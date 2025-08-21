@@ -19,6 +19,7 @@
 #include "audio_utils.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "source/audio_capture_source.h"
 
 using namespace testing::ext;
 
@@ -73,7 +74,7 @@ void AudioCaptureSourceUnitTest::InitPrimarySource()
     attr_.sampleRate = 48000; // 48000: sample rate
     attr_.channel = 2; // 2: channel
     attr_.format = SAMPLE_S16LE;
-    attr_.channelLayout = 3; // 3: channel layout
+    attr_.channelLayout = CH_LAYOUT_UNKNOWN;
     attr_.deviceType = DEVICE_TYPE_MIC;
     attr_.openMicSpeaker = 1;
     primarySource_->Init(attr_);
@@ -388,6 +389,30 @@ HWTEST_F(AudioCaptureSourceUnitTest, UsbSourceUnitTest_004, TestSize.Level1)
     ret = usbSource_->Stop();
     EXPECT_EQ(ret, SUCCESS);
     DeInitUsbSource();
+}
+
+/**
+ * @tc.name   : Test GetChannelCountByChannelLayout API
+ * @tc.number : GetChannelCountByChannelLayout_001
+ * @tc.desc   : Test GetChannelCountByChannelLayout API
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, GetChannelCountByChannelLayout_001, TestSize.Level1)
+{
+    uint64_t channelCount = 0;
+    
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_UNKNOW);
+
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_MONO);
+    EXPECT_EQ(channelCount, AudioChannel::MONO);
+
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_STEREO);
+    EXPECT_EQ(channelCount, AudioChannel::STEREO);
+
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_4POINT0);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_4);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_QUAD);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_4);
 }
 
 } // namespace AudioStandard

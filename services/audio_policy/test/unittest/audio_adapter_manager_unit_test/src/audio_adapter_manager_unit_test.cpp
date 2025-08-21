@@ -718,5 +718,20 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetMinVolumeLevel_004, TestSize.Level1)
     EXPECT_EQ(ret, audioAdapterManager->minVolumeIndexMap_[STREAM_MUSIC]);
 }
 
+/**
+ * @tc.name: Test GetAudioSourceAttr
+ * @tc.number: GetAudioSourceAttr_001
+ * @tc.type: FUNC
+ * @tc.desc: when inof layout is not empty, passthrought layout to attr
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetAudioSourceAttr_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    AudioModuleInfo info;
+    info.channelLayout = "263"; // 263 = 100000111
+    IAudioSourceAttr attr = audioAdapterManager->GetAudioSourceAttr(info);
+    EXPECT_EQ(attr.channelLayout, 263); // 263 = 100000111
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
