@@ -33,7 +33,6 @@ using namespace OHOS::AudioStandard::HPAE;
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
-const uint8_t TESTSIZE = 32;
 static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;

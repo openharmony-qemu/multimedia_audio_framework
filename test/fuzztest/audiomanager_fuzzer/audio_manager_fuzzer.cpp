@@ -29,7 +29,6 @@ namespace AudioStandard {
 namespace {
     std::string g_networkId = "LocalDevice";
 }
-const uint8_t TESTSIZE = 4;
 typedef void (*TestPtr)(const uint8_t *, size_t);
 
 void AudioRendererStateCallbackFuzz::OnRendererStateChange(
@@ -179,7 +178,7 @@ void AudioGroupManagerFuzzTest(const uint8_t* data, size_t size)
 } // namespace AudioStandard
 } // namesapce OHOS
 
-OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
+OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioManagerFuzzTest,
     OHOS::AudioStandard::AudioRoutingManagerFuzzTest,
     OHOS::AudioStandard::AudioStreamManagerFuzzTest,
@@ -193,8 +192,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     if (data == nullptr || size <= 1) {
         return 0;
     }
-    uint8_t firstByte = *data % OHOS::AudioStandard::TESTSIZE;
-    if (firstByte >= OHOS::AudioStandard::TESTSIZE) {
+    uint32_t funcSize = sizeof(g_testPtrs) / sizeof(g_testPtrs[0]);
+    uint8_t firstByte = *data % funcSize;
+    if (firstByte >= funcSize) {
         return 0;
     }
     data = data + 1;

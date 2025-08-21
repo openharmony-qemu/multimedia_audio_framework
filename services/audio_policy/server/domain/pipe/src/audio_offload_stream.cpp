@@ -140,11 +140,5 @@ std::vector<SinkInput> AudioOffloadStream::FilterSinkInputs(int32_t sessionId, s
     }
     return targetSinkInputs;
 }
-
-int32_t AudioOffloadStream::ActivateConcurrencyFromServer(AudioPipeType incomingPipe)
-{
-    (void)incomingPipe;
-    return SUCCESS;
-}
 } // namespace AudioStandard
 } // namespace OHOS

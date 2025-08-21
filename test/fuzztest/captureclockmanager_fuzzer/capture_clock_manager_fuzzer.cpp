@@ -47,7 +47,6 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 5;
 static int32_t NUM_2 = 2;
 constexpr uint64_t MOCK_POSITION_INC = 960;
 constexpr uint32_t MOCK_SAMPLE_RATE = 48000;
@@ -166,7 +165,7 @@ void GetTimeStampByPositionDifferentFuzzTest()
     CapturerClockManager::GetInstance().DeleteCapturerClock(1);
 }
 
-TestFuncs g_testFuncs[TESTSIZE] = {
+TestFuncs g_testFuncs[] = {
     GetMediaRenderDeviceFuzzTest,
     GetRecordCaptureDeviceFuzzTest,
     CaptureClockStartAndStopFuzzTest,

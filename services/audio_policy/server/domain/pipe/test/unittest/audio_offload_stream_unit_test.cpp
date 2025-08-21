@@ -121,19 +121,6 @@ HWTEST_F(AudioOffloadStreamTest, FilterSinkInputs_ShouldReturnEmpty_WhenSinkInpu
 }
 
 /**
- * @tc.name  : SpatializationEnabledAndEffectOffloadEnabled
- * @tc.number: AudioOffloadStreamTest_021
- * @tc.desc  : Test ActivateConcurrencyFromServer Interface.
- */
-HWTEST_F(AudioOffloadStreamTest, AudioOffloadStreamTest_021, TestSize.Level4)
-{
-    AudioPipeType incomingPipe = PIPE_TYPE_UNKNOWN;
-    AudioOffloadStream testModule;
-    int32_t ret = testModule.ActivateConcurrencyFromServer(incomingPipe);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
  * @tc.name   : AudioOffloadStreamTest_GetInstance_001
  * @tc.number : GetInstance_001
  * @tc.desc   : Test GetInstance()

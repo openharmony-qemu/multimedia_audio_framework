@@ -43,7 +43,6 @@ const uint32_t LIMIT_TWO = 30;
 const uint32_t LIMIT_THREE = 60;
 const uint32_t LIMIT_FOUR = static_cast<uint32_t>(AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX);
 bool g_hasServerInit = false;
-const uint8_t TESTSIZE = 70;
 typedef void (*TestPtr)(const uint8_t *, size_t);
 
 static const uint8_t* RAW_DATA = nullptr;
@@ -933,7 +932,7 @@ void AudioPolicyServiceIsDevicePlaybackSupportedFuzztest(const uint8_t *rawData,
 } // namespace AudioStandard
 } // namesapce OHOS
 
-OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
+OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioPolicyServiceDumpTest,
     OHOS::AudioStandard::AudioPolicyServiceDeviceTest,
     OHOS::AudioStandard::AudioPolicyServiceAccountTest,
@@ -1012,8 +1011,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     if (data == nullptr || size <= 1) {
         return 0;
     }
-    uint8_t firstByte = *data % OHOS::AudioStandard::TESTSIZE;
-    if (firstByte >= OHOS::AudioStandard::TESTSIZE) {
+    uint32_t funcSize = sizeof(g_testPtrs) / sizeof(g_testPtrs[0]);
+    uint8_t firstByte = *data % funcSize;
+    if (firstByte >= funcSize) {
         return 0;
     }
     data = data + 1;

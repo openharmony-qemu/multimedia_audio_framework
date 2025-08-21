@@ -53,7 +53,6 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 2;
 static int32_t NUM_2 = 2;
 static constexpr int64_t TIMEOUT_IN_NS = 300000000;
 static constexpr uint32_t CYCLES_TIMES = 500;
@@ -122,7 +121,7 @@ void FutexWaitFuzzTest()
     threadWrite.join();
 }
 
-TestFuncs g_testFuncs[TESTSIZE] = {
+TestFuncs g_testFuncs[] = {
     FutexWakeFuzzTest,
     FutexWaitFuzzTest,
 };

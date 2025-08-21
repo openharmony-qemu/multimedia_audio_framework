@@ -39,7 +39,6 @@ static std::string g_rootCapturerPath = "/data/source_file_io_48000_2_s16le.pcm"
 const char* DEFAULT_TEST_DEVICE_CLASS = "file_io";
 const char* DEFAULT_TEST_DEVICE_NETWORKID = "LocalDevice";
 constexpr size_t THRESHOLD = 10;
-constexpr uint8_t TESTSIZE = 4;
 
 // need full audio channel layouts to cover all cases during setting up downmix table -- first part
 constexpr static AudioChannelLayout FIRST_PART_CH_LAYOUTS = static_cast<AudioChannelLayout> (
@@ -274,7 +273,7 @@ void ProcesFuzzTest2()
 }
 
 typedef void (*TestFuncs)();
-TestFuncs g_testFuncs[TESTSIZE] = {
+TestFuncs g_testFuncs[] = {
     SetParamFuzzTest,
     SetDefaultChannelLayoutFuzzTest,
     ProcesFuzzTest1,

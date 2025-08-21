@@ -60,9 +60,6 @@ public:
     // not offload related
     std::vector<SinkInput> FilterSinkInputs(int32_t sessionId, std::vector<SinkInput> sinkInputs);
 
-    // no used
-    int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe);
-
 private:
     AudioOffloadStream()
         : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
