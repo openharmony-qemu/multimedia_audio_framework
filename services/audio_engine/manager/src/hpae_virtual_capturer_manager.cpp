@@ -286,7 +286,7 @@ int32_t HpaeVirtualCapturerManager::AddAllNodesToSource(const std::vector<HpaeCa
 {
     std::lock_guard<std::mutex> lock(captureMutex_);
     for (auto moveInfo : moveInfos) {
-         AUDIO_INFO_LOG("[FinishMove] session: %{public}u to source:[virtual]", moveInfo.sessionId);
+        AUDIO_INFO_LOG("[FinishMove] session: %{public}u to source:[virtual]", moveInfo.sessionId);
         captureStream_.emplace(moveInfo.sessionId, moveInfo);
     }
     return SUCCESS;
