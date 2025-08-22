@@ -137,8 +137,8 @@ private:
     int32_t SetVolumeInner(float left, float right);
     void UpdateSinkState(bool started);
     int32_t GetRenderPositionInner();
-    void AddHdiLatency(uint32_t duration);
-    void RemoveHdiLatency(uint32_t duration);
+    void AddHdiLatency(uint64_t duration);
+    void RemoveHdiLatency(uint64_t duration);
     void CheckHdiTime(int64_t &timeSec, int64_t &timeNanoSec);
     int32_t GetLatencyInner();
     void CalcHdiPosition(uint64_t frames, int64_t timeSec, int64_t timeNanoSec);
@@ -205,11 +205,11 @@ private:
     // Audio playback rate
     float speed_ = 1.0f;
     // Delay queue: pair <latency duration, speed>
-    std::deque<std::pair<uint32_t, uint32_t>> realLatencyDeque_;
+    std::deque<std::pair<uint64_t, uint64_t>> realLatencyDeque_;
     // Delay queue real length
-    uint32_t realLatencyTotalUS_ = 0;
+    uint64_t realLatencyTotalUS_ = 0;
     // remote offload hdi latency (us)
-    uint32_t hdiLatencyUS_ = 0;
+    uint64_t hdiLatencyUS_ = 0;
     // The timestamp (in microseconds) of the last HDI flush operation for frames (before scaling to one times speed)
     uint64_t lastHdiFlushFramesUS_ = 0;
     // The timestamp (in microseconds) of the last HDI flush operation for frames (after scaling to one times speed)
