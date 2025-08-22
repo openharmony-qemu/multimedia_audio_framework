@@ -274,7 +274,7 @@ void AudioPolicyServer::OnStart()
     SubscribeVolumeKeyEvents();
 #endif
     if (getpid() > FIRST_SCREEN_ON_PID) {
-        audioDeviceCommon_.SetFirstScreenOn();
+        coreService_->SetFirstScreenOn();
     }
     // Restart to reload the volume.
     InitKVStore();
@@ -1059,11 +1059,9 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
         eventEntry_->OnReceiveUpdateDeviceNameEvent(macAddress, deviceName);
     } else if (action == "usual.event.SCREEN_ON") {
         AUDIO_INFO_LOG("receive SCREEN_ON action, control audio focus if need");
-        audioDeviceCommon_.SetFirstScreenOn();
-        if (powerStateListener_ == nullptr) {
-            AUDIO_ERR_LOG("powerStateListener_ is nullptr");
-            return;
-        }
+        CHECK_AND_RETURN_RET_LOG(coreService_, "coreService_ is nullptr");
+        coreService_->SetFirstScreenOn();
+        CHECK_AND_RETURN_RET_LOG(powerStateListener_, "coreService_ is nullptr");
         powerStateListener_->ControlAudioFocus(false);
     } else if (action == "usual.event.SCREEN_LOCKED") {
         AUDIO_INFO_LOG("receive SCREEN_OFF or SCREEN_LOCKED action, control audio volume change if stream is active");
