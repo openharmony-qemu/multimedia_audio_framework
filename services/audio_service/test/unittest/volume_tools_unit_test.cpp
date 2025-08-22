@@ -277,8 +277,8 @@ HWTEST_F(VolumeToolsUnitTest, VolumeTools_014, TestSize.Level1)
 {
     EXPECT_EQ(VolumeTools::IsZeroVolume(1e-10f), true);
     EXPECT_EQ(VolumeTools::IsZeroVolume(-1e-10f), true);
-    EXPECT_EQ(VolumeTools::IsZeroVolume(0.5f), true);
-    EXPECT_EQ(VolumeTools::IsZeroVolume(-0.5f), true);
+    EXPECT_EQ(VolumeTools::IsZeroVolume(0.5f), false);
+    EXPECT_EQ(VolumeTools::IsZeroVolume(-0.5f), false);
 }
 }
 }
