@@ -2220,8 +2220,10 @@ bool AudioRendererPrivate::FinishOldStream(IAudioStream::StreamClass targetClass
         AUDIO_INFO_LOG("Server died, reset session id: %{public}d", switchInfo.params.originalSessionId);
         switchInfo.params.originalSessionId = 0;
         switchInfo.sessionId = 0;
-        switchInfo.lastFramePosAndTimePairWithSpeed[Timestampbase::MONOTONIC].first = switchInfo.unprocessSamples;
-        switchInfo.lastFramePosAndTimePairWithSpeed[Timestampbase::BOOTTIME].first = switchInfo.unprocessSamples;
+        switchInfo.lastFramePosAndTimePairWithSpeed[Timestamp::Timestampbase::MONOTONIC].first =
+            switchInfo.unprocessSamples;
+        switchInfo.lastFramePosAndTimePairWithSpeed[Timestamp::Timestampbase::BOOTTIME].first = 
+            switchInfo.unprocessSamples;
     }
     UpdateFramesWritten();
     switchResult = audioStream_->ReleaseAudioStream(true, true);
