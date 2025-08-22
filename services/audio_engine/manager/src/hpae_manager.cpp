@@ -33,6 +33,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 namespace {
+constexpr uint32_t FADED_OUT_UPDATE_TIME_MAX = 60; // 60ms
 static inline const std::unordered_set<SourceType> INNER_SOURCE_TYPE_SET = {
     SOURCE_TYPE_PLAYBACK_CAPTURE, SOURCE_TYPE_REMOTE_CAST};
 }  // namespace
@@ -61,8 +62,14 @@ void HpaeManagerThread::Run()
             std::unique_lock<std::mutex> lock(mutex_);
             bool isProcessing = m_hpaeManager->IsMsgProcessing();
             bool signal = recvSignal_.load();
+            uint64_t sleepTime = m_hpaeManager->HandlePendingTransitions();
             Trace trace("runFunc:" + std::to_string(signal) + " isPorcessing:" + std::to_string(isProcessing));
-            condition_.wait(lock, [this] { return m_hpaeManager->IsMsgProcessing() || recvSignal_.load(); });
+            if (sleepTime > 0) {
+                condition_.wait_for(lock, std::chrono::milliseconds(sleepTime),
+                    [this] { return m_hpaeManager->IsMsgProcessing() || recvSignal_.load(); });
+            } else {
+                condition_.wait(lock, [this] { return m_hpaeManager->IsMsgProcessing() || recvSignal_.load(); });
+            }
         }
         m_hpaeManager->HandleMsg();
         recvSignal_.store(false);
@@ -1103,9 +1110,19 @@ void HpaeManager::HandleUpdateStatus(
         // maybe dosomething while move sink inputs
         return;
     }
-    auto it = streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY ? rendererIdStreamInfoMap_.find(sessionId)
-                                                             : capturerIdStreamInfoMap_.find(sessionId);
-    if (it != rendererIdStreamInfoMap_.end() && it != capturerIdStreamInfoMap_.end()) {
+    if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
+        auto it = rendererIdStreamInfoMap_.find(sessionId);
+        CHECK_AND_RETURN(it != rendererIdStreamInfoMap_.end());
+        CHECK_AND_RETURN_LOG(!(operation == OPERATION_STOPPED && it->second.state != HPAE_SESSION_STOPPING) && 
+            !(operation == OPERATION_PAUSED && it->second.state != HPAE_SESSION_PAUSING), "stopped or paused");
+        if (operation == OPERATION_PAUSED || operation == OPERATION_STOPPED) {
+            RemovePendingTransition(sessionId);
+            it->second.state = status;
+        }
+        UpdateStatus(it->second.statusCallback, operation, sessionId);
+    } else {
+        auto it = capturerIdStreamInfoMap_.find(sessionId);
+        CHECK_AND_RETURN(it != capturerIdStreamInfoMap_.end());
         UpdateStatus(it->second.statusCallback, operation, sessionId);
     }
 }
@@ -1200,6 +1217,44 @@ void HpaeManager::SendRequest(Request &&request, std::string funcName)
     CHECK_AND_RETURN_LOG(hpaeManagerThread_, "hpaeManagerThread_ is nullptr");
     hpaeManagerThread_->Notify();
 }
+
+uint64_t HpaeManager::HandlePendingTransitions()
+{
+    constexpr auto timeout = std::chrono::milliseconds(FADED_OUT_UPDATE_TIME_MAX);
+    const auto now = std::chrono::high_resolution_clock::now();
+    while (!pendingTransitionsTracker_.empty()) {
+        auto front = pendingTransitionsTracker_.front();
+        auto elapsed = now - front.time;
+        if (elapsed >= timeout) {
+            AUDIO_INFO_LOG("HandlePendingTransitions sessionid:%{public}u status:%{public}d operation:%{public}d",
+                front.sessionId, front.state, front.operation);
+            pendingTransitionsTracker_.pop_front();
+            HandleUpdateStatus(HPAE_STREAM_CLASS_TYPE_PLAY, front.sessionId, front.state, front.operation);
+        } else {
+            return std::chrono::duration_cast<std::chrono::milliseconds>(timeout - elapsed).count();
+        }
+    }
+    return 0;
+}
+
+void HpaeManager::RemovePendingTransition(uint32_t sessionId)
+{
+    auto it = pendingTransitionsTracker_.begin();
+    while (it != pendingTransitionsTracker_.end()) {
+        if (it->sessionId == sessionId) {
+            it = pendingTransitionsTracker_.erase(it);
+            AUDIO_INFO_LOG("RemovePendingTransition sessionid:%{public}u", sessionId);
+        } else {
+            ++it;
+        }
+    }
+}
+
+void HpaeManager::EnqueuePendingTransition(uint32_t sessionId, HpaeSessionState state, IOperation operation)
+{
+    pendingTransitionsTracker_.push_back({sessionId, state, operation, std::chrono::high_resolution_clock::now()});
+}
+
 // play and record stream interface
 int32_t HpaeManager::CreateStream(const HpaeStreamInfo &streamInfo)
 {
@@ -1479,6 +1534,7 @@ int32_t HpaeManager::Pause(HpaeStreamClassType streamClassType, uint32_t session
                 "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Pause(sessionId);
             rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_PAUSING;
+            EnqueuePendingTransition(sessionId, HPAE_SESSION_PAUSED, OPERATION_PAUSED);
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
                    capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
             AUDIO_INFO_LOG("capturer Pause sessionId: %{public}u deviceName:%{public}s",
@@ -1605,6 +1661,7 @@ int32_t HpaeManager::Stop(HpaeStreamClassType streamClassType, uint32_t sessionI
                 "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Stop(sessionId);
             rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_STOPPING;
+            EnqueuePendingTransition(sessionId, HPAE_SESSION_STOPPED, OPERATION_STOPPED);
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
                    capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
             AUDIO_INFO_LOG("capturer Stop sessionId: %{public}u deviceName:%{public}s",
