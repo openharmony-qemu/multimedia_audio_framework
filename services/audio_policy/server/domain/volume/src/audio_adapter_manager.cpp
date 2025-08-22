@@ -3237,6 +3237,7 @@ void AudioAdapterManager::NotifyAccountsChanged(const int &id)
             CheckAndDealMuteStatus(deviceType, streamType);
         }
     }
+    UpdateVolumeForLowLatency();
 }
 
 int32_t AudioAdapterManager::DoRestoreData()
