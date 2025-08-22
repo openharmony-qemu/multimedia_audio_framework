@@ -84,6 +84,7 @@ public:
         uint64_t frameMarkPosition = 0;
         uint64_t framePeriodNumber = 0;
 
+        uint64_t unprocessSamples = 0;
         uint64_t totalBytesWritten = 0;
         uint64_t framePeriodWritten = 0;
         std::shared_ptr<RendererPositionCallback> renderPositionCb;

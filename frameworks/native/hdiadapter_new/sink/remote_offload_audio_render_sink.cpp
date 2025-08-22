@@ -357,7 +357,7 @@ int32_t RemoteOffloadAudioRenderSink::GetHdiLatency(uint32_t &latency)
     }
 
     latency = hdiLatencyUS_;
-    AUDIO_DEBUG_LOG("RemoteOffloadAudioRenderSink::GetHdiLatency hdiLatencyUS_ %{public}u", hdiLatencyUS_);
+    AUDIO_DEBUG_LOG("RemoteOffloadAudioRenderSink::GetHdiLatency hdiLatencyUS_ %{public}" PRIu64, hdiLatencyUS_);
     return SUCCESS;
 }
 
@@ -590,9 +590,9 @@ void RemoteOffloadAudioRenderSink::CalcHdiPosition(uint64_t frames, int64_t time
     lastHdiTimeNanoSec_ = timeNanoSec;
 }
 
-void RemoteOffloadAudioRenderSink::RemoveHdiLatency(uint32_t duration)
+void RemoteOffloadAudioRenderSink::RemoveHdiLatency(uint64_t duration)
 {
-    AUDIO_INFO_LOG("RemoteOffloadAudioRenderSink::RemoveHdiLatency duration: %{public}u", duration);
+    AUDIO_INFO_LOG("RemoteOffloadAudioRenderSink::RemoveHdiLatency duration: %{public}" PRId64, duration);
     if (realLatencyTotalUS_ <= duration) {
         realLatencyTotalUS_ = 0;
         realLatencyDeque_.clear();
@@ -610,18 +610,18 @@ void RemoteOffloadAudioRenderSink::RemoveHdiLatency(uint32_t duration)
             duration = 0;
         }
     }
-    AUDIO_INFO_LOG("RemoteOffloadAudioRenderSink::RemoveHdiLatency realLatencyTotalUS_: %{public}u",
+    AUDIO_INFO_LOG("RemoteOffloadAudioRenderSink::RemoveHdiLatency realLatencyTotalUS_: %{public}" PRId64,
         realLatencyTotalUS_);
 }
 
-void RemoteOffloadAudioRenderSink::AddHdiLatency(uint32_t duration)
+void RemoteOffloadAudioRenderSink::AddHdiLatency(uint64_t duration)
 {
-    AUDIO_DEBUG_LOG("RemoteOffloadAudioRenderSink::AddHdiLatency duration: %{public}u, speed: %{public}f",
-        duration, speed_);
+    AUDIO_DEBUG_LOG("RemoteOffloadAudioRenderSink::AddHdiLatency duration: %{public}" PRId64
+        ", speed: %{public}f", duration, speed_);
     realLatencyTotalUS_ += duration;
     realLatencyDeque_.push_front({duration, speed_});
 
-    uint32_t maxDequeLengthUS = 1000000;
+    uint64_t maxDequeLengthUS = 1000000;
     // If the total length exceeds 1,000,000 microseconds.
     // clear the end of the queue to ensure the maximum length remains at 1,000,000 microseconds.
     while (realLatencyTotalUS_ > maxDequeLengthUS) {
@@ -629,12 +629,12 @@ void RemoteOffloadAudioRenderSink::AddHdiLatency(uint32_t duration)
             realLatencyTotalUS_ -= realLatencyDeque_.back().first;
             realLatencyDeque_.pop_back();
         } else {
-            uint32_t excess = realLatencyTotalUS_ - maxDequeLengthUS;
+            uint64_t excess = realLatencyTotalUS_ - maxDequeLengthUS;
             realLatencyDeque_.back().first -= excess;
             realLatencyTotalUS_ -= excess;
         }
     }
-    AUDIO_DEBUG_LOG("RemoteOffloadAudioRenderSink::AddHdiLatency realLatencyTotalUS_: %{public}u",
+    AUDIO_DEBUG_LOG("RemoteOffloadAudioRenderSink::AddHdiLatency realLatencyTotalUS_: %{public}" PRId64,
         realLatencyTotalUS_);
 }
 
