@@ -112,7 +112,6 @@ void NapiAudioVolumeKeyEvent::SafeJsCallbackVolumeEventWork(napi_env env, napi_v
     napi_handle_scope scope = nullptr;
     napi_open_handle_scope(env, &scope);
     CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
-    AUDIO_INFO_LOG("SafeJsCallbackVolumeEventWork: safe js callback working.");
 
     do {
         napi_value jsCallback = nullptr;
