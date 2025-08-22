@@ -75,8 +75,11 @@ int32_t HpaeSoftLink::Init()
 {
     Trace trace("HpaeSoftLink::Init");
     AUDIO_INFO_LOG("init in");
-    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::PREPARED, SUCCESS, "softlink already inited");
-    CHECK_AND_RETURN_RET_LOG(state_ == HpaeSoftLinkState::NEW, ERR_ILLEGAL_STATE, "init error state");
+    {
+        std::lock_guard<std::mutex> stateLock(stateMutex_);
+        CHECK_AND_RETURN_RET_LOG(state_.load() != HpaeSoftLinkState::PREPARED, SUCCESS, "softlink already inited");
+        CHECK_AND_RETURN_RET_LOG(state_.load() == HpaeSoftLinkState::NEW, ERR_ILLEGAL_STATE, "init error state");
+    }
     CHECK_AND_RETURN_RET_LOG(sinkIdx_ != HDI_INVALID_ID && sourceIdx_ != HDI_INVALID_ID, ERR_INVALID_PARAM,
         "invalid sinkIdx or capturerIdx");
 
@@ -176,21 +179,29 @@ int32_t HpaeSoftLink::CreateStream()
         false, AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL, false
     };
     AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
-    streamStateMap_[rendererStreamInfo_.sessionId] = HpaeSoftLinkState::PREPARED;
+    {
+        std::lock_guard<std::mutex> stateLock(stateMutex_);
+        streamStateMap_[rendererStreamInfo_.sessionId] = HpaeSoftLinkState::PREPARED;
+    }
 
     uint32_t &capturerSessionId = capturerStreamInfo_.sessionId;
     IHpaeManager::GetHpaeManager().CreateStream(capturerStreamInfo_);
     IHpaeManager::GetHpaeManager().RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_RECORD, capturerSessionId,
         shared_from_this());
     IHpaeManager::GetHpaeManager().RegisterReadCallback(capturerSessionId, shared_from_this());
-    streamStateMap_[capturerStreamInfo_.sessionId] = HpaeSoftLinkState::PREPARED;
+    {
+        std::lock_guard<std::mutex> stateLock(stateMutex_);
+        streamStateMap_[capturerStreamInfo_.sessionId] = HpaeSoftLinkState::PREPARED;
+    }
     return SUCCESS;
 }
 
 int32_t HpaeSoftLink::SetVolume(float volume)
 {
-    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::NEW, ERR_ILLEGAL_STATE, "softlink not prepared");
-    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::RELEASED, ERR_ILLEGAL_STATE, "softlink already release");
+    std::lock_guard<std::mutex> stateLock(stateMutex_);
+    CHECK_AND_RETURN_RET_LOG(state_.load() != HpaeSoftLinkState::NEW, ERR_ILLEGAL_STATE, "softlink not prepared");
+    CHECK_AND_RETURN_RET_LOG(state_.load() != HpaeSoftLinkState::RELEASED, ERR_ILLEGAL_STATE,
+        "softlink already release");
     AudioVolume::GetInstance()->SetStreamVolume(rendererStreamInfo_.sessionId, volume);
     return SUCCESS;
 }
@@ -199,9 +210,13 @@ int32_t HpaeSoftLink::Start()
 {
     Trace trace("HpaeSoftLink::Start");
     AUDIO_INFO_LOG("Start in");
-    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::RUNNING, SUCCESS, "softlink already start");
-    CHECK_AND_RETURN_RET_LOG(state_ == HpaeSoftLinkState::PREPARED || state_ == HpaeSoftLinkState::STOPPED,
-        ERR_ILLEGAL_STATE, "softlink not init");
+    {
+        std::lock_guard<std::mutex> stateLock(stateMutex_);
+        CHECK_AND_RETURN_RET_LOG(state_.load() != HpaeSoftLinkState::RUNNING, SUCCESS, "softlink already start");
+        CHECK_AND_RETURN_RET_LOG(
+            state_.load() == HpaeSoftLinkState::PREPARED || state_.load() == HpaeSoftLinkState::STOPPED,
+            ERR_ILLEGAL_STATE, "softlink not init");
+    }
     std::unique_lock<std::mutex> lock(callbackMutex_);
     isStreamOperationFinish_ = 0;
     IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_PLAY, rendererStreamInfo_.sessionId);
@@ -226,27 +241,34 @@ int32_t HpaeSoftLink::Start()
 int32_t HpaeSoftLink::Stop()
 {
     Trace trace("HpaeSoftLink::Stop");
-    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::STOPPED, SUCCESS, "softlink already stop");
-    CHECK_AND_RETURN_RET_LOG(state_ == HpaeSoftLinkState::RUNNING, ERR_ILLEGAL_STATE, "softlink not init");
+    AUDIO_INFO_LOG("Stop in");
+    std::lock_guard<std::mutex> stateLock(stateMutex_);
+    CHECK_AND_RETURN_RET_LOG(state_.load() != HpaeSoftLinkState::STOPPED, SUCCESS, "softlink already stop");
+    CHECK_AND_RETURN_RET_LOG(state_.load() == HpaeSoftLinkState::RUNNING, ERR_ILLEGAL_STATE, "softlink not init");
+    StopInner();
+    return SUCCESS;
+}
+
+void HpaeSoftLink::StopInner()
+{
     IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_PLAY, rendererStreamInfo_.sessionId);
     IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_RECORD, capturerStreamInfo_.sessionId);
-    std::lock_guard<std::mutex> lock(stateMutex_);
     state_ = HpaeSoftLinkState::STOPPED;
-    return SUCCESS;
 }
 
 int32_t HpaeSoftLink::Release()
 {
     Trace trace("HpaeSoftLink::Release");
-    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::RELEASED, SUCCESS, "softlink already release");
-    if (state_ == HpaeSoftLinkState::RUNNING) {
+    AUDIO_INFO_LOG("Release in");
+    std::lock_guard<std::mutex> stateLock(stateMutex_);
+    CHECK_AND_RETURN_RET_LOG(state_.load() != HpaeSoftLinkState::RELEASED, SUCCESS, "softlink already release");
+    if (state_.load() == HpaeSoftLinkState::RUNNING) {
         AUDIO_INFO_LOG("softlink not stop, stop before release");
         Stop();
     }
     IHpaeManager::GetHpaeManager().Release(HPAE_STREAM_CLASS_TYPE_PLAY, rendererStreamInfo_.sessionId);
     AudioVolume::GetInstance()->RemoveStreamVolume(rendererStreamInfo_.sessionId);
     IHpaeManager::GetHpaeManager().Release(HPAE_STREAM_CLASS_TYPE_RECORD, capturerStreamInfo_.sessionId);
-    std::lock_guard<std::mutex> lock(stateMutex_);
     state_ = HpaeSoftLinkState::RELEASED;
     return SUCCESS;
 }
@@ -313,6 +335,13 @@ int32_t HpaeSoftLink::OnStreamData(AudioCallBackStreamInfo& callbackStreamInfo)
     AUDIO_DEBUG_LOG("readable size: %{public}zu, requestDataLen: %{public}zu", result.size, requestDataLen);
     result = bufferQueue_->Dequeue({reinterpret_cast<uint8_t *>(inputData), requestDataLen});
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringBuffer dequeue failed");
+    {
+        std::lock_guard<std::mutex> stateLock(stateMutex_);
+        if (streamStateMap_[capturerStreamInfo_.sessionId] == HpaeSoftLinkState::STOPPED) {
+            AUDIO_DEBUG_LOG("restart capturer[%{public}u]", capturerStreamInfo_.sessionId);
+            IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_RECORD, capturerStreamInfo_.sessionId);
+        }
+    }
     return SUCCESS;
 }
 
@@ -365,6 +394,13 @@ int32_t HpaeSoftLink::OnStreamData(AudioCallBackCapturerStreamInfo& callbackStre
     AUDIO_DEBUG_LOG("writable size: %{public}zu, requestDataLen: %{public}zu", result.size, requestDataLen);
     result = bufferQueue_->Enqueue({reinterpret_cast<uint8_t *>(outputData), requestDataLen});
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringBuffer enqueue failed");
+    {
+        std::lock_guard<std::mutex> stateLock(stateMutex_);
+        if (streamStateMap_[rendererStreamInfo_.sessionId] == HpaeSoftLinkState::STOPPED) {
+            AUDIO_DEBUG_LOG("restart renderer[%{public}u]", rendererStreamInfo_.sessionId);
+            IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_PLAY, rendererStreamInfo_.sessionId);
+        }
+    }
     return SUCCESS;
 }
 

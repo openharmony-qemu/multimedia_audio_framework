@@ -71,6 +71,7 @@ private:
     int32_t CreateStream();
     void FlushRingCache();
     void TransSinkInfoToStreamInfo(HpaeStreamInfo &info, const HpaeStreamClassType &streamClassType);
+    void StopInner();
 private:
     static uint32_t g_sessionId;
     inline static std::mutex sessionIdMutex_;
@@ -83,7 +84,7 @@ private:
     HpaeStreamInfo capturerStreamInfo_;
     std::unique_ptr<AudioRingCache> bufferQueue_ = nullptr;
     std::vector<char> tempBuffer_;
-    HpaeSoftLinkState state_ = HpaeSoftLinkState::INVALID;
+    std::atomic<HpaeSoftLinkState> state_ = HpaeSoftLinkState::INVALID;
     std::mutex stateMutex_;
     uint8_t isStreamOperationFinish_ = 0;
     uint8_t isDeviceOperationFinish_ = 0;
