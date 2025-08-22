@@ -170,6 +170,7 @@ int32_t HpaeVirtualCapturerManager::SetStreamMute(uint32_t sessionId, bool isMut
     CHECK_AND_RETURN_RET_LOG(captureStream_.find(sessionId) != captureStream_.end(), SUCCESS,
         "sessionId %{public}u is not exist", sessionId);
     auto captureInfo = captureStream_[sessionId];
+    CHECK_AND_RETURN_RET_LOG(captureInfo.sourceOutputNode, SUCCESS, "captureInfo.sourceOutputNode is nullptr");
     captureInfo.sourceOutputNode->SetMute(isMute);
     return SUCCESS;
 }
@@ -235,6 +236,7 @@ int32_t HpaeVirtualCapturerManager::GetSourceOutputInfo(uint32_t sessionId, Hpae
     CHECK_AND_RETURN_RET_LOG(captureStream_.find(sessionId) != captureStream_.end(), SUCCESS,
         "sessionId %{public}u is not exist", sessionId);
     auto captureInfo = captureStream_[sessionId];
+    CHECK_AND_RETURN_RET_LOG(captureInfo.sourceOutputNode, SUCCESS, "captureInfo.sourceOutputNode is nullptr");
     sourceOutputInfo.nodeInfo = captureInfo.sourceOutputNode->GetNodeInfo();
     sourceOutputInfo.capturerSessionInfo = captureInfo.sessionInfo;
     return SUCCESS;
@@ -316,6 +318,7 @@ std::string HpaeVirtualCapturerManager::GetDeviceHDFDumpInfo()
 void HpaeVirtualCapturerManager::SetSessionState(HpaeCaptureMoveInfo &streamInfo, HpaeSessionState capturerState)
 {
     streamInfo.sessionInfo.state = capturerState;
+    CHECK_AND_RETURN_LOG(captureInfo.sourceOutputNode, "captureInfo.sourceOutputNode is nullptr");
     streamInfo.sourceOutputNode->SetState(capturerState);
 }
 }  // namespace HPAE
