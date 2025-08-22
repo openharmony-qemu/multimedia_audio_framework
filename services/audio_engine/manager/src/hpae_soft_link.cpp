@@ -221,7 +221,7 @@ int32_t HpaeSoftLink::Start()
     isStreamOperationFinish_ = 0;
     IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_PLAY, rendererStreamInfo_.sessionId);
     IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_RECORD, capturerStreamInfo_.sessionId);
-    bool  stopWaiting = callbackCV_.wait_for(lock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+    bool stopWaiting = callbackCV_.wait_for(lock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return (isStreamOperationFinish_ & SOFTLINK_RENDERER_OPERATION) &&
             (isStreamOperationFinish_ & SOFTLINK_CAPTURER_OPERATION);
     });
@@ -264,7 +264,7 @@ int32_t HpaeSoftLink::Release()
     CHECK_AND_RETURN_RET_LOG(state_.load() != HpaeSoftLinkState::RELEASED, SUCCESS, "softlink already release");
     if (state_.load() == HpaeSoftLinkState::RUNNING) {
         AUDIO_INFO_LOG("softlink not stop, stop before release");
-        Stop();
+        StopInner();
     }
     IHpaeManager::GetHpaeManager().Release(HPAE_STREAM_CLASS_TYPE_PLAY, rendererStreamInfo_.sessionId);
     AudioVolume::GetInstance()->RemoveStreamVolume(rendererStreamInfo_.sessionId);
