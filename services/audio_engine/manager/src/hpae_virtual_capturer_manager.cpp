@@ -28,7 +28,6 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
-
 HpaeVirtualCapturerManager::HpaeVirtualCapturerManager() {}
 
 HpaeVirtualCapturerManager::~HpaeVirtualCapturerManager() {}
@@ -56,14 +55,14 @@ int32_t HpaeVirtualCapturerManager::CreateStream(const HpaeStreamInfo &streamInf
     HpaeCapturerSessionInfo sessionInfo;
     sessionInfo.sceneType = sceneType;
     HpaeCaptureMoveInfo moveInfo = {streamInfo.sessionId, sourceOutputNode, sessionInfo};
-    capturerStream_.emplace(streamInfo.sessionId, moveInfo);
+    captureStream_.emplace(streamInfo.sessionId, moveInfo);
     return SUCCESS;
 }
 
 int32_t HpaeVirtualCapturerManager::DestroyStream(uint32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(captureMutex_);
-    capturerStream_.erase(sessionId);
+    captureStream_.erase(sessionId);
     return SUCCESS;
 }
 
@@ -100,7 +99,7 @@ int32_t HpaeVirtualCapturerManager::Flush(uint32_t sessionId)
 
 int32_t HpaeVirtualCapturerManager::Drain(uint32_t sessionId)
 {
-    Trace trace("[" + std::to_string(sessionId) + "]HpaeVirtualCapturerManager::Pause");
+    Trace trace("[" + std::to_string(sessionId) + "]HpaeVirtualCapturerManager::Drain");
     std::lock_guard<std::mutex> lock(captureMutex_);
     CHECK_AND_RETURN_RET_LOG(captureStream_.find(sessionId) != captureStream_.end(), SUCCESS,
         "sessionId %{public}u is not exist", sessionId);
@@ -129,20 +128,21 @@ int32_t HpaeVirtualCapturerManager::Release(uint32_t sessionId)
     return DestroyStream(sessionId);
 }
 
-int32_t HpaeVirtualCapturerManager::MoveStream(uint32_t sessionId, const std::string& sourceName)
+int32_t HpaeVirtualCapturerManager::MoveStream(uint32_t sessionId, const std::string &sourceName)
 {
     std::lock_guard<std::mutex> lock(captureMutex_);
     CHECK_AND_RETURN_RET_LOG(captureStream_.find(sessionId) != captureStream_.end(), SUCCESS,
         "sessionId %{public}u is not exist", sessionId);
     auto captureInfo = captureStream_[sessionId];
     std::string name = sourceName;
-    AUDIO_INFO_LOG("[StartMove] seesion: %{public}u, source [virtual] ---> [%{public}s]",
+    AUDIO_INFO_LOG("[StartMove] session: %{public}u, source [virtual] ---> [%{public}s]",
         sessionId, sourceName.c_str());
+    TriggerSyncCallback(MOVE_SOURCE_OUTPUT, captureInfo, name);
     captureStream_.erase(sessionId);
     return SUCCESS;
 }
 
-int32_t HpaeVirtualCapturerManager::MoveAllStream(const std::string &sourceName, const std::vector<uint32_t>& moveIds,
+int32_t HpaeVirtualCapturerManager::MoveAllStream(const std::string &sourceName, const std::vector<uint32_t> &moveIds,
     MoveSessionType moveType)
 {
     std::lock_guard<std::mutex> lock(captureMutex_);
@@ -158,7 +158,7 @@ int32_t HpaeVirtualCapturerManager::MoveAllStream(const std::string &sourceName,
             ++itr;
         }
     }
-    AUDIO_INFO_LOG("[StartMove] seesion: %{public}u to source name:[%{public}s], move type:%{public}d",
+    AUDIO_INFO_LOG("[StartMove] session: %{public}u to source name:%{public}s, move type:%{public}d",
         idStr.c_str(), name.c_str(), moveType);
     TriggerSyncCallback(MOVE_ALL_SOURCE_OUTPUT, moveInfos, name);
     return SUCCESS;
@@ -253,7 +253,12 @@ std::vector<SourceOutput> HpaeVirtualCapturerManager::GetAllSourceOutputsInfo()
 
 void HpaeVirtualCapturerManager::OnNodeStatusUpdate(uint32_t sessionId, IOperation operation)
 {
-    AUDIO_ERR_LOG("Unsupported operation");
+    std::lock_guard<std::mutex> lock(captureMutex_);
+    CHECK_AND_RETURN_RET_LOG(captureStream_.find(sessionId) != captureStream_.end(), SUCCESS,
+        "sessionId %{public}u is not exist", sessionId);
+    auto captureInfo = captureStream_[sessionId];
+    TriggerSyncCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
+        captureInfo.sessionInfo.state, operation);
 }
 
 void HpaeVirtualCapturerManager::OnNotifyQueue()

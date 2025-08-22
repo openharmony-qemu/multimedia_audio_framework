@@ -31,7 +31,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
-static std::string g_rootCapturerPath = "/data/source_file_io_48000_2_s16le.pcm";
+static std::string g_rootCapturerPath = "";
 const uint32_t DEFAULT_FRAME_LENGTH = 960;
 const uint32_t DEFAULT_SESSION_ID = 123456;
 const std::string DEFAULT_SOURCE_NAME = "Built_in_mic";
@@ -264,10 +264,10 @@ HWTEST_F(HpaeVirtualCapturerManagerTest, HpaeVirtualCapturerManagerMoveAllStream
     auto capturerManager = std::make_shared<HpaeVirtualCapturerManager>();
     EXPECT_NE(capturerManager, nullptr);
 
-    uint32_t sessionId = DEFAULT_SESSION_ID;
+    std::string sourceName = DEFAULT_SOURCE_NAME;
     std::vector<uint32_t> moveIds {};
     MoveSessionType moveType = MOVE_SINGLE;
-    int32_t ret = capturerManager->MoveAllStream(sessionId, moveIds, moveType);
+    int32_t ret = capturerManager->MoveAllStream(sourceName, moveIds, moveType);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -282,10 +282,10 @@ HWTEST_F(HpaeVirtualCapturerManagerTest, HpaeVirtualCapturerManagerMoveAllStream
     auto capturerManager = std::make_shared<HpaeVirtualCapturerManager>();
     EXPECT_NE(capturerManager, nullptr);
 
-    uint32_t sessionId = DEFAULT_SESSION_ID;
+    std::string sourceName = DEFAULT_SOURCE_NAME;
     std::vector<uint32_t> moveIds {};
     MoveSessionType moveType = MOVE_ALL;
-    int32_t ret = capturerManager->MoveAllStream(sessionId, moveIds, moveType);
+    int32_t ret = capturerManager->MoveAllStream(sourceName, moveIds, moveType);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -302,13 +302,13 @@ HWTEST_F(HpaeVirtualCapturerManagerTest, HpaeVirtualCapturerManagerMoveAllStream
 
     uint32_t sessionId = DEFAULT_SESSION_ID;
     HpaeCaptureMoveInfo moveInfo {};
-    capturerManager->captureStream_.insert_or_assign(session, moveInfo);
+    capturerManager->captureStream_.insert_or_assign(sessionId, moveInfo);
 
-    std::string sourceNmae = DEFAULT_SOURCE_NAME;
+    std::string sourceName = DEFAULT_SOURCE_NAME;
     std::vector<uint32_t> moveIds {};
     moveIds.push_back(sessionId);
     MoveSessionType moveType = MOVE_SINGLE;
-    int32_t ret = capturerManager->MoveAllStream(sessionId, moveIds, moveType);
+    int32_t ret = capturerManager->MoveAllStream(sourceName, moveIds, moveType);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -325,13 +325,13 @@ HWTEST_F(HpaeVirtualCapturerManagerTest, HpaeVirtualCapturerManagerMoveAllStream
 
     uint32_t sessionId = DEFAULT_SESSION_ID;
     HpaeCaptureMoveInfo moveInfo {};
-    capturerManager->captureStream_.insert_or_assign(session, moveInfo);
+    capturerManager->captureStream_.insert_or_assign(sessionId, moveInfo);
 
-    std::string sourceNmae = DEFAULT_SOURCE_NAME;
+    std::string sourceName = DEFAULT_SOURCE_NAME;
     std::vector<uint32_t> moveIds {};
     moveIds.push_back(sessionId);
     MoveSessionType moveType = MOVE_ALL;
-    int32_t ret = capturerManager->MoveAllStream(sessionId, moveIds, moveType);
+    int32_t ret = capturerManager->MoveAllStream(sourceName, moveIds, moveType);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -361,20 +361,6 @@ HWTEST_F(HpaeVirtualCapturerManagerTest, HpaeVirtualCapturerManagerHandleMsg, Te
     EXPECT_NE(capturerManager, nullptr);
 
     capturerManager->HandleMsg();
-}
-
-/*
- * tc.name   : Test HpaeVirtualCapturerManager API
- * tc.type   : FUNC
- * tc.number : HpaeVirtualCapturerManagerProcess
- * tc.desc   : Test HpaeVirtualCapturerManagerProcess
- */
-HWTEST_F(HpaeVirtualCapturerManagerTest, HpaeVirtualCapturerManagerProcess, TestSize.Level0)
-{
-    auto capturerManager = std::make_shared<HpaeVirtualCapturerManager>();
-    EXPECT_NE(capturerManager, nullptr);
-
-    capturerManager->Process();
 }
 
 /*
@@ -587,7 +573,7 @@ HWTEST_F(HpaeVirtualCapturerManagerTest, HpaeVirtualCapturerManagerAddNodeToSour
     auto capturerManager = std::make_shared<HpaeVirtualCapturerManager>();
     EXPECT_NE(capturerManager, nullptr);
 
-    HpaeMoveInfo moveInfo {};
+    HpaeCaptureMoveInfo moveInfo {};
     int32_t ret = capturerManager->AddNodeToSource(moveInfo);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -622,22 +608,6 @@ HWTEST_F(HpaeVirtualCapturerManagerTest, HpaeVirtualCapturerManagerAddAllNodesTo
     std::string threadName = DEFAULT_THREAD_NAME;
     std::string ret = capturerManager->GetThreadName();
     EXPECT_EQ(ret, SUCCESS);
-}
-
-/*
- * tc.name   : Test HpaeVirtualCapturerManager API
- * tc.type   : FUNC
- * tc.number : HpaeVirtualCapturerManagerAddAllNodesToSource
- * tc.desc   : Test HpaeVirtualCapturerManagerAddAllNodesToSource
- */
-HWTEST_F(HpaeVirtualCapturerManagerTest, HpaeVirtualCapturerManagerAddAllNodesToSource, TestSize.Level0)
-{
-    auto capturerManager = std::make_shared<HpaeVirtualCapturerManager>();
-    EXPECT_NE(capturerManager, nullptr);
-
-    std::string threadName = DEFAULT_THREAD_NAME;
-    std::string ret = capturerManager->GetThreadName();
-    EXPECT_EQ(ret, threadName);
 }
 
 /*

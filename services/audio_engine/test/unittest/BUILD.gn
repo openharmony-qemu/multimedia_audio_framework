@@ -122,7 +122,6 @@ ohos_unittest("hpae_virtual_capturer_manager_test") {
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
-    "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
   external_deps = [

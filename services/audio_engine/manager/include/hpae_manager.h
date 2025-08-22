@@ -243,7 +243,6 @@ private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;
     std::unordered_map<std::string, std::shared_ptr<IHpaeCapturerManager>> capturerManagerMap_;
     std::unordered_map<std::string, std::shared_ptr<IHpaeRendererManager>> rendererManagerMap_;
-    std::shared_ptr<IHpaeCapturerManager> coreCapturerManager_;
     std::unordered_map<uint32_t, std::string> capturerIdSourceNameMap_;
     std::unordered_map<uint32_t, std::string> rendererIdSinkNameMap_;
     std::unordered_map<uint32_t, std::string> idPreferSinkNameMap_;

@@ -347,7 +347,7 @@ void HpaeManager::CreateCoreSourceManager()
     coreSource_ = DEFAULT_CORE_SOURCE_NAME;
     uint32_t sinkSourceIndex = static_cast<uint32_t>(sinkSourceIndex_.load());
     sinkSourceIndex_.fetch_add(1);
-    auto captureManager = std::make_shared<HpaeVirtualCapturerManager>();
+    auto capturerManager = std::make_shared<HpaeVirtualCapturerManager>();
     capturerManager->RegisterSendMsgCallback(weak_from_this());
     capturerManagerMap_[DEFAULT_CORE_SOURCE_NAME] = capturerManager;
     sourceNameSourceIdMap_[DEFAULT_CORE_SOURCE_NAME] = sinkSourceIndex;
