@@ -1086,7 +1086,7 @@ void AudioPolicyServerSetVirtualCallFuzzTest()
 
     bool isVirtual = GetData<bool>();
 
-    audioPolicyServer->SetVirtualCall(0, isVirtual);
+    audioPolicyServer->SetVirtualCall(isVirtual);
 }
 
 void AudioPolicyServerSetDeviceConnectionStatusFuzzTest()
