@@ -367,6 +367,8 @@ public:
 
     FutexCode WaitFor(int64_t timeoutInNs, const OnIndexChange &pred);
 
+    void WakeFutex(uint32_t wakeVal = IS_READY);
+
 private:
     int32_t Init(int dataFd, int infoFd);
     int32_t SizeCheck();

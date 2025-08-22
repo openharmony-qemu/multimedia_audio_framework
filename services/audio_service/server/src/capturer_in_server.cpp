@@ -183,7 +183,6 @@ void CapturerInServer::OnStatusUpdate(IOperation operation)
         case OPERATION_UNDERFLOW:
             underflowCount += 1;
             AUDIO_INFO_LOG("Underflow!! underflow count %{public}d", underflowCount);
-            stateListener->OnOperationHandled(BUFFER_OVERFLOW, underflowCount);
             break;
         case OPERATION_STARTED:
             status_ = I_STATUS_STARTED;
@@ -257,7 +256,6 @@ bool CapturerInServer::IsReadDataOverFlow(size_t length, uint64_t currentWriteFr
             BufferDesc dstBuffer = stream_->DequeueBuffer(length);
             stream_->EnqueueBuffer(dstBuffer);
         }
-        stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
         return true;
     }
     return false;
@@ -406,7 +404,6 @@ void CapturerInServer::ReadData(size_t length)
     UpdateBufferTimeStamp(dstBuffer.bufLength);
 
     stream_->EnqueueBuffer(srcBuffer);
-    stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
 }
 // LCOV_EXCL_STOP
 
@@ -470,8 +467,6 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
     audioServerBuffer_->SetHandleInfo(currentWriteFrame, ClockTime::GetCurNano());
 
     UpdateBufferTimeStamp(dstBuffer.bufLength);
-
-    stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
 
     return SUCCESS;
 }
@@ -936,6 +931,7 @@ RestoreStatus CapturerInServer::RestoreSession(RestoreInfo restoreInfo)
         SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
 
         audioServerBuffer_->SetRestoreInfo(restoreInfo);
+        audioServerBuffer_->WakeFutex(IS_PRE_EXIT);
     }
     return restoreStatus;
 }
