@@ -1829,7 +1829,7 @@ HWTEST(AudioSystemManagerUnitTest, ConfigDistributedRoutingRoleTest_002, TestSiz
  * @tc.name  : Test GetTypeValueFromPin API
  * @tc.type  : FUNC
  * @tc.number: GetTypeValueFromPin_003
- * @tc.desc  : Test GetTypeValueFromPin interface.
+ * @tc.desc  : Test GetTypeValueFromPin interface. 
  */
 HWTEST(AudioSystemManagerUnitTest, GetTypeValueFromPin_003, TestSize.Level4)
 {
