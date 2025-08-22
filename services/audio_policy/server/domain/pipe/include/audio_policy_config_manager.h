@@ -98,7 +98,8 @@ public:
     DirectPlaybackMode GetDirectPlaybackSupport(std::shared_ptr<AudioDeviceDescriptor> desc,
         const AudioStreamInfo &streamInfo);
     bool IsStreamPropMatch(const AudioStreamInfo &streamInfo, std::list<std::shared_ptr<PipeStreamPropInfo>> &infos);
-
+    bool PreferMultiChannelPipe(std::shared_ptr<AudioStreamDescriptor> &desc);
+    
     AudioPolicyConfigManager() : audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
         audioPolicyConfig_(AudioPolicyConfigData::GetInstance())
     {
