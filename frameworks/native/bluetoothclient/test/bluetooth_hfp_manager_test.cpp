@@ -58,7 +58,7 @@ public:
         AudioHfpManager::scene_ = AUDIO_SCENE_DEFAULT;
         AudioHfpManager::isRecognitionScene_.store(false);
         AudioHfpManager::isRecordScene_.store(false);
-        AudioHfpManager::virtualCallStreams_.clear();
+        AudioHfpManager::virtualCalls_.clear();
         AudioHfpManager::activeHfpDevice_ = BluetoothRemoteDevice();
     }
 };
