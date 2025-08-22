@@ -67,6 +67,7 @@
 #define SCENE_TYPE_NUM 7
 #define PA_ERR (-1)
 #define MAX_PARTS 10
+#define ARG_LEN 4
 #define EPSILON (1e-6f)
 
 #define STREAM_TYPE_MEDIA "1"
@@ -74,7 +75,7 @@
 #define STREAM_TYPE_NAVIGATION "13"
 #define STREAM_TYPE_VIDEO_COMMUNICATION "17"
 
-char *g_splitArr[MAX_PARTS];
+char g_splitArr[MAX_PARTS][ARG_LEN] = {0};
 int g_splitNums = 0;
 
 // count the num of empty chunk sent in each stream.
@@ -209,27 +210,16 @@ static enum AudioSampleFormatIntf ConvertPaToHdiAdapterFormat(pa_sample_format_t
 
 static void ConvertToSplitArr(const char *str)
 {
-    AUDIO_INFO_LOG("start ConvertToSplitArr");
-    g_splitNums = 0;
-    for (int i = 0; i < MAX_PARTS; ++i) {
-        g_splitArr[i] = NULL;
-    }
     char *token;
     char *copy = strdup(str);
     CHECK_AND_RETURN_LOG(copy != NULL, "copy is null");
     int count = 0;
     token = strtok(copy, ":");
     while (token != NULL && count < MAX_PARTS) {
-        g_splitArr[count] = (char *)malloc(strlen(token) + 1);
-        if (g_splitArr[count] != NULL) {
-            if (strcpy_s(g_splitArr[count], strlen(token) + 1, token) != 0) {
-                AUDIO_ERR_LOG("strcpy_s failed.");
-            };
-            count++;
-        } else {
-            AUDIO_ERR_LOG("Memory allocation failed.\n");
-            break;
-        }
+        if (strcpy_s(g_splitArr[count], ARG_LEN, token) != 0) {
+            AUDIO_ERR_LOG("strcpy_s failed.");
+        };
+        count++;
         token = strtok(NULL, ":");
     }
     g_splitNums = count;
@@ -409,7 +399,6 @@ static void SplitSinkRenderInputsDrop(pa_sink *si, pa_mix_info *infoIn, unsigned
 static int IsPeekCurrentSinkInput(char *streamType, const char *usageStr)
 {
     CHECK_AND_RETURN_RET_LOG(usageStr != NULL, -1, "usageStr is null");
-    CHECK_AND_RETURN_RET_LOG(streamType != NULL, -1, "streamType is null");
     int flag = 0;
     if (g_splitNums == SPLIT_ONE_STREAM) {
         flag = 1;
@@ -1178,16 +1167,6 @@ static void UserdataFree(struct userdata *u)
     }
 
     pa_xfree(u);
-
-    // restore the arr ptr and len
-    g_splitNums = 0;
-    for (int32_t i = 0; i < MAX_PARTS; ++i) {
-        if (g_splitArr[i] == NULL) {
-            continue;
-        }
-        free(g_splitArr[i]);
-        g_splitArr[i] = NULL;
-    }
 }
 
 static int InitFailed(pa_module *m, pa_modargs *ma)
