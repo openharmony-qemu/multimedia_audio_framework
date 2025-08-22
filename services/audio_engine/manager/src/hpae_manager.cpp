@@ -63,7 +63,7 @@ void HpaeManagerThread::Run()
             bool isProcessing = m_hpaeManager->IsMsgProcessing();
             bool signal = recvSignal_.load();
             uint64_t sleepTime = m_hpaeManager->HandlePendingTransitions();
-            Trace trace("runFunc:" + std::to_string(signal) + " isPorcessing:" + std::to_string(isProcessing));
+            Trace trace("runFunc:" + std::to_string(signal) + " isPorcessing:" + std::to_string(isProcessing) + " sleepTime:" + std::to_string(sleepTime));
             if (sleepTime > 0) {
                 condition_.wait_for(lock, std::chrono::milliseconds(sleepTime),
                     [this] { return m_hpaeManager->IsMsgProcessing() || recvSignal_.load(); });
@@ -1114,7 +1114,7 @@ void HpaeManager::HandleUpdateStatus(
         auto it = rendererIdStreamInfoMap_.find(sessionId);
         CHECK_AND_RETURN(it != rendererIdStreamInfoMap_.end());
         CHECK_AND_RETURN_LOG(!(operation == OPERATION_STOPPED && it->second.state != HPAE_SESSION_STOPPING) && 
-            !(operation == OPERATION_PAUSED && it->second.state != HPAE_SESSION_PAUSING), "stopped or paused");
+            !(operation == OPERATION_PAUSED && it->second.state != HPAE_SESSION_PAUSING), "stopped or paused, currentState:%{public}d", it->second.state);
         if (operation == OPERATION_PAUSED || operation == OPERATION_STOPPED) {
             RemovePendingTransition(sessionId);
             it->second.state = status;
