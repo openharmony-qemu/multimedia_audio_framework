@@ -2630,7 +2630,7 @@ HWTEST(RendererInClientInnerUnitTest, SetOffloadDataCallbackState_002, TestSize.
 /**
  * @tc.name  : Test RecordDropPosition API
  * @tc.type  : FUNC
- * @tc.number: RecordDropPosition_001
+ * @tc.number: RecordDropPosition_001 
  * @tc.desc  : Test RendererInClientInner::RecordDropPosition
  */
 HWTEST(RendererInClientInnerUnitTest, RecordDropPosition_001, TestSize.Level1)

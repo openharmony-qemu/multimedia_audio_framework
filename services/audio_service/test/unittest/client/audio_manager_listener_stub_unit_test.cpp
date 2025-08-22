@@ -63,7 +63,7 @@ HWTEST(AudioManagerListenerTest, OnCapturerState_002, TestSize.Level1)
  * @tc.name  : Test OnWakeupClose API
  * @tc.type  : FUNC
  * @tc.number: OnWakeupClose_001
- * @tc.desc  : Test OnWakeupClose interface.
+ * @tc.desc  : Test OnWakeupClose interface. 
  */
 HWTEST(AudioManagerListenerTest, OnWakeupClose_001, TestSize.Level1)
 {
