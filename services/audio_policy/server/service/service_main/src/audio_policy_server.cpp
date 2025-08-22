@@ -1059,9 +1059,9 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
         eventEntry_->OnReceiveUpdateDeviceNameEvent(macAddress, deviceName);
     } else if (action == "usual.event.SCREEN_ON") {
         AUDIO_INFO_LOG("receive SCREEN_ON action, control audio focus if need");
-        CHECK_AND_RETURN_RET_LOG(coreService_, "coreService_ is nullptr");
+        CHECK_AND_RETURN_LOG(coreService_, "coreService_ is nullptr");
         coreService_->SetFirstScreenOn();
-        CHECK_AND_RETURN_RET_LOG(powerStateListener_, "coreService_ is nullptr");
+        CHECK_AND_RETURN_LOG(powerStateListener_, "coreService_ is nullptr");
         powerStateListener_->ControlAudioFocus(false);
     } else if (action == "usual.event.SCREEN_LOCKED") {
         AUDIO_INFO_LOG("receive SCREEN_OFF or SCREEN_LOCKED action, control audio volume change if stream is active");

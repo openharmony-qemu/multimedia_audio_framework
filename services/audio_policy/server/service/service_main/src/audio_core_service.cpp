@@ -1419,7 +1419,7 @@ int32_t AudioCoreService::CaptureConcurrentCheck(uint32_t sessionId)
     return SUCCESS;
 }
 
-int32_t AudioCoreService::SetFirstScreenOn()
+void AudioCoreService::SetFirstScreenOn()
 {
     isFirstScreenOn_ = true;
 }
