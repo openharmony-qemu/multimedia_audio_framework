@@ -597,17 +597,17 @@ HWTEST_F(HpaeVirtualCapturerManagerTest, HpaeVirtualCapturerManagerAddAllNodesTo
 /*
  * tc.name   : Test HpaeVirtualCapturerManager API
  * tc.type   : FUNC
- * tc.number : HpaeVirtualCapturerManagerAddAllNodesToSource
- * tc.desc   : Test HpaeVirtualCapturerManagerAddAllNodesToSource
+ * tc.number : HpaeVirtualCapturerManagerGetThreadName
+ * tc.desc   : Test HpaeVirtualCapturerManagerGetThreadName
  */
-HWTEST_F(HpaeVirtualCapturerManagerTest, HpaeVirtualCapturerManagerAddAllNodesToSource, TestSize.Level0)
+HWTEST_F(HpaeVirtualCapturerManagerTest, HpaeVirtualCapturerManagerGetThreadName, TestSize.Level0)
 {
     auto capturerManager = std::make_shared<HpaeVirtualCapturerManager>();
     EXPECT_NE(capturerManager, nullptr);
 
     std::string threadName = DEFAULT_THREAD_NAME;
     std::string ret = capturerManager->GetThreadName();
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, threadName);
 }
 
 /*

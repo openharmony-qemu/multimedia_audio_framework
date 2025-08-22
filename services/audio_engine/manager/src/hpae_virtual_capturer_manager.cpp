@@ -158,7 +158,7 @@ int32_t HpaeVirtualCapturerManager::MoveAllStream(const std::string &sourceName,
             ++itr;
         }
     }
-    AUDIO_INFO_LOG("[StartMove] session: %{public}u to source name:%{public}s, move type:%{public}d",
+    AUDIO_INFO_LOG("[StartMove] session: %{public}s to source name:%{public}s, move type:%{public}d",
         idStr.c_str(), name.c_str(), moveType);
     TriggerSyncCallback(MOVE_ALL_SOURCE_OUTPUT, moveInfos, name);
     return SUCCESS;
@@ -256,7 +256,7 @@ std::vector<SourceOutput> HpaeVirtualCapturerManager::GetAllSourceOutputsInfo()
 void HpaeVirtualCapturerManager::OnNodeStatusUpdate(uint32_t sessionId, IOperation operation)
 {
     std::lock_guard<std::mutex> lock(captureMutex_);
-    CHECK_AND_RETURN_RET_LOG(captureStream_.find(sessionId) != captureStream_.end(), SUCCESS,
+    CHECK_AND_RETURN_LOG(captureStream_.find(sessionId) != captureStream_.end(),
         "sessionId %{public}u is not exist", sessionId);
     auto captureInfo = captureStream_[sessionId];
     TriggerSyncCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
@@ -318,7 +318,7 @@ std::string HpaeVirtualCapturerManager::GetDeviceHDFDumpInfo()
 void HpaeVirtualCapturerManager::SetSessionState(HpaeCaptureMoveInfo &streamInfo, HpaeSessionState capturerState)
 {
     streamInfo.sessionInfo.state = capturerState;
-    CHECK_AND_RETURN_LOG(captureInfo.sourceOutputNode, "captureInfo.sourceOutputNode is nullptr");
+    CHECK_AND_RETURN_LOG(streamInfo.sourceOutputNode, "streamInfo.sourceOutputNode is nullptr");
     streamInfo.sourceOutputNode->SetState(capturerState);
 }
 }  // namespace HPAE
