@@ -274,8 +274,7 @@ void HpaeRendererManager::RefreshProcessClusterByDeviceInner(const std::shared_p
         }
     } else if (processClusterDecision == USE_NONE_PROCESSCLUSTER && !sessionNodeMap_[nodeInfo.sessionId].bypass) {
         AUDIO_INFO_LOG("current processCluster is incorrect, refresh to %{public}d", processClusterDecision);
-        DeleteConnectInputProcessor(sinkInputNodeMap_[nodeInfo.sessionId]);
-        DeleteProcessClusterInner(GetProcessorType(nodeInfo.sessionId));
+        DeleteProcessCluster(nodeInfo.sessionId);
         sessionNodeMap_[nodeInfo.sessionId].bypass = true;
         if (isConnected) {
             ConnectInputSession(nodeInfo.sessionId);
