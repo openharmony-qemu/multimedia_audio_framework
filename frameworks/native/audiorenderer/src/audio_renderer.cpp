@@ -2222,7 +2222,7 @@ bool AudioRendererPrivate::FinishOldStream(IAudioStream::StreamClass targetClass
         switchInfo.sessionId = 0;
         switchInfo.lastFramePosAndTimePairWithSpeed[Timestamp::Timestampbase::MONOTONIC].first =
             switchInfo.unprocessSamples;
-        switchInfo.lastFramePosAndTimePairWithSpeed[Timestamp::Timestampbase::BOOTTIME].first = 
+        switchInfo.lastFramePosAndTimePairWithSpeed[Timestamp::Timestampbase::BOOTTIME].first =
             switchInfo.unprocessSamples;
     }
     UpdateFramesWritten();
