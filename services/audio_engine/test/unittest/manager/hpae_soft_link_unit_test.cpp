@@ -234,6 +234,26 @@ TEST_F(HpaeSoftLinkTest, testStaticFunc)
     EXPECT_EQ(HpaeSoftLink::GenerateSessionId(), 99999); // 99999 for max sessionId
     EXPECT_EQ(HpaeSoftLink::g_sessionId, 90000); // 90000 for min sessionId
 }
+
+TEST_F(HpaeSoftLinkTest, testReStartRenderer)
+{
+    std::shared_ptr<HpaeSoftLink> softLink_ =
+        std::make_shared<HpaeSoftLink>(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
+    EXPECT_NE(softLink_, nullptr);
+    EXPECT_EQ(softLink_->state_, HpaeSoftLinkState::NEW);
+    EXPECT_EQ(softLink_->Init(), SUCCESS);
+    EXPECT_EQ(softLink_->state_, HpaeSoftLinkState::PREPARED);
+    EXPECT_EQ(softLink_->Start(), SUCCESS);
+    EXPECT_EQ(softLink_->state_, HpaeSoftLinkState::RUNNING);
+    std::this_thread::sleep_for(std::chrono::milliseconds(200)); // 200ms for sleep
+    
+    auto &rendererSessionId = softLink_->rendererStreamInfo_.sessionId;
+    IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_PLAY, rendererSessionId);
+    std::this_thread::sleep_for(std::chrono::milliseconds(60)); // 60ms for sleep
+    EXPECT_EQ(softLink_->GetStreamStateById(rendererSessionId), HpaeSoftLinkState::RUNNING);
+    EXPECT_EQ(softLink_->Release(), SUCCESS);
+    EXPECT_EQ(softLink_->state_, HpaeSoftLinkState::RELEASED);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
