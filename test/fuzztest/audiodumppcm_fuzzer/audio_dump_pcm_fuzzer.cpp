@@ -55,7 +55,6 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 14;
 static int32_t NUM_2 = 2;
 
 typedef void (*TestFuncs)();
@@ -117,7 +116,7 @@ void CacheDataFuzzTest()
 {
     std::string dumpFileName;
     void* srcDataPointer;
-    size_t dataLength;
+    size_t dataLength = THRESHOLD;
     uint8_t srcBuffer[THRESHOLD] = {0};
     auto audioCacheMgrInner = std::make_shared<AudioCacheMgrInner>();
     if (audioCacheMgrInner == nullptr) {
@@ -125,7 +124,6 @@ void CacheDataFuzzTest()
     }
     dumpFileName = "test.txt";
     srcDataPointer = static_cast<void *>(srcBuffer);
-    dataLength = TESTSIZE;
     audioCacheMgrInner->isInited_ = GetData<uint32_t>() % NUM_2;
     audioCacheMgrInner->CacheData(dumpFileName, srcDataPointer, dataLength);
     audioCacheMgrInner->isDumpingData_ = GetData<uint32_t>() % NUM_2;
@@ -244,7 +242,7 @@ void PrintCurMemoryConditionFuzzTest()
     audioCacheMgrInner.PrintCurMemoryCondition();
 }
 
-TestFuncs g_testFuncs[TESTSIZE] = {
+TestFuncs g_testFuncs[] = {
     InitFuzzTest,
     DeInitFuzzTest,
     DumpAllMemBlockFuzzTest,
