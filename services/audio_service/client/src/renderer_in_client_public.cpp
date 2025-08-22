@@ -228,15 +228,17 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     const AudioPlaybackCaptureConfig &config)
 {
     // In plan: If paramsIsSet_ is true, and new info is same as old info, return
-    AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}d, custom sampling rate: %{public}u, "
-        "channels: %{public}d, format: %{public}d, stream type: %{public}d, encoding type: %{public}d",
-        info.samplingRate, info.customSampleRate, info.channels, info.format, eStreamType_, info.encoding);
+    AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}u, channels: %{public}d, "
+        "format: %{public}d, stream type: %{public}d, encoding type: %{public}d",
+        info.customSampleRate == 0 ? info.samplingRate : info.customSampleRate,
+        info.channels, info.format, eStreamType_, info.encoding);
 
     AudioXCollie guard("RendererInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
     if (!IsFormatValid(info.format) || !IsEncodingTypeValid(info.encoding) ||
-        !(IsSamplingRateValid(info.samplingRate) || IsCustomSampleRateValid(info.customSampleRate))) {
+        !((info.customSampleRate == 0 && IsSamplingRateValid(info.samplingRate)) ||
+        (info.customSampleRate != 0 && IsCustomSampleRateValid(info.customSampleRate)))) {
         AUDIO_ERR_LOG("Unsupported audio parameter");
         return ERR_NOT_SUPPORTED;
     }
