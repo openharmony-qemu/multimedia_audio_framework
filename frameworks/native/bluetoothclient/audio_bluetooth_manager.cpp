@@ -46,8 +46,7 @@ std::atomic<AudioScene> AudioHfpManager::scene_ = AUDIO_SCENE_DEFAULT;
 BluetoothRemoteDevice AudioHfpManager::activeHfpDevice_;
 std::atomic<bool> AudioHfpManager::isRecognitionScene_ = false;
 std::atomic<bool> AudioHfpManager::isRecordScene_ = false;
-std::map<std::string, bool> AudioHfpManager::virtualCalls_;
-std::map<std::string, std::list<int32_t>> AudioHfpManager::virtualCallStreams_;
+std::map<pid_t, bool> AudioHfpManager::virtualCalls_;
 std::mutex AudioHfpManager::virtualCallMutex_;
 std::vector<std::shared_ptr<AudioA2dpPlayingStateChangedListener>> AudioA2dpManager::a2dpPlayingStateChangedListeners_;
 std::mutex g_activehfpDeviceLock;
@@ -600,83 +599,29 @@ bool AudioHfpManager::IsRecognitionStatus()
     return BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_RECOGNITION);
 }
 
-int32_t AudioHfpManager::SetVirtualCall(const std::string &name, const bool isVirtual)
-{
-    {
-        CHECK_AND_RETURN_RET(virtualCalls_[name] != isVirtual, SUCCESS);
-        std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
-        virtualCalls_[name] = isVirtual;
-    }
-
-    AUDIO_INFO_LOG("set virtual call %{public}d by service %{public}s", isVirtual, name.c_str());
-    return TryUpdateScoCategory();
-}
-
-int32_t AudioHfpManager::AddVirtualCallBundleName(const std::string &name, int32_t streamId)
+int32_t AudioHfpManager::SetVirtualCall(pid_t uid, const bool isVirtual)
 {
     {
         std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
-        if (virtualCallStreams_.find(name) == virtualCallStreams_.end()) {
-            std::list<int32_t> streamIds;
-            streamIds.push_back(streamId);
-            virtualCallStreams_[name] = streamIds;
+        if (isVirtual) {
+            if (virtualCalls_.count(uid) > 0) {
+                virtualCalls_.erase(uid);
+            }
         } else {
-            virtualCallStreams_[name].push_back(streamId);
+            virtualCalls_[uid] = isVirtual;
         }
-        AUDIO_INFO_LOG("add virtual call bundlename %{public}s streamId %{public}d size %{public}zu",
-            name.c_str(), streamId, virtualCallStreams_[name].size());
     }
 
+    AUDIO_INFO_LOG("set virtual call %{public}d by service %{public}d", isVirtual, uid);
     return TryUpdateScoCategory();
-}
-
-void AudioHfpManager::DeleteVirtualCallStream(int32_t streamId)
-{
-    {
-        std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
-        std::string bundleName;
-        for (auto &stream : virtualCallStreams_) {
-            bool found = false;
-            for (auto it = stream.second.begin(); it != stream.second.end();) {
-                if (*it == streamId) {
-                    found = true;
-                    stream.second.erase(it);
-                    break;
-                }
-                it++;
-            }
-            if (found) {
-                bundleName = stream.first;
-                break;
-            }
-        }
-        if (bundleName.empty()) {
-            AUDIO_WARNING_LOG("not found bundle name %{public}s", bundleName.c_str());
-            return;
-        }
-
-        AUDIO_INFO_LOG("del virtual call name %{public}s streamId %{public}d size %{public}zu",
-            bundleName.c_str(), streamId, virtualCallStreams_[bundleName].size());
-        if (virtualCallStreams_[bundleName].size() == 0) {
-            virtualCallStreams_.erase(bundleName);
-        }
-    }
-
-    TryUpdateScoCategory();
 }
 
 bool AudioHfpManager::IsVirtualCall()
 {
     std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
-    for (const auto &it : virtualCallStreams_) {
-        if (virtualCalls_.find(it.first) != virtualCalls_.end()) {
-            AUDIO_INFO_LOG("not virtual call for service %{public}s", it.first.c_str());
-            return false;
-        }
-        std::string suffix = "meetimeservice";
-        if (std::mismatch(suffix.rbegin(), suffix.rend(), it.first.rbegin()).first ==
-            suffix.rend()) {
-            AUDIO_INFO_LOG("not virtual call for service %{public}s", it.first.c_str());
+    for (const auto &it : virtualCalls_) {
+        if (!it.second) {
+            AUDIO_INFO_LOG("not virtual call for service %{public}d", it.first);
             return false;
         }
     }
