@@ -63,12 +63,109 @@ HWTEST(AudioManagerListenerTest, OnCapturerState_002, TestSize.Level1)
  * @tc.name  : Test OnWakeupClose API
  * @tc.type  : FUNC
  * @tc.number: OnWakeupClose_001
- * @tc.desc  : Test OnWakeupClose interface. 
+ * @tc.desc  : Test OnWakeupClose interface.
  */
 HWTEST(AudioManagerListenerTest, OnWakeupClose_001, TestSize.Level1)
 {
     auto audioManagerListenerStub = std::make_unique<AudioManagerListenerStubImpl>();
     EXPECT_EQ(audioManagerListenerStub->OnWakeupClose(), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OnAudioParameterChange API
+ * @tc.type  : FUNC
+ * @tc.number: OnAudioParameterChange_001
+ * @tc.desc  : Test OnAudioParameterChange interface.
+ */
+HWTEST(AudioManagerListenerTest, OnAudioParameterChange_001, TestSize.Level4)
+{
+    auto audioManagerListenerStub = std::make_unique<AudioManagerListenerStubImpl>();
+    const std::string networkId = "test_network_id";
+    const int32_t key = static_cast<int32_t>(AudioParamKey::VOLUME);
+    const std::string condition = "test_condition";
+    const std::string value = "test_value";
+
+    int32_t result = audioManagerListenerStub->OnAudioParameterChange(networkId, key, condition, value);
+
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OnDataTransferStateChange API
+ * @tc.type  : FUNC
+ * @tc.number: OnDataTransferStateChange_001
+ * @tc.desc  : Test OnDataTransferStateChange interface.
+ */
+HWTEST(AudioManagerListenerTest, OnDataTransferStateChange_001, TestSize.Level4)
+{
+    auto audioManagerListenerStub = std::make_unique<AudioManagerListenerStubImpl>();
+    AudioRendererDataTransferStateChangeInfo info;
+    int32_t callbackId = 123;
+
+    int32_t result = audioManagerListenerStub->OnDataTransferStateChange(callbackId, info);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test GetAudioServerProxy API
+ * @tc.type  : FUNC
+ * @tc.number: GetAudioServerProxy_001
+ * @tc.desc  : Test GetAudioServerProxy
+ */
+HWTEST(RendererInClientInnerUnitTest, GetAudioServerProxy_001, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
+    sptr<IStandardAudioService> proxy = ptrRendererInClientInner->GetAudioServerProxy();
+    EXPECT_NE(proxy, nullptr);
+}
+
+/**
+ * @tc.name  : Test InitDirectPipeType API
+ * @tc.type  : FUNC
+ * @tc.number: InitDirectPipeType_001
+ * @tc.desc  : Test InitDirectPipeType
+ */
+HWTEST(RendererInClientInnerUnitTest, InitDirectPipeType_001, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->InitDirectPipeType();
+    EXPECT_EQ(ptrRendererInClientInner->rendererInfo_.pipeType, PIPE_TYPE_UNKNOWN);
+}
+
+/**
+ * @tc.name  : Test CheckBufferNeedWrite API
+ * @tc.type  : FUNC
+ * @tc.number: CheckBufferNeedWrite_001
+ * @tc.desc  : Test CheckBufferNeedWrite
+ */
+HWTEST(RendererInClientInnerUnitTest, CheckBufferNeedWrite_001, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    uint32_t totalSizeInFrame = 100;
+    uint32_t byteSizePerFrame = 1;
+    ptrRendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
+    ptrRendererInClientInner->sizePerFrameInByte_ = 1;
+    ptrRendererInClientInner->engineTotalSizeInFrame_ = 2;
+    ptrRendererInClientInner->cbBufferSize_ = 1000;
+
+    bool ret = ptrRendererInClientInner->CheckBufferNeedWrite();
+
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test WriteCallbackFunc API
+ * @tc.type  : FUNC
+ * @tc.number: WriteCallbackFunc_001
+ * @tc.desc  : Test WriteCallbackFunc
+ */
+HWTEST(RendererInClientInnerUnitTest, WriteCallbackFunc_001, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->state_ = State::RUNNING;
+    bool ret  = ptrRendererInClientInner->WriteCallbackFunc();
+    EXPECT_EQ(ret, false);
 }
 } // namespace AudioStandard
 } // namespace OHOS
