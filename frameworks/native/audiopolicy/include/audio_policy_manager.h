@@ -698,14 +698,6 @@ public:
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
     int32_t ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
 
-    int32_t SetVolumeDegreeCallback(const int32_t clientPid,
-        const std::shared_ptr<VolumeKeyEventCallback> &callback);
-    int32_t UnsetVolumeDegreeCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback);
-    int32_t SetSystemVolumeDegree(AudioVolumeType volumeType, int32_t volumeDegree,
-        int32_t volumeFlag, int32_t uid);
-    int32_t GetSystemVolumeDegree(AudioVolumeType volumeType, int32_t uid);
-    int32_t GetMinVolumeDegree(AudioVolumeType volumeType);
-
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}

@@ -98,8 +98,6 @@ public:
                 (int32_t stateChangeHint), (override));
     MOCK_METHOD(ErrCode, OnAudioSessionCurrentDeviceChanged,
                 (const CurrentOutputDeviceChangedEvent& deviceChangedEvent), (override));
-    MOCK_METHOD(ErrCode, OnVolumeDegreeEvent,
-                (const VolumeEvent& volumeEvent), (override));
 };
 
 } // namespace AudioStandard
