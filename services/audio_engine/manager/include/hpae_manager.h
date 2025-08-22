@@ -18,6 +18,7 @@
 #include <any>
 #include "audio_module_info.h"
 #include "hpae_capturer_manager.h"
+#include "hpae_virtual_capturer_manager.h"
 #include "hpae_renderer_manager.h"
 #include "hpae_inner_capturer_manager.h"
 #include "hpae_msg_channel.h"
@@ -236,11 +237,13 @@ private:
     bool ShouldNotSkipProcess(const HpaeStreamClassType &streamType, const uint32_t &sessionId);
     bool CheckMoveSinkInput(uint32_t sinkInputId, const std::string &sinkName);
     bool CheckMoveSourceOutput(uint32_t sourceOutputId, const std::string &sourceName);
+    void CreateCoreSourceManager();
 
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;
     std::unordered_map<std::string, std::shared_ptr<IHpaeCapturerManager>> capturerManagerMap_;
     std::unordered_map<std::string, std::shared_ptr<IHpaeRendererManager>> rendererManagerMap_;
+    std::shared_ptr<IHpaeCapturerManager> coreCapturerManager_;
     std::unordered_map<uint32_t, std::string> capturerIdSourceNameMap_;
     std::unordered_map<uint32_t, std::string> rendererIdSinkNameMap_;
     std::unordered_map<uint32_t, std::string> idPreferSinkNameMap_;
@@ -255,7 +258,8 @@ private:
     std::string coreSink_ = "";
     std::unordered_map<std::string, uint32_t> sourceNameSourceIdMap_;
     std::unordered_map<uint32_t, std::string> sourceIdSourceNameMap_;
-    std::string defaultSource_ = "Built_in_mic";
+    std::string defaultSource_ = "";
+    std::string coreSource_ = "";
     std::atomic<int32_t> sinkSourceIndex_ = 0;
     std::atomic<bool> isInit_ = false;
 
