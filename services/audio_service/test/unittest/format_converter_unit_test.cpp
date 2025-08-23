@@ -645,8 +645,7 @@ HWTEST_F(FormatConverterUnitTest, S16MonoToS16Stereo_004, TestSize.Level1)
     EXPECT_EQ(*dstDesc.buffer, 1);
     EXPECT_EQ(*dstDesc.buffer + 1, 2);
     EXPECT_EQ(*dstDesc.buffer + 2, 3);
-    EXPECT_EQ(*dstDesc.buffer + 3, 4);
-    
+    EXPECT_EQ(*dstDesc.buffer + 3, 4);  
 
     ret = FormatConverter::F32MonoToS32Stereo(srcDesc, dstDesc);
     EXPECT_EQ(ret, 0);
@@ -673,8 +672,7 @@ HWTEST_F(FormatConverterUnitTest, S16StereoToS16Mono_001, TestSize.Level1)
     EXPECT_EQ(*dstDesc.buffer, 2);
     EXPECT_EQ(*dstDesc.buffer + 1, 3);
     EXPECT_EQ(*dstDesc.buffer + 2, 4);
-    EXPECT_EQ(*dstDesc.buffer + 3, 5);
-    
+    EXPECT_EQ(*dstDesc.buffer + 3, 5);   
 }
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS
