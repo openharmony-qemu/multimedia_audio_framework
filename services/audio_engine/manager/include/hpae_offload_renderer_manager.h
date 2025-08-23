@@ -95,7 +95,7 @@ public:
     int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
     int32_t GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override;
 private:
-    void SendRequest(Request &&request, bool isInit = false);
+    void SendRequest(Request &&request, std::string funcName, bool isInit = false);
     int32_t StartRenderSink();
     int32_t CreateInputSession(const HpaeStreamInfo &streamInfo);
     int32_t ConnectInputSession();

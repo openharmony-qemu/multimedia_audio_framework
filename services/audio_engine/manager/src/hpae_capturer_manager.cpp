@@ -25,6 +25,8 @@
 #include "audio_effect_map.h"
 #include "hpae_policy_manager.h"
 #include "audio_engine_log.h"
+#include "hpae_message_queue_monitor.h"
+#include "hpae_stream_move_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -804,11 +806,17 @@ bool HpaeCapturerManager::IsRunning(void)
 void HpaeCapturerManager::SendRequest(Request &&request, bool isInit)
 {
     if (!isInit && !IsInit()) {
-        AUDIO_INFO_LOG("HpaeCapturerManager not init");
+        AUDIO_INFO_LOG("HpaeCapturerManager not init, %{public}s excute failed", funcName.c_str());
+        HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_CAPTURE_MANAGER_TYPE, funcName, "HpaeCapturerManager not init");
         return;
     }
     hpaeNoLockQueue_.PushRequest(std::move(request));
     CHECK_AND_RETURN_LOG(hpaeSignalProcessThread_, "hpaeSignalProcessThread_ capturer is nullptr");
+    if (hpaeSignalProcessThread_ == nullptr) {
+        AUDIO_INFO_LOG("hpaeSignalProcessThread_ capturer is nullptr, %{public}s excute failed", funcName.c_str());
+        HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_CAPTURE_MANAGER_TYPE, funcName, "thread is nullptr");
+        return;
+    }
     hpaeSignalProcessThread_->Notify();
 }
 
@@ -914,6 +922,7 @@ int32_t HpaeCapturerManager::MoveStream(uint32_t sessionId, const std::string& s
         if (!SafeGetMap(sourceOutputNodeMap_, sessionId)) {
             AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,not find session,move %{public}s --> %{public}s",
                 sessionId, sourceInfo_.sourceName.c_str(), sourceName.c_str());
+            HpaeStreamMoveMonitor::ReportStreamMoveException(0, sessionId, HPAE_STREAM_CLASS_TYPE_RECORD, sourceInfo_.sourceName, sourceName, "not find session");
             TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId, MOVE_SINGLE, sourceName);
             return;
         }
@@ -921,6 +930,7 @@ int32_t HpaeCapturerManager::MoveStream(uint32_t sessionId, const std::string& s
         if (sessionNodeMap_.find(sessionId)==sessionNodeMap_.end()) {
             AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,not find session node,move %{public}s --> %{public}s",
                 sessionId, sourceInfo_.sourceName.c_str(), sourceName.c_str());
+            HpaeStreamMoveMonitor::ReportStreamMoveException(0, sessionId, HPAE_STREAM_CLASS_TYPE_RECORD, sourceInfo_.sourceName, sourceName, "not find session node");
             TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId, MOVE_SINGLE, sourceName);
             return;
         }

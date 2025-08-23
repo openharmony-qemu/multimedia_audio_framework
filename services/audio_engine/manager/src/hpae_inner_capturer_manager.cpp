@@ -22,6 +22,8 @@
 #include "hpae_node_common.h"
 #include "hpae_inner_capturer_manager.h"
 #include "audio_engine_log.h"
+#include "hpae_message_queue_monitor.h"
+#include "hpae_stream_move_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -145,11 +147,13 @@ int32_t HpaeInnerCapturerManager::MoveStream(uint32_t sessionId, const std::stri
             AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,can not find session,move %{public}s --> %{public}s",
                 sessionId, sinkInfo_.deviceName.c_str(), sinkName.c_str());
             TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, MOVE_SINGLE, sinkName);
+            HpaeStreamMoveMonitor::ReportStreamMoveException(0, sessionId, HPAE_STREAM_CLASS_TYPE_PLAY, "innercapture", sinkName, "not find session node");
             return;
         }
         if (sinkName.empty()) {
             AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,sinkName is empty", sessionId);
             TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, MOVE_SINGLE, sinkName);
+            HpaeStreamMoveMonitor::ReportStreamMoveException(0, sessionId, HPAE_STREAM_CLASS_TYPE_PLAY, "innercapture", sinkName, "sinkName is empty");
             return;
         }
 
@@ -832,14 +836,20 @@ void HpaeInnerCapturerManager::SetSessionStateForCapturer(uint32_t sessionId, Hp
     capturerSessionNodeMap_[sessionId].state = capturerState;
 }
 
-void HpaeInnerCapturerManager::SendRequestInner(Request &&request, bool isInit)
+void HpaeInnerCapturerManager::SendRequestInner(Request &&request, std::string funcName, bool isInit)
 {
     if (!isInit && !IsInit()) {
-        AUDIO_INFO_LOG("HpaeInnerCapturerManager not init");
+        AUDIO_INFO_LOG("HpaeInnerCapturerManager not init, %{public}s excute failed", funcName.c_str());
+        HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_INNER_CAPTURE_MANAGER_TYPE, funcName, "HpaeInnerCapturerManager not init");
         return;
     }
     hpaeNoLockQueue_.PushRequest(std::move(request));
     CHECK_AND_RETURN_LOG(hpaeSignalProcessThread_, "hpaeSignalProcessThread_  inner capturer sink is nullptr");
+    if (hpaeSignalProcessThread_ == nullptr) {
+        AUDIO_INFO_LOG("hpaeSignalProcessThread_  inner capturer sink is nullptr, %{public}s excute failed", funcName.c_str());
+        HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_INNER_CAPTURE_MANAGER_TYPE, funcName, "thread is nullptr");
+        return;
+    }
     hpaeSignalProcessThread_->Notify();
 }
 

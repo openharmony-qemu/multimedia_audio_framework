@@ -27,6 +27,8 @@
 #include "audio_engine_log.h"
 #include "hpae_output_cluster.h"
 #include "hpae_remote_output_cluster.h"
+#include "hpae_message_queue_monitor.h"
+#include "hpae_stream_move_monitor.h"
 
 constexpr int32_t DEFAULT_EFFECT_RATE = 48000;
 constexpr int32_t DEFAULT_EFFECT_FRAME_LEN = 960;
@@ -92,7 +94,7 @@ int32_t HpaeRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo
 int32_t HpaeRendererManager::AddNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node)
 {
     auto request = [this, node]() { AddSingleNodeToSink(node); };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -229,7 +231,7 @@ int32_t HpaeRendererManager::AddAllNodesToSink(
             AddSingleNodeToSink(it, isConnect);
         }
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -276,7 +278,7 @@ int32_t HpaeRendererManager::RefreshProcessClusrerByDevice()
             }
         }
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -296,7 +298,7 @@ int32_t HpaeRendererManager::CreateStream(const HpaeStreamInfo &streamInfo)
         sessionNodeMap_[streamInfo.sessionId].isMoveAble = streamInfo.isMoveAble;
         sinkInputNodeMap_[streamInfo.sessionId]->SetState(HPAE_SESSION_PREPARED);
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -315,7 +317,7 @@ int32_t HpaeRendererManager::DestroyStream(uint32_t sessionId)
         sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RELEASED);
         DeleteInputSession(sessionId);
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -496,7 +498,7 @@ int32_t HpaeRendererManager::MoveAllStream(const std::string &sinkName, const st
         auto request = [this, sinkName, sessionIds, moveType]() {
             MoveAllStreamToNewSink(sinkName, sessionIds, moveType);
         };
-        SendRequest(request);
+        SendRequest(request, __func__);
     }
     return SUCCESS;
 }
@@ -507,12 +509,14 @@ void HpaeRendererManager::MoveStreamSync(uint32_t sessionId, const std::string &
         AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,can not find session,move %{public}s --> %{public}s",
             sessionId, sinkInfo_.deviceName.c_str(), sinkName.c_str());
         TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, MOVE_SINGLE, sinkName);
+        HpaeStreamMoveMonitor::ReportStreamMoveException(0, sessionId, HPAE_STREAM_CLASS_TYPE_PLAY, sinkInfo_.deviceName, sinkName, "not find session node");
         return;
     }
 
     if (sinkName.empty()) {
         AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,sinkName is empty", sessionId);
         TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, MOVE_SINGLE, sinkName);
+        HpaeStreamMoveMonitor::ReportStreamMoveException(0, sessionId, HPAE_STREAM_CLASS_TYPE_PLAY, sinkInfo_.deviceName, sinkName, "sinkName is empty");
         return;
     }
 
@@ -537,7 +541,7 @@ int32_t HpaeRendererManager::MoveStream(uint32_t sessionId, const std::string &s
         MoveStreamSync(sessionId, sinkName);
     } else {
         auto request = [this, sessionId, sinkName]() { MoveStreamSync(sessionId, sinkName); };
-        SendRequest(request);
+        SendRequest(request, __func__);
     }
     return SUCCESS;
 }
@@ -555,7 +559,7 @@ int32_t HpaeRendererManager::Start(uint32_t sessionId)
         SetSessionState(sessionId, HPAE_SESSION_RUNNING);
         SetSessionFade(sessionId, OPERATION_STARTED);
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -576,7 +580,7 @@ int32_t HpaeRendererManager::StartWithSyncId(uint32_t sessionId, int32_t syncId)
             HandleSyncId(sessionId, syncId);
         }
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -609,7 +613,7 @@ void HpaeRendererManager::OnDisConnectProcessCluster(HpaeProcessorType sceneType
         }
         DeleteProcessCluster(sceneType);
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
 }
 
 void HpaeRendererManager::DisConnectInputCluster(uint32_t sessionId, HpaeProcessorType sceneType)
@@ -637,7 +641,7 @@ int32_t HpaeRendererManager::Pause(uint32_t sessionId)
             DisConnectInputSession(sessionId);
         }
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -651,7 +655,7 @@ int32_t HpaeRendererManager::Flush(uint32_t sessionId)
         // flush history buffer
         sinkInputNodeMap_[sessionId]->Flush();
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -672,7 +676,7 @@ int32_t HpaeRendererManager::Drain(uint32_t sessionId)
                 OPERATION_DRAINED);
         }
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -687,7 +691,7 @@ int32_t HpaeRendererManager::Stop(uint32_t sessionId)
             DisConnectInputSession(sessionId);
         }
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -730,7 +734,7 @@ int32_t HpaeRendererManager::SuspendStreamManager(bool isSuspend)
             outputCluster_->Start();
         }
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -742,7 +746,7 @@ int32_t HpaeRendererManager::SetMute(bool isMute)
             isMute_ = isMute;  // todo: fadein and fadeout and mute feature
         }
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -774,7 +778,7 @@ int32_t HpaeRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo, b
         }
         AUDIO_INFO_LOG("connect device:%{public}s all processor end", sinkInfo.deviceName.c_str());
     };
-    SendRequest(request, true);
+    SendRequest(request, __func__, true);
     hpaeSignalProcessThread_->ActivateThread(shared_from_this());
     return SUCCESS;
 }
@@ -853,7 +857,7 @@ int32_t HpaeRendererManager::Init(bool isReload)
         Trace trace("HpaeRendererManager::Init");
         InitManager(isReload);
     };
-    SendRequest(request, true);
+    SendRequest(request, __func__, true);
     hpaeSignalProcessThread_->ActivateThread(shared_from_this());
     return SUCCESS;
 }
@@ -924,7 +928,7 @@ int32_t HpaeRendererManager::SetLoudnessGain(uint32_t sessionId, float loudnessG
             "session with Id %{public}d not in sceneClusterMap_", sessionId);
         processCluster->SetLoudnessGain(sessionId, loudnessGain);
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -956,7 +960,7 @@ int32_t HpaeRendererManager::SetAudioEffectMode(uint32_t sessionId, int32_t effe
             }
         }
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -1032,7 +1036,7 @@ void HpaeRendererManager::SetSpeed(uint32_t sessionId, float speed)
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), "not find sessionId %{public}u", sessionId);
         sinkInputNodeMap_[sessionId]->SetSpeed(speed);
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
 }
 
 std::vector<SinkInput> HpaeRendererManager::GetAllSinkInputsInfo()
@@ -1074,12 +1078,19 @@ bool HpaeRendererManager::IsRunning(void)
     }
 }
 
-void HpaeRendererManager::SendRequest(Request &&request, bool isInit)
+void HpaeRendererManager::SendRequest(Request &&request, std::string funcName, bool isInit)
 {
-    AUDIO_DEBUG_LOG("HpaeRendererManager::isInit is %{public}s", isInit ? "true" : "false");
-    CHECK_AND_RETURN_LOG(isInit || IsInit(), "HpaeRendererManager not init");
+    if (!isInit && !IsInit()) {
+        AUDIO_ERR_LOG("HpaeRendererManager not init, %{public}s excute failed", funcName.c_str());
+        HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_RENDERER_MANAGER_TYPE, funcName, "HpaeRendererManager not init");
+        return;
+    }
     hpaeNoLockQueue_.PushRequest(std::move(request));
-    CHECK_AND_RETURN_LOG(hpaeSignalProcessThread_, "hpaeSignalProcessThread_  renderer is nullptr");
+    if (hpaeSignalProcessThread_ == nullptr) {
+        AUDIO_ERR_LOG("hpaeSignalProcessThread_  renderer is nullptr, %{public}s excute failed", funcName.c_str());
+        HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_RENDERER_MANAGER_TYPE, funcName, "thread is nullptr");
+        return;
+    }
     hpaeSignalProcessThread_->Notify();
 }
 
@@ -1102,7 +1113,7 @@ void HpaeRendererManager::OnFadeDone(uint32_t sessionId, IOperation operation)
             sinkInputNodeMap_[sessionId]->SetState(state);
         }
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
 }
 
 int32_t HpaeRendererManager::RegisterReadCallback(uint32_t sessionId,
@@ -1187,7 +1198,7 @@ int32_t HpaeRendererManager::DumpSinkInfo()
         AUDIO_INFO_LOG("DumpSinkInfo deviceName %{public}s", sinkInfo_.deviceName.c_str());
         UploadDumpSinkInfo(sinkInfo_.deviceName);
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -1203,7 +1214,7 @@ int32_t HpaeRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t state)
             AUDIO_ERR_LOG("not find sessionId %{public}u", sessionId);
         }
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -1226,7 +1237,7 @@ int32_t HpaeRendererManager::UpdateCollaborativeState(bool isCollaborationEnable
             DisableCollaboration();
         }
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -1268,7 +1279,7 @@ int32_t HpaeRendererManager::ConnectCoBufferNode(const std::shared_ptr<HpaeCoBuf
             outputCluster_->Start();
         }
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -1282,7 +1293,7 @@ int32_t HpaeRendererManager::DisConnectCoBufferNode(const std::shared_ptr<HpaeCo
             coBufferNode->SetOutputClusterConnected(false);
         }
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
