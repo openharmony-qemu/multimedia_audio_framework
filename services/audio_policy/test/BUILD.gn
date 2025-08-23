@@ -101,9 +101,7 @@ group("audio_policy_unittest_packages") {
     ":user_select_router_unit_test",
     ":user_select_router_ext_unit_test",
     "../server/domain/pipe/test/unittest:pipe_domain_unit_test_group",
-    "../client/stub:audio_zone_client_unit_test",
-    "../client/stub:audio_policy_manager_listener_stub_impl_unit_test",
-    "../client/stub:sle_audio_operation_callback_stub_impl_unit_test"
+    "../client/stub:client_stub_unit_test_group"
   ]
 }
 

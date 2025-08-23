@@ -21,6 +21,15 @@ import("../../../../config.gni")
 module_output_path =
     "audio_framework/audio_framework_policy/service/audio_policy"
 
+group("client_stub_unit_test_group") {
+  testonly = true
+  deps = [
+    ":audio_zone_client_unit_test",
+    ":audio_policy_manager_listener_stub_impl_unit_test",
+    ":sle_audio_operation_callback_stub_impl_unit_test",
+  ]
+}
+
 ohos_unittest("audio_zone_client_unit_test") {
   module_out_path = module_output_path
 
