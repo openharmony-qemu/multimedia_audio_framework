@@ -70,5 +70,39 @@ HWTEST(AudioManagerListenerTest, OnWakeupClose_001, TestSize.Level1)
     auto audioManagerListenerStub = std::make_unique<AudioManagerListenerStubImpl>();
     EXPECT_EQ(audioManagerListenerStub->OnWakeupClose(), SUCCESS);
 }
+
+/**
+ * @tc.name  : Test OnAudioParameterChange API
+ * @tc.type  : FUNC
+ * @tc.number: OnAudioParameterChange_001
+ * @tc.desc  : Test OnAudioParameterChange interface.
+ */
+HWTEST(AudioManagerListenerTest, OnAudioParameterChange_001, TestSize.Level4)
+{
+    auto audioManagerListenerStub = std::make_unique<AudioManagerListenerStubImpl>();
+    const std::string networkId = "test_network_id";
+    const int32_t key = static_cast<int32_t>(AudioParamKey::VOLUME);
+    const std::string condition = "test_condition";
+    const std::string value = "test_value";
+
+    int32_t result = audioManagerListenerStub->OnAudioParameterChange(networkId, key, condition, value);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OnDataTransferStateChange API
+ * @tc.type  : FUNC
+ * @tc.number: OnDataTransferStateChange_001
+ * @tc.desc  : Test OnDataTransferStateChange interface.
+ */
+HWTEST(AudioManagerListenerTest, OnDataTransferStateChange_001, TestSize.Level4)
+{
+    auto audioManagerListenerStub = std::make_unique<AudioManagerListenerStubImpl>();
+    AudioRendererDataTransferStateChangeInfo info;
+    int32_t callbackId = 123;
+
+    int32_t result = audioManagerListenerStub->OnDataTransferStateChange(callbackId, info);
+    EXPECT_EQ(result, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

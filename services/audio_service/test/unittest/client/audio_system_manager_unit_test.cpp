@@ -1836,5 +1836,51 @@ HWTEST(AudioSystemManagerUnitTest, GetTypeValueFromPin_003, TestSize.Level4)
     DeviceType deviceValue = AudioSystemManager::GetInstance()->GetTypeValueFromPin(AUDIO_PIN_IN_UWB);
     EXPECT_EQ(deviceValue, DEVICE_TYPE_ACCESSORY);
 }
+
+/**
+ * @tc.name   : Test StartGroup API
+ * @tc.number : StartGroup_003
+ * @tc.desc   : Test StartGroup interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, StartGroup_003, TestSize.Level4)
+{
+    AudioSystemManager manager;
+    bool needUpdatePrio = false;
+    int32_t testWorkgroupid = 1;
+    int32_t startTimeMs = 1000;
+    int32_t endTimeMs = 500;
+    std::unordered_map<int32_t, bool> threads = {
+        {101, true},
+        {102, true}
+    };
+    int32_t result = manager.StartGroup(testWorkgroupid, startTimeMs, endTimeMs, threads, needUpdatePrio);
+    EXPECT_EQ(result, AUDIO_ERR);
+}
+
+/**
+* @tc.name   : Test ConfigDistributedRoutingRole API
+* @tc.number : ConfigDistributedRoutingRoleTest_003
+* @tc.desc   : Test ConfigDistributedRoutingRole interface.
+*/
+HWTEST(AudioSystemManagerUnitTest, ConfigDistributedRoutingRoleTest_003, TestSize.Level4)
+{
+    CastType castType = CAST_TYPE_ALL;
+    std::shared_ptr<AudioDeviceDescriptor> audioDevDesc = std::make_shared<AudioDeviceDescriptor>();
+    constexpr size_t VALID_REMOTE_NETWORK_ID_LENGTH = 64;
+    constexpr char invalidLocalNetworkId[] = "123456";
+    audioDevDesc->networkId_ = invalidLocalNetworkId;
+    int32_t result = AudioSystemManager::GetInstance()->ConfigDistributedRoutingRole(audioDevDesc, castType);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+
+    audioDevDesc->networkId_ = LOCAL_NETWORK_ID;
+    audioDevDesc->networkId_.resize(VALID_REMOTE_NETWORK_ID_LENGTH);
+    result = AudioSystemManager::GetInstance()->ConfigDistributedRoutingRole(audioDevDesc, castType);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+
+    constexpr size_t INVALID_REMOTE_NETWORK_ID_LENGTH = 100;
+    audioDevDesc->networkId_.resize(INVALID_REMOTE_NETWORK_ID_LENGTH);
+    result = AudioSystemManager::GetInstance()->ConfigDistributedRoutingRole(audioDevDesc, castType);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+}
 } // namespace AudioStandard
 } // namespace OHOS
