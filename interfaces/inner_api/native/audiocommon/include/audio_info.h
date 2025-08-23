@@ -1950,6 +1950,14 @@ enum BoostTriggerMethod : uint32_t {
     METHOD_WRITE_OR_READ,
     METHOD_MAX
 };
+
+enum XperfEventId : int32_t {
+    XPERF_EVENT_START = 0,
+    XPERF_EVENT_STOP = 1,
+    XPERF_EVENT_RELEASE = 2,
+    XPERF_EVENT_FAULT = 3,
+    XPERF_EVENT_MAX = 4,
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H
