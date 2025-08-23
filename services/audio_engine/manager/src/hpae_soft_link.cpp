@@ -40,7 +40,7 @@ static constexpr int32_t MAX_OVERFLOW_UNDERRUN_COUNT = 50; // 1s
 uint32_t HpaeSoftLink::g_sessionId = FIRST_SESSIONID; // begin at 90000
 std::shared_ptr<IHpaeSoftLink> IHpaeSoftLink::CreateSoftLink(uint32_t sinkIdx, uint32_t sourceIdx, SoftLinkMode mode)
 {
-    std::shared_ptr<IHpaeSoftLink> softLink = std::make_shared<HpaeSoftLink>(sinkIdx, sourceIdx, mode);
+    std::shared_ptr<HpaeSoftLink> softLink = std::make_shared<HpaeSoftLink>(sinkIdx, sourceIdx, mode);
     CHECK_AND_RETURN_RET_LOG(softLink != nullptr, nullptr, "new HpaeSoftLink failed");
     CHECK_AND_RETURN_RET_LOG(softLink->Init() == SUCCESS, nullptr, "HpaeSoftLink init failed");
     return softLink;
@@ -75,11 +75,8 @@ int32_t HpaeSoftLink::Init()
 {
     Trace trace("HpaeSoftLink::Init");
     AUDIO_INFO_LOG("init in");
-    {
-        std::lock_guard<std::mutex> stateLock(stateMutex_);
-        CHECK_AND_RETURN_RET_LOG(state_.load() != HpaeSoftLinkState::PREPARED, SUCCESS, "softlink already inited");
-        CHECK_AND_RETURN_RET_LOG(state_.load() == HpaeSoftLinkState::NEW, ERR_ILLEGAL_STATE, "init error state");
-    }
+    CHECK_AND_RETURN_RET_LOG(state_.load() != HpaeSoftLinkState::PREPARED, SUCCESS, "softlink already inited");
+    CHECK_AND_RETURN_RET_LOG(state_.load() == HpaeSoftLinkState::NEW, ERR_ILLEGAL_STATE, "init error state");
     CHECK_AND_RETURN_RET_LOG(sinkIdx_ != HDI_INVALID_ID && sourceIdx_ != HDI_INVALID_ID, ERR_INVALID_PARAM,
         "invalid sinkIdx or capturerIdx");
 
@@ -179,20 +176,14 @@ int32_t HpaeSoftLink::CreateStream()
         false, AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL, false
     };
     AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
-    {
-        std::lock_guard<std::mutex> stateLock(stateMutex_);
-        streamStateMap_[rendererStreamInfo_.sessionId] = HpaeSoftLinkState::PREPARED;
-    }
+    streamStateMap_[rendererStreamInfo_.sessionId] = HpaeSoftLinkState::PREPARED;
 
     uint32_t &capturerSessionId = capturerStreamInfo_.sessionId;
     IHpaeManager::GetHpaeManager().CreateStream(capturerStreamInfo_);
     IHpaeManager::GetHpaeManager().RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_RECORD, capturerSessionId,
         shared_from_this());
     IHpaeManager::GetHpaeManager().RegisterReadCallback(capturerSessionId, shared_from_this());
-    {
-        std::lock_guard<std::mutex> stateLock(stateMutex_);
-        streamStateMap_[capturerStreamInfo_.sessionId] = HpaeSoftLinkState::PREPARED;
-    }
+    streamStateMap_[capturerStreamInfo_.sessionId] = HpaeSoftLinkState::PREPARED;
     return SUCCESS;
 }
 

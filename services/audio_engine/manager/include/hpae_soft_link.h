@@ -54,7 +54,7 @@ public:
     HpaeSoftLink(uint32_t sinkIdx, uint32_t sourceIdx, SoftLinkMode mode);
     ~HpaeSoftLink();
     static uint32_t GenerateSessionId();
-    int32_t Init() override;
+    int32_t Init();
     int32_t Start() override;
     int32_t Stop() override;
     int32_t Release() override;
