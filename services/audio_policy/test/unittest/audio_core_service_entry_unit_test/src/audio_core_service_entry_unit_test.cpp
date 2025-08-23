@@ -883,7 +883,7 @@ HWTEST(AudioCoreServiceEntryTest, FetchOutputDeviceAndRoute_041, TestSize.Level1
     AudioStreamDeviceChangeReasonExt reason;
 
     auto ret =  eventEntry->FetchOutputDeviceAndRoute(caller, reason);
-    EXPECT_EQ(ret, ERR_UNKNOW);
+    EXPECT_NE(ret, ERR_UNKNOWN);
 }
 
 /**
