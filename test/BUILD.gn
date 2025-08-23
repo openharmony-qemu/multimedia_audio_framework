@@ -77,6 +77,7 @@ group("audio_unit_test") {
     "../services/audio_engine/test/unittest:audio_engine_unit_test",
     "../services/audio_engine/test/unittest:hpae_capture_effect_node_test",
     "../services/audio_engine/test/unittest:hpae_capturer_manager_test",
+    "../services/audio_engine/test/unittest:hpae_virtual_capturer_manager_test",
     "../services/audio_engine/test/unittest:hpae_co_buffer_node_test",
     "../services/audio_engine/test/unittest:hpae_gain_node_test",
     "../services/audio_engine/test/unittest:hpae_inner_capturer_unit_test",
