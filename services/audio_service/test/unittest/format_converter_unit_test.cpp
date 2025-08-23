@@ -628,7 +628,7 @@ HWTEST_F(FormatConverterUnitTest, S16MonoToS16Stereo_004, TestSize.Level1)
     EXPECT_EQ(*dstDescTest.buffer, 1);
     EXPECT_EQ(*dstDescTest.buffer + 1, 2);
     EXPECT_EQ(*dstDescTest.buffer + 2, 3);
-    EXPECT_EQ(*dstDescTest.buffer + 3, 4);   
+    EXPECT_EQ(*dstDescTest.buffer + 3, 4);
 
     ret = FormatConverter::F32MonoToS32Stereo(srcDescTest, dstDescTest);
     EXPECT_EQ(ret, 0);
