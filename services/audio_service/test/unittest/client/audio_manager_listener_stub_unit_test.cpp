@@ -86,7 +86,6 @@ HWTEST(AudioManagerListenerTest, OnAudioParameterChange_001, TestSize.Level4)
     const std::string value = "test_value";
 
     int32_t result = audioManagerListenerStub->OnAudioParameterChange(networkId, key, condition, value);
-
     EXPECT_EQ(result, SUCCESS);
 }
 
