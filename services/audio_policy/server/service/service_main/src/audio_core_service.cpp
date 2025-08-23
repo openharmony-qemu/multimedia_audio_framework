@@ -1265,13 +1265,14 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
         }
         streamUsage = (streamUsage != StreamUsage::STREAM_USAGE_INVALID) ? streamUsage :
             streamDesc->rendererInfo_.streamUsage;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
         if (VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_) {
-            streamDesc->AddNewDevice(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
+            devices.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
         } else {
-            auto device = audioRouterCenter_.FetchOutputDevices(streamUsage, GetRealUid(streamDesc),
+            devices = audioRouterCenter_.FetchOutputDevices(streamUsage, GetRealUid(streamDesc),
                 caller + "FetchOutputDeviceAndRoute");
-            streamDesc->UpdateNewDevice(device);
         }
+        streamDesc->UpdateNewDevice(devices);
         AUDIO_INFO_LOG("[AudioSession] streamUsage %{public}d renderer streamUsage %{public}d",
             streamUsage, streamDesc->rendererInfo_.streamUsage);
         AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d with status %{public}u",
