@@ -88,7 +88,7 @@ private:
     std::mutex stateMutex_;
     uint8_t isStreamOperationFinish_ = 0;
     uint8_t isDeviceOperationFinish_ = 0;
-    std::unordered_map<uint32_t, HpaeSoftLinkState> streamStateMap_;
+    std::unordered_map<uint32_t, std::atomic<HpaeSoftLinkState>> streamStateMap_;
     std::mutex callbackMutex_;
     std::condition_variable callbackCV_;
     bool isOperationFinish_ = false;
