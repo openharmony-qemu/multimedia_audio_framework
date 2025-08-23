@@ -14,6 +14,7 @@
  */
 
 #include "audio_capturer_session_unit_test.h"
+
 using namespace testing::ext;
 
 namespace OHOS {
@@ -585,6 +586,66 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_028, TestSize.Level1)
 
     audioCapturerSession->ReloadSourceForDeviceChange(inputDevice, outputDevice, caller);
     EXPECT_EQ(audioCapturerSession->inputDeviceForReload_.deviceType_, DEVICE_TYPE_MIC);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_032
+ * @tc.desc  : Test ReloadCaptureSessionSoftLink
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_032, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    EXPECT_NE(pipeManager, nullptr);
+
+    auto pipeInfoOne = std::make_shared<AudioPipeInfo>();
+    pipeInfoOne->name_ = "test_output_one";
+    pipeInfoOne->adapterName_ = "test_one";
+    pipeManager->AddAudioPipeInfo(pipeInfoOne);
+
+    auto pipeInfoTwo = std::make_shared<AudioPipeInfo>();
+    pipeInfoTwo->name_ = "test_output_two";
+    pipeInfoTwo->adapterName_ = "test_two";
+    pipeInfoTwo->pipeRole_ = AudioPipeRole::PIPE_ROLE_OUTPUT;
+    std::shared_ptr<AudioStreamDescriptor> streamDescriptor = std::make_shared<AudioStreamDescriptor>();
+    streamDescriptor->sessionId_ = 0;
+    pipeInfoTwo->streamDescriptors_.push_back(streamDescriptor);
+    pipeManager->AddAudioPipeInfo(pipeInfoTwo);
+
+    auto pipeInfoThree = std::make_shared<AudioPipeInfo>();
+    pipeInfoThree->name_ = "test_input_three";
+    pipeInfoThree->adapterName_ = "primary";
+    pipeInfoThree->pipeRole_ = AudioPipeRole::PIPE_ROLE_INPUT;
+    pipeInfoThree->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    std::shared_ptr<AudioStreamDescriptor> streamDescriptorOne = std::make_shared<AudioStreamDescriptor>();
+    streamDescriptorOne->sessionId_ = 1;
+    pipeInfoThree->streamDescriptors_.push_back(streamDescriptorOne);
+    std::shared_ptr<AudioStreamDescriptor> streamDescriptorTwo = std::make_shared<AudioStreamDescriptor>();
+    streamDescriptorTwo->sessionId_ = 2;
+    pipeInfoThree->streamDescriptors_.push_back(streamDescriptorTwo);
+    std::shared_ptr<AudioStreamDescriptor> streamDescriptorThree = std::make_shared<AudioStreamDescriptor>();
+    streamDescriptorThree->sessionId_ = 3;
+    pipeInfoThree->streamDescriptors_.push_back(streamDescriptorThree);
+    pipeInfoThree->softLinkFlag_ = true;
+    pipeManager->AddAudioPipeInfo(pipeInfoThree);
+
+    SessionInfo sessionInfoTwo;
+    sessionInfoTwo.sourceType = SourceType::SOURCE_TYPE_WAKEUP;
+    SessionInfo sessionInfoTheee;
+    sessionInfoTheee.sourceType = SourceType::SOURCE_TYPE_VOICE_CALL;
+    audioCapturerSession->sessionWithNormalSourceType_[2] = sessionInfoTwo;
+    audioCapturerSession->sessionWithNormalSourceType_[3] = sessionInfoTheee;
+
+    auto ret = audioCapturerSession->ReloadCaptureSessionSoftLink();
+    EXPECT_EQ(ret, SUCCESS);
+
+    auto ioRet = AudioIOHandleMap::GetInstance().ClosePortAndEraseIOHandle("test");
+    EXPECT_EQ(ioRet, SUCCESS);
+
+    auto pipeRet = pipeManager->GetUnusedRecordPipe();
+    EXPECT_EQ(pipeRet.size(), 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

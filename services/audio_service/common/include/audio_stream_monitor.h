@@ -29,6 +29,8 @@ public:
     virtual ~DataTransferStateChangeCallbackForMonitor() = default;
     virtual void OnDataTransferStateChange(const int32_t &pid, const int32_t & callbackId,
         const AudioRendererDataTransferStateChangeInfo& info) = 0;
+    virtual void OnMuteStateChange(const int32_t &pid, const int32_t &callbackId,
+        const int32_t &uid, const uint32_t &sessionId, const bool &isMuted) = 0;
 };
 
 class AudioStreamMonitor {
@@ -38,12 +40,16 @@ public:
         const int32_t pid, const int32_t callbackId);
     int32_t UnregisterAudioRendererDataTransferStateListener(const int32_t pid, const int32_t callbackId);
     void OnCallback(int32_t pid, int32_t callbackId, const AudioRendererDataTransferStateChangeInfo &info);
+    void OnMuteCallback(const int32_t &pid, const int32_t &callbackId,
+        const int32_t &uid, const uint32_t &sessionId, const bool &isMuted);
     void ReportStreamFreezen(int64_t intervalTime);
     void AddCheckForMonitor(uint32_t sessionId, std::shared_ptr<AudioStreamChecker> &checker);
     void DeleteCheckForMonitor(uint32_t sessionId);
     void SetAudioServerPtr(DataTransferStateChangeCallbackForMonitor *ptr);
     void OnCallbackAppDied(const int32_t pid);
     void NotifyAppStateChange(const int32_t uid, bool isBackground);
+    void UpdateMonitorVolume(const uint32_t &sessionId, const float &volume);
+    int32_t GetVolumeBySessionId(const uint32_t &sessionId, float &volume);
 private:
     AudioStreamMonitor() {}
     ~AudioStreamMonitor() {}
@@ -51,6 +57,7 @@ private:
     std::map<std::pair<int32_t, int32_t>, DataTransferMonitorParam> registerInfo_;
     std::map<uint32_t, std::shared_ptr<AudioStreamChecker>> audioStreamCheckers_;
     std::mutex regStatusMutex_;
+    std::mutex callbackMutex_;
     DataTransferStateChangeCallbackForMonitor *audioServer_ = nullptr;
 };
 }

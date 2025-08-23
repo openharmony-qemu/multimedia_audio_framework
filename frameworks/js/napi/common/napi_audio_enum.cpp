@@ -511,6 +511,20 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioLoopbackStatusMap = {
     {"AVAILABLE_RUNNING", LOOPBACK_AVAILABLE_RUNNING},
 };
 
+const std::map<std::string, int32_t> NapiAudioEnum::audioLoopbackReverbPresetMap = {
+    {"ORIGINAL", REVERB_PRESET_ORIGINAL},
+    {"KTV", REVERB_PRESET_KTV},
+    {"THEATRE", REVERB_PRESET_THEATRE},
+    {"CONCERT", REVERB_PRESET_CONCERT},
+};
+
+
+const std::map<std::string, int32_t> NapiAudioEnum::audioLoopbackEqualizerPresetMap = {
+    {"FLAT", EQUALIZER_PRESET_FLAT},
+    {"FULL", EQUALIZER_PRESET_FULL},
+    {"BRIGHT", EQUALIZER_PRESET_BRIGHT},
+};
+
 const std::map<std::string, int32_t> NapiAudioEnum::audioSessionSceneMap = {
     {"AUDIO_SESSION_SCENE_MEDIA", static_cast<int32_t>(AudioSessionScene::MEDIA)},
     {"AUDIO_SESSION_SCENE_GAME", static_cast<int32_t>(AudioSessionScene::GAME)},
@@ -531,6 +545,11 @@ const std::map<std::string, int32_t> NapiAudioEnum::outputDeviceChangeRecommende
     {"DEVICE_CHANGE_RECOMMEND_TO_CONTINUE",
         static_cast<int32_t>(OutputDeviceChangeRecommendedAction::RECOMMEND_TO_CONTINUE)},
     {"DEVICE_CHANGE_RECOMMEND_TO_STOP", static_cast<int32_t>(OutputDeviceChangeRecommendedAction::RECOMMEND_TO_STOP)},
+};
+
+const std::map<std::string, int32_t> NapiAudioEnum::effectFlagMap = {
+    {"RENDER_EFFECT_FLAG", RENDER_EFFECT_FLAG},
+    {"CAPTURE_EFFECT_FLAG", CAPTURE_EFFECT_FLAG},
 };
 
 NapiAudioEnum::NapiAudioEnum()
@@ -691,11 +710,16 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("AudioLoopbackMode", CreateEnumObject(env, audioLoopbackModeMap)),
         DECLARE_NAPI_PROPERTY("AudioLoopbackStatus",
             CreateEnumObject(env, audioLoopbackStatusMap)),
+        DECLARE_NAPI_PROPERTY("AudioLoopbackReverbPreset",
+            CreateEnumObject(env, audioLoopbackReverbPresetMap)),
+        DECLARE_NAPI_PROPERTY("AudioLoopbackEqualizerPreset",
+            CreateEnumObject(env, audioLoopbackEqualizerPresetMap)),
         DECLARE_NAPI_PROPERTY("AudioSessionScene", CreateEnumObject(env, audioSessionSceneMap)),
         DECLARE_NAPI_PROPERTY("AudioSessionStateChangeHint",
             CreateEnumObject(env, audioSessionStateChangeHintMap)),
         DECLARE_NAPI_PROPERTY("OutputDeviceChangeRecommendedAction",
             CreateEnumObject(env, outputDeviceChangeRecommendedActionMap)),
+        DECLARE_NAPI_PROPERTY("EffectFlag", CreateEnumObject(env, effectFlagMap)),
     };
     return napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
 }
@@ -1317,8 +1341,8 @@ int32_t NapiAudioEnum::GetJsStreamUsage(StreamUsage streamUsage)
         case StreamUsage::STREAM_USAGE_UNKNOWN:
             result = NapiAudioEnum::USAGE_UNKNOW;
             break;
-        case StreamUsage::STREAM_USAGE_MEDIA:
-            result = NapiAudioEnum::USAGE_MEDIA;
+        case StreamUsage::STREAM_USAGE_MUSIC:
+            result = NapiAudioEnum::USAGE_MUSIC;
             break;
         case StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION:
             result = NapiAudioEnum::USAGE_VOICE_COMMUNICATION;
@@ -1386,7 +1410,7 @@ int32_t NapiAudioEnum::GetJsStreamUsageFir(StreamUsage streamUsage)
             result = NapiAudioEnum::USAGE_VOICE_CALL_ASSISTANT;
             break;
         default:
-            result = NapiAudioEnum::USAGE_MEDIA;
+            result = NapiAudioEnum::USAGE_UNKNOW;
             break;
     }
     return result;
@@ -1590,10 +1614,10 @@ AudioVolumeType NapiAudioEnum::GetNativeAudioVolumeType(int32_t volumeType)
             result = STREAM_SYSTEM;
             break;
         case NapiAudioEnum::NOTIFICATION:
-            result = STREAM_NOTIFICATION;
+            result = STREAM_RING;
             break;
         case NapiAudioEnum::NAVIGATION:
-            result = STREAM_NAVIGATION;
+            result = STREAM_MUSIC;
             break;
         case NapiAudioEnum::ALL:
             result = STREAM_ALL;
@@ -1615,8 +1639,8 @@ StreamUsage NapiAudioEnum::GetNativeStreamUsage(int32_t streamUsage)
         case NapiAudioEnum::USAGE_UNKNOW:
             result = STREAM_USAGE_UNKNOWN;
             break;
-        case NapiAudioEnum::USAGE_MEDIA:
-            result = STREAM_USAGE_MEDIA;
+        case NapiAudioEnum::USAGE_MUSIC:
+            result = STREAM_USAGE_MUSIC;
             break;
         case NapiAudioEnum::USAGE_VOICE_COMMUNICATION:
             result = STREAM_USAGE_VOICE_COMMUNICATION;
@@ -1843,6 +1867,40 @@ bool NapiAudioEnum::IsLegalInputArgumentAudioLoopbackMode(int32_t inputMode)
     }
     return result;
 }
+
+bool NapiAudioEnum::IsLegalInputArgumentAudioLoopbackReverbPreset(int32_t preset)
+{
+    bool result = false;
+    switch (preset) {
+        case AudioLoopbackReverbPreset::REVERB_PRESET_ORIGINAL:
+        case AudioLoopbackReverbPreset::REVERB_PRESET_KTV:
+        case AudioLoopbackReverbPreset::REVERB_PRESET_THEATRE:
+        case AudioLoopbackReverbPreset::REVERB_PRESET_CONCERT:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool NapiAudioEnum::IsLegalInputArgumentAudioLoopbackEqualizerPreset(int32_t preset)
+{
+    bool result = false;
+    switch (preset) {
+        case AudioLoopbackEqualizerPreset::EQUALIZER_PRESET_FLAT:
+        case AudioLoopbackEqualizerPreset::EQUALIZER_PRESET_FULL:
+        case AudioLoopbackEqualizerPreset::EQUALIZER_PRESET_BRIGHT:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
 
 bool NapiAudioEnum::IsLegalInputArgumentSessionScene(int32_t scene)
 {

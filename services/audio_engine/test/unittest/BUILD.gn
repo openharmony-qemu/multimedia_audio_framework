@@ -25,6 +25,7 @@ config("audio_engine_private_config") {
     "-Werror",
     "-fno-access-control",
     "-DENABLE_HIDUMP_DFX",
+    "-DENABLE_HOOK_PCM",
   ]
 
   include_dirs = [
@@ -244,6 +245,7 @@ ohos_unittest("hpae_sink_output_node_test") {
 
   external_deps = [
     "c_utils:utils",
+    "googletest:gmock",
     "googletest:gtest",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
@@ -868,6 +870,7 @@ ohos_unittest("hpae_plugins_unit_test") {
     "plugin/channel_converter/down_mixer_test.cpp",
     "plugin/channel_converter/channel_converter_test.cpp",
     "plugin/proresampler/audio_proresampler_test.cpp",
+    "plugin/proresampler/audio_proresampler_process_test.cpp",
   ]
 
   configs = [ ":audio_engine_private_config" ]

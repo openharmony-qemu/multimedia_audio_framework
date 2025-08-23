@@ -269,7 +269,7 @@ HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_014, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors = {audioDeviceDescriptor};
 
     auto ret = audioGeneralManagerPtr->SelectOutputDevice(audioDeviceDescriptors);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -288,7 +288,7 @@ HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_015, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors = {audioDeviceDescriptor};
 
     auto ret = audioGeneralManagerPtr->SelectOutputDevice(audioDeviceDescriptors);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -448,6 +448,41 @@ HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_023, TestSize.Level1)
 
     int32_t ret = audioGeneralManagerPtr->SelectOutputDevice(audioRendererFilter,  audioDeviceDescriptors);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test SetDeviceVolumeBehavior.
+ * @tc.number: AudioGeneralManager_024
+ * @tc.desc  : Test SetDeviceVolumeBehavior when AudioPolicyManagerProxy is null.
+ */
+HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_024, TestSize.Level4)
+{
+    auto audioGeneralManager = AudioGeneralManager::GetInstance();
+    EXPECT_NE(audioGeneralManager, nullptr);
+
+    std::string networkId = "invalid_id";
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
+    VolumeBehavior volumeBehavior = {false, false, "invalid"};
+
+    int32_t ret = audioGeneralManager->SetDeviceVolumeBehavior(networkId, deviceType, volumeBehavior);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SaveCallback.
+ * @tc.number: SaveCallback_001
+ * @tc.desc  : Test SaveCallback API.
+ */
+HWTEST(AudioGeneralManagerUnitTest, SaveCallback_001, TestSize.Level4)
+{
+    auto audioFocusInfoChangeCallbackImpl = std::make_shared<AudioFocusInfoChangeCallbackImpl>();
+    EXPECT_NE(audioFocusInfoChangeCallbackImpl, nullptr);
+    std::shared_ptr<AudioFocusInfoChangeCallback> callback = std::make_shared<AudioFocusInfoChangeCallbackImpl>();
+    EXPECT_NE(callback, nullptr);
+
+    audioFocusInfoChangeCallbackImpl->SaveCallback(callback);
+
+    EXPECT_EQ(audioFocusInfoChangeCallbackImpl->callbackList_.size(), 1);
 }
 } // namespace AudioStandard
 } // namespace OHOS

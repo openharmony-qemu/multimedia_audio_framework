@@ -24,6 +24,7 @@
 #include "audio_policy_server_handler.h"
 #include "audio_zone_service.h"
 #include "audio_interrupt_service.h"
+#include "audio_session_service.h"
 #include "i_audio_zone_event_dispatcher.h"
 
 namespace OHOS {
@@ -51,9 +52,9 @@ public:
     {
         AudioZoneUnitTestBase::SetUp();
         AudioZoneContext context;
-        zoneId1_ = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context);
+        zoneId1_ = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context, 0);
         EXPECT_NE(zoneId1_, 0);
-        zoneId2_ = AudioZoneService::GetInstance().CreateAudioZone("TestZone2", context);
+        zoneId2_ = AudioZoneService::GetInstance().CreateAudioZone("TestZone2", context, 0);
         EXPECT_NE(zoneId2_, 0);
     }
 

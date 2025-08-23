@@ -59,6 +59,7 @@ constexpr int32_t AUDIO_FLAG_VKB_FAST = 1025;
 constexpr int32_t AUDIO_USAGE_NORMAL = 0;
 constexpr int32_t AUDIO_USAGE_VOIP = 1;
 constexpr uint32_t STREAM_FLAG_FAST = 1;
+constexpr uint32_t DEFAULT_SUSPEND_TIME_IN_MS = 3000;
 constexpr float MAX_STREAM_SPEED_LEVEL = 4.0f;
 constexpr float MIN_STREAM_SPEED_LEVEL = 0.125f;
 constexpr float NORMAL_STREAM_SPEED_LEVEL = 1.0f;
@@ -342,6 +343,7 @@ enum CallbackChange : int32_t {
     CALLBACK_SYSTEM_VOLUME_CHANGE,
     CALLBACK_AUDIO_SESSION_STATE,
     CALLBACK_AUDIO_SESSION_DEVICE,
+    CALLBACK_SET_VOLUME_DEGREE_CHANGE,
     CALLBACK_MAX,
 };
 
@@ -398,6 +400,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_SYSTEM_VOLUME_CHANGE,
     CALLBACK_AUDIO_SESSION_STATE,
     CALLBACK_AUDIO_SESSION_DEVICE,
+    CALLBACK_SET_VOLUME_DEGREE_CHANGE,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
@@ -406,6 +409,7 @@ static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<s
 struct VolumeEvent : public Parcelable {
     AudioVolumeType volumeType;
     int32_t volume;
+    int32_t volumeDegree;
     bool updateUi;
     int32_t volumeGroupId = 0;
     std::string networkId = LOCAL_NETWORK_ID;
@@ -420,6 +424,7 @@ struct VolumeEvent : public Parcelable {
     {
         return parcel.WriteInt32(static_cast<int32_t>(volumeType))
             && parcel.WriteInt32(volume)
+            && parcel.WriteInt32(volumeDegree)
             && parcel.WriteBool(updateUi)
             && parcel.WriteInt32(volumeGroupId)
             && parcel.WriteString(networkId)
@@ -430,6 +435,7 @@ struct VolumeEvent : public Parcelable {
     {
         volumeType = static_cast<AudioVolumeType>(parcel.ReadInt32());
         volume = parcel.ReadInt32();
+        volumeDegree = parcel.ReadInt32();
         updateUi = parcel.ReadBool();
         volumeGroupId = parcel.ReadInt32();
         networkId = parcel.ReadString();
@@ -556,9 +562,44 @@ enum AudioLoopbackState {
     LOOPBACK_STATE_DESTROYED,
 };
 
+enum AudioLoopbackReverbPreset {
+    /**
+     * A preset that keep the original reverberation without any enhancement.
+     */
+    REVERB_PRESET_ORIGINAL = 1,
+    /**
+     * A preset representing a reverberation effect with karaoke-like acoustic characteristics.
+     */
+    REVERB_PRESET_KTV = 2,
+    /**
+     * A preset representing a reverberation effect with theater-like acoustic characteristics.
+     */
+    REVERB_PRESET_THEATRE = 3,
+    /**
+     * A preset representing a reverberation effect with concert-like acoustic characteristics.
+     */
+    REVERB_PRESET_CONCERT = 4,
+};
+
+enum AudioLoopbackEqualizerPreset {
+    /**
+     * A preset that keep the original frequency response without any enhancement.
+     */
+    EQUALIZER_PRESET_FLAT = 1,
+    /**
+     * A preset representing a equalizer that can enhance the fullness of the vocie
+     */
+    EQUALIZER_PRESET_FULL = 2,
+    /**
+     * A preset representing a equalizer that can enhance the brightness of the vocie
+     */
+    EQUALIZER_PRESET_BRIGHT = 3,
+};
+
 struct AudioRendererInfo : public Parcelable {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
+    bool forceToNormal = false;
     int32_t rendererFlags = AUDIO_FLAG_NORMAL;
     AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
     std::string sceneType = "";
@@ -591,11 +632,14 @@ struct AudioRendererInfo : public Parcelable {
         int32_t rendererFlagsIn, AudioVolumeMode volumeModeIn)
         : contentType(contentTypeIn), streamUsage(streamUsageIn),
         rendererFlags(rendererFlagsIn), volumeMode(volumeModeIn) {}
+    AudioRendererInfo(ContentType contentTypeIn, StreamUsage streamUsageIn)
+        : contentType(contentTypeIn), streamUsage(streamUsageIn) {}
 
     bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteInt32(static_cast<int32_t>(contentType))
             && parcel.WriteInt32(static_cast<int32_t>(streamUsage))
+            && parcel.WriteBool(forceToNormal)
             && parcel.WriteInt32(rendererFlags)
             && parcel.WriteInt32(originalFlag)
             && parcel.WriteString(sceneType)
@@ -620,6 +664,7 @@ struct AudioRendererInfo : public Parcelable {
     {
         contentType = static_cast<ContentType>(parcel.ReadInt32());
         streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+        forceToNormal = parcel.ReadBool();
         rendererFlags = parcel.ReadInt32();
         originalFlag = parcel.ReadInt32();
         sceneType = parcel.ReadString();
@@ -1370,6 +1415,7 @@ struct Volume {
     bool isMute = false;
     float volumeFloat = 1.0f;
     uint32_t volumeInt = 0;
+    uint32_t volumeDegree = 0;
 };
 
 enum AppIsBackState {
@@ -1567,6 +1613,17 @@ public:
     virtual void OnAudioPolicyServiceDied() = 0;
 };
 
+class AudioSessionManagerPolicyServiceDiedCallback {
+public:
+    virtual ~AudioSessionManagerPolicyServiceDiedCallback() = default;
+
+    /**
+     * Called when audio policy service died.
+     * @since 20
+     */
+    virtual void OnAudioPolicyServiceDied() = 0;
+};
+
 /**
  * Describes three-dimensional value.
  * @since 11
@@ -1635,16 +1692,18 @@ enum DeviceGroup {
     DEVICE_GROUP_DP,
 };
 
+static const std::map<DeviceType, DeviceGroup> DEVICE_GROUP_FOR_VOLUME = {
+    {DEVICE_TYPE_EARPIECE, DEVICE_GROUP_EARPIECE}, {DEVICE_TYPE_SPEAKER, DEVICE_GROUP_BUILT_IN},
+    {DEVICE_TYPE_WIRED_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_USB_HEADSET, DEVICE_GROUP_WIRED},
+    {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_GROUP_WIRELESS},
+    {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_GROUP_WIRELESS}, {DEVICE_TYPE_REMOTE_CAST, DEVICE_GROUP_REMOTE_CAST},
+    {DEVICE_TYPE_ACCESSORY, DEVICE_GROUP_WIRELESS}, {DEVICE_TYPE_NEARLINK, DEVICE_GROUP_WIRELESS},
+    {DEVICE_TYPE_DP, DEVICE_GROUP_DP}, {DEVICE_TYPE_HDMI, DEVICE_GROUP_DP},
+    {DEVICE_TYPE_WIRED_HEADPHONES, DEVICE_GROUP_WIRED},
+};
+
 static inline DeviceGroup GetVolumeGroupForDevice(DeviceType deviceType)
 {
-    static const std::map<DeviceType, DeviceGroup> DEVICE_GROUP_FOR_VOLUME = {
-        {DEVICE_TYPE_EARPIECE, DEVICE_GROUP_EARPIECE}, {DEVICE_TYPE_SPEAKER, DEVICE_GROUP_BUILT_IN},
-        {DEVICE_TYPE_WIRED_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_USB_HEADSET, DEVICE_GROUP_WIRED},
-        {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_GROUP_WIRELESS},
-        {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_GROUP_WIRELESS}, {DEVICE_TYPE_REMOTE_CAST, DEVICE_GROUP_REMOTE_CAST},
-        {DEVICE_TYPE_ACCESSORY, DEVICE_GROUP_WIRELESS}, {DEVICE_TYPE_NEARLINK, DEVICE_GROUP_WIRELESS},
-        {DEVICE_TYPE_DP, DEVICE_GROUP_DP}, {DEVICE_TYPE_HDMI, DEVICE_GROUP_DP},
-    };
     auto it = DEVICE_GROUP_FOR_VOLUME.find(deviceType);
     return it == DEVICE_GROUP_FOR_VOLUME.end() ? DEVICE_GROUP_INVALID : it->second;
 }

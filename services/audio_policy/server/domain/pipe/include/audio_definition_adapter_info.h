@@ -143,6 +143,7 @@ public:
 
     AudioPreloadType preloadAttr_ = PRELOAD_TYPE_UNKNOWN;
     uint32_t supportFlags_ = AUDIO_FLAG_NONE;
+    uint32_t suspendIdleTimeout_ = DEFAULT_SUSPEND_TIME_IN_MS;
     int32_t audioUsage_ = AUDIO_USAGE_NORMAL;
     bool supportEncodingEac3_ = false;
 
@@ -172,6 +173,8 @@ public:
 
 class PolicyAdapterInfo {
 public:
+    PolicyAdapterInfo();
+    ~PolicyAdapterInfo();
     void SelfCheck();
 
     static AudioAdapterType GetAdapterType(const std::string &adapterName);
@@ -240,6 +243,35 @@ private:
         std::unordered_map<std::string, std::shared_ptr<AdapterDeviceInfo>> &tmpDeviceInfoMap_);
 
     std::string version_ = STR_INITED;
+};
+
+struct AudioSourceStrategyType {
+    AudioSourceStrategyType() = default;
+    std::string hdiSource = "AUDIO_INPUT_MIC_TYPE";
+    std::string adapterName = "primary";
+    std::string pipeName = "primary_input";
+    AudioFlag audioFlag = AUDIO_INPUT_FLAG_NORMAL;
+    uint32_t priority = 0;
+
+    AudioSourceStrategyType(const std::string &hdiSource, const std::string &adapterName, const std::string &pipeName,
+        const AudioFlag &audioFlag, const uint32_t priority)
+        : hdiSource(hdiSource), adapterName(adapterName), pipeName(pipeName), audioFlag(audioFlag), priority(priority)
+    {}
+};
+
+class AudioSourceStrategyData {
+public:
+    static AudioSourceStrategyData& GetInstance();
+    std::shared_ptr<std::map<SourceType, AudioSourceStrategyType>> GetSourceStrategyMap() const;
+    void SetSourceStrategyMap(std::shared_ptr<std::map<SourceType, AudioSourceStrategyType>> newMap);
+    uint32_t MappingAudioFlag(const std::string& key) const;
+private:
+    AudioSourceStrategyData() = default;
+    AudioSourceStrategyData(const AudioSourceStrategyData&) = delete;
+    AudioSourceStrategyData& operator=(const AudioSourceStrategyData&) = delete;
+    std::shared_ptr<std::map<SourceType, AudioSourceStrategyType>> sourceStrategyMap_ =
+        std::make_shared<std::map<SourceType, AudioSourceStrategyType>>();
+    mutable std::mutex mutex_;
 };
 
 } // namespace AudioStandard

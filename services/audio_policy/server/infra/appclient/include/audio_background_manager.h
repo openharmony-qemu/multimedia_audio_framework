@@ -37,6 +37,7 @@ struct AppState
     bool hasSession = false;
     bool hasBackTask = false;
     bool isBinder = false;
+    bool isSystem = false;
 };
 
 class AudioBackgroundManager {
@@ -58,6 +59,8 @@ public:
     int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze);
     int32_t ResetAllProxy();
     void HandleFreezeStateChange(const int32_t pid, bool isFreeze);
+    void WriteAppStateChangeSysEvent(int32_t pid, AppState appState, bool isAdd);
+    void RecoryAppState();
 
 private:
     AudioBackgroundManager() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()) {}

@@ -43,7 +43,6 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 21;
 static int32_t NUM_2 = 2;
 typedef void (*TestFuncs)();
 
@@ -212,16 +211,17 @@ void AudioCoreServiceUnexcludeOutputDevicesFuzzTest()
     audioDevDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
     audioDevDesc->macAddress_ = "00:00:00:00:00:00";
     audioDeviceDescriptors.push_back(audioDevDesc);
+    AudioRecoveryDevice::GetInstance().audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
     audioCoreService->UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
 }
 
-void AudioCoreServiceOnReceiveBluetoothEventFuzzTest()
+void AudioCoreServiceOnReceiveUpdateDeviceNameEventFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     std::string macAddress = "11-22-33-44-55-66";
     std::string deviceName = "deviceName";
     audioCoreService->Init();
-    audioCoreService->OnReceiveBluetoothEvent(macAddress, deviceName);
+    audioCoreService->OnReceiveUpdateDeviceNameEvent(macAddress, deviceName);
 }
 
 void AudioCoreServiceNotifyRemoteRenderStateFuzzTest()
@@ -316,7 +316,7 @@ void LoadSplitModuleFuzzTest()
     audioCoreService->LoadSplitModule("splitArgs", "networkId");
 }
 
-TestFuncs g_testFuncs[TESTSIZE] = {
+TestFuncs g_testFuncs[] = {
     AudioCoreServiceDeInitFuzzTest,
     AudioCoreServiceDumpPipeManagerFuzzTest,
     AudioCoreServiceCheckAndSetCurrentOutputDeviceFuzzTest,
@@ -327,7 +327,7 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     AudioCoreServiceFetchInputDeviceForTrackFuzzTest,
     AudioCoreServiceExcludeOutputDevicesFuzzTest,
     AudioCoreServiceUnexcludeOutputDevicesFuzzTest,
-    AudioCoreServiceOnReceiveBluetoothEventFuzzTest,
+    AudioCoreServiceOnReceiveUpdateDeviceNameEventFuzzTest,
     AudioCoreServiceNotifyRemoteRenderStateFuzzTest,
     AudioCoreServiceOnCapturerSessionAddedFuzzTest,
     AudioCoreServiceOnCapturerSessionRemovedFuzzTest,

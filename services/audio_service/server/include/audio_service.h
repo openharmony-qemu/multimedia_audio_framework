@@ -89,9 +89,10 @@ public:
     void ReleaseProcess(const std::string endpointName, const int32_t delayTime);
 
     void CheckBeforeRecordEndpointCreate(bool isRecord);
-    AudioDeviceDescriptor GetDeviceInfoForProcess(const AudioProcessConfig &config, bool isReloadProcess = false);
+    AudioDeviceDescriptor GetDeviceInfoForProcess(const AudioProcessConfig &config,
+        AudioStreamInfo &streamInfo, bool isReloadProcess = false);
     std::shared_ptr<AudioEndpoint> GetAudioEndpointForDevice(AudioDeviceDescriptor &deviceInfo,
-        const AudioProcessConfig &clientConfig, bool isVoipStream);
+        const AudioProcessConfig &clientConfig, AudioStreamInfo &streamInfo, bool isVoipStream);
 
     int32_t LinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
     int32_t UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
@@ -140,11 +141,30 @@ public:
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
 #endif
     void RenderersCheckForAudioWorkgroup(int32_t pid);
+    void SendInterruptEventToAudioService(uint32_t sessionId, InterruptEventInternal interruptEvent);
 
+    bool UpdateResumeInterruptEventMap(uint32_t sessionId, InterruptEventInternal interruptEvent);
+    bool RemoveResumeInterruptEventMap(uint32_t sessionId);
+    bool IsStreamInterruptResume(uint32_t sessionId);
+
+    bool UpdatePauseInterruptEventMap(uint32_t sessionId, InterruptEventInternal interruptEvent);
+    bool RemovePauseInterruptEventMap(uint32_t sessionId);
+    bool IsStreamInterruptPause(uint32_t sessionId);
+
+    bool IsInSwitchStreamMap(uint32_t sessionId, SwitchState &switchState);
+    bool UpdateSwitchStreamMap(uint32_t sessionId, SwitchState switchState);
+    void RemoveSwitchStreamMap(uint32_t sessionId);
+
+    bool IsBackgroundCaptureAllowed(uint32_t sessionId);
+    bool UpdateBackgroundCaptureMap(uint32_t sessionId, bool res);
+    void RemoveBackgroundCaptureMap(uint32_t sessionId);
+    bool NeedRemoveBackgroundCaptureMap(uint32_t sessionId);
+    
 private:
     AudioService();
     void DelayCallReleaseEndpoint(std::string endpointName);
-    ReuseEndpointType GetReuseEndpointType(AudioDeviceDescriptor &deviceInfo, const std::string &deviceKey);
+    ReuseEndpointType GetReuseEndpointType(AudioDeviceDescriptor &deviceInfo,
+        const std::string &deviceKey, AudioStreamInfo &streamInfo);
     void InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
     void InsertCapturer(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -179,11 +199,19 @@ private:
     bool IsMuteSwitchStream(uint32_t sessionId);
     float GetSystemVolume();
     void UpdateSystemVolume(AudioStreamType streamType, float volume);
-
+    void UpdateSessionMuteStatus(const uint32_t sessionId, const bool muteFlag);
 private:
     std::mutex foregroundSetMutex_;
     std::set<std::string> foregroundSet_;
     std::set<uint32_t> foregroundUidSet_;
+    std::mutex audioSwitchStreamMutex_;
+    std::map<uint32_t, SwitchState> audioSwitchStreamMap_;
+    std::mutex backgroundCaptureMutex_;
+    std::map<uint32_t, bool> backgroundCaptureMap_;
+    std::mutex resumeInterruptEventMutex_;
+    std::map<uint32_t, InterruptEventInternal> resumeInterruptEventMap_;
+    std::mutex pauseInterruptEventMutex_;
+    std::map<uint32_t, InterruptEventInternal> pauseInterruptEventMap_;
     std::mutex processListMutex_;
     std::mutex releaseEndpointMutex_;
     std::condition_variable releaseEndpointCV_;

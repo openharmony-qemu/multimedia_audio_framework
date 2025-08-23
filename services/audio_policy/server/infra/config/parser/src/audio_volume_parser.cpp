@@ -84,6 +84,45 @@ int32_t AudioVolumeParser::ParseVolumeConfig(const char *path, StreamVolumeInfoM
         }
     }
     curNode = nullptr;
+    int32_t result = UseVoiceAssistantFixedVolumeConfig(streamVolumeInfoMap);
+    AUDIO_INFO_LOG("The voice assistant uses a fixed volume configuration. Result: %{public}d", result);
+    return SUCCESS;
+}
+
+int32_t AudioVolumeParser::UseVoiceAssistantFixedVolumeConfig(StreamVolumeInfoMap &streamVolumeInfoMap)
+{
+    if (streamVolumeInfoMap.find(STREAM_VOICE_ASSISTANT) == streamVolumeInfoMap.end() ||
+        streamVolumeInfoMap[STREAM_VOICE_ASSISTANT] == nullptr) {
+        AUDIO_ERR_LOG("Failed to find the volume config of STREAM_VOICE_ASSISTANT!");
+        return ERROR;
+    }
+
+    // Allow to set voice assistant volume to 0.
+    streamVolumeInfoMap[STREAM_VOICE_ASSISTANT]->minLevel = 0;
+
+    // Modify the volume point index for volume level 0.
+    const std::vector<DeviceVolumeType> DEVICE_VOLUME_TYPE_LIST = {
+        EARPIECE_VOLUME_TYPE,
+        SPEAKER_VOLUME_TYPE,
+        HEADSET_VOLUME_TYPE,
+    };
+    DeviceVolumeInfoMap &deviceVolumeInfos = streamVolumeInfoMap[STREAM_VOICE_ASSISTANT]->deviceVolumeInfos;
+    for (auto device : DEVICE_VOLUME_TYPE_LIST) {
+        if (deviceVolumeInfos.find(device) == deviceVolumeInfos.end() ||
+            deviceVolumeInfos[device] == nullptr) {
+            AUDIO_ERR_LOG("Failed to find the device %{public}d in deviceVolumeInfos!", device);
+            continue;
+        }
+        deviceVolumeInfos[device]->minLevel = -1; // Ensure that the minLevel of this device is an invalid value.
+        std::vector<VolumePoint> &volumePoints = deviceVolumeInfos[device]->volumePoints;
+        if (volumePoints.empty()) {
+            AUDIO_ERR_LOG("The vector fo volumePoints is empty!");
+            continue;
+        }
+        if (volumePoints[0].index == 0) {
+            volumePoints[0].index = 1;
+        }
+    }
     return SUCCESS;
 }
 
@@ -196,7 +235,21 @@ void AudioVolumeParser::ParseDeviceVolumeInfos(std::shared_ptr<AudioXmlNode> cur
             std::shared_ptr<DeviceVolumeInfo> deviceVolInfo = std::make_shared<DeviceVolumeInfo>();
             deviceVolInfo->deviceType = audioDeviceMap_[pValueStr];
             AUDIO_DEBUG_LOG("deviceVolInfo->deviceType %{public}d;", deviceVolInfo->deviceType);
-            int32_t result = curNode->GetProp("defaultidx", pValueStr);
+            int32_t result = curNode->GetProp("minidx", pValueStr);
+            if (result == SUCCESS) {
+                StringConverter<int32_t>(pValueStr, deviceVolInfo->minLevel);
+                AUDIO_DEBUG_LOG("minidx: %{public}d", deviceVolInfo->minLevel);
+            } else {
+                AUDIO_DEBUG_LOG("The minidx attribute is not configured or minidx parameter is invalid");
+            }
+            result = curNode->GetProp("maxidx", pValueStr);
+            if (result == SUCCESS) {
+                StringConverter<int32_t>(pValueStr, deviceVolInfo->maxLevel);
+                AUDIO_DEBUG_LOG("maxidx: %{public}d", deviceVolInfo->maxLevel);
+            } else {
+                AUDIO_DEBUG_LOG("The maxidx attribute is not configured or maxidx parameter is invalid");
+            }
+            result = curNode->GetProp("defaultidx", pValueStr);
             if (result == SUCCESS) {
                 StringConverter<int32_t>(pValueStr, deviceVolInfo->defaultLevel);
                 AUDIO_DEBUG_LOG("defaultidx: %{public}d", deviceVolInfo->defaultLevel);

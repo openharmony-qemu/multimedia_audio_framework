@@ -42,8 +42,6 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 12;
-static int32_t NUM_2 = 2;
 
 typedef void (*TestFuncs)();
 
@@ -130,49 +128,6 @@ void OffloadStopPlayingFuzzTest()
     manager->OffloadStopPlaying(sessionIds);
 }
 
-void UpdateA2dpOffloadFlagForAllStreamFuzzTest()
-{
-    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
-    manager->Init();
-    std::unordered_map<uint32_t, bool> sessionIDToSpatializationEnableMap = {
-        {1, true},
-        {2, false}
-    };
-
-    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
-    auto changeInfo1 = std::make_shared<AudioRendererChangeInfo>();
-    changeInfo1->sessionId = GetData<uint32_t>();
-    constexpr int32_t rendererStateCount =
-        static_cast<int32_t>(RendererState::RENDERER_PAUSED - RendererState::RENDERER_INVALID) + 1;
-    changeInfo1->rendererState = static_cast<RendererState>(GetData<int32_t>() % rendererStateCount- 1);
-    audioRendererChangeInfos.push_back(changeInfo1);
-
-    auto changeInfo2 = std::make_shared<AudioRendererChangeInfo>();
-    changeInfo2->sessionId = GetData<uint32_t>();
-    changeInfo2->rendererState = static_cast<RendererState>(GetData<int32_t>() % rendererStateCount - 1);
-    audioRendererChangeInfos.push_back(changeInfo2);
-    manager->streamCollector_.audioRendererChangeInfos_ = audioRendererChangeInfos;
-    manager->UpdateA2dpOffloadFlagForAllStream(sessionIDToSpatializationEnableMap, deviceType);
-}
-
-void UpdateA2dpOffloadFlagFuzzTest()
-{
-    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
-    manager->Init();
-    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    std::vector<Bluetooth::A2dpStreamInfo> allActiveSessions;
-    Bluetooth::A2dpStreamInfo a2dpStreamInfo;
-    a2dpStreamInfo.sessionId = 1;
-    a2dpStreamInfo.streamType = 1;
-    a2dpStreamInfo.isSpatialAudio = false;
-    allActiveSessions.push_back(a2dpStreamInfo);
-    constexpr int32_t stateCount = static_cast<int32_t>(BluetoothOffloadState::A2DP_OFFLOAD) + 1;
-    BluetoothOffloadState state = static_cast<BluetoothOffloadState>(GetData<int32_t>() % stateCount);
-    manager->SetA2dpOffloadFlag(state);
-    manager->UpdateA2dpOffloadFlag(allActiveSessions, deviceType);
-}
-
 void HandleA2dpDeviceOutOffloadFuzzTest()
 {
     std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
@@ -184,7 +139,8 @@ void HandleA2dpDeviceOutOffloadFuzzTest()
     BluetoothOffloadState a2dpOffloadFlag = static_cast<BluetoothOffloadState>(GetData<int32_t>() % stateCount);
     AudioDeviceDescriptor deviceDescriptor;
     deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    manager->HandleA2dpDeviceOutOffload(a2dpOffloadFlag);
+    std::vector<int32_t> allRunningSessions = {1};
+    manager->HandleA2dpDeviceOutOffload(a2dpOffloadFlag, allRunningSessions);
 }
 
 void HandleA2dpDeviceInOffloadFuzzTest()
@@ -205,7 +161,8 @@ void HandleA2dpDeviceInOffloadFuzzTest()
     constexpr int32_t a2dpOffloadFlagCount = static_cast<int32_t>(BluetoothOffloadState::A2DP_OFFLOAD) + 1;
     BluetoothOffloadState a2dpOffloadFlag =
         static_cast<BluetoothOffloadState>(GetData<int32_t>() % a2dpOffloadFlagCount);
-    manager->HandleA2dpDeviceInOffload(a2dpOffloadFlag);
+    std::vector<int32_t> allRunningSessions = {1};
+    manager->HandleA2dpDeviceInOffload(a2dpOffloadFlag, allRunningSessions);
 }
 
 void GetA2dpOffloadCodecAndSendToDspFuzzTest()
@@ -216,33 +173,6 @@ void GetA2dpOffloadCodecAndSendToDspFuzzTest()
     deviceDescriptor.deviceType_ = DEVICE_TYPE_SPEAKER;
     manager->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
     manager->GetA2dpOffloadCodecAndSendToDsp();
-}
-
-void FetchStreamForA2dpOffloadFuzzTest()
-{
-    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
-    manager->Init();
-    std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
-    auto changeInfo = std::make_shared<AudioRendererChangeInfo>();
-    constexpr int32_t streamUsageCount = static_cast<int32_t>(StreamUsage::STREAM_USAGE_VOICE_CALL_ASSISTANT) + 1;
-    StreamUsage streamUsage = static_cast<StreamUsage>(GetData<int32_t>() % streamUsageCount - 1);
-    changeInfo->rendererInfo.streamUsage = streamUsage;
-    changeInfo->clientUID = GetData<uint32_t>();
-    changeInfo->rendererInfo.rendererFlags = STREAM_USAGE_UNKNOWN;
-    rendererChangeInfos.push_back(changeInfo);
-    manager->streamCollector_.audioRendererChangeInfos_ = rendererChangeInfos;
-    bool requireReset = GetData<uint32_t>() % NUM_2;
-    manager->FetchStreamForA2dpOffload(requireReset);
-}
-
-void GetVolumeGroupTypeFuzzTest()
-{
-    std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
-    manager->Init();
-    
-    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
-    manager->GetVolumeGroupType(deviceType);
 }
 
 void OnA2dpPlayingStateChangedFuzzTest()
@@ -272,32 +202,14 @@ void IsA2dpOffloadConnectingFuzzTest()
     manager->IsA2dpOffloadConnecting(GetData<uint32_t>());
 }
 
-void HandleActiveDeviceFuzzTest()
-{
-    shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
-    manager->Init();
-    AudioDeviceDescriptor deviceDescriptor;
-    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    deviceDescriptor.deviceType_ = DeviceTypeVec[deviceTypeCount];
-    deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    manager->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
-    manager->audioConfigManager_.isUpdateRouteSupported_ = GetData<uint32_t>() % NUM_2;
-    manager->HandleActiveDevice(deviceDescriptor);
-}
-
-TestFuncs g_testFuncs[TESTSIZE] = {
+TestFuncs g_testFuncs[] = {
     OffloadStartPlayingFuzzTest,
     OffloadStopPlayingFuzzTest,
-    UpdateA2dpOffloadFlagForAllStreamFuzzTest,
-    UpdateA2dpOffloadFlagFuzzTest,
     HandleA2dpDeviceOutOffloadFuzzTest,
     HandleA2dpDeviceInOffloadFuzzTest,
     GetA2dpOffloadCodecAndSendToDspFuzzTest,
-    FetchStreamForA2dpOffloadFuzzTest,
-    GetVolumeGroupTypeFuzzTest,
     OnA2dpPlayingStateChangedFuzzTest,
     IsA2dpOffloadConnectingFuzzTest,
-    HandleActiveDeviceFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

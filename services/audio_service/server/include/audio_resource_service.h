@@ -21,7 +21,9 @@
 #include <memory>
 #include <cstdio>
 #include <thread>
- 
+
+#include "iremote_object.h"
+
 #include "audio_workgroup.h"
 #include "audio_common_log.h"
 #include "audio_stream_info.h"

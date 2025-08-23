@@ -79,8 +79,8 @@ public:
     bool Init(std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler);
     void DeInit(void);
     void InitKVStore();
-    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType) const;
-    int32_t GetMinVolumeLevel(AudioVolumeType volumeType) const;
+    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE) const;
+    int32_t GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE) const;
     bool SetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume vol);
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer);
     void SetSharedAbsVolumeScene(const bool support);
@@ -137,6 +137,11 @@ public:
     void OnTimerExpired();
     bool IsNeedForceControlVolumeType();
     AudioVolumeType GetForceControlVolumeType();
+    int32_t SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree,
+        int32_t zoneId);
+    int32_t GetSystemVolumeDegree(AudioStreamType streamType);
+    int32_t GetMinVolumeDegree(AudioVolumeType volumeType) const;
+    void SendLoudVolumeMode(FunctionHoldType funcHoldType, bool state, bool repeatTrigNotif = false);
 
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -163,6 +168,7 @@ private:
         DeviceType deviceType = DEVICE_TYPE_NONE);
     void PublishSafeVolumeNotification(int32_t notificationId);
     void CancelSafeVolumeNotification(int32_t notificationId);
+    void PublishLoudVolumeNotification(int32_t notificationId);
     bool IsWiredHeadSet(const DeviceType &deviceType);
     void CheckToCloseNotification(AudioStreamType streamType, int32_t volumeLevel);
     bool DeviceIsSupportSafeVolume();
@@ -257,7 +263,7 @@ private:
     AudioVolumeManager &audioVolumeManager_;
     int32_t duration_ = 0;
     int32_t cbId_ = INVALID_CB_ID;
-    std::mutex mtx_;
+    std::mutex monitorMtx_;
 };
 }
 }

@@ -121,7 +121,7 @@ public:
 
     int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method) override;
 
-    int32_t SetDefaultOutputDevice(int32_t defaultOutputDevice) override;
+    int32_t SetDefaultOutputDevice(int32_t defaultOutputDevice, bool skipForce = false) override;
 
     int32_t SetSourceDuration(int64_t duration) override;
 

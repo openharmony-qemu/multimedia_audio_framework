@@ -294,6 +294,15 @@ void AudioPolicyConfigParser::ParseAttributeByName(AttributeInfo &attributeInfo,
         }
     } else if (attributeInfo.name_ == "preload") {
         pipeInfo->preloadAttr_ = AudioDefinitionPolicyUtils::preloadStrToEnum[attributeInfo.value_];
+    } else if (attributeInfo.name_ == "suspend_idle_timeout") {
+        std::string value = attributeInfo.value_;
+        int timeout = 0;
+        auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), timeout);
+        if (ec == std::errc{} && ptr == value.data() + value.size()) {
+            pipeInfo->suspendIdleTimeout_ = static_cast<uint32_t>(timeout);
+        } else {
+            pipeInfo->suspendIdleTimeout_ = DEFAULT_SUSPEND_TIME_IN_MS;
+        }
     }
 }
 
@@ -701,6 +710,7 @@ void AudioPolicyConfigParser::GetCommontAudioModuleInfo(std::shared_ptr<AdapterP
 
     audioModuleInfo.fixedLatency = pipeInfo->paProp_.fixedLatency_;
     audioModuleInfo.renderInIdleState = pipeInfo->paProp_.renderInIdleState_;
+    audioModuleInfo.suspendIdleTimeout = pipeInfo->suspendIdleTimeout_;
 }
 
 std::string AudioPolicyConfigParser::GetAudioModuleInfoName(std::string &pipeInfoName,

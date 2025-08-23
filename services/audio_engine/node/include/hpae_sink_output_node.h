@@ -39,6 +39,7 @@ public:
     virtual bool ResetAll() override;
     void Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override;
     void DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override;
+    void RegisterCurrentDeviceCallback(const std::function<void(bool)> &callback);
     int32_t GetRenderSinkInstance(const std::string &deviceClass, const std::string &deviceNetId);
     int32_t RenderSinkInit(IAudioSinkAttr &attr);
     int32_t RenderSinkDeInit();
@@ -77,6 +78,7 @@ private:
     int32_t syncId_ = -1;
     uint32_t latency_ = 0;
     uint64_t renderFrameTimes_ = 0;
+    HighResolutionTimer periodTimer_;
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer intervalTimer_;
 #endif

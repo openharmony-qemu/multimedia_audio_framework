@@ -131,6 +131,7 @@ void AudioPolicyService::CreateRecoveryThread()
     RecoveryDevicesThread_ = std::make_unique<std::thread>([this] {
         audioRecoveryDevice_.RecoverExcludedOutputDevices();
         audioRecoveryDevice_.RecoveryPreferredDevices();
+        audioBackgroundManager_.RecoryAppState();
     });
     pthread_setname_np(RecoveryDevicesThread_->native_handle(), "APSRecovery");
 }
@@ -368,7 +369,8 @@ void AudioPolicyService::UpdateA2dpOffloadFlagBySpatialService(
 {
     DeviceType spatialDevice = audioDeviceCommon_.GetSpatialDeviceType(macAddress);
     if (audioA2dpOffloadManager_) {
-        audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream(sessionIDToSpatializationEnableMap, spatialDevice);
+        audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForSpatializationChanged(
+            sessionIDToSpatializationEnableMap, spatialDevice);
     }
 }
 
@@ -530,6 +532,7 @@ int32_t AudioPolicyService::GetCurrentCapturerChangeInfos(vector<shared_ptr<Audi
 void AudioPolicyService::UpdateDescWhenNoBTPermission(vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
 {
     for (std::shared_ptr<AudioDeviceDescriptor> &desc : deviceDescs) {
+        CHECK_AND_CONTINUE_LOG(desc != nullptr, "Device is nullptr, continue");
         if ((desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) || (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) {
             std::shared_ptr<AudioDeviceDescriptor> copyDesc = std::make_shared<AudioDeviceDescriptor>(desc);
             copyDesc->deviceName_ = "";
@@ -707,21 +710,6 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
     AudioServerProxy::GetInstance().SetParameterCallbackProxy(object);
 }
 
-int32_t AudioPolicyService::DynamicUnloadModule(const AudioPipeType pipeType)
-{
-    switch (pipeType) {
-        case PIPE_TYPE_OFFLOAD:
-            audioOffloadStream_.DynamicUnloadOffloadModule();
-            break;
-        case PIPE_TYPE_MULTICHANNEL:
-            return audioOffloadStream_.UnloadMchModule();
-        default:
-            AUDIO_WARNING_LOG("not supported for pipe type %{public}d", pipeType);
-            break;
-    }
-    return SUCCESS;
-}
-
 int32_t AudioPolicyService::GetMaxRendererInstances()
 {
     return audioConfigManager_.GetMaxRendererInstances();
@@ -828,28 +816,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::DeviceFi
         deviceDescriptors.push_back(move(tempDec));
     }
     return deviceDescriptors;
-}
-
-int32_t AudioPolicyService::OffloadStartPlaying(const std::vector<int32_t> &sessionIds)
-{
-#ifdef BLUETOOTH_ENABLE
-    if (audioA2dpOffloadManager_) {
-        return audioA2dpOffloadManager_->OffloadStartPlaying(sessionIds);
-    }
-    AUDIO_WARNING_LOG("Null audioA2dpOffloadManager");
-#endif
-    return SUCCESS;
-}
-
-int32_t AudioPolicyService::OffloadStopPlaying(const std::vector<int32_t> &sessionIds)
-{
-#ifdef BLUETOOTH_ENABLE
-    if (audioA2dpOffloadManager_) {
-        return audioA2dpOffloadManager_->OffloadStopPlaying(sessionIds);
-    }
-    AUDIO_WARNING_LOG("Null audioA2dpOffloadManager");
-#endif
-    return SUCCESS;
 }
 
 int32_t AudioPolicyService::OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp)

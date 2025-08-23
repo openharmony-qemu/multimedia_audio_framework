@@ -22,6 +22,30 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
+class DataTransferStateChangeCallbackForMonitorTest : public DataTransferStateChangeCallbackForMonitor {
+public:
+    void OnDataTransferStateChange(const int32_t &pid, const int32_t & callbackId,
+        const AudioRendererDataTransferStateChangeInfo& info) override {}
+    void OnMuteStateChange(const int32_t &pid, const int32_t &callbackId,
+        const int32_t &uid, const uint32_t &sessionId, const bool &isMuted) override;
+
+    int32_t pid_ = 0;
+    int32_t callbackId_ = 0;
+    int32_t uid_ = 0;
+    uint32_t sessionId_ = 0;
+    bool isMuted_ = false;
+};
+
+void DataTransferStateChangeCallbackForMonitorTest::OnMuteStateChange(const int32_t &pid,
+    const int32_t &callbackId, const int32_t &uid, const uint32_t &sessionId, const bool &isMuted)
+{
+    pid_ = pid;
+    callbackId_ = callbackId;
+    uid_ = uid;
+    sessionId_ = sessionId;
+    isMuted_ = isMuted;
+}
+
 class AudioStreamMonitorTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -180,6 +204,87 @@ HWTEST(AudioStreamMonitorTest, UnregisterAudioRendedData_002, TestSize.Level1)
     result =
         AudioStreamMonitor::GetInstance().UnregisterAudioRendererDataTransferStateListener(pid, callbackId);
     EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test UpdateMonitorVolume API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateMonitorVolume_001
+ */
+HWTEST(AudioStreamMonitorTest, UpdateMonitorVolume_001, TestSize.Level1)
+{
+    DataTransferMonitorParam para;
+    para.clientUID = 20002000;
+    AudioStreamMonitor::GetInstance().RegisterAudioRendererDataTransferStateListener(para, 10000, 10000);
+    AudioProcessConfig cfg;
+    cfg.originalSessionId = 0;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    AudioStreamMonitor::GetInstance().AddCheckForMonitor(cfg.originalSessionId, checker);
+    AudioStreamMonitor::GetInstance().UpdateMonitorVolume(0, 0.5f);
+    AudioStreamMonitor::GetInstance().UpdateMonitorVolume(1, 0.5f);
+    AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(0);
+    int32_t size = AudioStreamMonitor::GetInstance().audioStreamCheckers_.size();
+    EXPECT_EQ(size, 0);
+}
+
+/**
+ * @tc.name  : Test OnMuteStateChange API
+ * @tc.type  : FUNC
+ * @tc.number: OnMuteStateChange_001
+ */
+HWTEST(AudioStreamMonitorTest, OnMuteStateChange_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamMonitor> monitor = std::make_shared<AudioStreamMonitor>();
+    DataTransferStateChangeCallbackForMonitorTest *test =
+        new DataTransferStateChangeCallbackForMonitorTest();
+
+    int32_t pid = 1;
+    int32_t callbackId = 1;
+    int32_t uid = 1;
+    uint32_t sessionId = 1;
+    bool isMuted = true;
+    monitor->OnMuteCallback(pid, callbackId, uid, sessionId, isMuted);
+    EXPECT_EQ(test->pid_, 0);
+    EXPECT_EQ(test->callbackId_, 0);
+    EXPECT_EQ(test->uid_, 0);
+    EXPECT_EQ(test->sessionId_, 0);
+    EXPECT_EQ(test->isMuted_, false);
+
+    monitor->SetAudioServerPtr(test);
+    monitor->OnMuteCallback(pid, callbackId, uid, sessionId, isMuted);
+    EXPECT_EQ(test->pid_, pid);
+    EXPECT_EQ(test->callbackId_, callbackId);
+    EXPECT_EQ(test->uid_, uid);
+    EXPECT_EQ(test->sessionId_, sessionId);
+    EXPECT_EQ(test->isMuted_, isMuted);
+    delete test;
+}
+
+/**
+ * @tc.name  : Test GetVolumeBySessionId API
+ * @tc.type  : FUNC
+ * @tc.number: GetVolumeBySessionId_001
+ */
+HWTEST(AudioStreamMonitorTest, GetVolumeBySessionId_001, TestSize.Level1)
+{
+    DataTransferMonitorParam para;
+    para.clientUID = 20002000;
+    AudioStreamMonitor::GetInstance().RegisterAudioRendererDataTransferStateListener(para, 10000, 10000);
+
+    AudioProcessConfig cfg;
+    cfg.originalSessionId = 0;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    AudioStreamMonitor::GetInstance().AddCheckForMonitor(cfg.originalSessionId, checker);
+
+    float volume;
+    int32_t ret;
+    ret = AudioStreamMonitor::GetInstance().GetVolumeBySessionId(0, volume);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = AudioStreamMonitor::GetInstance().GetVolumeBySessionId(1, volume);
+    EXPECT_EQ(ret, ERR_UNKNOWN);
+    AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(0);
+    int32_t size = AudioStreamMonitor::GetInstance().audioStreamCheckers_.size();
+    EXPECT_EQ(size, 0);
 }
 }
 }

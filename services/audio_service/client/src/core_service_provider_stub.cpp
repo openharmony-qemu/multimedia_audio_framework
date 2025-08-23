@@ -19,6 +19,7 @@
 #include "core_service_provider_stub.h"
 #include "audio_service_log.h"
 #include "audio_errors.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -47,11 +48,11 @@ int32_t CoreServiceProviderWrapper::ReloadCaptureSession(uint32_t sessionId, uin
 }
 
 int32_t CoreServiceProviderWrapper::SetDefaultOutputDevice(int32_t defaultOutputDevice,
-    uint32_t sessionID, int32_t streamUsage, bool isRunning)
+    uint32_t sessionID, int32_t streamUsage, bool isRunning, bool skipForce)
 {
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
     return coreServiceWorker_->SetDefaultOutputDevice(static_cast<DeviceType>(defaultOutputDevice), sessionID,
-        static_cast<StreamUsage>(streamUsage), isRunning);
+        static_cast<StreamUsage>(streamUsage), isRunning, skipForce);
 }
 
 int32_t CoreServiceProviderWrapper::GetAdapterNameBySessionId(uint32_t sessionID, std::string& name)
@@ -61,11 +62,11 @@ int32_t CoreServiceProviderWrapper::GetAdapterNameBySessionId(uint32_t sessionID
     return SUCCESS;
 }
 
-int32_t CoreServiceProviderWrapper::GetProcessDeviceInfoBySessionId(
-    uint32_t sessionId, AudioDeviceDescriptor &deviceInfo, bool isReloadProcess)
+int32_t CoreServiceProviderWrapper::GetProcessDeviceInfoBySessionId(uint32_t sessionId,
+    AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, bool isReloadProcess)
 {
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
-    return coreServiceWorker_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, isReloadProcess);
+    return coreServiceWorker_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo, isReloadProcess);
 }
 
 int32_t CoreServiceProviderWrapper::GenerateSessionId(uint32_t &sessionId)
@@ -80,6 +81,21 @@ int32_t CoreServiceProviderWrapper::SetWakeUpAudioCapturerFromAudioServer(
 {
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
     ret = coreServiceWorker_->SetWakeUpAudioCapturerFromAudioServer(config);
+    return SUCCESS;
+}
+
+int32_t CoreServiceProviderWrapper::GetVoiceMuteState(uint32_t sessionId, bool &muteState)
+{
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    coreServiceWorker_->GetVoiceMuteState(sessionId, muteState);
+    return SUCCESS;
+}
+
+int32_t CoreServiceProviderWrapper::RemoveVoiceMuteState(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), AUDIO_PERMISSION_DENIED, "only audio is allowed");
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    coreServiceWorker_->RemoveVoiceMuteState(sessionId);
     return SUCCESS;
 }
 } // namespace AudioStandard

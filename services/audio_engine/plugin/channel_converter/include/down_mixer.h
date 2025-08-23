@@ -56,6 +56,15 @@ private:
     std::vector<std::vector<float>> downMixTable_;
     bool mixLfe_ = true;
     bool isInitialized_ = false;
+
+    uint32_t gSl_ = 6;
+    uint32_t gSr_ = 7;
+    uint32_t gTfl_ = 8;
+    uint32_t gTfr_ = 9;
+    uint32_t gTbl_ = 10;
+    uint32_t gTbr_ = 11;
+    uint32_t gTsl_ = 12;
+    uint32_t gTsr_ = 13;
     bool CheckIsHOA(AudioChannelLayout layout);
     void SetupStereoDmixTable();
     void Setup5Point1DmixTable();

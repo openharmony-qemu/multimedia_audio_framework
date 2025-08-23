@@ -156,19 +156,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, CheckAudioSessionStrategy_001, TestSize.
 }
 
 /**
- * @tc.name  : Test HandleA2dpDeviceInOffload.
- * @tc.number: HandleA2dpDeviceInOffload_001
- * @tc.desc  : Test HandleA2dpDeviceInOffload interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, HandleA2dpDeviceInOffload_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    BluetoothOffloadState a2dpOffloadFlag = A2DP_NOT_OFFLOAD;
-    int32_t ret = server->audioPolicyService_.audioA2dpOffloadManager_->HandleA2dpDeviceInOffload(a2dpOffloadFlag);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
  * @tc.name  : Test WriteAllDeviceSysEvents.
  * @tc.number: WriteAllDeviceSysEvents_001
  * @tc.desc  : Test WriteAllDeviceSysEvents interfaces.
@@ -958,44 +945,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, TriggerAvailableDeviceChangedCallback_00
 }
 
 /**
- * @tc.name  : Test OffloadStartPlaying.
- * @tc.number: OffloadStartPlaying_001
- * @tc.desc  : Test OffloadStartPlaying interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, OffloadStartPlaying_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    std::vector<int32_t> sessionIds = {0};
-    int32_t ret;
-
-    ret = server->audioPolicyService_.OffloadStartPlaying(sessionIds);
-    EXPECT_EQ(ret, SUCCESS);
-
-    sessionIds.clear();
-    ret = server->audioPolicyService_.OffloadStartPlaying(sessionIds);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : Test OffloadStopPlaying.
- * @tc.number: OffloadStopPlaying_001
- * @tc.desc  : Test OffloadStopPlaying interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, OffloadStopPlaying_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    std::vector<int32_t> sessionIds = {0};
-    int32_t ret;
-
-    ret = server->audioPolicyService_.OffloadStopPlaying(sessionIds);
-    EXPECT_EQ(ret, SUCCESS);
-
-    sessionIds.clear();
-    ret = server->audioPolicyService_.OffloadStopPlaying(sessionIds);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
  * @tc.name  : Test OffloadGetRenderPosition.
  * @tc.number: OffloadGetRenderPosition_001
  * @tc.desc  : Test OffloadGetRenderPosition interfaces.
@@ -1235,6 +1184,37 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetSinkPortName_004, TestSize.Level1)
     deviceType = DEVICE_TYPE_HEARING_AID;
     retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
     EXPECT_EQ(HEARING_AID_SPEAKER, retPortName);
+}
+
+/**
+* @tc.name  : Test SetSystemVolumeDegree
+* @tc.number: SetSystemVolumeDegree_001
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, SetSystemVolumeDegree_001, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    ASSERT_TRUE(server != nullptr);
+    int32_t streamType = static_cast<int32_t>(STREAM_MUSIC);
+    int32_t volumeDegree = 44;
+    int32_t ret = server->SetSystemVolumeDegree(streamType, volumeDegree, 0, 0);
+    EXPECT_EQ(ret, SUCCESS);
+
+    int32_t streamType2 = static_cast<int32_t>(STREAM_APP);
+    ret = server->SetSystemVolumeDegree(streamType2, volumeDegree, 0, 0);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+
+    auto &manager = static_cast<AudioAdapterManager &>(server->audioPolicyManager_);
+    manager.isVolumeUnadjustable_ = true;
+    ret = server->SetSystemVolumeDegree(streamType, volumeDegree, 0, 0);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    manager.isVolumeUnadjustable_ = false;
+
+    server->GetSystemVolumeDegree(streamType, 0, ret);
+    EXPECT_EQ(ret, volumeDegree);
+
+    server->GetMinVolumeDegree(streamType, ret);
+    EXPECT_EQ(ret, 0);
 }
 
 } // namespace AudioStandard

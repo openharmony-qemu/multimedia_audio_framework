@@ -74,7 +74,7 @@
             <point idx="100" decibel="-0"/>
         </volumecurve>
     </volume_type>
-    <volume_type type="VOICE_ASSISTANT" minidx="1" maxidx="15" defaultidx="7">
+    <volume_type type="VOICE_ASSISTANT" minidx="0" maxidx="15" defaultidx="7">
         <volumecurve deviceClass="earpiece">
             <point idx="0"   decibel="-2700"/>
             <point idx="33"  decibel="-1800"/>

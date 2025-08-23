@@ -168,7 +168,7 @@ public:
 
     /**
      * @brief Set the mute state of the VoIP ringtone for the specified app.
-     * @param appUid The UID fo the app.
+     * @param appUid The UID of the app.
      * @param muted Set to true to mute the VoIP ringtone, false to unmute.
      * @return Returns {@link SUCCESS} if the app ringtone is set successfully; returns an error code
      * defined in {@link audio_errors.h} otherwise.
@@ -261,6 +261,24 @@ public:
      * @since 8
      */
     int32_t GetMinVolume(AudioVolumeType volumeType);
+
+    /**
+     * @brief get device max stream volume.
+     *
+     * @param volumeType audio volume type.
+     * @param deviceType device type.
+     * @return Returns the maxinum stream volume.
+     */
+    int32_t GetDeviceMaxVolume(AudioVolumeType volumeType, DeviceType deviceType);
+
+    /**
+     * @brief get device min stream volume.
+     *
+     * @param volumeType audio volume type.
+     * @param deviceType device type.
+     * @return Returns the mininum stream volume.
+     */
+    int32_t GetDeviceMinVolume(AudioVolumeType volumeType, DeviceType deviceType);
 
     /**
      * @brief set stream mute.
@@ -714,6 +732,24 @@ public:
         const std::shared_ptr<VolumeKeyEventCallback> &callback = nullptr);
 
     /**
+     * @brief registers the volume degree callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t RegisterVolumeDegreeCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeKeyEventCallback> &callback);
+
+    /**
+     * @brief Unregisters the volumeKeyEvent callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t UnregisterVolumeDegreeCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeKeyEventCallback> &callback = nullptr);
+
+    /**
      * @brief registers the systemVolumeChange callback listener
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
@@ -822,6 +858,27 @@ public:
      * @since 8
      */
     int32_t ActivateAudioInterrupt(AudioInterrupt &audioInterrupt);
+
+    /**
+     * @brief Set App Concurrency Mode
+     *
+     * @param appUid app Uid
+     * @param mode concurrency Mode
+     * @return Returns {@link SUCCESS} if seting is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    int32_t SetAppConcurrencyMode(const int32_t appUid, const int32_t mode);
+
+    /**
+     * @brief Set App Slient On Display
+     *
+     * @param displayId app slient On display id
+     * @return Returns {@link SUCCESS} if seting is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    int32_t SetAppSlientOnDisplay(const int32_t displayId);
 
     /**
      * @brief Deactivactivate audio Interrupt
@@ -1439,6 +1496,16 @@ public:
     * @test
     */
     int32_t ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
+
+    /**
+    * @brief set stream volume by sessionId.
+    *
+    * @param sessionId stream sessionId.
+    * @param volume return stream volume.
+    * @return Returns {@link SUCCESS} if the operation is successfully.
+    * @test
+    */
+    int32_t GetVolumeBySessionId(const uint32_t &sessionId, float &volume);
 
     class WorkgroupPrioRecorder {
     public:

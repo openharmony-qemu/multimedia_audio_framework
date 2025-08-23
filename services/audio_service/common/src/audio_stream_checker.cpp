@@ -17,6 +17,7 @@
 #include "audio_renderer_log.h"
 #include "audio_utils.h"
 #include "audio_stream_monitor.h"
+#include "volume_tools.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -157,9 +158,36 @@ void AudioStreamChecker::CheckStreamThread()
     AUDIO_INFO_LOG("In");
     while (isKeepCheck_.load()) {
         MonitorCheckFrame();
+        CheckVolume();
         ClockTime::RelativeSleep(STREAM_CHECK_INTERVAL_TIME);
     }
     AUDIO_INFO_LOG("Out");
+}
+
+void AudioStreamChecker::CheckVolume()
+{
+    std::lock_guard<std::mutex> lock(volumeLock_);
+    if (VolumeTools::IsZeroVolume(curVolume_) && !VolumeTools::IsZeroVolume(preVolume_)) {
+        AUDIO_INFO_LOG("sessionId %{public}u change to mute", streamConfig_.originalSessionId);
+        std::unique_lock<std::recursive_mutex> lock(checkLock_);
+        for (size_t index = 0; index < checkParaVector_.size(); index++) {
+            AudioStreamMonitor::GetInstance().OnMuteCallback(checkParaVector_[index].pid,
+                checkParaVector_[index].callbackId, streamConfig_.appInfo.appUid,
+                streamConfig_.originalSessionId, true);
+        }
+        lock.unlock();
+    }
+    if (!VolumeTools::IsZeroVolume(curVolume_) && VolumeTools::IsZeroVolume(preVolume_)) {
+        AUDIO_INFO_LOG("sessionId %{public}u change to unmute", streamConfig_.originalSessionId);
+        std::unique_lock<std::recursive_mutex> lock(checkLock_);
+        for (size_t index = 0; index < checkParaVector_.size(); index++) {
+            AudioStreamMonitor::GetInstance().OnMuteCallback(checkParaVector_[index].pid,
+                checkParaVector_[index].callbackId, streamConfig_.appInfo.appUid,
+                streamConfig_.originalSessionId, false);
+        }
+        lock.unlock();
+    }
+    preVolume_ = curVolume_;
 }
 
 void AudioStreamChecker::MonitorCheckFrame()
@@ -386,6 +414,21 @@ void AudioStreamChecker::UpdateAppState(bool isBackground)
         std::lock_guard<std::recursive_mutex> lock(backgroundStateLock_);
         isBackground_ = isBackground;
     }
+}
+
+void AudioStreamChecker::SetVolume(float volume)
+{
+    std::lock_guard<std::mutex> lock(volumeLock_);
+    CHECK_AND_RETURN(curVolume_ != volume);
+    AUDIO_INFO_LOG("sessionId:%{public}u volume change from %{public}f to %{public}f",
+        streamConfig_.originalSessionId, curVolume_, volume);
+    curVolume_ = volume;
+}
+
+float AudioStreamChecker::GetVolume()
+{
+    std::lock_guard<std::mutex> lock(volumeLock_);
+    return curVolume_;
 }
 }
 }

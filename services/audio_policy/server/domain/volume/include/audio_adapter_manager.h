@@ -48,6 +48,7 @@ struct AppConfigVolume {
 };
 
 const int32_t MAX_CACHE_AMOUNT = 10;
+static constexpr int32_t MAX_VOLUME_DEGREE = 100;
 class AudioAdapterManager : public IAudioPolicyInterface {
 public:
     static constexpr std::string_view SPLIT_STREAM_SINK = "libmodule-split-stream-sink.z.so";
@@ -81,9 +82,9 @@ public:
 
     virtual ~AudioAdapterManager() {}
 
-    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType);
+    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
 
-    int32_t GetMinVolumeLevel(AudioVolumeType volumeType);
+    int32_t GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
 
     int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
 
@@ -167,7 +168,7 @@ public:
 
     bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false);
 
-    float CalculateVolumeDb(int32_t volumeLevel);
+    float CalculateVolumeDb(int32_t volumeLevel, int32_t maxDegree = MAX_VOLUME_LEVEL);
 
     int32_t SetSystemSoundUri(const std::string &key, const std::string &uri);
 
@@ -259,6 +260,9 @@ public:
     void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel,
         std::string networkId);
 
+    void HandleSaveVolumeDegree(DeviceType deviceType, AudioStreamType streamType,
+        int32_t volumeDegree, std::string networkId);
+
     void HandleStreamMuteStatus(AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
         const DeviceType &deviceType = DEVICE_TYPE_NONE, std::string networkId = LOCAL_NETWORK_ID);
 
@@ -301,7 +305,12 @@ public:
     void RegisterDoNotDisturbStatusWhiteList();
     int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object);
     void HandleDistributedDeviceVolume();
+    void SetSleVoiceStatusFlag(bool isSleVoiceStatus);
 
+    int32_t SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree);
+    int32_t GetSystemVolumeDegree(AudioStreamType streamType);
+    int32_t GetMinVolumeDegree(AudioVolumeType volumeType);
+    void SendLoudVolumeModeToDsp(FunctionHoldType funcHoldType, bool state);
 private:
     friend class PolicyCallbackImpl;
 
@@ -405,6 +414,7 @@ private:
     static void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args);
     void UpdateVolumeForLowLatency();
     bool IsDistributedVolumeType(AudioStreamType streamType);
+    void GetHdiSourceTypeToAudioSourceAttr(IAudioSourceAttr &attr, int32_t sourceType) const;
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
@@ -458,6 +468,7 @@ private:
     bool isVolumeUnadjustable_ = false;
     bool testModeOn_ {false};
     std::atomic<float> getSystemVolumeInDb_  {0.0f};
+    std::atomic<bool> isSleVoiceStatus_ {false};
     bool useNonlinearAlgo_ = false;
     bool isAbsVolumeScene_ = false;
     bool isAbsVolumeMute_ = false;

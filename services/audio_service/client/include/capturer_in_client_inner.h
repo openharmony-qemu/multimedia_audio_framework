@@ -194,12 +194,10 @@ public:
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
 
-    bool RestoreAudioStream(bool needStoreState = true) override;
-
     bool GetOffloadEnable() override;
     bool GetSpatializationEnabled() override;
     bool GetHighResolutionEnabled() override;
-    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce = false) override;
     DeviceType GetDefaultOutputDevice() override;
     FastStatus GetFastStatus() override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
@@ -208,8 +206,11 @@ public:
     void SetRestoreInfo(RestoreInfo &restoreInfo) override;
     RestoreStatus CheckRestoreStatus() override;
     RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
-    void SetSwitchInfoTimestamp(std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair) override;
+    void SetSwitchInfoTimestamp(std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair,
+        std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePairWithSpeed) override;
     void FetchDeviceForSplitStream() override;
+
+    bool RestoreAudioStream(bool needStoreState = true) override;
 
     void SetCallStartByUserTid(pid_t tid) override;
     void SetCallbackLoopTid(int32_t tid) override;
@@ -245,6 +246,7 @@ private:
     int32_t UnregisterCapturerInClientPolicyServerDiedCb();
     void ResetCallbackLoopTid();
     bool GetAudioTimeInner(Timestamp &timestamp, Timestamp::Timestampbase base, int64_t latency);
+
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
@@ -305,10 +307,6 @@ private:
 
     Operation notifiedOperation_ = MAX_OPERATION_CODE;
     int64_t notifiedResult_ = 0;
-
-    // read data
-    std::mutex readDataMutex_;
-    std::condition_variable readDataCV_;
 
     uint32_t overflowCount_ = 0;
     // ipc stream related

@@ -45,7 +45,6 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 17;
 static int32_t NUM_2 = 2;
 
 typedef void (*TestFuncs)();
@@ -231,18 +230,6 @@ void SetCallDeviceActiveFuzzTest()
     }
 }
 
-void CheckActiveOutputDeviceSupportOffloadFuzzTest()
-{
-    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
-    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
-    uint32_t roleCount = GetData<uint32_t>() % DeviceRoleVec.size();
-    DeviceRole role = DeviceRoleVec[roleCount];
-    AudioDeviceDescriptor audioDeviceDescriptor(deviceType, role);
-    audioActiveDevice->SetCurrentOutputDevice(audioDeviceDescriptor);
-    audioActiveDevice->CheckActiveOutputDeviceSupportOffload();
-}
-
 void IsDirectSupportedDeviceFuzzTest()
 {
     auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
@@ -358,7 +345,34 @@ void AudioActiveDeviceIsDeviceInVectorFuzzTest()
     audioActiveDevice->IsDeviceInVector(desc, descs);
 }
 
-TestFuncs g_testFuncs[TESTSIZE] = {
+void AudioDeviceDescriptorSetClientInfoFuzzTest()
+{
+    AudioDeviceDescriptor deviceDescriptor;
+    AudioDeviceDescriptor::ClientInfo clientInfo;
+    deviceDescriptor.GetDeviceCategory();
+    deviceDescriptor.SetClientInfo(clientInfo);
+}
+
+void AudioDeviceDescriptorFixApiCompatibilityFuzzTest()
+{
+    AudioDeviceDescriptor deviceDescriptor;
+    int apiVersion = GetData<int>();
+    DeviceRole deviceRole = GetData<DeviceRole>();
+    DeviceType deviceType = GetData<DeviceType>();
+    int32_t deviceId = GetData<int32_t>();
+    DeviceStreamInfo streamInfo;
+    std::list<DeviceStreamInfo> streamInfos;
+    streamInfos.push_back(streamInfo);
+    deviceDescriptor.FixApiCompatibility(apiVersion, deviceRole, deviceType, deviceId, streamInfos);
+}
+
+void AudioDeviceDescriptorGetKeyFuzzTest()
+{
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.GetKey();
+}
+
+TestFuncs g_testFuncs[] = {
     GetActiveA2dpDeviceStreamInfoFuzzTest,
     GetMaxAmplitudeFuzzTest,
     UpdateDeviceFuzzTest,
@@ -366,7 +380,6 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     HandleNegtiveBtFuzzTest,
     SetDeviceActiveFuzzTest,
     SetCallDeviceActiveFuzzTest,
-    CheckActiveOutputDeviceSupportOffloadFuzzTest,
     IsDirectSupportedDeviceFuzzTest,
     IsDeviceActiveFuzzTest,
     AudioActiveDeviceGetCurrentOutputDeviceCategoryFuzzTest,
@@ -376,6 +389,9 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     AudioActiveDeviceSetDeviceActiveFuzzTest,
     AudioActiveDeviceSetCallDeviceActiveFuzzTest,
     AudioActiveDeviceIsDeviceInVectorFuzzTest,
+    AudioDeviceDescriptorSetClientInfoFuzzTest,
+    AudioDeviceDescriptorFixApiCompatibilityFuzzTest,
+    AudioDeviceDescriptorGetKeyFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

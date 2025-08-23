@@ -264,7 +264,12 @@ public:
     int32_t UnregisterDataTransferMonitorParam(int32_t callbackId) override;
     void OnDataTransferStateChange(const int32_t &pid, const int32_t &callbackId,
         const AudioRendererDataTransferStateChangeInfo &info) override;
+    void OnMuteStateChange(const int32_t &pid, const int32_t &callbackId,
+        const int32_t &uid, const uint32_t &sessionId, const bool &isMuted) override;
     int32_t SetBtHdiInvalidState() override;
+    int32_t SendInterruptEventToAudioServer(uint32_t sessionId,
+        const InterruptEventInternal &interruptEvent) override;
+    int32_t GetVolumeBySessionId(uint32_t sessionId, float &volume) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
@@ -413,6 +418,8 @@ public:
     virtual ~DataTransferStateChangeCallbackInnerImpl() = default;
     void OnDataTransferStateChange(const int32_t &callbackId,
         const AudioRendererDataTransferStateChangeInfo &info) override;
+    void OnMuteStateChange(const int32_t &callbackId, const int32_t &uid,
+        const uint32_t &sessionId, const bool &isMuted) override {}
     void SetDataTransferMonitorParam(const DataTransferMonitorParam &param);
 private:
     void ReportEvent(const AudioRendererDataTransferStateChangeInfo &info);

@@ -493,7 +493,7 @@ public:
         return reason_ == ExtEnum::OVERRODE;
     }
 
-    bool isSetAudioScene() const
+    bool IsSetAudioScene() const
     {
         return reason_ == ExtEnum::SET_AUDIO_SCENE;
     }

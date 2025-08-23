@@ -85,6 +85,7 @@ private:
     // low latency
     int32_t PrepareMmapBuffer(void);
     int32_t CheckPositionTime(void);
+    int32_t StopInner();
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;

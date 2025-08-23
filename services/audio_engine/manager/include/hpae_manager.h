@@ -104,6 +104,7 @@ public:
     int32_t GetMsgCount();
 
     void Invoke(HpaeMsgCode cmdID, const std::any &args) override;
+    void InvokeSync(HpaeMsgCode cmdID, const std::any &args) override;
     // play and record stream interface
     int32_t CreateStream(const HpaeStreamInfo &streamInfo) override;
     int32_t DestroyStream(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
@@ -181,6 +182,8 @@ public:
     bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) override;
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
+    void AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume) override;
+    void DeleteStreamVolumeToEffect(const std::string stringSessionID) override;
 private:
     int32_t CloseOutAudioPort(std::string sinkName);
     int32_t CloseInAudioPort(std::string sourceName);

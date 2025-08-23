@@ -216,7 +216,8 @@ HWTEST_F(AudioCoreServiceUnitTest, GetProcessDeviceInfoBySessionId_001, TestSize
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest GetProcessDeviceInfoBySessionId_001 start");
     uint32_t sessionID = 100001; // sessionId
     AudioDeviceDescriptor deviceDesc;
-    auto result = GetServerPtr()->eventEntry_->GetProcessDeviceInfoBySessionId(sessionID, deviceDesc);
+    AudioStreamInfo info;
+    auto result = GetServerPtr()->eventEntry_->GetProcessDeviceInfoBySessionId(sessionID, deviceDesc, info);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -818,6 +819,34 @@ HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportMultiChannel_002, TestSize.Lev
 
 /**
  * @tc.name   : Test AudioCoreServiceUnit
+ * @tc.number : UpdatePlaybackStreamFlag_001
+ * @tc.desc   : Test UpdatePlaybackStreamFlag interface - when streamDesc is null, return flag normal.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, UpdatePlaybackStreamFlag_001, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, GetServerPtr());
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_FORCED_NORMAL;
+
+    bool isCreateProcess = true;
+    GetServerPtr()->coreService_->UpdatePlaybackStreamFlag(streamDesc, isCreateProcess);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+
+    streamDesc->rendererInfo_.forceToNormal = true;
+    GetServerPtr()->coreService_->UpdatePlaybackStreamFlag(streamDesc, isCreateProcess);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+
+    isCreateProcess = false;
+    GetServerPtr()->coreService_->UpdatePlaybackStreamFlag(streamDesc, isCreateProcess);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+
+    streamDesc->rendererInfo_.forceToNormal = false;
+    GetServerPtr()->coreService_->UpdatePlaybackStreamFlag(streamDesc, isCreateProcess);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+}
+
+/**
+ * @tc.name   : Test AudioCoreServiceUnit
  * @tc.number : SetFlagForSpecialStream_001
  * @tc.desc   : Test SetFlagForSpecialStream interface - when streamDesc is null, return flag normal.
  */
@@ -1303,6 +1332,29 @@ HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_006, TestSize.Level1)
     EXPECT_EQ(audioCoreService->audioVolumeManager_.IsAppRingMuted(appUid), true);
     audioCoreService->audioVolumeManager_.SetAppRingMuted(appUid, false);
     audioVolume->streamVolume_.clear();
+}
+
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: SetFlagForMmapStream_001
+* @tc.desc  : Test SetFlagForMmapStream() when device type is DEVICE_TYPE_BLUETOOTH_A2DP
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetFlagForMmapStream_001, TestSize.Level4)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest CreateRenderClient_001 start");
+
+    ASSERT_NE(nullptr, GetServerPtr());
+    auto coreService_ = GetServerPtr()->coreService_;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(nullptr, streamDesc);
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    ASSERT_NE(nullptr, deviceDesc);
+
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    auto ret = coreService_->SetFlagForMmapStream(streamDesc);
+    EXPECT_EQ(AUDIO_OUTPUT_FLAG_FAST, ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

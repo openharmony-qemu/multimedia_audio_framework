@@ -56,7 +56,6 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 14;
 
 typedef void (*TestFuncs)();
 
@@ -107,7 +106,7 @@ void UnmarshallingFuzzTest()
     }
     Parcel parcel;
     streamDesc->Marshalling(parcel);
-    streamDesc->Unmarshalling(parcel);
+    std::shared_ptr<AudioStreamDescriptor> filter(AudioStreamDescriptor::Unmarshalling(parcel));
 }
 
 void WriteDeviceDescVectorToParcelFuzzTest()
@@ -248,7 +247,7 @@ void GetNewDevicesInfoFuzzTest()
     streamDesc->GetNewDevicesInfo();
 }
 
-TestFuncs g_testFuncs[TESTSIZE] = {
+TestFuncs g_testFuncs[] = {
     MarshallingFuzzTest,
     UnmarshallingFuzzTest,
     WriteDeviceDescVectorToParcelFuzzTest,

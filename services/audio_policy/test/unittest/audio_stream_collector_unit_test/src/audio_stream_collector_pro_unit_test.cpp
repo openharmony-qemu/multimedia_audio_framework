@@ -1069,5 +1069,94 @@ HWTEST_F(AudioStreamCollectorUnitTest, HandleStartStreamMuteState_004, TestSize.
     collector.HandleStartStreamMuteState(uid, pid, false, false);
     EXPECT_FALSE(rendererChangeInfo2->backMute);
 }
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: ExistStreamForPipe_001
+* @tc.desc  : Test ExistStreamForPipe.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, ExistStreamForPipe_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    AudioPipeType pipeType = AudioPipeType::PIPE_TYPE_UNKNOWN;
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+
+    rendererChangeInfo->createrUID = 1001;
+    rendererChangeInfo->clientUID = 2001;
+    rendererChangeInfo->rendererInfo.pipeType = AudioPipeType::PIPE_TYPE_MULTICHANNEL;
+    collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+    bool result = collector.ExistStreamForPipe(pipeType);
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: IsTransparentCapture_002
+* @tc.desc  : Test IsTransparentCapture.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, IsTransparentCapture_002, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+
+    uint32_t clientUid = 5000 - 10;
+    bool ret = collector.IsTransparentCapture(clientUid);
+    EXPECT_EQ(false, ret);
+
+    clientUid = 5000;
+    ret = collector.IsTransparentCapture(clientUid);
+    EXPECT_EQ(true, ret);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: ResetCapturerStreamDeviceInfo_001
+* @tc.desc  : Test ResetCapturerStreamDeviceInfo.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, ResetCapturerStreamDeviceInfo_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    AudioDeviceDescriptor updataDesc(AudioDeviceDescriptor::DEVICE_INFO);
+    updataDesc.deviceType_ = DEVICE_TYPE_EARPIECE;
+    updataDesc.macAddress_ = "12345";
+    updataDesc.networkId_ = "12345";
+
+    shared_ptr<AudioCapturerChangeInfo> rendererChangeInfo = make_shared<AudioCapturerChangeInfo>();
+
+    (rendererChangeInfo->inputDeviceInfo).deviceType_ = DEVICE_TYPE_EARPIECE;
+    (rendererChangeInfo->inputDeviceInfo).macAddress_ = "12345";
+    (rendererChangeInfo->inputDeviceInfo).networkId_ = "12345";
+    rendererChangeInfo->capturerState = CAPTURER_STOPPED;
+    collector.audioCapturerChangeInfos_.push_back(move(rendererChangeInfo));
+
+    EXPECT_NO_THROW(
+        collector.ResetCapturerStreamDeviceInfo(updataDesc);
+    );
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: ResetRendererStreamDeviceInfo_001
+* @tc.desc  : Test ResetRendererStreamDeviceInfo.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, ResetRendererStreamDeviceInfo_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    AudioDeviceDescriptor updataDesc(AudioDeviceDescriptor::DEVICE_INFO);
+    updataDesc.deviceType_ = DEVICE_TYPE_EARPIECE;
+    updataDesc.macAddress_ = "12345";
+    updataDesc.networkId_ = "12345";
+
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+
+    (rendererChangeInfo->outputDeviceInfo).deviceType_ = DEVICE_TYPE_EARPIECE;
+    (rendererChangeInfo->outputDeviceInfo).macAddress_ = "12345";
+    (rendererChangeInfo->outputDeviceInfo).networkId_ = "12345";
+    rendererChangeInfo->rendererState = RENDERER_STOPPED;
+    collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+
+    EXPECT_NO_THROW(
+        collector.ResetRendererStreamDeviceInfo(updataDesc);
+    );
+}
 } // namespace AudioStandard
 } // namespace OHOS

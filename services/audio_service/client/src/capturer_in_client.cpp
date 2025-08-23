@@ -95,14 +95,12 @@ int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t r
     if (operation == UPDATE_STREAM) {
         AUDIO_DEBUG_LOG("OnOperationHandled() UPDATE_STREAM result:%{public}" PRId64".", result);
         // notify write if blocked
-        readDataCV_.notify_all();
         return SUCCESS;
     }
 
     if (operation == BUFFER_OVERFLOW) {
         AUDIO_WARNING_LOG("recv overflow %{public}d", overflowCount_);
         // in plan next: do more to reduce overflow
-        readDataCV_.notify_all();
         return SUCCESS;
     }
 
@@ -631,9 +629,11 @@ bool CapturerInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
 }
 
 void CapturerInClientInner::SetSwitchInfoTimestamp(
-    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair)
+    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair,
+    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePairWithSpeed)
 {
     (void)lastFramePosAndTimePair;
+    (void)lastFramePosAndTimePairWithSpeed;
     AUDIO_INFO_LOG("capturer stream not support timestamp re-set when stream switching");
 }
 
@@ -1222,7 +1222,7 @@ bool CapturerInClientInner::StopAudioStream()
 
     if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
         state_ = STOPPING;
-        readDataCV_.notify_all();
+        clientBuffer_->WakeFutex();
         AUDIO_INFO_LOG("Stop begin in callback mode sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
     }
 
@@ -1284,7 +1284,7 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
             cbBufferQueue_.PushNoWait({nullptr, 0, 0});
         }
         cbThreadCv_.notify_all();
-        readDataCV_.notify_all();
+        clientBuffer_->WakeFutex();
         if (callbackLoop_.joinable()) {
             callbackLoop_.join();
         }
@@ -1432,19 +1432,19 @@ int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &user
             BufferWrap bufferWrap = {currentOHBuffer_.buffer, clientSpanSizeInByte_};
             ringCache_->Enqueue(bufferWrap);
             memset_s(static_cast<void *>(bufferWrap.dataPtr), bufferWrap.dataSize, 0, bufferWrap.dataSize);
-            clientBuffer_->SetCurReadFrame(clientBuffer_->GetCurReadFrame() + spanSizeInFrame_);
+            clientBuffer_->SetCurReadFrame((clientBuffer_->GetCurReadFrame() + spanSizeInFrame_), false);
         } else {
             if (!isBlockingRead) {
                 return readSize; // Return buffer immediately
             }
             // wait for server read some data
-            std::unique_lock<std::mutex> readLock(readDataMutex_);
-            bool isTimeout = !readDataCV_.wait_for(readLock,
-                std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-                    return clientBuffer_->GetCurWriteFrame() > clientBuffer_->GetCurReadFrame() || state_ != RUNNING;
+            constexpr auto timeoutInNano = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS)).count();
+            FutexCode futexRet = clientBuffer_->WaitFor(timeoutInNano, [this] {
+                return clientBuffer_->GetCurWriteFrame() > clientBuffer_->GetCurReadFrame() || state_ != RUNNING;
             });
             CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "State is not running");
-            CHECK_AND_RETURN_RET_LOG(isTimeout == false, ERROR, "Wait timeout");
+            CHECK_AND_RETURN_RET_LOG(futexRet == FUTEX_SUCCESS, ERROR, "Wait timeout or breaked:%{public}d", futexRet);
         }
     }
     return readSize;
@@ -1772,9 +1772,10 @@ void CapturerInClientInner::JoinCallbackLoop()
     AUDIO_INFO_LOG("Not Support");
 }
 
-int32_t CapturerInClientInner::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+int32_t CapturerInClientInner::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce)
 {
     (void)defaultOutputDevice;
+    (void)skipForce;
     AUDIO_WARNING_LOG("not supported in capturer");
     return ERROR;
 }

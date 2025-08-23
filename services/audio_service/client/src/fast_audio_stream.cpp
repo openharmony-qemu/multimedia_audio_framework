@@ -288,9 +288,11 @@ bool FastAudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbas
 }
 
 void FastAudioStream::SetSwitchInfoTimestamp(
-    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair)
+    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair,
+    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePairWithSpeed)
 {
     (void)lastFramePosAndTimePair;
+    (void)lastFramePosAndTimePairWithSpeed;
     AUDIO_INFO_LOG("fast stream not support timestamp re-set when stream switching");
 }
 
@@ -1117,10 +1119,10 @@ bool FastAudioStream::GetHighResolutionEnabled()
     return false;
 }
 
-int32_t FastAudioStream::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+int32_t FastAudioStream::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce)
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "set failed: null process");
-    int32_t ret = processClient_->SetDefaultOutputDevice(defaultOutputDevice);
+    int32_t ret = processClient_->SetDefaultOutputDevice(defaultOutputDevice, skipForce);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDefaultOutputDevice error.");
     defaultOutputDevice_ = defaultOutputDevice;
     return SUCCESS;

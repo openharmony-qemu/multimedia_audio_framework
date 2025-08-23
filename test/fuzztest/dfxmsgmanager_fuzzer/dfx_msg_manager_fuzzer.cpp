@@ -43,7 +43,6 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 15;
 const int32_t COUNT = 100;
 const int32_t NUM_2 = 2;
 

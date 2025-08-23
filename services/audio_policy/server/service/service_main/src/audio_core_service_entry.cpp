@@ -121,15 +121,15 @@ std::string AudioCoreService::EventEntry::GetAdapterNameBySessionId(uint32_t ses
     return coreService_->GetAdapterNameBySessionId(sessionId);
 }
 
-int32_t AudioCoreService::EventEntry::GetProcessDeviceInfoBySessionId(
-    uint32_t sessionId, AudioDeviceDescriptor &deviceInfo, bool isReloadProcess)
+int32_t AudioCoreService::EventEntry::GetProcessDeviceInfoBySessionId(uint32_t sessionId,
+    AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, bool isReloadProcess)
 {
     if (isReloadProcess) {
         // Get process from reload does not require lock
-        return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo);
+        return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo);
     }
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo);
+    return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo);
 }
 
 uint32_t AudioCoreService::EventEntry::GenerateSessionId()
@@ -137,13 +137,23 @@ uint32_t AudioCoreService::EventEntry::GenerateSessionId()
     return coreService_->GenerateSessionId();
 }
 
+void AudioCoreService::EventEntry::GetVoiceMuteState(uint32_t sessionId, bool &muteState)
+{
+    return coreService_->GetVoiceMuteState(sessionId, muteState);
+}
+
+void AudioCoreService::EventEntry::RemoveVoiceMuteState(uint32_t sessionId)
+{
+    return coreService_->RemoveVoiceMuteState(sessionId);
+}
+
 int32_t AudioCoreService::EventEntry::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
-    const StreamUsage streamUsage, bool isRunning)
+    const StreamUsage streamUsage, bool isRunning, bool skipForce)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     AUDIO_INFO_LOG("withlock device %{public}d, sessionId %{public}u, streamUsage %{public}d, running %{public}d",
         deviceType, sessionID, streamUsage, isRunning);
-    int32_t ret = coreService_->SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
+    int32_t ret = coreService_->SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning, skipForce);
     return ret;
 }
 
@@ -297,6 +307,13 @@ int32_t AudioCoreService::EventEntry::FetchOutputDeviceAndRoute(std::string call
     return coreService_->FetchOutputDeviceAndRoute(caller, reason);
 }
 
+int32_t AudioCoreService::EventEntry::FetchInputDeviceAndRoute(std::string caller)
+{
+    CHECK_AND_RETURN_RET(coreService_ != nullptr, ERR_UNKNOWN);
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->FetchInputDeviceAndRoute(caller);
+}
+
 std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::EventEntry::GetActiveBluetoothDevice()
 {
     std::shared_lock<std::shared_mutex> lock(eventMutex_);
@@ -321,12 +338,6 @@ int32_t AudioCoreService::EventEntry::SetCallDeviceActive(
         deviceType, active, uid);
     coreService_->SetCallDeviceActive(deviceType, active, address, uid);
     return SUCCESS;
-}
-
-std::vector<shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry::GetAvailableDevices(AudioDeviceUsage usage)
-{
-    std::shared_lock<std::shared_mutex> lock(eventMutex_);
-    return coreService_->GetAvailableDevices(usage);
 }
 
 int32_t AudioCoreService::EventEntry::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
@@ -373,10 +384,11 @@ vector<sptr<MicrophoneDescriptor>> AudioCoreService::EventEntry::GetAudioCapture
     return coreService_->GetAudioCapturerMicrophoneDescriptors(sessionId);
 }
 
-void AudioCoreService::EventEntry::OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName)
+void AudioCoreService::EventEntry::OnReceiveUpdateDeviceNameEvent(const std::string macAddress,
+    const std::string deviceName)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    coreService_->OnReceiveBluetoothEvent(macAddress, deviceName);
+    coreService_->OnReceiveUpdateDeviceNameEvent(macAddress, deviceName);
 }
 
 int32_t AudioCoreService::EventEntry::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,

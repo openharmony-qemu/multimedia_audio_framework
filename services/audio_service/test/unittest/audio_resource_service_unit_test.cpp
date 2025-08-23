@@ -55,6 +55,8 @@ void AudioResourceServiceUnitTest::TearDown(void)
 AudioResourceService::AudioWorkgroupDeathRecipient deathRecipient;
 AudioResourceService audioResourceService;
 const int32_t testRtgId = 2;
+static constexpr int32_t AUDIO_MAX_PROCESS = 2;
+static constexpr int32_t AUDIO_MAX_GRP_PER_PROCESS = 4;
 
 class RemoteObjectTestStub : public IRemoteObject {
 public:
@@ -65,6 +67,11 @@ public:
     bool RemoveDeathRecipient(const sptr<DeathRecipient> &recipient) { return true; };
     int Dump(int fd, const std::vector<std::u16string> &args) { return 0; };
     DECLARE_INTERFACE_DESCRIPTOR(u"RemoteObjectTestStub");
+};
+
+class DummyAudioWorkgroup : public AudioWorkgroup {
+public:
+    explicit DummyAudioWorkgroup(int32_t groupId) : AudioWorkgroup(groupId) {}
 };
 
 /**
@@ -259,7 +266,7 @@ HWTEST(AudioResourceServiceUnitTest, RestoreAudioWorkgroupPrio_002, TestSize.Lev
  * @tc.name  : Test AudioWorkgroupCheck
  * @tc.type  : FUNC
  * @tc.number: AudioWorkgroupCheck
- * @tc.desc  : Test ReleaseWorkgroupDeathRecipient when find workgroup
+ * @tc.desc  : Test AudioWorkgroupCheck method with invalid and valid pid
  */
 HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_001, TestSize.Level0)
 {
@@ -276,7 +283,7 @@ HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_001, TestSize.Level0)
  * @tc.name  : Test ReleaseAudioWorkgroup
  * @tc.type  : FUNC
  * @tc.number: ReleaseAudioWorkgroup
- * @tc.desc  : Test ReleaseWorkgroupDeathRecipient when find workgroup
+ * @tc.desc  : Test ReleaseAudioWorkgroup method with invalid and valid pid
  */
 HWTEST(AudioResourceServiceUnitTest, ReleaseAudioWorkgroup_001, TestSize.Level0)
 {
@@ -415,6 +422,488 @@ HWTEST(AudioResourceServiceUnitTest, StopGroup_001, TestSize.Level0)
 {
     int32_t ret = audioResourceService.StopGroup(123, 456);
     EXPECT_NE(ret, 0);
+}
+
+/**
+ * @tc.name  : StopGroup
+ * @tc.type  : FUNC
+ * @tc.number: StopGroup_002
+ * @tc.desc  : Test that StopGroup executes Stop when group exists.
+ */
+HWTEST(AudioResourceServiceUnitTest, StopGroup_002, TestSize.Level1)
+{
+    AudioResourceService* service = AudioResourceService::GetInstance();
+    int32_t pid = 55;
+    int32_t groupId = 66;
+ 
+    std::shared_ptr<AudioWorkgroup> workgroupPtr = std::make_shared<AudioWorkgroup>(groupId);
+    service->audioWorkgroupMap_[pid].groups[groupId] = workgroupPtr;
+ 
+    int32_t ret = service->StopGroup(pid, groupId);
+ 
+    EXPECT_EQ(ret, AUDIO_ERR);
+}
+
+/**
+ * @tc.name  : Test IsProcessHasSystemPermission
+ * @tc.type  : FUNC
+ * @tc.number: IsProcessHasSystemPermission_001
+ * @tc.desc  : Test IsProcessHasSystemPermission when find workgroup
+ */
+HWTEST(AudioResourceServiceUnitTest, IsProcessHasSystemPermission_001, TestSize.Level0)
+{
+    int32_t pid = 123;
+    audioResourceService.audioWorkgroupMap_[pid].hasSystemPermission = true;
+    EXPECT_TRUE(audioResourceService.IsProcessHasSystemPermission(pid));
+}
+
+/**
+ * @tc.name  : Test IsProcessHasSystemPermission
+ * @tc.type  : FUNC
+ * @tc.number: IsProcessHasSystemPermission_002
+ * @tc.desc  : Test IsProcessHasSystemPermission when find workgroup
+ */
+HWTEST(AudioResourceServiceUnitTest, IsProcessHasSystemPermission_002, TestSize.Level0)
+{
+    int32_t pid = 123;
+    audioResourceService.audioWorkgroupMap_[pid].hasSystemPermission = false;
+    EXPECT_FALSE(audioResourceService.IsProcessHasSystemPermission(pid));
+}
+
+/**
+ * @tc.name  : Test RegisterAudioWorkgroupMonitor
+ * @tc.type  : FUNC
+ * @tc.number: RegisterAudioWorkgroupMonitor_002
+ * @tc.desc  : Test RegisterAudioWorkgroupMonitor when find workgroup
+ */
+HWTEST(AudioResourceServiceUnitTest, RegisterAudioWorkgroupMonitor_002, TestSize.Level0)
+{
+    int32_t pid = 1;
+    int32_t groupId = 1;
+    sptr<IRemoteObject> remoteObj = new RemoteObjectTestStub();
+    EXPECT_NE(audioResourceService.RegisterAudioWorkgroupMonitor(pid, groupId, remoteObj), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test RegisterAudioWorkgroupMonitor
+ * @tc.type  : FUNC
+ * @tc.number: RegisterAudioWorkgroupMonitor_003
+ * @tc.desc  : Test RegisterAudioWorkgroupMonitor when find workgroup
+ */
+HWTEST(AudioResourceServiceUnitTest, RegisterAudioWorkgroupMonitor_003, TestSize.Level0)
+{
+    int32_t pid = 1;
+    int32_t groupId = 1;
+    sptr<IRemoteObject> object = nullptr;
+    EXPECT_EQ(audioResourceService.RegisterAudioWorkgroupMonitor(pid, groupId, object), ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test RegisterAudioWorkgroupMonitor
+ * @tc.type  : FUNC
+ * @tc.number: RegisterAudioWorkgroupMonitor_004
+ * @tc.desc  : Test RegisterAudioWorkgroupMonitor when find workgroup
+ */
+HWTEST(AudioResourceServiceUnitTest, RegisterAudioWorkgroupMonitor_004, TestSize.Level0)
+{
+    int32_t pid = 1;
+    int32_t groupId = 1;
+    sptr<IRemoteObject> remoteObj = new RemoteObjectTestStub();
+    audioResourceService.audioWorkgroupMap_[pid].hasSystemPermission = false;
+    EXPECT_EQ(audioResourceService.RegisterAudioWorkgroupMonitor(pid, groupId, remoteObj), ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test RegisterAudioWorkgroupMonitor
+ * @tc.type  : FUNC
+ * @tc.number: RegisterAudioWorkgroupMonitor_005
+ * @tc.desc  : Test RegisterAudioWorkgroupMonitor when find workgroup
+ */
+HWTEST(AudioResourceServiceUnitTest, RegisterAudioWorkgroupMonitor_005, TestSize.Level0)
+{
+    int32_t pid = 1;
+    int32_t groupId = 1;
+    sptr<IRemoteObject> remoteObj = new RemoteObjectTestStub();
+    std::shared_ptr<AudioWorkgroup> workgroup = std::make_shared<AudioWorkgroup>(testRtgId);
+    audioResourceService.audioWorkgroupMap_[pid].hasSystemPermission = false;
+    audioResourceService.audioWorkgroupMap_[1].groups[testRtgId] = {workgroup};
+    EXPECT_NE(audioResourceService.RegisterAudioWorkgroupMonitor(pid, groupId, remoteObj), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test StartGroup
+ * @tc.type  : FUNC
+ * @tc.number: StartGroup_001
+ * @tc.desc  : Test StartGroup when find workgroup
+ */
+HWTEST(AudioResourceServiceUnitTest, StartGroup_001, TestSize.Level0)
+{
+    int32_t pid = 1;
+    int32_t workgroupId = 1;
+    uint64_t startTime = 1000;
+    uint64_t deadlineTime = 2000;
+
+    int32_t ret = audioResourceService.StartGroup(pid, workgroupId, startTime, deadlineTime);
+
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : StartGroup
+ * @tc.type  : FUNC
+ * @tc.number: StartGroup_002
+ * @tc.desc  : Test that StartGroup executes Start when group exists.
+ */
+HWTEST(AudioResourceServiceUnitTest, StartGroup_002, TestSize.Level1)
+{
+    AudioResourceService* service = AudioResourceService::GetInstance();
+    int32_t pid = 101;
+    int32_t groupId = 202;
+    uint64_t startTime = 1000;
+    uint64_t deadlineTime = 2000;
+ 
+    std::shared_ptr<AudioWorkgroup> workgroupPtr = std::make_shared<AudioWorkgroup>(groupId);
+    service->audioWorkgroupMap_[pid].groups[groupId] = workgroupPtr;
+ 
+    int32_t ret = service->StartGroup(pid, groupId, startTime, deadlineTime);
+ 
+    EXPECT_EQ(ret, AUDIO_ERR);
+}
+
+/**
+ * @tc.name  : Test RemoveThreadFromGroup
+ * @tc.type  : FUNC
+ * @tc.number: RemoveThreadFromGroup_001
+ * @tc.desc  : Test RemoveThreadFromGroup when find workgroup
+ */
+HWTEST(AudioResourceServiceUnitTest, RemoveThreadFromGroup_001, TestSize.Level0)
+{
+    int32_t pid = 1;
+    int32_t workgroupId = 1;
+    int32_t tokenId = 1;
+
+    int32_t ret = audioResourceService.RemoveThreadFromGroup(pid, workgroupId, tokenId);
+
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : RemoveThreadFromGroup
+ * @tc.type  : FUNC
+ * @tc.number: RemoveThreadFromGroup_002
+ * @tc.desc  : Test that RemoveThreadFromGroup executes RemoveThread when group exists.
+ */
+HWTEST(AudioResourceServiceUnitTest, RemoveThreadFromGroup_002, TestSize.Level1)
+{
+    AudioResourceService* service = AudioResourceService::GetInstance();
+    int32_t pid = 1111;
+    int32_t groupId = 2222;
+    int32_t tokenId = 3333;
+ 
+    // Insert a real AudioWorkgroup into map
+    std::shared_ptr<AudioWorkgroup> workgroupPtr = std::make_shared<AudioWorkgroup>(groupId);
+    service->audioWorkgroupMap_[pid].groups[groupId] = workgroupPtr;
+ 
+    int32_t ret = service->RemoveThreadFromGroup(pid, groupId, tokenId);
+ 
+    EXPECT_TRUE(ret == 0);
+}
+
+/**
+ * @tc.name  : Test AddThreadToGroup
+ * @tc.type  : FUNC
+ * @tc.number: AddThreadToGroup_002
+ * @tc.desc  : Test AddThreadToGroup when find workgroup
+ */
+HWTEST(AudioResourceServiceUnitTest, AddThreadToGroup_002, TestSize.Level0)
+{
+    int32_t pid = 1;
+    int32_t workgroupId = 1;
+    int32_t tokenId = 1;
+    int32_t ret = audioResourceService.AddThreadToGroup(pid, workgroupId, tokenId);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test AddThreadToGroup
+ * @tc.type  : FUNC
+ * @tc.number: AddThreadToGroup_003
+ * @tc.desc  : Test AddThreadToGroup when find workgroup
+ */
+HWTEST(AudioResourceServiceUnitTest, AddThreadToGroup_003, TestSize.Level0)
+{
+    int32_t pid = 2;
+    int32_t workgroupId = 2;
+    int32_t tokenId = 2;
+    int32_t ret = audioResourceService.AddThreadToGroup(pid, workgroupId, tokenId);
+    EXPECT_NE(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test AddThreadToGroup
+ * @tc.type  : FUNC
+ * @tc.number: AddThreadToGroup_004
+ * @tc.desc  : Test AddThreadToGroup when find workgroup
+ */
+HWTEST(AudioResourceServiceUnitTest, AddThreadToGroup_004, TestSize.Level0)
+{
+    int32_t pid = 3;
+    int32_t workgroupId = 3;
+    int32_t tokenId = 3;
+    int32_t ret = audioResourceService.AddThreadToGroup(pid, workgroupId, tokenId);
+    EXPECT_NE(ret, ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test AddThreadToGroup
+ * @tc.type  : FUNC
+ * @tc.number: AddThreadToGroup_005
+ * @tc.desc  : Test AddThreadToGroup when find workgroup
+ */
+HWTEST(AudioResourceServiceUnitTest, AddThreadToGroup_005, TestSize.Level0)
+{
+    int32_t pid = 4;
+    int32_t workgroupId = 4;
+    int32_t tokenId = 4;
+    int32_t ret = audioResourceService.AddThreadToGroup(pid, workgroupId, tokenId);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AddThreadToGroup
+ * @tc.type  : FUNC
+ * @tc.number: AddThreadToGroup_006
+ * @tc.desc  : Test when the number of threads per process reaches AUDIO_MAX_RT_THREADS,
+ *             AddThreadToGroup should return ERR_NOT_SUPPORTED.
+ */
+HWTEST(AudioResourceServiceUnitTest, AddThreadToGroup_006, TestSize.Level1)
+{
+    AudioResourceService* service = AudioResourceService::GetInstance();
+    int32_t pid = 12345;
+    int32_t groupId = 67890;
+    int32_t tokenId = 12346;
+ 
+    std::shared_ptr<DummyAudioWorkgroup> workgroupPtr = std::make_shared<DummyAudioWorkgroup>(groupId);
+    service->audioWorkgroupMap_[pid].groups[groupId] = workgroupPtr;
+ 
+    for (int i = 0; i < 4; ++i) {
+        workgroupPtr->AddThread(tokenId + i + 100);
+    }
+    int32_t ret = service->AddThreadToGroup(pid, groupId, tokenId);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test ReleaseAudioWorkgroup
+ * @tc.type  : FUNC
+ * @tc.number: ReleaseAudioWorkgroup_002
+ * @tc.desc  : Test ReleaseAudioWorkgroup when find workgroup
+ */
+HWTEST(AudioResourceServiceUnitTest, ReleaseAudioWorkgroup_002, TestSize.Level0)
+{
+    int32_t pid = -1;
+    int32_t workgroupId = 1;
+    int32_t ret = audioResourceService.ReleaseAudioWorkgroup(pid, workgroupId);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test ReleaseAudioWorkgroup
+ * @tc.type  : FUNC
+ * @tc.number: ReleaseAudioWorkgroup_003
+ * @tc.desc  : Test ReleaseAudioWorkgroup when find workgroup
+ */
+HWTEST(AudioResourceServiceUnitTest, ReleaseAudioWorkgroup_003, TestSize.Level0)
+{
+    int32_t pid = 1;
+    int32_t workgroupId = 1;
+    int32_t ret = audioResourceService.ReleaseAudioWorkgroup(pid, workgroupId);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test ReleaseAudioWorkgroup
+ * @tc.type  : FUNC
+ * @tc.number: ReleaseAudioWorkgroup_004
+ * @tc.desc  : Test ReleaseAudioWorkgroup when find workgroup
+ */
+HWTEST(AudioResourceServiceUnitTest, ReleaseAudioWorkgroup_004, TestSize.Level0)
+{
+    int32_t pid = 1;
+    int32_t workgroupId = -1;
+    int32_t ret = audioResourceService.ReleaseAudioWorkgroup(pid, workgroupId);
+    EXPECT_NE(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test ReleaseAudioWorkgroup
+ * @tc.type  : FUNC
+ * @tc.number: ReleaseAudioWorkgroup_005
+ * @tc.desc  : Test ReleaseAudioWorkgroup when find workgroup
+ */
+HWTEST(AudioResourceServiceUnitTest, ReleaseAudioWorkgroup_005, TestSize.Level0)
+{
+    int32_t pid = 1;
+    int32_t workgroupId = 1;
+    int32_t ret = audioResourceService.ReleaseAudioWorkgroup(pid, workgroupId);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : ReleaseAudioWorkgroup
+ * @tc.type  : FUNC
+ * @tc.number: ReleaseAudioWorkgroup_006
+ * @tc.desc  : Test successful release of an existing audio workgroup. Covers the normal branch where reply.paramA == 0.
+ */
+HWTEST(AudioResourceServiceUnitTest, ReleaseAudioWorkgroup_006, TestSize.Level1)
+{
+    AudioResourceService* service = AudioResourceService::GetInstance();
+    int32_t pid = 12345;
+    int32_t groupId = 67890;
+ 
+    std::shared_ptr<DummyAudioWorkgroup> workgroupPtr = std::make_shared<DummyAudioWorkgroup>(groupId);
+    service->audioWorkgroupMap_[pid].groups[groupId] = workgroupPtr;
+ 
+    int32_t ret = service->ReleaseAudioWorkgroup(pid, groupId);
+ 
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(service->audioWorkgroupMap_.count(pid), 0);
+}
+
+/**
+ * @tc.name  : Test AudioWorkgroupCheck
+ * @tc.type  : FUNC
+ * @tc.number: AudioWorkgroupCheck_003
+ * @tc.desc  : Test AudioWorkgroupCheck when find workgroup
+ */
+HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_003, TestSize.Level0)
+{
+    int32_t pid = 1234;
+    for (int i = 0; i < AUDIO_MAX_PROCESS; i++) {
+        audioResourceService.audioWorkgroupMap_[AUDIO_MAX_PROCESS].hasSystemPermission = false;
+    }
+    EXPECT_NE(audioResourceService.AudioWorkgroupCheck(pid), ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test AudioWorkgroupCheck
+ * @tc.type  : FUNC
+ * @tc.number: AudioWorkgroupCheck_004
+ * @tc.desc  : Test AudioWorkgroupCheck when find workgroup
+ */
+HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_004, TestSize.Level0)
+{
+    int32_t pid = 1234;
+    EXPECT_EQ(audioResourceService.AudioWorkgroupCheck(pid), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test WorkgroupRendererMonitor
+ * @tc.type  : FUNC
+ * @tc.number: WorkgroupRendererMonitor
+ * @tc.desc  : Test WorkgroupRendererMonitor when find workgroup
+ */
+HWTEST(AudioResourceServiceUnitTest, WorkgroupRendererMonitor_002, TestSize.Level0)
+{
+    int32_t testPid = 321;
+    audioResourceService.audioWorkgroupMap_[testPid].permission = false;
+    audioResourceService.WorkgroupRendererMonitor(testPid, true);
+
+    EXPECT_TRUE(audioResourceService.audioWorkgroupMap_[testPid].permission);
+}
+
+/**
+ * @tc.name  : Test deathRecipient
+ * @tc.type  : FUNC
+ * @tc.number: OnWorkgroupRemoteDied_001
+ * @tc.desc  : Test OnWorkgroupRemoteDied when called
+ */
+HWTEST(AudioResourceServiceUnitTest, OnWorkgroupRemoteDied_001, TestSize.Level0)
+{
+    std::shared_ptr<AudioWorkgroup> workgroup = std::make_shared<AudioWorkgroup>(testRtgId);
+    std::shared_ptr<AudioWorkgroup> workGroup = std::make_shared<AudioWorkgroup>(testRtgId);
+    sptr<IRemoteObject> remoteObj = nullptr;
+
+    audioResourceService.audioWorkgroupMap_[10].groups[testRtgId] = {workGroup};
+    audioResourceService.OnWorkgroupRemoteDied(workgroup, remoteObj);
+    EXPECT_EQ(audioResourceService.audioWorkgroupMap_[10].groups.count(testRtgId), 1);
+}
+
+/**
+ * @tc.name  : Test AudioWorkgroupCheck
+ * @tc.type  : FUNC
+ * @tc.number: AudioWorkgroupCheck
+ * @tc.desc  : Test ReleaseWorkgroupDeathRecipient when find workgroup
+ */
+HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_008, TestSize.Level0)
+{
+    int32_t pid = 4321;
+    for (int i = 0; i <= AUDIO_MAX_GRP_PER_PROCESS; i++) {
+        audioResourceService.audioWorkgroupMap_[pid].groups[i] = nullptr;
+    }
+    EXPECT_TRUE(audioResourceService.IsProcessInWorkgroup(pid));
+    EXPECT_EQ(audioResourceService.AudioWorkgroupCheck(pid), ERR_NOT_SUPPORTED);
+
+    pid = 532;
+    audioResourceService.audioWorkgroupMap_[pid].groups[pid] = nullptr;
+    audioResourceService.audioWorkgroupMap_[pid].hasSystemPermission = false;
+
+    for (int i = 0; i <= AUDIO_MAX_PROCESS; i++) {
+        audioResourceService.audioWorkgroupMap_[i].groups[i] = nullptr;
+    }
+    EXPECT_FALSE(audioResourceService.IsProcessInWorkgroup(pid + 1));
+    EXPECT_EQ(audioResourceService.AudioWorkgroupCheck(pid + 1), ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : AudioWorkgroupCheck
+ * @tc.type  : FUNC
+ * @tc.number: AudioWorkgroupCheck_005
+ * @tc.desc  : Should return ERR_NOT_SUPPORTED if a process already has >= AUDIO_MAX_GRP_PER_PROCESS groups.
+ */
+HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_005, TestSize.Level1)
+{
+    auto* service = AudioResourceService::GetInstance();
+    int32_t pid = 1001;
+    service->audioWorkgroupMap_.clear();
+    service->audioWorkgroupMap_[pid].groups.clear();
+    for (int i = 0; i < 4; ++i) {
+        service->audioWorkgroupMap_[pid].groups[i] = std::make_shared<AudioWorkgroup>(i);
+    }
+    EXPECT_EQ(service->AudioWorkgroupCheck(pid), ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : AudioWorkgroupCheck
+ * @tc.type  : FUNC
+ * @tc.number: AudioWorkgroupCheck_006
+ * @tc.desc  : Should enter the for-loop over processes when not in any group.
+ */
+HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_006, TestSize.Level1)
+{
+    auto* service = AudioResourceService::GetInstance();
+    service->audioWorkgroupMap_.clear();
+    // Fill a few process entries, all without system permission
+    service->audioWorkgroupMap_[2001].hasSystemPermission = false;
+    int32_t pid = 9999;
+    EXPECT_EQ(service->AudioWorkgroupCheck(pid), SUCCESS);
+}
+
+/**
+ * @tc.name  : AudioWorkgroupCheck - Max Process Limit
+ * @tc.type  : FUNC
+ * @tc.number: AudioWorkgroupCheck_007
+ * @tc.desc  : Should return ERR_NOT_SUPPORTED if normal process count reaches AUDIO_MAX_PROCESS.
+ */
+HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_007, TestSize.Level1)
+{
+    auto* service = AudioResourceService::GetInstance();
+    service->audioWorkgroupMap_.clear();
+    for (int i = 0; i < 2; ++i) {
+        service->audioWorkgroupMap_[3000 + i].hasSystemPermission = false;
+    }
+    int32_t pid = 8888;
+    EXPECT_EQ(service->AudioWorkgroupCheck(pid), ERR_NOT_SUPPORTED);
 }
 } // namespace AudioStandard
 } // namespace OHOS

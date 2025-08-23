@@ -84,6 +84,7 @@ public:
         uint64_t frameMarkPosition = 0;
         uint64_t framePeriodNumber = 0;
 
+        uint64_t unprocessSamples = 0;
         uint64_t totalBytesWritten = 0;
         uint64_t framePeriodWritten = 0;
         std::shared_ptr<RendererPositionCallback> renderPositionCb;
@@ -106,6 +107,9 @@ public:
 
         std::optional<pid_t> lastCallStartByUserTid = std::nullopt;
         std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair = {
+            Timestamp::Timestampbase::BASESIZE, {0, 0}
+        };
+        std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePairWithSpeed = {
             Timestamp::Timestampbase::BASESIZE, {0, 0}
         };
     };
@@ -291,7 +295,7 @@ public:
 
     virtual bool GetSilentModeAndMixWithOthers() = 0;
 
-    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) = 0;
+    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce = false) = 0;
 
     virtual FastStatus GetFastStatus() { return FASTSTATUS_NORMAL; };
 
@@ -315,7 +319,8 @@ public:
 
     virtual RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) = 0;
 
-    virtual void SetSwitchInfoTimestamp(std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair) = 0;
+    virtual void SetSwitchInfoTimestamp(std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair,
+        std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePairWithSpeed) = 0;
 
     virtual void FetchDeviceForSplitStream() = 0;
 

@@ -23,10 +23,12 @@ ohos_fuzztest("AudioInterruptServiceMoreFuzzTest") {
   fuzz_config_file = "../audiointerruptservicemore_fuzzer"
 
   include_dirs = [
+    "../../../services/audio_engine/manager/include",
     "../../../services/audio_policy/client/include",
     "../../../services/audio_policy/server/include",
     "../../../services/audio_policy/server/include/service",
     "../../../services/audio_policy/server/include/service/manager",
+    "../../../services/audio_service/server/include",
   ]
 
   cflags = [
@@ -54,6 +56,8 @@ ohos_fuzztest("AudioInterruptServiceMoreFuzzTest") {
   deps = [
     "../../../services/audio_service/idl:audio_framework_interface",
     "../../../frameworks/native/audioutils:audio_utils",
+    "../../../frameworks/native/hdiadapter_new:hdiadapter_new",
+    "../../../services/audio_engine:audio_engine_manager",
     "../../../services/audio_policy:audio_policy_client_static",
     "../../../services/audio_policy:audio_policy_service_static",
   ]

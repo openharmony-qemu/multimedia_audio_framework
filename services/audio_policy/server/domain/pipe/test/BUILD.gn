@@ -1,0 +1,70 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//build/test.gni")
+import("../../../../../../accessibility.gni")
+import("../../../../../../appgallery.gni")
+import("../../../../../../bluetooth_part.gni")
+import("../../../../../../config.gni")
+
+audio_framework_root = "../../../../../.."
+module_output_path = "audio_framework/audio_framework_policy/audio_policy"
+
+group("audio_policy_pipe_unittest_packages") {
+  testonly = true
+  deps = [
+    ":audio_capturer_session_ext_unit_test",
+  ]
+}
+
+ohos_unittest("audio_capturer_session_ext_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "./unittest/audio_capturer_session_unit_test/include",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  cflags_cc = cflags
+
+  external_deps = [
+    "bluetooth:btframework",
+    "c_utils:utils",
+    "common_event_service:cesfwk_innerkits",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_5.0",
+    "googletest:gmock",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "kv_store:distributeddata_inner",
+    "os_account:os_account_innerkits",
+    "power_manager:powermgr_client",
+    "eventhandler:libeventhandler",
+  ]
+
+  sources = [ "./unittest/audio_capturer_session_unit_test/src/audio_capturer_session_ext_unit_test.cpp" ]
+
+  deps = [
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../../../../audio_policy:audio_policy_service_static",
+  ]
+}

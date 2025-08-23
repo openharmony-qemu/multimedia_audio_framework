@@ -52,6 +52,7 @@ static const char* DP_SINK = "DP_speaker";
 static const char* USB_MIC = "Usb_arm_mic";
 static const char* PRIMARY_MIC = "Built_in_mic";
 static const char* PRIMARY_WAKEUP_MIC = "Built_in_wakeup";
+static const char* PRIMARY_AI_MIC = "Built_in_ai";
 static const char* FILE_SINK = "file_sink";
 static const char* FILE_SOURCE = "file_source";
 static const char* PIPE_SINK = "fifo_output";
@@ -136,6 +137,7 @@ struct AudioModuleInfo {
     std::string micRefRate;
     std::string micRefFormat;
     std::string micRefChannels;
+    uint32_t suspendIdleTimeout = DEFAULT_SUSPEND_TIME_IN_MS;
 
     std::list<AudioModuleInfo> ports;
     std::string extra;

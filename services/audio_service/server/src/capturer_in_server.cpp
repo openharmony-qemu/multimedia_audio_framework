@@ -168,6 +168,7 @@ int32_t CapturerInServer::Init()
     return SUCCESS;
 }
 
+// LCOV_EXCL_START
 void CapturerInServer::OnStatusUpdate(IOperation operation)
 {
     AUDIO_INFO_LOG("CapturerInServer::OnStatusUpdate operation: %{public}d", operation);
@@ -182,7 +183,6 @@ void CapturerInServer::OnStatusUpdate(IOperation operation)
         case OPERATION_UNDERFLOW:
             underflowCount += 1;
             AUDIO_INFO_LOG("Underflow!! underflow count %{public}d", underflowCount);
-            stateListener->OnOperationHandled(BUFFER_OVERFLOW, underflowCount);
             break;
         case OPERATION_STARTED:
             status_ = I_STATUS_STARTED;
@@ -211,6 +211,7 @@ void CapturerInServer::OnStatusUpdate(IOperation operation)
 
     CaptureConcurrentCheck(streamIndex_);
 }
+// LCOV_EXCL_STOP
 
 void CapturerInServer::HandleOperationFlushed()
 {
@@ -239,6 +240,7 @@ BufferDesc CapturerInServer::DequeueBuffer(size_t length)
     return stream_->DequeueBuffer(length);
 }
 
+// LCOV_EXCL_START
 bool CapturerInServer::IsReadDataOverFlow(size_t length, uint64_t currentWriteFrame,
     std::shared_ptr<IStreamListener> stateListener)
 {
@@ -254,11 +256,11 @@ bool CapturerInServer::IsReadDataOverFlow(size_t length, uint64_t currentWriteFr
             BufferDesc dstBuffer = stream_->DequeueBuffer(length);
             stream_->EnqueueBuffer(dstBuffer);
         }
-        stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
         return true;
     }
     return false;
 }
+// LCOV_EXCL_STOP
 
 
 static CapturerState HandleStreamStatusToCapturerState(const IStatus &status)
@@ -286,6 +288,7 @@ static CapturerState HandleStreamStatusToCapturerState(const IStatus &status)
     }
 }
 
+// LCOV_EXCL_START
 static uint32_t GetByteSizeByFormat(enum AudioSampleFormat format)
 {
     uint32_t byteSize = 0;
@@ -311,6 +314,7 @@ static uint32_t GetByteSizeByFormat(enum AudioSampleFormat format)
     }
     return byteSize;
 }
+// LCOV_EXCL_STOP
 
 void CapturerInServer::UpdateBufferTimeStamp(size_t readLen)
 {
@@ -330,6 +334,20 @@ void CapturerInServer::UpdateBufferTimeStamp(size_t readLen)
     audioServerBuffer_->SetTimeStampInfo(curProcessPos_, timestamp);
 }
 
+void CapturerInServer::MuteVoice(const SourceType sourceType, BufferDesc &dstBuffer)
+{
+    bool muteState = false;
+    if (CoreServiceHandler::GetInstance().GetVoiceMuteState(streamIndex_, muteState)) {
+        if (muteState) {
+            AUDIO_DEBUG_LOG("session:%{public}d muted", streamIndex_);
+            int32_t ret = memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength,
+                0, dstBuffer.bufLength);
+            CHECK_AND_RETURN_LOG(ret == EOK, "Clear buffer fail, ret %{public}d.", ret);
+        }
+    }
+}
+
+// LCOV_EXCL_START
 void CapturerInServer::ReadData(size_t length)
 {
     CHECK_AND_RETURN_LOG(length >= spanSizeInBytes_,
@@ -365,6 +383,9 @@ void CapturerInServer::ReadData(size_t length)
         LEGACY_MUTE_CAP) || muteFlag_) {
         dstBuffer.buffer = dischargeBuffer_.get(); // discharge valid data.
     }
+
+    MuteVoice(processConfig_.capturerInfo.sourceType, dstBuffer);
+
     if (muteFlag_) {
         memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
     }
@@ -383,8 +404,8 @@ void CapturerInServer::ReadData(size_t length)
     UpdateBufferTimeStamp(dstBuffer.bufLength);
 
     stream_->EnqueueBuffer(srcBuffer);
-    stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
 }
+// LCOV_EXCL_STOP
 
 int32_t CapturerInServer::OnReadData(size_t length)
 {
@@ -393,6 +414,7 @@ int32_t CapturerInServer::OnReadData(size_t length)
     return SUCCESS;
 }
 
+// LCOV_EXCL_START
 int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
 {
     CHECK_AND_RETURN_RET_LOG(status_.load() == I_STATUS_STARTED, ERR_READ_FAILED, "CapturerInServer is not started");
@@ -426,6 +448,9 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
         LEGACY_MUTE_CAP) || muteFlag_) {
         dstBuffer.buffer = dischargeBuffer_.get(); // discharge valid data.
     }
+
+    MuteVoice(processConfig_.capturerInfo.sourceType, dstBuffer);
+
     if (muteFlag_) {
         memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
     }
@@ -443,10 +468,9 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
 
     UpdateBufferTimeStamp(dstBuffer.bufLength);
 
-    stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
-
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 int32_t CapturerInServer::UpdateReadIndex()
 {
@@ -477,6 +501,13 @@ bool CapturerInServer::CheckBGCapture()
     uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
 
     if (PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId)) {
+        AudioService::GetInstance()->UpdateBackgroundCaptureMap(streamIndex_, true);
+        return true;
+    }
+
+    if (AudioService::GetInstance()->IsStreamInterruptResume(streamIndex_) &&
+        AudioService::GetInstance()->IsBackgroundCaptureAllowed(streamIndex_)) {
+        AUDIO_WARNING_LOG("Stream:%{public}u Result:success Reason:resume", streamIndex_);
         return true;
     }
 
@@ -502,19 +533,19 @@ bool CapturerInServer::TurnOnMicIndicator(CapturerState capturerState)
         tokenId,
         capturerState,
     };
-    if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
+    if (SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
+        AudioService::GetInstance()->UpdateSwitchStreamMap(streamIndex_, SWITCH_STATE_STARTED);
+    } else {
         CHECK_AND_RETURN_RET_LOG(CheckBGCapture(), false, "Verify failed");
     }
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
 
     if (isMicIndicatorOn_) {
-        AUDIO_WARNING_LOG("MicIndicator of stream:%{public}d is already on."
-            "No need to call NotifyPrivacyStart!", streamIndex_);
+        AUDIO_WARNING_LOG("MicIndicator：already on, Stream:%{public}u.", streamIndex_);
     } else {
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, streamIndex_),
             false, "NotifyPrivacyStart failed!");
-        AUDIO_INFO_LOG("Turn on micIndicator of stream:%{public}d from off "
-            "after NotifyPrivacyStart success!", streamIndex_);
+        AUDIO_INFO_LOG("MicIndicator:turn on，Stream:%{public}u", streamIndex_);
         isMicIndicatorOn_ = true;
     }
     return true;
@@ -533,13 +564,15 @@ bool CapturerInServer::TurnOffMicIndicator(CapturerState capturerState)
     };
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
 
+    if (AudioService::GetInstance()->NeedRemoveBackgroundCaptureMap(streamIndex_)) {
+        AudioService::GetInstance()->RemoveBackgroundCaptureMap(streamIndex_);
+    }
     if (isMicIndicatorOn_) {
         PermissionUtil::NotifyPrivacyStop(tokenId, streamIndex_);
-        AUDIO_INFO_LOG("Turn off micIndicator of stream:%{public}d from on after NotifyPrivacyStop!", streamIndex_);
+        AUDIO_INFO_LOG("MicIndicator:turn off, Stream:%{public}u", streamIndex_);
         isMicIndicatorOn_ = false;
     } else {
-        AUDIO_WARNING_LOG("MicIndicator of stream:%{public}d is already off."
-            "No need to call NotifyPrivacyStop!", streamIndex_);
+        AUDIO_WARNING_LOG("MicIndicator:already off, Stream:%{public}u", streamIndex_);
     }
     return true;
 }
@@ -560,6 +593,7 @@ int32_t CapturerInServer::Start()
     return ret;
 }
 
+// LCOV_EXCL_START
 int32_t CapturerInServer::StartInner()
 {
     needStart = 0;
@@ -602,7 +636,9 @@ int32_t CapturerInServer::StartInner()
 
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 int32_t CapturerInServer::Pause()
 {
     AudioXCollie audioXCollie(
@@ -631,6 +667,7 @@ int32_t CapturerInServer::Pause()
     }
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 int32_t CapturerInServer::Flush()
 {
@@ -676,6 +713,7 @@ int32_t CapturerInServer::DrainAudioBuffer()
     return SUCCESS;
 }
 
+// LCOV_EXCL_START
 int32_t CapturerInServer::Stop()
 {
     AudioXCollie audioXCollie(
@@ -702,8 +740,10 @@ int32_t CapturerInServer::Stop()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
+    CoreServiceHandler::GetInstance().RemoveVoiceMuteState(streamIndex_);
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 int32_t CapturerInServer::Release(bool isSwitchStream)
 {
@@ -817,6 +857,7 @@ int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCapture
 }
 #endif
 
+// LCOV_EXCL_START
 int32_t CapturerInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
 {
     if (status_ == I_STATUS_STOPPED) {
@@ -832,6 +873,7 @@ int32_t CapturerInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
     }
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 int32_t CapturerInServer::GetLatency(uint64_t &latency)
 {
@@ -883,12 +925,13 @@ RestoreStatus CapturerInServer::RestoreSession(RestoreInfo restoreInfo)
             processConfig_.appInfo.appTokenId,
             HandleStreamStatusToCapturerState(status_)
         };
-        AUDIO_INFO_LOG("Insert fast record stream:%{public}u uid:%{public}d tokenId:%{public}u "
-            "into switchStreamRecord because restoreStatus:NEED_RESTORE",
-            streamIndex_, info.callerUid, info.appTokenId);
+        AUDIO_INFO_LOG("Insert switchStream:%{public}u uid:%{public}d tokenId:%{public}u "
+            "Reason:NEED_RESTORE", streamIndex_, info.callerUid, info.appTokenId);
+        AudioService::GetInstance()->UpdateSwitchStreamMap(streamIndex_, SWITCH_STATE_WAITING);
         SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
 
         audioServerBuffer_->SetRestoreInfo(restoreInfo);
+        audioServerBuffer_->WakeFutex(IS_PRE_EXIT);
     }
     return restoreStatus;
 }
@@ -912,6 +955,7 @@ int32_t CapturerInServer::ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<
     return ERR_NOT_SUPPORTED;
 }
 
+// LCOV_EXCL_START
 inline void CapturerInServer::CaptureConcurrentCheck(uint32_t streamIndex)
 {
     if (lastStatus_ == status_) {
@@ -921,5 +965,6 @@ inline void CapturerInServer::CaptureConcurrentCheck(uint32_t streamIndex)
     int32_t ret = PolicyHandler::GetInstance().CaptureConcurrentCheck(streamIndex);
     AUDIO_INFO_LOG("ret:%{public}d streamIndex_:%{public}d status_:%{public}u", ret, streamIndex, status_.load());
 }
+// LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

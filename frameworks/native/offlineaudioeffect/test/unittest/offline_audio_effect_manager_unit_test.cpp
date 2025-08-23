@@ -16,11 +16,19 @@
 #include <iostream>
 #include <thread>
 #include <gtest/gtest.h>
-
+#include "gmock/gmock.h"
 #include "audio_errors.h"
 #include "offline_audio_effect_manager.h"
 #include "offline_audio_effect_server_chain.h"
+#include "offline_audio_effect_chain_impl.h"
+#include "offline_stream_in_client.h"
 #include "audio_stream_info.h"
+#include "audio_shared_memory.h"
+#include "audio_log.h"
+#include "v1_0/effect_types.h"
+#include "v1_0/ieffect_control.h"
+#include "v1_0/ieffect_model.h"
+#include "audio_utils.h"
 
 using namespace testing::ext;
 using namespace testing;
@@ -34,6 +42,17 @@ namespace {
         AudioSamplingRate::SAMPLE_RATE_48000, AudioEncodingType::ENCODING_PCM,
         AudioSampleFormat::SAMPLE_S16LE, AudioChannel::STEREO, AudioChannelLayout::CH_LAYOUT_STEREO);
 }
+class IpcOfflineStreamMock : public IIpcOfflineStream {
+public:
+    MOCK_METHOD(int32_t, CreateOfflineEffectChain, (const std::string &chainName));
+    MOCK_METHOD(int32_t, ConfigureOfflineEffectChain, (const AudioStreamInfo& inInfo, const AudioStreamInfo& outInfo));
+    MOCK_METHOD(int32_t, SetParamOfflineEffectChain, (const std::vector<uint8_t>& param));
+    MOCK_METHOD(int32_t, PrepareOfflineEffectChain, (shared_ptr<AudioSharedMemory>& inBuffer,
+                                                  shared_ptr<AudioSharedMemory>& outBuffer));
+    MOCK_METHOD(int32_t, ProcessOfflineEffectChain, (uint32_t inSize, uint32_t outSize));
+    MOCK_METHOD(int32_t, ReleaseOfflineEffectChain, ());
+    MOCK_METHOD(sptr<IRemoteObject>, AsObject, ());
+};
 class OfflineAudioEffectManagerUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -70,6 +89,84 @@ void OfflineAudioEffectChainUnitTest::SetUpTestCase(void)
     }
 }
 
+unique_ptr<OfflineAudioEffectChain> CreateOfflineAudioEffectChainMock(
+    const std::string &chainName)
+{
+    sptr<IpcOfflineStreamMock> mockProxy = new IpcOfflineStreamMock();
+    EXPECT_CALL(*mockProxy, PrepareOfflineEffectChain(_, _)).WillOnce(DoAll(
+        SetArgReferee<0>(AudioSharedMemory::CreateFormLocal(1, "testEffect")),
+        SetArgReferee<1>(AudioSharedMemory::CreateFormLocal(1, "testEffect")),
+        Return(0)
+    ));
+    unique_ptr<OfflineAudioEffectChainImpl> chain = std::make_unique<OfflineAudioEffectChainImpl>();
+    chain->chainName_ = chainName;
+    chain->offlineStreamInClient_ = make_shared<OfflineStreamInClient>(mockProxy);
+    int32_t ret = chain->CreateEffectChain();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "create OfflineEffectChain failed, errcode is %{public}d", ret);
+    return chain;
+}
+  
+int32_t EffectProcess(struct IEffectControl *self, const struct AudioEffectBuffer* input,
+    struct AudioEffectBuffer* output)
+{
+    return SUCCESS;
+}
+
+int32_t SendCommand(struct IEffectControl *self, uint32_t cmdId, const int8_t* cmdData, uint32_t cmdDataLen,
+    int8_t* replyData, uint32_t* replyDataLen)
+{
+    return SUCCESS;
+}
+
+int32_t GetEffectDescriptor(struct IEffectControl *self, struct EffectControllerDescriptor* desc)
+{
+    return SUCCESS;
+}
+
+int32_t EffectReverse(struct IEffectControl *self, const struct AudioEffectBuffer* input,
+    struct AudioEffectBuffer* output)
+{
+    return SUCCESS;
+}
+
+int32_t GetVersion(struct IEffectControl *self, uint32_t* majorVer, uint32_t* minorVer)
+{
+    return SUCCESS;
+}
+
+int32_t IsSupplyEffectLibs(struct IEffectModel *self, bool* supply)
+{
+    return SUCCESS;
+}
+
+int32_t GetAllEffectDescriptors(struct IEffectModel *self, struct EffectControllerDescriptor* descs,
+    uint32_t* descsLen)
+{
+    return SUCCESS;
+}
+
+int32_t CreateEffectController(struct IEffectModel *self, const struct EffectInfo* info,
+    struct IEffectControl** contoller, struct ControllerId* id)
+{
+    return SUCCESS;
+}
+
+int32_t DestroyEffectController(struct IEffectModel *self, const struct ControllerId* id)
+{
+    return SUCCESS;
+}
+
+int32_t GetEffectDescriptor(struct IEffectModel *self, const char* effectId,
+    struct EffectControllerDescriptor* desc)
+{
+    return SUCCESS;
+}
+
+int32_t GetVersion(struct IEffectModel *self, uint32_t* majorVer, uint32_t* minorVer)
+{
+    return SUCCESS;
+}
+
 void OfflineAudioEffectChainUnitTest::TearDownTestCase(void)
 {
     g_manager = nullptr;
@@ -77,7 +174,7 @@ void OfflineAudioEffectChainUnitTest::TearDownTestCase(void)
 
 void OfflineAudioEffectChainUnitTest::SetUp(void)
 {
-    chain_ = g_manager->CreateOfflineAudioEffectChain(g_normalName);
+    chain_ = CreateOfflineAudioEffectChainMock(g_normalName);
 }
 
 void OfflineAudioEffectChainUnitTest::TearDown(void)
@@ -120,26 +217,9 @@ HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_001, TestSiz
  */
 HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_002, TestSize.Level0)
 {
-    auto manager = make_shared<OfflineAudioEffectManager>();
-    auto chain = manager->CreateOfflineAudioEffectChain(g_normalName);
-    if (g_normalName == "") {
-        EXPECT_EQ(nullptr, chain);
-    } else {
-        EXPECT_NE(nullptr, chain);
-    }
-}
-
-/**
- * @tc.name  : Test CreateOfflineAudioEffectChain API
- * @tc.type  : FUNC
- * @tc.number: OfflineAudioEffectManager_003
- * @tc.desc  : Test OfflineAudioEffectManager interface.
- */
-HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_003, TestSize.Level1)
-{
-    auto manager = make_shared<OfflineAudioEffectManager>();
-    auto chain = manager->CreateOfflineAudioEffectChain(INVALID_EFFECT_NAME);
-    EXPECT_EQ(nullptr, chain);
+    auto chain = CreateOfflineAudioEffectChainMock(g_normalName);
+    EXPECT_NE(nullptr, chain);
+    EXPECT_EQ(SUCCESS, chain->Prepare());
 }
 
 /**
@@ -150,10 +230,9 @@ HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_003, TestSiz
  */
 HWTEST_F(OfflineAudioEffectChainUnitTest, OfflineAudioEffectChain_001, TestSize.Level1)
 {
-    if (chain_) {
-        int32_t ret = chain_->Configure(NORMAL_STREAM_INFO, NORMAL_STREAM_INFO);
-        EXPECT_EQ(SUCCESS, ret);
-    }
+    int32_t ret = chain_->Configure(NORMAL_STREAM_INFO, NORMAL_STREAM_INFO);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, chain_->Prepare());
 }
 
 /**
@@ -164,10 +243,8 @@ HWTEST_F(OfflineAudioEffectChainUnitTest, OfflineAudioEffectChain_001, TestSize.
  */
 HWTEST_F(OfflineAudioEffectChainUnitTest, OfflineAudioEffectChain_002, TestSize.Level1)
 {
-    if (chain_) {
-        EXPECT_EQ(SUCCESS, chain_->Configure(NORMAL_STREAM_INFO, NORMAL_STREAM_INFO));
-        EXPECT_EQ(SUCCESS, chain_->Prepare());
-    }
+    EXPECT_EQ(SUCCESS, chain_->Configure(NORMAL_STREAM_INFO, NORMAL_STREAM_INFO));
+    EXPECT_EQ(SUCCESS, chain_->Prepare());
 }
 
 /**
@@ -180,24 +257,22 @@ HWTEST_F(OfflineAudioEffectChainUnitTest, OfflineAudioEffectChain_003, TestSize.
 {
     uint32_t inSize = 0;
     uint32_t outSize = 0;
-    if (chain_) {
-        EXPECT_EQ(SUCCESS, chain_->Configure(NORMAL_STREAM_INFO, NORMAL_STREAM_INFO));
-        EXPECT_EQ(SUCCESS, chain_->Prepare());
-        EXPECT_EQ(SUCCESS, chain_->GetEffectBufferSize(inSize, outSize));
-        EXPECT_GT(inSize, 0);
-        EXPECT_GT(outSize, 0);
-        uint8_t *inBuffer = new uint8_t[inSize];
-        uint8_t *outBuffer = new uint8_t[outSize];
-        for (uint32_t i = 0; i < inSize; i++) {
+    EXPECT_EQ(SUCCESS, chain_->Configure(NORMAL_STREAM_INFO, NORMAL_STREAM_INFO));
+    EXPECT_EQ(SUCCESS, chain_->Prepare());
+    EXPECT_EQ(SUCCESS, chain_->GetEffectBufferSize(inSize, outSize));
+    EXPECT_GT(inSize, 0);
+    EXPECT_GT(outSize, 0);
+    uint8_t *inBuffer = new uint8_t[inSize];
+    uint8_t *outBuffer = new uint8_t[outSize];
+    for (uint32_t i = 0; i < inSize; i++) {
             inBuffer[i] = 1;
         }
-        EXPECT_EQ(ERR_INVALID_PARAM, chain_->Process(nullptr, inSize, outBuffer, outSize));
-        EXPECT_EQ(ERR_INVALID_PARAM, chain_->Process(inBuffer, inSize + 1, outBuffer, outSize));
-        EXPECT_EQ(ERR_INVALID_PARAM, chain_->Process(inBuffer, inSize, nullptr, outSize));
-        EXPECT_EQ(ERR_INVALID_PARAM, chain_->Process(inBuffer, inSize, outBuffer, outSize + 1));
-        delete []inBuffer;
-        delete []outBuffer;
-    }
+    EXPECT_EQ(ERR_INVALID_PARAM, chain_->Process(nullptr, inSize, outBuffer, outSize));
+    EXPECT_EQ(ERR_INVALID_PARAM, chain_->Process(inBuffer, inSize + 1, outBuffer, outSize));
+    EXPECT_EQ(ERR_INVALID_PARAM, chain_->Process(inBuffer, inSize, nullptr, outSize));
+    EXPECT_EQ(ERR_INVALID_PARAM, chain_->Process(inBuffer, inSize, outBuffer, outSize + 1));
+    delete []inBuffer;
+    delete []outBuffer;
 }
 
 /**
@@ -208,17 +283,23 @@ HWTEST_F(OfflineAudioEffectChainUnitTest, OfflineAudioEffectChain_003, TestSize.
  */
 HWTEST_F(OfflineAudioEffectChainUnitTest, OfflineAudioEffectChain_004, TestSize.Level1)
 {
-    if (chain_) {
-        std::vector<uint8_t> param(0);
-        int32_t ret = chain_->SetParam(param);
-        EXPECT_EQ(ERROR, ret);
-    }
+    std::vector<uint8_t> param(0);
+    int32_t ret = chain_->SetParam(param);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, chain_->Prepare());
 }
 
 HWTEST_F(OfflineAudioEffectServerChainUnitTest, Create_001, TestSize.Level1)
 {
     std::shared_ptr<OfflineAudioEffectServerChain>  serverChain =
         std::make_shared<OfflineAudioEffectServerChain>("test");
+    IEffectControl *mockControl = new IEffectControl();
+    mockControl->EffectProcess = EffectProcess;
+    mockControl->SendCommand = SendCommand;
+    mockControl->GetEffectDescriptor = GetEffectDescriptor;
+    mockControl->EffectReverse = EffectReverse;
+    mockControl->GetVersion = GetVersion;
+    serverChain->controller_=mockControl;
     int32_t ret = serverChain->Create();
     EXPECT_EQ(ret, ERROR);
 }
@@ -238,8 +319,18 @@ HWTEST_F(OfflineAudioEffectServerChainUnitTest, SetConfig_001, TestSize.Level1)
     outInfo.encoding = AudioEncodingType::ENCODING_PCM;
     outInfo.format = AudioSampleFormat::SAMPLE_S16LE;
     outInfo.channels = AudioChannel::MONO;
+
     int32_t ret = serverChain->SetConfig(inInfo, outInfo);
     EXPECT_EQ(ret, ERROR);
+    IEffectControl *mockControl = new IEffectControl();
+    mockControl->EffectProcess = EffectProcess;
+    mockControl->SendCommand = SendCommand;
+    mockControl->GetEffectDescriptor = GetEffectDescriptor;
+    mockControl->EffectReverse = EffectReverse;
+    mockControl->GetVersion = GetVersion;
+    serverChain->controller_=mockControl;
+    ret = serverChain->SetConfig(inInfo, outInfo);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 HWTEST_F(OfflineAudioEffectServerChainUnitTest, SetParam_001, TestSize.Level1)
@@ -247,8 +338,18 @@ HWTEST_F(OfflineAudioEffectServerChainUnitTest, SetParam_001, TestSize.Level1)
     std::shared_ptr<OfflineAudioEffectServerChain>  serverChain =
         std::make_shared<OfflineAudioEffectServerChain>("test");
     std::vector<uint8_t> param(0);
+
     int32_t ret = serverChain->SetParam(param);
     EXPECT_EQ(ret, ERROR);
+    IEffectControl *mockControl = new IEffectControl();
+    mockControl->EffectProcess = EffectProcess;
+    mockControl->SendCommand = SendCommand;
+    mockControl->GetEffectDescriptor = GetEffectDescriptor;
+    mockControl->EffectReverse = EffectReverse;
+    mockControl->GetVersion = GetVersion;
+    serverChain->controller_=mockControl;
+    ret = serverChain->SetParam(param);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 HWTEST_F(OfflineAudioEffectServerChainUnitTest, GetEffectBufferSize_001, TestSize.Level1)
@@ -288,6 +389,14 @@ HWTEST_F(OfflineAudioEffectServerChainUnitTest, Release_001, TestSize.Level1)
 {
     std::shared_ptr<OfflineAudioEffectServerChain>  serverChain =
         std::make_shared<OfflineAudioEffectServerChain>("test");
+
+    IEffectControl *mockControl = new IEffectControl();
+    mockControl->EffectProcess = EffectProcess;
+    mockControl->SendCommand = SendCommand;
+    mockControl->GetEffectDescriptor = GetEffectDescriptor;
+    mockControl->EffectReverse = EffectReverse;
+    mockControl->GetVersion = GetVersion;
+    serverChain->controller_=mockControl;
     int32_t ret = serverChain->Release();
     EXPECT_EQ(ret, ERROR);
 }

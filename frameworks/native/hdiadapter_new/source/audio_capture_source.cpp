@@ -38,6 +38,47 @@ namespace OHOS {
 namespace AudioStandard {
 
 static constexpr uint32_t DECIMAL_BASE = 10;
+static const std::unordered_map<AudioChannelLayout, AudioChannel> MAP_LAYOUT_TO_CHANNEL = {
+    {AudioChannelLayout::CH_LAYOUT_MONO, AudioChannel::MONO},
+    {AudioChannelLayout::CH_LAYOUT_STEREO, AudioChannel::STEREO},
+    {AudioChannelLayout::CH_LAYOUT_STEREO_DOWNMIX, AudioChannel::STEREO},
+    {AudioChannelLayout::CH_LAYOUT_2POINT1, AudioChannel::CHANNEL_3},
+    {AudioChannelLayout::CH_LAYOUT_3POINT0, AudioChannel::CHANNEL_3},
+    {AudioChannelLayout::CH_LAYOUT_SURROUND, AudioChannel::CHANNEL_3},
+    {AudioChannelLayout::CH_LAYOUT_3POINT1, AudioChannel::CHANNEL_4},
+    {AudioChannelLayout::CH_LAYOUT_4POINT0, AudioChannel::CHANNEL_4},
+    {AudioChannelLayout::CH_LAYOUT_QUAD_SIDE, AudioChannel::CHANNEL_4},
+    {AudioChannelLayout::CH_LAYOUT_QUAD, AudioChannel::CHANNEL_4},
+    {AudioChannelLayout::CH_LAYOUT_2POINT0POINT2, AudioChannel::CHANNEL_4},
+    {AudioChannelLayout::CH_LAYOUT_4POINT1, AudioChannel::CHANNEL_5},
+    {AudioChannelLayout::CH_LAYOUT_5POINT0, AudioChannel::CHANNEL_5},
+    {AudioChannelLayout::CH_LAYOUT_5POINT0_BACK, AudioChannel::CHANNEL_5},
+    {AudioChannelLayout::CH_LAYOUT_2POINT1POINT2, AudioChannel::CHANNEL_5},
+    {AudioChannelLayout::CH_LAYOUT_3POINT0POINT2, AudioChannel::CHANNEL_5},
+    {AudioChannelLayout::CH_LAYOUT_5POINT1, AudioChannel::CHANNEL_6},
+    {AudioChannelLayout::CH_LAYOUT_5POINT1_BACK, AudioChannel::CHANNEL_6},
+    {AudioChannelLayout::CH_LAYOUT_6POINT0, AudioChannel::CHANNEL_6},
+    {AudioChannelLayout::CH_LAYOUT_HEXAGONAL, AudioChannel::CHANNEL_6},
+    {AudioChannelLayout::CH_LAYOUT_3POINT1POINT2, AudioChannel::CHANNEL_6},
+    {AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT, AudioChannel::CHANNEL_6},
+    {AudioChannelLayout::CH_LAYOUT_6POINT1, AudioChannel::CHANNEL_7},
+    {AudioChannelLayout::CH_LAYOUT_6POINT1_BACK, AudioChannel::CHANNEL_7},
+    {AudioChannelLayout::CH_LAYOUT_6POINT1_FRONT, AudioChannel::CHANNEL_7},
+    {AudioChannelLayout::CH_LAYOUT_7POINT0, AudioChannel::CHANNEL_7},
+    {AudioChannelLayout::CH_LAYOUT_7POINT0_FRONT, AudioChannel::CHANNEL_7},
+    {AudioChannelLayout::CH_LAYOUT_7POINT1, AudioChannel::CHANNEL_8},
+    {AudioChannelLayout::CH_LAYOUT_OCTAGONAL, AudioChannel::CHANNEL_8},
+    {AudioChannelLayout::CH_LAYOUT_5POINT1POINT2, AudioChannel::CHANNEL_8},
+    {AudioChannelLayout::CH_LAYOUT_7POINT1_WIDE, AudioChannel::CHANNEL_8},
+    {AudioChannelLayout::CH_LAYOUT_7POINT1_WIDE_BACK, AudioChannel::CHANNEL_8},
+    {AudioChannelLayout::CH_LAYOUT_5POINT1POINT4, AudioChannel::CHANNEL_10},
+    {AudioChannelLayout::CH_LAYOUT_7POINT1POINT2, AudioChannel::CHANNEL_10},
+    {AudioChannelLayout::CH_LAYOUT_7POINT1POINT4, AudioChannel::CHANNEL_12},
+    {AudioChannelLayout::CH_LAYOUT_10POINT2, AudioChannel::CHANNEL_12},
+    {AudioChannelLayout::CH_LAYOUT_9POINT1POINT4, AudioChannel::CHANNEL_14},
+    {AudioChannelLayout::CH_LAYOUT_9POINT1POINT6, AudioChannel::CHANNEL_16},
+    {AudioChannelLayout::CH_LAYOUT_HEXADECAGONAL, AudioChannel::CHANNEL_16},
+};
 
 AudioCaptureSource::AudioCaptureSource(const uint32_t captureId, const std::string &halName)
     : captureId_(captureId), halName_(halName)
@@ -606,8 +647,54 @@ uint64_t AudioCaptureSource::GetChannelLayoutByChannelCount(uint32_t channelCoun
     return channelLayout;
 }
 
-enum AudioInputType AudioCaptureSource::ConvertToHDIAudioInputType(int32_t sourceType)
+
+uint64_t AudioCaptureSource::GetChannelCountByChannelLayout(uint64_t channelLayout)
 {
+    AudioChannel channel = AudioChannel::CHANNEL_UNKNOW;
+    AudioChannelLayout layout = static_cast<AudioChannelLayout>(channelLayout);
+    if (MAP_LAYOUT_TO_CHANNEL.find(layout) != MAP_LAYOUT_TO_CHANNEL.end()) {
+        return static_cast<uint64_t>(MAP_LAYOUT_TO_CHANNEL.at(layout));
+    }
+
+    return static_cast<uint64_t>(channel);
+}
+
+const std::unordered_map<std::string, AudioInputType> AudioCaptureSource::audioInputTypeMap_ = {
+    {"AUDIO_INPUT_MIC_TYPE", AUDIO_INPUT_MIC_TYPE},
+    {"AUDIO_INPUT_SPEECH_WAKEUP_TYPE", AUDIO_INPUT_SPEECH_WAKEUP_TYPE},
+    {"AUDIO_INPUT_VOICE_COMMUNICATION_TYPE", AUDIO_INPUT_VOICE_COMMUNICATION_TYPE},
+    {"AUDIO_INPUT_VOICE_RECOGNITION_TYPE", AUDIO_INPUT_VOICE_RECOGNITION_TYPE},
+    {"AUDIO_INPUT_VOICE_UPLINK_TYPE", AUDIO_INPUT_VOICE_UPLINK_TYPE},
+    {"AUDIO_INPUT_VOICE_DOWNLINK_TYPE", AUDIO_INPUT_VOICE_DOWNLINK_TYPE},
+    {"AUDIO_INPUT_VOICE_CALL_TYPE", AUDIO_INPUT_VOICE_CALL_TYPE},
+    {"AUDIO_INPUT_EC_TYPE", AUDIO_INPUT_EC_TYPE},
+    {"AUDIO_INPUT_NOISE_REDUCTION_TYPE", AUDIO_INPUT_NOISE_REDUCTION_TYPE},
+    {"AUDIO_INPUT_RAW_TYPE", AUDIO_INPUT_RAW_TYPE},
+    {"AUDIO_INPUT_LIVE_TYPE", AUDIO_INPUT_LIVE_TYPE},
+    {"AUDIO_INPUT_VOICE_TRANSCRIPTION", AUDIO_INPUT_VOICE_TRANSCRIPTION}
+};
+
+AudioInputType AudioCaptureSource::MappingAudioInputType(std::string hdiSourceType)
+{
+    if (hdiSourceType != "AUDIO_INPUT_DEFAULT_TYPE") {
+        AUDIO_INFO_LOG("find hdisourceType: %{public}s", hdiSourceType.c_str());
+        auto it = audioInputTypeMap_.find(hdiSourceType);
+        if (it != audioInputTypeMap_.end()) {
+            return it->second;
+        } else {
+            return AUDIO_INPUT_MIC_TYPE;
+        }
+    }
+    return AUDIO_INPUT_DEFAULT_TYPE;
+}
+
+enum AudioInputType AudioCaptureSource::ConvertToHDIAudioInputType(int32_t sourceType, std::string hdiSourceType)
+{
+    AudioInputType hdiSource = MappingAudioInputType(hdiSourceType);
+    if (hdiSource != AUDIO_INPUT_DEFAULT_TYPE) {
+        return hdiSource;
+    }
+
     enum AudioInputType hdiAudioInputType;
     switch (sourceType) {
         case SOURCE_TYPE_INVALID:
@@ -757,6 +844,8 @@ uint32_t AudioCaptureSource::GetUniqueIdBySourceType(void) const
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_MIC_REF);
         case SOURCE_TYPE_WAKEUP:
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_WAKEUP);
+        case SOURCE_TYPE_VOICE_TRANSCRIPTION:
+            return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_VOICE_TRANSCRIPTION);
         default:
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_PRIMARY);
     }
@@ -805,13 +894,17 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
     param.format = ConvertToHdiFormat(attr_.format);
     param.isBigEndian = attr_.isBigEndian;
     param.channelCount = attr_.channel;
-    param.channelLayout = GetChannelLayoutByChannelCount(attr_.channel);
+    param.channelLayout = attr_.channelLayout;
+    if (GetChannelCountByChannelLayout(param.channelLayout) != param.channelCount) {
+        AUDIO_WARNING_LOG("channelLayout is ot suitable for channelCount, convert channel to channelLayout");
+        param.channelLayout = GetChannelLayoutByChannelCount(attr_.channel);
+    }
     param.silenceThreshold = attr_.bufferSize;
     param.frameSize = param.format * param.channelCount;
     if (param.frameSize != 0) {
         param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
     }
-    param.sourceType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
+    param.sourceType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType, attr_.hdiSourceType));
     CheckAcousticEchoCancelerSupported(attr_.sourceType, param.sourceType);
 
     if ((attr_.hasEcConfig || attr_.sourceType == SOURCE_TYPE_EC) && attr_.channelEc != 0) {
@@ -931,7 +1024,7 @@ int32_t AudioCaptureSource::DoSetInputRoute(DeviceType inputDevice)
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
     int32_t streamId = static_cast<int32_t>(GetUniqueIdBySourceType());
-    int32_t inputType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
+    int32_t inputType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType, attr_.hdiSourceType));
     CheckAcousticEchoCancelerSupported(attr_.sourceType, inputType);
     AUDIO_INFO_LOG("adapterName: %{public}s, inputDevice: %{public}d, streamId: %{public}d, inputType: %{public}d",
         attr_.adapterName.c_str(), inputDevice, streamId, inputType);
@@ -1163,7 +1256,7 @@ int32_t AudioCaptureSource::SetAccessoryDeviceState(bool state)
 
 int32_t AudioCaptureSource::DoStop(void)
 {
-    AUDIO_INFO_LOG("halName: %{public}s", halName_.c_str());
+    AUDIO_INFO_LOG("halName: %{public}s, sourcetype: %{public}d", halName_.c_str(), attr_.sourceType);
     Trace trace("AudioCaptureSource::DoStop");
 
     if (IsNonblockingSource(adapterNameCase_)) {

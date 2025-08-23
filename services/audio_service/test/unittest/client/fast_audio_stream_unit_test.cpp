@@ -14,6 +14,7 @@
 */
 
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 #include "audio_service_log.h"
 #include "audio_errors.h"
@@ -113,6 +114,12 @@ public:
     virtual void OnStateChange(const State state, const StateChangeCmdType cmdType = CMD_FROM_CLIENT) {};
 };
 
+class MockFastAudioStream : public FastAudioStream {
+public:
+    using FastAudioStream::FastAudioStream;
+    MOCK_METHOD(float, GetDuckVolume, (),  (override));
+};
+
 /**
  * @tc.name  : Test GetVolume API
  * @tc.type  : FUNC
@@ -187,14 +194,18 @@ HWTEST(FastSystemStreamUnitTest, SetSilentModeAndMixWithOthers_001, TestSize.Lev
  * @tc.number: GetSwitchInfo_001
  * @tc.desc  : Test GetSwitchInfo interface.
  */
-HWTEST(FastSystemStreamUnitTest, GetSwitchInfo_001, TestSize.Level1)
+HWTEST(FastSystemStreamUnitTest, GetSwitchInfo_001, TestSize.Level4)
 {
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSwitchInfo_001 start");
     int32_t appUid = static_cast<int32_t>(getuid());
+    auto fastAudioStream = std::make_shared<MockFastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    EXPECT_NE(fastAudioStream, nullptr);
+    EXPECT_CALL(*fastAudioStream, GetDuckVolume()).WillRepeatedly(testing::Return(0.2));
+
     IAudioStream::SwitchInfo info;
-    std::shared_ptr<FastAudioStream> fastAudioStream;
-    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
     fastAudioStream->GetSwitchInfo(info);
+    EXPECT_EQ(info.renderMode, fastAudioStream->renderMode_);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSwitchInfo_001 end");
 }
 
 /**
@@ -205,9 +216,11 @@ HWTEST(FastSystemStreamUnitTest, GetSwitchInfo_001, TestSize.Level1)
  */
 HWTEST(FastSystemStreamUnitTest, GetSwitchInfo_002, TestSize.Level1)
 {
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSwitchInfo_002 start");
     int32_t appUid = static_cast<int32_t>(getuid());
-    std::shared_ptr<FastAudioStream> fastAudioStream;
-    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    auto fastAudioStream = std::make_shared<MockFastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    EXPECT_NE(fastAudioStream, nullptr);
+    EXPECT_CALL(*fastAudioStream, GetDuckVolume()).WillRepeatedly(testing::Return(0.2));
 
     std::shared_ptr<AudioRendererWriteCallback> spkCallback = std::make_shared<AudioRendererWriteCallbackTest>();
     AudioStreamParams tempParams = {};
@@ -223,6 +236,8 @@ HWTEST(FastSystemStreamUnitTest, GetSwitchInfo_002, TestSize.Level1)
 
     IAudioStream::SwitchInfo info;
     fastAudioStream->GetSwitchInfo(info);
+    EXPECT_EQ(info.renderMode, fastAudioStream->renderMode_);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSwitchInfo_002 end");
 }
 
 /**
@@ -1738,6 +1753,64 @@ HWTEST(FastSystemStreamUnitTest, RestoreAudioStream_006, TestSize.Level1)
     fastAudioStream->state_ = RELEASED;
     int ret = fastAudioStream->RestoreAudioStream(needStoreState);
     EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test RestoreAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: RestoreAudioStream_007
+ * @tc.desc  : Test RestoreAudioStream interface using unsupported parameters.
+ */
+HWTEST(FastSystemStreamUnitTest, RestoreAudioStream_007, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    EXPECT_EQ(fastAudioStream->RestoreAudioStream(true), false);
+}
+
+/**
+ * @tc.name  : Test RestoreAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: RestoreAudioStream_008
+ * @tc.desc  : Test RestoreAudioStream interface using unsupported parameters.
+ */
+HWTEST(FastSystemStreamUnitTest, RestoreAudioStream_008, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    fastAudioStream->state_ = NEW;
+    EXPECT_NE(fastAudioStream->RestoreAudioStream(true), true);
+
+    fastAudioStream->state_ = RUNNING;
+    EXPECT_EQ(fastAudioStream->RestoreAudioStream(true), false);
+
+    fastAudioStream->state_ = PAUSED;
+    EXPECT_EQ(fastAudioStream->RestoreAudioStream(true), false);
+
+    fastAudioStream->state_ = STOPPED;
+    EXPECT_EQ(fastAudioStream->RestoreAudioStream(true), false);
+
+    fastAudioStream->state_ = STOPPING;
+    EXPECT_EQ(fastAudioStream->RestoreAudioStream(true), false);
+}
+/**
+ * @tc.name  : Test GetDefaultOutputDevice API
+ * @tc.type  : FUNC
+ * @tc.number: GetDefaultOutputDevice_001
+ * @tc.desc  : Test GetDefaultOutputDevice interface using unsupported parameters.
+ */
+HWTEST(FastSystemStreamUnitTest, GetDefaultOutputDevice_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    fastAudioStream->defaultOutputDevice_ = DeviceType::DEVICE_TYPE_SPEAKER;
+
+    DeviceType result = fastAudioStream->GetDefaultOutputDevice();
+
+    EXPECT_EQ(result, DeviceType::DEVICE_TYPE_SPEAKER);
 }
 } // namespace AudioStandard
 } // namespace OHOS

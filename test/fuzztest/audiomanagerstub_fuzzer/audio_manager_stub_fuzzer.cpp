@@ -51,7 +51,6 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 1;
 bool g_hasPermission = false;
 const int32_t SYSTEM_ABILITY_ID = 3001;
 const bool RUN_ON_CREATE = false;
@@ -242,7 +241,7 @@ void OnRemoteRequestFuzzTest()
     audioServer->OnRemoteRequest(format, data, reply, option);
 }
 
-TestFuncs g_testFuncs[TESTSIZE] = {
+TestFuncs g_testFuncs[] = {
     OnRemoteRequestFuzzTest,
 };
 

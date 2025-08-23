@@ -19,6 +19,7 @@
 #include <atomic>
 #include <thread>
 #include "audio_policy_manager.h"
+#include "sle_audio_device_manager.h"
 using namespace std;
 
 namespace OHOS {
@@ -60,6 +61,60 @@ uint32_t GetArrLength(T& arr)
     }
     return sizeof(arr) / sizeof(arr[0]);
 }
+
+class AudioManagerDeviceChangeCallbackFuzzTest : public AudioManagerDeviceChangeCallback {
+public:
+    AudioManagerDeviceChangeCallbackFuzzTest() {}
+    void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override {}
+};
+
+class AudioPreferredOutputDeviceChangeCallbackFuzzTest : public AudioPreferredOutputDeviceChangeCallback {
+public:
+    AudioPreferredOutputDeviceChangeCallbackFuzzTest() {}
+    void OnPreferredOutputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) override {}
+};
+
+class AudioPreferredInputDeviceChangeCallbackFuzzTest : public AudioPreferredInputDeviceChangeCallback {
+public:
+    AudioPreferredInputDeviceChangeCallbackFuzzTest() {}
+    void OnPreferredInputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) override {};
+};
+
+class DeviceChangeWithInfoCallbackFuzzTest : public DeviceChangeWithInfoCallback {
+public:
+    DeviceChangeWithInfoCallbackFuzzTest() {}
+    void OnDeviceChangeWithInfo(const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo,
+        const AudioStreamDeviceChangeReasonExt reason) override {}
+
+    void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
+        const AudioStreamDeviceChangeReasonExt reason) override {}
+};
+
+class AudioManagerAvailableDeviceChangeCallbackFuzzTest : public AudioManagerAvailableDeviceChangeCallback {
+public:
+    AudioManagerAvailableDeviceChangeCallbackFuzzTest() {}
+    void OnAvailableDeviceChange(const AudioDeviceUsage usage, const DeviceChangeAction &deviceChangeAction) override {}
+};
+
+class AudioDeviceAnahsFuzzTest : public AudioDeviceAnahs {
+public:
+    AudioDeviceAnahsFuzzTest() {}
+
+    int32_t OnExtPnpDeviceStatusChanged(std::string anahsStatus, std::string anahsShowType) override
+    {
+        return 0;
+    }
+};
+
+class AudioQueryDeviceVolumeBehaviorCallbackFuzzTest : public AudioQueryDeviceVolumeBehaviorCallback {
+public:
+    AudioQueryDeviceVolumeBehaviorCallbackFuzzTest() {}
+    VolumeBehavior OnQueryDeviceVolumeBehavior() override
+    {
+        VolumeBehavior volumeBehavior;
+        return volumeBehavior;
+    }
+};
 
 void AudioPolicyManagerOneFuzzTest()
 {
@@ -428,6 +483,10 @@ void AudioPolicyManagerNiNeFuzzTest()
     vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     StreamUsage streamUsage = GetData<StreamUsage>();
     std::string address = "address";
+    int32_t volumeDegree = GetData<int32_t>();
+    AudioVolumeType volumeType = GetData<AudioVolumeType>();
+    int32_t volumeFlag = GetData<int32_t>();
+    uid_t uid = GetData<uid_t>();
 
     AudioPolicyManager::GetInstance().SetMicrophoneMutePersistent(isMute, type);
     AudioPolicyManager::GetInstance().GetPersistentMicMuteState();
@@ -441,6 +500,9 @@ void AudioPolicyManagerNiNeFuzzTest()
     AudioPolicyManager::GetInstance().GetSpatializationState(streamUsage);
     AudioPolicyManager::GetInstance().IsSpatializationSupported();
     AudioPolicyManager::GetInstance().IsSpatializationSupportedForDevice(address);
+    AudioPolicyManager::GetInstance().SetSystemVolumeDegree(volumeType, volumeDegree, volumeFlag, uid);
+    AudioPolicyManager::GetInstance().GetSystemVolumeDegree(volumeType, uid);
+    AudioPolicyManager::GetInstance().GetMinVolumeDegree(volumeType);
 }
 
 void AudioPolicyManagerDeviceOneFuzzTest()
@@ -519,14 +581,112 @@ void AudioPolicyManagerDeviceTwoFuzzTest()
     AudioPolicyManager::GetInstance().SetPreferredDevice(preferredType, desc, uid);
     AudioPolicyManager::GetInstance().SetAudioDeviceAnahsCallback(audioDeviceAnahs);
     AudioPolicyManager::GetInstance().UnsetAudioDeviceAnahsCallback();
-    AudioPolicyManager::GetInstance().MoveToNewPipe(sessionId, pipeType);
     AudioPolicyManager::GetInstance().SetDeviceConnectionStatus(desc, isConnected);
     AudioPolicyManager::GetInstance().UpdateDeviceInfo(desc, command);
     AudioPolicyManager::GetInstance().SetSleAudioOperationCallback(sleAudioOperationCallback);
 }
 
+void AudioPolicyManagerIsDeviceActiveFuzzTest()
+{
+    AudioPolicyManager audioPolicyManager;
+    InternalDeviceType deviceType = GetData<InternalDeviceType>();
+    audioPolicyManager.IsDeviceActive(deviceType);
+}
 
-typedef void (*TestFuncs[11])();
+void AudioPolicyManagerUnsetDeviceChangeCallbackFuzzTest()
+{
+    AudioPolicyManager audioPolicyManager;
+    int32_t clientId = GetData<int32_t>();
+    DeviceFlag flag = GetData<DeviceFlag>();
+    std::shared_ptr<AudioManagerDeviceChangeCallback> cb = std::make_shared<AudioManagerDeviceChangeCallbackFuzzTest>();
+    audioPolicyManager.audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+
+    audioPolicyManager.UnsetDeviceChangeCallback(clientId, flag, cb);
+}
+
+void AudioPolicyManagerSetPreferredInputDeviceChangeCallbackFuzzTest()
+{
+    AudioPolicyManager audioPolicyManager;
+
+    std::shared_ptr<AudioPreferredInputDeviceChangeCallback> callback =
+        std::make_shared<AudioPreferredInputDeviceChangeCallbackFuzzTest>();
+    audioPolicyManager.audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    AudioCapturerInfo capturerInfo;
+    audioPolicyManager.isAudioPolicyClientRegisted_ = GetData<bool>();
+    audioPolicyManager.SetPreferredInputDeviceChangeCallback(capturerInfo, callback);
+}
+
+void AudioPolicyManagerUnsetPreferredOutputDeviceChangeCallbackFuzzTest()
+{
+    AudioPolicyManager audioPolicyManager;
+    audioPolicyManager.audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> callback =
+        std::make_shared<AudioPreferredOutputDeviceChangeCallbackFuzzTest>();
+    audioPolicyManager.UnsetPreferredOutputDeviceChangeCallback(callback);
+}
+
+void AudioPolicyManagerUnsetPreferredInputDeviceChangeCallbackFuzzTest()
+{
+    AudioPolicyManager audioPolicyManager;
+    audioPolicyManager.audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    std::shared_ptr<AudioPreferredInputDeviceChangeCallback> callback =
+        std::make_shared<AudioPreferredInputDeviceChangeCallbackFuzzTest>();
+    audioPolicyManager.UnsetPreferredInputDeviceChangeCallback(callback);
+}
+
+void AudioPolicyManagerRegisterDeviceChangeWithInfoCallbackFuzzTest()
+{
+    AudioPolicyManager audioPolicyManager;
+    audioPolicyManager.audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    std::shared_ptr<DeviceChangeWithInfoCallback> callbackByshared =
+        std::make_shared<DeviceChangeWithInfoCallbackFuzzTest>();
+    std::weak_ptr<DeviceChangeWithInfoCallback> callback = callbackByshared;
+    uint32_t sessionID = GetData<uint32_t>();
+    audioPolicyManager.isAudioPolicyClientRegisted_ = GetData<bool>();
+    audioPolicyManager.RegisterDeviceChangeWithInfoCallback(sessionID, callback);
+}
+
+void AudioPolicyManagerUnregisterDeviceChangeWithInfoCallbackFuzzTest()
+{
+    AudioPolicyManager audioPolicyManager;
+    audioPolicyManager.audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    uint32_t sessionID = GetData<uint32_t>();
+    audioPolicyManager.UnregisterDeviceChangeWithInfoCallback(sessionID);
+}
+
+void AudioPolicyManagerSetAvailableDeviceChangeCallbackFuzzTest()
+{
+    AudioPolicyManager audioPolicyManager;
+    int32_t clientId = GetData<int32_t>();
+    AudioDeviceUsage usage = GetData<AudioDeviceUsage>();
+    std::shared_ptr<AudioManagerAvailableDeviceChangeCallback> callback =
+        make_shared<AudioManagerAvailableDeviceChangeCallbackFuzzTest>();
+
+    audioPolicyManager.SetAvailableDeviceChangeCallback(clientId, usage, callback);
+}
+
+void AudioPolicyManagerSetAudioDeviceAnahsCallbackFuzzTest()
+{
+    AudioPolicyManager audioPolicyManager;
+    audioPolicyManager.audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    bool isNullptr = GetData<bool>();
+    if (isNullptr) {
+        audioPolicyManager.audioPolicyClientStubCB_ = nullptr;
+    }
+    std::shared_ptr<AudioDeviceAnahs> callback = make_shared<AudioDeviceAnahsFuzzTest>();
+
+    audioPolicyManager.SetAudioDeviceAnahsCallback(callback);
+}
+
+void AudioPolicyManagerSetSleAudioOperationCallbackFuzzTest()
+{
+    AudioPolicyManager audioPolicyManager;
+    std::shared_ptr<SleAudioOperationCallback> callback = make_shared<SleAudioDeviceManager>();
+
+    audioPolicyManager.SetSleAudioOperationCallback(callback);
+}
+
+typedef void (*TestFuncs[21])();
 
 TestFuncs g_testFuncs = {
     AudioPolicyManagerOneFuzzTest,
@@ -540,6 +700,16 @@ TestFuncs g_testFuncs = {
     AudioPolicyManagerNiNeFuzzTest,
     AudioPolicyManagerDeviceOneFuzzTest,
     AudioPolicyManagerDeviceTwoFuzzTest,
+    AudioPolicyManagerIsDeviceActiveFuzzTest,
+    AudioPolicyManagerUnsetDeviceChangeCallbackFuzzTest,
+    AudioPolicyManagerSetPreferredInputDeviceChangeCallbackFuzzTest,
+    AudioPolicyManagerUnsetPreferredOutputDeviceChangeCallbackFuzzTest,
+    AudioPolicyManagerUnsetPreferredInputDeviceChangeCallbackFuzzTest,
+    AudioPolicyManagerRegisterDeviceChangeWithInfoCallbackFuzzTest,
+    AudioPolicyManagerUnregisterDeviceChangeWithInfoCallbackFuzzTest,
+    AudioPolicyManagerSetAvailableDeviceChangeCallbackFuzzTest,
+    AudioPolicyManagerSetAudioDeviceAnahsCallbackFuzzTest,
+    AudioPolicyManagerSetSleAudioOperationCallbackFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

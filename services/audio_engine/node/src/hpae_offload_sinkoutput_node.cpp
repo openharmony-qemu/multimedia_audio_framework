@@ -45,11 +45,13 @@ namespace {
     constexpr uint32_t OFFLOAD_HDI_CACHE_FRONTGROUND_IN_MS = 200;
     constexpr uint32_t OFFLOAD_HDI_CACHE_MOVIE_IN_MS = 500;
     // hdi fallback, modify when hdi change
+    constexpr uint32_t OFFLOAD_FAD_INTERVAL_IN_US = 180000;
     constexpr uint32_t OFFLOAD_SET_BUFFER_SIZE_NUM = 5;
     constexpr uint32_t POLICY_STATE_DELAY_IN_SEC = 3;
     static constexpr float EPSILON = 1e-6f;
 
     const std::string DEVICE_CLASS_OFFLOAD = "offload";
+    const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
 }
 HpaeOffloadSinkOutputNode::HpaeOffloadSinkOutputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo),
@@ -113,7 +115,7 @@ void HpaeOffloadSinkOutputNode::DoProcess()
     int32_t ret = ProcessRenderFrame();
     // if renderframe faild, sleep and return directly
     // if renderframe full, unlock the powerlock
-    static uint32_t retryCount = 1;
+    retryCount_ = 1;
     if (ret == OFFLOAD_FULL) {
         if (hdiPolicyState_ == OFFLOAD_INACTIVE_BACKGROUND || GetStreamType() == STREAM_MOVIE) {
             RunningLock(false);
@@ -121,13 +123,13 @@ void HpaeOffloadSinkOutputNode::DoProcess()
         isHdiFull_.store(true);
         return;
     } else if (ret != SUCCESS) {
-        usleep(std::min(retryCount, FRAME_TIME_IN_MS) * TIME_US_PER_MS);
-        if (retryCount < ERR_RETRY_COUNT) {
-            retryCount++;
+        usleep(std::min(retryCount_, FRAME_TIME_IN_MS) * TIME_US_PER_MS);
+        if (retryCount_ < ERR_RETRY_COUNT) {
+            retryCount_++;
         }
         return;
     }
-    retryCount = 1;
+    retryCount_ = 1;
     return;
 }
 
@@ -360,6 +362,8 @@ void HpaeOffloadSinkOutputNode::StopStream()
     auto ret = RenderSinkFlush();
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "RenderSinkFlush failed");
     uint64_t cacheLenInHdi = CalcOffloadCacheLenInHdi();
+    uint64_t fadeOutLen = static_cast<uint64_t>(OFFLOAD_FAD_INTERVAL_IN_US * speed_);
+    cacheLenInHdi = cacheLenInHdi > fadeOutLen ? cacheLenInHdi - fadeOutLen : 0;
     uint64_t rewindTime = cacheLenInHdi + ConvertDatalenToUs(renderFrameData_.size(), GetNodeInfo());
     AUDIO_DEBUG_LOG("OffloadRewindAndFlush rewind time in us %{public}" PRIu64, rewindTime);
     auto callback = GetNodeInfo().statusCallback.lock();
@@ -413,6 +417,7 @@ int32_t HpaeOffloadSinkOutputNode::SetOffloadRenderCallbackType(int32_t type)
 void HpaeOffloadSinkOutputNode::SetSpeed(float speed)
 {
     CHECK_AND_RETURN_LOG(audioRendererSink_, "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
+    CHECK_AND_RETURN(GetStreamType() == STREAM_MOVIE || GetDeviceClass() == DEVICE_CLASS_REMOTE_OFFLOAD);
     speed_ = speed;
     audioRendererSink_->SetSpeed(speed);
 }
@@ -466,7 +471,8 @@ int32_t HpaeOffloadSinkOutputNode::ProcessRenderFrame()
         return OFFLOAD_WRITE_FAILED;
     }
     uint64_t writeLen = 0;
-    char *renderFrameData = (char *)renderFrameData_.data();
+    renderFrameDataTemp_ = renderFrameData_;
+    char *renderFrameData = (char *)renderFrameDataTemp_.data();
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer timer;
     timer.Start();
@@ -502,8 +508,6 @@ int32_t HpaeOffloadSinkOutputNode::ProcessRenderFrame()
     // hdi fallback, dont modify
     SetBufferSizeWhileRenderFrame();
 #ifdef ENABLE_HOOK_PCM
-    AUDIO_DEBUG_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderFrame interval: %{public}" PRIu64 " ms",
-        sinkOutAttr_.adapterName.c_str(), interval);
     if (outputPcmDumper_) {
         outputPcmDumper_->Dump((int8_t *)renderFrameData, renderFrameData_.size());
     }

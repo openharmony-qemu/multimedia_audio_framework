@@ -16,7 +16,6 @@
 #ifndef I_ST_AUDIO_MANAGER_BASE_H
 #define I_ST_AUDIO_MANAGER_BASE_H
 
-#include "iremote_object.h"
 #include "audio_stutter.h"
 #include "audio_workgroup_ipc.h"
 
@@ -29,6 +28,9 @@ public:
     
     virtual void OnDataTransferStateChange(const int32_t &callbackId,
         const AudioRendererDataTransferStateChangeInfo &info) = 0;
+
+    virtual void OnMuteStateChange(const int32_t &callbackId, const int32_t &uid,
+        const uint32_t &sessionId, const bool &isMuted) = 0;
 };
 
 } // namespace AudioStandard

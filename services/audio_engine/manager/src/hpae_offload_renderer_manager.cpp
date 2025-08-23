@@ -222,6 +222,7 @@ int32_t HpaeOffloadRendererManager::Pause(uint32_t sessionId)
             sinkOutputNode_->StopStream();
         }
         sessionInfo_.state = HPAE_SESSION_PAUSED;
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionInfo_.state, OPERATION_PAUSED);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -271,6 +272,7 @@ int32_t HpaeOffloadRendererManager::Stop(uint32_t sessionId)
         if (state == HPAE_SESSION_RUNNING) {
             sinkOutputNode_->StopStream();
         }
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionInfo_.state, OPERATION_STOPPED);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -298,7 +300,11 @@ void HpaeOffloadRendererManager::MoveAllStreamToNewSink(const std::string &sinkN
     if (sinkInputs.size() == 0) {
         AUDIO_WARNING_LOG("sink count is 0,no need move session");
     }
-    TriggerCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);
+    if (moveType == MOVE_ALL) {
+        TriggerSyncCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);
+    } else {
+        TriggerCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);
+    }
 }
 
 int32_t HpaeOffloadRendererManager::MoveAllStream(const std::string &sinkName, const std::vector<uint32_t>& sessionIds,
@@ -532,6 +538,7 @@ int32_t HpaeOffloadRendererManager::RegisterWriteCallback(
     uint32_t sessionId, const std::weak_ptr<IStreamCallback> &callback)
 {
     auto request = [this, sessionId, callback]() {
+        CHECK_AND_RETURN_LOG(sinkInputNode_ != nullptr, "SinkInputNode is nullptr");
         CHECK_AND_RETURN_LOG(sessionId == sinkInputNode_->GetSessionId(),
             "RegisterWriteCallback not find sessionId %{public}u",
             sessionId);
@@ -639,7 +646,7 @@ int32_t HpaeOffloadRendererManager::GetSinkInputInfo(uint32_t sessionId, HpaeSin
     return SUCCESS;
 }
 
-int32_t HpaeOffloadRendererManager::RefreshProcessClusrerByDevice()
+int32_t HpaeOffloadRendererManager::RefreshProcessClusterByDevice()
 {
     return SUCCESS;
 }

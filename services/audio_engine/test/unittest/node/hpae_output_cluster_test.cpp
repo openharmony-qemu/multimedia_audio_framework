@@ -159,6 +159,7 @@ HWTEST_F(HpaeOutputClusterTest, testHpaeWriteDataOutSessionTest, TestSize.Level0
     std::shared_ptr<WriteFixedValueCb> writeFixedValueCb1 =
         std::make_shared<WriteFixedValueCb>(SAMPLE_F32LE, TEST_VALUE_2);
     ringSinkInputNode->RegisterWriteCallback(writeFixedValueCb1);
+    hpaeOutputCluster->RegisterCurrentDeviceCallback();
     hpaeOutputCluster->DoProcess();
     TestRendererRenderFrame(hpaeOutputCluster->GetFrameData(),
         nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));

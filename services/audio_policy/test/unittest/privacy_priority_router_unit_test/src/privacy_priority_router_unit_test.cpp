@@ -25,10 +25,88 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
+const static int32_t TEST_CLIENT_UID = 1;
+const static uint32_t TEST_SESSION_ID = 1;
+
 void PrivacyPriorityRouterUnitTest::SetUpTestCase(void) {}
 void PrivacyPriorityRouterUnitTest::TearDownTestCase(void) {}
 void PrivacyPriorityRouterUnitTest::SetUp(void) {}
 void PrivacyPriorityRouterUnitTest::TearDown(void) {}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter.
+ * @tc.number: GetRecordCaptureDevice_002
+ * @tc.desc  : Test GetRecordCaptureDevice interface.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, GetRecordCaptureDevice_002, TestSize.Level1)
+{
+    PrivacyPriorityRouter privacyPriorityRouter;
+    SourceType sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    int32_t clientUID = TEST_CLIENT_UID;
+    uint32_t sessionID = TEST_SESSION_ID;
+    auto result = privacyPriorityRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter.
+ * @tc.number: GetRecordCaptureDevice_003
+ * @tc.desc  : Test GetRecordCaptureDevice interface.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, GetRecordCaptureDevice_003, TestSize.Level1)
+{
+    PrivacyPriorityRouter privacyPriorityRouter;
+    SourceType sourceType = SOURCE_TYPE_INVALID;
+    int32_t clientUID = TEST_CLIENT_UID;
+    uint32_t sessionID = TEST_SESSION_ID;
+    auto result = privacyPriorityRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter.
+ * @tc.number: GetRecordCaptureDevice_004
+ * @tc.desc  : Test GetRecordCaptureDevice interface.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, GetRecordCaptureDevice_004, TestSize.Level1)
+{
+    PrivacyPriorityRouter privacyPriorityRouter;
+    SourceType sourceType = SOURCE_TYPE_INVALID;
+    int32_t clientUID = TEST_CLIENT_UID;
+    uint32_t sessionID = TEST_SESSION_ID;
+    shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    auto result = privacyPriorityRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
+    EXPECT_NE(result->deviceType_, desc->deviceType_);
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter.
+ * @tc.number: GetCallRenderDevice_001
+ * @tc.desc  : Test GetCallRenderDevice interface.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, GetCallRenderDevice_001, TestSize.Level1)
+{
+    PrivacyPriorityRouter privacyPriorityRouter;
+    StreamUsage streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
+    int32_t clientUID = TEST_CLIENT_UID;
+    auto result = privacyPriorityRouter.GetCallRenderDevice(streamUsage, clientUID);
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter.
+ * @tc.number: GetCallRenderDevice_002
+ * @tc.desc  : Test GetCallRenderDevice interface.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, GetCallRenderDevice_002, TestSize.Level1)
+{
+    PrivacyPriorityRouter privacyPriorityRouter;
+    StreamUsage streamUsage = STREAM_USAGE_MEDIA;
+    int32_t clientUID = TEST_CLIENT_UID;
+    auto result = privacyPriorityRouter.GetCallRenderDevice(streamUsage, clientUID);
+    EXPECT_NE(result, nullptr);
+}
 
 /**
  * @tc.name  : Test PrivacyPriorityRouter.
@@ -60,6 +138,65 @@ HWTEST(PrivacyPriorityRouterUnitTest, PrivacyPriorityRouter_002, TestSize.Level1
     EXPECT_EQ(1, router.GetRingRenderDevices(STREAM_USAGE_VOICE_RINGTONE, 1).size());
     EXPECT_EQ(1, router.GetRingRenderDevices(STREAM_USAGE_RINGTONE, 1).size());
     EXPECT_EQ(1, router.GetRingRenderDevices(STREAM_USAGE_ALARM, 1).size());
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter.
+ * @tc.number: GetMediaRenderDevice_001
+ * @tc.desc  : Test GetMediaRenderDevice interface.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, GetMediaRenderDevice_001, TestSize.Level4)
+{
+    PrivacyPriorityRouter router;
+    StreamUsage streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
+    int32_t clientUID = TEST_CLIENT_UID;
+    auto ret = router.GetMediaRenderDevice(streamUsage, clientUID);
+    EXPECT_NE(ret, nullptr);
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter.
+ * @tc.number: GetCallCaptureDevice_001
+ * @tc.desc  : Test GetCallCaptureDevice interface.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, GetCallCaptureDevice_001, TestSize.Level4)
+{
+    PrivacyPriorityRouter router;
+    SourceType sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    int32_t clientUID = TEST_CLIENT_UID;
+    uint32_t sessionID = TEST_SESSION_ID;
+    auto ret = router.GetCallCaptureDevice(sourceType, clientUID, sessionID);
+    EXPECT_NE(ret, nullptr);
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter.
+ * @tc.number: GetToneRenderDevice_001
+ * @tc.desc  : Test GetToneRenderDevice interface.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, GetToneRenderDevice_001, TestSize.Level4)
+{
+    PrivacyPriorityRouter router;
+    StreamUsage streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
+    int32_t clientUID = TEST_CLIENT_UID;
+    auto ret = router.GetToneRenderDevice(streamUsage, clientUID);
+    EXPECT_NE(ret, nullptr);
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter.
+ * @tc.number: RemoveArmUsb_001
+ * @tc.desc  : Test RemoveArmUsb interface.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, RemoveArmUsb_001, TestSize.Level4)
+{
+    PrivacyPriorityRouter router;
+    vector<shared_ptr<AudioDeviceDescriptor>> descs;
+    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    descs.emplace_back(desc);
+    router.RemoveArmUsb(descs);
+    EXPECT_EQ(descs.size(), 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

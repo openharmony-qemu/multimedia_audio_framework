@@ -27,10 +27,12 @@ void AudioCollaborativeServiceUnitTest::TearDownTestCase(void) {}
 void AudioCollaborativeServiceUnitTest::SetUp(void)
 {
     audioCollaborativeServicePtr_ = std::make_unique<AudioCollaborativeService>();
+    audioCollaborativeService_.isCollaborativePlaybackSupported_ = true;
 }
 void AudioCollaborativeServiceUnitTest::TearDown(void)
 {
     audioCollaborativeServicePtr_.reset();
+    audioCollaborativeService_.addressToCollaborativeEnabledMap_.clear();
 }
 static std::string testAddr1 = "address1";
 static std::string testAddr2 = "address2";
@@ -49,8 +51,13 @@ static const std::string BLUETOOTH_EFFECT_CHAIN_NAME = "EFFECTCHAIN_COLLABORATIV
 */
 HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_001, TestSize.Level0)
 {
-    bool isSupported = audioCollaborativeService_.IsCollaborativePlaybackSupported();
-    EXPECT_EQ(isSupported, true);
+    std::vector<std::string> applyVec;
+    EffectChain effectChain1(BLUETOOTH_EFFECT_CHAIN_NAME, applyVec, AUDIO_COLLABORATIVE_SERVICE_LABEL);
+    EffectChain effectChain2(BLUETOOTH_EFFECT_CHAIN_NAME, applyVec, TEST_LABEL);
+    EffectChain effectChain3(TEST_NAME, applyVec, TEST_LABEL);
+    std::vector<EffectChain> effectChains = { effectChain1, effectChain2, effectChain3 };
+    audioCollaborativeServicePtr_->Init(effectChains);
+    EXPECT_TRUE(audioCollaborativeServicePtr_->isCollaborativePlaybackSupported_);
 }
 
 /**
@@ -101,6 +108,7 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_003, TestS
 * @tc.name  : Test Su.
 * @tc.number: AudioSpatializationService_004
 * @tc.desc  : Test UpdateCurrentDevice.
+*             isCollaborativeStateEnabled_ should be updated when collaborative state for current device is changed.
 */
 HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_004, TestSize.Level0)
 {
@@ -117,51 +125,42 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_004, TestS
     EXPECT_EQ(ret, SUCCESS);
     ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(AudioDevice2, false);
     EXPECT_EQ(ret, SUCCESS);
-    audioCollaborativeService_.UpdateCurrentDevice(*AudioDevice1);
     audioCollaborativeService_.UpdateCurrentDevice(*AudioDevice2);
+    EXPECT_EQ(audioCollaborativeService_.isCollaborativeStateEnabled_, false);
+    audioCollaborativeService_.UpdateCurrentDevice(*AudioDevice1);
+    EXPECT_EQ(audioCollaborativeService_.isCollaborativeStateEnabled_, true);
     audioCollaborativeService_.UpdateCurrentDevice(*AudioDevice3);
-}
-
-/**
-* @tc.name  : Test Su.
-* @tc.number: AudioCollaborativeService_005
-* @tc.desc  : Test Init.
-*/
-HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_005, TestSize.Level0)
-{
-    std::vector<std::string> applyVec;
-    EffectChain effectChain1(BLUETOOTH_EFFECT_CHAIN_NAME, applyVec, AUDIO_COLLABORATIVE_SERVICE_LABEL);
-    EffectChain effectChain2(BLUETOOTH_EFFECT_CHAIN_NAME, applyVec, TEST_LABEL);
-    EffectChain effectChain3(TEST_NAME, applyVec, TEST_LABEL);
-    std::vector<EffectChain> effectChains = { effectChain1, effectChain2, effectChain3 };
-    audioCollaborativeServicePtr_->Init(effectChains);
-    EXPECT_TRUE(audioCollaborativeServicePtr_->isCollaborativePlaybackSupported_);
+    EXPECT_EQ(audioCollaborativeService_.isCollaborativeStateEnabled_, false);
 }
 
 /**
 * @tc.name  : Test Su.
 * @tc.number: AudioCollaborativeService_006
 * @tc.desc  : Test UpdateCurrentDevice.
+*             When device is in addressToCollaborativeEnabledMap_ and its type is changed, its collaborative state
+*             should be changed too.s
 */
-HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_006, TestSize.Level0)
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_005, TestSize.Level0)
 {
     AudioDeviceDescriptor descriptor1;
     descriptor1.macAddress_ = TEST_MAC_ADDR;
-    descriptor1.deviceType_ = DEVICE_TYPE_EARPIECE;
+    descriptor1.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     AudioDeviceDescriptor descriptor2;
-    descriptor2.macAddress_ = EMPTY_MAC_ADDR;
-    descriptor2.deviceType_ = DEVICE_TYPE_EARPIECE;
-    audioCollaborativeServicePtr_->addressToCollaborativeEnabledMap_
-        .insert(std::pair<std::string, bool>(TEST_MAC_ADDR, true));
+    descriptor2.macAddress_ = testAddr1;
+    descriptor2.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    audioCollaborativeServicePtr_->addressToCollaborativeEnabledMap_[TEST_MAC_ADDR] = COLLABORATIVE_OPENED;
 
+    descriptor1.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     audioCollaborativeServicePtr_->UpdateCurrentDevice(descriptor1);
-    EXPECT_EQ(audioCollaborativeServicePtr_->addressToCollaborativeEnabledMap_.size(), 0);
+    EXPECT_EQ(audioCollaborativeServicePtr_->addressToCollaborativeEnabledMap_[TEST_MAC_ADDR], COLLABORATIVE_RESERVED);
+
     descriptor1.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     audioCollaborativeServicePtr_->UpdateCurrentDevice(descriptor1);
-    EXPECT_EQ(audioCollaborativeServicePtr_->addressToCollaborativeEnabledMap_.size(), 1);
+    EXPECT_EQ(audioCollaborativeServicePtr_->addressToCollaborativeEnabledMap_[TEST_MAC_ADDR], COLLABORATIVE_OPENED);
+    // size of addressToCollaborativeEnabledMap_ should no be changed by UpdateCurrentDevice()
     audioCollaborativeServicePtr_->UpdateCurrentDevice(descriptor2);
     EXPECT_EQ(audioCollaborativeServicePtr_->addressToCollaborativeEnabledMap_.size(), 1);
-    descriptor1.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    descriptor1.deviceType_ = DEVICE_TYPE_SPEAKER;
     audioCollaborativeServicePtr_->UpdateCurrentDevice(descriptor2);
     EXPECT_EQ(audioCollaborativeServicePtr_->addressToCollaborativeEnabledMap_.size(), 1);
 }
@@ -171,25 +170,32 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_006, TestS
 * @tc.number: AudioCollaborativeService_007
 * @tc.desc  : Test UpdateCollaborativeStateReal.
 */
-HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_007, TestSize.Level0)
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_006, TestSize.Level0)
 {
+    // local device does not support collaborative service
     audioCollaborativeServicePtr_->isCollaborativePlaybackSupported_ = false;
     EXPECT_EQ(audioCollaborativeServicePtr_->UpdateCollaborativeStateReal(), ERROR);
 
     audioCollaborativeServicePtr_->isCollaborativePlaybackSupported_ = true;
+    // current device is not in addressToCollaborativeEnabledMap_ but collaborative state is true
+    audioCollaborativeServicePtr_->curDeviceAddress_ = testAddr1;
     audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = true;
-    audioCollaborativeServicePtr_->addressToCollaborativeEnabledMap_
-        .insert(std::pair<std::string, bool>(TEST_MAC_ADDR, true));
-    audioCollaborativeServicePtr_->curDeviceAddress_ = EMPTY_MAC_ADDR;
-    EXPECT_EQ(audioCollaborativeServicePtr_->UpdateCollaborativeStateReal(),
-        ERR_OPERATION_FAILED);
-
-    audioCollaborativeServicePtr_->curDeviceAddress_ = TEST_MAC_ADDR;
     EXPECT_EQ(audioCollaborativeServicePtr_->UpdateCollaborativeStateReal(), ERR_OPERATION_FAILED);
 
+    // current device is not in addressToCollaborativeEnabledMap_ but collaborative state is false
+    audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = false;
+    EXPECT_EQ(audioCollaborativeServicePtr_->UpdateCollaborativeStateReal(), SUCCESS);
+    
+    // current device address is in addressToCollaborativeEnabledMap_ and collaborative state should be changed
+    audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = false;
+    audioCollaborativeServicePtr_->addressToCollaborativeEnabledMap_[TEST_MAC_ADDR] = COLLABORATIVE_OPENED;
+    audioCollaborativeServicePtr_->curDeviceAddress_ = TEST_MAC_ADDR;
+    EXPECT_EQ(audioCollaborativeServicePtr_->UpdateCollaborativeStateReal(), ERR_OPERATION_FAILED);
+    EXPECT_EQ(audioCollaborativeServicePtr_->GetRealCollaborativeState(), true);
+
+    // current device address is in addressToCollaborativeEnabledMap_ and collaborative state should not be changed
     audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = true;
     EXPECT_EQ(audioCollaborativeServicePtr_->UpdateCollaborativeStateReal(), SUCCESS);
-    EXPECT_EQ(audioCollaborativeServicePtr_->GetRealCollaborativeState(), true);
 }
 } // AudioStandard
 } // OHOS

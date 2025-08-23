@@ -102,7 +102,7 @@ CArrAudioRendererChangeInfo MMAAudioStreamManagerImpl::GetCurrentRendererChangeI
         return CArrAudioRendererChangeInfo();
     }
     arrInfo.head = head;
-    if (memset_s(head, arrInfo.size, 0, arrInfo.size) != EOK) {
+    if (memset_s(head, mallocSize, 0, mallocSize) != EOK) {
         free(head);
         *errorCode = CJ_ERR_SYSTEM;
         return CArrAudioRendererChangeInfo();

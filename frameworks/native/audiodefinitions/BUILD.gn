@@ -37,6 +37,8 @@ ohos_shared_library("audio_definitions") {
     "../../../services/audio_policy/common/include",
   ]
 
+  deps = [ "../audioutils:audio_utils" ]
+
   sources = [
     "../../../services/audio_policy/server/domain/device/src/audio_device_descriptor.cpp",
     "./src/audio_pipe_info.cpp",
@@ -78,14 +80,16 @@ ohos_unittest("audio_definitions_unit_test") {
   ]
 
   include_dirs = [
-    "./include",
+    "./test/unittest",
     "../../../frameworks/native/audioutils/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../../../services/audio_policy/common/include",
   ]
 
   sources = [
+    "test/unittest/audio_definitions_unit_test_utils.cpp",
     "test/unittest/audio_stream_descriptor_unit_test.cpp",
+    "test/unittest/audio_pipe_info_unit_test.cpp",
   ]
 
   deps = [ 

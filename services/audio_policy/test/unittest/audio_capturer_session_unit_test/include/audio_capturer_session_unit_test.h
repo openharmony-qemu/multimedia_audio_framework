@@ -18,6 +18,7 @@
 
 #include "gtest/gtest.h"
 #include "audio_capturer_session.h"
+#include "audio_pipe_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {

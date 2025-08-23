@@ -54,11 +54,14 @@ public:
     static AudioPolicyManager& GetInstance();
     static const sptr<IAudioPolicy> GetAudioPolicyManagerProxy(bool block = true);
 
-    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType);
+    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
 
-    int32_t GetMinVolumeLevel(AudioVolumeType volumeType);
+    int32_t GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
 
     int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, bool isLegacy = false,
+        int32_t volumeFlag = 0, int32_t uid = 0);
+
+    int32_t SetSystemNotificationVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, bool isLegacy = false,
         int32_t volumeFlag = 0, int32_t uid = 0);
 
     int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType,
@@ -78,6 +81,8 @@ public:
     AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid);
 
     int32_t GetSystemVolumeLevel(AudioVolumeType volumeType, int32_t uid = 0);
+
+    int32_t GetSystemNotificationVolumeLevel(AudioVolumeType volumeType, int32_t uid = 0);
 
     int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
 
@@ -209,6 +214,10 @@ public:
     int32_t ActivateAudioInterrupt(
         AudioInterrupt &audioInterrupt, const int32_t zoneID = 0, const bool isUpdatedAudioStrategy = false);
 
+    int32_t SetAppConcurrencyMode(const int32_t appUid, const int32_t mode = 0);
+
+    int32_t SetAppSlientOnDisplay(const int32_t displayId = -1);
+
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
 
     int32_t ActivatePreemptMode(void);
@@ -233,6 +242,10 @@ public:
     AudioStreamType GetStreamInFocusByUid(const int32_t uid, const int32_t zoneID = 0);
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
+
+    int32_t RegisterAudioPolicyServerDiedCb(std::shared_ptr<AudioSessionManagerPolicyServiceDiedCallback> &callback);
+
+    static void AudioSessionManagerCallback();
 
     int32_t ActivateAudioSession(const AudioSessionStrategy &strategy);
 
@@ -486,6 +499,8 @@ public:
 
     const std::shared_ptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId);
 
+    int32_t GetAudioZoneByName(std::string name);
+
     int32_t BindDeviceToAudioZone(int32_t zoneId,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices);
 
@@ -504,7 +519,11 @@ public:
 
     int32_t AddStreamToAudioZone(int32_t zoneId, AudioZoneStream stream);
 
+    int32_t AddStreamsToAudioZone(int32_t zoneId, std::vector<AudioZoneStream> streams);
+
     int32_t RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream);
+
+    int32_t RemoveStreamsFromAudioZone(int32_t zoneId, std::vector<AudioZoneStream> streams);
 
     void SetZoneDeviceVisible(bool visible);
 
@@ -570,8 +589,6 @@ public:
 
     int32_t UnsetAudioDeviceAnahsCallback();
 
-    int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
-
     void ResetClientTrackerStubMap();
 
     void RemoveClientTrackerStub(int32_t sessionId);
@@ -585,6 +602,27 @@ public:
 
     int32_t UnsetMicrophoneBlockedCallback(const int32_t clientId,
         const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &callback);
+
+    int32_t SetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType, VolumeBehavior volumeBehavior);
+
+    int32_t SetQueryDeviceVolumeBehaviorCallback(
+        const std::shared_ptr<AudioQueryDeviceVolumeBehaviorCallback> &callback);
+
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
+
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
+    int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
+    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
+    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
+    bool IsAcousticEchoCancelerSupported(SourceType sourceType);
+    bool IsAudioLoopbackSupported(AudioLoopbackMode mode);
+    bool SetKaraokeParameters(const std::string &parameters);
+    int32_t SetAudioRouteCallback(uint32_t sessionId, std::shared_ptr<AudioRouteCallback> callback, uint32_t clientUid);
+    int32_t UnsetAudioRouteCallback(uint32_t sessionId);
 
     int32_t SetAudioSceneChangeCallback(const int32_t clientId,
         const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback);
@@ -608,11 +646,6 @@ public:
 
     static void RegisterServerDiedCallBack(AudioServerDiedCallBack func);
 
-    int32_t SetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType, VolumeBehavior volumeBehavior);
-
-    int32_t SetQueryDeviceVolumeBehaviorCallback(
-        const std::shared_ptr<AudioQueryDeviceVolumeBehaviorCallback> &callback);
-
     int32_t SetVirtualCall(const bool isVirtual);
 
     int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionId,
@@ -630,22 +663,6 @@ public:
     int32_t UnsetAudioFormatUnsupportedErrorCallback();
 
     DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo, const StreamUsage &streamUsage);
-
-    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
-    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
-
-    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
-    int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
-    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
-    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
-    bool IsAcousticEchoCancelerSupported(SourceType sourceType);
-    bool IsAudioLoopbackSupported(AudioLoopbackMode mode);
-    bool SetKaraokeParameters(const std::string &parameters);
-    int32_t SetAudioRouteCallback(uint32_t sessionId, std::shared_ptr<AudioRouteCallback> callback, uint32_t clientUid);
-    int32_t UnsetAudioRouteCallback(uint32_t sessionId);
 
     int32_t ForceStopAudioStream(StopAudioType audioType);
     bool IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo);
@@ -670,6 +687,14 @@ public:
     bool IsCollaborativePlaybackEnabledForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
     int32_t ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
+
+    int32_t SetVolumeDegreeCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeKeyEventCallback> &callback);
+    int32_t UnsetVolumeDegreeCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback);
+    int32_t SetSystemVolumeDegree(AudioVolumeType volumeType, int32_t volumeDegree,
+        int32_t volumeFlag, int32_t uid);
+    int32_t GetSystemVolumeDegree(AudioVolumeType volumeType, int32_t uid);
+    int32_t GetMinVolumeDegree(AudioVolumeType volumeType);
 
 private:
     AudioPolicyManager() {}
@@ -706,6 +731,9 @@ private:
 
     static std::vector<AudioServerDiedCallBack> serverDiedCbks_;
     static std::mutex serverDiedCbkMutex_;
+
+    static std::weak_ptr<AudioSessionManagerPolicyServiceDiedCallback> audioSessionManagerCb_;
+    static std::mutex serverDiedSessionManagerCbkMutex_;
 };
 } // namespce AudioStandard
 } // namespace OHOS

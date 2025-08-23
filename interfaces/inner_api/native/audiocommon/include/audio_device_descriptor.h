@@ -21,6 +21,7 @@
 #include "parcel.h"
 #include "audio_device_info.h"
 #include "audio_info.h"
+#include <optional>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -97,6 +98,8 @@ public:
 
     bool IsDistributedSpeaker() const;
 
+    bool IsRemote() const;
+
     DeviceType MapInternalToExternalDeviceType(int32_t apiVersion) const;
 
     DeviceStreamInfo GetDeviceStreamInfo(void) const;
@@ -130,11 +133,13 @@ public:
             if (lhs == nullptr || rhs == nullptr) {
                 return false;
             }
-            return lhs->IsSameDeviceDesc(*rhs);
+            return lhs->deviceType_ == rhs->deviceType_ &&
+                lhs->macAddress_ == rhs->macAddress_ &&
+                lhs->networkId_ == rhs->networkId_;
         }
     };
 
-    void SetClientInfo(std::shared_ptr<ClientInfo> clientInfo) const;
+    void SetClientInfo(const ClientInfo &clientInfo) const;
 private:
     static void FixApiCompatibility(int apiVersion, DeviceRole deviceRole,
         DeviceType &deviceType, int32_t &deviceId, std::list<DeviceStreamInfo> &streamInfo);
@@ -177,7 +182,7 @@ public:
     bool hasPair_{false};
     RouterType routerType_ = ROUTER_TYPE_NONE;
     bool isVrSupported_ = true;
-    mutable std::shared_ptr<ClientInfo> clientInfo_ = nullptr;
+    mutable std::optional<ClientInfo> clientInfo_ = std::nullopt;
     VolumeBehavior volumeBehavior_;
 
 private:

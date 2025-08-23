@@ -285,7 +285,7 @@ static void MultiplyFilterSymmetricOddUpStereo(SingleStagePolyphaseResamplerStat
 static void MultiplyFilterSymmetricOddUpMultichannel(SingleStagePolyphaseResamplerState* state, const float* coeffs,
     const float* inputs, float* outputs, int32_t subfilterNum)
 {
-    const int32_t indCenter = state->filterLength / TWO_STEPS - 1;
+    const uint32_t indCenter = state->filterLength / TWO_STEPS - 1;
     for (uint32_t ch = 0; ch < state->numChannels; ch++) {
         *outputs++ = inputs[state->numChannels * indCenter + ch];
     }
@@ -294,10 +294,10 @@ static void MultiplyFilterSymmetricOddUpMultichannel(SingleStagePolyphaseResampl
 static void MultiplyFilterSymmetricEvenUpMono(SingleStagePolyphaseResamplerState* state, const float* coeffs,
     const float* inputs, float* outputs, int32_t subfilterNum)
 {
-    const int32_t n = state->filterLength;
+    const uint32_t n = state->filterLength;
     float sum = 0;
 
-    for (int32_t j = 0; j < n / TWO_STEPS; j += FOUR_STEPS) {
+    for (uint32_t j = 0; j < n / TWO_STEPS; j += FOUR_STEPS) {
         sum += (*coeffs++) * (inputs[j] + inputs[(n - j - 1)]);
         sum += (*coeffs++) * (inputs[j + 1] + inputs[(n - (j + 1) - 1)]);
         sum += (*coeffs++) * (inputs[j + TWO_STEPS] + inputs[(n - (j + TWO_STEPS) - 1)]);
@@ -309,12 +309,12 @@ static void MultiplyFilterSymmetricEvenUpMono(SingleStagePolyphaseResamplerState
 static void MultiplyFilterSymmetricEvenUpStereo(SingleStagePolyphaseResamplerState* state, const float* coeffs,
     const float* inputs, float* outputs, int32_t subfilterNum)
 {
-    const int32_t n = state->filterLength;
+    const uint32_t n = state->filterLength;
     float sumL = 0;
     float sumR = 0;
     float h;
 
-    for (int32_t j = 0; j < n / TWO_STEPS; j += FOUR_STEPS) {
+    for (uint32_t j = 0; j < n / TWO_STEPS; j += FOUR_STEPS) {
         h = *coeffs++;
         sumL += h * (inputs[j * STEREO] + inputs[(n - j - 1) * STEREO]);
         sumR += h * (inputs[j * STEREO + 1] + inputs[(n - j - 1) * STEREO + 1]);
@@ -335,10 +335,10 @@ static void MultiplyFilterSymmetricEvenUpStereo(SingleStagePolyphaseResamplerSta
 static void MultiplyFilterSymmetricEvenUpMultichannel(SingleStagePolyphaseResamplerState* state, const float* coeffs,
     const float* inputs, float* outputs, int32_t subfilterNum)
 {
-    const int32_t n = state->filterLength;
-    const int32_t numChannels = state->numChannels;
-    int32_t ch;
-    int32_t j;
+    const uint32_t n = state->filterLength;
+    const uint32_t numChannels = state->numChannels;
+    uint32_t ch;
+    uint32_t j;
     float sum[MAX_NUM_CHANNEL];
     float h;
 
@@ -605,14 +605,14 @@ static void MultiplyFilterSymmetricEvenDownMultichannel(SingleStagePolyphaseResa
 static void MultiplyFilterDownMono(SingleStagePolyphaseResamplerState *state, const float *coeffs,
     const float *inputs, float *outputs, int32_t subfilterNum)
 {
-    const int32_t n = state->filterLength;
-    const int32_t indCenter = n / TWO_STEPS - 1;
+    const uint32_t n = state->filterLength;
+    const uint32_t indCenter = n / TWO_STEPS - 1;
     const uint32_t decimateFactor = state->decimateFactor;
-    int32_t j;
+    uint32_t j;
     float h;
     float sum = 0;
 
-    int32_t counts = indCenter % decimateFactor - subfilterNum;
+    uint32_t counts = indCenter % decimateFactor - (uint32_t)subfilterNum;
     if (counts < 0) {
         counts += state->interpolateFactor;
     }
@@ -633,15 +633,15 @@ static void MultiplyFilterDownMono(SingleStagePolyphaseResamplerState *state, co
 static void MultiplyFilterDownStereo(SingleStagePolyphaseResamplerState* state, const float* coeffs,
     const float* inputs, float* outputs, int32_t subfilterNum)
 {
-    const int32_t n = state->filterLength;
-    const int32_t indCenter = n / TWO_STEPS - 1;
+    const uint32_t n = state->filterLength;
+    const uint32_t indCenter = n / TWO_STEPS - 1;
     const uint32_t decimateFactor = state->decimateFactor;
-    int32_t j;
+    uint32_t j;
     float sumL = 0;
     float sumR = 0;
     float h;
 
-    int32_t counts = indCenter % decimateFactor - subfilterNum;
+    uint32_t counts = indCenter % decimateFactor - (uint32_t)subfilterNum;
     if (counts < 0) {
         counts += state->interpolateFactor;
     }
@@ -664,16 +664,16 @@ static void MultiplyFilterDownStereo(SingleStagePolyphaseResamplerState* state, 
 static void MultiplyFilterDownMultichannel(SingleStagePolyphaseResamplerState *state, const float *coeffs,
     const float *inputs, float *outputs, int32_t subfilterNum)
 {
-    const int32_t n = state->filterLength;
-    const int32_t indCenter = n / TWO_STEPS - 1;
+    const uint32_t n = state->filterLength;
+    const uint32_t indCenter = n / TWO_STEPS - 1;
     const uint32_t decimateFactor = state->decimateFactor;
-    const int32_t numChannels = state->numChannels;
-    int32_t j;
-    int32_t ch;
+    const uint32_t numChannels = state->numChannels;
+    uint32_t j;
+    uint32_t ch;
     float h;
     float sum[MAX_NUM_CHANNEL];
 
-    int32_t counts = indCenter % decimateFactor - subfilterNum;
+    uint32_t counts = indCenter % decimateFactor - (uint32_t)subfilterNum;
     if (counts < 0) {
         counts += state->interpolateFactor;
     }
@@ -726,18 +726,18 @@ static MultiplyFilterFun multiplyFilterFunTable[] = {
 static int32_t PolyphaseResamplerMono(SingleStagePolyphaseResamplerState *state, const float *in, uint32_t *inputLength,
     float *out, uint32_t *outputLength)
 {
-    const int32_t n = state->filterLength;
-    int32_t outSample = 0;
-    int32_t inputIndex = state->inputIndex;
+    const uint32_t n = state->filterLength;
+    uint32_t outSample = 0;
+    uint32_t inputIndex = state->inputIndex;
     uint32_t subfilterNum = state->subfilterNum;
     const float* filterCoefficients = state->filterCoefficients;
-    const int32_t quoSamplerateRatio = state->quoSamplerateRatio;
-    const int32_t remSamplerateRatio = state->remSamplerateRatio;
+    const uint32_t quoSamplerateRatio = state->quoSamplerateRatio;
+    const uint32_t remSamplerateRatio = state->remSamplerateRatio;
     const uint32_t decimateFactor = state->decimateFactor;
     const uint32_t interpolateFactor = state->interpolateFactor;
-    int32_t i;
+    uint32_t i;
 
-    if (inputIndex < (int32_t)(*inputLength)) {
+    if (inputIndex < (uint32_t)(*inputLength)) {
         outSample = CompareMin((*outputLength), ((interpolateFactor * ((*inputLength) - inputIndex) -
             subfilterNum) - 1) / decimateFactor + 1);
     }
@@ -764,18 +764,18 @@ static int32_t PolyphaseResamplerMono(SingleStagePolyphaseResamplerState *state,
 static int32_t PolyphaseResamplerStereo(SingleStagePolyphaseResamplerState* state, const float* in,
     uint32_t* inputLength, float* out, uint32_t* outputLength)
 {
-    const int32_t n = state->filterLength;
-    int32_t outSample = 0;
-    int32_t inputIndex = state->inputIndex;
+    const uint32_t n = state->filterLength;
+    uint32_t outSample = 0;
+    uint32_t inputIndex = state->inputIndex;
     uint32_t subfilterNum = state->subfilterNum;
     const float* filterCoefficients = state->filterCoefficients;
-    const int32_t quoSamplerateRatio = state->quoSamplerateRatio;
-    const int32_t remSamplerateRatio = state->remSamplerateRatio;
+    const uint32_t quoSamplerateRatio = state->quoSamplerateRatio;
+    const uint32_t remSamplerateRatio = state->remSamplerateRatio;
     const uint32_t decimateFactor = state->decimateFactor;
     const uint32_t interpolateFactor = state->interpolateFactor;
-    int32_t i;
+    uint32_t i;
 
-    if (inputIndex < (int32_t) (*inputLength)) {
+    if (inputIndex < (uint32_t) (*inputLength)) {
         outSample = CompareMin((*outputLength), ((interpolateFactor * ((*inputLength) - inputIndex) -
             subfilterNum) - 1) / decimateFactor + 1);
     }
@@ -801,19 +801,19 @@ static int32_t PolyphaseResamplerStereo(SingleStagePolyphaseResamplerState* stat
 static int32_t PolyphaseResamplerMultichannel(SingleStagePolyphaseResamplerState* state, const float* in,
     uint32_t* inputLength, float* out, uint32_t* outputLength)
 {
-    const int32_t n = state->filterLength;
-    int32_t outSample = 0;
-    int32_t inputIndex = state->inputIndex;
+    const uint32_t n = state->filterLength;
+    uint32_t outSample = 0;
+    uint32_t inputIndex = state->inputIndex;
     uint32_t subfilterNum = state->subfilterNum;
     const float* filterCoefficients = state->filterCoefficients;
-    const int32_t quoSamplerateRatio = state->quoSamplerateRatio;
-    const int32_t remSamplerateRatio = state->remSamplerateRatio;
+    const uint32_t quoSamplerateRatio = state->quoSamplerateRatio;
+    const uint32_t remSamplerateRatio = state->remSamplerateRatio;
     const uint32_t decimateFactor = state->decimateFactor;
     const uint32_t interpolateFactor = state->interpolateFactor;
-    const int32_t numChannels = state->numChannels;
-    int32_t i;
+    const uint32_t numChannels = state->numChannels;
+    uint32_t i;
 
-    if (inputIndex < (int32_t)(*inputLength)) {
+    if (inputIndex < (uint32_t)(*inputLength)) {
         outSample = CompareMin((*outputLength), ((interpolateFactor *
             ((*inputLength) - inputIndex) - subfilterNum) - 1) / decimateFactor + 1);
     }
@@ -840,17 +840,17 @@ static int32_t PolyphaseResamplerMultichannel(SingleStagePolyphaseResamplerState
 static int32_t PolyphaseDownsamplerHalfbandMono(SingleStagePolyphaseResamplerState* state, const float* in,
     uint32_t* inputLength, float* out, uint32_t* outputLength)
 {
-    const int32_t n = state->filterLength;
-    const int32_t indCenter = n / TWO_STEPS - 1;
-    int32_t outSample = 0;
-    int32_t inputIndex = state->inputIndex;
+    const uint32_t n = state->filterLength;
+    const uint32_t indCenter = n / TWO_STEPS - 1;
+    uint32_t outSample = 0;
+    uint32_t inputIndex = state->inputIndex;
     const float* filterCoefficients = state->filterCoefficients;
     float hCenter = filterCoefficients[indCenter];
-    int32_t i;
-    int32_t j;
+    uint32_t i;
+    uint32_t j;
     float sum;
 
-    if (inputIndex < (int32_t)(*inputLength)) {
+    if (inputIndex < (uint32_t)(*inputLength)) {
         outSample = CompareMin((*outputLength), (((*inputLength) - inputIndex) - 1) / TWO_STEPS + 1);
     }
 
@@ -876,19 +876,19 @@ static int32_t PolyphaseDownsamplerHalfbandMono(SingleStagePolyphaseResamplerSta
 static int32_t PolyphaseDownsamplerHalfbandStereo(SingleStagePolyphaseResamplerState* state, const float* in,
     uint32_t* inputLength, float* out, uint32_t* outputLength)
 {
-    const int32_t n = state->filterLength;
-    const int32_t indCenter = n / TWO_STEPS - 1;
-    int32_t outSample = 0;
-    int32_t inputIndex = state->inputIndex;
+    const uint32_t n = state->filterLength;
+    const uint32_t indCenter = n / TWO_STEPS - 1;
+    uint32_t outSample = 0;
+    uint32_t inputIndex = state->inputIndex;
     const float* filterCoefficients = state->filterCoefficients;
     float hCenter = filterCoefficients[indCenter];
-    int32_t i;
-    int32_t j;
+    uint32_t i;
+    uint32_t j;
     float sumL;
     float sumR;
     float h;
 
-    if (inputIndex < (int32_t)(*inputLength)) {
+    if (inputIndex < (uint32_t)(*inputLength)) {
         outSample = CompareMin((*outputLength), (((*inputLength) - inputIndex) - 1) / TWO_STEPS + 1);
     }
 
@@ -918,20 +918,20 @@ static int32_t PolyphaseDownsamplerHalfbandStereo(SingleStagePolyphaseResamplerS
 static int32_t PolyphaseDownsamplerHalfbandMultichannel(SingleStagePolyphaseResamplerState* state, const float* in,
     uint32_t* inputLength, float* out, uint32_t* outputLength)
 {
-    const int32_t n = state->filterLength;
-    const int32_t indCenter = n / TWO_STEPS - 1;
-    int32_t outSample = 0;
-    int32_t inputIndex = state->inputIndex;
+    const uint32_t n = state->filterLength;
+    const uint32_t indCenter = n / TWO_STEPS - 1;
+    uint32_t outSample = 0;
+    uint32_t inputIndex = state->inputIndex;
     const float* filterCoefficients = state->filterCoefficients;
     float hCenter = filterCoefficients[indCenter];
-    int32_t i;
-    int32_t j;
-    int32_t ch;
+    uint32_t i;
+    uint32_t j;
+    uint32_t ch;
     float h;
     float sum[MAX_NUM_CHANNEL];
-    const int32_t numChannels = state->numChannels;
+    const uint32_t numChannels = state->numChannels;
 
-    if (inputIndex < (int32_t)(*inputLength)) {
+    if (inputIndex < (uint32_t)(*inputLength)) {
         outSample = CompareMin((*outputLength), (((*inputLength) - inputIndex) - 1) / TWO_STEPS + 1);
     }
 
@@ -964,18 +964,18 @@ static int32_t PolyphaseDownsamplerHalfbandMultichannel(SingleStagePolyphaseResa
 static int32_t PolyphaseDownsamplerThirdbandMono(SingleStagePolyphaseResamplerState* state, const float* in,
     uint32_t* inputLength, float* out, uint32_t* outputLength)
 {
-    const int32_t n = state->filterLength;
-    const int32_t indCenter = n / TWO_STEPS - 1;
-    int32_t outSample = 0;
-    int32_t inputIndex = state->inputIndex;
+    const uint32_t n = state->filterLength;
+    const uint32_t indCenter = n / TWO_STEPS - 1;
+    uint32_t outSample = 0;
+    uint32_t inputIndex = state->inputIndex;
     const float* filterCoefficients = state->filterCoefficients;
-    int32_t i;
-    int32_t j;
+    uint32_t i;
+    uint32_t j;
     float sum;
-    int32_t rem = indCenter % THREE_STEPS;
+    uint32_t rem = indCenter % THREE_STEPS;
     float hCenter = filterCoefficients[indCenter];
 
-    if (inputIndex < (int32_t)(*inputLength)) {
+    if (inputIndex < (uint32_t)(*inputLength)) {
         outSample = CompareMin((*outputLength), (((*inputLength) - inputIndex) - 1) / THREE_STEPS + 1);
     }
 
@@ -1006,21 +1006,21 @@ static int32_t PolyphaseDownsamplerThirdbandMono(SingleStagePolyphaseResamplerSt
 static int32_t PolyphaseDownsamplerThirdbandStereo(SingleStagePolyphaseResamplerState* state, const float* in,
     uint32_t* inputLength, float* out, uint32_t* outputLength)
 {
-    const int32_t n = state->filterLength;
-    const int32_t indCenter = n / TWO_STEPS - 1;
-    int32_t outSample = 0;
-    int32_t inputIndex = state->inputIndex;
+    const uint32_t n = state->filterLength;
+    const uint32_t indCenter = n / TWO_STEPS - 1;
+    uint32_t outSample = 0;
+    uint32_t inputIndex = state->inputIndex;
     const float* filterCoefficients = state->filterCoefficients;
-    int32_t i;
-    int32_t j;
+    uint32_t i;
+    uint32_t j;
     float sumL;
     float sumR;
     float h;
 
-    int32_t rem = indCenter % THREE_STEPS;
+    uint32_t rem = indCenter % THREE_STEPS;
     float hCenter = filterCoefficients[indCenter];
 
-    if (inputIndex < (int32_t)(*inputLength)) {
+    if (inputIndex < (uint32_t)(*inputLength)) {
         outSample = CompareMin((*outputLength), (((*inputLength) - inputIndex) - 1) / THREE_STEPS + 1);
     }
 
@@ -1060,22 +1060,22 @@ static int32_t PolyphaseDownsamplerThirdbandStereo(SingleStagePolyphaseResampler
 static int32_t PolyphaseDownsamplerThirdbandMultichannel(SingleStagePolyphaseResamplerState* state, const float* in,
     uint32_t* inputLength, float* out, uint32_t* outputLength)
 {
-    const int32_t n = state->filterLength;
-    const int32_t indCenter = n / TWO_STEPS - 1;
-    int32_t outSample = 0;
-    int32_t inputIndex = state->inputIndex;
+    const uint32_t n = state->filterLength;
+    const uint32_t indCenter = n / TWO_STEPS - 1;
+    uint32_t outSample = 0;
+    uint32_t inputIndex = state->inputIndex;
     const float* filterCoefficients = state->filterCoefficients;
-    int32_t i;
-    int32_t j;
-    int32_t ch;
+    uint32_t i;
+    uint32_t j;
+    uint32_t ch;
     float h1;
     float h2;
     float sum[MAX_NUM_CHANNEL];
-    const int32_t numChannels = state->numChannels;
-    int32_t rem = indCenter % THREE_STEPS;
+    const uint32_t numChannels = state->numChannels;
+    uint32_t rem = indCenter % THREE_STEPS;
     float hCenter = filterCoefficients[indCenter];
 
-    if (inputIndex < (int32_t)(*inputLength)) {
+    if (inputIndex < (uint32_t)(*inputLength)) {
         outSample = CompareMin((*outputLength), (((*inputLength) - inputIndex) - 1) / THREE_STEPS + 1);
     }
 
@@ -1119,19 +1119,19 @@ static int32_t PolyphaseDownsamplerThirdbandMultichannel(SingleStagePolyphaseRes
 static int32_t PolyphaseResamplerCoarse(SingleStagePolyphaseResamplerState* state, const float* in,
     uint32_t* inputLength, float* out, uint32_t* outputLength)
 {
-    const int32_t n = state->filterLength;
-    int32_t outSample = 0;
-    int32_t inputIndex = state->inputIndex;
+    const uint32_t n = state->filterLength;
+    uint32_t outSample = 0;
+    uint32_t inputIndex = state->inputIndex;
     uint32_t subfilterNum = state->subfilterNum;
     const float* filterCoefficients = state->filterCoefficients;
-    const int32_t quoSamplerateRatio = state->quoSamplerateRatio;
-    const int32_t remSamplerateRatio = state->remSamplerateRatio;
+    const uint32_t quoSamplerateRatio = state->quoSamplerateRatio;
+    const uint32_t remSamplerateRatio = state->remSamplerateRatio;
     const uint32_t decimateFactor = state->decimateFactor;
     const uint32_t interpolateFactor = state->interpolateFactor;
-    const int32_t numChannels = state->numChannels;
-    int32_t i;
+    const uint32_t numChannels = state->numChannels;
+    uint32_t i;
 
-    if (inputIndex < (int32_t)(*inputLength)) {
+    if (inputIndex < (uint32_t)(*inputLength)) {
         outSample = CompareMin((*outputLength), ((interpolateFactor * ((*inputLength) - inputIndex) -
             subfilterNum) - 1) / decimateFactor + 1);
     }
@@ -1162,20 +1162,20 @@ static int32_t PolyphaseResamplerCoarse(SingleStagePolyphaseResamplerState* stat
 static int32_t PolyphaseResamplerZero(SingleStagePolyphaseResamplerState* state, const float* in,
     uint32_t* inputLength, float* out, uint32_t* outputLength)
 {
-    int32_t outSample = 0;
-    int32_t inputIndex = state->inputIndex;
+    uint32_t outSample = 0;
+    uint32_t inputIndex = state->inputIndex;
     uint32_t subfilterNum = state->subfilterNum;
-    const int32_t quoSamplerateRatio = state->quoSamplerateRatio;
-    const int32_t remSamplerateRatio = state->remSamplerateRatio;
+    const uint32_t quoSamplerateRatio = state->quoSamplerateRatio;
+    const uint32_t remSamplerateRatio = state->remSamplerateRatio;
     const uint32_t decimateFactor = state->decimateFactor;
     const uint32_t interpolateFactor = state->interpolateFactor;
-    const int32_t numChannels = state->numChannels;
-    int32_t i;
-    int32_t ch;
+    const uint32_t numChannels = state->numChannels;
+    uint32_t i;
+    uint32_t ch;
 
     (void)in;
 
-    if (inputIndex < (int32_t)(*inputLength)) {
+    if (inputIndex < (uint32_t)(*inputLength)) {
         outSample = CompareMin((*outputLength), ((interpolateFactor * ((*inputLength) - inputIndex) -
             subfilterNum) - 1) / decimateFactor + 1);
     }
@@ -1200,7 +1200,7 @@ static int32_t PolyphaseResamplerZero(SingleStagePolyphaseResamplerState* state,
 
 static MultiplyFilterFun GetMultiplyFilterFun(SingleStagePolyphaseResamplerState* state, uint32_t i)
 {
-    int32_t channelMode = CompareMin(state->numChannels - 1, STEREO);
+    uint32_t channelMode = CompareMin(state->numChannels - 1, STEREO);
 
     if (state->interpolateFactor < state->decimateFactor) { // downsampling
         if (i == 0) {
@@ -1409,12 +1409,12 @@ SingleStagePolyphaseResamplerState* SingleStagePolyphaseResamplerInit(uint32_t n
 static void ApplyResampler(SingleStagePolyphaseResamplerState* state, uint32_t* inputLength,
     float* out, uint32_t* outputLength)
 {
-    const int32_t n = state->filterLength;
+    const uint32_t n = state->filterLength;
     int32_t outSample = 0;
     float* inputMemory = state->inputMemory;
     uint32_t inputSize;
-    const int32_t numChannels = state->numChannels;
-    int32_t j;
+    const uint32_t numChannels = state->numChannels;
+    uint32_t j;
 
     state->isStarted = 1;
     /* Call resampler function */
@@ -1451,9 +1451,9 @@ int32_t SingleStagePolyphaseResamplerProcess(SingleStagePolyphaseResamplerState*
     uint32_t j;
     uint32_t remainingInputLength = *inputLength;
     uint32_t remainingOutputLength = *outputLength;
-    const int32_t filtOffs = state->filterLength - 1;
+    const uint32_t filtOffs = state->filterLength - 1;
     const uint32_t bufferLen = state->inputMemorySize - filtOffs;
-    const int32_t numChannels = state->numChannels;
+    const uint32_t numChannels = state->numChannels;
     float* buf = state->inputMemory + filtOffs * numChannels;
 
     while (remainingInputLength && remainingOutputLength) {

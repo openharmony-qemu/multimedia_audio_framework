@@ -32,6 +32,7 @@ public:
     bool ResetAll() override;
     void Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override;
     void DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override;
+    void RegisterCurrentDeviceCallback();
     int32_t GetConverterNodeCount() override;
     int32_t GetPreOutNum() override;
     int32_t GetInstance(const std::string &deviceClass, const std::string &deviceNetId) override;
@@ -55,6 +56,7 @@ private:
     std::shared_ptr<HpaeMixerNode> mixerNode_ = nullptr;
     std::shared_ptr<HpaeSinkOutputNode> hpaeSinkOutputNode_ = nullptr;
     std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeAudioFormatConverterNode>> sceneConverterMap_;
+    std::atomic<uint32_t> timeoutThdFramesForDevice_ = TIME_OUT_STOP_THD_DEFAULT_FRAME;
     uint32_t timeoutThdFrames_ = TIME_OUT_STOP_THD_DEFAULT_FRAME;
     uint32_t timeoutStopCount_ = 0;
     uint32_t frameLenMs_ = FRAME_LEN_MS_DEFAULT_MS;

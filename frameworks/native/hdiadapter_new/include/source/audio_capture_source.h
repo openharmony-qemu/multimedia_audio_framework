@@ -80,7 +80,8 @@ public:
 private:
     static AudioFormat ConvertToHdiFormat(AudioSampleFormat format);
     static uint64_t GetChannelLayoutByChannelCount(uint32_t channelCount);
-    static enum AudioInputType ConvertToHDIAudioInputType(int32_t sourceType);
+    static uint64_t GetChannelCountByChannelLayout(uint64_t channelLayout);
+    static enum AudioInputType ConvertToHDIAudioInputType(int32_t sourceType, std::string hdiSourceType);
     static AudioSampleFormat ParseAudioFormat(const std::string &format);
     static AudioCategory GetAudioCategory(AudioScene audioScene);
     static int32_t GetByteSizeByFormat(AudioSampleFormat format);
@@ -111,6 +112,7 @@ private:
     void InitRunningLock(void);
     void CheckAcousticEchoCancelerSupported(int32_t sourcetype, int32_t &hdiAudioInputType);
     bool IsCaptureInvalid(void) override;
+    static AudioInputType MappingAudioInputType(std::string hdiSourceType);
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -175,6 +177,7 @@ private:
     std::unordered_map<DeviceType, uint16_t> dmDeviceTypeMap_;
 
     std::shared_ptr<AudioCapturerSourceClock> audioSrcClock_ = nullptr;
+    static const std::unordered_map<std::string, AudioInputType> audioInputTypeMap_;
 };
 
 } // namespace AudioStandard

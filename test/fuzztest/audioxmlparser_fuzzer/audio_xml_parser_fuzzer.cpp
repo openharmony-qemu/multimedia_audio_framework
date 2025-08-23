@@ -57,7 +57,6 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 3;
 
 typedef void (*TestFuncs)();
 
@@ -115,7 +114,7 @@ void OperatorFuzzTest()
     shared_ptr<AudioXmlNode> ptr2 = ptr1;
 }
 
-TestFuncs g_testFuncs[TESTSIZE] = {
+TestFuncs g_testFuncs[] = {
     HasPropFuzzTest,
     GetContentFuzzTest,
     OperatorFuzzTest,

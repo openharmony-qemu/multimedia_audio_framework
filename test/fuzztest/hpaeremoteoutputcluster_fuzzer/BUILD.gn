@@ -16,7 +16,7 @@ import("//build/test.gni")
 import("../../../accessibility.gni")
 import("../../../config.gni")
 
-ohos_fuzztest("HpaeRemoteOutputCluster") {
+ohos_fuzztest("HpaeRemoteOutputClusterFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
   fuzz_config_file = "../hpaeremoteoutputcluster_fuzzer"
 
@@ -37,6 +37,8 @@ ohos_fuzztest("HpaeRemoteOutputCluster") {
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
     "-fno-access-control",
+    "-DENABLE_HIDUMP_DFX",
+    "-DENABLE_HOOK_PCM",
   ]
 
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
@@ -96,5 +98,5 @@ defines = []
 
 group("fuzztest") {
   testonly = true
-  deps = [ ":HpaeRemoteOutputCluster" ]
+  deps = [ ":HpaeRemoteOutputClusterFuzzTest" ]
 }

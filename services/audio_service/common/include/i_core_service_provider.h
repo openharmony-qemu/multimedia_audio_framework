@@ -30,12 +30,14 @@ public:
     virtual int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation,
         SessionOperationMsg opMsg) = 0;
     virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice,
-        const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning) = 0;
+        const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning, bool skipForce = false) = 0;
     virtual std::string GetAdapterNameBySessionId(uint32_t sessionID) = 0;
     virtual int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionID, AudioDeviceDescriptor &deviceInfo,
-        bool isReloadProcess) = 0;
+        AudioStreamInfo &streamInfo, bool isReloadProcess) = 0;
     virtual uint32_t GenerateSessionId() = 0;
     virtual int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config) = 0;
+    virtual void GetVoiceMuteState(uint32_t sessionId, bool &muteState) = 0;
+    virtual void RemoveVoiceMuteState(uint32_t sessionId) = 0;
 
     virtual ~ICoreServiceProvider() = default;
 };

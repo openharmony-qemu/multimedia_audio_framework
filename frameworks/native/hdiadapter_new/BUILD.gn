@@ -172,6 +172,7 @@ ohos_unittest("hdiadapter_unit_test") {
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../audioutils/include",
     "../../../frameworks/native/hdiadapter_new/include/sink",
+    "../../../frameworks/native/audioclock/include",
   ]
 
   sources = [

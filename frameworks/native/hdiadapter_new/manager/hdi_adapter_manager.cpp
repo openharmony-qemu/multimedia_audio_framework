@@ -77,6 +77,7 @@ uint32_t HdiAdapterManager::GetId(HdiIdBase base, HdiIdType type, const std::str
 {
     uint32_t id = IdHandler::GetInstance().GetId(base, type, info);
     CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
+    std::scoped_lock lock(renderSinkMtx_, captureSourceMtx_);
     if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
         IdHandler::GetInstance().IncInfoIdUseCount(id);
     }
@@ -94,6 +95,7 @@ uint32_t HdiAdapterManager::GetRenderIdByDeviceClass(const std::string &deviceCl
     AUDIO_INFO_LOG("Device class: %{public}s, info: %{public}s, id: %{public}u",
         deviceClass.c_str(), info.c_str(), id);
     CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
+    std::scoped_lock lock(renderSinkMtx_, captureSourceMtx_);
     if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
         IdHandler::GetInstance().IncInfoIdUseCount(id);
     }
@@ -109,6 +111,7 @@ uint32_t HdiAdapterManager::GetCaptureIdByDeviceClass(const std::string &deviceC
     AUDIO_INFO_LOG("Device class: %{public}s, sourceType: %{public}d, info: %{public}s, id: %{public}u",
         deviceClass.c_str(), sourceType, info.c_str(), id);
     CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
+    std::scoped_lock lock(renderSinkMtx_, captureSourceMtx_);
     if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
         IdHandler::GetInstance().IncInfoIdUseCount(id);
     }
@@ -121,6 +124,7 @@ void HdiAdapterManager::ReleaseId(uint32_t &id)
 {
     uint32_t tempId = id;
     id = HDI_INVALID_ID;
+    std::scoped_lock lock(renderSinkMtx_, captureSourceMtx_);
     CHECK_AND_RETURN(tempId != HDI_INVALID_ID && (renderSinks_.count(tempId) || captureSources_.count(tempId)));
     DecRefCount(tempId);
 }
@@ -326,10 +330,8 @@ void HdiAdapterManager::IncRefCount(uint32_t id)
 {
     uint32_t base = IdHandler::GetInstance().ParseBase(id);
     if (base == HDI_ID_BASE_RENDER) {
-        std::lock_guard<std::mutex> lock(renderSinkMtx_);
         renderSinks_[id].refCount_++;
     } else {
-        std::lock_guard<std::mutex> lock(captureSourceMtx_);
         captureSources_[id].refCount_++;
     }
 }
@@ -338,7 +340,6 @@ void HdiAdapterManager::DecRefCount(uint32_t id)
 {
     uint32_t base = IdHandler::GetInstance().ParseBase(id);
     if (base == HDI_ID_BASE_RENDER) {
-        std::lock_guard<std::mutex> lock(renderSinkMtx_);
         if (renderSinks_[id].refCount_.load() > 0) {
             renderSinks_[id].refCount_--;
             if (renderSinks_[id].refCount_.load() > 0) {
@@ -350,7 +351,6 @@ void HdiAdapterManager::DecRefCount(uint32_t id)
         renderSinks_.erase(id);
         IdHandler::GetInstance().DecInfoIdUseCount(id);
     } else {
-        std::lock_guard<std::mutex> lock(captureSourceMtx_);
         if (captureSources_[id].refCount_.load() > 0) {
             captureSources_[id].refCount_--;
             if (captureSources_[id].refCount_.load() > 0) {

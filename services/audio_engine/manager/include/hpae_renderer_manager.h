@@ -76,7 +76,7 @@ public:
     void SetSpeed(uint32_t sessionId, float speed) override;
     std::vector<SinkInput> GetAllSinkInputsInfo() override;
     int32_t GetSinkInputInfo(uint32_t sessionId, HpaeSinkInputInfo &sinkInputInfo) override;
-    int32_t RefreshProcessClusrerByDevice() override;
+    int32_t RefreshProcessClusterByDevice() override;
     HpaeSinkInfo GetSinkInfo() override;
 
     int32_t AddNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node) override;
@@ -135,12 +135,17 @@ private:
     void EnableCollaboration();
     void DisableCollaboration();
     int32_t HandleSyncId(uint32_t sessionId, int32_t syncId);
-    int32_t DeleteProcessCluster(HpaeProcessorType sceneType);
+    int32_t DeleteProcessCluster(uint32_t sessionId);
+    int32_t DeleteProcessClusterInner(HpaeProcessorType sceneType);
+    void RefreshProcessClusterByDeviceInner(const std::shared_ptr<HpaeSinkInputNode> &node);
+    void TriggerStreamState(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode> &node);
+    void UpdateStreamType(const std::shared_ptr<HpaeNode> sourceNode, std::shared_ptr<HpaeNode> dstNode);
 
 private:
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;
     std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeProcessCluster>> sceneClusterMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSinkInputNode>> sinkInputNodeMap_;
+    std::unordered_map<HpaeProcessorType, uint32_t> toBeStoppedSceneTypeToSessionMap_;
     std::unique_ptr<IHpaeOutputCluster> outputCluster_ = nullptr;
     HpaeNoLockQueue hpaeNoLockQueue_;
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;

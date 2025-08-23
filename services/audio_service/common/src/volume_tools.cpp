@@ -597,6 +597,14 @@ void VolumeTools::CalcMuteFrame(BufferDesc &buffer, AudioStreamInfo streamInfo, 
     Trace::Count(logTag, minVolume);
 }
 
+bool VolumeTools::IsZeroVolume(float volume)
+{
+    float d = volume - 0.0f;
+    if ((d >= 0 && d <= FLOAT_EPS) || (d <= 0 && d >= -FLOAT_EPS)) {
+        return true;
+    }
+    return false;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 

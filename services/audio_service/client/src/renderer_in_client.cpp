@@ -343,6 +343,19 @@ bool RendererInClientInner::WaitForRunning()
     return true;
 }
 
+void RendererInClientInner::RecordDropPosition(size_t bufLength)
+{
+    CHECK_AND_RETURN_LOG(isHdiSpeed_.load(), "record drop position only when is hdi speed ");
+    uint32_t channels = clientConfig_.streamInfo.channels;
+    uint32_t samplePerFrame = Util::GetSamplePerFrame(clientConfig_.streamInfo.format);
+    // calculate samples by dropped buffer size
+    uint32_t dropPostion = bufLength / (channels * samplePerFrame);
+    dropPosition_ += dropPostion;
+    dropHdiPosition_ += dropPostion / GetSpeed();
+    AUDIO_WARNING_LOG("RendererInClientInner::RecordDropPosition dropPosition_:%{public}" PRIu64
+        ",dropHdiPosition_:%{public}" PRIu64, dropPosition_.load(), dropHdiPosition_.load());
+}
+
 int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
 {
     int32_t result = 0; // Ensure result with default value.
@@ -370,6 +383,7 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
     }
     if (result < 0) {
         AUDIO_WARNING_LOG("Call write fail, result:%{public}d, bufLength:%{public}zu", result, bufferDesc.bufLength);
+        RecordDropPosition(bufferDesc.bufLength);
     }
     return result;
 }
@@ -402,6 +416,20 @@ bool RendererInClientInner::CheckBufferNeedWrite()
     return true;
 }
 
+bool RendererInClientInner::IsRestoreNeeded()
+{
+    RestoreStatus restoreStatus = clientBuffer_->GetRestoreStatus();
+    if (restoreStatus == NEED_RESTORE) {
+        return true;
+    }
+
+    if (restoreStatus == NEED_RESTORE_TO_NORMAL) {
+        return true;
+    }
+
+    return false;
+}
+
 void RendererInClientInner::WaitForBufferNeedWrite()
 {
     int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
@@ -411,6 +439,11 @@ void RendererInClientInner::WaitForBufferNeedWrite()
             if (state_ != RUNNING) {
                 return true;
             }
+
+            if (IsRestoreNeeded()) {
+                return true;
+            }
+
             return CheckBufferNeedWrite();
         });
     if (futexRes != SUCCESS) {
@@ -582,7 +615,7 @@ int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize
         inBuffer.dataLength = copySize;
         ret = ringBuffer.CopyInputBufferValueToCurBuffer(inBuffer);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "errcode: %{public}d", ret);
-        clientBuffer_->SetCurWriteFrame(writePos + (copySize / sizePerFrameInByte_));
+        clientBuffer_->SetCurWriteFrame((writePos + (copySize / sizePerFrameInByte_)), false);
         inBuffer.SeekFromStart(copySize);
         remainSize -= copySize;
     }
@@ -684,6 +717,8 @@ void RendererInClientInner::ResetFramePosition()
         lastFramePosAndTimePairWithSpeed_[base].first = 0;
         lastSwitchPosition_[base] = 0;
     }
+    dropPosition_ = 0;
+    dropHdiPosition_ = 0;
     unprocessedFramesBytes_ = 0;
     totalBytesWrittenAfterFlush_ = 0;
     writtenAtSpeedChange_.store(WrittenFramesWithSpeed{0, speed_});
@@ -970,25 +1005,6 @@ int32_t RendererInClientInner::SetSpeedInner(float speed)
     speedEnable_ = true;
     AUDIO_DEBUG_LOG("SetSpeed %{public}f, OffloadEnable %{public}d", speed_, offloadEnable_);
     return SUCCESS;
-}
-
-void RendererInClientInner::NotifyOffloadSpeed()
-{
-    std::lock_guard lock(speedMutex_);
-    bool curIsHdiSpeed = offloadEnable_ && eStreamType_ == STREAM_MOVIE &&
-        rendererInfo_.originalFlag == AUDIO_FLAG_PCM_OFFLOAD;
-    AUDIO_INFO_LOG("need set speed to hdi: %{public}s", curIsHdiSpeed ? "true" : "false");
-    isHdiSpeed_.store(curIsHdiSpeed);
-    if (curIsHdiSpeed) {
-        if (realSpeed_.has_value()) {
-            DoHdiSetSpeed(realSpeed_.value(), true);
-            SetSpeedInner(1.0);
-        }
-    } else {
-        if (realSpeed_.has_value()) {
-            SetSpeedInner(realSpeed_.value());
-        }
-    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

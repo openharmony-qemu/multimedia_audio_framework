@@ -40,24 +40,7 @@ void AudioStreamCollectorUnitTest::TearDownTestCase(void) {}
 void AudioStreamCollectorUnitTest::SetUp(void) {}
 void AudioStreamCollectorUnitTest::TearDown(void) {}
 
-
 #define PRINT_LINE printf("debug __LINE__:%d\n", __LINE__)
-
-class MockAudioClientTracker : public AudioClientTracker {
-public:
-    MOCK_METHOD(void, MuteStreamImpl, (const StreamSetStateEventInternal& streamSetStateEventInternal), (override));
-    MOCK_METHOD(void, UnmuteStreamImpl, (const StreamSetStateEventInternal& streamSetStateEventInternal), (override));
-    MOCK_METHOD(void, PausedStreamImpl, (const StreamSetStateEventInternal& streamSetStateEventInternal), (override));
-    MOCK_METHOD(void, ResumeStreamImpl, (const StreamSetStateEventInternal& streamSetStateEventInternal), (override));
-
-    MOCK_METHOD(void, SetLowPowerVolumeImpl, (float volume), (override));
-    MOCK_METHOD(void, GetLowPowerVolumeImpl, (float& volume), (override));
-
-    MOCK_METHOD(void, SetOffloadModeImpl, (int32_t state, bool isAppBack), (override));
-    MOCK_METHOD(void, UnsetOffloadModeImpl, (), (override));
-
-    MOCK_METHOD(void, GetSingleStreamVolumeImpl, (float& volume), (override));
-};
 
 /**
 * @tc.name  : Test AudioStreamCollector.
@@ -66,24 +49,32 @@ public:
 */
 HWTEST_F(AudioStreamCollectorUnitTest, HandleKaraokeAppToBack_001, TestSize.Level1)
 {
-    AudioStreamCollector audioStreamCollector_;
-    int32_t testUid = 1001;
-    int32_t testPid = 2001;
-    int32_t invalidUid = 1002;
-    int32_t invalidPid = 2002;
-    auto validInfo = std::make_unique<AudioRendererChangeInfo>();
-    validInfo->clientUID = testUid;
-    validInfo->clientPid = testPid;
-    validInfo->rendererInfo.isLoopback = true;
-    validInfo->sessionId = 1;
-    auto mockCallback = std::make_shared<MockAudioClientTracker>();
-    audioStreamCollector_.clientTracker_[validInfo->sessionId] = mockCallback;
-    audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(validInfo));
-    EXPECT_CALL(*mockCallback, PausedStreamImpl(_)).Times(1);
-    audioStreamCollector_.HandleKaraokeAppToBack(testUid, testPid);
-    audioStreamCollector_.HandleKaraokeAppToBack(testUid, invalidPid);
-    audioStreamCollector_.HandleKaraokeAppToBack(invalidUid, testPid);
-    audioStreamCollector_.HandleKaraokeAppToBack(invalidUid, invalidPid);
+    AudioStreamCollector collector;
+    int32_t uid = 1001;
+    int32_t pid = 3001;
+    StreamUsage callStreamUsage = collector.GetLastestRunningCallStreamUsage();
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+
+    rendererChangeInfo->clientUID = 1001;
+    rendererChangeInfo->rendererInfo.isLoopback = true;
+    rendererChangeInfo->clientPid = 3001;
+    rendererChangeInfo->sessionId = 2001;
+    collector.audioRendererChangeInfos_.push_back(rendererChangeInfo);
+
+    sptr<IRemoteObject> object;
+    sptr<IStandardClientTracker> listener = iface_cast<IStandardClientTracker>(object);
+    std::shared_ptr<AudioClientTracker> callback = std::make_shared<ClientTrackerCallbackListener>(listener);
+    collector.clientTracker_[rendererChangeInfo->sessionId] = callback;
+
+    EXPECT_NO_THROW(collector.HandleKaraokeAppToBack(uid, pid));
+    EXPECT_EQ(collector.audioRendererChangeInfos_[0]->clientUID, uid);
+    EXPECT_NE(collector.clientTracker_[rendererChangeInfo->sessionId], nullptr);
+
+    collector.clientTracker_[rendererChangeInfo->sessionId] = nullptr;
+
+    EXPECT_NO_THROW(collector.HandleKaraokeAppToBack(uid, pid));
+    EXPECT_EQ(collector.audioRendererChangeInfos_[0]->clientUID, uid);
+    EXPECT_EQ(collector.clientTracker_[rendererChangeInfo->sessionId], nullptr);
 }
 
 /**
@@ -93,29 +84,61 @@ HWTEST_F(AudioStreamCollectorUnitTest, HandleKaraokeAppToBack_001, TestSize.Leve
 */
 HWTEST_F(AudioStreamCollectorUnitTest, HandleKaraokeAppToBack_002, TestSize.Level1)
 {
-    AudioStreamCollector audioStreamCollector_;
-    int32_t testUid = 1001;
-    int32_t testPid = 2001;
-    auto invalidInfo = std::make_unique<AudioRendererChangeInfo>();
-    invalidInfo->clientUID = testUid;
-    invalidInfo->clientPid = testPid;
-    invalidInfo->rendererInfo.isLoopback = false;
-    invalidInfo->sessionId = 1;
-    auto mockCallback = std::make_shared<MockAudioClientTracker>();
-    audioStreamCollector_.clientTracker_[invalidInfo->sessionId] = mockCallback;
-    audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(invalidInfo));
+    AudioStreamCollector collector;
+    int32_t uid = 1001;
+    int32_t pid = 3001;
+    StreamUsage callStreamUsage = collector.GetLastestRunningCallStreamUsage();
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = nullptr;
+    collector.audioRendererChangeInfos_.push_back(rendererChangeInfo);
 
-    int32_t testUid2 = 1002;
-    int32_t testPid2 = 2002;
-    auto invalidInfo2 = std::make_unique<AudioRendererChangeInfo>();
-    invalidInfo2->clientUID = testUid2;
-    invalidInfo2->clientPid = testPid2;
-    invalidInfo2->rendererInfo.isLoopback = true;
-    invalidInfo2->sessionId = 2;
-    audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(invalidInfo2));
-    EXPECT_CALL(*mockCallback, PausedStreamImpl(_)).Times(0);
-    audioStreamCollector_.HandleKaraokeAppToBack(testUid, testPid);
-    audioStreamCollector_.HandleKaraokeAppToBack(testUid2, testPid2);
+    EXPECT_NO_THROW(collector.HandleKaraokeAppToBack(uid, pid));
+    EXPECT_EQ(collector.audioRendererChangeInfos_[0], nullptr);
+
+    collector.audioRendererChangeInfos_[0] = make_shared<AudioRendererChangeInfo>();
+    collector.audioRendererChangeInfos_[0]->clientUID = 1002;
+    collector.audioRendererChangeInfos_[0]->rendererInfo.isLoopback = true;
+    collector.audioRendererChangeInfos_[0]->clientPid = 3001;
+    collector.audioRendererChangeInfos_[0]->sessionId = 2001;
+    EXPECT_NO_THROW(collector.HandleKaraokeAppToBack(uid, pid));
+    EXPECT_EQ(collector.audioRendererChangeInfos_[0]->clientPid, pid);
+    EXPECT_NE(collector.audioRendererChangeInfos_[0]->clientUID, uid);
+
+    collector.audioRendererChangeInfos_[0]->clientUID = 1001;
+    collector.audioRendererChangeInfos_[0]->clientPid = 3002;
+    EXPECT_NO_THROW(collector.HandleKaraokeAppToBack(uid, pid));
+    EXPECT_NE(collector.audioRendererChangeInfos_[0]->clientPid, pid);
+
+    collector.audioRendererChangeInfos_[0]->clientPid = 3001;
+    collector.audioRendererChangeInfos_[0]->rendererInfo.isLoopback = false;
+    EXPECT_NO_THROW(collector.HandleKaraokeAppToBack(uid, pid));
+    EXPECT_FALSE(collector.audioRendererChangeInfos_[0]->rendererInfo.isLoopback);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: UpdateCapturerStreamInternal_001
+* @tc.desc  : Test UpdateCapturerStreamInternal.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, UpdateCapturerStreamInternal_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    AudioStreamChangeInfo streamChangeInfo;
+    streamChangeInfo.audioCapturerChangeInfo.clientUID = 1001;
+    streamChangeInfo.audioCapturerChangeInfo.sessionId = 2001;
+    streamChangeInfo.audioCapturerChangeInfo.capturerState = CapturerState::CAPTURER_RUNNING;
+    shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_shared<AudioCapturerChangeInfo>();
+
+    int32_t ret = collector.UpdateCapturerStreamInternal(streamChangeInfo);
+    EXPECT_EQ(ERROR, ret);
+
+    capturerChangeInfo->clientUID = 1001;
+    capturerChangeInfo->createrUID = 1001;
+    capturerChangeInfo->sessionId = 2001;
+    capturerChangeInfo->capturerInfo.pipeType = PIPE_TYPE_MULTICHANNEL;
+    collector.audioCapturerChangeInfos_.push_back(move(capturerChangeInfo));
+
+    ret = collector.UpdateCapturerStreamInternal(streamChangeInfo);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -1210,6 +1233,28 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_040, TestSize.Level1
     EXPECT_TRUE(ret);
 }
 
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: AudioStreamCollector_041
+* @tc.desc  : Test IsStreamActive.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_041, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    AudioStreamType volumeType = STREAM_VOICE_ASSISTANT;
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+
+    rendererChangeInfo->createrUID = 1001;
+    rendererChangeInfo->clientUID = 1001;
+    rendererChangeInfo->sessionId = 2001;
+    rendererChangeInfo->rendererState = RENDERER_RUNNING;
+    collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+
+    bool ret = collector.IsStreamActive(volumeType);
+    EXPECT_FALSE(ret);
+}
+
 /**
 * @tc.name  : Test AudioStreamCollector.
 * @tc.number: AudioStreamCollector_042
@@ -1986,7 +2031,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, GetRunningRendererInfos_001, TestSize.Lev
 HWTEST_F(AudioStreamCollectorUnitTest, GetRunningRendererInfos_002, TestSize.Level1)
 {
     AudioStreamCollector audioStreamCollector_;
-    audioStreamCollector_.audioRendererChangeInfos_.push_back(std::shared_ptr<AudioRendererChangeInfo>());
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(std::make_shared<AudioRendererChangeInfo>());
     audioStreamCollector_.audioRendererChangeInfos_.back()->rendererState = RENDERER_RUNNING;
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> infos;
     int32_t result = audioStreamCollector_.GetRunningRendererInfos(infos);
@@ -2003,10 +2048,10 @@ HWTEST_F(AudioStreamCollectorUnitTest, GetRunningRendererInfos_002, TestSize.Lev
 HWTEST_F(AudioStreamCollectorUnitTest, GetRunningRendererInfos_003, TestSize.Level1)
 {
     AudioStreamCollector audioStreamCollector_;
-    auto info1 = std::shared_ptr<AudioRendererChangeInfo>();
+    auto info1 = std::make_shared<AudioRendererChangeInfo>();
     info1->rendererState = RENDERER_RUNNING;
     audioStreamCollector_.audioRendererChangeInfos_.push_back(info1);
-    auto info2 = std::shared_ptr<AudioRendererChangeInfo>();
+    auto info2 = std::make_shared<AudioRendererChangeInfo>();
     info2->rendererState = RENDERER_STOPPED;
     audioStreamCollector_.audioRendererChangeInfos_.push_back(info2);
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> infos;

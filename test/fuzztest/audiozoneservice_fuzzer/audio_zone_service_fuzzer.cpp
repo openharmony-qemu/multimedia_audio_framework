@@ -224,7 +224,7 @@ void AudioZoneServiceCreateAudioZoneFuzzTest()
     int32_t zoneId = GetData<int32_t>();
     std::shared_ptr<AudioZone> zone = std::make_shared<AudioZone>(manager, name, context);
     audioZoneService.zoneMaps_.insert(make_pair(zoneId, zone));
-    audioZoneService.CreateAudioZone(name, context);
+    audioZoneService.CreateAudioZone(name, context, 0);
 }
 
 void AudioZoneServiceReleaseAudioZoneFuzzTest()

@@ -24,6 +24,7 @@ enum class AudioConcurrencyMode {
     DUCK_OTHERS = 2,
     PAUSE_OTHERS = 3,
     SILENT = 4,
+    STANDALONE = 5,
 };
 
 struct AudioSessionStrategy {

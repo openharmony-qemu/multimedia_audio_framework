@@ -71,6 +71,7 @@ public:
     void OnDeviceConfigurationChanged(DeviceType deviceType,
         const std::string &macAddress, const std::string &deviceName,
         const AudioStreamInfo &streamInfo);
+    std::shared_ptr<AudioDeviceDescriptor> GetDeviceByStatusInfo(const DStatusInfo &statusInfo);
     void OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop = false);
     int32_t OnServiceConnected(AudioServiceIndex serviceIndex);
     void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress);

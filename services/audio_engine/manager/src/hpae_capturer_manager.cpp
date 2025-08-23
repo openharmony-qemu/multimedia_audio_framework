@@ -351,6 +351,8 @@ int32_t HpaeCapturerManager::Pause(uint32_t sessionId)
             "Pause not find sessionId %{public}u", sessionId);
         DisConnectOutputSession(sessionId);
         SetSessionState(sessionId, HPAE_SESSION_PAUSED);
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
+            HPAE_SESSION_PAUSED, OPERATION_PAUSED);
     };
     SendRequest(request);
     return SUCCESS;
@@ -430,6 +432,8 @@ int32_t HpaeCapturerManager::Stop(uint32_t sessionId)
             "Stop not find sessionId %{public}u", sessionId);
         DisConnectOutputSession(sessionId);
         SetSessionState(sessionId, HPAE_SESSION_STOPPED);
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
+            HPAE_SESSION_STOPPED, OPERATION_STOPPED);
     };
     SendRequest(request);
     return SUCCESS;
@@ -913,7 +917,11 @@ void HpaeCapturerManager::MoveAllStreamToNewSource(const std::string &sourceName
     }
     AUDIO_INFO_LOG("[StartMove] session:%{public}s to source name:%{public}s, move type:%{public}d",
         idStr.c_str(), name.c_str(), moveType);
-    TriggerCallback(MOVE_ALL_SOURCE_OUTPUT, moveInfos, name);
+    if (moveType == MOVE_ALL) {
+        TriggerSyncCallback(MOVE_ALL_SOURCE_OUTPUT, moveInfos, name);
+    } else {
+        TriggerCallback(MOVE_ALL_SOURCE_OUTPUT, moveInfos, name);
+    }
 }
 
 int32_t HpaeCapturerManager::MoveStream(uint32_t sessionId, const std::string& sourceName)

@@ -52,7 +52,7 @@ public:
     const static std::vector<AudioZoneBindKey> GetSupportKeys(const AudioZoneBindKey &key);
 
 private:
-    int32_t uid_ = -1;
+    int32_t uid_ = INVALID_UID;
     std::string deviceTag_ = "";
     std::string streamTag_ = "";
     StreamUsage usage_ = StreamUsage::STREAM_USAGE_INVALID;
@@ -63,13 +63,14 @@ private:
 
 class AudioZone {
 public:
-    AudioZone(std::shared_ptr<AudioZoneClientManager> manager,
-        const std::string &name, const AudioZoneContext &context);
+    AudioZone(std::shared_ptr<AudioZoneClientManager> manager, const std::string &name,
+        const AudioZoneContext &context, pid_t clientPid = 0);
     ~AudioZone() = default;
 
     int32_t GetId();
     const std::shared_ptr<AudioZoneDescriptor> GetDescriptor();
     const std::string GetStringDescriptor();
+    const std::string GetName();
 
     void BindByKey(const AudioZoneBindKey &key);
     void RemoveKey(const AudioZoneBindKey &key);
@@ -94,6 +95,8 @@ public:
 
     int32_t UpdateDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> device);
 
+    pid_t GetClientPid();
+
 private:
     int32_t zoneId_ = -1;
     std::string name_ = "";
@@ -103,6 +106,7 @@ private:
     std::shared_ptr<AudioZoneClientManager> clientManager_;
     std::set<pid_t> changeReportClientList_;
     pid_t volumeProxyClientPid_ = 0;
+    pid_t zoneClientPid_ = 0;
     bool isVolumeProxyEnabled_ = false;
 
     int32_t SetDeviceDescriptorState(const std::shared_ptr<AudioDeviceDescriptor> device, const bool enable);

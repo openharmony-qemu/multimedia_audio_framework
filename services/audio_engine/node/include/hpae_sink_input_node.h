@@ -57,6 +57,7 @@ public:
     float GetLoudnessGain();
     void SetSpeed(float speed);
     float GetSpeed();
+    bool isConnected_ = false;
 private:
     int32_t GetDataFromSharedBuffer();
     void CheckAndDestroyHistoryBuffer();
@@ -80,6 +81,7 @@ private:
     float loudnessGain_ = 0.0f;
     float speed_ = 1.0f;
     std::atomic<uint64_t> hdiFramePosition_ = 0;
+    uint32_t standbyCounter_ = 0;
 };
 
 }  // namespace HPAE

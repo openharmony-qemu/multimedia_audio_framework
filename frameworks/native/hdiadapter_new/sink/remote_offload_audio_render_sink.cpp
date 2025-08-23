@@ -357,7 +357,7 @@ int32_t RemoteOffloadAudioRenderSink::GetHdiLatency(uint32_t &latency)
     }
 
     latency = hdiLatencyUS_;
-    AUDIO_DEBUG_LOG("RemoteOffloadAudioRenderSink::GetHdiLatency hdiLatencyUS_ %{public}u", hdiLatencyUS_);
+    AUDIO_DEBUG_LOG("RemoteOffloadAudioRenderSink::GetHdiLatency hdiLatencyUS_ %{public}" PRIu64, hdiLatencyUS_);
     return SUCCESS;
 }
 
@@ -407,8 +407,8 @@ int32_t RemoteOffloadAudioRenderSink::GetLatency(uint32_t &latency)
     AUDIO_DEBUG_LOG("RemoteOffloadAudioRenderSink::GetLatency originLatencyUS: %{public}u", originLatencyUS);
 
     uint64_t positionUS = lastHdiOriginFramesUS_ > originLatencyUS ? lastHdiOriginFramesUS_ - originLatencyUS : 0;
-    uint64_t renderFrameUS =
-        renderPos_ * SECOND_TO_MICROSECOND / (attr_.sampleRate * GetFormatByteSize(attr_.format) * attr_.channel);
+    uint64_t renderFrameUS = renderPos_ * SECOND_TO_MICROSECOND /
+        (attr_.sampleRate * static_cast<uint32_t>(GetFormatByteSize(attr_.format)) * attr_.channel);
     AUDIO_DEBUG_LOG("RemoteOffloadAudioRenderSink::GetOriginLatency renderFrameUS: %{public}" PRIu64, renderFrameUS);
     latency = renderFrameUS > positionUS ? (renderFrameUS - positionUS) / MICROSECOND_PER_MILLISECOND : 0;
     return ret;
@@ -461,16 +461,39 @@ int32_t RemoteOffloadAudioRenderSink::EstimateRenderPosition()
     // The sample count can be inferred based on the time interval
     // between the current time and the last occurrence.
     int64_t now = ClockTime::GetCurNano();
-    int64_t durationNS = now - lastSystemTimeNS_;
-    int64_t durationUS = durationNS / NANOSECOND_TO_MICROSECOND;
+    int64_t durationNS = now > lastSystemTimeNS_ ? now - lastSystemTimeNS_ : 0;
+    uint64_t durationUS = static_cast<uint64_t>(durationNS) / NANOSECOND_TO_MICROSECOND;
+
+    // The underlying time recorded must be calculated because this time increments at a fixed rate
+    // regardless of whether it is played or not, or whether there is buffering or not
+    lastHdiTimeNS_ += durationNS;
+    lastHdiTimeSec_ = lastHdiTimeNS_ / AUDIO_NS_PER_SECOND;
+    lastHdiTimeNanoSec_ = lastHdiTimeNS_ % AUDIO_NS_PER_SECOND;
+    // The system time also needs to be updated because it is fixed as well
+    lastSystemTimeNS_ = now;
+
+    uint64_t renderFrameUS = renderPos_ * SECOND_TO_MICROSECOND /
+        (attr_.sampleRate * static_cast<uint32_t>(GetFormatByteSize(attr_.format)) * attr_.channel);
+    if (renderFrameUS <= lastHdiOriginFramesUS_) {
+        AUDIO_INFO_LOG("RemoteOffloadAudioRenderSink::EstimateRenderPosition renderFrameUS: %{public}" PRIu64
+            ", lastHdiFramesUS_: %{public}" PRIu64 " no need to estimate", renderFrameUS, lastHdiOriginFramesUS_);
+        return SUCCESS;
+    }
+    
+    uint64_t originFrameUS = lastHdiOriginFramesUS_ + durationUS * speed_;
+    if (originFrameUS > renderFrameUS) {
+        AUDIO_INFO_LOG("RemoteOffloadAudioRenderSink::EstimateRenderPosition renderFrameUS: %{public}" PRIu64
+            ", originFrameUS: %{public}" PRIu64 " set to renderFrameUS", renderFrameUS, originFrameUS);
+        auto excess = (renderFrameUS - lastHdiOriginFramesUS_) / speed_;
+        lastHdiOriginFramesUS_ = renderFrameUS;
+        lastHdiFramesUS_ += excess;
+
+        AddHdiLatency(excess);
+        return SUCCESS;
+    }
 
     lastHdiFramesUS_ += durationUS;
     lastHdiOriginFramesUS_ += durationUS * speed_;
-    lastSystemTimeNS_ = now;
-    lastHdiTimeNS_ += durationNS;
-
-    lastHdiTimeSec_ = lastHdiTimeNS_ / AUDIO_NS_PER_SECOND;
-    lastHdiTimeNanoSec_ = lastHdiTimeNS_ % AUDIO_NS_PER_SECOND;
 
     AddHdiLatency(durationUS);
     return SUCCESS;
@@ -567,9 +590,9 @@ void RemoteOffloadAudioRenderSink::CalcHdiPosition(uint64_t frames, int64_t time
     lastHdiTimeNanoSec_ = timeNanoSec;
 }
 
-void RemoteOffloadAudioRenderSink::RemoveHdiLatency(uint32_t duration)
+void RemoteOffloadAudioRenderSink::RemoveHdiLatency(uint64_t duration)
 {
-    AUDIO_INFO_LOG("RemoteOffloadAudioRenderSink::RemoveHdiLatency duration: %{public}u", duration);
+    AUDIO_INFO_LOG("RemoteOffloadAudioRenderSink::RemoveHdiLatency duration: %{public}" PRId64, duration);
     if (realLatencyTotalUS_ <= duration) {
         realLatencyTotalUS_ = 0;
         realLatencyDeque_.clear();
@@ -587,18 +610,18 @@ void RemoteOffloadAudioRenderSink::RemoveHdiLatency(uint32_t duration)
             duration = 0;
         }
     }
-    AUDIO_INFO_LOG("RemoteOffloadAudioRenderSink::RemoveHdiLatency realLatencyTotalUS_: %{public}u",
+    AUDIO_INFO_LOG("RemoteOffloadAudioRenderSink::RemoveHdiLatency realLatencyTotalUS_: %{public}" PRId64,
         realLatencyTotalUS_);
 }
 
-void RemoteOffloadAudioRenderSink::AddHdiLatency(uint32_t duration)
+void RemoteOffloadAudioRenderSink::AddHdiLatency(uint64_t duration)
 {
-    AUDIO_DEBUG_LOG("RemoteOffloadAudioRenderSink::AddHdiLatency duration: %{public}u, speed: %{public}f",
-        duration, speed_);
+    AUDIO_DEBUG_LOG("RemoteOffloadAudioRenderSink::AddHdiLatency duration: %{public}" PRId64
+        ", speed: %{public}f", duration, speed_);
     realLatencyTotalUS_ += duration;
     realLatencyDeque_.push_front({duration, speed_});
 
-    uint32_t maxDequeLengthUS = 1000000;
+    uint64_t maxDequeLengthUS = 1000000;
     // If the total length exceeds 1,000,000 microseconds.
     // clear the end of the queue to ensure the maximum length remains at 1,000,000 microseconds.
     while (realLatencyTotalUS_ > maxDequeLengthUS) {
@@ -606,12 +629,12 @@ void RemoteOffloadAudioRenderSink::AddHdiLatency(uint32_t duration)
             realLatencyTotalUS_ -= realLatencyDeque_.back().first;
             realLatencyDeque_.pop_back();
         } else {
-            int excess = realLatencyTotalUS_ - maxDequeLengthUS;
+            uint64_t excess = realLatencyTotalUS_ - maxDequeLengthUS;
             realLatencyDeque_.back().first -= excess;
             realLatencyTotalUS_ -= excess;
         }
     }
-    AUDIO_DEBUG_LOG("RemoteOffloadAudioRenderSink::AddHdiLatency realLatencyTotalUS_: %{public}u",
+    AUDIO_DEBUG_LOG("RemoteOffloadAudioRenderSink::AddHdiLatency realLatencyTotalUS_: %{public}" PRId64,
         realLatencyTotalUS_);
 }
 

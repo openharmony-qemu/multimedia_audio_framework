@@ -39,6 +39,9 @@ const int32_t SESSION_ID = 1000001;
 const int32_t STATE = 1;
 const uint32_t TEST_APP_UID = 1;
 
+const uint32_t MIN_VOLUME_LEVEL = 0;
+const uint32_t MAX_VOLUME_LEVEL = 15;
+
 void AudioPolicyServiceFourthUnitTest::SetUpTestCase(void)
 {
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest::SetUpTestCase start-end");
@@ -136,13 +139,13 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, LoadHdiEffectModel_001, TestSize.Leve
 }
 
 /**
-* @tc.name  : Test OnReceiveBluetoothEvent.
-* @tc.number: OnReceiveBluetoothEvent_001
+* @tc.name  : Test OnReceiveUpdateDeviceNameEvent.
+* @tc.number: OnReceiveUpdateDeviceNameEvent_001
 * @tc.desc  : Test AudioPolicyService interfaces.
 */
-HWTEST_F(AudioPolicyServiceFourthUnitTest, OnReceiveBluetoothEvent_001, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceFourthUnitTest, OnReceiveUpdateDeviceNameEvent_001, TestSize.Level1)
 {
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest OnReceiveBluetoothEvent_001 start");
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest OnReceiveUpdateDeviceNameEvent_001 start");
     ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
 
     const std::string macAddress = "11-11-11-11-11-11";
@@ -234,21 +237,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOffloadConnecting_003, TestSize
     audioA2dpOffloadManager_.connectionTriggerSessionIds_ = {0};
 
     bool ret = audioA2dpOffloadManager_.IsA2dpOffloadConnecting(0);
-    EXPECT_FALSE(ret);
-}
-
-/**
-* @tc.name  : Test CheckSpatializationAndEffectState.
-* @tc.number: CheckSpatializationAndEffectState_001
-* @tc.desc  : Test AudioPolicyServic interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckSpatializationAndEffectState_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest CheckSpatializationAndEffectState_001 start");
-    auto server = GetServerUtil::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-
-    bool ret = server->audioPolicyService_.audioOffloadStream_.CheckSpatializationAndEffectState();
     EXPECT_FALSE(ret);
 }
 
@@ -1622,6 +1610,82 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckDynamicCapturerConfig_001, TestS
     manager.CheckDynamicCapturerConfig(streamDesc, info);
     EXPECT_EQ(info->format_, SAMPLE_U8);
     EXPECT_EQ(info->sampleRate_, 0);
+}
+
+/**
+* @tc.name  : Test GetMaxVolumeLevel.
+* @tc.number: GetMaxVolumeLevel_001
+* @tc.desc  : valid parameters, return SUCCESS and volumeLevel is correct.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetMaxVolumeLevel_001, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+
+    int32_t volumeType = 1;
+    int32_t volumeLevel = 0;
+    int32_t deviceType = 0;
+    int ret = server->GetMaxVolumeLevel(volumeType, volumeLevel, deviceType);
+
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(volumeLevel, MAX_VOLUME_LEVEL);
+}
+
+/**
+* @tc.name  : Test GetMaxVolumeLevel.
+* @tc.number: GetMaxVolumeLevel_002
+* @tc.desc  : no valid parameters, return SUCCESS and volumeLevel is default value.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetMaxVolumeLevel_002, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+
+    int32_t volumeType = -1;
+    int32_t volumeLevel = 0;
+    int32_t deviceType = -1;
+    int ret = server->GetMaxVolumeLevel(volumeType, volumeLevel, deviceType);
+
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(volumeLevel, MAX_VOLUME_LEVEL);
+}
+
+/**
+* @tc.name  : Test GetMinVolumeLevel.
+* @tc.number: GetMaxVolumeLevel_001
+* @tc.desc  : valid parameters, return SUCCESS and volumeLevel is correct.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetMinVolumeLevel_001, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+
+    int32_t volumeType = 1;
+    int32_t volumeLevel = 0;
+    int32_t deviceType = 0;
+    int ret = server->GetMinVolumeLevel(volumeType, volumeLevel, deviceType);
+
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(volumeLevel, MIN_VOLUME_LEVEL);
+}
+
+/**
+* @tc.name  : Test GetMinVolumeLevel.
+* @tc.number: GetMinVolumeLevel_002
+* @tc.desc  : no valid parameters, return SUCCESS and volumeLevel is default value.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetMinVolumeLevel_002, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+
+    int32_t volumeType = -1;
+    int32_t volumeLevel = 0;
+    int32_t deviceType = -1;
+    int ret = server->GetMinVolumeLevel(volumeType, volumeLevel, deviceType);
+
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(volumeLevel, MIN_VOLUME_LEVEL);
 }
 } // namespace AudioStandard
 } // namespace OHOS

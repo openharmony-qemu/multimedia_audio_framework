@@ -58,6 +58,34 @@ extern "C" AudioSafeVolumeNotification *CreateSafeVolumeNotificationImpl()
 {
     return new AudioSafeVolumeNotificationImpl;
 }
+
+class AudioLoudVolumeNotificationImpl : public AudioLoudVolumeNotification {
+public:
+    AudioLoudVolumeNotificationImpl() = default;
+    virtual ~AudioLoudVolumeNotificationImpl() = default;
+
+    void PublishLoudVolumeNotification(int32_t notificationId) override;
+private:
+    std::string GetSystemStringByName(const std::string &name);
+    bool SetTitleAndText(int32_t notificationId, Notification::NotificationCapsule &capsule);
+    bool GetPixelMap();
+    Global::Resource::RState GetMediaDataByName(const std::string& name, size_t& len,
+        std::unique_ptr<uint8_t[]>& outValue, uint32_t density = 0);
+
+    std::string title_ {};
+    std::string text_ {};
+    std::string buttonName_ {};
+    std::string iconPath_ {};
+
+    std::mutex mutex_ {};
+    std::shared_ptr<Media::PixelMap> iconPixelMap_ {};
+};
+
+extern "C" AudioLoudVolumeNotification *CreateLoudVolumeNotificationImpl()
+{
+    return new AudioLoudVolumeNotificationImpl;
+}
+
 }  // namespace AudioStandard
 }  // namespace OHOS
 #endif  // AUDIO_SAFE_VOLUME_NOTIFICATION_IMPL_H

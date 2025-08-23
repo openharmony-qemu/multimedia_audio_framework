@@ -49,6 +49,7 @@ const std::string DEFAULT_DEVICE_TYPE = "DEVICE_TYPE_MIC";
 const std::vector<std::string> NEED_EC_SCENE = {
     "SCENE_VOIP_UP",
     "SCENE_PRE_ENHANCE",
+    "SCENE_RECOGNITION",
 };
 
 const std::vector<std::string> NEED_MICREF_SCENE = {

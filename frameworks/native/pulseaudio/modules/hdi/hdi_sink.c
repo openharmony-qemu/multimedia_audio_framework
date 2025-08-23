@@ -46,7 +46,6 @@
 #include "securec.h"
 
 #include "audio_hdi_log.h"
-#include "audio_qosmanager.h"
 #include "audio_schedule.h"
 #include "parameter.h"
 #include "audio_utils_c.h"
@@ -2513,11 +2512,7 @@ static bool InputIsOffload(pa_sink_input *i)
     if (!u->offload_enable || !u->offload.inited) {
         return false;
     }
-    const char *offloadEnableStr = pa_proplist_gets(i->proplist, "stream.offload.enable");
-    if (offloadEnableStr == NULL) {
-        return false;
-    }
-    const bool offloadEnable = !strcmp(offloadEnableStr, "1");
+    const bool offloadEnable = (GetOffloadEnable(i->index) == 1);
     return offloadEnable;
 }
 

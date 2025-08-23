@@ -64,7 +64,7 @@ public:
     std::string GetSinkName(const AudioDeviceDescriptor &desc, int32_t sessionId);
     std::string GetSinkName(std::shared_ptr<AudioDeviceDescriptor> desc, int32_t sessionId);
     uint32_t PcmFormatToBytes(AudioSampleFormat format);
-    std::string GetSourcePortName(DeviceType deviceType);
+    std::string GetSourcePortName(DeviceType deviceType, uint32_t routeFlag = AUDIO_FLAG_NONE);
     void UpdateDisplayName(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     void UpdateDisplayNameForRemote(std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     int32_t GetDeviceNameFromDataShareHelper(std::string &deviceName);

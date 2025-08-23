@@ -100,9 +100,12 @@ void HpaeSinkOutputNode::DoProcess()
     if (ret != SUCCESS || writeLen != renderFrameData_.size()) {
         AUDIO_ERR_LOG("HpaeSinkOutputNode: RenderFrame failed");
         if (GetDeviceClass() != "remote") {
-            usleep(SLEEP_TIME_IN_US); // others failed to RenderFrame, need sleep 20ms
+            periodTimer_.Stop();
+            uint64_t usedTimeUs = periodTimer_.Elapsed<std::chrono::microseconds>();
+            usleep(SLEEP_TIME_IN_US > usedTimeUs ? SLEEP_TIME_IN_US - usedTimeUs : 0);
         }
     }
+    periodTimer_.Start();
     HandleRemoteTiming(); // used to control remote RenderFrame tempo.
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
@@ -118,6 +121,13 @@ void HpaeSinkOutputNode::DoProcess()
 const char *HpaeSinkOutputNode::GetRenderFrameData(void)
 {
     return renderFrameData_.data();
+}
+
+void HpaeSinkOutputNode::RegisterCurrentDeviceCallback(const std::function<void(bool)> &callback)
+{
+    CHECK_AND_RETURN_LOG(audioRendererSink_ != nullptr, "audioRendererSink_ is nullptr");
+    CHECK_AND_RETURN_LOG(callback != nullptr, "callback is nullptr");
+    audioRendererSink_->RegisterCurrentDeviceCallback(callback);
 }
 
 bool HpaeSinkOutputNode::Reset()
@@ -294,6 +304,7 @@ int32_t HpaeSinkOutputNode::RenderSinkStart(void)
         AUDIO_INFO_LOG("Speaker sink started, open pa:[%{public}s] -- [%{public}s], ret:%{public}d",
             GetDeviceClass().c_str(), (ret == 0 ? "success" : "failed"), ret);
     }
+    periodTimer_.Start();
     return SUCCESS;
 }
 
@@ -355,7 +366,8 @@ void HpaeSinkOutputNode::HandlePaPower(HpaePcmBuffer *pcmBuffer)
         }
         silenceDataUs_ += static_cast<int64_t>(pcmBuffer->GetFrameLen()) * TIME_IN_US /
             static_cast<int64_t>(pcmBuffer->GetSampleRate());
-        if (isOpenPaPower_ && silenceDataUs_ >= WAIT_CLOSE_PA_TIME * TIME_IN_US) {
+        if (isOpenPaPower_ && silenceDataUs_ >= WAIT_CLOSE_PA_TIME * TIME_IN_US &&
+            audioRendererSink_->GetAudioScene() == 0) {
             int32_t ret = audioRendererSink_->SetPaPower(false);
             isOpenPaPower_ = false;
             silenceDataUs_ = 0;

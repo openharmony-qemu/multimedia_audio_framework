@@ -47,6 +47,7 @@ static const char* AUDIO_SERVICE_PKG = "audio_manager_service";
 std::map<std::string, ClassType> AudioPolicyUtils::portStrToEnum = {
     {PRIMARY_SPEAKER, TYPE_PRIMARY},
     {PRIMARY_MIC, TYPE_PRIMARY},
+    {PRIMARY_AI_MIC, TYPE_PRIMARY},
     {PRIMARY_WAKEUP_MIC, TYPE_PRIMARY},
     {BLUETOOTH_SPEAKER, TYPE_A2DP},
     {BLUETOOTH_MIC, TYPE_A2DP},
@@ -326,13 +327,18 @@ std::string AudioPolicyUtils::GetSinkName(std::shared_ptr<AudioDeviceDescriptor>
     }
 }
 
-std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType)
+std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType, uint32_t routeFlag)
 {
     std::string portName = PORT_NONE;
     switch (deviceType) {
         case InternalDeviceType::DEVICE_TYPE_MIC:
         case InternalDeviceType::DEVICE_TYPE_NEARLINK_IN:
-            portName = PRIMARY_MIC;
+            if (routeFlag == AUDIO_INPUT_FLAG_AI) {
+                portName = PRIMARY_AI_MIC;
+                AUDIO_INFO_LOG("use PRIMARY_AI_IC for devicetype: %{public}d", deviceType);
+            } else {
+                portName = PRIMARY_MIC;
+            }
             break;
         case InternalDeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
             portName = USB_MIC;
@@ -386,7 +392,9 @@ std::string AudioPolicyUtils::GetInputDeviceClassBySourcePortName(std::string so
         {PRIMARY_WAKEUP, PRIMARY_CLASS},
         {FILE_SOURCE, FILE_CLASS},
         {BLUETOOTH_MIC, A2DP_CLASS},
-        {PORT_NONE, INVALID_CLASS}
+        {PRIMARY_AI_MIC, PRIMARY_CLASS},
+        {PORT_NONE, INVALID_CLASS},
+        
     };
     std::string deviceClass = INVALID_CLASS;
     if (sourcePortStrToClassStrMap_.count(sourcePortName) > 0) {
@@ -509,6 +517,7 @@ void AudioPolicyUtils::UpdateEffectDefaultSink(DeviceType deviceType)
         case DeviceType::DEVICE_TYPE_SPEAKER:
         case DeviceType::DEVICE_TYPE_FILE_SINK:
         case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
+        case DeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
         case DeviceType::DEVICE_TYPE_DP:
         case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
@@ -613,6 +622,7 @@ DeviceRole AudioPolicyUtils::GetDeviceRole(AudioPin pin) const
             return DeviceRole::DEVICE_ROLE_NONE;
         case OHOS::AudioStandard::AUDIO_PIN_OUT_SPEAKER:
         case OHOS::AudioStandard::AUDIO_PIN_OUT_HEADSET:
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_HEADPHONE:
         case OHOS::AudioStandard::AUDIO_PIN_OUT_LINEOUT:
         case OHOS::AudioStandard::AUDIO_PIN_OUT_HDMI:
         case OHOS::AudioStandard::AUDIO_PIN_OUT_USB:
@@ -637,7 +647,7 @@ DeviceType AudioPolicyUtils::GetDeviceType(const std::string &deviceName)
     DeviceType devType = DeviceType::DEVICE_TYPE_NONE;
     if (deviceName == "Speaker") {
         devType = DeviceType::DEVICE_TYPE_SPEAKER;
-    } else if (deviceName == "Built_in_mic") {
+    } else if (deviceName == "Built_in_mic" || deviceName == PRIMARY_AI_MIC) {
         devType = DeviceType::DEVICE_TYPE_MIC;
     } else if (deviceName == "Built_in_wakeup") {
         devType = DeviceType::DEVICE_TYPE_WAKEUP;

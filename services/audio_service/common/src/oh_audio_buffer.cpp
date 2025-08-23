@@ -329,9 +329,9 @@ int32_t OHAudioBuffer::GetWritableDataFrames()
     return ohAudioBufferBase_.GetWritableDataFrames();
 }
 
-int32_t OHAudioBuffer::ResetCurReadWritePos(uint64_t readFrame, uint64_t writeFrame)
+int32_t OHAudioBuffer::ResetCurReadWritePos(uint64_t readFrame, uint64_t writeFrame, bool wakeFutex)
 {
-    return ohAudioBufferBase_.ResetCurReadWritePos(readFrame, writeFrame);
+    return ohAudioBufferBase_.ResetCurReadWritePos(readFrame, writeFrame, wakeFutex);
 }
 
 bool OHAudioBuffer::CheckWriteOrReadFrame(uint64_t writeOrReadFrame)
@@ -357,18 +357,18 @@ uint64_t OHAudioBuffer::GetCurReadFrame()
     return ohAudioBufferBase_.GetCurReadFrame();
 }
 
-int32_t OHAudioBuffer::SetCurWriteFrame(uint64_t writeFrame)
+int32_t OHAudioBuffer::SetCurWriteFrame(uint64_t writeFrame, bool wakeFutex)
 {
     CHECK_AND_RETURN_RET_LOG(CheckWriteOrReadFrame(writeFrame), ERR_INVALID_PARAM,
         "Invalid writeFrame: %{public}" PRIu64 "", writeFrame);
-    return ohAudioBufferBase_.SetCurWriteFrame(writeFrame);
+    return ohAudioBufferBase_.SetCurWriteFrame(writeFrame, wakeFutex);
 }
 
-int32_t OHAudioBuffer::SetCurReadFrame(uint64_t readFrame)
+int32_t OHAudioBuffer::SetCurReadFrame(uint64_t readFrame, bool wakeFutex)
 {
     CHECK_AND_RETURN_RET_LOG(CheckWriteOrReadFrame(readFrame), ERR_INVALID_PARAM,
         "Invalid readFrame: %{public}" PRIu64 "", readFrame);
-    return ohAudioBufferBase_.SetCurReadFrame(readFrame);
+    return ohAudioBufferBase_.SetCurReadFrame(readFrame, wakeFutex);
 }
 
 uint32_t OHAudioBuffer::GetSessionId()
@@ -538,6 +538,11 @@ bool OHAudioBuffer::GetStopFlag() const
 FutexCode OHAudioBuffer::WaitFor(int64_t timeoutInNs, const OnIndexChange &pred)
 {
     return ohAudioBufferBase_.WaitFor(timeoutInNs, pred);
+}
+
+void OHAudioBuffer::WakeFutex(uint32_t wakeVal)
+{
+    ohAudioBufferBase_.WakeFutex(wakeVal);
 }
 } // namespace AudioStandard
 } // namespace OHOS

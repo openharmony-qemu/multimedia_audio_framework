@@ -14,6 +14,7 @@
  */
 
 #include "audio_core_service_utils_unit_test.h"
+#include "audio_scene_manager.h"
 using namespace testing::ext;
 
 namespace OHOS {
@@ -46,6 +47,10 @@ HWTEST(AudioCoreServiceUtilsTest, AudioCoreServiceUtils_002, TestSize.Level1)
     EXPECT_TRUE(AudioCoreServiceUtils::IsOverRunPlayback(mode, RENDERER_STOPPED));
     EXPECT_TRUE(AudioCoreServiceUtils::IsOverRunPlayback(mode, RENDERER_RELEASED));
     EXPECT_TRUE(AudioCoreServiceUtils::IsOverRunPlayback(mode, RENDERER_PAUSED));
+    EXPECT_FALSE(AudioCoreServiceUtils::IsOverRunPlayback(mode, RENDERER_PREPARED));
+
+    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_RINGING, 0, 0);
+    EXPECT_FALSE(AudioCoreServiceUtils::IsOverRunPlayback(mode, RENDERER_PAUSED));
     EXPECT_FALSE(AudioCoreServiceUtils::IsOverRunPlayback(mode, RENDERER_PREPARED));
 }
 
@@ -106,6 +111,17 @@ HWTEST(AudioCoreServiceUtilsTest, AudioCoreServiceUtils_004, TestSize.Level1)
     EXPECT_TRUE(AudioCoreServiceUtils::NeedDualHalToneInStatus(RINGER_MODE_NORMAL, STREAM_USAGE_MUSIC, false, false));
     EXPECT_TRUE(AudioCoreServiceUtils::NeedDualHalToneInStatus(RINGER_MODE_SILENT, STREAM_USAGE_ALARM, false, false));
     EXPECT_FALSE(AudioCoreServiceUtils::NeedDualHalToneInStatus(RINGER_MODE_SILENT, STREAM_USAGE_MUSIC, false, false));
+}
+
+/**
+ * @tc.name  : Test AudioCoreServiceUtils.
+ * @tc.number: AudioCoreServiceUtils_005
+ * @tc.desc  : Test AudioCoreServiceUtils::IsAlarmOnActive()
+ */
+HWTEST(AudioCoreServiceUtilsTest, AudioCoreServiceUtils_005, TestSize.Level1)
+{
+    EXPECT_TRUE(AudioCoreServiceUtils::IsAlarmOnActive(STREAM_USAGE_ALARM, true));
+    EXPECT_FALSE(AudioCoreServiceUtils::IsAlarmOnActive(STREAM_USAGE_MUSIC, true));
 }
 } // namespace AudioStandard
 } // namespace OHOS

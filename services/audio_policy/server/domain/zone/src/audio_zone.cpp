@@ -163,7 +163,7 @@ const std::vector<AudioZoneBindKey> AudioZoneBindKey::GetSupportKeys(int32_t uid
     pushBack(AudioZoneBindKey(uid, "", streamTag));
     pushBack(AudioZoneBindKey(uid));
     pushBack(AudioZoneBindKey(uid, deviceTag));
-    pushBack(AudioZoneBindKey(INVALID_ZONEID, "", "", usage));
+    pushBack(AudioZoneBindKey(INVALID_UID, "", "", usage));
     return keys;
 }
 
@@ -177,10 +177,11 @@ const std::vector<AudioZoneBindKey> AudioZoneBindKey::GetSupportKeys(const Audio
 }
 
 AudioZone::AudioZone(std::shared_ptr<AudioZoneClientManager> manager,
-    const std::string &name, const AudioZoneContext &context)
+    const std::string &name, const AudioZoneContext &context, pid_t clientPid)
     : zoneId_(GenerateZoneId()),
       name_(name),
-      clientManager_(manager)
+      clientManager_(manager),
+      zoneClientPid_(clientPid)
 {
 }
 
@@ -217,6 +218,11 @@ const std::string AudioZone::GetStringDescriptor()
     str += isVolumeProxyEnabled_ ? "enabled" : "disabled";
     str += "\n";
     return str;
+}
+
+const std::string AudioZone::GetName()
+{
+    return name_;
 }
 
 const std::shared_ptr<AudioZoneDescriptor> AudioZone::GetDescriptorNoLock()
@@ -473,6 +479,11 @@ int32_t AudioZone::GetSystemVolumeLevel(AudioVolumeType volumeType)
         mgr = clientManager_;
     }
     return mgr->GetSystemVolumeLevel(volumeProxyClientPid_, zoneId_, volumeType);
+}
+
+pid_t AudioZone::GetClientPid()
+{
+    return zoneClientPid_;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -121,7 +121,7 @@ struct MicrophoneBlockedInfo : public Parcelable {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     static constexpr int32_t DEVICE_CHANGE_VALID_SIZE = 128;
 
-    void SetClientInfo(std::shared_ptr<AudioDeviceDescriptor::ClientInfo> clientInfo) const
+    void SetClientInfo(const AudioDeviceDescriptor::ClientInfo &clientInfo) const
     {
         for (auto &dev : devices) {
             if (dev != nullptr) {
@@ -360,6 +360,8 @@ public:
     virtual ~AudioRendererDataTransferStateChangeCallback() = default;
 
     virtual void OnDataTransferStateChange(const AudioRendererDataTransferStateChangeInfo &info) = 0;
+
+    virtual void OnMuteStateChange(const int32_t &uid, const uint32_t &sessionId, const bool &isMuted) = 0;
 };
 
 class AudioWorkgroupChangeCallback {

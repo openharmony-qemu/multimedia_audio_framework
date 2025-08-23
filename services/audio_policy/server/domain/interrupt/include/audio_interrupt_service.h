@@ -64,7 +64,8 @@ public:
     void OnSessionTimeout(const int32_t pid) override;
 
     // interfaces for AudioSessionService
-    int32_t ActivateAudioSession(const int32_t zoneId, const int32_t callerPid, const AudioSessionStrategy &strategy);
+    int32_t ActivateAudioSession(const int32_t zoneId, const int32_t callerPid,
+        const AudioSessionStrategy &strategy, const bool isStandalone = false);
     bool IsSessionNeedToFetchOutputDevice(const int32_t callerPid);
     int32_t DeactivateAudioSession(const int32_t zoneId, const int32_t callerPid);
     bool IsAudioSessionActivated(const int32_t callerPid);
@@ -118,16 +119,27 @@ public:
     std::set<int32_t> GetStreamIdsForAudioSessionByStreamUsage(
         const int32_t zoneId, const std::set<StreamUsage> &streamUsageSet);
     std::set<int32_t> GetStreamIdsForAudioSessionByDeviceType(const int32_t zoneId, DeviceType deviceType);
+    std::vector<int32_t> GetAudioSessionUidList(int32_t zoneId);
+    StreamUsage GetAudioSessionStreamUsage(int32_t callerPid);
+    
+    bool ShouldAudioServerProcessInruptEvent(const InterruptEventInternal &interruptEvent,
+        const AudioInterrupt &audioInterrupt);
+    void SendInterruptEventToAudioServer(const InterruptEventInternal &interruptEvent,
+        const AudioInterrupt &audioInterrupt);
 
     void ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent);
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
     void RegisterDefaultVolumeTypeListener();
 
+    void RemoveExistingFocus(
+        const int32_t appUid, std::unordered_set<int32_t> &uidActivedSessions);
+    void ResumeFocusByStreamId(
+        const int32_t streamId, const InterruptEventInternal interruptEventResume);
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
+    static constexpr int32_t ZONEID_INVALID = -1;
     static constexpr float DUCK_FACTOR = 0.2f;
     static constexpr int32_t DEFAULT_APP_PID = -1;
-    static constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;
     static constexpr int32_t STREAM_DEFAULT_PRIORITY = 100;
 
     using InterruptIterator = std::list<std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator>;
@@ -257,6 +269,7 @@ private:
     bool IsActiveStreamLowPriority(const AudioFocusEntry &focusEntry);
     void UpdateHintTypeForExistingSession(const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
     void HandleSessionTimeOutEvent(const int32_t pid);
+    int32_t GetAudioSessionZoneidByPid(const int32_t pid);
     bool HandleLowPriorityEvent(const int32_t pid, const uint32_t streamId);
     void SendSessionTimeOutStopEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList);
@@ -294,13 +307,13 @@ private:
     AudioScene RefreshAudioSceneFromAudioInterrupt(const AudioInterrupt &audioInterrupt,
         AudioScene &highestPriorityAudioScene);
 
-    void HandleAppStreamType(AudioInterrupt &audioInterrupt);
+    void HandleAppStreamType(const int32_t zoneId, AudioInterrupt &audioInterrupt);
     bool IsGameAvoidCallbackCase(const AudioInterrupt &audioInterrupt);
     void ResetNonInterruptControl(AudioInterrupt audioInterrupt);
     ClientType GetClientTypeByStreamId(int32_t streamId);
     // for audiosessionv2
     int32_t ProcessFocusEntryForAudioSession(const int32_t zoneId, const int32_t callerPid, bool &updateScene);
-    bool ShouldBypassAudioSessionFocus(const AudioInterrupt &incomingInterrupt);
+    bool ShouldBypassAudioSessionFocus(const int32_t zoneId, const AudioInterrupt &incomingInterrupt);
     void DeactivateAudioSessionFakeInterrupt(
         const int32_t zoneId, const int32_t callerPid, bool isSessionTimeout = false);
     void DispatchInterruptEventForAudioSession(
@@ -321,6 +334,9 @@ private:
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &activeInterrupt);
     void ReportRecordGetFocusFail(const AudioInterrupt &incomingInterrupt,
         const AudioInterrupt &activeInterrupt, int32_t reason);
+    void HandleVoiceCallAndTranscriptionFocus(
+        std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap,
+        const AudioInterrupt &currentInterrupt, const AudioInterrupt &newInterrupt);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;

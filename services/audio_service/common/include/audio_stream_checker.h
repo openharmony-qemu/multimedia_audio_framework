@@ -62,6 +62,8 @@ public:
     void OnRemoteAppDied(const int32_t pid);
     void RecordStandbyTime(bool isStart);
     void UpdateAppState(bool isBackground);
+    void SetVolume(float volume);
+    float GetVolume();
 private:
     bool IsMonitorMuteFrame(const CheckerParam &para);
     bool IsMonitorNoDataFrame(const CheckerParam &para);
@@ -69,6 +71,7 @@ private:
     void CheckStreamThread();
     void MonitorCheckFrameAction(CheckerParam &para, int64_t abnormalFrameNum, float badFrameRatio);
     void CalculateFrameAfterStandby(CheckerParam &para, int64_t &abnormalFrameNum);
+    void CheckVolume();
     std::vector<CheckerParam> checkParaVector_;
     bool monitorSwitch_ = false;
     bool isBackground_ = false;
@@ -78,6 +81,9 @@ private:
     std::thread checkThread_;
     std::atomic<bool> isKeepCheck_ = false;
     std::atomic<bool> isNeedCreateThread_ = true;
+    std::mutex volumeLock_;
+    float curVolume_ = 1.0f;
+    float preVolume_ = 1.0f;
 };
 
 }

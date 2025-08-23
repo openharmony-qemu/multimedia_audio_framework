@@ -20,6 +20,9 @@
 #include "securec.h"
 #include "audio_interrupt_service.h"
 #include "audio_device_descriptor.h"
+#include "i_hpae_manager.h"
+#include "manager/hdi_adapter_manager.h"
+#include "util/id_handler.h"
 #include "accesstoken_kit.h"
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
@@ -45,6 +48,9 @@ sptr<AudioPolicyServer> GetPolicyServerUnitTest()
     static sptr<AudioPolicyServer> server =
         sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
     if (!g_hasServerInit) {
+        IdHandler::GetInstance();
+        HdiAdapterManager::GetInstance();
+        HPAE::IHpaeManager::GetHpaeManager().Init();
         server->OnStart();
         server->OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
@@ -101,16 +107,17 @@ void ReleaseServer()
 }
 
 void AudioPolicyUnitTest::SetUpTestCase(void) {}
-void AudioPolicyUnitTest::TearDownTestCase(void) {}
+void AudioPolicyUnitTest::TearDownTestCase(void)
+{
+    ReleaseServer();
+}
+
 void AudioPolicyUnitTest::SetUp(void)
 {
     GetPermission();
 }
 
-void AudioPolicyUnitTest::TearDown(void)
-{
-    ReleaseServer();
-}
+void AudioPolicyUnitTest::TearDown(void) {}
 
 class RemoteObjectTestStub : public IRemoteObject {
 public:
@@ -125,6 +132,148 @@ public:
 };
 
 #define PRINT_LINE printf("debug __LINE__:%d\n", __LINE__)
+
+/**
+* @tc.name  : Test SetNearlinkDeviceVolume.
+* @tc.number: SetNearlinkDeviceVolume_002
+* @tc.desc  : Test SetNearlinkDeviceVolume
+*/
+HWTEST(AudioPolicyUnitTest, SetNearlinkDeviceVolume_002, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    
+    std::string macAddress = "LocalDevice";
+    int32_t streamTypeIn = 1;
+    int32_t volume = 0;
+    bool updateUi = true;
+
+    int32_t ret = ptrAudioPolicyServer->SetNearlinkDeviceVolume(macAddress, streamTypeIn, volume, updateUi);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
+
+    streamTypeIn = 0;
+    ret = ptrAudioPolicyServer->SetNearlinkDeviceVolume(macAddress, streamTypeIn, volume, updateUi);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: SetAudioInterruptCallback_002
+* @tc.desc  : Test AudioPolicyServer::SetAudioInterruptCallback
+*/
+HWTEST(AudioPolicyUnitTest, SetAudioInterruptCallback_002, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+
+    uint32_t sessionID = 0;
+    sptr<IRemoteObject> object = nullptr;
+    uint32_t clientUid = 0;
+    int32_t zoneID = 0;
+
+    ptrAudioPolicyServer->interruptService_ = nullptr;
+    ptrAudioPolicyServer->coreService_ = nullptr;
+    int32_t result = ptrAudioPolicyServer->SetAudioInterruptCallback(sessionID, object, clientUid, zoneID);
+    EXPECT_EQ(result, ERR_UNKNOWN);
+
+    ptrAudioPolicyServer->interruptService_ = std::make_shared<AudioInterruptService>();
+    ptrAudioPolicyServer->coreService_ = nullptr;
+    result = ptrAudioPolicyServer->SetAudioInterruptCallback(sessionID, object, clientUid, zoneID);
+    EXPECT_EQ(result, ERR_UNKNOWN);
+
+    ptrAudioPolicyServer->interruptService_ = std::make_shared<AudioInterruptService>();
+    ptrAudioPolicyServer->coreService_ = std::make_shared<AudioCoreService>();
+    result = ptrAudioPolicyServer->SetAudioInterruptCallback(sessionID, object, clientUid, zoneID);
+    EXPECT_EQ(result, ERR_UNKNOWN);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: GetDmDeviceType_001
+* @tc.desc  : Test AudioPolicyServer::GetDmDeviceType
+*/
+HWTEST(AudioPolicyUnitTest, GetDmDeviceType_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+
+    uint16_t deviceType = 0;
+    int32_t result = ptrAudioPolicyServer->GetDmDeviceType(deviceType);
+    EXPECT_EQ(result, ERROR);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: SetSystemVolumeLevelWithDeviceInternal_001
+* @tc.desc  : Test AudioPolicyServer::SetSystemVolumeLevelWithDeviceInternal
+*/
+HWTEST(AudioPolicyUnitTest, SetSystemVolumeLevelWithDeviceInternal_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+
+    AudioStreamType streamType = AudioStreamType::STREAM_MUSIC;
+    int32_t volumeLevel = 20;
+    bool isUpdateUi = false;
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_DEFAULT;
+
+    int32_t result = ptrAudioPolicyServer->SetSystemVolumeLevelWithDeviceInternal(
+        streamType, volumeLevel, isUpdateUi, deviceType);
+
+    EXPECT_EQ(result, ptrAudioPolicyServer->SetSingleStreamVolumeWithDevice(
+        streamType, volumeLevel, isUpdateUi, deviceType));
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: GetSystemVolumeLevel_001
+* @tc.desc  : Test AudioPolicyServer::GetSystemVolumeLevel
+*/
+HWTEST(AudioPolicyUnitTest, GetSystemVolumeLevel_001, TestSize.Level1)
+{
+    int32_t streamType = 1;
+    int32_t uid = 0;
+    int32_t volumeLevel = 0;
+    
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    int32_t res = ptrAudioPolicyServer->GetSystemVolumeLevel(streamType, uid, volumeLevel);
+    EXPECT_EQ(res, SUCCESS);
+
+    uid = -1;
+    res = ptrAudioPolicyServer->GetSystemVolumeLevel(streamType, uid, volumeLevel);
+    EXPECT_EQ(res, SUCCESS);
+
+    uid = 1;
+    res = ptrAudioPolicyServer->GetSystemVolumeLevel(streamType, uid, volumeLevel);
+    EXPECT_EQ(res, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: SetStreamMute_001
+* @tc.desc  : Test AudioPolicyServer::SetStreamMute
+*/
+HWTEST(AudioPolicyUnitTest, SetStreamMute_001, TestSize.Level1)
+{
+    int32_t streamTypeIn = 1;
+    bool mute = false;
+    int32_t deviceTypeIn = 1;
+    
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    int32_t res = ptrAudioPolicyServer->SetStreamMute(streamTypeIn, mute, deviceTypeIn);
+    EXPECT_EQ(res, ERR_PERMISSION_DENIED);
+}
 
 /**
 * @tc.name  : Test AudioPolicyServer.
@@ -1643,8 +1792,14 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_051, TestSize.Level1)
     EXPECT_NE(ptrAudioPolicyServer, nullptr);
 
     ptrAudioPolicyServer->coreService_ = std::make_shared<AudioCoreService>();
-    auto ret = ptrAudioPolicyServer->SetRingerMode(AudioRingerMode::RINGER_MODE_NORMAL);
+    auto ret = ptrAudioPolicyServer->SetRingerMode(AudioRingerMode::RINGER_MODE_SILENT);
     EXPECT_EQ(ret, SUCCESS);
+    ret = ptrAudioPolicyServer->SetRingerMode(AudioRingerMode::RINGER_MODE_VIBRATE);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = ptrAudioPolicyServer->SetRingerMode(AudioRingerMode::RINGER_MODE_NORMAL);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = ptrAudioPolicyServer->SetRingerMode(60);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 /**

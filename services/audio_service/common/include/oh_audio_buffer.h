@@ -191,14 +191,14 @@ public:
     int32_t GetWritableDataFrames();
     int32_t GetReadableDataFrames();
 
-    int32_t ResetCurReadWritePos(uint64_t readFrame, uint64_t writeFrame);
+    int32_t ResetCurReadWritePos(uint64_t readFrame, uint64_t writeFrame, bool wakeFutex = true);
 
     uint64_t GetCurWriteFrame();
     uint64_t GetCurReadFrame();
     uint64_t GetBasePosInFrame();
 
-    int32_t SetCurWriteFrame(uint64_t writeFrame);
-    int32_t SetCurReadFrame(uint64_t readFrame);
+    int32_t SetCurWriteFrame(uint64_t writeFrame, bool wakeFutex = true);
+    int32_t SetCurReadFrame(uint64_t readFrame, bool wakeFutex = true);
 
     int32_t GetBufferByOffset(size_t offset, size_t dataLength, RingBufferWrapper &buffer);
     int32_t TryGetContinuousBufferByOffset(size_t offset, size_t dataLength, BufferDesc &bufferDesc);
@@ -233,6 +233,10 @@ public:
     bool GetStopFlag() const;
 
     FutexCode WaitFor(int64_t timeoutInNs, const OnIndexChange &pred);
+
+    void WakeFutex(uint32_t wakeVal = IS_READY);
+
+    RestoreStatus GetRestoreStatus();
 private:
     int32_t SizeCheck();
 
@@ -244,7 +248,7 @@ private:
 
     void InitBasicBufferInfo();
 
-    void WakeFutexIfNeed();
+    void WakeFutexIfNeed(uint32_t wakeVal = IS_READY);
 
     uint32_t sessionId_ = 0;
 
@@ -318,13 +322,13 @@ public:
 
     int32_t GetWritableDataFrames();
 
-    int32_t ResetCurReadWritePos(uint64_t readFrame, uint64_t writeFrame);
+    int32_t ResetCurReadWritePos(uint64_t readFrame, uint64_t writeFrame, bool wakeFutex = true);
 
     uint64_t GetCurWriteFrame();
     uint64_t GetCurReadFrame();
 
-    int32_t SetCurWriteFrame(uint64_t writeFrame);
-    int32_t SetCurReadFrame(uint64_t readFrame);
+    int32_t SetCurWriteFrame(uint64_t writeFrame, bool wakeFutex = true);
+    int32_t SetCurReadFrame(uint64_t readFrame, bool wakeFutex = true);
 
     uint32_t GetSessionId();
     int32_t SetSessionId(uint32_t sessionId);
@@ -362,6 +366,8 @@ public:
     bool GetStopFlag() const;
 
     FutexCode WaitFor(int64_t timeoutInNs, const OnIndexChange &pred);
+
+    void WakeFutex(uint32_t wakeVal = IS_READY);
 
 private:
     int32_t Init(int dataFd, int infoFd);

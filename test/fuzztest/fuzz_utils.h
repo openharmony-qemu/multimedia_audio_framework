@@ -16,12 +16,14 @@
 #define FUZZ_UTILS_H
 
 #include <cstdint>
+#include <vector>
 #include <securec.h>
-#include "audio_log.h"
+#include "audio_common_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
+const size_t FUZZ_INPUT_THRESHOLD_SIZE = 10;
 typedef void (*TestFuncs)();
 class FuzzUtils {
 public:
@@ -33,7 +35,7 @@ public:
 
     void fuzzTest(const uint8_t *rawData, size_t size, std::vector<TestFuncs> &testFunctions)
     {
-        if (rawData == nullptr) {
+        if (rawData == nullptr || size < FUZZ_INPUT_THRESHOLD_SIZE) {
             return;
         }
 

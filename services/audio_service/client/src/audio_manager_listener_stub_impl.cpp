@@ -87,6 +87,21 @@ int32_t AudioManagerListenerStubImpl::OnDataTransferStateChange(int32_t callback
     return SUCCESS;
 }
 
+int32_t AudioManagerListenerStubImpl::OnMuteStateChange(int32_t callbackId, int32_t uid,
+    uint32_t sessionId, bool isMuted)
+{
+    std::shared_ptr<AudioRendererDataTransferStateChangeCallback> callback = nullptr;
+    std::unique_lock<std::mutex> lock(stateChangeMutex_);
+    auto it = stateChangeCallbackMap_.find(callbackId);
+    CHECK_AND_RETURN_RET(it != stateChangeCallbackMap_.end(), SUCCESS);
+    callback = stateChangeCallbackMap_[callbackId].second;
+    lock.unlock();
+    CHECK_AND_RETURN_RET(callback != nullptr, SUCCESS);
+    callback->OnMuteStateChange(uid, sessionId, isMuted);
+
+    return SUCCESS;
+}
+
 int32_t AudioManagerListenerStubImpl::AddDataTransferStateChangeCallback(const DataTransferMonitorParam &param,
     std::shared_ptr<AudioRendererDataTransferStateChangeCallback> cb)
 {

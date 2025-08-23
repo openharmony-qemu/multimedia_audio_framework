@@ -45,6 +45,7 @@ public:
     virtual int32_t SetPriPaPower(void) { return 0; };
     virtual int32_t SetSyncId(int32_t syncId) { return 0; };
     virtual uint32_t GetLatency() { return 0; };
+    virtual void UpdateStreamInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> preNode) {};
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

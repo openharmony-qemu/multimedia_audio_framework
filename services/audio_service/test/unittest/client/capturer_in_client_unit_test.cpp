@@ -185,7 +185,7 @@ public:
         return 0;
     }
 
-    virtual int32_t SetDefaultOutputDevice(int32_t defaultOuputDevice) override { return 0; }
+    virtual int32_t SetDefaultOutputDevice(int32_t defaultOuputDevice, bool skipForce = false) override { return 0; }
 
     virtual int32_t SetSourceDuration(int64_t duration) override { return 0; }
 
@@ -1817,7 +1817,7 @@ HWTEST(CapturerInClientUnitTest, SetSwitchInfoTimestamp_001, TestSize.Level1)
     std::vector<std::pair<uint64_t, uint64_t>> testLastFramePosAndTimePair = {
         Timestamp::Timestampbase::BASESIZE, {TEST_POSITION, TEST_TIMESTAMP_NS}
     };
-    testCapturerInClientObj->SetSwitchInfoTimestamp(testLastFramePosAndTimePair);
+    testCapturerInClientObj->SetSwitchInfoTimestamp(testLastFramePosAndTimePair, testLastFramePosAndTimePair);
     Timestamp testTimestamp;
     testCapturerInClientObj->GetAudioPosition(testTimestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_NE(testTimestamp.framePosition, TEST_POSITION);
@@ -1917,6 +1917,128 @@ HWTEST(CapturerInClientUnitTest, FlushCbBuffer_003, TestSize.Level1)
     capturerInClientInner->cbBufferSize_ = 10;
     auto ret = capturerInClientInner->FlushCbBuffer();
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test FetchDeviceForSplitStream API
+ * @tc.type  : FUNC
+ * @tc.number: FetchDeviceForSplitStream_002
+ * @tc.desc  : Test FetchDeviceForSplitStream interface.
+ */
+HWTEST(CapturerInClientUnitTest, FetchDeviceForSplitStream_002, TestSize.Level2)
+{
+    int32_t clientUid = 0;
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->SetRestoreStatus(NO_NEED_FOR_RESTORE);
+    capturerInClientInner->FetchDeviceForSplitStream();
+
+    EXPECT_NE(capturerInClientInner->CheckRestoreStatus(), NEED_RESTORE);
+}
+ 
+/**
+ * @tc.name  : Test FetchDeviceForSplitStream API
+ * @tc.type  : FUNC
+ * @tc.number: FetchDeviceForSplitStream_003
+ * @tc.desc  : Test FetchDeviceForSplitStream interface.
+ */
+HWTEST(CapturerInClientUnitTest, FetchDeviceForSplitStream_003, TestSize.Level2)
+{
+    int32_t clientUid = 0;
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->SetRestoreStatus(NEED_RESTORE);
+    capturerInClientInner->audioStreamTracker_ = nullptr;
+    capturerInClientInner->FetchDeviceForSplitStream();
+
+    EXPECT_NE(capturerInClientInner->CheckRestoreStatus(), NO_NEED_FOR_RESTORE);
+}
+
+/**
+ * @tc.name  : Test OnOperationHandled API
+ * @tc.type  : FUNC
+ * @tc.number: OnOperationHandled_002
+ * @tc.desc  : Test OnOperationHandled interface.
+ */
+HWTEST(CapturerInClientUnitTest, OnOperationHandled_002, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Operation operation = Operation::RESTORE_SESSION;
+    int64_t result = 1;
+    capturerInClientInner_->audioStreamTracker_ = nullptr;
+    int32_t ret = capturerInClientInner_->OnOperationHandled(operation, result);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test GetFrameCount API
+ * @tc.type  : FUNC
+ * @tc.number: GetFrameCount_002
+ * @tc.desc  : Test GetFrameCount interface.
+ */
+HWTEST(CapturerInClientUnitTest, GetFrameCount_002, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    uint32_t frameCount = -111;
+    capturerInClientInner->capturerMode_ = CAPTURE_MODE_CALLBACK;
+
+    int32_t result = capturerInClientInner->GetFrameCount(frameCount);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test Clear API
+ * @tc.type  : FUNC
+ * @tc.number: Clear_002
+ * @tc.desc  : Test Clear interface.
+ */
+HWTEST(CapturerInClientUnitTest, Clear_002, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner_->capturerMode_ = CAPTURE_MODE_NORMAL;
+    capturerInClientInner_->cbBuffer_.reset(new uint8_t[VALUE_TEN]);
+    int32_t ret = capturerInClientInner_->Clear();
+    EXPECT_EQ(ret, ERR_INCORRECT_MODE);
+}
+
+/**
+ * @tc.name  : Test StopAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: StopAudioStream_004
+ * @tc.desc  : Test StopAudioStream interface.
+ */
+HWTEST(CapturerInClientUnitTest, StopAudioStream_004, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->state_ = State::PAUSED;
+    capturerInClientInner->capturerMode_ = CAPTURE_MODE_CALLBACK;
+    capturerInClientInner->ipcStream_ = std::make_shared<IpcStreamTest>().get();
+    bool result = capturerInClientInner->StopAudioStream();
+    EXPECT_EQ(capturerInClientInner->state_, State::INVALID);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : Test Read API
+ * @tc.type  : FUNC
+ * @tc.number: Read_002
+ * @tc.desc  : Test Read interface.
+ */
+HWTEST(CapturerInClientUnitTest, Read_002, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner_->state_ = State::NEW;
+    size_t userSize = 16;
+    uint8_t buffer = 0;
+    bool isBlockingRead = false;
+    capturerInClientInner_->readLogTimes_ = VALUE_TEN;
+    int32_t ret = capturerInClientInner_->Read(buffer, userSize, isBlockingRead);
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
 }
 } // namespace AudioStandard
 } // namespace OHOS

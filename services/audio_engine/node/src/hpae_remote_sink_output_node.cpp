@@ -115,6 +115,7 @@ void HpaeRemoteSinkOutputNode::DoProcess()
             continue;
         }
         HpaeSplitStreamType streamType = outputData->GetSplitStreamType();
+        AudioStreamType type = outputData->GetAudioStreamType();
         ConvertFromFloat(
             GetBitWidth(), GetChannelCount() * GetFrameLen(), outputData->GetPcmDataBuffer(), renderFrameData_.data());
         uint64_t writeLen = 0;
@@ -123,7 +124,8 @@ void HpaeRemoteSinkOutputNode::DoProcess()
         HandlePcmDumping(streamType, renderFrameData, renderFrameData_.size());
 #endif
         auto ret = audioRendererSink_->SplitRenderFrame(*renderFrameData, renderFrameData_.size(),
-            writeLen, std::to_string(static_cast<int>(streamType)).c_str());
+            writeLen, std::to_string(static_cast<int>(streamType)).c_str(),
+            std::to_string(static_cast<int>(type)).c_str());
         if (ret != SUCCESS || writeLen != renderFrameData_.size()) {
             AUDIO_ERR_LOG("HpaeRemoteSinkOutputNode: RenderFrame failed, SplitStreamType %{public}d", streamType);
         }

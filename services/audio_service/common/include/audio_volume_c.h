@@ -75,6 +75,9 @@ void SetOffloadType(uint32_t streamIndex, int32_t offloadType);
 
 int32_t GetOffloadType(uint32_t streamIndex);
 
+void SetOffloadEnable(uint32_t streamIndex, int32_t offloadEnable);
+
+int32_t GetOffloadEnable(uint32_t streamIndex);
 #ifdef __cplusplus
 }
 #endif

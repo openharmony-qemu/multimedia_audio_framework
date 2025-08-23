@@ -31,6 +31,9 @@
 #include "audio_workgroup.h"
 #include "rtg_interface.h"
 #include "concurrent_task_client.h"
+#include "audio_resource_service.h"
+#include "audio_endpoint.h"
+
 
 using namespace testing::ext;
 
@@ -683,10 +686,11 @@ HWTEST(AudioServiceUnitTest, AudioServiceGetDeviceInfoForProcess_001, TestSize.L
     AudioProcessConfig config = {};
     config.audioMode = AUDIO_MODE_PLAYBACK;
     AudioDeviceDescriptor deviceinfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceinfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config);
+    AudioStreamInfo info;
+    deviceinfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, info);
     EXPECT_NE(deviceinfo.deviceRole_, INPUT_DEVICE);
     config.audioMode = AUDIO_MODE_RECORD;
-    deviceinfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config);
+    deviceinfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, info);
     EXPECT_NE(deviceinfo.deviceRole_, OUTPUT_DEVICE);
 }
 
@@ -2990,13 +2994,215 @@ HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_001, TestSize.Level1)
     config.originalSessionId = 1;
     config.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
     config.streamInfo.samplingRate = SAMPLE_RATE_16000;
-    bool isReloadProcess = false;
-
-    AudioDeviceDescriptor deviceInfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, isReloadProcess);
+    bool reload = false;
+    AudioStreamInfo info;
+    AudioDeviceDescriptor deviceInfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, info, reload);
 
     EXPECT_NE(deviceInfo.deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(deviceInfo.isLowLatencyDevice_, false);
     EXPECT_EQ(deviceInfo.audioStreamInfo_.size(), 1);
 }
+
+/**
+ * @tc.name  : Test GetDeviceInfoForProcess API
+ * @tc.type  : FUNC
+ * @tc.number: GetDeviceInfoForProcess_002,
+ * @tc.desc  : Test GetDeviceInfoForProcess interface.
+ */
+HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_002, TestSize.Level1)
+{
+    AudioProcessConfig config = {};
+    config.originalSessionId = 1;
+    config.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    config.capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    config.streamInfo.samplingRate = SAMPLE_RATE_16000;
+    bool reload = false;
+    AudioStreamInfo info;
+    AudioDeviceDescriptor deviceInfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, info, reload);
+
+    EXPECT_NE(deviceInfo.deviceType_, DEVICE_TYPE_MIC);
+    EXPECT_EQ(deviceInfo.isLowLatencyDevice_, false);
+    EXPECT_EQ(deviceInfo.a2dpOffloadFlag_, 0);
+    EXPECT_EQ(deviceInfo.audioStreamInfo_.size(), 1);
+    EXPECT_EQ(deviceInfo.deviceName_, "mmap_device");
+}
+
+/**
+ * @tc.name  : Test GetDeviceInfoForProcess API
+ * @tc.type  : FUNC
+ * @tc.number: GetDeviceInfoForProcess_003,
+ * @tc.desc  : Test GetDeviceInfoForProcess interface.
+ */
+HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_003, TestSize.Level1)
+{
+    AudioProcessConfig config = {};
+    config.originalSessionId = 1;
+    config.audioMode = AUDIO_MODE_RECORD;
+    bool reload = false;
+    AudioStreamInfo info;
+    AudioDeviceDescriptor deviceInfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, info, reload);
+
+    EXPECT_EQ(deviceInfo.deviceId_, 1);
+    EXPECT_EQ(deviceInfo.networkId_, LOCAL_NETWORK_ID);
+    EXPECT_EQ(deviceInfo.deviceRole_, INPUT_DEVICE);
+    EXPECT_EQ(deviceInfo.deviceType_, DEVICE_TYPE_MIC);
+    EXPECT_EQ(deviceInfo.audioStreamInfo_.size(), 1);
+
+    EXPECT_EQ(deviceInfo.deviceName_, "mmap_device");
+}
+
+/**
+ * @tc.name  : Test InitAllDupBuffer API
+ * @tc.type  : FUNC
+ * @tc.number: InitAllDupBuffer_001,
+ * @tc.desc  : Test InitAllDupBuffer interface.
+ */
+HWTEST(AudioServiceUnitTest, InitAllDupBuffer_001, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    int32_t innerCapId = 1;
+
+    std::weak_ptr<RendererInServer> server;
+    std::unique_lock<std::mutex> lock(audioService->rendererMapMutex_);
+    AudioService::GetInstance()->filteredRendererMap_[innerCapId].push_back(server);
+    lock.unlock();
+
+    AudioService::GetInstance()->InitAllDupBuffer(innerCapId);
+}
+
+/**
+ * @tc.name  : Test RenderersCheckForAudioWorkgroup API
+ * @tc.type  : FUNC
+ * @tc.number: RenderersCheckForAudioWorkgroup_001,
+ * @tc.desc  : Test RenderersCheckForAudioWorkgroup interface.
+ */
+HWTEST(AudioServiceUnitTest, RenderersCheckForAudioWorkgroup_001, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->RenderersCheckForAudioWorkgroup(1);
+    EXPECT_FALSE(AudioResourceService::GetInstance()->IsProcessInWorkgroup(1));
+    EXPECT_FALSE(AudioResourceService::GetInstance()->IsProcessHasSystemPermission(1));
+
+    audioService->RenderersCheckForAudioWorkgroup(-1);
+    EXPECT_FALSE(AudioResourceService::GetInstance()->IsProcessInWorkgroup(-1));
+    EXPECT_FALSE(AudioResourceService::GetInstance()->IsProcessHasSystemPermission(-1));
+}
+
+/**
+ * @tc.name  : Test GetSystemVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetSystemVolume_001,
+ * @tc.desc  : Test GetSystemVolume interface.
+ */
+HWTEST(AudioServiceUnitTest, GetSystemVolume_001, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->musicOrVoipSystemVolume_ = 0.5;
+    float volume = 0.0;
+    volume = audioService->GetSystemVolume();
+    EXPECT_EQ(volume, 0.5);
+
+    audioService->musicOrVoipSystemVolume_ = 1.0;
+    volume = audioService->GetSystemVolume();
+    EXPECT_EQ(volume, 1.0);
+
+    audioService->musicOrVoipSystemVolume_ = 0.0;
+    volume = audioService->GetSystemVolume();
+    EXPECT_EQ(volume, 0.0);
+}
+
+/**
+ * @tc.name  : Test LinkProcessToEndpoint API
+ * @tc.type  : FUNC
+ * @tc.number: LinkProcessToEndpoint_001,
+ * @tc.desc  : Test LinkProcessToEndpoint interface.
+ */
+HWTEST(AudioServiceUnitTest, LinkProcessToEndpoint_001, TestSize.Level1)
+{
+    AudioProcessConfig config = {};
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    sptr<AudioProcessInServer> audioprocess =  AudioProcessInServer::Create(config, AudioService::GetInstance());
+    EXPECT_NE(audioprocess, nullptr);
+    std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_VOIP_MMAP,
+        123, config);
+    EXPECT_NE(AudioService::GetInstance()->LinkProcessToEndpoint(audioprocess, endpoint), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test UpdateForegroundState API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateForegroundState_001,
+ * @tc.desc  : Test UpdateForegroundState interface.
+ */
+HWTEST(AudioServiceUnitTest, UpdateForegroundState_001, TestSize.Level1)
+{
+    uint32_t appTokenId = 12345;
+    bool isActive = true;
+    bool result = AudioService::GetInstance()->UpdateForegroundState(appTokenId, isActive);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test UpdateForegroundState API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateForegroundState_002,
+ * @tc.desc  : Test UpdateForegroundState interface.
+ */
+HWTEST(AudioServiceUnitTest, UpdateForegroundState_002, TestSize.Level1)
+{
+    uint32_t appTokenId = -1;
+    bool isActive = true;
+    bool result = AudioService::GetInstance()->UpdateForegroundState(appTokenId, isActive);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test DumpForegroundList API
+ * @tc.type  : FUNC
+ * @tc.number: DumpForegroundList_001,
+ * @tc.desc  : Test DumpForegroundList interface.
+ */
+HWTEST(AudioServiceUnitTest, DumpForegroundList_001, TestSize.Level1)
+{
+    std::string dumpString;
+    AudioService::GetInstance()->DumpForegroundList(dumpString);
+    EXPECT_NE(dumpString, "DumpForegroundList:\n");
+}
+
+/**
+ * @tc.name  : Test ConfigCoreServiceProvider API
+ * @tc.type  : FUNC
+ * @tc.number: ConfigCoreServiceProvider_002,
+ * @tc.desc  : Test ConfigCoreServiceProvider interface.
+ */
+HWTEST(AudioServiceUnitTest, ConfigCoreServiceProvider_002, TestSize.Level1)
+{
+    auto coreServiceHandler = CoreServiceHandler::GetInstance();
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    EXPECT_NE(nullptr, samgr);
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<ICoreServiceProviderIpc> coreServiceProvider = iface_cast<ICoreServiceProviderIpc>(object);
+    int32_t ret = coreServiceHandler.ConfigCoreServiceProvider(coreServiceProvider);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test ConfigCoreServiceProvider API
+ * @tc.type  : FUNC
+ * @tc.number: ConfigCoreServiceProvider_003,
+ * @tc.desc  : Test ConfigCoreServiceProvider interface.
+ */
+HWTEST(AudioServiceUnitTest, ConfigCoreServiceProvider_003, TestSize.Level1)
+{
+    auto coreServiceHandler = CoreServiceHandler::GetInstance();
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    EXPECT_NE(nullptr, samgr);
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<ICoreServiceProviderIpc> coreServiceProvider = iface_cast<ICoreServiceProviderIpc>(object);
+    coreServiceHandler.ConfigCoreServiceProvider(coreServiceProvider); // Set the provider
+    int32_t ret = coreServiceHandler.ConfigCoreServiceProvider(coreServiceProvider);
+    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

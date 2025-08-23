@@ -200,8 +200,6 @@ public:
 
     int32_t GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc);
 
-    int32_t OffloadStopPlaying(const std::vector<int32_t> &sessionIds);
-
     int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
 
     int32_t NearlinkGetRenderPosition(uint32_t &delayValue);
@@ -220,7 +218,6 @@ public:
 
     void NotifyAccountsChanged(const int &id);
 
-    int32_t DynamicUnloadModule(const AudioPipeType pipeType);
     // for effect V3
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
@@ -318,8 +315,6 @@ private:
 
     void UnregisterBluetoothListener();
 
-    int32_t OffloadStartPlaying(const std::vector<int32_t> &sessionIds);
-
     BluetoothOffloadState GetA2dpOffloadFlag();
     void SetDefaultAdapterEnable(bool isEnable);
     bool IsDevicePlaybackSupported(const AudioProcessConfig &config, const AudioDeviceDescriptor &deviceInfo);
@@ -415,7 +410,6 @@ private:
     AudioDeviceLock& audioDeviceLock_;
     AudioDeviceStatus& audioDeviceStatus_;
     SleAudioDeviceManager& sleAudioDeviceManager_;
-
 };
 
 class SafeVolumeEventSubscriber : public EventFwk::CommonEventSubscriber {

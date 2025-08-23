@@ -126,9 +126,9 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_004, TestSize.Level1)
 {
     ClearZone();
     AudioZoneContext context;
-    auto zoneId1 = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context);
+    auto zoneId1 = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context, 0);
     EXPECT_NE(zoneId1, 0);
-    auto zoneId2 = AudioZoneService::GetInstance().CreateAudioZone("TestZone2", context);
+    auto zoneId2 = AudioZoneService::GetInstance().CreateAudioZone("TestZone2", context, 0);
     EXPECT_NE(zoneId2, 0);
 
     auto zoneList = AudioZoneService::GetInstance().GetAllAudioZone();
@@ -147,6 +147,85 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_004, TestSize.Level1)
     AudioZoneService::GetInstance().ReleaseAudioZone(zoneId2);
     zoneList = AudioZoneService::GetInstance().GetAllAudioZone();
     EXPECT_EQ(zoneList.size(), 0);
+}
+
+/**
+ * @tc.name  : Test EnableChangeReport.
+ * @tc.number: EnableChangeReport_001
+ * @tc.desc  : Test EnableChangeReport interface.
+ */
+HWTEST_F(AudioZoneUnitTest, EnableChangeReport_001, TestSize.Level1)
+{
+    ClearZone();
+    auto zone = CreateZone("TestZone");
+    pid_t clientPid = 1;
+    bool enable = true;
+    EXPECT_EQ(zone->EnableChangeReport(clientPid, enable), 0);
+}
+
+/**
+ * @tc.name  : Test EnableChangeReport.
+ * @tc.number: EnableChangeReport_002
+ * @tc.desc  : Test EnableChangeReport interface.
+ */
+HWTEST_F(AudioZoneUnitTest, EnableChangeReport_002, TestSize.Level1)
+{
+    ClearZone();
+    auto zone = CreateZone("TestZone");
+    pid_t clientPid = 1;
+    bool enable = false;
+    EXPECT_EQ(zone->EnableChangeReport(clientPid, enable), 0);
+}
+
+/**
+ * @tc.name  : Test AudioZone.
+ * @tc.number: AudioZone_005
+ * @tc.desc  : Test release audio zone
+ */
+HWTEST_F(AudioZoneUnitTest, AudioZone_005, TestSize.Level1)
+{
+    ClearZone();
+    AudioZoneContext context;
+    auto zoneId = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context, 0);
+    AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, 20);
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
+    auto ret = AudioZoneService::GetInstance().GetAudioZone(zoneId);
+    EXPECT_EQ(ret, nullptr);
+}
+
+/**
+ * @tc.name  : Test AudioZone.
+ * @tc.number: AudioZone_006
+ * @tc.desc  : Test release audio zone
+ */
+HWTEST_F(AudioZoneUnitTest, AudioZone_006, TestSize.Level1)
+{
+    ClearZone();
+    int32_t fakeUid = 1234;
+    int32_t fakePid = 4321;
+    auto ret = AudioZoneService::GetInstance().FindAudioSessionZoneid(fakeUid, fakePid, false);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name  : Test AudioZone.
+ * @tc.number: AudioZone_007
+ * @tc.desc  : Test release audio zone
+ */
+HWTEST_F(AudioZoneUnitTest, AudioZone_007, TestSize.Level1)
+{
+    ClearZone();
+    int32_t fakeUid = 1234;
+    int32_t fakePid = 4321;
+    AudioZoneContext context;
+    auto zoneId = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context, 0);
+    AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, 20);
+    std::shared_ptr<AudioSessionService> sessionService = AudioSessionService::GetAudioSessionService();
+    int ret = sessionService->SetAudioSessionScene(fakePid, AudioSessionScene::MEDIA);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = AudioZoneService::GetInstance().FindAudioSessionZoneid(fakeUid, fakePid, false);
+    EXPECT_EQ(ret, zoneId);
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
 }
 } // namespace AudioStandard
 } // namespace OHOS

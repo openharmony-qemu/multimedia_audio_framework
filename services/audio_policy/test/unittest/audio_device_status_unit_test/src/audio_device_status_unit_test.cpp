@@ -1073,7 +1073,7 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_046, TestSize.Level1)
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
 
     result = audioDeviceStatus.HandleSpecialDeviceType(deviceType, isConnected, address, deviceRole);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(result, ERROR);
 }
 
 /**
@@ -1464,6 +1464,121 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_069, TestSize.Level1)
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
     int32_t result = audioDeviceStatus.HandleLocalDeviceDisconnected(updatedDesc);
     EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: WriteOutputDeviceChangedSysEvents_001
+* @tc.desc  : Test WriteOutputDeviceChangedSysEvents interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, WriteOutputDeviceChangedSysEvents_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    SinkInput sinkInput;
+    deviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    deviceDescriptor->macAddress_ = "00:11:22:33:44:55";
+    deviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    deviceDescriptor->networkId_ = "123456";
+    deviceDescriptor->deviceName_ = "usb_headset";
+    deviceDescriptor->deviceCategory_ = BT_UNWEAR_HEADPHONE;
+    sinkInput.streamId = 1;
+    sinkInput.streamType = STREAM_RING;
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    audioDeviceStatus.WriteOutputDeviceChangedSysEvents(deviceDescriptor, sinkInput);
+    EXPECT_EQ(deviceDescriptor->deviceId_, 0);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: WriteInputDeviceChangedSysEvents_001
+* @tc.desc  : Test WriteInputDeviceChangedSysEvents interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, WriteInputDeviceChangedSysEvents_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    SourceOutput sourceOutput;
+    deviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    deviceDescriptor->macAddress_ = "00:11:22:33:44:55";
+    deviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    deviceDescriptor->networkId_ = "123456";
+    deviceDescriptor->deviceName_ = "usb_headset";
+    deviceDescriptor->deviceCategory_ = BT_UNWEAR_HEADPHONE;
+    sourceOutput.streamId = 1;
+    sourceOutput.streamType = STREAM_RING;
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    audioDeviceStatus.WriteInputDeviceChangedSysEvents(deviceDescriptor, sourceOutput);
+    EXPECT_EQ(deviceDescriptor->deviceId_, 0);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: RemoveDeviceFromGlobalOnly_001
+* @tc.desc  : Test RemoveDeviceFromGlobalOnly interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, RemoveDeviceFromGlobalOnly_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    deviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    deviceDescriptor->macAddress_ = "00:11:22:33:44:55";
+    deviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    deviceDescriptor->networkId_ = "123456";
+    deviceDescriptor->deviceName_ = "usb_headset";
+    deviceDescriptor->deviceCategory_ = BT_UNWEAR_HEADPHONE;
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    audioDeviceStatus.RemoveDeviceFromGlobalOnly(deviceDescriptor);
+    EXPECT_EQ(deviceDescriptor->deviceId_, 0);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AddDeviceBackToGlobalOnly_001
+* @tc.desc  : Test AddDeviceBackToGlobalOnly interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AddDeviceBackToGlobalOnly_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    deviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    deviceDescriptor->macAddress_ = "00:11:22:33:44:55";
+    deviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    deviceDescriptor->networkId_ = "123456";
+    deviceDescriptor->deviceName_ = "usb_headset";
+    deviceDescriptor->deviceCategory_ = BT_UNWEAR_HEADPHONE;
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    audioDeviceStatus.AddDeviceBackToGlobalOnly(deviceDescriptor);
+    EXPECT_EQ(deviceDescriptor->deviceId_, 0);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: GetDmDeviceType_001
+* @tc.desc  : Test GetDmDeviceType interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, GetDmDeviceType_001, TestSize.Level1)
+{
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    uint16_t ret = audioDeviceStatus.GetDmDeviceType();
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: GetPaIndexByPortName_001
+* @tc.desc  : Test GetPaIndexByPortName interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, GetPaIndexByPortName_001, TestSize.Level1)
+{
+    string portName = PRIMARY_SPEAKER;
+    AudioIOHandle moduleId = 2;
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    audioDeviceStatus.audioIOHandleMap_.AddIOHandleInfo(portName, moduleId);
+    uint32_t ret = audioDeviceStatus.GetPaIndexByPortName(portName);
+    EXPECT_NE(ret, moduleId);
 }
 } // namespace AudioStandard
 } // namespace OHOS

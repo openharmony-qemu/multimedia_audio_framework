@@ -512,17 +512,20 @@ napi_value NapiAudioVolumeManager::GetVolumeGroupInfosSync(napi_env env, napi_ca
 
 napi_value NapiAudioVolumeManager::GetSystemVolume(napi_env env, napi_callback_info info)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"),
+        "No system permission");
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of audioVolumeType must be number"),
+        NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of audioVolumeType must be number"),
         "invalid valueType");
 
     int32_t volType;
@@ -544,17 +547,20 @@ napi_value NapiAudioVolumeManager::GetSystemVolume(napi_env env, napi_callback_i
 
 napi_value NapiAudioVolumeManager::GetMinSystemVolume(napi_env env, napi_callback_info info)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"),
+        "No system permission");
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of audioVolumeType must be number"),
+        NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of audioVolumeType must be number"),
         "invalid valueType");
 
     int32_t volType;
@@ -576,17 +582,20 @@ napi_value NapiAudioVolumeManager::GetMinSystemVolume(napi_env env, napi_callbac
 
 napi_value NapiAudioVolumeManager::GetMaxSystemVolume(napi_env env, napi_callback_info info)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"),
+        "No system permission");
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of audioVolumeType must be number"),
+        NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of audioVolumeType must be number"),
         "invalid valueType");
 
     int32_t volType;
@@ -608,17 +617,20 @@ napi_value NapiAudioVolumeManager::GetMaxSystemVolume(napi_env env, napi_callbac
 
 napi_value NapiAudioVolumeManager::IsSystemMuted(napi_env env, napi_callback_info info)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"),
+        "No system permission");
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of audioVolumeType must be number"),
+        NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of audioVolumeType must be number"),
         "invalid valueType");
 
     int32_t volType;
@@ -640,17 +652,20 @@ napi_value NapiAudioVolumeManager::IsSystemMuted(napi_env env, napi_callback_inf
 
 napi_value NapiAudioVolumeManager::GetVolumeInUnitOfDb(napi_env env, napi_callback_info info)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"),
+        "No system permission");
     napi_value result = nullptr;
     size_t argc = ARGS_THREE;
     napi_value args[ARGS_THREE] = {};
     auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_THREE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
     for (size_t i = 0; i < argc; i++) {
         napi_valuetype valueType = napi_undefined;
         napi_typeof(env, args[i], &valueType);
         CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-            NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of parameter must be number"),
+            NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of parameter must be number"),
             "invalid valueType");
     }
     int32_t volType;
@@ -674,6 +689,9 @@ napi_value NapiAudioVolumeManager::GetVolumeInUnitOfDb(napi_env env, napi_callba
     float volumeInDb = napiAudioVolumeManager->audioSystemMngr_->GetVolumeInUnitOfDb(
         NapiAudioEnum::GetNativeAudioVolumeType(volType),
         volLevel, static_cast<DeviceType>(deviceType));
+    CHECK_AND_RETURN_RET_LOG(!FLOAT_COMPARE_EQ(volumeInDb, static_cast<float>(ERR_INVALID_PARAM)),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM, "volumeInDb invalid"),
+        "getsystemvolumeindb failed");
     NapiParamUtils::SetValueDouble(env, volumeInDb, result);
     return result;
 }
@@ -685,12 +703,12 @@ napi_value NapiAudioVolumeManager::GetVolumeByStream(napi_env env, napi_callback
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of streamUsage must be number"),
+        NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of streamUsage must be number"),
         "invalid valueType");
 
     int32_t streamUsage;
@@ -706,6 +724,12 @@ napi_value NapiAudioVolumeManager::GetVolumeByStream(napi_env env, napi_callback
     }
     int32_t volume = napiAudioVolumeManager->audioSystemMngr_->GetVolumeByUsage(
         NapiAudioEnum::GetNativeStreamUsage(streamUsage));
+    if (volume == ERR_PERMISSION_DENIED) {
+        return NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "No system permission");
+    }
+    if (volume == ERR_NOT_SUPPORTED) {
+        return NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM, "streamUsage not supported");
+    }
     NapiParamUtils::SetValueInt32(env, volume, result);
     return result;
 }
@@ -717,12 +741,12 @@ napi_value NapiAudioVolumeManager::GetMinVolumeByStream(napi_env env, napi_callb
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of streamUsage must be number"),
+        NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of streamUsage must be number"),
         "invalid valueType");
 
     int32_t streamUsage;
@@ -738,6 +762,12 @@ napi_value NapiAudioVolumeManager::GetMinVolumeByStream(napi_env env, napi_callb
     }
     int32_t minVolume = napiAudioVolumeManager->audioSystemMngr_->GetMinVolumeByUsage(
         NapiAudioEnum::GetNativeStreamUsage(streamUsage));
+    if (minVolume == ERR_PERMISSION_DENIED) {
+        return NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "No system permission");
+    }
+    if (minVolume == ERR_NOT_SUPPORTED) {
+        return NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM, "streamUsage not supported");
+    }
     NapiParamUtils::SetValueInt32(env, minVolume, result);
     return result;
 }
@@ -749,12 +779,12 @@ napi_value NapiAudioVolumeManager::GetMaxVolumeByStream(napi_env env, napi_callb
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of streamUsage must be number"),
+        NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of streamUsage must be number"),
         "invalid valueType");
 
     int32_t streamUsage;
@@ -770,6 +800,12 @@ napi_value NapiAudioVolumeManager::GetMaxVolumeByStream(napi_env env, napi_callb
     }
     int32_t maxVolume = napiAudioVolumeManager->audioSystemMngr_->GetMaxVolumeByUsage(
         NapiAudioEnum::GetNativeStreamUsage(streamUsage));
+    if (maxVolume == ERR_PERMISSION_DENIED) {
+        return NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "No system permission");
+    }
+    if (maxVolume == ERR_NOT_SUPPORTED) {
+        return NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM, "streamUsage not supported");
+    }
     NapiParamUtils::SetValueInt32(env, maxVolume, result);
     return result;
 }
@@ -781,12 +817,12 @@ napi_value NapiAudioVolumeManager::IsSystemMutedForStream(napi_env env, napi_cal
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of streamUsage must be number"),
+        NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of streamUsage must be number"),
         "invalid valueType");
 
     int32_t streamUsage;
@@ -803,10 +839,12 @@ napi_value NapiAudioVolumeManager::IsSystemMutedForStream(napi_env env, napi_cal
     bool isMuted;
     int32_t status = napiAudioVolumeManager->audioSystemMngr_->IsStreamMuteByUsage(
         NapiAudioEnum::GetNativeStreamUsage(streamUsage), isMuted);
-    CHECK_AND_RETURN_RET_LOG(status == SUCCESS,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM, "System error"),
-        "IsSystemMutedForStream IsStreamMuteByUsage failed");
-
+    if (status == ERR_PERMISSION_DENIED) {
+        return NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "No system permission");
+    }
+    if (status == ERR_NOT_SUPPORTED) {
+        return NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM, "streamUsage not supported");
+    }
     NapiParamUtils::SetValueBoolean(env, isMuted, result);
     return result;
 }
@@ -818,12 +856,12 @@ napi_value NapiAudioVolumeManager::GetVolumeInUnitOfDbByStream(napi_env env, nap
     napi_value args[ARGS_THREE] = {};
     auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_THREE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
     for (size_t i = 0; i < argc; i++) {
         napi_valuetype valueType = napi_undefined;
         napi_typeof(env, args[i], &valueType);
         CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-            NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of parameter must be number"),
+            NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of parameter must be number"),
             "invalid valueType");
     }
     int32_t streamUsage;
@@ -847,18 +885,27 @@ napi_value NapiAudioVolumeManager::GetVolumeInUnitOfDbByStream(napi_env env, nap
     float volumeInDb = napiAudioVolumeManager->audioSystemMngr_->GetVolumeInDbByStream(
         NapiAudioEnum::GetNativeStreamUsage(streamUsage),
         volLevel, static_cast<DeviceType>(deviceType));
+    CHECK_AND_RETURN_RET_LOG(!FLOAT_COMPARE_EQ(volumeInDb, static_cast<float>(ERR_PERMISSION_DENIED)),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"),
+        "getsystemvolumeindb failed");
+    CHECK_AND_RETURN_RET_LOG(!FLOAT_COMPARE_EQ(volumeInDb, static_cast<float>(ERR_NOT_SUPPORTED)),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM, "streamUsage not supported"),
+        "getsystemvolumeindb failed");
     NapiParamUtils::SetValueDouble(env, volumeInDb, result);
     return result;
 }
 
 napi_value NapiAudioVolumeManager::GetSupportedAudioVolumeTypes(napi_env env, napi_callback_info info)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"),
+        "No system permission");
     napi_value result = nullptr;
     size_t argc = ARGS_ZERO;
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ZERO, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
 
     if (napiAudioVolumeManager == nullptr || napiAudioVolumeManager->audioSystemMngr_ == nullptr) {
         AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr  is nullptr!");
@@ -871,17 +918,20 @@ napi_value NapiAudioVolumeManager::GetSupportedAudioVolumeTypes(napi_env env, na
 
 napi_value NapiAudioVolumeManager::GetAudioVolumeTypeByStreamUsage(napi_env env, napi_callback_info info)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"),
+        "No system permission");
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of streamUsage must be number"),
+        NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of streamUsage must be number"),
         "invalid valueType");
 
     int32_t streamUsage;
@@ -897,23 +947,30 @@ napi_value NapiAudioVolumeManager::GetAudioVolumeTypeByStreamUsage(napi_env env,
     }
     AudioVolumeType volType = napiAudioVolumeManager->audioSystemMngr_->GetAudioVolumeTypeByStreamUsage(
         NapiAudioEnum::GetNativeStreamUsage(streamUsage));
+    if (volType == STREAM_DEFAULT) {
+        return NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "No system permission");
+    }
+
     NapiParamUtils::SetValueInt32(env, NapiAudioEnum::GetJsAudioVolumeType(volType), result);
     return result;
 }
 
 napi_value NapiAudioVolumeManager::GetStreamUsagesByVolumeType(napi_env env, napi_callback_info info)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"),
+        "No system permission");
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of audioVolumeType must be number"),
+        NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of audioVolumeType must be number"),
         "invalid valueType");
 
     int32_t volType;
@@ -1180,8 +1237,14 @@ napi_value NapiAudioVolumeManager::RegisterStreamVolumeChangeCallback(napi_env e
         napiAudioVolumeManager->streamVolumeChangeCallbackNapiList_.push_back(
             std::static_pointer_cast<NapiAudioStreamVolumeChangeCallback>(
                 napiAudioVolumeManager->streamVolumeChangeCallbackNapi_));
-        if (ret) {
-            AUDIO_ERR_LOG("RegisterStreamVolumeChangeCallback Failed");
+        if (ret != SUCCESS) {
+            if (ret == ERROR_INVALID_PARAM) {
+                NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+                    "Parameter verification failed. Invalid callback.");
+            } else {
+                NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM,
+                    "System error.");
+            }
         }
     }
     std::shared_ptr<NapiAudioStreamVolumeChangeCallback> cb =
@@ -1197,6 +1260,9 @@ napi_value NapiAudioVolumeManager::RegisterStreamVolumeChangeCallback(napi_env e
 napi_value NapiAudioVolumeManager::RegisterSystemVolumeChangeCallback(napi_env env, napi_value *args,
     const std::string &cbName, NapiAudioVolumeManager *napiAudioVolumeManager)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"),
+        "No system permission");
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
     if (napiAudioVolumeManager->systemVolumeChangeCallbackNapi_ == nullptr) {
@@ -1207,8 +1273,14 @@ napi_value NapiAudioVolumeManager::RegisterSystemVolumeChangeCallback(napi_env e
         napiAudioVolumeManager->systemVolumeChangeCallbackNapiList_.push_back(
             std::static_pointer_cast<NapiAudioSystemVolumeChangeCallback>(
                 napiAudioVolumeManager->systemVolumeChangeCallbackNapi_));
-        if (ret) {
-            AUDIO_ERR_LOG("RegisterSystemVolumeChangeCallback Failed");
+        if (ret != SUCCESS) {
+            if (ret == ERROR_INVALID_PARAM) {
+                NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+                    "Parameter verification failed. Invalid callback.");
+            } else {
+                NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM,
+                    "System error.");
+            }
         }
     }
     std::shared_ptr<NapiAudioSystemVolumeChangeCallback> cb =
@@ -1457,6 +1529,9 @@ void NapiAudioVolumeManager::UnregisterStreamVolumeChangeCallback(napi_env env, 
 void NapiAudioVolumeManager::UnregisterSystemVolumeChangeCallback(napi_env env, napi_value *args,
     size_t argc, NapiAudioVolumeManager *napiAudioVolumeManager)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowError(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"),
+        "No system permission");
     napi_value callback = nullptr;
     if (argc == ARGS_TWO) {
         callback = args[PARAM1];

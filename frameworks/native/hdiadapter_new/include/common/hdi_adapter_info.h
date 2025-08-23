@@ -38,6 +38,7 @@ enum HdiIdType : uint32_t {
     HDI_ID_TYPE_MULTICHANNEL,
     HDI_ID_TYPE_WAKEUP,
     HDI_ID_TYPE_ACCESSORY,
+    HDI_ID_TYPE_AI,
     HDI_ID_TYPE_NUM,
 };
 

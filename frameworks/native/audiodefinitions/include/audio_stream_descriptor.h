@@ -17,6 +17,7 @@
 #define AUDIO_STREAM_DESCRIPTOR_H
 
 #include <memory>
+#include <mutex>
 #include "parcel.h"
 #include "audio_device_descriptor.h"
 #include "audio_stream_enum.h"
@@ -37,6 +38,7 @@ public:
     AudioMode audioMode_ = AUDIO_MODE_PLAYBACK;
     AudioFlag audioFlag_ = AUDIO_FLAG_NONE;
     uint32_t routeFlag_ = AUDIO_FLAG_NONE;
+    uint32_t oldRouteFlag_ = AUDIO_FLAG_NONE;
     int64_t createTimeStamp_ = 0;
     int64_t startTimeStamp_ = 0;
     AudioRendererInfo rendererInfo_ = {};
@@ -51,16 +53,16 @@ public:
     mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDescs_ = {};
     std::string bundleName_ = "";
 
-    AudioStreamDescriptor();
-    virtual ~AudioStreamDescriptor();
+    AudioStreamDescriptor() = default;
+    AudioStreamDescriptor(AudioStreamInfo streamInfo, AudioRendererInfo rendererInfo, AppInfo appInfo);
+    AudioStreamDescriptor(AudioStreamInfo streamInfo, AudioCapturerInfo rendererInfo, AppInfo appInfo);
+    virtual ~AudioStreamDescriptor() = default;
+
+    // Need to delete later
+    void CopyToStruct(AudioStreamDescriptor &streamDesc);
 
     bool Marshalling(Parcel &parcel) const override;
     static AudioStreamDescriptor *Unmarshalling(Parcel &parcel);
-    bool WriteDeviceDescVectorToParcel(
-        Parcel &parcel, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs) const;
-    void UnmarshallingDeviceDescVector(Parcel &parcel, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
-
-    void SetBunduleName(std::string &bundleName);
 
     // log and dump
     void Dump(std::string &dumpString);
@@ -68,15 +70,164 @@ public:
     std::string GetNewDevicesInfo();
     std::string GetDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> desc);
 
-private:
-    bool IsRenderer()
+    // Common info funcs above
+    bool IsPlayback() const
     {
-        return audioMode_ == AUDIO_MODE_PLAYBACK;
+        return (audioMode_ == AUDIO_MODE_PLAYBACK);
     }
+
+    bool IsRecording() const
+    {
+        return (audioMode_ == AUDIO_MODE_RECORD);
+    }
+
+    uint32_t GetSessionId() const
+    {
+        return sessionId_;
+    }
+
+    bool IsRunning() const
+    {
+        return (streamStatus_ == STREAM_STATUS_STARTED);
+    }
+
+    void SetStatus(AudioStreamStatus status)
+    {
+        streamStatus_ = status;
+    }
+
+    void SetAction(AudioStreamAction action)
+    {
+        streamAction_ = action;
+    }
+
+    void SetBunduleName(std::string &bundleName);
+
+    std::string GetBundleName()
+    {
+        return bundleName_;
+    }
+
+    AudioStreamAction GetAction() const
+    {
+        return streamAction_;
+    }
+
+    AudioFlag GetAudioFlag() const
+    {
+        return audioFlag_;
+    }
+
+    void SetAudioFlag(AudioFlag flag)
+    {
+        audioFlag_ = flag;
+    }
+
+    bool IsUseMoveToConcedeType() const
+    {
+        return (audioFlag_ == AUDIO_OUTPUT_FLAG_LOWPOWER) ||
+            (audioFlag_ == AUDIO_OUTPUT_FLAG_MULTICHANNEL);
+    }
+
+    // Route funcs above
+    uint32_t GetRoute() const
+    {
+        return routeFlag_;
+    }
+
+    void SetRoute(uint32_t flag)
+    {
+        routeFlag_ = flag;
+    }
+
+    void SetOldRoute(uint32_t route)
+    {
+        oldRouteFlag_ = route;
+    }
+
+    uint32_t GetOldRoute() const
+    {
+        return oldRouteFlag_;
+    }
+
+    bool IsRouteNormal() const
+    {
+        if (IsPlayback()) {
+            return (routeFlag_ == AUDIO_OUTPUT_FLAG_NORMAL);
+        } else {
+            return (routeFlag_ == AUDIO_INPUT_FLAG_NORMAL);
+        }
+    }
+
+    bool IsRouteOffload() const
+    {
+        return (routeFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER);
+    }
+
+    bool IsNoRunningOffload() const
+    {
+        return IsRouteOffload() && !IsRunning();
+    }
+
+    void ResetToNormalRoute(bool updateRoute);
+
+    bool IsOldRouteOffload() const
+    {
+        return (oldRouteFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER);
+    }
+
+    // Device funcs above
+    DeviceType GetMainNewDeviceType()
+    {
+        std::lock_guard<std::mutex> lock(lock_);
+        if (newDeviceDescs_.size() < 1 || newDeviceDescs_[0] == nullptr) {
+            return DEVICE_TYPE_NONE;
+        }
+        return newDeviceDescs_[0]->getType();
+    }
+
+    void AddNewDevice(std::shared_ptr<AudioDeviceDescriptor> device)
+    {
+        if (device == nullptr) {
+            return;
+        }
+        std::lock_guard<std::mutex> lock(lock_);
+        newDeviceDescs_.push_back(device);
+    }
+
+    void UpdateNewDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices)
+    {
+        std::lock_guard<std::mutex> lock(lock_);
+        for (auto &device : devices) {
+            if (device == nullptr) {
+                return;
+            }
+        }
+        newDeviceDescs_ = devices;
+    }
+
+    bool IsDeviceRemote()
+    {
+        std::lock_guard<std::mutex> lock(lock_);
+        for (auto &device : newDeviceDescs_) {
+            if (device != nullptr && device->IsRemote()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+private:
+    bool WriteDeviceDescVectorToParcel(
+        Parcel &parcel, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs) const;
+    void UnmarshallingDeviceDescVector(Parcel &parcel, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
+
     void DumpCommonAttrs(std::string &dumpString);
     void DumpRendererStreamAttrs(std::string &dumpString);
     void DumpCapturerStreamAttrs(std::string &dumpString);
     void DumpDeviceAttrs(std::string &dumpString);
+
+    std::mutex lock_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

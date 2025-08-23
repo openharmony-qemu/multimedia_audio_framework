@@ -191,6 +191,10 @@ void HpaeProcessCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer 
     idGainMap_[sessionId]->Connect(idLoudnessGainNodeMap_[sessionId]);
     idLoudnessGainNodeMap_[sessionId]->Connect(idConverterMap_[sessionId]);
     idConverterMap_[sessionId]->Connect(preNode);
+    // update mixer node info
+    HpaeNodeInfo tmpNodeinfo = mixerNode_->GetNodeInfo();
+    tmpNodeinfo.streamType = preNodeInfo.streamType;
+    mixerNode_->SetNodeInfo(tmpNodeinfo);
     mixerNode_->EnableProcess(true);
 }
 
@@ -220,8 +224,16 @@ void HpaeProcessCluster::DisConnectMixerNode()
 {
     if (renderEffectNode_) {
         renderEffectNode_->DisConnect(mixerNode_);
+        renderEffectNode_->InitEffectBufferFromDisConnect();
         AUDIO_INFO_LOG("Process DisConnect mixerNode_");
     }
+}
+
+void HpaeProcessCluster::InitEffectBuffer(const uint32_t sessionId)
+{
+    CHECK_AND_RETURN_LOG(renderEffectNode_ != nullptr, "renderEffectNode is nullptr");
+    renderEffectNode_->InitEffectBuffer(sessionId);
+    AUDIO_INFO_LOG("begin InitEffectBuffer sessionId: %{public}u", sessionId);
 }
 
 int32_t HpaeProcessCluster::GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat)

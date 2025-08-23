@@ -99,7 +99,9 @@ int32_t HpaeSinkInputNode::GetDataFromSharedBuffer()
         .requestDataLen = interleveData_.size(),
         .deviceClass = GetDeviceClass(),
         .deviceNetId = GetDeviceNetId(),
-        .needData = !(historyBuffer_ && historyBuffer_->GetCurFrames())};
+        .needData = !(historyBuffer_ && historyBuffer_->GetCurFrames()),
+        // offload enbale, underrun 9 times, request force write data; 9 times about 40ms
+        .forceData = offloadEnable_ ? (standbyCounter_ > 9 ? true : false) : true};
     GetCurrentPosition(streamInfo_.framePosition, streamInfo_.timestamp);
     auto writeCallback = writeCallback_.lock();
     if (writeCallback != nullptr) {
@@ -139,6 +141,9 @@ bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
                 nodeCallback->OnNodeStatusUpdate(GetSessionId(), OPERATION_DRAINED);
                 isDrain_ = false;
             }
+            standbyCounter_++;
+        } else {
+            standbyCounter_ = 0;
         }
     }
     inputAudioBuffer_.SetBufferValid(ret ? false : true);

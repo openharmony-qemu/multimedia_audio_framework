@@ -43,7 +43,6 @@ private:
     };
 
     void OnJsCallbackAudioSession(std::unique_ptr<AudioSessionJsCallback> &jsCb);
-    static void WorkCallbackAudioSessionChangeDone(uv_work_t *work, int status);
     static void AudioSessionTsfnFinalize(napi_env env, void *data, void *hint);
     static void SafeJsCallbackAudioSessionWork(napi_env env, napi_value js_cb, void *context, void *data);
 

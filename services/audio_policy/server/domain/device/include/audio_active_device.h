@@ -23,22 +23,20 @@
 #include <mutex>
 #include "singleton.h"
 #include "audio_group_handle.h"
-#include "audio_manager_base.h"
 #include "audio_module_info.h"
 #include "audio_volume_config.h"
 #include "audio_system_manager.h"
 #include "audio_errors.h"
 #include "audio_device_manager.h"
 #include "audio_affinity_manager.h"
-#include "audio_policy_manager_factory.h"
-
-
 #include "audio_a2dp_offload_flag.h"
 #include "audio_a2dp_device.h"
 #include "audio_iohandle_map.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
+using InternalDeviceType = DeviceType;
 
 class AudioActiveDevice {
 public:
@@ -47,11 +45,11 @@ public:
         static AudioActiveDevice instance;
         return instance;
     }
-    bool CheckActiveOutputDeviceSupportOffload();
     bool IsDirectSupportedDevice();
     void NotifyUserSelectionEventToBt(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor,
         StreamUsage streamUsage = STREAM_USAGE_UNKNOWN);
-    void NotifyUserDisSelectionEventToBt(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor);
+    void NotifyUserDisSelectionEventToBt(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor,
+        bool isSameDevice = false);
     void NotifyUserSelectionEventForInput(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor,
         SourceType sourceType = SOURCE_TYPE_INVALID);
 
@@ -85,11 +83,10 @@ public:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs);
     void UpdateStreamDeviceMap(std::string source);
 private:
-    AudioActiveDevice() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
-        audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
+    AudioActiveDevice()
+        : audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
         audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
-        audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()) {}
     ~AudioActiveDevice() {}
     void WriteOutputRouteChangeEvent(std::shared_ptr<AudioDeviceDescriptor> &desc,
@@ -108,11 +105,9 @@ private:
     std::unordered_map<AudioStreamType, std::shared_ptr<AudioDeviceDescriptor>> streamTypeDeviceMap_;
     std::unordered_map<StreamUsage, std::shared_ptr<AudioDeviceDescriptor>> streamUsageDeviceMap_;
 
-    IAudioPolicyInterface& audioPolicyManager_;
     AudioDeviceManager &audioDeviceManager_;
     AudioAffinityManager &audioAffinityManager_;
     AudioA2dpDevice& audioA2dpDevice_;
-    AudioIOHandleMap& audioIOHandleMap_;
     AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;
 };
 

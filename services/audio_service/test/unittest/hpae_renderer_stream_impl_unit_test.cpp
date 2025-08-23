@@ -21,6 +21,7 @@
 #include "linear_pos_time_model.h"
 #include "oh_audio_buffer.h"
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 #include "hpae_renderer_stream_impl.h"
 #include "policy_handler.h"
 #include "hpae_adapter_manager.h"
@@ -29,6 +30,7 @@
 #include "audio_system_manager.h"
 
 using namespace testing::ext;
+using namespace testing;
 namespace OHOS {
 namespace AudioStandard {
 const int32_t CAPTURER_FLAG = 10;
@@ -596,6 +598,108 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_030, TestSize.Level1)
     info.hdiFramePosition = 10000;
     unit->OnDeviceClassChange(info);
     EXPECT_GT(unit->lastHdiFramePosition_, 10000);
+}
+
+/**
+ * @tc.name  : Test WriteDataFromRingBuffer.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_031
+ * @tc.desc  : Test WriteDataFromRingBuffer.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_031, TestSize.Level0)
+{
+    std::shared_ptr<HpaeRendererStreamImpl> hpaeRenderer = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(hpaeRenderer, nullptr);
+
+    // 10 bytes
+    constexpr size_t bufferSize = 10;
+
+    hpaeRenderer->ringBuffer_ = AudioRingCache::Create(bufferSize);
+    std::vector<int8_t> tmpBuffer(bufferSize, 1);
+    hpaeRenderer->ringBuffer_->Enqueue({reinterpret_cast<uint8_t *>(tmpBuffer.data()), bufferSize});
+    tmpBuffer = std::vector<int8_t>(bufferSize, 0);
+    size_t requestDataLen = bufferSize;
+    int32_t ret = hpaeRenderer->WriteDataFromRingBuffer(false, tmpBuffer.data(), requestDataLen);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(requestDataLen, bufferSize);
+    EXPECT_THAT(tmpBuffer, Each(Eq(1)));
+}
+
+/**
+ * @tc.name  : Test WriteDataFromRingBuffer.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_032
+ * @tc.desc  : Test WriteDataFromRingBuffer.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_032, TestSize.Level0)
+{
+    std::shared_ptr<HpaeRendererStreamImpl> hpaeRenderer = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(hpaeRenderer, nullptr);
+
+    // 10 bytes
+    constexpr size_t bufferSize = 10;
+
+    hpaeRenderer->ringBuffer_ = AudioRingCache::Create(bufferSize);
+    std::vector<int8_t> tmpBuffer(bufferSize, 1);
+    hpaeRenderer->ringBuffer_->Enqueue({reinterpret_cast<uint8_t *>(tmpBuffer.data()), bufferSize - 1});
+    tmpBuffer = std::vector<int8_t>(bufferSize, 0);
+    size_t requestDataLen = bufferSize;
+    int32_t ret = hpaeRenderer->WriteDataFromRingBuffer(false, tmpBuffer.data(), requestDataLen);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test WriteDataFromRingBuffer.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_033
+ * @tc.desc  : Test WriteDataFromRingBuffer.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_033, TestSize.Level0)
+{
+    std::shared_ptr<HpaeRendererStreamImpl> hpaeRenderer = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(hpaeRenderer, nullptr);
+
+    // 10 bytes
+    constexpr size_t bufferSize = 10;
+
+    hpaeRenderer->ringBuffer_ = AudioRingCache::Create(bufferSize);
+    std::vector<int8_t> tmpBuffer(bufferSize, 1);
+    hpaeRenderer->ringBuffer_->Enqueue({reinterpret_cast<uint8_t *>(tmpBuffer.data()), bufferSize - 1});
+    tmpBuffer = std::vector<int8_t>(bufferSize, 2);
+    size_t requestDataLen = bufferSize;
+    int32_t ret = hpaeRenderer->WriteDataFromRingBuffer(true, tmpBuffer.data(), requestDataLen);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(requestDataLen, bufferSize - 1);
+    EXPECT_THAT(std::vector<int8_t>(tmpBuffer.begin(), tmpBuffer.end() - 1), Each(Eq(1)));
+    EXPECT_EQ(tmpBuffer[bufferSize - 1], 0);
+}
+
+/**
+ * @tc.name  : Test OnStreamData.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_034
+ * @tc.desc  : Test OnStreamData.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_034, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(nullptr, unit);
+ 
+    AudioCallBackStreamInfo info = {
+        .deviceClass = "remote_offload",
+        .framePosition = 10000,
+    };
+   
+    unit->OnStreamData(info);
+    EXPECT_EQ(10000, unit->lastHdiFramePosition_);
+    EXPECT_EQ(10000, unit->lastFramePosition_);
+
+    unit->isCallbackMode_ = false;
+    info.needData = true;
+    info.requestDataLen = 0;
+    unit->OnStreamData(info);
+    EXPECT_EQ(OFFLOAD_DEFAULT, unit->offloadStatePolicy_);
+    EXPECT_EQ(INVALID, unit->state_);
 }
 }
 }

@@ -34,8 +34,10 @@ public:
     {
         AUDIO_ERR_LOG("dtor");
     }
+
     void Init();
-    std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction>& GetConcurrencyMap();
+
+    ConcurrencyAction GetConcurrencyAction(const AudioPipeType existingPipe, const AudioPipeType commingPipe);
 
 private:
     std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction> concurrencyCfgMap_ = {};

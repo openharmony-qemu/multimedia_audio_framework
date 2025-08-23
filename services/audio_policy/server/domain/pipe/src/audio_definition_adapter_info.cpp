@@ -122,9 +122,6 @@ std::string AudioPolicyConfigData::GetVersion()
 std::shared_ptr<AdapterDeviceInfo> AudioPolicyConfigData::GetAdapterDeviceInfo(
     DeviceType type_, DeviceRole role_, const std::string &networkId_, uint32_t flags, int32_t a2dpOffloadFlag)
 {
-    AUDIO_INFO_LOG("type_:%{public}d, role_:%{public}d, networkId_:%{public}s, flags:%{public}u,"
-        "a2dpOffloadFlag: %{public}d", type_, role_, Hide(networkId_).c_str(), flags, a2dpOffloadFlag);
-
     // use primary to select device when in remote cast;
     DeviceType tempType = (type_ == DEVICE_TYPE_REMOTE_CAST ? DEVICE_TYPE_SPEAKER : type_);
     std::pair<DeviceType, DeviceRole> deviceMapKey = std::make_pair(tempType, role_);
@@ -231,6 +228,15 @@ uint32_t AudioPolicyConfigData::GetDynamicStreamPropsSize(const std::string adap
     std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfo->GetPipeInfoByName(pipeName);
     CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, 0, "pipeInfo is nullptr");
     return pipeInfo->dynamicStreamPropInfos_.size();
+}
+
+PolicyAdapterInfo::PolicyAdapterInfo()
+{
+    AUDIO_INFO_LOG("in");
+}
+PolicyAdapterInfo::~PolicyAdapterInfo()
+{
+    AUDIO_INFO_LOG("in");
 }
 
 AudioAdapterType PolicyAdapterInfo::GetTypeEnum()
@@ -372,6 +378,25 @@ void PipeStreamPropInfo::SelfCheck()
                 pipeInfoPtr->name_.c_str(), deviceName.c_str());
         }
     }
+}
+
+AudioSourceStrategyData& AudioSourceStrategyData::GetInstance()
+{
+    static AudioSourceStrategyData instance;
+    return instance;
+}
+
+void AudioSourceStrategyData::SetSourceStrategyMap(std::shared_ptr<std::map<SourceType,
+    AudioSourceStrategyType>> newMap)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    sourceStrategyMap_ = newMap;
+}
+
+std::shared_ptr<std::map<SourceType, AudioSourceStrategyType>> AudioSourceStrategyData::GetSourceStrategyMap() const
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return sourceStrategyMap_;
 }
 
 }

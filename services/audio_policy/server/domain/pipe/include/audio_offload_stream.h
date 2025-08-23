@@ -15,95 +15,75 @@
 #ifndef ST_AUDIO_OFFLOAD_STREAM_H
 #define ST_AUDIO_OFFLOAD_STREAM_H
 
-#include <bitset>
-#include <list>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
+#include <vector>
 #include <mutex>
-#include "singleton.h"
-#include "audio_group_handle.h"
-#include "power_mgr_client.h"
-#include "audio_manager_base.h"
-#include "audio_module_info.h"
-#include "audio_volume_config.h"
-#include "audio_system_manager.h"
-#include "audio_router_center.h"
-#include "audio_errors.h"
-#include "audio_policy_manager_factory.h"
-#include "audio_stream_collector.h"
-#include "ipc_skeleton.h"
 
-#include "audio_router_map.h"
-#include "audio_iohandle_map.h"
-#include "audio_active_device.h"
+#include "power_mgr_client.h"
+
+#include "audio_info.h"
+#include "audio_policy_manager_factory.h"
 #include "audio_stream_collector.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
+enum OffloadAdapter : uint32_t {
+    OFFLOAD_IN_PRIMARY = 0,
+    OFFLOAD_IN_REMOTE,
+    OFFLOAD_IN_ADAPTER_SIZE
+};
+
+enum OffloadAction : uint32_t {
+    OFFLOAD_NEW = 0,
+    OFFLOAD_MOVE_IN,
+    OFFLOAD_MOVE_OUT
+};
+
+constexpr uint32_t NO_OFFLOAD_STREAM_SESSIONID = 0;
+
 class AudioOffloadStream {
 public:
-    static AudioOffloadStream& GetInstance()
+    static AudioOffloadStream &GetInstance()
     {
         static AudioOffloadStream instance;
         return instance;
     }
-    void OffloadStreamSetCheck(uint32_t sessionId);
-    void OffloadStreamReleaseCheck(uint32_t sessionId);
+
+    uint32_t GetOffloadSessionId(OffloadAdapter offloadAdapter);
+    void SetOffloadStatus(OffloadAdapter offloadAdapter, uint32_t sessionId);
+    void UnsetOffloadStatus(uint32_t sessionId);
     void HandlePowerStateChanged(PowerMgr::PowerState state);
-    void ResetOffloadMode(int32_t sessionId);
-    int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
-    void RemoteOffloadStreamRelease(uint32_t sessionId);
-    bool CheckStreamMultichannelMode(const int64_t activateSessionId);
-    int32_t MoveToOutputDevice(uint32_t sessionId, std::string portName);
+    void UpdateOffloadStatusFromUpdateTracker(uint32_t sessionId, RendererState state);
+    void Dump(std::string &dumpString);
+
+    // not offload related
     std::vector<SinkInput> FilterSinkInputs(int32_t sessionId, std::vector<SinkInput> sinkInputs);
-    void SetOffloadAvailableFromXML(AudioModuleInfo &moduleInfo);
-    int32_t DynamicUnloadOffloadModule();
-    int32_t UnloadMchModule();
-    int32_t LoadMchModule();
-    bool GetOffloadAvailableFromXml() const;
-    void ResetOffloadModeOnSpatializationChanged(std::vector<int32_t> &allSessions);
-    void SetOffloadStatus(uint32_t sessionId);
-    void ResetOffloadStatus(uint32_t sessionId);
+
 private:
-    AudioOffloadStream() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
-        audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
-        streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
-        audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
-        audioRouteMap_(AudioRouteMap::GetInstance()),
-        audioActiveDevice_(AudioActiveDevice::GetInstance()) {}
+    AudioOffloadStream()
+        : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
+        streamCollector_(AudioStreamCollector::GetAudioStreamCollector())
+    {
+        for (uint32_t i = 0; i < OFFLOAD_IN_ADAPTER_SIZE; ++i) {
+            offloadSessionIdMap_[static_cast<OffloadAdapter>(i)] = NO_OFFLOAD_STREAM_SESSIONID;
+        }
+    }
     ~AudioOffloadStream() {}
-    bool CheckStreamOffloadMode(int64_t activateSessionId, AudioStreamType streamType);
-    bool CheckSpatializationAndEffectState();
-    void SetOffloadMode();
-    int32_t MoveToNewPipeInner(const uint32_t sessionId, const AudioPipeType pipeType);
-    int32_t SwitchToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
-    int32_t LoadOffloadModule();
-    int32_t UnloadOffloadModule();
-    AudioModuleInfo ConstructMchAudioModuleInfo(DeviceType deviceType);
-    AudioModuleInfo ConstructOffloadAudioModuleInfo(DeviceType deviceType);
+
+    void SetOffloadStatusInternal(uint32_t sessionId);
+    void UnsetOffloadStatusInternal(uint32_t sessionId);
+
 private:
-    std::optional<uint32_t> offloadSessionID_;
-    PowerMgr::PowerState currentPowerState_ = PowerMgr::PowerState::AWAKE;
+    IAudioPolicyInterface &audioPolicyManager_;
+    AudioStreamCollector &streamCollector_;
+
     std::mutex offloadMutex_;
-    bool currentOffloadSessionIsBackground_ = false;
-    bool isOffloadAvailable_ = false;
-
-    std::mutex offloadCloseMutex_;
-    std::mutex offloadOpenMutex_;
-    std::atomic<bool> isOffloadOpened_ = false;
-    std::condition_variable offloadCloseCondition_;
-
-    IAudioPolicyInterface& audioPolicyManager_;
-    AudioRouterCenter& audioRouterCenter_;
-    AudioStreamCollector& streamCollector_;
-    AudioIOHandleMap& audioIOHandleMap_;
-    AudioRouteMap& audioRouteMap_;
-    AudioActiveDevice& audioActiveDevice_;
+    std::map<OffloadAdapter, uint32_t> offloadSessionIdMap_ ;
+    PowerMgr::PowerState currentPowerState_ = PowerMgr::PowerState::AWAKE;
 };
 
-}
-}
+} // namespace AudioStandard
+} // namespace OHOS
 
 #endif

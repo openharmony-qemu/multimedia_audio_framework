@@ -15,7 +15,6 @@ import("//build/ohos.gni")
 import("../../accessibility.gni")
 import("../../appgallery.gni")
 import("../../audio_framework_test_sources.gni")
-import("../../av_session.gni")
 import("../../bluetooth_part.gni")
 import("../../config.gni")
 
@@ -44,34 +43,34 @@ config("audio_policy_public_config") {
     "client/service/include",
     "server/infra/ipc_proxy/include",
     "common/definitions/include",
+    "server/domain/pipe/include",
     "common/include",
     "client/interface",
     "client/proxy/include",
     "client/stub/include",
-    "server/domain/router",
     "server/include",
     "server/infra/async_action_handler/include",
     "server/infra/state_monitor",
     "server/stub/include",
     "server/proxy/include",
+    "server/domain/interrupt/include",
+    "server/domain/volume/include",
+    "server/domain/stream",
+    "server/domain/tone",
     "server/include/service",
     "server/include/service/common",
     "server/common/include",
     "server/infra/config/parser/include",
     "server/domain/effect/include",
-    "server/domain/pipe/include",
-    "server/domain/interrupt/include",
-    "server/domain/volume/include",
-    "server/domain/stream",
-    "server/domain/tone",
-    "server/domain/zone/include",
     "server/include/service/interface",
     "server/include/service/listener",
     "server/infra/appclient/include",
     "server/infra/datashare/include",
     "server/domain/device/src/pnp",
     "server/domain/device/src/sle",
+    "server/domain/router",
     "server/include/service/service",
+    "server/domain/zone/include",
     "server/domain/device/include",
     "server/domain/device/src/a2dp",
     "server/src/service/concurrency",
@@ -80,6 +79,7 @@ config("audio_policy_public_config") {
     "../audio_service/client/include",
     "../audio_service/common/include",
     "../audio_service/common/include/dfx",
+    "../audio_engine/manager/include",
     "../../frameworks/native/audioinnercall/include",
     "../../frameworks/native/audiorenderer/include",
     "../../frameworks/native/audioadapter/include",
@@ -108,10 +108,6 @@ config("audio_policy_public_config") {
 
   if (bluetooth_part_enable == true) {
     cflags += [ "-DBLUETOOTH_ENABLE" ]
-  }
-
-  if (avsession_part_enable == true && !(use_libfuzzer || use_clang_coverage)) {
-    cflags += [ "-DAVSESSION_ENABLE" ]
   }
 
   ldflags = [ "-Wl" ]
@@ -174,49 +170,68 @@ audio_ohos_library("audio_policy_service") {
   }
   install_enable = true
   sources = [
+    "server/domain/interrupt/src/standalone_mode_manager.cpp",
     "../audio_service/client/src/audio_filter.cpp",
     "../audio_service/client/src/audio_manager_listener_stub_impl.cpp",
     "../audio_service/client/src/core_service_provider_stub.cpp",
     "../audio_service/client/src/microphone_descriptor.cpp",
     "../audio_service/client/src/policy_provider_stub.cpp",
-    "server/common/src/audio_group_handle.cpp",
-    "server/domain/device/src/a2dp/audio_a2dp_device.cpp",
-    "server/domain/device/src/audio_active_device.cpp",
-    "server/domain/device/src/audio_affinity_manager.cpp",
-    "server/domain/device/src/audio_connected_device.cpp",
-    "server/domain/device/src/audio_device_common.cpp",
-    "server/domain/device/src/audio_device_lock.cpp",
-    "server/domain/device/src/audio_device_manager.cpp",
-    "server/domain/device/src/audio_device_status.cpp",
-    "server/domain/device/src/audio_microphone_descriptor.cpp",
-    "server/domain/device/src/audio_recovery_device.cpp",
-    "server/domain/device/src/audio_router_map.cpp",
-    "server/domain/device/src/audio_scene_manager.cpp",
-    "server/domain/device/src/audio_state_manager.cpp",
-    "server/domain/device/src/device_status_listener.cpp",
-    "server/domain/device/src/sle/sle_audio_device_manager.cpp",
-    "server/domain/effect/src/audio_collaborative_service.cpp",
-    "server/domain/effect/src/audio_effect_service.cpp",
-    "server/domain/effect/src/audio_spatialization_service.cpp",
-    "server/domain/interrupt/src/audio_interrupt_dfx_collector.cpp",
     "server/domain/interrupt/src/audio_interrupt_group_info.cpp",
+    "server/domain/volume/src/audio_volume_group_info.cpp",
+    "server/domain/pipe/src/audio_definition_adapter_info.cpp",
+    "server/domain/pipe/src/audio_definition_policy_utils.cpp",
+    "server/infra/appclient/src/app_state_listener.cpp",
+    "server/infra/appclient/src/audio_background_manager.cpp",
+    "server/infra/appclient/src/audio_bundle_manager.cpp",
+    "server/infra/appclient/src/client_type_manager.cpp",
+    "server/infra/appclient/src/client_type_manager_handler.cpp",
+    "server/infra/async_action_handler/src/audio_policy_async_action_handler.cpp",
+    "server/infra/config/parser/src/audio_affinity_parser.cpp",
+    "server/infra/config/parser/src/audio_concurrency_parser.cpp",
+    "server/infra/config/parser/src/audio_converter_parser.cpp",
+    "server/infra/config/parser/src/audio_device_parser.cpp",
+    "server/infra/config/parser/src/audio_effect_config_parser.cpp",
+    "server/infra/config/parser/src/audio_focus_parser.cpp",
+    "server/infra/config/parser/src/audio_policy_config_parser.cpp",
+    "server/infra/config/parser/src/audio_policy_global_parser.cpp",
+    "server/infra/config/parser/src/audio_strategy_router_parser.cpp",
+    "server/infra/config/parser/src/audio_source_strategy_parser.cpp",
+    "server/infra/config/parser/src/audio_usage_strategy_parser.cpp",
+    "server/infra/config/parser/src/audio_volume_parser.cpp",
+    "server/infra/datashare/src/audio_policy_utils.cpp",
+    "server/infra/datashare/src/audio_policy_datashare_listener.cpp",
+    "server/infra/ipc_proxy/src/audio_ability_manager.cpp",
+    "server/infra/ipc_proxy/src/audio_policy_client_holder.cpp",
+    "server/infra/ipc_proxy/src/audio_server_proxy.cpp",
+    "server/infra/state_monitor/audio_policy_state_monitor.cpp",
+    "server/common/src/audio_group_handle.cpp",
+    "server/service/service_main/src/audio_policy_server.cpp",
+    "server/infra/async_action_handler/src/audio_policy_server_handler.cpp",
+    "server/domain/stream/audio_stream_collector.cpp",
+    "server/domain/stream/audio_stream_id_allocator.cpp",
+    "server/infra/appclient/src/background_task_listener.cpp",
+    "server/domain/device/src/audio_affinity_manager.cpp",
+    "server/domain/device/src/audio_device_manager.cpp",
+    "server/domain/pipe/src/audio_global_config_manager.cpp",
+    "server/service/service_main/src/audio_policy_service.cpp",
+    "server/domain/device/src/audio_state_manager.cpp",
+    "server/domain/pipe/src/audio_concurrency_service.cpp",
+    "server/service/service_main/src/device_init_callback.cpp",
+    "server/src/audio_client_tracker_callback_service.cpp",
+    "server/src/audio_client_tracker_callback_listener.cpp",
+    "server/src/audio_spatialization_state_change_callback.cpp",
+    "server/src/audio_spatialization_state_change_listener.cpp",
+    "server/src/audio_policy_manager_listener.cpp",
+    "server/domain/effect/src/audio_effect_service.cpp",
+    "server/domain/interrupt/src/audio_interrupt_dfx_collector.cpp",
     "server/domain/interrupt/src/audio_interrupt_service.cpp",
     "server/domain/interrupt/src/audio_interrupt_service_ext.cpp",
     "server/domain/interrupt/src/audio_interrupt_zone.cpp",
+    "server/domain/device/src/device_status_listener.cpp",
     "server/domain/interrupt/src/power_state_listener.cpp",
-    "server/domain/pipe/src/audio_a2dp_offload_flag.cpp",
-    "server/domain/pipe/src/audio_a2dp_offload_manager.cpp",
-    "server/domain/pipe/src/audio_capturer_session.cpp",
-    "server/domain/pipe/src/audio_concurrency_service.cpp",
-    "server/domain/pipe/src/audio_definition_adapter_info.cpp",
-    "server/domain/pipe/src/audio_definition_policy_utils.cpp",
-    "server/domain/pipe/src/audio_ec_manager.cpp",
-    "server/domain/pipe/src/audio_global_config_manager.cpp",
-    "server/domain/pipe/src/audio_iohandle_map.cpp",
-    "server/domain/pipe/src/audio_offload_stream.cpp",
-    "server/domain/pipe/src/audio_pipe_manager.cpp",
-    "server/domain/pipe/src/audio_pipe_selector.cpp",
-    "server/domain/pipe/src/audio_policy_config_manager.cpp",
+    "server/domain/volume/src/audio_adapter_manager.cpp",
+    "server/domain/volume/src/audio_adapter_manager_handler.cpp",
+    "server/domain/volume/src/volume_data_maintainer.cpp",
     "server/domain/router/app_select_router.cpp",
     "server/domain/router/audio_router_center.cpp",
     "server/domain/router/cockpit_phone_router.cpp",
@@ -227,59 +242,42 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/router/public_priority_router.cpp",
     "server/domain/router/stream_filter_router.cpp",
     "server/domain/router/user_select_router.cpp",
+    "server/domain/device/src/a2dp/audio_a2dp_device.cpp",
+    "server/domain/pipe/src/audio_a2dp_offload_flag.cpp",
+    "server/domain/pipe/src/audio_a2dp_offload_manager.cpp",
+    "server/domain/device/src/audio_active_device.cpp",
+    "server/domain/pipe/src/audio_capturer_session.cpp",
+    "server/domain/device/src/audio_connected_device.cpp",
+    "server/domain/device/src/audio_device_common.cpp",
+    "server/domain/device/src/audio_device_lock.cpp",
+    "server/domain/device/src/audio_device_status.cpp",
+    "server/domain/pipe/src/audio_ec_manager.cpp",
+    "server/domain/pipe/src/audio_iohandle_map.cpp",
+    "server/domain/device/src/audio_microphone_descriptor.cpp",
+    "server/domain/pipe/src/audio_offload_stream.cpp",
+    "server/service/service_main/src/audio_policy_dump.cpp",
+    "server/domain/device/src/audio_recovery_device.cpp",
+    "server/domain/device/src/audio_router_map.cpp",
+    "server/domain/device/src/audio_scene_manager.cpp",
+    "server/domain/tone/audio_tone_manager.cpp",
+    "server/domain/volume/src/audio_volume_manager.cpp",
+    "server/domain/device/src/sle/sle_audio_device_manager.cpp",
     "server/domain/session/src/audio_session.cpp",
     "server/domain/session/src/audio_session_service.cpp",
     "server/domain/session/src/audio_session_state_monitor.cpp",
-    "server/domain/stream/audio_stream_collector.cpp",
-    "server/domain/stream/audio_stream_id_allocator.cpp",
-    "server/domain/tone/audio_tone_manager.cpp",
-    "server/domain/volume/src/audio_adapter_manager.cpp",
-    "server/domain/volume/src/audio_adapter_manager_handler.cpp",
-    "server/domain/volume/src/audio_volume_group_info.cpp",
-    "server/domain/volume/src/audio_volume_manager.cpp",
-    "server/domain/volume/src/volume_data_maintainer.cpp",
+    "server/domain/effect/src/audio_collaborative_service.cpp",
+    "server/domain/effect/src/audio_spatialization_service.cpp",
     "server/domain/zone/src/audio_zone.cpp",
     "server/domain/zone/src/audio_zone_client_manager.cpp",
     "server/domain/zone/src/audio_zone_interrupt_reporter.cpp",
     "server/domain/zone/src/audio_zone_service.cpp",
-    "server/infra/appclient/src/app_state_listener.cpp",
-    "server/infra/appclient/src/audio_background_manager.cpp",
-    "server/infra/appclient/src/audio_bundle_manager.cpp",
-    "server/infra/appclient/src/background_task_listener.cpp",
-    "server/infra/appclient/src/client_type_manager.cpp",
-    "server/infra/appclient/src/client_type_manager_handler.cpp",
-    "server/infra/async_action_handler/src/audio_policy_async_action_handler.cpp",
-    "server/infra/async_action_handler/src/audio_policy_server_handler.cpp",
-    "server/infra/config/parser/src/audio_affinity_parser.cpp",
-    "server/infra/config/parser/src/audio_concurrency_parser.cpp",
-    "server/infra/config/parser/src/audio_converter_parser.cpp",
-    "server/infra/config/parser/src/audio_device_parser.cpp",
-    "server/infra/config/parser/src/audio_effect_config_parser.cpp",
-    "server/infra/config/parser/src/audio_focus_parser.cpp",
-    "server/infra/config/parser/src/audio_policy_config_parser.cpp",
-    "server/infra/config/parser/src/audio_policy_global_parser.cpp",
-    "server/infra/config/parser/src/audio_strategy_router_parser.cpp",
-    "server/infra/config/parser/src/audio_usage_strategy_parser.cpp",
-    "server/infra/config/parser/src/audio_volume_parser.cpp",
-    "server/infra/datashare/src/audio_policy_datashare_listener.cpp",
-    "server/infra/datashare/src/audio_policy_utils.cpp",
-    "server/infra/ipc_proxy/src/audio_ability_manager.cpp",
-    "server/infra/ipc_proxy/src/audio_policy_client_holder.cpp",
-    "server/infra/ipc_proxy/src/audio_server_proxy.cpp",
-    "server/infra/state_monitor/audio_policy_state_monitor.cpp",
+    "server/domain/pipe/src/audio_policy_config_manager.cpp",
     "server/service/service_main/src/audio_core_service.cpp",
     "server/service/service_main/src/audio_core_service_entry.cpp",
     "server/service/service_main/src/audio_core_service_private.cpp",
     "server/service/service_main/src/audio_core_service_utils.cpp",
-    "server/service/service_main/src/audio_policy_dump.cpp",
-    "server/service/service_main/src/audio_policy_server.cpp",
-    "server/service/service_main/src/audio_policy_service.cpp",
-    "server/service/service_main/src/device_init_callback.cpp",
-    "server/src/audio_client_tracker_callback_listener.cpp",
-    "server/src/audio_client_tracker_callback_service.cpp",
-    "server/src/audio_policy_manager_listener.cpp",
-    "server/src/audio_spatialization_state_change_callback.cpp",
-    "server/src/audio_spatialization_state_change_listener.cpp",
+    "server/domain/pipe/src/audio_pipe_manager.cpp",
+    "server/domain/pipe/src/audio_pipe_selector.cpp",
   ]
 
   defines = []
@@ -333,6 +331,7 @@ audio_ohos_library("audio_policy_service") {
     "../audio_policy:audio_foundation",
     "../audio_policy:audio_setting_provider",
     "../audio_service:audio_common",
+    "../audio_engine:audio_engine_manager",
   ]
 
   external_deps = [
@@ -376,6 +375,7 @@ audio_ohos_library("audio_policy_service") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "window_manager:session_manager_lite",
+    "window_manager:libwm_lite",
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
@@ -560,25 +560,25 @@ audio_ohos_library("audio_policy_client") {
     "../audio_policy/server/domain/device/src/audio_device_descriptor.cpp",
     "../audio_service/client/src/audio_filter.cpp",
     "../audio_service/client/src/microphone_descriptor.cpp",
-    "client/service/src/audio_anahs_manager_listener.cpp",
     "client/service/src/audio_policy_manager.cpp",
     "client/service/src/audio_policy_manager_device.cpp",
     "client/service/src/audio_policy_manager_zone.cpp",
     "client/service/src/audio_routing_manager_listener.cpp",
+    "client/service/src/audio_anahs_manager_listener.cpp",
     "client/service/src/audio_zone_manager.cpp",
+    "server/domain/volume/src/audio_volume_group_info.cpp",
     "client/stub/src/audio_policy_client_stub_impl.cpp",
     "client/stub/src/audio_policy_manager_listener_stub_impl.cpp",
     "client/stub/src/audio_zone_client.cpp",
     "client/stub/src/sle_audio_operation_callback_stub_impl.cpp",
-    "server/domain/volume/src/audio_volume_group_info.cpp",
     "server/src/audio_client_tracker_callback_service.cpp",
     "server/src/audio_spatialization_state_change_listener.cpp",
   ]
 
   deps = [
-    "../../services/audio_service/idl:audio_framework_interface",
     "../../frameworks/native/audiodefinitions:audio_definitions",
     "../../frameworks/native/audioutils:audio_utils",
+    "../../services/audio_service/idl:audio_framework_interface",
   ]
 
   public_configs = [ ":audio_policy_client_config" ]
@@ -614,13 +614,25 @@ group("audio_policy_test_packages") {
     ":audio_dump_test",
     ":audio_policy_test",
     "test:audio_policy_unittest_packages",
+    "client/stub:audio_zone_client_unit_test",
+    "client/stub:audio_policy_manager_listener_stub_impl_unit_test",
+    "client/service/test:audio_policy_manager_device_unit_test",
     "server/infra/config/parser/test:audio_policy_config_parser_unittest_packages",
+    "server/domain/device:audio_device_common_unit_next_test",
+    "server/domain/device/test:audio_device_status_extended_test",
     "server/domain/effect/test:audio_spatialization_service_extended_test",
+    "server/domain/pipe/test:audio_policy_pipe_unittest_packages",
+    "server/domain/router/test:audio_router_unittest_packages",
+    "server/domain/session/test:audio_policy_session_unit_test",
+    "server/domain/volume/test:audio_volume_unittest_packages",
+    "server/service/service_main/test:audio_policy_dump_unit_test",
     "server/service/service_main/test:audio_policy_server_extended_test",
     "server/service/service_main/test:audio_policy_service_ext_unit_test",
+    "server/service/service_main/test:device_init_callback_unit_test",
     "server/infra/state_monitor/test:audio_policy_state_monitor_unittest_packages",
+    "server/infra/ipc_proxy/test:audio_policy_ipc_proxy_unittest_packages",
     "server/common/test:audio_policy_server_common_unittest_packages",
-    #"server/service/service_main/test:device_init_callback_unit_test",
+    "server/src/test:audio_server_src_unittest_packages",
   ]
 }
 
@@ -746,9 +758,9 @@ ohos_shared_library("audio_foundation") {
 config("audio_manager_client_public_config") {
   include_dirs = [
     "util/include",
-    "client/service/include",
     "server/domain/device/include",
     "server/domain/effect/include",
+    "client/service/include",
     "../../frameworks/native/audiodefinitions/include",
     "../../frameworks/native/audiodefinitions/include/common",
     "../../frameworks/native/hdiadapter_new/include/common",
@@ -840,36 +852,6 @@ ohos_shared_library("audio_policy_common") {
     "ipc:ipc_core",
     "resource_management:global_resmgr",
   ]
-
-  cflags = [ "-Os" ]
-  cflags_cc = cflags
-
-  innerapi_tags = [ "platformsdk" ]
-  subsystem_name = "multimedia"
-  part_name = "audio_framework"
-}
-
-config("audio_policy_ipc_config") {
-  include_dirs = [ "common/include" ]
-}
-
-ohos_shared_library("audio_policy_ipc") {
-  branch_protector_ret = "pac_ret"
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    cfi_vcall_icall_only = true
-    debug = false
-    integer_overflow = true
-    ubsan = true
-    boundary_sanitize = true
-  }
-  install_enable = true
-  sources = []
-
-  public_configs = [ ":audio_policy_ipc_config" ]
-
-  external_deps = []
 
   cflags = [ "-Os" ]
   cflags_cc = cflags

@@ -32,6 +32,7 @@ sequenceable audio_effect..OHOS.AudioStandard.AudioEnhancePropertyArray;
 sequenceable hdi_adapter_type..OHOS.AudioStandard.IAudioSinkAttr;
 sequenceable hdi_adapter_type..OHOS.AudioStandard.IAudioSourceAttr;
 sequenceable audio_stutter..OHOS.AudioStandard.DataTransferMonitorParam;
+sequenceable audio_interrupt_info..OHOS.AudioStandard.InterruptEventInternal;
 
 interface IStandardAudioService {
     [ipccode 0] void GetAudioParameter([in] String key, [out] String value);
@@ -138,9 +139,11 @@ interface IStandardAudioService {
     [oneway] void ImproveAudioWorkgroupPrio([in] int pid, [in] Map<int, boolean> threads);
     void RestoreAudioWorkgroupPrio([in] int pid, [in] Map<int, int> threads);
     void SetRenderWhitelist([in] List<String> list);
+    void GetVolumeBySessionId([in] unsigned int sessionId, [out] float volume);
     // WARNING: above functions correspond with AudioServerInterfaceCode
 
     // undefined in AudioServerInterfaceCode
     [ipccode 1000] void SetForegroundList([in] List<String> list);
     void GetVolumeDataCount([in] String sinkName, [out] long ret);
+    void SendInterruptEventToAudioServer([in] unsigned int sessionId, [in] InterruptEventInternal interruptEvent);
 }
