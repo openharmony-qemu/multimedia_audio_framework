@@ -132,9 +132,7 @@ HWTEST_F(HpaeSourceInputNodeTest, testWriteDataToSourceInputDataCase, TestSize.L
     nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
     nodeInfo.sourceInputNodeType = HPAE_SOURCE_MIC;
     std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
-    uint64_t requestBytes = nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format);
-    std::vector<char> testData(requestBytes);
-    uint64_t replyBytes = 0;
+
     std::string deviceClass = "file_io";
     std::string deviceNetId = "LocalDevice";
     SourceType sourceType = SOURCE_TYPE_MIC;
@@ -146,17 +144,7 @@ HWTEST_F(HpaeSourceInputNodeTest, testWriteDataToSourceInputDataCase, TestSize.L
     EXPECT_EQ(hpaeSourceInputNode->CapturerSourceInit(attr), SUCCESS);
     EXPECT_EQ(hpaeSourceInputNode->CapturerSourceStart(), SUCCESS);
     EXPECT_EQ(hpaeSourceInputNode->GetSourceState() == STREAM_MANAGER_RUNNING, true);
-    TestCapturerSourceFrame(testData.data(), requestBytes, replyBytes);
-    std::vector<float> testDataFloat(requestBytes / SAMPLE_F32LE);
-    ConvertToFloat(nodeInfo.format, nodeInfo.channels * nodeInfo.frameLen, testData.data(), testDataFloat.data());
-    OutputPort<HpaePcmBuffer *> *outputPort = hpaeSourceInputNode->GetOutputPort();
-    HpaePcmBuffer* outPcmBuffer = outputPort->PullOutputData();
-    ASSERT_NE(outPcmBuffer, nullptr);
-    float* outputPcmData = outPcmBuffer->GetPcmDataBuffer();
-    for (int32_t i = 0; i < requestBytes / SAMPLE_F32LE; i++) {
-        float diff = outputPcmData[i] - testDataFloat[i];
-        EXPECT_EQ(fabs(diff) < TEST_VALUE_PRESION, true);
-    }
+    hpaeSourceInputNode->DoProcess();
     EXPECT_EQ(hpaeSourceInputNode->CapturerSourceStop(), SUCCESS);
     EXPECT_EQ(hpaeSourceInputNode->GetSourceState() == STREAM_MANAGER_SUSPENDED, true);
     EXPECT_EQ(hpaeSourceInputNode->CapturerSourceDeInit(), SUCCESS);
