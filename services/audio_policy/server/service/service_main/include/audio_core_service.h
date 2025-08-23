@@ -304,6 +304,7 @@ private:
     void ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName);
     uint32_t GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName);
     int32_t CaptureConcurrentCheck(uint32_t sessionId);
+    void SetFirstScreenOn();
 
 private:
     static std::string GetEncryptAddr(const std::string &addr);
@@ -577,6 +578,7 @@ private:
     };
     std::unordered_map<uint32_t, bool> voiceMuteStateMap_;
     std::shared_mutex muteMutex_;
+    bool isFirstScreenOn_ = false;
 };
 }
 }

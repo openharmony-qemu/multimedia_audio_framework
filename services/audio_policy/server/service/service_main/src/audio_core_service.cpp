@@ -1265,9 +1265,14 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
         }
         streamUsage = (streamUsage != StreamUsage::STREAM_USAGE_INVALID) ? streamUsage :
             streamDesc->rendererInfo_.streamUsage;
-        streamDesc->newDeviceDescs_ =
-            audioRouterCenter_.FetchOutputDevices(streamUsage, GetRealUid(streamDesc),
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+        if (VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_) {
+            devices.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
+        } else {
+            devices = audioRouterCenter_.FetchOutputDevices(streamUsage, GetRealUid(streamDesc),
                 caller + "FetchOutputDeviceAndRoute");
+        }
+        streamDesc->UpdateNewDevice(devices);
         AUDIO_INFO_LOG("[AudioSession] streamUsage %{public}d renderer streamUsage %{public}d",
             streamUsage, streamDesc->rendererInfo_.streamUsage);
         AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d with status %{public}u",
@@ -1415,6 +1420,11 @@ int32_t AudioCoreService::CaptureConcurrentCheck(uint32_t sessionId)
     LogCapturerConcurrentResult(dfxResult);
     WriteCapturerConcurrentEvent(dfxResult);
     return SUCCESS;
+}
+
+void AudioCoreService::SetFirstScreenOn()
+{
+    isFirstScreenOn_ = true;
 }
 } // namespace AudioStandard
 } // namespace OHOS
