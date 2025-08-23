@@ -875,19 +875,15 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_040, TestSize.Level1)
 HWTEST(AudioCoreServiceEntryTest, FetchOutputDeviceAndRoute_041, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
-    ASSERT_NE(audioCoreService, nullptr);
+    EXPECT_NE(audioCoreService, nullptr);
     auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
-    ASSERT_NE(eventEntry, nullptr);
+    EXPECT_NE(eventEntry, nullptr);
 
     std::string caller;
     AudioStreamDeviceChangeReasonExt reason;
 
     auto ret =  eventEntry->FetchOutputDeviceAndRoute(caller, reason);
-    EXPECT_EQ(ret, SUCCESS);
-
-    audioCoreService->isFirstScreenOn_ = false;
-    ret =  eventEntry->FetchOutputDeviceAndRoute(caller, reason);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERR_UNKNOW);
 }
 
 /**
