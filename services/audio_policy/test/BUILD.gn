@@ -95,6 +95,7 @@ group("audio_policy_unittest_packages") {
     ":privacy_priority_router_unit_test",
     ":stream_filter_router_unit_test",
     ":sle_audio_device_manager_unit_test",
+
     ":volume_data_maintainer_unit_test",
     ":audio_ipc_serialization_unit_test",
     ":audio_device_manager_unit_test",
