@@ -219,13 +219,15 @@ int32_t HpaeSoftLink::Start()
 
     if (streamStateMap_[rendererStreamInfo_.sessionId] != HpaeSoftLinkState::RUNNING) {
         AUDIO_ERR_LOG("start renderer[%{public}d] failed", rendererStreamInfo_.sessionId);
-        IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_RECORD, capturerStreamInfo_.sessionId);
+        CHECK_AND_RETURN_RET(streamStateMap_[capturerStreamInfo_.sessionId] == HpaeSoftLinkState::RUNNING, ERROR,
+            "start capturer[%{public}d] failed", capturerStreamInfo_.sessionId);
+        IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_RECORD, capturerStreamInfo_.sessionId);
         return ERROR;
     }
 
     if (streamStateMap_[capturerStreamInfo_.sessionId] != HpaeSoftLinkState::RUNNING) {
         AUDIO_ERR_LOG("start capturer[%{public}d] failed", capturerStreamInfo_.sessionId);
-        IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_PLAY, rendererStreamInfo_.sessionId);
+        IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_PLAY, rendererStreamInfo_.sessionId);
         return ERROR;
     }
     state_ = HpaeSoftLinkState::RUNNING;
