@@ -1059,35 +1059,6 @@ uint32_t AudioCoreService::GenerateSessionId()
     return AudioStreamIdAllocator::GetAudioStreamIdAllocator().GenerateStreamId();
 }
 
-void AudioCoreService::SetVoiceMuteState(uint32_t sessionId, bool isMute)
-{
-    std::unique_lock<std::shared_mutex> lock(muteMutex_);
-    voiceMuteStateMap_[sessionId] = isMute;
-    AUDIO_INFO_LOG("set mute state for session %{public}u to %{public}s", sessionId, isMute ? "muted" : "unmuted");
-}
-
-void AudioCoreService::GetVoiceMuteState(uint32_t sessionId, bool &muteState)
-{
-    std::shared_lock<std::shared_mutex> lock(muteMutex_);
-    auto it = voiceMuteStateMap_.find(sessionId);
-    if (it != voiceMuteStateMap_.end()) {
-        muteState = it->second;
-        return;
-    }
-
-    muteState = false;
-}
-
-void AudioCoreService::RemoveVoiceMuteState(uint32_t sessionId)
-{
-    std::unique_lock<std::shared_mutex> lock(muteMutex_);
-    auto it = voiceMuteStateMap_.find(sessionId);
-    if (it != voiceMuteStateMap_.end()) {
-        AUDIO_INFO_LOG("remove mute state for session %{public}u", sessionId);
-        voiceMuteStateMap_.erase(it);
-    }
-}
-
 void AudioCoreService::AddSessionId(const uint32_t sessionId)
 {
     uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());

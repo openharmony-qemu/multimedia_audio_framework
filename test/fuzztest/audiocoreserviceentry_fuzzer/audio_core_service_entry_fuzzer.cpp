@@ -618,23 +618,6 @@ void AudioCoreServiceEventEntryGetPreferredInputStreamTypeFuzzTest()
     eventEntry->GetPreferredInputStreamType(capturerInfo);
 }
 
-void AudioCoreServiceEventEntryGetMuteStateFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
-    uint32_t sessionId = 0;
-    bool muteState = false;
-    eventEntry->GetVoiceMuteState(sessionId, muteState);
-}
-
-void AudioCoreServiceEventEntryRemoveMuteStateFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
-    uint32_t sessionId = 0;
-    eventEntry->RemoveVoiceMuteState(sessionId);
-}
-
 TestFuncs g_testFuncs[] = {
     UpdateSessionOperationFuzzTest,
     OnServiceConnectedFuzzTest,
@@ -684,8 +667,6 @@ TestFuncs g_testFuncs[] = {
     AudioCoreServiceEventEntrySetSessionDefaultOutputDeviceFuzzTest,
     AudioCoreServiceEventEntryGetSessionDefaultOutputDeviceFuzzTest,
     AudioCoreServiceEventEntryGetPreferredInputStreamTypeFuzzTest,
-    AudioCoreServiceEventEntryGetMuteStateFuzzTest,
-    AudioCoreServiceEventEntryRemoveMuteStateFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

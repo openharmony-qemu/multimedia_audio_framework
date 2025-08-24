@@ -334,19 +334,6 @@ void CapturerInServer::UpdateBufferTimeStamp(size_t readLen)
     audioServerBuffer_->SetTimeStampInfo(curProcessPos_, timestamp);
 }
 
-void CapturerInServer::MuteVoice(const SourceType sourceType, BufferDesc &dstBuffer)
-{
-    bool muteState = false;
-    if (CoreServiceHandler::GetInstance().GetVoiceMuteState(streamIndex_, muteState)) {
-        if (muteState) {
-            AUDIO_DEBUG_LOG("session:%{public}d muted", streamIndex_);
-            int32_t ret = memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength,
-                0, dstBuffer.bufLength);
-            CHECK_AND_RETURN_LOG(ret == EOK, "Clear buffer fail, ret %{public}d.", ret);
-        }
-    }
-}
-
 // LCOV_EXCL_START
 void CapturerInServer::ReadData(size_t length)
 {
@@ -383,8 +370,6 @@ void CapturerInServer::ReadData(size_t length)
         LEGACY_MUTE_CAP) || muteFlag_) {
         dstBuffer.buffer = dischargeBuffer_.get(); // discharge valid data.
     }
-
-    MuteVoice(processConfig_.capturerInfo.sourceType, dstBuffer);
 
     if (muteFlag_) {
         memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
@@ -448,8 +433,6 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
         LEGACY_MUTE_CAP) || muteFlag_) {
         dstBuffer.buffer = dischargeBuffer_.get(); // discharge valid data.
     }
-
-    MuteVoice(processConfig_.capturerInfo.sourceType, dstBuffer);
 
     if (muteFlag_) {
         memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
@@ -740,7 +723,6 @@ int32_t CapturerInServer::Stop()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
-    CoreServiceHandler::GetInstance().RemoveVoiceMuteState(streamIndex_);
     return SUCCESS;
 }
 // LCOV_EXCL_STOP
