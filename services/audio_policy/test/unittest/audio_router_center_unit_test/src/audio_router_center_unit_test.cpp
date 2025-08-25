@@ -29,6 +29,8 @@ static constexpr int32_t CLIENT_UID_TYPE_EARPIECE = 2;
 namespace OHOS {
 namespace AudioStandard {
 
+const uint32_t TEST_RETRETURN = 0;
+
 void AudioRouterCenterUnitTest::SetUpTestCase(void) {}
 void AudioRouterCenterUnitTest::TearDownTestCase(void) {}
 void AudioRouterCenterUnitTest::SetUp(void) {}
@@ -541,6 +543,24 @@ HWTEST(AudioRouterCenterUnitTest, FetchVoiceMessageCaptureDevice_deviceType_vali
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result, validDesc);
     EXPECT_EQ(rtype, ROUTER_TYPE_DEFAULT);
+}
+
+/**
+ * @tc.name  : Test GetBypassWithSco.
+ * @tc.number: GetBypassWithSco_001
+ * @tc.desc  : Test GetBypassWithSco interface when desc->deviceType_ is valid.
+ */
+HWTEST(AudioRouterCenterUnitTest, GetBypassWithSco_001, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    auto validDesc = std::make_shared<AudioDeviceDescriptor>();
+    validDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    center.voiceMessageRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, nullptr, nullptr, validDesc));
+    RouterType rtype = ROUTER_TYPE_NONE;
+    AudioScene audioScene = AUDIO_SCENE_DEFAULT;
+    auto result = center.GetBypassWithSco(audioScene);
+    EXPECT_EQ(result, TEST_RETRETURN);
 }
 } // namespace AudioStandard
 } // namespace OHOS
