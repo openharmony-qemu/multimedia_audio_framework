@@ -27,6 +27,9 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
+const uint32_t TEST_GROUPID = 10;
+const uint32_t TEST_RESULTZERO = 0;
+
 void StreamFilterRouterUnitTest::SetUpTestCase(void) {}
 void StreamFilterRouterUnitTest::TearDownTestCase(void) {}
 void StreamFilterRouterUnitTest::SetUp(void) {}
@@ -334,6 +337,94 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_011, TestSize.Level1)
 
     result = streamFilterRouter_->GetRecordCaptureDevice(sourceType, clientId);
     EXPECT_NE(streamFilterRouter_, nullptr);
+}
+
+/**
+ * @tc.name  : Test IsIncomingDeviceInRemoteDevice.
+ * @tc.number: StreamFilterRouter_012
+ * @tc.desc  : Test IsIncomingDeviceInRemoteDevice.
+ */
+HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_012, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> incomingDevice = std::make_shared<AudioDeviceDescriptor>();
+    incomingDevice->networkId_ = "networkId123";
+    incomingDevice->deviceRole_ = INPUT_DEVICE;
+    incomingDevice->deviceType_ = DEVICE_TYPE_MIC;
+    incomingDevice->interruptGroupId_ = TEST_GROUPID;
+    incomingDevice->volumeGroupId_ = TEST_GROUPID;
+    incomingDevice->macAddress_ = "macAddress_123";
+
+    std::shared_ptr<AudioDeviceDescriptor> matchingDevice = std::make_shared<AudioDeviceDescriptor>();
+    matchingDevice->networkId_ = "networkId123";
+    matchingDevice->deviceRole_ = INPUT_DEVICE;
+    matchingDevice->deviceType_ = DEVICE_TYPE_MIC;
+    matchingDevice->interruptGroupId_ = TEST_GROUPID;
+    matchingDevice->volumeGroupId_ = TEST_GROUPID;
+    matchingDevice->macAddress_ = "macAddress_123";
+
+    auto streamFilterRouter_ = std::make_shared<StreamFilterRouter>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descriptors = {};
+    bool result = streamFilterRouter_->IsIncomingDeviceInRemoteDevice(descriptors, incomingDevice);
+    EXPECT_FALSE(result);
+
+    matchingDevice->macAddress_ = "macAddress";
+    descriptors = {matchingDevice};
+    result = streamFilterRouter_->IsIncomingDeviceInRemoteDevice(descriptors, incomingDevice);
+    EXPECT_TRUE(incomingDevice->isVrSupported_);
+
+    matchingDevice->volumeGroupId_ = TEST_GROUPID - 1;
+    descriptors = {matchingDevice};
+    result = streamFilterRouter_->IsIncomingDeviceInRemoteDevice(descriptors, incomingDevice);
+    EXPECT_EQ(NO_A2DP_DEVICE, incomingDevice->a2dpOffloadFlag_ );
+
+    matchingDevice->interruptGroupId_ = TEST_GROUPID - 1;
+    descriptors = {matchingDevice};
+    result = streamFilterRouter_->IsIncomingDeviceInRemoteDevice(descriptors, incomingDevice);
+    EXPECT_EQ(TEST_RESULTZERO, incomingDevice->deviceId_);
+
+    matchingDevice->deviceType_ = DEVICE_TYPE_SPEAKER;
+    descriptors = {matchingDevice};
+    result = streamFilterRouter_->IsIncomingDeviceInRemoteDevice(descriptors, incomingDevice);
+    EXPECT_FALSE(matchingDevice->isScoRealConnected_);
+    
+    incomingDevice->deviceRole_ = OUTPUT_DEVICE;
+    descriptors = {matchingDevice};
+    result = streamFilterRouter_->IsIncomingDeviceInRemoteDevice(descriptors, incomingDevice);
+    EXPECT_EQ(ALL_USAGE, matchingDevice->deviceUsage_ );
+
+    matchingDevice->networkId_ = "otherNetworkId";
+    result = streamFilterRouter_->IsIncomingDeviceInRemoteDevice(descriptors, incomingDevice);
+    EXPECT_FALSE(matchingDevice->spatializationSupported_);
+}
+
+/**
+ * @tc.name  : Test SelectRemoteCaptureDevice.
+ * @tc.number: StreamFilterRouter_013
+ * @tc.desc  : Test SelectRemoteCaptureDevice.
+ */
+HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_013, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> incomingDevice = std::make_shared<AudioDeviceDescriptor>();
+    incomingDevice->networkId_ = "networkId123";
+    incomingDevice->deviceRole_ = INPUT_DEVICE;
+    incomingDevice->deviceType_ = DEVICE_TYPE_MIC;
+
+    std::shared_ptr<AudioDeviceDescriptor> matchingDevice = std::make_shared<AudioDeviceDescriptor>();
+    matchingDevice->networkId_ = "networkId123";
+    matchingDevice->deviceRole_ = INPUT_DEVICE;
+    matchingDevice->deviceType_ = DEVICE_TYPE_SPEAKER;
+
+    StreamFilterRouter rot;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descriptors = {matchingDevice};
+    bool hasDescriptor = false;
+    std::shared_ptr<AudioDeviceDescriptor> ret =
+    rot.SelectRemoteCaptureDevice(descriptors, incomingDevice, hasDescriptor);
+    EXPECT_EQ(incomingDevice->a2dpOffloadFlag_, matchingDevice->a2dpOffloadFlag_);
+
+    incomingDevice->deviceRole_ = OUTPUT_DEVICE;
+    descriptors = {matchingDevice};
+    ret = rot.SelectRemoteCaptureDevice(descriptors, incomingDevice, hasDescriptor);
+    EXPECT_EQ(incomingDevice->routerType_, matchingDevice->routerType_);
 }
 } // namespace AudioStandard
 } // namespace OHOS
