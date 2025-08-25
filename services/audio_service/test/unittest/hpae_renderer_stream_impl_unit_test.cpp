@@ -701,5 +701,27 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_034, TestSize.Level1)
     EXPECT_EQ(OFFLOAD_DEFAULT, unit->offloadStatePolicy_);
     EXPECT_EQ(INVALID, unit->state_);
 }
+
+/**
+ * @tc.name  : Test GetOffloadApproximatelyCacheTime
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_035
+ * @tc.desc  : Test GetOffloadApproximatelyCacheTime.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_004, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+    uint64_t timestamp = 0;
+    uint64_t paWriteIndex = 0;
+    uint64_t cacheTimeDsp = 0;
+    uint64_t cacheTimePa = 0;
+    unit->offloadEnable_ = false;
+    int32_t ret = unit->GetOffloadApproximatelyCacheTime(timestamp, paWriteIndex, cacheTimeDsp, cacheTimePa);
+    EXPECT_NE(ret, SUCCESS);
+    unit->offloadEnable_ = true;
+    int32_t ret = unit->GetOffloadApproximatelyCacheTime(timestamp, paWriteIndex, cacheTimeDsp, cacheTimePa);
+    EXPECT_EQ(ret, SUCCESS);
+}
 }
 }
