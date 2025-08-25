@@ -378,8 +378,8 @@ bool RendererInClientInner::CheckBufferNeedWrite()
 {
     uint32_t totalSizeInFrame = clientBuffer_->GetTotalSizeInFrame();
     size_t totalSizeInByte = totalSizeInFrame * sizePerFrameInByte_;
-    int32_t writableInFrame = clientBuffer_ -> GetWritableDataFrames();
-    size_t writableSizeInByte = writableInFrame * sizePerFrameInByte_;
+    int32_t writableInFrame = clientBuffer_->GetWritableDataFrames();
+    size_t writableSizeInByte = static_cast<size_t>(writableInFrame) * sizePerFrameInByte_;
 
     if (writableInFrame <= 0) {
         return false;

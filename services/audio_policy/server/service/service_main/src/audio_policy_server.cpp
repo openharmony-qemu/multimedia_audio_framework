@@ -782,11 +782,8 @@ void AudioPolicyServer::AddRemoteDevstatusCallback()
 
 void AudioPolicyServer::SubscribePowerStateChangeEvents()
 {
-    sptr<PowerMgr::IPowerStateCallback> powerStateCallback_;
-
-    if (powerStateCallback_ == nullptr) {
-        powerStateCallback_ = new (std::nothrow) AudioPolicyServerPowerStateCallback(this);
-    }
+    sptr<PowerMgr::IPowerStateCallback> powerStateCallback_ =
+        new (std::nothrow) AudioPolicyServerPowerStateCallback(this);
 
     if (powerStateCallback_ == nullptr) {
         AUDIO_ERR_LOG("subscribe create power state callback Create Error");

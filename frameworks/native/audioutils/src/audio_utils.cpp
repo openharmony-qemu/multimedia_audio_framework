@@ -563,7 +563,7 @@ bool PermissionUtil::CheckCallingUidPermission(const std::vector<uid_t> &allowed
         return true;
     }
     for (const auto &uid : allowedUids) {
-        if (uid == callingUid) {
+        if (uid == static_cast<uid_t>(callingUid)) {
             return true;
         }
     }

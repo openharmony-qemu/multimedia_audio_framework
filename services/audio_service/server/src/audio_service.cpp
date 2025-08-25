@@ -1411,6 +1411,7 @@ int32_t AudioService::UpdateSourceType(SourceType sourceType)
 void AudioService::SetIncMaxRendererStreamCnt(AudioMode audioMode)
 {
     if (audioMode == AUDIO_MODE_PLAYBACK) {
+        std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
         currentRendererStreamCnt_++;
     }
 }
@@ -1473,6 +1474,7 @@ bool AudioService::HasBluetoothEndpoint()
 
 int32_t AudioService::GetCurrentRendererStreamCnt()
 {
+    std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
     return currentRendererStreamCnt_;
 }
 
