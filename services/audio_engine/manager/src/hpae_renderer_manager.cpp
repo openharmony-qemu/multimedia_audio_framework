@@ -263,6 +263,7 @@ void HpaeRendererManager::RefreshProcessClusterByDeviceInner(const std::shared_p
     bool isConnected = (node->isConnected_) ? true : false;
     if (processClusterDecision != USE_NONE_PROCESSCLUSTER && sessionNodeMap_[nodeInfo.sessionId].bypass) {
         AUDIO_INFO_LOG("current processCluster is incorrect, refresh to %{public}d", processClusterDecision);
+        TriggerStreamState(nodeInfo.sessionId, node);
         DeleteProcessCluster(nodeInfo.sessionId);
         CreateProcessClusterInner(nodeInfo, processClusterDecision);
         CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
@@ -274,6 +275,7 @@ void HpaeRendererManager::RefreshProcessClusterByDeviceInner(const std::shared_p
         }
     } else if (processClusterDecision == USE_NONE_PROCESSCLUSTER && !sessionNodeMap_[nodeInfo.sessionId].bypass) {
         AUDIO_INFO_LOG("current processCluster is incorrect, refresh to %{public}d", processClusterDecision);
+        TriggerStreamState(nodeInfo.sessionId, node);
         DeleteProcessCluster(nodeInfo.sessionId);
         sessionNodeMap_[nodeInfo.sessionId].bypass = true;
         if (isConnected) {
