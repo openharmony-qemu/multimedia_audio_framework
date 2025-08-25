@@ -33,7 +33,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 namespace {
-constexpr uint32_t FADED_OUT_UPDATE_TIME_MAX = 60; // 60ms
+constexpr uint32_t DEFAULT_PAUSE_STREAM_TIME_IN_MS = 60; // 60ms
 static inline const std::unordered_set<SourceType> INNER_SOURCE_TYPE_SET = {
     SOURCE_TYPE_PLAYBACK_CAPTURE, SOURCE_TYPE_REMOTE_CAST};
 }  // namespace
@@ -62,8 +62,9 @@ void HpaeManagerThread::Run()
             std::unique_lock<std::mutex> lock(mutex_);
             bool isProcessing = m_hpaeManager->IsMsgProcessing();
             bool signal = recvSignal_.load();
-            uint64_t sleepTime = m_hpaeManager->HandlePendingTransitions();
-            Trace trace("runFunc:" + std::to_string(signal) + " isPorcessing:" + std::to_string(isProcessing) + " sleepTime:" + std::to_string(sleepTime));
+            uint64_t sleepTime = m_hpaeManager->ProcessPendingTransitionsAndGetNextDelay();
+            Trace trace("runFunc:" + std::to_string(signal) + " isPorcessing:" + std::to_string(isProcessing) +
+                " sleepTime:" + std::to_string(sleepTime));
             if (sleepTime > 0) {
                 condition_.wait_for(lock, std::chrono::milliseconds(sleepTime),
                     [this] { return m_hpaeManager->IsMsgProcessing() || recvSignal_.load(); });
@@ -1113,10 +1114,9 @@ void HpaeManager::HandleUpdateStatus(
     if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
         auto it = rendererIdStreamInfoMap_.find(sessionId);
         CHECK_AND_RETURN(it != rendererIdStreamInfoMap_.end());
-        CHECK_AND_RETURN_LOG(!(operation == OPERATION_STOPPED && it->second.state != HPAE_SESSION_STOPPING) && 
-            !(operation == OPERATION_PAUSED && it->second.state != HPAE_SESSION_PAUSING), "stopped or paused, currentState:%{public}d", it->second.state);
+        CHECK_AND_RETURN(IsValidUpdateStatus(operation, it->second.state));
         if (operation == OPERATION_PAUSED || operation == OPERATION_STOPPED) {
-            RemovePendingTransition(sessionId);
+            DequeuePendingTransition(sessionId);
             it->second.state = status;
         }
         UpdateStatus(it->second.statusCallback, operation, sessionId);
@@ -1125,6 +1125,14 @@ void HpaeManager::HandleUpdateStatus(
         CHECK_AND_RETURN(it != capturerIdStreamInfoMap_.end());
         UpdateStatus(it->second.statusCallback, operation, sessionId);
     }
+}
+
+bool HpaeManager::IsValidUpdateStatus(IOperation operation, HpaeSessionState currentState)
+{
+    CHECK_AND_RETURN_RET_LOG(!(operation == OPERATION_STOPPED && currentState != HPAE_SESSION_STOPPING) &&
+        !(operation == OPERATION_PAUSED && currentState != HPAE_SESSION_PAUSING), false,
+        "stopped or paused, currentState:%{public}d", currentState);
+    return true;
 }
 
 void HpaeManager::UpdateStatus(const std::weak_ptr<IStreamStatusCallback> &callback,
@@ -1218,15 +1226,15 @@ void HpaeManager::SendRequest(Request &&request, std::string funcName)
     hpaeManagerThread_->Notify();
 }
 
-uint64_t HpaeManager::HandlePendingTransitions()
+uint64_t HpaeManager::ProcessPendingTransitionsAndGetNextDelay()
 {
-    constexpr auto timeout = std::chrono::milliseconds(FADED_OUT_UPDATE_TIME_MAX);
+    constexpr auto timeout = std::chrono::milliseconds(DEFAULT_PAUSE_STREAM_TIME_IN_MS);
     const auto now = std::chrono::high_resolution_clock::now();
     while (!pendingTransitionsTracker_.empty()) {
         auto front = pendingTransitionsTracker_.front();
         auto elapsed = now - front.time;
         if (elapsed >= timeout) {
-            AUDIO_INFO_LOG("HandlePendingTransitions sessionid:%{public}u status:%{public}d operation:%{public}d",
+            AUDIO_INFO_LOG("sessionid:%{public}u status:%{public}d operation:%{public}d",
                 front.sessionId, front.state, front.operation);
             pendingTransitionsTracker_.pop_front();
             HandleUpdateStatus(HPAE_STREAM_CLASS_TYPE_PLAY, front.sessionId, front.state, front.operation);
@@ -1237,13 +1245,14 @@ uint64_t HpaeManager::HandlePendingTransitions()
     return 0;
 }
 
-void HpaeManager::RemovePendingTransition(uint32_t sessionId)
+void HpaeManager::DequeuePendingTransition(uint32_t sessionId)
 {
     auto it = pendingTransitionsTracker_.begin();
     while (it != pendingTransitionsTracker_.end()) {
         if (it->sessionId == sessionId) {
             it = pendingTransitionsTracker_.erase(it);
-            AUDIO_INFO_LOG("RemovePendingTransition sessionid:%{public}u", sessionId);
+            AUDIO_INFO_LOG("DequeuePendingTransition sessionid:%{public}u", sessionId);
+            break;
         } else {
             ++it;
         }
