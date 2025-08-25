@@ -588,6 +588,33 @@ void HpaeManagerImpl::DeleteStreamVolumeToEffect(const std::string stringSession
     CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
     manager_->DeleteStreamVolumeToEffect(stringSessionID);
 }
+
+// interfaces for injector
+void HpaeManagerImpl::UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo)
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->UpdateAudioPortInfo(sinkPortIndex, audioPortInfo);
+}
+
+void HpaeManagerImpl::AddCaptureInjector(
+    const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType)
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->AddCaptureInjector(sinkPortIndex, sourcePortIndex, sourceType);
+}
+
+void HpaeManagerImpl::RemoveCaptureInjector(
+    const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType)
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->RemoveCaptureInjector(sinkPortIndex, sourcePortIndex, sourceType);
+}
+
+int32_t HpaeManagerImpl::PeekAudioData(const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize)
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->PeekAudioData(sinkPortIndex, buffer, bufferSize);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

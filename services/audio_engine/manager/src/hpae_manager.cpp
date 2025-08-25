@@ -2402,6 +2402,23 @@ void HpaeManager::DeleteStreamVolumeToEffect(const std::string stringSessionID)
     };
     SendRequest(request, __func__);
 }
+
+// interfaces for injector
+void HpaeManager::UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo)
+{}
+
+void HpaeManager::AddCaptureInjector(
+    const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType)
+{}
+
+void HpaeManager::RemoveCaptureInjector(
+    const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType)
+{}
+
+int32_t HpaeManager::PeekAudioData(const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize)
+{
+    return SUCCESS;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
