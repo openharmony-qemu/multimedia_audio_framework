@@ -295,6 +295,7 @@ void RendererInServer::OnStatusUpdateExt(IOperation operation, std::shared_ptr<I
         stateListener->OnOperationHandled(DRAIN_STREAM, 0);
     }
     afterDrain = true;
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(streamIndex_, processConfig_.appInfo.appTokenId);
 }
 
 void RendererInServer::HandleOperationStarted()
@@ -476,6 +477,7 @@ void RendererInServer::HandleOperationFlushed()
         default:
             AUDIO_WARNING_LOG("Invalid status before flusing");
     }
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(streamIndex_, processConfig_.appInfo.appTokenId);
 }
 
 void RendererInServer::HandleOperationStopped(RendererStage stage)

@@ -18,6 +18,7 @@
 
 #include "audio_endpoint.h"
 #include "audio_endpoint_private.h"
+#include "audio_performance_monitor.h"
 
 #include <string>
 #include <memory>
@@ -121,6 +122,7 @@ void AudioEndpointInner::ZeroVolumeCheck(const int32_t vol)
             ClockTime::GetCurNano() - zeroVolumeStartTime_ > DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME_NS) {
             zeroVolumeState_ = ACTIVE;
             HandleZeroVolumeStopEvent();
+            AudioPerformanceMonitor::GetInstance().RecordTimeStamp(adapterType_, INIT_LASTWRITTEN_TIME);
         }
     } else {
         if (zeroVolumeState_ == INACTIVE) {
