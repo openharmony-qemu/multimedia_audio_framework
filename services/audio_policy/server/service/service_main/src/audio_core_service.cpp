@@ -243,7 +243,7 @@ bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDe
 
     if (streamDesc->streamInfo_.encoding == ENCODING_AUDIOVIVID &&
         policyConfigMananger_.PreferMultiChannelPipe(streamDesc)) {
-        AUDIO_INFO_LOG("IsStreamSupportMultiChannel encoding PreferMultiChannelPipe");
+        AUDIO_INFO_LOG("AudioVivid encoding and MultiChannelPipe supported");
         return true;
     }
 
