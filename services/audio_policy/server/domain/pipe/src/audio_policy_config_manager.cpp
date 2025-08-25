@@ -637,13 +637,13 @@ bool AudioPolicyConfigManager::PreferMultiChannelPipe(std::shared_ptr<AudioStrea
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(newDeviceDesc->deviceType_,
         newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_, newDeviceDesc->a2dpOffloadFlag_);
     if (deviceInfo == nullptr) {
-        AUDIO_INFO_LOG("PreferMultiChannelPipe deviceInfo == nullptr");
+        AUDIO_ERR_LOG("PreferMultiChannelPipe deviceInfo == nullptr");
         return false;
     }
 
     auto pipeIt = deviceInfo->supportPipeMap_.find(AUDIO_OUTPUT_FLAG_MULTICHANNEL);
     if (pipeIt->second != nullptr) {
-        AUDIO_INFO_LOG("PreferMultiChannelPipe adapterType:%{public}d", pipeIt->second->GetAdapterType());
+        AUDIO_ERR_LOG("PreferMultiChannelPipe adapterType:%{public}d", pipeIt->second->GetAdapterType());
         if (pipeIt->second->GetAdapterType() != OHOS::AudioStandard::AudioAdapterType::TYPE_PRIMARY) {
             return true;
         }
