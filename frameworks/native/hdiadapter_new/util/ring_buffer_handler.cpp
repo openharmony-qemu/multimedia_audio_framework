@@ -84,25 +84,20 @@ int32_t RingBufferHandler::ReadDataFromRingBuffer(uint8_t *data, uint32_t dataLe
 
 void RingBufferHandler::AddWriteIndex(void)
 {
-    if (writeIdx_ < UINT64_MAX) {
-        ++writeIdx_;
-        return;
+    if (writeIdx_ >= UINT64_MAX) {
+        uint64_t diff = (writeIdx_ - readIdx_) % maxFrameNum_;
+        readIdx_ = readIdx_ % maxFrameNum_;
+        writeIdx_ = readIdx_ + diff;
     }
-
-    uint64_t diff = (writeIdx_ - readIdx_) % maxFrameNum_;
-    writeIdx_ = writeIdx_ % maxFrameNum_;
-    readIdx_ = writeIdx_ - diff;
     ++writeIdx_;
+    if (writeIdx_ - readIdx_ >= maxFrameNum_) {
+        ++readIdx_;
+    }
 }
 
 void RingBufferHandler::AddReadIndex(void)
 {
-    if (readIdx_ < UINT64_MAX) {
-        ++readIdx_;
-        return;
-    }
-
-    readIdx_ = 0;
+    ++readIdx_;
 }
 
 } // namespace AudioStandard

@@ -155,6 +155,7 @@ private:
     bool CheckBGCapturer();
     void WriterRenderStreamStandbySysEvent(uint32_t sessionId, int32_t standby);
     void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
+    void NotifyXperfOnPlayback(AudioMode audioMode, XperfEventId eventId);
 
 private:
     std::atomic<bool> muteFlag_ = false;

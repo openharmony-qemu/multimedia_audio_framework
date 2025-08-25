@@ -30,6 +30,9 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr uint64_t TEST_MAX_FRAME_NUM = 5;
+constexpr uint64_t TEST_READ_START_POSITION = 10;
+constexpr uint64_t TEST_MAX_ARRAY_LEN = 100;
 class UtilUnitTest : public testing::Test {
 public:
     static void SetUpTestCase() {}
@@ -175,6 +178,37 @@ HWTEST_F(UtilUnitTest, RingBufferHandlerUnitTest_001, TestSize.Level1)
 
     handler->AddWriteIndex();
     handler->AddReadIndex();
+}
+/**
+ * @tc.name   : Test RingBufferHandler API
+ * @tc.number : RingBufferHandlerUnitTest_002
+ * @tc.desc   : Test RingBufferHandler action
+ */
+HWTEST_F(UtilUnitTest, RingBufferHandlerUnitTest_002, TestSize.Level1)
+{
+    auto ringBuffer = std::make_shared<RingBufferHandler>();
+    EXPECT_NE(ringBuffer, nullptr);
+
+    const uint32_t dataLen = static_cast<uint32_t>(sizeof(uint32_t));
+    const uint32_t maxFrameNum = TEST_MAX_FRAME_NUM;
+    const uint32_t arrayLen = TEST_MAX_ARRAY_LEN;
+    ringBuffer->Init(arrayLen, 1, dataLen, 1, maxFrameNum);
+    std::vector<uint32_t> testNums;
+    for (uint32_t i = 0; i < arrayLen; ++i) {
+        testNums.emplace_back(i);
+    }
+
+    const uint32_t readStart = TEST_READ_START_POSITION;
+    for (uint32_t i = 0; i < readStart; ++i) {
+        EXPECT_EQ(ringBuffer->WriteDataToRingBuffer(reinterpret_cast<uint8_t *>(&testNums[i]), dataLen), SUCCESS);
+    }
+
+    for (uint32_t i = readStart; i < arrayLen; ++i) {
+        EXPECT_EQ(ringBuffer->WriteDataToRingBuffer(reinterpret_cast<uint8_t *>(&testNums[i]), dataLen), SUCCESS);
+        uint32_t val = 0;
+        EXPECT_EQ(ringBuffer->ReadDataFromRingBuffer(reinterpret_cast<uint8_t *>(&val), dataLen), SUCCESS);
+        EXPECT_EQ(val, testNums[i - maxFrameNum + 1]);
+    }
 }
 
 /**

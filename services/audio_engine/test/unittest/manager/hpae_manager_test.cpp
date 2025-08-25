@@ -1675,4 +1675,66 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerGetSinkAndSourceInfoTest_002, TestSize
     hpaeManager_->CloseAudioPort(portId);
     WaitForMsgProcessing(hpaeManager_);
 }
+
+HWTEST_F(HpaeManagerUnitTest, CloseInCoreAudioPort_001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    std::string sourceName = "mic";
+    HpaeSourceInfo sourceInfo;
+    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    hpaeManager_->capturerManagerMap_.insert_or_assign(sourceName, capturerManager);
+    hpaeManager_->defaultSource_ = "mic";
+    hpaeManager_->coreSource_ = "virtual";
+    EXPECT_EQ(hpaeManager_->CloseInAudioPort(sourceName), SUCCESS);
+}
+
+HWTEST_F(HpaeManagerUnitTest, CloseInCoreAudioPort_002, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    std::string sourceName = "mic1";
+    HpaeSourceInfo sourceInfo;
+    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    hpaeManager_->capturerManagerMap_.insert_or_assign(sourceName, capturerManager);
+    hpaeManager_->defaultSource_ = "mic";
+    hpaeManager_->coreSource_ = "virtual";
+    EXPECT_EQ(hpaeManager_->CloseInAudioPort(sourceName), SUCCESS);
+}
+
+HWTEST_F(HpaeManagerUnitTest, CloseInCoreAudioPort_003, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    std::string sourceName = "mic";
+    HpaeSourceInfo sourceInfo;
+    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    hpaeManager_->capturerManagerMap_.insert_or_assign(sourceName, capturerManager);
+    hpaeManager_->defaultSource_ = "mic";
+    hpaeManager_->coreSource_ = "mic";
+    EXPECT_EQ(hpaeManager_->CloseInAudioPort(sourceName), SUCCESS);
+}
+
+HWTEST_F(HpaeManagerUnitTest, CloseInCoreAudioPort_004, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    std::string sourceName = "mic1";
+    HpaeSourceInfo sourceInfo;
+    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    hpaeManager_->capturerManagerMap_.insert_or_assign(sourceName, capturerManager);
+    hpaeManager_->defaultSource_ = "mic";
+    hpaeManager_->coreSource_ = "mic";
+    EXPECT_EQ(hpaeManager_->CloseInAudioPort(sourceName), SUCCESS);
+}
+
+HWTEST_F(HpaeManagerUnitTest, CloseInCoreAudioPort_005, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    std::string sourceName = "mic1";
+    std::string coreSourceName = "mic";
+    HpaeSourceInfo sourceInfo;
+    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    hpaeManager_->capturerManagerMap_.insert_or_assign(sourceName, capturerManager);
+    hpaeManager_->capturerManagerMap_.insert_or_assign(coreSourceName, capturerManager);
+    hpaeManager_->defaultSource_ = "mic";
+    hpaeManager_->coreSource_ = "mic";
+    EXPECT_EQ(hpaeManager_->CloseInAudioPort(sourceName), SUCCESS);
+}
 }  // namespace

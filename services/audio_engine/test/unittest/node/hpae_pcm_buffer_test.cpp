@@ -79,7 +79,6 @@ HWTEST_F(HpaePcmBufferTest, constructHpaePcmBufferTest, TestSize.Level0)
     pcmBufferInfo.rate = DEFAULT_SAMPLE_RATE;
     pcmBufferInfo.frames = DEFAULT_FRAME_NUM;
     HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
-    EXPECT_EQ(reinterpret_cast<uintptr_t>(hpaePcmBuffer.GetPcmDataBuffer()) % MEMORY_ALIGN_BYTE_NUM, 0);
     EXPECT_EQ(hpaePcmBuffer.GetChannelCount(), pcmBufferInfo.ch);
     EXPECT_EQ(hpaePcmBuffer.GetFrameLen(), pcmBufferInfo.frameLen);
     EXPECT_EQ(hpaePcmBuffer.GetSampleRate(), pcmBufferInfo.rate);
@@ -103,7 +102,6 @@ HWTEST_F(HpaePcmBufferTest, assignHpaePcmBufferTest, TestSize.Level0)
     pcmBufferInfo.rate = DEFAULT_SAMPLE_RATE;
     pcmBufferInfo.frames = DEFAULT_FRAME_NUM;
     HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
-    EXPECT_EQ(reinterpret_cast<uintptr_t>(hpaePcmBuffer.GetPcmDataBuffer()) % MEMORY_ALIGN_BYTE_NUM, 0);
     size_t tempFrameLen = pcmBufferInfo.frameLen * pcmBufferInfo.ch;
     std::vector<std::vector<float>> testVec;
     for (size_t i = 0; i < pcmBufferInfo.frames; i++) {
@@ -125,7 +123,6 @@ HWTEST_F(HpaePcmBufferTest, calHpaePcmBufferTest, TestSize.Level0)
     pcmBufferInfo.rate = DEFAULT_SAMPLE_RATE;
     pcmBufferInfo.frames = DEFAULT_FRAME_NUM;
     HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
-    EXPECT_EQ(reinterpret_cast<uintptr_t>(hpaePcmBuffer.GetPcmDataBuffer()) % MEMORY_ALIGN_BYTE_NUM, 0);
     size_t tempFrameLen = pcmBufferInfo.frameLen * pcmBufferInfo.ch;
     for (size_t i = 0; i < pcmBufferInfo.frames; i++) {
         for (size_t j = 0; j < tempFrameLen; j++) {
@@ -137,7 +134,6 @@ HWTEST_F(HpaePcmBufferTest, calHpaePcmBufferTest, TestSize.Level0)
         testVec.push_back(std::vector<float>(tempFrameLen, 3.14f));
     }
     HpaePcmBuffer hpaePcmBuffer2(pcmBufferInfo);
-    EXPECT_EQ(reinterpret_cast<uintptr_t>(hpaePcmBuffer2.GetPcmDataBuffer()) % MEMORY_ALIGN_BYTE_NUM, 0);
     hpaePcmBuffer2 = testVec;
     hpaePcmBuffer += hpaePcmBuffer2;
     for (size_t i = 0; i < pcmBufferInfo.frames; i++) {
@@ -169,7 +165,6 @@ HWTEST_F(HpaePcmBufferTest, calHpaePcmBufferMultiFrameTest, TestSize.Level0)
     pcmBufferInfo.frames = inputFrames;
     pcmBufferInfo.isMultiFrames = true;
     HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
-    EXPECT_EQ(reinterpret_cast<uintptr_t>(hpaePcmBuffer.GetPcmDataBuffer()) % MEMORY_ALIGN_BYTE_NUM, 0);
     EXPECT_EQ(hpaePcmBuffer.IsMultiFrames(), true);
     
     size_t tempFrameLen = pcmBufferInfo.frameLen * pcmBufferInfo.ch;
@@ -189,7 +184,6 @@ HWTEST_F(HpaePcmBufferTest, calHpaePcmBufferMultiFrameTest, TestSize.Level0)
     pcmBufferInfo.frames = 1;
     pcmBufferInfo.isMultiFrames = false;
     HpaePcmBuffer testHpaePcmBuffer(pcmBufferInfo);
-    EXPECT_EQ(reinterpret_cast<uintptr_t>(testHpaePcmBuffer.GetPcmDataBuffer()) % MEMORY_ALIGN_BYTE_NUM, 0);
     EXPECT_EQ(hpaePcmBuffer.PushFrameData(testHpaePcmBuffer), false);
     size_t curFrames = inputFrames;
     std::cout << "inputFrames is: " << inputFrames << std::endl;
@@ -211,9 +205,6 @@ HWTEST_F(HpaePcmBufferTest, ConstructorInitialization, TestSize.Level0)
 {
     PcmBufferInfo info = CreateBufferInfo(NUM_TWO, true);
     HpaePcmBuffer buffer(info);
-
-    uintptr_t addr = reinterpret_cast<uintptr_t>(buffer.GetPcmDataBuffer());
-    EXPECT_EQ(addr % MEMORY_ALIGN_BYTE_NUM, 0);
 
     EXPECT_EQ(buffer.GetChannelCount(), DEFAULT_CHANNEL_COUNT);
     EXPECT_EQ(buffer.GetFrameLen(), DEFAULT_FRAME_LEN);

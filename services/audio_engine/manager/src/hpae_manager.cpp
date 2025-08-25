@@ -39,6 +39,7 @@ static inline const std::unordered_set<SourceType> INNER_SOURCE_TYPE_SET = {
 }  // namespace
 static constexpr int32_t SINK_INVALID_ID = -1;
 static const std::string BT_SINK_NAME = "Bt_Speaker";
+static const std::string DEFAULT_CORE_SOURCE_NAME = "Virtual_Capture";
 
 HpaeManagerThread::~HpaeManagerThread()
 {
@@ -339,10 +340,26 @@ int32_t HpaeManager::OpenInputAudioPort(const AudioModuleInfo &audioModuleInfo, 
     capturerManagerMap_[audioModuleInfo.name] = capturerManager;
     sourceNameSourceIdMap_[audioModuleInfo.name] = sinkSourceIndex;
     sourceIdSourceNameMap_[sinkSourceIndex] = audioModuleInfo.name;
+    if (defaultSource_ == "" && coreSource_ == "") {
+        CreateCoreSourceManager();
+    }
     capturerManagerMap_[audioModuleInfo.name]->Init();
     AUDIO_INFO_LOG(
         "open source name: %{public}s end sourceIndex is %{public}u", audioModuleInfo.name.c_str(), sinkSourceIndex);
     return SUCCESS;
+}
+
+void HpaeManager::CreateCoreSourceManager()
+{
+    defaultSource_ = DEFAULT_CORE_SOURCE_NAME;
+    coreSource_ = DEFAULT_CORE_SOURCE_NAME;
+    uint32_t sinkSourceIndex = static_cast<uint32_t>(sinkSourceIndex_.load());
+    sinkSourceIndex_.fetch_add(1);
+    auto capturerManager = std::make_shared<HpaeVirtualCapturerManager>();
+    capturerManager->RegisterSendMsgCallback(weak_from_this());
+    capturerManagerMap_[DEFAULT_CORE_SOURCE_NAME] = capturerManager;
+    sourceNameSourceIdMap_[DEFAULT_CORE_SOURCE_NAME] = sinkSourceIndex;
+    sourceIdSourceNameMap_[sinkSourceIndex] = DEFAULT_CORE_SOURCE_NAME;
 }
 
 int32_t HpaeManager::OpenVirtualAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex)
@@ -549,6 +566,14 @@ int32_t HpaeManager::CloseInAudioPort(std::string sourceName)
     if (!SafeGetMap(capturerManagerMap_, sourceName)) {
         AUDIO_WARNING_LOG("can not find sourceName: %{public}s in capturerManagerMap_", sourceName.c_str());
         return SUCCESS;
+    }
+    if (sourceName == defaultSource_ && defaultSource_ != coreSource_) {
+        if (GetCapturerManagerByName(coreSource_) != nullptr) {
+            AUDIO_INFO_LOG("reset default source to core source");
+            defaultSource_ = coreSource_;
+        } else {
+            AUDIO_ERR_LOG("cannot find core source to replace default source");
+        }
     }
     capturerManagerMap_[sourceName]->DeInit(sourceName != defaultSource_);
     if (sourceName != defaultSource_) {

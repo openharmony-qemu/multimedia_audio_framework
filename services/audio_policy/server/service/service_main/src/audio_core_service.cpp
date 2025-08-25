@@ -169,10 +169,6 @@ int32_t AudioCoreService::CreateRendererClient(
         audioFlag = AUDIO_FLAG_NORMAL;
         AddSessionId(sessionId);
         pipeManager_->AddModemCommunicationId(sessionId, streamDesc);
-    } else if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_RINGTONE ||
-        streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) {
-        std::string bundleName = AudioBundleManager::GetBundleNameFromUid(streamDesc->appInfo_.appUid);
-        Bluetooth::AudioHfpManager::AddVirtualCallBundleName(bundleName, streamDesc->sessionId_);
     }
 
     AUDIO_INFO_LOG("[DeviceFetchStart] for stream %{public}d", sessionId);
@@ -963,15 +959,6 @@ int32_t AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &
         return ret; // only update tracker in new and prepared
     }
 
-    const auto &rendererChangeInfo = streamChangeInfo.audioRendererChangeInfo;
-    if ((mode == AUDIO_MODE_PLAYBACK) && (rendererChangeInfo.rendererInfo.streamUsage == STREAM_USAGE_RINGTONE ||
-        rendererChangeInfo.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION)) {
-        if ((rendererState == RENDERER_STOPPED ||rendererState == RENDERER_RELEASED ||
-            rendererState == RENDERER_PAUSED)) {
-            Bluetooth::AudioHfpManager::DeleteVirtualCallStream(rendererChangeInfo.sessionId);
-        }
-    }
-    
     UpdateTracker(mode, streamChangeInfo, rendererState);
 
     if (audioA2dpOffloadManager_) {
@@ -1265,9 +1252,14 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
         }
         streamUsage = (streamUsage != StreamUsage::STREAM_USAGE_INVALID) ? streamUsage :
             streamDesc->rendererInfo_.streamUsage;
-        streamDesc->newDeviceDescs_ =
-            audioRouterCenter_.FetchOutputDevices(streamUsage, GetRealUid(streamDesc),
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+        if (VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_) {
+            devices.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
+        } else {
+            devices = audioRouterCenter_.FetchOutputDevices(streamUsage, GetRealUid(streamDesc),
                 caller + "FetchOutputDeviceAndRoute");
+        }
+        streamDesc->UpdateNewDevice(devices);
         AUDIO_INFO_LOG("[AudioSession] streamUsage %{public}d renderer streamUsage %{public}d",
             streamUsage, streamDesc->rendererInfo_.streamUsage);
         AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d with status %{public}u",
@@ -1415,6 +1407,11 @@ int32_t AudioCoreService::CaptureConcurrentCheck(uint32_t sessionId)
     LogCapturerConcurrentResult(dfxResult);
     WriteCapturerConcurrentEvent(dfxResult);
     return SUCCESS;
+}
+
+void AudioCoreService::SetFirstScreenOn()
+{
+    isFirstScreenOn_ = true;
 }
 } // namespace AudioStandard
 } // namespace OHOS
