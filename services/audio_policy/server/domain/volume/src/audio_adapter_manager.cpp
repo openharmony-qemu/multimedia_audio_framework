@@ -122,6 +122,7 @@ const std::unordered_map<DeviceType, std::vector<std::string>> DEVICE_CLASS_MAP 
 // LCOV_EXCL_START
 bool AudioAdapterManager::Init()
 {
+    currentActiveDevice_.deviceType_ = DEVICE_TYPE_SPEAKER;
     char testMode[10] = {0}; // 10 for system parameter usage
     auto ret = GetParameter("debug.audio_service.testmodeon", "0", testMode, sizeof(testMode));
     if (ret == 1 && testMode[0] == '1') {
