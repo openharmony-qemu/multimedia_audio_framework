@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include <gtest/gtest.h>
 #include <string>
 #include "test_case_common.h"
@@ -21,6 +22,7 @@
 #include "hpae_co_buffer_node.h"
 #include "hpae_inner_capturer_manager.h"
 #include "audio_effect_chain_manager.h"
+#include "hpae_mocks.h"
 #include <thread>
 #include <chrono>
 #include <cstdio>
@@ -1173,5 +1175,30 @@ HWTEST_F(HpaeRendererManagerTest, RefreshProcessClusterByDevice_004, TestSize.Le
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test MoveAllStreamToNewSinkInner
+ * @tc.type  : FUNC
+ * @tc.number: MoveAllStreamToNewSinkInner_001
+ * @tc.desc  : Test MoveAllStreamToNewSinkInner.
+ */
+HWTEST_F(HpaeRendererManagerTest, MoveAllStreamToNewSinkInner_001, TestSize.Level0)
+{
+    HpaeSinkInfo info;
+    auto hpaeOffloadRendererManager = std:make_shared<HpaeOffloadRendererManager>(info);
+    auto hpaeRendererManager = std:make_shared<HpaeRendererManager>(info);
+    auto mockCallback = std::make_shared<MockSendMsgCalback>();
+    EXPECT_CALL(*mockCallback, InvokeSync(MOVE_ALL_SINK_INPUT, testing::_))
+        .Times(2);
+    EXPECT_CALL(*mockCallback, Invoke(MOVE_ALL_SINK_INPUT, testing::_))
+        .Times(2);
+    hpaeOffloadRendererManager->weakCallback_ = mockCallback;
+    hpaeRendererManager->weakCallback_ = mockCallback;
+    vector<uint32_t> moveids;
+    hpaeOffloadRendererManager->MoveAllStreamToNewSinkInner("", moveids, MOVE_ALL);
+    hpaeRendererManager->MoveAllStreamToNewSinkInner("", moveids, MOVE_ALL);
+    hpaeOffloadRendererManager->MoveAllStreamToNewSinkInner("", moveids, MOVE_PREFER);
+    hpaeRendererManager->MoveAllStreamToNewSinkInner("", moveids, MOVE_PREFER);
 }
 }  // namespace
