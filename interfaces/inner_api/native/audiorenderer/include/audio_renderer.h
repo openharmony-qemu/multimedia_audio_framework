@@ -1112,7 +1112,7 @@ public:
      */
     virtual void ResetFirstFrameState() {};
 
-    static bool CheckSupportedSamplingRates(uint32_t rates);
+    virtual bool CheckSupportedSamplingRates(uint32_t rates);
 
 private:
     static void SendRendererCreateError(const StreamUsage &sreamUsage,

@@ -410,10 +410,6 @@ void AudioRenderer::SendRendererCreateError(const StreamUsage &sreamUsage,
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
-bool AudioRenderer::CheckSupportedSamplingRates(uint32_t rates)
-{
-    return rates >= SAMPLE_RATE_8000 && rates <= SAMPLE_RATE_384000 && rates % SAMPLE_RATE_RESOLUTION_10 == 0;
-}
 
 AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream)
 {
@@ -448,6 +444,12 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
     audioInterrupt_.mode = SHARE_MODE;
 
     state_ = RENDERER_PREPARED;
+}
+
+bool AudioRendererPrivate::CheckSupportedSamplingRates(uint32_t rates)
+{
+    return (rates >= SAMPLE_RATE_8000 && rates <= SAMPLE_RATE_384000 && rates % SAMPLE_RATE_RESOLUTION_10 == 0) ||
+        rates == SAMPLE_RATE_11025;
 }
 
 // Inner function. Must be called with AudioRendererPrivate::rendererMutex_

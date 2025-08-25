@@ -4621,5 +4621,19 @@ HWTEST(AudioRendererUnitTest, NotifyForcedEvent_001, TestSize.Level1)
     audioInterruptCallback->NotifyForcedEvent(interruptEvent);
     EXPECT_FALSE(audioInterruptCallback->isForcePaused_);
 }
+
+/**
+ * @tc.name  : Test CheckSupportedSamplingRates
+ * @tc.number: CheckSupportedSamplingRates_001
+ * @tc.desc  : Test CheckSupportedSamplingRates the branch when custom sample rates differ
+ */
+ HWTEST(AudioRendererUnitTest, CheckSupportedSamplingRatesTest, TestSize.Level0)
+{
+    EXPECT_TRUE(CheckSupportedSamplingRates(SAMPLE_RATE_16010));
+    EXPECT_TRUE(CheckSupportedSamplingRates(SAMPLE_RATE_11025));
+    EXPECT_FALSE(CheckSupportedSamplingRates(SAMPLE_RATE_7999));
+    EXPECT_FALSE(CheckSupportedSamplingRates(SAMPLE_RATE_384001));
+    EXPECT_FALSE(CheckSupportedSamplingRates(SAMPLE_RATE_16001));
+}
 } // namespace AudioStandard
 } // namespace OHOS

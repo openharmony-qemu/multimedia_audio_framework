@@ -482,6 +482,12 @@ public:
         return sharedAudioRenderer_->SetInterruptEventCallbackType(callbackType);
     }
 
+    bool AudioRendererPrivate::CheckSupportedSamplingRates(uint32_t rates) override
+    {
+        return (rates >= SAMPLE_RATE_8000 && rates <= SAMPLE_RATE_384000 && rates % SAMPLE_RATE_RESOLUTION_10 == 0) ||
+            rates == SAMPLE_RATE_11025;
+    }
+
     explicit SharedAudioRendererWrapper(std::shared_ptr<AudioRenderer> renderer) : sharedAudioRenderer_(renderer)
     {
     }

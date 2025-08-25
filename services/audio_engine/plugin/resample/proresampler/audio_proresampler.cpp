@@ -201,6 +201,8 @@ int32_t ProResampler::UpdateRates(uint32_t inRate, uint32_t outRate)
     expectedInFrameLen_ = inRate_ * FRAME_LEN_20MS / MS_PER_SECOND;
     if (inRate_ == SAMPLE_RATE_11025) {
         expectedInFrameLen_ = inRate_ * FRAME_LEN_20MS * BUFFER_EXPAND_SIZE_2 / MS_PER_SECOND;
+    } else if (inRate_ % CUSTOM_SAMPLE_RATE_MULTIPLES != 0) {
+        expectedInFrameLen_ = inRate_ * FRAME_LEN_20MS * BUFFER_EXPAND_SIZE_5 / MS_PER_SECOND;
     }
     CHECK_AND_RETURN_RET_LOG(state_ != nullptr, RESAMPLER_ERR_ALLOC_FAILED, "ProResampler: resampler is null");
     

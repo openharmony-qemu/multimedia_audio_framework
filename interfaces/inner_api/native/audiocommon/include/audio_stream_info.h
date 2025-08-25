@@ -38,7 +38,6 @@ const uint64_t CH_MODE_MASK = ((1ULL << 4) - 1ULL) << CH_MODE_OFFSET;
 const uint64_t CH_HOA_ORDNUM_MASK = ((1ULL << 8) - 1ULL) << CH_HOA_ORDNUM_OFFSET;
 const uint64_t CH_HOA_COMORD_MASK = ((1ULL << 4) - 1ULL) << CH_HOA_COMORD_OFFSET;
 const uint64_t CH_HOA_NOR_MASK = ((1ULL << 4) - 1ULL) << CH_HOA_NOR_OFFSET;
-const uint32_t SAMPLE_RATE_384000 = 384000;
 const uint32_t SAMPLE_RATE_RESOLUTION_10 = 10;
 
 enum AudioStreamType {
@@ -289,7 +288,8 @@ enum AudioSamplingRate {
     SAMPLE_RATE_88200 = 88200,
     SAMPLE_RATE_96000 = 96000,
     SAMPLE_RATE_176400 = 176400,
-    SAMPLE_RATE_192000 = 192000
+    SAMPLE_RATE_192000 = 192000,
+    SAMPLE_RATE_384000 = 384000
 };
 
 enum AudioEncodingType {

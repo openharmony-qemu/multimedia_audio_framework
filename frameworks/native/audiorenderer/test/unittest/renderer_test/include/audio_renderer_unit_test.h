@@ -60,6 +60,11 @@ inline size_t g_reqBufLen = 0;
 
 constexpr int g_writeOverflowNum = 1000;
 
+constexpr uint32_t SAMPLE_RATE_16010 = 16010;
+constexpr uint32_t SAMPLE_RATE_7999 = 7999;
+constexpr uint32_t SAMPLE_RATE_384001 = 384001;
+constexpr uint32_t SAMPLE_RATE_16001 = 16001;
+
 void StartRenderThread(AudioRenderer *audioRenderer, uint32_t limit);
 }
 

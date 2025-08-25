@@ -41,7 +41,9 @@ constexpr uint32_t INVALID_QUALITY = -1;
 constexpr uint32_t QUALITY_ONE = 1;
 constexpr uint32_t FRAME_LEN_20MS = 20;
 constexpr uint32_t FRAME_LEN_40MS = 40;
+constexpr uint32_t FRAME_LEN_100MS = 100;
 constexpr uint32_t MS_PER_SECOND = 1000;
+constexpr uint32_t SAMPLE_RATE_48010 = 48010;
 
 class AudioProResamplerTest : public testing::Test {
 public:
@@ -69,6 +71,9 @@ HWTEST_F(AudioProResamplerTest, InitTest, TestSize.Level0)
 
     // test other input
     ProResampler resampler2(SAMPLE_RATE_48000, SAMPLE_RATE_44100, STEREO, QUALITY_ONE);
+
+    // test custom sample rate that is not multiples of 50
+    ProResampler resampler3(SAMPLE_RATE_48010, SAMPLE_RATE_44100, STEREO, QUALITY_ONE);
 }
 
 HWTEST_F(AudioProResamplerTest, ProcessTest, TestSize.Level0)
@@ -104,8 +109,42 @@ HWTEST_F(AudioProResamplerTest, ProcessTest, TestSize.Level0)
     // no data left, send 0s
     ret = resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen);
     EXPECT_EQ(ret, EOK);
+
+    // test special case customSampleRate that is not multiples of 50
+    ProResampler resampler(SAMPLE_RATE_48010, SAMPLE_RATE_48000, STEREO, QUALITY_ONE);
+    uint32_t inFrameLen = SAMPLE_RATE_48010 * FRAME_LEN_100MS / MS_PER_SECOND;
+    uint32_t outFrameLen = SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND;
+    std::vector<float> in(inFrameLen * STEREO);
+    std::vector<float> out(outFrameLen * STEREO);
+    // Process first 100ms frame, send first 1/5 of data to output
+    int32_t ret = resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen);
+    EXPECT_EQ(ret, EOK);
+    inFrameLen = 0;
+    // no new data in, send stored 20ms
+    for (uint8_t i = 0; i < 4; i++) {
+        ret = resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen);
+        EXPECT_EQ(ret, EOK);
+    }
+    // no data left, send 0s
+    ret = resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen);
+    EXPECT_EQ(ret, EOK);
 }
 
+HWTEST_F(AudioProResamplerTest, UpdateChannel, TestSize.Level0)
+{
+    ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_96000, STEREO, QUALITY_ONE);
+    EXPECT_EQ(resampler.channels_, STEREO);
+
+    resampler.UpdateChannels(CHANNEL_6);
+    EXPECT_EQ(resampler.channels_, CHANNEL_6);
+}
+
+/*
+ * @tc.name  : Test UpdateRates API.
+ * @tc.type  : FUNC
+ * @tc.number: UpdateRatesTest.
+ * @tc.desc  : Test UpdateRates, set inRate is 11025.
+ */
 HWTEST_F(AudioProResamplerTest, UpdateRatesTest, TestSize.Level0)
 {
     ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_96000, STEREO, QUALITY_ONE);
@@ -119,15 +158,6 @@ HWTEST_F(AudioProResamplerTest, UpdateRatesTest, TestSize.Level0)
     EXPECT_EQ(resampler.outRate_, SAMPLE_RATE_48000);
     EXPECT_EQ(resampler.expectedInFrameLen_, SAMPLE_RATE_11025 * FRAME_LEN_40MS / MS_PER_SECOND);
     EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND);
-}
-
-HWTEST_F(AudioProResamplerTest, UpdateChannel, TestSize.Level0)
-{
-    ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_96000, STEREO, QUALITY_ONE);
-    EXPECT_EQ(resampler.channels_, STEREO);
-
-    resampler.UpdateChannels(CHANNEL_6);
-    EXPECT_EQ(resampler.channels_, CHANNEL_6);
 }
 
 /*
@@ -148,6 +178,27 @@ HWTEST_F(AudioProResamplerTest, UpdateRatesTest_01, TestSize.Level0)
     EXPECT_EQ(resampler.inRate_, 2);
     EXPECT_EQ(resampler.outRate_, SAMPLE_RATE_48000);
     EXPECT_EQ(resampler.expectedInFrameLen_, 2 * FRAME_LEN_40MS / MS_PER_SECOND);
+    EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND);
+}
+
+/*
+ * @tc.name  : Test UpdateRates API.
+ * @tc.type  : FUNC
+ * @tc.number: UpdateRatesTest_02.
+ * @tc.desc  : Test UpdateRates, set inRate is 48010.
+ */
+HWTEST_F(AudioProResamplerTest, UpdateRatesTest_02, TestSize.Level0)
+{
+    ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_96000, STEREO, QUALITY_ONE);
+    EXPECT_EQ(resampler.inRate_, SAMPLE_RATE_48000);
+    EXPECT_EQ(resampler.outRate_, SAMPLE_RATE_96000);
+    EXPECT_EQ(resampler.expectedInFrameLen_, SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND);
+    EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_96000 * FRAME_LEN_20MS / MS_PER_SECOND);
+    
+    resampler.UpdateRates(SAMPLE_RATE_48010, SAMPLE_RATE_48000);
+    EXPECT_EQ(resampler.inRate_, SAMPLE_RATE_48010);
+    EXPECT_EQ(resampler.outRate_, SAMPLE_RATE_48000);
+    EXPECT_EQ(resampler.expectedInFrameLen_, SAMPLE_RATE_48010 * FRAME_LEN_100MS / MS_PER_SECOND);
     EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND);
 }
 
