@@ -202,6 +202,8 @@ private:
     void ExitStandByIfNeed();
 
     bool IsRestoreNeeded();
+
+    void WaitForReadableSpace() const;
 private:
     static constexpr int64_t MILLISECOND_PER_SECOND = 1000; // 1000ms
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
@@ -808,10 +810,24 @@ int32_t AudioProcessInClientInner::SaveUnderrunCallback(const std::shared_ptr<Cl
     return SUCCESS;
 }
 
+void AudioProcessInClientInner::WaitForReadableSpace() const
+{
+    FutexCode futexRes = FUTEX_OPERATION_FAILED;
+    int64_t timeout = FAST_WRITE_CACHE_TIMEOUT_IN_MS;
+    futexRes = audioBuffer_->WaitFor(timeout * AUDIO_US_PER_SECOND,
+        [this] () {
+            CHECK_AND_RETURN_RET(streamStatus_->load() == StreamStatus::STREAM_RUNNING, true);
+            return (static_cast<uint32_t>(audioBuffer_->GetReadableDataFrames()) >= spanSizeInFrame_);
+        });
+
+    CHECK_AND_RETURN_LOG(futexRes == SUCCESS, "futex err: %{public}d", futexRes);
+}
+
 int32_t AudioProcessInClientInner::ReadFromProcessClient() const
 {
     CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, ERR_INVALID_HANDLE,
         "%{public}s audio buffer is null.", __func__);
+    WaitForReadableSpace();
     uint64_t curReadPos = audioBuffer_->GetCurReadFrame();
     Trace trace("AudioProcessInClient::ReadProcessData-<" + std::to_string(curReadPos));
     RingBufferWrapper ringBuffer;
