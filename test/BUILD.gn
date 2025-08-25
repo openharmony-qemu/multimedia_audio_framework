@@ -204,6 +204,7 @@ group("audio_fuzz_test") {
     "fuzztest/audioaffinitymanager_fuzzer:fuzztest",
     "fuzztest/audiobackgroundmanager_fuzzer:fuzztest",
     "fuzztest/audiobufferbase_fuzzer:fuzztest",
+    "fuzztest/audiocapturersession_fuzzer:fuzztest",
     "fuzztest/audioclienttrackercallbacklistener_fuzzer:fuzztest",
     "fuzztest/audiocollaborativeservice_fuzzer:fuzztest",
     "fuzztest/audioconnecteddevice_fuzzer:fuzztest",
@@ -240,6 +241,7 @@ group("audio_fuzz_test") {
 
     # "fuzztest/audiopolicyanother_fuzzer:fuzztest",
     # "fuzztest/audiopolicyclient_fuzzer:fuzztest",
+    "fuzztest/audiopolicyconfigmanager_fuzzer:fuzztest",
     "fuzztest/audiopolicymanager_fuzzer:fuzztest",
     "fuzztest/audiopolicymanagerlistenerstubimpl_fuzzer:fuzztest",
 
@@ -271,6 +273,7 @@ group("audio_fuzz_test") {
     "fuzztest/audioserviceserversrc_fuzzer:fuzztest",
     "fuzztest/audioserviceserversrcenhance_fuzzer:fuzztest",
     "fuzztest/audioservicestub_fuzzer:fuzztest",
+    "fuzztest/audiosession_fuzzer:fuzztest",
     "fuzztest/audiosessionservice_fuzzer:fuzztest",
     "fuzztest/audiosocketthread_fuzzer:fuzztest",
     "fuzztest/audiospatializationservice_fuzzer:fuzztest",
