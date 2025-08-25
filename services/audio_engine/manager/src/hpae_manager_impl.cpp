@@ -613,7 +613,7 @@ void HpaeManagerImpl::RemoveCaptureInjector(
 int32_t HpaeManagerImpl::PeekAudioData(const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize)
 {
     CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
-    manager_->PeekAudioData(sinkPortIndex, buffer, bufferSize);
+    return manager_->PeekAudioData(sinkPortIndex, buffer, bufferSize);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
