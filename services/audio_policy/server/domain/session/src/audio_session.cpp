@@ -34,15 +34,15 @@ static constexpr time_t AUDIO_SESSION_TIME_OUT_DURATION_S = 60; // Audio session
 static constexpr time_t AUDIO_SESSION_SCENE_TIME_OUT_DURATION_S = 10; // Audio sessionV2 timeout duration : 10 seconds
 
 AudioSession::AudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy,
-    const std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor)
-    : deviceManager_(AudioDeviceManager::GetAudioDeviceManager())
+                           AudioSessionStateMonitor &audioSessionStateMonitor)
+    : callerPid_(callerPid),
+      strategy_(strategy),
+      audioSessionStateMonitor_(audioSessionStateMonitor),
+      pipeManager_(AudioPipeManager::GetPipeManager()),
+      deviceManager_(AudioDeviceManager::GetAudioDeviceManager())
 {
     AUDIO_INFO_LOG("AudioSession()");
-    callerPid_ = callerPid;
-    strategy_ = strategy;
-    audioSessionStateMonitor_ = audioSessionStateMonitor;
     state_ = AudioSessionState::SESSION_NEW;
-    pipeManager_ = AudioPipeManager::GetPipeManager();
 }
 
 AudioSession::~AudioSession()
@@ -126,10 +126,7 @@ void AudioSession::AddStreamInfo(const AudioInterrupt &incomingInterrupt)
         (void)EnableSingleVoipStreamDefaultOutputDevice(incomingInterrupt);
     }
 
-    auto monitor = audioSessionStateMonitor_.lock();
-    if (monitor != nullptr) {
-        monitor->StopMonitor(callerPid_);
-    }
+    audioSessionStateMonitor_.StopMonitor(callerPid_);
 }
 
 bool AudioSession::IsSessionDefaultDeviceEnabled()
@@ -150,16 +147,15 @@ void AudioSession::RemoveStreamInfo(uint32_t streamId)
         }
     }
 
-    auto monitor = audioSessionStateMonitor_.lock();
-    if ((streamsInSession_.size() == 0) && monitor != nullptr) {
+    if (streamsInSession_.size() == 0) {
         // session v1 60s
         if (audioSessionScene_ == AudioSessionScene::INVALID) {
-            monitor->StartMonitor(callerPid_, AUDIO_SESSION_TIME_OUT_DURATION_S);
+            audioSessionStateMonitor_.StartMonitor(callerPid_, AUDIO_SESSION_TIME_OUT_DURATION_S);
         }
 
         // session v2 background 10s
         if ((audioSessionScene_ != AudioSessionScene::INVALID) && IsBackGroundApp()) {
-            monitor->StartMonitor(callerPid_, AUDIO_SESSION_SCENE_TIME_OUT_DURATION_S);
+            audioSessionStateMonitor_.StartMonitor(callerPid_, AUDIO_SESSION_SCENE_TIME_OUT_DURATION_S);
         }
     }
 }

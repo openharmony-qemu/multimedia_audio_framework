@@ -30,9 +30,6 @@ public:
     void RemoveFromMonitorMap(int32_t pid);
 
 private:
-    virtual std::shared_ptr<AudioSessionStateMonitor> GetSelfSharedPtr() = 0;
-
-private:
     std::mutex sessionMonitorMutex_;
     std::unordered_map<int32_t, int32_t> pidCbIdMap_;
 };

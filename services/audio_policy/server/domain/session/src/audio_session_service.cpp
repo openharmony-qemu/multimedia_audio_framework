@@ -85,7 +85,7 @@ int32_t AudioSessionService::ActivateAudioSession(const int32_t callerPid, const
         // The audio session of the callerPid is already created. The strategy will be updated.
         AUDIO_INFO_LOG("The audio seesion of pid %{public}d has already been created! Update strategy.", callerPid);
     } else {
-        sessionMap_[callerPid] = std::make_shared<AudioSession>(callerPid, strategy, shared_from_this());
+        sessionMap_[callerPid] = std::make_shared<AudioSession>(callerPid, strategy, *this);
     }
 
     if (sessionMap_[callerPid] == nullptr) {
@@ -197,11 +197,6 @@ void AudioSessionService::OnAudioSessionTimeOut(int32_t callerPid)
     cb->OnSessionTimeout(callerPid);
 }
 
-std::shared_ptr<AudioSessionStateMonitor> AudioSessionService::GetSelfSharedPtr()
-{
-    return shared_from_this();
-}
-
 int32_t AudioSessionService::SetAudioSessionScene(int32_t callerPid, AudioSessionScene scene)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
@@ -211,7 +206,7 @@ int32_t AudioSessionService::SetAudioSessionScene(int32_t callerPid, AudioSessio
     } else {
         AudioSessionStrategy strategy;
         strategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
-        sessionMap_[callerPid] = std::make_shared<AudioSession>(callerPid, strategy, shared_from_this());
+        sessionMap_[callerPid] = std::make_shared<AudioSession>(callerPid, strategy, *this);
         CHECK_AND_RETURN_RET_LOG(sessionMap_[callerPid] != nullptr, ERROR, "Create AudioSession fail");
     }
 
@@ -416,7 +411,7 @@ int32_t AudioSessionService::SetSessionDefaultOutputDevice(const int32_t callerP
     } else {
         AudioSessionStrategy strategy;
         strategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
-        sessionMap_[callerPid] = std::make_shared<AudioSession>(callerPid, strategy, shared_from_this());
+        sessionMap_[callerPid] = std::make_shared<AudioSession>(callerPid, strategy, *this);
         CHECK_AND_RETURN_RET_LOG(sessionMap_[callerPid] != nullptr, ERROR, "Create AudioSession fail");
     }
 

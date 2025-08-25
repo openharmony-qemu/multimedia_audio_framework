@@ -31,7 +31,7 @@ public:
     virtual void OnSessionTimeout(const int32_t pid) = 0;
 };
 
-class AudioSessionService : public AudioSessionStateMonitor, public std::enable_shared_from_this<AudioSessionService> {
+class AudioSessionService : public AudioSessionStateMonitor {
 public:
     AudioSessionService();
     ~AudioSessionService() override;
@@ -73,7 +73,6 @@ public:
 
 private:
     int32_t DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout = false);
-    std::shared_ptr<AudioSessionStateMonitor> GetSelfSharedPtr() override;
     void GenerateFakeStreamId(int32_t callerPid);
 
 private:
