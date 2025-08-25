@@ -237,6 +237,12 @@ bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDe
 {
     Trace trace("IsStreamSupportMultiChannel");
 
+    if (streamDesc->streamInfo_.encoding == ENCODING_AUDIOVIVID &&
+        policyConfigMananger_.PreferMultiChannelPipe(streamDesc)) {
+        AUDIO_INFO_LOG("AudioVivid encoding and MultiChannelPipe supported");
+        return true;
+    }
+
     // MultiChannel: Speaker, A2dp offload
     if (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_SPEAKER &&
         (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP ||

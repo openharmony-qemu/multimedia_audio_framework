@@ -380,6 +380,15 @@ void PipeStreamPropInfo::SelfCheck()
     }
 }
 
+AudioAdapterType AdapterPipeInfo::GetAdapterType()
+{
+    auto adapter = adapterInfo_.lock();
+    if (adapter) {
+        return adapter->GetTypeEnum();
+    }
+    return OHOS::AudioStandard::AudioAdapterType::TYPE_INVALID;
+}
+
 AudioSourceStrategyData& AudioSourceStrategyData::GetInstance()
 {
     static AudioSourceStrategyData instance;
