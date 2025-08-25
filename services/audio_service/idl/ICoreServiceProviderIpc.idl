@@ -44,9 +44,4 @@ interface ICoreServiceProviderIpc {
     void SetWakeUpAudioCapturerFromAudioServer(
         [in] AudioProcessConfig config,
         [out] int ret);
-    void GetVoiceMuteState(
-        [in] unsigned int sessionId,
-        [out] boolean muteState);
-    void RemoveVoiceMuteState(
-        [in] unsigned int sessionId);
 }

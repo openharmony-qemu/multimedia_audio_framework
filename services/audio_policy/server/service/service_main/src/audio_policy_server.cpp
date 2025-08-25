@@ -5326,12 +5326,6 @@ int32_t AudioPolicyServer::CallRingtoneLibrary()
     return SUCCESS;
 }
 
-void AudioPolicyServer::SetVoiceMuteState(uint32_t sessionId, bool isMute)
-{
-    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
-    return coreService_->SetVoiceMuteState(sessionId, isMute);
-}
-
 int32_t AudioPolicyServer::SetSystemVolumeDegree(int32_t streamTypeIn, int32_t volumeDegree, int32_t volumeFlag,
     int32_t uid)
 {

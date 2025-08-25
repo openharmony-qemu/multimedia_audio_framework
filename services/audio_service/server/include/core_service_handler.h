@@ -46,8 +46,6 @@ public:
         AudioStreamInfo &streamInfo, bool isReloadProcess);
     uint32_t GenerateSessionId();
     int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config);
-    int32_t GetVoiceMuteState(uint32_t sessionId, bool &muteState);
-    int32_t RemoveVoiceMuteState(uint32_t sessionId);
 private:
     CoreServiceHandler();
     sptr<ICoreServiceProviderIpc> iCoreServiceProvider_ = nullptr;
