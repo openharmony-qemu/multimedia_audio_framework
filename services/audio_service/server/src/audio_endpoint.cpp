@@ -31,7 +31,6 @@
 #include "media_monitor_manager.h"
 #include "volume_tools.h"
 #include "audio_dump_pcm.h"
-#include "audio_performance_monitor.h"
 #include "audio_service.h"
 #ifdef RESSCHE_ENABLE
 #include "res_type.h"
@@ -110,6 +109,7 @@ AudioEndpointInner::AudioEndpointInner(EndpointType type, uint64_t id,
     } else {
         logUtilsTag_ = "AudioEndpoint::Rec";
     }
+    adapterType_ = endpointType_ == TYPE_VOIP_MMAP ? ADAPTER_TYPE_VOIP_FAST : ADAPTER_TYPE_FAST;
 }
 
 std::string AudioEndpointInner::GetEndpointName()
@@ -381,7 +381,7 @@ void AudioEndpointInner::Release()
         endpointWorkThread_.join();
         AUDIO_DEBUG_LOG("AudioEndpoint join work thread end");
     }
-    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(ADAPTER_TYPE_FAST);
+    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(adapterType_);
 
     stopUpdateThread_.store(true);
     updateThreadCV_.notify_all();
@@ -879,7 +879,7 @@ bool AudioEndpointInner::StartDevice(EndpointStatus preferredState)
     }
     workThreadCV_.notify_all();
     AUDIO_DEBUG_LOG("StartDevice out, status is %{public}s", GetStatusStr(endpointStatus_).c_str());
-
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(adapterType_, INIT_LASTWRITTEN_TIME);
     listLock.unlock();
     return true;
 }
@@ -986,6 +986,7 @@ int32_t AudioEndpointInner::OnStart(IAudioProcessStream *processStream)
         }
     }
 
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(adapterType_, INIT_LASTWRITTEN_TIME);
     endpointStatus_ = RUNNING;
     delayStopTime_ = INT64_MAX;
     return SUCCESS;
@@ -1576,8 +1577,7 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos, std::
         CheckSyncInfo(curWritePos);
         lastWriteTime_ = ClockTime::GetCurNano();
     }
-    AdapterType type = endpointType_ == TYPE_VOIP_MMAP ? ADAPTER_TYPE_VOIP_FAST : ADAPTER_TYPE_FAST;
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(type, ClockTime::GetCurNano());
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(adapterType_, ClockTime::GetCurNano());
     {
         std::lock_guard<std::mutex> captureLock(dupMutex_);
         for (auto &capture: fastCaptureInfos_) {
@@ -1614,9 +1614,8 @@ void AudioEndpointInner::CheckSyncInfo(uint64_t curWritePos)
         return;
     }
     AUDIO_WARNING_LOG("write %{public}d is slower than read %{public}d ", curWriteFrame, curReadFrame);
-    AdapterType type = endpointType_ == TYPE_VOIP_MMAP ? ADAPTER_TYPE_VOIP_FAST : ADAPTER_TYPE_FAST;
     int64_t cost = (ClockTime::GetCurNano() - lastWriteTime_) / AUDIO_US_PER_SECOND;
-    AudioPerformanceMonitor::GetInstance().ReportWriteSlow(type, cost);
+    AudioPerformanceMonitor::GetInstance().ReportWriteSlow(adapterType_, cost);
     return;
 }
 

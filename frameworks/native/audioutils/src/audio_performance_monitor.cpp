@@ -83,8 +83,7 @@ void AudioPerformanceMonitor::PauseSilenceMonitor(uint32_t sessionId)
 void AudioPerformanceMonitor::DeleteSilenceMonitor(uint32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(monitorMutex_);
-    CHECK_AND_RETURN_LOG(silenceDetectMap_.find(sessionId) != silenceDetectMap_.end(),
-        "invalid sessionId: %{public}d", sessionId);
+    CHECK_AND_RETURN(silenceDetectMap_.find(sessionId) != silenceDetectMap_.end());
     AUDIO_INFO_LOG("delete sessionId %{public}d silence Monitor!", sessionId);
     silenceDetectMap_.erase(sessionId);
 }
@@ -133,8 +132,7 @@ void AudioPerformanceMonitor::RecordTimeStamp(AdapterType adapterType, int64_t c
 void AudioPerformanceMonitor::DeleteOvertimeMonitor(AdapterType adapterType)
 {
     std::lock_guard<std::mutex> lock(monitorMutex_);
-    CHECK_AND_RETURN_LOG(overTimeDetectMap_.find(adapterType) != overTimeDetectMap_.end(),
-        "invalid adapterType: %{public}d", adapterType);
+    CHECK_AND_RETURN(overTimeDetectMap_.find(adapterType) != overTimeDetectMap_.end());
     AUDIO_INFO_LOG("delete adapterType %{public}d overTime Monitor!", adapterType);
     overTimeDetectMap_.erase(adapterType);
 }

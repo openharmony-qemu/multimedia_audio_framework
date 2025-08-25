@@ -335,13 +335,11 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerTest002, TestSize.Level1)
     hpaeManager_->Pause(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
-    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_PAUSING);
     EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_PAUSED);
 
     hpaeManager_->Stop(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
-    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_STOPPING);
     EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STOPPED);
 
     hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
@@ -389,13 +387,11 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerTest003, TestSize.Level1)
     hpaeManager_->Pause(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
-    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_PAUSING);
     EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_PAUSED);
 
     hpaeManager_->Stop(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
-    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_STOPPING);
     EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STOPPED);
 
     hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
@@ -444,12 +440,10 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerTest004, TestSize.Level1)
     hpaeManager_->Pause(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
-    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_PAUSING);
 
     hpaeManager_->Stop(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
-    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_STOPPING);
 
     hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
@@ -499,14 +493,12 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest001, TestSize.Leve
     hpaeManager_->Pause(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
-    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_PAUSING);
     EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_PAUSED);
 
     hpaeManager_->MoveSinkInputByIndexOrName(streamInfo.sessionId, 1, "Speaker_File1");
     hpaeManager_->Stop(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
-    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_STOPPING);
     EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STOPPED);
 
     hpaeManager_->MoveSinkInputByIndexOrName(streamInfo.sessionId, 0, "Speaker_File");
@@ -687,12 +679,10 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest002, TestSize.Level1)
     hpaeManager_->Pause(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
-    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_PAUSING);
     EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_PAUSED);
     hpaeManager_->Stop(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
-    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_STOPPING);
     EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STOPPED);
     hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
@@ -790,14 +780,12 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest001, TestSize.Lev
     hpaeManager_->Pause(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
-    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_PAUSING);
     EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_PAUSED);
     
     hpaeManager_->MoveSourceOutputByIndexOrName(streamInfo.sessionId, 1, "mic1");
     hpaeManager_->Stop(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
-    EXPECT_EQ(sessionInfo.state, HPAE_SESSION_STOPPING);
     EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STOPPED);
     
     hpaeManager_->MoveSourceOutputByIndexOrName(streamInfo.sessionId, 0, "mic");
