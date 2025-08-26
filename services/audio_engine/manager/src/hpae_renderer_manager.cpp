@@ -1023,12 +1023,13 @@ int32_t HpaeRendererManager::SetAudioEffectMode(uint32_t sessionId, int32_t effe
         if (nodeInfo.effectInfo.effectMode != static_cast<AudioEffectMode>(effectMode)) {
             nodeInfo.effectInfo.effectMode = static_cast<AudioEffectMode>(effectMode);
             size_t sinkInputNodeConnectNum = sinkInputNodeMap_[sessionId]->GetOutputPort()->GetInputNum();
-            if (sinkInputNodeConnectNum != 0) {
+            HpaeSessionState inputState = sinkInputNodeMap_[sessionId]->GetState();
+            if (sinkInputNodeConnectNum != 0 && inputState == HPAE_SESSION_RUNNING) {
                 AUDIO_INFO_LOG("UpdateProcessClusterConnection because effectMode to be %{public}d", effectMode);
                 UpdateProcessClusterConnection(sessionId, effectMode);
             } else {
-                AUDIO_INFO_LOG("no need to ProcessClusterConnection, sinkInputNodeConnectNum is %{public}zu",
-                    sinkInputNodeConnectNum);
+                AUDIO_INFO_LOG("no need to ProcessClusterConnection, sinkInputNodeConnectNum is %{public}zu, "
+                    "inputState is %{public}d", sinkInputNodeConnectNum, inputState);
             }
         }
     };
