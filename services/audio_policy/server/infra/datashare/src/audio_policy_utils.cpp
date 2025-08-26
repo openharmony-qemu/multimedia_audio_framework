@@ -754,5 +754,22 @@ bool AudioPolicyUtils::IsDataShareReady()
     }
 }
 
+int32_t AudioPolicyUtils::SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object)
+{
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "object is nullptr");
+    queryBundleNameListCallback_ = iface_cast<IStandardAudioPolicyManagerListener>(object);
+    CHECK_AND_RETURN_RET_LOG(queryBundleNameListCallback_ != nullptr, ERR_CALLBACK_NOT_REGISTERED,
+        "queryBundleNameListCallback_ is nullptr");
+    return SUCCESS;
+}
+
+bool AudioPolicyUtils::IsBundleNameInList(const std::string &bundleName, const std::string &listType)
+{
+    bool isBundleNameExist = false;
+    CHECK_AND_RETURN_RET_LOG(queryBundleNameListCallback_ != nullptr, false, "queryBundleNameListCallback_ is nullptr");
+    queryBundleNameListCallback_->OnQueryBundleNameIsInList(listType, bundleName, isBundleNameExist);
+    return isBundleNameExist;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
