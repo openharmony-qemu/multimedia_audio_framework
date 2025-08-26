@@ -371,6 +371,7 @@ std::string AudioPolicyUtils::GetOutputDeviceClassBySinkPortName(std::string sin
         {BLUETOOTH_SPEAKER, A2DP_CLASS},
         {USB_SPEAKER, USB_CLASS},
         {PRIMARY_DIRECT_VOIP, DIRECT_VOIP_CLASS},
+        {PRIMARY_MMAP_VOIP, MMAP_VOIP_CLASS},
         {DP_SINK, DP_CLASS},
         {FILE_SINK, FILE_CLASS},
         {REMOTE_CAST_INNER_CAPTURER_SINK_NAME, REMOTE_CLASS},
