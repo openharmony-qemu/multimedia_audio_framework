@@ -23,10 +23,10 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-class MockSendMsgCalback : public ISendMsgCallback {
+class MockSendMsgCallback : public ISendMsgCallback {
 public:
-    MockSendMsgCalback() = default;
-    virtual ~MockSendMsgCalback() = default;
+    MockSendMsgCallback() = default;
+    virtual ~MockSendMsgCallback() = default;
     MOCK_METHOD(void, Invoke, (HpaeMsgCode cmdID, const std::any& args), (override));
     MOCK_METHOD(void, InvokeSync, (HpaeMsgCode cmdID, const std::any& args), (override));
 };

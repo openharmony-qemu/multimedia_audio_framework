@@ -1189,7 +1189,7 @@ HWTEST_F(HpaeRendererManagerTest, MoveAllStreamToNewSinkInner_001, TestSize.Leve
     HpaeSinkInfo info;
     auto hpaeOffloadRendererManager = std:make_shared<HpaeOffloadRendererManager>(info);
     auto hpaeRendererManager = std:make_shared<HpaeRendererManager>(info);
-    auto mockCallback = std::make_shared<MockSendMsgCalback>();
+    auto mockCallback = std::make_shared<MockSendMsgCallback>();
     EXPECT_CALL(*mockCallback, InvokeSync(MOVE_ALL_SINK_INPUT, testing::_))
         .Times(2);
     EXPECT_CALL(*mockCallback, Invoke(MOVE_ALL_SINK_INPUT, testing::_))
