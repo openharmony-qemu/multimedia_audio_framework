@@ -635,7 +635,7 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, MoveAllStreamToNewSinkInner_001, Test
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     HpaeStreamInfo playStreamInfo = GetInCapPlayStreamInfo();
     ++playStreamInfo.sessionId;
-    auto mockCallback = std::make_shared<MockSendMsgCalback>();
+    auto mockCallback = std::make_shared<MockSendMsgCallback>();
     EXPECT_CALL(*mockCallback, InvokeSync(MOVE_ALL_SINK_INPUT, testing::_))
         .Times(1);
     EXPECT_CALL(*mockCallback, Invoke(MOVE_ALL_SINK_INPUT, testing::_))

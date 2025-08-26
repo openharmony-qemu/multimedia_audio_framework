@@ -146,7 +146,7 @@ private:
     std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeProcessCluster>> sceneClusterMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSinkInputNode>> sinkInputNodeMap_;
     std::unordered_map<HpaeProcessorType, uint32_t> toBeStoppedSceneTypeToSessionMap_;
-    std::unique_ptr<IHpaeOutputCluster> outputCluster_ = nullptr;
+    std::shared_ptr<IHpaeOutputCluster> outputCluster_ = nullptr;
     HpaeNoLockQueue hpaeNoLockQueue_;
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;
     std::atomic<bool> isInit_ = false;
@@ -157,6 +157,7 @@ private:
     std::vector<int32_t> appsUid_;
     std::shared_ptr<HpaeCoBufferNode> hpaeCoBufferNode_;
     bool isCollaborationEnabled_ = false;
+    int64_t noneStreamTime_; // if no stream, 3s time out to stop rendersink
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

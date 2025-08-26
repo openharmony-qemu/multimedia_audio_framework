@@ -34,7 +34,9 @@ constexpr int32_t DEFAULT_EFFECT_FRAME_LEN = 960;
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-
+namespace {
+    constexpr float SUSPEND_TIME_OUT_S = 3.1; // prevent stop not success
+}
 HpaeRendererManager::HpaeRendererManager(HpaeSinkInfo &sinkInfo)
     : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT), sinkInfo_(sinkInfo)
 {}
@@ -1068,7 +1070,19 @@ void HpaeRendererManager::Process()
     Trace trace("HpaeRendererManager::Process");
     if (outputCluster_ != nullptr && IsRunning()) {
         UpdateAppsUid();
-        outputCluster_->DoProcess();
+        // no stream running & over 3s need stop
+        if (appsUid_.empty()) {
+            int64_t now = ClockTime::GetCurNano();
+            noneStreamTime_ = noneStreamTime_ == 0 ? now : noneStreamTime_;
+            if (now - noneStreamTime_ > SUSPEND_TIME_OUT_S * AUDIO_NS_PER_SECOND) {
+                outputCluster_->Stop();
+            } else {
+                outputCluster_->DoProcess();
+            }
+        } else {
+            noneStreamTime_ = 0;
+            outputCluster_->DoProcess();
+        }
     }
 }
 
