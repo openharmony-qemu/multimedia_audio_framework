@@ -1572,8 +1572,8 @@ int32_t AudioServer::GetHapBuildApiVersion(int32_t callerUid)
     sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
     CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, 0, "failed: bundleMgrProxy is nullptr");
 
-    WatchTimeout reguard("bundleMgrProxy->GetNameForUid:GetHapBuildApiVersion");
-    bundleMgrProxy->GetNameForUid(callerUid, bundleName);
+    WatchTimeout reguard("bundleMgrProxy->GetBundleNameForUid:GetHapBuildApiVersion");
+    bundleMgrProxy->GetBundleNameForUid(callerUid, bundleName);
     bundleMgrProxy->GetBundleInfoV9(bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_DEFAULT |
         AppExecFwk::BundleFlag::GET_BUNDLE_WITH_ABILITIES |
         AppExecFwk::BundleFlag::GET_BUNDLE_WITH_REQUESTED_PERMISSION |
