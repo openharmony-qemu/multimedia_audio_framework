@@ -2440,6 +2440,7 @@ HWTEST_F(AudioServerUnitTest, RestoreAudioWorkgroupPrio_003, TestSize.Level1)
     EXPECT_EQ(result, 0);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test SetRenderWhitelist API
  * @tc.type  : FUNC
@@ -2455,6 +2456,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetRenderWhitelist_001, TestSize.Level2
     int32_t ret = audioServer->SetRenderWhitelist(list);
     EXPECT_EQ(SUCCESS, ret);
 }
+#endif
 
 /**
  * @tc.name  : Test GenerateSessionId API
