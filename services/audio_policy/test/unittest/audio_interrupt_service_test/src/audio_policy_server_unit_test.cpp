@@ -699,7 +699,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_025, TestSize.Level1)
     ptrAudioPolicyServer->interruptService_ = std::make_shared<AudioInterruptService>();
 
     auto ret = ptrAudioPolicyServer->ActivateAudioSession(strategy);
- 
+
     EXPECT_EQ(ret, ERR_UNKNOWN);
 }
 
