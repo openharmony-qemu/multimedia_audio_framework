@@ -52,7 +52,7 @@ config("audio_engine_private_config") {
 
 engine_test_external_deps = [
   "c_utils:utils",
-  "googlemock:gmock",
+  "googletest:gmock",
   "googletest:gtest",
   "hilog:libhilog",
   "hisysevent:libhisysevent",
