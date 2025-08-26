@@ -748,7 +748,7 @@ void AudioRendererPrivate::SetClientInfo(uint32_t flag, IAudioStream::StreamClas
             rendererInfo_.rendererFlags = AUDIO_FLAG_DIRECT;
             rendererInfo_.pipeType = PIPE_TYPE_DIRECT_OUT;
         }
-    } else if (flag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) {
+    } else if (flag & AUDIO_OUTPUT_FLAG_LOWPOWER) {
         streamClass = IAudioStream::StreamClass::PA_STREAM;
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
         rendererInfo_.pipeType = PIPE_TYPE_OFFLOAD;
