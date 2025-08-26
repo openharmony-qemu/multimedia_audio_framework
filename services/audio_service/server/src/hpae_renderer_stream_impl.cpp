@@ -326,6 +326,7 @@ int32_t HpaeRendererStreamImpl::GetLatency(uint64_t &latency)
     GetLatencyInner(timestamp, latency, base);
     return SUCCESS;
 }
+
 void HpaeRendererStreamImpl::GetLatencyInner(uint64_t &timestamp, uint64_t &latencyUs, int32_t base)
 {
     int32_t baseUsed = base >= 0 && base < Timestamp::Timestampbase::BASESIZE ?
@@ -579,7 +580,8 @@ int32_t HpaeRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &times
     if (!offloadEnable_) {
         return ERR_OPERATION_FAILED;
     }
-    return SUCCESS;
+    cacheTimePa = 0;
+    return GetCurrentPosition(paWriteIndex, timestamp, cacheTimeDsp, Timestamp::Timestampbase::MONOTONIC);
 }
 
 void HpaeRendererStreamImpl::SyncOffloadMode()

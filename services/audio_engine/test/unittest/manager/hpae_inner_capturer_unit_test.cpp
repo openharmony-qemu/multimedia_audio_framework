@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
-#include "test_case_common.h"
 #include "hpae_inner_capturer_manager.h"
+#include "hpae_mocks.h"
+#include "test_case_common.h"
 #include <string>
 #include "audio_errors.h"
 #include <thread>
@@ -32,7 +32,6 @@ namespace HPAE {
 const uint32_t DEFAULT_SESSION_ID = 123456;
 const float FRAME_LENGTH_IN_SECOND = 0.02;
 std::string g_rootPath = "/data/";
-
 
 static HpaeSinkInfo GetInCapSinkInfo()
 {
@@ -621,6 +620,30 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, ReloadRenderManager_001, TestSize.Lev
     EXPECT_EQ(hpaeInnerCapturerManager_->DeInit(), SUCCESS);
     EXPECT_EQ(hpaeInnerCapturerManager_->ReloadRenderManager(sinkInfo, true), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->DeInit(), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test MoveAllStreamToNewSinkInner
+ * @tc.type  : FUNC
+ * @tc.number: MoveAllStreamToNewSinkInner_001
+ * @tc.desc  : Test MoveAllStreamToNewSinkInner.
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, MoveAllStreamToNewSinkInner_001, TestSize.Level0)
+{
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    HpaeStreamInfo playStreamInfo = GetInCapPlayStreamInfo();
+    ++playStreamInfo.sessionId;
+    auto mockCallback = std::make_shared<MockSendMsgCallback>();
+    EXPECT_CALL(*mockCallback, InvokeSync(MOVE_ALL_SINK_INPUT, testing::_))
+        .Times(1);
+    EXPECT_CALL(*mockCallback, Invoke(MOVE_ALL_SINK_INPUT, testing::_))
+        .Times(1);
+    hpaeInnerCapturerManager_->weakCallback_ = mockCallback;
+    vector<uint32_t> moveids;
+    hpaeInnerCapturerManager_->MoveAllStreamToNewSinkInner("", moveids, MOVE_ALL);
+    hpaeInnerCapturerManager_->MoveAllStreamToNewSinkInner("", moveids, MOVE_PREFER);
     EXPECT_EQ(hpaeInnerCapturerManager_->DeInit(), SUCCESS);
 }
 }  // namespace HPAE
