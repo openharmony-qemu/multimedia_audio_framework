@@ -410,7 +410,6 @@ void AudioRenderer::SendRendererCreateError(const StreamUsage &sreamUsage,
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
-
 AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream)
 {
     appInfo_ = appInfo;
@@ -446,7 +445,7 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
     state_ = RENDERER_PREPARED;
 }
 
-bool AudioRendererPrivate::CheckSupportedSamplingRates(uint32_t rates)
+bool AudioRenderer::CheckSupportedSamplingRates(uint32_t rates)
 {
     return (rates >= SAMPLE_RATE_8000 && rates <= SAMPLE_RATE_384000 && rates % SAMPLE_RATE_RESOLUTION_10 == 0) ||
         rates == SAMPLE_RATE_11025;

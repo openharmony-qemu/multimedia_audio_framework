@@ -41,7 +41,6 @@ class AudioRouteCallbackImpl;
 class AudioRendererPrivate : public AudioRenderer, public std::enable_shared_from_this<AudioRendererPrivate> {
     friend class AudioRouteCallbackImpl;
 public:
-    bool CheckSupportedSamplingRates(uint32_t rates) override;
     int32_t GetFrameCount(uint32_t &frameCount) const override;
     int32_t GetLatency(uint64_t &latency) const override;
     void SetAudioPrivacyType(AudioPrivacyType privacyType) override;

@@ -1112,7 +1112,13 @@ public:
      */
     virtual void ResetFirstFrameState() {};
 
-    virtual bool CheckSupportedSamplingRates(uint32_t rates);
+    /**
+     * @brief check whether sampling rate is supported by audio renderer
+     *
+     * @param rates sampling rate
+     * @since 20
+     */
+    static bool CheckSupportedSamplingRates(uint32_t rates);
 
 private:
     static void SendRendererCreateError(const StreamUsage &sreamUsage,
