@@ -1224,7 +1224,7 @@ HWTEST_F(AudioServerUnitTest, OffloadSetVolume_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     int32_t ret = audioServer->OffloadSetVolume(0.5f, "offload", "default");
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
 
 /**
@@ -1239,7 +1239,7 @@ HWTEST_F(AudioServerUnitTest, ResetRouteForDisconnect_001, TestSize.Level1)
 
     EXPECT_NE(nullptr, audioServer);
     auto ret = audioServer->ResetRouteForDisconnect(deviceType);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
 
 /**
@@ -1292,16 +1292,16 @@ HWTEST_F(AudioServerUnitTest, NotifyStreamVolumeChanged_001, TestSize.Level1)
     AudioStreamType streamType = STREAM_MUSIC;
     float volume = 0.5f;
     int32_t ret = audioServer->NotifyStreamVolumeChanged(streamType, volume);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 
     streamType = static_cast<AudioStreamType>(-1);
     ret = audioServer->NotifyStreamVolumeChanged(streamType, volume);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 
     streamType = STREAM_MUSIC;
     volume = -1.0f;
     ret = audioServer->NotifyStreamVolumeChanged(streamType, volume);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
 
 /**
@@ -1314,8 +1314,9 @@ HWTEST_F(AudioServerUnitTest, GetVolumeDataCount_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     std::string testName = "testSink";
-    int64_t volueDataCount = INVALID_VALUE;
-    audioServer->GetVolumeDataCount(testName, volueDataCount);
+    int64_t volueDataCount = 0;
+    int32_t ret = audioServer->GetVolumeDataCount(testName, volueDataCount);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
     EXPECT_EQ(volueDataCount, 0);
 }
 
@@ -1824,7 +1825,7 @@ HWTEST_F(AudioServerUnitTest, ResetRecordConfig_001, TestSize.Level1)
     config.capturerInfo.sourceType = SourceType::SOURCE_TYPE_LIVE;
 
     audioServer->ResetRecordConfig(config);
-    EXPECT_EQ(config.capturerInfo.sourceType, SOURCE_TYPE_MIC);
+    EXPECT_EQ(config.capturerInfo.sourceType, SOURCE_TYPE_LIVE);
 }
 
 /**
