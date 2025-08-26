@@ -571,7 +571,8 @@ int32_t HpaeRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &times
     if (!offloadEnable_) {
         return ERR_OPERATION_FAILED;
     }
-    return GetCurrentPosition(paWriteIndex, timestamp, latency, Timestamp::Timestampbase::MONOTONIC);
+    cacheTimePa = 0;
+    return GetCurrentPosition(paWriteIndex, timestamp, cacheTimeDsp, Timestamp::Timestampbase::MONOTONIC);
 }
 
 void HpaeRendererStreamImpl::SyncOffloadMode()
