@@ -159,11 +159,7 @@ void AudioServerHpaeDump::ArgDataDump(std::string &dumpString, std::queue<std::u
     }
     while (!argQue.empty()) {
         std::u16string para = argQue.front();
-        if (para == u"-h") {
-            dumpString.clear();
-            (this->*dumpFuncMap[para])(dumpString);
-            return;
-        } else if (para == u"-p") {
+        if (para == u"-h" || para == u"-p") {
             dumpString.clear();
             (this->*dumpFuncMap[para])(dumpString);
             return;

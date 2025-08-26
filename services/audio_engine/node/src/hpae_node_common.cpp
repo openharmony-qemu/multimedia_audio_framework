@@ -278,7 +278,7 @@ AudioSampleFormat TransFormatFromStringToEnum(std::string format)
 void AdjustMchSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo)
 {
     if (sinkInfo.deviceName == "DP_MCH_speaker") {
-        sinkInfo.channelLayout = static_cast<uint64_t>(std::atol(audioModuleInfo.channelLayout.c_str()));
+        sinkInfo.channelLayout = static_cast<uint64_t>(std::stol(audioModuleInfo.channelLayout.c_str()));
         return;
     }
     if (sinkInfo.deviceName != "MCH_Speaker") {
@@ -314,20 +314,20 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
     sinkInfo.splitMode = audioModuleInfo.extra;
     sinkInfo.filePath = audioModuleInfo.fileName;
 
-    sinkInfo.samplingRate = static_cast<AudioSamplingRate>(std::atol(audioModuleInfo.rate.c_str()));
+    sinkInfo.samplingRate = static_cast<AudioSamplingRate>(std::stol(audioModuleInfo.rate.c_str()));
     sinkInfo.format = static_cast<AudioSampleFormat>(TransFormatFromStringToEnum(audioModuleInfo.format));
-    sinkInfo.channels = static_cast<AudioChannel>(std::atol(audioModuleInfo.channels.c_str()));
-    int32_t bufferSize = static_cast<int32_t>(std::atol(audioModuleInfo.bufferSize.c_str()));
+    sinkInfo.channels = static_cast<AudioChannel>(std::stol(audioModuleInfo.channels.c_str()));
+    int32_t bufferSize = static_cast<int32_t>(std::stol(audioModuleInfo.bufferSize.c_str()));
     sinkInfo.frameLen = static_cast<size_t>(bufferSize) / (sinkInfo.channels *
                                 static_cast<size_t>(GetSizeFromFormat(sinkInfo.format)));
     sinkInfo.channelLayout = 0ULL;
-    sinkInfo.deviceType = static_cast<int32_t>(std::atol(audioModuleInfo.deviceType.c_str()));
+    sinkInfo.deviceType = static_cast<int32_t>(std::stol(audioModuleInfo.deviceType.c_str()));
     sinkInfo.volume = MAX_SINK_VOLUME_LEVEL;
-    sinkInfo.openMicSpeaker = static_cast<uint32_t>(std::atol(audioModuleInfo.OpenMicSpeaker.c_str()));
-    sinkInfo.renderInIdleState = static_cast<uint32_t>(std::atol(audioModuleInfo.renderInIdleState.c_str()));
-    sinkInfo.offloadEnable = static_cast<uint32_t>(std::atol(audioModuleInfo.offloadEnable.c_str()));
-    sinkInfo.sinkLatency = static_cast<uint32_t>(std::atol(audioModuleInfo.sinkLatency.c_str()));
-    sinkInfo.fixedLatency = static_cast<uint32_t>(std::atol(audioModuleInfo.fixedLatency.c_str()));
+    sinkInfo.openMicSpeaker = static_cast<uint32_t>(std::stol(audioModuleInfo.OpenMicSpeaker.c_str()));
+    sinkInfo.renderInIdleState = static_cast<uint32_t>(std::stol(audioModuleInfo.renderInIdleState.c_str()));
+    sinkInfo.offloadEnable = static_cast<uint32_t>(std::stol(audioModuleInfo.offloadEnable.c_str()));
+    sinkInfo.sinkLatency = static_cast<uint32_t>(std::stol(audioModuleInfo.sinkLatency.c_str()));
+    sinkInfo.fixedLatency = static_cast<uint32_t>(std::stol(audioModuleInfo.fixedLatency.c_str()));
     sinkInfo.deviceName = audioModuleInfo.name;
     AdjustMchSinkInfo(audioModuleInfo, sinkInfo);
     if (audioModuleInfo.needEmptyChunk) {
@@ -347,30 +347,30 @@ int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, 
     sourceInfo.adapterName = audioModuleInfo.adapterName;
     sourceInfo.sourceName = audioModuleInfo.name;  // built_in_mic
     sourceInfo.deviceName = audioModuleInfo.name;
-    sourceInfo.sourceType = static_cast<SourceType>(std::atol(audioModuleInfo.sourceType.c_str()));
+    sourceInfo.sourceType = static_cast<SourceType>(std::stol(audioModuleInfo.sourceType.c_str()));
     sourceInfo.filePath = audioModuleInfo.fileName;
-    int32_t bufferSize = static_cast<int32_t>(std::atol(audioModuleInfo.bufferSize.c_str()));
-    sourceInfo.channels = static_cast<AudioChannel>(std::atol(audioModuleInfo.channels.c_str()));
+    int32_t bufferSize = static_cast<int32_t>(std::stol(audioModuleInfo.bufferSize.c_str()));
+    sourceInfo.channels = static_cast<AudioChannel>(std::stol(audioModuleInfo.channels.c_str()));
     sourceInfo.format = TransFormatFromStringToEnum(audioModuleInfo.format);
     sourceInfo.frameLen = static_cast<size_t>(bufferSize) / (sourceInfo.channels *
                                 static_cast<size_t>(GetSizeFromFormat(sourceInfo.format)));
-    sourceInfo.samplingRate = static_cast<AudioSamplingRate>(std::atol(audioModuleInfo.rate.c_str()));
+    sourceInfo.samplingRate = static_cast<AudioSamplingRate>(std::stol(audioModuleInfo.rate.c_str()));
     sourceInfo.channelLayout = 0ULL;
-    sourceInfo.deviceType = static_cast<int32_t>(std::atol(audioModuleInfo.deviceType.c_str()));
+    sourceInfo.deviceType = static_cast<int32_t>(std::stol(audioModuleInfo.deviceType.c_str()));
     sourceInfo.volume = MAX_SINK_VOLUME_LEVEL;  // 1.0f;
 
-    sourceInfo.ecType = static_cast<HpaeEcType>(std::atol(audioModuleInfo.ecType.c_str()));
+    sourceInfo.ecType = static_cast<HpaeEcType>(std::stol(audioModuleInfo.ecType.c_str()));
     sourceInfo.ecAdapterName = audioModuleInfo.ecAdapter;
-    sourceInfo.ecSamplingRate = static_cast<AudioSamplingRate>(std::atol(audioModuleInfo.ecSamplingRate.c_str()));
+    sourceInfo.ecSamplingRate = static_cast<AudioSamplingRate>(std::stol(audioModuleInfo.ecSamplingRate.c_str()));
     sourceInfo.ecFormat = TransFormatFromStringToEnum(audioModuleInfo.ecFormat);
-    sourceInfo.ecChannels = static_cast<AudioChannel>(std::atol(audioModuleInfo.ecChannels.c_str()));
+    sourceInfo.ecChannels = static_cast<AudioChannel>(std::stol(audioModuleInfo.ecChannels.c_str()));
     sourceInfo.ecFrameLen = DEFAULT_MULTICHANNEL_FRAME_LEN_MS * (sourceInfo.ecSamplingRate / MS_PER_SECOND);
 
-    sourceInfo.micRef = static_cast<HpaeMicRefSwitch>(std::atol(audioModuleInfo.openMicRef.c_str()));
-    sourceInfo.micRefSamplingRate = static_cast<AudioSamplingRate>(std::atol(audioModuleInfo.micRefRate.c_str()));
+    sourceInfo.micRef = static_cast<HpaeMicRefSwitch>(std::stol(audioModuleInfo.openMicRef.c_str()));
+    sourceInfo.micRefSamplingRate = static_cast<AudioSamplingRate>(std::stol(audioModuleInfo.micRefRate.c_str()));
     sourceInfo.micRefFormat = TransFormatFromStringToEnum(audioModuleInfo.micRefFormat);
-    sourceInfo.micRefChannels = static_cast<AudioChannel>(std::atol(audioModuleInfo.micRefChannels.c_str()));
-    sourceInfo.openMicSpeaker = static_cast<uint32_t>(std::atol(audioModuleInfo.OpenMicSpeaker.c_str()));
+    sourceInfo.micRefChannels = static_cast<AudioChannel>(std::stol(audioModuleInfo.micRefChannels.c_str()));
+    sourceInfo.openMicSpeaker = static_cast<uint32_t>(std::stol(audioModuleInfo.OpenMicSpeaker.c_str()));
     sourceInfo.micRefFrameLen = DEFAULT_MULTICHANNEL_FRAME_LEN_MS * (sourceInfo.micRefSamplingRate / MS_PER_SECOND);
     return SUCCESS;
 }
