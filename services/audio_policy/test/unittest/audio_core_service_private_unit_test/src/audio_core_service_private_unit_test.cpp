@@ -2388,8 +2388,7 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_123, TestSize.Leve
     audioCoreService->pipeManager_->AddAudioPipeInfo(pipe2);
 
     audioCoreService->RemoveUnusedPipe();
-    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    EXPECT_EQ(audioCoreService->pipeManager_->GetUnusedPipe(deviceType).size(), 2); // 2: unused pipe size
+    EXPECT_EQ(audioCoreService->pipeManager_->GetUnusedPipe().size(), 2); // 2: unused pipe size
 }
 
 /**
