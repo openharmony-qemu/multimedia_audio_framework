@@ -100,7 +100,8 @@ group("audio_policy_unittest_packages") {
     ":audio_device_manager_unit_test",
     ":user_select_router_unit_test",
     ":user_select_router_ext_unit_test",
-    "../server/domain/pipe/test/unittest:pipe_domain_unit_test_group"
+    "../server/domain/pipe/test/unittest:pipe_domain_unit_test_group",
+    "../client/stub:client_stub_unit_test_group"
   ]
 }
 
