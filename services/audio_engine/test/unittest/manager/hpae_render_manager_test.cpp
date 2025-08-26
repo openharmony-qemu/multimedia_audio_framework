@@ -1187,8 +1187,8 @@ HWTEST_F(HpaeRendererManagerTest, RefreshProcessClusterByDevice_004, TestSize.Le
 HWTEST_F(HpaeRendererManagerTest, MoveAllStreamToNewSinkInner_001, TestSize.Level0)
 {
     HpaeSinkInfo info;
-    auto hpaeOffloadRendererManager = std:make_shared<HpaeOffloadRendererManager>(info);
-    auto hpaeRendererManager = std:make_shared<HpaeRendererManager>(info);
+    auto hpaeOffloadRendererManager = std::make_shared<HpaeOffloadRendererManager>(info);
+    auto hpaeRendererManager = std::make_shared<HpaeRendererManager>(info);
     auto mockCallback = std::make_shared<MockSendMsgCallback>();
     EXPECT_CALL(*mockCallback, InvokeSync(MOVE_ALL_SINK_INPUT, testing::_))
         .Times(2);
@@ -1222,12 +1222,12 @@ HWTEST_F(HpaeRendererManagerTest, Process_001, TestSize.Level0)
     outputCluster->hpaeSinkOutputNode_->SetSinkState(STREAM_MANAGER_RUNNING);
     outputCluster->timeoutThdFramesForDevice_ = 300; // prevent unexpected call
     hpaeRendererManager->hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
-    hpaeRendererManager->hpaeSignalProcessThread_->runninng_.store(true);
+    hpaeRendererManager->hpaeSignalProcessThread_->running_.store(true);
 
     hpaeRendererManager->Process();
     EXPECT_EQ(hpaeRendererManager->IsRunning(), true);
     auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeinfo);
-    hpaeRendererManager->sinkInputNodeMap_.insert(1, sinkInputNode);
+    hpaeRendererManager->sinkInputNodeMap_.insert_or_assgin(1, sinkInputNode);
     sinkInputNode->SetState(HPAE_SESSION_RUNNING);
     hpaeRendererManager->Process();
     EXPECT_EQ(hpaeRendererManager->IsRunning(), true);
