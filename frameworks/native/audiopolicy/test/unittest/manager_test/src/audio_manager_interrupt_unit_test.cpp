@@ -944,7 +944,7 @@ HWTEST(AudioManagerInterruptUnitTest, SetAppConcurrencyMode_001, TestSize.Level1
     int32_t uid = 0;
     int32_t mode = 0;
     auto ret = AudioSystemManager::GetInstance()->SetAppConcurrencyMode(uid, mode);
-    EXPECT_EQ(ret, -1);
+    EXPECT_EQ(ret, ERR_SYSTEM_PERMISSION_DENIED);
 }
 
 /**
@@ -957,7 +957,7 @@ HWTEST(AudioManagerInterruptUnitTest, SetAppSilentOnDisplay_001, TestSize.Level1
 {
     int32_t displayId = 0;
     auto ret = AudioSystemManager::GetInstance()->SetAppSilentOnDisplay(displayId);
-    EXPECT_EQ(ret, -1);
+    EXPECT_EQ(ret, ERR_SYSTEM_PERMISSION_DENIED);
 }
 }
 }
