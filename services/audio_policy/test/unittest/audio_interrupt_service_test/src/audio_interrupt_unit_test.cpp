@@ -1024,6 +1024,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceCanMixForSession_002, TestSi
     strategyTest.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
     int32_t ret = interruptService->ActivateAudioSession(0, incomingInterrupt.pid, strategyTest);
     EXPECT_EQ(SUCCESS, ret);
+
     ret = interruptService->ActivateAudioSession(0, incomingInterrupt.pid, strategyTest, true);
     EXPECT_EQ(SUCCESS, ret);
     ret = interruptService->CanMixForSession(incomingInterrupt, activeInterrupt, focusEntry);
