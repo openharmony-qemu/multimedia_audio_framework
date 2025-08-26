@@ -1227,7 +1227,7 @@ HWTEST_F(HpaeRendererManagerTest, Process_001, TestSize.Level0)
     hpaeRendererManager->Process();
     EXPECT_EQ(hpaeRendererManager->IsRunning(), true);
     auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeinfo);
-    hpaeRendererManager->sinkInputNodeMap_.insert_or_assgin(1, sinkInputNode);
+    hpaeRendererManager->sinkInputNodeMap_.insert_or_assign(1, sinkInputNode);
     sinkInputNode->SetState(HPAE_SESSION_RUNNING);
     hpaeRendererManager->Process();
     EXPECT_EQ(hpaeRendererManager->IsRunning(), true);
