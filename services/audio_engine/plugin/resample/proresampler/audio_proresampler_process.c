@@ -52,7 +52,7 @@
 #define THREE_STEPS 3
 #define FOUR_STEPS 4
 #define QUALITY_LEVEL_TEN 10
-#define BUFFER_SIZE 160
+#define BUFFER_SIZE 256
 
 // WARNING: Code for support to sudden changes in sampling frequency is deprecated!
 // It is disabled because it is complex and untested.
@@ -153,12 +153,13 @@ static int32_t CalculateFilter(SingleStagePolyphaseResamplerState* state)
     double w;
     uint32_t requiredFilterCoefficientsSize;
     float cutoff = state->cutoff;
+    uint32_t pFactor = state->polyphaseFactor;
 
-    if (INT_MAX / sizeof(float) / state->interpolateFactor < state->filterLength) {
+    if (INT_MAX / sizeof(float) / pFactor < state->filterLength) {
         return RESAMPLER_ERR_ALLOC_FAILED;
     }
 
-    requiredFilterCoefficientsSize = state->filterLength * state->interpolateFactor;
+    requiredFilterCoefficientsSize = state->filterLength * pFactor;
 
     if (state->filterCoefficientsSize < requiredFilterCoefficientsSize) {
         if (state->filterCoefficients == NULL) {
@@ -177,15 +178,27 @@ static int32_t CalculateFilter(SingleStagePolyphaseResamplerState* state)
         }
         state->filterCoefficientsSize = requiredFilterCoefficientsSize;
     }
-
-    for (i = 0; i < state->interpolateFactor; i++) {
+    for (i = 0; i < pFactor; i++) {
         for (j = 0; j < state->filterLength; j++) {
             phi = ((int32_t)j - (int32_t)state->filterLength / TWO_STEPS + 1) - phi0;
             w = CompHyperbolicCosineWindow(fabs((double)TWO_STEPS * phi / state->filterLength),
                 state->coshParameter);
             state->filterCoefficients[i * state->filterLength + j] = w * cutoff * Sinc(cutoff * phi);
         }
-        phi0 += 1.0 / state->interpolateFactor;
+        phi0 += 1.0 / pFactor;
+    }
+    // gain compensation for filter coefficinents, 2025.3.21
+    if (state->gainCorrection) {
+        float gain = 0;
+        for (i = 0; i < pFactor; i++) {
+            gain = 0.0;
+            for (j = 0; j < state->filterLength; j++) {
+                gain += state->filterCoefficients[i * state->filterLength + j];
+            }
+            for (j = 0; j < state->filterLength; j++) {
+                state->filterCoefficients[i * state->filterLength + j] /= gain;
+            }
+        }
     }
     return 0;
 }
@@ -730,12 +743,15 @@ static int32_t PolyphaseResamplerMono(SingleStagePolyphaseResamplerState *state,
     uint32_t outSample = 0;
     uint32_t inputIndex = state->inputIndex;
     uint32_t subfilterNum = state->subfilterNum;
+    uint32_t indexPhase = 0;
     const float* filterCoefficients = state->filterCoefficients;
     const uint32_t quoSamplerateRatio = state->quoSamplerateRatio;
     const uint32_t remSamplerateRatio = state->remSamplerateRatio;
     const uint32_t decimateFactor = state->decimateFactor;
     const uint32_t interpolateFactor = state->interpolateFactor;
+    const uint32_t polyphaseFactor = state->polyphaseFactor;
     uint32_t i;
+    float scalerPhase = (float)(polyphaseFactor - 1) / (float)interpolateFactor;
 
     if (inputIndex < (uint32_t)(*inputLength)) {
         outSample = CompareMin((*outputLength), ((interpolateFactor * ((*inputLength) - inputIndex) -
@@ -743,7 +759,13 @@ static int32_t PolyphaseResamplerMono(SingleStagePolyphaseResamplerState *state,
     }
 
     for (i = 0; i < outSample; i++) {
-        const float* coeffs = &filterCoefficients[subfilterNum * n];
+        if (state->gainCorrection) {
+            indexPhase = (int)(subfilterNum * scalerPhase);
+        }
+        else {
+            indexPhase = subfilterNum;
+        }
+        const float* coeffs = &filterCoefficients[indexPhase * n];
         const float* inputs = &in[inputIndex * MONO];
         MultiplyFilterMono(state, coeffs, inputs, out, subfilterNum);
         out++;
@@ -768,19 +790,28 @@ static int32_t PolyphaseResamplerStereo(SingleStagePolyphaseResamplerState* stat
     uint32_t outSample = 0;
     uint32_t inputIndex = state->inputIndex;
     uint32_t subfilterNum = state->subfilterNum;
+    uint32_t indexPhase = 0;
     const float* filterCoefficients = state->filterCoefficients;
     const uint32_t quoSamplerateRatio = state->quoSamplerateRatio;
     const uint32_t remSamplerateRatio = state->remSamplerateRatio;
     const uint32_t decimateFactor = state->decimateFactor;
     const uint32_t interpolateFactor = state->interpolateFactor;
+    const uint32_t polyphaseFactor = state->polyphaseFactor;
     uint32_t i;
 
+    float = (float)(polyphaseFactor - 1) / (float)interpolateFactor;
     if (inputIndex < (uint32_t) (*inputLength)) {
         outSample = CompareMin((*outputLength), ((interpolateFactor * ((*inputLength) - inputIndex) -
             subfilterNum) - 1) / decimateFactor + 1);
     }
     for (i = 0; i < outSample; i++) {
-        const float* coeffs = &filterCoefficients[subfilterNum * n];
+        if (state->gainCorrection) {
+            indexPhase = (int)(subfilterNum * scalerPhase);
+        }
+        else {
+            indexPhase = subfilterNum;
+        }
+        const float* coeffs = &filterCoefficients[indexPhase * n];
         const float* inputs = &in[inputIndex * STEREO];
         MultiplyFilterStereo(state, coeffs, inputs, out, subfilterNum);
         out += STEREO;
@@ -805,12 +836,14 @@ static int32_t PolyphaseResamplerMultichannel(SingleStagePolyphaseResamplerState
     uint32_t outSample = 0;
     uint32_t inputIndex = state->inputIndex;
     uint32_t subfilterNum = state->subfilterNum;
+    uint32_t indexPhase = 0;
     const float* filterCoefficients = state->filterCoefficients;
     const uint32_t quoSamplerateRatio = state->quoSamplerateRatio;
     const uint32_t remSamplerateRatio = state->remSamplerateRatio;
     const uint32_t decimateFactor = state->decimateFactor;
     const uint32_t interpolateFactor = state->interpolateFactor;
     const uint32_t numChannels = state->numChannels;
+    const uint32_t polyphaseFactor = state->polyphaseFactor;
     uint32_t i;
 
     if (inputIndex < (uint32_t)(*inputLength)) {
@@ -819,7 +852,14 @@ static int32_t PolyphaseResamplerMultichannel(SingleStagePolyphaseResamplerState
     }
 
     for (i = 0; i < outSample; i++) {
-        const float* coeffs = &filterCoefficients[subfilterNum * n];
+    float scalerPhase = (float)(polyphaseFactor - 1) / (float)interpolateFactor;
+        if (state->gainCorrection) {
+            indexPhase = (int)(subfilterNum * scalerPhase);
+        }
+        else {
+            indexPhase = subfilterNum;
+        }
+        const float* coeffs = &filterCoefficients[indexPhase * n];
         const float* inputs = &in[inputIndex * numChannels];
         MultiplyFilterMultichannel(state, coeffs, inputs, out, subfilterNum);
         out += numChannels;
@@ -1263,18 +1303,30 @@ static int32_t UpdateResamplerState(SingleStagePolyphaseResamplerState* state)
 
     if (state->interpolateFactor < state->decimateFactor) { // downsampling
         state->cutoff = (float)state->interpolateFactor / state->decimateFactor;
-        state->filterLength = state->filterLength * state->decimateFactor / state->interpolateFactor;
-
+        // updating filter length for downsampling
+        float filterLength = state->filterLength * state->decimateFactor / state->interpolateFactor;
+        if (filterLength < MAX_DWNSMPLE_FILT_LEN) {
+            state->filterLength = filterLength;
+        }
+        else {
+            state->filterLength = MAX_DWNSMPLE_FILT_LEN;
+        }
         // Round up to make sure filterLength be multiple of 8
         state->filterLength = 8 * ((state->filterLength - 1) / 8) + 8;
     } else { // upsampling
         state->cutoff = 1;
     }
     
-    // modified for new requirements (extended i/o sample rate combination) 2025.2.28
-    if ((CompareMax(state->decimateFactor, state->interpolateFactor) <= MAX_RATIO_INTEGRAL_METHOD) &
-        ((state->decimateFactor == 1 || state->interpolateFactor == 1) ||
-            ((float)state->decimateFactor / (float)state->interpolateFactor < 2.0f))) {
+    // set up the polyphase factor, 2025.3.21
+    state->polyphaseFactor = (uint32_t)(MAX_LIMIT_POLYNUM / state->filterLength);
+    state->gainCorrection = 1;
+    if (state->interpolateFactor <= state->polyphaseFactor) {
+        state->polyphaseFactor = state->interpolateFactor;
+        state->gainCorrection = 0;
+    }
+    // coarse (integral) sampling rate ratio
+    if ((COMPARE_MAX(state->decimateFactor, state->interpolateFactor) <= MAX_RATIO_INTEGRAL_METHOD) &
+        (state->decimateFactor == 1 || state->interpolateFactor == 1)) {
         state->resamplerFunction = SetResamplerFunctionCoarse(state);
     } else { // fine (non-integral) sampling rate ratio
         switch (state->numChannels) {
@@ -1374,6 +1426,8 @@ SingleStagePolyphaseResamplerState* SingleStagePolyphaseResamplerInit(uint32_t n
     state->isStarted = 0;
     state->decimateFactor = 0;
     state->interpolateFactor = 0;
+    state->polyphaseFactor = 0;
+    state->gainCorrection = 0;
     state->quality = -1;
     state->filterCoefficientsSize = 0;
     state->inputMemorySize = 0;
