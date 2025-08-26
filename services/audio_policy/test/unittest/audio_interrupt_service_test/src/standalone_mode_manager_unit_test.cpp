@@ -29,7 +29,7 @@ void StandaloneModeManagerUnitTest::TearDownTestCase(void) {}
 void StandaloneModeManagerUnitTest::SetUp(void) {}
 void StandaloneModeManagerUnitTest::TearDown(void) {}
 
-static int32_t STANDALONE_MOED = 5;
+static int32_t STANDALONE_MODE = 5;
 
 /**
 * @tc.name  : Test CheckAndRecordStandaloneApp.
@@ -43,7 +43,6 @@ HWTEST_F(StandaloneModeManagerUnitTest, StandaloneModeManagerUnitTest_001, TestS
     int32_t sessionId = 1;
     int32_t ownerPid = 1;
     int32_t displayId = 1;
-    int32_t mode = STANDALONE_MOED;
     std::shared_ptr<AudioInterruptService> interruptService =
         std::make_shared<AudioInterruptService>();
     StandaloneModeManager::GetInstance().Init(interruptService);
@@ -70,7 +69,6 @@ HWTEST_F(StandaloneModeManagerUnitTest, StandaloneModeManagerUnitTest_002, TestS
     int32_t ownerPid = 1;
     int32_t displayId = 1;
     int32_t appUid = 1;
-    int32_t mode = STANDALONE_MOED;
     std::shared_ptr<AudioInterruptService> interruptService =
         std::make_shared<AudioInterruptService>();
     StandaloneModeManager::GetInstance().Init(interruptService);
@@ -95,7 +93,7 @@ HWTEST_F(StandaloneModeManagerUnitTest, StandaloneModeManagerUnitTest_003, TestS
 {
     int32_t ownerPid = 1;
     int32_t appUid = 1;
-    int32_t mode = STANDALONE_MOED;
+    int32_t mode = STANDALONE_MODE;
     int32_t sessionId = 1;
     std::shared_ptr<AudioInterruptService> interruptService =
         std::make_shared<AudioInterruptService>();
@@ -130,7 +128,6 @@ HWTEST_F(StandaloneModeManagerUnitTest, StandaloneModeManagerUnitTest_004, TestS
     int32_t displayId = 1;
     int32_t sessionId = 1;
     bool isOnlyRecordUid = false;
-    int32_t mode = STANDALONE_MOED;
     std::shared_ptr<AudioInterruptService> interruptService =
         std::make_shared<AudioInterruptService>();
     auto ret = StandaloneModeManager::GetInstance().SetAppSilentOnDisplay(ownerPid, displayId);
