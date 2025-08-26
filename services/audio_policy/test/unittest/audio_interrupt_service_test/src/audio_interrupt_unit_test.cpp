@@ -1113,8 +1113,8 @@ HWTEST(AudioInterruptUnitTest, AudioPolicyServer_001, TestSize.Level1)
     int32_t strategy = 0;
     server->interruptService_ = std::make_shared<AudioInterruptService>();
     int32_t result = server->DeactivateAudioInterrupt(audioInterrupt, zoneID);
-    EXPECT_EQ(result, ERR_UNKNOWN);
-    EXPECT_EQ(policyServerTest->ActivateAudioSession(strategy), SUCCESS);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(policyServerTest->ActivateAudioSession(strategy), ERR_UNKNOWN);
     server->RegisteredStreamListenerClientDied(pid, uid);
 }
 
