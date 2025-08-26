@@ -2789,11 +2789,9 @@ HWTEST(AudioServiceUnitTest, InRenderWhitelist_001, TestSize.Level1)
  */
 HWTEST(AudioServiceUnitTest, SaveRenderWhitelist_001, TestSize.Level1)
 {
-    std::vector<std::string> list;
-    list.resize(5);
-    EXPECT_EQ(list.size(), 5);
+    std::vector<std::string> list = { "test1", "test2", "test3" };
     AudioService::GetInstance()->SaveRenderWhitelist(list);
-    EXPECT_EQ(AudioService::GetInstance()->renderWhitelist_.size(), 5);
+    EXPECT_EQ(AudioService::GetInstance()->renderWhitelist_.size(), 3);
 }
 
 /**
