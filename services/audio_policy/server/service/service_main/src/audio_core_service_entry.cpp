@@ -538,6 +538,12 @@ int32_t AudioCoreService::EventEntry::SetWakeUpAudioCapturerFromAudioServer(cons
     return coreService_->SetWakeUpAudioCapturerFromAudioServer(config);
 }
 
+uint32_t AudioCoreService::EventEntry::GetPaIndexByPortName(const std::string &portName)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->GetPaIndexByPortName(portName);
+}
+
 int32_t AudioCoreService::EventEntry::ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type)
 {
     CHECK_AND_RETURN_RET_LOG(coreService_, ERR_INVALID_PARAM, "coreService_ is nullptr");

@@ -1726,6 +1726,11 @@ int32_t AudioService::UnloadModernInnerCapSink(int32_t innerCapId)
 {
     return PolicyHandler::GetInstance().UnloadModernInnerCapSink(innerCapId);
 }
+
+int32_t AudioService::UnloadModernOffloadCapSource()
+{
+    return PolicyHandler::GetInstance().UnloadModernOffloadCapSource();
+}
 #endif
 
 RestoreStatus AudioService::RestoreSession(uint32_t sessionId, RestoreInfo restoreInfo)

@@ -1960,6 +1960,11 @@ int32_t AudioServer::InnerCheckCaptureLimit(const AudioPlaybackCaptureConfig &co
     int32_t ret = playbackCapturerMgr->CheckCaptureLimit(config, innerCapId);
     if (ret == SUCCESS) {
         PolicyHandler::GetInstance().LoadModernInnerCapSink(innerCapId);
+        bool isSupportInnerCaptureOffload = PolicyHandler::GetInstance().IsSupportInnerCaptureOffload();
+        AUDIO_INFO_LOG("LoadModernOffloadCapSource %{public}d", isSupportInnerCaptureOffload);
+        if (isSupportInnerCaptureOffload) {
+            PolicyHandler::GetInstance().LoadModernOffloadCapSource();
+        }
     }
     return ret;
 }
@@ -2863,6 +2868,7 @@ int32_t AudioServer::ReleaseCaptureLimit(int32_t innerCapId)
     uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
     if (callingUid == ROOT_UID) {
         PlaybackCapturerManager::GetInstance()->CheckReleaseUnloadModernInnerCapSink(innerCapId);
+        PlaybackCapturerManager::GetInstance()->CheckReleaseUnloadModernOffloadCapSource();
         return SUCCESS;
     }
 #endif

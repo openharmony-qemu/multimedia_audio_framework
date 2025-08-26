@@ -127,7 +127,14 @@ HWTEST(PlaybackPlaybackCapturerManagerUnitTest, CheckCaptureLimit_001, TestSize.
     playbackCapturerMgr_->CheckReleaseUnloadModernInnerCapSink(innerCapId);
     bool checkRet = playbackCapturerMgr_->CheckReleaseUnloadModernInnerCapSink(1);
     EXPECT_TRUE(checkRet);
-}
 
+    innerCapId = 100;
+    ret = playbackCapturerMgr_->CheckCaptureLimit(config, innerCapId);
+    EXPECT_EQ(ret, SUCCESS);
+    playbackCapturerMgr_->CheckReleaseUnloadModernOffloadCapSource();
+    playbackCapturerMgr_->CheckCaptureLimit(config, innerCapId);
+    bool checkOffloadRet = playbackCapturerMgr_->CheckReleaseUnloadModernOffloadCapSource();
+    EXPECT_FALSE(checkOffloadRet);
+}
 }
 }

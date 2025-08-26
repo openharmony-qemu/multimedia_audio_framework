@@ -89,6 +89,7 @@ const char* RECORD_VOICE_CALL_PERMISSION = "ohos.permission.RECORD_VOICE_CALL";
 
 const char* PRIMARY_WAKEUP = "Built_in_wakeup";
 const char* INNER_CAPTURER_SINK = "InnerCapturerSink_";
+const char* OFFLOAD_CAPTURER_SOURCE = "InnerCapturerSource";
 const char* REMOTE_CAST_INNER_CAPTURER_SINK_NAME = "RemoteCastInnerCapturer";
 const char* DUP_STREAM = "DupStream";
 }

@@ -96,12 +96,18 @@ public:
 
     virtual int32_t GetMaxRendererInstances() = 0;
 
+    virtual bool IsSupportInnerCaptureOffload() = 0;
+
     virtual int32_t NotifyCapturerRemoved(uint64_t sessionId) = 0;
 
 #ifdef HAS_FEATURE_INNERCAPTURER
     virtual int32_t LoadModernInnerCapSink(int32_t innerCapId) = 0;
 
     virtual int32_t UnloadModernInnerCapSink(int32_t innerCapId) = 0;
+
+    virtual int32_t LoadModernOffloadCapSource() = 0;
+
+    virtual int32_t UnloadModernOffloadCapSource() = 0;
 #endif
 
     virtual int32_t ClearAudioFocusBySessionID(const int32_t &sessionID) = 0;

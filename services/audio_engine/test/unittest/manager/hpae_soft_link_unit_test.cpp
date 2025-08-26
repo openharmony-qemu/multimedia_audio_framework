@@ -282,6 +282,18 @@ TEST_F(HpaeSoftLinkTest, testSoftLinkStart)
     EXPECT_EQ(softLink_->Release(), SUCCESS);
     EXPECT_EQ(softLink_->state_, HpaeSoftLinkState::RELEASED);
 }
+
+TEST_F(HpaeSoftLinkTest, testTransSinkInfoToStreamInfo)
+{
+    std::shared_ptr<HpaeSoftLinkForTest> softLink_ =
+        std::make_shared<HpaeSoftLinkForTest>(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
+    EXPECT_NE(softLink_, nullptr);
+
+    HpaeStreamInfo streamInfo;
+    softLink_->TransSinkInfoToStreamInfo(streamInfo, HPAE_STREAM_CLASS_TYPE_RECORD);
+    softLink_->linkMode_ = SoftLinkMode::OFFLOADINNERCAP_AID;
+    softLink_->TransSinkInfoToStreamInfo(streamInfo, HPAE_STREAM_CLASS_TYPE_RECORD);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

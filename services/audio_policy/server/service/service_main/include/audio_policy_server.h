@@ -364,6 +364,8 @@ public:
 
     int32_t GetMaxRendererInstances(int32_t &ret) override;
 
+    int32_t IsSupportInnerCaptureOffload(bool &ret) override;
+
     void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos);
 
     int32_t QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig) override;

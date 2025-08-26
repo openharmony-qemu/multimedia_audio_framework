@@ -59,10 +59,14 @@ public:
     int32_t Stop() override;
     int32_t Release() override;
     int32_t SetVolume(float volume) override;
+    virtual int32_t SetVolumeMute(bool isMute) override;
+    virtual int32_t SetVolumeDuckFactor(float duckFactor) override;
+    virtual int32_t SetVolumeLowPowerFactor(float lowPowerFactor) override;
     void OnStatusUpdate(IOperation operation, uint32_t streamIndex) override;
     int32_t OnStreamData(AudioCallBackStreamInfo& callbackStreamInfo) override;
     int32_t OnStreamData(AudioCallBackCapturerStreamInfo& callbackStreamInfo) override;
     void OnDeviceInfoReceived(const HpaeSoftLinkDeviceOperation &operation);
+    int32_t SetLoudnessGain(float loudnessGain) override;
 
     // for unit test
     HpaeSoftLinkState GetStreamStateById(uint32_t sessionId);

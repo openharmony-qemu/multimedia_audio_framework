@@ -1498,7 +1498,7 @@ int32_t AudioDeviceStatus::RestoreNewA2dpPort(std::vector<std::shared_ptr<AudioS
     return SUCCESS;
 }
 
-uint32_t AudioDeviceStatus::GetPaIndexByPortName(std::string &portName)
+uint32_t AudioDeviceStatus::GetPaIndexByPortName(const std::string &portName)
 {
     AudioIOHandle ioHandle;
     CHECK_AND_RETURN_RET_LOG(audioIOHandleMap_.GetModuleIdByKey(portName, ioHandle), OPEN_PORT_FAILURE,

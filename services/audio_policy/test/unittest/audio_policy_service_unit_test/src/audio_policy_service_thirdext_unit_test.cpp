@@ -1392,6 +1392,29 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_005, TestSiz
 }
 
 /**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: AudioPolicyConfigManager_006
+* @tc.desc  : Test AudioPolicyConfigManager.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_006, TestSize.Level1)
+{
+    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(audioConfigManager_.Init(true), true);
+
+    PolicyGlobalConfigs gCfg;
+    gCfg.adapter_ = "hdmi";
+    gCfg.pipe_ = "default";
+    gCfg.device_ = "speaker";
+    gCfg.commonConfigs_.push_back({"offloadInnerCaptureSupport", "true", "bool"});
+    gCfg.commonConfigs_.push_back({"mute", "0", "bool"});
+    gCfg.updateRouteSupport_ = true;
+
+    audioConfigManager_.OnGlobalConfigsParsed(gCfg);
+    bool ret = audioConfigManager_.IsSupportInnerCaptureOffload();
+    EXPECT_EQ(ret, true);
+}
+
+/**
 * @tc.name  : Test DFX_MSG_MANAGER
 * @tc.number: DfxMsgManagerActionTest_001
 * @tc.desc  : Test DFX_MSG_MANAGER interfaces.

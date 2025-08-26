@@ -233,6 +233,15 @@ bool PlaybackCapturerManager::CheckReleaseUnloadModernInnerCapSink(int32_t inner
     return result;
 }
 
+bool PlaybackCapturerManager::CheckReleaseUnloadModernOffloadCapSource()
+{
+    std::lock_guard<std::mutex> lock(filterMapMutex_);
+    if (filters_.empty()) {
+        return true;
+    }
+    return false;
+}
+
 void PlaybackCapturerManager::InitAllDupBuffer(int32_t innerCapId)
 {
     CHECK_AND_RETURN_LOG(listener_ != nullptr, "listener is null!");

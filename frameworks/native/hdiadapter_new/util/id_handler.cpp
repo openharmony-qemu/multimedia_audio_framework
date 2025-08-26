@@ -122,6 +122,8 @@ uint32_t IdHandler::GetCaptureIdByDeviceClass(const std::string &deviceClass, co
 #endif
     } else if (deviceClass == "accessory") {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY);
+    } else if (deviceClass == "offload") {
+        return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_OFFLOAD, HDI_ID_INFO_DEFAULT);
     }
 
     AUDIO_ERR_LOG("invalid param, deviceClass: %{public}s, sourceType: %{public}d, info: %{public}s",

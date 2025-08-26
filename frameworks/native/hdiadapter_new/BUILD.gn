@@ -198,7 +198,10 @@ ohos_unittest("hdiadapter_unit_test") {
     "test/unittest/util_unit_test.cpp",
   ]
 
-  deps = [ ":hdiadapter_new" ]
+  deps = [
+      ":hdiadapter_new",
+      "../audioclock:audio_clock",
+  ]
 
   external_deps = [
     "drivers_interface_audio:libaudio_proxy_5.0",

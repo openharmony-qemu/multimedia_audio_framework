@@ -107,6 +107,14 @@ int32_t CoreServiceHandler::SetWakeUpAudioCapturerFromAudioServer(const AudioPro
     return ret;
 }
 
+uint32_t CoreServiceHandler::GetPaIndexByPortName(const std::string &portName)
+{
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
+    uint32_t ret = ERROR;
+    iCoreServiceProvider_->GetPaIndexByPortName(portName, ret);
+    return ret;
+}
+
 int32_t CoreServiceHandler::GetVoiceMuteState(uint32_t sessionId, bool &muteState)
 {
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");

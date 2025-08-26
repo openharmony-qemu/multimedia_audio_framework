@@ -34,6 +34,7 @@ public:
     int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor& deviceInfo,
         AudioStreamInfo &streamInfo, bool isReloadProcess) override;
     int32_t GenerateSessionId(uint32_t &sessionId) override;
+    int32_t GetPaIndexByPortName(const std::string &portName, uint32_t &ret) override;
 
     int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config, int32_t &ret) override;
     int32_t GetVoiceMuteState(uint32_t sessionId, bool &muteState) override;

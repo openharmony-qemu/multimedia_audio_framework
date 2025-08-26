@@ -362,6 +362,27 @@ HWTEST_F(HpaeCapturerManagerTest, CreateOutputSession_002, TestSize.Level0)
  * tc.name   : Test HpaeCapturerManager API
  * tc.type   : FUNC
  * tc.number : HpaeCapturerManagerTest
+ * tc.desc   : Test CreateOutputSession_003
+ */
+HWTEST_F(HpaeCapturerManagerTest, CreateOutputSession_003, TestSize.Level0)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.sourceType = SOURCE_TYPE_OFFLOAD_CAPTURE;
+
+    EXPECT_EQ(capturerManager->CreateOutputSession(streamInfo), SUCCESS);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test DisConnectSceneClusterFromSourceInputCluster_001
  */
 HWTEST_F(HpaeCapturerManagerTest, DisConnectSceneClusterFromSourceInputCluster_001, TestSize.Level0)
@@ -919,6 +940,22 @@ HWTEST_F(HpaeCapturerManagerTest, CheckEcAndMicRefCondition_001, TestSize.Level0
 
     HpaeNodeInfo micRefNodeInfo;
     EXPECT_EQ(capturerManager->CheckMicRefCondition(sceneType, micRefNodeInfo), false);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : HpaeCapturerManagerTest
+ * tc.desc   : Test InitCaptureManager_001
+ */
+HWTEST_F(HpaeCapturerManagerTest, InitCaptureManager_001, TestSize.Level0)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    EXPECT_EQ(capturerManager->InitCapturerManager() == SUCCESS, true);
 }
 } // namespace HPAE
 } // namespace AudioStandard

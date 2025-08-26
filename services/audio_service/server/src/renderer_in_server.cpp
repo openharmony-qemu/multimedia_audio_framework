@@ -67,6 +67,7 @@ namespace {
     const int32_t DUP_COMMON_LEN = 440; // 400 -> 440ms
     const int32_t DUP_DEFAULT_LEN = 20; // 20 -> 20ms
     const int32_t DUP_RECOVERY_AUTISHAKE_BUFFER_COUNT = 2; // 2 -> 2 frames -> 40ms
+    const uint32_t UNSIGNED_ERROR = -1;
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -1029,18 +1030,26 @@ int32_t RendererInServer::StartInner()
     AUDIO_INFO_LOG("Server update position %{public}" PRIu64" time%{public} " PRId64".", currentReadFrame, tempTime);
     resetTime_ = true;
 
-    std::unique_lock<std::mutex> dupLock(dupMutex_);
-    for (auto &capInfo : captureInfos_) {
-        if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
-            capInfo.second.dupStream->Start();
-        }
-    }
-    dupLock.unlock();
+    StartStreamByType();
     enterStandbyTime_ = 0;
 
     dualToneStreamInStart();
     AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(streamIndex_, processConfig_.appInfo.appTokenId);
     return SUCCESS;
+}
+
+void RendererInServer::StartStreamByType()
+{
+    if (IsMovieOffloadStream()) {
+        SetSoftLinkFunc([](auto &softLink) { softLink->Start(); });
+    } else {
+        std::lock_guard<std::mutex> dupLock(dupMutex_);
+        for (auto &capInfo : captureInfos_) {
+            if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
+                capInfo.second.dupStream->Start();
+            }
+        }
+    }
 }
 
 void RendererInServer::dualToneStreamInStart()
@@ -1096,10 +1105,14 @@ int32_t RendererInServer::Pause()
     int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).PauseRender(streamIndex_) : stream_->Pause();
     {
-        std::lock_guard<std::mutex> lock(dupMutex_);
-        for (auto &capInfo : captureInfos_) {
-            if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
-                capInfo.second.dupStream->Pause();
+        if (IsMovieOffloadStream()) {
+            SetSoftLinkFunc([](auto &softLink) { softLink->Stop(); });
+        } else {
+            std::lock_guard<std::mutex> lock(dupMutex_);
+            for (auto &capInfo : captureInfos_) {
+                if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
+                    capInfo.second.dupStream->Pause();
+                }
             }
         }
     }
@@ -1279,10 +1292,14 @@ int32_t RendererInServer::StopInner()
     int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).StopRender(streamIndex_) : stream_->Stop();
     {
-        std::lock_guard<std::mutex> lock(dupMutex_);
-        for (auto &capInfo : captureInfos_) {
-            if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
-                capInfo.second.dupStream->Stop();
+        if (IsMovieOffloadStream()) {
+            SetSoftLinkFunc([](auto &softLink) { softLink->Stop(); });
+        } else {
+            std::lock_guard<std::mutex> lock(dupMutex_);
+            for (auto &capInfo : captureInfos_) {
+                if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
+                    capInfo.second.dupStream->Stop();
+                }
             }
         }
     }
@@ -1353,13 +1370,25 @@ int32_t RendererInServer::Release(bool isSwitchStream)
 
 int32_t RendererInServer::DisableAllInnerCap()
 {
-    std::lock_guard<std::mutex> lock(dupMutex_);
-    for (auto &capInfo : captureInfos_) {
-        if (capInfo.second.isInnerCapEnabled) {
-            DisableInnerCapHandle(capInfo.first);
+    AUDIO_INFO_LOG("Disable all inner capture");
+    {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        for (auto &capInfo : captureInfos_) {
+            if (capInfo.second.isInnerCapEnabled) {
+                DisableInnerCapHandle(capInfo.first);
+            }
         }
+        captureInfos_.clear();
     }
-    captureInfos_.clear();
+
+    {
+        for (auto &softLinkInfo : softLinkInfos_) {
+            if (softLinkInfo.second.isSoftLinkEnabled) {
+                DestroySoftLink(softLinkInfo.first);
+            }
+        }
+        softLinkInfos_.clear();
+    }
     return SUCCESS;
 }
 
@@ -1432,6 +1461,7 @@ int32_t RendererInServer::SetLowPowerVolume(float volume)
             }
         }
     }
+    SetSoftLinkFunc([volume](auto &softLink) { softLink->SetVolumeLowPowerFactor(volume); });
     if (isDualToneEnabled_) {
         AudioVolume::GetInstance()->SetStreamVolumeLowPowerFactor(dualToneStreamIndex_, volume);
     }
@@ -1474,23 +1504,39 @@ int32_t RendererInServer::GetPrivacyType(int32_t &privacyType)
 int32_t RendererInServer::EnableInnerCap(int32_t innerCapId)
 {
     // in plan
-    int32_t ret = InitDupStream(innerCapId);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dup stream failed");
+    AUDIO_INFO_LOG("EnableInnerCap start:");
+    if (IsMovieOffloadStream()) {
+        int32_t ret = InitSoftLink(innerCapId);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init softLink failed");
+    } else {
+        int32_t ret = InitDupStream(innerCapId);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dup stream failed");
+    }
+
     return SUCCESS;
 }
 
 int32_t RendererInServer::DisableInnerCap(int32_t innerCapId)
 {
-    std::lock_guard<std::mutex> lock(dupMutex_);
-    if (!captureInfos_.count(innerCapId) || !captureInfos_[innerCapId].isInnerCapEnabled) {
-        AUDIO_WARNING_LOG("InnerCap is already disabled.capId:%{public}d", innerCapId);
-        return ERR_INVALID_OPERATION;
+    AUDIO_INFO_LOG("DisableInnerCap start:");
+    if (IsMovieOffloadStream()) {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        int32_t ret = DestroySoftLink(innerCapId);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Destory softLink failed");
+    } else {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        int32_t ret = DisableInnerCapHandle(innerCapId);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Destory dup stream failed");
     }
-    return DisableInnerCapHandle(innerCapId);
+    return SUCCESS;
 }
 
 int32_t RendererInServer::DisableInnerCapHandle(int32_t innerCapId)
 {
+    if (!captureInfos_.count(innerCapId) || !captureInfos_[innerCapId].isInnerCapEnabled) {
+        AUDIO_WARNING_LOG("InnerCap is already disabled.capId:%{public}d", innerCapId);
+        return ERR_INVALID_OPERATION;
+    }
     captureInfos_[innerCapId].isInnerCapEnabled = false;
     AUDIO_INFO_LOG("Disable dup renderer %{public}u with status: %{public}d", streamIndex_, status_.load());
     // in plan: call stop?
@@ -1725,6 +1771,24 @@ std::unique_ptr<AudioRingCache>& StreamCallbacks::GetDupRingBuffer()
     return dupRingBuffer_;
 }
 
+void RendererInServer::HandleOffloadStream(const int32_t captureId, const CaptureInfo& captureInfo)
+{
+    if (IsMovieStream()) {
+        if (status_ == I_STATUS_STARTED) {
+            captureInfo.dupStream->Stop();
+        }
+        captureInfo.dupStream->Flush();
+        auto it = softLinkInfos_.find(captureId);
+        if (it == softLinkInfos_.end() || !it->second.isSoftLinkEnabled) {
+            InitSoftLink(captureId);
+        } else if (status_ == I_STATUS_STARTED) {
+            it->second.softLink->Start();
+        }
+    } else {
+        captureInfo.dupStream->UpdateMaxLength(350);  // 350 for cover offload
+    }
+}
+
 int32_t RendererInServer::SetOffloadMode(int32_t state, bool isAppBack)
 {
     int32_t ret = stream_->SetOffloadMode(state, isAppBack);
@@ -1732,7 +1796,7 @@ int32_t RendererInServer::SetOffloadMode(int32_t state, bool isAppBack)
         std::lock_guard<std::mutex> lock(dupMutex_);
         for (auto &capInfo : captureInfos_) {
             if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
-                capInfo.second.dupStream->UpdateMaxLength(350); // 350 for cover offload
+                HandleOffloadStream(capInfo.first, capInfo.second);
             }
         }
     }
@@ -1749,13 +1813,29 @@ int32_t RendererInServer::UnsetOffloadMode()
 {
     int32_t ret = stream_->UnsetOffloadMode();
     {
-        std::lock_guard<std::mutex> lock(dupMutex_);
-        for (auto &capInfo : captureInfos_) {
-            if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
-                capInfo.second.dupStream->UpdateMaxLength(20); // 20 for unset offload
+        for (auto &softInfo : softLinkInfos_) {
+            if (IsEnabledAndValidSoftLink(softInfo.second) && status_ == I_STATUS_STARTED) {
+                softInfo.second.softLink->Stop();
+            }
+            if (!captureInfos_.count(softInfo.first) || !captureInfos_[softInfo.first].isInnerCapEnabled) {
+                InitDupStream(softInfo.first);
             }
         }
     }
+
+
+    {
+        std::lock_guard<std::mutex> lock(dupMutex_);
+        for (auto &capInfo : captureInfos_) {
+            if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
+                capInfo.second.dupStream->UpdateMaxLength(20);  // 20 for unset offload
+                if (status_ == I_STATUS_STARTED) {
+                    capInfo.second.dupStream->Start();
+                }
+            }
+        }
+    }
+
     if (isDualToneEnabled_) {
         std::lock_guard<std::mutex> lock(dualToneMutex_);
         if (dualToneStream_ != nullptr) {
@@ -1831,6 +1911,7 @@ int32_t RendererInServer::SetSilentModeAndMixWithOthers(bool on)
             }
         }
     }
+    SetSoftLinkFunc([isMuted](auto &softLink) { softLink->SetVolumeMute(isMuted); });
     if (isDualToneEnabled_) {
         AudioVolume::GetInstance()->SetStreamVolumeMute(dualToneStreamIndex_, isMuted);
     }
@@ -1865,6 +1946,7 @@ int32_t RendererInServer::SetClientVolume()
             }
         }
     }
+    SetSoftLinkFunc([clientVolume](auto &softLink) { softLink->SetVolume(clientVolume); });
     if (isDualToneEnabled_) {
         AudioVolume::GetInstance()->SetStreamVolume(dualToneStreamIndex_, clientVolume);
     }
@@ -1891,6 +1973,14 @@ int32_t RendererInServer::SetLoudnessGain(float loudnessGain)
             }
         }
     }
+
+    {
+        for (auto &softLinkInfo : softLinkInfos_) {
+            if (softLinkInfo.second.isSoftLinkEnabled && softLinkInfo.second.softLink != nullptr) {
+                ret += softLinkInfo.second.softLink->SetLoudnessGain(loudnessGain);
+            }
+        }
+    }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "setloudnessGain failed during capture, error: %{public}d", ret);
     return SUCCESS;
 }
@@ -1910,6 +2000,7 @@ int32_t RendererInServer::SetMute(bool isMute)
             }
         }
     }
+    SetSoftLinkFunc([isMuted](auto &softLink) { softLink->SetVolumeMute(isMuted); });
     if (isDualToneEnabled_) {
         AudioVolume::GetInstance()->SetStreamVolumeMute(dualToneStreamIndex_, isMuted);
     }
@@ -1942,6 +2033,7 @@ int32_t RendererInServer::SetDuckFactor(float duckFactor)
             }
         }
     }
+    SetSoftLinkFunc([duckFactor](auto &softLink) { softLink->SetVolumeDuckFactor(duckFactor); });
     if (isDualToneEnabled_) {
         AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(dualToneStreamIndex_, duckFactor);
     }
@@ -2095,6 +2187,7 @@ void RendererInServer::SetNonInterruptMute(const bool muteFlag)
             }
         }
     }
+    SetSoftLinkFunc([isMuted](auto &softLink) { softLink->SetVolumeMute(isMuted); });
     if (isDualToneEnabled_) {
         AudioVolume::GetInstance()->SetStreamVolumeMute(dualToneStreamIndex_, isMuted);
     }
@@ -2269,6 +2362,111 @@ void RendererInServer::InitDupBuffer(int32_t innerCapId)
         ReConfig(dupTotalSizeInFrame_ * dupByteSizePerFrame_, false);
     AUDIO_INFO_LOG("InitDupBuffer success, innerCapId: %{public}d, stream sessionId: %{public}u",
         innerCapId, streamIndex_);
+}
+
+int32_t RendererInServer::InitSoftLink(int32_t innerCapId)
+{
+    std::lock_guard<std::mutex> lock(softLinkMutex_);
+    if (softLinkInfos_.count(innerCapId) && softLinkInfos_[innerCapId].isSoftLinkEnabled) {
+        AUDIO_INFO_LOG("softLink is already enabled,id:%{public}d", innerCapId);
+        return SUCCESS;
+    }
+    std::string sinkName = INNER_CAPTURER_SINK + std::to_string(innerCapId);
+    std::string sourceName = OFFLOAD_CAPTURER_SOURCE;
+
+    uint32_t renderIdx = CoreServiceHandler::GetInstance().GetPaIndexByPortName(sinkName);
+    uint32_t captureIdx = CoreServiceHandler::GetInstance().GetPaIndexByPortName(sourceName);
+    CHECK_AND_RETURN_RET_LOG(renderIdx != UNSIGNED_ERROR, ERR_OPERATION_FAILED, "OpenRender Failed");
+    CHECK_AND_RETURN_RET_LOG(captureIdx != UNSIGNED_ERROR, ERR_OPERATION_FAILED, "OpenCapture Failed");
+    AUDIO_INFO_LOG("InitSoftLink:renderIdx%{public}u captureIdx%{public}u", renderIdx, captureIdx);
+
+    std::shared_ptr<HPAE::IHpaeSoftLink> ptrSoftLink =
+        HPAE::IHpaeSoftLink::CreateSoftLink(renderIdx, captureIdx, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
+    CHECK_AND_RETURN_RET_LOG(ptrSoftLink != nullptr, ERR_OPERATION_FAILED, "CreateSoftLink Failed");
+    auto &softLinkInfo = softLinkInfos_[innerCapId];
+    softLinkInfo.softLink = ptrSoftLink;
+    softLinkInfo.isSoftLinkEnabled = true;
+    InitSoftLinkVolume(ptrSoftLink);
+
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        std::string dumpSoftLinkFileName_ = std::to_string(innerCapId) + "_softLink_" + ".pcm";
+        DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpSoftLinkFileName_, &dumpSoftLink);
+    }
+
+    if (status_ == I_STATUS_STARTED) {
+        AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the softlink", streamIndex_);
+        softLinkInfo.softLink->Start();
+    }
+    return SUCCESS;
+}
+
+int32_t RendererInServer::DestroySoftLink(int32_t innerCapId)
+{
+    if (!softLinkInfos_.count(innerCapId) || !softLinkInfos_[innerCapId].isSoftLinkEnabled) {
+        AUDIO_WARNING_LOG("soft Link is already Destroy.capId:%{public}d", innerCapId);
+        return ERR_INVALID_OPERATION;
+    }
+
+    softLinkInfos_[innerCapId].isSoftLinkEnabled = false;
+    AUDIO_INFO_LOG("Disable soft link %{public}u with status: %{public}d", innerCapId, status_);
+
+    if (softLinkInfos_[innerCapId].softLink != nullptr) {
+        int32_t ret = softLinkInfos_[innerCapId].softLink->Release();
+        if (ret < 0) {
+            AUDIO_WARNING_LOG("Release softLink failed!");
+            return ERR_OPERATION_FAILED;
+        }
+        softLinkInfos_[innerCapId].softLink = nullptr;
+    }
+
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        DumpFileUtil::CloseDumpFile(&dumpSoftLink);
+    }
+    return SUCCESS;
+}
+
+int32_t RendererInServer::InitSoftLinkVolume(std::shared_ptr<HPAE::IHpaeSoftLink> softLinkPtr)
+{
+    if (audioServerBuffer_ != nullptr) {
+    float clientVolume = audioServerBuffer_->GetStreamVolume();
+    float duckFactor = audioServerBuffer_->GetDuckFactor();
+    bool isMuted = (isMuted_ || silentModeAndMixWithOthers_ || muteFlag_);
+    // If some factors are not needed, remove them.
+    softLinkPtr->SetVolume(clientVolume);
+    softLinkPtr->SetVolumeDuckFactor(duckFactor);
+    softLinkPtr->SetVolumeMute(isMuted);
+    softLinkPtr->SetVolumeLowPowerFactor(lowPowerVolume_);
+    }
+    return SUCCESS;
+}
+
+template <typename T>
+void RendererInServer::SetSoftLinkFunc(T&& softLinkFunc)
+{
+    for (auto& [id, softInfo] : softLinkInfos_) {
+        if (softInfo.isSoftLinkEnabled && softInfo.softLink != nullptr) {
+            softLinkFunc(softInfo.softLink);
+        }
+    }
+}
+
+bool RendererInServer::IsEnabledAndValidSoftLink(SoftLinkInfo& softLinkInfo)
+{
+    return softLinkInfo.isSoftLinkEnabled && softLinkInfo.softLink != nullptr;
+}
+
+bool RendererInServer::IsMovieOffloadStream()
+{
+    return processConfig_.streamType == STREAM_MOVIE &&
+    processConfig_.rendererInfo.originalFlag == AUDIO_FLAG_PCM_OFFLOAD && offloadEnable_;
+}
+
+bool RendererInServer::IsMovieStream()
+{
+    return processConfig_.streamType == STREAM_MOVIE &&
+    processConfig_.rendererInfo.originalFlag == AUDIO_FLAG_PCM_OFFLOAD;
 }
 } // namespace AudioStandard
 } // namespace OHOS

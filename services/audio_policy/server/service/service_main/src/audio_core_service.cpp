@@ -794,6 +794,11 @@ void AudioCoreService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const De
     audioDeviceStatus_.OnDeviceInfoUpdated(desc, command);
 }
 
+uint32_t AudioCoreService::GetPaIndexByPortName(const std::string &portName)
+{
+    return audioDeviceStatus_.GetPaIndexByPortName(portName);
+}
+
 int32_t AudioCoreService::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
     const int32_t uid)
 {

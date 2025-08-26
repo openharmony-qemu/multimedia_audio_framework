@@ -114,6 +114,7 @@ enum HpaeSourceInputNodeType {
     HPAE_SOURCE_MIC_EC,
     HPAE_SOURCE_EC,
     HPAE_SOURCE_MICREF,
+    HPAE_SOURCE_OFFLOAD,
 };
 
 struct HpaeDfxNodeInfo {

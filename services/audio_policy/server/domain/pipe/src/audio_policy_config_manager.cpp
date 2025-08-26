@@ -31,6 +31,7 @@ static const unsigned int BUFFER_CALC_20MS = 20;
 static const char* MAX_RENDERERS_NAME = "maxRenderers";
 static const char* MAX_CAPTURERS_NAME = "maxCapturers";
 static const char* MAX_FAST_RENDERERS_NAME = "maxFastRenderers";
+static const char* OFFLOAD_INNER_CAPTURE_SUPPORT_NAME = "offloadInnerCaptureSupport";
 
 const int32_t DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES = 128;
 const int32_t DEFAULT_MAX_INPUT_NORMAL_INSTANCES = 16;
@@ -325,6 +326,18 @@ int32_t AudioPolicyConfigManager::GetMaxFastRenderersInstances()
         return convertValue;
     }
     return DEFAULT_MAX_FAST_NORMAL_INSTANCES;
+}
+
+bool AudioPolicyConfigManager::IsSupportInnerCaptureOffload()
+{
+    for (const auto& commonConfig : globalConfigs_.commonConfigs_) {
+        if (commonConfig.name_ != OFFLOAD_INNER_CAPTURE_SUPPORT_NAME) {
+            continue;
+        }
+        AUDIO_INFO_LOG("Offload capture supported value is %{public}s", commonConfig.value_.c_str());
+        return commonConfig.value_ == "true";
+    }
+    return false;
 }
 
 int32_t AudioPolicyConfigManager::GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId,

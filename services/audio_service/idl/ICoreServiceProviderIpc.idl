@@ -47,6 +47,9 @@ interface ICoreServiceProviderIpc {
     void GetVoiceMuteState(
         [in] unsigned int sessionId,
         [out] boolean muteState);
+    void GetPaIndexByPortName(
+        [in] String portName,
+        [out] unsigned int ret);
     void RemoveVoiceMuteState(
         [in] unsigned int sessionId);
 }

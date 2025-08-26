@@ -84,6 +84,13 @@ int32_t CoreServiceProviderWrapper::SetWakeUpAudioCapturerFromAudioServer(
     return SUCCESS;
 }
 
+int32_t CoreServiceProviderWrapper::GetPaIndexByPortName(const std::string &portName, uint32_t &ret)
+{
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    ret = coreServiceWorker_->GetPaIndexByPortName(portName);
+    return SUCCESS;
+}
+
 int32_t CoreServiceProviderWrapper::GetVoiceMuteState(uint32_t sessionId, bool &muteState)
 {
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
