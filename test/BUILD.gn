@@ -279,6 +279,7 @@ group("audio_fuzz_test") {
     "fuzztest/audiospatializationservice_fuzzer:fuzztest",
     "fuzztest/audiostatemanager_fuzzer:fuzztest",
     "fuzztest/audiostream_fuzzer:fuzztest",
+    "fuzztest/audiostreamchecker_fuzzer:fuzztest",
     "fuzztest/audiostreamcollector_fuzzer:fuzztest",
     "fuzztest/audiostreamdescriptor_fuzzer:fuzztest",
     "fuzztest/audiousbmanager_fuzzer:fuzztest",
