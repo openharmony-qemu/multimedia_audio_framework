@@ -1687,5 +1687,131 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetMinVolumeLevel_002, TestSize.Level
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(volumeLevel, MIN_VOLUME_LEVEL);
 }
+
+/**
+* @tc.name  : Test IsCurrentDeviceEnableIntelligentNoiseReduction.
+* @tc.number: IsCurrentDeviceEnableIntelligentNoiseReduction_001
+* @tc.desc  : Test IsCurrentDeviceEnableIntelligentNoiseReduction interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, IsCurrentDeviceEnableIntelligentNoiseReduction_001, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+ 
+    SourceType sourceType = SourceType::SOURCE_TYPE_MIC;
+    bool ret = server->audioPolicyService_.IsCurrentDeviceEnableIntelligentNoiseReduction(sourceType);
+    EXPECT_EQ(ret, false);
+}
+ 
+/**
+* @tc.name  : Test IsCurrentDeviceEnableIntelligentNoiseReduction.
+* @tc.number: IsCurrentDeviceEnableIntelligentNoiseReduction_002
+* @tc.desc  : Test IsCurrentDeviceEnableIntelligentNoiseReduction interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, IsCurrentDeviceEnableIntelligentNoiseReduction_002, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+ 
+    SourceType sourceType = SourceType::SOURCE_TYPE_LIVE;
+    bool ret = server->audioPolicyService_.IsCurrentDeviceEnableIntelligentNoiseReduction(sourceType);
+    EXPECT_EQ(ret, true);
+}
+ 
+/**
+* @tc.name  : Test IsCurrentDeviceEnableIntelligentNoiseReduction.
+* @tc.number: IsCurrentDeviceEnableIntelligentNoiseReduction_003
+* @tc.desc  : Test IsCurrentDeviceEnableIntelligentNoiseReduction interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, IsCurrentDeviceEnableIntelligentNoiseReduction_003, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+ 
+    SourceType sourceType = SourceType::SOURCE_TYPE_VOICE_COMMUNICATION;
+    server->audioPolicyService_.audioEcManager_.isEcFeatureEnable_ = 1;
+    bool ret = server->audioPolicyService_.IsCurrentDeviceEnableIntelligentNoiseReduction(sourceType);
+    EXPECT_EQ(ret, false);
+}
+ 
+/**
+* @tc.name  : Test IsCurrentDeviceEnableIntelligentNoiseReduction.
+* @tc.number: IsCurrentDeviceEnableIntelligentNoiseReduction_004
+* @tc.desc  : Test IsCurrentDeviceEnableIntelligentNoiseReduction interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, IsCurrentDeviceEnableIntelligentNoiseReduction_004, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+ 
+    SourceType sourceType = SourceType::SOURCE_TYPE_VOICE_COMMUNICATION;
+    server->audioPolicyService_.audioEcManager_.isEcFeatureEnable_ = 0;
+    bool ret = server->audioPolicyService_.IsCurrentDeviceEnableIntelligentNoiseReduction(sourceType);
+    EXPECT_EQ(ret, false);
+}
+ 
+/**
+* @tc.name  : Test CheckVoipANROn.
+* @tc.number: CheckVoipANROn_001
+* @tc.desc  : Test CheckVoipANROn interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipANROn_001, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+ 
+    AudioEffectPropertyArrayV3 propertyArray = {};
+    propertyArray.property.push_back({"record", "NROFF"});
+    bool ret = server->audioPolicyService_.CheckVoipANROn(propertyArray.property);
+    EXPECT_EQ(ret, false);
+}
+ 
+/**
+* @tc.name  : Test CheckVoipANROn.
+* @tc.number: CheckVoipANROn_002
+* @tc.desc  : Test CheckVoipANROn interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipANROn_002, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+ 
+    AudioEffectPropertyArrayV3 propertyArray = {};
+    propertyArray.property.push_back({"voip_up", "NROFF"});
+    bool ret = server->audioPolicyService_.CheckVoipANROn(propertyArray.property);
+    EXPECT_EQ(ret, false);
+}
+ 
+/**
+* @tc.name  : Test CheckVoipANROn.
+* @tc.number: CheckVoipANROn_003
+* @tc.desc  : Test CheckVoipANROn interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipANROn_003, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+ 
+    AudioEffectPropertyArrayV3 propertyArray = {};
+    propertyArray.property.push_back({"record", "AINR"});
+    bool ret = server->audioPolicyService_.CheckVoipANROn(propertyArray.property);
+    EXPECT_EQ(ret, false);
+}
+ 
+/**
+* @tc.name  : Test CheckVoipANROn.
+* @tc.number: CheckVoipANROn_004
+* @tc.desc  : Test CheckVoipANROn interfaces.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipANROn_004, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+ 
+    AudioEffectPropertyArrayV3 propertyArray = {};
+    propertyArray.property.push_back({"voip_up", "AINR"});
+    bool ret = server->audioPolicyService_.CheckVoipANROn(propertyArray.property);
+    EXPECT_EQ(ret, true);
+}
 } // namespace AudioStandard
 } // namespace OHOS
