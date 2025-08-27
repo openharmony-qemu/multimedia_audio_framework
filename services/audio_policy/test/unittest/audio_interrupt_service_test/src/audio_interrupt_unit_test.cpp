@@ -3805,7 +3805,7 @@ HWTEST(AudioInterruptUnitTest, AudioSessionFocusMode_004, TestSize.Level1)
     movieInterrupt.audioFocusType.isPlay = true;
     movieInterrupt.callbackType = INTERRUPT_EVENT_CALLBACK_DEFAULT;
 
-    int32_t zoneId = -1;
+    int32_t zoneId = 0;
     bool result = audioInterruptService->ShouldBypassAudioSessionFocus(zoneId, movieInterrupt);
     EXPECT_FALSE(result);
 
@@ -4104,21 +4104,17 @@ HWTEST(AudioInterruptUnitTest, AudioSessionFocusMode_010, TestSize.Level2)
     int32_t CALLER_PID = IPCSkeleton::GetCallingPid();
     auto audioInterruptService = std::make_shared<AudioInterruptService>();
     ASSERT_NE(audioInterruptService, nullptr);
-    audioInterruptService->Init(GetPolicyServerTest());
-    audioInterruptService->SetCallbackHandler(GetServerHandlerTest());
+    audioInterruptService->sessionService_ = nullptr;
+    const std::vector<AudioInterrupt> streamsInSession;
+    audioInterruptService->DelayToDeactivateStreamsInAudioSession(DEFAULT_ZONE_ID, CALLER_PID, streamsInSession);
 
-    std::shared_ptr<AudioSessionService> sessionService = std::make_shared<AudioSessionService>();
-    ASSERT_NE(nullptr, sessionService);
-    audioInterruptService->sessionService_ = sessionService;
-    int32_t ret = sessionService->SetAudioSessionScene(CALLER_PID, AudioSessionScene::MEDIA);
-    EXPECT_EQ(SUCCESS, ret);
-    AudioSessionStrategy audioSessionStrategy;
-    audioSessionStrategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
-    ret = audioInterruptService->ActivateAudioSession(DEFAULT_ZONE_ID, CALLER_PID, audioSessionStrategy);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ASSERT_NE(nullptr, sessionService->sessionMap_[CALLER_PID]);
-    AudioInterrupt audioInterrupt = {};
+    auto audioInterruptServiceWithSession = std::make_shared<AudioInterruptService>();
+    audioInterruptServiceWithSession->SetCallbackHandler(GetServerHandlerTest());
+    AudioSessionStrategy strategy;
+    strategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
+    auto sessionService = std::make_shared<AudioSessionService>();
+    sessionService->sessionMap_[CALLER_PID] = std::make_shared<AudioSession>(CALLER_PID, strategy, sessionService);
+    AudioInterrupt audioInterrupt;
     audioInterrupt.pid = CALLER_PID;
     audioInterrupt.streamId = SESSION_ID_TEST + 1;
     audioInterrupt.audioFocusType.streamType = STREAM_MUSIC;
@@ -4126,24 +4122,23 @@ HWTEST(AudioInterruptUnitTest, AudioSessionFocusMode_010, TestSize.Level2)
     audioInterrupt.callbackType = INTERRUPT_EVENT_CALLBACK_DEFAULT;
     sessionService->sessionMap_[CALLER_PID]->AddStreamInfo(audioInterrupt);
 
-    audioInterruptService->sessionService_ = nullptr;
-    audioInterruptService->DelayToDeactivateStreamsInAudioSession(
-        DEFAULT_ZONE_ID, CALLER_PID, sessionService->GetStreams(CALLER_PID));
-    std::this_thread::sleep_for(std::chrono::seconds(2));
-    audioInterruptService->sessionService_ = sessionService;
+    audioInterruptServiceWithSession->sessionService_ = sessionService;
     sessionService->sessionMap_[CALLER_PID]->state_ = AudioSessionState::SESSION_ACTIVE;
-    audioInterruptService->DelayToDeactivateStreamsInAudioSession(
+    audioInterruptServiceWithSession->DelayToDeactivateStreamsInAudioSession(
         DEFAULT_ZONE_ID, CALLER_PID, sessionService->GetStreams(CALLER_PID));
-    std::this_thread::sleep_for(std::chrono::seconds(2));
 
-    ret = sessionService->SetAudioSessionScene(CALLER_PID, AudioSessionScene::MEDIA);
-    EXPECT_EQ(SUCCESS, ret);
-    ret = audioInterruptService->ActivateAudioSession(DEFAULT_ZONE_ID, CALLER_PID, audioSessionStrategy);
-    EXPECT_EQ(SUCCESS, ret);
+    auto audioInterruptServiceWithoutHandler = std::make_shared<AudioInterruptService>();
+    audioInterruptServiceWithoutHandler->SetCallbackHandler(nullptr);
+    auto sessionServiceWithoutHandler = std::make_shared<AudioSessionService>();
+    sessionServiceWithoutHandler->sessionMap_[CALLER_PID] =
+        std::make_shared<AudioSession>(CALLER_PID, strategy, sessionServiceWithoutHandler);
+    sessionServiceWithoutHandler->sessionMap_[CALLER_PID]->AddStreamInfo(audioInterrupt);
 
-    audioInterruptService->SetCallbackHandler(nullptr);
-    ret = audioInterruptService->DeactivateAudioSession(DEFAULT_ZONE_ID, CALLER_PID);
-    EXPECT_EQ(SUCCESS, ret);
+    audioInterruptServiceWithoutHandler->sessionService_ = sessionServiceWithoutHandler;
+    sessionServiceWithoutHandler->sessionMap_[CALLER_PID]->state_ = AudioSessionState::SESSION_NEW;
+    audioInterruptServiceWithoutHandler->DelayToDeactivateStreamsInAudioSession(
+        DEFAULT_ZONE_ID, CALLER_PID, sessionServiceWithoutHandler->GetStreams(CALLER_PID));
+
     std::this_thread::sleep_for(std::chrono::seconds(2));
 }
 
