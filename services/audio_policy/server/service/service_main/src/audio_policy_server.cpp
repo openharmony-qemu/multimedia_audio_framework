@@ -240,7 +240,7 @@ void AudioPolicyServer::OnStart()
     interruptService_->SetCallbackHandler(audioPolicyServerHandler_);
 
     AudioZoneService::GetInstance().Init(audioPolicyServerHandler_, interruptService_);
-    StandaloneModeManager::GetInstance().InIt(interruptService_);
+    StandaloneModeManager::GetInstance().Init(interruptService_);
     if (audioPolicyManager_.SetAudioStreamRemovedCallback(this)) {
         AUDIO_ERR_LOG("SetAudioStreamRemovedCallback failed");
     }
@@ -2812,10 +2812,10 @@ int32_t AudioPolicyServer::SetAppConcurrencyMode(const int32_t appUid, const int
     return ERR_UNKNOWN;
 }
 
-int32_t AudioPolicyServer::SetAppSlientOnDisplay(const int32_t displayId)
+int32_t AudioPolicyServer::SetAppSilentOnDisplay(const int32_t displayId)
 {
     if (interruptService_ != nullptr) {
-        return StandaloneModeManager::GetInstance().SetAppSlientOnDisplay(IPCSkeleton::GetCallingPid(), displayId);
+        return StandaloneModeManager::GetInstance().SetAppSilentOnDisplay(IPCSkeleton::GetCallingPid(), displayId);
     }
     return ERR_UNKNOWN;
 }
