@@ -323,11 +323,8 @@ HWTEST_F(AudioRenderSinkUnitTest, RegisterCurrentDeviceType_001, TestSize.Level1
 {
     InitPrimarySink();
     EXPECT_TRUE(primarySink_ && primarySink_->IsInited());
-    std::function<void(bool)> HandleDeviceCallback;
-    HandleDeviceCallback(true);
-    primarySink_->RegisterCurrentDeviceCallback(HandleDeviceCallback);
-    HandleDeviceCallback(false);
-    primarySink_->RegisterCurrentDeviceCallback(HandleDeviceCallback);
+    std::function<void(bool)> callback = [](bool state) { EXPECT_FALSE(state); };
+    primarySink_->RegisterCurrentDeviceCallback(callback);
     DeInitPrimarySink();
 }
 
