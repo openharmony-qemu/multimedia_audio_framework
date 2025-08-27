@@ -829,7 +829,7 @@ void AudioManagerProxy::SetActiveOutputDevice(DeviceType deviceType)
 
     error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_ACTIVE_OUTPUT_DEVICE), dataParcel, replyParcel, option);
-        CHECK_AND_RETURN_LOG(error == ERR_NONE, "SetActiveOutputDevice failed, error: %{public}d", error);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "SetActiveOutputDevice failed, error: %{public}d", error);
     return;
 }
 
