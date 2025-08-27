@@ -1845,23 +1845,17 @@ void AudioInterruptService::UpdateMicFocusStrategy(SourceType existSourceType,
     SourceType incomingSourceType, const std::string &currentBundleName,
     const std::string &incomingBundleName, AudioFocusEntry &focusEntry)
 {
-    if (incomingSourceType == SOURCE_TYPE_INVALID || existSourceType == SOURCE_TYPE_INVALID
-        || queryBundleNameListCallback_ == nullptr) {
+    if (incomingSourceType == SOURCE_TYPE_INVALID || existSourceType == SOURCE_TYPE_INVALID ||
+        queryBundleNameListCallback_ == nullptr) {
         AUDIO_INFO_LOG("Not a recording stream access");
         return;
     }
     bool isCurrentBundleNameExist = false;
     bool isIncomingBundleNameExist = false;
-    if (queryBundleNameListCallback_ != nullptr) {
-        queryBundleNameListCallback_->OnQueryBundleNameIsInList(currentBundleName, "audio_micfocus_list",
-            isCurrentBundleNameExist);
-        AUDIO_INFO_LOG("isCurrentBundleNameExist: %{public}d", isCurrentBundleNameExist);
-    }
-    if (queryBundleNameListCallback_ != nullptr) {
-        queryBundleNameListCallback_->OnQueryBundleNameIsInList(incomingBundleName, "audio_micfocus_list",
-            isIncomingBundleNameExist);
-        AUDIO_INFO_LOG("isIncomingBundleNameExist: %{public}d", isIncomingBundleNameExist);
-    }
+    queryBundleNameListCallback_->OnQueryBundleNameIsInList(currentBundleName, "audio_micfocus_list",
+        isCurrentBundleNameExist);
+    queryBundleNameListCallback_->OnQueryBundleNameIsInList(incomingBundleName, "audio_micfocus_list",
+        isIncomingBundleNameExist);
     AUDIO_INFO_LOG("%{public}s update mic focus strategy, focusEntry.hintType: %{public}d,"
         " focusEntry.actionOn: %{public}d"
         " existSourceType: %{public}d  incomingSourceType: %{public}d"
