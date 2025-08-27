@@ -163,6 +163,12 @@ public:
     int32_t SelectInputDevice(const sptr<AudioCapturerFilter> &audioCapturerFilter,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) override;
 
+    int32_t SelectInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor) override;
+
+    int32_t GetSelectedInputDevice(std::shared_ptr<AudioDeviceDescriptor> &AudioDeviceDescriptor) override;
+
+    int32_t ClearSelectedInputDevice() override;
+
     int32_t ExcludeOutputDevices(int32_t audioDevUsage,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) override;
 

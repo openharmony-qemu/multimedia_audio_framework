@@ -1976,6 +1976,12 @@ int32_t AudioPolicyServer::SelectInputDevice(const sptr<AudioCapturerFilter> &au
     return ret;
 }
 
+int32_t AudioPolicyServer::SelectInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    return eventEntry_->SelectInputDeviceByUid(audioDeviceDescriptor, callerUid);
+}
+
 int32_t AudioPolicyServer::ExcludeOutputDevices(int32_t audioDevUsageIn,
     const vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
@@ -3326,6 +3332,7 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid, pid_t uid)
     audioAffinityManager_.DelSelectRendererDevice(uid);
     std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
     eventEntry_->RegisteredTrackerClientDied(uid, pid);
+    eventEntry_->ClearSelectedInputDeviceByUid(uid);
 
     auto filter = [&pid](int val) {
         return pid == val;
@@ -3782,6 +3789,20 @@ int32_t AudioPolicyServer::SetNearlinkDeviceVolume(const std::string &macAddress
         return SetSystemVolumeLevelWithDeviceInternal(streamType, volume, updateUi, DEVICE_TYPE_NEARLINK);
     }
 
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::GetSelectedInputDevice(std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    audioDeviceDescriptor = eventEntry_->GetSelectedInputDeviceByUid(callerUid);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::ClearSelectedInputDevice()
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    eventEntry_->ClearSelectedInputDeviceByUid(callerUid);
     return SUCCESS;
 }
 

@@ -78,6 +78,7 @@ AudioCoreService::AudioCoreService()
       policyConfigMananger_(AudioPolicyConfigManager::GetInstance()),
       audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
       sleAudioDeviceManager_(SleAudioDeviceManager::GetInstance()),
+      audioUsrSelectManager_(AudioUsrSelectManager::GetAudioUsrSelectManager()),
       audioPipeSelector_(AudioPipeSelector::GetPipeSelector()),
       audioSessionService_(AudioSessionService::GetAudioSessionService()),
       pipeManager_(AudioPipeManager::GetPipeManager())
@@ -1071,6 +1072,28 @@ int32_t AudioCoreService::SelectInputDevice(sptr<AudioCapturerFilter> audioCaptu
     }
 
     return audioRecoveryDevice_.SelectInputDevice(audioCapturerFilter, selectedDesc);
+}
+
+int32_t AudioCoreService::SelectInputDeviceByUid(const std::shared_ptr<AudioDeviceDescriptor> &selectedDesc,
+    int32_t uid)
+{
+    int32_t result = SUCCESS;
+    audioUsrSelectManager_.SelectInputDeviceByUid(selectedDesc, uid);
+    AudioScene scene = audioSceneManager_.GetAudioScene(true);
+    CHECK_AND_RETURN_RET(scene != AUDIO_SCENE_PHONE_CALL && scene != AUDIO_SCENE_PHONE_CHAT, result);
+    result = FetchInputDeviceAndRoute("SelectInputDeviceByUid");
+    return result;
+}
+
+std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::GetSelectedInputDeviceByUid(int32_t uid)
+{
+    return audioUsrSelectManager_.GetSelectedInputDeviceByUid(uid);
+}
+
+int32_t AudioCoreService::ClearSelectedInputDeviceByUid(int32_t uid)
+{
+    audioUsrSelectManager_.ClearSelectedInputDeviceByUid(uid);
+    return SUCCESS;
 }
 
 void AudioCoreService::NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value)
