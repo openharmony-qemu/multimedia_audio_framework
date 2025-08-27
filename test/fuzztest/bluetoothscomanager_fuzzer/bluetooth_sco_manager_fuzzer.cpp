@@ -49,6 +49,8 @@ void UpdateScoStateWhenConnectedFuzzTest()
     BluetoothRemoteDevice device("00:11:22:33:44:55", TRANSPORT);
     int reason = g_fuzzUtils.GetData<int>();
     scoManager.UpdateScoStateWhenConnected(scoState, device, reason);
+    scoState = HfpScoConnectState::SCO_CONNECTED;
+    scoManager.UpdateScoStateWhenConnected(scoState, device, reason);
 }
 
 void UpdateScoStateWhenConnectingFuzzTest()
@@ -98,11 +100,21 @@ void HandleScoConnectFuzzTest()
     scoManager.HandleScoConnect(category, device);
 }
 
+void HandleScoDisconnectFuzzTest()
+{
+    BluetoothScoManager scoManager;
+    BluetoothRemoteDevice device("00:11:22:33:44:55", TRANSPORT);
+    scoManager.currentScoState_= g_fuzzUtils.GetData<AudioScoState>();
+    scoManager.HandleScoDisconnect(device);
+}
+
 void HandleScoConnectNoLockFuzzTest()
 {
     BluetoothScoManager scoManager;
     BluetoothRemoteDevice device("00:11:22:33:44:55", TRANSPORT);
     ScoCategory category = ScoCategory::SCO_DEFAULT;
+    scoManager.HandleScoConnectNoLock(category, device);
+    scoManager.currentScoState_= g_fuzzUtils.GetData<AudioScoState>();
     scoManager.HandleScoConnectNoLock(category, device);
 }
 
@@ -135,6 +147,8 @@ void IsNeedSwitchScoCategoryFuzzTest()
     BluetoothScoManager scoManager;
     ScoCategory category = ScoCategory::SCO_DEFAULT;
     scoManager.IsNeedSwitchScoCategory(category);
+    scoManager.currentScoCategory_ = ScoCategory::SCO_VIRTUAL;
+    scoManager.IsNeedSwitchScoCategory(category);
 }
 
 void ProcDisconnectReqWhenConnectedFuzzTest()
@@ -164,6 +178,9 @@ void ConnectAndDisconnectScoFuzzTest()
     BluetoothScoManager scoManager;
     ScoCategory category = ScoCategory::SCO_DEFAULT;
     BluetoothRemoteDevice device("00:11:22:33:44:55", TRANSPORT);
+    scoManager.ConnectSco(category, device);
+    scoManager.DisconnectSco(category, device);
+    category = ScoCategory::SCO_RECOGNITION;
     scoManager.ConnectSco(category, device);
     scoManager.DisconnectSco(category, device);
 }
@@ -222,6 +239,17 @@ void GetAudioScoDeviceFuzzTest()
     scoManager.GetAudioScoDevice();
 }
 
+void UpdateScoStateFuzzTest()
+{
+    BluetoothScoManager scoManager;
+    HfpScoConnectState scoState = HfpScoConnectState::SCO_DISCONNECTED;
+    BluetoothRemoteDevice device("00:11:22:33:44:55", TRANSPORT);
+    scoManager.currentScoDevice_ = device;
+    int reason = g_fuzzUtils.GetData<int>();
+    scoManager.currentScoState_= g_fuzzUtils.GetData<AudioScoState>();
+    scoManager.UpdateScoState(scoState, device, reason);
+}
+
 vector<TestFuncs> g_testFuncs = {
     UpdateScoStateWhenDisconnectedFuzzTest,
     UpdateScoStateWhenConnectedFuzzTest,
@@ -231,6 +259,7 @@ vector<TestFuncs> g_testFuncs = {
     ForceUpdateScoCategoryFuzzTest,
     ProcCacheRequestFuzzTest,
     HandleScoConnectFuzzTest,
+    HandleScoDisconnectFuzzTest,
     HandleScoConnectNoLockFuzzTest,
     ProcConnectReqWhenDisconnectedFuzzTest,
     ProcConnectReqWhenConnectedFuzzTest,
@@ -248,6 +277,7 @@ vector<TestFuncs> g_testFuncs = {
     SetAudioScoStateFuzzTest,
     OnScoStateTimeOutFuzzTest,
     GetAudioScoDeviceFuzzTest,
+    UpdateScoStateFuzzTest,
 };
 } // namespace AudioStandard
 } // namesapce OHOS

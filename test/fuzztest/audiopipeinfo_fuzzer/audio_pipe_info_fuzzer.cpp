@@ -124,7 +124,33 @@ void DumpInputAttrsFuzzTest()
 void AudioPipeInfoFuzzTest()
 {
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    CHECK_AND_RETURN(pipeInfo != nullptr);
     AudioPipeInfo audioPipeInfo(pipeInfo);
+}
+
+void ToStringFuzzTest()
+{
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    CHECK_AND_RETURN(pipeInfo != nullptr);
+    pipeInfo->ToString();
+}
+
+void ContainStreamFuzzTest()
+{
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    CHECK_AND_RETURN(pipeInfo != nullptr);
+    uint32_t sessionId = GetData<uint32_t>();
+    pipeInfo->ContainStream(sessionId);
+}
+
+void AddStreamFuzzTest()
+{
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    CHECK_AND_RETURN(pipeInfo != nullptr);
+    std::shared_ptr<AudioStreamDescriptor> stream = std::make_shared<AudioStreamDescriptor>();
+    pipeInfo->AddStream(stream);
+    uint32_t sessionId = GetData<uint32_t>();
+    pipeInfo->RemoveStream(sessionId);
 }
 
 TestFuncs g_testFuncs[] = {
@@ -133,6 +159,9 @@ TestFuncs g_testFuncs[] = {
     DumpOutputAttrsFuzzTest,
     DumpInputAttrsFuzzTest,
     AudioPipeInfoFuzzTest,
+    ToStringFuzzTest,
+    ContainStreamFuzzTest,
+    AddStreamFuzzTest,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)

@@ -292,6 +292,7 @@ group("audio_fuzz_test") {
     "fuzztest/audiozoneservice_fuzzer:fuzztest",
     "fuzztest/audiozoneclientmanager_fuzzer:fuzztest",
     "fuzztest/bluetoothdevicemanager_fuzzer:fuzztest",
+    "fuzztest/bluetoothhfpinterface_fuzzer:fuzztest",
     "fuzztest/bluetoothscomanager_fuzzer:fuzztest",
     "fuzztest/captureclockmanager_fuzzer:fuzztest",
     "fuzztest/capturerinserver_fuzzer:fuzztest",
