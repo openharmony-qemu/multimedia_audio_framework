@@ -158,17 +158,15 @@ bool OH_AudioStreamManager_IsFastRecordingSupported(
 }
 
 bool OH_AudioStreamManager_IsCurrentDeviceEnableIntelligentNoiseReduction(
-    OH_AudioStreamManager *audioStreamManager, OH_AudioStream_SourceType source)
+    OH_AudioStreamManager *streamManager, OH_AudioStream_SourceType source)
 {
-    CHECK_AND_RETURN_RET_LOG(supported != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "supported is nullptr");
-    OHAudioStreamManager *ohAudioStreamManager = convertManager(audioStreamManager);
+    OHAudioStreamManager *ohAudioStreamManager = convertManager(streamManager);
     CHECK_AND_RETURN_RET_LOG(ohAudioStreamManager != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioStreamManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(VALID_OH_SOURCE_TYPES.count(source) != 0,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "sourceType is invalid");
     SourceType sourceType = static_cast<SourceType>(source);
-    *supported = ohAudioStreamManager->IsCurrentDeviceEnableIntelligentNoiseReduction(sourceType);
-    return AUDIOCOMMON_RESULT_SUCCESS;
+    return ohAudioStreamManager->IsCurrentDeviceEnableIntelligentNoiseReduction(sourceType);
 }
 
 namespace OHOS {

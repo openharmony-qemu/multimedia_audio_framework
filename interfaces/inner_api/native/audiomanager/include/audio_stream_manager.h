@@ -394,7 +394,7 @@ public:
     /**
      * @brief Return if the system recording supports intelligent noise reduction for current device.
      * @param SourceType sourceType used to decide the audio device and pipe type selection result.
-     * @returns {@code true} if the system recording supports intelligent noise reduction for current device.
+     * @return {@code true} if the system recording supports intelligent noise reduction for current device.
      * @since 21
      */
     bool IsCurrentDeviceEnableIntelligentNoiseReduction(SourceType sourceType);

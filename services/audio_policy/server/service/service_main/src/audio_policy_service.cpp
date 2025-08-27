@@ -1204,7 +1204,7 @@ bool AudioPolicyService::CheckVoipANROn(std::vector<AudioEffectPropertyV3> &prop
 bool AudioPolicyService::IsCurrentDeviceEnableIntelligentNoiseReduction(SourceType sourceType)
 {
     if (sourceType != SOURCE_TYPE_LIVE && sourceType != SOURCE_TYPE_VOICE_COMMUNICATION) {
-        AUDIO_INFO_LOG("SourceType %{public}d not support ANR", sourceType);
+        AUDIO_INFO_LOG("SourceType %{public}d IsCurrentDeviceEnableIntelligentNoiseReduction 0", sourceType);
         return false;
     }
  

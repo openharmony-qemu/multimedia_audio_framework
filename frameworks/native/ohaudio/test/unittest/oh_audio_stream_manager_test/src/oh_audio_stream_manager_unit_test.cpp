@@ -207,20 +207,20 @@ HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsFastRecordingSuppor
 }
 
 /**
- * @tc.name  : Test IsCurrentDeviceEnableIntelligentNoiseReduction.
+ * @tc.name  : Test OH_AudioStreamManager_IsCurrentDeviceEnableIntelligentNoiseReduction.
  * @tc.number: OH_AudioStreamManager_IsCurrentDeviceEnableIntelligentNoiseReduction_001
- * @tc.desc  : Test IsCurrentDeviceEnableIntelligentNoiseReduction.
+ * @tc.desc  : Test OH_AudioStreamManager_IsCurrentDeviceEnableIntelligentNoiseReduction.
  */
-HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsCurrentDeviceEnableIntelligentNoiseReduction_001, TestSize.Level0)
+HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsCurrentDeviceEnableIntelligentNoiseReduction_001,
+    TestSize.Level0)
 {
     OH_AudioStreamManager *audioStreamManager = nullptr;
-    auto result = OH_AudioManager_GetAudioStreamManager(&audioStreamManager);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-    EXPECT_NE(audioStreamManager, nullptr);
+    auto ret = OH_AudioManager_GetAudioStreamManager(&audioStreamManager);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_SUCCESS);
 
     OH_AudioStream_SourceType sourceType = AUDIOSTREAM_SOURCE_TYPE_MIC;
-    auto ret = IsCurrentDeviceEnableIntelligentNoiseReduction(audioStreamManager, sourceType);
-    EXPECT_EQ(ret, false);
+    auto result = OH_AudioStreamManager_IsCurrentDeviceEnableIntelligentNoiseReduction(audioStreamManager, sourceType);
+    EXPECT_EQ(result, false);
 }
 } // namespace AudioStandard
 } // namespace OHOS
