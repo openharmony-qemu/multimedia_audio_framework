@@ -616,6 +616,16 @@ void AudioEcManager::GetTargetSourceTypeAndMatchingFlag(SourceType source,
     }
 }
 
+int32_t AudioEcManager::ReloadSourceSoftLink(std::shared_ptr<AudioPipeInfo> &pipeInfo,
+    const AudioModuleInfo &moduleInfo)
+{
+    int32_t ret = audioIOHandleMap_.ReloadPortAndUpdateIOHandle(pipeInfo, moduleInfo, true);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "reload softLink failed");
+    normalSourceOpened_ = SOURCE_TYPE_VOICE_CALL;
+    AUDIO_INFO_LOG("reload hearingAid");
+    return SUCCESS;
+}
+
 void AudioEcManager::ReloadSourceForSession(SessionInfo sessionInfo)
 {
     AUDIO_INFO_LOG("reload session for source: %{public}d", sessionInfo.sourceType);

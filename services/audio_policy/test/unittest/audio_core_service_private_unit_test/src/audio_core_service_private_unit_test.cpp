@@ -3084,11 +3084,15 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateHearingAidCall_001, TestSize
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
+    audioCoreService->hearingAidCallFlag_ = false;
     audioCoreService->CheckAndUpdateHearingAidCall(DeviceType::DEVICE_TYPE_HEARING_AID);
+    audioCoreService->hearingAidCallFlag_ = true;
     audioCoreService->CheckAndUpdateHearingAidCall(DeviceType::DEVICE_TYPE_EARPIECE);
-    auto audioPipeManager = AudioPipeManager::GetPipeManager();
-    auto pipeInfo = audioPipeManager->GetPipeinfoByNameAndFlag("primary", AUDIO_INPUT_FLAG_NORMAL);
-    ASSERT_NE(pipeInfo, nullptr);
+    ASSERT_EQ(audioCoreService->hearingAidCallFlag_, false);
+
+    audioCoreService->CheckAndUpdateHearingAidCall(DeviceType::DEVICE_TYPE_HEARING_AID);
+    bool ret = audioCoreService->audioIOHandleMap_.CheckIOHandleExist("Built_in_mic");
+    ASSERT_EQ(ret, false);
 }
 
 /**
