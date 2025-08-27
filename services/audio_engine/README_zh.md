@@ -5,7 +5,7 @@
 
 **图1** 引擎架构图
 
-<img src="../../figures/zh-cn_image_proaudio.png" width="60%">
+<img src="../../figures/zh-cn_image_proaudio.png" width="30%">
 
 ### 架构理念
 架构特点是以节点的形化处理音频数据，每个节点负责相对独立的功能模块，节点之间可以组合链接，实现预期的对音频数据的处理，具有时延低、扩展性强的优势。
@@ -185,15 +185,13 @@ ProAudio通路暂时收编Primary（primary、a2dp、remote、dp、multi channel
 
 **图2** 下行播放数据流转以及节点连接图
 
-<img src="../../figures/zh-cn_image_proaudio_renderer.png" width="60%">
+<img src="../../figures/zh-cn_image_proaudio_renderer.png" width="30%">
 
 **图3** 上行录制数据流转以及节点连接图
 
-<img src="../../figures/zh-cn_image_proaudio_capturer.png" width="60%">
+<img src="../../figures/zh-cn_image_proaudio_capturer.png" width="30%">
 
 其中，节点的连接时机是在调用**start**函数时，节点的断连时机是在调用**pause**或者**stop**  
 
 数据拉取均通过OutputNode，即SinkOutputNode和SourceOutputNode，因此，下行通路数据流动只需要拉动SinkOutputNode，便可递归式从所有节点拉取数据（dfs）;  
 而上行需要遍历所有SourceOutPutNode，对每一个节点都执行拉数据操作（同样为递归式），但ProAudio节点具有分发功能，因此，只有第一个节点可以触发上一个节点拉数据，其余节点均取到第一个节点所拉到的数据，并不会造成重复拉数据。
-
-
