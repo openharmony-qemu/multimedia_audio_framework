@@ -149,12 +149,12 @@ static void GainCompensation(SingleStagePolyphaseResamplerState* state, uint32_t
     CHECK_AND_RETURN_LOG(state != nullptr, "state is nullptr!");
     if (state->gainCorrection) {
         float gain = 0;
-        for (i = 0; i < pFactor; i++) {
+        for (uint32_t i = 0; i < pFactor; i++) {
             gain = 0.0;
-            for (j = 0; j < state->filterLength; j++) {
+            for (uint32_t j = 0; j < state->filterLength; j++) {
                 gain += state->filterCoefficients[i * state->filterLength + j];
             }
-            for (j = 0; j < state->filterLength; j++) {
+            for (uint32_t j = 0; j < state->filterLength; j++) {
                 state->filterCoefficients[i * state->filterLength + j] /= gain;
             }
         }
