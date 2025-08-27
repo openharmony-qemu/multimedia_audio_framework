@@ -135,10 +135,10 @@ HWTEST_F(HpaeCoBufferNodeUnitTest, Process_001, TestSize.Level0)
     std::string deviceNetId = "LocalDevice";
     EXPECT_EQ(sinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
     sinkOutputNode->DoProcess();
-    EXPECT_EQ(hpaeCaptureEffectNode->Reset(), true);
+    EXPECT_EQ(coBufferNode->Reset(), true);
     sinkOutputNode->DoProcess();
-    EXPECT_EQ(hpaeCaptureEffectNode->ResetAll(), true);
-    sinkOutputNode->ProcessOutputFrameInner();
+    EXPECT_EQ(coBufferNode->ResetAll(), true);
+    coBufferNode->ProcessOutputFrameInner();
     TestRendererRenderFrame(sinkOutputNode->GetRenderFrameData(),
         nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
 }
