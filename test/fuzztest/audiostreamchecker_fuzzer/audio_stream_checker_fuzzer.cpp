@@ -254,6 +254,57 @@ void AudioStreamCheckerCleanRecordDataFuzzTest()
     checker->StopCheckStreamThread();
 }
 
+void AudioStreamCheckerCalculateFrameAfterStandbyFuzzTest()
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    CHECK_AND_RETURN(checker != nullptr);
+    CheckerParam para;
+    int64_t abnormalFrameNum = 0;
+
+    para.standbyStartTime = 0;
+    para.standbyStopTime = g_fuzzUtils.GetData<int64_t>();
+    para.lastUpdateTime = 0;
+    para.isMonitorNoDataFrame = g_fuzzUtils.GetData<bool>();
+    checker->streamConfig_.rendererInfo.rendererFlags = 0;
+    checker->CalculateFrameAfterStandby(para, abnormalFrameNum);
+}
+
+void AudioStreamCheckerCheckStreamThreadFuzzTest()
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    CHECK_AND_RETURN(checker != nullptr);
+    checker->CheckStreamThread();
+}
+
+void AudioStreamCheckerCheckVolumeFuzzTest()
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    CHECK_AND_RETURN(checker != nullptr);
+    checker->curVolume_ = g_fuzzUtils.GetData<float>();
+    checker->preVolume_ = g_fuzzUtils.GetData<float>();
+    checker->CheckVolume();
+}
+
+void AudioStreamCheckerSetVolumeFuzzTest()
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    CHECK_AND_RETURN(checker != nullptr);
+    float volume = g_fuzzUtils.GetData<float>();
+    checker->SetVolume(volume);
+}
+
+void AudioStreamCheckerGetVolumeFuzzTest()
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    CHECK_AND_RETURN(checker != nullptr);
+    checker->GetVolume();
+}
+
 vector<TestFuncs> g_testFuncs = {
     AudioStreamCheckerInitCheckerFuzzTest,
     AudioStreamCheckerRecordFrameFuzzTest,
@@ -268,6 +319,11 @@ vector<TestFuncs> g_testFuncs = {
     AudioStreamCheckerRecordStandbyTimeFuzzTest,
     AudioStreamCheckerUpdateAppStateFuzzTest,
     AudioStreamCheckerCleanRecordDataFuzzTest,
+    AudioStreamCheckerCalculateFrameAfterStandbyFuzzTest,
+    AudioStreamCheckerCheckStreamThreadFuzzTest,
+    AudioStreamCheckerCheckVolumeFuzzTest,
+    AudioStreamCheckerSetVolumeFuzzTest,
+    AudioStreamCheckerGetVolumeFuzzTest,
 };
 } // namespace AudioStandard
 } // namesapce OHOS
