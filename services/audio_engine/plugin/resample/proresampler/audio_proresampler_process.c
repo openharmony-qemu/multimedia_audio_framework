@@ -799,7 +799,7 @@ static int32_t PolyphaseResamplerStereo(SingleStagePolyphaseResamplerState* stat
     const uint32_t polyphaseFactor = state->polyphaseFactor;
     uint32_t i;
 
-    float = (float)(polyphaseFactor - 1) / (float)interpolateFactor;
+    float scalerPhase = (float)(polyphaseFactor - 1) / (float)interpolateFactor;
     if (inputIndex < (uint32_t) (*inputLength)) {
         outSample = CompareMin((*outputLength), ((interpolateFactor * ((*inputLength) - inputIndex) -
             subfilterNum) - 1) / decimateFactor + 1);
@@ -1325,7 +1325,7 @@ static int32_t UpdateResamplerState(SingleStagePolyphaseResamplerState* state)
         state->gainCorrection = 0;
     }
     // coarse (integral) sampling rate ratio
-    if ((COMPARE_MAX(state->decimateFactor, state->interpolateFactor) <= MAX_RATIO_INTEGRAL_METHOD) &
+    if ((CompareMax(state->decimateFactor, state->interpolateFactor) <= MAX_RATIO_INTEGRAL_METHOD) &
         (state->decimateFactor == 1 || state->interpolateFactor == 1)) {
         state->resamplerFunction = SetResamplerFunctionCoarse(state);
     } else { // fine (non-integral) sampling rate ratio
@@ -1474,7 +1474,7 @@ static void ApplyResampler(SingleStagePolyphaseResamplerState* state, uint32_t* 
     /* Call resampler function */
     outSample = state->resamplerFunction(state, inputMemory, inputLength, out, outputLength);
 
-    if (state->inputIndex < (int32_t)*inputLength) {
+    if (state->inputIndex < (uint32_t)*inputLength) {
         *inputLength = state->inputIndex;
     }
     *outputLength = outSample;
