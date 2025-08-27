@@ -1746,5 +1746,94 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_063, TestSize.
     audioInterruptService->DispatchInterruptEventWithStreamId(streamId, interruptEvent);
     EXPECT_EQ(true, interruptEvent.callbackToApp);
 }
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_064
+* @tc.desc  : Test ShouldCallbackToClient
+*/
+HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_064, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+    uint32_t streamId = 0;
+    uint32_t uid = 123;
+    InterruptEventInternal interruptEvent;
+    auto ret = audioInterruptService->ShouldCallbackToClient(uid, streamId, interruptEvent);
+    EXPECT_EQ(true, ret);
+
+    ClientTypeManager::GetInstance()->clientTypeMap_[uid] = CLIENT_TYPE_GAME;
+    interruptEvent.hintType = INTERRUPT_HINT_DUCK;
+    ret = audioInterruptService->ShouldCallbackToClient(uid, streamId, interruptEvent);
+    EXPECT_EQ(true, ret);
+
+    interruptEvent.hintType = INTERRUPT_HINT_UNDUCK;
+    ret = audioInterruptService->ShouldCallbackToClient(uid, streamId, interruptEvent);
+    EXPECT_EQ(true, ret);
+
+    interruptEvent.hintType = INTERRUPT_HINT_RESUME;
+    sptr<AudioPolicyServer> server = new AudioPolicyServer(0);
+    audioInterruptService->Init(server);
+    ret = audioInterruptService->ShouldCallbackToClient(uid, streamId, interruptEvent);
+    EXPECT_EQ(false, ret);
+
+    interruptEvent.hintType = INTERRUPT_HINT_STOP;
+    ret = audioInterruptService->ShouldCallbackToClient(uid, streamId, interruptEvent);
+    EXPECT_EQ(false, ret);
+
+    interruptEvent.hintType = INTERRUPT_HINT_MUTE;
+    ret = audioInterruptService->ShouldCallbackToClient(uid, streamId, interruptEvent);
+    EXPECT_EQ(false, ret);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_065
+* @tc.desc  : Test RemoveClient_001
+*/
+HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_065, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+    int32_t zoneId = 123;
+    uint32_t streamId = 123;
+    auto audioInterruptZone = make_shared<AudioInterruptZone>();
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.streamId = streamId;
+    audioInterruptZone->audioFocusInfoList.push_back({audioInterrupt, STOP});
+    audioInterruptService->zonesMap_[0] = audioInterruptZone;
+    audioInterruptService->RemoveClient(zoneId, streamId);
+    EXPECT_EQ(false, audioInterrupt.isAudioSessionInterrupt);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_066
+* @tc.desc  : Test RemoveClient_002
+*/
+HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_066, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+    int32_t zoneId = 123;
+    uint32_t streamId = 123;
+    auto audioInterruptZone = make_shared<AudioInterruptZone>();
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.streamId = 0;
+    audioInterruptZone->audioFocusInfoList.push_back({audioInterrupt, STOP});
+    audioInterruptService->zonesMap_[zoneId] = nullptr;
+    audioInterruptService->zonesMap_[0] = audioInterruptZone;
+    audioInterruptService->RemoveClient(zoneId, streamId);
+    EXPECT_EQ(false, audioInterrupt.isAudioSessionInterrupt);
+
+    audioInterruptService->zonesMap_[zoneId] = audioInterruptZone;
+    audioInterruptService->RemoveClient(zoneId, streamId);
+    EXPECT_EQ(false, audioInterrupt.isAudioSessionInterrupt);
+
+    audioInterruptZone->interruptCbsMap[streamId] = std::make_shared<AudioInterruptCallbackTest>();
+    audioInterruptService->zonesMap_[zoneId] = audioInterruptZone;
+    audioInterruptService->RemoveClient(zoneId, streamId);
+    EXPECT_EQ(false, audioInterrupt.isAudioSessionInterrupt);
+}
 } // namespace AudioStandard
 } // namespace OHOS
