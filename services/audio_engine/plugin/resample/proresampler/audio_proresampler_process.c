@@ -146,7 +146,7 @@ static float Sinc(float x)
 // gain compensation for filter coefficinents, 2025.3.21
 static void GainCompensation(SingleStagePolyphaseResamplerState* state, uint32_t pFactor)
 {
-    CHECK_AND_RETURN_LOG(state != nullptr, "state is nullptr!");
+    CHECK_AND_RETURN_LOG(state != NULL, "state is NULL!");
     if (state->gainCorrection) {
         float gain = 0;
         for (uint32_t i = 0; i < pFactor; i++) {
