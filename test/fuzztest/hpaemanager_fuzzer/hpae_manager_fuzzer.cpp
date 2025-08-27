@@ -38,7 +38,6 @@ static size_t g_pos;
 static std::string g_rootCapturerPath = "/data/source_file_io_48000_2_s16le.pcm";
 const uint32_t DEFAULT_FRAME_LENGTH = 960;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 1;
 
 typedef void (*TestFuncs)();
 
@@ -100,7 +99,7 @@ void UploadDumpSourceInfoFuzzTest()
     capturerManager->UploadDumpSourceInfo(deviceName);
 }
 
-TestFuncs g_testFuncs[TESTSIZE] = {
+TestFuncs g_testFuncs[] = {
     UploadDumpSourceInfoFuzzTest,
 };
 

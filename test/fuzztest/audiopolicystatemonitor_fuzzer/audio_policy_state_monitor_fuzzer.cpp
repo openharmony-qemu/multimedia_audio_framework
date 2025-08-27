@@ -48,7 +48,6 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 2;
 static const std::time_t AUDIO_SESSION_TIME_OUT_DURATION_TEST_S = 3;
 
 typedef void (*TestFuncs)();
@@ -105,7 +104,7 @@ void FreeCbIdFuzzTest()
     audioPolicyStateMonitor->FreeCbId(cbId);
 }
 
-TestFuncs g_testFuncs[TESTSIZE] = {
+TestFuncs g_testFuncs[] = {
     UnRegisterCallbackFuzzTest,
     FreeCbIdFuzzTest,
 };

@@ -300,8 +300,8 @@ std::string AudioSystemManager::GetSelfBundleName(int32_t uid)
     sptr<AppExecFwk::IBundleMgr> iBundleMgr = iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
     CHECK_AND_RETURN_RET_LOG(iBundleMgr != nullptr, bundleName, "bundlemgr interface is null");
 
-    WatchTimeout reguard("bundleMgrProxy->GetNameForUid:GetSelfBundleName");
-    iBundleMgr->GetNameForUid(uid, bundleName);
+    WatchTimeout reguard("bundleMgrProxy->GetBundleNameForUid:GetSelfBundleName");
+    iBundleMgr->GetBundleNameForUid(uid, bundleName);
     reguard.CheckCurrTimeout();
     return bundleName;
 }

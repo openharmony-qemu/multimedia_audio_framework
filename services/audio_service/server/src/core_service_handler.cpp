@@ -106,19 +106,5 @@ int32_t CoreServiceHandler::SetWakeUpAudioCapturerFromAudioServer(const AudioPro
     iCoreServiceProvider_->SetWakeUpAudioCapturerFromAudioServer(config, ret);
     return ret;
 }
-
-int32_t CoreServiceHandler::GetVoiceMuteState(uint32_t sessionId, bool &muteState)
-{
-    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
-    iCoreServiceProvider_->GetVoiceMuteState(sessionId, muteState);
-    return SUCCESS;
-}
-
-int32_t CoreServiceHandler::RemoveVoiceMuteState(uint32_t sessionId)
-{
-    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
-    iCoreServiceProvider_->RemoveVoiceMuteState(sessionId);
-    return SUCCESS;
-}
 } // namespace AudioStandard
 } // namespace OHOS

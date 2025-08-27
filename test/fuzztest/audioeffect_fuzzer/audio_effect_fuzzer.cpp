@@ -179,7 +179,8 @@ void UpdateSpatializationStateFuzzTest()
     bool headTrackingEnabled = GetData<bool>();
 
     AudioSpatializationState spatializationState = {spatializationEnabled, headTrackingEnabled};
-    
+    AudioEffectChainManager::GetInstance()->headTrackingEnabled_ = true;
+    AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = true;
     AudioEffectChainManager::GetInstance()->UpdateSpatializationState(spatializationState);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }

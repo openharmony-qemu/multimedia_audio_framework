@@ -41,7 +41,6 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 26;
 const uint32_t RESIZENUM = 2;
 const uint32_t IDNUM = 2;
 const uint32_t NUM_2 = 2;
@@ -164,8 +163,7 @@ void GetUnusedPipeFuzzTest()
     pipe1->streamDescriptors_.clear();
     audioPipeManager->AddAudioPipeInfo(pipe1);
 
-    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    audioPipeManager->GetUnusedPipe(deviceType);
+    audioPipeManager->GetUnusedPipe();
 }
 
 void IsSpecialPipeFuzzTest()
@@ -469,7 +467,7 @@ void GetPipeByModuleAndFlagFuzzTest()
     audioPipeManager->GetPipeByModuleAndFlag(targetModuleName, targetRouteFlag);
 }
 
-TestFuncs g_testFuncs[TESTSIZE] = {
+TestFuncs g_testFuncs[] = {
     RemoveAudioPipeInfoFuzzTest,
     RemoveAudioPipeInfoByIdFuzzTest,
     UpdateAudioPipeInfoFuzzTest,

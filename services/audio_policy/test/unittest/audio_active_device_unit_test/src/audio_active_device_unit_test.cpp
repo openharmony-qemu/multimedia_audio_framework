@@ -246,5 +246,48 @@ HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_012, TestSize.Leve
     result = audioActiveDevice->IsDeviceActive(DeviceType::DEVICE_TYPE_BLUETOOTH_SCO);
     EXPECT_EQ(result, false);
 }
+
+/**
+* @tc.name  : Test AudioActiveDevice.
+* @tc.number: GetCurrentInputDeviceMacAddr_001.
+* @tc.desc  : Test GetCurrentInputDeviceMacAddr.
+*/
+HWTEST_F(AudioActiveDeviceUnitTest, GetCurrentInputDeviceMacAddr_001, TestSize.Level1)
+{
+    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+
+    audioActiveDevice->currentActiveDevice_.macAddress_ = "00:11:22:33:44:55";
+    string ret = audioActiveDevice->GetCurrentInputDeviceMacAddr();
+    EXPECT_EQ(ret, "00:11:22:33:44:55");
+}
+
+/**
+* @tc.name  : Test AudioActiveDevice.
+* @tc.number: GetCurrentOutputDeviceCategory_001.
+* @tc.desc  : Test GetCurrentOutputDeviceCategory.
+*/
+HWTEST_F(AudioActiveDeviceUnitTest, GetCurrentOutputDeviceCategory_001, TestSize.Level1)
+{
+    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+
+    DeviceCategory ret = audioActiveDevice->GetCurrentOutputDeviceCategory();
+    EXPECT_EQ(ret, CATEGORY_DEFAULT);
+}
+
+/**
+* @tc.name  : Test AudioActiveDevice.
+* @tc.number: WriteOutputRouteChangeEvent_001.
+* @tc.desc  : Test WriteOutputRouteChangeEvent.
+*/
+HWTEST_F(AudioActiveDeviceUnitTest, WriteOutputRouteChangeEvent_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    deviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
+    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+
+    audioActiveDevice->WriteOutputRouteChangeEvent(deviceDescriptor, reason);
+    EXPECT_EQ(deviceDescriptor->deviceId_, 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS

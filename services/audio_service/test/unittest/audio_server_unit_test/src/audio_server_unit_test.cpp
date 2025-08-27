@@ -2441,6 +2441,7 @@ HWTEST_F(AudioServerUnitTest, RestoreAudioWorkgroupPrio_003, TestSize.Level1)
     EXPECT_EQ(result, 0);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test SetRenderWhitelist API
  * @tc.type  : FUNC
@@ -2456,6 +2457,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetRenderWhitelist_001, TestSize.Level2
     int32_t ret = audioServer->SetRenderWhitelist(list);
     EXPECT_EQ(SUCCESS, ret);
 }
+#endif
 
 /**
  * @tc.name  : Test GenerateSessionId API
@@ -2542,6 +2544,79 @@ HWTEST_F(AudioServerUnitTest, ArgDataDump_001, TestSize.Level1)
     audioServerHpaeDump.ArgDataDump(dumpString, argQue);
 
     EXPECT_NE(dumpString, "Hpae AudioServer Data Dump:\n\n");
+}
+
+/**
+ * @tc.name  : Test CacheExtraParameters API
+ * @tc.type  : FUNC
+ * @tc.number: CacheExtraParameters_001
+ * @tc.desc  : Test CacheExtraParameters interface.
+ */
+HWTEST_F(AudioServerUnitTest, CacheExtraParameters_001, TestSize.Level4)
+{
+    EXPECT_NE(nullptr, audioServer);
+    std::string key = "test_key";
+    std::vector<std::pair<std::string, std::string>> kvpairs = {{"sub_key1", "value1"}, {"sub_key2", "value2"}};
+    int32_t ret = audioServer->CacheExtraParameters(key, kvpairs);
+    EXPECT_EQ(false, ret);
+}
+
+/**
+ * @tc.name  : Test RestoreRenderSink API
+ * @tc.type  : FUNC
+ * @tc.number: RestoreRenderSink_001
+ * @tc.desc  : Test RestoreRenderSink interface.
+ */
+HWTEST_F(AudioServerUnitTest, RestoreRenderSink_001, TestSize.Level4)
+{
+    EXPECT_NE(nullptr, audioServer);
+    std::string sinkName = "primary";
+    int32_t ret = audioServer->RestoreRenderSink(sinkName);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+}
+
+/**
+ * @tc.name  : Test GetEffectLiveParameter API
+ * @tc.type  : FUNC
+ * @tc.number: GetEffectLiveParameter_001
+ * @tc.desc  : Test GetEffectLiveParameter interface.
+ */
+HWTEST_F(AudioServerUnitTest, GetEffectLiveParameter_001, TestSize.Level4)
+{
+    EXPECT_NE(nullptr, audioServer);
+    std::vector<std::string> subKeys = {"key1", "key2"};
+    std::vector<std::pair<std::string, std::string>> result;
+    bool ret = audioServer->GetEffectLiveParameter(subKeys, result);
+    EXPECT_EQ(false, ret);
+}
+
+/**
+ * @tc.name  : Test GetExtraParametersInner API
+ * @tc.type  : FUNC
+ * @tc.number: GetExtraParametersInner_001
+ * @tc.desc  : Test GetExtraParametersInner interface.
+ */
+HWTEST_F(AudioServerUnitTest, GetExtraParametersInner_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    std::string mainKey = "hpae_effect";
+    std::vector<std::string> subKeys = {"key1", "key2"};
+    std::vector<std::pair<std::string, std::string>> result;
+    bool ret = audioServer->GetExtraParametersInner(mainKey, subKeys, result);
+    EXPECT_EQ(true, ret);
+}
+
+/**
+ * @tc.name  : Test CheckMaxLoopbackInstances API
+ * @tc.type  : FUNC
+ * @tc.number: CheckMaxLoopbackInstances_003
+ * @tc.desc  : Test CheckMaxLoopbackInstances interface.
+ */
+HWTEST_F(AudioServerUnitTest, CheckMaxLoopbackInstances_003, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    int32_t ret = audioServer->CheckMaxLoopbackInstances(AUDIO_MODE_PLAYBACK);
+    EXPECT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

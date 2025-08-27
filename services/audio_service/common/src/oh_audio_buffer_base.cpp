@@ -277,6 +277,7 @@ OHAudioBufferBase::OHAudioBufferBase(AudioBufferHolder bufferHolder, uint32_t to
 
 int32_t OHAudioBufferBase::SizeCheck()
 {
+    CHECK_AND_RETURN_RET_LOG(byteSizePerFrame_ != 0, ERR_INVALID_PARAM, "failed: invalid byteSizePerFrame_.");
     if (totalSizeInFrame_ > UINT_MAX / byteSizePerFrame_) {
         AUDIO_ERR_LOG("failed: totalSizeInFrame: %{public}u byteSizePerFrame: %{public}u",
             totalSizeInFrame_, byteSizePerFrame_);

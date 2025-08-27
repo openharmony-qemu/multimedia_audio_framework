@@ -148,7 +148,6 @@ public:
 
     int32_t SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId);
     void InitDupBuffer(int32_t innerCapId);
-
 public:
     const AudioProcessConfig processConfig_;
 private:

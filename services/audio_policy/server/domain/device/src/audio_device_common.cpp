@@ -1812,11 +1812,7 @@ void AudioDeviceCommon::SetFirstScreenOn()
 
 int32_t AudioDeviceCommon::SetVirtualCall(pid_t uid, const bool isVirtual)
 {
-    if (uid == 5523) { /* 5523 call manager */
-        return Bluetooth::AudioHfpManager::SetVirtualCall("meetimeservice", isVirtual);
-    }
-    std::string bundleName = AudioBundleManager::GetBundleNameFromUid(uid);
-    return Bluetooth::AudioHfpManager::SetVirtualCall(bundleName, isVirtual);
+    return Bluetooth::AudioHfpManager::SetVirtualCall(uid, isVirtual);
 }
 
 void AudioDeviceCommon::SetHeadsetUnpluggedToSpkOrEpFlag(DeviceType oldDeviceType, DeviceType newDeviceType)

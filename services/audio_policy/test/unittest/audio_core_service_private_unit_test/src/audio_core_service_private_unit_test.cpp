@@ -2388,8 +2388,7 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_123, TestSize.Leve
     audioCoreService->pipeManager_->AddAudioPipeInfo(pipe2);
 
     audioCoreService->RemoveUnusedPipe();
-    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    EXPECT_EQ(audioCoreService->pipeManager_->GetUnusedPipe(deviceType).size(), 2); // 2: unused pipe size
+    EXPECT_EQ(audioCoreService->pipeManager_->GetUnusedPipe().size(), 2); // 2: unused pipe size
 }
 
 /**
@@ -2765,6 +2764,42 @@ HWTEST_F(AudioCoreServicePrivateTest, ActivateInputDevice_002, TestSize.Level4)
     auto result = audioCoreService->ActivateInputDevice(streamDesc);
     EXPECT_EQ(result, SUCCESS);
     AUDIO_INFO_LOG("AudioCoreServicePrivateTest ActivateInputDevice_002 end");
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: MuteSinkPortForSwitchDevice_001
+ * @tc.desc  : Test AudioCoreService::MuteSinkPortForSwitchDevice()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, MuteSinkPortForSwitchDevice_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    // Test1
+    AudioStreamDeviceChangeReasonExt::ExtEnum extReason = AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE;
+    AudioStreamDeviceChangeReasonExt reason(extReason);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> oldDesc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    std::shared_ptr<AudioDeviceDescriptor> newDesc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    streamDesc->oldDeviceDescs_.push_back(oldDesc);
+    streamDesc->oldDeviceDescs_.push_back(newDesc);
+    audioCoreService->audioIOHandleMap_.SetMoveFinish(true);
+    
+    audioCoreService->MuteSinkPortForSwitchDevice(streamDesc, reason);
+    EXPECT_TRUE(audioCoreService->audioIOHandleMap_.moveDeviceFinished_.load());
+    streamDesc->newDeviceDescs_.clear();
+
+    // Test2
+    newDesc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    streamDesc->newDeviceDescs_.push_back(newDesc);
+
+    audioCoreService->MuteSinkPortForSwitchDevice(streamDesc, reason);
+    EXPECT_FALSE(audioCoreService->audioIOHandleMap_.moveDeviceFinished_.load());
+    audioCoreService->audioIOHandleMap_.SetMoveFinish(false);
 }
 
 /**

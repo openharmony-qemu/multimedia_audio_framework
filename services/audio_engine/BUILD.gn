@@ -234,6 +234,7 @@ ohos_shared_library("audio_engine_manager") {
     "manager/src/i_hpae_capturer_manager.cpp",
     "manager/src/i_hpae_manager.cpp",
     "manager/src/i_hpae_renderer_manager.cpp",
+    "manager/src/hpae_virtual_capturer_manager.cpp",
   ]
 
   deps = [

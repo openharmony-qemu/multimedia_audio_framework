@@ -73,6 +73,24 @@ HWTEST_F(DeviceInitCallbackUnitTest, DeviceInitCallbackUnitTest_002, TestSize.Le
     deviceStatusCallbackImpl->OnDeviceOnline(dmDeviceInfo);
     EXPECT_NE(0, dmDeviceInfo.extraData.length());
 }
+
+/**
+ * @tc.name  : Test OnDeviceChanged with full GetExtraDataField coverage
+ * @tc.number: DeviceInitCallbackUnitTest_003
+ * @tc.desc  : Test OnDeviceChanged triggers GetExtraDataField with all escape cases
+ */
+HWTEST_F(DeviceInitCallbackUnitTest, DeviceInitCallbackUnitTest_003, TestSize.Level4)
+{
+    auto deviceStatusCallbackImpl = make_shared<DeviceStatusCallbackImpl>();
+    DistributedHardware::DmDeviceInfo dmDeviceInfo;
+
+    strncpy_s(dmDeviceInfo.deviceName, DM_MAX_DEVICE_NAME_LEN, "test", 4);
+    strncpy_s(dmDeviceInfo.networkId, DM_MAX_DEVICE_ID_LEN, "1234", 4);
+
+    dmDeviceInfo.extraData = "{\\\"\\\"CAR_BRAND\\\\\\\": \\\"\\\\\\\"\\\\\\\\\\\\\\\"Bugatti\\\"}";
+    deviceStatusCallbackImpl->OnDeviceChanged(dmDeviceInfo);
+    EXPECT_NE(0, dmDeviceInfo.extraData.length());
+}
 } // namespace AudioStandard
 } // namespace OHOS
   

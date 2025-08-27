@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include <config.h>
+#include <pa_config.h>
 #include <pulsecore/log.h>
 #include <pulsecore/modargs.h>
 #include <pulsecore/module.h>

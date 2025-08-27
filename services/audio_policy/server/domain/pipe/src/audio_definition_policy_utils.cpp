@@ -60,6 +60,7 @@ std::unordered_map<std::string, DeviceType> AudioDefinitionPolicyUtils::deviceTy
     {"DEVICE_TYPE_NEARLINK", DEVICE_TYPE_NEARLINK},
     {"DEVICE_TYPE_NEARLINK_IN", DEVICE_TYPE_NEARLINK_IN},
     {"DEVICE_TYPE_HEARING_AID", DEVICE_TYPE_HEARING_AID},
+    {"DEVICE_TYPE_REMOTE_DAUDIO", DEVICE_TYPE_REMOTE_DAUDIO},
 };
 
 std::unordered_map<std::string, AudioPin> AudioDefinitionPolicyUtils::pinStrToEnum = {

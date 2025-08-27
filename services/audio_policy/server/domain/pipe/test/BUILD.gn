@@ -21,6 +21,13 @@ import("../../../../../../config.gni")
 audio_framework_root = "../../../../../.."
 module_output_path = "audio_framework/audio_framework_policy/audio_policy"
 
+group("audio_policy_pipe_unittest_packages") {
+  testonly = true
+  deps = [
+    ":audio_capturer_session_ext_unit_test",
+  ]
+}
+
 ohos_unittest("audio_capturer_session_ext_unit_test") {
   module_out_path = module_output_path
   include_dirs = [

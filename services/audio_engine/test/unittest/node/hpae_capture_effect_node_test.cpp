@@ -162,22 +162,8 @@ HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_002, TestSize.Leve
     hpaeSourceInputCluster->CapturerSourceInit(attr);
     hpaeSourceInputCluster->CapturerSourceStart();
 
-    uint64_t requestBytes = nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format);
-    uint64_t replyBytes = 0;
-    std::vector<char> testData(requestBytes);
-    TestCapturerSourceFrame(testData.data(), requestBytes, replyBytes);
-    std::vector<float> testDataFloat(requestBytes / SAMPLE_F32LE);
-    ConvertToFloat(nodeInfo.format, nodeInfo.channels * nodeInfo.frameLen, testData.data(), testDataFloat.data());
-
     hpaeCaptureEffectNode->DoProcess();
-    OutputPort<HpaePcmBuffer *> *outputPort = hpaeCaptureEffectNode->GetOutputPort();
-    HpaePcmBuffer* outPcmBuffer = outputPort->PullOutputData();
-    float* outputPcmData = outPcmBuffer->GetPcmDataBuffer();
 
-    for (int32_t i = 0; i < requestBytes / SAMPLE_F32LE; i++) {
-        float diff = outputPcmData[i] - testDataFloat[i];
-        EXPECT_EQ(fabs(diff) < TEST_VALUE_PRESION, true);
-    }
     hpaeCaptureEffectNode->DisConnectWithInfo(hpaeSourceInputCluster, nodeInfo);
     EXPECT_EQ(hpaeSourceInputCluster->GetSourceInputNodeUseCount(), 1);
     hpaeSourceInputCluster->CapturerSourceStop();

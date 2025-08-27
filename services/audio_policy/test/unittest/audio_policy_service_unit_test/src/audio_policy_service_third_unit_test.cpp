@@ -1136,8 +1136,6 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetVirtualCall_001, TestSize.Level1)
     bool isVirtual = false;
     int32_t ret = server->audioDeviceCommon_.SetVirtualCall(0, isVirtual);
     EXPECT_EQ(ret, SUCCESS);
-    ret = server->audioDeviceCommon_.SetVirtualCall(5523, isVirtual); /* 5523: call manager */
-    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

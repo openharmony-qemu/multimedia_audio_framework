@@ -599,7 +599,6 @@ enum AudioLoopbackEqualizerPreset {
 struct AudioRendererInfo : public Parcelable {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
-    bool forceToNormal = false;
     int32_t rendererFlags = AUDIO_FLAG_NORMAL;
     AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
     std::string sceneType = "";
@@ -624,6 +623,7 @@ struct AudioRendererInfo : public Parcelable {
     bool isVirtualKeyboard = false;
     // store the finally select routeflag after concurrency
     uint32_t audioFlag = 0x0;
+    bool forceToNormal = false;
 
     AudioRendererInfo() {}
     AudioRendererInfo(ContentType contentTypeIn, StreamUsage streamUsageIn, int32_t rendererFlagsIn)
@@ -639,7 +639,6 @@ struct AudioRendererInfo : public Parcelable {
     {
         return parcel.WriteInt32(static_cast<int32_t>(contentType))
             && parcel.WriteInt32(static_cast<int32_t>(streamUsage))
-            && parcel.WriteBool(forceToNormal)
             && parcel.WriteInt32(rendererFlags)
             && parcel.WriteInt32(originalFlag)
             && parcel.WriteString(sceneType)
@@ -658,13 +657,13 @@ struct AudioRendererInfo : public Parcelable {
             && parcel.WriteBool(isLoopback)
             && parcel.WriteInt32(static_cast<int32_t>(loopbackMode))
             && parcel.WriteBool(isVirtualKeyboard)
-            && parcel.WriteUint32(audioFlag);
+            && parcel.WriteUint32(audioFlag)
+            && parcel.WriteBool(forceToNormal);
     }
     void UnmarshallingSelf(Parcel &parcel)
     {
         contentType = static_cast<ContentType>(parcel.ReadInt32());
         streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
-        forceToNormal = parcel.ReadBool();
         rendererFlags = parcel.ReadInt32();
         originalFlag = parcel.ReadInt32();
         sceneType = parcel.ReadString();
@@ -684,6 +683,7 @@ struct AudioRendererInfo : public Parcelable {
         loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
         isVirtualKeyboard = parcel.ReadBool();
         audioFlag = parcel.ReadUint32();
+        forceToNormal = parcel.ReadBool();
     }
 
     static AudioRendererInfo *Unmarshalling(Parcel &parcel)
@@ -1949,6 +1949,14 @@ enum BoostTriggerMethod : uint32_t {
     METHOD_START = 0,
     METHOD_WRITE_OR_READ,
     METHOD_MAX
+};
+
+enum XperfEventId : int32_t {
+    XPERF_EVENT_START = 0,
+    XPERF_EVENT_STOP = 1,
+    XPERF_EVENT_RELEASE = 2,
+    XPERF_EVENT_FAULT = 3,
+    XPERF_EVENT_MAX = 4,
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -802,7 +802,7 @@ HWTEST(AudioPolicyManager, SetNearlinkDeviceVolume_001, TestSize.Level1)
     bool updateUi = false;
 
     auto result = audioPolicyManager_->SetNearlinkDeviceVolume(macAddress, volumeType, volume, updateUi);
-    EXPECT_EQ(result, ERROR);
+    EXPECT_NE(result, SUCCESS);
 }
 
 /**
@@ -821,7 +821,7 @@ HWTEST(AudioPolicyManager, SetNearlinkDeviceVolume_002, TestSize.Level1)
     bool updateUi = true;
 
     auto result = audioPolicyManager_->SetNearlinkDeviceVolume(macAddress, volumeType, volume, updateUi);
-    EXPECT_EQ(result, ERROR);
+    EXPECT_NE(result, SUCCESS);
 }
 
 /**

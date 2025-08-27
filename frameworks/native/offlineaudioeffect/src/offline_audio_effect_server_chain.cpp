@@ -102,8 +102,11 @@ static void InitControllerDescriptor()
     CHECK_AND_RETURN_LOG(model, "get all descriptor failed, effectmodel is nullptr");
     struct EffectControllerDescriptor descs[MAX_DESCRIPTOR_NUM];
     int32_t ret = model->GetAllEffectDescriptors(model, descs, &descsLen);
-    CHECK_AND_RETURN_LOG(model, "get all descriptor failed, errCode is %{public}d", ret);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "get all descriptor failed, errCode is %{public}d", ret);
     for (uint32_t i = 0; i < descsLen; i++) {
+        CHECK_AND_CONTINUE_LOG(descs[i].effectName != nullptr, "descs[i].effectName is nullptr");
+        CHECK_AND_CONTINUE_LOG(descs[i].libName != nullptr, "descs[i].libName is nullptr");
+        CHECK_AND_CONTINUE_LOG(descs[i].effectId != nullptr, "descs[i].effectId is nullptr");
         g_chainName2infoMap.insert_or_assign(descs[i].effectName,
             std::make_pair(std::string(descs[i].libName), std::string(descs[i].effectId)));
         FreeIfNotNull(descs[i].effectName);

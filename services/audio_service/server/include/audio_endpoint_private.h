@@ -23,6 +23,7 @@
 #include "i_process_status_listener.h"
 #include "linear_pos_time_model.h"
 #include "audio_device_descriptor.h"
+#include "audio_performance_monitor.h"
 #include "i_stream_manager.h"
 #include "i_renderer_stream.h"
 #include "audio_utils.h"
@@ -263,6 +264,7 @@ private:
     };
     
     EndpointType endpointType_;
+    AdapterType adapterType_ = ADAPTER_TYPE_FAST;
     int32_t id_ = 0;
     std::mutex listLock_;
     std::vector<IAudioProcessStream *> processList_;

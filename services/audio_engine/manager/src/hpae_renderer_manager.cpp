@@ -34,7 +34,9 @@ constexpr int32_t DEFAULT_EFFECT_FRAME_LEN = 960;
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-
+namespace {
+    constexpr float SUSPEND_TIME_OUT_S = 3.1; // prevent stop not success
+}
 HpaeRendererManager::HpaeRendererManager(HpaeSinkInfo &sinkInfo)
     : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT), sinkInfo_(sinkInfo)
 {}
@@ -263,6 +265,7 @@ void HpaeRendererManager::RefreshProcessClusterByDeviceInner(const std::shared_p
     bool isConnected = (node->isConnected_) ? true : false;
     if (processClusterDecision != USE_NONE_PROCESSCLUSTER && sessionNodeMap_[nodeInfo.sessionId].bypass) {
         AUDIO_INFO_LOG("current processCluster is incorrect, refresh to %{public}d", processClusterDecision);
+        TriggerStreamState(nodeInfo.sessionId, node);
         DeleteProcessCluster(nodeInfo.sessionId);
         CreateProcessClusterInner(nodeInfo, processClusterDecision);
         CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
@@ -274,8 +277,8 @@ void HpaeRendererManager::RefreshProcessClusterByDeviceInner(const std::shared_p
         }
     } else if (processClusterDecision == USE_NONE_PROCESSCLUSTER && !sessionNodeMap_[nodeInfo.sessionId].bypass) {
         AUDIO_INFO_LOG("current processCluster is incorrect, refresh to %{public}d", processClusterDecision);
-        DeleteConnectInputProcessor(sinkInputNodeMap_[nodeInfo.sessionId]);
-        DeleteProcessClusterInner(GetProcessorType(nodeInfo.sessionId));
+        TriggerStreamState(nodeInfo.sessionId, node);
+        DeleteProcessCluster(nodeInfo.sessionId);
         sessionNodeMap_[nodeInfo.sessionId].bypass = true;
         if (isConnected) {
             ConnectInputSession(nodeInfo.sessionId);
@@ -1022,12 +1025,13 @@ int32_t HpaeRendererManager::SetAudioEffectMode(uint32_t sessionId, int32_t effe
         if (nodeInfo.effectInfo.effectMode != static_cast<AudioEffectMode>(effectMode)) {
             nodeInfo.effectInfo.effectMode = static_cast<AudioEffectMode>(effectMode);
             size_t sinkInputNodeConnectNum = sinkInputNodeMap_[sessionId]->GetOutputPort()->GetInputNum();
-            if (sinkInputNodeConnectNum != 0) {
+            HpaeSessionState inputState = sinkInputNodeMap_[sessionId]->GetState();
+            if (sinkInputNodeConnectNum != 0 && inputState == HPAE_SESSION_RUNNING) {
                 AUDIO_INFO_LOG("UpdateProcessClusterConnection because effectMode to be %{public}d", effectMode);
                 UpdateProcessClusterConnection(sessionId, effectMode);
             } else {
-                AUDIO_INFO_LOG("no need to ProcessClusterConnection, sinkInputNodeConnectNum is %{public}zu",
-                    sinkInputNodeConnectNum);
+                AUDIO_INFO_LOG("no need to ProcessClusterConnection, sinkInputNodeConnectNum is %{public}zu, "
+                    "inputState is %{public}d", sinkInputNodeConnectNum, inputState);
             }
         }
     };
@@ -1067,7 +1071,19 @@ void HpaeRendererManager::Process()
     Trace trace("HpaeRendererManager::Process");
     if (outputCluster_ != nullptr && IsRunning()) {
         UpdateAppsUid();
-        outputCluster_->DoProcess();
+        // no stream running & over 3s need stop
+        if (appsUid_.empty()) {
+            int64_t now = ClockTime::GetCurNano();
+            noneStreamTime_ = noneStreamTime_ == 0 ? now : noneStreamTime_;
+            if (now - noneStreamTime_ > SUSPEND_TIME_OUT_S * AUDIO_NS_PER_SECOND) {
+                outputCluster_->Stop();
+            } else {
+                outputCluster_->DoProcess();
+            }
+        } else {
+            noneStreamTime_ = 0;
+            outputCluster_->DoProcess();
+        }
     }
 }
 

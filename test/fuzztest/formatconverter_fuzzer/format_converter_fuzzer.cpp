@@ -128,7 +128,7 @@ void S16MonoToS16StereoFuzzTest()
     dstDesc.bufLength = BUFFER_SIZE_LARGE;
     dstDesc.buffer = dstBuffer;
     FormatConverter::S16MonoToS16Stereo(srcDesc, dstDesc);
-    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.buffer = nullptr;
     FormatConverter::S16MonoToS16Stereo(srcDesc, dstDesc);
 }
 

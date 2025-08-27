@@ -220,6 +220,26 @@ HWTEST(AudioRouterCenterUnitTest, CockpitPhoneRouter_GetRingRenderDevices_001, T
         cockpitPhoneRouter.GetRingRenderDevices(streamUsage, clientUID);
     EXPECT_TRUE(descs.empty());
 }
+
+/**
+ * @tc.name  : Test CockpitPhoneRouter_GetBTCarDevices.
+ * @tc.number: CockpitPhoneRouter_GetBTCarDevices_001
+ * @tc.desc  : Test CockpitPhoneRouter_GetBTCarDevices interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, CockpitPhoneRouter_GetBTCarDevices_001, TestSize.Level4)
+{
+    StreamUsage streamUsage = STREAM_USAGE_ALARM;
+    int32_t clientUID = 1000;
+    CockpitPhoneRouter cockpitPhoneRouter;
+    shared_ptr<AudioDeviceDescriptor> desc1 = nullptr;
+    shared_ptr<AudioDeviceDescriptor> desc2 = make_shared<AudioDeviceDescriptor>();
+    desc2->deviceCategory_ = BT_CAR;
+    shared_ptr<AudioDeviceDescriptor> desc3 = make_shared<AudioDeviceDescriptor>();
+    desc2->deviceCategory_ = BT_SOUNDBOX;
+    AudioDeviceManager::GetAudioDeviceManager().commRenderPublicDevices_ = { desc1, desc2, desc3 };
+    shared_ptr<AudioDeviceDescriptor> desc = cockpitPhoneRouter.GetCallRenderDevice(streamUsage, clientUID);
+    EXPECT_NE(desc, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS
  

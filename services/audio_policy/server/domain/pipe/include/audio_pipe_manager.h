@@ -45,7 +45,7 @@ public:
     bool IsSamePipe(std::shared_ptr<AudioPipeInfo> info, std::shared_ptr<AudioPipeInfo> cmpInfo);
 
     const std::vector<std::shared_ptr<AudioPipeInfo>> GetPipeList();
-    std::vector<std::shared_ptr<AudioPipeInfo>> GetUnusedPipe(DeviceType curOutputDeviceType);
+    std::vector<std::shared_ptr<AudioPipeInfo>> GetUnusedPipe();
     std::vector<std::shared_ptr<AudioPipeInfo>> GetUnusedRecordPipe();
     std::shared_ptr<AudioPipeInfo> GetPipeinfoByNameAndFlag(const std::string adapterName, const uint32_t routeFlag);
     std::string GetAdapterNameBySessionId(uint32_t sessionId);

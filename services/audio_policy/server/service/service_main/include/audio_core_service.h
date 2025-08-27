@@ -96,8 +96,6 @@ public:
         int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
             AudioStreamInfo &streamInfo, bool isReloadProcess = false) override;
         uint32_t GenerateSessionId() override;
-        void GetVoiceMuteState(uint32_t sessionId, bool &muteState) override;
-        void RemoveVoiceMuteState(uint32_t sessionId) override;
         int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
         // IDeviceStatusObserver
@@ -212,9 +210,6 @@ private:
         AudioStreamInfo &streamInfo);
     uint32_t GenerateSessionId();
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
-    void SetVoiceMuteState(uint32_t sessionId, bool isMute);
-    void GetVoiceMuteState(uint32_t sessionId, bool &muteState);
-    void RemoveVoiceMuteState(uint32_t sessionId);
 
     // IDeviceStatusObserver from EventEntry
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
@@ -304,6 +299,7 @@ private:
     void ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName);
     uint32_t GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName);
     int32_t CaptureConcurrentCheck(uint32_t sessionId);
+    void SetFirstScreenOn();
 
 private:
     static std::string GetEncryptAddr(const std::string &addr);
@@ -575,8 +571,7 @@ private:
         .descriptor = nullptr,
         .type = CAST_TYPE_NULL
     };
-    std::unordered_map<uint32_t, bool> voiceMuteStateMap_;
-    std::shared_mutex muteMutex_;
+    bool isFirstScreenOn_ = false;
 };
 }
 }

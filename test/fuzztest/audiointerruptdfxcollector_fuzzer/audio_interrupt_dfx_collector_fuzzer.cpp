@@ -50,7 +50,6 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 11;
 
 typedef void (*TestFuncs)();
 
@@ -176,7 +175,7 @@ void ParseSecondOfValueFuzzTest()
     settingProvider.ParseSecondOfValue(pos, len, input);
 }
 
-TestFuncs g_testFuncs[TESTSIZE] = {
+TestFuncs g_testFuncs[] = {
     FlushDfxMsgFuzzTest,
     WriteEffectMsgFuzzTest,
     GetDfxIndexesFuzzTest,

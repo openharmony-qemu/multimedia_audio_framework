@@ -748,7 +748,7 @@ void AudioRendererPrivate::SetClientInfo(uint32_t flag, IAudioStream::StreamClas
             rendererInfo_.rendererFlags = AUDIO_FLAG_DIRECT;
             rendererInfo_.pipeType = PIPE_TYPE_DIRECT_OUT;
         }
-    } else if (flag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) {
+    } else if (flag & AUDIO_OUTPUT_FLAG_LOWPOWER) {
         streamClass = IAudioStream::StreamClass::PA_STREAM;
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
         rendererInfo_.pipeType = PIPE_TYPE_OFFLOAD;
@@ -2220,6 +2220,10 @@ bool AudioRendererPrivate::FinishOldStream(IAudioStream::StreamClass targetClass
         AUDIO_INFO_LOG("Server died, reset session id: %{public}d", switchInfo.params.originalSessionId);
         switchInfo.params.originalSessionId = 0;
         switchInfo.sessionId = 0;
+        switchInfo.lastFramePosAndTimePairWithSpeed[Timestamp::Timestampbase::MONOTONIC].first =
+            switchInfo.unprocessSamples;
+        switchInfo.lastFramePosAndTimePairWithSpeed[Timestamp::Timestampbase::BOOTTIME].first =
+            switchInfo.unprocessSamples;
     }
     UpdateFramesWritten();
     switchResult = audioStream_->ReleaseAudioStream(true, true);

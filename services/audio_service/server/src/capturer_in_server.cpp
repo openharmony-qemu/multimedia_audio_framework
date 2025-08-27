@@ -183,7 +183,6 @@ void CapturerInServer::OnStatusUpdate(IOperation operation)
         case OPERATION_UNDERFLOW:
             underflowCount += 1;
             AUDIO_INFO_LOG("Underflow!! underflow count %{public}d", underflowCount);
-            stateListener->OnOperationHandled(BUFFER_OVERFLOW, underflowCount);
             break;
         case OPERATION_STARTED:
             status_ = I_STATUS_STARTED;
@@ -257,7 +256,6 @@ bool CapturerInServer::IsReadDataOverFlow(size_t length, uint64_t currentWriteFr
             BufferDesc dstBuffer = stream_->DequeueBuffer(length);
             stream_->EnqueueBuffer(dstBuffer);
         }
-        stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
         return true;
     }
     return false;
@@ -336,19 +334,6 @@ void CapturerInServer::UpdateBufferTimeStamp(size_t readLen)
     audioServerBuffer_->SetTimeStampInfo(curProcessPos_, timestamp);
 }
 
-void CapturerInServer::MuteVoice(const SourceType sourceType, BufferDesc &dstBuffer)
-{
-    bool muteState = false;
-    if (CoreServiceHandler::GetInstance().GetVoiceMuteState(streamIndex_, muteState)) {
-        if (muteState) {
-            AUDIO_DEBUG_LOG("session:%{public}d muted", streamIndex_);
-            int32_t ret = memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength,
-                0, dstBuffer.bufLength);
-            CHECK_AND_RETURN_LOG(ret == EOK, "Clear buffer fail, ret %{public}d.", ret);
-        }
-    }
-}
-
 // LCOV_EXCL_START
 void CapturerInServer::ReadData(size_t length)
 {
@@ -386,8 +371,6 @@ void CapturerInServer::ReadData(size_t length)
         dstBuffer.buffer = dischargeBuffer_.get(); // discharge valid data.
     }
 
-    MuteVoice(processConfig_.capturerInfo.sourceType, dstBuffer);
-
     if (muteFlag_) {
         memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
     }
@@ -406,7 +389,6 @@ void CapturerInServer::ReadData(size_t length)
     UpdateBufferTimeStamp(dstBuffer.bufLength);
 
     stream_->EnqueueBuffer(srcBuffer);
-    stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
 }
 // LCOV_EXCL_STOP
 
@@ -452,8 +434,6 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
         dstBuffer.buffer = dischargeBuffer_.get(); // discharge valid data.
     }
 
-    MuteVoice(processConfig_.capturerInfo.sourceType, dstBuffer);
-
     if (muteFlag_) {
         memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
     }
@@ -470,8 +450,6 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
     audioServerBuffer_->SetHandleInfo(currentWriteFrame, ClockTime::GetCurNano());
 
     UpdateBufferTimeStamp(dstBuffer.bufLength);
-
-    stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
 
     return SUCCESS;
 }
@@ -745,7 +723,6 @@ int32_t CapturerInServer::Stop()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
-    CoreServiceHandler::GetInstance().RemoveVoiceMuteState(streamIndex_);
     return SUCCESS;
 }
 // LCOV_EXCL_STOP
@@ -936,6 +913,7 @@ RestoreStatus CapturerInServer::RestoreSession(RestoreInfo restoreInfo)
         SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
 
         audioServerBuffer_->SetRestoreInfo(restoreInfo);
+        audioServerBuffer_->WakeFutex(IS_PRE_EXIT);
     }
     return restoreStatus;
 }

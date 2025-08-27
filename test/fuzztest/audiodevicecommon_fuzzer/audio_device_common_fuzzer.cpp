@@ -50,7 +50,6 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 61;
 static int32_t NUM_2 = 2;
 const int32_t SESSIONID = 12345;
 
@@ -1108,7 +1107,7 @@ void AudioDeviceCommonDeviceParamsCheckFuzzTest()
     audioDeviceCommon.DeviceParamsCheck(targetRole, audioDeviceDescriptors);
 }
 
-TestFuncs g_testFuncs[TESTSIZE] = {
+TestFuncs g_testFuncs[] = {
     FilterSourceOutputsFuzzTest,
     IsRingerOrAlarmerDualDevicesRangeFuzzTest,
     IsRingOverPlaybackFuzzTest,
