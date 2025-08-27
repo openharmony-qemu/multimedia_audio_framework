@@ -948,7 +948,6 @@
     <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION">
         <focus_table>
             <deny>
-                <focus_type value="SOURCE_TYPE_MIC"/>
                 <focus_type value="SOURCE_TYPE_CAMCORDER"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION"/>
                 <focus_type value="SOURCE_TYPE_WAKEUP"/>

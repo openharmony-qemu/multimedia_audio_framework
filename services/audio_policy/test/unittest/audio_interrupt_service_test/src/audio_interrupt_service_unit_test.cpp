@@ -490,6 +490,7 @@ HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_019, TestSize.Level1
     ClientTypeManager::GetInstance()->OnClientTypeQueryCompleted(uid2, clientType);
     audioInterruptService->policyServer_ = new AudioPolicyServer(0);
     ASSERT_NE(audioInterruptService->policyServer_, nullptr);
+    audioInterruptService->GetRealBundleName(uid);
     auto ret = audioInterruptService->ShouldCallbackToClient(uid, streamId, interruptEvent);
     EXPECT_EQ(ret, false);
 }
@@ -1052,12 +1053,14 @@ HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_052, TestSize.Level1
     SourceType existSourceType;
     SourceType incomingSourceType;
     std::string bundleName = "";
+    std::string currentBundleName = "";
     AudioFocusEntry focusEntry;
 
     existSourceType = SOURCE_TYPE_INVALID;
     incomingSourceType = SOURCE_TYPE_MIC;
     focusEntry.hintType = INTERRUPT_HINT_PAUSE;
-    audioInterruptService->UpdateMicFocusStrategy(existSourceType, incomingSourceType, bundleName, focusEntry);
+    audioInterruptService->UpdateMicFocusStrategy(existSourceType, incomingSourceType,
+        currentBundleName, bundleName, focusEntry);
     EXPECT_NE(focusEntry.hintType, INTERRUPT_HINT_NONE);
 }
 

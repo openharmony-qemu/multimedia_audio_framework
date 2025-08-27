@@ -1216,19 +1216,20 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_040, TestSize.
     incomingSourceType = SOURCE_TYPE_INVALID;
     existSourceType = SOURCE_TYPE_INVALID;
     string bundleName = "test";
+    std::string currentBundleName = "currentTest";
     AudioFocusEntry focusEntry;
     audioInterruptService->UpdateMicFocusStrategy(existSourceType, incomingSourceType,
-        bundleName, focusEntry);
+        currentBundleName, bundleName, focusEntry);
     incomingSourceType = SOURCE_TYPE_VOICE_CALL;
     audioInterruptService->UpdateMicFocusStrategy(existSourceType, incomingSourceType,
-        bundleName, focusEntry);
+        currentBundleName, bundleName, focusEntry);
     existSourceType = SOURCE_TYPE_MIC;
     audioInterruptService->UpdateMicFocusStrategy(existSourceType, incomingSourceType,
-        bundleName, focusEntry);
+        currentBundleName, bundleName, focusEntry);
     sptr<IStandardAudioPolicyManagerListener> listener(new IStandardAudioPolicyManagerListenerStub());
     audioInterruptService->queryBundleNameListCallback_ = listener;
     audioInterruptService->UpdateMicFocusStrategy(existSourceType, incomingSourceType,
-        bundleName, focusEntry);
+        currentBundleName, bundleName, focusEntry);
 }
 
 /**
