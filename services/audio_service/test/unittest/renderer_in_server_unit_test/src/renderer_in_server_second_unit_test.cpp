@@ -52,6 +52,8 @@ const uint64_t TEST_FRAMEPOS = 123456;
 const uint64_t TEST_TIMESTAMP = 111111;
 const float IN_VOLUME_RANGE = 0.5f;
 const uint32_t TEST_STREAMINDEX = 64;
+const uint32_t TEST_SESSIONID = 64;
+const int32_t TEST_UID = 10;
 
 static AudioProcessConfig processConfig;
 static BufferDesc bufferDesc;
@@ -63,8 +65,8 @@ static AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPL
 static AudioProcessConfig GetInnerCapConfig()
 {
     AudioProcessConfig config;
-    config.appInfo.appUid = 10;
-    config.appInfo.appPid = 10;
+    config.appInfo.appUid = TEST_UID;
+    config.appInfo.appPid = TEST_UID;
     config.streamInfo.format = SAMPLE_S32LE;
     config.streamInfo.samplingRate = SAMPLE_RATE_48000;
     config.streamInfo.channels = STEREO;
@@ -73,7 +75,7 @@ static AudioProcessConfig GetInnerCapConfig()
     config.streamType = AudioStreamType::STREAM_MUSIC;
     config.deviceType = DEVICE_TYPE_USB_HEADSET;
     config.innerCapId = 1;
-    config.originalSessionId = 123456;
+    config.originalSessionId = TEST_SESSIONID;
     return config;
 }
 void RendererInServerExtUnitTest::SetUpTestCase(void) {}
@@ -444,7 +446,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerDisableInnerCap_001, TestS
 
     server->Init();
     server->offloadEnable_ = true;
-    server->stream_ = td::make_shared<ProRendererStreamImpl>(processConfig, true);
+    server->stream_ = std::make_shared<ProRendererStreamImpl>(processConfig, true);
     ret = server->stream_->SetOffloadMode(1, true);
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -1039,9 +1041,11 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetLowPowerVolume_005, Tes
     rendererInServer->softLinkInfos_[1].isSoftLinkEnabled = true;
     rendererInServer->softLinkInfos_[1].softLink = nullptr;
     rendererInServer->softLinkInfos_[2].isSoftLinkEnabled = false;
-    rendererInServer->softLinkInfos_[2].softLink = HPAE::IHpaeSoftLink::CreateSoftLink(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
+    rendererInServer->softLinkInfos_[2].softLink = 
+        HPAE::IHpaeSoftLink::CreateSoftLink(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
     rendererInServer->softLinkInfos_[3].isSoftLinkEnabled = true;
-    rendererInServer->softLinkInfos_[3].softLink = HPAE::IHpaeSoftLink::CreateSoftLink(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
+    rendererInServer->softLinkInfos_[3].softLink = 
+        HPAE::IHpaeSoftLink::CreateSoftLink(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
 
     float volume = IN_VOLUME_RANGE;
     int32_t ret = rendererInServer->SetLowPowerVolume(volume);
@@ -1529,7 +1533,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerPause_003, TestSize.Level1
     server->stream_ = CreateHpaeRendererStream();
     server->status_ = I_STATUS_STARTED;
     server->standByEnable_ = false;
-    server->offloadEnale_ = true;
+    server->offloadEnable_ = true;
     server->stream_->SetOffloadMode(1, true);
 
     server->softLinkInfos_[0].isSoftLinkEnabled = false;
@@ -1537,9 +1541,11 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerPause_003, TestSize.Level1
     server->softLinkInfos_[1].isSoftLinkEnabled = true;
     server->softLinkInfos_[1].softLink = nullptr;
     server->softLinkInfos_[2].isSoftLinkEnabled = false;
-    server->softLinkInfos_[2].softLink = HPAE::IHpaeSoftLink::CreateSoftLink(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
+    server->softLinkInfos_[2].softLink = 
+        HPAE::IHpaeSoftLink::CreateSoftLink(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
     server->softLinkInfos_[3].isSoftLinkEnabled = true;
-    server->softLinkInfos_[3].softLink = HPAE::IHpaeSoftLink::CreateSoftLink(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
+    server->softLinkInfos_[3].softLink = 
+        HPAE::IHpaeSoftLink::CreateSoftLink(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
 
     server->captureInfos_[0].isInnerCapEnabled = false;
     server->captureInfos_[0].dupStream = nullptr;
@@ -1575,7 +1581,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerStopInner_001, TestSize.Le
     server->stream_ = CreateHpaeRendererStream();
     server->status_ = I_STATUS_STARTED;
     server->standByEnable_ = false;
-    server->offloadEnale_ = true;
+    server->offloadEnable_ = true;
     server->stream_->SetOffloadMode(1, true);
 
     server->softLinkInfos_[0].isSoftLinkEnabled = false;
@@ -1583,9 +1589,11 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerStopInner_001, TestSize.Le
     server->softLinkInfos_[1].isSoftLinkEnabled = true;
     server->softLinkInfos_[1].softLink = nullptr;
     server->softLinkInfos_[2].isSoftLinkEnabled = false;
-    server->softLinkInfos_[2].softLink = HPAE::IHpaeSoftLink::CreateSoftLink(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
+    server->softLinkInfos_[2].softLink = 
+        HPAE::IHpaeSoftLink::CreateSoftLink(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
     server->softLinkInfos_[3].isSoftLinkEnabled = true;
-    server->softLinkInfos_[3].softLink = HPAE::IHpaeSoftLink::CreateSoftLink(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
+    server->softLinkInfos_[3].softLink = 
+        HPAE::IHpaeSoftLink::CreateSoftLink(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
 
     server->captureInfos_[0].isInnerCapEnabled = false;
     server->captureInfos_[0].dupStream = nullptr;
@@ -1621,7 +1629,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerEnableInnerCap_001, TestSi
     server->stream_ = CreateHpaeRendererStream();
     server->status_ = I_STATUS_STARTED;
     server->standByEnable_ = false;
-    server->offloadEnale_ = true;
+    server->offloadEnable_ = true;
     server->stream_->SetOffloadMode(1, true);
 
     auto ret = server->EnableInnerCap(0);
@@ -1649,7 +1657,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerDisableInnerCapHandle_001,
     server->stream_ = CreateHpaeRendererStream();
     server->status_ = I_STATUS_STARTED;
     server->standByEnable_ = false;
-    server->offloadEnale_ = true;
+    server->offloadEnable_ = true;
     server->stream_->SetOffloadMode(1, true);
 
     server->captureInfos_[0].isInnerCapEnabled = false;
@@ -1681,7 +1689,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetOffloadMode_002, TestSi
     server->stream_ = CreateHpaeRendererStream();
     server->status_ = I_STATUS_STARTED;
     server->standByEnable_ = false;
-    server->offloadEnale_ = true;
+    server->offloadEnable_ = true;
     server->Init();
 
     server->softLinkInfos_[0].isSoftLinkEnabled = false;
@@ -1722,7 +1730,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerUnsetOffloadMode_001, Test
     auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
     ASSERT_TRUE(server != nullptr);
     server->standByEnable_ = false;
-    server->offloadEnale_ = true;
+    server->offloadEnable_ = true;
     server->Init();
 
     server->softLinkInfos_[0].isSoftLinkEnabled = false;
@@ -1771,7 +1779,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetLoudnessGain_001, TestS
     server->stream_ = CreateHpaeRendererStream();
     server->status_ = I_STATUS_STARTED;
     server->standByEnable_ = false;
-    server->offloadEnale_ = true;
+    server->offloadEnable_ = true;
     server->Init();
 
     server->softLinkInfos_[0].isSoftLinkEnabled = false;
@@ -1805,7 +1813,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerDisableAllInnerCap_001, Te
     server->stream_ = CreateHpaeRendererStream();
     server->status_ = I_STATUS_STARTED;
     server->standByEnable_ = false;
-    server->offloadEnale_ = true;
+    server->offloadEnable_ = true;
     server->Init();
 
     server->softLinkInfos_[0].isSoftLinkEnabled = false;
@@ -1813,9 +1821,11 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerDisableAllInnerCap_001, Te
     server->softLinkInfos_[1].isSoftLinkEnabled = true;
     server->softLinkInfos_[1].softLink = nullptr;
     server->softLinkInfos_[2].isSoftLinkEnabled = false;
-    server->softLinkInfos_[2].softLink = HPAE::IHpaeSoftLink::CreateSoftLink(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
+    server->softLinkInfos_[2].softLink = 
+        HPAE::IHpaeSoftLink::CreateSoftLink(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
     server->softLinkInfos_[3].isSoftLinkEnabled = true;
-    server->softLinkInfos_[3].softLink = HPAE::IHpaeSoftLink::CreateSoftLink(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
+    server->softLinkInfos_[3].softLink = 
+        HPAE::IHpaeSoftLink::CreateSoftLink(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
 
     server->captureInfos_[0].isInnerCapEnabled = false;
     server->captureInfos_[0].dupStream = nullptr;
@@ -1873,7 +1883,8 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerInitSoftLink_001, TestSize
     server->InitSoftLink(31);
 
     server->softLinkInfos_[32].isSoftLinkEnabled = true;
-    server->softLinkInfos_[32].softLink = HPAE::IHpaeSoftLink::CreateSoftLink(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
+    server->softLinkInfos_[32].softLink = 
+        HPAE::IHpaeSoftLink::CreateSoftLink(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
 
     int32_t ret = server->InitSoftLink(32);
     EXPECT_EQ(SUCCESS, ret);
@@ -1897,7 +1908,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerStartStreamByType_001, Tes
     server->stream_ = CreateHpaeRendererStream();
     server->status_ = I_STATUS_STARTED;
     server->standByEnable_ = false;
-    server->offloadEnale_ = true;
+    server->offloadEnable_ = true;
     server->Init();
 
     server->softLinkInfos_[0].isSoftLinkEnabled = false;
@@ -1943,7 +1954,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerHandleOffloadStream_001, T
     ASSERT_TRUE(server != nullptr);
     server->stream_ = CreateHpaeRendererStream();
     server->standByEnable_ = false;
-    server->offloadEnale_ = true;
+    server->offloadEnable_ = true;
     auto ret = server->Init();
 
     CaptureInfo captureInfo;
@@ -1990,7 +2001,8 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerDestroySoftLink_001, TestS
     server->softLinkInfos_[1].isSoftLinkEnabled = true;
     server->softLinkInfos_[1].softLink = nullptr;
     server->softLinkInfos_[3].isSoftLinkEnabled = true;
-    server->softLinkInfos_[3].softLink = HPAE::IHpaeSoftLink::CreateSoftLink(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
+    server->softLinkInfos_[3].softLink = 
+        HPAE::IHpaeSoftLink::CreateSoftLink(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
 
     int32_t ret = server->DestroySoftLink(0);
     ret = server->DestroySoftLink(1);

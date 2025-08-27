@@ -110,7 +110,7 @@ int32_t CoreServiceHandler::SetWakeUpAudioCapturerFromAudioServer(const AudioPro
 uint32_t CoreServiceHandler::GetPaIndexByPortName(const std::string &portName)
 {
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
-    uint32_t ret = ERROR;
+    uint32_t ret = OPEN_PORT_FAILURE;
     iCoreServiceProvider_->GetPaIndexByPortName(portName, ret);
     return ret;
 }

@@ -121,17 +121,8 @@ int32_t AudioCaptureSourceUnitTest::AudioCaptureCaptureFrameEc001(
 int32_t AudioCaptureSourceUnitTest::AudioCaptureCaptureFrameEc002(
     struct IAudioCapture *self, const struct AudioFrameLen *frameLen, struct AudioCaptureFrameInfo *frameInfo)
 {
-    int8_t* frameEc = nullptr;
-    frameEc = new int8_t[8];
-    frameEc[0] = 0;
-    frameEc[1] = 1;
-    frameEc[2] = 2;
-    frameEc[3] = 3;
-    frameEc[4] = 4;
-    frameEc[5] = 5;
-    frameEc[6] = 6;
-    frameEc[7] = 7;
-    frameInfo->frameEc = frameEc;
+    std::vector<int8_t> frameEc{0,1,2,3,4,5,6,7};
+    frameInfo->frameEc = frameEc.data();
     return 0;
 }
 

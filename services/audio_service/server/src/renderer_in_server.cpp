@@ -67,7 +67,6 @@ namespace {
     const int32_t DUP_COMMON_LEN = 440; // 400 -> 440ms
     const int32_t DUP_DEFAULT_LEN = 20; // 20 -> 20ms
     const int32_t DUP_RECOVERY_AUTISHAKE_BUFFER_COUNT = 2; // 2 -> 2 frames -> 40ms
-    const uint32_t UNSIGNED_ERROR = -1;
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -1823,7 +1822,6 @@ int32_t RendererInServer::UnsetOffloadMode()
         }
     }
 
-
     {
         std::lock_guard<std::mutex> lock(dupMutex_);
         for (auto &capInfo : captureInfos_) {
@@ -2376,8 +2374,8 @@ int32_t RendererInServer::InitSoftLink(int32_t innerCapId)
 
     uint32_t renderIdx = CoreServiceHandler::GetInstance().GetPaIndexByPortName(sinkName);
     uint32_t captureIdx = CoreServiceHandler::GetInstance().GetPaIndexByPortName(sourceName);
-    CHECK_AND_RETURN_RET_LOG(renderIdx != UNSIGNED_ERROR, ERR_OPERATION_FAILED, "OpenRender Failed");
-    CHECK_AND_RETURN_RET_LOG(captureIdx != UNSIGNED_ERROR, ERR_OPERATION_FAILED, "OpenCapture Failed");
+    CHECK_AND_RETURN_RET_LOG(renderIdx != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED, "OpenRender Failed");
+    CHECK_AND_RETURN_RET_LOG(captureIdx != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED, "OpenCapture Failed");
     AUDIO_INFO_LOG("InitSoftLink:renderIdx%{public}u captureIdx%{public}u", renderIdx, captureIdx);
 
     std::shared_ptr<HPAE::IHpaeSoftLink> ptrSoftLink =
