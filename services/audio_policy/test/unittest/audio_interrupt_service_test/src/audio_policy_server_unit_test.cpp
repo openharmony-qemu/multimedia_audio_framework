@@ -3716,5 +3716,21 @@ HWTEST(AudioPolicyUnitTest, GetDeviceVolumeBehavior_001, TestSize.Level1)
     VolumeBehavior volumeBehavior = server->audioDeviceManager_.GetDeviceVolumeBehavior(networkId, deviceType);
     EXPECT_EQ(volumeBehavior.isReady, false);
 }
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: IsCurrentDeviceEnableIntelligentNoiseReduction_001
+* @tc.desc  : Test IsCurrentDeviceEnableIntelligentNoiseReduction.
+*/
+HWTEST(AudioPolicyUnitTest, IsCurrentDeviceEnableIntelligentNoiseReduction_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    SourceType sourceType = SourceType::SOURCE_TYPE_MIC;
+    bool isSupport = false;
+    int32_t ret = server->IsCurrentDeviceEnableIntelligentNoiseReduction(sourceType, isSupport);
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // AudioStandard
 } // OHOS

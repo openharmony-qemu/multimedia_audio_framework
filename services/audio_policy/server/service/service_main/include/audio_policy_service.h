@@ -230,6 +230,7 @@ public:
     int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
+    bool IsCurrentDeviceEnableIntelligentNoiseReduction(int32_t sourceType);
     bool getFastControlParam();
 
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
@@ -318,6 +319,7 @@ private:
     BluetoothOffloadState GetA2dpOffloadFlag();
     void SetDefaultAdapterEnable(bool isEnable);
     bool IsDevicePlaybackSupported(const AudioProcessConfig &config, const AudioDeviceDescriptor &deviceInfo);
+    bool CheckVoipAnrOn(std::vector<AudioEffectPropertyV3> &property);
 private:
 
     static bool isBtListenerRegistered;

@@ -5375,5 +5375,12 @@ int32_t AudioPolicyServer::GetMinVolumeDegree(int32_t volumeType, int32_t &volum
     volumeDegree = audioVolumeManager_.GetMinVolumeDegree(static_cast<AudioVolumeType>(volumeType));
     return SUCCESS;
 }
+
+int32_t AudioPolicyServer::IsCurrentDeviceEnableIntelligentNoiseReduction(int32_t sourceType, bool &ret)
+{
+    ret = audioPolicyService_.IsCurrentDeviceEnableIntelligentNoiseReduction(
+        static_cast<SourceType>(sourceType));
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS
