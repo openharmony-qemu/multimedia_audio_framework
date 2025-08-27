@@ -76,7 +76,7 @@ ProAudio通路暂时收编Primary（primary、a2dp、remote、dp、multi channel
     ```
 3. 使用**HpaeManager**实例的**Start**接口，根据音频流id启动对应音频流的播放
     ```
-    uint32_t sessionId = 123456;                        // 音频流Id示例
+    uint32_t sessionId = 123456;                                                                // 音频流Id示例
     int32_t ret = IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_PLAY, sessionId);
     ```
 4. 使用**HpaeManager**实例的**Stop**接口，停止音频流的播放
