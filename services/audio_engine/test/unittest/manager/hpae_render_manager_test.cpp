@@ -1303,17 +1303,17 @@ HWTEST_F(HpaeRendererManagerTest, SetAudioEffectMode_002, TestSize.Level0)
     nodeInfo.effectInfo.effectMode = EFFECT_NONE;
     nodeInfo.sceneType = HPAE_SCENE_MUSIC;
     hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
-    ret = hpaeRendererManager->SetAudioEffectMode(sessionId, effectMode);
+    int32_t ret = hpaeRendererManager->SetAudioEffectMode(sessionId, effectMode);
     EXPECT_EQ(ret, SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     effectMode = EFFECT_NONE;
     hpaeRendererManager->ConnectProcessCluster(sessionId, HPAE_SCENE_EFFECT_NONE);
-    hpaeRendererManager->sinkInputNodeMap_[sessionId]->setState(HPAE_SESSION_PAUSED);
+    hpaeRendererManager->sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_PAUSED);
     ret = hpaeRendererManager->SetAudioEffectMode(sessionId, effectMode);
     EXPECT_EQ(ret, SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     effectMode = EFFECT_DEFAULT;
-    hpaeRendererManager->sinkInputNodeMap_[sessionId]->setState(HPAE_SESSION_RUNNING);
+    hpaeRendererManager->sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RUNNING);
     ret = hpaeRendererManager->SetAudioEffectMode(sessionId, effectMode);
     EXPECT_EQ(ret, SUCCESS);
     
