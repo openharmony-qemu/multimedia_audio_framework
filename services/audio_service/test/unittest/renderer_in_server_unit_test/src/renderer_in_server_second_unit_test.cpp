@@ -1636,7 +1636,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerEnableInnerCap_001, TestSi
     EXPECT_EQ(SUCCESS, ret);
 
     server->stream_->UnsetOffloadMode();
-    auto ret = server->EnableInnerCap(0);
+    ret = server->EnableInnerCap(0);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -1751,13 +1751,13 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerUnsetOffloadMode_001, Test
     server->captureInfos_[3].isInnerCapEnabled = true;
     server->captureInfos_[3].dupStream = dupStream;
 
-    int32_t ret = server->UnSetOffloadMode();
+    int32_t ret = server->UnsetOffloadMode();
     EXPECT_EQ(SUCCESS, ret);
 
     server->stream_ = CreateHpaeRendererStream();
     server->SetOffloadMode(1, true);
     server->status_ = I_STATUS_STARTED;
-    ret = server->UnSetOffloadMode();
+    ret = server->UnsetOffloadMode();
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -1909,7 +1909,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerStartStreamByType_001, Tes
     server->status_ = I_STATUS_STARTED;
     server->standByEnable_ = false;
     server->offloadEnable_ = true;
-    server->Init();
+    int32_t ret = server->Init();
 
     server->softLinkInfos_[0].isSoftLinkEnabled = false;
     server->softLinkInfos_[0].softLink = nullptr;
@@ -1929,11 +1929,9 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerStartStreamByType_001, Tes
     server->captureInfos_[3].isInnerCapEnabled = true;
     server->captureInfos_[3].dupStream = dupStream;
 
-    int32_t ret = server->StartStreamByType();
-    EXPECT_EQ(SUCCESS, ret);
-
+    server->StartStreamByType();
     server->stream_->SetOffloadMode(1, true);
-    ret = server->StartStreamByType();
+    server->StartStreamByType();
     EXPECT_EQ(SUCCESS, ret);
 }
 

@@ -2407,7 +2407,7 @@ int32_t RendererInServer::DestroySoftLink(int32_t innerCapId)
     }
 
     softLinkInfos_[innerCapId].isSoftLinkEnabled = false;
-    AUDIO_INFO_LOG("Disable soft link %{public}u with status: %{public}d", innerCapId, status_);
+    AUDIO_INFO_LOG("Disable soft link %{public}u", innerCapId);
 
     if (softLinkInfos_[innerCapId].softLink != nullptr) {
         int32_t ret = softLinkInfos_[innerCapId].softLink->Release();
