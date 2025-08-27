@@ -1865,7 +1865,7 @@ void AudioInterruptService::UpdateMicFocusStrategy(SourceType existSourceType,
     AUDIO_INFO_LOG("%{public}s update mic focus strategy, focusEntry.hintType: %{public}d,"
         " focusEntry.actionOn: %{public}d"
         " existSourceType: %{public}d  incomingSourceType: %{public}d"
-        " isCurrentBundleNameExist: %{public}d  isIncomingBundleNameExist: %{public}d" ,
+        " isCurrentBundleNameExist: %{public}d  isIncomingBundleNameExist: %{public}d",
         currentBundleName.c_str(), focusEntry.hintType, focusEntry.actionOn, existSourceType, incomingSourceType,
         isCurrentBundleNameExist, isIncomingBundleNameExist);
     if (existSourceType == SOURCE_TYPE_MIC && IsMicSource(incomingSourceType) && isCurrentBundleNameExist) {
