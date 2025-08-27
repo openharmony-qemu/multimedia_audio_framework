@@ -37,7 +37,7 @@ using AudioFocusIterator = std::list<AudioFocusList::iterator>;
 
 typedef struct {
     int32_t zoneId; // Zone ID value should 0 on local device.
-    AudioZoneFocusStrategy focusStrategy;
+    AudioZoneContext context;
     std::set<int32_t> pids; // When Zone ID is 0, there does not need to be a value.
     std::set<uint32_t> interruptCbStreamIdsMap;
     std::set<int32_t> audioPolicyClientProxyCBClientPidMap;
@@ -55,8 +55,8 @@ protected:
     virtual ~AudioInterruptZoneManager();
 
     void InitService(AudioInterruptService *service);
-    int32_t CreateAudioInterruptZone(const int32_t zoneId, AudioZoneFocusStrategy focusStrategy =
-        AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY, bool checkPermission = true);
+    int32_t CreateAudioInterruptZone(const int32_t zoneId, const AudioZoneContext &context,
+        bool checkPermission = true);
     int32_t ReleaseAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func);
     int32_t MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func);
     int32_t InjectInterruptToAudioZone(const int32_t zoneId, const AudioFocusList &interrupts);
