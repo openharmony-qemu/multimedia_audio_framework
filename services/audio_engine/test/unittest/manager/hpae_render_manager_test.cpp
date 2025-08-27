@@ -466,6 +466,52 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStreamTest_002, TestS
     WaitForMsgProcessing(hpaeRendererManagerNew);
 }
 
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStreamTest_003, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    sinkInfo.deviceName = "MCH_Speaker";
+    sinkInfo.lib = "libmodule-split-stream-sink.z.so";
+    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+
+    EXPECT_EQ(hpaeRendererManager->DestroyStream(INVALID_ID) == SUCCESS, false);
+    EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
+
+    std::shared_ptr<IHpaeRendererManager> hpaeRendererManagerNew = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManagerNew->DestroyStream(INVALID_ID) == SUCCESS, false);
+    EXPECT_EQ(hpaeRendererManagerNew->Init() == SUCCESS, true);
+
+    WaitForMsgProcessing(hpaeRendererManager);
+    WaitForMsgProcessing(hpaeRendererManagerNew);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    EXPECT_EQ(hpaeRendererManagerNew->IsInit(), true);
+    HpaeStreamInfo streamInfo;
+    streamInfo.sessionId = 1;
+    HpaeRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    HpaeRendererManagerCreateStream(hpaeRendererManagerNew, streamInfo);
+
+    EXPECT_EQ(hpaeRendererManager->DestroyStream(INVALID_ID) == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManagerNew->DestroyStream(INVALID_ID) == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManagerNew->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManagerNew);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManagerNew->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManagerNew);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo) == ERR_INVALID_OPERATION, true);
+}
 
 HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerTransStreamUsage, TestSize.Level1)
 {
@@ -1173,5 +1219,224 @@ HWTEST_F(HpaeRendererManagerTest, RefreshProcessClusterByDevice_004, TestSize.Le
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : CreateProcessClusterInner
+ * @tc.type  : FUNC
+ * @tc.number: CreateProcessClusterInner_001
+ * @tc.desc  : Test CreateProcessClusterInner
+ */
+HWTEST_F(HpaeRendererManagerTest, CreateProcessClusterInner_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.channels = STEREO;
+    nodeInfo.frameLen = FRAME_LENGTH_960;
+    nodeInfo.channelLayout = CH_LAYOUT_STEREO;
+    std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>();
+    EXPECT_NE(coBufferNode, nullptr);
+    coBufferNode->SetNodeInfo(nodeInfo);
+    int32_t processClusterDecision = NO_NEED_TO_CREATE_PROCESSCLUSTER;
+    hpaeRendererManager->CreateProcessClusterInner(coBufferNode, processClusterDecision);
+}
+
+HWTEST_F(HpaeRendererManagerTest, CreateProcessClusterInner_002, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.channels = STEREO;
+    nodeInfo.frameLen = FRAME_LENGTH_960;
+    nodeInfo.channelLayout = CH_LAYOUT_STEREO;
+    std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>();
+    EXPECT_NE(coBufferNode, nullptr);
+    coBufferNode->SetNodeInfo(nodeInfo);
+    int32_t processClusterDecision = CREATE_NEW_PROCESSCLUSTER;
+    hpaeRendererManager->CreateProcessClusterInner(coBufferNode, processClusterDecision);
+}
+
+HWTEST_F(HpaeRendererManagerTest, CreateProcessClusterInner_002, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.channels = STEREO;
+    nodeInfo.frameLen = FRAME_LENGTH_960;
+    nodeInfo.channelLayout = CH_LAYOUT_STEREO;
+    std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>();
+    EXPECT_NE(coBufferNode, nullptr);
+    coBufferNode->SetNodeInfo(nodeInfo);
+    int32_t processClusterDecision = USE_DEFAULT_PROCESSCLUSTER;
+    hpaeRendererManager->CreateProcessClusterInner(coBufferNode, processClusterDecision);
+}
+
+/**
+ * @tc.name  : MoveStreamSync
+ * @tc.type  : FUNC
+ * @tc.number: MoveStream_001
+ * @tc.desc  : Test MoveStream
+ */
+HWTEST_F(HpaeRendererManagerTest, MoveStream_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    
+    HpaeStreamInfo streamInfo;
+    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
+    HpaeRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+    std::string sinkName = "valid_sink_name";
+    hpaeRendererManager->MoveStream(TEST_STREAM_SESSION_ID, sinkName);
+    WaitForMsgProcessing(hpaeRendererManager);
+    hpaeRendererManager->Release(TEST_STREAM_SESSION_ID)
+}
+
+/**
+ * @tc.name  : MoveStreamSync
+ * @tc.type  : FUNC
+ * @tc.number: MoveStream_002
+ * @tc.desc  : Test MoveStream
+ */
+HWTEST_F(HpaeRendererManagerTest, MoveStream_002, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    
+    HpaeStreamInfo streamInfo;
+    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
+    HpaeRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+    std::string sinkName = "valid_sink_name";
+    hpaeRendererManager->MoveStream(TEST_STREAM_SESSION_ID, sinkName);
+}
+
+/**
+ * @tc.name  : DeactivateThread
+ * @tc.type  : FUNC
+ * @tc.number: DeactivateThread_001
+ * @tc.desc  : Test DeactivateThread
+ */
+HWTEST_F(HpaeRendererManagerTest, DeactivateThread_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread = std::make_unique<HpaeSignalProcessThread>();
+    EXPECT_EQ(hpaeRendererManager->IsRunning(), false);
+    EXPECT_EQ(hpaeRendererManager->IsMsgProcessing(), false);
+    hpaeSignalProcessThread->ActivateThread(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsRunning(), true);
+    hpaeSignalProcessThread->Notify();
+    EXPECT_EQ(hpaeRendererManager->IsMsgProcessing(), true);
+    hpaeRendererManager->DeactivateThread();
+    EXPECT_EQ(hpaeRendererManager->IsRunning(), false);
+}
+
+/**
+ * @tc.name  : UpdateProcessClusterConnection
+ * @tc.type  : FUNC
+ * @tc.number: UpdateProcessClusterConnection_001
+ * @tc.desc  : Test UpdateProcessClusterConnection
+ */
+HWTEST_F(HpaeRendererManagerTest, UpdateProcessClusterConnection_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    int32_t effectMode = 0;
+    uint32_t sessionId = 123456;
+    hpaeRendererManager->Init();
+    hpaeRendererManager->UpdateProcessClusterConnection(sessionId, effectMode);
+    WaitForMsgProcessing(offloadRendererManager);
+    hpaeRendererManager->DeInit();
 }
 }  // namespace
