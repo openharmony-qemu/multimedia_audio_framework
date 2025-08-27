@@ -1751,66 +1751,66 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsCurrentDeviceEnableIntelligentNoise
 }
 
 /**
-* @tc.name  : Test CheckVoipANROn.
-* @tc.number: CheckVoipANROn_001
-* @tc.desc  : Test CheckVoipANROn interfaces.
+* @tc.name  : Test CheckVoipAnrOn.
+* @tc.number: CheckVoipAnrOn_001
+* @tc.desc  : Test CheckVoipAnrOn interfaces.
 */
-HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipANROn_001, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipAnrOn_001, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(nullptr, server);
 
     AudioEffectPropertyArrayV3 propertyArray = {};
     propertyArray.property.push_back({"record", "NROFF"});
-    bool ret = server->audioPolicyService_.CheckVoipANROn(propertyArray.property);
+    bool ret = server->audioPolicyService_.CheckVoipAnrOn(propertyArray.property);
     EXPECT_EQ(ret, false);
 }
 
 /**
-* @tc.name  : Test CheckVoipANROn.
-* @tc.number: CheckVoipANROn_002
-* @tc.desc  : Test CheckVoipANROn interfaces.
+* @tc.name  : Test CheckVoipAnrOn.
+* @tc.number: CheckVoipAnrOn_002
+* @tc.desc  : Test CheckVoipAnrOn interfaces.
 */
-HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipANROn_002, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipAnrOn_002, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(nullptr, server);
 
     AudioEffectPropertyArrayV3 propertyArray = {};
     propertyArray.property.push_back({"voip_up", "NROFF"});
-    bool ret = server->audioPolicyService_.CheckVoipANROn(propertyArray.property);
+    bool ret = server->audioPolicyService_.CheckVoipAnrOn(propertyArray.property);
     EXPECT_EQ(ret, false);
 }
 
 /**
-* @tc.name  : Test CheckVoipANROn.
-* @tc.number: CheckVoipANROn_003
-* @tc.desc  : Test CheckVoipANROn interfaces.
+* @tc.name  : Test CheckVoipAnrOn.
+* @tc.number: CheckVoipAnrOn_003
+* @tc.desc  : Test CheckVoipAnrOn interfaces.
 */
-HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipANROn_003, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipAnrOn_003, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(nullptr, server);
 
     AudioEffectPropertyArrayV3 propertyArray = {};
     propertyArray.property.push_back({"record", "AINR"});
-    bool ret = server->audioPolicyService_.CheckVoipANROn(propertyArray.property);
+    bool ret = server->audioPolicyService_.CheckVoipAnrOn(propertyArray.property);
     EXPECT_EQ(ret, false);
 }
 
 /**
-* @tc.name  : Test CheckVoipANROn.
-* @tc.number: CheckVoipANROn_004
-* @tc.desc  : Test CheckVoipANROn interfaces.
+* @tc.name  : Test CheckVoipAnrOn.
+* @tc.number: CheckVoipAnrOn_004
+* @tc.desc  : Test CheckVoipAnrOn interfaces.
 */
-HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipANROn_004, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipAnrOn_004, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(nullptr, server);
 
     AudioEffectPropertyArrayV3 propertyArray = {};
     propertyArray.property.push_back({"voip_up", "AINR"});
-    bool ret = server->audioPolicyService_.CheckVoipANROn(propertyArray.property);
+    bool ret = server->audioPolicyService_.CheckVoipAnrOn(propertyArray.property);
     EXPECT_EQ(ret, true);
 }
 } // namespace AudioStandard
