@@ -56,12 +56,13 @@ HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManagerUnitTest_002, TestS
 {
     AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceId_ = 123;
     int32_t uid = 123;
     audioUsrSelectManager.SelectInputDeviceByUid(desc, uid);
 
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor =
         audioUsrSelectManager.GetSelectedInputDeviceByUid(uid);
-    EXPECT_NE(audioDeviceDescriptor, nullptr);
+    EXPECT_EQ(audioDeviceDescriptor->deviceId_, 123);
 }
 
 /**
