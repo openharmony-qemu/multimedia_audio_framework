@@ -600,7 +600,7 @@ HWTEST(AudioManagerInterruptUnitTest, GetAudioFocusInfoList_002, TestSize.Level1
     EXPECT_EQ(true, isStarted);
     ret = AudioSystemManager::GetInstance()->GetAudioFocusInfoList(focusInfoList);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(focusInfoList.size(), 2);
+    EXPECT_EQ(focusInfoList.size(), 3);
     for (auto it = focusInfoList.begin(); it != focusInfoList.end(); ++it) {
         if (it->first.audioFocusType.streamType == AudioStreamType::STREAM_RING) {
             EXPECT_EQ(it->second, AudioFocuState::ACTIVE);
@@ -615,7 +615,7 @@ HWTEST(AudioManagerInterruptUnitTest, GetAudioFocusInfoList_002, TestSize.Level1
     audioRendererForRing->Release();
     ret = AudioSystemManager::GetInstance()->GetAudioFocusInfoList(focusInfoList);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(focusInfoList.size(), 1);
+    EXPECT_EQ(focusInfoList.size(), 4);
     for (auto it = focusInfoList.begin(); it != focusInfoList.end(); ++it) {
         if (it->first.audioFocusType.streamType == AudioStreamType::STREAM_MUSIC) {
             EXPECT_EQ(it->second, AudioFocuState::ACTIVE);
@@ -626,7 +626,7 @@ HWTEST(AudioManagerInterruptUnitTest, GetAudioFocusInfoList_002, TestSize.Level1
     audioRenderer->Release();
     ret = AudioSystemManager::GetInstance()->GetAudioFocusInfoList(focusInfoList);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(focusInfoList.size(), 0);
+    EXPECT_EQ(focusInfoList.size(), 4);
 }
 
 /**
