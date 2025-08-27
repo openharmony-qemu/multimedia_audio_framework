@@ -111,7 +111,7 @@ HWTEST_F(AudioProResamplerTest, ProcessTest, TestSize.Level0)
     EXPECT_EQ(ret, EOK);
 }
 
-HWTEST_F(AudioProResamplerTest, ProcessTest, TestSize.Level0)
+HWTEST_F(AudioProResamplerTest, ProcessTest_001, TestSize.Level0)
 {
     // test special case customSampleRate that is not multiples of 50
     ProResampler resampler(SAMPLE_RATE_48010, SAMPLE_RATE_48000, STEREO, QUALITY_ONE);

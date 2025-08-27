@@ -31,7 +31,7 @@ constexpr uint32_t MS_PER_SECOND = 1000;
 constexpr uint32_t ADD_SIZE = 100;
 static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 // for now ProResampler accept input 20ms for other sample rates, 40ms input for 11025hz
-// 100ms input for 10Hz resolution rates that are not multiples of 50, eg. 8010, 8020, 8030, 8040... 
+// 100ms input for 10Hz resolution rates that are not multiples of 50, eg. 8010, 8020, 8030, 8040...
 // however 8050, 8100, 8150... are for 20ms
 // output 20ms for all sample rates
 ProResampler::ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels, uint32_t quality)
@@ -156,7 +156,7 @@ int32_t ProResampler::Process10HzSampleRate(const float *inBuffer, uint32_t inFr
         if (bufFor100msIndex_ > 0) { // output 2nd, 3rd, 4th, 5th part of 100ms buffer
             ret = memcpy_s(outBuffer, outFrameSize * channels_ * sizeof(float),
                 bufFor100ms_.data() + bufFor100msIndex_,  expectedOutFrameLen_ * channels_ * sizeof(float));
-            CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "memcpy_s failed with error %{public}d", ret);  
+            CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "memcpy_s failed with error %{public}d", ret);
             bufFor100msIndex_ += expectedOutFrameLen_ * channels_;
             if (bufFor100msIndex_ >= BUFFER_EXPAND_SIZE_5 * expectedOutFrameLen_ * channels_) {
                 bufFor100msIndex_ = 0;
