@@ -510,7 +510,7 @@ int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int
 int32_t AudioVolumeManager::SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel,
     DeviceType deviceType)
 {
-    return result = audioPolicyManager_.SaveSpecifiedDeviceVolume(
+    return audioPolicyManager_.SaveSpecifiedDeviceVolume(
         VolumeUtils::GetVolumeTypeFromStreamType(streamType), volumeLevel, deviceType);
 }
 
