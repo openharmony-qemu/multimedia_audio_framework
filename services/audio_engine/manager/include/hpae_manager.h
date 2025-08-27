@@ -194,6 +194,13 @@ public:
     void AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume) override;
     void DeleteStreamVolumeToEffect(const std::string stringSessionID) override;
     uint64_t ProcessPendingTransitionsAndGetNextDelay();
+    // interfaces for injector
+    void UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo) override;
+    void AddCaptureInjector(
+        const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType) override;
+    void RemoveCaptureInjector(
+        const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType) override;
+    int32_t PeekAudioData(const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize) override;
 private:
     int32_t CloseOutAudioPort(std::string sinkName);
     int32_t CloseInAudioPort(std::string sourceName);

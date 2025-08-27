@@ -1102,6 +1102,7 @@ void AudioEffectChainManager::SetSpatializationEnabledToChains()
 
 void AudioEffectChainManager::ResetInfo()
 {
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
     effectToLibraryEntryMap_.clear();
     effectToLibraryNameMap_.clear();
     effectChainToEffectsMap_.clear();

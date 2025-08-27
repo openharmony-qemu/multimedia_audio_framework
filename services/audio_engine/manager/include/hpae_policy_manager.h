@@ -25,6 +25,12 @@ namespace HPAE {
 
 class HpaePolicyManager {
 public:
+    HpaePolicyManager(const HpaePolicyManager&) = delete;
+    HpaePolicyManager &operator=(const HpaePolicyManager&) = delete;
+
+    HpaePolicyManager(HpaePolicyManager&&) = delete;
+    HpaePolicyManager &operator=(HpaePolicyManager&&) = delete;
+
     static HpaePolicyManager &GetInstance();
     ~HpaePolicyManager();
     // interfaces for render effect

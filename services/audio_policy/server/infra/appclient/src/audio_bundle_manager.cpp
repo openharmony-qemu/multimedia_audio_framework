@@ -81,8 +81,8 @@ std::string AudioBundleManager::GetBundleNameFromUid(int32_t callingUid)
     sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
     CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, "", "bundleMgrProxy is nullptr");
 
-    WatchTimeout reguard("bundleMgrProxy->GetNameForUid:GetBundleNameFromUid");
-    bundleMgrProxy->GetNameForUid(callingUid, bundleName);
+    WatchTimeout reguard("bundleMgrProxy->GetBundleNameForUid:GetBundleNameFromUid");
+    bundleMgrProxy->GetBundleNameForUid(callingUid, bundleName);
     reguard.CheckCurrTimeout();
 
     return bundleName;
@@ -110,8 +110,8 @@ AppExecFwk::BundleInfo AudioBundleManager::GetBundleInfoFromUid(int32_t callingU
     sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
     CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, bundleInfo, "bundleMgrProxy is nullptr");
 
-    WatchTimeout reguard("bundleMgrProxy->GetNameForUid:GetBundleInfoFromUid");
-    bundleMgrProxy->GetNameForUid(callingUid, bundleName);
+    WatchTimeout reguard("bundleMgrProxy->GetBundleNameForUid:GetBundleInfoFromUid");
+    bundleMgrProxy->GetBundleNameForUid(callingUid, bundleName);
 
     bundleMgrProxy->GetBundleInfoV9(bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_DEFAULT |
         AppExecFwk::BundleFlag::GET_BUNDLE_WITH_ABILITIES |

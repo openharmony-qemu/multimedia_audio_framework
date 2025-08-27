@@ -216,7 +216,7 @@ public:
 
     int32_t SetAppConcurrencyMode(const int32_t appUid, const int32_t mode = 0);
 
-    int32_t SetAppSlientOnDisplay(const int32_t displayId = -1);
+    int32_t SetAppSilentOnDisplay(const int32_t displayId = -1);
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
 

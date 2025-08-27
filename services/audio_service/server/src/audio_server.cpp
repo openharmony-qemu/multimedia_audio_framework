@@ -1421,10 +1421,6 @@ int32_t AudioServer::SetDmDeviceType(uint16_t dmDeviceType, int32_t deviceType)
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "refused for %{public}d", callingUid);
 
-    std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY);
-    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "has no valid sink");
-    sink->SetDmDeviceType(dmDeviceType, static_cast<DeviceType>(deviceType));
-
     std::shared_ptr<IAudioCaptureSource> source;
     if (static_cast<DeviceType>(deviceType) == DEVICE_TYPE_NEARLINK_IN) {
         source = GetSourceByProp(HDI_ID_TYPE_PRIMARY);
@@ -1572,8 +1568,8 @@ int32_t AudioServer::GetHapBuildApiVersion(int32_t callerUid)
     sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
     CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, 0, "failed: bundleMgrProxy is nullptr");
 
-    WatchTimeout reguard("bundleMgrProxy->GetNameForUid:GetHapBuildApiVersion");
-    bundleMgrProxy->GetNameForUid(callerUid, bundleName);
+    WatchTimeout reguard("bundleMgrProxy->GetBundleNameForUid:GetHapBuildApiVersion");
+    bundleMgrProxy->GetBundleNameForUid(callerUid, bundleName);
     bundleMgrProxy->GetBundleInfoV9(bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_DEFAULT |
         AppExecFwk::BundleFlag::GET_BUNDLE_WITH_ABILITIES |
         AppExecFwk::BundleFlag::GET_BUNDLE_WITH_REQUESTED_PERMISSION |

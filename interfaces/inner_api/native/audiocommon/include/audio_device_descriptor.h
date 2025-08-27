@@ -48,6 +48,7 @@ public:
         bool hasBTPermission_ = false;
         bool hasSystemPermission_ = false;
         int32_t apiVersion_ = 0;
+        bool isSupportedNearlink_ = true;
 
         ClientInfo() = default;
         ClientInfo(int32_t apiVersion)
@@ -100,7 +101,7 @@ public:
 
     bool IsRemote() const;
 
-    DeviceType MapInternalToExternalDeviceType(int32_t apiVersion) const;
+    DeviceType MapInternalToExternalDeviceType(int32_t apiVersion, bool isSupportedNearlink = true) const;
 
     DeviceStreamInfo GetDeviceStreamInfo(void) const;
 
@@ -117,7 +118,6 @@ public:
                 return 0;
             }
             return std::hash<int32_t>{}(static_cast<int32_t>(deviceDescriptor->deviceType_)) ^
-                std::hash<int32_t>{}(static_cast<int32_t>(deviceDescriptor->deviceRole_)) ^
                 std::hash<std::string>{}(deviceDescriptor->macAddress_) ^
                 std::hash<std::string>{}(deviceDescriptor->networkId_);
         }
@@ -147,7 +147,7 @@ private:
     bool MarshallingInner(Parcel &parcel) const;
 
     bool MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission,
-        int32_t apiVersion) const;
+        int32_t apiVersion, bool isSupportedNearlink = true) const;
 public:
     DeviceType deviceType_ = DEVICE_TYPE_NONE;
     DeviceRole deviceRole_ = DEVICE_ROLE_NONE;
