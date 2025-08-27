@@ -42,7 +42,12 @@ void HpaeSinkInputNodeTest::TearDown()
 namespace {
 constexpr int32_t NORMAL_FRAME_LEN = 960;
 constexpr int32_t NORMAL_ID = 1243;
+
 constexpr float LOUDNESS_GAIN = 1.0f;
+constexpr uint32_t SAMPLE_RATE_16010 = 16010;
+constexpr uint32_t FRAME_LEN_20MS = 20;
+constexpr uint32_t FRAME_LEN_100MS = 100;
+
 HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
@@ -81,7 +86,7 @@ HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode_001, TestSize.Level0)
     EXPECT_EQ(hpaeSinkInputNode->GetFrameLen(), nodeInfo.frameLen);
     EXPECT_EQ(hpaeSinkInputNode->GetChannelCount(), nodeInfo.channels);
     EXPECT_EQ(hpaeSinkInputNode->GetBitWidth(), nodeInfo.format);
-    EXPECE_TRUE(hpaeSinkInputNode.pullDataFlag_);
+    EXPECT_TRUE(hpaeSinkInputNode->pullDataFlag_);
     HpaeNodeInfo &retNi = hpaeSinkInputNode->GetNodeInfo();
     EXPECT_EQ(retNi.samplingRate, nodeInfo.samplingRate);
     EXPECT_EQ(retNi.frameLen, nodeInfo.frameLen);
@@ -107,7 +112,7 @@ HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode_002, TestSize.Level0)
     EXPECT_EQ(hpaeSinkInputNode->GetFrameLen(), nodeInfo.frameLen);
     EXPECT_EQ(hpaeSinkInputNode->GetChannelCount(), nodeInfo.channels);
     EXPECT_EQ(hpaeSinkInputNode->GetBitWidth(), nodeInfo.format);
-    EXPECT_EQ(hpaeSinkInputNode.pullDataCount_, FRAME_LEN_100MS / FRAME_LEN_20MS - 1);
+    EXPECT_EQ(hpaeSinkInputNode->pullDataCount_, FRAME_LEN_100MS / FRAME_LEN_20MS - 1);
     HpaeNodeInfo &retNi = hpaeSinkInputNode->GetNodeInfo();
     EXPECT_EQ(retNi.samplingRate, nodeInfo.samplingRate);
     EXPECT_EQ(retNi.frameLen, nodeInfo.frameLen);

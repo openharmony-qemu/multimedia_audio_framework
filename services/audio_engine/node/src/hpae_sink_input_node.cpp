@@ -61,8 +61,8 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
     }
     if (nodeInfo.customSampleRate == 0 && nodeInfo.samplingRate == SAMPLE_RATE_11025) {
         pullDataFlag_ = true;
-    } else if (nodeInfo.customSampleRate != 0 && nodeInfo.customSampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES != 0){
-        pullDataCount_ = FRAME_LEN_100MS / FRAME_LEN_20MS - 1;
+    } else if (nodeInfo.customSampleRate != 0 && nodeInfo.customSampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES != 0) {
+        pullDataCount_ = 0;
     }
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeSinkInputNode");
@@ -131,7 +131,7 @@ bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
              // for 11025, skip pull data next time
             pullDataFlag_ = false;
         } else if (GetNodeInfo().customSampleRate != 0 &&
-            GetNodeInfo().customSampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES != 0){
+            GetNodeInfo().customSampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES != 0) {
             pullDataCount_ = FRAME_LEN_100MS / FRAME_LEN_20MS - 1;
         }
         // if historyBuffer has enough data, write to outputStream

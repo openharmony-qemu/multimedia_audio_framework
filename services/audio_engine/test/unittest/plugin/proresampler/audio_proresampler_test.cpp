@@ -109,7 +109,10 @@ HWTEST_F(AudioProResamplerTest, ProcessTest, TestSize.Level0)
     // no data left, send 0s
     ret = resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen);
     EXPECT_EQ(ret, EOK);
+}
 
+HWTEST_F(AudioProResamplerTest, ProcessTest, TestSize.Level0)
+{
     // test special case customSampleRate that is not multiples of 50
     ProResampler resampler(SAMPLE_RATE_48010, SAMPLE_RATE_48000, STEREO, QUALITY_ONE);
     uint32_t inFrameLen = SAMPLE_RATE_48010 * FRAME_LEN_100MS / MS_PER_SECOND;
