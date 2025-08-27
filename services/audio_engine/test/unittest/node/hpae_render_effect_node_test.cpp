@@ -259,7 +259,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, testSplitCollaborativeData_001, TestSize.Leve
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
-    EXPECT_EQ(hpaeRenderEffectNode->SplitCollaborativeData(), SUCCESS);
+    hpaeRenderEffectNode->SplitCollaborativeData();
 }
 
 HWTEST_F(HpaeRenderEffectNodeTest, testInitEffectBuffer_001, TestSize.Level0)
@@ -271,7 +271,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, testInitEffectBuffer_001, TestSize.Level0)
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
-    const uint32_t sessionId = "111"
+    uint32_t sessionId = 123;
     hpaeRenderEffectNode->InitEffectBuffer(sessionId);
 }
 

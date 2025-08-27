@@ -122,8 +122,8 @@ HWTEST_F(HpaeGainNodeTest, testHpaeGainTestNode, TestSize.Level0)
     hpaeSinkInputNode->RegisterWriteCallback(writeFixedValueCb0);
     hpaeSinkOutputNode->DoProcess();
     float gain = 1.0;
-    EXPECT_EQ(hpaeSinkOutputNode->SetClientVolume(float gain), true);
-    hpaeSinkOutputNode->GetClientVolume();
+    EXPECT_EQ(hpaeGainNode->SetClientVolume(gain), true);
+    hpaeGainNode->GetClientVolume();
     TestRendererRenderFrame(hpaeSinkOutputNode->GetRenderFrameData(),
         nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
     hpaeSinkOutputNode->DoProcess();
