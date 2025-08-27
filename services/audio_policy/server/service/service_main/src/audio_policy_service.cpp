@@ -65,6 +65,9 @@ bool AudioPolicyService::isBtListenerRegistered = false;
 bool AudioPolicyService::isBtCrashed = false;
 const std::string AINR_FLAG = "ai_voice_noise_suppression_flag";
 const std::string AUDIO_SETTING_TABLE_TYPE = "global";
+const std::string LIVE_EFFECT_KEY = "live_effect_enable";
+const std::string LIVE_EFFECT_TABLE_TYPE = "system";
+const std::string LIVE_EFFECT_ON = "NRON";
 const int32_t INVALID_VALUE = -1;
 static const std::unordered_set<std::string> ANRCategories = {"AINR", "PNR"};
 
@@ -1207,24 +1210,24 @@ bool AudioPolicyService::IsCurrentDeviceEnableIntelligentNoiseReduction(SourceTy
  
     bool ret = false;
     if (sourceType == SOURCE_TYPE_LIVE) {
-        std::string paramKey = "live_effect_enable";
+        std::string paramKey = LIVE_EFFECT_KEY;
         std::string paramValue = "";
         AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
         CHECK_AND_RETURN_RET_LOG(settingProvider.CheckOsAccountReady(), false, "os account not ready");
-        settingProvider.GetStringValue(paramKey, paramValue, "system");
-        ret = (paramValue == "NRON");
+        settingProvider.GetStringValue(paramKey, paramValue, LIVE_EFFECT_TABLE_TYPE);
+        ret = (paramValue == LIVE_EFFECT_ON);
         AUDIO_INFO_LOG("SourceType %{public}d IsCurrentDeviceEnableIntelligentNoiseReduction %{public}d",
             sourceType, ret);
         return ret;
     }
  
     bool isEcFeatureEnable = audioEcManager_.GetEcFeatureEnable();
-    if (isEcFeatureEnable) { // pc
+    if (isEcFeatureEnable) { // is configed according to the product
         AudioEffectPropertyArrayV3 propertyArray = {};
         int32_t getPropRet = GetAudioEnhanceProperty(propertyArray);
         CHECK_AND_RETURN_RET_LOG(getPropRet == SUCCESS, false, "get audio enhance property failed, return false");
         ret = CheckVoipANROn(propertyArray.property);
-    } else { // phone
+    } else {
         AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
         CHECK_AND_RETURN_RET_LOG(settingProvider.CheckOsAccountReady(), false, "os account not ready");
         int32_t flagValue = INVALID_VALUE;
