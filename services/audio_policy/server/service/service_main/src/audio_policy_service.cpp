@@ -1188,7 +1188,7 @@ int32_t AudioPolicyService::CaptureConcurrentCheck(const uint32_t &sessionID)
     return AudioCoreService::GetCoreService()->CaptureConcurrentCheck(sessionID);
 }
 
-bool AudioPolicyService::CheckVoipANROn(std::vector<AudioEffectPropertyV3> &property)
+bool AudioPolicyService::CheckVoipAnrOn(std::vector<AudioEffectPropertyV3> &property)
 {
     bool ret = false;
     for (const auto &item : property) {
@@ -1226,7 +1226,7 @@ bool AudioPolicyService::IsCurrentDeviceEnableIntelligentNoiseReduction(SourceTy
         AudioEffectPropertyArrayV3 propertyArray = {};
         int32_t getPropRet = GetAudioEnhanceProperty(propertyArray);
         CHECK_AND_RETURN_RET_LOG(getPropRet == SUCCESS, false, "get audio enhance property failed, return false");
-        ret = CheckVoipANROn(propertyArray.property);
+        ret = CheckVoipAnrOn(propertyArray.property);
     } else {
         AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
         CHECK_AND_RETURN_RET_LOG(settingProvider.CheckOsAccountReady(), false, "os account not ready");
