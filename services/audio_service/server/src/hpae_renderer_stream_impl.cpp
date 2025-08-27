@@ -449,7 +449,8 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
     if (isCallbackMode_) { // callback buffer
         auto requestDataLen = callBackStreamInfo.requestDataLen;
         auto writeCallback = writeCallback_.lock();
-        if (callBackStreamInfo.needData && writeCallback) {
+        CHECK_AND_RETURN_RET(writeCallback != nullptr, ERROR);
+        if (callBackStreamInfo.needData) {
             writeCallback->GetAvailableSize(requestDataLen);
             requestDataLen = std::min(requestDataLen, callBackStreamInfo.requestDataLen);
             size_t mutePaddingSize = 0;

@@ -111,8 +111,8 @@ int32_t NoneMixEngine::Start()
     AUDIO_INFO_LOG("Enter in");
     int32_t ret = SUCCESS;
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_);
-    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "null sink!");
-    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_NOT_STARTED, "sink Not Inited! Init the sink first!");
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "null sink.");
+    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_NOT_STARTED, "sink Not Inited! Init the sink first.");
     fwkSyncTime_ = static_cast<uint64_t>(ClockTime::GetCurNano());
     writeCount_ = 0;
     failedCount_ = 0;
@@ -184,7 +184,7 @@ int32_t NoneMixEngine::StopAudioSink()
     if (sink && sink->IsInited()) {
         ret = sink->Stop();
     } else {
-        AUDIO_ERR_LOG("sink is null or not init!");
+        AUDIO_ERR_LOG("sink is null or not init.");
     }
     return ret;
 }
@@ -308,7 +308,6 @@ void NoneMixEngine::MixStreams()
     int32_t appUid = stream_->GetAudioProcessConfig().appInfo.appUid;
     int32_t index = -1;
     int32_t result = stream_->Peek(&audioBuffer, index);
-
     uint32_t sessionId = stream_->GetStreamIndex();
     writeCount_++;
     if (index < 0) {
