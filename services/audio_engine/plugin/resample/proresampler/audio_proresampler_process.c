@@ -143,6 +143,23 @@ static float Sinc(float x)
     return sin(M_PI * x) / (M_PI * x);
 }
 
+// gain compensation for filter coefficinents, 2025.3.21
+static void GainCompensation(SingleStagePolyphaseResamplerState* state, uint32_t pFactor)
+{
+    CHECK_AND_RETURN_LOG(state != nullptr, "state is nullptr!");
+    if (state->gainCorrection) {
+        float gain = 0;
+        for (i = 0; i < pFactor; i++) {
+            gain = 0.0;
+            for (j = 0; j < state->filterLength; j++) {
+                gain += state->filterCoefficients[i * state->filterLength + j];
+            }
+            for (j = 0; j < state->filterLength; j++) {
+                state->filterCoefficients[i * state->filterLength + j] /= gain;
+            }
+        }
+    }
+}
 
 static int32_t CalculateFilter(SingleStagePolyphaseResamplerState* state)
 {
@@ -187,19 +204,7 @@ static int32_t CalculateFilter(SingleStagePolyphaseResamplerState* state)
         }
         phi0 += 1.0 / pFactor;
     }
-    // gain compensation for filter coefficinents, 2025.3.21
-    if (state->gainCorrection) {
-        float gain = 0;
-        for (i = 0; i < pFactor; i++) {
-            gain = 0.0;
-            for (j = 0; j < state->filterLength; j++) {
-                gain += state->filterCoefficients[i * state->filterLength + j];
-            }
-            for (j = 0; j < state->filterLength; j++) {
-                state->filterCoefficients[i * state->filterLength + j] /= gain;
-            }
-        }
-    }
+    GainCompensation(state, pFactor);
     return 0;
 }
 
@@ -761,8 +766,7 @@ static int32_t PolyphaseResamplerMono(SingleStagePolyphaseResamplerState *state,
     for (i = 0; i < outSample; i++) {
         if (state->gainCorrection) {
             indexPhase = (int)(subfilterNum * scalerPhase);
-        }
-        else {
+        } else {
             indexPhase = subfilterNum;
         }
         const float* coeffs = &filterCoefficients[indexPhase * n];
@@ -807,8 +811,7 @@ static int32_t PolyphaseResamplerStereo(SingleStagePolyphaseResamplerState* stat
     for (i = 0; i < outSample; i++) {
         if (state->gainCorrection) {
             indexPhase = (int)(subfilterNum * scalerPhase);
-        }
-        else {
+        } else {
             indexPhase = subfilterNum;
         }
         const float* coeffs = &filterCoefficients[indexPhase * n];
@@ -855,8 +858,7 @@ static int32_t PolyphaseResamplerMultichannel(SingleStagePolyphaseResamplerState
     float scalerPhase = (float)(polyphaseFactor - 1) / (float)interpolateFactor;
         if (state->gainCorrection) {
             indexPhase = (int)(subfilterNum * scalerPhase);
-        }
-        else {
+        } else {
             indexPhase = subfilterNum;
         }
         const float* coeffs = &filterCoefficients[indexPhase * n];
@@ -1307,8 +1309,7 @@ static int32_t UpdateResamplerState(SingleStagePolyphaseResamplerState* state)
         float filterLength = state->filterLength * state->decimateFactor / state->interpolateFactor;
         if (filterLength < MAX_DWNSMPLE_FILT_LEN) {
             state->filterLength = filterLength;
-        }
-        else {
+        } else {
             state->filterLength = MAX_DWNSMPLE_FILT_LEN;
         }
         // Round up to make sure filterLength be multiple of 8
