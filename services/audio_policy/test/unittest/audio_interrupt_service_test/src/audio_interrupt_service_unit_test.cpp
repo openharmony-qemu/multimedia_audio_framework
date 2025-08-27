@@ -490,7 +490,6 @@ HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_019, TestSize.Level1
     ClientTypeManager::GetInstance()->OnClientTypeQueryCompleted(uid2, clientType);
     audioInterruptService->policyServer_ = new AudioPolicyServer(0);
     ASSERT_NE(audioInterruptService->policyServer_, nullptr);
-    audioInterruptService->GetRealBundleName(uid);
     auto ret = audioInterruptService->ShouldCallbackToClient(uid, streamId, interruptEvent);
     EXPECT_EQ(ret, false);
 }

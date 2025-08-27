@@ -217,7 +217,7 @@ bool AudioProcessInServer::CheckBGCapturer()
         AUDIO_WARNING_LOG("Stream:%{public}u Result:success Reason:resume", sessionId_);
         return true;
     }
-    CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType == SOURCE_TYPE_MIC &&
+    CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION  &&
         AudioService::GetInstance()->InForegroundList(processConfig_.appInfo.appUid), false, "Verify failed");
 
     AudioService::GetInstance()->UpdateForegroundState(tokenId, true);

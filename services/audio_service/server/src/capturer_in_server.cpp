@@ -494,7 +494,7 @@ bool CapturerInServer::CheckBGCapture()
         return true;
     }
 
-    CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType == SOURCE_TYPE_MIC &&
+    CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION  &&
         AudioService::GetInstance()->InForegroundList(processConfig_.appInfo.appUid), false, "Check failed");
 
     AudioService::GetInstance()->UpdateForegroundState(tokenId, true);

@@ -2310,7 +2310,7 @@ bool AudioServer::HandleCheckRecorderBackgroundCapture(const AudioProcessConfig 
 
     std::string bundleName = AppBundleManager::GetBundleNameFromUid(config.appInfo.appUid);
     if (AudioService::GetInstance()->MatchForegroundList(bundleName, config.appInfo.appUid) &&
-        config.capturerInfo.sourceType == SOURCE_TYPE_MIC) {
+        config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         AudioService::GetInstance()->UpdateForegroundState(config.appInfo.appTokenId, true);
         bool res = PermissionUtil::VerifyBackgroundCapture(appInfo.appTokenId, appInfo.appFullTokenId);
         AUDIO_INFO_LOG("Retry for %{public}s, result:%{public}s", bundleName.c_str(), (res ? "success" : "fail"));
