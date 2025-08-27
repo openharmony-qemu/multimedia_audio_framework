@@ -62,10 +62,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
 {
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList = AudioPipeManager::GetPipeManager()->GetPipeList();
 
-    if (streamDesc->routeFlag_ == AUDIO_FLAG_NONE) {
-        AUDIO_INFO_LOG("Need update route flag");
-        ScanPipeListForStreamDesc(pipeInfoList, streamDesc);
-    }
+    ScanPipeListForStreamDesc(pipeInfoList, streamDesc);
     AUDIO_INFO_LOG("Original Pipelist size: %{public}zu, stream routeFlag: 0x%{public}x to fetch",
         pipeInfoList.size(), streamDesc->routeFlag_);
 
