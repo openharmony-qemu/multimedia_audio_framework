@@ -4748,7 +4748,7 @@ ohos_unittest("audio_usr_select_manager_unit_test") {
   module_out_path = module_output_path
 
   include_dirs = [
-    "./unittest/audio_state_manager_unit_test/include",
+    "./unittest/audio_usr_select_manager_unit_test/include",
   ]
 
   use_exceptions = true

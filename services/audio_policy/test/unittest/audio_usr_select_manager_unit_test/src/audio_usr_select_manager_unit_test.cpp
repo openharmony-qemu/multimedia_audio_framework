@@ -40,7 +40,7 @@ void AudioUsrSelectManagerUnitTest::TearDown(void) {}
 HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManagerUnitTest_001, TestSize.Level0)
 {
     AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
-    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     int32_t uid = 123;
     audioUsrSelectManager.SelectInputDeviceByUid(desc, uid);
     EXPECT_EQ(audioUsrSelectManager.audioUsrSelectMap_.size(), 1);
@@ -55,7 +55,7 @@ HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManagerUnitTest_001, TestS
 HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManagerUnitTest_002, TestSize.Level1)
 {
     AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
-    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     int32_t uid = 123;
     audioUsrSelectManager.SelectInputDeviceByUid(desc, uid);
 
@@ -69,10 +69,10 @@ HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManagerUnitTest_002, TestS
 * @tc.number: AudioUsrSelectManagerUnitTest_003
 * @tc.desc  : Test ClearSelectedInputDeviceByUid interface.
 */
-HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManagerUnitTest_002, TestSize.Level1)
+HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManagerUnitTest_003, TestSize.Level1)
 {
     AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
-    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     int32_t uid = 123;
     audioUsrSelectManager.SelectInputDeviceByUid(desc, uid);
 
