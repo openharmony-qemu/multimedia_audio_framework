@@ -116,6 +116,8 @@ public:
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
 
+    int32_t SelectInputDevice(std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor);
+
     int32_t ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
 
@@ -413,6 +415,10 @@ public:
         const int32_t volume, const bool updateUi);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
+
+    std::shared_ptr<AudioDeviceDescriptor> GetSelectedInputDevice();
+
+    int32_t ClearSelectedInputDevice();
 
     int32_t SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,
         const std::shared_ptr<AudioManagerAvailableDeviceChangeCallback>& callback);

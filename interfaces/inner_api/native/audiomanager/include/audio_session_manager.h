@@ -16,6 +16,7 @@
 #ifndef ST_AUDIO_SESSION_MANAGER_H
 #define ST_AUDIO_SESSION_MANAGER_H
 
+#include "audio_device_descriptor.h"
 #include "audio_system_manager.h"
 #include "audio_session_device_info.h"
 
@@ -273,6 +274,42 @@ public:
      * @since 20
      */
     void OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent);
+
+    /**
+     * @brief Obtains all the available audio devices with a specific device usage.
+     *
+     * @param deviceUsage. Audio device usage.
+     * @return Returns AudioDeviceDescriptor vector
+     * @since 21
+     */
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
+
+    /**
+     * @brief Select an audio device.
+     *
+     * @param audioDeviceDescriptor. Audio device descriptor.
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 21
+     */
+    int32_t SelectInputDevice(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor);
+
+    /**
+     * @brief Get selected audio device.
+     *
+     * @return Returns AudioDeviceDescriptor
+     * @since 21
+     */
+    std::shared_ptr<AudioDeviceDescriptor> GetSelectedInputDevice();
+
+    /**
+     * @brief Clear selected audio device.
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 21
+     */
+    int32_t ClearSelectedInputDevice();
 
 private:
     std::mutex setDefaultOutputDeviceMutex_;

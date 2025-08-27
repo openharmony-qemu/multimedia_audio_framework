@@ -401,6 +401,28 @@ int32_t AudioCoreService::EventEntry::SelectInputDevice(sptr<AudioCapturerFilter
     return coreService_->SelectInputDevice(audioCapturerFilter, selectedDesc);
 }
 
+int32_t AudioCoreService::EventEntry::SelectInputDeviceByUid(const std::shared_ptr<AudioDeviceDescriptor> &descriptor,
+    int32_t uid)
+{
+    Trace trace("KeyAction AudioCoreService::SelectInputDeviceByUid");
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->SelectInputDeviceByUid(descriptor, uid);
+}
+
+std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::EventEntry::GetSelectedInputDeviceByUid(int32_t uid)
+{
+    Trace trace("KeyAction AudioCoreService::GetSelectedInputDeviceByUid");
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->GetSelectedInputDeviceByUid(uid);
+}
+
+int32_t AudioCoreService::EventEntry::ClearSelectedInputDeviceByUid(int32_t uid)
+{
+    Trace trace("KeyAction AudioCoreService::ClearSelectedInputDeviceByUid");
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->ClearSelectedInputDeviceByUid(uid);
+}
+
 int32_t AudioCoreService::EventEntry::GetCurrentRendererChangeInfos(vector<shared_ptr<AudioRendererChangeInfo>>
     &audioRendererChangeInfos, bool hasBTPermission, bool hasSystemPermission)
 {
