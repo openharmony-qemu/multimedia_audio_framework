@@ -727,7 +727,7 @@ std::string AudioHfpManager::GetAudioScoDeviceMac()
 
 void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, int state, int reason)
 {
-    AUDIO_WARNING_LOG("state:[%{public}d] reason:[%{public}d] device:[%{public}s]",
+    HILOG_COMM_INFO("state:[%{public}d] reason:[%{public}d] device:[%{public}s]",
         state, reason, GetEncryptAddr(device.GetDeviceAddr()).c_str());
     // SCO_DISCONNECTED = 3, SCO_CONNECTING = 4, SCO_DISCONNECTING = 5, SCO_CONNECTED = 6
     HfpScoConnectState scoState = static_cast<HfpScoConnectState>(state);

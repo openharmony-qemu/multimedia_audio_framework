@@ -157,7 +157,7 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
         ErasePreferredDeviceByType(preferredType);
     }
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Set preferredType %{public}d failed, ret: %{public}d", preferredType, ret);
+        HILOG_COMM_INFO("Set preferredType %{public}d failed, ret: %{public}d", preferredType, ret);
     }
     return ret;
 }
