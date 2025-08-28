@@ -707,7 +707,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetMinVolumeLevel_003, TestSize.Level1)
 HWTEST_F(AudioAdapterManagerUnitTest, GetMinVolumeLevel_004, TestSize.Level1)
 {
     int32_t ret = audioAdapterManager_->GetMinVolumeLevel(STREAM_DEFAULT, DEVICE_TYPE_NONE);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM]);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
 /**
