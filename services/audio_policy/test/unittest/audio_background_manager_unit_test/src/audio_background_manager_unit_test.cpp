@@ -1174,11 +1174,10 @@ HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_046, TestSize.Leve
     ASSERT_TRUE(audioBackgroundManagerTest_ != nullptr);
 
     int32_t pid = 0;
-    int32_t uid = 0;
     AppState appState;
 
     audioBackgroundManagerTest_->appStatesMap_.clear();
-    audioBackgroundManagerTest_->InsertIntoAppStatesMapWithoutUid(pid, uid, appState);
+    audioBackgroundManagerTest_->InsertIntoAppStatesMapWithoutUid(pid, appState);
     EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_.empty(), false);
 
     bool ret = audioBackgroundManagerTest_->FindKeyInMap(pid);
