@@ -488,8 +488,7 @@ bool CapturerInServer::CheckBGCapture()
         return true;
     }
 
-    if (AudioService::GetInstance()->IsStreamInterruptResume(streamIndex_) &&
-        AudioService::GetInstance()->IsBackgroundCaptureAllowed(streamIndex_)) {
+    if (AudioService::GetInstance()->IsStreamInterruptResume(streamIndex_)) {
         AUDIO_WARNING_LOG("Stream:%{public}u Result:success Reason:resume", streamIndex_);
         return true;
     }
@@ -547,7 +546,7 @@ bool CapturerInServer::TurnOffMicIndicator(CapturerState capturerState)
     };
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
 
-    if (AudioService::GetInstance()->NeedRemoveBackgroundCaptureMap(streamIndex_)) {
+    if (AudioService::GetInstance()->NeedRemoveBackgroundCaptureMap(streamIndex_, capturerState)) {
         AudioService::GetInstance()->RemoveBackgroundCaptureMap(streamIndex_);
     }
     if (isMicIndicatorOn_) {

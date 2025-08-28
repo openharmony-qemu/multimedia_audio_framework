@@ -393,7 +393,6 @@ bool AudioService::IsStreamInterruptResume(const uint32_t sessionId)
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_NS_PER_SECOND;
     if (stamp <= BACKGROUND_CAPTURE_INTERRUPT_TIMEOUT_SEC) {
         AUDIO_WARNING_LOG("sessionId:%{public}u Resume Interrupt!!!", sessionId);
-        resumeInterruptEventMap_.erase(sessionId);
         return true;
     }
     resumeInterruptEventMap_.erase(sessionId);
@@ -420,7 +419,7 @@ bool AudioService::RemovePauseInterruptEventMap(const uint32_t sessionId)
     if (iter == pauseInterruptEventMap_.end()) {
         return false;
     }
-    resumeInterruptEventMap_.erase(sessionId);
+    pauseInterruptEventMap_.erase(sessionId);
     return true;
 }
  
@@ -504,23 +503,25 @@ void AudioService::RemoveBackgroundCaptureMap(uint32_t sessionId)
     std::lock_guard<std::mutex> lock(backgroundCaptureMutex_);
     auto iter = backgroundCaptureMap_.find(sessionId);
     if (iter != backgroundCaptureMap_.end()) {
-        audioSwitchStreamMap_.erase(sessionId);
+        backgroundCaptureMap_.erase(sessionId);
     }
 }
  
-bool AudioService::NeedRemoveBackgroundCaptureMap(uint32_t sessionId)
+bool AudioService::NeedRemoveBackgroundCaptureMap(uint32_t sessionId, CapturerState capturerState)
 {
     SwitchState switchState;
     if (IsInSwitchStreamMap(sessionId, switchState)) {
+        AUDIO_INFO_LOG("sessionId:%{public}u switchState:%{public}d", sessionId, switchState);
         if (switchState == SWITCH_STATE_WAITING) {
-            AUDIO_WARNING_LOG("SwitchStream should not reset");
             return false;
         }
         RemoveSwitchStreamMap(sessionId);
     }
     if (IsStreamInterruptPause(sessionId)) {
-        AUDIO_WARNING_LOG ("Pause Intertrupt Event need not reset");
-        RemovePauseInterruptEventMap(sessionId);
+        AUDIO_WARNING_LOG ("Pause Interrupt!sessionId:%{public}u state:%{public}d", sessionId, capturerState);
+        if (capturerState == CAPTURER_PAUSED) {
+            RemovePauseInterruptEventMap(sessionId);
+        }
         return false;
     }
     return true;
