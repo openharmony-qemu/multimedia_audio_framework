@@ -485,28 +485,30 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     // Update a2dp offload flag for update active route, if a2dp offload flag is not true, audioserver
     // will reset a2dp device to none.
     audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForStartStream(static_cast<int32_t>(sessionId));
-
+    auto deviceDesc = streamDesc->newDeviceDescs_.front();
+    CHECK_AND_RETURN_RET_LOG(deviceDesc, ERR_NULL_POINTER, "deviceDesc is empty");
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         int32_t outputRet = ActivateOutputDevice(streamDesc);
         CHECK_AND_RETURN_RET_LOG(outputRet == SUCCESS, outputRet, "Activate output device failed");
-        CheckAndSetCurrentOutputDevice(streamDesc->newDeviceDescs_.front(), streamDesc->sessionId_);
+        CheckAndSetCurrentOutputDevice(deviceDesc, streamDesc->sessionId_);
         std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
         if (policyConfigMananger_.GetUpdateRouteSupport()) {
             UpdateOutputRoute(streamDesc);
         }
+        streamCollector_.UpdateRendererDeviceInfo(deviceDesc);
     } else {
         int32_t inputRet = ActivateInputDevice(streamDesc);
         CHECK_AND_RETURN_RET_LOG(inputRet == SUCCESS, inputRet, "Activate input device failed");
-        CheckAndSetCurrentInputDevice(streamDesc->newDeviceDescs_.front());
+        CheckAndSetCurrentInputDevice(deviceDesc);
         audioActiveDevice_.UpdateActiveDeviceRoute(
             streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG,
             streamDesc->newDeviceDescs_[0]->deviceName_, streamDesc->newDeviceDescs_[0]->networkId_);
-        streamCollector_.UpdateCapturerDeviceInfo(streamDesc->newDeviceDescs_.front());
+        streamCollector_.UpdateCapturerDeviceInfo(deviceDesc);
     }
     streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
     sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc);
 
-    CheckForRemoteDeviceState(streamDesc->newDeviceDescs_.front());
+    CheckForRemoteDeviceState(deviceDesc);
     return SUCCESS;
 }
 
