@@ -46,6 +46,8 @@ using namespace std;
 constexpr unsigned int GET_BUNDLE_INFO_TIME_OUT_SECONDS = 10;
 constexpr unsigned int XCOLLIE_TIME_OUT_SECONDS = 10;
 constexpr unsigned int MS_PER_SECOND = 1000;
+constexpr unsigned int AUDIO_DEADLINE_PARAM_MIN = 10;
+constexpr unsigned int AUDIO_DEADLINE_PARAM_MAX = 50;
 constexpr size_t VALID_REMOTE_NETWORK_ID_LENGTH = 64;
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioSystemManager::streamTypeMap_
     = AudioSystemManager::CreateStreamMap();
@@ -2325,7 +2327,7 @@ int32_t AudioSystemManager::CreateAudioWorkgroup()
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS && workgroupId >= 0, AUDIO_ERR,
         "CreateAudioWorkgroup failed, res:%{public}d workgroupId:%{public}d", res, workgroupId);
 
-    std::lock_guard<std::mutex> lock(workgroupPrioRecorderMutex_);
+    std::lock_guard<std::mutex> recorderLock(workgroupPrioRecorderMutex_);
     workgroupPrioRecorderMap_.emplace(workgroupId, std::make_shared<WorkgroupPrioRecorder>(workgroupId));
     return workgroupId;
 }
@@ -2341,7 +2343,7 @@ int32_t AudioSystemManager::ReleaseAudioWorkgroup(int32_t workgroupId)
         if (recorder->RestoreGroupPrio(false) != AUDIO_OK) {
             AUDIO_ERR_LOG("[WorkgroupInClient] restore grp:%{public}d prio failed", workgroupId);
         } else {
-            std::lock_guard<std::mutex> lock(workgroupPrioRecorderMutex_);
+            std::lock_guard<std::mutex> recorderLock(workgroupPrioRecorderMutex_);
             workgroupPrioRecorderMap_.erase(workgroupId);
         }
     }
@@ -2414,13 +2416,17 @@ int32_t AudioSystemManager::StartGroup(int32_t workgroupId, uint64_t startTime, 
     const std::unordered_map<int32_t, bool> threads, bool &needUpdatePrio)
 {
     if (!IsValidToStartGroup(workgroupId)) {
+        StopGroup(workgroupId);
         return AUDIO_ERR;
     }
 
     Trace trace("[WorkgroupInClient] StartGroup workgroupId:" + std::to_string(workgroupId) +
         " startTime:" + std::to_string(startTime) + " deadlineTime:" + std::to_string(deadlineTime));
     CHECK_AND_RETURN_RET_LOG(deadlineTime > startTime, ERR_INVALID_PARAM, "Invalid Audio Deadline params");
-    RME::SetFrameRateAndPrioType(workgroupId, MS_PER_SECOND/(deadlineTime - startTime), 0);
+    int32_t audioDeadlineRate = MS_PER_SECOND / (deadlineTime - startTime);
+    CHECK_AND_RETURN_RET_LOG(audioDeadlineRate >= AUDIO_DEADLINE_PARAM_MIN &&
+        audioDeadlineRate <= AUDIO_DEADLINE_PARAM_MAX, ERR_INVALID_PARAM, "Invalid Audio Deadline Rate");
+    RME::SetFrameRateAndPrioType(workgroupId, audioDeadlineRate, 0);
 
     if (ExcuteAudioWorkgroupPrioImprove(workgroupId, threads, needUpdatePrio) != AUDIO_OK) {
         AUDIO_ERR_LOG("[WorkgroupInClient] excute audioworkgroup prio improve failed");
@@ -2591,7 +2597,7 @@ int32_t AudioSystemManager::WorkgroupPrioRecorder::GetGrpId()
  
 std::shared_ptr<AudioSystemManager::WorkgroupPrioRecorder> AudioSystemManager::GetRecorderByGrpId(int32_t grpId)
 {
-    std::lock_guard<std::mutex> lock(workgroupPrioRecorderMutex_);
+    std::lock_guard<std::mutex> recorderLock(workgroupPrioRecorderMutex_);
     auto it = workgroupPrioRecorderMap_.find(grpId);
     if (it != workgroupPrioRecorderMap_.end()) {
         return it->second;

@@ -30,7 +30,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     static constexpr int32_t AUDIO_MAX_PROCESS = 2;
-    static constexpr int32_t AUDIO_MAX_GRP_PER_PROCESS = 4;
+    static constexpr int32_t AUDIO_MAX_GRP_PER_PROCESS = 2;
     static constexpr int32_t AUDIO_MAX_RT_THREADS = 4;
 }
 
@@ -98,6 +98,7 @@ int32_t AudioResourceService::CreateAudioWorkgroup(int32_t pid, const sptr<IRemo
         std::lock_guard<std::mutex> lock(workgroupLock_);
         auto workgroup = std::make_shared<AudioWorkgroup>(reply.rtgId);
         audioWorkgroupMap_[pid].groups[reply.rtgId] = workgroup;
+        FillAudioWorkgroupCgroupLimit(pid, workgroup);
 
         sptr<AudioWorkgroupDeathRecipient> deathRecipient = new AudioWorkgroupDeathRecipient();
         deathRecipient->SetNotifyCb([this, workgroup, object]() {
@@ -390,6 +391,30 @@ int32_t AudioResourceService::RestoreAudioWorkgroupPrio(int32_t pid,
         ScheduleReportDataWithQosLevel(pid, tid.first, "audio_server", tid.second);
     }
     return AUDIO_OK;
+}
+
+void AudioResourceService::FillAudioWorkgroupCgroupLimit(int32_t pid,
+    std::shared_ptr<AudioWorkgroup>& workgroup)
+{
+    if (workgroup == nullptr) {
+        AUDIO_ERR_LOG("[WorkgroupInServer]workgroup is nullptr");
+        return;
+    }
+    int32_t cgroupId = -1;
+    std::set<int32_t> usedGroupLimitIds;
+    for (const auto& group : audioWorkgroupMap_[pid].groups) {
+        int32_t currId = (group.second ? group.second->GetCgroupLimitId() : -1);
+        if (currId != -1) {
+            usedGroupLimitIds.insert(currId);
+        }
+    }
+    for (int32_t i = 0; i < AUDIO_MAX_GRP_PER_PROCESS; i++) {
+        if (usedGroupLimitIds.count(i) == 0) {
+            cgroupId = i;
+            break;
+        }
+    }
+    workgroup->SetCgroupLimitParams(pid, cgroupId);
 }
 } // namespce AudioStandard
 } // namespace OHOS

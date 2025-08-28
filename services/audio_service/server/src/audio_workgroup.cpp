@@ -18,12 +18,10 @@
 #endif
 
 #include "audio_workgroup.h"
-#include "audio_common_log.h"
 #include "rtg_interface.h"
+#include "audio_common_log.h"
 #include "audio_utils.h"
 #include "concurrent_task_client.h"
-
-using namespace OHOS::RME;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -32,6 +30,7 @@ constexpr unsigned int MS_PER_SECOND = 1000;
 AudioWorkgroup::AudioWorkgroup(int32_t id) : workgroupId(id)
 {
     AUDIO_INFO_LOG("OHAudioWorkgroup Constructor is called\n");
+    SetCgroupLimitParams(0, -1);
 }
 
 int32_t AudioWorkgroup::GetWorkgroupId()
@@ -46,11 +45,15 @@ uint32_t AudioWorkgroup::GetThreadsNums()
 
 int32_t AudioWorkgroup::AddThread(int32_t tid)
 {
+    Trace trace("[WorkgroupInServer] AddThread tid:" + std::to_string(tid) +
+        " workgroupId:" + std::to_string(workgroupId));
     ConcurrentTask::IntervalReply reply;
+    reply.paramA = cgroupLimit.clientPid;
+    reply.paramB = cgroupLimit.globalCgroupId;
     OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().SetAudioDeadline(
         ConcurrentTask::AUDIO_DDL_ADD_THREAD, tid, workgroupId, reply);
     if (reply.paramA < 0) {
-        AUDIO_INFO_LOG("AudioWorkgroup AddThread Failed!\n");
+        AUDIO_INFO_LOG("[WorkgroupInServer] AudioWorkgroup AddThread Failed\n");
         return AUDIO_ERR;
     }
     threads[tid] = true;
@@ -59,11 +62,15 @@ int32_t AudioWorkgroup::AddThread(int32_t tid)
 
 int32_t AudioWorkgroup::RemoveThread(int32_t tid)
 {
+    Trace trace("[WorkgroupInServer] RemoveThread tid:" + std::to_string(tid) +
+        " workgroupId:" + std::to_string(workgroupId));
     ConcurrentTask::IntervalReply reply;
+    reply.paramA = cgroupLimit.clientPid;
+    reply.paramB = cgroupLimit.globalCgroupId;
     OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().SetAudioDeadline(
         ConcurrentTask::AUDIO_DDL_REMOVE_THREAD, tid, workgroupId, reply);
     if (reply.paramA < 0) {
-        AUDIO_INFO_LOG("AudioWorkgroup RemoveThread Failed!\n");
+        AUDIO_INFO_LOG("[WorkgroupInServer] AudioWorkgroup RemoveThread Failed\n");
         return AUDIO_ERR;
     }
     threads.erase(tid);
@@ -72,13 +79,15 @@ int32_t AudioWorkgroup::RemoveThread(int32_t tid)
 
 int32_t AudioWorkgroup::Start(uint64_t startTime, uint64_t deadlineTime)
 {
+    Trace trace("[WorkgroupInServer] Start workgroupId:" + std::to_string(workgroupId) +
+        " startTime:" + std::to_string(startTime) + " deadlineTime:" + std::to_string(deadlineTime));
     if (deadlineTime <= startTime) {
-        AUDIO_ERR_LOG("[WorkgroupInServer] Invalid params When Start!");
+        AUDIO_ERR_LOG("[WorkgroupInServer] Invalid params When Start.");
         return AUDIO_ERR;
     }
-    SetFrameRateAndPrioType(workgroupId, MS_PER_SECOND/(deadlineTime - startTime), 0);
-    if (BeginFrameFreq(0) != 0) {
-        AUDIO_ERR_LOG("[WorkgroupInServer] Audio Deadline BeginFrame Failed!");
+    RME::SetFrameRateAndPrioType(workgroupId, MS_PER_SECOND/(deadlineTime - startTime), 0);
+    if (RME::BeginFrameFreq(deadlineTime - startTime) != 0) {
+        AUDIO_ERR_LOG("[WorkgroupInServer] Audio Deadline BeginFrame failed");
         return AUDIO_ERR;
     }
     return AUDIO_OK;
@@ -86,11 +95,24 @@ int32_t AudioWorkgroup::Start(uint64_t startTime, uint64_t deadlineTime)
 
 int32_t AudioWorkgroup::Stop()
 {
-    if (EndFrameFreq(0) != 0) {
-        AUDIO_ERR_LOG("[WorkgroupInServer] Audio Deadline EndFrame Failed!");
+    Trace trace("[WorkgroupInServer] Stop workgroupId:" + std::to_string(workgroupId));
+    if (RME::EndFrameFreq(0) != 0) {
+        AUDIO_ERR_LOG("[WorkgroupInServer] Audio Deadline EndFrame failed");
         return AUDIO_ERR;
     }
     return AUDIO_OK;
 }
+
+int32_t AudioWorkgroup::GetCgroupLimitId()
+{
+    return cgroupLimit.globalCgroupId;
+}
+
+void AudioWorkgroup::SetCgroupLimitParams(int32_t pid, int32_t globalCgroupId)
+{
+    cgroupLimit.clientPid = pid;
+    cgroupLimit.globalCgroupId = globalCgroupId;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
