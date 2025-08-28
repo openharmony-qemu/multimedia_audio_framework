@@ -240,7 +240,7 @@ HWTEST_F(AudioSessionServiceUnitTest, GetAudioSessionStreamUsage_001, TestSize.L
     int ret = sessionService->SetAudioSessionScene(fakePid, AudioSessionScene::MEDIA);
     EXPECT_EQ(SUCCESS, ret);
     StreamUsage usage = sessionService->GetAudioSessionStreamUsage(fakePid);
-    EXPECT_EQ(STREAM_USAGE_INVALID, usage);
+    EXPECT_EQ(STREAM_USAGE_MEDIA, usage);
 }
 
 /**

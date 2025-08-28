@@ -215,6 +215,7 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/pipe/src/audio_global_config_manager.cpp",
     "server/service/service_main/src/audio_policy_service.cpp",
     "server/domain/device/src/audio_state_manager.cpp",
+    "server/domain/device/src/audio_usr_select_manager.cpp",
     "server/domain/pipe/src/audio_concurrency_service.cpp",
     "server/service/service_main/src/device_init_callback.cpp",
     "server/src/audio_client_tracker_callback_service.cpp",

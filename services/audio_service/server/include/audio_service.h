@@ -104,8 +104,8 @@ public:
 
     void RemoveRenderer(uint32_t sessionId, bool isSwitchStream = false);
     void RemoveCapturer(uint32_t sessionId, bool isSwitchStream = false);
-    int32_t EnableDualToneList(uint32_t sessionId);
-    int32_t DisableDualToneList(uint32_t sessionId);
+    int32_t EnableDualStream(const uint32_t sessionId, const std::string &dupSinkName);
+    int32_t DisableDualStream(const uint32_t sessionId);
     int32_t SetOffloadMode(uint32_t sessionId, int32_t state, bool isAppBack);
     int32_t UnsetOffloadMode(uint32_t sessionId);
     void UpdateAudioSinkState(uint32_t sinkId, bool started);

@@ -286,14 +286,14 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_SetReverbPreset_001, TestSize.Lev
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
     audioLoopback->currentState_ = LOOPBACK_STATE_RUNNING;
-    bool ret = audioLoopback->SetReverbPreset(REVERB_PRESET_THEATRE);
+    bool ret = audioLoopback->SetReverbPreset(REVERB_PRESET_THEATER);
     EXPECT_EQ(ret, true);
 }
 
 HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_SetReverbPreset_002, TestSize.Level1)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    bool ret = audioLoopback->SetReverbPreset(REVERB_PRESET_THEATRE);
+    bool ret = audioLoopback->SetReverbPreset(REVERB_PRESET_THEATER);
     EXPECT_EQ(ret, true);
 }
 

@@ -885,10 +885,10 @@ int32_t AudioService::OnUpdateInnerCapList(int32_t innerCapId)
 }
 #endif
 
-int32_t AudioService::EnableDualToneList(uint32_t sessionId)
+int32_t AudioService::EnableDualStream(const uint32_t sessionId, const std::string &dupSinkName)
 {
     workingDualToneId_ = sessionId;
-    AUDIO_INFO_LOG("EnableDualToneList sessionId is %{public}d", sessionId);
+    AUDIO_INFO_LOG("sessionId is %{public}d", sessionId);
     std::unique_lock<std::mutex> lock(rendererMapMutex_);
     for (auto it = allRendererMap_.begin(); it != allRendererMap_.end(); it++) {
         std::shared_ptr<RendererInServer> renderer = it->second.lock();
@@ -897,14 +897,14 @@ int32_t AudioService::EnableDualToneList(uint32_t sessionId)
             continue;
         }
         if (ShouldBeDualTone(renderer->processConfig_)) {
-            renderer->EnableDualTone();
+            renderer->EnableDualTone(dupSinkName);
             filteredDualToneRendererMap_.push_back(renderer);
         }
     }
     return SUCCESS;
 }
 
-int32_t AudioService::DisableDualToneList(uint32_t sessionId)
+int32_t AudioService::DisableDualStream(const uint32_t sessionId)
 {
     AUDIO_INFO_LOG("disable dual tone, sessionId is %{public}d", sessionId);
     std::unique_lock<std::mutex> lock(rendererMapMutex_);
@@ -1594,6 +1594,7 @@ int32_t AudioService::UpdateSourceType(SourceType sourceType)
 void AudioService::SetIncMaxRendererStreamCnt(AudioMode audioMode)
 {
     if (audioMode == AUDIO_MODE_PLAYBACK) {
+        std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
         currentRendererStreamCnt_++;
     }
 }
@@ -1656,6 +1657,7 @@ bool AudioService::HasBluetoothEndpoint()
 
 int32_t AudioService::GetCurrentRendererStreamCnt()
 {
+    std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
     return currentRendererStreamCnt_;
 }
 

@@ -163,8 +163,7 @@ void GetUnusedPipeFuzzTest()
     pipe1->streamDescriptors_.clear();
     audioPipeManager->AddAudioPipeInfo(pipe1);
 
-    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    audioPipeManager->GetUnusedPipe(deviceType);
+    audioPipeManager->GetUnusedPipe();
 }
 
 void IsSpecialPipeFuzzTest()

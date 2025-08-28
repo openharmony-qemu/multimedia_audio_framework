@@ -1215,20 +1215,23 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_040, TestSize.
     SourceType existSourceType, incomingSourceType;
     incomingSourceType = SOURCE_TYPE_INVALID;
     existSourceType = SOURCE_TYPE_INVALID;
+    AudioStreamType existStreamType = STREAM_ALARM;
+    AudioStreamType incomingStreamType = STREAM_ALARM;
     string bundleName = "test";
+    std::string currentBundleName = "currentTest";
     AudioFocusEntry focusEntry;
-    audioInterruptService->UpdateMicFocusStrategy(existSourceType, incomingSourceType,
-        bundleName, focusEntry);
+    audioInterruptService->UpdateMicFocusStrategy(existSourceType, incomingSourceType, existStreamType,
+        incomingStreamType, currentBundleName, bundleName, focusEntry);
     incomingSourceType = SOURCE_TYPE_VOICE_CALL;
-    audioInterruptService->UpdateMicFocusStrategy(existSourceType, incomingSourceType,
-        bundleName, focusEntry);
+    audioInterruptService->UpdateMicFocusStrategy(existSourceType, incomingSourceType, existStreamType,
+        incomingStreamType, currentBundleName, bundleName, focusEntry);
     existSourceType = SOURCE_TYPE_MIC;
-    audioInterruptService->UpdateMicFocusStrategy(existSourceType, incomingSourceType,
-        bundleName, focusEntry);
+    audioInterruptService->UpdateMicFocusStrategy(existSourceType, incomingSourceType, existStreamType,
+        incomingStreamType, currentBundleName, bundleName, focusEntry);
     sptr<IStandardAudioPolicyManagerListener> listener(new IStandardAudioPolicyManagerListenerStub());
     audioInterruptService->queryBundleNameListCallback_ = listener;
-    audioInterruptService->UpdateMicFocusStrategy(existSourceType, incomingSourceType,
-        bundleName, focusEntry);
+    audioInterruptService->UpdateMicFocusStrategy(existSourceType, incomingSourceType, existStreamType,
+        incomingStreamType, currentBundleName, bundleName, focusEntry);
 }
 
 /**
@@ -1344,6 +1347,30 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_GetAudioSessio
 
     EXPECT_EQ(ret.size(), 1);
     EXPECT_EQ(ret.at(0), 1000);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_045
+* @tc.desc  : Test AudioInterruptService_045
+*/
+HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_045, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    int32_t fakePid = 123;
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.pid = fakePid;
+    incomingInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    AudioSessionStrategy audioSessionStrategy;
+    InterruptEventInternal interruptEvent;
+    audioSessionStrategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
+    audioInterruptService->sessionService_ = AudioSessionService::GetAudioSessionService();
+    audioInterruptService->sessionService_->sessionMap_[fakePid] = nullptr;
+    auto ret = audioInterruptService->ActivateAudioSession(1, fakePid, audioSessionStrategy, true);
+    audioInterruptService->ResumeFocusByStreamId(fakePid, interruptEvent);
+    EXPECT_EQ(ERROR, ret);
 }
 
 /**

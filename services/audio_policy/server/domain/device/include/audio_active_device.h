@@ -82,6 +82,8 @@ public:
     bool IsDeviceInVector(std::shared_ptr<AudioDeviceDescriptor> desc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs);
     void UpdateStreamDeviceMap(std::string source);
+    bool IsDeviceInActiveOutputDevices(DeviceType type, bool isRemote);
+
 private:
     AudioActiveDevice()
         : audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
@@ -93,6 +95,9 @@ private:
         const AudioStreamDeviceChangeReason reason);
     void HandleActiveBt(DeviceType deviceType, std::string macAddress);
     void HandleNegtiveBt(DeviceType deviceType);
+    void UpdateVolumeTypeDeviceMap(std::shared_ptr<AudioStreamDescriptor> desc);
+    void UpdateStreamUsageDeviceMap(std::shared_ptr<AudioStreamDescriptor> desc);
+
 private:
     std::mutex curOutputDevice_; // lock this mutex to operate currentActiveDevice_
     AudioDeviceDescriptor currentActiveDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
@@ -102,8 +107,8 @@ private:
     std::string activeBTDevice_;
     std::string activeBTInDevice_;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> activeOutputDevices_;
-    std::unordered_map<AudioStreamType, std::shared_ptr<AudioDeviceDescriptor>> streamTypeDeviceMap_;
-    std::unordered_map<StreamUsage, std::shared_ptr<AudioDeviceDescriptor>> streamUsageDeviceMap_;
+    std::unordered_map<AudioVolumeType, std::vector<std::shared_ptr<AudioDeviceDescriptor>>> volumeTypeDeviceMap_;
+    std::unordered_map<StreamUsage, std::vector<std::shared_ptr<AudioDeviceDescriptor>>> streamUsageDeviceMap_;
 
     AudioDeviceManager &audioDeviceManager_;
     AudioAffinityManager &audioAffinityManager_;

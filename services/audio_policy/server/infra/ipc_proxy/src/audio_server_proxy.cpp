@@ -149,12 +149,13 @@ void AudioServerProxy::SetDmDeviceTypeProxy(uint16_t dmDeviceType, DeviceType de
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
-int32_t AudioServerProxy::UpdateDualToneStateProxy(const bool &enable, const int32_t &sessionId)
+int32_t AudioServerProxy::UpdateDualToneStateProxy(const bool &enable, const int32_t &sessionId,
+    const std::string &dupSinkName)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->UpdateDualToneState(enable, sessionId);
+    int32_t ret = gsp->UpdateDualToneState(enable, sessionId, dupSinkName);
     IPCSkeleton::SetCallingIdentity(identity);
     return ret;
 }

@@ -294,6 +294,8 @@ int32_t HpaeRendererStreamImpl::GetSpeedPosition(uint64_t &framePosition, uint64
     CHECK_AND_RETURN_RET(ret == ERR_NOT_SUPPORTED, ret);
 
     framePosition = lastHdiFramePosition_ + framePosition_ - lastFramePosition_;
+    uint64_t mutePaddingFrames = mutePaddingFrames_.load();
+    framePosition = (framePosition > mutePaddingFrames) ? (framePosition - mutePaddingFrames) : 0;
 
     uint64_t latencyUs = 0;
     GetLatencyInner(timestamp, latencyUs, base);
@@ -309,6 +311,8 @@ int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint
     GetLatencyInner(timestamp, latencyUs, base);
     latency = latencyUs * static_cast<uint64_t>(processConfig_.streamInfo.samplingRate) / AUDIO_US_PER_S;
     framePosition = framePosition_;
+    uint64_t mutePaddingFrames = mutePaddingFrames_.load();
+    framePosition = (framePosition > mutePaddingFrames) ? (framePosition - mutePaddingFrames) : 0;
     AUDIO_DEBUG_LOG("HpaeRendererStreamImpl::GetCurrentPosition Latency info: framePosition: %{public}" PRIu64
         ", latency %{public}" PRIu64, framePosition, latency);
     return SUCCESS;
@@ -445,19 +449,25 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
     if (isCallbackMode_) { // callback buffer
         auto requestDataLen = callBackStreamInfo.requestDataLen;
         auto writeCallback = writeCallback_.lock();
-        if (callBackStreamInfo.needData && writeCallback) {
+        CHECK_AND_RETURN_RET(writeCallback != nullptr, ERROR);
+        if (callBackStreamInfo.needData) {
             writeCallback->GetAvailableSize(requestDataLen);
             requestDataLen = std::min(requestDataLen, callBackStreamInfo.requestDataLen);
+            size_t mutePaddingSize = 0;
             if (callBackStreamInfo.requestDataLen > requestDataLen) {
+                mutePaddingSize = callBackStreamInfo.requestDataLen - requestDataLen;
                 int chToFill = (processConfig_.streamInfo.format == SAMPLE_U8) ? 0x7f : 0;
                 memset_s(callBackStreamInfo.inputData + requestDataLen,
-                    callBackStreamInfo.requestDataLen - requestDataLen, chToFill,
-                    callBackStreamInfo.requestDataLen - requestDataLen);
+                    mutePaddingSize, chToFill, mutePaddingSize);
                 requestDataLen = callBackStreamInfo.forceData ? requestDataLen : 0;
             }
             callBackStreamInfo.requestDataLen = requestDataLen;
-            return writeCallback->OnWriteData(callBackStreamInfo.inputData,
+            int32_t ret = writeCallback->OnWriteData(callBackStreamInfo.inputData,
                 requestDataLen);
+            CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+            size_t mutePaddingFrames = (byteSizePerFrame_ == 0) ? 0 : (mutePaddingSize / byteSizePerFrame_);
+            CHECK_AND_RETURN_RET(mutePaddingFrames != 0, SUCCESS);
+            mutePaddingFrames_.fetch_add(mutePaddingFrames);
         }
     } else { // write buffer
         return WriteDataFromRingBuffer(callBackStreamInfo.forceData,
@@ -714,17 +724,20 @@ int32_t HpaeRendererStreamImpl::WriteDataFromRingBuffer(bool forceData, int8_t *
     CHECK_AND_RETURN_RET_LOG(result.size != 0, ERROR,
         "Readable size is invalid, result.size:%{public}zu, requestDataLen:%{public}zu, buffer underflow.",
         result.size, requestDataLen);
+    size_t mutePaddingSize = 0;
     if (requestDataLen > result.size) {
+        mutePaddingSize = requestDataLen - result.size;
         CHECK_AND_RETURN_RET_LOG(forceData, ERROR, "not enough data");
         int chToFill = (processConfig_.streamInfo.format == SAMPLE_U8) ? 0x7f : 0;
-        memset_s(inputData + result.size,
-            requestDataLen - result.size, chToFill,
-            requestDataLen - result.size);
+        memset_s(inputData + result.size, mutePaddingSize, chToFill, mutePaddingSize);
     }
     AUDIO_DEBUG_LOG("requestDataLen is:%{public}zu readSize is:%{public}zu", requestDataLen, result.size);
     requestDataLen = std::min(requestDataLen, result.size);
     result = ringBuffer_->Dequeue({reinterpret_cast<uint8_t *>(inputData), requestDataLen});
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "RingBuffer dequeue failed");
+    size_t mutePaddingFrames = (byteSizePerFrame_ == 0) ? 0 : (mutePaddingSize / byteSizePerFrame_);
+    CHECK_AND_RETURN_RET(mutePaddingFrames != 0, SUCCESS);
+    mutePaddingFrames_.fetch_add(mutePaddingFrames);
     return SUCCESS;
 }
 

@@ -965,6 +965,47 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceCanMixForSession_001, TestSi
 }
 
 /**
+ * @tc.name  : Test AudioInterruptService.
+ * @tc.number: AudioInterruptService_RemoveExistingFocus_001
+ * @tc.desc  : Test RemoveExistingFocus.
+ */
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_RemoveExistingFocus_001, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->zonesMap_.clear();
+    int32_t appUid = 1;
+    auto audioInterruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt audioInterrupt1;
+    audioInterrupt1.streamId = 100;
+    audioInterrupt1.uid = 1;
+    std::unordered_set<int32_t> uidActivedSessions;
+    audioInterruptZone->audioFocusInfoList.clear();
+    audioInterruptZone->audioFocusInfoList.emplace_back(audioInterrupt1, AudioFocuState{PAUSE});
+    EXPECT_EQ(interruptServiceTest->zonesMap_.find(0), interruptServiceTest->zonesMap_.end());
+    interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
+    interruptServiceTest->zonesMap_[1] = audioInterruptZone;
+    interruptServiceTest->zonesMap_[2] = std::make_shared<AudioInterruptZone>();
+    interruptServiceTest->RemoveExistingFocus(appUid, uidActivedSessions);
+}
+
+/**
+ * @tc.name  : Test AudioInterruptService.
+ * @tc.number: AudioInterruptService_ResumeFocusByStreamId_001
+ * @tc.desc  : Test ResumeFocusByStreamId.
+ */
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_ResumeFocusByStreamId_001, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    InterruptEventInternal interruptEvent;
+    interruptServiceTest->ResumeFocusByStreamId(0, interruptEvent);
+    interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
+    auto retStatus = interruptServiceTest->SetAudioInterruptCallback(0, 0,
+        sptr<RemoteObjectTestStub>::MakeSptr(), 0);
+    EXPECT_EQ(retStatus, SUCCESS);
+    interruptServiceTest->ResumeFocusByStreamId(0, interruptEvent);
+}
+
+/**
 * @tc.name  : Test AudioInterruptService.
 * @tc.number: AudioInterruptServiceCanMixForSession_002
 * @tc.desc  : Test CanMixForSession.
@@ -984,6 +1025,8 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceCanMixForSession_002, TestSi
     int32_t ret = interruptService->ActivateAudioSession(0, incomingInterrupt.pid, strategyTest);
     EXPECT_EQ(SUCCESS, ret);
 
+    ret = interruptService->ActivateAudioSession(0, incomingInterrupt.pid, strategyTest, true);
+    EXPECT_EQ(SUCCESS, ret);
     ret = interruptService->CanMixForSession(incomingInterrupt, activeInterrupt, focusEntry);
     EXPECT_TRUE(ret);
 }
@@ -1013,6 +1056,67 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceCanMixForSession_003, TestSi
 
     ret = interruptService->CanMixForSession(incomingInterrupt, activeInterrupt, focusEntry);
     EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test AudioInterruptUnitTest.
+ * @tc.number: SetAppConcurrencyMode_001
+ * @tc.desc  : Test SetAppConcurrencyMode.
+ */
+HWTEST(AudioInterruptUnitTest, SetAppConcurrencyMode_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerTest();
+    ASSERT_TRUE(server != nullptr);
+    int32_t uid = 0;
+    int32_t mode = 0;
+    auto ret = server->SetAppConcurrencyMode(uid, mode);
+    EXPECT_EQ(ret, SUCCESS);
+    server->interruptService_ = nullptr;
+    ret = server->SetAppConcurrencyMode(uid, mode);
+    server->interruptService_ = std::make_shared<AudioInterruptService>();
+    EXPECT_EQ(ret, ERR_UNKNOWN);
+}
+ 
+/**
+ * @tc.name  : Test AudioInterruptUnitTest.
+ * @tc.number: SetAppSilentOnDisplay_001
+ * @tc.desc  : Test SetAppSilentOnDisplay.
+ */
+HWTEST(AudioInterruptUnitTest, SetAppSilentOnDisplay_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerTest();
+    ASSERT_TRUE(server != nullptr);
+    int32_t displayId = 1;
+    auto ret = server->SetAppSilentOnDisplay(displayId);
+    EXPECT_EQ(ret, SUCCESS);
+    server->interruptService_ = nullptr;
+    ret = server->SetAppSilentOnDisplay(displayId);
+    server->interruptService_ = std::make_shared<AudioInterruptService>();
+    EXPECT_EQ(ret, ERR_UNKNOWN);
+}
+ 
+/**
+* @tc.name  : Test AudioInterruptUnitTest.
+* @tc.number: AudioPolicyServer_009
+* @tc.desc  : Test DeactivateAudioInterrupt.
+*/
+HWTEST(AudioInterruptUnitTest, AudioPolicyServer_001, TestSize.Level1)
+{
+    auto policyServerTest = GetPolicyServerTest();
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
+ 
+    AudioInterrupt audioInterrupt;
+    int32_t zoneID = 456;
+    pid_t pid = 1;
+    pid_t uid = 1;
+    int32_t strategy = 0;
+    server->interruptService_ = std::make_shared<AudioInterruptService>();
+    int32_t result = server->DeactivateAudioInterrupt(audioInterrupt, zoneID);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(policyServerTest->ActivateAudioSession(strategy), ERR_UNKNOWN);
+    server->RegisteredStreamListenerClientDied(pid, uid);
 }
 
 /**
@@ -3805,7 +3909,7 @@ HWTEST(AudioInterruptUnitTest, AudioSessionFocusMode_004, TestSize.Level1)
     movieInterrupt.audioFocusType.isPlay = true;
     movieInterrupt.callbackType = INTERRUPT_EVENT_CALLBACK_DEFAULT;
 
-    int32_t zoneId = -1;
+    int32_t zoneId = 0;
     bool result = audioInterruptService->ShouldBypassAudioSessionFocus(zoneId, movieInterrupt);
     EXPECT_FALSE(result);
 
@@ -4104,21 +4208,17 @@ HWTEST(AudioInterruptUnitTest, AudioSessionFocusMode_010, TestSize.Level2)
     int32_t CALLER_PID = IPCSkeleton::GetCallingPid();
     auto audioInterruptService = std::make_shared<AudioInterruptService>();
     ASSERT_NE(audioInterruptService, nullptr);
-    audioInterruptService->Init(GetPolicyServerTest());
-    audioInterruptService->SetCallbackHandler(GetServerHandlerTest());
+    audioInterruptService->sessionService_ = nullptr;
+    const std::vector<AudioInterrupt> streamsInSession;
+    audioInterruptService->DelayToDeactivateStreamsInAudioSession(DEFAULT_ZONE_ID, CALLER_PID, streamsInSession);
 
-    std::shared_ptr<AudioSessionService> sessionService = std::make_shared<AudioSessionService>();
-    ASSERT_NE(nullptr, sessionService);
-    audioInterruptService->sessionService_ = sessionService;
-    int32_t ret = sessionService->SetAudioSessionScene(CALLER_PID, AudioSessionScene::MEDIA);
-    EXPECT_EQ(SUCCESS, ret);
-    AudioSessionStrategy audioSessionStrategy;
-    audioSessionStrategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
-    ret = audioInterruptService->ActivateAudioSession(DEFAULT_ZONE_ID, CALLER_PID, audioSessionStrategy);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ASSERT_NE(nullptr, sessionService->sessionMap_[CALLER_PID]);
-    AudioInterrupt audioInterrupt = {};
+    auto audioInterruptServiceWithSession = std::make_shared<AudioInterruptService>();
+    audioInterruptServiceWithSession->SetCallbackHandler(GetServerHandlerTest());
+    AudioSessionStrategy strategy;
+    strategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
+    auto sessionService = std::make_shared<AudioSessionService>();
+    sessionService->sessionMap_[CALLER_PID] = std::make_shared<AudioSession>(CALLER_PID, strategy, sessionService);
+    AudioInterrupt audioInterrupt;
     audioInterrupt.pid = CALLER_PID;
     audioInterrupt.streamId = SESSION_ID_TEST + 1;
     audioInterrupt.audioFocusType.streamType = STREAM_MUSIC;
@@ -4126,24 +4226,23 @@ HWTEST(AudioInterruptUnitTest, AudioSessionFocusMode_010, TestSize.Level2)
     audioInterrupt.callbackType = INTERRUPT_EVENT_CALLBACK_DEFAULT;
     sessionService->sessionMap_[CALLER_PID]->AddStreamInfo(audioInterrupt);
 
-    audioInterruptService->sessionService_ = nullptr;
-    audioInterruptService->DelayToDeactivateStreamsInAudioSession(
-        DEFAULT_ZONE_ID, CALLER_PID, sessionService->GetStreams(CALLER_PID));
-    std::this_thread::sleep_for(std::chrono::seconds(2));
-    audioInterruptService->sessionService_ = sessionService;
+    audioInterruptServiceWithSession->sessionService_ = sessionService;
     sessionService->sessionMap_[CALLER_PID]->state_ = AudioSessionState::SESSION_ACTIVE;
-    audioInterruptService->DelayToDeactivateStreamsInAudioSession(
+    audioInterruptServiceWithSession->DelayToDeactivateStreamsInAudioSession(
         DEFAULT_ZONE_ID, CALLER_PID, sessionService->GetStreams(CALLER_PID));
-    std::this_thread::sleep_for(std::chrono::seconds(2));
 
-    ret = sessionService->SetAudioSessionScene(CALLER_PID, AudioSessionScene::MEDIA);
-    EXPECT_EQ(SUCCESS, ret);
-    ret = audioInterruptService->ActivateAudioSession(DEFAULT_ZONE_ID, CALLER_PID, audioSessionStrategy);
-    EXPECT_EQ(SUCCESS, ret);
+    auto audioInterruptServiceWithoutHandler = std::make_shared<AudioInterruptService>();
+    audioInterruptServiceWithoutHandler->SetCallbackHandler(nullptr);
+    auto sessionServiceWithoutHandler = std::make_shared<AudioSessionService>();
+    sessionServiceWithoutHandler->sessionMap_[CALLER_PID] =
+        std::make_shared<AudioSession>(CALLER_PID, strategy, sessionServiceWithoutHandler);
+    sessionServiceWithoutHandler->sessionMap_[CALLER_PID]->AddStreamInfo(audioInterrupt);
 
-    audioInterruptService->SetCallbackHandler(nullptr);
-    ret = audioInterruptService->DeactivateAudioSession(DEFAULT_ZONE_ID, CALLER_PID);
-    EXPECT_EQ(SUCCESS, ret);
+    audioInterruptServiceWithoutHandler->sessionService_ = sessionServiceWithoutHandler;
+    sessionServiceWithoutHandler->sessionMap_[CALLER_PID]->state_ = AudioSessionState::SESSION_NEW;
+    audioInterruptServiceWithoutHandler->DelayToDeactivateStreamsInAudioSession(
+        DEFAULT_ZONE_ID, CALLER_PID, sessionServiceWithoutHandler->GetStreams(CALLER_PID));
+
     std::this_thread::sleep_for(std::chrono::seconds(2));
 }
 

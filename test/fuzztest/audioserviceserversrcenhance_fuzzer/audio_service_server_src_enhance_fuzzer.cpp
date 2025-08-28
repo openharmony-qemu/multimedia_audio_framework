@@ -107,7 +107,7 @@ void AudioServiceMoreFuzzTest()
     AudioPlaybackCaptureConfig newConfig;
     audioServicePtr->UpdateMuteControlSet(sessionId, true);
     audioServicePtr->UpdateMuteControlSet(sessionId, false);
-    audioServicePtr->EnableDualToneList(sessionId);
+    audioServicePtr->EnableDualStream(sessionId, "Speaker");
     audioServicePtr->OnCapturerFilterChange(sessionId, newConfig, 1);
     audioServicePtr->OnCapturerFilterRemove(sessionId, 1);
 

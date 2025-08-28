@@ -266,6 +266,8 @@ bool AudioInterruptService::IsCapturerFocusAvailable(const int32_t zoneId, const
         return false;
     }
 
+    AUDIO_INFO_LOG("start check capturer focus, zoneId:%{public}d, sourceType:%{public}d",
+        zoneId, capturerInfo.sourceType);
     AudioInterrupt incomingInterrupt;
     incomingInterrupt.audioFocusType.sourceType = capturerInfo.sourceType;
     incomingInterrupt.audioFocusType.isPlay = false;

@@ -78,6 +78,7 @@ AudioCoreService::AudioCoreService()
       policyConfigMananger_(AudioPolicyConfigManager::GetInstance()),
       audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
       sleAudioDeviceManager_(SleAudioDeviceManager::GetInstance()),
+      audioUsrSelectManager_(AudioUsrSelectManager::GetAudioUsrSelectManager()),
       audioPipeSelector_(AudioPipeSelector::GetPipeSelector()),
       audioSessionService_(AudioSessionService::GetAudioSessionService()),
       pipeManager_(AudioPipeManager::GetPipeManager())
@@ -236,6 +237,12 @@ int32_t AudioCoreService::CreateCapturerClient(
 bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
     Trace trace("IsStreamSupportMultiChannel");
+
+    if (streamDesc->streamInfo_.encoding == ENCODING_AUDIOVIVID &&
+        policyConfigMananger_.PreferMultiChannelPipe(streamDesc)) {
+        AUDIO_INFO_LOG("AudioVivid encoding and MultiChannelPipe supported");
+        return true;
+    }
 
     // MultiChannel: Speaker, A2dp offload
     if (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_SPEAKER &&
@@ -479,28 +486,30 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     // Update a2dp offload flag for update active route, if a2dp offload flag is not true, audioserver
     // will reset a2dp device to none.
     audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForStartStream(static_cast<int32_t>(sessionId));
-
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->newDeviceDescs_.front();
+    CHECK_AND_RETURN_RET_LOG(deviceDesc, ERR_NULL_POINTER, "deviceDesc is nullptr");
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         int32_t outputRet = ActivateOutputDevice(streamDesc);
         CHECK_AND_RETURN_RET_LOG(outputRet == SUCCESS, outputRet, "Activate output device failed");
-        CheckAndSetCurrentOutputDevice(streamDesc->newDeviceDescs_.front(), streamDesc->sessionId_);
+        CheckAndSetCurrentOutputDevice(deviceDesc, streamDesc->sessionId_);
         std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
         if (policyConfigMananger_.GetUpdateRouteSupport()) {
             UpdateOutputRoute(streamDesc);
         }
+        streamCollector_.UpdateRendererDeviceInfo(deviceDesc);
     } else {
         int32_t inputRet = ActivateInputDevice(streamDesc);
         CHECK_AND_RETURN_RET_LOG(inputRet == SUCCESS, inputRet, "Activate input device failed");
-        CheckAndSetCurrentInputDevice(streamDesc->newDeviceDescs_.front());
+        CheckAndSetCurrentInputDevice(deviceDesc);
         audioActiveDevice_.UpdateActiveDeviceRoute(
             streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG,
             streamDesc->newDeviceDescs_[0]->deviceName_, streamDesc->newDeviceDescs_[0]->networkId_);
-        streamCollector_.UpdateCapturerDeviceInfo(streamDesc->newDeviceDescs_.front());
+        streamCollector_.UpdateCapturerDeviceInfo(deviceDesc);
     }
     streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
     sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc);
 
-    CheckForRemoteDeviceState(streamDesc->newDeviceDescs_.front());
+    CheckForRemoteDeviceState(deviceDesc);
     return SUCCESS;
 }
 
@@ -1065,6 +1074,28 @@ int32_t AudioCoreService::SelectInputDevice(sptr<AudioCapturerFilter> audioCaptu
     }
 
     return audioRecoveryDevice_.SelectInputDevice(audioCapturerFilter, selectedDesc);
+}
+
+int32_t AudioCoreService::SelectInputDeviceByUid(const std::shared_ptr<AudioDeviceDescriptor> &selectedDesc,
+    int32_t uid)
+{
+    int32_t result = SUCCESS;
+    audioUsrSelectManager_.SelectInputDeviceByUid(selectedDesc, uid);
+    AudioScene scene = audioSceneManager_.GetAudioScene(true);
+    CHECK_AND_RETURN_RET(scene != AUDIO_SCENE_PHONE_CALL && scene != AUDIO_SCENE_PHONE_CHAT, result);
+    result = FetchInputDeviceAndRoute("SelectInputDeviceByUid");
+    return result;
+}
+
+std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::GetSelectedInputDeviceByUid(int32_t uid)
+{
+    return audioUsrSelectManager_.GetSelectedInputDeviceByUid(uid);
+}
+
+int32_t AudioCoreService::ClearSelectedInputDeviceByUid(int32_t uid)
+{
+    audioUsrSelectManager_.ClearSelectedInputDeviceByUid(uid);
+    return SUCCESS;
 }
 
 void AudioCoreService::NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value)

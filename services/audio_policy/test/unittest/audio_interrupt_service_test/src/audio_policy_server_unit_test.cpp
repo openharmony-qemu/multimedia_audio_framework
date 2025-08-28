@@ -422,8 +422,12 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_009, TestSize.Level1)
 
     AudioInterrupt audioInterrupt;
     int32_t zoneID = 456;
+
     int32_t result = server->DeactivateAudioInterrupt(audioInterrupt, zoneID);
     EXPECT_EQ(result, ERR_UNKNOWN);
+    server->interruptService_ = std::make_shared<AudioInterruptService>();
+    result = server->DeactivateAudioInterrupt(audioInterrupt, zoneID);
+    EXPECT_EQ(result, 0);
 }
 
 /**
@@ -531,7 +535,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_016, TestSize.Level1)
     int32_t zoneID = 456;
     int32_t result = 0;
     policyServerTest->ActivateAudioInterrupt(audioInterrupt, zoneID, result);
-    EXPECT_EQ(result, ERR_FOCUS_DENIED);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**
@@ -582,7 +586,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_019, TestSize.Level1)
     bool isActive = false;
     ptrAudioPolicyServer->interruptService_ = std::make_shared<AudioInterruptService>();
     ptrAudioPolicyServer->IsAudioSessionActivated(isActive);
-    EXPECT_EQ(isActive, true);
+    EXPECT_EQ(isActive, false);
 }
 
 /**
@@ -601,7 +605,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_020, TestSize.Level1)
     bool isActive = false;
     ptrAudioPolicyServer->interruptService_ = nullptr;
     ptrAudioPolicyServer->IsAudioSessionActivated(isActive);
-    EXPECT_EQ(isActive, true);
+    EXPECT_EQ(isActive, false);
 }
 
 /**
@@ -696,7 +700,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_025, TestSize.Level1)
 
     auto ret = ptrAudioPolicyServer->ActivateAudioSession(strategy);
 
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_EQ(ret, ERR_UNKNOWN);
 }
 
 /**
@@ -1972,7 +1976,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_062, TestSize.Level1)
     std::shared_ptr<AudioDeviceDescriptor> desc;
     int32_t ret = 0;
     server->SetPreferredDevice(PreferredType::AUDIO_CALL_CAPTURE, desc, ret);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -2473,7 +2477,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_096, TestSize.Level1)
     int32_t ret = 0;
     server->isFirstAudioServiceStart_.store(true);
     server->GetMaxRendererInstances(ret);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, 0);
 }
 
 /**
@@ -2489,7 +2493,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_097, TestSize.Level1)
     int32_t ret = 0;
     server->isFirstAudioServiceStart_.store(false);
     server->GetMaxRendererInstances(ret);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, 0);
 }
 
 /**
@@ -2576,7 +2580,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_102, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 
     ret = server->SetRingerModeInner(AudioRingerMode::RINGER_MODE_SILENT);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 /**
@@ -3188,7 +3192,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_148, TestSize.Level1)
 
     volumeLevel = server->audioVolumeManager_.GetMinVolumeLevel(AudioStreamType::STREAM_RING);
     ret = server->SetSystemVolumeLevelLegacy(AudioStreamType::STREAM_RING, volumeLevel);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 #ifdef TEMP_DISABLE

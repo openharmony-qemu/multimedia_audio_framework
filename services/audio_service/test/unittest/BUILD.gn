@@ -366,6 +366,7 @@ ohos_unittest("audio_service_unit_test") {
     "googletest:gtest",
     "googletest:gmock",
     "hilog:libhilog",
+    "ipc:ipc_single",
     "qos_manager:concurrent_task_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",

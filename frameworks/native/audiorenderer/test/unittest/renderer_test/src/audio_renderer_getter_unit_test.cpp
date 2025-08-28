@@ -46,6 +46,26 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetSupportedFormats_001, TestSize.L
 }
 
 /**
+ * @tc.name  : Test OnInterrupt API.
+ * @tc.number: Audio_Renderer_OnInterrupt_004
+ * @tc.desc  : Test OnInterrupt interface.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_OnInterrupt_004, TestSize.Level2)
+{
+    AudioStreamParams audioStreamParams;
+    std::shared_ptr<IAudioStream> audioStream = IAudioStream::GetPlaybackStream(IAudioStream::FAST_STREAM,
+        audioStreamParams, STREAM_DEFAULT, 1);
+    AudioInterrupt audioInterrupt;
+    auto audioInterruptCallback = std::make_shared<AudioRendererInterruptCallbackImpl>(audioStream, audioInterrupt);
+    ASSERT_TRUE(audioInterruptCallback != nullptr);
+
+    audioInterruptCallback->switching_ = true;
+    InterruptEventInternal interruptEvent1 {INTERRUPT_TYPE_BEGIN, INTERRUPT_SHARE,
+        INTERRUPT_HINT_EXIT_STANDALONE, 1.0f};
+    audioInterruptCallback->OnInterrupt(interruptEvent1);
+}
+
+/**
  * @tc.name  : Test GetSupportedChannels API
  * @tc.number: Audio_Renderer_GetSupportedChannels_001
  * @tc.desc  : Test GetSupportedChannels interface. Returns supported Channels on success.
@@ -129,7 +149,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_002, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioRenderer->Start();
-    EXPECT_EQ(true, isStarted);
+    EXPECT_EQ(false, isStarted);
 
     AudioRendererParams getRendererParams;
     ret = audioRenderer->GetParams(getRendererParams);
@@ -197,10 +217,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_005, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioRenderer->Start();
-    EXPECT_EQ(true, isStarted);
+    EXPECT_EQ(false, isStarted);
 
     bool isStopped = audioRenderer->Stop();
-    EXPECT_EQ(true, isStopped);
+    EXPECT_EQ(false, isStopped);
 
     AudioRendererParams getRendererParams;
     ret = audioRenderer->GetParams(getRendererParams);

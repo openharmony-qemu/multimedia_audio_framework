@@ -163,6 +163,12 @@ public:
     int32_t SelectInputDevice(const sptr<AudioCapturerFilter> &audioCapturerFilter,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) override;
 
+    int32_t SelectInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor) override;
+
+    int32_t GetSelectedInputDevice(std::shared_ptr<AudioDeviceDescriptor> &AudioDeviceDescriptor) override;
+
+    int32_t ClearSelectedInputDevice() override;
+
     int32_t ExcludeOutputDevices(int32_t audioDevUsage,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) override;
 
@@ -240,7 +246,7 @@ public:
 
     int32_t SetAppConcurrencyMode(const int32_t appUid, const int32_t mode = 0) override;
 
-    int32_t SetAppSlientOnDisplay(const int32_t displayId = -1) override;
+    int32_t SetAppSilentOnDisplay(const int32_t displayId = -1) override;
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, int32_t zoneId) override;
 

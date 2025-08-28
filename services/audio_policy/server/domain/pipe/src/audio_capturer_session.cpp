@@ -296,9 +296,27 @@ bool AudioCapturerSession::FindRunningNormalSession(uint32_t sessionId, AudioStr
     return HandleNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
 }
 
+int32_t AudioCapturerSession::SetHearingAidReloadFlag(const bool hearingAidReloadFlag)
+{
+    std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
+    hearingAidReloadFlag_ = hearingAidReloadFlag;
+    return SUCCESS;
+}
+
+int32_t AudioCapturerSession::ReloadCaptureSoftLink(std::shared_ptr<AudioPipeInfo> &pipeInfo,
+    const AudioModuleInfo &moduleInfo)
+{
+    std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
+    int32_t ret = audioEcManager_.ReloadSourceSoftLink(pipeInfo, moduleInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "reload softLink failed");
+    hearingAidReloadFlag_ = true;
+    return SUCCESS;
+}
+
 int32_t AudioCapturerSession::ReloadCaptureSessionSoftLink()
 {
     std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
+    hearingAidReloadFlag_ = false;
     bool hasSession = false;
     auto pipes = AudioPipeManager::GetPipeManager()->GetPipeList();
     if (pipes.empty()) {
@@ -347,6 +365,7 @@ int32_t AudioCapturerSession::ReloadCaptureSession(uint32_t sessionId, SessionOp
 {
     AUDIO_INFO_LOG("prepare reload session: %{public}u with operation: %{public}d", sessionId, operation);
     std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
+    CHECK_AND_RETURN_RET_LOG(!hearingAidReloadFlag_, SUCCESS, "no need to reload session");
     uint32_t targetSessionId = sessionId;
     AudioStreamDescriptor runningSessionInfo = {};
     bool needReload = false;

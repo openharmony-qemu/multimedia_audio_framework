@@ -107,7 +107,7 @@ private:
     std::atomic<CapturerState> capturerState_ = CAPTURER_INVALID;
     std::atomic<bool> isCapturerUsb_ = false;
     std::atomic<FastStatus> capturerFastStatus_ = FASTSTATUS_NORMAL;
-    AudioLoopbackReverbPreset currentReverbPreset_ = REVERB_PRESET_THEATRE;
+    AudioLoopbackReverbPreset currentReverbPreset_ = REVERB_PRESET_THEATER;
     AudioLoopbackEqualizerPreset currentEqualizerPreset_ = EQUALIZER_PRESET_FULL;
 };
 }  // namespace AudioStandard

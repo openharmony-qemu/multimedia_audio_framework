@@ -1559,6 +1559,59 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateBasicStreamInfo_001, TestSize.L
 
 /**
 * @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: GetDynamicStreamPropInfoFromPipe_001
+* @tc.desc  : Test GetDynamicStreamPropInfoFromPipe
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetDynamicStreamPropInfoFromPipe_001, TestSize.Level1)
+{
+    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(manager.Init(true), true);
+    std::vector<AudioChannel> channelVec = { AudioChannel::MONO, AudioChannel::STEREO, AudioChannel::CHANNEL_3,
+        AudioChannel::CHANNEL_4, AudioChannel::STEREO, AudioChannel::STEREO };
+    std::vector<uint32_t> sampleRateVec = { 192000, 32000, 48000, 96000, 42000, 41000 };
+    std::shared_ptr<AdapterPipeInfo> info = std::make_shared<AdapterPipeInfo>();
+    info->dynamicStreamPropInfos_.push_back(nullptr);
+    for (size_t i = 0; i < channelVec.size(); i++) {
+        std::shared_ptr<PipeStreamPropInfo> temp = std::make_shared<PipeStreamPropInfo>();
+        temp->channels_ = channelVec[i];
+        temp->sampleRate_ = sampleRateVec[i];
+        info->dynamicStreamPropInfos_.push_back(temp);
+    }
+    info->dynamicStreamPropInfos_.push_back(nullptr);
+
+    AudioSampleFormat format = AudioSampleFormat::SAMPLE_S16LE;
+    std::shared_ptr<PipeStreamPropInfo> defaultStreamProp = nullptr;
+    uint32_t sampleRate;
+    AudioChannel channels;
+    auto isEqual = [](const AudioChannel &channel, const uint32_t &sampleRate,
+        std::shared_ptr<PipeStreamPropInfo> &defaultStreamProp) {
+            return channel == defaultStreamProp->channels_ && sampleRate == defaultStreamProp->sampleRate_;
+    };
+
+    sampleRate = 192100;
+    channels = AudioChannel::CHANNEL_5;
+    defaultStreamProp = manager.GetDynamicStreamPropInfoFromPipe(info, format, sampleRate, channels);
+    EXPECT_EQ(true, isEqual(channelVec[0], sampleRateVec[0], defaultStreamProp));
+
+    sampleRate = 41000;
+    channels = AudioChannel::STEREO;
+    defaultStreamProp = manager.GetDynamicStreamPropInfoFromPipe(info, format, sampleRate, channels);
+    EXPECT_EQ(true, isEqual(channelVec[5], sampleRateVec[5], defaultStreamProp));
+
+    sampleRate = 44100;
+    channels = AudioChannel::STEREO;
+    defaultStreamProp = manager.GetDynamicStreamPropInfoFromPipe(info, format, sampleRate, channels);
+    EXPECT_EQ(true, isEqual(channelVec[4], sampleRateVec[4], defaultStreamProp));
+
+    info->dynamicStreamPropInfos_.clear();
+    info->dynamicStreamPropInfos_.push_back(nullptr);
+    info->dynamicStreamPropInfos_.push_back(nullptr);
+    defaultStreamProp = manager.GetDynamicStreamPropInfoFromPipe(info, format, sampleRate, channels);
+    EXPECT_EQ(true, defaultStreamProp == nullptr);
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
 * @tc.number: ParseFormat_001
 * @tc.desc  : Test ParseFormat
 */

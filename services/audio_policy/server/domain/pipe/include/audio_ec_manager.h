@@ -59,6 +59,7 @@ public:
         SourceType &targetSourceType);
 
     void ReloadSourceForSession(SessionInfo sessionInfo);
+    int32_t ReloadSourceSoftLink(std::shared_ptr<AudioPipeInfo> &pipeInfo, const AudioModuleInfo &moduleInfo);
 
     void SetDpSinkModuleInfo(const AudioModuleInfo &moduleInfo);
     void SetPrimaryMicModuleInfo(const AudioModuleInfo &moduleInfo);
