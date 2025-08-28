@@ -36,6 +36,8 @@ static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
 static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
 static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
+static constexpr int32_t MAX_TRY = 100;
+static constexpr int32_t DELAY_MS = 100;
 }
 
 static bool IsRemoteOffloadActive(uint32_t remoteOffloadStreamPropSize, int32_t streamUsage)
@@ -101,6 +103,7 @@ void AudioCoreService::Init()
 {
     serviceFlag_.reset();
     eventEntry_ = std::make_shared<EventEntry>(shared_from_this());
+    deviceStatusListener_ = std::make_shared<DeviceStatusListener>(*eventEntry_); // shared_ptr.get() -> *
 
     audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
     if (audioA2dpOffloadManager_ != nullptr) {
@@ -113,7 +116,6 @@ void AudioCoreService::Init()
     audioDeviceStatus_.Init(audioA2dpOffloadManager_, audioPolicyServerHandler_);
     audioCapturerSession_.Init(audioA2dpOffloadManager_);
 
-    deviceStatusListener_ = std::make_shared<DeviceStatusListener>(*eventEntry_); // shared_ptr.get() -> *
     isFastControlled_ = GetFastControlParam();
     // Register device status listener
     int32_t status = deviceStatusListener_->RegisterDeviceStatusListener();
@@ -211,7 +213,7 @@ int32_t AudioCoreService::CreateCapturerClient(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId)
 {
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_INVALID_PARAM, "streamDesc is nullptr");
-    
+
     AUDIO_INFO_LOG("[DeviceFetchStart] for stream %{public}d", sessionId);
     streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
     std::shared_ptr<AudioDeviceDescriptor> inputDeviceDesc =
@@ -302,7 +304,7 @@ bool AudioCoreService::IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &st
 void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess)
 {
     CHECK_AND_RETURN_LOG(streamDesc, "Input param error");
-    
+
     if (isCreateProcess && streamDesc->rendererInfo_.forceToNormal) {
         AUDIO_INFO_LOG("client force create normal");
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
@@ -557,7 +559,7 @@ int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid
     if (!isSameScene) {
         OnAudioSceneChange(audioScene);
     }
-    
+
     if (audioScene == AUDIO_SCENE_PHONE_CALL) {
         // Make sure the STREAM_VOICE_CALL volume is set before the calling starts.
         audioVolumeManager_.SetVoiceCallVolume(audioVolumeManager_.GetSystemVolumeLevel(STREAM_VOICE_CALL));
@@ -1183,7 +1185,20 @@ int32_t AudioCoreService::UnsetAudioDeviceAnahsCallback()
 void AudioCoreService::OnUpdateAnahsSupport(std::string anahsShowType)
 {
     AUDIO_INFO_LOG("OnUpdateAnahsSupport show type: %{public}s", anahsShowType.c_str());
-    deviceStatusListener_->UpdateAnahsPlatformType(anahsShowType);
+    thread th([this](string &&anahsShowType) {
+        for (int32_t i = 0; i < MAX_TRY; ++i) {
+            if (i > 0) {
+                this_thread::sleep_for(std::chrono::milliseconds(DELAY_MS));
+            }
+            if (deviceStatusListener_) {
+                deviceStatusListener_->UpdateAnahsPlatformType(anahsShowType);
+                return;
+            }
+        }
+        AUDIO_ERR_LOG("Try UpdateAnahsPlatformType over %{public}d times, failed", MAX_TRY);
+    }, move(anahsShowType));
+    pthread_setname_np(th.native_handle(), "OS_ANAHS_TYP");
+    th.detach();
 }
 
 void AudioCoreService::RegisterBluetoothListener()
@@ -1428,7 +1443,7 @@ int32_t AudioCoreService::CaptureConcurrentCheck(uint32_t sessionId)
     if (streamDesc->audioMode_ != AUDIO_MODE_RECORD) {
         return ERR_NOT_SUPPORTED;
     }
- 
+
     auto dfxResult = std::make_unique<struct ConcurrentCaptureDfxResult>();
     if (!WriteCapturerConcurrentMsg(streamDesc, dfxResult)) {
         return ERR_INVALID_HANDLE;
