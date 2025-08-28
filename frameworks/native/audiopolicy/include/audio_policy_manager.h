@@ -109,7 +109,10 @@ public:
     bool IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source);
 
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors,
+        const int32_t audioDeviceSelectMode = 0);
+
+    int32_t RestoreOutputDevice(sptr<AudioRendererFilter> audioRendererFilter);
 
     std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType);
 
@@ -344,7 +347,7 @@ public:
         AudioCapturerInfo &captureInfo);
 
     int32_t SetPreferredOutputDeviceChangeCallback(const AudioRendererInfo &rendererInfo,
-        const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback);
+        const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback, const int32_t uid = -1);
 
     int32_t SetPreferredInputDeviceChangeCallback(const AudioCapturerInfo &capturerInfo,
         const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback);
@@ -703,7 +706,7 @@ private:
     int32_t RegisterPolicyCallbackClientFunc(const sptr<IAudioPolicy> &gsp);
     int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable, bool block = true);
     int32_t SetCallbackStreamInfo(const CallbackChange &callbackChange);
-    int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo);
+    int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid = -1);
     int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo);
 
     std::mutex listenerStubMutex_;

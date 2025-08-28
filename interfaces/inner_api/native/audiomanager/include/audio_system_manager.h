@@ -371,7 +371,18 @@ public:
      * @since 9
      */
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors,
+        const int32_t audioDeviceSelectMode = 0) const;
+
+    /**
+     * @brief Restore the audio output device according to the filter conditions.
+     *
+     * @param audioRendererFilter filter conditions.
+     * @return Returns {@link SUCCESS} if the setting is successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 21
+     */
+    int32_t RestoreOutputDevice(sptr<AudioRendererFilter> audioRendererFilter) const;
 
     /**
      * @brief Select the audio input device according to the filter conditions.

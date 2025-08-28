@@ -128,7 +128,7 @@ public:
         bool ConnectServiceAdapter();
         void OnReceiveUpdateDeviceNameEvent(const std::string macAddress, const std::string deviceName);
         int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-            std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
+            std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc, const int32_t audioDeviceSelectMode = 0);
         int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
             std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
         void NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value);
@@ -240,7 +240,7 @@ private:
     bool ConnectServiceAdapter();
     void OnReceiveUpdateDeviceNameEvent(const std::string macAddress, const std::string deviceName);
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc, const int32_t audioDeviceSelectMode = 0);
     void NotifyDistributedOutputChange(const AudioDeviceDescriptor &deviceDesc);
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);

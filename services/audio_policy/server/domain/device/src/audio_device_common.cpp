@@ -156,7 +156,7 @@ void AudioDeviceCommon::OnPreferredInputDeviceUpdated(DeviceType deviceType, std
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPreferredOutputDeviceDescInner(
-    AudioRendererInfo &rendererInfo, std::string networkId)
+    AudioRendererInfo &rendererInfo, std::string networkId, const int32_t uid)
 {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList = {};
     if (rendererInfo.streamUsage <= STREAM_USAGE_UNKNOWN ||
@@ -168,6 +168,15 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPrefer
         return deviceList;
     }
     if (networkId == LOCAL_NETWORK_ID) {
+        auto preferredType = AudioPolicyUtils::GetInstance().GetPreferredTypeByStreamUsage(rendererInfo.streamUsage);
+        if (preferredType == AUDIO_CALL_RENDER) {
+            shared_ptr<AudioDeviceDescriptor> preferredDev_ = 
+                AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDeviceForUid(uid);
+            if (preferredDev_->deviceId_ != 0) {
+                deviceList.push_back(preferredDev_);
+                return deviceList;
+            }
+        }
         vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
             audioRouterCenter_.FetchOutputDevices(rendererInfo.streamUsage,
                 -1, "GetPreferredOutputDeviceDescInner");

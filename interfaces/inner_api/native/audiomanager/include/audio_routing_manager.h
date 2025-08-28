@@ -40,7 +40,7 @@ public:
     int32_t GetPreferredOutputDeviceForRendererInfo(AudioRendererInfo rendererInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
     int32_t SetPreferredOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
-        const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback);
+        const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback, const int32_t uid = -1);
     int32_t UnsetPreferredOutputDeviceChangeCallback(
         const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback = nullptr);
     int32_t GetPreferredInputDeviceForCapturerInfo(AudioCapturerInfo captureInfo,
