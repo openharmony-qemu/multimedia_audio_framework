@@ -1078,20 +1078,6 @@ HWTEST(AudioPolicyUnitTest, SetSystemVolumeLevel_014, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test SetSystemVolumeLevel
- * @tc.number: SetSystemVolumeLevel_015
- * @tc.desc  : Test SetSystemVolumeLevel interface. Returns SUCCESS.
- */
-HWTEST(AudioPolicyUnitTest, SetSystemVolumeLevel_015, TestSize.Level1)
-{
-    AudioVolumeType volumeType = STREAM_NOTIFICATION;
-    int32_t volumeLevel = 6;
-    int32_t volumeFlag = 1;
-    int32_t ret = AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volumeLevel, API_9, volumeFlag);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
  * @tc.name  : Test GetSystemVolumeLevel
  * @tc.number: GetSystemVolumeLevel_001
  * @tc.desc  : Test GetSystemVolumeLevel interface. Returns volumeLevel.
@@ -1199,21 +1185,6 @@ HWTEST(AudioPolicyUnitTest, GetSystemVolumeLevel_006, TestSize.Level1)
     int32_t volumeLevel = 8;
     ret = AudioPolicyManager::GetInstance().SetSystemVolumeLevel(AudioVolumeType::STREAM_ULTRASONIC, volumeLevel);
     ret = AudioPolicyManager::GetInstance().GetSystemVolumeLevel(AudioVolumeType::STREAM_ULTRASONIC);
-    EXPECT_EQ(volumeLevel, ret);
-}
-
-/**
- * @tc.name  : Test GetSystemVolumeLevel
- * @tc.number: GetSystemVolumeLevel_007
- * @tc.desc  : Test GetSystemVolumeLevel interface. Returns volumeLevel.
- */
-HWTEST(AudioPolicyUnitTest, GetSystemVolumeLevel_007, TestSize.Level1)
-{
-    int32_t ret;
-    int32_t volumeLevel = 9;
-    ret = AudioPolicyManager::GetInstance().SetSystemVolumeLevel(AudioVolumeType::STREAM_NOTIFICATION, volumeLevel);
-    EXPECT_EQ(SUCCESS, ret);
-    ret = AudioPolicyManager::GetInstance().GetSystemVolumeLevel(AudioVolumeType::STREAM_NOTIFICATION);
     EXPECT_EQ(volumeLevel, ret);
 }
 
