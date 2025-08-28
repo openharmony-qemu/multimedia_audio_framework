@@ -1819,9 +1819,11 @@ void AudioInterruptService::UpdateAudioFocusStrategy(const AudioInterrupt &curre
     UpdateFocusStrategy(bundleName, focusEntry, IsMediaStream(existStreamType), IsMediaStream(incomingStreamType));
     if (uid == static_cast<int32_t>(AUDIO_ID)) {
         AUDIO_INFO_LOG("lake app:%{public}s access", std::to_string(uid).c_str());
-        UpdateMicFocusStrategy(existSourceType, incomingSourceType, std::to_string(uid), bundleName, focusEntry);
+        UpdateMicFocusStrategy(existSourceType, incomingSourceType, existStreamType,
+            incomingStreamType, std::to_string(uid), bundleName, focusEntry);
     } else {
-        UpdateMicFocusStrategy(existSourceType, incomingSourceType, currentBundleName, bundleName, focusEntry);
+        UpdateMicFocusStrategy(existSourceType, incomingSourceType, existStreamType,
+            incomingStreamType, currentBundleName, bundleName, focusEntry);
     }
     UpdateWindowFocusStrategy(currentPid, incomingPid, existStreamType, incomingStreamType, focusEntry);
     UpdateMuteAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
