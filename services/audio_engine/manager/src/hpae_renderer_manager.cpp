@@ -1171,7 +1171,7 @@ bool HpaeRendererManager::IsRunning(void)
     }
 }
 
-void HpaeRendererManager::SendRequest(Request &&request, std::string funcName, bool isInit)
+void HpaeRendererManager::SendRequest(Request &&request, const std::string &funcName, bool isInit)
 {
     if (!isInit && !IsInit()) {
         AUDIO_ERR_LOG("HpaeRendererManager not init, %{public}s excute failed", funcName.c_str());

@@ -658,7 +658,7 @@ HpaeSinkInfo HpaeOffloadRendererManager::GetSinkInfo()
     return sinkInfo_;
 }
 
-void HpaeOffloadRendererManager::SendRequest(Request &&request, std::string funcName, bool isInit)
+void HpaeOffloadRendererManager::SendRequest(Request &&request, const std::string &funcName, bool isInit)
 {
     if (!isInit && !IsInit()) {
         AUDIO_ERR_LOG("HpaeOffloadRendererManager not init, %{public}s excute failed", funcName.c_str());
