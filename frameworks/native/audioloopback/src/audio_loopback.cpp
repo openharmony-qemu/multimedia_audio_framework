@@ -33,7 +33,7 @@ namespace {
     const std::map<AudioLoopbackReverbPreset, std::string> audioLoopbackReverbPresetMap = {
         {REVERB_PRESET_ORIGINAL, "disable"},
         {REVERB_PRESET_KTV, "ktv"},
-        {REVERB_PRESET_THEATRE, "theatre"},
+        {REVERB_PRESET_THEATER, "theatre"},
         {REVERB_PRESET_CONCERT, "concert"},
     };
     const std::map<AudioLoopbackEqualizerPreset, std::string> audioLoopbackEqualizerPresetMap = {
