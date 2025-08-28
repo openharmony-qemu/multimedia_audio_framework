@@ -21,8 +21,6 @@
 #include "audio_interrupt_info.h"
 #include "audio_session_info.h"
 #include "audio_device_info.h"
-#include "audio_device_descriptor.h"
-#include "audio_policy_server_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -64,7 +62,8 @@ public:
     void GetSessionDefaultOutputDevice(DeviceType &deviceType);
     bool IsStreamContainedInCurrentSession(const uint32_t &streamId);
     bool GetAndClearNeedToFetchFlag();
-    bool IsRecommendToStopAudio(const std::shared_ptr<AudioPolicyServerHandler::EventContextObj> eventContextObj);
+    bool IsRecommendToStopAudio(AudioStreamDeviceChangeReason changeReason,
+        const std::shared_ptr<AudioDeviceDescriptor> descriptor);
     bool IsSessionOutputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     bool IsSessionInputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     StreamUsage GetSessionStreamUsage();

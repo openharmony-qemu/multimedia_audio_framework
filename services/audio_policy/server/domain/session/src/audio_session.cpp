@@ -459,23 +459,23 @@ bool AudioSession::IsCurrentDevicePrivateDevice(const std::shared_ptr<AudioDevic
 }
 
 bool AudioSession::IsRecommendToStopAudio(
-    const std::shared_ptr<AudioPolicyServerHandler::EventContextObj> eventContextObj)
+    AudioStreamDeviceChangeReason changeReason,
+    const std::shared_ptr<AudioDeviceDescriptor> descriptor)
 {
     bool ret = false;
 
-    if ((eventContextObj == nullptr) || (eventContextObj->reason_ == AudioStreamDeviceChangeReason::OVERRODE) ||
-        (eventContextObj->descriptor == nullptr)) {
+    if ((changeReason == AudioStreamDeviceChangeReason::OVERRODE) || (descriptor == nullptr)) {
         return ret;
     }
 
     std::lock_guard<std::mutex> lock(sessionMutex_);
 
     if (IsCurrentDevicePrivateDevice(std::make_shared<AudioDeviceDescriptor>(deviceDescriptor_)) &&
-        (!IsCurrentDevicePrivateDevice(eventContextObj->descriptor))) {
+        (!IsCurrentDevicePrivateDevice(descriptor))) {
         ret = true;
     }
 
-    deviceDescriptor_ = AudioDeviceDescriptor(eventContextObj->descriptor);
+    deviceDescriptor_ = AudioDeviceDescriptor(descriptor);
     return ret;
 }
 

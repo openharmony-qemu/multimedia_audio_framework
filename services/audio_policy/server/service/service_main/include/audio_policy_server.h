@@ -868,6 +868,7 @@ private:
     AudioActiveDevice &audioActiveDevice_;
 
     std::shared_ptr<AudioInterruptService> interruptService_;
+    AudioSessionService &sessionService_;
     std::shared_ptr<AudioCoreService> coreService_;
     std::shared_ptr<AudioCoreService::EventEntry> eventEntry_;
 

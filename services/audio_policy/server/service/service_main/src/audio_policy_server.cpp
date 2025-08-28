@@ -161,7 +161,8 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
 #ifdef USB_ENABLE
       usbManager_(AudioUsbManager::GetInstance()),
 #endif
-      audioActiveDevice_(AudioActiveDevice::GetInstance())
+      audioActiveDevice_(AudioActiveDevice::GetInstance()),
+      sessionService_(OHOS::Singleton<AudioSessionService>::GetInstance())
 
 {
     volumeStep_ = system::GetIntParameter("const.multimedia.audio.volumestep", 1);
@@ -2730,7 +2731,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
         ret = AudioZoneService::GetInstance().ActivateAudioInterrupt(zoneId, audioInterrupt,
             isUpdatedAudioStrategy);
     }
-    if ((ret == SUCCESS) && (interruptService_->IsSessionNeedToFetchOutputDevice(IPCSkeleton::GetCallingPid()))) {
+    if ((ret == SUCCESS) && (sessionService_.IsSessionNeedToFetchOutputDevice(IPCSkeleton::GetCallingPid()))) {
         eventEntry_->FetchOutputDeviceAndRoute("ActivateAudioInterrupt",
             AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
     }
@@ -2997,7 +2998,7 @@ void AudioPolicyServer::MicrophoneMuteInfoDump(std::string &dumpString)
 
 void AudioPolicyServer::AudioSessionInfoDump(std::string &dumpString)
 {
-    interruptService_->AudioSessionInfoDump(dumpString);
+    sessionService_.AudioSessionInfoDump(dumpString);
 }
 
 void AudioPolicyServer::AudioPipeManagerDump(std::string &dumpString)
@@ -4889,7 +4890,7 @@ int32_t AudioPolicyServer::ActivateAudioSession(int32_t strategyIn)
     bool isStandalone = StandaloneModeManager::GetInstance().CheckAndRecordStandaloneApp(
         IPCSkeleton::GetCallingUid(), true);
     int32_t ret = interruptService_->ActivateAudioSession(zoneId, callerPid, strategy, isStandalone);
-    if ((ret == SUCCESS) && (interruptService_->IsSessionNeedToFetchOutputDevice(callerPid)) &&
+    if ((ret == SUCCESS) && (sessionService_.IsSessionNeedToFetchOutputDevice(callerPid)) &&
         (eventEntry_ != nullptr)) {
         eventEntry_->FetchOutputDeviceAndRoute("ActivateAudioSession",
             AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
@@ -4962,7 +4963,7 @@ int32_t AudioPolicyServer::SetDefaultOutputDevice(int32_t deviceType)
 
     int32_t callerPid = IPCSkeleton::GetCallingPid();
     int32_t ret = eventEntry_->SetSessionDefaultOutputDevice(callerPid, static_cast<DeviceType>(deviceType));
-    if ((ret == SUCCESS) && (interruptService_->IsSessionNeedToFetchOutputDevice(callerPid))) {
+    if ((ret == SUCCESS) && (sessionService_.IsSessionNeedToFetchOutputDevice(callerPid))) {
         eventEntry_->FetchOutputDeviceAndRoute("SetDefaultOutputDevice",
             AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
     }

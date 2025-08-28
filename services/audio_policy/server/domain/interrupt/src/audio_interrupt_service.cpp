@@ -267,12 +267,6 @@ int32_t AudioInterruptService::ActivateAudioSession(const int32_t zoneId, const 
     return SUCCESS;
 }
 
-bool AudioInterruptService::IsSessionNeedToFetchOutputDevice(const int32_t callerPid)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    return sessionService_.IsSessionNeedToFetchOutputDevice(callerPid);
-}
-
 int32_t AudioInterruptService::SetAudioSessionScene(int32_t callerPid, AudioSessionScene scene)
 {
     std::unique_lock<std::mutex> lock(mutex_);

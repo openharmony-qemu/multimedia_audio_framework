@@ -80,12 +80,6 @@ void AudioInterruptService::AudioInterruptZoneDump(std::string &dumpString)
     return;
 }
 
-void AudioInterruptService::AudioSessionInfoDump(std::string &dumpString)
-{
-    AppendFormat(dumpString, "    - The AudioSession as follow:\n");
-    sessionService_.AudioSessionInfoDump(dumpString);
-}
-
 // AudioInterruptDeathRecipient impl begin
 AudioInterruptService::AudioInterruptDeathRecipient::AudioInterruptDeathRecipient(
     const std::shared_ptr<AudioInterruptService> &service,

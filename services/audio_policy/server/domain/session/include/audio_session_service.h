@@ -22,6 +22,7 @@
 #include "audio_session.h"
 #include "audio_session_state_monitor.h"
 #include "audio_device_info.h"
+#include "audio_device_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -68,6 +69,11 @@ public:
     static bool IsSameTypeForAudioSession(const AudioStreamType incomingType, const AudioStreamType existedType);
     void NotifyAppStateChange(const int32_t pid, bool isBackState);
     bool HasStreamForDeviceType(int32_t callerPid, DeviceType deviceType);
+    int32_t FillCurrentOutputDeviceChangedEvent(
+        int32_t callerPid,
+        AudioStreamDeviceChangeReason changeReason,
+        const std::shared_ptr<AudioDeviceDescriptor> descriptor,
+        CurrentOutputDeviceChangedEvent &deviceChangedEvent);
 
 private:
     int32_t DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout = false);

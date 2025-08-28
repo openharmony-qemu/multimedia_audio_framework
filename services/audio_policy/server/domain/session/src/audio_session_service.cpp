@@ -23,6 +23,7 @@
 #include "audio_stream_id_allocator.h"
 #include "audio_stream_collector.h"
 #include "ipc_skeleton.h"
+#include "audio_session_device_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -478,6 +479,30 @@ void AudioSessionService::NotifyAppStateChange(const int32_t pid, bool isBackSta
         sessionMap_[pid]->IsAudioSessionEmpty()) {
         StartMonitor(pid, AUDIO_SESSION_SCENE_TIME_OUT_DURATION_S);
     }
+}
+
+int32_t AudioSessionService::FillCurrentOutputDeviceChangedEvent(
+    int32_t callerPid,
+    AudioStreamDeviceChangeReason changeReason,
+    const std::shared_ptr<AudioDeviceDescriptor> descriptor,
+    CurrentOutputDeviceChangedEvent &deviceChangedEvent)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(callerPid);
+    if (session == sessionMap_.end()) {
+        return ERROR;
+    }
+
+    CHECK_AND_RETURN_RET((!session->second->IsSessionOutputDeviceChanged(deviceChangedEvent.devices[0]) ||
+        (changeReason == AudioStreamDeviceChangeReason::AUDIO_SESSION_ACTIVATE)), ERROR,
+        "device of session %{public}d is not changed", callerPid);
+
+    deviceChangedEvent.changeReason = changeReason;
+    deviceChangedEvent.recommendedAction = session->second->IsRecommendToStopAudio(changeReason, descriptor) ?
+        OutputDeviceChangeRecommendedAction::RECOMMEND_TO_STOP :
+        OutputDeviceChangeRecommendedAction::RECOMMEND_TO_CONTINUE;
+
+    return SUCCESS;
 }
 
 } // namespace AudioStandard
