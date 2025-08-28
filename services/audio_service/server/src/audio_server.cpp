@@ -2591,15 +2591,15 @@ int32_t AudioServer::UpdateLatencyTimestamp(const std::string &timestamp, bool i
 }
 
 // LCOV_EXCL_START
-int32_t AudioServer::UpdateDualToneState(bool enable, int32_t sessionId)
+int32_t AudioServer::UpdateDualToneState(bool enable, int32_t sessionId, const std::string &dupSinkName)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
 
     if (enable) {
-        return AudioService::GetInstance()->EnableDualToneList(static_cast<uint32_t>(sessionId));
+        return AudioService::GetInstance()->EnableDualStream(static_cast<uint32_t>(sessionId), dupSinkName);
     } else {
-        return AudioService::GetInstance()->DisableDualToneList(static_cast<uint32_t>(sessionId));
+        return AudioService::GetInstance()->DisableDualStream(static_cast<uint32_t>(sessionId));
     }
 }
 // LCOV_EXCL_STOP
