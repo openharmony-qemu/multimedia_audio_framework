@@ -733,11 +733,12 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_035, TestSize.Level1)
     EXPECT_EQ(unit->OnStreamData(info), SUCCESS); // needData false, noneed callback
 
     info.needData = true;
-    EXPECT_CALL(*mockWriteCallback, GetAvailableSize(0))
-        .WillOnce(Return(0));
+    size_t framesize = 0;
+    EXPECT_CALL(*mockWriteCallback, GetAvailableSize(framesize))
+        .WillOnce(Return(0))
         .WillOnce(Return(0));
     EXPECT_CALL(*mockWriteCallback, OnWriteData(nullptr, 0))
-        .WillOnce(Return(0));
+        .WillOnce(Return(0))
         .WillOnce(Return(-1));
     EXPECT_EQ(unit->OnStreamData(info), SUCCESS); // onwritedata success
 
