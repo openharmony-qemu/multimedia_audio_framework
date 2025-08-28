@@ -507,12 +507,13 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_023, TestSize.Level1)
     std::set<int32_t> pids;
     pids.insert(data.ReadInt32());
     int32_t zoneId = 1;
+    AudioZoneContext context;
 
-    int32_t ret = interruptServiceTest->CreateAudioInterruptZone(zoneId);
+    int32_t ret = interruptServiceTest->CreateAudioInterruptZone(zoneId, context);
     EXPECT_EQ(ret, VALUE_ERROR);
 
     zoneId = 0;
-    ret = interruptServiceTest->CreateAudioInterruptZone(zoneId);
+    ret = interruptServiceTest->CreateAudioInterruptZone(zoneId, context);
     EXPECT_EQ(ret, VALUE_ERROR);
 }
 
@@ -1982,17 +1983,18 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceCreateAudioInterruptZone_001
     sptr<AudioPolicyServer> server = nullptr;
     auto interruptServiceTest = GetTnterruptServiceTest();
     interruptServiceTest->Init(server);
+    AudioZoneContext context;
 
     SetUid1041();
-    auto retStatus = interruptServiceTest->CreateAudioInterruptZone(-1);
+    auto retStatus = interruptServiceTest->CreateAudioInterruptZone(-1, context);
     EXPECT_EQ(retStatus, ERR_INVALID_PARAM);
 
     SetUid1041();
-    retStatus = interruptServiceTest->CreateAudioInterruptZone(0);
+    retStatus = interruptServiceTest->CreateAudioInterruptZone(0, context);
     EXPECT_EQ(retStatus, ERR_INVALID_PARAM);
 
     SetUid1041();
-    retStatus = interruptServiceTest->CreateAudioInterruptZone(2);
+    retStatus = interruptServiceTest->CreateAudioInterruptZone(2, context);
     EXPECT_EQ(retStatus, ERR_INVALID_PARAM);
 }
 

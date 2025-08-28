@@ -68,7 +68,7 @@ int32_t AudioInterruptZoneManager::GetAudioFocusInfoList(const int32_t zoneId,
 }
 
 int32_t AudioInterruptZoneManager::CreateAudioInterruptZone(const int32_t zoneId,
-    AudioZoneFocusStrategy focusStrategy, bool checkPermission)
+    const AudioZoneContext &context, bool checkPermission)
 {
     CHECK_AND_RETURN_RET_LOG(service_ != nullptr, ERR_INVALID_PARAM, "interrupt service is nullptr");
     CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "zone id is invalid");
@@ -85,7 +85,7 @@ int32_t AudioInterruptZoneManager::CreateAudioInterruptZone(const int32_t zoneId
     CHECK_AND_RETURN_RET_LOG(zone != nullptr, ERROR, "zone %{public}d create interrupt failed", zoneId);
 
     zone->zoneId = zoneId;
-    zone->focusStrategy = focusStrategy;
+    zone->context = context;
     tempMap[zoneId] = zone;
     return SUCCESS;
 }
@@ -105,6 +105,8 @@ int32_t AudioInterruptZoneManager::ReleaseAudioInterruptZone(const int32_t zoneI
 
     bool updateScene = false;
     auto &releaseZone = tempMap[zoneId];
+    CHECK_AND_RETURN_RET_LOG(releaseZone->context.backStrategy_ != MediaBackStrategy::KEEP,
+        SUCCESS, "zone %{public}d does not need to be stopped", zoneId);
     for (auto it = releaseZone->audioFocusInfoList.begin(); it != releaseZone->audioFocusInfoList.end(); it++) {
         if ((it->second != ACTIVE && it->second != DUCK) ||
             (it->first.streamUsage == STREAM_USAGE_UNKNOWN ||

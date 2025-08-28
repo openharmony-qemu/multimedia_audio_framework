@@ -139,9 +139,9 @@ void AudioInterruptService::Init(sptr<AudioPolicyServer> server)
     policyServer_ = server;
     clientOnFocus_ = 0;
     focussedAudioInterruptInfo_ = nullptr;
+    AudioZoneContext context;
 
-    zoneManager_.CreateAudioInterruptZone(ZONEID_DEFAULT,
-        AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY, false);
+    zoneManager_.CreateAudioInterruptZone(ZONEID_DEFAULT, context, false);
 
     sessionService_ = AudioSessionService::GetAudioSessionService();
     sessionService_->SetSessionTimeOutCallback(shared_from_this());
@@ -1103,10 +1103,10 @@ int32_t AudioInterruptService::DeactivatePreemptMode()
 }
 
 int32_t AudioInterruptService::CreateAudioInterruptZone(const int32_t zoneId,
-    AudioZoneFocusStrategy focusStrategy)
+    const AudioZoneContext &context)
 {
     std::unique_lock<std::mutex> lock(mutex_);
-    return zoneManager_.CreateAudioInterruptZone(zoneId, focusStrategy);
+    return zoneManager_.CreateAudioInterruptZone(zoneId, context);
 }
 
 int32_t AudioInterruptService::ReleaseAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func)
@@ -2335,7 +2335,7 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
         return;
     }
 
-    if (itZone->second->focusStrategy == AudioZoneFocusStrategy::DISTRIBUTED_FOCUS_STRATEGY) {
+    if (itZone->second->context.focusStrategy_ == AudioZoneFocusStrategy::DISTRIBUTED_FOCUS_STRATEGY) {
         AUDIO_INFO_LOG("zone: %{public}d distributed focus strategy not resume when deactivate interrupt",
             itZone->first);
         return;

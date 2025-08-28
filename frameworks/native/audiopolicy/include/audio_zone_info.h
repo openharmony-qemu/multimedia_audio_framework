@@ -46,15 +46,22 @@ enum class AudioZoneFocusStrategy {
     DISTRIBUTED_FOCUS_STRATEGY = 1,
 };
 
+enum class MediaBackStrategy {
+    STOP = 0,
+    KEEP = 1,
+};
+
 class AudioZoneContext : public Parcelable {
 public:
     AudioZoneFocusStrategy focusStrategy_ = AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY;
+    MediaBackStrategy backStrategy_ = MediaBackStrategy::STOP;
 
     AudioZoneContext() = default;
 
     bool Marshalling(Parcel &parcel) const
     {
-        return parcel.WriteInt32(static_cast<int32_t>(focusStrategy_));
+        return parcel.WriteInt32(static_cast<int32_t>(focusStrategy_))
+            && parcel.WriteInt32(static_cast<int32_t>(backStrategy_));
     }
 
     static AudioZoneContext *Unmarshalling(Parcel &parcel)
@@ -65,6 +72,7 @@ public:
         }
 
         info->focusStrategy_ = static_cast<AudioZoneFocusStrategy>(parcel.ReadInt32());
+        info->backStrategy_ = static_cast<MediaBackStrategy>(parcel.ReadInt32());
         return info;
     }
 };
