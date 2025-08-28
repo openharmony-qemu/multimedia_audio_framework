@@ -52,7 +52,7 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
     if (nodeInfo.historyFrameCount > 0) {
         PcmBufferInfo pcmInfo = PcmBufferInfo{
             nodeInfo.channels, nodeInfo.frameLen, nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate :
-            nodeInfo.samplingRate, nodeInfo.channelLayout, nodeInfo.historyFrameCount};
+            nodeInfo.customSampleRate, nodeInfo.channelLayout, nodeInfo.historyFrameCount};
         pcmInfo.isMultiFrames = true;
         historyBuffer_ = std::make_unique<HpaePcmBuffer>(pcmInfo);
         AUDIO_INFO_LOG("HpaeSinkInputNode::historybuffer created");

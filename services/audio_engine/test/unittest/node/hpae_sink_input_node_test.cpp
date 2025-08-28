@@ -45,8 +45,6 @@ constexpr int32_t NORMAL_ID = 1243;
 
 constexpr float LOUDNESS_GAIN = 1.0f;
 constexpr uint32_t SAMPLE_RATE_16010 = 16010;
-constexpr uint32_t FRAME_LEN_20MS = 20;
-constexpr uint32_t FRAME_LEN_100MS = 100;
 
 HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode, TestSize.Level0)
 {
@@ -61,11 +59,13 @@ HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode, TestSize.Level0)
     EXPECT_EQ(hpaeSinkInputNode->GetFrameLen(), nodeInfo.frameLen);
     EXPECT_EQ(hpaeSinkInputNode->GetChannelCount(), nodeInfo.channels);
     EXPECT_EQ(hpaeSinkInputNode->GetBitWidth(), nodeInfo.format);
+    EXPECT_FALSE(hpaeSinkInputNode->pullDataFlag_);
     HpaeNodeInfo &retNi = hpaeSinkInputNode->GetNodeInfo();
     EXPECT_EQ(retNi.samplingRate, nodeInfo.samplingRate);
     EXPECT_EQ(retNi.frameLen, nodeInfo.frameLen);
     EXPECT_EQ(retNi.channels, nodeInfo.channels);
     EXPECT_EQ(retNi.format, nodeInfo.format);
+    EXPECT_EQ(retNi.customSampleRate, 0);
 }
 
 /**
@@ -92,6 +92,7 @@ HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode_001, TestSize.Level0)
     EXPECT_EQ(retNi.frameLen, nodeInfo.frameLen);
     EXPECT_EQ(retNi.channels, nodeInfo.channels);
     EXPECT_EQ(retNi.format, nodeInfo.format);
+    EXPECT_EQ(retNi.customSampleRate, 0);
 }
 
 /**
@@ -112,7 +113,7 @@ HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode_002, TestSize.Level0)
     EXPECT_EQ(hpaeSinkInputNode->GetFrameLen(), nodeInfo.frameLen);
     EXPECT_EQ(hpaeSinkInputNode->GetChannelCount(), nodeInfo.channels);
     EXPECT_EQ(hpaeSinkInputNode->GetBitWidth(), nodeInfo.format);
-    EXPECT_EQ(hpaeSinkInputNode->pullDataCount_, FRAME_LEN_100MS / FRAME_LEN_20MS - 1);
+    EXPECT_FALSE(hpaeSinkInputNode->pullDataFlag_);
     HpaeNodeInfo &retNi = hpaeSinkInputNode->GetNodeInfo();
     EXPECT_EQ(retNi.samplingRate, nodeInfo.samplingRate);
     EXPECT_EQ(retNi.frameLen, nodeInfo.frameLen);
@@ -126,7 +127,7 @@ HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode_002, TestSize.Level0)
  * @tc.number: constructHpaeSinkInputNode_003
  * @tc.desc  : Test HpaeSinkInputNode the branch when customSampleRate = 11025
  */
-HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode_002, TestSize.Level0)
+HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode_003, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = NORMAL_ID;
