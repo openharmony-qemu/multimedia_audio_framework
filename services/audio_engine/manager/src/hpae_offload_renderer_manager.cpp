@@ -330,14 +330,16 @@ int32_t HpaeOffloadRendererManager::MoveStream(uint32_t sessionId, const std::st
             AUDIO_ERR_LOG("[StartMove] session:%{public}d failed,sink [offload] --> [%{public}s]",
                 sessionId, sinkName.c_str());
             TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, MOVE_SINGLE, sinkName);
-            HpaeStreamMoveMonitor::ReportStreamMoveException(0, sessionId, HPAE_STREAM_CLASS_TYPE_PLAY, "offload", sinkName, "not find session node");
+            HpaeStreamMoveMonitor::ReportStreamMoveException(0, sessionId, HPAE_STREAM_CLASS_TYPE_PLAY,
+                "offload", sinkName, "not find session node");
             return;
         }
 
         if (sinkName.empty()) {
             AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,sinkName is empty", sessionId);
             TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, MOVE_SINGLE, sinkName);
-            HpaeStreamMoveMonitor::ReportStreamMoveException(0, sessionId, HPAE_STREAM_CLASS_TYPE_PLAY, "offload", sinkName, "sinkName is empty");
+            HpaeStreamMoveMonitor::ReportStreamMoveException(sinkInputNode_->GetAppUid(), sessionId,
+                HPAE_STREAM_CLASS_TYPE_PLAY, "offload", sinkName, "sinkName is empty");
             return;
         }
 
@@ -660,12 +662,13 @@ void HpaeOffloadRendererManager::SendRequest(Request &&request, std::string func
 {
     if (!isInit && !IsInit()) {
         AUDIO_ERR_LOG("HpaeOffloadRendererManager not init, %{public}s excute failed", funcName.c_str());
-        HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_OFFLOAD_MANAGER_TYPE, funcName, "HpaeOffloadRendererManager not init");
+        HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_OFFLOAD_MANAGER_TYPE, funcName,
+            "HpaeOffloadRendererManager not init");
         return;
     }
     hpaeNoLockQueue_.PushRequest(std::move(request));
     if (hpaeSignalProcessThread_ == nullptr) {
-        AUDIO_ERR_LOG("hpaeSignalProcessThread_ offloadrenderer is nullptr, %{public}s excute failed", funcName.c_str());
+        AUDIO_ERR_LOG("hpaeSignalProcessThread_ is nullptr, %{public}s excute failed",funcName.c_str());
         HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_OFFLOAD_MANAGER_TYPE, funcName, "thread is nullptr");
         return;
     }

@@ -100,7 +100,7 @@ public:
     int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
 
 private:
-    void SendRequest(Request &&request, std::string funcName, bool isInit = false);
+    void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
     int32_t StartRenderSink();
     bool IsMchDevice();
     int32_t CreateInputSession(const HpaeStreamInfo &streamInfo);

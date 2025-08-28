@@ -568,14 +568,16 @@ void HpaeRendererManager::MoveStreamSync(uint32_t sessionId, const std::string &
         AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,can not find session,move %{public}s --> %{public}s",
             sessionId, sinkInfo_.deviceName.c_str(), sinkName.c_str());
         TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, MOVE_SINGLE, sinkName);
-        HpaeStreamMoveMonitor::ReportStreamMoveException(0, sessionId, HPAE_STREAM_CLASS_TYPE_PLAY, sinkInfo_.deviceName, sinkName, "not find session node");
+        HpaeStreamMoveMonitor::ReportStreamMoveException(0, sessionId, HPAE_STREAM_CLASS_TYPE_PLAY,
+            sinkInfo_.deviceName, sinkName, "not find session node");
         return;
     }
 
     if (sinkName.empty()) {
         AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,sinkName is empty", sessionId);
         TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, MOVE_SINGLE, sinkName);
-        HpaeStreamMoveMonitor::ReportStreamMoveException(0, sessionId, HPAE_STREAM_CLASS_TYPE_PLAY, sinkInfo_.deviceName, sinkName, "sinkName is empty");
+        HpaeStreamMoveMonitor::ReportStreamMoveException(sinkInputNodeMap_[sessionId]->GetAppUid(), sessionId,
+            HPAE_STREAM_CLASS_TYPE_PLAY, sinkInfo_.deviceName, sinkName, "sinkName is empty");
         return;
     }
 
@@ -840,7 +842,7 @@ int32_t HpaeRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo, b
         
         for (const auto &it : sinkInputNodeMap_) {
             TriggerStreamState(it.first, it.second);
-            DeleteConnectInputProcessor(it.second);
+            DeleteProcessCluster(it.first);
         }
         AUDIO_INFO_LOG("delete device:%{public}s all input processor end", sinkInfo.deviceName.c_str());
         sinkInfo_ = sinkInfo;
@@ -1156,13 +1158,15 @@ void HpaeRendererManager::SendRequest(Request &&request, std::string funcName, b
 {
     if (!isInit && !IsInit()) {
         AUDIO_ERR_LOG("HpaeRendererManager not init, %{public}s excute failed", funcName.c_str());
-        HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_RENDERER_MANAGER_TYPE, funcName, "HpaeRendererManager not init");
+        HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_RENDERER_MANAGER_TYPE, funcName,
+            "HpaeRendererManager not init");
         return;
     }
     hpaeNoLockQueue_.PushRequest(std::move(request));
     if (hpaeSignalProcessThread_ == nullptr) {
-        AUDIO_ERR_LOG("hpaeSignalProcessThread_  renderer is nullptr, %{public}s excute failed", funcName.c_str());
-        HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_RENDERER_MANAGER_TYPE, funcName, "thread is nullptr");
+        AUDIO_ERR_LOG("hpaeSignalProcessThread_ is nullptr, %{public}s excute failed", funcName.c_str());
+        HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_RENDERER_MANAGER_TYPE, funcName,
+            "thread is nullptr");
         return;
     }
     hpaeSignalProcessThread_->Notify();

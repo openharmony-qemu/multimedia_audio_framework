@@ -920,6 +920,34 @@ HWTEST_F(HpaeCapturerManagerTest, CheckEcAndMicRefCondition_001, TestSize.Level0
     HpaeNodeInfo micRefNodeInfo;
     EXPECT_EQ(capturerManager->CheckMicRefCondition(sceneType, micRefNodeInfo), false);
 }
+
+/**
+ * @tc.name  : Test SendRequestInner_001
+ * @tc.type  : FUNC
+ * @tc.number: SendRequestInner_001
+ * @tc.desc  : Test SendRequestInner when config in vaild.
+ */
+HWTEST_F(HpaeCapturerManagerTest, SendRequestInner_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.ecType = HPAE_EC_TYPE_SAME_ADAPTER;
+    sourceInfo.micRef = HPAE_REF_ON;
+
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    auto request = []() {
+    };
+    capturerManager->SendRequest(request, "unit_test_send_request");
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    capturerManager->SendRequest(request, "unit_test_send_request");
+    WaitForMsgProcessing(capturerManager);
+    capturerManager->hpaeSignalProcessThread_ = nullptr;
+    capturerManager->SendRequest(request, "unit_test_send_request");
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
