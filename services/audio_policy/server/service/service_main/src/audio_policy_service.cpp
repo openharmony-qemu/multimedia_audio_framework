@@ -63,6 +63,13 @@ const int32_t UID_AUDIO = 1041;
 mutex g_dataShareHelperMutex;
 bool AudioPolicyService::isBtListenerRegistered = false;
 bool AudioPolicyService::isBtCrashed = false;
+const std::string AINR_FLAG = "ai_voice_noise_suppression_flag";
+const std::string AUDIO_SETTING_TABLE_TYPE = "global";
+const std::string LIVE_EFFECT_KEY = "live_effect_enable";
+const std::string LIVE_EFFECT_TABLE_TYPE = "system";
+const std::string LIVE_EFFECT_ON = "NRON";
+const int32_t INVALID_VALUE = -1;
+static const std::unordered_set<std::string> ANRCategories = {"AINR", "PNR"};
 
 AudioPolicyService::~AudioPolicyService()
 {
@@ -1179,6 +1186,57 @@ int32_t AudioPolicyService::ClearAudioFocusBySessionID(const int32_t &sessionID)
 int32_t AudioPolicyService::CaptureConcurrentCheck(const uint32_t &sessionID)
 {
     return AudioCoreService::GetCoreService()->CaptureConcurrentCheck(sessionID);
+}
+
+bool AudioPolicyService::CheckVoipAnrOn(std::vector<AudioEffectPropertyV3> &property)
+{
+    bool ret = false;
+    for (const auto &item : property) {
+        if (item.name != "voip_up") continue;
+        if (ANRCategories.find(item.category) != ANRCategories.end()) {
+            ret = true;
+            break;
+        }
+    }
+    return ret;
+}
+ 
+bool AudioPolicyService::IsCurrentDeviceEnableIntelligentNoiseReduction(SourceType sourceType)
+{
+    if (sourceType != SOURCE_TYPE_LIVE && sourceType != SOURCE_TYPE_VOICE_COMMUNICATION) {
+        AUDIO_INFO_LOG("SourceType %{public}d IsCurrentDeviceEnableIntelligentNoiseReduction 0", sourceType);
+        return false;
+    }
+ 
+    bool ret = false;
+    if (sourceType == SOURCE_TYPE_LIVE) {
+        std::string paramKey = LIVE_EFFECT_KEY;
+        std::string paramValue = "";
+        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+        CHECK_AND_RETURN_RET_LOG(settingProvider.CheckOsAccountReady(), false, "os account not ready");
+        settingProvider.GetStringValue(paramKey, paramValue, LIVE_EFFECT_TABLE_TYPE);
+        ret = (paramValue == LIVE_EFFECT_ON);
+        AUDIO_INFO_LOG("SourceType %{public}d IsCurrentDeviceEnableIntelligentNoiseReduction %{public}d",
+            sourceType, ret);
+        return ret;
+    }
+ 
+    bool isEcFeatureEnable = audioEcManager_.GetEcFeatureEnable();
+    if (isEcFeatureEnable) { // is configed according to the product
+        AudioEffectPropertyArrayV3 propertyArray = {};
+        int32_t getPropRet = GetAudioEnhanceProperty(propertyArray);
+        CHECK_AND_RETURN_RET_LOG(getPropRet == SUCCESS, false, "get audio enhance property failed, return false");
+        ret = CheckVoipAnrOn(propertyArray.property);
+    } else {
+        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+        CHECK_AND_RETURN_RET_LOG(settingProvider.CheckOsAccountReady(), false, "os account not ready");
+        int32_t flagValue = INVALID_VALUE;
+        settingProvider.GetIntValue(AINR_FLAG, flagValue, AUDIO_SETTING_TABLE_TYPE);
+        ret = (flagValue == 1);
+    }
+    AUDIO_INFO_LOG("SourceType %{public}d IsCurrentDeviceEnableIntelligentNoiseReduction %{public}d",
+        sourceType, ret);
+    return ret;
 }
 } // namespace AudioStandard
 } // namespace OHOS
