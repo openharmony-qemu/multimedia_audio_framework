@@ -3843,6 +3843,19 @@ int32_t AudioPolicyServer::ClearSelectedInputDevice()
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::PreferBluetoothAndNearlinkRecord(bool isPreferred)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    return eventEntry_->PreferBluetoothAndNearlinkRecordByUid(callerUid, isPreferred);
+}
+
+int32_t AudioPolicyServer::GetPreferBluetoothAndNearlinkRecord(bool &isPreferred)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    isPreferred = eventEntry_->GetPreferBluetoothAndNearlinkRecordByUid(callerUid);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::GetAvailableDevices(int32_t usageIn,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
 {

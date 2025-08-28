@@ -151,6 +151,8 @@ interface IAudioPolicy {
     void GetAvailableDevices([in] int usage, [out] List<sharedptr<AudioDeviceDescriptor>> retDeviceList);
     void GetSelectedInputDevice([out] sharedptr<AudioDeviceDescriptor> audioDeviceDescriptor);
     void ClearSelectedInputDevice();
+    void PreferBluetoothAndNearlinkRecord([in] boolean isPreferred);
+    void GetPreferBluetoothAndNearlinkRecord([out] boolean isPreferred);
     void SetAvailableDeviceChangeCallback([in] int clientId, [in] int usage, [in] IRemoteObject object);
     void UnsetAvailableDeviceChangeCallback([in] int clientId, [in] int usage);
     void IsSpatializationEnabled([out] boolean ret);

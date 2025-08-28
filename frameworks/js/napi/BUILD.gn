@@ -61,6 +61,7 @@ ohos_shared_library("audio") {
       "audiomanager/callback/napi_audio_rounting_available_devicechange_callback.cpp",
       "audiomanager/callback/napi_audio_routing_manager_callbacks.cpp",
       "audiomanager/callback/napi_audio_scene_callbacks.cpp",
+      "audiomanager/callback/napi_audio_session_available_devicechange_callback.cpp",
       "audiomanager/callback/napi_audio_session_callback.cpp",
       "audiomanager/callback/napi_audio_session_device_callback.cpp",
       "audiomanager/callback/napi_audio_session_state_callback.cpp",

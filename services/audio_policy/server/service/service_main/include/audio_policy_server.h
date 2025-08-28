@@ -169,6 +169,10 @@ public:
 
     int32_t ClearSelectedInputDevice() override;
 
+    int32_t PreferBluetoothAndNearlinkRecord(bool isPreferred) override;
+
+    int32_t GetPreferBluetoothAndNearlinkRecord(bool &isPreferred) override;
+
     int32_t ExcludeOutputDevices(int32_t audioDevUsage,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) override;
 

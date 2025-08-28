@@ -92,10 +92,20 @@ private:
     static napi_value SelectMediaInputDevice(napi_env env, napi_callback_info info);
     static napi_value GetSelectedMediaInputDevice(napi_env env, napi_callback_info info);
     static napi_value ClearSelectedMediaInputDevice(napi_env env, napi_callback_info info);
+    static napi_value PreferBluetoothAndNearlinkRecord(napi_env env, napi_callback_info info);
+    static napi_value GetPreferBluetoothAndNearlinkRecord(napi_env env, napi_callback_info info);
+
+    static void RegisterAvaiableDeviceChangeCallback(napi_env env, napi_value *args,
+        NapiAudioSessionMgr *napiSessionMgr);
+    static napi_value UnregisterCB(napi_env env, napi_value jsThis, napi_value* args);
+    static void UnregisterAvailableDeviceChangeCallback(napi_env env, napi_value callback,
+        NapiAudioSessionMgr *napiSessionMgr);
 
     napi_env env_;
+    AudioSystemManager *audioMngr_;
     AudioSessionManager *audioSessionMngr_;
     std::shared_ptr<AudioSessionCallback> audioSessionCallbackNapi_ = nullptr;
+    std::shared_ptr<AudioManagerAvailableDeviceChangeCallback> availableDeviceChangeCallbackNapi_ = nullptr;
     std::list<std::shared_ptr<NapiAudioSessionStateCallback>> sessionStateCallbackList_;
     std::list<std::shared_ptr<NapiAudioSessionDeviceCallback>> sessionDeviceCallbackList_;
 

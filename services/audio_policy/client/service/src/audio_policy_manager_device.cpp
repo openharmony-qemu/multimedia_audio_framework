@@ -460,6 +460,22 @@ int32_t AudioPolicyManager::ClearSelectedInputDevice()
     return gsp->ClearSelectedInputDevice();
 }
 
+int32_t AudioPolicyManager::PreferBluetoothAndNearlinkRecord(bool isPreferred)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->PreferBluetoothAndNearlinkRecord(isPreferred);
+}
+
+bool AudioPolicyManager::GetPreferBluetoothAndNearlinkRecord()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    bool isPreferred = false;
+    gsp->GetPreferBluetoothAndNearlinkRecord(isPreferred);
+    return isPreferred;
+}
+
 int32_t AudioPolicyManager::SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,
     const std::shared_ptr<AudioManagerAvailableDeviceChangeCallback>& callback)
 {

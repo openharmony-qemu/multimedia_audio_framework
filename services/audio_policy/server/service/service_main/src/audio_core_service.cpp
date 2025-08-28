@@ -1100,6 +1100,17 @@ int32_t AudioCoreService::ClearSelectedInputDeviceByUid(int32_t uid)
     return SUCCESS;
 }
 
+int32_t AudioCoreService::PreferBluetoothAndNearlinkRecordByUid(int32_t uid, bool isPreferred)
+{
+    audioUsrSelectManager_.PreferBluetoothAndNearlinkRecordByUid(uid, isPreferred);
+    return SUCCESS;
+}
+
+bool AudioCoreService::GetPreferBluetoothAndNearlinkRecordByUid(int32_t uid)
+{
+    return audioUsrSelectManager_.GetPreferBluetoothAndNearlinkRecordByUid(uid);
+}
+
 void AudioCoreService::NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value)
 {
     AUDIO_INFO_LOG("device<%{public}s> condition:%{public}s value:%{public}s",

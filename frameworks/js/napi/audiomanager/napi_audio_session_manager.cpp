@@ -20,6 +20,7 @@
 #include "napi_param_utils.h"
 #include "napi_audio_enum.h"
 #include "audio_errors.h"
+#include "napi_audio_session_available_devicechange_callback.h"
 #include "napi_audio_session_callback.h"
 #include "napi_audio_session_state_callback.h"
 #include "napi_audio_session_device_callback.h"
@@ -65,6 +66,7 @@ napi_value NapiAudioSessionMgr::Construct(napi_env env, napi_callback_info info)
     CHECK_AND_RETURN_RET_LOG(napiSessionMgr != nullptr, result, "No memory");
 
     napiSessionMgr->env_ = env;
+    napiSessionMgr->audioMngr_ = AudioSystemManager::GetInstance();
     napiSessionMgr->audioSessionMngr_ = AudioSessionManager::GetInstance();
     ObjectRefMap<NapiAudioSessionMgr>::Insert(napiSessionMgr.get());
 
@@ -99,6 +101,8 @@ napi_value NapiAudioSessionMgr::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("selectMediaInputDevice", SelectMediaInputDevice),
         DECLARE_NAPI_FUNCTION("getSelectedMediaInputDevice", GetSelectedMediaInputDevice),
         DECLARE_NAPI_FUNCTION("clearSelectedMediaInputDevice", ClearSelectedMediaInputDevice),
+        DECLARE_NAPI_FUNCTION("preferBluetoothAndNearlinkRecord", PreferBluetoothAndNearlinkRecord),
+        DECLARE_NAPI_FUNCTION("getPreferBluetoothAndNearlinkRecord", GetPreferBluetoothAndNearlinkRecord),
     };
 
     status = napi_define_class(env, AUDIO_SESSION_MGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -263,30 +267,22 @@ napi_value NapiAudioSessionMgr::IsAudioSessionActivated(napi_env env, napi_callb
 void NapiAudioSessionMgr::RegisterCallback(napi_env env, napi_value jsThis,
     napi_value *args, const std::string &cbName)
 {
+    NapiAudioSessionMgr *napiSessionMgr = nullptr;
+    napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiSessionMgr));
+    if ((status != napi_ok) || (napiSessionMgr == nullptr) || (napiSessionMgr->audioSessionMngr_ == nullptr) ||
+        (napiSessionMgr->audioMngr_ == nullptr)) {
+        AUDIO_ERR_LOG("NapiAudioSessionMgr can not get session mgr napi instance");
+        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM, "can not get session mgr napi instance");
+        return;
+    }
     if (!cbName.compare(AUDIOSESSION_CALLBACK_NAME)) {
-        NapiAudioSessionMgr *napiSessionMgr = nullptr;
-        napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiSessionMgr));
-        CHECK_AND_RETURN_LOG((status == napi_ok) && (napiSessionMgr != nullptr) &&
-            (napiSessionMgr->audioSessionMngr_ != nullptr), "Failed to retrieve session mgr napi instance.");
         RegisterAudioSessionCallback(env, args, cbName, napiSessionMgr);
     } else if (!cbName.compare(AUDIOSESSION_STATE_CALLBACK_NAME)) {
-        NapiAudioSessionMgr *napiSessionMgr = nullptr;
-        napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiSessionMgr));
-        if ((status != napi_ok) || (napiSessionMgr == nullptr) || (napiSessionMgr->audioSessionMngr_ == nullptr)) {
-            AUDIO_ERR_LOG("NapiAudioSessionMgr can not get session mgr napi instance");
-            NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM, "can not get session mgr napi instance");
-            return;
-        }
         RegisterAudioSessionStateCallback(env, args, cbName, napiSessionMgr);
     } else if (!cbName.compare(AUDIOSESSION_DEVICE_CALLBACK_NAME)) {
-        NapiAudioSessionMgr *napiSessionMgr = nullptr;
-        napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiSessionMgr));
-        if ((status != napi_ok) || (napiSessionMgr == nullptr) || (napiSessionMgr->audioSessionMngr_ == nullptr)) {
-            AUDIO_ERR_LOG("NapiAudioSessionMgr can not get session mgr napi instance");
-            NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM, "can not get session mgr napi instance");
-            return;
-        }
         RegisterAudioSessionDeviceCallback(env, args, cbName, napiSessionMgr);
+    } else if (!cbName.compare(AVAILABLE_DEVICE_CHANGE_CALLBACK_NAME)) {
+        RegisterAvaiableDeviceChangeCallback(env, args, napiSessionMgr);
     } else {
         AUDIO_ERR_LOG("NapiAudioSessionMgr::No such callback supported");
         NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
@@ -393,6 +389,51 @@ void NapiAudioSessionMgr::RegisterAudioSessionDeviceCallback(napi_env env, napi_
     }
 
     AUDIO_INFO_LOG("RegisterAudioSessionDeviceCallback is successful");
+}
+
+void NapiAudioSessionMgr::RegisterAvaiableDeviceChangeCallback(napi_env env, napi_value *args,
+    NapiAudioSessionMgr *napiSessionMgr)
+{
+    int32_t flag = 0;
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, args[PARAM1], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowError(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of deviceUsage must be number"),
+        "invalid Type");
+
+    NapiParamUtils::GetValueInt32(env, flag, args[PARAM1]);
+    AUDIO_INFO_LOG("RegisterDeviceChangeCallback:On deviceFlag: %{public}d", flag);
+    if (!NapiAudioEnum::IsLegalDeviceUsage(flag)) {
+        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of deviceUsage must be enum DeviceUsage");
+    }
+
+    napi_valuetype handler = napi_undefined;
+    napi_typeof(env, args[PARAM2], &handler);
+    if (handler != napi_function) {
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+            "incorrect parameter types: The type of callback must be function");
+    }
+    AudioDeviceUsage usage = static_cast<AudioDeviceUsage>(flag);
+    if (!napiSessionMgr->availableDeviceChangeCallbackNapi_) {
+        napiSessionMgr->availableDeviceChangeCallbackNapi_ =
+            std::make_shared<NapiAudioSessionAvailableDeviceChangeCallback>(env);
+    }
+    CHECK_AND_RETURN_LOG(napiSessionMgr->availableDeviceChangeCallbackNapi_ != nullptr,
+        "RegisterDeviceChangeCallback: Memory Allocation Failed !");
+
+    int32_t ret = napiSessionMgr->audioMngr_->SetAvailableDeviceChangeCallback(usage,
+        napiSessionMgr->availableDeviceChangeCallbackNapi_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowError(env, ret),
+        "RegisterDeviceChangeCallback: Registering Device Change Callback Failed %{public}d", ret);
+
+    std::shared_ptr<NapiAudioSessionAvailableDeviceChangeCallback> cb =
+        std::static_pointer_cast<NapiAudioSessionAvailableDeviceChangeCallback>(
+        napiSessionMgr->availableDeviceChangeCallbackNapi_);
+    cb->SaveSessionAvailbleDeviceChangeCbRef(usage, args[PARAM2]);
+    if (!cb->GetSessionDevChgTsfnFlag()) {
+        cb->CreateSessionDevChgTsfn(env);
+    }
 }
 
 napi_value NapiAudioSessionMgr::On(napi_env env, napi_callback_info info)
@@ -608,6 +649,28 @@ void NapiAudioSessionMgr::UnregisterSessionDeviceCallbackCarryParam(
     AUDIO_ERR_LOG("UnregisterSessionDeviceCallbackCarryParam Success");
 }
 
+void NapiAudioSessionMgr::UnregisterAvailableDeviceChangeCallback(napi_env env, napi_value callback,
+    NapiAudioSessionMgr *napiSessionMgr)
+{
+    if (napiSessionMgr->availableDeviceChangeCallbackNapi_ != nullptr) {
+        std::shared_ptr<NapiAudioSessionAvailableDeviceChangeCallback> cb =
+            std::static_pointer_cast<NapiAudioSessionAvailableDeviceChangeCallback>(
+            napiSessionMgr->availableDeviceChangeCallbackNapi_);
+        if (callback == nullptr || cb->GetSessionAvailbleDeviceChangeCbListSize() == 0) {
+            int32_t ret = napiSessionMgr->audioMngr_->UnsetAvailableDeviceChangeCallback(D_ALL_DEVICES);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnsetAvailableDeviceChangeCallback Failed");
+
+            napiSessionMgr->availableDeviceChangeCallbackNapi_.reset();
+            napiSessionMgr->availableDeviceChangeCallbackNapi_ = nullptr;
+            cb->RemoveAllSessionAvailbleDeviceChangeCb();
+            return;
+        }
+        cb->RemoveSessionAvailbleDeviceChangeCbRef(env, callback);
+    } else {
+        AUDIO_ERR_LOG("UnregisterAvailableDeviceChangeCallback: availableDeviceChangeCallbackNapi_ is null");
+    }
+}
+
 napi_value NapiAudioSessionMgr::Off(napi_env env, napi_callback_info info)
 {
     const size_t requireArgc = ARGS_ONE;
@@ -624,36 +687,52 @@ napi_value NapiAudioSessionMgr::Off(napi_env env, napi_callback_info info)
         NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified");
         return undefinedResult;
     }
+    return UnregisterCB(env, jsThis, args);
+}
+
+napi_value NapiAudioSessionMgr::UnregisterCB(napi_env env, napi_value jsThis, napi_value* args)
+{
+    napi_value undefinedResult = nullptr;
+    napi_get_undefined(env, &undefinedResult);
 
     napi_valuetype eventType = napi_undefined;
     napi_typeof(env, args[PARAM0], &eventType);
     CHECK_AND_RETURN_RET_LOG(eventType == napi_string, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of eventType must be string"), "event error");
+    
+    napi_valuetype handler = napi_undefined;
+    napi_typeof(env, args[PARAM1], &handler);
+    CHECK_AND_RETURN_RET_LOG(handler == napi_undefined || handler == napi_function,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID, "incorrect callback"), "event error");
+
+    NapiAudioSessionMgr *napiSessionMgr = nullptr;
+    napi_status status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiSessionMgr));
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && napiSessionMgr != nullptr, undefinedResult,
+        "Failed to retrieve audio mgr napi instance.");
+    CHECK_AND_RETURN_RET_LOG(napiSessionMgr->audioMngr_ != nullptr && napiSessionMgr->audioSessionMngr_ != nullptr,
+        undefinedResult, "audio system mgr or audio session mgr instance is null.");
+
     std::string callbackName = NapiParamUtils::GetStringArgument(env, args[PARAM0]);
     if (!callbackName.compare(AUDIOSESSION_CALLBACK_NAME)) {
-        napi_valuetype handler = napi_undefined;
-        napi_typeof(env, args[PARAM1], &handler);
         if (handler == napi_function) {
             UnregisterCallbackCarryParam(env, jsThis, args, sizeof(args));
         } else {
             UnregisterCallback(env, jsThis);
         }
     } else if (!callbackName.compare(AUDIOSESSION_STATE_CALLBACK_NAME)) {
-        napi_valuetype handler = napi_undefined;
-        napi_typeof(env, args[PARAM1], &handler);
         if (handler == napi_function) {
             UnregisterSessionStateCallbackCarryParam(env, jsThis, args, sizeof(args));
         } else {
             UnregisterSessionStateCallback(env, jsThis);
         }
     } else if (!callbackName.compare(AUDIOSESSION_DEVICE_CALLBACK_NAME)) {
-        napi_valuetype handler = napi_undefined;
-        napi_typeof(env, args[PARAM1], &handler);
         if (handler == napi_function) {
             UnregisterSessionDeviceCallbackCarryParam(env, jsThis, args, sizeof(args));
         } else {
             UnregisterSessionDeviceCallback(env, jsThis);
         }
+    } else if (!callbackName.compare(AVAILABLE_DEVICE_CHANGE_CALLBACK_NAME)) {
+        UnregisterAvailableDeviceChangeCallback(env, args[PARAM1], napiSessionMgr);
     } else {
         AUDIO_ERR_LOG("NapiAudioSessionMgr::No such callback supported");
         NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
@@ -795,6 +874,66 @@ napi_value NapiAudioSessionMgr::ClearSelectedMediaInputDevice(napi_env env, napi
         output = NapiParamUtils::GetUndefinedValue(env);
     };
     return NapiAsyncWork::Enqueue(env, context, "ClearSelectedMediaInputDevice", executor, complete);
+}
+
+napi_value NapiAudioSessionMgr::PreferBluetoothAndNearlinkRecord(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioSessionMgrAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("ActivateAudioSession failed : no memory");
+        NapiAudioError::ThrowError(env, "ActivateAudioSession failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetValueBoolean(env, context->isTrue, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "GetValueBoolean failed",
+            NAPI_ERR_INPUT_INVALID);
+    };
+    context->GetCbInfo(env, info, inputParser);
+
+    if ((context->status != napi_ok) && (context->errCode == NAPI_ERR_INPUT_INVALID)) {
+        NapiAudioError::ThrowError(env, context->errCode, context->errMessage);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioSessionMgr*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiSessionMgr = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioSessionStatus(napiSessionMgr, context),
+            "context object state is error.");
+
+        context->intValue =
+            napiSessionMgr->audioSessionMngr_->PreferBluetoothAndNearlinkRecord(context->isTrue);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "PreferBluetoothAndNearlinkRecord failed",
+            NAPI_ERR_SYSTEM);
+    };
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "PreferBluetoothAndNearlinkRecord", executor, complete);
+}
+
+napi_value NapiAudioSessionMgr::GetPreferBluetoothAndNearlinkRecord(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = PARAM0;
+    auto *napiSessionMgr = GetParamWithSync(env, info, argc, nullptr);
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INVALID_PARAM, "argcCount invalid"), "argcCount invalid");
+
+    CHECK_AND_RETURN_RET_LOG(napiSessionMgr != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INVALID_PARAM, "can not get session"), "napiSessionMgr is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiSessionMgr->audioSessionMngr_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INVALID_PARAM, "can not get session"), "audioSessionMngr_ is nullptr");
+
+    bool isPreferred = napiSessionMgr->audioSessionMngr_->GetPreferBluetoothAndNearlinkRecord();
+    NapiParamUtils::SetValueBoolean(env, isPreferred, result);
+    return result;
 }
 
 napi_value NapiAudioSessionMgr::SetAudioSessionScene(napi_env env, napi_callback_info info)

@@ -48,5 +48,17 @@ void AudioUsrSelectManager::ClearSelectedInputDeviceByUid(int32_t uid)
     std::lock_guard<std::mutex> lock(mutex_);
     audioUsrSelectMap_[uid].clear();
 }
+
+void AudioUsrSelectManager::PreferBluetoothAndNearlinkRecordByUid(int32_t uid, bool isPreferred)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    isPreferredBluetoothAndNearlinkRecordMap_[uid] = isPreferred;
+}
+
+bool AudioUsrSelectManager::GetPreferBluetoothAndNearlinkRecordByUid(int32_t uid)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return isPreferredBluetoothAndNearlinkRecordMap_[uid];
+}
 } // namespace AudioStandard
 } // namespace OHOS

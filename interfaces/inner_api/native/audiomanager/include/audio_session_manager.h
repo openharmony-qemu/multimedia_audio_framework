@@ -247,6 +247,9 @@ public:
     int32_t UnsetAudioSessionCurrentDeviceChangeCallback(
         const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback);
 
+    int32_t SetAvailableDeviceChangeCallback(const AudioDeviceUsage usage,
+        const std::shared_ptr<AudioManagerAvailableDeviceChangeCallback>& callback);
+
     /**
      * @brief Register AudioPolicyServer died callback.
      *
@@ -310,6 +313,10 @@ public:
      * @since 21
      */
     int32_t ClearSelectedInputDevice();
+
+    int32_t PreferBluetoothAndNearlinkRecord(bool isPreferred);
+
+    bool GetPreferBluetoothAndNearlinkRecord();
 
 private:
     std::mutex setDefaultOutputDeviceMutex_;

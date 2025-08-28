@@ -130,6 +130,16 @@ int32_t AudioSessionManager::ClearSelectedInputDevice()
     return AudioPolicyManager::GetInstance().ClearSelectedInputDevice();
 }
 
+int32_t AudioSessionManager::PreferBluetoothAndNearlinkRecord(bool isPreferred)
+{
+    return AudioPolicyManager::GetInstance().PreferBluetoothAndNearlinkRecord(isPreferred);
+}
+
+bool AudioSessionManager::GetPreferBluetoothAndNearlinkRecord()
+{
+    return AudioPolicyManager::GetInstance().GetPreferBluetoothAndNearlinkRecord();
+}
+
 int32_t AudioSessionManager::SetAudioSessionStateChangeCallback(
     const std::shared_ptr<AudioSessionStateChangedCallback> &stateChangedCallback)
 {
