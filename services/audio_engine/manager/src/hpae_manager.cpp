@@ -248,7 +248,6 @@ int32_t HpaeManager::ReloadRenderManager(const AudioModuleInfo &audioModuleInfo,
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.sinkId = sinkNameSinkIdMap_[audioModuleInfo.name];
-    sinkInfo.suspendTime = DEFAULT_SUSPEND_TIME_IN_MS;
     int32_t ret = TransModuleInfoToHpaeSinkInfo(audioModuleInfo, sinkInfo);
     if (ret != SUCCESS) {
         OnCallbackOpenOrReloadFailed(isReload);
@@ -272,7 +271,6 @@ int32_t HpaeManager::CreateRendererManager(const AudioModuleInfo &audioModuleInf
     sinkSourceIndex_.fetch_add(1);
     HpaeSinkInfo sinkInfo;
     sinkInfo.sinkId = sinkSourceIndex;
-    sinkInfo.suspendTime = DEFAULT_SUSPEND_TIME_IN_MS;
     int32_t ret = TransModuleInfoToHpaeSinkInfo(audioModuleInfo, sinkInfo);
     if (ret != SUCCESS) {
         OnCallbackOpenOrReloadFailed(isReload);
@@ -944,6 +942,16 @@ void HpaeManager::Invoke(HpaeMsgCode cmdID, const std::any &args)
     AUDIO_ERR_LOG("HpaeManager::Invoke cmdID %{public}d not found", (int32_t)cmdID);
 }
 
+void HpaeManager::InvokeSync(HpaeMsgCode cmdID, const std::any &args)
+{
+    auto it = handlers_.find(cmdID);
+    if (it != handlers_.end()) {
+        it->second(args);
+        return;
+    };
+    AUDIO_ERR_LOG("HpaeManager::InvokeSync cmdID %{public}d not found", (int32_t)cmdID);
+}
+
 template <typename... Args>
 void HpaeManager::RegisterHandler(HpaeMsgCode cmdID, void (HpaeManager::*func)(Args...))
 {
@@ -999,6 +1007,7 @@ void HpaeManager::HandleMoveSinkInput(const std::shared_ptr<HpaeSinkInputNode> s
     }
     rendererManager->AddNodeToSink(sinkInputNode);
     rendererIdSinkNameMap_[sessionId] = sinkName;
+    rendererIdStreamInfoMap_[sessionId].streamInfo.deviceName = sinkName;
     if (sinkName != defaultSink_) {
         idPreferSinkNameMap_[sessionId] = sinkName;
     }
@@ -1041,6 +1050,7 @@ void HpaeManager::HandleMoveSourceOutput(HpaeCaptureMoveInfo moveInfo, std::stri
     }
     catpureManager->AddNodeToSource(moveInfo);
     capturerIdSourceNameMap_[sessionId] = sourceName;
+    capturerIdStreamInfoMap_[sessionId].streamInfo.deviceName = sourceName;
     if (sourceOutputs_.find(sessionId) != sourceOutputs_.end()) {
         sourceOutputs_[sessionId].deviceSourceId = sourceNameSourceIdMap_[sourceName];
     }
@@ -1082,6 +1092,7 @@ void HpaeManager::HandleMoveAllSinkInputs(
         CHECK_AND_CONTINUE_LOG(sinkInput, "sinkInput is nullptr");
         uint32_t sessionId = sinkInput->GetNodeInfo().sessionId;
         rendererIdSinkNameMap_[sessionId] = sinkName;
+        rendererIdStreamInfoMap_[sessionId].streamInfo.deviceName = sinkName;
         if (sinkInputs_.find(sessionId) != sinkInputs_.end()) {
             sinkInputs_[sessionId].deviceSinkId = sinkNameSinkIdMap_[sinkName];
             sinkInputs_[sessionId].sinkName = sinkName;
@@ -1108,6 +1119,7 @@ void HpaeManager::HandleMoveAllSourceOutputs(const std::vector<HpaeCaptureMoveIn
     capturerManagerMap_[sourceName]->AddAllNodesToSource(moveInfos, true);
     for (const auto &it : moveInfos) {
         capturerIdSourceNameMap_[it.sessionId] = sourceName;
+        capturerIdStreamInfoMap_[it.sessionId].streamInfo.deviceName = sourceName;
         if (sourceOutputs_.find(it.sessionId) != sourceOutputs_.end()) {
             sourceOutputs_[it.sessionId].deviceSourceId = sourceNameSourceIdMap_[sourceName];
         }
@@ -1600,7 +1612,6 @@ int32_t HpaeManager::Pause(HpaeStreamClassType streamClassType, uint32_t session
                 capturerManagerMap_[capturerIdSourceNameMap_[sessionId]]->Pause(sessionId);
             }
             capturerIdStreamInfoMap_[sessionId].state = HPAE_SESSION_PAUSING;
-            UpdateStatus(capturerIdStreamInfoMap_[sessionId].statusCallback, OPERATION_PAUSED, sessionId);
         } else {
             AUDIO_WARNING_LOG("Pause can not find sessionId streamClassType  %{public}d, sessionId %{public}u",
                 streamClassType, sessionId);
@@ -1728,7 +1739,6 @@ int32_t HpaeManager::Stop(HpaeStreamClassType streamClassType, uint32_t sessionI
                 capturerManagerMap_[capturerIdSourceNameMap_[sessionId]]->Stop(sessionId);
             }
             capturerIdStreamInfoMap_[sessionId].state = HPAE_SESSION_STOPPING;
-            UpdateStatus(capturerIdStreamInfoMap_[sessionId].statusCallback, OPERATION_STOPPED, sessionId);
         } else {
             AUDIO_WARNING_LOG("Stop can not find sessionId streamClassType  %{public}d, sessionId %{public}u",
                 streamClassType, sessionId);
