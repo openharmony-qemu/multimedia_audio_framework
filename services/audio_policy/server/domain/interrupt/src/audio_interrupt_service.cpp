@@ -1841,12 +1841,11 @@ void AudioInterruptService::UpdateFocusStrategy(const std::string &bundleName,
     }
 }
 
-void AudioInterruptService::UpdateMicFocusStrategy(SourceType existSourceType,
-    SourceType incomingSourceType, const std::string &currentBundleName,
-    const std::string &incomingBundleName, AudioFocusEntry &focusEntry)
+void AudioInterruptService::UpdateMicFocusStrategy(SourceType existSourceType, SourceType incomingSourceType,
+    const AudioStreamType &existStreamType, const AudioStreamType &incomingStreamType,
+    const std::string &currentBundleName, const std::string &incomingBundleName, AudioFocusEntry &focusEntry)
 {
-    if (incomingSourceType == SOURCE_TYPE_INVALID || existSourceType == SOURCE_TYPE_INVALID ||
-        queryBundleNameListCallback_ == nullptr) {
+    if (queryBundleNameListCallback_ == nullptr) {
         AUDIO_INFO_LOG("Not a recording stream access");
         return;
     }
@@ -1859,16 +1858,22 @@ void AudioInterruptService::UpdateMicFocusStrategy(SourceType existSourceType,
     AUDIO_INFO_LOG("%{public}s update mic focus strategy, focusEntry.hintType: %{public}d,"
         " focusEntry.actionOn: %{public}d"
         " existSourceType: %{public}d  incomingSourceType: %{public}d"
+        " existStreamType: %{public}d incomingStreamType: %{public}d"
         " isCurrentBundleNameExist: %{public}d  isIncomingBundleNameExist: %{public}d",
         currentBundleName.c_str(), focusEntry.hintType, focusEntry.actionOn, existSourceType, incomingSourceType,
+        existStreamType, incomingStreamType,
         isCurrentBundleNameExist, isIncomingBundleNameExist);
-    if (existSourceType == SOURCE_TYPE_MIC && IsMicSource(incomingSourceType) && isCurrentBundleNameExist) {
+    if (existSourceType == SOURCE_TYPE_MIC &&
+        (IsMicSource(incomingSourceType) || incomingStreamType == STREAM_VOICE_CALL) &&
+        isCurrentBundleNameExist) {
         focusEntry.hintType = INTERRUPT_HINT_PAUSE;
         focusEntry.actionOn = CURRENT;
         AUDIO_INFO_LOG("current %{public}s update mic focus strategy", currentBundleName.c_str());
         return;
     }
-    if (IsMicSource(existSourceType) && incomingSourceType == SOURCE_TYPE_MIC && isIncomingBundleNameExist) {
+    if ((IsMicSource(existSourceType) || existStreamType == STREAM_VOICE_CALL) &&
+        incomingSourceType == SOURCE_TYPE_MIC &&
+        isIncomingBundleNameExist) {
         focusEntry.hintType = INTERRUPT_HINT_PAUSE;
         focusEntry.actionOn = INCOMING;
         AUDIO_INFO_LOG("incoming %{public}s update mic focus strategy", incomingBundleName.c_str());

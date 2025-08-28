@@ -246,6 +246,7 @@ private:
         std::list<int32_t> &removeFocusInfoPidList);
     void PrintLogsOfFocusStrategyBaseMusic(const AudioInterrupt &audioInterrupt);
     void UpdateMicFocusStrategy(SourceType existSourceType, SourceType incomingSourceType,
+        const AudioStreamType &existStreamType, const AudioStreamType &incomingStreamType,
         const std::string &currentBundleName, const std::string &incomingBundleName, AudioFocusEntry &focusEntry);
     bool CheckWindowState(const int32_t pid);
     void UpdateWindowFocusStrategy(const int32_t &currentPid, const int32_t &incomingPid,
