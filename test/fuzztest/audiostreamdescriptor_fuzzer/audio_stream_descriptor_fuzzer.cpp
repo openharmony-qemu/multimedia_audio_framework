@@ -158,6 +158,7 @@ void DumpFuzzTest()
         return;
     }
     std::string bundleName = "abc";
+    streamDesc->audioMode_ = GetData<AudioMode>();
     streamDesc->Dump(bundleName);
 }
 
@@ -168,6 +169,7 @@ void DumpCommonAttrsFuzzTest()
         return;
     }
     std::string bundleName = "abc";
+    streamDesc->streamStatus_ = GetData<AudioStreamStatus>();
     streamDesc->DumpCommonAttrs(bundleName);
 }
 
@@ -198,6 +200,10 @@ void DumpDeviceAttrsFuzzTest()
         return;
     }
     std::string bundleName = "abc";
+    std::shared_ptr<AudioDeviceDescriptor> ptr = std::make_shared<AudioDeviceDescriptor>();
+    CHECK_AND_RETURN(ptr != nullptr);
+    streamDesc->oldDeviceDescs_.push_back(ptr);
+    streamDesc->newDeviceDescs_.push_back(ptr);
     streamDesc->DumpDeviceAttrs(bundleName);
 }
 
@@ -244,7 +250,44 @@ void GetNewDevicesInfoFuzzTest()
     if (streamDesc == nullptr) {
         return;
     }
+    std::shared_ptr<AudioDeviceDescriptor> ptr = std::make_shared<AudioDeviceDescriptor>();
+    CHECK_AND_RETURN(ptr != nullptr);
+    streamDesc->newDeviceDescs_.push_back(ptr);
     streamDesc->GetNewDevicesInfo();
+}
+
+void Construction1FuzzTest()
+{
+    AudioStreamInfo streamInfo;
+    AudioRendererInfo rendererInfo;
+    AppInfo appInfo;
+    AudioStreamDescriptor streamDesc(streamInfo, rendererInfo, appInfo);
+}
+
+void Construction2FuzzTest()
+{
+    AudioStreamInfo streamInfo;
+    AudioCapturerInfo capturerInfo;
+    AppInfo appInfo;
+    AudioStreamDescriptor streamDesc(streamInfo, capturerInfo, appInfo);
+}
+
+void CopyToStructFuzzTest()
+{
+    AudioStreamInfo streamInfo;
+    AudioCapturerInfo capturerInfo;
+    AppInfo appInfo;
+    AudioStreamDescriptor streamDesc(streamInfo, capturerInfo, appInfo);
+    AudioStreamDescriptor streamDesc2;
+    streamDesc2.CopyToStruct(streamDesc);
+}
+
+void ResetToNormalRouteFuzzTest()
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    CHECK_AND_RETURN(streamDesc != nullptr);
+    bool updateRoute = GetData<bool>();
+    streamDesc->ResetToNormalRoute(updateRoute);
 }
 
 TestFuncs g_testFuncs[] = {
@@ -262,6 +305,10 @@ TestFuncs g_testFuncs[] = {
     StreamStatusToStringFuzzTest,
     GetDeviceInfoFuzzTest,
     GetNewDevicesInfoFuzzTest,
+    Construction1FuzzTest,
+    Construction2FuzzTest,
+    CopyToStructFuzzTest,
+    ResetToNormalRouteFuzzTest,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)

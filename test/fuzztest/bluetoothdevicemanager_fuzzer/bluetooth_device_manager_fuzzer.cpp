@@ -235,6 +235,141 @@ void RegisterDisconnectScoFuncFuzzTest()
     deviceManager.RegisterDisconnectScoFunc(nullptr);
 }
 
+void HandleDisconnectDeviceFuzzTest()
+{
+    MediaBluetoothDeviceManager deviceManager;
+    BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
+    deviceManager.a2dpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
+    deviceManager.HandleDisconnectDevice(device);
+}
+
+void HandleWearDeviceFuzzTest()
+{
+    MediaBluetoothDeviceManager deviceManager;
+    BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
+    deviceManager.a2dpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
+    deviceManager.HandleWearDevice(device);
+}
+
+void HandleUnwearDeviceFuzzTest()
+{
+    MediaBluetoothDeviceManager deviceManager;
+    BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
+    deviceManager.a2dpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
+    deviceManager.HandleUnwearDevice(device);
+}
+
+void HandleEnableDeviceFuzzTest()
+{
+    MediaBluetoothDeviceManager deviceManager;
+    BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
+    deviceManager.a2dpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
+    deviceManager.HandleEnableDevice(device);
+}
+
+void HandleDisableDeviceFuzzTest()
+{
+    MediaBluetoothDeviceManager deviceManager;
+    BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
+    deviceManager.a2dpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
+    deviceManager.HandleDisableDevice(device);
+}
+
+void HandleWearEnableFuzzTest()
+{
+    MediaBluetoothDeviceManager deviceManager;
+    BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
+    deviceManager.a2dpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
+    deviceManager.HandleWearEnable(device);
+}
+
+void HandleUpdateDeviceCategoryFuzzTest()
+{
+    MediaBluetoothDeviceManager deviceManager;
+    BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
+    deviceManager.a2dpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
+    deviceManager.HandleUpdateDeviceCategory(device);
+}
+
+void HfpHandleDisconnectDeviceFuzzTest()
+{
+    HfpBluetoothDeviceManager deviceManager;
+    BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
+    deviceManager.hfpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
+    deviceManager.HandleDisconnectDevice(device);
+}
+
+void HfpHandleWearDeviceFuzzTest()
+{
+    HfpBluetoothDeviceManager deviceManager;
+    BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
+    deviceManager.hfpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
+    deviceManager.HandleWearDevice(device);
+}
+
+void HfpHandleUnwearDeviceFuzzTest()
+{
+    HfpBluetoothDeviceManager deviceManager;
+    BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
+    deviceManager.hfpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
+    deviceManager.HandleUnwearDevice(device);
+}
+
+void HfpHandleEnableDeviceFuzzTest()
+{
+    HfpBluetoothDeviceManager deviceManager;
+    BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
+    deviceManager.hfpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
+    deviceManager.HandleEnableDevice(device);
+}
+
+void HfpHandleDisableDeviceFuzzTest()
+{
+    HfpBluetoothDeviceManager deviceManager;
+    BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
+    deviceManager.hfpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
+    deviceManager.HandleDisableDevice(device);
+}
+
+void HfpHandleUpdateDeviceCategoryFuzzTest()
+{
+    HfpBluetoothDeviceManager deviceManager;
+    BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
+    deviceManager.hfpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
+    deviceManager.HandleUpdateDeviceCategory(device);
+}
+
+void OnDeviceCategoryUpdatedFuzzTest()
+{
+    HfpBluetoothDeviceManager deviceManager;
+    BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
+    deviceManager.hfpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
+    AudioDeviceDescriptor desc;
+    desc.deviceCategory_ = BT_UNWEAR_HEADPHONE;
+    deviceManager.OnDeviceCategoryUpdated(device, desc);
+}
+
+void OnDeviceEnableUpdatedFuzzTest()
+{
+    HfpBluetoothDeviceManager deviceManager;
+    BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
+    deviceManager.hfpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
+    AudioDeviceDescriptor desc;
+    desc.isEnable_ = g_fuzzUtils.GetData<bool>();
+    deviceManager.OnDeviceEnableUpdated(device, desc);
+}
+
+void TryDisconnectScoSyncFuzzTest()
+{
+    HfpBluetoothDeviceManager deviceManager;
+    BluetoothRemoteDevice device(DEFAULT_BLUETOOTH_MAC_ADDRESS, TRANSPORT);
+    deviceManager.hfpBluetoothDeviceMap_[DEFAULT_BLUETOOTH_MAC_ADDRESS] = device;
+    Bluetooth::HfpBluetoothDeviceManager::DisconnectScoForDevice func;
+    deviceManager.RegisterDisconnectScoFunc(func);
+    std::string reason = "test";
+    deviceManager.TryDisconnectScoSync(device, reason);
+}
+
 vector<TestFuncs> g_testFuncs = {
     RegisterDeviceObserverFuzzTest,
     SetMediaStackFuzzTest,
@@ -253,6 +388,22 @@ vector<TestFuncs> g_testFuncs = {
     GetAllHfpBluetoothDeviceFuzzTest,
     OnScoStateChangedFuzzTest,
     RegisterDisconnectScoFuncFuzzTest,
+    HandleDisconnectDeviceFuzzTest,
+    HandleWearDeviceFuzzTest,
+    HandleUnwearDeviceFuzzTest,
+    HandleEnableDeviceFuzzTest,
+    HandleDisableDeviceFuzzTest,
+    HandleWearEnableFuzzTest,
+    HandleUpdateDeviceCategoryFuzzTest,
+    HfpHandleDisconnectDeviceFuzzTest,
+    HfpHandleWearDeviceFuzzTest,
+    HfpHandleUnwearDeviceFuzzTest,
+    HfpHandleEnableDeviceFuzzTest,
+    HfpHandleDisableDeviceFuzzTest,
+    HfpHandleUpdateDeviceCategoryFuzzTest,
+    OnDeviceCategoryUpdatedFuzzTest,
+    OnDeviceEnableUpdatedFuzzTest,
+    TryDisconnectScoSyncFuzzTest,
 };
 
 } // namespace AudioStandard
