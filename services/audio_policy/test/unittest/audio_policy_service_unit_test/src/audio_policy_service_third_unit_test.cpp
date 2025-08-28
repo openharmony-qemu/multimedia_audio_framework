@@ -1067,6 +1067,28 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, OnUpdateAnahsSupport_001, TestSize.Lev
 }
 
 /**
+ * @tc.name  : Test OnUpdateAnahsSupport.
+ * @tc.number: OnUpdateAnahsSupport_002
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, OnUpdateAnahsSupport_002, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    std::string anahsShowType = "anahsShowType";
+
+    auto coreSvc = AudioCoreService::GetCoreService();
+    auto bakUp = coreSvc->deviceStatusListener_;
+    CHECK_AND_RETURN(bakUp);
+    coreSvc->deviceStatusListener_ = nullptr;
+    coreSvc->OnUpdateAnahsSupport(anahsShowType);
+    coreSvc->deviceStatusListener_ = bakUp;
+    coreSvc->OnUpdateAnahsSupport(anahsShowType);
+    EXPECT_NE(coreSvc->deviceStatusListener_, nullptr);
+}
+
+/**
  * @tc.name  : Test OnDeviceStatusUpdated.
  * @tc.number: OnDeviceStatusUpdated_001
  * @tc.desc  : Test AudioPolicyService interfaces.

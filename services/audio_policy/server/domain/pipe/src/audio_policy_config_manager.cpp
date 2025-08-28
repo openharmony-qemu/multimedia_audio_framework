@@ -20,7 +20,7 @@
 #include "audio_policy_config_parser.h"
 #include "audio_source_strategy_parser.h"
 #include "audio_policy_utils.h"
-#include "audio_policy_service.h"
+#include "audio_core_service.h"
 #include "audio_ec_manager.h"
 
 namespace OHOS {
@@ -166,7 +166,7 @@ void AudioPolicyConfigManager::OnVoipConfigParsed(bool enableFastVoip)
 void AudioPolicyConfigManager::OnUpdateAnahsSupport(std::string anahsShowType)
 {
     AUDIO_INFO_LOG("show type: %{public}s", anahsShowType.c_str());
-    AudioPolicyService::GetAudioPolicyService().OnUpdateAnahsSupport(anahsShowType);
+    AudioCoreService::GetCoreService()->OnUpdateAnahsSupport(anahsShowType);
 }
 
 void AudioPolicyConfigManager::OnUpdateEac3Support(bool isSupported)
