@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- #include "hpae_stream_move_monitor.h"
- #include "media_monitor_manager.h"
+#include "hpae_stream_move_monitor.h"
+#include "media_monitor_manager.h"
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
