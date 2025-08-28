@@ -354,7 +354,7 @@ void AudioSessionRestoreParame::RecordAudioSessionOpt(const OperationType type, 
         }
 
         bool firstFound = false;
-        for (int idx = actions_.size() - 1; idx >= 0; idx--) {
+        for (int32_t idx = static_cast<int32_t>(actions_.size()) - 1; idx >= 0; idx--) {
             CHECK_AND_CONTINUE(actions_[idx] != nullptr);
             if (actions_[idx]->type != OperationType::AUDIO_SESSION_SET_SCENE) {
                 continue;
