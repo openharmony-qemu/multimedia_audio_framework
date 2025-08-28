@@ -50,13 +50,14 @@ public:
 bool AudioConnectedDevice::IsConnectedOutputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     std::shared_lock<std::shared_mutex> lock(mutex_);
-    CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
+    CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "desc is nullptr.");
     DeviceType deviceType = desc->deviceType_;
 
     CHECK_AND_RETURN_RET_LOG(desc->deviceRole_ == DeviceRole::OUTPUT_DEVICE, false,
         "Not output device!");
 
     auto isPresent = [&deviceType] (const std::shared_ptr<AudioDeviceDescriptor> &desc) {
+        CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
         if (deviceType == DEVICE_TYPE_FILE_SINK) {
             return false;
         }
