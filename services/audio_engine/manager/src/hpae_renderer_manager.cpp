@@ -419,7 +419,7 @@ int32_t HpaeRendererManager::DeleteProcessCluster(uint32_t sessionId)
         DisConnectProcessCluster(nodeInfo, sceneType, sessionId);
         if (sceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
             sceneClusterMap_[sceneType]->DisConnectMixerNode();
-            if(outputCluster_ != nullptr){
+            if (outputCluster_ != nullptr) {
                 outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
             }
             // for collaboration
