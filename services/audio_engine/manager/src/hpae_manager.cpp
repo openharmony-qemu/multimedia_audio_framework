@@ -1570,7 +1570,7 @@ int32_t HpaeManager::StartWithSyncId(HpaeStreamClassType streamClassType, uint32
             UpdateStatus(rendererIdStreamInfoMap_[sessionId].statusCallback, OPERATION_STARTED, sessionId);
         } else {
             AUDIO_WARNING_LOG("StartWithSyncId can not find sessionId streamClassType  %{public}d,"
-                "sessionId %{public}u syncId: %{public}d",
+                "sessionId %{public}u, syncId: %{public}d",
                 streamClassType, sessionId, syncId);
         }
     };
