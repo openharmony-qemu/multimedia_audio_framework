@@ -72,7 +72,7 @@ public:
     bool hasBTPermission_ = true;
     bool hasSystemPermission_ = true;
     int32_t apiVersion_ = API_VERSION_MAX;
-    std::string clientName_ = "";
+    bool isSupportedNearlink_ = true;
 
 private:
     sptr<IAudioPolicyClient> audioPolicyClient_ = nullptr;
