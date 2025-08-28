@@ -36,6 +36,15 @@ namespace AudioStandard {
 const int32_t CAPTURER_FLAG = 10;
 static std::shared_ptr<HpaeAdapterManager> adapterManager;
 
+class MockWriteCallback : public IWriteCallback {
+public:
+    MockWriteCallback() = default;
+    virtual ~MockWriteCallback = default;
+    MOCK_METHOD(int32_t, OnWriteData, (size_t length), (override));
+    MOCK_METHOD(int32_t, OnWriteData, (int8_t *inputData, size_t requestDataLen), (override));
+    MOCK_METHOD(int32_t, GetAvailableSize, (size_t &length), (override));
+};
+
 class HpaeRendererStreamUnitTest : public ::testing::Test {
 public:
     void SetUp();
@@ -700,6 +709,39 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_034, TestSize.Level1)
     unit->OnStreamData(info);
     EXPECT_EQ(OFFLOAD_DEFAULT, unit->offloadStatePolicy_);
     EXPECT_EQ(INVALID, unit->state_);
+}
+
+/**
+ * @tc.name  : Test OnStreamDataPrimary.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_035
+ * @tc.desc  : Test OnStreamDataPrimary.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_035, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 1); // callback mode
+ 
+    AudioCallBackStreamInfo info = {
+        .needData = false
+    };
+
+    EXPECT_NE(unit->OnStreamData(info), SUCCESS); // writecallback nullptr
+
+    auto mockWriteCallback = std::make_shared<MockWriteCallback>();
+    unit->writeCallback = mockWriteCallback;
+    EXPECT_EQ(unit->OnStreamData(info), SUCCESS); // needData false, noneed callback
+
+    info.needData = true;
+    EXPECT_CALL(*mockWriteCallback, GetAvailableSize(0))
+        .WillOnce(Return(0));
+        .WillOnce(Return(0));
+    EXPECT_CALL(*mockWriteCallback, OnWriteData(nullptr, 0))
+        .WillOnce(Return(0));
+        .WillOnce(Return(-1));
+    EXPECT_EQ(unit->OnStreamData(info), SUCCESS); // onwritedata success
+
+    EXPECT_NE(unit->OnStreamData(info), SUCCESS); // onwritedata error
 }
 }
 }
