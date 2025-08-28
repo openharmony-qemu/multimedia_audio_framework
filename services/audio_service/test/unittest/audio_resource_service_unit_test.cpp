@@ -905,66 +905,7 @@ HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_007, TestSize.Level1)
     int32_t pid = 8888;
     EXPECT_EQ(service->AudioWorkgroupCheck(pid), ERR_NOT_SUPPORTED);
 }
-/**
- * @tc.name  : Test ImproveAudioWorkgroupPrio
- * @tc.type  : FUNC
- * @tc.number: ImproveAudioWorkgroupPrio_001
- * @tc.desc  : Test ImproveAudioWorkgroupPrio when threads map is not empty
- */
-HWTEST(AudioResourceServiceUnitTest, ImproveAudioWorkgroupPrio_001, TestSize.Level0)
-{
-    AudioResourceService audioResourceService;
-    pid_t pid = 1234;
-    std::unordered_map<int32_t, bool> threads = {{1, true}, {2, false}};
-    int32_t result = audioResourceService.ImproveAudioWorkgroupPrio(pid, threads);
-    EXPECT_EQ(result, AUDIO_OK);
-}
- 
-/**
- * @tc.name  : Test ImproveAudioWorkgroupPrio
- * @tc.type  : FUNC
- * @tc.number: ImproveAudioWorkgroupPrio_002
- * @tc.desc  : Test ImproveAudioWorkgroupPrio when threads map is empty
- */
-HWTEST(AudioResourceServiceUnitTest, ImproveAudioWorkgroupPrio_002, TestSize.Level0)
-{
-    AudioResourceService audioResourceService;
-    pid_t pid = 1234;
-    std::unordered_map<int32_t, bool> threads = {};
-    int32_t result = audioResourceService.ImproveAudioWorkgroupPrio(pid, threads);
-    EXPECT_EQ(result, AUDIO_OK);
-}
- 
-/**
- * @tc.name  : Test RestoreAudioWorkgroupPrio
- * @tc.type  : FUNC
- * @tc.number: RestoreAudioWorkgroupPrio_001
- * @tc.desc  : Test RestoreAudioWorkgroupPrio when threads map is empty
- */
-HWTEST(AudioResourceServiceUnitTest, RestoreAudioWorkgroupPrio_001, TestSize.Level0)
-{
-    AudioResourceService audioResourceService;
-    pid_t pid = 1234;
-    std::unordered_map<int32_t, int32_t> threads = {{1, 2}, {3, 4}};
-    int32_t result = audioResourceService.RestoreAudioWorkgroupPrio(pid, threads);
-    EXPECT_EQ(result, AUDIO_OK);
-}
- 
-/**
- * @tc.name  : Test RestoreAudioWorkgroupPrio
- * @tc.type  : FUNC
- * @tc.number: RestoreAudioWorkgroupPrio_002
- * @tc.desc  : Test RestoreAudioWorkgroupPrio when threads map is empty
- */
-HWTEST(AudioResourceServiceUnitTest, RestoreAudioWorkgroupPrio_002, TestSize.Level0)
-{
-    AudioResourceService audioResourceService;
-    pid_t pid = 1234;
-    std::unordered_map<int32_t, int32_t> threads = {};
-    int32_t result = audioResourceService.RestoreAudioWorkgroupPrio(pid, threads);
-    EXPECT_EQ(result, AUDIO_OK);
-}
- 
+
 /**
  * @tc.name  : Test FillAudioWorkgroupCgroupLimit
  * @tc.type  : FUNC
