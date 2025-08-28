@@ -1174,6 +1174,7 @@ HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_046, TestSize.Leve
     ASSERT_TRUE(audioBackgroundManagerTest_ != nullptr);
 
     int32_t pid = 0;
+    int32_t uid = 0;
     AppState appState;
 
     audioBackgroundManagerTest_->appStatesMap_.clear();

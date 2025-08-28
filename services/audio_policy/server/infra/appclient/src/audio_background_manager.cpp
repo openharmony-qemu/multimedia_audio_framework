@@ -272,8 +272,8 @@ void AudioBackgroundManager::InsertIntoAppStatesMapWithoutUid(int32_t pid, AppSt
     appState.isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
     appStatesMap_.insert(std::make_pair(pid, appState));
     AUDIO_INFO_LOG("appStatesMap_ add pid: %{public}d with hasSession: %{public}d, isBack: %{public}d, "
-        "hasBackgroundTask: %{public}d, isFreeze: %{public}d, isSystem: %{public}d", pid, appState.hasSession, appState.isBack,
-        appState.hasBackTask, appState.isFreeze, appState.isSystem);
+        "hasBackgroundTask: %{public}d, isFreeze: %{public}d, isSystem: %{public}d", pid, appState.hasSession,
+        appState.isBack, appState.hasBackTask, appState.isFreeze, appState.isSystem);
 }
 
 void AudioBackgroundManager::InsertIntoAppStatesMap(int32_t pid, int32_t uid, AppState appState)
@@ -281,8 +281,8 @@ void AudioBackgroundManager::InsertIntoAppStatesMap(int32_t pid, int32_t uid, Ap
     appState.isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
     appStatesMap_.insert(std::make_pair(pid, appState));
     AUDIO_INFO_LOG("appStatesMap_ add pid: %{public}d with hasSession: %{public}d, isBack: %{public}d, "
-        "hasBackgroundTask: %{public}d, isFreeze: %{public}d, isSystem: %{public}d", pid, appState.hasSession, appState.isBack,
-        appState.hasBackTask, appState.isFreeze, appState.isSystem);
+        "hasBackgroundTask: %{public}d, isFreeze: %{public}d, isSystem: %{public}d", pid, appState.hasSession,
+        appState.isBack, appState.hasBackTask, appState.isFreeze, appState.isSystem);
 }
 
 void AudioBackgroundManager::RecoryAppState()
