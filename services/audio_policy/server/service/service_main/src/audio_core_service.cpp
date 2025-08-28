@@ -181,7 +181,7 @@ int32_t AudioCoreService::CreateRendererClient(
             GetRealUid(streamDesc), "CreateRendererClient");
     CHECK_AND_RETURN_RET_LOG(streamDesc->newDeviceDescs_.size() > 0 && streamDesc->newDeviceDescs_.front() != nullptr,
         ERR_NULL_POINTER, "Invalid deviceDesc");
-    AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d",
+    HILOG_COMM_INFO("[DeviceFetchInfo] device %{public}s for stream %{public}d",
         streamDesc->GetNewDevicesTypeString().c_str(), sessionId);
 
     if (isModemStream) {

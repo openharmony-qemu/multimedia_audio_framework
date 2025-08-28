@@ -106,7 +106,7 @@ RendererInClientInner::~RendererInClientInner()
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
 {
     Trace trace(traceTag_ + " OnOperationHandled:" + std::to_string(static_cast<int>(operation)));
-    AUDIO_INFO_LOG("sessionId %{public}d recv operation:%{public}d result:%{public}" PRId64".", sessionId_,
+    HILOG_COMM_INFO("sessionId %{public}d recv operation:%{public}d result:%{public}" PRId64".", sessionId_,
         static_cast<int>(operation), result);
     if (operation == SET_OFFLOAD_ENABLE) {
         AUDIO_INFO_LOG("SET_OFFLOAD_ENABLE result:%{public}" PRId64".", result);
@@ -1025,7 +1025,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
 
     waitLock.unlock();
 
-    AUDIO_INFO_LOG("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    HILOG_COMM_INFO("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     UpdateTracker("RUNNING");
 
     FlushBeforeStart();
@@ -1102,7 +1102,7 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     StateCmdTypeToParams(param, state_, cmdType);
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, param);
 
-    AUDIO_INFO_LOG("Pause SUCCESS, sessionId %{public}d, uid %{public}d, mode %{public}s", sessionId_,
+    HILOG_COMM_INFO("Pause SUCCESS, sessionId %{public}d, uid %{public}d, mode %{public}s", sessionId_,
         clientUid_, renderMode_ == RENDER_MODE_NORMAL ? "RENDER_MODE_NORMAL" : "RENDER_MODE_CALLBACK");
     UpdateTracker("PAUSED");
     return true;
@@ -1159,7 +1159,7 @@ bool RendererInClientInner::StopAudioStream()
     // in plan: call HiSysEventWrite
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, state_);
 
-    AUDIO_INFO_LOG("Stop SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    HILOG_COMM_INFO("Stop SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     UpdateTracker("STOPPED");
     return true;
 }
@@ -1220,7 +1220,7 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
     lock.unlock();
 
     UpdateTracker("RELEASED");
-    AUDIO_INFO_LOG("Release end, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    HILOG_COMM_INFO("Release end, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
 
     std::lock_guard lockSpeed(speedMutex_);
     audioSpeed_.reset();
