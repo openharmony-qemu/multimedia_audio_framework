@@ -53,7 +53,7 @@ void HpaeInnerCapturerManager::AddSingleNodeToSinkInner(const std::shared_ptr<Hp
     HpaeNodeInfo nodeInfo = node->GetNodeInfo();
     uint32_t sessionId = nodeInfo.sessionId;
     Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::AddSingleNodeToSinkInner");
-    AUDIO_INFO_LOG("[FinishMove] session :%{public}u to sink:%{public}s", sessionId, sinkInfo_.deviceClass.c_str());
+    HILOG_COMM_INFO("[FinishMove] session :%{public}u to sink:%{public}s", sessionId, sinkInfo_.deviceClass.c_str());
     sinkInputNodeMap_[sessionId] = node;
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
@@ -178,7 +178,7 @@ int32_t HpaeInnerCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
         if (streamInfo.streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
             Trace trace("HpaeInnerCapturerManager::CreateRendererStream id[" +
                 std::to_string(streamInfo.sessionId) + "]");
-            AUDIO_INFO_LOG("CreateCapRendererStream sessionID: %{public}d", streamInfo.sessionId);
+            HILOG_COMM_INFO("CreateCapRendererStream sessionID: %{public}d", streamInfo.sessionId);
             CreateRendererInputSessionInner(streamInfo);
             SetSessionStateForRenderer(streamInfo.sessionId, HPAE_SESSION_PREPARED);
             sinkInputNodeMap_[streamInfo.sessionId]->SetState(HPAE_SESSION_PREPARED);
@@ -186,7 +186,7 @@ int32_t HpaeInnerCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
         } else if (streamInfo.streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD) {
             Trace trace("HpaeInnerCapturerManager::CreateCapturerStream id[" +
                 std::to_string(streamInfo.sessionId) + "]");
-            AUDIO_INFO_LOG("CreateCapCapturerStream sessionID: %{public}d", streamInfo.sessionId);
+            HILOG_COMM_INFO("CreateCapCapturerStream sessionID: %{public}d", streamInfo.sessionId);
             CreateCapturerInputSessionInner(streamInfo);
             SetSessionStateForCapturer(streamInfo.sessionId, HPAE_SESSION_PREPARED);
             capturerSessionNodeMap_[streamInfo.sessionId].isMoveAble = streamInfo.isMoveAble;
@@ -728,7 +728,7 @@ void HpaeInnerCapturerManager::DeleteRendererInputNodeSession(const std::shared_
         sceneTypeToProcessClusterCount_--;
         uint32_t sessionId = sinkInputNode->GetSessionId();
         if (sceneTypeToProcessClusterCount_ == 0) {
-            AUDIO_INFO_LOG("need to erase rendererSceneCluster, last stream: %{public}u", sessionId);
+            HILOG_COMM_INFO("need to erase rendererSceneCluster, last stream: %{public}u", sessionId);
         } else {
             AUDIO_INFO_LOG("%{public}u is not last stream, no need erase rendererSceneCluster", sessionId);
         }
