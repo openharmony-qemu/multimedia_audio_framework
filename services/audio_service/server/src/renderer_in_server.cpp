@@ -236,7 +236,7 @@ void RendererInServer::CheckAndWriterRenderStreamStandbySysEvent(bool standbyEna
 void RendererInServer::OnStatusUpdate(IOperation operation)
 {
     if (operation != OPERATION_UNDERFLOW) {
-        AUDIO_INFO_LOG("%{public}u recv operation:%{public}d standByEnable_:%{public}s", streamIndex_, operation,
+        HILOG_COMM_INFO("%{public}u recv operation:%{public}d standByEnable_:%{public}s", streamIndex_, operation,
             (standByEnable_ ? "true" : "false"));
     }
     Trace trace(traceTag_ + " OnStatusUpdate:" + std::to_string(operation));
