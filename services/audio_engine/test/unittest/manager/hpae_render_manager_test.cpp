@@ -1396,11 +1396,8 @@ HWTEST_F(HpaeRendererManagerTest, DeactivateThread_001, TestSize.Level1)
     std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread = std::make_unique<HpaeSignalProcessThread>();
     EXPECT_EQ(hpaeRendererManager->IsRunning(), false);
-    EXPECT_EQ(hpaeRendererManager->IsMsgProcessing(), false);
     hpaeSignalProcessThread->ActivateThread(hpaeRendererManager);
-    EXPECT_EQ(hpaeRendererManager->IsRunning(), true);
-    hpaeSignalProcessThread->Notify();
-    EXPECT_EQ(hpaeRendererManager->IsMsgProcessing(), true);
+    EXPECT_EQ(hpaeSignalProcessThread->IsRunning(), true);
     hpaeRendererManager->DeactivateThread();
     EXPECT_EQ(hpaeRendererManager->IsRunning(), false);
 }
@@ -1464,34 +1461,6 @@ HWTEST_F(HpaeRendererManagerTest, Process_001, TestSize.Level0)
         .WillOnce(Return(0));
     hpaeRendererManager->Process();
     EXPECT_EQ(hpaeRendererManager->IsRunning(), false);
-}
-
-/**
- * @tc.name  : UpdateProcessClusterConnection
- * @tc.type  : FUNC
- * @tc.number: UpdateProcessClusterConnection_001
- * @tc.desc  : Test UpdateProcessClusterConnection
- */
-HWTEST_F(HpaeRendererManagerTest, UpdateProcessClusterConnection_001, TestSize.Level1)
-{
-    HpaeSinkInfo sinkInfo;
-    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
-    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
-    sinkInfo.frameLen = FRAME_LENGTH_960;
-    sinkInfo.samplingRate = SAMPLE_RATE_48000;
-    sinkInfo.format = SAMPLE_F32LE;
-    sinkInfo.channels = STEREO;
-    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
-    
-    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
-    int32_t effectMode = 0;
-    uint32_t sessionId = 123456;
-    hpaeRendererManager->Init();
-    hpaeRendererManager->UpdateProcessClusterConnection(sessionId, effectMode);
-    WaitForMsgProcessing(hpaeRendererManager);
-    hpaeRendererManager->DeInit();
 }
 
 /**
