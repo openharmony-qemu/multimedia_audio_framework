@@ -108,6 +108,8 @@ HWTEST_F(HpaeRemoteOutputClusterTest, SetTimeoutStopThd_01, TestSize.Level0)
     hpaeRemoteOutputCluster->SetTimeoutStopThd(100); // 100: time
     hpaeRemoteOutputCluster->DoProcess();
     hpaeRemoteOutputCluster->GetConverterNodeCount();
+    hpaeRemoteOutputCluster->GetFrameData();
+    hpaeRemoteOutputCluster->GetPreOutNum();
     hpaeRemoteOutputCluster->DeInit();
     hpaeRemoteOutputCluster->Flush();
     hpaeRemoteOutputCluster->Pause();
