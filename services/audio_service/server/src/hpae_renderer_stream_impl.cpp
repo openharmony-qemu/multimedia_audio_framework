@@ -57,6 +57,9 @@ HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig,
         spanSizeInFrame_ = processConfig.streamInfo.samplingRate == SAMPLE_RATE_11025 ?
             FRAME_LEN_40MS * static_cast<uint32_t>(processConfig.streamInfo.samplingRate) / AUDIO_MS_PER_S :
             FRAME_LEN_20MS * static_cast<uint32_t>(processConfig.streamInfo.samplingRate) / AUDIO_MS_PER_S;
+    } else if (processConfig.streamInfo.customSampleRate == SAMPLE_RATE_11025) {
+        spanSizeInFrame_ = 
+            FRAME_LEN_40MS * static_cast<uint32_t>(processConfig.streamInfo.customSampleRate) / AUDIO_MS_PER_S;
     } else {
         spanSizeInFrame_ = processConfig.streamInfo.customSampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES == 0 ?
             FRAME_LEN_20MS * static_cast<uint32_t>(processConfig.streamInfo.customSampleRate) / AUDIO_MS_PER_S :

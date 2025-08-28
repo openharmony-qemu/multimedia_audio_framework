@@ -34,20 +34,17 @@ static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 HpaeProcessCluster::HpaeProcessCluster(HpaeNodeInfo nodeInfo, HpaeSinkInfo &sinkInfo)
     : HpaeNode(nodeInfo), sinkInfo_(sinkInfo)
 {
-    if (nodeInfo.customSampleRate == 0) {
-        nodeInfo.frameLen = (nodeInfo.frameLen * sinkInfo.samplingRate) / nodeInfo.samplingRate;
-        // for 11025, frameSize has expand twice, shrink to 20ms here for correctly setting up
-        // frameLen in formatConverterNode in outputCluster, need to be reconstructed
-        if (nodeInfo.samplingRate == SAMPLE_RATE_11025) {
+    nodeInfo.frameLen = (nodeInfo.frameLen * sinkInfo.samplingRate) /
+        (nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate : nodeInfo.customSampleRate);
+    // for 11025, frameSize has expand twice, shrink to 20ms here for correctly setting up
+    // frameLen in formatConverterNode in outputCluster, need to be reconstructed
+    if ((nodeInfo.customSampleRate == 0 && nodeInfo.samplingRate == SAMPLE_RATE_11025) ||
+        nodeInfo.customSampleRate == SAMPLE_RATE_11025) {
             nodeInfo.frameLen /= EXPAND_SIZE_2;
-        }
-    } else {
-        nodeInfo.frameLen = (nodeInfo.frameLen * sinkInfo.samplingRate) / nodeInfo.customSampleRate;
+    } else if (nodeInfo.customSampleRate != 0 && nodeInfo.customSampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES != 0) {
         // customSampleRate is multiples of 50, eg. 8050, 8100, 8150... 20ms
         // else eg. 8010, 8020, 8030, 8040... 100ms shrink to 20ms
-        if (nodeInfo.customSampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES != 0) {
             nodeInfo.frameLen /= EXPAND_SIZE_5;
-        }
     }
     nodeInfo.samplingRate = sinkInfo.samplingRate;
     // nodeInfo is the first streamInfo, but mixerNode need formatConverterOutput's nodeInfo.

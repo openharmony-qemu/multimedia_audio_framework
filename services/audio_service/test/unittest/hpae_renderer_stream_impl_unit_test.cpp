@@ -143,7 +143,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_002, TestSi
  * @tc.name  : Test HpaeRendererStreamImpl Construct
  * @tc.type  : FUNC
  * @tc.number: HpaeRendererStreamImplConstruct_003
- * @tc.desc  : Test branch when customSampleRate = 16010
+ * @tc.desc  : Test branch when customSampleRate = 16050
  */
 HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_003, TestSize.Level0)
 {
@@ -181,6 +181,31 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_004, TestSi
     EXPECT_EQ(rendererStreamImpl.byteSizePerFrame_, 0);
     EXPECT_EQ(rendererStreamImpl.minBufferSize_, 0);
     EXPECT_EQ(rendererStreamImpl.expectedPlaybackDurationMs_, 0);
+    EXPECT_TRUE(rendererStreamImpl.isMoveAble_);
+    EXPECT_FALSE(rendererStreamImpl.isCallbackMode_);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererStreamImpl Construct
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRendererStreamImplConstruct_005
+ * @tc.desc  : Test branch when customSampleRate = 11025
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_005, TestSize.Level0)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.streamInfo.customSampleRate = SAMPLE_RATE_11025;
+    processConfig.rendererInfo.expectedPlaybackDurationBytes = 1024;
+
+    HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
+    EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_40MS *
+        static_cast<uint32_t>(processConfig.streamInfo.samplingRate) / AUDIO_MS_PER_S);
+    EXPECT_EQ(rendererStreamImpl.byteSizePerFrame_, processConfig.streamInfo.channels *
+        static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
+    EXPECT_EQ(rendererStreamImpl.minBufferSize_, MIN_BUFFER_SIZE * rendererStreamImpl.byteSizePerFrame_ *
+        rendererStreamImpl.spanSizeInFrame_);
+    EXPECT_EQ(rendererStreamImpl.expectedPlaybackDurationMs_, processConfig.rendererInfo.expectedPlaybackDurationBytes *
+        AUDIO_MS_PER_S / rendererStreamImpl.byteSizePerFrame_ / processConfig.streamInfo.samplingRate);
     EXPECT_TRUE(rendererStreamImpl.isMoveAble_);
     EXPECT_FALSE(rendererStreamImpl.isCallbackMode_);
 }

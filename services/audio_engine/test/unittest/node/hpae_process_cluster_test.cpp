@@ -207,6 +207,43 @@ HWTEST_F(HpaeProcessClusterTest, constructHpaeProcessClusterNode_003, TestSize.L
     EXPECT_EQ(hpaeProcessCluster->GetConverterNodeCount(), 1);
 }
 
+/**
+ * @tc.name  : Test HpaeProcessCluster construct and HpaeSinkInputNode construct
+ * @tc.number: constructHpaeProcessClusterNode_004
+ * @tc.desc  : Test HpaeProcessCluster the branch when customSampleRate = 11025
+ */
+HWTEST_F(HpaeProcessClusterTest, constructHpaeProcessClusterNode_004, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.customSampleRate = SAMPLE_RATE_11025;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+
+    HpaeSinkInfo dummySinkInfo;
+
+    std::shared_ptr<HpaeProcessCluster> hpaeProcessCluster =
+        std::make_shared<HpaeProcessCluster>(nodeInfo, dummySinkInfo);
+    EXPECT_EQ(hpaeProcessCluster->GetSampleRate(), nodeInfo.samplingRate);
+    EXPECT_EQ(hpaeProcessCluster->GetFrameLen(), nodeInfo.frameLen);
+    EXPECT_EQ(hpaeProcessCluster->GetChannelCount(), nodeInfo.channels);
+    EXPECT_EQ(hpaeProcessCluster->GetBitWidth(), nodeInfo.format);
+    HpaeNodeInfo &retNi = hpaeProcessCluster->GetNodeInfo();
+    EXPECT_EQ(retNi.samplingRate, nodeInfo.samplingRate);
+    EXPECT_EQ(retNi.frameLen, nodeInfo.frameLen);
+    EXPECT_EQ(retNi.channels, nodeInfo.channels);
+    EXPECT_EQ(retNi.format, nodeInfo.format);
+    EXPECT_EQ(retNi.customSampleRate, nodeInfo.customSampleRate);
+
+    std::shared_ptr<HpaeSinkInputNode> hpaeSinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeProcessCluster->Connect(hpaeSinkInputNode);
+    EXPECT_EQ(hpaeSinkInputNode.use_count(), static_cast<long>(DEFAULT_VALUE_TWO));
+    EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), 1);
+    EXPECT_EQ(hpaeProcessCluster->GetConverterNodeCount(), 1);
+}
+
 static int32_t g_testValue1 = 0;
 static int32_t g_testValue2 = 0;
 static int32_t TestRendererRenderFrame(const char *data, uint64_t len)

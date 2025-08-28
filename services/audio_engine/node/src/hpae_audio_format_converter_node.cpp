@@ -269,6 +269,7 @@ bool HpaeAudioFormatConverterNode::CheckUpdateInInfo(HpaePcmBuffer *input)
     // do not influence isInfoUpdated flag, which is used for update tmp data length
     // for 8010, frameLen is 801, 0, 0, 0, 0, 801, 0...
     if ((preNodeInfo_.customSampleRate == 0 && preNodeInfo_.samplingRate == SAMPLE_RATE_11025) ||
+        preNodeInfo_.customSampleRate == SAMPLE_RATE_11025 ||
         (preNodeInfo_.customSampleRate != 0 && preNodeInfo_.customSampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES != 0)) {
         preNodeInfo_.frameLen = input->GetFrameLen();
     }
@@ -310,6 +311,7 @@ void HpaeAudioFormatConverterNode::CheckAndUpdateInfo(HpaePcmBuffer *input)
     outPcmBufferInfo.channelLayout = outChannelInfo.channelLayout;
 
     if ((preNodeInfo_.customSampleRate == 0 && preNodeInfo_.samplingRate == SAMPLE_RATE_11025) ||
+        preNodeInfo_.customSampleRate == SAMPLE_RATE_11025 ||
         (preNodeInfo_.customSampleRate != 0 && preNodeInfo_.customSampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES != 0)) {
         // for 11025, fix out frameLen based on output sample rate and fixed frameLen 20ms
         outPcmBufferInfo.frameLen = resampler_->GetOutRate() * FRAME_LEN_20MS / MS_IN_SECOND;

@@ -121,6 +121,34 @@ HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode_002, TestSize.Level0)
     EXPECT_EQ(retNi.customSampleRate, nodeInfo.customSampleRate);
 }
 
+/**
+ * @tc.name  : Test HpaeSinkInputNode construct
+ * @tc.number: constructHpaeSinkInputNode_003
+ * @tc.desc  : Test HpaeSinkInputNode the branch when customSampleRate = 11025
+ */
+HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode_002, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = NORMAL_ID;
+    nodeInfo.frameLen = NORMAL_FRAME_LEN;
+    nodeInfo.customSampleRate = SAMPLE_RATE_11025;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    std::unique_ptr<HpaeSinkInputNode> hpaeSinkInputNode =  std::make_unique<HpaeSinkInputNode>(nodeInfo);
+    EXPECT_EQ(hpaeSinkInputNode->GetSampleRate(), nodeInfo.samplingRate);
+    EXPECT_EQ(hpaeSinkInputNode->GetFrameLen(), nodeInfo.frameLen);
+    EXPECT_EQ(hpaeSinkInputNode->GetChannelCount(), nodeInfo.channels);
+    EXPECT_EQ(hpaeSinkInputNode->GetBitWidth(), nodeInfo.format);
+    EXPECT_TRUE(hpaeSinkInputNode->pullDataFlag_);
+    HpaeNodeInfo &retNi = hpaeSinkInputNode->GetNodeInfo();
+    EXPECT_EQ(retNi.samplingRate, nodeInfo.samplingRate);
+    EXPECT_EQ(retNi.frameLen, nodeInfo.frameLen);
+    EXPECT_EQ(retNi.channels, nodeInfo.channels);
+    EXPECT_EQ(retNi.format, nodeInfo.format);
+    EXPECT_EQ(retNi.customSampleRate, nodeInfo.customSampleRate);
+}
+
+
 HWTEST_F(HpaeSinkInputNodeTest, testSinkInputOutputCase, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;

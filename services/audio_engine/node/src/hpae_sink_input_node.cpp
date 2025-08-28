@@ -59,7 +59,8 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
     } else {
         historyBuffer_ = nullptr;
     }
-    if (nodeInfo.customSampleRate == 0 && nodeInfo.samplingRate == SAMPLE_RATE_11025) {
+    if ((nodeInfo.customSampleRate == 0 && nodeInfo.samplingRate == SAMPLE_RATE_11025) ||
+        nodeInfo.customSampleRate == SAMPLE_RATE_11025) {
         pullDataFlag_ = true;
     } else if (nodeInfo.customSampleRate != 0 && nodeInfo.customSampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES != 0) {
         pullDataCount_ = 0;
@@ -127,7 +128,8 @@ bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
         AUDIO_WARNING_LOG("The session %{public}u offloadEnable is false, not request data", GetSessionId());
     } else {
         ret = GetDataFromSharedBuffer();
-        if (GetNodeInfo().customSampleRate == 0 && GetSampleRate() == SAMPLE_RATE_11025) {
+        if ((GetNodeInfo().customSampleRate == 0 && GetSampleRate() == SAMPLE_RATE_11025) ||
+            GetNodeInfo().customSampleRate == SAMPLE_RATE_11025) {
              // for 11025, skip pull data next time
             pullDataFlag_ = false;
         } else if (GetNodeInfo().customSampleRate != 0 &&
@@ -158,7 +160,9 @@ bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
 void HpaeSinkInputNode::DoProcess()
 {
     Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSinkInputNode::DoProcess " + GetTraceInfo());
-    if (GetNodeInfo().customSampleRate == 0 && GetSampleRate() == SAMPLE_RATE_11025 && !pullDataFlag_) {
+    if (((GetNodeInfo().customSampleRate == 0 && GetSampleRate() == SAMPLE_RATE_11025) ||
+        GetNodeInfo().customSampleRate == SAMPLE_RATE_11025)
+        && !pullDataFlag_) {
         // for 11025 input sample rate, pull 40ms data at a time, so pull once each two DoProcess()
         pullDataFlag_ = true;
         outputStream_.WriteDataToOutput(&emptyAudioBuffer_);
