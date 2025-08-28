@@ -519,7 +519,7 @@ bool AudioService::NeedRemoveBackgroundCaptureMap(uint32_t sessionId, CapturerSt
         RemoveSwitchStreamMap(sessionId);
     }
     if (IsStreamInterruptPause(sessionId)) {
-        AUDIO_WARNING_LOG ("Pause Intertrupt Event need not reset");
+        AUDIO_WARNING_LOG ("Pause Intertrupt!sessionId:%{public}u state:%{public}d", sessionId, capturerState);
         if (capturerState == CAPTURER_PAUSE) {
             RemovePauseInterruptEventMap(sessionId);
         }

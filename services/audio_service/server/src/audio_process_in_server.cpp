@@ -210,8 +210,7 @@ bool AudioProcessInServer::CheckBGCapturer()
         return true;
     }
 
-    if (AudioService::GetInstance()->IsStreamInterruptResume(sessionId_) &&
-        AudioService::GetInstance()->IsBackgroundCaptureAllowed(sessionId_)) {
+    if (AudioService::GetInstance()->IsStreamInterruptResume(sessionId_)) {
         AUDIO_WARNING_LOG("Stream:%{public}u Result:success Reason:resume", sessionId_);
         return true;
     }
