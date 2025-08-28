@@ -59,12 +59,6 @@ AudioSessionService::~AudioSessionService()
 {
 }
 
-std::shared_ptr<AudioSessionService> AudioSessionService::GetAudioSessionService()
-{
-    static std::shared_ptr<AudioSessionService> audioSessionService = std::make_shared<AudioSessionService>();
-    return audioSessionService;
-}
-
 bool AudioSessionService::IsSameTypeForAudioSession(const AudioStreamType incomingType,
     const AudioStreamType existedType)
 {

@@ -83,11 +83,7 @@ void AudioInterruptService::AudioInterruptZoneDump(std::string &dumpString)
 void AudioInterruptService::AudioSessionInfoDump(std::string &dumpString)
 {
     AppendFormat(dumpString, "    - The AudioSession as follow:\n");
-    if (sessionService_ == nullptr) {
-        AppendFormat(dumpString, "    - The AudioSessionService is null.\n");
-        return;
-    }
-    sessionService_->AudioSessionInfoDump(dumpString);
+    sessionService_.AudioSessionInfoDump(dumpString);
 }
 
 // AudioInterruptDeathRecipient impl begin

@@ -339,7 +339,7 @@ private:
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
     std::shared_ptr<AudioPolicyServerHandler> handler_;
-    std::shared_ptr<AudioSessionService> sessionService_;
+    AudioSessionService &sessionService_;
     friend class AudioInterruptZoneManager;
     AudioInterruptZoneManager zoneManager_;
 

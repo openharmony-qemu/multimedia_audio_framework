@@ -1178,8 +1178,7 @@ void AudioPolicyServerHandler::HandleAudioSessionDeviceChangeEvent(const AppExec
         if ((clientCallbacksMap.count(it->first) > 0) &&
             (clientCallbacksMap[it->first].count(CALLBACK_AUDIO_SESSION_DEVICE) > 0) &&
             (clientCallbacksMap[it->first][CALLBACK_AUDIO_SESSION_DEVICE])) {
-            std::shared_ptr<AudioSessionService> audioSessionService = AudioSessionService::GetAudioSessionService();
-            audioSession = audioSessionService->GetAudioSessionByPid(it->first);
+            audioSession = OHOS::Singleton<AudioSessionService>::GetInstance().GetAudioSessionByPid(it->first);
             if ((audioSession == nullptr) || (!audioSession->IsActivated())) {
                 continue;
             }

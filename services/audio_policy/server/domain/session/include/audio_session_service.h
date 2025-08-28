@@ -18,6 +18,7 @@
 
 #include <mutex>
 #include <vector>
+#include "singleton.h"
 #include "audio_session.h"
 #include "audio_session_state_monitor.h"
 #include "audio_device_info.h"
@@ -32,12 +33,9 @@ public:
 };
 
 class AudioSessionService : public AudioSessionStateMonitor {
+    DECLARE_SINGLETON(AudioSessionService)
 public:
-    AudioSessionService();
-    ~AudioSessionService() override;
-
     // Audio session manager interfaces
-    static std::shared_ptr<AudioSessionService> GetAudioSessionService(void);
     int32_t ActivateAudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy);
     int32_t DeactivateAudioSession(const int32_t callerPid);
     bool IsAudioSessionActivated(const int32_t callerPid);
