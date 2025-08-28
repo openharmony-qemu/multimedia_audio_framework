@@ -512,14 +512,14 @@ bool AudioService::NeedRemoveBackgroundCaptureMap(uint32_t sessionId, CapturerSt
 {
     SwitchState switchState;
     if (IsInSwitchStreamMap(sessionId, switchState)) {
+        AUDIO_INFO_LOG("sessionId:%{public}u switchState:%{public}d", sessionId, switchState);
         if (switchState == SWITCH_STATE_WAITING) {
-            AUDIO_WARNING_LOG("SwitchStream should not reset");
             return false;
         }
         RemoveSwitchStreamMap(sessionId);
     }
     if (IsStreamInterruptPause(sessionId)) {
-        AUDIO_WARNING_LOG ("Pause Intertrupt!sessionId:%{public}u state:%{public}d", sessionId, capturerState);
+        AUDIO_WARNING_LOG ("Pause Interrupt!sessionId:%{public}u state:%{public}d", sessionId, capturerState);
         if (capturerState == CAPTURER_PAUSE) {
             RemovePauseInterruptEventMap(sessionId);
         }
