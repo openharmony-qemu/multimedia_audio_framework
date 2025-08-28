@@ -114,6 +114,8 @@ private:
         std::shared_ptr<AdapterPipeInfo> adapterPipeInfo, std::shared_ptr<PipeStreamPropInfo> &info,
         const AudioChannel &tempChannel);
     std::shared_ptr<AdapterPipeInfo> GetNormalRecordAdapterInfo(std::shared_ptr<AudioStreamDescriptor> desc);
+    std::shared_ptr<PipeStreamPropInfo> GetSuitableStreamPropInfo(
+        std::list<std::shared_ptr<PipeStreamPropInfo>> &dynamicStreamPropInfos, uint32_t sampleRate);
     std::shared_ptr<PipeStreamPropInfo> GetDynamicStreamPropInfoFromPipe(std::shared_ptr<AdapterPipeInfo> &info,
         AudioSampleFormat format, uint32_t sampleRate, AudioChannel channels);
     AudioSampleFormat ParseFormat(std::string format);
