@@ -1418,5 +1418,32 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_064, TestSize.Level1)
     ret = audioVolumeManager.SetAdjustVolumeForZone(zoneId);
     EXPECT_NE(ret, SUCCESS);
 }
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_067
+* @tc.desc  : Test SetNearlinkDeviceVolume interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_067, TestSize.Level1)
+{
+    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
+    ASSERT_TRUE(audioVolumeManager != nullptr);
+
+    std::string macAddress = "test";
+    AudioStreamType streamType = STREAM_MUSIC;
+    int32_t volumeLevel = 8;
+    bool internalCall = true;
+    SleVolumeConfigInfo configInfo;
+    std::pair<SleVolumeConfigInfo, SleVolumeConfigInfo> pairConfigInfo = std::make_pair(configInfo, configInfo);
+    SleAudioDeviceManager::GetInstance().deviceVolumeConfigInfo_["test"] = pairConfigInfo;
+    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NEARLINK, DeviceRole::OUTPUT_DEVICE);
+    audioVolumeManager->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
+    auto ret = audioVolumeManager->SetNearlinkDeviceVolume(macAddress, streamType, volumeLevel, internalCall);
+    EXPECT_EQ(ret, ERROR);
+    AudioDeviceDescriptor curDesc2(DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    audioVolumeManager->audioActiveDevice_.SetCurrentOutputDevice(curDesc2);
+    ret = audioVolumeManager->SetNearlinkDeviceVolume(macAddress, streamType, volumeLevel, internalCall);
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS
