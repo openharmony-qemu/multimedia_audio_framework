@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- #ifndef HPAE_STREAM_MOVE_MONITOR_H
- #define HPAE_STREAM_MOVE_MONITOR_H
+#ifndef HPAE_STREAM_MOVE_MONITOR_H
+#define HPAE_STREAM_MOVE_MONITOR_H
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {

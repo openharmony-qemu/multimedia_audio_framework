@@ -1373,7 +1373,8 @@ HWTEST_F(HpaeRendererManagerTest, SendRequestInner_002, TestSize.Level1)
     sinkInfo.format = SAMPLE_F32LE;
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
-    std::shared_ptr<HpaeOffloadRendererManager> hpaeRendererManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    std::shared_ptr<HpaeOffloadRendererManager> hpaeRendererManager =
+        std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     auto request = []() {
     };
     hpaeRendererManager->SendRequest(request, "unit_test_send_request");

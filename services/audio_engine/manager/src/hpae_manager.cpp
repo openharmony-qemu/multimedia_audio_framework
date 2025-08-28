@@ -1123,12 +1123,10 @@ void HpaeManager::HandleMoveSessionFailed(
         return;
     }
     if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
-         
         if (auto serviceCallback = serviceCallback_.lock()) {
             serviceCallback->OnMoveSinkInputByIndexOrNameCb(ERROR_INVALID_PARAM);
         }
     } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD) {
-         HpaeStreamMoveMonitor::ReportStreamMoveException(0, sessionId, HPAE_STREAM_CLASS_TYPE_RECORD, "", name, "handle move failed");
         if (auto serviceCallback = serviceCallback_.lock()) {
             serviceCallback->OnMoveSourceOutputByIndexOrNameCb(ERROR_INVALID_PARAM);
         }

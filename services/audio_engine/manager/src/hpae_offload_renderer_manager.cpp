@@ -668,7 +668,7 @@ void HpaeOffloadRendererManager::SendRequest(Request &&request, std::string func
     }
     hpaeNoLockQueue_.PushRequest(std::move(request));
     if (hpaeSignalProcessThread_ == nullptr) {
-        AUDIO_ERR_LOG("hpaeSignalProcessThread_ is nullptr, %{public}s excute failed",funcName.c_str());
+        AUDIO_ERR_LOG("hpaeSignalProcessThread_ is nullptr, %{public}s excute failed", funcName.c_str());
         HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_OFFLOAD_MANAGER_TYPE, funcName, "thread is nullptr");
         return;
     }
