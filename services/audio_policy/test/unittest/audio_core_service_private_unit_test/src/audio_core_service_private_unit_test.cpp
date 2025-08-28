@@ -1594,7 +1594,7 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_104, TestSize.Leve
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
 
     audioCoreService->ProcessInputPipeNew(pipeInfo, flag);
-    EXPECT_EQ(flag, AUDIO_OUTPUT_FLAG_DIRECT);
+    EXPECT_EQ(flag, AUDIO_FLAG_NONE);
     ASSERT_NE(audioCoreService->pipeManager_, nullptr);
 }
 

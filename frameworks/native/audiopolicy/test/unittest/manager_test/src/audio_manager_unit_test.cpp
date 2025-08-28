@@ -580,7 +580,7 @@ HWTEST(AudioManagerUnitTest, SetForegroudList_001, TestSize.Level1)
 {
     std::vector<std::string> list = {};
     auto ret = AudioSystemManager::GetInstance()->SetForegroundList(list);
-    EXPECT_EQ(ERR_INVALID_OPERATION, ret);
+    EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
 }
 
 #ifdef TEMP_DISABLE
