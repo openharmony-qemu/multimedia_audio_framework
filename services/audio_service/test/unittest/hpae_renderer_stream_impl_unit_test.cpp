@@ -39,7 +39,7 @@ static std::shared_ptr<HpaeAdapterManager> adapterManager;
 class MockWriteCallback : public IWriteCallback {
 public:
     MockWriteCallback() = default;
-    virtual ~MockWriteCallback = default;
+    virtual ~MockWriteCallback() = default;
     MOCK_METHOD(int32_t, OnWriteData, (size_t length), (override));
     MOCK_METHOD(int32_t, OnWriteData, (int8_t *inputData, size_t requestDataLen), (override));
     MOCK_METHOD(int32_t, GetAvailableSize, (size_t &length), (override));
@@ -729,7 +729,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_035, TestSize.Level1)
     EXPECT_NE(unit->OnStreamData(info), SUCCESS); // writecallback nullptr
 
     auto mockWriteCallback = std::make_shared<MockWriteCallback>();
-    unit->writeCallback = mockWriteCallback;
+    unit->writeCallback_ = mockWriteCallback;
     EXPECT_EQ(unit->OnStreamData(info), SUCCESS); // needData false, noneed callback
 
     info.needData = true;
