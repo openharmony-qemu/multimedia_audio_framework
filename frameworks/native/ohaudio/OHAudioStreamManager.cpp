@@ -162,9 +162,9 @@ bool OH_AudioStreamManager_IsCurrentDeviceEnableIntelligentNoiseReduction(
 {
     OHAudioStreamManager *ohAudioStreamManager = convertManager(streamManager);
     CHECK_AND_RETURN_RET_LOG(ohAudioStreamManager != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioStreamManager is nullptr");
+        false, "ohAudioStreamManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(VALID_OH_SOURCE_TYPES.count(source) != 0,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "sourceType is invalid");
+        false, "sourceType is invalid");
     SourceType sourceType = static_cast<SourceType>(source);
     return ohAudioStreamManager->IsCurrentDeviceEnableIntelligentNoiseReduction(sourceType);
 }
