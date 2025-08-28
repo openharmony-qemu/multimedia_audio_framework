@@ -393,7 +393,6 @@ bool AudioService::IsStreamInterruptResume(const uint32_t sessionId)
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_NS_PER_SECOND;
     if (stamp <= BACKGROUND_CAPTURE_INTERRUPT_TIMEOUT_SEC) {
         AUDIO_WARNING_LOG("sessionId:%{public}u Resume Interrupt!!!", sessionId);
-        resumeInterruptEventMap_.erase(sessionId);
         return true;
     }
     resumeInterruptEventMap_.erase(sessionId);
