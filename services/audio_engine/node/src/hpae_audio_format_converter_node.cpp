@@ -199,7 +199,7 @@ bool HpaeAudioFormatConverterNode::CheckUpdateOutInfo()
             .channelLayout = (AudioChannelLayout)channelLayout,
             .numChannels = numChannels,
         };
-        AUDIO_INFO_LOG("NodeId %{public}d, update out channels and channelLayout: channels %{public}d -> %{public}d",
+        HILOG_COMM_INFO("NodeId %{public}d, update out channels and channelLayout: channels %{public}d -> %{public}d",
             GetNodeId(), curOutChannelInfo.numChannels, numChannels);
         CHECK_AND_RETURN_RET_LOG(channelConverter_.SetOutChannelInfo(newOutChannelInfo) == DMIX_ERR_SUCCESS, false,
             "NodeId: %{public}d, Fail to set output channel info from effectNode!", GetNodeId());
@@ -211,7 +211,7 @@ bool HpaeAudioFormatConverterNode::CheckUpdateOutInfo()
     }
     // update sample rate
     if (resampler_->GetOutRate() != sampleRate) {
-        AUDIO_INFO_LOG("NodeId: %{public}d, update output sample rate: %{public}d -> %{public}d",
+        HILOG_COMM_INFO("NodeId: %{public}d, update output sample rate: %{public}d -> %{public}d",
             GetNodeId(), resampler_->GetOutRate(), sampleRate);
         resampler_->UpdateRates(preNodeInfo_.samplingRate, sampleRate);
     }
@@ -234,7 +234,7 @@ bool HpaeAudioFormatConverterNode::CheckUpdateInInfo(HpaePcmBuffer *input)
     bool isInfoUpdated = false;
     // update channels and channelLayout
     if ((curInChannelInfo.numChannels != numChannels) || (curInChannelInfo.channelLayout != channelLayout)) {
-        AUDIO_INFO_LOG("NodeId %{public}d: Update innput channel info from pcmBufferInfo, "
+        HILOG_COMM_INFO("NodeId %{public}d: Update innput channel info from pcmBufferInfo, "
             "channels: %{public}d -> %{public}d, channellayout: %{public}" PRIu64 " -> %{public}" PRIu64 ".",
             GetNodeId(), curInChannelInfo.numChannels, numChannels, curInChannelInfo.channelLayout, channelLayout);
  
@@ -255,7 +255,7 @@ bool HpaeAudioFormatConverterNode::CheckUpdateInInfo(HpaePcmBuffer *input)
     }
     // update sample rate
     if (sampleRate != resampler_->GetInRate()) {
-        AUDIO_INFO_LOG("NodeId %{public}d: Update resampler input sample rate: %{public}d -> %{public}d",
+        HILOG_COMM_INFO("NodeId %{public}d: Update resampler input sample rate: %{public}d -> %{public}d",
             GetNodeId(), resampler_->GetInRate(), sampleRate);
         preNodeInfo_.frameLen = input->GetFrameLen();
         preNodeInfo_.samplingRate = (AudioSamplingRate)sampleRate;

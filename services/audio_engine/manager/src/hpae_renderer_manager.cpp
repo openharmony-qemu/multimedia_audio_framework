@@ -152,7 +152,7 @@ void HpaeRendererManager::CreateEffectAndConnect(HpaeNodeInfo &nodeInfo, bool is
 
 void HpaeRendererManager::CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo)
 {
-    AUDIO_INFO_LOG("use default processCluster");
+    HILOG_COMM_INFO("use default processCluster");
     if (sceneClusterMap_.find(HPAE_SCENE_DEFAULT) == sceneClusterMap_.end()) {
         AUDIO_INFO_LOG("default processCluster is null, create default processCluster");
         HpaeNodeInfo temp = nodeInfo;
@@ -174,20 +174,20 @@ void HpaeRendererManager::CreateProcessClusterInner(HpaeNodeInfo &nodeInfo, int3
     std::shared_ptr<HpaeProcessCluster> hpaeProcessCluster = nullptr;
     switch (processClusterDecision) {
         case NO_NEED_TO_CREATE_PROCESSCLUSTER:
-            AUDIO_INFO_LOG("no need to create processCluster");
+            HILOG_COMM_INFO("no need to create processCluster");
             CHECK_AND_RETURN(!SafeGetMap(sceneClusterMap_, nodeInfo.sceneType));
             AUDIO_INFO_LOG("processCluster is null, create a new processCluster");
             sceneClusterMap_[nodeInfo.sceneType] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
             break;
         case CREATE_NEW_PROCESSCLUSTER:
             CHECK_AND_RETURN(!SafeGetMap(sceneClusterMap_, nodeInfo.sceneType));
-            AUDIO_INFO_LOG("create new processCluster");
+            HILOG_COMM_INFO("create new processCluster");
             sceneClusterMap_[nodeInfo.sceneType] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
             break;
         case CREATE_DEFAULT_PROCESSCLUSTER:
             temp.sceneType = HPAE_SCENE_DEFAULT;
             if (!SafeGetMap(sceneClusterMap_, HPAE_SCENE_DEFAULT)) {
-                AUDIO_INFO_LOG("begin control, create default processCluster");
+                HILOG_COMM_INFO("begin control, create default processCluster");
                 hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(temp, sinkInfo_);
                 sceneClusterMap_[HPAE_SCENE_DEFAULT] = hpaeProcessCluster;
                 sceneClusterMap_[nodeInfo.sceneType] = hpaeProcessCluster;
@@ -200,10 +200,10 @@ void HpaeRendererManager::CreateProcessClusterInner(HpaeNodeInfo &nodeInfo, int3
             CreateDefaultProcessCluster(nodeInfo);
             break;
         case USE_NONE_PROCESSCLUSTER:
-            AUDIO_INFO_LOG("use none processCluster");
+            HILOG_COMM_INFO("use none processCluster");
             break;
         case CREATE_EXTRA_PROCESSCLUSTER:
-            AUDIO_INFO_LOG("out of control");
+            HILOG_COMM_INFO("out of control");
             CHECK_AND_RETURN(!SafeGetMap(sceneClusterMap_, nodeInfo.sceneType));
             AUDIO_INFO_LOG("out of control, create a new processCluster");
             sceneClusterMap_[nodeInfo.sceneType] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
@@ -1029,7 +1029,7 @@ int32_t HpaeRendererManager::SetAudioEffectMode(uint32_t sessionId, int32_t effe
             size_t sinkInputNodeConnectNum = sinkInputNodeMap_[sessionId]->GetOutputPort()->GetInputNum();
             HpaeSessionState inputState = sinkInputNodeMap_[sessionId]->GetState();
             if (sinkInputNodeConnectNum != 0 && inputState == HPAE_SESSION_RUNNING) {
-                AUDIO_INFO_LOG("UpdateProcessClusterConnection because effectMode to be %{public}d", effectMode);
+                HILOG_COMM_INFO("UpdateProcessClusterConnection because effectMode to be %{public}d", effectMode);
                 UpdateProcessClusterConnection(sessionId, effectMode);
             } else {
                 AUDIO_INFO_LOG("no need to ProcessClusterConnection, sinkInputNodeConnectNum is %{public}zu, "
