@@ -2652,5 +2652,74 @@ HWTEST(RendererInClientInnerUnitTest, RecordDropPosition_001, TestSize.Level1)
     EXPECT_EQ(ptrRendererInClientInner->dropPosition_, 10);
     EXPECT_EQ(ptrRendererInClientInner->dropHdiPosition_, 5);
 }
+
+/**
+ * @tc.name  : Test GetAudioServerProxy API
+ * @tc.type  : FUNC
+ * @tc.number: GetAudioServerProxy_001
+ * @tc.desc  : Test GetAudioServerProxy
+ */
+HWTEST(RendererInClientInnerUnitTest, GetAudioServerProxy_001, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+
+    ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
+    sptr<IStandardAudioService> proxy = ptrRendererInClientInner->GetAudioServerProxy();
+    EXPECT_NE(proxy, nullptr);
+}
+
+/**
+ * @tc.name  : Test InitDirectPipeType API
+ * @tc.type  : FUNC
+ * @tc.number: InitDirectPipeType_001
+ * @tc.desc  : Test InitDirectPipeType
+ */
+HWTEST(RendererInClientInnerUnitTest, InitDirectPipeType_001, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+
+    ptrRendererInClientInner->InitDirectPipeType();
+    EXPECT_EQ(ptrRendererInClientInner->rendererInfo_.pipeType, PIPE_TYPE_UNKNOWN);
+}
+
+/**
+ * @tc.name  : Test CheckBufferNeedWrite API
+ * @tc.type  : FUNC
+ * @tc.number: CheckBufferNeedWrite_001
+ * @tc.desc  : Test CheckBufferNeedWrite
+ */
+HWTEST(RendererInClientInnerUnitTest, CheckBufferNeedWrite_001, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+
+    uint32_t totalSizeInFrame = 100;
+    uint32_t byteSizePerFrame = 1;
+    ptrRendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
+    ptrRendererInClientInner->sizePerFrameInByte_ = 1;
+    ptrRendererInClientInner->engineTotalSizeInFrame_ = 2;
+    ptrRendererInClientInner->cbBufferSize_ = 1000;
+
+    bool ret = ptrRendererInClientInner->CheckBufferNeedWrite();
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test WriteCallbackFunc API
+ * @tc.type  : FUNC
+ * @tc.number: WriteCallbackFunc_001
+ * @tc.desc  : Test WriteCallbackFunc
+ */
+HWTEST(RendererInClientInnerUnitTest, WriteCallbackFunc_001, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+
+    ptrRendererInClientInner->state_ = State::RUNNING;
+    bool ret  = ptrRendererInClientInner->WriteCallbackFunc();
+    EXPECT_EQ(ret, false);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -566,9 +566,9 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
     EXPECT_EQ(0, floatRet);
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(false);
     EXPECT_EQ(0, floatRet);
-    int32_t ret = AudioService::GetInstance()->EnableDualToneList(MAX_STREAMID - 1);
+    int32_t ret = AudioService::GetInstance()->EnableDualStream(MAX_STREAMID - 1, "Speaker");
     EXPECT_EQ(SUCCESS, ret);
-    ret = AudioService::GetInstance()->DisableDualToneList(MAX_STREAMID - 1);
+    ret = AudioService::GetInstance()->DisableDualStream(MAX_STREAMID - 1);
     EXPECT_EQ(SUCCESS, ret);
     AudioService::GetInstance()->ResetAudioEndpoint();
     ret = AudioService::GetInstance()->OnProcessRelease(audioProcess, false);
@@ -1411,18 +1411,18 @@ HWTEST(AudioServiceUnitTest, OnUpdateInnerCapList_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test EnableDualToneList API
+ * @tc.name  : Test EnableDualStream API
  * @tc.type  : FUNC
- * @tc.number: EnableDualToneList_001
- * @tc.desc  : Test EnableDualToneList interface.
+ * @tc.number: EnableDualStream_001
+ * @tc.desc  : Test EnableDualStream interface.
  */
-HWTEST(AudioServiceUnitTest, EnableDualToneList_001, TestSize.Level1)
+HWTEST(AudioServiceUnitTest, EnableDualStream_001, TestSize.Level1)
 {
     AudioService *audioService = AudioService::GetInstance();
     std::shared_ptr<RendererInServer> renderer = nullptr;
     int32_t sessionId = 1;
     audioService->allRendererMap_.insert(std::make_pair(sessionId, renderer));
-    int32_t ret = audioService->EnableDualToneList(sessionId);
+    int32_t ret = audioService->EnableDualStream(sessionId, "Speaker");
     EXPECT_EQ(ret, SUCCESS);
 }
 /**
@@ -1437,7 +1437,7 @@ HWTEST(AudioServiceUnitTest, DisableDualToneList_001, TestSize.Level1)
     std::shared_ptr<RendererInServer> renderer = nullptr;
     audioService->filteredDualToneRendererMap_.push_back(renderer);
     int32_t sessionId = 1;
-    int32_t ret = audioService->DisableDualToneList(sessionId);
+    int32_t ret = audioService->DisableDualStream(sessionId);
     EXPECT_EQ(ret, SUCCESS);
 }
 /**
@@ -2789,11 +2789,9 @@ HWTEST(AudioServiceUnitTest, InRenderWhitelist_001, TestSize.Level1)
  */
 HWTEST(AudioServiceUnitTest, SaveRenderWhitelist_001, TestSize.Level1)
 {
-    std::vector<std::string> list;
-    list.resize(5);
-    EXPECT_EQ(list.size(), 5);
+    std::vector<std::string> list = { "test1", "test2", "test3" };
     AudioService::GetInstance()->SaveRenderWhitelist(list);
-    EXPECT_EQ(AudioService::GetInstance()->renderWhitelist_.size(), 5);
+    EXPECT_EQ(AudioService::GetInstance()->renderWhitelist_.size(), 3);
 }
 
 /**

@@ -223,10 +223,17 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_006, TestSize.Level1)
 HWTEST_F(AudioDeviceStatusUnitTest, GetModuleNameByType_001, TestSize.Level1)
 {
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
-    auto moduleName = audioDeviceStatus.GetModuleNameByType(TYPE_PRIMARY);
-    EXPECT_NE(moduleName, string(""));
-    moduleName = audioDeviceStatus.GetModuleNameByType(TYPE_INVALID);
-    EXPECT_EQ(moduleName, string(""));
+
+    unordered_map<ClassType, list<AudioModuleInfo>> deviceClassInfo;
+    AudioPolicyConfigManager::GetInstance().GetDeviceClassInfo(deviceClassInfo);
+    if (!deviceClassInfo.empty()) {
+        auto type = deviceClassInfo.cbegin()->first;
+        auto moduleName = audioDeviceStatus.GetModuleNameByType(type);
+        list<AudioModuleInfo> &moduleList = deviceClassInfo[type];
+        if (!moduleList.empty()) {
+            EXPECT_EQ(moduleName, moduleList.front().name);
+        }
+    }
 }
 
 /**

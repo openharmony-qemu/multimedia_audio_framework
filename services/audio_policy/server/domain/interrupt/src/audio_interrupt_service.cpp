@@ -1563,49 +1563,6 @@ void AudioInterruptService::ProcessRemoteInterrupt(std::set<int32_t> streamIds, 
     targetZoneIt->second->audioFocusInfoList = tmpFocusInfoList;
 }
 
-void AudioInterruptService::HandleVoiceCallAndTranscriptionFocus(
-    std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap,
-    const AudioInterrupt &currentInterrupt, const AudioInterrupt &newInterrupt)
-{
-    bool isSourceVoiceCall = (currentInterrupt.audioFocusType.streamType == STREAM_VOICE_CALL ||
-        currentInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_CALL) &&
-        (newInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION);
-    bool isSourceVoiceTranscripTion = (currentInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) &&
-        (newInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_CALL ||
-        newInterrupt.audioFocusType.streamType == STREAM_VOICE_CALL);
-
-    uint32_t mutesessionId = 0;
-    if (isSourceVoiceCall) {
-        mutesessionId = newInterrupt.streamId;
-    }
-    if (isSourceVoiceTranscripTion) {
-        mutesessionId = currentInterrupt.streamId;
-    }
-    AUDIO_INFO_LOG("current streamtype: %{public}d, sourcetype: %{public}d, newInterrupt streamtype: %{public}d, "
-                   "sourcetype: %{public}d, mutesessionId:%{public}d",
-        currentInterrupt.audioFocusType.streamType, currentInterrupt.audioFocusType.sourceType,
-        newInterrupt.audioFocusType.streamType, newInterrupt.audioFocusType.sourceType, mutesessionId);
-    if (isSourceVoiceCall || isSourceVoiceTranscripTion) {
-        auto key = std::make_pair(currentInterrupt.audioFocusType, newInterrupt.audioFocusType);
-        auto it = focusMap.find(key);
-        if (it == focusMap.end()) {
-            return;
-        }
-
-        CHECK_AND_RETURN_LOG(policyServer_ != nullptr, "policyServer nullptr");
-        if (policyServer_->VerifyPermission(RECORD_VOICE_CALL_PERMISSION)) {
-            AUDIO_INFO_LOG("VerifyPermission mutesessionId:%{public}d", mutesessionId);
-            it->second.forceType = INTERRUPT_FORCE;
-            it->second.hintType = INTERRUPT_HINT_NONE;
-            it->second.actionOn = INCOMING;
-            it->second.isReject = false;
-            policyServer_->SetVoiceMuteState(mutesessionId, false);
-        } else {
-            policyServer_->SetVoiceMuteState(mutesessionId, true);
-        }
-    }
-}
-
 void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const AudioInterrupt &incomingInterrupt)
 {
     // Use local variable to record target focus info list, can be optimized
@@ -1621,7 +1578,6 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
     std::list<int32_t> removeFocusInfoPidList = {};
     InterruptDfxBuilder dfxBuilder;
     for (auto iterActive = tmpFocusInfoList.begin(); iterActive != tmpFocusInfoList.end();) {
-        HandleVoiceCallAndTranscriptionFocus(focusCfgMap_, iterActive->first, incomingInterrupt);
         AudioFocusEntry focusEntry =
             focusCfgMap_[std::make_pair((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType)];
         UpdateAudioFocusStrategy(iterActive->first, incomingInterrupt, focusEntry);
@@ -2758,7 +2714,7 @@ void AudioInterruptService::RemoveExistingFocus(
         return;
     }
 
-    for (auto itZone : zonesMap_) {
+    for (const auto& itZone : zonesMap_) {
         bool isNeedRefresh = false;
         auto audioFocusInfoList = itZone.second->audioFocusInfoList;
         for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end();) {
@@ -2783,7 +2739,7 @@ void AudioInterruptService::ResumeFocusByStreamId(
     const int32_t streamId, const InterruptEventInternal interruptEventResume)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_INFO_LOG("Remove Focus By StreamId = %{public}d", streamId);
+    AUDIO_INFO_LOG("Resume Focus By StreamId = %{public}d", streamId);
     if (interruptClients_.find(streamId) != interruptClients_.end() && handler_ != nullptr) {
         handler_->SendInterruptEventWithStreamIdCallback(interruptEventResume, streamId);
     }

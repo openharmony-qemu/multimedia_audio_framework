@@ -150,6 +150,7 @@ public:
     std::weak_ptr<PolicyAdapterInfo> adapterInfo_;
     std::list<std::shared_ptr<PipeStreamPropInfo>> streamPropInfos_ {};
     std::list<std::shared_ptr<AttributeInfo>> attributeInfos_ {};
+    AudioAdapterType GetAdapterType();
 
     // for dynamic
     std::mutex dynamicMtx_;

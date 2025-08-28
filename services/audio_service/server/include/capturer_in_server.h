@@ -79,7 +79,6 @@ private:
     void HandleOperationStopped(CapturerStage stage);
     void UpdateBufferTimeStamp(size_t readLen);
     inline void CaptureConcurrentCheck(uint32_t streamIndex);
-    void MuteVoice(const SourceType sourceType, BufferDesc &dstBuffer);
 
     std::mutex statusLock_;
     std::condition_variable statusCv_;

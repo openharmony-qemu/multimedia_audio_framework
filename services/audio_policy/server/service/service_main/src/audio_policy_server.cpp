@@ -119,6 +119,7 @@ const std::set<int32_t> CALLBACK_TRUST_LIST = {
     UID_DMSDP,
     UID_TV_SERVICE
 };
+const std::string NEARLINK_LIST = "audio_nearlink_list";
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
@@ -239,7 +240,7 @@ void AudioPolicyServer::OnStart()
     interruptService_->SetCallbackHandler(audioPolicyServerHandler_);
 
     AudioZoneService::GetInstance().Init(audioPolicyServerHandler_, interruptService_);
-    StandaloneModeManager::GetInstance().InIt(interruptService_);
+    StandaloneModeManager::GetInstance().Init(interruptService_);
     if (audioPolicyManager_.SetAudioStreamRemovedCallback(this)) {
         AUDIO_ERR_LOG("SetAudioStreamRemovedCallback failed");
     }
@@ -274,7 +275,7 @@ void AudioPolicyServer::OnStart()
     SubscribeVolumeKeyEvents();
 #endif
     if (getpid() > FIRST_SCREEN_ON_PID) {
-        audioDeviceCommon_.SetFirstScreenOn();
+        coreService_->SetFirstScreenOn();
     }
     // Restart to reload the volume.
     InitKVStore();
@@ -947,11 +948,8 @@ void AudioPolicyServer::AddRemoteDevstatusCallback()
 
 void AudioPolicyServer::SubscribePowerStateChangeEvents()
 {
-    sptr<PowerMgr::IPowerStateCallback> powerStateCallback_;
-
-    if (powerStateCallback_ == nullptr) {
-        powerStateCallback_ = new (std::nothrow) AudioPolicyServerPowerStateCallback(this);
-    }
+    sptr<PowerMgr::IPowerStateCallback> powerStateCallback_ =
+        new (std::nothrow) AudioPolicyServerPowerStateCallback(this);
 
     if (powerStateCallback_ == nullptr) {
         AUDIO_ERR_LOG("subscribe create power state callback Create Error");
@@ -1059,11 +1057,9 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
         eventEntry_->OnReceiveUpdateDeviceNameEvent(macAddress, deviceName);
     } else if (action == "usual.event.SCREEN_ON") {
         AUDIO_INFO_LOG("receive SCREEN_ON action, control audio focus if need");
-        audioDeviceCommon_.SetFirstScreenOn();
-        if (powerStateListener_ == nullptr) {
-            AUDIO_ERR_LOG("powerStateListener_ is nullptr");
-            return;
-        }
+        CHECK_AND_RETURN_LOG(coreService_, "coreService_ is nullptr");
+        coreService_->SetFirstScreenOn();
+        CHECK_AND_RETURN_LOG(powerStateListener_, "powerStateListener_ is nullptr");
         powerStateListener_->ControlAudioFocus(false);
     } else if (action == "usual.event.SCREEN_LOCKED") {
         AUDIO_INFO_LOG("receive SCREEN_OFF or SCREEN_LOCKED action, control audio volume change if stream is active");
@@ -1980,6 +1976,12 @@ int32_t AudioPolicyServer::SelectInputDevice(const sptr<AudioCapturerFilter> &au
     return ret;
 }
 
+int32_t AudioPolicyServer::SelectInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    return eventEntry_->SelectInputDeviceByUid(audioDeviceDescriptor, callerUid);
+}
+
 int32_t AudioPolicyServer::ExcludeOutputDevices(int32_t audioDevUsageIn,
     const vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
@@ -2012,6 +2014,9 @@ int32_t AudioPolicyServer::GetExcludedDevices(int32_t audioDevUsageIn,
 
     int32_t apiVersion = HasUsbDevice(device) ? GetApiTargetVersion() : 0;
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
+    bool isSupportedNearlink = !audioPolicyUtils_.IsBundleNameInList(AudioBundleManager::GetBundleName(),
+        NEARLINK_LIST);
+    clientInfo.isSupportedNearlink_ = isSupportedNearlink;
     for (auto &desc : device) {
         CHECK_AND_RETURN_RET_LOG(desc, ERR_MEMORY_ALLOC_FAILED, "nullptr");
         desc->SetClientInfo(clientInfo);
@@ -2043,10 +2048,12 @@ int32_t AudioPolicyServer::GetDevices(int32_t deviceFlagIn,
     deviceDescs = eventEntry_->GetDevices(deviceFlag);
 
     int32_t apiVersion = HasUsbDevice(deviceDescs) ? GetApiTargetVersion() : 0;
+    bool isSupportedNearlink = !audioPolicyUtils_.IsBundleNameInList(AudioBundleManager::GetBundleName(),
+        NEARLINK_LIST);
     for (auto &desc : deviceDescs) {
         CHECK_AND_RETURN_RET_LOG(desc, ERR_MEMORY_ALLOC_FAILED, "nullptr");
         if (desc->IsAudioDeviceDescriptor()) {
-            desc->deviceType_ = desc->MapInternalToExternalDeviceType(apiVersion);
+            desc->deviceType_ = desc->MapInternalToExternalDeviceType(apiVersion, isSupportedNearlink);
         }
         if (!hasSystemPermission) {
             desc->networkId_ = "";
@@ -2088,10 +2095,12 @@ int32_t AudioPolicyServer::GetOutputDevice(const sptr<AudioRendererFilter> &audi
     deviceDescs = audioPolicyService_.GetOutputDevice(audioRendererFilter);
 
     int32_t apiVersion = HasUsbDevice(deviceDescs) ? GetApiTargetVersion() : 0;
+    bool isSupportedNearlink = !audioPolicyUtils_.IsBundleNameInList(AudioBundleManager::GetBundleName(),
+        NEARLINK_LIST);
     for (auto &desc : deviceDescs) {
         CHECK_AND_RETURN_RET_LOG(desc, ERR_MEMORY_ALLOC_FAILED, "nullptr");
         if (desc->IsAudioDeviceDescriptor()) {
-            desc->deviceType_ = desc->MapInternalToExternalDeviceType(apiVersion);
+            desc->deviceType_ = desc->MapInternalToExternalDeviceType(apiVersion, isSupportedNearlink);
         }
     }
 
@@ -2108,10 +2117,12 @@ int32_t AudioPolicyServer::GetInputDevice(const sptr<AudioCapturerFilter> &audio
     deviceDescs = audioPolicyService_.GetInputDevice(audioCapturerFilter);
 
     int32_t apiVersion = HasUsbDevice(deviceDescs) ? GetApiTargetVersion() : 0;
+    bool isSupportedNearlink = !audioPolicyUtils_.IsBundleNameInList(AudioBundleManager::GetBundleName(),
+        NEARLINK_LIST);
     for (auto &desc : deviceDescs) {
         CHECK_AND_RETURN_RET_LOG(desc, ERR_MEMORY_ALLOC_FAILED, "nullptr");
         if (desc->IsAudioDeviceDescriptor()) {
-            desc->deviceType_ = desc->MapInternalToExternalDeviceType(apiVersion);
+            desc->deviceType_ = desc->MapInternalToExternalDeviceType(apiVersion, isSupportedNearlink);
         }
     }
 
@@ -2146,11 +2157,13 @@ int32_t AudioPolicyServer::GetPreferredOutputDeviceDescriptors(const AudioRender
     }
 
     int32_t apiVersion = HasUsbDevice(deviceDescs) ? GetApiTargetVersion() : 0;
+    bool isSupportedNearlink = !audioPolicyUtils_.IsBundleNameInList(AudioBundleManager::GetBundleName(),
+        NEARLINK_LIST);
     for (auto &desc : deviceDescs) {
         CHECK_AND_RETURN_RET_LOG(desc, ERR_MEMORY_ALLOC_FAILED, "nullptr");
         desc->descriptorType_ = AudioDeviceDescriptor::AUDIO_DEVICE_DESCRIPTOR;
         if (desc->IsAudioDeviceDescriptor()) {
-            desc->deviceType_ = desc->MapInternalToExternalDeviceType(apiVersion);
+            desc->deviceType_ = desc->MapInternalToExternalDeviceType(apiVersion, isSupportedNearlink);
         }
     }
 
@@ -2688,10 +2701,12 @@ int32_t AudioPolicyServer::SetQueryBundleNameListCallback(const sptr<IRemoteObje
         return ERR_OPERATION_FAILED;
     }
 
-    if (interruptService_ != nullptr) {
-        return interruptService_->SetQueryBundleNameListCallback(object);
-    }
-    return ERR_UNKNOWN;
+    CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERR_UNKNOWN, "interruptService_ is nullptr");
+    interruptService_->SetQueryBundleNameListCallback(object);
+
+    audioPolicyUtils_.SetQueryBundleNameListCallback(object);
+
+    return SUCCESS;
 }
 // LCOV_EXCL_STOP
 
@@ -2803,10 +2818,10 @@ int32_t AudioPolicyServer::SetAppConcurrencyMode(const int32_t appUid, const int
     return ERR_UNKNOWN;
 }
 
-int32_t AudioPolicyServer::SetAppSlientOnDisplay(const int32_t displayId)
+int32_t AudioPolicyServer::SetAppSilentOnDisplay(const int32_t displayId)
 {
     if (interruptService_ != nullptr) {
-        return StandaloneModeManager::GetInstance().SetAppSlientOnDisplay(IPCSkeleton::GetCallingPid(), displayId);
+        return StandaloneModeManager::GetInstance().SetAppSilentOnDisplay(IPCSkeleton::GetCallingPid(), displayId);
     }
     return ERR_UNKNOWN;
 }
@@ -3317,6 +3332,7 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid, pid_t uid)
     audioAffinityManager_.DelSelectRendererDevice(uid);
     std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
     eventEntry_->RegisteredTrackerClientDied(uid, pid);
+    eventEntry_->ClearSelectedInputDeviceByUid(uid);
 
     auto filter = [&pid](int val) {
         return pid == val;
@@ -3776,6 +3792,20 @@ int32_t AudioPolicyServer::SetNearlinkDeviceVolume(const std::string &macAddress
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::GetSelectedInputDevice(std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    audioDeviceDescriptor = eventEntry_->GetSelectedInputDeviceByUid(callerUid);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::ClearSelectedInputDevice()
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    eventEntry_->ClearSelectedInputDeviceByUid(callerUid);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::GetAvailableDevices(int32_t usageIn,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
 {
@@ -4201,6 +4231,7 @@ int32_t AudioPolicyServer::RegisterPolicyCallbackClient(const sptr<IRemoteObject
     callback->hasBTPermission_ = hasBTPermission;
     callback->hasSystemPermission_ = hasSysPermission;
     callback->apiVersion_ = GetApiTargetVersion();
+    callback->clientName_ = AudioBundleManager::GetBundleName();
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, callback);
     }
@@ -5326,12 +5357,6 @@ int32_t AudioPolicyServer::CallRingtoneLibrary()
     CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, ERROR, "Create dataShare failed, datashare or library error.");
     dataShareHelper->Release();
     return SUCCESS;
-}
-
-void AudioPolicyServer::SetVoiceMuteState(uint32_t sessionId, bool isMute)
-{
-    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
-    return coreService_->SetVoiceMuteState(sessionId, isMute);
 }
 
 int32_t AudioPolicyServer::SetSystemVolumeDegree(int32_t streamTypeIn, int32_t volumeDegree, int32_t volumeFlag,

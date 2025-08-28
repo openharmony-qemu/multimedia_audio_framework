@@ -29,7 +29,6 @@ class IHpaeSoftLink {
 public:
     virtual ~IHpaeSoftLink() = default;
     static std::shared_ptr<IHpaeSoftLink> CreateSoftLink(uint32_t sinkIdx, uint32_t sourceIdx, SoftLinkMode mode);
-    virtual int32_t Init() = 0;
     virtual int32_t Start() = 0;
     virtual int32_t Stop() = 0;
     virtual int32_t Release() = 0;

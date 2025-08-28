@@ -18,6 +18,7 @@
 
 #include "audio_performance_monitor.h"
 #include "audio_performance_monitor_c.h"
+#include "xperf_adapter.h"
 #include <memory>
 #include <string>
 #include "audio_errors.h"
@@ -82,8 +83,7 @@ void AudioPerformanceMonitor::PauseSilenceMonitor(uint32_t sessionId)
 void AudioPerformanceMonitor::DeleteSilenceMonitor(uint32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(monitorMutex_);
-    CHECK_AND_RETURN_LOG(silenceDetectMap_.find(sessionId) != silenceDetectMap_.end(),
-        "invalid sessionId: %{public}d", sessionId);
+    CHECK_AND_RETURN(silenceDetectMap_.find(sessionId) != silenceDetectMap_.end());
     AUDIO_INFO_LOG("delete sessionId %{public}d silence Monitor!", sessionId);
     silenceDetectMap_.erase(sessionId);
 }
@@ -132,8 +132,7 @@ void AudioPerformanceMonitor::RecordTimeStamp(AdapterType adapterType, int64_t c
 void AudioPerformanceMonitor::DeleteOvertimeMonitor(AdapterType adapterType)
 {
     std::lock_guard<std::mutex> lock(monitorMutex_);
-    CHECK_AND_RETURN_LOG(overTimeDetectMap_.find(adapterType) != overTimeDetectMap_.end(),
-        "invalid adapterType: %{public}d", adapterType);
+    CHECK_AND_RETURN(overTimeDetectMap_.find(adapterType) != overTimeDetectMap_.end());
     AUDIO_INFO_LOG("delete adapterType %{public}d overTime Monitor!", adapterType);
     overTimeDetectMap_.erase(adapterType);
 }
@@ -211,11 +210,17 @@ std::string AudioPerformanceMonitor::GetRunningHapNames(AdapterType adapterType)
     return hapNames.str();
 }
 
+void AudioPerformanceMonitor::NotifyXperf(int32_t faultcode, uint32_t uid, uint32_t sessionId)
+{
+    XperfAdapter::GetInstance().ReportFaultEvent(faultcode, uid, sessionId);
+}
+
 void AudioPerformanceMonitor::ReportEvent(DetectEvent reasonCode, int32_t periodMs, AudioPipeType pipeType,
-    AdapterType adapterType, uint32_t uid)
+    AdapterType adapterType, uint32_t uid, uint32_t sessionId)
 {
     int64_t curRealTime = ClockTime::GetRealNano();
     std::string hapNames = "";
+    NotifyXperf(reasonCode, uid, sessionId);
     switch (reasonCode) {
         case SILENCE_EVENT:
             CHECK_AND_RETURN_LOG(curRealTime - silenceLastReportTime_ >= MIN_REPORT_INTERVAL_MS * AUDIO_NS_PER_MS,

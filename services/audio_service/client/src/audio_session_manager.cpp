@@ -110,6 +110,26 @@ int32_t AudioSessionManager::SetAudioSessionScene(const AudioSessionScene audioS
     return result;
 }
 
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioSessionManager::GetAvailableDevices(AudioDeviceUsage usage)
+{
+    return AudioPolicyManager::GetInstance().GetAvailableDevices(usage);
+}
+
+int32_t AudioSessionManager::SelectInputDevice(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor)
+{
+    return AudioPolicyManager::GetInstance().SelectInputDevice(audioDeviceDescriptor);
+}
+
+std::shared_ptr<AudioDeviceDescriptor> AudioSessionManager::GetSelectedInputDevice()
+{
+    return AudioPolicyManager::GetInstance().GetSelectedInputDevice();
+}
+
+int32_t AudioSessionManager::ClearSelectedInputDevice()
+{
+    return AudioPolicyManager::GetInstance().ClearSelectedInputDevice();
+}
+
 int32_t AudioSessionManager::SetAudioSessionStateChangeCallback(
     const std::shared_ptr<AudioSessionStateChangedCallback> &stateChangedCallback)
 {

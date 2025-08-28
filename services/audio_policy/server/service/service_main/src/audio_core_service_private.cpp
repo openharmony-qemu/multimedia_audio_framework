@@ -1006,8 +1006,7 @@ void AudioCoreService::ProcessInputPipeUpdate(std::shared_ptr<AudioPipeInfo> pip
 
 void AudioCoreService::RemoveUnusedPipe()
 {
-    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = pipeManager_->GetUnusedPipe(curOutputDeviceType);
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = pipeManager_->GetUnusedPipe();
     for (auto pipeInfo : pipeInfos) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         AUDIO_INFO_LOG("[PipeExecInfo] Remove and close Pipe %{public}s", pipeInfo->ToString().c_str());
@@ -1057,35 +1056,6 @@ int32_t AudioCoreService::GetProcessDeviceInfoBySessionId(uint32_t sessionId,
 uint32_t AudioCoreService::GenerateSessionId()
 {
     return AudioStreamIdAllocator::GetAudioStreamIdAllocator().GenerateStreamId();
-}
-
-void AudioCoreService::SetVoiceMuteState(uint32_t sessionId, bool isMute)
-{
-    std::unique_lock<std::shared_mutex> lock(muteMutex_);
-    voiceMuteStateMap_[sessionId] = isMute;
-    AUDIO_INFO_LOG("set mute state for session %{public}u to %{public}s", sessionId, isMute ? "muted" : "unmuted");
-}
-
-void AudioCoreService::GetVoiceMuteState(uint32_t sessionId, bool &muteState)
-{
-    std::shared_lock<std::shared_mutex> lock(muteMutex_);
-    auto it = voiceMuteStateMap_.find(sessionId);
-    if (it != voiceMuteStateMap_.end()) {
-        muteState = it->second;
-        return;
-    }
-
-    muteState = false;
-}
-
-void AudioCoreService::RemoveVoiceMuteState(uint32_t sessionId)
-{
-    std::unique_lock<std::shared_mutex> lock(muteMutex_);
-    auto it = voiceMuteStateMap_.find(sessionId);
-    if (it != voiceMuteStateMap_.end()) {
-        AUDIO_INFO_LOG("remove mute state for session %{public}u", sessionId);
-        voiceMuteStateMap_.erase(it);
-    }
 }
 
 void AudioCoreService::AddSessionId(const uint32_t sessionId)
@@ -2433,18 +2403,32 @@ void AudioCoreService::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDe
     const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioCoreService::MuteSinkPortForSwitchDevice");
-    if (streamDesc->newDeviceDescs_.front()->IsSameDeviceDesc(streamDesc->oldDeviceDescs_.front())) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr && !streamDesc->oldDeviceDescs_.empty() &&
+        !streamDesc->newDeviceDescs_.empty(), "Invalid streamDesc");
+    std::shared_ptr<AudioDeviceDescriptor> oldDesc = streamDesc->oldDeviceDescs_.front();
+    std::shared_ptr<AudioDeviceDescriptor> newDesc = streamDesc->newDeviceDescs_.front();
+    CHECK_AND_RETURN(oldDesc != nullptr && newDesc != nullptr);
+    if (oldDesc->IsSameDeviceDesc(*newDesc)) { return; }
 
     audioIOHandleMap_.SetMoveFinish(false);
 
-    std::string oldSinkName = AudioPolicyUtils::GetInstance().GetSinkName(streamDesc->oldDeviceDescs_.front(),
-        streamDesc->sessionId_);
-    std::string newSinkName = AudioPolicyUtils::GetInstance().GetSinkName(*streamDesc->newDeviceDescs_.front(),
-        streamDesc->sessionId_);
-    AUDIO_INFO_LOG("mute sink old:[%{public}s] new:[%{public}s]", oldSinkName.c_str(), newSinkName.c_str());
-    MuteSinkPort(oldSinkName, newSinkName, reason);
+    std::string oldSinkPortName = AudioPolicyUtils::GetInstance().GetSinkName(oldDesc, streamDesc->sessionId_);
+    std::string newSinkPortName = AudioPolicyUtils::GetInstance().GetSinkName(newDesc, streamDesc->sessionId_);
+
+    auto GetVoipSinkPortNameIfVoip = [](uint32_t routeFlag, const std::string &defaultSinkPortName) -> std::string {
+        if (routeFlag == (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP)) {
+            return PRIMARY_MMAP_VOIP;
+        }
+        if (routeFlag == (AUDIO_OUTPUT_FLAG_DIRECT | AUDIO_OUTPUT_FLAG_VOIP)) {
+            return PRIMARY_DIRECT_VOIP;
+        }
+        return defaultSinkPortName;
+    };
+    oldSinkPortName = GetVoipSinkPortNameIfVoip(streamDesc->oldRouteFlag_, oldSinkPortName);
+    newSinkPortName = GetVoipSinkPortNameIfVoip(streamDesc->routeFlag_, newSinkPortName);
+
+    AUDIO_INFO_LOG("mute sink old:[%{public}s] new:[%{public}s]", oldSinkPortName.c_str(), newSinkPortName.c_str());
+    MuteSinkPort(oldSinkPortName, newSinkPortName, reason);
 }
 
 // After media playback is interrupted by the alarm or ring,

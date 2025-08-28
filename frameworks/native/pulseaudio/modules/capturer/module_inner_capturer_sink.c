@@ -14,7 +14,7 @@
  */
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include <pa_config.h>
 #endif
 
 #ifndef LOG_TAG

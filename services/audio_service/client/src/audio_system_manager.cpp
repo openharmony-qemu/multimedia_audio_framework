@@ -300,8 +300,8 @@ std::string AudioSystemManager::GetSelfBundleName(int32_t uid)
     sptr<AppExecFwk::IBundleMgr> iBundleMgr = iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
     CHECK_AND_RETURN_RET_LOG(iBundleMgr != nullptr, bundleName, "bundlemgr interface is null");
 
-    WatchTimeout reguard("bundleMgrProxy->GetNameForUid:GetSelfBundleName");
-    iBundleMgr->GetNameForUid(uid, bundleName);
+    WatchTimeout reguard("bundleMgrProxy->GetBundleNameForUid:GetSelfBundleName");
+    iBundleMgr->GetBundleNameForUid(uid, bundleName);
     reguard.CheckCurrTimeout();
     return bundleName;
 }
@@ -1355,14 +1355,24 @@ int32_t AudioSystemManager::ActivateAudioInterrupt(AudioInterrupt &audioInterrup
 
 int32_t AudioSystemManager::SetAppConcurrencyMode(const int32_t appUid, const int32_t mode)
 {
-    AUDIO_DEBUG_LOG("stub implementation");
+    bool ret = PermissionUtil::VerifyIsSystemApp();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED,
+        "SetAppConcurrencyMode: No system permission");
+    ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED,
+        "SetAppConcurrencyMode: No system permission");
     return AudioPolicyManager::GetInstance().SetAppConcurrencyMode(appUid, mode);
 }
 
-int32_t AudioSystemManager::SetAppSlientOnDisplay(const int32_t displayId)
+int32_t AudioSystemManager::SetAppSilentOnDisplay(const int32_t displayId)
 {
-    AUDIO_DEBUG_LOG("stub implementation");
-    return AudioPolicyManager::GetInstance().SetAppSlientOnDisplay(displayId);
+    bool ret = PermissionUtil::VerifyIsSystemApp();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED,
+        "SetAppSilentOnDisplay: No system permission");
+    ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED,
+        "SetAppSilentOnDisplay: No system permission");
+    return AudioPolicyManager::GetInstance().SetAppSilentOnDisplay(displayId);
 }
 
 int32_t AudioSystemManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt) const

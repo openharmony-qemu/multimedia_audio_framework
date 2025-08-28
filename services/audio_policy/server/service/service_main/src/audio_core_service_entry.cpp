@@ -17,14 +17,16 @@
 #endif
 
 #include "audio_core_service.h"
+
+#include "audio_utils.h"
 #include "audio_server_proxy.h"
-#include "audio_usb_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace {
 static constexpr int64_t WAIT_LOAD_DEFAULT_DEVICE_TIME_MS = 200; // 200ms
 static constexpr int32_t RETRY_TIMES = 25;
+static constexpr uint32_t TIMEOUT_CORE_ENTRY_S = 20;
 }
 
 static const char *SessionOperationToString(SessionOperation operation)
@@ -92,6 +94,10 @@ int32_t AudioCoreService::EventEntry::CreateCapturerClient(
 int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId, SessionOperation operation,
     SessionOperationMsg opMsg)
 {
+    // This function is called frequently, add xcollie here to avoid freezing for a very long time
+    AudioXCollie audioXCollie("EventEntry::UpdateSessionOperation", TIMEOUT_CORE_ENTRY_S,
+        nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     AUDIO_INFO_LOG("withlock sessionId %{public}u, operation %{public}s, msg %{public}s",
         sessionId, SessionOperationToString(operation), SessionOperationMsgToString(opMsg));
@@ -135,16 +141,6 @@ int32_t AudioCoreService::EventEntry::GetProcessDeviceInfoBySessionId(uint32_t s
 uint32_t AudioCoreService::EventEntry::GenerateSessionId()
 {
     return coreService_->GenerateSessionId();
-}
-
-void AudioCoreService::EventEntry::GetVoiceMuteState(uint32_t sessionId, bool &muteState)
-{
-    return coreService_->GetVoiceMuteState(sessionId, muteState);
-}
-
-void AudioCoreService::EventEntry::RemoveVoiceMuteState(uint32_t sessionId)
-{
-    return coreService_->RemoveVoiceMuteState(sessionId);
 }
 
 int32_t AudioCoreService::EventEntry::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
@@ -349,6 +345,10 @@ int32_t AudioCoreService::EventEntry::RegisterTracker(AudioMode &mode, AudioStre
 
 int32_t AudioCoreService::EventEntry::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
+    // This function is called frequently, add xcollie here to avoid freezing for a very long time
+    AudioXCollie audioXCollie("EventEntry::UpdateSessionOperation", TIMEOUT_CORE_ENTRY_S,
+        nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     return coreService_->UpdateTracker(mode, streamChangeInfo);
 }
@@ -409,6 +409,28 @@ int32_t AudioCoreService::EventEntry::SelectInputDevice(sptr<AudioCapturerFilter
     Trace trace("KeyAction AudioCoreService::SelectInputDevice");
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     return coreService_->SelectInputDevice(audioCapturerFilter, selectedDesc);
+}
+
+int32_t AudioCoreService::EventEntry::SelectInputDeviceByUid(const std::shared_ptr<AudioDeviceDescriptor> &descriptor,
+    int32_t uid)
+{
+    Trace trace("KeyAction AudioCoreService::SelectInputDeviceByUid");
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->SelectInputDeviceByUid(descriptor, uid);
+}
+
+std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::EventEntry::GetSelectedInputDeviceByUid(int32_t uid)
+{
+    Trace trace("KeyAction AudioCoreService::GetSelectedInputDeviceByUid");
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->GetSelectedInputDeviceByUid(uid);
+}
+
+int32_t AudioCoreService::EventEntry::ClearSelectedInputDeviceByUid(int32_t uid)
+{
+    Trace trace("KeyAction AudioCoreService::ClearSelectedInputDeviceByUid");
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->ClearSelectedInputDeviceByUid(uid);
 }
 
 int32_t AudioCoreService::EventEntry::GetCurrentRendererChangeInfos(vector<shared_ptr<AudioRendererChangeInfo>>

@@ -88,6 +88,9 @@ public:
     void SetScoExcluded(bool scoExcluded);
     bool GetScoExcluded();
     bool IsDataShareReady();
+
+    int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
+    bool IsBundleNameInList(const std::string &bundleName, const std::string &listType);
 private:
     AudioPolicyUtils() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
@@ -108,6 +111,8 @@ private:
     AudioDeviceManager &audioDeviceManager_;
     AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;
     AudioPolicyConfigManager& audioConfigManager_;
+
+    sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
 };
 
 }

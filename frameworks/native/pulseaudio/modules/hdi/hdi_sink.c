@@ -16,7 +16,7 @@
 #define LOG_TAG "HdiSink"
 #endif
 
-#include <config.h>
+#include <pa_config.h>
 #include <pulse/rtclock.h>
 #include <pulse/timeval.h>
 #include <pulse/xmalloc.h>

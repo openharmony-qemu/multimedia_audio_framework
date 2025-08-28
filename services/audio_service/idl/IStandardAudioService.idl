@@ -43,7 +43,7 @@ interface IStandardAudioService {
     void SetAudioScene([in] int audioScene, [in] int a2dpOffloadFlag, [in] boolean scoExcludeFlag);
     void UpdateActiveDeviceRoute([in] int type, [in] int flag, [in] int a2dpOffloadFlag);
     void UpdateActiveDevicesRoute([in] List<IntPair> activeDevices, [in] int a2dpOffloadFlag, [in] String deviceName);
-    void UpdateDualToneState([in] boolean enable, [in] int sessionId);
+    void UpdateDualToneState([in] boolean enable, [in] int sessionId, [in] String dupSinkName);
     void GetTransactionId([in] int deviceType, [in] int deviceRole, [out] unsigned long transactionId);
     void SetParameterCallback([in] IRemoteObject object);
     void GetAudioParameter([in] String networkId, [in] int key, [in] String condition, [out] String value);

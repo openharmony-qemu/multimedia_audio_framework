@@ -143,6 +143,14 @@ public:
     virtual int32_t UpdateCollaborativeState(bool isCollaborationEnabled) = 0;
     virtual void AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume) = 0;
     virtual void DeleteStreamVolumeToEffect(const std::string stringSessionID) = 0;
+
+    // interfaces for injector
+    virtual void UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo) = 0;
+    virtual void AddCaptureInjector(
+        const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType) = 0;
+    virtual void RemoveCaptureInjector(
+        const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType) = 0;
+    virtual int32_t PeekAudioData(const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize) = 0;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

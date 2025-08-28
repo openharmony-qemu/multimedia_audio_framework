@@ -95,6 +95,10 @@ napi_value NapiAudioSessionMgr::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("setAudioSessionScene", SetAudioSessionScene),
         DECLARE_NAPI_FUNCTION("getDefaultOutputDevice", GetDefaultOutputDevice),
         DECLARE_NAPI_FUNCTION("setDefaultOutputDevice", SetDefaultOutputDevice),
+        DECLARE_NAPI_FUNCTION("getAvailableDevices", GetAvailableDevices),
+        DECLARE_NAPI_FUNCTION("selectMediaInputDevice", SelectMediaInputDevice),
+        DECLARE_NAPI_FUNCTION("getSelectedMediaInputDevice", GetSelectedMediaInputDevice),
+        DECLARE_NAPI_FUNCTION("clearSelectedMediaInputDevice", ClearSelectedMediaInputDevice),
     };
 
     status = napi_define_class(env, AUDIO_SESSION_MGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -656,6 +660,141 @@ napi_value NapiAudioSessionMgr::Off(napi_env env, napi_callback_info info)
             "parameter verification failed: The param of type is not supported");
     }
     return undefinedResult;
+}
+
+napi_value NapiAudioSessionMgr::SelectMediaInputDevice(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioSessionMgrAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("ActivateAudioSession failed : no memory");
+        NapiAudioError::ThrowError(env, "ActivateAudioSession failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
+        NapiParamUtils::GetAudioDeviceDescriptor(env, context->deviceDescriptor,
+            context->bArgTransFlag, argv[PARAM0]);
+    };
+    context->GetCbInfo(env, info, inputParser);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioSessionMgr*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiSessionMgr = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioSessionStatus(napiSessionMgr, context),
+            "context object state is error.");
+        if (!context->bArgTransFlag) {
+            context->SignError(NAPI_ERR_INVALID_PARAM);
+        }
+        context->intValue = napiSessionMgr->audioSessionMngr_->SelectInputDevice(context->deviceDescriptor);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "SelectInputDevice failed",
+            NAPI_ERR_SYSTEM);
+    };
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "SelectInputDevice", executor, complete);
+}
+
+napi_value NapiAudioSessionMgr::GetAvailableDevices(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value argv[ARGS_ONE] = {};
+    auto *napiSessionMgr = GetParamWithSync(env, info, argc, argv);
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argcCount invalid");
+
+    napi_valuetype valueType = napi_undefined;
+    napi_status status = napi_typeof(env, argv[PARAM0], &valueType);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of deviceUsage must be number"),
+        "valueType invalid");
+
+    int32_t intValue = 0;
+    status = napi_get_value_int32(env, argv[PARAM0], &intValue);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && NapiAudioEnum::IsLegalDeviceUsage(intValue),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "parameter verification failed: The param of deviceUsage must be enum DeviceUsage"), "invalid deviceusage");
+
+    CHECK_AND_RETURN_RET_LOG(napiSessionMgr != nullptr, result, "napiSessionMgr is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiSessionMgr->audioSessionMngr_ != nullptr, result,
+        "audioSessionMngr_ is nullptr");
+    AudioDeviceUsage usage = static_cast<AudioDeviceUsage>(intValue);
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> availableDescs =
+        napiSessionMgr->audioSessionMngr_->GetAvailableDevices(usage);
+    
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> availableSptrDescs;
+    for (const auto &availableDesc : availableDescs) {
+        std::shared_ptr<AudioDeviceDescriptor> dec = std::make_shared<AudioDeviceDescriptor>(*availableDesc);
+        CHECK_AND_BREAK_LOG(dec != nullptr, "dec mallac failed,no memery.");
+        if (availableDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
+            dec->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+        }
+        availableSptrDescs.push_back(dec);
+    }
+    NapiParamUtils::SetDeviceDescriptors(env, availableSptrDescs, result);
+    return result;
+}
+
+napi_value NapiAudioSessionMgr::GetSelectedMediaInputDevice(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = PARAM0;
+    auto *napiSessionMgr = GetParamWithSync(env, info, argc, nullptr);
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INVALID_PARAM, "argcCount invalid"), "argcCount invalid");
+
+    CHECK_AND_RETURN_RET_LOG(napiSessionMgr != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INVALID_PARAM, "can not get session"), "napiSessionMgr is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiSessionMgr->audioSessionMngr_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INVALID_PARAM, "can not get session"), "audioSessionMngr_ is nullptr");
+
+    std::shared_ptr<AudioDeviceDescriptor> descriptor = napiSessionMgr->audioSessionMngr_->GetSelectedInputDevice();
+    if (descriptor == nullptr) {
+        AUDIO_ERR_LOG("GetSelectedMediaInputDevice Failed");
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE, "get selected input device error");
+        return result;
+    }
+    NapiParamUtils::SetDeviceDescriptor(env, descriptor, result);
+    return result;
+}
+
+napi_value NapiAudioSessionMgr::ClearSelectedMediaInputDevice(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioSessionMgrAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("ClearSelectedMediaInputDevice failed : no memory");
+        NapiAudioError::ThrowError(env, "ClearSelectedMediaInputDevice failed : no memory",
+            NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+    context->GetCbInfo(env, info);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioSessionMgr*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiSessionMgr = objectGuard.GetPtr();
+        if (napiSessionMgr == nullptr || napiSessionMgr->audioSessionMngr_ == nullptr) {
+            context->SignError(NAPI_ERR_SYSTEM, "System error. Internal variable exception.");
+            AUDIO_ERR_LOG("The napiSessionMgr or audioSessionMngr is nullptr");
+            return;
+        }
+        context->intValue = napiSessionMgr->audioSessionMngr_->ClearSelectedInputDevice();
+        if (context->intValue != SUCCESS) {
+            context->SignError(NAPI_ERR_SYSTEM, "System error. Set app volume fail.");
+        }
+    };
+
+    auto complete = [env, context](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "ClearSelectedMediaInputDevice", executor, complete);
 }
 
 napi_value NapiAudioSessionMgr::SetAudioSessionScene(napi_env env, napi_callback_info info)

@@ -422,8 +422,12 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_009, TestSize.Level1)
 
     AudioInterrupt audioInterrupt;
     int32_t zoneID = 456;
+
     int32_t result = server->DeactivateAudioInterrupt(audioInterrupt, zoneID);
     EXPECT_EQ(result, ERR_UNKNOWN);
+    server->interruptService_ = std::make_shared<AudioInterruptService>();
+    result = server->DeactivateAudioInterrupt(audioInterrupt, zoneID);
+    EXPECT_EQ(result, 0);
 }
 
 /**
@@ -531,7 +535,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_016, TestSize.Level1)
     int32_t zoneID = 456;
     int32_t result = 0;
     policyServerTest->ActivateAudioInterrupt(audioInterrupt, zoneID, result);
-    EXPECT_EQ(result, ERR_FOCUS_DENIED);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**
@@ -696,7 +700,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_025, TestSize.Level1)
 
     auto ret = ptrAudioPolicyServer->ActivateAudioSession(strategy);
 
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_EQ(ret, ERR_UNKNOWN);
 }
 
 /**

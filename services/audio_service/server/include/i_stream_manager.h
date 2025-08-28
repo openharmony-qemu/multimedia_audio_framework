@@ -16,6 +16,9 @@
 #ifndef I_STREAM_MANAGER_H
 #define I_STREAM_MANAGER_H
 
+#include <optional>
+#include <string_view>
+
 #include "i_renderer_stream.h"
 #include "i_capturer_stream.h"
 
@@ -40,7 +43,8 @@ public:
     static IStreamManager &GetDupPlaybackManager();
     static IStreamManager &GetDualPlaybackManager();
 
-    virtual int32_t CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream) = 0;
+    virtual int32_t CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream,
+        std::optional<std::string_view> originDeviceName = std::nullopt) = 0;
     virtual int32_t ReleaseRender(uint32_t streamIndex_) = 0;
     virtual int32_t StartRender(uint32_t streamIndex) = 0;
     virtual int32_t StartRenderWithSyncId(uint32_t streamIndex, const int32_t &syncId)

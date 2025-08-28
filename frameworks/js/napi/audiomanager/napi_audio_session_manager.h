@@ -48,6 +48,8 @@ private:
         NapiAudioSessionMgr *objectInfo;
         AudioSessionStrategy audioSessionStrategy;
         int32_t deviceType;
+        std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor;
+        bool bArgTransFlag = false;
     };
 
     static napi_value Construct(napi_env env, napi_callback_info info);
@@ -86,6 +88,10 @@ private:
         napi_env env, napi_value jsThis, napi_value *args, size_t len);
     static std::shared_ptr<NapiAudioSessionDeviceCallback> GetAudioSessionDeviceCallback(
         napi_value argv, NapiAudioSessionMgr *napiSessionMgr);
+    static napi_value GetAvailableDevices(napi_env env, napi_callback_info info);
+    static napi_value SelectMediaInputDevice(napi_env env, napi_callback_info info);
+    static napi_value GetSelectedMediaInputDevice(napi_env env, napi_callback_info info);
+    static napi_value ClearSelectedMediaInputDevice(napi_env env, napi_callback_info info);
 
     napi_env env_;
     AudioSessionManager *audioSessionMngr_;
