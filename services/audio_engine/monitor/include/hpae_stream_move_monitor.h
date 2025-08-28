@@ -14,6 +14,8 @@
  */
 #ifndef HPAE_STREAM_MOVE_MONITOR_H
 #define HPAE_STREAM_MOVE_MONITOR_H
+#include <cstdint>
+#include <string>
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
