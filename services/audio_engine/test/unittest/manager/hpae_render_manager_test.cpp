@@ -1405,6 +1405,7 @@ HWTEST_F(HpaeRendererManagerTest, DeactivateThread_001, TestSize.Level1)
     EXPECT_EQ(hpaeRendererManager->IsRunning(), false);
 }
 
+ /**
  * @tc.name  : Test MoveAllStreamToNewSinkInner
  * @tc.type  : FUNC
  * @tc.number: MoveAllStreamToNewSinkInner_001
@@ -1493,6 +1494,7 @@ HWTEST_F(HpaeRendererManagerTest, UpdateProcessClusterConnection_001, TestSize.L
     hpaeRendererManager->DeInit();
 }
 
+/**
  * @tc.name: SetAudioEffectMode
  * @tc.type: FUNC
  * @tc.number: SetAudioEffectMode_001
