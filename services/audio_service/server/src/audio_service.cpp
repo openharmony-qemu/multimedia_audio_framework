@@ -420,7 +420,7 @@ bool AudioService::RemovePauseInterruptEventMap(const uint32_t sessionId)
     if (iter == pauseInterruptEventMap_.end()) {
         return false;
     }
-    resumeInterruptEventMap_.erase(sessionId);
+    pauseInterruptEventMap_.erase(sessionId);
     return true;
 }
  
@@ -504,7 +504,7 @@ void AudioService::RemoveBackgroundCaptureMap(uint32_t sessionId)
     std::lock_guard<std::mutex> lock(backgroundCaptureMutex_);
     auto iter = backgroundCaptureMap_.find(sessionId);
     if (iter != backgroundCaptureMap_.end()) {
-        audioSwitchStreamMap_.erase(sessionId);
+        backgroundCaptureMap_.erase(sessionId);
     }
 }
  
