@@ -1959,7 +1959,7 @@ int32_t AudioPolicyServer::RestoreOutputDevice(const sptr<AudioRendererFilter> &
     restoreDescs.push_back(std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_NONE,
         DeviceRole::OUTPUT_DEVICE));
 
-    return eventEntry_->SelectOutputDevice(audioRendererFilter, restoreDescs);
+    return eventEntry_->SelectOutputDevice(audioRendererFilter, restoreDescs, 0);
 }
 
 int32_t AudioPolicyServer::GetSelectedDeviceInfo(int32_t uid, int32_t pid, int32_t streamTypeIn,

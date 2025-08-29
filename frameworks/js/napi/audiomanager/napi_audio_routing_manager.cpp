@@ -318,6 +318,7 @@ napi_value NapiAudioRoutingManager::SelectOutputDeviceByFilter(napi_env env, nap
             context->bArgTransFlag, argv[PARAM0]);
         NapiParamUtils::GetAudioDeviceDescriptorVector(env, context->deviceDescriptors,
             context->bArgTransFlag, argv[PARAM1]);
+        context->audioDeviceSelectMode = 0;
         if (argc == ARGS_THREE) {
             NapiParamUtils::GetValueInt32(env, context->audioDeviceSelectMode, argv[PARAM2]);
         }
