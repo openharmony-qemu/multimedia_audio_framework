@@ -1932,7 +1932,8 @@ void AudioPolicyServer::MapExternalToInternalDeviceType(AudioDeviceDescriptor &d
 
 // LCOV_EXCL_START
 int32_t AudioPolicyServer::SelectOutputDevice(const sptr<AudioRendererFilter> &audioRendererFilter,
-    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors,
+    const int32_t audioDeviceSelectMode)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
         "SelectOutputDevice: No system permission");
@@ -1946,7 +1947,19 @@ int32_t AudioPolicyServer::SelectOutputDevice(const sptr<AudioRendererFilter> &a
         targetOutputDevice.push_back(newDeviceDescriptor);
     }
 
-    return eventEntry_->SelectOutputDevice(audioRendererFilter, targetOutputDevice);
+    return eventEntry_->SelectOutputDevice(audioRendererFilter, targetOutputDevice, audioDeviceSelectMode);
+}
+
+int32_t AudioPolicyServer::RestoreOutputDevice(const sptr<AudioRendererFilter> &audioRendererFilter)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
+        "SelectOutputDevice: No system permission");
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> restoreDescs;
+    restoreDescs.push_back(std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_NONE,
+        DeviceRole::OUTPUT_DEVICE));
+
+    return eventEntry_->SelectOutputDevice(audioRendererFilter, restoreDescs);
 }
 
 int32_t AudioPolicyServer::GetSelectedDeviceInfo(int32_t uid, int32_t pid, int32_t streamTypeIn,
@@ -2209,10 +2222,10 @@ int32_t AudioPolicyServer::SetClientCallbacksEnable(int32_t callbackchangeIn, bo
     }
 }
 
-int32_t AudioPolicyServer::SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo)
+int32_t AudioPolicyServer::SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid)
 {
     if (audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SetCallbackRendererInfo(rendererInfo);
+        audioPolicyServerHandler_->SetCallbackRendererInfo(rendererInfo, uid);
     }
     return SUCCESS;
 }
