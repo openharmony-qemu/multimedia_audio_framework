@@ -614,6 +614,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetMaxVolumeLevel_002, TestSize.Level1)
 {
     AudioVolumeType volumeType = STREAM_VOICE_CALL;
     DeviceVolumeType deviceType = SPEAKER_VOLUME_TYPE;
+    audioAdapterManager_->Init();
     if (audioAdapterManager_->streamVolumeInfos_.end() != audioAdapterManager_->streamVolumeInfos_.find(volumeType)) {
         if ((audioAdapterManager_->streamVolumeInfos_[volumeType] != nullptr) &&
             (audioAdapterManager_->streamVolumeInfos_[volumeType]->deviceVolumeInfos.end() !=
@@ -673,6 +674,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetMinVolumeLevel_002, TestSize.Level1)
 {
     AudioVolumeType volumeType = STREAM_VOICE_CALL;
     DeviceVolumeType deviceType = SPEAKER_VOLUME_TYPE;
+    audioAdapterManager_->Init();
     if (audioAdapterManager_->streamVolumeInfos_.end() != audioAdapterManager_->streamVolumeInfos_.find(volumeType)) {
         if ((audioAdapterManager_->streamVolumeInfos_[volumeType] != nullptr) &&
             (audioAdapterManager_->streamVolumeInfos_[volumeType]->deviceVolumeInfos.end() !=
