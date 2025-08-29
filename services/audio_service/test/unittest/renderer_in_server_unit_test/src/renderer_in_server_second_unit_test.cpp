@@ -774,6 +774,8 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerWriteMuteDataSysEvent_001,
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
     EXPECT_NE(nullptr, rendererInServer);
 
+    uint8_t bufferTest[10];
+    bufferDesc.buffer = bufferTest;
     bufferDesc.buffer[0] = 0;
     rendererInServer->WriteMuteDataSysEvent(bufferDesc);
     EXPECT_EQ(false, rendererInServer->isInSilentState_);
@@ -814,6 +816,8 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerWriteMuteDataSysEvent_003,
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
     EXPECT_NE(nullptr, rendererInServer);
 
+    uint8_t bufferTest[10];
+    bufferDesc.buffer = bufferTest;
     bufferDesc.buffer[0] = 0;
     rendererInServer->isInSilentState_ = 0;
     rendererInServer->startMuteTime_ = 1;
@@ -974,7 +978,7 @@ HWTEST_F(RendererInServerExtUnitTest, StreamCallbacksOnWriteData_002, TestSize.L
 
     streamCallbacks->dupRingBuffer_ = AudioRingCache::Create(10);
     ret = streamCallbacks->OnWriteData(inputData, 3);
-    EXPECT_EQ(ERROR, ret);
+    EXPECT_EQ(SUCCESS, ret);
     delete[] inputData;
 }
 
@@ -1253,7 +1257,7 @@ HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_004, TestSize.Level1)
     std::shared_ptr<RendererInServer> tmpRendererInServer;
     tmpRendererInServer = std::make_shared<RendererInServer>(tempProcessConfig, streamListener);
     EXPECT_NE(nullptr, tmpRendererInServer);
-    EXPECT_TRUE(tmpRendererInServer->IsHighResolution());
+    EXPECT_FALSE(tmpRendererInServer->IsHighResolution());
 }
 
 /**

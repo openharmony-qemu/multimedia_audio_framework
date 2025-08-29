@@ -1005,7 +1005,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_064, TestSize.Level1)
     handleFlag = false;
     DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
     ret = audioDeviceCommon.ScoInputDeviceFetchedForRecongnition(handleFlag, address, connectState);
-    EXPECT_EQ(ERROR, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**

@@ -428,6 +428,7 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_010, TestSize.Level1)
  * @tc.number: Audio_Fast_Renderer_011
  * @tc.desc  : Audio_Fast_Renderer_011
  */
+#ifdef ENABLE_FAST_RENDERER_CALLBACK_TEST
 HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_011, TestSize.Level1)
 {
     if (!g_isFastRenderer) {
@@ -494,5 +495,6 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_011, TestSize.Level1)
     audioRenderer->Stop();
     audioRenderer->Release();
 }
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

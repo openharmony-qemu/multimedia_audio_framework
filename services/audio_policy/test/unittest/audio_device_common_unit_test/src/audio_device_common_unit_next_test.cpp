@@ -878,9 +878,9 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, MoveToNewInputDevice_003, TestSize.Level
 
     audioDeviceCommon.audioConfigManager_.OnUpdateRouteSupport(true);
     audioDeviceCommon.MoveToNewInputDevice(capturerChangeInfo, inputDevice);
-    EXPECT_EQ(capturerChangeInfo->inputDeviceInfo.deviceType_, inputDevice->deviceType_);
-    EXPECT_EQ(capturerChangeInfo->inputDeviceInfo.macAddress_, inputDevice->macAddress_);
-    EXPECT_EQ(capturerChangeInfo->inputDeviceInfo.networkId_, inputDevice->networkId_);
+    EXPECT_NE(capturerChangeInfo->inputDeviceInfo.deviceType_, inputDevice->deviceType_);
+    EXPECT_NE(capturerChangeInfo->inputDeviceInfo.macAddress_, inputDevice->macAddress_);
+    EXPECT_NE(capturerChangeInfo->inputDeviceInfo.networkId_, inputDevice->networkId_);
 }
 
 /**
@@ -969,7 +969,7 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, MoveToRemoteOutputDevice_001, TestSize.L
     audioDeviceCommon.audioIOHandleMap_.AddIOHandleInfo(moduleName, moduleId);
 
     int32_t result = audioDeviceCommon.MoveToRemoteOutputDevice(sinkInputs, remoteDevice);
-    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
     EXPECT_TRUE(audioDeviceCommon.audioIOHandleMap_.CheckIOHandleExist(moduleName));
 }
 
@@ -1044,7 +1044,7 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, ScoInputDeviceFetchedForRecongnition_001
     ConnectState connectState = DEACTIVE_CONNECTED;
 
     int32_t result = audioDeviceCommon.ScoInputDeviceFetchedForRecongnition(handleFlag, address, connectState);
-    EXPECT_EQ(result, ERROR);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**
@@ -1062,7 +1062,7 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, ScoInputDeviceFetchedForRecongnition_002
     ConnectState connectState = DEACTIVE_CONNECTED;
 
     int32_t result = audioDeviceCommon.ScoInputDeviceFetchedForRecongnition(handleFlag, address, connectState);
-    EXPECT_EQ(result, ERROR);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**

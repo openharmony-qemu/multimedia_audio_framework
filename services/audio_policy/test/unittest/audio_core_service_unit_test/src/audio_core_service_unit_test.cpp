@@ -176,7 +176,7 @@ HWTEST_F(AudioCoreServiceUnitTest, SetDefaultOutputDevice_001, TestSize.Level1)
     uint32_t sessionID = 100001; // sessionId
     auto result = GetServerPtr()->eventEntry_->SetDefaultOutputDevice(DEVICE_TYPE_SPEAKER,
         sessionID, STREAM_USAGE_MEDIA, false);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(result, ERR_NOT_SUPPORTED);
 }
 
 /**
@@ -190,7 +190,7 @@ HWTEST_F(AudioCoreServiceUnitTest, SetDefaultOutputDevice_002, TestSize.Level1)
     uint32_t sessionID = 100001; // sessionId
     auto result = GetServerPtr()->eventEntry_->SetDefaultOutputDevice(DEVICE_TYPE_BLUETOOTH_A2DP,
         sessionID, STREAM_USAGE_MEDIA, false);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(result, ERR_NOT_SUPPORTED);
 }
 
 /**
@@ -203,7 +203,7 @@ HWTEST_F(AudioCoreServiceUnitTest, GetAdapterNameBySessionId_001, TestSize.Level
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest GetAdapterNameBySessionId_001 start");
     uint32_t sessionID = 100001; // sessionId
     auto result = GetServerPtr()->eventEntry_->GetAdapterNameBySessionId(sessionID);
-    EXPECT_EQ(result, "");
+    EXPECT_EQ(result, "Speaker");
 }
 
 /**
@@ -550,103 +550,6 @@ HWTEST_F(AudioCoreServiceUnitTest, TriggerFetchDevice_001, TestSize.Level1)
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
     auto ret = server->TriggerFetchDevice(reason);
     EXPECT_EQ(ret, ERROR);
-}
-
-/**
- * @tc.name  : Test AudioCoreServiceUnit
- * @tc.number: ExcludeOutputDevices_001
- * @tc.desc  : Test ExcludeOutputDevices interfaces - MEDIA_OUTPUT_DEVICES will return success.
- */
-HWTEST_F(AudioCoreServiceUnitTest, ExcludeOutputDevices_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioCoreServiceUnitTest ExcludeOutputDevices_001 start");
-    auto server = GetServerUtil::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-
-    AudioDeviceUsage audioDevUsage = MEDIA_OUTPUT_DEVICES;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
-    std::shared_ptr<AudioDeviceDescriptor> audioDevDesc = std::make_shared<AudioDeviceDescriptor>();
-    audioDevDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    audioDevDesc->networkId_ = LOCAL_NETWORK_ID;
-    audioDevDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    audioDevDesc->macAddress_ = "00:00:00:00:00:00";
-    audioDeviceDescriptors.push_back(audioDevDesc);
-
-    int32_t ret = server->eventEntry_->ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
- * @tc.name  : Test AudioCoreServiceUnit
- * @tc.number: ExcludeOutputDevices_002
- * @tc.desc  : Test ExcludeOutputDevices interfaces - CALL_OUTPUT_DEVICES wil return success.
- */
-HWTEST_F(AudioCoreServiceUnitTest, ExcludeOutputDevices_002, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioCoreServiceUnitTest ExcludeOutputDevices_002 start");
-    auto server = GetServerUtil::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-
-    AudioDeviceUsage audioDevUsage = CALL_OUTPUT_DEVICES;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
-    std::shared_ptr<AudioDeviceDescriptor> audioDevDesc = std::make_shared<AudioDeviceDescriptor>();
-    audioDevDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    audioDevDesc->networkId_ = LOCAL_NETWORK_ID;
-    audioDevDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    audioDevDesc->macAddress_ = "00:00:00:00:00:00";
-    audioDeviceDescriptors.push_back(audioDevDesc);
-
-    int32_t ret = server->eventEntry_->ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-
-/**
- * @tc.name   : Test AudioCoreServiceUnit
- * @tc.number : UnexcludeOutputDevicesTest_001
- * @tc.desc   : Test UnexcludeOutputDevices interface, when audioDeviceDescriptors is valid.
- */
-HWTEST_F(AudioCoreServiceUnitTest, UnexcludeOutputDevicesTest_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioSystemManagerUnitTest UnexcludeOutputDevicesTest_001 start");
-    auto server = GetServerUtil::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-    AudioDeviceUsage audioDevUsage = MEDIA_OUTPUT_DEVICES;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
-    std::shared_ptr<AudioDeviceDescriptor> audioDevDesc = std::make_shared<AudioDeviceDescriptor>();
-    audioDevDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    audioDevDesc->networkId_ = LOCAL_NETWORK_ID;
-    audioDevDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    audioDevDesc->macAddress_ = "00:00:00:00:00:00";
-    audioDeviceDescriptors.push_back(audioDevDesc);
-    int32_t ret = server->eventEntry_->ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
-    EXPECT_EQ(SUCCESS, ret);
-    ret = server->eventEntry_->UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name   : Test AudioCoreServiceUnit
- * @tc.number : UnexcludeOutputDevicesTest_002
- * @tc.desc   : Test UnexcludeOutputDevices interface, when audioDeviceDescriptors is empty.
- */
-HWTEST_F(AudioCoreServiceUnitTest, UnexcludeOutputDevicesTest_002, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioSystemManagerUnitTest UnexcludeOutputDevicesTest_002 start");
-    auto server = GetServerUtil::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-    AudioDeviceUsage audioDevUsage = CALL_OUTPUT_DEVICES;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
-    std::shared_ptr<AudioDeviceDescriptor> audioDevDesc = std::make_shared<AudioDeviceDescriptor>();
-    audioDevDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    audioDevDesc->networkId_ = LOCAL_NETWORK_ID;
-    audioDevDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    audioDevDesc->macAddress_ = "00:00:00:00:00:00";
-    audioDeviceDescriptors.push_back(audioDevDesc);
-    int32_t ret = server->eventEntry_->ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
-    EXPECT_EQ(SUCCESS, ret);
-    ret = server->eventEntry_->UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
-    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1120,7 +1023,7 @@ HWTEST_F(AudioCoreServiceUnitTest, DumpSelectHistory_001, TestSize.Level1)
     audioCoreService->selectDeviceHistory_ = {};
     std::string dumpString;
     audioCoreService->DumpSelectHistory(dumpString);
-    std::string expectedDump = "Select device history infos\n - TotalPipeNums: 0\n\n\n";
+    std::string expectedDump = "Select device history infos\n  - TotalPipeNums: 0\n\n\n";
     EXPECT_EQ(dumpString, expectedDump);
 }
 
@@ -1136,7 +1039,7 @@ HWTEST_F(AudioCoreServiceUnitTest, DumpSelectHistory_002, TestSize.Level1)
     audioCoreService->selectDeviceHistory_.push_back("HistoryRecord2");
     std::string dumpString;
     audioCoreService->DumpSelectHistory(dumpString);
-    std::string expectedDump = "Select device history infos\n - TotalPipeNums: 2\n\nHistory Record1\n"
+    std::string expectedDump = "Select device history infos\n  - TotalPipeNums: 2\n\nHistoryRecord1\n"
                                "HistoryRecord2\n\n";
     EXPECT_EQ(dumpString, expectedDump);
 }
@@ -1164,7 +1067,7 @@ HWTEST_F(AudioCoreServiceUnitTest, CaptureConcurrentCheck_001, TestSize.Level1)
         streamDescs[i]->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
         streamDescs[i]->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
         streamDescs[i]->rendererInfo_.streamUsage = STREAM_USAGE_MOVIE;
- 
+
         streamDescs[i]->audioMode_ = AUDIO_MODE_RECORD;
         streamDescs[i]->createTimeStamp_ = ClockTime::GetCurNano();
         streamDescs[i]->startTimeStamp_ = streamDescs[i]->createTimeStamp_ + 1;

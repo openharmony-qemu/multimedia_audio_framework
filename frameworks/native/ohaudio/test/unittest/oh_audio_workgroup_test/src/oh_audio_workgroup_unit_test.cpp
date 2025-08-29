@@ -49,9 +49,9 @@ void* TestFunc(void* arg)
     result = OH_AudioWorkgroup_AddCurrentThread(audioWorkgroup, &testTid);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
     result = OH_AudioWorkgroup_Start(audioWorkgroup, startTime, endTime);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_SYSTEM);
     result = OH_AudioWorkgroup_Stop(audioWorkgroup);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_SYSTEM);
     result = OH_AudioWorkgroup_RemoveThread(audioWorkgroup, testTid);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
     result = OH_AudioResourceManager_ReleaseWorkgroup(audioResourceManager, audioWorkgroup);

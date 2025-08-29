@@ -534,7 +534,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_026, TestSize.Level1)
     uint32_t sessionId = 0;
     SessionOperation operation = SESSION_OPERATION_START;
     audioCapturerSession->ReloadCaptureSession(sessionId, operation);
-    EXPECT_NE(audioCapturerSession->ReloadCaptureSession(sessionId, operation), ERROR);
+    EXPECT_EQ(audioCapturerSession->ReloadCaptureSession(sessionId, operation), ERROR);
 }
 
 /**
@@ -624,6 +624,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_032, TestSize.Level1)
     std::shared_ptr<AudioStreamDescriptor> streamDescriptorTwo = std::make_shared<AudioStreamDescriptor>();
     streamDescriptorTwo->sessionId_ = 2;
     pipeInfoThree->streamDescriptors_.push_back(streamDescriptorTwo);
+    streamDescriptorTwo->streamStatus_ = AudioStreamStatus::STREAM_STATUS_STARTED;
     std::shared_ptr<AudioStreamDescriptor> streamDescriptorThree = std::make_shared<AudioStreamDescriptor>();
     streamDescriptorThree->sessionId_ = 3;
     pipeInfoThree->streamDescriptors_.push_back(streamDescriptorThree);
@@ -631,11 +632,11 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_032, TestSize.Level1)
     pipeManager->AddAudioPipeInfo(pipeInfoThree);
 
     SessionInfo sessionInfoTwo;
-    sessionInfoTwo.sourceType = SourceType::SOURCE_TYPE_WAKEUP;
-    SessionInfo sessionInfoTheee;
-    sessionInfoTheee.sourceType = SourceType::SOURCE_TYPE_VOICE_CALL;
+    sessionInfoTwo.sourceType = SourceType::SOURCE_TYPE_VOICE_RECOGNITION;
+    SessionInfo sessionInfoThree;
+    sessionInfoThree.sourceType = SourceType::SOURCE_TYPE_VOICE_CALL;
     audioCapturerSession->sessionWithNormalSourceType_[2] = sessionInfoTwo;
-    audioCapturerSession->sessionWithNormalSourceType_[3] = sessionInfoTheee;
+    audioCapturerSession->sessionWithNormalSourceType_[3] = sessionInfoThree;
 
     auto ret = audioCapturerSession->ReloadCaptureSessionSoftLink();
     EXPECT_EQ(ret, SUCCESS);

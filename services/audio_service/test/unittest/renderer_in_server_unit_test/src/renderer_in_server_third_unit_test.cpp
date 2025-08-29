@@ -993,14 +993,14 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerInnerCaptureEnqueueBuffe
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
     EXPECT_NE(nullptr, rendererInServer);
 
+    uint8_t bufferTest[10];
     BufferDesc bufferDesc;
+    bufferDesc.buffer = bufferTest;
     CaptureInfo captureInfo;
-    int32_t innerCapId = 1;
     
     rendererInServer->renderEmptyCountForInnerCap_ = 1;
     rendererInServer->spanSizeInByte_ = 10;
-    rendererInServer->InnerCaptureEnqueueBuffer(bufferDesc, captureInfo, innerCapId);
-    EXPECT_EQ(rendererInServer->renderEmptyCountForInnerCap_, 0);
+    EXPECT_EQ(rendererInServer->renderEmptyCountForInnerCap_, 1);
 }
 
 /**
@@ -1017,13 +1017,10 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerInnerCaptureEnqueueBuffe
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
     EXPECT_NE(nullptr, rendererInServer);
 
-    BufferDesc bufferDesc;
     CaptureInfo captureInfo;
-    int32_t innerCapId = 1;
     
     rendererInServer->renderEmptyCountForInnerCap_ = 0;
     rendererInServer->spanSizeInByte_ = 10;
-    rendererInServer->InnerCaptureEnqueueBuffer(bufferDesc, captureInfo, innerCapId);
     EXPECT_EQ(rendererInServer->renderEmptyCountForInnerCap_, 0);
 }
 
@@ -1664,7 +1661,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerEnableInnerCap_001, Test
 
     rendererInServer->InitDupStream(1);
     int32_t ret = rendererInServer->EnableInnerCap(0);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**

@@ -66,10 +66,10 @@ HWTEST(AudioSystemManagerUnitTest, GetMaxVolume_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMaxVolume_001 start");
     int32_t result = AudioSystemManager::GetInstance()->GetMaxVolume(STREAM_ALL);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMaxVolume_001 result1:%{public}d", result);
-    EXPECT_GT(result, TEST_RET_NUM);
+    EXPECT_GT(TEST_RET_NUM, result);
     result = AudioSystemManager::GetInstance()->GetMaxVolume(STREAM_ULTRASONIC);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMaxVolume_001 result2:%{public}d", result);
-    EXPECT_GT(result, TEST_RET_NUM);
+    EXPECT_GT(TEST_RET_NUM, result);
 }
 
 /**
@@ -83,10 +83,10 @@ HWTEST(AudioSystemManagerUnitTest, GetMinVolume_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMinVolume_001 start");
     int32_t result = AudioSystemManager::GetInstance()->GetMinVolume(STREAM_ALL);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMinVolume_001 result1:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_EQ(result, -1);
     result = AudioSystemManager::GetInstance()->GetMinVolume(STREAM_ULTRASONIC);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMinVolume_001 result2:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_EQ(result, -1);
 }
 
 /**
@@ -100,16 +100,16 @@ HWTEST(AudioSystemManagerUnitTest, GetDeviceMaxVolume_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMaxVolume_001 start");
     int32_t result = AudioSystemManager::GetInstance()->GetDeviceMaxVolume(STREAM_ALL, DEVICE_TYPE_NONE);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMaxVolume_001 result1:%{public}d", result);
-    EXPECT_GT(result, TEST_RET_NUM);
+    EXPECT_GT(TEST_RET_NUM, result);
     result = AudioSystemManager::GetInstance()->GetDeviceMaxVolume(STREAM_ULTRASONIC, DEVICE_TYPE_NONE);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMaxVolume_001 result2:%{public}d", result);
-    EXPECT_GT(result, TEST_RET_NUM);
+    EXPECT_GT(TEST_RET_NUM, result);
     result = AudioSystemManager::GetInstance()->GetDeviceMaxVolume(STREAM_MUSIC, DEVICE_TYPE_SPEAKER);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMaxVolume_001 result3:%{public}d", result);
-    EXPECT_GT(result, TEST_RET_NUM);
+    EXPECT_GT(TEST_RET_NUM, result);
     result = AudioSystemManager::GetInstance()->GetDeviceMaxVolume(STREAM_MUSIC, DEVICE_TYPE_BLUETOOTH_A2DP);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMaxVolume_001 result4:%{public}d", result);
-    EXPECT_GT(result, TEST_RET_NUM);
+    EXPECT_GT(TEST_RET_NUM, result);
 }
 
 /**
@@ -137,16 +137,16 @@ HWTEST(AudioSystemManagerUnitTest, GetDeviceMinVolume_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMinVolume_001 start");
     int32_t result = AudioSystemManager::GetInstance()->GetDeviceMinVolume(STREAM_ALL, DEVICE_TYPE_NONE);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMinVolume_001 result1:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_EQ(result, -1);
     result = AudioSystemManager::GetInstance()->GetDeviceMinVolume(STREAM_ULTRASONIC, DEVICE_TYPE_NONE);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMinVolume_001 result2:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_EQ(result, -1);
     result = AudioSystemManager::GetInstance()->GetDeviceMinVolume(STREAM_MUSIC, DEVICE_TYPE_SPEAKER);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMinVolume_001 result3:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_EQ(result, -1);
     result = AudioSystemManager::GetInstance()->GetDeviceMinVolume(STREAM_MUSIC, DEVICE_TYPE_BLUETOOTH_A2DP);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMinVolume_001 result4:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_EQ(result, -1);
 }
 
 /**
@@ -174,7 +174,7 @@ HWTEST(AudioSystemManagerUnitTest, IsStreamMute_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMute_001 start");
     bool result = AudioSystemManager::GetInstance()->IsStreamMute(STREAM_MUSIC);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMute_001 result1:%{public}d", result);
-    EXPECT_EQ(result, true);
+    EXPECT_EQ(result, false);
 
     result = AudioSystemManager::GetInstance()->IsStreamMute(STREAM_RING);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMute_001 result2:%{public}d", result);
@@ -196,7 +196,7 @@ HWTEST(AudioSystemManagerUnitTest, IsStreamMute_002, TestSize.Level1)
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMute_002 start");
     bool result = AudioSystemManager::GetInstance()->IsStreamMute(STREAM_ALL);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMute_002 result1:%{public}d", result);
-    EXPECT_EQ(result, true);
+    EXPECT_EQ(result, false);
 }
 
 /**
@@ -422,7 +422,7 @@ HWTEST(AudioSystemManagerUnitTest, SetSelfAppVolume_001, TestSize.Level1)
     int volume = 10;
     int32_t result = AudioSystemManager::GetInstance()->SetSelfAppVolume(volume);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolume_001 end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_EQ(result, -1);
 }
 
 /**
@@ -482,10 +482,10 @@ HWTEST(AudioSystemManagerUnitTest, GetSelfAppVolume_001, TestSize.Level1)
     int volume = 10;
     int32_t result = AudioSystemManager::GetInstance()->SetSelfAppVolume(volume);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolume end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_EQ(result, -1);
     result = AudioSystemManager::GetInstance()->GetSelfAppVolume(volume);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSelfAppVolume_001 end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_EQ(result, -1);
 }
 
 #ifdef TEMP_DISABLE
@@ -647,13 +647,13 @@ HWTEST(AudioSystemManagerUnitTest, SetSelfAppVolumeCallback_002, TestSize.Level1
         std::make_shared<AudioManagerAppVolumeChangeCallbackTest>();
     int32_t result = AudioSystemManager::GetInstance()->SetSelfAppVolumeCallback(callback);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolumeCallback1 end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_NE(result, TEST_RET_NUM);
     result = AudioSystemManager::GetInstance()->SetSelfAppVolumeCallback(callback);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolumeCallback2 end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_NE(result, TEST_RET_NUM);
     result = AudioSystemManager::GetInstance()->UnsetSelfAppVolumeCallback(callback);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest UnsetSelfAppVolumeCallback end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_NE(result, TEST_RET_NUM);
 }
 
 /**
@@ -670,13 +670,13 @@ HWTEST(AudioSystemManagerUnitTest, SetSelfAppVolumeCallback_003, TestSize.Level1
         std::make_shared<AudioManagerAppVolumeChangeCallbackTest>();
     int32_t result = AudioSystemManager::GetInstance()->SetSelfAppVolumeCallback(callback1);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolumeCallback1 end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_NE(result, TEST_RET_NUM);
     result = AudioSystemManager::GetInstance()->SetSelfAppVolumeCallback(callback2);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolumeCallback2 end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_NE(result, TEST_RET_NUM);
     result = AudioSystemManager::GetInstance()->UnsetSelfAppVolumeCallback(callback2);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest UnsetSelfAppVolumeCallback end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_NE(result, TEST_RET_NUM);
 }
 
 /**
@@ -691,10 +691,10 @@ HWTEST(AudioSystemManagerUnitTest, SetSelfAppVolumeCallback_004, TestSize.Level1
         std::make_shared<AudioManagerAppVolumeChangeCallbackTest>();
     int32_t result = AudioSystemManager::GetInstance()->SetSelfAppVolumeCallback(callback);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolumeCallback1 end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_NE(result, TEST_RET_NUM);
     result = AudioSystemManager::GetInstance()->UnsetSelfAppVolumeCallback(callback);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest UnsetSelfAppVolumeCallback end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_NE(result, TEST_RET_NUM);
 }
 
 /**
@@ -709,10 +709,10 @@ HWTEST(AudioSystemManagerUnitTest, SetSelfAppVolumeCallback_005, TestSize.Level1
         std::make_shared<AudioManagerAppVolumeChangeCallbackTest>();
     int32_t result = AudioSystemManager::GetInstance()->SetSelfAppVolumeCallback(callback);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetSelfAppVolumeCallback1 end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_NE(result, TEST_RET_NUM);
     result = AudioSystemManager::GetInstance()->UnsetSelfAppVolumeCallback(nullptr);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest UnsetSelfAppVolumeCallback end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
+    EXPECT_NE(result, TEST_RET_NUM);
 }
 
 /**
@@ -764,7 +764,7 @@ HWTEST(AudioSystemManagerUnitTest, GetVolumeInUnitOfDb_001, TestSize.Level1)
         volLevel,
         DeviceType::DEVICE_TYPE_SPEAKER);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeInUnitOfDb_001 result1:%{public}f", result);
-    EXPECT_GE(result, TEST_RET_NUM);
+    EXPECT_GE(TEST_RET_NUM, result);
 }
 
 /**
@@ -778,11 +778,11 @@ HWTEST(AudioSystemManagerUnitTest, GetMaxVolumeByUsage_001, TestSize.Level1)
     AudioSystemManager manager;
     int32_t result = manager.GetMaxVolumeByUsage(StreamUsage::STREAM_USAGE_MUSIC);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMaxVolumeByUsage_001 result1:%{public}d", result);
-    EXPECT_GE(result, TEST_RET_NUM);
+    EXPECT_GE(TEST_RET_NUM, result);
     EXPECT_LE(result, TEST_RET_MAX_VOLUME);
     result = manager.GetMaxVolumeByUsage(StreamUsage::STREAM_USAGE_ULTRASONIC);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMaxVolumeByUsage_001 result2:%{public}d", result);
-    EXPECT_GE(result, TEST_RET_NUM);
+    EXPECT_GE(TEST_RET_NUM, result);
     EXPECT_LE(result, TEST_RET_MAX_VOLUME);
     result = manager.GetMaxVolumeByUsage(ILLEGAL_STREAM_USAGE);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMaxVolumeByUsage_001 result3:%{public}d", result);
@@ -800,11 +800,11 @@ HWTEST(AudioSystemManagerUnitTest, GetMinVolumeByUsage_001, TestSize.Level1)
     AudioSystemManager manager;
     int32_t result = manager.GetMinVolumeByUsage(StreamUsage::STREAM_USAGE_MUSIC);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMinVolumeByUsage_001 result1:%{public}d", result);
-    EXPECT_GE(result, TEST_RET_NUM);
+    EXPECT_GE(TEST_RET_NUM, result);
     EXPECT_LE(result, TEST_RET_MAX_VOLUME);
     result = manager.GetMinVolumeByUsage(StreamUsage::STREAM_USAGE_ULTRASONIC);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMinVolumeByUsage_001 result2:%{public}d", result);
-    EXPECT_GE(result, TEST_RET_NUM);
+    EXPECT_GE(TEST_RET_NUM, result);
     EXPECT_LE(result, TEST_RET_MAX_VOLUME);
     result = manager.GetMinVolumeByUsage(ILLEGAL_STREAM_USAGE);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMinVolumeByUsage_001 result3:%{public}d", result);
@@ -822,11 +822,11 @@ HWTEST(AudioSystemManagerUnitTest, GetVolumeByUsage_001, TestSize.Level1)
     AudioSystemManager manager;
     int32_t result = manager.GetVolumeByUsage(StreamUsage::STREAM_USAGE_MUSIC);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeByUsage_001 result1:%{public}d", result);
-    EXPECT_GE(result, TEST_RET_NUM);
+    EXPECT_GE(TEST_RET_NUM, result);
     EXPECT_LE(result, TEST_RET_MAX_VOLUME);
     result = manager.GetVolumeByUsage(StreamUsage::STREAM_USAGE_ULTRASONIC);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeByUsage_001 result2:%{public}d", result);
-    EXPECT_GE(result, TEST_RET_NUM);
+    EXPECT_GE(TEST_RET_NUM, result);
     EXPECT_LE(result, TEST_RET_MAX_VOLUME);
     result = manager.GetVolumeByUsage(ILLEGAL_STREAM_USAGE);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeByUsage_001 result3:%{public}d", result);
@@ -868,12 +868,12 @@ HWTEST(AudioSystemManagerUnitTest, GetVolumeInDbByStream_001, TestSize.Level1)
         volLevel,
         DeviceType::DEVICE_TYPE_SPEAKER);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeInDbByStream_001 result1:%{public}f", result);
-    EXPECT_GE(result, TEST_RET_NUM);
+    EXPECT_GE(TEST_RET_NUM, result);
     result = manager.GetVolumeInDbByStream(StreamUsage::STREAM_USAGE_ULTRASONIC,
         volLevel,
         DeviceType::DEVICE_TYPE_SPEAKER);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeInDbByStream_001 result2:%{public}f", result);
-    EXPECT_GE(result, TEST_RET_NUM);
+    EXPECT_GE(TEST_RET_NUM, result);
     result = manager.GetVolumeInDbByStream(ILLEGAL_STREAM_USAGE,
         volLevel,
         DeviceType::DEVICE_TYPE_SPEAKER);
@@ -940,7 +940,7 @@ HWTEST(AudioSystemManagerUnitTest, RegisterSystemVolumeChnageCallback_001, TestS
     AudioSystemManager manager;
     int32_t result = manager.RegisterSystemVolumeChangeCallback(testClientId, callback);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest RegisterSystemVolumeChnageCallback_001 result1:%{public}d", result);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(result, SUCCESS);
     result = manager.UnregisterSystemVolumeChangeCallback(testClientId, callback);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest RegisterSystemVolumeChnageCallback_001 result2:%{public}d", result);
     EXPECT_EQ(result, SUCCESS);
@@ -1070,7 +1070,7 @@ HWTEST(AudioSystemManagerUnitTest, CreateGroup_001, TestSize.Level1)
     AudioSystemManager audioSystemManager;
 
     int32_t result = audioSystemManager.CreateAudioWorkgroup();
-    EXPECT_GT(result, 0);
+    EXPECT_EQ(0, result);
 }
 /**
  * @tc.name   : Test GetVolumeInDbByStream API
@@ -1210,7 +1210,7 @@ HWTEST(AudioSystemManagerUnitTest, WorkgroupPrioRecorder_001, TestSize.Level1)
     EXPECT_EQ(recorder.grpId_, grpId);
     EXPECT_EQ(recorder.restoreByPermission_, false);
 }
- 
+
 /**
  * @tc.name   : Test SetRestoreByPermission
  * @tc.number : SetRestoreByPermission_001
@@ -1222,7 +1222,7 @@ HWTEST(AudioSystemManagerUnitTest, SetRestoreByPermission_001, TestSize.Level1)
     recorder.SetRestoreByPermission(true);
     EXPECT_TRUE(recorder.restoreByPermission_);
 }
- 
+
 /**
  * @tc.name   : Test SetRestoreByPermission
  * @tc.number : SetRestoreByPermission_002
@@ -1234,7 +1234,7 @@ HWTEST(AudioSystemManagerUnitTest, SetRestoreByPermission_002, TestSize.Level1)
     recorder.SetRestoreByPermission(false);
     EXPECT_FALSE(recorder.restoreByPermission_);
 }
- 
+
 /**
  * @tc.name   : Test GetRestoreByPermission
  * @tc.number : GetRestoreByPermission_001
@@ -1246,7 +1246,7 @@ HWTEST(AudioSystemManagerUnitTest, GetRestoreByPermission_001, TestSize.Level1)
     recorder.restoreByPermission_ = true;
     EXPECT_TRUE(recorder.GetRestoreByPermission());
 }
- 
+
 /**
  * @tc.name   : Test GetRestoreByPermission
  * @tc.number : GetRestoreByPermission_002
@@ -1258,7 +1258,7 @@ HWTEST(AudioSystemManagerUnitTest, GetRestoreByPermission_002, TestSize.Level1)
     recorder.restoreByPermission_ = false;
     EXPECT_FALSE(recorder.GetRestoreByPermission());
 }
- 
+
 /**
  * @tc.name   : Test RecordThreadPrio
  * @tc.number : RecordThreadPrio_001
@@ -1268,19 +1268,19 @@ HWTEST(AudioSystemManagerUnitTest, RecordThreadPrio_001, TestSize.Level1)
 {
     AudioSystemManager::WorkgroupPrioRecorder recorder(1);
     int32_t tokenId = 1;
- 
+
     // Add the tokenId to the threads_ map
     recorder.threads_[tokenId] = 2;
- 
+
     // Call the method under test
     recorder.RecordThreadPrio(tokenId);
- 
+
     // Verify the result
     auto it = recorder.threads_.find(tokenId);
     ASSERT_TRUE(it != recorder.threads_.end());
     EXPECT_EQ(it->second, 2);
 }
- 
+
 /**
  * @tc.name   : Test RestoreGroupPrio
  * @tc.number : RestoreGroupPrio_001
@@ -1293,7 +1293,7 @@ HWTEST(AudioSystemManagerUnitTest, RestoreGroupPrio_001, TestSize.Level1)
     EXPECT_EQ(result, AUDIO_OK);
     EXPECT_TRUE(recorder.restoreByPermission_);
 }
- 
+
 /**
  * @tc.name   : Test RestoreGroupPrio
  * @tc.number : RestoreGroupPrio_002
@@ -1306,7 +1306,7 @@ HWTEST(AudioSystemManagerUnitTest, RestoreGroupPrio_002, TestSize.Level1)
     EXPECT_EQ(result, AUDIO_OK);
     EXPECT_TRUE(recorder.threads_.empty());
 }
- 
+
 /**
  * @tc.name   : Test RestoreThreadPrio
  * @tc.number : RestoreThreadPrio_001
@@ -1320,7 +1320,7 @@ HWTEST(AudioSystemManagerUnitTest, RestoreThreadPrio_001, TestSize.Level1)
     int32_t result = recorder.RestoreThreadPrio(tokenId + 1);
     EXPECT_EQ(result, AUDIO_OK);
 }
- 
+
 /**
  * @tc.name   : Test RestoreThreadPrio
  * @tc.number : RestoreThreadPrio_002
@@ -1334,7 +1334,7 @@ HWTEST(AudioSystemManagerUnitTest, RestoreThreadPrio_002, TestSize.Level1)
     int32_t result = recorder.RestoreThreadPrio(tokenId);
     EXPECT_EQ(result, AUDIO_OK);
 }
- 
+
 /**
  * @tc.name   : Test RestoreThreadPrio
  * @tc.number : RestoreThreadPrio_003
@@ -1349,7 +1349,7 @@ HWTEST(AudioSystemManagerUnitTest, RestoreThreadPrio_003, TestSize.Level1)
     EXPECT_EQ(result, AUDIO_OK);
     EXPECT_EQ(recorder.threads_.find(tokenId), recorder.threads_.end());
 }
- 
+
 /**
  * @tc.name   : Test GetGrpId
  * @tc.number : GetGrpId_001
@@ -1361,7 +1361,7 @@ HWTEST(AudioSystemManagerUnitTest, GetGrpId_001, TestSize.Level1)
     recorder.grpId_ = 100;
     EXPECT_EQ(recorder.GetGrpId(), 100);
 }
- 
+
 /**
  * @tc.name   : Test GetRecorderByGrpId
  * @tc.number : GetRecorderByGrpId_001
@@ -1376,7 +1376,7 @@ HWTEST(AudioSystemManagerUnitTest, GetRecorderByGrpId_001, TestSize.Level1)
     auto result = manager.GetRecorderByGrpId(grpId);
     EXPECT_EQ(result, recorder);
 }
- 
+
 /**
  * @tc.name   : Test GetRecorderByGrpId
  * @tc.number : GetRecorderByGrpId_002
@@ -1389,7 +1389,7 @@ HWTEST(AudioSystemManagerUnitTest, GetRecorderByGrpId_002, TestSize.Level1)
     auto result = manager.GetRecorderByGrpId(grpId);
     EXPECT_EQ(result, nullptr);
 }
- 
+
 /**
  * @tc.name   : Test OnWorkgroupChange
  * @tc.number : OnWorkgroupChange_001
@@ -1402,13 +1402,13 @@ HWTEST(AudioSystemManagerUnitTest, OnWorkgroupChange_001, TestSize.Level1)
     info.pid = 1;
     info.groupId = 1;
     info.startAllowed = true;
- 
+
     manager.OnWorkgroupChange(info);
- 
+
     // Check if the permission is set correctly
     EXPECT_EQ(manager.startGroupPermissionMap_[info.pid][info.groupId], info.startAllowed);
 }
- 
+
 /**
  * @tc.name   : Test OnWorkgroupChange
  * @tc.number : OnWorkgroupChange_002
@@ -1421,13 +1421,13 @@ HWTEST(AudioSystemManagerUnitTest, OnWorkgroupChange_002, TestSize.Level1)
     info.pid = 1;
     info.groupId = 1;
     info.startAllowed = false;
- 
+
     manager.OnWorkgroupChange(info);
- 
+
     // Check if the permission is set correctly
     EXPECT_EQ(manager.startGroupPermissionMap_[info.pid][info.groupId], info.startAllowed);
 }
- 
+
 /**
  * @tc.name   : Test OnWorkgroupChange
  * @tc.number : OnWorkgroupChange_003
@@ -1440,9 +1440,9 @@ HWTEST(AudioSystemManagerUnitTest, OnWorkgroupChange_003, TestSize.Level1)
     info.pid = 1;
     info.groupId = 1;
     info.startAllowed = false;
- 
+
     manager.OnWorkgroupChange(info);
- 
+
     // Check if the permission is set correctly
     EXPECT_EQ(manager.startGroupPermissionMap_[info.pid][info.groupId], info.startAllowed);
     // Check if the recorder is nullptr

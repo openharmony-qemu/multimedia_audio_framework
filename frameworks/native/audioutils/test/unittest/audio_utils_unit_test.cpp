@@ -2742,8 +2742,8 @@ HWTEST(AudioUtilsUnitTest, MockPcmData_001, TestSize.Level1)
 */
 HWTEST(AudioUtilsUnitTest, MockPcmData_002, TestSize.Level1)
 {
-    uint8_t buffer[0] = {};
-    size_t bufferLen = 0;
+    uint8_t buffer[4096] = {0};
+    size_t bufferLen = sizeof(buffer);
     int32_t sampleRate = 44100;
     int32_t channelCount = 2;
     int32_t sampleFormat = 16;
@@ -2755,7 +2755,7 @@ HWTEST(AudioUtilsUnitTest, MockPcmData_002, TestSize.Level1)
 
     audioLatencyMeasurement->mockedTime_ = 2000;
     bool ret = audioLatencyMeasurement->MockPcmData(buffer, bufferLen);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
 
     audioLatencyMeasurement->mockedTime_ = 2000;
     audioLatencyMeasurement->format_ = SAMPLE_S32LE;

@@ -134,7 +134,7 @@ HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_006, TestSize.Level1)
     type = SOURCE_TYPE_VOICE_COMMUNICATION;
     EXPECT_TRUE(audioRouterCenter.IsConfigRouterStrategy(type));
     type = SOURCE_TYPE_VOICE_MESSAGE;
-    EXPECT_FALSE(audioRouterCenter.IsConfigRouterStrategy(type));
+    EXPECT_TRUE(audioRouterCenter.IsConfigRouterStrategy(type));
     type = SOURCE_TYPE_INVALID;
     EXPECT_FALSE(audioRouterCenter.IsConfigRouterStrategy(type));
 }

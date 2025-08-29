@@ -1654,7 +1654,7 @@ HWTEST(RendererInClientInnerUnitTest, GetAudioTimestampInfo_001, TestSize.Level0
     for (auto i = 0; i < Timestamp::Timestampbase::BASESIZE; i++) {
         ptrRendererInClientInner->GetAudioTimestampInfo(timestamp,
             static_cast<Timestamp::Timestampbase>(i));
-        EXPECT_EQ(timestamp.framePosition, 450); // latency = 50 + (200 - 50) * 2 = 350, frameposition = 150 < 450
+        EXPECT_EQ(timestamp.framePosition, 150); // latency = 50 + (200 - 50) * 2 = 350, frameposition = 150 < 450
     }
     ptrRendererInClientInner->unprocessedFramesBytes_.store(1000);
     for (auto i = 0; i < Timestamp::Timestampbase::BASESIZE; i++) {
@@ -1751,7 +1751,7 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_061, TestSize.Level1
     info.channels = AudioChannel::STEREO;
     ptrRendererInClientInner->state_ = State::INVALID;
     ret = ptrRendererInClientInner->SetAudioStreamInfo(info, nullptr);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

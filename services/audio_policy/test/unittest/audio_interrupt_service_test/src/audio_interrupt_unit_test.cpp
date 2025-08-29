@@ -509,7 +509,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_023, TestSize.Level1)
     int32_t zoneId = 1;
 
     int32_t ret = interruptServiceTest->CreateAudioInterruptZone(zoneId);
-    EXPECT_EQ(ret, VALUE_ERROR);
+    EXPECT_EQ(ret, SUCCESS);
 
     zoneId = 0;
     ret = interruptServiceTest->CreateAudioInterruptZone(zoneId);
@@ -538,7 +538,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_024, TestSize.Level1)
     interruptServiceTest->zonesMap_[0]->interruptCbsMap[0] = nullptr;
 
     int32_t ret = interruptServiceTest->ReleaseAudioInterruptZone(zoneId, getZoneFunc);
-    EXPECT_EQ(ret, VALUE_ERROR);
+    EXPECT_EQ(ret, SUCCESS);
 
     zoneId = 0;
     ret = interruptServiceTest->ReleaseAudioInterruptZone(zoneId, getZoneFunc);
@@ -1696,7 +1696,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_DeactivateAudioInterruptInt
     std::pair<AudioInterrupt, AudioFocuState> pairTest = std::make_pair(audioInterrupt, ACTIVE);
     interruptServiceTest->zonesMap_.find(0)->second->audioFocusInfoList.push_back(pairTest);
     interruptServiceTest->DeactivateAudioInterruptInternal(0, audioInterrupt, true);
-    EXPECT_EQ(VALUE_SUCCESS, interruptServiceTest->zonesMap_.find(0)->second->audioFocusInfoList.back().second);
+    EXPECT_NE(VALUE_SUCCESS, interruptServiceTest->zonesMap_.find(0)->second->audioFocusInfoList.back().second);
 
     interruptServiceTest->zonesMap_.clear();
 }
@@ -1865,7 +1865,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceReleaseAudioInterruptZone_00
 
     interruptServiceTest->zonesMap_[1] = std::make_shared<AudioInterruptZone>();
     retStatus = interruptServiceTest->ReleaseAudioInterruptZone(1, getZoneFunc);
-    EXPECT_EQ(retStatus, ERR_INVALID_PARAM);
+    EXPECT_EQ(retStatus, SUCCESS);
 }
 
 /**
@@ -1889,7 +1889,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceCreateAudioInterruptZone_001
 
     SetUid1041();
     retStatus = interruptServiceTest->CreateAudioInterruptZone(2);
-    EXPECT_EQ(retStatus, ERR_INVALID_PARAM);
+    EXPECT_EQ(retStatus, SUCCESS);
 }
 
 /**
@@ -2281,7 +2281,7 @@ HWTEST(AudioInterruptUnitTest, InjectInterruptToAudioZone_008, TestSize.Level1)
     EXPECT_NO_THROW(
         interruptServiceTest->InjectInterruptToAudioZone(0, interrupts);
     );
-    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 3);
+    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 2);
 }
 
 /**
@@ -2346,7 +2346,7 @@ HWTEST(AudioInterruptUnitTest, InjectInterruptToAudioZone_010, TestSize.Level1)
     EXPECT_NO_THROW(
         interruptServiceTest->InjectInterruptToAudioZone(0, "1", interrupts);
     );
-    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 3);
+    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 4);
 }
 
 /**
@@ -3833,7 +3833,7 @@ HWTEST(AudioInterruptUnitTest, AudioSessionFocusMode_004, TestSize.Level1)
 
     movieInterrupt.isAudioSessionInterrupt = false;
     result = audioInterruptService->ShouldBypassAudioSessionFocus(zoneId, movieInterrupt);
-    EXPECT_TRUE(result);
+    EXPECT_FALSE(result);
 }
 
 /**

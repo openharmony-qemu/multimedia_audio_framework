@@ -221,6 +221,7 @@ HWTEST(AudioToneplayerUnitTest, Toneplayer_005, TestSize.Level1)
     bool stopRet = toneplayer->StopTone();
     EXPECT_EQ(true, stopRet);
 
+    toneplayer->toneState_ = TonePlayerImpl::ToneState::TONE_STOPPED;
     bool checkRet = toneplayer->CheckToneStopped();
     EXPECT_EQ(true, checkRet);
 

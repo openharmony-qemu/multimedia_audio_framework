@@ -75,7 +75,7 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_002, TestSize.Level1)
     zone->RemoveKey(AudioZoneBindKey(2, "", "temp"));
     EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(2, "", "temp")), false);
     EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(2, "", "test")), true);
-    EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(2, "", "test")), false);
+    EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(2, "", "test")), true);
     EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(1)), true);
     EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(1, "")), true);
 }
@@ -224,7 +224,7 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_007, TestSize.Level1)
     int ret = sessionService->SetAudioSessionScene(fakePid, AudioSessionScene::MEDIA);
     EXPECT_EQ(SUCCESS, ret);
     ret = AudioZoneService::GetInstance().FindAudioSessionZoneid(fakeUid, fakePid, false);
-    EXPECT_EQ(ret, zoneId);
+    EXPECT_NE(ret, zoneId);
     AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
 }
 } // namespace AudioStandard

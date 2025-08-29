@@ -1371,7 +1371,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetRendererInfo_001, TestSize.Level
     rendererOptions.rendererInfo.rendererFlags = RenderUT::RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    EXPECT_NE(nullptr, audioRenderer);
+    ASSERT_TRUE(audioRenderer != nullptr);
 
     AudioRendererInfo rendererInfo;
     audioRenderer->GetRendererInfo(rendererInfo);

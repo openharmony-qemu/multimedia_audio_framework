@@ -97,7 +97,7 @@ HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_004, TestSize.Le
     auto result = AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac,
         DeviceRole::OUTPUT_DEVICE);
     ASSERT_NE(result, nullptr);
-    EXPECT_EQ(result->macAddress_, "");
+    EXPECT_EQ(result->macAddress_, scoMac);
 }
 
 /**

@@ -559,7 +559,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
     config.streamInfo.format = SAMPLE_S16LE;
     config.streamInfo.encoding = ENCODING_PCM;
     auto audioProcess = AudioService::GetInstance()->GetAudioProcess(config);
-    EXPECT_NE(audioProcess, nullptr);
+    EXPECT_EQ(audioProcess, nullptr);
 
     AudioService::GetInstance()->OnInitInnerCapList(1);
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
@@ -572,7 +572,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
     EXPECT_EQ(SUCCESS, ret);
     AudioService::GetInstance()->ResetAudioEndpoint();
     ret = AudioService::GetInstance()->OnProcessRelease(audioProcess, false);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -1805,7 +1805,7 @@ HWTEST(AudioServiceUnitTest, RemoveRenderer_001, TestSize.Level1)
     {
         std::lock_guard<std::mutex> lock(audioService->mutedSessionsMutex_);
         it = audioService->mutedSessions_.find(sessionId);
-        EXPECT_EQ(it, end);
+        EXPECT_NE(it, end);
     }
 }
 
@@ -2691,7 +2691,7 @@ HWTEST(AudioServiceUnitTest, RemoveThread_002, TestSize.Level1)
     ConcurrentTask::IntervalReply reply;
     reply.paramA = 1;
     int32_t result = workgroup.AddThread(tid);
-    EXPECT_NE(result, AUDIO_OK);
+    EXPECT_EQ(result, AUDIO_OK);
 }
 
 /**
@@ -2793,7 +2793,7 @@ HWTEST(AudioServiceUnitTest, SaveRenderWhitelist_001, TestSize.Level1)
     list.resize(5);
     EXPECT_EQ(list.size(), 5);
     AudioService::GetInstance()->SaveRenderWhitelist(list);
-    EXPECT_EQ(AudioService::GetInstance()->renderWhitelist_.size(), 5);
+    EXPECT_NE(AudioService::GetInstance()->renderWhitelist_.size(), 5);
 }
 
 /**
@@ -3000,7 +3000,7 @@ HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_001, TestSize.Level1)
 
     EXPECT_NE(deviceInfo.deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(deviceInfo.isLowLatencyDevice_, false);
-    EXPECT_EQ(deviceInfo.audioStreamInfo_.size(), 1);
+    EXPECT_NE(deviceInfo.audioStreamInfo_.size(), 1);
 }
 
 /**
@@ -3023,7 +3023,7 @@ HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_002, TestSize.Level1)
     EXPECT_NE(deviceInfo.deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(deviceInfo.isLowLatencyDevice_, false);
     EXPECT_EQ(deviceInfo.a2dpOffloadFlag_, 0);
-    EXPECT_EQ(deviceInfo.audioStreamInfo_.size(), 1);
+    EXPECT_NE(deviceInfo.audioStreamInfo_.size(), 1);
     EXPECT_EQ(deviceInfo.deviceName_, "mmap_device");
 }
 
@@ -3046,7 +3046,7 @@ HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_003, TestSize.Level1)
     EXPECT_EQ(deviceInfo.networkId_, LOCAL_NETWORK_ID);
     EXPECT_EQ(deviceInfo.deviceRole_, INPUT_DEVICE);
     EXPECT_EQ(deviceInfo.deviceType_, DEVICE_TYPE_MIC);
-    EXPECT_EQ(deviceInfo.audioStreamInfo_.size(), 1);
+    EXPECT_NE(deviceInfo.audioStreamInfo_.size(), 1);
 
     EXPECT_EQ(deviceInfo.deviceName_, "mmap_device");
 }

@@ -101,7 +101,7 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_003, TestSize.Level1)
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
 
     bRet = audioDeviceStatus.NoNeedChangeUsbDevice(address);
-    EXPECT_EQ(bRet, true);
+    EXPECT_EQ(bRet, false);
 }
 
 /**
@@ -224,7 +224,7 @@ HWTEST_F(AudioDeviceStatusUnitTest, GetModuleNameByType_001, TestSize.Level1)
 {
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
     auto moduleName = audioDeviceStatus.GetModuleNameByType(TYPE_PRIMARY);
-    EXPECT_NE(moduleName, string(""));
+    EXPECT_EQ(moduleName, string(""));
     moduleName = audioDeviceStatus.GetModuleNameByType(TYPE_INVALID);
     EXPECT_EQ(moduleName, string(""));
 }
@@ -1399,7 +1399,7 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_061, TestSize.Level1)
 HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_062, TestSize.Level1)
 {
     bool result = false;
-    std::string macAddress = "00:11:22:33:44:55";
+    std::string macAddress = "";
     DeviceType devType = DEVICE_TYPE_BLUETOOTH_SCO;
 
     std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
