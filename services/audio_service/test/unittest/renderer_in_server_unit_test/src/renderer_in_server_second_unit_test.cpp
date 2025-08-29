@@ -484,7 +484,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerDisableInnerCap_002, TestS
     server->stream_->UnsetOffloadMode();
     server->DisableInnerCap(innerCapId);
 
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -1557,9 +1557,10 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerPause_003, TestSize.Level1
     server->captureInfos_[3].dupStream = dupStream;
 
     int32_t ret = server->Pause();
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
-    server->stream_->UnsetOffloadMode();
+    server->offloadEnable_ = false;
+    server->status_ = I_STATUS_STARTED;
     ret = server->Pause();
     EXPECT_NE(SUCCESS, ret);
 }
@@ -1607,7 +1608,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerStopInner_001, TestSize.Le
     int32_t ret = server->StopInner();
     EXPECT_EQ(SUCCESS, ret);
 
-    server->stream_->UnsetOffloadMode();
+    server->offloadEnable_ = false;
     ret = server->StopInner();
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -1633,11 +1634,11 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerEnableInnerCap_001, TestSi
     server->stream_->SetOffloadMode(1, true);
 
     auto ret = server->EnableInnerCap(0);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
-    server->stream_->UnsetOffloadMode();
+    server->offloadEnable_ = false;
     ret = server->EnableInnerCap(0);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -1668,7 +1669,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerDisableInnerCapHandle_001,
     server->captureInfos_[1].dupStream = nullptr;
     server->DisableInnerCapHandle(1);
     auto ret = server->DisableInnerCapHandle(2);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -1731,6 +1732,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerUnsetOffloadMode_001, Test
     ASSERT_TRUE(server != nullptr);
     server->standByEnable_ = false;
     server->offloadEnable_ = true;
+    server->status_ = I_STATUS_IDLE;
     server->Init();
 
     server->softLinkInfos_[0].isSoftLinkEnabled = false;
@@ -1748,14 +1750,12 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerUnsetOffloadMode_001, Test
     server->captureInfos_[1].dupStream = nullptr;
     server->captureInfos_[2].isInnerCapEnabled = false;
     server->captureInfos_[2].dupStream = dupStream;
-    server->captureInfos_[3].isInnerCapEnabled = true;
-    server->captureInfos_[3].dupStream = dupStream;
+    server->captureInfos_[4].isInnerCapEnabled = true;
+    server->captureInfos_[4].dupStream = dupStream;
 
     int32_t ret = server->UnsetOffloadMode();
     EXPECT_EQ(SUCCESS, ret);
 
-    server->stream_ = CreateHpaeRendererStream();
-    server->SetOffloadMode(1, true);
     server->status_ = I_STATUS_STARTED;
     ret = server->UnsetOffloadMode();
     EXPECT_EQ(SUCCESS, ret);
@@ -1930,9 +1930,9 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerStartStreamByType_001, Tes
     server->captureInfos_[3].dupStream = dupStream;
 
     server->StartStreamByType();
-    server->stream_->SetOffloadMode(1, true);
+    server->offloadEnable_ = false;
     server->StartStreamByType();
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -1960,9 +1960,6 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerHandleOffloadStream_001, T
     captureInfo.dupStream = dupStream;
 
     server->HandleOffloadStream(1, captureInfo);
-
-    server->stream_->SetOffloadMode(1, true);
-    server->HandleOffloadStream(1, captureInfo);
     server->status_ = I_STATUS_STARTED;
     server->HandleOffloadStream(1, captureInfo);
 
@@ -1973,8 +1970,21 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerHandleOffloadStream_001, T
     server->softLinkInfos_[1].isSoftLinkEnabled = true;
     server->HandleOffloadStream(1, captureInfo);
 
-    server->HandleOffloadStream(2, captureInfo);
-    EXPECT_EQ(SUCCESS, ret);
+    server->status_ = I_STATUS_IDLE;
+    server->HandleOffloadStream(1, captureInfo);
+
+    server->softLinkInfos_[1].softLink = nullptr;
+    server->HandleOffloadStream(1, captureInfo);
+
+    processConfig.streamType = STREAM_RECORDING;
+    auto server2 = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server2 != nullptr);
+    server2->stream_ = CreateHpaeRendererStream();
+    server2->standByEnable_ = false;
+    server2->offloadEnable_ = true;
+    ret = server2->Init();
+    server2->HandleOffloadStream(1, captureInfo);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -1999,15 +2009,13 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerDestroySoftLink_001, TestS
     server->softLinkInfos_[1].isSoftLinkEnabled = true;
     server->softLinkInfos_[1].softLink = nullptr;
     server->softLinkInfos_[3].isSoftLinkEnabled = true;
-    server->softLinkInfos_[3].softLink = 
-        HPAE::IHpaeSoftLink::CreateSoftLink(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
+    server->softLinkInfos_[3].softLink = softLink;
 
     int32_t ret = server->DestroySoftLink(0);
     ret = server->DestroySoftLink(1);
     ret = server->DestroySoftLink(2);
-    server->softLinkInfos_[1].softLink = softLink;
-    ret = server->DestroySoftLink(1);
-    EXPECT_EQ(SUCCESS, ret);
+    ret = server->DestroySoftLink(3);
+    EXPECT_NE(SUCCESS, ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -740,6 +740,7 @@ ohos_unittest("pa_capturer_stream_impl_unit_test") {
     "../../../../frameworks/native/audiocapturer:audio_capturer",
     "../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../services/audio_service/server/include",
+    "../../../../services/audio_engine/manager/include",
   ]
   sources = []
 

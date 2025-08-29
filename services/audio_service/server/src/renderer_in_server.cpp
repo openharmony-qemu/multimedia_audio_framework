@@ -1780,7 +1780,7 @@ void RendererInServer::HandleOffloadStream(const int32_t captureId, const Captur
         auto it = softLinkInfos_.find(captureId);
         if (it == softLinkInfos_.end() || !it->second.isSoftLinkEnabled) {
             InitSoftLink(captureId);
-        } else if (status_ == I_STATUS_STARTED) {
+        } else if (status_ == I_STATUS_STARTED && it->second.softLink != nullptr) {
             it->second.softLink->Start();
         }
     } else {
