@@ -90,16 +90,23 @@ bool AudioLoopbackPrivate::Enable(bool enable)
 {
     Trace trace("AudioLoopbackPrivate::Enable");
     std::lock_guard<std::mutex> lock(loopbackMutex_);
+
     CHECK_AND_RETURN_RET_LOG(IsAudioLoopbackSupported(), false, "AudioLoopback not support");
     AUDIO_INFO_LOG("Enable %{public}d, currentState_ %{public}d", enable, currentState_);
     if (enable) {
         CHECK_AND_RETURN_RET_LOG(GetCurrentState() != LOOPBACK_STATE_RUNNING, true, "AudioLoopback already running");
         InitStatus();
-        CHECK_AND_RETURN_RET_LOG(CheckDeviceSupport(), false, "Device not support");
+        if (!CheckDeviceSupport()) {
+            HILOG_COMM_INFO("Device not support");
+            return false;
+        }
         CreateAudioLoopback();
         currentState_ = LOOPBACK_STATE_PREPARED;
         UpdateStatus();
-        CHECK_AND_RETURN_RET_LOG(GetCurrentState() == LOOPBACK_STATE_RUNNING, false, "AudioLoopback Enable failed");
+        if (GetCurrentState() != LOOPBACK_STATE_RUNNING) {
+            HILOG_COMM_INFO("AudioLoopback Enable failed");
+            return false;
+        }
     } else {
         std::unique_lock<std::mutex> stateLock(stateMutex_);
         CHECK_AND_RETURN_RET_LOG(currentState_ == LOOPBACK_STATE_RUNNING, true, "AudioLoopback not Running");
@@ -227,21 +234,43 @@ void AudioLoopbackPrivate::CreateAudioLoopback()
 {
     Trace trace("AudioLoopbackPrivate::CreateAudioLoopback");
     audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions_, appInfo_);
-    CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "CreateRenderer failed");
-    CHECK_AND_RETURN_LOG(audioRenderer_->IsFastRenderer(), "CreateFastRenderer failed");
+    if (audioRenderer_ == nullptr) {
+        HILOG_COMM_INFO("CreateRenderer failed");
+        return;
+    }
+    if (!audioRenderer_->IsFastRenderer()) {
+        HILOG_COMM_INFO("CreateFastRenderer failed");
+        return;
+    }
+
     audioRenderer_->SetRendererWriteCallback(shared_from_this());
     rendererFastStatus_ = FASTSTATUS_FAST;
     audioCapturer_ = AudioCapturer::CreateCapturer(capturerOptions_, appInfo_);
-    CHECK_AND_RETURN_LOG(audioCapturer_ != nullptr, "CreateCapturer failed");
+     if (audioCapturer_ == nullptr) {
+        HILOG_COMM_INFO("CreateCapturer failed");
+        return;
+    }
+
     AudioCapturerInfo capturerInfo;
     audioCapturer_->GetCapturerInfo(capturerInfo);
-    CHECK_AND_RETURN_LOG(capturerInfo.capturerFlags == STREAM_FLAG_FAST, "CreateFastCapturer failed");
+    if (capturerInfo.capturerFlags != STREAM_FLAG_FAST) {
+        HILOG_COMM_INFO("CreateFastCapturer failed");
+        return;
+    }
+
     audioCapturer_->SetCapturerReadCallback(shared_from_this());
     InitializeCallbacks();
     capturerFastStatus_ = FASTSTATUS_FAST;
-    CHECK_AND_RETURN_LOG(audioRenderer_->Start(), "audioRenderer Start failed");
+
+    if (!audioRenderer_->Start()) {
+        HILOG_COMM_INFO("audioRenderer Start failed");
+        return;
+    }
     rendererState_ = RENDERER_RUNNING;
-    CHECK_AND_RETURN_LOG(audioCapturer_->Start(), "audioCapturer Start failed");
+    if (!audioCapturer_->Start()) {
+        HILOG_COMM_INFO("audioCapturer Start failed");
+        return;
+    }
     capturerState_ = CAPTURER_RUNNING;
 }
 
@@ -436,7 +465,7 @@ void AudioLoopbackPrivate::UpdateStatus()
         newState = EnableLoopback() ? LOOPBACK_STATE_RUNNING : LOOPBACK_STATE_DESTROYED;
     }
     if (newState != oldState) {
-        AUDIO_INFO_LOG("UpdateState: %{public}d -> %{public}d", oldState, newState);
+        HILOG_COMM_WARN("UpdateState: %{public}d -> %{public}d", oldState, newState);
         if (newState == LOOPBACK_STATE_DESTROYED) {
             currentState_ = LOOPBACK_STATE_DESTROYING;
             auto self = shared_from_this();
