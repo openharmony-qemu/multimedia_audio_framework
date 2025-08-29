@@ -350,6 +350,31 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleVolumeKeyEvent_Test_002, TestSize
 }
 
 /**
+ * @tc.name  : HandleVolumeKeyEvent_Test_003
+ * @tc.number: HandleVolumeKeyEvent_Test_003
+ * @tc.desc  : Test HandleVolumeKeyEvent function when volume type is STREAM_ULTRASONIC
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HandleVolumeKeyEvent_Test_003, TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    EXPECT_NE(audioPolicyServerHandler_, nullptr);
+    
+    int32_t clientPid = 1;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
+    audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
+    
+    VolumeEvent volumeEvent;
+    volumeEvent.volumeType = STREAM_ULTRASONIC;
+    volumeEvent.volume = 1;
+    volumeEvent.updateUi = true;
+    volumeEvent.volumeGroupId = 0;
+    volumeEvent.networkId = LOCAL_NETWORK_ID;
+    int32_t ret = audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
+
+    EXPECT_EQ(ret, AUDIO_OK);
+}
+
+/**
  * @tc.name  : HandleAudioSessionDeactiveCallback_001
  * @tc.number: HandleAudioSessionDeactiveCallback_001
  * @tc.desc  : Test HandleAudioSessionDeactiveCallback function when eventContextObj is nullptr.
