@@ -41,9 +41,6 @@ const std::unordered_map<std::string, AudioCategory> RemoteAudioRenderSink::SPLI
     { std::string(COMMUNICATION_STREAM_TYPE), AudioCategory::AUDIO_IN_COMMUNICATION },
 };
 
-const int8_t SPLIT_FLAG = 1; // flag indicates support split stream
-const int8_t NOSPLIT_FLAG = 0;
-
 RemoteAudioRenderSink::RemoteAudioRenderSink(const std::string &deviceNetworkId)
     : deviceNetworkId_(deviceNetworkId)
 {
@@ -690,14 +687,11 @@ int32_t RemoteAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &w
         CHECK_AND_RETURN_RET_LOG(audioStreamType != nullptr, ERR_INVALID_HANDLE, "audioStreamType is nullptr");
         int8_t streamType = ConvertStr2Int(audioStreamType);
         ret = memcpy_s(bufferVec.data(), len, &data, len);
-        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED, "copy fail, error code: %{public}d", ret);
         bufferVec.push_back(streamType);
-        bufferVec.push_back(SPLIT_FLAG);
     } else {
         ret = memcpy_s(bufferVec.data(), len, &data, len);
-        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED, "copy fail, error code: %{public}d", ret);
-        bufferVec.push_back(NOSPLIT_FLAG);
     }
+    CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED, "copy fail, error code: %{public}d", ret);
 
     BufferDesc buffer = { reinterpret_cast<uint8_t *>(&data), len, len };
     AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
