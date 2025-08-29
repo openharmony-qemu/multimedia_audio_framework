@@ -394,7 +394,7 @@ int32_t AudioResourceService::RestoreAudioWorkgroupPrio(int32_t pid,
 }
 
 void AudioResourceService::FillAudioWorkgroupCgroupLimit(int32_t pid,
-    std::shared_ptr<AudioWorkgroup>& workgroup)
+    std::shared_ptr<AudioWorkgroup> &workgroup)
 {
     if (workgroup == nullptr) {
         AUDIO_ERR_LOG("[WorkgroupInServer]workgroup is nullptr");
@@ -402,7 +402,7 @@ void AudioResourceService::FillAudioWorkgroupCgroupLimit(int32_t pid,
     }
     int32_t cgroupId = -1;
     std::set<int32_t> usedGroupLimitIds;
-    for (const auto& group : audioWorkgroupMap_[pid].groups) {
+    for (const auto &group : audioWorkgroupMap_[pid].groups) {
         int32_t currId = (group.second ? group.second->GetCgroupLimitId() : -1);
         if (currId != -1) {
             usedGroupLimitIds.insert(currId);
