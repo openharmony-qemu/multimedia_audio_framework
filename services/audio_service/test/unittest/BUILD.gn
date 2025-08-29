@@ -396,6 +396,7 @@ ohos_unittest("pa_renderer_stream_impl_unit_test") {
     "../../../../frameworks/native/audiocapturer/include",
     "../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../services/audio_service/server/include",
+    "../../../../services/audio_engine/manager/include",
   ]
   sources = [ ]
 
@@ -478,6 +479,7 @@ ohos_unittest("pa_renderer_stream_impl_unit_test_p2") {
     "../../../../frameworks/native/audiocapturer/include",
     "../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../services/audio_service/server/include",
+    "../../../../services/audio_engine/manager/include",
   ]
   sources = []
 

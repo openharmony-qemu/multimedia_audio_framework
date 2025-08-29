@@ -26,6 +26,8 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+
+const uint32_t DEFAULT_SIZE = 8;
 class AudioCaptureSourceUnitTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -121,7 +123,8 @@ int32_t AudioCaptureSourceUnitTest::AudioCaptureCaptureFrameEc001(
 int32_t AudioCaptureSourceUnitTest::AudioCaptureCaptureFrameEc002(
     struct IAudioCapture *self, const struct AudioFrameLen *frameLen, struct AudioCaptureFrameInfo *frameInfo)
 {
-    std::vector<int8_t> frameEc{0,1,2,3,4,5,6,7};
+    int8_t* frameEc = nullptr;
+    frameEc = new int8_t[DEFAULT_SIZE];
     frameInfo->frameEc = frameEc.data();
     return 0;
 }
