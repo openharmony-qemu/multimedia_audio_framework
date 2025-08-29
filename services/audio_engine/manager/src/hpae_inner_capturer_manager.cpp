@@ -673,6 +673,7 @@ int32_t HpaeInnerCapturerManager::CreateRendererInputSessionInner(const HpaeStre
     nodeInfo.streamType = streamInfo.streamType;
     nodeInfo.sessionId = streamInfo.sessionId;
     nodeInfo.samplingRate = (AudioSamplingRate)streamInfo.samplingRate;
+    nodeInfo.customSampleRate = streamInfo.customSampleRate;
     nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.deviceClass = sinkInfo_.deviceClass;

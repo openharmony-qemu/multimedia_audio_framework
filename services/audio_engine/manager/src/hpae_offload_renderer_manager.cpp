@@ -51,6 +51,7 @@ int32_t HpaeOffloadRendererManager::CreateInputSession(const HpaeStreamInfo &str
     nodeInfo.streamType = streamInfo.streamType;
     nodeInfo.sessionId = streamInfo.sessionId;
     nodeInfo.samplingRate = static_cast<AudioSamplingRate>(streamInfo.samplingRate);
+    nodeInfo.customSampleRate = streamInfo.customSampleRate;
     nodeInfo.sceneType = TransStreamTypeToSceneType(streamInfo.streamType);
     nodeInfo.effectInfo = streamInfo.effectInfo;
     nodeInfo.historyFrameCount = nodeInfo.frameLen ?

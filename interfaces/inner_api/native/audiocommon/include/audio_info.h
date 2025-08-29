@@ -1286,6 +1286,7 @@ struct AudioProcessConfig : public Parcelable {
 
         // AudioStreamInfo
         parcel.WriteInt32(streamInfo.samplingRate);
+        parcel.WriteUint32(streamInfo.customSampleRate);
         parcel.WriteInt32(streamInfo.encoding);
         parcel.WriteInt32(streamInfo.format);
         parcel.WriteInt32(streamInfo.channels);
@@ -1355,6 +1356,7 @@ struct AudioProcessConfig : public Parcelable {
 
         // AudioStreamInfo
         config->streamInfo.samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
+        config->streamInfo.customSampleRate = parcel.ReadUint32();
         config->streamInfo.encoding = static_cast<AudioEncodingType>(parcel.ReadInt32());
         config->streamInfo.format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
         config->streamInfo.channels = static_cast<AudioChannel>(parcel.ReadInt32());
