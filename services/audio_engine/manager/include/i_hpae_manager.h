@@ -150,7 +150,8 @@ public:
         const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType) = 0;
     virtual void RemoveCaptureInjector(
         const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType) = 0;
-    virtual int32_t PeekAudioData(const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize) = 0;
+    virtual int32_t PeekAudioData(
+        const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo) = 0;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard
