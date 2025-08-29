@@ -629,7 +629,7 @@ int32_t AudioSystemManager::SetActiveVolumeTypeCallback(
     return AudioPolicyManager::GetInstance().SetActiveVolumeTypeCallback(callback);
 }
 
-int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volumeLevel) const
+int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volumeLevel, int32_t uid) const
 {
     AUDIO_INFO_LOG("SetSystemVolume: volumeType[%{public}d], volumeLevel[%{public}d]", volumeType, volumeLevel);
 
@@ -657,7 +657,7 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
     }
 
     /* Call Audio Policy SetSystemVolumeLevel */
-    return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volumeLevel, true);
+    return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volumeLevel, uid == 0, 0, uid);
 }
 
 int32_t AudioSystemManager::SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
@@ -693,7 +693,7 @@ int32_t AudioSystemManager::SetVolumeWithDevice(AudioVolumeType volumeType, int3
     return AudioPolicyManager::GetInstance().SetSystemVolumeLevelWithDevice(volumeType, volumeLevel, deviceType);
 }
 
-int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
+int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType, int32_t uid) const
 {
     switch (volumeType) {
         case STREAM_MUSIC:
@@ -718,7 +718,7 @@ int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
             return ERR_NOT_SUPPORTED;
     }
 
-    return AudioPolicyManager::GetInstance().GetSystemVolumeLevel(volumeType);
+    return AudioPolicyManager::GetInstance().GetSystemVolumeLevel(volumeType, uid);
 }
 
 int32_t AudioSystemManager::SetLowPowerVolume(int32_t streamId, float volume) const

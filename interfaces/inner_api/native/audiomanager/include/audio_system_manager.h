@@ -66,7 +66,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    int32_t SetVolume(AudioVolumeType volumeType, int32_t volume) const;
+    int32_t SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t uid = 0) const;
 
     /**
      * @brief Set the stream volume.
@@ -214,7 +214,7 @@ public:
      * @return Returns current stream volume.
      * @since 8
      */
-    int32_t GetVolume(AudioVolumeType volumeType) const;
+    int32_t GetVolume(AudioVolumeType volumeType, int32_t uid = 0) const;
 
     /**
      * @brief Set volume discount factor.
