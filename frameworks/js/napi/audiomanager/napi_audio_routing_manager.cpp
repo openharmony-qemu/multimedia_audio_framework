@@ -1091,7 +1091,8 @@ void NapiAudioRoutingManager::RegisterPreferredOutputDeviceChangeCallback(napi_e
 
     cb->SaveCallbackReference(args[PARAM2]);
     cb->CreatePreferredOutTsfn(env);
-
+    
+    CHECK_AND_RETURN_LOG(napiRoutingMgr != nullptr, "NapiRoutingMgr is NULL!!");
     int32_t ret = napiRoutingMgr->audioRoutingMngr_->SetPreferredOutputDeviceChangeCallback(
         rendererInfo, cb);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowError(env, ret),
