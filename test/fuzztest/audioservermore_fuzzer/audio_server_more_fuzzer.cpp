@@ -931,6 +931,30 @@ void AudioServerGetVolumeBySessionIdFuzzTest(const uint8_t *rawData, size_t size
     audioServerPtr->GetVolumeBySessionId(sessionId, volume);
 }
 
+void AudioServerImproveAudioWorkgroupPrioFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    int32_t pid = GetData<int32_t>();
+    int32_t value1 = GetData<int32_t>();
+    unordered_map<int32_t, bool> threads = {{value1, true}};
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    audioServerPtr->ImproveAudioWorkgroupPrio(pid, threads);
+}
+
+void AudioServerRestoreAudioWorkgroupPrioFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    int32_t pid = GetData<int32_t>();
+    int32_t value1 = GetData<int32_t>();
+    int32_t value2 = GetData<int32_t>();
+    unordered_map<int32_t, int32_t> threads = {{value1, value2}};
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    audioServerPtr->RestoreAudioWorkgroupPrio(pid, threads);
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -983,5 +1007,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AudioServerHpaeDumpSourceOutputsInfoCbFuzzTest(data, size);
     OHOS::AudioStandard::AudioServerRemoveThreadFromGroupFuzzTest(data, size);
     OHOS::AudioStandard::AudioServerGetVolumeBySessionIdFuzzTest(data, size);
+    OHOS::AudioStandard::AudioServerImproveAudioWorkgroupPrioFuzzTest(data, size);
+    OHOS::AudioStandard::AudioServerRestoreAudioWorkgroupPrioFuzzTest(data, size);
     return 0;
 }

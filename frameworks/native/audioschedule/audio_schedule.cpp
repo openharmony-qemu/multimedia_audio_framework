@@ -63,12 +63,8 @@ void ConfigPayload(pid_t pid, pid_t tid, const char *bundleName, int32_t qosLeve
     mapPayload["bundleName"] = strBundleName;
 }
 
-void ScheduleReportDataWithQosLevel(pid_t pid, pid_t tid, const char *bundleName, int32_t qosLevel)
+static void ScheduleReportDataInner(pid_t pid, pid_t tid, const char *bundleName, int32_t qosLevel)
 {
-    AudioXCollie audioXcollie("RSS::ReportData with qos level + " + std::to_string(qosLevel) +
-        ", pid " + std::to_string(pid) + ", tid " + std::to_string(tid), REPORTDATA_TIMEOUT,
-         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    AUDIO_INFO_LOG("Report tid %{public}u to qosLeve %{public}d", tid, qosLevel);
     std::unordered_map<std::string, std::string> mapPayload;
     ConfigPayload(pid, tid, bundleName, qosLevel, mapPayload);
     OHOS::ResourceSchedule::ResSchedClient::GetInstance().ReportData(g_type, g_value, mapPayload);
@@ -81,9 +77,16 @@ void ScheduleReportData(pid_t pid, pid_t tid, const char *bundleName)
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     Trace trace ("Rss::ReportData with qos level 7");
     AUDIO_INFO_LOG("Report tid %{public}u", tid);
-    std::unordered_map<std::string, std::string> mapPayload;
-    ConfigPayload(pid, tid, bundleName, AUDIO_QOS_LEVEL, mapPayload);
-    OHOS::ResourceSchedule::ResSchedClient::GetInstance().ReportData(g_type, g_value, mapPayload);
+    ScheduleReportDataInner(pid, tid, bundleName, AUDIO_QOS_LEVEL);
+}
+
+void ScheduleReportDataWithQosLevel(pid_t pid, pid_t tid, const char *bundleName, int32_t qosLevel)
+{
+    AudioXCollie audioXcollie("RSS::ReportData with qos level + " + std::to_string(qosLevel) +
+        ", pid " + std::to_string(pid) + ", tid " + std::to_string(tid), REPORTDATA_TIMEOUT,
+         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+    AUDIO_INFO_LOG("Report tid %{public}u to qosLeve %{public}d", tid, qosLevel);
+    ScheduleReportDataInner(pid, tid, bundleName, qosLevel);
 }
 
 void UnscheduleReportData(pid_t pid, pid_t tid, const char* bundleName)
