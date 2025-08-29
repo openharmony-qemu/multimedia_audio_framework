@@ -120,6 +120,7 @@ void CjAudioCapturerReadCallback::OnReadData(size_t length)
     func_(arr);
     free(arr.head);
     arr.head = nullptr;
+    audioCapturer_->Enqueue(buf);
 }
 
 void CjAudioCapturerInfoChangeCallback::RegisterFunc(std::function<void(CAudioCapturerChangeInfo)> cjCallback)
