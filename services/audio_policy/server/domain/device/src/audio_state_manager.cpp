@@ -196,13 +196,15 @@ shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallRenderDevic
         "ForcedDeviceMapList_ is empty");
     for (auto it = forcedDeviceMapList_.begin(); it != forcedDeviceMapList_.end(); ++it) {
         if (clientUid == it->begin()->first) {
+            CHECK_AND_CONTINUE(it->begin()->second == nullptr);
             AUDIO_INFO_LOG("deviceType: %{public}d, ownerUid_: %{public}d", it->begin()->second->deviceType_,
                 clientUid);
-            return make_shared<AudioDeviceDescriptor>(std::move(it->begin()->second));
+            return make_shared<AudioDeviceDescriptor>(it->begin()->second);
         }
     }
     for (auto it = forcedDeviceMapList_.begin(); it != forcedDeviceMapList_.end(); ++it) {
         if (SYSTEM_UID == it->begin()->first) {
+            CHECK_AND_CONTINUE(it->begin()->second == nullptr);
             AUDIO_INFO_LOG("system force selected, deviceType: %{public}d",
                 it->begin()->second->deviceType_);
             return make_shared<AudioDeviceDescriptor>(it->begin()->second);

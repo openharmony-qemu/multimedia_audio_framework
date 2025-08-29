@@ -170,17 +170,15 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPrefer
     }
     if (networkId == LOCAL_NETWORK_ID) {
         auto preferredType = AudioPolicyUtils::GetInstance().GetPreferredTypeByStreamUsage(rendererInfo.streamUsage);
-        if (preferredType == AUDIO_CALL_RENDER) {
-            if (uid >= 0) {
-                bypassType = RouterType::ROUTER_TYPE_USER_SELECT;
-                shared_ptr<AudioDeviceDescriptor> preferredDevice = 
-                    AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDeviceForUid(uid);
-                CHECK_AND_RETURN_RET_LOG(preferredDevice != nullptr, deviceList, "preferredDevice is nullptr.");
-                if (preferredDevice->deviceId_ != 0) {
-                    deviceList.push_back(preferredDevice);
-                    return deviceList;
-                }
-            } 
+        if (preferredType == AUDIO_CALL_RENDER && uid >= 0) {
+            bypassType = RouterType::ROUTER_TYPE_USER_SELECT;
+            shared_ptr<AudioDeviceDescriptor> preferredDevice = 
+                AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDeviceForUid(uid);
+            CHECK_AND_RETURN_RET_LOG(preferredDevice != nullptr, deviceList, "preferredDevice is nullptr.");
+            if (preferredDevice->deviceId_ != 0) {
+                deviceList.push_back(preferredDevice);
+                return deviceList;
+            }
         }
         vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
             audioRouterCenter_.FetchOutputDevices(rendererInfo.streamUsage,
