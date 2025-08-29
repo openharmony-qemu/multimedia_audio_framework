@@ -315,7 +315,7 @@ HWTEST_F(HpaeSourceInputNodeTest, testDoprocess_003, TestSize.Level0)
     hpaeSourceInputNode->SetSourceInputNodeType(HpaeSourceInputNodeType::HPAE_SOURCE_OFFLOAD);
     hpaeSourceInputNode->DoProcess();
     EXPECT_NE(hpaeSourceInputNode, nullptr);
-}}
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
