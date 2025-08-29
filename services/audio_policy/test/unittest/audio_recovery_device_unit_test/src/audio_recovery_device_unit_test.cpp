@@ -64,5 +64,53 @@ HWTEST_F(AudioRecoveryDeviceUnitTest, AudioRecoveryDeviceUnitTest_003, TestSize.
         excludedDevices);
     EXPECT_EQ(result, ERROR);
 }
+
+/**
+* @tc.name  : Test AudioRecoveryDevice.
+* @tc.number: AudioRecoveryDeviceUnitTest_004.
+* @tc.desc  : Test SelectOutputDevice.
+*/
+HWTEST_F(AudioRecoveryDeviceUnitTest, AudioRecoveryDeviceUnitTest_004, TestSize.Level1)
+{
+    auto audioRecoveryDevice = std::make_shared<AudioRecoveryDevice>();
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->networkId_ = LOCAL_NETWORK_ID;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> restoreDevices;
+    restoreDevices.push_back(desc);
+    std::shared_ptr<AudioDeviceDescriptor> speaker = std::make_shared<AudioDeviceDescriptor>();
+    speaker->deviceType_ = DEVICE_TYPE_SPEAKER;
+    speaker->networkId_ = LOCAL_NETWORK_ID;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectDevices;
+    selectDevices.push_back(speaker);
+
+    sptr<AudioRendererFilter> filter = new(std::nothrow) AudioRendererFilter();
+    filter->rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION;
+    filter->uid = 0;
+    audioRecoveryDevice->SelectOutputDevice(filter, restoreDevices);
+    filter->uid = 789;
+    audioRecoveryDevice->SelectOutputDevice(filter, selectDevices);
+    shared_ptr<AudioDeviceDescriptor> deviceDesc =
+        AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDeviceForUid(789);
+    EXPECT_EQ(deviceDesc->deviceType_, DEVICE_TYPE_SPEAKER);
+    audioRecoveryDevice->SelectOutputDevice(filter, selectDevices, 1);
+    deviceDesc = AudioAffinityManager::GetAudioAffinityManager().GetRendererDevice(789);
+    EXPECT_EQ(deviceDesc->deviceType_, DEVICE_TYPE_SPEAKER);
+    filter->uid = -1;
+    audioRecoveryDevice->SelectOutputDevice(filter, selectDevices, 1);
+    deviceDesc = AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
+    EXPECT_EQ(deviceDesc->deviceType_, DEVICE_TYPE_SPEAKER);
+    filter->uid = 789;
+    audioRecoveryDevice->SelectOutputDevice(filter, restoreDevices);
+    deviceDesc = AudioStateManager::GetAudioStateManager().GetRendererDevice(789);
+    EXPECT_NE(deviceDesc->deviceType_, DEVICE_TYPE_SPEAKER);
+    deviceDesc = 
+        AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDeviceForUid(789);
+    EXPECT_NE(deviceDesc->deviceType_, DEVICE_TYPE_SPEAKER);
+    filter->uid = -1;
+    audioRecoveryDevice->SelectOutputDevice(filter, restoreDevices);
+    filter->uid = 0;
+    audioRecoveryDevice->SelectOutputDevice(filter, restoreDevices);
+}
 } // namespace AudioStandard
 } // namespace OHOS

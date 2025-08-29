@@ -1866,5 +1866,33 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckVoipAnrOn_004, TestSize.Level1)
     bool ret = server->audioPolicyService_.CheckVoipAnrOn(propertyArray.property);
     EXPECT_EQ(ret, true);
 }
+
+/**
+* @tc.name  : Test GetOutputDevice
+* @tc.number: GetOutputDevice_002
+* @tc.desc  : Test AudioPolicyService interfaces.
+*/
+HWTEST_F(AudioPolicyServiceUnitTest, GetOutputDevice_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest GetOutputDevice_002 start");
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+
+    sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+    audioRendererFilter->uid = 456;
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList = {};
+    std::shared_ptr<AudioDeviceDescriptor>desc = std::make_shared<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor>speaker = std::make_shared<AudioDeviceDescriptor>();
+    speaker->deviceType_ = DEVICE_TYPE_SPEAKER;
+    speaker->deviceId_ = 2;
+    
+    deviceList = server->audioPolicyService_.GetOutputDevice(audioRendererFilter);
+
+    serve->audioAffinityManager_.AddSelectedDevice(audioRendererFilter->uid, speaker);
+    deviceList = server->audioPolicyService_.GetOutputDevice(audioRendererFilter);
+    EXPECT_EQ(deviceList[0]->deviceId_, 2);
+    serve->audioAffinityManager_.DeleteSelectedDevice(456);
+}
 } // namespace AudioStandard
 } // namespace OHOS

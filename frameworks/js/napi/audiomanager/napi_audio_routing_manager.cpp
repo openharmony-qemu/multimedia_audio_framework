@@ -318,6 +318,7 @@ napi_value NapiAudioRoutingManager::SelectOutputDeviceByFilter(napi_env env, nap
             context->bArgTransFlag, argv[PARAM0]);
         NapiParamUtils::GetAudioDeviceDescriptorVector(env, context->deviceDescriptors,
             context->bArgTransFlag, argv[PARAM1]);
+        context->audioDeviceSelectMode = 0;
         if (argc == ARGS_THREE) {
             NapiParamUtils::GetValueInt32(env, context->audioDeviceSelectMode, argv[PARAM2]);
         }
@@ -1111,10 +1112,12 @@ void NapiAudioRoutingManager::RegisterPreferredOutputDeviceByFilterChangeCallbac
     CHECK_AND_RETURN_RET_LOG(argc == ARGS_THREE, NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
         "incorrect number of parameters: expected at least 3 parameters"), "argc invalid");
 
+    CHECK_AND_RETURN_LOG(args != nullptr, "args is invalid.");
     CHECK_AND_RETURN_RET_LOG(NapiParamUtils::CheckArgType(env, args[PARAM2], napi_function),
         NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
         "incorrect parameter types: The type of callback must be function"), "callback invalid");
-
+    
+    CHECK_AND_RETURN_LOG(napiRoutingMgr != nullptr, "NapiRoutingMgr is NULL.");
     CHECK_AND_RETURN_LOG(GetNapiPrefOutputDeviceChangeCb(args[PARAM2], napiRoutingMgr) == nullptr,
         "Do not allow duplicate registration of the same callback");
 
@@ -1131,9 +1134,6 @@ void NapiAudioRoutingManager::RegisterPreferredOutputDeviceByFilterChangeCallbac
     cb->SaveCallbackReference(args[PARAM2]);
     cb->CreatePreferredOutTsfn(env);
     
-    CHECK_AND_RETURN_LOG(napiRoutingMgr != nullptr, "NapiRoutingMgr is NULL.");
-    CHECK_AND_RETURN_LOG(napiRoutingMgr->audioRoutingMngr_ != nullptr,
-        "napiRoutingMgr->audioRoutingMngr_ is NULL.");
     int32_t ret = napiRoutingMgr->audioRoutingMngr_->SetPreferredOutputDeviceChangeCallback(
         audioRendererFilter->rendererInfo, cb, audioRendererFilter->uid);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, NapiAudioError::ThrowError(env, ret),
