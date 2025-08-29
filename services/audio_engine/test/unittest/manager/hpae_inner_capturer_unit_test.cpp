@@ -548,12 +548,15 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, SendRequestInner_001, TestSize.Level1
 {
     auto request = []() {
     };
-    hpaeInnerCapturerManager_->SendRequestInner(request);
+    hpaeInnerCapturerManager_->SendRequestInner(request, "unit_test_send_request");
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
-    hpaeInnerCapturerManager_->SendRequestInner(request);
+    hpaeInnerCapturerManager_->SendRequestInner(request, "unit_test_send_request");
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    hpaeInnerCapturerManager_->hpaeSignalProcessThread_ = nullptr;
+    hpaeInnerCapturerManager_->SendRequestInner(request, "unit_test_send_request");
+    EXPECT_EQ(hpaeInnerCapturerManager_->DeInit(), SUCCESS);
 }
 
 /**
