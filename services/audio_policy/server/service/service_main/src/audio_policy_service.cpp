@@ -301,9 +301,9 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetPrefe
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredOutputDeviceDescInner(
-    AudioRendererInfo &rendererInfo, std::string networkId)
+    AudioRendererInfo &rendererInfo, std::string networkId, const int32_t uid)
 {
-    return audioDeviceCommon_.GetPreferredOutputDeviceDescInner(rendererInfo, networkId);
+    return audioDeviceCommon_.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, uid);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredInputDeviceDescInner(
@@ -320,9 +320,14 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetOutpu
         shared_ptr<AudioDeviceDescriptor> preferredDesc =
             audioAffinityManager_.GetRendererDevice(audioRendererFilter->uid);
         std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*preferredDesc);
-        deviceList.push_back(devDesc);
+        CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, deviceList, "devDesc is nullptr.");
+        if (devDesc->deviceId_ != 0) {
+            deviceList.push_back(devDesc);
+            return deviceList;
+        }
     }
-    return deviceList;
+    return audioDeviceCommon_.GetPreferredOutputDeviceDescInner(audioRendererFilter->rendererInfo,
+        LOCAL_NETWORK_ID, audioRendererFilter->uid);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetInputDevice(

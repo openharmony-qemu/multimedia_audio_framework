@@ -43,7 +43,7 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamU
     }
 }
 
-shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID, const int32_t uid)
 {
     shared_ptr<AudioDeviceDescriptor> perDev_ =
         AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();

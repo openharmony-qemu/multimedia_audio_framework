@@ -40,7 +40,7 @@ public:
     int32_t GetPreferredOutputDeviceForRendererInfo(AudioRendererInfo rendererInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
     int32_t SetPreferredOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
-        const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback);
+        const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback, const int32_t uid = -1);
     int32_t UnsetPreferredOutputDeviceChangeCallback(
         const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback = nullptr);
     int32_t GetPreferredInputDeviceForCapturerInfo(AudioCapturerInfo captureInfo,
@@ -56,6 +56,7 @@ public:
     int32_t UnsetAudioDeviceRefinerCallback();
     int32_t SetPreferredDevice(const PreferredType preferredType, const std::shared_ptr<AudioDeviceDescriptor> &desc,
         const int32_t uid = INVALID_UID);
+    int32_t RestoreOutputDevice(sptr<AudioRendererFilter> audioRendererFilter);
     int32_t SetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType, VolumeBehavior volumeBehavior);
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc, const bool isConnected);
 private:

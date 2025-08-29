@@ -73,9 +73,11 @@ void AudioStateManager::SetPreferredCallRenderDevice(const std::shared_ptr<Audio
     } else {
         std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>> currentDeviceMap;
         if (callerUid == SYSTEM_UID && ownerUid_ != 0) {
-            RemoveForcedDeviceMapData(ownerUid_);
+            forcedDeviceMapList_.clear();
             currentDeviceMap = {{ownerUid_, deviceDescriptor}};
             forcedDeviceMapList_.push_back(currentDeviceMap);
+        } else if (callerUid == SYSTEM_UID && ownerUid_ == 0){
+            forcedDeviceMapList_.clear();
         }
 
         RemoveForcedDeviceMapData(callerUid);
@@ -185,6 +187,28 @@ shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallRenderDevic
         }
     }
     return std::make_shared<AudioDeviceDescriptor>();
+}
+
+shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallRenderDeviceForUid(const int32_t clientUid)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (clientUid >= 0 && !forcedDeviceMapList_.empty()) {
+    for (auto it = forcedDeviceMapList_.begin(); it != forcedDeviceMapList_.end(); ++it) {
+        if (clientUid == it->begin()->first) {
+            AUDIO_INFO_LOG("deviceType: %{public}d, ownerUid_: %{public}d", it->begin()->second->deviceType_,
+                clientUid);
+            return make_shared<AudioDeviceDescriptor>(std::move(it->begin()->second));
+        }
+    }
+    for (auto it = forcedDeviceMapList_.begin(); it != forcedDeviceMapList_.end(); ++it) {
+        if (SYSTEM_UID == it->begin()->first) {
+            AUDIO_INFO_LOG("system force selected, deviceType: %{public}d",
+                it->begin()->second->deviceType_);
+            return make_shared<AudioDeviceDescriptor>(it->begin()->second);
+        }
+    }
+    return std::make_shared<AudioDeviceDescriptor>();
+    }
 }
 
 shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallCaptureDevice()

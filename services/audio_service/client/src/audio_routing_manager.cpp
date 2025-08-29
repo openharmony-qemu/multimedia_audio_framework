@@ -65,12 +65,12 @@ int32_t AudioRoutingManager::GetPreferredInputDeviceForCapturerInfo(AudioCapture
 }
 
 int32_t AudioRoutingManager::SetPreferredOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
-    const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>& callback)
+    const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>& callback, const int32_t uid)
 {
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
-    return AudioPolicyManager::GetInstance().SetPreferredOutputDeviceChangeCallback(rendererInfo, callback);
+    return AudioPolicyManager::GetInstance().SetPreferredOutputDeviceChangeCallback(rendererInfo, callback, uid);
 }
 
 int32_t AudioRoutingManager::SetPreferredInputDeviceChangeCallback(AudioCapturerInfo capturerInfo,
@@ -127,6 +127,21 @@ int32_t AudioRoutingManager::SetPreferredDevice(const PreferredType preferredTyp
     const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t uid)
 {
     return AudioPolicyManager::GetInstance().SetPreferredDevice(preferredType, desc, uid);
+}
+
+int32_t AudioRoutingManager::RestoreOutputDevice(sptr<AudioRendererFilter> audioRendererFilter)
+{
+    CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr, ERR_INVALID_PARAM, "invalid parameter");
+
+    audioRendererFilter->streamType = GetStreamType(audioRendererFilter->rendererInfo.contentType,
+        audioRendererFilter->rendererInfo.streamUsage);
+
+    CHECK_AND_RETURN_RET_LOG(audioRendererFilter->uid >= -1, ERR_INVALID_PARAM, "invalid uid.");
+
+    AUDIO_DEBUG_LOG("[%{public}d] RestoreOutputDevice: uid<%{public}d> streamType<%{public}d>",
+        getpid(), audioRendererFilter->uid, static_cast<int32_t>(audioRendererFilter->streamType));
+
+    return AudioPolicyManager::GetInstance().RestoreOutputDevice(audioRendererFilter);
 }
 
 int32_t AudioRoutingManager::SetDeviceVolumeBehavior(const std::string &networkId,

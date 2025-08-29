@@ -213,7 +213,7 @@ int32_t AudioPolicyManager::SetCallbackStreamInfo(const CallbackChange &callback
     int32_t ret = SUCCESS;
     if (callbackChange == CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE) {
         for (auto &rendererInfo : rendererInfos_) {
-            ret = gsp->SetCallbackRendererInfo(rendererInfo);
+            ret = gsp->SetCallbackRendererInfo(rendererInfo, -1);
         }
     } else if (callbackChange == CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE) {
         for (auto &capturerInfo : capturerInfos_) {
@@ -639,11 +639,11 @@ int32_t AudioPolicyManager::SetClientCallbacksEnable(const CallbackChange &callb
     return gsp->SetClientCallbacksEnable(callbackchange, enable);
 }
 
-int32_t AudioPolicyManager::SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo)
+int32_t AudioPolicyManager::SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->SetCallbackRendererInfo(rendererInfo);
+    return gsp->SetCallbackRendererInfo(rendererInfo, uid);
 }
 
 int32_t AudioPolicyManager::SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo)
