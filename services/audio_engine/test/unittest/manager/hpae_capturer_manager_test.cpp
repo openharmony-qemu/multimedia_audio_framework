@@ -86,7 +86,7 @@ static void InitReloadStreamInfo(HpaeStreamInfo &streamInfo)
     streamInfo.deviceName = "Built_in_mic";
 }
 
-static void WaitForMsgProcessing(std::shared_ptr<IHpaeCapturerManager> &capturerManager)
+static void WaitForMsgProcessing(std::shared_ptr<HpaeCapturerManager> &capturerManager)
 {
     int waitCount = 0;
     const int waitCountThd = 5;
@@ -124,7 +124,7 @@ HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerConstructTest, TestSize.Lev
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
     
-    std::shared_ptr<IHpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     HpaeSourceInfo dstSourceInfo = capturerManager->GetSourceInfo();
     EXPECT_EQ(dstSourceInfo.deviceNetId == sourceInfo.deviceNetId, true);
     EXPECT_EQ(dstSourceInfo.deviceClass == sourceInfo.deviceClass, true);
@@ -147,7 +147,7 @@ HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerInitTest, TestSize.Level1)
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
     
-    std::shared_ptr<IHpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
     WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager->DeInit() == SUCCESS, true);
@@ -165,7 +165,7 @@ HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerCreateDestoryStreamTest, Te
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
     
-    std::shared_ptr<IHpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
     WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager->IsInit(), true);
@@ -187,7 +187,7 @@ HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerCreateDestoryStreamTest, Te
     WaitForMsgProcessing(capturerManager);
 }
 
-static void StateControlTest(std::shared_ptr<IHpaeCapturerManager> &capturerManager, HpaeStreamInfo &streamInfo,
+static void StateControlTest(std::shared_ptr<HpaeCapturerManager> &capturerManager, HpaeStreamInfo &streamInfo,
     HpaeSourceOutputInfo &sourceOutputInfo)
 {
     EXPECT_EQ(capturerManager->Start(streamInfo.sessionId) == SUCCESS, true);
@@ -232,7 +232,7 @@ HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerStartStopTest, TestSize.Lev
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
     
-    std::shared_ptr<IHpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
     WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager->IsInit(), true);
@@ -297,7 +297,7 @@ HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerReloadTest, TestSize.Level1
     HpaeSourceInfo newSourceInfo;
     InitReloadSourceInfo(sourceInfo, newSourceInfo);
 
-    std::shared_ptr<IHpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
     WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager->IsInit(), true);
@@ -457,7 +457,7 @@ HWTEST_F(HpaeCapturerManagerTest, Flush_002, TestSize.Level1)
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
 
-    std::shared_ptr<IHpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     EXPECT_NE(capturerManager, nullptr);
     EXPECT_EQ(capturerManager->Init(), SUCCESS);
     WaitForMsgProcessing(capturerManager);
@@ -499,7 +499,7 @@ HWTEST_F(HpaeCapturerManagerTest, Drain_002, TestSize.Level1)
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
 
-    std::shared_ptr<IHpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     EXPECT_NE(capturerManager, nullptr);
     EXPECT_EQ(capturerManager->Init(), SUCCESS);
     WaitForMsgProcessing(capturerManager);
