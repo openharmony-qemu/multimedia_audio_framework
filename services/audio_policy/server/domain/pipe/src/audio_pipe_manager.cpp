@@ -49,7 +49,6 @@ void AudioPipeManager::RemoveAudioPipeInfo(std::shared_ptr<AudioPipeInfo> info)
         if (IsSamePipe(info, *iter)) {
             AUDIO_INFO_LOG("Remove id:%{public}u, name %{public}s", info->id_, info->name_.c_str());
             curPipeList_.erase(iter);
-            break;
         }
     }
 }
@@ -61,7 +60,6 @@ void AudioPipeManager::RemoveAudioPipeInfo(AudioIOHandle id)
         if ((*iter)->id_ == id) {
             AUDIO_INFO_LOG("Remove id:%{public}u, name: %{public}s", id, (*iter)->name_.c_str());
             curPipeList_.erase(iter);
-            break;
         }
     }
 }
@@ -473,7 +471,7 @@ std::shared_ptr<AudioPipeInfo> AudioPipeManager::GetNormalSourceInfo(bool isEcFe
     pipeInfo = GetPipeByModuleAndFlag(BLUETOOTH_MIC, AUDIO_INPUT_FLAG_NORMAL);
     CHECK_AND_RETURN_RET(pipeInfo == nullptr, pipeInfo);
     if (isEcFeatureEnable) {
-        pipeInfo = GetPipeByModuleAndFlag(BLUETOOTH_MIC, AUDIO_INPUT_FLAG_NORMAL);
+        pipeInfo = GetPipeByModuleAndFlag(USB_MIC, AUDIO_INPUT_FLAG_NORMAL);
     }
     return pipeInfo;
 }
