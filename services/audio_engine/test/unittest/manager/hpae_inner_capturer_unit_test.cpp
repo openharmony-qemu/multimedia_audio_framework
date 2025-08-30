@@ -662,7 +662,7 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, InitSinkInner_001, TestSize.Level0)
     sinkInfo.frameLen = 0;
     bool isReload = 1;
     hpaeInnerCapturerManager_->InitSinkInner(isReload);
-    EXPECT_EQ(isInit_, false);
+    EXPECT_EQ(hpaeInnerCapturerManager_->isInit_, false);
 }
 }  // namespace HPAE
 }  // namespace OHOS::AudioStandard
