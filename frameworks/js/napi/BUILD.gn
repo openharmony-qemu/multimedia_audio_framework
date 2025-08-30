@@ -95,6 +95,7 @@ ohos_shared_library("audio") {
       "common/napi_audio_enum.cpp",
       "common/napi_audio_error.cpp",
       "common/napi_param_utils.cpp",
+      "common/napi_dfx_utils.cpp",
     ]
   }
 
@@ -133,6 +134,8 @@ ohos_shared_library("audio") {
     "ipc:ipc_single",
     "libuv:uv",
     "napi:ace_napi",
+    "media_foundation::media_monitor_client",
+    "media_foundation::media_monitor_common",
   ]
 
   if (audio_framework_feature_hiview_enable) {
