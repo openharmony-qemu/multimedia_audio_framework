@@ -197,7 +197,7 @@ shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallRenderDevic
     for (auto it = forcedDeviceMapList_.begin(); it != forcedDeviceMapList_.end(); ++it) {
         if (clientUid == it->begin()->first) {
             CHECK_AND_CONTINUE(it->begin()->second != nullptr);
-            AUDIO_INFO_LOG("deviceType: %{public}d, ownerUid_: %{public}d", it->begin()->second->deviceType_,
+            AUDIO_INFO_LOG("deviceType: %{public}d, clientUid: %{public}d", it->begin()->second->deviceType_,
                 clientUid);
             return make_shared<AudioDeviceDescriptor>(it->begin()->second);
         }

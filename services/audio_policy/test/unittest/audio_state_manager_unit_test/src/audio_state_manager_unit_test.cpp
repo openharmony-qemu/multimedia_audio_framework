@@ -306,7 +306,7 @@ HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_014, TestSize.Leve
     EXPECT_EQ(deviceDesc->deviceType_, DEVICE_TYPE_SPEAKER);
     deviceDesc =
         AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDeviceForUid(456);
-    EXPECT_NE(deviceDesc->deviceType_, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(deviceDesc->deviceType_, DEVICE_TYPE_SPEAKER);
     AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerUid(0);
     AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(speaker, 1);
     deviceDesc = AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
