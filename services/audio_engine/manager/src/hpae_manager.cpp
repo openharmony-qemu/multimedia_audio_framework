@@ -805,7 +805,7 @@ bool HpaeManager::CheckMoveSourceOutput(uint32_t sourceOutputId, const std::stri
     std::shared_ptr<IHpaeCapturerManager> oldCaptureManager = GetCapturerManagerById(sourceOutputId);
     HpaeStreamInfo stream = capturerIdStreamInfoMap_[sourceOutputId].streamInfo;
     if (oldCaptureManager == nullptr) {
-       HILOG_COMM_INFO("move session:%{public}u failed,can not find source.", sourceOutputId);
+        HILOG_COMM_INFO("move session:%{public}u failed,can not find source.", sourceOutputId);
         HpaeStreamMoveMonitor::ReportStreamMoveException(stream.uid, sourceOutputId,
             HPAE_STREAM_CLASS_TYPE_RECORD, "", sourceName, "can not find source");
         return false;

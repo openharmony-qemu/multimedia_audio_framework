@@ -254,7 +254,7 @@ void AudioLoopbackPrivate::CreateAudioLoopback()
     audioRenderer_->SetRendererWriteCallback(shared_from_this());
     rendererFastStatus_ = FASTSTATUS_FAST;
     audioCapturer_ = AudioCapturer::CreateCapturer(capturerOptions_, appInfo_);
-     if (audioCapturer_ == nullptr) {
+    if (audioCapturer_ == nullptr) {
         HILOG_COMM_INFO("CreateCapturer failed");
         return;
     }

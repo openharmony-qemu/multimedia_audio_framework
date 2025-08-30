@@ -30,7 +30,8 @@ public:
     MOCK_METHOD(int32_t, GetStreamInfo, (AudioStreamInfo &streamInfo), (const, override));
     MOCK_METHOD(bool, Start, (StateChangeCmdType cmdType), (override));
     MOCK_METHOD(int32_t, Write, (uint8_t *buffer, size_t bufferSize), (override));
-    MOCK_METHOD(int32_t, Write, (uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize), (override));
+    MOCK_METHOD(int32_t, Write,
+        (uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize), (override));
     MOCK_METHOD(RendererState, GetStatus, (), (const, override));
     MOCK_METHOD(bool, GetAudioTime, (Timestamp &timestamp, Timestamp::Timestampbase base), (const, override));
     MOCK_METHOD(bool, GetAudioPosition, (Timestamp &timestamp, Timestamp::Timestampbase base), (override));
@@ -55,16 +56,21 @@ public:
     MOCK_METHOD(AudioRendererRate, GetRenderRate, (), (const, override));
     MOCK_METHOD(int32_t, SetRendererSamplingRate, (uint32_t sampleRate), (const, override));
     MOCK_METHOD(uint32_t, GetRendererSamplingRate, (), (const, override));
-    MOCK_METHOD(int32_t, SetRendererPositionCallback, (int64_t markPosition, const std::shared_ptr<RendererPositionCallback> &callback), (override));
+    MOCK_METHOD(int32_t, SetRendererPositionCallback,
+        (int64_t markPosition, const std::shared_ptr<RendererPositionCallback> &callback), (override));
     MOCK_METHOD(void, UnsetRendererPositionCallback, (), (override));
-    MOCK_METHOD(int32_t, SetRendererPeriodPositionCallback, (int64_t frameNumber, const std::shared_ptr<RendererPeriodPositionCallback> &callback), (override));
-    MOCK_METHOD(void, SetFastStatusChangeCallback, (const std::shared_ptr<AudioRendererFastStatusChangeCallback> &callback), (override));
+    MOCK_METHOD(int32_t, SetRendererPeriodPositionCallback,
+        (int64_t frameNumber, const std::shared_ptr<RendererPeriodPositionCallback> &callback), (override));
+    MOCK_METHOD(void, SetFastStatusChangeCallback,
+        (const std::shared_ptr<AudioRendererFastStatusChangeCallback> &callback), (override));
     MOCK_METHOD(void, UnsetRendererPeriodPositionCallback, (), (override));
     MOCK_METHOD(int32_t, SetBufferDuration, (uint64_t bufferDuration), (const, override));
     MOCK_METHOD(int32_t, SetRenderMode, (AudioRenderMode renderMode), (override));
     MOCK_METHOD(AudioRenderMode, GetRenderMode, (), (const, override));
-    MOCK_METHOD(int32_t, SetRendererWriteCallback, (const std::shared_ptr<AudioRendererWriteCallback> &callback), (override));
-    MOCK_METHOD(int32_t, SetRendererFirstFrameWritingCallback, (const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback), (override));
+    MOCK_METHOD(int32_t, SetRendererWriteCallback,
+        (const std::shared_ptr<AudioRendererWriteCallback> &callback), (override));
+    MOCK_METHOD(int32_t, SetRendererFirstFrameWritingCallback,
+        (const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback), (override));
     MOCK_METHOD(int32_t, GetBufferDesc, (BufferDesc &bufDesc), (override));
     MOCK_METHOD(int32_t, Enqueue, (const BufferDesc &bufDesc), (override));
     MOCK_METHOD(int32_t, Clear, (), (const, override));
@@ -84,11 +90,15 @@ public:
     MOCK_METHOD(AudioEffectMode, GetAudioEffectMode, (), (const, override));
     MOCK_METHOD(int64_t, GetFramesWritten, (), (const, override));
     MOCK_METHOD(int32_t, SetAudioEffectMode, (AudioEffectMode effectMode), (const, override));
-    MOCK_METHOD(void, SetAudioRendererErrorCallback, (std::shared_ptr<AudioRendererErrorCallback> errorCallback), (override));
-    MOCK_METHOD(int32_t, RegisterOutputDeviceChangeWithInfoCallback, (const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback), (override));
+    MOCK_METHOD(void, SetAudioRendererErrorCallback,
+        (std::shared_ptr<AudioRendererErrorCallback> errorCallback), (override));
+    MOCK_METHOD(int32_t, RegisterOutputDeviceChangeWithInfoCallback,
+        (const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback), (override));
     MOCK_METHOD(int32_t, UnregisterOutputDeviceChangeWithInfoCallback, (), (override));
-    MOCK_METHOD(int32_t, UnregisterOutputDeviceChangeWithInfoCallback, (const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback), (override));
-    MOCK_METHOD(int32_t, RegisterAudioPolicyServerDiedCb, (const int32_t clientPid, const std::shared_ptr<AudioRendererPolicyServiceDiedCallback> &callback), (override));
+    MOCK_METHOD(int32_t, UnregisterOutputDeviceChangeWithInfoCallback,
+        (const std::shared_ptr<AudioRendererOutputDeviceChangeCallback> &callback), (override));
+    MOCK_METHOD(int32_t, RegisterAudioPolicyServerDiedCb,
+        (const int32_t clientPid, const std::shared_ptr<AudioRendererPolicyServiceDiedCallback> &callback), (override));
     MOCK_METHOD(int32_t, UnregisterAudioPolicyServerDiedCb, (const int32_t clientPid), (override));
     MOCK_METHOD(int32_t, SetChannelBlendMode, (ChannelBlendMode blendMode), (override));
     MOCK_METHOD(int32_t, SetVolumeWithRamp, (float volume, int32_t duration), (override));
@@ -107,13 +117,13 @@ public:
     MOCK_METHOD(FastStatus, GetFastStatus, (), (override));
     MOCK_METHOD(bool, Mute, (StateChangeCmdType cmdType), (const, override));
     MOCK_METHOD(bool, Unmute, (StateChangeCmdType cmdType), (const, override));
-    MOCK_METHOD(int32_t, GetAudioTimestampInfo, (Timestamp &timestamp, Timestamp::Timestampbase base), (const, override));
+    MOCK_METHOD(int32_t, GetAudioTimestampInfo,
+        (Timestamp &timestamp, Timestamp::Timestampbase base), (const, override));
     MOCK_METHOD(int32_t, StartDataCallback, (), (override));
     MOCK_METHOD(int32_t, StopDataCallback, (), (override));
     MOCK_METHOD(void, SetInterruptEventCallbackType, (InterruptEventCallbackType callbackType), (override));
     MOCK_METHOD(void, SetAudioHapticsSyncId, (int32_t audioHapticsSyncId), (override));
     MOCK_METHOD(void, ResetFirstFrameState, (), (override));
-
 };
 
 } // namespace AudioStandard
