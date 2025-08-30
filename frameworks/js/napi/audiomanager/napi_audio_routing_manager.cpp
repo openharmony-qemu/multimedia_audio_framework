@@ -320,7 +320,9 @@ napi_value NapiAudioRoutingManager::SelectOutputDeviceByFilter(napi_env env, nap
             context->bArgTransFlag, argv[PARAM1]);
         context->audioDeviceSelectMode = 0;
         if (argc == ARGS_THREE) {
-            NapiParamUtils::GetValueInt32(env, context->audioDeviceSelectMode, argv[PARAM2]);
+            napi_status status =NapiParamUtils::GetValueInt32(env, context->audioDeviceSelectMode, argv[PARAM2]);
+            NAPI_CHECK_ARGS_RETURN_VOID(context, status == napi_ok, "invalid audioDeviceSelectMode",
+                NAPI_ERR_INVALID_PARAM);
         }
     };
     context->GetCbInfo(env, info, inputParser);

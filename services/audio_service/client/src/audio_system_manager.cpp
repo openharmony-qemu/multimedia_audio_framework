@@ -1042,7 +1042,7 @@ int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         audioDeviceDescriptors[0] != nullptr, ERR_INVALID_OPERATION, "device error");
     audioRendererFilter->streamType = AudioSystemManager::GetStreamType(audioRendererFilter->rendererInfo.contentType,
         audioRendererFilter->rendererInfo.streamUsage);
-    // operation chack
+    // operation check
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors[0]->deviceRole_ == DeviceRole::OUTPUT_DEVICE,
         ERR_INVALID_OPERATION, "not an output device.");
 
