@@ -292,7 +292,8 @@ enum AudioRingerMode {
  */
 enum AudioPrivacyType {
     PRIVACY_TYPE_PUBLIC = 0,
-    PRIVACY_TYPE_PRIVATE = 1
+    PRIVACY_TYPE_PRIVATE = 1,
+    PRIVACY_TYPE_SHARED = 2
 };
 
 /**
@@ -619,6 +620,7 @@ struct AudioRendererInfo : public Parcelable {
     // store the finally select routeflag after concurrency
     uint32_t audioFlag = 0x0;
     bool forceToNormal = false;
+    AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
 
     AudioRendererInfo() {}
     AudioRendererInfo(ContentType contentTypeIn, StreamUsage streamUsageIn, int32_t rendererFlagsIn)
@@ -653,7 +655,8 @@ struct AudioRendererInfo : public Parcelable {
             && parcel.WriteInt32(static_cast<int32_t>(loopbackMode))
             && parcel.WriteBool(isVirtualKeyboard)
             && parcel.WriteUint32(audioFlag)
-            && parcel.WriteBool(forceToNormal);
+            && parcel.WriteBool(forceToNormal)
+            && parcel.WriteInt32(privacyType);
     }
     void UnmarshallingSelf(Parcel &parcel)
     {
@@ -679,6 +682,7 @@ struct AudioRendererInfo : public Parcelable {
         isVirtualKeyboard = parcel.ReadBool();
         audioFlag = parcel.ReadUint32();
         forceToNormal = parcel.ReadBool();
+        privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
     }
 
     static AudioRendererInfo *Unmarshalling(Parcel &parcel)
@@ -1953,6 +1957,60 @@ enum XperfEventId : int32_t {
     XPERF_EVENT_RELEASE = 2,
     XPERF_EVENT_FAULT = 3,
     XPERF_EVENT_MAX = 4,
+};
+
+struct FetchDeviceInfo : public Parcelable {
+    StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
+    int32_t clientUID = -1;
+    RouterType routerType = ROUTER_TYPE_NONE;
+    AudioPipeType audioPipeType = PIPE_TYPE_UNKNOWN;
+    AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
+    std::string caller = "";
+
+    FetchDeviceInfo(StreamUsage streamUsage, int32_t clientUID,
+        RouterType routerType, AudioPipeType audioPipeType, AudioPrivacyType privacyType)
+        : streamUsage(streamUsage), clientUID(clientUID), routerType(routerType),
+          audioPipeType(audioPipeType), privacyType(privacyType)
+    {}
+
+    FetchDeviceInfo() = default;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(streamUsage)) &&
+            parcel.WriteInt32(clientUID) &&
+            parcel.WriteInt32(static_cast<int32_t>(routerType)) &&
+            parcel.WriteInt32(static_cast<int32_t>(audioPipeType)) &&
+            parcel.WriteInt32(static_cast<int32_t>(privacyType)) &&
+            parcel.WriteString(caller);
+    }
+
+    static FetchDeviceInfo *Unmarshalling(Parcel &parcel)
+    {
+        auto info = new(std::nothrow) FetchDeviceInfo();
+        if (info == nullptr) {
+            return nullptr;
+        }
+
+        info->streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+        info->clientUID = parcel.ReadInt32();
+        info->routerType = static_cast<RouterType>(parcel.ReadInt32());
+        info->audioPipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
+        info->privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
+        info->caller = parcel.ReadString();
+
+        return info;
+    }
+
+    void UnmarshallingSelf(Parcel &parcel)
+    {
+        streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+        clientUID = parcel.ReadInt32();
+        routerType = static_cast<RouterType>(parcel.ReadInt32());
+        audioPipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
+        privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
+        caller = parcel.ReadString();
+    }
 };
 } // namespace AudioStandard
 } // namespace OHOS

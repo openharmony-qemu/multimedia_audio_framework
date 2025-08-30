@@ -1537,37 +1537,63 @@ std::vector<SourceOutput> AudioCoreService::GetSourceOutputs()
     return sourceOutputs;
 }
 
-void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+void AudioCoreService::UpdateRingerOrAlarmerDualDeviceOutputRouter(
+    std::shared_ptr<AudioStreamDescriptor> streamDesc)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0 &&
+        streamDesc->newDeviceDescs_.front() != nullptr, "streamDesc is nullptr");
+    StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
+    InternalDeviceType deviceType = streamDesc->newDeviceDescs_.front()->deviceType_;
+    if (!SelectRingerOrAlarmDevices(streamDesc)) {
+        audioActiveDevice_.UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG,
+            streamDesc->newDeviceDescs_.front()->deviceName_, streamDesc->newDeviceDescs_.front()->networkId_);
+    }
+
+    AudioRingerMode ringerMode = audioPolicyManager_.GetRingerMode();
+    if (ringerMode != RINGER_MODE_NORMAL &&
+        IsRingerOrAlarmerDualDevicesRange(streamDesc->newDeviceDescs_.front()->getType()) &&
+        streamDesc->newDeviceDescs_.front()->getType() != DEVICE_TYPE_SPEAKER) {
+        audioPolicyManager_.SetInnerStreamMute(STREAM_RING, false, streamUsage);
+        audioVolumeManager_.SetRingerModeMute(false);
+        if (audioPolicyManager_.GetSystemVolumeLevel(STREAM_RING) <
+            audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE) {
+            audioPolicyManager_.SetDoubleRingVolumeDb(STREAM_RING,
+                audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE);
+        }
+    } else {
+        audioVolumeManager_.SetRingerModeMute(true);
+    }
+    shouldUpdateDeviceDueToDualTone_ = true;
+}
+
+void AudioCoreService::UpdateDupDeviceOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    if (streamDesc->newDupDeviceDescs_.size() != 0) {
+        std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkName(
+            streamDesc->newDupDeviceDescs_.front(), streamDesc->sessionId_);
+        UpdateDualToneState(false, streamDesc->sessionId_);
+        UpdateDualToneState(true, streamDesc->sessionId_, sinkName);
+        shouldUpdateDeviceDueToDualTone_ = true;
+    } else if (streamDesc->oldDupDeviceDescs_.size() != 0) {
+        UpdateDualToneState(false, streamDesc->sessionId_);
+    }
+}
+
+void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0 &&
+        streamDesc->newDeviceDescs_.front() != nullptr, "streamDesc is nullptr");
     StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
     InternalDeviceType deviceType = streamDesc->newDeviceDescs_.front()->deviceType_;
     AUDIO_INFO_LOG("[PipeExecInfo] Update route streamUsage:%{public}d, devicetype:[%{public}s]",
         streamUsage, streamDesc->GetNewDevicesTypeString().c_str());
     // for collaboration, the route should be updated
     UpdateRouteForCollaboration(deviceType);
+    shouldUpdateDeviceDueToDualTone_ = false;
     if (Util::IsRingerOrAlarmerStreamUsage(streamUsage) && IsRingerOrAlarmerDualDevicesRange(deviceType) &&
         !VolumeUtils::IsPCVolumeEnable()) {
-        if (!SelectRingerOrAlarmDevices(streamDesc)) {
-            audioActiveDevice_.UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG,
-                streamDesc->newDeviceDescs_.front()->deviceName_, streamDesc->newDeviceDescs_.front()->networkId_);
-        }
-
-        AudioRingerMode ringerMode = audioPolicyManager_.GetRingerMode();
-        if (ringerMode != RINGER_MODE_NORMAL &&
-            IsRingerOrAlarmerDualDevicesRange(streamDesc->newDeviceDescs_.front()->getType()) &&
-            streamDesc->newDeviceDescs_.front()->getType() != DEVICE_TYPE_SPEAKER) {
-            audioPolicyManager_.SetInnerStreamMute(STREAM_RING, false, streamUsage);
-            audioVolumeManager_.SetRingerModeMute(false);
-            if (audioPolicyManager_.GetSystemVolumeLevel(STREAM_RING) <
-                audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE) {
-                audioPolicyManager_.SetDoubleRingVolumeDb(STREAM_RING,
-                    audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE);
-            }
-        } else {
-            audioVolumeManager_.SetRingerModeMute(true);
-        }
-        shouldUpdateDeviceDueToDualTone_ = true;
+        UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
     } else {
         audioVolumeManager_.SetRingerModeMute(true);
         if (isRingDualToneOnPrimarySpeaker_ && streamUsage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
@@ -1586,7 +1612,7 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
         } else {
             audioActiveDevice_.UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG,
                 streamDesc->newDeviceDescs_.front()->deviceName_, streamDesc->newDeviceDescs_.front()->networkId_);
-            shouldUpdateDeviceDueToDualTone_ = false;
+            UpdateDupDeviceOutputRoute(streamDesc);
         }
     }
 }
@@ -1706,7 +1732,7 @@ bool AudioCoreService::SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDes
     return false;
 }
 
-void AudioCoreService::UpdateDualToneState(const bool &enable, const int32_t &sessionId)
+void AudioCoreService::UpdateDualToneState(const bool &enable, const int32_t &sessionId, const std::string &dupSinkName)
 {
     AUDIO_INFO_LOG("Update dual tone state, enable:%{public}d, sessionId:%{public}d", enable, sessionId);
     enableDualHalToneState_ = enable;
@@ -1714,7 +1740,7 @@ void AudioCoreService::UpdateDualToneState(const bool &enable, const int32_t &se
         enableDualHalToneSessionId_ = sessionId;
     }
     Trace trace("AudioDeviceCommon::UpdateDualToneState sessionId:" + std::to_string(sessionId));
-    auto ret = AudioServerProxy::GetInstance().UpdateDualToneStateProxy(enable, sessionId);
+    auto ret = AudioServerProxy::GetInstance().UpdateDualToneStateProxy(enable, sessionId, dupSinkName);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the dual tone state for sessionId:%{public}d", sessionId);
 }
 

@@ -244,21 +244,21 @@ int32_t AudioRenderer::FadeOutAudioBuffer(const BufferDesc &buffer, AudioSampleF
     CHECK_AND_RETURN_RET_LOG(volRet == SUCCESS, volRet, "Process Volume failed: %{public}d", volRet);
     return volRet;
 }
- 
+
 int32_t AudioRenderer::MuteAudioBuffer(uint8_t *addr, size_t offset, size_t length, AudioSampleFormat format)
 {
     CHECK_AND_RETURN_RET_LOG(addr != nullptr && length != 0, ERR_INVALID_PARAM, "Invalid addr or length");
- 
+
     bool formatValid = std::find(AUDIO_SUPPORTED_FORMATS.begin(), AUDIO_SUPPORTED_FORMATS.end(), format)
         != AUDIO_SUPPORTED_FORMATS.end();
     CHECK_AND_RETURN_RET_LOG(formatValid, ERR_INVALID_PARAM, "Invalid AudioSampleFormat");
- 
+
     size_t bitWidthSize = GetAudioFormatSize(format);
     if (bitWidthSize != 0 && length % bitWidthSize != 0) {
         AUDIO_ERR_LOG("length is %{public}zu, can not be divided by %{public}zu", length, bitWidthSize);
         return ERR_INVALID_PARAM;
     }
- 
+
     int32_t ret = 0;
     if (format == SAMPLE_U8) {
         ret = memset_s(addr + offset, length, 0X7F, length);
@@ -331,7 +331,7 @@ void AudioRendererPrivate::HandleSetRendererInfoByOptions(const AudioRendererOpt
     rendererInfo_.isLoopback = rendererOptions.rendererInfo.isLoopback;
     rendererInfo_.loopbackMode = rendererOptions.rendererInfo.loopbackMode;
 
-    privacyType_ = rendererOptions.privacyType;
+    rendererInfo_.privacyType = rendererOptions.privacyType;
     strategy_ = rendererOptions.strategy;
     originalStrategy_ = rendererOptions.strategy;
 }
@@ -381,7 +381,7 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
         rendererOptions.rendererInfo.contentType, rendererOptions.rendererInfo.streamUsage,
         rendererOptions.rendererInfo.isOffloadAllowed ? "T" : "F", rendererFlags, appInfo.appUid);
     AUDIO_INFO_LOG("isVKB: %{public}s", isVirtualKeyboard ? "T" : "F");
-    
+
     audioRenderer->rendererInfo_.isVirtualKeyboard = isVirtualKeyboard;
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
@@ -523,7 +523,7 @@ int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParam
     audioStream_->SetRendererInfo(rendererInfo_);
     audioStream_->SetClientID(appInfo_.appPid, appInfo_.appUid, appInfo_.appTokenId, appInfo_.appFullTokenId);
 
-    SetAudioPrivacyTypeInner(privacyType_);
+    SetAudioPrivacyTypeInner(rendererInfo_.privacyType);
     audioStream_->SetStreamTrackerState(false);
 
     int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, rendererProxyObj_);
@@ -554,13 +554,13 @@ void AudioRendererPrivate::SetAudioPrivacyType(AudioPrivacyType privacyType)
 {
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_LOG(currentStream != nullptr, "audioStream_ is nullptr");
-    privacyType_ = privacyType;
+    rendererInfo_.privacyType = privacyType;
     currentStream->SetPrivacyType(privacyType);
 }
 
 AudioPrivacyType AudioRendererPrivate::GetAudioPrivacyType()
 {
-    return privacyType_;
+    return rendererInfo_.privacyType;
 }
 
 IAudioStream::StreamClass AudioRendererPrivate::GetPreferredStreamClass(AudioStreamParams audioStreamParams)
@@ -2134,7 +2134,7 @@ RendererState AudioRendererPrivate::GetStatusInner()
 void AudioRendererPrivate::SetAudioPrivacyTypeInner(AudioPrivacyType privacyType)
 {
     CHECK_AND_RETURN_LOG(audioStream_ != nullptr, "audioStream_ is nullptr");
-    privacyType_ = privacyType;
+    rendererInfo_.privacyType = privacyType;
     audioStream_->SetPrivacyType(privacyType);
 }
 

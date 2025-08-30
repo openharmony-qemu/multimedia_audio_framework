@@ -511,11 +511,67 @@ HWTEST(AudioServiceUnitTest, AudioServiceShouldBeDualTone_001, TestSize.Level1)
     AudioProcessConfig config = {};
     config.audioMode = AUDIO_MODE_RECORD;
     config.rendererInfo.streamUsage = STREAM_USAGE_ALARM;
-    bool ret = AudioService::GetInstance()->ShouldBeDualTone(config);
+    bool ret = AudioService::GetInstance()->ShouldBeDualTone(config, "Speaker");
     EXPECT_FALSE(ret);
     config.audioMode = AUDIO_MODE_PLAYBACK;
-    ret = AudioService::GetInstance()->ShouldBeDualTone(config);
+    ret = AudioService::GetInstance()->ShouldBeDualTone(config, "Speaker");
     EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test ShouldBeDualTone API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServiceShouldBeDualTone_002
+ * @tc.desc  : Test ShouldBeDualTone interface.
+ */
+HWTEST(AudioServiceUnitTest, AudioServiceShouldBeDualTone_002, TestSize.Level1)
+{
+    AudioProcessConfig config = {};
+    config.audioMode = AUDIO_MODE_RECORD;
+    bool ret;
+    ret = AudioService::GetInstance()->ShouldBeDualTone(config, "Speaker");
+    EXPECT_EQ(ret, false);
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    config.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
+    ret = AudioService::GetInstance()->ShouldBeDualTone(config, "Speaker");
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test ShouldBeDualTone API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServiceShouldBeDualTone_003
+ * @tc.desc  : Test ShouldBeDualTone interface.
+ */
+HWTEST(AudioServiceUnitTest, AudioServiceShouldBeDualTone_003, TestSize.Level1)
+{
+    AudioProcessConfig config = {};
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    bool ret;
+    ret = AudioService::GetInstance()->ShouldBeDualTone(config, "Speaker");
+    EXPECT_EQ(ret, false);
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    config.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
+    ret = AudioService::GetInstance()->ShouldBeDualTone(config, "Speaker");
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test ShouldBeDualTone API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServiceShouldBeDualTone_004
+ * @tc.desc  : Test ShouldBeDualTone interface.
+ */
+HWTEST(AudioServiceUnitTest, AudioServiceShouldBeDualTone_004, TestSize.Level1)
+{
+    AudioProcessConfig config = {};
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    bool ret;
+    ret = AudioService::GetInstance()->ShouldBeDualTone(config, "Speaker");
+    EXPECT_EQ(ret, false);
+
+    ret = AudioService::GetInstance()->ShouldBeDualTone(config, "Speaker_Remote");
+    EXPECT_EQ(ret, true);
 }
 
 /**
@@ -625,25 +681,6 @@ HWTEST(AudioServiceUnitTest, AudioServiceGetCapturerBySessionID_001, TestSize.Le
 
     auto ret = AudioService::GetInstance()->GetCapturerBySessionID(0);
     EXPECT_EQ(nullptr, ret);
-}
-
-/**
- * @tc.name  : Test ShouldBeDualTone API
- * @tc.type  : FUNC
- * @tc.number: AudioServiceShouldBeDualTone_002
- * @tc.desc  : Test ShouldBeDualTone interface.
- */
-HWTEST(AudioServiceUnitTest, AudioServiceShouldBeDualTone_002, TestSize.Level1)
-{
-    AudioProcessConfig config = {};
-    config.audioMode = AUDIO_MODE_RECORD;
-    bool ret;
-    ret = AudioService::GetInstance()->ShouldBeDualTone(config);
-    EXPECT_EQ(ret, false);
-    config.audioMode = AUDIO_MODE_PLAYBACK;
-    config.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
-    ret = AudioService::GetInstance()->ShouldBeDualTone(config);
-    EXPECT_FALSE(ret);
 }
 
 /**
@@ -1474,24 +1511,7 @@ HWTEST(AudioServiceUnitTest, UpdateAudioSinkState_002, TestSize.Level1)
     int32_t res = audioService->GetCurrentRendererStreamCnt();
     EXPECT_EQ(res, 1);
 }
-/**
- * @tc.name  : Test ShouldBeDualTone API
- * @tc.type  : FUNC
- * @tc.number: AudioServiceShouldBeDualTone_003
- * @tc.desc  : Test ShouldBeDualTone interface.
- */
-HWTEST(AudioServiceUnitTest, AudioServiceShouldBeDualTone_003, TestSize.Level1)
-{
-    AudioProcessConfig config = {};
-    config.audioMode = AUDIO_MODE_PLAYBACK;
-    bool ret;
-    ret = AudioService::GetInstance()->ShouldBeDualTone(config);
-    EXPECT_EQ(ret, false);
-    config.audioMode = AUDIO_MODE_PLAYBACK;
-    config.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
-    ret = AudioService::GetInstance()->ShouldBeDualTone(config);
-    EXPECT_FALSE(ret);
-}
+
 /**
  * @tc.name  : Test CheckHibernateState API
  * @tc.type  : FUNC
@@ -2921,11 +2941,11 @@ HWTEST(AudioServiceUnitTest, ShouldBeDualTone_001, TestSize.Level1)
     AudioProcessConfig config = {};
     config.rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
 
-    EXPECT_FALSE(AudioService::GetInstance()->ShouldBeDualTone(config));
+    EXPECT_FALSE(AudioService::GetInstance()->ShouldBeDualTone(config, "Speaker"));
 
     config.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    EXPECT_FALSE(AudioService::GetInstance()->ShouldBeDualTone(config));
+    EXPECT_FALSE(AudioService::GetInstance()->ShouldBeDualTone(config, "Speaker"));
 }
 
 /**
@@ -2941,7 +2961,7 @@ HWTEST(AudioServiceUnitTest, ShouldBeDualTone_002, TestSize.Level1)
     config.audioMode = AUDIO_MODE_RECORD;
 
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    EXPECT_FALSE(AudioService::GetInstance()->ShouldBeDualTone(config));
+    EXPECT_FALSE(AudioService::GetInstance()->ShouldBeDualTone(config, "Speaker"));
 }
 
 /**
@@ -2959,7 +2979,7 @@ HWTEST(AudioServiceUnitTest, ShouldBeDualTone_003, TestSize.Level1)
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
 
-    EXPECT_FALSE(AudioService::GetInstance()->ShouldBeDualTone(config));
+    EXPECT_FALSE(AudioService::GetInstance()->ShouldBeDualTone(config, "Speaker"));
 }
 
 /**
@@ -2977,7 +2997,25 @@ HWTEST(AudioServiceUnitTest, ShouldBeDualTone_004, TestSize.Level1)
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceType_ = static_cast<DeviceType>(999); // 未知设备类型
 
-    EXPECT_FALSE(AudioService::GetInstance()->ShouldBeDualTone(config));
+    EXPECT_FALSE(AudioService::GetInstance()->ShouldBeDualTone(config, "Speaker"));
+}
+
+/**
+ * @tc.name  : Test ShouldBeDualTone API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldBeDualTone_005,
+ * @tc.desc  : Test ShouldBeDualTone interface.
+ */
+HWTEST(AudioServiceUnitTest, ShouldBeDualTone_005, TestSize.Level1)
+{
+    AudioProcessConfig config = {};
+    config.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
+
+    EXPECT_TRUE(AudioService::GetInstance()->ShouldBeDualTone(config, "Speaker_remote"));
 }
 
 /**
