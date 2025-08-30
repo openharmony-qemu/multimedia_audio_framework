@@ -22,7 +22,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-void NapiDfxUtils::SendVolumeApiInvokeEvent(int32_t uid, std::string functionName, int32_t paramValue)
+void NapiDfxUtils::SendVolumeApiInvokeEvent(int32_t uid, const std::string &functionName, int32_t paramValue)
 {
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::VOLUME_API_INVOKE,

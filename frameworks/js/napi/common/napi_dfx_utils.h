@@ -22,7 +22,7 @@ namespace AudioStandard {
 
 class NapiDfxUtils {
 public:
-    static void SendVolumeApiInvokeEvent(int32_t uid, std::string functionName, int32_t paramValue);
+    static void SendVolumeApiInvokeEvent(int32_t uid, const std::string &functionName, int32_t paramValue);
 };
 } // namespace AudioStandard
 } // namespace OHOS
