@@ -15,7 +15,7 @@
 #ifndef AUDIO_RENDERER_MOCK_H
 #define AUDIO_RENDERER_MOCK_H
 #include <gmock/gmock.h>
-#include "audio_renderer.h"  // 包含原始头文件
+#include "audio_renderer.h"
 
 namespace OHOS {
 namespace AudioStandard {
