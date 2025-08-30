@@ -21,6 +21,7 @@
 #include "audio_interrupt_info.h"
 #include "audio_session_info.h"
 #include "audio_device_info.h"
+#include "audio_device_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -86,7 +87,7 @@ private:
     std::mutex sessionMutex_;
     int32_t callerPid_;
     bool needToFetch_ = false;
-    AudioSessionStrategy strategy_;
+    AudioSessionStrategy strategy_ {AudioConcurrencyMode::INVALID};
     AudioSessionStateMonitor &audioSessionStateMonitor_;
     AudioSessionScene audioSessionScene_ {AudioSessionScene::INVALID};
     // These are streams included in audiosession focus.

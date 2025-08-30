@@ -288,8 +288,6 @@ private:
         &audioFocusInfoList);
 
     AudioStreamType GetStreamInFocusInternal(const int32_t uid, const int32_t zoneId);
-    
-    bool CheckAudioSessionExistence(const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
 
     bool SwitchHintType(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive,
         InterruptEventInternal &interruptEvent, std::list<std::pair<AudioInterrupt, AudioFocuState>> &tmpFocusInfoList);

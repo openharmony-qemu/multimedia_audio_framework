@@ -132,9 +132,7 @@ void AudioInterruptZoneManager::ForceStopAudioFocusInZone(int32_t zoneId, const 
         service_->handler_->SendInterruptEventWithStreamIdCallback(interruptEvent, interrupt.streamId);
     }
 
-    auto audioSession = service_->sessionService_.GetAudioSessionByPid(interrupt.pid);
-    CHECK_AND_RETURN_LOG(audioSession != nullptr, "audio session is nullptr");
-    audioSession->RemoveStreamInfo(interrupt.streamId);
+    service_->sessionService_.RemoveStreamInfo(interrupt.pid, interrupt.streamId);
 }
 
 int32_t AudioInterruptZoneManager::MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func)
@@ -288,10 +286,7 @@ AudioFocusIterator AudioInterruptZoneManager::QueryAudioFocusFromZone(int32_t zo
 void AudioInterruptZoneManager::RemoveAudioZoneInterrupts(int32_t zoneId, const AudioFocusIterator &focus)
 {
     for (auto &it : focus) {
-        auto audioSession = service_->sessionService_.GetAudioSessionByPid(it->first.pid);
-        if (audioSession != nullptr) {
-            audioSession->RemoveStreamInfo(it->first.streamId);
-        }
+        service_->sessionService_.RemoveStreamInfo(it->first.pid, it->first.streamId);
         AUDIO_DEBUG_LOG("remove interrupt %{public}d from zone %{public}d",
             it->first.streamId, zoneId);
         service_->zonesMap_[zoneId]->audioFocusInfoList.erase(it);

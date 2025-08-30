@@ -46,7 +46,6 @@ public:
 
     // other public interfaces
     int32_t SetSessionTimeOutCallback(const std::shared_ptr<SessionTimeOutCallback> &timeOutCallback);
-    std::shared_ptr<AudioSession> GetAudioSessionByPid(const int32_t callerPid);
 
     // Dump AudioSession Info
     void AudioSessionInfoDump(std::string &dumpString);
@@ -62,8 +61,12 @@ public:
     bool ShouldExcludeStreamType(const AudioInterrupt &audioInterrupt);
     std::vector<AudioInterrupt> GetStreams(int32_t callerPid);
     AudioInterrupt GenerateFakeAudioInterrupt(int32_t callerPid);
-    void RemoveStreamInfo(const AudioInterrupt &audioInterrupt);
+    void AddStreamInfo(const AudioInterrupt &audioInterrupt);
+    void RemoveStreamInfo(const int32_t callerPid, const uint32_t streamId);
     void ClearStreamInfo(const int32_t callerPid);
+    bool IsStreamInfoEmpty(const int32_t callerPid);
+    bool IsAudioRendererEmpty(const int32_t callerPid);
+    AudioConcurrencyMode GetSessionStrategy(int32_t callerPid);
     bool ShouldAudioSessionProcessHintType(InterruptHint hintType);
     bool ShouldAudioStreamProcessHintType(InterruptHint hintType);
     static bool IsSameTypeForAudioSession(const AudioStreamType incomingType, const AudioStreamType existedType);
