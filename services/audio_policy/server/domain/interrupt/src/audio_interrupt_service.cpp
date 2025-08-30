@@ -890,6 +890,7 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
     if (ShouldBypassAudioSessionFocus(zoneId, audioInterrupt)) {
         TryHandleStreamCallbackInSession(zoneId, audioInterrupt);
         SendActiveVolumeTypeChangeEvent(zoneId);
+        sessionService_.AddStreamInfo(audioInterrupt);
         updateScene = true;
         AUDIO_INFO_LOG("Bypass Audio session focus, pid = %{public}d", audioInterrupt.pid);
         return SUCCESS;
@@ -2195,6 +2196,7 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
 
         needPlaceHolder = !audioInterrupt.isAudioSessionInterrupt &&
             audioInterrupt.audioFocusType.streamType != STREAM_DEFAULT &&
+            !sessionService_.ShouldExcludeStreamType(audioInterrupt) &&
             sessionService_.IsAudioRendererEmpty(audioInterrupt.pid) &&
             !HadVoipStatus(audioInterrupt, audioFocusInfoList);
     }

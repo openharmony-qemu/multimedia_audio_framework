@@ -103,15 +103,6 @@ AudioStreamType AudioSession::GetFakeStreamType()
 void AudioSession::AddStreamInfo(const AudioInterrupt &incomingInterrupt)
 {
     std::lock_guard<std::mutex> lock(sessionMutex_);
-    if (incomingInterrupt.isAudioSessionInterrupt) {
-        return;
-    }
-
-    if (state_ == AudioSessionState::SESSION_ACTIVE &&
-        audioSessionScene_ != AudioSessionScene::INVALID &&
-        ShouldExcludeStreamType(incomingInterrupt)) {
-        return;
-    }
 
     for (const auto &stream : streamsInSession_) {
         if (stream.streamId == incomingInterrupt.streamId) {
@@ -367,27 +358,6 @@ AudioSessionStrategy AudioSession::GetSessionStrategy()
     AUDIO_INFO_LOG("GetSessionStrategy: pid %{public}d, strategy_.concurrencyMode %{public}d",
         callerPid_, static_cast<int32_t>(strategy_.concurrencyMode));
     return strategy_;
-}
-
-// For audio session v2
-bool AudioSession::ShouldExcludeStreamType(const AudioInterrupt &audioInterrupt)
-{
-    bool isExcludedStream = audioInterrupt.audioFocusType.streamType == STREAM_NOTIFICATION ||
-                            audioInterrupt.audioFocusType.streamType == STREAM_DTMF ||
-                            audioInterrupt.audioFocusType.streamType == STREAM_ALARM ||
-                            audioInterrupt.audioFocusType.streamType == STREAM_VOICE_CALL_ASSISTANT ||
-                            audioInterrupt.audioFocusType.streamType == STREAM_ULTRASONIC ||
-                            audioInterrupt.audioFocusType.streamType == STREAM_ACCESSIBILITY;
-    if (isExcludedStream) {
-        return true;
-    }
-
-    bool isExcludedStreamType = audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID;
-    if (isExcludedStreamType) {
-        return true;
-    }
-
-    return false;
 }
 
 bool AudioSession::IsAudioSessionEmpty()

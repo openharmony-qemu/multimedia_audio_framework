@@ -52,7 +52,6 @@ public:
     void ClearStreamInfo(void);
     uint32_t GetFakeStreamId();
     void SaveFakeStreamId(uint32_t fakeStreamId);
-    bool ShouldExcludeStreamType(const AudioInterrupt &audioInterrupt);
     void Dump(std::string &dumpString);
     int32_t Activate(const AudioSessionStrategy strategy);
     int32_t Deactivate();
