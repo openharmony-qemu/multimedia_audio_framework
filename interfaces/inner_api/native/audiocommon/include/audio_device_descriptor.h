@@ -99,6 +99,8 @@ public:
 
     bool IsDistributedSpeaker() const;
 
+    bool IsSpeakerOrEarpiece() const;
+
     bool IsRemote() const;
 
     DeviceType MapInternalToExternalDeviceType(int32_t apiVersion, bool isSupportedNearlink = true) const;

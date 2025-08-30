@@ -58,6 +58,8 @@ static const int64_t SELECT_DEVICE_MUTE_MS = 200000; // 200ms
 static const int64_t SELECT_OFFLOAD_DEVICE_MUTE_MS = 400000; // 400ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS = 300000; // 300ms
 static const int64_t DISTRIBUTED_DEVICE_UNAVALIABLE_MUTE_MS = 1500000;  // 1.5s
+static const uint32_t VOICE_CALL_DEVICE_SWITCH_MUTE_US = 100000; // 100ms
+static const uint32_t MUTE_TO_ROUTE_UPDATE_TIMEOUT_MS = 1000; // 1s
 
 static const uint32_t BASE_DEVICE_SWITCH_SLEEP_US = 80000; // 80ms
 static const uint32_t OLD_DEVICE_UNAVAILABLE_EXTRA_SLEEP_US = 150000; // 150ms
@@ -319,6 +321,11 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
     // and the current output device is different from the target device, then mute to avoid pop issue.
     if (isModemCallRunning && IsDeviceSwitching(reason) && !curDesc.IsSameDeviceDesc(*descs.front())) {
         SetVoiceCallMuteForSwitchDevice();
+        needUnmuteVoiceCall_ = true;
+        SetUpdateModemRouteFinished(false);
+        uint32_t muteDuration = GetVoiceCallMuteDuration(curDesc, *descs.front());
+        std::thread switchThread(&AudioCoreService::UnmuteVoiceCallAfterMuteDuration, this, muteDuration);
+        switchThread.detach();
     }
     CheckAndUpdateHearingAidCall(descs.front()->deviceType_);
 }
@@ -333,7 +340,10 @@ int32_t AudioCoreService::UpdateModemRoute(std::vector<std::shared_ptr<AudioDevi
     if (audioSceneManager_.IsInPhoneCallScene()) {
         audioActiveDevice_.UpdateActiveDeviceRoute(descs.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG,
             descs.front()->deviceName_, LOCAL_NETWORK_ID);
-        audioVolumeManager_.SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
+        if (needUnmuteVoiceCall_) {
+            NotifyUnmuteVoiceCall();
+            needUnmuteVoiceCall_ = false;
+        }
     }
     AudioDeviceDescriptor desc = AudioDeviceDescriptor(descs.front());
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> modemSessionMap =
@@ -343,6 +353,44 @@ int32_t AudioCoreService::UpdateModemRoute(std::vector<std::shared_ptr<AudioDevi
         sleAudioDeviceManager_.UpdateSleStreamTypeCount(it->second);
     }
     return SUCCESS;
+}
+
+uint32_t AudioCoreService::GetVoiceCallMuteDuration(AudioDeviceDescriptor &curDesc, AudioDeviceDescriptor &newDesc)
+{
+    uint32_t muteDuration = 0;
+    if (!curDesc.IsSameDeviceDesc(newDesc) &&
+        !(curDesc.IsSpeakerOrEarpiece() && newDesc.IsSpeakerOrEarpiece())) {
+        muteDuration = VOICE_CALL_DEVICE_SWITCH_MUTE_US;
+    }
+    return muteDuration;
+}
+
+// muteDuration: duration to keep the voice call muted after modem route update
+void AudioCoreService::UnmuteVoiceCallAfterMuteDuration(uint32_t muteDuration)
+{
+    AUDIO_INFO_LOG("mute voice call %{public}d us after update modem route", muteDuration);
+    {
+        std::unique_lock<std::mutex> lock(updateModemRouteMutex_);
+        updateModemRouteCV_.wait_for(lock, std::chrono::milliseconds(MUTE_TO_ROUTE_UPDATE_TIMEOUT_MS),
+            [this] { return updateModemRouteFinished_; });
+    }
+    usleep(muteDuration);
+    audioVolumeManager_.SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
+}
+
+void AudioCoreService::NotifyUnmuteVoiceCall()
+{
+    {
+        std::unique_lock<std::mutex> lock(updateModemRouteMutex_);
+        updateModemRouteFinished_ = true;
+    }
+    updateModemRouteCV_.notify_all();
+}
+
+void AudioCoreService::SetUpdateModemRouteFinished(bool flag)
+{
+    std::unique_lock<std::mutex> lock(updateModemRouteMutex_);
+    updateModemRouteFinished_ = flag;
 }
 
 void AudioCoreService::CheckCloseHearingAidCall(const bool isModemCallRunning, const DeviceType type)

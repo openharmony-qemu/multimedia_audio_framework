@@ -489,6 +489,12 @@ bool AudioDeviceDescriptor::IsDistributedSpeaker() const
     return deviceType_ == DEVICE_TYPE_SPEAKER && networkId_ != "LocalDevice";
 }
 
+bool AudioDeviceDescriptor::IsSpeakerOrEarpiece() const
+{
+    return (networkId_ == LOCAL_NETWORK_ID && deviceType_ == DEVICE_TYPE_SPEAKER) ||
+        deviceType_ == DEVICE_TYPE_EARPIECE;
+}
+
 bool AudioDeviceDescriptor::IsRemote() const
 {
     return networkId_ != "LocalDevice";
