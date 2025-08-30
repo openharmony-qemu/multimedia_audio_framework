@@ -1889,10 +1889,10 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetOutputDevice_002, TestSize.Level1)
     
     deviceList = server->audioPolicyService_.GetOutputDevice(audioRendererFilter);
 
-    serve->audioAffinityManager_.AddSelectRendererDevice(audioRendererFilter->uid, speaker);
+    server->audioAffinityManager_.AddSelectRendererDevice(audioRendererFilter->uid, speaker);
     deviceList = server->audioPolicyService_.GetOutputDevice(audioRendererFilter);
     EXPECT_EQ(deviceList[0]->deviceId_, 2);
-    serve->audioAffinityManager_.DelSelectRendererDevice(456);
+    server->audioAffinityManager_.DelSelectRendererDevice(456);
 }
 
 /**

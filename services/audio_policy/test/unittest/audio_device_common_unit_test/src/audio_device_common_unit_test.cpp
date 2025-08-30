@@ -1497,11 +1497,11 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_091, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetPreferredOutPutDeviceDescInner.
-* @tc.number: GetPreferredOutPutDeviceDescInner
-* @tc.desc  : Test GetPreferredOutPutDeviceDescInner interface.
+* @tc.name  : Test GetPreferredOutputDeviceDescInner.
+* @tc.number: GetPreferredOutputDeviceDescInner
+* @tc.desc  : Test GetPreferredOutputDeviceDescInner interface.
 */
-HWTEST_F(AudioDeviceCommonUnitTest, GetPreferredOutPutDeviceDescInner, TestSize.Level1)
+HWTEST_F(AudioDeviceCommonUnitTest, GetPreferredOutputDeviceDescInner, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.DeInit();
@@ -1517,9 +1517,9 @@ HWTEST_F(AudioDeviceCommonUnitTest, GetPreferredOutPutDeviceDescInner, TestSize.
 
     AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, 0);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList =
-        audioDeviceCommon.GetPreferredOutPutDeviceDescInner(rendererInfo, networkId, uid);
+        audioDeviceCommon.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, uid);
     AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(speaker, uid);
-    deviceList = audioDeviceCommon.GetPreferredOutPutDeviceDescInner(
+    deviceList = audioDeviceCommon.GetPreferredOutputDeviceDescInner(
         rendererInfo, networkId, uid);
     EXPECT_EQ(deviceList[0]->deviceId_, 2);
 }
