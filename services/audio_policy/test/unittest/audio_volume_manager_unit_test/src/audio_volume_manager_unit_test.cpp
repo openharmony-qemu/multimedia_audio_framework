@@ -1429,20 +1429,15 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_067, TestSize.Level1)
     auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
     ASSERT_TRUE(audioVolumeManager != nullptr);
 
-    std::string macAddress = "test";
     AudioStreamType streamType = STREAM_MUSIC;
     int32_t volumeLevel = 8;
-    bool internalCall = true;
-    SleVolumeConfigInfo configInfo;
-    std::pair<SleVolumeConfigInfo, SleVolumeConfigInfo> pairConfigInfo = std::make_pair(configInfo, configInfo);
-    SleAudioDeviceManager::GetInstance().deviceVolumeConfigInfo_["test"] = pairConfigInfo;
     AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NEARLINK, DeviceRole::OUTPUT_DEVICE);
     audioVolumeManager->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
-    auto ret = audioVolumeManager->SetNearlinkDeviceVolume(macAddress, streamType, volumeLevel, internalCall);
-    EXPECT_EQ(ret, ERROR);
+    auto ret = audioVolumeManager->SetNearlinkDeviceVolumeEx(streamType, volumeLevel);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
     AudioDeviceDescriptor curDesc2(DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
     audioVolumeManager->audioActiveDevice_.SetCurrentOutputDevice(curDesc2);
-    ret = audioVolumeManager->SetNearlinkDeviceVolume(macAddress, streamType, volumeLevel, internalCall);
+    ret = audioVolumeManager->SetNearlinkDeviceVolumeEx(streamType, volumeLevel);
     EXPECT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard

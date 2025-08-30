@@ -638,6 +638,7 @@ int32_t AudioAdapterManager::SaveSpecifiedDeviceVolume(AudioStreamType streamTyp
     int32_t maxRet = GetMaxVolumeLevel(streamType);
     CHECK_AND_RETURN_RET_LOG(volumeLevel >= mimRet && volumeLevel <= maxRet, ERR_OPERATION_FAILED,
         "volumeLevel not in scope,mimRet:%{public}d maxRet:%{public}d", mimRet, maxRet);
+    CHECK_AND_RETURN_RET_LOG(handler_ != nullptr, ERROR, "handler_ is null");
     handler_->SendSaveVolume(deviceType, streamType, volumeLevel);
     return SUCCESS;
 }
