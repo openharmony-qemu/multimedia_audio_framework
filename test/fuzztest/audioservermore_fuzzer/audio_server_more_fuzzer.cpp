@@ -955,6 +955,19 @@ void AudioServerRestoreAudioWorkgroupPrioFuzzTest(const uint8_t *rawData, size_t
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->RestoreAudioWorkgroupPrio(pid, threads);
 }
+
+void AudioServerGetPrivacyTypeAudioServerFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    uint32_t sessionId = GetData<uint32_t>();
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    int32_t privacyType;
+    int32_t ret;
+    audioServerPtr->GetPrivacyTypeAudioServer(sessionId, privacyType, ret);
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -1009,5 +1022,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AudioServerGetVolumeBySessionIdFuzzTest(data, size);
     OHOS::AudioStandard::AudioServerImproveAudioWorkgroupPrioFuzzTest(data, size);
     OHOS::AudioStandard::AudioServerRestoreAudioWorkgroupPrioFuzzTest(data, size);
+    OHOS::AudioStandard::AudioServerGetPrivacyTypeAudioServerFuzzTest(data, size);
     return 0;
 }

@@ -3112,6 +3112,16 @@ int32_t AudioServer::RestoreAudioWorkgroupPrio(int32_t pid, const std::unordered
 {
     return AudioResourceService::GetInstance()->RestoreAudioWorkgroupPrio(pid, threads);
 }
+
+int32_t AudioServer::GetPrivacyTypeAudioServer(uint32_t sessionId, int32_t &privacyType, int32_t &ret)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_SYSTEM_PERMISSION_DENIED, "not audio calling!");
+    AudioPrivacyType type = PRIVACY_TYPE_PUBLIC;
+    ret = AudioService::GetInstance()->GetPrivacyType(sessionId, type);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, SUCCESS, "%{public}u err", sessionId);
+    privacyType = static_cast<int32_t>(type);
+    return SUCCESS;
+}
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

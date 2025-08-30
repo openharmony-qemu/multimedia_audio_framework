@@ -84,6 +84,7 @@
     *UpdateBackgroundCaptureMap*;
     *SendInterruptEventToAudioServer*;
     *SendInterruptEventToAudioService*;
+    *GetPrivacyType*;
   local:
     *;
 };
