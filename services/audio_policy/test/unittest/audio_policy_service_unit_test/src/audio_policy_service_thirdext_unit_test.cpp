@@ -1687,7 +1687,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetMaxVolumeLevel_001, TestSize.Level
 /**
 * @tc.name  : Test GetMaxVolumeLevel.
 * @tc.number: GetMaxVolumeLevel_002
-* @tc.desc  : no valid parameters, return SUCCESS and volumeLevel is default value.
+* @tc.desc  : no valid parameters, return SUCCESS and volumeLevel is no valid value.
 */
 HWTEST_F(AudioPolicyServiceFourthUnitTest, GetMaxVolumeLevel_002, TestSize.Level1)
 {
@@ -1700,7 +1700,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetMaxVolumeLevel_002, TestSize.Level
     int ret = server->GetMaxVolumeLevel(volumeType, volumeLevel, deviceType);
 
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(volumeLevel, MAX_VOLUME_LEVEL);
+    EXPECT_EQ(volumeLevel, ERR_INVALID_PARAM);
 }
 
 /**
@@ -1725,7 +1725,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetMinVolumeLevel_001, TestSize.Level
 /**
 * @tc.name  : Test GetMinVolumeLevel.
 * @tc.number: GetMinVolumeLevel_002
-* @tc.desc  : no valid parameters, return SUCCESS and volumeLevel is default value.
+* @tc.desc  : no valid parameters, return SUCCESS and volumeLevel is no valid value.
 */
 HWTEST_F(AudioPolicyServiceFourthUnitTest, GetMinVolumeLevel_002, TestSize.Level1)
 {
@@ -1738,7 +1738,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetMinVolumeLevel_002, TestSize.Level
     int ret = server->GetMinVolumeLevel(volumeType, volumeLevel, deviceType);
 
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(volumeLevel, MIN_VOLUME_LEVEL);
+    EXPECT_EQ(volumeLevel, ERR_INVALID_PARAM);
 }
 
 /**
