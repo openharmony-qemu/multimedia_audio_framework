@@ -47,8 +47,8 @@ public:
     MOCK_METHOD(int32_t, SetCapturerPositionCallback,
         (int64_t markPosition, const std::shared_ptr<CapturerPositionCallback> &callback), (override));
     MOCK_METHOD(void, UnsetCapturerPositionCallback, (), (override));
-    MOCK_METHOD(int32_t, SetCapturerPeriodPositionCallback, 
-        int64_t frameNumber, const std::shared_ptr<CapturerPeriodPositionCallback> &callback), (override));
+    MOCK_METHOD(int32_t, SetCapturerPeriodPositionCallback,
+        (int64_t frameNumber, const std::shared_ptr<CapturerPeriodPositionCallback> &callback), (override));
     MOCK_METHOD(void, UnsetCapturerPeriodPositionCallback, (), (override));
     MOCK_METHOD(int32_t, RegisterAudioPolicyServerDiedCb,
         (const int32_t clientPid, const std::shared_ptr<AudioCapturerPolicyServiceDiedCallback> &callback), (override));
