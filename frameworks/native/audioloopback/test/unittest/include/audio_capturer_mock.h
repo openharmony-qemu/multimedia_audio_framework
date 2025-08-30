@@ -77,4 +77,4 @@ public:
 
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // AUDIO_RENDERER_MOCK_H
+#endif // AUDIO_CAPTURER_MOCK_H

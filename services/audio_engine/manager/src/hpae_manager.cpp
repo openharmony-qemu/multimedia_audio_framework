@@ -778,8 +778,7 @@ int32_t HpaeManager::MoveSourceOutputByIndexOrName(
         }
         std::string name = capturerIdSourceNameMap_[sourceOutputId];
         if (sourceName == name) {
-            HILOG_COMM_INFO("source:%{public}s is the same, no need move",
-                sourceOutputId, sourceName.c_str());
+            HILOG_COMM_INFO("source:%{public}s is the same, no need move", sourceName.c_str());
             if (auto serviceCallback = serviceCallback_.lock()) {
                 serviceCallback->OnMoveSourceOutputByIndexOrNameCb(SUCCESS);
             }
