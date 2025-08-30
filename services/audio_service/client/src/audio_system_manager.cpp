@@ -2395,7 +2395,7 @@ int32_t AudioSystemManager::RemoveThreadFromGroup(int32_t workgroupId, int32_t t
     return gasp->RemoveThreadFromGroup(getpid(), workgroupId, tokenId);
 }
 
-int32_t AudioSystemManager::ExcuteAudioWorkgroupPrioImprove(int32_t workgroupId,
+int32_t AudioSystemManager::ExecuteAudioWorkgroupPrioImprove(int32_t workgroupId,
     const std::unordered_map<int32_t, bool> threads, bool &needUpdatePrio)
 {
     bool restoreByPermission = false;
@@ -2438,8 +2438,8 @@ int32_t AudioSystemManager::StartGroup(int32_t workgroupId, uint64_t startTime, 
         audioDeadlineRate <= AUDIO_DEADLINE_PARAM_MAX, ERR_INVALID_PARAM, "Invalid Audio Deadline Rate");
     RME::SetFrameRateAndPrioType(workgroupId, audioDeadlineRate, 0);
 
-    if (ExcuteAudioWorkgroupPrioImprove(workgroupId, threads, needUpdatePrio) != AUDIO_OK) {
-        AUDIO_ERR_LOG("[WorkgroupInClient] excute audioworkgroup prio improve failed");
+    if (ExecuteAudioWorkgroupPrioImprove(workgroupId, threads, needUpdatePrio) != AUDIO_OK) {
+        AUDIO_ERR_LOG("[WorkgroupInClient] execute audioworkgroup prio improve failed");
         return AUDIO_ERR;
     }
 

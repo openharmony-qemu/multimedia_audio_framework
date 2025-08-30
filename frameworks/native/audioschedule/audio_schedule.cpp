@@ -82,10 +82,10 @@ void ScheduleReportData(pid_t pid, pid_t tid, const char *bundleName)
 
 void ScheduleReportDataWithQosLevel(pid_t pid, pid_t tid, const char *bundleName, int32_t qosLevel)
 {
-    AudioXCollie audioXcollie("RSS::ReportData with qos level + " + std::to_string(qosLevel) +
+    AudioXCollie audioXcollie("RSS::ReportData with qos level " + std::to_string(qosLevel) +
         ", pid " + std::to_string(pid) + ", tid " + std::to_string(tid), REPORTDATA_TIMEOUT,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    AUDIO_INFO_LOG("Report tid %{public}u to qosLeve %{public}d", tid, qosLevel);
+    AUDIO_INFO_LOG("Report tid %{public}u to qosLevel %{public}d", tid, qosLevel);
     ScheduleReportDataInner(pid, tid, bundleName, qosLevel);
 }
 
