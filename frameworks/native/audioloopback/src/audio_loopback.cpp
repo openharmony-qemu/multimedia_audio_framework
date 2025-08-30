@@ -90,8 +90,10 @@ bool AudioLoopbackPrivate::Enable(bool enable)
 {
     Trace trace("AudioLoopbackPrivate::Enable");
     std::lock_guard<std::mutex> lock(loopbackMutex_);
-
-    CHECK_AND_RETURN_RET_LOG(IsAudioLoopbackSupported(), false, "AudioLoopback not support");
+    if (!IsAudioLoopbackSupported()) {
+        HILOG_COMM_INFO("AudioLoopback not support");
+        return false;
+    }
     AUDIO_INFO_LOG("Enable %{public}d, currentState_ %{public}d", enable, currentState_);
     if (enable) {
         CHECK_AND_RETURN_RET_LOG(GetCurrentState() != LOOPBACK_STATE_RUNNING, true, "AudioLoopback already running");
@@ -161,15 +163,14 @@ int32_t AudioLoopbackPrivate::SetVolume(float volume)
 {
     Trace trace("AudioLoopbackPrivate::SetVolume");
     if (volume < 0.0 || volume > 1.0) {
-        AUDIO_ERR_LOG("SetVolume with invalid volume %{public}f", volume);
+        HILOG_COMM_INFO("SetVolume with invalid volume %{public}f", volume);
         return ERR_INVALID_PARAM;
     }
     std::unique_lock<std::mutex> stateLock(stateMutex_);
     karaokeParams_["Karaoke_volume"] = std::to_string(static_cast<int>(volume * VALUE_HUNDRED));
     if (currentState_ == LOOPBACK_STATE_RUNNING) {
         std::string parameters = "Karaoke_volume=" + karaokeParams_["Karaoke_volume"];
-        CHECK_AND_RETURN_RET_LOG(AudioPolicyManager::GetInstance().SetKaraokeParameters(parameters), ERROR,
-            "SetVolume failed");
+        CHECK_AND_RETURN_RET_LOG(SetKaraokeParameters(parameters), ERROR, "SetVolume failed");
     }
     return SUCCESS;
 }
@@ -183,8 +184,7 @@ bool AudioLoopbackPrivate::SetReverbPreset(AudioLoopbackReverbPreset preset)
     karaokeParams_["Karaoke_reverb_mode"] = it->second;
     if (currentState_ == LOOPBACK_STATE_RUNNING) {
         std::string parameters = "Karaoke_reverb_mode=" + karaokeParams_["Karaoke_reverb_mode"];
-        CHECK_AND_RETURN_RET_LOG(AudioPolicyManager::GetInstance().SetKaraokeParameters(parameters), false,
-            "SetReverbPreset failed");
+        CHECK_AND_RETURN_RET_LOG(SetKaraokeParameters(parameters), false, "SetReverbPreset failed");
     }
     return true;
 }
@@ -204,8 +204,7 @@ bool AudioLoopbackPrivate::SetEqualizerPreset(AudioLoopbackEqualizerPreset prese
     karaokeParams_["Karaoke_eq_mode"] = it->second;
     if (currentState_ == LOOPBACK_STATE_RUNNING) {
         std::string parameters = "Karaoke_eq_mode=" + karaokeParams_["Karaoke_eq_mode"];
-        CHECK_AND_RETURN_RET_LOG(AudioPolicyManager::GetInstance().SetKaraokeParameters(parameters), false,
-            "SetEqualizerPreset failed");
+        CHECK_AND_RETURN_RET_LOG(SetKaraokeParameters(parameters), false, "SetEqualizerPreset failed");
     }
     return true;
 }
@@ -214,6 +213,15 @@ AudioLoopbackEqualizerPreset AudioLoopbackPrivate::GetEqualizerPreset()
 {
     std::unique_lock<std::mutex> stateLock(stateMutex_);
     return currentEqualizerPreset_;
+}
+
+bool AudioLoopbackPrivate::SetKaraokeParameters(const std::string &parameters)
+{
+    bool ret = AudioPolicyManager::GetInstance().SetKaraokeParameters(parameters);
+    if (!ret) {
+        HILOG_COMM_INFO("SetKaraokeParameters failed");
+    }
+    return ret;
 }
 
 int32_t AudioLoopbackPrivate::SetAudioLoopbackCallback(const std::shared_ptr<AudioLoopbackCallback> &callback)
@@ -262,6 +270,11 @@ void AudioLoopbackPrivate::CreateAudioLoopback()
     InitializeCallbacks();
     capturerFastStatus_ = FASTSTATUS_FAST;
 
+    StartAudioLoopback();
+}
+
+void AudioLoopbackPrivate::StartAudioLoopback()
+{
     if (!audioRenderer_->Start()) {
         HILOG_COMM_INFO("audioRenderer Start failed");
         return;
@@ -279,8 +292,7 @@ void AudioLoopbackPrivate::DisableLoopback()
     if (karaokeParams_["Karaoke_enable"] == "enable") {
         karaokeParams_["Karaoke_enable"] = "disable";
         std::string parameters = "Karaoke_enable=" + karaokeParams_["Karaoke_enable"];
-        CHECK_AND_RETURN_LOG(AudioPolicyManager::GetInstance().SetKaraokeParameters(parameters),
-            "DisableLoopback failed");
+        CHECK_AND_RETURN_LOG(SetKaraokeParameters(parameters), "DisableLoopback failed");
     }
 }
 
@@ -360,8 +372,8 @@ bool AudioLoopbackPrivate::EnableLoopback()
     std::string parameters = "";
     for (auto &param : karaokeParams_) {
         parameters = param.first + "=" + param.second + ";";
-        CHECK_AND_RETURN_RET_LOG(AudioPolicyManager::GetInstance().SetKaraokeParameters(parameters), false,
-            "SetKaraokeParameters failed");
+        CHECK_AND_RETURN_RET_LOG(SetKaraokeParameters(parameters), false,
+            "EnableLoopback failed");
     }
     return true;
 }
