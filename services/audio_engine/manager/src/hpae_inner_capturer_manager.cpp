@@ -272,6 +272,10 @@ int32_t HpaeInnerCapturerManager::Init(bool isReload)
 void HpaeInnerCapturerManager::InitSinkInner(bool isReload)
 {
     Trace trace("HpaeInnerCapturerManager::InitSinkInner");
+    if(sinkInfo_.frameLen == 0){
+        TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT :INIT_DEVICE_RESULT, sinkInfo_.deviceName, ERR_INVALID_PARAM);
+        AUDIO_ERR_LOG("FrameLen is 0");
+    }
     HpaeNodeInfo nodeInfo;
     nodeInfo.channels = sinkInfo_.channels;
     nodeInfo.format = sinkInfo_.format;

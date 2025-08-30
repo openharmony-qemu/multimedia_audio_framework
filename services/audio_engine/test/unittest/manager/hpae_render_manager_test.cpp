@@ -1612,4 +1612,42 @@ HWTEST_F(HpaeRendererManagerTest, SendRequestInner_002, TestSize.Level1)
     hpaeRendererManager->SendRequest(request, "unit_test_send_request");
     EXPECT_EQ(hpaeRendererManager->DeInit(), SUCCESS);
 }
+
+/**
+ * @tc.name  : Test InitSinkInner_001
+ * @tc.type  : FUNC
+ * @tc.number: InitSinkInner_001
+ * @tc.desc  : Test InitSinkInner when frameLen is 0.
+ */
+HWTEST_F(HpaeRendererManagerTest, InitSinkInner_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.frameLen = 0;
+    std::shared_ptr<HpaeOffloadRendererManager> hpaeRendererManager =
+        std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    auto request = []() {
+    };
+    bool isReload = 1;
+    hpaeRendererManager->InitSinkInner(isReload);
+    EXPECT_EQ(isInit_, false);
+}
+
+/**
+ * @tc.name  : Test InitManager_001
+ * @tc.type  : FUNC
+ * @tc.number: InitManager_001
+ * @tc.desc  : Test InitManager when frameLen is 0.
+ */
+HWTEST_F(HpaeRendererManagerTest, InitManager_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.frameLen = 0;
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager =
+        std::make_shared<HpaeRendererManager>(sinkInfo);
+    auto request = []() {
+    };
+    bool isReload = 1;
+    hpaeRendererManager->InitManager(isReload);
+    EXPECT_EQ(isInit_, false);
+}
 }  // namespace

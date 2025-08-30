@@ -424,6 +424,10 @@ void HpaeOffloadRendererManager::InitSinkInner(bool isReload)
 {
     AUDIO_INFO_LOG("HpaeOffloadRendererManager::init");
     HpaeNodeInfo nodeInfo;
+    if(sinkInfo_.frameLen == 0){
+        TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT :INIT_DEVICE_RESULT, sinkInfo_.deviceName, ERR_INVALID_PARAM);
+        AUDIO_ERR_LOG("FrameLen is 0");
+    }
     nodeInfo.channels = sinkInfo_.channels;
     nodeInfo.format = sinkInfo_.format;
     nodeInfo.frameLen = sinkInfo_.frameLen;
