@@ -871,8 +871,8 @@ void HpaeRendererManager::InitManager(bool isReload)
     AUDIO_INFO_LOG("init devicename:%{public}s", sinkInfo_.deviceName.c_str());
     HpaeNodeInfo nodeInfo;
     if (sinkInfo_.frameLen == 0) {
-        TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT :INIT_DEVICE_RESULT, 
-        sinkInfo_.deviceName, ERR_INVALID_PARAM);
+        TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
+                        sinkInfo_.deviceName, ERR_INVALID_PARAM);
         AUDIO_ERR_LOG("FrameLen is 0");
     }
     nodeInfo.channels = sinkInfo_.channels;
@@ -904,24 +904,28 @@ void HpaeRendererManager::InitManager(bool isReload)
     attr.filePath = sinkInfo_.filePath.c_str();
     attr.aux = sinkInfo_.splitMode.c_str();
     if (!sceneClusterMap_.count(HPAE_SCENE_EFFECT_NONE)) {
-        HpaeNodeInfo defaultNodeInfo;
-        defaultNodeInfo.frameLen = (uint32_t)DEFAULT_EFFECT_FRAME_LEN;
-        defaultNodeInfo.samplingRate = (AudioSamplingRate)DEFAULT_EFFECT_RATE;
-        defaultNodeInfo.format = AudioSampleFormat::INVALID_WIDTH;
-        defaultNodeInfo.channels = STEREO;
-        defaultNodeInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
-        defaultNodeInfo.streamType = STREAM_DEFAULT;
-        defaultNodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
-        defaultNodeInfo.deviceNetId = sinkInfo_.deviceNetId;
-        defaultNodeInfo.deviceClass = sinkInfo_.deviceClass;
-        defaultNodeInfo.statusCallback = weak_from_this();
-        sceneClusterMap_[HPAE_SCENE_EFFECT_NONE] = std::make_shared<HpaeProcessCluster>(defaultNodeInfo, sinkInfo_);
-        sceneTypeToProcessClusterCountMap_[HPAE_SCENE_EFFECT_NONE] = 1;
+        InitDefaultNodeInfo();
     }
-
     ret = outputCluster_->Init(attr);
     isInit_.store(ret == SUCCESS);
     TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT :INIT_DEVICE_RESULT, sinkInfo_.deviceName, ret);
+}
+
+void HpaeRendererManager::InitDefaultNodeInfo()
+{
+    HpaeNodeInfo defaultNodeInfo;
+    defaultNodeInfo.frameLen = (uint32_t)DEFAULT_EFFECT_FRAME_LEN;
+    defaultNodeInfo.samplingRate = (AudioSamplingRate)DEFAULT_EFFECT_RATE;
+    defaultNodeInfo.format = AudioSampleFormat::INVALID_WIDTH;
+    defaultNodeInfo.channels = STEREO;
+    defaultNodeInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    defaultNodeInfo.streamType = STREAM_DEFAULT;
+    defaultNodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
+    defaultNodeInfo.deviceNetId = sinkInfo_.deviceNetId;
+    defaultNodeInfo.deviceClass = sinkInfo_.deviceClass;
+    defaultNodeInfo.statusCallback = weak_from_this();
+    sceneClusterMap_[HPAE_SCENE_EFFECT_NONE] = std::make_shared<HpaeProcessCluster>(defaultNodeInfo, sinkInfo_);
+    sceneTypeToProcessClusterCountMap_[HPAE_SCENE_EFFECT_NONE] = 1;
 }
 
 void HpaeRendererManager::CreateOutputClusterNodeInfo(HpaeNodeInfo &nodeInfo)
