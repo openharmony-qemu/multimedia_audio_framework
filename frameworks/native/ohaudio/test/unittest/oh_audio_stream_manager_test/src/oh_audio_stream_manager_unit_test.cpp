@@ -219,7 +219,8 @@ HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsIntelligentNoiseRed
     EXPECT_EQ(ret, AUDIOCOMMON_RESULT_SUCCESS);
 
     OH_AudioStream_SourceType sourceType = AUDIOSTREAM_SOURCE_TYPE_MIC;
-    auto result = OH_AudioStreamManager_IsIntelligentNoiseReductionEnabledForCurrentDevice(audioStreamManager, sourceType);
+    auto result = OH_AudioStreamManager_IsIntelligentNoiseReductionEnabledForCurrentDevice(audioStreamManager,
+        sourceType);
     EXPECT_EQ(result, false);
 }
 } // namespace AudioStandard
