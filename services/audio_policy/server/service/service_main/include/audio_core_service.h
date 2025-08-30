@@ -320,6 +320,10 @@ private:
     void CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
          const AudioStreamDeviceChangeReasonExt reason);
     int32_t UpdateModemRoute(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
+    uint32_t GetVoiceCallMuteDuration(AudioDeviceDescriptor &curDesc, AudioDeviceDescriptor &newDesc);
+    void UnmuteVoiceCallAfterMuteDuration(uint32_t muteDuration);
+    void NotifyUnmuteVoiceCall();
+    void SetUpdateModemRouteFinished(bool flag);
     void HandleAudioCaptureState(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void UpdateDefaultOutputDeviceWhenStopping(int32_t uid);
     void UpdateInputDeviceWhenStopping(int32_t uid);
@@ -575,6 +579,11 @@ private:
     // route update callback
     std::unordered_map<uint32_t, sptr<IStandardAudioPolicyManagerListener>> routeUpdateCallback_;
     std::mutex routeUpdateCallbackMutex_;
+
+    std::mutex updateModemRouteMutex_;
+    std::condition_variable updateModemRouteCV_;
+    bool updateModemRouteFinished_ = false;
+    bool needUnmuteVoiceCall_ = false;
 
     DistributedRoutingInfo distributedRoutingInfo_ = {
         .descriptor = nullptr,
