@@ -1524,7 +1524,7 @@ public:
         std::mutex workgroupThreadsMutex_;
     };
     std::shared_ptr<WorkgroupPrioRecorder> GetRecorderByGrpId(int32_t grpId);
-    int32_t ExcuteAudioWorkgroupPrioImprove(int32_t workgroupId,
+    int32_t ExecuteAudioWorkgroupPrioImprove(int32_t workgroupId,
         const std::unordered_map<int32_t, bool> threads, bool &needUpdatePrio);
 
 private:
