@@ -685,7 +685,7 @@ int32_t HpaeCapturerManager::InitCapturerManager()
     sourceInputClusterMap_[mainMicType_]->SetSourceInputNodeType(mainMicType_);  // to do rewrite, optimise
     if (sourceInfo_.sourceType == SOURCE_TYPE_OFFLOAD_CAPTURE) {
         sourceInputClusterMap_[mainMicType_]->SetSourceInputNodeType(HPAE_SOURCE_OFFLOAD);
-    } 
+    }
     int32_t ret = sourceInputClusterMap_[mainMicType_]->GetCapturerSourceInstance(
         sourceInfo_.deviceClass, sourceInfo_.deviceNetId, sourceInfo_.sourceType, sourceInfo_.sourceName);
     captureId_ = sourceInputClusterMap_[mainMicType_]->GetCaptureId();

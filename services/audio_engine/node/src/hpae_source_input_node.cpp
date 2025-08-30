@@ -252,7 +252,7 @@ void HpaeSourceInputNode::DoProcess()
     } else if (sourceInputNodeType_ == HpaeSourceInputNodeType::HPAE_SOURCE_OFFLOAD) {
         uint64_t replyBytesEc = 0;
         audioCapturerSource_->CaptureFrameWithEc(&fdescMap_.at(HPAE_SOURCE_BUFFER_TYPE_MIC), replyBytes,
-                                                &fdescMap_.at(HPAE_SOURCE_BUFFER_TYPE_EC), replyBytesEc);
+                                                    &fdescMap_.at(HPAE_SOURCE_BUFFER_TYPE_EC), replyBytesEc);
         DoProcessInner(HPAE_SOURCE_BUFFER_TYPE_EC, replyBytesEc);
     } else {
         HpaeSourceBufferType sourceBufferType = nodeInfoMap_.begin()->second.sourceBufferType;
