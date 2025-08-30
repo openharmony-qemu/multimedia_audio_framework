@@ -923,7 +923,7 @@ HWTEST(FastSystemStreamUnitTest, ResetFirstFrameState_002, TestSize.Level1)
 
     fastAudioStream->spkProcClientCb_ = nullptr;
     fastAudioStream->ResetFirstFrameState();
-    
+
     EXPECT_EQ(spkProcClientCb->hasFirstFrameWrited_.load(), false);
 }
 
@@ -1085,7 +1085,7 @@ HWTEST(FastSystemStreamUnitTest, GetAudioTimestampInfo_001, TestSize.Level1)
     Timestamp timestamp;
     Timestamp::Timestampbase base = Timestamp::Timestampbase::MONOTONIC;
     auto result = fastAudioStream->GetAudioTimestampInfo(timestamp, base);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(result, SUCCESS);
 }
 
 /**

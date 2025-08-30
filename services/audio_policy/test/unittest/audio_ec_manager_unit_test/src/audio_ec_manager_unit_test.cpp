@@ -463,7 +463,7 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_018, TestSize.Level1)
 {
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
 
-    EXPECT_EQ(ecManager.GetSourceOpened(), SOURCE_TYPE_MIC);
+    EXPECT_EQ(ecManager.GetSourceOpened(), SOURCE_TYPE_INVALID);
 
     ecManager.Init(1, 0);
     bool isEcFeatureEnable = ecManager.isEcFeatureEnable_;

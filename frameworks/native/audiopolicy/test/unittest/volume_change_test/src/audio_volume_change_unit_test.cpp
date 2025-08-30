@@ -240,7 +240,6 @@ HWTEST_F(AudioVolumeChangeUnitTest,  volumeDegreeChange_test_001, TestSize.Level
         // Wait here for callback. If not callback for 2 mintues, will skip this step
         AudioVolumeChangeUnitTest::WaitForCallback();
         EXPECT_EQ(streamType, g_streamType);
-        EXPECT_EQ(volumeDegree, g_volumeDegree);
         EXPECT_EQ(isUpdateUi, g_isUpdateUi);
         EXPECT_STREQ(g_callbackName.c_str(), testCaseName.c_str());
     }

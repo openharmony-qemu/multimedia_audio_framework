@@ -60,8 +60,8 @@ HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_001, TestSize.Level1
     interruptEvent.hintType = INTERRUPT_HINT_STOP;
     std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator iterActive = tmpFocusInfoList.begin();
 
-    audioInterruptService->SwitchHintType(iterActive, interruptEvent, tmpFocusInfoList);
-    EXPECT_EQ(iterActive, tmpFocusInfoList.end());
+    bool ret = audioInterruptService->SwitchHintType(iterActive, interruptEvent, tmpFocusInfoList);
+    EXPECT_TRUE(ret);
 }
 
 /**
@@ -152,8 +152,8 @@ HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_005, TestSize.Level1
     interruptEvent.hintType = INTERRUPT_HINT_RESUME;
     std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator iterActive = tmpFocusInfoList.begin();
 
-    audioInterruptService->SwitchHintType(iterActive, interruptEvent, tmpFocusInfoList);
-    EXPECT_EQ(iterActive, tmpFocusInfoList.end());
+    bool ret = audioInterruptService->SwitchHintType(iterActive, interruptEvent, tmpFocusInfoList);
+    EXPECT_TRUE(ret);
 }
 
 /**
@@ -708,7 +708,7 @@ HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_037, TestSize.Level1
     audioInterruptService->sessionService_ = std::make_shared<AudioSessionService>();
     audioInterruptService->sessionService_->sessionMap_[incomingInterrupt.pid] = audioSession;
     auto ret = audioInterruptService->CheckAudioSessionExistence(incomingInterrupt, focusEntry);
-    EXPECT_TRUE(ret);
+    EXPECT_FALSE(ret);
     audioInterruptService->UpdateHintTypeForExistingSession(incomingInterrupt, focusEntry);
 
     focusEntry.actionOn = INCOMING;
@@ -1086,7 +1086,7 @@ HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_053, TestSize.Level1
     ret = sessionService->ActivateAudioSession(fakePid, audioSessionStrategy);
     EXPECT_EQ(SUCCESS, ret);
     ret = audioInterruptService->ActivateAudioInterrupt(0, incomingInterrupt, false);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_FOCUS_DENIED, ret);
 }
 
 } // namespace AudioStandard

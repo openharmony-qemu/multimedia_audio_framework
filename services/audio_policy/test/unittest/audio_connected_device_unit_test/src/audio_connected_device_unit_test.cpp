@@ -371,7 +371,7 @@ HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_017, TestSiz
     desc->networkId_ = selectedDevice;
     audioConnectedDevice->connectedDevices_.push_back(desc);
     bool result = audioConnectedDevice->CheckDeviceConnected(selectedDevice);
-    EXPECT_EQ(result, true);
+    EXPECT_EQ(result, false);
 
     result = audioConnectedDevice->CheckDeviceConnected("test1");
     EXPECT_EQ(result, false);

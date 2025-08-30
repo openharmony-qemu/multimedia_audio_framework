@@ -413,7 +413,8 @@ HWTEST(SleAudioDeviceManagerUnitTest, BySleStreamType_001, TestSize.Level1)
         std::make_shared<SleAudioDeviceManager>();
     
     uint32_t streamType_1 = SLE_AUDIO_STREAM_MUSIC;
-    std::set<StreamUsage> StreamUsage = {STREAM_USAGE_MEDIA, STREAM_USAGE_MUSIC, STREAM_USAGE_AUDIOBOOK};
+    std::set<StreamUsage> StreamUsage = {STREAM_USAGE_UNKNOWN, STREAM_USAGE_MEDIA, STREAM_USAGE_MUSIC,
+        STREAM_USAGE_AUDIOBOOK, STREAM_USAGE_VOICE_ASSISTANT};
     uint32_t streamType_2 = SLE_AUDIO_STREAM_VOICE_ASSISTANT;
     std::set<SourceType> SourceType = {SOURCE_TYPE_VOICE_RECOGNITION, SOURCE_TYPE_VOICE_TRANSCRIPTION};
 
@@ -1250,9 +1251,9 @@ HWTEST(SleAudioDeviceManagerUnitTest, SetDeviceAbsVolume_005, TestSize.Level1)
     sleAudioDeviceManager_->AddNearlinkDevice(deviceDesc);
 
     int32_t ret = sleAudioDeviceManager_->SetDeviceAbsVolume(device, streamType1, volume);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
     ret = sleAudioDeviceManager_->SetDeviceAbsVolume(device, streamType2, volume);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

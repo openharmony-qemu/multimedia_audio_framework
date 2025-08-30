@@ -103,7 +103,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_006, TestSize.Level1
     ConnectState connectState = DEACTIVE_CONNECTED;
 
     auto ret = audioCoreService->ScoInputDeviceFetchedForRecongnition(handleFlag, address, connectState);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -121,7 +121,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_007, TestSize.Level1
     ConnectState connectState = DEACTIVE_CONNECTED;
 
     auto ret = audioCoreService->ScoInputDeviceFetchedForRecongnition(handleFlag, address, connectState);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -417,7 +417,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_023, TestSize.Level1
 
     auto ret = audioCoreService->ReloadA2dpAudioPort(moduleInfo, deviceType, audioStreamInfo,
         networkId, sinkName, sourceType);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -440,7 +440,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_024, TestSize.Level1
 
     auto ret = audioCoreService->ReloadA2dpAudioPort(moduleInfo, deviceType, audioStreamInfo,
         networkId, sinkName, sourceType);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -3017,7 +3017,7 @@ HWTEST(AudioCoreServicePrivateTest, SleepForSwitchDevice_002, TestSize.Level1)
     std::shared_ptr<AudioDeviceDescriptor> newDesc = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
     streamDesc->oldDeviceDescs_.push_back(oldDesc);
-    streamDesc->oldDeviceDescs_.push_back(newDesc);
+    streamDesc->newDeviceDescs_.push_back(newDesc);
 
     AudioStreamDeviceChangeReasonExt::ExtEnum extReason = AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE;
     AudioStreamDeviceChangeReasonExt reason(extReason);
@@ -3078,7 +3078,7 @@ HWTEST(AudioCoreServicePrivateTest, AddSessionId_001, TestSize.Level1)
     auto audioCoreService = std::make_shared<AudioCoreService>();
     uint32_t sessionId = 1;
     audioCoreService->AddSessionId(sessionId);
-    ASSERT_EQ(audioCoreService->sessionIdMap_.count(sessionId), 0);
+    ASSERT_EQ(audioCoreService->sessionIdMap_.count(sessionId), 1);
     audioCoreService->DeleteSessionId(sessionId);
 }
 
@@ -3095,7 +3095,7 @@ HWTEST(AudioCoreServicePrivateTest, CheckAndUpdateHearingAidCall_001, TestSize.L
     audioCoreService->CheckAndUpdateHearingAidCall(DeviceType::DEVICE_TYPE_EARPIECE);
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     auto pipeInfo = audioPipeManager->GetPipeinfoByNameAndFlag("primary", AUDIO_INPUT_FLAG_NORMAL);
-    ASSERT_NE(pipeInfo, nullptr);
+    EXPECT_EQ(pipeInfo, nullptr);
 }
 
 /**

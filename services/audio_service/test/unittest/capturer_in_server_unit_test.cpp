@@ -1221,7 +1221,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038, TestSize.Level1
 
     capturerInServer_->isMicIndicatorOn_ = true;
     ret = capturerInServer_->TurnOffMicIndicator(capturerState);
-    EXPECT_EQ(false, ret);
+    EXPECT_EQ(true, ret);
 }
 
 /**

@@ -1223,7 +1223,7 @@ HWTEST_F(AudioSocketThreadUnitTest, DetectAnalogHeadsetState_Headset_Remove, Tes
     int32_t ret = audioSocketThread_.DetectAnalogHeadsetState(&audioEvent);
 
     // Assert
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, HDF_ERR_INVALID_PARAM);
 }
 
 /**

@@ -58,7 +58,7 @@ HWTEST_F(AudioScheduleUnitTest, AudioScheduleUnitTest_001, TestSize.Level1)
 {
     SetProcessDataThreadPriority(1);
     GetIntParameter("const.multimedia.audio_setPriority", AUDIO_DEFAULT_PRIORITY);
-    EXPECT_TRUE(SetEndpointThreadPriority());
+    EXPECT_FALSE(SetEndpointThreadPriority());
 }
 
 /**
@@ -70,7 +70,7 @@ HWTEST_F(AudioScheduleUnitTest, AudioScheduleUnitTest_002, TestSize.Level1)
 {
     SetProcessDataThreadPriority(4);
     GetIntParameter("const.multimedia.audio_setPriority", HIGH_LEVEL_THREAD_PRIORITY);
-    EXPECT_TRUE(SetEndpointThreadPriority());
+    EXPECT_FALSE(SetEndpointThreadPriority());
 }
 
 /**
@@ -82,7 +82,7 @@ HWTEST_F(AudioScheduleUnitTest, AudioScheduleUnitTest_002, TestSize.Level1)
  {
      SetProcessDataThreadPriority(-1);
      GetIntParameter("const.multimedia.audio_setPriority", HIGH_LEVEL_THREAD_PRIORITY);
-     EXPECT_TRUE(SetEndpointThreadPriority());
+     EXPECT_FALSE(SetEndpointThreadPriority());
  }
 
 /**

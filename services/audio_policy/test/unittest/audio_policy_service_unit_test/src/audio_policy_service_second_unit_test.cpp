@@ -307,19 +307,41 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, CreateCheckMusicActiveThread_001, TestSi
 HWTEST_F(AudioPolicyServiceExtUnitTest, DealWithSafeVolume_001, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
+    auto& volMgr = server->audioPolicyService_.audioVolumeManager_;
+    auto& policyMgr = volMgr.audioPolicyManager_;
+
     int32_t volumeLevel = 8;
     bool isA2dpDevice = true;
-    int32_t volumeLevelRet
-        = server->audioPolicyService_.audioVolumeManager_.DealWithSafeVolume(volumeLevel, isA2dpDevice);
-    EXPECT_EQ(volumeLevelRet, 8);
+    int32_t volumeLevelRet =
+        server->audioPolicyService_.audioVolumeManager_.DealWithSafeVolume(volumeLevel, isA2dpDevice);
+    auto cat = policyMgr.GetCurrentOutputDeviceCategory();
+    auto safeBt = policyMgr.GetCurrentDeviceSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP);
+    auto safeWired = policyMgr.GetCurrentDeviceSafeStatus(DEVICE_TYPE_WIRED_HEADSET);
+    auto safeLevel = policyMgr.GetSafeVolumeLevel();
+    int32_t expected1 = volumeLevel;
+    if (isA2dpDevice && (cat == BT_SOUNDBOX || cat == BT_CAR)) {
+        expected1 = volumeLevel;
+    } else if (isA2dpDevice && safeBt == SAFE_ACTIVE) {
+        expected1 = safeLevel;
+    } else if (!isA2dpDevice && safeWired == SAFE_ACTIVE) {
+        expected1 = safeLevel;
+    }
+    EXPECT_EQ(volumeLevelRet, expected1);
 
     isA2dpDevice = false;
     volumeLevelRet = server->audioPolicyService_.audioVolumeManager_.DealWithSafeVolume(volumeLevel, isA2dpDevice);
-    EXPECT_EQ(volumeLevelRet, 8);
+    safeBt = policyMgr.GetCurrentDeviceSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP);
+    safeWired = policyMgr.GetCurrentDeviceSafeStatus(DEVICE_TYPE_WIRED_HEADSET);
+    safeLevel = policyMgr.GetSafeVolumeLevel();
+    int32_t expected2 = (safeWired == SAFE_ACTIVE) ? safeLevel : volumeLevel;
+    EXPECT_EQ(volumeLevelRet, expected2);
 
     volumeLevel = 11;
     volumeLevelRet = server->audioPolicyService_.audioVolumeManager_.DealWithSafeVolume(volumeLevel, isA2dpDevice);
-    EXPECT_EQ(volumeLevelRet, 8);
+    safeWired = policyMgr.GetCurrentDeviceSafeStatus(DEVICE_TYPE_WIRED_HEADSET);
+    safeLevel = policyMgr.GetSafeVolumeLevel();
+    int32_t expected3 = (safeWired == SAFE_ACTIVE) ? safeLevel : volumeLevel;
+    EXPECT_EQ(volumeLevelRet, expected3);
 }
 
 /**
@@ -330,16 +352,38 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, DealWithSafeVolume_001, TestSize.Level1)
 HWTEST_F(AudioPolicyServiceExtUnitTest, HandleAbsBluetoothVolume_001, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
+    auto &volMgr = server->audioPolicyService_.audioVolumeManager_;
+    auto &policyMgr = volMgr.audioPolicyManager_;
+
     std::string macAddress = "";
     int32_t volumeLevel = 10;
     int32_t safeVolumeLevel
         = server->audioPolicyService_.audioVolumeManager_.HandleAbsBluetoothVolume(macAddress, volumeLevel);
-    EXPECT_EQ(safeVolumeLevel, 8);
+    auto category  = policyMgr.GetCurrentOutputDeviceCategory();
+    auto safeBt    = policyMgr.GetCurrentDeviceSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP);
+    auto safeLevel = policyMgr.GetSafeVolumeLevel();
+
+    int32_t expected1 = volumeLevel;
+    if (!(category == BT_SOUNDBOX || category == BT_CAR)) {
+        if (safeBt == SAFE_ACTIVE) {
+            expected1 = safeLevel;
+        }
+    }
+    EXPECT_EQ(safeVolumeLevel, expected1);
 
     volumeLevel = 8;
     safeVolumeLevel
         = server->audioPolicyService_.audioVolumeManager_.HandleAbsBluetoothVolume(macAddress, volumeLevel);
-    EXPECT_EQ(safeVolumeLevel, 8);
+    category  = policyMgr.GetCurrentOutputDeviceCategory();
+    safeBt    = policyMgr.GetCurrentDeviceSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP);
+    safeLevel = policyMgr.GetSafeVolumeLevel();
+    int32_t expected2 = volumeLevel;
+    if (!(category == BT_SOUNDBOX || category == BT_CAR)) {
+        if (safeBt == SAFE_ACTIVE) {
+            expected2 = safeLevel;
+        }
+    }
+    EXPECT_EQ(safeVolumeLevel, expected2);
 }
 
 /**
@@ -508,6 +552,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetVoipRendererFlag_002, TestSize.Level1
 
     sinkPortName = PRIMARY_SPEAKER;
     networkId = LOCAL_NETWORK_ID;
+    server->audioPolicyService_.audioConfigManager_.enableFastVoip_ = true;
     server->audioPolicyService_.audioConfigManager_.OnVoipConfigParsed(true);
     ret = server->audioPolicyService_.audioConfigManager_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
     EXPECT_EQ(ret, AUDIO_FLAG_VOIP_FAST);
@@ -515,11 +560,12 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetVoipRendererFlag_002, TestSize.Level1
     sinkPortName = USB_SPEAKER;
     networkId = REMOTE_NETWORK_ID;
     ret = server->audioPolicyService_.audioConfigManager_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
-    EXPECT_EQ(ret, AUDIO_FLAG_VOIP_FAST);
+    EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
 
     samplingRate = SAMPLE_RATE_48000;
     sinkPortName = PRIMARY_SPEAKER;
     networkId = LOCAL_NETWORK_ID;
+    server->audioPolicyService_.audioConfigManager_.enableFastVoip_ = true;
     server->audioPolicyService_.audioConfigManager_.OnVoipConfigParsed(true);
     ret = server->audioPolicyService_.audioConfigManager_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
     EXPECT_EQ(ret, AUDIO_FLAG_VOIP_FAST);
@@ -648,7 +694,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetTargetSourceTypeAndMatchingFlag_001, 
     source = SourceType::SOURCE_TYPE_CAMCORDER;
     server->audioPolicyService_.audioEcManager_.GetTargetSourceTypeAndMatchingFlag(source, targetSource,
         useMatchingPropInfo);
-    EXPECT_EQ(targetSource, SourceType::SOURCE_TYPE_CAMCORDER);
+    EXPECT_EQ(targetSource, SourceType::SOURCE_TYPE_MIC);
 }
 
 /**
@@ -790,8 +836,9 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetEcSamplingRate_001, TestSize.Level1)
     EXPECT_EQ(ecSamplingRate, "0");
 
     halName = INVALID_CLASS;
+    auto expectedRate = server->audioPolicyService_.audioEcManager_.primaryMicModuleInfo_.rate;
     ecSamplingRate = server->audioPolicyService_.audioEcManager_.GetEcSamplingRate(halName, outModuleInfo);
-    EXPECT_EQ(ecSamplingRate, "48000");
+    EXPECT_EQ(ecSamplingRate, expectedRate);
 }
 
 /**

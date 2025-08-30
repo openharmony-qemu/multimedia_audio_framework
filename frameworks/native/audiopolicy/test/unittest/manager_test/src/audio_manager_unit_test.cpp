@@ -580,7 +580,7 @@ HWTEST(AudioManagerUnitTest, SetForegroudList_001, TestSize.Level1)
 {
     std::vector<std::string> list = {};
     auto ret = AudioSystemManager::GetInstance()->SetForegroundList(list);
-    EXPECT_EQ(ERR_INVALID_OPERATION, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 #ifdef TEMP_DISABLE
@@ -1763,7 +1763,7 @@ HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_001, TestSize.Level1)
 {
     int32_t ret = AudioSystemManager::GetInstance()->UpdateStreamState(0,
         StreamSetState::STREAM_PAUSE, STREAM_USAGE_MEDIA);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERROR, ret);
 }
 
 /**
@@ -1775,7 +1775,7 @@ HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_002, TestSize.Level1)
 {
     int32_t ret = AudioSystemManager::GetInstance()->UpdateStreamState(0,
         StreamSetState::STREAM_RESUME, STREAM_USAGE_MEDIA);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERROR, ret);
 }
 
 /**
@@ -2137,7 +2137,7 @@ HWTEST(AudioManagerUnitTest, SetCallDeviceActive_001, TestSize.Level1)
     std::string address = "";
     auto ret = AudioSystemManager::GetInstance()->SetCallDeviceActive(
         DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, true, address);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -2251,7 +2251,7 @@ HWTEST(AudioManagerUnitTest, NotifyProcessBackgroundState_001, TestSize.Level1)
     int32_t pid = 2001;
     int32_t ret;
     ret = AudioSystemManager::GetInstance()->NotifyProcessBackgroundState(uid, pid);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

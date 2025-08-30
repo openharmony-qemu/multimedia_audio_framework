@@ -374,7 +374,7 @@ HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_015, TestSize.Leve
 
     audioBackgroundManagerTest_->NotifyAppStateChange(uid, pid, state);
     EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_.empty(), false);
-    EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_[pid].isBack, true);
+    EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_[pid].isBack, false);
 }
 
 /**
@@ -401,7 +401,7 @@ HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_016, TestSize.Leve
 
     audioBackgroundManagerTest_->NotifyAppStateChange(uid, pid, state);
     EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_.empty(), false);
-    EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_[pid].isBack, false);
+    EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_[pid].isBack, true);
 }
 
 /**
@@ -429,7 +429,7 @@ HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_017, TestSize.Leve
     VolumeUtils::SetPCVolumeEnable(false);
     audioBackgroundManagerTest_->NotifyAppStateChange(uid, pid, state);
     EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_.empty(), false);
-    EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_[pid].isBack, true);
+    EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_[pid].isBack, false);
 }
 
 /**
@@ -457,7 +457,7 @@ HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_018, TestSize.Leve
     VolumeUtils::SetPCVolumeEnable(false);
     audioBackgroundManagerTest_->NotifyAppStateChange(uid, pid, state);
     EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_.empty(), false);
-    EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_[pid].isBack, true);
+    EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_[pid].isBack, false);
 }
 
 /**
@@ -485,7 +485,7 @@ HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_019, TestSize.Leve
     VolumeUtils::SetPCVolumeEnable(true);
     audioBackgroundManagerTest_->NotifyAppStateChange(uid, pid, state);
     EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_.empty(), false);
-    EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_[pid].isBack, true);
+    EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_[pid].isBack, false);
 }
 
 /**

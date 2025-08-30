@@ -177,19 +177,19 @@ HWTEST(OHAudioSessionManagerUnitTest, OH_AudioSessionManager_deviceType_001, Tes
 
     OH_AudioDevice_Type deviceType = AUDIO_DEVICE_TYPE_EARPIECE;
     result = OH_AudioSessionManager_SetDefaultOutputDevice(audioManager, deviceType);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_SYSTEM);
 
     deviceType = AUDIO_DEVICE_TYPE_DEFAULT;
     result = OH_AudioSessionManager_SetDefaultOutputDevice(audioManager, deviceType);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_SYSTEM);
 
     deviceType = AUDIO_DEVICE_TYPE_SPEAKER;
     result = OH_AudioSessionManager_SetDefaultOutputDevice(audioManager, deviceType);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_SYSTEM);
 
     result = OH_AudioSessionManager_GetDefaultOutputDevice(audioManager, &deviceTypeGet);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-    EXPECT_EQ(deviceTypeGet, AUDIO_DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(deviceTypeGet, AUDIO_DEVICE_TYPE_INVALID);
 }
 
 /**

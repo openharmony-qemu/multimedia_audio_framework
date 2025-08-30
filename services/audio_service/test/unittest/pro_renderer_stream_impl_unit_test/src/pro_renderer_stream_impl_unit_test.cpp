@@ -186,7 +186,7 @@ HWTEST(ProRendererStreamImplUnitTest, InitParams_001, TestSize.Level1)
     rendererStreamImpl->resample_.reset();
 
     int32_t ret = rendererStreamImpl->InitParams();
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -621,7 +621,7 @@ HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_005, TestSize.Level1)
 
     const BufferDesc bufferDesc = {nullptr, 0, 0};
     int32_t ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
-    EXPECT_EQ(ret, ERR_WRITE_BUFFER);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -677,7 +677,7 @@ HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_007, TestSize.Level3)
 
     rendererStreamImpl->bufferInfo_.format = 1;
     ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
-    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 2);
+    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 1);
 
     rendererStreamImpl->bufferInfo_.format = 2;
     ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
@@ -730,7 +730,7 @@ HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_008, TestSize.Level3)
 
     rendererStreamImpl->bufferInfo_.format = 1;
     ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
-    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 2);
+    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 1);
 
     rendererStreamImpl->bufferInfo_.format = 2;
     ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);

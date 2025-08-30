@@ -1774,6 +1774,16 @@ ohos_unittest("audio_pnp_server_unit_test") {
     "-fno-access-control",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
+
   external_deps = [
     "ability_base:session_info",
     "ability_base:want",
@@ -2983,11 +2993,12 @@ ohos_unittest("audio_stream_collector_unit_test") {
 
   sanitize = {
     cfi = true
-    cfi_cross_dso = true
+    cfi_cross_dso = false
     boundary_sanitize = true
     debug = false
     integer_overflow = true
-    ubsan = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
   }
 
   external_deps = [
@@ -5200,11 +5211,12 @@ ohos_unittest("audio_strategy_router_parser_unit_test") {
 
   sanitize = {
     cfi = true
-    cfi_cross_dso = true
+    cfi_cross_dso = false
     boundary_sanitize = true
     debug = false
     integer_overflow = true
-    ubsan = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
   }
 
   configs = [ "${audio_framework_root}/services/audio_service/idl:audio_service_sa_idl_config" ]

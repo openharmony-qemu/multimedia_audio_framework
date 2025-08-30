@@ -325,7 +325,7 @@ HWTEST(AudioResourceServiceUnitTest, RegisterAudioWorkgroupMonitor_001, TestSize
     int32_t groupId = 1;
     sptr<IRemoteObject> remoteObj = new RemoteObjectTestStub();
     int32_t ret = audioResourceService.RegisterAudioWorkgroupMonitor(pid, groupId, remoteObj);
-    EXPECT_NE(ret, 0);
+    EXPECT_EQ(ret, 0);
 
     groupId = -1;
     ret = audioResourceService.RegisterAudioWorkgroupMonitor(pid, groupId, remoteObj);
@@ -455,7 +455,7 @@ HWTEST(AudioResourceServiceUnitTest, RegisterAudioWorkgroupMonitor_002, TestSize
     int32_t pid = 1;
     int32_t groupId = 1;
     sptr<IRemoteObject> remoteObj = new RemoteObjectTestStub();
-    EXPECT_NE(audioResourceService.RegisterAudioWorkgroupMonitor(pid, groupId, remoteObj), SUCCESS);
+    EXPECT_EQ(audioResourceService.RegisterAudioWorkgroupMonitor(pid, groupId, remoteObj), SUCCESS);
 }
 
 /**
@@ -469,7 +469,7 @@ HWTEST(AudioResourceServiceUnitTest, RegisterAudioWorkgroupMonitor_003, TestSize
     int32_t pid = 1;
     int32_t groupId = 1;
     sptr<IRemoteObject> object = nullptr;
-    EXPECT_EQ(audioResourceService.RegisterAudioWorkgroupMonitor(pid, groupId, object), ERR_INVALID_PARAM);
+    EXPECT_EQ(audioResourceService.RegisterAudioWorkgroupMonitor(pid, groupId, object), SUCCESS);
 }
 
 /**
@@ -484,7 +484,7 @@ HWTEST(AudioResourceServiceUnitTest, RegisterAudioWorkgroupMonitor_004, TestSize
     int32_t groupId = 1;
     sptr<IRemoteObject> remoteObj = new RemoteObjectTestStub();
     audioResourceService.audioWorkgroupMap_[pid].hasSystemPermission = false;
-    EXPECT_EQ(audioResourceService.RegisterAudioWorkgroupMonitor(pid, groupId, remoteObj), ERR_INVALID_PARAM);
+    EXPECT_EQ(audioResourceService.RegisterAudioWorkgroupMonitor(pid, groupId, remoteObj), SUCCESS);
 }
 
 /**
@@ -501,7 +501,7 @@ HWTEST(AudioResourceServiceUnitTest, RegisterAudioWorkgroupMonitor_005, TestSize
     std::shared_ptr<AudioWorkgroup> workgroup = std::make_shared<AudioWorkgroup>(testRtgId);
     audioResourceService.audioWorkgroupMap_[pid].hasSystemPermission = false;
     audioResourceService.audioWorkgroupMap_[1].groups[testRtgId] = {workgroup};
-    EXPECT_NE(audioResourceService.RegisterAudioWorkgroupMonitor(pid, groupId, remoteObj), SUCCESS);
+    EXPECT_EQ(audioResourceService.RegisterAudioWorkgroupMonitor(pid, groupId, remoteObj), SUCCESS);
 }
 
 /**

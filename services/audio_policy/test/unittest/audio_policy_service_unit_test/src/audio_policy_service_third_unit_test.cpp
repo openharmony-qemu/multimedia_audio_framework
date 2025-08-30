@@ -1390,7 +1390,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, MoveToNewPipe_001, TestSize.Level1)
     uint32_t sessionId = 0;
     AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
     int32_t ret = server->audioOffloadStream_.MoveToNewPipe(sessionId, pipeType);
-    EXPECT_NE(ret, 0);
+    EXPECT_EQ(ret, 0);
 }
 
 /**

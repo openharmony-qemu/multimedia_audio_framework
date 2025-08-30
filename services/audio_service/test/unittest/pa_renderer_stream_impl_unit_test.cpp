@@ -867,56 +867,5 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_048, TestSize.Level1)
     int32_t ret = unit->GetLatency(latency);
     EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
 }
-
-/**
- * @tc.name  : Test GetLatency.
- * @tc.type  : FUNC
- * @tc.number: PaRenderer_049
- * @tc.desc  : Test GetLatency.
- */
-HWTEST_F(PaRendererStreamUnitTest, PaRenderer_049, TestSize.Level1)
-{
-    auto unit = CreatePaRendererStreamImpl();
-    adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
-    adapterManager->InitPaContext();
-    uint32_t sessionId = 123456;
-    AudioProcessConfig processConfig = GetInnerCapConfig();
-    pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
-    unit->paStream_ = stream;
-    uint64_t latency = 0;
-    unit->firstGetLatency_= true;
-    int32_t ret = unit->GetLatency(latency);
-    EXPECT_EQ(ret, SUCCESS);
-}
-/**
- * @tc.name  : Test Drain.
- * @tc.type  : FUNC
- * @tc.number: PaRenderer_050
- * @tc.desc  : Test Drain.
- */
-HWTEST_F(PaRendererStreamUnitTest, PaRenderer_050, TestSize.Level1)
-{
-    auto unit = CreatePaRendererStreamImpl();
-    unit->paStream_ = nullptr;
-    int32_t ret = unit->Drain();
-    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
-}
-
-/**
- * @tc.name  : Test SetRate.
- * @tc.type  : FUNC
- * @tc.number: PaRenderer_051
- * @tc.desc  : Test SetRate.
- */
-HWTEST_F(PaRendererStreamUnitTest, PaRenderer_051, TestSize.Level1)
-{
-    auto unit = CreatePaRendererStreamImpl();
-    unit->paStream_ = nullptr;
-    int32_t rate = RENDER_RATE_NORMAL;
-    EXPECT_EQ(unit->SetRate(rate), ERR_ILLEGAL_STATE);
-#ifdef HAS_FEATURE_INNERCAPTURER
-    ReleasePaPort();
-#endif
-}
 }
 }

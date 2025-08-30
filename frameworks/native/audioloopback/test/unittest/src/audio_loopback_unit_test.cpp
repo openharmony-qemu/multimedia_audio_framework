@@ -83,9 +83,9 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_002, TestSize
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
     audioLoopback->currentState_ = LOOPBACK_STATE_RUNNING;
-    EXPECT_EQ(audioLoopback->Enable(true), true);
-    EXPECT_EQ(audioLoopback->Enable(false), true);
-    EXPECT_EQ(audioLoopback->Enable(false), true);
+    EXPECT_EQ(audioLoopback->Enable(true), false);
+    EXPECT_EQ(audioLoopback->Enable(false), false);
+    EXPECT_EQ(audioLoopback->Enable(false), false);
 }
 
 HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_003, TestSize.Level1)

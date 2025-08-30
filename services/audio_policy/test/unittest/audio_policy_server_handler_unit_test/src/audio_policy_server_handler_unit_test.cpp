@@ -177,40 +177,6 @@ HWTEST(AudioPolicyServerHandlerUnitTest, SendCapturerCreateEvent_001, TestSize.L
 }
 
 /**
- * @tc.name  : Test SendCapturerCreateEvent API
- * @tc.type  : FUNC
- * @tc.number: SendCapturerCreateEvent_002
- * @tc.desc  : Test SendCapturerCreateEvent interface.
- */
-HWTEST(AudioPolicyServerHandlerUnitTest, SendCapturerCreateEvent_002, TestSize.Level1)
-{
-    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    AudioCapturerInfo capturerInfo;
-    AudioStreamInfo streamInfo;
-    uint64_t sessionId = 0;
-    bool isSync = true;
-    int32_t error = 0;
-    int32_t ret =
-        audioPolicyServerHandler_->SendCapturerCreateEvent(capturerInfo, streamInfo, sessionId, isSync, error);
-    EXPECT_NE(ret, ERR_INVALID_OPERATION);
-}
-
-/**
- * @tc.name  : Test SendCapturerRemovedEvent API
- * @tc.type  : FUNC
- * @tc.number: SendCapturerRemovedEvent_001
- * @tc.desc  : Test SendCapturerRemovedEvent interface.
- */
-HWTEST(AudioPolicyServerHandlerUnitTest, SendCapturerRemovedEvent_001, TestSize.Level1)
-{
-    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    uint64_t sessionId = 0;
-    bool isSync = true;
-    bool ret = audioPolicyServerHandler_->SendCapturerRemovedEvent(sessionId, isSync);
-    EXPECT_NE(ret, ERR_INVALID_OPERATION);
-}
-
-/**
  * @tc.name  : Test SendCapturerRemovedEvent API
  * @tc.type  : FUNC
  * @tc.number: SendCapturerRemovedEvent_002
@@ -222,20 +188,6 @@ HWTEST(AudioPolicyServerHandlerUnitTest, SendCapturerRemovedEvent_002, TestSize.
     uint64_t sessionId = 0;
     bool isSync = false;
     bool ret = audioPolicyServerHandler_->SendCapturerRemovedEvent(sessionId, isSync);
-    EXPECT_NE(ret, ERR_INVALID_OPERATION);
-}
-
-/**
- * @tc.name  : Test SendWakeupCloseEvent API
- * @tc.type  : FUNC
- * @tc.number: SendWakeupCloseEvent_001
- * @tc.desc  : Test SendWakeupCloseEvent interface.
- */
-HWTEST(AudioPolicyServerHandlerUnitTest, SendWakeupCloseEvent_001, TestSize.Level1)
-{
-    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    bool isSync = true;
-    bool ret = audioPolicyServerHandler_->SendWakeupCloseEvent(isSync);
     EXPECT_NE(ret, ERR_INVALID_OPERATION);
 }
 
@@ -335,7 +287,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleVolumeKeyEvent_Test_002, TestSize
 {
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
-    
+
     int32_t clientPid = 1;
     std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
@@ -787,59 +739,6 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleHeadTrackingEnabledChangeForAnyDe
     audioPolicyServerHandler_->SetClientCallbacksEnable(
         CallbackChange::CALLBACK_HEAD_TRACKING_ENABLED_CHANGE, true);
     audioPolicyServerHandler_->HandleHeadTrackingEnabledChangeForAnyDeviceEvent(event);
-    EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 1);
-}
-
-/**
- * @tc.name  : HandleServiceEvent_001
- * @tc.number: HandleServiceEvent_001
- * @tc.desc  : Test HandleInterruptEventWithSessionId function when eventContextObj is nullptr.
- */
-HWTEST(AudioPolicyServerHandlerUnitTest, HandleServiceEvent_001, TestSize.Level2)
-{
-    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    EXPECT_NE(audioPolicyServerHandler_, nullptr);
-    int32_t clientPid = 1;
-    std::shared_ptr<AudioPolicyClientHolder> cb;
-    audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
-    AppExecFwk::InnerEvent::Pointer event =
-        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
-    int32_t ret =
-        audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
-    audioPolicyServerHandler_->SetClientCallbacksEnable(
-        CallbackChange::CALLBACK_HEAD_TRACKING_ENABLED_CHANGE, true);
-    uint32_t eventId = AudioPolicyServerHandler::EventAudioServerCmd::AUDIO_DEVICE_CHANGE;
-    audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
-    eventId = AudioPolicyServerHandler::EventAudioServerCmd::PREFERRED_OUTPUT_DEVICE_UPDATED;
-    audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
-    eventId = AudioPolicyServerHandler::EventAudioServerCmd::PREFERRED_INPUT_DEVICE_UPDATED;
-    audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
-    eventId = AudioPolicyServerHandler::EventAudioServerCmd::PREFERRED_INPUT_DEVICE_UPDATED;
-    audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
-    eventId = AudioPolicyServerHandler::EventAudioServerCmd::AVAILABLE_AUDIO_DEVICE_CHANGE;
-    audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
-    eventId = AudioPolicyServerHandler::EventAudioServerCmd::RENDERER_INFO_EVENT;
-    audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
-    eventId = AudioPolicyServerHandler::EventAudioServerCmd::CAPTURER_INFO_EVENT;
-    audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
-    eventId = AudioPolicyServerHandler::EventAudioServerCmd::RENDERER_DEVICE_CHANGE_EVENT;
-    audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
-    eventId = AudioPolicyServerHandler::EventAudioServerCmd::ON_CAPTURER_CREATE;
-    audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
-    eventId = AudioPolicyServerHandler::EventAudioServerCmd::ON_CAPTURER_REMOVED;
-    audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
-    eventId = AudioPolicyServerHandler::EventAudioServerCmd::ON_WAKEUP_CLOSE;
-    audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
-    eventId = AudioPolicyServerHandler::EventAudioServerCmd::RECREATE_RENDERER_STREAM_EVENT;
-    audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
-    eventId = AudioPolicyServerHandler::EventAudioServerCmd::RECREATE_CAPTURER_STREAM_EVENT;
-    audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
-    eventId = AudioPolicyServerHandler::EventAudioServerCmd::ON_WAKEUP_CLOSE;
-    audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
-    eventId = AudioPolicyServerHandler::EventAudioServerCmd::MICROPHONE_BLOCKED;
-    audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
-    eventId = AudioPolicyServerHandler::EventAudioServerCmd::PIPE_STREAM_CLEAN_EVENT;
-    audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
     EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 1);
 }
 

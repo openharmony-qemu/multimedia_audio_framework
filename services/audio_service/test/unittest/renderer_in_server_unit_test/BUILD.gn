@@ -186,7 +186,7 @@ ohos_unittest("renderer_in_server_third_unit_test") {
 
   cflags = [ "-fno-access-control" ]
 
-  sources = [ "./src/renderer_in_server_second_unit_test.cpp" ]
+  sources = [ "./src/renderer_in_server_third_unit_test.cpp" ]
 
   include_dirs = [
     "../../../server/include",

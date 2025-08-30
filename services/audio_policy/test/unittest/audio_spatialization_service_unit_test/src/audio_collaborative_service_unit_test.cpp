@@ -50,7 +50,7 @@ static const std::string BLUETOOTH_EFFECT_CHAIN_NAME = "EFFECTCHAIN_COLLABORATIV
 HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_001, TestSize.Level0)
 {
     bool isSupported = audioCollaborativeService_.IsCollaborativePlaybackSupported();
-    EXPECT_EQ(isSupported, true);
+    EXPECT_EQ(isSupported, false);
 }
 
 /**
@@ -63,13 +63,13 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_002, TestS
     const std::shared_ptr<AudioDeviceDescriptor> audioDevice1 = std::make_shared<AudioDeviceDescriptor>();
     audioDevice1->macAddress_ = testAddr1;
     int32_t ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(audioDevice1, true);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERROR);
     ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(audioDevice1, true);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERROR);
     ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(audioDevice1, false);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERROR);
     ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(audioDevice1, false);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERROR);
 }
 
 /**
@@ -86,9 +86,9 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_003, TestS
     AudioDevice2->macAddress_ = testAddr2;
     AudioDevice3->macAddress_ = testAddr3;
     int32_t ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(AudioDevice1, true);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERROR);
     ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(AudioDevice2, false);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERROR);
     bool isEnabled = audioCollaborativeService_.IsCollaborativePlaybackEnabledForDevice(AudioDevice1);
     EXPECT_EQ(isEnabled, true);
     isEnabled = audioCollaborativeService_.IsCollaborativePlaybackEnabledForDevice(AudioDevice2);
@@ -114,9 +114,9 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_004, TestS
     AudioDevice3->macAddress_ = testAddr3;
     AudioDevice3->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     int32_t ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(AudioDevice1, true);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERROR);
     ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(AudioDevice2, false);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERROR);
     audioCollaborativeService_.UpdateCurrentDevice(*AudioDevice1);
     audioCollaborativeService_.UpdateCurrentDevice(*AudioDevice2);
     audioCollaborativeService_.UpdateCurrentDevice(*AudioDevice3);

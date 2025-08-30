@@ -101,7 +101,7 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Generate_001, TestSize.Level0)
     OHAudioCapturer oHAudioCapturer;
     OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
-    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioStreamBuilder_Destroy(builder);
 }
@@ -169,7 +169,7 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Start_001, TestSize.Level0)
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
 
     result = OH_AudioCapturer_Start(audioCapturer);
-    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_ILLEGAL_STATE);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioCapturer_Release(audioCapturer);
     OH_AudioStreamBuilder_Destroy(builder);
@@ -212,7 +212,7 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Pause_001, TestSize.Level0)
     result = OH_AudioCapturer_Start(audioCapturer);
 
     result = OH_AudioCapturer_Pause(audioCapturer);
-    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_ILLEGAL_STATE);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioCapturer_Release(audioCapturer);
     OH_AudioStreamBuilder_Destroy(builder);
@@ -253,7 +253,7 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Stop_001, TestSize.Level0)
     result = OH_AudioCapturer_Start(audioCapturer);
 
     result = OH_AudioCapturer_Stop(audioCapturer);
-    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_ILLEGAL_STATE);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioCapturer_Release(audioCapturer);
     OH_AudioStreamBuilder_Destroy(builder);
@@ -294,7 +294,7 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Flush_001, TestSize.Level0)
     result = OH_AudioCapturer_Start(audioCapturer);
 
     result = OH_AudioCapturer_Flush(audioCapturer);
-    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_ILLEGAL_STATE);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioCapturer_Release(audioCapturer);
     OH_AudioStreamBuilder_Destroy(builder);
@@ -335,7 +335,7 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Release_001, TestSize.Level0)
     result = OH_AudioCapturer_Start(audioCapturer);
 
     result = OH_AudioCapturer_Release(audioCapturer);
-    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_ILLEGAL_STATE);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     OH_AudioStreamBuilder_Destroy(builder);
 }

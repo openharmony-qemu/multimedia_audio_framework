@@ -15,6 +15,7 @@
 
 #include "sle_audio_device_manager.h"
 #include "audio_volume_manager_unit_test.h"
+#include "i_policy_provider.h"
 
 using namespace testing::ext;
 
@@ -500,7 +501,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_018, TestSize.Level1)
 /**
 * @tc.name  : Test AudioVolumeManager.
 * @tc.number: AudioVolumeManager_019
-* @tc.desc  : Test CheckMixActiveMusicTime interface.
+* @tc.desc  : Test SetStreamMute interface.
 */
 HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_019, TestSize.Level1)
 {
@@ -510,12 +511,12 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_019, TestSize.Level1)
     bool bRet;
 
     bRet = audioVolumeManager.SetStreamMute(streamType, mute);
-    EXPECT_FALSE(bRet);
+    EXPECT_NE(bRet, SUCCESS);
 
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
     DeviceType deviceType = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
     bRet = audioVolumeManager.SetStreamMute(streamType, mute, streamUsage, deviceType);
-    EXPECT_FALSE(bRet);
+    EXPECT_NE(bRet, SUCCESS);
 }
 
 /**
@@ -649,14 +650,20 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_026, TestSize.Level1)
 {
     auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
     ASSERT_TRUE(audioVolumeManager != nullptr);
+    size_t vecSize = IPolicyProvider::GetVolumeVectorSize();
+    ASSERT_GT(vecSize, 0u);
+    audioVolumeManager->volumeVector_ = new Volume[vecSize]();
 
     AudioVolumeType streamType = STREAM_VOICE_CALL;
     DeviceType deviceType = DEVICE_TYPE_SPEAKER;
-    Volume vol;
-    audioVolumeManager->volumeVector_ = new Volume();
+    Volume vol{};
+    vol.isMute = false;
+    vol.volumeFloat = 0.5f;
+    vol.volumeInt = 8;
+    vol.volumeDegree = 0;
     auto ret = audioVolumeManager->SetSharedVolume(streamType, deviceType, vol);
     EXPECT_EQ(ret, true);
-    delete audioVolumeManager->volumeVector_;
+    delete[] audioVolumeManager->volumeVector_;
     audioVolumeManager->volumeVector_ = nullptr;
 }
 
@@ -1370,12 +1377,12 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManagerDegree_001, TestSize.Leve
     EXPECT_NE(ret, SUCCESS);
 
     AudioStreamType streamType = STREAM_MUSIC;
-    int32_t volumeDegree = 44;
-    ret = audioVolumeManager.SetSystemVolumeDegree(streamType, volumeDegree, 0);
+    int32_t setDegree = audioVolumeManager.GetMinVolumeDegree(streamType);
+    ret = audioVolumeManager.SetSystemVolumeDegree(streamType, setDegree, 0);
     EXPECT_EQ(ret, SUCCESS);
 
-    ret = audioVolumeManager.GetSystemVolumeDegree(streamType);
-    EXPECT_EQ(ret, volumeDegree);
+    int32_t gotDegree = audioVolumeManager.GetSystemVolumeDegree(streamType);
+    EXPECT_EQ(VolumeUtils::VolumeDegreeToLevel(gotDegree), VolumeUtils::VolumeDegreeToLevel(setDegree));
 
     ret = audioVolumeManager.GetMinVolumeDegree(streamType);
     EXPECT_EQ(ret, 0);

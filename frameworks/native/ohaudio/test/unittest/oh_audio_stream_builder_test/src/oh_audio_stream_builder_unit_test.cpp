@@ -1330,6 +1330,9 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_GenerateCapturer_001,
 
     OH_AudioCapturer *audioCapturer = nullptr;
     result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    OH_AudioStreamBuilder *builder1 = nullptr;
+    result = OH_AudioStreamBuilder_GenerateCapturer(builder1, &audioCapturer);
     EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
 
     result = OH_AudioStreamBuilder_Destroy(builder);

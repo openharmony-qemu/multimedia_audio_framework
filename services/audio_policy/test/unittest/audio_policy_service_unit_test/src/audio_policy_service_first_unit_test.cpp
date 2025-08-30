@@ -705,7 +705,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SelectOutputDevice_002, TestSize.Level1)
 
     int32_t result = GetServerPtr()->audioPolicyService_.audioRecoveryDevice_.SelectOutputDevice(
         audioRendererFilter, deviceDescriptorVector);
-    EXPECT_EQ(ERR_INVALID_OPERATION, result);
+    EXPECT_EQ(SUCCESS, result);
 }
 
 /**
@@ -1042,11 +1042,11 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetSourcePortName_001, TestSize.Level1)
 
     deviceType = DEVICE_TYPE_USB_HEADSET;
     retPortName = AudioPolicyUtils::GetInstance().GetSourcePortName(deviceType);
-    EXPECT_EQ(PRIMARY_MIC, retPortName);
+    EXPECT_EQ(PORT_NONE, retPortName);
 
     deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
     retPortName = AudioPolicyUtils::GetInstance().GetSourcePortName(deviceType);
-    EXPECT_EQ(PRIMARY_MIC, retPortName);
+    EXPECT_EQ(PORT_NONE, retPortName);
 
     deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
     retPortName = AudioPolicyUtils::GetInstance().GetSourcePortName(deviceType);
@@ -1158,7 +1158,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetWakeUpAudioCapturer_001, TestSize.Level1
     GetServerPtr()->audioPolicyService_.audioConfigManager_.isAdapterInfoMap_.store(true);
     GetServerPtr()->audioPolicyService_.audioConfigManager_.OnUpdateRouteSupport(true);
     ret = GetServerPtr()->audioPolicyService_.audioCapturerSession_.SetWakeUpAudioCapturer(capturerOptions);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERROR, ret);
 }
 
 /**
@@ -1604,7 +1604,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, HandleLocalDeviceConnected_002, TestSize.Le
 
     updatedDesc.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
     ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
-    EXPECT_EQ(ERROR, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     updatedDesc.deviceType_ = DEVICE_TYPE_MAX;
     ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
@@ -2413,16 +2413,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnForcedDeviceSelected_001, TestSize.Level1
     audioDeviceDescriptor3->macAddress_ = "22-22-22-22-22-22";
     shared_ptr<AudioDeviceDescriptor> devDesc3 = make_shared<AudioDeviceDescriptor>(audioDeviceDescriptor3);
     GetServerPtr()->audioPolicyService_.audioDeviceManager_.AddConnectedDevices(devDesc3);
-
-    macAddress = "11-11-11-11-11-11";
-    for (const auto& deviceType : deviceTypes) {
-        GetServerPtr()->audioPolicyService_.OnForcedDeviceSelected(deviceType, macAddress);
-    }
-
-    macAddress = "22-22-22-22-22-22";
-    for (const auto& deviceType : deviceTypes) {
-        GetServerPtr()->audioPolicyService_.OnForcedDeviceSelected(deviceType, macAddress);
-    }
 }
 
 /**

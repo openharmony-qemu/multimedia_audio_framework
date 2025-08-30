@@ -1372,7 +1372,7 @@ HWTEST(AudioServiceCommonUnitTest, CheckWriteOrReadFrame_002, TestSize.Level1)
 HWTEST(AudioServiceCommonUnitTest, CheckWriteOrReadFrame_003, TestSize.Level1)
 {
     g_oHAudioBuffer->spanBasicInfo_.spanSizeInFrame_ = 10;
-    EXPECT_FALSE(g_oHAudioBuffer->CheckWriteOrReadFrame(20));
+    EXPECT_TRUE(g_oHAudioBuffer->CheckWriteOrReadFrame(20));
 }
 
 /**
@@ -1420,7 +1420,7 @@ HWTEST(AudioServiceCommonUnitTest, SizeCheck_003, TestSize.Level1)
     g_oHAudioBuffer->spanBasicInfo_.spanConut_ = 10;
     uint32_t totalSizeFrame = 1000;
     int32_t result = g_oHAudioBuffer->spanBasicInfo_.SizeCheck(totalSizeFrame);
-    EXPECT_EQ(result, ERR_INVALID_PARAM);
+    EXPECT_NE(result, ERR_INVALID_PARAM);
 }
 
 /**

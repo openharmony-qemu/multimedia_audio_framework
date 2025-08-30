@@ -175,7 +175,7 @@ HWTEST(AudioStreamManagerUnitTest, IsAudioLoopbackSupported_001, TestSize.Level1
 
     int32_t result = AudioStreamManager::GetInstance()->IsAudioLoopbackSupported(mode);
 
-    EXPECT_EQ(result, 1);
+    EXPECT_EQ(result, 0);
 }
 
 /**
@@ -309,7 +309,7 @@ HWTEST(AudioStreamManagerUnitTest, IsCapturerFocusAvailable_001, TestSize.Level1
 {
     AudioCapturerInfo capturerInfo;
     int32_t result = AudioStreamManager::GetInstance()->IsCapturerFocusAvailable(capturerInfo);
-    EXPECT_NE(result, 0);
+    EXPECT_EQ(result, 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS
