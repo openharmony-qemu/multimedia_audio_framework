@@ -45,10 +45,12 @@ void AudioPipeManager::AddAudioPipeInfo(std::shared_ptr<AudioPipeInfo> info)
 void AudioPipeManager::RemoveAudioPipeInfo(std::shared_ptr<AudioPipeInfo> info)
 {
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
-    for (auto iter = curPipeList_.begin(); iter != curPipeList_.end(); iter++) {
+    for (auto iter = curPipeList_.begin(); iter != curPipeList_.end();) {
         if (IsSamePipe(info, *iter)) {
             AUDIO_INFO_LOG("Remove id:%{public}u, name %{public}s", info->id_, info->name_.c_str());
-            curPipeList_.erase(iter);
+            iter = curPipeList_.erase(iter);
+        } else {
+            ++iter;
         }
     }
 }
@@ -56,10 +58,12 @@ void AudioPipeManager::RemoveAudioPipeInfo(std::shared_ptr<AudioPipeInfo> info)
 void AudioPipeManager::RemoveAudioPipeInfo(AudioIOHandle id)
 {
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
-    for (auto iter = curPipeList_.begin(); iter != curPipeList_.end(); iter++) {
+    for (auto iter = curPipeList_.begin(); iter != curPipeList_.end();) {
         if ((*iter)->id_ == id) {
             AUDIO_INFO_LOG("Remove id:%{public}u, name: %{public}s", id, (*iter)->name_.c_str());
-            curPipeList_.erase(iter);
+            iter = curPipeList_.erase(iter);
+        } else {
+            ++iter;
         }
     }
 }
