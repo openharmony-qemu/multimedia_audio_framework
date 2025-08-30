@@ -172,7 +172,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPrefer
         auto preferredType = AudioPolicyUtils::GetInstance().GetPreferredTypeByStreamUsage(rendererInfo.streamUsage);
         if (preferredType == AUDIO_CALL_RENDER && uid >= 0) {
             bypassType = RouterType::ROUTER_TYPE_USER_SELECT;
-            shared_ptr<AudioDeviceDescriptor> preferredDevice = 
+            std::shared_ptr<AudioDeviceDescriptor> preferredDevice = 
                 AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDeviceForUid(uid);
             CHECK_AND_RETURN_RET_LOG(preferredDevice != nullptr, deviceList, "preferredDevice is nullptr.");
             if (preferredDevice->deviceId_ != 0) {
@@ -180,15 +180,15 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPrefer
                 return deviceList;
             }
         }
-        vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
             audioRouterCenter_.FetchOutputDevices(rendererInfo.streamUsage,
-                -1, "GetPreferredOutputDeviceDescInner");
+                -1, "GetPreferredOutputDeviceDescInner", bypassType);
         for (size_t i = 0; i < descs.size(); i++) {
             std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*descs[i]);
             deviceList.push_back(devDesc);
         }
     } else {
-        vector<shared_ptr<AudioDeviceDescriptor>> descs = audioDeviceManager_.GetRemoteRenderDevices();
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = audioDeviceManager_.GetRemoteRenderDevices();
         for (const auto &desc : descs) {
             std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*desc);
             deviceList.push_back(devDesc);
