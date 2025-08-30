@@ -48,7 +48,6 @@ ohos_unittest("audio_loopback_unit_test") {
     "access_token:libtokensetproc_shared",
     "c_utils:utils",
     "googletest:gmock",
-    "googletest:gtest",
     "hilog:libhilog",
     "init:libbegetutil",
     "ipc:ipc_single",
