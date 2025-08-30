@@ -145,7 +145,7 @@ bool OH_AudioStreamManager_IsFastRecordingSupported(
  * @return {@code true} if the system recording supports intelligent noise reduction for current device.
  * @since 21
  */
-bool OH_AudioStreamManager_IsCurrentDeviceEnableIntelligentNoiseReduction(
+bool OH_AudioStreamManager_IsIntelligentNoiseReductionEnabledForCurrentDevice(
     OH_AudioStreamManager *streamManager, OH_AudioStream_SourceType source);
 
 #ifdef __cplusplus

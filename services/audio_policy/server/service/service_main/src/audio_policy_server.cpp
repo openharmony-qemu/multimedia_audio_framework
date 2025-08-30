@@ -5459,9 +5459,9 @@ int32_t AudioPolicyServer::GetMinVolumeDegree(int32_t volumeType, int32_t &volum
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::IsCurrentDeviceEnableIntelligentNoiseReduction(int32_t sourceType, bool &ret)
+int32_t AudioPolicyServer::IsIntelligentNoiseReductionEnabledForCurrentDevice(int32_t sourceType, bool &ret)
 {
-    ret = audioPolicyService_.IsCurrentDeviceEnableIntelligentNoiseReduction(
+    ret = audioPolicyService_.IsIntelligentNoiseReductionEnabledForCurrentDevice(
         static_cast<SourceType>(sourceType));
     return SUCCESS;
 }

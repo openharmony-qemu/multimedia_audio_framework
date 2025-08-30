@@ -328,9 +328,9 @@ bool AudioStreamManager::IsAudioLoopbackSupported(AudioLoopbackMode mode)
     return AudioPolicyManager::GetInstance().IsAudioLoopbackSupported(mode);
 }
 
-bool AudioStreamManager::IsCurrentDeviceEnableIntelligentNoiseReduction(SourceType sourceType)
+bool AudioStreamManager::IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType)
 {
-    return AudioPolicyManager::GetInstance().IsCurrentDeviceEnableIntelligentNoiseReduction(sourceType);
+    return AudioPolicyManager::GetInstance().IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType);
 }
 } // namespace AudioStandard
 } // namespace OHOS
