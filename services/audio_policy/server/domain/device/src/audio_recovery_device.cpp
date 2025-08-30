@@ -170,6 +170,15 @@ int32_t AudioRecoveryDevice::HandleExcludedOutputDevicesRecovery(AudioDeviceUsag
     return ERROR;
 }
 
+void AudioRecoveryDevice::RestoreSelectRendererDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+    const int32_t uid)
+{
+    CHECK_AND_RETURN_LOG(deviceDesc != nullptr, "deviceDesc is nullptr");
+    if (deviceDesc->deviceType_ == DEVICE_TYPE_NONE && uid >= 0) {
+        audioAffinityManager_.DelSelectRendererDevice(uid);
+    }
+}
+
 void AudioRecoveryDevice::SetDeviceEnableAndUsage(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
 {
     deviceDesc->isEnable_ = true;
@@ -181,7 +190,6 @@ void AudioRecoveryDevice::SetDeviceEnableAndUsage(const std::shared_ptr<AudioDev
 int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc, const int32_t audioDeviceSelectMode)
 {
-    CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr, ERR_INVALID_PARAM, "audioRendererFilter is nullptr");
     AUDIO_WARNING_LOG("[ADeviceEvent] uid[%{public}d] type[%{public}d] islocal [%{public}d] mac[%{public}s] " \
         "streamUsage[%{public}d] callerUid[%{public}d] audioDeviceSelectMode[%{public}d]", audioRendererFilter->uid,
         selectedDesc[0]->deviceType_, selectedDesc[0]->networkId_ == LOCAL_NETWORK_ID,
@@ -206,9 +214,7 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
 
     SetDeviceEnableAndUsage(selectedDesc[0]);
 
-    if (selectedDesc[0]->deviceType_ == DEVICE_TYPE_NONE && audioRendererFilter->uid >= 0) {
-        audioAffinityManager_.DelSelectRendererDevice(audioRendererFilter->uid);
-    }
+    RestoreSelectRendererDevice(selectedDesc[0], audioRendererFilter->uid);
     if (audioDeviceSelectMode == SELECT_STRATEGY_INDEPENDENT && audioRendererFilter->uid >= 0) {
         return SelectOutputDeviceByFilterInner(audioRendererFilter, selectedDesc);
     }

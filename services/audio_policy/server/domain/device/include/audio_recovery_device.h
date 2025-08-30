@@ -93,6 +93,7 @@ private:
         std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     int32_t SelectOutputDeviceByFilterInner(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
+    void RestoreSelectRendererDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, const int32_t uid);
     void SetDeviceEnableAndUsage(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
 
     // selectinputdevice
