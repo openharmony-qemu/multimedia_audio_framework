@@ -76,33 +76,27 @@ int32_t AudioSessionService::ActivateAudioSession(const int32_t callerPid, const
         callerPid, static_cast<int32_t>(strategy.concurrencyMode));
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
 
-    if (sessionMap_.count(callerPid) != 0) {
-        // The audio session of the callerPid is already created. The strategy will be updated.
-        AUDIO_INFO_LOG("The audio seesion of pid %{public}d has already been created! Update strategy.", callerPid);
-    } else {
-        sessionMap_[callerPid] = std::make_shared<AudioSession>(callerPid, strategy, *this);
+    auto audioSession = CreateAudioSession(callerPid, strategy);
+    if (audioSession == nullptr) {
+        AUDIO_ERR_LOG("Create audio session fail, pid: %{public}d!", callerPid);
+        return ERROR
     }
 
-    if (sessionMap_[callerPid] == nullptr) {
-        AUDIO_ERR_LOG("Create audio seesion fail, pid: %{public}d!", callerPid);
-        return ERROR;
-    }
-
-    if (sessionMap_[callerPid]->IsSceneParameterSet()) {
+    if (audioSession->IsSceneParameterSet()) {
         GenerateFakeStreamId(callerPid);
     }
 
-    sessionMap_[callerPid]->Activate(strategy);
+    audioSession->Activate(strategy);
 
     StopMonitor(callerPid);
-    if (sessionMap_[callerPid]->IsAudioSessionEmpty()) {
+    if (audioSession->IsAudioSessionEmpty()) {
         // session v1 60s
-        if (!sessionMap_[callerPid]->IsSceneParameterSet()) {
+        if (!audioSession->IsSceneParameterSet()) {
             StartMonitor(callerPid, AUDIO_SESSION_TIME_OUT_DURATION_S);
         }
 
         // session v2 background 10s
-        if (sessionMap_[callerPid]->IsSceneParameterSet() && sessionMap_[callerPid]->IsBackGroundApp()) {
+        if (audioSession->IsSceneParameterSet() && audioSession->IsBackGroundApp()) {
             StartMonitor(callerPid, AUDIO_SESSION_SCENE_TIME_OUT_DURATION_S);
         }
     }
@@ -181,20 +175,32 @@ void AudioSessionService::OnAudioSessionTimeOut(int32_t callerPid)
     cb->OnSessionTimeout(callerPid);
 }
 
+std::make_shared<AudioSession> AudioSessionService::CreateAudioSession(
+    int32_t callerPid, AudioSessionStrategy strategy)
+{
+    std::make_shared<AudioSession> audioSession = nullptr;
+    if (sessionMap_.count(callerPid) != 0) {
+        audioSession = sessionMap_[callerPid];
+        AUDIO_INFO_LOG("The audio seesion of pid %{public}d has already been created", callerPid);
+    } else {
+        audioSession = std::make_shared<AudioSession>(callerPid, strategy, *this);
+        CHECK_AND_RETURN_RET_LOG(audioSession != nullptr, ERROR, "Create AudioSession fail");
+        sessionMap_[callerPid] = audioSession;
+    }
+
+    return audioSession;
+}
+
 int32_t AudioSessionService::SetAudioSessionScene(int32_t callerPid, AudioSessionScene scene)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
-    if (sessionMap_.count(callerPid) != 0 && sessionMap_[callerPid] != nullptr) {
-        // The audio session of the callerPid is already created. The strategy will be updated.
-        AUDIO_INFO_LOG("The audio seesion of pid %{public}d has already been created! Update scene.", callerPid);
-    } else {
-        AudioSessionStrategy strategy;
-        strategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
-        sessionMap_[callerPid] = std::make_shared<AudioSession>(callerPid, strategy, *this);
-        CHECK_AND_RETURN_RET_LOG(sessionMap_[callerPid] != nullptr, ERROR, "Create AudioSession fail");
+    auto audioSession = CreateAudioSession(callerPid);
+    if (audioSession == nullptr) {
+        AUDIO_ERR_LOG("Create audio session fail, pid: %{public}d!", callerPid);
+        return ERROR;
     }
 
-    return sessionMap_[callerPid]->SetAudioSessionScene(scene);
+    return audioSession->SetAudioSessionScene(scene);
 }
 
 StreamUsage AudioSessionService::GetAudioSessionStreamUsage(int32_t callerPid)
@@ -435,17 +441,16 @@ void AudioSessionService::AudioSessionInfoDump(std::string &dumpString)
 int32_t AudioSessionService::SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
-    if ((sessionMap_.count(callerPid) > 0) && (sessionMap_[callerPid] != nullptr)) {
-        AUDIO_INFO_LOG("SetSessionDefaultOutputDevice: callerPid %{public}d, deviceType %{public}d",
-            callerPid, static_cast<int32_t>(deviceType));
-    } else {
-        AudioSessionStrategy strategy;
-        strategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
-        sessionMap_[callerPid] = std::make_shared<AudioSession>(callerPid, strategy, *this);
-        CHECK_AND_RETURN_RET_LOG(sessionMap_[callerPid] != nullptr, ERROR, "Create AudioSession fail");
+    AUDIO_INFO_LOG("SetSessionDefaultOutputDevice: callerPid %{public}d, deviceType %{public}d",
+        callerPid, static_cast<int32_t>(deviceType));
+
+    auto audioSession = CreateAudioSession(callerPid);
+    if (audioSession == nullptr) {
+        AUDIO_ERR_LOG("Create audio session fail, pid: %{public}d!", callerPid);
+        return ERROR;
     }
 
-    return sessionMap_[callerPid]->SetSessionDefaultOutputDevice(deviceType);
+    return audioSession->SetSessionDefaultOutputDevice(deviceType);
 }
 
 DeviceType AudioSessionService::GetSessionDefaultOutputDevice(const int32_t callerPid)

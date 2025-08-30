@@ -81,6 +81,8 @@ public:
 private:
     int32_t DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout = false);
     void GenerateFakeStreamId(int32_t callerPid);
+    std::make_shared<AudioSession> CreateAudioSession(
+        int32_t callerPid, AudioSessionStrategy strategy = {AudioConcurrencyMode::INVALID});
 
 private:
     std::mutex sessionServiceMutex_;
