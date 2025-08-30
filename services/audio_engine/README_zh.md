@@ -8,7 +8,12 @@
 <img src="../../figures/zh-cn_image_proaudio.png" width="30%">
 
 ### 架构理念
-架构特点是以节点的形化处理音频数据，每个节点负责相对独立的功能模块，节点之间可以组合链接，实现预期的对音频数据的处理，具有时延低、扩展性强的优势。
+架构特点是以节点的形化处理音频数据，每个节点负责相对独立的功能模块，节点之间可以组合链接，实现预期的对音频数据的处理。
+相比于原来的pulseaudio引擎，具有以下优势
+* 线程模型简化，线程管理更简单
+* 控制流与数据流分离，减少音频数据卡顿
+* 无锁架构，从设计上避免稳定性问题
+* 面向对象的实现更利于开发者开发，扩展性更好
 
 ## 目录
 部件目录结构如下
@@ -136,8 +141,42 @@ ProAudio通路暂时收编Primary（primary、a2dp、remote、dp、multi channel
 
 **提供上述基本音频播放使用范例。更多接口请参考[**i_hpae_manager.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/services/audio_engine/manager/include/i_hpae_manager.h)**
 
-## 节点规格说明
+## 规格说明
 
+### 管理类规格
+1. **HpaeManager**
+
+    负责所有连接管理，只有一个实例，包含多个播放管理、多个录制管理、策略管理等，绑定HpaeManagerThread
+
+2. **HpaeRendererManager**
+
+    播放管理，可以有多个实例（与通路一一对应），负责播放节点管理，绑定下行HpaeSignalProcessThread线程
+
+3. **HpaeCapturerManager**
+
+    录制管理，可以有多个实例（与通路一一对应），负责录制节点管理，绑定上行HpaeSignalProcessThread线程
+
+4. **HpaeOffloadRendererManager**
+    
+    负责offload播放管理
+
+5. **HpaePolicyManager**
+
+    负责全局控制类的参数以及指令下发，由HpaeManager管理调用
+    
+
+### 处理层聚类规格
+1. **InputCluster**
+
+    包含HpaeSinkInputNode等输入节点
+2. **ProcessCluster**
+
+    与音效绑定，包含负责处理数据的相关节点
+3. **OutputCluster**
+    
+    与通路绑定，包含与南向HDI对接的节点
+
+### 节点规格
 1. **HpaeSinkInputNode**
 
     播放通路作为引擎数据流入的第一个节点（数据入口），主要负责读取客户端的音频数据（回调方式），以及将数据位深转化为32位浮点的功能，本身不对数据做任何处理。一条音频流对应一个SinkInputNode，**生命周期跟随音频流的生命周期**。
@@ -171,14 +210,55 @@ ProAudio通路暂时收编Primary（primary、a2dp、remote、dp、multi channel
 
     负责播放通路与南向HDI对接，一条通路对应一个SinkOutputNode，**生命周期跟随OutputCluster**
 
-8. **HpaeSourceInputNode** 
+8. **HpaeSourceInputNode**
+
     负责录制通路与南向HDI对接，录制通路中引擎的数据入口，一条通路至少对应一个SourceInputNode（主麦克风），存在异构EC和MicRef等辅助麦的情况下，可能存在存在3个SourceInputNode，分别对应不同主麦和EC、MicRef两个辅助麦，**生命周期跟随SourceInputCluster**
 
 9. **HpaeCaptureEffectNode**
+    
     负责录制通路音效处理，绑定HpaeSourceProcessCluster
 
 10. **HpaeSourceOutputNode**
+    
     作为录制通路中一条录制流的出口，对接一个capturer_in_server，通过capturer_in_server回调往共享内存写数据，**生命周期伴随流的生命周期**
+
+11. **HpaePluginNode**
+
+    处理插件节点，属于抽象父类节点，包含上下行音效、重采样、混音、音量以及淡入淡出节点
+
+### 工具规格
+
+1. **HpaePcmBuffer**
+
+    引擎的缓存分配和使用，支持多声道
+
+2. **HpaePcmProcess**
+
+    单通道数据基本处理
+
+3. **Resample**
+
+    重采样算法
+
+4. **Mixer**
+
+    混音算法
+
+5. **UpEffect**
+    
+    上行录制音效处理
+
+6. **DownEffect**
+
+    下行播放音效处理
+
+7. **Simd**
+
+    指令集优化
+
+8. **Dfx**
+
+    包含hook等维测能力
 
 
 ## 数据流转以及节点连接
