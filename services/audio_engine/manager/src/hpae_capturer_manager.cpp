@@ -655,7 +655,7 @@ int32_t HpaeCapturerManager::InitCapturerManager()
     HpaeNodeInfo nodeInfo;
     HpaeNodeInfo ecNodeInfo;
     HpaeNodeInfo micRefNodeInfo;
-    if(sourceInfo_.frameLen){
+    if (sourceInfo_.frameLen == 0) {
         return 0;
     }
     nodeInfo.deviceClass = sourceInfo_.deviceClass;
