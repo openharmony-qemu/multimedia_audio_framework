@@ -1941,7 +1941,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SelectOutputDevice_004, TestSize.Leve
     EXPECT_EQ(ret, SUCCESS);
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, 0);
-    
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1053,10 +1053,10 @@ int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         ERR_INVALID_PARAM, "invalid uid.");
 
     CHECK_AND_RETURN_RET_LOG(audioDeviceSelectMode == 0 || audioDeviceSelectMode == 1,
-        ERR_INVALID_PARAM, "invalid audioDeviceSelectMode."); 
+        ERR_INVALID_PARAM, "invalid audioDeviceSelectMode.");
 
     AUDIO_DEBUG_LOG("[%{public}d] SelectOutputDevice: uid<%{public}d> streamType<%{public}d> device<name:%{public}s> " \
-        " audioDeviceSelectMode<%{public}d>", getpid(), audioRendererFilter->uid, 
+        " audioDeviceSelectMode<%{public}d>", getpid(), audioRendererFilter->uid,
         static_cast<int32_t>(audioRendererFilter->streamType), (audioDeviceDescriptors[0]->networkId_.c_str()),
         audioDeviceSelectMode);
 

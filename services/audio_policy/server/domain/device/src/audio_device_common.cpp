@@ -172,7 +172,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPrefer
         auto preferredType = AudioPolicyUtils::GetInstance().GetPreferredTypeByStreamUsage(rendererInfo.streamUsage);
         if (preferredType == AUDIO_CALL_RENDER && uid >= 0) {
             bypassType = RouterType::ROUTER_TYPE_USER_SELECT;
-            std::shared_ptr<AudioDeviceDescriptor> preferredDevice = 
+            std::shared_ptr<AudioDeviceDescriptor> preferredDevice =
                 AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDeviceForUid(uid);
             CHECK_AND_RETURN_RET_LOG(preferredDevice != nullptr, deviceList, "preferredDevice is nullptr.");
             if (preferredDevice->deviceId_ != 0) {
