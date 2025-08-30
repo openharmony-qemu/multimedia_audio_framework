@@ -1768,7 +1768,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsIntelligentNoiseReductionEnabledFor
 
     SourceType sourceType = SourceType::SOURCE_TYPE_LIVE;
     bool ret = server->audioPolicyService_.IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType);
-    EXPECT_EQ(ret, true);
+    EXPECT_EQ(ret, false);
 }
 
 /**
