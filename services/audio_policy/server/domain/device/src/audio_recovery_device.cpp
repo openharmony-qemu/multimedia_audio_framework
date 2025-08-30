@@ -176,6 +176,8 @@ void AudioRecoveryDevice::SetDeviceEnableAndUsage(const std::shared_ptr<AudioDev
     audioDeviceManager_.UpdateDevicesListInfo(deviceDesc, ENABLE_UPDATE);
     deviceDesc->deviceUsage_ = ALL_USAGE;
     audioDeviceManager_.UpdateDevicesListInfo(deviceDesc, USAGE_UPDATE);
+    deviceDesc->exceptionFlag_ = false;
+    audioDeviceManager_.UpdateDevicesListInfo(deviceDesc, EXCEPTION_FLAG_UPDATE);
 }
 
 int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,

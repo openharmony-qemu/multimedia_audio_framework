@@ -457,6 +457,36 @@ HWTEST_F(AudioCoreServiceUnitTest, SelectOutputDevice_001, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioCoreService.
+* @tc.number: SelectOutputDevice_002
+* @tc.desc  : Test SelectOutputDevice - will return success.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SelectOutputDevice_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest SelectOutputDevice_001 start");
+    ASSERT_NE(nullptr, GetServerPtr());
+    sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+    ASSERT_NE(nullptr, audioRendererFilter) << "audioRendererFilter is nullptr.";
+    audioRendererFilter->uid = getuid();
+    audioRendererFilter->rendererInfo.rendererFlags = STREAM_FLAG_FAST;
+    audioRendererFilter->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+
+    auto &devMan = AudioDeviceManager::GetAudioDeviceManager();
+    shared_ptr<AudioDeviceDescriptor> devDesc;
+    for (auto &item : devMan.connectedDevices_) {
+        if (item->deviceRole_ == OUTPUT_DEVICE) {
+            devDesc = item;
+            break;
+        }
+    }
+    CHECK_AND_RETURN(devDesc);
+    auto selectedDev = make_shared<AudioDeviceDescriptor>(devDesc);
+    devDesc->exceptionFlag_ = true;
+    GetServerPtr()->eventEntry_->SelectOutputDevice(audioRendererFilter, {selectedDev});
+    EXPECT_EQ(devDesc->exceptionFlag_, false);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
 * @tc.number: SelectInputDevice_001
 * @tc.desc  : Test SelectInputDevice - will return success.
 */
@@ -1219,7 +1249,7 @@ HWTEST_F(AudioCoreServiceUnitTest, CaptureConcurrentCheck_001, TestSize.Level1)
         streamDescs[i]->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
         streamDescs[i]->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
         streamDescs[i]->rendererInfo_.streamUsage = STREAM_USAGE_MOVIE;
- 
+
         streamDescs[i]->audioMode_ = AUDIO_MODE_RECORD;
         streamDescs[i]->createTimeStamp_ = ClockTime::GetCurNano();
         streamDescs[i]->startTimeStamp_ = streamDescs[i]->createTimeStamp_ + 1;
