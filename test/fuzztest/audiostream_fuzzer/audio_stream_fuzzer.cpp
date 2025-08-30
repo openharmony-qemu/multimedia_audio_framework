@@ -111,9 +111,9 @@ public:
 
     int32_t UnloadModernInnerCapSink(int32_t innerCapId) override;
 
-    int32_t LoadModernOffloadCapSink() override;
+    int32_t LoadModernOffloadCapSource() override;
 
-    int32_t UnloadModernOffloadCapSink() override;
+    int32_t UnloadModernOffloadCapSource() override;
 #endif
 
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
@@ -212,12 +212,12 @@ int32_t MockPolicyProvider::UnloadModernInnerCapSink(int32_t innerCapId)
     return SUCCESS;
 }
 
-int32_t MockPolicyProvider::LoadModernOffloadCapSink()
+int32_t MockPolicyProvider::LoadModernOffloadCapSource()
 {
     return SUCCESS;
 }
 
-int32_t MockPolicyProvider::UnloadModernOffloadCapSink()
+int32_t MockPolicyProvider::UnloadModernOffloadCapSource()
 {
     return SUCCESS;
 }
