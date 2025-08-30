@@ -107,6 +107,7 @@ public:
 
     int32_t SetNearlinkDeviceVolume(const std::string &macAddress, AudioVolumeType volumeType,
         const int32_t volume, bool internalCall = false);
+    int32_t SetNearlinkDeviceVolumeEx(AudioVolumeType volumeType, const int32_t volume);
 
     void UpdateGroupInfo(GroupType type, std::string groupName, int32_t& groupId, std::string networkId,
         bool connected, int32_t mappingId);
