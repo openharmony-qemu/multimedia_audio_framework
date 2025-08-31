@@ -230,7 +230,7 @@ public:
     int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
-    bool IsCurrentDeviceEnableIntelligentNoiseReduction(SourceType sourceType);
+    bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
     bool getFastControlParam();
 
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);

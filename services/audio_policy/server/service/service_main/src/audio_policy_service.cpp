@@ -1201,10 +1201,10 @@ bool AudioPolicyService::CheckVoipAnrOn(std::vector<AudioEffectPropertyV3> &prop
     return ret;
 }
  
-bool AudioPolicyService::IsCurrentDeviceEnableIntelligentNoiseReduction(SourceType sourceType)
+bool AudioPolicyService::IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType)
 {
     if (sourceType != SOURCE_TYPE_LIVE && sourceType != SOURCE_TYPE_VOICE_COMMUNICATION) {
-        AUDIO_INFO_LOG("SourceType %{public}d IsCurrentDeviceEnableIntelligentNoiseReduction 0", sourceType);
+        AUDIO_INFO_LOG("SourceType %{public}d IsIntelligentNoiseReductionEnabledForCurrentDevice 0", sourceType);
         return false;
     }
  
@@ -1216,7 +1216,7 @@ bool AudioPolicyService::IsCurrentDeviceEnableIntelligentNoiseReduction(SourceTy
         CHECK_AND_RETURN_RET_LOG(settingProvider.CheckOsAccountReady(), false, "os account not ready");
         settingProvider.GetStringValue(paramKey, paramValue, LIVE_EFFECT_TABLE_TYPE);
         ret = (paramValue == LIVE_EFFECT_ON);
-        AUDIO_INFO_LOG("SourceType %{public}d IsCurrentDeviceEnableIntelligentNoiseReduction %{public}d",
+        AUDIO_INFO_LOG("SourceType %{public}d IsIntelligentNoiseReductionEnabledForCurrentDevice %{public}d",
             sourceType, ret);
         return ret;
     }
@@ -1234,7 +1234,7 @@ bool AudioPolicyService::IsCurrentDeviceEnableIntelligentNoiseReduction(SourceTy
         settingProvider.GetIntValue(AINR_FLAG, flagValue, AUDIO_SETTING_TABLE_TYPE);
         ret = (flagValue == 1);
     }
-    AUDIO_INFO_LOG("SourceType %{public}d IsCurrentDeviceEnableIntelligentNoiseReduction %{public}d",
+    AUDIO_INFO_LOG("SourceType %{public}d IsIntelligentNoiseReductionEnabledForCurrentDevice %{public}d",
         sourceType, ret);
     return ret;
 }

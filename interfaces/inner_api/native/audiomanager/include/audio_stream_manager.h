@@ -397,7 +397,7 @@ public:
      * @return {@code true} if the system recording supports intelligent noise reduction for current device.
      * @since 21
      */
-    bool IsCurrentDeviceEnableIntelligentNoiseReduction(SourceType sourceType);
+    bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
 private:
     std::mutex rendererStateChangeCallbacksMutex_;
     std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> rendererStateChangeCallbacks_;

@@ -3291,13 +3291,13 @@ int32_t AudioPolicyManager::GetMinVolumeDegree(AudioVolumeType volumeType)
     return volumeDegree;
 }
 
-bool AudioPolicyManager::IsCurrentDeviceEnableIntelligentNoiseReduction(SourceType sourceType)
+bool AudioPolicyManager::IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
 
     bool isSupport = false;
-    gsp->IsCurrentDeviceEnableIntelligentNoiseReduction(sourceType, isSupport);
+    gsp->IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType, isSupport);
     return isSupport;
 }
 

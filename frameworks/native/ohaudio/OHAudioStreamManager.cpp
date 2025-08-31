@@ -157,7 +157,7 @@ bool OH_AudioStreamManager_IsFastRecordingSupported(
     return ohAudioStreamManager->IsFastRecordingSupported(audioStreamInfo, sourceType);
 }
 
-bool OH_AudioStreamManager_IsCurrentDeviceEnableIntelligentNoiseReduction(
+bool OH_AudioStreamManager_IsIntelligentNoiseReductionEnabledForCurrentDevice(
     OH_AudioStreamManager *streamManager, OH_AudioStream_SourceType source)
 {
     OHAudioStreamManager *ohAudioStreamManager = convertManager(streamManager);
@@ -166,7 +166,7 @@ bool OH_AudioStreamManager_IsCurrentDeviceEnableIntelligentNoiseReduction(
     CHECK_AND_RETURN_RET_LOG(VALID_OH_SOURCE_TYPES.count(source) != 0,
         false, "sourceType is invalid");
     SourceType sourceType = static_cast<SourceType>(source);
-    return ohAudioStreamManager->IsCurrentDeviceEnableIntelligentNoiseReduction(sourceType);
+    return ohAudioStreamManager->IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType);
 }
 
 namespace OHOS {
@@ -209,10 +209,10 @@ bool OHAudioStreamManager::IsFastRecordingSupported(AudioStreamInfo &streamInfo,
     return audioStreamManager_->IsFastRecordingSupported(streamInfo, source);
 }
 
-bool OHAudioStreamManager::IsCurrentDeviceEnableIntelligentNoiseReduction(SourceType sourceType)
+bool OHAudioStreamManager::IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType)
 {
     CHECK_AND_RETURN_RET_LOG(audioStreamManager_ != nullptr, false, "failed, audioStreamManager_ is null");
-    return audioStreamManager_->IsCurrentDeviceEnableIntelligentNoiseReduction(sourceType);
+    return audioStreamManager_->IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType);
 }
 } // namespace AudioStandard
 } // namespace OHOS

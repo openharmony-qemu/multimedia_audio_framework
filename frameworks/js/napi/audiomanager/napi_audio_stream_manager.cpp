@@ -107,8 +107,8 @@ napi_value NapiAudioStreamMgr::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("isAcousticEchoCancelerSupported", IsAcousticEchoCancelerSupported),
         DECLARE_NAPI_FUNCTION("isRecordingAvailable", IsRecordingAvailable),
         DECLARE_NAPI_FUNCTION("isAudioLoopbackSupported", IsAudioLoopbackSupported),
-        DECLARE_NAPI_FUNCTION("isCurrentDeviceEnableIntelligentNoiseReduction",
-            IsCurrentDeviceEnableIntelligentNoiseReduction),
+        DECLARE_NAPI_FUNCTION("isIntelligentNoiseReductionEnabledForCurrentDevice",
+            IsIntelligentNoiseReductionEnabledForCurrentDevice),
     };
 
     status = napi_define_class(env, AUDIO_STREAM_MGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -912,7 +912,7 @@ napi_value NapiAudioStreamMgr::IsAudioLoopbackSupported(napi_env env, napi_callb
     return result;
 }
 
-napi_value NapiAudioStreamMgr::IsCurrentDeviceEnableIntelligentNoiseReduction(napi_env env, napi_callback_info info)
+napi_value NapiAudioStreamMgr::IsIntelligentNoiseReductionEnabledForCurrentDevice(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
@@ -933,7 +933,7 @@ napi_value NapiAudioStreamMgr::IsCurrentDeviceEnableIntelligentNoiseReduction(na
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of sourceType must be enum SourceType"), "get sourceType failed");
 
-    bool isSupported = napiStreamMgr->audioStreamMngr_->IsCurrentDeviceEnableIntelligentNoiseReduction(
+    bool isSupported = napiStreamMgr->audioStreamMngr_->IsIntelligentNoiseReductionEnabledForCurrentDevice(
         static_cast<SourceType>(sourceType));
     NapiParamUtils::SetValueBoolean(env, isSupported, result);
     return result;

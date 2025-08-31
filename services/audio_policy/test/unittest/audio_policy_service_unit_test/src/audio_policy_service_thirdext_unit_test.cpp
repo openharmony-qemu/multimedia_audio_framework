@@ -1742,64 +1742,64 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetMinVolumeLevel_002, TestSize.Level
 }
 
 /**
-* @tc.name  : Test IsCurrentDeviceEnableIntelligentNoiseReduction.
-* @tc.number: IsCurrentDeviceEnableIntelligentNoiseReduction_001
-* @tc.desc  : Test IsCurrentDeviceEnableIntelligentNoiseReduction interfaces.
+* @tc.name  : Test IsIntelligentNoiseReductionEnabledForCurrentDevice.
+* @tc.number: IsIntelligentNoiseReductionEnabledForCurrentDevice_001
+* @tc.desc  : Test IsIntelligentNoiseReductionEnabledForCurrentDevice interfaces.
 */
-HWTEST_F(AudioPolicyServiceFourthUnitTest, IsCurrentDeviceEnableIntelligentNoiseReduction_001, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceFourthUnitTest, IsIntelligentNoiseReductionEnabledForCurrentDevice_001, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(nullptr, server);
 
     SourceType sourceType = SourceType::SOURCE_TYPE_MIC;
-    bool ret = server->audioPolicyService_.IsCurrentDeviceEnableIntelligentNoiseReduction(sourceType);
+    bool ret = server->audioPolicyService_.IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType);
     EXPECT_EQ(ret, false);
 }
 
 /**
-* @tc.name  : Test IsCurrentDeviceEnableIntelligentNoiseReduction.
-* @tc.number: IsCurrentDeviceEnableIntelligentNoiseReduction_002
-* @tc.desc  : Test IsCurrentDeviceEnableIntelligentNoiseReduction interfaces.
+* @tc.name  : Test IsIntelligentNoiseReductionEnabledForCurrentDevice.
+* @tc.number: IsIntelligentNoiseReductionEnabledForCurrentDevice_002
+* @tc.desc  : Test IsIntelligentNoiseReductionEnabledForCurrentDevice interfaces.
 */
-HWTEST_F(AudioPolicyServiceFourthUnitTest, IsCurrentDeviceEnableIntelligentNoiseReduction_002, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceFourthUnitTest, IsIntelligentNoiseReductionEnabledForCurrentDevice_002, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(nullptr, server);
 
     SourceType sourceType = SourceType::SOURCE_TYPE_LIVE;
-    bool ret = server->audioPolicyService_.IsCurrentDeviceEnableIntelligentNoiseReduction(sourceType);
-    EXPECT_EQ(ret, true);
+    bool ret = server->audioPolicyService_.IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType);
+    EXPECT_EQ(ret, false);
 }
 
 /**
-* @tc.name  : Test IsCurrentDeviceEnableIntelligentNoiseReduction.
-* @tc.number: IsCurrentDeviceEnableIntelligentNoiseReduction_003
-* @tc.desc  : Test IsCurrentDeviceEnableIntelligentNoiseReduction interfaces.
+* @tc.name  : Test IsIntelligentNoiseReductionEnabledForCurrentDevice.
+* @tc.number: IsIntelligentNoiseReductionEnabledForCurrentDevice_003
+* @tc.desc  : Test IsIntelligentNoiseReductionEnabledForCurrentDevice interfaces.
 */
-HWTEST_F(AudioPolicyServiceFourthUnitTest, IsCurrentDeviceEnableIntelligentNoiseReduction_003, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceFourthUnitTest, IsIntelligentNoiseReductionEnabledForCurrentDevice_003, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(nullptr, server);
 
     SourceType sourceType = SourceType::SOURCE_TYPE_VOICE_COMMUNICATION;
     server->audioPolicyService_.audioEcManager_.isEcFeatureEnable_ = 1;
-    bool ret = server->audioPolicyService_.IsCurrentDeviceEnableIntelligentNoiseReduction(sourceType);
+    bool ret = server->audioPolicyService_.IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType);
     EXPECT_EQ(ret, false);
 }
 
 /**
-* @tc.name  : Test IsCurrentDeviceEnableIntelligentNoiseReduction.
-* @tc.number: IsCurrentDeviceEnableIntelligentNoiseReduction_004
-* @tc.desc  : Test IsCurrentDeviceEnableIntelligentNoiseReduction interfaces.
+* @tc.name  : Test IsIntelligentNoiseReductionEnabledForCurrentDevice.
+* @tc.number: IsIntelligentNoiseReductionEnabledForCurrentDevice_004
+* @tc.desc  : Test IsIntelligentNoiseReductionEnabledForCurrentDevice interfaces.
 */
-HWTEST_F(AudioPolicyServiceFourthUnitTest, IsCurrentDeviceEnableIntelligentNoiseReduction_004, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceFourthUnitTest, IsIntelligentNoiseReductionEnabledForCurrentDevice_004, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(nullptr, server);
 
     SourceType sourceType = SourceType::SOURCE_TYPE_VOICE_COMMUNICATION;
     server->audioPolicyService_.audioEcManager_.isEcFeatureEnable_ = 0;
-    bool ret = server->audioPolicyService_.IsCurrentDeviceEnableIntelligentNoiseReduction(sourceType);
+    bool ret = server->audioPolicyService_.IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType);
     EXPECT_EQ(ret, false);
 }
 
