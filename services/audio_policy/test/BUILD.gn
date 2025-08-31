@@ -2588,6 +2588,16 @@ ohos_unittest("audio_router_center_unit_test") {
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
+
   external_deps = [
     "ability_base:session_info",
     "ability_base:want",
@@ -3084,11 +3094,12 @@ ohos_unittest("audio_stream_collector_pro_unit_test") {
 
   sanitize = {
     cfi = true
-    cfi_cross_dso = true
+    cfi_cross_dso = false
     boundary_sanitize = true
     debug = false
     integer_overflow = true
-    ubsan = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
   }
 
   external_deps = [

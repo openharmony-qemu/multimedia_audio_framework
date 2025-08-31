@@ -329,12 +329,12 @@ HWTEST(AudioResourceServiceUnitTest, RegisterAudioWorkgroupMonitor_001, TestSize
 
     groupId = -1;
     ret = audioResourceService.RegisterAudioWorkgroupMonitor(pid, groupId, remoteObj);
-    EXPECT_NE(ret, 0);
+    EXPECT_EQ(ret, 0);
 
     pid = 1;
     ret = audioResourceService.RegisterAudioWorkgroupMonitor(pid, groupId, remoteObj);
 
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

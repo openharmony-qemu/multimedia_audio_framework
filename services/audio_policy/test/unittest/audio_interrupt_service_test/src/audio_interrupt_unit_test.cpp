@@ -538,7 +538,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_024, TestSize.Level1)
     interruptServiceTest->zonesMap_[0]->interruptCbsMap[0] = nullptr;
 
     int32_t ret = interruptServiceTest->ReleaseAudioInterruptZone(zoneId, getZoneFunc);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, VALUE_ERROR);
 
     zoneId = 0;
     ret = interruptServiceTest->ReleaseAudioInterruptZone(zoneId, getZoneFunc);

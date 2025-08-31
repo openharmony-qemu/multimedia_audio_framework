@@ -105,6 +105,7 @@ HWTEST_F(AudioToneParserSecondUnitTest, AudioToneParserSecondUnitTest_003, TestS
 {
     EXPECT_CALL(*(mockAudioXmlNode_), IsNodeValid())
         .WillOnce(Return(true))
+        .WillOnce(Return(false))
         .WillOnce(Return(false));
 
     EXPECT_CALL(*(mockAudioXmlNode_), IsElementNode()).WillOnce(Return(true));
@@ -137,7 +138,7 @@ HWTEST_F(AudioToneParserSecondUnitTest, AudioToneParserSecondUnitTest_004, TestS
 
     EXPECT_CALL(*(mockAudioXmlNode_), IsElementNode()).WillOnce(Return(true));
 
-    EXPECT_CALL(*(mockAudioXmlNode_), CompareName(testing::_)).WillOnce(Return(false));
+    EXPECT_CALL(*(mockAudioXmlNode_), CompareName(testing::_)).WillRepeatedly(Return(false));
 
     EXPECT_CALL(*(mockAudioXmlNode_), MoveToNext()).Times(1);
 
@@ -232,6 +233,7 @@ HWTEST_F(AudioToneParserSecondUnitTest, AudioToneParserSecondUnitTest_009, TestS
 {
     EXPECT_CALL(*(mockAudioXmlNode_), IsNodeValid())
         .WillOnce(Return(true))
+        .WillOnce(Return(false))
         .WillOnce(Return(false));
 
     EXPECT_CALL(*(mockAudioXmlNode_), IsElementNode()).WillOnce(Return(true));
@@ -263,6 +265,7 @@ HWTEST_F(AudioToneParserSecondUnitTest, AudioToneParserSecondUnitTest_010, TestS
 {
     EXPECT_CALL(*(mockAudioXmlNode_), IsNodeValid())
         .WillOnce(Return(true))
+        .WillOnce(Return(false))
         .WillOnce(Return(false));
 
     EXPECT_CALL(*(mockAudioXmlNode_), IsElementNode()).WillOnce(Return(true));
@@ -294,6 +297,7 @@ HWTEST_F(AudioToneParserSecondUnitTest, AudioToneParserSecondUnitTest_011, TestS
 {
     EXPECT_CALL(*(mockAudioXmlNode_), IsNodeValid())
         .WillOnce(Return(true))
+        .WillOnce(Return(false))
         .WillOnce(Return(false));
 
     EXPECT_CALL(*(mockAudioXmlNode_), IsElementNode()).WillOnce(Return(true));
@@ -325,6 +329,7 @@ HWTEST_F(AudioToneParserSecondUnitTest, AudioToneParserSecondUnitTest_012, TestS
 {
     EXPECT_CALL(*(mockAudioXmlNode_), IsNodeValid())
         .WillOnce(Return(true))
+        .WillOnce(Return(false))
         .WillOnce(Return(false));
 
     EXPECT_CALL(*(mockAudioXmlNode_), IsElementNode()).WillOnce(Return(true));
@@ -356,6 +361,7 @@ HWTEST_F(AudioToneParserSecondUnitTest, AudioToneParserSecondUnitTest_013, TestS
 {
     EXPECT_CALL(*(mockAudioXmlNode_), IsNodeValid())
         .WillOnce(Return(true))
+        .WillOnce(Return(false))
         .WillOnce(Return(false));
 
     EXPECT_CALL(*(mockAudioXmlNode_), IsElementNode()).WillOnce(Return(true));

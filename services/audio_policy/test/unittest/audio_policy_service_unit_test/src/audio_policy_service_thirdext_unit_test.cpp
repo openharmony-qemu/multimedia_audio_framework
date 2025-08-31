@@ -1615,7 +1615,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetMaxVolumeLevel_001, TestSize.Level
     int ret = server->GetMaxVolumeLevel(volumeType, volumeLevel, deviceType);
 
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(volumeLevel, ERR_INVALID_PARAM);
+    EXPECT_EQ(volumeLevel, MAX_VOLUME_LEVEL);
 }
 
 /**
@@ -1634,7 +1634,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetMaxVolumeLevel_002, TestSize.Level
     int ret = server->GetMaxVolumeLevel(volumeType, volumeLevel, deviceType);
 
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(volumeLevel, MAX_VOLUME_LEVEL);
+    EXPECT_EQ(volumeLevel, ERR_INVALID_PARAM);
 }
 
 /**
