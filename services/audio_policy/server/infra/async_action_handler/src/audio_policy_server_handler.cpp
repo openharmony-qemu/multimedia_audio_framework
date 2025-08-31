@@ -774,7 +774,8 @@ void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent
             AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
             continue;
         }
-        if (VolumeUtils::GetVolumeTypeFromStreamType(eventContextObj->volumeEvent.volumeType) == STREAM_SYSTEM &&
+        AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(eventContextObj->volumeEvent.volumeType);
+        if ((volumeType == STREAM_SYSTEM || volumeType == STREAM_ULTRASONIC) &&
             !volumeChangeCb->hasSystemPermission_) {
             AUDIO_DEBUG_LOG("volumeChangeCb: Non system applications do not send system callbacks");
             continue;
