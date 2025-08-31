@@ -283,6 +283,36 @@ HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_013, TestSize.Leve
     auto ret = AudioStateManager::GetAudioStateManager().GetExcludedDevices(usage);
     EXPECT_EQ(0, ret.size());
 }
+
+/**
+* @tc.name  : Test AudioStateManager.
+* @tc.number: AudioStateManagerUnitTest_014
+* @tc.desc  : Test SetAndGetPreferredCallRenderDeviceForUid interface.
+*/
+HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_014, TestSize.Level1)
+{
+    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    shared_ptr<AudioDeviceDescriptor> speaker = std::make_shared<AudioDeviceDescriptor>();
+    speaker->deviceType_ = DEVICE_TYPE_SPEAKER;
+    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, 0);
+    AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerUid(299);
+    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(speaker, 299);
+    shared_ptr<AudioDeviceDescriptor> deviceDesc =
+        AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDeviceForUid(299);
+    EXPECT_EQ(deviceDesc->deviceType_, DEVICE_TYPE_SPEAKER);
+    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(speaker, 1);
+    deviceDesc =
+        AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDeviceForUid(1);
+    EXPECT_EQ(deviceDesc->deviceType_, DEVICE_TYPE_SPEAKER);
+    deviceDesc =
+        AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDeviceForUid(456);
+    EXPECT_EQ(deviceDesc->deviceType_, DEVICE_TYPE_SPEAKER);
+    AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerUid(0);
+    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(speaker, 1);
+    deviceDesc = AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
+    EXPECT_EQ(deviceDesc->deviceType_, DEVICE_TYPE_SPEAKER);
+    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS
  

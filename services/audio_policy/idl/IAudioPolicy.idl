@@ -66,7 +66,7 @@ interface IAudioPolicy {
         [out] int volumeLevel);
     void GetAppVolumeLevel([in] int appUid, [out] int volumeLevel);
     void GetSelfAppVolumeLevel([out] int volumeLevel);
-    void SetStreamMuteLegacy([in] int volumeType, [in] boolean mute, [in] int deviceType); /*deviceType default DEVICE_TYPE_NONE， AudioVolumeType volumeType*/
+    void SetStreamMuteLegacy([in] int volumeType, [in] boolean mute, [in] int deviceType); /*deviceType default DEVICE_TYPE_NONE, AudioVolumeType volumeType*/
     void SetStreamMute([in] int volumeType, [in] boolean mute, [in] int deviceType); /*deviceType default DEVICE_TYPE_NONE*/
     void GetStreamMute([in] int volumeType, [out] boolean retMute);
     void IsStreamActive([in] int volumeType, [out] boolean retActive);
@@ -106,7 +106,7 @@ interface IAudioPolicy {
         [out] AudioInterrupt audioInterrupt,
         [in] int zoneId /* zoneID default value: 0 -- local device */);
     void GetDevices([in] int deviceFlag, [out] List<sharedptr<AudioDeviceDescriptor>> retDevicesList);
-    void SelectOutputDevice([in] sptr<AudioRendererFilter> audioRendererFilter, [in] List<sharedptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+    void SelectOutputDevice([in] sptr<AudioRendererFilter> audioRendererFilter, [in] List<sharedptr<AudioDeviceDescriptor>> audioDeviceDescriptors, [in] int audioDeviceSelectMode);
     void GetSelectedDeviceInfo([in] int uid, [in] int pid, [in] int streamType, [out] String retStr);
     void SelectInputDevice([in] sptr<AudioCapturerFilter> audioCapturerFilter, [in] List<sharedptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
     void SelectInputDevice([in] sharedptr<AudioDeviceDescriptor> audioDeviceDescriptor);
@@ -245,7 +245,7 @@ interface IAudioPolicy {
     void UnsetAudioDeviceAnahsCallback();
     void IsAllowedPlayback([in] int uid, [in] int pid, [out] boolean isAllowed);
     void SetVoiceRingtoneMute([in] boolean isMute);
-    void SetCallbackRendererInfo([in] AudioRendererInfo rendererInfo);
+    void SetCallbackRendererInfo([in] AudioRendererInfo rendererInfo, [in] int uid);
     void SetCallbackCapturerInfo([in] AudioCapturerInfo capturerInfo);
     void GetStreamInFocusByUid([in]  int uid, [in] int zoneId, [out] int retStreamType); /* zoneID default value: 0 -- local device */
     void SetPreferredDevice([in] int preferredType, [in] sharedptr<AudioDeviceDescriptor> desc, [in] int uid);
@@ -303,5 +303,6 @@ interface IAudioPolicy {
     void GetAudioZoneByName([in] String name, [out] int zoneId);
     void AddStreamsToAudioZone([in] int zoneId, [in] List<AudioZoneStream> streams);
     void RemoveStreamsFromAudioZone([in] int zoneId, [in] List<AudioZoneStream> streams);
+    void RestoreOutputDevice([in] sptr<AudioRendererFilter> audioRendererFilter);
 }
 

@@ -185,7 +185,7 @@ public:
         AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(
-        AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID);
+        AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID, const int32_t uid = -1);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(
         AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID);

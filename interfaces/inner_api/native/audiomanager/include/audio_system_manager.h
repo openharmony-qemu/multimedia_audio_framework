@@ -371,7 +371,8 @@ public:
      * @since 9
      */
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors,
+        const int32_t audioDeviceSelectMode = 0) const;
 
     /**
      * @brief Select the audio input device according to the filter conditions.

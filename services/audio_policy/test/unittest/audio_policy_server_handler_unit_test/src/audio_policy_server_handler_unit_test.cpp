@@ -958,8 +958,8 @@ HWTEST(AudioPolicyServerHandlerUnitTest, GetCallbackRendererInfoList_002, TestSi
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 123;
-    std::vector<AudioRendererInfo> infoList = {AudioRendererInfo()};
-    audioPolicyServerHandler_->clientCbRendererInfoMap_[clientPid] = infoList;
+    std::vector<AudioRendererFilter> filterList = {AudioRendererFilter()};
+    audioPolicyServerHandler_->clientCbRendererInfoMap_[clientPid] = filterList;
     audioPolicyServerHandler_->GetCallbackRendererInfoList(clientPid);
     EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 0);
 }
