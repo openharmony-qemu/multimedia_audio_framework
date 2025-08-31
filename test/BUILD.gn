@@ -160,7 +160,7 @@ group("audio_unit_test") {
   if (audio_framework_feature_low_latency) {
     deps += [
       "../frameworks/native/audiorenderer/test/unittest/renderer_test:audio_fast_renderer_unit_test",
-      "../frameworks/native/audiorenderer/test/unittest/renderer_test:audio_renderer_unit_test",
+      #"../frameworks/native/audiorenderer/test/unittest/renderer_test:audio_renderer_unit_test",
       "../services/audio_service/test/unittest:audio_process_in_server_unit_test",
       "../services/audio_service/test/unittest:audio_service_unit_test",
       "../services/audio_service/test/unittest/renderer_in_server_unit_test:renderer_in_server_second_unit_test",

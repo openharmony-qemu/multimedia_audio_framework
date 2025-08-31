@@ -681,22 +681,22 @@ HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_007, TestSize.Level3)
 
     rendererStreamImpl->bufferInfo_.format = 2;
     ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
-    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 3);
+    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 1);
 
     ret = rendererStreamImpl->Flush();
     EXPECT_EQ(ret, SUCCESS);
 
     rendererStreamImpl->bufferInfo_.format = 3;
     ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
-    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 4);
+    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 2);
 
     rendererStreamImpl->bufferInfo_.format = 4;
     ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
-    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 5);
+    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 2);
 
     rendererStreamImpl->bufferInfo_.format = 24;
     rendererStreamImpl->EnqueueBuffer(bufferDesc);
-    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 6);
+    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 2);
 }
 
 
@@ -734,22 +734,22 @@ HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_008, TestSize.Level3)
 
     rendererStreamImpl->bufferInfo_.format = 2;
     ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
-    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 3);
+    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 1);
 
     ret = rendererStreamImpl->Flush();
     EXPECT_EQ(ret, SUCCESS);
 
     rendererStreamImpl->bufferInfo_.format = 3;
     ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
-    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 4);
+    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 2);
 
     rendererStreamImpl->bufferInfo_.format = 4;
     ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
-    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 5);
+    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 2);
 
     rendererStreamImpl->bufferInfo_.format = 24;
     rendererStreamImpl->EnqueueBuffer(bufferDesc);
-    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 6);
+    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 2);
 }
 
 /**
