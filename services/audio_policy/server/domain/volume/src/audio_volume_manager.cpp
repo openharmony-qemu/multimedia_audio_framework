@@ -301,6 +301,7 @@ bool AudioVolumeManager::DeviceIsSupportSafeVolume()
     switch (curOutputDeviceType) {
         case DEVICE_TYPE_BLUETOOTH_A2DP:
         case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_NEARLINK:
             if (curOutputDeviceCategory != BT_SOUNDBOX &&
                 curOutputDeviceCategory != BT_CAR) {
                 return true;

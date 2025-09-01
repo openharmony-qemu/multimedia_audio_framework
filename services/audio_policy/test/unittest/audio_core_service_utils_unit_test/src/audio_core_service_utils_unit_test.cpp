@@ -116,12 +116,11 @@ HWTEST(AudioCoreServiceUtilsTest, AudioCoreServiceUtils_004, TestSize.Level1)
 /**
  * @tc.name  : Test AudioCoreServiceUtils.
  * @tc.number: AudioCoreServiceUtils_005
- * @tc.desc  : Test AudioCoreServiceUtils::IsAlarmOnActive()
+ * @tc.desc  : Test AudioCoreServiceUtils::IsDualOnActive()
  */
 HWTEST(AudioCoreServiceUtilsTest, AudioCoreServiceUtils_005, TestSize.Level1)
 {
-    EXPECT_TRUE(AudioCoreServiceUtils::IsAlarmOnActive(STREAM_USAGE_ALARM, true));
-    EXPECT_FALSE(AudioCoreServiceUtils::IsAlarmOnActive(STREAM_USAGE_MUSIC, true));
+    EXPECT_FALSE(AudioCoreServiceUtils::IsDualOnActive());
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -85,6 +85,7 @@ public:
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllCapturerStreamDescs();
     std::shared_ptr<AudioPipeInfo> FindPipeBySessionId(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
         uint32_t sessionId);
+    bool IsStreamUsageActive(const StreamUsage &usage);
 
 private:
     bool IsSpecialPipe(uint32_t routeFlag);
