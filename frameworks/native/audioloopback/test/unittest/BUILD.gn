@@ -40,7 +40,6 @@ ohos_unittest("audio_loopback_unit_test") {
     "../../../audiocapturer:audio_capturer",
     "../../../audiorenderer:audio_renderer",
     "../../../audioloopback:audio_loopback",
-    "googletest:gmock",
   ]
 
   external_deps = [
