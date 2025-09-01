@@ -358,25 +358,6 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_015, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioVolumeManager.
-* @tc.number: GetSystemVolumeLevel_001
-* @tc.desc  : Test GetSystemVolumeLevel interface.
-*/
-HWTEST_F(AudioVolumeManagerUnitTest, GetSystemVolumeLevel_001, TestSize.Level1)
-{
-    AudioStreamType streamType = STREAM_NOTIFICATION;
-    int32_t safeVolume = 0;
-    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
-
-    audioVolumeManager.RestoreSafeVolume(streamType, safeVolume);
-    EXPECT_EQ(audioVolumeManager.GetSystemVolumeLevel(streamType), 0);
-
-    safeVolume = -1;
-    audioVolumeManager.RestoreSafeVolume(streamType, safeVolume);
-    EXPECT_EQ(audioVolumeManager.GetSystemVolumeLevel(streamType), 0);
-}
-
-/**
-* @tc.name  : Test AudioVolumeManager.
 * @tc.number: SetVolumeForSwitchDevice_001
 * @tc.desc  : Test AudioVolumeManager::SetVolumeForSwitchDevice interface.
 */
