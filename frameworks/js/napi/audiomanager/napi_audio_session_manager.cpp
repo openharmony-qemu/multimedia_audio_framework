@@ -35,7 +35,7 @@ static __thread napi_ref g_sessionMgrConstructor = nullptr;
 const std::string AUDIO_SESSION_MGR_NAPI_CLASS_NAME = "AudioSessionManager";
 
 NapiAudioSessionMgr::NapiAudioSessionMgr()
-    : env_(nullptr), audioSessionMngr_(nullptr) {}
+    : env_(nullptr), audioSessionMngr_(nullptr), audioMngr_(nullptr) {}
 
 NapiAudioSessionMgr::~NapiAudioSessionMgr() = default;
 
@@ -715,7 +715,7 @@ napi_value NapiAudioSessionMgr::UnregisterCB(napi_env env, napi_value jsThis, na
     std::string callbackName = NapiParamUtils::GetStringArgument(env, args[PARAM0]);
     if (!callbackName.compare(AUDIOSESSION_CALLBACK_NAME)) {
         if (handler == napi_function) {
-            UnregisterCallbackCarryParam(env, jsThis, args, sizeof(args));
+            UnregisterCallbackCarryParam(env, jsThis, args);
         } else {
             UnregisterCallback(env, jsThis);
         }
