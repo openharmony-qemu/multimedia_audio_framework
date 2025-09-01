@@ -30,6 +30,7 @@
 #include "audio_zone_service.h"
 #include "audio_mute_factor_manager.h"
 #include "audio_server_proxy.h"
+#include "audio_scene_manager.h"
 
 using namespace std;
 
@@ -645,6 +646,7 @@ int32_t AudioAdapterManager::SetVolumeDb(std::shared_ptr<AudioDeviceDescriptor> 
     if (streamType == STREAM_VOICE_CALL_ASSISTANT) {
         volumeDb = 1.0f;
     }
+    DepressVolume(volumeDb, volumeLevel, streamType, device->deviceType_);
     AUDIO_INFO_LOG("streamType:%{public}d volumeDb:%{public}f volume:%{public}d devicetype:%{public}d",
         streamType, volumeDb, volumeLevel, device->deviceType_);
     SetSystemVolumeToEffect(streamType);
@@ -1192,6 +1194,63 @@ bool AudioAdapterManager::IsPaRoute(uint32_t routeFlag)
         return false;
     }
     return true;
+}
+
+void AudioAdapterManager::DepressVolume(float &volume, int32_t volumeLevel,
+    AudioStreamType streamType, DeviceType deviceType)
+{
+    if (streamType == STREAM_VOICE_CALL_ASSISTANT ||
+        streamType == STREAM_ULTRASONIC) {
+        return;
+    }
+
+    auto volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    auto dev = audioActiveDevice_.GetDeviceForVolume(volumeType);
+    auto devForCall = audioActiveDevice_.GetDeviceForVolume(STREAM_VOICE_CALL);
+    CHECK_AND_RETURN_LOG(dev != nullptr && devForCall != nullptr, "device is null");
+    if (dev->networkId_ != devForCall->networkId_) {
+        AUDIO_INFO_LOG("[streamType:%{public}d] volume only depressed in same device", streamType);
+        return;
+    }
+
+    auto &sceneManager = AudioSceneManager::GetInstance();
+    AudioScene curScene = sceneManager.GetAudioScene(true);
+
+    bool streamInCall = curScene == AUDIO_SCENE_PHONE_CALL || curScene == AUDIO_SCENE_PHONE_CHAT;
+    bool updateLimit = volumeType == STREAM_VOICE_CALL || volumeLimit_.load() == MAX_STREAM_VOLUME;
+    if (streamInCall) {
+        if (updateLimit) {
+            float newLimit = volumeType == STREAM_VOICE_CALL?
+                volume : GetSystemVolumeInDb(STREAM_VOICE_CALL, volumeLevel, deviceType);
+            SetVolumeLimit(newLimit);
+        }
+    } else {
+        SetVolumeLimit(MAX_STREAM_VOLUME);
+    }
+
+    volume = std::min(volume, volumeLimit_.load());
+}
+
+void AudioAdapterManager::UpdateOtherStreamVolume(AudioStreamType streamType)
+{
+    auto streamDescs = AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescs();
+    for (auto &streamDesc : streamDescs) {
+        CHECK_AND_CONTINUE(streamDesc != nullptr);
+        AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamUsage(streamDesc->rendererInfo_.streamUsage);
+        CHECK_AND_CONTINUE(volumeType != streamType);
+        AUDIO_INFO_LOG("streamType:%{public}d begin reduce volume for streamType:%{public}d", streamType, volumeType);
+        auto desc = streamDesc->newDeviceDescs_.front();
+        CHECK_AND_CONTINUE(desc != nullptr);
+        SetVolumeDb(desc, volumeType);
+    }
+}
+
+void AudioAdapterManager::SetVolumeLimit(float volume)
+{
+    if (volumeLimit_ != volume) {
+        AUDIO_INFO_LOG("volume limit set to %{public}f", volume);
+        volumeLimit_ = volume;
+    }
 }
 
 void AudioAdapterManager::SaveRingerModeInfo(AudioRingerMode ringMode, std::string callerName,

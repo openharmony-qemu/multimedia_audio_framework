@@ -323,7 +323,8 @@ public:
     int32_t GetMaxVolumeLevel(AudioVolumeType volumeType, std::shared_ptr<AudioDeviceDescriptor> desc);
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType, std::shared_ptr<AudioDeviceDescriptor> desc);
     bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout);
-
+    void UpdateOtherStreamVolume(AudioStreamType streamType);
+    void SetVolumeLimit(float volume);
 private:
     friend class PolicyCallbackImpl;
 
@@ -415,6 +416,7 @@ private:
     void SetFirstBoot(bool isFirst);
     void AdjustBluetoothVoiceAssistantVolume(std::shared_ptr<AudioDeviceDescriptor> &device, bool isA2dpSwitchToSco);
     bool IsPaRoute(uint32_t routeFlag);
+    void DepressVolume(float &volume, int32_t volumeLevel, AudioStreamType streamType, DeviceType deviceType);
     AudioIOHandle OpenPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex, std::string moduleArgs);
     AudioIOHandle OpenNotPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex);
     void GetSinkIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
@@ -509,6 +511,7 @@ private:
     bool isDpReConnect_ = false;
     sptr<IStandardAudioPolicyManagerListener> deviceVolumeBehaviorListener_;
     bool isA2DPPreActive_ = false;
+    std::atomic<float> volumeLimit_ = MAX_STREAM_VOLUME;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {
