@@ -86,6 +86,7 @@ struct HpaeStreamInfo {
     FadeType fadeType = NONE_FADE;
     AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
     AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
+    uint32_t customSampleRate = 0;
     AudioSampleFormat format = INVALID_WIDTH;
     AudioChannel channels = CHANNEL_UNKNOW;
     uint64_t channelLayout = 0ULL;

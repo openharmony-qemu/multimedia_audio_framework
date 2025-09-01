@@ -101,10 +101,10 @@ static vector<SoundCard> GetUsbSoundCards()
         if (file.length() <= card.length() || !(file.find(card, 0) == 0)) {continue;}
         string cardNumStr = file.substr(card.length());
         if (!StrToInt(cardNumStr, cardNum)) {continue;}
-        SoundCard card = {.cardNum_ = static_cast<uint32_t>(cardNum)};
-        FillSoundCard(baseDir + "/" + file, card);
-        if (card.usbBus_.empty()) {continue;}
-        soundCards.push_back(card);
+        SoundCard soundCard = {.cardNum_ = static_cast<uint32_t>(cardNum)};
+        FillSoundCard(baseDir + "/" + file, soundCard);
+        if (soundCard.usbBus_.empty()) {continue;}
+        soundCards.push_back(soundCard);
     }
     closedir(dir);
     return soundCards;

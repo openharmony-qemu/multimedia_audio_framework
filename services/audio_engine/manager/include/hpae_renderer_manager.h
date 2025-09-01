@@ -100,7 +100,7 @@ public:
     int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
 
 private:
-    void SendRequest(Request &&request, bool isInit = false);
+    void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
     int32_t StartRenderSink();
     bool IsMchDevice();
     int32_t CreateInputSession(const HpaeStreamInfo &streamInfo);
@@ -157,7 +157,7 @@ private:
     std::vector<int32_t> appsUid_;
     std::shared_ptr<HpaeCoBufferNode> hpaeCoBufferNode_;
     bool isCollaborationEnabled_ = false;
-    int64_t noneStreamTime_; // if no stream, 3s time out to stop rendersink
+    int64_t noneStreamTime_ = 0; // if no stream, 3s time out to stop rendersink
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

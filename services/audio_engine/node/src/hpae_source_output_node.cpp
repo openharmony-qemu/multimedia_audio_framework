@@ -184,7 +184,7 @@ void HpaeSourceOutputNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<H
 
 int32_t HpaeSourceOutputNode::SetState(HpaeSessionState captureState)
 {
-    AUDIO_INFO_LOG(" Capturer[%{public}s]->Session[%{public}u - %{public}d] state change:[%{public}s]-->[%{public}s]",
+    HILOG_COMM_INFO(" Capturer[%{public}s]->Session[%{public}u - %{public}d] state change:[%{public}s]-->[%{public}s]",
         GetDeviceClass().c_str(), GetSessionId(), GetStreamType(), ConvertSessionState2Str(state_).c_str(),
         ConvertSessionState2Str(captureState).c_str());
     state_ = captureState;

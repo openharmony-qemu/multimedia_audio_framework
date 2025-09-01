@@ -101,7 +101,7 @@ void HpaeSinkOutputNode::DoProcess()
         AUDIO_ERR_LOG("HpaeSinkOutputNode: RenderFrame failed");
         if (GetDeviceClass() != "remote") {
             periodTimer_.Stop();
-            uint64_t usedTimeUs = periodTimer_.Elapsed<std::chrono::microseconds>();
+            uint64_t usedTimeUs = static_cast<uint64_t>(periodTimer_.Elapsed<std::chrono::microseconds>());
             usleep(SLEEP_TIME_IN_US > usedTimeUs ? SLEEP_TIME_IN_US - usedTimeUs : 0);
         }
     }
@@ -335,7 +335,7 @@ StreamManagerState HpaeSinkOutputNode::GetSinkState(void)
 
 int32_t HpaeSinkOutputNode::SetSinkState(StreamManagerState sinkState)
 {
-    AUDIO_INFO_LOG("Sink[%{public}s] state change:[%{public}s]-->[%{public}s]",
+    HILOG_COMM_INFO("Sink[%{public}s] state change:[%{public}s]-->[%{public}s]",
         GetDeviceClass().c_str(), ConvertStreamManagerState2Str(state_).c_str(),
         ConvertStreamManagerState2Str(sinkState).c_str());
     state_ = sinkState;

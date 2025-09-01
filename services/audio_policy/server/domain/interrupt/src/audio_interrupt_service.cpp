@@ -2355,7 +2355,7 @@ void AudioInterruptService::UpdateAudioSceneFromInterrupt(const AudioScene audio
     policyServer_->GetAudioScene(scene);
     AudioScene currentAudioScene = static_cast<AudioScene>(scene);
     if (currentAudioScene != audioScene) {
-        AUDIO_PRERELEASE_LOGI("currentScene: %{public}d, targetScene: %{public}d, changeType: %{public}d",
+        HILOG_COMM_INFO("currentScene: %{public}d, targetScene: %{public}d, changeType: %{public}d",
             currentAudioScene, audioScene, changeType);
     }
 

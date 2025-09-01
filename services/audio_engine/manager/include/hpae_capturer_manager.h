@@ -76,7 +76,7 @@ public:
     int32_t DumpSourceInfo() override;
     std::string GetDeviceHDFDumpInfo() override;
 private:
-    void SendRequest(Request &&request, bool isInit = false);
+    void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
     int32_t CreateOutputSession(const HpaeStreamInfo &streamInfo);
     int32_t DeleteOutputSession(uint32_t sessionId);
     void ConnectProcessClusterWithEc(HpaeProcessorType &sceneType);

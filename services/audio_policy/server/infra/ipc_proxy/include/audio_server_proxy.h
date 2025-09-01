@@ -122,6 +122,7 @@ public:
     void SetBtHdiInvalidState();
     int32_t ForceStopAudioStreamProxy(StopAudioType audioType);
     void SendInterruptEventToAudioServerProxy(InterruptEventInternal interruptEvent, int32_t sessionId);
+    int32_t GetPrivacyType(const uint32_t sessionId, AudioPrivacyType &privacyType);
 private:
     AudioServerProxy() {}
     ~AudioServerProxy() {}

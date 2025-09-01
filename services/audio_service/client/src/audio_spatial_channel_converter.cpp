@@ -73,7 +73,7 @@ bool AudioSpatialChannelConverter::Init(const AudioStreamParams info, const Conv
     outChannel_ = info.channels;
 
     encoding_ = info.encoding;
-    sampleRate_ = info.samplingRate;
+    sampleRate_ = info.customSampleRate == 0 ? info.samplingRate : info.customSampleRate;
 
     bps_ = GetBps(info.format);
     CHECK_AND_RETURN_RET_LOG(bps_ > 0, false, "channel converter: Unsupported sample format");

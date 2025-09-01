@@ -1154,5 +1154,76 @@ HWTEST(AudioSettingProviderUnitTest, ParseJsonArray_020, TestSize.Level1)
 
     EXPECT_FALSE(result.empty());
 }
+
+/**
+ * @tc.name  : Test StringToInt32 API
+ * @tc.type  : FUNC
+ * @tc.number: StringToInt32
+ * @tc.desc  : Test StringToInt32
+ */
+HWTEST(AudioSettingProviderUnitTest, StringToInt32, TestSize.Level1)
+{
+    AudioSettingProvider* pder = nullptr;
+    int32_t systemAbilityId = 1;
+    pder = &AudioSettingProvider::GetInstance(systemAbilityId);
+    ASSERT_TRUE(pder != nullptr);
+
+    int32_t value = 0;
+    EXPECT_EQ(pder->StringToInt32("1", value), SUCCESS);
+    EXPECT_EQ(pder->StringToInt32(" 1", value), SUCCESS);
+    EXPECT_NE(pder->StringToInt32(" ", value), SUCCESS);
+    EXPECT_NE(pder->StringToInt32("", value), SUCCESS);
+    EXPECT_NE(pder->StringToInt32("1a", value), SUCCESS);
+    EXPECT_NE(pder->StringToInt32("99999999999999", value), SUCCESS);
+    EXPECT_NE(pder->StringToInt32("a1", value), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test StringToInt64 API
+ * @tc.type  : FUNC
+ * @tc.number: StringToInt64
+ * @tc.desc  : Test StringToInt64
+ */
+HWTEST(AudioSettingProviderUnitTest, StringToInt64, TestSize.Level1)
+{
+    AudioSettingProvider* pder = nullptr;
+    int32_t systemAbilityId = 1;
+    pder = &AudioSettingProvider::GetInstance(systemAbilityId);
+    ASSERT_TRUE(pder != nullptr);
+
+    int64_t value = 0;
+    EXPECT_EQ(pder->StringToInt64("1", value), SUCCESS);
+    EXPECT_EQ(pder->StringToInt64(" 1", value), SUCCESS);
+    EXPECT_NE(pder->StringToInt64("  ", value), SUCCESS);
+    EXPECT_NE(pder->StringToInt64("1a", value), SUCCESS);
+    EXPECT_NE(pder->StringToInt64("99999999999999", value), SUCCESS);
+    EXPECT_NE(pder->StringToInt64("a1", value), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test TrimLeft API
+ * @tc.type  : FUNC
+ * @tc.number: TrimLeft
+ * @tc.desc  : Test TrimLeft
+ */
+HWTEST(AudioSettingProviderUnitTest, TrimLeft, TestSize.Level1)
+{
+    AudioSettingProvider* pder = nullptr;
+    int32_t systemAbilityId = 1;
+    pder = &AudioSettingProvider::GetInstance(systemAbilityId);
+    ASSERT_TRUE(pder != nullptr);
+
+    std::string value = "";
+    pder->TrimLeft(value);
+    EXPECT_EQ(value, "");
+
+    value = " ";
+    pder->TrimLeft(value);
+    EXPECT_EQ(value, "");
+
+    value = " 1";
+    pder->TrimLeft(value);
+    EXPECT_EQ(value, "1");
+}
 } // namespace AudioStandard
 } // namespace OHOS

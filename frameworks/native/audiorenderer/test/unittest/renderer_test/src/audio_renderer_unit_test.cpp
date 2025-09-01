@@ -437,7 +437,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_015, TestSize.Level0)
  *             rendererOptions.streamInfo.encoding = ENCODING_PCM;
  *             rendererOptions.streamInfo.format = SAMPLE_S24LE;
  *             rendererOptions.streamInfo.channels = MONO;
- *             rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_SYSTEM;
+ *             rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
  *             rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_VKB_NORMAL;
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_016, TestSize.Level1)
@@ -447,7 +447,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_016, TestSize.Level1)
     rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
     rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
     rendererOptions.streamInfo.channels = AudioChannel::MONO;
-    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_SYSTEM;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION;
     rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_VKB_NORMAL;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
@@ -469,7 +469,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_016, TestSize.Level1)
  *             rendererOptions.streamInfo.encoding = ENCODING_PCM;
  *             rendererOptions.streamInfo.format = SAMPLE_S24LE;
  *             rendererOptions.streamInfo.channels = MONO;
- *             rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_SYSTEM;
+ *             rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
  *             rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_VKB_FAST;
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_017, TestSize.Level1)
@@ -479,7 +479,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_017, TestSize.Level1)
     rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
     rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
     rendererOptions.streamInfo.channels = AudioChannel::MONO;
-    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_SYSTEM;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION;
     rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_VKB_FAST;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
@@ -501,7 +501,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_017, TestSize.Level1)
  *             rendererOptions.streamInfo.encoding = ENCODING_PCM;
  *             rendererOptions.streamInfo.format = SAMPLE_S24LE;
  *             rendererOptions.streamInfo.channels = MONO;
- *             rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_SYSTEM;
+ *             rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
  *             rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
  */
 HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_018, TestSize.Level1)
@@ -511,7 +511,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_018, TestSize.Level1)
     rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
     rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
     rendererOptions.streamInfo.channels = AudioChannel::MONO;
-    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_SYSTEM;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION;
     rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
 
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
@@ -4592,6 +4592,20 @@ HWTEST(AudioRendererUnitTest, NotifyForcedEvent_001, TestSize.Level1)
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_RESUME, 20.0f};
     audioInterruptCallback->NotifyForcedEvent(interruptEvent);
     EXPECT_FALSE(audioInterruptCallback->isForcePaused_);
+}
+
+/**
+ * @tc.name  : Test CheckSupportedSamplingRates
+ * @tc.number: CheckSupportedSamplingRates
+ * @tc.desc  : Test CheckSupportedSamplingRates the branch when custom sample rates differ
+ */
+ HWTEST(AudioRendererUnitTest, CheckSupportedSamplingRatesTest, TestSize.Level0)
+{
+    EXPECT_TRUE(AudioRenderer::CheckSupportedSamplingRates(RenderUT::SAMPLE_RATE_16010));
+    EXPECT_TRUE(AudioRenderer::CheckSupportedSamplingRates(SAMPLE_RATE_11025));
+    EXPECT_FALSE(AudioRenderer::CheckSupportedSamplingRates(RenderUT::SAMPLE_RATE_7999));
+    EXPECT_FALSE(AudioRenderer::CheckSupportedSamplingRates(RenderUT::SAMPLE_RATE_384001));
+    EXPECT_FALSE(AudioRenderer::CheckSupportedSamplingRates(RenderUT::SAMPLE_RATE_16001));
 }
 } // namespace AudioStandard
 } // namespace OHOS

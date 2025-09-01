@@ -108,6 +108,7 @@ static AudioRendererParams SetStreamInfoToParams(const AudioStreamInfo &streamIn
     AudioRendererParams params;
     params.sampleFormat = streamInfo.format;
     params.sampleRate = streamInfo.samplingRate;
+    params.customSampleRate = streamInfo.customSampleRate;
     params.channelCount = streamInfo.channels;
     params.encodingType = streamInfo.encoding;
     params.channelLayout = streamInfo.channelLayout;
@@ -444,6 +445,12 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
     state_ = RENDERER_PREPARED;
 }
 
+bool AudioRenderer::CheckSupportedSamplingRates(uint32_t rates)
+{
+    return (rates >= SAMPLE_RATE_8000 && rates <= SAMPLE_RATE_384000 && rates % SAMPLE_RATE_RESOLUTION_10 == 0) ||
+        rates == SAMPLE_RATE_11025;
+}
+
 // Inner function. Must be called with AudioRendererPrivate::rendererMutex_
 // or AudioRendererPrivate::streamMutex_ held.
 int32_t AudioRendererPrivate::InitAudioInterruptCallback(bool isRestoreAudio)
@@ -660,7 +667,8 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 
     RegisterRendererPolicyServiceDiedCallback();
     // eg: 100005_44100_2_1_client_in.pcm
-    std::string dumpFileName = std::to_string(sessionID_) + "_" + std::to_string(params.sampleRate) + "_" +
+    std::string dumpFileName = std::to_string(sessionID_) + "_" +
+        std::to_string(params.customSampleRate == 0 ? params.sampleRate : params.customSampleRate) + "_" +
         std::to_string(params.channelCount) + "_" + std::to_string(params.sampleFormat) + "_client_in.pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
 
@@ -711,6 +719,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::ConvertToStreamDesc
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->streamInfo_.format = static_cast<AudioSampleFormat>(audioStreamParams.format);
     streamDesc->streamInfo_.samplingRate = static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
+    streamDesc->streamInfo_.customSampleRate = audioStreamParams.customSampleRate;
     streamDesc->streamInfo_.channels = static_cast<AudioChannel>(audioStreamParams.channels);
     streamDesc->streamInfo_.encoding = static_cast<AudioEncodingType>(audioStreamParams.encoding);
     streamDesc->streamInfo_.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.channelLayout);
@@ -2171,6 +2180,7 @@ void AudioRendererPrivate::InitSwitchInfo(IAudioStream::StreamClass targetClass,
         info.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
     }
     info.params.originalSessionId = sessionID_;
+    AUDIO_INFO_LOG("rendererInfo_.rendererFlags: %{public}u", rendererInfo_.rendererFlags);
     return;
 }
 
@@ -2253,6 +2263,10 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "SetParams GetPlayBackStream failed.");
     AUDIO_INFO_LOG("Get new stream success!");
 
+    // The latest route info returned by create needs to be used to update audioFlag,
+    // the server can obtain the route info to proceed with start.
+    switchInfo.rendererInfo.audioFlag = flag;
+    AUDIO_INFO_LOG("SetSwitchInfo, audioFlag: %{public}u", flag);
     // set new stream info. When switch to fast stream failed, call SetSwitchInfo again
     // and switch to normal ipc stream to avoid silence.
     switchResult = SetSwitchInfo(switchInfo, newAudioStream);
@@ -2272,6 +2286,8 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
             switchInfo.eStreamType, appInfo_.appUid);
         targetClass = IAudioStream::PA_STREAM;
         CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "Get ipc stream failed");
+        switchInfo.rendererInfo.audioFlag = flag;
+        AUDIO_INFO_LOG("SetSwitchInfo fail, try again, audioFlag: %{public}u", flag);
         switchResult = SetSwitchInfo(switchInfo, newAudioStream);
         CHECK_AND_RETURN_RET_LOG(switchResult, false, "Init ipc stream failed");
     }

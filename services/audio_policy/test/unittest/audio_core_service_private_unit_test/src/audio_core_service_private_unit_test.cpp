@@ -2258,10 +2258,16 @@ HWTEST_F(AudioCoreServicePrivateTest, UpdateModemRoute_001, TestSize.Level1)
     EXPECT_NE(audioCoreService->pipeManager_->modemCommunicationIdMap_[0], nullptr);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> modemDescs =
         audioCoreService->audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_MODEM_COMMUNICATION, -1, "");
+
     audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
     int32_t ret = audioCoreService->UpdateModemRoute(modemDescs);
-    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
     EXPECT_EQ(ret, SUCCESS);
+
+    audioCoreService->needUnmuteVoiceCall_ = true;
+    ret = audioCoreService->UpdateModemRoute(modemDescs);
+    EXPECT_EQ(ret, SUCCESS);
+
+    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
 }
 
 /**
@@ -2283,6 +2289,39 @@ HWTEST_F(AudioCoreServicePrivateTest, UpdateModemRoute_002, TestSize.Level1)
     audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
     int32_t ret = audioCoreService->UpdateModemRoute(modemDescs);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: GetVoiceCallMuteDuration_001
+ * @tc.desc  : Test AudioCoreService::GetVoiceCallMuteDuration
+ */
+HWTEST_F(AudioCoreServicePrivateTest, GetVoiceCallMuteDuration_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    AudioDeviceDescriptor desc1(DeviceType::DEVICE_TYPE_EARPIECE, DeviceRole::OUTPUT_DEVICE);
+    AudioDeviceDescriptor desc2(DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    AudioDeviceDescriptor desc3(DeviceType::DEVICE_TYPE_USB_HEADSET, DeviceRole::OUTPUT_DEVICE);
+    AudioDeviceDescriptor desc4(DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    desc4.networkId_ = "RemoteDevice";
+    uint32_t targetMuteDuration = 100000;
+
+    uint32_t muteDuration = audioCoreService->GetVoiceCallMuteDuration(desc1, desc1);
+    EXPECT_EQ(muteDuration, 0);
+
+    muteDuration = audioCoreService->GetVoiceCallMuteDuration(desc1, desc2);
+    EXPECT_EQ(muteDuration, 0);
+
+    muteDuration = audioCoreService->GetVoiceCallMuteDuration(desc1, desc3);
+    EXPECT_EQ(muteDuration, targetMuteDuration);
+
+    muteDuration = audioCoreService->GetVoiceCallMuteDuration(desc3, desc1);
+    EXPECT_EQ(muteDuration, targetMuteDuration);
+
+    muteDuration = audioCoreService->GetVoiceCallMuteDuration(desc1, desc4);
+    EXPECT_EQ(muteDuration, targetMuteDuration);
 }
 
 /**

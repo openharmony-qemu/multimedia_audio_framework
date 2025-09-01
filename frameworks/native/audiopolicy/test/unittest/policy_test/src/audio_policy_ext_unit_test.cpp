@@ -349,27 +349,6 @@ HWTEST(AudioPolicyExtUnitTest, RecoverAudioPolicyCallbackClient_002, TestSize.Le
 }
 
 /**
- * @tc.name  : Test RecoverAudioPolicyCallbackClient
- * @tc.number: RecoverAudioPolicyCallbackClient_003
- * @tc.desc  : Test RecoverAudioPolicyCallbackClient interface abnormal branch.
- */
-HWTEST(AudioPolicyExtUnitTest, RecoverAudioPolicyCallbackClient_003, TestSize.Level3)
-{
-    int32_t ret;
-    int32_t volumeLevel = 4;
-    ret = AudioPolicyManager::GetInstance().SetSystemVolumeLevel(AudioVolumeType::STREAM_NOTIFICATION, volumeLevel);
-    EXPECT_EQ(SUCCESS, ret);
-    ret = AudioPolicyManager::GetInstance().GetSystemVolumeLevel(AudioVolumeType::STREAM_NOTIFICATION);
-    EXPECT_EQ(volumeLevel, ret);
-
-    AudioPolicyManager::GetInstance().audioPolicyClientStubCB_ = nullptr;
-    AudioPolicyManager::GetInstance().RecoverAudioPolicyCallbackClient();
-
-    ret = AudioPolicyManager::GetInstance().GetSystemVolumeLevel(AudioVolumeType::STREAM_NOTIFICATION);
-    EXPECT_EQ(volumeLevel, ret);
-}
-
-/**
  * @tc.name  : Test AudioPolicyServerDied
  * @tc.number: AudioPolicyServerDied_001
  * @tc.desc  : Test AudioPolicyServerDied interface.

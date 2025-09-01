@@ -63,6 +63,7 @@ public:
 
     // Get call render device selected by the user
     shared_ptr<AudioDeviceDescriptor> GetPreferredCallRenderDevice();
+    shared_ptr<AudioDeviceDescriptor> GetPreferredCallRenderDeviceForUid(const int32_t clientUid);
 
     // Get call capture device selected by the user
     shared_ptr<AudioDeviceDescriptor> GetPreferredCallCaptureDevice();

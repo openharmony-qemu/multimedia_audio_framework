@@ -29,6 +29,11 @@ public:
     virtual void OnWorkgroupChange(const AudioWorkgroupChangeInfo &info) = 0;
 };
 
+struct AudioWorkgroupCgroupLimit {
+    int32_t clientPid;
+    int32_t globalCgroupId;
+};
+
 class AudioWorkgroup {
 public:
     explicit AudioWorkgroup(int32_t id);
@@ -40,11 +45,14 @@ public:
     int32_t RemoveThread(int32_t tid);
     int32_t Start(uint64_t startTime, uint64_t deadlineTime);
     int32_t Stop();
+    int32_t GetCgroupLimitId();
+    void SetCgroupLimitParams(int32_t pid, int32_t globalCgroupId);
     std::shared_ptr<AudioWorkgroupCallbackForMonitor> callback;
 
 private:
     int32_t workgroupId;
     std::unordered_map<int32_t, bool> threads;
+    AudioWorkgroupCgroupLimit cgroupLimit;
 };
 
 } // namespace AudioStandard

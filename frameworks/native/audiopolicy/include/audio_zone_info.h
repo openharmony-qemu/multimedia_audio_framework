@@ -23,6 +23,8 @@
 #include "audio_device_info.h"
 #include "audio_device_descriptor.h"
 
+#define ZONE_MAX_DEVICE_SIZE    128
+
 namespace OHOS {
 namespace AudioStandard {
 enum class AudioZoneChangeReason {
@@ -114,8 +116,8 @@ public:
         uids_ = UnmarshallingSetInt32<int32_t>(parcel);
 
         size_t size = parcel.ReadUint64();
-        if (size > std::numeric_limits<size_t>::max()) {
-            size = std::numeric_limits<size_t>::max();
+        if (size > ZONE_MAX_DEVICE_SIZE) {
+            size = ZONE_MAX_DEVICE_SIZE;
         }
 
         for (size_t i = 0; i < size; i++) {

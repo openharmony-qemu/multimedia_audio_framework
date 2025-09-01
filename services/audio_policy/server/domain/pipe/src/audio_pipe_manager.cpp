@@ -48,11 +48,12 @@ void AudioPipeManager::AddAudioPipeInfo(std::shared_ptr<AudioPipeInfo> info)
 void AudioPipeManager::RemoveAudioPipeInfo(std::shared_ptr<AudioPipeInfo> info)
 {
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
-    for (auto iter = curPipeList_.begin(); iter != curPipeList_.end(); iter++) {
+    for (auto iter = curPipeList_.begin(); iter != curPipeList_.end();) {
         if (IsSamePipe(info, *iter)) {
             AUDIO_INFO_LOG("Remove id:%{public}u, name %{public}s", info->id_, info->name_.c_str());
-            curPipeList_.erase(iter);
-            break;
+            iter = curPipeList_.erase(iter);
+        } else {
+            ++iter;
         }
     }
 }
@@ -60,11 +61,12 @@ void AudioPipeManager::RemoveAudioPipeInfo(std::shared_ptr<AudioPipeInfo> info)
 void AudioPipeManager::RemoveAudioPipeInfo(AudioIOHandle id)
 {
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
-    for (auto iter = curPipeList_.begin(); iter != curPipeList_.end(); iter++) {
+    for (auto iter = curPipeList_.begin(); iter != curPipeList_.end();) {
         if ((*iter)->id_ == id) {
             AUDIO_INFO_LOG("Remove id:%{public}u, name: %{public}s", id, (*iter)->name_.c_str());
-            curPipeList_.erase(iter);
-            break;
+            iter = curPipeList_.erase(iter);
+        } else {
+            ++iter;
         }
     }
 }
@@ -487,7 +489,7 @@ std::shared_ptr<AudioPipeInfo> AudioPipeManager::GetNormalSourceInfo(bool isEcFe
     pipeInfo = GetPipeByModuleAndFlag(BLUETOOTH_MIC, AUDIO_INPUT_FLAG_NORMAL);
     CHECK_AND_RETURN_RET(pipeInfo == nullptr, pipeInfo);
     if (isEcFeatureEnable) {
-        pipeInfo = GetPipeByModuleAndFlag(BLUETOOTH_MIC, AUDIO_INPUT_FLAG_NORMAL);
+        pipeInfo = GetPipeByModuleAndFlag(USB_MIC, AUDIO_INPUT_FLAG_NORMAL);
     }
     return pipeInfo;
 }

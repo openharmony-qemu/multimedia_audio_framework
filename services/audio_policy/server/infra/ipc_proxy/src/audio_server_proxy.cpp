@@ -712,5 +712,18 @@ void AudioServerProxy::SendInterruptEventToAudioServerProxy(InterruptEventIntern
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
+int32_t AudioServerProxy::GetPrivacyType(const uint32_t sessionId, AudioPrivacyType &privacyType)
+{
+    const sptr gsp = GetAudioServerProxy();
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "error for audio server proxy null");
+    int32_t ret = ERROR;
+    int32_t type;
+    gsp->GetPrivacyTypeAudioServer(sessionId, type, ret);
+    IPCSkeleton::SetCallingIdentity(identity);
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    privacyType = static_cast<AudioPrivacyType>(type);
+    return ret;
+}
 }
 }

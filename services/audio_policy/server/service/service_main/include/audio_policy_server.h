@@ -156,7 +156,10 @@ public:
     void MapExternalToInternalDeviceType(AudioDeviceDescriptor &desc);
 
     int32_t SelectOutputDevice(const sptr<AudioRendererFilter> &audioRendererFilter,
-        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) override;
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors,
+        const int32_t audioDeviceSelectMode = 0) override;
+
+    int32_t RestoreOutputDevice(const sptr<AudioRendererFilter> &audioRendererFilter) override;
 
     int32_t GetSelectedDeviceInfo(int32_t uid, int32_t pid, int32_t streamType, std::string &info) override;
 
@@ -339,7 +342,7 @@ public:
 
     int32_t IsAcousticEchoCancelerSupported(int32_t sourceType, bool &ret) override;
     int32_t IsAudioLoopbackSupported(int32_t mode, bool &ret) override;
-    int32_t IsCurrentDeviceEnableIntelligentNoiseReduction(int32_t sourceType, bool &ret) override;
+    int32_t IsIntelligentNoiseReductionEnabledForCurrentDevice(int32_t sourceType, bool &ret) override;
     int32_t SetKaraokeParameters(const std::string &parameters, bool &ret) override;
 
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
@@ -358,7 +361,7 @@ public:
 
     int32_t SetClientCallbacksEnable(int32_t callbackchange, bool enable) override;
 
-    int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo) override;
+    int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid = -1) override;
 
     int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
 
@@ -688,9 +691,6 @@ public:
     int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t command) override;
     int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object) override;
     int32_t CallRingtoneLibrary();
-    int32_t SetSystemVolumeDegree(int32_t streamType, int32_t volumeDegree, int32_t volumeFlag, int32_t uid) override;
-    int32_t GetSystemVolumeDegree(int32_t streamType, int32_t uid, int32_t &volumeDegree) override;
-    int32_t GetMinVolumeDegree(int32_t volumeType, int32_t &volumeDegree) override;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     bool ReloadLoudVolumeMode(const AudioStreamType streamInFocus,
         SetLoudVolMode setVolMode = LOUD_VOLUME_SWITCH_UNSET);
@@ -703,9 +703,6 @@ protected:
     int32_t GetApiTargetVersion();
 
 private:
-    int32_t SetSystemVolumeDegreeInner(AudioStreamType streamType, int32_t volumeDegree,
-        bool isUpdateUi, int32_t uid);
-
     friend class AudioInterruptService;
 
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;

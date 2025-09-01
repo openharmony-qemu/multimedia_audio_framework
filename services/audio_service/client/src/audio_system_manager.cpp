@@ -46,6 +46,8 @@ using namespace std;
 constexpr unsigned int GET_BUNDLE_INFO_TIME_OUT_SECONDS = 10;
 constexpr unsigned int XCOLLIE_TIME_OUT_SECONDS = 10;
 constexpr unsigned int MS_PER_SECOND = 1000;
+constexpr unsigned int AUDIO_DEADLINE_PARAM_MIN = 10;
+constexpr unsigned int AUDIO_DEADLINE_PARAM_MAX = 50;
 constexpr size_t VALID_REMOTE_NETWORK_ID_LENGTH = 64;
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioSystemManager::streamTypeMap_
     = AudioSystemManager::CreateStreamMap();
@@ -629,7 +631,7 @@ int32_t AudioSystemManager::SetActiveVolumeTypeCallback(
     return AudioPolicyManager::GetInstance().SetActiveVolumeTypeCallback(callback);
 }
 
-int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volumeLevel) const
+int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volumeLevel, int32_t uid) const
 {
     AUDIO_INFO_LOG("SetSystemVolume: volumeType[%{public}d], volumeLevel[%{public}d]", volumeType, volumeLevel);
 
@@ -657,7 +659,7 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
     }
 
     /* Call Audio Policy SetSystemVolumeLevel */
-    return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volumeLevel, true);
+    return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volumeLevel, uid == 0, 0, uid);
 }
 
 int32_t AudioSystemManager::SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
@@ -693,7 +695,7 @@ int32_t AudioSystemManager::SetVolumeWithDevice(AudioVolumeType volumeType, int3
     return AudioPolicyManager::GetInstance().SetSystemVolumeLevelWithDevice(volumeType, volumeLevel, deviceType);
 }
 
-int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
+int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType, int32_t uid) const
 {
     switch (volumeType) {
         case STREAM_MUSIC:
@@ -718,7 +720,7 @@ int32_t AudioSystemManager::GetVolume(AudioVolumeType volumeType) const
             return ERR_NOT_SUPPORTED;
     }
 
-    return AudioPolicyManager::GetInstance().GetSystemVolumeLevel(volumeType);
+    return AudioPolicyManager::GetInstance().GetSystemVolumeLevel(volumeType, uid);
 }
 
 int32_t AudioSystemManager::SetLowPowerVolume(int32_t streamId, float volume) const
@@ -1030,7 +1032,8 @@ std::string AudioSystemManager::GetSelectedDeviceInfo(int32_t uid, int32_t pid, 
 }
 
 int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors,
+    const int32_t audioDeviceSelectMode) const
 {
     // basic check
     CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr && audioDeviceDescriptors.size() != 0,
@@ -1041,7 +1044,7 @@ int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         audioDeviceDescriptors[0] != nullptr, ERR_INVALID_OPERATION, "device error");
     audioRendererFilter->streamType = AudioSystemManager::GetStreamType(audioRendererFilter->rendererInfo.contentType,
         audioRendererFilter->rendererInfo.streamUsage);
-    // operation chack
+    // operation check
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors[0]->deviceRole_ == DeviceRole::OUTPUT_DEVICE,
         ERR_INVALID_OPERATION, "not an output device.");
 
@@ -1051,11 +1054,16 @@ int32_t AudioSystemManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     CHECK_AND_RETURN_RET_LOG(audioRendererFilter->uid >= 0 || (audioRendererFilter->uid == -1),
         ERR_INVALID_PARAM, "invalid uid.");
 
-    AUDIO_DEBUG_LOG("[%{public}d] SelectOutputDevice: uid<%{public}d> streamType<%{public}d> device<name:%{public}s>",
-        getpid(), audioRendererFilter->uid, static_cast<int32_t>(audioRendererFilter->streamType),
-        (audioDeviceDescriptors[0]->networkId_.c_str()));
+    CHECK_AND_RETURN_RET_LOG(audioDeviceSelectMode == 0 || audioDeviceSelectMode == 1,
+        ERR_INVALID_PARAM, "invalid audioDeviceSelectMode.");
 
-    return AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
+    AUDIO_DEBUG_LOG("[%{public}d] SelectOutputDevice: uid<%{public}d> streamType<%{public}d> device<name:%{public}s> " \
+        " audioDeviceSelectMode<%{public}d>", getpid(), audioRendererFilter->uid,
+        static_cast<int32_t>(audioRendererFilter->streamType), (audioDeviceDescriptors[0]->networkId_.c_str()),
+        audioDeviceSelectMode);
+
+    return AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors,
+        audioDeviceSelectMode);
 }
 
 int32_t AudioSystemManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
@@ -1258,29 +1266,6 @@ int32_t AudioSystemManager::UnregisterVolumeKeyEventCallback(const int32_t clien
     int32_t ret = AudioPolicyManager::GetInstance().UnsetVolumeKeyEventCallback(callback);
     if (!ret) {
         AUDIO_DEBUG_LOG("UnsetVolumeKeyEventCallback success");
-    }
-    return ret;
-}
-
-int32_t AudioSystemManager::RegisterVolumeDegreeCallback(const int32_t clientPid,
-    const std::shared_ptr<VolumeKeyEventCallback> &callback)
-{
-    AUDIO_DEBUG_LOG("register");
-
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
-        "nullptr");
-    volumeChangeClientPid_ = clientPid;
-
-    return AudioPolicyManager::GetInstance().SetVolumeDegreeCallback(clientPid, callback);
-}
-
-int32_t AudioSystemManager::UnregisterVolumeDegreeCallback(const int32_t clientPid,
-    const std::shared_ptr<VolumeKeyEventCallback> &callback)
-{
-    AUDIO_DEBUG_LOG("unregister");
-    int32_t ret = AudioPolicyManager::GetInstance().UnsetVolumeDegreeCallback(callback);
-    if (!ret) {
-        AUDIO_DEBUG_LOG("success");
     }
     return ret;
 }
@@ -2335,7 +2320,7 @@ int32_t AudioSystemManager::CreateAudioWorkgroup()
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS && workgroupId >= 0, AUDIO_ERR,
         "CreateAudioWorkgroup failed, res:%{public}d workgroupId:%{public}d", res, workgroupId);
 
-    std::lock_guard<std::mutex> lock(workgroupPrioRecorderMutex_);
+    std::lock_guard<std::mutex> recorderLock(workgroupPrioRecorderMutex_);
     workgroupPrioRecorderMap_.emplace(workgroupId, std::make_shared<WorkgroupPrioRecorder>(workgroupId));
     return workgroupId;
 }
@@ -2351,7 +2336,7 @@ int32_t AudioSystemManager::ReleaseAudioWorkgroup(int32_t workgroupId)
         if (recorder->RestoreGroupPrio(false) != AUDIO_OK) {
             AUDIO_ERR_LOG("[WorkgroupInClient] restore grp:%{public}d prio failed", workgroupId);
         } else {
-            std::lock_guard<std::mutex> lock(workgroupPrioRecorderMutex_);
+            std::lock_guard<std::mutex> recorderLock(workgroupPrioRecorderMutex_);
             workgroupPrioRecorderMap_.erase(workgroupId);
         }
     }
@@ -2393,7 +2378,7 @@ int32_t AudioSystemManager::RemoveThreadFromGroup(int32_t workgroupId, int32_t t
     return gasp->RemoveThreadFromGroup(getpid(), workgroupId, tokenId);
 }
 
-int32_t AudioSystemManager::ExcuteAudioWorkgroupPrioImprove(int32_t workgroupId,
+int32_t AudioSystemManager::ExecuteAudioWorkgroupPrioImprove(int32_t workgroupId,
     const std::unordered_map<int32_t, bool> threads, bool &needUpdatePrio)
 {
     bool restoreByPermission = false;
@@ -2424,16 +2409,20 @@ int32_t AudioSystemManager::StartGroup(int32_t workgroupId, uint64_t startTime, 
     const std::unordered_map<int32_t, bool> threads, bool &needUpdatePrio)
 {
     if (!IsValidToStartGroup(workgroupId)) {
+        StopGroup(workgroupId);
         return AUDIO_ERR;
     }
 
     Trace trace("[WorkgroupInClient] StartGroup workgroupId:" + std::to_string(workgroupId) +
         " startTime:" + std::to_string(startTime) + " deadlineTime:" + std::to_string(deadlineTime));
     CHECK_AND_RETURN_RET_LOG(deadlineTime > startTime, ERR_INVALID_PARAM, "Invalid Audio Deadline params");
-    RME::SetFrameRateAndPrioType(workgroupId, MS_PER_SECOND/(deadlineTime - startTime), 0);
+    int32_t audioDeadlineRate = MS_PER_SECOND / (deadlineTime - startTime);
+    CHECK_AND_RETURN_RET_LOG(audioDeadlineRate >= AUDIO_DEADLINE_PARAM_MIN &&
+        audioDeadlineRate <= AUDIO_DEADLINE_PARAM_MAX, ERR_INVALID_PARAM, "Invalid Audio Deadline Rate");
+    RME::SetFrameRateAndPrioType(workgroupId, audioDeadlineRate, 0);
 
-    if (ExcuteAudioWorkgroupPrioImprove(workgroupId, threads, needUpdatePrio) != AUDIO_OK) {
-        AUDIO_ERR_LOG("[WorkgroupInClient] excute audioworkgroup prio improve failed");
+    if (ExecuteAudioWorkgroupPrioImprove(workgroupId, threads, needUpdatePrio) != AUDIO_OK) {
+        AUDIO_ERR_LOG("[WorkgroupInClient] execute audioworkgroup prio improve failed");
         return AUDIO_ERR;
     }
 
@@ -2601,7 +2590,7 @@ int32_t AudioSystemManager::WorkgroupPrioRecorder::GetGrpId()
  
 std::shared_ptr<AudioSystemManager::WorkgroupPrioRecorder> AudioSystemManager::GetRecorderByGrpId(int32_t grpId)
 {
-    std::lock_guard<std::mutex> lock(workgroupPrioRecorderMutex_);
+    std::lock_guard<std::mutex> recorderLock(workgroupPrioRecorderMutex_);
     auto it = workgroupPrioRecorderMap_.find(grpId);
     if (it != workgroupPrioRecorderMap_.end()) {
         return it->second;
