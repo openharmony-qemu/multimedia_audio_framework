@@ -109,7 +109,6 @@ interface IAudioPolicy {
     void SelectOutputDevice([in] sptr<AudioRendererFilter> audioRendererFilter, [in] List<sharedptr<AudioDeviceDescriptor>> audioDeviceDescriptors, [in] int audioDeviceSelectMode);
     void GetSelectedDeviceInfo([in] int uid, [in] int pid, [in] int streamType, [out] String retStr);
     void SelectInputDevice([in] sptr<AudioCapturerFilter> audioCapturerFilter, [in] List<sharedptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
-    void SelectInputDevice([in] sharedptr<AudioDeviceDescriptor> audioDeviceDescriptor);
     void GetPreferredOutputStreamType([in] AudioRendererInfo rendererInfo, [out] int streamType);
     void GetPreferredInputStreamType([in] AudioCapturerInfo capturerInfo, [out] int streamType);
     void CreateRendererClient([in] sharedptr<AudioStreamDescriptor> streamDesc, [out] unsigned int flag, [inout] unsigned int sessionId, [out] String networkId);
@@ -149,8 +148,6 @@ interface IAudioPolicy {
     void SetA2dpDeviceVolume([in] String macAddress, [in] int volume, [in] boolean updateUi);
     void SetNearlinkDeviceVolume([in] String macAddress, [in] int volumeType, [in] int volume, [in] boolean updateUi);
     void GetAvailableDevices([in] int usage, [out] List<sharedptr<AudioDeviceDescriptor>> retDeviceList);
-    void GetSelectedInputDevice([out] sharedptr<AudioDeviceDescriptor> audioDeviceDescriptor);
-    void ClearSelectedInputDevice();
     void SetAvailableDeviceChangeCallback([in] int clientId, [in] int usage, [in] IRemoteObject object);
     void UnsetAvailableDeviceChangeCallback([in] int clientId, [in] int usage);
     void IsSpatializationEnabled([out] boolean ret);
@@ -300,6 +297,11 @@ interface IAudioPolicy {
     void GetAudioZoneByName([in] String name, [out] int zoneId);
     void AddStreamsToAudioZone([in] int zoneId, [in] List<AudioZoneStream> streams);
     void RemoveStreamsFromAudioZone([in] int zoneId, [in] List<AudioZoneStream> streams);
+    void SelectInputDevice([in] sharedptr<AudioDeviceDescriptor> audioDeviceDescriptor);
+    void GetSelectedInputDevice([out] sharedptr<AudioDeviceDescriptor> audioDeviceDescriptor);
+    void ClearSelectedInputDevice();
+    void PreferBluetoothAndNearlinkRecord([in] boolean isPreferred);
+    void GetPreferBluetoothAndNearlinkRecord([out] boolean isPreferred);
     void RestoreOutputDevice([in] sptr<AudioRendererFilter> audioRendererFilter);
 }
 

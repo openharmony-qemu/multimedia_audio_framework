@@ -41,12 +41,15 @@ public:
     void SelectInputDeviceByUid(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, int32_t uid);
     std::shared_ptr<AudioDeviceDescriptor> GetSelectedInputDeviceByUid(int32_t uid);
     void ClearSelectedInputDeviceByUid(int32_t uid);
+    void PreferBluetoothAndNearlinkRecordByUid(int32_t uid, bool isPreferred);
+    bool GetPreferBluetoothAndNearlinkRecordByUid(int32_t uid);
 
 private:
     AudioUsrSelectManager() {};
     ~AudioUsrSelectManager() {};
 
     std::unordered_map<pid_t, AudioDeviceList> audioUsrSelectMap_;
+    std::unordered_map<pid_t, bool> isPreferredBluetoothAndNearlinkRecordMap_;
     std::mutex mutex_;
 };
 
