@@ -738,7 +738,7 @@ void HpaeManager::MoveToPreferSink(const std::string &name, std::shared_ptr<Audi
         return;
     }
     auto request = [this, name, sessionIds, serviceCallback]() {
-        AUDIO_INFO_LOG("Move %{public}s To Prefer Sink: %{public}s", defaultSink_.c_str(), name.c_str());
+        HILOG_COMM_INFO("Move %{public}s To Prefer Sink: %{public}s", defaultSink_.c_str(), name.c_str());
         if (!SafeGetMap(rendererManagerMap_, defaultSink_)) {
             AUDIO_ERR_LOG("can not find default sink: %{public}s", defaultSink_.c_str());
             serviceCallback->OnOpenAudioPortCb(sinkNameSinkIdMap_[name]);
@@ -778,8 +778,7 @@ int32_t HpaeManager::MoveSourceOutputByIndexOrName(
         }
         std::string name = capturerIdSourceNameMap_[sourceOutputId];
         if (sourceName == name) {
-            AUDIO_INFO_LOG("move session:%{public}u,source:%{public}s is the same, no need move",
-                sourceOutputId, sourceName.c_str());
+            HILOG_COMM_INFO("source:%{public}s is the same, no need move", sourceName.c_str());
             if (auto serviceCallback = serviceCallback_.lock()) {
                 serviceCallback->OnMoveSourceOutputByIndexOrNameCb(SUCCESS);
             }
@@ -798,7 +797,7 @@ int32_t HpaeManager::MoveSourceOutputByIndexOrName(
 bool HpaeManager::CheckMoveSourceOutput(uint32_t sourceOutputId, const std::string &sourceName)
 {
     if (capturerIdStreamInfoMap_.find(sourceOutputId) == capturerIdStreamInfoMap_.end()) {
-        AUDIO_ERR_LOG("move session:%{public}u failed,can not find session.", sourceOutputId);
+        HILOG_COMM_INFO("move session:%{public}u failed,can not find session.", sourceOutputId);
         HpaeStreamMoveMonitor::ReportStreamMoveException(0, sourceOutputId, HPAE_STREAM_CLASS_TYPE_RECORD,
             "", sourceName, "can not find session");
         return false;
@@ -806,27 +805,27 @@ bool HpaeManager::CheckMoveSourceOutput(uint32_t sourceOutputId, const std::stri
     std::shared_ptr<IHpaeCapturerManager> oldCaptureManager = GetCapturerManagerById(sourceOutputId);
     HpaeStreamInfo stream = capturerIdStreamInfoMap_[sourceOutputId].streamInfo;
     if (oldCaptureManager == nullptr) {
-        AUDIO_ERR_LOG("move session:%{public}u failed,can not find source.", sourceOutputId);
+        HILOG_COMM_INFO("move session:%{public}u failed,can not find source.", sourceOutputId);
         HpaeStreamMoveMonitor::ReportStreamMoveException(stream.uid, sourceOutputId,
             HPAE_STREAM_CLASS_TYPE_RECORD, "", sourceName, "can not find source");
         return false;
     }
     if (sourceName.empty()) {
-        AUDIO_ERR_LOG("move session:%{public}u failed,source name is empty.", sourceOutputId);
+        HILOG_COMM_INFO("move session:%{public}u failed,source name is empty.", sourceOutputId);
         HpaeStreamMoveMonitor::ReportStreamMoveException(stream.uid, sourceOutputId,
             HPAE_STREAM_CLASS_TYPE_RECORD, capturerIdSourceNameMap_[sourceOutputId], "", "source name is empty");
         return false;
     }
     std::shared_ptr<IHpaeCapturerManager> captureManager = GetCapturerManagerByName(sourceName);
     if (captureManager == nullptr || !captureManager->IsInit()) {
-        AUDIO_ERR_LOG("move session:%{public}u failed, can not find source:%{public}s or source is not open.",
+        HILOG_COMM_INFO("move session:%{public}u failed, can not find source:%{public}s or source is not open.",
             sourceOutputId, sourceName.c_str());
         HpaeStreamMoveMonitor::ReportStreamMoveException(stream.uid, sourceOutputId,
             HPAE_STREAM_CLASS_TYPE_RECORD, capturerIdSourceNameMap_[sourceOutputId], sourceName, "source is not open");
         return false;
     }
     if (!capturerIdStreamInfoMap_[sourceOutputId].streamInfo.isMoveAble) {
-        AUDIO_ERR_LOG("move session:%{public}u failed,session is not moveable.", sourceOutputId);
+        HILOG_COMM_INFO("move session:%{public}u failed,session is not moveable.", sourceOutputId);
         HpaeStreamMoveMonitor::ReportStreamMoveException(stream.uid, sourceOutputId, HPAE_STREAM_CLASS_TYPE_RECORD,
             capturerIdSourceNameMap_[sourceOutputId], sourceName, "session is not moveable");
         return false;
@@ -837,7 +836,7 @@ bool HpaeManager::CheckMoveSourceOutput(uint32_t sourceOutputId, const std::stri
 bool HpaeManager::CheckMoveSinkInput(uint32_t sinkInputId, const std::string &sinkName)
 {
     if (rendererIdStreamInfoMap_.find(sinkInputId) == rendererIdStreamInfoMap_.end()) {
-        AUDIO_ERR_LOG("move session:%{public}u failed,can not find session", sinkInputId);
+        HILOG_COMM_INFO("move session:%{public}u failed,can not find session", sinkInputId);
         HpaeStreamMoveMonitor::ReportStreamMoveException(0, sinkInputId, HPAE_STREAM_CLASS_TYPE_PLAY,
             "", sinkName, "can not find session");
         return false;
@@ -845,27 +844,27 @@ bool HpaeManager::CheckMoveSinkInput(uint32_t sinkInputId, const std::string &si
     std::shared_ptr<IHpaeRendererManager> oldRendererManager = GetRendererManagerById(sinkInputId);
     HpaeStreamInfo stream = rendererIdStreamInfoMap_[sinkInputId].streamInfo;
     if (oldRendererManager == nullptr) {
-        AUDIO_ERR_LOG("move session:%{public}u failed,can not find sink", sinkInputId);
+        HILOG_COMM_INFO("move session:%{public}u failed,can not find sink", sinkInputId);
         HpaeStreamMoveMonitor::ReportStreamMoveException(stream.uid, sinkInputId, HPAE_STREAM_CLASS_TYPE_PLAY,
             "", sinkName, "src sink is not find");
         return false;
     }
     if (sinkName.empty()) {
-        AUDIO_ERR_LOG("move session:%{public}u failed,sink name is empty.", sinkInputId);
+        HILOG_COMM_INFO("move session:%{public}u failed,sink name is empty.", sinkInputId);
         HpaeStreamMoveMonitor::ReportStreamMoveException(stream.uid, sinkInputId, HPAE_STREAM_CLASS_TYPE_PLAY,
             rendererIdSinkNameMap_[sinkInputId], sinkName, "sink name is empty");
         return false;
     }
     std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(sinkName);
     if (rendererManager == nullptr || !rendererManager->IsInit()) {
-        AUDIO_ERR_LOG("move session:%{public}u failed, can not find sink:%{public}s or sink is not open.",
+        HILOG_COMM_INFO("move session:%{public}u failed, can not find sink:%{public}s or sink is not open.",
             sinkInputId, sinkName.c_str());
         HpaeStreamMoveMonitor::ReportStreamMoveException(stream.uid, sinkInputId, HPAE_STREAM_CLASS_TYPE_PLAY,
             rendererIdSinkNameMap_[sinkInputId], sinkName, "dest sink is not open");
         return false;
     }
     if (!rendererIdStreamInfoMap_[sinkInputId].streamInfo.isMoveAble) {
-        AUDIO_ERR_LOG("move session:%{public}u failed,session is not moveable.", sinkInputId);
+        HILOG_COMM_INFO("move session:%{public}u failed,session is not moveable.", sinkInputId);
         HpaeStreamMoveMonitor::ReportStreamMoveException(stream.uid, sinkInputId, HPAE_STREAM_CLASS_TYPE_PLAY,
             rendererIdSinkNameMap_[sinkInputId], sinkName, "session is not moveable");
         return false;
@@ -885,7 +884,7 @@ int32_t HpaeManager::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t s
 
         std::string name = rendererIdSinkNameMap_[sinkInputId];
         if (sinkName == name) {
-            AUDIO_INFO_LOG("sink:%{public}s is the same, no need move session:%{public}u", sinkName.c_str(),
+            HILOG_COMM_INFO("sink:%{public}s is the same, no need move session:%{public}u", sinkName.c_str(),
                 sinkInputId);
             if (auto serviceCallback = serviceCallback_.lock()) {
                 serviceCallback->OnMoveSinkInputByIndexOrNameCb(SUCCESS);
@@ -1216,7 +1215,7 @@ void HpaeManager::HandleDumpSourceInfo(std::string deviceName, std::string dumpS
 
 void HpaeManager::HandleReloadDeviceResult(std::string deviceName, int32_t result)
 {
-    AUDIO_INFO_LOG("deviceName:%{public}s result:%{public}d ", deviceName.c_str(), result);
+    HILOG_COMM_INFO("deviceName:%{public}s result:%{public}d", deviceName.c_str(), result);
     auto serviceCallback = serviceCallback_.lock();
     if (serviceCallback && result == SUCCESS) {
         if (sinkNameSinkIdMap_.find(deviceName) != sinkNameSinkIdMap_.end()) {
@@ -2357,7 +2356,7 @@ void HpaeManager::NotifyAccountsChanged()
     }
     std::string value = HpaePolicyManager::GetInstance().GetAudioParameter("primary", AudioParamKey::PARAM_KEY_STATE,
         "source_type_live_aec_supported");
-    AUDIO_INFO_LOG("live_aec_supported: %{public}s", value.c_str());
+    HILOG_COMM_INFO("live_aec_supported: %{public}s", value.c_str());
     if (value == "true") {
         return true;
     }
@@ -2369,7 +2368,7 @@ void HpaeManager::LoadEffectLive()
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     ErrCode ret = ERROR;
     if (!settingProvider.CheckOsAccountReady()) {
-        AUDIO_ERR_LOG("OS account not ready");
+        HILOG_COMM_INFO("OS account not ready");
     } else {
         std::string configValue;
         ret = settingProvider.GetStringValue("live_effect_enable", configValue, "system");
@@ -2380,7 +2379,7 @@ void HpaeManager::LoadEffectLive()
     }
     std::string state = HpaePolicyManager::GetInstance().GetAudioParameter(
         "primary", AudioParamKey::PARAM_KEY_STATE, "live_effect_supported");
-    AUDIO_INFO_LOG("EffectLive %{public}s", effectLiveState_.c_str());
+    HILOG_COMM_INFO("EffectLive %{public}s", effectLiveState_.c_str());
     if (state != "true") {
         effectLiveState_ = "NoSupport";
         return;
@@ -2415,7 +2414,7 @@ bool HpaeManager::SetEffectLiveParameter(const std::vector<std::pair<std::string
     effectLiveState_ = paramValue;
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     if (!settingProvider.CheckOsAccountReady()) {
-        AUDIO_ERR_LOG("OS account not ready");
+        HILOG_COMM_INFO("OS account not ready");
         return false;
     }
 
