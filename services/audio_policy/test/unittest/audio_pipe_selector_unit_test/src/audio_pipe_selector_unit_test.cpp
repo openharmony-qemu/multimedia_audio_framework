@@ -31,6 +31,15 @@ void AudioPipeSelectorUnitTest::TearDownTestCase(void) {}
 void AudioPipeSelectorUnitTest::SetUp(void) {}
 void AudioPipeSelectorUnitTest::TearDown(void) {}
 
+static std::shared_ptr<AudioPipeInfo> MakeTestPipe(AudioPipeRole role, std::string adapterName, uint32_t route)
+{
+    auto newPipe = std::make_shared<AudioPipeInfo>();
+    newPipe->pipeRole_ = role;
+    newPipe->adapterName_ = adapterName;
+    newPipe->routeFlag_ = route;
+    return newPipe;
+}
+
 /**
  * @tc.name: GetPipeType_001
  * @tc.desc: Test GetPipeType when audioMode is AUDIO_MODE_PLAYBACK and flag contains
@@ -597,53 +606,32 @@ HWTEST_F(AudioPipeSelectorUnitTest, MoveStreamsToNormalPipes_001, TestSize.Level
     std::vector<std::shared_ptr<AudioPipeInfo>> testPipeInfoList;
 
     // Test pipe IsSameRole() false, pipe IsRouteNormal() false, pipe->IsSameAdapter() false
-    // Make a usb adapter fast input pipe
-    auto usbFastInputPipe = std::make_shared<AudioPipeInfo>();
-    usbFastInputPipe->pipeRole_ = PIPE_ROLE_INPUT;
-    usbFastInputPipe->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
-    usbFastInputPipe->adapterName_ = "usb";
+    auto usbFastInputPipe = MakeTestPipe(PIPE_ROLE_INPUT, "usb", AUDIO_INPUT_FLAG_FAST);
     testPipeInfoList.push_back(usbFastInputPipe);
 
     // Test pipe IsSameRole() false, pipe IsRouteNormal() true, pipe->IsSameAdapter() false
-    auto usbNormalInputPipe = std::make_shared<AudioPipeInfo>();
-    usbNormalInputPipe->pipeRole_ = PIPE_ROLE_INPUT;
-    usbNormalInputPipe->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
-    usbNormalInputPipe->adapterName_ = "usb";
+    auto usbNormalInputPipe = MakeTestPipe(PIPE_ROLE_INPUT, "usb", AUDIO_INPUT_FLAG_NORMAL);
     testPipeInfoList.push_back(usbNormalInputPipe);
 
     // Test pipe IsSameRole() false, pipe IsRouteNormal() true, pipe->IsSameAdapter() true
-    auto primaryNormalInputPipe = std::make_shared<AudioPipeInfo>();
-    primaryNormalInputPipe->pipeRole_ = PIPE_ROLE_INPUT;
-    primaryNormalInputPipe->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
-    primaryNormalInputPipe->adapterName_ = "primary";
+    auto primaryNormalInputPipe = MakeTestPipe(PIPE_ROLE_INPUT, "primary", AUDIO_INPUT_FLAG_NORMAL);
     testPipeInfoList.push_back(primaryNormalInputPipe);
 
     // Test pipe IsSameRole() true, pipe IsRouteNormal() false, pipe->IsSameAdapter() false
-    auto usbFastOutputPipe = std::make_shared<AudioPipeInfo>();
-    usbFastOutputPipe->pipeRole_ = PIPE_ROLE_OUTPUT;
-    usbFastOutputPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
-    usbFastOutputPipe->adapterName_ = "usb";
+    auto usbFastOutputPipe = MakeTestPipe(PIPE_ROLE_OUTPUT, "usb", AUDIO_OUTPUT_FLAG_FAST);
     testPipeInfoList.push_back(usbFastOutputPipe);
 
     // Test pipe IsSameRole() true, pipe IsRouteNormal() true && pipe->IsSameAdapter() false
-    auto usbNormalOutputPipe = std::make_shared<AudioPipeInfo>();
-    usbNormalOutputPipe->pipeRole_ = PIPE_ROLE_OUTPUT;
-    usbNormalOutputPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-    usbNormalOutputPipe->adapterName_ = "usb";
+    auto usbNormalOutputPipe = MakeTestPipe(PIPE_ROLE_OUTPUT, "usb", AUDIO_OUTPUT_FLAG_NORMAL);
     testPipeInfoList.push_back(usbNormalOutputPipe);
 
     // Test pipe IsSameRole() true, pipe IsRouteNormal() true && pipe->IsSameAdapter() true
-    auto primaryNormalOutputPipe = std::make_shared<AudioPipeInfo>();
-    primaryNormalOutputPipe->pipeRole_ = PIPE_ROLE_OUTPUT;
-    primaryNormalOutputPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-    primaryNormalOutputPipe->adapterName_ = "primary";
+    auto primaryNormalOutputPipe = MakeTestPipe(PIPE_ROLE_OUTPUT, "primary", AUDIO_OUTPUT_FLAG_NORMAL);
     testPipeInfoList.push_back(primaryNormalOutputPipe);
 
     // Test stream will be moved from primary adapter offload output pipe
-    auto primaryOffloadOutputPipe = std::make_shared<AudioPipeInfo>();
-    primaryOffloadOutputPipe->pipeRole_ = PIPE_ROLE_OUTPUT;
-    primaryOffloadOutputPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
-    primaryOffloadOutputPipe->adapterName_ = "primary";
+    auto primaryOffloadOutputPipe = MakeTestPipe(PIPE_ROLE_OUTPUT, "primary", AUDIO_OUTPUT_FLAG_LOWPOWER);
+    testPipeInfoList.push_back(primaryNormalOutputPipe);
 
     auto stream = std::make_shared<AudioStreamDescriptor>();
     stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
