@@ -276,7 +276,7 @@ void HpaeInnerCapturerManager::InitSinkInner(bool isReload)
         TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
                         sinkInfo_.deviceName, ERR_INVALID_PARAM);
         AUDIO_ERR_LOG("FrameLen is 0");
-        return ERROR;
+        return;
     }
     HpaeNodeInfo nodeInfo;
     nodeInfo.channels = sinkInfo_.channels;
