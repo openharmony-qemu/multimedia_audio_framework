@@ -2305,7 +2305,7 @@ HWTEST_F(AudioCoreServicePrivateTest, GetVoiceCallMuteDuration_001, TestSize.Lev
     AudioDeviceDescriptor desc2(DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
     AudioDeviceDescriptor desc3(DeviceType::DEVICE_TYPE_USB_HEADSET, DeviceRole::OUTPUT_DEVICE);
     AudioDeviceDescriptor desc4(DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
-    desc4.networkId_ = "LocalDevice";
+    desc4.networkId_ = "RemoteDevice";
     uint32_t targetMuteDuration = 100000;
 
     uint32_t muteDuration = audioCoreService->GetVoiceCallMuteDuration(desc1, desc1);
