@@ -66,7 +66,6 @@ public:
     void OnSystemVolumeChange(VolumeEvent volumeEvent);
     void OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent);
     void OnAudioSessionCurrentDeviceChanged(const CurrentOutputDeviceChangedEvent &deviceChangedEvent);
-    void OnVolumeDegreeEvent(VolumeEvent volumeEvent);
 
 public:
     bool hasBTPermission_ = true;

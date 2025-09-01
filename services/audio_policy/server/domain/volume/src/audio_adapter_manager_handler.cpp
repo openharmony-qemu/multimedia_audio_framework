@@ -63,19 +63,6 @@ bool AudioAdapterManagerHandler::SendSaveVolume(const DeviceType &deviceType,
     return ret;
 }
 
-bool AudioAdapterManagerHandler::SendSaveVolumeDegree(DeviceType deviceType, AudioStreamType streamType,
-    int32_t volumeDegree, std::string networkId)
-{
-    auto eventContextObj = std::make_shared<VolumeDataEvent>(deviceType, streamType, 0, networkId);
-    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
-    eventContextObj->volumeDegree_ = volumeDegree;
-    lock_guard<mutex> runnerlock(runnerMutex_);
-    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(
-        EventAdapterManagerServerCmd::VOLUME_DEGREE_DATABASE_SAVE, eventContextObj));
-    CHECK_AND_RETURN_RET_LOG(ret, ret, "send event failed");
-    return ret;
-}
-
 bool AudioAdapterManagerHandler::SendStreamMuteStatusUpdate(const AudioStreamType &streamType, const bool &mute,
     const StreamUsage &streamUsage, const DeviceType &deviceType, std::string networkId)
 {
@@ -117,14 +104,6 @@ void AudioAdapterManagerHandler::HandleVolumeDataBaseSave(const AppExecFwk::Inne
         eventContextObj->streamType_, eventContextObj->volumeLevel_, eventContextObj->networkId_);
 }
 
-void AudioAdapterManagerHandler::HandleVolumeDegreeDataBaseSave(const AppExecFwk::InnerEvent::Pointer &event)
-{
-    std::shared_ptr<VolumeDataEvent> eventContextObj = event->GetSharedObject<VolumeDataEvent>();
-    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
-    AudioPolicyManagerFactory::GetAudioPolicyManager().HandleSaveVolumeDegree(eventContextObj->deviceType_,
-        eventContextObj->streamType_, eventContextObj->volumeDegree_, eventContextObj->networkId_);
-}
-
 void AudioAdapterManagerHandler::HandleUpdateStreamMuteStatus(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<StreamMuteStatusEvent> eventContextObj = event->GetSharedObject<StreamMuteStatusEvent>();
@@ -164,9 +143,6 @@ void AudioAdapterManagerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Poin
             break;
         case RINGER_MODE_UPDATE:
             HandleUpdateRingerMode(event);
-            break;
-        case VOLUME_DEGREE_DATABASE_SAVE:
-            HandleVolumeDegreeDataBaseSave(event);
             break;
         default:
             break;

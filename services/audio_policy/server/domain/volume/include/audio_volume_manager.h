@@ -138,10 +138,6 @@ public:
     void OnTimerExpired();
     bool IsNeedForceControlVolumeType();
     AudioVolumeType GetForceControlVolumeType();
-    int32_t SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree,
-        int32_t zoneId);
-    int32_t GetSystemVolumeDegree(AudioStreamType streamType);
-    int32_t GetMinVolumeDegree(AudioVolumeType volumeType) const;
     void SendLoudVolumeMode(FunctionHoldType funcHoldType, bool state, bool repeatTrigNotif = false);
 
 private:

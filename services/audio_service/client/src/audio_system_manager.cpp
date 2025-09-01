@@ -1270,29 +1270,6 @@ int32_t AudioSystemManager::UnregisterVolumeKeyEventCallback(const int32_t clien
     return ret;
 }
 
-int32_t AudioSystemManager::RegisterVolumeDegreeCallback(const int32_t clientPid,
-    const std::shared_ptr<VolumeKeyEventCallback> &callback)
-{
-    AUDIO_DEBUG_LOG("register");
-
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
-        "nullptr");
-    volumeChangeClientPid_ = clientPid;
-
-    return AudioPolicyManager::GetInstance().SetVolumeDegreeCallback(clientPid, callback);
-}
-
-int32_t AudioSystemManager::UnregisterVolumeDegreeCallback(const int32_t clientPid,
-    const std::shared_ptr<VolumeKeyEventCallback> &callback)
-{
-    AUDIO_DEBUG_LOG("unregister");
-    int32_t ret = AudioPolicyManager::GetInstance().UnsetVolumeDegreeCallback(callback);
-    if (!ret) {
-        AUDIO_DEBUG_LOG("success");
-    }
-    return ret;
-}
-
 int32_t AudioSystemManager::RegisterSystemVolumeChangeCallback(const int32_t clientPid,
     const std::shared_ptr<SystemVolumeChangeCallback> &callback)
 {
