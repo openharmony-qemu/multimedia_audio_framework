@@ -963,7 +963,7 @@ HWTEST_F(HpaeCapturerManagerTest, InitCapturerManager_001, TestSize.Level1)
     sourceInfo.micRef = HPAE_REF_ON;
 
     std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    EXPECT_EQ(capturerManager->InitCapturerManager(), 0);
+    EXPECT_EQ(capturerManager->InitCapturerManager(), ERROR);
 }
 } // namespace HPAE
 } // namespace AudioStandard
