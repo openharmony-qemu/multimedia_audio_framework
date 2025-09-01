@@ -649,6 +649,22 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, MoveAllStreamToNewSinkInner_001, Test
     hpaeInnerCapturerManager_->MoveAllStreamToNewSinkInner("", moveids, MOVE_PREFER);
     EXPECT_EQ(hpaeInnerCapturerManager_->DeInit(), SUCCESS);
 }
+
+/**
+ * @tc.name  : Test InitSinkInner
+ * @tc.type  : FUNC
+ * @tc.number: InitSinkInner_001
+ * @tc.desc  : Test InitSinkInner.
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, InitSinkInner_001, TestSize.Level0)
+{
+    HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
+    sinkInfo.frameLen = 0;
+    bool isReload = 1;
+    hpaeInnerCapturerManager_ = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
+    hpaeInnerCapturerManager_->InitSinkInner(isReload);
+    EXPECT_EQ(hpaeInnerCapturerManager_->IsInit(), false);
+}
 }  // namespace HPAE
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS
