@@ -880,8 +880,8 @@ napi_value NapiAudioSessionMgr::PreferBluetoothAndNearlinkRecord(napi_env env, n
 {
     auto context = std::make_shared<AudioSessionMgrAsyncContext>();
     if (context == nullptr) {
-        AUDIO_ERR_LOG("ActivateAudioSession failed : no memory");
-        NapiAudioError::ThrowError(env, "ActivateAudioSession failed : no memory", NAPI_ERR_NO_MEMORY);
+        AUDIO_ERR_LOG("PreferBluetoothAndNearlinkRecord failed : no memory");
+        NapiAudioError::ThrowError(env, "PreferBluetoothAndNearlinkRecord failed : no memory", NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
