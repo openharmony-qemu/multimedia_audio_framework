@@ -13,19 +13,19 @@
 
 import("//build/config/features.gni")
 import("//build/test.gni")
-import("../../../accessibility.gni")
-import("../../../config.gni")
+import("../../../../accessibility.gni")
+import("../../../../config.gni")
 
 ohos_fuzztest("AudioA2dpDeviceFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
   fuzz_config_file = "../audioa2dpdevice_fuzzer"
 
   include_dirs = [
-    "../../../services/audio_policy/server/include/service",
-    "../../../services/audio_policy/server/include",
-    "../../../frameworks/native/audioutils/include",
-    "../../../services/audio_service/common/include/limiter/",
-    "../../../services/audio_engine/manager/include",
+    "../../../../services/audio_policy/server/include/service",
+    "../../../../services/audio_policy/server/include",
+    "../../../../frameworks/native/audioutils/include",
+    "../../../../services/audio_service/common/include/limiter/",
+    "../../../../services/audio_engine/manager/include",
   ]
   cflags = [
     "-g",
@@ -34,17 +34,17 @@ ohos_fuzztest("AudioA2dpDeviceFuzzTest") {
     "-fno-omit-frame-pointer",
     "-fno-access-control",
   ]
-  configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
+  configs = [ "../../../../services/audio_policy:audio_policy_public_config" ]
 
   sources = [ "audio_a2dp_device_fuzzer.cpp" ]
 
   deps = [
-    "../../../frameworks/native/audioutils:audio_utils",
-    "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
-    "../../../services/audio_policy:audio_policy_service_static",
-    "../../../services/audio_service:audio_common",
-    "../../../frameworks/native/audioclock:audio_clock",
-    "../../../services/audio_engine:audio_engine_manager",
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
+    "../../../../services/audio_policy:audio_policy_service_static",
+    "../../../../services/audio_service:audio_common",
+    "../../../../frameworks/native/audioclock:audio_clock",
+    "../../../../services/audio_engine:audio_engine_manager",
   ]
 
   external_deps = [

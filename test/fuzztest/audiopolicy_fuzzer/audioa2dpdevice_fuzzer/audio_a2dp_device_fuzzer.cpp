@@ -45,13 +45,22 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
+const size_t THRESHOLD = 10;
 static const uint8_t* RAW_DATA = nullptr;
+static int32_t NUM_2 = 2;
 static size_t g_dataSize = 0;
 static size_t g_pos;
-const size_t THRESHOLD = 10;
-static int32_t NUM_2 = 2;
 
 typedef void (*TestFuncs)();
+
+vector<AudioSampleFormat> AudioSampleFormatVec = {
+    SAMPLE_U8,
+    SAMPLE_S16LE,
+    SAMPLE_S24LE,
+    SAMPLE_S32LE,
+    SAMPLE_F32LE,
+    INVALID_WIDTH,
+};
 
 vector<AudioSamplingRate> AudioSamplingRateVec = {
     SAMPLE_RATE_8000,
@@ -68,15 +77,6 @@ vector<AudioSamplingRate> AudioSamplingRateVec = {
     SAMPLE_RATE_96000,
     SAMPLE_RATE_176400,
     SAMPLE_RATE_192000,
-};
-
-vector<AudioSampleFormat> AudioSampleFormatVec = {
-    SAMPLE_U8,
-    SAMPLE_S16LE,
-    SAMPLE_S24LE,
-    SAMPLE_S32LE,
-    SAMPLE_F32LE,
-    INVALID_WIDTH,
 };
 
 template<class T>
@@ -105,30 +105,6 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
-void GetA2dpDeviceInfoFuzzTest()
-{
-    uint32_t samplingRateCount = GetData<uint32_t>() % AudioSamplingRateVec.size();
-    AudioSamplingRate samplingRate = AudioSamplingRateVec[samplingRateCount];
-    int32_t encodingCount =
-        static_cast<int32_t>(AudioEncodingType::ENCODING_EAC3 - AudioEncodingType::ENCODING_INVALID) + 1;
-    AudioEncodingType encoding = static_cast<AudioEncodingType>(GetData<int32_t>() % encodingCount - 1);
-    uint32_t formatCount = GetData<uint32_t>() % AudioSampleFormatVec.size();
-    AudioSampleFormat format = AudioSampleFormatVec[formatCount];
-    int32_t channelsCount = static_cast<int32_t>(AudioChannel::CHANNEL_16) + 1;
-    AudioChannel channels = static_cast<AudioChannel>(GetData<int32_t>() % channelsCount);
-    DeviceStreamInfo streamInfo(samplingRate, encoding, format, channels);
-    A2dpDeviceConfigInfo configInfo;
-    configInfo.streamInfo = streamInfo;
-    configInfo.absVolumeSupport = GetData<uint32_t>() % NUM_2;
-    configInfo.volumeLevel = GetData<int32_t>();
-    configInfo.mute = GetData<uint32_t>() % NUM_2;
-    string device = "test_device";
-    AudioA2dpDevice::GetInstance().AddA2dpDevice(device, configInfo);
-    A2dpDeviceConfigInfo info;
-    AudioA2dpDevice::GetInstance().GetA2dpDeviceInfo(device, info);
-    AudioA2dpDevice::GetInstance().DelA2dpDevice(device);
-}
-
 void GetA2dpInDeviceInfoFuzzTest()
 {
     uint32_t samplingRateCount = GetData<uint32_t>() % AudioSamplingRateVec.size();
@@ -153,6 +129,39 @@ void GetA2dpInDeviceInfoFuzzTest()
     AudioA2dpDevice::GetInstance().DelA2dpInDevice(device);
 }
 
+void GetA2dpDeviceInfoFuzzTest()
+{
+    uint32_t samplingRateCount = GetData<uint32_t>() % AudioSamplingRateVec.size();
+    AudioSamplingRate samplingRate = AudioSamplingRateVec[samplingRateCount];
+    int32_t encodingCount =
+        static_cast<int32_t>(AudioEncodingType::ENCODING_EAC3 - AudioEncodingType::ENCODING_INVALID) + 1;
+    AudioEncodingType encoding = static_cast<AudioEncodingType>(GetData<int32_t>() % encodingCount - 1);
+    uint32_t formatCount = GetData<uint32_t>() % AudioSampleFormatVec.size();
+    AudioSampleFormat format = AudioSampleFormatVec[formatCount];
+    int32_t channelsCount = static_cast<int32_t>(AudioChannel::CHANNEL_16) + 1;
+    AudioChannel channels = static_cast<AudioChannel>(GetData<int32_t>() % channelsCount);
+    DeviceStreamInfo streamInfo(samplingRate, encoding, format, channels);
+    A2dpDeviceConfigInfo configInfo;
+    configInfo.streamInfo = streamInfo;
+    configInfo.absVolumeSupport = GetData<uint32_t>() % NUM_2;
+    configInfo.volumeLevel = GetData<int32_t>();
+    configInfo.mute = GetData<uint32_t>() % NUM_2;
+    string device = "test_device";
+    AudioA2dpDevice::GetInstance().AddA2dpDevice(device, configInfo);
+    A2dpDeviceConfigInfo info;
+    AudioA2dpDevice::GetInstance().GetA2dpDeviceInfo(device, info);
+    AudioA2dpDevice::GetInstance().DelA2dpDevice(device);
+}
+
+void CheckA2dpDeviceExistFuzzTest()
+{
+    A2dpDeviceConfigInfo configInfo;
+    std::string device = "test_device";
+    AudioA2dpDevice::GetInstance().AddA2dpDevice(device, configInfo);
+    AudioA2dpDevice::GetInstance().CheckA2dpDeviceExist(device);
+    AudioA2dpDevice::GetInstance().DelA2dpDevice(device);
+}
+
 void GetA2dpDeviceVolumeLevelFuzzTest()
 {
     A2dpDeviceConfigInfo configInfo;
@@ -166,12 +175,15 @@ void GetA2dpDeviceVolumeLevelFuzzTest()
     AudioA2dpDevice::GetInstance().GetA2dpDeviceVolumeLevel(nonDevice, volumeLeve2);
 }
 
-void CheckA2dpDeviceExistFuzzTest()
+void GetA2dpDeviceMuteFuzzTest()
 {
     A2dpDeviceConfigInfo configInfo;
+    configInfo.absVolumeSupport = GetData<uint32_t>() % NUM_2;
+    configInfo.mute = GetData<uint32_t>() % NUM_2;
     std::string device = "test_device";
     AudioA2dpDevice::GetInstance().AddA2dpDevice(device, configInfo);
-    AudioA2dpDevice::GetInstance().CheckA2dpDeviceExist(device);
+    bool isMute = GetData<uint32_t>() % NUM_2;
+    AudioA2dpDevice::GetInstance().GetA2dpDeviceMute(device, isMute);
     AudioA2dpDevice::GetInstance().DelA2dpDevice(device);
 }
 
@@ -187,15 +199,16 @@ void SetA2dpDeviceMuteFuzzTest()
     AudioA2dpDevice::GetInstance().DelA2dpDevice(device);
 }
 
-void GetA2dpDeviceMuteFuzzTest()
+void SetA2dpDeviceVolumeLevelFuzzTest()
 {
     A2dpDeviceConfigInfo configInfo;
     configInfo.absVolumeSupport = GetData<uint32_t>() % NUM_2;
-    configInfo.mute = GetData<uint32_t>() % NUM_2;
     std::string device = "test_device";
     AudioA2dpDevice::GetInstance().AddA2dpDevice(device, configInfo);
-    bool isMute = GetData<uint32_t>() % NUM_2;
-    AudioA2dpDevice::GetInstance().GetA2dpDeviceMute(device, isMute);
+    int32_t volumeLevel = GetData<int32_t>();
+    bool result = AudioA2dpDevice::GetInstance().SetA2dpDeviceVolumeLevel(device, volumeLevel);
+    A2dpDeviceConfigInfo info;
+    bool getInfoResult = AudioA2dpDevice::GetInstance().GetA2dpDeviceInfo(device, info);
     AudioA2dpDevice::GetInstance().DelA2dpDevice(device);
 }
 
@@ -211,19 +224,6 @@ void SetA2dpDeviceAbsVolumeSupportFuzzTest()
     AudioA2dpDevice::GetInstance().SetA2dpDeviceAbsVolumeSupport(device, support, volume, mute);
     A2dpDeviceConfigInfo info;
     AudioA2dpDevice::GetInstance().GetA2dpDeviceInfo(device, info);
-    AudioA2dpDevice::GetInstance().DelA2dpDevice(device);
-}
-
-void SetA2dpDeviceVolumeLevelFuzzTest()
-{
-    A2dpDeviceConfigInfo configInfo;
-    configInfo.absVolumeSupport = GetData<uint32_t>() % NUM_2;
-    std::string device = "test_device";
-    AudioA2dpDevice::GetInstance().AddA2dpDevice(device, configInfo);
-    int32_t volumeLevel = GetData<int32_t>();
-    bool result = AudioA2dpDevice::GetInstance().SetA2dpDeviceVolumeLevel(device, volumeLevel);
-    A2dpDeviceConfigInfo info;
-    bool getInfoResult = AudioA2dpDevice::GetInstance().GetA2dpDeviceInfo(device, info);
     AudioA2dpDevice::GetInstance().DelA2dpDevice(device);
 }
 
