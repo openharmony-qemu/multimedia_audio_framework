@@ -2397,7 +2397,7 @@ void AudioCoreService::HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> &
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is null");
     SourceType sourceType = streamDesc->capturerInfo_.sourceType;
     if (specialSourceTypeSet_.count(sourceType) == 0) {
-        audioEcManager_.PrepareNormalSource(pipeInfo->moduleInfo_, streamDesc);
+        audioEcManager_.PrepareNormalSource(pipeInfo, streamDesc);
     }
 }
 

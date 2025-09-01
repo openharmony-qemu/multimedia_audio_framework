@@ -118,6 +118,15 @@ void UpdateEnhanceEffectStateFuzzTest()
     ecManager.UpdateEnhanceEffectState(source);
 }
 
+void UpdatePrimaryMicModuleInfoFuzzTest()
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    SourceType source = g_fuzzUtils.GetData<SourceType>();
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    CHECK_AND_RETURN(pipeInfo != nullptr);
+    ecManager.UpdatePrimaryMicModuleInfo(pipeInfo, source);
+}
+
 void UpdateStreamCommonInfoFuzzTest()
 {
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
@@ -308,11 +317,12 @@ void GetHalNameForDeviceFuzzTest()
 
 void PrepareNormalSourceFuzzTest()
 {
-    AudioModuleInfo moduleInfo;
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    CHECK_AND_RETURN(pipeInfo != nullptr);
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     CHECK_AND_RETURN(streamDesc != nullptr);
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
-    ecManager.PrepareNormalSource(moduleInfo, streamDesc);
+    ecManager.PrepareNormalSource(pipeInfo, streamDesc);
 }
 
 void GetOpenedNormalSourceSessionIdFuzzTest()
