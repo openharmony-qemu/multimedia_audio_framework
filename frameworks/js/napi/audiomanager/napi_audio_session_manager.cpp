@@ -35,7 +35,7 @@ static __thread napi_ref g_sessionMgrConstructor = nullptr;
 const std::string AUDIO_SESSION_MGR_NAPI_CLASS_NAME = "AudioSessionManager";
 
 NapiAudioSessionMgr::NapiAudioSessionMgr()
-    : env_(nullptr), audioSessionMngr_(nullptr), audioMngr_(nullptr) {}
+    : env_(nullptr), audioMngr_(nullptr), audioSessionMngr_(nullptr) {}
 
 NapiAudioSessionMgr::~NapiAudioSessionMgr() = default;
 
