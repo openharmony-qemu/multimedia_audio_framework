@@ -16,6 +16,7 @@
 #include <cstdio>
 #include "hpae_no_lock_queue.h"
 #include "audio_engine_log.h"
+#include "hpae_message_queue_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -54,6 +55,8 @@ void HpaeNoLockQueue::PushRequest(Request &&request)
 {
     const uint64_t freeRequestIndex = GetRequestNode(&freeRequestHeadIndex_);
     if (GetRequsetIndex(freeRequestIndex) == INVALID_REQUEST_ID) {
+        HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_NO_LOCK_QUEUE_TYPE, __func__,
+            "reached Queue Capacity");
         AUDIO_WARNING_LOG("reached Queue Capacity: drop this request");
         return;
     }

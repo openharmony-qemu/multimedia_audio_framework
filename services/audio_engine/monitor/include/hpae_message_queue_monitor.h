@@ -25,6 +25,7 @@ enum MessageQueueType : int32_t {
     HPAE_CAPTURE_MANAGER_TYPE,
     HPAE_INNER_CAPTURE_MANAGER_TYPE,
     HPAE_OFFLOAD_MANAGER_TYPE,
+    HPAE_NO_LOCK_QUEUE_TYPE,
 };
 class HpaeMessageQueueMonitor {
 public:
