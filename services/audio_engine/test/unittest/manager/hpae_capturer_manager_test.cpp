@@ -959,9 +959,7 @@ HWTEST_F(HpaeCapturerManagerTest, InitCapturerManager_001, TestSize.Level1)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
-    sourceInfo.ecType = HPAE_EC_TYPE_SAME_ADAPTER;
-    sourceInfo.micRef = HPAE_REF_ON;
-
+    sourceInfo.frameLen = 0;
     std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     EXPECT_EQ(capturerManager->InitCapturerManager(), ERROR);
 }
