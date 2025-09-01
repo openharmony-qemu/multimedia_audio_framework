@@ -35,6 +35,7 @@
 #include "audio_utils.h"
 #include "hpae_renderer_stream_impl.h"
 #include "hpae_adapter_manager.h"
+#include "hpae_soft_link.h"
 
 using namespace testing::ext;
 
