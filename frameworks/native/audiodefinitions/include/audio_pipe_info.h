@@ -105,6 +105,14 @@ public:
         return adapterName_ == targetAdapterName;
     }
 
+    bool IsSameRole(const std::shared_ptr<AudioStreamDescriptor> stream) const
+    {
+        if (stream == nullptr) {
+            return false;
+        }
+        return (stream->IsPlayback() == IsOutput());
+    }
+
     void SetAction(AudioPipeAction action)
     {
         pipeAction_ = action;
