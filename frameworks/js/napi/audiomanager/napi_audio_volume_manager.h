@@ -84,6 +84,8 @@ private:
     static napi_value GetSupportedAudioVolumeTypes(napi_env env, napi_callback_info info);
     static napi_value GetAudioVolumeTypeByStreamUsage(napi_env env, napi_callback_info info);
     static napi_value GetStreamUsagesByVolumeType(napi_env env, napi_callback_info info);
+    static napi_value GetSystemVolumeByUid(napi_env env, napi_callback_info info);
+    static napi_value SetSystemVolumeByUid(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value RegisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value *args,
         const std::string &cbName);
