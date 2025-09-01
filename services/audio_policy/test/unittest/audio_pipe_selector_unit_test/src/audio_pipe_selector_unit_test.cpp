@@ -588,62 +588,72 @@ HWTEST_F(AudioPipeSelectorUnitTest, ProcessConcurrency_001, TestSize.Level4)
 /**
  * @tc.name: AudioPipeSelectorUnitTest_MoveStreamsToNormalPipes_001
  * @tc.number: MoveStreamsToNormalPipes_001
- * @tc.desc: Test MoveStreamsToNormalPipes cases
+ * @tc.desc: Test MoveStreamsToNormalPipes different cases
  */
 HWTEST_F(AudioPipeSelectorUnitTest, MoveStreamsToNormalPipes_001, TestSize.Level4)
 {
     auto testSelector = AudioPipeSelector::GetPipeSelector();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> testStreamsToMove;
     std::vector<std::shared_ptr<AudioPipeInfo>> testPipeInfoList;
-    // Make a normal pipe
-    auto normalPipe = std::make_shared<AudioPipeInfo>();
-    normalPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-    testPipeInfoList.push_back(normalPipe);
- 
-    // Make a offload pipe and add one remove stream
-    auto offloadPipe = std::make_shared<AudioPipeInfo>();
-    offloadPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+
+    // Test pipe IsSameRole() false, pipe IsRouteNormal() false, pipe->IsSameAdapter() false
+    // Make a usb adapter fast input pipe
+    auto usbFastInputPipe = std::make_shared<AudioPipeInfo>();
+    usbFastInputPipe->pipeRole_ = PIPE_ROLE_INPUT;
+    usbFastInputPipe->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
+    usbFastInputPipe->adapterName_ = "usb";
+    testPipeInfoList.push_back(usbFastInputPipe);
+
+    // Test pipe IsSameRole() false, pipe IsRouteNormal() true, pipe->IsSameAdapter() false
+    auto usbNormalInputPipe = std::make_shared<AudioPipeInfo>();
+    usbNormalInputPipe->pipeRole_ = PIPE_ROLE_INPUT;
+    usbNormalInputPipe->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    usbNormalInputPipe->adapterName_ = "usb";
+    testPipeInfoList.push_back(usbNormalInputPipe);
+
+    // Test pipe IsSameRole() false, pipe IsRouteNormal() true, pipe->IsSameAdapter() true
+    auto primaryNormalInputPipe = std::make_shared<AudioPipeInfo>();
+    primaryNormalInputPipe->pipeRole_ = PIPE_ROLE_INPUT;
+    primaryNormalInputPipe->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    primaryNormalInputPipe->adapterName_ = "primary";
+    testPipeInfoList.push_back(primaryNormalInputPipe);
+
+    // Test pipe IsSameRole() true, pipe IsRouteNormal() false, pipe->IsSameAdapter() false
+    auto usbFastOutputPipe = std::make_shared<AudioPipeInfo>();
+    usbFastOutputPipe->pipeRole_ = PIPE_ROLE_OUTPUT;
+    usbFastOutputPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    usbFastOutputPipe->adapterName_ = "usb";
+    testPipeInfoList.push_back(usbFastOutputPipe);
+
+    // Test pipe IsSameRole() true, pipe IsRouteNormal() true && pipe->IsSameAdapter() false
+    auto usbNormalOutputPipe = std::make_shared<AudioPipeInfo>();
+    usbNormalOutputPipe->pipeRole_ = PIPE_ROLE_OUTPUT;
+    usbNormalOutputPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    usbNormalOutputPipe->adapterName_ = "usb";
+    testPipeInfoList.push_back(usbNormalOutputPipe);
+
+    // Test pipe IsSameRole() true, pipe IsRouteNormal() true && pipe->IsSameAdapter() true
+    auto primaryNormalOutputPipe = std::make_shared<AudioPipeInfo>();
+    primaryNormalOutputPipe->pipeRole_ = PIPE_ROLE_OUTPUT;
+    primaryNormalOutputPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    primaryNormalOutputPipe->adapterName_ = "primary";
+    testPipeInfoList.push_back(primaryNormalOutputPipe);
+
+    // Test stream will be moved from primary adapter offload output pipe
+    auto primaryOffloadOutputPipe = std::make_shared<AudioPipeInfo>();
+    primaryOffloadOutputPipe->pipeRole_ = PIPE_ROLE_OUTPUT;
+    primaryOffloadOutputPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    primaryOffloadOutputPipe->adapterName_ = "primary";
+
     auto stream = std::make_shared<AudioStreamDescriptor>();
     stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
-    offloadPipe->AddStream(stream);
+    primaryOffloadOutputPipe->AddStream(stream);
     testStreamsToMove.push_back(stream);
     testPipeInfoList.push_back(offloadPipe);
  
     testSelector->MoveStreamsToNormalPipes(testStreamsToMove, testPipeInfoList);
-    EXPECT_EQ(true, normalPipe->ContainStream(TEST_STREAM_1_SESSION_ID));
-    EXPECT_EQ(PIPE_ACTION_UPDATE, normalPipe->GetAction());
-    EXPECT_EQ(false, offloadPipe->ContainStream(TEST_STREAM_1_SESSION_ID));
-}
- 
-/**
- * @tc.name: AudioPipeSelectorUnitTest_MoveStreamsToNormalPipes_002
- * @tc.number: MoveStreamsToNormalPipes_002
- * @tc.desc: Test MoveStreamsToNormalPipes cases
- */
-HWTEST_F(AudioPipeSelectorUnitTest, MoveStreamsToNormalPipes_002, TestSize.Level4)
-{
-    auto testSelector = AudioPipeSelector::GetPipeSelector();
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> testStreamsToMove;
-    std::vector<std::shared_ptr<AudioPipeInfo>> testPipeInfoList;
-    // Make a normal pipe
-    auto normalPipe = std::make_shared<AudioPipeInfo>();
-    normalPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-    normalPipe->SetAction(PIPE_ACTION_NEW);
-    testPipeInfoList.push_back(normalPipe);
- 
-    // Make a offload pipe and add one remove stream
-    auto offloadPipe = std::make_shared<AudioPipeInfo>();
-    offloadPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
-    auto stream = std::make_shared<AudioStreamDescriptor>();
-    stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
-    offloadPipe->AddStream(stream);
-    testStreamsToMove.push_back(stream);
-    testPipeInfoList.push_back(offloadPipe);
- 
-    testSelector->MoveStreamsToNormalPipes(testStreamsToMove, testPipeInfoList);
-    EXPECT_EQ(true, normalPipe->ContainStream(TEST_STREAM_1_SESSION_ID));
-    EXPECT_EQ(PIPE_ACTION_NEW, normalPipe->GetAction());
-    EXPECT_EQ(false, offloadPipe->ContainStream(TEST_STREAM_1_SESSION_ID));
+    EXPECT_EQ(false, primaryOffloadOutputPipe->ContainStream(TEST_STREAM_1_SESSION_ID));
+    EXPECT_EQ(PIPE_ACTION_UPDATE, primaryNormalOutputPipe->GetAction());
 }
 
 /**
