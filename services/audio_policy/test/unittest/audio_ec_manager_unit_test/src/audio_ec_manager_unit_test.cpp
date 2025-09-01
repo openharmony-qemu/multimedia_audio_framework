@@ -1,4 +1,3 @@
-dd
 /*
  * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -763,10 +762,10 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_033, TestSize.Level4)
 HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_034, TestSize.Level4)
 {
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
-    AudioModuleInfo moduleInfo = {};
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     EXPECT_NO_THROW(
-        ecManager.PrepareNormalSource(moduleInfo, streamDesc);
+        ecManager.PrepareNormalSource(pipeInfo, streamDesc);
     );
 }
 
@@ -852,6 +851,23 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_039, TestSize.Level4)
     ecManager.primaryMicModuleInfo_.OpenMicSpeaker = "1";
     ret = ecManager.FetchTargetInfoForSessionAdd(sessionInfo, targetInfo, targetSourceType);
     EXPECT_EQ(ret, ERROR);
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_040
+* @tc.desc  : Test UpdatePrimaryMicModuleInfo interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_040, TestSize.Level4)
+{
+    SourceType sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    auto ecManager = std::make_shared<AudioEcManager>();
+    ASSERT_TRUE(ecManager != nullptr);
+ 
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    ecManager->isEcFeatureEnable_ = true;
+    ecManager->UpdatePrimaryMicModuleInfo(pipeInfo, sourceType); 
+    EXPECT_EQ(ecManager->primaryMicModuleInfo_.rate, "48000");
 }
 } // namespace AudioStandard
 } // namespace OHOS
