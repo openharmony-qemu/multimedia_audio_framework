@@ -1622,12 +1622,20 @@ HWTEST_F(HpaeRendererManagerTest, SendRequestInner_002, TestSize.Level1)
 HWTEST_F(HpaeRendererManagerTest, InitSinkInner_001, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
     sinkInfo.frameLen = 0;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
     std::shared_ptr<HpaeOffloadRendererManager> hpaeRendererManager =
         std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     bool isReload = 1;
     hpaeRendererManager->InitSinkInner(isReload);
-    EXPECT_EQ(hpaeRendererManager->isInit_, false);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
 
 /**
@@ -1639,11 +1647,19 @@ HWTEST_F(HpaeRendererManagerTest, InitSinkInner_001, TestSize.Level1)
 HWTEST_F(HpaeRendererManagerTest, InitManager_001, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
     sinkInfo.frameLen = 0;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
     std::shared_ptr<HpaeRendererManager> hpaeRendererManager =
         std::make_shared<HpaeRendererManager>(sinkInfo);
     bool isReload = 1;
     hpaeRendererManager->InitManager(isReload);
-    EXPECT_EQ(hpaeRendererManager->isInit_, false);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
 }  // namespace
