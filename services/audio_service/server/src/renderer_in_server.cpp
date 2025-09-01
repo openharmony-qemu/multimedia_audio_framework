@@ -1790,6 +1790,7 @@ void RendererInServer::HandleOffloadStream(const int32_t captureId, const Captur
 
 int32_t RendererInServer::SetOffloadMode(int32_t state, bool isAppBack)
 {
+    AUDIO_INFO_LOG("SetOffloadMode, status: %{public}u", status_.load());
     int32_t ret = stream_->SetOffloadMode(state, isAppBack);
     {
         std::lock_guard<std::mutex> lock(dupMutex_);
@@ -1810,6 +1811,7 @@ int32_t RendererInServer::SetOffloadMode(int32_t state, bool isAppBack)
 
 int32_t RendererInServer::UnsetOffloadMode()
 {
+    AUDIO_INFO_LOG("UnsetOffloadMode, status: %{public}u", status_.load());
     int32_t ret = stream_->UnsetOffloadMode();
     {
         for (auto &softInfo : softLinkInfos_) {
