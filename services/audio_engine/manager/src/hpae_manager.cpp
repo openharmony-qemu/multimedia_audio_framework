@@ -1215,7 +1215,7 @@ void HpaeManager::HandleDumpSourceInfo(std::string deviceName, std::string dumpS
 
 void HpaeManager::HandleReloadDeviceResult(std::string deviceName, int32_t result)
 {
-    HILOG_COMM_INFO("deviceName:%{public}s result:%{public}d ", deviceName.c_str(), result);
+    HILOG_COMM_INFO("deviceName:%{public}s result:%{public}d", deviceName.c_str(), result);
     auto serviceCallback = serviceCallback_.lock();
     if (serviceCallback && result == SUCCESS) {
         if (sinkNameSinkIdMap_.find(deviceName) != sinkNameSinkIdMap_.end()) {
