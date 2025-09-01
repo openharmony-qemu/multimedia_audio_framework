@@ -107,5 +107,19 @@ HWTEST(OfflineStreamInServerUnitTest, OfflineStreamInServer_003, TestSize.Level1
     auto ret = offlineStreamInServer->PrepareOfflineEffectChain(inBuffer, outBuffer);
     EXPECT_EQ(ret, 0);
 }
+
+/**
+* @tc.name  : Test OfflineStreamInServer::PrepareOfflineEffectChain()
+* @tc.number: OfflineStreamInServer_004
+* @tc.desc  : Test OfflineStreamInServer interface.
+*/
+HWTEST(OfflineStreamInServerUnitTest, OfflineStreamInServer_004, TestSize.Level1)
+{
+    auto offlineStreamInServer = std::make_shared<OfflineStreamInServer>();
+    EXPECT_NE(offlineStreamInServer, nullptr);
+
+    auto ret = offlineStreamInServer->PrepareOfflineEffectChain(inBuffer, outBuffer);
+    EXPECT_NE(ret, 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS
