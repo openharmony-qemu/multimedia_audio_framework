@@ -866,7 +866,7 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_040, TestSize.Level4)
  
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
     ecManager->isEcFeatureEnable_ = true;
-    ecManager->UpdatePrimaryMicModuleInfo(pipeInfo, sourceType); 
+    ecManager->UpdatePrimaryMicModuleInfo(pipeInfo, sourceType);
     EXPECT_EQ(ecManager->primaryMicModuleInfo_.rate, "48000");
 }
 } // namespace AudioStandard
