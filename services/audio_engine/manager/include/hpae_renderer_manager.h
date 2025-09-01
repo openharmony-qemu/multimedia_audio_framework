@@ -157,7 +157,7 @@ private:
     std::vector<int32_t> appsUid_;
     std::shared_ptr<HpaeCoBufferNode> hpaeCoBufferNode_;
     bool isCollaborationEnabled_ = false;
-    int64_t noneStreamTime_; // if no stream, 3s time out to stop rendersink
+    int64_t noneStreamTime_ = 0; // if no stream, 3s time out to stop rendersink
 };
 }  // namespace HPAE
 }  // namespace AudioStandard
