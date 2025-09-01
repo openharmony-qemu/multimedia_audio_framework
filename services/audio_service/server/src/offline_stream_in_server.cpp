@@ -67,6 +67,7 @@ int32_t OfflineStreamInServer::SetParamOfflineEffectChain(const std::vector<uint
 int32_t OfflineStreamInServer::PrepareOfflineEffectChain(std::shared_ptr<AudioSharedMemory> &inBuffer,
     std::shared_ptr<AudioSharedMemory> &outBuffer)
 {
+    CHECK_AND_RETURN_RET_LOG(effectChain_, ERR_ILLEGAL_STATE, "effectChain not init");
     if (serverBufferIn_ == nullptr || serverBufferOut_ == nullptr) {
         uint32_t inSize = 0;
         uint32_t outSize = 0;
