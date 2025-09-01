@@ -558,7 +558,7 @@ void AudioPipeSelector::MoveStreamsToNormalPipes(
     // Put each stream to its according normal pipe
     for (auto &stream : streamsToMove) {
         for (auto &pipe : pipeInfoList) {
-            if (pipe->IsRouteNormal() && pipe->IsSameAdapter(streamToAdapter[stream])) {
+            if (pipe->IsSameRole(stream) && pipe->IsRouteNormal() && pipe->IsSameAdapter(streamToAdapter[stream])) {
                 AddStreamToPipeAndUpdateAction(stream, pipe);
                 break;
             }
