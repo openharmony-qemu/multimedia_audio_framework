@@ -118,7 +118,10 @@ HWTEST(OfflineStreamInServerUnitTest, OfflineStreamInServer_004, TestSize.Level1
     auto offlineStreamInServer = std::make_shared<OfflineStreamInServer>();
     EXPECT_NE(offlineStreamInServer, nullptr);
 
-    auto ret = offlineStreamInServer->PrepareOfflineEffectChain(inBuffer, outBuffer);
+    std::shared_ptr<AudioSharedMemory> inBuffer = nullptr;
+    std::shared_ptr<AudioSharedMemory> outBuffer = nullptr;
+
+    auto ret = offlineStreamInServer->PrepareOfflineEffectChain(inBuffer, outBuffer); // effectChain is nullptr
     EXPECT_NE(ret, 0);
 }
 } // namespace AudioStandard
