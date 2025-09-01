@@ -656,6 +656,7 @@ int32_t HpaeCapturerManager::InitCapturerManager()
     HpaeNodeInfo ecNodeInfo;
     HpaeNodeInfo micRefNodeInfo;
     if (sourceInfo_.frameLen == 0) {
+        AUDIO_ERR_LOG("FrameLen is 0");
         return ERROR;
     }
     nodeInfo.deviceClass = sourceInfo_.deviceClass;
