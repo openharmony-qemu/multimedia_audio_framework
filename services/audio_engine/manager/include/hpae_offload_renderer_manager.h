@@ -104,7 +104,7 @@ private:
     void AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect = true);
     void MoveAllStreamToNewSink(const std::string &sinkName, const std::vector<uint32_t> &moveIds,
         MoveSessionType moveType);
-    void InitSinkInner(bool isReload = false);
+    int32_t InitSinkInner(bool isReload = false);
     void UpdateAppsUid();
 
     HpaeRenderSessionInfo sessionInfo_;

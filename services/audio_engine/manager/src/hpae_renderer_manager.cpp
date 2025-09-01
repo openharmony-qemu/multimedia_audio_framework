@@ -866,7 +866,7 @@ int32_t HpaeRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo, b
     return SUCCESS;
 }
 
-void HpaeRendererManager::InitManager(bool isReload)
+int32_t HpaeRendererManager::InitManager(bool isReload)
 {
     AUDIO_INFO_LOG("init devicename:%{public}s", sinkInfo_.deviceName.c_str());
     HpaeNodeInfo nodeInfo;
@@ -874,7 +874,7 @@ void HpaeRendererManager::InitManager(bool isReload)
         TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
                         sinkInfo_.deviceName, ERR_INVALID_PARAM);
         AUDIO_ERR_LOG("FrameLen is 0");
-        return;
+        return ERROR;
     }
     nodeInfo.channels = sinkInfo_.channels;
     nodeInfo.format = sinkInfo_.format;
@@ -910,6 +910,7 @@ void HpaeRendererManager::InitManager(bool isReload)
     ret = outputCluster_->Init(attr);
     isInit_.store(ret == SUCCESS);
     TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT :INIT_DEVICE_RESULT, sinkInfo_.deviceName, ret);
+    return SUCCESS;
 }
 
 void HpaeRendererManager::InitDefaultNodeInfo()

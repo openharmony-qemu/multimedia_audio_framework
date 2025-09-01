@@ -420,7 +420,7 @@ int32_t HpaeOffloadRendererManager::Init(bool isReload)
     return SUCCESS;
 }
 
-void HpaeOffloadRendererManager::InitSinkInner(bool isReload)
+int32_t HpaeOffloadRendererManager::InitSinkInner(bool isReload)
 {
     AUDIO_INFO_LOG("HpaeOffloadRendererManager::init");
     HpaeNodeInfo nodeInfo;
@@ -428,7 +428,7 @@ void HpaeOffloadRendererManager::InitSinkInner(bool isReload)
         TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
                         sinkInfo_.deviceName, ERR_INVALID_PARAM);
         AUDIO_ERR_LOG("FrameLen is 0");
-        return;
+        return ERROR;
     }
     nodeInfo.channels = sinkInfo_.channels;
     nodeInfo.format = sinkInfo_.format;
@@ -459,6 +459,7 @@ void HpaeOffloadRendererManager::InitSinkInner(bool isReload)
     isInit_.store(true);
     TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT, sinkInfo_.deviceName, ret);
     AUDIO_INFO_LOG("HpaeOffloadRendererManager::inited");
+    return SUCCESS;
 }
 
 bool HpaeOffloadRendererManager::DeactivateThread()
