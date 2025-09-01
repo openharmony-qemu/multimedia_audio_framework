@@ -637,7 +637,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, MoveStreamsToNormalPipes_001, TestSize.Level
     stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
     primaryOffloadOutputPipe->AddStream(stream);
     testStreamsToMove.push_back(stream);
-    testPipeInfoList.push_back(offloadPipe);
+    testPipeInfoList.push_back(primaryOffloadOutputPipe);
  
     testSelector->MoveStreamsToNormalPipes(testStreamsToMove, testPipeInfoList);
     EXPECT_EQ(false, primaryOffloadOutputPipe->ContainStream(TEST_STREAM_1_SESSION_ID));

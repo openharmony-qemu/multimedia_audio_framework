@@ -224,18 +224,18 @@ HWTEST_F(AudioPipeInfoUnitTest, StreamOperation_002, TestSize.Level4)
  * @tc.number : IsSameRole_001
  * @tc.desc   : Test role check func by default output pipe in different cases
  */
-HWTEST_F(AudioPipeInfoUnitTest, StreamOperation_002, TestSize.Level4)
+HWTEST_F(AudioPipeInfoUnitTest, IsSameRole_001, TestSize.Level4)
 {
     // Test nullptr case
     EXPECT_EQ(false, testOutputPipe_->IsSameRole(nullptr));
 
     // Test same role case
-    auto stream = AudioDefinitionsUnitTestUtil::GenerateCommonStream(AUDIO_MODE_PLAYBACK);
-    EXPECT_EQ(true, testOutputPipe_->IsSameRole(stream));
+    auto playbackStream = AudioDefinitionsUnitTestUtil::GenerateCommonStream(AUDIO_MODE_PLAYBACK);
+    EXPECT_EQ(true, testOutputPipe_->IsSameRole(playbackStream));
 
     // Test different role case
-    auto stream = AudioDefinitionsUnitTestUtil::GenerateCommonStream(AUDIO_MODE_RECORD);
-    EXPECT_EQ(false, testOutputPipe_->IsSameRole(stream));
+    auto recordStream = AudioDefinitionsUnitTestUtil::GenerateCommonStream(AUDIO_MODE_RECORD);
+    EXPECT_EQ(false, testOutputPipe_->IsSameRole(recordStream));
 }
 } // namespace AudioStandard
 } // namespace OHOS
