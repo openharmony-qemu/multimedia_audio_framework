@@ -64,7 +64,7 @@ private:
     static napi_value IsAudioSessionActivated(napi_env env, napi_callback_info info);
     static void RegisterCallback(napi_env env, napi_value jsThis, napi_value *args, const std::string &cbName);
     static void UnregisterCallback(napi_env env, napi_value jsThis);
-    static void UnregisterCallbackCarryParam(napi_env env, napi_value jsThis, napi_value *args, size_t len);
+    static void UnregisterCallbackCarryParam(napi_env env, napi_value jsThis, napi_value *args);
     static void RegisterAudioSessionCallback(napi_env env, napi_value *args,
         const std::string &cbName, NapiAudioSessionMgr *napiSessionMgr);
     static void UnsetAudioSessionCallback(napi_env env, napi_value *args,
@@ -76,7 +76,7 @@ private:
     static void RegisterAudioSessionStateCallback(napi_env env, napi_value *args,
         const std::string &cbName, NapiAudioSessionMgr *napiSessionMgr);
     static void UnregisterSessionStateCallback(napi_env env, napi_value jsThis);
-    static void UnregisterSessionStateCallbackCarryParam(napi_env env, napi_value jsThis, napi_value *args, size_t len);
+    static void UnregisterSessionStateCallbackCarryParam(napi_env env, napi_value jsThis, napi_value *args);
     static napi_value GetDefaultOutputDevice(napi_env env, napi_callback_info info);
     static napi_value SetDefaultOutputDevice(napi_env env, napi_callback_info info);
     static std::shared_ptr<NapiAudioSessionStateCallback> GetAudioSessionStateCallback(
@@ -85,7 +85,7 @@ private:
         const std::string &cbName, NapiAudioSessionMgr *napiSessionMgr);
     static void UnregisterSessionDeviceCallback(napi_env env, napi_value jsThis);
     static void UnregisterSessionDeviceCallbackCarryParam(
-        napi_env env, napi_value jsThis, napi_value *args, size_t len);
+        napi_env env, napi_value jsThis, napi_value *args);
     static std::shared_ptr<NapiAudioSessionDeviceCallback> GetAudioSessionDeviceCallback(
         napi_value argv, NapiAudioSessionMgr *napiSessionMgr);
     static napi_value GetAvailableDevices(napi_env env, napi_callback_info info);

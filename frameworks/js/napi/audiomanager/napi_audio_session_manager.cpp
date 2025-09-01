@@ -488,7 +488,7 @@ void NapiAudioSessionMgr::UnregisterCallback(napi_env env, napi_value jsThis)
     AUDIO_ERR_LOG("Unset AudioSessionCallback Success");
 }
 
-void NapiAudioSessionMgr::UnregisterCallbackCarryParam(napi_env env, napi_value jsThis, napi_value *args, size_t len)
+void NapiAudioSessionMgr::UnregisterCallbackCarryParam(napi_env env, napi_value jsThis, napi_value *args)
 {
     AUDIO_INFO_LOG("UnregisterCallback");
     NapiAudioSessionMgr *napiSessionMgr = nullptr;
@@ -543,7 +543,7 @@ void NapiAudioSessionMgr::UnregisterSessionStateCallback(napi_env env, napi_valu
 }
 
 void NapiAudioSessionMgr::UnregisterSessionStateCallbackCarryParam(
-    napi_env env, napi_value jsThis, napi_value *args, size_t len)
+    napi_env env, napi_value jsThis, napi_value *args)
 {
     AUDIO_INFO_LOG("UnregisterCallback StateChanged.");
     if (args[PARAM1] == nullptr) {
@@ -613,7 +613,7 @@ void NapiAudioSessionMgr::UnregisterSessionDeviceCallback(napi_env env, napi_val
 }
 
 void NapiAudioSessionMgr::UnregisterSessionDeviceCallbackCarryParam(
-    napi_env env, napi_value jsThis, napi_value *args, size_t len)
+    napi_env env, napi_value jsThis, napi_value *args)
 {
     AUDIO_INFO_LOG("UnregisterCallback device changed.");
     if (args[PARAM1] == nullptr) {
@@ -721,13 +721,13 @@ napi_value NapiAudioSessionMgr::UnregisterCB(napi_env env, napi_value jsThis, na
         }
     } else if (!callbackName.compare(AUDIOSESSION_STATE_CALLBACK_NAME)) {
         if (handler == napi_function) {
-            UnregisterSessionStateCallbackCarryParam(env, jsThis, args, sizeof(args));
+            UnregisterSessionStateCallbackCarryParam(env, jsThis, args);
         } else {
             UnregisterSessionStateCallback(env, jsThis);
         }
     } else if (!callbackName.compare(AUDIOSESSION_DEVICE_CALLBACK_NAME)) {
         if (handler == napi_function) {
-            UnregisterSessionDeviceCallbackCarryParam(env, jsThis, args, sizeof(args));
+            UnregisterSessionDeviceCallbackCarryParam(env, jsThis, args);
         } else {
             UnregisterSessionDeviceCallback(env, jsThis);
         }
