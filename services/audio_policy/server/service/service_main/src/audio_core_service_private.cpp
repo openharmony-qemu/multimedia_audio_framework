@@ -811,7 +811,7 @@ int32_t AudioCoreService::LoadSplitModule(const std::string &splitArgs, const st
         OUTPUT_DEVICE, DEVICE_TYPE_SPEAKER);
     moudleInfo.lib = "libmodule-split-stream-sink.z.so";
     moudleInfo.extra = splitArgs;
-    moudleInfo.needEmptyChunk = true;
+    moudleInfo.needEmptyChunk = false;
 
     int32_t openRet = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleName, moudleInfo);
     if (openRet != 0) {
