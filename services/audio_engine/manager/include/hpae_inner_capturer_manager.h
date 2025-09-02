@@ -115,7 +115,7 @@ private:
     void AddSingleNodeToSinkInner(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect = true);
     void MoveAllStreamToNewSinkInner(const std::string &sinkName, const std::vector<uint32_t> &moveIds,
         MoveSessionType moveType);
-    void InitSinkInner(bool isReload = false);
+    int32_t InitSinkInner(bool isReload = false);
     uint32_t sinkInputNodeCounter_ = 0;
     int32_t sceneTypeToProcessClusterCount_ = 0;
     std::atomic<bool> isInit_ = false;

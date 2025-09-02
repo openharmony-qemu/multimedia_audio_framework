@@ -1046,7 +1046,7 @@ void AudioCoreService::RecordSelectDevice(const std::string &selectHistory)
 }
 
 int32_t AudioCoreService::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc, const int32_t audioDeviceSelectMode)
 {
     if (!selectedDesc.empty() && selectedDesc[0] != nullptr) {
         // eg. 2025-06-22-21:12:07:666|Uid: 6700 select output device: LOCAL_DEVICE type:2
@@ -1056,7 +1056,7 @@ int32_t AudioCoreService::SelectOutputDevice(sptr<AudioRendererFilter> audioRend
         RecordSelectDevice(selectHistory);
     }
 
-    return audioRecoveryDevice_.SelectOutputDevice(audioRendererFilter, selectedDesc);
+    return audioRecoveryDevice_.SelectOutputDevice(audioRendererFilter, selectedDesc, audioDeviceSelectMode);
 }
 
 void AudioCoreService::NotifyDistributedOutputChange(const AudioDeviceDescriptor &deviceDesc)
@@ -1098,6 +1098,17 @@ int32_t AudioCoreService::ClearSelectedInputDeviceByUid(int32_t uid)
 {
     audioUsrSelectManager_.ClearSelectedInputDeviceByUid(uid);
     return SUCCESS;
+}
+
+int32_t AudioCoreService::PreferBluetoothAndNearlinkRecordByUid(int32_t uid, bool isPreferred)
+{
+    audioUsrSelectManager_.PreferBluetoothAndNearlinkRecordByUid(uid, isPreferred);
+    return SUCCESS;
+}
+
+bool AudioCoreService::GetPreferBluetoothAndNearlinkRecordByUid(int32_t uid)
+{
+    return audioUsrSelectManager_.GetPreferBluetoothAndNearlinkRecordByUid(uid);
 }
 
 void AudioCoreService::NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value)

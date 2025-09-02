@@ -774,7 +774,8 @@ void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent
             AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
             continue;
         }
-        if (VolumeUtils::GetVolumeTypeFromStreamType(eventContextObj->volumeEvent.volumeType) == STREAM_SYSTEM &&
+        AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(eventContextObj->volumeEvent.volumeType);
+        if ((volumeType == STREAM_SYSTEM || volumeType == STREAM_ULTRASONIC) &&
             !volumeChangeCb->hasSystemPermission_) {
             AUDIO_DEBUG_LOG("volumeChangeCb: Non system applications do not send system callbacks");
             continue;
@@ -792,11 +793,6 @@ void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent
             clientCallbacksMap_[it->first].count(CALLBACK_SYSTEM_VOLUME_CHANGE) > 0 &&
             clientCallbacksMap_[it->first][CALLBACK_SYSTEM_VOLUME_CHANGE]) {
             volumeChangeCb->OnSystemVolumeChange(eventContextObj->volumeEvent);
-        }
-        if (clientCallbacksMap_.count(it->first) > 0 &&
-            clientCallbacksMap_[it->first].count(CALLBACK_SET_VOLUME_DEGREE_CHANGE) > 0 &&
-            clientCallbacksMap_[it->first][CALLBACK_SET_VOLUME_DEGREE_CHANGE]) {
-            volumeChangeCb->OnVolumeDegreeEvent(eventContextObj->volumeEvent);
         }
         HandleVolumeChangeCallback(it->first, volumeChangeCb, eventContextObj->volumeEvent);
     }
@@ -1084,10 +1080,10 @@ void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         int32_t clientPid = it->first;
-        std::vector<AudioRendererInfo> rendererInfoList = GetCallbackRendererInfoList(clientPid);
-        for (auto rendererInfo : rendererInfoList) {
+        std::vector<AudioRendererFilter> rendererFilterList = GetCallbackRendererInfoList(clientPid);
+        for (auto rendererFilter : rendererFilterList) {
             auto deviceDescs = AudioPolicyService::GetAudioPolicyService().
-                GetPreferredOutputDeviceDescInner(rendererInfo);
+                GetPreferredOutputDeviceDescInner(rendererFilter.rendererInfo, LOCAL_NETWORK_ID, rendererFilter.uid);
             if (!(it->second->hasBTPermission_)) {
                 AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(deviceDescs);
             }
@@ -1098,7 +1094,7 @@ void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
                 AUDIO_INFO_LOG("Send PreferredOutputDevice deviceType[%{public}d] deviceId[%{public}d]" \
                     "change to clientPid[%{public}d]",
                     deviceDescs[0]->deviceType_, deviceDescs[0]->deviceId_, clientPid);
-                it->second->OnPreferredOutputDeviceUpdated(rendererInfo, deviceDescs);
+                it->second->OnPreferredOutputDeviceUpdated(rendererFilter.rendererInfo, deviceDescs);
             }
         }
     }
@@ -1653,22 +1649,26 @@ int32_t AudioPolicyServerHandler::SetClientCallbacksEnable(const CallbackChange 
     return AUDIO_OK;
 }
 
-int32_t AudioPolicyServerHandler::SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo)
+int32_t AudioPolicyServerHandler::SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid)
 {
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     lock_guard<mutex> lock(clientCbRendererInfoMapMutex_);
     auto &rendererList = clientCbRendererInfoMap_[clientPid];
     auto it = std::find_if(rendererList.begin(), rendererList.end(),
-        [&rendererInfo](const AudioRendererInfo &existingRenderer) {
-            return existingRenderer.streamUsage == rendererInfo.streamUsage;
+        [&rendererInfo, uid](const AudioRendererFilter &existingFilter) {
+            return existingFilter.uid == uid &&
+                existingFilter.rendererInfo.streamUsage == rendererInfo.streamUsage;
         });
     if (it == rendererList.end()) {
-        rendererList.push_back(rendererInfo);
+        AudioRendererFilter newFilter;
+        newFilter.uid = uid;
+        newFilter.rendererInfo = rendererInfo;
+        rendererList.push_back(newFilter);
     }
     return AUDIO_OK;
 }
 
-std::vector<AudioRendererInfo> AudioPolicyServerHandler::GetCallbackRendererInfoList(int32_t clientPid)
+std::vector<AudioRendererFilter> AudioPolicyServerHandler::GetCallbackRendererInfoList(int32_t clientPid)
 {
     lock_guard<mutex> lock(clientCbRendererInfoMapMutex_);
     auto it = clientCbRendererInfoMap_.find(clientPid);

@@ -99,8 +99,8 @@ void HpaeSinkInputNode::CheckAndDestroyHistoryBuffer()
 
 int32_t HpaeSinkInputNode::GetDataFromSharedBuffer()
 {
-    streamInfo_ = {.framesWritten = framesWritten_,
-        .hdiFramePosition = hdiFramePosition_.exchange(0),
+    streamInfo_ = {.hdiFramePosition = hdiFramePosition_.exchange(0),
+        .framesWritten = framesWritten_,
         .latency = streamInfo_.latency,
         .inputData = interleveData_.data(),
         .requestDataLen = interleveData_.size(),

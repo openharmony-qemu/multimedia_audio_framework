@@ -197,7 +197,7 @@ group("audio_fuzz_test") {
   testonly = true
 
   deps = [
-    "fuzztest/audioa2dpdevice_fuzzer:fuzztest",
+    "fuzztest/audiopolicy_fuzzer/audioa2dpdevice_fuzzer:fuzztest",
     "fuzztest/audioa2dpoffloadmanager_fuzzer:fuzztest",
     "fuzztest/audioactivedevice_fuzzer:fuzztest",
     "fuzztest/audioadaptermanager_fuzzer:fuzztest",

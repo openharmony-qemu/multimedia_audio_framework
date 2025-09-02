@@ -313,15 +313,15 @@ HWTEST(AudioStreamManagerUnitTest, IsCapturerFocusAvailable_001, TestSize.Level1
 }
 
 /**
- * @tc.name  : Test IsCurrentDeviceEnableIntelligentNoiseReduction API
+ * @tc.name  : Test IsIntelligentNoiseReductionEnabledForCurrentDevice API
  * @tc.type  : FUNC
- * @tc.number: IsCurrentDeviceEnableIntelligentNoiseReduction_001
- * @tc.desc  : Test IsCurrentDeviceEnableIntelligentNoiseReduction interface.
+ * @tc.number: IsIntelligentNoiseReductionEnabledForCurrentDevice_001
+ * @tc.desc  : Test IsIntelligentNoiseReductionEnabledForCurrentDevice interface.
  */
-HWTEST(AudioStreamManagerUnitTest, IsCurrentDeviceEnableIntelligentNoiseReduction_001, TestSize.Level1)
+HWTEST(AudioStreamManagerUnitTest, IsIntelligentNoiseReductionEnabledForCurrentDevice_001, TestSize.Level1)
 {
     SourceType sourceType = SourceType::SOURCE_TYPE_MIC;
-    bool result = AudioStreamManager::GetInstance()->IsCurrentDeviceEnableIntelligentNoiseReduction(sourceType);
+    bool result = AudioStreamManager::GetInstance()->IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType);
 
     EXPECT_EQ(result, false);
 }

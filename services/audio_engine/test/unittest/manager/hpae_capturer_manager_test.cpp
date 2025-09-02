@@ -948,6 +948,21 @@ HWTEST_F(HpaeCapturerManagerTest, SendRequestInner_001, TestSize.Level1)
     capturerManager->SendRequest(request, "unit_test_send_request");
     EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
 }
+
+/**
+ * @tc.name  : Test InitCapturerManager_001
+ * @tc.type  : FUNC
+ * @tc.number: InitCapturerManager_001
+ * @tc.desc  : Test InitCapturerManager when frameLen is 0.
+ */
+HWTEST_F(HpaeCapturerManagerTest, InitCapturerManager_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.frameLen = 0;
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->InitCapturerManager(), ERROR);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

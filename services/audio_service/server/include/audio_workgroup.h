@@ -30,7 +30,7 @@ public:
 };
 
 struct AudioWorkgroupCgroupLimit {
-    pid_t clientPid;
+    int32_t clientPid;
     int32_t globalCgroupId;
 };
 

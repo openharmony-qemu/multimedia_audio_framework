@@ -392,7 +392,7 @@ void AudioCoreService::EventEntry::OnReceiveUpdateDeviceNameEvent(const std::str
 }
 
 int32_t AudioCoreService::EventEntry::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc, const int32_t audioDeviceSelectMode)
 {
     Trace trace("KeyAction AudioCoreService::SelectOutputDevice");
     if (!selectedDesc.empty() && selectedDesc[0] && coreService_ &&
@@ -400,7 +400,7 @@ int32_t AudioCoreService::EventEntry::SelectOutputDevice(sptr<AudioRendererFilte
         coreService_->NotifyDistributedOutputChange(selectedDesc[0]);
     }
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    return coreService_->SelectOutputDevice(audioRendererFilter, selectedDesc);
+    return coreService_->SelectOutputDevice(audioRendererFilter, selectedDesc, audioDeviceSelectMode);
 }
 
 int32_t AudioCoreService::EventEntry::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
@@ -431,6 +431,20 @@ int32_t AudioCoreService::EventEntry::ClearSelectedInputDeviceByUid(int32_t uid)
     Trace trace("KeyAction AudioCoreService::ClearSelectedInputDeviceByUid");
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     return coreService_->ClearSelectedInputDeviceByUid(uid);
+}
+
+int32_t AudioCoreService::EventEntry::PreferBluetoothAndNearlinkRecordByUid(int32_t uid, bool isPreferred)
+{
+    Trace trace("KeyAction AudioCoreService::PreferBluetoothAndNearlinkRecordByUid");
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->PreferBluetoothAndNearlinkRecordByUid(uid, isPreferred);
+}
+
+bool AudioCoreService::EventEntry::GetPreferBluetoothAndNearlinkRecordByUid(int32_t uid)
+{
+    Trace trace("KeyAction AudioCoreService::GetPreferBluetoothAndNearlinkRecordByUid");
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->GetPreferBluetoothAndNearlinkRecordByUid(uid);
 }
 
 int32_t AudioCoreService::EventEntry::GetCurrentRendererChangeInfos(vector<shared_ptr<AudioRendererChangeInfo>>

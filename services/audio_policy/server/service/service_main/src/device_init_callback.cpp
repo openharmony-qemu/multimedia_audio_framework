@@ -72,7 +72,7 @@ DeviceStatusCallbackImpl::DeviceStatusCallbackImpl()
 void DeviceStatusCallbackImpl::OnDeviceChanged(const DistributedHardware::DmDeviceBasicInfo &dmDeviceBasicInfo)
 {
     std::string strDeviceName(dmDeviceBasicInfo.deviceName);
-    AUDIO_INFO_LOG("OnDeviceChanged:remote name [%{public}s]", Hide(strDeviceName).c_str());
+    AUDIO_INFO_LOG("OnDeviceChanged");
 
     //OnDeviceChanged listeren did not report networkId information
     AudioConnectedDevice::GetInstance().SetDisplayName(strDeviceName, false);
@@ -80,8 +80,8 @@ void DeviceStatusCallbackImpl::OnDeviceChanged(const DistributedHardware::DmDevi
 
 void DeviceStatusCallbackImpl::OnDeviceChanged(const DistributedHardware::DmDeviceInfo &dmDeviceInfo)
 {
-    AUDIO_INFO_LOG("Entry. deviceName=%{public}s, dmDeviceType=%{public}d, networkId=%{public}s",
-        Hide(dmDeviceInfo.deviceName).c_str(), dmDeviceInfo.deviceTypeId, Hide(dmDeviceInfo.networkId).c_str());
+    AUDIO_INFO_LOG("Entry. dmDeviceType=%{public}d, networkId=%{public}s",
+        dmDeviceInfo.deviceTypeId, Hide(dmDeviceInfo.networkId).c_str());
     auto dmDev = ParseDmDevice(dmDeviceInfo);
     if (!dmDev.deviceName_.empty()) {
         AudioConnectedDevice::GetInstance().UpdateDmDeviceMap(std::move(dmDev), true);
@@ -90,8 +90,8 @@ void DeviceStatusCallbackImpl::OnDeviceChanged(const DistributedHardware::DmDevi
 
 void DeviceStatusCallbackImpl::OnDeviceOnline(const DistributedHardware::DmDeviceInfo &dmDeviceInfo)
 {
-    AUDIO_INFO_LOG("Entry. deviceName=%{public}s, dmDeviceType=%{public}d, networkId=%{public}s",
-        Hide(dmDeviceInfo.deviceName).c_str(), dmDeviceInfo.deviceTypeId, Hide(dmDeviceInfo.networkId).c_str());
+    AUDIO_INFO_LOG("Entry. dmDeviceType=%{public}d, networkId=%{public}s",
+        dmDeviceInfo.deviceTypeId, Hide(dmDeviceInfo.networkId).c_str());
     auto dmDev = ParseDmDevice(dmDeviceInfo);
     if (!dmDev.deviceName_.empty()) {
         AudioConnectedDevice::GetInstance().UpdateDmDeviceMap(std::move(dmDev), true);
@@ -100,8 +100,8 @@ void DeviceStatusCallbackImpl::OnDeviceOnline(const DistributedHardware::DmDevic
 
 void DeviceStatusCallbackImpl::OnDeviceOffline(const DistributedHardware::DmDeviceInfo &dmDeviceInfo)
 {
-    AUDIO_INFO_LOG("Entry. deviceName=%{public}s, dmDeviceType=%{public}d, networkId=%{public}s",
-        Hide(dmDeviceInfo.deviceName).c_str(), dmDeviceInfo.deviceTypeId, Hide(dmDeviceInfo.networkId).c_str());
+    AUDIO_INFO_LOG("Entry. dmDeviceType=%{public}d, networkId=%{public}s",
+        dmDeviceInfo.deviceTypeId, Hide(dmDeviceInfo.networkId).c_str());
     AudioConnectedDevice::GetInstance().UpdateDmDeviceMap({ .networkId_ = dmDeviceInfo.networkId }, false);
 }
 #endif

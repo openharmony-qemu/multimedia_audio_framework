@@ -2509,7 +2509,8 @@ void HpaeManager::RemoveCaptureInjector(
     const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType)
 {}
 
-int32_t HpaeManager::PeekAudioData(const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize)
+int32_t HpaeManager::PeekAudioData(
+    const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo)
 {
     return SUCCESS;
 }

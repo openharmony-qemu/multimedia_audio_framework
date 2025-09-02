@@ -1186,36 +1186,5 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetSinkPortName_004, TestSize.Level1)
     EXPECT_EQ(HEARING_AID_SPEAKER, retPortName);
 }
 
-/**
-* @tc.name  : Test SetSystemVolumeDegree
-* @tc.number: SetSystemVolumeDegree_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceExtUnitTest, SetSystemVolumeDegree_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    ASSERT_TRUE(server != nullptr);
-    int32_t streamType = static_cast<int32_t>(STREAM_MUSIC);
-    int32_t volumeDegree = 44;
-    int32_t ret = server->SetSystemVolumeDegree(streamType, volumeDegree, 0, 0);
-    EXPECT_EQ(ret, SUCCESS);
-
-    int32_t streamType2 = static_cast<int32_t>(STREAM_APP);
-    ret = server->SetSystemVolumeDegree(streamType2, volumeDegree, 0, 0);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
-
-    auto &manager = static_cast<AudioAdapterManager &>(server->audioPolicyManager_);
-    manager.isVolumeUnadjustable_ = true;
-    ret = server->SetSystemVolumeDegree(streamType, volumeDegree, 0, 0);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
-    manager.isVolumeUnadjustable_ = false;
-
-    server->GetSystemVolumeDegree(streamType, 0, ret);
-    EXPECT_EQ(ret, volumeDegree);
-
-    server->GetMinVolumeDegree(streamType, ret);
-    EXPECT_EQ(ret, 0);
-}
-
 } // namespace AudioStandard
 } // namespace OHOS

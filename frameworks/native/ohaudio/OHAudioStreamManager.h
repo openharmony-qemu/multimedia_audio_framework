@@ -43,7 +43,7 @@ public:
     bool IsFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage);
     bool IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source);
 
-    bool IsCurrentDeviceEnableIntelligentNoiseReduction(SourceType sourceType);
+    bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
 private:
     OHAudioStreamManager();
     static OHAudioStreamManager *ohAudioStreamManager_;
