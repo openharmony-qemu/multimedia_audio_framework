@@ -52,7 +52,6 @@ static const std::vector<AudioStreamType> VOLUME_TYPE_LIST = {
     STREAM_ALARM,
     STREAM_ACCESSIBILITY,
     STREAM_ULTRASONIC,
-    STREAM_VOICE_CALL_ASSISTANT,
     STREAM_MUSIC
 };
 
@@ -65,7 +64,6 @@ static const std::vector<AudioStreamType> PC_VOLUME_TYPE_LIST = {
     STREAM_ACCESSIBILITY,
     STREAM_SYSTEM,
     STREAM_ULTRASONIC,
-    STREAM_VOICE_CALL_ASSISTANT,
     // adjust the type of music from the head of list to end, make sure music is updated last.
     // avoid interference from ring updates on special platform.
     // when the device is switched to headset,ring and alarm is dualtone type.
