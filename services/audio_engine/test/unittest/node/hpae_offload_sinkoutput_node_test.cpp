@@ -66,6 +66,202 @@ void HpaeOffloadSinkOutputNodeTest::TearDown()
     mockSink_ = nullptr;
     ::testing::DefaultValue<int32_t>::Clear();
 }
+
+// Test OFFLOAD_FULL with background inactive condition
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, OffloadNeedSleep_FullInBackground_ShouldUnlock, TestSize.Level0)
+{
+    // Set background inactive state
+    offloadNode_->hdiPolicyState_ = OFFLOAD_INACTIVE_BACKGROUND;
+
+    // Expect unlock method called
+    EXPECT_CALL(*mockSink_, UnLockOffloadRunningLock()).Times(1);
+    offloadNode_->OffloadNeedSleep(OFFLOAD_FULL);
+    // Verify state changes
+    EXPECT_TRUE(offloadNode_->isHdiFull_.load());
+}
+
+// Test OFFLOAD_FULL with movie stream type
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, OffloadNeedSleep_FullMovieStream_ShouldUnlock, TestSize.Level0)
+{
+    // Set stream type to movie
+    offloadNode_->nodeInfo_.streamType = STREAM_MOVIE;
+
+    // Expect unlock method called
+    EXPECT_CALL(*mockSink_, UnLockOffloadRunningLock()).Times(1);
+    offloadNode_->OffloadNeedSleep(OFFLOAD_FULL);
+    // Verify state changes
+    EXPECT_TRUE(offloadNode_->isHdiFull_.load());
+}
+
+// Test OFFLOAD_FULL without matching conditions
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, OffloadNeedSleep_FullNoCondition_ShouldNotUnlock, TestSize.Level0)
+{
+    // Set non-matching conditions
+    offloadNode_->hdiPolicyState_ = OFFLOAD_ACTIVE_FOREGROUND;
+
+    // Unlock method should not be called
+    EXPECT_CALL(*mockSink_, UnLockOffloadRunningLock()).Times(0);
+    offloadNode_->OffloadNeedSleep(OFFLOAD_FULL);
+    // Verify state changes
+    EXPECT_TRUE(offloadNode_->isHdiFull_.load());
+}
+
+// Test error type with retry count below max
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, OffloadNeedSleep_ErrorBelowMaxRetry_ShouldIncreaseRetry, TestSize.Level0)
+{
+    // Set initial retry count
+    offloadNode_->retryCount_ = 1;
+
+    // Unlock method should not be called
+    EXPECT_CALL(*mockSink_, UnLockOffloadRunningLock()).Times(0);
+    offloadNode_->OffloadNeedSleep(OFFLOAD_WRITE_FAILED);
+    // Verify retry count increased
+    EXPECT_EQ(offloadNode_->retryCount_, 2);
+    EXPECT_FALSE(offloadNode_->isHdiFull_.load());
+}
+
+// Test error type with retry count at max
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, OffloadNeedSleep_ErrorAtMaxRetry_ShouldNotIncrease, TestSize.Level0)
+{
+    // Set retry count to max value
+    offloadNode_->retryCount_ = 20; // 20ms limit
+
+    // Unlock method should not be called
+    EXPECT_CALL(*mockSink_, UnLockOffloadRunningLock()).Times(0);
+
+    offloadNode_->OffloadNeedSleep(OFFLOAD_WRITE_FAILED);
+
+    // Verify retry count unchanged
+    EXPECT_EQ(offloadNode_->retryCount_, 20); // 20ms limit
+    EXPECT_FALSE(offloadNode_->isHdiFull_.load());
+}
+
+// Test SUCCESS type resets retry count
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, OffloadNeedSleep_Success_ShouldResetRetry, TestSize.Level0)
+{
+    // Set initial retry count
+    offloadNode_->retryCount_ = 5;
+
+    // Unlock method should not be called
+    EXPECT_CALL(*mockSink_, UnLockOffloadRunningLock()).Times(0);
+
+    offloadNode_->OffloadNeedSleep(SUCCESS);
+    // Verify retry count reset
+    EXPECT_EQ(offloadNode_->retryCount_, 1);
+    EXPECT_FALSE(offloadNode_->isHdiFull_.load());
+}
+
+// Test empty data returns failure
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, ProcessRenderFrame_EmptyData_ReturnsFailure, TestSize.Level0)
+{
+    // Set empty data
+    offloadNode_->renderFrameData_.clear();
+    
+    // Execute function
+    int32_t result = offloadNode_->ProcessRenderFrame();
+    // Verify failure returned
+    EXPECT_EQ(result, OFFLOAD_WRITE_FAILED);
+}
+
+// Test RenderFrame returns success but writes 0 bytes (non-first write)
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, ProcessRenderFrame_WriteZero_ReturnsOffloadFull, TestSize.Level0)
+{
+    // Set non-empty data
+    offloadNode_->renderFrameData_ = std::vector<char>(1024, 0);
+    offloadNode_->firstWriteHdi_ = false; // Not first write
+    
+    // Mock RenderFrame: success but 0 bytes written
+    EXPECT_CALL(*mockSink_, RenderFrame(_, _, _))
+        .WillOnce([](char &data, size_t size, uint64_t &written) {
+            written = 0;
+            return SUCCESS;
+        });
+    // Execute function
+    int32_t result = offloadNode_->ProcessRenderFrame();
+    // Verify OFFLOAD_FULL returned
+    EXPECT_EQ(result, OFFLOAD_FULL);
+}
+
+// Test RenderFrame failure returns OFFLOAD_WRITE_FAILED
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, ProcessRenderFrame_RenderFailure_ReturnsFailure, TestSize.Level0)
+{
+    // Set non-empty data
+    offloadNode_->renderFrameData_ = std::vector<char>(1024, 0);
+
+    // Mock RenderFrame failure
+    EXPECT_CALL(*mockSink_, RenderFrame(_, _, _))
+        .WillOnce(Return(OFFLOAD_WRITE_FAILED));
+    // Execute function
+    int32_t result = offloadNode_->ProcessRenderFrame();
+    // Verify failure returned
+    EXPECT_EQ(result, OFFLOAD_WRITE_FAILED);
+}
+
+// Test partial write returns failure
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, ProcessRenderFrame_PartialWrite_ReturnsFailure, TestSize.Level0)
+{
+    // Set non-empty data
+    offloadNode_->renderFrameData_ = std::vector<char>(DATA_SIZE, 0);
+    
+    // Mock partial write
+    EXPECT_CALL(*mockSink_, RenderFrame(_, _, _))
+        .WillOnce([](char &data, size_t size, uint64_t &written) {
+            written = DATA_SIZE / 2; // Half data written
+            return SUCCESS;
+        });
+    // Execute function
+    int32_t result = offloadNode_->ProcessRenderFrame();
+    // Verify failure returned
+    EXPECT_EQ(result, OFFLOAD_WRITE_FAILED);
+}
+
+// Test first successful write initializes state
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, ProcessRenderFrame_FirstWrite_InitializesState, TestSize.Level0)
+{
+    // Set non-empty data and first write flag
+    offloadNode_->renderFrameData_ = std::vector<char>(DATA_SIZE, 0);
+    offloadNode_->firstWriteHdi_ = true; // First write
+    offloadNode_->writePos_ = 0;
+    
+    // Mock successful write
+    EXPECT_CALL(*mockSink_, RenderFrame(_, _, _))
+        .WillOnce([](char &data, size_t size, uint64_t &written) {
+            written = DATA_SIZE;
+            return SUCCESS;
+        });
+    // Execute function
+    int32_t result = offloadNode_->ProcessRenderFrame();
+    // Verify success returned
+    EXPECT_EQ(result, SUCCESS);
+    // Verify first write state initialized
+    EXPECT_FALSE(offloadNode_->firstWriteHdi_);
+    EXPECT_NE(offloadNode_->hdiPos_.second.time_since_epoch().count(), 0);
+    EXPECT_EQ(offloadNode_->setHdiBufferSizeNum_, OFFLOAD_SET_BUFFER_SIZE_NUM - 1);
+    EXPECT_GT(offloadNode_->writePos_, 0);
+}
+
+// Test subsequent successful write updates state
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, ProcessRenderFrame_SubsequentWrite_UpdatesState, TestSize.Level0)
+{
+    // Set non-empty data and non-first write
+    offloadNode_->renderFrameData_ = std::vector<char>(DATA_SIZE, 0);
+    offloadNode_->firstWriteHdi_ = false;
+    offloadNode_->writePos_ = 1000; // Initial write position
+    
+    // Mock successful write
+    EXPECT_CALL(*mockSink_, RenderFrame(_, _, _))
+        .WillOnce([](char &data, size_t size, uint64_t &written) {
+            written = DATA_SIZE;
+            return SUCCESS;
+        });
+    // Execute function
+    int32_t result = offloadNode_->ProcessRenderFrame();
+    // Verify success returned
+    EXPECT_EQ(result, SUCCESS);
+    // Verify state updated
+    EXPECT_GT(offloadNode_->writePos_, 1000); // Write position increased
+    EXPECT_TRUE(offloadNode_->renderFrameData_.empty()); // Data cleared
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
