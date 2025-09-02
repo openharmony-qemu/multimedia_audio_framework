@@ -3754,7 +3754,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_119, TestSize.Level1)
 * @tc.name  : Test AudioInterruptService
 * @tc.number: AudioInterruptService_120
 * @tc.desc  : Test GetAudioInterruptBundleName_01
-*/ 
+*/
 HWTEST(AudioInterruptUnitTest, AudioInterruptService_120, TestSize.Level1)
 {
     auto audioInterruptService = std::make_shared<AudioInterruptService>();
