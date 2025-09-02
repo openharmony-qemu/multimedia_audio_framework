@@ -126,6 +126,17 @@ public:
     static AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
     static void CreateStreamMap(std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> &streamMap);
+    static int32_t CheckAudioStreamInfo(const AudioStreamParams info, AudioMode mode);
+    static bool IsFormatValid(uint8_t format);
+    static bool IsRendererChannelValid(uint8_t channel);
+    static bool IsCapturerChannelValid(uint8_t channel);
+    static bool IsEncodingTypeValid(uint8_t encodingType);
+    static bool IsSamplingRateValid(uint32_t samplingRate);
+    static bool IsCustomSampleRateValid(uint32_t customSampleRate);
+    static bool IsRendererChannelLayoutValid(uint64_t channelLayout);
+    static bool IsCapturerChannelLayoutValid(uint64_t channelLayout);
+    static bool IsPlaybackChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout);
+    static bool IsRecordChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout);
     static inline bool IsFastStreamClass(StreamClass streamClass)
     {
         if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
@@ -272,26 +283,6 @@ public:
     virtual void JoinCallbackLoop() = 0;
 
     virtual void SetState() {}
-
-    bool IsFormatValid(uint8_t format);
-
-    bool IsRendererChannelValid(uint8_t channel);
-
-    bool IsCapturerChannelValid(uint8_t channel);
-
-    bool IsEncodingTypeValid(uint8_t encodingType);
-
-    bool IsSamplingRateValid(uint32_t samplingRate);
-
-    bool IsCustomSampleRateValid(uint32_t customSampleRate);
-
-    bool IsRendererChannelLayoutValid(uint64_t channelLayout);
-
-    bool IsCapturerChannelLayoutValid(uint64_t channelLayout);
-
-    bool IsPlaybackChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout);
-
-    bool IsRecordChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout);
 
     virtual void SetSilentModeAndMixWithOthers(bool on) = 0;
 

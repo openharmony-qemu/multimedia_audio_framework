@@ -651,8 +651,12 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
 #endif
+
+    int32_t ret = IAudioStream::CheckAudioStreamInfo(audioStreamParams, AUDIO_MODE_PLAYBACK);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CheckAudioStreamInfo fail!");
+
     rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
-    int32_t ret = PrepareAudioStream(audioStreamParams, audioStreamType, streamClass, rendererInfo_.audioFlag);
+    ret = PrepareAudioStream(audioStreamParams, audioStreamType, streamClass, rendererInfo_.audioFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "PrepareAudioStream failed");
 
     ret = InitAudioStream(audioStreamParams);
@@ -2249,9 +2253,13 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     RendererState previousState, IAudioStream::SwitchInfo &switchInfo)
 {
     std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescBySwitchInfo(switchInfo, restoreInfo);
+
+    int32_t ret = IAudioStream::CheckAudioStreamInfo(switchInfo.params, AUDIO_MODE_PLAYBACK);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CheckAudioStreamInfo fail!");
+
     uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
     std::string networkId = LOCAL_NETWORK_ID;
-    int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(
+    ret = AudioPolicyManager::GetInstance().CreateRendererClient(
         streamDesc, flag, switchInfo.params.originalSessionId, networkId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "CreateRendererClient failed");
 
