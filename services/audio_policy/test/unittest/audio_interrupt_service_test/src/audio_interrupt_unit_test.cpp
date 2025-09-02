@@ -3758,7 +3758,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_119, TestSize.Level1)
 HWTEST(AudioInterruptUnitTest, AudioInterruptService_120, TestSize.Level1)
 {
     auto audioInterruptService = std::make_shared<AudioInterruptService>();
-    ASSERT_NE(AudioInterruptService, nullptr);
+    ASSERT_NE(audioInterruptService, nullptr);
 
     AudioInterrupt audioInterrupt = {};
     audioInterrupt.uid = 1013;
@@ -3775,7 +3775,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_120, TestSize.Level1)
 HWTEST(AudioInterruptUnitTest, AudioInterruptService_121, TestSize.Level1)
 {
     auto audioInterruptService = std::make_shared<AudioInterruptService>();
-    ASSERT_NE(AudioInterruptService, nullptr);
+    ASSERT_NE(audioInterruptService, nullptr);
 
     AudioInterrupt audioInterrupt = {};
     std::string str = "xyz";
