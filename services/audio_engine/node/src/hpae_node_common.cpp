@@ -328,6 +328,8 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
     sinkInfo.format = static_cast<AudioSampleFormat>(TransFormatFromStringToEnum(audioModuleInfo.format));
     sinkInfo.channels = static_cast<AudioChannel>(StringToNum(audioModuleInfo.channels));
     int32_t bufferSize = static_cast<int32_t>(StringToNum(audioModuleInfo.bufferSize));
+    CHECK_AND_RETURN_RET_LOG(sinkInfo.channels != CHANNEL_UNKNOW && sinkInfo.format != INVALID_WIDTH, ERROR,
+        "channels or format is invalid");
     sinkInfo.frameLen = static_cast<size_t>(bufferSize) / (sinkInfo.channels *
                                 static_cast<size_t>(GetSizeFromFormat(sinkInfo.format)));
     sinkInfo.channelLayout = 0ULL;
@@ -362,6 +364,8 @@ int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, 
     int32_t bufferSize = static_cast<int32_t>(StringToNum(audioModuleInfo.bufferSize));
     sourceInfo.channels = static_cast<AudioChannel>(StringToNum(audioModuleInfo.channels));
     sourceInfo.format = TransFormatFromStringToEnum(audioModuleInfo.format);
+    CHECK_AND_RETURN_RET_LOG(sourceInfo.channels != CHANNEL_UNKNOW && sourceInfo.format != INVALID_WIDTH, ERROR,
+        "channels or format is invalid");
     sourceInfo.frameLen = static_cast<size_t>(bufferSize) / (sourceInfo.channels *
                                 static_cast<size_t>(GetSizeFromFormat(sourceInfo.format)));
     sourceInfo.samplingRate = static_cast<AudioSamplingRate>(StringToNum(audioModuleInfo.rate));

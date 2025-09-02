@@ -529,7 +529,7 @@ void ConvertToFloatFuzzTest()
         int16_t src[1] = {g_fuzzUtils.GetData<int16_t>()};
         ConvertToFloat(format, 1, src, dst);
     } else if (format == SAMPLE_S24LE) {
-        uint8_t src[1] = {g_fuzzUtils.GetData<uint8_t>()};
+        uint8_t src[4] = {g_fuzzUtils.GetData<uint8_t>()};
         ConvertToFloat(format, 1, src, dst);
     } else if (format == SAMPLE_S32LE) {
         int32_t src[1] = {g_fuzzUtils.GetData<int32_t>()};
