@@ -22,7 +22,7 @@
 #include "audio_session.h"
 #include "audio_session_state_monitor.h"
 #include "audio_device_info.h"
-#include "audio_device_descriptor.h"
+#include "audio_session_device_info.h"
 
 namespace OHOS {
 namespace AudioStandard {

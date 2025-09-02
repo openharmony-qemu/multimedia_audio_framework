@@ -37,6 +37,10 @@ class AudioSessionStateMonitor;
 class AudioDeviceManager;
 class AudioPipeManager;
 
+/*
+ * AudioSession is an inner class of AudioSessionService, no mutex is added to AudioSession,
+ * and classes other than AudioSessionService are not allowed to directly access AudioSession.
+ */
 class AudioSession {
 public:
     AudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy,
@@ -83,7 +87,6 @@ private:
     void UpdateSingleVoipStreamDefaultOutputDevice(const AudioInterrupt &interrupt);
     bool IsSessionDefaultDeviceEnabled();
     bool IsOutputDeviceConfigurableByStreamUsage(const StreamUsage &streamUsage);
-    std::mutex sessionMutex_;
     int32_t callerPid_;
     bool needToFetch_ = false;
     AudioSessionStrategy strategy_ {AudioConcurrencyMode::INVALID};
