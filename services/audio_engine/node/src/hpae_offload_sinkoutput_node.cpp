@@ -115,21 +115,7 @@ void HpaeOffloadSinkOutputNode::DoProcess()
     int32_t ret = ProcessRenderFrame();
     // if renderframe faild, sleep and return directly
     // if renderframe full, unlock the powerlock
-    retryCount_ = 1;
-    if (ret == OFFLOAD_FULL) {
-        if (hdiPolicyState_ == OFFLOAD_INACTIVE_BACKGROUND || GetStreamType() == STREAM_MOVIE) {
-            RunningLock(false);
-        }
-        isHdiFull_.store(true);
-        return;
-    } else if (ret != SUCCESS) {
-        usleep(std::min(retryCount_, FRAME_TIME_IN_MS) * TIME_US_PER_MS);
-        if (retryCount_ < ERR_RETRY_COUNT) {
-            retryCount_++;
-        }
-        return;
-    }
-    retryCount_ = 1;
+    OffloadNeedSleep(ret);
     return;
 }
 
@@ -605,6 +591,25 @@ int32_t HpaeOffloadSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &app
     CHECK_AND_RETURN_RET_LOG(audioRendererSink_ != nullptr, ERROR, "audioRendererSink_ is nullptr");
     CHECK_AND_RETURN_RET_LOG(audioRendererSink_->IsInited(), ERR_ILLEGAL_STATE, "audioRendererSink_ not init");
     return audioRendererSink_->UpdateAppsUid(appsUid);
+}
+
+void HpaeOffloadSinkOutputNode::OffloadNeedSleep(int32_t retType)
+{
+    if (retType == OFFLOAD_FULL) {
+        if (hdiPolicyState_ == OFFLOAD_INACTIVE_BACKGROUND || GetStreamType() == STREAM_MOVIE) {
+            RunningLock(false);
+        }
+        isHdiFull_.store(true);
+        return;
+    }
+    if (retType != SUCCESS) {
+        usleep(std::min(retryCount_, FRAME_TIME_IN_MS) * TIME_US_PER_MS);
+        if (retryCount_ < ERR_RETRY_COUNT) {
+            retryCount_++;
+        }
+        return;
+    }
+    retryCount_ = 1;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

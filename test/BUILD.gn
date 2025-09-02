@@ -85,6 +85,7 @@ group("audio_unit_test") {
     "../services/audio_engine/test/unittest:hpae_manager_test",
     "../services/audio_engine/test/unittest:hpae_mixer_node_test",
     "../services/audio_engine/test/unittest:hpae_node_common_test",
+    "../services/audio_engine/test/unittest:hpae_offload_sinkoutput_node_test",
     "../services/audio_engine/test/unittest:hpae_output_cluster_test",
     "../services/audio_engine/test/unittest:hpae_pcm_buffer_test",
     "../services/audio_engine/test/unittest:hpae_pcm_process_test",
