@@ -27,6 +27,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 const char *ROOT_PATH = "/data/source_file_io_48000_2_s16le.pcm";
+constexpr int64_t SILENCE_TIME_OUT_US = 5 * 1000000;
 class HpaeSinkOutputNodeTest : public testing::Test {
 public:
     void SetUp();
@@ -354,7 +355,7 @@ HWTEST_F(HpaeSinkOutputNodeTest, HandlePaPower_SilenceTimeout_ShouldClosePa, Tes
 
     // Initial state: PA on and silence time near threshold
     hpaeSinkOutputNode->isOpenPaPower_ = true;
-    hpaeSinkOutputNode->silenceDataUs_ = 5 * 1000000; // 5 seconds
+    hpaeSinkOutputNode->silenceDataUs_ = SILENCE_TIME_OUT_US; // 5 seconds
 
     // Mock: normal audio scene
     EXPECT_CALL(*mockSink, GetAudioScene()).WillOnce(Return(0));
@@ -451,14 +452,14 @@ HWTEST_F(HpaeSinkOutputNodeTest, HandlePaPower_SilenceTimeoutWrongScene_ShouldNo
     
     // Initial state: PA on and silence time exceeded
     hpaeSinkOutputNode->isOpenPaPower_ = true;
-    hpaeSinkOutputNode->silenceDataUs_ = 5 * 1000000; // 5s
+    hpaeSinkOutputNode->silenceDataUs_ = SILENCE_TIME_OUT_US; // 5s
     // Mock: non-normal audio scene
     EXPECT_CALL(*mockSink, GetAudioScene()).WillOnce(Return(1)); // Scene not 0
     EXPECT_CALL(*mockSink, SetPaPower(::testing::_)).Times(0); // Should not call close
     hpaeSinkOutputNode->HandlePaPower(pcmBuffer.get());
     // Verify PA still on and timer not reset
     EXPECT_TRUE(hpaeSinkOutputNode->isOpenPaPower_);
-    EXPECT_GT(hpaeSinkOutputNode->silenceDataUs_, 5 * 1000000);
+    EXPECT_GT(hpaeSinkOutputNode->silenceDataUs_, SILENCE_TIME_OUT_US);
 }
 } // namespace HPAE
 } // namespace AudioStandard
