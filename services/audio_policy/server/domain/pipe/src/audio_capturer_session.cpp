@@ -233,7 +233,7 @@ bool AudioCapturerSession::HandleIndependentInputpipe(const std::vector<std::sha
     }
     return hasSession;
 }
-
+// sessionId 0 is a valid input parameter
 bool AudioCapturerSession::HandleNormalInputPipes(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
     uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession)
 {
@@ -317,41 +317,12 @@ int32_t AudioCapturerSession::ReloadCaptureSessionSoftLink()
 {
     std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
     hearingAidReloadFlag_ = false;
-    bool hasSession = false;
-    auto pipes = AudioPipeManager::GetPipeManager()->GetPipeList();
-    if (pipes.empty()) {
-        AUDIO_ERR_LOG("pipes invalid");
-        return ERR_INVALID_OPERATION;
-    }
+    const std::vector<std::shared_ptr<AudioPipeInfo>> pipes = AudioPipeManager::GetPipeManager()->GetPipeList();
+    CHECK_AND_RETURN_RET_LOG(!pipes.empty(), ERR_INVALID_OPERATION, "pipes invalid");
     AudioStreamDescriptor targetStream;
-    for (auto pipe : pipes) {
-        if (pipe == nullptr || pipe->streamDescriptors_.empty()) {
-            AUDIO_WARNING_LOG("pipe invalid");
-            continue;
-        }
-        if (pipe->pipeRole_ == AudioPipeRole::PIPE_ROLE_OUTPUT || (pipe->routeFlag_ & AUDIO_INPUT_FLAG_FAST) != 0) {
-            AUDIO_INFO_LOG("ignore pipe for pipeRole_: %{public}d, routeFlag_: %{public}d",
-                pipe->pipeRole_, pipe->routeFlag_);
-            continue;
-        }
-        for (auto streamDescriptor : pipe->streamDescriptors_) {
-            if (streamDescriptor == nullptr ||
-                sessionWithNormalSourceType_.find(streamDescriptor->sessionId_) ==
-                sessionWithNormalSourceType_.end()) {
-                AUDIO_WARNING_LOG("streamDescriptor invalid");
-                continue;
-            }
-            SourceType higherSourceType = sessionWithNormalSourceType_[streamDescriptor->sessionId_].sourceType;
-            if (streamDescriptor->streamStatus_ != AudioStreamStatus::STREAM_STATUS_STARTED ||
-                specialSourceTypeSet_.count(higherSourceType) != 0) {
-                continue;
-            }
-            if (IsHigherPrioritySourceType(higherSourceType, targetStream.capturerInfo_.sourceType)) {
-                hasSession = true;
-                streamDescriptor->CopyToStruct(targetStream);
-            }
-        }
-    }
+    const uint32_t softLinkSessionId = 0;
+    bool hasSession = false;
+    hasSession = HandleNormalInputPipes(pipes, softLinkSessionId, targetStream, hasSession);
 
     CHECK_AND_RETURN_RET_LOG(hasSession, SUCCESS, "no need to reload session");
     AUDIO_INFO_LOG("start reload session: %{public}u", targetStream.sessionId_);
@@ -365,7 +336,7 @@ int32_t AudioCapturerSession::ReloadCaptureSession(uint32_t sessionId, SessionOp
 {
     AUDIO_INFO_LOG("prepare reload session: %{public}u with operation: %{public}d", sessionId, operation);
     std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
-    CHECK_AND_RETURN_RET_LOG(!hearingAidReloadFlag_, SUCCESS, "no need to reload session");
+    CHECK_AND_RETURN_RET_LOG(!hearingAidReloadFlag_, SUCCESS, "no need to reload session for hearingAid");
     uint32_t targetSessionId = sessionId;
     AudioStreamDescriptor runningSessionInfo = {};
     bool needReload = false;
