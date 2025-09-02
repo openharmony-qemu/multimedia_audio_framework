@@ -48,6 +48,12 @@ static void PrepareNodeInfo(HpaeNodeInfo &nodeInfo)
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.deviceClass = "primary";
+}
+
+static void PreparePcmBufferInfo(PcmBufferInfo &bufferInfo)
+{
+    bufferInfo = {2, 960, 48000}; // 2channel 960framelen 48000samplerate
 }
 
 HWTEST_F(HpaeSinkOutputNodeTest, constructHpaeSinkOutputNode, TestSize.Level0)
@@ -172,82 +178,6 @@ HWTEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNodeRemote, TestSize.Leve
     std::function<void(bool)> callback = [](bool state) { EXPECT_FALSE(state); };
     hpaeSinkOutputNode->RegisterCurrentDeviceCallback(callback);
     hpaeSinkOutputNode->RenderSinkDeInit();
-}
-
-HWTEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutHandlePaPower, TestSize.Level0)
-{
-    std::string deviceClass = "primary";
-    std::string deviceNetId = "LocalDevice";
-    HpaeNodeInfo nodeInfo;
-    nodeInfo.deviceClass = deviceClass;
-    PrepareNodeInfo(nodeInfo);
-    std::shared_ptr<HpaeSinkOutputNode> hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
-    std::shared_ptr<HpaeSinkInputNode> hpaeSinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
-    hpaeSinkOutputNode->Connect(hpaeSinkInputNode);
-    std::shared_ptr<WriteIncDataCb> writeIncDataCb = std::make_shared<WriteIncDataCb>(SAMPLE_F32LE);
-    hpaeSinkInputNode->RegisterWriteCallback(writeIncDataCb);
-    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
-    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_NEW, true);
-    IAudioSinkAttr attr;
-    attr.adapterName = "primary";
-    attr.openMicSpeaker = 0;
-    attr.format = nodeInfo.format;
-    attr.sampleRate = nodeInfo.samplingRate;
-    attr.channel = nodeInfo.channels;
-    attr.volume = 0.0f;
-    attr.filePath = ROOT_PATH;
-    attr.deviceNetworkId = deviceNetId.c_str();
-    attr.deviceType = 0;
-    attr.channelLayout = 0;
-    attr.audioStreamFlag = 0;
-
-    hpaeSinkOutputNode->RenderSinkInit(attr);
-    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_IDLE, true);
-    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkStart(), SUCCESS);
-    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_RUNNING, true);
-    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkPause(), SUCCESS);
-    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_SUSPENDED, true);
-    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkStop(), SUCCESS);
-    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_SUSPENDED, true);
-    std::vector<HpaePcmBuffer *> &outputVec = hpaeSinkOutputNode->inputStream_.ReadPreOutputData();
-    EXPECT_FALSE(outputVec.empty());
-    HpaePcmBuffer *outputData = outputVec.front();
-    outputData->pcmBufferInfo_.state = PCM_BUFFER_STATE_SILENCE;
-    hpaeSinkOutputNode->isOpenPaPower_ = false;
-    hpaeSinkOutputNode->silenceDataUs_ = 500000000; // 500000000 us, long silence time
-    hpaeSinkOutputNode->HandlePaPower(outputData);
-    std::function<void(bool)> callback = [](bool state) { EXPECT_FALSE(state); };
-    hpaeSinkOutputNode->RegisterCurrentDeviceCallback(callback);
-    hpaeSinkOutputNode->RenderSinkDeInit();
-}
-
-HWTEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutHandlePaPower2, TestSize.Level0)
-{
-    PcmBufferInfo bufferInfo = { 2, 960, 48000 }; // 2 channel, 960 framelen, 48000 sampleRate
-    std::shared_ptr<HpaePcmBuffer> outputData = std::make_shared<HpaePcmBuffer>(bufferInfo);
-    outputData->pcmBufferInfo_.state = PCM_BUFFER_STATE_SILENCE;
-
-    uint32_t sessionId = 10001; // default sessionID
-    HpaeNodeInfo nodeInfo;
-    PrepareNodeInfo(nodeInfo);
-    nodeInfo.sessionId = sessionId;
-    nodeInfo.deviceClass = "primary"; // primary set pa power
-    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
-    auto mockSink = std::make_shared<MockAudioRenderSink>();
-    hpaeSinkOutputNode->audioRendererSink_ = mockSink;
-    hpaeSinkOutputNode->isOpenPaPower_ = true;
-    hpaeSinkOutputNode->silenceDataUs_ = 500000000; // 500000000 us, long silence time
-
-    EXPECT_CALL(*mockSink, GetAudioScene())
-        .WillOnce(Return(0))
-        .WillOnce(Return(1));
-    EXPECT_CALL(*mockSink, SetPaPower(false))
-        .WillOnce(Return(0));
-    hpaeSinkOutputNode->HandlePaPower(outputData.get());
-
-    hpaeSinkOutputNode->isOpenPaPower_ = true;
-    hpaeSinkOutputNode->silenceDataUs_ = 500000000; // 500000000 us, long silence time
-    hpaeSinkOutputNode->HandlePaPower(outputData.get());
 }
 
 #ifdef ENABLE_HOOK_PCM

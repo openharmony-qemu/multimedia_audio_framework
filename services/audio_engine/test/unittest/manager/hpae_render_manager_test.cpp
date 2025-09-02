@@ -1461,6 +1461,7 @@ HWTEST_F(HpaeRendererManagerTest, Process_001, TestSize.Level0)
         .WillOnce(Return(0));
     hpaeRendererManager->Process();
     EXPECT_EQ(hpaeRendererManager->IsRunning(), false);
+    ::testing::DefaultValue<int32_t>::Clear();
 }
 
 /**
