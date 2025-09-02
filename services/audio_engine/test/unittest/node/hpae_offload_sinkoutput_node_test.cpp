@@ -33,7 +33,6 @@ class HpaeOffloadSinkOutputNodeTest : public testing::Test {
 public:
     void SetUp() override;
     void TearDown() override;
-    void PrepareNodeInfo();
 
     std::shared_ptr<HpaeOffloadSinkOutputNode> offloadNode_;
     std::shared_ptr<MockAudioRenderSink> mockSink_;

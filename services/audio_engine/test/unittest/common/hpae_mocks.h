@@ -96,8 +96,10 @@ public:
         (uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec), (override));
 
     MOCK_METHOD(int32_t, Drain, (AudioDrainType type), (override));
-    MOCK_METHOD(void, RegistOffloadHdiCallback, (std::function<void(const RenderCallbackType type)> callback), (override));
-    MOCK_METHOD(int32_t, RegistDirectHdiCallback, (std::function<void(const RenderCallbackType type)> callback), (override));
+    MOCK_METHOD(void, RegistOffloadHdiCallback,
+        (std::function<void(const RenderCallbackType type)> callback), (override));
+    MOCK_METHOD(int32_t, RegistDirectHdiCallback,
+        (std::function<void(const RenderCallbackType type)> callback), (override));
     MOCK_METHOD(int32_t, SetBufferSize, (uint32_t sizeMs), (override));
     MOCK_METHOD(int32_t, SetOffloadRenderCallbackType, (RenderCallbackType type), (override));
     MOCK_METHOD(int32_t, LockOffloadRunningLock, (), (override));
