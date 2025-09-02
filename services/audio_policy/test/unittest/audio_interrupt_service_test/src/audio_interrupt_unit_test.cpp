@@ -2266,7 +2266,7 @@ HWTEST(AudioInterruptUnitTest, InjectInterruptToAudioZone_003, TestSize.Level1)
     interruptServiceTest->zonesMap_.clear();
     interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
     interruptServiceTest->zonesMap_[1] = std::make_shared<AudioInterruptZone>();
-    
+
     SetUid1041();
     EXPECT_NO_THROW(
         interruptServiceTest->InjectInterruptToAudioZone(1, interrupts);
@@ -2350,7 +2350,7 @@ HWTEST(AudioInterruptUnitTest, InjectInterruptToAudioZone_007, TestSize.Level1)
     interruptServiceTest->zonesMap_.clear();
     interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
     interruptServiceTest->zonesMap_[1] = std::make_shared<AudioInterruptZone>();
-    
+
     SetUid1041();
     EXPECT_NO_THROW(
         interruptServiceTest->InjectInterruptToAudioZone(1, "1", interrupts);
@@ -3701,7 +3701,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_118, TestSize.Level1)
     auto iterActive = myList.begin();
 
     AudioFocuState oldState = ACTIVE;
-    
+
     std::list<std::pair<AudioInterrupt, AudioFocuState>> myList2;
     myList.emplace_back(AudioInterrupt(), AudioFocuState::PAUSEDBYREMOTE);
     auto iterNew = myList.begin();
@@ -3748,6 +3748,40 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_119, TestSize.Level1)
     EXPECT_EQ(ret2, SUCCESS);
     ret1 = interruptServiceTest->ActivateAudioInterrupt(0, audioInterrupt);
     EXPECT_EQ(ret1, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_120
+* @tc.desc  : Test GetAudioInterruptBundleName_01
+*/ 
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_120, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(AudioInterruptService, nullptr);
+
+    AudioInterrupt audioInterrupt = {};
+    audioInterrupt.uid = 1013;
+    audioInterrupt.bundleName.clear();
+    audioInterruptService->GetAudioInterruptBundleName(audioInterrupt);
+    EXPECT_TRUE(audioInterrupt.bundleName.empty());
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_121
+* @tc.desc  : Test GetAudioInterruptBundleName_02
+*/
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_121, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(AudioInterruptService, nullptr);
+
+    AudioInterrupt audioInterrupt = {};
+    std::string str = "xyz";
+    audioInterrupt.bundleName = str;
+    audioInterruptService->GetAudioInterruptBundleName(audioInterrupt);
+    EXPECT_TRUE(audioInterrupt.bundleName.compare(str)==0);
 }
 
 /**

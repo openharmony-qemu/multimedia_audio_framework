@@ -1783,14 +1783,14 @@ int32_t AudioInterruptService::SetQueryBundleNameListCallback(const sptr<IRemote
     return SUCCESS;
 }
 
-std::string AudioInterruptService::GetRealBundleName(uint32_t uid)
+std::string AudioInterruptService::GetAudioInterruptBundleName(const AudioInterrupt &audioInterrupt)
 {
-    CHECK_AND_RETURN_RET_LOG(policyServer_ != nullptr, "", "policyServer nullptr");
-    if (IPCSkeleton::GetCallingUid() == MEDIA_SA_UID) {
-        auto info = AudioBundleManager::GetBundleInfoFromUid(uid);
-        return info.name;
+    if (audioInterrupt.bundleName.empty()) {
+        auto info = AudioBundleManager::GetBundleInfoFromUid(audioInterrupt.uid);
+        audioInterrupt.bundleName = info.name;
+        AUDIO_INFO_LOG("Get audio interrupt bundle name: %{public}s", audioInterrupt.bundleName.c_str());
     }
-    return AudioBundleManager::GetBundleName();
+    return audioInterrupt.bundleName;
 }
 
 std::string AudioInterruptService::GetCurrentBundleName(uint32_t uid)
@@ -1809,7 +1809,7 @@ void AudioInterruptService::UpdateAudioFocusStrategy(const AudioInterrupt &curre
     int32_t incomingPid = incomingInterrupt.pid;
     AudioFocusType incomingAudioFocusType = incomingInterrupt.audioFocusType;
     AudioFocusType existAudioFocusType = currentInterrupt.audioFocusType;
-    std::string bundleName = GetRealBundleName(static_cast<uint32_t>(uid));
+    std::string bundleName = GetAudioInterruptBundleName(incomingInterrupt);
     std::string currentBundleName = GetCurrentBundleName(static_cast<int32_t>(currentUid));
     CHECK_AND_RETURN_LOG(!bundleName.empty(), "bundleName is empty");
     AudioStreamType existStreamType = existAudioFocusType.streamType;

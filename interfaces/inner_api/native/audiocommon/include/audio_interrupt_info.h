@@ -298,6 +298,7 @@ public:
     int32_t pid { -1 };
     int32_t uid { -1 };
     std::string deviceTag;
+    mutable std::string bundleName;
     InterruptMode mode { SHARE_MODE };
     bool isAudioSessionInterrupt {false};
     AudioFocusConcurrency currencySources;
@@ -344,6 +345,7 @@ public:
         res = res && parcel.WriteInt32(interrupt.pid);
         res = res && parcel.WriteInt32(interrupt.uid);
         res = res && parcel.WriteString(interrupt.deviceTag);
+        res = res && parcel.WriteString(interrupt.bundleName);
         res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.mode));
         res = res && parcel.WriteBool(interrupt.isAudioSessionInterrupt);
         size_t vct = interrupt.currencySources.sourcesTypes.size();
@@ -370,6 +372,7 @@ public:
         interrupt.pid = parcel.ReadInt32();
         interrupt.uid = parcel.ReadInt32();
         interrupt.deviceTag = parcel.ReadString();
+        interrupt.bundleName = parcel.ReadString();
         interrupt.mode = static_cast<InterruptMode>(parcel.ReadInt32());
         interrupt.isAudioSessionInterrupt = parcel.ReadBool();
         int32_t vct = parcel.ReadInt32();

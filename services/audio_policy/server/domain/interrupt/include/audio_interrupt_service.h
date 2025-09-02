@@ -201,7 +201,7 @@ private:
     void UpdateFocusStrategy(const std::string &bundleName,
         AudioFocusEntry &focusEntry, bool isExistMediaStream, bool isIncomingMediaStream);
     bool IsMediaStream(AudioStreamType audioStreamType);
-    std::string GetRealBundleName(uint32_t uid);
+    std::string GetAudioInterruptBundleName(const AudioInterrupt &audioInterrupt);
     std::string GetCurrentBundleName(uint32_t uid);
     void UpdateAudioFocusStrategy(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
         AudioFocusEntry &focusEntry);
