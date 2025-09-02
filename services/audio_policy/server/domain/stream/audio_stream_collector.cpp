@@ -912,7 +912,7 @@ void AudioStreamCollector::RegisteredRendererTrackerClientDied(const int32_t uid
         const auto &audioRendererChangeInfo = *audioRendererBegin;
         if (audioRendererChangeInfo == nullptr ||
             (audioRendererChangeInfo->clientUID != uid && audioRendererChangeInfo->createrUID != uid) ||
-            audioRendererChangeInfo->clientPid != pid) {
+            (audioRendererChangeInfo->clientPid != pid && audioRendererChangeInfo->callerPid != pid)) {
             audioRendererBegin++;
             continue;
         }
