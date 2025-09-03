@@ -515,7 +515,7 @@ ChannelVolumes VolumeTools::CountVolumeLevel(const BufferDesc &buffer, AudioSamp
     ChannelVolumes channelVols = {};
     channelVols.channel = channel;
     if (format > SAMPLE_F32LE || channel > CHANNEL_16) {
-        AUDIO_ERR_LOG("failed with invalid params");
+        AUDIO_DEBUG_LOG("failed with invalid params");
         return channelVols;
     }
     switch (format) {
