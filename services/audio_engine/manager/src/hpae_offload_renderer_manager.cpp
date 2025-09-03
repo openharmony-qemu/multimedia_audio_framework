@@ -118,7 +118,7 @@ int32_t HpaeOffloadRendererManager::CreateStream(const HpaeStreamInfo &streamInf
     if (!IsInit()) {
         return ERR_INVALID_OPERATION;
     }
-    int32_t checkRet = CheckStreamInfo();
+    int32_t checkRet = CheckStreamInfo(streamInfo);
     if (checkRet != SUCCESS) {
         return checkRet;
     }
@@ -131,7 +131,7 @@ int32_t HpaeOffloadRendererManager::CreateStream(const HpaeStreamInfo &streamInf
     return SUCCESS;
 }
 
-int32_t HpaeOffloadRendererManager::CheckStreamInfo()
+int32_t HpaeOffloadRendererManager::CheckStreamInfo(const HpaeStreamInfo &streamInfo)
 {
     if (streamInfo.frameLen == 0) {
         AUDIO_ERR_LOG("FrameLen is 0.");

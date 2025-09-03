@@ -117,7 +117,7 @@ private:
         MoveSessionType moveType);
     int32_t InitSinkInner(bool isReload = false);
     int32_t CheckFramelen(bool isReload = false);
-    int32_t CheckStreamInfo();
+    int32_t CheckStreamInfo(const HpaeStreamInfo &streamInfo);
     uint32_t sinkInputNodeCounter_ = 0;
     int32_t sceneTypeToProcessClusterCount_ = 0;
     std::atomic<bool> isInit_ = false;

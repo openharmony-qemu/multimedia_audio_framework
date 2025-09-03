@@ -193,7 +193,7 @@ int32_t HpaeCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
         AUDIO_ERR_LOG("HpaeCapturerManager is not init");
         return ERR_INVALID_OPERATION;
     }
-    int32_t checkRet = CheckStreamInfo();
+    int32_t checkRet = CheckStreamInfo(streamInfo);
     if (checkRet != SUCCESS) {
         return checkRet;
     }
@@ -208,7 +208,7 @@ int32_t HpaeCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
     return SUCCESS;
 }
 
-int32_t HpaeCapturerManager::CheckStreamInfo()
+int32_t HpaeCapturerManager::CheckStreamInfo(const HpaeStreamInfo &streamInfo)
 {
     if (streamInfo.frameLen == 0) {
         AUDIO_ERR_LOG("FrameLen is 0.");

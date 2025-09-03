@@ -106,7 +106,7 @@ private:
         MoveSessionType moveType);
     int32_t InitSinkInner(bool isReload = false);
     int32_t CheckFramelen(bool isReload = false);
-    int32_t CheckStreamInfo();
+    int32_t CheckStreamInfo(const HpaeStreamInfo &streamInfo);
     void UpdateAppsUid();
 
     HpaeRenderSessionInfo sessionInfo_;

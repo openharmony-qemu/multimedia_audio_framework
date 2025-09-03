@@ -180,7 +180,7 @@ int32_t HpaeInnerCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
         AUDIO_INFO_LOG("CreateStream not init");
         return ERR_INVALID_OPERATION;
     }
-    int32_t checkRet = CheckStreamInfo();
+    int32_t checkRet = CheckStreamInfo(streamInfo);
     if (checkRet != SUCCESS) {
         return checkRet;
     }
@@ -206,7 +206,7 @@ int32_t HpaeInnerCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
     return SUCCESS;
 }
 
-int32_t HpaeInnerCapturerManager::CheckStreamInfo()
+int32_t HpaeInnerCapturerManager::CheckStreamInfo(const HpaeStreamInfo &streamInfo)
 {
     if (streamInfo.frameLen == 0) {
         AUDIO_ERR_LOG("FrameLen is 0.");
