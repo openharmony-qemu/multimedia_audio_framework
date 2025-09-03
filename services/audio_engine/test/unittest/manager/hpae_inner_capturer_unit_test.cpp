@@ -682,6 +682,38 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, InitSinkInner_002, TestSize.Level0)
     EXPECT_EQ(hpaeInnerCapturerManager_->InitSinkInner(isReload), ERROR);
     EXPECT_EQ(hpaeInnerCapturerManager_->IsInit(), false);
 }
+
+/**
+ * @tc.name  : Test CreateStream
+ * @tc.type  : FUNC
+ * @tc.number: CreateStream_003
+ * @tc.desc  : Test CreateStream when framelen is 0.
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, CreateStream_003, TestSize.Level0)
+{
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->IsInit(), true);
+    HpaeStreamInfo streamInfo = GetInCapPlayStreamInfo();
+    streamInfo.frameLen = 0;
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(streamInfo), ERROR);
+}
+
+/**
+ * @tc.name  : Test CreateStream
+ * @tc.type  : FUNC
+ * @tc.number: CreateStream_004
+ * @tc.desc  : Test CreateStream when framelen is over-sized.
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, CreateStream_004, TestSize.Level0)
+{
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->IsInit(), true);
+    HpaeStreamInfo streamInfo = GetInCapPlayStreamInfo();
+    streamInfo.frameLen = OVERSIZED_FRAME_LENGTH;
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(streamInfo), ERROR);
+}
 }  // namespace HPAE
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS

@@ -180,6 +180,10 @@ int32_t HpaeInnerCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
         AUDIO_INFO_LOG("CreateStream not init");
         return ERR_INVALID_OPERATION;
     }
+    int32_t checkRet = CheckStreamInfo();
+    if (checkRet != SUCCESS) {
+        return checkRet;
+    }
     auto request = [this, streamInfo]() {
         if (streamInfo.streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
             Trace trace("HpaeInnerCapturerManager::CreateRendererStream id[" +
@@ -199,6 +203,19 @@ int32_t HpaeInnerCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
         }
     };
     SendRequestInner(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeInnerCapturerManager::CheckStreamInfo()
+{
+    if (streamInfo.frameLen == 0) {
+        AUDIO_ERR_LOG("FrameLen is 0.");
+        return ERROR;
+    }
+    else if (streamInfo.frameLen >= 38400) {
+        AUDIO_ERR_LOG("FrameLen is over-sized.");
+        return ERROR;
+    }
     return SUCCESS;
 }
 
@@ -272,7 +289,10 @@ int32_t HpaeInnerCapturerManager::Init(bool isReload)
 int32_t HpaeInnerCapturerManager::InitSinkInner(bool isReload)
 {
     Trace trace("HpaeInnerCapturerManager::InitSinkInner");
-    CheckFramelen();
+    int32_t checkRet = CheckFramelen(isReload);
+    if (checkRet != SUCCESS) {
+        return checkRet;
+    }
     HpaeNodeInfo nodeInfo;
     nodeInfo.channels = sinkInfo_.channels;
     nodeInfo.format = sinkInfo_.format;
@@ -290,7 +310,7 @@ int32_t HpaeInnerCapturerManager::InitSinkInner(bool isReload)
     return SUCCESS;
 }
 
-int32_t HpaeInnerCapturerManager::CheckFramelen()
+int32_t HpaeInnerCapturerManager::CheckFramelen(bool isReload)
 {
     if (sinkInfo_.frameLen == 0) {
         TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
@@ -304,6 +324,7 @@ int32_t HpaeInnerCapturerManager::CheckFramelen()
         AUDIO_ERR_LOG("FrameLen is over-sized.");
         return ERROR;
     }
+    return SUCCESS;
 }
 
 bool HpaeInnerCapturerManager::DeactivateThread()

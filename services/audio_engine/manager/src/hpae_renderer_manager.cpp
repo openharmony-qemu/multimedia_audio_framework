@@ -305,6 +305,10 @@ int32_t HpaeRendererManager::CreateStream(const HpaeStreamInfo &streamInfo)
     if (!IsInit()) {
         return ERR_INVALID_OPERATION;
     }
+    int32_t checkRet = CheckStreamInfo();
+    if (checkRet != SUCCESS) {
+        return checkRet;
+    }
     auto request = [this, streamInfo]() {
         Trace trace("HpaeRendererManager::CreateStream id[" +
             std::to_string(streamInfo.sessionId) + "]");
@@ -317,6 +321,19 @@ int32_t HpaeRendererManager::CreateStream(const HpaeStreamInfo &streamInfo)
         sinkInputNodeMap_[streamInfo.sessionId]->SetState(HPAE_SESSION_PREPARED);
     };
     SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeRendererManager::CheckStreamInfo()
+{
+    if (streamInfo.frameLen == 0) {
+        AUDIO_ERR_LOG("FrameLen is 0.");
+        return ERROR;
+    }
+    else if (streamInfo.frameLen >= 38400) {
+        AUDIO_ERR_LOG("FrameLen is over-sized.");
+        return ERROR;
+    }
     return SUCCESS;
 }
 
@@ -870,7 +887,10 @@ int32_t HpaeRendererManager::InitManager(bool isReload)
 {
     AUDIO_INFO_LOG("init devicename:%{public}s", sinkInfo_.deviceName.c_str());
     HpaeNodeInfo nodeInfo;
-    CheckFramelen();
+    int32_t checkRet = CheckFramelen(isReload);
+    if (checkRet != SUCCESS) {
+        return checkRet;
+    }
     nodeInfo.channels = sinkInfo_.channels;
     nodeInfo.format = sinkInfo_.format;
     nodeInfo.frameLen = sinkInfo_.frameLen;
@@ -908,7 +928,7 @@ int32_t HpaeRendererManager::InitManager(bool isReload)
     return SUCCESS;
 }
 
-int32_t HpaeInnerCapturerManager::CheckFramelen()
+int32_t HpaeRendererManager::CheckFramelen(bool isReload)
 {
     if (sinkInfo_.frameLen == 0) {
         TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
@@ -922,6 +942,7 @@ int32_t HpaeInnerCapturerManager::CheckFramelen()
         AUDIO_ERR_LOG("FrameLen is over-sized.");
         return ERROR;
     }
+    return SUCCESS;
 }
 
 void HpaeRendererManager::InitDefaultNodeInfo()

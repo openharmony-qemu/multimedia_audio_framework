@@ -125,7 +125,8 @@ private:
     void CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo);
     void CreateOutputClusterNodeInfo(HpaeNodeInfo &nodeInfo);
     int32_t InitManager(bool isReload = false);
-    int32_t CheckFramelen();
+    int32_t CheckFramelen(bool isReload = false);
+    int32_t CheckStreamInfo();
     void InitDefaultNodeInfo();
     void MoveStreamSync(uint32_t sessionId, const std::string &sinkName);
     void UpdateAppsUid();

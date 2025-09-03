@@ -979,6 +979,46 @@ HWTEST_F(HpaeCapturerManagerTest, InitCapturerManager_002, TestSize.Level1)
     std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     EXPECT_EQ(capturerManager->InitCapturerManager(), ERROR);
 }
+
+/**
+ * @tc.name  : Test CreateStream_002
+ * @tc.type  : FUNC
+ * @tc.number: CreateStream_002
+ * @tc.desc  : Test CreateStream when frameLen is 0.
+ */
+HWTEST_F(HpaeCapturerManagerTest, CreateStream_002, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.frameLen = 0;
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), true);
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo), ERROR);
+}
+
+/**
+ * @tc.name  : Test InitCapturerManager_003
+ * @tc.type  : FUNC
+ * @tc.number: InitCapturerManager_003
+ * @tc.desc  : Test InitCapturerManager when frameLen is over-sized.
+ */
+HWTEST_F(HpaeCapturerManagerTest, CreateStream_003, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.frameLen = OVERSIZED_FRAME_LENGTH;
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), true);
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo), ERROR);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

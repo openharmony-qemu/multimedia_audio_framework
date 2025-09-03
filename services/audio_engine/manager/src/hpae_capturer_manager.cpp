@@ -193,6 +193,10 @@ int32_t HpaeCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
         AUDIO_ERR_LOG("HpaeCapturerManager is not init");
         return ERR_INVALID_OPERATION;
     }
+    int32_t checkRet = CheckStreamInfo();
+    if (checkRet != SUCCESS) {
+        return checkRet;
+    }
     auto request = [this, streamInfo]() {
         AUDIO_INFO_LOG("CreateStream sessionId %{public}u deviceName %{public}s",
             streamInfo.sessionId,
@@ -201,6 +205,19 @@ int32_t HpaeCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
         SetSessionState(streamInfo.sessionId, HPAE_SESSION_PREPARED);
     };
     SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeCapturerManager::CheckStreamInfo()
+{
+    if (streamInfo.frameLen == 0) {
+        AUDIO_ERR_LOG("FrameLen is 0.");
+        return ERROR;
+    }
+    else if (streamInfo.frameLen >= 38400) {
+        AUDIO_ERR_LOG("FrameLen is over-sized.");
+        return ERROR;
+    }
     return SUCCESS;
 }
 
@@ -655,7 +672,10 @@ int32_t HpaeCapturerManager::InitCapturerManager()
     HpaeNodeInfo nodeInfo;
     HpaeNodeInfo ecNodeInfo;
     HpaeNodeInfo micRefNodeInfo;
-    CheckFramelen();
+    int32_t checkRet = CheckFramelen();
+    if (checkRet != SUCCESS) {
+        return checkRet;
+    }
     nodeInfo.deviceClass = sourceInfo_.deviceClass;
     nodeInfo.channels = sourceInfo_.channels;
     nodeInfo.format = sourceInfo_.format;
@@ -693,16 +713,17 @@ int32_t HpaeCapturerManager::InitCapturerManager()
     return SUCCESS;
 }
 
-int32_t HpaeInnerCapturerManager::CheckFramelen()
+int32_t HpaeCapturerManager::CheckFramelen()
 {
-    if (sinkInfo_.frameLen == 0) {
+    if (sourceInfo_.frameLen == 0) {
         AUDIO_ERR_LOG("FrameLen is 0.");
         return ERROR;
     }
-    else if (sinkInfo_.frameLen >= 38400) {
+    else if (sourceInfo_.frameLen >= 38400) {
         AUDIO_ERR_LOG("FrameLen is over-sized.");
         return ERROR;
     }
+    return SUCCESS;
 }
 
 int32_t HpaeCapturerManager::Init(bool isReload)

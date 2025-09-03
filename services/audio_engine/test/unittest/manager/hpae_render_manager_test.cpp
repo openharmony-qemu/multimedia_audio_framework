@@ -1686,7 +1686,7 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerInitManager_001, TestSize.L
     std::shared_ptr<HpaeRendererManager> hpaeRendererManager =
         std::make_shared<HpaeRendererManager>(sinkInfo);
     bool isReload = 1;
-    EXPECT_EQ(hpaeRendererManager->InitSinkInner(isReload), ERROR);
+    EXPECT_EQ(hpaeRendererManager->InitManager(isReload), ERROR);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
 
@@ -1711,7 +1711,71 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerInitManager_002, TestSize.L
     std::shared_ptr<HpaeRendererManager> hpaeRendererManager =
         std::make_shared<HpaeRendererManager>(sinkInfo);
     bool isReload = 1;
-    EXPECT_EQ(hpaeRendererManager->InitSinkInner(isReload), ERROR);
+    EXPECT_EQ(hpaeRendererManager->InitManager(isReload), ERROR);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test HpaeOffloadRendererManagerCreateStream_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeOffloadRendererManagerCreateStream_001
+ * @tc.desc  : Test HpaeOffloadRendererManagerCreateStream when frameLen is 0.
+ */
+HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerCreateStream_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    std::shared_ptr<HpaeOffloadRendererManager> hpaeRendererManager =
+        std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    HpaeStreamInfo streamInfo;
+    streamInfo.frameLen = 0;
+    EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo), ERROR);
+}
+
+/**
+ * @tc.name  : Test HpaeOffloadRendererManagerCreateStream_002
+ * @tc.type  : FUNC
+ * @tc.number: HpaeOffloadRendererManagerCreateStream_002
+ * @tc.desc  : Test HpaeOffloadRendererManagerCreateStream when frameLen is over-sized.
+ */
+HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerCreateStream_002, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    std::shared_ptr<HpaeOffloadRendererManager> hpaeRendererManager =
+        std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    HpaeStreamInfo streamInfo;
+    streamInfo.frameLen = OVERSIZED_FRAME_LENGTH;
+    EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo), ERROR);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererManagerCreateStream_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRendererManagerCreateStream_001
+ * @tc.desc  : Test HpaeRendererManagerCreateStream when frameLen is 0.
+ */
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStream_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager =
+        std::make_shared<HpaeRendererManager>(sinkInfo);
+    HpaeStreamInfo streamInfo;
+    streamInfo.frameLen = 0;
+    EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo), ERROR);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererManagerCreateStream_002
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRendererManagerCreateStream_002
+ * @tc.desc  : Test HpaeRendererManagerCreateStream when frameLen is over-sized.
+ */
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStream_002, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager =
+        std::make_shared<HpaeRendererManager>(sinkInfo);
+    HpaeStreamInfo streamInfo;
+    streamInfo.frameLen = OVERSIZED_FRAME_LENGTH;
+    EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo), ERROR);
 }
 }  // namespace
