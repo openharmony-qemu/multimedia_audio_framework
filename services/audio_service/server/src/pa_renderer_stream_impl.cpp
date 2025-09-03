@@ -201,8 +201,8 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
         return ERR_OPERATION_FAILED;
     }
 
-    AudioVolume::GetInstance()->SetFadeoutState(sinkInputIndex_, DO_FADE);
-    if (!offloadEnable_) {
+    if (!offloadEnable_ && !isStandby) {
+        AudioVolume::GetInstance()->SetFadeoutState(sinkInputIndex_, DO_FADE);
         palock.Unlock();
         {
             std::unique_lock<std::mutex> lock(fadingMutex_);
