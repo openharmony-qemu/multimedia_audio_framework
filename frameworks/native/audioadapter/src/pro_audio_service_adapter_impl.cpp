@@ -562,6 +562,13 @@ int32_t ProAudioServiceAdapterImpl::SetAbsVolumeStateToEffect(const bool absVolu
     IHpaeManager::GetHpaeManager().SetAbsVolumeStateToEffect(absVolumeState);
     return SUCCESS;
 }
+
+int32_t ProAudioServiceAdapterImpl::SetSystemVolumeToEffect(AudioStreamType streamType, float volume)
+{
+    lock_guard<mutex> lock(lock_);
+    IHpaeManager::GetHpaeManager().SetEffectSystemVolume(streamType, volume);
+    return SUCCESS;
+}
 }  // namespace AudioStandard
 }  // namespace OHOS
 

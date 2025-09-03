@@ -247,6 +247,8 @@ public:
 
     virtual void SetSleVoiceStatusFlag(bool isSleVoiceStatus) = 0;
     virtual void SendLoudVolumeModeToDsp(FunctionHoldType funcHoldType, bool state) = 0;
+
+    virtual void SaveA2dpAbsVolume(DeviceType type, AudioStreamType streamType, int32_t volumeLevel) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
