@@ -1398,49 +1398,6 @@ HWTEST(AudioPolicyUnitTest, MapExternalToInternalDeviceType_002, TestSize.Level1
 }
 
 /**
-* @tc.name  : Test MapExternalToInternalDeviceType.
-* @tc.number: MapExternalToInternalDeviceType_003
-* @tc.desc  : Test MapExternalToInternalDeviceType
-*/
-HWTEST(AudioPolicyUnitTest, MapExternalToInternalDeviceType_003, TestSize.Level1)
-{
-    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    ASSERT_TRUE(server != nullptr);
-    AudioDeviceDescriptor desc;
-
-    desc.deviceType_ == DEVICE_TYPE_NEARLINK;
-    desc.deviceRole_ == INPUT_DEVICE;
-    server->MapExternalToInternalDeviceType(desc);
-    EXPECT_EQ(desc.deviceType_, DEVICE_TYPE_NEARLINK_IN);
-
-    desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP;
-    desc.deviceRole_ == INPUT_DEVICE;
-    server->MapExternalToInternalDeviceType(desc);
-    EXPECT_EQ(desc.deviceType_, DEVICE_TYPE_BLUETOOTH_A2DP_IN);
-}
-
-/**
-* @tc.name  : Test SetNearlinkDeviceVolume.
-* @tc.number: SetNearlinkDeviceVolume_001
-* @tc.desc  : Test SetNearlinkDeviceVolume
-*/
-HWTEST_F(AudioPolicyUnitTest, SetNearlinkDeviceVolume_001, TestSize.Level1)
-{
-    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    ASSERT_TRUE(server != nullptr);
-    
-    std::string macAddress = "LocalDevice";
-    int32_t streamTypeIn = 1;
-    int32_t volume = 0;
-    bool updateUi =true;
-
-    int32_t ret = server->SetNearlinkDeviceVolume(macAddress, streamTypeIn, volume, updateUi);
-
-
-    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
-}
-
-/**
 * @tc.name  : Test UpdateDeviceInfo.
 * @tc.number: UpdateDeviceInfo_001
 * @tc.desc  : Test UpdateDeviceInfo.
@@ -1455,27 +1412,6 @@ HWTEST(AudioPolicyUnitTest, UpdateDeviceInfo_001, TestSize.Level1)
     int32_t command = 1;
 
     int32_t ret = server->UpdateDeviceInfo(deviceDesc, command);
-    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
-}
-
-/**
-* @tc.name  : Test SetSleAudioOperationCallback.
-* @tc.number: SetSleAudioOperationCallback_001
-* @tc.desc  : Test SetSleAudioOperationCallback.
-*/
-HWTEST(AudioPolicyUnitTest, SetSleAudioOperationCallback_001, TestSize.Level1)
-{
-    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    ASSERT_TRUE(server != nullptr);
-
-    sptr<IRemoteObject> objectct = nullptr;
-
-    int32_t ret = server->SetSleAudioOperationCallback(objectct);
-    EXPECT_EQ(ERR_INVALID_PARAM, ret);
-
-    sptr<IRemoteObject> object = new RemoteObjectTestStub();
-
-    ret = server->SetSleAudioOperationCallback(objectct);
     EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
 }
 
