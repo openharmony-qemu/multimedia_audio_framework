@@ -578,5 +578,17 @@ std::shared_ptr<AudioPipeInfo> AudioPipeManager::FindPipeBySessionId(
     }
     return std::shared_ptr<AudioPipeInfo>();
 }
+
+bool AudioPipeManager::IsStreamUsageActive(const StreamUsage &usage)
+{
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> outputDescs = GetAllOutputStreamDescs();
+    for (auto &desc : outputDescs) {
+        CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
+        if (desc->rendererInfo_.streamUsage == usage && desc->streamStatus_ == STREAM_STATUS_STARTED) {
+            return true;
+        }
+    }
+    return false;
+}
 } // namespace AudioStandard
 } // namespace OHOS
