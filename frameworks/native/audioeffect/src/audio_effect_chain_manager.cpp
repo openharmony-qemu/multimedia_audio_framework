@@ -950,6 +950,9 @@ void AudioEffectChainManager::RecoverAllChains()
     }
     UpdateDefaultAudioEffectInner();
     UpdateStreamUsageInner();
+    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectVolume != nullptr, "null audioEffectVolume");
+    EffectVolumeUpdateInner(audioEffectVolume);
 }
 
 // LCOV_EXCL_START
