@@ -1798,7 +1798,7 @@ void AudioCoreService::TriggerRecreateRendererStreamCallback(shared_ptr<AudioStr
     }
 }
 
-void AudioCoreService::TriggerRecreateRendererStreamCallback(shared_ptr<AudioStreamDescriptor> &streamDesc,
+void AudioCoreService::TriggerRecreateRendererStreamCallbackEntry(shared_ptr<AudioStreamDescriptor> &streamDesc,
     const AudioStreamDeviceChangeReasonExt reason)
 {
     TriggerRecreateRendererStreamCallback(streamDesc, reason);
