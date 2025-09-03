@@ -719,7 +719,8 @@ void NapiAudioSessionMgr::UnregisterSessionInputDeviceCallback(napi_env env, nap
         return;
     }
 
-    std::shared_ptr<NapiAudioSessionInputDeviceCallback> cb = GetAudioSessionInputDeviceCallback(callback, napiSessionMgr);
+    std::shared_ptr<NapiAudioSessionInputDeviceCallback> cb =
+        GetAudioSessionInputDeviceCallback(callback, napiSessionMgr);
     CHECK_AND_RETURN_LOG(cb != nullptr, "The callback function not registered.");
     std::shared_ptr<AudioSessionCurrentInputDeviceChangedCallback> deviceCallback =
         std::static_pointer_cast<AudioSessionCurrentInputDeviceChangedCallback>(cb);

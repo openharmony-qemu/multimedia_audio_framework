@@ -781,7 +781,8 @@ int32_t AudioPolicyClientStubImpl::OnAudioSessionCurrentInputDeviceChanged(
 {
     AUDIO_INFO_LOG("OnAudioSessionCurrentInputDeviceChanged in");
     std::lock_guard<std::mutex> lockCbMap(audioSessionInputDeviceMutex_);
-    for (auto it = audioSessionInputDeviceCallbackList_.begin(); it != audioSessionInputDeviceCallbackList_.end(); ++it) {
+    for (auto it = audioSessionInputDeviceCallbackList_.begin();
+        it != audioSessionInputDeviceCallbackList_.end(); ++it) {
         std::shared_ptr<AudioSessionCurrentInputDeviceChangedCallback> deviceChangedCallback = (*it).lock();
         if (deviceChangedCallback != nullptr) {
             deviceChangedCallback->OnAudioSessionCurrentInputDeviceChanged(deviceChangedEvent);

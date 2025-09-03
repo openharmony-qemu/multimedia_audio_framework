@@ -187,7 +187,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::GetCapturerDevice(
         // 根据sourceType决定最终输入设备
         auto desc = JudgeFinalSelectDevice(deviceIt->second, sourceType);
         // 最终决策设备不会空，则返回
-        CHECK_AND_RETURN_RET_LOG(desc == nullptr, desc, "AudioUsrSelectManager::GetCapturerDevice has selected device.");
+        CHECK_AND_RETURN_RET_LOG(desc == nullptr, desc,
+            "AudioUsrSelectManager::GetCapturerDevice has selected device.");
     }
 
     // 当前uid没有强选，则应用偏好设置
@@ -228,7 +229,7 @@ int32_t AudioUsrSelectManager::GetRealUid(const std::shared_ptr<AudioStreamDescr
 
 std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::JudgeFinalSelectDevice(
     const std::shared_ptr<AudioDeviceDescriptor> &desc, SourceType sourceType)
-{   
+{
     // 如果是直播或录像且设备为sco，需要判断是否存在可用的高清设备
     if ((sourceType == SOURCE_TYPE_CAMCORDER || sourceType == SOURCE_TYPE_LIVE) &&
         desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {

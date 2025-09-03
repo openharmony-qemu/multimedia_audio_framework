@@ -92,7 +92,8 @@ private:
         napi_env env, napi_value jsThis, napi_value *args);
     static std::shared_ptr<NapiAudioSessionDeviceCallback> GetAudioSessionDeviceCallback(
         napi_value argv, NapiAudioSessionMgr *napiSessionMgr);
-    static void UnregisterSessionInputDeviceCallback(napi_env env, napi_value callback, NapiAudioSessionMgr *napiSessionMgr);
+    static void UnregisterSessionInputDeviceCallback(napi_env env, napi_value callback,
+        NapiAudioSessionMgr *napiSessionMgr);
     static std::shared_ptr<NapiAudioSessionInputDeviceCallback> GetAudioSessionInputDeviceCallback(
         napi_value argv, NapiAudioSessionMgr *napiSessionMgr);
     static napi_value GetAvailableDevices(napi_env env, napi_callback_info info);

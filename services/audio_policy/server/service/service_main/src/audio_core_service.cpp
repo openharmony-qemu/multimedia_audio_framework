@@ -235,7 +235,7 @@ int32_t AudioCoreService::CreateCapturerClient(
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::GetCaptureClientDevice(
-        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t sessionId)
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t sessionId)
 {
     auto captureStreams = pipeManager_->GetAllCapturerStreamDescs();
     CHECK_AND_RETURN_RET(captureStreams.size() == 0,
@@ -1388,7 +1388,8 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute(std::string caller, const Aud
 
     int32_t ret = FetchCapturerPipesAndExecute(inputStreamDescs);
     if (isUpdateActiveDevice) {
-        OnPreferredInputDeviceUpdated(audioActiveDevice_.GetCurrentInputDeviceType(), "", reason); // networkId is not used.
+        // networkId is not used.
+        OnPreferredInputDeviceUpdated(audioActiveDevice_.GetCurrentInputDeviceType(), "", reason);
     }
     return ret;
 }

@@ -26,25 +26,29 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr int32_t DEVICE_ID1 = 1;
+constexpr int32_t DEVICE_ID2 = 2;
 
 void AudioUsrSelectManagerUnitTest::SetUpTestCase(void) {}
 void AudioUsrSelectManagerUnitTest::TearDownTestCase(void) {}
-void AudioUsrSelectManagerUnitTest::SetUp(void) {
+void AudioUsrSelectManagerUnitTest::SetUp(void)
+{
     std::shared_ptr<AudioDeviceDescriptor> desc1 = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::INPUT_DEVICE);
-    desc1->deviceId_ = 1;
+    desc1->deviceId_ = DEVICE_ID1;
     desc1->macAddress_ = "00:11:22:33:44:55";
     desc1->connectState_ = VIRTUAL_CONNECTED;
     AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc1);
 
     std::shared_ptr<AudioDeviceDescriptor> desc2 = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN, DeviceRole::INPUT_DEVICE);
-    desc2->deviceId_ = 2;
+    desc2->deviceId_ = DEVICE_ID2;
     desc2->macAddress_ = "00:11:22:33:44:55";
     desc2->connectState_ = CONNECTED;
     AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc1);
 }
-void AudioUsrSelectManagerUnitTest::TearDown(void) {
+void AudioUsrSelectManagerUnitTest::TearDown(void)
+{
     AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.clear();
 }
 
@@ -195,7 +199,7 @@ HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_JudgeFinalSelectDe
 
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::INPUT_DEVICE);
-    desc->deviceId_ = 1;
+    desc->deviceId_ = DEVICE_ID1;
     desc->macAddress_ = "00:11:22:33:44:55";
     desc->connectState_ = VIRTUAL_CONNECTED;
     auto judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_CAMCORDER);
@@ -218,7 +222,7 @@ HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_JudgeFinalSelectDe
 
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN, DeviceRole::INPUT_DEVICE);
-    desc->deviceId_ = 2;
+    desc->deviceId_ = DEVICE_ID2;
     desc->macAddress_ = "00:11:22:33:44:55";
     desc->connectState_ = CONNECTED;
 

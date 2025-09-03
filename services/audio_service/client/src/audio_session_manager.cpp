@@ -212,7 +212,8 @@ int32_t AudioSessionManager::SetAudioSessionCurrentInputDeviceChangeCallback(
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(deviceChangedCallback != nullptr, ERR_INVALID_PARAM, "deviceChangedCallback is nullptr");
 
-    int32_t ret = AudioPolicyManager::GetInstance().SetAudioSessionCurrentInputDeviceChangeCallback(deviceChangedCallback);
+    int32_t ret =
+        AudioPolicyManager::GetInstance().SetAudioSessionCurrentInputDeviceChangeCallback(deviceChangedCallback);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
         "SetAudioSessionCurrentInputDeviceChangeCallback ret:%{public}d", ret);
     return ret;

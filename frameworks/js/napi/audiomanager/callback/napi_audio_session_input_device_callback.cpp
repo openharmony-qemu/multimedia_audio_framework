@@ -40,7 +40,8 @@ NapiAudioSessionInputDeviceCallback::~NapiAudioSessionInputDeviceCallback()
 void NapiAudioSessionInputDeviceCallback::OnAudioSessionCurrentInputDeviceChanged(
     const CurrentInputDeviceChangedEvent &deviceEvent)
 {
-    AUDIO_INFO_LOG("OnAudioSessionCurrentInputDeviceChanged is called changeReason=%{public}d", deviceEvent.changeReason);
+    AUDIO_INFO_LOG("OnAudioSessionCurrentInputDeviceChanged is called changeReason=%{public}d",
+        deviceEvent.changeReason);
     CHECK_AND_RETURN_LOG(audioSessionInputDeviceJsCallback_ != nullptr,
         "OnAudioSessionCurrentInputDeviceChanged:No JS callback registered return");
 
