@@ -21,16 +21,28 @@
 #include "fast_audio_stream.h"
 
 using namespace testing::ext;
+using namespace testing;
+using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-
+class MockAudioProcessInClient;
 class FastSystemStreamUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
-    void SetUp();
-    void TearDown();
+    void SetUp() override {
+        stream_ = make_unique<FastAudioStream>();
+        mockProcessClient_ = make_shared<MockAudioProcessInClient>();
+        stream_->processClient_ = mockProcessClient_;
+    }
+    void TearDown() override {
+        stream_.reset();
+        mockProcessClient_.reset();
+    }
+
+    unique_ptr<FastAudioStream> stream_;
+    shared_ptr<MockAudioProcessInClient> mockProcessClient_;
 };
 
 class AudioClientTrackerTest : public AudioClientTracker {
@@ -118,6 +130,68 @@ class MockFastAudioStream : public FastAudioStream {
 public:
     using FastAudioStream::FastAudioStream;
     MOCK_METHOD(float, GetDuckVolume, (),  (override));
+};
+
+class MockAudioProcessInClient : public AudioProcessInClient {
+public:
+    MOCK_METHOD(int32_t, SaveDataCallback, (const std::shared_ptr<AudioDataCallback> &dataCallback), (override));
+    MOCK_METHOD(int32_t, SaveUnderrunCallback, (const std::shared_ptr<ClientUnderrunCallBack> &underrunCallback), (override));
+
+    MOCK_METHOD(int32_t, GetBufferDesc, (BufferDesc &bufDesc), (const, override));
+    MOCK_METHOD(int32_t, Enqueue, (const BufferDesc &bufDesc), (override));
+
+    MOCK_METHOD(int32_t, SetVolume, (int32_t vol), (override));
+    MOCK_METHOD(int32_t, SetSourceDuration, (int64_t duration), (override));
+
+    MOCK_METHOD(int32_t, Start, (), (override));
+    MOCK_METHOD(int32_t, Pause, (bool isFlush), (override));
+    MOCK_METHOD(int32_t, Resume, (), (override));
+    MOCK_METHOD(int32_t, Stop, (AudioProcessStage stage), (override));
+    MOCK_METHOD(int32_t, Release, (bool isSwitchStream), (override));
+
+    MOCK_METHOD(int32_t, GetSessionID, (uint32_t &sessionID), (override));
+    MOCK_METHOD(bool, GetAudioTime, (uint32_t &framePos, int64_t &sec, int64_t &nanoSec), (override));
+    MOCK_METHOD(int32_t, GetBufferSize, (size_t &bufferSize), (override));
+    MOCK_METHOD(int32_t, GetFrameCount, (uint32_t &frameCount), (override));
+    MOCK_METHOD(int32_t, GetLatency, (uint64_t &latency), (override));
+
+    MOCK_METHOD(int32_t, SetVolume, (float vol), (override));
+    MOCK_METHOD(float, GetVolume, (), (override));
+
+    MOCK_METHOD(int32_t, SetDuckVolume, (float vol), (override));
+    MOCK_METHOD(float, GetDuckVolume, (), (override));
+
+    MOCK_METHOD(int32_t, SetMute, (bool mute), (override));
+    MOCK_METHOD(bool, GetMute, (), (override));
+
+    MOCK_METHOD(uint32_t, GetUnderflowCount, (), (override));
+    MOCK_METHOD(uint32_t, GetOverflowCount, (), (override));
+    MOCK_METHOD(void, SetUnderflowCount, (uint32_t underflowCount), (override));
+    MOCK_METHOD(void, SetOverflowCount, (uint32_t overflowCount), (override));
+
+    MOCK_METHOD(int64_t, GetFramesWritten, (), (override));
+    MOCK_METHOD(int64_t, GetFramesRead, (), (override));
+
+    MOCK_METHOD(void, SetPreferredFrameSize, (int32_t frameSize), (override));
+    MOCK_METHOD(void, UpdateLatencyTimestamp, (std::string &timestamp, bool isRenderer), (override));
+
+    MOCK_METHOD(int32_t, SetDefaultOutputDevice, (const DeviceType defaultOutputDevice, bool skipForce), (override));
+    MOCK_METHOD(int32_t, SetSilentModeAndMixWithOthers, (bool on), (override));
+
+    MOCK_METHOD(void, GetRestoreInfo, (RestoreInfo &restoreInfo), (override));
+    MOCK_METHOD(void, SetRestoreInfo, (RestoreInfo &restoreInfo), (override));
+    MOCK_METHOD(RestoreStatus, CheckRestoreStatus, (), (override));
+    MOCK_METHOD(RestoreStatus, SetRestoreStatus, (RestoreStatus restoreStatus), (override));
+
+    MOCK_METHOD(void, SaveAdjustStreamVolumeInfo, 
+        (float volume, uint32_t sessionId, std::string adjustTime, uint32_t code), (override));
+
+    MOCK_METHOD(int32_t, RegisterThreadPriority, 
+        (pid_t tid, const std::string &bundleName, BoostTriggerMethod method), (override));
+
+    MOCK_METHOD(bool, GetStopFlag, (), (const, override));
+    MOCK_METHOD(void, JoinCallbackLoop, (), (override));
+    MOCK_METHOD(void, SetAudioHapticsSyncId, (const int32_t &audioHapticsSyncId), (override));
 };
 
 /**
@@ -1070,22 +1144,84 @@ HWTEST(FastSystemStreamUnitTest, SetDefaultOutputDevice_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test GetAudioTimestampInfo API
+ * @tc.name  : Test GetAudioTimestampInfo with null process client
  * @tc.type  : FUNC
  * @tc.number: GetAudioTimestampInfo_001
- * @tc.desc  : Test GetAudioTimestampInfo interface.
+ * @tc.desc  : Test GetAudioTimestampInfo returns error when process client is null
  */
-HWTEST(FastSystemStreamUnitTest, GetAudioTimestampInfo_001, TestSize.Level1)
+HWTEST(FastSystemStreamUnitTest, GetAudioTimestampInfo_001, TestSize.Level0)
 {
-    int32_t appUid = static_cast<int32_t>(getuid());
-    std::shared_ptr<FastAudioStream> fastAudioStream;
-    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
-
-    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetAudioTimestampInfo_001 start");
     Timestamp timestamp;
-    Timestamp::Timestampbase base = Timestamp::Timestampbase::MONOTONIC;
-    auto result = fastAudioStream->GetAudioTimestampInfo(timestamp, base);
+    stream_->processClient_ = nullptr;
+
+    int32_t result = stream_->GetAudioTimestampInfo(timestamp, Timestamp::MONOTONIC);
+
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test GetAudioTimestampInfo with invalid timestamp base
+ * @tc.type  : FUNC
+ * @tc.number: GetAudioTimestampInfo_002
+ * @tc.desc  : Test GetAudioTimestampInfo returns error when timestamp base is not MONOTONIC
+ */
+HWTEST(FastSystemStreamUnitTest, GetAudioTimestampInfo_002, TestSize.Level0)
+{
+    Timestamp timestamp;
+
+    int32_t result = stream_->GetAudioTimestampInfo(timestamp, Timestamp::BOOTTIME);
+
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test GetAudioTimestampInfo when GetAudioTime returns false
+ * @tc.type  : FUNC
+ * @tc.number: GetAudioTimestampInfo_003
+ * @tc.desc  : Test GetAudioTimestampInfo returns error when GetAudioTime returns false
+ */
+HWTEST(FastSystemStreamUnitTest, GetAudioTimestampInfo_003, TestSize.Level0)
+{
+    Timestamp timestamp;
+
+    // Set expectation: mock process client's GetAudioTime returns false
+    EXPECT_CALL(*mockProcessClient_, GetAudioTime(_, _, _))
+        .WillOnce(Return(false));
+
+    int32_t result = stream_->GetAudioTimestampInfo(timestamp, Timestamp::MONOTONIC);
+
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test GetAudioTimestampInfo success case
+ * @tc.type  : FUNC
+ * @tc.number: GetAudioTimestampInfo_004
+ * @tc.desc  : Test GetAudioTimestampInfo returns success and correctly populates timestamp
+ */
+HWTEST(FastSystemStreamUnitTest, GetAudioTimestampInfo_004, TestSize.Level0)
+{
+    Timestamp timestamp;
+
+    uint32_t expectedFramePos = 100;
+    int64_t expectedSec = 12345;
+    int64_t expectedNsec = 67890;
+
+    // Set expectation: mock process client's GetAudioTime returns true with test values
+    EXPECT_CALL(*mockProcessClient_, GetAudioTime(_, _, _))
+        .WillOnce(DoAll(
+            SetArgReferee<0>(expectedFramePos),
+            SetArgReferee<1>(expectedSec),
+            SetArgReferee<2>(expectedNsec),
+            Return(true)
+        ));
+
+    int32_t result = stream_->GetAudioTimestampInfo(timestamp, Timestamp::MONOTONIC);
+
     EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(timestamp.framePosition, expectedFramePos);
+    EXPECT_EQ(timestamp.time.tv_sec, expectedSec);
+    EXPECT_EQ(timestamp.time.tv_nsec, expectedNsec);
 }
 
 /**
