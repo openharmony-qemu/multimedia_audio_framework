@@ -911,7 +911,7 @@ void AudioCoreService::ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeI
                 CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, desc);
                 break;
             case AUDIO_STREAM_ACTION_RECREATE:
-                TriggerRecreateRendererStreamCallback(desc, reason);
+                TriggerRecreateRendererStreamCallbackEntry(desc, reason);
                 break;
             default:
                 break;
@@ -943,7 +943,7 @@ void AudioCoreService::ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pi
                 CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, desc);
                 break;
             case AUDIO_STREAM_ACTION_RECREATE:
-                TriggerRecreateRendererStreamCallback(desc, reason);
+                TriggerRecreateRendererStreamCallbackEntry(desc, reason);
                 break;
             default:
                 break;
@@ -1796,6 +1796,13 @@ void AudioCoreService::TriggerRecreateRendererStreamCallback(shared_ptr<AudioStr
         callbackDesc->descriptorType_ = AudioDeviceDescriptor::DEVICE_INFO;
         audioPolicyServerHandler_->SendRendererDeviceChangeEvent(callerPid, sessionId, callbackDesc, reason);
     }
+}
+
+void AudioCoreService::TriggerRecreateRendererStreamCallbackEntry(shared_ptr<AudioStreamDescriptor> &streamDesc,
+    const AudioStreamDeviceChangeReasonExt reason)
+{
+    TriggerRecreateRendererStreamCallback(streamDesc, reason);
+    audioIOHandleMap_.NotifyUnmutePort();
 }
 
 CapturerState AudioCoreService::HandleStreamStatusToCapturerState(AudioStreamStatus status)
