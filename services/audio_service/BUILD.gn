@@ -400,6 +400,7 @@ audio_ohos_library("audio_process_service") {
     "server/src/audio_workgroup_callback.cpp",
     "server/src/audio_workgroup.cpp",
     "server/src/audio_resource_service.cpp",
+    "server/src/audio_injector_service.cpp",
   ]
 
   if (!audio_framework_feature_new_engine_flag) {
