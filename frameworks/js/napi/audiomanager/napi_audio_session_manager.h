@@ -23,12 +23,14 @@
 #include "audio_session_manager.h"
 #include "napi_audio_session_state_callback.h"
 #include "napi_audio_session_device_callback.h"
+#include "napi_audio_session_input_device_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
 const std::string AUDIOSESSION_CALLBACK_NAME = "audioSessionDeactivated";
 const std::string AUDIOSESSION_STATE_CALLBACK_NAME = "audioSessionStateChanged";
 const std::string AUDIOSESSION_DEVICE_CALLBACK_NAME = "currentOutputDeviceChanged";
+const std::string AUDIOSESSION_INPUT_DEVICE_CALLBACK_NAME = "currentInputDeviceChanged";
 
 class NapiAudioSessionMgr {
 public:
@@ -83,10 +85,15 @@ private:
         napi_value argv, NapiAudioSessionMgr *napiSessionMgr);
     static void RegisterAudioSessionDeviceCallback(napi_env env, napi_value *args,
         const std::string &cbName, NapiAudioSessionMgr *napiSessionMgr);
+    static void RegisterAudioSessionInputDeviceCallback(napi_env env, napi_value *args,
+        NapiAudioSessionMgr *napiSessionMgr);
     static void UnregisterSessionDeviceCallback(napi_env env, napi_value jsThis);
     static void UnregisterSessionDeviceCallbackCarryParam(
         napi_env env, napi_value jsThis, napi_value *args);
     static std::shared_ptr<NapiAudioSessionDeviceCallback> GetAudioSessionDeviceCallback(
+        napi_value argv, NapiAudioSessionMgr *napiSessionMgr);
+    static void UnregisterSessionInputDeviceCallback(napi_env env, napi_value callback, NapiAudioSessionMgr *napiSessionMgr);
+    static std::shared_ptr<NapiAudioSessionInputDeviceCallback> GetAudioSessionInputDeviceCallback(
         napi_value argv, NapiAudioSessionMgr *napiSessionMgr);
     static napi_value GetAvailableDevices(napi_env env, napi_callback_info info);
     static napi_value SelectMediaInputDevice(napi_env env, napi_callback_info info);
@@ -97,7 +104,8 @@ private:
 
     static void RegisterAvaiableDeviceChangeCallback(napi_env env, napi_value *args,
         NapiAudioSessionMgr *napiSessionMgr);
-    static napi_value UnregisterCB(napi_env env, napi_value jsThis, napi_value* args);
+    static napi_value UnregisterCB(napi_env env, napi_value jsThis, napi_value* args,
+        napi_valuetype handler, NapiAudioSessionMgr *napiSessionMgr);
     static void UnregisterAvailableDeviceChangeCallback(napi_env env, napi_value callback,
         NapiAudioSessionMgr *napiSessionMgr);
 
@@ -108,9 +116,11 @@ private:
     std::shared_ptr<AudioManagerAvailableDeviceChangeCallback> availableDeviceChangeCallbackNapi_ = nullptr;
     std::list<std::shared_ptr<NapiAudioSessionStateCallback>> sessionStateCallbackList_;
     std::list<std::shared_ptr<NapiAudioSessionDeviceCallback>> sessionDeviceCallbackList_;
+    std::list<std::shared_ptr<NapiAudioSessionInputDeviceCallback>> sessionInputDeviceCallbackList_;
 
     std::mutex sessionStateCbMutex_;
     std::mutex sessionDeviceCbMutex_;
+    std::mutex sessionInputDeviceCbMutex_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

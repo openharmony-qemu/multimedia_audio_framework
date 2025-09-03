@@ -278,5 +278,11 @@ void AudioPolicyClientHolder::OnAudioSessionCurrentDeviceChanged(
     audioPolicyClient_->OnAudioSessionCurrentDeviceChanged(deviceChangedEvent);
 }
 
+void AudioPolicyClientHolder::OnAudioSessionCurrentInputDeviceChanged(
+    const CurrentInputDeviceChangedEvent &deviceChangedEvent)
+{
+    CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
+    audioPolicyClient_->OnAudioSessionCurrentInputDeviceChanged(deviceChangedEvent);
+}
 } // namespace AudioStandard
 } // namespace OHOS

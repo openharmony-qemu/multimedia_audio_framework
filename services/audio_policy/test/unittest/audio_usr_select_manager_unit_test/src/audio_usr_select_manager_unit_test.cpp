@@ -29,57 +29,207 @@ namespace AudioStandard {
 
 void AudioUsrSelectManagerUnitTest::SetUpTestCase(void) {}
 void AudioUsrSelectManagerUnitTest::TearDownTestCase(void) {}
-void AudioUsrSelectManagerUnitTest::SetUp(void) {}
-void AudioUsrSelectManagerUnitTest::TearDown(void) {}
+void AudioUsrSelectManagerUnitTest::SetUp(void) {
+    std::shared_ptr<AudioDeviceDescriptor> desc1 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::INPUT_DEVICE);
+    desc1->deviceId_ = 1;
+    desc1->macAddress_ = "00:11:22:33:44:55";
+    desc1->connectState_ = VIRTUAL_CONNECTED;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc1);
+
+    std::shared_ptr<AudioDeviceDescriptor> desc2 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN, DeviceRole::INPUT_DEVICE);
+    desc2->deviceId_ = 2;
+    desc2->macAddress_ = "00:11:22:33:44:55";
+    desc2->connectState_ = CONNECTED;
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc1);
+}
+void AudioUsrSelectManagerUnitTest::TearDown(void) {
+    AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.clear();
+}
 
 /**
 * @tc.name  : Test AudioUsrSelectManager.
-* @tc.number: AudioUsrSelectManagerUnitTest_001
+* @tc.number: AudioUsrSelectManager_SelectInputDeviceByUid_001
 * @tc.desc  : Test SelectInputDeviceByUid interface.
 */
-HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManagerUnitTest_001, TestSize.Level0)
+HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_SelectInputDeviceByUid_001, TestSize.Level1)
 {
     AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     int32_t uid = 123;
-    audioUsrSelectManager.SelectInputDeviceByUid(desc, uid);
-    EXPECT_EQ(audioUsrSelectManager.audioUsrSelectMap_.size(), 1);
-    EXPECT_EQ(audioUsrSelectManager.audioUsrSelectMap_[uid].size(), 1);
+    EXPECT_EQ(audioUsrSelectManager.SelectInputDeviceByUid(desc, uid), false);
 }
 
 /**
-* @tc.name  : Test AudioStateManager.
-* @tc.number: AudioUsrSelectManagerUnitTest_002
+* @tc.name  : Test AudioUsrSelectManager.
+* @tc.number: AudioUsrSelectManager_SelectInputDeviceByUid_002
+* @tc.desc  : Test SelectInputDeviceByUid interface.
+*/
+HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_SelectInputDeviceByUid_002, TestSize.Level1)
+{
+    AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceId_ = 1;
+    int32_t uid = 123;
+    EXPECT_EQ(audioUsrSelectManager.SelectInputDeviceByUid(desc, uid), false);
+}
+
+/**
+* @tc.name  : Test AudioUsrSelectManager.
+* @tc.number: AudioUsrSelectManager_SelectInputDeviceByUid_003
+* @tc.desc  : Test SelectInputDeviceByUid interface.
+*/
+HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_SelectInputDeviceByUid_003, TestSize.Level1)
+{
+    AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceId_ = 2;
+    int32_t uid = 123;
+    EXPECT_EQ(audioUsrSelectManager.SelectInputDeviceByUid(desc, uid), true);
+}
+
+/**
+* @tc.name  : Test AudioUsrSelectManager.
+* @tc.number: AudioUsrSelectManager_GetSelectedInputDeviceByUid_001
 * @tc.desc  : Test GetSelectedInputDeviceByUid interface.
 */
-HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManagerUnitTest_002, TestSize.Level1)
+HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_GetSelectedInputDeviceByUid_001, TestSize.Level1)
 {
     AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->deviceId_ = 123;
-    int32_t uid = 123;
-    audioUsrSelectManager.SelectInputDeviceByUid(desc, uid);
-
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor =
-        audioUsrSelectManager.GetSelectedInputDeviceByUid(uid);
-    EXPECT_EQ(audioDeviceDescriptor->deviceId_, 123);
+    int32_t uid = 321;
+    auto desc = audioUsrSelectManager.GetSelectedInputDeviceByUid(uid);
+    EXPECT_EQ(desc->deviceType_, DeviceType(0));
 }
 
 /**
-* @tc.name  : Test AudioStateManager.
-* @tc.number: AudioUsrSelectManagerUnitTest_003
-* @tc.desc  : Test ClearSelectedInputDeviceByUid interface.
+* @tc.name  : Test AudioUsrSelectManager.
+* @tc.number: AudioUsrSelectManager_GetSelectedInputDeviceByUid_002
+* @tc.desc  : Test GetSelectedInputDeviceByUid interface.
 */
-HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManagerUnitTest_003, TestSize.Level1)
+HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_GetSelectedInputDeviceByUid_002, TestSize.Level1)
 {
     AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     int32_t uid = 123;
-    audioUsrSelectManager.SelectInputDeviceByUid(desc, uid);
+    auto desc = audioUsrSelectManager.GetSelectedInputDeviceByUid(uid);
+    EXPECT_EQ(desc->deviceId_, 2);
 
+    AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.clear();
+    desc = audioUsrSelectManager.GetSelectedInputDeviceByUid(uid);
+    EXPECT_EQ(desc->deviceType_, DeviceType(0));
+}
+
+/**
+* @tc.name  : Test AudioUsrSelectManager.
+* @tc.number: AudioUsrSelectManager_ClearSelectedInputDeviceByUid_001
+* @tc.desc  : Test ClearSelectedInputDeviceByUid interface.
+*/
+HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_ClearSelectedInputDeviceByUid_001, TestSize.Level1)
+{
+    AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
+    int32_t uid = 321;
     audioUsrSelectManager.ClearSelectedInputDeviceByUid(uid);
-    EXPECT_EQ(audioUsrSelectManager.audioUsrSelectMap_.size(), 1);
-    EXPECT_EQ(audioUsrSelectManager.audioUsrSelectMap_[uid].size(), 1);
+    EXPECT_EQ(audioUsrSelectManager.selectedDevices_.size(), 1);
+
+    uid = 123;
+    audioUsrSelectManager.ClearSelectedInputDeviceByUid(uid);
+    EXPECT_EQ(audioUsrSelectManager.selectedDevices_.size(), 0);
+}
+
+/**
+* @tc.name  : Test AudioUsrSelectManager.
+* @tc.number: AudioUsrSelectManager_PreferBluetoothAndNearlinkRecordByUid_001
+* @tc.desc  : Test PreferBluetoothAndNearlinkRecordByUid interface.
+*/
+HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_PreferBluetoothAndNearlinkRecordByUid_001,
+    TestSize.Level1)
+{
+    AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
+    audioUsrSelectManager.PreferBluetoothAndNearlinkRecordByUid(123, true);
+    EXPECT_EQ(audioUsrSelectManager.isPreferredBluetoothAndNearlinkRecord_.size(), 1);
+
+    audioUsrSelectManager.PreferBluetoothAndNearlinkRecordByUid(123, false);
+    EXPECT_EQ(audioUsrSelectManager.isPreferredBluetoothAndNearlinkRecord_.size(), 0);
+}
+
+/**
+* @tc.name  : Test AudioUsrSelectManager.
+* @tc.number: AudioUsrSelectManager_GetPreferBluetoothAndNearlinkRecordByUid_001
+* @tc.desc  : Test GetPreferBluetoothAndNearlinkRecordByUid interface.
+*/
+HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_GetPreferBluetoothAndNearlinkRecordByUid_001,
+    TestSize.Level1)
+{
+    AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
+    EXPECT_EQ(audioUsrSelectManager.GetPreferBluetoothAndNearlinkRecordByUid(123), true);
+    EXPECT_EQ(audioUsrSelectManager.GetPreferBluetoothAndNearlinkRecordByUid(321), false);
+}
+
+/**
+* @tc.name  : Test AudioUsrSelectManager.
+* @tc.number: AudioUsrSelectManager_GetRealUid_001
+* @tc.desc  : Test GetRealUid interface.
+*/
+HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_GetRealUid_001, TestSize.Level1)
+{
+    AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
+
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->streamStatus_ = STREAM_STATUS_STARTED;
+    stream->callerUid_ = 123;
+    EXPECT_EQ(audioUsrSelectManager.GetRealUid(stream), 123);
+
+    stream->callerUid_ = 1013;
+    stream->appInfo_.appUid = 321;
+    EXPECT_EQ(audioUsrSelectManager.GetRealUid(stream), 321);
+}
+
+/**
+* @tc.name  : Test AudioUsrSelectManager.
+* @tc.number: AudioUsrSelectManager_JudgeFinalSelectDevice_001
+* @tc.desc  : Test JudgeFinalSelectDevice interface.
+*/
+HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_JudgeFinalSelectDevice_001, TestSize.Level1)
+{
+    AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
+
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::INPUT_DEVICE);
+    desc->deviceId_ = 1;
+    desc->macAddress_ = "00:11:22:33:44:55";
+    desc->connectState_ = VIRTUAL_CONNECTED;
+    auto judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_CAMCORDER);
+    EXPECT_NE(judge, nullptr);
+    EXPECT_EQ(judge->deviceId_, 2);
+
+    judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_LIVE);
+    EXPECT_NE(judge, nullptr);
+    EXPECT_EQ(judge->deviceId_, 2);
+}
+
+/**
+* @tc.name  : Test AudioUsrSelectManager.
+* @tc.number: AudioUsrSelectManager_JudgeFinalSelectDevice_002
+* @tc.desc  : Test JudgeFinalSelectDevice interface.
+*/
+HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_JudgeFinalSelectDevice_002, TestSize.Level1)
+{
+    AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
+
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN, DeviceRole::INPUT_DEVICE);
+    desc->deviceId_ = 2;
+    desc->macAddress_ = "00:11:22:33:44:55";
+    desc->connectState_ = CONNECTED;
+
+    auto judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_CAMCORDER);
+    EXPECT_NE(judge, nullptr);
+
+    judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_LIVE);
+    EXPECT_NE(judge, nullptr);
+    
+    judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_VOICE_CALL);
+    EXPECT_NE(judge, nullptr);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -803,6 +803,17 @@ void AudioDeviceManager::AddAvailableDevicesByUsage(const AudioDeviceUsage usage
     }
 }
 
+std::shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetExistedDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &device)
+{
+    for (const auto &dev : connectedDevices_) {
+        if (dev->IsSameDeviceInfo(*device)) {
+            return make_shared<AudioDeviceDescriptor>(dev);
+        }
+    }
+    return nullptr;
+}
+
 bool AudioDeviceManager::IsExistedDevice(const std::shared_ptr<AudioDeviceDescriptor> &device,
     const vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
@@ -1000,6 +1011,22 @@ std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableB
     for (const auto &desc : connectedDevices_) {
         if (desc->deviceType_ == devType && desc->macAddress_ == macAddress) {
             audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(*desc));
+        }
+    }
+    return audioDeviceDescriptors;
+}
+
+std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetConnectedDevicesByTypesAndRole(
+    const std::vector<DeviceType> &types, DeviceRole role)
+{
+    std::vector<shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
+    for (const auto &desc : connectedDevices_) {
+        if (std::find(types.begin(), types.end(), desc->deviceType_) != types.end() &&
+            desc->deviceRole_ == role &&
+            desc->connectState_ == VIRTUAL_CONNECTED) {
+            audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(desc));
         }
     }
     return audioDeviceDescriptors;

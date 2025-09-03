@@ -1746,6 +1746,23 @@ bool AudioStreamCollector::HasRunningRecognitionCapturerStream()
     return hasRunningRecognitionCapturerStream;
 }
 
+bool AudioStreamCollector::HasRunningCapturerStreamByUid(int32_t uid)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    // judge stream state is running
+    bool hasStream = std::any_of(audioCapturerChangeInfos_.begin(), audioCapturerChangeInfos_.end(),
+        [uid](const auto &changeInfo) {
+            if (changeInfo->capturerState == CAPTURER_RUNNING && changeInfo->clientUID == uid) {
+                AUDIO_INFO_LOG("Running Capturer stream : %{public}d with uid %{public}d",
+                    changeInfo->sessionId, uid);
+                return true;
+            }
+            return false;
+        });
+
+    return hasStream;
+}
+
 bool AudioStreamCollector::HasRunningNormalCapturerStream(DeviceType type)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);

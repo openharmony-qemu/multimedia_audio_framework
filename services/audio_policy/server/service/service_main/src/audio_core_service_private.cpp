@@ -855,7 +855,7 @@ int32_t AudioCoreService::FetchDeviceAndRoute(std::string caller, const AudioStr
 {
     int32_t ret = FetchOutputDeviceAndRoute(caller + "FetchDeviceAndRoute", reason);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fetch output device failed");
-    return FetchInputDeviceAndRoute(caller + "FetchDeviceAndRoute");
+    return FetchInputDeviceAndRoute(caller + "FetchDeviceAndRoute", reason);
 }
 
 int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
@@ -1614,12 +1614,14 @@ void AudioCoreService::OnPreferredOutputDeviceUpdated(const AudioDeviceDescripto
     AudioCollaborativeService::GetAudioCollaborativeService().UpdateCurrentDevice(deviceDescriptor);
 }
 
-void AudioCoreService::OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId)
+void AudioCoreService::OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId,
+    const AudioStreamDeviceChangeReason reason)
 {
     AUDIO_INFO_LOG("OnPreferredInputDeviceUpdated Start");
 
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->SendPreferredInputDeviceUpdated();
+        audioPolicyServerHandler_->SendAudioSessionInputDeviceChange(reason);
     }
 }
 
@@ -2867,7 +2869,7 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
             if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK) {
                 FetchOutputDeviceAndRoute("ActivateNearlinkDevice", reason);
             } else {
-                FetchInputDeviceAndRoute("ActivateNearlinkDevice");
+                FetchInputDeviceAndRoute("ActivateNearlinkDevice", reason);
             }
         }
     }

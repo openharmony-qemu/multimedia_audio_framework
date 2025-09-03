@@ -18,16 +18,18 @@
 
 #include "audio_system_manager.h"
 
+#include "audio_device_manager.h"
+#include "audio_stream_descriptor.h"
+
 #include "ipc_skeleton.h"
 
 #include <shared_mutex>
 #include <unordered_map>
-#include <deque>
+#include <list>
 
 namespace OHOS {
 namespace AudioStandard {
 typedef std::shared_ptr<AudioDeviceDescriptor> AudioDevicePtr;
-typedef std::deque<AudioDevicePtr> AudioDeviceList;
 
 class AudioUsrSelectManager {
 public:
@@ -38,18 +40,28 @@ public:
     }
 
     // Set media render device selected by the user
-    void SelectInputDeviceByUid(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, int32_t uid);
+    bool SelectInputDeviceByUid(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, int32_t uid);
     std::shared_ptr<AudioDeviceDescriptor> GetSelectedInputDeviceByUid(int32_t uid);
     void ClearSelectedInputDeviceByUid(int32_t uid);
     void PreferBluetoothAndNearlinkRecordByUid(int32_t uid, bool isPreferred);
     bool GetPreferBluetoothAndNearlinkRecordByUid(int32_t uid);
+    void EnableSelectInputDevice(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &inputStreamDescs);
+    void DisableSelectInputDevice();
+    std::shared_ptr<AudioDeviceDescriptor> GetCapturerDevice(int32_t uid, SourceType sourceType);
 
 private:
     AudioUsrSelectManager() {};
     ~AudioUsrSelectManager() {};
 
-    std::unordered_map<pid_t, AudioDeviceList> audioUsrSelectMap_;
-    std::unordered_map<pid_t, bool> isPreferredBluetoothAndNearlinkRecordMap_;
+    std::list<std::pair<int32_t, AudioDevicePtr>>::iterator findDevice(int32_t uid);
+    int32_t GetRealUid(const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    std::shared_ptr<AudioDeviceDescriptor> JudgeFinalSelectDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc,
+        SourceType sourceType);
+
+    std::list<std::pair<int32_t, AudioDevicePtr>> selectedDevices_;
+    std::list<int32_t> isPreferredBluetoothAndNearlinkRecord_;
+    AudioDevicePtr capturerDevice_ = nullptr;
+    bool isEnabled_ = false;
     std::mutex mutex_;
 };
 
