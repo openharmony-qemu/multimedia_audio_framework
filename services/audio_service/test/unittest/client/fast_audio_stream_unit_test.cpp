@@ -31,18 +31,22 @@ class FastSystemStreamUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
-    void SetUp() override {
-        stream_ = make_unique<FastAudioStream>();
+
+    shared_ptr<FastAudioStream> stream_ = nullptr;
+    shared_ptr<MockAudioProcessInClient> mockProcessClient_ = nullptr;
+
+    void SetUp() override
+    {
+        int32_t appUid = static_cast<int32_t>(getuid());
+        stream_ = make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
         mockProcessClient_ = make_shared<MockAudioProcessInClient>();
         stream_->processClient_ = mockProcessClient_;
     }
-    void TearDown() override {
+    void TearDown() override
+    {
         stream_.reset();
         mockProcessClient_.reset();
     }
-
-    unique_ptr<FastAudioStream> stream_;
-    shared_ptr<MockAudioProcessInClient> mockProcessClient_;
 };
 
 class AudioClientTrackerTest : public AudioClientTracker {
@@ -135,7 +139,8 @@ public:
 class MockAudioProcessInClient : public AudioProcessInClient {
 public:
     MOCK_METHOD(int32_t, SaveDataCallback, (const std::shared_ptr<AudioDataCallback> &dataCallback), (override));
-    MOCK_METHOD(int32_t, SaveUnderrunCallback, (const std::shared_ptr<ClientUnderrunCallBack> &underrunCallback), (override));
+    MOCK_METHOD(int32_t, SaveUnderrunCallback,
+        (const std::shared_ptr<ClientUnderrunCallBack> &underrunCallback), (override));
 
     MOCK_METHOD(int32_t, GetBufferDesc, (BufferDesc &bufDesc), (const, override));
     MOCK_METHOD(int32_t, Enqueue, (const BufferDesc &bufDesc), (override));
@@ -183,10 +188,10 @@ public:
     MOCK_METHOD(RestoreStatus, CheckRestoreStatus, (), (override));
     MOCK_METHOD(RestoreStatus, SetRestoreStatus, (RestoreStatus restoreStatus), (override));
 
-    MOCK_METHOD(void, SaveAdjustStreamVolumeInfo, 
+    MOCK_METHOD(void, SaveAdjustStreamVolumeInfo,
         (float volume, uint32_t sessionId, std::string adjustTime, uint32_t code), (override));
 
-    MOCK_METHOD(int32_t, RegisterThreadPriority, 
+    MOCK_METHOD(int32_t, RegisterThreadPriority,
         (pid_t tid, const std::string &bundleName, BoostTriggerMethod method), (override));
 
     MOCK_METHOD(bool, GetStopFlag, (), (const, override));
