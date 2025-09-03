@@ -94,6 +94,7 @@ private:
     int32_t CaptureEffectCreate(const HpaeProcessorType &sceneType, const AudioEnhanceScene &enhanceScene);
     int32_t CaptureEffectRelease(const HpaeProcessorType &sceneType);
     int32_t InitCapturerManager();
+    int32_t CheckFramelen();
     void CreateSourceAttr(IAudioSourceAttr &attr);
     int32_t CapturerSourceStart();
     int32_t CapturerSourceStop();

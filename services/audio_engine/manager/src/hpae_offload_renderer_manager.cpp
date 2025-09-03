@@ -424,12 +424,7 @@ int32_t HpaeOffloadRendererManager::InitSinkInner(bool isReload)
 {
     AUDIO_INFO_LOG("HpaeOffloadRendererManager::init");
     HpaeNodeInfo nodeInfo;
-    if (sinkInfo_.frameLen == 0) {
-        TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
-                        sinkInfo_.deviceName, ERR_INVALID_PARAM);
-        AUDIO_ERR_LOG("FrameLen is 0");
-        return ERROR;
-    }
+    CheckFramelen();
     nodeInfo.channels = sinkInfo_.channels;
     nodeInfo.format = sinkInfo_.format;
     nodeInfo.frameLen = sinkInfo_.frameLen;
@@ -460,6 +455,22 @@ int32_t HpaeOffloadRendererManager::InitSinkInner(bool isReload)
     TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT, sinkInfo_.deviceName, ret);
     AUDIO_INFO_LOG("HpaeOffloadRendererManager::inited");
     return SUCCESS;
+}
+
+int32_t HpaeInnerCapturerManager::CheckFramelen()
+{
+    if (sinkInfo_.frameLen == 0) {
+        TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
+                        sinkInfo_.deviceName, ERR_INVALID_PARAM);
+        AUDIO_ERR_LOG("FrameLen is 0.");
+        return ERROR;
+    }
+    else if (sinkInfo_.frameLen >= 38400) {
+        TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
+                        sinkInfo_.deviceName, ERR_INVALID_PARAM);
+        AUDIO_ERR_LOG("FrameLen is over-sized.");
+        return ERROR;
+    }
 }
 
 bool HpaeOffloadRendererManager::DeactivateThread()
