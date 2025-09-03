@@ -28,8 +28,6 @@ public:
 
     virtual int32_t OnPause(IAudioProcessStream *processStream) = 0;
 
-    virtual int32_t OnUpdateHandleInfo(IAudioProcessStream *processStream) = 0;
-
     virtual ~IProcessStatusListener() = default;
 };
 } // namespace AudioStandard
