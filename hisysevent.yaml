@@ -278,7 +278,7 @@ SYSTEM_TONE_PLAYBACK:
   VIBRATION_STATE: {type: BOOL, arrsize: 100, desc: vibration state}
   VOLUME_LEVEL: {type: UINT8, arrsize: 100, desc: volume level}
   TIME_STAMP: {type: INT64, arrsize: 100, desc: the time stamp}
-  
+
 RECORD_ERROR:
   __BASE: {type: FAULT, level: CRITICAL, tag: AudioRecord, desc: AudioRecordErrorEvent}
   INCOMING_SOURCE: {type: UINT8, desc: source of incoming record}
@@ -332,3 +332,9 @@ MOVE_STREAM_EXCEPTION:
   DES_NAME: {type: STRING, desc: route name of stream move to}
   STREAM_TYPE: {type: UINT32, desc: stream type}
   ERROR_DESCRIPTION: {type: STRING, desc: error description}
+
+VOLUME_API_INVOKE:
+  __BASE: {type: STATISTIC, level: CRITICAL, desc: Ivocation of volume-related APIs}
+  APP_NAME: {type: STRING, desc: application name}
+  FUNC_NAME: {type: STRING, desc: function name}
+  PARAM_VALUE: {type: INT32, desc: streamUsage or audioVolumeType enum value}

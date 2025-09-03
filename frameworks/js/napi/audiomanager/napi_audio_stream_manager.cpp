@@ -24,6 +24,7 @@
 #include "audio_manager_log.h"
 #include "napi_audio_renderer_state_callback.h"
 #include "napi_audio_capturer_state_callback.h"
+#include "napi_dfx_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -315,6 +316,10 @@ napi_value NapiAudioStreamMgr::IsStreamActive(napi_env env, napi_callback_info i
         auto *napiStreamMgr = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioStreamManagerStatus(napiStreamMgr, context),
             "context object state is error.");
+
+        NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+            "isActive", context->volType);
+
         context->isActive = napiStreamMgr->audioStreamMngr_->IsStreamActive(
             NapiAudioEnum::GetNativeAudioVolumeType(context->volType));
         context->isTrue = context->isActive;
@@ -346,6 +351,9 @@ napi_value NapiAudioStreamMgr::IsStreamActiveSync(napi_env env, napi_callback_in
     CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType),
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of volumeType must be enum AudioVolumeType"), "get volType failed");
+
+    NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+        "isActiveSync", volType);
 
     CHECK_AND_RETURN_RET_LOG(napiStreamMgr != nullptr, result, "napiStreamMgr is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiStreamMgr->audioStreamMngr_ != nullptr, result,
@@ -380,6 +388,10 @@ napi_value NapiAudioStreamMgr::IsStreamActiveByStreamUsage(napi_env env, napi_ca
     CHECK_AND_RETURN_RET_LOG(napiStreamMgr != nullptr, result, "napiStreamMgr is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiStreamMgr->audioStreamMngr_ != nullptr, result,
         "audioStreamMngr_ is nullptr");
+
+    NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+        "isStreamActive", streamUsage);
+
     bool isActive = napiStreamMgr->audioStreamMngr_->
         IsStreamActiveByStreamUsage(NapiAudioEnum::GetNativeStreamUsage(streamUsage));
     NapiParamUtils::SetValueBoolean(env, isActive, result);
