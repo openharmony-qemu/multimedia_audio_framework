@@ -1173,7 +1173,7 @@ int32_t GetEngineFlag()
         CHECK_AND_RETURN_RET_LOG(res, engineFlag, "get %{public}s fail", para.c_str());
     }
     return engineFlag;
-#else 
+#else
     return 1;
 #endif
 }
