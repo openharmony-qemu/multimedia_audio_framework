@@ -1164,6 +1164,7 @@ template bool GetSysPara(const char *key, std::string &value);
 
 int32_t GetEngineFlag()
 {
+#ifdef SUPPORT_OLD_ENGINE
     std::string para = "const.multimedia.audio.proaudioEnable";
     static int32_t engineFlag = -1;
     if (engineFlag == -1) {
@@ -1172,6 +1173,9 @@ int32_t GetEngineFlag()
         CHECK_AND_RETURN_RET_LOG(res, engineFlag, "get %{public}s fail", para.c_str());
     }
     return engineFlag;
+#else
+    return 1;
+#endif
 }
 
 std::map<std::string, std::string> DumpFileUtil::g_lastPara = {};
