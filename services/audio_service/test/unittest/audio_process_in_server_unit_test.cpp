@@ -18,6 +18,7 @@
 #include "audio_errors.h"
 #include "audio_service.h"
 #include "audio_device_info.h"
+#include "oh_audio_buffer.h"
 
 using namespace testing::ext;
 
@@ -1187,5 +1188,749 @@ HWTEST(AudioProcessInServerUnitTest, GetSpanSizeInFrame_001, TestSize.Level4)
     uint32_t ret = audioProcessInServerRet.GetSpanSizeInFrame();
     EXPECT_EQ(ret, audioProcessInServerRet.spanSizeInframe_);
 }
+
+#ifdef ENABLE_INJECT
+class MockOHAudioBufferBase : public OHAudioBufferBase {
+public:
+    MOCK_METHOD(int32_t, GetWritableDataFrames, (), (override));
+    MOCK_METHOD(uint64_t, GetCurWriteFrame, (), (override));
+    MOCK_METHOD(int32_t, GetAllWritableBufferFromPosFrame, (uint64_t, RingBufferWrapper&), (override));
+    MOCK_METHOD(void, GetSizeParameter, (uint32_t&, uint32_t&), (override));
+    MOCK_METHOD(void, SetHandleInfo, (uint64_t, uint64_t), (override));
+    MOCK_METHOD(int32_t, SetCurWriteFrame, (uint64_t), (override));
+};
+
+class MockAudioProcessInServer : public AudioProcessInServer {
+public:
+    using AudioProcessInServer::AudioProcessInServer;
+    MOCK_METHOD(int32_t, HandleCapturerDataParams, (RingBufferWrapper&, AudioCaptureDataProcParams&), ());
+    MOCK_METHOD(bool, GetMuteState, (), (const));
+};
+
+// Mock classes for dependencies
+class MockFormatConverter {
+public:
+    static MockFormatConverter* GetMockInstance()
+    {
+        static MockFormatConverter instance;
+        return &instance;
+    }
+    
+    MOCK_METHOD(FormatHandlerMap, GetFormatHandlers, ());
+    MOCK_METHOD(int32_t, S16StereoToF32Stereo, (const BufferDesc&, BufferDesc&));
+};
+
+class MockProResampler {
+public:
+    static MockProResampler* GetMockInstance()
+    {
+        static MockProResampler instance;
+        return &instance;
+    }
+    
+    MOCK_METHOD(int32_t, Process, (const float*, uint32_t, float*, uint32_t));
+};
+
+class MockRingBufferWrapper {
+public:
+    static MockRingBufferWrapper* GetMockInstance()
+    {
+        static MockRingBufferWrapper instance;
+        return &instance;
+    }
+    
+    MOCK_METHOD(int32_t, Write, (const uint8_t*, size_t));
+};
+
+/**
+ * @tc.name  : Test WriteToSpecialProcBuf API
+ * @tc.type  : FUNC
+ * @tc.number: WriteToSpecialProcBuf_001
+ * @tc.desc  : Test WriteToSpecialProcBuf with null process buffer.
+ */
+HWTEST(AudioProcessInServerUnitTest, WriteToSpecialProcBuf_001, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService* service = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServer(config, service);
+
+    AudioCaptureDataProcParams procParams;
+    procParams.procBuf_ = nullptr; // Set null process buffer
+
+    auto result = audioProcessInServer.WriteToSpecialProcBuf(procParams);
+    EXPECT_EQ(result, ERR_INVALID_HANDLE);
+}
+
+/**
+ * @tc.name  : Test WriteToSpecialProcBuf API
+ * @tc.type  : FUNC
+ * @tc.number: WriteToSpecialProcBuf_002
+ * @tc.desc  : Test WriteToSpecialProcBuf with insufficient writable size.
+ */
+HWTEST(AudioProcessInServerUnitTest, WriteToSpecialProcBuf_002, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService* service = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServer(config, service);
+
+    AudioCaptureDataProcParams procParams;
+    auto mockProcBuf = std::make_shared<MockOHAudioBufferBase>();
+    procParams.procBuf_ = mockProcBuf;
+    procParams.dstSpanSizeInframe_ = 100; // Request more frames than available
+
+    // Mock GetWritableDataFrames to return insufficient size
+    EXPECT_CALL(*mockProcBuf, GetWritableDataFrames()).WillOnce(Return(50));
+    EXPECT_CALL(*mockProcBuf, GetCurWriteFrame()).WillOnce(Return(0));
+
+    auto result = audioProcessInServer.WriteToSpecialProcBuf(procParams);
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test WriteToSpecialProcBuf API
+ * @tc.type  : FUNC
+ * @tc.number: WriteToSpecialProcBuf_003
+ * @tc.desc  : Test WriteToSpecialProcBuf with GetAllWritableBufferFromPosFrame failure.
+ */
+HWTEST(AudioProcessInServerUnitTest, WriteToSpecialProcBuf_003, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService* service = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServer(config, service);
+
+    AudioCaptureDataProcParams procParams;
+    auto mockProcBuf = std::make_shared<MockOHAudioBufferBase>();
+    procParams.procBuf_ = mockProcBuf;
+    procParams.dstSpanSizeInframe_ = 50;
+
+    // Mock sufficient writable frames
+    EXPECT_CALL(*mockProcBuf, GetWritableDataFrames()).WillOnce(Return(100));
+    EXPECT_CALL(*mockProcBuf, GetCurWriteFrame()).WillOnce(Return(0));
+    // Mock GetAllWritableBufferFromPosFrame to fail
+    EXPECT_CALL(*mockProcBuf, GetAllWritableBufferFromPosFrame(_, _)).WillOnce(Return(ERR_OPERATION_FAILED));
+
+    auto result = audioProcessInServer.WriteToSpecialProcBuf(procParams);
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test WriteToSpecialProcBuf API
+ * @tc.type  : FUNC
+ * @tc.number: WriteToSpecialProcBuf_004
+ * @tc.desc  : Test WriteToSpecialProcBuf with zero byteSizePerFrame.
+ */
+HWTEST(AudioProcessInServerUnitTest, WriteToSpecialProcBuf_004, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService* service = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServer(config, service);
+
+    AudioCaptureDataProcParams procParams;
+    auto mockProcBuf = std::make_shared<MockOHAudioBufferBase>();
+    procParams.procBuf_ = mockProcBuf;
+    procParams.dstSpanSizeInframe_ = 50;
+
+    // Mock sufficient writable frames
+    EXPECT_CALL(*mockProcBuf, GetWritableDataFrames()).WillOnce(Return(100));
+    EXPECT_CALL(*mockProcBuf, GetCurWriteFrame()).WillOnce(Return(0));
+    // Mock GetAllWritableBufferFromPosFrame to succeed
+    EXPECT_CALL(*mockProcBuf, GetAllWritableBufferFromPosFrame(_, _)).WillOnce(Return(SUCCESS));
+    // Mock GetSizeParameter to return zero byteSizePerFrame
+    EXPECT_CALL(*mockProcBuf, GetSizeParameter(_, _)).WillOnce(DoAll(SetArgReferee<0>(1000), SetArgReferee<1>(0)));
+
+    auto result = audioProcessInServer.WriteToSpecialProcBuf(procParams);
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test WriteToSpecialProcBuf API
+ * @tc.type  : FUNC
+ * @tc.number: WriteToSpecialProcBuf_005
+ * @tc.desc  : Test WriteToSpecialProcBuf with mute state enabled, should set buffer to zero.
+ */
+HWTEST(AudioProcessInServerUnitTest, WriteToSpecialProcBuf_005, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService* service = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServer(config, service);
+
+    // Enable mute state
+    audioProcessInServer.muteFlag_ = true;
+
+    AudioCaptureDataProcParams procParams;
+    auto mockProcBuf = std::make_shared<MockOHAudioBufferBase>();
+    procParams.procBuf_ = mockProcBuf;
+    procParams.dstSpanSizeInframe_ = 50;
+
+    // Mock sufficient writable frames
+    EXPECT_CALL(*mockProcBuf, GetWritableDataFrames()).WillOnce(Return(100));
+    EXPECT_CALL(*mockProcBuf, GetCurWriteFrame()).WillOnce(Return(0));
+    // Mock GetAllWritableBufferFromPosFrame to succeed
+    EXPECT_CALL(*mockProcBuf, GetAllWritableBufferFromPosFrame(_, _)).WillOnce(Return(SUCCESS));
+    // Mock GetSizeParameter to return valid parameters
+    EXPECT_CALL(*mockProcBuf, GetSizeParameter(_, _)).WillOnce(DoAll(SetArgReferee<0>(1000), SetArgReferee<1>(4)));
+    // Mock RingBufferWrapper SetBuffersValueWithSpecifyDataLen for mute
+    // Note: This requires mocking the RingBufferWrapper behavior
+    EXPECT_CALL(*mockProcBuf, SetHandleInfo(_, _)).Times(1);
+    EXPECT_CALL(*mockProcBuf, SetCurWriteFrame(_)).WillOnce(Return(SUCCESS));
+
+    auto result = audioProcessInServer.WriteToSpecialProcBuf(procParams);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test WriteToSpecialProcBuf API
+ * @tc.type  : FUNC
+ * @tc.number: WriteToSpecialProcBuf_006
+ * @tc.desc  : Test WriteToSpecialProcBuf with HandleCapturerDataParams failure.
+ */
+HWTEST(AudioProcessInServerUnitTest, WriteToSpecialProcBuf_006, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService* service = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServer(config, service);
+
+    // Disable mute state to trigger HandleCapturerDataParams
+    audioProcessInServer.muteFlag_ = false;
+
+    AudioCaptureDataProcParams procParams;
+    auto mockProcBuf = std::make_shared<MockOHAudioBufferBase>();
+    procParams.procBuf_ = mockProcBuf;
+    procParams.dstSpanSizeInframe_ = 50;
+
+    // Mock sufficient writable frames
+    EXPECT_CALL(*mockProcBuf, GetWritableDataFrames()).WillOnce(Return(100));
+    EXPECT_CALL(*mockProcBuf, GetCurWriteFrame()).WillOnce(Return(0));
+    // Mock GetAllWritableBufferFromPosFrame to succeed
+    EXPECT_CALL(*mockProcBuf, GetAllWritableBufferFromPosFrame(_, _)).WillOnce(Return(SUCCESS));
+    // Mock GetSizeParameter to return valid parameters
+    EXPECT_CALL(*mockProcBuf, GetSizeParameter(_, _)).WillOnce(DoAll(SetArgReferee<0>(1000), SetArgReferee<1>(4)));
+    // Mock HandleCapturerDataParams to fail
+    EXPECT_CALL(audioProcessInServer, HandleCapturerDataParams(_, _)).WillOnce(Return(ERR_OPERATION_FAILED));
+
+    auto result = audioProcessInServer.WriteToSpecialProcBuf(procParams);
+    EXPECT_EQ(result, ERR_WRITE_FAILED);
+}
+
+/**
+ * @tc.name  : Test WriteToSpecialProcBuf API
+ * @tc.type  : FUNC
+ * @tc.number: WriteToSpecialProcBuf_007
+ * @tc.desc  : Test WriteToSpecialProcBuf with SetCurWriteFrame failure.
+ */
+HWTEST(AudioProcessInServerUnitTest, WriteToSpecialProcBuf_007, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService* service = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServer(config, service);
+
+    // Disable mute state
+    audioProcessInServer.muteFlag_ = false;
+
+    AudioCaptureDataProcParams procParams;
+    auto mockProcBuf = std::make_shared<MockOHAudioBufferBase>();
+    procParams.procBuf_ = mockProcBuf;
+    procParams.dstSpanSizeInframe_ = 50;
+
+    // Mock sufficient writable frames
+    EXPECT_CALL(*mockProcBuf, GetWritableDataFrames()).WillOnce(Return(100));
+    EXPECT_CALL(*mockProcBuf, GetCurWriteFrame()).WillOnce(Return(0));
+    // Mock GetAllWritableBufferFromPosFrame to succeed
+    EXPECT_CALL(*mockProcBuf, GetAllWritableBufferFromPosFrame(_, _)).WillOnce(Return(SUCCESS));
+    // Mock GetSizeParameter to return valid parameters
+    EXPECT_CALL(*mockProcBuf, GetSizeParameter(_, _)).WillOnce(DoAll(SetArgReferee<0>(1000), SetArgReferee<1>(4)));
+    // Mock HandleCapturerDataParams to succeed
+    EXPECT_CALL(audioProcessInServer, HandleCapturerDataParams(_, _)).WillOnce(Return(EOK));
+    // Mock SetHandleInfo to succeed
+    EXPECT_CALL(*mockProcBuf, SetHandleInfo(_, _)).Times(1);
+    // Mock SetCurWriteFrame to fail
+    EXPECT_CALL(*mockProcBuf, SetCurWriteFrame(_)).WillOnce(Return(ERR_OPERATION_FAILED));
+
+    auto result = audioProcessInServer.WriteToSpecialProcBuf(procParams);
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test WriteToSpecialProcBuf API
+ * @tc.type  : FUNC
+ * @tc.number: WriteToSpecialProcBuf_008
+ * @tc.desc  : Test WriteToSpecialProcBuf successful execution.
+ */
+HWTEST(AudioProcessInServerUnitTest, WriteToSpecialProcBuf_008, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService* service = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServer(config, service);
+
+    // Disable mute state
+    audioProcessInServer.muteFlag_ = false;
+
+    AudioCaptureDataProcParams procParams;
+    auto mockProcBuf = std::make_shared<MockOHAudioBufferBase>();
+    procParams.procBuf_ = mockProcBuf;
+    procParams.dstSpanSizeInframe_ = 50;
+
+    // Mock sufficient writable frames
+    EXPECT_CALL(*mockProcBuf, GetWritableDataFrames()).WillOnce(Return(100));
+    EXPECT_CALL(*mockProcBuf, GetCurWriteFrame()).WillOnce(Return(0));
+    // Mock GetAllWritableBufferFromPosFrame to succeed
+    EXPECT_CALL(*mockProcBuf, GetAllWritableBufferFromPosFrame(_, _)).WillOnce(Return(SUCCESS));
+    // Mock GetSizeParameter to return valid parameters
+    EXPECT_CALL(*mockProcBuf, GetSizeParameter(_, _)).WillOnce(DoAll(SetArgReferee<0>(1000), SetArgReferee<1>(4)));
+    // Mock HandleCapturerDataParams to succeed
+    EXPECT_CALL(audioProcessInServer, HandleCapturerDataParams(_, _)).WillOnce(Return(EOK));
+    // Mock SetHandleInfo and SetCurWriteFrame to succeed
+    EXPECT_CALL(*mockProcBuf, SetHandleInfo(_, _)).Times(1);
+    EXPECT_CALL(*mockProcBuf, SetCurWriteFrame(_)).WillOnce(Return(SUCCESS));
+
+    auto result = audioProcessInServer.WriteToSpecialProcBuf(procParams);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetCaptureStreamInfo API
+ * @tc.type  : FUNC
+ * @tc.number: SetCaptureStreamInfo_001
+ * @tc.desc  : Test SetCaptureStreamInfo with isConvertReadFormat true, should set format to SAMPLE_F32LE.
+ */
+HWTEST(AudioProcessInServerUnitTest, SetCaptureStreamInfo_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService* releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+
+    AudioStreamInfo srcInfo = {};
+    AudioCaptureDataProcParams procParams;
+    procParams.isConvertReadFormat_ = true;
+    procParams.srcSamplingRate = 48000;
+
+    audioProcessInServerRet.SetCaptureStreamInfo(srcInfo, procParams);
+
+    EXPECT_EQ(srcInfo.channels, STEREO);
+    EXPECT_EQ(srcInfo.format, SAMPLE_F32LE);
+    EXPECT_EQ(srcInfo.samplingRate, procParams.srcSamplingRate);
+}
+
+/**
+ * @tc.name  : Test SetCaptureStreamInfo API
+ * @tc.type  : FUNC
+ * @tc.number: SetCaptureStreamInfo_002
+ * @tc.desc  : Test SetCaptureStreamInfo with isConvertReadFormat false, should set format to SAMPLE_S16LE.
+ */
+HWTEST(AudioProcessInServerUnitTest, SetCaptureStreamInfo_002, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService* releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+
+    AudioStreamInfo srcInfo = {};
+    AudioCaptureDataProcParams procParams;
+    procParams.isConvertReadFormat_ = false;
+    procParams.srcSamplingRate = 44100;
+
+    audioProcessInServerRet.SetCaptureStreamInfo(srcInfo, procParams);
+
+    EXPECT_EQ(srcInfo.channels, STEREO);
+    EXPECT_EQ(srcInfo.format, SAMPLE_S16LE);
+    EXPECT_EQ(srcInfo.samplingRate, procParams.srcSamplingRate);
+}
+
+/**
+ * @tc.name  : Test CaptureDataResampleProcess API
+ * @tc.type  : FUNC
+ * @tc.number: CaptureDataResampleProcess_001
+ * @tc.desc  : Test CaptureDataResampleProcess with same sample rate and no format conversion.
+ */
+HWTEST(AudioProcessInServerUnitTest, CaptureDataResampleProcess_001, TestSize.Level2)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.streamInfo.samplingRate = 48000;
+    AudioService* releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+
+    size_t bufLen = 1024;
+    BufferDesc outBuf = {};
+    AudioStreamInfo srcInfo;
+    srcInfo.samplingRate = 48000;
+    srcInfo.format = SAMPLE_S16LE;
+    srcInfo.channels = STEREO;
+
+    AudioCaptureDataProcParams procParams;
+    procParams.isConvertReadFormat_ = false;
+    procParams.captureConvBuffer_.resize(bufLen);
+
+    int32_t ret = audioProcessInServerRet.CaptureDataResampleProcess(bufLen, outBuf, srcInfo, procParams);
+
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(outBuf.buffer, nullptr); // No change when no resampling needed
+}
+
+/**
+ * @tc.name  : Test CaptureDataResampleProcess API
+ * @tc.type  : FUNC
+ * @tc.number: CaptureDataResampleProcess_002
+ * @tc.desc  : Test CaptureDataResampleProcess with same sample rate and format conversion needed.
+ */
+HWTEST(AudioProcessInServerUnitTest, CaptureDataResampleProcess_002, TestSize.Level2)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.streamInfo.samplingRate = 48000;
+    AudioService* releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+
+    size_t bufLen = 1024;
+    BufferDesc outBuf = {};
+    AudioStreamInfo srcInfo;
+    srcInfo.samplingRate = 48000;
+    srcInfo.format = SAMPLE_S16LE;
+    srcInfo.channels = STEREO;
+
+    AudioCaptureDataProcParams procParams;
+    procParams.isConvertReadFormat_ = true;
+    procParams.captureConvBuffer_.resize(bufLen);
+
+    int32_t ret = audioProcessInServerRet.CaptureDataResampleProcess(bufLen, outBuf, srcInfo, procParams);
+
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(outBuf.buffer, procParams.captureConvBuffer_.data());
+    EXPECT_EQ(outBuf.bufLength, bufLen);
+}
+
+/**
+ * @tc.name  : Test CaptureDataResampleProcess API
+ * @tc.type  : FUNC
+ * @tc.number: CaptureDataResampleProcess_003
+ * @tc.desc  : Test CaptureDataResampleProcess with different sample rates and S16 format.
+ */
+HWTEST(AudioProcessInServerUnitTest, CaptureDataResampleProcess_003, TestSize.Level2)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.streamInfo.samplingRate = 44100;
+    AudioService* releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+
+    size_t bufLen = 1024;
+    BufferDesc outBuf = {};
+    AudioStreamInfo srcInfo;
+    srcInfo.samplingRate = 48000;
+    srcInfo.format = SAMPLE_S16LE;
+    srcInfo.channels = STEREO;
+
+    AudioCaptureDataProcParams procParams;
+    procParams.isConvertReadFormat_ = false;
+    procParams.captureConvBuffer_.resize(bufLen);
+    procParams.rendererConvBuffer_.resize(bufLen);
+
+    // Mock FormatConverter
+    EXPECT_CALL(*MockFormatConverter::GetMockInstance(), S16StereoToF32Stereo(_, _))
+        .WillOnce(Return(SUCCESS));
+
+    // Mock Resampler
+    EXPECT_CALL(*MockProResampler::GetMockInstance(), Process(_, _, _, _))
+        .WillOnce(Return(SUCCESS));
+
+    int32_t ret = audioProcessInServerRet.CaptureDataResampleProcess(bufLen, outBuf, srcInfo, procParams);
+
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(outBuf.buffer, nullptr);
+}
+
+/**
+ * @tc.name  : Test CaptureDataResampleProcess API
+ * @tc.type  : FUNC
+ * @tc.number: CaptureDataResampleProcess_004
+ * @tc.desc  : Test CaptureDataResampleProcess with different sample rates and F32 format.
+ */
+HWTEST(AudioProcessInServerUnitTest, CaptureDataResampleProcess_004, TestSize.Level2)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.streamInfo.samplingRate = 44100;
+    AudioService* releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+
+    size_t bufLen = 1024;
+    BufferDesc outBuf = {};
+    AudioStreamInfo srcInfo;
+    srcInfo.samplingRate = 48000;
+    srcInfo.format = SAMPLE_F32LE;
+    srcInfo.channels = STEREO;
+
+    AudioCaptureDataProcParams procParams;
+    procParams.isConvertReadFormat_ = false;
+    procParams.captureConvBuffer_.resize(bufLen);
+    procParams.rendererConvBuffer_.resize(bufLen);
+
+    // Mock Resampler
+    EXPECT_CALL(*MockProResampler::GetMockInstance(), Process(_, _, _, _))
+        .WillOnce(Return(SUCCESS));
+
+    int32_t ret = audioProcessInServerRet.CaptureDataResampleProcess(bufLen, outBuf, srcInfo, procParams);
+
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(outBuf.buffer, nullptr);
+}
+
+/**
+ * @tc.name  : Test CaptureDataResampleProcess API
+ * @tc.type  : FUNC
+ * @tc.number: CaptureDataResampleProcess_005
+ * @tc.desc  : Test CaptureDataResampleProcess with resampler creation failure.
+ */
+HWTEST(AudioProcessInServerUnitTest, CaptureDataResampleProcess_005, TestSize.Level3)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.streamInfo.samplingRate = 44100;
+    AudioService* releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+
+    size_t bufLen = 1024;
+    BufferDesc outBuf = {};
+    AudioStreamInfo srcInfo;
+    srcInfo.samplingRate = 48000;
+    srcInfo.format = SAMPLE_F32LE;
+    srcInfo.channels = STEREO;
+
+    AudioCaptureDataProcParams procParams;
+    procParams.isConvertReadFormat_ = false;
+    procParams.captureConvBuffer_.resize(bufLen);
+    procParams.rendererConvBuffer_.resize(bufLen);
+
+    // Mock Resampler to return failure
+    EXPECT_CALL(*MockProResampler::GetMockInstance(), Process(_, _, _, _))
+        .WillOnce(Return(ERROR));
+
+    int32_t ret = audioProcessInServerRet.CaptureDataResampleProcess(bufLen, outBuf, srcInfo, procParams);
+
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test CapturerDataFormatAndChnConv API
+ * @tc.type  : FUNC
+ * @tc.number: CapturerDataFormatAndChnConv_001
+ * @tc.desc  : Test CapturerDataFormatAndChnConv with supported format conversion.
+ */
+HWTEST(AudioProcessInServerUnitTest, CapturerDataFormatAndChnConv_001, TestSize.Level2)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.streamInfo.format = SAMPLE_S16LE;
+    configRet.streamInfo.channels = STEREO;
+    AudioService* releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+
+    RingBufferWrapper writeBuf;
+    BufferDesc resampleOutBuf;
+    resampleOutBuf.bufLength = 1024;
+    resampleOutBuf.buffer = new uint8_t[resampleOutBuf.bufLength];
+
+    AudioStreamInfo srcInfo;
+    srcInfo.format = SAMPLE_F32LE;
+    srcInfo.channels = STEREO;
+
+    AudioStreamInfo dstInfo = configRet.streamInfo;
+
+    // Mock format handler
+    FormatHandler mockHandler = [](BufferDesc&, BufferDesc&, bool& isDoConvert) {
+        isDoConvert = true;
+        return SUCCESS;
+    };
+
+    EXPECT_CALL(*MockFormatConverter::GetMockInstance(), GetFormatHandlers())
+        .WillOnce(Return(FormatHandlerMap{{FormatKey{STEREO, SAMPLE_F32LE, STEREO, SAMPLE_S16LE}, mockHandler}}));
+
+    EXPECT_CALL(*MockRingBufferWrapper::GetMockInstance(), Write(_, _))
+        .WillOnce(Return(SUCCESS));
+
+    int32_t ret = audioProcessInServerRet.CapturerDataFormatAndChnConv(writeBuf, resampleOutBuf, srcInfo, dstInfo);
+
+    EXPECT_EQ(ret, SUCCESS);
+
+    delete[] resampleOutBuf.buffer;
+}
+
+/**
+ * @tc.name  : Test CapturerDataFormatAndChnConv API
+ * @tc.type  : FUNC
+ * @tc.number: CapturerDataFormatAndChnConv_002
+ * @tc.desc  : Test CapturerDataFormatAndChnConv with no conversion needed.
+ */
+HWTEST(AudioProcessInServerUnitTest, CapturerDataFormatAndChnConv_002, TestSize.Level2)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.streamInfo.format = SAMPLE_S16LE;
+    configRet.streamInfo.channels = STEREO;
+    AudioService* releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+
+    RingBufferWrapper writeBuf;
+    BufferDesc resampleOutBuf;
+    resampleOutBuf.bufLength = 1024;
+    resampleOutBuf.buffer = new uint8_t[resampleOutBuf.bufLength];
+
+    AudioStreamInfo srcInfo;
+    srcInfo.format = SAMPLE_S16LE;
+    srcInfo.channels = STEREO;
+
+    AudioStreamInfo dstInfo = configRet.streamInfo;
+
+    // Mock format handler that doesn't require conversion
+    FormatHandler mockHandler = [](BufferDesc&, BufferDesc&, bool& isDoConvert) {
+        isDoConvert = false;
+        return SUCCESS;
+    };
+
+    EXPECT_CALL(*MockFormatConverter::GetMockInstance(), GetFormatHandlers())
+        .WillOnce(Return(FormatHandlerMap{{FormatKey{STEREO, SAMPLE_S16LE, STEREO, SAMPLE_S16LE}, mockHandler}}));
+
+    EXPECT_CALL(*MockRingBufferWrapper::GetMockInstance(), Write(_, _))
+        .WillOnce(Return(SUCCESS));
+
+    int32_t ret = audioProcessInServerRet.CapturerDataFormatAndChnConv(writeBuf, resampleOutBuf, srcInfo, dstInfo);
+
+    EXPECT_EQ(ret, SUCCESS);
+
+    delete[] resampleOutBuf.buffer;
+}
+
+/**
+ * @tc.name  : Test CapturerDataFormatAndChnConv API
+ * @tc.type  : FUNC
+ * @tc.number: CapturerDataFormatAndChnConv_003
+ * @tc.desc  : Test CapturerDataFormatAndChnConv with unsupported format conversion.
+ */
+HWTEST(AudioProcessInServerUnitTest, CapturerDataFormatAndChnConv_003, TestSize.Level2)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.streamInfo.format = SAMPLE_S16LE;
+    configRet.streamInfo.channels = STEREO;
+    AudioService* releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+
+    RingBufferWrapper writeBuf;
+    BufferDesc resampleOutBuf;
+    resampleOutBuf.bufLength = 1024;
+    resampleOutBuf.buffer = new uint8_t[resampleOutBuf.bufLength];
+
+    AudioStreamInfo srcInfo;
+    srcInfo.format = SAMPLE_S24LE; // Unsupported format
+    srcInfo.channels = STEREO;
+
+    AudioStreamInfo dstInfo = configRet.streamInfo;
+
+    EXPECT_CALL(*MockFormatConverter::GetMockInstance(), GetFormatHandlers())
+        .WillOnce(Return(FormatHandlerMap{})); // Empty handler map
+
+    int32_t ret = audioProcessInServerRet.CapturerDataFormatAndChnConv(writeBuf, resampleOutBuf, srcInfo, dstInfo);
+
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+
+    delete[] resampleOutBuf.buffer;
+}
+
+/**
+ * @tc.name  : Test HandleCapturerDataParams API
+ * @tc.type  : FUNC
+ * @tc.number: HandleCapturerDataParams_001
+ * @tc.desc  : Test HandleCapturerDataParams with successful processing.
+ */
+HWTEST(AudioProcessInServerUnitTest, HandleCapturerDataParams_001, TestSize.Level2)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.streamInfo.format = SAMPLE_S16LE;
+    configRet.streamInfo.channels = STEREO;
+    configRet.streamInfo.samplingRate = 48000;
+    AudioService* releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+
+    RingBufferWrapper writeBuf;
+    AudioCaptureDataProcParams procParams;
+    procParams.readBuf_.bufLength = 512;
+    procParams.readBuf_.buffer = new uint8_t[procParams.readBuf_.bufLength];
+    procParams.srcSamplingRate = 48000;
+    procParams.isConvertReadFormat_ = false;
+    procParams.captureConvBuffer_.resize(1024);
+
+    // Mock all dependent methods
+    EXPECT_CALL(*MockFormatConverter::GetMockInstance(), GetFormatHandlers())
+        .WillOnce(Return(FormatHandlerMap{}));
+
+    EXPECT_CALL(*MockRingBufferWrapper::GetMockInstance(), Write(_, _))
+        .WillOnce(Return(SUCCESS));
+
+    int32_t ret = audioProcessInServerRet.HandleCapturerDataParams(writeBuf, procParams);
+
+    EXPECT_EQ(ret, SUCCESS);
+
+    delete[] procParams.readBuf_.buffer;
+}
+
+/**
+ * @tc.name  : Test HandleCapturerDataParams API
+ * @tc.type  : FUNC
+ * @tc.number: HandleCapturerDataParams_002
+ * @tc.desc  : Test HandleCapturerDataParams with resample failure.
+ */
+HWTEST(AudioProcessInServerUnitTest, HandleCapturerDataParams_002, TestSize.Level3)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.streamInfo.format = SAMPLE_S16LE;
+    configRet.streamInfo.channels = STEREO;
+    configRet.streamInfo.samplingRate = 44100;
+    AudioService* releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+
+    RingBufferWrapper writeBuf;
+    AudioCaptureDataProcParams procParams;
+    procParams.readBuf_.bufLength = 512;
+    procParams.readBuf_.buffer = new uint8_t[procParams.readBuf_.bufLength];
+    procParams.srcSamplingRate = 48000;
+    procParams.isConvertReadFormat_ = false;
+    procParams.captureConvBuffer_.resize(1024);
+
+    // Mock resampler to return failure
+    EXPECT_CALL(*MockProResampler::GetMockInstance(), Process(_, _, _, _))
+        .WillOnce(Return(ERROR));
+
+    int32_t ret = audioProcessInServerRet.HandleCapturerDataParams(writeBuf, procParams);
+
+    EXPECT_NE(ret, SUCCESS);
+
+    delete[] procParams.readBuf_.buffer;
+}
+
+/**
+ * @tc.name  : Test HandleCapturerDataParams API
+ * @tc.type  : FUNC
+ * @tc.number: HandleCapturerDataParams_003
+ * @tc.desc  : Test HandleCapturerDataParams with format conversion failure.
+ */
+HWTEST(AudioProcessInServerUnitTest, HandleCapturerDataParams_003, TestSize.Level3)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.streamInfo.format = SAMPLE_S16LE;
+    configRet.streamInfo.channels = STEREO;
+    configRet.streamInfo.samplingRate = 48000;
+    AudioService* releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+
+    RingBufferWrapper writeBuf;
+    AudioCaptureDataProcParams procParams;
+    procParams.readBuf_.bufLength = 512;
+    procParams.readBuf_.buffer = new uint8_t[procParams.readBuf_.bufLength];
+    procParams.srcSamplingRate = 48000;
+    procParams.isConvertReadFormat_ = false;
+    procParams.captureConvBuffer_.resize(1024);
+
+    // Mock format conversion to return failure
+    EXPECT_CALL(*MockFormatConverter::GetMockInstance(), GetFormatHandlers())
+        .WillOnce(Return(FormatHandlerMap{}));
+
+    int32_t ret = audioProcessInServerRet.HandleCapturerDataParams(writeBuf, procParams);
+
+    EXPECT_NE(ret, SUCCESS);
+
+    delete[] procParams.readBuf_.buffer;
+}
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

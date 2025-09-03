@@ -21,6 +21,41 @@
 
 namespace OHOS {
 namespace AudioStandard {
+struct FormatKey {
+    AudioChannel srcChn;
+    AudioSampleFormat srcFormat;
+
+    AudioChannel dstChn;
+    AudioSampleFormat dstFormat;
+
+    bool operator==(const FormatKey& other) const
+    {
+        return srcChn == other.srcChn &&
+               srcFormat == other.srcFormat &&
+               dstChn == other.dstChn &&
+               dstFormat == other.dstFormat;
+    }
+};
+
+struct FormatKeyHash {
+    size_t operator()(const FormatKey& key) const
+    {
+        constexpr size_t hashOffset = 0x9e3779b9;
+        auto updateHash = [](size_t seed, size_t hashVal) -> size_t {
+            return seed ^ (hashVal + hashOffset + (seed << 6) + (seed >> 2));
+        };
+
+        size_t seed = std::hash<int32_t>{}(static_cast<int32_t>(key.srcChn));
+        seed = updateHash(seed, std::hash<int32_t>{}(static_cast<int32_t>(key.srcFormat)));
+        seed = updateHash(seed, std::hash<int32_t>{}(static_cast<int32_t>(key.dstChn)));
+        seed = updateHash(seed, std::hash<int32_t>{}(static_cast<int32_t>(key.dstFormat)));
+        return seed;
+    }
+};
+
+using FormatHandler = std::function<int32_t(const BufferDesc&, const BufferDesc&, bool&)>;
+using FormatHandlerMap = std::unordered_map<FormatKey, FormatHandler, FormatKeyHash>;
+
 class FormatConverter {
 public:
     static bool DataAccumulationFromVolume(const std::vector<AudioStreamData> &srcDataList,
@@ -34,6 +69,8 @@ public:
     static int32_t S32MonoToS32Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t F32MonoToS32Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t F32StereoToS32Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+    static int32_t F32StereoToF32Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+    static int32_t F32StereoToS16Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
 
     static int32_t S16StereoToF32Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t S16StereoToF32Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
@@ -41,7 +78,16 @@ public:
     static int32_t F32StereoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t S32MonoToS16Mono(std::vector<char> &audioBuffer, std::vector<char> &audioBufferConverted);
     static int32_t S32StereoToS16Stereo(std::vector<char> &audioBuffer, std::vector<char> &audioBufferConverted);
+
+    static void InitFormatHandlers();
+    static FormatHandlerMap &GetFormatHandlers();
+private:
+    static void InitS16ToFormatHandlers(FormatHandlerMap& handlers);
+    static void InitF32ToFormatHandlers(FormatHandlerMap& handlers);
+private:
+    static FormatHandlerMap formatHandlers;
 };
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // FORMAT_CONVERTER_H

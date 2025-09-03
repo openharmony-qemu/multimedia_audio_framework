@@ -109,6 +109,8 @@ public:
     {
     }
 private:
+    void UpdateStreamSampleInfo(std::shared_ptr<AudioStreamDescriptor> desc,
+                                AudioStreamInfo &streamInfo);
     void UpdateBasicStreamInfo(std::shared_ptr<AudioStreamDescriptor> desc, std::shared_ptr<AdapterPipeInfo> pipeInfo,
         AudioStreamInfo &streamInfo);
     void GetStreamPropInfoForRecord(std::shared_ptr<AudioStreamDescriptor> desc,

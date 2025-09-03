@@ -102,6 +102,9 @@ public:
 
     virtual AudioMode GetAudioMode() const = 0;
 
+    virtual int32_t AddCaptureInjector(const uint32_t &sinkPortIndex, const SourceType &sourceType) = 0;
+    virtual int32_t RemoveCaptureInjector(const uint32_t &sinkPortIndex, const SourceType &sourceType) = 0;
+
     virtual ~AudioEndpoint() = default;
 
 protected:
@@ -110,7 +113,8 @@ protected:
     AudioDeviceDescriptor deviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
 
 private:
-    virtual bool Config(const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo) = 0;
+    virtual bool Config(const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo,
+                        AudioStreamType streamType) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

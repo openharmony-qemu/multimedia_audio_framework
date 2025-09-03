@@ -1590,6 +1590,122 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateBasicStreamInfo_001, TestSize.L
 }
 
 /**
+ * @tc.name  : Test UpdateStreamSampleInfo API
+ * @tc.number: UpdateStreamSampleInfo_001
+ * @tc.desc  : Test UpdateStreamSampleInfo with non-VOIP_FAST route flag, should return early.
+ */
+HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_001, TestSize.Level1)
+{
+    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    AudioStreamInfo streamInfo;
+    streamInfo.samplingRate = SAMPLE_RATE_44100;
+    desc->routeFlag_ = AUDIO_INPUT_FLAG_FAST; // Not VOIP | FAST combination
+
+    SetInjectEnable(true);
+    manager.UpdateStreamSampleInfo(desc, streamInfo);
+    
+    // Should return early without modifying sampling rate
+    EXPECT_EQ(desc->streamInfo_.samplingRate, SAMPLE_RATE_44100);
+}
+
+/**
+ * @tc.name  : Test UpdateStreamSampleInfo API
+ * @tc.number: UpdateStreamSampleInfo_002
+ * @tc.desc  : Test UpdateStreamSampleInfo with VOIP_FAST route and 16000 sampling rate, should not modify.
+ */
+HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_002, TestSize.Level1)
+{
+    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    AudioStreamInfo streamInfo;
+    streamInfo.samplingRate = SAMPLE_RATE_16000;
+    desc->routeFlag_ = (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST);
+
+    SetInjectEnable(true);
+    manager.UpdateStreamSampleInfo(desc, streamInfo);
+    
+    // Should not modify since it's already 16000
+    EXPECT_EQ(desc->streamInfo_.samplingRate, SAMPLE_RATE_16000);
+}
+
+/**
+ * @tc.name  : Test UpdateStreamSampleInfo API
+ * @tc.number: UpdateStreamSampleInfo_003
+ * @tc.desc  : Test UpdateStreamSampleInfo with VOIP_FAST route and 48000 sampling rate, should not modify.
+ */
+HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_003, TestSize.Level1)
+{
+    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    AudioStreamInfo streamInfo;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    desc->routeFlag_ = (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST);
+
+    SetInjectEnable(true);
+    manager.UpdateStreamSampleInfo(desc, streamInfo);
+    
+    // Should not modify since it's already 48000
+    EXPECT_EQ(desc->streamInfo_.samplingRate, SAMPLE_RATE_48000);
+}
+
+/**
+ * @tc.name  : Test UpdateStreamSampleInfo API
+ * @tc.number: UpdateStreamSampleInfo_004
+ * @tc.desc  : Test UpdateStreamSampleInfo with VOIP_FAST route and 44100 sampling rate, should change to 48000.
+ */
+HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_004, TestSize.Level1)
+{
+    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    AudioStreamInfo streamInfo;
+    streamInfo.samplingRate = SAMPLE_RATE_44100;
+    desc->routeFlag_ = (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST);
+
+    SetInjectEnable(true);
+    manager.UpdateStreamSampleInfo(desc, streamInfo);
+
+    // Should change from 44100 to 48000
+    EXPECT_EQ(desc->streamInfo_.samplingRate, SAMPLE_RATE_48000);
+}
+/**
+ * @tc.name  : Test UpdateStreamSampleInfo API
+ * @tc.number: UpdateStreamSampleInfo_005
+ * @tc.desc  : Test UpdateStreamSampleInfo with VOIP_FAST route and various unsupported sampling rates.
+ */
+HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_005, TestSize.Level1)
+{
+    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+
+    // Test various sampling rates that should be converted to 48000
+    std::vector<AudioSamplingRate> testRates = {
+        SAMPLE_RATE_8000,   // Should change to 48000
+        SAMPLE_RATE_11025,  // Should change to 48000
+        SAMPLE_RATE_12000,  // Should change to 48000
+        SAMPLE_RATE_22050,  // Should change to 48000
+        SAMPLE_RATE_24000,  // Should change to 48000
+        SAMPLE_RATE_64000,  // Should change to 48000
+        SAMPLE_RATE_88200,  // Should change to 48000
+        SAMPLE_RATE_176400, // Should change to 48000
+        SAMPLE_RATE_192000, // Should change to 48000
+        SAMPLE_RATE_384000  // Should change to 48000
+    };
+
+    SetInjectEnable(true);
+    for (auto rate : testRates) {
+        std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+        AudioStreamInfo streamInfo;
+        streamInfo.samplingRate = rate;
+        desc->routeFlag_ = (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST);
+        
+        manager.UpdateStreamSampleInfo(desc, streamInfo);
+        
+        // All unsupported rates should be changed to 48000
+        EXPECT_EQ(desc->streamInfo_.samplingRate, SAMPLE_RATE_48000);
+    }
+}
+
+/**
 * @tc.name  : Test AudioPolicyConfigManager.
 * @tc.number: GetDynamicStreamPropInfoFromPipe_001
 * @tc.desc  : Test GetDynamicStreamPropInfoFromPipe

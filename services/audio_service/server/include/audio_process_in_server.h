@@ -27,6 +27,7 @@
 #include "audio_schedule_guard.h"
 #include "audio_stream_monitor.h"
 #include "audio_stream_checker.h"
+#include "audio_proresampler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -145,6 +146,8 @@ public:
 
     uint32_t GetSpanSizeInFrame() override;
     uint32_t GetByteSizePerFrame() override;
+
+    int32_t WriteToSpecialProcBuf(AudioCaptureDataProcParams &procParams) override;
 public:
     const AudioProcessConfig processConfig_;
 
@@ -158,6 +161,13 @@ private:
     void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
     void NotifyXperfOnPlayback(AudioMode audioMode, XperfEventId eventId);
 
+    int32_t HandleCapturerDataParams(RingBufferWrapper &writeBuf, AudioCaptureDataProcParams &procParams);
+    void SetCaptureStreamInfo(AudioStreamInfo &srcInfo, AudioCaptureDataProcParams &procParams);
+    int32_t CaptureDataResampleProcess(const size_t bufLen, BufferDesc &outBuf, AudioStreamInfo &srcInfo,
+                                       AudioCaptureDataProcParams &procParams);
+    int32_t CapturerDataFormatAndChnConv(RingBufferWrapper &writeBuf, BufferDesc &resampleOutBuf,
+                                         const AudioStreamInfo &srcInfo, const AudioStreamInfo &dstInfo);
+    int32_t WriteToRingBuffer(RingBufferWrapper &writeBuf, const BufferDesc &buffer);
 private:
     std::atomic<bool> muteFlag_ = false;
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
@@ -209,6 +219,8 @@ private:
     std::atomic<int32_t> audioHapticsSyncId_ = 0;
 
     StreamStatus streamStatusInServer_ = STREAM_INVALID;
+
+    std::unique_ptr<HPAE::ProResampler> resampler_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

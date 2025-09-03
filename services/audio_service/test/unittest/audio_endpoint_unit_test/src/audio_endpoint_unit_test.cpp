@@ -34,6 +34,39 @@ namespace AudioStandard {
 constexpr int32_t DEFAULT_STREAM_ID = 10;
 constexpr uint64_t AUDIO_ENDPOINT_ID = 123;
 
+// Mock classes for dependencies
+class MockAudioInjector : public AudioInjector {
+public:
+    MOCK_METHOD(uint32_t, GetSinkPortIdx, (), (const, override));
+    MOCK_METHOD(AudioModuleInfo, GetModuleInfo, (), (const, override));
+    MOCK_METHOD(void, UpdateAudioInfo, (const AudioModuleInfo& moduleInfo), (override));
+    MOCK_METHOD(int32_t, PeekAudioData, (uint32_t, uint8_t*, size_t, AudioStreamInfo&), (override));
+    static std::shared_ptr<MockAudioInjector> GetMockInstance()
+    {
+        static auto instance = std::make_shared<MockAudioInjector>();
+        return instance;
+    }
+};
+
+class MockFormatConverter {
+public:
+    MOCK_METHOD(int32_t, S16StereoToF32Stereo, (const BufferDesc&, const BufferDesc&), ());
+    static std::shared_ptr<MockFormatConverter> GetMockInstance();
+};
+
+class MockHPAE {
+public:
+    MOCK_METHOD(void, SimdPointByPointAdd, (size_t, float*, float*, float*), ());
+    static std::shared_ptr<MockHPAE> GetMockInstance();
+};
+
+class MockAudioLimiter : public AudioLimiter {
+public:
+    MOCK_METHOD(int32_t, SetConfig, (size_t, size_t, AudioSamplingRate, AudioChannel), (override));
+    MOCK_METHOD(int32_t, Process, (int32_t, float*, float*), (override));
+    static std::shared_ptr<MockAudioLimiter> GetMockInstance();
+};
+
 void AudioEndpointUnitTest::SetUpTestCase(void)
 {
     // input testsuit setup step，setup invoked before all testcases
@@ -58,10 +91,10 @@ static std::shared_ptr<AudioEndpointInner> CreateEndpointInner(AudioEndpoint::En
     const AudioProcessConfig &clientConfig, const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo)
 {
     std::shared_ptr<AudioEndpointInner> audioEndpoint =
-        std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+        std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "Create AudioEndpoint failed.");
 
-    if (!audioEndpoint->Config(deviceInfo, streamInfo)) {
+    if (!audioEndpoint->Config(deviceInfo, streamInfo, clientConfig.streamType)) {
         audioEndpoint = nullptr;
     }
     return audioEndpoint;
@@ -75,8 +108,9 @@ static std::shared_ptr<AudioEndpointInner> CreateInputEndpointInner(AudioEndpoin
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpointInner> audioEndpoint =
-        std::make_shared<AudioEndpointInner>(type, AUDIO_ENDPOINT_ID, config);
-    if (!audioEndpoint->Config(deviceInfo, audioStreamInfo)) {
+        std::make_shared<AudioEndpointInner>(type, AUDIO_ENDPOINT_ID, config.audioMode);
+    audioEndpoint->injector_ = *MockAudioInjector::GetMockInstance();
+    if (!audioEndpoint->Config(deviceInfo, audioStreamInfo, config.streamType)) {
         audioEndpoint = nullptr;
     }
     return audioEndpoint;
@@ -526,7 +560,7 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointMix_001, TestSize.Level1)
     deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
-    result = audioEndpointInner->Config(deviceInfo, audioStreamInfo);
+    result = audioEndpointInner->Config(deviceInfo, audioStreamInfo, config.streamType);
     EXPECT_FALSE(result);
 
     processStream->SetInnerCapState(true, 1);
@@ -1006,7 +1040,7 @@ HWTEST_F(AudioEndpointUnitTest, CheckStandBy_001, TestSize.Level1)
 {
     std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
     audioEndpointInner->endpointStatus_ = AudioEndpointInner::RUNNING;
-    audioEndpointInner->clientConfig_.audioMode = AUDIO_MODE_PLAYBACK;
+    audioEndpointInner->audioMode_ = AUDIO_MODE_PLAYBACK;
     audioEndpointInner->CheckStandBy();
     EXPECT_EQ(audioEndpointInner->endpointStatus_, AudioEndpointInner::RUNNING);
 }
@@ -1021,7 +1055,7 @@ HWTEST_F(AudioEndpointUnitTest, CheckStandBy_002, TestSize.Level1)
 {
     std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
     audioEndpointInner->endpointStatus_ = AudioEndpointInner::IDEL;
-    audioEndpointInner->clientConfig_.audioMode = AUDIO_MODE_PLAYBACK;
+    audioEndpointInner->audioMode_ = AUDIO_MODE_PLAYBACK;
     audioEndpointInner->CheckStandBy();
     EXPECT_EQ(audioEndpointInner->endpointStatus_, AudioEndpointInner::IDEL);
 }
@@ -1342,6 +1376,427 @@ HWTEST(AudioEndpointInnerUnitTest, IsDualStream_002, TestSize.Level1)
 {
     CaptureInfo capInfo;
     EXPECT_EQ(AudioEndpointInner::IsDualStream(capInfo), false);
+}
+
+/**
+ * @tc.name  : Test AddCaptureInjector API
+ * @tc.type  : FUNC
+ * @tc.number: AddCaptureInjector_001
+ * @tc.desc  : Test AddCaptureInjector with valid VOICE_COMMUNICATION source type and matching sink port index.
+ */
+HWTEST(AudioEndpointInnerUnitTest, AddCaptureInjector_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_VOIP_MMAP);
+
+    // Set up required member variables
+    audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
+    audioEndpointInner->dstStreamInfo_.channels = STEREO;
+
+    // Mock injector to return expected values
+    EXPECT_CALL(*MockAudioInjector::GetMockInstance(), GetSinkPortIdx())
+        .WillOnce(Return(1234));
+    EXPECT_CALL(*MockAudioInjector::GetMockInstance(), GetModuleInfo())
+        .WillOnce(Return(AudioModuleInfo{}));
+    EXPECT_CALL(*MockAudioInjector::GetMockInstance(), UpdateAudioInfo(_))
+        .Times(1);
+
+    uint32_t sinkPortIndex = 1234;
+    SourceType sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+
+    int32_t result = audioEndpointInner->AddCaptureInjector(sinkPortIndex, sourceType);
+
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_TRUE(audioEndpointInner->isNeedInject_);
+    EXPECT_EQ(audioEndpointInner->injectSinkPortIdx_, sinkPortIndex);
+}
+
+/**
+ * @tc.name  : Test AddCaptureInjector API
+ * @tc.type  : FUNC
+ * @tc.number: AddCaptureInjector_002
+ * @tc.desc  : Test AddCaptureInjector with invalid source type, should return ERROR.
+ */
+HWTEST(AudioEndpointInnerUnitTest, AddCaptureInjector_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_VOIP_MMAP);
+
+    uint32_t sinkPortIndex = 1234;
+    SourceType sourceType = SOURCE_TYPE_MIC; // Invalid source type
+
+    int32_t result = audioEndpointInner->AddCaptureInjector(sinkPortIndex, sourceType);
+
+    EXPECT_EQ(result, ERROR);
+    EXPECT_FALSE(audioEndpointInner->isNeedInject_);
+    EXPECT_NE(audioEndpointInner->injectSinkPortIdx_, sinkPortIndex);
+}
+
+/**
+ * @tc.name  : Test AddCaptureInjector API
+ * @tc.type  : FUNC
+ * @tc.number: AddCaptureInjector_003
+ * @tc.desc  : Test AddCaptureInjector with mismatched sink port index, should return ERROR.
+ */
+HWTEST(AudioEndpointInnerUnitTest, AddCaptureInjector_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_VOIP_MMAP);
+
+    // Mock injector to return different port index
+    EXPECT_CALL(*MockAudioInjector::GetMockInstance(), GetSinkPortIdx())
+        .WillOnce(Return(5678)); // Different from input
+
+    uint32_t sinkPortIndex = 1234;
+    SourceType sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    int32_t result = audioEndpointInner->AddCaptureInjector(sinkPortIndex, sourceType);
+
+    EXPECT_EQ(result, ERROR);
+    EXPECT_FALSE(audioEndpointInner->isNeedInject_);
+    EXPECT_NE(audioEndpointInner->injectSinkPortIdx_, sinkPortIndex);
+}
+
+/**
+ * @tc.name  : Test RemoveCaptureInjector API
+ * @tc.type  : FUNC
+ * @tc.number: RemoveCaptureInjector_001
+ * @tc.desc  : Test RemoveCaptureInjector with valid VOICE_COMMUNICATION source type and matching sink port index.
+ */
+HWTEST(AudioEndpointInnerUnitTest, RemoveCaptureInjector_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_VOIP_MMAP);
+
+    // Set up initial state
+    audioEndpointInner->isNeedInject_ = true;
+    audioEndpointInner->injectSinkPortIdx_ = 1234;
+
+    uint32_t sinkPortIndex = 1234;
+    SourceType sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+
+    int32_t result = audioEndpointInner->RemoveCaptureInjector(sinkPortIndex, sourceType);
+
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_FALSE(audioEndpointInner->isNeedInject_);
+    EXPECT_EQ(audioEndpointInner->injectSinkPortIdx_, UINT32_INVALID_VALUE);
+}
+
+/**
+ * @tc.name  : Test RemoveCaptureInjector API
+ * @tc.type  : FUNC
+ * @tc.number: RemoveCaptureInjector_002
+ * @tc.desc  : Test RemoveCaptureInjector with invalid source type, should return ERROR.
+ */
+HWTEST(AudioEndpointInnerUnitTest, RemoveCaptureInjector_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_VOIP_MMAP);
+
+    // Set up initial state
+    audioEndpointInner->isNeedInject_ = true;
+    audioEndpointInner->injectSinkPortIdx_ = 1234;
+
+    uint32_t sinkPortIndex = 1234;
+    SourceType sourceType = SOURCE_TYPE_MIC; // Invalid source type
+
+    int32_t result = audioEndpointInner->RemoveCaptureInjector(sinkPortIndex, sourceType);
+
+    EXPECT_EQ(result, ERROR);
+    EXPECT_TRUE(audioEndpointInner->isNeedInject_); // Should remain unchanged
+    EXPECT_EQ(audioEndpointInner->injectSinkPortIdx_, 1234); // Should remain unchanged
+}
+
+/**
+ * @tc.name  : Test RemoveCaptureInjector API
+ * @tc.type  : FUNC
+ * @tc.number: RemoveCaptureInjector_003
+ * @tc.desc  : Test RemoveCaptureInjector with mismatched sink port index, should return ERROR.
+ */
+HWTEST(AudioEndpointInnerUnitTest, RemoveCaptureInjector_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_VOIP_MMAP);
+
+    // Set up initial state
+    audioEndpointInner->isNeedInject_ = true;
+    audioEndpointInner->injectSinkPortIdx_ = 1234;
+
+    uint32_t sinkPortIndex = 5678; // Different from stored index
+    SourceType sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    
+    int32_t result = audioEndpointInner->RemoveCaptureInjector(sinkPortIndex, sourceType);
+
+    EXPECT_EQ(result, ERROR);
+    EXPECT_TRUE(audioEndpointInner->isNeedInject_); // Should remain unchanged
+    EXPECT_EQ(audioEndpointInner->injectSinkPortIdx_, 1234); // Should remain unchanged
+}
+
+/**
+ * @tc.name  : Test AddRemoveCaptureInjector API sequence
+ * @tc.type  : FUNC
+ * @tc.number: AddRemoveCaptureInjector_001
+ * @tc.desc  : Test sequential Add and Remove operations with valid parameters.
+ */
+HWTEST(AudioEndpointInnerUnitTest, AddRemoveCaptureInjector_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_MMAP);
+
+    // Set up required member variables
+    audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
+    audioEndpointInner->dstStreamInfo_.channels = STEREO;
+
+    // Mock injector calls
+    EXPECT_CALL(*MockAudioInjector::GetMockInstance(), GetSinkPortIdx())
+        .WillRepeatedly(Return(1234));
+    EXPECT_CALL(*MockAudioInjector::GetMockInstance(), GetModuleInfo())
+        .WillRepeatedly(Return(AudioModuleInfo{}));
+
+    uint32_t sinkPortIndex = 1234;
+    SourceType sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+
+    // Test multiple add/remove cycles
+    for (int i = 0; i < 3; i++) {
+        // Add injector
+        int32_t addResult = audioEndpointInner->AddCaptureInjector(sinkPortIndex, sourceType);
+        EXPECT_EQ(addResult, SUCCESS);
+        EXPECT_TRUE(audioEndpointInner->isNeedInject_);
+        EXPECT_EQ(audioEndpointInner->injectSinkPortIdx_, sinkPortIndex);
+        
+        // Remove injector
+        int32_t removeResult = audioEndpointInner->RemoveCaptureInjector(sinkPortIndex, sourceType);
+        EXPECT_EQ(removeResult, SUCCESS);
+        EXPECT_FALSE(audioEndpointInner->isNeedInject_);
+        EXPECT_EQ(audioEndpointInner->injectSinkPortIdx_, UINT32_INVALID_VALUE);
+    }
+}
+
+/**
+ * @tc.name  : Test InjectToCaptureDataProc API
+ * @tc.type  : FUNC
+ * @tc.number: InjectToCaptureDataProc_001
+ * @tc.desc  : Test InjectToCaptureDataProc with injection not needed, should return early.
+ */
+HWTEST(AudioEndpointInnerUnitTest, InjectToCaptureDataProc_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_VOIP_MMAP);
+
+    SetInjectEnable(true);
+    audioEndpointInner->isNeedInject_ = false;
+
+    BufferDesc readBuf = {nullptr, 1024};
+    audioEndpointInner->InjectToCaptureDataProc(readBuf);
+
+    // Should return early without processing
+    EXPECT_FALSE(audioEndpointInner->isConvertReadFormat_);
+}
+
+/**
+ * @tc.name  : Test InjectToCaptureDataProc API
+ * @tc.type  : FUNC
+ * @tc.number: InjectToCaptureDataProc_002
+ * @tc.desc  : Test InjectToCaptureDataProc with wrong endpoint type, should return early.
+ */
+HWTEST(AudioEndpointInnerUnitTest, InjectToCaptureDataProc_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_MMAP);
+
+    SetInjectEnable(true);
+    audioEndpointInner->isNeedInject_ = true;
+    audioEndpointInner->endpointType_ = AudioEndpoint::TYPE_MMAP; // Not VOIP_MMAP
+
+    BufferDesc readBuf = {nullptr, 1024};
+    audioEndpointInner->InjectToCaptureDataProc(readBuf);
+
+    // Should return early without processing
+    EXPECT_FALSE(audioEndpointInner->isConvertReadFormat_);
+}
+
+/**
+ * @tc.name  : Test InjectToCaptureDataProc API
+ * @tc.type  : FUNC
+ * @tc.number: InjectToCaptureDataProc_003
+ * @tc.desc  : Test InjectToCaptureDataProc with successful injection processing.
+ */
+HWTEST(AudioEndpointInnerUnitTest, InjectToCaptureDataProc_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_VOIP_MMAP);
+
+    // Set up required state
+    audioEndpointInner->isNeedInject_ = true;
+    audioEndpointInner->endpointType_ = AudioEndpoint::TYPE_VOIP_MMAP;
+    audioEndpointInner->dstStreamInfo_.channels = STEREO;
+    audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
+    audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    audioEndpointInner->injectSinkPortIdx_ = 1234;
+    audioEndpointInner->fastCaptureId_ = 1;
+
+    // Mock all external dependencies
+    SetInjectEnable(true);
+    EXPECT_CALL(*MockAudioInjector::GetMockInstance(), PeekAudioData(_, _, _, _))
+        .WillOnce(Return(SUCCESS));
+
+    EXPECT_CALL(*MockFormatConverter::GetMockInstance(), S16StereoToF32Stereo(_, _))
+        .Times(2)
+        .WillRepeatedly(Return(SUCCESS));
+
+    EXPECT_CALL(*MockHPAE::GetMockInstance(), SimdPointByPointAdd(_, _, _, _))
+        .Times(1);
+
+    EXPECT_CALL(*MockAudioLimiter::GetMockInstance(), SetConfig(_, _, _, _))
+        .WillOnce(Return(SUCCESS));
+
+    EXPECT_CALL(*MockAudioLimiter::GetMockInstance(), Process(_, _, _))
+        .WillOnce(Return(SUCCESS));
+
+    // Create test buffer
+    std::vector<uint8_t> testBuffer(1024, 0);
+    BufferDesc readBuf = {testBuffer.data(), testBuffer.size()};
+
+    audioEndpointInner->InjectToCaptureDataProc(readBuf);
+
+    // Should complete processing successfully
+    EXPECT_TRUE(audioEndpointInner->isConvertReadFormat_);
+}
+
+/**
+ * @tc.name  : Test InjectToCaptureDataProc API
+ * @tc.type  : FUNC
+ * @tc.number: InjectToCaptureDataProc_004
+ * @tc.desc  : Test InjectToCaptureDataProc with PeekRendererInjectData failure.
+ */
+HWTEST(AudioEndpointInnerUnitTest, InjectToCaptureDataProc_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_VOIP_MMAP);
+
+    // Set up required state
+    audioEndpointInner->isNeedInject_ = true;
+    audioEndpointInner->endpointType_ = AudioEndpoint::TYPE_VOIP_MMAP;
+    audioEndpointInner->injectSinkPortIdx_ = 1234;
+
+    SetInjectEnable(true);
+    EXPECT_CALL(*MockAudioInjector::GetMockInstance(), PeekAudioData(_, _, _, _))
+        .WillOnce(Return(ERROR)); // Peek fails
+
+    BufferDesc readBuf = {nullptr, 1024};
+    audioEndpointInner->InjectToCaptureDataProc(readBuf);
+
+    // Should return early due to peek failure
+    EXPECT_FALSE(audioEndpointInner->isConvertReadFormat_);
+}
+
+/**
+ * @tc.name  : Test InjectToCaptureDataProc API
+ * @tc.type  : FUNC
+ * @tc.number: InjectToCaptureDataProc_005
+ * @tc.desc  : Test InjectToCaptureDataProc with ConvertDataFormat failure.
+ */
+HWTEST(AudioEndpointInnerUnitTest, InjectToCaptureDataProc_005, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_VOIP_MMAP);
+
+    // Set up required state
+    audioEndpointInner->isNeedInject_ = true;
+    audioEndpointInner->endpointType_ = AudioEndpoint::TYPE_VOIP_MMAP;
+    audioEndpointInner->dstStreamInfo_.channels = MONO; // Different from renderer
+    audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
+    audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    audioEndpointInner->injectSinkPortIdx_ = 1234;
+
+    SetInjectEnable(true);
+    EXPECT_CALL(*MockAudioInjector::GetMockInstance(), PeekAudioData(_, _, _, _))
+        .WillOnce(DoAll(
+            SetArgPointee<3>(AudioStreamInfo{STEREO, SAMPLE_S16LE, SAMPLE_RATE_48000}),
+            Return(SUCCESS)
+        ));
+
+    BufferDesc readBuf = {nullptr, 1024};
+    audioEndpointInner->InjectToCaptureDataProc(readBuf);
+
+    // Should return early due to format conversion failure (channel mismatch)
+    EXPECT_FALSE(audioEndpointInner->isConvertReadFormat_);
+}
+
+/**
+ * @tc.name  : Test InjectToCaptureDataProc API
+ * @tc.type  : FUNC
+ * @tc.number: InjectToCaptureDataProc_006
+ * @tc.desc  : Test InjectToCaptureDataProc with limiter creation failure.
+ */
+HWTEST(AudioEndpointInnerUnitTest, InjectToCaptureDataProc_006, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_VOIP_MMAP);
+
+    // Set up required state
+    audioEndpointInner->isNeedInject_ = true;
+    audioEndpointInner->endpointType_ = AudioEndpoint::TYPE_VOIP_MMAP;
+    audioEndpointInner->dstStreamInfo_.channels = STEREO;
+    audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
+    audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    audioEndpointInner->injectSinkPortIdx_ = 1234;
+    audioEndpointInner->fastCaptureId_ = 1;
+
+    SetInjectEnable(true);
+    EXPECT_CALL(*MockAudioInjector::GetMockInstance(), PeekAudioData(_, _, _, _))
+        .WillOnce(DoAll(
+            SetArgPointee<3>(AudioStreamInfo{STEREO, SAMPLE_S16LE, SAMPLE_RATE_48000}),
+            Return(SUCCESS)
+        ));
+
+    EXPECT_CALL(*MockFormatConverter::GetMockInstance(), S16StereoToF32Stereo(_, _))
+        .Times(2)
+        .WillRepeatedly(Return(SUCCESS));
+
+    EXPECT_CALL(*MockHPAE::GetMockInstance(), SimdPointByPointAdd(_, _, _, _))
+        .Times(1);
+
+    EXPECT_CALL(*MockAudioLimiter::GetMockInstance(), SetConfig(_, _, _, _))
+        .WillOnce(Return(ERROR)); // Limiter config fails
+
+    BufferDesc readBuf = {nullptr, 1024};
+    audioEndpointInner->InjectToCaptureDataProc(readBuf);
+
+    // Should return early due to limiter failure
+    EXPECT_FALSE(audioEndpointInner->isConvertReadFormat_);
+}
+
+/**
+ * @tc.name  : Test InjectToCaptureDataProc API
+ * @tc.type  : FUNC
+ * @tc.number: InjectToCaptureDataProc_007
+ * @tc.desc  : Test InjectToCaptureDataProc with limiter processing failure.
+ */
+HWTEST(AudioEndpointInnerUnitTest, InjectToCaptureDataProc_007, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_VOIP_MMAP);
+
+    // Set up required state
+    audioEndpointInner->isNeedInject_ = true;
+    audioEndpointInner->endpointType_ = AudioEndpoint::TYPE_VOIP_MMAP;
+    audioEndpointInner->dstStreamInfo_.channels = STEREO;
+    audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
+    audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    audioEndpointInner->injectSinkPortIdx_ = 1234;
+    audioEndpointInner->fastCaptureId_ = 1;
+    audioEndpointInner->limiter_ = std::make_shared<AudioLimiter>(1); // Limiter already exists
+
+    SetInjectEnable(true);
+    EXPECT_CALL(*MockAudioInjector::GetMockInstance(), PeekAudioData(_, _, _, _))
+        .WillOnce(DoAll(
+            SetArgPointee<3>(AudioStreamInfo{STEREO, SAMPLE_S16LE, SAMPLE_RATE_48000}),
+            Return(SUCCESS)
+        ));
+
+    EXPECT_CALL(*MockFormatConverter::GetMockInstance(), S16StereoToF32Stereo(_, _))
+        .Times(2)
+        .WillRepeatedly(Return(SUCCESS));
+
+    EXPECT_CALL(*MockHPAE::GetMockInstance(), SimdPointByPointAdd(_, _, _, _))
+        .Times(1);
+
+    EXPECT_CALL(*MockAudioLimiter::GetMockInstance(), Process(_, _, _))
+        .WillOnce(Return(ERROR)); // Limiter process fails
+
+    BufferDesc readBuf = {nullptr, 1024};
+    audioEndpointInner->InjectToCaptureDataProc(readBuf);
+
+    // Should return early due to limiter process failure
+    EXPECT_FALSE(audioEndpointInner->isConvertReadFormat_);
 }
 } // namespace AudioStandard
 } // namespace OHOS

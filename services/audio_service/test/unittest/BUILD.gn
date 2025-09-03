@@ -52,6 +52,8 @@ ohos_unittest("audio_balance_unit_test") {
     "../../../../frameworks/native/audioclock/include",
     "../../../../services/audio_policy/server/include",
     "../../../../services/audio_engine/manager/include",
+    "../../../../services/audio_engine/plugin/resample/include",
+    "../../../../services/audio_service/common/include/limiter",
   ]
   sources = [
     "audio_group_manager_unit_test.cpp",
@@ -322,6 +324,7 @@ ohos_unittest("audio_service_unit_test") {
     "../../../../frameworks/native/audioclock/include",
     "../../../../services/audio_policy/server/include",
     "../../../../services/audio_engine/manager/include",
+    "../../../../services/audio_engine/plugin/resample/include",
   ]
 
   sources = [
@@ -604,6 +607,7 @@ ohos_unittest("audio_process_in_server_unit_test") {
     "../../../../services/audio_service/common/include",
     "../../../../services/audio_service/common/include/dfx",
     "../../../../services/audio_engine/manager/include",
+    "../../../../services/audio_engine/plugin/resample/include",
   ]
 
   sources = [ "audio_process_in_server_unit_test.cpp" ]
@@ -1078,6 +1082,7 @@ ohos_unittest("capturer_in_server_unit_test") {
     "../../../../services/audio_service/server/src/audio_workgroup_callback.cpp",
     "../../../../services/audio_service/server/src/audio_workgroup.cpp",
     "../../../../services/audio_service/server/src/audio_resource_service.cpp",
+    "../../../../services/audio_service/server/src/audio_injector_service.cpp",
     "capturer_in_server_second_unit_test.cpp",
   ]
 
@@ -1098,6 +1103,7 @@ ohos_unittest("capturer_in_server_unit_test") {
     "../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../../../../services/audio_engine:audio_engine_manager",
     "../../../../services/audio_engine:audio_engine_plugins",
+    "../../../../services/audio_engine:audio_engine_utils",
     "../../../../services/audio_policy:audio_policy_client",
     "../../../../services/audio_policy:audio_policy_service",
     "../../../../services/audio_service:audio_client",
