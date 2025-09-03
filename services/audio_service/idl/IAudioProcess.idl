@@ -25,8 +25,8 @@ interface IAudioProcess {
     void Pause([in] boolean isFlush);
     void Resume();
     void Stop([in] int stage); // AudioProcessStage stage = AUDIO_PROC_STAGE_STOP
-    void RequestHandleInfo();
-    [oneway] void RequestHandleInfoAsync(); // default
+    void CheckProcessInServer();
+    [oneway] void CheckProcessInServerAsync(); // default
     void Release([in] boolean isSwitchStream); // isSwitchStream = false
     void RegisterProcessCb([in] IRemoteObject object);
     void RegisterThreadPriority([in] int tid, [in] String bundleName, [in] unsigned int method); // BoostTriggerMethod method
