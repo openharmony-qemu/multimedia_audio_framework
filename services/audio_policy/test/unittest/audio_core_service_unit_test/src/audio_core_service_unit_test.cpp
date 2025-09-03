@@ -801,10 +801,10 @@ HWTEST_F(AudioCoreServiceUnitTest, GetPreferredInputDeviceDescriptors_001, TestS
         AudioCapturerInfo capturerInfo;
         capturerInfo.sourceType = SOURCE_TYPE_INVALID;
         string networkId = REMOTE_NETWORK_ID;
-        GetServerPtr()->eventEntry_->GetPreferredInputDeviceDescriptors(capturerInfo, networkId);
+        GetServerPtr()->eventEntry_->GetPreferredInputDeviceDescriptors(capturerInfo, INVALID_UID networkId);
 
         capturerInfo.sourceType = SOURCE_TYPE_MIC;
-        GetServerPtr()->eventEntry_->GetPreferredInputDeviceDescriptors(capturerInfo, networkId);
+        GetServerPtr()->eventEntry_->GetPreferredInputDeviceDescriptors(capturerInfo, INVALID_UID, networkId);
     );
 }
 
