@@ -27,7 +27,8 @@ public:
         return instance;
     }
     int32_t UpdateAudioInfo(AudioModuleInfo &info);
-    int32_t PeekAudioData(const uint32_t sinkPortIndex, uint8_t *buffer, const size_t bufferSize, AudioStreamInfo &streamInfo);
+    int32_t PeekAudioData(const uint32_t sinkPortIndex, uint8_t *buffer, const size_t bufferSize,
+        AudioStreamInfo &streamInfo);
     void SetSinkPortIdx(uint32_t sinkPortIdx);
     int32_t GetSinkPortIdx();
 private:

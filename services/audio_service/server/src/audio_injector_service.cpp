@@ -25,7 +25,8 @@ int32_t AudioInjectorService::UpdateAudioInfo(AudioModuleInfo &info)
     return 0;
 }
 
-int32_t AudioInjectorService::PeekAudioData(const uint32_t sinkPortIndex, uint8_t *buffer, const size_t bufferSize, AudioStreamInfo &streamInfo)
+int32_t AudioInjectorService::PeekAudioData(const uint32_t sinkPortIndex, uint8_t *buffer, const size_t bufferSize,
+    AudioStreamInfo &streamInfo)
 {
     return 0;
 }
