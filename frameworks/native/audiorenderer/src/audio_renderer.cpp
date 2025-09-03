@@ -652,8 +652,8 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
 #endif
 
-    int32_t ret = IAudioStream::CheckAudioStreamInfo(audioStreamParams, AUDIO_MODE_PLAYBACK);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CheckAudioStreamInfo fail!");
+    int32_t ret = IAudioStream::CheckRendererAudioStreamInfo(audioStreamParams);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CheckRendererAudioStreamInfo fail!");
 
     rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
     ret = PrepareAudioStream(audioStreamParams, audioStreamType, streamClass, rendererInfo_.audioFlag);
@@ -2254,8 +2254,8 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
 {
     std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescBySwitchInfo(switchInfo, restoreInfo);
 
-    int32_t ret = IAudioStream::CheckAudioStreamInfo(switchInfo.params, AUDIO_MODE_PLAYBACK);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CheckAudioStreamInfo fail!");
+    int32_t ret = IAudioStream::CheckRendererAudioStreamInfo(switchInfo.params);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CheckRendererAudioStreamInfo fail!");
 
     uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
     std::string networkId = LOCAL_NETWORK_ID;
@@ -2269,7 +2269,6 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetPlaybackStream(targetClass, switchInfo.params,
         switchInfo.eStreamType, appInfo_.appUid);
     CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "SetParams GetPlayBackStream failed.");
-    AUDIO_INFO_LOG("Get new stream success!");
 
     // The latest route info returned by create needs to be used to update audioFlag,
     // the server can obtain the route info to proceed with start.

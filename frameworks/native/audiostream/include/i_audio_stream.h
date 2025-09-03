@@ -126,7 +126,8 @@ public:
     static AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
     static void CreateStreamMap(std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> &streamMap);
-    static int32_t CheckAudioStreamInfo(const AudioStreamParams info, AudioMode mode);
+    static int32_t CheckRendererAudioStreamInfo(const AudioStreamParams info);
+    static int32_t CheckCapturerAudioStreamInfo(const AudioStreamParams info);
     static bool IsFormatValid(uint8_t format);
     static bool IsRendererChannelValid(uint8_t channel);
     static bool IsCapturerChannelValid(uint8_t channel);
