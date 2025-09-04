@@ -50,6 +50,7 @@ static const char* MCH_PRIMARY_SPEAKER = "MCH_Speaker";
 static const char* USB_SPEAKER = "Usb_arm_speaker";
 static const char* DP_SINK = "DP_speaker";
 static const char* USB_MIC = "Usb_arm_mic";
+static const char* USB_MIC_INPUT = "usb_arm_input";
 static const char* PRIMARY_MIC = "Built_in_mic";
 static const char* PRIMARY_WAKEUP_MIC = "Built_in_wakeup";
 static const char* PRIMARY_AI_MIC = "Built_in_ai";

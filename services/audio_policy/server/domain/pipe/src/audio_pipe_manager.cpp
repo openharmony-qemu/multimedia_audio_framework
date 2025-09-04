@@ -496,7 +496,7 @@ std::shared_ptr<AudioPipeInfo> AudioPipeManager::GetNormalSourceInfo(bool isEcFe
     pipeInfo = GetPipeByModuleAndFlag(BLUETOOTH_MIC, AUDIO_INPUT_FLAG_NORMAL);
     CHECK_AND_RETURN_RET(pipeInfo == nullptr, pipeInfo);
     if (isEcFeatureEnable) {
-        pipeInfo = GetPipeByModuleAndFlag(USB_MIC, AUDIO_INPUT_FLAG_NORMAL);
+        pipeInfo = GetPipeByModuleAndFlag(USB_MIC_INPUT, AUDIO_INPUT_FLAG_NORMAL);
     }
     return pipeInfo;
 }
