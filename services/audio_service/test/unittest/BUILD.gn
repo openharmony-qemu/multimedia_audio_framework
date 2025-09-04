@@ -989,7 +989,6 @@ ohos_unittest("audio_process_in_client_second_unit_test") {
     "ipc:ipc_core",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "frame_aware_sched:rtg_interface",
