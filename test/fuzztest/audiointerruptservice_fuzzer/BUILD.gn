@@ -89,6 +89,9 @@ ohos_fuzztest("AudioInterruptServiceFuzzTest") {
   if (bluetooth_part_enable == true) {
     external_deps += [ "bluetooth:btframework" ]
   }
+  if (audio_framework_feature_usb_audio) {
+    defines += [ "USB_ENABLE" ]
+  }
 }
 
 group("fuzztest") {
