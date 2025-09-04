@@ -780,24 +780,26 @@ int32_t AudioStreamCollector::UpdateTracker(AudioMode &mode, AudioStreamChangeIn
 
 void AudioStreamCollector::PostReclaimMemoryTask()
 {
-    if (system::GetParameter("persist.ace.testmode.enabled", "0") != "1" ||
-        audioPolicyServerHandler_ == nullptr) {
+    if (audioPolicyServerHandler_ == nullptr) {
         return;
     }
-    if (!taskNotStarted_.load() && !CheckAudioStateIdle()) {
+    if (isActivatedMemReclaiTask_.load() && !CheckAudioStateIdle()) {
         AUDIO_INFO_LOG("clear reclaim memory task");
         audioPolicyServerHandler_->RemoveTask(RECLAIM_MEMORY);
-        taskNotStarted_.store(true);
+        isActivatedMemReclaiTask_.store(false);
         return;
     }
-    if (taskNotStarted_.load() && CheckAudioStateIdle()) {
+    if (!isActivatedMemReclaiTask_.load() && CheckAudioStateIdle()) {
+        if (system::GetParameter("persist.ace.testmode.enabled", "0") != "1") {
+            return;
+        }
         AUDIO_INFO_LOG("start reclaim memory task");
         auto task = [this]() {
             ReclaimMem();
-            taskNotStarted_.store(true);
+            isActivatedMemReclaiTask_.store(false);
         };
         audioPolicyServerHandler_->PostTask(task, RECLAIM_MEMORY, TIME_OF_RECLAIM_MEMORY);
-        taskNotStarted_.store(false);
+        isActivatedMemReclaiTask_.store(true);
     }
 }
 

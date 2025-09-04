@@ -143,7 +143,7 @@ private:
     void PostReclaimMemoryTask();
     void ReclaimMem();
     bool CheckAudioStateIdle();
-    std::atomic_bool taskNotStarted_ = true;
+    std::atomic_bool isActivatedMemReclaiTask_ = false;
     std::mutex clearMemoryMutex_;
     AudioAbilityManager *audioAbilityMgr_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
