@@ -1413,5 +1413,22 @@ HWTEST_F(AudioCoreServiceUnitTest, SetFlagForMmapStream_001, TestSize.Level4)
     auto ret = coreService_->SetFlagForMmapStream(streamDesc);
     EXPECT_EQ(AUDIO_OUTPUT_FLAG_FAST, ret);
 }
+
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: SetSleVoiceStatusFlag_001
+* @tc.desc  : Test SetSleVoiceStatusFlag
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetSleVoiceStatusFlag_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NEARLINK, DeviceRole::OUTPUT_DEVICE);
+    audioCoreService->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
+    auto ret = audioCoreService->SetSleVoiceStatusFlag(AUDIO_SCENE_DEFAULT);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = audioCoreService->SetSleVoiceStatusFlag(AUDIO_SCENE_PHONE_CALL);
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

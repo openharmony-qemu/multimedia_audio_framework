@@ -1299,6 +1299,7 @@ void AudioAdapterManager::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
 {
     isSleVoiceStatus_ = isSleVoiceStatus;
     AUDIO_INFO_LOG("SetSleVoiceStatusFlag: %{public}d", isSleVoiceStatus);
+    SetVolumeDb(STREAM_MUSIC);
 }
 
 void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor)

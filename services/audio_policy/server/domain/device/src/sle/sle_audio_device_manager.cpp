@@ -234,9 +234,9 @@ int32_t SleAudioDeviceManager::SetDeviceAbsVolume(const std::string &device, Aud
 
     int32_t ret = SUCCESS;
     if (streamType == STREAM_MUSIC) {
-        ret = SetDeviceAbsVolume(device, static_cast<uint32_t>(volume), 0x00000002); // MEDIA
+        ret = SetDeviceAbsVolume(device, static_cast<uint32_t>(volume), SLE_AUDIO_STREAM_MUSIC);
     } else {
-        ret = SetDeviceAbsVolume(device, static_cast<uint32_t>(volume), 0x00000004); // VOICE_CALL
+        ret = SetDeviceAbsVolume(device, static_cast<uint32_t>(volume), SLE_AUDIO_STREAM_VOICE_CALL);
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "set device to nearlink failed");
 
