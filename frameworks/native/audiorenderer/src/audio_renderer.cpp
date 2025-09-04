@@ -1066,9 +1066,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
 
     float duckVolume = audioStream_->GetDuckVolume();
     bool isMute = audioStream_->GetMute();
-    AUDIO_WARNING_LOG("VolumeInfo for Renderer::Start. duckVolume: %{public}f, isMute: %{public}d, MinStreamVolume:"\
-        "MinStreamVolume: %{public}f, MaxStreamVolume: %{public}f",
-        duckVolume, isMute, GetMinStreamVolume(), GetMaxStreamVolume());
+    AUDIO_INFO_LOG("VolumeInfo for Renderer::Start. duckVolume: %{public}f, isMute: %{public}d", duckVolume, isMute);
 
     if ((GetVolumeInner() == 0 && isStillZeroStreamVolume_) || isMute) {
         AUDIO_INFO_LOG("StreamClientState for Renderer::Start. volume=%{public}f, isStillZeroStreamVolume_=%{public}d"
