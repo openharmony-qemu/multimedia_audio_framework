@@ -3400,6 +3400,7 @@ int32_t AudioAdapterManager::GetSystemVolumeForEffect(DeviceType deviceType, Aud
 
 int32_t AudioAdapterManager::SetSystemVolumeToEffect(AudioStreamType streamType, float volume)
 {
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERROR, "audioServiceAdapter is null");
     return audioServiceAdapter_->SetSystemVolumeToEffect(streamType, volume);
 }
 // LCOV_EXCL_STOP

@@ -1049,11 +1049,13 @@ std::string VolumeDataMaintainer::GetMuteKeyForDataShare(DeviceType deviceType, 
 void VolumeDataMaintainer::SaveSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType,
     int32_t volumeLevel)
 {
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
     deviceTypeToSystemVolumeForEffectMap_[deviceType][streamType] = volumeLevel;
 }
 
 int32_t VolumeDataMaintainer::GetSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType)
 {
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
     if (deviceTypeToSystemVolumeForEffectMap_.find(deviceType) != deviceTypeToSystemVolumeForEffectMap_.end() &&
         deviceTypeToSystemVolumeForEffectMap_[deviceType].find(streamType) !=
         deviceTypeToSystemVolumeForEffectMap_[deviceType].end()) {
