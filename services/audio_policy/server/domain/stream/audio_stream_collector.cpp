@@ -1752,10 +1752,16 @@ bool AudioStreamCollector::HasRunningCapturerStreamByUid(int32_t uid)
     // judge stream state is running
     bool hasStream = std::any_of(audioCapturerChangeInfos_.begin(), audioCapturerChangeInfos_.end(),
         [uid](const auto &changeInfo) {
-            if (changeInfo->capturerState == CAPTURER_RUNNING && changeInfo->clientUID == uid) {
+            if (changeInfo->capturerState == CAPTURER_RUNNING && ) {
                 AUDIO_INFO_LOG("Running Capturer stream : %{public}d with uid %{public}d",
                     changeInfo->sessionId, uid);
-                return true;
+                if (uid == -1) {
+                    return true;
+                }
+                if (changeInfo->clientUID == uid) {
+                    return true;
+                }
+                return false;
             }
             return false;
         });

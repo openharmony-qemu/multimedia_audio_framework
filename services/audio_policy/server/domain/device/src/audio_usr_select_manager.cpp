@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -126,7 +126,7 @@ void AudioUsrSelectManager::EnableSelectInputDevice(
         uidMap[uid] = i;
     }
 
-    // 先应用强选规则
+    // use selected rules first
     for (const auto &device : selectedDevices_) {
         CHECK_AND_CONTINUE(uidMap.find(device.first) != uidMap.end());
         auto desc = device.second;
@@ -143,25 +143,16 @@ void AudioUsrSelectManager::EnableSelectInputDevice(
         return;
     }
 
-    // 再应用prefer规则
+    // then use prefer rules
     // According to the device connection time, obtain the most recently connected Bluetooth/Nearlink device
-    std::vector<DeviceType> types = {
-        DEVICE_TYPE_NEARLINK,
-        DEVICE_TYPE_BLUETOOTH_SCO,
-    };
-    auto audioDeviceDescriptors =
-        AudioDeviceManager::GetAudioDeviceManager().GetConnectedDevicesByTypesAndRole(types, INPUT_DEVICE);
-    CHECK_AND_RETURN_LOG(audioDeviceDescriptors.size() > 0, "no bluetooth or nearlink devices");
-    std::sort(audioDeviceDescriptors.begin(), audioDeviceDescriptors.end(), [](const auto &desc1, const auto desc2) {
-        return desc1->connectTimeStamp_ < desc2->connectTimeStamp_;
-    });
-    
+    auto preferDevice = GetPreferDevice();
+    CHECK_AND_RETURN(preferDevice != nullptr);
     for (const int32_t uid : isPreferredBluetoothAndNearlinkRecord_) {
         CHECK_AND_CONTINUE(uidMap.find(uid) != uidMap.end());
 
         int32_t index = uidMap[uid];
         auto &streamDesc = inputStreamDescs[index];
-        capturerDevice_ = JudgeFinalSelectDevice(audioDeviceDescriptors.back(), streamDesc->capturerInfo_.sourceType);
+        capturerDevice_ = JudgeFinalSelectDevice(preferDevice, streamDesc->capturerInfo_.sourceType);
         CHECK_AND_CONTINUE(capturerDevice_ != nullptr);
         break;
     }
@@ -177,38 +168,29 @@ void AudioUsrSelectManager::DisableSelectInputDevice()
 std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::GetCapturerDevice(int32_t uid, SourceType sourceType)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    // 如果标记了就直接返回强选结果
+    // If marked, directly return the selection result.
     CHECK_AND_RETURN_RET(!isEnabled_, capturerDevice_);
 
     std::shared_ptr<AudioDeviceDescriptor> capturerDevice = nullptr;
-    // 如果没标记，先找当前uid的强选
+    // If not marked, first find the selection of the current UID
     auto deviceIt = findDevice(uid);
     if (deviceIt != selectedDevices_.end()) {
-        // 根据sourceType决定最终输入设备
+        // Based on the sourceType, determine the final input device
         auto desc = JudgeFinalSelectDevice(deviceIt->second, sourceType);
-        // 最终决策设备不会空，则返回
         CHECK_AND_RETURN_RET_LOG(desc == nullptr, desc,
             "AudioUsrSelectManager::GetCapturerDevice has selected device.");
     }
 
-    // 当前uid没有强选，则应用偏好设置
+    // If the current UID has no selection, then apply the preference setting
     auto it =
         std::find(isPreferredBluetoothAndNearlinkRecord_.begin(), isPreferredBluetoothAndNearlinkRecord_.end(), uid);
-    // 当前uid没有偏好设置，直接返回空
+    // If the current UID has no preference setting
     CHECK_AND_RETURN_RET_LOG(it != isPreferredBluetoothAndNearlinkRecord_.end(), nullptr,
         "AudioUsrSelectManager::GetCapturerDevice no prefer data");
-    std::vector<DeviceType> types = {
-        DEVICE_TYPE_NEARLINK,
-        DEVICE_TYPE_BLUETOOTH_SCO,
-    };
-    auto audioDeviceDescriptors =
-        AudioDeviceManager::GetAudioDeviceManager().GetConnectedDevicesByTypesAndRole(types, INPUT_DEVICE);
-    // 没有蓝牙设备在线，直接返回空
-    CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors.size() > 0, nullptr, "no bluetooth or nearlink devices");
-    std::sort(audioDeviceDescriptors.begin(), audioDeviceDescriptors.end(), [](const auto &desc1, const auto desc2) {
-        return desc1->connectTimeStamp_ < desc2->connectTimeStamp_;
-    });
-    return JudgeFinalSelectDevice(audioDeviceDescriptors.back(), sourceType);
+    // According to the device connection time, obtain the most recently connected Bluetooth/Nearlink device
+    auto preferDevice = GetPreferDevice();
+    CHECK_AND_RETURN_RET(preferDevice != nullptr, nullptr);
+    return JudgeFinalSelectDevice(preferDevice, sourceType);
 }
 
 std::list<std::pair<int32_t, AudioDevicePtr>>::iterator AudioUsrSelectManager::findDevice(int32_t uid)
@@ -242,6 +224,21 @@ std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::JudgeFinalSelectDe
     // 判断设备是不是存在且处于连接状态
     bool isConnected = AudioDeviceManager::GetAudioDeviceManager().IsConnectedDevices(desc);
     return isConnected ? desc : nullptr;
+}
+
+std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::GetPreferDevice()
+{
+    std::vector<DeviceType> types = {
+        DEVICE_TYPE_NEARLINK,
+        DEVICE_TYPE_BLUETOOTH_SCO,
+    };
+    auto audioDeviceDescriptors =
+        AudioDeviceManager::GetAudioDeviceManager().GetConnectedDevicesByTypesAndRole(types, INPUT_DEVICE);
+    CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors.size() > 0, nullptr, "no bluetooth or nearlink devices");
+    std::sort(audioDeviceDescriptors.begin(), audioDeviceDescriptors.end(), [](const auto &desc1, const auto desc2) {
+        return desc1->connectTimeStamp_ < desc2->connectTimeStamp_;
+    });
+    return audioDeviceDescriptors.back();
 }
 } // namespace AudioStandard
 } // namespace OHOS

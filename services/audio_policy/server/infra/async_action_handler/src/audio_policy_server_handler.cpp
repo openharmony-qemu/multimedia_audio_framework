@@ -1725,9 +1725,7 @@ int32_t AudioPolicyServerHandler::SetClientCallbacksEnable(const CallbackChange 
 int32_t AudioPolicyServerHandler::SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid)
 {
     int32_t clientPid = IPCSkeleton::GetCallingPid();
-    int32_t clientUid = IPCSkeleton::GetCallingUid();
     lock_guard<mutex> lock(clientCbRendererInfoMapMutex_);
-    pidUidMap_[clientPid] = clientUid;
     auto &rendererList = clientCbRendererInfoMap_[clientPid];
     auto it = std::find_if(rendererList.begin(), rendererList.end(),
         [&rendererInfo, uid](const AudioRendererFilter &existingFilter) {

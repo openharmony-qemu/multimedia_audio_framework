@@ -237,8 +237,8 @@ int32_t AudioCoreService::CreateCapturerClient(
 std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::GetCaptureClientDevice(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t sessionId)
 {
-    auto captureStreams = pipeManager_->GetAllCapturerStreamDescs();
-    CHECK_AND_RETURN_RET(captureStreams.size() == 0,
+    bool hasRunningStream = streamCollector_.HasRunningCapturerStreamByUid(INVALID_UID);
+    CHECK_AND_RETURN_RET(!hasRunningStream,
         std::make_shared<AudioDeviceDescriptor>(audioActiveDevice_.GetCurrentInputDevice()));
 
     return audioRouterCenter_.FetchInputDevice(streamDesc->capturerInfo_.sourceType,
@@ -1113,7 +1113,10 @@ int32_t AudioCoreService::ClearSelectedInputDeviceByUid(int32_t uid)
 int32_t AudioCoreService::PreferBluetoothAndNearlinkRecordByUid(int32_t uid, bool isPreferred)
 {
     audioUsrSelectManager_.PreferBluetoothAndNearlinkRecordByUid(uid, isPreferred);
-    return SUCCESS;
+    AudioScene scene = audioSceneManager_.GetAudioScene(true);
+    CHECK_AND_RETURN_RET(scene != AUDIO_SCENE_PHONE_CALL && scene != AUDIO_SCENE_PHONE_CHAT, result);
+    result = FetchInputDeviceAndRoute("SelectInputDeviceByUid");
+    return result;
 }
 
 bool AudioCoreService::GetPreferBluetoothAndNearlinkRecordByUid(int32_t uid)
