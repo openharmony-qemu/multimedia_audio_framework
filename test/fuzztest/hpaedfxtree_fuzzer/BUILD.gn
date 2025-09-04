@@ -14,7 +14,7 @@
   import("//build/test.gni")
 
 ohos_fuzztest("HpaeDfxTreeFuzzTest") {
-  module_out_path = "audio_framework/audio_framework_route"
+  module_out_path = "audio_framework/audio_framework_engine"
   fuzz_config_file = "../hpaedfxtree_fuzzer"
 
   cflags = [
