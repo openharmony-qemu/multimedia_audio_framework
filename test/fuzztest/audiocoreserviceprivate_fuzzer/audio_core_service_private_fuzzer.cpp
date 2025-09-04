@@ -259,13 +259,13 @@ void AudioCoreServicePrivateOnDeviceStatusUpdatedFuzzTest()
     audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
 
     desc.networkId_ = LOCAL_NETWORK_ID;
-    deviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
-    deviceInfo.macAddress_ = "00:00:00:00:00:00";
+    desc.deviceType_ = DEVICE_TYPE_SPEAKER;
+    desc.macAddress_ = "00:00:00:00:00:00";
     constexpr int32_t connectStateCount = static_cast<int32_t>(ConnectState::DEACTIVE_CONNECTED) + 1;
-    deviceInfo.connectState_ = static_cast<ConnectState>(GetData<uint8_t>() % connectStateCount);
-    deviceInfo.descriptorType_ = AudioDeviceDescriptor::DEVICE_INFO;
+    desc.connectState_ = static_cast<ConnectState>(GetData<uint8_t>() % connectStateCount);
+    desc.descriptorType_ = AudioDeviceDescriptor::DEVICE_INFO;
     int32_t a2dpOffloadFlagCount = static_cast<int32_t>(BluetoothOffloadState::A2DP_OFFLOAD) + 1;
-    deviceInfo.a2dpOffloadFlag_ = static_cast<BluetoothOffloadState>(GetData<uint8_t>() % a2dpOffloadFlagCount);
+    desc.a2dpOffloadFlag_ = static_cast<BluetoothOffloadState>(GetData<uint8_t>() % a2dpOffloadFlagCount);
 
     audioCoreService->OnDeviceStatusUpdated(desc, isConnect);
 }
