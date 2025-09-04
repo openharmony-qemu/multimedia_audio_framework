@@ -303,6 +303,9 @@ public:
     void HandleDistributedDeviceVolume();
     void SetSleVoiceStatusFlag(bool isSleVoiceStatus);
     void SendLoudVolumeModeToDsp(FunctionHoldType funcHoldType, bool state);
+    void SaveSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel);
+    int32_t GetSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType);
+    int32_t SetSystemVolumeToEffect(AudioStreamType streamType, float volume);
 private:
     friend class PolicyCallbackImpl;
 

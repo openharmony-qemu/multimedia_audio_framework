@@ -2488,7 +2488,6 @@ int32_t AudioServer::NotifyStreamVolumeChanged(int32_t streamType, float volume)
         return ERR_NOT_SUPPORTED;
     }
     AudioStreamType streamTypeTmp = static_cast<AudioStreamType>(streamType);
-    SetSystemVolumeToEffect(streamTypeTmp, volume);
 
     int32_t ret = AudioService::GetInstance()->NotifyStreamVolumeChanged(streamTypeTmp, volume);
     if (ret != SUCCESS) {

@@ -323,7 +323,6 @@ private:
     bool IsNormalIpcStream(const AudioProcessConfig &config) const;
     void RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
         const std::string &extraSceneType);
-    int32_t SetSystemVolumeToEffect(const AudioStreamType streamType, float volume);
     bool IsFastBlocked(int32_t uid, PlayerType playerType);
     int32_t SetVolumeInfoForEnhanceChain(const AudioStreamType &streamType);
     int32_t SetMicrophoneMuteForEnhanceChain(const bool &isMute);

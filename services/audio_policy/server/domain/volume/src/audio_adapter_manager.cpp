@@ -758,6 +758,11 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
         streamType, volumeDb, volumeLevel, currentActiveDevice_.deviceType_);
 
     // audio volume
+    int32_t volumeLevelTemp = GetSystemVolumeForEffect(currentActiveDevice_.deviceType_, streamType);
+    float volumeDbTemp = CalculateVolumeDbNonlinear(streamType, currentActiveDevice_.deviceType_, volumeLevelTemp);
+    AUDIO_INFO_LOG("SetSystemVolumeToEffect streamType: %{public}d, volumeDb: %{public}f, deviceType: %{public}d",
+        streamType, volumeDbTemp, currentActiveDevice_.deviceType_);
+    audioServiceAdapter_->SetSystemVolumeToEffect(streamType, volumeDbTemp);
     SetAudioVolume(streamType, volumeDb);
 
     return SUCCESS;
@@ -1347,9 +1352,13 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
     auto iter = defaultVolumeTypeList_.begin();
     while (iter != defaultVolumeTypeList_.end()) {
         // update volume level and mute status for each stream type
+        int32_t volumeLevelTemp = volumeDataMaintainer_.GetStreamVolume(*iter);
+        if (deviceDescriptor.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP || *iter != STREAM_MUSIC) {
+            SaveSystemVolumeForEffect(deviceDescriptor.deviceType_, *iter, volumeLevelTemp);
+        }
         SetVolumeDb(*iter);
-        AUDIO_INFO_LOG("volume: %{public}d, mute: %{public}d for stream type %{public}d",
-            volumeDataMaintainer_.GetStreamVolume(*iter), volumeDataMaintainer_.GetStreamMute(*iter), *iter);
+        AUDIO_INFO_LOG("volume: %{public}d, mute: %{public}d for stream type %{public}d, deviceType: %{public}d",
+            volumeLevelTemp, volumeDataMaintainer_.GetStreamMute(*iter), *iter, deviceDescriptor.deviceType_);
         iter++;
     }
 
@@ -3378,6 +3387,22 @@ void AudioAdapterManager::HandleHearingAidVolume(AudioStreamType streamType)
     }
 }
 
+void AudioAdapterManager::SaveSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType,
+    int32_t volumeLevel)
+{
+    return volumeDataMaintainer_.SaveSystemVolumeForEffect(deviceType, streamType, volumeLevel);
+}
+
+int32_t AudioAdapterManager::GetSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType)
+{
+    return volumeDataMaintainer_.GetSystemVolumeForEffect(deviceType, streamType);
+}
+
+int32_t AudioAdapterManager::SetSystemVolumeToEffect(AudioStreamType streamType, float volume)
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERROR, "audioServiceAdapter is null");
+    return audioServiceAdapter_->SetSystemVolumeToEffect(streamType, volume);
+}
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

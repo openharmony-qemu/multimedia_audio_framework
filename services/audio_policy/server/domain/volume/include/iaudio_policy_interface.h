@@ -247,6 +247,16 @@ public:
 
     virtual void SetSleVoiceStatusFlag(bool isSleVoiceStatus) = 0;
     virtual void SendLoudVolumeModeToDsp(FunctionHoldType funcHoldType, bool state) = 0;
+
+    virtual void SaveSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType,
+        int32_t volumeLevel) = 0;
+
+    virtual int32_t GetSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType) = 0;
+
+    virtual int32_t SetSystemVolumeToEffect(AudioStreamType streamType, float volume) = 0;
+
+    virtual float CalculateVolumeDbNonlinear(AudioStreamType streamType, DeviceType deviceType,
+        int32_t volumeLevel) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
