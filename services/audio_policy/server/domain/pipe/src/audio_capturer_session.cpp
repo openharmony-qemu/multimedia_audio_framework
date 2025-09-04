@@ -34,6 +34,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 const uint32_t PCM_8_BIT = 8;
+const uint32_t SESSION_ID_INVALID = 0;
 const float RENDER_FRAME_INTERVAL_IN_SECONDS = 0.02;
 const std::string PIPE_PRIMARY_INPUT = "primary_input";
 const std::string PIPE_WAKEUP_INPUT = "wakeup_input";
@@ -233,7 +234,7 @@ bool AudioCapturerSession::HandleIndependentInputpipe(const std::vector<std::sha
     }
     return hasSession;
 }
-// sessionId 0 is a valid input parameter
+
 bool AudioCapturerSession::HandleNormalInputPipes(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
     uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession)
 {
@@ -320,9 +321,8 @@ int32_t AudioCapturerSession::ReloadCaptureSessionSoftLink()
     const std::vector<std::shared_ptr<AudioPipeInfo>> pipes = AudioPipeManager::GetPipeManager()->GetPipeList();
     CHECK_AND_RETURN_RET_LOG(!pipes.empty(), ERR_INVALID_OPERATION, "pipes invalid");
     AudioStreamDescriptor targetStream;
-    const uint32_t softLinkSessionId = 0;
     bool hasSession = false;
-    hasSession = HandleNormalInputPipes(pipes, softLinkSessionId, targetStream, hasSession);
+    hasSession = HandleNormalInputPipes(pipes, SESSION_ID_INVALID, targetStream, hasSession);
 
     CHECK_AND_RETURN_RET_LOG(hasSession, SUCCESS, "no need to reload session");
     AUDIO_INFO_LOG("start reload session: %{public}u", targetStream.sessionId_);
