@@ -52,6 +52,9 @@ ohos_fuzztest("AudioInterruptServiceMoreFuzzTest") {
   if (use_libfuzzer || use_clang_coverage) {
     defines += [ "TEST_COVERAGE" ]
   }
+  if (audio_framework_feature_usb_audio) {
+    defines += [ "USB_ENABLE" ]
+  }
 
   deps = [
     "../../../services/audio_service/idl:audio_framework_interface",
