@@ -293,6 +293,9 @@ TEST_F(HpaeSoftLinkTest, testTransSinkInfoToStreamInfo)
     softLink_->TransSinkInfoToStreamInfo(streamInfo, HPAE_STREAM_CLASS_TYPE_RECORD);
     softLink_->linkMode_ = SoftLinkMode::OFFLOADINNERCAP_AID;
     softLink_->TransSinkInfoToStreamInfo(streamInfo, HPAE_STREAM_CLASS_TYPE_RECORD);
+
+    EXPECT_EQ(streamInfo.sourceType, SOURCE_TYPE_OFFLOAD_CAPTURE);
+
 }
 } // namespace HPAE
 } // namespace AudioStandard

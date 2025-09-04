@@ -26,8 +26,6 @@
 #include "audio_volume.h"
 #include "i_hpae_manager.h"
 #include "audio_engine_log.h"
-#include "capturer_clock_manager.h"
-#include "hpae_node.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -206,8 +204,8 @@ int32_t HpaeSoftLink::SetVolume(float volume)
 int32_t HpaeSoftLink::SetVolumeDuckFactor(float duckFactor)
 {
     std::lock_guard<std::mutex> stateLock(stateMutex_);
-    CHECK_AND_RETURN_RET_LOG(state_.load() != HpaeSoftLinkState::NEW, ERR_ILLEGAL_STATE, "softlink not prepared");
-    CHECK_AND_RETURN_RET_LOG(state_.load() != HpaeSoftLinkState::RELEASED, ERR_ILLEGAL_STATE,
+    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::NEW, ERR_ILLEGAL_STATE, "softlink not prepared");
+    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::RELEASED, ERR_ILLEGAL_STATE,
         "softlink already release");
     AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(rendererStreamInfo_.sessionId, duckFactor);
     return SUCCESS;
@@ -216,8 +214,8 @@ int32_t HpaeSoftLink::SetVolumeDuckFactor(float duckFactor)
 int32_t HpaeSoftLink::SetVolumeMute(bool isMute)
 {
     std::lock_guard<std::mutex> stateLock(stateMutex_);
-    CHECK_AND_RETURN_RET_LOG(state_.load() != HpaeSoftLinkState::NEW, ERR_ILLEGAL_STATE, "softlink not prepared");
-    CHECK_AND_RETURN_RET_LOG(state_.load() != HpaeSoftLinkState::RELEASED, ERR_ILLEGAL_STATE,
+    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::NEW, ERR_ILLEGAL_STATE, "softlink not prepared");
+    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::RELEASED, ERR_ILLEGAL_STATE,
         "softlink already release");
     AudioVolume::GetInstance()->SetStreamVolumeMute(rendererStreamInfo_.sessionId, isMute);
     return SUCCESS;
@@ -226,8 +224,8 @@ int32_t HpaeSoftLink::SetVolumeMute(bool isMute)
 int32_t HpaeSoftLink::SetVolumeLowPowerFactor(float lowPowerFactor)
 {
     std::lock_guard<std::mutex> stateLock(stateMutex_);
-    CHECK_AND_RETURN_RET_LOG(state_.load() != HpaeSoftLinkState::NEW, ERR_ILLEGAL_STATE, "softlink not prepared");
-    CHECK_AND_RETURN_RET_LOG(state_.load() != HpaeSoftLinkState::RELEASED, ERR_ILLEGAL_STATE,
+    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::NEW, ERR_ILLEGAL_STATE, "softlink not prepared");
+    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::RELEASED, ERR_ILLEGAL_STATE,
         "softlink already release");
     AudioVolume::GetInstance()->SetStreamVolumeLowPowerFactor(rendererStreamInfo_.sessionId, lowPowerFactor);
     return SUCCESS;

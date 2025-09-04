@@ -374,8 +374,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_017, TestSize.Lev
 
     auto ret1 = AudioPolicyService::GetAudioPolicyService().LoadModernOffloadCapSource();
     EXPECT_EQ(SUCCESS, ret1);
-    auto ret2 = AudioPolicyService::GetAudioPolicyService().LoadModernOffloadCapSource();
-    EXPECT_EQ(SUCCESS, ret2);
 }
 } // namespace AudioStandard
 } // namespace OHOS

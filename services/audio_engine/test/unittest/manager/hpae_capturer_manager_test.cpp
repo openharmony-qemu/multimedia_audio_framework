@@ -377,6 +377,9 @@ HWTEST_F(HpaeCapturerManagerTest, CreateOutputSession_003, TestSize.Level0)
     streamInfo.sourceType = SOURCE_TYPE_OFFLOAD_CAPTURE;
 
     EXPECT_EQ(capturerManager->CreateOutputSession(streamInfo), SUCCESS);
+    auto sourceOutputNode = capturerManager->sourceOutputNodeMap_[streamInfo.sessionId];
+    EXPECT_NE(sourceOutputNode, nullptr);
+    EXPECT_EQ(sourceOutputNode->GetNodeInfo().sourceBufferType HPAE_SOURCE_BUFFER_TYPE_EC);
 }
 
 /*
@@ -956,6 +959,10 @@ HWTEST_F(HpaeCapturerManagerTest, InitCaptureManager_001, TestSize.Level0)
     std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     EXPECT_NE(capturerManager, nullptr);
     EXPECT_EQ(capturerManager->InitCapturerManager() == SUCCESS, true);
+
+    auto sourceInputCluster = capturerManager->sourceInputClusterMap_[HPAE_SOURCE_MIC];
+    EXPECT_NE(sourceInputCluster, nullptr);
+    EXPECT_NE(sourceInputCluster->GetSourceInputNodeType(), HPAE_SOURCE_OFFLOAD);
 }
 } // namespace HPAE
 } // namespace AudioStandard

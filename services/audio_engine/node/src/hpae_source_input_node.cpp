@@ -253,6 +253,9 @@ void HpaeSourceInputNode::DoProcess()
         uint64_t replyBytesEc = 0;
         audioCapturerSource_->CaptureFrameWithEc(&fdescMap_.at(HPAE_SOURCE_BUFFER_TYPE_MIC), replyBytes,
                                                  &fdescMap_.at(HPAE_SOURCE_BUFFER_TYPE_EC), replyBytesEc);
+        CHECK_AND_RETURN_LOG(
+            CheckEcAndMicRefReplyValid(frameByteSizeMap_.at(HPAE_SOURCE_BUFFER_TYPE_EC), replyBytesEc),
+            "same offload ec request != reply");
         DoProcessInner(HPAE_SOURCE_BUFFER_TYPE_EC, replyBytesEc);
     } else {
         HpaeSourceBufferType sourceBufferType = nodeInfoMap_.begin()->second.sourceBufferType;

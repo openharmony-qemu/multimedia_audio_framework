@@ -3022,6 +3022,16 @@ bool AudioPolicyManager::IsAudioLoopbackSupported(AudioLoopbackMode mode)
     return support;
 }
 
+bool AudioPolicyManager::IsSupportInnerCaptureOffload()
+{
+    Trace trace("AudioPolicyManager::IsSupportInnerCaptureOffload");
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    bool isSupported = false;
+    gsp->IsSupportInnerCaptureOffload(isSupported);
+    return isSupported;
+}
+
 int32_t AudioPolicyManager::GetMaxVolumeLevelByUsage(StreamUsage streamUsage)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

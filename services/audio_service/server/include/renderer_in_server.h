@@ -192,6 +192,7 @@ private:
     template <typename T>
     void SetSoftLinkFunc(T&& softLinkFunc);
     bool IsEnabledAndValidSoftLink(SoftLinkInfo& softLinkInfo);
+    bool IsEnabledAndValidDupStream(CaptureInfo& captureInfo);
     void HandleOffloadStream(const int32_t captureId, const CaptureInfo& captureInfo);
 private:
     std::mutex statusLock_;

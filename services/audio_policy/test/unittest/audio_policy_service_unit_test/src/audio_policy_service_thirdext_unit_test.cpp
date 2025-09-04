@@ -1412,6 +1412,11 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_006, TestSiz
     audioConfigManager_.OnGlobalConfigsParsed(gCfg);
     bool ret = audioConfigManager_.IsSupportInnerCaptureOffload();
     EXPECT_EQ(ret, true);
+
+    PolicyGlobalConfigs gCfg2;
+    audioConfigManager_.OnGlobalConfigsParsed(gCfg2);
+    ret = audioConfigManager_.IsSupportInnerCaptureOffload();
+    EXPECT_EQ(ret, false);
 }
 
 /**

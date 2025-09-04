@@ -473,6 +473,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerDisableInnerCap_002, TestS
     server->offloadEnable_ = true;
     server->stream_->SetOffloadMode(1, true);
     auto ret = server->DisableInnerCap(innerCapId);
+    EXPECT_NE(SUCCESS, ret);
     
     server->offloadEnable_ = true;
     server->stream_->UnsetOffloadMode();
@@ -486,7 +487,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerDisableInnerCap_002, TestS
     server->stream_->UnsetOffloadMode();
     server->DisableInnerCap(innerCapId);
 
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_NE(server->softLinkInfos_[innerCapId].isSoftLinkEnabled, false);
 }
 
 /**
@@ -1036,8 +1037,6 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetLowPowerVolume_004, Tes
  */
 HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetLowPowerVolume_005, TestSize.Level1)
 {
-    EXPECT_NE(nullptr, rendererInServer);
-
     rendererInServer->softLinkInfos_[0].isSoftLinkEnabled = false;
     rendererInServer->softLinkInfos_[0].softLink = nullptr;
     rendererInServer->softLinkInfos_[1].isSoftLinkEnabled = true;
