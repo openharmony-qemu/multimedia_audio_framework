@@ -797,7 +797,7 @@ int32_t HpaeManager::MoveSourceOutputByIndexOrName(
 bool HpaeManager::CheckMoveSourceOutput(uint32_t sourceOutputId, const std::string &sourceName)
 {
     if (capturerIdStreamInfoMap_.find(sourceOutputId) == capturerIdStreamInfoMap_.end()) {
-        HILOG_COMM_INFO("move session:%{public}u failed,can not find session.", sourceOutputId);
+        HILOG_COMM_INFO("move session:%{public}u failed,can not find session", sourceOutputId);
         HpaeStreamMoveMonitor::ReportStreamMoveException(0, sourceOutputId, HPAE_STREAM_CLASS_TYPE_RECORD,
             "", sourceName, "can not find session");
         return false;
