@@ -1154,7 +1154,7 @@ HWTEST_F(FastSystemStreamUnitTest, SetDefaultOutputDevice_001, TestSize.Level1)
  * @tc.number: GetAudioTimestampInfo_001
  * @tc.desc  : Test GetAudioTimestampInfo returns error when process client is null
  */
-HWTEST_F_F(FastSystemStreamUnitTest, GetAudioTimestampInfo_001, TestSize.Level0)
+HWTEST_F(FastSystemStreamUnitTest, GetAudioTimestampInfo_001, TestSize.Level0)
 {
     Timestamp timestamp;
     stream_->processClient_ = nullptr;
@@ -1170,7 +1170,7 @@ HWTEST_F_F(FastSystemStreamUnitTest, GetAudioTimestampInfo_001, TestSize.Level0)
  * @tc.number: GetAudioTimestampInfo_002
  * @tc.desc  : Test GetAudioTimestampInfo returns error when timestamp base is not MONOTONIC
  */
-HWTEST_F_F(FastSystemStreamUnitTest, GetAudioTimestampInfo_002, TestSize.Level0)
+HWTEST_F(FastSystemStreamUnitTest, GetAudioTimestampInfo_002, TestSize.Level0)
 {
     Timestamp timestamp;
 
@@ -1185,7 +1185,7 @@ HWTEST_F_F(FastSystemStreamUnitTest, GetAudioTimestampInfo_002, TestSize.Level0)
  * @tc.number: GetAudioTimestampInfo_003
  * @tc.desc  : Test GetAudioTimestampInfo returns error when GetAudioTime returns false
  */
-HWTEST_F_F(FastSystemStreamUnitTest, GetAudioTimestampInfo_003, TestSize.Level0)
+HWTEST_F(FastSystemStreamUnitTest, GetAudioTimestampInfo_003, TestSize.Level0)
 {
     Timestamp timestamp;
 
@@ -1204,7 +1204,7 @@ HWTEST_F_F(FastSystemStreamUnitTest, GetAudioTimestampInfo_003, TestSize.Level0)
  * @tc.number: GetAudioTimestampInfo_004
  * @tc.desc  : Test GetAudioTimestampInfo returns success and correctly populates timestamp
  */
-HWTEST_F_F(FastSystemStreamUnitTest, GetAudioTimestampInfo_004, TestSize.Level0)
+HWTEST_F(FastSystemStreamUnitTest, GetAudioTimestampInfo_004, TestSize.Level0)
 {
     Timestamp timestamp;
 
