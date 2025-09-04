@@ -147,7 +147,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_003, TestSize.Level1)
     audioProcessInServerRet.processBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder,
         TOTAL_SIZE_IN_FRAME, byteSizePerFrame);
     EXPECT_NE(audioProcessInServerRet.processBuffer_, nullptr);
-    auto ret = audioProcessInServerRet.CheckProcessInServer();
+    auto ret = audioProcessInServerRet.RequestHandleInfo();
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1151,12 +1151,12 @@ HWTEST(AudioProcessInServerUnitTest, GetByteSizePerFrame_001, TestSize.Level4)
 }
 
 /**
- * @tc.name  : Test CheckProcessInServerAsync API
+ * @tc.name  : Test RequestHandleInfoAsync API
  * @tc.type  : FUNC
- * @tc.number: CheckProcessInServerAsync_001
- * @tc.desc  : Test CheckProcessInServerAsync interface.
+ * @tc.number: RequestHandleInfoAsync_001
+ * @tc.desc  : Test RequestHandleInfoAsync interface.
  */
-HWTEST(AudioProcessInServerUnitTest, CheckProcessInServerAsync_001, TestSize.Level4)
+HWTEST(AudioProcessInServerUnitTest, RequestHandleInfoAsync_001, TestSize.Level4)
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
@@ -1167,7 +1167,7 @@ HWTEST(AudioProcessInServerUnitTest, CheckProcessInServerAsync_001, TestSize.Lev
     audioProcessInServerRet.processBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder,
         TOTAL_SIZE_IN_FRAME, byteSizePerFrame);
     EXPECT_NE(audioProcessInServerRet.processBuffer_, nullptr);
-    auto ret = audioProcessInServerRet.CheckProcessInServerAsync();
+    auto ret = audioProcessInServerRet.RequestHandleInfoAsync();
     EXPECT_EQ(ret, SUCCESS);
 }
 
