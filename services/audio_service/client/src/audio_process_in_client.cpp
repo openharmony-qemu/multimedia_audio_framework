@@ -1590,7 +1590,7 @@ int32_t AudioProcessInClientInner::RecordReSyncServicePos()
     int32_t tryTimes = 3;
     int32_t ret = 0;
     while (tryTimes > 0) {
-        ret = processProxy_->CheckProcessInServerAsync();
+        ret = processProxy_->RequestHandleInfoAsync();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "%{public}s request handle info fail, ret %{public}d.",
             __func__, ret);
 
