@@ -551,9 +551,9 @@ int32_t BluetoothAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &apps
 }
 
 void BluetoothAudioRenderSink::SetInvalidState(void)
-{
-    std::lock_guard<std::mutex> lock(sinkMutex_);
+{   
     AUDIO_INFO_LOG("%{public}s in", logTypeTag_.c_str());
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     validState_ = false;
     sinkInited_ = false;
     started_ = false;
