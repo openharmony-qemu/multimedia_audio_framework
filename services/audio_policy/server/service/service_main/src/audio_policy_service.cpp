@@ -722,6 +722,11 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
     AudioServerProxy::GetInstance().SetParameterCallbackProxy(object);
 }
 
+bool AudioPolicyService::IsSupportInnerCaptureOffload()
+{
+    return audioConfigManager_.IsSupportInnerCaptureOffload();
+}
+
 int32_t AudioPolicyService::GetMaxRendererInstances()
 {
     return audioConfigManager_.GetMaxRendererInstances();
@@ -1161,6 +1166,35 @@ int32_t AudioPolicyService::LoadModernInnerCapSink(int32_t innerCapId)
     return SUCCESS;
 }
 
+int32_t AudioPolicyService::LoadModernOffloadCapSource()
+{
+    if (audioIOHandleMap_.CheckIOHandleExist(OFFLOAD_CAPTURER_SOURCE)) {
+        AUDIO_INFO_LOG("offload capture has loaded!");
+        return SUCCESS;
+    }
+    AUDIO_INFO_LOG("Start load offload capture:");
+    AudioModuleInfo moduleInfo = {};
+    moduleInfo.name = OFFLOAD_CAPTURER_SOURCE;
+    moduleInfo.lib = "libmodule-hdi-source.z.so";
+    moduleInfo.format = "s16le";
+    moduleInfo.ecFormat = "s16le";
+    moduleInfo.ecType = "1";
+    moduleInfo.channels = "2"; // 2 channel
+    moduleInfo.ecChannels = "2"; // 2 channel
+    moduleInfo.rate = "48000";
+    moduleInfo.ecSamplingRate = "48000";
+    moduleInfo.bufferSize = "3840"; // 20ms
+
+    moduleInfo.className = "offload";
+    moduleInfo.adapterName = "primary";
+    moduleInfo.offloadEnable = "true";
+    moduleInfo.role = "source";
+    moduleInfo.sourceType = std::to_string(SourceType::SOURCE_TYPE_OFFLOAD_CAPTURE);
+
+    int32_t result = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
+    return result;
+}
+
 int32_t AudioPolicyService::UnloadModernInnerCapSink(int32_t innerCapId)
 {
     AUDIO_INFO_LOG("Start");
@@ -1168,6 +1202,13 @@ int32_t AudioPolicyService::UnloadModernInnerCapSink(int32_t innerCapId)
     name += std::to_string(innerCapId);
 
     audioIOHandleMap_.ClosePortAndEraseIOHandle(name);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyService::UnloadModernOffloadCapSource()
+{
+    AUDIO_INFO_LOG("Start unload offload capture:");
+    audioIOHandleMap_.ClosePortAndEraseIOHandle(OFFLOAD_CAPTURER_SOURCE);
     return SUCCESS;
 }
 #endif

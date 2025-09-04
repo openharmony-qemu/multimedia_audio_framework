@@ -192,6 +192,8 @@ public:
 
     int32_t GetMaxRendererInstances();
 
+    bool IsSupportInnerCaptureOffload();
+
     void RegisterDataObserver();
 
     int32_t QueryEffectManagerSceneMode(SupportedEffectConfig &supportedEffectConfig);
@@ -240,6 +242,8 @@ public:
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t LoadModernInnerCapSink(int32_t innerCapId);
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
+    int32_t LoadModernOffloadCapSource();
+    int32_t UnloadModernOffloadCapSource();
 #endif
     void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo);
 

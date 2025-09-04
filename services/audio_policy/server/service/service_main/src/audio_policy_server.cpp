@@ -3733,6 +3733,12 @@ int32_t AudioPolicyServer::GetMaxRendererInstances(int32_t &ret)
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::IsSupportInnerCaptureOffload(bool &ret)
+{
+    ret = audioPolicyService_.IsSupportInnerCaptureOffload();
+    return SUCCESS;
+}
+
 void AudioPolicyServer::RegisterDataObserver()
 {
     audioPolicyService_.RegisterDataObserver();

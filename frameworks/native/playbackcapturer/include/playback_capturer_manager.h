@@ -58,6 +58,7 @@ public:
     int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId);
     int32_t SetInnerCapLimit(uint32_t innerCapLimit);
     bool CheckReleaseUnloadModernInnerCapSink(int32_t innerCapId);
+    bool CheckReleaseUnloadModernOffloadCapSource();
     void InitAllDupBuffer(int32_t innerCapId);
 private:
     uint32_t GetFilterIndex();

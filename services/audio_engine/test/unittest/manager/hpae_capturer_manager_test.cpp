@@ -362,6 +362,30 @@ HWTEST_F(HpaeCapturerManagerTest, CreateOutputSession_002, TestSize.Level0)
  * tc.name   : Test HpaeCapturerManager API
  * tc.type   : FUNC
  * tc.number : HpaeCapturerManagerTest
+ * tc.desc   : Test CreateOutputSession_003
+ */
+HWTEST_F(HpaeCapturerManagerTest, CreateOutputSession_003, TestSize.Level0)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.sourceType = SOURCE_TYPE_OFFLOAD_CAPTURE;
+
+    EXPECT_EQ(capturerManager->CreateOutputSession(streamInfo), SUCCESS);
+    auto sourceOutputNode = capturerManager->sourceOutputNodeMap_[streamInfo.sessionId];
+    EXPECT_NE(sourceOutputNode, nullptr);
+    EXPECT_EQ(sourceOutputNode->GetNodeInfo().sourceBufferType, HPAE_SOURCE_BUFFER_TYPE_MIC);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test DisConnectSceneClusterFromSourceInputCluster_001
  */
 HWTEST_F(HpaeCapturerManagerTest, DisConnectSceneClusterFromSourceInputCluster_001, TestSize.Level0)
@@ -919,6 +943,26 @@ HWTEST_F(HpaeCapturerManagerTest, CheckEcAndMicRefCondition_001, TestSize.Level0
 
     HpaeNodeInfo micRefNodeInfo;
     EXPECT_EQ(capturerManager->CheckMicRefCondition(sceneType, micRefNodeInfo), false);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : HpaeCapturerManagerTest
+ * tc.desc   : Test InitCaptureManager_001
+ */
+HWTEST_F(HpaeCapturerManagerTest, InitCaptureManager_001, TestSize.Level0)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    EXPECT_EQ(capturerManager->InitCapturerManager() == SUCCESS, true);
+
+    auto sourceInputCluster = capturerManager->sourceInputClusterMap_[HPAE_SOURCE_MIC];
+    EXPECT_NE(sourceInputCluster, nullptr);
+    EXPECT_NE(sourceInputCluster->GetSourceInputNodeType(), HPAE_SOURCE_OFFLOAD);
 }
 
 /**

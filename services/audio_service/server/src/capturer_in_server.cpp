@@ -774,6 +774,9 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
         if (PlaybackCapturerManager::GetInstance()->CheckReleaseUnloadModernInnerCapSink(innerCapId_)) {
             AudioService::GetInstance()->UnloadModernInnerCapSink(innerCapId_);
         }
+        if (PlaybackCapturerManager::GetInstance()->CheckReleaseUnloadModernOffloadCapSource()) {
+            AudioService::GetInstance()->UnloadModernOffloadCapSource();
+        }
         innerCapId_ = 0;
     }
 #endif

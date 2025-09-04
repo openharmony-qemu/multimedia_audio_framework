@@ -98,6 +98,8 @@ public:
 
     int32_t GetMaxRendererInstances() override;
 
+    bool IsSupportInnerCaptureOffload() override;
+
     int32_t NotifyCapturerRemoved(uint64_t sessionId) override;
 
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID) override;
@@ -108,6 +110,10 @@ public:
     int32_t LoadModernInnerCapSink(int32_t innerCapId) override;
 
     int32_t UnloadModernInnerCapSink(int32_t innerCapId) override;
+
+    int32_t LoadModernOffloadCapSource() override;
+
+    int32_t UnloadModernOffloadCapSource() override;
 #endif
 
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
@@ -175,6 +181,11 @@ int32_t MockPolicyProvider::GetMaxRendererInstances()
     return SUCCESS;
 }
 
+bool MockPolicyProvider::IsSupportInnerCaptureOffload()
+{
+    return true;
+}
+
 int32_t MockPolicyProvider::NotifyCapturerRemoved(uint64_t sessionId)
 {
     return SUCCESS;
@@ -197,6 +208,16 @@ int32_t MockPolicyProvider::LoadModernInnerCapSink(int32_t innerCapId)
 }
 
 int32_t MockPolicyProvider::UnloadModernInnerCapSink(int32_t innerCapId)
+{
+    return SUCCESS;
+}
+
+int32_t MockPolicyProvider::LoadModernOffloadCapSource()
+{
+    return SUCCESS;
+}
+
+int32_t MockPolicyProvider::UnloadModernOffloadCapSource()
 {
     return SUCCESS;
 }

@@ -139,6 +139,7 @@ public:
     void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
+    int32_t UnloadModernOffloadCapSource();
 #endif
     void RenderersCheckForAudioWorkgroup(int32_t pid);
     void SendInterruptEventToAudioService(uint32_t sessionId, InterruptEventInternal interruptEvent);

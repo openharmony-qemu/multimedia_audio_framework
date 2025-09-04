@@ -375,6 +375,11 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     bool isVirtualKeyboard = audioRenderer->IsVirtualKeyboard(rendererFlags);
     rendererFlags = rendererFlags == AUDIO_FLAG_VKB_NORMAL ? AUDIO_FLAG_NORMAL : rendererFlags;
     rendererFlags = rendererFlags == AUDIO_FLAG_VKB_FAST ? AUDIO_FLAG_MMAP : rendererFlags;
+    if (rendererFlags == AUDIO_FLAG_PCM_OFFLOAD) {
+        bool isSupportInnerCaptureOffload = AudioPolicyManager::GetInstance().IsSupportInnerCaptureOffload();
+        AUDIO_INFO_LOG("isSupportInnerCaptureOffload: %{public}d", isSupportInnerCaptureOffload);
+        rendererFlags = isSupportInnerCaptureOffload ? rendererFlags : AUDIO_FLAG_NORMAL;
+    }
 
     HILOG_COMM_INFO("StreamClientState for Renderer::Create. content: %{public}d, usage: %{public}d, "\
         "isOffloadAllowed: %{public}s, flags: %{public}d, uid: %{public}d",

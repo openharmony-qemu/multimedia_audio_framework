@@ -26,6 +26,7 @@
 #include "audio_dump_pcm.h"
 #include "volume_tools.h"
 #include "audio_schedule.h"
+#include "util/id_handler.h"
 #include "media_monitor_manager.h"
 #include "audio_enhance_chain_manager.h"
 #include "common/hdi_adapter_info.h"
@@ -389,6 +390,18 @@ int32_t AudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &reply
         return ERR_READ_FAILED;
     }
 
+    if (attr_.sourceType == SOURCE_TYPE_OFFLOAD_CAPTURE && frameInfo.frameEc != nullptr) {
+        if (memcpy_s(fdescEc->frame, fdescEc->frameLen, frameInfo.frameEc, fdescEc->frameLen) != EOK) {
+            AUDIO_ERR_LOG("copy desc ec fail");
+        } else {
+            replyBytesEc = frameInfo.replyBytesEc;
+        }
+
+        CheckUpdateState(fdesc->frame, replyBytes);
+        AudioCaptureFrameInfoFree(&frameInfo, false);
+        return SUCCESS;
+    }
+
     if (attr_.sourceType != SOURCE_TYPE_EC && frameInfo.frame != nullptr) {
         if (frameInfo.replyBytes - fdescEc->frameLen < fdesc->frameLen) {
             replyBytes = 0;
@@ -732,6 +745,9 @@ enum AudioInputType AudioCaptureSource::ConvertToHDIAudioInputType(int32_t sourc
             break;
         case SOURCE_TYPE_LIVE:
             hdiAudioInputType = AUDIO_INPUT_LIVE_TYPE;
+            break;
+        case SOURCE_TYPE_OFFLOAD_CAPTURE:
+            hdiAudioInputType = AUDIO_INPUT_OFFLOAD_CAPTURE_TYPE;
             break;
         default:
             hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;

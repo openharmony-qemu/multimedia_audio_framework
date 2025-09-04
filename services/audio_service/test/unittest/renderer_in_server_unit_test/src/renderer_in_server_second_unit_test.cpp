@@ -33,6 +33,9 @@
 #include "audio_volume.h"
 #include "i_renderer_stream.h"
 #include "audio_utils.h"
+#include "hpae_renderer_stream_impl.h"
+#include "hpae_adapter_manager.h"
+#include "hpae_soft_link.h"
 
 using namespace testing::ext;
 
@@ -41,6 +44,8 @@ namespace AudioStandard {
 
 static std::shared_ptr<IStreamListener> stateListener;
 static std::shared_ptr<StreamListenerHolder> streamListenerHolder = std::make_shared<StreamListenerHolder>();
+static std::shared_ptr<HPAE::IHpaeSoftLink>  softLink =
+    HPAE::IHpaeSoftLink::CreateSoftLink(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
 static std::shared_ptr<RendererInServer> rendererInServer;
 static std::shared_ptr<OHAudioBuffer> buffer;
 static std::weak_ptr<IStreamListener> streamListener;
@@ -49,6 +54,8 @@ const uint64_t TEST_FRAMEPOS = 123456;
 const uint64_t TEST_TIMESTAMP = 111111;
 const float IN_VOLUME_RANGE = 0.5f;
 const uint32_t TEST_STREAMINDEX = 64;
+const uint32_t TEST_SESSIONID = 64;
+const int32_t TEST_UID = 10;
 
 static AudioProcessConfig processConfig;
 static BufferDesc bufferDesc;
@@ -57,6 +64,22 @@ static int32_t length = 10000;
 static AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
     AudioChannelLayout::CH_LAYOUT_UNKNOWN);
 
+static AudioProcessConfig GetInnerCapConfig()
+{
+    AudioProcessConfig config;
+    config.appInfo.appUid = TEST_UID;
+    config.appInfo.appPid = TEST_UID;
+    config.streamInfo.format = SAMPLE_S32LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
+    config.streamType = AudioStreamType::STREAM_MUSIC;
+    config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    config.innerCapId = 1;
+    config.originalSessionId = TEST_SESSIONID;
+    return config;
+}
 void RendererInServerExtUnitTest::SetUpTestCase(void) {}
 
 void RendererInServerExtUnitTest::TearDownTestCase(void)
@@ -89,6 +112,14 @@ void InitAudioProcessConfig(AudioStreamInfo streamInfo, DeviceType deviceType = 
     processConfig.deviceType = deviceType;
     processConfig.rendererInfo.rendererFlags = rendererFlags;
     processConfig.streamType = streamType;
+}
+
+std::shared_ptr<IRendererStream> RendererInServerExtUnitTest::CreateHpaeRendererStream()
+{
+    std::shared_ptr<HpaeAdapterManager> adapterManager = std::make_shared<HpaeAdapterManager>(DUP_PLAYBACK);
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(processConfig, "");
+    return rendererStream;
 }
 
 /**
@@ -414,6 +445,49 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerDisableInnerCap_001, TestS
     server->captureInfos_[innerCapId].isInnerCapEnabled = true;
     auto ret = server->DisableInnerCap(innerCapId);
     EXPECT_EQ(SUCCESS, ret);
+
+    server->Init();
+    server->offloadEnable_ = true;
+    server->stream_ = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    ret = server->stream_->SetOffloadMode(1, true);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test RendererInServer API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerDisableInnerCap_002
+ * @tc.desc  : Test DisableInnerCap interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerDisableInnerCap_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    processConfig.rendererInfo.originalFlag = AUDIO_FLAG_PCM_OFFLOAD;
+    processConfig.streamType = STREAM_MOVIE;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+    server->Init();
+    
+    int32_t innerCapId = 0;
+    server->offloadEnable_ = true;
+    server->stream_->SetOffloadMode(1, true);
+    auto ret = server->DisableInnerCap(innerCapId);
+    EXPECT_NE(SUCCESS, ret);
+    
+    server->offloadEnable_ = true;
+    server->stream_->UnsetOffloadMode();
+    server->DisableInnerCap(innerCapId);
+
+    server->offloadEnable_ = false;
+    server->stream_->SetOffloadMode(1, true);
+    server->DisableInnerCap(innerCapId);
+
+    server->offloadEnable_ = false;
+    server->stream_->UnsetOffloadMode();
+    server->DisableInnerCap(innerCapId);
+
+    EXPECT_NE(server->softLinkInfos_[innerCapId].isSoftLinkEnabled, false);
 }
 
 /**
@@ -956,6 +1030,30 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetLowPowerVolume_004, Tes
 }
 
 /**
+ * @tc.name  : Test SetLowPowerVolume API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerSetLowPowerVolume_005
+ * @tc.desc  : Test SetLowPowerVolume interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetLowPowerVolume_005, TestSize.Level1)
+{
+    rendererInServer->softLinkInfos_[0].isSoftLinkEnabled = false;
+    rendererInServer->softLinkInfos_[0].softLink = nullptr;
+    rendererInServer->softLinkInfos_[1].isSoftLinkEnabled = true;
+    rendererInServer->softLinkInfos_[1].softLink = nullptr;
+    rendererInServer->softLinkInfos_[2].isSoftLinkEnabled = false;
+    rendererInServer->softLinkInfos_[2].softLink =
+        std::make_shared<HPAE::HpaeSoftLink>(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
+    rendererInServer->softLinkInfos_[3].isSoftLinkEnabled = true;
+    rendererInServer->softLinkInfos_[3].softLink =
+        std::make_shared<HPAE::HpaeSoftLink>(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
+
+    float volume = IN_VOLUME_RANGE;
+    int32_t ret = rendererInServer->SetLowPowerVolume(volume);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
  * @tc.name  : Test OnWriteData API
  * @tc.type  : FUNC
  * @tc.number: StreamCallbacksOnWriteData_002
@@ -1417,6 +1515,510 @@ HWTEST_F(RendererInServerExtUnitTest, GetPlaybackManager_003, TestSize.Level1)
 {
     IStreamManager &manager = IStreamManager::GetPlaybackManager(VOIP_PLAYBACK);
     EXPECT_NE(&manager, nullptr);
+}
+
+/**
+ * @tc.name  : Test Pause API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerPause_003
+ * @tc.desc  : Test Pause interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerPause_003, TestSize.Level1)
+{
+    processConfig.streamType = STREAM_MOVIE;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    processConfig.rendererInfo.originalFlag = AUDIO_FLAG_PCM_OFFLOAD;
+    auto dupStream = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+    server->stream_ = CreateHpaeRendererStream();
+    server->status_ = I_STATUS_STARTED;
+    server->standByEnable_ = false;
+    server->offloadEnable_ = true;
+    server->stream_->SetOffloadMode(1, true);
+
+    server->softLinkInfos_[0].isSoftLinkEnabled = false;
+    server->softLinkInfos_[0].softLink = nullptr;
+    server->softLinkInfos_[1].isSoftLinkEnabled = true;
+    server->softLinkInfos_[1].softLink = nullptr;
+    server->softLinkInfos_[2].isSoftLinkEnabled = false;
+    server->softLinkInfos_[2].softLink =
+        std::make_shared<HPAE::HpaeSoftLink>(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
+    server->softLinkInfos_[3].isSoftLinkEnabled = true;
+    server->softLinkInfos_[3].softLink =
+        std::make_shared<HPAE::HpaeSoftLink>(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
+
+    server->captureInfos_[0].isInnerCapEnabled = false;
+    server->captureInfos_[0].dupStream = nullptr;
+    server->captureInfos_[1].isInnerCapEnabled = true;
+    server->captureInfos_[1].dupStream = nullptr;
+    server->captureInfos_[2].isInnerCapEnabled = false;
+    server->captureInfos_[2].dupStream = dupStream;
+    server->captureInfos_[3].isInnerCapEnabled = true;
+    server->captureInfos_[3].dupStream = dupStream;
+
+    int32_t ret = server->Pause();
+    EXPECT_EQ(SUCCESS, ret);
+
+    server->offloadEnable_ = false;
+    server->status_ = I_STATUS_STARTED;
+    ret = server->Pause();
+    EXPECT_NE(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test StopInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerStopInner_001
+ * @tc.desc  : Test StopInner interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerStopInner_001, TestSize.Level1)
+{
+    processConfig.streamType = STREAM_MOVIE;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    processConfig.rendererInfo.originalFlag = AUDIO_FLAG_PCM_OFFLOAD;
+    auto dupStream = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+    server->stream_ = CreateHpaeRendererStream();
+    server->status_ = I_STATUS_STARTED;
+    server->standByEnable_ = false;
+    server->offloadEnable_ = true;
+    server->stream_->SetOffloadMode(1, true);
+
+    server->softLinkInfos_[0].isSoftLinkEnabled = false;
+    server->softLinkInfos_[0].softLink = nullptr;
+    server->softLinkInfos_[1].isSoftLinkEnabled = true;
+    server->softLinkInfos_[1].softLink = nullptr;
+    server->softLinkInfos_[2].isSoftLinkEnabled = false;
+    server->softLinkInfos_[2].softLink =
+        std::make_shared<HPAE::HpaeSoftLink>(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
+    server->softLinkInfos_[3].isSoftLinkEnabled = true;
+    server->softLinkInfos_[3].softLink =
+        std::make_shared<HPAE::HpaeSoftLink>(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
+
+    server->captureInfos_[0].isInnerCapEnabled = false;
+    server->captureInfos_[0].dupStream = nullptr;
+    server->captureInfos_[1].isInnerCapEnabled = true;
+    server->captureInfos_[1].dupStream = nullptr;
+    server->captureInfos_[2].isInnerCapEnabled = false;
+    server->captureInfos_[2].dupStream = dupStream;
+    server->captureInfos_[3].isInnerCapEnabled = true;
+    server->captureInfos_[3].dupStream = dupStream;
+
+    int32_t ret = server->StopInner();
+    EXPECT_EQ(SUCCESS, ret);
+
+    server->offloadEnable_ = false;
+    ret = server->StopInner();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test EnableInnerCap API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerEnableInnerCap_001
+ * @tc.desc  : Test EnableInnerCap interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerEnableInnerCap_001, TestSize.Level1)
+{
+    processConfig.streamType = STREAM_MOVIE;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    processConfig.rendererInfo.originalFlag = AUDIO_FLAG_PCM_OFFLOAD;
+    auto dupStream = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+    server->stream_ = CreateHpaeRendererStream();
+    server->status_ = I_STATUS_STARTED;
+    server->standByEnable_ = false;
+    server->offloadEnable_ = true;
+    server->stream_->SetOffloadMode(1, true);
+
+    auto ret = server->EnableInnerCap(0);
+    EXPECT_NE(SUCCESS, ret);
+
+    server->offloadEnable_ = false;
+    ret = server->EnableInnerCap(0);
+    EXPECT_NE(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test DisableInnerCapHandle API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerDisableInnerCapHandle_001
+ * @tc.desc  : Test DisableInnerCapHandle interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerDisableInnerCapHandle_001, TestSize.Level1)
+{
+    processConfig.streamType = STREAM_MOVIE;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    processConfig.rendererInfo.originalFlag = AUDIO_FLAG_PCM_OFFLOAD;
+    auto dupStream = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+    server->stream_ = CreateHpaeRendererStream();
+    server->status_ = I_STATUS_STARTED;
+    server->standByEnable_ = false;
+    server->offloadEnable_ = true;
+    server->stream_->SetOffloadMode(1, true);
+
+    server->captureInfos_[0].isInnerCapEnabled = false;
+    server->captureInfos_[0].dupStream = nullptr;
+    server->DisableInnerCapHandle(0);
+
+    server->captureInfos_[1].isInnerCapEnabled = true;
+    server->captureInfos_[1].dupStream = nullptr;
+    server->DisableInnerCapHandle(1);
+    auto ret = server->DisableInnerCapHandle(2);
+    EXPECT_NE(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test SetOffloadMode API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerSetOffloadMode_002
+ * @tc.desc  : Test SetOffloadMode interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetOffloadMode_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamType = STREAM_MOVIE;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    processConfig.rendererInfo.originalFlag = AUDIO_FLAG_PCM_OFFLOAD;
+    auto dupStream = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+    server->stream_ = CreateHpaeRendererStream();
+    server->status_ = I_STATUS_STARTED;
+    server->standByEnable_ = false;
+    server->offloadEnable_ = true;
+    server->Init();
+
+    server->softLinkInfos_[0].isSoftLinkEnabled = false;
+    server->softLinkInfos_[0].softLink = nullptr;
+    server->softLinkInfos_[1].isSoftLinkEnabled = true;
+    server->softLinkInfos_[1].softLink = nullptr;
+    server->softLinkInfos_[2].isSoftLinkEnabled = false;
+    server->softLinkInfos_[2].softLink = softLink;
+    server->softLinkInfos_[3].isSoftLinkEnabled = true;
+    server->softLinkInfos_[3].softLink = softLink;
+
+    server->captureInfos_[0].isInnerCapEnabled = false;
+    server->captureInfos_[0].dupStream = nullptr;
+    server->captureInfos_[1].isInnerCapEnabled = true;
+    server->captureInfos_[1].dupStream = nullptr;
+    server->captureInfos_[2].isInnerCapEnabled = false;
+    server->captureInfos_[2].dupStream = dupStream;
+    server->captureInfos_[3].isInnerCapEnabled = true;
+    server->captureInfos_[3].dupStream = dupStream;
+
+    int32_t ret = server->SetOffloadMode(0, false);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test UnsetOffloadMode API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerUnsetOffloadMode_001
+ * @tc.desc  : Test UnsetOffloadMode interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerUnsetOffloadMode_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamType = STREAM_MOVIE;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    processConfig.rendererInfo.originalFlag = AUDIO_FLAG_PCM_OFFLOAD;
+    auto dupStream = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+    server->standByEnable_ = false;
+    server->offloadEnable_ = true;
+    server->status_ = I_STATUS_IDLE;
+    server->Init();
+
+    server->softLinkInfos_[0].isSoftLinkEnabled = false;
+    server->softLinkInfos_[0].softLink = nullptr;
+    server->softLinkInfos_[1].isSoftLinkEnabled = true;
+    server->softLinkInfos_[1].softLink = nullptr;
+    server->softLinkInfos_[2].isSoftLinkEnabled = false;
+    server->softLinkInfos_[2].softLink = softLink;
+    server->softLinkInfos_[3].isSoftLinkEnabled = true;
+    server->softLinkInfos_[3].softLink = softLink;
+
+    server->captureInfos_[0].isInnerCapEnabled = false;
+    server->captureInfos_[0].dupStream = nullptr;
+    server->captureInfos_[1].isInnerCapEnabled = true;
+    server->captureInfos_[1].dupStream = nullptr;
+    server->captureInfos_[2].isInnerCapEnabled = false;
+    server->captureInfos_[2].dupStream = dupStream;
+    server->captureInfos_[4].isInnerCapEnabled = true;
+    server->captureInfos_[4].dupStream = dupStream;
+
+    int32_t ret = server->UnsetOffloadMode();
+    EXPECT_EQ(SUCCESS, ret);
+
+    server->status_ = I_STATUS_STARTED;
+    ret = server->UnsetOffloadMode();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test SetLoudnessGain API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerSetLoudnessGain_001
+ * @tc.desc  : Test SetLoudnessGain interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetLoudnessGain_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamType = STREAM_MOVIE;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    processConfig.rendererInfo.originalFlag = AUDIO_FLAG_PCM_OFFLOAD;
+    auto dupStream = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+    server->stream_ = CreateHpaeRendererStream();
+    server->status_ = I_STATUS_STARTED;
+    server->standByEnable_ = false;
+    server->offloadEnable_ = true;
+    server->Init();
+
+    server->softLinkInfos_[0].isSoftLinkEnabled = false;
+    server->softLinkInfos_[0].softLink = nullptr;
+    server->softLinkInfos_[1].isSoftLinkEnabled = true;
+    server->softLinkInfos_[1].softLink = nullptr;
+    server->softLinkInfos_[2].isSoftLinkEnabled = false;
+    server->softLinkInfos_[2].softLink = softLink;
+    server->softLinkInfos_[3].isSoftLinkEnabled = true;
+    server->softLinkInfos_[3].softLink = softLink;
+
+    int32_t ret = server->SetLoudnessGain(0.5);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test DisableAllInnerCap API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerDisableAllInnerCap_001
+ * @tc.desc  : Test DisableAllInnerCap interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerDisableAllInnerCap_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamType = STREAM_MOVIE;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    processConfig.rendererInfo.originalFlag = AUDIO_FLAG_PCM_OFFLOAD;
+    auto dupStream = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+    server->stream_ = CreateHpaeRendererStream();
+    server->status_ = I_STATUS_STARTED;
+    server->standByEnable_ = false;
+    server->offloadEnable_ = true;
+    server->Init();
+
+    server->softLinkInfos_[0].isSoftLinkEnabled = false;
+    server->softLinkInfos_[0].softLink = nullptr;
+    server->softLinkInfos_[1].isSoftLinkEnabled = true;
+    server->softLinkInfos_[1].softLink = nullptr;
+    server->softLinkInfos_[2].isSoftLinkEnabled = false;
+    server->softLinkInfos_[2].softLink =
+        std::make_shared<HPAE::HpaeSoftLink>(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
+    server->softLinkInfos_[3].isSoftLinkEnabled = true;
+    server->softLinkInfos_[3].softLink =
+        std::make_shared<HPAE::HpaeSoftLink>(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
+
+    server->captureInfos_[0].isInnerCapEnabled = false;
+    server->captureInfos_[0].dupStream = nullptr;
+    server->captureInfos_[1].isInnerCapEnabled = true;
+    server->captureInfos_[1].dupStream = nullptr;
+    server->captureInfos_[2].isInnerCapEnabled = false;
+    server->captureInfos_[2].dupStream = dupStream;
+    server->captureInfos_[3].isInnerCapEnabled = true;
+    server->captureInfos_[3].dupStream = dupStream;
+
+    int32_t ret = server->DisableAllInnerCap();
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test InitSoftLinkVolume API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerInitSoftLinkVolume_001
+ * @tc.desc  : Test InitSoftLinkVolume interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerInitSoftLinkVolume_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamType = STREAM_MOVIE;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    processConfig.rendererInfo.originalFlag = AUDIO_FLAG_PCM_OFFLOAD;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+    server->Init();
+
+    server->softLinkInfos_[2].isSoftLinkEnabled = false;
+    server->softLinkInfos_[2].softLink =
+        std::make_shared<HPAE::HpaeSoftLink>(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
+
+    int32_t ret = server->InitSoftLinkVolume(server->softLinkInfos_[2].softLink);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test InitSoftLink API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerInitSoftLink_001
+ * @tc.desc  : Test InitSoftLinkVolume interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerInitSoftLink_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamType = STREAM_MOVIE;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    processConfig.rendererInfo.originalFlag = AUDIO_FLAG_PCM_OFFLOAD;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+    server->Init();
+    server->InitSoftLink(30);
+    server->status_ = I_STATUS_STARTED;
+    server->InitSoftLink(31);
+
+    server->softLinkInfos_[32].isSoftLinkEnabled = true;
+    server->softLinkInfos_[32].softLink =
+        std::make_shared<HPAE::HpaeSoftLink>(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
+
+    int32_t ret = server->InitSoftLink(32);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test StartStreamByType API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerStartStreamByType_001
+ * @tc.desc  : Test StartStreamByType interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerStartStreamByType_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamType = STREAM_MOVIE;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    processConfig.rendererInfo.originalFlag = AUDIO_FLAG_PCM_OFFLOAD;
+    auto dupStream = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+    server->stream_ = CreateHpaeRendererStream();
+    server->status_ = I_STATUS_STARTED;
+    server->standByEnable_ = false;
+    server->offloadEnable_ = true;
+    int32_t ret = server->Init();
+
+    server->softLinkInfos_[0].isSoftLinkEnabled = false;
+    server->softLinkInfos_[0].softLink = nullptr;
+    server->softLinkInfos_[1].isSoftLinkEnabled = true;
+    server->softLinkInfos_[1].softLink = nullptr;
+    server->softLinkInfos_[2].isSoftLinkEnabled = false;
+    server->softLinkInfos_[2].softLink = softLink;
+    server->softLinkInfos_[3].isSoftLinkEnabled = true;
+    server->softLinkInfos_[3].softLink = softLink;
+
+    server->captureInfos_[0].isInnerCapEnabled = false;
+    server->captureInfos_[0].dupStream = nullptr;
+    server->captureInfos_[1].isInnerCapEnabled = true;
+    server->captureInfos_[1].dupStream = nullptr;
+    server->captureInfos_[2].isInnerCapEnabled = false;
+    server->captureInfos_[2].dupStream = dupStream;
+    server->captureInfos_[3].isInnerCapEnabled = true;
+    server->captureInfos_[3].dupStream = dupStream;
+
+    server->StartStreamByType();
+    server->offloadEnable_ = false;
+    server->StartStreamByType();
+    EXPECT_NE(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test HandleOffloadStream API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerHandleOffloadStream_001
+ * @tc.desc  : Test HandleOffloadStream interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerHandleOffloadStream_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamType = STREAM_MOVIE;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    processConfig.rendererInfo.originalFlag = AUDIO_FLAG_PCM_OFFLOAD;
+    auto dupStream = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+    server->stream_ = CreateHpaeRendererStream();
+    server->standByEnable_ = false;
+    server->offloadEnable_ = true;
+    auto ret = server->Init();
+
+    CaptureInfo captureInfo;
+    captureInfo.isInnerCapEnabled = true;
+    captureInfo.dupStream = dupStream;
+
+    server->HandleOffloadStream(1, captureInfo);
+    server->status_ = I_STATUS_STARTED;
+    server->HandleOffloadStream(1, captureInfo);
+
+    server->softLinkInfos_[1].isSoftLinkEnabled = false;
+    server->softLinkInfos_[1].softLink = softLink;
+    server->HandleOffloadStream(1, captureInfo);
+
+    server->softLinkInfos_[1].isSoftLinkEnabled = true;
+    server->HandleOffloadStream(1, captureInfo);
+
+    server->status_ = I_STATUS_IDLE;
+    server->HandleOffloadStream(1, captureInfo);
+
+    server->softLinkInfos_[1].softLink = nullptr;
+    server->HandleOffloadStream(1, captureInfo);
+
+    processConfig.streamType = STREAM_RECORDING;
+    auto server2 = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server2 != nullptr);
+    server2->stream_ = CreateHpaeRendererStream();
+    server2->standByEnable_ = false;
+    server2->offloadEnable_ = true;
+    ret = server2->Init();
+    server2->HandleOffloadStream(1, captureInfo);
+    EXPECT_NE(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test DestroySoftLink API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerDestroySoftLink_001
+ * @tc.desc  : Test DestorySoftLink interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerDestroySoftLink_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamType = STREAM_MOVIE;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    processConfig.rendererInfo.originalFlag = AUDIO_FLAG_PCM_OFFLOAD;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+    server->status_ = I_STATUS_STARTED;
+    server->Init();
+
+    server->softLinkInfos_[0].isSoftLinkEnabled = false;
+    server->softLinkInfos_[0].softLink = nullptr;
+    server->softLinkInfos_[1].isSoftLinkEnabled = true;
+    server->softLinkInfos_[1].softLink = nullptr;
+    server->softLinkInfos_[3].isSoftLinkEnabled = true;
+    server->softLinkInfos_[3].softLink =
+        std::make_shared<HPAE::HpaeSoftLink>(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
+
+    int32_t ret = server->DestroySoftLink(0);
+    ret = server->DestroySoftLink(1);
+    ret = server->DestroySoftLink(2);
+    ret = server->DestroySoftLink(3);
+    EXPECT_NE(SUCCESS, ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -39,6 +39,7 @@ ohos_unittest("pro_audio_stream_manager_unit_test") {
     "../../../server/include",
     "include",
     "../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../audio_engine/manager/include",
   ]
 
   configs = [ ":module_private_config" ]

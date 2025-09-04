@@ -116,6 +116,7 @@ std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreateCaptureSource(uint
         case HDI_ID_TYPE_PRIMARY:
         case HDI_ID_TYPE_ACCESSORY:
         case HDI_ID_TYPE_AI:
+        case HDI_ID_TYPE_OFFLOAD:
             source = CreatePrimaryCaptureSource(captureId, info);
             break;
         case HDI_ID_TYPE_BLUETOOTH:
