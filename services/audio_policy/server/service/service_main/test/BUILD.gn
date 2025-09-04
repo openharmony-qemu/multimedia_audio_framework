@@ -75,7 +75,6 @@ ohos_unittest("audio_policy_server_extended_test") {
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
   ]
 
@@ -227,7 +226,6 @@ ohos_unittest("audio_policy_service_ext_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "accessibility:accessibility_common",
@@ -395,7 +393,6 @@ ohos_unittest("device_init_callback_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "accessibility:accessibility_common",
@@ -568,7 +565,6 @@ ohos_unittest("audio_policy_dump_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "accessibility:accessibility_common",
