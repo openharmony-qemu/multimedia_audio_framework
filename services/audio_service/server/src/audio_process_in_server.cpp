@@ -185,17 +185,18 @@ int32_t AudioProcessInServer::ResolveBufferBaseAndGetServerSpanSize(std::shared_
     return SUCCESS;
 }
 
-int32_t AudioProcessInServer::CheckProcessInServer()
+int32_t AudioProcessInServer::RequestHandleInfo()
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
     CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_ILLEGAL_STATE, "buffer not inited!");
 
+    //
     return SUCCESS;
 }
 
-int32_t AudioProcessInServer::CheckProcessInServerAsync()
+int32_t AudioProcessInServer::RequestHandleInfoAsync()
 {
-    return CheckProcessInServer();
+    return RequestHandleInfo();
 }
 
 
