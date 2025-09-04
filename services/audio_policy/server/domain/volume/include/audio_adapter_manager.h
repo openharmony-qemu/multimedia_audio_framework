@@ -303,7 +303,6 @@ public:
     void HandleDistributedDeviceVolume();
     void SetSleVoiceStatusFlag(bool isSleVoiceStatus);
     void SendLoudVolumeModeToDsp(FunctionHoldType funcHoldType, bool state);
-    void SaveA2dpAbsVolume(DeviceType type, AudioStreamType streamType, int32_t volumeLevel);
     void SaveSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel);
     int32_t GetSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType);
     int32_t SetSystemVolumeToEffect(AudioStreamType streamType, float volume);

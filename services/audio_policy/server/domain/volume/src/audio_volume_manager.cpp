@@ -561,7 +561,6 @@ int32_t AudioVolumeManager::SelectDealSafeVolume(AudioStreamType streamType, int
 int32_t AudioVolumeManager::SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volumeLevel,
     bool internalCall)
 {
-    audioPolicyManager_.SaveA2dpAbsVolume(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_MUSIC, volumeLevel);
     if (audioA2dpDevice_.SetA2dpDeviceVolumeLevel(macAddress, volumeLevel) == false) {
         return ERROR;
     }

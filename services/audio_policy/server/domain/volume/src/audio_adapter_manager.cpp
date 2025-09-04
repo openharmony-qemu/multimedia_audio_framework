@@ -3387,11 +3387,6 @@ void AudioAdapterManager::HandleHearingAidVolume(AudioStreamType streamType)
     }
 }
 
-void AudioAdapterManager::SaveA2dpAbsVolume(DeviceType type, AudioStreamType streamType, int32_t volumeLevel)
-{
-    volumeDataMaintainer_.SaveVolume(type, streamType, volumeLevel);
-}
-
 void AudioAdapterManager::SaveSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType,
     int32_t volumeLevel)
 {
