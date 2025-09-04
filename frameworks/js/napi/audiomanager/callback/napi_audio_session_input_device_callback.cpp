@@ -42,6 +42,7 @@ void NapiAudioSessionInputDeviceCallback::OnAudioSessionCurrentInputDeviceChange
 {
     AUDIO_INFO_LOG("OnAudioSessionCurrentInputDeviceChanged is called changeReason=%{public}d",
         deviceEvent.changeReason);
+    std::lock_guard<std::mutex> lock(mutex_);
     CHECK_AND_RETURN_LOG(audioSessionInputDeviceJsCallback_ != nullptr,
         "OnAudioSessionCurrentInputDeviceChanged:No JS callback registered return");
 
@@ -70,6 +71,7 @@ void NapiAudioSessionInputDeviceCallback::SaveCallbackReference(napi_value args)
 
 void NapiAudioSessionInputDeviceCallback::CreateAudioSessionInputDeviceTsfn(napi_env env)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     regAmSessionInputDeviceChgTsfn_ = true;
     std::string callbackName = "currentInputDeviceChanged";
     napi_value cbName;
