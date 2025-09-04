@@ -1380,7 +1380,6 @@ int32_t RendererInServer::DisableAllInnerCap()
         captureInfos_.clear();
     }
 
-
     for (auto &softLinkInfo : softLinkInfos_) {
         if (softLinkInfo.second.isSoftLinkEnabled) {
             DestroySoftLink(softLinkInfo.first);
