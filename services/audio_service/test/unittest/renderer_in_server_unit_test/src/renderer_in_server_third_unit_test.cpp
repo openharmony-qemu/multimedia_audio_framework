@@ -286,7 +286,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerInitDualToneStream_001, 
     rendererInServer->status_ = I_STATUS_STARTED;
     
     rendererInServer->Init();
-    int32_t ret = rendererInServer->InitDualToneStream();
+    int32_t ret = rendererInServer->InitDualToneStream("Speaker");
 
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -304,7 +304,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerInitDualToneStream_002, 
     rendererInServer->status_ = I_STATUS_STARTED;
     rendererInServer->dualToneStream_ = nullptr;
     rendererInServer->Init();
-    int32_t ret = rendererInServer->InitDualToneStream();
+    int32_t ret = rendererInServer->InitDualToneStream("Speaker");
 
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -1567,7 +1567,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerStop_001, TestSize.Level
     int32_t ret = rendererInServer->Init();
     rendererInServer->standByEnable_ = true;
     rendererInServer->InitDupStream(1);
-    rendererInServer->InitDualToneStream();
+    rendererInServer->InitDualToneStream("Speaker");
     rendererInServer->playerDfx_ = 0;
 
     ret = rendererInServer->Stop();
@@ -1588,7 +1588,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerStop_002, TestSize.Level
     int32_t ret = rendererInServer->Init();
     rendererInServer->standByEnable_ = true;
     rendererInServer->InitDupStream(1);
-    rendererInServer->InitDualToneStream();
+    rendererInServer->InitDualToneStream("Speaker");
     rendererInServer->managerType_ = DIRECT_PLAYBACK;
 
     ret = rendererInServer->Stop();
@@ -1609,7 +1609,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerStop_003, TestSize.Level
     int32_t ret = rendererInServer->Init();
     rendererInServer->standByEnable_ = true;
     rendererInServer->InitDupStream(1);
-    rendererInServer->InitDualToneStream();
+    rendererInServer->InitDualToneStream("Speaker");
     rendererInServer->managerType_ = EAC3_PLAYBACK;
 
     ret = rendererInServer->Stop();
@@ -1630,7 +1630,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerStop_004, TestSize.Level
     int32_t ret = rendererInServer->Init();
     rendererInServer->standByEnable_ = true;
     rendererInServer->InitDupStream(1);
-    rendererInServer->InitDualToneStream();
+    rendererInServer->InitDualToneStream("Speaker");
     rendererInServer->managerType_ = RECORDER;
 
     ret = rendererInServer->Stop();

@@ -1011,8 +1011,7 @@ bool AudioDeviceManager::GetScoState()
     bool isScoStateConnect = Bluetooth::AudioHfpManager::IsAudioScoStateConnect();
     for (const auto &desc : connectedDevices_) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "Device is nullptr, continue");
-        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc->connectState_ == CONNECTED &&
-            isScoStateConnect) {
+        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && isScoStateConnect) {
             return true;
         }
     }

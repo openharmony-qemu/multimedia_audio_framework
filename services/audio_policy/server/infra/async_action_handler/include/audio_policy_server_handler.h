@@ -199,7 +199,7 @@ public:
     bool SendHeadTrackingEnabledChangeForAnyDeviceEvent(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
     int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
-    int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo);
+    int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid = -1);
     int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo);
     bool SendAudioSceneChangeEvent(const AudioScene &audioScene);
     bool SendAudioSessionDeactiveCallback(const std::pair<int32_t, AudioSessionDeactiveEvent> &sessionDeactivePair);
@@ -263,7 +263,7 @@ private:
 
     void HandleVolumeKeyEventToRssWhenAccountsChange(std::shared_ptr<EventContextObj> &eventContextObj);
 
-    std::vector<AudioRendererInfo> GetCallbackRendererInfoList(int32_t clientPid);
+    std::vector<AudioRendererFilter> GetCallbackRendererInfoList(int32_t clientPid);
     std::vector<AudioCapturerInfo> GetCallbackCapturerInfoList(int32_t clientPid);
 
     std::mutex runnerMutex_;
@@ -283,7 +283,7 @@ private:
     std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> distributedRoutingRoleChangeCbsMap_;
     std::unordered_map<int32_t,  std::unordered_map<CallbackChange, bool>> clientCallbacksMap_;
     int32_t pidOfRss_ = -1;
-    std::unordered_map<int32_t, std::vector<AudioRendererInfo>> clientCbRendererInfoMap_;
+    std::unordered_map<int32_t, std::vector<AudioRendererFilter>> clientCbRendererInfoMap_;
     std::unordered_map<int32_t, std::vector<AudioCapturerInfo>> clientCbCapturerInfoMap_;
     std::unordered_map<int32_t, std::set<StreamUsage>> clientCbStreamUsageMap_;
 };

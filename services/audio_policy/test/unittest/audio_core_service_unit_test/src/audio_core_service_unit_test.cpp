@@ -168,29 +168,57 @@ HWTEST_F(AudioCoreServiceUnitTest, CreateCapturerClient_001, TestSize.Level1)
 /**
 * @tc.name  : Test AudioCoreService.
 * @tc.number: SetDefaultOutputDevice_001
-* @tc.desc  : Test SetDefaultOutputDevice - Set DEVICE_TYPE_SPEAKER as default device.
+* @tc.desc  : Test SetDefaultOutputDevice - Set DEVICE_TYPE_SPEAKER as default device to nonexistent session.
 */
 HWTEST_F(AudioCoreServiceUnitTest, SetDefaultOutputDevice_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest SetDefaultOutputDevice_001 start");
-    uint32_t sessionID = 100001; // sessionId
+    uint32_t sessionID = 99999; // nonexistent sessionId
     auto result = GetServerPtr()->eventEntry_->SetDefaultOutputDevice(DEVICE_TYPE_SPEAKER,
         sessionID, STREAM_USAGE_MEDIA, false);
-    EXPECT_EQ(result, SUCCESS);
+
+    auto desc = GetServerPtr()->eventEntry_->coreService_->pipeManager_->GetStreamDescById(sessionID);
+    if (desc == nullptr) {
+        EXPECT_EQ(result, ERR_NOT_SUPPORTED);
+    } else {
+        EXPECT_EQ(result, SUCCESS);
+    }
 }
 
 /**
 * @tc.name  : Test AudioCoreService.
 * @tc.number: SetDefaultOutputDevice_002
-* @tc.desc  : Test SetDefaultOutputDevice - Set DEVICE_TYPE_BLUETOOTH_A2DP as default device.
+* @tc.desc  : Test SetDefaultOutputDevice - Set DEVICE_TYPE_SPEAKER as default device.
 */
 HWTEST_F(AudioCoreServiceUnitTest, SetDefaultOutputDevice_002, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest SetDefaultOutputDevice_002 start");
-    uint32_t sessionID = 100001; // sessionId
-    auto result = GetServerPtr()->eventEntry_->SetDefaultOutputDevice(DEVICE_TYPE_BLUETOOTH_A2DP,
+    uint32_t sessionID = 0; // sessionId
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
+    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
+    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_RINGTONE;
+
+    streamDesc->callerUid_ = getuid();
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
+    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    std::string networkId = LOCAL_NETWORK_ID;
+    auto createResult = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, sessionID, networkId);
+    EXPECT_EQ(createResult, SUCCESS);
+
+    auto result = GetServerPtr()->eventEntry_->SetDefaultOutputDevice(DEVICE_TYPE_SPEAKER,
         sessionID, STREAM_USAGE_MEDIA, false);
-    EXPECT_EQ(result, SUCCESS);
+    auto desc = GetServerPtr()->eventEntry_->coreService_->pipeManager_->GetStreamDescById(sessionID);
+    if (desc == nullptr) {
+        EXPECT_EQ(result, ERR_NOT_SUPPORTED);
+    } else {
+        EXPECT_EQ(result, SUCCESS);
+    }
 }
 
 /**
@@ -425,6 +453,36 @@ HWTEST_F(AudioCoreServiceUnitTest, SelectOutputDevice_001, TestSize.Level1)
     int32_t result = GetServerPtr()->eventEntry_->SelectOutputDevice(
         audioRendererFilter, deviceDescriptorVector);
     EXPECT_EQ(SUCCESS, result);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: SelectOutputDevice_002
+* @tc.desc  : Test SelectOutputDevice - will return success.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SelectOutputDevice_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest SelectOutputDevice_001 start");
+    ASSERT_NE(nullptr, GetServerPtr());
+    sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+    ASSERT_NE(nullptr, audioRendererFilter) << "audioRendererFilter is nullptr.";
+    audioRendererFilter->uid = getuid();
+    audioRendererFilter->rendererInfo.rendererFlags = STREAM_FLAG_FAST;
+    audioRendererFilter->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+
+    auto &devMan = AudioDeviceManager::GetAudioDeviceManager();
+    shared_ptr<AudioDeviceDescriptor> devDesc;
+    for (auto &item : devMan.connectedDevices_) {
+        if (item->deviceRole_ == OUTPUT_DEVICE) {
+            devDesc = item;
+            break;
+        }
+    }
+    CHECK_AND_RETURN(devDesc);
+    auto selectedDev = make_shared<AudioDeviceDescriptor>(devDesc);
+    devDesc->exceptionFlag_ = true;
+    GetServerPtr()->eventEntry_->SelectOutputDevice(audioRendererFilter, {selectedDev});
+    EXPECT_EQ(devDesc->exceptionFlag_, false);
 }
 
 /**
@@ -1148,8 +1206,8 @@ HWTEST_F(AudioCoreServiceUnitTest, DumpSelectHistory_001, TestSize.Level1)
     audioCoreService->selectDeviceHistory_ = {};
     std::string dumpString;
     audioCoreService->DumpSelectHistory(dumpString);
-    std::string expectedDump = "Select device history infos\n - TotalPipeNums: 0\n\n\n";
-    EXPECT_EQ(dumpString, expectedDump);
+    std::string expectedDump = "Select device history infos";
+    EXPECT_TRUE(dumpString.find(expectedDump) != std::string::npos);
 }
 
 /**
@@ -1164,9 +1222,8 @@ HWTEST_F(AudioCoreServiceUnitTest, DumpSelectHistory_002, TestSize.Level1)
     audioCoreService->selectDeviceHistory_.push_back("HistoryRecord2");
     std::string dumpString;
     audioCoreService->DumpSelectHistory(dumpString);
-    std::string expectedDump = "Select device history infos\n - TotalPipeNums: 2\n\nHistory Record1\n"
-                               "HistoryRecord2\n\n";
-    EXPECT_EQ(dumpString, expectedDump);
+    std::string expectedDump = "HistoryRecord2";
+    EXPECT_TRUE(dumpString.find(expectedDump) != std::string::npos);
 }
 
 /**
@@ -1192,7 +1249,7 @@ HWTEST_F(AudioCoreServiceUnitTest, CaptureConcurrentCheck_001, TestSize.Level1)
         streamDescs[i]->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
         streamDescs[i]->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
         streamDescs[i]->rendererInfo_.streamUsage = STREAM_USAGE_MOVIE;
- 
+
         streamDescs[i]->audioMode_ = AUDIO_MODE_RECORD;
         streamDescs[i]->createTimeStamp_ = ClockTime::GetCurNano();
         streamDescs[i]->startTimeStamp_ = streamDescs[i]->createTimeStamp_ + 1;

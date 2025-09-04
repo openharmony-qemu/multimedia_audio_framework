@@ -38,6 +38,8 @@ static size_t g_pos;
 const size_t THRESHOLD = 10;
 const uint32_t DEFAULT_FRAME_LENGTH1 = 960;
 const uint32_t DEFAULT_FRAME_LENGTH2 = 882;
+const uint32_t AUDIO_PER_SECOND_MS = 1000;
+const uint32_t LIMIT_SIZE = 20;
 static std::string g_rootPath = "/data/";
 static std::string g_rootCapturerPath = "/data/source_file_io_48000_2_s16le.pcm";
 const char* DEFAULT_TEST_DEVICE_CLASS = "file_io";
@@ -132,7 +134,7 @@ HpaeStreamInfo GetInCapPlayStreamInfo()
     HpaeStreamInfo streamInfo;
     streamInfo.channels = STEREO;
     streamInfo.samplingRate = SAMPLE_RATE_44100;
-    streamInfo.frameLen = GetData<size_t>();
+    streamInfo.frameLen = SAMPLE_RATE_48000 / AUDIO_PER_SECOND_MS * (GetData<size_t>() % LIMIT_SIZE + 1);
     streamInfo.format = SAMPLE_S16LE;
     streamInfo.sessionId = DEFAULT_SESSION_ID;
     streamInfo.streamType = STREAM_MUSIC;
@@ -146,7 +148,7 @@ HpaeStreamInfo GetInCapPlayFuzzStreamInfo()
     HpaeStreamInfo streamInfo;
     streamInfo.channels = STEREO;
     streamInfo.samplingRate = SAMPLE_RATE_44100;
-    streamInfo.frameLen = GetData<size_t>();
+    streamInfo.frameLen = SAMPLE_RATE_48000 / AUDIO_PER_SECOND_MS * (GetData<size_t>() % LIMIT_SIZE + 1);
     streamInfo.format = SAMPLE_S16LE;
     streamInfo.sessionId = GetData<uint32_t>();
     streamInfo.streamType = STREAM_MUSIC;

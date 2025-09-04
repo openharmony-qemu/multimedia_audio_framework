@@ -18,9 +18,6 @@
 #endif
 
 #include "pro_audio_service_adapter_impl.h"
-#if defined(_WIN32) || defined(_WIN64)
-#include <windows.h>
-#endif
 #include <sstream>
 #include <thread>
 

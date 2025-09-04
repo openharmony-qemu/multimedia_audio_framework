@@ -24,6 +24,7 @@
 static constexpr uint32_t FRAME_LEN_20MS = 20;
 static constexpr uint32_t MS_IN_SECOND = 1000;
 static constexpr uint32_t REASAMPLE_QUAILTY = 1;
+static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -35,8 +36,9 @@ HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeI
     converterOutput_.SetSplitStreamType(preNodeInfo.GetSplitStreamType());
     UpdateTmpOutPcmBufferInfo(pcmBufferInfo_);
     // use ProResamppler as default
-    resampler_ = std::make_unique<ProResampler>(preNodeInfo_.samplingRate, nodeInfo.samplingRate,
-        std::min(preNodeInfo_.channels, nodeInfo.channels), REASAMPLE_QUAILTY);
+    resampler_ = std::make_unique<ProResampler>(preNodeInfo.customSampleRate == 0 ? preNodeInfo.samplingRate :
+        preNodeInfo.customSampleRate, nodeInfo.samplingRate,
+        std::min(preNodeInfo.channels, nodeInfo.channels), REASAMPLE_QUAILTY);
     
     AudioChannelInfo inChannelInfo = {
         .channelLayout = preNodeInfo.channelLayout,
@@ -53,7 +55,8 @@ HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeI
         "input: bitformat %{public}d, frameLen %{public}d, sample rate %{public}d, channels %{public}d,"
         "channelLayout %{public}" PRIu64 ", output: bitformat %{public}d, frameLen %{public}d, sample rate %{public}d,"
         "channels %{public}d, channelLayout %{public}" PRIu64 "", GetNodeId(), GetSessionId(),
-        preNodeInfo.format, preNodeInfo.frameLen, preNodeInfo.samplingRate, inChannelInfo.numChannels,
+        preNodeInfo.format, preNodeInfo.frameLen, preNodeInfo.customSampleRate == 0 ? preNodeInfo.samplingRate :
+        preNodeInfo.customSampleRate, inChannelInfo.numChannels,
         inChannelInfo.channelLayout, nodeInfo.format, nodeInfo.frameLen, nodeInfo.samplingRate,
         outChannelInfo.numChannels, outChannelInfo.channelLayout);
 #ifdef ENABLE_HOOK_PCM
@@ -199,7 +202,7 @@ bool HpaeAudioFormatConverterNode::CheckUpdateOutInfo()
             .channelLayout = (AudioChannelLayout)channelLayout,
             .numChannels = numChannels,
         };
-        AUDIO_INFO_LOG("NodeId %{public}d, update out channels and channelLayout: channels %{public}d -> %{public}d",
+        HILOG_COMM_INFO("NodeId %{public}d, update out channels and channelLayout: channels %{public}d -> %{public}d",
             GetNodeId(), curOutChannelInfo.numChannels, numChannels);
         CHECK_AND_RETURN_RET_LOG(channelConverter_.SetOutChannelInfo(newOutChannelInfo) == DMIX_ERR_SUCCESS, false,
             "NodeId: %{public}d, Fail to set output channel info from effectNode!", GetNodeId());
@@ -211,7 +214,7 @@ bool HpaeAudioFormatConverterNode::CheckUpdateOutInfo()
     }
     // update sample rate
     if (resampler_->GetOutRate() != sampleRate) {
-        AUDIO_INFO_LOG("NodeId: %{public}d, update output sample rate: %{public}d -> %{public}d",
+        HILOG_COMM_INFO("NodeId: %{public}d, update output sample rate: %{public}d -> %{public}d",
             GetNodeId(), resampler_->GetOutRate(), sampleRate);
         resampler_->UpdateRates(preNodeInfo_.samplingRate, sampleRate);
     }
@@ -234,7 +237,7 @@ bool HpaeAudioFormatConverterNode::CheckUpdateInInfo(HpaePcmBuffer *input)
     bool isInfoUpdated = false;
     // update channels and channelLayout
     if ((curInChannelInfo.numChannels != numChannels) || (curInChannelInfo.channelLayout != channelLayout)) {
-        AUDIO_INFO_LOG("NodeId %{public}d: Update innput channel info from pcmBufferInfo, "
+        HILOG_COMM_INFO("NodeId %{public}d: Update innput channel info from pcmBufferInfo, "
             "channels: %{public}d -> %{public}d, channellayout: %{public}" PRIu64 " -> %{public}" PRIu64 ".",
             GetNodeId(), curInChannelInfo.numChannels, numChannels, curInChannelInfo.channelLayout, channelLayout);
  
@@ -255,7 +258,7 @@ bool HpaeAudioFormatConverterNode::CheckUpdateInInfo(HpaePcmBuffer *input)
     }
     // update sample rate
     if (sampleRate != resampler_->GetInRate()) {
-        AUDIO_INFO_LOG("NodeId %{public}d: Update resampler input sample rate: %{public}d -> %{public}d",
+        HILOG_COMM_INFO("NodeId %{public}d: Update resampler input sample rate: %{public}d -> %{public}d",
             GetNodeId(), resampler_->GetInRate(), sampleRate);
         preNodeInfo_.frameLen = input->GetFrameLen();
         preNodeInfo_.samplingRate = (AudioSamplingRate)sampleRate;
@@ -264,7 +267,10 @@ bool HpaeAudioFormatConverterNode::CheckUpdateInInfo(HpaePcmBuffer *input)
     }
     // special case for 11025, frameLen is 441, 0, 441, 0... alternating
     // do not influence isInfoUpdated flag, which is used for update tmp data length
-    if (preNodeInfo_.samplingRate == SAMPLE_RATE_11025) {
+    // for 8010, frameLen is 801, 0, 0, 0, 0, 801, 0...
+    if ((preNodeInfo_.customSampleRate == 0 && preNodeInfo_.samplingRate == SAMPLE_RATE_11025) ||
+        preNodeInfo_.customSampleRate == SAMPLE_RATE_11025 ||
+        (preNodeInfo_.customSampleRate != 0 && preNodeInfo_.customSampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES != 0)) {
         preNodeInfo_.frameLen = input->GetFrameLen();
     }
     return isInfoUpdated;
@@ -304,7 +310,9 @@ void HpaeAudioFormatConverterNode::CheckAndUpdateInfo(HpaePcmBuffer *input)
     outPcmBufferInfo.frameLen = preNodeInfo_.frameLen * resampler_->GetOutRate() / resampler_->GetInRate();
     outPcmBufferInfo.channelLayout = outChannelInfo.channelLayout;
 
-    if (preNodeInfo_.samplingRate == SAMPLE_RATE_11025) {
+    if ((preNodeInfo_.customSampleRate == 0 && preNodeInfo_.samplingRate == SAMPLE_RATE_11025) ||
+        preNodeInfo_.customSampleRate == SAMPLE_RATE_11025 ||
+        (preNodeInfo_.customSampleRate != 0 && preNodeInfo_.customSampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES != 0)) {
         // for 11025, fix out frameLen based on output sample rate and fixed frameLen 20ms
         outPcmBufferInfo.frameLen = resampler_->GetOutRate() * FRAME_LEN_20MS / MS_IN_SECOND;
     }

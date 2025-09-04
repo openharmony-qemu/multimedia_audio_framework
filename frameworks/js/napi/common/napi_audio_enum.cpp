@@ -514,7 +514,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioLoopbackStatusMap = {
 const std::map<std::string, int32_t> NapiAudioEnum::audioLoopbackReverbPresetMap = {
     {"ORIGINAL", REVERB_PRESET_ORIGINAL},
     {"KTV", REVERB_PRESET_KTV},
-    {"THEATRE", REVERB_PRESET_THEATRE},
+    {"THEATER", REVERB_PRESET_THEATER},
     {"CONCERT", REVERB_PRESET_CONCERT},
 };
 
@@ -1874,7 +1874,7 @@ bool NapiAudioEnum::IsLegalInputArgumentAudioLoopbackReverbPreset(int32_t preset
     switch (preset) {
         case AudioLoopbackReverbPreset::REVERB_PRESET_ORIGINAL:
         case AudioLoopbackReverbPreset::REVERB_PRESET_KTV:
-        case AudioLoopbackReverbPreset::REVERB_PRESET_THEATRE:
+        case AudioLoopbackReverbPreset::REVERB_PRESET_THEATER:
         case AudioLoopbackReverbPreset::REVERB_PRESET_CONCERT:
             result = true;
             break;

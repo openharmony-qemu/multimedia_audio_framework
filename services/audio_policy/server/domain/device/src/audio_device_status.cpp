@@ -126,7 +126,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnect
         "handle special deviceType failed.");
     CHECK_AND_RETURN_LOG(result == SUCCESS, "handle special deviceType failed.");
 
-    AUDIO_WARNING_LOG("[ADeviceEvent] device[%{public}d] address[%{public}s] role[%{public}d] connect[%{public}d]",
+    HILOG_COMM_INFO("[ADeviceEvent] device[%{public}d] address[%{public}s] role[%{public}d] connect[%{public}d]",
         devType, GetEncryptStr(macAddress).c_str(), role, isConnected);
 
     AudioDeviceDescriptor updatedDesc(devType, role == DEVICE_ROLE_NONE ?
@@ -853,7 +853,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioDeviceStatus::GetDeviceByStatusInfo(
 
 void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)
 {
-    AUDIO_WARNING_LOG("[ADeviceEvent] remote HDI_PIN[%{public}d] connet[%{public}d] "
+    HILOG_COMM_INFO("[ADeviceEvent] remote HDI_PIN[%{public}d] connet[%{public}d] "
         "networkId[%{public}s]", statusInfo.hdiPin, statusInfo.isConnected,
         GetEncryptStr(statusInfo.networkId).c_str());
     if (isStop) {
@@ -1146,7 +1146,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
     std::string macAddress, std::string deviceName, bool isActualConnection, AudioStreamInfo streamInfo,
     bool isConnected)
 {
-    AUDIO_WARNING_LOG("[ADeviceEvent] bt device[%{public}d] mac[%{public}s] connect[%{public}d]",
+    HILOG_COMM_INFO("[ADeviceEvent] bt device[%{public}d] mac[%{public}s] connect[%{public}d]",
         devType, GetEncryptStr(macAddress).c_str(), isConnected);
 
     auto devDesc = make_shared<AudioDeviceDescriptor>(updatedDesc);

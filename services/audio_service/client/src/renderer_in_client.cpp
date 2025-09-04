@@ -195,6 +195,7 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
     config.streamInfo.encoding = static_cast<AudioEncodingType>(curStreamParams_.encoding);
     config.streamInfo.format = static_cast<AudioSampleFormat>(curStreamParams_.format);
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(curStreamParams_.samplingRate);
+    config.streamInfo.customSampleRate = curStreamParams_.customSampleRate;
     config.streamInfo.channelLayout = static_cast<AudioChannelLayout>(curStreamParams_.channelLayout);
     config.originalSessionId = curStreamParams_.originalSessionId;
 
@@ -392,8 +393,8 @@ bool RendererInClientInner::CheckBufferNeedWrite()
 {
     uint32_t totalSizeInFrame = clientBuffer_->GetTotalSizeInFrame();
     size_t totalSizeInByte = totalSizeInFrame * sizePerFrameInByte_;
-    int32_t writableInFrame = clientBuffer_ -> GetWritableDataFrames();
-    size_t writableSizeInByte = writableInFrame * sizePerFrameInByte_;
+    int32_t writableInFrame = clientBuffer_->GetWritableDataFrames();
+    size_t writableSizeInByte = static_cast<size_t>(writableInFrame) * sizePerFrameInByte_;
 
     if (writableInFrame <= 0) {
         return false;

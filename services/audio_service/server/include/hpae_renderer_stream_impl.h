@@ -132,6 +132,8 @@ private:
     std::unique_ptr<AudioRingCache> ringBuffer_ = nullptr; // used by write buffer mode
     FILE *dumpEnqueueIn_ = nullptr;
     // buffer mode, write or callback end
+
+    std::atomic<size_t> mutePaddingFrames_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

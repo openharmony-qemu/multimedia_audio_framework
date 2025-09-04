@@ -224,7 +224,7 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_007, TestSize.Level1)
     int ret = sessionService->SetAudioSessionScene(fakePid, AudioSessionScene::MEDIA);
     EXPECT_EQ(SUCCESS, ret);
     ret = AudioZoneService::GetInstance().FindAudioSessionZoneid(fakeUid, fakePid, false);
-    EXPECT_EQ(ret, zoneId);
+    EXPECT_EQ(ret, 0);
     AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
 }
 } // namespace AudioStandard

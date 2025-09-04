@@ -1495,5 +1495,33 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_091, TestSize.Level1)
     state = RENDERER_PAUSED;
     EXPECT_TRUE(audioDeviceCommon.IsRingOverPlayback(mode, state));
 }
+
+/**
+* @tc.name  : Test GetPreferredOutputDeviceDescInner.
+* @tc.number: GetPreferredOutputDeviceDescInner
+* @tc.desc  : Test GetPreferredOutputDeviceDescInner interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, GetPreferredOutputDeviceDescInner, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+
+    std::shared_ptr<AudioDeviceDescriptor>desc = std::make_shared<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor>speaker = std::make_shared<AudioDeviceDescriptor>();
+    speaker->deviceType_ = DEVICE_TYPE_SPEAKER;
+    speaker->deviceId_ = 2;
+    AudioRendererInfo rendererInfo;
+    rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    std::string networkId = LOCAL_NETWORK_ID;
+    int32_t uid = 456;
+
+    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, 0);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList =
+        audioDeviceCommon.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, uid);
+    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(speaker, uid);
+    deviceList = audioDeviceCommon.GetPreferredOutputDeviceDescInner(
+        rendererInfo, networkId, uid);
+    EXPECT_EQ(deviceList[0]->deviceId_, 2);
+}
 } // namespace AudioStandard
 } // namespace OHOS

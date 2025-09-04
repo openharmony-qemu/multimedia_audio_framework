@@ -110,6 +110,36 @@ int32_t AudioSessionManager::SetAudioSessionScene(const AudioSessionScene audioS
     return result;
 }
 
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioSessionManager::GetAvailableDevices(AudioDeviceUsage usage)
+{
+    return AudioPolicyManager::GetInstance().GetAvailableDevices(usage);
+}
+
+int32_t AudioSessionManager::SelectInputDevice(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor)
+{
+    return AudioPolicyManager::GetInstance().SelectInputDevice(audioDeviceDescriptor);
+}
+
+std::shared_ptr<AudioDeviceDescriptor> AudioSessionManager::GetSelectedInputDevice()
+{
+    return AudioPolicyManager::GetInstance().GetSelectedInputDevice();
+}
+
+int32_t AudioSessionManager::ClearSelectedInputDevice()
+{
+    return AudioPolicyManager::GetInstance().ClearSelectedInputDevice();
+}
+
+int32_t AudioSessionManager::PreferBluetoothAndNearlinkRecord(bool isPreferred)
+{
+    return AudioPolicyManager::GetInstance().PreferBluetoothAndNearlinkRecord(isPreferred);
+}
+
+bool AudioSessionManager::GetPreferBluetoothAndNearlinkRecord()
+{
+    return AudioPolicyManager::GetInstance().GetPreferBluetoothAndNearlinkRecord();
+}
+
 int32_t AudioSessionManager::SetAudioSessionStateChangeCallback(
     const std::shared_ptr<AudioSessionStateChangedCallback> &stateChangedCallback)
 {
@@ -334,7 +364,7 @@ void AudioSessionRestoreParame::RecordAudioSessionOpt(const OperationType type, 
         }
 
         bool firstFound = false;
-        for (int idx = actions_.size() - 1; idx >= 0; idx--) {
+        for (int32_t idx = static_cast<int32_t>(actions_.size()) - 1; idx >= 0; idx--) {
             CHECK_AND_CONTINUE(actions_[idx] != nullptr);
             if (actions_[idx]->type != OperationType::AUDIO_SESSION_SET_SCENE) {
                 continue;

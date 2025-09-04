@@ -24,6 +24,7 @@
 #include "audio_device_descriptor.h"
 #include "audio_info.h"
 #include "audio_stream_descriptor.h"
+#include "audio_pipe_manager.h"
 #include "audio_policy_utils.h"
 #include "audio_module_info.h"
 
@@ -38,7 +39,7 @@ public:
         const int32_t sessionId);
     static bool NeedDualHalToneInStatus(AudioRingerMode mode, StreamUsage usage,
         bool isPcVolumeEnable, bool isMusicMute);
-    static bool IsAlarmOnActive(StreamUsage usage, bool isAlarmActive);
+    static bool IsDualOnActive();
 };
 }
 }

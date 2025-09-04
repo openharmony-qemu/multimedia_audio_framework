@@ -1051,13 +1051,17 @@ HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_052, TestSize.Level1
 
     SourceType existSourceType;
     SourceType incomingSourceType;
+    AudioStreamType existStreamType = STREAM_ALARM;
+    AudioStreamType incomingStreamType = STREAM_ALARM;
     std::string bundleName = "";
+    std::string currentBundleName = "";
     AudioFocusEntry focusEntry;
 
     existSourceType = SOURCE_TYPE_INVALID;
     incomingSourceType = SOURCE_TYPE_MIC;
     focusEntry.hintType = INTERRUPT_HINT_PAUSE;
-    audioInterruptService->UpdateMicFocusStrategy(existSourceType, incomingSourceType, bundleName, focusEntry);
+    audioInterruptService->UpdateMicFocusStrategy(existSourceType, incomingSourceType,
+        existStreamType, incomingStreamType, currentBundleName, bundleName, focusEntry);
     EXPECT_NE(focusEntry.hintType, INTERRUPT_HINT_NONE);
 }
 

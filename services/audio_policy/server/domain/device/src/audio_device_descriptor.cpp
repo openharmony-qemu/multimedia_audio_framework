@@ -22,6 +22,7 @@
 namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t API_VERSION_18 = 18;
+constexpr int32_t API_VERSION_20 = 20;
 
 const std::map<DeviceType, std::string> deviceTypeStringMap = {
     {DEVICE_TYPE_INVALID, "INVALID"},
@@ -211,6 +212,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     hasPair_ = deviceDescriptor.hasPair_;
     spatializationSupported_ = deviceDescriptor.spatializationSupported_;
     isVrSupported_ = deviceDescriptor.isVrSupported_;
+    clientInfo_ = deviceDescriptor.clientInfo_;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
@@ -245,6 +247,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     hasPair_ = deviceDescriptor->hasPair_;
     spatializationSupported_ = deviceDescriptor->spatializationSupported_;
     isVrSupported_ = deviceDescriptor->isVrSupported_;
+    clientInfo_ = deviceDescriptor->clientInfo_;
 }
 
 DeviceType AudioDeviceDescriptor::getType() const
@@ -283,12 +286,19 @@ bool AudioDeviceDescriptor::MarshallingInner(Parcel &parcel) const
 {
     if (clientInfo_ && !IsAudioDeviceDescriptor()) {
         return MarshallingToDeviceInfo(parcel, clientInfo_.value().hasBTPermission_,
-            clientInfo_.value().hasSystemPermission_, clientInfo_.value().apiVersion_);
+            clientInfo_.value().hasSystemPermission_, clientInfo_.value().apiVersion_,
+            clientInfo_.value().isSupportedNearlink_);
     }
 
+    int32_t apiVersion = 0;
+    bool isSupportedNearlink = true;
+    if (clientInfo_) {
+        apiVersion = clientInfo_.value().apiVersion_;
+        isSupportedNearlink = clientInfo_.value().isSupportedNearlink_;
+    }
     int32_t devType = deviceType_;
     if (IsAudioDeviceDescriptor()) {
-        devType = MapInternalToExternalDeviceType(clientInfo_ ? clientInfo_.value().apiVersion_ : 0);
+        devType = MapInternalToExternalDeviceType(apiVersion, isSupportedNearlink);
     }
 
     return  parcel.WriteInt32(devType) &&
@@ -341,9 +351,9 @@ void AudioDeviceDescriptor::FixApiCompatibility(int apiVersion, DeviceRole devic
 }
 
 bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission,
-    int32_t apiVersion) const
+    int32_t apiVersion, bool isSupportedNearlink) const
 {
-    DeviceType devType = deviceType_;
+    DeviceType devType = MapInternalToExternalDeviceType(apiVersion, isSupportedNearlink);
     int32_t devId = deviceId_;
     std::list<DeviceStreamInfo> streamInfo = audioStreamInfo_;
 
@@ -479,6 +489,12 @@ bool AudioDeviceDescriptor::IsDistributedSpeaker() const
     return deviceType_ == DEVICE_TYPE_SPEAKER && networkId_ != "LocalDevice";
 }
 
+bool AudioDeviceDescriptor::IsSpeakerOrEarpiece() const
+{
+    return (networkId_ == LOCAL_NETWORK_ID && deviceType_ == DEVICE_TYPE_SPEAKER) ||
+        deviceType_ == DEVICE_TYPE_EARPIECE;
+}
+
 bool AudioDeviceDescriptor::IsRemote() const
 {
     return networkId_ != "LocalDevice";
@@ -501,7 +517,7 @@ std::string AudioDeviceDescriptor::GetKey()
     return networkId_ + "_" + std::to_string(deviceType_);
 }
 
-DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType(int32_t apiVersion) const
+DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType(int32_t apiVersion, bool isSupportedNearlink) const
 {
     switch (deviceType_) {
         case DEVICE_TYPE_USB_HEADSET:
@@ -518,7 +534,11 @@ DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType(int32_t apiVer
             return DEVICE_TYPE_USB_HEADSET;
         case DEVICE_TYPE_BLUETOOTH_A2DP_IN:
             return DEVICE_TYPE_BLUETOOTH_A2DP;
+        case DEVICE_TYPE_NEARLINK:
         case DEVICE_TYPE_NEARLINK_IN:
+            if (apiVersion < API_VERSION_20 || !isSupportedNearlink) {
+                return DEVICE_TYPE_BLUETOOTH_SCO;
+            }
             return DEVICE_TYPE_NEARLINK;
         default:
             return deviceType_;

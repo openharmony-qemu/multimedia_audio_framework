@@ -20,6 +20,7 @@
 #include <mutex>
 #include <unordered_map>
 #include <unordered_set>
+#include "app_mgr_client.h"
 #include "audio_stream_collector.h"
 #include "common_event_manager.h"
 
@@ -63,10 +64,12 @@ public:
     void RecoryAppState();
 
 private:
-    AudioBackgroundManager() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()) {}
+    AudioBackgroundManager() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
+                               appMgrClient_(std::make_shared<AppExecFwk::AppMgrClient>()) {}
     ~AudioBackgroundManager() {}
 
-    void InsertIntoAppStatesMap(int32_t pid, AppState appState);
+    void InsertIntoAppStatesMapWithoutUid(int32_t pid, AppState appState);
+    void InsertIntoAppStatesMap(int32_t pid, int32_t uid, AppState appState);
     void DeleteFromMap(int32_t pid);
     bool FindKeyInMap(int32_t pid);
 
@@ -76,6 +79,7 @@ private:
     sptr<IStandardAudioPolicyManagerListener> isAllowedPlaybackListener_;
     sptr<IStandardAudioPolicyManagerListener> backgroundMuteListener_;
     std::shared_ptr<BackgroundTaskListener> backgroundTaskListener_;
+    std::shared_ptr<OHOS::AppExecFwk::AppMgrClient> appMgrClient_;
 
     std::mutex appStatesMapMutex_;
 };

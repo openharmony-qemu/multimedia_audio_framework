@@ -1594,7 +1594,7 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_104, TestSize.Leve
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
 
     audioCoreService->ProcessInputPipeNew(pipeInfo, flag);
-    EXPECT_EQ(flag, AUDIO_OUTPUT_FLAG_DIRECT);
+    EXPECT_EQ(flag, AUDIO_FLAG_NONE);
     ASSERT_NE(audioCoreService->pipeManager_, nullptr);
 }
 
@@ -2258,10 +2258,16 @@ HWTEST_F(AudioCoreServicePrivateTest, UpdateModemRoute_001, TestSize.Level1)
     EXPECT_NE(audioCoreService->pipeManager_->modemCommunicationIdMap_[0], nullptr);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> modemDescs =
         audioCoreService->audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_MODEM_COMMUNICATION, -1, "");
+
     audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
     int32_t ret = audioCoreService->UpdateModemRoute(modemDescs);
-    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
     EXPECT_EQ(ret, SUCCESS);
+
+    audioCoreService->needUnmuteVoiceCall_ = true;
+    ret = audioCoreService->UpdateModemRoute(modemDescs);
+    EXPECT_EQ(ret, SUCCESS);
+
+    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
 }
 
 /**
@@ -2283,6 +2289,39 @@ HWTEST_F(AudioCoreServicePrivateTest, UpdateModemRoute_002, TestSize.Level1)
     audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
     int32_t ret = audioCoreService->UpdateModemRoute(modemDescs);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: GetVoiceCallMuteDuration_001
+ * @tc.desc  : Test AudioCoreService::GetVoiceCallMuteDuration
+ */
+HWTEST_F(AudioCoreServicePrivateTest, GetVoiceCallMuteDuration_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    AudioDeviceDescriptor desc1(DeviceType::DEVICE_TYPE_EARPIECE, DeviceRole::OUTPUT_DEVICE);
+    AudioDeviceDescriptor desc2(DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    AudioDeviceDescriptor desc3(DeviceType::DEVICE_TYPE_USB_HEADSET, DeviceRole::OUTPUT_DEVICE);
+    AudioDeviceDescriptor desc4(DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    desc4.networkId_ = "RemoteDevice";
+    uint32_t targetMuteDuration = 100000;
+
+    uint32_t muteDuration = audioCoreService->GetVoiceCallMuteDuration(desc1, desc1);
+    EXPECT_EQ(muteDuration, 0);
+
+    muteDuration = audioCoreService->GetVoiceCallMuteDuration(desc1, desc2);
+    EXPECT_EQ(muteDuration, 0);
+
+    muteDuration = audioCoreService->GetVoiceCallMuteDuration(desc1, desc3);
+    EXPECT_EQ(muteDuration, targetMuteDuration);
+
+    muteDuration = audioCoreService->GetVoiceCallMuteDuration(desc3, desc1);
+    EXPECT_EQ(muteDuration, targetMuteDuration);
+
+    muteDuration = audioCoreService->GetVoiceCallMuteDuration(desc1, desc4);
+    EXPECT_EQ(muteDuration, targetMuteDuration);
 }
 
 /**
@@ -2388,8 +2427,7 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_123, TestSize.Leve
     audioCoreService->pipeManager_->AddAudioPipeInfo(pipe2);
 
     audioCoreService->RemoveUnusedPipe();
-    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    EXPECT_EQ(audioCoreService->pipeManager_->GetUnusedPipe(deviceType).size(), 2); // 2: unused pipe size
+    EXPECT_EQ(audioCoreService->pipeManager_->GetUnusedPipe().size(), 2); // 2: unused pipe size
 }
 
 /**
@@ -2769,6 +2807,42 @@ HWTEST_F(AudioCoreServicePrivateTest, ActivateInputDevice_002, TestSize.Level4)
 
 /**
  * @tc.name  : Test AudioCoreService.
+ * @tc.number: MuteSinkPortForSwitchDevice_001
+ * @tc.desc  : Test AudioCoreService::MuteSinkPortForSwitchDevice()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, MuteSinkPortForSwitchDevice_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    // Test1
+    AudioStreamDeviceChangeReasonExt::ExtEnum extReason = AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE;
+    AudioStreamDeviceChangeReasonExt reason(extReason);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> oldDesc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    std::shared_ptr<AudioDeviceDescriptor> newDesc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    streamDesc->oldDeviceDescs_.push_back(oldDesc);
+    streamDesc->oldDeviceDescs_.push_back(newDesc);
+    audioCoreService->audioIOHandleMap_.SetMoveFinish(true);
+    
+    audioCoreService->MuteSinkPortForSwitchDevice(streamDesc, reason);
+    EXPECT_TRUE(audioCoreService->audioIOHandleMap_.moveDeviceFinished_.load());
+    streamDesc->newDeviceDescs_.clear();
+
+    // Test2
+    newDesc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    streamDesc->newDeviceDescs_.push_back(newDesc);
+
+    audioCoreService->MuteSinkPortForSwitchDevice(streamDesc, reason);
+    EXPECT_FALSE(audioCoreService->audioIOHandleMap_.moveDeviceFinished_.load());
+    audioCoreService->audioIOHandleMap_.SetMoveFinish(false);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
  * @tc.number: CheckAndSleepBeforeRingDualDeviceSet_001
  * @tc.desc  : Test AudioCoreService::CheckAndSleepBeforeRingDualDeviceSet()
  */
@@ -3049,11 +3123,15 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateHearingAidCall_001, TestSize
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
+    audioCoreService->hearingAidCallFlag_ = false;
     audioCoreService->CheckAndUpdateHearingAidCall(DeviceType::DEVICE_TYPE_HEARING_AID);
+    audioCoreService->hearingAidCallFlag_ = true;
     audioCoreService->CheckAndUpdateHearingAidCall(DeviceType::DEVICE_TYPE_EARPIECE);
-    auto audioPipeManager = AudioPipeManager::GetPipeManager();
-    auto pipeInfo = audioPipeManager->GetPipeinfoByNameAndFlag("primary", AUDIO_INPUT_FLAG_NORMAL);
-    ASSERT_NE(pipeInfo, nullptr);
+    ASSERT_EQ(audioCoreService->hearingAidCallFlag_, false);
+
+    audioCoreService->CheckAndUpdateHearingAidCall(DeviceType::DEVICE_TYPE_HEARING_AID);
+    bool ret = audioCoreService->audioIOHandleMap_.CheckIOHandleExist("Built_in_mic");
+    ASSERT_EQ(ret, false);
 }
 
 /**

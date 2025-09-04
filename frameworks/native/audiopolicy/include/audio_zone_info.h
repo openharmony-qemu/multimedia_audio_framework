@@ -23,6 +23,8 @@
 #include "audio_device_info.h"
 #include "audio_device_descriptor.h"
 
+#define ZONE_MAX_DEVICE_SIZE    128
+
 namespace OHOS {
 namespace AudioStandard {
 enum class AudioZoneChangeReason {
@@ -46,15 +48,22 @@ enum class AudioZoneFocusStrategy {
     DISTRIBUTED_FOCUS_STRATEGY = 1,
 };
 
+enum class MediaBackStrategy {
+    STOP = 0,
+    KEEP = 1,
+};
+
 class AudioZoneContext : public Parcelable {
 public:
     AudioZoneFocusStrategy focusStrategy_ = AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY;
+    MediaBackStrategy backStrategy_ = MediaBackStrategy::STOP;
 
     AudioZoneContext() = default;
 
     bool Marshalling(Parcel &parcel) const
     {
-        return parcel.WriteInt32(static_cast<int32_t>(focusStrategy_));
+        return parcel.WriteInt32(static_cast<int32_t>(focusStrategy_))
+            && parcel.WriteInt32(static_cast<int32_t>(backStrategy_));
     }
 
     static AudioZoneContext *Unmarshalling(Parcel &parcel)
@@ -65,6 +74,7 @@ public:
         }
 
         info->focusStrategy_ = static_cast<AudioZoneFocusStrategy>(parcel.ReadInt32());
+        info->backStrategy_ = static_cast<MediaBackStrategy>(parcel.ReadInt32());
         return info;
     }
 };
@@ -106,8 +116,8 @@ public:
         uids_ = UnmarshallingSetInt32<int32_t>(parcel);
 
         size_t size = parcel.ReadUint64();
-        if (size > std::numeric_limits<size_t>::max()) {
-            size = std::numeric_limits<size_t>::max();
+        if (size > ZONE_MAX_DEVICE_SIZE) {
+            size = ZONE_MAX_DEVICE_SIZE;
         }
 
         for (size_t i = 0; i < size; i++) {

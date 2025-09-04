@@ -213,7 +213,7 @@ int32_t AudioPolicyManager::SetCallbackStreamInfo(const CallbackChange &callback
     int32_t ret = SUCCESS;
     if (callbackChange == CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE) {
         for (auto &rendererInfo : rendererInfos_) {
-            ret = gsp->SetCallbackRendererInfo(rendererInfo);
+            ret = gsp->SetCallbackRendererInfo(rendererInfo, -1);
         }
     } else if (callbackChange == CALLBACK_PREFERRED_INPUT_DEVICE_CHANGE) {
         for (auto &capturerInfo : capturerInfos_) {
@@ -353,19 +353,6 @@ int32_t AudioPolicyManager::SetSystemVolumeLevel(AudioVolumeType volumeType, int
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
 
-    if (isLegacy) {
-        return gsp->SetSystemVolumeLevelLegacy(volumeType, volumeLevel);
-    }
-    return gsp->SetSystemVolumeLevel(volumeType, volumeLevel, volumeFlag, uid);
-}
-
-int32_t AudioPolicyManager::SetSystemNotificationVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel,
-    bool isLegacy, int32_t volumeFlag, int32_t uid)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-
-    volumeType = STREAM_RING;
     if (isLegacy) {
         return gsp->SetSystemVolumeLevelLegacy(volumeType, volumeLevel);
     }
@@ -513,17 +500,6 @@ int32_t AudioPolicyManager::GetSystemVolumeLevel(AudioVolumeType volumeType, int
     return volumeLevel;
 }
 
-int32_t AudioPolicyManager::GetSystemNotificationVolumeLevel(AudioVolumeType volumeType, int32_t uid)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-
-    volumeType = STREAM_RING;
-    int32_t volumeLevel = -1;
-    gsp->GetSystemVolumeLevel(volumeType, uid, volumeLevel);
-    return volumeLevel;
-}
-
 int32_t AudioPolicyManager::SetStreamMute(AudioVolumeType volumeType, bool mute, bool isLegacy,
     const DeviceType &deviceType)
 {
@@ -639,11 +615,11 @@ int32_t AudioPolicyManager::SetClientCallbacksEnable(const CallbackChange &callb
     return gsp->SetClientCallbacksEnable(callbackchange, enable);
 }
 
-int32_t AudioPolicyManager::SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo)
+int32_t AudioPolicyManager::SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->SetCallbackRendererInfo(rendererInfo);
+    return gsp->SetCallbackRendererInfo(rendererInfo, uid);
 }
 
 int32_t AudioPolicyManager::SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo)
@@ -1177,7 +1153,7 @@ int32_t AudioPolicyManager::SetAppConcurrencyMode(const int32_t appUid, const in
     return gsp->SetAppConcurrencyMode(appUid, mode);
 }
 
-int32_t AudioPolicyManager::SetAppSlientOnDisplay(const int32_t displayId)
+int32_t AudioPolicyManager::SetAppSilentOnDisplay(const int32_t displayId)
 {
     CHECK_AND_RETURN_RET_LOG((displayId > 0 || displayId == -1), -1,
         "mode is illegal parameters");
@@ -1189,7 +1165,7 @@ int32_t AudioPolicyManager::SetAppSlientOnDisplay(const int32_t displayId)
             return ret;
         }
     }
-    return gsp->SetAppSlientOnDisplay(displayId);
+    return gsp->SetAppSilentOnDisplay(displayId);
 }
 
 int32_t AudioPolicyManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
@@ -3227,78 +3203,14 @@ int32_t AudioPolicyManager::ForceVolumeKeyControlType(AudioVolumeType volumeType
     return ret;
 }
 
-int32_t AudioPolicyManager::SetVolumeDegreeCallback(const int32_t clientPid,
-    const std::shared_ptr<VolumeKeyEventCallback> &callback)
-{
-    AUDIO_INFO_LOG("client: %{public}d", clientPid);
-    if (!PermissionUtil::VerifySystemPermission()) {
-        AUDIO_ERR_LOG("No system permission");
-        return ERR_PERMISSION_DENIED;
-    }
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "volume back is nullptr");
-
-    if (!isAudioPolicyClientRegisted_) {
-        const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
-        if (ret != SUCCESS) {
-            return ret;
-        }
-    }
-
-    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SET_VOLUME_DEGREE_CHANGE].mutex);
-    if (audioPolicyClientStubCB_ != nullptr) {
-        audioPolicyClientStubCB_->AddVolumeDegreeCallback(callback);
-        size_t callbackSize = audioPolicyClientStubCB_->GetVolumeDegreeCallbackSize();
-        if (callbackSize == 1) {
-            callbackChangeInfos_[CALLBACK_SET_VOLUME_DEGREE_CHANGE].isEnable = true;
-            SetClientCallbacksEnable(CALLBACK_SET_VOLUME_DEGREE_CHANGE, true);
-        }
-    }
-    return SUCCESS;
-}
-
-int32_t AudioPolicyManager::UnsetVolumeDegreeCallback(
-    const std::shared_ptr<VolumeKeyEventCallback> &callback)
-{
-    AUDIO_DEBUG_LOG("Start to unregister");
-    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SET_VOLUME_DEGREE_CHANGE].mutex);
-    if (audioPolicyClientStubCB_ != nullptr) {
-        audioPolicyClientStubCB_->RemoveVolumeDegreeCallback(callback);
-        if (audioPolicyClientStubCB_->GetVolumeDegreeCallbackSize() == 0) {
-            callbackChangeInfos_[CALLBACK_SET_VOLUME_DEGREE_CHANGE].isEnable = false;
-            SetClientCallbacksEnable(CALLBACK_SET_VOLUME_DEGREE_CHANGE, false, false);
-        }
-    }
-    return SUCCESS;
-}
-
-int32_t AudioPolicyManager::SetSystemVolumeDegree(AudioVolumeType volumeType, int32_t volumeDegree,
-    int32_t volumeFlag, int32_t uid)
+bool AudioPolicyManager::IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-    return gsp->SetSystemVolumeDegree(volumeType, volumeDegree, volumeFlag, uid);
-}
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
 
-int32_t AudioPolicyManager::GetSystemVolumeDegree(AudioVolumeType volumeType, int32_t uid)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, 0, "audio policy manager proxy is NULL.");
-
-    int32_t volumeDegree = 0;
-    gsp->GetSystemVolumeDegree(volumeType, uid, volumeDegree);
-    return volumeDegree;
-}
-
-int32_t AudioPolicyManager::GetMinVolumeDegree(AudioVolumeType volumeType)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, 0, "audio policy manager proxy is NULL.");
-
-    int32_t volumeDegree = 0;
-    gsp->GetMinVolumeDegree(volumeType, volumeDegree);
-    return volumeDegree;
+    bool isSupport = false;
+    gsp->IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType, isSupport);
+    return isSupport;
 }
 
 AudioPolicyManager& AudioPolicyManager::GetInstance()

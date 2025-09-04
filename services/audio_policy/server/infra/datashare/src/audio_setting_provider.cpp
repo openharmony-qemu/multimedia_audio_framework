@@ -22,6 +22,7 @@
 #include "audio_errors.h"
 #include "system_ability_definition.h"
 #include "audio_utils.h"
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -520,5 +521,168 @@ Uri AudioSettingProvider::AssembleUri(const std::string &key, std::string tableT
     Uri uri(SETTING_URI_PROXY + "&key=" + key);
     return uri;
 }
+
+// rewrite database operations
+void AudioSettingProvider::TrimLeft(std::string &str)
+{
+    if (str.empty()) {
+        return;
+    }
+    size_t start = str.find_first_not_of(" \t\n\r");
+    if (start != std::string::npos) {
+        str =str.substr(start);
+    } else {
+        str.clear();
+    }
+}
+
+int32_t AudioSettingProvider::StringToInt32(const std::string &str, int32_t &result)
+{
+    if (str.empty()) {
+        return ERROR;
+    }
+    int32_t oldValue = result;
+
+    std::string s = str;
+    TrimLeft(s);
+    if (s.empty()) {
+        return ERROR;
+    }
+
+    const auto *first = str.data();
+    const auto *last = first +str.size();
+    std::from_chars_result res = std::from_chars(first, last, result);
+    if (res.ec == std::errc{} && res.ptr ==last) {
+        return SUCCESS;
+    } else {
+        result = oldValue;
+        return ERROR;
+    }
+}
+
+int64_t AudioSettingProvider::StringToInt64(const std::string &str, int64_t &result)
+{
+    if (str.empty()) {
+        return ERROR;
+    }
+    int64_t oldValue = result;
+
+    std::string s = str;
+    TrimLeft(s);
+    if (s.empty()) {
+        return ERROR;
+    }
+
+    const auto *first = str.data();
+    const auto *last = first +str.size();
+    std::from_chars_result res = std::from_chars(first, last, result);
+    if (res.ec == std::errc{} && res.ptr ==last) {
+        return SUCCESS;
+    } else {
+        result = oldValue;
+        return ERROR;
+    }
+}
+
+void AudioSettingProvider::GetIntValues(std::vector<IntValueInfo> &infos, std::string tableType)
+{
+    std::string callingIdentity = IPCSkeleton::ResetCallingIdentity();
+    for (auto &info : infos) {
+        info.value = info.defaultValue;
+    }
+    GetIntValuesInner(infos, tableType);
+    IPCSkeleton::SetCallingIdentity(callingIdentity);
+}
+
+void AudioSettingProvider::GetIntValuesInner(std::vector<IntValueInfo> &infos, std::string tableType)
+{
+    auto helper = CreateDataShareHelper(tableType);
+    CHECK_AND_RETURN_LOG(helper != nullptr, "helper is null");
+    for (auto &info : infos) {
+        int32_t res = 0;
+        int32_t ret = GetIntValueInner(helper, info.key, tableType, res);
+        CHECK_AND_CONTINUE(ret == SUCCESS);
+        info.value = res;
+    }
+    ReleaseDataShareHelper(helper);
+}
+
+ErrCode AudioSettingProvider::GetIntValueInner(std::shared_ptr<DataShare::DataShareHelper> helper,
+    std::string key, std::string tableType, int32_t &res)
+{
+    CHECK_AND_RETURN_RET_LOG(helper != nullptr, ERR_NO_INIT, "helper is null");
+    std::vector<std::string> columns = {SETTING_COLUMN_VALUE};
+    DataShare::DataSharePredicates predicates;
+    predicates.EqualTo(SETTING_COLUMN_KEYWORD, key);
+    Uri uri(AssembleUri(key, tableType));
+    auto resultSet = helper->Query(uri, predicates, columns);
+    CHECK_AND_RETURN_RET_LOG(resultSet != nullptr, ERR_INVALID_OPERATION, "helper->Query return nullptr");
+
+    int32_t count;
+    resultSet->GetRowCount(count);
+    if (count == 0) {
+        AUDIO_WARNING_LOG("not found value, key=%{public}s, uri=%{public}s, count=%{public}d",
+            key.c_str(), uri.ToString().c_str(), count);
+        resultSet->Close();
+        return ERR_NAME_NOT_FOUND;
+    }
+    const int32_t INDEX = 0;
+    resultSet->GoToRow(INDEX);
+
+    std::string value;
+    int32_t ret = resultSet->GetString(INDEX, value);
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("resultSet->GetString return not ok, ret=%{public}d", ret);
+        resultSet->Close();
+        return ERR_INVALID_VALUE;
+    }
+
+    AUDIO_INFO_LOG("Read audio_info_database with key: %{public}s value: %{public}s in uri=%{public}s ",
+        key.c_str(), value.c_str(), uri.ToString().c_str());
+    ret = StringToInt32(value, res);
+    resultSet->Close();
+    return ret;
+}
+
+ErrCode AudioSettingProvider::PutIntValues(std::vector<IntValueInfo> &infos, std::string tableType)
+{
+    std::string callingIdentity = IPCSkeleton::ResetCallingIdentity();
+    int32_t ret = PutIntValuesInner(infos, tableType);
+    IPCSkeleton::SetCallingIdentity(callingIdentity);
+    return ret;
+}
+
+ErrCode AudioSettingProvider::PutIntValuesInner(std::vector<IntValueInfo> &infos, std::string tableType)
+{
+    auto helper =  CreateDataShareHelper(tableType);
+    CHECK_AND_RETURN_RET_LOG(helper != nullptr, ERR_NO_INIT, "helper is null");
+    for (auto &info : infos) {
+        PutIntValueInner(helper, info.key, std::to_string(info.value), tableType);
+    }
+    ReleaseDataShareHelper(helper);
+    return SUCCESS;
+}
+
+ErrCode AudioSettingProvider::PutIntValueInner(std::shared_ptr<DataShare::DataShareHelper> helper,
+    std::string key, std::string value, std::string tableType)
+{
+    CHECK_AND_RETURN_RET_LOG(helper != nullptr, ERR_NO_INIT, "helper is null");
+    AUDIO_INFO_LOG("Write audio_info_database with key: %{public}s value: %{public}s", key.c_str(), value.c_str());
+    DataShare::DataShareValueObject keyObj(key);
+    DataShare::DataShareValueObject valueObj(value);
+    DataShare::DataShareValuesBucket bucket;
+    bucket.Put(SETTING_COLUMN_KEYWORD, keyObj);
+    bucket.Put(SETTING_COLUMN_VALUE, valueObj);
+    DataShare::DataSharePredicates predicates;
+    predicates.EqualTo(SETTING_COLUMN_KEYWORD, key);
+    Uri uri(AssembleUri(key, tableType));
+    if (helper->Update(uri, predicates, bucket) <= 0) {
+        AUDIO_INFO_LOG("audio_info_database no data exist, insert one row");
+        helper->Insert(uri, bucket);
+    }
+    helper->NotifyChange(AssembleUri(key, tableType));
+    return SUCCESS;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

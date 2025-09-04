@@ -106,7 +106,7 @@ RendererInClientInner::~RendererInClientInner()
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
 {
     Trace trace(traceTag_ + " OnOperationHandled:" + std::to_string(static_cast<int>(operation)));
-    AUDIO_INFO_LOG("sessionId %{public}d recv operation:%{public}d result:%{public}" PRId64".", sessionId_,
+    HILOG_COMM_INFO("sessionId %{public}d recv operation:%{public}d result:%{public}" PRId64".", sessionId_,
         static_cast<int>(operation), result);
     if (operation == SET_OFFLOAD_ENABLE) {
         AUDIO_INFO_LOG("SET_OFFLOAD_ENABLE result:%{public}" PRId64".", result);
@@ -228,13 +228,17 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     const AudioPlaybackCaptureConfig &config)
 {
     // In plan: If paramsIsSet_ is true, and new info is same as old info, return
-    AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d,"
-        " stream type: %{public}d, encoding type: %{public}d", info.samplingRate, info.channels, info.format,
-        eStreamType_, info.encoding);
+    AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}u, channels: %{public}d, "
+        "format: %{public}d, stream type: %{public}d, encoding type: %{public}d",
+        info.customSampleRate == 0 ? info.samplingRate : info.customSampleRate,
+        info.channels, info.format, eStreamType_, info.encoding);
 
     AudioXCollie guard("RendererInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
-    if (!IsFormatValid(info.format) || !IsSamplingRateValid(info.samplingRate) || !IsEncodingTypeValid(info.encoding)) {
+
+    if (!IsFormatValid(info.format) || !IsEncodingTypeValid(info.encoding) ||
+        !((info.customSampleRate == 0 && IsSamplingRateValid(info.samplingRate)) ||
+        (info.customSampleRate != 0 && IsCustomSampleRateValid(info.customSampleRate)))) {
         AUDIO_ERR_LOG("Unsupported audio parameter");
         return ERR_NOT_SUPPORTED;
     }
@@ -268,7 +272,9 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     state_ = PREPARED;
 
     // eg: 100005_44100_2_1_client_out.pcm
-    dumpOutFile_ = std::to_string(sessionId_) + "_" + std::to_string(curStreamParams_.samplingRate) + "_" +
+    dumpOutFile_ = std::to_string(sessionId_) + "_" +
+        std::to_string(curStreamParams_.customSampleRate == 0 ?
+        curStreamParams_.samplingRate : curStreamParams_.customSampleRate) + "_" +
         std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_client_out.pcm";
 
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);
@@ -1025,7 +1031,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
 
     waitLock.unlock();
 
-    AUDIO_INFO_LOG("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    HILOG_COMM_INFO("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     UpdateTracker("RUNNING");
 
     FlushBeforeStart();
@@ -1102,7 +1108,7 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     StateCmdTypeToParams(param, state_, cmdType);
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, param);
 
-    AUDIO_INFO_LOG("Pause SUCCESS, sessionId %{public}d, uid %{public}d, mode %{public}s", sessionId_,
+    HILOG_COMM_INFO("Pause SUCCESS, sessionId %{public}d, uid %{public}d, mode %{public}s", sessionId_,
         clientUid_, renderMode_ == RENDER_MODE_NORMAL ? "RENDER_MODE_NORMAL" : "RENDER_MODE_CALLBACK");
     UpdateTracker("PAUSED");
     return true;
@@ -1159,7 +1165,7 @@ bool RendererInClientInner::StopAudioStream()
     // in plan: call HiSysEventWrite
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, state_);
 
-    AUDIO_INFO_LOG("Stop SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    HILOG_COMM_INFO("Stop SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     UpdateTracker("STOPPED");
     return true;
 }
@@ -1220,7 +1226,7 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
     lock.unlock();
 
     UpdateTracker("RELEASED");
-    AUDIO_INFO_LOG("Release end, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    HILOG_COMM_INFO("Release end, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
 
     std::lock_guard lockSpeed(speedMutex_);
     audioSpeed_.reset();
@@ -1954,6 +1960,7 @@ void RendererInClientInner::SetCallStartByUserTid(pid_t tid)
 
 void RendererInClientInner::SetCallbackLoopTid(int32_t tid)
 {
+    std::unique_lock<std::mutex> waitLock(callbackLoopTidMutex_);
     AUDIO_INFO_LOG("Callback loop tid: %{public}d", tid);
     callbackLoopTid_ = tid;
     callbackLoopTidCv_.notify_all();

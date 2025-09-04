@@ -35,7 +35,6 @@ namespace {
 
     int32_t g_streamType(0);
     int32_t g_volumeLevel(0);
-    int32_t g_volumeDegree(0);
     bool g_isUpdateUi(false);
     int32_t g_volumeGroupId(0);
     std::string g_networkId(LOCAL_NETWORK_ID);
@@ -53,18 +52,6 @@ void ApplicationCallback::OnVolumeKeyEvent(VolumeEvent volumeEvent)
     g_isCallbackReceived = true;
     g_streamType = volumeEvent.volumeType;
     g_volumeLevel = volumeEvent.volume;
-    g_callbackName = testCaseName_;
-    g_isUpdateUi = volumeEvent.updateUi;
-    g_volumeGroupId = volumeEvent.volumeGroupId;
-    g_networkId = volumeEvent.networkId;
-    g_condVar.notify_all();
-}
-
-void ApplicationCallback::OnVolumeDegreeEvent(VolumeEvent volumeEvent)
-{
-    g_isCallbackReceived = true;
-    g_streamType = volumeEvent.volumeType;
-    g_volumeDegree = volumeEvent.volume;
     g_callbackName = testCaseName_;
     g_isUpdateUi = volumeEvent.updateUi;
     g_volumeGroupId = volumeEvent.volumeGroupId;
@@ -203,48 +190,6 @@ HWTEST_F(AudioVolumeChangeUnitTest,  volumeChange_test_003, TestSize.Level1)
         EXPECT_STREQ(g_callbackName.c_str(), testCaseName.c_str());
     }
     g_audioManagerInstance->UnregisterVolumeKeyEventCallback(getpid());
-}
-
-/*
- * Feature: AudioVolumeChangeUnitTest
- * Function: Set volume degree for AudioStreamType::STREAM_VOICE_CALL
- * SubFunction: NA
- * FunctionPoints: NA
- * EnvConditions: NA
- * CaseDescription:
- */
-HWTEST_F(AudioVolumeChangeUnitTest,  volumeDegreeChange_test_001, TestSize.Level1)
-{
-    int32_t result;
-    int32_t callBackSetResult;
-    std::string testCaseName("volumeDegreeChange_test_001");
-    g_isCallbackReceived = false;
-    AudioStreamType streamType = AudioStreamType::STREAM_VOICE_CALL;
-    AudioVolumeType volumeType = static_cast<AudioVolumeType>(streamType);
-    int32_t volumeDegree = 50;
-    g_callbackName = testCaseName;
-    bool isUpdateUi = false;
-    auto appCallback = make_shared<ApplicationCallback>(testCaseName);
-
-    std::vector<sptr<VolumeGroupInfo>> infos;
-    g_audioManagerInstance->GetVolumeGroups(LOCAL_NETWORK_ID, infos);
-    EXPECT_GE(infos.size(), 0);
-    int32_t groupId = infos[0]->volumeGroupId_;
-    auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
-
-    callBackSetResult = g_audioManagerInstance->RegisterVolumeDegreeCallback(getpid(), appCallback);
-    result = audioGroupMngr_->SetVolumeDegree(volumeType, volumeDegree);
-    EXPECT_EQ(result, SUCCESS);
-    EXPECT_EQ(callBackSetResult, SUCCESS);
-    if (result == SUCCESS) {
-        // Wait here for callback. If not callback for 2 mintues, will skip this step
-        AudioVolumeChangeUnitTest::WaitForCallback();
-        EXPECT_EQ(streamType, g_streamType);
-        EXPECT_EQ(volumeDegree, g_volumeDegree);
-        EXPECT_EQ(isUpdateUi, g_isUpdateUi);
-        EXPECT_STREQ(g_callbackName.c_str(), testCaseName.c_str());
-    }
-    g_audioManagerInstance->UnregisterVolumeDegreeCallback(getpid());
 }
 } // namespace AudioStandard
 } // namespace OHOS

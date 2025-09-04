@@ -19,7 +19,6 @@
 #include "core_service_provider_stub.h"
 #include "audio_service_log.h"
 #include "audio_errors.h"
-#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -88,21 +87,6 @@ int32_t CoreServiceProviderWrapper::GetPaIndexByPortName(const std::string &port
 {
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
     ret = coreServiceWorker_->GetPaIndexByPortName(portName);
-    return SUCCESS;
-}
-
-int32_t CoreServiceProviderWrapper::GetVoiceMuteState(uint32_t sessionId, bool &muteState)
-{
-    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
-    coreServiceWorker_->GetVoiceMuteState(sessionId, muteState);
-    return SUCCESS;
-}
-
-int32_t CoreServiceProviderWrapper::RemoveVoiceMuteState(uint32_t sessionId)
-{
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), AUDIO_PERMISSION_DENIED, "only audio is allowed");
-    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
-    coreServiceWorker_->RemoveVoiceMuteState(sessionId);
     return SUCCESS;
 }
 } // namespace AudioStandard

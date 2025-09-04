@@ -109,7 +109,7 @@ public:
     int32_t UpdateActiveDevicesRoute(const std::vector<IntPair> &activeDevices,
         int32_t a2dpOffloadFlag, const std::string &deviceName) override;
     int32_t SetDmDeviceType(uint16_t dmDeviceType, int32_t deviceType) override;
-    int32_t UpdateDualToneState(bool enable, int32_t sessionId) override;
+    int32_t UpdateDualToneState(bool enable, int32_t sessionId, const std::string &dupSinkName) override;
     int32_t SetAudioMonoState(bool audioMono) override;
     int32_t SetAudioBalanceValue(float audioBalance) override;
     int32_t SuspendRenderSink(const std::string &sinkName) override;
@@ -363,6 +363,7 @@ private:
         const std::vector<std::string> &subKeys, std::vector<std::pair<std::string, std::string>> &result);
     int32_t ImproveAudioWorkgroupPrio(int32_t pid, const std::unordered_map<int32_t, bool> &threads) override;
     int32_t RestoreAudioWorkgroupPrio(int32_t pid, const std::unordered_map<int32_t, int32_t> &threads) override;
+    int32_t GetPrivacyTypeAudioServer(uint32_t sessionId, int32_t &privacyType, int32_t &ret) override;
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t VASSISTANT_UID = 3001;

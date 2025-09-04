@@ -50,6 +50,17 @@ config("audio_engine_private_config") {
   ]
 }
 
+engine_test_external_deps = [
+  "c_utils:utils",
+  "googletest:gmock",
+  "googletest:gtest",
+  "hilog:libhilog",
+  "hisysevent:libhisysevent",
+  "ipc:ipc_single",
+  "safwk:system_ability_fwk",
+  "samgr:samgr_proxy",
+]
+
 ohos_unittest("hpae_render_manager_test") {
   module_out_path = module_output_path
   sources = [
@@ -67,15 +78,7 @@ ohos_unittest("hpae_render_manager_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 }
 
 ohos_unittest("hpae_capturer_manager_test") {
@@ -95,15 +98,7 @@ ohos_unittest("hpae_capturer_manager_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
 }
@@ -124,15 +119,7 @@ ohos_unittest("hpae_virtual_capturer_manager_test") {
     "../../../audio_service:audio_common",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
 }
@@ -155,15 +142,7 @@ ohos_unittest("hpae_manager_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
 }
@@ -186,15 +165,7 @@ ohos_unittest("hpae_soft_link_unit_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
 }
@@ -216,15 +187,7 @@ ohos_unittest("hpae_inner_capturer_unit_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 }
 
 ohos_unittest("hpae_render_effect_node_test") {
@@ -244,15 +207,7 @@ ohos_unittest("hpae_render_effect_node_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 }
 
 ohos_unittest("hpae_sink_output_node_test") {
@@ -272,16 +227,7 @@ ohos_unittest("hpae_sink_output_node_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gmock",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
 }
@@ -303,15 +249,7 @@ ohos_unittest("hpae_source_process_cluster_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 }
 
 ohos_unittest("hpae_policy_manager_test") {
@@ -332,15 +270,7 @@ ohos_unittest("hpae_policy_manager_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
 }
@@ -362,15 +292,7 @@ ohos_unittest("hpae_signal_process_thread_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
 }
@@ -392,15 +314,7 @@ ohos_unittest("hpae_gain_node_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
 }
@@ -423,15 +337,7 @@ ohos_unittest("hpae_loudness_gain_node_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
 }
@@ -454,15 +360,7 @@ ohos_unittest("hpae_mixer_node_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
 }
@@ -485,15 +383,7 @@ ohos_unittest("hpae_node_common_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
 }
@@ -515,15 +405,7 @@ ohos_unittest("hpae_remote_output_cluster_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
 }
@@ -546,15 +428,29 @@ ohos_unittest("hpae_remote_sink_output_node_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
+  external_deps = engine_test_external_deps
+
+  resource_config_file = "./resource/ohos_test.xml"
+}
+
+ohos_unittest("hpae_offload_sinkoutput_node_test") {
+  module_out_path = module_output_path
+  sources = [
+    "node/hpae_offload_sinkoutput_node_test.cpp",
   ]
+
+  configs = [ ":audio_engine_private_config" ]
+
+  deps = [
+    "../../:audio_engine_manager",
+    "../../:audio_engine_node",
+    "../../:audio_engine_plugins",
+    "../../:audio_engine_utils",
+    "../../../audio_service:audio_common",
+    "../../../../frameworks/native/audioeffect:audio_effect",
+  ]
+
+  external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
 }
@@ -577,15 +473,7 @@ ohos_unittest("hpae_output_cluster_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
 }
@@ -607,15 +495,7 @@ ohos_unittest("hpae_pcm_buffer_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
 }
@@ -637,15 +517,7 @@ ohos_unittest("hpae_pcm_process_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
 }
@@ -667,15 +539,7 @@ ohos_unittest("hpae_process_cluster_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
 }
@@ -697,15 +561,7 @@ ohos_unittest("hpae_resample_node_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
 }
@@ -727,15 +583,7 @@ ohos_unittest("hpae_sink_input_node_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
 }
@@ -757,15 +605,7 @@ ohos_unittest("hpae_source_input_node_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
 }
@@ -787,15 +627,7 @@ ohos_unittest("hpae_source_output_node_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
 }
@@ -820,15 +652,7 @@ ohos_unittest("audio_engine_unit_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
 }
@@ -850,15 +674,7 @@ ohos_unittest("hpae_capture_effect_node_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
 }
@@ -880,15 +696,7 @@ ohos_unittest("hpae_source_input_cluster_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
 }
@@ -908,15 +716,7 @@ ohos_unittest("hpae_plugins_unit_test") {
     "../../:audio_engine_plugins",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
 }
@@ -937,15 +737,7 @@ ohos_unittest("hpae_co_buffer_node_test") {
     "../../../audio_service:audio_common",
   ]
 
-  external_deps = [
-    "c_utils:utils",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
+  external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
 }

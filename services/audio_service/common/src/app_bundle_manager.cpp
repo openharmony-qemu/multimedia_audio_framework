@@ -49,8 +49,8 @@ std::string AppBundleManager::GetBundleNameFromUid(int32_t uid)
     sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
     CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, "", "bundleMgrProxy is nullptr");
 
-    WatchTimeout reguard("bundleMgrProxy->GetNameForUid:GetBundleNameFromUid");
-    bundleMgrProxy->GetNameForUid(uid, bundleName);
+    WatchTimeout reguard("bundleMgrProxy->GetBundleNameForUid:GetBundleNameFromUid");
+    bundleMgrProxy->GetBundleNameForUid(uid, bundleName);
     reguard.CheckCurrTimeout();
 
     return bundleName;

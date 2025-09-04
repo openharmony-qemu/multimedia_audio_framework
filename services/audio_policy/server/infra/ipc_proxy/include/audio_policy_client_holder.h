@@ -66,12 +66,12 @@ public:
     void OnSystemVolumeChange(VolumeEvent volumeEvent);
     void OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent);
     void OnAudioSessionCurrentDeviceChanged(const CurrentOutputDeviceChangedEvent &deviceChangedEvent);
-    void OnVolumeDegreeEvent(VolumeEvent volumeEvent);
 
 public:
     bool hasBTPermission_ = true;
     bool hasSystemPermission_ = true;
     int32_t apiVersion_ = API_VERSION_MAX;
+    bool isSupportedNearlink_ = true;
 
 private:
     sptr<IAudioPolicyClient> audioPolicyClient_ = nullptr;

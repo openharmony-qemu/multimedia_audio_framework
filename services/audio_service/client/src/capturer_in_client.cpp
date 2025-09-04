@@ -1846,6 +1846,7 @@ void CapturerInClientInner::SetCallStartByUserTid(pid_t tid)
 
 void CapturerInClientInner::SetCallbackLoopTid(int32_t tid)
 {
+    std::unique_lock<std::mutex> waitLock(callbackLoopTidMutex_);
     AUDIO_INFO_LOG("Callback loop tid: %{public}d", tid);
     callbackLoopTid_ = tid;
     callbackLoopTidCv_.notify_all();

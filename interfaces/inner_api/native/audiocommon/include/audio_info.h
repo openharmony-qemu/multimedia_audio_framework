@@ -344,7 +344,6 @@ enum CallbackChange : int32_t {
     CALLBACK_SYSTEM_VOLUME_CHANGE,
     CALLBACK_AUDIO_SESSION_STATE,
     CALLBACK_AUDIO_SESSION_DEVICE,
-    CALLBACK_SET_VOLUME_DEGREE_CHANGE,
     CALLBACK_MAX,
 };
 
@@ -401,7 +400,6 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_SYSTEM_VOLUME_CHANGE,
     CALLBACK_AUDIO_SESSION_STATE,
     CALLBACK_AUDIO_SESSION_DEVICE,
-    CALLBACK_SET_VOLUME_DEGREE_CHANGE,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
@@ -410,7 +408,6 @@ static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<s
 struct VolumeEvent : public Parcelable {
     AudioVolumeType volumeType;
     int32_t volume;
-    int32_t volumeDegree;
     bool updateUi;
     int32_t volumeGroupId = 0;
     std::string networkId = LOCAL_NETWORK_ID;
@@ -425,7 +422,6 @@ struct VolumeEvent : public Parcelable {
     {
         return parcel.WriteInt32(static_cast<int32_t>(volumeType))
             && parcel.WriteInt32(volume)
-            && parcel.WriteInt32(volumeDegree)
             && parcel.WriteBool(updateUi)
             && parcel.WriteInt32(volumeGroupId)
             && parcel.WriteString(networkId)
@@ -436,7 +432,6 @@ struct VolumeEvent : public Parcelable {
     {
         volumeType = static_cast<AudioVolumeType>(parcel.ReadInt32());
         volume = parcel.ReadInt32();
-        volumeDegree = parcel.ReadInt32();
         updateUi = parcel.ReadBool();
         volumeGroupId = parcel.ReadInt32();
         networkId = parcel.ReadString();
@@ -575,7 +570,7 @@ enum AudioLoopbackReverbPreset {
     /**
      * A preset representing a reverberation effect with theater-like acoustic characteristics.
      */
-    REVERB_PRESET_THEATRE = 3,
+    REVERB_PRESET_THEATER = 3,
     /**
      * A preset representing a reverberation effect with concert-like acoustic characteristics.
      */
@@ -600,7 +595,6 @@ enum AudioLoopbackEqualizerPreset {
 struct AudioRendererInfo : public Parcelable {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
-    bool forceToNormal = false;
     int32_t rendererFlags = AUDIO_FLAG_NORMAL;
     AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
     std::string sceneType = "";
@@ -625,6 +619,7 @@ struct AudioRendererInfo : public Parcelable {
     bool isVirtualKeyboard = false;
     // store the finally select routeflag after concurrency
     uint32_t audioFlag = 0x0;
+    bool forceToNormal = false;
 
     AudioRendererInfo() {}
     AudioRendererInfo(ContentType contentTypeIn, StreamUsage streamUsageIn, int32_t rendererFlagsIn)
@@ -640,7 +635,6 @@ struct AudioRendererInfo : public Parcelable {
     {
         return parcel.WriteInt32(static_cast<int32_t>(contentType))
             && parcel.WriteInt32(static_cast<int32_t>(streamUsage))
-            && parcel.WriteBool(forceToNormal)
             && parcel.WriteInt32(rendererFlags)
             && parcel.WriteInt32(originalFlag)
             && parcel.WriteString(sceneType)
@@ -659,13 +653,13 @@ struct AudioRendererInfo : public Parcelable {
             && parcel.WriteBool(isLoopback)
             && parcel.WriteInt32(static_cast<int32_t>(loopbackMode))
             && parcel.WriteBool(isVirtualKeyboard)
-            && parcel.WriteUint32(audioFlag);
+            && parcel.WriteUint32(audioFlag)
+            && parcel.WriteBool(forceToNormal);
     }
     void UnmarshallingSelf(Parcel &parcel)
     {
         contentType = static_cast<ContentType>(parcel.ReadInt32());
         streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
-        forceToNormal = parcel.ReadBool();
         rendererFlags = parcel.ReadInt32();
         originalFlag = parcel.ReadInt32();
         sceneType = parcel.ReadString();
@@ -685,6 +679,7 @@ struct AudioRendererInfo : public Parcelable {
         loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
         isVirtualKeyboard = parcel.ReadBool();
         audioFlag = parcel.ReadUint32();
+        forceToNormal = parcel.ReadBool();
     }
 
     static AudioRendererInfo *Unmarshalling(Parcel &parcel)
@@ -1287,6 +1282,7 @@ struct AudioProcessConfig : public Parcelable {
 
         // AudioStreamInfo
         parcel.WriteInt32(streamInfo.samplingRate);
+        parcel.WriteUint32(streamInfo.customSampleRate);
         parcel.WriteInt32(streamInfo.encoding);
         parcel.WriteInt32(streamInfo.format);
         parcel.WriteInt32(streamInfo.channels);
@@ -1356,6 +1352,7 @@ struct AudioProcessConfig : public Parcelable {
 
         // AudioStreamInfo
         config->streamInfo.samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
+        config->streamInfo.customSampleRate = parcel.ReadUint32();
         config->streamInfo.encoding = static_cast<AudioEncodingType>(parcel.ReadInt32());
         config->streamInfo.format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
         config->streamInfo.channels = static_cast<AudioChannel>(parcel.ReadInt32());
@@ -1416,7 +1413,6 @@ struct Volume {
     bool isMute = false;
     float volumeFloat = 1.0f;
     uint32_t volumeInt = 0;
-    uint32_t volumeDegree = 0;
 };
 
 enum AppIsBackState {

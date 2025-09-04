@@ -765,7 +765,7 @@ void AudioCaptureSource::CheckAcousticEchoCancelerSupported(int32_t sourceType, 
     std::string value = deviceManager->GetAudioParameter("primary", AudioParamKey::PARAM_KEY_STATE,
         "source_type_live_aec_supported");
     if (value != "true") {
-        AUDIO_ERR_LOG("SOURCE_TYPE_LIVE not supported will be changed to SOURCE_TYPE_MIC");
+        HILOG_COMM_INFO("SOURCE_TYPE_LIVE not supported will be changed to SOURCE_TYPE_MIC");
         hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
     }
 }

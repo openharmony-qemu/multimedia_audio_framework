@@ -35,20 +35,21 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 mutex g_audioServerProxyMutex;
-sptr<IStandardAudioService> gAudioServerProxy = nullptr;
 static const sptr<IStandardAudioService> GetAudioServerProxy()
 {
-    lock_guard<mutex> lock(g_audioServerProxyMutex);
-    if (gAudioServerProxy == nullptr) {
-        auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-        CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr, "get sa manager failed");
-        sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
-        CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr, "get audio service remote object failed");
-        gAudioServerProxy = iface_cast<IStandardAudioService>(object);
-        CHECK_AND_RETURN_RET_LOG(gAudioServerProxy != nullptr, nullptr, "get audio service proxy failed");
-    }
-    sptr<IStandardAudioService> gasp = gAudioServerProxy;
-    return gasp;
+    AUDIO_DEBUG_LOG("[Policy Service] Start get audio policy service proxy.");
+    std::lock_guard<std::mutex> lock(g_audioServerProxyMutex);
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    CHECK_AND_RETURN_RET_LOG(samgr != nullptr, nullptr, "[Policy Service] Get samgr failed.");
+
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, nullptr,
+        "[Policy Service] audio service remote object is NULL.");
+
+    sptr<IStandardAudioService> gsp = iface_cast<IStandardAudioService>(object);
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, nullptr,
+        "[Policy Service] init gsp is NULL.");
+    return gsp;
 }
 }
 

@@ -26,7 +26,8 @@ class ProAudioStreamManager : public IStreamManager {
 public:
     explicit ProAudioStreamManager(ManagerType type);
     virtual ~ProAudioStreamManager();
-    int32_t CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream) override;
+    int32_t CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream,
+        std::optional<std::string_view> originDeviceName = std::nullopt) override;
     int32_t StartRender(uint32_t streamIndex) override;
     int32_t StopRender(uint32_t streamIndex) override;
     int32_t ReleaseRender(uint32_t streamIndex) override;

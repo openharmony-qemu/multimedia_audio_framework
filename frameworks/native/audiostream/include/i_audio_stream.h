@@ -283,6 +283,8 @@ public:
 
     bool IsSamplingRateValid(uint32_t samplingRate);
 
+    bool IsCustomSampleRateValid(uint32_t customSampleRate);
+
     bool IsRendererChannelLayoutValid(uint64_t channelLayout);
 
     bool IsCapturerChannelLayoutValid(uint64_t channelLayout);

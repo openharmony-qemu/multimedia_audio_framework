@@ -75,7 +75,7 @@ int32_t AudioZoneService::CreateAudioZone(const std::string &name, const AudioZo
         }
 
         CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERROR, "interruptService_ is nullptr");
-        interruptService_->CreateAudioInterruptZone(zoneId, context.focusStrategy_);
+        interruptService_->CreateAudioInterruptZone(zoneId, context);
     }
     AUDIO_INFO_LOG("create zone id %{public}d, name %{public}s", zoneId, name.c_str());
     return zoneId;

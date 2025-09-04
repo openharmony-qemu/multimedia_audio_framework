@@ -1345,7 +1345,7 @@ int32_t AudioServer::SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> 
     for (auto activeDevice : activeDevices) {
         deviceTypes.push_back(activeDevice.first);
     }
-    AUDIO_INFO_LOG("SetIORoutes 1st deviceType: %{public}d, deviceSize : %{public}zu, flag: %{public}d",
+    HILOG_COMM_INFO("SetIORoutes 1st deviceType: %{public}d, deviceSize : %{public}zu, flag: %{public}d",
         type, deviceTypes.size(), flag);
     int32_t ret = SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag, deviceName);
     return ret;
@@ -1420,10 +1420,6 @@ int32_t AudioServer::SetDmDeviceType(uint16_t dmDeviceType, int32_t deviceType)
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "refused for %{public}d", callingUid);
-
-    std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY);
-    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERROR, "has no valid sink");
-    sink->SetDmDeviceType(dmDeviceType, static_cast<DeviceType>(deviceType));
 
     std::shared_ptr<IAudioCaptureSource> source;
     if (static_cast<DeviceType>(deviceType) == DEVICE_TYPE_NEARLINK_IN) {
@@ -1572,8 +1568,8 @@ int32_t AudioServer::GetHapBuildApiVersion(int32_t callerUid)
     sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
     CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, 0, "failed: bundleMgrProxy is nullptr");
 
-    WatchTimeout reguard("bundleMgrProxy->GetNameForUid:GetHapBuildApiVersion");
-    bundleMgrProxy->GetNameForUid(callerUid, bundleName);
+    WatchTimeout reguard("bundleMgrProxy->GetBundleNameForUid:GetHapBuildApiVersion");
+    bundleMgrProxy->GetBundleNameForUid(callerUid, bundleName);
     bundleMgrProxy->GetBundleInfoV9(bundleName, AppExecFwk::BundleFlag::GET_BUNDLE_DEFAULT |
         AppExecFwk::BundleFlag::GET_BUNDLE_WITH_ABILITIES |
         AppExecFwk::BundleFlag::GET_BUNDLE_WITH_REQUESTED_PERMISSION |
@@ -2600,15 +2596,15 @@ int32_t AudioServer::UpdateLatencyTimestamp(const std::string &timestamp, bool i
 }
 
 // LCOV_EXCL_START
-int32_t AudioServer::UpdateDualToneState(bool enable, int32_t sessionId)
+int32_t AudioServer::UpdateDualToneState(bool enable, int32_t sessionId, const std::string &dupSinkName)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
 
     if (enable) {
-        return AudioService::GetInstance()->EnableDualToneList(static_cast<uint32_t>(sessionId));
+        return AudioService::GetInstance()->EnableDualStream(static_cast<uint32_t>(sessionId), dupSinkName);
     } else {
-        return AudioService::GetInstance()->DisableDualToneList(static_cast<uint32_t>(sessionId));
+        return AudioService::GetInstance()->DisableDualStream(static_cast<uint32_t>(sessionId));
     }
 }
 // LCOV_EXCL_STOP
@@ -3121,6 +3117,16 @@ int32_t AudioServer::ImproveAudioWorkgroupPrio(int32_t pid, const std::unordered
 int32_t AudioServer::RestoreAudioWorkgroupPrio(int32_t pid, const std::unordered_map<int32_t, int32_t> &threads)
 {
     return AudioResourceService::GetInstance()->RestoreAudioWorkgroupPrio(pid, threads);
+}
+
+int32_t AudioServer::GetPrivacyTypeAudioServer(uint32_t sessionId, int32_t &privacyType, int32_t &ret)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_SYSTEM_PERMISSION_DENIED, "not audio calling!");
+    AudioPrivacyType type = PRIVACY_TYPE_PUBLIC;
+    ret = AudioService::GetInstance()->GetPrivacyType(sessionId, type);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, SUCCESS, "%{public}u err", sessionId);
+    privacyType = static_cast<int32_t>(type);
+    return SUCCESS;
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

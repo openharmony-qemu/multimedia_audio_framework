@@ -48,6 +48,8 @@ private:
         NapiAudioSessionMgr *objectInfo;
         AudioSessionStrategy audioSessionStrategy;
         int32_t deviceType;
+        std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor;
+        bool bArgTransFlag = false;
     };
 
     static napi_value Construct(napi_env env, napi_callback_info info);
@@ -62,7 +64,7 @@ private:
     static napi_value IsAudioSessionActivated(napi_env env, napi_callback_info info);
     static void RegisterCallback(napi_env env, napi_value jsThis, napi_value *args, const std::string &cbName);
     static void UnregisterCallback(napi_env env, napi_value jsThis);
-    static void UnregisterCallbackCarryParam(napi_env env, napi_value jsThis, napi_value *args, size_t len);
+    static void UnregisterCallbackCarryParam(napi_env env, napi_value jsThis, napi_value *args);
     static void RegisterAudioSessionCallback(napi_env env, napi_value *args,
         const std::string &cbName, NapiAudioSessionMgr *napiSessionMgr);
     static void UnsetAudioSessionCallback(napi_env env, napi_value *args,
@@ -74,7 +76,7 @@ private:
     static void RegisterAudioSessionStateCallback(napi_env env, napi_value *args,
         const std::string &cbName, NapiAudioSessionMgr *napiSessionMgr);
     static void UnregisterSessionStateCallback(napi_env env, napi_value jsThis);
-    static void UnregisterSessionStateCallbackCarryParam(napi_env env, napi_value jsThis, napi_value *args, size_t len);
+    static void UnregisterSessionStateCallbackCarryParam(napi_env env, napi_value jsThis, napi_value *args);
     static napi_value GetDefaultOutputDevice(napi_env env, napi_callback_info info);
     static napi_value SetDefaultOutputDevice(napi_env env, napi_callback_info info);
     static std::shared_ptr<NapiAudioSessionStateCallback> GetAudioSessionStateCallback(
@@ -83,13 +85,27 @@ private:
         const std::string &cbName, NapiAudioSessionMgr *napiSessionMgr);
     static void UnregisterSessionDeviceCallback(napi_env env, napi_value jsThis);
     static void UnregisterSessionDeviceCallbackCarryParam(
-        napi_env env, napi_value jsThis, napi_value *args, size_t len);
+        napi_env env, napi_value jsThis, napi_value *args);
     static std::shared_ptr<NapiAudioSessionDeviceCallback> GetAudioSessionDeviceCallback(
         napi_value argv, NapiAudioSessionMgr *napiSessionMgr);
+    static napi_value GetAvailableDevices(napi_env env, napi_callback_info info);
+    static napi_value SelectMediaInputDevice(napi_env env, napi_callback_info info);
+    static napi_value GetSelectedMediaInputDevice(napi_env env, napi_callback_info info);
+    static napi_value ClearSelectedMediaInputDevice(napi_env env, napi_callback_info info);
+    static napi_value PreferBluetoothAndNearlinkRecord(napi_env env, napi_callback_info info);
+    static napi_value GetPreferBluetoothAndNearlinkRecord(napi_env env, napi_callback_info info);
+
+    static void RegisterAvaiableDeviceChangeCallback(napi_env env, napi_value *args,
+        NapiAudioSessionMgr *napiSessionMgr);
+    static napi_value UnregisterCB(napi_env env, napi_value jsThis, napi_value* args);
+    static void UnregisterAvailableDeviceChangeCallback(napi_env env, napi_value callback,
+        NapiAudioSessionMgr *napiSessionMgr);
 
     napi_env env_;
+    AudioSystemManager *audioMngr_;
     AudioSessionManager *audioSessionMngr_;
     std::shared_ptr<AudioSessionCallback> audioSessionCallbackNapi_ = nullptr;
+    std::shared_ptr<AudioManagerAvailableDeviceChangeCallback> availableDeviceChangeCallbackNapi_ = nullptr;
     std::list<std::shared_ptr<NapiAudioSessionStateCallback>> sessionStateCallbackList_;
     std::list<std::shared_ptr<NapiAudioSessionDeviceCallback>> sessionDeviceCallbackList_;
 
