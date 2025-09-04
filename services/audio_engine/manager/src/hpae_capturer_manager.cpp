@@ -214,7 +214,7 @@ int32_t HpaeCapturerManager::CheckStreamInfo(const HpaeStreamInfo &streamInfo)
     if (streamInfo.frameLen == 0) {
         AUDIO_ERR_LOG("FrameLen is 0.");
         return ERROR;
-    } else if (streamInfo.frameLen >= FRAME_LENGTH_LIMIT) {
+    } else if (streamInfo.frameLen > FRAME_LENGTH_LIMIT) {
         AUDIO_ERR_LOG("FrameLen is over-sized.");
         return ERROR;
     }
@@ -718,7 +718,7 @@ int32_t HpaeCapturerManager::CheckFramelen()
     if (sourceInfo_.frameLen == 0) {
         AUDIO_ERR_LOG("FrameLen is 0.");
         return ERROR;
-    } else if (sourceInfo_.frameLen >= FRAME_LENGTH_LIMIT) {
+    } else if (sourceInfo_.frameLen > FRAME_LENGTH_LIMIT) {
         AUDIO_ERR_LOG("FrameLen is over-sized.");
         return ERROR;
     }

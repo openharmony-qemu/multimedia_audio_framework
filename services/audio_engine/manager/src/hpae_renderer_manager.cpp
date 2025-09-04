@@ -330,7 +330,7 @@ int32_t HpaeRendererManager::CheckStreamInfo(const HpaeStreamInfo &streamInfo)
     if (streamInfo.frameLen == 0) {
         AUDIO_ERR_LOG("FrameLen is 0.");
         return ERROR;
-    } else if (streamInfo.frameLen >= FRAME_LENGTH_LIMIT) {
+    } else if (streamInfo.frameLen > FRAME_LENGTH_LIMIT) {
         AUDIO_ERR_LOG("FrameLen is over-sized.");
         return ERROR;
     }
@@ -935,7 +935,7 @@ int32_t HpaeRendererManager::CheckFramelen(bool isReload)
                         sinkInfo_.deviceName, ERR_INVALID_PARAM);
         AUDIO_ERR_LOG("FrameLen is 0.");
         return ERROR;
-    } else if (sinkInfo_.frameLen >= FRAME_LENGTH_LIMIT) {
+    } else if (sinkInfo_.frameLen > FRAME_LENGTH_LIMIT) {
         TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
                         sinkInfo_.deviceName, ERR_INVALID_PARAM);
         AUDIO_ERR_LOG("FrameLen is over-sized.");
