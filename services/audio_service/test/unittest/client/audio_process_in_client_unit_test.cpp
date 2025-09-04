@@ -40,9 +40,9 @@ public:
 
     MOCK_METHOD(int32_t, Stop, (int32_t stage), (override));
 
-    MOCK_METHOD(int32_t, CheckProcessInServer, (), (override));
+    MOCK_METHOD(int32_t, RequestHandleInfo, (), (override));
 
-    MOCK_METHOD(int32_t, CheckProcessInServerAsync, (), (override));
+    MOCK_METHOD(int32_t, RequestHandleInfoAsync, (), (override));
 
     MOCK_METHOD(int32_t, Release, (bool isSwitchStream), (override));
 
