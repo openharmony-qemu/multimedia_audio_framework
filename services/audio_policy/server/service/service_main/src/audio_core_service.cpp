@@ -1112,6 +1112,7 @@ int32_t AudioCoreService::ClearSelectedInputDeviceByUid(int32_t uid)
 
 int32_t AudioCoreService::PreferBluetoothAndNearlinkRecordByUid(int32_t uid, bool isPreferred)
 {
+    int32_t result = SUCCESS;
     audioUsrSelectManager_.PreferBluetoothAndNearlinkRecordByUid(uid, isPreferred);
     AudioScene scene = audioSceneManager_.GetAudioScene(true);
     CHECK_AND_RETURN_RET(scene != AUDIO_SCENE_PHONE_CALL && scene != AUDIO_SCENE_PHONE_CHAT, result);
