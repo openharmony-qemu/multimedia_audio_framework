@@ -74,7 +74,7 @@ void HpaeInnerCapturerManager::AddSingleNodeToSinkInner(const std::shared_ptr<Hp
     }
 
     if (node->GetState() == HPAE_SESSION_RUNNING) {
-        AUDIO_INFO_LOG("[FinishMove] session:%{public}u connect to sink:%{public}s",
+        HILOG_COMM_INFO("[FinishMove] session:%{public}u connect to sink:%{public}s",
             sessionId, sinkInfo_.deviceClass.c_str());
         ConnectRendererInputSessionInner(sessionId);
     }
@@ -116,7 +116,7 @@ void HpaeInnerCapturerManager::MoveAllStreamToNewSinkInner(const std::string &si
     for (const auto &it : sessionIds) {
         DeleteRendererInputSessionInner(it);
     }
-    AUDIO_INFO_LOG("[StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
+    HILOG_COMM_INFO("[StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
         idStr.c_str(), name.c_str(), moveType);
     TriggerCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);
 }

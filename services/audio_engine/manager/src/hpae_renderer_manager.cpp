@@ -115,7 +115,7 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     SetSessionState(sessionId, node->GetState());
     sessionNodeMap_[sessionId].sceneType = nodeInfo.sceneType;
 
-    AUDIO_INFO_LOG("[FinishMove] session :%{public}u to sink:%{public}s, sceneType is %{public}d",
+    HILOG_COMM_INFO("[FinishMove] session :%{public}u to sink:%{public}s, sceneType is %{public}d",
         sessionId, sinkInfo_.deviceClass.c_str(), nodeInfo.sceneType);
     CreateEffectAndConnect(nodeInfo, isConnect);
 }
@@ -513,7 +513,7 @@ void HpaeRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
     for (const auto &it : sessionIds) {
         DeleteInputSessionForMove(it);
     }
-    AUDIO_INFO_LOG("[StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
+    HILOG_COMM_INFO("[StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
         idStr.c_str(), name.c_str(), moveType);
     TriggerCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);
 }

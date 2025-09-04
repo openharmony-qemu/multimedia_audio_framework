@@ -86,7 +86,9 @@ private:
     bool CheckDeviceSupport();
     bool EnableLoopback();
     void DisableLoopback();
+    void StartAudioLoopback();
     AudioLoopbackStatus StateToStatus(AudioLoopbackState state);
+    bool SetKaraokeParameters(const std::string &parameters);
 
     AudioRendererOptions rendererOptions_;
     AudioCapturerOptions capturerOptions_;
