@@ -21,47 +21,14 @@
 #include "test_case_common.h"
 #include "audio_errors.h"
 
-using namespace OHOS;
-using namespace AudioStandard;
-using namespace HPAE;
 using namespace testing::ext;
 using namespace testing;
 
-class HpaeSinkInputNodeTest : public testing::Test {
-public:
-    void SetUp() override
-    {
-        HpaeNodeInfo nodeInfo;
-        nodeInfo.frameLen = 960;
-        nodeInfo.samplingRate = SAMPLE_RATE_48000;
-        nodeInfo.channels = STEREO;
-        nodeInfo.format = SAMPLE_F32LE;
-        nodeInfo.deviceClass = "primary";
-        nodeInfo.deviceNetId_ = "local";
-        node_ = std::make_unique<HpaeSinkInputNode>(nodeInfo);
-        mockNodeCallback_ = std::make_shared<MockNodeCallback>();
-        mockStreamCallback_ = std::make_shared<MockStreamCallback>();
-
-        // Set up weak pointers for callbacks
-        node_->nodeCallback_ = mockNodeCallback_;
-        node_->writeCallback_ = mockStreamCallback_;
-
-    }
-
-    void TearDown() override
-    {
-        node_.reset();
-    }
-
-    std::unique_ptr<HpaeSinkInputNode> node_;
-    std::shared_ptr<MockNodeCallback> mockNodeCallback_;
-    std::shared_ptr<MockStreamCallback> mockStreamCallback_;
-};
-
-namespace {
+namespace OHOS {
+namespace AudioStandard {
+namespace HPAE {
 constexpr int32_t NORMAL_FRAME_LEN = 960;
 constexpr int32_t NORMAL_ID = 1243;
-
 constexpr float LOUDNESS_GAIN = 1.0f;
 constexpr uint32_t SAMPLE_RATE_16010 = 16010;
 
@@ -71,8 +38,46 @@ static void AddFrameToBuffer(std::unique_ptr<HpaePcmBuffer> &buffer)
     info.isMultiFrames = false;
     info.frames = 1;
     HpaePcmBuffer d{info};
-    buffer.PushFrameData(d);
+    buffer->PushFrameData(d);
 }
+
+static void PrepareNodeInfo(HpaeNodeInfo &nodeInfo)
+{
+    nodeInfo.frameLen = 960;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.deviceClass = "primary";
+    nodeInfo.deviceNetId = "local";
+    nodeInfo.historyFrameCount = 5;
+}
+
+class HpaeSinkInputNodeTest : public testing::Test {
+public:
+    void SetUp() override
+    {
+        HpaeNodeInfo nodeInfo;
+        PrepareNodeInfo(nodeInfo);
+        node_ = std::make_unique<HpaeSinkInputNode>(nodeInfo);
+        mockNodeCallback_ = std::make_shared<MockNodeCallback>();
+        mockStreamCallback_ = std::make_shared<MockStreamCallback>();
+
+        // Set up weak pointers for callbacks
+        node_->nodeInfo_.statusCallback = mockNodeCallback_;
+        node_->writeCallback_ = mockStreamCallback_;
+    }
+
+    void TearDown() override
+    {
+        node_.reset();
+        mockNodeCallback_.reset();
+        mockStreamCallback_.reset();
+    }
+
+    std::unique_ptr<HpaeSinkInputNode> node_;
+    std::shared_ptr<MockNodeCallback> mockNodeCallback_;
+    std::shared_ptr<MockStreamCallback> mockStreamCallback_;
+};
 
 HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode, TestSize.Level0)
 {
@@ -315,15 +320,21 @@ HWTEST_F(HpaeSinkInputNodeTest, testReadToAudioBuffer, TestSize.Level0)
 }
 
 // Test case when nodeCallback is null
-TEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_NodeCallbackNull_ReturnsError) {
-    node_->nodeCallback_.reset();
+HWTEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_NodeCallbackNull_LatencyZero, TestSize.Level0) {
+    node_->nodeInfo_.statusCallback.reset();
+
+    EXPECT_CALL(*mockStreamCallback_, OnStreamData(_))
+        .WillOnce([&](AudioCallBackStreamInfo& info) {
+            EXPECT_EQ(info.latency, 0); // no latency
+            return SUCCESS;
+        });
 
     int32_t result = node_->OnStreamInfoChange(true);
-    EXPECT_EQ(result, ERROR);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 // Test case when writeCallback is null
-TEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_WriteCallbackNull_ReturnsError) {
+HWTEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_WriteCallbackNull_ReturnsError, TestSize.Level0) {
     node_->writeCallback_.reset();
 
     int32_t result = node_->OnStreamInfoChange(true);
@@ -331,130 +342,119 @@ TEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_WriteCallbackNull_ReturnsError)
 }
 
 // Test case when needData is true (historyBuffer is null and isPullData is true)
-TEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_NeedDataTrue) {
-    node->historyBuffer_ = nullptr;
+HWTEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_NeedDataTrue, TestSize.Level0) {
+    node_->historyBuffer_ = nullptr;
 
-    EXPECT_CALL(*mockNodeCallback, OnRequestLatency(_, _)).WillOnce(SetArgReferee<1>(5));
+    EXPECT_CALL(*mockNodeCallback_, OnRequestLatency(_, _)).WillOnce(SetArgReferee<1>(5));
 
     // Verify that needData is true and forceData is true (offloadEnable_ is false by default)
-    EXPECT_CALL(*mockStreamCallback, OnStreamData(_))
+    EXPECT_CALL(*mockStreamCallback_, OnStreamData(_))
         .WillOnce([&](AudioCallBackStreamInfo& info) {
             EXPECT_TRUE(info.needData);
             EXPECT_TRUE(info.forceData);
             return SUCCESS;
         });
-
-    int32_t result = node->OnStreamInfoChange(true);
-    EXPECT_EQ(result, SUCCESS);
-}
-
-// Test case when needData is false (historyBuffer has data)
-TEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_NeedDataFalse) {
-    EXPECT_CALL(*mockNodeCallback, OnRequestLatency(_, _)).WillOnce(SetArgReferee<1>(5));
-    EXPECT_CALL(*mockStreamCallback, OnStreamData(_)).WillOnce(Return(SUCCESS));
 
     int32_t result = node_->OnStreamInfoChange(true);
     EXPECT_EQ(result, SUCCESS);
 }
 
 // Test case when needData is false (historyBuffer has data)
-TEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_NeedDataFalse) {
-    node_->historyBuffer_ = std::make_unique<HpaePcmBuffer>(2, 960, 48000, 3, 3);
-    node_->historyBuffer_.isMultiFrames = true;
+HWTEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_NeedDataFalse, TestSize.Level0) {
     AddFrameToBuffer(node_->historyBuffer_);
 
-    EXPECT_CALL(*mockNodeCallback, OnRequestLatency(_, _)).WillOnce(SetArgReferee<1>(5));
+    EXPECT_CALL(*mockNodeCallback_, OnRequestLatency(_, _)).WillOnce(SetArgReferee<1>(5));
 
     // Verify that needData is false and forceData is true (offloadEnable_ is false by default)
-    EXPECT_CALL(*mockStreamCallback, OnStreamData(_))
+    EXPECT_CALL(*mockStreamCallback_, OnStreamData(_))
         .WillOnce([&](AudioCallBackStreamInfo& info) {
             EXPECT_FALSE(info.needData);
             EXPECT_TRUE(info.forceData);
             return SUCCESS;
         });
 
-    int32_t result = node->OnStreamInfoChange(true);
+    int32_t result = node_->OnStreamInfoChange(true);
     EXPECT_EQ(result, SUCCESS);
 }
 
 // Test case when forceData is true (offloadEnable is false)
-TEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_ForceDataTrue_OffloadDisabled) {
-    node->historyBuffer_ = nullptr;
-    node->offloadEnable_ = false;
+HWTEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_ForceDataTrue_OffloadDisabled, TestSize.Level0) {
+    node_->historyBuffer_ = nullptr;
+    node_->offloadEnable_ = false;
 
-    EXPECT_CALL(*mockNodeCallback, OnRequestLatency(_, _)).WillOnce(SetArgReferee<1>(5));
+    EXPECT_CALL(*mockNodeCallback_, OnRequestLatency(_, _)).WillOnce(SetArgReferee<1>(5));
 
     // Verify that needData is true and forceData is true
-    EXPECT_CALL(*mockStreamCallback, OnStreamData(_))
+    EXPECT_CALL(*mockStreamCallback_, OnStreamData(_))
         .WillOnce([&](AudioCallBackStreamInfo& info) {
             EXPECT_TRUE(info.needData);
             EXPECT_TRUE(info.forceData);
             return SUCCESS;
         });
 
-    int32_t result = node->OnStreamInfoChange(true);
+    int32_t result = node_->OnStreamInfoChange(true);
     EXPECT_EQ(result, SUCCESS);
 }
 
 // Test case when forceData is true (offloadEnable is true and standbyCounter exceeds threshold)
-TEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_ForceDataTrue_StandbyExceedThreshold) {
-    node->historyBuffer_ = nullptr;
-    node->offloadEnable_ = true;
-    node->standbyCounter_ = 10; // Exceeds STANDBY_THRESHOLD (9)
+HWTEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_ForceDataTrue_StandbyExceedThreshold, TestSize.Level0) {
+    node_->historyBuffer_ = nullptr;
+    node_->offloadEnable_ = true;
+    node_->standbyCounter_ = 10; // Exceeds STANDBY_THRESHOLD (9)
 
-    EXPECT_CALL(*mockNodeCallback, OnRequestLatency(_, _)).WillOnce(SetArgReferee<1>(5));
+    EXPECT_CALL(*mockNodeCallback_, OnRequestLatency(_, _)).WillOnce(SetArgReferee<1>(5));
 
     // Verify that needData is true and forceData is true
-    EXPECT_CALL(*mockStreamCallback, OnStreamData(_))
+    EXPECT_CALL(*mockStreamCallback_, OnStreamData(_))
         .WillOnce([&](AudioCallBackStreamInfo& info) {
             EXPECT_TRUE(info.needData);
             EXPECT_TRUE(info.forceData);
             return SUCCESS;
         });
 
-    int32_t result = node->OnStreamInfoChange(true);
+    int32_t result = node_->OnStreamInfoChange(true);
     EXPECT_EQ(result, SUCCESS);
 }
 
 // Test case when forceData is false (offloadEnable is true and standbyCounter is below threshold)
-TEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_ForceDataFalse_StandbyBelowThreshold) {
-    node->historyBuffer_ = nullptr;
-    node->offloadEnable_ = true;
-    node->standbyCounter_ = 5; // Below STANDBY_THRESHOLD (9)
+HWTEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_ForceDataFalse_StandbyBelowThreshold, TestSize.Level0) {
+    node_->historyBuffer_ = nullptr;
+    node_->offloadEnable_ = true;
+    node_->standbyCounter_ = 5; // Below STANDBY_THRESHOLD (9)
 
-    EXPECT_CALL(*mockNodeCallback, OnRequestLatency(_, _)).WillOnce(SetArgReferee<1>(5));
+    EXPECT_CALL(*mockNodeCallback_, OnRequestLatency(_, _)).WillOnce(SetArgReferee<1>(5));
 
     // Verify that needData is true and forceData is false
-    EXPECT_CALL(*mockStreamCallback, OnStreamData(_))
+    EXPECT_CALL(*mockStreamCallback_, OnStreamData(_))
         .WillOnce([&](AudioCallBackStreamInfo& info) {
             EXPECT_TRUE(info.needData);
             EXPECT_FALSE(info.forceData);
             return SUCCESS;
         });
 
-    int32_t result = node->OnStreamInfoChange(true);
+    int32_t result = node_->OnStreamInfoChange(true);
     EXPECT_EQ(result, SUCCESS);
 }
 
 // Test case to verify parameters passed to OnStreamData are correct
-TEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_StreamDataParametersCorrect) {
+HWTEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_StreamDataParametersCorrect, TestSize.Level0) {
     node_->historyBuffer_ = nullptr;
 
-    EXPECT_CALL(*mockNodeCallback, OnRequestLatency(_, _)).WillOnce(SetArgReferee<1>(5));
+    EXPECT_CALL(*mockNodeCallback_, OnRequestLatency(_, _)).WillOnce(SetArgReferee<1>(5));
 
     AudioCallBackStreamInfo expectedInfo;
     expectedInfo.framePosition = node_->totalFrames_;
     expectedInfo.hdiFramePosition = 0; // Because of hdiFramePosition_.exchange(0)
     expectedInfo.framesWritten = node_->totalFrames_;
-    expectedInfo.latency = 15; // OnRequestLatency returns 5 + GetLatency returns 10
+    expectedInfo.latency = 5; // OnRequestLatency returns 5 + GetLatency(0) returns 5
     expectedInfo.inputData = node_->interleveData_.data();
     expectedInfo.requestDataLen = node_->interleveData_.size();
-    expectedInfo.deviceClass = DEVICE_CLASS_SPEAKER;
-    expectedInfo.deviceNetId = 0;
+    expectedInfo.deviceClass = "primary";
+    expectedInfo.deviceNetId = "local";
     expectedInfo.needData = true;
     expectedInfo.forceData = true; // Because offloadEnable_ is false by default
 
-    EXPECT_CALL(*mockStreamCallback, OnStreamData(_))
+    EXPECT_CALL(*mockStreamCallback_, OnStreamData(_))
         .WillOnce([&](AudioCallBackStreamInfo& info) {
             EXPECT_EQ(info.framePosition, expectedInfo.framePosition);
             EXPECT_EQ(info.hdiFramePosition, expectedInfo.hdiFramePosition);
@@ -474,40 +474,22 @@ TEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_StreamDataParametersCorrect) {
 }
 
 // Test case when isPullData is false and historyBuffer is null
-TEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_IsPullDataFalse_HistoryBufferNull) {
-    node->historyBuffer_ = nullptr;
-    
-    EXPECT_CALL(*mockNodeCallback, OnRequestLatency(_, _)).WillOnce(SetArgReferee<1>(5));
+HWTEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_IsPullDataFalse, TestSize.Level0) {
+    node_->historyBuffer_ = nullptr;
+
+    EXPECT_CALL(*mockNodeCallback_, OnRequestLatency(_, _)).WillOnce(SetArgReferee<1>(5));
 
     // Verify that needData is false (because isPullData is false) and forceData is true
-    EXPECT_CALL(*mockStreamCallback, OnStreamData(_))
+    EXPECT_CALL(*mockStreamCallback_, OnStreamData(_))
         .WillOnce([&](AudioCallBackStreamInfo& info) {
             EXPECT_FALSE(info.needData);
             EXPECT_TRUE(info.forceData); // offloadEnable_ is false by default
             return SUCCESS;
         });
 
-    int32_t result = node->OnStreamInfoChange(false);
+    int32_t result = node_->OnStreamInfoChange(false);
     EXPECT_EQ(result, SUCCESS);
 }
-
-// Test case when isPullData is false and historyBuffer has data
-TEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_IsPullDataFalse_HistoryBufferHasData) {
-    node_->historyBuffer_ = std::make_unique<HpaePcmBuffer>(2, 960, 48000, 3, 3);
-    node_->historyBuffer_.isMultiFrames = true;
-    AddFrameToBuffer(node_->historyBuffer_);
-
-    EXPECT_CALL(*mockNodeCallback, OnRequestLatency(_, _)).WillOnce(SetArgReferee<1>(5));
-
-    // Verify that needData is false (because isPullData is false) and forceData is true
-    EXPECT_CALL(*mockStreamCallback, OnStreamData(_))
-        .WillOnce([&](AudioCallBackStreamInfo& info) {
-            EXPECT_FALSE(info.needData);
-            EXPECT_TRUE(info.forceData); // offloadEnable_ is false by default
-            return SUCCESS;
-        });
-
-    int32_t result = node->OnStreamInfoChange(false);
-    EXPECT_EQ(result, SUCCESS);
-}
-}
+} // namespace HPAE
+} // namespace AudioStandard
+} // namespace OHOS

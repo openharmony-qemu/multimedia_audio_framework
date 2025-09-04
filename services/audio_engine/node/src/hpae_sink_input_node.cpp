@@ -265,7 +265,7 @@ int32_t HpaeSinkInputNode::GetAppUid()
 
 void HpaeSinkInputNode::RewindHistoryBuffer(uint64_t rewindTime, uint64_t hdiFramePosition)
 {
-    CHECK_AND_RETURN_RET_LOG(historyBuffer_, ERROR, "historyBuffer_ is nullptr");
+    CHECK_AND_RETURN_LOG(historyBuffer_, "historyBuffer_ is nullptr");
     hdiFramePosition_.store(hdiFramePosition);
     AUDIO_INFO_LOG("HpaeSinkInputNode::rewind %{public}zu frames", ConvertUsToFrameCount(rewindTime, GetNodeInfo()));
     historyBuffer_->RewindBuffer(ConvertUsToFrameCount(rewindTime, GetNodeInfo()));
@@ -303,22 +303,23 @@ float HpaeSinkInputNode::GetSpeed()
     return speed_;
 }
 
-uint32_t HpaeSinkInputNode::GetLatency()
+uint64_t HpaeSinkInputNode::GetLatency()
 {
     return historyBuffer_ ? historyBuffer_->GetCurFrames() * GetFrameLen() : 0;
 }
 
 int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
 {
-    auto nodeCallback = GetNodeStatusCallback().lock();
-    CHECK_AND_RETURN_RET_LOG(nodeCallback, ERROR, "managerCallback is null, Id %{public}d fatal err", GetSessionId());
     auto writeCallback = writeCallback_.lock();
     CHECK_AND_RETURN_RET_LOG(writeCallback, ERROR, "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
     bool needData = !(historyBuffer_ && historyBuffer_->GetCurFrames()) && isPullData;
     // offload enbale, underrun 9 times, request force write data; 9 times about 40ms
     bool forceData = offloadEnable_ ? (standbyCounter_ > STANDBY_THRESHOLD ? true : false) : true;
-    uint32_t latency = 0;
-    nodeCallback->OnRequestLatency(GetSessionId(), latency);
+    uint64_t latency = 0;
+    auto nodeCallback = GetNodeStatusCallback().lock();
+    if (nodeCallback) {
+        nodeCallback->OnRequestLatency(GetSessionId(), latency);
+    }
     latency += GetLatency();
     streamInfo_ = {
         .framePosition = totalFrames_,

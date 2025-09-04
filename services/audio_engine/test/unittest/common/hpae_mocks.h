@@ -33,6 +33,8 @@ public:
 
 class MockAudioRenderSink : public IAudioRenderSink {
 public:
+    MockAudioRenderSink() = default;
+    virtual ~MockAudioRenderSink() = default;
     MOCK_METHOD(int32_t, Init, (const IAudioSinkAttr &attr), (override));
     MOCK_METHOD(void, DeInit, (), (override));
     MOCK_METHOD(bool, IsInited, (), (override));
@@ -116,6 +118,8 @@ public:
 // Mock INodeCallback
 class MockNodeCallback : public INodeCallback {
 public:
+    MockNodeCallback() = default;
+    virtual ~MockNodeCallback() = default;
     MOCK_METHOD(void, OnNodeStatusUpdate, (uint32_t, IOperation), (override));
     MOCK_METHOD(void, OnFadeDone, (uint32_t, IOperation), (override));
     MOCK_METHOD(void, OnRequestLatency, (uint32_t, uint64_t &), (override));
@@ -129,6 +133,8 @@ public:
 // Mock IStreamCallback
 class MockStreamCallback : public IStreamCallback {
 public:
+    MockStreamCallback() = default;
+    virtual ~MockStreamCallback() = default;
     MOCK_METHOD(int32_t, OnStreamData, (AudioCallBackStreamInfo&), (override));
 };
 } // namespace HPAE

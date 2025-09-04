@@ -56,9 +56,10 @@ public:
     float GetLoudnessGain();
     void SetSpeed(float speed);
     float GetSpeed();
-    uint32_t GetLatency();
+    uint64_t GetLatency();
     bool isConnected_ = false;
 private:
+    int32_t GetDataFromSharedBuffer();
     int32_t OnStreamInfoChange(bool needata = true);
     void CheckAndDestroyHistoryBuffer();
     bool ReadToAudioBuffer(int32_t &ret);
