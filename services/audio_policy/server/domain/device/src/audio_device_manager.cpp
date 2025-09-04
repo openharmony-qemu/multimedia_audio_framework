@@ -806,6 +806,8 @@ void AudioDeviceManager::AddAvailableDevicesByUsage(const AudioDeviceUsage usage
 std::shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetExistedDevice(
     const std::shared_ptr<AudioDeviceDescriptor> &device)
 {
+    CHECK_AND_RETURN_RET_LOG(device != nullptr, nullptr, "device is nullptr");
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     for (const auto &dev : connectedDevices_) {
         if (dev->IsSameDeviceInfo(*device)) {
             return make_shared<AudioDeviceDescriptor>(dev);

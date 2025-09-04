@@ -785,7 +785,9 @@ int32_t AudioPolicyClientStubImpl::OnAudioSessionCurrentInputDeviceChanged(
         it != audioSessionInputDeviceCallbackList_.end(); ++it) {
         std::shared_ptr<AudioSessionCurrentInputDeviceChangedCallback> deviceChangedCallback = (*it).lock();
         if (deviceChangedCallback != nullptr) {
-            deviceChangedCallback->OnAudioSessionCurrentInputDeviceChanged(deviceChangedEvent);
+            CurrentInputDeviceChangedEvent change = deviceChangedEvent;
+            AudioDeviceDescriptor::MapInputDeviceType(change.devices);
+            deviceChangedCallback->OnAudioSessionCurrentInputDeviceChanged(change);
         }
     }
 

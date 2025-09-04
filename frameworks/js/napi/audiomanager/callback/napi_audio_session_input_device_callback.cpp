@@ -45,13 +45,6 @@ void NapiAudioSessionInputDeviceCallback::OnAudioSessionCurrentInputDeviceChange
     CHECK_AND_RETURN_LOG(audioSessionInputDeviceJsCallback_ != nullptr,
         "OnAudioSessionCurrentInputDeviceChanged:No JS callback registered return");
 
-    // A2DP_IN to SCO
-    for (const auto &availableDesc : deviceEvent.devices) {
-        if (availableDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
-            availableDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-        }
-    }
-
     std::unique_ptr<AudioSessionInputDeviceJsCallback> cb = std::make_unique<AudioSessionInputDeviceJsCallback>();
     CHECK_AND_RETURN_LOG(cb != nullptr, "No memory");
     cb->callback = audioSessionInputDeviceJsCallback_;

@@ -112,7 +112,9 @@ int32_t AudioSessionManager::SetAudioSessionScene(const AudioSessionScene audioS
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioSessionManager::GetAvailableDevices(AudioDeviceUsage usage)
 {
-    return AudioPolicyManager::GetInstance().GetAvailableDevices(usage);
+    auto descs = AudioPolicyManager::GetInstance().GetAvailableDevices(usage);
+    AudioDeviceDescriptor::MapInputDeviceType(descs);
+    return descs;
 }
 
 int32_t AudioSessionManager::SelectInputDevice(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor)

@@ -410,7 +410,7 @@ void NapiAudioSessionMgr::RegisterAudioSessionInputDeviceCallback(napi_env env, 
         std::make_shared<NapiAudioSessionInputDeviceCallback>(env);
     if (deviceChangedCallback == nullptr) {
         AUDIO_ERR_LOG("NapiAudioSessionMgr: Memory Allocation Failed!");
-        NapiAudioError::ThrowError(env, NAPI_ERR_NO_MEMORY, "Memory Allocation Failed!");
+        NapiAudioError::ThrowError(env, NAPI_ERR_SYSTEM, "Memory Allocation Failed!");
         return;
     }
 
@@ -696,7 +696,6 @@ void NapiAudioSessionMgr::UnregisterSessionInputDeviceCallback(napi_env env, nap
 {
     AUDIO_INFO_LOG("UnregisterCallback input device");
 
-    std::lock_guard<std::mutex> lock(napiSessionMgr->sessionDeviceCbMutex_);
     CHECK_AND_RETURN_LOG(!napiSessionMgr->sessionInputDeviceCallbackList_.empty(),
         "Not register callback function, no need unregister.");
     
@@ -792,8 +791,7 @@ napi_value NapiAudioSessionMgr::Off(napi_env env, napi_callback_info info)
     CHECK_AND_RETURN_RET_LOG(napiSessionMgr->audioMngr_ != nullptr && napiSessionMgr->audioSessionMngr_ != nullptr,
         undefinedResult, "audio system mgr or audio session mgr instance is null.");
 
-    UnregisterCB(env, jsThis, args, handler, napiSessionMgr);
-    return undefinedResult;
+    return UnregisterCB(env, jsThis, args, handler, napiSessionMgr);
 }
 
 napi_value NapiAudioSessionMgr::UnregisterCB(napi_env env, napi_value jsThis, napi_value* args,
@@ -903,9 +901,6 @@ napi_value NapiAudioSessionMgr::GetAvailableDevices(napi_env env, napi_callback_
     for (const auto &availableDesc : availableDescs) {
         std::shared_ptr<AudioDeviceDescriptor> dec = std::make_shared<AudioDeviceDescriptor>(*availableDesc);
         CHECK_AND_BREAK_LOG(dec != nullptr, "dec mallac failed,no memery.");
-        if (availableDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
-            dec->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-        }
         availableSptrDescs.push_back(dec);
     }
     NapiParamUtils::SetDeviceDescriptors(env, availableSptrDescs, result);
