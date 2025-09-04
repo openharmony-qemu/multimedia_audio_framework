@@ -33,6 +33,7 @@ namespace AudioStandard {
 namespace HPAE {
 const std::string DEFAULT_DEVICE_CLASS = "primary";
 const std::string DEFAULT_DEVICE_NETWORKID = "LocalDevice";
+const uint32_t FRAME_LENGTH_LIMIT = 38400;
 
 HpaeCapturerManager::HpaeCapturerManager(HpaeSourceInfo &sourceInfo)
     : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT), sourceInfo_(sourceInfo)
@@ -213,8 +214,7 @@ int32_t HpaeCapturerManager::CheckStreamInfo(const HpaeStreamInfo &streamInfo)
     if (streamInfo.frameLen == 0) {
         AUDIO_ERR_LOG("FrameLen is 0.");
         return ERROR;
-    }
-    else if (streamInfo.frameLen >= 38400) {
+    } else if (streamInfo.frameLen >= FRAME_LENGTH_LIMIT) {
         AUDIO_ERR_LOG("FrameLen is over-sized.");
         return ERROR;
     }
@@ -718,8 +718,7 @@ int32_t HpaeCapturerManager::CheckFramelen()
     if (sourceInfo_.frameLen == 0) {
         AUDIO_ERR_LOG("FrameLen is 0.");
         return ERROR;
-    }
-    else if (sourceInfo_.frameLen >= 38400) {
+    } else if (sourceInfo_.frameLen >= FRAME_LENGTH_LIMIT) {
         AUDIO_ERR_LOG("FrameLen is over-sized.");
         return ERROR;
     }

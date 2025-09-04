@@ -29,6 +29,7 @@ namespace AudioStandard {
 namespace HPAE {
 namespace {
 constexpr uint32_t HISTORY_INTERVAL_S = 7;  // 7s buffer for rewind
+constexpr uint32_t FRAME_LENGTH_LIMIT = 38400;
 }
 
 HpaeOffloadRendererManager::HpaeOffloadRendererManager(HpaeSinkInfo &sinkInfo)
@@ -136,8 +137,7 @@ int32_t HpaeOffloadRendererManager::CheckStreamInfo(const HpaeStreamInfo &stream
     if (streamInfo.frameLen == 0) {
         AUDIO_ERR_LOG("FrameLen is 0.");
         return ERROR;
-    }
-    else if (streamInfo.frameLen >= 38400) {
+    } else if (streamInfo.frameLen >= FRAME_LENGTH_LIMIT) {
         AUDIO_ERR_LOG("FrameLen is over-sized.");
         return ERROR;
     }
@@ -484,8 +484,7 @@ int32_t HpaeOffloadRendererManager::CheckFramelen(bool isReload)
                         sinkInfo_.deviceName, ERR_INVALID_PARAM);
         AUDIO_ERR_LOG("FrameLen is 0.");
         return ERROR;
-    }
-    else if (sinkInfo_.frameLen >= 38400) {
+    } else if (sinkInfo_.frameLen >= FRAME_LENGTH_LIMIT) {
         TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
                         sinkInfo_.deviceName, ERR_INVALID_PARAM);
         AUDIO_ERR_LOG("FrameLen is over-sized.");

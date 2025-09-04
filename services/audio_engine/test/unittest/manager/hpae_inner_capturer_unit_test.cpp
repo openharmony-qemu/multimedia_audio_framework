@@ -661,7 +661,7 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, InitSinkInner_001, TestSize.Level0)
 {
     HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
     sinkInfo.frameLen = 0;
-    bool isReload = 1;
+    bool isReload = true;
     hpaeInnerCapturerManager_ = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
     EXPECT_EQ(hpaeInnerCapturerManager_->InitSinkInner(isReload), ERROR);
     EXPECT_EQ(hpaeInnerCapturerManager_->IsInit(), false);
@@ -677,7 +677,7 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, InitSinkInner_002, TestSize.Level0)
 {
     HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
     sinkInfo.frameLen = OVERSIZED_FRAME_LENGTH;
-    bool isReload = 1;
+    bool isReload = true;
     hpaeInnerCapturerManager_ = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
     EXPECT_EQ(hpaeInnerCapturerManager_->InitSinkInner(isReload), ERROR);
     EXPECT_EQ(hpaeInnerCapturerManager_->IsInit(), false);

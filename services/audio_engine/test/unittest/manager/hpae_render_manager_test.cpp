@@ -1635,7 +1635,7 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerInitSinkInner_001, T
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
     std::shared_ptr<HpaeOffloadRendererManager> hpaeRendererManager =
         std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
-    bool isReload = 1;
+    bool isReload = true;
     EXPECT_EQ(hpaeRendererManager->InitSinkInner(isReload), ERROR);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
@@ -1660,7 +1660,7 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerInitSinkInner_002, T
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
     std::shared_ptr<HpaeOffloadRendererManager> hpaeRendererManager =
         std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
-    bool isReload = 1;
+    bool isReload = true;
     EXPECT_EQ(hpaeRendererManager->InitSinkInner(isReload), ERROR);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
@@ -1685,7 +1685,7 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerInitManager_001, TestSize.L
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
     std::shared_ptr<HpaeRendererManager> hpaeRendererManager =
         std::make_shared<HpaeRendererManager>(sinkInfo);
-    bool isReload = 1;
+    bool isReload = true;
     EXPECT_EQ(hpaeRendererManager->InitManager(isReload), ERROR);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
@@ -1710,7 +1710,7 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerInitManager_002, TestSize.L
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
     std::shared_ptr<HpaeRendererManager> hpaeRendererManager =
         std::make_shared<HpaeRendererManager>(sinkInfo);
-    bool isReload = 1;
+    bool isReload = true;
     EXPECT_EQ(hpaeRendererManager->InitManager(isReload), ERROR);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
@@ -1724,8 +1724,20 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerInitManager_002, TestSize.L
 HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerCreateStream_001, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
-    std::shared_ptr<HpaeOffloadRendererManager> hpaeRendererManager =
-        std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    bool isReload = true;
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(isReload), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
     HpaeStreamInfo streamInfo;
     streamInfo.frameLen = 0;
     EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo), ERROR);
@@ -1740,8 +1752,20 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerCreateStream_001, Te
 HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerCreateStream_002, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
-    std::shared_ptr<HpaeOffloadRendererManager> hpaeRendererManager =
-        std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    bool isReload = true;
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(isReload), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
     HpaeStreamInfo streamInfo;
     streamInfo.frameLen = OVERSIZED_FRAME_LENGTH;
     EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo), ERROR);
@@ -1756,8 +1780,20 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerCreateStream_002, Te
 HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStream_001, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
-    std::shared_ptr<HpaeRendererManager> hpaeRendererManager =
-        std::make_shared<HpaeRendererManager>(sinkInfo);
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    bool isReload = true;
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(isReload), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
     HpaeStreamInfo streamInfo;
     streamInfo.frameLen = 0;
     EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo), ERROR);
@@ -1772,8 +1808,20 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStream_001, TestSize.
 HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStream_002, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
-    std::shared_ptr<HpaeRendererManager> hpaeRendererManager =
-        std::make_shared<HpaeRendererManager>(sinkInfo);
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    bool isReload = true;
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(isReload), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
     HpaeStreamInfo streamInfo;
     streamInfo.frameLen = OVERSIZED_FRAME_LENGTH;
     EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo), ERROR);
