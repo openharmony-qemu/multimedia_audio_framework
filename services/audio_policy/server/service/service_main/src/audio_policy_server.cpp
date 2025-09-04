@@ -998,6 +998,7 @@ void AudioPolicyServer::SubscribeCommonEventExecute()
     SubscribeCommonEvent("usual.event.SCREEN_LOCKED");
     SubscribeCommonEvent("usual.event.SCREEN_UNLOCKED");
     SubscribeCommonEvent("usual.event.LOCALE_CHANGED");
+    SubscribeCommonEvent("usual.event.USER_STARTED");
 #ifdef USB_ENABLE
     usbManager_.SubscribeEvent();
 #endif
@@ -1067,7 +1068,7 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
     } else if (action == "usual.event.SCREEN_UNLOCKED") {
         AUDIO_INFO_LOG("receive SCREEN_UNLOCKED action, can change volume");
         isScreenOffOrLock_ = false;
-    } else if (action == "usual.event.LOCALE_CHANGED") {
+    } else if (action == "usual.event.LOCALE_CHANGED" || action == "usual.event.USER_STARTED") {
         CallRingtoneLibrary();
     }
 }
