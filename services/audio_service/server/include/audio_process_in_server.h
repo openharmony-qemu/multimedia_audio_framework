@@ -69,9 +69,9 @@ public:
 
     int32_t Stop(int32_t stage) override;
 
-    int32_t CheckProcessInServer() override;
+    int32_t RequestHandleInfo() override;
 
-    int32_t CheckProcessInServerAsync() override;
+    int32_t RequestHandleInfoAsync() override;
 
     int32_t Release(bool isSwitchStream) override;
 
