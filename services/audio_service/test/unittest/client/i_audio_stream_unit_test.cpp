@@ -216,21 +216,21 @@ HWTEST(IAudioStreamUnitTest, CheckRendererAudioStreamInfo_001, TestSize.Level1)
     params.customSampleRate = 0;
     params.channels = STEREO;
     params.channelLayout = CH_LAYOUT_STEREO;
-    EXPECT_EQ(IAudioStream::CheckRendererAudioStreamInfo(params, AUDIO_MODE_PLAYBACK), SUCCESS);
+    EXPECT_EQ(IAudioStream::CheckRendererAudioStreamInfo(params), SUCCESS);
 
     params.channelLayout = 12345;
-    EXPECT_EQ(IAudioStream::CheckRendererAudioStreamInfo(params, AUDIO_MODE_PLAYBACK), ERR_NOT_SUPPORTED);
+    EXPECT_EQ(IAudioStream::CheckRendererAudioStreamInfo(params), ERR_NOT_SUPPORTED);
     params.channels = CHANNEL_UNKNOW;
-    EXPECT_EQ(IAudioStream::CheckRendererAudioStreamInfo(params, AUDIO_MODE_PLAYBACK), ERR_NOT_SUPPORTED);
+    EXPECT_EQ(IAudioStream::CheckRendererAudioStreamInfo(params), ERR_NOT_SUPPORTED);
 
     params.samplingRate = 12345;
-    EXPECT_EQ(IAudioStream::CheckRendererAudioStreamInfo(params, AUDIO_MODE_PLAYBACK), ERR_NOT_SUPPORTED);
+    EXPECT_EQ(IAudioStream::CheckRendererAudioStreamInfo(params), ERR_NOT_SUPPORTED);
     params.customSampleRate = SAMPLE_RATE_48000;
-    EXPECT_EQ(IAudioStream::CheckRendererAudioStreamInfo(params, AUDIO_MODE_PLAYBACK), ERR_NOT_SUPPORTED);
+    EXPECT_EQ(IAudioStream::CheckRendererAudioStreamInfo(params), ERR_NOT_SUPPORTED);
     params.encoding = ENCODING_INVALID;
-    EXPECT_EQ(IAudioStream::CheckRendererAudioStreamInfo(params, AUDIO_MODE_PLAYBACK), ERR_NOT_SUPPORTED);
+    EXPECT_EQ(IAudioStream::CheckRendererAudioStreamInfo(params), ERR_NOT_SUPPORTED);
     params.format = INVALID_WIDTH;
-    EXPECT_EQ(IAudioStream::CheckRendererAudioStreamInfo(params, AUDIO_MODE_PLAYBACK), ERR_NOT_SUPPORTED);
+    EXPECT_EQ(IAudioStream::CheckRendererAudioStreamInfo(params), ERR_NOT_SUPPORTED);
 }
 
 /**
@@ -248,19 +248,19 @@ HWTEST(IAudioStreamUnitTest, CheckCapturerAudioStreamInfo_001, TestSize.Level1)
     params.customSampleRate = 0;
     params.channels = STEREO;
     params.channelLayout = CH_LAYOUT_STEREO;
-    EXPECT_EQ(IAudioStream::CheckCapturerAudioStreamInfo(params, AUDIO_MODE_RECORD), SUCCESS);
+    EXPECT_EQ(IAudioStream::CheckCapturerAudioStreamInfo(params), SUCCESS);
 
     params.channelLayout = 12345;
-    EXPECT_EQ(IAudioStream::CheckCapturerAudioStreamInfo(params, AUDIO_MODE_RECORD), ERR_NOT_SUPPORTED);
+    EXPECT_EQ(IAudioStream::CheckCapturerAudioStreamInfo(params), ERR_NOT_SUPPORTED);
     params.channels = CHANNEL_UNKNOW;
-    EXPECT_EQ(IAudioStream::CheckCapturerAudioStreamInfo(params, AUDIO_MODE_RECORD), ERR_NOT_SUPPORTED);
+    EXPECT_EQ(IAudioStream::CheckCapturerAudioStreamInfo(params), ERR_NOT_SUPPORTED);
 
     params.samplingRate = 12345;
-    EXPECT_EQ(IAudioStream::CheckCapturerAudioStreamInfo(params, AUDIO_MODE_RECORD), ERR_NOT_SUPPORTED);
+    EXPECT_EQ(IAudioStream::CheckCapturerAudioStreamInfo(params), ERR_NOT_SUPPORTED);
     params.encoding = ENCODING_INVALID;
-    EXPECT_EQ(IAudioStream::CheckCapturerAudioStreamInfo(params, AUDIO_MODE_RECORD), ERR_NOT_SUPPORTED);
+    EXPECT_EQ(IAudioStream::CheckCapturerAudioStreamInfo(params), ERR_NOT_SUPPORTED);
     params.format = INVALID_WIDTH;
-    EXPECT_EQ(IAudioStream::CheckCapturerAudioStreamInfo(params, AUDIO_MODE_RECORD), ERR_NOT_SUPPORTED);
+    EXPECT_EQ(IAudioStream::CheckCapturerAudioStreamInfo(params), ERR_NOT_SUPPORTED);
 }
 } // namespace AudioStandard
 } // namespace OHOS
