@@ -511,6 +511,7 @@ public:
 
     std::vector<T> GetData()
     {
+        std::lock_guard<std::mutex> lock(mtx_);
         std::vector<T> dataInfo;
         for (size_t i = 0; i < currentSize_; ++i) {
             dataInfo.push_back(data_[i]);
