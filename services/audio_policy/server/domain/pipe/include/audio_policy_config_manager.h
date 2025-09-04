@@ -141,6 +141,8 @@ private:
     AudioDeviceManager &audioDeviceManager_;
 
     AudioPolicyConfigData &audioPolicyConfig_;
+
+    std::optional<float> isSupportInnerCaptureOffload_ = std::nullopt;
 };
 
 } // namespace AudioStandard

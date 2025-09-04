@@ -1413,8 +1413,12 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_006, TestSiz
     bool ret = audioConfigManager_.IsSupportInnerCaptureOffload();
     EXPECT_EQ(ret, true);
 
+    audioConfigManager_.isSupportInnerCaptureOffload_ = std::nullopt;
     PolicyGlobalConfigs gCfg2;
     audioConfigManager_.OnGlobalConfigsParsed(gCfg2);
+    ret = audioConfigManager_.IsSupportInnerCaptureOffload();
+    EXPECT_EQ(ret, false);
+
     ret = audioConfigManager_.IsSupportInnerCaptureOffload();
     EXPECT_EQ(ret, false);
 }

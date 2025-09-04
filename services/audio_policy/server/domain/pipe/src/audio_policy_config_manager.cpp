@@ -330,14 +330,20 @@ int32_t AudioPolicyConfigManager::GetMaxFastRenderersInstances()
 
 bool AudioPolicyConfigManager::IsSupportInnerCaptureOffload()
 {
+    if (isSupportInnerCaptureOffload_.has_value()) {
+        return isSupportInnerCaptureOffload_.value();
+    }
+
     for (const auto& commonConfig : globalConfigs_.commonConfigs_) {
         if (commonConfig.name_ != OFFLOAD_INNER_CAPTURE_SUPPORT_NAME) {
             continue;
         }
         AUDIO_INFO_LOG("Offload capture supported value is %{public}s", commonConfig.value_.c_str());
-        return commonConfig.value_ == "true";
+        isSupportInnerCaptureOffload_ = (commonConfig.value_ == "true");
+        return isSupportInnerCaptureOffload_.value();
     }
-    return false;
+    isSupportInnerCaptureOffload_ = false;
+    return isSupportInnerCaptureOffload_.value();
 }
 
 int32_t AudioPolicyConfigManager::GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId,
