@@ -73,6 +73,7 @@ config("audio_policy_public_config") {
     "server/domain/zone/include",
     "server/domain/device/include",
     "server/domain/device/src/a2dp",
+    "server/domain/device/src/va",
     "server/src/service/concurrency",
     "server/domain/session/include",
     "server/service/service_main/include",
@@ -263,6 +264,8 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/tone/audio_tone_manager.cpp",
     "server/domain/volume/src/audio_volume_manager.cpp",
     "server/domain/device/src/sle/sle_audio_device_manager.cpp",
+    "server/domain/device/src/va/va_device_manager.cpp",
+    "client/stub/src/va_device_broker_stub_impl.cpp",
     "server/domain/session/src/audio_session.cpp",
     "server/domain/session/src/audio_session_service.cpp",
     "server/domain/session/src/audio_session_state_monitor.cpp",
@@ -368,6 +371,7 @@ audio_ohos_library("audio_policy_service") {
     "hisysevent:libhisysevent",
     "init:libbegetutil",
     "ipc:ipc_single",
+    "ipc:ipc_core",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
@@ -596,6 +600,7 @@ audio_ohos_library("audio_policy_client") {
     "hilog:libhilog",
     "init:libbegetutil",
     "ipc:ipc_single",
+    "ipc:ipc_core",
     "samgr:samgr_proxy",
   ]
   subsystem_name = "multimedia"
@@ -626,6 +631,7 @@ group("audio_policy_test_packages") {
     "server/domain/pipe/test:audio_policy_pipe_unittest_packages",
     "server/domain/router/test:audio_router_unittest_packages",
     "server/domain/session/test:audio_policy_session_unit_test",
+    "server/domain/pipe/test:audio_capturer_session_ext_unit_test",
     "server/domain/volume/test:audio_volume_unittest_packages",
     "server/service/service_main/test:audio_policy_dump_unit_test",
     "server/service/service_main/test:audio_policy_server_extended_test",
@@ -706,6 +712,7 @@ config("audio_foundation_public_config") {
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
     "../../frameworks/native/audiopolicy/include",
+    "//foundation/multimedia/audio_framework/services/audio_service/idl",
   ]
 }
 
@@ -740,7 +747,10 @@ ohos_shared_library("audio_foundation") {
     "../audio_service:audio_common",
   ]
 
-  external_deps = [ "hilog:libhilog" ]
+  external_deps = [
+    "hilog:libhilog",
+    "ipc:ipc_core",
+  ]
 
   public_external_deps = [ "c_utils:utils" ]
 

@@ -35,6 +35,7 @@ ohos_unittest("audio_routing_manager_test") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "ipc:ipc_core",
   ]
   sources = [ "src/audio_routing_manager_unit_test.cpp" ]
   deps = [

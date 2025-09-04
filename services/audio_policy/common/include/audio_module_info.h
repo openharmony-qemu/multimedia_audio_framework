@@ -64,6 +64,7 @@ static const char* PORT_NONE = "none";
 static const char* PRIMARY_DIRECT_VOIP = "direct_voip";
 static const char* PRIMARY_MMAP_VOIP = "mmap_voip";
 static const char* ACCESSORY_SOURCE = "accessory_mic";
+static const char* VIRTUAL_AUDIO = "virtual_audio";
 }
 
 enum NodeName {
@@ -122,6 +123,7 @@ struct AudioModuleInfo {
     std::string OpenMicSpeaker;
     std::string fileName;
     std::string networkId;
+    std::string macAddress;
     std::string deviceType;
     std::string sceneName;
     std::string sourceType;

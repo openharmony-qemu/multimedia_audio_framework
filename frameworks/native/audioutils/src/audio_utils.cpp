@@ -161,6 +161,7 @@ static const std::unordered_map<DeviceType, std::string> DEVICE_TYPE_NAME_MAP = 
     {DEVICE_TYPE_INVALID, "INVALID"},
     {DEVICE_TYPE_REMOTE_CAST, "REMOTE_CAST"},
     {DEVICE_TYPE_HEARING_AID, "HEARING_AID"},
+    {DEVICE_TYPE_BT_SPP, "BT_SPP"},
 };
 
 uint32_t Util::GetSamplePerFrame(const AudioSampleFormat &format)

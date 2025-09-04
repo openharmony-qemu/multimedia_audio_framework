@@ -1027,12 +1027,6 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
     }
 };
 
-struct AudioCapturerOptions {
-    AudioStreamInfo streamInfo;
-    AudioCapturerInfo capturerInfo;
-    AudioPlaybackCaptureConfig playbackCaptureConfig;
-    AudioSessionStrategy strategy = { AudioConcurrencyMode::INVALID };
-};
 
 struct AppInfo {
     int32_t appUid { INVALID_UID };

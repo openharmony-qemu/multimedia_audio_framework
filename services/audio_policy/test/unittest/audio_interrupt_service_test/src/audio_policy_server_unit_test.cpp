@@ -3518,6 +3518,34 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_168, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: AudioPolicyServer_222
+* @tc.desc  : Test GetVADeviceBroker.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_222, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    sptr<IRemoteObject> client;
+    int32_t result = server->GetVADeviceBroker(client);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(client, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: AudioPolicyServer_223
+* @tc.desc  : Test GetVADeviceBroker.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_223, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    sptr<IRemoteObject> controller;
+    std::string macAddress = "00:11:22:33:44:55";
+    int32_t result = server->GetVADeviceController(macAddress, controller);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
  * @tc.name  : Test AudioPolicyServer
  * @tc.number: IsStreamActiveByStreamUsage_001
  * @tc.desc  : AudioPolicyServer::IsStreamActiveByStreamUsage

@@ -37,6 +37,7 @@
 #include "audio_combine_denoising_manager.h"
 #include "audio_stream_descriptor.h"
 #include "sle_audio_operation_callback_stub_impl.h"
+#include "audio_capturer_options.h"
 
 namespace OHOS {
 namespace AudioStandard {

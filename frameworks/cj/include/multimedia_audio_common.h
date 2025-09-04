@@ -20,6 +20,7 @@
 #include "cj_common_ffi.h"
 #include "multimedia_audio_ffi.h"
 #include "securec.h"
+#include "audio_capturer_options.h"
 
 namespace OHOS {
 namespace AudioStandard {

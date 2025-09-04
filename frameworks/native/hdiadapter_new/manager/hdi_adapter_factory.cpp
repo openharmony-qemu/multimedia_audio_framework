@@ -35,6 +35,7 @@
 #include "source/wakeup_audio_capture_source.h"
 #include "source/fast_audio_capture_source.h"
 #include "source/file_audio_capture_source.h"
+#include "source/va_capture_source.h"
 #include "adapter/local_device_manager.h"
 #include "adapter/bluetooth_device_manager.h"
 
@@ -120,6 +121,9 @@ std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreateCaptureSource(uint
             break;
         case HDI_ID_TYPE_BLUETOOTH:
             source = std::make_shared<BluetoothAudioCaptureSource>(captureId);
+            break;
+        case HDI_ID_TYPE_VA:
+            source = std::make_shared<VACaptureSource>(captureId);
             break;
         case HDI_ID_TYPE_WAKEUP:
             source = std::make_shared<WakeupAudioCaptureSource>(captureId);

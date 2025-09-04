@@ -135,9 +135,21 @@
               "name": "//foundation/multimedia/audio_framework/services/audio_policy:audio_foundation",
               "header": {
                 "header_files": [
+                  "./audiocommon/include/audio_device_info.h",
                   "./audiocommon/include/audio_device_descriptor.h"
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include"
+              }
+            },
+            {
+              "type": "none",
+              "name": "//foundation/multimedia/audio_framework/services/audio_service:audio_common",
+              "header": {
+                "header_files": [
+                  "va_shared_buffer.h",
+                  "va_shared_buffer_operator.h"
+                ],
+                "header_base": "//foundation/multimedia/audio_framework/services/audio_service/common/include"
               }
             },
             {
