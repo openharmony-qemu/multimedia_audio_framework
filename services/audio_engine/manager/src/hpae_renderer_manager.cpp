@@ -887,8 +887,10 @@ int32_t HpaeRendererManager::InitManager(bool isReload)
 {
     AUDIO_INFO_LOG("init devicename:%{public}s", sinkInfo_.deviceName.c_str());
     HpaeNodeInfo nodeInfo;
-    int32_t checkRet = CheckFramelen(isReload);
+    int32_t checkRet = CheckFramelen();
     if (checkRet != SUCCESS) {
+        TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
+                        sinkInfo_.deviceName, ERR_INVALID_PARAM);
         return checkRet;
     }
     nodeInfo.channels = sinkInfo_.channels;
@@ -928,16 +930,12 @@ int32_t HpaeRendererManager::InitManager(bool isReload)
     return SUCCESS;
 }
 
-int32_t HpaeRendererManager::CheckFramelen(bool isReload)
+int32_t HpaeRendererManager::CheckFramelen()
 {
     if (sinkInfo_.frameLen == 0) {
-        TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
-                        sinkInfo_.deviceName, ERR_INVALID_PARAM);
         AUDIO_ERR_LOG("FrameLen is 0.");
         return ERROR;
     } else if (sinkInfo_.frameLen > FRAME_LENGTH_LIMIT) {
-        TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
-                        sinkInfo_.deviceName, ERR_INVALID_PARAM);
         AUDIO_ERR_LOG("FrameLen is over-sized.");
         return ERROR;
     }

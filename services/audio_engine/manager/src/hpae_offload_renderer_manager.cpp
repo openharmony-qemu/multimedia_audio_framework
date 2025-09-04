@@ -441,8 +441,10 @@ int32_t HpaeOffloadRendererManager::InitSinkInner(bool isReload)
 {
     AUDIO_INFO_LOG("HpaeOffloadRendererManager::init");
     HpaeNodeInfo nodeInfo;
-    int32_t checkRet = CheckFramelen(isReload);
+    int32_t checkRet = CheckFramelen();
     if (checkRet != SUCCESS) {
+        TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
+                        sinkInfo_.deviceName, ERR_INVALID_PARAM);
         return checkRet;
     }
     nodeInfo.channels = sinkInfo_.channels;
@@ -477,16 +479,12 @@ int32_t HpaeOffloadRendererManager::InitSinkInner(bool isReload)
     return SUCCESS;
 }
 
-int32_t HpaeOffloadRendererManager::CheckFramelen(bool isReload)
+int32_t HpaeOffloadRendererManager::CheckFramelen()
 {
     if (sinkInfo_.frameLen == 0) {
-        TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
-                        sinkInfo_.deviceName, ERR_INVALID_PARAM);
         AUDIO_ERR_LOG("FrameLen is 0.");
         return ERROR;
     } else if (sinkInfo_.frameLen > FRAME_LENGTH_LIMIT) {
-        TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
-                        sinkInfo_.deviceName, ERR_INVALID_PARAM);
         AUDIO_ERR_LOG("FrameLen is over-sized.");
         return ERROR;
     }
