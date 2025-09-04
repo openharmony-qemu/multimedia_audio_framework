@@ -340,7 +340,7 @@ int32_t AudioProcessInServer::StartInner()
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
     AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId_, processConfig_.appInfo.appTokenId);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_START);
-    AUDIO_INFO_LOG("Start in server success!");
+    HILOG_COMM_INFO("Start in server success!");
     return SUCCESS;
 }
 
@@ -379,7 +379,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, false);
     AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(sessionId_);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_STOP);
-    AUDIO_PRERELEASE_LOGI("Pause in server success!");
+    HILOG_COMM_INFO("Pause in server success!");
     return SUCCESS;
 }
 
@@ -407,7 +407,7 @@ int32_t AudioProcessInServer::Resume()
     CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START, false);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_START);
-    AUDIO_PRERELEASE_LOGI("Resume in server success!");
+    HILOG_COMM_INFO("Resume in server success!");
     return SUCCESS;
 }
 
@@ -451,7 +451,7 @@ int32_t AudioProcessInServer::Stop(int32_t stage)
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, false);
     AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(sessionId_);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_STOP);
-    AUDIO_INFO_LOG("Stop in server success!");
+    HILOG_COMM_INFO("Stop in server success!");
     return SUCCESS;
 }
 
@@ -475,7 +475,7 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, false);
     ret = releaseCallback_->OnProcessRelease(this, isSwitchStream);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_RELEASE);
-    AUDIO_INFO_LOG("notify service release result: %{public}d", ret);
+    HILOG_COMM_INFO("notify service release result: %{public}d", ret);
     return SUCCESS;
 }
 
