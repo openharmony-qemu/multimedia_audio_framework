@@ -112,6 +112,25 @@ public:
 
     MOCK_METHOD(void, DumpInfo, (std::string &dumpString), (override));
 };
+
+// Mock INodeCallback
+class MockNodeCallback : public INodeCallback {
+public:
+    MOCK_METHOD(void, OnNodeStatusUpdate, (uint32_t, IOperation), (override));
+    MOCK_METHOD(void, OnFadeDone, (uint32_t, IOperation), (override));
+    MOCK_METHOD(void, OnRequestLatency, (uint32_t, uint64_t &), (override));
+    MOCK_METHOD(void, OnRewindAndFlush, (uint64_t, uint64_t), (override));
+    MOCK_METHOD(void, OnNotifyQueue, (), (override));
+    MOCK_METHOD(void, OnDisConnectProcessCluster, (HpaeProcessorType), (override));
+    MOCK_METHOD(void, OnNotifyDfxNodeInfo, (bool, uint32_t, HpaeDfxNodeInfo &), (override));
+    MOCK_METHOD(void, OnNotifyDfxNodeInfoChanged, (uint32_t, const HpaeDfxNodeInfo &), (override));
+};
+
+// Mock IStreamCallback
+class MockStreamCallback : public IStreamCallback {
+public:
+    MOCK_METHOD(int32_t, OnStreamData, (AudioCallBackStreamInfo&), (override));
+};
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
