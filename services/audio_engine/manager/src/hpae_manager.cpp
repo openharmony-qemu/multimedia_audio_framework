@@ -780,7 +780,7 @@ bool HpaeManager::CheckMoveSourceOutput(uint32_t sourceOutputId, const std::stri
         return false;
     }
     if (capturerIdStreamInfoMap_.find(sourceOutputId) == capturerIdStreamInfoMap_.end()) {
-        HILOG_COMM_INFO("move session:%{public}u failed,can not find session.", sourceOutputId);
+        HILOG_COMM_INFO("move session:%{public}u failed,can not find session", sourceOutputId);
         return false;
     }
     if (!capturerIdStreamInfoMap_[sourceOutputId].streamInfo.isMoveAble) {

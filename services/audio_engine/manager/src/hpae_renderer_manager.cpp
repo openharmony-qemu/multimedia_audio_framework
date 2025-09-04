@@ -513,7 +513,7 @@ void HpaeRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
     for (const auto &it : sessionIds) {
         DeleteInputSessionForMove(it);
     }
-    HILOG_COMM_INFO("[StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
+    HILOG_COMM_INFO("StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
         idStr.c_str(), name.c_str(), moveType);
     TriggerCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);
 }

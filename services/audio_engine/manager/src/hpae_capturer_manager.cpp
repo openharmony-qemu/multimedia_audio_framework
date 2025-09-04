@@ -843,7 +843,7 @@ int32_t HpaeCapturerManager::AddNodeToSource(const HpaeCaptureMoveInfo &moveInfo
 void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveInfo, bool isConnect)
 {
     uint32_t sessionId = moveInfo.sessionId;
-    HILOG_COMM_INFO("[FinishMove] session :%{public}u to source:[%{public}s].",
+    HILOG_COMM_INFO("[FinishMove] session :%{public}u to source:[%{public}s]",
         sessionId, sourceInfo_.sourceName.c_str());
     CHECK_AND_RETURN_LOG(moveInfo.sourceOutputNode != nullptr, "move fail, sourceoutputnode is null");
     HpaeNodeInfo nodeInfo = moveInfo.sourceOutputNode->GetNodeInfo();
