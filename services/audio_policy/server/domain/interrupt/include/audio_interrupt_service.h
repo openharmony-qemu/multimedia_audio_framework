@@ -311,7 +311,8 @@ private:
     // for audiosessionv2
     int32_t ProcessFocusEntryForAudioSession(const int32_t zoneId, const int32_t callerPid, bool &updateScene);
     bool ShouldBypassAudioSessionFocus(const int32_t zoneId, const AudioInterrupt &incomingInterrupt);
-    void DeactivateAudioSessionFakeInterrupt(
+    void DeactivateAudioSessionFakeInterrupt(const int32_t zoneId, const int32_t callerPid);
+    void DeactivateAudioSessionFakeInterruptInternal(
         const int32_t zoneId, const int32_t callerPid, bool isSessionTimeout = false);
     void DispatchInterruptEventForAudioSession(
         InterruptEventInternal &interruptEvent, const AudioInterrupt &audioInterrupt) override;
@@ -325,7 +326,8 @@ private:
         const AudioInterrupt &audioInterrupt, const AudioScene &audioScene) const;
     void DelayToDeactivateStreamsInAudioSession(
         const int32_t zoneId, const int32_t callerPid, const std::vector<AudioInterrupt> &streamsInSession);
-
+    int32_t DeactivateStreamsInAudioSession(
+        const int32_t zoneId, const int32_t callerPid, const std::vector<AudioInterrupt> &streamsInSession);
     int32_t ProcessActiveStreamFocus(std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList,
         const AudioInterrupt &incomingInterrupt, AudioFocuState &incomingState,
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &activeInterrupt);

@@ -77,6 +77,7 @@ public:
         AudioStreamDeviceChangeReason changeReason,
         const std::shared_ptr<AudioDeviceDescriptor> descriptor,
         CurrentOutputDeviceChangedEvent &deviceChangedEvent);
+    bool IsSessionInputDeviceChanged(int32_t callerPid, const std::shared_ptr<AudioDeviceDescriptor> desc);
 
 private:
     int32_t DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout = false);
