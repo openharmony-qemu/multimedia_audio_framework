@@ -577,10 +577,12 @@ private:
     std::mutex serviceFlagMutex_;
 
     // offload delay release
+    // isOffloadOpened_ check whether offload is need open
     std::atomic<bool> isOffloadOpened_[OFFLOAD_TYPE_NUM] = {};
+    // isOffloadInRelease_ check whether delayRelease thread is running
+    std::atomic<bool> isOffloadInRelease_[OFFLOAD_TYPE_NUM] = {};
     std::condition_variable offloadCloseCondition_[OFFLOAD_TYPE_NUM];
     std::mutex offloadCloseMutex_;
-    std::mutex offloadReOpenMutex_;
 
     // route update callback
     std::unordered_map<uint32_t, sptr<IStandardAudioPolicyManagerListener>> routeUpdateCallback_;
