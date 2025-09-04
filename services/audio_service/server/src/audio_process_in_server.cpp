@@ -190,7 +190,7 @@ int32_t AudioProcessInServer::RequestHandleInfo()
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
     CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_ILLEGAL_STATE, "buffer not inited!");
 
-    //deleted OnUpdateHandleInfo(),because it only GetStreamBuffer and does not do any other processing.
+    // Check update handle info usage later
     return SUCCESS;
 }
 
