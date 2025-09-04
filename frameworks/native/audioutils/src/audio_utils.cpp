@@ -1169,7 +1169,7 @@ int32_t GetEngineFlag()
     static int32_t engineFlag = -1;
     if (engineFlag == -1) {
         bool res = GetSysPara(para.c_str(), engineFlag);
-        AUDIO_DEBUG_LOG("get %{public}s = %{public}d", para.c_str(), engineFlag);
+        AUDIO_INFO_LOG("get %{public}s = %{public}d", para.c_str(), engineFlag);
         CHECK_AND_RETURN_RET_LOG(res, engineFlag, "get %{public}s fail", para.c_str());
     }
     return engineFlag;

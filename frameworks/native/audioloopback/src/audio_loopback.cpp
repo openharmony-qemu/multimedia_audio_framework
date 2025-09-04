@@ -163,7 +163,7 @@ int32_t AudioLoopbackPrivate::SetVolume(float volume)
 {
     Trace trace("AudioLoopbackPrivate::SetVolume");
     if (volume < 0.0 || volume > 1.0) {
-        HILOG_COMM_INFO("SetVolume with invalid volume %{public}f", volume);
+        HILOG_COMM_INFO("SetVolume with invalid volume");
         return ERR_INVALID_PARAM;
     }
     std::unique_lock<std::mutex> stateLock(stateMutex_);
@@ -482,6 +482,7 @@ void AudioLoopbackPrivate::UpdateStatus()
             currentState_ = LOOPBACK_STATE_DESTROYING;
             auto self = shared_from_this();
             std::thread([self] {
+                CHECK_AND_RETURN(self != nullptr);
                 self->DestroyAudioLoopback();
             }).detach();
         }
