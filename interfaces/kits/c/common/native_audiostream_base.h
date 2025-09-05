@@ -870,10 +870,10 @@ typedef enum {
      */
     AUDIO_STREAM_PRIVACY_TYPE_PRIVATE = 1,
     /**
-     * Privacy type that stream can be safely captured and screen casting
+     * Privacy type that stream can be safely captured and screen casting.
      * For example,{@link OH_AudioStream_Usage#AUDIOSTREAM_USAGE_VOICE_COMMUNICATION} will not be
      * captured or screen casted by third party applications under AUDIO_STREAM_PRIVACY_TYPE_PUBLIC policy.
-     * However, the internal catpure is allowed under the AUDIO_STREAM_PRIVACY_TYPE_SHARED policy.
+     * However, the internal capture is allowed under the AUDIO_STREAM_PRIVACY_TYPE_SHARED policy.
      * @since 21
      */
     AUDIO_STREAM_PRIVACY_TYPE_SHARED = 2,
