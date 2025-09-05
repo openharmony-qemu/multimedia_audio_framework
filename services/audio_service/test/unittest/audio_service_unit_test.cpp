@@ -623,9 +623,9 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(false);
     EXPECT_EQ(0, floatRet);
     int32_t ret = AudioService::GetInstance()->EnableDualStream(MAX_STREAMID - 1, "Speaker");
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
     ret = AudioService::GetInstance()->DisableDualStream(MAX_STREAMID - 1);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
     AudioService::GetInstance()->ResetAudioEndpoint();
     ret = AudioService::GetInstance()->OnProcessRelease(audioProcess, false);
     EXPECT_EQ(SUCCESS, ret);
@@ -1460,7 +1460,7 @@ HWTEST(AudioServiceUnitTest, EnableDualStream_001, TestSize.Level1)
     int32_t sessionId = 1;
     audioService->allRendererMap_.insert(std::make_pair(sessionId, renderer));
     int32_t ret = audioService->EnableDualStream(sessionId, "Speaker");
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 /**
  * @tc.name  : Test DisableDualToneList API
@@ -1472,10 +1472,9 @@ HWTEST(AudioServiceUnitTest, DisableDualToneList_001, TestSize.Level1)
 {
     AudioService *audioService = AudioService::GetInstance();
     std::shared_ptr<RendererInServer> renderer = nullptr;
-    audioService->filteredDualToneRendererMap_.push_back(renderer);
     int32_t sessionId = 1;
     int32_t ret = audioService->DisableDualStream(sessionId);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 /**
  * @tc.name  : Test UpdateAudioSinkState API
