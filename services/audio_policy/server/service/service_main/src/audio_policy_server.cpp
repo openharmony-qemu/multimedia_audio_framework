@@ -2194,7 +2194,7 @@ int32_t AudioPolicyServer::GetPreferredInputDeviceDescriptors(const AudioCapture
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
 {
     AudioCapturerInfo captureInfo = captureInfoIn;
-    deviceDescs = eventEntry_->GetPreferredInputDeviceDescriptors(captureInfo);
+    deviceDescs = eventEntry_->GetPreferredInputDeviceDescriptors(captureInfo, IPCSkeleton::GetCallingUid());
     bool hasBTPermission = VerifyBluetoothPermission();
     if (!hasBTPermission) {
         audioPolicyService_.UpdateDescWhenNoBTPermission(deviceDescs);
@@ -3383,6 +3383,7 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid, pid_t uid)
     std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
     eventEntry_->RegisteredTrackerClientDied(uid, pid);
     eventEntry_->ClearSelectedInputDeviceByUid(uid);
+    eventEntry_->PreferBluetoothAndNearlinkRecordByUid(uid, false);
 
     auto filter = [&pid](int val) {
         return pid == val;

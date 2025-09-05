@@ -80,6 +80,7 @@ public:
         AUDIO_ZONE_EVENT,
         FORMAT_UNSUPPORTED_ERROR,
         SESSION_DEVICE_CHANGE,
+        SESSION_INPUT_DEVICE_CHANGE,
         INTERRUPT_EVENT_FOR_AUDIO_SESSION,
     };
     /* event data */
@@ -209,6 +210,7 @@ public:
     bool SendFormatUnsupportedErrorEvent(const AudioErrors &errorCode);
     int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages);
     bool SendAudioSessionDeviceChange(const AudioStreamDeviceChangeReason changeReason, int32_t callerPid = -1);
+    bool SendAudioSessionInputDeviceChange(const AudioStreamDeviceChangeReason changeReason, int32_t callerPid = -1);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -232,6 +234,7 @@ private:
     void HandlePreferredInputDeviceUpdated();
     void HandleDistributedRoutingRoleChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAudioSessionDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleAudioSessionInputDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleRendererInfoEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleCapturerInfoEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleRendererDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
@@ -286,6 +289,7 @@ private:
     std::unordered_map<int32_t, std::vector<AudioRendererFilter>> clientCbRendererInfoMap_;
     std::unordered_map<int32_t, std::vector<AudioCapturerInfo>> clientCbCapturerInfoMap_;
     std::unordered_map<int32_t, std::set<StreamUsage>> clientCbStreamUsageMap_;
+    std::unordered_map<int32_t, int32_t> pidUidMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

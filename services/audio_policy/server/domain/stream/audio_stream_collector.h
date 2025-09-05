@@ -100,6 +100,7 @@ public:
     bool HasRunningRendererStream();
     bool HasRunningRecognitionCapturerStream();
     bool HasRunningNormalCapturerStream(DeviceType type);
+    bool HasRunningCapturerStreamByUid(int32_t uid = INVALID_UID);
     bool IsMediaPlaying();
     bool IsVoipStreamActive();
     void UpdateAppVolume(int32_t appUid, int32_t volume);

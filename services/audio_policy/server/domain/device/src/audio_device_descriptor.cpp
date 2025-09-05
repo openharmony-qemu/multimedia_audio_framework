@@ -436,6 +436,32 @@ AudioDeviceDescriptor *AudioDeviceDescriptor::Unmarshalling(Parcel &parcel)
     return deviceDescriptor;
 }
 
+void AudioDeviceDescriptor::MapInputDeviceType(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
+{
+    for (size_t index = descs.size() - 1; index >= 0; index--) {
+        if (descs[index]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP || descs[index]->deviceRole_ != INPUT_DEVICE) {
+            continue;
+        }
+        bool hasSame = false;
+        for (const auto& otherDesc : descs) {
+            if (otherDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+                descs[index]->macAddress_ != "" &&
+                otherDesc->macAddress_ == descs[index]->macAddress_ &&
+                otherDesc->deviceRole_ == descs[index]->deviceRole_ &&
+                otherDesc->networkId_ == descs[index]->networkId_) {
+                hasSame = true;
+                break;
+            }
+        }
+
+        if (hasSame) {
+            descs.erase(descs.begin() + index);
+        } else {
+            descs[index]->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+        }
+    }
+}
+
 void AudioDeviceDescriptor::SetDeviceInfo(std::string deviceName, std::string macAddress)
 {
     deviceName_ = deviceName;
