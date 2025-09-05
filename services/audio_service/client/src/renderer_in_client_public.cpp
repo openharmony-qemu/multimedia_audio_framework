@@ -236,13 +236,6 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     AudioXCollie guard("RendererInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
-    if (!IsFormatValid(info.format) || !IsEncodingTypeValid(info.encoding) ||
-        !((info.customSampleRate == 0 && IsSamplingRateValid(info.samplingRate)) ||
-        (info.customSampleRate != 0 && IsCustomSampleRateValid(info.customSampleRate)))) {
-        AUDIO_ERR_LOG("Unsupported audio parameter");
-        return ERR_NOT_SUPPORTED;
-    }
-
     streamParams_ = curStreamParams_ = info; // keep it for later use
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
         ConverterConfig cfg = AudioPolicyManager::GetInstance().GetConverterConfig();
@@ -252,10 +245,6 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
             return ERR_NOT_SUPPORTED;
         }
         converter_->ConverterChannels(curStreamParams_.channels, curStreamParams_.channelLayout);
-    }
-
-    if (!IsPlaybackChannelRelatedInfoValid(curStreamParams_.channels, curStreamParams_.channelLayout)) {
-        return ERR_NOT_SUPPORTED;
     }
 
     CHECK_AND_RETURN_RET_LOG(IAudioStream::GetByteSizePerFrame(curStreamParams_, sizePerFrameInByte_) == SUCCESS,

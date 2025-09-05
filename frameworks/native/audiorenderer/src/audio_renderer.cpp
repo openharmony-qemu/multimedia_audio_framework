@@ -656,8 +656,12 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
 #endif
+
+    int32_t ret = IAudioStream::CheckRendererAudioStreamInfo(audioStreamParams);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CheckRendererAudioStreamInfo fail!");
+
     rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
-    int32_t ret = PrepareAudioStream(audioStreamParams, audioStreamType, streamClass, rendererInfo_.audioFlag);
+    ret = PrepareAudioStream(audioStreamParams, audioStreamType, streamClass, rendererInfo_.audioFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "PrepareAudioStream failed");
 
     ret = InitAudioStream(audioStreamParams);
@@ -2252,9 +2256,13 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     RendererState previousState, IAudioStream::SwitchInfo &switchInfo)
 {
     std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescBySwitchInfo(switchInfo, restoreInfo);
+
+    int32_t ret = IAudioStream::CheckRendererAudioStreamInfo(switchInfo.params);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CheckRendererAudioStreamInfo fail!");
+
     uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
     std::string networkId = LOCAL_NETWORK_ID;
-    int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(
+    ret = AudioPolicyManager::GetInstance().CreateRendererClient(
         streamDesc, flag, switchInfo.params.originalSessionId, networkId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "CreateRendererClient failed");
 
@@ -2264,7 +2272,6 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetPlaybackStream(targetClass, switchInfo.params,
         switchInfo.eStreamType, appInfo_.appUid);
     CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "SetParams GetPlayBackStream failed.");
-    AUDIO_INFO_LOG("Get new stream success!");
 
     // The latest route info returned by create needs to be used to update audioFlag,
     // the server can obtain the route info to proceed with start.
