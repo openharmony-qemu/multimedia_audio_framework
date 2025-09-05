@@ -65,5 +65,6 @@ audio_sources = [
   "$WORK_DIR/common/napi_async_work.cpp",
   "$WORK_DIR/common/napi_audio_enum.cpp",
   "$WORK_DIR/common/napi_audio_error.cpp",
+  "$WORK_DIR/common/napi_dfx_utils.cpp",
   "$WORK_DIR/common/napi_param_utils.cpp",
 ]

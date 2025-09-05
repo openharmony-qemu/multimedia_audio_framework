@@ -16,14 +16,17 @@
 #include <cstdio>
 #include "napi_dfx_utils.h"
 #include "audio_common_log.h"
+#ifndef CROSS_PLATFORM
 #include "media_monitor_manager.h"
 #include "media_monitor_info.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
 
 void NapiDfxUtils::SendVolumeApiInvokeEvent(int32_t uid, const std::string &functionName, int32_t paramValue)
 {
+#ifndef CROSS_PLATFORM
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::VOLUME_API_INVOKE,
         Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
@@ -31,6 +34,7 @@ void NapiDfxUtils::SendVolumeApiInvokeEvent(int32_t uid, const std::string &func
     bean->Add("FUNC_NAME", functionName);
     bean->Add("PARAM_VALUE", paramValue);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+#endif
 }
 } // namespace AudioStandard
 } // namespace OHOS
