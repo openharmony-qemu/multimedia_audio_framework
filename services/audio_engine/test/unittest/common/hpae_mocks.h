@@ -19,6 +19,7 @@
 #include "gmock/gmock.h"
 #include "hpae_msg_channel.h"
 #include "sink/i_audio_render_sink.h"
+#include "i_renderer_stream.h"
 
 namespace OHOS {
 namespace AudioStandard {
