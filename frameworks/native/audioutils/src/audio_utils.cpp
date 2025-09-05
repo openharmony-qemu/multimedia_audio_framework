@@ -1197,6 +1197,7 @@ int32_t GetEngineFlag()
         AUDIO_INFO_LOG("get %{public}s = %{public}d", para.c_str(), engineFlag);
         CHECK_AND_RETURN_RET_LOG(res, engineFlag, "get %{public}s fail", para.c_str());
     }
+    return engineFlag;
 #else
     return 1;
 #endif
