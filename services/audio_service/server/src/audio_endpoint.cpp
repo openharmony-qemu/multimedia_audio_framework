@@ -880,7 +880,7 @@ bool AudioEndpointInner::StartDevice(EndpointStatus preferredState, int64_t dela
     workThreadCV_.notify_all();
     AUDIO_DEBUG_LOG("StartDevice out, status is %{public}s", GetStatusStr(endpointStatus_).c_str());
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(adapterType_, INIT_LASTWRITTEN_TIME);
-    delayStopTime_ = delayStopTime == INVALID_DELAY_STOP_TIME ? delayStopTime_ : delayStopTime;
+    delayStopTime_ = delayStopTime == INVALID_DELAY_STOP_HDI_TIME_NO_RUNNING_NS ? delayStopTime_ : delayStopTime;
     listLock.unlock();
     return true;
 }
