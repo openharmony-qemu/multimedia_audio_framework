@@ -835,7 +835,7 @@ void AudioEndpointInner::ReSyncPosition()
     return;
 }
 
-bool AudioEndpointInner::StartDevice(EndpointStatus preferredState)
+bool AudioEndpointInner::StartDevice(EndpointStatus preferredState, int64_t delayStopTime)
 {
     AUDIO_INFO_LOG("StartDevice enter.");
     // how to modify the status while unlinked and started?
@@ -880,6 +880,7 @@ bool AudioEndpointInner::StartDevice(EndpointStatus preferredState)
     workThreadCV_.notify_all();
     AUDIO_DEBUG_LOG("StartDevice out, status is %{public}s", GetStatusStr(endpointStatus_).c_str());
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(adapterType_, INIT_LASTWRITTEN_TIME);
+    delayStopTime_ = delayStopTime == INVALID_DELAY_STOP_TIME ? delayStopTime_ : delayStopTime;
     listLock.unlock();
     return true;
 }
@@ -982,13 +983,9 @@ int32_t AudioEndpointInner::OnStart(IAudioProcessStream *processStream)
     if (endpointStatus_ == IDEL) {
         // call sink start
         if (!isStarted_) {
-            CHECK_AND_RETURN_RET_LOG(StartDevice(RUNNING), ERR_OPERATION_FAILED, "StartDevice failed");
+            CHECK_AND_RETURN_RET_LOG(StartDevice(RUNNING, INT64_MAX), ERR_OPERATION_FAILED, "StartDevice failed");
         }
     }
-
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(adapterType_, INIT_LASTWRITTEN_TIME);
-    endpointStatus_ = RUNNING;
-    delayStopTime_ = INT64_MAX;
     return SUCCESS;
 }
 
