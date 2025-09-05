@@ -23,7 +23,6 @@
 #include "audio_volume_manager.h"
 
 #include "media_monitor_manager.h"
-#include "parameters.h"
 #include <fstream>
 
 namespace OHOS {
@@ -790,9 +789,6 @@ void AudioStreamCollector::PostReclaimMemoryTask()
         return;
     }
     if (!isActivatedMemReclaiTask_.load() && CheckAudioStateIdle()) {
-        if (system::GetParameter("persist.ace.testmode.enabled", "0") != "1") {
-            return;
-        }
         AUDIO_INFO_LOG("start reclaim memory task");
         auto task = [this]() {
             ReclaimMem();
@@ -824,22 +820,19 @@ bool AudioStreamCollector::CheckAudioStateIdle()
         AUDIO_INFO_LOG("there are no tasks");
         return true;
     }
-    if (!audioRendererChangeInfos_.empty()) {
-        for (auto rendererInfo : audioRendererChangeInfos_) {
-            if (rendererInfo->rendererState == RENDERER_RUNNING) {
-                AUDIO_INFO_LOG("rendererInfo exist running task");
-                return false;
-            }
+    for (const auto& rendererInfo : audioRendererChangeInfos_) {
+        if (rendererInfo->rendererState == RENDERER_RUNNING) {
+            AUDIO_INFO_LOG("rendererInfo exist running task");
+            return false;
         }
     }
-    if (!audioCapturerChangeInfos_.empty()) {
-        for (auto capturerInfo : audioCapturerChangeInfos_) {
-            if (capturerInfo->capturerState == CAPTURER_RUNNING) {
-                AUDIO_INFO_LOG("capturerInfo exist running task");
-                return false;
-            }
+    for (const auto& capturerInfo : audioCapturerChangeInfos_) {
+        if (capturerInfo->capturerState == CAPTURER_RUNNING) {
+            AUDIO_INFO_LOG("capturerInfo exist running task");
+            return false;
         }
     }
+
     AUDIO_INFO_LOG("there are no tasks running");
     return true;
 }
