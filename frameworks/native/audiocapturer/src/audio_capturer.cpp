@@ -1954,7 +1954,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::GetStreamDescBySwit
     streamDesc->audioMode_ = AUDIO_MODE_RECORD;
     streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->capturerInfo_= switchInfo.capturerInfo;
-    streamDesc->appInfo_ = AppInfo{switchInfo.appUid, 0, switchInfo.clientPid, 0};
+    streamDesc->appInfo_ = appInfo_;
     streamDesc->callerUid_ = static_cast<int32_t>(getuid());
     streamDesc->callerPid_ = static_cast<int32_t>(getpid());
     streamDesc->sessionId_ = switchInfo.sessionId;
