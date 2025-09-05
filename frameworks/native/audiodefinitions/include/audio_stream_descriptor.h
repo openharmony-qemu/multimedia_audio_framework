@@ -51,6 +51,9 @@ public:
     AudioStreamAction streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
     mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> oldDeviceDescs_ = {};
     mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDescs_ = {};
+    // for dup device
+    mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> oldDupDeviceDescs_ = {};
+    mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDupDeviceDescs_ = {};
     std::string bundleName_ = "";
 
     AudioStreamDescriptor() = default;
@@ -67,6 +70,7 @@ public:
     // log and dump
     void Dump(std::string &dumpString);
     std::string GetNewDevicesTypeString();
+    std::string GetNewDupDevicesTypeString();
     std::string GetNewDevicesInfo();
     std::string GetDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> desc);
 

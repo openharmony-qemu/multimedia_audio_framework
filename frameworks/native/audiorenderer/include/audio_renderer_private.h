@@ -174,7 +174,6 @@ public:
         return audioStreamParams;
     }
 
-    AudioPrivacyType privacyType_ = PRIVACY_TYPE_PUBLIC;
     AudioRendererInfo rendererInfo_ = {CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MUSIC, 0};
     AudioSessionStrategy strategy_ = { AudioConcurrencyMode::INVALID };
     AudioSessionStrategy originalStrategy_ = { AudioConcurrencyMode::INVALID };

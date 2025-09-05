@@ -18,10 +18,15 @@
 #include "audio_policy_log.h"
 #include "audio_zone_service.h"
 
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
+
 #include <thread>
 #include <memory>
 #include <vector>
 using namespace testing::ext;
+using namespace testing;
+using ::testing::_;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -141,6 +146,79 @@ HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_006, TestSize.Level1)
     EXPECT_FALSE(audioRouterCenter.IsConfigRouterStrategy(type));
 }
 
+class MockStandardAudioRoutingManagerListener : public StandardAudioRoutingManagerListenerStub {
+public:
+    MockStandardAudioRoutingManagerListener() {};
+    virtual ~MockStandardAudioRoutingManagerListener() {};
+
+    MOCK_METHOD(int32_t, OnAudioDupDeviceRefined, (std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
+        const FetchDeviceInfo &fetchDeviceInfo), (override));
+    MOCK_METHOD(int32_t, OnAudioOutputDeviceRefined, (std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
+        const FetchDeviceInfo &fetchDeviceInfo), (override));
+    MOCK_METHOD(int32_t, OnAudioInputDeviceRefined, (std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
+        int32_t routerType, int32_t sourceType, int32_t clientUid, int32_t audioPipeType), (override));
+    MOCK_METHOD(int32_t, GetSplitInfoRefined, (std::string &splitInfo), (override));
+    MOCK_METHOD(int32_t, OnDistributedOutputChange, (bool isRemote), (override));
+    MOCK_METHOD(int32_t, OnDistributedRoutingRoleChange,
+        (const std::shared_ptr<AudioDeviceDescriptor> &descriptor, int32_t type), (override));
+};
+
+/**
+ * @tc.name  : Test FetchDupDevice.
+ * @tc.number: FetchDupDevices_001
+ * @tc.desc  : Test FetchDupDevices interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchDupDevices_001, TestSize.Level1)
+{
+    AudioRouterCenter audioRouterCenter;
+    audioRouterCenter.audioDeviceRefinerCb_ = nullptr;
+
+    FetchDeviceInfo fetchDeviceInfo = {};
+    fetchDeviceInfo.streamUsage = STREAM_USAGE_MUSIC;
+    fetchDeviceInfo.clientUID = 1000;
+    fetchDeviceInfo.routerType = ROUTER_TYPE_DEFAULT;
+    fetchDeviceInfo.caller = "caller";
+    auto result = audioRouterCenter.FetchDupDevices(fetchDeviceInfo);
+
+    EXPECT_EQ(result.size(), 0);
+}
+
+/**
+ * @tc.name  : Test FetchDupDevice.
+ * @tc.number: FetchDupDevices_002
+ * @tc.desc  : Test FetchDupDevices interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchDupDevices_002, TestSize.Level1)
+{
+    AudioRouterCenter audioRouterCenter;
+    MockStandardAudioRoutingManagerListener mockCallback;
+    audioRouterCenter.audioDeviceRefinerCb_ = &mockCallback;
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> expectDescs;
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    expectDescs.push_back(desc);
+
+    EXPECT_CALL(mockCallback, OnAudioDupDeviceRefined(_, _))
+        .Times(1)
+        .WillOnce(Invoke([&](std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
+        const FetchDeviceInfo &fetchDeviceInfo) -> int32_t {
+            descs = expectDescs;
+
+            return 0;
+        }));
+
+    FetchDeviceInfo fetchDeviceInfo = {};
+    fetchDeviceInfo.streamUsage = STREAM_USAGE_MUSIC;
+    fetchDeviceInfo.clientUID = 1000;
+    fetchDeviceInfo.routerType = ROUTER_TYPE_DEFAULT;
+    fetchDeviceInfo.caller = "caller";
+    auto result = audioRouterCenter.FetchDupDevices(fetchDeviceInfo);
+
+    EXPECT_EQ(result, expectDescs);
+}
+
+
 /**
  * @tc.name  : Test FetchRingRenderDevices.
  * @tc.number: FetchRingRenderDevices_001
@@ -192,7 +270,7 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> callRenderRet_;
     std::shared_ptr<AudioDeviceDescriptor> callCaptureRet_;
     std::shared_ptr<AudioDeviceDescriptor> recordCaptureRet_;
- 
+
     MockRouter(RouterType type = ROUTER_TYPE_DEFAULT,
         std::shared_ptr<AudioDeviceDescriptor> mediaRenderRet = nullptr,
         std::shared_ptr<AudioDeviceDescriptor> callRenderRet = nullptr,
@@ -203,7 +281,7 @@ public:
           callRenderRet_(std::move(callRenderRet)),
           callCaptureRet_(std::move(callCaptureRet)),
           recordCaptureRet_(std::move(recordCaptureRet)) {}
- 
+
     std::shared_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage, int32_t) override
     {
         return mediaRenderRet_;
@@ -257,7 +335,7 @@ HWTEST(AudioRouterCenterUnitTest, FetchMediaRenderDevice_desc_nullptr, TestSize.
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
     EXPECT_EQ(rtype, ROUTER_TYPE_NONE);
 }
- 
+
 /**
  * @tc.name  : Test FetchMediaRenderDevice.
  * @tc.number: FetchMediaRenderDevice_002
@@ -276,7 +354,7 @@ HWTEST(AudioRouterCenterUnitTest, FetchMediaRenderDevice_deviceType_NONE, TestSi
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
     EXPECT_EQ(rtype, ROUTER_TYPE_NONE);
 }
- 
+
 /**
  * @tc.name  : Test FetchMediaRenderDevice.
  * @tc.number: FetchMediaRenderDevice_003
@@ -295,7 +373,7 @@ HWTEST(AudioRouterCenterUnitTest, FetchMediaRenderDevice_deviceType_valid, TestS
     EXPECT_EQ(result, validDesc);
     EXPECT_EQ(rtype, ROUTER_TYPE_DEFAULT);
 }
- 
+
 /**
  * @tc.name  : Test FetchMediaRenderDevice.
  * @tc.number: FetchMediaRenderDevice_004
@@ -314,7 +392,7 @@ HWTEST(AudioRouterCenterUnitTest, FetchMediaRenderDevice_bypassType_skip, TestSi
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
     EXPECT_EQ(rtype, ROUTER_TYPE_NONE);
 }
- 
+
 /**
  * @tc.name  : Test FetchCallRenderDevice.
  * @tc.number: FetchCallRenderDevice_001
@@ -332,7 +410,7 @@ HWTEST(AudioRouterCenterUnitTest, FetchCallRenderDevice_desc_nullptr, TestSize.L
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
     EXPECT_EQ(rtype, ROUTER_TYPE_NONE);
 }
- 
+
 /**
  * @tc.name  : Test FetchCallRenderDevice.
  * @tc.number: FetchCallRenderDevice_002
@@ -352,7 +430,7 @@ HWTEST(AudioRouterCenterUnitTest, FetchCallRenderDevice_deviceType_NONE, TestSiz
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
     EXPECT_EQ(rtype, ROUTER_TYPE_NONE);
 }
- 
+
 /**
  * @tc.name  : Test FetchCallRenderDevice.
  * @tc.number: FetchCallRenderDevice_003
@@ -372,7 +450,7 @@ HWTEST(AudioRouterCenterUnitTest, FetchCallRenderDevice_deviceType_valid, TestSi
     EXPECT_EQ(result, validDesc);
     EXPECT_EQ(rtype, ROUTER_TYPE_DEFAULT);
 }
- 
+
 /**
  * @tc.name  : Test FetchCallRenderDevice.
  * @tc.number: FetchCallRenderDevice_004
@@ -392,7 +470,7 @@ HWTEST(AudioRouterCenterUnitTest, FetchCallRenderDevice_bypassType_skip, TestSiz
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
     EXPECT_EQ(rtype, ROUTER_TYPE_NONE);
 }
- 
+
 /**
  * @tc.name  : Test FetchCallCaptureDevice.
  * @tc.number: FetchCallCaptureDevice_001
@@ -409,7 +487,7 @@ HWTEST(AudioRouterCenterUnitTest, FetchCallCaptureDevice_desc_nullptr, TestSize.
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
     EXPECT_EQ(rtype, ROUTER_TYPE_NONE);
 }
- 
+
 /**
  * @tc.name  : Test FetchCallCaptureDevice.
  * @tc.number: FetchCallCaptureDevice_002
@@ -428,7 +506,7 @@ HWTEST(AudioRouterCenterUnitTest, FetchCallCaptureDevice_deviceType_NONE, TestSi
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
     EXPECT_EQ(rtype, ROUTER_TYPE_NONE);
 }
- 
+
 /**
  * @tc.name  : Test FetchCallCaptureDevice.
  * @tc.number: FetchCallCaptureDevice_003
@@ -447,7 +525,7 @@ HWTEST(AudioRouterCenterUnitTest, FetchCallCaptureDevice_deviceType_valid, TestS
     EXPECT_EQ(result, validDesc);
     EXPECT_EQ(rtype, ROUTER_TYPE_DEFAULT);
 }
- 
+
 /**
  * @tc.name  : Test FetchVoiceMessageCaptureDevice.
  * @tc.number: FetchVoiceMessageCaptureDevice_001
@@ -464,7 +542,7 @@ HWTEST(AudioRouterCenterUnitTest, FetchVoiceMessageCaptureDevice_desc_nullptr, T
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
     EXPECT_EQ(rtype, ROUTER_TYPE_NONE);
 }
- 
+
 /**
  * @tc.name  : Test FetchVoiceMessageCaptureDevice.
  * @tc.number: FetchVoiceMessageCaptureDevice_002
@@ -483,7 +561,7 @@ HWTEST(AudioRouterCenterUnitTest, FetchVoiceMessageCaptureDevice_deviceType_NONE
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
     EXPECT_EQ(rtype, ROUTER_TYPE_NONE);
 }
- 
+
 /**
  * @tc.name  : Test FetchVoiceMessageCaptureDevice.
  * @tc.number: FetchVoiceMessageCaptureDevice_003
