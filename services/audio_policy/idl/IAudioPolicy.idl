@@ -290,6 +290,8 @@ interface IAudioPolicy {
     void SetDefaultOutputDevice([in] int deviceType /* deviceType */);
     void ForceVolumeKeyControlType([in] int volumeType, [in] int duration, [out] int ret);
     void SetQueryDeviceVolumeBehaviorCallback([in] IRemoteObject object);
+    void GetVADeviceBroker([out] IRemoteObject client);
+    void GetVADeviceController([in] String macAddress, [out] IRemoteObject controller);
     void SetAppConcurrencyMode([in] int appUid, [in] int mode);
     void SetAppSilentOnDisplay([in] int displayId);
     void IsIntelligentNoiseReductionEnabledForCurrentDevice([in] int sourceType, [out] boolean ret);

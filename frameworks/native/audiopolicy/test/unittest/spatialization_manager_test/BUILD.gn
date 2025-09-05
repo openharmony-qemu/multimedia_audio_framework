@@ -37,5 +37,6 @@ ohos_unittest("audio_spatialization_manager_test") {
     "c_utils:utils",
     "googletest:gmock",
     "googletest:gtest",
+    "ipc:ipc_core",
   ]
 }

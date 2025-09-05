@@ -44,6 +44,7 @@ const std::unordered_map<DeviceType, std::string> &GetSupportedDeviceType()
         {DEVICE_TYPE_EXTERN_CABLE, "DEVICE_TYPE_EXTERN_CABLE"},
         {DEVICE_TYPE_DEFAULT, "DEVICE_TYPE_DEFAULT"},
         {DEVICE_TYPE_ACCESSORY, "DEVICE_TYPE_ACCESSORY"},
+        {DEVICE_TYPE_BT_SPP, "DEVICE_TYPE_BT_SPP"},
     };
     return supportedDevicetype;
 }

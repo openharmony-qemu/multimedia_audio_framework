@@ -40,6 +40,7 @@ static const char* ADAPTER_TYPE_USB = "usb";
 static const char* ADAPTER_TYPE_DP = "dp";
 static const char* ADAPTER_TYPE_ACCESSORY = "accessory";
 static const char* ADAPTER_TYPE_SLE = "sle";
+static const char* ADAPTER_TYPE_VA = "va";
 
 struct PairHash {
     template <class T1, class T2>
@@ -67,6 +68,7 @@ enum class AudioAdapterType {
     TYPE_ACCESSORY,
     TYPE_SLE,
     TYPE_HEARING_AID,
+    TYPE_VA,
     TYPE_INVALID
 };
 

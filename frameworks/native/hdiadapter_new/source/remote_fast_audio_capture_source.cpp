@@ -221,6 +221,13 @@ std::string RemoteFastAudioCaptureSource::GetAudioParameter(const AudioParamKey 
     return "";
 }
 
+void RemoteFastAudioCaptureSource::SetAudioParameter(
+    const AudioParamKey key, const std::string &condition, const std::string &value)
+{
+    AUDIO_WARNING_LOG("not support");
+    return;
+}
+
 int32_t RemoteFastAudioCaptureSource::SetVolume(float left, float right)
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");

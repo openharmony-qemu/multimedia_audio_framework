@@ -84,6 +84,8 @@ ohos_shared_library("audio_common") {
     "common/src/oh_audio_buffer_base.cpp",
     "common/src/volume_tools.cpp",
     "common/src/app_bundle_manager.cpp",
+    "common/src/va_shared_buffer.cpp",
+    "common/src/va_shared_buffer_operator.cpp",
   ]
 
   cflags = [
@@ -108,6 +110,7 @@ ohos_shared_library("audio_common") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
+    "ipc:ipc_core",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "samgr:samgr_proxy",

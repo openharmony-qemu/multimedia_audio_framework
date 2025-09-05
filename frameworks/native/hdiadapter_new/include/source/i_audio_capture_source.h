@@ -56,6 +56,7 @@ public:
         uint64_t &replyBytesEc) = 0;
 
     virtual std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) = 0;
+    virtual void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) = 0;
 
     virtual int32_t SetVolume(float left, float right) = 0;
     virtual int32_t GetVolume(float &left, float &right) = 0;

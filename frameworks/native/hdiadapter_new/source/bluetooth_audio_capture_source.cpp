@@ -257,6 +257,13 @@ std::string BluetoothAudioCaptureSource::GetAudioParameter(const AudioParamKey k
     return "";
 }
 
+void BluetoothAudioCaptureSource::SetAudioParameter(
+    const AudioParamKey key, const std::string &condition, const std::string &value)
+{
+    AUDIO_WARNING_LOG("not support");
+    return;
+}
+
 int32_t BluetoothAudioCaptureSource::SetVolume(float left, float right)
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");

@@ -126,6 +126,13 @@ std::string FileAudioCaptureSource::GetAudioParameter(const AudioParamKey key, c
     return "";
 }
 
+void FileAudioCaptureSource::SetAudioParameter(
+    const AudioParamKey key, const std::string &condition, const std::string &value)
+{
+    AUDIO_WARNING_LOG("not support");
+    return;
+}
+
 int32_t FileAudioCaptureSource::SetVolume(float left, float right)
 {
     return SUCCESS;

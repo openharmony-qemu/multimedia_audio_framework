@@ -209,6 +209,13 @@ std::string FastAudioCaptureSource::GetAudioParameter(const AudioParamKey key, c
     return "";
 }
 
+void FastAudioCaptureSource::SetAudioParameter(
+    const AudioParamKey key, const std::string &condition, const std::string &value)
+{
+    AUDIO_WARNING_LOG("not support");
+    return;
+}
+
 int32_t FastAudioCaptureSource::SetVolume(float left, float right)
 {
     AUDIO_INFO_LOG("not support");

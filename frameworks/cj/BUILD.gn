@@ -72,6 +72,7 @@ ohos_shared_library("cj_multimedia_audio_ffi") {
     "napi:ace_napi",
     "napi:cj_bind_ffi",
     "napi:cj_bind_native",
+    "ipc:ipc_core",
   ]
 
   innerapi_tags = [ "platformsdk" ]

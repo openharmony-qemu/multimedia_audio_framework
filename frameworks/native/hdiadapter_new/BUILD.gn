@@ -65,6 +65,7 @@ ohos_shared_library("hdiadapter_new") {
     "source/fast_audio_capture_source.cpp",
     "source/file_audio_capture_source.cpp",
     "source/wakeup_audio_capture_source.cpp",
+    "source/va_capture_source.cpp",
     "util/callback_wrapper.cpp",
     "util/id_handler.cpp",
     "util/ring_buffer_handler.cpp",
@@ -80,6 +81,7 @@ ohos_shared_library("hdiadapter_new") {
   ]
 
   external_deps = [
+    "hisysevent:libhisysevent",
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "data_share:datashare_common",
@@ -90,6 +92,7 @@ ohos_shared_library("hdiadapter_new") {
     "hilog:libhilog",
     "init:libbegetutil",
     "ipc:ipc_single",
+    "ipc:ipc_core",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
@@ -189,6 +192,7 @@ ohos_unittest("hdiadapter_unit_test") {
     "test/unittest/sink/remote_fast_audio_render_sink_unit_test.cpp",
     "test/unittest/sink/remote_offload_audio_render_sink_unit_test.cpp",
     "test/unittest/source/audio_capture_source_unit_test.cpp",
+    "test/unittest/source/va_capture_source_unit_test.cpp",
     "test/unittest/source/bluetooth_audio_capture_source_unit_test.cpp",
     "test/unittest/source/fast_audio_capture_source_unit_test.cpp",
     "test/unittest/source/file_audio_capture_source_unit_test.cpp",
@@ -204,6 +208,7 @@ ohos_unittest("hdiadapter_unit_test") {
   ]
 
   external_deps = [
+    "c_utils:utils",
     "drivers_interface_audio:libaudio_proxy_5.0",
     "googletest:gmock",
     "googletest:gtest",

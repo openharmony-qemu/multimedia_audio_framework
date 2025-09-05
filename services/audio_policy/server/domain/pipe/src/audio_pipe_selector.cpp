@@ -523,6 +523,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
 
     info.moduleInfo_.deviceType = std::to_string(streamDesc->newDeviceDescs_[0]->deviceType_);
     info.moduleInfo_.networkId = streamDesc->newDeviceDescs_[0]->networkId_;
+    info.moduleInfo_.macAddress = streamDesc->newDeviceDescs_[0]->macAddress_;
     info.moduleInfo_.sourceType = std::to_string(streamDesc->capturerInfo_.sourceType);
 
     info.streamDescriptors_.push_back(streamDesc);

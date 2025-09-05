@@ -2062,6 +2062,7 @@ IAudioSourceAttr AudioAdapterManager::GetAudioSourceAttr(const AudioModuleInfo &
     attr.isBigEndian = IsBigEndian(audioModuleInfo.format);
     attr.filePath = audioModuleInfo.fileName.c_str();
     attr.deviceNetworkId = audioModuleInfo.networkId.c_str();
+    attr.macAddress = audioModuleInfo.macAddress.c_str();
     if (!audioModuleInfo.deviceType.empty()) {
         attr.deviceType = std::stoi(audioModuleInfo.deviceType);
     }

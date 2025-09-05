@@ -90,6 +90,7 @@ typedef struct IAudioSourceAttr : public Parcelable {
     bool isBigEndian = false;
     std::string filePath = "";
     std::string deviceNetworkId = "";
+    std::string macAddress = "";
     int32_t deviceType = 0;
     int32_t sourceType = 0;
     uint64_t channelLayout = 0;
@@ -112,6 +113,7 @@ typedef struct IAudioSourceAttr : public Parcelable {
             parcel.WriteBool(isBigEndian) &&
             parcel.WriteString(filePath) &&
             parcel.WriteString(deviceNetworkId) &&
+            parcel.WriteString(macAddress) &&
             parcel.WriteInt32(deviceType) &&
             parcel.WriteInt32(sourceType) &&
             parcel.WriteUint64(channelLayout) &&
@@ -140,6 +142,7 @@ typedef struct IAudioSourceAttr : public Parcelable {
         attr->isBigEndian = parcel.ReadBool();
         attr->filePath = parcel.ReadString();
         attr->deviceNetworkId = parcel.ReadString();
+        attr->macAddress = parcel.ReadString();
         attr->deviceType = parcel.ReadInt32();
         attr->sourceType = parcel.ReadInt32();
         attr->channelLayout = parcel.ReadUint64();

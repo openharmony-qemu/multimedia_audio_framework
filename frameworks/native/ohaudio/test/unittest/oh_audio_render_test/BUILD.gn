@@ -76,6 +76,7 @@ ohos_unittest("audio_oh_render_unit_test") {
   external_deps = [
     "googletest:gmock",
     "googletest:gtest",
-    "hilog:libhilog"
+    "hilog:libhilog",
+    "ipc:ipc_core",
   ]
 }

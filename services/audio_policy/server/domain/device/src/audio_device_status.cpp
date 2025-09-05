@@ -443,6 +443,8 @@ int32_t AudioDeviceStatus::HandleLocalDeviceConnected(AudioDeviceDescriptor &upd
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_HEARING_AID) {
         A2dpDeviceConfigInfo configInfo = {audioStreamInfo, false};
         audioA2dpDevice_.AddHearingAidDevice(updatedDesc.macAddress_, configInfo);
+    } else if (updatedDesc.deviceType_ == DEVICE_TYPE_BT_SPP) {
+        AUDIO_INFO_LOG("not supported");
     }
     return SUCCESS;
 }
@@ -485,6 +487,8 @@ int32_t AudioDeviceStatus::HandleLocalDeviceDisconnected(const AudioDeviceDescri
         if (audioA2dpDevice_.DelHearingAidDevice(updatedDesc.macAddress_) == 0) {
             audioIOHandleMap_.ClosePortAndEraseIOHandle(HEARING_AID_SPEAKER);
         }
+    } else if (updatedDesc.deviceType_ == DEVICE_TYPE_BT_SPP) {
+        AUDIO_INFO_LOG("not supported");
     }
     SleAudioDeviceManager::GetInstance().RemoveNearlinkDevice(updatedDesc);
 
