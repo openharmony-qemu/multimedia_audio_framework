@@ -223,7 +223,7 @@ public:
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime) override;
 
     int32_t GenerateSessionId(uint32_t &sessionId) override;
-    
+
     int32_t NotifyAccountsChanged() override;
 
     int32_t NotifySettingsDataReady() override;
@@ -400,6 +400,7 @@ private:
     std::mutex streamLifeCycleMutex_ {};
     // Temporary resolution to avoid pcm driver problem
     std::map<std::string, std::string> usbInfoMap_;
+    std::mutex mtxGetUsbParameter_;
 
     std::atomic<bool> isAudioPolicyReady_ = false;
     std::mutex isAudioPolicyReadyMutex_;
