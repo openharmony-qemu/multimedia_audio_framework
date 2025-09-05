@@ -301,6 +301,25 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_008, TestSize.Level1)
     reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     ret = audioDeviceStatus.HandleDistributedDeviceUpdate(statusInfo, descForCb, reason);
     EXPECT_EQ(ret, SUCCESS);
+
+    DeviceStreamInfo deviceStreamInfo = {};
+    std::list<DeviceStreamInfo> streamInfoList = { deviceStreamInfo };
+    statusInfo.streamInfo = streamInfoList;
+    std::string testNetworkId = "testNetworkId_0";
+    auto res = strncpy_s(statusInfo.networkId, NETWORK_ID_SIZE, testNetworkId.c_str(), testNetworkId.size());
+    EXPECT_EQ(res, 0);
+    DeviceType devType = audioDeviceStatus.GetDeviceTypeFromPin(statusInfo.hdiPin);
+    std::shared_ptr<AudioDeviceDescriptor> audioDescriptor =
+        std::make_shared<AudioDeviceDescriptor>(devType, OUTPUT_DEVICE);
+    audioDescriptor->networkId_ = statusInfo.networkId;
+    audioDeviceStatus.audioConnectedDevice_.AddConnectedDevice(audioDescriptor);
+
+    statusInfo.isConnected = true;
+    reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
+    ret = audioDeviceStatus.HandleDistributedDeviceUpdate(statusInfo, descForCb, reason);
+    audioDeviceStatus.audioConnectedDevice_.DelConnectedDevice(audioDescriptor->networkId_,
+        audioDescriptor->deviceType_);
+    EXPECT_EQ(ret, SUCCESS_BUT_NOT_CONTINUE);
 }
 
 /**
