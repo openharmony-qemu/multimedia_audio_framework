@@ -23,6 +23,7 @@
 #include "audio_volume_manager.h"
 
 #include "media_monitor_manager.h"
+#include <fstream>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -36,6 +37,9 @@ const std::vector<StreamUsage> BACKGROUND_MUTE_STREAM_USAGE {
 
 constexpr uint32_t THP_EXTRA_SA_UID = 5000;
 constexpr uint32_t MEDIA_UID = 1013;
+constexpr const char* RECLAIM_MEMORY = "AudioReclaimMemory";
+constexpr uint32_t TIME_OF_RECLAIM_MEMORY = 240000; //4min
+constexpr const char* RECLAIM_FILE_STRING = "1";
 
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::streamTypeMap_ =
     AudioStreamCollector::CreateStreamMap();
@@ -769,7 +773,68 @@ int32_t AudioStreamCollector::UpdateTracker(AudioMode &mode, AudioStreamChangeIn
         UpdateCapturerStream(streamChangeInfo);
     }
     WriterStreamChangeSysEvent(mode, streamChangeInfo);
+    PostReclaimMemoryTask();
     return SUCCESS;
+}
+
+void AudioStreamCollector::PostReclaimMemoryTask()
+{
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    if (isActivatedMemReclaiTask_.load() && !CheckAudioStateIdle()) {
+        AUDIO_INFO_LOG("clear reclaim memory task");
+        audioPolicyServerHandler_->RemoveTask(RECLAIM_MEMORY);
+        isActivatedMemReclaiTask_.store(false);
+        return;
+    }
+    if (!isActivatedMemReclaiTask_.load() && CheckAudioStateIdle()) {
+        AUDIO_INFO_LOG("start reclaim memory task");
+        auto task = [this]() {
+            ReclaimMem();
+            isActivatedMemReclaiTask_.store(false);
+        };
+        audioPolicyServerHandler_->PostTask(task, RECLAIM_MEMORY, TIME_OF_RECLAIM_MEMORY);
+        isActivatedMemReclaiTask_.store(true);
+    }
+}
+
+void AudioStreamCollector::ReclaimMem()
+{
+    std::lock_guard<std::mutex> lock(clearMemoryMutex_);
+    std::string reclaimPath = "/proc/" + std::to_string(getpid()) + "/reclaim";
+    std::string reclaimContent = RECLAIM_FILE_STRING;
+    AUDIO_INFO_LOG("start reclaim file = %{public}s", reclaimPath.c_str());
+    std::ofstream outfile(reclaimPath);
+    if (outfile.is_open()) {
+        outfile << reclaimContent;
+        outfile.close();
+    } else {
+        AUDIO_ERR_LOG("reclaim cannot open file");
+    }
+}
+
+bool AudioStreamCollector::CheckAudioStateIdle()
+{
+    if (audioRendererChangeInfos_.empty() && audioCapturerChangeInfos_.empty()) {
+        AUDIO_INFO_LOG("there are no tasks");
+        return true;
+    }
+    for (const auto& rendererInfo : audioRendererChangeInfos_) {
+        if (rendererInfo->rendererState == RENDERER_RUNNING) {
+            AUDIO_INFO_LOG("rendererInfo exist running task");
+            return false;
+        }
+    }
+    for (const auto& capturerInfo : audioCapturerChangeInfos_) {
+        if (capturerInfo->capturerState == CAPTURER_RUNNING) {
+            AUDIO_INFO_LOG("capturerInfo exist running task");
+            return false;
+        }
+    }
+
+    AUDIO_INFO_LOG("there are no tasks running");
+    return true;
 }
 
 int32_t AudioStreamCollector::UpdateTrackerInternal(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
