@@ -31,7 +31,7 @@ constexpr int32_t NORMAL_FRAME_LEN = 960;
 constexpr int32_t NORMAL_ID = 1243;
 constexpr float LOUDNESS_GAIN = 1.0f;
 constexpr uint32_t SAMPLE_RATE_16010 = 16010;
-constexpr size_t DEFAULT_HISTROY_FRAME_COUNT = 5; 
+constexpr size_t DEFAULT_HISTROY_FRAME_COUNT = 5;
 
 static void AddFrameToBuffer(std::unique_ptr<HpaePcmBuffer> &buffer)
 {
