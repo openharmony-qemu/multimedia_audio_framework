@@ -32,6 +32,7 @@
 
 constexpr int32_t DEFAULT_EFFECT_RATE = 48000;
 constexpr int32_t DEFAULT_EFFECT_FRAME_LEN = 960;
+constexpr int32_t FRAME_LENGTH_LIMIT = 38400;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -305,6 +306,10 @@ int32_t HpaeRendererManager::CreateStream(const HpaeStreamInfo &streamInfo)
     if (!IsInit()) {
         return ERR_INVALID_OPERATION;
     }
+    int32_t checkRet = CheckStreamInfo(streamInfo);
+    if (checkRet != SUCCESS) {
+        return checkRet;
+    }
     auto request = [this, streamInfo]() {
         Trace trace("HpaeRendererManager::CreateStream id[" +
             std::to_string(streamInfo.sessionId) + "]");
@@ -317,6 +322,18 @@ int32_t HpaeRendererManager::CreateStream(const HpaeStreamInfo &streamInfo)
         sinkInputNodeMap_[streamInfo.sessionId]->SetState(HPAE_SESSION_PREPARED);
     };
     SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeRendererManager::CheckStreamInfo(const HpaeStreamInfo &streamInfo)
+{
+    if (streamInfo.frameLen == 0) {
+        AUDIO_ERR_LOG("FrameLen is 0.");
+        return ERROR;
+    } else if (streamInfo.frameLen > FRAME_LENGTH_LIMIT) {
+        AUDIO_ERR_LOG("FrameLen is over-sized.");
+        return ERROR;
+    }
     return SUCCESS;
 }
 
@@ -870,11 +887,11 @@ int32_t HpaeRendererManager::InitManager(bool isReload)
 {
     AUDIO_INFO_LOG("init devicename:%{public}s", sinkInfo_.deviceName.c_str());
     HpaeNodeInfo nodeInfo;
-    if (sinkInfo_.frameLen == 0) {
+    int32_t checkRet = CheckFramelen();
+    if (checkRet != SUCCESS) {
         TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
                         sinkInfo_.deviceName, ERR_INVALID_PARAM);
-        AUDIO_ERR_LOG("FrameLen is 0");
-        return ERROR;
+        return checkRet;
     }
     nodeInfo.channels = sinkInfo_.channels;
     nodeInfo.format = sinkInfo_.format;
@@ -910,6 +927,18 @@ int32_t HpaeRendererManager::InitManager(bool isReload)
     ret = outputCluster_->Init(attr);
     isInit_.store(ret == SUCCESS);
     TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT :INIT_DEVICE_RESULT, sinkInfo_.deviceName, ret);
+    return SUCCESS;
+}
+
+int32_t HpaeRendererManager::CheckFramelen()
+{
+    if (sinkInfo_.frameLen == 0) {
+        AUDIO_ERR_LOG("FrameLen is 0.");
+        return ERROR;
+    } else if (sinkInfo_.frameLen > FRAME_LENGTH_LIMIT) {
+        AUDIO_ERR_LOG("FrameLen is over-sized.");
+        return ERROR;
+    }
     return SUCCESS;
 }
 

@@ -40,6 +40,7 @@ namespace {
 static std::string g_rootPath = "/data/";
 constexpr int32_t FRAME_LENGTH_882 = 882;
 constexpr int32_t FRAME_LENGTH_960 = 960;
+constexpr int32_t OVERSIZED_FRAME_LENGTH = 38500;
 constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
 constexpr int32_t TEST_SLEEP_TIME_20 = 20;
 constexpr int32_t TEST_SLEEP_TIME_40 = 40;
@@ -1615,12 +1616,12 @@ HWTEST_F(HpaeRendererManagerTest, SendRequestInner_002, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test InitSinkInner_001
+ * @tc.name  : Test HpaeOffloadRendererManagerInitSinkInner_001
  * @tc.type  : FUNC
- * @tc.number: InitSinkInner_001
- * @tc.desc  : Test InitSinkInner when frameLen is 0.
+ * @tc.number: HpaeOffloadRendererManagerInitSinkInner_001
+ * @tc.desc  : Test HpaeOffloadRendererManagerInitSinkInner when frameLen is 0.
  */
-HWTEST_F(HpaeRendererManagerTest, InitSinkInner_001, TestSize.Level1)
+HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerInitSinkInner_001, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -1634,18 +1635,43 @@ HWTEST_F(HpaeRendererManagerTest, InitSinkInner_001, TestSize.Level1)
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
     std::shared_ptr<HpaeOffloadRendererManager> hpaeRendererManager =
         std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
-    bool isReload = 1;
-    hpaeRendererManager->InitSinkInner(isReload);
+    bool isReload = true;
+    EXPECT_EQ(hpaeRendererManager->InitSinkInner(isReload), ERROR);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
 
 /**
- * @tc.name  : Test InitManager_001
+ * @tc.name  : Test HpaeOffloadRendererManagerInitSinkInner_002
  * @tc.type  : FUNC
- * @tc.number: InitManager_001
- * @tc.desc  : Test InitManager when frameLen is 0.
+ * @tc.number: HpaeOffloadRendererManagerInitSinkInner_002
+ * @tc.desc  : Test HpaeOffloadRendererManagerInitSinkInner when frameLen is over-sized.
  */
-HWTEST_F(HpaeRendererManagerTest, InitManager_001, TestSize.Level1)
+HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerInitSinkInner_002, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = OVERSIZED_FRAME_LENGTH;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    std::shared_ptr<HpaeOffloadRendererManager> hpaeRendererManager =
+        std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    bool isReload = true;
+    EXPECT_EQ(hpaeRendererManager->InitSinkInner(isReload), ERROR);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererManagerInitManager_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRendererManagerInitManager_001
+ * @tc.desc  : Test HpaeRendererManagerInitManager when frameLen is 0.
+ */
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerInitManager_001, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -1659,8 +1685,145 @@ HWTEST_F(HpaeRendererManagerTest, InitManager_001, TestSize.Level1)
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
     std::shared_ptr<HpaeRendererManager> hpaeRendererManager =
         std::make_shared<HpaeRendererManager>(sinkInfo);
-    bool isReload = 1;
-    hpaeRendererManager->InitManager(isReload);
+    bool isReload = true;
+    EXPECT_EQ(hpaeRendererManager->InitManager(isReload), ERROR);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererManagerInitManager_002
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRendererManagerInitManager_002
+ * @tc.desc  : Test HpaeRendererManagerInitManager when frameLen is over-sized.
+ */
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerInitManager_002, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = OVERSIZED_FRAME_LENGTH;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager =
+        std::make_shared<HpaeRendererManager>(sinkInfo);
+    bool isReload = true;
+    EXPECT_EQ(hpaeRendererManager->InitManager(isReload), ERROR);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test HpaeOffloadRendererManagerCreateStream_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeOffloadRendererManagerCreateStream_001
+ * @tc.desc  : Test HpaeOffloadRendererManagerCreateStream when frameLen is 0.
+ */
+HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerCreateStream_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    bool isReload = true;
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(isReload), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    HpaeStreamInfo streamInfo;
+    streamInfo.frameLen = 0;
+    EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo), ERROR);
+}
+
+/**
+ * @tc.name  : Test HpaeOffloadRendererManagerCreateStream_002
+ * @tc.type  : FUNC
+ * @tc.number: HpaeOffloadRendererManagerCreateStream_002
+ * @tc.desc  : Test HpaeOffloadRendererManagerCreateStream when frameLen is over-sized.
+ */
+HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerCreateStream_002, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    bool isReload = true;
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(isReload), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    HpaeStreamInfo streamInfo;
+    streamInfo.frameLen = OVERSIZED_FRAME_LENGTH;
+    EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo), ERROR);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererManagerCreateStream_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRendererManagerCreateStream_001
+ * @tc.desc  : Test HpaeRendererManagerCreateStream when frameLen is 0.
+ */
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStream_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    bool isReload = true;
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(isReload), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    HpaeStreamInfo streamInfo;
+    streamInfo.frameLen = 0;
+    EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo), ERROR);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererManagerCreateStream_002
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRendererManagerCreateStream_002
+ * @tc.desc  : Test HpaeRendererManagerCreateStream when frameLen is over-sized.
+ */
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStream_002, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    bool isReload = true;
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(isReload), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    HpaeStreamInfo streamInfo;
+    streamInfo.frameLen = OVERSIZED_FRAME_LENGTH;
+    EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo), ERROR);
 }
 }  // namespace
