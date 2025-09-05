@@ -67,6 +67,8 @@ private:
         std::map<std::shared_ptr<AudioStreamDescriptor>, std::string> &streamToAdapter);
     void AddStreamToPipeAndUpdateAction(std::shared_ptr<AudioStreamDescriptor> &streamToAdd,
         std::shared_ptr<AudioPipeInfo> &pipe);
+    void ProcessModemCommunicationConcurrency(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
+        std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsMoveToNormal);
 
     AudioPolicyConfigManager& configManager_;
 };

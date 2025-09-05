@@ -187,6 +187,8 @@ int32_t AudioCoreService::CreateRendererClient(
         isModemStream = true;
         audioFlag = AUDIO_FLAG_NORMAL;
         AddSessionId(sessionId);
+        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_MODEM_COMMUNICATION;
+        streamDesc->routeFlag_ = AUDIO_OUTPUT_FLAG_MODEM_COMMUNICATION;
         pipeManager_->AddModemCommunicationId(sessionId, streamDesc);
     }
 
