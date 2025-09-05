@@ -148,13 +148,29 @@ HpaeStreamInfo GetCaptureStreamInfo()
     return streamInfo;
 }
 
-HWTEST_F(HpaeManagerUnitTest, constructHpaeManagerTest, TestSize.Level0)
+HWTEST_F(HpaeManagerUnitTest, constructHpaeManagerTest001, TestSize.Level0)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
     EXPECT_EQ(hpaeManager_->IsInit(), true);
     sleep(1);
     EXPECT_EQ(hpaeManager_->IsRunning(), true);
+    hpaeManager_->DeInit();
+    EXPECT_EQ(hpaeManager_->IsInit(), false);
+    sleep(1);
+    EXPECT_EQ(hpaeManager_->IsRunning(), false);
+}
+
+
+HWTEST_F(HpaeManagerUnitTest, constructHpaeManagerTest002, TestSize.Level0)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+    EXPECT_EQ(hpaeManager_->IsRunning(), true);
+    hpaeManager_->DeInit();
     hpaeManager_->DeInit();
     EXPECT_EQ(hpaeManager_->IsInit(), false);
     sleep(1);

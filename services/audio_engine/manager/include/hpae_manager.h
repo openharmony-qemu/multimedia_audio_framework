@@ -291,6 +291,7 @@ private:
     std::unordered_map<std::string, std::string> deviceDumpSinkInfoMap_;
     std::unordered_map<HpaeMsgCode, std::function<void(const std::any &)>> handlers_;
     std::string effectLiveState_ = "";
+    std::mutex mutex_;
 };
 
 }  // namespace HPAE

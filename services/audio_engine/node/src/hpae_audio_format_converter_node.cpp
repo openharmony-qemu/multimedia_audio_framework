@@ -59,13 +59,6 @@ HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeI
         preNodeInfo.customSampleRate, inChannelInfo.numChannels,
         inChannelInfo.channelLayout, nodeInfo.format, nodeInfo.frameLen, nodeInfo.samplingRate,
         outChannelInfo.numChannels, outChannelInfo.channelLayout);
-#ifdef ENABLE_HOOK_PCM
-    outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
-        "HpaeConverterNodeOutput_id_" + std::to_string(GetSessionId()) +
-        + "_nodeId_" + std::to_string(GetNodeId()) +
-        "_ch_" + std::to_string(GetChannelCount()) + "_rate_" +
-        std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
-#endif
 
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeAudioFormatConverterNode");
@@ -103,6 +96,17 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
 
     // make sure size of silenceData_, tmpOutput_, and ConverterOutput_ is correct
     CheckAndUpdateInfo(inputs[0]);
+
+#ifdef ENABLE_HOOK_PCM
+    if (!outputPcmDumper_) {
+        outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
+            "HpaeConverterNodeOutput_id_" + std::to_string(GetSessionId()) +
+            + "_nodeId_" + std::to_string(GetNodeId()) +
+            "_ch_" + std::to_string(GetChannelCount()) + "_rate_" +
+            std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
+    }
+#endif
+
     // pass valid tag to next node
     if (!inputs[0]->IsValid()) {
         return &silenceData_;

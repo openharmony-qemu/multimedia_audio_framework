@@ -123,11 +123,15 @@ HpaeManager::~HpaeManager()
 
 int32_t HpaeManager::Init()
 {
-    sinkSourceIndex_ = 0;
-    hpaeManagerThread_ = std::make_unique<HpaeManagerThread>();
-    hpaeManagerThread_->ActivateThread(this);
+    std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_RET_LOG(!IsInit(), SUCCESS, "already inited");
+    if (!hpaeManagerThread_) {
+        sinkSourceIndex_ = 0;
+        hpaeManagerThread_ = std::make_unique<HpaeManagerThread>();
+        hpaeManagerThread_->ActivateThread(this);
+    }
     isInit_.store(true);
-    return 0;
+    return SUCCESS;
 }
 
 int32_t HpaeManager::SuspendAudioDevice(std::string &audioPortName, bool isSuspend)
@@ -203,6 +207,8 @@ int32_t HpaeManager::GetAllSinks()
 
 int32_t HpaeManager::DeInit()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_RET_LOG(IsInit(), SUCCESS, "isn't inited");
     if (hpaeManagerThread_ != nullptr) {
         hpaeManagerThread_->DeactivateThread();
         hpaeManagerThread_ = nullptr;
