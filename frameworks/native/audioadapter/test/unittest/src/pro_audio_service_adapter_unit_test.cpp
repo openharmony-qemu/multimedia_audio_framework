@@ -47,7 +47,6 @@ void ProAudioServiceAdapterUnitTest::TearDown(void)
 
 ProAudioServiceAdapterUnitTest::ProAudioServiceAdapterUnitTest()
 {
-    
 }
 
 ProAudioServiceAdapterUnitTest::~ProAudioServiceAdapterUnitTest()
