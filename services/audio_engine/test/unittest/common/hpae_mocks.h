@@ -19,6 +19,7 @@
 #include "gmock/gmock.h"
 #include "hpae_msg_channel.h"
 #include "sink/i_audio_render_sink.h"
+#include "i_renderer_stream.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -33,6 +34,8 @@ public:
 
 class MockAudioRenderSink : public IAudioRenderSink {
 public:
+    MockAudioRenderSink() = default;
+    virtual ~MockAudioRenderSink() = default;
     MOCK_METHOD(int32_t, Init, (const IAudioSinkAttr &attr), (override));
     MOCK_METHOD(void, DeInit, (), (override));
     MOCK_METHOD(bool, IsInited, (), (override));
@@ -111,6 +114,29 @@ public:
     MOCK_METHOD(void, SetDmDeviceType, (uint16_t dmDeviceType, DeviceType deviceType), (override));
 
     MOCK_METHOD(void, DumpInfo, (std::string &dumpString), (override));
+};
+
+// Mock INodeCallback
+class MockNodeCallback : public INodeCallback {
+public:
+    MockNodeCallback() = default;
+    virtual ~MockNodeCallback() = default;
+    MOCK_METHOD(void, OnNodeStatusUpdate, (uint32_t, IOperation), (override));
+    MOCK_METHOD(void, OnFadeDone, (uint32_t, IOperation), (override));
+    MOCK_METHOD(void, OnRequestLatency, (uint32_t, uint64_t &), (override));
+    MOCK_METHOD(void, OnRewindAndFlush, (uint64_t, uint64_t), (override));
+    MOCK_METHOD(void, OnNotifyQueue, (), (override));
+    MOCK_METHOD(void, OnDisConnectProcessCluster, (HpaeProcessorType), (override));
+    MOCK_METHOD(void, OnNotifyDfxNodeInfo, (bool, uint32_t, HpaeDfxNodeInfo &), (override));
+    MOCK_METHOD(void, OnNotifyDfxNodeInfoChanged, (uint32_t, const HpaeDfxNodeInfo &), (override));
+};
+
+// Mock IStreamCallback
+class MockStreamCallback : public IStreamCallback {
+public:
+    MockStreamCallback() = default;
+    virtual ~MockStreamCallback() = default;
+    MOCK_METHOD(int32_t, OnStreamData, (AudioCallBackStreamInfo&), (override));
 };
 } // namespace HPAE
 } // namespace AudioStandard

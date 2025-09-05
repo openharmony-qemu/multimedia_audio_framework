@@ -354,8 +354,8 @@ void HpaeOffloadSinkOutputNode::StopStream()
     AUDIO_DEBUG_LOG("OffloadRewindAndFlush rewind time in us %{public}" PRIu64, rewindTime);
     auto callback = GetNodeInfo().statusCallback.lock();
     CHECK_AND_RETURN_LOG(callback != nullptr, "HpaeOffloadSinkOutputNode::StopStream callback is null");
-    callback->OnRewindAndFlush(rewindTime, hdiRealPos_);
     OffloadReset();
+    callback->OnRewindAndFlush(rewindTime, hdiRealPos_);
 }
 
 void HpaeOffloadSinkOutputNode::SetPolicyState(int32_t state)

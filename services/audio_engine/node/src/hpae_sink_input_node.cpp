@@ -35,6 +35,8 @@ const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
 static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 static constexpr uint32_t FRAME_LEN_100MS = 100;
 static constexpr uint32_t FRAME_LEN_20MS = 20;
+constexpr int32_t STANDBY_THRESHOLD = 9; // 9 standby is about 40ms
+
 HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo),
       pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate :
@@ -42,7 +44,7 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
       emptyBufferInfo_(nodeInfo.channels, 0, nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate :
         nodeInfo.customSampleRate, (uint64_t)nodeInfo.channelLayout),
       inputAudioBuffer_(pcmBufferInfo_), emptyAudioBuffer_(emptyBufferInfo_), outputStream_(this),
-      interleveData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)), framesWritten_(0),
+      interleveData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)),
       totalFrames_(0)
 {
     AUDIO_INFO_LOG("sinkinput sessionId %{public}d, channelcount %{public}d, channelLayout %{public}" PRIu64 ", "
@@ -99,31 +101,12 @@ void HpaeSinkInputNode::CheckAndDestroyHistoryBuffer()
 
 int32_t HpaeSinkInputNode::GetDataFromSharedBuffer()
 {
-    streamInfo_ = {.hdiFramePosition = hdiFramePosition_.exchange(0),
-        .framesWritten = framesWritten_,
-        .latency = streamInfo_.latency,
-        .inputData = interleveData_.data(),
-        .requestDataLen = interleveData_.size(),
-        .deviceClass = GetDeviceClass(),
-        .deviceNetId = GetDeviceNetId(),
-        .needData = !(historyBuffer_ && historyBuffer_->GetCurFrames()),
-        // offload enbale, underrun 9 times, request force write data; 9 times about 40ms
-        .forceData = offloadEnable_ ? (standbyCounter_ > 9 ? true : false) : true};
-    GetCurrentPosition(streamInfo_.framePosition, streamInfo_.timestamp);
-    auto writeCallback = writeCallback_.lock();
-    if (writeCallback != nullptr) {
-        return writeCallback->OnStreamData(streamInfo_);
-    }
-    AUDIO_ERR_LOG("sessionId: %{public}d, writeCallback is nullptr", GetSessionId());
-    return ERROR;
+    return OnStreamInfoChange(true);
 }
 
 bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
 {
     auto nodeCallback = GetNodeStatusCallback().lock();
-    if (nodeCallback) {
-        nodeCallback->OnRequestLatency(GetSessionId(), streamInfo_.latency);
-    }
     if ((GetDeviceClass() == DEVICE_CLASS_OFFLOAD || GetDeviceClass() == DEVICE_CLASS_REMOTE_OFFLOAD) &&
         !offloadEnable_) {
         ret = ERR_OPERATION_FAILED;
@@ -200,8 +183,7 @@ void HpaeSinkInputNode::DoProcess()
             AudioPerformanceMonitor::GetInstance().RecordSilenceState(GetSessionId(), false, pipeType,
                 static_cast<uint32_t>(appUid_));
         }
-        totalFrames_ = totalFrames_ + GetFrameLen();
-        framesWritten_ = totalFrames_;
+        totalFrames_ += GetFrameLen();
         if (historyBuffer_) {
             historyBuffer_->StoreFrameData(inputAudioBuffer_);
         }
@@ -281,29 +263,13 @@ int32_t HpaeSinkInputNode::GetAppUid()
     return appUid_;
 }
 
-uint64_t HpaeSinkInputNode::GetFramesWritten()
+void HpaeSinkInputNode::RewindHistoryBuffer(uint64_t rewindTime, uint64_t hdiFramePosition)
 {
-    return framesWritten_;
-}
-
-int32_t HpaeSinkInputNode::GetCurrentPosition(uint64_t &framePosition, std::vector<uint64_t> &timestamp)
-{
-    framePosition = GetFramesWritten();
-    if (historyBuffer_) {
-        framePosition = framePosition > historyBuffer_->GetCurFrames() * GetFrameLen()
-                            ? framePosition - historyBuffer_->GetCurFrames() * GetFrameLen()
-                            : 0;
-    }
-    ClockTime::GetAllTimeStamp(timestamp);
-    return SUCCESS;
-}
-
-int32_t HpaeSinkInputNode::RewindHistoryBuffer(uint64_t rewindTime, uint64_t hdiFramePosition)
-{
-    CHECK_AND_RETURN_RET_LOG(historyBuffer_, ERROR, "historyBuffer_ is nullptr");
+    CHECK_AND_RETURN_LOG(historyBuffer_, "historyBuffer_ is nullptr");
     hdiFramePosition_.store(hdiFramePosition);
     AUDIO_INFO_LOG("HpaeSinkInputNode::rewind %{public}zu frames", ConvertUsToFrameCount(rewindTime, GetNodeInfo()));
-    return historyBuffer_->RewindBuffer(ConvertUsToFrameCount(rewindTime, GetNodeInfo()));
+    historyBuffer_->RewindBuffer(ConvertUsToFrameCount(rewindTime, GetNodeInfo()));
+    OnStreamInfoChange(false);
 }
 
 void HpaeSinkInputNode::SetOffloadEnabled(bool offloadEnable)
@@ -335,6 +301,40 @@ void HpaeSinkInputNode::SetSpeed(float speed)
 float HpaeSinkInputNode::GetSpeed()
 {
     return speed_;
+}
+
+uint64_t HpaeSinkInputNode::GetLatency()
+{
+    return historyBuffer_ ? historyBuffer_->GetCurFrames() * GetFrameLen() : 0;
+}
+
+int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
+{
+    auto writeCallback = writeCallback_.lock();
+    CHECK_AND_RETURN_RET_LOG(writeCallback, ERROR, "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
+    bool needData = !(historyBuffer_ && historyBuffer_->GetCurFrames()) && isPullData;
+    // offload enbale, underrun 9 times, request force write data; 9 times about 40ms
+    bool forceData = offloadEnable_ ? (standbyCounter_ > STANDBY_THRESHOLD ? true : false) : true;
+    uint64_t latency = 0;
+    auto nodeCallback = GetNodeStatusCallback().lock();
+    if (nodeCallback) {
+        nodeCallback->OnRequestLatency(GetSessionId(), latency);
+    }
+    latency += GetLatency();
+    streamInfo_ = {
+        .framePosition = totalFrames_,
+        .hdiFramePosition = hdiFramePosition_.exchange(0),
+        .framesWritten = totalFrames_,
+        .latency = latency,
+        .inputData = interleveData_.data(),
+        .requestDataLen = interleveData_.size(),
+        .deviceClass = GetDeviceClass(),
+        .deviceNetId = GetDeviceNetId(),
+        .needData = needData,
+        .forceData = forceData
+    };
+    ClockTime::GetAllTimeStamp(streamInfo_.timestamp);
+    return writeCallback->OnStreamData(streamInfo_);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

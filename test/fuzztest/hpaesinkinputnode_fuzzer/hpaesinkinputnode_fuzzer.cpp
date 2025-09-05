@@ -139,22 +139,6 @@ void GetStateFuzzTest()
     hpaeSinkInputNode->GetState();
 }
 
-void GetFramesWrittenFuzzTest()
-{
-    HpaeNodeInfo nodeInfo;
-    auto hpaeSinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
-    hpaeSinkInputNode->GetFramesWritten();
-}
-
-void GetCurrentPositionFuzzTest()
-{
-    HpaeNodeInfo nodeInfo;
-    auto hpaeSinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
-    uint64_t framePosition = GetData<uint64_t>();
-    std::vector<uint64_t> timestamp;
-    hpaeSinkInputNode->GetCurrentPosition(framePosition, timestamp);
-}
-
 void RewindHistoryBufferFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
@@ -218,8 +202,6 @@ TestFuncs g_testFuncs = {
     DrainFuzzTest,
     SetStateFuzzTest,
     GetStateFuzzTest,
-    GetFramesWrittenFuzzTest,
-    GetCurrentPositionFuzzTest,
     RewindHistoryBufferFuzzTest,
     SetAppUidFuzzTest,
     GetAppUidFuzzTest,
