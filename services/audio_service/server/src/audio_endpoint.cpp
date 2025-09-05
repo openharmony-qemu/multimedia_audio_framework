@@ -984,8 +984,13 @@ int32_t AudioEndpointInner::OnStart(IAudioProcessStream *processStream)
         // call sink start
         if (!isStarted_) {
             CHECK_AND_RETURN_RET_LOG(StartDevice(RUNNING, INT64_MAX), ERR_OPERATION_FAILED, "StartDevice failed");
+            return SUCCESS;
         }
     }
+
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(adapterType_, INIT_LASTWRITTEN_TIME);
+    endpointStatus_ = RUNNING;
+    delayStopTime_ = INT64_MAX;
     return SUCCESS;
 }
 
