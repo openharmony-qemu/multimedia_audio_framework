@@ -1027,7 +1027,7 @@ std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetConnectedD
     for (const auto &desc : connectedDevices_) {
         if (std::find(types.begin(), types.end(), desc->deviceType_) != types.end() &&
             desc->deviceRole_ == role &&
-            desc->connectState_ == VIRTUAL_CONNECTED) {
+            desc->connectState_ != VIRTUAL_CONNECTED) {
             audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(desc));
         }
     }

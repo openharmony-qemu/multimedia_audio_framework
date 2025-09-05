@@ -1755,7 +1755,7 @@ bool AudioStreamCollector::HasRunningCapturerStreamByUid(int32_t uid)
             if (changeInfo->capturerState == CAPTURER_RUNNING) {
                 AUDIO_INFO_LOG("Running Capturer stream : %{public}d with uid %{public}d",
                     changeInfo->sessionId, uid);
-                if (uid == -1) {
+                if (uid == INVALID_UID) {
                     return true;
                 }
                 if (changeInfo->clientUID == uid) {

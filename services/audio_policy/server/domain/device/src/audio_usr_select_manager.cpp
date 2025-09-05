@@ -64,13 +64,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::GetSelectedInputDe
         AUDIO_ERR_LOG("AudioUsrSelectManager::GetSelectedInputDeviceByUid no selected device. uid:%{public}d", uid);
         return invalidDesc;
     }
-
-    auto desc = AudioDeviceManager::GetAudioDeviceManager().GetExistedDevice(it->second);
-    if (desc == nullptr) {
-        AUDIO_ERR_LOG("AudioUsrSelectManager::GetSelectedInputDeviceByUid device does not exist. uid:%{public}d", uid);
-        return invalidDesc;
-    }
-    return desc;
+    return it->second;
 }
 
 void AudioUsrSelectManager::ClearSelectedInputDeviceByUid(int32_t uid)
