@@ -35,7 +35,9 @@ constexpr size_t DEFAULT_HISTROY_FRAME_COUNT = 5;
 
 static void AddFrameToBuffer(std::unique_ptr<HpaePcmBuffer> &buffer)
 {
-    CHECK_AND_RETURN(buffer);
+    if (buffer == nullptr) {
+        return;
+    }
     PcmBufferInfo info = buffer->pcmBufferInfo_;
     info.isMultiFrames = false;
     info.frames = 1;
