@@ -2455,6 +2455,45 @@ int32_t AudioPolicyManager::SetDefaultOutputDevice(DeviceType deviceType)
     return gsp->SetDefaultOutputDevice(static_cast<int32_t>(deviceType));
 }
 
+int32_t AudioPolicyManager::SetAudioSessionCurrentInputDeviceChangeCallback(
+    const std::shared_ptr<AudioSessionCurrentInputDeviceChangedCallback> &deviceChangedCallback)
+{
+    CHECK_AND_RETURN_RET_LOG(deviceChangedCallback != nullptr, ERR_INVALID_PARAM, "deviceChangedCallback is nullptr");
+
+    int32_t result = CheckAudioPolicyClientRegisted();
+    CHECK_AND_RETURN_RET(result == SUCCESS, result);
+
+    CHECK_AND_RETURN_RET_LOG(audioPolicyClientStubCB_ != nullptr, ERROR_ILLEGAL_STATE,
+        "audioPolicyClientStubCB_ is null");
+    result = audioPolicyClientStubCB_->AddAudioSessionInputDeviceCallback(deviceChangedCallback);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to add audio session device callback.");
+
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_AUDIO_SESSION_INPUT_DEVICE].mutex);
+    CHECK_AND_RETURN_RET(audioPolicyClientStubCB_->GetAudioSessionInputDeviceCallbackSize() == 1, result);
+    // Notify audio server that the client has registerd one listener.
+    callbackChangeInfos_[CALLBACK_AUDIO_SESSION_INPUT_DEVICE].isEnable = true;
+    SetClientCallbacksEnable(CALLBACK_AUDIO_SESSION_INPUT_DEVICE, true);
+    return result;
+}
+
+int32_t AudioPolicyManager::UnsetAudioSessionCurrentInputDeviceChangeCallback(
+    const std::optional<std::shared_ptr<AudioSessionCurrentInputDeviceChangedCallback>> &deviceChangedCallback)
+{
+    CHECK_AND_RETURN_RET_LOG(audioPolicyClientStubCB_ != nullptr, ERROR_ILLEGAL_STATE,
+        "audioPolicyClientStubCB_ is null");
+
+    int32_t result = audioPolicyClientStubCB_->RemoveAudioSessionInputDeviceCallback(deviceChangedCallback);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to remove the audio session device callback.");
+
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_AUDIO_SESSION_INPUT_DEVICE].mutex);
+    if (audioPolicyClientStubCB_->GetAudioSessionInputDeviceCallbackSize() == 0) {
+        // Notify audio server that all of the client listeners have been unregisterd.
+        callbackChangeInfos_[CALLBACK_AUDIO_SESSION_INPUT_DEVICE].isEnable = false;
+        SetClientCallbacksEnable(CALLBACK_AUDIO_SESSION_INPUT_DEVICE, false);
+    }
+    return result;
+}
+
 int32_t AudioPolicyManager::SetAudioSessionCurrentDeviceChangeCallback(
     const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback)
 {
@@ -3211,6 +3250,16 @@ bool AudioPolicyManager::IsIntelligentNoiseReductionEnabledForCurrentDevice(Sour
     bool isSupport = false;
     gsp->IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType, isSupport);
     return isSupport;
+}
+
+int32_t AudioPolicyManager::CheckAudioPolicyClientRegisted()
+{
+    CHECK_AND_RETURN_RET(!isAudioPolicyClientRegisted_, SUCCESS);
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    int32_t result = RegisterPolicyCallbackClientFunc(gsp);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to register policy callback clent");
+    return result;
 }
 
 AudioPolicyManager& AudioPolicyManager::GetInstance()

@@ -186,7 +186,7 @@ private:
     bool ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, std::set<int32_t> &beCapIds);
     bool CheckShouldCap(const AudioProcessConfig &rendererConfig, int32_t innerCapId);
 #endif
-    bool ShouldBeDualTone(const AudioProcessConfig &config);
+    bool ShouldBeDualTone(const AudioProcessConfig &config, const std::string &dupSinkName);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t OnInitInnerCapList(int32_t innerCapId); // for first InnerCap filter take effect.
     int32_t OnUpdateInnerCapList(int32_t innerCapId); // for some InnerCap filter has already take effect.

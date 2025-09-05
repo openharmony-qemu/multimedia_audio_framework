@@ -2566,7 +2566,7 @@ ohos_unittest("sle_audio_device_manager_unit_test") {
 
   sources = [ "./unittest/sle_audio_device_manager_unit_test/src/sle_audio_device_manager_unit_test.cpp" ]
 
-  deps = [ 
+  deps = [
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
     "../../audio_policy:audio_policy_client",
     "../../audio_policy:audio_policy_service_static",
@@ -2701,6 +2701,8 @@ ohos_unittest("audio_router_center_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "googletest:gmock",
+    "googletest:gtest",
   ]
 
   sources = [
@@ -2714,6 +2716,7 @@ ohos_unittest("audio_router_center_unit_test") {
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_client",
     "../../audio_service:audio_common",
+    "../../audio_service/idl:audio_framework_interface"
   ]
 
   if (accessibility_enable == true) {

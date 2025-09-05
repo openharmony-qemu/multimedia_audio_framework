@@ -66,8 +66,6 @@ public:
     int32_t OnStart(IAudioProcessStream *processStream) override;
     // when audio process pause.
     int32_t OnPause(IAudioProcessStream *processStream) override;
-    // when audio process request update handle info.
-    int32_t OnUpdateHandleInfo(IAudioProcessStream *processStream) override;
 
     /**
      * Call LinkProcessStream when first create process or link other process with this endpoint.

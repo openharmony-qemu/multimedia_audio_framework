@@ -383,6 +383,7 @@ int32_t BluetoothAudioCaptureSource::UpdateAppsUid(const std::vector<int32_t> &a
 void BluetoothAudioCaptureSource::SetInvalidState(void)
 {
     AUDIO_INFO_LOG("in");
+    std::lock_guard<std::mutex> lock(statusMutex_);
     validState_ = false;
     sourceInited_ = false;
     started_ = false;

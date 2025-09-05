@@ -256,7 +256,17 @@ void AudioCoreServicePrivateOnDeviceStatusUpdatedFuzzTest()
     }
     AudioDeviceDescriptor desc;
     bool isConnect = GetData<uint32_t>() % NUM_2;
-    audioCoreService->pipeManager_ = nullptr;
+    audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
+
+    desc.networkId_ = LOCAL_NETWORK_ID;
+    desc.deviceType_ = DEVICE_TYPE_SPEAKER;
+    desc.macAddress_ = "00:00:00:00:00:00";
+    constexpr int32_t connectStateCount = static_cast<int32_t>(ConnectState::DEACTIVE_CONNECTED) + 1;
+    desc.connectState_ = static_cast<ConnectState>(GetData<uint8_t>() % connectStateCount);
+    desc.descriptorType_ = AudioDeviceDescriptor::DEVICE_INFO;
+    int32_t a2dpOffloadFlagCount = static_cast<int32_t>(BluetoothOffloadState::A2DP_OFFLOAD) + 1;
+    desc.a2dpOffloadFlag_ = static_cast<BluetoothOffloadState>(GetData<uint8_t>() % a2dpOffloadFlagCount);
+
     audioCoreService->OnDeviceStatusUpdated(desc, isConnect);
 }
 
@@ -363,6 +373,7 @@ void BluetoothDeviceFetchOutputHandleFuzzTest()
     AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = GetData<AudioStreamDeviceChangeReasonExt::ExtEnum>();
     AudioStreamDeviceChangeReasonExt reason(extEnum);
     std::string encryptMacAddr = "abc";
+    audioCoreService->audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
     audioCoreService->BluetoothDeviceFetchOutputHandle(desc, reason, encryptMacAddr);
 }
 
@@ -1208,7 +1219,6 @@ void AudioCoreServicePrivateDelayReleaseOffloadPipeFuzzTest()
     OffloadType type = LOCAL_OFFLOAD;
     audioCoreService->DelayReleaseOffloadPipe(id, paIndex, type);
     audioCoreService->isOffloadOpened_[type].store(true);
-    audioCoreService->DelayReleaseOffloadPipe(id, paIndex, type);
 }
 
 void AudioCoreServicePrivateReleaseOffloadPipeFuzzTest()

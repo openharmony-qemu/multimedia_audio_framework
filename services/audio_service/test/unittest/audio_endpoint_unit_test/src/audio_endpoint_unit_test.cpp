@@ -518,13 +518,7 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointMix_001, TestSize.Level1)
     bool result = audioEndpointInner->UnlinkProcessStream(processStream);
     EXPECT_FALSE(result);
 
-    int32_t ret = audioEndpointInner->OnUpdateHandleInfo(processStream);
-    EXPECT_NE(SUCCESS, ret);
-
-    ret = audioEndpointInner->LinkProcessStream(processStream);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = audioEndpointInner->OnUpdateHandleInfo(processStream);
+    int32_t ret = audioEndpointInner->LinkProcessStream(processStream);
     EXPECT_EQ(SUCCESS, ret);
 
     AudioProcessConfig config = {};

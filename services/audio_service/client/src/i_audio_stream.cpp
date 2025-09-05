@@ -112,6 +112,29 @@ void IAudioStream::CreateStreamMap(std::map<std::pair<ContentType, StreamUsage>,
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_CALL_ASSISTANT)] = STREAM_VOICE_CALL_ASSISTANT;
 }
 
+int32_t IAudioStream::CheckRendererAudioStreamInfo(const AudioStreamParams info)
+{
+    if (!IsFormatValid(info.format) || !IsEncodingTypeValid(info.encoding) ||
+        !((info.customSampleRate == 0 && IsSamplingRateValid(info.samplingRate)) ||
+        (info.customSampleRate != 0 && IsCustomSampleRateValid(info.customSampleRate)))) {
+        AUDIO_ERR_LOG("Unsupported audio renderer parameter");
+        return ERR_NOT_SUPPORTED;
+    }
+    CHECK_AND_RETURN_RET(IsPlaybackChannelRelatedInfoValid(info.channels, info.channelLayout), ERR_NOT_SUPPORTED);
+    return SUCCESS;
+}
+
+int32_t IAudioStream::CheckCapturerAudioStreamInfo(const AudioStreamParams info)
+{
+    if (!IsFormatValid(info.format) || !IsEncodingTypeValid(info.encoding) ||
+        !IsSamplingRateValid(info.samplingRate)) {
+        AUDIO_ERR_LOG("Unsupported audio capturer parameter");
+        return ERR_NOT_SUPPORTED;
+    }
+    CHECK_AND_RETURN_RET(IsRecordChannelRelatedInfoValid(info.channels, info.channelLayout), ERR_NOT_SUPPORTED);
+    return SUCCESS;
+}
+
 AudioStreamType IAudioStream::GetStreamType(ContentType contentType, StreamUsage streamUsage)
 {
     AudioStreamType streamType = STREAM_MUSIC;
@@ -321,9 +344,11 @@ bool IAudioStream::IsPlaybackChannelRelatedInfoValid(uint8_t channels, uint64_t 
 bool IAudioStream::IsRecordChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout)
 {
     if (!IsCapturerChannelValid(channels)) {
+        AUDIO_ERR_LOG("AudioStream: Invalid source channel %{public}d", channels);
         return false;
     }
     if (!IsCapturerChannelLayoutValid(channelLayout)) {
+        AUDIO_ERR_LOG("AudioStream: Invalid source channel layout");
         return false;
     }
     return true;

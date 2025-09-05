@@ -134,7 +134,6 @@ void AudioBackgroundManager::NotifyAppStateChange(const int32_t uid, const int32
         AUDIO_INFO_LOG("OnBackground with uid: %{public}d", uid);
         backgroundMuteListener_->OnBackgroundMute(uid);
     }
-    WriteAppStateChangeSysEvent(pid, appStatesMap_[pid], true);
 }
 
 void AudioBackgroundManager::NotifyBackgroundTaskStateChange(const int32_t uid, const int32_t pid, bool hasBackgroundTask)
@@ -145,6 +144,7 @@ void AudioBackgroundManager::NotifyBackgroundTaskStateChange(const int32_t uid, 
         appState.hasBackTask = hasBackgroundTask;
         appState.isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
         InsertIntoAppStatesMap(pid, uid, appState);
+        WriteAppStateChangeSysEvent(pid, appStatesMap_[pid], true);
     } else {
         AppState &appState = appStatesMap_[pid];
         CHECK_AND_RETURN(appState.hasBackTask != hasBackgroundTask);
@@ -155,8 +155,8 @@ void AudioBackgroundManager::NotifyBackgroundTaskStateChange(const int32_t uid, 
         if (appState.hasBackTask && !appState.isFreeze) {
             streamCollector_.HandleBackTaskStateChange(uid, appState.hasSession);
         }
+        WriteAppStateChangeSysEvent(pid, appStatesMap_[pid], true);
     }
-    WriteAppStateChangeSysEvent(pid, appStatesMap_[pid], true);
 }
 
 int32_t AudioBackgroundManager::NotifySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession)
@@ -167,6 +167,7 @@ int32_t AudioBackgroundManager::NotifySessionStateChange(const int32_t uid, cons
         appState.hasSession = hasSession;
         appState.isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
         InsertIntoAppStatesMap(pid, uid, appState);
+        WriteAppStateChangeSysEvent(pid, appStatesMap_[pid], true);
     } else {
         AppState &appState = appStatesMap_[pid];
         CHECK_AND_RETURN_RET(appState.hasSession != hasSession, SUCCESS);
@@ -175,8 +176,8 @@ int32_t AudioBackgroundManager::NotifySessionStateChange(const int32_t uid, cons
             "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
             appState.hasBackTask, appState.isFreeze);
         HandleSessionStateChange(uid, pid);
+        WriteAppStateChangeSysEvent(pid, appStatesMap_[pid], true);
     }
-    WriteAppStateChangeSysEvent(pid, appStatesMap_[pid], true);
     return SUCCESS;
 }
 
@@ -216,7 +217,6 @@ int32_t AudioBackgroundManager::NotifyFreezeStateChange(const std::set<int32_t> 
                 appState.hasBackTask, appState.isFreeze);
             HandleFreezeStateChange(pid, isFreeze);
         }
-        WriteAppStateChangeSysEvent(pid, appStatesMap_[pid], true);
     }
     return SUCCESS;
 }

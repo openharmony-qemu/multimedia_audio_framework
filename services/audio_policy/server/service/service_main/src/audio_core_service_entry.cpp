@@ -286,10 +286,10 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry::GetPreferredInputDeviceDescriptors(
-    AudioCapturerInfo &captureInfo, std::string networkId)
+    AudioCapturerInfo &captureInfo, int32_t uid, std::string networkId)
 {
     std::shared_lock<std::shared_mutex> lock(eventMutex_);
-    return coreService_->GetPreferredInputDeviceDescInner(captureInfo, networkId);
+    return coreService_->GetPreferredInputDeviceDescInner(captureInfo, uid, networkId);
 }
 
 int32_t AudioCoreService::EventEntry::FetchOutputDeviceAndRoute(std::string caller,
@@ -303,11 +303,12 @@ int32_t AudioCoreService::EventEntry::FetchOutputDeviceAndRoute(std::string call
     return coreService_->FetchOutputDeviceAndRoute(caller, reason);
 }
 
-int32_t AudioCoreService::EventEntry::FetchInputDeviceAndRoute(std::string caller)
+int32_t AudioCoreService::EventEntry::FetchInputDeviceAndRoute(std::string caller,
+    const AudioStreamDeviceChangeReasonExt reason)
 {
     CHECK_AND_RETURN_RET(coreService_ != nullptr, ERR_UNKNOWN);
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    return coreService_->FetchInputDeviceAndRoute(caller);
+    return coreService_->FetchInputDeviceAndRoute(caller, reason);
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::EventEntry::GetActiveBluetoothDevice()

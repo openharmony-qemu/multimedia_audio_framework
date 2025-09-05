@@ -84,6 +84,8 @@ public:
 
     static AudioDeviceDescriptor *Unmarshalling(Parcel &parcel);
 
+    static void MapInputDeviceType(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
+
     void SetDeviceInfo(std::string deviceName, std::string macAddress);
 
     void SetDeviceCapability(const std::list<DeviceStreamInfo> &audioStreamInfo, int32_t channelMask,

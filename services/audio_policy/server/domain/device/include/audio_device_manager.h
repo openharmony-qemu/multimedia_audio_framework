@@ -71,6 +71,8 @@ public:
         std::vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
     vector<shared_ptr<AudioDeviceDescriptor>> GetAvailableBluetoothDevice(DeviceType devType,
         const std::string &macAddress);
+    vector<shared_ptr<AudioDeviceDescriptor>> GetConnectedDevicesByTypesAndRole(
+        const std::vector<DeviceType> &types, DeviceRole role);
     bool GetScoState();
     void UpdateEarpieceStatus(const bool hasEarPiece);
     vector<shared_ptr<AudioDeviceDescriptor>> GetDevicesByFilter(DeviceType devType, DeviceRole devRole,
@@ -105,6 +107,7 @@ public:
     bool ExistsByTypeAndAddress(DeviceType devType, const string &address) const;
     bool ExistSameRemoteDeviceByMacAddress(std::shared_ptr<AudioDeviceDescriptor> desc);
     shared_ptr<AudioDeviceDescriptor> GetActiveScoDevice(std::string scoMac, DeviceRole role);
+    std::shared_ptr<AudioDeviceDescriptor> GetExistedDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
 
 private:
     AudioDeviceManager();

@@ -368,7 +368,7 @@ bool AudioService::UpdateResumeInterruptEventMap(const uint32_t sessionId,
     }
     return true;
 }
- 
+
 bool AudioService::RemoveResumeInterruptEventMap(const uint32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(resumeInterruptEventMutex_);
@@ -379,7 +379,7 @@ bool AudioService::RemoveResumeInterruptEventMap(const uint32_t sessionId)
     resumeInterruptEventMap_.erase(sessionId);
     return true;
 }
- 
+
 bool AudioService::IsStreamInterruptResume(const uint32_t sessionId)
 {
     InterruptEventInternal interruptEvent;
@@ -397,7 +397,7 @@ bool AudioService::IsStreamInterruptResume(const uint32_t sessionId)
     resumeInterruptEventMap_.erase(sessionId);
     return false;
 }
- 
+
 bool AudioService::UpdatePauseInterruptEventMap(const uint32_t sessionId,
     InterruptEventInternal interruptEvent)
 {
@@ -410,7 +410,7 @@ bool AudioService::UpdatePauseInterruptEventMap(const uint32_t sessionId,
     }
     return true;
 }
- 
+
 bool AudioService::RemovePauseInterruptEventMap(const uint32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(pauseInterruptEventMutex_);
@@ -421,7 +421,7 @@ bool AudioService::RemovePauseInterruptEventMap(const uint32_t sessionId)
     pauseInterruptEventMap_.erase(sessionId);
     return true;
 }
- 
+
 bool AudioService::IsStreamInterruptPause(const uint32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(pauseInterruptEventMutex_);
@@ -438,7 +438,7 @@ bool AudioService::IsStreamInterruptPause(const uint32_t sessionId)
     AUDIO_INFO_LOG("sessionId:%{public}u Pause Timeout!!!", sessionId);
     return false;
 }
- 
+
 bool AudioService::IsInSwitchStreamMap(uint32_t sessionId, SwitchState &switchState)
 {
     std::lock_guard<std::mutex> lock(audioSwitchStreamMutex_);
@@ -449,7 +449,7 @@ bool AudioService::IsInSwitchStreamMap(uint32_t sessionId, SwitchState &switchSt
     switchState = iter->second;
     return true;
 }
- 
+
 bool AudioService::UpdateSwitchStreamMap(uint32_t sessionId, SwitchState switchState)
 {
     std::lock_guard<std::mutex> lock(audioSwitchStreamMutex_);
@@ -461,7 +461,7 @@ bool AudioService::UpdateSwitchStreamMap(uint32_t sessionId, SwitchState switchS
     iter->second = switchState;
     return true;
 }
- 
+
 void AudioService::RemoveSwitchStreamMap(uint32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(audioSwitchStreamMutex_);
@@ -470,7 +470,7 @@ void AudioService::RemoveSwitchStreamMap(uint32_t sessionId)
         audioSwitchStreamMap_.erase(sessionId);
     }
 }
- 
+
 bool AudioService::IsBackgroundCaptureAllowed(uint32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(backgroundCaptureMutex_);
@@ -484,7 +484,7 @@ bool AudioService::IsBackgroundCaptureAllowed(uint32_t sessionId)
     }
     return false;
 }
- 
+
 bool AudioService::UpdateBackgroundCaptureMap(uint32_t sessionId, bool res)
 {
     std::lock_guard<std::mutex> lock(backgroundCaptureMutex_);
@@ -496,7 +496,7 @@ bool AudioService::UpdateBackgroundCaptureMap(uint32_t sessionId, bool res)
     iter->second = res;
     return true;
 }
- 
+
 void AudioService::RemoveBackgroundCaptureMap(uint32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(backgroundCaptureMutex_);
@@ -505,7 +505,7 @@ void AudioService::RemoveBackgroundCaptureMap(uint32_t sessionId)
         backgroundCaptureMap_.erase(sessionId);
     }
 }
- 
+
 bool AudioService::NeedRemoveBackgroundCaptureMap(uint32_t sessionId, CapturerState capturerState)
 {
     SwitchState switchState;
@@ -753,8 +753,13 @@ bool AudioService::CheckShouldCap(const AudioProcessConfig &rendererConfig, int3
 }
 #endif
 
-bool AudioService::ShouldBeDualTone(const AudioProcessConfig &config)
+bool AudioService::ShouldBeDualTone(const AudioProcessConfig &config, const std::string &dupSinkName)
 {
+    // for dup device scene, use dmsdp speaker
+    if (dupSinkName != "Speaker") {
+        return true;
+    }
+
     CHECK_AND_RETURN_RET_LOG(Util::IsRingerOrAlarmerStreamUsage(config.rendererInfo.streamUsage), false,
         "Wrong usage ,should not be dualtone");
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
@@ -896,7 +901,7 @@ int32_t AudioService::EnableDualStream(const uint32_t sessionId, const std::stri
             AUDIO_WARNING_LOG("Renderer is already released!");
             continue;
         }
-        if (ShouldBeDualTone(renderer->processConfig_)) {
+        if (ShouldBeDualTone(renderer->processConfig_, dupSinkName)) {
             renderer->EnableDualTone(dupSinkName);
             filteredDualToneRendererMap_.push_back(renderer);
         }

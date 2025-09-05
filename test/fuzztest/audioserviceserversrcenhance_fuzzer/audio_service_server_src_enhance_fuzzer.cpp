@@ -116,7 +116,7 @@ void AudioServiceMoreFuzzTest()
     audioServicePtr->GetIpcStream(config, ret);
 #ifdef HAS_FEATURE_INNERCAPTURER
     audioServicePtr->ShouldBeInnerCap(config, 1);
-    audioServicePtr->ShouldBeDualTone(config);
+    audioServicePtr->ShouldBeDualTone(config, "Speaker");
 
     audioServicePtr->OnInitInnerCapList(1);
     audioServicePtr->OnUpdateInnerCapList(1);

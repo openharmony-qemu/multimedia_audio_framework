@@ -300,9 +300,12 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 
     // Create Client
     std::shared_ptr<AudioStreamDescriptor> streamDesc = ConvertToStreamDescriptor(audioStreamParams);
+
+    int32_t ret = IAudioStream::CheckCapturerAudioStreamInfo(audioStreamParams);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CheckCapturerAudioStreamInfo fail!");
+
     uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
-    int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(
-        streamDesc, flag, audioStreamParams.originalSessionId);
+    ret = AudioPolicyManager::GetInstance().CreateCapturerClient(streamDesc, flag, audioStreamParams.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateCapturerClient failed");
     AUDIO_INFO_LOG("StreamClientState for Capturer::CreateClient. id %{public}u, flag :%{public}u",
         audioStreamParams.originalSessionId, flag);
@@ -1520,8 +1523,11 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     CapturerState previousState, IAudioStream::SwitchInfo &switchInfo)
 {
     std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescBySwitchInfo(switchInfo, restoreInfo);
+
+    int32_t ret = IAudioStream::CheckCapturerAudioStreamInfo(switchInfo.params);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CheckCapturerAudioStreamInfo fail!");
     uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
-    int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(
+    ret = AudioPolicyManager::GetInstance().CreateCapturerClient(
         streamDesc, flag, switchInfo.params.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "CreateCapturerClient failed");
 

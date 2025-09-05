@@ -50,8 +50,9 @@ int32_t AudioPolicyManagerListenerStubImpl::OnAvailableDeviceChange(uint32_t usa
 
     CHECK_AND_RETURN_RET_LOG(availabledeviceChangedCallback != nullptr, AUDIO_INVALID_PARAM,
         "OnAvailableDeviceChange: deviceChangeCallback_ or deviceChangeAction is nullptr");
-
-    availabledeviceChangedCallback->OnAvailableDeviceChange(static_cast<AudioDeviceUsage>(usage), deviceChangeAction);
+    DeviceChangeAction change = deviceChangeAction;
+    AudioDeviceDescriptor::MapInputDeviceType(change.deviceDescriptors);
+    availabledeviceChangedCallback->OnAvailableDeviceChange(static_cast<AudioDeviceUsage>(usage), change);
     return SUCCESS;
 }
 

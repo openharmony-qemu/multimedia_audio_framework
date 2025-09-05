@@ -72,7 +72,6 @@ void AudioCoreServiceUnitTest::SetUpTestCase(void)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest::SetUpTestCase start-end");
     GetPermission();
-    HPAE::IHpaeManager::GetHpaeManager().Init();
     GetServerPtr()->coreService_->OnServiceConnected(HDI_SERVICE_INDEX);
 }
 void AudioCoreServiceUnitTest::TearDownTestCase(void)
@@ -801,10 +800,10 @@ HWTEST_F(AudioCoreServiceUnitTest, GetPreferredInputDeviceDescriptors_001, TestS
         AudioCapturerInfo capturerInfo;
         capturerInfo.sourceType = SOURCE_TYPE_INVALID;
         string networkId = REMOTE_NETWORK_ID;
-        GetServerPtr()->eventEntry_->GetPreferredInputDeviceDescriptors(capturerInfo, networkId);
+        GetServerPtr()->eventEntry_->GetPreferredInputDeviceDescriptors(capturerInfo, INVALID_UID, networkId);
 
         capturerInfo.sourceType = SOURCE_TYPE_MIC;
-        GetServerPtr()->eventEntry_->GetPreferredInputDeviceDescriptors(capturerInfo, networkId);
+        GetServerPtr()->eventEntry_->GetPreferredInputDeviceDescriptors(capturerInfo, INVALID_UID, networkId);
     );
 }
 
@@ -1412,6 +1411,188 @@ HWTEST_F(AudioCoreServiceUnitTest, SetFlagForMmapStream_001, TestSize.Level4)
 
     auto ret = coreService_->SetFlagForMmapStream(streamDesc);
     EXPECT_EQ(AUDIO_OUTPUT_FLAG_FAST, ret);
+}
+
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: UpdateRingerOrAlarmerDualDeviceOutputRouter_001
+* @tc.desc  : Test UpdateRingerOrAlarmerDualDeviceOutputRouter() when device type is null
+*/
+HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_001, TestSize.Level4)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateRingerOrAlarmerDualDeviceOutputRouter_001 start");
+
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(nullptr);
+
+    EXPECT_EQ(audioCoreService->shouldUpdateDeviceDueToDualTone_, false);
+
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateRingerOrAlarmerDualDeviceOutputRouter_001 end");
+}
+
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: UpdateRingerOrAlarmerDualDeviceOutputRouter_002
+* @tc.desc  : Test UpdateRingerOrAlarmerDualDeviceOutputRouter() when device type is error
+*/
+HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_002, TestSize.Level4)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateRingerOrAlarmerDualDeviceOutputRouter_002 start");
+
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    ASSERT_NE(audioDeviceDescriptor, nullptr);
+
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_MIC;
+    streamDesc->newDeviceDescs_.push_back(std::move(audioDeviceDescriptor));
+
+    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
+
+    EXPECT_EQ(audioCoreService->shouldUpdateDeviceDueToDualTone_, true);
+    EXPECT_EQ(audioCoreService->enableDualHalToneState_, false);
+
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateRingerOrAlarmerDualDeviceOutputRouter_002 end");
+}
+
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: UpdateRingerOrAlarmerDualDeviceOutputRouter_003
+* @tc.desc  : Test UpdateRingerOrAlarmerDualDeviceOutputRouter() when device type is error
+*/
+HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_003, TestSize.Level4)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateRingerOrAlarmerDualDeviceOutputRouter_003 start");
+
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    ASSERT_NE(audioDeviceDescriptor, nullptr);
+
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.push_back(std::move(audioDeviceDescriptor));
+
+    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
+
+    EXPECT_EQ(audioCoreService->audioVolumeManager_.IsRingerModeMute(), true);
+
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateRingerOrAlarmerDualDeviceOutputRouter_003 end");
+}
+
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: UpdateRingerOrAlarmerDualDeviceOutputRouter_004
+* @tc.desc  : Test UpdateRingerOrAlarmerDualDeviceOutputRouter() when device type is error
+*/
+HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_004, TestSize.Level4)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateRingerOrAlarmerDualDeviceOutputRouter_004 start");
+
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    ASSERT_NE(audioDeviceDescriptor, nullptr);
+
+    audioCoreService->SetRingerMode(AudioRingerMode::RINGER_MODE_SILENT);
+
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_REMOTE_CAST;
+    streamDesc->newDeviceDescs_.push_back(std::move(audioDeviceDescriptor));
+
+    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
+
+    EXPECT_EQ(audioCoreService->audioVolumeManager_.IsRingerModeMute(), false);
+
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateRingerOrAlarmerDualDeviceOutputRouter_004 end");
+}
+
+
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: UpdateDupDeviceOutputRoute_001
+* @tc.desc  : Test UpdateDupDeviceOutputRoute() when device type is null
+*/
+HWTEST_F(AudioCoreServiceUnitTest, UpdateDupDeviceOutputRoute_001, TestSize.Level4)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateDupDeviceOutputRoute_003 start");
+
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    audioCoreService->UpdateDupDeviceOutputRoute(nullptr);
+
+    EXPECT_EQ(audioCoreService->shouldUpdateDeviceDueToDualTone_, false);
+
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateDupDeviceOutputRoute_003 end");
+}
+
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: UpdateDupDeviceOutputRoute_002
+* @tc.desc  : Test UpdateDupDeviceOutputRoute() when device type is null
+*/
+HWTEST_F(AudioCoreServiceUnitTest, UpdateDupDeviceOutputRoute_002, TestSize.Level4)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateDupDeviceOutputRoute_002 start");
+
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    ASSERT_NE(audioDeviceDescriptor, nullptr);
+
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDupDeviceDescs_.push_back(std::move(audioDeviceDescriptor));
+
+    audioCoreService->UpdateDupDeviceOutputRoute(streamDesc);
+
+    EXPECT_EQ(audioCoreService->shouldUpdateDeviceDueToDualTone_, true);
+
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateDupDeviceOutputRoute_002 end");
+}
+
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: UpdateDupDeviceOutputRoute_003
+* @tc.desc  : Test UpdateDupDeviceOutputRoute() when device type is null
+*/
+HWTEST_F(AudioCoreServiceUnitTest, UpdateDupDeviceOutputRoute_003, TestSize.Level4)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateDupDeviceOutputRoute_003 start");
+
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    ASSERT_NE(audioDeviceDescriptor, nullptr);
+
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->oldDupDeviceDescs_.push_back(std::move(audioDeviceDescriptor));
+
+    audioCoreService->UpdateDupDeviceOutputRoute(streamDesc);
+
+    EXPECT_EQ(audioCoreService->shouldUpdateDeviceDueToDualTone_, false);
+
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateDupDeviceOutputRoute_003 end");
 }
 
 /**

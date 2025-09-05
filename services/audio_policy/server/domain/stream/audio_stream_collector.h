@@ -100,6 +100,7 @@ public:
     bool HasRunningRendererStream();
     bool HasRunningRecognitionCapturerStream();
     bool HasRunningNormalCapturerStream(DeviceType type);
+    bool HasRunningCapturerStreamByUid(int32_t uid = INVALID_UID);
     bool IsMediaPlaying();
     bool IsVoipStreamActive();
     void UpdateAppVolume(int32_t appUid, int32_t volume);
@@ -140,6 +141,11 @@ private:
     bool CheckRendererInfoChanged(AudioStreamChangeInfo &streamChangeInfo);
     bool IsTransparentCapture(const uint32_t clientUid);
     void ResetRingerModeMute(RendererState rendererState, StreamUsage streamUsage);
+    void PostReclaimMemoryTask();
+    void ReclaimMem();
+    bool CheckAudioStateIdle();
+    std::atomic_bool isActivatedMemReclaiTask_ = false;
+    std::mutex clearMemoryMutex_;
     AudioAbilityManager *audioAbilityMgr_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     std::shared_ptr<AudioConcurrencyService> audioConcurrencyService_;
