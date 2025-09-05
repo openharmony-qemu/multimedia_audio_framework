@@ -54,11 +54,13 @@ private:
 
 class AudioEndpointInner : public AudioEndpoint {
 public:
+    static constexpr int64_t INVALID_DELAY_STOP_HDI_TIME_NO_RUNNING_NS = -1;
     AudioEndpointInner(EndpointType type, uint64_t id, const AudioProcessConfig &clientConfig);
     ~AudioEndpointInner();
 
     bool Config(const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo) override;
-    bool StartDevice(EndpointStatus preferredState = INVALID);
+    bool StartDevice(EndpointStatus preferredState = INVALID,
+        int64_t delayStopTime_ = INVALID_DELAY_STOP_HDI_TIME_NO_RUNNING_NS);
     void HandleStartDeviceFailed();
     bool StopDevice();
 
