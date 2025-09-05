@@ -716,8 +716,6 @@ void AudioServiceDisableDualToneListFuzzTest()
         renderer = std::make_shared<RendererInServer>(processConfig, streamListener);
     }
 
-    audioService->filteredDualToneRendererMap_.clear();
-    audioService->filteredDualToneRendererMap_.push_back(renderer);
     int32_t sessionId = GetData<int32_t>();
     audioService->DisableDualStream(sessionId);
 }

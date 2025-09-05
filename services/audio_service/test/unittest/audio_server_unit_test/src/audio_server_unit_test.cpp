@@ -833,10 +833,10 @@ HWTEST_F(AudioServerUnitTest, AudioServerUpdateDualToneState_001, TestSize.Level
     EXPECT_NE(nullptr, audioServer);
 
     int32_t ret = audioServer->UpdateDualToneState(false, 123);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     ret = audioServer->UpdateDualToneState(true, 123);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 #endif
 

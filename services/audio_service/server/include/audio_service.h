@@ -207,8 +207,15 @@ private:
 #ifdef SUPPORT_LOW_LATENCY
     sptr<AudioProcessInServer> GetProcessInServerBySessionId(const uint32_t sessionId);
     int32_t GetPrivacyTypeForFastStream(const uint32_t sessionId, AudioPrivacyType &privacyType);
+    int32_t EnableDualStreamForFastStream(const uint32_t sessionId, const std::string &dupSinkName);
+    int32_t DisableDualStreamForFastStream(const uint32_t sessionId);
+    std::vector<std::pair<sptr<AudioProcessInServer>, std::shared_ptr<AudioEndpoint>>> GetLinkedPairInner(
+        const uint32_t sessionId);
+    void HandleProcessInserverDualStreamDisableInner(AudioEndpoint &endpoint);
+    void HandleProcessInserverDualStreamEnableInner(AudioEndpoint &endpoint, const std::string &dupSinkName);
 #endif
-
+    int32_t EnableDualStreamForNormalStream(const uint32_t sessionId, const std::string &dupSinkName);
+    int32_t DisableDualStreamForNormalStream(const uint32_t sessionId);
 private:
     std::mutex foregroundSetMutex_;
     std::set<std::string> foregroundSet_;
@@ -237,7 +244,6 @@ private:
     // for inner-capturer
     bool isRegisterCapturerFilterListened_ = false;
     bool isDefaultAdapterEnable_ = false;
-    uint32_t workingDualToneId_ = 0; // invalid sessionId
     AudioPlaybackCaptureConfig workingConfig_;
     std::unordered_map<int32_t, AudioPlaybackCaptureConfig> workingConfigs_;
 
@@ -248,8 +254,6 @@ private:
     std::unordered_map<int32_t, std::vector<std::weak_ptr<RendererInServer>>> filteredRendererMap_ = {};
     std::map<uint32_t, std::weak_ptr<RendererInServer>> allRendererMap_ = {};
     std::map<uint32_t, std::weak_ptr<CapturerInServer>> allCapturerMap_ = {};
-
-    std::vector<std::weak_ptr<RendererInServer>> filteredDualToneRendererMap_ = {};
 
     std::mutex mutedSessionsMutex_;
     std::set<uint32_t> mutedSessions_ = {};
@@ -268,6 +272,8 @@ private:
     std::map<uint32_t, bool> muteStateMap_{};
     std::mutex musicOrVoipSystemVolumeMutex_;
     float musicOrVoipSystemVolume_ = 0.0f;
+
+    std::mutex dualStreamMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -102,11 +102,12 @@ public:
 
     // for inner-cap
     bool ShouldInnerCap(int32_t innerCapId) override;
-    int32_t EnableFastInnerCap(int32_t innerCapId) override;
+    int32_t EnableFastInnerCap(int32_t innerCapId,
+        const std::optional<std::string> &dualDeviceName = std::nullopt) override;
     int32_t DisableFastInnerCap() override;
     int32_t DisableFastInnerCap(int32_t innerCapId) override;
 
-    int32_t InitDupStream(int32_t innerCapId);
+    int32_t InitDupStream(int32_t innerCapId, const std::optional<std::string> &dualDeviceName = std::nullopt);
 
     EndpointStatus GetStatus() override;
 
@@ -225,6 +226,11 @@ private:
     bool NeedUseTempBuffer(const RingBufferWrapper &ringBuffer, size_t spanSizeInByte);
     void PrepareStreamDataBuffer(size_t i, size_t spanSizeInByte,
         RingBufferWrapper &ringBuffer, AudioStreamData &streamData);
+    int32_t WriteDupBufferInnerForWriteModeInner(const BufferDesc &bufferDesc, int32_t innerCapId);
+    int32_t WriteDupBufferInnerForCallbackModeInner(const BufferDesc &bufferDesc, int32_t innerCapId);
+
+    static bool IsDupRenderCallbackMode(int32_t engineFlag, bool isDualStream);
+    static bool IsDualStream(const CaptureInfo &capInfo);
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
     static constexpr int64_t TWO_MILLISECOND_DURATION = 2000000; // 2ms

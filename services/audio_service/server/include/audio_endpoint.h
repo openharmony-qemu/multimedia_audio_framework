@@ -82,7 +82,8 @@ public:
     virtual void Release() = 0;
 
     virtual bool ShouldInnerCap(int32_t innerCapId) = 0;
-    virtual int32_t EnableFastInnerCap(int32_t innerCapId) = 0;
+    virtual int32_t EnableFastInnerCap(int32_t innerCapId,
+        const std::optional<std::string> &dualDeviceName = std::nullopt) = 0;
     virtual int32_t DisableFastInnerCap() = 0;
     virtual int32_t DisableFastInnerCap(int32_t innerCapId) = 0;
 
