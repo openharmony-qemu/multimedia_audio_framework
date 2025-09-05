@@ -190,9 +190,7 @@ int32_t AudioProcessInServer::RequestHandleInfo()
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
     CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_ILLEGAL_STATE, "buffer not inited!");
 
-    for (size_t i = 0; i < listenerList_.size(); i++) {
-        listenerList_[i]->OnUpdateHandleInfo(this);
-    }
+    // Check update handle info usage later
     return SUCCESS;
 }
 

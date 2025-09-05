@@ -1008,30 +1008,6 @@ int32_t AudioEndpointInner::OnPause(IAudioProcessStream *processStream)
     return SUCCESS;
 }
 
-int32_t AudioEndpointInner::OnUpdateHandleInfo(IAudioProcessStream *processStream)
-{
-    Trace trace("AudioEndpoint::OnUpdateHandleInfo");
-    bool isFind = false;
-    std::lock_guard<std::mutex> lock(listLock_);
-    auto processItr = processList_.begin();
-    while (processItr != processList_.end()) {
-        if (*processItr != processStream) {
-            processItr++;
-            continue;
-        }
-        std::shared_ptr<OHAudioBufferBase> processBuffer = (*processItr)->GetStreamBuffer();
-        CHECK_AND_RETURN_RET_LOG(processBuffer != nullptr, ERR_OPERATION_FAILED, "Process found but buffer is null");
-        uint64_t proHandleFrame = 0;
-        int64_t proHandleTime = 0;
-        processBuffer->GetHandleInfo(proHandleFrame, proHandleTime);
-
-        isFind = true;
-        break;
-    }
-    CHECK_AND_RETURN_RET_LOG(isFind, ERR_OPERATION_FAILED, "Can not find any process to UpdateHandleInfo");
-    return SUCCESS;
-}
-
 void AudioEndpointInner::AddProcessStreamToList(IAudioProcessStream *processStream,
     const std::shared_ptr<OHAudioBufferBase> &processBuffer)
 {
