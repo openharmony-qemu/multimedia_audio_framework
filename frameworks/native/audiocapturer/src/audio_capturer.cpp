@@ -1533,7 +1533,7 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
 
     bool switchResult = false;
     std::shared_ptr<IAudioStream> oldAudioStream = nullptr;
-    SetClientInfo(restoreInfo.routeFlag, targetClass);
+    SetClientInfo(flag, targetClass);
     std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetRecordStream(targetClass, switchInfo.params,
         switchInfo.eStreamType, appInfo_.appUid);
     CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "GetRecordStream failed.");

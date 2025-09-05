@@ -2269,7 +2269,7 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     bool switchResult = false;
     std::shared_ptr<IAudioStream> oldAudioStream = nullptr;
     // create new IAudioStream
-    SetClientInfo(restoreInfo.routeFlag, targetClass);
+    SetClientInfo(flag, targetClass);
     std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetPlaybackStream(targetClass, switchInfo.params,
         switchInfo.eStreamType, appInfo_.appUid);
     CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "SetParams GetPlayBackStream failed.");
