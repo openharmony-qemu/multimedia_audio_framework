@@ -533,7 +533,6 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_025, TestSize.Level1)
     uint32_t flag = 0x6000;
     IAudioStream::StreamClass streamClass = capturer->UpdateCapturerInfoByRouteFlag(flag);
     EXPECT_EQ(streamClass, IAudioStream::StreamClass::VOIP_STREAM);
-    
 }
 
 /**
