@@ -359,36 +359,13 @@ void RendererInClientInner::SetSwitchInfoTimestamp(
     std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair,
     std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePairWithSpeed)
 {
-    std::vector<uint64_t> timestampCurrent = {0};
-    ClockTime::GetAllTimeStamp(timestampCurrent);
+    AUDIO_INFO_LOG("RendererInClientInner::SetSwitchInfoTimestamp");
 
     lastFramePosAndTimePair_ = lastFramePosAndTimePair;
     lastFramePosAndTimePairWithSpeed_ = lastFramePosAndTimePairWithSpeed;
     for (int32_t base = 0; base < Timestamp::Timestampbase::BASESIZE; base++) {
-        uint64_t timestampNS = timestampCurrent[base];
-
-        // Calculate the number of samples at the switching point based on the current time
-        // before scaling to one times speed, for RendererInClientInner::GetAudioPosition
-        uint64_t lastTimeNS = lastFramePosAndTimePair[base].second;
-        uint64_t durationNS = timestampNS > lastTimeNS && lastTimeNS > 0 ? timestampNS - lastTimeNS : 0;
-        uint64_t durationUS = durationNS / AUDIO_US_PER_MS;
-        uint64_t newPositionUS =
-            lastFramePosAndTimePair[base].first + durationUS * curStreamParams_.samplingRate / AUDIO_US_PER_S;
-        lastSwitchPosition_[base] = newPositionUS;
-        lastFramePosAndTimePair_[base].first = newPositionUS;
-        lastFramePosAndTimePair_[base].second = timestampNS;
-
-        // after scaling to one times speed, for RendererInClientInner::GetAudioTimestampInfo
-        uint64_t lastTimeWithSpeedNS = lastFramePosAndTimePairWithSpeed[base].second;
-        uint64_t durationWithSpeedNS =
-            timestampNS > lastTimeWithSpeedNS && lastTimeWithSpeedNS > 0 ? timestampNS - lastTimeWithSpeedNS : 0;
-        uint64_t durationWithSpeedUS = durationWithSpeedNS / AUDIO_US_PER_MS;
-        float speed = GetSpeed();
-        uint64_t newPositionWithSpeedUS = lastFramePosAndTimePairWithSpeed[base].first +
-            durationWithSpeedUS * curStreamParams_.samplingRate * speed / AUDIO_US_PER_S;
-        lastSwitchPositionWithSpeed_[base] = newPositionWithSpeedUS;
-        lastFramePosAndTimePairWithSpeed_[base].first = newPositionWithSpeedUS;
-        lastFramePosAndTimePairWithSpeed_[base].second = timestampNS;
+        lastSwitchPosition_[base] = lastFramePosAndTimePair[base].first;
+        lastSwitchPositionWithSpeed_[base] = lastFramePosAndTimePairWithSpeed[base].first;
     }
 }
 
@@ -1522,7 +1499,7 @@ void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
     info.renderPeriodPositionCb = rendererPeriodPositionCallback_;
 
     info.rendererWriteCallback = writeCb_;
-    info.unprocessSamples = unprocessedFramesBytes_.load();
+    info.unprocessSamples = unprocessedFramesBytes_.load() + lastSwitchPosition_[Timestamp::Timestampbase::MONOTONIC];
 }
 
 IAudioStream::StreamClass RendererInClientInner::GetStreamClass()
