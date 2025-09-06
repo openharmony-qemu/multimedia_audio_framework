@@ -251,6 +251,7 @@ void Init(std::shared_ptr<CapturerInClientInner> capturerInClientInner)
     size_t size = 8 * 1024;
     capturerInClientInner->clientSpanSizeInByte_ = size;
     capturerInClientInner->ringCache_ = std::make_unique<AudioRingCache>(size);
+    capturerInClientInner->clientBuffer_ = OHAudioBuffer::CreateFromLocal(VALUE_FIF, VALUE_FIVE, VALUE_FOUR);
 }
 
 /**
