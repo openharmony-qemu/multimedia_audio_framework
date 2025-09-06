@@ -166,7 +166,7 @@ bool MockIRemoteObject::bExchange = true;
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_010, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_AEC_MODE);
     MessageParcel data;
     data.WriteInt32(0);
@@ -191,7 +191,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_011, TestSize.Level1)
     data.WriteInt32(1);
     MessageParcel reply;
     MessageOption option;
-    std::shared_ptr<AudioServer> audioServerN = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServerN = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     auto ret = audioServerN ->HandleFourthPartCode(format, data, reply, option);
     EXPECT_EQ(AUDIO_ERR, ret);
 }
@@ -210,7 +210,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_012, TestSize.Level1)
     data.WriteInt32(1);
     MessageParcel reply;
     MessageOption option;
-    std::shared_ptr<AudioServer> audioServerN = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServerN = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     auto ret = audioServerN ->HandleFourthPartCode(format, data, reply, option);
     EXPECT_EQ(AUDIO_ERR, ret);
 }
@@ -228,7 +228,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_019, TestSize.Level1)
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    std::shared_ptr<AudioServer> audioServerN = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServerN = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     auto ret = audioServerN ->HandleFourthPartCode(format, data, reply, option);
     EXPECT_EQ(305, ret);
 }
@@ -241,7 +241,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_019, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_NOISE_SUPPRESSION_MODE);
     MessageParcel data;
     data.WriteInt32(0);
@@ -262,7 +262,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_001, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_002, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_WHISPER_DETECTION_MODE);
     MessageParcel data;
     data.WriteInt32(0);
@@ -283,7 +283,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_002, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_003, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_WHISPER_DETECTION_MODE);
     MessageParcel data;
     data.WriteInt32(0);
@@ -304,7 +304,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_003, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_004, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_VOICE_CONTROL_MODE);
     MessageParcel data;
     data.WriteInt32(0);
@@ -325,7 +325,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_004, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_005, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_VOICE_MUTE_MODE);
     MessageParcel data;
     data.WriteInt32(0);
@@ -346,7 +346,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_005, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_006, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::IS_WHISPERING);
     MessageParcel data;
     data.WriteInt32(0);
@@ -367,7 +367,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_006, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_007, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::GET_EFFECT_OFFLOAD_ENABLED);
     MessageParcel data;
     data.WriteInt32(0);
@@ -388,7 +388,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_007, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_008, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SUSPEND_RENDERSINK);
     MessageParcel data;
     data.WriteInt32(0);
@@ -409,7 +409,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_008, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_009, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::RESTORE_RENDERSINK);
     MessageParcel data;
     data.WriteInt32(0);
@@ -430,7 +430,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_009, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_010, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::LOAD_HDI_EFFECT_MODEL);
     MessageParcel data;
     data.WriteInt32(0);
@@ -451,7 +451,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_010, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_013, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_EFFECT_BT_OFFLOAD_SUPPORTED);
     MessageParcel data;
     data.WriteInt32(0);
@@ -472,7 +472,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_013, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_014, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_SINK_MUTE_FOR_SWITCH_DEVICE);
     MessageParcel data;
     data.WriteInt32(0);
@@ -493,7 +493,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_014, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_015, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_ROTATION_TO_EFFECT);
     MessageParcel data;
     data.WriteInt32(0);
@@ -514,7 +514,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_015, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_016, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_SESSION_CONNECTION_STATE);
     MessageParcel data;
     data.WriteInt32(0);
@@ -535,7 +535,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_016, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_017, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_SINGLE_STREAM_MUTE);
     MessageParcel data;
     data.WriteInt32(0);
@@ -556,7 +556,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_017, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_018, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::RESTORE_SESSION);
     MessageParcel data;
     data.WriteInt32(0);
@@ -577,7 +577,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_018, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_STREAM_VOLUME_CHANGED);
     MessageParcel data;
     data.WriteInt32(0);
@@ -595,7 +595,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_001, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_002, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_SPATIALIZATION_SCENE_TYPE);
     MessageParcel data;
     data.WriteInt32(0);
@@ -613,7 +613,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_002, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_003, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::GET_MAX_AMPLITUDE);
     MessageParcel data;
     data.WriteInt32(0);
@@ -631,7 +631,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_003, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_004, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::RESET_AUDIO_ENDPOINT);
     MessageParcel data;
     data.WriteInt32(0);
@@ -649,7 +649,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_004, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_005, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::RESET_ROUTE_FOR_DISCONNECT);
     MessageParcel data;
     data.WriteInt32(0);
@@ -667,7 +667,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_005, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_006, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::GET_EFFECT_LATENCY);
     MessageParcel data;
     data.WriteInt32(0);
@@ -685,7 +685,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_006, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_007, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_LATENCY_TIMESTAMP);
     MessageParcel data;
     data.WriteInt32(0);
@@ -703,7 +703,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_007, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_008, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_AEC_MODE);
     MessageParcel data;
     data.WriteInt32(0);
@@ -721,7 +721,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_008, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_009, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_AEC_MODE);
     MessageParcel data;
     data.WriteInt32(0);
@@ -742,7 +742,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_009, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_011, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_NOISE_SUPPRESSION_MODE);
     MessageParcel data;
     data.WriteInt32(0);
@@ -760,7 +760,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_011, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_012, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_WHISPER_DETECTION_MODE);
     MessageParcel data;
     data.WriteInt32(0);
@@ -778,7 +778,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_012, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_013, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_EFFECT_PROPERTY);
     MessageParcel data;
     data.WriteInt32(2);
@@ -796,7 +796,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_013, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_014, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_ENHANCE_PROPERTY);
     MessageParcel data;
     data.WriteInt32(2);
@@ -814,7 +814,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_014, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_015, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_EFFECT_PROPERTY);
     MessageParcel data;
     data.WriteInt32(2);
@@ -835,7 +835,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_015, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_016, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_ENHANCE_PROPERTY);
     MessageParcel data;
     data.WriteInt32(2);
@@ -856,7 +856,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_016, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_017, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::UNSET_OFFLOAD_MODE);
     MessageParcel data;
     data.WriteUint32(2);
@@ -874,7 +874,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_017, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_018, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_OFFLOAD_MODE);
     MessageParcel data;
     data.WriteUint32(2);
@@ -894,7 +894,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_018, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::CHECK_REMOTE_DEVICE_STATE);
     MessageParcel data;
     MessageParcel reply;
@@ -911,7 +911,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_001, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_002, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_VOICE_VOLUME);
     MessageParcel data;
     MessageParcel reply;
@@ -928,7 +928,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_002, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_003, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_MONO_STATE);
     MessageParcel data;
     MessageParcel reply;
@@ -945,7 +945,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_003, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_004, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_BALANCE_VALUE);
     MessageParcel data;
     MessageParcel reply;
@@ -962,7 +962,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_004, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_006, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::LOAD_AUDIO_EFFECT_LIBRARIES);
     MessageParcel data;
     data.WriteInt32(0);
@@ -985,7 +985,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_006, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_008, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIO_EFFECT_CHAIN_MANAGER);
     MessageParcel data;
     data.WriteInt32(1);
@@ -1026,7 +1026,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_008, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_009, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_OUTPUT_DEVICE_SINK);
     MessageParcel data;
     data.WriteInt32(24);
@@ -1044,7 +1044,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_009, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_010, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_PLAYBACK_CAPTURER_MANAGER);
     MessageParcel data;
     MessageParcel reply;
@@ -1061,7 +1061,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_010, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_015, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_SPATIALIZATION_STATE);
     MessageParcel data;
     data.WriteBool(0);
@@ -1080,7 +1080,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_015, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_016, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_SPATIAL_DEVICE_TYPE);
     MessageParcel data;
     MessageParcel reply;
@@ -1097,7 +1097,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_016, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_017, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_SET_VOLUME);
     MessageParcel data;
     MessageParcel reply;
@@ -1114,7 +1114,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_017, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_018, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_STREAM_VOLUME_CHANGED);
     MessageParcel data;
     MessageParcel reply;
@@ -1131,7 +1131,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_018, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX);
     MessageParcel data;
     data.WriteInterfaceToken(u"IStandardAudioService");
@@ -1152,7 +1152,7 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_001, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_002, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_NOISE_SUPPRESSION_MODE);
     MessageParcel data;
     data.WriteInterfaceToken(u"IStandardAudioService");
@@ -1173,7 +1173,7 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_002, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_003, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_PARAMETER);
     MessageParcel data;
     data.WriteInterfaceToken(u"IStandardAudioService");
@@ -1191,7 +1191,7 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_003, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_004, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_PARAMETER);
     MessageParcel data;
     data.WriteInterfaceToken(u"IStandardAudioService");
@@ -1209,7 +1209,7 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_004, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_005, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::GET_EXTRA_AUDIO_PARAMETERS);
     MessageParcel data;
     data.WriteInterfaceToken(u"IStandardAudioService");
@@ -1228,7 +1228,7 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_005, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_006, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_EXTRA_AUDIO_PARAMETERS);
     MessageParcel data;
     data.WriteInterfaceToken(u"IStandardAudioService");
@@ -1250,7 +1250,7 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_006, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_007, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_MICROPHONE_MUTE);
     MessageParcel data;
     data.WriteInterfaceToken(u"IStandardAudioService");
@@ -1268,7 +1268,7 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_007, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_008, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_SCENE);
     MessageParcel data;
     data.WriteInterfaceToken(u"IStandardAudioService");
@@ -1290,7 +1290,7 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_008, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_009, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_SCENE);
     MessageParcel data;
     data.WriteInterfaceToken(u"IStandardAudioService");
@@ -1313,7 +1313,7 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_009, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_010, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_ROUTE_REQ);
     MessageParcel data;
     data.WriteInterfaceToken(u"IStandardAudioService");
@@ -1334,7 +1334,7 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_010, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_011, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_ROUTES_REQ);
     MessageParcel data;
     data.WriteInterfaceToken(u"IStandardAudioService");
@@ -1356,7 +1356,7 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_011, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_012, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_ROUTES_REQ);
     MessageParcel data;
     data.WriteInterfaceToken(u"IStandardAudioService");
@@ -1378,7 +1378,7 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_012, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_013, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_DUAL_TONE_REQ);
     MessageParcel data;
     data.WriteInterfaceToken(u"IStandardAudioService");
@@ -1398,7 +1398,7 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_013, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_014, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::GET_TRANSACTION_ID);
     MessageParcel data;
     data.WriteInterfaceToken(u"IStandardAudioService");
@@ -1418,7 +1418,7 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_014, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_015, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_PARAMETER_CALLBACK);
     MessageParcel data;
     data.WriteInterfaceToken(u"IStandardAudioService");
@@ -1439,7 +1439,7 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_015, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_016, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::GET_REMOTE_AUDIO_PARAMETER);
     MessageParcel data;
     data.WriteInterfaceToken(u"IStandardAudioService");
@@ -1460,7 +1460,7 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_016, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_017, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_REMOTE_AUDIO_PARAMETER);
     MessageParcel data;
     data.WriteInterfaceToken(u"IStandardAudioService");
@@ -1482,7 +1482,7 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_017, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_018, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_DEVICE_INFO);
     MessageParcel data;
     data.WriteInterfaceToken(u"IStandardAudioService");
@@ -1502,7 +1502,7 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_018, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_019, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_SPATIALIZATION_STATE);
     MessageParcel data;
     data.WriteInterfaceToken(u"IStandardAudioService");
@@ -1522,7 +1522,7 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_019, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_020, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_ASR_VOICE_CONTROL_MODE);
     MessageParcel data;
     MessageParcel reply;
@@ -1539,7 +1539,7 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_020, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_021, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(700);
     MessageParcel data;
     data.WriteInterfaceToken(u"IStandardAudioService");
@@ -1557,7 +1557,7 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_021, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_022, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::GET_ALL_SINK_INPUTS);
     MessageParcel data;
     data.WriteInterfaceToken(u"IStandardAudioService");
@@ -1575,7 +1575,7 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_022, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleFifthPartCode_001, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_IPC_OFFLINE_STREAM);
     MessageParcel data;
     data.WriteInt32(0);
@@ -1593,7 +1593,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleFifthPartCode_001, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleFifthPartCode_002, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::GET_OFFLINE_AUDIO_EFFECT_CHAINS);
     MessageParcel data;
     data.WriteInt32(0);
@@ -1611,7 +1611,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleFifthPartCode_002, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleFifthPartCode_003, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::GET_STANDBY_STATUS);
     MessageParcel data;
     data.WriteInt32(0);
@@ -1629,7 +1629,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleFifthPartCode_003, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleFifthPartCode_004, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::GENERATE_SESSION_ID);
     MessageParcel data;
     data.WriteInt32(0);
@@ -1647,7 +1647,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleFifthPartCode_004, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleFifthPartCode_005, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::LOAD_HDI_ADAPTER);
     MessageParcel data;
     data.WriteInt32(0);
@@ -1665,7 +1665,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleFifthPartCode_005, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_027, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::UNLOAD_HDI_ADAPTER);
     MessageParcel data;
     data.WriteInt32(0);
@@ -1683,7 +1683,7 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_027, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_019, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_EFFECT_PROPERTY_V3);
     MessageParcel data;
     data.WriteInt32(0);
@@ -1701,7 +1701,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_019, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_020, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_EFFECT_PROPERTY_V3);
     MessageParcel data;
     data.WriteInt32(0);
@@ -1719,7 +1719,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleThirdPartCode_020, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_019, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIOPROCESS);
     MessageParcel data;
     MessageParcel reply;
@@ -1736,7 +1736,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_019, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_020, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::REGISET_POLICY_PROVIDER);
     MessageParcel data;
     MessageParcel reply;
@@ -1753,7 +1753,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_020, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_021, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::SET_WAKEUP_CLOSE_CALLBACK);
     MessageParcel data;
     MessageParcel reply;
@@ -1770,7 +1770,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_021, TestSize.Level1)
 */
 HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_022, TestSize.Level1)
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::CHECK_HIBERNATE_STATE);
     MessageParcel data;
     MessageParcel reply;
