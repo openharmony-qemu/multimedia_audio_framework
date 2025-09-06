@@ -156,6 +156,7 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
 
     if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_MAX || sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE ||
         sourceType == AUDIO_SOURCE_TYPE_INVALID_5) {
+        CHECK_AND_RETURN_RET(sourceType != SOURCE_TYPE_VIRTUAL_CAPTURE, nullptr);
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_INVALID_PARAM);
         AUDIO_ERR_LOG("Invalid sourceType %{public}d!", sourceType);
         return nullptr;
