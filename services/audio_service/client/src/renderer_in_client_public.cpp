@@ -1499,7 +1499,7 @@ void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
     info.renderPeriodPositionCb = rendererPeriodPositionCallback_;
 
     info.rendererWriteCallback = writeCb_;
-    info.unprocessSamples = unprocessedFramesBytes_.load() + lastSwitchPosition_[Timestampbase::MONOTONIC];
+    info.unprocessSamples = unprocessedFramesBytes_.load() + lastSwitchPosition_[Timestamp::Timestampbase::MONOTONIC];
 }
 
 IAudioStream::StreamClass RendererInClientInner::GetStreamClass()
