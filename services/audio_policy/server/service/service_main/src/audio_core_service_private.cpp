@@ -2439,7 +2439,8 @@ void AudioCoreService::HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> &
 void AudioCoreService::DelayReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type)
 {
     AUDIO_INFO_LOG("In");
-    CHECK_AND_RETURN_LOG(type < OFFLOAD_TYPE_NUM && isOffloadOpened_[type].load(), "Offload is already released");
+    CHECK_AND_RETURN_LOG(type < OFFLOAD_TYPE_NUM && !isOffloadInRelease_[type].load(), "Offload is releasing");
+    isOffloadInRelease_[type].store(true);
     isOffloadOpened_[type].store(false);
     auto unloadOffloadThreadFuc = [this, id, paIndex, type] { this->ReleaseOffloadPipe(id, paIndex, type); };
     std::thread unloadOffloadThread(unloadOffloadThreadFuc);
