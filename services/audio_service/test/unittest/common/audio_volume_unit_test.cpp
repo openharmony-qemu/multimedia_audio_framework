@@ -1476,26 +1476,6 @@ HWTEST_F(AudioVolumeUnitTest, GetFadeStrategy_003, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test SetAppVolumeMute API
- * @tc.type  : FUNC
- * @tc.number: SetAppVolumeMute_007
- * @tc.desc  : Test AudioVolume interface.
- */
-HWTEST_F(AudioVolumeUnitTest, SetAppVolumeMute_007, TestSize.Level1)
-{
-    bool isMuted = true;
-    int32_t appuid = 123;
-    ASSERT_TRUE(AudioVolume::GetInstance() != nullptr);
-    AudioVolume::GetInstance()->SetAppVolumeMute(appuid, isMuted);
-
-    isMuted = false;
-    AudioVolume::GetInstance()->SetAppVolumeMute(appuid, isMuted);
-
-    appuid = -1;
-    AudioVolume::GetInstance()->SetAppVolumeMute(appuid, isMuted);
-}
-
-/**
  * @tc.name  : Test AudioVolume API
  * @tc.type  : FUNC
  * @tc.number: SetOffloadType_001

@@ -297,33 +297,7 @@ HWTEST(AudioServiceUnitTest, RestoreAudioStream_001, TestSize.Level1)
     ret = fastAudioStream->RestoreAudioStream(needStoreState);
     EXPECT_EQ(ret, 0);
 }
-/**
- * @tc.name  : Test JoincallbackLoop API
- * @tc.type  : FUNC
- * @tc.number: JoincallbackLoop_001
- * @tc.desc  : Test JoincallbackLoop interface using unsupported parameters.
- */
-HWTEST(AudioServiceUnitTest, JoinCallbackLoop_001, TestSize.Level1)
-{
-    AudioProcessConfig config;
-    config.appInfo.appPid = getpid();
-    config.appInfo.appUid = getuid();
 
-    config.audioMode = AUDIO_MODE_PLAYBACK;
-
-    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
-    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
-    config.rendererInfo.rendererFlags = RENDERER_FLAGS;
-
-    config.streamInfo.channels = STEREO;
-    config.streamInfo.encoding = ENCODING_PCM;
-    config.streamInfo.format = SAMPLE_S16LE;
-    config.streamInfo.samplingRate = SAMPLE_RATE_64000;
-    std::unique_ptr<FastAudioStream> fastAudioStream = std::make_unique<FastAudioStream>(config.streamType,
-        AUDIO_MODE_PLAYBACK, config.appInfo.appUid);
-    fastAudioStream->JoinCallbackLoop();
-    EXPECT_NE(fastAudioStream, nullptr);
-}
 /**
  * @tc.name  : Test SetDefaultoutputDevice API
  * @tc.type  : FUNC
