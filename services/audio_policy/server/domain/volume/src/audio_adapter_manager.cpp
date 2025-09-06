@@ -414,19 +414,20 @@ void AudioAdapterManager::UpdateSafeVolumeByS4()
     SetVolumeDb(STREAM_MUSIC);
 }
 
-void AudioAdapterManager::SendLoudVolumeModeToDsp(FunctionHoldType funcHoldType, bool state)
+void AudioAdapterManager::SendLoudVolumeModeToDsp(LoudVolumeHoldType funcHoldType, bool state)
 {
     std::string key = "LOUD_VOLUME_MODE";
     std::string value = "super_loudness_mode=voice_off";
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     CHECK_AND_RETURN_LOG(audioServerProxy_ != nullptr, "audioServerProxy_ null");
 
-    if (FUNCTION_HOLD_SYSTEM == funcHoldType) {
+    if (LOUD_VOLUME_MODE_VOICE == funcHoldType) {
         value = state ? "super_loudness_mode=voice_on" : "super_loudness_mode=voice_off";
-    } else if (FUNCTION_HOLD_MUSIC == funcHoldType) {
+    } else if (LOUD_VOLUME_MODE_MUSIC == funcHoldType) {
         value = state ? "super_loudness_mode=music_on" : "super_loudness_mode=music_off";
     } else {
         AUDIO_ERR_LOG("funcHoldType error : %{public}d", funcHoldType);
+        IPCSkeleton::SetCallingIdentity(identity);
         return;
     }
  

@@ -302,7 +302,7 @@ public:
     int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object);
     void HandleDistributedDeviceVolume();
     void SetSleVoiceStatusFlag(bool isSleVoiceStatus);
-    void SendLoudVolumeModeToDsp(FunctionHoldType funcHoldType, bool state);
+    void SendLoudVolumeModeToDsp(LoudVolumeHoldType funcHoldType, bool state);
     void SaveSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel);
     int32_t GetSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType);
     int32_t SetSystemVolumeToEffect(AudioStreamType streamType, float volume);

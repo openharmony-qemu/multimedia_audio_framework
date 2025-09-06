@@ -78,6 +78,8 @@ public:
 
     AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid);
 
+    bool ReloadLoudVolumeMode(AudioStreamType streamType, SetLoudVolMode setVolMode);
+
     int32_t GetSystemVolumeLevel(AudioVolumeType volumeType, int32_t uid = 0);
 
     int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);

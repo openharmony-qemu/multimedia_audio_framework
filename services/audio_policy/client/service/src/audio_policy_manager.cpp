@@ -476,6 +476,15 @@ AudioStreamType AudioPolicyManager::GetSystemActiveVolumeType(const int32_t clie
     return static_cast<AudioStreamType>(streamType);
 }
 
+bool AudioPolicyManager::ReloadLoudVolumeMode(AudioStreamType streamType, SetLoudVolMode setVolMode)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    bool ret = false;
+    gsp->ReloadLoudVolumeMode(static_cast<int32_t>(streamType), static_cast<int32_t>(setVolMode), ret);
+    return ret;
+}
+
 int32_t AudioPolicyManager::GetSelfAppVolumeLevel(int32_t &volumeLevel)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

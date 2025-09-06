@@ -138,7 +138,7 @@ public:
     void OnTimerExpired();
     bool IsNeedForceControlVolumeType();
     AudioVolumeType GetForceControlVolumeType();
-    void SendLoudVolumeMode(FunctionHoldType funcHoldType, bool state, bool repeatTrigNotif = false);
+    void SendLoudVolumeMode(LoudVolumeHoldType funcHoldType, bool state, bool repeatTrigNotif = false);
 
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
