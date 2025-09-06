@@ -164,6 +164,11 @@ static const std::unordered_map<DeviceType, std::string> DEVICE_TYPE_NAME_MAP = 
     {DEVICE_TYPE_BT_SPP, "BT_SPP"},
 };
 
+static const std::set<SourceType> BACKGROUND_SOURCE_TYPE = {
+    SOURCE_TYPE_MIC,
+    SOURCE_TYPE_VOICE_COMMUNICATION,
+};
+
 uint32_t Util::GetSamplePerFrame(const AudioSampleFormat &format)
 {
     uint32_t audioPerSampleLength = 2; // 2 byte
@@ -185,6 +190,11 @@ uint32_t Util::GetSamplePerFrame(const AudioSampleFormat &format)
             break;
     }
     return audioPerSampleLength;
+}
+
+bool Util::IsBackgroundSourceType(const SourceType sourceType)
+{
+    return BACKGROUND_SOURCE_TYPE.find(sourceType) != BACKGROUND_SOURCE_TYPE.end();
 }
 
 bool Util::IsScoSupportSource(const SourceType sourceType)
