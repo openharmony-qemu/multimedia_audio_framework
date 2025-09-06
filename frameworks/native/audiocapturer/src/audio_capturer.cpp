@@ -1954,11 +1954,11 @@ std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::GenerateStreamDesc(
 
     // update with switchInfo
     AudioStreamInfo &streamInfo = streamDesc->streamInfo_;
-    streamInfo_.format = static_cast<AudioSampleFormat>(switchInfo.params.format);
-    streamInfo_.samplingRate = static_cast<AudioSamplingRate>(switchInfo.params.samplingRate);
-    streamInfo_.channels = static_cast<AudioChannel>(switchInfo.params.channels);
-    streamInfo_.encoding = static_cast<AudioEncodingType>(switchInfo.params.encoding);
-    streamInfo_.channelLayout = static_cast<AudioChannelLayout>(switchInfo.params.channelLayout);
+    streamInfo.format = static_cast<AudioSampleFormat>(switchInfo.params.format);
+    streamInfo.samplingRate = static_cast<AudioSamplingRate>(switchInfo.params.samplingRate);
+    streamInfo.channels = static_cast<AudioChannel>(switchInfo.params.channels);
+    streamInfo.encoding = static_cast<AudioEncodingType>(switchInfo.params.encoding);
+    streamInfo.channelLayout = static_cast<AudioChannelLayout>(switchInfo.params.channelLayout);
     streamDesc->capturerInfo_= switchInfo.capturerInfo;
     streamDesc->sessionId_ = switchInfo.sessionId;
 
