@@ -46,7 +46,6 @@ sptr<AudioProcessInServer> AudioProcessInServer::Create(const AudioProcessConfig
     ProcessReleaseCallback *releaseCallback)
 {
     sptr<AudioProcessInServer> process = new(std::nothrow) AudioProcessInServer(processConfig, releaseCallback);
-
     return process;
 }
 
@@ -77,6 +76,7 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
     }
     audioStreamChecker_ = std::make_shared<AudioStreamChecker>(processConfig);
     AudioStreamMonitor::GetInstance().AddCheckForMonitor(processConfig.originalSessionId, audioStreamChecker_);
+    streamStatusInServer_ = STREAM_IDEL;
 }
 
 AudioProcessInServer::~AudioProcessInServer()
@@ -297,6 +297,7 @@ int32_t AudioProcessInServer::Start()
         lastWriteFrame_ = static_cast<int64_t>(processBuffer_->GetCurReadFrame());
     }
     lastWriteMuteFrame_ = 0;
+    streamStatusInServer_ = STREAM_RUNNING;
     return ret;
 }
 
@@ -378,6 +379,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(sessionId_);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_STOP);
     HILOG_COMM_INFO("Pause in server success!");
+    streamStatusInServer_ = STREAM_PAUSED;
     return SUCCESS;
 }
 
@@ -406,6 +408,7 @@ int32_t AudioProcessInServer::Resume()
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START, false);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_START);
     HILOG_COMM_INFO("Resume in server success!");
+    streamStatusInServer_ = STREAM_RUNNING;
     return SUCCESS;
 }
 
@@ -450,6 +453,7 @@ int32_t AudioProcessInServer::Stop(int32_t stage)
     AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(sessionId_);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_STOP);
     HILOG_COMM_INFO("Stop in server success!");
+    streamStatusInServer_ = STREAM_STOPPED;
     return SUCCESS;
 }
 
@@ -474,6 +478,7 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
     ret = releaseCallback_->OnProcessRelease(this, isSwitchStream);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_RELEASE);
     HILOG_COMM_INFO("notify service release result: %{public}d", ret);
+    streamStatusInServer_ = STREAM_RELEASED;
     return SUCCESS;
 }
 
@@ -845,7 +850,7 @@ RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
                 processConfig_.appInfo.appUid,
                 processConfig_.appInfo.appPid,
                 processConfig_.appInfo.appTokenId,
-                HandleStreamStatusToCapturerState(streamStatus_->load())
+                HandleStreamStatusToCapturerState(streamStatusInServer_)
             };
             AUDIO_INFO_LOG("Insert switchStream:%{public}u uid:%{public}d tokenId:%{public}u "
                 "Reason:NEED_RESTORE", sessionId_, info.callerUid, info.appTokenId);
@@ -889,6 +894,11 @@ void AudioProcessInServer::NotifyXperfOnPlayback(AudioMode audioMode, XperfEvent
     XperfAdapter::GetInstance().ReportStateChangeEventIfNeed(eventId,
         processConfig_.rendererInfo.streamUsage, sessionId_, processConfig_.appInfo.appPid,
         processConfig_.appInfo.appUid);
+}
+
+StreamStatus AudioProcessInServer::GetStreamInServerStatus()
+{
+    return streamStatusInServer_;
 }
 } // namespace AudioStandard
 } // namespace OHOS

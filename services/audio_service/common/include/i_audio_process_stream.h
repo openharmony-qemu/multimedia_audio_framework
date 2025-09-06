@@ -57,6 +57,8 @@ public:
 
     virtual uint32_t GetByteSizePerFrame() = 0;
 
+    virtual StreamStatus GetStreamInServerStatus() = 0;
+
     virtual void EnableStandby();
 
     virtual ~IAudioProcessStream() = default;

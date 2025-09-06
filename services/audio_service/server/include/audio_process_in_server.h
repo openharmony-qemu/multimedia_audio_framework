@@ -138,7 +138,8 @@ public:
     StreamStatus GetStreamStatus() override;
     RestoreStatus RestoreSession(RestoreInfo restoreInfo);
     int32_t StopSession();
-    
+    StreamStatus GetStreamInServerStatus() override;
+
     bool TurnOnMicIndicator(CapturerState capturerState);
     bool TurnOffMicIndicator(CapturerState capturerState);
 
@@ -206,6 +207,8 @@ private:
     std::shared_ptr<AudioStreamChecker> audioStreamChecker_ = nullptr;
     
     std::atomic<int32_t> audioHapticsSyncId_ = 0;
+
+    StreamStatus streamStatusInServer_ = STREAM_INVALID;
 };
 } // namespace AudioStandard
 } // namespace OHOS
