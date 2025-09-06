@@ -1522,7 +1522,7 @@ bool AudioCapturerPrivate::FinishOldStream(IAudioStream::StreamClass targetClass
 bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo,
     CapturerState previousState, IAudioStream::SwitchInfo &switchInfo)
 {
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescBySwitchInfo(switchInfo, restoreInfo);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = GenerateStreamDesc(switchInfo, restoreInfo);
 
     int32_t ret = IAudioStream::CheckCapturerAudioStreamInfo(switchInfo.params);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CheckCapturerAudioStreamInfo fail!");
@@ -1941,27 +1941,33 @@ std::shared_ptr<IAudioStream> AudioCapturerPrivate::GetInnerStream() const
 }
 // LCOV_EXCL_STOP
 
-std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::GetStreamDescBySwitchInfo(
+std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::GenerateStreamDesc(
     const IAudioStream::SwitchInfo &switchInfo, const RestoreInfo &restoreInfo)
 {
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->streamInfo_.format = static_cast<AudioSampleFormat>(switchInfo.params.format);
-    streamDesc->streamInfo_.samplingRate = static_cast<AudioSamplingRate>(switchInfo.params.samplingRate);
-    streamDesc->streamInfo_.channels = static_cast<AudioChannel>(switchInfo.params.channels);
-    streamDesc->streamInfo_.encoding = static_cast<AudioEncodingType>(switchInfo.params.encoding);
-    streamDesc->streamInfo_.channelLayout = static_cast<AudioChannelLayout>(switchInfo.params.channelLayout);
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
 
     streamDesc->audioMode_ = AUDIO_MODE_RECORD;
     streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
-    streamDesc->capturerInfo_= switchInfo.capturerInfo;
     streamDesc->appInfo_ = appInfo_;
     streamDesc->callerUid_ = static_cast<int32_t>(getuid());
     streamDesc->callerPid_ = static_cast<int32_t>(getpid());
+
+    // update with switchInfo
+    AudioStreamInfo &streamInfo = streamDesc->streamInfo_;
+    streamInfo_.format = static_cast<AudioSampleFormat>(switchInfo.params.format);
+    streamInfo_.samplingRate = static_cast<AudioSamplingRate>(switchInfo.params.samplingRate);
+    streamInfo_.channels = static_cast<AudioChannel>(switchInfo.params.channels);
+    streamInfo_.encoding = static_cast<AudioEncodingType>(switchInfo.params.encoding);
+    streamInfo_.channelLayout = static_cast<AudioChannelLayout>(switchInfo.params.channelLayout);
+    streamDesc->capturerInfo_= switchInfo.capturerInfo;
     streamDesc->sessionId_ = switchInfo.sessionId;
+
+    // update with restoreInfo
     streamDesc->routeFlag_ = restoreInfo.routeFlag;
     if (restoreInfo.targetStreamFlag == AUDIO_FLAG_FORCED_NORMAL) {
         streamDesc->capturerInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
     }
+
     return streamDesc;
 }
 
