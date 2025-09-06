@@ -230,7 +230,7 @@ void GetPermission()
 void OnRemoteRequestFuzzTest()
 {
     GetPermission();
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     uint32_t audioServerInterfaceCodeCount = GetData<uint32_t>() % AudioServerInterfaceCodeVec.size();
     AudioServerInterfaceCode audioServerInterfaceCode = AudioServerInterfaceCodeVec[audioServerInterfaceCodeCount];
     uint32_t format = static_cast<uint32_t>(audioServerInterfaceCode);

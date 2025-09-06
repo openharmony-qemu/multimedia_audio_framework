@@ -143,7 +143,7 @@ vector<IStandardAudioServiceIpcCode> IStandardAudioServiceIpcCodeVec = {
 
 void OnRemoteRequestFuzzTest()
 {
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     if (audioServer == nullptr) {
         return;
     }
