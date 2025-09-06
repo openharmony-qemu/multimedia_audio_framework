@@ -495,6 +495,7 @@ void ProcessDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
 
 int32_t AudioProcessInServer::RegisterProcessCb(const sptr<IRemoteObject>& object)
 {
+    std::lock_guard<std::mutex> lock(registerProcessCbLock_);
     sptr<IProcessCb> processCb = iface_cast<IProcessCb>(object);
     CHECK_AND_RETURN_RET_LOG(processCb != nullptr, ERR_INVALID_PARAM, "RegisterProcessCb obj cast failed");
     deathRecipient_ = new ProcessDeathRecipient(this, releaseCallback_);
