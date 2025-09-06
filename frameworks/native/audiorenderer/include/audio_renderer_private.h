@@ -201,7 +201,7 @@ private:
     std::shared_ptr<AudioStreamDescriptor> ConvertToStreamDescriptor(const AudioStreamParams &audioStreamParams);
     std::shared_ptr<AudioStreamDescriptor> GetStreamDescBySwitchInfo(
         const IAudioStream::SwitchInfo &switchInfo, const RestoreInfo &restoreInfo);
-    IAudioStream::StreamClass UpdateRendererInfoAndGenerateStreamClass(uint32_t flag);
+    IAudioStream::StreamClass DecideStreamClassUpdateRendererInfo(uint32_t flag);
     int32_t InitAudioInterruptCallback(bool isRestoreAudio = false);
     int32_t InitOutputDeviceChangeCallback();
     void InitAudioRouteCallback();

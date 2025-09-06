@@ -138,7 +138,7 @@ private:
     int32_t CheckAndStopAudioCapturer(std::string callingFunc);
     int32_t InitAudioInterruptCallback();
     std::shared_ptr<AudioStreamDescriptor> ConvertToStreamDescriptor(const AudioStreamParams &audioStreamParams);
-    IAudioStream::StreamClass UpdateCapturerInfoAndGenerateStreamClass(uint32_t flag);
+    IAudioStream::StreamClass DecideStreamClassAndUpdateCapturerInfo(uint32_t flag);
     int32_t InitInputDeviceChangeCallback();
     int32_t SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
     void InitSwitchInfo(IAudioStream::StreamClass targetClass, IAudioStream::SwitchInfo &info);
