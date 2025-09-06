@@ -1791,7 +1791,9 @@ int32_t AudioRendererPrivate::GetBufferDesc(BufferDesc &bufDesc)
 
 int32_t AudioRendererPrivate::Enqueue(const BufferDesc &bufDesc)
 {
-    Trace trace("AudioRenderer::Enqueue");
+    // if dataLength = 0, this buffer will be discard.
+    Trace trace("AudioRenderer::Enqueue dataLength:" + std::to_string(bufDesc.dataLength) + " bufLength:" +
+        std::to_string(bufDesc.bufLength));
     AsyncCheckAudioRenderer("Enqueue");
     MockPcmData(bufDesc.buffer, bufDesc.bufLength);
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), bufDesc.bufLength);

@@ -935,6 +935,7 @@ bool AudioEndpointInner::DelayStopDevice()
             false, "Sink stop failed.");
     }
     isStarted_ = false;
+    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(adapterType_);
     return true;
 }
 
@@ -972,6 +973,7 @@ bool AudioEndpointInner::StopDevice()
     }
     endpointStatus_ = STOPPED;
     isStarted_ = false;
+    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(adapterType_);
     return true;
 }
 
@@ -1212,12 +1214,16 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
     return isAllReady;
 }
 
+// wait at 1 ~ 5ms
 void AudioEndpointInner::WaitAllProcessReady(uint64_t curWritePos)
 {
     Trace trace("AudioEndpoint::WaitAllProcessReady");
     int64_t tempWakeupTime = readTimeModel_.GetTimeOfPos(curWritePos) + WRITE_TO_HDI_AHEAD_TIME;
-    if (tempWakeupTime - ClockTime::GetCurNano() < ONE_MILLISECOND_DURATION) {
+    int64_t sleepTime = tempWakeupTime - ClockTime::GetCurNano();
+    if (sleepTime < ONE_MILLISECOND_DURATION) {
         ClockTime::RelativeSleep(ONE_MILLISECOND_DURATION);
+    } else if (sleepTime > RELATIVE_SLEEP_TIME_NS) {
+        ClockTime::RelativeSleep(RELATIVE_SLEEP_TIME_NS);
     } else {
         ClockTime::AbsoluteSleep(tempWakeupTime); // sleep to hdi read time ahead 1ms.
     }
@@ -1550,11 +1556,9 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos, std::
             ProcessData(audioDataList, dstStreamData);
         }
     }
-    if (syncInfoSize_ != 0) {
-        CheckSyncInfo(curWritePos);
-        lastWriteTime_ = ClockTime::GetCurNano();
-    }
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(adapterType_, ClockTime::GetCurNano());
+
+    CheckJank(curWritePos);
+
     {
         std::lock_guard<std::mutex> captureLock(dupMutex_);
         for (auto &capture: fastCaptureInfos_) {
@@ -1574,6 +1578,17 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos, std::
         dstStreamData.bufferDesc.bufLength);
 
     return true;
+}
+
+void AudioEndpointInner::CheckJank(uint64_t curWritePos)
+{
+    if (syncInfoSize_ != 0) {
+        CheckSyncInfo(curWritePos);
+        lastWriteTime_ = ClockTime::GetCurNano();
+    }
+    if (isStarted_) {
+        AudioPerformanceMonitor::GetInstance().RecordTimeStamp(adapterType_, ClockTime::GetCurNano());
+    }
 }
 
 void AudioEndpointInner::CheckSyncInfo(uint64_t curWritePos)
@@ -1836,6 +1851,8 @@ std::string AudioEndpointInner::GetStatusStr(EndpointStatus status)
 
 bool AudioEndpointInner::KeepWorkloopRunning()
 {
+    std::string status = GetStatusStr(endpointStatus_);
+    Trace trace("AudioEndpointInner::KeepWorkloopRunning:" + status);
     EndpointStatus targetStatus = INVALID;
     switch (endpointStatus_.load()) {
         case RUNNING:
@@ -1865,8 +1882,7 @@ bool AudioEndpointInner::KeepWorkloopRunning()
 
     // when return false, EndpointWorkLoopFuc will continue loop immediately. Wait to avoid a inifity loop.
     std::unique_lock<std::mutex> lock(loopThreadLock_);
-    AUDIO_PRERELEASE_LOGI("%{public}s now, wait for %{public}s...", GetStatusStr(endpointStatus_).c_str(),
-        GetStatusStr(targetStatus).c_str());
+    AUDIO_PRERELEASE_LOGI("%{public}s now, wait for %{public}s...", status.c_str(), GetStatusStr(targetStatus).c_str());
     threadStatus_ = WAITTING;
     workThreadCV_.wait_for(lock, std::chrono::milliseconds(SLEEP_TIME_IN_DEFAULT));
     AUDIO_DEBUG_LOG("Wait end. Cur is %{public}s now, target is %{public}s...", GetStatusStr(endpointStatus_).c_str(),
