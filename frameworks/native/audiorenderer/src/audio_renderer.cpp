@@ -709,7 +709,7 @@ int32_t AudioRendererPrivate::PrepareAudioStream(AudioStreamParams &audioStreamP
     HILOG_COMM_INFO("StreamClientState for Renderer::CreateClient. id %{public}u, flag: %{public}u",
         audioStreamParams.originalSessionId, flag);
 
-    SetClientInfo(flag, streamClass);
+    streamClass = DecideStreamClassAndUpdateRendererInfo(flag);
 
     if (audioStream_ == nullptr) {
         audioStream_ = IAudioStream::GetPlaybackStream(streamClass, audioStreamParams, audioStreamType,
@@ -742,45 +742,42 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::ConvertToStreamDesc
     return streamDesc;
 }
 
-void AudioRendererPrivate::SetClientInfo(uint32_t flag, IAudioStream::StreamClass &streamClass)
+IAudioStream::StreamClass AudioRendererPrivate::DecideStreamClassAndUpdateRendererInfo(uint32_t flag)
 {
+    IAudioStream::StreamClass ret = IAudioStream::StreamClass::PA_STREAM;
     if (flag & AUDIO_OUTPUT_FLAG_FAST) {
         if (flag & AUDIO_OUTPUT_FLAG_VOIP) {
-            streamClass = IAudioStream::StreamClass::VOIP_STREAM;
             rendererInfo_.originalFlag = AUDIO_FLAG_VOIP_FAST;
             rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
             rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY_OUT;
+            ret = IAudioStream::StreamClass::VOIP_STREAM;
         } else {
-            streamClass = IAudioStream::StreamClass::FAST_STREAM;
             rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
             rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY_OUT;
+            ret = IAudioStream::StreamClass::FAST_STREAM;
         }
     } else if (flag & AUDIO_OUTPUT_FLAG_DIRECT) {
         if (flag & AUDIO_OUTPUT_FLAG_VOIP) {
-            streamClass = IAudioStream::StreamClass::PA_STREAM;
             rendererInfo_.originalFlag = AUDIO_FLAG_VOIP_DIRECT;
             rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
             rendererInfo_.pipeType = PIPE_TYPE_CALL_OUT;
         } else {
-            streamClass = IAudioStream::StreamClass::PA_STREAM;
             rendererInfo_.rendererFlags = AUDIO_FLAG_DIRECT;
             rendererInfo_.pipeType = PIPE_TYPE_DIRECT_OUT;
         }
     } else if (flag & AUDIO_OUTPUT_FLAG_LOWPOWER) {
-        streamClass = IAudioStream::StreamClass::PA_STREAM;
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
         rendererInfo_.pipeType = PIPE_TYPE_OFFLOAD;
     } else if (flag & AUDIO_OUTPUT_FLAG_MULTICHANNEL) {
-        streamClass = IAudioStream::StreamClass::PA_STREAM;
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
         rendererInfo_.pipeType = PIPE_TYPE_MULTICHANNEL;
     } else {
-        streamClass = IAudioStream::StreamClass::PA_STREAM;
         rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
         rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
     }
     AUDIO_INFO_LOG("Route flag: %{public}u, streamClass: %{public}d, rendererFlag: %{public}d, pipeType: %{public}d",
-        flag, streamClass, rendererInfo_.rendererFlags, rendererInfo_.pipeType);
+        flag, ret, rendererInfo_.rendererFlags, rendererInfo_.pipeType);
+    return ret;
 }
 
 int32_t AudioRendererPrivate::GetParams(AudioRendererParams &params) const
@@ -1013,7 +1010,7 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
 
         // Get restore info and target stream class for switching.
         audioStream_->GetRestoreInfo(restoreInfo);
-        SetClientInfo(restoreInfo.routeFlag, targetClass);
+        targetClass = DecideStreamClassAndUpdateRendererInfo(restoreInfo.routeFlag);
         if (restoreStatus == NEED_RESTORE_TO_NORMAL) {
             restoreInfo.targetStreamFlag = AUDIO_FLAG_FORCED_NORMAL;
         }
@@ -2267,8 +2264,8 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "CreateRendererClient failed");
 
     bool switchResult = false;
-    std::shared_ptr<IAudioStream> oldAudioStream = nullptr;
     // create new IAudioStream
+    targetClass = DecideStreamClassAndUpdateRendererInfo(flag);
     std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetPlaybackStream(targetClass, switchInfo.params,
         switchInfo.eStreamType, appInfo_.appUid);
     CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "SetParams GetPlayBackStream failed.");
@@ -2301,7 +2298,7 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
         switchResult = SetSwitchInfo(switchInfo, newAudioStream);
         CHECK_AND_RETURN_RET_LOG(switchResult, false, "Init ipc stream failed");
     }
-    oldAudioStream = audioStream_;
+    std::shared_ptr<IAudioStream> oldAudioStream = audioStream_;
     // Update audioStream_ to newAudioStream in both AudioRendererPrivate and AudioInterruptCallbackImpl.
     // Operation of replace audioStream_ must be performed before StartAudioStream.
     // Otherwise GetBufferDesc will return the buffer pointer of oldStream (causing Use-After-Free).

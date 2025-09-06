@@ -1705,10 +1705,10 @@ HWTEST(AudioRendererUnitTest, SetAudioPrivacyType_001, TestSize.Level1)
 
 /**
  * @tc.name  : Test AudioRendererPrivate
- * @tc.number: SetClientInfo_001
- * @tc.desc  : Test SetClientInfo API
+ * @tc.number: DecideStreamClassAndUpdateRendererInfo_001
+ * @tc.desc  : Test DecideStreamClassAndUpdateRendererInfo API
  */
-HWTEST(AudioRendererUnitTest, SetClientInfo_001, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, DecideStreamClassAndUpdateRendererInfo_001, TestSize.Level1)
 {
     AppInfo appInfo = {};
     std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
@@ -1716,23 +1716,23 @@ HWTEST(AudioRendererUnitTest, SetClientInfo_001, TestSize.Level1)
     uint32_t flag = AUDIO_OUTPUT_FLAG_FAST;
     IAudioStream::StreamClass streamClass;
 
-    audioRendererPrivate->SetClientInfo(flag, streamClass);
+    streamClass = audioRendererPrivate->DecideStreamClassAndUpdateRendererInfo(flag);
     EXPECT_EQ(streamClass, IAudioStream::StreamClass::FAST_STREAM);
 
     flag = AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP;
-    audioRendererPrivate->SetClientInfo(flag, streamClass);
+    streamClass = audioRendererPrivate->DecideStreamClassAndUpdateRendererInfo(flag);
     EXPECT_EQ(streamClass, IAudioStream::StreamClass::VOIP_STREAM);
 
     flag = AUDIO_OUTPUT_FLAG_DIRECT;
-    audioRendererPrivate->SetClientInfo(flag, streamClass);
+    streamClass = audioRendererPrivate->DecideStreamClassAndUpdateRendererInfo(flag);
     EXPECT_EQ(streamClass, IAudioStream::StreamClass::PA_STREAM);
 
     flag = AUDIO_OUTPUT_FLAG_MULTICHANNEL;
-    audioRendererPrivate->SetClientInfo(flag, streamClass);
+    streamClass = audioRendererPrivate->DecideStreamClassAndUpdateRendererInfo(flag);
     EXPECT_EQ(streamClass, IAudioStream::StreamClass::PA_STREAM);
 
     flag = AUDIO_FLAG_NONE;
-    audioRendererPrivate->SetClientInfo(flag, streamClass);
+    streamClass = audioRendererPrivate->DecideStreamClassAndUpdateRendererInfo(flag);
     EXPECT_EQ(streamClass, IAudioStream::StreamClass::PA_STREAM);
 }
 
@@ -2437,10 +2437,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SwitchToTargetStream_002, TestSize.
 
 /**
  * @tc.name  : Test AudioRendererPrivate
- * @tc.number: SetClientInfo_002
- * @tc.desc  : Test SetClientInfo API
+ * @tc.number: DecideStreamClassAndUpdateRendererInfo_002
+ * @tc.desc  : Test DecideStreamClassAndUpdateRendererInfo API
  */
-HWTEST(AudioRendererUnitTest, SetClientInfo_002, TestSize.Level1)
+HWTEST(AudioRendererUnitTest, DecideStreamClassAndUpdateRendererInfo_002, TestSize.Level1)
 {
     AppInfo appInfo = {};
     std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
@@ -2448,11 +2448,11 @@ HWTEST(AudioRendererUnitTest, SetClientInfo_002, TestSize.Level1)
     uint32_t flag = AUDIO_OUTPUT_FLAG_DIRECT;
     IAudioStream::StreamClass streamClass;
 
-    audioRendererPrivate->SetClientInfo(flag, streamClass);
+    streamClass = audioRendererPrivate->DecideStreamClassAndUpdateRendererInfo(flag);
     EXPECT_EQ(streamClass, IAudioStream::StreamClass::PA_STREAM);
 
     flag = AUDIO_OUTPUT_FLAG_DIRECT | AUDIO_OUTPUT_FLAG_VOIP;
-    audioRendererPrivate->SetClientInfo(flag, streamClass);
+    streamClass = audioRendererPrivate->DecideStreamClassAndUpdateRendererInfo(flag);
     EXPECT_EQ(streamClass, IAudioStream::StreamClass::PA_STREAM);
 }
 } // namespace AudioStandard
