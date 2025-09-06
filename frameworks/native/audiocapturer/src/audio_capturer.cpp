@@ -310,7 +310,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     AUDIO_INFO_LOG("StreamClientState for Capturer::CreateClient. id %{public}u, flag :%{public}u",
         audioStreamParams.originalSessionId, flag);
 
-    streamClass = UpdateCapturerInfoByAudioFlag(flag);
+    streamClass = UpdateCapturerInfoByRouteFlag(flag);
     // check AudioStreamParams for fast stream
     if (audioStream_ == nullptr) {
         audioStream_ = IAudioStream::GetRecordStream(streamClass, audioStreamParams, audioStreamType_,
@@ -377,7 +377,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::ConvertToStreamDesc
     return streamDesc;
 }
 
-IAudioStream::StreamClass AudioCapturerPrivate::UpdateCapturerInfoByAudioFlag(uint32_t flag)
+IAudioStream::StreamClass AudioCapturerPrivate::UpdateCapturerInfoByRouteFlag(uint32_t flag)
 {
     IAudioStream::StreamClass ret = IAudioStream::StreamClass::PA_STREAM;
     if (flag & AUDIO_INPUT_FLAG_FAST) {
@@ -713,7 +713,7 @@ int32_t AudioCapturerPrivate::CheckAndRestoreAudioCapturer(std::string callingFu
     // Get restore info and target stream class for switching.
     RestoreInfo restoreInfo;
     audioStream_->GetRestoreInfo(restoreInfo);
-    IAudioStream::StreamClass targetClass = UpdateCapturerInfoByAudioFlag(restoreInfo.routeFlag);
+    IAudioStream::StreamClass targetClass = UpdateCapturerInfoByRouteFlag(restoreInfo.routeFlag);
     if (restoreStatus == NEED_RESTORE_TO_NORMAL) {
         restoreInfo.targetStreamFlag = AUDIO_FLAG_FORCED_NORMAL;
     }
@@ -1535,7 +1535,7 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
 
     bool switchResult = false;
     std::shared_ptr<IAudioStream> oldAudioStream = nullptr;
-    targetClass = UpdateCapturerInfoByAudioFlag(flag);
+    targetClass = UpdateCapturerInfoByRouteFlag(flag);
     std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetRecordStream(targetClass, switchInfo.params,
         switchInfo.eStreamType, appInfo_.appUid);
     CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "GetRecordStream failed.");

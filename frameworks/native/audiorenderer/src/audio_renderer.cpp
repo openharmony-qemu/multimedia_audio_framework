@@ -709,7 +709,7 @@ int32_t AudioRendererPrivate::PrepareAudioStream(AudioStreamParams &audioStreamP
     HILOG_COMM_INFO("StreamClientState for Renderer::CreateClient. id %{public}u, flag: %{public}u",
         audioStreamParams.originalSessionId, flag);
 
-    streamClass = UpdateRendererInfoByAudioFlag(flag);
+    streamClass = UpdateRendererInfoByRouteFlag(flag);
 
     if (audioStream_ == nullptr) {
         audioStream_ = IAudioStream::GetPlaybackStream(streamClass, audioStreamParams, audioStreamType,
@@ -742,7 +742,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::ConvertToStreamDesc
     return streamDesc;
 }
 
-IAudioStream::StreamClass AudioRendererPrivate::UpdateRendererInfoByAudioFlag(uint32_t flag)
+IAudioStream::StreamClass AudioRendererPrivate::UpdateRendererInfoByRouteFlag(uint32_t flag)
 {
     IAudioStream::StreamClass ret = IAudioStream::StreamClass::PA_STREAM;
     if (flag & AUDIO_OUTPUT_FLAG_FAST) {
@@ -1010,7 +1010,7 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
 
         // Get restore info and target stream class for switching.
         audioStream_->GetRestoreInfo(restoreInfo);
-        targetClass = UpdateRendererInfoByAudioFlag(restoreInfo.routeFlag);
+        targetClass = UpdateRendererInfoByRouteFlag(restoreInfo.routeFlag);
         if (restoreStatus == NEED_RESTORE_TO_NORMAL) {
             restoreInfo.targetStreamFlag = AUDIO_FLAG_FORCED_NORMAL;
         }
@@ -2266,7 +2266,7 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     bool switchResult = false;
     std::shared_ptr<IAudioStream> oldAudioStream = nullptr;
     // create new IAudioStream
-    targetClass = UpdateRendererInfoByAudioFlag(flag);
+    targetClass = UpdateRendererInfoByRouteFlag(flag);
     std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetPlaybackStream(targetClass, switchInfo.params,
         switchInfo.eStreamType, appInfo_.appUid);
     CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "SetParams GetPlayBackStream failed.");
