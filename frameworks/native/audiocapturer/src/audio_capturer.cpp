@@ -396,7 +396,7 @@ IAudioStream::StreamClass AudioCapturerPrivate::UpdateCapturerInfoByRouteFlag(ui
         capturerInfo_.pipeType = PIPE_TYPE_NORMAL_IN;
     }
     AUDIO_INFO_LOG("Route flag: %{public}u, streamClass: %{public}d, capturerFlags: %{public}d, pipeType: %{public}d",
-        flag, streamClass, capturerInfo_.capturerFlags, capturerInfo_.pipeType);
+        flag, ret, capturerInfo_.capturerFlags, capturerInfo_.pipeType);
     return ret;
 }
 
@@ -1534,7 +1534,6 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "CreateCapturerClient failed");
 
     bool switchResult = false;
-    std::shared_ptr<IAudioStream> oldAudioStream = nullptr;
     targetClass = UpdateCapturerInfoByRouteFlag(flag);
     std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetRecordStream(targetClass, switchInfo.params,
         switchInfo.eStreamType, appInfo_.appUid);
@@ -1562,7 +1561,7 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
         CHECK_AND_RETURN_RET_LOG(initResult == SUCCESS, false, "Init ipc strean failed");
     }
 
-    oldAudioStream = audioStream_;
+    std::shared_ptr<IAudioStream> oldAudioStream = audioStream_;
     // Operation of replace audioStream_ must be performed before StartAudioStream.
     // Otherwise GetBufferDesc will return the buffer pointer of oldStream (causing Use-After-Free).
     audioStream_ = newAudioStream;

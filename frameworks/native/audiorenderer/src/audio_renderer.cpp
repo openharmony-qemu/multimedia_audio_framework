@@ -776,7 +776,7 @@ IAudioStream::StreamClass AudioRendererPrivate::UpdateRendererInfoByRouteFlag(ui
         rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
     }
     AUDIO_INFO_LOG("Route flag: %{public}u, streamClass: %{public}d, rendererFlag: %{public}d, pipeType: %{public}d",
-        flag, streamClass, rendererInfo_.rendererFlags, rendererInfo_.pipeType);
+        flag, ret, rendererInfo_.rendererFlags, rendererInfo_.pipeType);
     return ret;
 }
 
@@ -2264,7 +2264,6 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "CreateRendererClient failed");
 
     bool switchResult = false;
-    std::shared_ptr<IAudioStream> oldAudioStream = nullptr;
     // create new IAudioStream
     targetClass = UpdateRendererInfoByRouteFlag(flag);
     std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetPlaybackStream(targetClass, switchInfo.params,
@@ -2299,7 +2298,7 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
         switchResult = SetSwitchInfo(switchInfo, newAudioStream);
         CHECK_AND_RETURN_RET_LOG(switchResult, false, "Init ipc stream failed");
     }
-    oldAudioStream = audioStream_;
+    std::shared_ptr<IAudioStream> oldAudioStream = audioStream_;
     // Update audioStream_ to newAudioStream in both AudioRendererPrivate and AudioInterruptCallbackImpl.
     // Operation of replace audioStream_ must be performed before StartAudioStream.
     // Otherwise GetBufferDesc will return the buffer pointer of oldStream (causing Use-After-Free).
