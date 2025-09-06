@@ -500,7 +500,10 @@ int32_t AudioProcessInServer::RegisterProcessCb(const sptr<IRemoteObject>& objec
     deathRecipient_ = new ProcessDeathRecipient(this, releaseCallback_);
     bool result = object->AddDeathRecipient(deathRecipient_);
     CHECK_AND_RETURN_RET_LOG(result, ERR_OPERATION_FAILED, "AddDeathRecipient failed.");
-    object_= object;
+    {
+        std::lock_guard<std::mutex> lock(objectLock_);
+        object_= object;
+    }
     return SUCCESS;
 }
 
