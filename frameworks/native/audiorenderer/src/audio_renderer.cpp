@@ -2255,7 +2255,7 @@ bool AudioRendererPrivate::FinishOldStream(IAudioStream::StreamClass targetClass
 bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo,
     RendererState previousState, IAudioStream::SwitchInfo &switchInfo)
 {
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescBySwitchInfo(switchInfo, restoreInfo);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = GenerateStreamDesc(switchInfo, restoreInfo);
 
     int32_t ret = IAudioStream::CheckRendererAudioStreamInfo(switchInfo.params);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CheckRendererAudioStreamInfo fail!");
@@ -2369,27 +2369,33 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
     return switchResult;
 }
 
-std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::GetStreamDescBySwitchInfo(
+std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::GenerateStreamDesc(
     const IAudioStream::SwitchInfo &switchInfo, const RestoreInfo &restoreInfo)
 {
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->streamInfo_.format = static_cast<AudioSampleFormat>(switchInfo.params.format);
-    streamDesc->streamInfo_.samplingRate = static_cast<AudioSamplingRate>(switchInfo.params.samplingRate);
-    streamDesc->streamInfo_.channels = static_cast<AudioChannel>(switchInfo.params.channels);
-    streamDesc->streamInfo_.encoding = static_cast<AudioEncodingType>(switchInfo.params.encoding);
-    streamDesc->streamInfo_.channelLayout = static_cast<AudioChannelLayout>(switchInfo.params.channelLayout);
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
 
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
     streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
-    streamDesc->rendererInfo_ = switchInfo.rendererInfo;
-    streamDesc->appInfo_ = AppInfo{switchInfo.appUid, 0, switchInfo.clientPid, 0};
+    streamDesc->appInfo_ = appInfo_;
     streamDesc->callerUid_ = static_cast<int32_t>(getuid());
     streamDesc->callerPid_ = static_cast<int32_t>(getpid());
+
+    // update with switchInfo
+    AudioStreamInfo &streamInfo = streamDesc->streamInfo_;
+    streamInfo.format = static_cast<AudioSampleFormat>(switchInfo.params.format);
+    streamInfo.samplingRate = static_cast<AudioSamplingRate>(switchInfo.params.samplingRate);
+    streamInfo.channels = static_cast<AudioChannel>(switchInfo.params.channels);
+    streamInfo.encoding = static_cast<AudioEncodingType>(switchInfo.params.encoding);
+    streamInfo.channelLayout = static_cast<AudioChannelLayout>(switchInfo.params.channelLayout);
+    streamDesc->rendererInfo_ = switchInfo.rendererInfo;
     streamDesc->sessionId_ = switchInfo.sessionId;
+
+    // update with restoreInfo
     streamDesc->routeFlag_ = restoreInfo.routeFlag;
     if (restoreInfo.targetStreamFlag == AUDIO_FLAG_FORCED_NORMAL) {
         streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
     }
+
     return streamDesc;
 }
 

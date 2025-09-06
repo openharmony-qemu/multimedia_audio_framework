@@ -162,7 +162,7 @@ private:
     std::shared_ptr<IAudioStream> GetInnerStream() const;
     IAudioStream::StreamClass GetPreferredStreamClass(AudioStreamParams audioStreamParams);
     IAudioStream::StreamClass SetCaptureInfo(AudioStreamParams &audioStreamParams);
-    std::shared_ptr<AudioStreamDescriptor> GetStreamDescBySwitchInfo(
+    std::shared_ptr<AudioStreamDescriptor> GenerateStreamDesc(
         const IAudioStream::SwitchInfo &switchInfo, const RestoreInfo &restoreInfo);
     int32_t HandleCreateFastStreamError(AudioStreamParams &audioStreamParams);
     std::shared_ptr<InputDeviceChangeWithInfoCallbackImpl> inputDeviceChangeCallback_ = nullptr;
