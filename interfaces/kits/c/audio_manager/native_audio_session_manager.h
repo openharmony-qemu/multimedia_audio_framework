@@ -226,6 +226,40 @@ typedef void (*OH_AudioSession_StateChangedCallback) (
 
 /**
  * @brief This function pointer will point to the callback function that
+ *     is used to return the changing audio device descriptors.
+ *     There may be more than one audio device descriptor returned.
+ *
+ * @param type the {@link OH_AudioDevice_ChangeType} is connect or disconnect.
+ * @param audioDeviceDescriptorArray the {@link OH_AudioDeviceDescriptorArray}
+ *     pointer variable which will be set the audio device descriptors value.
+ *     Do not release the audioDeviceDescriptorArray pointer separately
+ *     instead call {@link OH_AudioSessionManager_ReleaseDevices} to release the DeviceDescriptor array
+ *     when it is no use anymore.
+ * @since 21
+ */
+typedef void (*OH_AudioSession_AvailableDeviceChangedCallback) (
+    OH_AudioDevice_ChangeType type,
+    OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray);
+
+/**
+ * @brief This function pointer will point to the callback function that
+ *     is used to return the audio session input device change event.
+ *
+ * @param audioDeviceDescriptorArray the {@link OH_AudioDeviceDescriptorArray}
+ *     pointer variable which will be set the audio input device descriptors value.
+ *     Do not release the audioDeviceDescriptorArray pointer separately
+ *     instead call {@link OH_AudioSessionManager_ReleaseDevices}
+ *     to release the DeviceDescriptor array when it is no use anymore.
+ * @param changeReason the {@link #OH_AudioStream_DeviceChangeReason} indicates
+ *     that why does the input device changes.
+ * @since 21
+ */
+typedef void (*OH_AudioSession_CurrentInputDeviceChangedCallback) (
+    OH_AudioDeviceDescriptorArray *devices,
+    OH_AudioStream_DeviceChangeReason changeReason);
+
+/**
+ * @brief This function pointer will point to the callback function that
  * is used to return the audio session device change event.
  *
  * @param audioDeviceDescriptorArray the {@link OH_AudioDeviceDescriptorArray}
