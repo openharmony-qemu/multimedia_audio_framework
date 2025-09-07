@@ -180,7 +180,6 @@ public:
     OH_AudioCommon_Result UnsetAudioSessionCurrentInputDeviceChangeCallback(
         OH_AudioSession_CurrentInputDeviceChangedCallback callback);
 
-
     OH_AudioCommon_Result SetAudioSessionCallback(OH_AudioSession_DeactivatedCallback callback);
 
     OH_AudioCommon_Result UnsetAudioSessionCallback(OH_AudioSession_DeactivatedCallback callback);
