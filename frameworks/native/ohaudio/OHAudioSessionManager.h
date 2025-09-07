@@ -97,6 +97,7 @@ private:
 };
 
 class OHAudioAvailableDeviceCallback : public AudioManagerAvailableDeviceChangeCallback {
+public:
     explicit OHAudioAvailableDeviceCallback(AudioDeviceUsage deviceUsage,
         OH_AudioSession_AvailableDeviceChangedCallback callback)
         : deviceUsage_(deviceUsage), callback_(callback)
@@ -166,8 +167,19 @@ public:
     OH_AudioDeviceDescriptorArray *GetAvailableDevices(AudioDeviceUsage deviceUsage);
     OH_AudioCommon_Result SelectMediaInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     OH_AudioDeviceDescriptor *GetSelectedMediaInputDevice();
+    OH_AudioCommon_Result ClearSelectedMediaInputDevice();
     OH_AudioCommon_Result PreferBluetoothAndNearlinkRecord(bool enable);
-    bool OHAudioSessionManager::IsPreferredBluetoothAndNearlinkRecord();
+    bool IsPreferredBluetoothAndNearlinkRecord();
+
+    OH_AudioCommon_Result SetAvailableDeviceChangeCallback(
+        AudioDeviceUsage deviceUsage, OH_AudioSession_AvailableDeviceChangedCallback callback);
+    OH_AudioCommon_Result UnsetAvailableDeviceChangeCallback(
+        OH_AudioSession_AvailableDeviceChangedCallback callback);
+    OH_AudioCommon_Result SetAudioSessionCurrentInputDeviceChangeCallback(
+        OH_AudioSession_CurrentInputDeviceChangedCallback callback);
+    OH_AudioCommon_Result UnsetAudioSessionCurrentInputDeviceChangeCallback(
+        OH_AudioSession_CurrentInputDeviceChangedCallback callback);
+
 
     OH_AudioCommon_Result SetAudioSessionCallback(OH_AudioSession_DeactivatedCallback callback);
 
