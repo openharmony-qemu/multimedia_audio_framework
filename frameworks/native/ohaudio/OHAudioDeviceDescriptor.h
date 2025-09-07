@@ -40,6 +40,10 @@ public:
     OH_AudioCommon_Result GetDeviceChannelCounts(uint32_t **channelCounts, uint32_t *size);
     OH_AudioCommon_Result GetDeviceDisplayName(char **displayName);
     OH_AudioCommon_Result GetDeviceEncodingTypes(OH_AudioStream_EncodingType **encodingTypes, uint32_t *size);
+    std::shared_ptr<AudioDeviceDescriptor> GetAudioDeviceDescriptor()
+    {
+        return audioDeviceDescriptor_;
+    }
 
 private:
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor_;

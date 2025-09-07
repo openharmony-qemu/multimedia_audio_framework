@@ -32,6 +32,12 @@ static OHOS::AudioStandard::OHAudioSessionManager *convertManager(OH_AudioSessio
     return (OHAudioSessionManager*) manager;
 }
 
+static OHOS::AudioStandard::OHAudioDeviceDescriptor *convertDeviceDescriptor(
+    OH_AudioDeviceDescriptor* deviceDescriptor)
+{
+    return (OHOS::AudioStandard::OHAudioDeviceDescriptor*) deviceDescriptor;
+}
+
 
 OH_AudioCommon_Result OH_AudioManager_GetAudioSessionManager(OH_AudioSessionManager **audioSessionManager)
 {
@@ -93,6 +99,107 @@ bool OH_AudioSessionManager_IsAudioSessionActivated(
     OHAudioSessionManager* ohAudioSessionManager = convertManager(audioSessionManager);
     CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr, false, "ohAudioSessionManager is nullptr");
     return ohAudioSessionManager->IsAudioSessionActivated();
+}
+
+OH_AudioCommon_Result OH_AudioSessionManager_GetAvailableDevices(OH_AudioSessionManager *audioSessionManager,
+    OH_AudioDevice_Usage deviceUsage, OH_AudioDeviceDescriptorArray **audioDeviceDescriptorArray)
+{
+    if (audioSessionManager == nullptr || !VALID_OH_AUDIO_DEVICE_UASGES.count(deviceUsage) ||
+        audioDeviceDescriptorArray == nullptr) {
+        AUDIO_ERR_LOG("Invalid params!");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+    OHAudioSessionManager *ohAudioSessionManager = convertManager(audioSessionManager);
+    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
+    AudioDeviceUsage usage = static_cast<AudioDeviceUsage>(deviceUsage);
+
+    *audioDeviceDescriptorArray = ohAudioSessionManager->GetAvailableDevices(usage);
+    CHECK_AND_RETURN_RET_LOG(*audioDeviceDescriptorArray != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_NO_MEMORY, "*audioDeviceDescriptorArray is nullptr");
+
+    return AUDIOCOMMON_RESULT_SUCCESS;
+}
+
+OH_AudioCommon_Result OH_AudioSessionManager_SelectMediaInputDevice(
+    OH_AudioSessionManager *audioSessionManager, OH_AudioDeviceDescriptor *deviceDescriptor)
+{
+    if (audioSessionManager == nullptr || deviceDescriptor == nullptr) {
+        AUDIO_ERR_LOG("Invalid params!");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+    OHAudioSessionManager *ohAudioSessionManager = convertManager(audioSessionManager);
+    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
+    OHAudioDeviceDescriptor* deviceDescriptor = convertDeviceDescriptor(deviceDescriptor);
+    CHECK_AND_RETURN_RET_LOG(deviceDescriptor != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "deviceDescriptor is nullptr");
+    auto desc = deviceDescriptor->GetAudioDeviceDescriptor();
+    CHECK_AND_RETURN_RET_LOG(desc != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioDeviceDescriptor is nullptr");
+    return ohAudioSessionManager->SelectMediaInputDevice(deviceDescriptor);
+}
+
+OH_AudioCommon_Result OH_AudioSessionManager_GetSelectedMediaInputDevice(
+    OH_AudioSessionManager *audioSessionManager, OH_AudioDeviceDescriptor *deviceDescriptor)
+{
+    if (audioSessionManager == nullptr || deviceDescriptor == nullptr) {
+        AUDIO_ERR_LOG("Invalid params!");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+    OHAudioSessionManager *ohAudioSessionManager = convertManager(audioSessionManager);
+    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
+    *deviceDescriptor = ohAudioSessionManager->GetSelectedMediaInputDevice();
+    CHECK_AND_RETURN_RET_LOG(deviceDescriptor != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_NO_MEMORY, "*deviceDescriptor is nullptr");
+
+    return AUDIOCOMMON_RESULT_SUCCESS;
+}
+
+OH_AudioCommon_Result OH_AudioSessionManager_ClearSelectedMediaInputDevice(OH_AudioSessionManager *audioSessionManager)
+{
+    if (audioSessionManager == nullptr || deviceDescriptor == nullptr) {
+        AUDIO_ERR_LOG("Invalid params!");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+    OHAudioSessionManager *ohAudioSessionManager = convertManager(audioSessionManager);
+    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
+    return ohAudioSessionManager->ClearSelectedMediaInputDevice();
+}
+
+OH_AudioCommon_Result OH_AudioSessionManager_PreferBluetoothAndNearlinkRecord(
+    OH_AudioSessionManager *audioSessionManager, bool enable)
+{
+    if (audioSessionManager == nullptr) {
+        AUDIO_ERR_LOG("Invalid params!");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+    OHAudioSessionManager *ohAudioSessionManager = convertManager(audioSessionManager);
+    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
+    return ohAudioSessionManager->PreferBluetoothAndNearlinkRecord(enable);
+}
+
+OH_AudioCommon_Result OH_AudioSessionManager_IsPreferredBluetoothAndNearlinkRecord(
+    OH_AudioSessionManager *audioSessionManager, bool *enable)
+{
+    if (audioSessionManager == nullptr) {
+        AUDIO_ERR_LOG("Invalid params!");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+    OHAudioSessionManager *ohAudioSessionManager = convertManager(audioSessionManager);
+    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
+    *enable = ohAudioSessionManager->IsPreferredBluetoothAndNearlinkRecord();
+
+    if (*enable == true) {
+        AUDIO_INFO_LOG("is preferred Bluetooth and Nearlink");
+    } else {
+        AUDIO_INFO_LOG("is not preferred Bluetooth and Nearlink");
+    }
+    return AUDIOCOMMON_RESULT_SUCCESS;
 }
 
 OH_AudioCommon_Result OH_AudioSessionManager_SetScene(
@@ -211,6 +318,49 @@ OH_AudioCommon_Result OH_AudioSessionManager_UnregisterCurrentOutputDeviceChange
     return ohAudioSessionManager->UnsetAudioSessionCurrentDeviceChangeCallback(callback);
 }
 
+OH_AudioCommon_Result OH_AudioSessionManager_RegisterAvailableDevicesChangeCallback(
+    OH_AudioSessionManager *audioSessionManager, OH_AudioDevice_Usage deviceUsage,
+    OH_AudioSession_AvailableDeviceChangedCallback callback)
+{
+    CHECK_AND_RETURN_RET_LOG(audioSessionManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioSessionManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(VALID_OH_AUDIO_DEVICE_UASGES.count(deviceUsage),
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "invalid deviceUsage");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "callback is nullptr");
+    OHAudioSessionManager* ohAudioSessionManager = convertManager(audioSessionManager);
+    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
+    AudioDeviceUsage usage = static_cast<AudioDeviceUsage>(deviceUsage);
+    return ohAudioSessionManager->SetAvailableDeviceChangeCallback(deviceUsage, callback);
+}
+
+OH_AudioCommon_Result OH_AudioSessionManager_UnregisterAvailableDevicesChangeCallback(
+    OH_AudioSessionManager *audioSessionManager,
+    OH_AudioSession_AvailableDeviceChangedCallback callback)
+{
+    CHECK_AND_RETURN_RET_LOG(audioSessionManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioSessionManager is nullptr");
+    OHAudioSessionManager* ohAudioSessionManager = convertManager(audioSessionManager);
+    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "callback is nullptr");
+    return ohAudioSessionManager->UnsetAvailableDeviceChangeCallback(callback);
+}
+
+OH_AudioCommon_Result OH_AudioSessionManager_RegisterCurrentInputDeviceChangeCallback(
+    OH_AudioSessionManager *audioSessionManager,
+    OH_AudioSession_CurrentInputDeviceChangedCallback callback)
+{
+    CHECK_AND_RETURN_RET_LOG(audioSessionManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioSessionManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "callback is nullptr");
+    OHAudioSessionManager* ohAudioSessionManager = convertManager(audioSessionManager);
+    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
+
+    return ohAudioSessionManager->SetAudioSessionCurrentInputDeviceChangeCallback(callback);
+}
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -231,6 +381,46 @@ static void DestroyAudioDeviceDescriptor(OH_AudioDeviceDescriptorArray *array)
         free(array);
         array = nullptr;
     }
+}
+
+OH_AudioDeviceDescriptorArray *ConvertDesc(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+{
+    size_t size = desc.size();
+    if (size == 0 || size >= MAX_VALID_SIZE) {
+        AUDIO_ERR_LOG("failed to convert device info, size is %{public}zu", size);
+        return nullptr;
+    }
+
+    OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray =
+        (OH_AudioDeviceDescriptorArray *)malloc(sizeof(OH_AudioDeviceDescriptorArray));
+
+    if (audioDeviceDescriptorArray == nullptr) {
+        AUDIO_ERR_LOG("failed to malloc.");
+        return nullptr;
+    }
+    audioDeviceDescriptorArray->size = 0;
+    audioDeviceDescriptorArray->descriptors =
+        (OH_AudioDeviceDescriptor **)malloc(sizeof(OH_AudioDeviceDescriptor *) * size);
+    if (audioDeviceDescriptorArray->descriptors == nullptr) {
+        free(audioDeviceDescriptorArray);
+        audioDeviceDescriptorArray = nullptr;
+        AUDIO_ERR_LOG("failed to malloc descriptors.");
+        return nullptr;
+    }
+
+    uint32_t index = 0;
+    for (auto deviceDescriptor : desc) {
+        audioDeviceDescriptorArray->descriptors[index] =
+            (OH_AudioDeviceDescriptor *)(new OHAudioDeviceDescriptor(deviceDescriptor));
+        if (audioDeviceDescriptorArray->descriptors[index] == nullptr) {
+            DestroyAudioDeviceDescriptor(audioDeviceDescriptorArray);
+            return nullptr;
+        }
+        index++;
+        audioDeviceDescriptorArray->size = index;
+    }
+    return audioDeviceDescriptorArray;
 }
 
 OHAudioSessionManager::OHAudioSessionManager()
@@ -285,6 +475,64 @@ OH_AudioCommon_Result OHAudioSessionManager::DeactivateAudioSession()
     } else {
         return AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
     }
+}
+
+OH_AudioDeviceDescriptorArray *OHAudioSessionManager::GetAvailableDevices(AudioDeviceUsage deviceUsage)
+{
+    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "failed, audioSessionManager_ is null");
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> tempDesc =
+        audioSessionManager_->GetAvailableDevices(deviceUsage);
+    if (tempDesc.size() == 0) {
+        AUDIO_ERR_LOG("get no device");
+        return nullptr;
+    }
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> altaDesc = {};
+    for (const auto &availableDesc : tempDesc) {
+        std::shared_ptr<AudioDeviceDescriptor> dec = std::make_shared<AudioDeviceDescriptor>(*availableDesc);
+        altaDesc.push_back(dec);
+    }
+    return ConvertDesc(altaDesc);
+}
+
+OH_AudioCommon_Result OHAudioSessionManager::SelectMediaInputDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
+{
+    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "failed, audioSessionManager_ is null");
+    int32_t result = audioSessionManager_->SelectInputDevice(deviceDescriptor);
+    return result == 0 ? AUDIOCOMMON_RESULT_SUCCESS : AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
+}
+
+OH_AudioDeviceDescriptor *OHAudioSessionManager::GetSelectedMediaInputDevice()
+{
+    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
+        nullptr, "failed, audioSessionManager_ is null");
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = audioSessionManager_->GetSelectedInputDevice();
+    return (OH_AudioDeviceDescriptor *)(new OHAudioDeviceDescriptor(deviceDescriptor));
+}
+
+OH_AudioCommon_Result OHAudioSessionManager::ClearSelectedMediaInputDevice()
+{
+    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "failed, audioSessionManager_ is null");
+    int32_t result = audioSessionManager_->ClearSelectedInputDevice();
+    return result == 0 ? AUDIOCOMMON_RESULT_SUCCESS : AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
+}
+
+OH_AudioCommon_Result OHAudioSessionManager::PreferBluetoothAndNearlinkRecord(bool enable)
+{
+    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "failed, audioSessionManager_ is null");
+    int32_t result = audioSessionManager_->PreferBluetoothAndNearlinkRecord(enable);
+    return result == 0 ? AUDIOCOMMON_RESULT_SUCCESS : AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
+}
+
+bool OHAudioSessionManager::IsPreferredBluetoothAndNearlinkRecord()
+{
+    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
+        false, "failed, audioSessionManager_ is null");
+    return audioSessionManager_->GetPreferBluetoothAndNearlinkRecord();
 }
 
 bool OHAudioSessionManager::IsAudioSessionActivated()
@@ -385,6 +633,114 @@ OH_AudioCommon_Result OHAudioSessionManager::GetDefaultOutputDevice(DeviceType &
         AUDIO_ERR_LOG("failed to GetDefaultOutputDevice.");
         return AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
     }
+    return AUDIOCOMMON_RESULT_SUCCESS;
+}
+
+OH_AudioCommon_Result OHAudioSessionManager::SetAvailableDeviceChangeCallback(
+    AudioDeviceUsage deviceUsage, OH_AudioSession_AvailableDeviceChangedCallback callback)
+{
+    CHECK_AND_RETURN_RET_LOG(audioMngr_ != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed, audioMngr_ is null");
+
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("invalid callback");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+
+    std::lock_guard<std::mutex> lock(availableDeviceCbMutex_);
+    if (availebleDeviceCallbacks_.count(callback) != 0) {
+        AUDIO_INFO_LOG("callback already registed");
+        return AUDIOCOMMON_RESULT_SUCCESS;
+    }
+
+    std::shared_ptr<OHAudioAvailableDeviceCallback> ohAudioAvailableDeviceCallback =
+        std::make_shared<OHAudioAvailableDeviceCallback>(deviceUsage, callback);
+    CHECK_AND_RETURN_RET_LOG(ohAudioAvailableDeviceCallback != nullptr, AUDIOCOMMON_RESULT_ERROR_SYSTEM,
+        "Failed to create AudioAvailableDevice callback!");
+
+    int32_t ret = audioMngr_->SetAvailableDeviceChangeCallback(deviceUsage, ohAudioAvailableDeviceCallback);
+    if (ret != AUDIOCOMMON_RESULT_SUCCESS) {
+        AUDIO_ERR_LOG("failed to SetAvailableDeviceChangeCallback.");
+        return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
+    }
+    availebleDeviceCallbacks_.emplace(callback, ohAudioAvailableDeviceCallback);
+
+    return AUDIOCOMMON_RESULT_SUCCESS;
+}
+
+OH_AudioCommon_Result OHAudioSessionManager::UnsetAvailableDeviceChangeCallback(
+    OH_AudioSession_AvailableDeviceChangedCallback callback)
+{
+    CHECK_AND_RETURN_RET_LOG(audioMngr_ != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed, audioMngr_ is null");
+
+    std::lock_guard<std::mutex> lock(availableDeviceCbMutex_);
+    if ((callback == nullptr) || (availebleDeviceCallbacks_.count(callback) == 0)) {
+        AUDIO_ERR_LOG("invalid callback or callback not registered");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+
+    int32_t ret = audioMngr_->UnsetAvailableDeviceChangeCallback(availebleDeviceCallbacks_[callback]);
+    if (ret != AUDIOCOMMON_RESULT_SUCCESS) {
+        AUDIO_ERR_LOG("failed to UnsetAvailableDeviceChangeCallback.");
+        return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
+    }
+    availebleDeviceCallbacks_.erase(callback);
+    return AUDIOCOMMON_RESULT_SUCCESS;
+}
+
+OH_AudioCommon_Result OHAudioSessionManager::SetAudioSessionCurrentInputDeviceChangeCallback(
+    OH_AudioSession_CurrentInputDeviceChangedCallback callback)
+{
+    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed, audioSessionManager_ is null");
+
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("invalid callback");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+
+    std::lock_guard<std::mutex> lock(sessionInputDeviceCbMutex_);
+    if (sessionInputDeviceCallbacks_.count(callback) != 0) {
+        AUDIO_INFO_LOG("callback already registed");
+        return AUDIOCOMMON_RESULT_SUCCESS;
+    }
+
+    std::shared_ptr<OHAudioSessionInputDeviceCallback> ohAudioSessionInputDeviceCallback =
+        std::make_shared<OHAudioSessionInputDeviceCallback>(callback);
+    CHECK_AND_RETURN_RET_LOG(ohAudioSessionInputDeviceCallback != nullptr, AUDIOCOMMON_RESULT_ERROR_SYSTEM,
+        "Failed to create AudioSessionInputDevice callback!");
+
+    int32_t ret =
+        audioSessionManager_->SetAudioSessionCurrentInputDeviceChangeCallback(ohAudioSessionInputDeviceCallback);
+    if (ret != AUDIOCOMMON_RESULT_SUCCESS) {
+        AUDIO_ERR_LOG("failed to SetAudioSessionCurrentInputDeviceChangeCallback.");
+        return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
+    }
+    sessionInputDeviceCallbacks_.emplace(callback, ohAudioSessionInputDeviceCallback);
+
+    return AUDIOCOMMON_RESULT_SUCCESS;
+}
+
+OH_AudioCommon_Result OHAudioSessionManager::UnsetAudioSessionCurrentInputDeviceChangeCallback(
+    OH_AudioSession_CurrentInputDeviceChangedCallback callback)
+{
+    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed, audioSessionManager_ is null");
+
+    std::lock_guard<std::mutex> lock(sessionInputDeviceCbMutex_);
+    if ((callback == nullptr) || (sessionInputDeviceCallbacks_.count(callback) == 0)) {
+        AUDIO_ERR_LOG("invalid callback or callback not registered");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+
+    int32_t ret = audioSessionManager_->UnsetAudioSessionCurrentInputDeviceChangeCallback(
+        sessionInputDeviceCallbacks_[callback]);
+    if (ret != AUDIOCOMMON_RESULT_SUCCESS) {
+        AUDIO_ERR_LOG("failed to UnsetAudioSessionCurrentInputDeviceChangeCallback.");
+        return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
+    }
+    sessionInputDeviceCallbacks_.erase(callback);
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
 
@@ -497,5 +853,34 @@ void OHAudioSessionDeviceCallback::OnAudioSessionCurrentDeviceChanged(
         static_cast<OH_AudioSession_OutputDeviceChangeRecommendedAction>(deviceChangedEvent.recommendedAction));
 }
 
+void OHAudioAvailableDeviceCallback::OnAvailableDeviceChange(const AudioDeviceUsage usage,
+    const DeviceChangeAction &deviceChangeAction)
+{
+    CHECK_AND_RETURN_LOG(callback_ != nullptr, "failed, pointer to the function is nullptr");
+    CHECK_AND_RETURN_LOG(usage == deviceUsage_, "other device usage's callback");
+
+    uint32_t size = deviceChangeAction.deviceDescriptors.size();
+    if ((size == 0) || (size > MAX_VALID_SIZE)) {
+        AUDIO_ERR_LOG("audioDeviceDescriptors is null");
+        return;
+    }
+
+    OH_AudioDeviceDescriptorArray *array = ConvertDesc(deviceChangeAction.deviceDescriptors);
+    callback_(static_cast<OH_AudioDevice_ChangeType>(deviceChangeAction.type), array);
+}
+
+void OHAudioSessionInputDeviceCallback::OnAudioSessionCurrentInputDeviceChanged(
+    const CurrentInputDeviceChangedEvent &deviceChangedEvent)
+{
+    CHECK_AND_RETURN_LOG(callback_ != nullptr, "failed, pointer to the function is nullptr");
+
+    uint32_t size = deviceChangedEvent.devices.size();
+    if ((size == 0) || (size > MAX_VALID_SIZE)) {
+        AUDIO_ERR_LOG("audioDeviceDescriptors is null");
+        return;
+    }
+    OH_AudioDeviceDescriptorArray *array = ConvertDesc(deviceChangedEvent.devices);
+    callback_(array, static_cast<OH_AudioStream_DeviceChangeReason>(deviceChangedEvent.changeReason));
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -19,6 +19,7 @@
 #include "audio_manager_log.h"
 #include "native_audio_session_manager.h"
 #include "audio_session_manager.h"
+#include "audio_system_manager.h"
 #include "OHAudioDeviceDescriptor.h"
 
 namespace OHOS {
@@ -95,6 +96,55 @@ private:
     OH_AudioSession_CurrentOutputDeviceChangedCallback callback_;
 };
 
+class OHAudioAvailableDeviceCallback : public AudioManagerAvailableDeviceChangeCallback {
+    explicit OHAudioAvailableDeviceCallback(AudioDeviceUsage deviceUsage,
+        OH_AudioSession_AvailableDeviceChangedCallback callback)
+        : deviceUsage_(deviceUsage), callback_(callback)
+    {
+    }
+
+    void OnAvailableDeviceChange(const AudioDeviceUsage usage, const DeviceChangeAction &deviceChangeAction) override;
+
+    OH_AudioSession_AvailableDeviceChangedCallback GetCallback()
+    {
+        return callback_;
+    }
+
+    ~OHAudioAvailableDeviceCallback()
+    {
+        AUDIO_INFO_LOG("~OHAudioAvailableDeviceCallback called.");
+        callback_ = nullptr;
+    }
+
+private:
+    AudioDeviceUsage deviceUsage_;
+    OH_AudioSession_AvailableDeviceChangedCallback callback_;
+};
+
+class OHAudioSessionInputDeviceCallback : public AudioSessionCurrentInputDeviceChangedCallback {
+public:
+    explicit OHAudioSessionInputDeviceCallback(OH_AudioSession_CurrentInputDeviceChangedCallback callback)
+        : callback_(callback)
+    {
+    }
+
+    void OnAudioSessionCurrentInputDeviceChanged(const CurrentInputDeviceChangedEvent &deviceChangedEvent) override;
+
+    OH_AudioSession_CurrentInputDeviceChangedCallback GetCallback()
+    {
+        return callback_;
+    }
+
+    ~OHAudioSessionInputDeviceCallback()
+    {
+        AUDIO_INFO_LOG("~OHAudioSessionInputDeviceCallback called.");
+        callback_ = nullptr;
+    }
+
+private:
+    OH_AudioSession_CurrentInputDeviceChangedCallback callback_;
+};
+
 class OHAudioSessionManager {
 public:
     ~OHAudioSessionManager();
@@ -112,6 +162,12 @@ public:
     OH_AudioCommon_Result DeactivateAudioSession();
 
     bool IsAudioSessionActivated();
+
+    OH_AudioDeviceDescriptorArray *GetAvailableDevices(AudioDeviceUsage deviceUsage);
+    OH_AudioCommon_Result SelectMediaInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
+    OH_AudioDeviceDescriptor *GetSelectedMediaInputDevice();
+    OH_AudioCommon_Result PreferBluetoothAndNearlinkRecord(bool enable);
+    bool OHAudioSessionManager::IsPreferredBluetoothAndNearlinkRecord();
 
     OH_AudioCommon_Result SetAudioSessionCallback(OH_AudioSession_DeactivatedCallback callback);
 
@@ -133,14 +189,21 @@ private:
     static OHAudioSessionManager *ohAudioSessionManager_;
 
     AudioSessionManager *audioSessionManager_ = AudioSessionManager::GetInstance();
+    AudioSystemManager *audioMngr_ = AudioSystemManager::GetInstance();
 
     std::map<OH_AudioSession_StateChangedCallback,
         std::shared_ptr<OHAudioSessionStateCallback>> sessionStateCallbacks_;
     std::map<OH_AudioSession_CurrentOutputDeviceChangedCallback,
         std::shared_ptr<OHAudioSessionDeviceCallback>> sessionDeviceCallbacks_;
+    std::map<OH_AudioSession_AvailableDeviceChangedCallback,
+        std::shared_ptr<OHAudioAvailableDeviceCallback>> availebleDeviceCallbacks_;
+    std::map<OH_AudioSession_CurrentInputDeviceChangedCallback,
+        std::shared_ptr<OHAudioSessionInputDeviceCallback>> sessionInputDeviceCallbacks_;
 
     std::mutex sessionStateCbMutex_;
     std::mutex sessionDeviceCbMutex_;
+    std::mutex availableDeviceCbMutex_;
+    std::mutex sessionInputDeviceCbMutex_;
 };
 
 OHAudioSessionManager* OHAudioSessionManager::ohAudioSessionManager_ = nullptr;
