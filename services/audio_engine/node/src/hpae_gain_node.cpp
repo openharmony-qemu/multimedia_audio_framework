@@ -100,7 +100,6 @@ HpaePcmBuffer *HpaeGainNode::SignalProcess(const std::vector<HpaePcmBuffer *> &i
             "_rate_" + std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
     }
 #endif
-    
     if (needGainState_) {
         DoGain(inputs[0], frameLen, channelCount);
     }
