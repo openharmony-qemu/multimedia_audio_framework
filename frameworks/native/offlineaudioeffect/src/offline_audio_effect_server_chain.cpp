@@ -236,6 +236,21 @@ int32_t OfflineAudioEffectServerChain::Prepare(const std::shared_ptr<AudioShared
     std::lock_guard<std::mutex> lock(offlineChainMutex_);
     serverBufferIn_ = bufferIn;
     serverBufferOut_ = bufferOut;
+    int8_t input[MAX_REPLY_LEN] = {0};
+    int8_t output[MAX_REPLY_LEN] = {0};
+    uint32_t replyLen = MAX_REPLY_LEN;
+
+    if (controller_) {
+        int32_t ret = controller_->SendCommand(controller_, AUDIO_EFFECT_COMMAND_RESET,
+            input, MAX_REPLY_LEN, output, &replyLen);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("%{public}s effect COMMAND_RESET failed, errCode is %{public}d", chainName_.c_str(), ret);
+        } else {
+            firstProcess_ = 0;
+        }
+    } else {
+        AUDIO_ERR_LOG("reset failed, controller is nullptr");
+    }
     AUDIO_INFO_LOG("Prepare in server done");
     return SUCCESS;
 }
@@ -267,6 +282,7 @@ int32_t OfflineAudioEffectServerChain::Process(uint32_t inSize, uint32_t outSize
     ret = memcpy_s(reinterpret_cast<int8_t *>(serverBufferOut_->GetBase()), outSize,
         output.rawData, output.frameCount * GetFormatByteSize(offlineConfig_.outputCfg.format));
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "memcpy failed, ret:%{public}d", ret);
+    firstProcess_ = true;
     FreeIfNotNull(output.rawData);
 
     DumpFileUtil::WriteDumpFile(dumpFileOut_, serverBufferOut_->GetBase(), outSize);

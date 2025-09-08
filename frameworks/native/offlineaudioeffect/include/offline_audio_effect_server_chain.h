@@ -74,6 +74,7 @@ private:
     string chainName_;
     mutex offlineChainMutex_;
     OfflineEffectIOConfig offlineConfig_ = {};
+    bool firstProcess_ = false;
     FILE *dumpFileIn_ = nullptr;
     FILE *dumpFileOut_ = nullptr;
 };
