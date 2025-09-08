@@ -80,7 +80,7 @@ void HpaeOffloadRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeS
     nodeInfo.statusCallback = weak_from_this();
     node->SetNodeInfo(nodeInfo);
     uint32_t sessionId = nodeInfo.sessionId;
-    AUDIO_INFO_LOG("[FinishMove] session:%{public}u to sink:offload", sessionId);
+    HILOG_COMM_INFO("[FinishMove] session:%{public}u to sink:offload", sessionId);
     sinkInputNode_ = node;
     sessionInfo_.state = node->GetState();
 
@@ -291,7 +291,7 @@ void HpaeOffloadRendererManager::MoveAllStreamToNewSink(const std::string &sinkN
         if (moveType == MOVE_ALL || std::find(moveIds.begin(), moveIds.end(), sessionId) != moveIds.end()) {
             sinkInputs.emplace_back(sinkInputNode_);
             DeleteInputSession();
-            AUDIO_INFO_LOG("[StartMove] session: %{public}u,sink [offload] --> [%{public}s]",
+            HILOG_COMM_INFO("[StartMove] session: %{public}u,sink [offload] --> [%{public}s]",
                 sessionId, sinkName.c_str());
         }
     }

@@ -19,11 +19,16 @@
 #include "accesstoken_kit.h"
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
+#include "audio_renderer_mock.h"
+#include "audio_capturer_mock.h"
 
 using namespace testing::ext;
 using namespace testing;
 namespace OHOS {
 namespace AudioStandard {
+using ::testing::_;
+using ::testing::Return;
+using ::testing::NiceMock;
 bool g_hasPermission = false;
 
 void GetPermission()
@@ -82,6 +87,8 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_001, TestSize
 HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_002, TestSize.Level0)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
+    audioLoopback->currentState_ = LOOPBACK_STATE_IDLE;
+    EXPECT_EQ(audioLoopback->Enable(true), false);
     audioLoopback->currentState_ = LOOPBACK_STATE_RUNNING;
     EXPECT_EQ(audioLoopback->Enable(true), false);
     EXPECT_EQ(audioLoopback->Enable(false), false);
@@ -286,14 +293,14 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_SetReverbPreset_001, TestSize.Lev
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
     audioLoopback->currentState_ = LOOPBACK_STATE_RUNNING;
-    bool ret = audioLoopback->SetReverbPreset(REVERB_PRESET_THEATRE);
+    bool ret = audioLoopback->SetReverbPreset(REVERB_PRESET_THEATER);
     EXPECT_EQ(ret, true);
 }
 
 HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_SetReverbPreset_002, TestSize.Level1)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    bool ret = audioLoopback->SetReverbPreset(REVERB_PRESET_THEATRE);
+    bool ret = audioLoopback->SetReverbPreset(REVERB_PRESET_THEATER);
     EXPECT_EQ(ret, true);
 }
 
@@ -310,6 +317,74 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_SetEqualizerPreset_002, TestSize.
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
     bool ret = audioLoopback->SetEqualizerPreset(EQUALIZER_PRESET_FLAT);
     EXPECT_EQ(ret, true);
+}
+
+HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_StartAudioLoopback_001, TestSize.Level1)
+{
+    std::shared_ptr<MockAudioRenderer> mockRenderer = std::make_shared<NiceMock<MockAudioRenderer>>();
+    std::shared_ptr<MockAudioCapturer> mockCapturer = std::make_shared<NiceMock<MockAudioCapturer>>();
+    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
+
+    audioLoopback->audioRenderer_ = mockRenderer;
+    audioLoopback->audioCapturer_ = mockCapturer;
+    EXPECT_CALL(*mockRenderer, Start(_)).WillOnce(Return(true));
+    EXPECT_CALL(*mockCapturer, Start()).WillOnce(Return(true));
+
+    audioLoopback->StartAudioLoopback();
+
+    EXPECT_EQ(audioLoopback->rendererState_, RENDERER_RUNNING);
+    EXPECT_EQ(audioLoopback->capturerState_, CAPTURER_RUNNING);
+}
+
+HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_StartAudioLoopback_002, TestSize.Level1)
+{
+    std::shared_ptr<MockAudioRenderer> mockRenderer = std::make_shared<NiceMock<MockAudioRenderer>>();
+    std::shared_ptr<MockAudioCapturer> mockCapturer = std::make_shared<NiceMock<MockAudioCapturer>>();
+    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
+
+    audioLoopback->audioRenderer_ = mockRenderer;
+    audioLoopback->audioCapturer_ = mockCapturer;
+    EXPECT_CALL(*mockRenderer, Start(_)).WillOnce(Return(false));
+    EXPECT_CALL(*mockCapturer, Start()).Times(0);
+
+    audioLoopback->StartAudioLoopback();
+
+    EXPECT_NE(audioLoopback->rendererState_, RENDERER_RUNNING);
+    EXPECT_NE(audioLoopback->capturerState_, CAPTURER_RUNNING);
+}
+
+HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_StartAudioLoopback_003, TestSize.Level1)
+{
+    std::shared_ptr<MockAudioRenderer> mockRenderer = std::make_shared<NiceMock<MockAudioRenderer>>();
+    std::shared_ptr<MockAudioCapturer> mockCapturer = std::make_shared<NiceMock<MockAudioCapturer>>();
+    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
+
+    audioLoopback->audioRenderer_ = mockRenderer;
+    audioLoopback->audioCapturer_ = mockCapturer;
+    EXPECT_CALL(*mockRenderer, Start(_)).WillOnce(Return(true));
+    EXPECT_CALL(*mockCapturer, Start()).WillOnce(Return(false));
+
+    audioLoopback->StartAudioLoopback();
+
+    EXPECT_EQ(audioLoopback->rendererState_, RENDERER_RUNNING);
+    EXPECT_NE(audioLoopback->capturerState_, CAPTURER_RUNNING);
+}
+
+HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_DestroyAudioLoopback_002, TestSize.Level1)
+{
+    std::shared_ptr<MockAudioRenderer> mockRenderer = std::make_shared<NiceMock<MockAudioRenderer>>();
+    std::shared_ptr<MockAudioCapturer> mockCapturer = std::make_shared<NiceMock<MockAudioCapturer>>();
+    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
+
+    audioLoopback->audioRenderer_ = mockRenderer;
+    audioLoopback->audioCapturer_ = mockCapturer;
+    EXPECT_CALL(*mockCapturer, Stop()).Times(1);
+    EXPECT_CALL(*mockRenderer, Stop()).Times(1);
+
+    audioLoopback->DestroyAudioLoopback();
+
+    EXPECT_EQ(audioLoopback->audioRenderer_, nullptr);
+    EXPECT_EQ(audioLoopback->audioCapturer_, nullptr);
 }
 } // namespace AudioStandard
 } // namespace OHOS

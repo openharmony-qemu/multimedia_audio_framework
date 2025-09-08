@@ -573,7 +573,7 @@ enum AudioLoopbackReverbPreset {
     /**
      * A preset representing a reverberation effect with theater-like acoustic characteristics.
      */
-    REVERB_PRESET_THEATRE = 3,
+    REVERB_PRESET_THEATER = 3,
     /**
      * A preset representing a reverberation effect with concert-like acoustic characteristics.
      */

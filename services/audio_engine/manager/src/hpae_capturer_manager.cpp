@@ -843,7 +843,7 @@ int32_t HpaeCapturerManager::AddNodeToSource(const HpaeCaptureMoveInfo &moveInfo
 void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveInfo, bool isConnect)
 {
     uint32_t sessionId = moveInfo.sessionId;
-    AUDIO_INFO_LOG("[FinishMove] session :%{public}u to source:[%{public}s].",
+    HILOG_COMM_INFO("[FinishMove] session :%{public}u to source:[%{public}s]",
         sessionId, sourceInfo_.sourceName.c_str());
     CHECK_AND_RETURN_LOG(moveInfo.sourceOutputNode != nullptr, "move fail, sourceoutputnode is null");
     HpaeNodeInfo nodeInfo = moveInfo.sourceOutputNode->GetNodeInfo();
@@ -907,7 +907,7 @@ void HpaeCapturerManager::MoveAllStreamToNewSource(const std::string &sourceName
     for (const auto &it : moveInfos) {
         DeleteOutputSession(it.sessionId);
     }
-    AUDIO_INFO_LOG("[StartMove] session:%{public}s to source name:%{public}s, move type:%{public}d",
+    HILOG_COMM_INFO("[StartMove] session:%{public}s to source name:%{public}s, move type:%{public}d",
         idStr.c_str(), name.c_str(), moveType);
     TriggerCallback(MOVE_ALL_SOURCE_OUTPUT, moveInfos, name);
 }

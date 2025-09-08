@@ -86,7 +86,9 @@ private:
     bool CheckDeviceSupport();
     bool EnableLoopback();
     void DisableLoopback();
+    void StartAudioLoopback();
     AudioLoopbackStatus StateToStatus(AudioLoopbackState state);
+    bool SetKaraokeParameters(const std::string &parameters);
 
     AudioRendererOptions rendererOptions_;
     AudioCapturerOptions capturerOptions_;
@@ -107,7 +109,7 @@ private:
     std::atomic<CapturerState> capturerState_ = CAPTURER_INVALID;
     std::atomic<bool> isCapturerUsb_ = false;
     std::atomic<FastStatus> capturerFastStatus_ = FASTSTATUS_NORMAL;
-    AudioLoopbackReverbPreset currentReverbPreset_ = REVERB_PRESET_THEATRE;
+    AudioLoopbackReverbPreset currentReverbPreset_ = REVERB_PRESET_THEATER;
     AudioLoopbackEqualizerPreset currentEqualizerPreset_ = EQUALIZER_PRESET_FULL;
 };
 }  // namespace AudioStandard

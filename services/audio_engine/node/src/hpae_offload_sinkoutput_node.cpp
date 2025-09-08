@@ -114,7 +114,6 @@ void HpaeOffloadSinkOutputNode::DoProcess()
     int32_t ret = ProcessRenderFrame();
     // if renderframe faild, sleep and return directly
     // if renderframe full, unlock the powerlock
-    retryCount_ = 1;
     if (ret == OFFLOAD_FULL) {
         if (hdiPolicyState_ == OFFLOAD_INACTIVE_BACKGROUND || GetStreamType() == STREAM_MOVIE) {
             RunningLock(false);
@@ -340,7 +339,7 @@ StreamManagerState HpaeOffloadSinkOutputNode::GetSinkState(void)
 
 int32_t HpaeOffloadSinkOutputNode::SetSinkState(StreamManagerState sinkState)
 {
-    AUDIO_INFO_LOG("Sink[%{public}s] state change:[%{public}s]-->[%{public}s]",
+    HILOG_COMM_INFO("Sink[%{public}s] state change:[%{public}s]-->[%{public}s]",
         GetDeviceClass().c_str(), ConvertStreamManagerState2Str(state_).c_str(),
         ConvertStreamManagerState2Str(sinkState).c_str());
     state_ = sinkState;
