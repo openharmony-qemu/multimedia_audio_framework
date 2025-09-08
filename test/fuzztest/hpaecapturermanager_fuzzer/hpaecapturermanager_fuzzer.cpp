@@ -138,16 +138,16 @@ void RoundVal(T &roundVal, const std::vector<T>& list)
     }
 }
 
-void RoundSourceInfo(HpaeSourceInfo &sourceInofo)
+void RoundSourceInfo(HpaeSourceInfo &sourceInfo)
 {
-    RoundVal(sourceInofo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
-    RoundVal(sourceInofo.channels, SUPPORTED_CHANNELS);
-    RoundVal(sourceInofo.format, AUDIO_SUPPORTED_FORMATS);
-    sourceInofo.frameLen = GetData<size_t>();
-    if(GetData<bool>()) sourceInofo.frameLen %= MAXFRAMELEN;
-    if(GetData<bool>()) sourceInofo.ecType %= static_cast<OHOS::AudioStandard::HPAE::HpaeEcType>(GetData<int32_t>());
-    else sourceInofo.ecType = static_cast<OHOS::AudioStandard::HPAE::HpaeEcType>(GetData<uint32_t>() % ECTYPENUM);
-    sourceInofo.micRef = HPAE_REF_OFF;
+    RoundVal(sourceInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
+    RoundVal(sourceInfo.channels, SUPPORTED_CHANNELS);
+    RoundVal(sourceInfo.format, AUDIO_SUPPORTED_FORMATS);
+    sourceInfo.frameLen = GetData<size_t>();
+    if(GetData<bool>()) sourceInfo.frameLen %= MAXFRAMELEN;
+    if(GetData<bool>()) sourceInfo.ecType %= static_cast<OHOS::AudioStandard::HPAE::HpaeEcType>(GetData<int32_t>());
+    else sourceInfo.ecType = static_cast<OHOS::AudioStandard::HPAE::HpaeEcType>(GetData<uint32_t>() % ECTYPENUM);
+    sourceInfo.micRef = HPAE_REF_OFF;
 }
 
 void RoundStreamInfo(HpaeStreamInfo &streamInfo)
