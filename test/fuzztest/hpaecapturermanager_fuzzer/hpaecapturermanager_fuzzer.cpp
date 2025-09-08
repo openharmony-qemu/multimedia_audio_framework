@@ -22,6 +22,8 @@
 #include <string>
 #undef private
 #include "audio_info.h"
+#include "audio_stream_info.h"
+#include "audio_ec_info.h"
 #include "i_stream.h"
 #include "hpae_capturer_manager.h"
 #include "hpae_source_output_node.h"
@@ -42,6 +44,27 @@ static std::string g_rootCapturerPath = "/data/source_file_io_48000_2_s16le.pcm"
 const char* DEFAULT_TEST_DEVICE_CLASS = "file_io";
 const char* DEFAULT_TEST_DEVICE_NETWORKID = "LocalDevice";
 const uint32_t DEFAULT_SESSION_ID = 123456;
+const uint32_t MAXFRAMELEN = 38400;
+const uint32_t ECTYPENUM = 3;
+const std::vector<AudioChannel> SUPPORTED_CHANNELS {
+    MONO,
+    STEREO,
+    CHANNEL_3,
+    CHANNEL_4,
+    CHANNEL_5,
+    CHANNEL_6,
+    CHANNEL_7,
+    CHANNEL_8,
+    CHANNEL_9,
+    CHANNEL_10,
+    CHANNEL_11,
+    CHANNEL_12,
+    CHANNEL_13,
+    CHANNEL_14,
+    CHANNEL_15,
+    CHANNEL_16,
+}
+
 typedef void (*TestPtr)(const uint8_t *, size_t);
 
 class DummyCapturerStreamCallback : public ICapturerStreamCallback {
@@ -105,55 +128,59 @@ int32_t ReadDataCb::OnStreamData(AudioCallBackCapturerStreamInfo &callBackStream
     return SUCCESS;
 }
 
+template<class T>
+void RoundVal(T &roundVal, const std::vector<T>& list)
+{
+    if(GetData<bool>()) {
+        roundVal = GetData<T>();
+    } else {
+        roundVal = list[GetData<uint32_t>%list.size()];
+    }
+}
+
+void RoundSourceInfo(HpaeSourceInfo &sourceInofo)
+{
+    RoundVal(sourceInofo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
+    RoundVal(sourceInofo.channels, SUPPORTED_CHANNELS);
+    RoundVal(sourceInofo.format, AUDIO_SUPPORTED_FORMATS);
+    sourceInofo.frameLen = GetData<size_t>();
+    if(GetData<bool>()) sourceInofo.frameLen %= MAXFRAMELEN;
+    if(GetData<bool>()) sourceInofo.ecType %= static_cast<OHOS::AudioStandard::HPAE::HpaeEcType>(GetData<int32_t>());
+    else sourceInofo.ecType = static_cast<OHOS::AudioStandard::HPAE::HpaeEcType>(GetData<uint32_t>() % ECTYPENUM);
+    sourceInofo.micRef = HPAE_REF_OFF;
+}
+
+void RoundStreamInfo(HpaeStreamInfo &streamInfo)
+{
+    RoundVal(streamInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
+    RoundVal(streamInfo.channels, SUPPORTED_CHANNELS);
+    RoundVal(streamInfo.format, AUDIO_SUPPORTED_FORMATS);
+    streamInfo.frameLen = GetData<size_t>();
+    if (GetData<bool>()) streamInfo.frameLen %= MAXFRAMELEN;
+}
+
+void RoundNodeInfo(HpaeNodeInfo &nodeInfo)
+{
+    RoundVal(nodeInfo.sampleRate, AUDIO_SUPPORTED_SAMPLING_RATES);
+    RoundVal(nodeInfo.channels, SUPPORTED_CHANNELS);
+    RoundVal(nodeInfo.format, AUDIO_SUPPORTED_FORMATS);
+    nodeInfo.frameLen = GetData<size_t>();
+    if (GetData<bool>()) nodeInfo.frameLen %= MAXFRAMELEN;
+}
+
 void InitSourceInfo(HpaeSourceInfo &sourceInfo)
 {
     sourceInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
     sourceInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     sourceInfo.sourceType = SOURCE_TYPE_MIC;
     sourceInfo.filePath = g_rootCapturerPath;
-
-    sourceInfo.samplingRate = SAMPLE_RATE_48000;
-    sourceInfo.channels = STEREO;
-    sourceInfo.format = SAMPLE_S16LE;
-    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    sourceInfo.ecType = HPAE_EC_TYPE_NONE;
-    sourceInfo.micRef = HPAE_REF_OFF;
-}
-
-void InitFuzzSourceInfo(HpaeSourceInfo &sourceInfo)
-{
-    sourceInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
-    sourceInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
-    sourceInfo.sourceType = SOURCE_TYPE_MIC;
-    sourceInfo.filePath = g_rootCapturerPath;
-
-    sourceInfo.samplingRate = SAMPLE_RATE_48000;
-    sourceInfo.channels = STEREO;
-    sourceInfo.format = SAMPLE_S16LE;
-    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    sourceInfo.ecType = HPAE_EC_TYPE_NONE;
-    sourceInfo.micRef = HPAE_REF_OFF;
+    RoundSourceInfo(sourceInfo);
 }
 
 void InitReloadStreamInfo(HpaeStreamInfo &streamInfo)
 {
-    streamInfo.channels = STEREO;
-    streamInfo.samplingRate = SAMPLE_RATE_48000;
-    streamInfo.format = SAMPLE_S16LE;
-    streamInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    RoundStreamInfo(streamInfo);
     streamInfo.sessionId = DEFAULT_SESSION_ID;
-    streamInfo.streamType = STREAM_MUSIC;
-    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_RECORD;
-    streamInfo.deviceName = "Built_in_mic";
-}
-
-void InitReloadFuzzStreamInfo(HpaeStreamInfo &streamInfo)
-{
-    streamInfo.channels = STEREO;
-    streamInfo.samplingRate = SAMPLE_RATE_48000;
-    streamInfo.format = SAMPLE_S16LE;
-    streamInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    streamInfo.sessionId = GetData<uint32_t>();
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_RECORD;
     streamInfo.deviceName = "Built_in_mic";
@@ -166,60 +193,20 @@ void InitReloadSourceInfo(HpaeSourceInfo &sourceInfo, HpaeSourceInfo &newSourceI
     sourceInfo.sourceType = SOURCE_TYPE_MIC;
     sourceInfo.filePath = g_rootCapturerPath;
 
-    sourceInfo.samplingRate = SAMPLE_RATE_48000;
-    sourceInfo.channels = STEREO;
-    sourceInfo.format = SAMPLE_S16LE;
-    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    sourceInfo.ecType = HPAE_EC_TYPE_NONE;
-    sourceInfo.micRef = HPAE_REF_OFF;
+    RoundSourceInfo(sourceInfo);
 
     newSourceInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
     newSourceInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     newSourceInfo.sourceType = SOURCE_TYPE_VOICE_TRANSCRIPTION;
     newSourceInfo.filePath = g_rootCapturerPath;
 
-    newSourceInfo.samplingRate = SAMPLE_RATE_48000;
-    newSourceInfo.channels = STEREO;
-    newSourceInfo.format = SAMPLE_S16LE;
-    newSourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    newSourceInfo.ecType = HPAE_EC_TYPE_SAME_ADAPTER;
-    newSourceInfo.micRef = HPAE_REF_OFF;
-}
-
-void InitReloadFuzzSourceInfo(HpaeSourceInfo &sourceInfo, HpaeSourceInfo &newSourceInfo)
-{
-    sourceInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
-    sourceInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
-    sourceInfo.sourceType = SOURCE_TYPE_MIC;
-    sourceInfo.filePath = g_rootCapturerPath;
-
-    sourceInfo.samplingRate = SAMPLE_RATE_48000;
-    sourceInfo.channels = STEREO;
-    sourceInfo.format = SAMPLE_S16LE;
-    sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    sourceInfo.ecType = HPAE_EC_TYPE_NONE;
-    sourceInfo.micRef = HPAE_REF_OFF;
-
-    newSourceInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
-    newSourceInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
-    newSourceInfo.sourceType = SOURCE_TYPE_VOICE_TRANSCRIPTION;
-    newSourceInfo.filePath = g_rootCapturerPath;
-
-    newSourceInfo.samplingRate = SAMPLE_RATE_48000;
-    newSourceInfo.channels = STEREO;
-    newSourceInfo.format = SAMPLE_S16LE;
-    newSourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    newSourceInfo.ecType = HPAE_EC_TYPE_SAME_ADAPTER;
-    newSourceInfo.micRef = HPAE_REF_OFF;
+    RoundSourceInfo(newSourceInfo);
 }
 
 void GetFuzzNodeInfo(HpaeNodeInfo &nodeInfo)
 {
     nodeInfo.nodeId = GetData<uint32_t>();
-    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    nodeInfo.samplingRate = SAMPLE_RATE_48000;
-    nodeInfo.channels = STEREO;
-    nodeInfo.format = SAMPLE_S16LE;
+    RoundNodeInfo(nodeInfo);
     nodeInfo.sceneType = HPAE_SCENE_RECORD;
     nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
 }
