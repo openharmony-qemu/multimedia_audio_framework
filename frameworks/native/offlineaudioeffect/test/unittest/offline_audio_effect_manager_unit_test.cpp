@@ -385,14 +385,14 @@ HWTEST_F(OfflineAudioEffectServerChainUnitTest, Prepare_001, TestSize.Level1)
 {
     serverChain->firstProcess_  = true;
     serverChain->Prepare(nullptr, nullptr);
-    EXPECT_EQ(firstProcess_, true);
+    EXPECT_EQ(serverChain->firstProcess_, true);
     serverChain->controller_ = mockControl;
     mockControl->SendCommand = SendCommandError;
     serverChain->Prepare(nullptr, nullptr);
-    EXPECT_EQ(firstProcess_, true);
+    EXPECT_EQ(serverChain->firstProcess_, true);
     mockControl->SendCommand = SendCommand;
     int32_t ret = serverChain->Prepare(nullptr, nullptr);
-    EXPECT_EQ(firstProcess_, false);
+    EXPECT_EQ(serverChain->firstProcess_, false);
     EXPECT_EQ(ret, SUCCESS);
 }
 
