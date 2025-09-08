@@ -63,7 +63,7 @@ const std::vector<AudioChannel> SUPPORTED_CHANNELS {
     CHANNEL_14,
     CHANNEL_15,
     CHANNEL_16,
-}
+};
 
 typedef void (*TestPtr)(const uint8_t *, size_t);
 

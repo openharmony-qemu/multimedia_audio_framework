@@ -79,7 +79,7 @@ const std::vector<AudioChannel> SUPPORTED_CHANNELS {
     CHANNEL_14,
     CHANNEL_15,
     CHANNEL_16,
-}
+};
 
 template<class T>
 T GetData()
