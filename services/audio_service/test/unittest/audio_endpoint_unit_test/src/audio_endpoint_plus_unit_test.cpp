@@ -33,6 +33,8 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+static int64_t WAIT_TIME_HALF_MILLISECOND = 500000; // 0.5ms
+static int64_t WAIT_TIME_EIGHT_MILLISECOND = 8000000; // 8ms
 class MockAudioProcessStream : public IAudioProcessStream {
 public:
     // Pure virtual methods
@@ -1206,6 +1208,61 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_040, TestSize.Level1)
     uint64_t curWritePos = 0;
 
     audioEndpointInner->WaitAllProcessReady(curWritePos);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointInner_WaitAllReady_001
+ * @tc.desc  : Test AudioEndpointInner::WaitAllProcessReady() will wait between 1~5ms
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_WaitAllReady_001, TestSize.Level1)
+{
+    AudioProcessConfig clientConfig = {};
+    auto endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_MMAP, 0, clientConfig);
+
+    ASSERT_NE(endpoint, nullptr);
+
+    endpoint->readTimeModel_.ConfigSampleRate(SAMPLE_RATE_48000);
+    uint64_t curWritePos = 0;
+    endpoint->readTimeModel_.ResetFrameStamp(curWritePos, ClockTime::GetCurNano());
+    int64_t time = ClockTime::GetCurNano();
+    endpoint->WaitAllProcessReady(curWritePos);
+    time = ClockTime::GetCurNano() - time;
+    EXPECT_GE(time, WAIT_TIME_HALF_MILLISECOND);
+    time = ClockTime::GetCurNano();
+    curWritePos = 1200; // 25ms
+    endpoint->WaitAllProcessReady(curWritePos);
+    time = ClockTime::GetCurNano() - time;
+    EXPECT_GE(WAIT_TIME_EIGHT_MILLISECOND, time);
+}
+
+/*
+ * @tc.name  : Test CheckJank API
+ * @tc.type  : FUNC
+ * @tc.number: CheckJank_001
+ * @tc.desc  : Test AudioEndpointInner::CheckJank()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, CheckJank_001, TestSize.Level1)
+{
+    AudioProcessConfig clientConfig = {};
+    auto endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_MMAP, 0, clientConfig);
+
+    uint32_t totalSizeInFrame = 8;
+    uint32_t spanSizeInFrame = 2;
+    uint32_t byteSizePerFrame = 4;
+    endpoint->dstAudioBuffer_ = std::make_shared<OHAudioBuffer>(AUDIO_SERVER_SHARED, totalSizeInFrame,
+        spanSizeInFrame, byteSizePerFrame);
+    EXPECT_NE(endpoint->dstAudioBuffer_, nullptr);
+    endpoint->syncInfoSize_ = 0;
+    endpoint->CheckJank(0);
+
+    endpoint->syncInfoSize_ = 8;
+    endpoint->dstSpanSizeInframe_ = 0;
+    endpoint->CheckJank(0);
+
+    endpoint->isStarted_ = true;
+    endpoint->CheckJank(0);
 }
 
 /*

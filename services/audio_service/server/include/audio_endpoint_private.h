@@ -162,6 +162,7 @@ private:
     bool CheckAllBufferReady(int64_t checkTime, uint64_t curWritePos);
     void WaitAllProcessReady(uint64_t curWritePos);
     void CheckSyncInfo(uint64_t curWritePos);
+    void CheckJank(uint64_t curWritePos);
     bool ProcessToEndpointDataHandle(uint64_t curWritePos, std::function<void()> &moveClientIndex);
     void ProcessToDupStream(const std::vector<AudioStreamData> &audioDataList, AudioStreamData &dstStreamData,
         int32_t innerCapId);

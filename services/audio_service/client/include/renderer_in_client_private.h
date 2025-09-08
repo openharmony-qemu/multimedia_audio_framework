@@ -239,6 +239,7 @@ private:
     int32_t WriteCacheData(uint8_t *buffer, size_t bufferSize, bool speedCached, size_t oriBufferSize);
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
+    void CallClientHandle();
     bool WriteCallbackFunc();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
