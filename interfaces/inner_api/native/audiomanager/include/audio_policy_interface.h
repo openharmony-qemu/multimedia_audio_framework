@@ -24,7 +24,10 @@
 #include "audio_info.h"
 #include "audio_interrupt_info.h"
 #include "audio_stream_change_info.h"
+
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
 #include "va_device.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -350,6 +353,7 @@ public:
     virtual int32_t GetRenderPosition(const std::string &device, uint32_t &delayValue) = 0;
 };
 
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
 class VAStreamCallback {
 public:
     virtual int32_t Start() = 0;
@@ -379,7 +383,7 @@ public:
                                        const std::shared_ptr<VADeviceControllerCallback> &controllerCallback) = 0;
     virtual int32_t OnDevicesDisconnected(const VADevice &device) = 0;
 };
-
+#endif
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // ST_AUDIO_POLICY_INTERFACE_H
