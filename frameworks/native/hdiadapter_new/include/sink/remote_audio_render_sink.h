@@ -89,8 +89,7 @@ public:
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
-    int32_t SplitRenderFrame(char &data, uint64_t len, uint64_t &writeLen, const char *streamType,
-        const char *audioStreamType) override;
+    int32_t SplitRenderFrame(char &data, uint64_t len, uint64_t &writeLen, const char *splitStreamType) override;
 
     void DumpInfo(std::string &dumpString) override;
 
@@ -100,7 +99,6 @@ public:
     void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
 private:
-    int8_t ConvertStr2Int(const char *str);
     static RemoteAudioFormat ConvertToHdiFormat(AudioSampleFormat format);
     static RemoteAudioCategory GetAudioCategory(AudioScene audioScene);
     void InitSplitStream(const char *splitStreamStr, std::vector<RemoteAudioCategory> &splitStreamVector);
@@ -109,8 +107,7 @@ private:
     int32_t CreateRender(RemoteAudioCategory type);
     int32_t DoSetOutputRoute(void);
     void CheckUpdateState(char *data, uint64_t len);
-    int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen, RemoteAudioCategory type,
-        bool isSplitFrame = false, const char *audioStreamType = nullptr);
+    int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen, RemoteAudioCategory type);
 
     void JoinStartThread();
 
