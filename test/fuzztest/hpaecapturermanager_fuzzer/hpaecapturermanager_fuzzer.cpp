@@ -144,9 +144,14 @@ void RoundSourceInfo(HpaeSourceInfo &sourceInfo)
     RoundVal(sourceInfo.channels, SUPPORTED_CHANNELS);
     RoundVal(sourceInfo.format, AUDIO_SUPPORTED_FORMATS);
     sourceInfo.frameLen = GetData<size_t>();
-    if (GetData<bool>()) sourceInfo.frameLen %= MAXFRAMELEN;
-    if (GetData<bool>()) sourceInfo.ecType = static_cast<OHOS::AudioStandard::HPAE::HpaeEcType>(GetData<int32_t>());
-    else sourceInfo.ecType = static_cast<OHOS::AudioStandard::HPAE::HpaeEcType>(GetData<uint32_t>() % ECTYPENUM);
+    if (GetData<bool>()) {
+        sourceInfo.frameLen %= MAXFRAMELEN;
+    }
+    if (GetData<bool>()) {
+        sourceInfo.ecType = static_cast<OHOS::AudioStandard::HPAE::HpaeEcType>(GetData<int32_t>());
+    } else {
+        sourceInfo.ecType = static_cast<OHOS::AudioStandard::HPAE::HpaeEcType>(GetData<uint32_t>() % ECTYPENUM);
+    }
     sourceInfo.micRef = HPAE_REF_OFF;
 }
 
@@ -156,7 +161,9 @@ void RoundStreamInfo(HpaeStreamInfo &streamInfo)
     RoundVal(streamInfo.channels, SUPPORTED_CHANNELS);
     RoundVal(streamInfo.format, AUDIO_SUPPORTED_FORMATS);
     streamInfo.frameLen = GetData<size_t>();
-    if (GetData<bool>()) streamInfo.frameLen %= MAXFRAMELEN;
+    if (GetData<bool>()) {
+        streamInfo.frameLen %= MAXFRAMELEN;
+    }
 }
 
 void RoundNodeInfo(HpaeNodeInfo &nodeInfo)
@@ -165,7 +172,9 @@ void RoundNodeInfo(HpaeNodeInfo &nodeInfo)
     RoundVal(nodeInfo.channels, SUPPORTED_CHANNELS);
     RoundVal(nodeInfo.format, AUDIO_SUPPORTED_FORMATS);
     nodeInfo.frameLen = GetData<size_t>();
-    if (GetData<bool>()) nodeInfo.frameLen %= MAXFRAMELEN;
+    if (GetData<bool>()) {
+        nodeInfo.frameLen %= MAXFRAMELEN;
+    }
 }
 
 void InitSourceInfo(HpaeSourceInfo &sourceInfo)

@@ -123,7 +123,9 @@ void RoundSinkInfo(HpaeSinkInfo &sinkInfo)
     RoundVal(sinkInfo.channels, SUPPORTED_CHANNELS);
     RoundVal(sinkInfo.format, AUDIO_SUPPORTED_FORMATS);
     sinkInfo.frameLen = GetData<size_t>();
-    if (GetData<bool>()) sinkInfo.frameLen %= MAXFRAMELEN;
+    if (GetData<bool>()) {
+        sinkInfo.frameLen %= MAXFRAMELEN;
+    }
 }
 
 void RoundStreamInfo(HpaeStreamInfo &streamInfo)
@@ -132,7 +134,9 @@ void RoundStreamInfo(HpaeStreamInfo &streamInfo)
     RoundVal(streamInfo.channels, SUPPORTED_CHANNELS);
     RoundVal(streamInfo.format, AUDIO_SUPPORTED_FORMATS);
     streamInfo.frameLen = GetData<size_t>();
-    if (GetData<bool>()) streamInfo.frameLen %= MAXFRAMELEN;
+    if (GetData<bool>()) {
+        streamInfo.frameLen %= MAXFRAMELEN;
+    }
 }
 
 void RoundNodeInfo(HpaeNodeInfo &nodeInfo)
@@ -141,7 +145,9 @@ void RoundNodeInfo(HpaeNodeInfo &nodeInfo)
     RoundVal(nodeInfo.channels, SUPPORTED_CHANNELS);
     RoundVal(nodeInfo.format, AUDIO_SUPPORTED_FORMATS);
     nodeInfo.frameLen = GetData<size_t>();
-    if (GetData<bool>()) nodeInfo.frameLen %= MAXFRAMELEN;
+    if (GetData<bool>()) {
+        nodeInfo.frameLen %= MAXFRAMELEN;
+    }
 }
 
 
