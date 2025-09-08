@@ -113,7 +113,7 @@ void RoundVal(T &roundVal, const std::vector<T>& list)
     if(GetData<bool>()) {
         roundVal = GetData<T>();
     } else {
-        roundVal = list[GetData<uint32_t>%list.size()];
+        roundVal = list[GetData<uint32_t>()%list.size()];
     }
 }
 
@@ -137,7 +137,7 @@ void RoundStreamInfo(HpaeStreamInfo &streamInfo)
 
 void RoundNodeInfo(HpaeNodeInfo &nodeInfo)
 {
-    RoundVal(nodeInfo.sampleRate, AUDIO_SUPPORTED_SAMPLING_RATES);
+    RoundVal(nodeInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
     RoundVal(nodeInfo.channels, SUPPORTED_CHANNELS);
     RoundVal(nodeInfo.format, AUDIO_SUPPORTED_FORMATS);
     nodeInfo.frameLen = GetData<size_t>();
@@ -151,7 +151,7 @@ static void InitHpaeSinkInfo(HpaeSinkInfo &sinkInfo)
     sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
     sinkInfo.filePath = "g_rootCapturerPath";
-    RoundSinkInfo(sinkInfo)
+    RoundSinkInfo(sinkInfo);
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
 }
 
