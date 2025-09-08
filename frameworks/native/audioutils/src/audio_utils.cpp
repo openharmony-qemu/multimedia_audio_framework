@@ -45,6 +45,7 @@
 #include "privacy_error.h"
 
 using OHOS::Security::AccessToken::AccessTokenKit;
+using namespace std::chrono_literals;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -215,6 +216,16 @@ bool Util::IsRingerOrAlarmerStreamUsage(const StreamUsage &usage)
 bool Util::IsRingerAudioScene(const AudioScene &audioScene)
 {
     return audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING;
+}
+
+size_t Util::CalculatePcmSizeFromDurationCeiling(std::chrono::nanoseconds duration,
+    uint32_t sampleRate, uint32_t bytesPerSample)
+{
+    size_t sampleCount = duration * sampleRate / (1s);
+    if (((duration * sampleRate) % (1s)) > (0ns)) {
+        sampleCount++;
+    }
+    return sampleCount * bytesPerSample;
 }
 
 WatchTimeout::WatchTimeout(const std::string &funcName, int64_t timeoutNs) : funcName_(funcName), timeoutNs_(timeoutNs)

@@ -1124,10 +1124,6 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc)
         bufDesc.dataLength <= bufDesc.bufLength, ERR_INVALID_PARAM,
         "bufDesc error, bufLen %{public}zu, dataLen %{public}zu, spanSize %{public}zu.",
         bufDesc.bufLength, bufDesc.dataLength, clientSpanSizeInByte_);
-    // check if this buffer is form us.
-    if (bufDesc.buffer != callbackBuffer_.get()) {
-        AUDIO_WARNING_LOG("the buffer is not created by client.");
-    }
 
     if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
         if (memset_s(callbackBuffer_.get(), clientSpanSizeInByte_, 0, clientSpanSizeInByte_) != EOK) {
@@ -1150,9 +1146,8 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc)
     int32_t ret = WriteDataChunk(bufDesc, clientRemainSizeInFrame);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "writedataChunk failed, err: %{public}d", ret);
 
-    if (memset_s(callbackBuffer_.get(), clientSpanSizeInByte_, 0, clientSpanSizeInByte_) != EOK) {
-        AUDIO_WARNING_LOG("reset callback buffer fail.");
-    }
+    JUDGE_AND_WARNING_LOG(memset_s(bufDesc.buffer, bufDesc.bufLength, 0, bufDesc.bufLength) != EOK,
+        "reset callback buffer fail.");
 
     return SUCCESS;
 }
