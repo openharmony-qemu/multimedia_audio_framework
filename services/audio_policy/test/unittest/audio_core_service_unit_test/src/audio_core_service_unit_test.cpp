@@ -1594,5 +1594,22 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateDupDeviceOutputRoute_003, TestSize.Leve
 
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateDupDeviceOutputRoute_003 end");
 }
+
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: SetSleVoiceStatusFlag_001
+* @tc.desc  : Test SetSleVoiceStatusFlag
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetSleVoiceStatusFlag_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NEARLINK, DeviceRole::OUTPUT_DEVICE);
+    audioCoreService->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
+    auto ret = audioCoreService->SetSleVoiceStatusFlag(AUDIO_SCENE_DEFAULT);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = audioCoreService->SetSleVoiceStatusFlag(AUDIO_SCENE_PHONE_CALL);
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

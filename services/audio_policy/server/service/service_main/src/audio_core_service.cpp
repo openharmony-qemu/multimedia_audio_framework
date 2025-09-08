@@ -589,6 +589,7 @@ int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid
     FetchDeviceAndRoute("SetAudioScene", AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
 
     if (!isSameScene) {
+        SetSleVoiceStatusFlag(audioScene);
         OnAudioSceneChange(audioScene);
     }
 

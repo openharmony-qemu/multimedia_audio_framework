@@ -359,6 +359,7 @@ private:
     int32_t SwitchActiveHearingAidDevice(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     int32_t LoadHearingAidModule(DeviceType deviceType, const AudioStreamInfo &audioStreamInfo,
         std::string networkId, std::string sinkName, SourceType sourceType);
+    int32_t SetSleVoiceStatusFlag(AudioScene audioScene);
 #ifdef BLUETOOTH_ENABLE
     void RegisterBluetoothDeathCallback();
     static void BluetoothServiceCrashedCallback(pid_t pid, pid_t uid);
