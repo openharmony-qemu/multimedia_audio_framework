@@ -110,7 +110,7 @@ uint32_t GetArrLength(T& arr)
 template<class T>
 void RoundVal(T &roundVal, const std::vector<T>& list)
 {
-    if(GetData<bool>()) {
+    if (GetData<bool>()) {
         roundVal = GetData<T>();
     } else {
         roundVal = list[GetData<uint32_t>()%list.size()];
@@ -123,7 +123,7 @@ void RoundSinkInfo(HpaeSinkInfo &sinkInfo)
     RoundVal(sinkInfo.channels, SUPPORTED_CHANNELS);
     RoundVal(sinkInfo.format, AUDIO_SUPPORTED_FORMATS);
     sinkInfo.frameLen = GetData<size_t>();
-    if(GetData<bool>()) sinkInfo.frameLen %= MAXFRAMELEN;
+    if (GetData<bool>()) sinkInfo.frameLen %= MAXFRAMELEN;
 }
 
 void RoundStreamInfo(HpaeStreamInfo &streamInfo)

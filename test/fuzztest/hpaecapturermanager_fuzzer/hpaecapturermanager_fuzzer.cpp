@@ -131,7 +131,7 @@ int32_t ReadDataCb::OnStreamData(AudioCallBackCapturerStreamInfo &callBackStream
 template<class T>
 void RoundVal(T &roundVal, const std::vector<T>& list)
 {
-    if(GetData<bool>()) {
+    if (GetData<bool>()) {
         roundVal = GetData<T>();
     } else {
         roundVal = list[GetData<uint32_t>()%list.size()];
@@ -144,8 +144,8 @@ void RoundSourceInfo(HpaeSourceInfo &sourceInfo)
     RoundVal(sourceInfo.channels, SUPPORTED_CHANNELS);
     RoundVal(sourceInfo.format, AUDIO_SUPPORTED_FORMATS);
     sourceInfo.frameLen = GetData<size_t>();
-    if(GetData<bool>()) sourceInfo.frameLen %= MAXFRAMELEN;
-    if(GetData<bool>()) sourceInfo.ecType = static_cast<OHOS::AudioStandard::HPAE::HpaeEcType>(GetData<int32_t>());
+    if (GetData<bool>()) sourceInfo.frameLen %= MAXFRAMELEN;
+    if (GetData<bool>()) sourceInfo.ecType = static_cast<OHOS::AudioStandard::HPAE::HpaeEcType>(GetData<int32_t>());
     else sourceInfo.ecType = static_cast<OHOS::AudioStandard::HPAE::HpaeEcType>(GetData<uint32_t>() % ECTYPENUM);
     sourceInfo.micRef = HPAE_REF_OFF;
 }
