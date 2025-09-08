@@ -42,7 +42,7 @@ void ProAudioServiceAdapterUnitTest::SetUp(void)
 
 void ProAudioServiceAdapterUnitTest::TearDown(void)
 {
-    HPAE::IHpaeManager::GetHpaeManager().DeInit();    
+    HPAE::IHpaeManager::GetHpaeManager().DeInit();
 }
 
 ProAudioServiceAdapterUnitTest::ProAudioServiceAdapterUnitTest()

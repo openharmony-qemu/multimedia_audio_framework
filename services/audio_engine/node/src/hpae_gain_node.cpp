@@ -95,10 +95,9 @@ HpaePcmBuffer *HpaeGainNode::SignalProcess(const std::vector<HpaePcmBuffer *> &i
         SetNodeInfo(nodeInfo);
 
         outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
-            "HpaeGainNodeOut_id_" + std::to_string(GetSessionId()) +
-            + "_nodeId_" + std::to_string(GetNodeId()) +
-            "_ch_" + std::to_string(GetChannelCount()) + "_rate_" +
-            std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
+            "HpaeGainNodeOut_id_" + std::to_string(GetSessionId()) + "_nodeId_" + std::to_string(GetNodeId()) +
+            "_ch_" + std::to_string(GetChannelCount()) +
+            "_rate_" + std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
     }
 #endif
     

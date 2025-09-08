@@ -100,10 +100,9 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
 #ifdef ENABLE_HOOK_PCM
     if (!outputPcmDumper_) {
         outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
-            "HpaeConverterNodeOutput_id_" + std::to_string(GetSessionId()) +
-            + "_nodeId_" + std::to_string(GetNodeId()) +
-            "_ch_" + std::to_string(GetChannelCount()) + "_rate_" +
-            std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
+            "HpaeConverterNodeOutput_id_" + std::to_string(GetSessionId()) + "_nodeId_" + std::to_string(GetNodeId()) +
+            "_ch_" + std::to_string(GetChannelCount()) +
+            "_rate_" + std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
     }
 #endif
 
