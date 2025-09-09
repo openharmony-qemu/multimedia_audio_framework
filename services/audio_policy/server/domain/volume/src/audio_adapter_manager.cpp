@@ -752,7 +752,7 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
     }
 
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERR_OPERATION_FAILED,
-        "SetSystemVolumeLevel audio adapter null");
+        "SetSystemVolumeLevel failed audio adapter null");
 
     AUDIO_INFO_LOG("streamType:%{public}d volumeDb:%{public}f volume:%{public}d devicetype:%{public}d",
         streamType, volumeDb, volumeLevel, currentActiveDevice_.deviceType_);
