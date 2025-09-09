@@ -140,7 +140,7 @@ OH_AudioCommon_Result OH_AudioSessionManager_SelectMediaInputDevice(
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
 
     if (deviceDescriptor == nullptr) {
-        return ohAudioSessionManager->ClearSelectedMediaInputDevice(desc);
+        return ohAudioSessionManager->ClearSelectedMediaInputDevice();
     }
 
     OHAudioDeviceDescriptor* ohDeviceDescriptor = convertDeviceDescriptor(deviceDescriptor);
