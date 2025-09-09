@@ -647,5 +647,24 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_032, TestSize.Level1)
     auto pipeRet = pipeManager->GetUnusedRecordPipe();
     EXPECT_EQ(pipeRet.size(), 0);
 }
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_033
+ * @tc.desc  : Test ReloadSourceForDeviceChange() for valid source and device
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_033, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    SessionInfo sessionInfo;
+    sessionInfo.sourceType = SourceType::SOURCE_TYPE_VOICE_COMMUNICATION;
+    uint32_t sessionId = 0;
+    SessionOperation operation = SESSION_OPERATION_RELEASE;
+    audioCapturerSession->sessionWithNormalSourceType_[sessionId] = sessionInfo;
+    audioCapturerSession->ReloadCaptureSession(sessionId, operation);
+    EXPECT_EQ(audioCapturerSession->ReloadCaptureSession(sessionId, operation), ERROR);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -297,6 +297,26 @@ bool AudioCapturerSession::FindRunningNormalSession(uint32_t sessionId, AudioStr
     return HandleNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
 }
 
+bool AudioCapturerSession::FindRemainingNormalSession(uint32_t sessionId, bool findRunningSessionRet,
+    uint32_t runningSessionId, uint32_t &targetSessionId)
+{
+    bool hasRemainSession = false;
+    targetSessionId = runningSessionId;
+    CHECK_AND_RETURN_RET(!findRunningSessionRet, true);
+
+    SessionInfo targetSession;
+    targetSession.sourceType = SOURCE_TYPE_INVALID;
+    for (auto it : sessionWithNormalSourceType_) {
+        CHECK_AND_CONTINUE(it.first != sessionId);
+        hasRemainSession = true;
+        SourceType higherSourceType = it.second.sourceType;
+        CHECK_AND_CONTINUE(IsHigherPrioritySourceType(higherSourceType, targetSession.sourceType));
+        targetSession = it.second;
+        targetSessionId = it.first;
+    }
+    return hasRemainSession;
+}
+
 int32_t AudioCapturerSession::SetHearingAidReloadFlag(const bool hearingAidReloadFlag)
 {
     std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
@@ -365,6 +385,13 @@ int32_t AudioCapturerSession::ReloadCaptureSession(uint32_t sessionId, SessionOp
                 targetSessionId = runningSessionInfo.sessionId_;
                 targetSession = sessionWithNormalSourceType_[targetSessionId];
             }
+            break;
+        case SESSION_OPERATION_RELEASE:
+            CHECK_AND_BREAK_LOG((targetSession.sourceType == audioEcManager_.GetSourceOpened()) &&
+                FindRemainingNormalSession(sessionId, findRunningSessionRet,
+                runningSessionInfo.sessionId_, targetSessionId), "no remain stream.");
+            needReload = true;
+            targetSession = sessionWithNormalSourceType_[targetSessionId];
             break;
         default:
             AUDIO_ERR_LOG("operation parameter error!");

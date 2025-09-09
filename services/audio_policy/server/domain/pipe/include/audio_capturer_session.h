@@ -102,6 +102,8 @@ private:
     const AudioDeviceDescriptor& GetInputDeviceTypeForReload();
     bool IsVoipDeviceChanged(const AudioDeviceDescriptor &inputDevcie, const AudioDeviceDescriptor &outputDevice);
     bool FindRunningNormalSession(uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo);
+    bool FindRemainingNormalSession(uint32_t sessionId, bool findRunningSessionRet,
+        uint32_t runningSessionId, uint32_t &targetSessionId);
 
     std::string GetEnhancePropByName(const AudioEnhancePropertyArray &propertyArray, const std::string &propName);
     std::string GetEnhancePropByNameV3(const AudioEffectPropertyArrayV3 &oldPropertyArray, const std::string &propName);
