@@ -263,6 +263,7 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/device/src/audio_scene_manager.cpp",
     "server/domain/tone/audio_tone_manager.cpp",
     "server/domain/volume/src/audio_volume_manager.cpp",
+    "server/domain/volume/src/audio_loud_volume_manager.cpp",
     "server/domain/device/src/sle/sle_audio_device_manager.cpp",
     "server/domain/device/src/va/va_device_manager.cpp",
     "client/stub/src/va_device_broker_stub_impl.cpp",

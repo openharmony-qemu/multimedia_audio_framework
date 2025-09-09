@@ -306,5 +306,6 @@ interface IAudioPolicy {
     void PreferBluetoothAndNearlinkRecord([in] boolean isPreferred);
     void GetPreferBluetoothAndNearlinkRecord([out] boolean isPreferred);
     void RestoreOutputDevice([in] sptr<AudioRendererFilter> audioRendererFilter);
+    void ReloadLoudVolumeMode([in] int streamInFocus, [in] int setVolMode, [out] boolean ret);
 }
 

@@ -348,7 +348,7 @@ void AudioVolumeManager::PublishLoudVolumeNotification(int32_t notificationId)
 #endif
 }
 
-void AudioVolumeManager::SendLoudVolumeMode(FunctionHoldType funcHoldType, bool state, bool repeatTrigNotif)
+void AudioVolumeManager::SendLoudVolumeMode(LoudVolumeHoldType funcHoldType, bool state, bool repeatTrigNotif)
 {
     if (state && repeatTrigNotif) {
         const int INSTANT_NOTIFICATION_ID = 6;
