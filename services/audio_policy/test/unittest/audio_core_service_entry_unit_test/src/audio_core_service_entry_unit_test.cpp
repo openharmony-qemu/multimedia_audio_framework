@@ -849,7 +849,7 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_039, TestSize.Level1)
 /**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreService_040
- * @tc.desc  : Test AudioCoreService::HandlePlaybackStreamInA2dp
+ * @tc.desc  : Test AudioCoreService::SelectA2dpType
  */
 HWTEST(AudioCoreServiceEntryTest, AudioCoreService_040, TestSize.Level1)
 {
@@ -861,7 +861,7 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_040, TestSize.Level1)
     audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
 
-    audioCoreService->HandlePlaybackStreamInA2dp(audioStreamDescriptor, false);
+    audioCoreService->SelectA2dpType(audioStreamDescriptor, false);
     std::shared_ptr<AudioDeviceDescriptor> temp = audioStreamDescriptor->newDeviceDescs_.front();
     EXPECT_NE(temp, nullptr);
     EXPECT_NE(temp->a2dpOffloadFlag_, A2DP_OFFLOAD);
@@ -924,6 +924,26 @@ HWTEST(AudioCoreServiceEntryTest, UpdateSessionOperation_043, TestSize.Level1)
 
     auto ret = eventEntry->UpdateSessionOperation(sessionId, operation, opMsg);
     EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: AudioCoreService_044
+ * @tc.desc  : Test AudioCoreService::UpdateStreamDevicesForStart
+ */
+HWTEST(AudioCoreServiceEntryTest, AudioCoreService_044, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
+    audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test");
+    EXPECT_NE(audioStreamDescriptor->newDeviceDescs_.size(), 0);
+
+    audioCoreService->isFirstScreenOn_ = true;
+    audioCoreService->audioSessionService_ = nullptr;
+    audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test");
+    EXPECT_NE(audioStreamDescriptor->newDeviceDescs_.size(), 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

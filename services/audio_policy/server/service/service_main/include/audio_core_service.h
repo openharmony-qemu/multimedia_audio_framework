@@ -495,7 +495,9 @@ private:
     bool HandleInputStreamInRunning(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void HandleDualStartClient(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
-    void HandlePlaybackStreamInA2dp(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
+    void SelectA2dpType(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
+    void UpdateStreamDevicesForCreate(std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller);
+    void UpdateStreamDevicesForStart(std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller);
     bool IsNoRunningStream(std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs);
     void UpdateActiveDeviceAndVolumeBeforeMoveSession(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason);

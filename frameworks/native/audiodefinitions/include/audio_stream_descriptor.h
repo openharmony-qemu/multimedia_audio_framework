@@ -95,9 +95,24 @@ public:
         return (streamStatus_ == STREAM_STATUS_STARTED);
     }
 
+    StreamUsage GetRenderUsage() const
+    {
+        return rendererInfo_.streamUsage;
+    }
+
+    AudioPrivacyType GetRenderPrivacyType() const
+    {
+        return rendererInfo_.privacyType;
+    }
+
     void SetStatus(AudioStreamStatus status)
     {
         streamStatus_ = status;
+    }
+
+    AudioStreamStatus GetStatus() const
+    {
+        return streamStatus_;
     }
 
     void SetAction(AudioStreamAction action)
@@ -208,6 +223,18 @@ public:
             }
         }
         newDeviceDescs_ = devices;
+    }
+
+    void UpdateNewDeviceWithoutCheck(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices)
+    {
+        std::lock_guard<std::mutex> lock(lock_);
+        newDeviceDescs_ = devices;
+    }
+
+    void UpdateOldDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices)
+    {
+        std::lock_guard<std::mutex> lock(lock_);
+        oldDeviceDescs_ = devices;
     }
 
     bool IsDeviceRemote()
