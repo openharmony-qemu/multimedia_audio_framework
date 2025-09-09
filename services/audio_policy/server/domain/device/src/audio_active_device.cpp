@@ -430,8 +430,7 @@ void AudioActiveDevice::UpdateVolumeTypeDeviceMap(std::shared_ptr<AudioStreamDes
     CHECK_AND_RETURN_LOG(desc->newDeviceDescs_.front() != nullptr, "Devicedesc is null");
 
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamUsage(desc->rendererInfo_.streamUsage);
-    CHECK_AND_RETURN_LOG(!IsDeviceInVector(desc->newDeviceDescs_.front(), volumeTypeDeviceMap_[volumeType]),
-        "descId %{public}d is exist", desc->newDeviceDescs_.front()->deviceId_);
+    CHECK_AND_RETURN(!IsDeviceInVector(desc->newDeviceDescs_.front(), volumeTypeDeviceMap_[volumeType]));
 
     volumeTypeDeviceMap_[volumeType].push_back(desc->newDeviceDescs_.front());
     AUDIO_INFO_LOG("volumeDeviceMap: %{public}d add deviceId %{public}d",
@@ -443,9 +442,8 @@ void AudioActiveDevice::UpdateStreamUsageDeviceMap(std::shared_ptr<AudioStreamDe
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
     CHECK_AND_RETURN_LOG(desc->newDeviceDescs_.front() != nullptr, "Devicedesc is null");
 
-    CHECK_AND_RETURN_LOG(!IsDeviceInVector(desc->newDeviceDescs_.front(),
-        streamUsageDeviceMap_[desc->rendererInfo_.streamUsage]),
-        "descId %{public}d is exist", desc->newDeviceDescs_.front()->deviceId_);
+    CHECK_AND_RETURN(!IsDeviceInVector(desc->newDeviceDescs_.front(),
+        streamUsageDeviceMap_[desc->rendererInfo_.streamUsage]));
 
     streamUsageDeviceMap_[desc->rendererInfo_.streamUsage].push_back(desc->newDeviceDescs_.front());
     AUDIO_INFO_LOG("streamUsageDeviceMap: %{public}d add deviceId %{public}d",
