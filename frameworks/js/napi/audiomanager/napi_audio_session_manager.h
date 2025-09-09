@@ -50,6 +50,7 @@ private:
         NapiAudioSessionMgr *objectInfo;
         AudioSessionStrategy audioSessionStrategy;
         int32_t deviceType;
+        uint32_t category;
         std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor;
         bool bArgTransFlag = false;
     };

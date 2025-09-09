@@ -82,6 +82,8 @@ int32_t AudioPolicyManager::SelectInputDevice(std::shared_ptr<AudioDeviceDescrip
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptor != nullptr, -1,
         "SelectInputDevice get null device.");
+    int32_t result = CheckAudioPolicyClientRegisted();
+    CHECK_AND_RETURN_RET(result == SUCCESS, result);
     return gsp->SelectInputDevice(audioDeviceDescriptor);
 }
 
@@ -468,20 +470,22 @@ int32_t AudioPolicyManager::ClearSelectedInputDevice()
     return gsp->ClearSelectedInputDevice();
 }
 
-int32_t AudioPolicyManager::PreferBluetoothAndNearlinkRecord(bool isPreferred)
+int32_t AudioPolicyManager::PreferBluetoothAndNearlinkRecord(BluetoothAndNearlinkPreferredRecordCategory category)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-    return gsp->PreferBluetoothAndNearlinkRecord(isPreferred);
+    int32_t result = CheckAudioPolicyClientRegisted();
+    CHECK_AND_RETURN_RET(result == SUCCESS, result);
+    return gsp->PreferBluetoothAndNearlinkRecord(category);
 }
 
-bool AudioPolicyManager::GetPreferBluetoothAndNearlinkRecord()
+BluetoothAndNearlinkPreferredRecordCategory AudioPolicyManager::GetPreferBluetoothAndNearlinkRecord()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-    bool isPreferred = false;
-    gsp->GetPreferBluetoothAndNearlinkRecord(isPreferred);
-    return isPreferred;
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, PREFERRED_NONE, "audio policy manager proxy is NULL.");
+    uint32_t category = PREFERRED_NONE;
+    gsp->GetPreferBluetoothAndNearlinkRecord(category);
+    return static_cast<BluetoothAndNearlinkPreferredRecordCategory>(category);
 }
 
 int32_t AudioPolicyManager::SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,

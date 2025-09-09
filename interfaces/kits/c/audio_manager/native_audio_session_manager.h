@@ -179,6 +179,36 @@ typedef enum {
 } OH_AudioSession_DeactivatedReason;
 
 /**
+ * @brief Enumerates the categories application prefer to use
+ * when recording with bluetooth and nearlink.
+ *
+ * @since 21
+ */
+typedef enum {
+    /**
+     * @brief Not prefer to use bluetooth and nearlink record.
+     */
+    PREFERRED_NONE = 0,
+
+    /**
+     * @brief Prefer to use bluetooth and nearlink record.
+     * However, whether to use low latency or high quality recording
+     * dpends on system.
+     */
+    PREFERRED_DEFAULT = 1,
+
+    /**
+     * @brief Prefer to use bluetooth and nearlink low latency mode to record.
+     */
+    PREFERRED_LOW_LATENCY = 2,
+
+    /**
+     * @brief Prefer to use bluetooth and nearlink high quality mode to record.
+     */
+    PREFERRED_HIGH_QUALITY = 3,
+} OH_AudioSession_BluetoothAndNearlinkPreferredRecordCategory;
+
+/**
  * @brief declare the audio session strategy
  *
  * @since 12

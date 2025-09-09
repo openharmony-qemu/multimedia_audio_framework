@@ -3393,7 +3393,8 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid, pid_t uid)
     std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
     eventEntry_->RegisteredTrackerClientDied(uid, pid);
     eventEntry_->ClearSelectedInputDeviceByUid(uid);
-    eventEntry_->PreferBluetoothAndNearlinkRecordByUid(uid, false);
+    eventEntry_->PreferBluetoothAndNearlinkRecordByUid(uid,
+        BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE);
 
     auto filter = [&pid](int val) {
         return pid == val;
@@ -3425,6 +3426,9 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
 
     AudioZoneService::GetInstance().UnRegisterAudioZoneClient(pid);
     AudioZoneService::GetInstance().ReleaseAudioZoneByClientPid(pid);
+    eventEntry_->ClearSelectedInputDeviceByUid(uid);
+    eventEntry_->PreferBluetoothAndNearlinkRecordByUid(uid,
+        BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE);
 }
 
 int32_t AudioPolicyServer::ResumeStreamState()
@@ -3861,6 +3865,7 @@ int32_t AudioPolicyServer::GetSelectedInputDevice(std::shared_ptr<AudioDeviceDes
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
     audioDeviceDescriptor = eventEntry_->GetSelectedInputDeviceByUid(callerUid);
+    audioPolicyUtils_.UpdateDisplayName(audioDeviceDescriptor);
     return SUCCESS;
 }
 
@@ -3871,16 +3876,18 @@ int32_t AudioPolicyServer::ClearSelectedInputDevice()
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::PreferBluetoothAndNearlinkRecord(bool isPreferred)
+int32_t AudioPolicyServer::PreferBluetoothAndNearlinkRecord(uint32_t category)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
-    return eventEntry_->PreferBluetoothAndNearlinkRecordByUid(callerUid, isPreferred);
+    return eventEntry_->PreferBluetoothAndNearlinkRecordByUid(callerUid,
+        static_cast<BluetoothAndNearlinkPreferredRecordCategory>(category));
 }
 
-int32_t AudioPolicyServer::GetPreferBluetoothAndNearlinkRecord(bool &isPreferred)
+int32_t AudioPolicyServer::GetPreferBluetoothAndNearlinkRecord(uint32_t &category)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
-    isPreferred = eventEntry_->GetPreferBluetoothAndNearlinkRecordByUid(callerUid);
+    auto preferCategory = eventEntry_->GetPreferBluetoothAndNearlinkRecordByUid(callerUid);
+    category = static_cast<uint32_t>(preferCategory);
     return SUCCESS;
 }
 

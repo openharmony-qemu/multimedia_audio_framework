@@ -159,6 +159,7 @@ public:
     static bool IsLegalInputArgumentAudioLoopbackReverbPreset(int32_t preset);
     static bool IsLegalInputArgumentAudioLoopbackEqualizerPreset(int32_t preset);
     static bool IsLegalInputArgumentSessionScene(int32_t scene);
+    static bool IsLegalBluetoothAndNearlinkPreferredRecordCategory(uint32_t category);
 
 private:
     static void Destructor(napi_env env, void *nativeObject, void *finalizeHint);

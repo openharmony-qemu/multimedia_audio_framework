@@ -30,6 +30,7 @@ bool AudioUsrSelectManager::SelectInputDeviceByUid(const std::shared_ptr<AudioDe
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
+    AUDIO_INFO_LOG("select input device, uid: %{public}d, deviceId: %{public}d", uid, deviceDescriptor->deviceId_);
     auto desc = AudioDeviceManager::GetAudioDeviceManager().FindConnectedDeviceById(deviceDescriptor->deviceId_);
     if (desc == nullptr) {
         AUDIO_ERR_LOG("AudioUsrSelectManager::SelectInputDeviceByUid no device found, deviceId: %{public}d",
@@ -40,6 +41,7 @@ bool AudioUsrSelectManager::SelectInputDeviceByUid(const std::shared_ptr<AudioDe
     // If the selected device is virtual device, connect it.
     bool isVirtualDevice = AudioDeviceManager::GetAudioDeviceManager().IsVirtualConnectedDevice(desc);
     if (isVirtualDevice) {
+        AUDIO_INFO_LOG("is a virtual device, deviceId: %{public}d", desc->deviceId_);
         int32_t ret = AudioRecoveryDevice::GetInstance().ConnectVirtualDevice(desc);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Connect device [%{public}s] failed",
             GetEncryptStr(desc->macAddress_).c_str());
@@ -76,31 +78,33 @@ void AudioUsrSelectManager::ClearSelectedInputDeviceByUid(int32_t uid)
     }
 }
 
-void AudioUsrSelectManager::PreferBluetoothAndNearlinkRecordByUid(int32_t uid, bool isPreferred)
+void AudioUsrSelectManager::PreferBluetoothAndNearlinkRecordByUid(int32_t uid,
+    BluetoothAndNearlinkPreferredRecordCategory category)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-
+    AUDIO_INFO_LOG("prefer to use bluetooth and nearlink to record, uid: %{public}d, category: %{public}d",
+        uid, category);
     auto it =
         std::find(isPreferredBluetoothAndNearlinkRecord_.begin(), isPreferredBluetoothAndNearlinkRecord_.end(), uid);
     if (it != isPreferredBluetoothAndNearlinkRecord_.end()) {
         isPreferredBluetoothAndNearlinkRecord_.erase(it);
     }
-    
-    if (isPreferred) {
-        isPreferredBluetoothAndNearlinkRecord_.push_front(uid);
-    }
+
+    isPreferredBluetoothAndNearlinkRecord_.push_front(uid);
+    categoryMap_[uid] = category;
 }
 
-bool AudioUsrSelectManager::GetPreferBluetoothAndNearlinkRecordByUid(int32_t uid)
+BluetoothAndNearlinkPreferredRecordCategory AudioUsrSelectManager::GetPreferBluetoothAndNearlinkRecordByUid(
+    int32_t uid)
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
     auto it =
         std::find(isPreferredBluetoothAndNearlinkRecord_.begin(), isPreferredBluetoothAndNearlinkRecord_.end(), uid);
     if (it != isPreferredBluetoothAndNearlinkRecord_.end()) {
-        return true;
+        categoryMap_[uid];
     }
-    return false;
+    return BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE;
 }
 
 void AudioUsrSelectManager::EnableSelectInputDevice(
@@ -119,6 +123,7 @@ void AudioUsrSelectManager::EnableSelectInputDevice(
         int32_t uid = GetRealUid(streamDesc);
         uidMap[uid] = i;
     }
+    AUDIO_INFO_LOG("running stream size: %{public}ld", uidMap.size());
 
     // use selected rules first
     for (const auto &device : selectedDevices_) {
@@ -127,10 +132,12 @@ void AudioUsrSelectManager::EnableSelectInputDevice(
         
         int32_t index = uidMap[device.first];
         auto &streamDesc = inputStreamDescs[index];
-        capturerDevice_ = JudgeFinalSelectDevice(desc, streamDesc->capturerInfo_.sourceType);
+        capturerDevice_ = JudgeFinalSelectDevice(desc, streamDesc->capturerInfo_.sourceType,
+            categoryMap_[device.first]);
         CHECK_AND_CONTINUE(capturerDevice_ != nullptr);
         return;
     }
+    AUDIO_WARNING_LOG("no select device, use prefer settings");
 
     if (isPreferredBluetoothAndNearlinkRecord_.size() == 0) {
         AUDIO_WARNING_LOG("AudioUsrSelectManager::EnableSelectInputDevice no prefer settings");
@@ -142,11 +149,12 @@ void AudioUsrSelectManager::EnableSelectInputDevice(
     auto preferDevice = GetPreferDevice();
     CHECK_AND_RETURN(preferDevice != nullptr);
     for (const int32_t uid : isPreferredBluetoothAndNearlinkRecord_) {
-        CHECK_AND_CONTINUE(uidMap.find(uid) != uidMap.end());
+        CHECK_AND_CONTINUE_LOG(uidMap.find(uid) != uidMap.end(), "uid: %{public}d has no running stream", uid);
+        CHECK_AND_CONTINUE_LOG(categoryMap_[uid] != PREFERRED_NONE, "uid: %{public}d prefer setting 0", uid);
 
         int32_t index = uidMap[uid];
         auto &streamDesc = inputStreamDescs[index];
-        capturerDevice_ = JudgeFinalSelectDevice(preferDevice, streamDesc->capturerInfo_.sourceType);
+        capturerDevice_ = JudgeFinalSelectDevice(preferDevice, streamDesc->capturerInfo_.sourceType, categoryMap_[uid]);
         CHECK_AND_CONTINUE(capturerDevice_ != nullptr);
         break;
     }
@@ -163,28 +171,34 @@ std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::GetCapturerDevice(
 {
     std::lock_guard<std::mutex> lock(mutex_);
     // If marked, directly return the selection result.
-    CHECK_AND_RETURN_RET(!isEnabled_, capturerDevice_);
+    CHECK_AND_RETURN_RET_LOG(!isEnabled_, capturerDevice_, "select enabled, return capturerDevice_");
+    AUDIO_INFO_LOG("select disabled, search selected device. uid: %{public}d, sourceType: %{public}d",
+        uid, sourceType);
 
     std::shared_ptr<AudioDeviceDescriptor> capturerDevice = nullptr;
     // If not marked, first find the selection of the current UID
     auto deviceIt = findDevice(uid);
     if (deviceIt != selectedDevices_.end()) {
         // Based on the sourceType, determine the final input device
-        auto desc = JudgeFinalSelectDevice(deviceIt->second, sourceType);
+        auto desc = JudgeFinalSelectDevice(deviceIt->second, sourceType, categoryMap_[uid]);
         CHECK_AND_RETURN_RET_LOG(desc == nullptr, desc,
             "AudioUsrSelectManager::GetCapturerDevice has selected device.");
+        AUDIO_WARNING_LOG("selected device no longer available");
     }
 
+    AUDIO_WARNING_LOG("no selected device, use prefer settings");
     // If the current UID has no selection, then apply the preference setting
     auto it =
         std::find(isPreferredBluetoothAndNearlinkRecord_.begin(), isPreferredBluetoothAndNearlinkRecord_.end(), uid);
     // If the current UID has no preference setting
     CHECK_AND_RETURN_RET_LOG(it != isPreferredBluetoothAndNearlinkRecord_.end(), nullptr,
         "AudioUsrSelectManager::GetCapturerDevice no prefer data");
+    CHECK_AND_RETURN_RET_LOG(categoryMap_[uid] != PREFERRED_NONE, nullptr,
+        "AudioUsrSelectManager::GetCapturerDevice prefer setting 0");
     // According to the device connection time, obtain the most recently connected Bluetooth/Nearlink device
     auto preferDevice = GetPreferDevice();
     CHECK_AND_RETURN_RET(preferDevice != nullptr, nullptr);
-    return JudgeFinalSelectDevice(preferDevice, sourceType);
+    return JudgeFinalSelectDevice(preferDevice, sourceType, categoryMap_[uid]);
 }
 
 std::list<std::pair<int32_t, AudioDevicePtr>>::iterator AudioUsrSelectManager::findDevice(int32_t uid)
@@ -204,19 +218,24 @@ int32_t AudioUsrSelectManager::GetRealUid(const std::shared_ptr<AudioStreamDescr
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::JudgeFinalSelectDevice(
-    const std::shared_ptr<AudioDeviceDescriptor> &desc, SourceType sourceType)
+    const std::shared_ptr<AudioDeviceDescriptor> &desc, SourceType sourceType,
+    BluetoothAndNearlinkPreferredRecordCategory category)
 {
+    // 判断设备是不是存在且处于连接状态
+    bool isConnected = AudioDeviceManager::GetAudioDeviceManager().IsConnectedDevices(desc);
+
+    if (desc->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO || category == PREFERRED_LOW_LATENCY) {
+        return isConnected ? desc : nullptr;
+    }
+
     // 如果是直播或录像且设备为sco，需要判断是否存在可用的高清设备
-    if ((sourceType == SOURCE_TYPE_CAMCORDER || sourceType == SOURCE_TYPE_LIVE) &&
-        desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+    if (sourceType == SOURCE_TYPE_CAMCORDER || sourceType == SOURCE_TYPE_LIVE || category == PREFERRED_HIGH_QUALITY) {
         auto a2dpin = std::make_shared<AudioDeviceDescriptor>(desc);
         a2dpin->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
         bool isA2dpinConnected = AudioDeviceManager::GetAudioDeviceManager().IsConnectedDevices(a2dpin);
         CHECK_AND_RETURN_RET(!isA2dpinConnected, a2dpin);
     }
 
-    // 判断设备是不是存在且处于连接状态
-    bool isConnected = AudioDeviceManager::GetAudioDeviceManager().IsConnectedDevices(desc);
     return isConnected ? desc : nullptr;
 }
 

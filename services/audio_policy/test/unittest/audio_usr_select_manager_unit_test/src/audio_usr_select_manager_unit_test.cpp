@@ -149,10 +149,10 @@ HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_PreferBluetoothAnd
     TestSize.Level1)
 {
     AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
-    audioUsrSelectManager.PreferBluetoothAndNearlinkRecordByUid(123, true);
+    audioUsrSelectManager.PreferBluetoothAndNearlinkRecordByUid(123, PREFERRED_DEFAULT);
     EXPECT_EQ(audioUsrSelectManager.isPreferredBluetoothAndNearlinkRecord_.size(), 1);
 
-    audioUsrSelectManager.PreferBluetoothAndNearlinkRecordByUid(123, false);
+    audioUsrSelectManager.PreferBluetoothAndNearlinkRecordByUid(123, PREFERRED_NONE);
     EXPECT_EQ(audioUsrSelectManager.isPreferredBluetoothAndNearlinkRecord_.size(), 0);
 }
 
@@ -165,8 +165,10 @@ HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_GetPreferBluetooth
     TestSize.Level1)
 {
     AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
-    EXPECT_EQ(audioUsrSelectManager.GetPreferBluetoothAndNearlinkRecordByUid(123), true);
-    EXPECT_EQ(audioUsrSelectManager.GetPreferBluetoothAndNearlinkRecordByUid(321), false);
+    audioUsrSelectManager.PreferBluetoothAndNearlinkRecordByUid(123, PREFERRED_DEFAULT);
+
+    EXPECT_EQ(audioUsrSelectManager.GetPreferBluetoothAndNearlinkRecordByUid(123), PREFERRED_DEFAULT);
+    EXPECT_EQ(audioUsrSelectManager.GetPreferBluetoothAndNearlinkRecordByUid(321), PREFERRED_NONE);
 }
 
 /**
@@ -202,13 +204,21 @@ HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_JudgeFinalSelectDe
     desc->deviceId_ = DEVICE_ID1;
     desc->macAddress_ = "00:11:22:33:44:55";
     desc->connectState_ = VIRTUAL_CONNECTED;
-    auto judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_CAMCORDER);
+    auto judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_CAMCORDER, PREFERRED_DEFAULT);
     EXPECT_NE(judge, nullptr);
     EXPECT_EQ(judge->deviceId_, 2);
 
-    judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_LIVE);
+    judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_LIVE, PREFERRED_DEFAULT);
     EXPECT_NE(judge, nullptr);
     EXPECT_EQ(judge->deviceId_, 2);
+
+    judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_EC, PREFERRED_HIGH_QUALITY);
+    EXPECT_NE(judge, nullptr);
+    EXPECT_EQ(judge->deviceId_, 2);
+
+    judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_EC, PREFERRED_DEFAULT);
+    EXPECT_NE(judge, nullptr);
+    EXPECT_EQ(judge->deviceId_, 1);
 }
 
 /**
@@ -226,13 +236,7 @@ HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_JudgeFinalSelectDe
     desc->macAddress_ = "00:11:22:33:44:55";
     desc->connectState_ = CONNECTED;
 
-    auto judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_CAMCORDER);
-    EXPECT_NE(judge, nullptr);
-
-    judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_LIVE);
-    EXPECT_NE(judge, nullptr);
-    
-    judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_VOICE_CALL);
+    auto judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_CAMCORDER, PREFERRED_DEFAULT);
     EXPECT_NE(judge, nullptr);
 }
 } // namespace AudioStandard

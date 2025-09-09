@@ -303,8 +303,8 @@ interface IAudioPolicy {
     void SelectInputDevice([in] sharedptr<AudioDeviceDescriptor> audioDeviceDescriptor);
     void GetSelectedInputDevice([out] sharedptr<AudioDeviceDescriptor> audioDeviceDescriptor);
     void ClearSelectedInputDevice();
-    void PreferBluetoothAndNearlinkRecord([in] boolean isPreferred);
-    void GetPreferBluetoothAndNearlinkRecord([out] boolean isPreferred);
+    void PreferBluetoothAndNearlinkRecord([in] unsigned int category);
+    void GetPreferBluetoothAndNearlinkRecord([out] unsigned int category);
     void RestoreOutputDevice([in] sptr<AudioRendererFilter> audioRendererFilter);
 }
 

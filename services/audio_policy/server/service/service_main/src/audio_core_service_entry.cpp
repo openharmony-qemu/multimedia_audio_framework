@@ -434,14 +434,16 @@ int32_t AudioCoreService::EventEntry::ClearSelectedInputDeviceByUid(int32_t uid)
     return coreService_->ClearSelectedInputDeviceByUid(uid);
 }
 
-int32_t AudioCoreService::EventEntry::PreferBluetoothAndNearlinkRecordByUid(int32_t uid, bool isPreferred)
+int32_t AudioCoreService::EventEntry::PreferBluetoothAndNearlinkRecordByUid(int32_t uid,
+    BluetoothAndNearlinkPreferredRecordCategory category)
 {
     Trace trace("KeyAction AudioCoreService::PreferBluetoothAndNearlinkRecordByUid");
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    return coreService_->PreferBluetoothAndNearlinkRecordByUid(uid, isPreferred);
+    return coreService_->PreferBluetoothAndNearlinkRecordByUid(uid, category);
 }
 
-bool AudioCoreService::EventEntry::GetPreferBluetoothAndNearlinkRecordByUid(int32_t uid)
+BluetoothAndNearlinkPreferredRecordCategory AudioCoreService::EventEntry::
+    GetPreferBluetoothAndNearlinkRecordByUid(int32_t uid)
 {
     Trace trace("KeyAction AudioCoreService::GetPreferBluetoothAndNearlinkRecordByUid");
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
