@@ -57,6 +57,7 @@ public:
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid);
 
 private:
+    void NotifyStreamTypeChange(AudioStreamType type, HpaeSplitStreamType splitStreamType);
     void HandleRemoteTiming();
     void HandlePcmDumping(HpaeSplitStreamType streamType, char* data, size_t size);
     InputPort<HpaePcmBuffer *> inputStream_;
