@@ -166,7 +166,7 @@ int32_t AudioLoopbackPrivate::SetVolume(float volume)
         HILOG_COMM_INFO("SetVolume with invalid volume");
         return ERR_INVALID_PARAM;
     }
-    std::unique_lock<std::mutex> stateLock(stateMutex_);
+    std::lock_guard<std::mutex> lock(loopbackMutex_);
     karaokeParams_["Karaoke_volume"] = std::to_string(static_cast<int>(volume * VALUE_HUNDRED));
     if (currentState_ == LOOPBACK_STATE_RUNNING) {
         std::string parameters = "Karaoke_volume=" + karaokeParams_["Karaoke_volume"];
@@ -177,7 +177,8 @@ int32_t AudioLoopbackPrivate::SetVolume(float volume)
 
 bool AudioLoopbackPrivate::SetReverbPreset(AudioLoopbackReverbPreset preset)
 {
-    std::unique_lock<std::mutex> stateLock(stateMutex_);
+    Trace trace("AudioLoopbackPrivate::SetReverbPreset");
+    std::lock_guard<std::mutex> lock(loopbackMutex_);
     auto it = audioLoopbackReverbPresetMap.find(preset);
     CHECK_AND_RETURN_RET_LOG(it != audioLoopbackReverbPresetMap.end(), false, "preset invalid");
     currentReverbPreset_ = preset;
@@ -191,13 +192,14 @@ bool AudioLoopbackPrivate::SetReverbPreset(AudioLoopbackReverbPreset preset)
 
 AudioLoopbackReverbPreset AudioLoopbackPrivate::GetReverbPreset()
 {
-    std::unique_lock<std::mutex> stateLock(stateMutex_);
+    std::lock_guard<std::mutex> lock(loopbackMutex_);
     return currentReverbPreset_;
 }
 
 bool AudioLoopbackPrivate::SetEqualizerPreset(AudioLoopbackEqualizerPreset preset)
 {
-    std::unique_lock<std::mutex> stateLock(stateMutex_);
+    Trace trace("AudioLoopbackPrivate::SetEqualizerPreset");
+    std::lock_guard<std::mutex> lock(loopbackMutex_);
     auto it = audioLoopbackEqualizerPresetMap.find(preset);
     CHECK_AND_RETURN_RET_LOG(it != audioLoopbackEqualizerPresetMap.end(), false, "preset invalid");
     currentEqualizerPreset_ = preset;
@@ -211,7 +213,7 @@ bool AudioLoopbackPrivate::SetEqualizerPreset(AudioLoopbackEqualizerPreset prese
 
 AudioLoopbackEqualizerPreset AudioLoopbackPrivate::GetEqualizerPreset()
 {
-    std::unique_lock<std::mutex> stateLock(stateMutex_);
+    std::lock_guard<std::mutex> lock(loopbackMutex_);
     return currentEqualizerPreset_;
 }
 
