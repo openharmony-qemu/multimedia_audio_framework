@@ -171,5 +171,43 @@ HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_008, TestSize.Le
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->macAddress_, "");
 }
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: MakePairedDeviceDescriptor_001.
+* @tc.desc  : Test MakePairedDeviceDescriptor.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, MakePairedDeviceDescriptor_001, TestSize.Level4)
+{
+    std::shared_ptr<AudioDeviceDescriptor> outDesc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_NEARLINK, DeviceRole::OUTPUT_DEVICE);
+    outDesc->macAddress_ = "00:11:22:33:44:55";
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(outDesc);
+    auto inDesc = std::make_shared<AudioDeviceDescriptor>(outDesc);
+    inDesc->deviceRole_ = DeviceRole::INPUT_DEVICE;
+    inDesc->deviceType_ = DeviceType::DEVICE_TYPE_NEARLINK_IN;
+    AudioDeviceManager::GetAudioDeviceManager().MakePairedDeviceDescriptor(inDesc);
+    EXPECT_EQ(outDesc->pairDeviceDescriptor_ != nullptr, true);
+    AudioDeviceManager::GetAudioDeviceManager().RemoveConnectedDevices(outDesc);
+}
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: MakePairedDeviceDescriptor_002.
+* @tc.desc  : Test MakePairedDeviceDescriptor.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, MakePairedDeviceDescriptor_002, TestSize.Level4)
+{
+    std::shared_ptr<AudioDeviceDescriptor> outDesc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    outDesc->macAddress_ = "00:11:22:33:44:55";
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(outDesc);
+    auto inDesc = std::make_shared<AudioDeviceDescriptor>(outDesc);
+    inDesc->deviceRole_ = DeviceRole::INPUT_DEVICE;
+    inDesc->deviceType_ = DeviceType::DEVICE_TYPE_NEARLINK_IN;
+    AudioDeviceManager::GetAudioDeviceManager().MakePairedDeviceDescriptor(inDesc);
+    EXPECT_EQ(outDesc->pairDeviceDescriptor_ != nullptr, false);
+    AudioDeviceManager::GetAudioDeviceManager().RemoveConnectedDevices(outDesc);
+}
 } // namespace AudioStandard
 } // namespace OHOS

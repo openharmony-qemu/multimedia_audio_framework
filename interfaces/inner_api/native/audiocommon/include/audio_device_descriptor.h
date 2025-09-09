@@ -31,6 +31,11 @@ inline bool IsUsb(DeviceType type)
     return type == DEVICE_TYPE_USB_HEADSET || type == DEVICE_TYPE_USB_ARM_HEADSET;
 }
 
+inline bool IsNearlinkDevice(DeviceType deviceType)
+{
+    return deviceType == DEVICE_TYPE_NEARLINK || deviceType == DEVICE_TYPE_NEARLINK_IN;
+}
+
 /**
  * @brief The AudioDeviceDescriptor provides
  *         different sets of audio devices and their roles
