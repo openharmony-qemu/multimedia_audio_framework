@@ -126,7 +126,7 @@ void AudioUsrSelectManager::EnableSelectInputDevice(
         int32_t uid = GetRealUid(streamDesc);
         uidMap[uid] = i;
     }
-    AUDIO_INFO_LOG("running stream size: %{public}" PRIu64, uidMap.size());
+    AUDIO_INFO_LOG("running stream size: %{public}zu", uidMap.size());
 
     // use selected rules first
     for (const auto &device : selectedDevices_) {
