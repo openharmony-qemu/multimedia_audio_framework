@@ -2608,5 +2608,10 @@ int32_t AudioSystemManager::GetVolumeBySessionId(const uint32_t &sessionId, floa
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed: %{public}d", ret);
     return ret;
 }
+
+void AudioSystemManager::CleanUpResource()
+{
+    AudioPolicyManager::GetInstance().CleanUpResource();
+}
 } // namespace AudioStandard
 } // namespace OHOS

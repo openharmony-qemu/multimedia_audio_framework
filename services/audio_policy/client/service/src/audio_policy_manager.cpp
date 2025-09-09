@@ -51,17 +51,19 @@ std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackService>> AudioPolicy
 
 std::weak_ptr<AudioSessionManagerPolicyServiceDiedCallback> AudioPolicyManager::audioSessionManagerCb_;
 std::mutex AudioPolicyManager::serverDiedSessionManagerCbkMutex_;
+sptr<AudioServerDeathRecipient> g_deathRecipient = nullptr;
 
 static bool RegisterDeathRecipientInner(sptr<IRemoteObject> object)
 {
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, false, "Object is NULL.");
     pid_t pid = 0;
     pid_t uid = 0;
-    sptr<AudioServerDeathRecipient> deathRecipient = new(std::nothrow) AudioServerDeathRecipient(pid, uid);
-    CHECK_AND_RETURN_RET(deathRecipient != nullptr, false);
-    deathRecipient->SetNotifyCb(
+    g_deathRecipient = new(std::nothrow) AudioServerDeathRecipient(pid, uid);
+    CHECK_AND_RETURN_RET(g_deathRecipient != nullptr, false);
+    g_deathRecipient->SetNotifyCb(
         [] (pid_t pid, pid_t uid) { AudioPolicyManager::AudioPolicyServerDied(pid, uid); });
     AUDIO_DEBUG_LOG("Register audio policy server death recipient");
-    CHECK_AND_RETURN_RET_LOG(object->AddDeathRecipient(deathRecipient), false, "AddDeathRecipient failed");
+    CHECK_AND_RETURN_RET_LOG(object->AddDeathRecipient(g_deathRecipient), false, "AddDeathRecipient failed");
     return true;
 }
 
@@ -101,6 +103,30 @@ const sptr<IAudioPolicy> AudioPolicyManager::GetAudioPolicyManagerProxy(bool blo
     }
 
     return gsp;
+}
+
+void AudioPolicyManager::CleanUpResource()
+{
+    lock_guard<mutex> lock(g_apProxyMutex);
+
+    if (g_apProxy == nullptr) {
+        AUDIO_INFO_LOG("g_apProxy is null.");
+        return;
+    }
+
+    sptr<IRemoteObject> object = g_apProxy->AsObject();
+    if (object == nullptr) {
+        AUDIO_INFO_LOG("object is null.");
+        return;
+    }
+
+    if (g_deathRecipient != nullptr) {
+        AUDIO_INFO_LOG("Remove DeathRecipient Success.");
+        object->RemoveDeathRecipient(g_deathRecipient);
+        g_deathRecipient = nullptr;
+    }
+    g_apProxy = nullptr;
+    AUDIO_INFO_LOG("Remove DeathRecipient end.");
 }
 
 static const sptr<IAudioPolicy> RecoverAndGetAudioPolicyManagerProxy()
