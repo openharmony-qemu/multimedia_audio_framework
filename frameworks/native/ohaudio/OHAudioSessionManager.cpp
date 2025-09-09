@@ -311,6 +311,7 @@ OH_AudioCommon_Result OH_AudioSessionManager_ReleaseDevice(
     if (ohAudioDeviceDescriptor != nullptr) {
         delete ohAudioDeviceDescriptor;
     }
+    return AUDIOCOMMON_RESULT_SUCCESS;
 }
 
 OH_AudioCommon_Result OH_AudioSessionManager_RegisterCurrentOutputDeviceChangeCallback(
