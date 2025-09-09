@@ -336,7 +336,7 @@ bool IAudioStream::IsChannelLayoutMatchedWithChannel(uint8_t channel, uint64_t c
     // unknown channel layout is matched with any channel count
     CHECK_AND_RETURN_RET(channelLayout != CH_LAYOUT_UNKNOWN, true);
 
-    if ((channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET == 0) {
+    if (((channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET) == 0) {
         int32_t channelCount = __builtin_popcountll(channelLayout);
         return channelCount == static_cast<int32_t>(channel);
     }
