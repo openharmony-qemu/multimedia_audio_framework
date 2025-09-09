@@ -1137,7 +1137,8 @@ int32_t AudioCoreService::ClearSelectedInputDeviceByUid(int32_t uid)
     return SUCCESS;
 }
 
-int32_t AudioCoreService::PreferBluetoothAndNearlinkRecordByUid(int32_t uid, BluetoothAndNearlinkPreferredRecordCategory category)
+int32_t AudioCoreService::PreferBluetoothAndNearlinkRecordByUid(int32_t uid,
+    BluetoothAndNearlinkPreferredRecordCategory category)
 {
     int32_t result = SUCCESS;
     audioUsrSelectManager_.PreferBluetoothAndNearlinkRecordByUid(uid, category);

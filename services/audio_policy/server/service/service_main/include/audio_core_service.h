@@ -137,7 +137,8 @@ public:
             int32_t uid);
         std::shared_ptr<AudioDeviceDescriptor> GetSelectedInputDeviceByUid(int32_t uid);
         int32_t ClearSelectedInputDeviceByUid(int32_t uid);
-        int32_t PreferBluetoothAndNearlinkRecordByUid(int32_t uid, BluetoothAndNearlinkPreferredRecordCategory category);
+        int32_t PreferBluetoothAndNearlinkRecordByUid(int32_t uid,
+            BluetoothAndNearlinkPreferredRecordCategory category);
         BluetoothAndNearlinkPreferredRecordCategory GetPreferBluetoothAndNearlinkRecordByUid(int32_t uid);
         void NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value);
         int32_t OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo, AudioStreamInfo streamInfo);

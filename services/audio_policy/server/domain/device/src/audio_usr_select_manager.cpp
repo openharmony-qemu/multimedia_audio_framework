@@ -88,10 +88,13 @@ void AudioUsrSelectManager::PreferBluetoothAndNearlinkRecordByUid(int32_t uid,
         std::find(isPreferredBluetoothAndNearlinkRecord_.begin(), isPreferredBluetoothAndNearlinkRecord_.end(), uid);
     if (it != isPreferredBluetoothAndNearlinkRecord_.end()) {
         isPreferredBluetoothAndNearlinkRecord_.erase(it);
+        categoryMap_.erase(uid);
     }
 
-    isPreferredBluetoothAndNearlinkRecord_.push_front(uid);
-    categoryMap_[uid] = category;
+    if (category != BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE) {
+        isPreferredBluetoothAndNearlinkRecord_.push_front(uid);
+        categoryMap_[uid] = category;
+    }
 }
 
 BluetoothAndNearlinkPreferredRecordCategory AudioUsrSelectManager::GetPreferBluetoothAndNearlinkRecordByUid(
