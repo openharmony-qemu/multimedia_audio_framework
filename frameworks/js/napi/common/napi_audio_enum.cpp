@@ -231,7 +231,8 @@ const std::map<std::string, int32_t> NapiAudioEnum::effectModeMap = {
 
 const std::map<std::string, int32_t> NapiAudioEnum::audioPrivacyTypeMap = {
     {"PRIVACY_TYPE_PUBLIC", PRIVACY_TYPE_PUBLIC},
-    {"PRIVACY_TYPE_PRIVATE", PRIVACY_TYPE_PRIVATE}
+    {"PRIVACY_TYPE_PRIVATE", PRIVACY_TYPE_PRIVATE},
+    {"PRIVACY_TYPE_SHARED", PRIVACY_TYPE_SHARED},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::deviceChangeTypeMap = {
