@@ -72,7 +72,6 @@ private:
     uint32_t inBufferSize_ = 0;
     uint32_t outBufferSize_ = 0;
     string chainName_;
-    mutex offlineChainMutex_;
     OfflineEffectIOConfig offlineConfig_ = {};
     bool firstProcess_ = false;
     FILE *dumpFileIn_ = nullptr;
