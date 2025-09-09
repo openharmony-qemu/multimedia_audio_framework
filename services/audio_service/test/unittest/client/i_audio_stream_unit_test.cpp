@@ -158,6 +158,14 @@ HWTEST(IAudioStreamUnitTest, IsPlaybackChannelRelatedInfoValid_001, TestSize.Lev
     audioChannel = 2;
     channelLayout = 100;
     EXPECT_FALSE(IAudioStream::IsPlaybackChannelRelatedInfoValid(audioChannel, channelLayout));
+
+    audioChannel = 2;
+    channelLayout = 4;
+    EXPECT_FALSE(IAudioStream::IsPlaybackChannelRelatedInfoValid(audioChannel, channelLayout));
+
+    audioChannel = 2;
+    channelLayout = 3;
+    EXPECT_TRUE(IAudioStream::IsPlaybackChannelRelatedInfoValid(audioChannel, channelLayout));
 }
 
 /**
@@ -170,9 +178,21 @@ HWTEST(IAudioStreamUnitTest, IsRecordChannelRelatedInfoValid_001, TestSize.Level
 {
     std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
         std::make_shared<CapturerInClientInner>(AudioStreamType::STREAM_MUSIC, 0);
-    std::uint8_t audioChannel = 2;
+    std::uint8_t audioChannel = 100;
     std::uint64_t channelLayout = 100;
     EXPECT_FALSE(IAudioStream::IsRecordChannelRelatedInfoValid(audioChannel, channelLayout));
+
+    audioChannel = 2;
+    channelLayout = 100;
+    EXPECT_FALSE(IAudioStream::IsRecordChannelRelatedInfoValid(audioChannel, channelLayout));
+
+    audioChannel = 2;
+    channelLayout = 4;
+    EXPECT_FALSE(IAudioStream::IsRecordChannelRelatedInfoValid(audioChannel, channelLayout));
+
+    audioChannel = 2;
+    channelLayout = 3;
+    EXPECT_TRUE(IAudioStream::IsRecordChannelRelatedInfoValid(audioChannel, channelLayout));
 }
 
 /**

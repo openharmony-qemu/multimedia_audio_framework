@@ -328,6 +328,18 @@ bool IAudioStream::IsCapturerChannelLayoutValid(uint64_t channelLayout)
     return isValidCapturerChannelLayout;
 }
 
+bool IAudioStream::IsChannelLayoutMatchedWithChannel(uint8_t channel, uint64_t channelLayout)
+{
+    if ((channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET == 0) {
+        int32_t channelCount = std::popcount(channelLayout);
+        return channelCount == static_cast<int32_t>(channel);
+    }
+
+    uint64_t order = (channelLayout & CH_HOA_ORDNUM_MASK) >> CH_HOA_ORDNUM_OFFSET;
+    uint64_t channelCount = (order + 1) * (order + 1);
+    return channelCount == static_cast<uint64_t>(channel);
+}
+
 bool IAudioStream::IsPlaybackChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout)
 {
     if (!IsRendererChannelValid(channels)) {
@@ -336,6 +348,10 @@ bool IAudioStream::IsPlaybackChannelRelatedInfoValid(uint8_t channels, uint64_t 
     }
     if (!IsRendererChannelLayoutValid(channelLayout)) {
         AUDIO_ERR_LOG("AudioStream: Invalid sink channel layout");
+        return false;
+    }
+    if (!IsChannelLayoutMatchedWithChannel(channels, channelLayout)) {
+        AUDIO_ERR_LOG("AudioStream: not matched sink channel and channel layout");
         return false;
     }
     return true;
@@ -349,6 +365,10 @@ bool IAudioStream::IsRecordChannelRelatedInfoValid(uint8_t channels, uint64_t ch
     }
     if (!IsCapturerChannelLayoutValid(channelLayout)) {
         AUDIO_ERR_LOG("AudioStream: Invalid source channel layout");
+        return false;
+    }
+    if (!IsChannelLayoutMatchedWithChannel(channels, channelLayout)) {
+        AUDIO_ERR_LOG("AudioStream: not matched source channel and channel layout");
         return false;
     }
     return true;
