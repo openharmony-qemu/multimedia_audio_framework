@@ -504,7 +504,8 @@ int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFla
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
     deviceManager->SetAudioScene(currentAudioScene_);
 
-    if (isChangeScene && currentAudioScene_ == DEVICE_TYPE_NEARLINK) {
+    if (isChangeScene && currentAudioScene_ == AUDIO_SCENE_DEFAULT &&
+        currentActiveDevice_ == DEVICE_TYPE_NEARLINK) {
         UpdateNearlinkOutputRoute();
     }
 
