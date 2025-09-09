@@ -717,5 +717,16 @@ void AudioZoneService::ReleaseAudioZoneByClientPid(pid_t clientPid)
     AUDIO_INFO_LOG("client %{public}d died, release zone %{public}d", clientPid, zoneId);
     ReleaseAudioZone(zoneId);
 }
+
+bool AudioZoneService::CheckDeviceInAudioZone(AudioDeviceDescriptor device)
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    for (auto &it : zoneMaps_) {
+        if (it.second->CheckDeviceInZone(device)) {
+            return true;
+        }
+    }
+    return false;
+}
 } // namespace AudioStandard
 } // namespace OHOS
