@@ -1098,6 +1098,10 @@ void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
         for (auto rendererFilter : rendererFilterList) {
             auto deviceDescs = AudioPolicyService::GetAudioPolicyService().
                 GetPreferredOutputDeviceDescInner(rendererFilter.rendererInfo, LOCAL_NETWORK_ID, rendererFilter.uid);
+            for (auto &desc : deviceDescs) {
+                CHECK_AND_CONTINUE(desc != nullptr);
+                desc->descriptorType_ = AudioDeviceDescriptor::AUDIO_DEVICE_DESCRIPTOR;
+            }
             if (!(it->second->hasBTPermission_)) {
                 AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(deviceDescs);
             }
