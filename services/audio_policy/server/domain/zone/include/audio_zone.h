@@ -97,6 +97,8 @@ public:
 
     pid_t GetClientPid();
 
+    bool CheckDeviceInZone(AudioDeviceDescriptor device);
+
 private:
     int32_t zoneId_ = -1;
     std::string name_ = "";
