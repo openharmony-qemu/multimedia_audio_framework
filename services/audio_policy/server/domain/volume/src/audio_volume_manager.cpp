@@ -54,6 +54,7 @@ static std::string GetEncryptAddr(const std::string &addr)
 }
 
 const int32_t ONE_MINUTE = 60;
+const int32_t HALF_MINUTE = 30;
 const uint32_t ABS_VOLUME_SUPPORT_RETRY_INTERVAL_IN_MICROSECONDS = 10000;
 constexpr int32_t CANCEL_FORCE_CONTROL_VOLUME_TYPE = -1;
 
@@ -845,7 +846,7 @@ int32_t AudioVolumeManager::CheckActiveMusicTime()
             startSafeTime_ = 0;
             startSafeTimeBt_ = 0;
         }
-        sleep(ONE_MINUTE);
+        sleep(HALF_MINUTE);
     }
     return 0;
 }
