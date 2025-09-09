@@ -153,19 +153,19 @@ HWTEST(IAudioStreamUnitTest, IsPlaybackChannelRelatedInfoValid_001, TestSize.Lev
         std::make_shared<CapturerInClientInner>(AudioStreamType::STREAM_MUSIC, 0);
     std::uint8_t audioChannel = 100;
     std::uint64_t channelLayout = 100;
-    EXPECT_FALSE(IAudioStream::IsPlaybackChannelRelatedInfoValid(audioChannel, channelLayout));
+    EXPECT_FALSE(IAudioStream::IsPlaybackChannelRelatedInfoValid(ENCODING_PCM, audioChannel, channelLayout));
 
     audioChannel = 2;
     channelLayout = 100;
-    EXPECT_FALSE(IAudioStream::IsPlaybackChannelRelatedInfoValid(audioChannel, channelLayout));
+    EXPECT_FALSE(IAudioStream::IsPlaybackChannelRelatedInfoValid(ENCODING_PCM, audioChannel, channelLayout));
 
     audioChannel = 2;
     channelLayout = 4;
-    EXPECT_FALSE(IAudioStream::IsPlaybackChannelRelatedInfoValid(audioChannel, channelLayout));
+    EXPECT_FALSE(IAudioStream::IsPlaybackChannelRelatedInfoValid(ENCODING_PCM, audioChannel, channelLayout));
 
     audioChannel = 2;
     channelLayout = 3;
-    EXPECT_TRUE(IAudioStream::IsPlaybackChannelRelatedInfoValid(audioChannel, channelLayout));
+    EXPECT_TRUE(IAudioStream::IsPlaybackChannelRelatedInfoValid(ENCODING_PCM, audioChannel, channelLayout));
 }
 
 /**
