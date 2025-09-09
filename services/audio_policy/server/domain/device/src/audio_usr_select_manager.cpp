@@ -102,7 +102,7 @@ BluetoothAndNearlinkPreferredRecordCategory AudioUsrSelectManager::GetPreferBlue
     auto it =
         std::find(isPreferredBluetoothAndNearlinkRecord_.begin(), isPreferredBluetoothAndNearlinkRecord_.end(), uid);
     if (it != isPreferredBluetoothAndNearlinkRecord_.end()) {
-        categoryMap_[uid];
+        return categoryMap_[uid];
     }
     return BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE;
 }

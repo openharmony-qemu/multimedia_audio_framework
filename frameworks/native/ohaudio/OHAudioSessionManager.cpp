@@ -150,18 +150,18 @@ OH_AudioCommon_Result OH_AudioSessionManager_SelectMediaInputDevice(
 }
 
 OH_AudioCommon_Result OH_AudioSessionManager_GetSelectedMediaInputDevice(
-    OH_AudioSessionManager *audioSessionManager, OH_AudioDeviceDescriptor *deviceDescriptor)
+    OH_AudioSessionManager *audioSessionManager, OH_AudioDeviceDescriptor **audioDeviceDescriptor);
 {
-    if (audioSessionManager == nullptr || deviceDescriptor == nullptr) {
+    if (audioSessionManager == nullptr || audioDeviceDescriptor == nullptr) {
         AUDIO_ERR_LOG("Invalid params!");
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
     OHAudioSessionManager *ohAudioSessionManager = convertManager(audioSessionManager);
     CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
-    deviceDescriptor = ohAudioSessionManager->GetSelectedMediaInputDevice();
-    CHECK_AND_RETURN_RET_LOG(deviceDescriptor != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_NO_MEMORY, "*deviceDescriptor is nullptr");
+    *audioDeviceDescriptor = ohAudioSessionManager->GetSelectedMediaInputDevice();
+    CHECK_AND_RETURN_RET_LOG(*audioDeviceDescriptor != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_NO_MEMORY, "*audioDeviceDescriptor is nullptr");
 
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
@@ -307,6 +307,23 @@ OH_AudioCommon_Result OH_AudioSessionManager_ReleaseDevices(
     free(audioDeviceDescriptorArray);
     audioDeviceDescriptorArray = nullptr;
     return AUDIOCOMMON_RESULT_SUCCESS;
+}
+
+OH_AudioCommon_Result OH_AudioSessionManager_ReleaseDevice(
+    OH_AudioSessionManager *audioSessionManager,
+    OH_AudioDeviceDescriptor *audioDeviceDescriptor)
+{
+    OHAudioSessionManager *ohAudioSessionManager = convertManager(audioSessionManager);
+    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptor != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioDeviceDescriptor is nullptr");
+
+    OHAudioDeviceDescriptor *ohAudioDeviceDescriptor =
+            (OHAudioDeviceDescriptor*)audioDeviceDescriptor;
+    if (ohAudioDeviceDescriptor != nullptr) {
+        delete ohAudioDeviceDescriptor;
+    }
 }
 
 OH_AudioCommon_Result OH_AudioSessionManager_RegisterCurrentOutputDeviceChangeCallback(
