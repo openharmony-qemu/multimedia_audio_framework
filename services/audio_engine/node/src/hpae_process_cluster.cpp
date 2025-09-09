@@ -191,11 +191,11 @@ void HpaeProcessCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer 
         preNodeInfo.customSampleRate == 0 ? preNodeInfo.samplingRate : preNodeInfo.customSampleRate,
         preNodeInfo.channels, preNodeInfo.nodeId, preNodeInfo.nodeName.c_str());
     
-    ConnectMixerNode();
-    CreateGainNode(sessionId, preNodeInfo);
     CreateConverterNode(sessionId, preNodeInfo);
     CreateLoudnessGainNode(sessionId, preNodeInfo);
+    CreateGainNode(sessionId, preNodeInfo);
     
+    ConnectMixerNode();
     mixerNode_->Connect(idGainMap_[sessionId]);
     idGainMap_[sessionId]->Connect(idLoudnessGainNodeMap_[sessionId]);
     idLoudnessGainNodeMap_[sessionId]->Connect(idConverterMap_[sessionId]);
