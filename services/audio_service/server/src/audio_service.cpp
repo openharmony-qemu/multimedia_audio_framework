@@ -49,7 +49,7 @@ static const uint32_t VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME = 60; // 60ms
 static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
 #endif
 static const uint32_t BLOCK_HIBERNATE_CALLBACK_IN_MS = 5000; // 5s
-static const uint32_t RECHECK_SINK_STATE_IN_US = 100000; // 100ms
+static const uint32_t RECHECK_SINK_STATE_IN_US = 300000; // 300ms
 static const int32_t MEDIA_SERVICE_UID = 1013;
 static const int32_t RENDERER_STREAM_CNT_PER_UID_LIMIT = 40;
 static const int32_t INVALID_APP_UID = -1;
@@ -1554,10 +1554,10 @@ void AudioService::CheckHibernateState(bool onHibernate)
     if (onHibernate) {
         bool ret = true;
         if (allRunningSinks_.empty()) {
-            // Sleep for 100ms and recheck to avoid another sink start right after first check.
-            AUDIO_INFO_LOG("No running sinks, sleep for 100ms and check again");
+            // Sleep for 300ms and recheck to avoid another sink start right after first check.
+            AUDIO_INFO_LOG("No running sinks, sleep for 300ms and check again");
             lock.unlock(); // Unlock so that other running sinks can be added
-            usleep(RECHECK_SINK_STATE_IN_US); // sleep for 100ms
+            usleep(RECHECK_SINK_STATE_IN_US); // sleep for 300ms
             lock.lock();
             CHECK_AND_RETURN_LOG(!allRunningSinks_.empty(), "No running sinks, continue to hibernate");
         }
