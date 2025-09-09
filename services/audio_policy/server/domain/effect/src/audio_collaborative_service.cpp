@@ -113,7 +113,7 @@ bool AudioCollaborativeService::IsCollaborativePlaybackEnabledForDevice(
             addressToCollaborativeEnabledMap_[selectedAudioDevice->macAddress_]);
         return addressToCollaborativeEnabledMap_[selectedAudioDevice->macAddress_] == COLLABORATIVE_OPENED;
     }
-    AUDIO_INFO_LOG("address %{public}s is not in map", selectedAudioDevice->macAddress_.c_str());
+    AUDIO_INFO_LOG("address %{public}s is not in map", GetEncryptAddr(selectedAudioDevice->macAddress_).c_str());
     return false;
 }
 
