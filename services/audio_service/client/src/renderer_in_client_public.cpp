@@ -837,11 +837,6 @@ int32_t RendererInClientInner::Enqueue(const BufferDesc &bufDesc)
     CHECK_AND_RETURN_RET_LOG(curStreamParams_.encoding != ENCODING_AUDIOVIVID ||
             converter_ != nullptr && converter_->CheckInputValid(bufDesc),
         ERR_INVALID_PARAM, "Invalid buffer desc");
-    // allow opensles enqueue self buffer
-    if ((rendererInfo_.playerType != PLAYER_TYPE_OPENSL_ES) && !CheckBufferValid(bufDesc)) {
-        AUDIO_WARNING_LOG("Invalid bufLength:%{public}zu or dataLength:%{public}zu, should be %{public}zu",
-            bufDesc.bufLength, bufDesc.dataLength, cbBufferSize_);
-    }
 
     BufferDesc temp = bufDesc;
 

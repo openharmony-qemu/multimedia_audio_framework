@@ -79,6 +79,9 @@ public:
     static uint32_t GetSamplePerFrame(const AudioSampleFormat &format);
 
     static bool IsBackgroundSourceType(const SourceType sourceType);
+
+    static size_t CalculatePcmSizeFromDurationCeiling(std::chrono::nanoseconds duration,
+        uint32_t sampleRate, uint32_t bytesPerSample);
 };
 
 class Trace {
