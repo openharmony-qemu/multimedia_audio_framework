@@ -169,18 +169,6 @@ OH_AudioCommon_Result OH_AudioSessionManager_GetSelectedMediaInputDevice(
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
 
-OH_AudioCommon_Result OH_AudioSessionManager_ClearSelectedMediaInputDevice(OH_AudioSessionManager *audioSessionManager)
-{
-    if (audioSessionManager == nullptr) {
-        AUDIO_ERR_LOG("Invalid params!");
-        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
-    }
-    OHAudioSessionManager *ohAudioSessionManager = convertManager(audioSessionManager);
-    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
-    return ohAudioSessionManager->ClearSelectedMediaInputDevice();
-}
-
 OH_AudioCommon_Result OH_AudioSessionManager_SetBluetoothAndNearlinkPreferredRecordCategory(
     OH_AudioSessionManager *audioSessionManager,
     OH_AudioSession_BluetoothAndNearlinkPreferredRecordCategory category)
@@ -531,14 +519,6 @@ OH_AudioCommon_Result OHAudioSessionManager::SelectMediaInputDevice(
     CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "failed, audioSessionManager_ is null");
     int32_t result = audioSessionManager_->SelectInputDevice(deviceDescriptor);
-    return result == 0 ? AUDIOCOMMON_RESULT_SUCCESS : AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
-}
-
-OH_AudioCommon_Result OHAudioSessionManager::ClearSelectedMediaInputDevice()
-{
-    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "failed, audioSessionManager_ is null");
-    int32_t result = audioSessionManager_->ClearSelectedInputDevice();
     return result == 0 ? AUDIOCOMMON_RESULT_SUCCESS : AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
 }
 
