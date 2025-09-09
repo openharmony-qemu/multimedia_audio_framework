@@ -2915,7 +2915,9 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
             } else {
                 FetchInputDeviceAndRoute("ActivateNearlinkDevice", reason);
             }
+            return ERROR;
         }
+        sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc);
     }
     return SUCCESS;
 }

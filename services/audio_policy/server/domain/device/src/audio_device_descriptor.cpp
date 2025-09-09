@@ -508,7 +508,8 @@ bool AudioDeviceDescriptor::IsPairedDeviceDesc(const AudioDeviceDescriptor &devi
 {
     return ((deviceDescriptor.deviceRole_ == INPUT_DEVICE && deviceRole_ == OUTPUT_DEVICE) ||
         (deviceDescriptor.deviceRole_ == OUTPUT_DEVICE && deviceRole_ == INPUT_DEVICE)) &&
-        deviceDescriptor.deviceType_ == deviceType_ &&
+        (deviceDescriptor.deviceType_ == deviceType_ ||
+            (IsNearlinkDevice(deviceDescriptor.deviceType_) && IsNearlinkDevice(deviceType_))) &&
         deviceDescriptor.macAddress_ == macAddress_ &&
         deviceDescriptor.networkId_ == networkId_;
 }
