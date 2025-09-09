@@ -53,6 +53,7 @@ int32_t RemoteAudioCaptureSource::Init(const IAudioSourceAttr &attr)
 
 void RemoteAudioCaptureSource::DeInit(void)
 {
+    Trace trace("RemoteAudioCaptureSource::DeInit");
     AUDIO_INFO_LOG("in");
     sourceInited_.store(false);
     captureInited_.store(false);
@@ -71,9 +72,13 @@ bool RemoteAudioCaptureSource::IsInited(void)
 
 int32_t RemoteAudioCaptureSource::Start(void)
 {
+    Trace trace("RemoteAudioCaptureSource::Start");
     AUDIO_INFO_LOG("in");
     std::lock_guard<std::mutex> lock(createCaptureMutex_);
-    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, DUMP_REMOTE_CAPTURE_SOURCE_FILENAME, &dumpFile_);
+    dumpFileName_ = std::string(DUMP_REMOTE_CAPTURE_SOURCE_FILENAME) + "_" + GetTime() + "_" +
+        std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel) + "_" +
+        std::to_string(attr_.format) + ".pcm";
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
     if (!captureInited_.load()) {
         int32_t ret = CreateCapture();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create capture fail");
@@ -93,6 +98,7 @@ int32_t RemoteAudioCaptureSource::Start(void)
 
 int32_t RemoteAudioCaptureSource::Stop(void)
 {
+    Trace trace("RemoteAudioCaptureSource::Stop");
     AUDIO_INFO_LOG("in");
     if (!started_.load()) {
         AUDIO_INFO_LOG("already stopped");
@@ -112,6 +118,7 @@ int32_t RemoteAudioCaptureSource::Stop(void)
 
 int32_t RemoteAudioCaptureSource::Resume(void)
 {
+    Trace trace("RemoteAudioCaptureSource::Resume");
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "not start, invalid state");
 
@@ -129,6 +136,7 @@ int32_t RemoteAudioCaptureSource::Resume(void)
 
 int32_t RemoteAudioCaptureSource::Pause(void)
 {
+    Trace trace("RemoteAudioCaptureSource::Pause");
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "not start, invalid state");
 
@@ -146,6 +154,7 @@ int32_t RemoteAudioCaptureSource::Pause(void)
 
 int32_t RemoteAudioCaptureSource::Flush(void)
 {
+    Trace trace("RemoteAudioCaptureSource::Flush");
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "not start, invalid state");
 
@@ -157,6 +166,7 @@ int32_t RemoteAudioCaptureSource::Flush(void)
 
 int32_t RemoteAudioCaptureSource::Reset(void)
 {
+    Trace trace("RemoteAudioCaptureSource::Reset");
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "not start, invalid state");
 
@@ -174,6 +184,7 @@ int32_t RemoteAudioCaptureSource::CaptureFrame(char *frame, uint64_t requestByte
         return ERR_ILLEGAL_STATE;
     }
 
+    Trace trace("RemoteAudioCaptureSource::CaptureFrame");
     std::vector<int8_t> bufferVec(requestBytes);
     int32_t ret = audioCapture_->CaptureFrame(bufferVec, replyBytes);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_READ_FAILED, "fail, ret: %{public}x", ret);
@@ -181,7 +192,8 @@ int32_t RemoteAudioCaptureSource::CaptureFrame(char *frame, uint64_t requestByte
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED, "copy fail, error code: %{public}d", ret);
     replyBytes = requestBytes;
 
-    DumpFileUtil::WriteDumpFile(dumpFile_, frame, requestBytes);
+    HdiDfxUtils::PrintVolumeInfo(frame, replyBytes, attr_, logUtilsTag_, volumeDataCount_);
+    HdiDfxUtils::DumpData(frame, replyBytes, dumpFile_, dumpFileName_);
     CheckUpdateState(frame, requestBytes);
     return SUCCESS;
 }
@@ -408,6 +420,7 @@ void RemoteAudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &devi
 
 int32_t RemoteAudioCaptureSource::CreateCapture(void)
 {
+    Trace trace("RemoteAudioCaptureSource::CreateCapture");
     struct AudioSampleAttributes param;
     struct AudioDeviceDescriptor deviceDesc;
     InitAudioSampleAttr(param);

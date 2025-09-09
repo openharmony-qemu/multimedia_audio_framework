@@ -66,6 +66,7 @@ ohos_shared_library("hdiadapter_new") {
     "source/file_audio_capture_source.cpp",
     "source/wakeup_audio_capture_source.cpp",
     "util/callback_wrapper.cpp",
+    "util/hdi_dfx_utils.cpp",
     "util/id_handler.cpp",
     "util/ring_buffer_handler.cpp",
   ]
