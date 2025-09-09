@@ -338,8 +338,8 @@ bool IAudioStream::IsChannelLayoutMatchedWithChannel(uint8_t channel, uint64_t c
     }
 
     uint64_t order = (channelLayout & CH_HOA_ORDNUM_MASK) >> CH_HOA_ORDNUM_OFFSET;
-    uint64_t channelCount = (order + 1) * (order + 1);
-    return channelCount == static_cast<uint64_t>(channel);
+    uint64_t channelCountHoa = (order + 1) * (order + 1);
+    return channelCountHoa == static_cast<uint64_t>(channel);
 }
 
 bool IAudioStream::IsPlaybackChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout)
