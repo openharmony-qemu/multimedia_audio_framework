@@ -1897,5 +1897,18 @@ bool AudioStreamCollector::IsVoipStreamActive()
     }
     return false;
 }
+
+bool AudioStreamCollector::IsStreamRunning(StreamUsage streamUsage)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (auto &changeInfo: audioRendererChangeInfos_) {
+        if (changeInfo != nullptr &&
+            ((changeInfo->rendererInfo).streamUsage == streamUsage &&
+            changeInfo->rendererState == RENDERER_RUNNING)) {
+            return true;
+        }
+    }
+    return false;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -66,6 +66,7 @@ static const uint32_t OLD_DEVICE_UNAVAILABLE_EXTRA_SLEEP_US = 150000; // 150ms
 static const uint32_t DISTRIBUTED_DEVICE_UNAVAILABLE_EXTRA_SLEEP_US = 350000; // 350ms
 static const uint32_t HEADSET_TO_SPK_EP_EXTRA_SLEEP_US = 50000; // 50ms
 static const uint32_t MEDIA_PAUSE_TO_DOUBLE_RING_DELAY_US = 120000; // 120ms
+static const uint32_t VOICE_CALL_DEVICE_SET_DELAY_US = 120000; // 120ms
 
 static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 static const int32_t WAIT_OFFLOAD_CLOSE_TIME_SEC = 10;
@@ -328,6 +329,7 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
         switchThread.detach();
     }
     CheckAndUpdateHearingAidCall(descs.front()->deviceType_);
+    CheckAndSleepBeforeVoiceCallDeviceSet(reason);
 }
 
 int32_t AudioCoreService::UpdateModemRoute(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
@@ -2510,6 +2512,21 @@ void AudioCoreService::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDe
 
     AUDIO_INFO_LOG("mute sink old:[%{public}s] new:[%{public}s]", oldSinkPortName.c_str(), newSinkPortName.c_str());
     MuteSinkPort(oldSinkPortName, newSinkPortName, reason);
+}
+
+/**
+ * After a voice call is answered during an incoming ringtone,
+ * a delay is required before setting the voice call device.
+ * This ensures the remaining ringtone buffer is drained,
+ * preventing any residual ringtone sound from leaking into the call path.
+ *
+ * This function should only be called in the voice call scenario.
+*/
+void AudioCoreService::CheckAndSleepBeforeVoiceCallDeviceSet(const AudioStreamDeviceChangeReasonExt reason)
+{
+    if (reason.IsSetAudioScene() && streamCollector_.IsStreamRunning(STREAM_USAGE_VOICE_RINGTONE)) {
+        usleep(VOICE_CALL_DEVICE_SET_DELAY_US);
+    }
 }
 
 // After media playback is interrupted by the alarm or ring,

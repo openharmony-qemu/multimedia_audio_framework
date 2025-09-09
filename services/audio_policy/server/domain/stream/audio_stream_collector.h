@@ -103,6 +103,7 @@ public:
     bool HasRunningCapturerStreamByUid(int32_t uid = INVALID_UID);
     bool IsMediaPlaying();
     bool IsVoipStreamActive();
+    bool IsStreamRunning(StreamUsage streamUsage);
     void UpdateAppVolume(int32_t appUid, int32_t volume);
 
 private:
