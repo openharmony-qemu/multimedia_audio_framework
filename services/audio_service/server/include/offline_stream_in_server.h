@@ -53,6 +53,7 @@ private:
     std::shared_ptr<AudioSharedMemory> serverBufferOut_;
 #ifdef FEATURE_OFFLINE_EFFECT
     std::shared_ptr<OfflineAudioEffectServerChain> effectChain_;
+    std::mutex offlineChainMutex_;
 #endif
 };
 } // namespace AudioStandard

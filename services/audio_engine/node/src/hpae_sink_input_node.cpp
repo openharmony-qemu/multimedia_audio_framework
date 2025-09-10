@@ -305,7 +305,8 @@ float HpaeSinkInputNode::GetSpeed()
 
 uint64_t HpaeSinkInputNode::GetLatency()
 {
-    return historyBuffer_ ? historyBuffer_->GetCurFrames() * GetFrameLen() : 0;
+    uint64_t samples = historyBuffer_ ? historyBuffer_->GetCurFrames() * GetFrameLen() : 0;
+    return samples * AUDIO_US_PER_SECOND / GetSampleRate();
 }
 
 int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
