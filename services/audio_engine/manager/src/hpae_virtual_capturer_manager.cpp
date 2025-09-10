@@ -297,7 +297,7 @@ std::string HpaeVirtualCapturerManager::GetThreadName()
     return "Virtual_capture";
 }
 
-int32_t HpaeVirtualCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceInfo)
+int32_t HpaeVirtualCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceInfo, bool isReload)
 {
     AUDIO_ERR_LOG("Unsupported operation");
     return SUCCESS;
