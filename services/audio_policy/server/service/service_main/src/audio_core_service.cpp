@@ -1215,6 +1215,9 @@ void AudioCoreService::CloseWakeUpAudioCapturer()
 int32_t AudioCoreService::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
 {
     FetchOutputDeviceAndRoute("TriggerFetchDevice", reason);
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendPreferredOutputDeviceUpdated();
+    }
     FetchInputDeviceAndRoute("TriggerFetchDevice", reason);
 
     // update a2dp offload
