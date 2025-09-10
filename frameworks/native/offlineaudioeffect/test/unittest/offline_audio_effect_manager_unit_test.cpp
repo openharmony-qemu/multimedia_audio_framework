@@ -221,6 +221,7 @@ void OfflineAudioEffectServerChainUnitTest::TearDown(void)
 {
     if (mockControl) {
         delete mockControl;
+        mockControl = nullptr;
     }
     serverChain.reset();
 }
