@@ -219,7 +219,7 @@ bool HpaeAudioFormatConverterNode::CheckUpdateOutInfo()
     if (resampler_->GetOutRate() != sampleRate) {
         HILOG_COMM_INFO("NodeId: %{public}d, update output sample rate: %{public}d -> %{public}d",
             GetNodeId(), resampler_->GetOutRate(), sampleRate);
-        resampler_->UpdateRates(preNodeInfo_.samplingRate, sampleRate);
+        resampler_->UpdateRates(resampler_->GetInRate(), sampleRate);
     }
 
     HpaeNodeInfo nodeInfo = GetNodeInfo();
