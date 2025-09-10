@@ -330,23 +330,8 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(std::string &sceneTy
         "SceneType [%{public}s] does not exist, failed to set", sceneType.c_str());
 
     std::shared_ptr<AudioEffectChain> audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
-    const std::unordered_map<AudioEffectMode, std::string> &audioSupportedSceneModes = GetAudioSupportedSceneModes();
-    std::string effectChain;
     std::string effectChainKey = sceneType + "_&_" + effectMode + "_&_" + GetDeviceTypeName();
-    std::string effectNone = audioSupportedSceneModes.find(EFFECT_NONE)->second;
-    if (!sceneTypeAndModeToEffectChainNameMap_.count(effectChainKey)) {
-        AUDIO_ERR_LOG("EffectChain key [%{public}s] does not exist, auto set to %{public}s",
-            effectChainKey.c_str(), effectNone.c_str());
-        effectChain = effectNone;
-    } else {
-        effectChain = sceneTypeAndModeToEffectChainNameMap_[effectChainKey];
-    }
-
-    if (effectChain != effectNone && !effectChainToEffectsMap_.count(effectChain)) {
-        AUDIO_ERR_LOG("EffectChain name [%{public}s] does not exist, auto set to %{public}s",
-            effectChain.c_str(), effectNone.c_str());
-        effectChain = effectNone;
-    }
+    std::string effectChain = GetEffectChainByMode(effectChainKey);
 
     ConfigureAudioEffectChain(audioEffectChain, effectMode);
     bool exists = std::find(AUDIO_PERSISTENCE_SCENE.begin(), AUDIO_PERSISTENCE_SCENE.end(), sceneType) !=
@@ -381,6 +366,27 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(std::string &sceneTy
 
     AUDIO_INFO_LOG("SceneType %{public}s delay %{public}u", sceneType.c_str(), audioEffectChain->GetLatency());
     return SUCCESS;
+}
+
+std::string AudioEffectChainManager::GetEffectChainByMode(std::string effectChainKey)
+{
+    std::string effectChain;
+    const std::unordered_map<AudioEffectMode, std::string> &audioSupportedSceneModes = GetAudioSupportedSceneModes();
+    std::string effectNone = audioSupportedSceneModes.find(EFFECT_NONE)->second;
+    if (!sceneTypeAndModeToEffectChainNameMap_.count(effectChainKey)) {
+        AUDIO_ERR_LOG("EffectChain key [%{public}s] does not exist, auto set to %{public}s",
+            effectChainKey.c_str(), effectNone.c_str());
+        effectChain = effectNone;
+    } else {
+        effectChain = sceneTypeAndModeToEffectChainNameMap_[effectChainKey];
+    }
+
+    if (effectChain != effectNone && !effectChainToEffectsMap_.count(effectChain)) {
+        AUDIO_ERR_LOG("EffectChain name [%{public}s] does not exist, auto set to %{public}s",
+            effectChain.c_str(), effectNone.c_str());
+        effectChain = effectNone;
+    }
+    return effectChain;
 }
 
 void AudioEffectChainManager::ConfigureAudioEffectChain(std::shared_ptr<AudioEffectChain> audioEffectChain,
