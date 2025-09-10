@@ -39,6 +39,8 @@ extern "C" {
     };
     
     #define MAX_RATIO_INTEGRAL_METHOD 32
+    #define MAX_LIMIT_POLYNUM         327680
+    #define MAX_DWNSMPLE_FILT_LEN     256
 
     typedef struct SingleStagePolyphaseResamplerState SingleStagePolyphaseResamplerState;
 
@@ -62,6 +64,8 @@ extern "C" {
         uint32_t bufferSize; /** Number of buffer samples for each channel */
         uint32_t quoSamplerateRatio; /** Quotient of (input sampling frequency)/(output sampling frequency) */
         uint32_t remSamplerateRatio; /** remainder of (input sampling frequency)/(output sampling frequency) */
+        uint32_t polyphaseFactor; /** Number of polyphase factor */
+        int32_t gainCorrection; /** gain correction for filter coefficinents */
         float cutoff; /** Normalized cutoff frequency of anti-aliasing/imaging filter */
         float coshParameter; /** Parameter of cosh window for adjusting side-lobe decay of filter */
         int32_t isInitialized; /** If the state is initialized, isInitialized=1. */

@@ -38,6 +38,8 @@ enum HdiIdType : uint32_t {
     HDI_ID_TYPE_MULTICHANNEL,
     HDI_ID_TYPE_WAKEUP,
     HDI_ID_TYPE_ACCESSORY,
+    HDI_ID_TYPE_AI,
+    HDI_ID_TYPE_VA,
     HDI_ID_TYPE_NUM,
 };
 
@@ -53,7 +55,8 @@ enum HdiIdType : uint32_t {
 #define HDI_ID_INFO_MMAP "mmap"
 #define HDI_ID_INFO_HEARING_AID "hearing_aid"
 #define HDI_ID_INFO_ACCESSORY "accessory"
-#define HDI_ID_INFO_DP_MULITCHANNEL "dp_multichannel"
+#define HDI_ID_INFO_DP_MULTICHANNEL "dp_multichannel"
+#define HDI_ID_INFO_VA "va"
 
 // device manager
 enum HdiDeviceManagerType : uint32_t {

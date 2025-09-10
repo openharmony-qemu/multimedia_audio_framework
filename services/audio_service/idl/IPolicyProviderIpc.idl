@@ -31,9 +31,12 @@ interface IPolicyProviderIpc {
     void NearlinkGetRenderPosition([out] unsigned int delayValue);
     void GetAndSaveClientType([in] unsigned int uid, [in] String bundleName);
     void GetMaxRendererInstances([out] int maxInstances);
+    void IsSupportInnerCaptureOffload([out] boolean isSupported);
     void NotifyCapturerRemoved([in] unsigned long sessionId);
     void LoadModernInnerCapSink([in] int innerCapId);
     void UnloadModernInnerCapSink([in] int innerCapId);
+    void LoadModernOffloadCapSource();
+    void UnloadModernOffloadCapSource();
     void ClearAudioFocusBySessionID([in] int sessionID);
     [oneway] void CaptureConcurrentCheck([in] unsigned int sessionID);
 }

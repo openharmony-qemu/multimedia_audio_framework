@@ -44,8 +44,6 @@
     *DisconnectBluetoothA2dpSource*;
     *UpdateAudioScene*;
     *SetVirtualCall*;
-    *AddVirtualCallBundleName*;
-    *DeleteVirtualCallStream*;
     *IsVirtualCall*;
     *GetAudioScoDeviceMac*;
   local:

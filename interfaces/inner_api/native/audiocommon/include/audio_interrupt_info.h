@@ -154,6 +154,7 @@ struct InterruptEventInternal : public Parcelable {
     InterruptHint hintType = INTERRUPT_HINT_NONE;
     float duckVolume = 1.0f;
     bool callbackToApp = true;
+    int64_t eventTimestamp = 0;
 
     InterruptEventInternal() = default;
 
@@ -164,6 +165,7 @@ struct InterruptEventInternal : public Parcelable {
         forceType = forcetype;
         hintType = hinttype;
         duckVolume = duckvolume;
+        eventTimestamp = 0;
     }
 
     bool Marshalling(Parcel &parcel) const override
@@ -172,21 +174,23 @@ struct InterruptEventInternal : public Parcelable {
             && parcel.WriteInt32(static_cast<int32_t>(forceType))
             && parcel.WriteInt32(static_cast<int32_t>(hintType))
             && parcel.WriteFloat(duckVolume)
-            && parcel.WriteBool(callbackToApp);
+            && parcel.WriteBool(callbackToApp)
+            && parcel.WriteInt64(eventTimestamp);
     }
 
     static InterruptEventInternal *Unmarshalling(Parcel &parcel)
     {
-        auto interupt = new(std::nothrow) InterruptEventInternal();
-        if (interupt == nullptr) {
+        auto interrupt = new(std::nothrow) InterruptEventInternal();
+        if (interrupt == nullptr) {
             return nullptr;
         }
-        interupt->eventType = static_cast<InterruptType>(parcel.ReadInt32());
-        interupt->forceType = static_cast<InterruptForceType>(parcel.ReadInt32());
-        interupt->hintType = static_cast<InterruptHint>(parcel.ReadInt32());
-        interupt->duckVolume = parcel.ReadFloat();
-        interupt->callbackToApp = parcel.ReadBool();
-        return interupt;
+        interrupt->eventType = static_cast<InterruptType>(parcel.ReadInt32());
+        interrupt->forceType = static_cast<InterruptForceType>(parcel.ReadInt32());
+        interrupt->hintType = static_cast<InterruptHint>(parcel.ReadInt32());
+        interrupt->duckVolume = parcel.ReadFloat();
+        interrupt->callbackToApp = parcel.ReadBool();
+        interrupt->eventTimestamp = parcel.ReadInt64();
+        return interrupt;
     }
 };
 
@@ -294,6 +298,7 @@ public:
     int32_t pid { -1 };
     int32_t uid { -1 };
     std::string deviceTag;
+    mutable std::string bundleName;
     InterruptMode mode { SHARE_MODE };
     bool isAudioSessionInterrupt {false};
     AudioFocusConcurrency currencySources;
@@ -340,6 +345,7 @@ public:
         res = res && parcel.WriteInt32(interrupt.pid);
         res = res && parcel.WriteInt32(interrupt.uid);
         res = res && parcel.WriteString(interrupt.deviceTag);
+        res = res && parcel.WriteString(interrupt.bundleName);
         res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.mode));
         res = res && parcel.WriteBool(interrupt.isAudioSessionInterrupt);
         size_t vct = interrupt.currencySources.sourcesTypes.size();
@@ -366,6 +372,7 @@ public:
         interrupt.pid = parcel.ReadInt32();
         interrupt.uid = parcel.ReadInt32();
         interrupt.deviceTag = parcel.ReadString();
+        interrupt.bundleName = parcel.ReadString();
         interrupt.mode = static_cast<InterruptMode>(parcel.ReadInt32());
         interrupt.isAudioSessionInterrupt = parcel.ReadBool();
         int32_t vct = parcel.ReadInt32();

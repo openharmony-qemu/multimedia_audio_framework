@@ -32,7 +32,6 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 7;
 
 typedef void (*TestFuncs)();
 
@@ -122,8 +121,9 @@ void GetProcessDeviceInfoBySessionIdFuzzTest()
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker));
     uint32_t sessionId = GetData<uint32_t>();
     AudioDeviceDescriptor deviceInfo;
-    bool isReloadProcess = GetData<bool>();
-    coreServiceProviderWrapper.GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, isReloadProcess);
+    bool reload = GetData<bool>();
+    AudioStreamInfo info;
+    coreServiceProviderWrapper.GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, info, reload);
 }
 
 void GenerateSessionIdFuzzTest()
@@ -135,7 +135,7 @@ void GenerateSessionIdFuzzTest()
     coreServiceProviderWrapper.GenerateSessionId(sessionId);
 }
 
-TestFuncs g_testFuncs[TESTSIZE] = {
+TestFuncs g_testFuncs[] = {
     CoreServiceProviderWrapperFuzzTest,
     UpdateSessionOperationFuzzTest,
     ReloadCaptureSessionFuzzTest,

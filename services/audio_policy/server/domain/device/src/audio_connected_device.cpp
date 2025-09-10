@@ -50,6 +50,7 @@ public:
 bool AudioConnectedDevice::IsConnectedOutputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     std::shared_lock<std::shared_mutex> lock(mutex_);
+    CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "desc is nullptr.");
     DeviceType deviceType = desc->deviceType_;
 
     CHECK_AND_RETURN_RET_LOG(desc->deviceRole_ == DeviceRole::OUTPUT_DEVICE, false,

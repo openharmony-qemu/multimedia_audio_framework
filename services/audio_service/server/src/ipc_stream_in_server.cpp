@@ -76,9 +76,9 @@ IpcStreamInServer::IpcStreamInServer(const AudioProcessConfig &config, AudioMode
 IpcStreamInServer::~IpcStreamInServer()
 {
     AUDIO_INFO_LOG("~IpcStreamInServer(), uid: %{public}d", config_.appInfo.appUid); // waiting for review: add uid.
-    // avoid unexpected release in proRenderStreamImpl working thread
-    if (rendererInServer_ && (rendererInServer_->GetActualStreamManagerType() == DIRECT_PLAYBACK ||
-        rendererInServer_->GetActualStreamManagerType() == VOIP_PLAYBACK)) {
+    // 1. Avoid unexpected release in proRenderStreamImpl working thread
+    // 2. Avoid RendererInServer destructor from AudioService weak_ptr, may cause deadlock in UpdateSessionOperation
+    if (rendererInServer_) {
         rendererInServer_->Release();
     }
 }
@@ -497,13 +497,13 @@ int32_t IpcStreamInServer::RegisterThreadPriority(int32_t tid, const std::string
     return SUCCESS;
 }
 
-int32_t IpcStreamInServer::SetDefaultOutputDevice(int32_t defaultOutputDevice)
+int32_t IpcStreamInServer::SetDefaultOutputDevice(int32_t defaultOutputDevice, bool skipForce)
 {
     if ((mode_ != AUDIO_MODE_PLAYBACK) || (rendererInServer_ == nullptr)) {
         AUDIO_ERR_LOG("mode is not playback or renderer is null");
         return ERR_OPERATION_FAILED;
     }
-    return rendererInServer_->SetDefaultOutputDevice(static_cast<DeviceType>(defaultOutputDevice));
+    return rendererInServer_->SetDefaultOutputDevice(static_cast<DeviceType>(defaultOutputDevice), skipForce);
 }
 
 int32_t IpcStreamInServer::SetSourceDuration(int64_t duration)

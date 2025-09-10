@@ -695,5 +695,148 @@ HWTEST(AudioEffectServiceTest, audioEffectService_034, TestSize.Level1)
         mergedSet, device2PropertySet);
     EXPECT_EQ(result, AUDIO_OK);
 }
+
+/**
+* @tc.name  : Test AudioEffectService.
+* @tc.number: GetOriginalEffectConfig.
+* @tc.desc  : Test GetOriginalEffectConfig.
+*/
+HWTEST(AudioEffectServiceTest, GetOriginalEffectConfig, TestSize.Level4)
+{
+    auto audioEffectService_ = std::make_shared<AudioEffectService>();
+    audioEffectService_->oriEffectConfig_.version = "v1.1.1";
+    OriginalEffectConfig oriEffectConfig;
+    std::string configVersion = "v1.1.1";
+    audioEffectService_->GetOriginalEffectConfig(oriEffectConfig);
+    EXPECT_EQ(oriEffectConfig.version, configVersion);
+}
+
+/**
+* @tc.name  : Test AudioEffectService.
+* @tc.number: GetAvailableEffects.
+* @tc.desc  : Test GetAvailableEffects.
+*/
+HWTEST(AudioEffectServiceTest, GetAvailableEffects, TestSize.Level4)
+{
+    auto audioEffectService_ = std::make_shared<AudioEffectService>();
+    Effect effect = {};
+    audioEffectService_->availableEffects_.emplace_back(effect);
+    std::vector<Effect> availableEffects;
+    audioEffectService_->GetAvailableEffects(availableEffects);
+    EXPECT_NE(availableEffects.size(), 0);
+}
+
+/**
+* @tc.name  : Test AudioEffectService.
+* @tc.number: UpdateAvailableEffects.
+* @tc.desc  : Test UpdateAvailableEffects.
+*/
+HWTEST(AudioEffectServiceTest, UpdateAvailableEffects, TestSize.Level4)
+{
+    auto audioEffectService_ = std::make_shared<AudioEffectService>();
+    std::vector<Effect> newAvailableEffects;
+    audioEffectService_->UpdateAvailableEffects(newAvailableEffects);
+    EXPECT_EQ(audioEffectService_->availableEffects_.size(), 0);
+}
+
+/**
+* @tc.name  : Test AudioEffectService.
+* @tc.number: GetSupportedEffectConfig.
+* @tc.desc  : Test GetSupportedEffectConfig.
+*/
+HWTEST(AudioEffectServiceTest, GetSupportedEffectConfig, TestSize.Level4)
+{
+    auto audioEffectService_ = std::make_shared<AudioEffectService>();
+    SupportedEffectConfig supportedEffectConfig;
+    audioEffectService_->GetSupportedEffectConfig(supportedEffectConfig);
+    EXPECT_EQ(supportedEffectConfig.effectChains.size(), 0);
+}
+
+/**
+* @tc.name  : Test AudioEffectService.
+* @tc.number: SetMasterSinkAvailable.
+* @tc.desc  : Test SetMasterSinkAvailable.
+*/
+HWTEST(AudioEffectServiceTest, SetMasterSinkAvailable, TestSize.Level4)
+{
+    auto audioEffectService_ = std::make_shared<AudioEffectService>();
+    audioEffectService_->SetMasterSinkAvailable();
+    EXPECT_TRUE(audioEffectService_->isMasterSinkAvailable_);
+}
+
+/**
+* @tc.name  : Test AudioEffectService.
+* @tc.number: SetEffectChainManagerAvailable.
+* @tc.desc  : Test SetEffectChainManagerAvailable.
+*/
+HWTEST(AudioEffectServiceTest, SetEffectChainManagerAvailable, TestSize.Level4)
+{
+    auto audioEffectService_ = std::make_shared<AudioEffectService>();
+    audioEffectService_->SetEffectChainManagerAvailable();
+    EXPECT_TRUE(audioEffectService_->isEffectChainManagerAvailable_);
+}
+
+/**
+* @tc.name  : Test AudioEffectService.
+* @tc.number: CanLoadEffectSinks.
+* @tc.desc  : Test CanLoadEffectSinks.
+*/
+HWTEST(AudioEffectServiceTest, CanLoadEffectSinks, TestSize.Level4)
+{
+    auto audioEffectService_ = std::make_shared<AudioEffectService>();
+    audioEffectService_->SetMasterSinkAvailable();
+    audioEffectService_->SetEffectChainManagerAvailable();
+    bool ret = audioEffectService_->CanLoadEffectSinks();
+    EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name  : Test AudioEffectService.
+* @tc.number: QueryEffectManagerSceneMode.
+* @tc.desc  : Test QueryEffectManagerSceneMode.
+*/
+HWTEST(AudioEffectServiceTest, QueryEffectManagerSceneMode, TestSize.Level4)
+{
+    auto audioEffectService_ = std::make_shared<AudioEffectService>();
+    SupportedEffectConfig supportedEffectConfig;
+    int32_t ret = audioEffectService_->QueryEffectManagerSceneMode(supportedEffectConfig);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+* @tc.name  : Test AudioEffectService.
+* @tc.number: AddSupportedAudioEffectPropertyByDevice.
+* @tc.desc  : Test AddSupportedAudioEffectPropertyByDevice.
+*/
+HWTEST(AudioEffectServiceTest, AddSupportedAudioEffectPropertyByDevice, TestSize.Level4)
+{
+    auto audioEffectService_ = std::make_shared<AudioEffectService>();
+    std::set<std::pair<std::string, std::string>> mergedSet;
+    std::unordered_map<std::string, std::set<std::pair<std::string, std::string>>> device2PropertySet;
+    std::set<std::pair<std::string, std::string>> device2Property;
+    device2PropertySet.insert({"DEVICE_TYPE_DEFAULT", device2Property});
+    audioEffectService_->device2EffectPropertySet_ = device2PropertySet;
+    int32_t result = audioEffectService_->AddSupportedAudioEffectPropertyByDevice(DeviceType::DEVICE_TYPE_NONE,
+        mergedSet);
+    EXPECT_EQ(result, AUDIO_OK);
+}
+
+/**
+* @tc.name  : Test AudioEffectService.
+* @tc.number: AddSupportedAudioEnhancePropertyByDevice.
+* @tc.desc  : Test AddSupportedAudioEnhancePropertyByDevice.
+*/
+HWTEST(AudioEffectServiceTest, AddSupportedAudioEnhancePropertyByDevice, TestSize.Level4)
+{
+    auto audioEffectService_ = std::make_shared<AudioEffectService>();
+    std::set<std::pair<std::string, std::string>> mergedSet;
+    std::unordered_map<std::string, std::set<std::pair<std::string, std::string>>> device2PropertySet;
+    std::set<std::pair<std::string, std::string>> device2Property;
+    device2PropertySet.insert({"DEVICE_TYPE_DEFAULT", device2Property});
+    audioEffectService_->device2EnhancePropertySet_ = device2PropertySet;
+    int32_t result = audioEffectService_->AddSupportedAudioEnhancePropertyByDevice(DeviceType::DEVICE_TYPE_NONE,
+        mergedSet);
+    EXPECT_EQ(result, AUDIO_OK);
+}
 } // namespace AudioStandard
 } // namespace OHOS

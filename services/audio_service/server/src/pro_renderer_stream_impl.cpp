@@ -33,7 +33,7 @@ constexpr int32_t DEFAULT_BUFFER_MICROSECOND = 20000000;
 constexpr uint32_t DOUBLE_VALUE = 2;
 constexpr int32_t DEFAULT_RESAMPLE_QUANTITY = 2;
 constexpr int32_t STEREO_CHANNEL_COUNT = 2;
-constexpr int32_t DEFAULT_TOTAL_SPAN_COUNT = 2;
+constexpr int32_t DEFAULT_TOTAL_SPAN_COUNT = 4;
 constexpr int32_t DRAIN_WAIT_TIMEOUT_TIME = 100;
 constexpr int32_t FIRST_FRAME_TIMEOUT_TIME = 500;
 const std::string DUMP_DIRECT_STREAM_FILE = "dump_direct_audio_stream.pcm";
@@ -112,7 +112,7 @@ AudioSampleFormat ProRendererStreamImpl::GetDirectFormat(AudioSampleFormat forma
     if (format == SAMPLE_S16LE || format == SAMPLE_S32LE) {
         return format;
     } else if (format == SAMPLE_F32LE) {
-        // Direct VoIP not support SAMPLE_F32LE format.It needs to be converted to S16.
+        //Direct VoIP not support SAMPLE_F32LE format.It needs to be converted to S16.
         return AudioSampleFormat::SAMPLE_S16LE;
     } else {
         AUDIO_WARNING_LOG("The format %{public}u is unsupported for direct VoIP. Use 32Bit.", format);
@@ -140,7 +140,7 @@ int32_t ProRendererStreamImpl::InitParams()
         resample_ = std::make_shared<AudioResample>(desChannels, streamInfo.samplingRate, desSamplingRate_,
             DEFAULT_RESAMPLE_QUANTITY);
         if (!resample_->IsResampleInit()) {
-            AUDIO_ERR_LOG("resample not supported!");
+            AUDIO_ERR_LOG("resample not supported.");
             return ERR_INVALID_PARAM;
         }
         resampleSrcBuffer.resize(frameSize, 0.f);
@@ -157,7 +157,7 @@ int32_t ProRendererStreamImpl::InitParams()
         downMixer_ = std::make_unique<AudioDownMixStereo>();
         int32_t ret = downMixer_->InitMixer(streamInfo.channelLayout, streamInfo.channels);
         if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("down mixer not supported!");
+            AUDIO_ERR_LOG("down mixer not supported.");
             return ret;
         }
     }
@@ -406,12 +406,13 @@ int32_t ProRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
         auto error = memcpy_s(sinkBuffer_[writeIndex].data(), sinkBuffer_[writeIndex].size(), bufferDesc.buffer,
             bufferDesc.bufLength);
         if (error != EOK) {
-            AUDIO_ERR_LOG("copy failed!");
+            AUDIO_ERR_LOG("copy failed.");
         }
     } else {
         if (isNeedMcr_ && !isNeedResample_) {
             ConvertSrcToFloat(bufferDesc);
             downMixer_->Apply(spanSizeInFrame_, resampleSrcBuffer.data(), resampleDesBuffer.data());
+            DumpFileUtil::WriteDumpFile(dumpFile_, resampleDesBuffer.data(), resampleDesBuffer.size() * sizeof(float));
             ConvertFloatToDes(writeIndex);
         } else if (isNeedMcr_ && isNeedResample_) {
             ConvertSrcToFloat(bufferDesc);
@@ -568,7 +569,7 @@ int32_t ProRendererStreamImpl::Peek(std::vector<char> *audioBuffer, int32_t &ind
             }
         }
     } else {
-        AUDIO_ERR_LOG("Write callback is nullptr!");
+        AUDIO_ERR_LOG("Write callback is nullptr.");
         result = ERR_WRITE_BUFFER;
     }
     return result;

@@ -215,7 +215,7 @@ int32_t AudioInterruptService::ProcessActiveStreamFocus(
         CheckIncommingFoucsValidity(focusEntry, incomingInterrupt, incomingInterrupt.currencySources.sourcesTypes);
         if (FocusEntryContinue(iterActive, focusEntry, incomingInterrupt)) { continue; }
         if (focusEntry.isReject) {
-            if (IsGameAvoidCallbackCase(iterActive->first)) {
+            if (IsGameAvoidCallbackCase(incomingInterrupt)) {
                 incomingState = PAUSE;
                 AUDIO_INFO_LOG("incomingState: %{public}d", incomingState);
                 continue;
@@ -266,6 +266,8 @@ bool AudioInterruptService::IsCapturerFocusAvailable(const int32_t zoneId, const
         return false;
     }
 
+    AUDIO_INFO_LOG("start check capturer focus, zoneId:%{public}d, sourceType:%{public}d",
+        zoneId, capturerInfo.sourceType);
     AudioInterrupt incomingInterrupt;
     incomingInterrupt.audioFocusType.sourceType = capturerInfo.sourceType;
     incomingInterrupt.audioFocusType.isPlay = false;

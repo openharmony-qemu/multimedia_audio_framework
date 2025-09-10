@@ -59,6 +59,9 @@ HWTEST(AudioDefinitionAdapterInfoUnitTest, PolicyAdapterInfo_001, TestSize.Level
     ret = policyAdapter->GetAdapterType(ADAPTER_TYPE_SLE);
     EXPECT_EQ(AudioAdapterType::TYPE_SLE, ret);
 
+    ret = policyAdapter->GetAdapterType(ADAPTER_TYPE_VA);
+    EXPECT_EQ(AudioAdapterType::TYPE_VA, ret);
+
     ret = policyAdapter->GetAdapterType(ADAPTER_TYPE_ACCESSORY);
     EXPECT_EQ(AudioAdapterType::TYPE_ACCESSORY, ret);
 
@@ -561,14 +564,31 @@ HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_018, TestSize.L
 
 /**
 * @tc.name  : Test AudioDefinitionAdapterInfoUnitTest.
-* @tc.number: AudioPolicyConfigData_019
-* @tc.desc  : Test GetAdapterType
+* @tc.number: SetDeviceInfoMap_001
+* @tc.desc  : Test SetDeviceInfoMap
 */
-HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_019, TestSize.Level1)
+HWTEST(AudioDefinitionAdapterInfoUnitTest, SetDeviceInfoMap_001, TestSize.Level1)
 {
-    std::string adapterName = ADAPTER_TYPE_ACCESSORY;
-    auto ret = PolicyAdapterInfo::GetAdapterType(adapterName);
-    EXPECT_EQ(ret, AudioAdapterType::TYPE_ACCESSORY);
+    auto audioPolicyConfigData = std::make_shared<AudioPolicyConfigData>();
+    EXPECT_NE(audioPolicyConfigData, nullptr);
+    std::list<std::shared_ptr<AdapterDeviceInfo>> deviceInfo;
+    std::unordered_map<std::string, std::shared_ptr<AdapterDeviceInfo>> deviceInfoMap;
+    deviceInfoMap["test"] = std::make_shared<AdapterDeviceInfo>();
+    EXPECT_NO_THROW(audioPolicyConfigData->SetDeviceInfoMap(deviceInfo, deviceInfoMap));
+}
+
+/**
+* @tc.name  : Test AudioDefinitionAdapterInfoUnitTest.
+* @tc.number: SetVersion_001
+* @tc.desc  : Test SSetVersion
+*/
+HWTEST(AudioDefinitionAdapterInfoUnitTest, SetVersion_001, TestSize.Level1)
+{
+    auto audioPolicyConfigData = std::make_shared<AudioPolicyConfigData>();
+    EXPECT_NE(audioPolicyConfigData, nullptr);
+    
+    std::string version = "";
+    EXPECT_NO_THROW(audioPolicyConfigData->SetVersion(version));
 }
 } // namespace AudioStandard
 } // namespace OHOS

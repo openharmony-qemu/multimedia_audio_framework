@@ -643,109 +643,6 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDoFadingOut_003, TestSize.Lev
 }
 
 /**
- * @tc.name  : Test WriteMuteDataSysEvent API
- * @tc.type  : FUNC
- * @tc.number: RendererInServerWriteMuteDataSysEvent_001
- * @tc.desc  : Test WriteMuteDataSysEvent when buffer[0] is 0 and startMuteTime_ is 0.
- */
-HWTEST_F(RendererInServerUnitTest, RendererInServerWriteMuteDataSysEvent_001, TestSize.Level1)
-{
-    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
-        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
-    InitAudioProcessConfig(testStreamInfo);
-    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
-    EXPECT_NE(nullptr, rendererInServer);
-
-    bufferDesc.buffer[0] = 0;
-    rendererInServer->WriteMuteDataSysEvent(bufferDesc);
-    EXPECT_EQ(false, rendererInServer->isInSilentState_);
-}
-
-/**
- * @tc.name  : Test WriteMuteDataSysEvent API
- * @tc.type  : FUNC
- * @tc.number: RendererInServerWriteMuteDataSysEvent_002
- * @tc.desc  : Test WriteMuteDataSysEvent when buffer[0] is 0 and startMuteTime_ is not 0.
- */
-HWTEST_F(RendererInServerUnitTest, RendererInServerWriteMuteDataSysEvent_002, TestSize.Level1)
-{
-    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
-        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
-    InitAudioProcessConfig(testStreamInfo);
-    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
-    EXPECT_NE(nullptr, rendererInServer);
-
-    uint8_t bufferTest = 0;
-    bufferDesc.buffer = &bufferTest;
-    rendererInServer->startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    rendererInServer->WriteMuteDataSysEvent(bufferDesc);
-    EXPECT_EQ(false, rendererInServer->isInSilentState_);
-}
-
-/**
- * @tc.name  : Test WriteMuteDataSysEvent API
- * @tc.type  : FUNC
- * @tc.number: RendererInServerWriteMuteDataSysEvent_003
- * @tc.desc  : Test WriteMuteDataSysEvent when buffer[0] is 0 and isInSilentState_ is not 1.
- */
-HWTEST_F(RendererInServerUnitTest, RendererInServerWriteMuteDataSysEvent_003, TestSize.Level1)
-{
-    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
-        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
-    InitAudioProcessConfig(testStreamInfo);
-    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
-    EXPECT_NE(nullptr, rendererInServer);
-
-    bufferDesc.buffer[0] = 0;
-    rendererInServer->isInSilentState_ = 0;
-    rendererInServer->WriteMuteDataSysEvent(bufferDesc);
-    EXPECT_EQ(false, rendererInServer->isInSilentState_);
-}
-
-
-/**
- * @tc.name  : Test WriteMuteDataSysEvent API
- * @tc.type  : FUNC
- * @tc.number: RendererInServerWriteMuteDataSysEvent_004
- * @tc.desc  : Test WriteMuteDataSysEvent when buffer[0] is not 0.
- */
-HWTEST_F(RendererInServerUnitTest, RendererInServerWriteMuteDataSysEvent_004, TestSize.Level1)
-{
-    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
-        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
-    InitAudioProcessConfig(testStreamInfo);
-    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
-    EXPECT_NE(nullptr, rendererInServer);
-
-    bufferDesc.buffer[0] = 1;
-    rendererInServer->WriteMuteDataSysEvent(bufferDesc);
-    EXPECT_EQ(0, rendererInServer->startMuteTime_);
-    EXPECT_EQ(false, rendererInServer->isInSilentState_);
-}
-
-/**
- * @tc.name  : Test WriteMuteDataSysEvent API
- * @tc.type  : FUNC
- * @tc.number: RendererInServerWriteMuteDataSysEvent_005
- * @tc.desc  : Test WriteMuteDataSysEvent when buffer[0] is not 0 and startMuteTime_ is not 0 and isInSilentState_ is 0.
- */
-HWTEST_F(RendererInServerUnitTest, RendererInServerWriteMuteDataSysEvent_005, TestSize.Level1)
-{
-    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
-        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
-    InitAudioProcessConfig(testStreamInfo);
-    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
-    EXPECT_NE(nullptr, rendererInServer);
-
-    bufferDesc.buffer[0] = 1;
-    rendererInServer->startMuteTime_ = 1;
-    rendererInServer->isInSilentState_ = 0;
-    rendererInServer->WriteMuteDataSysEvent(bufferDesc);
-    EXPECT_EQ(0, rendererInServer->startMuteTime_);
-    EXPECT_EQ(false, rendererInServer->isInSilentState_);
-}
-
-/**
  * @tc.name  : Test VolumeHandle API
  * @tc.type  : FUNC
  * @tc.number: RendererInServerVolumeHandle_001
@@ -945,7 +842,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteData_005, TestSize.Level
     rendererInServer->audioServerBuffer_->basicBufferInfo_->totalSizeInFrame = 16;
     rendererInServer->spanSizeInFrame_ = 4;
     ret = rendererInServer->InitDupStream(1);
-    ret = rendererInServer->InitDualToneStream();
+    ret = rendererInServer->InitDualToneStream("Speaker");
 
     ret = rendererInServer->WriteData();
     EXPECT_EQ(SUCCESS, ret);
@@ -972,7 +869,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteData_006, TestSize.Level
     rendererInServer->audioServerBuffer_->basicBufferInfo_->totalSizeInFrame = 16;
     rendererInServer->spanSizeInFrame_ = 4;
     ret = rendererInServer->InitDupStream(1);
-    ret = rendererInServer->InitDualToneStream();
+    ret = rendererInServer->InitDualToneStream("Speaker");
     if (rendererInServer->captureInfos_.count(1)) {
         rendererInServer->captureInfos_[1].dupStream = nullptr;
         rendererInServer->captureInfos_.erase(1);
@@ -1083,7 +980,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_001, TestSize.Level1)
 
     int32_t ret = rendererInServer->Init();
     ret = rendererInServer->InitDupStream(1);
-    ret = rendererInServer->InitDualToneStream();
+    ret = rendererInServer->InitDualToneStream("Speaker");
     rendererInServer->OnStatusUpdate(OPERATION_RELEASED);
 
     ret = rendererInServer->Start();
@@ -1174,7 +1071,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_005, TestSize.Level1)
 
     int32_t ret = rendererInServer->Init();
     ret = rendererInServer->InitDupStream(1);
-    ret = rendererInServer->InitDualToneStream();
+    ret = rendererInServer->InitDualToneStream("Speaker");
     if (rendererInServer->captureInfos_.count(1)) {
         rendererInServer->captureInfos_[1].dupStream = nullptr;
         rendererInServer->captureInfos_.erase(1);
@@ -1335,7 +1232,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerPause_003, TestSize.Level1)
 
     int32_t ret = rendererInServer->Init();
     ret = rendererInServer->InitDupStream(1);
-    ret = rendererInServer->InitDualToneStream();
+    ret = rendererInServer->InitDualToneStream("Speaker");
     rendererInServer->OnStatusUpdate(OPERATION_STARTED);
 
     ret = rendererInServer->Pause();
@@ -1359,7 +1256,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerPause_004, TestSize.Level1)
 
     int32_t ret = rendererInServer->Init();
     ret = rendererInServer->InitDupStream(1);
-    ret = rendererInServer->InitDualToneStream();
+    ret = rendererInServer->InitDualToneStream("Speaker");
     if (rendererInServer->captureInfos_.count(1)) {
         rendererInServer->captureInfos_[1].dupStream = nullptr;
         rendererInServer->captureInfos_.erase(1);
@@ -1494,7 +1391,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerFlush_005, TestSize.Level1)
 
     int32_t ret = rendererInServer->Init();
     ret = rendererInServer->InitDupStream(1);
-    ret = rendererInServer->InitDualToneStream();
+    ret = rendererInServer->InitDualToneStream("Speaker");
     rendererInServer->OnStatusUpdate(OPERATION_STARTED);
 
     ret = rendererInServer->Flush();
@@ -1518,7 +1415,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerFlush_006, TestSize.Level1)
 
     int32_t ret = rendererInServer->Init();
     ret = rendererInServer->InitDupStream(1);
-    ret = rendererInServer->InitDualToneStream();
+    ret = rendererInServer->InitDualToneStream("Speaker");
     if (rendererInServer->captureInfos_.count(1)) {
         rendererInServer->captureInfos_[1].dupStream = nullptr;
         rendererInServer->captureInfos_.erase(1);
@@ -1656,7 +1553,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDrain_003, TestSize.Level1)
 
     int32_t ret = rendererInServer->Init();
     ret = rendererInServer->InitDupStream(1);
-    ret = rendererInServer->InitDualToneStream();
+    ret = rendererInServer->InitDualToneStream("Speaker");
     rendererInServer->OnStatusUpdate(OPERATION_STARTED);
 
     bool stopFlag = true;
@@ -1681,7 +1578,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDrain_004, TestSize.Level1)
 
     int32_t ret = rendererInServer->Init();
     ret = rendererInServer->InitDupStream(1);
-    ret = rendererInServer->InitDualToneStream();
+    ret = rendererInServer->InitDualToneStream("Speaker");
     if (rendererInServer->captureInfos_.count(1)) {
         rendererInServer->captureInfos_[1].dupStream = nullptr;
         rendererInServer->captureInfos_.erase(1);
@@ -1765,7 +1662,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStop_003, TestSize.Level1)
     rendererInServer->Init();
     rendererInServer->standByEnable_ = true;
     rendererInServer->InitDupStream(1);
-    rendererInServer->InitDualToneStream();
+    rendererInServer->InitDualToneStream("Speaker");
     int32_t ret = rendererInServer->Stop();
 
     EXPECT_EQ(SUCCESS, ret);
@@ -2293,7 +2190,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerEnableDualTone_001, TestSize.
 {
     EXPECT_NE(nullptr, rendererInServer);
 
-    int32_t ret = rendererInServer->EnableDualTone();
+    int32_t ret = rendererInServer->EnableDualTone("Speaker");
 
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -2308,8 +2205,8 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerEnableDualTone_002, TestSize.
 {
     EXPECT_NE(nullptr, rendererInServer);
 
-    rendererInServer->InitDualToneStream();
-    int32_t ret = rendererInServer->EnableDualTone();
+    rendererInServer->InitDualToneStream("Speaker");
+    int32_t ret = rendererInServer->EnableDualTone("Speaker");
 
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -2339,7 +2236,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDisableDualTone_002, TestSize
 {
     EXPECT_NE(nullptr, rendererInServer);
 
-    rendererInServer->InitDualToneStream();
+    rendererInServer->InitDualToneStream("Speaker");
     int32_t ret = rendererInServer->DisableDualTone();
 
     EXPECT_EQ(ERROR, ret);
@@ -2364,7 +2261,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerInitDualToneStream_001, TestS
     EXPECT_NE(nullptr, tempRendererInServer);
 
     tempRendererInServer->dualToneStream_ = nullptr;
-    int32_t ret = tempRendererInServer->InitDualToneStream();
+    int32_t ret = tempRendererInServer->InitDualToneStream("Speaker");
 
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -2381,7 +2278,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerInitDualToneStream_002, TestS
 
     rendererInServer->status_ = I_STATUS_STARTED;
     rendererInServer->Init();
-    int32_t ret = rendererInServer->InitDualToneStream();
+    int32_t ret = rendererInServer->InitDualToneStream("Speaker");
 
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -2451,7 +2348,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerSetOffloadMode_002, TestSize.
     tempRendererInServer->managerType_ = DIRECT_PLAYBACK;
     tempRendererInServer->Init();
     tempRendererInServer->InitDupStream(1);
-    tempRendererInServer->InitDualToneStream();
+    tempRendererInServer->InitDualToneStream("Speaker");
     int32_t ret = tempRendererInServer->SetOffloadMode(TEST_STATE, TEST_ISAPPBACK);
 
     EXPECT_EQ(SUCCESS, ret);
@@ -2479,7 +2376,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerSetOffloadMode_003, TestSize.
     tempRendererInServer->managerType_ = DIRECT_PLAYBACK;
     tempRendererInServer->Init();
     tempRendererInServer->InitDupStream(1);
-    tempRendererInServer->InitDualToneStream();
+    tempRendererInServer->InitDualToneStream("Speaker");
     if (rendererInServer->captureInfos_.count(1)) {
         rendererInServer->captureInfos_[1].dupStream = nullptr;
         rendererInServer->captureInfos_.erase(1);
@@ -2538,7 +2435,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerUnsetOffloadMode_002, TestSiz
     tempRendererInServer->managerType_ = DIRECT_PLAYBACK;
     tempRendererInServer->Init();
     tempRendererInServer->InitDupStream(1);
-    tempRendererInServer->InitDualToneStream();
+    tempRendererInServer->InitDualToneStream("Speaker");
     int32_t ret = tempRendererInServer->UnsetOffloadMode();
 
     EXPECT_EQ(SUCCESS, ret);
@@ -2566,7 +2463,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerUnsetOffloadMode_003, TestSiz
     tempRendererInServer->managerType_ = DIRECT_PLAYBACK;
     tempRendererInServer->Init();
     tempRendererInServer->InitDupStream(1);
-    tempRendererInServer->InitDualToneStream();
+    tempRendererInServer->InitDualToneStream("Speaker");
     if (rendererInServer->captureInfos_.count(1)) {
         rendererInServer->captureInfos_[1].dupStream = nullptr;
         rendererInServer->captureInfos_.erase(1);

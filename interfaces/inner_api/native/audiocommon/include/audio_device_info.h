@@ -186,6 +186,8 @@ enum DeviceType {
      * Indicates a Nearlink device for input.
      */
     DEVICE_TYPE_NEARLINK_IN = 32,
+    DEVICE_TYPE_BT_SPP = 33,
+    DEVICE_TYPE_NEARLINK_PORT = 34,
     /**
      * Indicates a debug sink device
      */
@@ -198,6 +200,7 @@ enum DeviceType {
      * Indicates any headset/headphone for disconnect
      */
     DEVICE_TYPE_EXTERN_CABLE = 100,
+    DEVICE_TYPE_SYSTEM_PRIVATE = 200,
     /**
      * Indicates default device
      */
@@ -223,6 +226,8 @@ inline const std::unordered_set<DeviceType> INPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_FILE_SOURCE,
     DeviceType::DEVICE_TYPE_ACCESSORY,
     DeviceType::DEVICE_TYPE_NEARLINK_IN,
+    DeviceType::DEVICE_TYPE_BT_SPP,
+    DeviceType::DEVICE_TYPE_NEARLINK_PORT,
 };
 
 inline bool IsInputDevice(DeviceType deviceType, DeviceRole deviceRole = DEVICE_ROLE_NONE)
@@ -234,6 +239,11 @@ inline bool IsInputDevice(DeviceType deviceType, DeviceRole deviceRole = DEVICE_
         return INPUT_DEVICE_TYPE_SET.count(deviceType) > 0;
     }
 }
+
+enum AudioDeviceSelectMode {
+    SELECT_STRATEGY_DEFAULT = 0,
+    SELECT_STRATEGY_INDEPENDENT = 1,
+};
 
 enum DmDeviceType {
     DM_DEVICE_TYPE_DEFAULT = 0,
@@ -493,7 +503,7 @@ public:
         return reason_ == ExtEnum::OVERRODE;
     }
 
-    bool isSetAudioScene() const
+    bool IsSetAudioScene() const
     {
         return reason_ == ExtEnum::SET_AUDIO_SCENE;
     }

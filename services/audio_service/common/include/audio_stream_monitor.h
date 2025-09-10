@@ -49,6 +49,7 @@ public:
     void OnCallbackAppDied(const int32_t pid);
     void NotifyAppStateChange(const int32_t uid, bool isBackground);
     void UpdateMonitorVolume(const uint32_t &sessionId, const float &volume);
+    int32_t GetVolumeBySessionId(const uint32_t &sessionId, float &volume);
 private:
     AudioStreamMonitor() {}
     ~AudioStreamMonitor() {}
@@ -56,6 +57,7 @@ private:
     std::map<std::pair<int32_t, int32_t>, DataTransferMonitorParam> registerInfo_;
     std::map<uint32_t, std::shared_ptr<AudioStreamChecker>> audioStreamCheckers_;
     std::mutex regStatusMutex_;
+    std::mutex callbackMutex_;
     DataTransferStateChangeCallbackForMonitor *audioServer_ = nullptr;
 };
 }

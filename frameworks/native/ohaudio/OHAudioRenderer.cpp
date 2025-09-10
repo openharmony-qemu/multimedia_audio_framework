@@ -874,7 +874,7 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
             }
 
             bufDesc.dataLength = static_cast<size_t>(writeFrameInByte);
-            bufDesc.bufLength = static_cast<size_t>(writeFrameInByte);
+            bufDesc.bufLength = (writeFrameInByte == 0) ? bufDesc.bufLength : static_cast<size_t>(writeFrameInByte);
         }
     }
     audioRenderer->Enqueue(bufDesc);

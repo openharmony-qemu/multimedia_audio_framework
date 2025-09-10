@@ -37,6 +37,8 @@ const std::unordered_map<std::string, std::string> AUDIO_PERSISTENCE_EFFECT_KEY 
 };
 const std::vector<std::string> AUDIO_PERSISTENCE_SCENE {"SCENE_VOIP_DOWN"};
 }
+
+// LCOV_EXCL_START
 static int32_t CheckValidEffectLibEntry(const std::shared_ptr<AudioEffectLibEntry> &libEntry, const std::string &effect,
     const std::string &libName)
 {
@@ -54,6 +56,7 @@ static int32_t CheckValidEffectLibEntry(const std::shared_ptr<AudioEffectLibEntr
         libName.c_str());
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 static int32_t FindEffectLib(const std::string &effect,
     const std::vector<std::shared_ptr<AudioEffectLibEntry>> &effectLibraryList,
@@ -115,6 +118,7 @@ AudioEffectChainManager *AudioEffectChainManager::GetInstance()
     return &audioEffectChainManager;
 }
 
+// LCOV_EXCL_START
 int32_t AudioEffectChainManager::UpdateDeviceInfo(int32_t device, const std::string &sinkName)
 {
     if (!isInitialized_) {
@@ -135,7 +139,9 @@ int32_t AudioEffectChainManager::UpdateDeviceInfo(int32_t device, const std::str
 
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void AudioEffectChainManager::SetSpkOffloadState()
 {
     int32_t ret;
@@ -170,7 +176,9 @@ void AudioEffectChainManager::SetSpkOffloadState()
         RecoverAllChains();
     }
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void AudioEffectChainManager::SetOutputDeviceSink(int32_t device, const std::string &sinkName)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
@@ -181,6 +189,7 @@ void AudioEffectChainManager::SetOutputDeviceSink(int32_t device, const std::str
     SetSpkOffloadState();
     return;
 }
+// LCOV_EXCL_STOP
 
 std::string AudioEffectChainManager::GetDeviceTypeName()
 {
@@ -443,6 +452,7 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
     return SUCCESS;
 }
 
+// LCOV_EXCL_START
 int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffectVolume> audioEffectVolume)
 {
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
@@ -477,6 +487,7 @@ int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffe
     }
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffectVolume> audioEffectVolume)
 {
@@ -506,6 +517,7 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
     return SendEffectApVolume(audioEffectVolume);
 }
 
+// LCOV_EXCL_START
 int32_t AudioEffectChainManager::SendEffectApVolume(std::shared_ptr<AudioEffectVolume> audioEffectVolume)
 {
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
@@ -539,6 +551,7 @@ int32_t AudioEffectChainManager::SendEffectApVolume(std::shared_ptr<AudioEffectV
     }
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioEffectChainManager::EffectVolumeUpdate()
 {
@@ -608,6 +621,7 @@ int32_t AudioEffectChainManager::EffectDspRotationUpdate(std::shared_ptr<AudioEf
     return SUCCESS;
 }
 
+// LCOV_EXCL_START
 int32_t AudioEffectChainManager::EffectApRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
     const uint32_t rotationState)
 {
@@ -633,6 +647,7 @@ int32_t AudioEffectChainManager::EffectApRotationUpdate(std::shared_ptr<AudioEff
 
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioEffectChainManager::EffectRotationUpdate(const uint32_t rotationState)
 {
@@ -661,6 +676,7 @@ int32_t AudioEffectChainManager::InitAudioEffectChainDynamic(const std::string &
     return InitAudioEffectChainDynamicInner(sceneType);
 }
 
+// LCOV_EXCL_START
 int32_t AudioEffectChainManager::InitAudioEffectChainDynamicInner(const std::string &sceneType)
 {
     CHECK_AND_RETURN_RET_LOG(isInitialized_, ERROR, "has not been initialized");
@@ -680,6 +696,7 @@ int32_t AudioEffectChainManager::InitAudioEffectChainDynamicInner(const std::str
 
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioEffectChainManager::UpdateSpatializationState(AudioSpatializationState spatializationState)
 {
@@ -720,6 +737,7 @@ int32_t AudioEffectChainManager::ReturnEffectChannelInfo(const std::string &scen
     return ReturnEffectChannelInfoInner(sceneType, channels, channelLayout);
 }
 
+// LCOV_EXCL_START
 int32_t AudioEffectChainManager::ReturnMultiChannelInfo(uint32_t *channels, uint64_t *channelLayout)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
@@ -746,6 +764,7 @@ int32_t AudioEffectChainManager::ReturnMultiChannelInfo(uint32_t *channels, uint
     }
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioEffectChainManager::SessionInfoMapAdd(const std::string &sessionID, const SessionEffectInfo &info)
 {
@@ -800,6 +819,7 @@ int32_t AudioEffectChainManager::SetHdiParam(const AudioEffectScene &sceneType)
     return SUCCESS;
 }
 
+// LCOV_EXCL_START
 int32_t AudioEffectChainManager::QueryHdiSupportedChannelInfo(uint32_t &channels, uint64_t &channelLayout)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
@@ -845,7 +865,9 @@ int32_t AudioEffectChainManager::QueryHdiSupportedChannelInfo(uint32_t &channels
     }
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void AudioEffectChainManager::UpdateSensorState()
 {
     effectHdiInput_[0] = HDI_HEAD_MODE;
@@ -897,6 +919,7 @@ void AudioEffectChainManager::UpdateSensorState()
     }
 #endif
 }
+// LCOV_EXCL_STOP
 
 void AudioEffectChainManager::DeleteAllChains()
 {
@@ -927,8 +950,13 @@ void AudioEffectChainManager::RecoverAllChains()
     }
     UpdateDefaultAudioEffectInner();
     UpdateStreamUsageInner();
+
+    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectVolume != nullptr, "null audioEffectVolume");
+    EffectVolumeUpdateInner(audioEffectVolume);
 }
 
+// LCOV_EXCL_START
 uint32_t AudioEffectChainManager::GetLatency(const std::string &sessionId)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
@@ -950,6 +978,7 @@ uint32_t AudioEffectChainManager::GetLatency(const std::string &sessionId)
         sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr, 0);
     return sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]->GetLatency();
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioEffectChainManager::SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType)
 {
@@ -972,6 +1001,7 @@ int32_t AudioEffectChainManager::SetSpatializationSceneType(AudioSpatializationS
     return SUCCESS;
 }
 
+// LCOV_EXCL_START
 void AudioEffectChainManager::SendAudioParamToHDI(
     HdiSetParamCommandCode code, const std::string &value, DeviceType device)
 {
@@ -982,7 +1012,9 @@ void AudioEffectChainManager::SendAudioParamToHDI(
         AUDIO_WARNING_LOG("set hdi parameter failed for code %{public}d and value %{public}s", code, value.c_str());
     }
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void AudioEffectChainManager::SendAudioParamToARM(HdiSetParamCommandCode code, const std::string &value)
 {
     for (const auto &[scene, audioEffectChain] : sceneTypeToEffectChainMap_) {
@@ -1014,7 +1046,9 @@ void AudioEffectChainManager::SendAudioParamToARM(HdiSetParamCommandCode code, c
         }
     }
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void AudioEffectChainManager::UpdateParamExtra(
     const std::string &mainkey, const std::string &subkey, const std::string &value)
 {
@@ -1038,7 +1072,9 @@ void AudioEffectChainManager::UpdateParamExtra(
         return;
     }
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void AudioEffectChainManager::SetSpatializationSceneTypeToChains()
 {
     for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); ++it) {
@@ -1053,7 +1089,9 @@ void AudioEffectChainManager::SetSpatializationSceneTypeToChains()
         }
     }
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void AudioEffectChainManager::SetSpatializationEnabledToChains()
 {
     for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); ++it) {
@@ -1064,9 +1102,11 @@ void AudioEffectChainManager::SetSpatializationEnabledToChains()
         audioEffectChain->SetSpatializationEnabledForFading(spatializationEnabled_);
     }
 }
+// LCOV_EXCL_STOP
 
 void AudioEffectChainManager::ResetInfo()
 {
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
     effectToLibraryEntryMap_.clear();
     effectToLibraryNameMap_.clear();
     effectChainToEffectsMap_.clear();
@@ -1136,6 +1176,7 @@ void AudioEffectChainManager::UpdateStreamUsage()
     UpdateStreamUsageInner();
 }
 
+// LCOV_EXCL_START
 void AudioEffectChainManager::UpdateStreamUsageInner()
 {
     // for special scene type
@@ -1183,7 +1224,9 @@ void AudioEffectChainManager::UpdateStreamUsageInner()
     // update dsp scene type and stream usage
     UpdateCurrSceneTypeAndStreamUsageForDsp();
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 bool AudioEffectChainManager::CheckSceneTypeMatch(const std::string &sinkSceneType, const std::string &sceneType)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
@@ -1204,6 +1247,7 @@ bool AudioEffectChainManager::CheckSceneTypeMatch(const std::string &sinkSceneTy
     }
     return false;
 }
+// LCOV_EXCL_STOP
 
 void AudioEffectChainManager::UpdateCurrSceneType(AudioEffectScene &currSceneType, const std::string &sceneType)
 {
@@ -1211,6 +1255,7 @@ void AudioEffectChainManager::UpdateCurrSceneType(AudioEffectScene &currSceneTyp
     currSceneType = static_cast<AudioEffectScene>(GetKeyFromValue(audioSupportedSceneTypes, sceneType));
 }
 
+// LCOV_EXCL_START
 void AudioEffectChainManager::FindMaxEffectChannels(const std::string &sceneType,
     const std::set<std::string> &sessions, uint32_t &channels, uint64_t &channelLayout)
 {
@@ -1234,6 +1279,7 @@ void AudioEffectChainManager::FindMaxEffectChannels(const std::string &sceneType
         }
     }
 }
+// LCOV_EXCL_STOP
 
 std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChain(const std::string &sceneType,
     bool isPriorScene)
@@ -1242,7 +1288,7 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
     std::string defaultSceneTypeAndDeviceKey = DEFAULT_SCENE_TYPE + "_&_" + GetDeviceTypeName();
     defaultEffectChainCreated_ = false;
     if (isPriorScene) {
-        AUDIO_INFO_LOG("create prior effect chain: %{public}s", sceneType.c_str());
+        HILOG_COMM_INFO("create prior effect chain: %{public}s", sceneType.c_str());
 #ifdef SENSOR_ENABLE
         audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker_);
 #else
@@ -1251,7 +1297,7 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
         return audioEffectChain;
     }
     if ((maxEffectChainCount_ - static_cast<int32_t>(sceneTypeToSpecialEffectSet_.size())) > 1) {
-        AUDIO_INFO_LOG("max audio effect chain count not reached, create special effect chain: %{public}s",
+        HILOG_COMM_INFO("max audio effect chain count not reached, create special effect chain: %{public}s",
             sceneType.c_str());
         sceneTypeToSpecialEffectSet_.insert(sceneType);
 #ifdef SENSOR_ENABLE
@@ -1261,7 +1307,7 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
 #endif
     } else {
         if (!isDefaultEffectChainExisted_) {
-            AUDIO_INFO_LOG("max audio effect chain count reached, create current and default effect chain");
+            HILOG_COMM_INFO("max audio effect chain count reached, create current and default effect chain");
 #ifdef SENSOR_ENABLE
             audioEffectChain = std::make_shared<AudioEffectChain>(DEFAULT_SCENE_TYPE, headTracker_);
 #else
@@ -1273,16 +1319,17 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
         } else {
             audioEffectChain = sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey];
             defaultEffectChainCount_++;
-            AUDIO_INFO_LOG("max audio effect chain count reached and default effect chain already exist: %{public}d",
+            HILOG_COMM_INFO("max audio effect chain count reached and default effect chain already exist: %{public}d",
                 defaultEffectChainCount_);
         }
     }
     return audioEffectChain;
 }
 
+// LCOV_EXCL_START
 int32_t AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::string &sceneType)
 {
-    AUDIO_INFO_LOG("release effect chain for scene type: %{public}s", sceneType.c_str());
+    HILOG_COMM_INFO("release effect chain for scene type: %{public}s", sceneType.c_str());
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     std::string defaultSceneTypeAndDeviceKey = DEFAULT_SCENE_TYPE + "_&_" + GetDeviceTypeName();
     sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = 0;
@@ -1300,16 +1347,18 @@ int32_t AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::str
             defaultEffectChainCount_= 0;
             isDefaultEffectChainExisted_ = false;
             sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey]->InitEffectChain();
-            AUDIO_INFO_LOG("default effect chain will be released");
+            HILOG_COMM_INFO("default effect chain will be released");
             return SUCCESS;
         } else {
             defaultEffectChainCount_--;
-            AUDIO_INFO_LOG("default effect chain still exist, count is %{public}d", defaultEffectChainCount_);
+            HILOG_COMM_INFO("default effect chain still exist, count is %{public}d", defaultEffectChainCount_);
         }
     }
     return ERROR;
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationState spatializationState)
 {
     spatializationEnabled_ = spatializationState.spatializationEnabled;
@@ -1345,6 +1394,8 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
     }
     SetSpatializationEnabledToChains();
 }
+// LCOV_EXCL_STOP
+
 // for AISS temporarily
 bool AudioEffectChainManager::CheckIfSpkDsp()
 {
@@ -1396,6 +1447,7 @@ int32_t AudioEffectChainManager::SetAudioEffectProperty(const AudioEffectPropert
     return ret;
 }
 
+// LCOV_EXCL_START
 void AudioEffectChainManager::LoadEffectProperties()
 {
     hasLoadedEffectProperties_ = false;
@@ -1417,7 +1469,9 @@ void AudioEffectChainManager::LoadEffectProperties()
     }
     hasLoadedEffectProperties_ = true;
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 int32_t AudioEffectChainManager::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
@@ -1431,6 +1485,7 @@ int32_t AudioEffectChainManager::SetAudioEffectProperty(const AudioEffectPropert
     }
     return AUDIO_OK;
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioEffectChainManager::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
 {
@@ -1497,6 +1552,7 @@ int32_t AudioEffectChainManager::UpdateSceneTypeList(const std::string &sceneTyp
     return SUCCESS;
 }
 
+// LCOV_EXCL_START
 uint32_t AudioEffectChainManager::GetSceneTypeToChainCount(const std::string &sceneType)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
@@ -1518,6 +1574,7 @@ uint32_t AudioEffectChainManager::GetSceneTypeToChainCount(const std::string &sc
     }
     return 0;
 }
+// LCOV_EXCL_STOP
 
 void AudioEffectChainManager::FindMaxSessionID(uint32_t &maxSessionID, std::string &sceneType,
     const std::string &scenePairType, std::set<std::string> &sessions)
@@ -1619,7 +1676,7 @@ int32_t AudioEffectChainManager::CreateAudioEffectChainDynamicInner(const std::s
                 sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey]) {
                 defaultEffectChainCount_++;
             }
-            AUDIO_INFO_LOG("effect chain %{public}s still exist, current count: %{public}d, default count: %{public}d",
+            HILOG_COMM_INFO("effect chain %{public}s still exist, current count: %{public}d, default count: %{public}d",
                 sceneType.c_str(), sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey], defaultEffectChainCount_);
             return SUCCESS;
         }
@@ -1744,7 +1801,7 @@ int32_t AudioEffectChainManager::UpdateMultichannelConfigInner(const std::string
 
 int32_t AudioEffectChainManager::UpdateSpatializationStateInner(AudioSpatializationState spatializationState)
 {
-    AUDIO_INFO_LOG("begin to update spatialization state, current state: %{public}d and %{public}d, previous state: \
+    HILOG_COMM_INFO("begin to update spatialization state, current state: %{public}d and %{public}d, previous state: \
         %{public}d and %{public}d", spatializationState.spatializationEnabled, spatializationState.headTrackingEnabled,
         spatializationEnabled_.load(), headTrackingEnabled_);
 

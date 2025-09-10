@@ -340,6 +340,7 @@ void BluetoothAudioRenderSink::SetAudioParameter(const AudioParamKey key, const 
     const std::string &value)
 {
     AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     CHECK_AND_RETURN_LOG(audioRender_ != nullptr, "render is nullptr");
     CHECK_AND_RETURN(IsValidState());
     int32_t ret = audioRender_->attr.SetExtraParams(reinterpret_cast<AudioHandle>(audioRender_), value.c_str());
@@ -347,7 +348,6 @@ void BluetoothAudioRenderSink::SetAudioParameter(const AudioParamKey key, const 
         AUDIO_WARNING_LOG("set parameter fail, error code: %{public}d", ret);
     }
 
-    std::lock_guard<std::mutex> lock(sinkMutex_);
     if (started_ && isBluetoothLowLatency_ && !strcmp(value.c_str(), "A2dpSuspended=0;")) {
         int32_t tryCount = 3;
         while (tryCount-- > 0) {
@@ -553,6 +553,7 @@ int32_t BluetoothAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &apps
 void BluetoothAudioRenderSink::SetInvalidState(void)
 {
     AUDIO_INFO_LOG("%{public}s in", logTypeTag_.c_str());
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     validState_ = false;
     sinkInited_ = false;
     started_ = false;
@@ -836,8 +837,6 @@ int32_t BluetoothAudioRenderSink::DoRenderFrame(char &data, uint64_t len, uint64
             continue;
         }
         if (ret != SUCCESS) {
-            HdiMonitor::ReportHdiException(HdiType::A2DP, ErrorCase::CALL_HDI_FAILED, ret, "a2dp render frame "
-                "failed: " + std::to_string(ret));
             AUDIO_ERR_LOG("A2dp RenderFrame fail, ret: %{public}x", ret);
             ret = ERR_WRITE_FAILED;
         }

@@ -225,11 +225,10 @@ void AudioServiceReLinkProcessToEndpointFuzzTest()
     AudioProcessConfig config = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
-    deviceInfo.audioStreamInfo_.push_back(audioStreamInfo);
+    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
-        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo);
+        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo);
     AudioProcessConfig configProcess = {};
     sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
         AudioService::GetInstance());
@@ -248,11 +247,10 @@ void AudioServiceCheckInnerCapForProcessFuzzTest()
     AudioProcessConfig config = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
-    deviceInfo.audioStreamInfo_.push_back(audioStreamInfo);
+    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
-        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo);
+        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo);
     AudioProcessConfig configProcess = {};
     sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
         AudioService::GetInstance());
@@ -268,11 +266,10 @@ void AudioServiceLinkProcessToEndpointFuzzTest()
     AudioProcessConfig config = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
-    deviceInfo.audioStreamInfo_.push_back(audioStreamInfo);
+    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
-        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo);
+        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo);
     AudioProcessConfig configProcess = {};
     sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
         AudioService::GetInstance());
@@ -288,11 +285,10 @@ void AudioServiceUnlinkProcessToEndpointFuzzTest()
     AudioProcessConfig config = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
-    deviceInfo.audioStreamInfo_.push_back(audioStreamInfo);
+    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
-        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo);
+        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo);
     AudioProcessConfig configProcess = {};
     sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
         AudioService::GetInstance());
@@ -316,7 +312,9 @@ void AudioServiceGetDeviceInfoForProcessFuzzTest()
     config.streamInfo.channels = static_cast<AudioChannel>(GetData<uint32_t>() % AUDIOCHANNELSIZE);
     config.streamInfo.samplingRate = g_testAudioSamplingRates[GetData<uint32_t>() % g_testAudioSamplingRates.size()];
     config.streamInfo.format = g_testAudioSampleFormats[GetData<uint32_t>() % g_testAudioSampleFormats.size()];
-    audioService->GetDeviceInfoForProcess(config);
+
+    AudioStreamInfo info;
+    audioService->GetDeviceInfoForProcess(config, info);
 }
 
 void AudioServiceGetMaxAmplitudeFuzzTest()
@@ -324,11 +322,10 @@ void AudioServiceGetMaxAmplitudeFuzzTest()
     AudioProcessConfig config = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
-    deviceInfo.audioStreamInfo_.push_back(audioStreamInfo);
+    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
-        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo);
+        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo);
     AudioProcessConfig configProcess = {};
     sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
         AudioService::GetInstance());
@@ -698,7 +695,7 @@ void AudioServiceEnableDualToneListFuzzTest()
     int32_t sessionId = GetData<int32_t>();
     audioService->allRendererMap_.clear();
     audioService->allRendererMap_.insert(std::make_pair(sessionId, renderer));
-    audioService->EnableDualToneList(sessionId);
+    audioService->EnableDualStream(sessionId, "Speaker");
 }
 
 void AudioServiceDisableDualToneListFuzzTest()
@@ -719,10 +716,8 @@ void AudioServiceDisableDualToneListFuzzTest()
         renderer = std::make_shared<RendererInServer>(processConfig, streamListener);
     }
 
-    audioService->filteredDualToneRendererMap_.clear();
-    audioService->filteredDualToneRendererMap_.push_back(renderer);
     int32_t sessionId = GetData<int32_t>();
-    audioService->DisableDualToneList(sessionId);
+    audioService->DisableDualStream(sessionId);
 }
 
 void AudioServiceNotifyStreamVolumeChangedFuzzTest()
@@ -730,11 +725,10 @@ void AudioServiceNotifyStreamVolumeChangedFuzzTest()
     AudioProcessConfig config = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
-    deviceInfo.audioStreamInfo_.push_back(audioStreamInfo);
+    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
-        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo);
+        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo);
     AudioProcessConfig configProcess = {};
     sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
         AudioService::GetInstance());
@@ -754,11 +748,10 @@ void AudioServiceDumpFuzzTest()
     AudioProcessConfig config = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
-    deviceInfo.audioStreamInfo_.push_back(audioStreamInfo);
+    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
-        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo);
+        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo);
     AudioProcessConfig configProcess = {};
     sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
         AudioService::GetInstance());

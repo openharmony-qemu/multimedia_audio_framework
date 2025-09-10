@@ -29,7 +29,6 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 27;
 static int32_t NUM_2 = 2;
 
 typedef void (*TestFuncs)();
@@ -370,7 +369,7 @@ void SetVgsVolumeSupportedFuzzTest()
     AudioVolume::GetInstance()->SetVgsVolumeSupported(GetData<uint8_t>() % NUM_2);
 }
 
-TestFuncs g_testFuncs[TESTSIZE] = {
+TestFuncs g_testFuncs[] = {
     GetVolumeFuzzTest,
     GetDoNotDisturbStatusVolumeFuzzTest,
     SetDoNotDisturbStatusWhiteListVolumeFuzzTest,

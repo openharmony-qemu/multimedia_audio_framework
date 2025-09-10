@@ -15,7 +15,7 @@
 #undef LOG_TAG
 #define LOG_TAG "ModuleHdiSource"
 
-#include <config.h>
+#include <pa_config.h>
 #include <pulsecore/log.h>
 #include <pulsecore/modargs.h>
 #include <pulsecore/module.h>

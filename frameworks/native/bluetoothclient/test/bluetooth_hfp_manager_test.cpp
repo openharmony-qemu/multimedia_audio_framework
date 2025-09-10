@@ -59,7 +59,6 @@ public:
         AudioHfpManager::isRecognitionScene_.store(false);
         AudioHfpManager::isRecordScene_.store(false);
         AudioHfpManager::virtualCalls_.clear();
-        AudioHfpManager::virtualCallStreams_.clear();
         AudioHfpManager::activeHfpDevice_ = BluetoothRemoteDevice();
     }
 };
@@ -201,25 +200,18 @@ HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_006, TestSize.Level1)
     AudioHfpManager::scene_ = AUDIO_SCENE_PHONE_CHAT;
     AudioHfpManager::activeHfpDevice_ = BluetoothRemoteDevice(HFP_DEVICE_MAC2);
 
-    AudioHfpManager::SetVirtualCall(TEST_VIRTUAL_CALL_BUNDLE_NAME, false);
+    AudioHfpManager::SetVirtualCall(0, false);
     EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::CONNECTING);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_VIRTUAL), true);
+    EXPECT_EQ(BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_CALLULAR), true);
     BluetoothScoManager::GetInstance().UpdateScoState(HfpScoConnectState::SCO_CONNECTED,
         AudioHfpManager::activeHfpDevice_);
     EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::CONNECTED);
 
-    AudioHfpManager::AddVirtualCallBundleName(TEST_VIRTUAL_CALL_BUNDLE_NAME, 1);
+    AudioHfpManager::SetVirtualCall(0, true);
     EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::DISCONNECTING);
     BluetoothScoManager::GetInstance().UpdateScoState(HfpScoConnectState::SCO_DISCONNECTED,
         AudioHfpManager::activeHfpDevice_);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::CONNECTING);
-    BluetoothScoManager::GetInstance().UpdateScoState(HfpScoConnectState::SCO_CONNECTED,
-        AudioHfpManager::activeHfpDevice_);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::CONNECTED);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_CALLULAR), true);
-
-    AudioHfpManager::DeleteVirtualCallStream(1);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::DISCONNECTING);
+    EXPECT_EQ(BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_VIRTUAL), true);
 }
 } // namespace Bluetooth
 } // namespace OHOS

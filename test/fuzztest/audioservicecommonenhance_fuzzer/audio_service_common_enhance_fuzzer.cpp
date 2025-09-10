@@ -48,6 +48,8 @@ static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
+const int32_t TEST_MAX_REQUEST = 7680;
+const int32_t NUM_10 = 10;
 
 /*
 * describe: get data from outside untrusted data(RAW_DATA) which size is according to sizeof(T)
@@ -127,13 +129,15 @@ void AudioDownMixStereoFuzzTest()
     std::shared_ptr<AudioDownMixStereo> audioDownMixStereo = std::make_shared<AudioDownMixStereo>();
 
     AudioChannelLayout mode = GetData<AudioChannelLayout>();
-    int32_t channels = GetData<int32_t>();
+    int32_t channels = (GetData<int32_t>() % NUM_10) + 1;
     audioDownMixStereo->InitMixer(mode, channels);
 
-    int32_t frameLength = GetData<int32_t>();
-    float *input = GetData<float*>();
-    float *output = GetData<float*>();
-    audioDownMixStereo->Apply(frameLength, input, output);
+    int32_t frameLen = TEST_MAX_REQUEST / SAMPLE_F32LE;
+    std::vector<float> inBufferVector(frameLen, 0);
+    std::vector<float> outBufferVector(frameLen, 0);
+    float *input = inBufferVector.data();
+    float *output = outBufferVector.data();
+    audioDownMixStereo->Apply(NUM_10, input, output);
 }
 
 void AudioLogUtilsFuzzTest()

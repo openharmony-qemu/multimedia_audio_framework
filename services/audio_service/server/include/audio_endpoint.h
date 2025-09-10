@@ -67,7 +67,7 @@ public:
     };
 
     static std::shared_ptr<AudioEndpoint> CreateEndpoint(EndpointType type, uint64_t id,
-        const AudioProcessConfig &clientConfig, const AudioDeviceDescriptor &deviceInfo);
+        const AudioProcessConfig &clientConfig, const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo);
     static std::string GenerateEndpointKey(AudioDeviceDescriptor &deviceInfo, int32_t endpointFlag);
 
     virtual std::string GetEndpointName() = 0;
@@ -82,7 +82,8 @@ public:
     virtual void Release() = 0;
 
     virtual bool ShouldInnerCap(int32_t innerCapId) = 0;
-    virtual int32_t EnableFastInnerCap(int32_t innerCapId) = 0;
+    virtual int32_t EnableFastInnerCap(int32_t innerCapId,
+        const std::optional<std::string> &dualDeviceName = std::nullopt) = 0;
     virtual int32_t DisableFastInnerCap() = 0;
     virtual int32_t DisableFastInnerCap(int32_t innerCapId) = 0;
 
@@ -93,16 +94,23 @@ public:
 
     virtual void Dump(std::string &dumpString) = 0;
 
-    virtual DeviceRole GetDeviceRole() = 0;
-    virtual AudioDeviceDescriptor &GetDeviceInfo() = 0;
+    virtual DeviceRole GetDeviceRole();
+    virtual AudioDeviceDescriptor &GetDeviceInfo();
+    virtual AudioStreamInfo &GetAudioStreamInfo();
     virtual float GetMaxAmplitude() = 0;
     virtual uint32_t GetLinkedProcessCount() = 0;
 
     virtual AudioMode GetAudioMode() const = 0;
 
     virtual ~AudioEndpoint() = default;
+
+protected:
+    // SamplingRate EncodingType SampleFormat Channel
+    AudioStreamInfo dstStreamInfo_;
+    AudioDeviceDescriptor deviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
+
 private:
-    virtual bool Config(const AudioDeviceDescriptor &deviceInfo) = 0;
+    virtual bool Config(const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

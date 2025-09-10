@@ -277,6 +277,7 @@ OHAudioBufferBase::OHAudioBufferBase(AudioBufferHolder bufferHolder, uint32_t to
 
 int32_t OHAudioBufferBase::SizeCheck()
 {
+    CHECK_AND_RETURN_RET_LOG(byteSizePerFrame_ != 0, ERR_INVALID_PARAM, "failed: invalid byteSizePerFrame_.");
     if (totalSizeInFrame_ > UINT_MAX / byteSizePerFrame_) {
         AUDIO_ERR_LOG("failed: totalSizeInFrame: %{public}u byteSizePerFrame: %{public}u",
             totalSizeInFrame_, byteSizePerFrame_);
@@ -1084,16 +1085,16 @@ void OHAudioBufferBase::InitBasicBufferInfo()
     basicBufferInfo_->muteFactor.store(MAX_FLOAT_VOLUME);
 }
 
-void OHAudioBufferBase::WakeFutexIfNeed()
+void OHAudioBufferBase::WakeFutexIfNeed(uint32_t wakeVal)
 {
     if (basicBufferInfo_) {
-        FutexTool::FutexWake(&(basicBufferInfo_->futexObj));
+        FutexTool::FutexWake(&(basicBufferInfo_->futexObj), wakeVal);
     }
 }
 
-void OHAudioBufferBase::WakeFutex()
+void OHAudioBufferBase::WakeFutex(uint32_t wakeVal)
 {
-    WakeFutexIfNeed();
+    WakeFutexIfNeed(wakeVal);
 }
 } // namespace AudioStandard
 } // namespace OHOS

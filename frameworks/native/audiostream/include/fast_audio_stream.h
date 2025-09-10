@@ -192,7 +192,7 @@ public:
 
     bool GetSilentModeAndMixWithOthers() override;
 
-    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce = false) override;
 
     FastStatus GetFastStatus() override;
 

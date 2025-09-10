@@ -33,6 +33,7 @@
 #include "audio_core_service.h"
 #include "audio_utils_c.h"
 #include "sle_audio_device_manager.h"
+#include "audio_zone_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -125,7 +126,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnect
         "handle special deviceType failed.");
     CHECK_AND_RETURN_LOG(result == SUCCESS, "handle special deviceType failed.");
 
-    AUDIO_WARNING_LOG("[ADeviceEvent] device[%{public}d] address[%{public}s] role[%{public}d] connect[%{public}d]",
+    HILOG_COMM_INFO("[ADeviceEvent] device[%{public}d] address[%{public}s] role[%{public}d] connect[%{public}d]",
         devType, GetEncryptStr(macAddress).c_str(), role, isConnected);
 
     AudioDeviceDescriptor updatedDesc(devType, role == DEVICE_ROLE_NONE ?
@@ -166,7 +167,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnect
 
     // fetch input&output device
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnDeviceStatusUpdated_2", reason);
-    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnDeviceStatusUpdated_2");
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnDeviceStatusUpdated_2", reason);
 
     if (!isConnected) {
         result = HandleLocalDeviceDisconnected(updatedDesc);
@@ -442,6 +443,8 @@ int32_t AudioDeviceStatus::HandleLocalDeviceConnected(AudioDeviceDescriptor &upd
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_HEARING_AID) {
         A2dpDeviceConfigInfo configInfo = {audioStreamInfo, false};
         audioA2dpDevice_.AddHearingAidDevice(updatedDesc.macAddress_, configInfo);
+    } else if (updatedDesc.deviceType_ == DEVICE_TYPE_BT_SPP) {
+        AUDIO_INFO_LOG("not supported");
     }
     return SUCCESS;
 }
@@ -484,6 +487,8 @@ int32_t AudioDeviceStatus::HandleLocalDeviceDisconnected(const AudioDeviceDescri
         if (audioA2dpDevice_.DelHearingAidDevice(updatedDesc.macAddress_) == 0) {
             audioIOHandleMap_.ClosePortAndEraseIOHandle(HEARING_AID_SPEAKER);
         }
+    } else if (updatedDesc.deviceType_ == DEVICE_TYPE_BT_SPP) {
+        AUDIO_INFO_LOG("not supported");
     }
     SleAudioDeviceManager::GetInstance().RemoveNearlinkDevice(updatedDesc);
 
@@ -739,9 +744,15 @@ void AudioDeviceStatus::OnDeviceConfigurationChanged(DeviceType deviceType, cons
         "macAddress:[%{public}s], activeBTDevice:[%{public}s]",
         deviceType, audioActiveDevice_.GetCurrentOutputDeviceType(),
         GetEncryptAddr(macAddress).c_str(), GetEncryptAddr(btDevice).c_str());
-    // only for the active a2dp device.
+
+    // Bt configuration changed cases:
+    // 1) To another stream info: Reload pipe by new stream info.
+    // 2) To another bt device: Reload pipe by new stream info.
+    // 3) To SBC/L2HC codec: Re-fetch pipes for all streams, may change from a2dp to a2dp offload.
     if ((deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) && !macAddress.compare(btDevice)) {
-        int32_t activeSessionsSize = 0;
+        AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("BtConfigurationChanged");
+        AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("BtConfigurationChanged");
+        uint32_t activeSessionsSize = 0;
         BluetoothOffloadState state = NO_A2DP_DEVICE;
         if (audioA2dpOffloadManager_) {
             activeSessionsSize = audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
@@ -831,12 +842,28 @@ string AudioDeviceStatus::GetModuleNameByType(ClassType type)
     return moduleList.front().name;
 }
 
+std::shared_ptr<AudioDeviceDescriptor> AudioDeviceStatus::GetDeviceByStatusInfo(const DStatusInfo &statusInfo)
+{
+    DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
+    AudioDeviceDescriptor deviceDesc(devType, AudioPolicyUtils::GetInstance().GetDeviceRole(devType));
+    deviceDesc.SetDeviceInfo(statusInfo.deviceName, statusInfo.macAddress);
+    DeviceStreamInfo streamInfo = {};
+    std::list<DeviceStreamInfo> streamInfoList = statusInfo.streamInfo.empty() ?
+        std::list<DeviceStreamInfo>{ streamInfo } : statusInfo.streamInfo;
+    deviceDesc.SetDeviceCapability(streamInfoList, 0);
+    deviceDesc.networkId_ = statusInfo.networkId;
+    return std::make_shared<AudioDeviceDescriptor>(deviceDesc);
+}
+
 void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)
 {
-    AUDIO_WARNING_LOG("[ADeviceEvent] remote HDI_PIN[%{public}d] connet[%{public}d] "
+    HILOG_COMM_INFO("[ADeviceEvent] remote HDI_PIN[%{public}d] connet[%{public}d] "
         "networkId[%{public}s]", statusInfo.hdiPin, statusInfo.isConnected,
         GetEncryptStr(statusInfo.networkId).c_str());
     if (isStop) {
+        std::shared_ptr<AudioDeviceDescriptor> device = GetDeviceByStatusInfo(statusInfo);
+        AudioZoneService::GetInstance().MoveDeviceToGlobalFromZones(device);
+
         HandleOfflineDistributedDevice();
         audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
             audioActiveDevice_.GetCurrentOutputDevice(), "OnDeviceStatusUpdated 2.1 param");
@@ -851,7 +878,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSto
     TriggerAvailableDeviceChangedCallback(descForCb, statusInfo.isConnected);
 
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnDeviceStatusUpdated_3", reason);
-    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnDeviceStatusUpdated_3");
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnDeviceStatusUpdated_3", reason);
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
     DeviceRole deviceRole = AudioPolicyUtils::GetInstance().GetDeviceRole(devType);
     if (!statusInfo.isConnected) {
@@ -885,23 +912,23 @@ int32_t AudioDeviceStatus::ActivateNewDevice(std::string networkId, DeviceType d
             "OpenAudioPort failed ioHandle[%{public}u]", ioHandle);
         CHECK_AND_RETURN_RET_LOG(paIndex != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
             "OpenAudioPort failed paId[%{public}u]", paIndex);
-        std::shared_ptr<AudioPipeInfo> pipeInfo_ = std::make_shared<AudioPipeInfo>();
-        pipeInfo_->id_ = ioHandle;
-        pipeInfo_->paIndex_ = paIndex;
+        std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+        pipeInfo->id_ = ioHandle;
+        pipeInfo->paIndex_ = paIndex;
         if (moduleInfo.role == "sink") {
-            pipeInfo_->name_ = "distributed_output";
-            pipeInfo_->pipeRole_ = PIPE_ROLE_OUTPUT;
-            pipeInfo_->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+            pipeInfo->name_ = "distributed_output";
+            pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+            pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
         } else {
-            pipeInfo_->name_ = "distributed_input";
-            pipeInfo_->pipeRole_ = PIPE_ROLE_INPUT;
-            pipeInfo_->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+            pipeInfo->name_ = "distributed_input";
+            pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+            pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
         }
-        pipeInfo_->adapterName_ = moduleInfo.adapterName;
-        pipeInfo_->moduleInfo_ = moduleInfo;
-        pipeInfo_->pipeAction_ = PIPE_ACTION_DEFAULT;
-
-        AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipeInfo_);
+        pipeInfo->adapterName_ = moduleInfo.adapterName;
+        pipeInfo->moduleInfo_ = moduleInfo;
+        pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+        pipeInfo->InitAudioStreamInfo();
+        AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipeInfo);
         audioIOHandleMap_.AddIOHandleInfo(moduleName, ioHandle);
     }
     return SUCCESS;
@@ -925,8 +952,17 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
     audioVolumeManager_.UpdateGroupInfo(INTERRUPT_TYPE, GROUP_NAME_DEFAULT, deviceDesc.interruptGroupId_, networkId,
         statusInfo.isConnected, statusInfo.mappingInterruptId);
     if (statusInfo.isConnected) {
-        if (audioConnectedDevice_.GetConnectedDeviceByType(networkId, devType) != nullptr) {
-            return ERROR;
+        std::shared_ptr<AudioDeviceDescriptor> connDevDesc = audioConnectedDevice_.GetConnectedDeviceByType(networkId,
+            devType);
+        if (connDevDesc != nullptr) {
+            CHECK_AND_RETURN_RET(!statusInfo.streamInfo.empty(), ERROR);
+
+            // Remote device may connect twice, and device capability will be carried in either time. So we need to
+            // update device capability even if device is already connected, and return not success to avoid doing
+            // other connection logic.
+            connDevDesc->SetDeviceCapability(statusInfo.streamInfo, 0);
+            AUDIO_INFO_LOG("Update capability");
+            return SUCCESS_BUT_NOT_CONTINUE;
         }
         int32_t ret = ActivateNewDevice(statusInfo.networkId, devType,
             statusInfo.connectType == ConnectType::CONNECT_TYPE_DISTRIBUTED);
@@ -940,6 +976,8 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
             AudioServerProxy::GetInstance().NotifyDeviceInfoProxy(networkId, true);
         }
     } else {
+        std::shared_ptr<AudioDeviceDescriptor> device = GetDeviceByStatusInfo(statusInfo);
+        AudioZoneService::GetInstance().MoveDeviceToGlobalFromZones(device);
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(deviceDesc, descForCb);
         reason = AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE_UNAVAILABLE;
         std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId,
@@ -1053,7 +1091,6 @@ int32_t AudioDeviceStatus::OnServiceConnected(AudioServiceIndex serviceIndex)
             if (OpenPortAndAddDeviceOnServiceConnected(moduleInfo)) {
                 result = SUCCESS;
             }
-            audioOffloadStream_.SetOffloadAvailableFromXML(moduleInfo);
         }
     }
 
@@ -1122,7 +1159,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
     std::string macAddress, std::string deviceName, bool isActualConnection, AudioStreamInfo streamInfo,
     bool isConnected)
 {
-    AUDIO_WARNING_LOG("[ADeviceEvent] bt device[%{public}d] mac[%{public}s] connect[%{public}d]",
+    HILOG_COMM_INFO("[ADeviceEvent] bt device[%{public}d] mac[%{public}s] connect[%{public}d]",
         devType, GetEncryptStr(macAddress).c_str(), isConnected);
 
     auto devDesc = make_shared<AudioDeviceDescriptor>(updatedDesc);
@@ -1152,7 +1189,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
     }
     // fetch input&output device
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnDeviceStatusUpdated_4", reason);
-    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnDeviceStatusUpdated_4");
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnDeviceStatusUpdated_4", reason);
     // update a2dp offload
     if (devType == DEVICE_TYPE_BLUETOOTH_A2DP && audioA2dpOffloadManager_) {
         audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
@@ -1182,7 +1219,7 @@ void AudioDeviceStatus::UpdateDeviceList(AudioDeviceDescriptor &updatedDesc,  bo
             AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("UpdateDeviceList", reason);
         }
         if (IsInputDevice(updatedDesc.deviceType_, updatedDesc.deviceRole_)) {
-            AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("UpdateDeviceList");
+            AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("UpdateDeviceList", reason);
         }
         int32_t result = HandleLocalDeviceDisconnected(updatedDesc);
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Disconnect local device failed.");
@@ -1239,7 +1276,7 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
 
     OnPreferredStateUpdated(desc, command, reason);
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnDeviceInfoUpdated", reason);
-    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnDeviceInfoUpdated");
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnDeviceInfoUpdated", reason);
     if (portNeedClose != "" && oldPaIndex == GetPaIndexByPortName(portNeedClose)) {
         audioIOHandleMap_.ClosePortAndEraseIOHandle(portNeedClose);
     }
@@ -1375,10 +1412,8 @@ void AudioDeviceStatus::RemoveDeviceFromGlobalOnly(std::shared_ptr<AudioDeviceDe
     AUDIO_INFO_LOG("remove device from global list only");
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
     audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(desc, descForCb);
-    TriggerDeviceChangedCallback(descForCb, false);
-    TriggerAvailableDeviceChangedCallback(descForCb, false);
-    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("RemoveDeviceFromGlobalOnly");
-    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("RemoveDeviceFromGlobalOnly");
+    AudioCoreService::GetCoreService()->GetEventEntry()->FetchOutputDeviceAndRoute("RemoveDeviceFromGlobalOnly");
+    AudioCoreService::GetCoreService()->GetEventEntry()->FetchInputDeviceAndRoute("RemoveDeviceFromGlobalOnly");
 }
 
 void AudioDeviceStatus::AddDeviceBackToGlobalOnly(std::shared_ptr<AudioDeviceDescriptor> desc)
@@ -1387,10 +1422,8 @@ void AudioDeviceStatus::AddDeviceBackToGlobalOnly(std::shared_ptr<AudioDeviceDes
     AUDIO_INFO_LOG("add device back to global list only");
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
     audioDeviceCommon_.UpdateConnectedDevicesWhenConnecting(desc, descForCb);
-    TriggerDeviceChangedCallback(descForCb, true);
-    TriggerAvailableDeviceChangedCallback(descForCb, true);
-    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("AddDeviceBackToGlobalOnly");
-    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("AddDeviceBackToGlobalOnly");
+    AudioCoreService::GetCoreService()->GetEventEntry()->FetchOutputDeviceAndRoute("AddDeviceBackToGlobalOnly");
+    AudioCoreService::GetCoreService()->GetEventEntry()->FetchInputDeviceAndRoute("AddDeviceBackToGlobalOnly");
 }
 
 void AudioDeviceStatus::HandleOfflineDistributedDevice()
@@ -1422,7 +1455,8 @@ void AudioDeviceStatus::HandleOfflineDistributedDevice()
         AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE_UNAVAILABLE);
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("HandleOfflineDistributedDevice",
         AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE_UNAVAILABLE);
-    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("HandleOfflineDistributedDevice");
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("HandleOfflineDistributedDevice",
+        AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE_UNAVAILABLE);
     for (auto &moduleName : modulesNeedClose) {
         audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleName);
     }
@@ -1468,12 +1502,13 @@ int32_t AudioDeviceStatus::RestoreNewA2dpPort(std::vector<std::shared_ptr<AudioS
     pipeInfo->adapterName_ = "a2dp";
     pipeInfo->moduleInfo_ = moduleInfo;
     pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+    pipeInfo->InitAudioStreamInfo();
     pipeInfo->streamDescriptors_.insert(pipeInfo->streamDescriptors_.end(), streamDescs.begin(), streamDescs.end());
     AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipeInfo);
     return SUCCESS;
 }
 
-uint32_t AudioDeviceStatus::GetPaIndexByPortName(std::string &portName)
+uint32_t AudioDeviceStatus::GetPaIndexByPortName(const std::string &portName)
 {
     AudioIOHandle ioHandle;
     CHECK_AND_RETURN_RET_LOG(audioIOHandleMap_.GetModuleIdByKey(portName, ioHandle), OPEN_PORT_FAILURE,

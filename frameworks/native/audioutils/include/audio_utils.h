@@ -77,6 +77,11 @@ public:
     static bool IsRingerAudioScene(const AudioScene &audioScene);
 
     static uint32_t GetSamplePerFrame(const AudioSampleFormat &format);
+
+    static bool IsBackgroundSourceType(const SourceType sourceType);
+
+    static size_t CalculatePcmSizeFromDurationCeiling(std::chrono::nanoseconds duration,
+        uint32_t sampleRate, uint32_t bytesPerSample);
 };
 
 class Trace {
@@ -511,6 +516,7 @@ public:
 
     std::vector<T> GetData()
     {
+        std::lock_guard<std::mutex> lock(mtx_);
         std::vector<T> dataInfo;
         for (size_t i = 0; i < currentSize_; ++i) {
             dataInfo.push_back(data_[i]);
@@ -554,6 +560,7 @@ enum HdiCaptureOffset : uint32_t {
     HDI_CAPTURE_OFFSET_WAKEUP = 8,
     HDI_CAPTURE_OFFSET_BLUETOOTH = 9,
     HDI_CAPTURE_OFFSET_ACCESSORY = 10,
+    HDI_CAPTURE_OFFSET_VOICE_TRANSCRIPTION = 11,
 };
 
 enum HdiRenderOffset : uint32_t {

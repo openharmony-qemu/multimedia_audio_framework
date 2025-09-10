@@ -16,9 +16,13 @@
 #include "audio_policy_client_holder.h"
 #include "audio_service_log.h"
 #include "audio_utils.h"
+#include "audio_policy_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+const std::string NEARLINK_LIST = "audio_nearlink_list";
+}
 void AudioPolicyClientHolder::OnVolumeKeyEvent(VolumeEvent volumeEvent)
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
@@ -47,7 +51,8 @@ void AudioPolicyClientHolder::OnAudioFocusAbandoned(const AudioInterrupt &abando
 void AudioPolicyClientHolder::OnDeviceChange(const DeviceChangeAction &deviceChangeAction)
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
-    auto clientInfo = std::make_shared<AudioDeviceDescriptor::ClientInfo>(apiVersion_);
+    AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion_ };
+    clientInfo.isSupportedNearlink_ = isSupportedNearlink_;
     deviceChangeAction.SetClientInfo(clientInfo);
     audioPolicyClient_->OnDeviceChange(deviceChangeAction);
 }
@@ -55,7 +60,8 @@ void AudioPolicyClientHolder::OnDeviceChange(const DeviceChangeAction &deviceCha
 void AudioPolicyClientHolder::OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo)
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
-    auto clientInfo = std::make_shared<AudioDeviceDescriptor::ClientInfo>(apiVersion_);
+    AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion_ };
+    clientInfo.isSupportedNearlink_ = isSupportedNearlink_;
     microphoneBlockedInfo.SetClientInfo(clientInfo);
     audioPolicyClient_->OnMicrophoneBlocked(microphoneBlockedInfo);
 }
@@ -88,7 +94,8 @@ void AudioPolicyClientHolder::OnPreferredOutputDeviceUpdated(const AudioRenderer
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
-    auto clientInfo = std::make_shared<AudioDeviceDescriptor::ClientInfo>(apiVersion_);
+    AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion_ };
+    clientInfo.isSupportedNearlink_ = isSupportedNearlink_;
     for (auto &deviceDesc : desc) {
         CHECK_AND_CONTINUE_LOG(deviceDesc != nullptr, "deviceDesc is nullptr.");
         deviceDesc->SetClientInfo(clientInfo);
@@ -100,7 +107,8 @@ void AudioPolicyClientHolder::OnPreferredInputDeviceUpdated(const AudioCapturerI
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
-    auto clientInfo = std::make_shared<AudioDeviceDescriptor::ClientInfo>(apiVersion_);
+    AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion_ };
+    clientInfo.isSupportedNearlink_ = isSupportedNearlink_;
     for (auto &deviceDesc : desc) {
         CHECK_AND_CONTINUE_LOG(deviceDesc != nullptr, "deviceDesc is nullptr.");
         deviceDesc->SetClientInfo(clientInfo);
@@ -112,8 +120,8 @@ void AudioPolicyClientHolder::OnRendererStateChange(
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
-    auto clientInfo = std::make_shared<AudioDeviceDescriptor::ClientInfo>(
-        hasBTPermission_, hasSystemPermission_, apiVersion_);
+    AudioDeviceDescriptor::ClientInfo clientInfo { hasBTPermission_, hasSystemPermission_, apiVersion_ };
+    clientInfo.isSupportedNearlink_ = isSupportedNearlink_;
     for (auto &audioRendererChangeInfo : audioRendererChangeInfos) {
         CHECK_AND_CONTINUE_LOG(audioRendererChangeInfo != nullptr, "audioRendererChangeInfo is nullptr.");
         audioRendererChangeInfo->SetClientInfo(clientInfo);
@@ -125,8 +133,8 @@ void AudioPolicyClientHolder::OnCapturerStateChange(
     std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
-    auto clientInfo = std::make_shared<AudioDeviceDescriptor::ClientInfo>(
-        hasBTPermission_, hasSystemPermission_, apiVersion_);
+    AudioDeviceDescriptor::ClientInfo clientInfo { hasBTPermission_, hasSystemPermission_, apiVersion_ };
+    clientInfo.isSupportedNearlink_ = isSupportedNearlink_;
     for (auto &audioCapturerChangeInfo : audioCapturerChangeInfos) {
         CHECK_AND_CONTINUE_LOG(audioCapturerChangeInfo != nullptr, "audioCapturerChangeInfo is nullptr.");
         audioCapturerChangeInfo->SetClientInfo(clientInfo);
@@ -138,7 +146,8 @@ void AudioPolicyClientHolder::OnRendererDeviceChange(const uint32_t sessionId,
     const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
-    auto clientInfo = std::make_shared<AudioDeviceDescriptor::ClientInfo>(apiVersion_);
+    AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion_ };
+    clientInfo.isSupportedNearlink_ = isSupportedNearlink_;
     deviceInfo.SetClientInfo(clientInfo);
     audioPolicyClient_->OnRendererDeviceChange(sessionId, deviceInfo, reason);
 }
@@ -179,7 +188,8 @@ void AudioPolicyClientHolder::OnSpatializationEnabledChangeForAnyDevice(
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
     CHECK_AND_RETURN_LOG(deviceDescriptor != nullptr, "deviceDescriptor is nullptr.");
     if (hasSystemPermission_) {
-        auto clientInfo = std::make_shared<AudioDeviceDescriptor::ClientInfo>(apiVersion_);
+        AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion_ };
+        clientInfo.isSupportedNearlink_ = isSupportedNearlink_;
         deviceDescriptor->SetClientInfo(clientInfo);
         audioPolicyClient_->OnSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled);
     } else {
@@ -209,7 +219,8 @@ void AudioPolicyClientHolder::OnHeadTrackingEnabledChangeForAnyDevice(
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
     CHECK_AND_RETURN_LOG(deviceDescriptor != nullptr, "deviceDescriptor is nullptr.");
     if (hasSystemPermission_) {
-        auto clientInfo = std::make_shared<AudioDeviceDescriptor::ClientInfo>(apiVersion_);
+        AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion_ };
+        clientInfo.isSupportedNearlink_ = isSupportedNearlink_;
         deviceDescriptor->SetClientInfo(clientInfo);
         audioPolicyClient_->OnHeadTrackingEnabledChangeForAnyDevice(deviceDescriptor, enabled);
     } else {
@@ -267,5 +278,11 @@ void AudioPolicyClientHolder::OnAudioSessionCurrentDeviceChanged(
     audioPolicyClient_->OnAudioSessionCurrentDeviceChanged(deviceChangedEvent);
 }
 
+void AudioPolicyClientHolder::OnAudioSessionCurrentInputDeviceChanged(
+    const CurrentInputDeviceChangedEvent &deviceChangedEvent)
+{
+    CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
+    audioPolicyClient_->OnAudioSessionCurrentInputDeviceChanged(deviceChangedEvent);
+}
 } // namespace AudioStandard
 } // namespace OHOS

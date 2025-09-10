@@ -19,7 +19,7 @@ import("../../../bluetooth_part.gni")
 import("../../../config.gni")
 
 ohos_fuzztest("HapeAudioFormatConverterNodeFuzzTest") {
-  module_out_path = "audio_framework/audio_framework_route"
+  module_out_path = "audio_framework/audio_framework_engine"
   fuzz_config_file = "../hapeaudioformatconverternode_fuzzer"
 
   include_dirs = [
@@ -36,6 +36,8 @@ ohos_fuzztest("HapeAudioFormatConverterNodeFuzzTest") {
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
     "-fno-access-control",
+    "-DENABLE_HIDUMP_DFX",
+    "-DENABLE_HOOK_PCM",
   ]
 
   sources = [

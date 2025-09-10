@@ -20,6 +20,7 @@
 #include "audio_spatialization_service.h"
 #include "audio_policy_log.h"
 #include "audio_errors.h"
+#include "parameters.h"
 #include <thread>
 #include <string>
 #include <memory>
@@ -1105,6 +1106,115 @@ HWTEST_F(AudioStreamCollectorUnitTest, IsTransparentCapture_002, TestSize.Level1
     clientUid = 5000;
     ret = collector.IsTransparentCapture(clientUid);
     EXPECT_EQ(true, ret);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: ResetCapturerStreamDeviceInfo_001
+* @tc.desc  : Test ResetCapturerStreamDeviceInfo.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, ResetCapturerStreamDeviceInfo_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    AudioDeviceDescriptor updataDesc(AudioDeviceDescriptor::DEVICE_INFO);
+    updataDesc.deviceType_ = DEVICE_TYPE_EARPIECE;
+    updataDesc.macAddress_ = "12345";
+    updataDesc.networkId_ = "12345";
+
+    shared_ptr<AudioCapturerChangeInfo> rendererChangeInfo = make_shared<AudioCapturerChangeInfo>();
+
+    (rendererChangeInfo->inputDeviceInfo).deviceType_ = DEVICE_TYPE_EARPIECE;
+    (rendererChangeInfo->inputDeviceInfo).macAddress_ = "12345";
+    (rendererChangeInfo->inputDeviceInfo).networkId_ = "12345";
+    rendererChangeInfo->capturerState = CAPTURER_STOPPED;
+    collector.audioCapturerChangeInfos_.push_back(move(rendererChangeInfo));
+
+    EXPECT_NO_THROW(
+        collector.ResetCapturerStreamDeviceInfo(updataDesc);
+    );
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: ResetRendererStreamDeviceInfo_001
+* @tc.desc  : Test ResetRendererStreamDeviceInfo.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, ResetRendererStreamDeviceInfo_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    AudioDeviceDescriptor updataDesc(AudioDeviceDescriptor::DEVICE_INFO);
+    updataDesc.deviceType_ = DEVICE_TYPE_EARPIECE;
+    updataDesc.macAddress_ = "12345";
+    updataDesc.networkId_ = "12345";
+
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+
+    (rendererChangeInfo->outputDeviceInfo).deviceType_ = DEVICE_TYPE_EARPIECE;
+    (rendererChangeInfo->outputDeviceInfo).macAddress_ = "12345";
+    (rendererChangeInfo->outputDeviceInfo).networkId_ = "12345";
+    rendererChangeInfo->rendererState = RENDERER_STOPPED;
+    collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+
+    EXPECT_NO_THROW(
+        collector.ResetRendererStreamDeviceInfo(updataDesc);
+    );
+}
+
+/**
+* @tc.name  : Test PostReclaimMemoryTask.
+* @tc.number: PostReclaimMemoryTask_001
+* @tc.desc  : Test PostReclaimMemoryTask.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, PostReclaimMemoryTask_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    collector.audioRendererChangeInfos_.clear();
+    collector.audioCapturerChangeInfos_.clear();
+    collector.audioPolicyServerHandler_ = nullptr;
+    collector.PostReclaimMemoryTask();
+    collector.audioPolicyServerHandler_ = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
+    collector.PostReclaimMemoryTask();
+    std::string retString = system::GetParameter("persist.ace.testmode.enabled", "0");
+    system::SetParameter("persist.ace.testmode.enabled", "1");
+    collector.PostReclaimMemoryTask();
+    collector.ReclaimMem();
+    collector.isActivatedMemReclaiTask_ = true;
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    EXPECT_NE(rendererChangeInfo, nullptr);
+    rendererChangeInfo->rendererState = RENDERER_RUNNING;
+    collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+    collector.PostReclaimMemoryTask();
+    system::SetParameter("persist.ace.testmode.enabled", retString);
+    EXPECT_NE("1", system::GetParameter("persist.ace.testmode.enabled", "0"));
+}
+
+/**
+* @tc.name  : Test CheckAudioStateIdle.
+* @tc.number: CheckAudioStateIdle_001
+* @tc.desc  : Test CheckAudioStateIdle.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, CheckAudioStateIdle_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    EXPECT_NE(rendererChangeInfo, nullptr);
+    rendererChangeInfo->rendererState = RENDERER_RUNNING;
+    collector.audioRendererChangeInfos_.push_back(rendererChangeInfo);
+    EXPECT_EQ(false, collector.CheckAudioStateIdle());
+
+    collector.audioRendererChangeInfos_.clear();
+    shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_shared<AudioCapturerChangeInfo>();
+    EXPECT_NE(capturerChangeInfo, nullptr);
+    capturerChangeInfo->capturerState = CAPTURER_RUNNING;
+    collector.audioCapturerChangeInfos_.push_back(capturerChangeInfo);
+    EXPECT_EQ(false, collector.CheckAudioStateIdle());
+
+    collector.audioCapturerChangeInfos_.clear();
+    rendererChangeInfo->rendererState = RENDERER_STOPPED;
+    capturerChangeInfo->capturerState = CAPTURER_STOPPED;
+    collector.audioRendererChangeInfos_.push_back(rendererChangeInfo);
+    collector.audioCapturerChangeInfos_.push_back(capturerChangeInfo);
+    EXPECT_EQ(true, collector.CheckAudioStateIdle());
 }
 } // namespace AudioStandard
 } // namespace OHOS

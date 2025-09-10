@@ -49,7 +49,8 @@ ProAudioStreamManager::~ProAudioStreamManager()
     AUDIO_DEBUG_LOG("~ProAudioStreamManager");
 }
 
-int32_t ProAudioStreamManager::CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream)
+int32_t ProAudioStreamManager::CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream,
+    std::optional<std::string_view> originDeviceName)
 {
     Trace trace("ProAudioStreamManager::CreateRender");
     AUDIO_DEBUG_LOG("Create renderer start,manager type:%{public}d", managerType_);

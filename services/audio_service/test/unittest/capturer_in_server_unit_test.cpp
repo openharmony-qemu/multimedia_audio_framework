@@ -409,8 +409,8 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_010, TestSize.Level1
 HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_011, TestSize.Level1)
 {
     AudioProcessConfig processConfig = GetInnerCapConfig();
-    int32_t UID_MSDP_SA = 6699;
-    processConfig.callerUid = UID_MSDP_SA;
+    int32_t udimsdpsa = 6699;
+    processConfig.callerUid = udimsdpsa;
     std::weak_ptr<IStreamListener> streamListener;
 
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
@@ -466,8 +466,8 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_012, TestSize.Level1
 HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_013, TestSize.Level1)
 {
     AudioProcessConfig processConfig = GetInnerCapConfig();
-    int32_t UID_MSDP_SA = 6699;
-    processConfig.callerUid = UID_MSDP_SA;
+    int32_t udimsdpsa = 6699;
+    processConfig.callerUid = udimsdpsa;
     std::weak_ptr<IStreamListener> streamListener;
 
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
@@ -691,6 +691,24 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_020, TestSize.Level1
 }
 
 #ifdef HAS_FEATURE_INNERCAPTURER
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: pdatePlaybackCaptureConfigInLegacy_021.
+ * @tc.desc  : Test pdatePlaybackCaptureConfigInLegacy interface.
+ */
+HWTEST_F(CapturerInServerUnitTest, UpdatePlaybackCaptureConfigInLegacy_001, TestSize.Level3)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    AudioPlaybackCaptureConfig config;
+    processConfig.innerCapMode = MODERN_INNER_CAP;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    int32_t result = capturerInServer_->UpdatePlaybackCaptureConfigInLegacy(config);
+    EXPECT_EQ(result, SUCCESS);
+}
+
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
@@ -1364,6 +1382,49 @@ HWTEST_F(CapturerInServerUnitTest, OnStatusUpdate_002, TestSize.Level1)
     capturerInServer_->OnStatusUpdate(static_cast<IOperation>(999));
 
     EXPECT_NE(capturerInServer_->status_, I_STATUS_INVALID);
+}
+
+/**
+ * @tc.name  : Test OnStatusUpdate.
+ * @tc.type  : FUNC
+ * @tc.number: StopSession_001
+ * @tc.desc  : Test StopSession interface.
+ */
+HWTEST_F(CapturerInServerUnitTest, StopSession_001, TestSize.Level3)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    uint32_t totalSizeInFrame = 10;
+    uint32_t spanSizeInFrame = 10;
+    uint32_t byteSizePerFrame = 10;
+ 
+    capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(AudioBufferHolder::AUDIO_CLIENT,
+        totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    auto result = capturerInServer_->StopSession();
+ 
+    EXPECT_EQ(result, SUCCESS);
+}
+ 
+/**
+ * @tc.name  : Test OnStatusUpdate.
+ * @tc.type  : FUNC
+ * @tc.number: ResolveBufferBaseAndGetServerSpanSize_001
+ * @tc.desc  : Test ResolveBufferBaseAndGetServerSpanSize interface.
+ */
+HWTEST_F(CapturerInServerUnitTest, ResolveBufferBaseAndGetServerSpanSize_001, TestSize.Level3)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    std::shared_ptr<OHAudioBufferBase> buffer;
+    uint32_t spanSizeInFrame = 1;
+    uint64_t engineTotalSizeInFrame = 1;
+ 
+    auto result = capturerInServer_->ResolveBufferBaseAndGetServerSpanSize(
+                    buffer, spanSizeInFrame, engineTotalSizeInFrame);
+ 
+    EXPECT_EQ(result, ERR_NOT_SUPPORTED);
 }
 } // namespace AudioStandard
 } // namespace OHOS

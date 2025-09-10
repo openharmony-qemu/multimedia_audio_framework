@@ -61,6 +61,7 @@ ohos_unittest("renderer_in_server_unit_test") {
     "../../../../../services/audio_policy/client/include",
     "../../../../../frameworks/native/audiopolicy/include",
     "../../../../../frameworks/native/audioclock/include",
+    "../../../../audio_engine/manager/include",
   ]
 
   configs = [ ":module_private_config" ]
@@ -149,6 +150,8 @@ ohos_unittest("renderer_in_server_second_unit_test") {
     "../../../../../services/audio_policy/client/include",
     "../../../../../frameworks/native/audiopolicy/include",
     "../../../../../frameworks/native/audioclock/include",
+    "../../../../../services/audio_engine/manager/include",
+    "../../../../../services/audio_engine/buffer",
   ]
 
   configs = [ ":module_private_config" ]
@@ -186,7 +189,7 @@ ohos_unittest("renderer_in_server_third_unit_test") {
 
   cflags = [ "-fno-access-control" ]
 
-  sources = [ "./src/renderer_in_server_second_unit_test.cpp" ]
+  sources = [ "./src/renderer_in_server_third_unit_test.cpp" ]
 
   include_dirs = [
     "../../../server/include",
@@ -206,6 +209,7 @@ ohos_unittest("renderer_in_server_third_unit_test") {
     "../../../../../services/audio_policy/client/include",
     "../../../../../frameworks/native/audiopolicy/include",
     "../../../../../frameworks/native/audioclock/include",
+    "../../../../../services/audio_engine/manager/include",
   ]
 
   configs = [ ":module_private_config" ]

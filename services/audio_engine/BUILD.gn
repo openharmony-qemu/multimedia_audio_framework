@@ -40,6 +40,7 @@ ohos_shared_library("audio_engine_utils") {
     "dfx",
     "buffer",
     "manager/include",
+    "monitor/include",
     "../audio_service/common/include",
     "../audio_service/server/include",
     "../../interfaces/inner_api/native/audiocommon/include",
@@ -53,6 +54,7 @@ ohos_shared_library("audio_engine_utils") {
   ]
 
   deps = [
+    ":audio_engine_monitor",
     "../audio_service:audio_common",
     "../../frameworks/native/audioutils:audio_utils",
   ]
@@ -108,6 +110,7 @@ config("audio_engine_node_config") {
   include_dirs = [
     "node/include",
     "manager/include",
+    "monitor/include",
     "buffer",
     "simd",
     "utils",
@@ -234,11 +237,13 @@ ohos_shared_library("audio_engine_manager") {
     "manager/src/i_hpae_capturer_manager.cpp",
     "manager/src/i_hpae_manager.cpp",
     "manager/src/i_hpae_renderer_manager.cpp",
+    "manager/src/hpae_virtual_capturer_manager.cpp",
   ]
 
   deps = [
     ":audio_engine_node",
     ":audio_engine_utils",
+    ":audio_engine_monitor",
     "../../frameworks/native/audioeffect:audio_effect",
     "../../frameworks/native/audioqosmanager:audio_qosmanager",
     "../../frameworks/native/audioschedule:audio_schedule",
@@ -259,6 +264,33 @@ ohos_shared_library("audio_engine_manager") {
     "samgr:samgr_proxy",
   ]
 
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
+ohos_shared_library("audio_engine_monitor") {
+  stack_protector_ret = true
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+  }
+  install_enable = true
+
+  configs = [ ":audio_engine_node_config" ]
+
+  sources = [
+    "monitor/src/hpae_message_queue_monitor.cpp",
+    "monitor/src/hpae_stream_move_monitor.cpp"
+  ]
+
+  external_deps = [
+    "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "samgr:samgr_proxy",
+  ]
   subsystem_name = "multimedia"
   part_name = "audio_framework"
 }

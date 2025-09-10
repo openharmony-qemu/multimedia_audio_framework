@@ -73,6 +73,7 @@ std::map<std::string, std::string> AudioIOHandleMap::sinkPortStrToClassStrMap_ =
     {OFFLOAD_PRIMARY_SPEAKER, OFFLOAD_CLASS},
     {PRIMARY_DIRECT_VOIP, DIRECT_VOIP_CLASS},
     {PRIMARY_MMAP_VOIP, MMAP_VOIP_CLASS},
+    {MCH_PRIMARY_SPEAKER, MCH_CLASS},
 };
 
 void AudioIOHandleMap::DeInit()
@@ -201,6 +202,7 @@ int32_t AudioIOHandleMap::OpenPortAndInsertIOHandle(const std::string &moduleNam
     pipeInfo->adapterName_ = moduleInfo.adapterName;
     pipeInfo->moduleInfo_ = moduleInfo;
     pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+    pipeInfo->InitAudioStreamInfo();
     AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipeInfo);
 
     AddIOHandleInfo(moduleName, ioHandle);
@@ -210,12 +212,19 @@ int32_t AudioIOHandleMap::OpenPortAndInsertIOHandle(const std::string &moduleNam
 
 int32_t AudioIOHandleMap::ClosePortAndEraseIOHandle(const std::string &moduleName)
 {
+    std::shared_ptr<AudioPipeManager> pipeManager = AudioPipeManager::GetPipeManager();
+    auto pipeInfoInput = pipeManager->GetPipeinfoByNameAndFlag("primary", AUDIO_INPUT_FLAG_NORMAL);
+    if (pipeInfoInput != nullptr && pipeInfoInput->softLinkFlag_) {
+        pipeInfoInput->streamDescMap_.clear();
+        pipeInfoInput->streamDescriptors_.clear();
+        pipeManager->UpdateAudioPipeInfo(pipeInfoInput);
+        return SUCCESS;
+    }
     AudioIOHandle ioHandle;
     CHECK_AND_RETURN_RET_LOG(GetModuleIdByKey(moduleName, ioHandle), ERROR,
         "can not find %{public}s in io map", moduleName.c_str());
     DelIOHandleInfo(moduleName);
 
-    std::shared_ptr<AudioPipeManager> pipeManager = AudioPipeManager::GetPipeManager();
     uint32_t paIndex = pipeManager->GetPaIndexByIoHandle(ioHandle);
     pipeManager->RemoveAudioPipeInfo(ioHandle);
 
@@ -301,7 +310,7 @@ void AudioIOHandleMap::DoUnmutePort(int32_t muteDuration, const std::string &por
 }
 
 int32_t AudioIOHandleMap::ReloadPortAndUpdateIOHandle(std::shared_ptr<AudioPipeInfo> &pipeInfo,
-    const AudioModuleInfo &moduleInfo)
+    const AudioModuleInfo &moduleInfo, bool softLinkFlag)
 {
     std::string oldModuleName = pipeInfo->moduleInfo_.name;
     AudioIOHandle ioHandle;
@@ -329,6 +338,8 @@ int32_t AudioIOHandleMap::ReloadPortAndUpdateIOHandle(std::shared_ptr<AudioPipeI
     pipeInfo->adapterName_ = moduleInfo.adapterName;
     pipeInfo->moduleInfo_ = moduleInfo;
     pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+    pipeInfo->softLinkFlag_ = softLinkFlag;
+    pipeInfo->InitAudioStreamInfo();
 
     AddIOHandleInfo(moduleInfo.name, ioHandle);
     return SUCCESS;

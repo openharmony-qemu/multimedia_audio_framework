@@ -314,25 +314,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_012, TestSize.Lev
 
 /**
 * @tc.name  : Test AudioPolicyService.
-* @tc.number: AudioPolicyServiceTest_013
-* @tc.desc  : Test DynamicUnloadModule interfaces.
-*/
-HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_013, TestSize.Level1)
-{
-    AudioPipeType pipeType;
-    pipeType = PIPE_TYPE_OFFLOAD;
-    auto ret = AudioPolicyService::GetAudioPolicyService().DynamicUnloadModule(pipeType);
-    EXPECT_EQ(SUCCESS, ret);
-    pipeType = PIPE_TYPE_MULTICHANNEL;
-    ret = AudioPolicyService::GetAudioPolicyService().DynamicUnloadModule(pipeType);
-    EXPECT_EQ(ERROR, ret);
-    pipeType = PIPE_TYPE_HIGHRESOLUTION;
-    ret = AudioPolicyService::GetAudioPolicyService().DynamicUnloadModule(pipeType);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
-* @tc.name  : Test AudioPolicyService.
 * @tc.number: AudioPolicyServiceTest_014
 * @tc.desc  : Test RegisterBluetoothListener interfaces.
 */
@@ -376,6 +357,23 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_016, TestSize.Lev
     propertyArray.property.push_back(tmp);
     auto ret = AudioPolicyService::GetAudioPolicyService().SetAudioEffectProperty(propertyArray);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
+}
+
+/**
+* @tc.name  : Test AudioPolicyService.
+* @tc.number: AudioPolicyServiceTest_017
+* @tc.desc  : Test LoadModernOffloadCapSource interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_017, TestSize.Level1)
+{
+    auto ret0 = AudioPolicyService::GetAudioPolicyService().LoadModernOffloadCapSource();
+    EXPECT_EQ(SUCCESS, ret0);
+
+    AudioIOHandle audioIOHandle = 1003;
+    AudioPolicyService::GetAudioPolicyService().audioIOHandleMap_.IOHandles_["offloadCapturerSource"] = audioIOHandle;
+
+    auto ret1 = AudioPolicyService::GetAudioPolicyService().LoadModernOffloadCapSource();
+    EXPECT_EQ(SUCCESS, ret1);
 }
 } // namespace AudioStandard
 } // namespace OHOS

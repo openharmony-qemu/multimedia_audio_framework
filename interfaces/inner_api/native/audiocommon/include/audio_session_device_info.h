@@ -95,6 +95,60 @@ struct CurrentOutputDeviceChangedEvent : public Parcelable {
         return event;
     }
 };
+
+/**
+ * Audio session device change info.
+ * @since 21
+ */
+struct CurrentInputDeviceChangedEvent : public Parcelable {
+    /**
+     * Audio device descriptors after changed.
+     * @since 21
+     */
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+    /**
+     * Audio device changed reason.
+     * @since 21
+     */
+    AudioStreamDeviceChangeReason changeReason;
+
+    static constexpr int32_t DEVICE_CHANGE_VALID_SIZE = 128;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        parcel.WriteInt32(static_cast<int32_t>(changeReason));
+        int32_t size = static_cast<int32_t>(devices.size());
+        parcel.WriteInt32(size);
+        for (int i = 0; i < size; i++) {
+            if (devices[i] != nullptr) {
+                devices[i]->Marshalling(parcel);
+            }
+        }
+        return true;
+    }
+
+    static CurrentInputDeviceChangedEvent *Unmarshalling(Parcel &parcel)
+    {
+        auto event = new(std::nothrow) CurrentInputDeviceChangedEvent();
+        if (event == nullptr) {
+            return nullptr;
+        }
+
+        event->changeReason = static_cast<AudioStreamDeviceChangeReason>(parcel.ReadInt32());
+        int32_t size = parcel.ReadInt32();
+        if (size < 0 || size >= DEVICE_CHANGE_VALID_SIZE) {
+            delete event;
+            return nullptr;
+        }
+        for (int32_t i = 0; i < size; i++) {
+            auto device = AudioDeviceDescriptor::Unmarshalling(parcel);
+            if (device != nullptr) {
+                event->devices.emplace_back(std::shared_ptr<AudioDeviceDescriptor>(device));
+            }
+        }
+        return event;
+    }
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_SESSION_DEVICE_INFO_H

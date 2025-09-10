@@ -325,5 +325,98 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_016, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 }
 
+/**
+ * @tc.name  : Test IsSupportedNearlink API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_017
+ * @tc.desc  : Test IsSupportedNearlink with system permission
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_017, TestSize.Level1)
+{
+    AudioPolicyUtils* audioPolicyUtilsTest_ = nullptr;
+    audioPolicyUtilsTest_ = &AudioPolicyUtils::GetInstance();
+    ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
+
+    std::string bundleName = "com.ohos.test";
+    bool hasSystemPermission = true;
+    int32_t apiVersion = 0;
+
+    int32_t ret = audioPolicyUtilsTest_->IsSupportedNearlink(bundleName, apiVersion, hasSystemPermission);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test IsSupportedNearlink API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_018
+ * @tc.desc  : Test IsSupportedNearlink without system permission.
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_018, TestSize.Level1)
+{
+    AudioPolicyUtils* audioPolicyUtilsTest_ = nullptr;
+    audioPolicyUtilsTest_ = &AudioPolicyUtils::GetInstance();
+    ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
+
+    std::string bundleName = "com.ohos.test";
+    bool hasSystemPermission = false;
+    int32_t apiVersion = 0;
+
+    int32_t ret = audioPolicyUtilsTest_->IsSupportedNearlink(bundleName, apiVersion, hasSystemPermission);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test IsSupportedNearlink API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_019
+ * @tc.desc  : Test IsSupportedNearlink without system permission with 20 api.
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_019, TestSize.Level1)
+{
+    AudioPolicyUtils* audioPolicyUtilsTest_ = nullptr;
+    audioPolicyUtilsTest_ = &AudioPolicyUtils::GetInstance();
+    ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
+
+    std::string bundleName = "com.ohos.test";
+    bool hasSystemPermission = false;
+    int32_t apiVersion = 20;
+
+    int32_t ret = audioPolicyUtilsTest_->IsSupportedNearlink(bundleName, apiVersion, hasSystemPermission);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test IsWirelessDevice API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_020
+ * @tc.desc  : Test IsWirelessDevice.
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_020, TestSize.Level1)
+{
+    AudioPolicyUtils* audioPolicyUtilsTest_ = nullptr;
+    audioPolicyUtilsTest_ = &AudioPolicyUtils::GetInstance();
+    ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
+
+    DeviceType type = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
+    int32_t ret = audioPolicyUtilsTest_->IsWirelessDevice(type);
+    EXPECT_EQ(ret, true);
+
+    type = DeviceType::DEVICE_TYPE_BLUETOOTH_SCO;
+    ret = audioPolicyUtilsTest_->IsWirelessDevice(type);
+    EXPECT_EQ(ret, true);
+
+    type = DeviceType::DEVICE_TYPE_NEARLINK;
+    ret = audioPolicyUtilsTest_->IsWirelessDevice(type);
+    EXPECT_EQ(ret, true);
+
+    type = DeviceType::DEVICE_TYPE_NEARLINK_IN;
+    ret = audioPolicyUtilsTest_->IsWirelessDevice(type);
+    EXPECT_EQ(ret, true);
+
+    type = DeviceType::DEVICE_TYPE_SPEAKER;
+    ret = audioPolicyUtilsTest_->IsWirelessDevice(type);
+    EXPECT_EQ(ret, false);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

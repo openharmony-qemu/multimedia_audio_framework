@@ -64,7 +64,7 @@ public:
     std::string GetSinkName(const AudioDeviceDescriptor &desc, int32_t sessionId);
     std::string GetSinkName(std::shared_ptr<AudioDeviceDescriptor> desc, int32_t sessionId);
     uint32_t PcmFormatToBytes(AudioSampleFormat format);
-    std::string GetSourcePortName(DeviceType deviceType);
+    std::string GetSourcePortName(DeviceType deviceType, uint32_t routeFlag = AUDIO_FLAG_NONE);
     void UpdateDisplayName(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     void UpdateDisplayNameForRemote(std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     int32_t GetDeviceNameFromDataShareHelper(std::string &deviceName);
@@ -88,6 +88,12 @@ public:
     void SetScoExcluded(bool scoExcluded);
     bool GetScoExcluded();
     bool IsDataShareReady();
+
+    int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
+    bool IsBundleNameInList(const std::string &bundleName, const std::string &listType);
+    bool IsSupportedNearlink(const std::string &bundleName, int32_t apiVersion, bool hasSystemPermission);
+
+    bool IsWirelessDevice(DeviceType deviceType);
 private:
     AudioPolicyUtils() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
@@ -108,6 +114,8 @@ private:
     AudioDeviceManager &audioDeviceManager_;
     AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;
     AudioPolicyConfigManager& audioConfigManager_;
+
+    sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
 };
 
 }

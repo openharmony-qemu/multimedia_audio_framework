@@ -234,7 +234,7 @@ public:
 
     FutexCode WaitFor(int64_t timeoutInNs, const OnIndexChange &pred);
 
-    void WakeFutex();
+    void WakeFutex(uint32_t wakeVal = IS_READY);
 
     RestoreStatus GetRestoreStatus();
 private:
@@ -248,7 +248,7 @@ private:
 
     void InitBasicBufferInfo();
 
-    void WakeFutexIfNeed();
+    void WakeFutexIfNeed(uint32_t wakeVal = IS_READY);
 
     uint32_t sessionId_ = 0;
 
@@ -366,6 +366,8 @@ public:
     bool GetStopFlag() const;
 
     FutexCode WaitFor(int64_t timeoutInNs, const OnIndexChange &pred);
+
+    void WakeFutex(uint32_t wakeVal = IS_READY);
 
 private:
     int32_t Init(int dataFd, int infoFd);

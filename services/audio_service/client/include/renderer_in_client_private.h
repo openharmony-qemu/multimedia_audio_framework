@@ -200,7 +200,7 @@ public:
     bool RestoreAudioStream(bool needStoreState = true) override;
     void JoinCallbackLoop() override;
 
-    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce = false) override;
     FastStatus GetFastStatus() override;
     DeviceType GetDefaultOutputDevice() override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
@@ -239,6 +239,7 @@ private:
     int32_t WriteCacheData(uint8_t *buffer, size_t bufferSize, bool speedCached, size_t oriBufferSize);
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
+    void CallClientHandle();
     bool WriteCallbackFunc();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
@@ -295,6 +296,7 @@ private:
     bool CheckBufferValid(const BufferDesc &bufDesc);
 
     bool IsRestoreNeeded();
+    void RecordDropPosition(size_t dataLength);
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
@@ -441,6 +443,8 @@ private:
     };
     std::vector<uint64_t> lastSwitchPosition_ = {0, 0};
     std::vector<uint64_t> lastSwitchPositionWithSpeed_ = {0, 0};
+    std::atomic<uint64_t> dropPosition_ = 0;
+    std::atomic<uint64_t> dropHdiPosition_ = 0;
 
     struct WrittenFramesWithSpeed {
         uint64_t writtenFrames = 0;
@@ -460,6 +464,8 @@ private:
     bool isUpEvent_ = false;
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
     int64_t preWriteEndTime_ = 0;
+    bool loudVolumeModeEnable_ = false;
+
     uint64_t lastFlushReadIndex_ = 0;
     uint64_t lastSpeedFlushReadIndex_ = 0;
     bool isDataLinkConnected_ = false;

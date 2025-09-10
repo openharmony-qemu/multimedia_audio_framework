@@ -45,7 +45,6 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 20;
 static int32_t NUM_2 = 2;
 
 typedef void (*TestFuncs)();
@@ -231,18 +230,6 @@ void SetCallDeviceActiveFuzzTest()
     }
 }
 
-void CheckActiveOutputDeviceSupportOffloadFuzzTest()
-{
-    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
-    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
-    uint32_t roleCount = GetData<uint32_t>() % DeviceRoleVec.size();
-    DeviceRole role = DeviceRoleVec[roleCount];
-    AudioDeviceDescriptor audioDeviceDescriptor(deviceType, role);
-    audioActiveDevice->SetCurrentOutputDevice(audioDeviceDescriptor);
-    audioActiveDevice->CheckActiveOutputDeviceSupportOffload();
-}
-
 void IsDirectSupportedDeviceFuzzTest()
 {
     auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
@@ -361,8 +348,7 @@ void AudioActiveDeviceIsDeviceInVectorFuzzTest()
 void AudioDeviceDescriptorSetClientInfoFuzzTest()
 {
     AudioDeviceDescriptor deviceDescriptor;
-    std::shared_ptr<AudioDeviceDescriptor::ClientInfo> clientInfo =
-        std::make_shared<AudioDeviceDescriptor::ClientInfo>();
+    AudioDeviceDescriptor::ClientInfo clientInfo;
     deviceDescriptor.GetDeviceCategory();
     deviceDescriptor.SetClientInfo(clientInfo);
 }
@@ -386,7 +372,7 @@ void AudioDeviceDescriptorGetKeyFuzzTest()
     deviceDescriptor.GetKey();
 }
 
-TestFuncs g_testFuncs[TESTSIZE] = {
+TestFuncs g_testFuncs[] = {
     GetActiveA2dpDeviceStreamInfoFuzzTest,
     GetMaxAmplitudeFuzzTest,
     UpdateDeviceFuzzTest,
@@ -394,7 +380,6 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     HandleNegtiveBtFuzzTest,
     SetDeviceActiveFuzzTest,
     SetCallDeviceActiveFuzzTest,
-    CheckActiveOutputDeviceSupportOffloadFuzzTest,
     IsDirectSupportedDeviceFuzzTest,
     IsDeviceActiveFuzzTest,
     AudioActiveDeviceGetCurrentOutputDeviceCategoryFuzzTest,

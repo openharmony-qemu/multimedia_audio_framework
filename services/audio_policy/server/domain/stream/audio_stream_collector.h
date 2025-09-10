@@ -81,7 +81,7 @@ public:
     bool ExistStreamForPipe(AudioPipeType pipeType);
     int32_t GetRendererDeviceInfo(const int32_t sessionId, AudioDeviceDescriptor &outputDeviceInfo);
 
-    std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction>& GetConcurrencyMap();
+    ConcurrencyAction GetConcurrencyAction(const AudioPipeType existingPipe, const AudioPipeType commingPipe);
     void ResetRendererStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc);
     void ResetCapturerStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc);
     StreamUsage GetRunningStreamUsageNoUltrasonic();
@@ -100,8 +100,10 @@ public:
     bool HasRunningRendererStream();
     bool HasRunningRecognitionCapturerStream();
     bool HasRunningNormalCapturerStream(DeviceType type);
+    bool HasRunningCapturerStreamByUid(int32_t uid = INVALID_UID);
     bool IsMediaPlaying();
     bool IsVoipStreamActive();
+    bool IsStreamRunning(StreamUsage streamUsage);
     void UpdateAppVolume(int32_t appUid, int32_t volume);
 
 private:
@@ -140,6 +142,11 @@ private:
     bool CheckRendererInfoChanged(AudioStreamChangeInfo &streamChangeInfo);
     bool IsTransparentCapture(const uint32_t clientUid);
     void ResetRingerModeMute(RendererState rendererState, StreamUsage streamUsage);
+    void PostReclaimMemoryTask();
+    void ReclaimMem();
+    bool CheckAudioStateIdle();
+    std::atomic_bool isActivatedMemReclaiTask_ = false;
+    std::mutex clearMemoryMutex_;
     AudioAbilityManager *audioAbilityMgr_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     std::shared_ptr<AudioConcurrencyService> audioConcurrencyService_;

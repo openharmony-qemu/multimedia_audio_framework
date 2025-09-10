@@ -20,9 +20,6 @@
 #endif
 
 #include "pro_audio_service_adapter_impl.h"
-#if defined(_WIN32) || defined(_WIN64)
-#include <windows.h>
-#endif
 #include <sstream>
 #include <thread>
 
@@ -563,6 +560,13 @@ int32_t ProAudioServiceAdapterImpl::SetAbsVolumeStateToEffect(const bool absVolu
     AUDIO_INFO_LOG("SetAbsVolumeStateToEffect, state %{public}d", absVolumeState);
     lock_guard<mutex> lock(lock_);
     IHpaeManager::GetHpaeManager().SetAbsVolumeStateToEffect(absVolumeState);
+    return SUCCESS;
+}
+
+int32_t ProAudioServiceAdapterImpl::SetSystemVolumeToEffect(AudioStreamType streamType, float volume)
+{
+    lock_guard<mutex> lock(lock_);
+    IHpaeManager::GetHpaeManager().SetEffectSystemVolume(streamType, volume);
     return SUCCESS;
 }
 }  // namespace AudioStandard

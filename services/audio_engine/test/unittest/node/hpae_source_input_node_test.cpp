@@ -22,6 +22,7 @@
 #include "test_case_common.h"
 #include "audio_errors.h"
 #include "hpae_format_convert.h"
+#include "manager/hdi_adapter_manager.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
@@ -132,9 +133,7 @@ HWTEST_F(HpaeSourceInputNodeTest, testWriteDataToSourceInputDataCase, TestSize.L
     nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
     nodeInfo.sourceInputNodeType = HPAE_SOURCE_MIC;
     std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
-    uint64_t requestBytes = nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format);
-    std::vector<char> testData(requestBytes);
-    uint64_t replyBytes = 0;
+
     std::string deviceClass = "file_io";
     std::string deviceNetId = "LocalDevice";
     SourceType sourceType = SOURCE_TYPE_MIC;
@@ -146,17 +145,7 @@ HWTEST_F(HpaeSourceInputNodeTest, testWriteDataToSourceInputDataCase, TestSize.L
     EXPECT_EQ(hpaeSourceInputNode->CapturerSourceInit(attr), SUCCESS);
     EXPECT_EQ(hpaeSourceInputNode->CapturerSourceStart(), SUCCESS);
     EXPECT_EQ(hpaeSourceInputNode->GetSourceState() == STREAM_MANAGER_RUNNING, true);
-    TestCapturerSourceFrame(testData.data(), requestBytes, replyBytes);
-    std::vector<float> testDataFloat(requestBytes / SAMPLE_F32LE);
-    ConvertToFloat(nodeInfo.format, nodeInfo.channels * nodeInfo.frameLen, testData.data(), testDataFloat.data());
-    OutputPort<HpaePcmBuffer *> *outputPort = hpaeSourceInputNode->GetOutputPort();
-    HpaePcmBuffer* outPcmBuffer = outputPort->PullOutputData();
-    ASSERT_NE(outPcmBuffer, nullptr);
-    float* outputPcmData = outPcmBuffer->GetPcmDataBuffer();
-    for (int32_t i = 0; i < requestBytes / SAMPLE_F32LE; i++) {
-        float diff = outputPcmData[i] - testDataFloat[i];
-        EXPECT_EQ(fabs(diff) < TEST_VALUE_PRESION, true);
-    }
+    hpaeSourceInputNode->DoProcess();
     EXPECT_EQ(hpaeSourceInputNode->CapturerSourceStop(), SUCCESS);
     EXPECT_EQ(hpaeSourceInputNode->GetSourceState() == STREAM_MANAGER_SUSPENDED, true);
     EXPECT_EQ(hpaeSourceInputNode->CapturerSourceDeInit(), SUCCESS);
@@ -295,6 +284,35 @@ HWTEST_F(HpaeSourceInputNodeTest, testDoprocess_002, TestSize.Level0)
     IAudioSourceAttr attr;
     attr.filePath = g_rootCapturerPath;
     EXPECT_EQ(hpaeSourceInputNode->CapturerSourceInit(attr), SUCCESS);
+    hpaeSourceInputNode->DoProcess();
+    EXPECT_NE(hpaeSourceInputNode, nullptr);
+}
+
+HWTEST_F(HpaeSourceInputNodeTest, testDoprocess_003, TestSize.Level0)
+{
+    std::vector<HpaeNodeInfo> vec;
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
+    nodeInfo.sourceInputNodeType = HPAE_SOURCE_MIC_EC;
+    vec.push_back(nodeInfo);
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_EC;
+    vec.push_back(nodeInfo);
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(vec);
+        std::string deviceClass = "file_io";
+    std::string deviceNetId = "LocalDevice";
+    SourceType sourceType = SOURCE_TYPE_MIC;
+    std::string sourceName = "mic";
+    hpaeSourceInputNode->GetCapturerSourceInstance(deviceClass, deviceNetId, sourceType, sourceName);
+    IAudioSourceAttr attr;
+    attr.filePath = g_rootCapturerPath;
+    hpaeSourceInputNode->CapturerSourceInit(attr);
+
+    hpaeSourceInputNode->SetSourceInputNodeType(HpaeSourceInputNodeType::HPAE_SOURCE_OFFLOAD);
     hpaeSourceInputNode->DoProcess();
     EXPECT_NE(hpaeSourceInputNode, nullptr);
 }

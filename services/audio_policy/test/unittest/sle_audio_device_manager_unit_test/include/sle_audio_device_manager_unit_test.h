@@ -54,47 +54,56 @@ public:
 
     int32_t IsInBandRingOpen(const std::string &device, bool &ret) override
     {
+        ret = true;
         return 0;
     }
 
     int32_t GetSupportStreamType(const std::string &device, uint32_t &retType) override
     {
+        retType = SUCCESS;
         return 0;
     }
 
     int32_t SetActiveSinkDevice(const std::string &device, uint32_t streamType, int32_t &ret) override
     {
+        ret = SUCCESS;
         return SUCCESS;
     }
 
     int32_t StartPlaying(const std::string &device, uint32_t streamType, int32_t &ret) override
     {
+        ret = SUCCESS;
         return SUCCESS;
     }
 
     int32_t StopPlaying(const std::string &device, uint32_t streamType, int32_t &ret) override
     {
+        ret = SUCCESS;
         return SUCCESS;
     }
 
     int32_t ConnectAllowedProfiles(const std::string &remoteAddr, int32_t &ret) override
     {
+        ret = SUCCESS;
         return SUCCESS;
     }
 
     int32_t SetDeviceAbsVolume(const std::string &remoteAddr, uint32_t volume, uint32_t streamType,
         int32_t &ret) override
     {
+        ret = SUCCESS;
         return SUCCESS;
     }
 
     int32_t SendUserSelection(const std::string &device, uint32_t streamType, int32_t &ret) override
     {
+        ret = SUCCESS;
         return SUCCESS;
     }
 
     int32_t GetRenderPosition(const std::string &device, uint32_t &delayValue) override
     {
+        delayValue = 0;
         return SUCCESS;
     }
 };

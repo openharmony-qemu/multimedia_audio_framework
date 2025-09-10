@@ -17,9 +17,12 @@
 #include <cstddef>
 #include <cstdint>
 #undef private
+
+#include "../fuzz_utils.h"
 #include "audio_info.h"
 #include "audio_policy_server.h"
 #include "audio_interrupt_service.h"
+
 using namespace std;
 
 namespace OHOS {
@@ -27,7 +30,6 @@ namespace AudioStandard {
 using namespace std;
 const int32_t LIMITSIZE = 4;
 const std::u16string FORMMGR_INTERFACE_TOKEN = u"IAudioPolicy";
-const uint8_t TESTSIZE = 71;
 const uint32_t TEST_ID_MODULO = 3;
 constexpr uint32_t BOOL_MODULO = 2;
 typedef void (*TestPtr)(const uint8_t *, size_t);
@@ -156,8 +158,9 @@ void CreateAudioInterruptZoneFuzzTest(const uint8_t *rawData, size_t size)
     std::set<int32_t> pids;
     pids.insert(data.ReadInt32());
     int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
+    AudioZoneContext context;
 
-    interruptService->CreateAudioInterruptZone(zoneId);
+    interruptService->CreateAudioInterruptZone(zoneId, context);
 }
 
 void ReleaseAudioInterruptZoneFuzzTest(const uint8_t *rawData, size_t size)
@@ -992,7 +995,7 @@ void AudioInterruptServiceProcessActiveInterruptFuzzTest(const uint8_t *rawData,
     interruptService->zonesMap_.insert({zoneId, audioInterruptZone});
     audioInterruptZone->audioFocusInfoList.push_back(
         {audioInterrupt, *reinterpret_cast<const AudioFocuState *>(rawData)});
-    interruptService->policyServer_ = new AudioPolicyServer(zoneId);
+    interruptService->policyServer_ = nullptr;
     interruptService->ProcessActiveInterrupt(zoneId, audioInterrupt);
 }
 
@@ -1099,7 +1102,7 @@ void AudioInterruptServiceUpdateAudioFocusStrategyFuzzTest(const uint8_t *rawDat
     focusEntry.forceType = *reinterpret_cast<const InterruptForceType *>(rawData);
     focusEntry.hintType = *reinterpret_cast<const InterruptHint *>(rawData);
     focusEntry.isReject = (*reinterpret_cast<const uint32_t *>(rawData)) % BOOL_MODULO;
-    interruptService->policyServer_ = new AudioPolicyServer(currentInterrupt.pid);
+    interruptService->policyServer_ = nullptr;
 
     interruptService->UpdateAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
 }
@@ -1395,7 +1398,7 @@ void CanMixForActiveSessionFuzzTest(const uint8_t *rawData, size_t size)
 } // namespace AudioStandard
 } // namesapce OHOS
 
-OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
+OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::InitFuzzTest,
     OHOS::AudioStandard::AddDumpInfoFuzzTest,
     OHOS::AudioStandard::SetCallbackHandlerFuzzTest,
@@ -1476,8 +1479,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     if (data == nullptr || size <= 1) {
         return 0;
     }
-    uint8_t firstByte = *data % OHOS::AudioStandard::TESTSIZE;
-    if (firstByte >= OHOS::AudioStandard::TESTSIZE) {
+    uint32_t funcSize = sizeof(g_testPtrs) / sizeof(g_testPtrs[0]);
+    uint8_t firstByte = *data % funcSize;
+    if (firstByte >= funcSize) {
         return 0;
     }
     data = data + 1;

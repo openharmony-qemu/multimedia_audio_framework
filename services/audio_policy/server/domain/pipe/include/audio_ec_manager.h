@@ -59,6 +59,7 @@ public:
         SourceType &targetSourceType);
 
     void ReloadSourceForSession(SessionInfo sessionInfo);
+    int32_t ReloadSourceSoftLink(std::shared_ptr<AudioPipeInfo> &pipeInfo, const AudioModuleInfo &moduleInfo);
 
     void SetDpSinkModuleInfo(const AudioModuleInfo &moduleInfo);
     void SetPrimaryMicModuleInfo(const AudioModuleInfo &moduleInfo);
@@ -67,7 +68,8 @@ public:
     bool GetMicRefFeatureEnable();
     void UpdateStreamEcAndMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
     void SetOpenedNormalSource(SourceType sourceType);
-    void PrepareNormalSource(AudioModuleInfo &moduleInfo, std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void PrepareNormalSource(std::shared_ptr<AudioPipeInfo> &pipeInfo,
+        std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void SetOpenedNormalSourceSessionId(uint64_t sessionId);
     uint64_t GetOpenedNormalSourceSessionId();
     int32_t ReloadNormalSource(SessionInfo &sessionInfo, PipeStreamPropInfo &targetInfo, SourceType targetSource);
@@ -82,6 +84,7 @@ private:
     ~AudioEcManager() {}
 
     void UpdateEnhanceEffectState(SourceType source);
+    void UpdatePrimaryMicModuleInfo(std::shared_ptr<AudioPipeInfo> &pipeInfo, SourceType sourceType);
     void UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStreamPropInfo &targetInfo, SourceType sourceType);
     void UpdateAudioEcInfo(const AudioDeviceDescriptor &inputDevice, const AudioDeviceDescriptor &outputDevice);
     void UpdateModuleInfoForEc(AudioModuleInfo &moduleInfo);

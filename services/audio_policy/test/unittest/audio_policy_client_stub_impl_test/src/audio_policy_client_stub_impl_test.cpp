@@ -596,6 +596,15 @@ HWTEST(AudioPolicyClientStubImplTest, AudioDeviceDescriptor_001, TestSize.Level1
     EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(API_VERSION_MAX), DEVICE_TYPE_BLUETOOTH_A2DP);
     deviceDescriptor.deviceType_ = DEVICE_TYPE_SPEAKER;
     EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(API_VERSION_MAX), DEVICE_TYPE_SPEAKER);
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_NEARLINK;
+    EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(API_VERSION_MAX), DEVICE_TYPE_NEARLINK);
+    int32_t apiVersion = 0;
+    EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(apiVersion), DEVICE_TYPE_BLUETOOTH_SCO);
+    bool isSupportNearlink = false;
+    EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(apiVersion, isSupportNearlink),
+        DEVICE_TYPE_BLUETOOTH_SCO);
+    EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(API_VERSION_MAX, isSupportNearlink),
+        DEVICE_TYPE_BLUETOOTH_SCO);
 }
 
 /**

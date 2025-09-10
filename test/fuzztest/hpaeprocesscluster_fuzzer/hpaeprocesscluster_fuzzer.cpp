@@ -294,7 +294,17 @@ void DisConnectMixerNodeFuzzTest()
     hpaeProcessCluster->DisConnectMixerNode();
 }
 
-typedef void (*TestFuncs[22])();
+void InitEffectBufferFuzzTest()
+{
+    HpaeNodeInfo nodeInfo;
+    HpaeSinkInfo dummySinkInfo;
+    CreateHpaeInfo(nodeInfo, dummySinkInfo);
+    auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo, dummySinkInfo);
+    uint32_t sessionId = GetData<uint32_t>();
+    hpaeProcessCluster->InitEffectBuffer(sessionId);
+}
+
+typedef void (*TestFuncs[23])();
 
 TestFuncs g_testFuncs = {
     DoProcessFuzzTest,
@@ -319,6 +329,7 @@ TestFuncs g_testFuncs = {
     SetupAudioLimiterFuzzTest,
     SetLoudnessGainFuzzTest,
     DisConnectMixerNodeFuzzTest,
+    InitEffectBufferFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

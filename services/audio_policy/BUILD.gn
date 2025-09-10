@@ -15,7 +15,6 @@ import("//build/ohos.gni")
 import("../../accessibility.gni")
 import("../../appgallery.gni")
 import("../../audio_framework_test_sources.gni")
-import("../../av_session.gni")
 import("../../bluetooth_part.gni")
 import("../../config.gni")
 
@@ -74,12 +73,14 @@ config("audio_policy_public_config") {
     "server/domain/zone/include",
     "server/domain/device/include",
     "server/domain/device/src/a2dp",
+    "server/domain/device/src/va",
     "server/src/service/concurrency",
     "server/domain/session/include",
     "server/service/service_main/include",
     "../audio_service/client/include",
     "../audio_service/common/include",
     "../audio_service/common/include/dfx",
+    "../audio_engine/manager/include",
     "../../frameworks/native/audioinnercall/include",
     "../../frameworks/native/audiorenderer/include",
     "../../frameworks/native/audioadapter/include",
@@ -108,10 +109,6 @@ config("audio_policy_public_config") {
 
   if (bluetooth_part_enable == true) {
     cflags += [ "-DBLUETOOTH_ENABLE" ]
-  }
-
-  if (avsession_part_enable == true && !(use_libfuzzer || use_clang_coverage)) {
-    cflags += [ "-DAVSESSION_ENABLE" ]
   }
 
   ldflags = [ "-Wl" ]
@@ -199,6 +196,7 @@ audio_ohos_library("audio_policy_service") {
     "server/infra/config/parser/src/audio_policy_config_parser.cpp",
     "server/infra/config/parser/src/audio_policy_global_parser.cpp",
     "server/infra/config/parser/src/audio_strategy_router_parser.cpp",
+    "server/infra/config/parser/src/audio_source_strategy_parser.cpp",
     "server/infra/config/parser/src/audio_usage_strategy_parser.cpp",
     "server/infra/config/parser/src/audio_volume_parser.cpp",
     "server/infra/datashare/src/audio_policy_utils.cpp",
@@ -218,6 +216,7 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/pipe/src/audio_global_config_manager.cpp",
     "server/service/service_main/src/audio_policy_service.cpp",
     "server/domain/device/src/audio_state_manager.cpp",
+    "server/domain/device/src/audio_usr_select_manager.cpp",
     "server/domain/pipe/src/audio_concurrency_service.cpp",
     "server/service/service_main/src/device_init_callback.cpp",
     "server/src/audio_client_tracker_callback_service.cpp",
@@ -264,7 +263,10 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/device/src/audio_scene_manager.cpp",
     "server/domain/tone/audio_tone_manager.cpp",
     "server/domain/volume/src/audio_volume_manager.cpp",
+    "server/domain/volume/src/audio_loud_volume_manager.cpp",
     "server/domain/device/src/sle/sle_audio_device_manager.cpp",
+    "server/domain/device/src/va/va_device_manager.cpp",
+    "client/stub/src/va_device_broker_stub_impl.cpp",
     "server/domain/session/src/audio_session.cpp",
     "server/domain/session/src/audio_session_service.cpp",
     "server/domain/session/src/audio_session_state_monitor.cpp",
@@ -334,6 +336,7 @@ audio_ohos_library("audio_policy_service") {
     "../audio_policy:audio_foundation",
     "../audio_policy:audio_setting_provider",
     "../audio_service:audio_common",
+    "../audio_engine:audio_engine_manager",
   ]
 
   external_deps = [
@@ -369,6 +372,7 @@ audio_ohos_library("audio_policy_service") {
     "hisysevent:libhisysevent",
     "init:libbegetutil",
     "ipc:ipc_single",
+    "ipc:ipc_core",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
@@ -377,7 +381,7 @@ audio_ohos_library("audio_policy_service") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "window_manager:session_manager_lite",
-    "window_manager:libwm",
+    "window_manager:libwm_lite",
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
@@ -597,6 +601,7 @@ audio_ohos_library("audio_policy_client") {
     "hilog:libhilog",
     "init:libbegetutil",
     "ipc:ipc_single",
+    "ipc:ipc_core",
     "samgr:samgr_proxy",
   ]
   subsystem_name = "multimedia"
@@ -617,16 +622,26 @@ group("audio_policy_test_packages") {
     ":audio_policy_test",
     "test:audio_policy_unittest_packages",
     "client/stub:audio_zone_client_unit_test",
+    "client/stub:audio_policy_manager_listener_stub_impl_unit_test",
+    "client/service/test:audio_policy_manager_device_unit_test",
     "server/infra/config/parser/test:audio_policy_config_parser_unittest_packages",
     "server/domain/device:audio_device_common_unit_next_test",
     "server/domain/device/test:audio_device_status_extended_test",
     "server/domain/effect/test:audio_spatialization_service_extended_test",
+    "server/domain/device/test:audio_active_device_new_unit_test",
+    "server/domain/pipe/test:audio_policy_pipe_unittest_packages",
+    "server/domain/router/test:audio_router_unittest_packages",
+    "server/domain/session/test:audio_policy_session_unit_test",
+    "server/domain/pipe/test:audio_capturer_session_ext_unit_test",
+    "server/domain/volume/test:audio_volume_unittest_packages",
     "server/service/service_main/test:audio_policy_dump_unit_test",
     "server/service/service_main/test:audio_policy_server_extended_test",
     "server/service/service_main/test:audio_policy_service_ext_unit_test",
     "server/service/service_main/test:device_init_callback_unit_test",
     "server/infra/state_monitor/test:audio_policy_state_monitor_unittest_packages",
+    "server/infra/ipc_proxy/test:audio_policy_ipc_proxy_unittest_packages",
     "server/common/test:audio_policy_server_common_unittest_packages",
+    "server/src/test:audio_server_src_unittest_packages",
   ]
 }
 
@@ -698,6 +713,7 @@ config("audio_foundation_public_config") {
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
     "../../frameworks/native/audiopolicy/include",
+    "//foundation/multimedia/audio_framework/services/audio_service/idl",
   ]
 }
 
@@ -732,7 +748,10 @@ ohos_shared_library("audio_foundation") {
     "../audio_service:audio_common",
   ]
 
-  external_deps = [ "hilog:libhilog" ]
+  external_deps = [
+    "hilog:libhilog",
+    "ipc:ipc_core",
+  ]
 
   public_external_deps = [ "c_utils:utils" ]
 

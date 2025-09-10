@@ -133,6 +133,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::deviceTypeMap = {
     {"WIRED_HEADPHONES", DEVICE_TYPE_WIRED_HEADPHONES},
     {"BLUETOOTH_SCO", DEVICE_TYPE_BLUETOOTH_SCO},
     {"BLUETOOTH_A2DP", DEVICE_TYPE_BLUETOOTH_A2DP},
+    {"BT_SPP", DEVICE_TYPE_BT_SPP},
     {"NEARLINK", DEVICE_TYPE_NEARLINK},
     {"HEARING_AID", DEVICE_TYPE_HEARING_AID},
     {"MIC", DEVICE_TYPE_MIC},
@@ -230,7 +231,8 @@ const std::map<std::string, int32_t> NapiAudioEnum::effectModeMap = {
 
 const std::map<std::string, int32_t> NapiAudioEnum::audioPrivacyTypeMap = {
     {"PRIVACY_TYPE_PUBLIC", PRIVACY_TYPE_PUBLIC},
-    {"PRIVACY_TYPE_PRIVATE", PRIVACY_TYPE_PRIVATE}
+    {"PRIVACY_TYPE_PRIVATE", PRIVACY_TYPE_PRIVATE},
+    {"PRIVACY_TYPE_SHARED", PRIVACY_TYPE_SHARED},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::deviceChangeTypeMap = {
@@ -511,6 +513,20 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioLoopbackStatusMap = {
     {"AVAILABLE_RUNNING", LOOPBACK_AVAILABLE_RUNNING},
 };
 
+const std::map<std::string, int32_t> NapiAudioEnum::audioLoopbackReverbPresetMap = {
+    {"ORIGINAL", REVERB_PRESET_ORIGINAL},
+    {"KTV", REVERB_PRESET_KTV},
+    {"THEATER", REVERB_PRESET_THEATER},
+    {"CONCERT", REVERB_PRESET_CONCERT},
+};
+
+
+const std::map<std::string, int32_t> NapiAudioEnum::audioLoopbackEqualizerPresetMap = {
+    {"FLAT", EQUALIZER_PRESET_FLAT},
+    {"FULL", EQUALIZER_PRESET_FULL},
+    {"BRIGHT", EQUALIZER_PRESET_BRIGHT},
+};
+
 const std::map<std::string, int32_t> NapiAudioEnum::audioSessionSceneMap = {
     {"AUDIO_SESSION_SCENE_MEDIA", static_cast<int32_t>(AudioSessionScene::MEDIA)},
     {"AUDIO_SESSION_SCENE_GAME", static_cast<int32_t>(AudioSessionScene::GAME)},
@@ -531,6 +547,11 @@ const std::map<std::string, int32_t> NapiAudioEnum::outputDeviceChangeRecommende
     {"DEVICE_CHANGE_RECOMMEND_TO_CONTINUE",
         static_cast<int32_t>(OutputDeviceChangeRecommendedAction::RECOMMEND_TO_CONTINUE)},
     {"DEVICE_CHANGE_RECOMMEND_TO_STOP", static_cast<int32_t>(OutputDeviceChangeRecommendedAction::RECOMMEND_TO_STOP)},
+};
+
+const std::map<std::string, int32_t> NapiAudioEnum::effectFlagMap = {
+    {"RENDER_EFFECT_FLAG", RENDER_EFFECT_FLAG},
+    {"CAPTURE_EFFECT_FLAG", CAPTURE_EFFECT_FLAG},
 };
 
 NapiAudioEnum::NapiAudioEnum()
@@ -691,11 +712,16 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("AudioLoopbackMode", CreateEnumObject(env, audioLoopbackModeMap)),
         DECLARE_NAPI_PROPERTY("AudioLoopbackStatus",
             CreateEnumObject(env, audioLoopbackStatusMap)),
+        DECLARE_NAPI_PROPERTY("AudioLoopbackReverbPreset",
+            CreateEnumObject(env, audioLoopbackReverbPresetMap)),
+        DECLARE_NAPI_PROPERTY("AudioLoopbackEqualizerPreset",
+            CreateEnumObject(env, audioLoopbackEqualizerPresetMap)),
         DECLARE_NAPI_PROPERTY("AudioSessionScene", CreateEnumObject(env, audioSessionSceneMap)),
         DECLARE_NAPI_PROPERTY("AudioSessionStateChangeHint",
             CreateEnumObject(env, audioSessionStateChangeHintMap)),
         DECLARE_NAPI_PROPERTY("OutputDeviceChangeRecommendedAction",
             CreateEnumObject(env, outputDeviceChangeRecommendedActionMap)),
+        DECLARE_NAPI_PROPERTY("EffectFlag", CreateEnumObject(env, effectFlagMap)),
     };
     return napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
 }
@@ -1465,6 +1491,23 @@ bool NapiAudioEnum::IsValidSourceType(int32_t intValue)
     }
 }
 
+bool NapiAudioEnum::IsLegalBluetoothAndNearlinkPreferredRecordCategory(uint32_t category)
+{
+    bool result = false;
+    switch (category) {
+        case BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE:
+        case BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_DEFAULT:
+        case BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_LOW_LATENCY:
+        case BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_HIGH_QUALITY:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
 bool NapiAudioEnum::IsLegalDeviceUsage(int32_t usage)
 {
     bool result = false;
@@ -1843,6 +1886,40 @@ bool NapiAudioEnum::IsLegalInputArgumentAudioLoopbackMode(int32_t inputMode)
     }
     return result;
 }
+
+bool NapiAudioEnum::IsLegalInputArgumentAudioLoopbackReverbPreset(int32_t preset)
+{
+    bool result = false;
+    switch (preset) {
+        case AudioLoopbackReverbPreset::REVERB_PRESET_ORIGINAL:
+        case AudioLoopbackReverbPreset::REVERB_PRESET_KTV:
+        case AudioLoopbackReverbPreset::REVERB_PRESET_THEATER:
+        case AudioLoopbackReverbPreset::REVERB_PRESET_CONCERT:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool NapiAudioEnum::IsLegalInputArgumentAudioLoopbackEqualizerPreset(int32_t preset)
+{
+    bool result = false;
+    switch (preset) {
+        case AudioLoopbackEqualizerPreset::EQUALIZER_PRESET_FLAT:
+        case AudioLoopbackEqualizerPreset::EQUALIZER_PRESET_FULL:
+        case AudioLoopbackEqualizerPreset::EQUALIZER_PRESET_BRIGHT:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
 
 bool NapiAudioEnum::IsLegalInputArgumentSessionScene(int32_t scene)
 {

@@ -29,11 +29,12 @@ public:
     int32_t UpdateSessionOperation(uint32_t sessionId, uint32_t operation, uint32_t opMsg) override;
     int32_t ReloadCaptureSession(uint32_t sessionId, uint32_t operation) override;
     int32_t SetDefaultOutputDevice(int32_t defaultOutputDevice, uint32_t sessionID, int32_t streamUsage,
-        bool isRunning) override;
+        bool isRunning, bool skipForce = false) override;
     int32_t GetAdapterNameBySessionId(uint32_t sessionId, std::string& name) override;
     int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor& deviceInfo,
-         bool isReloadProcess) override;
+        AudioStreamInfo &streamInfo, bool isReloadProcess) override;
     int32_t GenerateSessionId(uint32_t &sessionId) override;
+    int32_t GetPaIndexByPortName(const std::string &portName, uint32_t &ret) override;
 
     int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config, int32_t &ret) override;
 private:

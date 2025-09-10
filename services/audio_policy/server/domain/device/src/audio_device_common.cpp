@@ -88,7 +88,8 @@ static const std::vector<std::string> SourceNames = {
     std::string(BLUETOOTH_MIC),
     std::string(USB_MIC),
     std::string(PRIMARY_WAKEUP),
-    std::string(FILE_SOURCE)
+    std::string(FILE_SOURCE),
+    std::string(PRIMARY_AI_MIC)
 };
 
 static bool IsDistributedOutput(const AudioDeviceDescriptor &desc)
@@ -155,9 +156,10 @@ void AudioDeviceCommon::OnPreferredInputDeviceUpdated(DeviceType deviceType, std
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPreferredOutputDeviceDescInner(
-    AudioRendererInfo &rendererInfo, std::string networkId)
+    AudioRendererInfo &rendererInfo, std::string networkId, const int32_t uid)
 {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList = {};
+    RouterType bypassType = RouterType::ROUTER_TYPE_NONE;
     if (rendererInfo.streamUsage <= STREAM_USAGE_UNKNOWN ||
         rendererInfo.streamUsage > STREAM_USAGE_MAX) {
         AUDIO_WARNING_LOG("Invalid usage[%{public}d], return current device.", rendererInfo.streamUsage);
@@ -167,15 +169,26 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPrefer
         return deviceList;
     }
     if (networkId == LOCAL_NETWORK_ID) {
-        vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
+        auto preferredType = AudioPolicyUtils::GetInstance().GetPreferredTypeByStreamUsage(rendererInfo.streamUsage);
+        if (preferredType == AUDIO_CALL_RENDER && uid >= 0) {
+            bypassType = RouterType::ROUTER_TYPE_USER_SELECT;
+            std::shared_ptr<AudioDeviceDescriptor> preferredDevice =
+                AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDeviceForUid(uid);
+            CHECK_AND_RETURN_RET_LOG(preferredDevice != nullptr, deviceList, "preferredDevice is nullptr.");
+            if (preferredDevice->deviceId_ != 0) {
+                deviceList.push_back(preferredDevice);
+                return deviceList;
+            }
+        }
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
             audioRouterCenter_.FetchOutputDevices(rendererInfo.streamUsage,
-                -1, "GetPreferredOutputDeviceDescInner");
+                -1, "GetPreferredOutputDeviceDescInner", bypassType);
         for (size_t i = 0; i < descs.size(); i++) {
             std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*descs[i]);
             deviceList.push_back(devDesc);
         }
     } else {
-        vector<shared_ptr<AudioDeviceDescriptor>> descs = audioDeviceManager_.GetRemoteRenderDevices();
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = audioDeviceManager_.GetRemoteRenderDevices();
         for (const auto &desc : descs) {
             std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*desc);
             deviceList.push_back(devDesc);
@@ -207,6 +220,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPrefer
 
     if (networkId == LOCAL_NETWORK_ID) {
         std::shared_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, -1);
+        CHECK_AND_RETURN_RET_LOG(desc != nullptr, deviceList, "desc is nullptr.");
         if (desc->deviceType_ == DEVICE_TYPE_NONE && (captureInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE ||
             captureInfo.sourceType == SOURCE_TYPE_REMOTE_CAST)) {
             desc->deviceType_ = DEVICE_TYPE_INVALID;
@@ -816,7 +830,6 @@ void AudioDeviceCommon::MoveToNewOutputDevice(std::shared_ptr<AudioRendererChang
 
     streamCollector_.UpdateRendererDeviceInfo(rendererChangeInfo->clientUID, rendererChangeInfo->sessionId,
         rendererChangeInfo->outputDeviceInfo);
-    ResetOffloadAndMchMode(rendererChangeInfo, outputDevices);
     audioIOHandleMap_.NotifyUnmutePort();
 }
 
@@ -952,98 +965,6 @@ void AudioDeviceCommon::UpdateRoute(std::shared_ptr<AudioRendererChangeInfo> &re
             audioActiveDevice_.UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
         }
         shouldUpdateDeviceDueToDualTone_ = false;
-    }
-}
-
-void AudioDeviceCommon::ResetOffloadAndMchMode(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-    vector<std::shared_ptr<AudioDeviceDescriptor>> &outputDevices)
-{
-    if (outputDevices.front()->networkId_ != LOCAL_NETWORK_ID
-        || outputDevices.front()->deviceType_ == DEVICE_TYPE_REMOTE_CAST) {
-        audioOffloadStream_.RemoteOffloadStreamRelease(rendererChangeInfo->sessionId);
-    } else {
-        FetchStreamForSpkMchStream(rendererChangeInfo, outputDevices);
-    }
-}
-
-void AudioDeviceCommon::JudgeIfLoadMchModule()
-{
-    bool isNeedLoadMchModule = false;
-    {
-        if (audioIOHandleMap_.CheckIOHandleExist(MCH_PRIMARY_SPEAKER) == false) {
-            isNeedLoadMchModule = true;
-        }
-    }
-    if (isNeedLoadMchModule) {
-        audioOffloadStream_.LoadMchModule();
-    }
-}
-
-void AudioDeviceCommon::FetchStreamForA2dpMchStream(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-    vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
-{
-    if (audioOffloadStream_.CheckStreamMultichannelMode(rendererChangeInfo->sessionId)) {
-        JudgeIfLoadMchModule();
-        audioActiveDevice_.UpdateActiveDeviceRoute(DEVICE_TYPE_BLUETOOTH_A2DP, DeviceFlag::OUTPUT_DEVICES_FLAG);
-        std::string portName = AudioPolicyUtils::GetInstance().GetSinkPortName(descs.front()->deviceType_,
-            PIPE_TYPE_MULTICHANNEL);
-        int32_t ret  = audioOffloadStream_.MoveToOutputDevice(rendererChangeInfo->sessionId, portName);
-        if (ret == SUCCESS) {
-            streamCollector_.UpdateRendererPipeInfo(rendererChangeInfo->sessionId, PIPE_TYPE_MULTICHANNEL);
-        }
-    } else {
-        AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
-        streamCollector_.GetPipeType(rendererChangeInfo->sessionId, pipeType);
-        if (pipeType == PIPE_TYPE_MULTICHANNEL) {
-            std::string currentActivePort = MCH_PRIMARY_SPEAKER;
-            AudioIOHandle activateDeviceIOHandle;
-            CHECK_AND_RETURN_LOG(audioIOHandleMap_.GetModuleIdByKey(currentActivePort, activateDeviceIOHandle),
-                "Can not find port MCH_PRIMARY_SPEAKER in io map");
-            audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
-            audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
-            audioIOHandleMap_.DelIOHandleInfo(currentActivePort);
-            streamCollector_.UpdateRendererPipeInfo(rendererChangeInfo->sessionId, PIPE_TYPE_NORMAL_OUT);
-        }
-        audioOffloadStream_.ResetOffloadMode(rendererChangeInfo->sessionId);
-        std::vector<SinkInput> sinkInputs;
-        audioPolicyManager_.GetAllSinkInputs(sinkInputs);
-        MoveToNewOutputDevice(rendererChangeInfo, descs, sinkInputs);
-    }
-}
-
-void AudioDeviceCommon::FetchStreamForSpkMchStream(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-    vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
-{
-    if (audioOffloadStream_.CheckStreamMultichannelMode(rendererChangeInfo->sessionId)) {
-        JudgeIfLoadMchModule();
-        std::string oldSinkName = AudioPolicyUtils::GetInstance().GetSinkName(rendererChangeInfo->outputDeviceInfo,
-            rendererChangeInfo->sessionId);
-        std::string newSinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(descs.front()->deviceType_,
-            PIPE_TYPE_MULTICHANNEL);
-        if (oldSinkName != newSinkName) {
-            AUDIO_INFO_LOG("mute sink old:[%{public}s] new:[%{public}s]", oldSinkName.c_str(), newSinkName.c_str());
-            MuteSinkPort(oldSinkName, newSinkName, AudioStreamDeviceChangeReason::OVERRODE);
-        }
-        int32_t ret  = audioOffloadStream_.MoveToOutputDevice(rendererChangeInfo->sessionId, newSinkName);
-        if (ret == SUCCESS) {
-            streamCollector_.UpdateRendererPipeInfo(rendererChangeInfo->sessionId, PIPE_TYPE_MULTICHANNEL);
-        }
-    } else {
-        AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
-        streamCollector_.GetPipeType(rendererChangeInfo->sessionId, pipeType);
-        if (pipeType == PIPE_TYPE_MULTICHANNEL) {
-            {
-                AUDIO_INFO_LOG("unload multichannel module");
-                std::string currentActivePort = MCH_PRIMARY_SPEAKER;
-                AudioIOHandle activateDeviceIOHandle;
-                CHECK_AND_RETURN_LOG(audioIOHandleMap_.GetModuleIdByKey(currentActivePort, activateDeviceIOHandle),
-                    "Can not find port MCH_PRIMARY_SPEAKER in io map");
-                audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
-                audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
-                audioIOHandleMap_.DelIOHandleInfo(currentActivePort);
-            }
-        }
-        audioOffloadStream_.ResetOffloadMode(rendererChangeInfo->sessionId);
     }
 }
 
@@ -1903,11 +1824,7 @@ void AudioDeviceCommon::SetFirstScreenOn()
 
 int32_t AudioDeviceCommon::SetVirtualCall(pid_t uid, const bool isVirtual)
 {
-    if (uid == 5523) { /* 5523 call manager */
-        return Bluetooth::AudioHfpManager::SetVirtualCall("meetimeservice", isVirtual);
-    }
-    std::string bundleName = AudioBundleManager::GetBundleNameFromUid(uid);
-    return Bluetooth::AudioHfpManager::SetVirtualCall(bundleName, isVirtual);
+    return Bluetooth::AudioHfpManager::SetVirtualCall(uid, isVirtual);
 }
 
 void AudioDeviceCommon::SetHeadsetUnpluggedToSpkOrEpFlag(DeviceType oldDeviceType, DeviceType newDeviceType)

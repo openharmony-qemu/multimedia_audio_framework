@@ -100,6 +100,7 @@ private:
     std::shared_ptr<AudioEnhanceChain> CreateEnhanceChainInner(uint64_t sceneKeyCode,
         const AudioEnhanceDeviceAttr &deviceAttr);
     std::vector<std::string> GetEnhanceNamesBySceneCode(uint64_t sceneKeyCode, bool defaultFlag);
+    void ReleaseThreadHandlerByScene(AudioEnhanceScene scene);
     int32_t UpdatePropertyAndSendToAlgo(DeviceType inputDevice);
     void UpdateEnhancePropertyMapFromDb(DeviceType deviceType);
     int32_t WriteEnhancePropertyToDb(const std::string &key, const std::string &property);

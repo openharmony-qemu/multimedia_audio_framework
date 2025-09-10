@@ -38,8 +38,10 @@ HpaePcmDumper::~HpaePcmDumper()
 
 int32_t HpaePcmDumper::Dump(const int8_t *buffer, int32_t length)
 {
-    DumpFileUtil::WriteDumpFile(dumpFile_, (void *)(buffer), length);
-    AudioCacheMgr::GetInstance().CacheData(filename_, (void *)(buffer), length);
+    if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
+        DumpFileUtil::WriteDumpFile(dumpFile_, (void *)(buffer), length);
+        AudioCacheMgr::GetInstance().CacheData(filename_, (void *)(buffer), length);
+    }
     return SUCCESS;
 }
 

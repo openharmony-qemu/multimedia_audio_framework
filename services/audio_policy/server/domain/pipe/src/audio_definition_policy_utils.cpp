@@ -60,6 +60,8 @@ std::unordered_map<std::string, DeviceType> AudioDefinitionPolicyUtils::deviceTy
     {"DEVICE_TYPE_NEARLINK", DEVICE_TYPE_NEARLINK},
     {"DEVICE_TYPE_NEARLINK_IN", DEVICE_TYPE_NEARLINK_IN},
     {"DEVICE_TYPE_HEARING_AID", DEVICE_TYPE_HEARING_AID},
+    {"DEVICE_TYPE_REMOTE_DAUDIO", DEVICE_TYPE_REMOTE_DAUDIO},
+    {"DEVICE_TYPE_BT_SPP", DEVICE_TYPE_BT_SPP},
 };
 
 std::unordered_map<std::string, AudioPin> AudioDefinitionPolicyUtils::pinStrToEnum = {
@@ -169,6 +171,7 @@ std::unordered_map<std::string, AudioFlag> AudioDefinitionPolicyUtils::flagStrTo
     {"AUDIO_INPUT_FLAG_VOIP", AUDIO_INPUT_FLAG_VOIP},
     {"AUDIO_INPUT_FLAG_VOIP_FAST", AUDIO_INPUT_FLAG_VOIP_FAST},
     {"AUDIO_INPUT_FLAG_WAKEUP", AUDIO_INPUT_FLAG_WAKEUP},
+    {"AUDIO_INPUT_FLAG_AI", AUDIO_INPUT_FLAG_AI},
 };
 
 std::unordered_map<std::string, AudioPreloadType> AudioDefinitionPolicyUtils::preloadStrToEnum = {

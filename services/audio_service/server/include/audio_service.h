@@ -89,9 +89,10 @@ public:
     void ReleaseProcess(const std::string endpointName, const int32_t delayTime);
 
     void CheckBeforeRecordEndpointCreate(bool isRecord);
-    AudioDeviceDescriptor GetDeviceInfoForProcess(const AudioProcessConfig &config, bool isReloadProcess = false);
+    AudioDeviceDescriptor GetDeviceInfoForProcess(const AudioProcessConfig &config,
+        AudioStreamInfo &streamInfo, bool isReloadProcess = false);
     std::shared_ptr<AudioEndpoint> GetAudioEndpointForDevice(AudioDeviceDescriptor &deviceInfo,
-        const AudioProcessConfig &clientConfig, bool isVoipStream);
+        const AudioProcessConfig &clientConfig, AudioStreamInfo &streamInfo, bool isVoipStream);
 
     int32_t LinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
     int32_t UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
@@ -103,8 +104,8 @@ public:
 
     void RemoveRenderer(uint32_t sessionId, bool isSwitchStream = false);
     void RemoveCapturer(uint32_t sessionId, bool isSwitchStream = false);
-    int32_t EnableDualToneList(uint32_t sessionId);
-    int32_t DisableDualToneList(uint32_t sessionId);
+    int32_t EnableDualStream(const uint32_t sessionId, const std::string &dupSinkName);
+    int32_t DisableDualStream(const uint32_t sessionId);
     int32_t SetOffloadMode(uint32_t sessionId, int32_t state, bool isAppBack);
     int32_t UnsetOffloadMode(uint32_t sessionId);
     void UpdateAudioSinkState(uint32_t sinkId, bool started);
@@ -138,13 +139,33 @@ public:
     void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
+    int32_t UnloadModernOffloadCapSource();
 #endif
     void RenderersCheckForAudioWorkgroup(int32_t pid);
+    void SendInterruptEventToAudioService(uint32_t sessionId, InterruptEventInternal interruptEvent);
 
+    bool UpdateResumeInterruptEventMap(uint32_t sessionId, InterruptEventInternal interruptEvent);
+    bool RemoveResumeInterruptEventMap(uint32_t sessionId);
+    bool IsStreamInterruptResume(uint32_t sessionId);
+
+    bool UpdatePauseInterruptEventMap(uint32_t sessionId, InterruptEventInternal interruptEvent);
+    bool RemovePauseInterruptEventMap(uint32_t sessionId);
+    bool IsStreamInterruptPause(uint32_t sessionId);
+
+    bool IsInSwitchStreamMap(uint32_t sessionId, SwitchState &switchState);
+    bool UpdateSwitchStreamMap(uint32_t sessionId, SwitchState switchState);
+    void RemoveSwitchStreamMap(uint32_t sessionId);
+
+    bool IsBackgroundCaptureAllowed(uint32_t sessionId);
+    bool UpdateBackgroundCaptureMap(uint32_t sessionId, bool res);
+    void RemoveBackgroundCaptureMap(uint32_t sessionId);
+    bool NeedRemoveBackgroundCaptureMap(uint32_t sessionId, CapturerState capturerState);
+    int32_t GetPrivacyType(const uint32_t sessionId, AudioPrivacyType &privacyType);
 private:
     AudioService();
     void DelayCallReleaseEndpoint(std::string endpointName);
-    ReuseEndpointType GetReuseEndpointType(AudioDeviceDescriptor &deviceInfo, const std::string &deviceKey);
+    ReuseEndpointType GetReuseEndpointType(AudioDeviceDescriptor &deviceInfo,
+        const std::string &deviceKey, AudioStreamInfo &streamInfo);
     void InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
     void InsertCapturer(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -165,7 +186,7 @@ private:
     bool ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, std::set<int32_t> &beCapIds);
     bool CheckShouldCap(const AudioProcessConfig &rendererConfig, int32_t innerCapId);
 #endif
-    bool ShouldBeDualTone(const AudioProcessConfig &config);
+    bool ShouldBeDualTone(const AudioProcessConfig &config, const std::string &dupSinkName);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t OnInitInnerCapList(int32_t innerCapId); // for first InnerCap filter take effect.
     int32_t OnUpdateInnerCapList(int32_t innerCapId); // for some InnerCap filter has already take effect.
@@ -179,11 +200,34 @@ private:
     bool IsMuteSwitchStream(uint32_t sessionId);
     float GetSystemVolume();
     void UpdateSystemVolume(AudioStreamType streamType, float volume);
+    void UpdateSessionMuteStatus(const uint32_t sessionId, const bool muteFlag);
+    std::shared_ptr<RendererInServer> GetRendererInServerBySessionId(const uint32_t sessionId);
+    int32_t GetPrivacyTypeForNormalStream(const uint32_t sessionId, AudioPrivacyType &privacyType);
 
+#ifdef SUPPORT_LOW_LATENCY
+    sptr<AudioProcessInServer> GetProcessInServerBySessionId(const uint32_t sessionId);
+    int32_t GetPrivacyTypeForFastStream(const uint32_t sessionId, AudioPrivacyType &privacyType);
+    int32_t EnableDualStreamForFastStream(const uint32_t sessionId, const std::string &dupSinkName);
+    int32_t DisableDualStreamForFastStream(const uint32_t sessionId);
+    std::vector<std::pair<sptr<AudioProcessInServer>, std::shared_ptr<AudioEndpoint>>> GetLinkedPairInner(
+        const uint32_t sessionId);
+    void HandleProcessInserverDualStreamDisableInner(AudioEndpoint &endpoint);
+    void HandleProcessInserverDualStreamEnableInner(AudioEndpoint &endpoint, const std::string &dupSinkName);
+#endif
+    int32_t EnableDualStreamForNormalStream(const uint32_t sessionId, const std::string &dupSinkName);
+    int32_t DisableDualStreamForNormalStream(const uint32_t sessionId);
 private:
     std::mutex foregroundSetMutex_;
     std::set<std::string> foregroundSet_;
     std::set<uint32_t> foregroundUidSet_;
+    std::mutex audioSwitchStreamMutex_;
+    std::map<uint32_t, SwitchState> audioSwitchStreamMap_;
+    std::mutex backgroundCaptureMutex_;
+    std::map<uint32_t, bool> backgroundCaptureMap_;
+    std::mutex resumeInterruptEventMutex_;
+    std::map<uint32_t, InterruptEventInternal> resumeInterruptEventMap_;
+    std::mutex pauseInterruptEventMutex_;
+    std::map<uint32_t, InterruptEventInternal> pauseInterruptEventMap_;
     std::mutex processListMutex_;
     std::mutex releaseEndpointMutex_;
     std::condition_variable releaseEndpointCV_;
@@ -194,12 +238,12 @@ private:
 #ifdef SUPPORT_LOW_LATENCY
     std::vector<std::pair<sptr<AudioProcessInServer>, std::shared_ptr<AudioEndpoint>>> linkedPairedList_;
     std::map<std::string, std::shared_ptr<AudioEndpoint>> endpointList_;
+    std::unordered_map<uint32_t, wptr<AudioProcessInServer>> allProcessInServer_;
 #endif
 
     // for inner-capturer
     bool isRegisterCapturerFilterListened_ = false;
     bool isDefaultAdapterEnable_ = false;
-    uint32_t workingDualToneId_ = 0; // invalid sessionId
     AudioPlaybackCaptureConfig workingConfig_;
     std::unordered_map<int32_t, AudioPlaybackCaptureConfig> workingConfigs_;
 
@@ -210,8 +254,6 @@ private:
     std::unordered_map<int32_t, std::vector<std::weak_ptr<RendererInServer>>> filteredRendererMap_ = {};
     std::map<uint32_t, std::weak_ptr<RendererInServer>> allRendererMap_ = {};
     std::map<uint32_t, std::weak_ptr<CapturerInServer>> allCapturerMap_ = {};
-
-    std::vector<std::weak_ptr<RendererInServer>> filteredDualToneRendererMap_ = {};
 
     std::mutex mutedSessionsMutex_;
     std::set<uint32_t> mutedSessions_ = {};
@@ -230,6 +272,8 @@ private:
     std::map<uint32_t, bool> muteStateMap_{};
     std::mutex musicOrVoipSystemVolumeMutex_;
     float musicOrVoipSystemVolume_ = 0.0f;
+
+    std::mutex dualStreamMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

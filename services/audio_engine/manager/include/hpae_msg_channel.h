@@ -44,6 +44,7 @@ enum NodeOperation { UNDERFLOW, FADED, DRAINED };
 class ISendMsgCallback {
 public:
     virtual void Invoke(HpaeMsgCode cmdID, const std::any &args) = 0;
+    virtual void InvokeSync(HpaeMsgCode cmdID, const std::any &args) = 0;
 };
 
 class CallbackSender {
@@ -63,6 +64,16 @@ public:
             // pack the arguments into a tuple
             auto packed = std::make_tuple(std::forward<Args>(args)...);
             callback->Invoke(cmdID, packed);
+        }
+    }
+
+    template <typename... Args>
+    void TriggerSyncCallback(HpaeMsgCode cmdID, Args &&...args)
+    {
+        if (auto callback = weakCallback_.lock()) {
+            // pack the arguments into a tuple
+            auto packed = std::make_tuple(std::forward<Args>(args)...);
+            callback->InvokeSync(cmdID, packed);
         }
     }
 };
@@ -93,6 +104,7 @@ enum HpaeProcessorType {
 
     // scene for collaboration
     HPAE_SCENE_COLLABORATIVE = 25,
+    HPAE_SCENE_RECOGNITION = 26,
 };
 
 // mark sourceInputNode(cluster)
@@ -102,6 +114,7 @@ enum HpaeSourceInputNodeType {
     HPAE_SOURCE_MIC_EC,
     HPAE_SOURCE_EC,
     HPAE_SOURCE_MICREF,
+    HPAE_SOURCE_OFFLOAD,
 };
 
 struct HpaeDfxNodeInfo {
@@ -115,7 +128,7 @@ struct HpaeDfxNodeInfo {
     AudioChannel channels;
     AudioChannelLayout channelLayout = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
     FadeType fadeType = NONE_FADE;
-    AudioStreamType streamType;
+    AudioStreamType streamType = STREAM_DEFAULT;
     HpaeProcessorType sceneType;
     std::string deviceClass;
     std::string deviceNetId;

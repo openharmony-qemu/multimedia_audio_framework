@@ -40,6 +40,7 @@ private:
         int32_t deviceFlag;
         int32_t deviceType;
         int32_t intValue;
+        int32_t audioDeviceSelectMode = 0;
         bool isActive;
         bool isTrue;
         bool bArgTransFlag = true;
@@ -87,6 +88,8 @@ private:
     static void RegisterDeviceChangeCallback(napi_env env, size_t argc, napi_value *args, const std::string &cbName,
         NapiAudioRoutingManager *napiRoutingMgr);
     static void RegisterPreferredOutputDeviceChangeCallback(napi_env env, size_t argc, napi_value *args,
+        const std::string &cbName, NapiAudioRoutingManager *napiRoutingMgr);
+    static void RegisterPreferredOutputDeviceByFilterChangeCallback(napi_env env, size_t argc, napi_value *args,
         const std::string &cbName, NapiAudioRoutingManager *napiRoutingMgr);
     static void RegisterPreferredInputDeviceChangeCallback(napi_env env, size_t argc, napi_value *args,
         const std::string &cbName, NapiAudioRoutingManager *napiRoutingMgr);

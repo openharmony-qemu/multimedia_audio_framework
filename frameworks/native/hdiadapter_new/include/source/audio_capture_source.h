@@ -26,6 +26,7 @@
 #include "util/audio_running_lock.h"
 #include "util/ring_buffer_handler.h"
 #include "util/callback_wrapper.h"
+#include "util/hdi_dfx_utils.h"
 #include "audio_primary_source_clock.h"
 
 namespace OHOS {
@@ -51,6 +52,7 @@ public:
         uint64_t &replyBytesEc) override;
 
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
+    void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
 
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
@@ -80,7 +82,8 @@ public:
 private:
     static AudioFormat ConvertToHdiFormat(AudioSampleFormat format);
     static uint64_t GetChannelLayoutByChannelCount(uint32_t channelCount);
-    static enum AudioInputType ConvertToHDIAudioInputType(int32_t sourceType);
+    static uint64_t GetChannelCountByChannelLayout(uint64_t channelLayout);
+    static enum AudioInputType ConvertToHDIAudioInputType(int32_t sourceType, std::string hdiSourceType);
     static AudioSampleFormat ParseAudioFormat(const std::string &format);
     static AudioCategory GetAudioCategory(AudioScene audioScene);
     static int32_t GetByteSizeByFormat(AudioSampleFormat format);
@@ -107,10 +110,10 @@ private:
     void CaptureThreadLoop(void);
     int32_t UpdateActiveDeviceWithoutLock(DeviceType inputDevice);
     int32_t DoStop(void);
-    void DumpData(char *frame, uint64_t &replyBytes);
     void InitRunningLock(void);
     void CheckAcousticEchoCancelerSupported(int32_t sourcetype, int32_t &hdiAudioInputType);
     bool IsCaptureInvalid(void) override;
+    static AudioInputType MappingAudioInputType(std::string hdiSourceType);
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -175,6 +178,7 @@ private:
     std::unordered_map<DeviceType, uint16_t> dmDeviceTypeMap_;
 
     std::shared_ptr<AudioCapturerSourceClock> audioSrcClock_ = nullptr;
+    static const std::unordered_map<std::string, AudioInputType> audioInputTypeMap_;
 };
 
 } // namespace AudioStandard

@@ -15,8 +15,8 @@
   global:
     *GetInstance*;
     *GetRecorderManager*;
-    *EnableDualToneList*;
-    *DisableDualToneList*;
+    *EnableDualStream*;
+    *DisableDualStream*;
     *GetAndSaveClientType*;
     *IsExceedingMaxStreamCntPerUid*;
     *ConfigPolicyProvider*;
@@ -33,6 +33,7 @@
     *CheckHibernateState*;
     *GetHibernateState*;
     *GetMaxRendererInstances*;
+    *IsSupportInnerCaptureOffload*;
     *ProcessCbProxy*;
     *GetCapturerBySessionID*;
     *GetCurrentRendererStreamCnt*;
@@ -61,6 +62,8 @@
     *GenerateSessionId*;
     *LoadModernInnerCapSink*;
     *UnloadModernInnerCapSink*;
+    *LoadModernOffloadCapSource*;
+    *UnloadModernOffloadCapSource*;
     *ConfigCoreServiceProvider*;
     *UpdateSessionOperation*;
     *SetSessionMuteState*;
@@ -80,6 +83,11 @@
     *SaveRenderWhitelist*;
     *InRenderWhitelist*;
     *HpaeCapturerStreamImpl*;
+    *UpdateSwitchStreamMap*;
+    *UpdateBackgroundCaptureMap*;
+    *SendInterruptEventToAudioServer*;
+    *SendInterruptEventToAudioService*;
+    *GetPrivacyType*;
   local:
     *;
 };

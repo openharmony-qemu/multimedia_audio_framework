@@ -59,6 +59,7 @@ constexpr int32_t MIN_CACHE_SIZE = 3528;
 inline size_t g_reqBufLen = 0;
 
 constexpr int g_writeOverflowNum = 1000;
+constexpr float DUCK_VOLUME = 0.2f;
 
 constexpr uint32_t SAMPLE_RATE_16010 = 16010;
 constexpr uint32_t SAMPLE_RATE_7999 = 7999;
@@ -107,7 +108,7 @@ public:
 class TestAudioStremStub : public FastAudioStream {
 public:
     TestAudioStremStub() : FastAudioStream(AudioStreamType::STREAM_MUSIC,
-        AudioMode::AUDIO_MODE_RECORD, 0) {}
+        AudioMode::AUDIO_MODE_PLAYBACK, 0) {}
     uint32_t GetOverflowCount() override { return RenderUT::g_writeOverflowNum; }
     State GetState() override { return state_; }
     bool StopAudioStream() override { return true; }
@@ -124,6 +125,8 @@ public:
         const std::shared_ptr<AudioClientTracker> &proxyObj,
         const AudioPlaybackCaptureConfig &config = AudioPlaybackCaptureConfig()) override { return SUCCESS; }
     void GetRestoreInfo(RestoreInfo &restoreInfo) override {};
+    float GetDuckVolume() override { return RenderUT::DUCK_VOLUME; }
+    int32_t SetDuckVolume(float volume) override { return SUCCESS; }
 
     State state_ = State::RUNNING;
     RestoreStatus restoreStatus_ = NO_NEED_FOR_RESTORE;

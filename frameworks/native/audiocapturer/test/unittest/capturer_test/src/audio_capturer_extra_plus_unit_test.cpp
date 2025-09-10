@@ -446,98 +446,6 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_009, TestSize.Level1)
 /**
  * @tc.name  : Test AudioCapturerPrivate API
  * @tc.type  : FUNC
- * @tc.number: AudioCapturerPrivate_010
- * @tc.desc  : Test AudioCapturerPrivate::ContinueAfterConcede
- */
-HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_010, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
-    ASSERT_NE(capturer, nullptr);
-
-    capturer->audioStream_ = std::make_shared<FastAudioStreamFork>();
-    ASSERT_NE(capturer->audioStream_, nullptr);
-
-    IAudioStream::StreamClass targetClass;
-    RestoreInfo restoreInfo;
-    restoreInfo.restoreReason = STREAM_CONCEDED;
-
-    auto ret = capturer->ContinueAfterConcede(targetClass, restoreInfo);
-    EXPECT_EQ(ret, false);
-}
-
-/**
- * @tc.name  : Test AudioCapturerPrivate API
- * @tc.type  : FUNC
- * @tc.number: AudioCapturerPrivate_011
- * @tc.desc  : Test AudioCapturerPrivate::ContinueAfterConcede
- */
-HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_011, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
-    ASSERT_NE(capturer, nullptr);
-
-    capturer->audioStream_ = std::make_shared<FastAudioStreamFork2>();
-    ASSERT_NE(capturer->audioStream_, nullptr);
-
-    IAudioStream::StreamClass targetClass;
-    RestoreInfo restoreInfo;
-    restoreInfo.restoreReason = STREAM_CONCEDED;
-
-    auto ret = capturer->ContinueAfterConcede(targetClass, restoreInfo);
-    EXPECT_EQ(ret, true);
-}
-
-/**
- * @tc.name  : Test AudioCapturerPrivate API
- * @tc.type  : FUNC
- * @tc.number: AudioCapturerPrivate_012
- * @tc.desc  : Test AudioCapturerPrivate::ContinueAfterConcede
- */
-HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_012, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
-    ASSERT_NE(capturer, nullptr);
-
-    capturer->audioStream_ = std::make_shared<FastAudioStreamFork3>();
-    ASSERT_NE(capturer->audioStream_, nullptr);
-
-    IAudioStream::StreamClass targetClass;
-    RestoreInfo restoreInfo;
-    restoreInfo.restoreReason = STREAM_CONCEDED;
-
-    auto ret = capturer->ContinueAfterConcede(targetClass, restoreInfo);
-    EXPECT_EQ(ret, true);
-}
-
-/**
- * @tc.name  : Test AudioCapturerPrivate API
- * @tc.type  : FUNC
- * @tc.number: AudioCapturerPrivate_013
- * @tc.desc  : Test AudioCapturerPrivate::ContinueAfterConcede
- */
-HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_013, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_VOICE_CALL, appInfo, true);
-    ASSERT_NE(capturer, nullptr);
-
-    capturer->audioStream_ = std::make_shared<FastAudioStreamFork4>();
-    ASSERT_NE(capturer->audioStream_, nullptr);
-
-    IAudioStream::StreamClass targetClass;
-    RestoreInfo restoreInfo;
-    restoreInfo.restoreReason = STREAM_CONCEDED;
-
-    auto ret = capturer->ContinueAfterConcede(targetClass, restoreInfo);
-    EXPECT_EQ(ret, false);
-}
-
-/**
- * @tc.name  : Test AudioCapturerPrivate API
- * @tc.type  : FUNC
  * @tc.number: AudioCapturerPrivate_018
  * @tc.desc  : Test AudioCapturerPrivate::HandleAudioInterruptWhenServerDied
  */
@@ -614,7 +522,7 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_024, TestSize.Level1)
  * @tc.name  : Test AudioCapturerPrivate API
  * @tc.type  : FUNC
  * @tc.number: AudioCapturerPrivate_025
- * @tc.desc  : Test AudioCapturerPrivate::SetClientInfo
+ * @tc.desc  : Test AudioCapturerPrivate::DecideStreamClassAndUpdateCapturerInfo
  */
 HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_025, TestSize.Level1)
 {
@@ -623,10 +531,8 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_025, TestSize.Level1)
     ASSERT_NE(capturer, nullptr);
 
     uint32_t flag = 0x6000;
-    IAudioStream::StreamClass streamClass = IAudioStream::StreamClass::PA_STREAM;
-
-    capturer->SetClientInfo(flag, streamClass);
-    EXPECT_EQ(capturer->capturerInfo_.pipeType, PIPE_TYPE_CALL_IN);
+    IAudioStream::StreamClass streamClass = capturer->DecideStreamClassAndUpdateCapturerInfo(flag);
+    EXPECT_EQ(streamClass, IAudioStream::StreamClass::VOIP_STREAM);
 }
 
 /**
@@ -717,6 +623,114 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_029, TestSize.Level1)
 
     capturer->SetFastStatusChangeCallback(fastStatusChangeCallback);
     EXPECT_NE(capturer->fastStatusChangeCallback_, nullptr);
+}
+
+/**
+ * @tc.name  : Test ParamsToStateCmdType API
+ * @tc.type  : FUNC
+ * @tc.number: ParamsToStateCmdType_001
+ * @tc.desc  : Test ParamsToStateCmdType API
+ */
+HWTEST(AudioCapturerUnitTest, ParamsToStateCmdType_001, TestSize.Level1)
+{
+    FastAudioStream fastAudioStream(AudioStreamType::STREAM_MUSIC,
+        AudioMode::AUDIO_MODE_RECORD, 0);
+    State state;
+    StateChangeCmdType cmdType;
+    int32_t ret = fastAudioStream.ParamsToStateCmdType(FastAudioStreamFork2::HANDLER_PARAM_NEW, state, cmdType);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(state, NEW);
+    EXPECT_EQ(cmdType, CMD_FROM_CLIENT);
+}
+
+/**
+ * @tc.name  : Test ParamsToStateCmdType API
+ * @tc.type  : FUNC
+ * @tc.number: ParamsToStateCmdType_002
+ * @tc.desc  : Test ParamsToStateCmdType
+ */
+HWTEST(AudioCapturerUnitTest, ParamsToStateCmdType_002, TestSize.Level1)
+{
+    FastAudioStream fastAudioStream(AudioStreamType::STREAM_MUSIC,
+        AudioMode::AUDIO_MODE_RECORD, 0);
+    State state;
+    StateChangeCmdType cmdType;
+    int32_t ret = fastAudioStream.ParamsToStateCmdType(FastAudioStreamFork2::HANDLER_PARAM_RELEASED, state, cmdType);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(state, RELEASED);
+    EXPECT_EQ(cmdType, CMD_FROM_CLIENT);
+}
+
+/**
+ * @tc.name  : Test ParamsToStateCmdType API
+ * @tc.type  : FUNC
+ * @tc.number: ParamsToStateCmdType_003
+ * @tc.desc  : Test ParamsToStateCmdType
+ */
+HWTEST(AudioCapturerUnitTest, ParamsToStateCmdType_003, TestSize.Level1)
+{
+    FastAudioStream fastAudioStream(AudioStreamType::STREAM_MUSIC,
+        AudioMode::AUDIO_MODE_RECORD, 0);
+    State state;
+    StateChangeCmdType cmdType;
+    int32_t ret = fastAudioStream.ParamsToStateCmdType(
+        FastAudioStreamFork2::HANDLER_PARAM_PAUSED, state, cmdType);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(state, PAUSED);
+    EXPECT_EQ(cmdType, CMD_FROM_CLIENT);
+}
+
+/**
+ * @tc.name  : Test ParamsToStateCmdType API
+ * @tc.type  : FUNC
+ * @tc.number: ParamsToStateCmdType_004
+ * @tc.desc  : Test ParamsToStateCmdType
+ */
+HWTEST(AudioCapturerUnitTest, ParamsToStateCmdType_004, TestSize.Level1)
+{
+    FastAudioStream fastAudioStream(AudioStreamType::STREAM_MUSIC,
+        AudioMode::AUDIO_MODE_RECORD, 0);
+    State state;
+    StateChangeCmdType cmdType;
+    int32_t ret = fastAudioStream.ParamsToStateCmdType(
+        FastAudioStreamFork2::HANDLER_PARAM_RUNNING_FROM_SYSTEM, state, cmdType);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(state, RUNNING);
+    EXPECT_EQ(cmdType, CMD_FROM_SYSTEM);
+}
+
+/**
+ * @tc.name  : Test ParamsToStateCmdType API
+ * @tc.type  : FUNC
+ * @tc.number: ParamsToStateCmdType_005
+ * @tc.desc  : Test ParamsToStateCmdType
+ */
+HWTEST(AudioCapturerUnitTest, ParamsToStateCmdType_005, TestSize.Level1)
+{
+    FastAudioStream fastAudioStream(AudioStreamType::STREAM_MUSIC,
+        AudioMode::AUDIO_MODE_RECORD, 0);
+    State state;
+    StateChangeCmdType cmdType;
+    int32_t ret = fastAudioStream.ParamsToStateCmdType(
+        FastAudioStreamFork2::HANDLER_PARAM_PAUSED_FROM_SYSTEM, state, cmdType);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(state, PAUSED);
+    EXPECT_EQ(cmdType, CMD_FROM_SYSTEM);
+}
+
+/**
+ * @tc.name  : Test SetStreamCallback API
+ * @tc.type  : FUNC
+ * @tc.number: SetStreamCallback_001
+ * @tc.desc  : Test SetStreamCallback_001
+ */
+HWTEST(AudioCapturerUnitTest, SetStreamCallback_001, TestSize.Level1)
+{
+    FastAudioStream fastAudioStream(AudioStreamType::STREAM_MUSIC,
+        AudioMode::AUDIO_MODE_RECORD, 0);
+    std::shared_ptr<AudioStreamCallback> callback = nullptr;
+    int32_t ret = fastAudioStream.SetStreamCallback(callback);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 } // namespace AudioStandard
 } // namespace OHOS

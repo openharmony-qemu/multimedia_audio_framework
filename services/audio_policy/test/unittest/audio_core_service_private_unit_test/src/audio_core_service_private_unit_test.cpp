@@ -14,6 +14,7 @@
  */
 
 #include "audio_core_service_private_unit_test.h"
+
 using namespace testing::ext;
 
 namespace OHOS {
@@ -21,13 +22,26 @@ namespace AudioStandard {
 
 static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
 static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
+static const uint32_t TEST_STREAM_1_SESSION_ID = 100001;
+static const uint32_t TEST_STREAM_2_SESSION_ID = 100002;
+
+void AudioCoreServicePrivateTest::SetUp(void)
+{
+    testCoreService_ = std::make_shared<AudioCoreService>();
+    testCoreService_->Init();
+}
+
+void AudioCoreServicePrivateTest::TearDown(void)
+{
+    testCoreService_ = nullptr;
+}
 
 /**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_001
  * @tc.desc  : Test AudioCoreService::GetEncryptAddr()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_001, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_001, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -43,7 +57,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_001, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_002
  * @tc.desc  : Test AudioCoreService::GetEncryptAddr()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_002, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_002, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -59,7 +73,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_002, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_003
  * @tc.desc  : Test AudioCoreService::GetEncryptAddr()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_003, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_003, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -75,7 +89,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_003, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_005
  * @tc.desc  : Test AudioCoreService::ScoInputDeviceFetchedForRecongnition()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_005, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_005, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -93,7 +107,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_005, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_006
  * @tc.desc  : Test AudioCoreService::ScoInputDeviceFetchedForRecongnition()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_006, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_006, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -111,7 +125,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_006, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_007
  * @tc.desc  : Test AudioCoreService::ScoInputDeviceFetchedForRecongnition()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_007, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_007, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -129,7 +143,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_007, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_008
  * @tc.desc  : Test AudioCoreService::BluetoothScoFetch()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_008, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_008, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -148,7 +162,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_008, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_009
  * @tc.desc  : Test AudioCoreService::CheckModemScene()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_009, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_009, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -166,7 +180,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_009, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_010
  * @tc.desc  : Test AudioCoreService::CheckModemScene()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_010, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_010, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -188,7 +202,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_010, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_011
  * @tc.desc  : Test AudioCoreService::HandleAudioCaptureState()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_011, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_011, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -207,7 +221,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_011, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_012
  * @tc.desc  : Test AudioCoreService::HandleAudioCaptureState()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_012, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_012, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -226,7 +240,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_012, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_013
  * @tc.desc  : Test AudioCoreService::HandleAudioCaptureState()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_013, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_013, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -244,7 +258,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_013, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_014
  * @tc.desc  : Test AudioCoreService::HandleAudioCaptureState()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_014, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_014, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -262,7 +276,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_014, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_015
  * @tc.desc  : Test AudioCoreService::BluetoothDeviceFetchOutputHandle()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_015, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_015, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -281,7 +295,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_015, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_016
  * @tc.desc  : Test AudioCoreService::BluetoothDeviceFetchOutputHandle()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_016, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_016, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -303,7 +317,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_016, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_017
  * @tc.desc  : Test AudioCoreService::BluetoothDeviceFetchOutputHandle()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_017, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_017, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -325,7 +339,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_017, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_018
  * @tc.desc  : Test AudioCoreService::ActivateA2dpDeviceWhenDescEnabled()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_018, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_018, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -344,7 +358,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_018, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_019
  * @tc.desc  : Test AudioCoreService::ActivateA2dpDeviceWhenDescEnabled()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_019, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_019, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -363,7 +377,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_019, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_020
  * @tc.desc  : Test AudioCoreService::ActivateA2dpDeviceWhenDescEnabled()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_020, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_020, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -382,7 +396,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_020, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_022
  * @tc.desc  : Test AudioCoreService::LoadA2dpModule()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_022, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_022, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -402,7 +416,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_022, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_023
  * @tc.desc  : Test AudioCoreService::ReloadA2dpAudioPort()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_023, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_023, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -425,7 +439,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_023, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_024
  * @tc.desc  : Test AudioCoreService::ReloadA2dpAudioPort()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_024, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_024, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -448,7 +462,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_024, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_025
  * @tc.desc  : Test AudioCoreService::GetA2dpModuleInfo()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_025, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_025, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -467,7 +481,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_025, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_026
  * @tc.desc  : Test AudioCoreService::GetA2dpModuleInfo()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_026, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_026, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -486,7 +500,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_026, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_027
  * @tc.desc  : Test AudioCoreService::IsSameDevice()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_027, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_027, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -513,7 +527,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_027, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_028
  * @tc.desc  : Test AudioCoreService::IsSameDevice()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_028, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_028, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -543,7 +557,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_028, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_029
  * @tc.desc  : Test AudioCoreService::IsSameDevice()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_029, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_029, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -570,7 +584,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_029, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_030
  * @tc.desc  : Test AudioCoreService::IsSameDevice()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_030, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_030, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -599,7 +613,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_030, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_031
  * @tc.desc  : Test AudioCoreService::IsSameDevice()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_031, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_031, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -625,7 +639,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_031, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_032
  * @tc.desc  : Test AudioCoreService::IsSameDevice()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_032, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_032, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -651,7 +665,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_032, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_033
  * @tc.desc  : Test AudioCoreService::IsSameDevice()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_033, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_033, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -677,7 +691,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_033, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_034
  * @tc.desc  : Test AudioCoreService::IsSameDevice()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_034, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_034, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -703,7 +717,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_034, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_037
  * @tc.desc  : Test AudioCoreService::ProcessOutputPipeNew()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_037, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_037, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -729,7 +743,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_037, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_038
  * @tc.desc  : Test AudioCoreService::ProcessOutputPipeNew()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_038, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_038, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -755,7 +769,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_038, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_039
  * @tc.desc  : Test AudioCoreService::ProcessOutputPipeNew()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_039, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_039, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -781,7 +795,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_039, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_040
  * @tc.desc  : Test AudioCoreService::ProcessOutputPipeNew()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_040, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_040, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -807,7 +821,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_040, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_043
  * @tc.desc  : Test AudioCoreService::BluetoothScoFetch
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_043, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_043, TestSize.Level1)
 {
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
@@ -825,7 +839,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_043, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_044
  * @tc.desc : Test AudioCoreService::HandleAudioCaptureState
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_044, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_044, TestSize.Level1)
 {
     AudioMode mode = AUDIO_MODE_RECORD;
     AudioStreamChangeInfo streamChangeInfo;
@@ -844,7 +858,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_044, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_045
  * @tc.desc : Test AudioCoreService::HandleAudioCaptureState
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_045, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_045, TestSize.Level1)
 {
     AudioMode mode = AUDIO_MODE_RECORD;
     AudioStreamChangeInfo streamChangeInfo;
@@ -863,7 +877,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_045, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_046
  * @tc.desc : Test AudioCoreService::HandleAudioCaptureState
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_046, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_046, TestSize.Level1)
 {
     AudioMode mode = AUDIO_MODE_RECORD;
     AudioStreamChangeInfo streamChangeInfo;
@@ -882,7 +896,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_046, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_047
  * @tc.desc : Test AudioCoreService::HandleAudioCaptureState
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_047, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_047, TestSize.Level1)
 {
     AudioMode mode = AUDIO_MODE_RECORD;
     AudioStreamChangeInfo streamChangeInfo;
@@ -900,7 +914,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_047, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_048
  * @tc.desc : Test AudioCoreService::HandleAudioCaptureState
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_048, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_048, TestSize.Level1)
 {
     AudioMode mode = AUDIO_MODE_PLAYBACK;
     AudioStreamChangeInfo streamChangeInfo;
@@ -918,7 +932,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_048, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_049
  * @tc.desc : Test AudioCoreService::HasLowLatencyCapability
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_049, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_049, TestSize.Level1)
 {
     auto audioCoreService = AudioCoreService::GetCoreService();
 
@@ -932,7 +946,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_049, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_050
  * @tc.desc : Test AudioCoreService::HasLowLatencyCapability
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_050, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_050, TestSize.Level1)
 {
     DeviceType deviceType = DEVICE_TYPE_EARPIECE;
 
@@ -948,7 +962,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_050, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_051
  * @tc.desc : Test AudioCoreService::HasLowLatencyCapability
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_051, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_051, TestSize.Level1)
 {
     DeviceType deviceType = DEVICE_TYPE_SPEAKER;
 
@@ -964,7 +978,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_051, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_052
  * @tc.desc : Test AudioCoreService::HasLowLatencyCapability
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_052, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_052, TestSize.Level1)
 {
     DeviceType deviceType = DEVICE_TYPE_WIRED_HEADSET;
 
@@ -980,7 +994,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_052, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_053
  * @tc.desc : Test AudioCoreService::HasLowLatencyCapability
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_053, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_053, TestSize.Level1)
 {
     DeviceType deviceType = DEVICE_TYPE_WIRED_HEADPHONES;
 
@@ -996,7 +1010,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_053, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_054
  * @tc.desc : Test AudioCoreService::HasLowLatencyCapability
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_054, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_054, TestSize.Level1)
 {
     DeviceType deviceType = DEVICE_TYPE_USB_HEADSET;
     auto audioCoreService = AudioCoreService::GetCoreService();
@@ -1011,7 +1025,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_054, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_055
  * @tc.desc : Test AudioCoreService::HasLowLatencyCapability
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_055, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_055, TestSize.Level1)
 {
     DeviceType deviceType = DEVICE_TYPE_DP;
     auto audioCoreService = AudioCoreService::GetCoreService();
@@ -1026,7 +1040,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_055, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_056
  * @tc.desc : Test AudioCoreService::HasLowLatencyCapability
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_056, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_056, TestSize.Level1)
 {
     DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
     auto audioCoreService = AudioCoreService::GetCoreService();
@@ -1041,7 +1055,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_056, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_057
  * @tc.desc : Test AudioCoreService::HasLowLatencyCapability
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_057, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_057, TestSize.Level1)
 {
     DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
     auto audioCoreService = AudioCoreService::GetCoreService();
@@ -1056,7 +1070,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_057, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_058
  * @tc.desc : Test AudioCoreService::HasLowLatencyCapability
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_058, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_058, TestSize.Level1)
 {
     DeviceType deviceType = DEVICE_TYPE_DEFAULT;
     auto audioCoreService = AudioCoreService::GetCoreService();
@@ -1071,7 +1085,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_058, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_059
  * @tc.desc : Test AudioCoreService::GetRealUid
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_059, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_059, TestSize.Level1)
 {
     auto streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->callerUid_ = 1013;
@@ -1089,7 +1103,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_059, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_060
  * @tc.desc : Test AudioCoreService::GetRealUid
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_060, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_060, TestSize.Level1)
 {
     auto streamDesc = std::make_shared<AudioStreamDescriptor>();
     auto audioCoreService = AudioCoreService::GetCoreService();
@@ -1106,7 +1120,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_060, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_GetRealPid
  * @tc.desc : Test AudioCoreService::GetRealPid
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_GetRealPid, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_GetRealPid, TestSize.Level1)
 {
     auto streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->callerUid_ = 1013;
@@ -1125,7 +1139,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_GetRealPid, TestSize
  * @tc.number: AudioCoreServicePrivate_GetRealPid_02
  * @tc.desc : Test AudioCoreService::GetRealPid
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_GetRealPid_02, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_GetRealPid_02, TestSize.Level1)
 {
     auto streamDesc = std::make_shared<AudioStreamDescriptor>();
     auto audioCoreService = AudioCoreService::GetCoreService();
@@ -1142,7 +1156,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_GetRealPid_02, TestS
  * @tc.number: AudioCoreServicePrivate_061
  * @tc.desc : Test AudioCoreService::UpdateRendererInfoWhenNoPermission
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_061, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_061, TestSize.Level1)
 {
     auto audioRendererChangeInfos = std::make_shared<AudioRendererChangeInfo>();
     bool hasSystemPermission = true;
@@ -1159,7 +1173,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_061, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_062
  * @tc.desc : Test AudioCoreService::UpdateRendererInfoWhenNoPermission
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_062, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_062, TestSize.Level1)
 {
     auto audioRendererChangeInfos = std::make_shared<AudioRendererChangeInfo>();
     bool hasSystemPermission = false;
@@ -1176,7 +1190,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_062, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_063
  * @tc.desc : Test AudioCoreService::UpdateRendererInfoWhenNoPermission
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_063, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_063, TestSize.Level1)
 {
     auto audioCapturerChangeInfos = std::make_shared<AudioCapturerChangeInfo>();
     bool hasSystemPermission = true;
@@ -1193,7 +1207,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_063, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_064
  * @tc.desc : Test AudioCoreService::UpdateRendererInfoWhenNoPermission
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_064, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_064, TestSize.Level1)
 {
     auto audioCapturerChangeInfos = std::make_shared<AudioCapturerChangeInfo>();
     bool hasSystemPermission = false;
@@ -1210,7 +1224,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_064, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_065
  * @tc.desc : Test AudioCoreService::GetFastControlParam
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_065, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_065, TestSize.Level1)
 {
     auto audioCoreService = AudioCoreService::GetCoreService();
     audioCoreService->isFastControlled_ = true;
@@ -1227,7 +1241,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_065, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_066
  * @tc.desc : Test AudioCoreService::GetFastControlParam
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_066, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_066, TestSize.Level1)
 {
     auto audioCoreService = AudioCoreService::GetCoreService();
     audioCoreService->isFastControlled_ = true;
@@ -1244,7 +1258,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_066, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_067
  * @tc.desc : Test AudioCoreService::NeedRehandleA2DPDevice
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_067, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_067, TestSize.Level1)
 {
     auto desc = std::make_shared<AudioDeviceDescriptor>();
 
@@ -1261,7 +1275,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_067, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_068
  * @tc.desc : Test AudioCoreService::NeedRehandleA2DPDevice
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_068, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_068, TestSize.Level1)
 {
     auto desc = std::make_shared<AudioDeviceDescriptor>();
 
@@ -1281,7 +1295,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_068, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_069
  * @tc.desc : Test AudioCoreService::NeedRehandleA2DPDevice
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_069, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_069, TestSize.Level1)
 {
     auto desc = std::make_shared<AudioDeviceDescriptor>();
 
@@ -1301,7 +1315,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_069, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_070
  * @tc.desc : Test AudioCoreService::TriggerRecreateRendererStreamCallback
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_070, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_070, TestSize.Level1)
 {
     shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->callerPid_ = 0;
@@ -1333,7 +1347,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_070, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_071
  * @tc.desc : Test AudioCoreService::TriggerRecreateRendererStreamCallback
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_071, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_071, TestSize.Level1)
 {
     shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->callerPid_ = 0;
@@ -1368,7 +1382,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_071, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_072
  * @tc.desc : Test AudioCoreService::TriggerRecreateCapturerStreamCallback
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_072, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_072, TestSize.Level1)
 {
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->sessionId_ = 0,
@@ -1392,7 +1406,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_072, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_073
  * @tc.desc : Test AudioCoreService::TriggerRecreateCapturerStreamCallback
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_073, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_073, TestSize.Level1)
 {
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->sessionId_ = 123456,
@@ -1419,7 +1433,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_073, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_074
  * @tc.desc : Test AudioCoreService::HandleStreamStatusToCapturerState
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_074, TestSize.Level2)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_074, TestSize.Level2)
 {
     auto audioCoreService = AudioCoreService::GetCoreService();
     
@@ -1441,39 +1455,10 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_074, TestSize.Level2
 
 /**
  * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_075
- * @tc.desc  : Test AudioCoreService::ProcessOutputPipeNew()
- */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_075, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
- 
-    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
-    audioStreamDescriptor->streamAction_ = AUDIO_STREAM_ACTION_MOVE;
-    audioStreamDescriptor->streamStatus_ = STREAM_STATUS_STARTED;
-    audioStreamDescriptor->appInfo_.appUid = AUDIO_ID;
-    pipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
-    uint32_t flag = 0;
-    AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
-    AudioStreamDeviceChangeReasonExt reason(extEnum);
-    audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
- 
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
-    audioStreamDescriptor->oldDeviceDescs_.push_back(audioDeviceDescriptor);
- 
-    audioCoreService->ProcessOutputPipeNew(pipeInfo, flag, reason);
-    EXPECT_NE(audioCoreService->pipeManager_, nullptr);
-}
-
-/**
- * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_100
  * @tc.desc  : Test AudioCoreService::ProcessOutputPipeUpdate()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_100, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_100, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -1501,7 +1486,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_100, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_101
  * @tc.desc  : Test AudioCoreService::ProcessOutputPipeUpdate()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_101, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_101, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -1530,7 +1515,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_101, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_102
  * @tc.desc  : Test AudioCoreService::ProcessOutputPipeUpdate()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_102, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_102, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -1560,7 +1545,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_102, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_103
  * @tc.desc  : Test AudioCoreService::ProcessOutputPipeUpdate()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_103, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_103, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -1590,7 +1575,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_103, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_104
  * @tc.desc  : Test AudioCoreService::ProcessInputPipeNew()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_104, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_104, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -1609,7 +1594,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_104, TestSize.Level1
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
 
     audioCoreService->ProcessInputPipeNew(pipeInfo, flag);
-    EXPECT_EQ(flag, AUDIO_OUTPUT_FLAG_DIRECT);
+    EXPECT_EQ(flag, AUDIO_FLAG_NONE);
     ASSERT_NE(audioCoreService->pipeManager_, nullptr);
 }
 
@@ -1618,7 +1603,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_104, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_105
  * @tc.desc  : Test AudioCoreService::ProcessInputPipeNew()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_105, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_105, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -1644,7 +1629,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_105, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_106
  * @tc.desc  : Test AudioCoreService::ProcessInputPipeNew()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_106, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_106, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -1670,7 +1655,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_106, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_107
  * @tc.desc  : Test AudioCoreService::ProcessInputPipeNew()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_107, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_107, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -1696,7 +1681,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_107, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_108
  * @tc.desc  : Test AudioCoreService::ProcessInputPipeUpdate()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_108, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_108, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -1724,7 +1709,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_108, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_109
  * @tc.desc  : Test AudioCoreService::ProcessInputPipeUpdate()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_109, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_109, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -1750,7 +1735,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_109, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_110
  * @tc.desc  : Test AudioCoreService::ProcessInputPipeUpdate()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_110, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_110, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -1776,7 +1761,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_110, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_111
  * @tc.desc  : Test AudioCoreService::ProcessInputPipeUpdate()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_111, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_111, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -1802,7 +1787,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_111, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_112
  * @tc.desc  : Test AudioCoreService::SwitchActiveA2dpDevice()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_112, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_112, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -1825,7 +1810,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_112, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_113
  * @tc.desc  : Test AudioCoreService::SwitchActiveA2dpDevice()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_113, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_113, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -1848,7 +1833,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_113, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_114
  * @tc.desc  : Test AudioCoreService::SwitchActiveA2dpDevice()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_114, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_114, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -1872,7 +1857,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_114, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_115
  * @tc.desc  : Test AudioCoreService::MoveToNewInputDevice()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_115, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_115, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -1893,7 +1878,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_115, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_116
  * @tc.desc  : Test AudioCoreService::MoveToNewInputDevice()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_116, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_116, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -1915,7 +1900,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_116, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_117
  * @tc.desc  : Test AudioCoreService::IsNewDevicePlaybackSupported()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_117, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_117, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -1935,7 +1920,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_117, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_118
  * @tc.desc  : Test AudioCoreService::IsNewDevicePlaybackSupported()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_118, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_118, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -1952,7 +1937,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_118, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_119
  * @tc.desc  : Test AudioCoreService::IsNewDevicePlaybackSupported()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_119, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_119, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -1974,7 +1959,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_119, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_120
  * @tc.desc  : Test AudioCoreService::IsNewDevicePlaybackSupported()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_120, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_120, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -1996,7 +1981,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_120, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_121
  * @tc.desc  : Test AudioCoreService::UpdateInputDeviceWhenStopping
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_121, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_121, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -2024,7 +2009,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_121, TestSize.Level1
  * @tc.number: IsFastAllowedTest_001
  * @tc.desc  : Test AudioCoreService::IsFastAllowed, return true when bundleName is null.
  */
-HWTEST(AudioCoreServicePrivateTest, IsFastAllowedTest_001, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, IsFastAllowedTest_001, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -2037,7 +2022,7 @@ HWTEST(AudioCoreServicePrivateTest, IsFastAllowedTest_001, TestSize.Level1)
  * @tc.number: IsFastAllowedTest_002
  * @tc.desc  : Test AudioCoreService::IsFastAllowed, return true when bundleName is normal app.
  */
-HWTEST(AudioCoreServicePrivateTest, IsFastAllowedTest_002, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, IsFastAllowedTest_002, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -2052,7 +2037,7 @@ HWTEST(AudioCoreServicePrivateTest, IsFastAllowedTest_002, TestSize.Level1)
  * @tc.number: HandleFetchOutputWhenNoRunningStream_001
  * @tc.desc  : Test AudioCoreService::HandleFetchOutputWhenNoRunningStream, fetch output when no running stream.
  */
-HWTEST(AudioCoreServicePrivateTest, HandleFetchOutputWhenNoRunningStream_001, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, HandleFetchOutputWhenNoRunningStream_001, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -2065,7 +2050,7 @@ HWTEST(AudioCoreServicePrivateTest, HandleFetchOutputWhenNoRunningStream_001, Te
  * @tc.number: CheckModemScene_001
  * @tc.desc  : Test AudioCoreService::CheckModemScene, set streamStatus to started if scene is AUDIO_SCENE_PHONE_CALL
  */
-HWTEST(AudioCoreServicePrivateTest, CheckModemScene_001, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, CheckModemScene_001, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -2090,7 +2075,7 @@ HWTEST(AudioCoreServicePrivateTest, CheckModemScene_001, TestSize.Level1)
  * @tc.number: CheckModemScene_002
  * @tc.desc  : Test AudioCoreService::CheckModemScene, set streamStatus to stopped if scene is AUDIO_SCENE_DEFAULT
  */
-HWTEST(AudioCoreServicePrivateTest, CheckModemScene_002, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, CheckModemScene_002, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -2114,7 +2099,7 @@ HWTEST(AudioCoreServicePrivateTest, CheckModemScene_002, TestSize.Level1)
  * @tc.number: CheckModemScene_003
  * @tc.desc  : Test AudioCoreService::CheckModemScene, set streamStatus to started if scene is AUDIO_SCENE_PHONE_CALL
  */
-HWTEST(AudioCoreServicePrivateTest, CheckModemScene_003, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, CheckModemScene_003, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -2139,7 +2124,7 @@ HWTEST(AudioCoreServicePrivateTest, CheckModemScene_003, TestSize.Level1)
  * @tc.number: CheckModemScene_004
  * @tc.desc  : Test AudioCoreService::CheckModemScene, set streamStatus to stopped if scene is AUDIO_SCENE_DEFAULT
  */
-HWTEST(AudioCoreServicePrivateTest, CheckModemScene_004, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, CheckModemScene_004, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -2163,7 +2148,7 @@ HWTEST(AudioCoreServicePrivateTest, CheckModemScene_004, TestSize.Level1)
  * @tc.number: CheckModemScene_005
  * @tc.desc  : Test AudioCoreService::CheckModemScene, set streamStatus to started if scene is AUDIO_SCENE_PHONE_CALL
  */
-HWTEST(AudioCoreServicePrivateTest, CheckModemScene_005, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, CheckModemScene_005, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -2188,7 +2173,7 @@ HWTEST(AudioCoreServicePrivateTest, CheckModemScene_005, TestSize.Level1)
  * @tc.number: CheckModemScene_006
  * @tc.desc  : Test AudioCoreService::CheckModemScene, set streamStatus to stopped if scene is AUDIO_SCENE_DEFAULT
  */
-HWTEST(AudioCoreServicePrivateTest, CheckModemScene_006, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, CheckModemScene_006, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -2212,7 +2197,7 @@ HWTEST(AudioCoreServicePrivateTest, CheckModemScene_006, TestSize.Level1)
  * @tc.number: CheckModemScene_007
  * @tc.desc  : Test AudioCoreService::CheckModemScene, set streamStatus to started if scene is AUDIO_SCENE_PHONE_CALL
  */
-HWTEST(AudioCoreServicePrivateTest, CheckModemScene_007, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, CheckModemScene_007, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -2237,7 +2222,7 @@ HWTEST(AudioCoreServicePrivateTest, CheckModemScene_007, TestSize.Level1)
  * @tc.number: CheckModemScene_008
  * @tc.desc  : Test AudioCoreService::CheckModemScene, set streamStatus to stopped if scene is AUDIO_SCENE_DEFAULT
  */
-HWTEST(AudioCoreServicePrivateTest, CheckModemScene_008, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, CheckModemScene_008, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -2262,7 +2247,7 @@ HWTEST(AudioCoreServicePrivateTest, CheckModemScene_008, TestSize.Level1)
  * @tc.number: UpdateModemRoute_001
  * @tc.desc  : Test AudioCoreService::UpdateModemRoute
  */
-HWTEST(AudioCoreServicePrivateTest, UpdateModemRoute_001, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, UpdateModemRoute_001, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -2273,10 +2258,16 @@ HWTEST(AudioCoreServicePrivateTest, UpdateModemRoute_001, TestSize.Level1)
     EXPECT_NE(audioCoreService->pipeManager_->modemCommunicationIdMap_[0], nullptr);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> modemDescs =
         audioCoreService->audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_MODEM_COMMUNICATION, -1, "");
+
     audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
     int32_t ret = audioCoreService->UpdateModemRoute(modemDescs);
-    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
     EXPECT_EQ(ret, SUCCESS);
+
+    audioCoreService->needUnmuteVoiceCall_ = true;
+    ret = audioCoreService->UpdateModemRoute(modemDescs);
+    EXPECT_EQ(ret, SUCCESS);
+
+    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
 }
 
 /**
@@ -2284,7 +2275,7 @@ HWTEST(AudioCoreServicePrivateTest, UpdateModemRoute_001, TestSize.Level1)
  * @tc.number: UpdateModemRoute_002
  * @tc.desc  : Test AudioCoreService::UpdateModemRoute
  */
-HWTEST(AudioCoreServicePrivateTest, UpdateModemRoute_002, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, UpdateModemRoute_002, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -2302,10 +2293,43 @@ HWTEST(AudioCoreServicePrivateTest, UpdateModemRoute_002, TestSize.Level1)
 
 /**
  * @tc.name  : Test AudioCoreService.
+ * @tc.number: GetVoiceCallMuteDuration_001
+ * @tc.desc  : Test AudioCoreService::GetVoiceCallMuteDuration
+ */
+HWTEST_F(AudioCoreServicePrivateTest, GetVoiceCallMuteDuration_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    AudioDeviceDescriptor desc1(DeviceType::DEVICE_TYPE_EARPIECE, DeviceRole::OUTPUT_DEVICE);
+    AudioDeviceDescriptor desc2(DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    AudioDeviceDescriptor desc3(DeviceType::DEVICE_TYPE_USB_HEADSET, DeviceRole::OUTPUT_DEVICE);
+    AudioDeviceDescriptor desc4(DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    desc4.networkId_ = "RemoteDevice";
+    uint32_t targetMuteDuration = 100000;
+
+    uint32_t muteDuration = audioCoreService->GetVoiceCallMuteDuration(desc1, desc1);
+    EXPECT_EQ(muteDuration, 0);
+
+    muteDuration = audioCoreService->GetVoiceCallMuteDuration(desc1, desc2);
+    EXPECT_EQ(muteDuration, 0);
+
+    muteDuration = audioCoreService->GetVoiceCallMuteDuration(desc1, desc3);
+    EXPECT_EQ(muteDuration, targetMuteDuration);
+
+    muteDuration = audioCoreService->GetVoiceCallMuteDuration(desc3, desc1);
+    EXPECT_EQ(muteDuration, targetMuteDuration);
+
+    muteDuration = audioCoreService->GetVoiceCallMuteDuration(desc1, desc4);
+    EXPECT_EQ(muteDuration, targetMuteDuration);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
  * @tc.number: IsStreamSupportLowpower_001
  * @tc.desc  : Test AudioCoreService::IsStreamSupportLowpower, if playerType is PLAYER_TYPE_SOUND_POOL, return false
  */
-HWTEST(AudioCoreServicePrivateTest, IsStreamSupportLowpower_001, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, IsStreamSupportLowpower_001, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -2324,7 +2348,7 @@ HWTEST(AudioCoreServicePrivateTest, IsStreamSupportLowpower_001, TestSize.Level1
  * @tc.number: IsStreamSupportLowpower_002
  * @tc.desc  : Test AudioCoreService::IsStreamSupportLowpower, if playerType is PLAYER_TYPE_OPENSL_ES, return false
  */
-HWTEST(AudioCoreServicePrivateTest, IsStreamSupportLowpower_002, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, IsStreamSupportLowpower_002, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -2343,7 +2367,7 @@ HWTEST(AudioCoreServicePrivateTest, IsStreamSupportLowpower_002, TestSize.Level1
 * @tc.number: IsStreamSupportLowpower_003
 * @tc.desc  : Test interface IsStreamSupportLowpower
 */
-HWTEST(AudioCoreServicePrivateTest, IsStreamSupportLowpower_003, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, IsStreamSupportLowpower_003, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServicePrivateTest IsStreamSupportLower start");
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -2362,7 +2386,7 @@ HWTEST(AudioCoreServicePrivateTest, IsStreamSupportLowpower_003, TestSize.Level1
 * @tc.number: IsStreamSupportLowpower_004
 * @tc.desc  : Test interface IsStreamSupportLowpower
 */
-HWTEST(AudioCoreServicePrivateTest, IsStreamSupportLowpower_004, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, IsStreamSupportLowpower_004, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServicePrivateTest IsStreamSupportLower start");
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -2380,41 +2404,10 @@ HWTEST(AudioCoreServicePrivateTest, IsStreamSupportLowpower_004, TestSize.Level1
 
 /**
  * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_122
- * @tc.desc  : Test AudioCoreService::ReConfigOffloadStatus
- */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_122, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    ASSERT_NE(audioCoreService, nullptr);
-    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    ASSERT_NE(pipeInfo, nullptr);
-    std::string sinkName = "test";
-
-    pipeInfo->moduleInfo_.name = "test";
-    pipeInfo->moduleInfo_.className = "test";
-    audioCoreService->ReConfigOffloadStatus(0, pipeInfo, sinkName);
-
-    pipeInfo->moduleInfo_.name = "test";
-    pipeInfo->moduleInfo_.className = "remote_offload";
-    audioCoreService->ReConfigOffloadStatus(0, pipeInfo, sinkName);
-
-    pipeInfo->moduleInfo_.name = "Offload_Speaker";
-    pipeInfo->moduleInfo_.className = "test";
-    audioCoreService->ReConfigOffloadStatus(0, pipeInfo, sinkName);
-
-    pipeInfo->moduleInfo_.name = "Offload_Speaker";
-    pipeInfo->moduleInfo_.className = "remote_offload";
-    audioCoreService->ReConfigOffloadStatus(0, pipeInfo, sinkName);
-    EXPECT_EQ(audioCoreService->audioOffloadStream_.offloadSessionID_.has_value(), true);
-}
-
-/**
- * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_123
  * @tc.desc  : Test AudioCoreService::RemoveUnusedPipe
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_123, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_123, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -2442,7 +2435,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_123, TestSize.Level1
  * @tc.number: LoadSplitModule_001
  * @tc.desc  : Test AudioCoreService::LoadSplitModule.
  */
-HWTEST(AudioCoreServicePrivateTest, LoadSplitModule_001, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, LoadSplitModule_001, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -2456,7 +2449,7 @@ HWTEST(AudioCoreServicePrivateTest, LoadSplitModule_001, TestSize.Level1)
  * @tc.number: LoadSplitModule_002
  * @tc.desc  : Test AudioCoreService::LoadSplitModule.
  */
-HWTEST(AudioCoreServicePrivateTest, LoadSplitModule_002, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, LoadSplitModule_002, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -2472,7 +2465,7 @@ HWTEST(AudioCoreServicePrivateTest, LoadSplitModule_002, TestSize.Level1)
  * @tc.number: LoadSplitModule_003
  * @tc.desc  : Test AudioCoreService::LoadSplitModule.
  */
-HWTEST(AudioCoreServicePrivateTest, LoadSplitModule_003, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, LoadSplitModule_003, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -2488,7 +2481,7 @@ HWTEST(AudioCoreServicePrivateTest, LoadSplitModule_003, TestSize.Level1)
  * @tc.number: LoadSplitModule_004
  * @tc.desc  : Test AudioCoreService::LoadSplitModule.
  */
-HWTEST(AudioCoreServicePrivateTest, LoadSplitModule_004, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, LoadSplitModule_004, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -2499,13 +2492,12 @@ HWTEST(AudioCoreServicePrivateTest, LoadSplitModule_004, TestSize.Level1)
     EXPECT_EQ(ret, 0);
 }
 
-
 /**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_124
  * @tc.desc  : Test AudioCoreService::OpenNewAudioPortAndRoute()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_124, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_124, TestSize.Level1)
 {
     uint32_t sessionIDTest = 100;
 
@@ -2536,7 +2528,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_124, TestSize.Level1
  * @tc.number: AudioCoreServicePrivate_125
  * @tc.desc  : Test AudioCoreService::OpenNewAudioPortAndRoute()
  */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_125, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_125, TestSize.Level1)
 {
     uint32_t sessionIDTest = 0;
 
@@ -2571,7 +2563,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_125, TestSize.Level1
  * @tc.number: IsRingerOrAlarmerDualDevicesRange_001.
  * @tc.desc  : Test IsRingerOrAlarmerDualDevicesRange.
  */
-HWTEST(AudioCoreServicePrivateTest, IsRingerOrAlarmerDualDevicesRange_001, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, IsRingerOrAlarmerDualDevicesRange_001, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -2584,7 +2576,7 @@ HWTEST(AudioCoreServicePrivateTest, IsRingerOrAlarmerDualDevicesRange_001, TestS
  * @tc.number: SwitchActiveHearingAidDevice_001.
  * @tc.desc  : Test SwitchActiveHearingAidDevice.
  */
-HWTEST(AudioCoreServicePrivateTest, SwitchActiveHearingAidDevice_001, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, SwitchActiveHearingAidDevice_001, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -2617,7 +2609,7 @@ HWTEST(AudioCoreServicePrivateTest, SwitchActiveHearingAidDevice_001, TestSize.L
  * @tc.number: ResetNearlinkDeviceState_001.
  * @tc.desc  : Test ResetNearlinkDeviceState.
  */
-HWTEST(AudioCoreServicePrivateTest, ResetNearlinkDeviceState_001, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, ResetNearlinkDeviceState_001, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -2633,6 +2625,8 @@ HWTEST(AudioCoreServicePrivateTest, ResetNearlinkDeviceState_001, TestSize.Level
     deviceDesc2->deviceType_ = DEVICE_TYPE_NEARLINK;
     deviceDesc1->macAddress_ = mac1;
     deviceDesc2->macAddress_ = mac2;
+    deviceDesc1->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    deviceDesc2->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
 
     audioCoreService->audioActiveDevice_.SetCurrentOutputDevice(*deviceDesc1);
 
@@ -2658,7 +2652,7 @@ HWTEST(AudioCoreServicePrivateTest, ResetNearlinkDeviceState_001, TestSize.Level
  * @tc.number: ResetNearlinkDeviceState_002.
  * @tc.desc  : Test ResetNearlinkDeviceState.
  */
-HWTEST(AudioCoreServicePrivateTest, ResetNearlinkDeviceState_002, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, ResetNearlinkDeviceState_002, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
@@ -2674,6 +2668,8 @@ HWTEST(AudioCoreServicePrivateTest, ResetNearlinkDeviceState_002, TestSize.Level
     deviceDesc2->deviceType_ = DEVICE_TYPE_NEARLINK_IN;
     deviceDesc1->macAddress_ = mac1;
     deviceDesc2->macAddress_ = mac2;
+    deviceDesc1->deviceRole_ = DeviceRole::INPUT_DEVICE;
+    deviceDesc2->deviceRole_ = DeviceRole::INPUT_DEVICE;
 
     audioCoreService->audioActiveDevice_.SetCurrentInputDevice(*deviceDesc1);
 
@@ -2698,7 +2694,7 @@ HWTEST(AudioCoreServicePrivateTest, ResetNearlinkDeviceState_002, TestSize.Level
  * @tc.number: CaptureConcurrentCheck_001
  * @tc.desc  : Test AudioCoreService::CaptureConcurrentCheck()
  */
-HWTEST(AudioCoreServicePrivateTest, CaptureConcurrentCheck_001, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, CaptureConcurrentCheck_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServicePrivateTest CaptureConcurrentCheck_001 start");
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -2736,7 +2732,7 @@ HWTEST(AudioCoreServicePrivateTest, CaptureConcurrentCheck_001, TestSize.Level1)
  * @tc.number: CaptureConcurrentCheck_002
  * @tc.desc  : Test AudioCoreService::CaptureConcurrentCheck()
  */
-HWTEST(AudioCoreServicePrivateTest, CaptureConcurrentCheck_002, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, CaptureConcurrentCheck_002, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServicePrivateTest CaptureConcurrentCheck_002 start");
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -2764,7 +2760,7 @@ HWTEST(AudioCoreServicePrivateTest, CaptureConcurrentCheck_002, TestSize.Level1)
  * @tc.number: ActivateInputDevice_001
  * @tc.desc  : Test AudioCoreService::ActivateInputDevice()
  */
-HWTEST(AudioCoreServicePrivateTest, ActivateInputDevice_001, TestSize.Level4)
+HWTEST_F(AudioCoreServicePrivateTest, ActivateInputDevice_001, TestSize.Level4)
 {
     AUDIO_INFO_LOG("AudioCoreServicePrivateTest ActivateInputDevice_001 start");
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -2789,7 +2785,7 @@ HWTEST(AudioCoreServicePrivateTest, ActivateInputDevice_001, TestSize.Level4)
  * @tc.number: ActivateInputDevice_002
  * @tc.desc  : Test AudioCoreService::ActivateInputDevice()
  */
-HWTEST(AudioCoreServicePrivateTest, ActivateInputDevice_002, TestSize.Level4)
+HWTEST_F(AudioCoreServicePrivateTest, ActivateInputDevice_002, TestSize.Level4)
 {
     AUDIO_INFO_LOG("AudioCoreServicePrivateTest ActivateInputDevice_002 start");
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -2811,13 +2807,263 @@ HWTEST(AudioCoreServicePrivateTest, ActivateInputDevice_002, TestSize.Level4)
 
 /**
  * @tc.name  : Test AudioCoreService.
+ * @tc.number: MuteSinkPortForSwitchDevice_001
+ * @tc.desc  : Test AudioCoreService::MuteSinkPortForSwitchDevice()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, MuteSinkPortForSwitchDevice_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    // Test1
+    AudioStreamDeviceChangeReasonExt::ExtEnum extReason = AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE;
+    AudioStreamDeviceChangeReasonExt reason(extReason);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> oldDesc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    std::shared_ptr<AudioDeviceDescriptor> newDesc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    streamDesc->oldDeviceDescs_.push_back(oldDesc);
+    streamDesc->oldDeviceDescs_.push_back(newDesc);
+    audioCoreService->audioIOHandleMap_.SetMoveFinish(true);
+    
+    audioCoreService->MuteSinkPortForSwitchDevice(streamDesc, reason);
+    EXPECT_TRUE(audioCoreService->audioIOHandleMap_.moveDeviceFinished_.load());
+    streamDesc->newDeviceDescs_.clear();
+
+    // Test2
+    newDesc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    streamDesc->newDeviceDescs_.push_back(newDesc);
+
+    audioCoreService->MuteSinkPortForSwitchDevice(streamDesc, reason);
+    EXPECT_FALSE(audioCoreService->audioIOHandleMap_.moveDeviceFinished_.load());
+    audioCoreService->audioIOHandleMap_.SetMoveFinish(false);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: CheckAndSleepBeforeVoiceCallDeviceSet_001
+ * @tc.desc  : Test AudioCoreService::CheckAndSleepBeforeVoiceCallDeviceSet()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckAndSleepBeforeVoiceCallDeviceSet_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    // Test1
+    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+
+    auto start = std::chrono::steady_clock::now();
+    audioCoreService->CheckAndSleepBeforeVoiceCallDeviceSet(reason);
+    auto end = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    uint32_t deltaUs = 3000; // 3ms
+    EXPECT_LE(duration, deltaUs);
+
+    // Test2
+    reason = AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE;
+    auto info = std::make_shared<AudioRendererChangeInfo>();
+    info->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    info->rendererState = RENDERER_RUNNING;
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.push_back(info);
+
+    start = std::chrono::steady_clock::now();
+    audioCoreService->CheckAndSleepBeforeVoiceCallDeviceSet(reason);
+    end = std::chrono::steady_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    EXPECT_LE(duration, deltaUs);
+
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
+
+    // Test3
+    info->rendererInfo.streamUsage = STREAM_USAGE_VOICE_RINGTONE;
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.push_back(info);
+
+    start = std::chrono::steady_clock::now();
+    audioCoreService->CheckAndSleepBeforeVoiceCallDeviceSet(reason);
+    end = std::chrono::steady_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    uint32_t targetTime = 120000; //120ms
+    EXPECT_GE(duration, targetTime);
+
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: CheckAndSleepBeforeRingDualDeviceSet_001
+ * @tc.desc  : Test AudioCoreService::CheckAndSleepBeforeRingDualDeviceSet()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckAndSleepBeforeRingDualDeviceSet_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    // Test1
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ == STREAM_STATUS_NEW;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_RINGTONE;
+
+    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
+
+    std::shared_ptr<AudioDeviceDescriptor> newDesc1 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_USB_HEADSET, DeviceRole::OUTPUT_DEVICE);
+    std::shared_ptr<AudioDeviceDescriptor> newDesc2 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    streamDesc->newDeviceDescs_.push_back(newDesc1);
+    streamDesc->newDeviceDescs_.push_back(newDesc2);
+
+    auto info = std::make_shared<AudioRendererChangeInfo>();
+    info->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    info->rendererState = RENDERER_RUNNING;
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.push_back(info);
+
+    auto start = std::chrono::steady_clock::now();
+    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
+    auto end = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    uint32_t targetTime = 120000; //120ms
+    EXPECT_GE(duration, targetTime);
+    streamDesc->newDeviceDescs_.clear();
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
+
+    // Test2
+    std::shared_ptr<AudioDeviceDescriptor> newDesc3 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_EARPIECE, DeviceRole::OUTPUT_DEVICE);
+    streamDesc->newDeviceDescs_.push_back(newDesc3);
+
+    start = std::chrono::steady_clock::now();
+    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
+    end = std::chrono::steady_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    uint32_t deltaUs = 5000; // 5ms
+    EXPECT_LE(duration, deltaUs);
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: CheckAndSleepBeforeRingDualDeviceSet_002
+ * @tc.desc  : Test AudioCoreService::CheckAndSleepBeforeRingDualDeviceSet()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckAndSleepBeforeRingDualDeviceSet_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    // Test3
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ == STREAM_STATUS_NEW;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_RINGTONE;
+
+    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+
+    std::shared_ptr<AudioDeviceDescriptor> newDesc1 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_USB_HEADSET, DeviceRole::OUTPUT_DEVICE);
+    std::shared_ptr<AudioDeviceDescriptor> newDesc2 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    streamDesc->newDeviceDescs_.push_back(newDesc1);
+    streamDesc->newDeviceDescs_.push_back(newDesc2);
+
+    auto info = std::make_shared<AudioRendererChangeInfo>();
+    info->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    info->rendererState = RENDERER_RUNNING;
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.push_back(info);
+
+    auto start = std::chrono::steady_clock::now();
+    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
+    auto end = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    uint32_t deltaUs = 5000; // 5ms
+    EXPECT_LE(duration, deltaUs);
+    streamDesc->newDeviceDescs_.clear();
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
+
+    // Test4
+    streamDesc->streamStatus_ == STREAM_STATUS_NEW;
+
+    reason = AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE;
+
+    start = std::chrono::steady_clock::now();
+    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
+    end = std::chrono::steady_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    EXPECT_LE(duration, deltaUs);
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: CheckAndSleepBeforeRingDualDeviceSet_003
+ * @tc.desc  : Test AudioCoreService::CheckAndSleepBeforeRingDualDeviceSet()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckAndSleepBeforeRingDualDeviceSet_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    // Test5
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ == STREAM_STATUS_NEW;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MOVIE;
+
+    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
+
+    std::shared_ptr<AudioDeviceDescriptor> newDesc1 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_USB_HEADSET, DeviceRole::OUTPUT_DEVICE);
+    std::shared_ptr<AudioDeviceDescriptor> newDesc2 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    streamDesc->newDeviceDescs_.push_back(newDesc1);
+    streamDesc->newDeviceDescs_.push_back(newDesc2);
+
+    auto info = std::make_shared<AudioRendererChangeInfo>();
+    info->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    info->rendererState = RENDERER_RUNNING;
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.push_back(info);
+
+    auto start = std::chrono::steady_clock::now();
+    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
+    auto end = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    uint32_t deltaUs = 5000; // 5ms
+    EXPECT_LE(duration, deltaUs);
+    streamDesc->newDeviceDescs_.clear();
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
+
+    // Test6
+    streamDesc->streamStatus_ == STREAM_STATUS_NEW;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_ALARM;
+
+    info->rendererState = RENDERER_STOPPED;
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.push_back(info);
+
+    start = std::chrono::steady_clock::now();
+    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
+    end = std::chrono::steady_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    EXPECT_LE(duration, deltaUs);
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
  * @tc.number: SleepForSwitchDevice_001
  * @tc.desc  : Test AudioCoreService::SleepForSwitchDevice()
  */
-HWTEST(AudioCoreServicePrivateTest, SleepForSwitchDevice_001, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, SleepForSwitchDevice_001, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
+    ASSERT_NE(audioCoreService, nullptr);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> oldDesc = std::make_shared<AudioDeviceDescriptor>(
@@ -2844,10 +3090,10 @@ HWTEST(AudioCoreServicePrivateTest, SleepForSwitchDevice_001, TestSize.Level1)
  * @tc.number: SleepForSwitchDevice_002
  * @tc.desc  : Test AudioCoreService::SleepForSwitchDevice()
  */
-HWTEST(AudioCoreServicePrivateTest, SleepForSwitchDevice_002, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, SleepForSwitchDevice_002, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
+    ASSERT_NE(audioCoreService, nullptr);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> oldDesc = std::make_shared<AudioDeviceDescriptor>(
@@ -2876,10 +3122,10 @@ HWTEST(AudioCoreServicePrivateTest, SleepForSwitchDevice_002, TestSize.Level1)
  * @tc.number: SleepForSwitchDevice_003
  * @tc.desc  : Test AudioCoreService::SleepForSwitchDevice()
  */
-HWTEST(AudioCoreServicePrivateTest, SleepForSwitchDevice_003, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, SleepForSwitchDevice_003, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
+    ASSERT_NE(audioCoreService, nullptr);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> oldDesc = std::make_shared<AudioDeviceDescriptor>(
@@ -2911,13 +3157,152 @@ HWTEST(AudioCoreServicePrivateTest, SleepForSwitchDevice_003, TestSize.Level1)
  * @tc.number: AddSessionId_001
  * @tc.desc  : Test AudioCoreService::AddSessionId()
  */
-HWTEST(AudioCoreServicePrivateTest, AddSessionId_001, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, AddSessionId_001, TestSize.Level3)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     uint32_t sessionId = 1;
     audioCoreService->AddSessionId(sessionId);
-    ASSERT_EQ(audioCoreService->sessionIdMap_.count(sessionId), 0);
+    EXPECT_EQ(1, audioCoreService->sessionIdMap_.count(sessionId));
     audioCoreService->DeleteSessionId(sessionId);
 }
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: CheckAndUpdateHearingAidCall_001
+ * @tc.desc  : Test AudioCoreService::CheckAndUpdateHearingAidCall
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateHearingAidCall_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
+    audioCoreService->hearingAidCallFlag_ = false;
+    audioCoreService->CheckAndUpdateHearingAidCall(DeviceType::DEVICE_TYPE_HEARING_AID);
+    audioCoreService->hearingAidCallFlag_ = true;
+    audioCoreService->CheckAndUpdateHearingAidCall(DeviceType::DEVICE_TYPE_EARPIECE);
+    ASSERT_EQ(audioCoreService->hearingAidCallFlag_, false);
+
+    audioCoreService->CheckAndUpdateHearingAidCall(DeviceType::DEVICE_TYPE_HEARING_AID);
+    bool ret = audioCoreService->audioIOHandleMap_.CheckIOHandleExist("Built_in_mic");
+    ASSERT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: ActivateOutputDevice_001
+ * @tc.desc  : Test AudioCoreService::ActivateOutputDevice
+ */
+HWTEST_F(AudioCoreServicePrivateTest, ActivateOutputDevice_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    newDeviceDesc->deviceType_ = DEVICE_TYPE_HEARING_AID;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(newDeviceDesc);
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    int32_t ret = audioCoreService->ActivateOutputDevice(streamDesc);
+    ASSERT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name   : AudioCoreServicePrivateTest_CheckAndUpdateOffloadEnableForStream_001
+ * @tc.number : CheckAndUpdateOffloadEnableForStream_001
+ * @tc.desc   : Test CheckAndUpdateOffloadEnableForStream() for offload new case
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_001, TestSize.Level3)
+{
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
+    stream->SetRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, stream);
+    EXPECT_EQ(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
+}
+
+/**
+ * @tc.name   : AudioCoreServicePrivateTest_CheckAndUpdateOffloadEnableForStream_002
+ * @tc.number : CheckAndUpdateOffloadEnableForStream_002
+ * @tc.desc   : Test CheckAndUpdateOffloadEnableForStream() for offload move in case
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_002, TestSize.Level3)
+{
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
+    stream->SetRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, stream);
+    EXPECT_EQ(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
+}
+
+/**
+ * @tc.name   : AudioCoreServicePrivateTest_CheckAndUpdateOffloadEnableForStream_003
+ * @tc.number : CheckAndUpdateOffloadEnableForStream_003
+ * @tc.desc   : Test CheckAndUpdateOffloadEnableForStream() for offload move in case
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_003, TestSize.Level4)
+{
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->sessionId_ = TEST_STREAM_2_SESSION_ID;
+    stream->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, stream);
+    EXPECT_NE(TEST_STREAM_2_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
+}
+
+/**
+ * @tc.name   : AudioCoreServicePrivateTest_CheckAndUpdateOffloadEnableForStream_004
+ * @tc.number : CheckAndUpdateOffloadEnableForStream_004
+ * @tc.desc   : Test CheckAndUpdateOffloadEnableForStream() for offload move out case
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_004, TestSize.Level3)
+{
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
+    stream->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
+    stream->SetOldRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, stream);
+    EXPECT_NE(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
+}
+
+/**
+ * @tc.name   : AudioCoreServicePrivateTest_CheckAndUpdateOffloadEnableForStream_005
+ * @tc.number : CheckAndUpdateOffloadEnableForStream_005
+ * @tc.desc   : Test CheckAndUpdateOffloadEnableForStream() for offload move out case
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_005, TestSize.Level3)
+{
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
+    stream->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
+    stream->SetOldRoute(AUDIO_OUTPUT_FLAG_NORMAL);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, stream);
+    EXPECT_NE(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
+}
+
+/**
+ * @tc.name   : AudioCoreServicePrivateTest_CheckAndUpdateOffloadEnableForStream_006
+ * @tc.number : CheckAndUpdateOffloadEnableForStream_006
+ * @tc.desc   : Test CheckAndUpdateOffloadEnableForStream() for offload move out case
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_006, TestSize.Level3)
+{
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
+    stream->SetRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
+    stream->SetOldRoute(AUDIO_OUTPUT_FLAG_NORMAL);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, stream);
+    EXPECT_NE(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
+}
+
+/**
+ * @tc.name   : AudioCoreServicePrivateTest_CheckAndUpdateOffloadEnableForStream_007
+ * @tc.number : CheckAndUpdateOffloadEnableForStream_007
+ * @tc.desc   : Test CheckAndUpdateOffloadEnableForStream() for offload move out case
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_007, TestSize.Level3)
+{
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
+    stream->SetRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
+    stream->SetOldRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, stream);
+    EXPECT_NE(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

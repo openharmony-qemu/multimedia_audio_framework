@@ -43,10 +43,9 @@ public:
     bool Drain();
     int32_t SetState(HpaeSessionState renderState);
     HpaeSessionState GetState();
-    uint64_t GetFramesWritten();
 
     int32_t GetCurrentPosition(uint64_t &framePosition, std::vector<uint64_t> &timestamp);
-    int32_t RewindHistoryBuffer(uint64_t rewindTime, uint64_t hdiFramePosition = 0);
+    void RewindHistoryBuffer(uint64_t rewindTime, uint64_t hdiFramePosition = 0);
 
     void SetAppUid(int32_t appUid);
     int32_t GetAppUid();
@@ -57,9 +56,11 @@ public:
     float GetLoudnessGain();
     void SetSpeed(float speed);
     float GetSpeed();
+    uint64_t GetLatency();
     bool isConnected_ = false;
 private:
     int32_t GetDataFromSharedBuffer();
+    int32_t OnStreamInfoChange(bool needata = true);
     void CheckAndDestroyHistoryBuffer();
     bool ReadToAudioBuffer(int32_t &ret);
     std::weak_ptr<IStreamCallback> writeCallback_;
@@ -70,7 +71,6 @@ private:
     HpaePcmBuffer emptyAudioBuffer_;
     OutputPort<HpaePcmBuffer *> outputStream_;
     std::vector<int8_t> interleveData_;
-    uint64_t framesWritten_;
     uint64_t totalFrames_;
     bool isDrain_ = false;
     HpaeSessionState state_ = HPAE_SESSION_NEW;
@@ -82,6 +82,7 @@ private:
     float loudnessGain_ = 0.0f;
     float speed_ = 1.0f;
     std::atomic<uint64_t> hdiFramePosition_ = 0;
+    uint32_t standbyCounter_ = 0;
 };
 
 }  // namespace HPAE

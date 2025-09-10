@@ -249,6 +249,14 @@ void HpaeSourceInputNode::DoProcess()
             CheckEcAndMicRefReplyValid(frameByteSizeMap_.at(HPAE_SOURCE_BUFFER_TYPE_EC), replyBytesEc),
             "same ec request != reply");
         DoProcessInner(HPAE_SOURCE_BUFFER_TYPE_EC, replyBytesEc);
+    } else if (sourceInputNodeType_ == HpaeSourceInputNodeType::HPAE_SOURCE_OFFLOAD) {
+        uint64_t replyBytesEc = 0;
+        audioCapturerSource_->CaptureFrameWithEc(&fdescMap_.at(HPAE_SOURCE_BUFFER_TYPE_MIC), replyBytes,
+                                                 &fdescMap_.at(HPAE_SOURCE_BUFFER_TYPE_EC), replyBytesEc);
+        CHECK_AND_RETURN_LOG(
+            CheckEcAndMicRefReplyValid(frameByteSizeMap_.at(HPAE_SOURCE_BUFFER_TYPE_EC), replyBytesEc),
+            "same offload ec request != reply");
+        DoProcessInner(HPAE_SOURCE_BUFFER_TYPE_EC, replyBytesEc);
     } else {
         HpaeSourceBufferType sourceBufferType = nodeInfoMap_.begin()->second.sourceBufferType;
         if (sourceInputNodeType_ == HPAE_SOURCE_EC) {
@@ -475,7 +483,7 @@ StreamManagerState HpaeSourceInputNode::GetSourceState(void)
 
 int32_t HpaeSourceInputNode::SetSourceState(StreamManagerState sourceState)
 {
-    AUDIO_INFO_LOG("Source[%{public}s] state change:[%{public}s]-->[%{public}s]",
+    HILOG_COMM_INFO("Source[%{public}s] state change:[%{public}s]-->[%{public}s]",
         GetDeviceClass().c_str(), ConvertStreamManagerState2Str(state_).c_str(),
         ConvertStreamManagerState2Str(sourceState).c_str());
     state_ = sourceState;

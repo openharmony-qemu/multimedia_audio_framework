@@ -344,6 +344,19 @@ bool RendererInClientInner::WaitForRunning()
     return true;
 }
 
+void RendererInClientInner::RecordDropPosition(size_t bufLength)
+{
+    CHECK_AND_RETURN_LOG(isHdiSpeed_.load(), "record drop position only when is hdi speed ");
+    uint32_t channels = clientConfig_.streamInfo.channels;
+    uint32_t samplePerFrame = Util::GetSamplePerFrame(clientConfig_.streamInfo.format);
+    // calculate samples by dropped buffer size
+    uint32_t dropPostion = bufLength / (channels * samplePerFrame);
+    dropPosition_ += dropPostion;
+    dropHdiPosition_ += dropPostion / GetSpeed();
+    AUDIO_WARNING_LOG("RendererInClientInner::RecordDropPosition dropPosition_:%{public}" PRIu64
+        ",dropHdiPosition_:%{public}" PRIu64, dropPosition_.load(), dropHdiPosition_.load());
+}
+
 int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
 {
     int32_t result = 0; // Ensure result with default value.
@@ -371,6 +384,7 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
     }
     if (result < 0) {
         AUDIO_WARNING_LOG("Call write fail, result:%{public}d, bufLength:%{public}zu", result, bufferDesc.bufLength);
+        RecordDropPosition(bufferDesc.bufLength);
     }
     return result;
 }
@@ -379,8 +393,8 @@ bool RendererInClientInner::CheckBufferNeedWrite()
 {
     uint32_t totalSizeInFrame = clientBuffer_->GetTotalSizeInFrame();
     size_t totalSizeInByte = totalSizeInFrame * sizePerFrameInByte_;
-    int32_t writableInFrame = clientBuffer_ -> GetWritableDataFrames();
-    size_t writableSizeInByte = writableInFrame * sizePerFrameInByte_;
+    int32_t writableInFrame = clientBuffer_->GetWritableDataFrames();
+    size_t writableSizeInByte = static_cast<size_t>(writableInFrame) * sizePerFrameInByte_;
 
     if (writableInFrame <= 0) {
         return false;
@@ -438,6 +452,22 @@ void RendererInClientInner::WaitForBufferNeedWrite()
     }
 }
 
+void RendererInClientInner::CallClientHandle()
+{
+    // call client write
+    std::shared_ptr<AudioRendererWriteCallback> cb = nullptr;
+    {
+        std::unique_lock<std::mutex> lockCb(writeCbMutex_);
+        cb = writeCb_;
+    }
+    if (cb != nullptr) {
+        Trace traceCb("RendererInClientInner::OnWriteData");
+        WatchTimeout guard("write interval too long"); // default time out 40ms
+        cb->OnWriteData(cbBufferSize_);
+        guard.CheckCurrTimeout();
+    }
+}
+
 bool RendererInClientInner::WriteCallbackFunc()
 {
     CHECK_AND_RETURN_RET_LOG(!cbThreadReleased_, false, "Callback thread released");
@@ -475,16 +505,7 @@ bool RendererInClientInner::WriteCallbackFunc()
     if (state_ != RUNNING) {
         return true;
     }
-    // call client write
-    std::shared_ptr<AudioRendererWriteCallback> cb = nullptr;
-    {
-        std::unique_lock<std::mutex> lockCb(writeCbMutex_);
-        cb = writeCb_;
-    }
-    if (cb != nullptr) {
-        Trace traceCb("RendererInClientInner::OnWriteData");
-        cb->OnWriteData(cbBufferSize_);
-    }
+    CallClientHandle();
 
     Trace traceQueuePush("RendererInClientInner::QueueWaitPush");
     std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
@@ -523,6 +544,7 @@ bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, b
 
 void RendererInClientInner::DfxWriteInterval()
 {
+    CHECK_AND_RETURN(renderMode_ == RENDER_MODE_NORMAL); // should only work in write mode.
     if (preWriteEndTime_ != 0 &&
         ((ClockTime::GetCurNano() / AUDIO_US_PER_SECOND) - preWriteEndTime_) > MAX_WRITE_INTERVAL_MS) {
         AUDIO_WARNING_LOG("[%{public}s] write interval too long cost %{public}" PRId64,
@@ -704,6 +726,8 @@ void RendererInClientInner::ResetFramePosition()
         lastFramePosAndTimePairWithSpeed_[base].first = 0;
         lastSwitchPosition_[base] = 0;
     }
+    dropPosition_ = 0;
+    dropHdiPosition_ = 0;
     unprocessedFramesBytes_ = 0;
     totalBytesWrittenAfterFlush_ = 0;
     writtenAtSpeedChange_.store(WrittenFramesWithSpeed{0, speed_});

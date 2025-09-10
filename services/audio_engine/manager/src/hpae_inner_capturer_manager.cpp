@@ -22,10 +22,13 @@
 #include "hpae_node_common.h"
 #include "hpae_inner_capturer_manager.h"
 #include "audio_engine_log.h"
+#include "hpae_message_queue_monitor.h"
+#include "hpae_stream_move_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+const uint32_t FRAME_LENGTH_LIMIT = 38400;
 // todo sinkInfo
 HpaeInnerCapturerManager::HpaeInnerCapturerManager(HpaeSinkInfo &sinkInfo)
     : sinkInfo_(sinkInfo), hpaeNoLockQueue_(CURRENT_REQUEST_COUNT)
@@ -44,7 +47,7 @@ int32_t HpaeInnerCapturerManager::AddNodeToSink(const std::shared_ptr<HpaeSinkIn
     auto request = [this, node]() {
         AddSingleNodeToSinkInner(node);
     };
-    SendRequestInner(request);
+    SendRequestInner(request, __func__);
     return SUCCESS;
 }
 
@@ -53,7 +56,8 @@ void HpaeInnerCapturerManager::AddSingleNodeToSinkInner(const std::shared_ptr<Hp
     HpaeNodeInfo nodeInfo = node->GetNodeInfo();
     uint32_t sessionId = nodeInfo.sessionId;
     Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::AddSingleNodeToSinkInner");
-    AUDIO_INFO_LOG("[FinishMove] session :%{public}u to sink:%{public}s", sessionId, sinkInfo_.deviceClass.c_str());
+    HILOG_COMM_INFO("[FinishMove] session :%{public}u to sink:%{public}s, sceneType is %{public}d",
+        sessionId, sinkInfo_.deviceClass.c_str(), node->GetSceneType());
     sinkInputNodeMap_[sessionId] = node;
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
@@ -88,7 +92,7 @@ int32_t HpaeInnerCapturerManager::AddAllNodesToSink(
             AddSingleNodeToSinkInner(it, isConnect);
         }
     };
-    SendRequestInner(request);
+    SendRequestInner(request, __func__);
     return SUCCESS;
 }
 
@@ -116,9 +120,13 @@ void HpaeInnerCapturerManager::MoveAllStreamToNewSinkInner(const std::string &si
     for (const auto &it : sessionIds) {
         DeleteRendererInputSessionInner(it);
     }
-    AUDIO_INFO_LOG("[StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
+    HILOG_COMM_INFO("StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
         idStr.c_str(), name.c_str(), moveType);
-    TriggerCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);
+    if (moveType == MOVE_ALL) {
+        TriggerSyncCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);
+    } else {
+        TriggerCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);
+    }
 }
 
 int32_t HpaeInnerCapturerManager::MoveAllStream(const std::string &sinkName, const std::vector<uint32_t>& sessionIds,
@@ -132,7 +140,7 @@ int32_t HpaeInnerCapturerManager::MoveAllStream(const std::string &sinkName, con
         auto request = [this, sinkName, sessionIds, moveType]() {
             MoveAllStreamToNewSinkInner(sinkName, sessionIds, moveType);
         };
-        SendRequestInner(request);
+        SendRequestInner(request, __func__);
     }
     return SUCCESS;
 }
@@ -145,11 +153,15 @@ int32_t HpaeInnerCapturerManager::MoveStream(uint32_t sessionId, const std::stri
             AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,can not find session,move %{public}s --> %{public}s",
                 sessionId, sinkInfo_.deviceName.c_str(), sinkName.c_str());
             TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, MOVE_SINGLE, sinkName);
+            HpaeStreamMoveMonitor::ReportStreamMoveException(0, sessionId, HPAE_STREAM_CLASS_TYPE_PLAY,
+                "innercapture", sinkName, "not find session node");
             return;
         }
         if (sinkName.empty()) {
             AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,sinkName is empty", sessionId);
             TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, MOVE_SINGLE, sinkName);
+            HpaeStreamMoveMonitor::ReportStreamMoveException(sinkInputNodeMap_[sessionId]->GetAppUid(), sessionId,
+                HPAE_STREAM_CLASS_TYPE_PLAY, "innercapture", sinkName, "sinkName is empty");
             return;
         }
 
@@ -160,7 +172,7 @@ int32_t HpaeInnerCapturerManager::MoveStream(uint32_t sessionId, const std::stri
         std::string name = sinkName;
         TriggerCallback(MOVE_SINK_INPUT, inputNode, name);
     };
-    SendRequestInner(request);
+    SendRequestInner(request, __func__);
     return SUCCESS;
 }
 
@@ -170,11 +182,15 @@ int32_t HpaeInnerCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
         AUDIO_INFO_LOG("CreateStream not init");
         return ERR_INVALID_OPERATION;
     }
+    int32_t checkRet = CheckStreamInfo(streamInfo);
+    if (checkRet != SUCCESS) {
+        return checkRet;
+    }
     auto request = [this, streamInfo]() {
         if (streamInfo.streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
             Trace trace("HpaeInnerCapturerManager::CreateRendererStream id[" +
                 std::to_string(streamInfo.sessionId) + "]");
-            AUDIO_INFO_LOG("CreateCapRendererStream sessionID: %{public}d", streamInfo.sessionId);
+            HILOG_COMM_INFO("CreateCapRendererStream sessionID: %{public}d", streamInfo.sessionId);
             CreateRendererInputSessionInner(streamInfo);
             SetSessionStateForRenderer(streamInfo.sessionId, HPAE_SESSION_PREPARED);
             sinkInputNodeMap_[streamInfo.sessionId]->SetState(HPAE_SESSION_PREPARED);
@@ -182,13 +198,25 @@ int32_t HpaeInnerCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
         } else if (streamInfo.streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD) {
             Trace trace("HpaeInnerCapturerManager::CreateCapturerStream id[" +
                 std::to_string(streamInfo.sessionId) + "]");
-            AUDIO_INFO_LOG("CreateCapCapturerStream sessionID: %{public}d", streamInfo.sessionId);
+            HILOG_COMM_INFO("CreateCapCapturerStream sessionID: %{public}d", streamInfo.sessionId);
             CreateCapturerInputSessionInner(streamInfo);
             SetSessionStateForCapturer(streamInfo.sessionId, HPAE_SESSION_PREPARED);
             capturerSessionNodeMap_[streamInfo.sessionId].isMoveAble = streamInfo.isMoveAble;
         }
     };
-    SendRequestInner(request);
+    SendRequestInner(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeInnerCapturerManager::CheckStreamInfo(const HpaeStreamInfo &streamInfo)
+{
+    if (streamInfo.frameLen == 0) {
+        AUDIO_ERR_LOG("FrameLen is 0.");
+        return ERROR;
+    } else if (streamInfo.frameLen > FRAME_LENGTH_LIMIT) {
+        AUDIO_ERR_LOG("FrameLen is over-sized.");
+        return ERROR;
+    }
     return SUCCESS;
 }
 
@@ -212,7 +240,7 @@ int32_t HpaeInnerCapturerManager::DestroyStream(uint32_t sessionId)
             DeleteCapturerInputSessionInner(sessionId);
         }
     };
-    SendRequestInner(request);
+    SendRequestInner(request, __func__);
     return SUCCESS;
 }
  
@@ -242,7 +270,7 @@ int32_t HpaeInnerCapturerManager::ReloadRenderManager(const HpaeSinkInfo &sinkIn
             }
         }
     };
-    SendRequestInner(request, true);
+    SendRequestInner(request, __func__, true);
     hpaeSignalProcessThread_->ActivateThread(shared_from_this());
     return SUCCESS;
 }
@@ -254,14 +282,20 @@ int32_t HpaeInnerCapturerManager::Init(bool isReload)
         Trace trace("HpaeInnerCapturerManager::Init");
         InitSinkInner(isReload);
     };
-    SendRequestInner(request, true);
+    SendRequestInner(request, __func__, true);
     hpaeSignalProcessThread_->ActivateThread(shared_from_this());
     return SUCCESS;
 }
  
-void HpaeInnerCapturerManager::InitSinkInner(bool isReload)
+int32_t HpaeInnerCapturerManager::InitSinkInner(bool isReload)
 {
     Trace trace("HpaeInnerCapturerManager::InitSinkInner");
+    int32_t checkRet = CheckFramelen();
+    if (checkRet != SUCCESS) {
+        TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
+                        sinkInfo_.deviceName, ERR_INVALID_PARAM);
+        return checkRet;
+    }
     HpaeNodeInfo nodeInfo;
     nodeInfo.channels = sinkInfo_.channels;
     nodeInfo.format = sinkInfo_.format;
@@ -276,6 +310,19 @@ void HpaeInnerCapturerManager::InitSinkInner(bool isReload)
     hpaeInnerCapSinkNode_->InnerCapturerSinkInit();
     isInit_.store(true);
     TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT :INIT_DEVICE_RESULT, sinkInfo_.deviceName, SUCCESS);
+    return SUCCESS;
+}
+
+int32_t HpaeInnerCapturerManager::CheckFramelen()
+{
+    if (sinkInfo_.frameLen == 0) {
+        AUDIO_ERR_LOG("FrameLen is 0.");
+        return ERROR;
+    } else if (sinkInfo_.frameLen > FRAME_LENGTH_LIMIT) {
+        AUDIO_ERR_LOG("FrameLen is over-sized.");
+        return ERROR;
+    }
+    return SUCCESS;
 }
 
 bool HpaeInnerCapturerManager::DeactivateThread()
@@ -335,7 +382,7 @@ int32_t HpaeInnerCapturerManager::Start(uint32_t sessionId)
             SetSessionStateForCapturer(sessionId, HPAE_SESSION_RUNNING);
         }
     };
-    SendRequestInner(request);
+    SendRequestInner(request, __func__);
     return SUCCESS;
 }
 
@@ -362,7 +409,7 @@ int32_t HpaeInnerCapturerManager::Pause(uint32_t sessionId)
                 HPAE_SESSION_PAUSED, OPERATION_PAUSED);
         }
     };
-    SendRequestInner(request);
+    SendRequestInner(request, __func__);
     return SUCCESS;
 }
 
@@ -384,7 +431,7 @@ int32_t HpaeInnerCapturerManager::Flush(uint32_t sessionId)
                 "Flush not find sessionId %{public}u", sessionId);
         }
     };
-    SendRequestInner(request);
+    SendRequestInner(request, __func__);
     return SUCCESS;
 }
 
@@ -414,7 +461,7 @@ int32_t HpaeInnerCapturerManager::Drain(uint32_t sessionId)
                 capturerSessionNodeMap_[sessionId].state, OPERATION_DRAINED);
         }
     };
-    SendRequestInner(request);
+    SendRequestInner(request, __func__);
     return SUCCESS;
 }
 
@@ -441,7 +488,7 @@ int32_t HpaeInnerCapturerManager::Stop(uint32_t sessionId)
                 HPAE_SESSION_STOPPED, OPERATION_STOPPED);
         }
     };
-    SendRequestInner(request);
+    SendRequestInner(request, __func__);
     return SUCCESS;
 }
 
@@ -462,7 +509,7 @@ int32_t HpaeInnerCapturerManager::SuspendStreamManager(bool isSuspend)
             hpaeInnerCapSinkNode_->InnerCapturerSinkStart();
         }
     };
-    SendRequestInner(request);
+    SendRequestInner(request, __func__);
     return SUCCESS;
 }
 
@@ -476,7 +523,7 @@ int32_t HpaeInnerCapturerManager::SetMute(bool isMute)
             AUDIO_INFO_LOG("hapeInnerCapSinkNode_ is nullptr");
         }
     };
-    SendRequestInner(request);
+    SendRequestInner(request, __func__);
     return SUCCESS;
 }
 
@@ -559,7 +606,7 @@ int32_t HpaeInnerCapturerManager::RegisterWriteCallback(uint32_t sessionId,
             sinkInputNodeMap_[sessionId]->RegisterWriteCallback(callback);
         }
     };
-    SendRequestInner(request);
+    SendRequestInner(request, __func__);
     return SUCCESS;
 }
 
@@ -618,7 +665,7 @@ void HpaeInnerCapturerManager::OnFadeDone(uint32_t sessionId, IOperation operati
         }
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, state, operation);
     };
-    SendRequestInner(request);
+    SendRequestInner(request, __func__);
 }
 
 void HpaeInnerCapturerManager::OnNodeStatusUpdate(uint32_t sessionId, IOperation operation)
@@ -636,7 +683,7 @@ int32_t HpaeInnerCapturerManager::RegisterReadCallback(uint32_t sessionId,
         AUDIO_INFO_LOG("RegisterReadCallback sessionId %{public}u", sessionId);
         sourceOutputNodeMap_[sessionId]->RegisterReadCallback(callback);
     };
-    SendRequestInner(request);
+    SendRequestInner(request, __func__);
     return SUCCESS;
 }
 
@@ -725,7 +772,7 @@ void HpaeInnerCapturerManager::DeleteRendererInputNodeSession(const std::shared_
         sceneTypeToProcessClusterCount_--;
         uint32_t sessionId = sinkInputNode->GetSessionId();
         if (sceneTypeToProcessClusterCount_ == 0) {
-            AUDIO_INFO_LOG("need to erase rendererSceneCluster, last stream: %{public}u", sessionId);
+            HILOG_COMM_INFO("need to erase rendererSceneCluster, last stream: %{public}u", sessionId);
         } else {
             AUDIO_INFO_LOG("%{public}u is not last stream, no need erase rendererSceneCluster", sessionId);
         }
@@ -804,7 +851,7 @@ void HpaeInnerCapturerManager::OnDisConnectProcessCluster(HpaeProcessorType scen
             AUDIO_INFO_LOG("no need erase rendererSceneCluster sceneType[%{public}d]", sceneType);
         }
     };
-    SendRequestInner(request);
+    SendRequestInner(request, __func__);
 }
 
 int32_t HpaeInnerCapturerManager::DisConnectRendererInputSessionInner(uint32_t sessionId)
@@ -842,14 +889,22 @@ void HpaeInnerCapturerManager::SetSessionStateForCapturer(uint32_t sessionId, Hp
     capturerSessionNodeMap_[sessionId].state = capturerState;
 }
 
-void HpaeInnerCapturerManager::SendRequestInner(Request &&request, bool isInit)
+void HpaeInnerCapturerManager::SendRequestInner(Request &&request, const std::string &funcName, bool isInit)
 {
     if (!isInit && !IsInit()) {
-        AUDIO_INFO_LOG("HpaeInnerCapturerManager not init");
+        AUDIO_INFO_LOG("HpaeInnerCapturerManager not init, %{public}s excute failed", funcName.c_str());
+        HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_INNER_CAPTURE_MANAGER_TYPE,
+            funcName, "HpaeInnerCapturerManager not init");
         return;
     }
     hpaeNoLockQueue_.PushRequest(std::move(request));
-    CHECK_AND_RETURN_LOG(hpaeSignalProcessThread_, "hpaeSignalProcessThread_  inner capturer sink is nullptr");
+    if (hpaeSignalProcessThread_ == nullptr) {
+        AUDIO_INFO_LOG("hpaeSignalProcessThread_  inner capturer sink is nullptr, %{public}s excute failed",
+            funcName.c_str());
+        HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_INNER_CAPTURE_MANAGER_TYPE, funcName,
+            "thread is nullptr");
+        return;
+    }
     hpaeSignalProcessThread_->Notify();
 }
 
@@ -896,7 +951,7 @@ int32_t HpaeInnerCapturerManager::SetLoudnessGain(uint32_t sessionId, float loud
             "processCluster with sceneType %{public}d not exists", processorType);
         processCluster->SetLoudnessGain(sessionId, loudnessGain);
     };
-    SendRequestInner(request);
+    SendRequestInner(request, __func__);
     return SUCCESS;
 }
 
@@ -907,7 +962,7 @@ int32_t HpaeInnerCapturerManager::DumpSinkInfo()
         AUDIO_INFO_LOG("DumpSinkInfo deviceName %{public}s", sinkInfo_.deviceName.c_str());
         UploadDumpSinkInfo(sinkInfo_.deviceName);
     };
-    SendRequestInner(request);
+    SendRequestInner(request, __func__);
     return SUCCESS;
 }
 
@@ -920,7 +975,7 @@ int32_t HpaeInnerCapturerManager::SetOffloadPolicy(uint32_t sessionId, int32_t s
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), "not find sessionId %{public}u", sessionId);
         sinkInputNodeMap_[sessionId]->SetOffloadEnabled(state != OFFLOAD_DEFAULT);
     };
-    SendRequestInner(request);
+    SendRequestInner(request, __func__);
     return SUCCESS;
 }
 
@@ -933,7 +988,7 @@ void HpaeInnerCapturerManager::SetSpeed(uint32_t sessionId, float speed)
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), "not find sessionId %{public}u", sessionId);
         sinkInputNodeMap_[sessionId]->SetSpeed(speed);
     };
-    SendRequestInner(request);
+    SendRequestInner(request, __func__);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

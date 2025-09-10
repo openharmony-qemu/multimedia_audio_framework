@@ -467,5 +467,22 @@ HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_024, TestSize.Level4)
     int32_t ret = audioGeneralManager->SetDeviceVolumeBehavior(networkId, deviceType, volumeBehavior);
     EXPECT_NE(ret, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test SaveCallback.
+ * @tc.number: SaveCallback_001
+ * @tc.desc  : Test SaveCallback API.
+ */
+HWTEST(AudioGeneralManagerUnitTest, SaveCallback_001, TestSize.Level4)
+{
+    auto audioFocusInfoChangeCallbackImpl = std::make_shared<AudioFocusInfoChangeCallbackImpl>();
+    EXPECT_NE(audioFocusInfoChangeCallbackImpl, nullptr);
+    std::shared_ptr<AudioFocusInfoChangeCallback> callback = std::make_shared<AudioFocusInfoChangeCallbackImpl>();
+    EXPECT_NE(callback, nullptr);
+
+    audioFocusInfoChangeCallbackImpl->SaveCallback(callback);
+
+    EXPECT_EQ(audioFocusInfoChangeCallbackImpl->callbackList_.size(), 1);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -85,6 +85,8 @@ private:
     void OffloadCallback(const RenderCallbackType type);
     // check when stop hdi, if need suspend
     bool CheckIfSuspend();
+    // check renderFrame ret to decide whether need sleep
+    void OffloadNeedSleep(int32_t retType);
 
     InputPort<HpaePcmBuffer*> inputStream_;
     std::vector<char> renderFrameData_;

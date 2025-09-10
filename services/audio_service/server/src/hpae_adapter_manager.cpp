@@ -39,7 +39,8 @@ HpaeAdapterManager::HpaeAdapterManager(ManagerType type)
     managerType_ = type;
 }
 
-int32_t HpaeAdapterManager::CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream)
+int32_t HpaeAdapterManager::CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream,
+    std::optional<std::string_view> originDeviceName)
 {
     AUDIO_DEBUG_LOG("Create renderer start");
     uint32_t sessionId = 0;
@@ -60,6 +61,7 @@ int32_t HpaeAdapterManager::CreateRender(AudioProcessConfig processConfig, std::
         AUDIO_INFO_LOG("sink name is null");
         deviceName = "Speaker";
     }
+    deviceName = originDeviceName.has_value() ? std::string(originDeviceName.value()) : deviceName;
     // HpaeAdapterManager is solely responsible for creating paStream objects
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig, deviceName);
     CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream!");
@@ -97,16 +99,15 @@ int32_t HpaeAdapterManager::ReleaseRender(uint32_t streamIndex)
     std::shared_ptr<IRendererStream> currentRender = rendererStreamMap_[streamIndex];
     rendererStreamMap_[streamIndex] = nullptr;
     rendererStreamMap_.erase(streamIndex);
+    AUDIO_INFO_LOG("rendererStreamMap_.size() : %{public}zu", rendererStreamMap_.size());
+    if (rendererStreamMap_.size() == 0) {
+        AUDIO_INFO_LOG("Release the last stream");
+    }
     lock.unlock();
 
     if (currentRender->Release() < 0) {
         AUDIO_WARNING_LOG("Release stream %{public}d failed", streamIndex);
         return ERR_OPERATION_FAILED;
-    }
-
-    AUDIO_INFO_LOG("rendererStreamMap_.size() : %{public}zu", rendererStreamMap_.size());
-    if (rendererStreamMap_.size() == 0) {
-        AUDIO_INFO_LOG("Release the last stream");
     }
 
     if (isHighResolutionExist_ && highResolutionIndex_ == streamIndex) {

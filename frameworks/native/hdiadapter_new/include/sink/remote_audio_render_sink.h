@@ -89,7 +89,7 @@ public:
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
-    int32_t SplitRenderFrame(char &data, uint64_t len, uint64_t &writeLen, const char *streamType) override;
+    int32_t SplitRenderFrame(char &data, uint64_t len, uint64_t &writeLen, const char *splitStreamType) override;
 
     void DumpInfo(std::string &dumpString) override;
 

@@ -32,7 +32,6 @@ public:
         AudioVolumeType volumeType);
     static std::vector<AudioVolumeType> GetSupportedAudioVolumeTypes();
     static std::vector<StreamUsage> GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType);
-
 private:
     static std::set<StreamUsage>& GetStreamUsageSetForVolumeType(AudioVolumeType volumeType);
 

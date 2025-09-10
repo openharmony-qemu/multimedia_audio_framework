@@ -16,7 +16,7 @@
 #define LOG_TAG "HdiSink"
 #endif
 
-#include <config.h>
+#include <pa_config.h>
 #include <pulse/rtclock.h>
 #include <pulse/timeval.h>
 #include <pulse/xmalloc.h>
@@ -2512,11 +2512,7 @@ static bool InputIsOffload(pa_sink_input *i)
     if (!u->offload_enable || !u->offload.inited) {
         return false;
     }
-    const char *offloadEnableStr = pa_proplist_gets(i->proplist, "stream.offload.enable");
-    if (offloadEnableStr == NULL) {
-        return false;
-    }
-    const bool offloadEnable = !strcmp(offloadEnableStr, "1");
+    const bool offloadEnable = (GetOffloadEnable(i->index) == 1);
     return offloadEnable;
 }
 

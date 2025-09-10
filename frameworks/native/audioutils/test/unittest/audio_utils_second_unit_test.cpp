@@ -26,6 +26,7 @@
 #include "audio_scope_exit.h"
 #include "audio_safe_block_queue.h"
 #include "audio_utils_c.h"
+#include "xperf_adapter.h"
 
 using namespace testing::ext;
 using namespace testing;
@@ -273,6 +274,65 @@ HWTEST(AudioUtilsUnitTest, AudioLatencyMeasurement_001, TestSize.Level1)
 {
     AudioLatencyMeasurement audioLatencyMeasurement(44100, 2, 16, "com.example.null", 1);
     EXPECT_EQ(audioLatencyMeasurement.sessionId_, 1);
+}
+
+/**
+ * @tc.name  : Test NeedNotifyXperf API
+ * @tc.type  : FUNC
+ * @tc.number: XperfAdapterNeedNotifyXperf_001
+ * @tc.desc  : Test NeedNotifyXperf.
+ */
+HWTEST(AudioUtilsUnitTest, XperfAdapterNeedNotifyXperf_001, TestSize.Level1)
+{
+    EXPECT_EQ(XperfAdapter::GetInstance().NeedNotifyXperf(STREAM_USAGE_MEDIA), true);
+}
+
+/**
+ * @tc.name  : Test NeedNotifyXperf API
+ * @tc.type  : FUNC
+ * @tc.number: XperfAdapterNeedNotifyXperf_002
+ * @tc.desc  : Test NeedNotifyXperf.
+ */
+HWTEST(AudioUtilsUnitTest, XperfAdapterNeedNotifyXperf_002, TestSize.Level1)
+{
+    EXPECT_EQ(XperfAdapter::GetInstance().NeedNotifyXperf(STREAM_USAGE_VOICE_COMMUNICATION), true);
+}
+
+/**
+ * @tc.name  : Test NeedNotifyXperf API
+ * @tc.type  : FUNC
+ * @tc.number: XperfAdapterNeedNotifyXperf_003
+ * @tc.desc  : Test NeedNotifyXperf.
+ */
+HWTEST(AudioUtilsUnitTest, XperfAdapterNeedNotifyXperf_003, TestSize.Level1)
+{
+    EXPECT_EQ(XperfAdapter::GetInstance().NeedNotifyXperf(STREAM_USAGE_MOVIE), true);
+}
+
+/**
+ * @tc.name  : Test NeedNotifyXperf API
+ * @tc.type  : FUNC
+ * @tc.number: XperfAdapterNeedNotifyXperf_004
+ * @tc.desc  : Test NeedNotifyXperf.
+ */
+HWTEST(AudioUtilsUnitTest, XperfAdapterNeedNotifyXperf_004, TestSize.Level1)
+{
+    EXPECT_EQ(XperfAdapter::GetInstance().NeedNotifyXperf(STREAM_USAGE_NOTIFICATION_RINGTONE), false);
+}
+
+/**
+ * @tc.name  : Test CalculatePcmSizeFromDurationCeiling API
+ * @tc.type  : FUNC
+ * @tc.number: CalculatePcmSizeFromDurationCeiling
+ * @tc.desc  : Test CalculatePcmSizeFromDurationCeiling.
+ */
+HWTEST(AudioUtilsUnitTest, CalculatePcmSizeFromDurationCeiling, TestSize.Level1)
+{
+    EXPECT_EQ(Util::CalculatePcmSizeFromDurationCeiling(20ms, 48000, 4), 3840);
+
+    EXPECT_EQ(Util::CalculatePcmSizeFromDurationCeiling(1ns, 48000, 4), 4);
+
+    EXPECT_EQ(Util::CalculatePcmSizeFromDurationCeiling(20ms + 1ns, 48000, 4), 3844);
 }
 } // namespace AudioStandard
 } // namespace OHOS

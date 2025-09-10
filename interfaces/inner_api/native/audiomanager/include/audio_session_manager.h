@@ -16,6 +16,7 @@
 #ifndef ST_AUDIO_SESSION_MANAGER_H
 #define ST_AUDIO_SESSION_MANAGER_H
 
+#include "audio_device_descriptor.h"
 #include "audio_system_manager.h"
 #include "audio_session_device_info.h"
 
@@ -87,6 +88,18 @@ public:
      * @since 20
      */
     virtual void OnAudioSessionCurrentDeviceChanged(const CurrentOutputDeviceChangedEvent &deviceChangedEvent) = 0;
+};
+
+class AudioSessionCurrentInputDeviceChangedCallback {
+public:
+    virtual ~AudioSessionCurrentInputDeviceChangedCallback() = default;
+    /**
+     * @brief
+     *
+     * @param deviceChangedEvent the audio session current device changed event.
+     * @since 21
+     */
+    virtual void OnAudioSessionCurrentInputDeviceChanged(const CurrentInputDeviceChangedEvent &deviceChangedEvent) = 0;
 };
 
 class AudioSessionManager {
@@ -246,6 +259,24 @@ public:
     int32_t UnsetAudioSessionCurrentDeviceChangeCallback(
         const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback);
 
+    int32_t SetAvailableDeviceChangeCallback(const AudioDeviceUsage usage,
+        const std::shared_ptr<AudioManagerAvailableDeviceChangeCallback>& callback);
+
+    /**
+     * @brief Subscribes input device changed event callback.
+     * The event is triggered when input device changed.
+     *
+     * @param deviceChangedCallback The audio session input device changed callback.
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 21
+     */
+    int32_t SetAudioSessionCurrentInputDeviceChangeCallback(
+        const std::shared_ptr<AudioSessionCurrentInputDeviceChangedCallback> &deviceChangedCallback);
+
+    int32_t UnsetAudioSessionCurrentInputDeviceChangeCallback(
+        const std::optional<std::shared_ptr<AudioSessionCurrentInputDeviceChangedCallback>> &callback);
+
     /**
      * @brief Register AudioPolicyServer died callback.
      *
@@ -273,6 +304,46 @@ public:
      * @since 20
      */
     void OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent);
+
+    /**
+     * @brief Obtains all the available audio devices with a specific device usage.
+     *
+     * @param deviceUsage. Audio device usage.
+     * @return Returns AudioDeviceDescriptor vector
+     * @since 21
+     */
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
+
+    /**
+     * @brief Select an audio device.
+     *
+     * @param audioDeviceDescriptor. Audio device descriptor.
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 21
+     */
+    int32_t SelectInputDevice(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor);
+
+    /**
+     * @brief Get selected audio device.
+     *
+     * @return Returns AudioDeviceDescriptor
+     * @since 21
+     */
+    std::shared_ptr<AudioDeviceDescriptor> GetSelectedInputDevice();
+
+    /**
+     * @brief Clear selected audio device.
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 21
+     */
+    int32_t ClearSelectedInputDevice();
+
+    int32_t PreferBluetoothAndNearlinkRecord(BluetoothAndNearlinkPreferredRecordCategory category);
+
+    BluetoothAndNearlinkPreferredRecordCategory GetPreferBluetoothAndNearlinkRecord();
 
 private:
     std::mutex setDefaultOutputDeviceMutex_;

@@ -557,6 +557,254 @@ void AudioPolicyServerGetSystemVolumeDbFuzzTest()
     audioPolicyServer->GetSystemVolumeDb(streamType);
 }
 
+void AudioPolicyServerSetSelfAppVolumeLevelFuzztest()
+{
+    auto audioPolicyServer = GetServerPtr();
+    CHECK_AND_RETURN(audioPolicyServer != nullptr);
+    int32_t volumeLevel = GetData<int32_t>();
+    int32_t volumeFlag = GetData<int32_t>();
+    audioPolicyServer->SetSelfAppVolumeLevel(volumeLevel, volumeFlag);
+}
+
+void AudioPolicyServerSetAppVolumeLevelInternalFuzztest()
+{
+    auto audioPolicyServer = GetServerPtr();
+    CHECK_AND_RETURN(audioPolicyServer != nullptr);
+    bool isUpdateUi = GetData<bool>();
+    bool muted = GetData<bool>();
+    int32_t appUid = GetData<int32_t>();
+    audioPolicyServer->SetAppVolumeLevelInternal(appUid, muted, isUpdateUi);
+}
+
+void AudioPolicyServerSetSystemVolumeLevelInternalFuzztest()
+{
+    auto audioPolicyServer = GetServerPtr();
+    CHECK_AND_RETURN(audioPolicyServer != nullptr);
+    AudioStreamType streamType = AudioStreamType::STREAM_VOICE_CALL_ASSISTANT;
+    bool isUpdateUi = GetData<bool>();
+    int32_t volumeLevel = 0;
+    int32_t zoneId = GetData<int32_t>();
+    audioPolicyServer->SetSystemVolumeLevelInternal(streamType, volumeLevel, isUpdateUi, zoneId);
+}
+
+void AudioPolicyServerSetSystemVolumeLevelWithDeviceInternalFuzztest()
+{
+    auto audioPolicyServer = GetServerPtr();
+    CHECK_AND_RETURN(audioPolicyServer != nullptr);
+    AudioStreamType streamType = AudioStreamType::STREAM_VOICE_CALL_ASSISTANT;
+    bool isUpdateUi = GetData<bool>();
+    int32_t volumeLevel = 0;
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_EARPIECE;
+    audioPolicyServer->SetSystemVolumeLevelWithDeviceInternal(streamType, volumeLevel, isUpdateUi, deviceType);
+}
+
+void AudioPolicyServerSendVolumeKeyEventCbWithUpdateUiOrNotFuzztest()
+{
+    auto audioPolicyServer = GetServerPtr();
+    CHECK_AND_RETURN(audioPolicyServer != nullptr);
+    AudioStreamType streamType = AudioStreamType::STREAM_VOICE_CALL_ASSISTANT;
+    bool isUpdateUi = GetData<bool>();
+    int32_t zoneId = GetData<int32_t>();
+    audioPolicyServer->SendVolumeKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi, zoneId);
+}
+
+void AudioPolicyServerUpdateMuteStateAccordingToVolLevelFuzztest()
+{
+    auto audioPolicyServer = GetServerPtr();
+    CHECK_AND_RETURN(audioPolicyServer != nullptr);
+    AudioStreamType streamType = AudioStreamType::STREAM_MUSIC;
+    bool isUpdateUi = GetData<bool>();
+    int32_t zoneId = GetData<int32_t>();
+    int32_t volumeLevel = 0;
+    bool mute = false;
+    audioPolicyServer->UpdateMuteStateAccordingToVolLevel(streamType, volumeLevel, mute, isUpdateUi, zoneId);
+    volumeLevel = 1;
+    mute = true;
+    audioPolicyServer->UpdateMuteStateAccordingToVolLevel(streamType, volumeLevel, mute, isUpdateUi, zoneId);
+}
+
+void AudioPolicyServerProcUpdateRingerModeFuzztest()
+{
+    auto audioPolicyServer = GetServerPtr();
+    CHECK_AND_RETURN(audioPolicyServer != nullptr);
+    audioPolicyServer->supportVibrator_ = true;
+    audioPolicyServer->ProcUpdateRingerMode();
+    audioPolicyServer->supportVibrator_ = false;
+    audioPolicyServer->ProcUpdateRingerMode();
+}
+
+void AudioPolicyServerSetAppSingleStreamVolumeFuzztest()
+{
+    auto audioPolicyServer = GetServerPtr();
+    CHECK_AND_RETURN(audioPolicyServer != nullptr);
+    int32_t volumeLevel = GetData<int32_t>();
+    bool isUpdateUi = GetData<bool>();
+    int32_t appUid = GetData<int32_t>();
+    audioPolicyServer->SetAppSingleStreamVolume(appUid, volumeLevel, isUpdateUi);
+}
+
+void AudioPolicyServerSetSingleStreamVolumeFuzztest()
+{
+    auto audioPolicyServer = GetServerPtr();
+    CHECK_AND_RETURN(audioPolicyServer != nullptr);
+    int32_t volumeLevel = GetData<int32_t>();
+    bool isUpdateUi = GetData<bool>();
+    bool mute = GetData<bool>();
+    int32_t zoneId = GetData<int32_t>();
+    audioPolicyServer->SetSingleStreamVolume(AudioStreamType::STREAM_RING, volumeLevel, isUpdateUi, mute, zoneId);
+    audioPolicyServer->SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_ASSISTANT, volumeLevel,
+        isUpdateUi, mute, zoneId);
+}
+
+void AudioPolicyServerSetSingleStreamVolumeWithDeviceFuzztest()
+{
+    auto audioPolicyServer = GetServerPtr();
+    CHECK_AND_RETURN(audioPolicyServer != nullptr);
+    bool mute = GetData<bool>();
+    AudioStreamType streamType = STREAM_RING;
+    int32_t volumeLevel = GetData<int32_t>();
+    bool isUpdateUi = GetData<bool>();
+    DeviceType deviceType = GetData<DeviceType>();
+    audioPolicyServer->SetSingleStreamVolumeWithDevice(streamType, volumeLevel, isUpdateUi, deviceType);
+}
+
+void AudioPolicyServerGetStreamMuteFuzztest()
+{
+    auto audioPolicyServer = GetServerPtr();
+    CHECK_AND_RETURN(audioPolicyServer != nullptr);
+    bool mute = GetData<bool>();
+    AudioStreamType streamTypeIn = STREAM_RING;
+    audioPolicyServer->GetStreamMute(streamTypeIn, mute);
+}
+
+void AudioPolicyServerMapExternalToInternalDeviceTypeFuzztest()
+{
+    auto audioPolicyServer = GetServerPtr();
+    CHECK_AND_RETURN(audioPolicyServer != nullptr);
+    AudioDeviceDescriptor desc = std::make_shared<AudioDeviceDescriptor>();
+    desc.deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    audioPolicyServer->MapExternalToInternalDeviceType(desc);
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    desc.deviceRole_ = INPUT_DEVICE;
+    audioPolicyServer->MapExternalToInternalDeviceType(desc);
+    desc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    desc.deviceRole_ = INPUT_DEVICE;
+    audioPolicyServer->MapExternalToInternalDeviceType(desc);
+}
+
+void AudioPolicyServerGetPreferredOutputDeviceDescriptorsFuzztest()
+{
+    auto audioPolicyServer = GetServerPtr();
+    CHECK_AND_RETURN(audioPolicyServer != nullptr);
+    AudioRendererInfo rendererInfo;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs;
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDescs.push_back(deviceDesc);
+    bool forceNoBTPermission = false;
+    audioPolicyServer->GetPreferredOutputDeviceDescriptors(rendererInfo, forceNoBTPermission, deviceDescs);
+}
+
+void AudioPolicyServerGetPreferredInputDeviceDescriptorsFuzztest()
+{
+    auto audioPolicyServer = GetServerPtr();
+    CHECK_AND_RETURN(audioPolicyServer != nullptr);
+    AudioCapturerInfo capturerInfo;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs;
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDescs.push_back(deviceDesc);
+    audioPolicyServer->GetPreferredInputDeviceDescriptors(capturerInfo, deviceDescs);
+}
+
+void AudioPolicyServerIsFastRecordingSupportedFuzztest()
+{
+    auto audioPolicyServer = GetServerPtr();
+    CHECK_AND_RETURN(audioPolicyServer != nullptr);
+    AudioStreamInfo streamInfo = {};
+    int32_t source = GetData<uint16_t>();
+    bool support = GetData<bool>();
+    audioPolicyServer->IsFastRecordingSupported(streamInfo, source, support);
+}
+
+void AudioPolicyServerSetRingerModeInternalFuzztest()
+{
+    auto audioPolicyServer = GetServerPtr();
+    CHECK_AND_RETURN(audioPolicyServer != nullptr);
+    AudioRingerMode inputRingerMode = GetData<AudioRingerMode>();
+    bool hasUpdatedVolume = false;
+    audioPolicyServer->SetRingerModeInternal(inputRingerMode, hasUpdatedVolume);
+}
+
+void AudioPolicyServerInitMicrophoneMuteFuzztest()
+{
+    auto audioPolicyServer = GetServerPtr();
+    CHECK_AND_RETURN(audioPolicyServer != nullptr);
+    audioPolicyServer->isInitMuteState_ = true;
+    audioPolicyServer->InitMicrophoneMute();
+    audioPolicyServer->isInitMuteState_ = false;
+    audioPolicyServer->InitMicrophoneMute();
+}
+
+void AudioPolicyServerSetMicrophoneMuteAudioConfigFuzztest()
+{
+    auto audioPolicyServer = GetServerPtr();
+    CHECK_AND_RETURN(audioPolicyServer != nullptr);
+    bool isMute = GetData<bool>();
+    audioPolicyServer->SetMicrophoneMuteAudioConfig(isMute);
+}
+
+void AudioPolicyServerSetMicrophoneMutePersistentFuzztest()
+{
+    auto audioPolicyServer = GetServerPtr();
+    CHECK_AND_RETURN(audioPolicyServer != nullptr);
+    bool isMute = GetData<bool>();
+    PolicyType typeIn = GetData<PolicyType>();
+    audioPolicyServer->SetMicrophoneMutePersistent(isMute, typeIn);
+}
+
+void AudioPolicyServerSetAudioSceneFuzztest()
+{
+    auto audioPolicyServer = GetServerPtr();
+    CHECK_AND_RETURN(audioPolicyServer != nullptr);
+    AudioScene audioSceneIn = AUDIO_SCENE_DEFAULT;
+    audioPolicyServer->SetAudioScene(audioSceneIn);
+    audioSceneIn = AUDIO_SCENE_PHONE_CALL;
+    audioPolicyServer->SetAudioScene(audioSceneIn);
+    audioSceneIn = AUDIO_SCENE_PHONE_CHAT;
+    audioPolicyServer->SetAudioScene(audioSceneIn);
+}
+
+void AudioPolicyServerSetAndUnsetAudioInterruptCallbackFuzztest()
+{
+    auto audioPolicyServer = GetServerPtr();
+    CHECK_AND_RETURN(audioPolicyServer != nullptr);
+    uint32_t sessionID = GetData<uint32_t>();
+    uint32_t zoneID = GetData<uint32_t>();
+    uint32_t clientUid = GetData<uint32_t>();
+    sptr<IRemoteObject> object = new RemoteObjectFuzzTestStub();
+    audioPolicyServer->SetAudioInterruptCallback(sessionID, object, clientUid, zoneID);
+    audioPolicyServer->UnsetAudioInterruptCallback(sessionID, zoneID);
+}
+
+void AudioPolicyServerVerifySessionIdFuzztest()
+{
+    auto audioPolicyServer = GetServerPtr();
+    CHECK_AND_RETURN(audioPolicyServer != nullptr);
+    uint32_t sessionId = GetData<uint32_t>();
+    uint32_t clientUid = GetData<uint32_t>();
+    audioPolicyServer->VerifySessionId(sessionId, clientUid);
+}
+
+void AudioPolicyServerSetAndUnsetAudioRouteCallbackFuzztest()
+{
+    auto audioPolicyServer = GetServerPtr();
+    CHECK_AND_RETURN(audioPolicyServer != nullptr);
+    uint32_t sessionId = GetData<uint32_t>();
+    sptr<IRemoteObject> object = new RemoteObjectFuzzTestStub();
+    uint32_t clientUid = GetData<uint32_t>();
+    audioPolicyServer->SetAudioRouteCallback(sessionId, object, clientUid);
+    audioPolicyServer->UnsetAudioRouteCallback(sessionId);
+}
+
 void AudioPolicyServerSubscribeAccessibilityConfigObserverFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
@@ -711,20 +959,6 @@ void AudioPolicyServerUnsetAvailableDeviceChangeCallbackFuzzTest()
     int32_t usageIn = GetData<int32_t>();
 
     audioPolicyServer->UnsetAvailableDeviceChangeCallback(clientId, usageIn);
-}
-
-void AudioPolicyServerOffloadStopPlayingFuzzTest()
-{
-    auto audioPolicyServer = GetServerPtr();
-    CHECK_AND_RETURN(audioPolicyServer != nullptr);
-
-    StreamUsage streamUsage = GetData<StreamUsage>();
-    ContentType contentType = GetData<ContentType>();
-    AudioFocusType audioFocusType = GetData<AudioFocusType>();
-    uint32_t streamId = GetData<uint32_t>();
-    AudioInterrupt audioInterrupt(streamUsage, contentType, audioFocusType, streamId);
-
-    audioPolicyServer->OffloadStopPlaying(audioInterrupt);
 }
 
 void AudioPolicyServerCheckAudioSessionStrategyFuzzTest()
@@ -1208,7 +1442,7 @@ void AudioPolicyServerAudioZoneQueryFuzzTest()
     std::string name = "zone";
     AudioZoneContext context;
     int32_t zoneId = 0;
-    server->CreateAudioZone(name, context, zoneId);
+    server->CreateAudioZone(name, context, zoneId, 0);
 
     std::vector<std::shared_ptr<AudioZoneDescriptor>> descs;
     server->GetAllAudioZone(descs);
@@ -1229,7 +1463,7 @@ void AudioPolicyServerBindUnbindDeviceToAudioZoneFuzzTest()
     std::string name = "zone";
     AudioZoneContext context;
     int32_t zoneId = 0;
-    server->CreateAudioZone(name, context, zoneId);
+    server->CreateAudioZone(name, context, zoneId, 0);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     int32_t deviceCount = DEVICE_COUNT;
@@ -1255,7 +1489,7 @@ void AudioPolicyServerEnableAudioZoneReportFuzzTest()
     std::string name = "zone";
     AudioZoneContext context;
     int32_t zoneId = 0;
-    server->CreateAudioZone(name, context, zoneId);
+    server->CreateAudioZone(name, context, zoneId, 0);
 
     bool changeEnable = GetData<bool>();
     server->EnableAudioZoneChangeReport(zoneId, changeEnable);
@@ -1270,7 +1504,7 @@ void AudioPolicyServerAddRemoveUidToAudioZoneFuzzTest()
     std::string name = "zone";
     AudioZoneContext context;
     int32_t zoneId = 0;
-    server->CreateAudioZone(name, context, zoneId);
+    server->CreateAudioZone(name, context, zoneId, 0);
 
     int32_t uid = GetData<int32_t>();
     server->AddUidToAudioZone(zoneId, uid);
@@ -1286,7 +1520,7 @@ void AudioPolicyServerAddStreamToAudioZoneFuzzTest()
     std::string zoneName = "zone";
     AudioZoneContext context;
     int32_t zoneId = 0;
-    server->CreateAudioZone(zoneName, context, zoneId);
+    server->CreateAudioZone(zoneName, context, zoneId, 0);
 
     AudioZoneStream stream;
     stream.streamUsage = GetData<StreamUsage>();
@@ -1304,7 +1538,7 @@ void AudioPolicyServerAddStreamsToAudioZoneFuzzTest()
     std::string zoneName = "zone";
     AudioZoneContext context;
     int32_t zoneId = 0;
-    server->CreateAudioZone(zoneName, context, zoneId);
+    server->CreateAudioZone(zoneName, context, zoneId, 0);
 
     std::vector<AudioZoneStream> streams;
     int32_t count = COUNT;
@@ -1335,7 +1569,7 @@ void AudioPolicyServerEnableSystemVolumeProxyFuzzTest()
     std::string zoneName = "zone";
     AudioZoneContext context;
     int32_t zoneId = 0;
-    server->CreateAudioZone(zoneName, context, zoneId);
+    server->CreateAudioZone(zoneName, context, zoneId, 0);
     bool enable = GetData<bool>();
     server->EnableSystemVolumeProxy(zoneId, enable);
     server->ReleaseAudioZone(zoneId);
@@ -1348,7 +1582,7 @@ void AudioPolicyServerGetAudioInterruptForZoneFuzzTest()
     std::string zoneName = "zone";
     AudioZoneContext context;
     int32_t zoneId = 0;
-    server->CreateAudioZone(zoneName, context, zoneId);
+    server->CreateAudioZone(zoneName, context, zoneId, 0);
     std::vector<std::map<AudioInterrupt, int32_t>> retList;
     server->GetAudioInterruptForZone(zoneId, retList);
     std::string deviceTag = "dev";
@@ -1430,15 +1664,6 @@ void AudioPolicyServerNotifyAccountsChangedFuzzTest()
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
     server->NotifyAccountsChanged(id);
-}
-
-void AudioPolicyServerMoveToNewPipeFuzzTest()
-{
-    uint32_t sessionId = GetData<uint32_t>();
-    int32_t pipeType = GetData<int32_t>();
-    auto server = GetServerPtr();
-    CHECK_AND_RETURN(server != nullptr);
-    server->MoveToNewPipe(sessionId, pipeType);
 }
 
 void AudioPolicyServerCheckHibernateStateFuzzTest()
@@ -1896,6 +2121,28 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerSetSingleStreamMuteFuzzTest,
     AudioPolicyServerProcUpdateRingerModeForMuteFuzzTest,
     AudioPolicyServerGetSystemVolumeDbFuzzTest,
+    AudioPolicyServerSetSelfAppVolumeLevelFuzztest,
+    AudioPolicyServerSetAppVolumeLevelInternalFuzztest,
+    AudioPolicyServerSetSystemVolumeLevelInternalFuzztest,
+    AudioPolicyServerSetSystemVolumeLevelWithDeviceInternalFuzztest,
+    AudioPolicyServerSendVolumeKeyEventCbWithUpdateUiOrNotFuzztest,
+    AudioPolicyServerUpdateMuteStateAccordingToVolLevelFuzztest,
+    AudioPolicyServerProcUpdateRingerModeFuzztest,
+    AudioPolicyServerSetAppSingleStreamVolumeFuzztest,
+    AudioPolicyServerSetSingleStreamVolumeFuzztest,
+    AudioPolicyServerSetSingleStreamVolumeWithDeviceFuzztest,
+    AudioPolicyServerGetStreamMuteFuzztest,
+    AudioPolicyServerMapExternalToInternalDeviceTypeFuzztest,
+    AudioPolicyServerGetPreferredInputDeviceDescriptorsFuzztest,
+    AudioPolicyServerIsFastRecordingSupportedFuzztest,
+    AudioPolicyServerSetRingerModeInternalFuzztest,
+    AudioPolicyServerInitMicrophoneMuteFuzztest,
+    AudioPolicyServerSetMicrophoneMuteAudioConfigFuzztest,
+    AudioPolicyServerSetMicrophoneMutePersistentFuzztest,
+    AudioPolicyServerSetAudioSceneFuzztest,
+    AudioPolicyServerSetAndUnsetAudioInterruptCallbackFuzztest,
+    AudioPolicyServerVerifySessionIdFuzztest,
+    AudioPolicyServerSetAndUnsetAudioRouteCallbackFuzztest,
     AudioPolicyServerSubscribeAccessibilityConfigObserverFuzzTest,
     AudioPolicyServerGetMinStreamVolumeFuzzTest,
     AudioPolicyServerGetMaxStreamVolumeFuzzTest,
@@ -1912,7 +2159,6 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerGetAvailableDevicesFuzzTest,
     AudioPolicyServerSetAvailableDeviceChangeCallbackFuzzTest,
     AudioPolicyServerUnsetAvailableDeviceChangeCallbackFuzzTest,
-    AudioPolicyServerOffloadStopPlayingFuzzTest,
     AudioPolicyServerCheckAudioSessionStrategyFuzzTest,
     AudioPolicyServerSetAudioSessionSceneFuzzTest,
     AudioPolicyServerGetDefaultOutputDeviceFuzzTest,
@@ -1976,7 +2222,6 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerUnsetAudioDeviceAnahsCallbackFuzzTest,
     AudioPolicyServerSendVolumeKeyEventToRssWhenAccountsChangedFuzzTest,
     AudioPolicyServerNotifyAccountsChangedFuzzTest,
-    AudioPolicyServerMoveToNewPipeFuzzTest,
     AudioPolicyServerCheckHibernateStateFuzzTest,
     AudioPolicyServerUpdateSafeVolumeByS4FuzzTest,
     AudioPolicyServerCheckConnectedDeviceFuzzTest,

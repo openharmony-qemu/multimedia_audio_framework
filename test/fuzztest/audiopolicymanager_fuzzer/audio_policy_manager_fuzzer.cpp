@@ -221,6 +221,8 @@ void AudioPolicyManagerThreeFuzzTest()
     std::shared_ptr<AudioInterruptCallback> interruptCallback;
     uint32_t clientUid = GetData<int32_t>();
     int32_t zoneId = GetData<int32_t>();
+    int32_t displayId = GetData<int32_t>();
+    int32_t mode = GetData<int32_t>();
     std::shared_ptr<AudioQueryClientTypeCallback> audioQueryClientTypeCallback;
     std::shared_ptr<AudioQueryBundleNameListCallback> audioQueryBundleNameListCallback;
     AudioInterrupt audioInterrupt;
@@ -251,6 +253,8 @@ void AudioPolicyManagerThreeFuzzTest()
     AudioPolicyManager::GetInstance().DeactivatePreemptMode();
     AudioPolicyManager::GetInstance().SetAudioManagerInterruptCallback(clientId, interruptCallback);
     AudioPolicyManager::GetInstance().UnsetAudioManagerInterruptCallback(clientId);
+    AudioPolicyManager::GetInstance().SetAppConcurrencyMode(appUid, mode);
+    AudioPolicyManager::GetInstance().SetAppSilentOnDisplay(displayId);
 }
 
 void AudioPolicyManagerFourFuzzTest()
@@ -574,7 +578,6 @@ void AudioPolicyManagerDeviceTwoFuzzTest()
     AudioPolicyManager::GetInstance().SetPreferredDevice(preferredType, desc, uid);
     AudioPolicyManager::GetInstance().SetAudioDeviceAnahsCallback(audioDeviceAnahs);
     AudioPolicyManager::GetInstance().UnsetAudioDeviceAnahsCallback();
-    AudioPolicyManager::GetInstance().MoveToNewPipe(sessionId, pipeType);
     AudioPolicyManager::GetInstance().SetDeviceConnectionStatus(desc, isConnected);
     AudioPolicyManager::GetInstance().UpdateDeviceInfo(desc, command);
     AudioPolicyManager::GetInstance().SetSleAudioOperationCallback(sleAudioOperationCallback);

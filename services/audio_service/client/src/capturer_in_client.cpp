@@ -95,14 +95,12 @@ int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t r
     if (operation == UPDATE_STREAM) {
         AUDIO_DEBUG_LOG("OnOperationHandled() UPDATE_STREAM result:%{public}" PRId64".", result);
         // notify write if blocked
-        readDataCV_.notify_all();
         return SUCCESS;
     }
 
     if (operation == BUFFER_OVERFLOW) {
         AUDIO_WARNING_LOG("recv overflow %{public}d", overflowCount_);
         // in plan next: do more to reduce overflow
-        readDataCV_.notify_all();
         return SUCCESS;
     }
 
@@ -204,15 +202,6 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         info.encoding);
     AudioXCollie guard("CapturerInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
-    if (!IsFormatValid(info.format) || !IsEncodingTypeValid(info.encoding) || !IsSamplingRateValid(info.samplingRate)) {
-        AUDIO_ERR_LOG("CapturerInClient: Unsupported audio parameter");
-        return ERR_NOT_SUPPORTED;
-    }
-    if (!IsRecordChannelRelatedInfoValid(info.channels, info.channelLayout)) {
-        AUDIO_ERR_LOG("Invalid sink channel %{public}d or channel layout %{public}" PRIu64, info.channels,
-                info.channelLayout);
-        return ERR_NOT_SUPPORTED;
-    }
 
     CHECK_AND_RETURN_RET_LOG(IAudioStream::GetByteSizePerFrame(info, sizePerFrameInByte_) == SUCCESS,
         ERROR_INVALID_PARAM, "GetByteSizePerFrame failed with invalid params");
@@ -1224,7 +1213,7 @@ bool CapturerInClientInner::StopAudioStream()
 
     if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
         state_ = STOPPING;
-        readDataCV_.notify_all();
+        clientBuffer_->WakeFutex();
         AUDIO_INFO_LOG("Stop begin in callback mode sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
     }
 
@@ -1286,7 +1275,7 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
             cbBufferQueue_.PushNoWait({nullptr, 0, 0});
         }
         cbThreadCv_.notify_all();
-        readDataCV_.notify_all();
+        clientBuffer_->WakeFutex();
         if (callbackLoop_.joinable()) {
             callbackLoop_.join();
         }
@@ -1440,13 +1429,13 @@ int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &user
                 return readSize; // Return buffer immediately
             }
             // wait for server read some data
-            std::unique_lock<std::mutex> readLock(readDataMutex_);
-            bool isTimeout = !readDataCV_.wait_for(readLock,
-                std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-                    return clientBuffer_->GetCurWriteFrame() > clientBuffer_->GetCurReadFrame() || state_ != RUNNING;
+            constexpr auto timeoutInNano = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS)).count();
+            FutexCode futexRet = clientBuffer_->WaitFor(timeoutInNano, [this] {
+                return clientBuffer_->GetCurWriteFrame() > clientBuffer_->GetCurReadFrame() || state_ != RUNNING;
             });
             CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "State is not running");
-            CHECK_AND_RETURN_RET_LOG(isTimeout == false, ERROR, "Wait timeout");
+            CHECK_AND_RETURN_RET_LOG(futexRet == FUTEX_SUCCESS, ERROR, "Wait timeout or breaked:%{public}d", futexRet);
         }
     }
     return readSize;
@@ -1774,9 +1763,10 @@ void CapturerInClientInner::JoinCallbackLoop()
     AUDIO_INFO_LOG("Not Support");
 }
 
-int32_t CapturerInClientInner::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+int32_t CapturerInClientInner::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce)
 {
     (void)defaultOutputDevice;
+    (void)skipForce;
     AUDIO_WARNING_LOG("not supported in capturer");
     return ERROR;
 }
@@ -1847,6 +1837,7 @@ void CapturerInClientInner::SetCallStartByUserTid(pid_t tid)
 
 void CapturerInClientInner::SetCallbackLoopTid(int32_t tid)
 {
+    std::unique_lock<std::mutex> waitLock(callbackLoopTidMutex_);
     AUDIO_INFO_LOG("Callback loop tid: %{public}d", tid);
     callbackLoopTid_ = tid;
     callbackLoopTidCv_.notify_all();

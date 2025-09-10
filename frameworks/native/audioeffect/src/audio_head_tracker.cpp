@@ -60,7 +60,7 @@ void HeadTracker::HeadPostureDataProcCb(SensorEvent *event)
             headPostureDataTmp->y, headPostureDataTmp->z);
     }
     if (headPostureData_.order % HP_DATA_PRINT_COUNT_INFO == ORDER_ONE) {
-        AUDIO_INFO_LOG("Head posture data of order %{public}d received, w: %{public}f, x: %{public}f, "
+        HILOG_COMM_INFO("Head posture data of order %{public}d received, w: %{public}f, x: %{public}f, "
             "y: %{public}f, z: %{public}f", headPostureData_.order, headPostureDataTmp->w, headPostureDataTmp->x,
             headPostureDataTmp->y, headPostureDataTmp->z);
     }
@@ -91,12 +91,12 @@ int32_t HeadTracker::SensorSetConfig(int32_t spatializerEngineState)
             ret = ERROR;
             break;
         case ARM_SPATIALIZER_ENGINE:
-            AUDIO_INFO_LOG("system uses arm spatializer engine!");
+            HILOG_COMM_INFO("system uses arm spatializer engine!");
             ret = SetBatch(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_,
                 sensorSamplingInterval_, sensorSamplingInterval_);
             break;
         case DSP_SPATIALIZER_ENGINE:
-            AUDIO_INFO_LOG("system uses dsp spatializer engine!");
+            HILOG_COMM_INFO("system uses dsp spatializer engine!");
             ret = SetBatch(SENSOR_TYPE_ID_HEADPOSTURE, &sensorUser_,
                 sensorSamplingInterval_, sensorSamplingInterval_ * 2); // 2 * sampling for DSP
             break;

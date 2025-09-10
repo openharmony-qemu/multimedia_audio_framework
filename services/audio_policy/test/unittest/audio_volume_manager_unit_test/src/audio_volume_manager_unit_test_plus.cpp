@@ -365,5 +365,20 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_117, TestSize.Level1)
     streamUsages = VolumeUtils::GetStreamUsageSetForVolumeType(STREAM_MUSIC);
     EXPECT_FALSE(streamUsages.empty());
 }
+
+
+/**
+ * @tc.name  : Test AudioVolumeManager.
+ * @tc.number: AudioVolumeManager_118
+ * @tc.desc  : Test AudioVolumeManager.
+ */
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_118, TestSize.Level1)
+{
+    auto audioVolumeManager = std::make_shared<ForceControlVolumeTypeMonitor>();
+    EXPECT_NE(audioVolumeManager, nullptr);
+
+    EXPECT_NO_THROW(audioVolumeManager->SetTimer(-1, nullptr));
+    EXPECT_NO_THROW(audioVolumeManager->SetTimer(1, nullptr));
+}
 } // namespace AudioStandard
 } // namespace OHOS

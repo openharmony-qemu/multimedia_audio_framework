@@ -52,6 +52,7 @@ static const char* DP_SINK = "DP_speaker";
 static const char* USB_MIC = "Usb_arm_mic";
 static const char* PRIMARY_MIC = "Built_in_mic";
 static const char* PRIMARY_WAKEUP_MIC = "Built_in_wakeup";
+static const char* PRIMARY_AI_MIC = "Built_in_ai";
 static const char* FILE_SINK = "file_sink";
 static const char* FILE_SOURCE = "file_source";
 static const char* PIPE_SINK = "fifo_output";
@@ -63,6 +64,7 @@ static const char* PORT_NONE = "none";
 static const char* PRIMARY_DIRECT_VOIP = "direct_voip";
 static const char* PRIMARY_MMAP_VOIP = "mmap_voip";
 static const char* ACCESSORY_SOURCE = "accessory_mic";
+static const char* VIRTUAL_AUDIO = "virtual_audio";
 }
 
 enum NodeName {
@@ -121,6 +123,7 @@ struct AudioModuleInfo {
     std::string OpenMicSpeaker;
     std::string fileName;
     std::string networkId;
+    std::string macAddress;
     std::string deviceType;
     std::string sceneName;
     std::string sourceType;
@@ -136,6 +139,7 @@ struct AudioModuleInfo {
     std::string micRefRate;
     std::string micRefFormat;
     std::string micRefChannels;
+    uint32_t suspendIdleTimeout = DEFAULT_SUSPEND_TIME_IN_MS;
 
     std::list<AudioModuleInfo> ports;
     std::string extra;

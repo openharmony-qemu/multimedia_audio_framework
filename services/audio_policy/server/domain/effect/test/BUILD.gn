@@ -15,7 +15,6 @@ import("//build/ohos.gni")
 import("//build/test.gni")
 import("../../../../../../accessibility.gni")
 import("../../../../../../appgallery.gni")
-import("../../../../../../av_session.gni")
 import("../../../../../../bluetooth_part.gni")
 import("../../../../../../config.gni")
 
@@ -67,7 +66,6 @@ ohos_unittest("audio_spatialization_service_extended_test") {
     "kv_store:distributeddata_inner",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "eventhandler:libeventhandler",
   ]

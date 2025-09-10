@@ -56,6 +56,7 @@
 #include "audio_effect_map.h"
 
 #include "media_monitor_manager.h"
+#include "parameters.h"
 
 using namespace OHOS::HiviewDFX;
 using namespace OHOS::AppExecFwk;
@@ -85,6 +86,7 @@ RendererInClientInner::RendererInClientInner(AudioStreamType eStreamType, int32_
 {
     AUDIO_INFO_LOG("Create with StreamType:%{public}d appUid:%{public}d ", eStreamType_, appUid_);
     audioStreamTracker_ = std::make_unique<AudioStreamTracker>(AUDIO_MODE_PLAYBACK, appUid);
+    loudVolumeModeEnable_ = OHOS::system::GetBoolParameter("const.audio.loudvolume", false);
     state_ = NEW;
 }
 
@@ -106,7 +108,7 @@ RendererInClientInner::~RendererInClientInner()
 int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t result)
 {
     Trace trace(traceTag_ + " OnOperationHandled:" + std::to_string(static_cast<int>(operation)));
-    AUDIO_INFO_LOG("sessionId %{public}d recv operation:%{public}d result:%{public}" PRId64".", sessionId_,
+    HILOG_COMM_INFO("sessionId %{public}d recv operation:%{public}d result:%{public}" PRId64".", sessionId_,
         static_cast<int>(operation), result);
     if (operation == SET_OFFLOAD_ENABLE) {
         AUDIO_INFO_LOG("SET_OFFLOAD_ENABLE result:%{public}" PRId64".", result);
@@ -236,13 +238,6 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     AudioXCollie guard("RendererInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
-    if (!IsFormatValid(info.format) || !IsEncodingTypeValid(info.encoding) ||
-        !((info.customSampleRate == 0 && IsSamplingRateValid(info.samplingRate)) ||
-        (info.customSampleRate != 0 && IsCustomSampleRateValid(info.customSampleRate)))) {
-        AUDIO_ERR_LOG("Unsupported audio parameter");
-        return ERR_NOT_SUPPORTED;
-    }
-
     streamParams_ = curStreamParams_ = info; // keep it for later use
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
         ConverterConfig cfg = AudioPolicyManager::GetInstance().GetConverterConfig();
@@ -252,10 +247,6 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
             return ERR_NOT_SUPPORTED;
         }
         converter_->ConverterChannels(curStreamParams_.channels, curStreamParams_.channelLayout);
-    }
-
-    if (!IsPlaybackChannelRelatedInfoValid(curStreamParams_.channels, curStreamParams_.channelLayout)) {
-        return ERR_NOT_SUPPORTED;
     }
 
     CHECK_AND_RETURN_RET_LOG(IAudioStream::GetByteSizePerFrame(curStreamParams_, sizePerFrameInByte_) == SUCCESS,
@@ -370,36 +361,13 @@ void RendererInClientInner::SetSwitchInfoTimestamp(
     std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair,
     std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePairWithSpeed)
 {
-    std::vector<uint64_t> timestampCurrent = {0};
-    ClockTime::GetAllTimeStamp(timestampCurrent);
+    AUDIO_INFO_LOG("RendererInClientInner::SetSwitchInfoTimestamp");
 
     lastFramePosAndTimePair_ = lastFramePosAndTimePair;
     lastFramePosAndTimePairWithSpeed_ = lastFramePosAndTimePairWithSpeed;
     for (int32_t base = 0; base < Timestamp::Timestampbase::BASESIZE; base++) {
-        uint64_t timestampNS = timestampCurrent[base];
-
-        // Calculate the number of samples at the switching point based on the current time
-        // before scaling to one times speed, for RendererInClientInner::GetAudioPosition
-        uint64_t lastTimeNS = lastFramePosAndTimePair[base].second;
-        uint64_t durationNS = timestampNS > lastTimeNS && lastTimeNS > 0 ? timestampNS - lastTimeNS : 0;
-        uint64_t durationUS = durationNS / AUDIO_US_PER_MS;
-        uint64_t newPositionUS =
-            lastFramePosAndTimePair[base].first + durationUS * curStreamParams_.samplingRate / AUDIO_US_PER_S;
-        lastSwitchPosition_[base] = newPositionUS;
-        lastFramePosAndTimePair_[base].first = newPositionUS;
-        lastFramePosAndTimePair_[base].second = timestampNS;
-
-        // after scaling to one times speed, for RendererInClientInner::GetAudioTimestampInfo
-        uint64_t lastTimeWithSpeedNS = lastFramePosAndTimePairWithSpeed[base].second;
-        uint64_t durationWithSpeedNS =
-            timestampNS > lastTimeWithSpeedNS && lastTimeWithSpeedNS > 0 ? timestampNS - lastTimeWithSpeedNS : 0;
-        uint64_t durationWithSpeedUS = durationWithSpeedNS / AUDIO_US_PER_MS;
-        float speed = realSpeed_.has_value() ? realSpeed_.value() : 1;
-        uint64_t newPositionWithSpeedUS = lastFramePosAndTimePairWithSpeed[base].first +
-            durationWithSpeedUS * curStreamParams_.samplingRate * speed / AUDIO_US_PER_S;
-        lastSwitchPositionWithSpeed_[base] = newPositionWithSpeedUS;
-        lastFramePosAndTimePairWithSpeed_[base].first = newPositionWithSpeedUS;
-        lastFramePosAndTimePairWithSpeed_[base].second = timestampNS;
+        lastSwitchPosition_[base] = lastFramePosAndTimePair[base].first;
+        lastSwitchPositionWithSpeed_[base] = lastFramePosAndTimePairWithSpeed[base].first;
     }
 }
 
@@ -416,6 +384,7 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
 
     uint64_t framePosition = readIdx > lastSpeedFlushReadIndex_ ? readIdx - lastSpeedFlushReadIndex_ : 0;
     framePosition = framePosition > latency ? framePosition - latency : 0;
+    framePosition += dropHdiPosition_.load();
     framePosition += lastSwitchPosition_[base];
 
     // reset the timestamp
@@ -870,11 +839,6 @@ int32_t RendererInClientInner::Enqueue(const BufferDesc &bufDesc)
     CHECK_AND_RETURN_RET_LOG(curStreamParams_.encoding != ENCODING_AUDIOVIVID ||
             converter_ != nullptr && converter_->CheckInputValid(bufDesc),
         ERR_INVALID_PARAM, "Invalid buffer desc");
-    // allow opensles enqueue self buffer
-    if ((rendererInfo_.playerType != PLAYER_TYPE_OPENSL_ES) && !CheckBufferValid(bufDesc)) {
-        AUDIO_WARNING_LOG("Invalid bufLength:%{public}zu or dataLength:%{public}zu, should be %{public}zu",
-            bufDesc.bufLength, bufDesc.dataLength, cbBufferSize_);
-    }
 
     BufferDesc temp = bufDesc;
 
@@ -1006,10 +970,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     mutePlayStartTime_ = 0;
     Trace trace("RendererInClientInner::StartAudioStream " + std::to_string(sessionId_));
     std::unique_lock<std::mutex> statusLock(statusMutex_);
-    if (state_ != PREPARED && state_ != STOPPED && state_ != PAUSED) {
-        AUDIO_ERR_LOG("Start failed Illegal state:%{public}d", state_.load());
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(state_ == PREPARED || state_ == STOPPED || state_ == PAUSED, false, "Start failed");
 
     hasFirstFrameWrited_ = false;
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
@@ -1029,8 +990,12 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     }
 
     waitLock.unlock();
+    if (loudVolumeModeEnable_) {
+        AudioPolicyManager::GetInstance().ReloadLoudVolumeMode(eStreamType_, LOUD_VOLUME_SWITCH_AUTO);
+    }
 
-    AUDIO_INFO_LOG("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    HILOG_COMM_INFO("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+
     UpdateTracker("RUNNING");
 
     FlushBeforeStart();
@@ -1107,7 +1072,7 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     StateCmdTypeToParams(param, state_, cmdType);
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, param);
 
-    AUDIO_INFO_LOG("Pause SUCCESS, sessionId %{public}d, uid %{public}d, mode %{public}s", sessionId_,
+    HILOG_COMM_INFO("Pause SUCCESS, sessionId %{public}d, uid %{public}d, mode %{public}s", sessionId_,
         clientUid_, renderMode_ == RENDER_MODE_NORMAL ? "RENDER_MODE_NORMAL" : "RENDER_MODE_CALLBACK");
     UpdateTracker("PAUSED");
     return true;
@@ -1164,7 +1129,7 @@ bool RendererInClientInner::StopAudioStream()
     // in plan: call HiSysEventWrite
     SafeSendCallbackEvent(STATE_CHANGE_EVENT, state_);
 
-    AUDIO_INFO_LOG("Stop SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    HILOG_COMM_INFO("Stop SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     UpdateTracker("STOPPED");
     return true;
 }
@@ -1225,7 +1190,7 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
     lock.unlock();
 
     UpdateTracker("RELEASED");
-    AUDIO_INFO_LOG("Release end, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+    HILOG_COMM_INFO("Release end, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
 
     std::lock_guard lockSpeed(speedMutex_);
     audioSpeed_.reset();
@@ -1532,6 +1497,8 @@ void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
     info.renderPeriodPositionCb = rendererPeriodPositionCallback_;
 
     info.rendererWriteCallback = writeCb_;
+    info.unprocessSamples = unprocessedFramesBytes_.load() +
+        lastSwitchPositionWithSpeed_[Timestamp::Timestampbase::MONOTONIC];
 }
 
 IAudioStream::StreamClass RendererInClientInner::GetStreamClass()
@@ -1821,10 +1788,10 @@ error:
     return false;
 }
 
-int32_t RendererInClientInner::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+int32_t RendererInClientInner::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce)
 {
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is not inited!");
-    int32_t ret = ipcStream_->SetDefaultOutputDevice(defaultOutputDevice);
+    int32_t ret = ipcStream_->SetDefaultOutputDevice(defaultOutputDevice, skipForce);
     if (ret == SUCCESS) {
         defaultOutputDevice_ = defaultOutputDevice;
     }
@@ -1875,6 +1842,7 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     frameLatency += SONIC_LATENCY_IN_MS * curStreamParams_.samplingRate / AUDIO_MS_PER_SECOND;
     // real frameposition
     uint64_t framePosition = unprocessSamples > frameLatency ? unprocessSamples - frameLatency : 0;
+    framePosition += dropPosition_.load();
     framePosition += lastSwitchPositionWithSpeed_[base];
 
     // reset the timestamp
@@ -1957,6 +1925,7 @@ void RendererInClientInner::SetCallStartByUserTid(pid_t tid)
 
 void RendererInClientInner::SetCallbackLoopTid(int32_t tid)
 {
+    std::unique_lock<std::mutex> waitLock(callbackLoopTidMutex_);
     AUDIO_INFO_LOG("Callback loop tid: %{public}d", tid);
     callbackLoopTid_ = tid;
     callbackLoopTidCv_.notify_all();

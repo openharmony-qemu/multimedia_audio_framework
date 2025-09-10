@@ -59,13 +59,6 @@ HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeI
         preNodeInfo.customSampleRate, inChannelInfo.numChannels,
         inChannelInfo.channelLayout, nodeInfo.format, nodeInfo.frameLen, nodeInfo.samplingRate,
         outChannelInfo.numChannels, outChannelInfo.channelLayout);
-#ifdef ENABLE_HOOK_PCM
-    outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
-        "HpaeConverterNodeOutput_id_" + std::to_string(GetSessionId()) +
-        + "_nodeId_" + std::to_string(GetNodeId()) +
-        "_ch_" + std::to_string(GetChannelCount()) + "_rate_" +
-        std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
-#endif
 
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeAudioFormatConverterNode");
@@ -103,6 +96,16 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
 
     // make sure size of silenceData_, tmpOutput_, and ConverterOutput_ is correct
     CheckAndUpdateInfo(inputs[0]);
+
+#ifdef ENABLE_HOOK_PCM
+    if (!outputPcmDumper_) {
+        outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
+            "HpaeConverterNodeOutput_id_" + std::to_string(GetSessionId()) + "_nodeId_" + std::to_string(GetNodeId()) +
+            "_ch_" + std::to_string(GetChannelCount()) +
+            "_rate_" + std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
+    }
+#endif
+
     // pass valid tag to next node
     if (!inputs[0]->IsValid()) {
         return &silenceData_;
@@ -202,7 +205,7 @@ bool HpaeAudioFormatConverterNode::CheckUpdateOutInfo()
             .channelLayout = (AudioChannelLayout)channelLayout,
             .numChannels = numChannels,
         };
-        AUDIO_INFO_LOG("NodeId %{public}d, update out channels and channelLayout: channels %{public}d -> %{public}d",
+        HILOG_COMM_INFO("NodeId %{public}d, update out channels and channelLayout: channels %{public}d -> %{public}d",
             GetNodeId(), curOutChannelInfo.numChannels, numChannels);
         CHECK_AND_RETURN_RET_LOG(channelConverter_.SetOutChannelInfo(newOutChannelInfo) == DMIX_ERR_SUCCESS, false,
             "NodeId: %{public}d, Fail to set output channel info from effectNode!", GetNodeId());
@@ -214,7 +217,7 @@ bool HpaeAudioFormatConverterNode::CheckUpdateOutInfo()
     }
     // update sample rate
     if (resampler_->GetOutRate() != sampleRate) {
-        AUDIO_INFO_LOG("NodeId: %{public}d, update output sample rate: %{public}d -> %{public}d",
+        HILOG_COMM_INFO("NodeId: %{public}d, update output sample rate: %{public}d -> %{public}d",
             GetNodeId(), resampler_->GetOutRate(), sampleRate);
         resampler_->UpdateRates(preNodeInfo_.samplingRate, sampleRate);
     }
@@ -237,7 +240,7 @@ bool HpaeAudioFormatConverterNode::CheckUpdateInInfo(HpaePcmBuffer *input)
     bool isInfoUpdated = false;
     // update channels and channelLayout
     if ((curInChannelInfo.numChannels != numChannels) || (curInChannelInfo.channelLayout != channelLayout)) {
-        AUDIO_INFO_LOG("NodeId %{public}d: Update innput channel info from pcmBufferInfo, "
+        HILOG_COMM_INFO("NodeId %{public}d: Update innput channel info from pcmBufferInfo, "
             "channels: %{public}d -> %{public}d, channellayout: %{public}" PRIu64 " -> %{public}" PRIu64 ".",
             GetNodeId(), curInChannelInfo.numChannels, numChannels, curInChannelInfo.channelLayout, channelLayout);
  
@@ -258,7 +261,7 @@ bool HpaeAudioFormatConverterNode::CheckUpdateInInfo(HpaePcmBuffer *input)
     }
     // update sample rate
     if (sampleRate != resampler_->GetInRate()) {
-        AUDIO_INFO_LOG("NodeId %{public}d: Update resampler input sample rate: %{public}d -> %{public}d",
+        HILOG_COMM_INFO("NodeId %{public}d: Update resampler input sample rate: %{public}d -> %{public}d",
             GetNodeId(), resampler_->GetInRate(), sampleRate);
         preNodeInfo_.frameLen = input->GetFrameLen();
         preNodeInfo_.samplingRate = (AudioSamplingRate)sampleRate;

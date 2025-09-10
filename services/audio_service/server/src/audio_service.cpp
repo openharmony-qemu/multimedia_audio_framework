@@ -49,11 +49,12 @@ static const uint32_t VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME = 60; // 60ms
 static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
 #endif
 static const uint32_t BLOCK_HIBERNATE_CALLBACK_IN_MS = 5000; // 5s
-static const uint32_t RECHECK_SINK_STATE_IN_US = 100000; // 100ms
+static const uint32_t RECHECK_SINK_STATE_IN_US = 300000; // 300ms
 static const int32_t MEDIA_SERVICE_UID = 1013;
 static const int32_t RENDERER_STREAM_CNT_PER_UID_LIMIT = 40;
 static const int32_t INVALID_APP_UID = -1;
 static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = 0;
+static const uint32_t BACKGROUND_CAPTURE_INTERRUPT_TIMEOUT_SEC = 2; //2s
 namespace {
 static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
     SOURCE_TYPE_PLAYBACK_CAPTURE,
@@ -95,7 +96,8 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool isSwit
     while (paired != linkedPairedList_.end()) {
         if ((*paired).first == process) {
             AUDIO_INFO_LOG("SessionId %{public}u", (*paired).first->GetSessionId());
-            AudioPerformanceMonitor::GetInstance().DeleteSilenceMonitor(process->GetAudioSessionId());
+            uint32_t sessionId = process->GetAudioSessionId();
+            AudioPerformanceMonitor::GetInstance().DeleteSilenceMonitor(sessionId);
             auto processConfig = process->GetAudioProcessConfig();
             if (processConfig.audioMode == AUDIO_MODE_PLAYBACK) {
                 SetDecMaxRendererStreamCnt();
@@ -110,12 +112,14 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool isSwit
                 RemoveIdFromMuteControlSet((*paired).first->GetSessionId());
             }
             ret = UnlinkProcessToEndpoint((*paired).first, (*paired).second);
+            HandleProcessInserverDualStreamDisableInner(*(paired->second));
             if ((*paired).second->GetStatus() == AudioEndpoint::EndpointStatus::UNLINKED) {
                 needRelease = true;
                 endpointName = (*paired).second->GetEndpointName();
                 delayTime = GetReleaseDelayTime((*paired).second, isSwitchStream,
                     processConfig.audioMode == AUDIO_MODE_RECORD);
             }
+            allProcessInServer_.erase(sessionId);
             linkedPairedList_.erase(paired);
             isFind = true;
             break;
@@ -123,11 +127,8 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool isSwit
             paired++;
         }
     }
-    if (isFind) {
-        AUDIO_INFO_LOG("find and release process result %{public}d", ret);
-    } else {
-        AUDIO_INFO_LOG("can not find target process, maybe already released.");
-    }
+    JUDGE_AND_INFO_LOG(isFind, "find and release process result %{public}d", ret);
+    JUDGE_AND_INFO_LOG(!isFind, "can not find target process, maybe already released.");
     if (needRelease) {
         ReleaseProcess(endpointName, delayTime);
     }
@@ -341,6 +342,189 @@ bool AudioService::InForegroundList(uint32_t uid)
         return true;
     }
     return false;
+}
+
+void AudioService::SendInterruptEventToAudioService(uint32_t sessionId,
+    InterruptEventInternal interruptEvent)
+{
+    interruptEvent.eventTimestamp = ClockTime::GetCurNano();
+    AUDIO_INFO_LOG("Recive InterruptEvent:[%{public}d] from InterruptService", interruptEvent.hintType);
+    if (interruptEvent.hintType == INTERRUPT_HINT_RESUME) {
+        UpdateResumeInterruptEventMap(sessionId, interruptEvent);
+    }
+    if (interruptEvent.hintType == INTERRUPT_HINT_PAUSE) {
+        UpdatePauseInterruptEventMap(sessionId, interruptEvent);
+    }
+}
+
+bool AudioService::UpdateResumeInterruptEventMap(const uint32_t sessionId,
+    InterruptEventInternal interruptEvent)
+{
+    std::lock_guard<std::mutex> lock(resumeInterruptEventMutex_);
+    auto iter = resumeInterruptEventMap_.find(sessionId);
+    if (iter == resumeInterruptEventMap_.end()) {
+        resumeInterruptEventMap_[sessionId] = interruptEvent;
+    } else {
+        iter->second = interruptEvent;
+    }
+    return true;
+}
+
+bool AudioService::RemoveResumeInterruptEventMap(const uint32_t sessionId)
+{
+    std::lock_guard<std::mutex> lock(resumeInterruptEventMutex_);
+    auto iter = resumeInterruptEventMap_.find(sessionId);
+    if (iter == resumeInterruptEventMap_.end()) {
+        return false;
+    }
+    resumeInterruptEventMap_.erase(sessionId);
+    return true;
+}
+
+bool AudioService::IsStreamInterruptResume(const uint32_t sessionId)
+{
+    InterruptEventInternal interruptEvent;
+    std::lock_guard<std::mutex> lock(resumeInterruptEventMutex_);
+    auto iter = resumeInterruptEventMap_.find(sessionId);
+    if (iter == resumeInterruptEventMap_.end()) {
+        return false;
+    }
+    int64_t stamp = iter->second.eventTimestamp;
+    stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_NS_PER_SECOND;
+    if (stamp <= BACKGROUND_CAPTURE_INTERRUPT_TIMEOUT_SEC) {
+        AUDIO_WARNING_LOG("sessionId:%{public}u Resume Interrupt!!!", sessionId);
+        return true;
+    }
+    resumeInterruptEventMap_.erase(sessionId);
+    return false;
+}
+
+bool AudioService::UpdatePauseInterruptEventMap(const uint32_t sessionId,
+    InterruptEventInternal interruptEvent)
+{
+    std::lock_guard<std::mutex> lock(pauseInterruptEventMutex_);
+    auto iter = pauseInterruptEventMap_.find(sessionId);
+    if (iter == pauseInterruptEventMap_.end()) {
+        pauseInterruptEventMap_[sessionId] = interruptEvent;
+    } else {
+        iter->second = interruptEvent;
+    }
+    return true;
+}
+
+bool AudioService::RemovePauseInterruptEventMap(const uint32_t sessionId)
+{
+    std::lock_guard<std::mutex> lock(pauseInterruptEventMutex_);
+    auto iter = pauseInterruptEventMap_.find(sessionId);
+    if (iter == pauseInterruptEventMap_.end()) {
+        return false;
+    }
+    pauseInterruptEventMap_.erase(sessionId);
+    return true;
+}
+
+bool AudioService::IsStreamInterruptPause(const uint32_t sessionId)
+{
+    std::lock_guard<std::mutex> lock(pauseInterruptEventMutex_);
+    auto iter = pauseInterruptEventMap_.find(sessionId);
+    if (iter == pauseInterruptEventMap_.end()) {
+        return false;
+    }
+    int64_t stamp = iter->second.eventTimestamp;
+    stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_NS_PER_SECOND;
+    if (stamp <= BACKGROUND_CAPTURE_INTERRUPT_TIMEOUT_SEC) {
+        AUDIO_WARNING_LOG("sessionId:%{public}u Pause Interrupt!!!", sessionId);
+        return true;
+    }
+    AUDIO_INFO_LOG("sessionId:%{public}u Pause Timeout!!!", sessionId);
+    return false;
+}
+
+bool AudioService::IsInSwitchStreamMap(uint32_t sessionId, SwitchState &switchState)
+{
+    std::lock_guard<std::mutex> lock(audioSwitchStreamMutex_);
+    switchState = SWITCH_STATE_FINISHED;
+    auto iter = audioSwitchStreamMap_.find(sessionId);
+    CHECK_AND_RETURN_RET_LOG(iter != audioSwitchStreamMap_.end(), false,
+        "can not find switchStream:%{public}u", sessionId);
+    switchState = iter->second;
+    return true;
+}
+
+bool AudioService::UpdateSwitchStreamMap(uint32_t sessionId, SwitchState switchState)
+{
+    std::lock_guard<std::mutex> lock(audioSwitchStreamMutex_);
+    auto iter = audioSwitchStreamMap_.find(sessionId);
+    if (iter == audioSwitchStreamMap_.end()) {
+        audioSwitchStreamMap_[sessionId] = switchState;
+        return true;
+    }
+    iter->second = switchState;
+    return true;
+}
+
+void AudioService::RemoveSwitchStreamMap(uint32_t sessionId)
+{
+    std::lock_guard<std::mutex> lock(audioSwitchStreamMutex_);
+    auto iter = audioSwitchStreamMap_.find(sessionId);
+    if (iter != audioSwitchStreamMap_.end()) {
+        audioSwitchStreamMap_.erase(sessionId);
+    }
+}
+
+bool AudioService::IsBackgroundCaptureAllowed(uint32_t sessionId)
+{
+    std::lock_guard<std::mutex> lock(backgroundCaptureMutex_);
+    auto iter = backgroundCaptureMap_.find(sessionId);
+    if (iter == backgroundCaptureMap_.end()) {
+        return false;
+    }
+    if (iter->second) {
+        AUDIO_WARNING_LOG("sessionId:%{public}u lastBackCap: success", sessionId);
+        return true;
+    }
+    return false;
+}
+
+bool AudioService::UpdateBackgroundCaptureMap(uint32_t sessionId, bool res)
+{
+    std::lock_guard<std::mutex> lock(backgroundCaptureMutex_);
+    auto iter = backgroundCaptureMap_.find(sessionId);
+    if (iter == backgroundCaptureMap_.end()) {
+        backgroundCaptureMap_[sessionId] = res;
+        return true;
+    }
+    iter->second = res;
+    return true;
+}
+
+void AudioService::RemoveBackgroundCaptureMap(uint32_t sessionId)
+{
+    std::lock_guard<std::mutex> lock(backgroundCaptureMutex_);
+    auto iter = backgroundCaptureMap_.find(sessionId);
+    if (iter != backgroundCaptureMap_.end()) {
+        backgroundCaptureMap_.erase(sessionId);
+    }
+}
+
+bool AudioService::NeedRemoveBackgroundCaptureMap(uint32_t sessionId, CapturerState capturerState)
+{
+    SwitchState switchState;
+    if (IsInSwitchStreamMap(sessionId, switchState)) {
+        AUDIO_INFO_LOG("sessionId:%{public}u switchState:%{public}d", sessionId, switchState);
+        if (switchState == SWITCH_STATE_WAITING) {
+            return false;
+        }
+        RemoveSwitchStreamMap(sessionId);
+    }
+    if (IsStreamInterruptPause(sessionId)) {
+        AUDIO_WARNING_LOG ("Pause Interrupt!sessionId:%{public}u state:%{public}d", sessionId, capturerState);
+        if (capturerState == CAPTURER_PAUSED) {
+            RemovePauseInterruptEventMap(sessionId);
+        }
+        return false;
+    }
+    return true;
 }
 
 void AudioService::SaveRenderWhitelist(std::vector<std::string> list)
@@ -570,8 +754,13 @@ bool AudioService::CheckShouldCap(const AudioProcessConfig &rendererConfig, int3
 }
 #endif
 
-bool AudioService::ShouldBeDualTone(const AudioProcessConfig &config)
+bool AudioService::ShouldBeDualTone(const AudioProcessConfig &config, const std::string &dupSinkName)
 {
+    // for dup device scene, use dmsdp speaker
+    if (dupSinkName != "Speaker") {
+        return true;
+    }
+
     CHECK_AND_RETURN_RET_LOG(Util::IsRingerOrAlarmerStreamUsage(config.rendererInfo.streamUsage), false,
         "Wrong usage ,should not be dualtone");
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
@@ -702,38 +891,33 @@ int32_t AudioService::OnUpdateInnerCapList(int32_t innerCapId)
 }
 #endif
 
-int32_t AudioService::EnableDualToneList(uint32_t sessionId)
+int32_t AudioService::EnableDualStreamForNormalStream(const uint32_t sessionId, const std::string &dupSinkName)
 {
-    workingDualToneId_ = sessionId;
-    AUDIO_INFO_LOG("EnableDualToneList sessionId is %{public}d", sessionId);
-    std::unique_lock<std::mutex> lock(rendererMapMutex_);
-    for (auto it = allRendererMap_.begin(); it != allRendererMap_.end(); it++) {
-        std::shared_ptr<RendererInServer> renderer = it->second.lock();
-        if (renderer == nullptr) {
-            AUDIO_WARNING_LOG("Renderer is already released!");
-            continue;
-        }
-        if (ShouldBeDualTone(renderer->processConfig_)) {
-            renderer->EnableDualTone();
-            filteredDualToneRendererMap_.push_back(renderer);
-        }
-    }
+    AUDIO_INFO_LOG("sessionId is %{public}d", sessionId);
+    std::lock_guard<std::mutex> lock(rendererMapMutex_);
+
+    CHECK_AND_RETURN_RET(allRendererMap_.count(sessionId) > 0, ERR_OPERATION_FAILED);
+    auto weakRenderer = allRendererMap_[sessionId];
+    auto renderer = weakRenderer.lock();
+
+    CHECK_AND_RETURN_RET_LOG(renderer != nullptr, ERR_OPERATION_FAILED, "renderer is null");
+    CHECK_AND_RETURN_RET(ShouldBeDualTone(renderer->processConfig_, dupSinkName), SUCCESS);
+
+    renderer->EnableDualTone(dupSinkName);
     return SUCCESS;
 }
 
-int32_t AudioService::DisableDualToneList(uint32_t sessionId)
+int32_t AudioService::DisableDualStreamForNormalStream(const uint32_t sessionId)
 {
     AUDIO_INFO_LOG("disable dual tone, sessionId is %{public}d", sessionId);
-    std::unique_lock<std::mutex> lock(rendererMapMutex_);
-    for (size_t i = 0; i < filteredDualToneRendererMap_.size(); i++) {
-        std::shared_ptr<RendererInServer> renderer = filteredDualToneRendererMap_[i].lock();
-        if (renderer == nullptr) {
-            AUDIO_WARNING_LOG("Renderer is already released!");
-            continue;
-        }
-        renderer->DisableDualTone();
-    }
-    filteredDualToneRendererMap_.clear();
+    std::lock_guard<std::mutex> lock(rendererMapMutex_);
+
+    CHECK_AND_RETURN_RET(allRendererMap_.count(sessionId) > 0, ERR_OPERATION_FAILED);
+    auto weakRenderer = allRendererMap_[sessionId];
+    auto renderer = weakRenderer.lock();
+
+    CHECK_AND_RETURN_RET_LOG(renderer != nullptr, ERR_OPERATION_FAILED, "renderer is null");
+    renderer->DisableDualTone();
     return SUCCESS;
 }
 
@@ -832,23 +1016,23 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
 {
     Trace trace("AudioService::GetAudioProcess for " + std::to_string(config.appInfo.appPid));
     AUDIO_INFO_LOG("GetAudioProcess dump %{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
-    AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config);
+    AudioStreamInfo audioStreamInfo;
+    AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config, audioStreamInfo);
     std::lock_guard<std::mutex> lock(processListMutex_);
     std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config,
-        IsEndpointTypeVoip(config, deviceInfo));
+        audioStreamInfo, IsEndpointTypeVoip(config, deviceInfo));
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "no endpoint found for the process");
 
     uint32_t totalSizeInframe = 0;
     uint32_t spanSizeInframe = 0;
     audioEndpoint->GetPreferBufferInfo(totalSizeInframe, spanSizeInframe);
 
-    DeviceStreamInfo audioStreamInfo = deviceInfo.GetDeviceStreamInfo();
-    CHECK_AND_RETURN_RET_LOG(*audioStreamInfo.samplingRate.rbegin() > 0, nullptr,
-        "Sample rate in server is invalid.");
+    CHECK_AND_RETURN_RET_LOG(audioStreamInfo.samplingRate > 0, nullptr, "Sample rate in server is invalid.");
 
     sptr<AudioProcessInServer> process = AudioProcessInServer::Create(config, this);
     CHECK_AND_RETURN_RET_LOG(process != nullptr, nullptr, "AudioProcessInServer create failed.");
-    CheckFastSessionMuteState(process->GetSessionId(), process);
+    uint32_t sessionId = process->GetSessionId();
+    CheckFastSessionMuteState(sessionId, process);
 
     std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
     int32_t ret = process->ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, audioStreamInfo, buffer);
@@ -857,6 +1041,7 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     ret = LinkProcessToEndpoint(process, audioEndpoint);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "LinkProcessToEndpoint failed");
     linkedPairedList_.push_back(std::make_pair(process, audioEndpoint));
+    allProcessInServer_[sessionId] = process;
 #ifdef HAS_FEATURE_INNERCAPTURER
     CheckInnerCapForProcess(process, audioEndpoint);
 #endif
@@ -899,10 +1084,11 @@ void AudioService::ReLinkProcessToEndpoint()
             AUDIO_INFO_LOG("Session id %{public}u", paired->first->GetSessionId());
 
             // get new endpoint
+            AudioStreamInfo streamInfo;
             const AudioProcessConfig &config = paired->first->processConfig_;
-            AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config, true);
+            AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config, streamInfo, true);
             std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config,
-                IsEndpointTypeVoip(config, deviceInfo));
+                streamInfo, IsEndpointTypeVoip(config, deviceInfo));
             if (audioEndpoint == nullptr) {
                 AUDIO_ERR_LOG("Get new endpoint failed");
                 errorLinkedPaireds.push_back(paired);
@@ -1001,12 +1187,13 @@ void AudioService::DelayCallReleaseEndpoint(std::string endpointName)
     return;
 }
 
-AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &config, bool isReloadProcess)
+AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &config,
+    AudioStreamInfo &streamInfo, bool isReloadProcess)
 {
     // send the config to AudioPolicyServera and get the device info.
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     int32_t ret = CoreServiceHandler::GetInstance().GetProcessDeviceInfoBySessionId(config.originalSessionId,
-        deviceInfo, isReloadProcess);
+        deviceInfo, streamInfo, isReloadProcess);
     if (ret == SUCCESS) {
         AUDIO_INFO_LOG("Get DeviceInfo from policy: deviceType:%{public}d, supportLowLatency:%{public}s"
             " a2dpOffloadFlag:%{public}d", deviceInfo.deviceType_, (deviceInfo.isLowLatencyDevice_ ? "true" : "false"),
@@ -1016,13 +1203,13 @@ AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessCo
             config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
             if (config.streamInfo.samplingRate <= SAMPLE_RATE_16000) {
                 AUDIO_INFO_LOG("VoIP 16K");
-                deviceInfo.audioStreamInfo_ = {{SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO}};
+                streamInfo = {SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO};
             } else {
                 AUDIO_INFO_LOG("VoIP 48K");
-                deviceInfo.audioStreamInfo_ = {{SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO}};
+                streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO};
             }
         } else {
-            AUDIO_INFO_LOG("Fast stream use format:%{public}s", deviceInfo.GetDeviceStreamInfo().Serialize().c_str());
+            AUDIO_INFO_LOG("Fast stream use format:%{public}d", streamInfo.format);
             deviceInfo.deviceName_ = "mmap_device";
         }
         return deviceInfo;
@@ -1040,9 +1227,8 @@ AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessCo
         deviceInfo.deviceRole_ = OUTPUT_DEVICE;
         deviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
     }
-    AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO,
+    streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO,
         CH_LAYOUT_STEREO}; // note: read from xml
-    deviceInfo.audioStreamInfo_ = { targetStreamInfo };
     deviceInfo.deviceName_ = "mmap_device";
     return deviceInfo;
 }
@@ -1063,22 +1249,23 @@ void AudioService::CheckBeforeRecordEndpointCreate(bool isRecord)
 }
 
 // must be called with processListMutex_ lock hold
-ReuseEndpointType AudioService::GetReuseEndpointType(AudioDeviceDescriptor &deviceInfo, const std::string &deviceKey)
+ReuseEndpointType AudioService::GetReuseEndpointType(AudioDeviceDescriptor &deviceInfo,
+    const std::string &deviceKey, AudioStreamInfo &streamInfo)
 {
     if (endpointList_.find(deviceKey) == endpointList_.end()) {
         return ReuseEndpointType::CREATE_ENDPOINT;
     }
-    bool reuse = deviceInfo.audioStreamInfo_ == endpointList_[deviceKey]->GetDeviceInfo().audioStreamInfo_;
+    bool reuse = streamInfo == endpointList_[deviceKey]->GetAudioStreamInfo();
     return reuse ? ReuseEndpointType::REUSE_ENDPOINT : ReuseEndpointType::RECREATE_ENDPOINT;
 }
 
 std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(AudioDeviceDescriptor &deviceInfo,
-    const AudioProcessConfig &clientConfig, bool isVoipStream)
+    const AudioProcessConfig &clientConfig, AudioStreamInfo &streamInfo, bool isVoipStream)
 {
     // Create shared stream.
     int32_t endpointFlag = isVoipStream ? AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;
     std::string deviceKey = AudioEndpoint::GenerateEndpointKey(deviceInfo, endpointFlag);
-    ReuseEndpointType type = GetReuseEndpointType(deviceInfo, deviceKey);
+    ReuseEndpointType type = GetReuseEndpointType(deviceInfo, deviceKey, streamInfo);
     std::shared_ptr<AudioEndpoint> endpoint = nullptr;
 
     switch (type) {
@@ -1096,7 +1283,7 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(AudioDevi
         case ReuseEndpointType::CREATE_ENDPOINT: {
             CheckBeforeRecordEndpointCreate(clientConfig.audioMode == AudioMode::AUDIO_MODE_RECORD);
             endpoint = AudioEndpoint::CreateEndpoint(isVoipStream ? AudioEndpoint::TYPE_VOIP_MMAP :
-                AudioEndpoint::TYPE_MMAP, endpointFlag, clientConfig, deviceInfo);
+                AudioEndpoint::TYPE_MMAP, endpointFlag, clientConfig, deviceInfo, streamInfo);
             CHECK_AND_RETURN_RET_LOG(endpoint != nullptr, nullptr, "Create mmap AudioEndpoint failed.");
             AUDIO_INFO_LOG("Add endpoint %{public}s to endpointList_", deviceKey.c_str());
             endpointList_[deviceKey] = endpoint;
@@ -1237,6 +1424,7 @@ void AudioService::SetNonInterruptMute(const uint32_t sessionId, const bool mute
         }
         renderer->SetNonInterruptMute(muteFlag);
         AUDIO_INFO_LOG("allRendererMap_ has sessionId");
+        UpdateSessionMuteStatus(sessionId, muteFlag);
         rendererLock.unlock();
         return;
     }
@@ -1250,6 +1438,7 @@ void AudioService::SetNonInterruptMute(const uint32_t sessionId, const bool mute
         }
         capturer->SetNonInterruptMute(muteFlag);
         AUDIO_INFO_LOG("allCapturerMap_ has sessionId");
+        UpdateSessionMuteStatus(sessionId, muteFlag);
         return;
     }
     capturerLock.unlock();
@@ -1285,6 +1474,11 @@ void AudioService::SetNonInterruptMuteForProcess(const uint32_t sessionId, const
     // this sessionid will not add into mutedSessions_
     // so need save it temporarily, when new stream create, check if new stream need mute
     // if set muteflag 0 again before new stream create, do not mute it
+    UpdateSessionMuteStatus(sessionId, muteFlag);
+}
+
+void AudioService::UpdateSessionMuteStatus(const uint32_t sessionId, const bool muteFlag)
+{
     std::lock_guard<std::mutex> muteSwitchStreamLock(muteSwitchStreamSetMutex_);
     if (muteFlag) {
         muteSwitchStreams_.insert(sessionId);
@@ -1360,10 +1554,10 @@ void AudioService::CheckHibernateState(bool onHibernate)
     if (onHibernate) {
         bool ret = true;
         if (allRunningSinks_.empty()) {
-            // Sleep for 100ms and recheck to avoid another sink start right after first check.
-            AUDIO_INFO_LOG("No running sinks, sleep for 100ms and check again");
+            // Sleep for 300ms and recheck to avoid another sink start right after first check.
+            AUDIO_INFO_LOG("No running sinks, sleep for 300ms and check again");
             lock.unlock(); // Unlock so that other running sinks can be added
-            usleep(RECHECK_SINK_STATE_IN_US); // sleep for 100ms
+            usleep(RECHECK_SINK_STATE_IN_US); // sleep for 300ms
             lock.lock();
             CHECK_AND_RETURN_LOG(!allRunningSinks_.empty(), "No running sinks, continue to hibernate");
         }
@@ -1403,6 +1597,7 @@ int32_t AudioService::UpdateSourceType(SourceType sourceType)
 void AudioService::SetIncMaxRendererStreamCnt(AudioMode audioMode)
 {
     if (audioMode == AUDIO_MODE_PLAYBACK) {
+        std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
         currentRendererStreamCnt_++;
     }
 }
@@ -1465,6 +1660,7 @@ bool AudioService::HasBluetoothEndpoint()
 
 int32_t AudioService::GetCurrentRendererStreamCnt()
 {
+    std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
     return currentRendererStreamCnt_;
 }
 
@@ -1534,6 +1730,11 @@ void AudioService::GetCreatedAudioStreamMostUid(int32_t &mostAppUid, int32_t &mo
 int32_t AudioService::UnloadModernInnerCapSink(int32_t innerCapId)
 {
     return PolicyHandler::GetInstance().UnloadModernInnerCapSink(innerCapId);
+}
+
+int32_t AudioService::UnloadModernOffloadCapSource()
+{
+    return PolicyHandler::GetInstance().UnloadModernOffloadCapSource();
 }
 #endif
 
@@ -1741,6 +1942,139 @@ void AudioService::InitAllDupBuffer(int32_t innerCapId)
         }
     }
     lock.unlock();
+}
+
+#ifdef SUPPORT_LOW_LATENCY
+sptr<AudioProcessInServer> AudioService::GetProcessInServerBySessionId(const uint32_t sessionId)
+{
+    std::lock_guard<std::mutex> processListLock(processListMutex_);
+    CHECK_AND_RETURN_RET(allProcessInServer_.count(sessionId) > 0, nullptr);
+    return allProcessInServer_[sessionId].promote();
+}
+
+int32_t AudioService::GetPrivacyTypeForFastStream(const uint32_t sessionId, AudioPrivacyType &privacyType)
+{
+    auto processInServer = GetProcessInServerBySessionId(sessionId);
+    CHECK_AND_RETURN_RET(processInServer != nullptr, ERROR);
+    privacyType = processInServer->processConfig_.privacyType;
+    return SUCCESS;
+}
+#endif
+
+std::shared_ptr<RendererInServer> AudioService::GetRendererInServerBySessionId(const uint32_t sessionId)
+{
+    std::lock_guard<std::mutex> lock(rendererMapMutex_);
+    CHECK_AND_RETURN_RET(allRendererMap_.count(sessionId) > 0, nullptr);
+    return allRendererMap_[sessionId].lock();
+}
+
+int32_t AudioService::GetPrivacyTypeForNormalStream(const uint32_t sessionId, AudioPrivacyType &privacyType)
+{
+    auto rendererInServer = GetRendererInServerBySessionId(sessionId);
+    CHECK_AND_RETURN_RET(rendererInServer != nullptr, ERROR);
+    privacyType = rendererInServer->processConfig_.privacyType;
+    return SUCCESS;
+}
+
+int32_t AudioService::GetPrivacyType(const uint32_t sessionId, AudioPrivacyType &privacyType)
+{
+    int32_t ret = GetPrivacyTypeForNormalStream(sessionId, privacyType);
+    CHECK_AND_RETURN_RET(ret != SUCCESS, ret);
+
+#ifdef SUPPORT_LOW_LATENCY
+    ret = GetPrivacyTypeForFastStream(sessionId, privacyType);
+    CHECK_AND_RETURN_RET(ret != SUCCESS, ret);
+#endif
+
+    AUDIO_ERR_LOG("%{public}u not found", sessionId);
+    return ERROR;
+}
+
+#ifdef SUPPORT_LOW_LATENCY
+std::vector<std::pair<sptr<AudioProcessInServer>, std::shared_ptr<AudioEndpoint>>> AudioService::GetLinkedPairInner(
+    const uint32_t sessionId)
+{
+    std::vector<std::pair<sptr<AudioProcessInServer>, std::shared_ptr<AudioEndpoint>>> retVector;
+    for (const auto &[processInServer, endpoint] : linkedPairedList_) {
+        CHECK_AND_CONTINUE(processInServer != nullptr);
+        CHECK_AND_CONTINUE(endpoint != nullptr);
+        CHECK_AND_CONTINUE(processInServer->GetSessionId() == sessionId);
+        retVector.push_back({processInServer, endpoint});
+    }
+    return retVector;
+}
+
+void AudioService::HandleProcessInserverDualStreamDisableInner(AudioEndpoint &endpoint)
+{
+    bool enableDualStream = endpoint.ShouldInnerCap(FAST_DUAL_CAP_ID);
+    CHECK_AND_RETURN(!enableDualStream);
+    endpoint.DisableFastInnerCap(FAST_DUAL_CAP_ID);
+}
+
+void AudioService::HandleProcessInserverDualStreamEnableInner(AudioEndpoint &endpoint, const std::string &dupSinkName)
+{
+    bool enableDualStream = endpoint.ShouldInnerCap(FAST_DUAL_CAP_ID);
+    CHECK_AND_RETURN(enableDualStream);
+    endpoint.EnableFastInnerCap(FAST_DUAL_CAP_ID, dupSinkName);
+}
+
+int32_t AudioService::EnableDualStreamForFastStream(const uint32_t sessionId, const std::string &dupSinkName)
+{
+    std::lock_guard<std::mutex> lock(processListMutex_);
+    auto linkedPairs = GetLinkedPairInner(sessionId);
+    CHECK_AND_RETURN_RET_LOG(!linkedPairs.empty(), ERR_OPERATION_FAILED, "%{public}u not found", sessionId);
+
+    for (const auto &[processInServer, endpoint] : linkedPairs) {
+        processInServer->SetInnerCapState(true, FAST_DUAL_CAP_ID);
+        HandleProcessInserverDualStreamEnableInner(*endpoint, dupSinkName);
+    }
+
+    return SUCCESS;
+}
+
+int32_t AudioService::DisableDualStreamForFastStream(const uint32_t sessionId)
+{
+    std::lock_guard<std::mutex> lock(processListMutex_);
+    auto linkedPairs = GetLinkedPairInner(sessionId);
+    CHECK_AND_RETURN_RET_LOG(!linkedPairs.empty(), ERR_OPERATION_FAILED, "%{public}u not found", sessionId);
+
+    for (const auto &[processInServer, endpoint] : linkedPairs) {
+        processInServer->SetInnerCapState(false, FAST_DUAL_CAP_ID);
+        HandleProcessInserverDualStreamDisableInner(*endpoint);
+    }
+
+    return SUCCESS;
+}
+#endif
+
+int32_t AudioService::EnableDualStream(const uint32_t sessionId, const std::string &dupSinkName)
+{
+    std::lock_guard lock(dualStreamMutex_);
+    int32_t ret = EnableDualStreamForNormalStream(sessionId, dupSinkName);
+    CHECK_AND_RETURN_RET(ret != SUCCESS, ret);
+
+#ifdef SUPPORT_LOW_LATENCY
+    ret = EnableDualStreamForFastStream(sessionId, dupSinkName);
+    CHECK_AND_RETURN_RET(ret != SUCCESS, ret);
+#endif
+
+    AUDIO_ERR_LOG("%{public}u failed", sessionId);
+    return ERR_OPERATION_FAILED;
+}
+
+int32_t AudioService::DisableDualStream(const uint32_t sessionId)
+{
+    std::lock_guard lock(dualStreamMutex_);
+    int32_t ret = DisableDualStreamForNormalStream(sessionId);
+    CHECK_AND_RETURN_RET(ret != SUCCESS, ret);
+
+#ifdef SUPPORT_LOW_LATENCY
+    ret = DisableDualStreamForFastStream(sessionId);
+    CHECK_AND_RETURN_RET(ret != SUCCESS, ret);
+#endif
+
+    AUDIO_ERR_LOG("%{public}u failed", sessionId);
+    return ERR_OPERATION_FAILED;
 }
 } // namespace AudioStandard
 } // namespace OHOS

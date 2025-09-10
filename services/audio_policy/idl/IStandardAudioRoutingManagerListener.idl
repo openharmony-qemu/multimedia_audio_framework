@@ -16,10 +16,14 @@
 package OHOS.AudioStandard;
 
 sequenceable audio_device_descriptor..OHOS.AudioStandard.AudioDeviceDescriptor;
+sequenceable audio_device_info..OHOS.AudioStandard.FetchDeviceInfo;
+
 interface IStandardAudioRoutingManagerListener {
     [ipccode 1] void OnDistributedRoutingRoleChange([in] sharedptr<AudioDeviceDescriptor> descriptor, [in] int type); // CastType type
     void OnAudioOutputDeviceRefined([inout] List<sharedptr<AudioDeviceDescriptor>> descs,
-        [in] int routerType, [in] int streamUsage, [in] int clientUid, [in] int audioPipeType); // RouterType routerType,  StreamUsage streamUsage, AudioPipeType audioPipeType
+        [in] FetchDeviceInfo fetchDeviceInfo); // FetchDeviceInfo fetchDeviceInfo
+    void OnAudioDupDeviceRefined([inout] List<sharedptr<AudioDeviceDescriptor>> descs,
+        [in] FetchDeviceInfo fetchDeviceInfo); // FetchDeviceInfo fetchDeviceInfo
     void OnAudioInputDeviceRefined([inout] List<sharedptr<AudioDeviceDescriptor>> descs,
         [in] int routerType, [in] int sourceType, [in] int clientUid, [in] int audioPipeType); // SourceType sourceType, AudioPipeType audioPipeType
     void GetSplitInfoRefined([out] String splitInfo);

@@ -38,4 +38,4 @@ protected:
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif //AUDIO_SPATIALIZATION_SERVICE_UNIT_TEST_H
+#endif // AUDIO_SPATIALIZATION_SERVICE_UNIT_TEST_H

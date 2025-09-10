@@ -19,6 +19,7 @@
 #include <type_traits>
 #include <memory>
 #include <algorithm>
+#include "audio_stream_info.h"
 #include "hpae_pcm_process.h"
 namespace OHOS {
 namespace AudioStandard {
@@ -257,6 +258,16 @@ public:
         splitStreamType_ = type;
     }
 
+    void SetAudioStreamType(AudioStreamType type)
+    {
+        streamType_ = type;
+    }
+
+    AudioStreamType GetAudioStreamType()
+    {
+        return streamType_;
+    }
+
 private:
     void InitPcmProcess();
 
@@ -275,6 +286,7 @@ private:
     PcmBufferInfo pcmBufferInfo_;
     HpaeSourceBufferType sourceBufferType_ = HPAE_SOURCE_BUFFER_TYPE_DEFAULT;
     HpaeSplitStreamType splitStreamType_ = STREAM_TYPE_DEFAULT;
+    AudioStreamType streamType_ = STREAM_DEFAULT;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

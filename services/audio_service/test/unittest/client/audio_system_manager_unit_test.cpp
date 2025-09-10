@@ -18,6 +18,7 @@
 #include "audio_service_log.h"
 #include "audio_errors.h"
 #include "audio_system_manager.h"
+#include "audio_workgroup_callback_impl.h"
 
 using namespace testing::ext;
 
@@ -1722,6 +1723,164 @@ HWTEST(AudioSystemManagerUnitTest, IsValidToStartGroup_002, TestSize.Level4)
     audioSystemManager.hasSystemPermission_ = false;
     bool result = audioSystemManager.IsValidToStartGroup(workgroupId);
     EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name   : Test OnWorkgroupChange API
+ * @tc.number : OnWorkgroupChange_004
+ * @tc.desc   : Test OnWorkgroupChange interface
+ */
+HWTEST(AudioSystemManagerUnitTest, OnWorkgroupChange_004, TestSize.Level4)
+{
+    AudioWorkgroupCallbackImpl audioWorkgroupCallbackImpl;
+    AudioWorkgroupChangeInfoIpc info;
+    audioWorkgroupCallbackImpl.workgroupCb_ = nullptr;
+    EXPECT_EQ(audioWorkgroupCallbackImpl.OnWorkgroupChange(info), ERROR);
+}
+
+/**
+ * @tc.name   : Test RemoveWorkgroupChangeCallback API
+ * @tc.number : RemoveWorkgroupChangeCallback_001
+ * @tc.desc   : Test RemoveWorkgroupChangeCallback interface
+ */
+HWTEST(AudioSystemManagerUnitTest, RemoveWorkgroupChangeCallback_001, TestSize.Level4)
+{
+    AudioWorkgroupCallbackImpl audioWorkgroupCallbackImpl;
+    audioWorkgroupCallbackImpl.RemoveWorkgroupChangeCallback();
+    EXPECT_EQ(nullptr, audioWorkgroupCallbackImpl.workgroupCb_);
+}
+
+/**
+ * @tc.name   : Test SetVolumeWithDevice API
+ * @tc.number : SetVolumeWithDevice_002
+ * @tc.desc   : Test SetVolumeWithDevice interface
+ */
+HWTEST(AudioSystemManagerUnitTest, SetVolumeWithDevice_002, TestSize.Level4)
+{
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+    AudioSystemManager audioSystemManager;
+    int32_t volumeLevel = 5;
+    EXPECT_EQ(audioSystemManager.SetVolumeWithDevice(STREAM_ULTRASONIC, volumeLevel, deviceType),
+        ERR_PERMISSION_DENIED);
+}
+
+/**
+ * @tc.name   : Test SetVolumeWithDevice API
+ * @tc.number : SetVolumeWithDevice_003
+ * @tc.desc   : Test SetVolumeWithDevice interface
+ */
+HWTEST(AudioSystemManagerUnitTest, SetVolumeWithDevice_003, TestSize.Level4)
+{
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+    AudioSystemManager audioSystemManager;
+    int32_t volumeLevel = 5;
+    EXPECT_EQ(audioSystemManager.SetVolumeWithDevice(STREAM_INTERNAL_FORCE_STOP, volumeLevel, deviceType),
+        ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test GetPinValueForPeripherals API
+ * @tc.type  : FUNC
+ * @tc.number: GetPinValueForPeripherals_003
+ * @tc.desc  : Test GetPinValueForPeripherals interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, GetPinValueForPeripherals_003, TestSize.Level4)
+{
+    AudioPin pinValue = AudioSystemManager::GetInstance()->GetPinValueForPeripherals(DEVICE_TYPE_WIRED_HEADPHONES,
+        OUTPUT_DEVICE, DM_DEVICE_TYPE_UWB);
+    EXPECT_EQ(pinValue, AUDIO_PIN_OUT_HEADPHONE);
+}
+
+/**
+ * @tc.name   : Test StartGroup API
+ * @tc.number : StartGroup_002
+ * @tc.desc   : Test StartGroup interface
+ */
+HWTEST(AudioSystemManagerUnitTest, StartGroup_002, TestSize.Level4)
+{
+    AudioSystemManager manager;
+    bool needUpdatePrio = true;
+    int32_t testWorkgroupid = 1;
+    int32_t startTimeMs = 500;
+    int32_t endTimeMs = 1000;
+    std::unordered_map<int32_t, bool> threads = {
+        {101, true},
+        {102, true}
+    };
+    int32_t result = manager.StartGroup(testWorkgroupid, startTimeMs, endTimeMs, threads, needUpdatePrio);
+    EXPECT_EQ(result, AUDIO_ERR);
+}
+
+/**
+* @tc.name   : Test ConfigDistributedRoutingRole API
+* @tc.number : ConfigDistributedRoutingRoleTest_002
+* @tc.desc   : Test ConfigDistributedRoutingRole interface.
+*/
+HWTEST(AudioSystemManagerUnitTest, ConfigDistributedRoutingRoleTest_002, TestSize.Level4)
+{
+    CastType castType = CAST_TYPE_ALL;
+    std::shared_ptr<AudioDeviceDescriptor> audioDevDesc = std::make_shared<AudioDeviceDescriptor>();;
+    audioDevDesc->networkId_ = LOCAL_NETWORK_ID;
+    int32_t result = AudioSystemManager::GetInstance()->ConfigDistributedRoutingRole(audioDevDesc, castType);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test GetTypeValueFromPin API
+ * @tc.type  : FUNC
+ * @tc.number: GetTypeValueFromPin_003
+ * @tc.desc  : Test GetTypeValueFromPin interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, GetTypeValueFromPin_003, TestSize.Level4)
+{
+    DeviceType deviceValue = AudioSystemManager::GetInstance()->GetTypeValueFromPin(AUDIO_PIN_IN_UWB);
+    EXPECT_EQ(deviceValue, DEVICE_TYPE_ACCESSORY);
+}
+
+/**
+ * @tc.name   : Test StartGroup API
+ * @tc.number : StartGroup_003
+ * @tc.desc   : Test StartGroup interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, StartGroup_003, TestSize.Level4)
+{
+    AudioSystemManager manager;
+    bool needUpdatePrio = false;
+    int32_t testWorkgroupid = 1;
+    int32_t startTimeMs = 1000;
+    int32_t endTimeMs = 500;
+    std::unordered_map<int32_t, bool> threads = {
+        {101, true},
+        {102, true}
+    };
+    int32_t result = manager.StartGroup(testWorkgroupid, startTimeMs, endTimeMs, threads, needUpdatePrio);
+    EXPECT_EQ(result, AUDIO_ERR);
+}
+
+/**
+* @tc.name   : Test ConfigDistributedRoutingRole API
+* @tc.number : ConfigDistributedRoutingRoleTest_003
+* @tc.desc   : Test ConfigDistributedRoutingRole interface.
+*/
+HWTEST(AudioSystemManagerUnitTest, ConfigDistributedRoutingRoleTest_003, TestSize.Level4)
+{
+    CastType castType = CAST_TYPE_ALL;
+    std::shared_ptr<AudioDeviceDescriptor> audioDevDesc = std::make_shared<AudioDeviceDescriptor>();
+    constexpr size_t VALID_REMOTE_NETWORK_ID_LENGTH = 64;
+    constexpr char invalidLocalNetworkId[] = "123456";
+    audioDevDesc->networkId_ = invalidLocalNetworkId;
+    int32_t result = AudioSystemManager::GetInstance()->ConfigDistributedRoutingRole(audioDevDesc, castType);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+
+    audioDevDesc->networkId_ = LOCAL_NETWORK_ID;
+    audioDevDesc->networkId_.resize(VALID_REMOTE_NETWORK_ID_LENGTH);
+    result = AudioSystemManager::GetInstance()->ConfigDistributedRoutingRole(audioDevDesc, castType);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+
+    constexpr size_t INVALID_REMOTE_NETWORK_ID_LENGTH = 100;
+    audioDevDesc->networkId_.resize(INVALID_REMOTE_NETWORK_ID_LENGTH);
+    result = AudioSystemManager::GetInstance()->ConfigDistributedRoutingRole(audioDevDesc, castType);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
 }
 } // namespace AudioStandard
 } // namespace OHOS

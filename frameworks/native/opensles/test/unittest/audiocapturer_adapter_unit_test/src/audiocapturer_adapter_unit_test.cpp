@@ -397,6 +397,21 @@ HWTEST(AudioCapturerAdapterUnitTest, AudioRecorderDestroy_001, TestSize.Level0)
 }
 
 /**
+* @tc.name  : Test AudioRecorderDestroy
+* @tc.number: AudioPlayerDestroy_001
+* @tc.desc  : Test AudioRecorderDestroy interface.
+*/
+HWTEST(AudioCapturerAdapterUnitTest, AudioPlayerDestroy_001, TestSize.Level3)
+{
+    void *self = new CAudioPlayer();
+    SLresult result = AudioPlayerDestroy(nullptr);
+    EXPECT_TRUE(result == SL_RESULT_PARAMETER_INVALID);
+ 
+    result = AudioPlayerDestroy(self);
+    EXPECT_EQ(result, SL_RESULT_SUCCESS);
+}
+
+/**
 * @tc.name  : Test AudioCapturerAdapter API
 * @tc.type  : FUNC
 * @tc.number: SetCaptureStateAdapter_003

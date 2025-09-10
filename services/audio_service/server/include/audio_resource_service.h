@@ -21,7 +21,9 @@
 #include <memory>
 #include <cstdio>
 #include <thread>
- 
+
+#include "iremote_object.h"
+
 #include "audio_workgroup.h"
 #include "audio_common_log.h"
 #include "audio_stream_info.h"
@@ -67,6 +69,7 @@ public:
     std::vector<int32_t> GetProcessesOfAudioWorkgroup();
     int32_t ImproveAudioWorkgroupPrio(int32_t pid, const std::unordered_map<int32_t, bool> &threads);
     int32_t RestoreAudioWorkgroupPrio(int32_t pid, const std::unordered_map<int32_t, int32_t> &threads);
+    void FillAudioWorkgroupCgroupLimit(int32_t pid, std::shared_ptr<AudioWorkgroup>& workgroup);
     // Inner class for death handler
     class AudioWorkgroupDeathRecipient : public IRemoteObject::DeathRecipient {
     public:

@@ -108,6 +108,7 @@ ohos_unittest("audio_endpoint_plus_unit_test") {
     "../../../../../frameworks/native/audioschedule/include",
     "../../../../../frameworks/native/hdiadapter_new/include",
     "../../../../../frameworks/native/audioclock/include",
+    "../../../../../services/audio_engine/manager/include",
   ]
 
   deps = [

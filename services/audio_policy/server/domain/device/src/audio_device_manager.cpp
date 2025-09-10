@@ -803,6 +803,19 @@ void AudioDeviceManager::AddAvailableDevicesByUsage(const AudioDeviceUsage usage
     }
 }
 
+std::shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetExistedDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &device)
+{
+    CHECK_AND_RETURN_RET_LOG(device != nullptr, nullptr, "device is nullptr");
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
+    for (const auto &dev : connectedDevices_) {
+        if (dev->IsSameDeviceInfo(*device)) {
+            return make_shared<AudioDeviceDescriptor>(dev);
+        }
+    }
+    return nullptr;
+}
+
 bool AudioDeviceManager::IsExistedDevice(const std::shared_ptr<AudioDeviceDescriptor> &device,
     const vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
@@ -1005,14 +1018,29 @@ std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableB
     return audioDeviceDescriptors;
 }
 
+std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetConnectedDevicesByTypesAndRole(
+    const std::vector<DeviceType> &types, DeviceRole role)
+{
+    std::vector<shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
+    for (const auto &desc : connectedDevices_) {
+        if (std::find(types.begin(), types.end(), desc->deviceType_) != types.end() &&
+            desc->deviceRole_ == role &&
+            desc->connectState_ != VIRTUAL_CONNECTED) {
+            audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(desc));
+        }
+    }
+    return audioDeviceDescriptors;
+}
+
 bool AudioDeviceManager::GetScoState()
 {
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     bool isScoStateConnect = Bluetooth::AudioHfpManager::IsAudioScoStateConnect();
     for (const auto &desc : connectedDevices_) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "Device is nullptr, continue");
-        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && desc->connectState_ == CONNECTED &&
-            isScoStateConnect) {
+        if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && isScoStateConnect) {
             return true;
         }
     }
@@ -1272,7 +1300,7 @@ DeviceUsage AudioDeviceManager::GetDeviceUsage(const AudioDeviceDescriptor &desc
     return usage;
 }
 
-void AudioDeviceManager::OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName)
+void AudioDeviceManager::OnReceiveUpdateDeviceNameEvent(const std::string macAddress, const std::string deviceName)
 {
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     for (auto device : connectedDevices_) {

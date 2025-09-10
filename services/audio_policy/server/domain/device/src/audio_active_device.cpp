@@ -88,18 +88,6 @@ bool AudioActiveDevice::IsDirectSupportedDevice()
     return dev == DEVICE_TYPE_WIRED_HEADSET || dev == DEVICE_TYPE_USB_HEADSET;
 }
 
-bool AudioActiveDevice::CheckActiveOutputDeviceSupportOffload()
-{
-    DeviceType dev = GetCurrentOutputDeviceType();
-    if (GetCurrentOutputDeviceNetworkId() != LOCAL_NETWORK_ID || dev == DEVICE_TYPE_REMOTE_CAST) {
-        return false;
-    }
-
-    return dev == DEVICE_TYPE_SPEAKER ||
-        (dev == DEVICE_TYPE_BLUETOOTH_A2DP && audioA2dpOffloadFlag_.GetA2dpOffloadFlag() == A2DP_OFFLOAD) ||
-        dev == DEVICE_TYPE_USB_HEADSET;
-}
-
 void AudioActiveDevice::SetCurrentInputDevice(const AudioDeviceDescriptor &desc)
 {
     std::lock_guard<std::mutex> lock(curInputDevice_);
@@ -429,10 +417,37 @@ void AudioActiveDevice::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceTyp
 bool AudioActiveDevice::IsDeviceInVector(std::shared_ptr<AudioDeviceDescriptor> desc,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs)
 {
+    CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "IsDeviceInVector: desc is null");
     for (auto &it : descs) {
         CHECK_AND_RETURN_RET(!it->IsSameDeviceDesc(desc), true);
     }
     return false;
+}
+
+void AudioActiveDevice::UpdateVolumeTypeDeviceMap(std::shared_ptr<AudioStreamDescriptor> desc)
+{
+    CHECK_AND_RETURN_LOG(desc != nullptr, "streamDesc is null");
+    CHECK_AND_RETURN_LOG(desc->newDeviceDescs_.front() != nullptr, "Devicedesc is null");
+
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamUsage(desc->rendererInfo_.streamUsage);
+    CHECK_AND_RETURN(!IsDeviceInVector(desc->newDeviceDescs_.front(), volumeTypeDeviceMap_[volumeType]));
+
+    volumeTypeDeviceMap_[volumeType].push_back(desc->newDeviceDescs_.front());
+    AUDIO_INFO_LOG("volumeDeviceMap: %{public}d add deviceId %{public}d",
+        volumeType, desc->newDeviceDescs_.front()->deviceId_);
+}
+
+void AudioActiveDevice::UpdateStreamUsageDeviceMap(std::shared_ptr<AudioStreamDescriptor> desc)
+{
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
+    CHECK_AND_RETURN_LOG(desc->newDeviceDescs_.front() != nullptr, "Devicedesc is null");
+
+    CHECK_AND_RETURN(!IsDeviceInVector(desc->newDeviceDescs_.front(),
+        streamUsageDeviceMap_[desc->rendererInfo_.streamUsage]));
+
+    streamUsageDeviceMap_[desc->rendererInfo_.streamUsage].push_back(desc->newDeviceDescs_.front());
+    AUDIO_INFO_LOG("streamUsageDeviceMap: %{public}d add deviceId %{public}d",
+        desc->rendererInfo_.streamUsage, desc->newDeviceDescs_.front()->deviceId_);
 }
 
 void AudioActiveDevice::UpdateStreamDeviceMap(std::string source)
@@ -441,30 +456,35 @@ void AudioActiveDevice::UpdateStreamDeviceMap(std::string source)
     std::vector<std::shared_ptr<AudioStreamDescriptor>> descs =
         AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescs();
     activeOutputDevices_.clear();
+    volumeTypeDeviceMap_.clear();
+    streamUsageDeviceMap_.clear();
     for (auto &desc : descs) {
         CHECK_AND_CONTINUE(desc != nullptr);
         AUDIO_INFO_LOG("session: %{public}d, calleruid: %{public}d, appuid: %{public}d " \
             "usage:%{public}d devices:%{public}s",
             desc->sessionId_, desc->callerUid_, desc->appInfo_.appUid,
             desc->rendererInfo_.streamUsage, desc->GetNewDevicesInfo().c_str());
-        AudioStreamType streamType = VolumeUtils::GetVolumeTypeFromStreamUsage(desc->rendererInfo_.streamUsage);
-        streamTypeDeviceMap_[streamType] = desc->newDeviceDescs_.back();
-        streamUsageDeviceMap_[desc->rendererInfo_.streamUsage] = desc->newDeviceDescs_.front();
+
+        // front device is main device, second device use copy stream
+        UpdateVolumeTypeDeviceMap(desc);
+        UpdateStreamUsageDeviceMap(desc);
+
         for (const auto &device : desc->newDeviceDescs_) {
             CHECK_AND_CONTINUE(!IsDeviceInVector(device, activeOutputDevices_));
             activeOutputDevices_.push_back(device);
+            AUDIO_INFO_LOG("[activeOutputDevices_] deviceId: %{public}d", device->deviceId_);
         }
     }
+}
 
-    for (auto &pair : streamTypeDeviceMap_) {
-        CHECK_AND_CONTINUE(!IsDeviceInVector(pair.second, activeOutputDevices_));
-        streamTypeDeviceMap_[pair.first] = nullptr;
-    }
-
-    for (auto &pair : streamUsageDeviceMap_) {
-        CHECK_AND_CONTINUE(!IsDeviceInVector(pair.second, activeOutputDevices_));
-        streamUsageDeviceMap_[pair.first] = nullptr;
-    }
+bool AudioActiveDevice::IsDeviceInActiveOutputDevices(DeviceType type, bool isRemote)
+{
+    auto isExist = std::find_if(activeOutputDevices_.begin(), activeOutputDevices_.end(),
+        [type, isRemote](std::shared_ptr<AudioDeviceDescriptor> &device) {
+            return device->deviceType_ == type &&
+                isRemote == (device->networkId_ != LOCAL_NETWORK_ID);
+        });
+    return isExist != activeOutputDevices_.end();
 }
 }
 }

@@ -100,9 +100,12 @@ void HpaeSinkOutputNode::DoProcess()
     if (ret != SUCCESS || writeLen != renderFrameData_.size()) {
         AUDIO_ERR_LOG("HpaeSinkOutputNode: RenderFrame failed");
         if (GetDeviceClass() != "remote") {
-            usleep(SLEEP_TIME_IN_US); // others failed to RenderFrame, need sleep 20ms
+            periodTimer_.Stop();
+            uint64_t usedTimeUs = static_cast<uint64_t>(periodTimer_.Elapsed<std::chrono::microseconds>());
+            usleep(SLEEP_TIME_IN_US > usedTimeUs ? SLEEP_TIME_IN_US - usedTimeUs : 0);
         }
     }
+    periodTimer_.Start();
     HandleRemoteTiming(); // used to control remote RenderFrame tempo.
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
@@ -118,6 +121,13 @@ void HpaeSinkOutputNode::DoProcess()
 const char *HpaeSinkOutputNode::GetRenderFrameData(void)
 {
     return renderFrameData_.data();
+}
+
+void HpaeSinkOutputNode::RegisterCurrentDeviceCallback(const std::function<void(bool)> &callback)
+{
+    CHECK_AND_RETURN_LOG(audioRendererSink_ != nullptr, "audioRendererSink_ is nullptr");
+    CHECK_AND_RETURN_LOG(callback != nullptr, "callback is nullptr");
+    audioRendererSink_->RegisterCurrentDeviceCallback(callback);
 }
 
 bool HpaeSinkOutputNode::Reset()
@@ -294,6 +304,7 @@ int32_t HpaeSinkOutputNode::RenderSinkStart(void)
         AUDIO_INFO_LOG("Speaker sink started, open pa:[%{public}s] -- [%{public}s], ret:%{public}d",
             GetDeviceClass().c_str(), (ret == 0 ? "success" : "failed"), ret);
     }
+    periodTimer_.Start();
     return SUCCESS;
 }
 
@@ -324,11 +335,11 @@ StreamManagerState HpaeSinkOutputNode::GetSinkState(void)
 
 int32_t HpaeSinkOutputNode::SetSinkState(StreamManagerState sinkState)
 {
-    AUDIO_INFO_LOG("Sink[%{public}s] state change:[%{public}s]-->[%{public}s]",
+    HILOG_COMM_INFO("Sink[%{public}s] state change:[%{public}s]-->[%{public}s]",
         GetDeviceClass().c_str(), ConvertStreamManagerState2Str(state_).c_str(),
         ConvertStreamManagerState2Str(sinkState).c_str());
-        state_ = sinkState;
-        return SUCCESS;
+    state_ = sinkState;
+    return SUCCESS;
 }
 
 size_t HpaeSinkOutputNode::GetPreOutNum()

@@ -84,6 +84,7 @@ public:
         uint64_t frameMarkPosition = 0;
         uint64_t framePeriodNumber = 0;
 
+        uint64_t unprocessSamples = 0;
         uint64_t totalBytesWritten = 0;
         uint64_t framePeriodWritten = 0;
         std::shared_ptr<RendererPositionCallback> renderPositionCb;
@@ -125,6 +126,20 @@ public:
     static AudioStreamType GetStreamType(ContentType contentType, StreamUsage streamUsage);
     static std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> CreateStreamMap();
     static void CreateStreamMap(std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> &streamMap);
+    static int32_t CheckRendererAudioStreamInfo(const AudioStreamParams info);
+    static int32_t CheckCapturerAudioStreamInfo(const AudioStreamParams info);
+    static bool IsFormatValid(uint8_t format);
+    static bool IsRendererChannelValid(uint8_t channel);
+    static bool IsCapturerChannelValid(uint8_t channel);
+    static bool IsEncodingTypeValid(uint8_t encodingType);
+    static bool IsSamplingRateValid(uint32_t samplingRate);
+    static bool IsCustomSampleRateValid(uint32_t customSampleRate);
+    static bool IsRendererChannelLayoutValid(uint64_t channelLayout);
+    static bool IsCapturerChannelLayoutValid(uint64_t channelLayout);
+    static bool IsChannelLayoutMatchedWithChannel(uint8_t channel, uint64_t channelLayout,
+        uint8_t encodingType = ENCODING_PCM);
+    static bool IsPlaybackChannelRelatedInfoValid(uint8_t encodingType, uint8_t channels, uint64_t channelLayout);
+    static bool IsRecordChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout);
     static inline bool IsFastStreamClass(StreamClass streamClass)
     {
         if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
@@ -272,31 +287,11 @@ public:
 
     virtual void SetState() {}
 
-    bool IsFormatValid(uint8_t format);
-
-    bool IsRendererChannelValid(uint8_t channel);
-
-    bool IsCapturerChannelValid(uint8_t channel);
-
-    bool IsEncodingTypeValid(uint8_t encodingType);
-
-    bool IsSamplingRateValid(uint32_t samplingRate);
-
-    bool IsCustomSampleRateValid(uint32_t customSampleRate);
-
-    bool IsRendererChannelLayoutValid(uint64_t channelLayout);
-
-    bool IsCapturerChannelLayoutValid(uint64_t channelLayout);
-
-    bool IsPlaybackChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout);
-
-    bool IsRecordChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout);
-
     virtual void SetSilentModeAndMixWithOthers(bool on) = 0;
 
     virtual bool GetSilentModeAndMixWithOthers() = 0;
 
-    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) = 0;
+    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce = false) = 0;
 
     virtual FastStatus GetFastStatus() { return FASTSTATUS_NORMAL; };
 

@@ -34,6 +34,7 @@ const int32_t INVALIAD_SETTINGS_CLONE_STATUS = -1;
 const int32_t SETTINGS_CLONING_STATUS = 1;
 const int32_t SETTINGS_CLONED_STATUS = 0;
 constexpr int32_t MAX_SAFE_STATUS = 2;
+constexpr int32_t DEFAULT_SYSTEM_VOLUME_FOR_EFFECT = 5;
 
 static const std::vector<VolumeDataMaintainer::VolumeDataMaintainerStreamType> VOLUME_MUTE_STREAM_TYPE = {
     // all volume types except STREAM_ALL
@@ -1045,5 +1046,23 @@ std::string VolumeDataMaintainer::GetMuteKeyForDataShare(DeviceType deviceType, 
     return type + deviceTypeName;
 }
 
+void VolumeDataMaintainer::SaveSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType,
+    int32_t volumeLevel)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    deviceTypeToSystemVolumeForEffectMap_[deviceType][streamType] = volumeLevel;
+}
+
+int32_t VolumeDataMaintainer::GetSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    if (deviceTypeToSystemVolumeForEffectMap_.find(deviceType) != deviceTypeToSystemVolumeForEffectMap_.end() &&
+        deviceTypeToSystemVolumeForEffectMap_[deviceType].find(streamType) !=
+        deviceTypeToSystemVolumeForEffectMap_[deviceType].end()) {
+        return deviceTypeToSystemVolumeForEffectMap_[deviceType][streamType];
+    }
+
+    return DEFAULT_SYSTEM_VOLUME_FOR_EFFECT;
+}
 } // namespace AudioStandard
 } // namespace OHOS

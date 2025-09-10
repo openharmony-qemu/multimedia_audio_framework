@@ -17,6 +17,7 @@
 #define RENDERER_IN_SERVER_EXT_UNIT_TEST_H
 
 #include "gtest/gtest.h"
+#include "i_renderer_stream.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -30,6 +31,7 @@ public:
     void SetUp(void);
     // TearDown: Called after each test cases
     void TearDown(void);
+    std::shared_ptr<IRendererStream> CreateHpaeRendererStream();
 };
 } // namespace AudioStandard
 } // namespace OHOS

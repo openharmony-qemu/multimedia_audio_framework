@@ -146,7 +146,8 @@ void HpaeDfxTree::PrintNodeInfo(std::string &outStr, HpaeDfxNodeInfo &nodeInfo)
     outStr = outStr + "ch[" + std::to_string(nodeInfo.channels) + "],";
     outStr = outStr + "bw[" + std::to_string(nodeInfo.format) + "],";
     outStr = outStr + "len[" + std::to_string(nodeInfo.frameLen) + "],";
-    outStr = outStr + "scene[" + std::to_string(nodeInfo.sceneType) + "] \n";
+    outStr = outStr + "scene[" + std::to_string(nodeInfo.sceneType) + "],";
+    outStr = outStr + "streamType[" + std::to_string(nodeInfo.streamType) + "] \n";
 }
 
 void HpaeDfxTree::PrintSubTree(DfxTreeNode *node, const std::string &prefix, bool isLastChild, std::string &outStr)

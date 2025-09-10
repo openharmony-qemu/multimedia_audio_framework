@@ -24,6 +24,7 @@ ohos_benchmarktest("BenchmarkAudioManagerTest") {
   ]
   sources = [ "benchmark_audiomanager_test.cpp" ]
   deps = [ "../../../../../services/audio_service:audio_client" ]
+  external_deps = [ "ipc:ipc_core" ]
 }
 
 group("benchmarktest") {

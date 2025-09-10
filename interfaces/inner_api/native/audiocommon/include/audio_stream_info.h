@@ -254,6 +254,7 @@ enum AudioPipeType {
     PIPE_TYPE_SPATIALIZATION = 12,
     PIPE_TYPE_DIRECT_MUSIC = 13,
     PIPE_TYPE_DIRECT_VOIP = 14,
+    PIPE_TYPE_NORMAL_IN_AI = 15,
 };
 
 enum AudioPreloadType {
@@ -557,6 +558,14 @@ const std::vector<StreamUsage> AUDIO_SUPPORTED_STREAM_USAGES {
     STREAM_USAGE_VOICE_CALL_ASSISTANT,
 };
 
+enum SetLoudVolMode {
+    LOUD_VOLUME_SWITCH_INVALID = -1,
+    LOUD_VOLUME_SWITCH_AUTO,
+    LOUD_VOLUME_SWITCH_PAUSE,
+    LOUD_VOLUME_SWITCH_OFF,
+    LOUD_VOLUME_SWITCH_ON,
+};
+
 class AudioStreamInfo : public Parcelable {
 public:
     AudioSamplingRate samplingRate;
@@ -593,6 +602,12 @@ public:
         customSampleRate = parcel.ReadUint32();
     }
 
+    bool operator==(const AudioStreamInfo &info) const
+    {
+        return encoding == info.encoding && format == info.format && channels == info.channels &&
+            channelLayout == info.channelLayout && samplingRate == info.samplingRate;
+    }
+
     static AudioStreamInfo *Unmarshalling(Parcel &parcel)
     {
         auto info = new(std::nothrow) AudioStreamInfo();
@@ -625,6 +640,7 @@ struct AudioCallBackStreamInfo {
     std::string deviceClass;
     std::string deviceNetId;
     bool needData = false;
+    bool forceData = false;
 };
 
 struct AudioCallBackCapturerStreamInfo {

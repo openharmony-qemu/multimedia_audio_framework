@@ -45,6 +45,7 @@
 #include "privacy_error.h"
 
 using OHOS::Security::AccessToken::AccessTokenKit;
+using namespace std::chrono_literals;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -161,6 +162,12 @@ static const std::unordered_map<DeviceType, std::string> DEVICE_TYPE_NAME_MAP = 
     {DEVICE_TYPE_INVALID, "INVALID"},
     {DEVICE_TYPE_REMOTE_CAST, "REMOTE_CAST"},
     {DEVICE_TYPE_HEARING_AID, "HEARING_AID"},
+    {DEVICE_TYPE_BT_SPP, "BT_SPP"},
+};
+
+static const std::set<SourceType> BACKGROUND_SOURCE_TYPE = {
+    SOURCE_TYPE_MIC,
+    SOURCE_TYPE_VOICE_COMMUNICATION,
 };
 
 uint32_t Util::GetSamplePerFrame(const AudioSampleFormat &format)
@@ -186,6 +193,11 @@ uint32_t Util::GetSamplePerFrame(const AudioSampleFormat &format)
     return audioPerSampleLength;
 }
 
+bool Util::IsBackgroundSourceType(const SourceType sourceType)
+{
+    return BACKGROUND_SOURCE_TYPE.find(sourceType) != BACKGROUND_SOURCE_TYPE.end();
+}
+
 bool Util::IsScoSupportSource(const SourceType sourceType)
 {
     return sourceType == SOURCE_TYPE_VOICE_RECOGNITION || sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION;
@@ -204,6 +216,16 @@ bool Util::IsRingerOrAlarmerStreamUsage(const StreamUsage &usage)
 bool Util::IsRingerAudioScene(const AudioScene &audioScene)
 {
     return audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING;
+}
+
+size_t Util::CalculatePcmSizeFromDurationCeiling(std::chrono::nanoseconds duration,
+    uint32_t sampleRate, uint32_t bytesPerSample)
+{
+    size_t sampleCount = duration * sampleRate / (1s);
+    if (((duration * sampleRate) % (1s)) > (0ns)) {
+        sampleCount++;
+    }
+    return sampleCount * bytesPerSample;
 }
 
 WatchTimeout::WatchTimeout(const std::string &funcName, int64_t timeoutNs) : funcName_(funcName), timeoutNs_(timeoutNs)
@@ -559,7 +581,7 @@ bool PermissionUtil::CheckCallingUidPermission(const std::vector<uid_t> &allowed
         return true;
     }
     for (const auto &uid : allowedUids) {
-        if (uid == callingUid) {
+        if (uid == static_cast<uid_t>(callingUid)) {
             return true;
         }
     }
@@ -603,25 +625,6 @@ bool SwitchStreamUtil::InsertSwitchStreamRecord(SwitchStreamInfo &info, SwitchSt
     AUDIO_INFO_LOG("Insert stream:%{public}u switchState:%{public}d uid:%{public}d CapturerState:%{public}d"
         "into switchStreamRecord success", info.sessionId, targetState, info.appUid, info.nextState);
     return true;
-}
-
-void SwitchStreamUtil::TimeoutThreadHandleTimeoutRecord(SwitchStreamInfo info, SwitchState targetState)
-{
-    const std::chrono::seconds TIMEOUT_DURATION(2);
-    AUDIO_INFO_LOG("Start timing. It will change to SWITCH_STATE_TIMEOUT after 2 seconds.");
-    std::this_thread::sleep_for(TIMEOUT_DURATION);
-
-    {
-        std::lock_guard<std::mutex> lock(g_switchMapMutex);
-        auto it = g_switchStreamRecordMap.find(info);
-        if (it != g_switchStreamRecordMap.end()) {
-            it->second = SWITCH_STATE_TIMEOUT;
-            g_switchStreamRecordMap.erase(it);
-            AUDIO_INFO_LOG("SwitchStream:%{public}u uid:%{public}d CapturerState:%{public}d was timeout! "
-                "Update Record switchState:%{public}d success",
-                info.sessionId, info.appUid, info.nextState, SWITCH_STATE_TIMEOUT);
-        }
-    }
 }
 
 //Remove switchStreamInfo from  switchStreamRecordMap must be called with g_switchMapMutex held
@@ -670,7 +673,7 @@ bool SwitchStreamUtil::UpdateSwitchStreamRecord(SwitchStreamInfo &info, SwitchSt
                 false, "Remove error record for switchStream:%{public}u failed!", iter->first.sessionId);
             CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::InsertSwitchStreamRecord(info, targetState),
                 false, "Retry insert switchStream into record failed!");
-            break;
+            return true;
         case SWITCH_STATE_CREATED:
             CHECK_AND_RETURN_RET_LOG(HandleCreatedSwitchInfoInRecord(info, targetState), false,
                 "Handle switch record to SWITCH_STATE_CREATED failed!");
@@ -684,17 +687,15 @@ bool SwitchStreamUtil::UpdateSwitchStreamRecord(SwitchStreamInfo &info, SwitchSt
                 "Handle switch info in record failed!");
             break;
     }
+    iter = g_switchStreamRecordMap.find(info);
+    CHECK_AND_RETURN_RET_LOG(iter != g_switchStreamRecordMap.end(), false, "SwitchStream has been removed!");
     if (iter->first.nextState == info.nextState) {
         g_switchStreamRecordMap[info] = SWITCH_STATE_FINISHED;
         g_switchStreamRecordMap.erase(info);
         AUDIO_INFO_LOG("SwitchStream will finish!Remove Record for stream:%{public}u uid:%{public}d ",
             info.sessionId, info.appUid);
     }
-    if (iter->second == SWITCH_STATE_TIMEOUT || iter->second == SWITCH_STATE_FINISHED) {
-        CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState), false,
-            "Remove TIMEOUT or FINISHED Record for Stream:%{public}u Failed!", iter->first.sessionId);
-        return false;
-    }
+
     return true;
 }
 
@@ -1185,14 +1186,18 @@ template bool GetSysPara(const char *key, std::string &value);
 
 int32_t GetEngineFlag()
 {
+#ifdef SUPPORT_OLD_ENGINE
     std::string para = "const.multimedia.audio.proaudioEnable";
     static int32_t engineFlag = -1;
     if (engineFlag == -1) {
         bool res = GetSysPara(para.c_str(), engineFlag);
-        AUDIO_DEBUG_LOG("get %{public}s = %{public}d", para.c_str(), engineFlag);
+        AUDIO_INFO_LOG("get %{public}s = %{public}d", para.c_str(), engineFlag);
         CHECK_AND_RETURN_RET_LOG(res, engineFlag, "get %{public}s fail", para.c_str());
     }
     return engineFlag;
+#else
+    return 1;
+#endif
 }
 
 std::map<std::string, std::string> DumpFileUtil::g_lastPara = {};

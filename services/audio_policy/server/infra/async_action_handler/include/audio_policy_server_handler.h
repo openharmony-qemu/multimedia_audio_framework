@@ -72,7 +72,6 @@ public:
         SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE,
         HEAD_TRACKING_ENABLED_CHANGE,
         HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICE,
-        PIPE_STREAM_CLEAN_EVENT,
         AUDIO_SESSION_DEACTIVE_EVENT,
         MICROPHONE_BLOCKED,
         NN_STATE_CHANGE,
@@ -81,6 +80,7 @@ public:
         AUDIO_ZONE_EVENT,
         FORMAT_UNSUPPORTED_ERROR,
         SESSION_DEVICE_CHANGE,
+        SESSION_INPUT_DEVICE_CHANGE,
         INTERRUPT_EVENT_FOR_AUDIO_SESSION,
     };
     /* event data */
@@ -199,9 +199,8 @@ public:
     bool SendHeadTrackingEnabledChangeEvent(const bool &enabled);
     bool SendHeadTrackingEnabledChangeForAnyDeviceEvent(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
-    bool SendPipeStreamCleanEvent(AudioPipeType pipeType);
     int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
-    int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo);
+    int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid = -1);
     int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo);
     bool SendAudioSceneChangeEvent(const AudioScene &audioScene);
     bool SendAudioSessionDeactiveCallback(const std::pair<int32_t, AudioSessionDeactiveEvent> &sessionDeactivePair);
@@ -211,6 +210,7 @@ public:
     bool SendFormatUnsupportedErrorEvent(const AudioErrors &errorCode);
     int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages);
     bool SendAudioSessionDeviceChange(const AudioStreamDeviceChangeReason changeReason, int32_t callerPid = -1);
+    bool SendAudioSessionInputDeviceChange(const AudioStreamDeviceChangeReason changeReason, int32_t callerPid = -1);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
@@ -234,6 +234,7 @@ private:
     void HandlePreferredInputDeviceUpdated();
     void HandleDistributedRoutingRoleChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAudioSessionDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleAudioSessionInputDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleRendererInfoEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleCapturerInfoEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleRendererDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
@@ -248,7 +249,6 @@ private:
     void HandleSpatializatonEnabledChangeForCurrentDeviceEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleHeadTrackingEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleHeadTrackingEnabledChangeForAnyDeviceEvent(const AppExecFwk::InnerEvent::Pointer &event);
-    void HandlePipeStreamCleanEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAudioSessionDeactiveCallback(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleNnStateChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAudioSceneChange(const AppExecFwk::InnerEvent::Pointer &event);
@@ -266,7 +266,7 @@ private:
 
     void HandleVolumeKeyEventToRssWhenAccountsChange(std::shared_ptr<EventContextObj> &eventContextObj);
 
-    std::vector<AudioRendererInfo> GetCallbackRendererInfoList(int32_t clientPid);
+    std::vector<AudioRendererFilter> GetCallbackRendererInfoList(int32_t clientPid);
     std::vector<AudioCapturerInfo> GetCallbackCapturerInfoList(int32_t clientPid);
 
     std::mutex runnerMutex_;
@@ -286,9 +286,10 @@ private:
     std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> distributedRoutingRoleChangeCbsMap_;
     std::unordered_map<int32_t,  std::unordered_map<CallbackChange, bool>> clientCallbacksMap_;
     int32_t pidOfRss_ = -1;
-    std::unordered_map<int32_t, std::vector<AudioRendererInfo>> clientCbRendererInfoMap_;
+    std::unordered_map<int32_t, std::vector<AudioRendererFilter>> clientCbRendererInfoMap_;
     std::unordered_map<int32_t, std::vector<AudioCapturerInfo>> clientCbCapturerInfoMap_;
     std::unordered_map<int32_t, std::set<StreamUsage>> clientCbStreamUsageMap_;
+    std::unordered_map<int32_t, int32_t> pidUidMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

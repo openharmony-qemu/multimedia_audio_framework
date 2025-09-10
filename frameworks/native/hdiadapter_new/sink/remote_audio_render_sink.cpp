@@ -458,11 +458,12 @@ int32_t RemoteAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &appsUid
     return ERR_NOT_SUPPORTED;
 }
 
-int32_t RemoteAudioRenderSink::SplitRenderFrame(char &data, uint64_t len, uint64_t &writeLen, const char *streamType)
+int32_t RemoteAudioRenderSink::SplitRenderFrame(char &data, uint64_t len, uint64_t &writeLen,
+    const char *splitStreamType)
 {
     Trace trace("RemoteAudioRenderSink::SplitRenderFrame");
-    AUDIO_DEBUG_LOG("in, type: %{public}s", streamType);
-    auto it = SPLIT_STREAM_MAP.find(streamType);
+    AUDIO_DEBUG_LOG("in, type: %{public}s", splitStreamType);
+    auto it = SPLIT_STREAM_MAP.find(splitStreamType);
     CHECK_AND_RETURN_RET_LOG(it != SPLIT_STREAM_MAP.end(), ERR_INVALID_PARAM, "invalid stream type");
     return RenderFrame(data, len, writeLen, it->second);
 }

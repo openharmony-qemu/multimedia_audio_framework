@@ -40,11 +40,9 @@
 namespace OHOS {
 namespace AudioStandard {
 
-static const int64_t MEDIA_TO_RING_MUTE_DURATION_TIME_US = 200000; // 200ms
-static const int64_t HEADSET_SWITCH_DELAY_US = 100000; //100ms
-
 void AudioSceneManager::SetAudioScenePre(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
+    HILOG_COMM_INFO("Set audio scene start %{public}d, lastScene %{public}d", audioScene, audioScene_);
     lastAudioScene_ = audioScene_;
     audioScene_ = audioScene;
     if (lastAudioScene_ != AUDIO_SCENE_DEFAULT && audioScene_ == AUDIO_SCENE_DEFAULT) {

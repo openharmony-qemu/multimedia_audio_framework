@@ -28,7 +28,8 @@ namespace OHOS {
 namespace AudioStandard {
 typedef struct InfoAttr {
     std::string info_ = HDI_ID_INFO_DEFAULT;
-    std::atomic<uint32_t> useCount_ = 0;
+    std::unordered_set<uint32_t> useIdSet_;
+    std::mutex useIdMtx_;
 } InfoAttr;
 
 class IdHandler {

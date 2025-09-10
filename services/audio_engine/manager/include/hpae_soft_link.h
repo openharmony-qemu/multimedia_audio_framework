@@ -54,15 +54,19 @@ public:
     HpaeSoftLink(uint32_t sinkIdx, uint32_t sourceIdx, SoftLinkMode mode);
     ~HpaeSoftLink();
     static uint32_t GenerateSessionId();
-    int32_t Init() override;
+    int32_t Init();
     int32_t Start() override;
     int32_t Stop() override;
     int32_t Release() override;
     int32_t SetVolume(float volume) override;
+    virtual int32_t SetVolumeMute(bool isMute) override;
+    virtual int32_t SetVolumeDuckFactor(float duckFactor) override;
+    virtual int32_t SetVolumeLowPowerFactor(float lowPowerFactor) override;
     void OnStatusUpdate(IOperation operation, uint32_t streamIndex) override;
     int32_t OnStreamData(AudioCallBackStreamInfo& callbackStreamInfo) override;
     int32_t OnStreamData(AudioCallBackCapturerStreamInfo& callbackStreamInfo) override;
     void OnDeviceInfoReceived(const HpaeSoftLinkDeviceOperation &operation);
+    int32_t SetLoudnessGain(float loudnessGain) override;
 
     // for unit test
     HpaeSoftLinkState GetStreamStateById(uint32_t sessionId);
@@ -71,6 +75,7 @@ private:
     int32_t CreateStream();
     void FlushRingCache();
     void TransSinkInfoToStreamInfo(HpaeStreamInfo &info, const HpaeStreamClassType &streamClassType);
+    void StopInner();
 private:
     static uint32_t g_sessionId;
     inline static std::mutex sessionIdMutex_;
@@ -83,11 +88,11 @@ private:
     HpaeStreamInfo capturerStreamInfo_;
     std::unique_ptr<AudioRingCache> bufferQueue_ = nullptr;
     std::vector<char> tempBuffer_;
-    HpaeSoftLinkState state_ = HpaeSoftLinkState::INVALID;
+    std::atomic<HpaeSoftLinkState> state_ = HpaeSoftLinkState::INVALID;
     std::mutex stateMutex_;
     uint8_t isStreamOperationFinish_ = 0;
     uint8_t isDeviceOperationFinish_ = 0;
-    std::unordered_map<uint32_t, HpaeSoftLinkState> streamStateMap_;
+    std::unordered_map<uint32_t, std::atomic<HpaeSoftLinkState>> streamStateMap_;
     std::mutex callbackMutex_;
     std::condition_variable callbackCV_;
     bool isOperationFinish_ = false;

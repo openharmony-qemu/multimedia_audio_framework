@@ -235,6 +235,13 @@ public:
      * @return int32_t the result, only supports proaudio for now.
      */
     virtual int32_t SetAbsVolumeStateToEffect(const bool absVolumeState) NOT_SUPPORT_RET
+
+    /**
+     * @brief Set SetSystemVolumeToEffect service enabled
+     *
+     * @return int32_t the result, only supports proaudio for now.
+     */
+    virtual int32_t SetSystemVolumeToEffect(AudioStreamType streamType, float volume) NOT_SUPPORT_RET
     virtual ~AudioServiceAdapter();
 };
 } // namespace AudioStandard

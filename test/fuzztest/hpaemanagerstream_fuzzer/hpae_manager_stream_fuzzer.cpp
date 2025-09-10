@@ -35,7 +35,6 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 14;
 static int32_t NUM_2 = 2;
 static std::string g_rootPath = "/data/";
 constexpr int32_t TEST_SLEEP_TIME_20 = 20;
@@ -721,7 +720,7 @@ void HpaeManagerDumpStreamInfoTest2()
     WaitForMsgProcessing(hpaeManager_);
 }
 
-TestFuncs g_testFuncs[TESTSIZE] = {
+TestFuncs g_testFuncs[] = {
     InitFuzzTest,
     HpaeRenderStreamManagerFuzzTest,
     HpaeRenderStreamManagerFuzzTest2,

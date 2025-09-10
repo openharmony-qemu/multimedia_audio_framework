@@ -262,12 +262,13 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, FetchOutputDevice_001, TestSize.Level4)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.DeInit();
+    const string CALL_RENDER_ROUTERS = "CallRenderRouters";
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
     rendererChangeInfos.push_back(rendererChangeInfo);
     rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
     audioDeviceCommon.audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
-
+    audioDeviceCommon.audioRouterCenter_.renderConfigMap_[STREAM_USAGE_VOICE_MODEM_COMMUNICATION] = CALL_RENDER_ROUTERS;
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     audioDeviceCommon.FetchOutputDevice(rendererChangeInfos, reason);
     EXPECT_NE(rendererChangeInfo, nullptr);
@@ -1499,6 +1500,36 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, SwitchActiveA2dpDevice_002, TestSize.Lev
     audioDeviceCommon.audioIOHandleMap_.IOHandles_.clear();
     int32_t result = audioDeviceCommon.SwitchActiveA2dpDevice(deviceDescriptor);
     EXPECT_EQ(result, ERROR);
+}
+
+/**
+* @tc.name  : Test UpdateConnectedDevicesWhenConnectingForOutputDevice
+* @tc.number: UpdateConnectedDevicesWhenConnectingForOutputDevice_001
+* @tc.desc  : Test UpdateConnectedDevicesWhenConnectingForOutputDevice interface.
+*/
+HWTEST_F(AudioDeviceCommonUnitNextTest, UpdateConnectedDevicesWhenConnectingForOutputDevice_001, TestSize.Level4)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->connectState_ = VIRTUAL_CONNECTED;
+    desc->deviceRole_ = INPUT_DEVICE;
+    desc->deviceType_ = DEVICE_TYPE_HEARING_AID;
+    desc->networkId_ == "123";
+    desc->macAddress_ == "00:11:22:33:44:55";
+    audioDeviceCommon.audioDeviceManager_.connectedDevices_.push_back(desc);
+
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    deviceDescriptor->macAddress_ = "00:11:22:33:44:55";
+    deviceDescriptor->deviceName_ = "TestA2dpDevice";
+    deviceDescriptor->deviceType_ = DEVICE_TYPE_HEARING_AID;
+    deviceDescriptor->networkId_ = "123";
+    deviceDescriptor->deviceRole_ = INPUT_DEVICE;
+    deviceDescriptor->connectState_ = VIRTUAL_CONNECTED;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb;
+    descForCb.push_back(deviceDescriptor);
+
+    audioDeviceCommon.UpdateConnectedDevicesWhenConnectingForOutputDevice(deviceDescriptor, descForCb);
+    EXPECT_NE(nullptr, deviceDescriptor);
 }
 } // namespace AudioStandard
 } // namespace OHOS

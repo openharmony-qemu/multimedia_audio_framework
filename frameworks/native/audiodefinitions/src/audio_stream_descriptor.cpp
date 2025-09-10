@@ -41,12 +41,44 @@ static const char *StreamStatusToString(AudioStreamStatus status)
     }
 }
 
-AudioStreamDescriptor::AudioStreamDescriptor()
+AudioStreamDescriptor::AudioStreamDescriptor(
+    AudioStreamInfo streamInfo, AudioRendererInfo rendererInfo, AppInfo appInfo)
+    : streamInfo_(streamInfo),
+    audioMode_(AUDIO_MODE_PLAYBACK),
+    rendererInfo_(rendererInfo),
+    appInfo_(appInfo)
 {
 }
 
-AudioStreamDescriptor::~AudioStreamDescriptor()
+AudioStreamDescriptor::AudioStreamDescriptor(
+    AudioStreamInfo streamInfo, AudioCapturerInfo capturerInfo, AppInfo appInfo)
+    : streamInfo_(streamInfo),
+    audioMode_(AUDIO_MODE_RECORD),
+    capturerInfo_(capturerInfo),
+    appInfo_(appInfo)
 {
+}
+
+void AudioStreamDescriptor::CopyToStruct(AudioStreamDescriptor &streamDesc)
+{
+    streamDesc.streamInfo_ = streamInfo_;
+    streamDesc.audioMode_ = audioMode_;
+    streamDesc.audioFlag_ = audioFlag_;
+    streamDesc.routeFlag_ = routeFlag_;
+    streamDesc.oldRouteFlag_ = oldRouteFlag_;
+    streamDesc.createTimeStamp_ = createTimeStamp_;
+    streamDesc.startTimeStamp_ = startTimeStamp_;
+    streamDesc.rendererInfo_ = rendererInfo_;
+    streamDesc.capturerInfo_ = capturerInfo_;
+    streamDesc.appInfo_ = appInfo_;
+    streamDesc.sessionId_ = sessionId_;
+    streamDesc.callerUid_ = callerUid_;
+    streamDesc.callerPid_ = callerPid_;
+    streamDesc.streamStatus_ = streamStatus_;
+    streamDesc.streamAction_ = streamAction_;
+    streamDesc.oldDeviceDescs_ = oldDeviceDescs_;
+    streamDesc.newDeviceDescs_ = newDeviceDescs_;
+    streamDesc.bundleName_ = bundleName_;
 }
 
 bool AudioStreamDescriptor::Marshalling(Parcel &parcel) const
@@ -55,6 +87,7 @@ bool AudioStreamDescriptor::Marshalling(Parcel &parcel) const
         parcel.WriteUint32(audioMode_) &&
         parcel.WriteUint32(audioFlag_) &&
         parcel.WriteUint32(routeFlag_) &&
+        parcel.WriteUint32(oldRouteFlag_) &&
         parcel.WriteInt64(createTimeStamp_) &&
         parcel.WriteInt64(startTimeStamp_) &&
         rendererInfo_.Marshalling(parcel) &&
@@ -82,6 +115,7 @@ AudioStreamDescriptor *AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
     info->audioMode_ = static_cast<AudioMode>(parcel.ReadUint32());
     info->audioFlag_ = static_cast<AudioFlag>(parcel.ReadUint32());
     info->routeFlag_ = static_cast<uint32_t>(parcel.ReadUint32());
+    info->oldRouteFlag_ = static_cast<uint32_t>(parcel.ReadUint32());
     info->createTimeStamp_ = parcel.ReadInt64();
     info->startTimeStamp_ = parcel.ReadInt64();
     info->rendererInfo_.UnmarshallingSelf(parcel);
@@ -120,8 +154,7 @@ bool AudioStreamDescriptor::WriteDeviceDescVectorToParcel(
 void AudioStreamDescriptor::UnmarshallingDeviceDescVector(
     Parcel &parcel, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
 {
-    int32_t size = 0;
-    parcel.ReadInt32(size);
+    int32_t size = parcel.ReadInt32();
     if (size == -1 || size > MAX_STREAM_DESCRIPTORS_SIZE) {
         AUDIO_ERR_LOG("Invalid vector size");
         return;
@@ -139,7 +172,7 @@ void AudioStreamDescriptor::SetBunduleName(std::string &bundleName)
 
 void AudioStreamDescriptor::Dump(std::string &dumpString)
 {
-    AppendFormat(dumpString, "  Stream %d:\n", sessionId_);
+    AppendFormat(dumpString, "  Stream %u:\n", sessionId_);
 
     DumpCommonAttrs(dumpString);
 
@@ -165,7 +198,8 @@ void AudioStreamDescriptor::DumpCommonAttrs(std::string &dumpString)
         streamInfo_.samplingRate, streamInfo_.channels, streamInfo_.channelLayout,
         streamInfo_.format, streamInfo_.encoding);
 
-    AppendFormat(dumpString, "    - AudioFlag: 0x%x RouteFlag: 0x%x\n", audioFlag_, routeFlag_);
+    AppendFormat(dumpString, "    - AudioFlag: 0x%x RouteFlag: 0x%x OldRouteFlag: 0x%x\n",
+        audioFlag_, routeFlag_, oldRouteFlag_);
     AppendFormat(dumpString, "    - CreateTimestamp: %" PRId64"\n", createTimeStamp_);
     AppendFormat(dumpString, "    - StartTimestamp: %" PRId64"\n", startTimeStamp_);
 }
@@ -215,6 +249,17 @@ std::string AudioStreamDescriptor::GetNewDevicesTypeString()
     return out;
 }
 
+std::string AudioStreamDescriptor::GetNewDupDevicesTypeString()
+{
+    std::string out = "";
+    for (auto &desc : newDupDeviceDescs_) {
+        if (desc != nullptr) {
+            out += (desc->GetDeviceTypeString() + ":");
+        }
+    }
+    return out;
+}
+
 std::string AudioStreamDescriptor::GetDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> desc)
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, "", "desc is nullptr");
@@ -233,5 +278,14 @@ std::string AudioStreamDescriptor::GetNewDevicesInfo()
     }
     return out;
 }
+
+void AudioStreamDescriptor::ResetToNormalRoute(bool updateRoute)
+{
+    if (updateRoute) {
+        oldRouteFlag_ = routeFlag_;
+    }
+    routeFlag_ = (IsPlayback() ? AUDIO_OUTPUT_FLAG_NORMAL : AUDIO_INPUT_FLAG_NORMAL);
+}
+
 } // AudioStandard
 } // namespace OHOS

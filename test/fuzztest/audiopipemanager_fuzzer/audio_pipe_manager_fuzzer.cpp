@@ -41,7 +41,6 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 26;
 const uint32_t RESIZENUM = 2;
 const uint32_t IDNUM = 2;
 const uint32_t NUM_2 = 2;
@@ -64,6 +63,7 @@ vector<AudioFlag> AudioFlagVec = {
     AUDIO_INPUT_FLAG_VOIP,
     AUDIO_INPUT_FLAG_VOIP_FAST,
     AUDIO_INPUT_FLAG_WAKEUP,
+    AUDIO_INPUT_FLAG_AI,
     AUDIO_FLAG_MAX,
 };
 
@@ -289,7 +289,8 @@ void GetProcessDeviceInfoBySessionIdFuzzTest()
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
 
     uint32_t targetSessionId = GetData<uint32_t>();
-    audioPipeManager->GetProcessDeviceInfoBySessionId(targetSessionId);
+    AudioStreamInfo info;
+    audioPipeManager->GetProcessDeviceInfoBySessionId(targetSessionId, info);
 }
 
 void GetAllOutputStreamDescsFuzzTest()
@@ -466,7 +467,7 @@ void GetPipeByModuleAndFlagFuzzTest()
     audioPipeManager->GetPipeByModuleAndFlag(targetModuleName, targetRouteFlag);
 }
 
-TestFuncs g_testFuncs[TESTSIZE] = {
+TestFuncs g_testFuncs[] = {
     RemoveAudioPipeInfoFuzzTest,
     RemoveAudioPipeInfoByIdFuzzTest,
     UpdateAudioPipeInfoFuzzTest,

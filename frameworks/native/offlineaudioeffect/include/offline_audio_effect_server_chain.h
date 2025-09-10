@@ -21,15 +21,6 @@
 #include <string>
 #include <vector>
 #include <mutex>
-#include <algorithm>
-#include <chrono>
-#include <cinttypes>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <string>
-#include <unistd.h>
-#include "securec.h"
 
 #include "v1_0/effect_types.h"
 #include "v1_0/ieffect_control.h"
@@ -81,8 +72,8 @@ private:
     uint32_t inBufferSize_ = 0;
     uint32_t outBufferSize_ = 0;
     string chainName_;
-    mutex offlineChainMutex_;
     OfflineEffectIOConfig offlineConfig_ = {};
+    bool firstProcess_ = false;
     FILE *dumpFileIn_ = nullptr;
     FILE *dumpFileOut_ = nullptr;
 };

@@ -43,7 +43,6 @@ const uint32_t LIMIT_TWO = 30;
 const uint32_t LIMIT_THREE = 60;
 const uint32_t LIMIT_FOUR = static_cast<uint32_t>(AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX);
 bool g_hasServerInit = false;
-const uint8_t TESTSIZE = 73;
 typedef void (*TestPtr)(const uint8_t *, size_t);
 
 static const uint8_t* RAW_DATA = nullptr;
@@ -192,25 +191,9 @@ void AudioPolicyServiceDeviceTest(const uint8_t *rawData, size_t size)
 
     int32_t state = (num % MOD_NUM_TWO) + CONNECTING_NUMBER; // DATA_LINK_CONNECTING = 10, DATA_LINK_CONNECTED = 11;
 
-    GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
+    GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForA2dpDeviceOut();
     GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->GetA2dpOffloadCodecAndSendToDsp();
     GetServerPtr()->audioPolicyService_.audioMicrophoneDescriptor_.UpdateAudioCapturerMicrophoneDescriptor(deviceType);
-
-    // the max value of BluetoothOffloadState is A2DP_OFFLOAD.
-    BluetoothOffloadState flag = static_cast<BluetoothOffloadState>(num % (A2DP_OFFLOAD + 1));
-    GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->HandleA2dpDeviceInOffload(flag);
-    GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->HandleA2dpDeviceOutOffload(flag);
-
-    uint32_t sessionId = static_cast<uint32_t>(num);
-    // the max value of AudioPipeType is PIPE_TYPE_DIRECT_VOIP.
-    AudioPipeType pipeType = static_cast<AudioPipeType>(num % (PIPE_TYPE_DIRECT_VOIP + 1));
-    GetServerPtr()->audioPolicyService_.audioOffloadStream_.MoveToNewPipeInner(sessionId, pipeType);
-
-    GetServerPtr()->audioPolicyService_.audioOffloadStream_.LoadMchModule();
-    GetServerPtr()->audioPolicyService_.audioOffloadStream_.ConstructMchAudioModuleInfo(deviceType);
-    GetServerPtr()->audioPolicyService_.audioOffloadStream_.LoadOffloadModule();
-    GetServerPtr()->audioPolicyService_.audioOffloadStream_.UnloadOffloadModule();
-    GetServerPtr()->audioPolicyService_.audioOffloadStream_.ConstructOffloadAudioModuleInfo(deviceType);
 }
 
 void AudioPolicyServiceAccountTest(const uint8_t *rawData, size_t size)
@@ -262,16 +245,8 @@ void AudioPolicyServiceInterfaceTest(const uint8_t *rawData, size_t size)
     sptr<AudioRendererFilter> fuzzAudioRendererFilter = new AudioRendererFilter();
 
     // set offload support on for covery
-    GetServerPtr()->audioPolicyService_.audioOffloadStream_.isOffloadAvailable_ = true;
     GetServerPtr()->audioPolicyService_.audioRecoveryDevice_.HandleRecoveryPreferredDevices(fuzzInt32One,
         fuzzInt32Two, fuzzInt32Three);
-    GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->GetVolumeGroupType(fuzzDeviceType);
-    GetServerPtr()->audioPolicyService_.audioOffloadStream_.SetOffloadMode();
-    GetServerPtr()->audioPolicyService_.audioOffloadStream_.ResetOffloadMode(fuzzInt32One);
-    GetServerPtr()->audioPolicyService_.audioOffloadStream_.OffloadStreamReleaseCheck(fuzzInt32One);
-    GetServerPtr()->audioPolicyService_.audioOffloadStream_.RemoteOffloadStreamRelease(fuzzInt32One);
-    GetServerPtr()->audioPolicyService_.audioActiveDevice_.CheckActiveOutputDeviceSupportOffload();
-    GetServerPtr()->audioPolicyService_.audioOffloadStream_.GetOffloadAvailableFromXml();
     GetServerPtr()->audioPolicyService_.SetSourceOutputStreamMute(fuzzInt32One, fuzzBool);
     GetServerPtr()->audioPolicyService_.audioDeviceCommon_.IsDeviceConnected(fuzzAudioDeviceDescriptorSptr);
     GetServerPtr()->audioPolicyService_.audioDeviceCommon_.DeviceParamsCheck(fuzzDeviceRole,
@@ -716,16 +691,6 @@ void AudioPolicyServiceInitSharedVolumeFuzztest(const uint8_t *rawData, size_t s
     GetServerPtr()->audioPolicyService_.InitSharedVolume(buffer);
 }
 
-void AudioPolicyServiceDynamicUnloadModuleFuzztest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    AudioPipeType pipeType = PIPE_TYPE_OFFLOAD;
-    GetServerPtr()->audioPolicyService_.DynamicUnloadModule(pipeType);
-}
-
 void AudioPolicyServiceGetMaxRendererInstancesFuzztest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -794,22 +759,6 @@ void AudioPolicyServiceDeviceFilterByUsageInnerFuzztest(const uint8_t *rawData, 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
     descs.push_back(fuzzAudioDeviceDescriptorSptr);
     GetServerPtr()->audioPolicyService_.DeviceFilterByUsageInner(usage, descs);
-}
-
-void AudioPolicyServiceOffloadStartPlayingFuzztest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-    }
-    std::vector<int32_t> sessionIds;
-    GetServerPtr()->audioPolicyService_.OffloadStartPlaying(sessionIds);
-}
-
-void AudioPolicyServiceOffloadStopPlayingFuzztest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-    }
-    std::vector<int32_t> sessionIds;
-    GetServerPtr()->audioPolicyService_.OffloadStopPlaying(sessionIds);
 }
 
 void AudioPolicyServiceOffloadGetRenderPositionFuzztest(const uint8_t *rawData, size_t size)
@@ -983,7 +932,7 @@ void AudioPolicyServiceIsDevicePlaybackSupportedFuzztest(const uint8_t *rawData,
 } // namespace AudioStandard
 } // namesapce OHOS
 
-OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
+OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioPolicyServiceDumpTest,
     OHOS::AudioStandard::AudioPolicyServiceDeviceTest,
     OHOS::AudioStandard::AudioPolicyServiceAccountTest,
@@ -1026,7 +975,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
     OHOS::AudioStandard::AudioPolicyServiceGetProcessDeviceInfoFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetVoipDeviceInfoFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceInitSharedVolumeFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceDynamicUnloadModuleFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetMaxRendererInstancesFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceRegisterBluetoothListenerFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceUnregisterBluetoothListenerFuzztest,
@@ -1035,8 +983,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
     OHOS::AudioStandard::AudioPolicyServiceRegisterDataObserverFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetHardwareOutputSamplingRateFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceDeviceFilterByUsageInnerFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceOffloadStartPlayingFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceOffloadStopPlayingFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceOffloadGetRenderPositionFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceNearlinkGetRenderPositionFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetAndSaveClientTypeFuzztest,
@@ -1065,8 +1011,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     if (data == nullptr || size <= 1) {
         return 0;
     }
-    uint8_t firstByte = *data % OHOS::AudioStandard::TESTSIZE;
-    if (firstByte >= OHOS::AudioStandard::TESTSIZE) {
+    uint32_t funcSize = sizeof(g_testPtrs) / sizeof(g_testPtrs[0]);
+    uint8_t firstByte = *data % funcSize;
+    if (firstByte >= funcSize) {
         return 0;
     }
     data = data + 1;

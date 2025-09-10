@@ -41,7 +41,6 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 7;
 const int32_t NUM_1 = 1;
 const uint32_t IDNUM = 100;
 constexpr int32_t AUDIO_MODE_COUNT = static_cast<int32_t>(AudioMode::AUDIO_MODE_RECORD) + NUM_1;
@@ -139,6 +138,12 @@ void JudgeStreamActionFuzzTest()
     newPipe->adapterName_ = newAdapterName;
     AudioFlag newAudioFlag = static_cast<AudioFlag>(GetData<uint8_t>() % AUDIO_FLAG_COUNT);
     newPipe->routeFlag_ = newAudioFlag;
+    std::vector<std::string> className = {
+        "remote_offload",
+        "name"
+    };
+    size_t idx = GetData<size_t>() % className.size();
+    newPipe->moduleInfo_.className = className[idx];
 
     std::shared_ptr<AudioPipeInfo> oldPipe = std::make_shared<AudioPipeInfo>();
     uint8_t oldRandomNum = GetData<uint8_t>();
@@ -146,6 +151,8 @@ void JudgeStreamActionFuzzTest()
     oldPipe->adapterName_ = oldAdapterName;
     AudioFlag oldAudioFlag = static_cast<AudioFlag>(GetData<uint8_t>() % AUDIO_FLAG_COUNT);
     oldPipe->routeFlag_ = oldAudioFlag;
+    idx = GetData<size_t>() % className.size();
+    oldPipe->moduleInfo_.className = className[idx];
 
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
@@ -182,13 +189,30 @@ void FetchPipesAndExecuteFuzzTest()
     audioPipeSelector->FetchPipesAndExecute(streamDescs);
 }
 
-TestFuncs g_testFuncs[TESTSIZE] = {
+void ProcessConcurrencyFuzzTest()
+{
+    std::shared_ptr<AudioStreamDescriptor> existingStream = std::make_shared<AudioStreamDescriptor>();
+    CHECK_AND_RETURN(existingStream != nullptr);
+    std::shared_ptr<AudioStreamDescriptor> incomingStream = std::make_shared<AudioStreamDescriptor>();
+    CHECK_AND_RETURN(incomingStream != nullptr);
+    existingStream->routeFlag_ = GetData<uint32_t>();
+    existingStream->audioMode_ = GetData<AudioMode>();
+    incomingStream->routeFlag_ = GetData<uint32_t>();
+    incomingStream->audioMode_ = GetData<AudioMode>();
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    CHECK_AND_RETURN(audioPipeSelector != nullptr);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamsToMove;
+    audioPipeSelector->ProcessConcurrency(existingStream, incomingStream, streamsToMove);
+}
+
+TestFuncs g_testFuncs[] = {
     GetPipeTypeFuzzTest,
     GetAdapterNameByStreamDescFuzzTest,
     ConvertStreamDescToPipeInfoFuzzTest,
     JudgeStreamActionFuzzTest,
     FetchPipeAndExecuteFuzzTest,
     FetchPipesAndExecuteFuzzTest,
+    ProcessConcurrencyFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

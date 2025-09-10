@@ -107,28 +107,6 @@ void AudioFuzzTestGetPermission()
     }
 }
 
-sptr<AudioPolicyServer> GetServerPtr()
-{
-    static sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    if (!g_hasServerInit && server != nullptr) {
-        IdHandler::GetInstance();
-        HdiAdapterManager::GetInstance();
-        HPAE::IHpaeManager::GetHpaeManager().Init();
-        server->OnStart();
-        server->OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
-#ifdef FEATURE_MULTIMODALINPUT_INPUT
-        server->OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
-#endif
-        server->OnAddSystemAbility(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, "");
-        server->OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
-        server->OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
-        server->OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
-        server->audioPolicyService_.SetDefaultDeviceLoadFlag(true);
-        g_hasServerInit = true;
-    }
-    return server;
-}
-
 void MoreFuzzTest()
 {
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
@@ -143,7 +121,6 @@ void MoreFuzzTest()
 void AddAudioSessionFuzzTest()
 {
     int32_t sessionStrategy = 0;
-    GetServerPtr()->ActivateAudioSession(sessionStrategy);
 
     AudioInterrupt incomingInterrupt;
     incomingInterrupt.audioFocusType.streamType = STREAM_MUSIC;

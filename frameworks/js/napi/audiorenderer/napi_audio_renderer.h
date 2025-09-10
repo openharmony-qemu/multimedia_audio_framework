@@ -19,11 +19,13 @@
 #include <iostream>
 #include <map>
 #include <queue>
+#include <optional>
 
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 #include "audio_stream_manager.h"
 #include "audio_renderer.h"
+#include "audio_info.h"
 #include "napi_async_work.h"
 #include "napi_audio_renderer_device_change_callback.h"
 
@@ -47,9 +49,9 @@ public:
 #else
     std::unique_ptr<AudioRenderer> audioRenderer_;
 #endif
+    std::optional<AudioRendererOptions> rendererOptions_ = std::nullopt;
     std::mutex writeCallbackMutex_;
     std::condition_variable writeCallbackCv_;
-    bool enqueued_ = false;
     std::list<std::shared_ptr<NapiAudioRendererCallbackInner>> audioRendererCallbacks_;
 
 private:

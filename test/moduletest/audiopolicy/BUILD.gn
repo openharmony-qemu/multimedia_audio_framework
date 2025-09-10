@@ -36,5 +36,6 @@ ohos_moduletest("audio_policy_module_test") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "ipc:ipc_core",
   ]
 }

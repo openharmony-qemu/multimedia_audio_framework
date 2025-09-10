@@ -78,7 +78,7 @@ void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
         enqueueCount_++;
         enqueueRunning_ = true;
         // fill silence frames for latency adjustment
-        AUDIO_INFO_LOG("Filling silence frames for latency adjustment");
+        HILOG_COMM_INFO("Filling silence frames for latency adjustment");
         ringCache_->ResetBuffer();
         FillSilenceFramesInner(TEST_LATENCY);
     }
@@ -147,7 +147,7 @@ void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>
         nodeInfo.nodeName = GetNodeName();
         SetNodeInfo(nodeInfo);
         inputStream_.Connect(shared_from_this(), preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
-        AUDIO_INFO_LOG("HpaeCoBufferNode connect to preNode");
+        HILOG_COMM_INFO("HpaeCoBufferNode connect to preNode");
     }
 
     // reset status flag
@@ -167,7 +167,7 @@ void HpaeCoBufferNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer
     if (connectedProcessCluster_.find(nodeInfo.sceneType) != connectedProcessCluster_.end()) {
         connectedProcessCluster_.erase(nodeInfo.sceneType);
         inputStream_.DisConnect(preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
-        AUDIO_INFO_LOG("HpaeCoBufferNode disconnected from prenode, scenetype %{public}u", nodeInfo.sceneType);
+        HILOG_COMM_INFO("HpaeCoBufferNode disconnected from prenode, scenetype %{public}u", nodeInfo.sceneType);
     }
 }
 
@@ -256,7 +256,7 @@ void HpaeCoBufferNode::ProcessOutputFrameInner()
 void HpaeCoBufferNode::SetOutputClusterConnected(bool isConnect)
 {
     isOutputClusterConnected_ = isConnect;
-    AUDIO_INFO_LOG("HpaeCoBufferNode output cluster connected status: %{public}d", isConnect);
+    HILOG_COMM_INFO("HpaeCoBufferNode output cluster connected status: %{public}d", isConnect);
 }
 
 bool HpaeCoBufferNode::IsOutputClusterConnected()

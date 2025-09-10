@@ -412,10 +412,10 @@ HWTEST(SleAudioDeviceManagerUnitTest, BySleStreamType_001, TestSize.Level1)
     std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
         std::make_shared<SleAudioDeviceManager>();
     
-    uint32_t streamType_1 = SLE_AUDIO_STREAM_MUSIC;
-    std::set<StreamUsage> StreamUsage = {STREAM_USAGE_MEDIA, STREAM_USAGE_MUSIC, STREAM_USAGE_AUDIOBOOK};
-    uint32_t streamType_2 = SLE_AUDIO_STREAM_VOICE_ASSISTANT;
-    std::set<SourceType> SourceType = {SOURCE_TYPE_VOICE_RECOGNITION, SOURCE_TYPE_VOICE_TRANSCRIPTION};
+    uint32_t streamType_1 = SLE_AUDIO_STREAM_NONE;
+    std::set<StreamUsage> StreamUsage = {};
+    uint32_t streamType_2 = SLE_AUDIO_STREAM_NONE;
+    std::set<SourceType> SourceType = {};
 
     auto ret = sleAudioDeviceManager_->GetStreamUsagesBySleStreamType(streamType_1);
     EXPECT_EQ(ret, StreamUsage);

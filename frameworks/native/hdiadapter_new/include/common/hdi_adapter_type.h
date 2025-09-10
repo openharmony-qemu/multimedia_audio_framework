@@ -90,6 +90,7 @@ typedef struct IAudioSourceAttr : public Parcelable {
     bool isBigEndian = false;
     std::string filePath = "";
     std::string deviceNetworkId = "";
+    std::string macAddress = "";
     int32_t deviceType = 0;
     int32_t sourceType = 0;
     uint64_t channelLayout = 0;
@@ -98,6 +99,7 @@ typedef struct IAudioSourceAttr : public Parcelable {
     AudioSampleFormat formatEc = AudioSampleFormat::INVALID_WIDTH;
     uint32_t sampleRateEc = 0;
     uint32_t channelEc = 0;
+    std::string hdiSourceType = "AUDIO_INPUT_DEFAULT_TYPE";
 
     bool Marshalling(Parcel &parcel) const override
     {
@@ -111,6 +113,7 @@ typedef struct IAudioSourceAttr : public Parcelable {
             parcel.WriteBool(isBigEndian) &&
             parcel.WriteString(filePath) &&
             parcel.WriteString(deviceNetworkId) &&
+            parcel.WriteString(macAddress) &&
             parcel.WriteInt32(deviceType) &&
             parcel.WriteInt32(sourceType) &&
             parcel.WriteUint64(channelLayout) &&
@@ -118,7 +121,8 @@ typedef struct IAudioSourceAttr : public Parcelable {
             parcel.WriteBool(hasEcConfig) &&
             parcel.WriteUint8(static_cast<uint8_t>(formatEc)) &&
             parcel.WriteUint32(sampleRateEc) &&
-            parcel.WriteUint32(channelEc);
+            parcel.WriteUint32(channelEc) &&
+            parcel.WriteString(hdiSourceType);
     }
 
     static IAudioSourceAttr *Unmarshalling(Parcel &parcel)
@@ -138,6 +142,7 @@ typedef struct IAudioSourceAttr : public Parcelable {
         attr->isBigEndian = parcel.ReadBool();
         attr->filePath = parcel.ReadString();
         attr->deviceNetworkId = parcel.ReadString();
+        attr->macAddress = parcel.ReadString();
         attr->deviceType = parcel.ReadInt32();
         attr->sourceType = parcel.ReadInt32();
         attr->channelLayout = parcel.ReadUint64();
@@ -146,6 +151,7 @@ typedef struct IAudioSourceAttr : public Parcelable {
         attr->formatEc = static_cast<AudioSampleFormat>(parcel.ReadUint8());
         attr->sampleRateEc = parcel.ReadUint32();
         attr->channelEc = parcel.ReadUint32();
+        attr->hdiSourceType = parcel.ReadString();
         return attr;
     }
 } IAudioSourceAttr;

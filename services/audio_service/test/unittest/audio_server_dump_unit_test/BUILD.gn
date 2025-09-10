@@ -56,6 +56,7 @@ ohos_unittest("audio_server_dump_unit_test") {
     "../../../../../services/audio_policy/client/include",
     "../../../../../frameworks/native/audiopolicy/include",
     "../../../../../frameworks/native/audioclock/include",
+    "../../../../../services/audio_engine/manager/include",
   ]
 
   configs = [ ":module_private_config" ]

@@ -19,3 +19,4 @@ persist.multimedia.audio.safevolume = audio:audio:660
 persist.multimedia.audio.safevolume.timeout = audio:audio:660
 persist.multimedia.audio.firstboot = audio:audio:660
 persist.multimedia.audio.anco_focus_control = audio:audio:660
+persist.multimedia.audio.anco_capture_focus_control = audio:audio:660

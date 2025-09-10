@@ -66,7 +66,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    int32_t SetVolume(AudioVolumeType volumeType, int32_t volume) const;
+    int32_t SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t uid = 0) const;
 
     /**
      * @brief Set the stream volume.
@@ -214,7 +214,7 @@ public:
      * @return Returns current stream volume.
      * @since 8
      */
-    int32_t GetVolume(AudioVolumeType volumeType) const;
+    int32_t GetVolume(AudioVolumeType volumeType, int32_t uid = 0) const;
 
     /**
      * @brief Set volume discount factor.
@@ -371,7 +371,8 @@ public:
      * @since 9
      */
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors,
+        const int32_t audioDeviceSelectMode = 0) const;
 
     /**
      * @brief Select the audio input device according to the filter conditions.
@@ -853,14 +854,14 @@ public:
     int32_t SetAppConcurrencyMode(const int32_t appUid, const int32_t mode);
 
     /**
-     * @brief Set App Slient On Display
+     * @brief Set App Silent On Display
      *
-     * @param displayId app slient On display id
+     * @param displayId app silent On display id
      * @return Returns {@link SUCCESS} if seting is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 20
      */
-    int32_t SetAppSlientOnDisplay(const int32_t displayId);
+    int32_t SetAppSilentOnDisplay(const int32_t displayId);
 
     /**
      * @brief Deactivactivate audio Interrupt
@@ -1479,6 +1480,22 @@ public:
     */
     int32_t ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
 
+    /**
+    * @brief set stream volume by sessionId.
+    *
+    * @param sessionId stream sessionId.
+    * @param volume return stream volume.
+    * @return Returns {@link SUCCESS} if the operation is successfully.
+    * @test
+    */
+    int32_t GetVolumeBySessionId(const uint32_t &sessionId, float &volume);
+
+    /**
+    * @brief clean resouce.
+    * @test
+    */
+    void CleanUpResource();
+
     class WorkgroupPrioRecorder {
     public:
         WorkgroupPrioRecorder(int32_t grpId);
@@ -1496,7 +1513,7 @@ public:
         std::mutex workgroupThreadsMutex_;
     };
     std::shared_ptr<WorkgroupPrioRecorder> GetRecorderByGrpId(int32_t grpId);
-    int32_t ExcuteAudioWorkgroupPrioImprove(int32_t workgroupId,
+    int32_t ExecuteAudioWorkgroupPrioImprove(int32_t workgroupId,
         const std::unordered_map<int32_t, bool> threads, bool &needUpdatePrio);
 
 private:

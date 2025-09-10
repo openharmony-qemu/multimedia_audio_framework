@@ -42,6 +42,7 @@ constexpr int32_t AUDIO_PROC_QOS_TABLE = 7;
 void SetThreadQosLevel(void)
 {
     std::unordered_map<std::string, std::string> payload;
+    payload["groupId"] = std::to_string(AUDIO_PROC_QOS_TABLE);
     payload["pid"] = std::to_string(getpid());
     OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().RequestAuth(payload);
     int32_t ret = OHOS::QOS::SetThreadQos(OHOS::QOS::QosLevel::QOS_USER_INTERACTIVE);

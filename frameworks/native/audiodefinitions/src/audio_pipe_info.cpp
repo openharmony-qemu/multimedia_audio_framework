@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef LOG_TAG
+#define LOG_TAG "AudioPipeInfo"
+#endif
 
 #include "audio_pipe_info.h"
 
@@ -20,12 +23,44 @@
 namespace OHOS {
 namespace AudioStandard {
 
+static std::map<std::string, AudioSampleFormat> formatStrToEnum = {
+    {"s8", SAMPLE_U8},
+    {"s16", SAMPLE_S16LE},
+    {"s24", SAMPLE_S24LE},
+    {"s32", SAMPLE_S32LE},
+    {"s16le", SAMPLE_S16LE},
+    {"s24le", SAMPLE_S24LE},
+    {"s32le", SAMPLE_S32LE},
+};
+
 AudioPipeInfo::AudioPipeInfo()
 {
 }
 
 AudioPipeInfo::~AudioPipeInfo()
 {
+}
+
+void AudioPipeInfo::InitAudioStreamInfo()
+{
+    AUDIO_INFO_LOG("rate %{public}s, channel %{public}s, format %{public}s",
+        moduleInfo_.rate.c_str(), moduleInfo_.channels.c_str(), moduleInfo_.format.c_str());
+    int32_t value = 0;
+    if (!StringConverter(moduleInfo_.rate, value)) {
+        AUDIO_ERR_LOG("error sample rate");
+        value = SAMPLE_RATE_48000;
+    }
+    audioStreamInfo_.samplingRate = static_cast<AudioSamplingRate>(value);
+
+    if (!StringConverter(moduleInfo_.channels, value)) {
+        AUDIO_ERR_LOG("error channels");
+        value = STEREO;
+    }
+    audioStreamInfo_.channels = static_cast<AudioChannel>(value);
+
+    if (formatStrToEnum.count(moduleInfo_.format) > 0) {
+        audioStreamInfo_.format = formatStrToEnum[moduleInfo_.format];
+    }
 }
 
 AudioPipeInfo::AudioPipeInfo(const std::shared_ptr<AudioPipeInfo> pipeInfo)
@@ -40,6 +75,7 @@ AudioPipeInfo::AudioPipeInfo(const std::shared_ptr<AudioPipeInfo> pipeInfo)
     pipeAction_ = pipeInfo->pipeAction_;
     streamDescriptors_ = pipeInfo->streamDescriptors_;
     streamDescMap_ = pipeInfo->streamDescMap_;
+    audioStreamInfo_ = pipeInfo->audioStreamInfo_;
 }
 
 void AudioPipeInfo::Dump(std::string &dumpString)
@@ -89,6 +125,32 @@ std::string AudioPipeInfo::ToString()
     AppendFormat(out, "id %u, adapter %s, name %s",
         id_, adapterName_.c_str(), name_.c_str());
     return out;
+}
+
+bool AudioPipeInfo::ContainStream(uint32_t sessionId) const
+{
+    return (streamDescMap_.find(sessionId) != streamDescMap_.end());
+}
+ 
+void AudioPipeInfo::AddStream(std::shared_ptr<AudioStreamDescriptor> stream)
+{
+    streamDescriptors_.push_back(stream);
+    streamDescMap_[stream->GetSessionId()] = stream;
+}
+ 
+void AudioPipeInfo::RemoveStream(uint32_t sessionId)
+{
+    if (!ContainStream(sessionId)) {
+        return;
+    }
+ 
+    // Both streamdesc data need remove
+    streamDescMap_.erase(sessionId);
+    streamDescriptors_.erase(std::remove_if(streamDescriptors_.begin(), streamDescriptors_.end(),
+        [&sessionId] (const std::shared_ptr<AudioStreamDescriptor> &stream) {
+            return stream->GetSessionId() == sessionId;
+        }),
+        streamDescriptors_.end());
 }
 
 } // AudioStandard

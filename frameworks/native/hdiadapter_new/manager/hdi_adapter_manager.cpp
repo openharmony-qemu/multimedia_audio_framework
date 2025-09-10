@@ -77,12 +77,11 @@ uint32_t HdiAdapterManager::GetId(HdiIdBase base, HdiIdType type, const std::str
 {
     uint32_t id = IdHandler::GetInstance().GetId(base, type, info);
     CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
-    CHECK_AND_RETURN_RET(isResident, id);
-    std::unique_lock<std::mutex> renderLock(renderSinkMtx_);
-    std::unique_lock<std::mutex> captureLock(captureSourceMtx_);
+    std::scoped_lock lock(renderSinkMtx_, captureSourceMtx_);
     if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
         IdHandler::GetInstance().IncInfoIdUseCount(id);
     }
+    CHECK_AND_RETURN_RET(isResident, id);
     AUDIO_INFO_LOG("base: %{public}u, type: %{public}u, info: %{public}s, id: %{public}u", base, type, info.c_str(),
         id);
     IncRefCount(id);
@@ -96,12 +95,11 @@ uint32_t HdiAdapterManager::GetRenderIdByDeviceClass(const std::string &deviceCl
     AUDIO_INFO_LOG("Device class: %{public}s, info: %{public}s, id: %{public}u",
         deviceClass.c_str(), info.c_str(), id);
     CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
-    CHECK_AND_RETURN_RET(isResident, id);
-    std::unique_lock<std::mutex> renderLock(renderSinkMtx_);
-    std::unique_lock<std::mutex> captureLock(captureSourceMtx_);
+    std::scoped_lock lock(renderSinkMtx_, captureSourceMtx_);
     if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
         IdHandler::GetInstance().IncInfoIdUseCount(id);
     }
+    CHECK_AND_RETURN_RET(isResident, id);
     IncRefCount(id);
     return id;
 }
@@ -113,12 +111,11 @@ uint32_t HdiAdapterManager::GetCaptureIdByDeviceClass(const std::string &deviceC
     AUDIO_INFO_LOG("Device class: %{public}s, sourceType: %{public}d, info: %{public}s, id: %{public}u",
         deviceClass.c_str(), sourceType, info.c_str(), id);
     CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
-    CHECK_AND_RETURN_RET(isResident, id);
-    std::unique_lock<std::mutex> renderLock(renderSinkMtx_);
-    std::unique_lock<std::mutex> captureLock(captureSourceMtx_);
+    std::scoped_lock lock(renderSinkMtx_, captureSourceMtx_);
     if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
         IdHandler::GetInstance().IncInfoIdUseCount(id);
     }
+    CHECK_AND_RETURN_RET(isResident, id);
     IncRefCount(id);
     return id;
 }
@@ -127,8 +124,7 @@ void HdiAdapterManager::ReleaseId(uint32_t &id)
 {
     uint32_t tempId = id;
     id = HDI_INVALID_ID;
-    std::unique_lock<std::mutex> renderLock(renderSinkMtx_);
-    std::unique_lock<std::mutex> captureLock(captureSourceMtx_);
+    std::scoped_lock lock(renderSinkMtx_, captureSourceMtx_);
     CHECK_AND_RETURN(tempId != HDI_INVALID_ID && (renderSinks_.count(tempId) || captureSources_.count(tempId)));
     DecRefCount(tempId);
 }
@@ -142,7 +138,7 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterManager::GetRenderSink(uint32_t rend
         return renderSinks_[renderId].sink_;
     }
     if (!tryCreate) {
-        AUDIO_ERR_LOG("no available sink, renderId: %{public}u", renderId);
+        AUDIO_WARNING_LOG("no available sink, renderId: %{public}u", renderId);
         return nullptr;
     }
     AUDIO_INFO_LOG("create sink, renderId: %{public}u", renderId);
@@ -167,7 +163,7 @@ std::shared_ptr<IAudioCaptureSource> HdiAdapterManager::GetCaptureSource(uint32_
         return captureSources_[captureId].source_;
     }
     if (!tryCreate) {
-        AUDIO_ERR_LOG("no available source, captureId: %{public}u", captureId);
+        AUDIO_WARNING_LOG("no available source, captureId: %{public}u", captureId);
         return nullptr;
     }
     AUDIO_INFO_LOG("create source, captureId: %{public}u", captureId);

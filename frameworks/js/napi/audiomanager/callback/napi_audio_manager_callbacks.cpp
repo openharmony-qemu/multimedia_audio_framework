@@ -306,7 +306,6 @@ void NapiAudioManagerCallback::SafeJsCallbackDeviceChangeWork(napi_env env, napi
     napi_handle_scope scope = nullptr;
     napi_open_handle_scope(env, &scope);
     CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
-    AUDIO_INFO_LOG("SafeJsCallbackDeviceChangeWork: safe js callback working.");
 
     do {
         napi_value jsCallback = nullptr;

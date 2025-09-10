@@ -86,6 +86,9 @@ public:
 
     void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
+    void RegisterCurrentDeviceCallback(const std::function<void(bool)> &callback) override;
+    void HandleDeviceCallback(const bool state);
+
 private:
     static uint32_t PcmFormatToBit(AudioSampleFormat format);
     static AudioFormat ConvertToHdiFormat(AudioSampleFormat format);
@@ -115,6 +118,7 @@ private:
     void WriteSmartPAStatusSysEvent(int32_t status);
     void UpdateSinkState(bool started);
     void WaitForDataLinkConnected();
+    void UpdateNearlinkOutputRoute();
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -195,6 +199,7 @@ private:
     std::mutex dataConnectionMutex_;
     bool isDataLinkConnected_ = false;
     std::condition_variable dataConnectionCV_;
+    std::function<void(bool)> deviceCallback_ = nullptr;
 };
 
 } // namespace AudioStandard
