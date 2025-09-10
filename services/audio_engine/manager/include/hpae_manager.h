@@ -200,7 +200,8 @@ public:
         const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType) override;
     void RemoveCaptureInjector(
         const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType) override;
-    int32_t PeekAudioData(const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize) override;
+    int32_t PeekAudioData(
+        const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo) override;
 private:
     int32_t CloseOutAudioPort(std::string sinkName);
     int32_t CloseInAudioPort(std::string sourceName);
@@ -292,6 +293,7 @@ private:
     std::unordered_map<std::string, std::string> deviceDumpSinkInfoMap_;
     std::unordered_map<HpaeMsgCode, std::function<void(const std::any &)>> handlers_;
     std::string effectLiveState_ = "";
+    std::mutex mutex_;
 };
 
 }  // namespace HPAE

@@ -40,6 +40,7 @@ ohos_shared_library("audio_engine_utils") {
     "dfx",
     "buffer",
     "manager/include",
+    "monitor/include",
     "../audio_service/common/include",
     "../audio_service/server/include",
     "../../interfaces/inner_api/native/audiocommon/include",
@@ -53,6 +54,7 @@ ohos_shared_library("audio_engine_utils") {
   ]
 
   deps = [
+    ":audio_engine_monitor",
     "../audio_service:audio_common",
     "../../frameworks/native/audioutils:audio_utils",
   ]

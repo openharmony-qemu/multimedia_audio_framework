@@ -22,6 +22,7 @@
 #include "test_case_common.h"
 #include "audio_errors.h"
 #include "hpae_format_convert.h"
+#include "manager/hdi_adapter_manager.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
@@ -283,6 +284,35 @@ HWTEST_F(HpaeSourceInputNodeTest, testDoprocess_002, TestSize.Level0)
     IAudioSourceAttr attr;
     attr.filePath = g_rootCapturerPath;
     EXPECT_EQ(hpaeSourceInputNode->CapturerSourceInit(attr), SUCCESS);
+    hpaeSourceInputNode->DoProcess();
+    EXPECT_NE(hpaeSourceInputNode, nullptr);
+}
+
+HWTEST_F(HpaeSourceInputNodeTest, testDoprocess_003, TestSize.Level0)
+{
+    std::vector<HpaeNodeInfo> vec;
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
+    nodeInfo.sourceInputNodeType = HPAE_SOURCE_MIC_EC;
+    vec.push_back(nodeInfo);
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_EC;
+    vec.push_back(nodeInfo);
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(vec);
+        std::string deviceClass = "file_io";
+    std::string deviceNetId = "LocalDevice";
+    SourceType sourceType = SOURCE_TYPE_MIC;
+    std::string sourceName = "mic";
+    hpaeSourceInputNode->GetCapturerSourceInstance(deviceClass, deviceNetId, sourceType, sourceName);
+    IAudioSourceAttr attr;
+    attr.filePath = g_rootCapturerPath;
+    hpaeSourceInputNode->CapturerSourceInit(attr);
+
+    hpaeSourceInputNode->SetSourceInputNodeType(HpaeSourceInputNodeType::HPAE_SOURCE_OFFLOAD);
     hpaeSourceInputNode->DoProcess();
     EXPECT_NE(hpaeSourceInputNode, nullptr);
 }

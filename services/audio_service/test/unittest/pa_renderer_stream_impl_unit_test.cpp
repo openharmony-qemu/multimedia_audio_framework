@@ -918,5 +918,21 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_051, TestSize.Level1)
     ReleasePaPort();
 #endif
 }
+
+/**
+ * @tc.name  : Test Pause.
+ * @tc.type  : FUNC
+ * @tc.number: PaRenderer_052
+ * @tc.desc  : Test Pause.
+ */
+HWTEST_F(PaRendererStreamUnitTest, PaRenderer_052, TestSize.Level1)
+{
+    auto unit = CreatePaRendererStreamImpl();
+    unit->paStream_ = nullptr;
+    unit->offloadEnable_ = false;
+    bool isStandby = false;
+    int32_t ret = unit->Pause(isStandby);
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+}
 }
 }

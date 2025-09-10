@@ -20,7 +20,7 @@
 #include "audio_policy_config_parser.h"
 #include "audio_source_strategy_parser.h"
 #include "audio_policy_utils.h"
-#include "audio_policy_service.h"
+#include "audio_core_service.h"
 #include "audio_ec_manager.h"
 
 namespace OHOS {
@@ -31,6 +31,7 @@ static const unsigned int BUFFER_CALC_20MS = 20;
 static const char* MAX_RENDERERS_NAME = "maxRenderers";
 static const char* MAX_CAPTURERS_NAME = "maxCapturers";
 static const char* MAX_FAST_RENDERERS_NAME = "maxFastRenderers";
+static const char* OFFLOAD_INNER_CAPTURE_SUPPORT_NAME = "offloadInnerCaptureSupport";
 
 const int32_t DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES = 128;
 const int32_t DEFAULT_MAX_INPUT_NORMAL_INSTANCES = 16;
@@ -166,7 +167,7 @@ void AudioPolicyConfigManager::OnVoipConfigParsed(bool enableFastVoip)
 void AudioPolicyConfigManager::OnUpdateAnahsSupport(std::string anahsShowType)
 {
     AUDIO_INFO_LOG("show type: %{public}s", anahsShowType.c_str());
-    AudioPolicyService::GetAudioPolicyService().OnUpdateAnahsSupport(anahsShowType);
+    AudioCoreService::GetCoreService()->OnUpdateAnahsSupport(anahsShowType);
 }
 
 void AudioPolicyConfigManager::OnUpdateEac3Support(bool isSupported)
@@ -325,6 +326,24 @@ int32_t AudioPolicyConfigManager::GetMaxFastRenderersInstances()
         return convertValue;
     }
     return DEFAULT_MAX_FAST_NORMAL_INSTANCES;
+}
+
+bool AudioPolicyConfigManager::IsSupportInnerCaptureOffload()
+{
+    if (isSupportInnerCaptureOffload_.has_value()) {
+        return isSupportInnerCaptureOffload_.value();
+    }
+
+    for (const auto& commonConfig : globalConfigs_.commonConfigs_) {
+        if (commonConfig.name_ != OFFLOAD_INNER_CAPTURE_SUPPORT_NAME) {
+            continue;
+        }
+        AUDIO_INFO_LOG("Offload capture supported value is %{public}s", commonConfig.value_.c_str());
+        isSupportInnerCaptureOffload_ = (commonConfig.value_ == "true");
+        return isSupportInnerCaptureOffload_.value();
+    }
+    isSupportInnerCaptureOffload_ = false;
+    return isSupportInnerCaptureOffload_.value();
 }
 
 int32_t AudioPolicyConfigManager::GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId,
@@ -736,25 +755,42 @@ void AudioPolicyConfigManager::UpdateBasicStreamInfo(std::shared_ptr<AudioStream
     }
 }
 
+std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetSuitableStreamPropInfo(
+    std::list<std::shared_ptr<PipeStreamPropInfo>> &dynamicStreamPropInfos, uint32_t sampleRate)
+{
+    // Firstly match same channels, and then match sampleRate.The result is greater than and closest to target.
+    dynamicStreamPropInfos.sort([](const auto &a, const auto &b) {
+        if (a == nullptr) {
+            return true;
+        } else if (b == nullptr) {
+            return false;
+        } else {
+            return a->sampleRate_ < b->sampleRate_;
+        }
+    });
+
+    for (auto &streamProp : dynamicStreamPropInfos) {
+        CHECK_AND_RETURN_RET(!(streamProp && streamProp->sampleRate_ >= sampleRate), streamProp);
+    }
+
+    return dynamicStreamPropInfos.back();
+}
+
 std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetDynamicStreamPropInfoFromPipe(
     std::shared_ptr<AdapterPipeInfo> &info, AudioSampleFormat format, uint32_t sampleRate, AudioChannel channels)
 {
     std::unique_lock<std::mutex> lock(info->dynamicMtx_);
     CHECK_AND_RETURN_RET(info && !info->dynamicStreamPropInfos_.empty(), nullptr);
 
-    std::shared_ptr<PipeStreamPropInfo> defaultStreamProp = nullptr;
     AUDIO_INFO_LOG("use dynamic streamProp");
+    std::list<std::shared_ptr<PipeStreamPropInfo>> channelMatchInfos;
     for (auto &streamProp : info->dynamicStreamPropInfos_) {
-        CHECK_AND_CONTINUE(streamProp && streamProp->sampleRate_ >= sampleRate);
-        CHECK_AND_RETURN_RET(streamProp->sampleRate_ != sampleRate, streamProp);
-        // find min sampleRate bigger than music sampleRate, eg: 44100 -> 48000 when has 32000, 48000, 96000, 192000
-        CHECK_AND_CONTINUE(defaultStreamProp == nullptr || (defaultStreamProp != nullptr &&
-            defaultStreamProp->sampleRate_ > streamProp->sampleRate_));
-        defaultStreamProp = streamProp;
+        CHECK_AND_CONTINUE(streamProp && streamProp->channels_ == channels);
+        channelMatchInfos.push_back(streamProp);
     }
-    CHECK_AND_RETURN_RET_LOG(defaultStreamProp != nullptr, info->dynamicStreamPropInfos_.back(),
-        "not match any streamProp");
-    return defaultStreamProp;
+
+    return channelMatchInfos.size() == 0 ? GetSuitableStreamPropInfo(info->dynamicStreamPropInfos_, sampleRate)
+        : GetSuitableStreamPropInfo(channelMatchInfos, sampleRate);
 }
 
 std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoFromPipe(

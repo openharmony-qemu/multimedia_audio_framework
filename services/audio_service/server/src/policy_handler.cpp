@@ -215,6 +215,14 @@ int32_t PolicyHandler::GetMaxRendererInstances()
     return ret;
 }
 
+bool PolicyHandler::IsSupportInnerCaptureOffload()
+{
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr!");
+    bool ret = false;
+    iPolicyProvider_->IsSupportInnerCaptureOffload(ret);
+    return ret;
+}
+
 int32_t PolicyHandler::NotifyCapturerRemoved(uint64_t sessionId)
 {
     CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr!");
@@ -232,6 +240,18 @@ int32_t PolicyHandler::UnloadModernInnerCapSink(int32_t innerCapId)
 {
     CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr!");
     return iPolicyProvider_->UnloadModernInnerCapSink(innerCapId);
+}
+
+int32_t PolicyHandler::LoadModernOffloadCapSource()
+{
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr!");
+    return iPolicyProvider_->LoadModernOffloadCapSource();
+}
+
+int32_t PolicyHandler::UnloadModernOffloadCapSource()
+{
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr!");
+    return iPolicyProvider_->UnloadModernOffloadCapSource();
 }
 #endif
 

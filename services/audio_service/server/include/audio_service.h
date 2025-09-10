@@ -139,6 +139,7 @@ public:
     void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
+    int32_t UnloadModernOffloadCapSource();
 #endif
     void RenderersCheckForAudioWorkgroup(int32_t pid);
     void SendInterruptEventToAudioService(uint32_t sessionId, InterruptEventInternal interruptEvent);
@@ -158,8 +159,8 @@ public:
     bool IsBackgroundCaptureAllowed(uint32_t sessionId);
     bool UpdateBackgroundCaptureMap(uint32_t sessionId, bool res);
     void RemoveBackgroundCaptureMap(uint32_t sessionId);
-    bool NeedRemoveBackgroundCaptureMap(uint32_t sessionId);
-    
+    bool NeedRemoveBackgroundCaptureMap(uint32_t sessionId, CapturerState capturerState);
+    int32_t GetPrivacyType(const uint32_t sessionId, AudioPrivacyType &privacyType);
 private:
     AudioService();
     void DelayCallReleaseEndpoint(std::string endpointName);
@@ -185,7 +186,7 @@ private:
     bool ShouldBeInnerCap(const AudioProcessConfig &rendererConfig, std::set<int32_t> &beCapIds);
     bool CheckShouldCap(const AudioProcessConfig &rendererConfig, int32_t innerCapId);
 #endif
-    bool ShouldBeDualTone(const AudioProcessConfig &config);
+    bool ShouldBeDualTone(const AudioProcessConfig &config, const std::string &dupSinkName);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t OnInitInnerCapList(int32_t innerCapId); // for first InnerCap filter take effect.
     int32_t OnUpdateInnerCapList(int32_t innerCapId); // for some InnerCap filter has already take effect.
@@ -200,6 +201,21 @@ private:
     float GetSystemVolume();
     void UpdateSystemVolume(AudioStreamType streamType, float volume);
     void UpdateSessionMuteStatus(const uint32_t sessionId, const bool muteFlag);
+    std::shared_ptr<RendererInServer> GetRendererInServerBySessionId(const uint32_t sessionId);
+    int32_t GetPrivacyTypeForNormalStream(const uint32_t sessionId, AudioPrivacyType &privacyType);
+
+#ifdef SUPPORT_LOW_LATENCY
+    sptr<AudioProcessInServer> GetProcessInServerBySessionId(const uint32_t sessionId);
+    int32_t GetPrivacyTypeForFastStream(const uint32_t sessionId, AudioPrivacyType &privacyType);
+    int32_t EnableDualStreamForFastStream(const uint32_t sessionId, const std::string &dupSinkName);
+    int32_t DisableDualStreamForFastStream(const uint32_t sessionId);
+    std::vector<std::pair<sptr<AudioProcessInServer>, std::shared_ptr<AudioEndpoint>>> GetLinkedPairInner(
+        const uint32_t sessionId);
+    void HandleProcessInserverDualStreamDisableInner(AudioEndpoint &endpoint);
+    void HandleProcessInserverDualStreamEnableInner(AudioEndpoint &endpoint, const std::string &dupSinkName);
+#endif
+    int32_t EnableDualStreamForNormalStream(const uint32_t sessionId, const std::string &dupSinkName);
+    int32_t DisableDualStreamForNormalStream(const uint32_t sessionId);
 private:
     std::mutex foregroundSetMutex_;
     std::set<std::string> foregroundSet_;
@@ -222,12 +238,12 @@ private:
 #ifdef SUPPORT_LOW_LATENCY
     std::vector<std::pair<sptr<AudioProcessInServer>, std::shared_ptr<AudioEndpoint>>> linkedPairedList_;
     std::map<std::string, std::shared_ptr<AudioEndpoint>> endpointList_;
+    std::unordered_map<uint32_t, wptr<AudioProcessInServer>> allProcessInServer_;
 #endif
 
     // for inner-capturer
     bool isRegisterCapturerFilterListened_ = false;
     bool isDefaultAdapterEnable_ = false;
-    uint32_t workingDualToneId_ = 0; // invalid sessionId
     AudioPlaybackCaptureConfig workingConfig_;
     std::unordered_map<int32_t, AudioPlaybackCaptureConfig> workingConfigs_;
 
@@ -238,8 +254,6 @@ private:
     std::unordered_map<int32_t, std::vector<std::weak_ptr<RendererInServer>>> filteredRendererMap_ = {};
     std::map<uint32_t, std::weak_ptr<RendererInServer>> allRendererMap_ = {};
     std::map<uint32_t, std::weak_ptr<CapturerInServer>> allCapturerMap_ = {};
-
-    std::vector<std::weak_ptr<RendererInServer>> filteredDualToneRendererMap_ = {};
 
     std::mutex mutedSessionsMutex_;
     std::set<uint32_t> mutedSessions_ = {};
@@ -258,6 +272,8 @@ private:
     std::map<uint32_t, bool> muteStateMap_{};
     std::mutex musicOrVoipSystemVolumeMutex_;
     float musicOrVoipSystemVolume_ = 0.0f;
+
+    std::mutex dualStreamMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

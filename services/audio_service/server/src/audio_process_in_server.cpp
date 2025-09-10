@@ -190,9 +190,7 @@ int32_t AudioProcessInServer::RequestHandleInfo()
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
     CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_ILLEGAL_STATE, "buffer not inited!");
 
-    for (size_t i = 0; i < listenerList_.size(); i++) {
-        listenerList_[i]->OnUpdateHandleInfo(this);
-    }
+    // Check update handle info usage later
     return SUCCESS;
 }
 
@@ -212,12 +210,11 @@ bool AudioProcessInServer::CheckBGCapturer()
         return true;
     }
 
-    if (AudioService::GetInstance()->IsStreamInterruptResume(sessionId_) &&
-        AudioService::GetInstance()->IsBackgroundCaptureAllowed(sessionId_)) {
+    if (AudioService::GetInstance()->IsStreamInterruptResume(sessionId_)) {
         AUDIO_WARNING_LOG("Stream:%{public}u Result:success Reason:resume", sessionId_);
         return true;
     }
-    CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
+    CHECK_AND_RETURN_RET_LOG(Util::IsBackgroundSourceType(processConfig_.capturerInfo.sourceType) &&
         AudioService::GetInstance()->InForegroundList(processConfig_.appInfo.appUid), false, "Verify failed");
 
     AudioService::GetInstance()->UpdateForegroundState(tokenId, true);
@@ -270,7 +267,7 @@ bool AudioProcessInServer::TurnOffMicIndicator(CapturerState capturerState)
     };
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
 
-    if (AudioService::GetInstance()->NeedRemoveBackgroundCaptureMap(sessionId_)) {
+    if (AudioService::GetInstance()->NeedRemoveBackgroundCaptureMap(sessionId_, capturerState)) {
         AudioService::GetInstance()->RemoveBackgroundCaptureMap(sessionId_);
     }
     if (isMicIndicatorOn_) {
@@ -341,7 +338,7 @@ int32_t AudioProcessInServer::StartInner()
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
     AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId_, processConfig_.appInfo.appTokenId);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_START);
-    AUDIO_INFO_LOG("Start in server success!");
+    HILOG_COMM_INFO("Start in server success!");
     return SUCCESS;
 }
 
@@ -380,7 +377,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, false);
     AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(sessionId_);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_STOP);
-    AUDIO_PRERELEASE_LOGI("Pause in server success!");
+    HILOG_COMM_INFO("Pause in server success!");
     return SUCCESS;
 }
 
@@ -408,7 +405,7 @@ int32_t AudioProcessInServer::Resume()
     CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START, false);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_START);
-    AUDIO_PRERELEASE_LOGI("Resume in server success!");
+    HILOG_COMM_INFO("Resume in server success!");
     return SUCCESS;
 }
 
@@ -452,7 +449,7 @@ int32_t AudioProcessInServer::Stop(int32_t stage)
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, false);
     AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(sessionId_);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_STOP);
-    AUDIO_INFO_LOG("Stop in server success!");
+    HILOG_COMM_INFO("Stop in server success!");
     return SUCCESS;
 }
 
@@ -476,7 +473,7 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, false);
     ret = releaseCallback_->OnProcessRelease(this, isSwitchStream);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_RELEASE);
-    AUDIO_INFO_LOG("notify service release result: %{public}d", ret);
+    HILOG_COMM_INFO("notify service release result: %{public}d", ret);
     return SUCCESS;
 }
 
@@ -498,6 +495,7 @@ void ProcessDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
 
 int32_t AudioProcessInServer::RegisterProcessCb(const sptr<IRemoteObject>& object)
 {
+    std::lock_guard<std::mutex> lock(registerProcessCbLock_);
     sptr<IProcessCb> processCb = iface_cast<IProcessCb>(object);
     CHECK_AND_RETURN_RET_LOG(processCb != nullptr, ERR_INVALID_PARAM, "RegisterProcessCb obj cast failed");
     deathRecipient_ = new ProcessDeathRecipient(this, releaseCallback_);

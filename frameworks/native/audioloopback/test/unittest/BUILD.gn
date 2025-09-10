@@ -37,6 +37,8 @@ ohos_unittest("audio_loopback_unit_test") {
 
   deps = [
     "../../../../../services/audio_service:audio_client",
+    "../../../audiocapturer:audio_capturer",
+    "../../../audiorenderer:audio_renderer",
     "../../../audioloopback:audio_loopback",
   ]
 
@@ -45,6 +47,7 @@ ohos_unittest("audio_loopback_unit_test") {
     "access_token:libnativetoken_shared",
     "access_token:libtokensetproc_shared",
     "c_utils:utils",
+    "googletest:gmock",
     "hilog:libhilog",
     "init:libbegetutil",
     "ipc:ipc_single",

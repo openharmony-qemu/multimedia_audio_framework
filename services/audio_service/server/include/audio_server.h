@@ -223,7 +223,7 @@ public:
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime) override;
 
     int32_t GenerateSessionId(uint32_t &sessionId) override;
-    
+
     int32_t NotifyAccountsChanged() override;
 
     int32_t NotifySettingsDataReady() override;
@@ -323,7 +323,6 @@ private:
     bool IsNormalIpcStream(const AudioProcessConfig &config) const;
     void RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
         const std::string &extraSceneType);
-    int32_t SetSystemVolumeToEffect(const AudioStreamType streamType, float volume);
     bool IsFastBlocked(int32_t uid, PlayerType playerType);
     int32_t SetVolumeInfoForEnhanceChain(const AudioStreamType &streamType);
     int32_t SetMicrophoneMuteForEnhanceChain(const bool &isMute);
@@ -356,6 +355,7 @@ private:
     const std::string GetAudioParameterInner(const std::string &key);
     const std::string GetAudioParameterInner(const std::string& networkId, const AudioParamKey key,
         const std::string& condition);
+    const std::string GetVAParameter(const std::string &key);
     int32_t SetAudioSceneInner(AudioScene audioScene, BluetoothOffloadState a2dpOffloadFlag, bool scoExcludeFlag);
     sptr<IRemoteObject> CreateAudioProcessInner(const AudioProcessConfig &config, int32_t &errorCode,
         const AudioPlaybackCaptureConfig &filterConfig);
@@ -363,6 +363,7 @@ private:
         const std::vector<std::string> &subKeys, std::vector<std::pair<std::string, std::string>> &result);
     int32_t ImproveAudioWorkgroupPrio(int32_t pid, const std::unordered_map<int32_t, bool> &threads) override;
     int32_t RestoreAudioWorkgroupPrio(int32_t pid, const std::unordered_map<int32_t, int32_t> &threads) override;
+    int32_t GetPrivacyTypeAudioServer(uint32_t sessionId, int32_t &privacyType, int32_t &ret) override;
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t VASSISTANT_UID = 3001;
@@ -400,6 +401,7 @@ private:
     std::mutex streamLifeCycleMutex_ {};
     // Temporary resolution to avoid pcm driver problem
     std::map<std::string, std::string> usbInfoMap_;
+    std::mutex mtxGetUsbParameter_;
 
     std::atomic<bool> isAudioPolicyReady_ = false;
     std::mutex isAudioPolicyReadyMutex_;

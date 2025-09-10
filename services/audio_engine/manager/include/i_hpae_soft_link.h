@@ -22,7 +22,7 @@ namespace HPAE {
 
 enum class SoftLinkMode : int32_t {
     HEARING_AID = 0,
-    OFFLOAD_INNER_CAP = 1,
+    OFFLOADINNERCAP_AID = 1,
 };
 
 class IHpaeSoftLink {
@@ -33,6 +33,10 @@ public:
     virtual int32_t Stop() = 0;
     virtual int32_t Release() = 0;
     virtual int32_t SetVolume(float volume) = 0;
+    virtual int32_t SetVolumeMute(bool isMute) = 0;
+    virtual int32_t SetVolumeDuckFactor(float duckFactor) = 0;
+    virtual int32_t SetVolumeLowPowerFactor(float lowPowerFactor) = 0;
+    virtual int32_t SetLoudnessGain(float loudnessGain) = 0;
 };
 } // namespace HPAE
 } // namespace AudioStandard

@@ -55,6 +55,8 @@ ohos_fuzztest("AudioPolicyConfigManagerFuzzTest") {
     "eventhandler:libeventhandler",
   ]
 
+  defines = []
+
   if (is_emulator) {
     defines += [ "IS_EMULATOR" ]
   }

@@ -91,7 +91,7 @@ void AudioPerformanceMonitor::DeleteSilenceMonitor(uint32_t sessionId)
 void AudioPerformanceMonitor::ReportWriteSlow(AdapterType adapterType, int32_t overtimeMs)
 {
     std::lock_guard<std::mutex> lock(monitorMutex_);
-    AUDIO_WARNING_LOG("AdapterType %{public}d, PipeType %{public}d, write time interval %{public}d ms! overTime!",
+    HILOG_COMM_WARN("AdapterType %{public}d, PipeType %{public}d, write time interval %{public}d ms! overTime!",
         adapterType, PIPE_TYPE_MAP[adapterType], overtimeMs);
     AUTO_CTRACE("Fast pipe OVERTIME_EVENT, overtimeMs: %d, pipeType %d, adapterType: %d", overtimeMs,
         PIPE_TYPE_MAP[adapterType], adapterType);
@@ -179,7 +179,7 @@ void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isSilence, uin
                 printStr += silenceDetectMap_[sessionId].historyStateDeque.front() ? "_" : "-";
                 silenceDetectMap_[sessionId].historyStateDeque.pop_front();
             }
-            AUDIO_WARNING_LOG("record %{public}d state, pipeType %{public}d for last %{public}zu times: %{public}s",
+            HILOG_COMM_WARN("record %{public}d state, pipeType %{public}d for last %{public}zu times: %{public}s",
                 sessionId, silenceDetectMap_[sessionId].pipeType, MAX_RECORD_QUEUE_SIZE, printStr.c_str());
             AUTO_CTRACE("Audio FWK detect SILENCE_EVENT, pipeType %d, PreState: %s",
                 silenceDetectMap_[sessionId].pipeType, printStr.c_str());

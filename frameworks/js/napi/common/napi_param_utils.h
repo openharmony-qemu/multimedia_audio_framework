@@ -31,6 +31,7 @@
 #include "audio_capturer.h"
 #include "audio_system_manager.h"
 #include "audio_stream_manager.h"
+#include "audio_device_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {

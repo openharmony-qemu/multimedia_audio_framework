@@ -36,6 +36,7 @@ namespace AudioStandard {
 
 static constexpr int32_t NS_PER_MS = 1000000;
 static constexpr int32_t MS_PER_S = 1000;
+static constexpr int32_t NEARLINK_API_VERSION = 20;
 static const char* SETTINGS_DATA_FIELD_VALUE = "VALUE";
 static const char* SETTINGS_DATA_FIELD_KEYWORD = "KEYWORD";
 static const char* PREDICATES_STRING = "settings.general.device_name";
@@ -43,6 +44,7 @@ static const char* SETTINGS_DATA_BASE_URI =
     "datashare:///com.ohos.settingsdata/entry/settingsdata/SETTINGSDATA?Proxy=true";
 static const char* SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settingsdata.DataAbility";
 static const char* AUDIO_SERVICE_PKG = "audio_manager_service";
+static const std::string NEARLINK_LIST = "audio_nearlink_list";
 
 std::map<std::string, ClassType> AudioPolicyUtils::portStrToEnum = {
     {PRIMARY_SPEAKER, TYPE_PRIMARY},
@@ -155,7 +157,7 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
         ErasePreferredDeviceByType(preferredType);
     }
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Set preferredType %{public}d failed, ret: %{public}d", preferredType, ret);
+        HILOG_COMM_INFO("Set preferredType %{public}d failed, ret: %{public}d", preferredType, ret);
     }
     return ret;
 }
@@ -768,8 +770,27 @@ bool AudioPolicyUtils::IsBundleNameInList(const std::string &bundleName, const s
 {
     bool isBundleNameExist = false;
     CHECK_AND_RETURN_RET_LOG(queryBundleNameListCallback_ != nullptr, false, "queryBundleNameListCallback_ is nullptr");
-    queryBundleNameListCallback_->OnQueryBundleNameIsInList(listType, bundleName, isBundleNameExist);
+    queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName, listType, isBundleNameExist);
     return isBundleNameExist;
+}
+
+bool AudioPolicyUtils::IsSupportedNearlink(const std::string &bundleName, int32_t apiVersion, bool hasSystemPermission)
+{
+    return hasSystemPermission ||
+        (apiVersion >= NEARLINK_API_VERSION && !IsBundleNameInList(bundleName, NEARLINK_LIST));
+}
+
+bool AudioPolicyUtils::IsWirelessDevice(DeviceType deviceType)
+{
+    switch (deviceType) {
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_NEARLINK:
+        case DEVICE_TYPE_NEARLINK_IN:
+            return true;
+        default:
+            return false;
+    }
 }
 
 } // namespace AudioStandard

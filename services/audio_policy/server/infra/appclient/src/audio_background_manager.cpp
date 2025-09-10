@@ -70,14 +70,14 @@ bool AudioBackgroundManager::IsAllowedPlayback(const int32_t &uid, const int32_t
     if (!FindKeyInMap(pid)) {
         AppState appState;
         appState.isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
-        InsertIntoAppStatesMap(pid, appState);
+        InsertIntoAppStatesMap(pid, uid, appState);
     }
 
     AppState &appState = appStatesMap_[pid];
     AUDIO_INFO_LOG("appStatesMap_ start pid: %{public}d with hasSession: %{public}d, isBack: %{public}d, "
         "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
         appState.hasBackTask, appState.isFreeze);
-    if (appState.isBack) {
+    if (appState.isBack && !appState.isSystem) {
         bool mute = appState.hasBackTask ? false : (appState.isBinder ? true : false);
         if (!appState.hasSession) {
             // for media
@@ -105,7 +105,7 @@ void AudioBackgroundManager::NotifyAppStateChange(const int32_t uid, const int32
             AppState appState;
             appState.isBack = isBack;
             appState.isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
-            InsertIntoAppStatesMap(pid, appState);
+            InsertIntoAppStatesMap(pid, uid, appState);
         }
         return;
     }
@@ -134,7 +134,6 @@ void AudioBackgroundManager::NotifyAppStateChange(const int32_t uid, const int32
         AUDIO_INFO_LOG("OnBackground with uid: %{public}d", uid);
         backgroundMuteListener_->OnBackgroundMute(uid);
     }
-    WriteAppStateChangeSysEvent(pid, appStatesMap_[pid], true);
 }
 
 void AudioBackgroundManager::NotifyBackgroundTaskStateChange(const int32_t uid, const int32_t pid, bool hasBackgroundTask)
@@ -144,7 +143,8 @@ void AudioBackgroundManager::NotifyBackgroundTaskStateChange(const int32_t uid, 
         AppState appState;
         appState.hasBackTask = hasBackgroundTask;
         appState.isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
-        InsertIntoAppStatesMap(pid, appState);
+        InsertIntoAppStatesMap(pid, uid, appState);
+        WriteAppStateChangeSysEvent(pid, appStatesMap_[pid], true);
     } else {
         AppState &appState = appStatesMap_[pid];
         CHECK_AND_RETURN(appState.hasBackTask != hasBackgroundTask);
@@ -155,8 +155,8 @@ void AudioBackgroundManager::NotifyBackgroundTaskStateChange(const int32_t uid, 
         if (appState.hasBackTask && !appState.isFreeze) {
             streamCollector_.HandleBackTaskStateChange(uid, appState.hasSession);
         }
+        WriteAppStateChangeSysEvent(pid, appStatesMap_[pid], true);
     }
-    WriteAppStateChangeSysEvent(pid, appStatesMap_[pid], true);
 }
 
 int32_t AudioBackgroundManager::NotifySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession)
@@ -166,7 +166,8 @@ int32_t AudioBackgroundManager::NotifySessionStateChange(const int32_t uid, cons
         AppState appState;
         appState.hasSession = hasSession;
         appState.isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
-        InsertIntoAppStatesMap(pid, appState);
+        InsertIntoAppStatesMap(pid, uid, appState);
+        WriteAppStateChangeSysEvent(pid, appStatesMap_[pid], true);
     } else {
         AppState &appState = appStatesMap_[pid];
         CHECK_AND_RETURN_RET(appState.hasSession != hasSession, SUCCESS);
@@ -175,8 +176,8 @@ int32_t AudioBackgroundManager::NotifySessionStateChange(const int32_t uid, cons
             "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
             appState.hasBackTask, appState.isFreeze);
         HandleSessionStateChange(uid, pid);
+        WriteAppStateChangeSysEvent(pid, appStatesMap_[pid], true);
     }
-    WriteAppStateChangeSysEvent(pid, appStatesMap_[pid], true);
     return SUCCESS;
 }
 
@@ -205,7 +206,7 @@ int32_t AudioBackgroundManager::NotifyFreezeStateChange(const std::set<int32_t> 
         if (!FindKeyInMap(pid)) {
             AppState appState;
             appState.isFreeze = isFreeze;
-            InsertIntoAppStatesMap(pid, appState);
+            InsertIntoAppStatesMapWithoutUid(pid, appState);
         } else {
             AppState &appState = appStatesMap_[pid];
             CHECK_AND_RETURN_RET(appState.isFreeze != isFreeze, SUCCESS);
@@ -216,7 +217,6 @@ int32_t AudioBackgroundManager::NotifyFreezeStateChange(const std::set<int32_t> 
                 appState.hasBackTask, appState.isFreeze);
             HandleFreezeStateChange(pid, isFreeze);
         }
-        WriteAppStateChangeSysEvent(pid, appStatesMap_[pid], true);
     }
     return SUCCESS;
 }
@@ -235,7 +235,7 @@ int32_t AudioBackgroundManager::ResetAllProxy()
 void AudioBackgroundManager::HandleFreezeStateChange(const int32_t pid, bool isFreeze)
 {
     AppState& appState = appStatesMap_[pid];
-    if (isFreeze) {
+    if (isFreeze && !appState.isSystem) {
         if (!appState.hasBackTask) {
             streamCollector_.HandleFreezeStateChange(pid, true, appState.hasSession);
         }
@@ -264,12 +264,25 @@ void AudioBackgroundManager::WriteAppStateChangeSysEvent(int32_t pid, AppState a
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
-void AudioBackgroundManager::InsertIntoAppStatesMap(int32_t pid, AppState appState)
+void AudioBackgroundManager::InsertIntoAppStatesMapWithoutUid(int32_t pid, AppState appState)
 {
+    int32_t uid = 0;
+    std::string appBundleName = "";
+    appMgrClient_->GetBundleNameByPid(pid, appBundleName, uid);
+    appState.isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
     appStatesMap_.insert(std::make_pair(pid, appState));
     AUDIO_INFO_LOG("appStatesMap_ add pid: %{public}d with hasSession: %{public}d, isBack: %{public}d, "
-        "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
-        appState.hasBackTask, appState.isFreeze);
+        "hasBackgroundTask: %{public}d, isFreeze: %{public}d, isSystem: %{public}d", pid, appState.hasSession,
+        appState.isBack, appState.hasBackTask, appState.isFreeze, appState.isSystem);
+}
+
+void AudioBackgroundManager::InsertIntoAppStatesMap(int32_t pid, int32_t uid, AppState appState)
+{
+    appState.isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
+    appStatesMap_.insert(std::make_pair(pid, appState));
+    AUDIO_INFO_LOG("appStatesMap_ add pid: %{public}d with hasSession: %{public}d, isBack: %{public}d, "
+        "hasBackgroundTask: %{public}d, isFreeze: %{public}d, isSystem: %{public}d", pid, appState.hasSession,
+        appState.isBack, appState.hasBackTask, appState.isFreeze, appState.isSystem);
 }
 
 void AudioBackgroundManager::RecoryAppState()

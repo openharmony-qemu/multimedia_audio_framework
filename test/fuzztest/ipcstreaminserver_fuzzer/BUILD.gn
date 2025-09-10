@@ -24,6 +24,7 @@ ohos_fuzztest("IpcStreamInServerFuzzTest") {
     "../../../frameworks/native/audioschedule/include",
     "../../../services/audio_service/common/include/dfx",
     "../../../services/audio_service/server/include",
+    "../../../services/audio_engine/manager/include",
   ]
 
   cflags = [

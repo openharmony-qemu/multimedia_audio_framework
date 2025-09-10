@@ -319,5 +319,20 @@ HWTEST(AudioUtilsUnitTest, XperfAdapterNeedNotifyXperf_004, TestSize.Level1)
 {
     EXPECT_EQ(XperfAdapter::GetInstance().NeedNotifyXperf(STREAM_USAGE_NOTIFICATION_RINGTONE), false);
 }
+
+/**
+ * @tc.name  : Test CalculatePcmSizeFromDurationCeiling API
+ * @tc.type  : FUNC
+ * @tc.number: CalculatePcmSizeFromDurationCeiling
+ * @tc.desc  : Test CalculatePcmSizeFromDurationCeiling.
+ */
+HWTEST(AudioUtilsUnitTest, CalculatePcmSizeFromDurationCeiling, TestSize.Level1)
+{
+    EXPECT_EQ(Util::CalculatePcmSizeFromDurationCeiling(20ms, 48000, 4), 3840);
+
+    EXPECT_EQ(Util::CalculatePcmSizeFromDurationCeiling(1ns, 48000, 4), 4);
+
+    EXPECT_EQ(Util::CalculatePcmSizeFromDurationCeiling(20ms + 1ns, 48000, 4), 3844);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -51,9 +51,11 @@ public:
     void DeInit();
     void RecoveryPreferredDevices();
     void RecoverExcludedOutputDevices();
+    int32_t ConnectVirtualDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
 
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors,
+        const int32_t audioDeviceSelectMode = 0);
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
     int32_t ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
@@ -82,8 +84,8 @@ private:
     // selectoutputdevice
     int32_t SelectOutputDeviceForFastInner(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
-    int32_t SetRenderDeviceForUsage(StreamUsage streamUsage, std::shared_ptr<AudioDeviceDescriptor> desc);
-    int32_t ConnectVirtualDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
+    int32_t SetRenderDeviceForUsage(StreamUsage streamUsage, std::shared_ptr<AudioDeviceDescriptor> desc,
+        const int32_t uid = -1);
     void HandleFetchDeviceChange(const AudioStreamDeviceChangeReason &reason, const std::string &caller);
     void WriteSelectOutputSysEvents(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &selectedDesc,
         StreamUsage strUsage);
@@ -91,6 +93,7 @@ private:
         std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     int32_t SelectOutputDeviceByFilterInner(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
+    void RestoreSelectRendererDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, const int32_t uid);
     void SetDeviceEnableAndUsage(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
 
     // selectinputdevice

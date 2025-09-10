@@ -85,6 +85,7 @@ group("audio_unit_test") {
     "../services/audio_engine/test/unittest:hpae_manager_test",
     "../services/audio_engine/test/unittest:hpae_mixer_node_test",
     "../services/audio_engine/test/unittest:hpae_node_common_test",
+    "../services/audio_engine/test/unittest:hpae_offload_sinkoutput_node_test",
     "../services/audio_engine/test/unittest:hpae_output_cluster_test",
     "../services/audio_engine/test/unittest:hpae_pcm_buffer_test",
     "../services/audio_engine/test/unittest:hpae_pcm_process_test",
@@ -196,7 +197,7 @@ group("audio_fuzz_test") {
   testonly = true
 
   deps = [
-    "fuzztest/audioa2dpdevice_fuzzer:fuzztest",
+    "fuzztest/audiopolicy_fuzzer/audioa2dpdevice_fuzzer:fuzztest",
     "fuzztest/audioa2dpoffloadmanager_fuzzer:fuzztest",
     "fuzztest/audioactivedevice_fuzzer:fuzztest",
     "fuzztest/audioadaptermanager_fuzzer:fuzztest",
@@ -292,6 +293,7 @@ group("audio_fuzz_test") {
     "fuzztest/audiozoneservice_fuzzer:fuzztest",
     "fuzztest/audiozoneclientmanager_fuzzer:fuzztest",
     "fuzztest/bluetoothdevicemanager_fuzzer:fuzztest",
+    "fuzztest/bluetoothhfpinterface_fuzzer:fuzztest",
     "fuzztest/bluetoothscomanager_fuzzer:fuzztest",
     "fuzztest/captureclockmanager_fuzzer:fuzztest",
     "fuzztest/capturerinserver_fuzzer:fuzztest",

@@ -31,6 +31,11 @@ inline bool IsUsb(DeviceType type)
     return type == DEVICE_TYPE_USB_HEADSET || type == DEVICE_TYPE_USB_ARM_HEADSET;
 }
 
+inline bool IsNearlinkDevice(DeviceType deviceType)
+{
+    return deviceType == DEVICE_TYPE_NEARLINK || deviceType == DEVICE_TYPE_NEARLINK_IN;
+}
+
 /**
  * @brief The AudioDeviceDescriptor provides
  *         different sets of audio devices and their roles
@@ -84,6 +89,8 @@ public:
 
     static AudioDeviceDescriptor *Unmarshalling(Parcel &parcel);
 
+    static void MapInputDeviceType(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
+
     void SetDeviceInfo(std::string deviceName, std::string macAddress);
 
     void SetDeviceCapability(const std::list<DeviceStreamInfo> &audioStreamInfo, int32_t channelMask,
@@ -98,6 +105,8 @@ public:
     bool IsPairedDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
 
     bool IsDistributedSpeaker() const;
+
+    bool IsSpeakerOrEarpiece() const;
 
     bool IsRemote() const;
 

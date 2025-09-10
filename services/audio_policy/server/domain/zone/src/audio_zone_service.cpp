@@ -62,6 +62,7 @@ int32_t AudioZoneService::CreateAudioZone(const std::string &name, const AudioZo
     std::shared_ptr<AudioZone> zone = std::make_shared<AudioZone>(zoneClientManager_, name, context, clientPid);
     CHECK_AND_RETURN_RET_LOG(zone != nullptr, ERROR, "zone is nullptr");
     int32_t zoneId = zone->GetId();
+    std::shared_ptr<AudioInterruptService> tmp = nullptr;
     {
         std::lock_guard<std::mutex> lock(zoneMutex_);
         CHECK_AND_RETURN_RET_LOG(zoneMaps_.find(zoneId) == zoneMaps_.end(),
@@ -73,10 +74,10 @@ int32_t AudioZoneService::CreateAudioZone(const std::string &name, const AudioZo
         for (auto &pid : zoneReportClientList_) {
             zoneClientManager_->SendZoneAddEvent(pid, zone->GetDescriptor());
         }
-
-        CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERROR, "interruptService_ is nullptr");
-        interruptService_->CreateAudioInterruptZone(zoneId, context.focusStrategy_);
+        tmp = interruptService_;
     }
+    CHECK_AND_RETURN_RET_LOG(tmp != nullptr, ERROR, "interruptService_ tmp is nullptr");
+    tmp->CreateAudioInterruptZone(zoneId, context);
     AUDIO_INFO_LOG("create zone id %{public}d, name %{public}s", zoneId, name.c_str());
     return zoneId;
 }
@@ -496,12 +497,15 @@ int32_t AudioZoneService::GetSystemVolumeLevel(int32_t zoneId, AudioVolumeType v
 
 AudioZoneFocusList AudioZoneService::GetAudioInterruptForZone(int32_t zoneId)
 {
-    std::lock_guard<std::mutex> lock(zoneMutex_);
+    std::shared_ptr<AudioInterruptService> tmp = nullptr;
     AudioZoneFocusList interrupts;
-    CHECK_AND_RETURN_RET_LOG(CheckIsZoneValid(zoneId), interrupts, "zone id %{public}d is not valid", zoneId);
-    CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, interrupts, "interruptService_ is nullptr");
-
-    interruptService_->GetAudioFocusInfoList(zoneId, interrupts);
+    {
+        std::lock_guard<std::mutex> lock(zoneMutex_);
+        CHECK_AND_RETURN_RET_LOG(CheckIsZoneValid(zoneId), interrupts, "zone id %{public}d is not valid", zoneId);
+        tmp = interruptService_;
+    }
+    CHECK_AND_RETURN_RET_LOG(tmp != nullptr, interrupts, "interruptService_ tmp is nullptr");
+    tmp->GetAudioFocusInfoList(zoneId, interrupts);
     return interrupts;
 }
 
@@ -524,12 +528,15 @@ bool AudioZoneService::CheckZoneExist(int32_t zoneId)
 
 AudioZoneFocusList AudioZoneService::GetAudioInterruptForZone(int32_t zoneId, const std::string &deviceTag)
 {
-    std::lock_guard<std::mutex> lock(zoneMutex_);
+    std::shared_ptr<AudioInterruptService> tmp = nullptr;
     AudioZoneFocusList interrupts;
-    CHECK_AND_RETURN_RET_LOG(CheckIsZoneValid(zoneId), interrupts, "zone id %{public}d is not valid", zoneId);
-    CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, interrupts, "interruptService_ is nullptr");
-
-    interruptService_->GetAudioFocusInfoList(zoneId, deviceTag, interrupts);
+    {
+        std::lock_guard<std::mutex> lock(zoneMutex_);
+        CHECK_AND_RETURN_RET_LOG(CheckIsZoneValid(zoneId), interrupts, "zone id %{public}d is not valid", zoneId);
+        tmp = interruptService_;
+    }
+    CHECK_AND_RETURN_RET_LOG(tmp != nullptr, interrupts, "interruptService_ tmp is nullptr");
+    tmp->GetAudioFocusInfoList(zoneId, deviceTag, interrupts);
     return interrupts;
 }
 
@@ -709,6 +716,17 @@ void AudioZoneService::ReleaseAudioZoneByClientPid(pid_t clientPid)
 
     AUDIO_INFO_LOG("client %{public}d died, release zone %{public}d", clientPid, zoneId);
     ReleaseAudioZone(zoneId);
+}
+
+bool AudioZoneService::CheckDeviceInAudioZone(AudioDeviceDescriptor device)
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    for (auto &it : zoneMaps_) {
+        if (it.second->CheckDeviceInZone(device)) {
+            return true;
+        }
+    }
+    return false;
 }
 } // namespace AudioStandard
 } // namespace OHOS

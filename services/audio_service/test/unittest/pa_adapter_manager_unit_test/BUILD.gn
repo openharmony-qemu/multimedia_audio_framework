@@ -39,6 +39,7 @@ ohos_unittest("pa_adapter_manager_unit_test") {
     "include",
     "../../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../services/audio_engine/manager/include",
   ]
 
   configs = [ ":module_private_config" ]
@@ -69,7 +70,6 @@ ohos_unittest("pa_adapter_manager_unit_test") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "pulseaudio:pulse",
     "samgr:samgr_proxy",
   ]
 

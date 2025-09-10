@@ -25,6 +25,7 @@
 #include "napi_audio_micstatechange_callback.h"
 #include "audio_errors.h"
 #include "audio_manager_log.h"
+#include "napi_dfx_utils.h"
 #ifdef FEATURE_HIVIEW_ENABLE
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
 #include "xpower_event_js.h"
@@ -37,7 +38,6 @@ using namespace std;
 using namespace HiviewDFX;
 const std::string AUDIO_VOLUME_GROUP_MNGR_NAPI_CLASS_NAME = "AudioVolumeGroupManager";
 static __thread napi_ref g_groupmanagerConstructor = nullptr;
-int32_t NapiAudioVolumeGroupManager::isConstructSuccess_ = SUCCESS;
 std::mutex NapiAudioVolumeGroupManager::volumeGroupManagerMutex_;
 
 bool NapiAudioVolumeGroupManager::CheckContextStatus(std::shared_ptr<AudioVolumeGroupManagerAsyncContext> context)
@@ -201,7 +201,6 @@ napi_value NapiAudioVolumeGroupManager::Construct(napi_env env, napi_callback_in
     auto groupManager = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
     if (groupManager == nullptr) {
         AUDIO_ERR_LOG("Failed to get group manager!");
-        NapiAudioVolumeGroupManager::isConstructSuccess_ = NAPI_ERR_INVALID_PARAM;
         return undefinedResult;
     }
 
@@ -278,6 +277,10 @@ napi_value NapiAudioVolumeGroupManager::GetVolume(napi_env env, napi_callback_in
         auto *napiAudioVolumeGroupManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
             "audio volume group manager state is error.");
+
+        NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+            "getVolume", context->volType);
+
         context->volLevel = napiAudioVolumeGroupManager->audioGroupMngr_->GetVolume(
             NapiAudioEnum::GetNativeAudioVolumeType(context->volType));
     };
@@ -309,6 +312,9 @@ napi_value NapiAudioVolumeGroupManager::GetVolumeSync(napi_env env, napi_callbac
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of volumeType must be enum AudioVolumeType"), "get volType failed");
 
+    NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+        "getVolumeSync", volType);
+
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, result, "napiAudioVolumeGroupManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,
         "audioGroupMngr_ is nullptr");
@@ -339,7 +345,7 @@ napi_value NapiAudioVolumeGroupManager::GetSystemVolumeByUid(napi_env env, napi_
     CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType),
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of volumeType must be enum AudioVolumeType"), "get volType failed");
-    
+
     int32_t uid;
     NapiParamUtils::GetValueInt32(env, uid, args[PARAM1]);
     CHECK_AND_RETURN_RET_LOG(uid >= 0,
@@ -393,6 +399,10 @@ napi_value NapiAudioVolumeGroupManager::SetVolume(napi_env env, napi_callback_in
         auto *napiAudioVolumeGroupManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
             "audio volume group manager state is error.");
+
+        NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+            "setVolume", context->volType);
+
         context->intValue = napiAudioVolumeGroupManager->audioGroupMngr_->SetVolume(
             NapiAudioEnum::GetNativeAudioVolumeType(context->volType), context->volLevel);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "setvolume failed",
@@ -445,6 +455,10 @@ napi_value NapiAudioVolumeGroupManager::SetVolumeWithFlag(napi_env env, napi_cal
         auto *napiAudioVolumeGroupManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
             "audio volume group manager state is error.");
+
+        NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+            "setVolumeWithFlag", context->volType);
+
         context->intValue = napiAudioVolumeGroupManager->audioGroupMngr_->SetVolume(
             NapiAudioEnum::GetNativeAudioVolumeType(context->volType), context->volLevel, context->volFlag);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "setvolumeWithFlag failed",
@@ -533,6 +547,10 @@ napi_value NapiAudioVolumeGroupManager::GetMaxVolume(napi_env env, napi_callback
         auto *napiAudioVolumeGroupManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
             "audio volume group manager state is error.");
+
+        NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+            "getMaxVolume", context->volType);
+
         context->volLevel = napiAudioVolumeGroupManager->audioGroupMngr_->GetMaxVolume(
             NapiAudioEnum::GetNativeAudioVolumeType(context->volType));
     };
@@ -563,6 +581,9 @@ napi_value NapiAudioVolumeGroupManager::GetMaxVolumeSync(napi_env env, napi_call
     CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType),
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of volumeType must be enum AudioVolumeType"), "get volType failed");
+
+    NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+        "getMaxVolumeSync", volType);
 
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, result, "napiAudioVolumeGroupManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,
@@ -602,6 +623,10 @@ napi_value NapiAudioVolumeGroupManager::GetMinVolume(napi_env env, napi_callback
         auto *napiAudioVolumeGroupManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
             "audio volume group manager state is error.");
+
+        NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+            "getMinVolume", context->volType);
+
         context->volLevel = napiAudioVolumeGroupManager->audioGroupMngr_->GetMinVolume(
             NapiAudioEnum::GetNativeAudioVolumeType(context->volType));
     };
@@ -632,6 +657,9 @@ napi_value NapiAudioVolumeGroupManager::GetMinVolumeSync(napi_env env, napi_call
     CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType),
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of volumeType must be enum AudioVolumeType"), "get volType failed");
+
+    NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+        "getMinVolumeSync", volType);
 
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, result, "napiAudioVolumeGroupManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,
@@ -675,6 +703,10 @@ napi_value NapiAudioVolumeGroupManager::SetMute(napi_env env, napi_callback_info
         auto *napiAudioVolumeGroupManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
             "audio volume group manager state is error.");
+
+        NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+            "mute", context->volType);
+
         context->intValue = napiAudioVolumeGroupManager->audioGroupMngr_->SetMute(
             NapiAudioEnum::GetNativeAudioVolumeType(context->volType), context->isMute);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "setmute failed",
@@ -715,6 +747,9 @@ napi_value NapiAudioVolumeGroupManager::IsStreamMute(napi_env env, napi_callback
         auto *napiAudioVolumeGroupManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
             "audio volume group manager state is error.");
+
+        NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+            "isMute", context->volType);
         context->intValue = napiAudioVolumeGroupManager->audioGroupMngr_->IsStreamMute(
             NapiAudioEnum::GetNativeAudioVolumeType(context->volType), context->isMute);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "isstreammute failed",
@@ -748,6 +783,9 @@ napi_value NapiAudioVolumeGroupManager::IsStreamMuteSync(napi_env env, napi_call
     CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType),
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of volumeType must be enum AudioVolumeType"), "get volType failed");
+
+    NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+        "isMuteSync", volType);
 
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, result, "napiAudioVolumeGroupManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,
@@ -1144,6 +1182,10 @@ napi_value NapiAudioVolumeGroupManager::AdjustSystemVolumeByStep(napi_env env, n
         auto *napiAudioVolumeGroupManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
             "audio volume group manager state is error.");
+
+        NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+            "adjustSystemVolumeByStep", context->volType);
+
         context->volumeAdjustStatus = napiAudioVolumeGroupManager->audioGroupMngr_->AdjustSystemVolumeByStep(
             NapiAudioEnum::GetNativeAudioVolumeType(context->volType),
             static_cast<VolumeAdjustType>(context->adjustType));
@@ -1202,6 +1244,10 @@ napi_value NapiAudioVolumeGroupManager::GetSystemVolumeInDb(napi_env env, napi_c
         auto *napiAudioVolumeGroupManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
             "audio volume group manager state is error.");
+
+        NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+            "getSystemVolumeInDb", context->volType);
+
         context->volumeInDb = napiAudioVolumeGroupManager->audioGroupMngr_->GetSystemVolumeInDb(
             NapiAudioEnum::GetNativeAudioVolumeType(context->volType), context->volLevel,
             static_cast<DeviceType>(context->deviceType));
@@ -1249,6 +1295,10 @@ napi_value NapiAudioVolumeGroupManager::GetSystemVolumeInDbSync(napi_env env, na
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, result, "napiAudioVolumeGroupManager is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,
         "audioGroupMngr_ is nullptr");
+
+    NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+        "getSystemVolumeInDbSync", volType);
+
     double volumeInDb = napiAudioVolumeGroupManager->audioGroupMngr_->GetSystemVolumeInDb(
         NapiAudioEnum::GetNativeAudioVolumeType(volType), volLevel, static_cast<DeviceType>(deviceType));
     CHECK_AND_RETURN_RET_LOG(!FLOAT_COMPARE_EQ(static_cast<float>(volumeInDb), static_cast<float>(ERR_INVALID_PARAM)),
@@ -1365,7 +1415,7 @@ void NapiAudioVolumeGroupManager::UnregisterRingerModeCallback(
         "ringerModecallbackNapi is null");
     std::shared_ptr<NapiAudioRingerModeCallback> cb = std::static_pointer_cast<NapiAudioRingerModeCallback>(
         napiAudioVolumeGroupManager->ringerModecallbackNapi_);
-    
+
     napi_value callback = nullptr;
     if (argc == ARGS_TWO) {
         callback = args[PARAM1];
@@ -1388,7 +1438,7 @@ void NapiAudioVolumeGroupManager::UnregisterMicStateChangeCallback(
     std::shared_ptr<NapiAudioManagerMicStateChangeCallback> cb =
         std::static_pointer_cast<NapiAudioManagerMicStateChangeCallback>(
         napiAudioVolumeGroupManager->micStateChangeCallbackNapi_);
-    
+
     napi_value callback = nullptr;
     if (argc == ARGS_TWO) {
         callback = args[PARAM1];

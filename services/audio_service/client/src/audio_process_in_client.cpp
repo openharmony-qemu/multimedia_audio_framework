@@ -259,7 +259,7 @@ private:
 
     std::thread callbackLoop_; // thread for callback to client and write.
     std::mutex loopMutex_;
-    bool isCallbackLoopEnd_ = false;
+    std::atomic<bool> isCallbackLoopEnd_ = false;
     std::atomic<ThreadStatus> threadStatus_ = INVALID;
     std::mutex loopThreadLock_;
     std::condition_variable threadStatusCV_;
@@ -1124,10 +1124,6 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc)
         bufDesc.dataLength <= bufDesc.bufLength, ERR_INVALID_PARAM,
         "bufDesc error, bufLen %{public}zu, dataLen %{public}zu, spanSize %{public}zu.",
         bufDesc.bufLength, bufDesc.dataLength, clientSpanSizeInByte_);
-    // check if this buffer is form us.
-    if (bufDesc.buffer != callbackBuffer_.get()) {
-        AUDIO_WARNING_LOG("the buffer is not created by client.");
-    }
 
     if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
         if (memset_s(callbackBuffer_.get(), clientSpanSizeInByte_, 0, clientSpanSizeInByte_) != EOK) {
@@ -1150,9 +1146,8 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc)
     int32_t ret = WriteDataChunk(bufDesc, clientRemainSizeInFrame);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "writedataChunk failed, err: %{public}d", ret);
 
-    if (memset_s(callbackBuffer_.get(), clientSpanSizeInByte_, 0, clientSpanSizeInByte_) != EOK) {
-        AUDIO_WARNING_LOG("reset callback buffer fail.");
-    }
+    JUDGE_AND_WARNING_LOG(memset_s(bufDesc.buffer, bufDesc.bufLength, 0, bufDesc.bufLength) != EOK,
+        "reset callback buffer fail.");
 
     return SUCCESS;
 }
@@ -1335,7 +1330,7 @@ void AudioProcessInClientInner::JoinCallbackLoop()
     std::unique_lock<std::mutex> statusLock(loopMutex_);
     if (callbackLoop_.joinable()) {
         std::unique_lock<std::mutex> lock(loopThreadLock_);
-        isCallbackLoopEnd_ = true; // change it with lock to break the loop
+        isCallbackLoopEnd_.store(true); // change it with lock to break the loop
         threadStatusCV_.notify_all();
         lock.unlock(); // should call unlock before join
         audioBuffer_->WakeFutex(IS_PRE_EXIT);
@@ -1354,8 +1349,10 @@ int32_t AudioProcessInClientInner::Release(bool isSwitchStream)
         return SUCCESS;
     }
     Stop(AudioProcessStage::AUDIO_PROC_STAGE_STOP_BY_RELEASE);
-    isCallbackLoopEnd_ = true;
+    std::unique_lock<std::mutex> loopLock(loopThreadLock_);
+    isCallbackLoopEnd_.store(true);
     threadStatusCV_.notify_all();
+    loopLock.unlock();
     std::lock_guard<std::mutex> lock(statusSwitchLock_);
     StreamStatus currentStatus = streamStatus_->load();
     if (currentStatus != STREAM_STOPPED) {
@@ -1535,6 +1532,7 @@ bool AudioProcessInClientInner::KeepLoopRunning()
 
     Trace trace("AudioProcessInClient::InWaitStatus");
     std::unique_lock<std::mutex> lock(loopThreadLock_);
+    CHECK_AND_RETURN_RET(!isCallbackLoopEnd_.load(), false);
     AUDIO_DEBUG_LOG("Process status is %{public}s now, wait for %{public}s...",
         GetStatusInfo(streamStatus_->load()).c_str(), GetStatusInfo(targetStatus).c_str());
     threadStatus_ = WAITTING;
@@ -1547,7 +1545,7 @@ bool AudioProcessInClientInner::KeepLoopRunning()
 
 bool AudioProcessInClientInner::RecordProcessCallbackFuc(uint64_t &curReadPos, int64_t clientReadCost)
 {
-    if (isCallbackLoopEnd_ || audioBuffer_ == nullptr) {
+    if (isCallbackLoopEnd_.load() || audioBuffer_ == nullptr) {
         return false;
     }
     if (!KeepLoopRunning()) {
@@ -1714,7 +1712,7 @@ bool AudioProcessInClientInner::CheckAndWaitBufferReadyForRecord()
 
 bool AudioProcessInClientInner::ProcessCallbackFuc(uint64_t &curWritePos)
 {
-    if (isCallbackLoopEnd_ && !startFadeout_.load()) {
+    if (isCallbackLoopEnd_.load() && !startFadeout_.load()) {
         return false;
     }
     if (!KeepLoopRunning()) {

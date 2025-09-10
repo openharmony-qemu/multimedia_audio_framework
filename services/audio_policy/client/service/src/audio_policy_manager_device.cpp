@@ -31,7 +31,7 @@ using namespace std;
 const unsigned int TIME_OUT_SECONDS = 10;
 
 int32_t AudioPolicyManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors, const int32_t audioDeviceSelectMode)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
@@ -43,7 +43,15 @@ int32_t AudioPolicyManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
         return -1;
     }
 
-    return gsp->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
+    return gsp->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors, audioDeviceSelectMode);
+}
+
+int32_t AudioPolicyManager::RestoreOutputDevice(sptr<AudioRendererFilter> audioRendererFilter)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+
+    return gsp->RestoreOutputDevice(audioRendererFilter);
 }
 
 std::string AudioPolicyManager::GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType)
@@ -74,6 +82,8 @@ int32_t AudioPolicyManager::SelectInputDevice(std::shared_ptr<AudioDeviceDescrip
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptor != nullptr, -1,
         "SelectInputDevice get null device.");
+    int32_t result = CheckAudioPolicyClientRegisted();
+    CHECK_AND_RETURN_RET(result == SUCCESS, result);
     return gsp->SelectInputDevice(audioDeviceDescriptor);
 }
 
@@ -297,7 +307,7 @@ int32_t AudioPolicyManager::UnsetDeviceChangeCallback(const int32_t clientId, De
 }
 
 int32_t AudioPolicyManager::SetPreferredOutputDeviceChangeCallback(const AudioRendererInfo &rendererInfo,
-    const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback)
+    const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback, const int32_t uid)
 {
     AUDIO_DEBUG_LOG("AudioPolicyManager::SetPreferredOutputDeviceChangeCallback");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
@@ -315,7 +325,7 @@ int32_t AudioPolicyManager::SetPreferredOutputDeviceChangeCallback(const AudioRe
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->AddPreferredOutputDeviceChangeCallback(rendererInfo, callback);
         rendererInfos_.push_back(rendererInfo);
-        SetCallbackRendererInfo(rendererInfo);
+        SetCallbackRendererInfo(rendererInfo, uid);
         size_t callbackSize = audioPolicyClientStubCB_->GetPreferredOutputDeviceChangeCallbackSize();
         if (callbackSize == 1) {
             callbackChangeInfos_[CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE].isEnable = true;
@@ -458,6 +468,24 @@ int32_t AudioPolicyManager::ClearSelectedInputDevice()
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     return gsp->ClearSelectedInputDevice();
+}
+
+int32_t AudioPolicyManager::PreferBluetoothAndNearlinkRecord(BluetoothAndNearlinkPreferredRecordCategory category)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    int32_t result = CheckAudioPolicyClientRegisted();
+    CHECK_AND_RETURN_RET(result == SUCCESS, result);
+    return gsp->PreferBluetoothAndNearlinkRecord(category);
+}
+
+BluetoothAndNearlinkPreferredRecordCategory AudioPolicyManager::GetPreferBluetoothAndNearlinkRecord()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, PREFERRED_NONE, "audio policy manager proxy is NULL.");
+    uint32_t category = PREFERRED_NONE;
+    gsp->GetPreferBluetoothAndNearlinkRecord(category);
+    return static_cast<BluetoothAndNearlinkPreferredRecordCategory>(category);
 }
 
 int32_t AudioPolicyManager::SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,

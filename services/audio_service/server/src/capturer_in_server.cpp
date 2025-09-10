@@ -488,13 +488,12 @@ bool CapturerInServer::CheckBGCapture()
         return true;
     }
 
-    if (AudioService::GetInstance()->IsStreamInterruptResume(streamIndex_) &&
-        AudioService::GetInstance()->IsBackgroundCaptureAllowed(streamIndex_)) {
+    if (AudioService::GetInstance()->IsStreamInterruptResume(streamIndex_)) {
         AUDIO_WARNING_LOG("Stream:%{public}u Result:success Reason:resume", streamIndex_);
         return true;
     }
 
-    CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
+    CHECK_AND_RETURN_RET_LOG(Util::IsBackgroundSourceType(processConfig_.capturerInfo.sourceType) &&
         AudioService::GetInstance()->InForegroundList(processConfig_.appInfo.appUid), false, "Check failed");
 
     AudioService::GetInstance()->UpdateForegroundState(tokenId, true);
@@ -547,7 +546,7 @@ bool CapturerInServer::TurnOffMicIndicator(CapturerState capturerState)
     };
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
 
-    if (AudioService::GetInstance()->NeedRemoveBackgroundCaptureMap(streamIndex_)) {
+    if (AudioService::GetInstance()->NeedRemoveBackgroundCaptureMap(streamIndex_, capturerState)) {
         AudioService::GetInstance()->RemoveBackgroundCaptureMap(streamIndex_);
     }
     if (isMicIndicatorOn_) {
@@ -774,6 +773,9 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
         }
         if (PlaybackCapturerManager::GetInstance()->CheckReleaseUnloadModernInnerCapSink(innerCapId_)) {
             AudioService::GetInstance()->UnloadModernInnerCapSink(innerCapId_);
+        }
+        if (PlaybackCapturerManager::GetInstance()->CheckReleaseUnloadModernOffloadCapSource()) {
+            AudioService::GetInstance()->UnloadModernOffloadCapSource();
         }
         innerCapId_ = 0;
     }

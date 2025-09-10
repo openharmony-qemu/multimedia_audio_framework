@@ -28,15 +28,23 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-static constexpr uint32_t EXPAND_SIZE = 2;
+static constexpr uint32_t EXPAND_SIZE_2 = 2;
+static constexpr uint32_t EXPAND_SIZE_5 = 5;
+static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 HpaeProcessCluster::HpaeProcessCluster(HpaeNodeInfo nodeInfo, HpaeSinkInfo &sinkInfo)
     : HpaeNode(nodeInfo), sinkInfo_(sinkInfo)
 {
-    nodeInfo.frameLen = (nodeInfo.frameLen * sinkInfo.samplingRate) / nodeInfo.samplingRate;
+    nodeInfo.frameLen = (nodeInfo.frameLen * sinkInfo.samplingRate) /
+        (nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate : nodeInfo.customSampleRate);
     // for 11025, frameSize has expand twice, shrink to 20ms here for correctly setting up
     // frameLen in formatConverterNode in outputCluster, need to be reconstructed
-    if (nodeInfo.samplingRate == SAMPLE_RATE_11025) {
-        nodeInfo.frameLen /= EXPAND_SIZE;
+    if ((nodeInfo.customSampleRate == 0 && nodeInfo.samplingRate == SAMPLE_RATE_11025) ||
+        nodeInfo.customSampleRate == SAMPLE_RATE_11025) {
+            nodeInfo.frameLen /= EXPAND_SIZE_2;
+    } else if (nodeInfo.customSampleRate != 0 && nodeInfo.customSampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES != 0) {
+        // customSampleRate is multiples of 50, eg. 8050, 8100, 8150... 20ms
+        // else eg. 8010, 8020, 8030, 8040... 100ms shrink to 20ms
+            nodeInfo.frameLen /= EXPAND_SIZE_5;
     }
     nodeInfo.samplingRate = sinkInfo.samplingRate;
     // nodeInfo is the first streamInfo, but mixerNode need formatConverterOutput's nodeInfo.
@@ -179,14 +187,15 @@ void HpaeProcessCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer 
     AUDIO_INFO_LOG("HpaeProcessCluster sessionId is %{public}u, streamType is %{public}d, sceneType is %{public}d, "
         "HpaeProcessCluster rate is %{public}u, ch is %{public}u, "
         "HpaeProcessCluster preNodeId %{public}u, preNodeName is %{public}s",
-        preNodeInfo.sessionId, preNodeInfo.streamType, preNodeInfo.sceneType, preNodeInfo.samplingRate,
+        preNodeInfo.sessionId, preNodeInfo.streamType, preNodeInfo.sceneType,
+        preNodeInfo.customSampleRate == 0 ? preNodeInfo.samplingRate : preNodeInfo.customSampleRate,
         preNodeInfo.channels, preNodeInfo.nodeId, preNodeInfo.nodeName.c_str());
     
-    ConnectMixerNode();
-    CreateGainNode(sessionId, preNodeInfo);
     CreateConverterNode(sessionId, preNodeInfo);
     CreateLoudnessGainNode(sessionId, preNodeInfo);
+    CreateGainNode(sessionId, preNodeInfo);
     
+    ConnectMixerNode();
     mixerNode_->Connect(idGainMap_[sessionId]);
     idGainMap_[sessionId]->Connect(idLoudnessGainNodeMap_[sessionId]);
     idLoudnessGainNodeMap_[sessionId]->Connect(idConverterMap_[sessionId]);

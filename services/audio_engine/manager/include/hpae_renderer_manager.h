@@ -124,7 +124,10 @@ private:
     bool SetSessionFade(uint32_t sessionId, IOperation operation);
     void CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo);
     void CreateOutputClusterNodeInfo(HpaeNodeInfo &nodeInfo);
-    void InitManager(bool isReload = false);
+    int32_t InitManager(bool isReload = false);
+    int32_t CheckFramelen();
+    int32_t CheckStreamInfo(const HpaeStreamInfo &streamInfo);
+    void InitDefaultNodeInfo();
     void MoveStreamSync(uint32_t sessionId, const std::string &sinkName);
     void UpdateAppsUid();
     int32_t HandlePriPaPower(uint32_t sessionId);
@@ -157,7 +160,7 @@ private:
     std::vector<int32_t> appsUid_;
     std::shared_ptr<HpaeCoBufferNode> hpaeCoBufferNode_;
     bool isCollaborationEnabled_ = false;
-    int64_t noneStreamTime_; // if no stream, 3s time out to stop rendersink
+    int64_t noneStreamTime_ = 0; // if no stream, 3s time out to stop rendersink
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

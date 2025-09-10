@@ -766,7 +766,7 @@
                 <focus_type value="SOURCE_TYPE_LIVE" is_forced="true" action_type="PLAY" action_on="incoming"/>
             </shared>
             <private>
-                <focus_type value="STREAM_INTERNAL_FORCE_STOP" is_forced="true" action_type="STOP" action_on="existing"/>
+                <focus_type value="STREAM_INTERNAL_FORCE_STOP" is_forced="true" action_type="PAUSE" action_on="existing"/>
                 <focus_type value="STREAM_VOICE_CALL_ASSISTANT" is_forced="true" action_type="PAUSE" action_on="existing"/>
                 <focus_type value="STREAM_VOICE_CALL" is_forced="true" action_type="PAUSE" action_on="existing"/>
                 <focus_type value="STREAM_VOICE_COMMUNICATION" is_forced="true" action_type="PAUSE" action_on="existing"/>
@@ -983,7 +983,7 @@
             <private>
                 <focus_type value="STREAM_VOICE_CALL_ASSISTANT" is_forced="true" action_type="PAUSE" action_on="existing"/>
                 <focus_type value="STREAM_VOICE_CALL" is_forced="true" action_type="PAUSE" action_on="existing"/>
-                <focus_type value="STREAM_INTERNAL_FORCE_STOP" is_forced="true" action_type="STOP" action_on="existing"/>
+                <focus_type value="STREAM_INTERNAL_FORCE_STOP" is_forced="true" action_type="PAUSE" action_on="existing"/>
                 <focus_type value="SOURCE_TYPE_VOICE_COMMUNICATION" is_forced="true" action_type="PAUSE" action_on="existing"/>
             </private>
         </focus_table>

@@ -26,6 +26,7 @@ group("audio_policy_unittest_packages") {
     ":audio_a2dp_device_unit_test",
     ":audio_active_device_unit_test",
     ":audio_adapter_manager_unit_test",
+    ":audio_adapter_manager_ext_unit_test",
     ":audio_affinity_manager_unit_test",
     ":audio_affinity_parser_test",
     ":audio_background_manager_unit_test",
@@ -88,6 +89,7 @@ group("audio_policy_unittest_packages") {
     ":audio_usb_manager_unit_test",
     ":audio_usr_select_manager_unit_test",
     ":audio_volume_manager_unit_test",
+    ":audio_volume_manager_ext_unit_test",
     ":audio_zone_service_unit_test",
     ":audio_zone_unit_test",
     ":client_type_manager_unit_test",
@@ -2564,7 +2566,7 @@ ohos_unittest("sle_audio_device_manager_unit_test") {
 
   sources = [ "./unittest/sle_audio_device_manager_unit_test/src/sle_audio_device_manager_unit_test.cpp" ]
 
-  deps = [ 
+  deps = [
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
     "../../audio_policy:audio_policy_client",
     "../../audio_policy:audio_policy_service_static",
@@ -2699,6 +2701,8 @@ ohos_unittest("audio_router_center_unit_test") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "googletest:gmock",
+    "googletest:gtest",
   ]
 
   sources = [
@@ -2712,6 +2716,7 @@ ohos_unittest("audio_router_center_unit_test") {
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_client",
     "../../audio_service:audio_common",
+    "../../audio_service/idl:audio_framework_interface"
   ]
 
   if (accessibility_enable == true) {
@@ -4319,6 +4324,54 @@ ohos_unittest("audio_volume_manager_unit_test") {
   defines = [ "BLUETOOTH_ENABLE" ]
 }
 
+ohos_unittest("audio_volume_manager_ext_unit_test") {
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "../../audio_policy/server/include/service/service",
+    "../../audio_policy/server/domain/device/include",
+    "./unittest/audio_volume_manager_unit_test/include",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  external_deps = [
+    "bluetooth:btframework",
+    "c_utils:utils",
+    "common_event_service:cesfwk_innerkits",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "googletest:gmock",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "kv_store:distributeddata_inner",
+    "os_account:os_account_innerkits",
+    "power_manager:power_setting",
+    "power_manager:powermgr_client",
+    "eventhandler:libeventhandler",
+  ]
+
+  sources = [
+    "./unittest/audio_volume_manager_unit_test/src/audio_volume_manager_ext_unit_test.cpp",
+  ]
+
+  deps = [
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../audio_policy:audio_policy_service_static",
+  ]
+
+  defines = [ "BLUETOOTH_ENABLE" ]
+}
+
 ohos_unittest("audio_adapter_manager_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
@@ -4339,6 +4392,84 @@ ohos_unittest("audio_adapter_manager_unit_test") {
   ]
 
   sources = [ "./unittest/audio_adapter_manager_unit_test/src/audio_adapter_manager_unit_test.cpp" ]
+
+  deps = [
+    "../../../frameworks/native/audiodefinitions:audio_definitions",
+    "../../../frameworks/native/audioeffect:audio_effect",
+    "../../../frameworks/native/audioschedule:audio_schedule",
+    "../../../frameworks/native/audioutils:audio_utils",
+    "../../../services/audio_policy:audio_policy_client",
+    "../../../services/audio_policy:audio_policy_service_static",
+    "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_common",
+    "../../../services/audio_service:audio_process_service",
+    "../../../services/audio_service:audio_service",
+  ]
+
+  external_deps = [
+    "ability_base:session_info",
+    "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_connect_callback_stub",
+    "ability_runtime:ability_context_native",
+    "ability_runtime:app_context",
+    "ability_runtime:dataobs_manager",
+    "ability_runtime:extension_manager",
+    "ability_runtime:wantagent_innerkits",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
+    "background_task_mgr:bgtaskmgr_innerkits",
+    "bluetooth:btframework",
+    "bounds_checking_function:libsec_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_5.0",
+    "eventhandler:libeventhandler",
+    "googletest:gmock",
+    "hdf_core:libhdf_host",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdf_utils",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
+    "power_manager:power_setting",
+    "power_manager:powermgr_client",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+}
+
+ohos_unittest("audio_adapter_manager_ext_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "../server/include",
+    "./unittest/audio_adapter_manager_unit_test/include",
+    "../../../services/audio_policy/server/infra/datashare/include",
+    "../../../frameworks/native/audiodefinitions/include",
+    "../../../services/audio_policy/server/domain/interrupt/include",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  sources = [ "./unittest/audio_adapter_manager_unit_test/src/audio_adapter_manager_ext_unit_test.cpp" ]
 
   deps = [
     "../../../frameworks/native/audiodefinitions:audio_definitions",
@@ -6350,7 +6481,6 @@ ohos_unittest("user_select_router_unit_test") {
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -6453,7 +6583,6 @@ ohos_unittest("user_select_router_ext_unit_test") {
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]

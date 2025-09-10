@@ -198,6 +198,13 @@ std::string RemoteAudioCaptureSource::GetAudioParameter(const AudioParamKey key,
     return "";
 }
 
+void RemoteAudioCaptureSource::SetAudioParameter(
+    const AudioParamKey key, const std::string &condition, const std::string &value)
+{
+    AUDIO_WARNING_LOG("not support");
+    return;
+}
+
 int32_t RemoteAudioCaptureSource::SetVolume(float left, float right)
 {
     float leftVolume = left;

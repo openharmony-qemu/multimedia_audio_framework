@@ -90,6 +90,18 @@ public:
     virtual void OnAudioSessionCurrentDeviceChanged(const CurrentOutputDeviceChangedEvent &deviceChangedEvent) = 0;
 };
 
+class AudioSessionCurrentInputDeviceChangedCallback {
+public:
+    virtual ~AudioSessionCurrentInputDeviceChangedCallback() = default;
+    /**
+     * @brief
+     *
+     * @param deviceChangedEvent the audio session current device changed event.
+     * @since 21
+     */
+    virtual void OnAudioSessionCurrentInputDeviceChanged(const CurrentInputDeviceChangedEvent &deviceChangedEvent) = 0;
+};
+
 class AudioSessionManager {
 public:
     AudioSessionManager() = default;
@@ -247,6 +259,24 @@ public:
     int32_t UnsetAudioSessionCurrentDeviceChangeCallback(
         const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback);
 
+    int32_t SetAvailableDeviceChangeCallback(const AudioDeviceUsage usage,
+        const std::shared_ptr<AudioManagerAvailableDeviceChangeCallback>& callback);
+
+    /**
+     * @brief Subscribes input device changed event callback.
+     * The event is triggered when input device changed.
+     *
+     * @param deviceChangedCallback The audio session input device changed callback.
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 21
+     */
+    int32_t SetAudioSessionCurrentInputDeviceChangeCallback(
+        const std::shared_ptr<AudioSessionCurrentInputDeviceChangedCallback> &deviceChangedCallback);
+
+    int32_t UnsetAudioSessionCurrentInputDeviceChangeCallback(
+        const std::optional<std::shared_ptr<AudioSessionCurrentInputDeviceChangedCallback>> &callback);
+
     /**
      * @brief Register AudioPolicyServer died callback.
      *
@@ -310,6 +340,10 @@ public:
      * @since 21
      */
     int32_t ClearSelectedInputDevice();
+
+    int32_t PreferBluetoothAndNearlinkRecord(BluetoothAndNearlinkPreferredRecordCategory category);
+
+    BluetoothAndNearlinkPreferredRecordCategory GetPreferBluetoothAndNearlinkRecord();
 
 private:
     std::mutex setDefaultOutputDeviceMutex_;

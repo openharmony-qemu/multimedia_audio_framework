@@ -1217,7 +1217,7 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetSourceName_007, TestSize.Level0
 {
     SourceType sourceType = SOURCE_TYPE_MAX;
     const std::string sourceName = AudioInfoDumpUtils::GetSourceName(sourceType);
-    EXPECT_EQ(sourceName, "SOURCE_TYPE_LIVE");
+    EXPECT_EQ(sourceName, "UNKNOWN");
 }
 
 /**

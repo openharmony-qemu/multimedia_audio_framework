@@ -37,6 +37,7 @@
 #include "audio_combine_denoising_manager.h"
 #include "audio_stream_descriptor.h"
 #include "sle_audio_operation_callback_stub_impl.h"
+#include "audio_capturer_options.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -61,9 +62,6 @@ public:
     int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, bool isLegacy = false,
         int32_t volumeFlag = 0, int32_t uid = 0);
 
-    int32_t SetSystemNotificationVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, bool isLegacy = false,
-        int32_t volumeFlag = 0, int32_t uid = 0);
-
     int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType,
         int32_t volumeFlag = 0);
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, int32_t volumeFlag = 0);
@@ -80,9 +78,9 @@ public:
 
     AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid);
 
-    int32_t GetSystemVolumeLevel(AudioVolumeType volumeType, int32_t uid = 0);
+    bool ReloadLoudVolumeMode(AudioStreamType streamType, SetLoudVolMode setVolMode);
 
-    int32_t GetSystemNotificationVolumeLevel(AudioVolumeType volumeType, int32_t uid = 0);
+    int32_t GetSystemVolumeLevel(AudioVolumeType volumeType, int32_t uid = 0);
 
     int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
 
@@ -109,7 +107,10 @@ public:
     bool IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source);
 
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors,
+        const int32_t audioDeviceSelectMode = 0);
+
+    int32_t RestoreOutputDevice(sptr<AudioRendererFilter> audioRendererFilter);
 
     std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType);
 
@@ -150,6 +151,8 @@ public:
     int32_t SetRingerModeLegacy(AudioRingerMode ringMode);
 
     int32_t SetRingerMode(AudioRingerMode ringMode);
+
+    void CleanUpResource();
 
 #ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones(const std::string &countryCode);
@@ -282,6 +285,12 @@ public:
 
     int32_t UnsetAudioSessionCurrentDeviceChangeCallback(
         const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback);
+    
+    int32_t SetAudioSessionCurrentInputDeviceChangeCallback(
+        const std::shared_ptr<AudioSessionCurrentInputDeviceChangedCallback> &deviceChangedCallback);
+
+    int32_t UnsetAudioSessionCurrentInputDeviceChangeCallback(
+        const std::optional<std::shared_ptr<AudioSessionCurrentInputDeviceChangedCallback>> &deviceChangedCallback);
 
     int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
         const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v = API_9);
@@ -346,7 +355,7 @@ public:
         AudioCapturerInfo &captureInfo);
 
     int32_t SetPreferredOutputDeviceChangeCallback(const AudioRendererInfo &rendererInfo,
-        const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback);
+        const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback, const int32_t uid = -1);
 
     int32_t SetPreferredInputDeviceChangeCallback(const AudioCapturerInfo &capturerInfo,
         const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback);
@@ -419,6 +428,10 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> GetSelectedInputDevice();
 
     int32_t ClearSelectedInputDevice();
+
+    int32_t PreferBluetoothAndNearlinkRecord(BluetoothAndNearlinkPreferredRecordCategory category);
+
+    BluetoothAndNearlinkPreferredRecordCategory GetPreferBluetoothAndNearlinkRecord();
 
     int32_t SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,
         const std::shared_ptr<AudioManagerAvailableDeviceChangeCallback>& callback);
@@ -626,6 +639,8 @@ public:
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
     bool IsAudioLoopbackSupported(AudioLoopbackMode mode);
+    bool IsSupportInnerCaptureOffload();
+    bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
     bool SetKaraokeParameters(const std::string &parameters);
     int32_t SetAudioRouteCallback(uint32_t sessionId, std::shared_ptr<AudioRouteCallback> callback, uint32_t clientUid);
     int32_t UnsetAudioRouteCallback(uint32_t sessionId);
@@ -694,14 +709,6 @@ public:
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
     int32_t ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
 
-    int32_t SetVolumeDegreeCallback(const int32_t clientPid,
-        const std::shared_ptr<VolumeKeyEventCallback> &callback);
-    int32_t UnsetVolumeDegreeCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback);
-    int32_t SetSystemVolumeDegree(AudioVolumeType volumeType, int32_t volumeDegree,
-        int32_t volumeFlag, int32_t uid);
-    int32_t GetSystemVolumeDegree(AudioVolumeType volumeType, int32_t uid);
-    int32_t GetMinVolumeDegree(AudioVolumeType volumeType);
-
 private:
     AudioPolicyManager() {}
     ~AudioPolicyManager() {}
@@ -709,8 +716,9 @@ private:
     int32_t RegisterPolicyCallbackClientFunc(const sptr<IAudioPolicy> &gsp);
     int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable, bool block = true);
     int32_t SetCallbackStreamInfo(const CallbackChange &callbackChange);
-    int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo);
+    int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid = -1);
     int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo);
+    int32_t CheckAudioPolicyClientRegisted();
 
     std::mutex listenerStubMutex_;
     std::mutex registerCallbackMutex_;

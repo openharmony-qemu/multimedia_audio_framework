@@ -148,6 +148,9 @@ public:
 
     int32_t SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId);
     void InitDupBuffer(int32_t innerCapId);
+    int32_t InitSoftLink(int32_t innerCapId);
+    int32_t DestroySoftLink(int32_t innerCapId);
+    int32_t InitSoftLinkVolume(std::shared_ptr<HPAE::IHpaeSoftLink> softLinkPtr);
 public:
     const AudioProcessConfig processConfig_;
 private:
@@ -172,6 +175,7 @@ private:
     void ReConfigDupStreamCallback();
     void HandleOperationStopped(RendererStage stage);
     int32_t StartInnerDuringStandby();
+    void StartStreamByType();
     void RecordStandbyTime(bool isStandby, bool isStart);
     int32_t FlushOhAudioBuffer();
     BufferDesc PrepareOutputBuffer(const RingBufferWrapper& ringBufferDesc);
@@ -183,6 +187,13 @@ private:
     int32_t DisableInnerCapHandle(int32_t innerCapId);
     int32_t InitDupStreamVolume(uint32_t dupStreamIndex);
     void ProcessManagerType();
+    bool IsMovieOffloadStream();
+    bool IsMovieStream();
+    template <typename T>
+    void SetSoftLinkFunc(T&& softLinkFunc);
+    bool IsEnabledAndValidSoftLink(SoftLinkInfo& softLinkInfo);
+    bool IsEnabledAndValidDupStream(CaptureInfo& captureInfo);
+    void HandleOffloadStream(const int32_t captureId, const CaptureInfo& captureInfo);
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -197,6 +208,7 @@ private:
 
     // for inner-cap
     std::mutex dupMutex_;
+    std::mutex softLinkMutex_;
     size_t dupTotalSizeInFrame_ = 0;
     size_t dupSpanSizeInFrame_ = 0;
     size_t dupSpanSizeInByte_ = 0;
@@ -272,6 +284,9 @@ private:
 
     bool latestForWorkgroupInited_ = false;
     struct RendererLatestInfoForWorkgroup latestForWorkgroup_;
+
+    std::unordered_map<int32_t, SoftLinkInfo> softLinkInfos_;
+    FILE *dumpSoftLink = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

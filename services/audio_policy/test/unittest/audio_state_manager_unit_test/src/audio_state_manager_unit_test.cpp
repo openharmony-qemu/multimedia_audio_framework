@@ -27,10 +27,67 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
+const int32_t ANCO_SERVICE_BROKER_UID = 5557;
+
 void AudioStateManagerUnitTest::SetUpTestCase(void) {}
 void AudioStateManagerUnitTest::TearDownTestCase(void) {}
 void AudioStateManagerUnitTest::SetUp(void) {}
 void AudioStateManagerUnitTest::TearDown(void) {}
+
+class IStandardAudioPolicyManagerListenerStub : public IStandardAudioPolicyManagerListener {
+public:
+    sptr<IRemoteObject> AsObject() override { return nullptr; }
+
+    ~IStandardAudioPolicyManagerListenerStub() {}
+
+    ErrCode OnInterrupt(const InterruptEventInternal& interruptEvent) override { return SUCCESS; }
+
+    ErrCode OnRouteUpdate(uint32_t routeFlag, const std::string& networkId) override { return SUCCESS; }
+
+    ErrCode OnAvailableDeviceChange(uint32_t usage, const DeviceChangeAction& deviceChangeAction) override
+    {
+        return SUCCESS;
+    }
+
+    ErrCode OnQueryClientType(const std::string& bundleName, uint32_t uid, bool& ret) override
+    {
+        return SUCCESS;
+    }
+
+    ErrCode OnCheckClientInfo(const std::string& bundleName, int32_t& uid, int32_t pid, bool& ret) override
+    {
+        return SUCCESS;
+    }
+
+    ErrCode OnCheckVKBInfo(const std::string& bundleName, bool& isValid) override
+    {
+        return SUCCESS;
+    }
+
+    ErrCode OnQueryAllowedPlayback(int32_t uid, int32_t pid, bool& ret) override
+    {
+        return SUCCESS;
+    }
+
+    ErrCode OnBackgroundMute(int32_t uid) override
+    {
+        return SUCCESS;
+    }
+
+    ErrCode OnQueryBundleNameIsInList(const std::string& bundleName, const std::string& listType, bool& ret) override
+    {
+        ret = true;
+        return SUCCESS;
+    }
+
+    ErrCode OnQueryDeviceVolumeBehavior(VolumeBehavior &volumeBehavior) override
+    {
+        volumeBehavior.isReady = false;
+        volumeBehavior.isVolumeControlDisabled = false;
+        volumeBehavior.databaseVolumeName = "";
+        return SUCCESS;
+    }
+};
 
 /**
 * @tc.name  : Test AudioStateManager.
@@ -69,6 +126,8 @@ HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_002, TestSize.Leve
     AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerUid(790);
     deviceDesc = AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
     EXPECT_NE(deviceDesc, nullptr);
+    sptr<IStandardAudioPolicyManagerListener> callback = new IStandardAudioPolicyManagerListenerStub();
+    AudioStateManager::GetAudioStateManager().SetAudioClientInfoMgrCallback(callback);
     AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(speaker, 1);
     AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, 790);
     deviceDesc = AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
@@ -174,5 +233,86 @@ HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_010, TestSize.Leve
     EXPECT_NE(AudioStateManager::GetAudioStateManager().GetPreferredRecordCaptureDevice()->connectState_,
         ConnectState::CONNECTED);
 }
+
+/**
+* @tc.name  : Test AudioStateManager.
+* @tc.number: AudioStateManagerUnitTest_011
+* @tc.desc  : Test ExcludeOutputDevices interface.
+*/
+HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_011, TestSize.Level1)
+{
+    AudioDeviceUsage audioDevUsage = MEDIA_OUTPUT_DEVICES;
+    auto descriptor = std::make_shared<AudioDeviceDescriptor>();
+    vector<shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+    audioDeviceDescriptors.push_back(descriptor);
+    AudioStateManager::GetAudioStateManager().ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    AudioStateManager::GetAudioStateManager().UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    EXPECT_NE(0, audioDeviceDescriptors.size());
+
+    audioDevUsage = CALL_OUTPUT_DEVICES;
+    AudioStateManager::GetAudioStateManager().ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    AudioStateManager::GetAudioStateManager().UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    EXPECT_NE(0, audioDeviceDescriptors.size());
+
+    audioDevUsage = CALL_INPUT_DEVICES;
+    AudioStateManager::GetAudioStateManager().ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    AudioStateManager::GetAudioStateManager().UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    EXPECT_NE(0, audioDeviceDescriptors.size());
+}
+
+/**
+* @tc.name  : Test AudioStateManager.
+* @tc.number: AudioStateManagerUnitTest_012
+* @tc.desc  : Test SetAudioSceneOwnerUid interface.
+*/
+HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_012, TestSize.Level1)
+{
+    int32_t uid = 1041;
+    AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerUid(uid);
+    EXPECT_EQ(ANCO_SERVICE_BROKER_UID, AudioStateManager::GetAudioStateManager().ownerUid_);
+}
+
+/**
+* @tc.name  : Test AudioStateManager.
+* @tc.number: AudioStateManagerUnitTest_013
+* @tc.desc  : Test GetExcludedDevices interface.
+*/
+HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_013, TestSize.Level1)
+{
+    AudioDeviceUsage usage = CALL_INPUT_DEVICES;
+    auto ret = AudioStateManager::GetAudioStateManager().GetExcludedDevices(usage);
+    EXPECT_EQ(0, ret.size());
+}
+
+/**
+* @tc.name  : Test AudioStateManager.
+* @tc.number: AudioStateManagerUnitTest_014
+* @tc.desc  : Test SetAndGetPreferredCallRenderDeviceForUid interface.
+*/
+HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_014, TestSize.Level1)
+{
+    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    shared_ptr<AudioDeviceDescriptor> speaker = std::make_shared<AudioDeviceDescriptor>();
+    speaker->deviceType_ = DEVICE_TYPE_SPEAKER;
+    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, 0);
+    AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerUid(299);
+    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(speaker, 299);
+    shared_ptr<AudioDeviceDescriptor> deviceDesc =
+        AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDeviceForUid(299);
+    EXPECT_EQ(deviceDesc->deviceType_, DEVICE_TYPE_SPEAKER);
+    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(speaker, 1);
+    deviceDesc =
+        AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDeviceForUid(1);
+    EXPECT_EQ(deviceDesc->deviceType_, DEVICE_TYPE_SPEAKER);
+    deviceDesc =
+        AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDeviceForUid(456);
+    EXPECT_EQ(deviceDesc->deviceType_, DEVICE_TYPE_SPEAKER);
+    AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerUid(0);
+    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(speaker, 1);
+    deviceDesc = AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
+    EXPECT_EQ(deviceDesc->deviceType_, DEVICE_TYPE_SPEAKER);
+    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS
+ 

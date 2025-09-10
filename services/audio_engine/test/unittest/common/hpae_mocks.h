@@ -19,6 +19,7 @@
 #include "gmock/gmock.h"
 #include "hpae_msg_channel.h"
 #include "sink/i_audio_render_sink.h"
+#include "i_renderer_stream.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -33,6 +34,8 @@ public:
 
 class MockAudioRenderSink : public IAudioRenderSink {
 public:
+    MockAudioRenderSink() = default;
+    virtual ~MockAudioRenderSink() = default;
     MOCK_METHOD(int32_t, Init, (const IAudioSinkAttr &attr), (override));
     MOCK_METHOD(void, DeInit, (), (override));
     MOCK_METHOD(bool, IsInited, (), (override));
@@ -65,17 +68,17 @@ public:
     MOCK_METHOD(void, SetAudioMonoState, (bool audioMono), (override));
     MOCK_METHOD(void, SetAudioBalanceValue, (float audioBalance), (override));
 
-    int32_t SetSinkMuteForSwitchDevice(bool /* mute */) override { return 0; }
-    int32_t SetDeviceConnectedFlag(bool /* flag */) override { return -1; }
-    void SetSpeed(float /* speed */) override {}
+    MOCK_METHOD(int32_t, SetSinkMuteForSwitchDevice, (bool mute), (override));
+    MOCK_METHOD(int32_t, SetDeviceConnectedFlag, (bool flag), (override));
+    MOCK_METHOD(void, SetSpeed, (float speed), (override));
 
     MOCK_METHOD(int32_t, SetAudioScene, (AudioScene audioScene, bool scoExcludeFlag), (override));
     MOCK_METHOD(int32_t, GetAudioScene, (), (override));
 
     MOCK_METHOD(int32_t, UpdateActiveDevice, (std::vector<DeviceType> &outputDevices), (override));
 
-    void RegistCallback(uint32_t /* type */, IAudioSinkCallback * /* callback */) override {}
-    void RegistCallback(uint32_t /* type */, std::shared_ptr<IAudioSinkCallback> /* callback */) override {}
+    MOCK_METHOD(void, RegistCallback, (uint32_t type, IAudioSinkCallback *callback), (override));
+    MOCK_METHOD(void, RegistCallback, (uint32_t type, std::shared_ptr<IAudioSinkCallback> callback), (override));
     MOCK_METHOD(void, ResetActiveDeviceForDisconnect, (DeviceType device), (override));
 
     MOCK_METHOD(int32_t, SetPaPower, (int32_t flag), (override));
@@ -84,37 +87,56 @@ public:
     MOCK_METHOD(int32_t, UpdateAppsUid, (const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size), (override));
     MOCK_METHOD(int32_t, UpdateAppsUid, (const std::vector<int32_t> &appsUid), (override));
 
-    int32_t SetRenderEmpty(int32_t /* durationUs */) override { return 0; }
-    void SetAddress(const std::string & /* address */) override {}
-    void SetInvalidState() override {}
+    MOCK_METHOD(int32_t, SetRenderEmpty, (int32_t durationUs), (override));
+    MOCK_METHOD(void, SetAddress, (const std::string &address), (override));
+    MOCK_METHOD(void, SetInvalidState, (), (override));
+    MOCK_METHOD(bool, IsSinkInited, (), (override));  // 注意与已存在的 IsInited 区分
+
+    MOCK_METHOD(int32_t, GetMmapBufferInfo,
+        (int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
+         uint32_t &byteSizePerFrame, uint32_t &syncInfoSize), (override));
+    MOCK_METHOD(int32_t, GetMmapHandlePosition,
+        (uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec), (override));
+
+    MOCK_METHOD(int32_t, Drain, (AudioDrainType type), (override));
+    MOCK_METHOD(void, RegistOffloadHdiCallback,
+        (std::function<void(const RenderCallbackType type)> callback), (override));
+    MOCK_METHOD(int32_t, RegistDirectHdiCallback,
+        (std::function<void(const RenderCallbackType type)> callback), (override));
+    MOCK_METHOD(int32_t, SetBufferSize, (uint32_t sizeMs), (override));
+    MOCK_METHOD(int32_t, SetOffloadRenderCallbackType, (RenderCallbackType type), (override));
+    MOCK_METHOD(int32_t, LockOffloadRunningLock, (), (override));
+    MOCK_METHOD(int32_t, UnLockOffloadRunningLock, (), (override));
+
+    MOCK_METHOD(int32_t, SplitRenderFrame,
+        (char &data, uint64_t len, uint64_t &writeLen, const char *splitStreamType), (override));
+    MOCK_METHOD(int32_t, UpdatePrimaryConnectionState, (uint32_t operation), (override));
+    MOCK_METHOD(void, SetDmDeviceType, (uint16_t dmDeviceType, DeviceType deviceType), (override));
 
     MOCK_METHOD(void, DumpInfo, (std::string &dumpString), (override));
+};
 
-    bool IsSinkInited() override { return false; }
+// Mock INodeCallback
+class MockNodeCallback : public INodeCallback {
+public:
+    MockNodeCallback() = default;
+    virtual ~MockNodeCallback() = default;
+    MOCK_METHOD(void, OnNodeStatusUpdate, (uint32_t, IOperation), (override));
+    MOCK_METHOD(void, OnFadeDone, (uint32_t, IOperation), (override));
+    MOCK_METHOD(void, OnRequestLatency, (uint32_t, uint64_t &), (override));
+    MOCK_METHOD(void, OnRewindAndFlush, (uint64_t, uint64_t), (override));
+    MOCK_METHOD(void, OnNotifyQueue, (), (override));
+    MOCK_METHOD(void, OnDisConnectProcessCluster, (HpaeProcessorType), (override));
+    MOCK_METHOD(void, OnNotifyDfxNodeInfo, (bool, uint32_t, HpaeDfxNodeInfo &), (override));
+    MOCK_METHOD(void, OnNotifyDfxNodeInfoChanged, (uint32_t, const HpaeDfxNodeInfo &), (override));
+};
 
-    int32_t GetMmapBufferInfo(int & /* fd */, uint32_t & /* totalSizeInframe */,
-        uint32_t & /* spanSizeInframe */, uint32_t & /* byteSizePerFrame */,
-        uint32_t & /* syncInfoSize */) override { return -1; }
-    int32_t GetMmapHandlePosition(uint64_t & /* frames */, int64_t & /* timeSec */,
-        int64_t & /* timeNanoSec */) override { return -1; }
-
-    int32_t Drain(AudioDrainType /* type */) override { return -1; }
-    void RegistOffloadHdiCallback(std::function<void(const RenderCallbackType type)> /* callback */) override {}
-    int32_t RegistDirectHdiCallback(std::function<void(const RenderCallbackType type)> /* callback */) override
-    {
-        return 0;
-    }
-    int32_t SetBufferSize(uint32_t /* sizeMs */) override { return -1; }
-    int32_t SetOffloadRenderCallbackType(RenderCallbackType /* type */) override { return -1; }
-    int32_t LockOffloadRunningLock() override { return -1; }
-    int32_t UnLockOffloadRunningLock() override { return -1; }
-
-    int32_t SplitRenderFrame(char & /* data */, uint64_t /* len */, uint64_t & /* writeLen */,
-        const char * /* streamType */, const char * /* audioType */) override { return -1; }
-
-    int32_t UpdatePrimaryConnectionState(uint32_t /* operation */) override { return -1; }
-
-    void SetDmDeviceType(uint16_t /* dmDeviceType */, DeviceType /* deviceType */) override {}
+// Mock IStreamCallback
+class MockStreamCallback : public IStreamCallback {
+public:
+    MockStreamCallback() = default;
+    virtual ~MockStreamCallback() = default;
+    MOCK_METHOD(int32_t, OnStreamData, (AudioCallBackStreamInfo&), (override));
 };
 } // namespace HPAE
 } // namespace AudioStandard

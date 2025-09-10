@@ -1137,6 +1137,36 @@ void AudioStreamCollectorCheckVoiceCallActiveFuzzTest(const uint8_t *rawData, si
     audioStreamCollector_.CheckVoiceCallActive(clientPid);
 }
 
+void AudioStreamCollectorPostReclaimMemoryTaskFuzzTest(const uint8_t *rawData, size_t size)
+{
+    uint32_t index = static_cast<uint32_t>(size);
+    AudioStreamType volumeType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    int32_t randIntValue = static_cast<int32_t>(size);
+    rendererChangeInfo->createrUID = randIntValue / NUM_2;
+    rendererChangeInfo->clientUID = randIntValue / NUM_2;
+    rendererChangeInfo->sessionId = randIntValue;
+    rendererChangeInfo->rendererState = g_testRendererState[index % g_testRendererState.size()];
+    audioStreamCollector_.audioRendererChangeInfos_.clear();
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+    audioStreamCollector_.PostReclaimMemoryTask();
+    audioStreamCollector_.ReclaimMem();
+}
+
+void AudioStreamCollectorCheckAudioStateIdleFuzzTest(const uint8_t *rawData, size_t size)
+{
+    uint32_t index = static_cast<uint32_t>(size);
+    AudioStreamType volumeType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    int32_t randIntValue = static_cast<int32_t>(size);
+    rendererChangeInfo->createrUID = randIntValue / NUM_2;
+    rendererChangeInfo->clientUID = randIntValue / NUM_2;
+    rendererChangeInfo->sessionId = randIntValue;
+    rendererChangeInfo->rendererState = g_testRendererState[index % g_testRendererState.size()];
+    audioStreamCollector_.audioRendererChangeInfos_.clear();
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+    audioStreamCollector_.CheckAudioStateIdle();
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -1198,6 +1228,8 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioStreamCollectorIsMediaPlayingFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorIsVoipStreamActiveFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorCheckVoiceCallActiveFuzzTest,
+    OHOS::AudioStandard::AudioStreamCollectorPostReclaimMemoryTaskFuzzTest,
+    OHOS::AudioStandard::AudioStreamCollectorCheckAudioStateIdleFuzzTest,
 };
 
 /* Fuzzer entry point */

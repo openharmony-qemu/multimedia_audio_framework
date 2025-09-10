@@ -66,7 +66,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    int32_t SetVolume(AudioVolumeType volumeType, int32_t volume) const;
+    int32_t SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t uid = 0) const;
 
     /**
      * @brief Set the stream volume.
@@ -214,7 +214,7 @@ public:
      * @return Returns current stream volume.
      * @since 8
      */
-    int32_t GetVolume(AudioVolumeType volumeType) const;
+    int32_t GetVolume(AudioVolumeType volumeType, int32_t uid = 0) const;
 
     /**
      * @brief Set volume discount factor.
@@ -371,7 +371,8 @@ public:
      * @since 9
      */
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors,
+        const int32_t audioDeviceSelectMode = 0) const;
 
     /**
      * @brief Select the audio input device according to the filter conditions.
@@ -729,24 +730,6 @@ public:
      * @since 8
      */
     int32_t UnregisterVolumeKeyEventCallback(const int32_t clientPid,
-        const std::shared_ptr<VolumeKeyEventCallback> &callback = nullptr);
-
-    /**
-     * @brief registers the volume degree callback listener
-     *
-     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     */
-    int32_t RegisterVolumeDegreeCallback(const int32_t clientPid,
-        const std::shared_ptr<VolumeKeyEventCallback> &callback);
-
-    /**
-     * @brief Unregisters the volumeKeyEvent callback listener
-     *
-     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     */
-    int32_t UnregisterVolumeDegreeCallback(const int32_t clientPid,
         const std::shared_ptr<VolumeKeyEventCallback> &callback = nullptr);
 
     /**
@@ -1507,6 +1490,12 @@ public:
     */
     int32_t GetVolumeBySessionId(const uint32_t &sessionId, float &volume);
 
+    /**
+    * @brief clean resouce.
+    * @test
+    */
+    void CleanUpResource();
+
     class WorkgroupPrioRecorder {
     public:
         WorkgroupPrioRecorder(int32_t grpId);
@@ -1524,7 +1513,7 @@ public:
         std::mutex workgroupThreadsMutex_;
     };
     std::shared_ptr<WorkgroupPrioRecorder> GetRecorderByGrpId(int32_t grpId);
-    int32_t ExcuteAudioWorkgroupPrioImprove(int32_t workgroupId,
+    int32_t ExecuteAudioWorkgroupPrioImprove(int32_t workgroupId,
         const std::unordered_map<int32_t, bool> threads, bool &needUpdatePrio);
 
 private:

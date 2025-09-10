@@ -39,7 +39,10 @@ ohos_fuzztest("AudioManagerFuzzTest") {
     "../../../services/audio_policy:audio_foundation",
     "../../../services/audio_service:audio_client",
   ]
-  external_deps = [ "c_utils:utils" ]
+  external_deps = [
+    "c_utils:utils",
+    "ipc:ipc_core",
+  ]
 
   defines = []
   if (use_libfuzzer || use_clang_coverage) {

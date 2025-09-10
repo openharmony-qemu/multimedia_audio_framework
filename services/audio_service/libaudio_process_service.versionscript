@@ -33,6 +33,7 @@
     *CheckHibernateState*;
     *GetHibernateState*;
     *GetMaxRendererInstances*;
+    *IsSupportInnerCaptureOffload*;
     *ProcessCbProxy*;
     *GetCapturerBySessionID*;
     *GetCurrentRendererStreamCnt*;
@@ -61,6 +62,8 @@
     *GenerateSessionId*;
     *LoadModernInnerCapSink*;
     *UnloadModernInnerCapSink*;
+    *LoadModernOffloadCapSource*;
+    *UnloadModernOffloadCapSource*;
     *ConfigCoreServiceProvider*;
     *UpdateSessionOperation*;
     *SetSessionMuteState*;
@@ -84,6 +87,7 @@
     *UpdateBackgroundCaptureMap*;
     *SendInterruptEventToAudioServer*;
     *SendInterruptEventToAudioService*;
+    *GetPrivacyType*;
   local:
     *;
 };

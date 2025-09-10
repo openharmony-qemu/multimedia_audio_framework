@@ -355,7 +355,7 @@ void AudioCoreServiceEventEntryGetPreferredInputDeviceDescriptorsFuzzTest()
     AudioCapturerInfo capturerInfo;
     capturerInfo.sourceType = SOURCE_TYPE_INVALID;
     std::string networkId = "networkId";
-    eventEntry->GetPreferredInputDeviceDescriptors(capturerInfo, networkId);
+    eventEntry->GetPreferredInputDeviceDescriptors(capturerInfo, INVALID_UID, networkId);
 }
 
 void AudioCoreServiceEventEntryGetActiveBluetoothDeviceFuzzTest()

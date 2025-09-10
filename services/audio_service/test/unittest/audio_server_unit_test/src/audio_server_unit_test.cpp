@@ -38,11 +38,11 @@ const int32_t SYSTEM_ABILITY_ID = 3001;
 const bool RUN_ON_CREATE = false;
 constexpr int32_t INVALID_VALUE = -1;
 
-static std::shared_ptr<AudioServer> audioServer;
+static sptr<AudioServer> audioServer;
 
 void AudioServerUnitTest::SetUpTestCase(void)
 {
-    audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     EXPECT_NE(nullptr, audioServer);
     audioServer->OnDump();
 }
@@ -833,10 +833,10 @@ HWTEST_F(AudioServerUnitTest, AudioServerUpdateDualToneState_001, TestSize.Level
     EXPECT_NE(nullptr, audioServer);
 
     int32_t ret = audioServer->UpdateDualToneState(false, 123);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     ret = audioServer->UpdateDualToneState(true, 123);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 #endif
 

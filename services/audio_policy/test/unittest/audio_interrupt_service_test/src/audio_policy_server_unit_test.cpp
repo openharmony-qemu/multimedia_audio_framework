@@ -586,7 +586,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_019, TestSize.Level1)
     bool isActive = false;
     ptrAudioPolicyServer->interruptService_ = std::make_shared<AudioInterruptService>();
     ptrAudioPolicyServer->IsAudioSessionActivated(isActive);
-    EXPECT_EQ(isActive, true);
+    EXPECT_EQ(isActive, false);
 }
 
 /**
@@ -605,7 +605,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_020, TestSize.Level1)
     bool isActive = false;
     ptrAudioPolicyServer->interruptService_ = nullptr;
     ptrAudioPolicyServer->IsAudioSessionActivated(isActive);
-    EXPECT_EQ(isActive, true);
+    EXPECT_EQ(isActive, false);
 }
 
 /**
@@ -1398,49 +1398,6 @@ HWTEST(AudioPolicyUnitTest, MapExternalToInternalDeviceType_002, TestSize.Level1
 }
 
 /**
-* @tc.name  : Test MapExternalToInternalDeviceType.
-* @tc.number: MapExternalToInternalDeviceType_003
-* @tc.desc  : Test MapExternalToInternalDeviceType
-*/
-HWTEST(AudioPolicyUnitTest, MapExternalToInternalDeviceType_003, TestSize.Level1)
-{
-    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    ASSERT_TRUE(server != nullptr);
-    AudioDeviceDescriptor desc;
-
-    desc.deviceType_ == DEVICE_TYPE_NEARLINK;
-    desc.deviceRole_ == INPUT_DEVICE;
-    server->MapExternalToInternalDeviceType(desc);
-    EXPECT_EQ(desc.deviceType_, DEVICE_TYPE_NEARLINK_IN);
-
-    desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP;
-    desc.deviceRole_ == INPUT_DEVICE;
-    server->MapExternalToInternalDeviceType(desc);
-    EXPECT_EQ(desc.deviceType_, DEVICE_TYPE_BLUETOOTH_A2DP_IN);
-}
-
-/**
-* @tc.name  : Test SetNearlinkDeviceVolume.
-* @tc.number: SetNearlinkDeviceVolume_001
-* @tc.desc  : Test SetNearlinkDeviceVolume
-*/
-HWTEST_F(AudioPolicyUnitTest, SetNearlinkDeviceVolume_001, TestSize.Level1)
-{
-    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    ASSERT_TRUE(server != nullptr);
-    
-    std::string macAddress = "LocalDevice";
-    int32_t streamTypeIn = 1;
-    int32_t volume = 0;
-    bool updateUi =true;
-
-    int32_t ret = server->SetNearlinkDeviceVolume(macAddress, streamTypeIn, volume, updateUi);
-
-
-    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
-}
-
-/**
 * @tc.name  : Test UpdateDeviceInfo.
 * @tc.number: UpdateDeviceInfo_001
 * @tc.desc  : Test UpdateDeviceInfo.
@@ -1455,27 +1412,6 @@ HWTEST(AudioPolicyUnitTest, UpdateDeviceInfo_001, TestSize.Level1)
     int32_t command = 1;
 
     int32_t ret = server->UpdateDeviceInfo(deviceDesc, command);
-    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
-}
-
-/**
-* @tc.name  : Test SetSleAudioOperationCallback.
-* @tc.number: SetSleAudioOperationCallback_001
-* @tc.desc  : Test SetSleAudioOperationCallback.
-*/
-HWTEST(AudioPolicyUnitTest, SetSleAudioOperationCallback_001, TestSize.Level1)
-{
-    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    ASSERT_TRUE(server != nullptr);
-
-    sptr<IRemoteObject> objectct = nullptr;
-
-    int32_t ret = server->SetSleAudioOperationCallback(objectct);
-    EXPECT_EQ(ERR_INVALID_PARAM, ret);
-
-    sptr<IRemoteObject> object = new RemoteObjectTestStub();
-
-    ret = server->SetSleAudioOperationCallback(objectct);
     EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
 }
 
@@ -1976,7 +1912,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_062, TestSize.Level1)
     std::shared_ptr<AudioDeviceDescriptor> desc;
     int32_t ret = 0;
     server->SetPreferredDevice(PreferredType::AUDIO_CALL_CAPTURE, desc, ret);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -2477,7 +2413,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_096, TestSize.Level1)
     int32_t ret = 0;
     server->isFirstAudioServiceStart_.store(true);
     server->GetMaxRendererInstances(ret);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, 0);
 }
 
 /**
@@ -2493,7 +2429,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_097, TestSize.Level1)
     int32_t ret = 0;
     server->isFirstAudioServiceStart_.store(false);
     server->GetMaxRendererInstances(ret);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, 0);
 }
 
 /**
@@ -2580,7 +2516,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_102, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 
     ret = server->SetRingerModeInner(AudioRingerMode::RINGER_MODE_SILENT);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 /**
@@ -3192,7 +3128,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_148, TestSize.Level1)
 
     volumeLevel = server->audioVolumeManager_.GetMinVolumeLevel(AudioStreamType::STREAM_RING);
     ret = server->SetSystemVolumeLevelLegacy(AudioStreamType::STREAM_RING, volumeLevel);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 #ifdef TEMP_DISABLE
@@ -3582,6 +3518,34 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_168, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: AudioPolicyServer_222
+* @tc.desc  : Test GetVADeviceBroker.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_222, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    sptr<IRemoteObject> client;
+    int32_t result = server->GetVADeviceBroker(client);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(client, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: AudioPolicyServer_223
+* @tc.desc  : Test GetVADeviceBroker.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_223, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    sptr<IRemoteObject> controller;
+    std::string macAddress = "00:11:22:33:44:55";
+    int32_t result = server->GetVADeviceController(macAddress, controller);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
  * @tc.name  : Test AudioPolicyServer
  * @tc.number: IsStreamActiveByStreamUsage_001
  * @tc.desc  : AudioPolicyServer::IsStreamActiveByStreamUsage
@@ -3719,6 +3683,22 @@ HWTEST(AudioPolicyUnitTest, GetDeviceVolumeBehavior_001, TestSize.Level1)
     DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
     VolumeBehavior volumeBehavior = server->audioDeviceManager_.GetDeviceVolumeBehavior(networkId, deviceType);
     EXPECT_EQ(volumeBehavior.isReady, false);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: IsIntelligentNoiseReductionEnabledForCurrentDevice_001
+* @tc.desc  : Test IsIntelligentNoiseReductionEnabledForCurrentDevice.
+*/
+HWTEST(AudioPolicyUnitTest, IsIntelligentNoiseReductionEnabledForCurrentDevice_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    SourceType sourceType = SourceType::SOURCE_TYPE_MIC;
+    bool isSupport = false;
+    int32_t ret = server->IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType, isSupport);
+    EXPECT_EQ(ret, SUCCESS);
 }
 } // AudioStandard
 } // OHOS

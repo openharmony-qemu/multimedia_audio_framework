@@ -264,6 +264,8 @@ AudioAdapterType PolicyAdapterInfo::GetAdapterType(const std::string &adapterNam
         return AudioAdapterType::TYPE_ACCESSORY;
     } else if (adapterName == ADAPTER_TYPE_SLE) {
         return AudioAdapterType::TYPE_SLE;
+    } else if (adapterName == ADAPTER_TYPE_VA) {
+        return AudioAdapterType::TYPE_VA;
     } else {
         return AudioAdapterType::TYPE_INVALID;
     }

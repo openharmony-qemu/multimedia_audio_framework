@@ -42,6 +42,7 @@ void ProAudioServiceAdapterUnitTest::SetUp(void)
 
 void ProAudioServiceAdapterUnitTest::TearDown(void)
 {
+    HPAE::IHpaeManager::GetHpaeManager().DeInit();
 }
 
 ProAudioServiceAdapterUnitTest::ProAudioServiceAdapterUnitTest()
@@ -329,19 +330,19 @@ HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_001, TestSize
 {
     AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
     int32_t portId = impl_->ReloadAudioPort(moduleInfo.lib, moduleInfo);
-    EXPECT_GE(0, portId);
+    EXPECT_GE(portId, 0);
 }
 
 /**
  * @tc.name: Pro_Audio_ReloadAudioPort_002
- * @tc.desc: test reload audio port sink
+ * @tc.desc: test reload audio port source
  * @tc.type: FUNC
  */
 HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_002, TestSize.Level1)
 {
     AudioModuleInfo moduleInfo = InitSourceAudioModeInfo();
     int32_t portId = impl_->ReloadAudioPort(moduleInfo.lib, moduleInfo);
-    EXPECT_GE(0, portId);
+    EXPECT_EQ(portId, -1);
 }
 
 /**
@@ -353,9 +354,9 @@ HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_004, TestSize
 {
     AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
     int32_t portId = impl_->OpenAudioPort(moduleInfo.lib, moduleInfo);
-    EXPECT_GE(0, portId);
+    EXPECT_GE(portId, 0);
     portId = impl_->ReloadAudioPort(moduleInfo.lib, moduleInfo);
-    EXPECT_GE(0, portId);
+    EXPECT_GE(portId, 0);
 }
 
 /**
@@ -367,11 +368,11 @@ HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_005, TestSize
 {
     AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
     int32_t portId = impl_->OpenAudioPort(moduleInfo.lib, moduleInfo);
-    EXPECT_GE(0, portId);
+    EXPECT_GE(portId, 0);
     int32_t ret = impl_->CloseAudioPort(portId);
     EXPECT_EQ(ERROR, ret);
     portId = impl_->ReloadAudioPort(moduleInfo.lib, moduleInfo);
-    EXPECT_GE(0, portId);
+    EXPECT_GE(portId, 0);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

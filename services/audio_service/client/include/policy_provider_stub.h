@@ -38,10 +38,13 @@ public:
     int32_t NearlinkGetRenderPosition(uint32_t &delayValue) override;
     int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName) override;
     int32_t GetMaxRendererInstances(int32_t &maxInstances) override;
+    int32_t IsSupportInnerCaptureOffload(bool &isSupported) override;
     int32_t NotifyCapturerRemoved(uint64_t sessionId) override;
 // #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t LoadModernInnerCapSink(int32_t innerCapId) override;
     int32_t UnloadModernInnerCapSink(int32_t innerCapId) override;
+    int32_t LoadModernOffloadCapSource() override;
+    int32_t UnloadModernOffloadCapSource() override;
 // #endif
     int32_t ClearAudioFocusBySessionID(int32_t sessionID) override;
     int32_t CaptureConcurrentCheck(uint32_t sessionID) override;

@@ -32,6 +32,7 @@
 
 constexpr int32_t DEFAULT_EFFECT_RATE = 48000;
 constexpr int32_t DEFAULT_EFFECT_FRAME_LEN = 960;
+constexpr int32_t FRAME_LENGTH_LIMIT = 38400;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -67,6 +68,7 @@ int32_t HpaeRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo
     nodeInfo.streamType = streamInfo.streamType;
     nodeInfo.sessionId = streamInfo.sessionId;
     nodeInfo.samplingRate = static_cast<AudioSamplingRate>(streamInfo.samplingRate);
+    nodeInfo.customSampleRate = streamInfo.customSampleRate;
     nodeInfo.sceneType = TransToProperSceneType(streamInfo.effectInfo.streamUsage, streamInfo.effectInfo.effectScene);
     nodeInfo.effectInfo = streamInfo.effectInfo;
     TransNodeInfoForCollaboration(nodeInfo, isCollaborationEnabled_);
@@ -119,7 +121,7 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     SetSessionState(sessionId, node->GetState());
     sessionNodeMap_[sessionId].sceneType = nodeInfo.sceneType;
 
-    AUDIO_INFO_LOG("[FinishMove] session :%{public}u to sink:%{public}s, sceneType is %{public}d",
+    HILOG_COMM_INFO("[FinishMove] session :%{public}u to sink:%{public}s, sceneType is %{public}d",
         sessionId, sinkInfo_.deviceClass.c_str(), nodeInfo.sceneType);
     CreateEffectAndConnect(nodeInfo, isConnect);
 }
@@ -154,7 +156,7 @@ void HpaeRendererManager::CreateEffectAndConnect(HpaeNodeInfo &nodeInfo, bool is
 
 void HpaeRendererManager::CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo)
 {
-    AUDIO_INFO_LOG("use default processCluster");
+    HILOG_COMM_INFO("use default processCluster");
     if (sceneClusterMap_.find(HPAE_SCENE_DEFAULT) == sceneClusterMap_.end()) {
         AUDIO_INFO_LOG("default processCluster is null, create default processCluster");
         HpaeNodeInfo temp = nodeInfo;
@@ -176,20 +178,20 @@ void HpaeRendererManager::CreateProcessClusterInner(HpaeNodeInfo &nodeInfo, int3
     std::shared_ptr<HpaeProcessCluster> hpaeProcessCluster = nullptr;
     switch (processClusterDecision) {
         case NO_NEED_TO_CREATE_PROCESSCLUSTER:
-            AUDIO_INFO_LOG("no need to create processCluster");
+            HILOG_COMM_INFO("no need to create processCluster");
             CHECK_AND_RETURN(!SafeGetMap(sceneClusterMap_, nodeInfo.sceneType));
             AUDIO_INFO_LOG("processCluster is null, create a new processCluster");
             sceneClusterMap_[nodeInfo.sceneType] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
             break;
         case CREATE_NEW_PROCESSCLUSTER:
             CHECK_AND_RETURN(!SafeGetMap(sceneClusterMap_, nodeInfo.sceneType));
-            AUDIO_INFO_LOG("create new processCluster");
+            HILOG_COMM_INFO("create new processCluster");
             sceneClusterMap_[nodeInfo.sceneType] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
             break;
         case CREATE_DEFAULT_PROCESSCLUSTER:
             temp.sceneType = HPAE_SCENE_DEFAULT;
             if (!SafeGetMap(sceneClusterMap_, HPAE_SCENE_DEFAULT)) {
-                AUDIO_INFO_LOG("begin control, create default processCluster");
+                HILOG_COMM_INFO("begin control, create default processCluster");
                 hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(temp, sinkInfo_);
                 sceneClusterMap_[HPAE_SCENE_DEFAULT] = hpaeProcessCluster;
                 sceneClusterMap_[nodeInfo.sceneType] = hpaeProcessCluster;
@@ -202,10 +204,10 @@ void HpaeRendererManager::CreateProcessClusterInner(HpaeNodeInfo &nodeInfo, int3
             CreateDefaultProcessCluster(nodeInfo);
             break;
         case USE_NONE_PROCESSCLUSTER:
-            AUDIO_INFO_LOG("use none processCluster");
+            HILOG_COMM_INFO("use none processCluster");
             break;
         case CREATE_EXTRA_PROCESSCLUSTER:
-            AUDIO_INFO_LOG("out of control");
+            HILOG_COMM_INFO("out of control");
             CHECK_AND_RETURN(!SafeGetMap(sceneClusterMap_, nodeInfo.sceneType));
             AUDIO_INFO_LOG("out of control, create a new processCluster");
             sceneClusterMap_[nodeInfo.sceneType] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
@@ -304,6 +306,10 @@ int32_t HpaeRendererManager::CreateStream(const HpaeStreamInfo &streamInfo)
     if (!IsInit()) {
         return ERR_INVALID_OPERATION;
     }
+    int32_t checkRet = CheckStreamInfo(streamInfo);
+    if (checkRet != SUCCESS) {
+        return checkRet;
+    }
     auto request = [this, streamInfo]() {
         Trace trace("HpaeRendererManager::CreateStream id[" +
             std::to_string(streamInfo.sessionId) + "]");
@@ -316,6 +322,18 @@ int32_t HpaeRendererManager::CreateStream(const HpaeStreamInfo &streamInfo)
         sinkInputNodeMap_[streamInfo.sessionId]->SetState(HPAE_SESSION_PREPARED);
     };
     SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeRendererManager::CheckStreamInfo(const HpaeStreamInfo &streamInfo)
+{
+    if (streamInfo.frameLen == 0) {
+        AUDIO_ERR_LOG("FrameLen is 0.");
+        return ERROR;
+    } else if (streamInfo.frameLen > FRAME_LENGTH_LIMIT) {
+        AUDIO_ERR_LOG("FrameLen is over-sized.");
+        return ERROR;
+    }
     return SUCCESS;
 }
 
@@ -421,7 +439,9 @@ int32_t HpaeRendererManager::DeleteProcessCluster(uint32_t sessionId)
         DisConnectProcessCluster(nodeInfo, sceneType, sessionId);
         if (sceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
             sceneClusterMap_[sceneType]->DisConnectMixerNode();
-            outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
+            if (outputCluster_ != nullptr) {
+                outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
+            }
             // for collaboration
             if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
                 hpaeCoBufferNode_->DisConnect(sceneClusterMap_[sceneType]);
@@ -541,7 +561,7 @@ void HpaeRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
     for (const auto &it : sessionIds) {
         DeleteInputSessionForMove(it);
     }
-    AUDIO_INFO_LOG("[StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
+    HILOG_COMM_INFO("StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
         idStr.c_str(), name.c_str(), moveType);
     if (moveType == MOVE_ALL) {
         TriggerSyncCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);
@@ -863,10 +883,16 @@ int32_t HpaeRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo, b
     return SUCCESS;
 }
 
-void HpaeRendererManager::InitManager(bool isReload)
+int32_t HpaeRendererManager::InitManager(bool isReload)
 {
     AUDIO_INFO_LOG("init devicename:%{public}s", sinkInfo_.deviceName.c_str());
     HpaeNodeInfo nodeInfo;
+    int32_t checkRet = CheckFramelen();
+    if (checkRet != SUCCESS) {
+        TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
+                        sinkInfo_.deviceName, ERR_INVALID_PARAM);
+        return checkRet;
+    }
     nodeInfo.channels = sinkInfo_.channels;
     nodeInfo.format = sinkInfo_.format;
     nodeInfo.frameLen = sinkInfo_.frameLen;
@@ -896,24 +922,41 @@ void HpaeRendererManager::InitManager(bool isReload)
     attr.filePath = sinkInfo_.filePath.c_str();
     attr.aux = sinkInfo_.splitMode.c_str();
     if (!sceneClusterMap_.count(HPAE_SCENE_EFFECT_NONE)) {
-        HpaeNodeInfo defaultNodeInfo;
-        defaultNodeInfo.frameLen = (uint32_t)DEFAULT_EFFECT_FRAME_LEN;
-        defaultNodeInfo.samplingRate = (AudioSamplingRate)DEFAULT_EFFECT_RATE;
-        defaultNodeInfo.format = AudioSampleFormat::INVALID_WIDTH;
-        defaultNodeInfo.channels = STEREO;
-        defaultNodeInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
-        defaultNodeInfo.streamType = STREAM_DEFAULT;
-        defaultNodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
-        defaultNodeInfo.deviceNetId = sinkInfo_.deviceNetId;
-        defaultNodeInfo.deviceClass = sinkInfo_.deviceClass;
-        defaultNodeInfo.statusCallback = weak_from_this();
-        sceneClusterMap_[HPAE_SCENE_EFFECT_NONE] = std::make_shared<HpaeProcessCluster>(defaultNodeInfo, sinkInfo_);
-        sceneTypeToProcessClusterCountMap_[HPAE_SCENE_EFFECT_NONE] = 1;
+        InitDefaultNodeInfo();
     }
-
     ret = outputCluster_->Init(attr);
     isInit_.store(ret == SUCCESS);
     TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT :INIT_DEVICE_RESULT, sinkInfo_.deviceName, ret);
+    return SUCCESS;
+}
+
+int32_t HpaeRendererManager::CheckFramelen()
+{
+    if (sinkInfo_.frameLen == 0) {
+        AUDIO_ERR_LOG("FrameLen is 0.");
+        return ERROR;
+    } else if (sinkInfo_.frameLen > FRAME_LENGTH_LIMIT) {
+        AUDIO_ERR_LOG("FrameLen is over-sized.");
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
+void HpaeRendererManager::InitDefaultNodeInfo()
+{
+    HpaeNodeInfo defaultNodeInfo;
+    defaultNodeInfo.frameLen = (uint32_t)DEFAULT_EFFECT_FRAME_LEN;
+    defaultNodeInfo.samplingRate = (AudioSamplingRate)DEFAULT_EFFECT_RATE;
+    defaultNodeInfo.format = AudioSampleFormat::INVALID_WIDTH;
+    defaultNodeInfo.channels = STEREO;
+    defaultNodeInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    defaultNodeInfo.streamType = STREAM_DEFAULT;
+    defaultNodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
+    defaultNodeInfo.deviceNetId = sinkInfo_.deviceNetId;
+    defaultNodeInfo.deviceClass = sinkInfo_.deviceClass;
+    defaultNodeInfo.statusCallback = weak_from_this();
+    sceneClusterMap_[HPAE_SCENE_EFFECT_NONE] = std::make_shared<HpaeProcessCluster>(defaultNodeInfo, sinkInfo_);
+    sceneTypeToProcessClusterCountMap_[HPAE_SCENE_EFFECT_NONE] = 1;
 }
 
 void HpaeRendererManager::CreateOutputClusterNodeInfo(HpaeNodeInfo &nodeInfo)
@@ -1033,7 +1076,7 @@ int32_t HpaeRendererManager::SetAudioEffectMode(uint32_t sessionId, int32_t effe
             size_t sinkInputNodeConnectNum = sinkInputNodeMap_[sessionId]->GetOutputPort()->GetInputNum();
             HpaeSessionState inputState = sinkInputNodeMap_[sessionId]->GetState();
             if (sinkInputNodeConnectNum != 0 && inputState == HPAE_SESSION_RUNNING) {
-                AUDIO_INFO_LOG("UpdateProcessClusterConnection because effectMode to be %{public}d", effectMode);
+                HILOG_COMM_INFO("UpdateProcessClusterConnection because effectMode to be %{public}d", effectMode);
                 UpdateProcessClusterConnection(sessionId, effectMode);
             } else {
                 AUDIO_INFO_LOG("no need to ProcessClusterConnection, sinkInputNodeConnectNum is %{public}zu, "

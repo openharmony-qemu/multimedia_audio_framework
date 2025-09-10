@@ -66,6 +66,7 @@ public:
     bool GetAndClearNeedToFetchFlag();
     bool IsRecommendToStopAudio(const std::shared_ptr<AudioPolicyServerHandler::EventContextObj> eventContextObj);
     bool IsSessionOutputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
+    bool IsSessionInputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     StreamUsage GetSessionStreamUsage();
     bool IsBackGroundApp(void);
 
@@ -95,6 +96,7 @@ private:
     AudioSessionState state_ = AudioSessionState::SESSION_INVALID;
     DeviceType defaultDeviceType_ = DEVICE_TYPE_INVALID;
     AudioDeviceDescriptor deviceDescriptor_;
+    AudioDeviceDescriptor inputDeviceDescriptor_;
     std::shared_ptr<AudioPipeManager> pipeManager_ = nullptr;
     AudioDeviceManager &deviceManager_;
 };

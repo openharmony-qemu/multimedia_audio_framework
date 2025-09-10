@@ -25,6 +25,10 @@
 #include "audio_interrupt_info.h"
 #include "audio_stream_change_info.h"
 
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
+#include "va_device.h"
+#endif
+
 namespace OHOS {
 namespace AudioStandard {
 /**
@@ -109,7 +113,9 @@ public:
     virtual ~AudioDeviceRefiner() = default;
 
     virtual int32_t OnAudioOutputDeviceRefined(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
-        RouterType routerType, StreamUsage streamUsage, int32_t clientUid, AudioPipeType audioPipeType) = 0;
+        const FetchDeviceInfo &fetchDeviceInfo) = 0;
+    virtual int32_t OnAudioDupDeviceRefined(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
+        const FetchDeviceInfo &fetchDeviceInfo) = 0;
     virtual int32_t OnAudioInputDeviceRefined(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
         RouterType routerType, SourceType sourceType, int32_t clientUid, AudioPipeType audioPipeType) = 0;
     virtual int32_t GetSplitInfoRefined(std::string &splitInfo) = 0;
@@ -185,12 +191,6 @@ public:
      * @since 8
      */
     virtual void OnVolumeKeyEvent(VolumeEvent volumeEvent) = 0;
-    /**
-     * @brief VolumeKeyEventCallback will be executed when volume degree is updated
-     *
-     * @param volumeEvent the volume event info.
-     */
-    virtual void OnVolumeDegreeEvent(VolumeEvent volumeEvent) {}
 };
 
 class StreamVolumeChangeCallback {
@@ -352,6 +352,38 @@ public:
      */
     virtual int32_t GetRenderPosition(const std::string &device, uint32_t &delayValue) = 0;
 };
+
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
+class VAStreamCallback {
+public:
+    virtual int32_t Start() = 0;
+    virtual int32_t Stop() = 0;
+    virtual int32_t Close() = 0;
+    virtual int32_t GetStreamProperty(VAAudioStreamProperty& streamProp) = 0;
+    virtual int32_t RequestSharedMem(const VASharedMemInfo& memInfo) = 0;
+};
+
+class VAInputStreamCallback : public VAStreamCallback {
+public:
+    virtual int32_t GetCapturePosition(uint64_t& attr_1, uint64_t& attr_2) = 0;
+};
+
+class VADeviceControllerCallback {
+public:
+    virtual int32_t OpenInputStream(const VAAudioStreamProperty &prop, const VAInputStreamAttribute &attr,
+                                    std::shared_ptr<VAInputStreamCallback> &inputStream) = 0;
+    virtual int32_t GetParameters(const std::string& key, std::string& value) = 0;
+
+    virtual int32_t SetParameters(const std::string& key, const std::string& value) = 0;
+};
+
+class VADeviceBrokerWrapper {
+public:
+    virtual int32_t OnDevicesConnected(const VADevice &device,
+                                       const std::shared_ptr<VADeviceControllerCallback> &controllerCallback) = 0;
+    virtual int32_t OnDevicesDisconnected(const VADevice &device) = 0;
+};
+#endif
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // ST_AUDIO_POLICY_INTERFACE_H

@@ -249,6 +249,17 @@ std::string AudioStreamDescriptor::GetNewDevicesTypeString()
     return out;
 }
 
+std::string AudioStreamDescriptor::GetNewDupDevicesTypeString()
+{
+    std::string out = "";
+    for (auto &desc : newDupDeviceDescs_) {
+        if (desc != nullptr) {
+            out += (desc->GetDeviceTypeString() + ":");
+        }
+    }
+    return out;
+}
+
 std::string AudioStreamDescriptor::GetDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> desc)
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, "", "desc is nullptr");

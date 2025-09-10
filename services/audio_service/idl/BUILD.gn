@@ -56,6 +56,10 @@ idl_gen_interface("audio_policy_idl_interface") {
     "${audio_policy_idl_location}/IStandardClientTracker.idl",
     "${audio_policy_idl_location}/IStandardSleAudioOperationCallback.idl",
     "${audio_policy_idl_location}/IStandardSpatializationStateChangeListener.idl",
+    "${audio_policy_idl_location}/IVADeviceBroker.idl",
+    "${audio_policy_idl_location}/IVAInputStream.idl",
+    "${audio_policy_idl_location}/IVADeviceController.idl",
+    "${audio_policy_idl_location}/IVAStream.idl",
   ]
   sources_callback = []
   sources_common = []
@@ -67,6 +71,15 @@ idl_gen_interface("audio_policy_idl_interface") {
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
+}
+
+config("audio_framework_interface_config") {
+  include_dirs = [
+    "${target_gen_dir}",
+    "//foundation/multimedia/audio_framework/services/audio_service/idl/",
+  ]
+  print("include_dirs=", include_dirs)
+  print("target_gen_dir=", target_gen_dir)
 }
 
 config("audio_service_sa_idl_config") {
@@ -93,6 +106,7 @@ ohos_shared_library("audio_framework_interface") {
   branch_protector_ret = "pac_ret"
 
   public_configs = [
+    ":audio_framework_interface_config",
     ":audio_service_sa_idl_config",
     ":audio_policy_sa_idl_config",
   ]

@@ -358,5 +358,22 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_016, TestSize.Lev
     auto ret = AudioPolicyService::GetAudioPolicyService().SetAudioEffectProperty(propertyArray);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
+
+/**
+* @tc.name  : Test AudioPolicyService.
+* @tc.number: AudioPolicyServiceTest_017
+* @tc.desc  : Test LoadModernOffloadCapSource interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_017, TestSize.Level1)
+{
+    auto ret0 = AudioPolicyService::GetAudioPolicyService().LoadModernOffloadCapSource();
+    EXPECT_EQ(SUCCESS, ret0);
+
+    AudioIOHandle audioIOHandle = 1003;
+    AudioPolicyService::GetAudioPolicyService().audioIOHandleMap_.IOHandles_["offloadCapturerSource"] = audioIOHandle;
+
+    auto ret1 = AudioPolicyService::GetAudioPolicyService().LoadModernOffloadCapSource();
+    EXPECT_EQ(SUCCESS, ret1);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -156,7 +156,11 @@ void HpaeSoftLink::TransSinkInfoToStreamInfo(HpaeStreamInfo &info, const HpaeStr
     } else {
         info.streamType = STREAM_SOURCE_VOICE_CALL;
         info.deviceName = sourceInfo_.deviceName;
-        info.sourceType = SOURCE_TYPE_MIC;
+        if (linkMode_ == SoftLinkMode::OFFLOADINNERCAP_AID) {
+            info.sourceType = SOURCE_TYPE_OFFLOAD_CAPTURE;
+        } else {
+            info.sourceType = SOURCE_TYPE_MIC;
+        }
     }
 }
 
@@ -194,6 +198,36 @@ int32_t HpaeSoftLink::SetVolume(float volume)
     CHECK_AND_RETURN_RET_LOG(state_.load() != HpaeSoftLinkState::RELEASED, ERR_ILLEGAL_STATE,
         "softlink already release");
     AudioVolume::GetInstance()->SetStreamVolume(rendererStreamInfo_.sessionId, volume);
+    return SUCCESS;
+}
+
+int32_t HpaeSoftLink::SetVolumeDuckFactor(float duckFactor)
+{
+    std::lock_guard<std::mutex> stateLock(stateMutex_);
+    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::NEW, ERR_ILLEGAL_STATE, "softlink not prepared");
+    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::RELEASED, ERR_ILLEGAL_STATE,
+        "softlink already release");
+    AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(rendererStreamInfo_.sessionId, duckFactor);
+    return SUCCESS;
+}
+
+int32_t HpaeSoftLink::SetVolumeMute(bool isMute)
+{
+    std::lock_guard<std::mutex> stateLock(stateMutex_);
+    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::NEW, ERR_ILLEGAL_STATE, "softlink not prepared");
+    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::RELEASED, ERR_ILLEGAL_STATE,
+        "softlink already release");
+    AudioVolume::GetInstance()->SetStreamVolumeMute(rendererStreamInfo_.sessionId, isMute);
+    return SUCCESS;
+}
+
+int32_t HpaeSoftLink::SetVolumeLowPowerFactor(float lowPowerFactor)
+{
+    std::lock_guard<std::mutex> stateLock(stateMutex_);
+    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::NEW, ERR_ILLEGAL_STATE, "softlink not prepared");
+    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::RELEASED, ERR_ILLEGAL_STATE,
+        "softlink already release");
+    AudioVolume::GetInstance()->SetStreamVolumeLowPowerFactor(rendererStreamInfo_.sessionId, lowPowerFactor);
     return SUCCESS;
 }
 
@@ -388,6 +422,14 @@ HpaeSoftLinkState HpaeSoftLink::GetStreamStateById(uint32_t sessionId)
     CHECK_AND_RETURN_RET_LOG(streamStateMap_.find(sessionId) != streamStateMap_.end(), HpaeSoftLinkState::INVALID,
         "invalid param");
     return streamStateMap_[sessionId];
+}
+
+int32_t HpaeSoftLink::SetLoudnessGain(float loudnessGain)
+{
+    std::lock_guard<std::mutex> stateLock(stateMutex_);
+    int32_t ret = IHpaeManager::GetHpaeManager().SetLoudnessGain(rendererStreamInfo_.sessionId, loudnessGain);
+    CHECK_AND_RETURN_RET_LOG(ret == OPERATION_SUCCESS, ERROR, "SetLoudnessGain is error");
+    return SUCCESS;
 }
 } // namespace HPAE
 } // namespace AudioStandard

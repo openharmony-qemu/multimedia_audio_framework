@@ -36,6 +36,7 @@ public:
     int32_t ConfigCoreServiceProvider(const sptr<ICoreServiceProviderIpc> policyProvider);
 
     int32_t ReloadCaptureSession(uint32_t sessionId, SessionOperation operation);
+    uint32_t GetPaIndexByPortName(const std::string &portName);
     int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation,
         SessionOperationMsg opMsg = SESSION_OP_MSG_DEFAULT);
     int32_t SetDefaultOutputDevice(

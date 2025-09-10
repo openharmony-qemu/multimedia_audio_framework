@@ -33,6 +33,12 @@ namespace AudioStandard {
 constexpr int32_t MAX_STRING_LENGTH = 10;
 constexpr int32_t MIN_USER_ACCOUNT = 100;
 
+struct IntValueInfo {
+    std::string key;
+    int32_t defaultValue;
+    int32_t value;
+};
+
 class AudioSettingObserver : public AAFwk::DataAbilityObserverStub {
 public:
     AudioSettingObserver() = default;
@@ -81,6 +87,25 @@ public:
     std::vector<std::map<std::string, std::string>> ParseJsonArray(const std::string& input);
     std::string ParseFirstOfKey(size_t &pos, size_t len, std::string input);
     std::string ParseSecondOfValue(size_t &pos, size_t len, std::string input);
+
+// rewrite database operations
+public:
+    void GetIntValues(std::vector<IntValueInfo> &infos, std::string tableType);
+    ErrCode PutIntValues(std::vector<IntValueInfo>& infos, std::string tableType);
+private:
+    void GetIntValuesInner(std::vector<IntValueInfo> &infos, std::string tableType);
+    ErrCode GetIntValueInner(std::shared_ptr<DataShare::DataShareHelper> helper,
+        std::string key, std::string tableType, int32_t &res);
+
+    ErrCode PutIntValuesInner(std::vector<IntValueInfo> &infos, std::string tableType);
+    ErrCode PutIntValueInner(std::shared_ptr<DataShare::DataShareHelper> helper,
+        std::string key, std::string value, std::string tableType);
+
+// tools
+public:
+    void TrimLeft(std::string &str);
+    int32_t StringToInt32(const std::string &str, int32_t &result);
+    int64_t StringToInt64(const std::string &str, int64_t &result);
 
 protected:
     ~AudioSettingProvider() override;

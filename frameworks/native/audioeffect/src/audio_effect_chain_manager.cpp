@@ -950,6 +950,10 @@ void AudioEffectChainManager::RecoverAllChains()
     }
     UpdateDefaultAudioEffectInner();
     UpdateStreamUsageInner();
+
+    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectVolume != nullptr, "null audioEffectVolume");
+    EffectVolumeUpdateInner(audioEffectVolume);
 }
 
 // LCOV_EXCL_START
@@ -1284,7 +1288,7 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
     std::string defaultSceneTypeAndDeviceKey = DEFAULT_SCENE_TYPE + "_&_" + GetDeviceTypeName();
     defaultEffectChainCreated_ = false;
     if (isPriorScene) {
-        AUDIO_INFO_LOG("create prior effect chain: %{public}s", sceneType.c_str());
+        HILOG_COMM_INFO("create prior effect chain: %{public}s", sceneType.c_str());
 #ifdef SENSOR_ENABLE
         audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker_);
 #else
@@ -1293,7 +1297,7 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
         return audioEffectChain;
     }
     if ((maxEffectChainCount_ - static_cast<int32_t>(sceneTypeToSpecialEffectSet_.size())) > 1) {
-        AUDIO_INFO_LOG("max audio effect chain count not reached, create special effect chain: %{public}s",
+        HILOG_COMM_INFO("max audio effect chain count not reached, create special effect chain: %{public}s",
             sceneType.c_str());
         sceneTypeToSpecialEffectSet_.insert(sceneType);
 #ifdef SENSOR_ENABLE
@@ -1303,7 +1307,7 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
 #endif
     } else {
         if (!isDefaultEffectChainExisted_) {
-            AUDIO_INFO_LOG("max audio effect chain count reached, create current and default effect chain");
+            HILOG_COMM_INFO("max audio effect chain count reached, create current and default effect chain");
 #ifdef SENSOR_ENABLE
             audioEffectChain = std::make_shared<AudioEffectChain>(DEFAULT_SCENE_TYPE, headTracker_);
 #else
@@ -1315,7 +1319,7 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
         } else {
             audioEffectChain = sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey];
             defaultEffectChainCount_++;
-            AUDIO_INFO_LOG("max audio effect chain count reached and default effect chain already exist: %{public}d",
+            HILOG_COMM_INFO("max audio effect chain count reached and default effect chain already exist: %{public}d",
                 defaultEffectChainCount_);
         }
     }
@@ -1325,7 +1329,7 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
 // LCOV_EXCL_START
 int32_t AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::string &sceneType)
 {
-    AUDIO_INFO_LOG("release effect chain for scene type: %{public}s", sceneType.c_str());
+    HILOG_COMM_INFO("release effect chain for scene type: %{public}s", sceneType.c_str());
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     std::string defaultSceneTypeAndDeviceKey = DEFAULT_SCENE_TYPE + "_&_" + GetDeviceTypeName();
     sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = 0;
@@ -1343,11 +1347,11 @@ int32_t AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::str
             defaultEffectChainCount_= 0;
             isDefaultEffectChainExisted_ = false;
             sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey]->InitEffectChain();
-            AUDIO_INFO_LOG("default effect chain will be released");
+            HILOG_COMM_INFO("default effect chain will be released");
             return SUCCESS;
         } else {
             defaultEffectChainCount_--;
-            AUDIO_INFO_LOG("default effect chain still exist, count is %{public}d", defaultEffectChainCount_);
+            HILOG_COMM_INFO("default effect chain still exist, count is %{public}d", defaultEffectChainCount_);
         }
     }
     return ERROR;
@@ -1672,7 +1676,7 @@ int32_t AudioEffectChainManager::CreateAudioEffectChainDynamicInner(const std::s
                 sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey]) {
                 defaultEffectChainCount_++;
             }
-            AUDIO_INFO_LOG("effect chain %{public}s still exist, current count: %{public}d, default count: %{public}d",
+            HILOG_COMM_INFO("effect chain %{public}s still exist, current count: %{public}d, default count: %{public}d",
                 sceneType.c_str(), sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey], defaultEffectChainCount_);
             return SUCCESS;
         }
@@ -1797,7 +1801,7 @@ int32_t AudioEffectChainManager::UpdateMultichannelConfigInner(const std::string
 
 int32_t AudioEffectChainManager::UpdateSpatializationStateInner(AudioSpatializationState spatializationState)
 {
-    AUDIO_INFO_LOG("begin to update spatialization state, current state: %{public}d and %{public}d, previous state: \
+    HILOG_COMM_INFO("begin to update spatialization state, current state: %{public}d and %{public}d, previous state: \
         %{public}d and %{public}d", spatializationState.spatializationEnabled, spatializationState.headTrackingEnabled,
         spatializationEnabled_.load(), headTrackingEnabled_);
 

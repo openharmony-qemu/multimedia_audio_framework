@@ -28,6 +28,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+const uint32_t FRAME_LENGTH_LIMIT = 38400;
 // todo sinkInfo
 HpaeInnerCapturerManager::HpaeInnerCapturerManager(HpaeSinkInfo &sinkInfo)
     : sinkInfo_(sinkInfo), hpaeNoLockQueue_(CURRENT_REQUEST_COUNT)
@@ -55,7 +56,8 @@ void HpaeInnerCapturerManager::AddSingleNodeToSinkInner(const std::shared_ptr<Hp
     HpaeNodeInfo nodeInfo = node->GetNodeInfo();
     uint32_t sessionId = nodeInfo.sessionId;
     Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::AddSingleNodeToSinkInner");
-    AUDIO_INFO_LOG("[FinishMove] session :%{public}u to sink:%{public}s", sessionId, sinkInfo_.deviceClass.c_str());
+    HILOG_COMM_INFO("[FinishMove] session :%{public}u to sink:%{public}s, sceneType is %{public}d",
+        sessionId, sinkInfo_.deviceClass.c_str(), node->GetSceneType());
     sinkInputNodeMap_[sessionId] = node;
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
@@ -118,7 +120,7 @@ void HpaeInnerCapturerManager::MoveAllStreamToNewSinkInner(const std::string &si
     for (const auto &it : sessionIds) {
         DeleteRendererInputSessionInner(it);
     }
-    AUDIO_INFO_LOG("[StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
+    HILOG_COMM_INFO("StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
         idStr.c_str(), name.c_str(), moveType);
     if (moveType == MOVE_ALL) {
         TriggerSyncCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);
@@ -180,11 +182,15 @@ int32_t HpaeInnerCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
         AUDIO_INFO_LOG("CreateStream not init");
         return ERR_INVALID_OPERATION;
     }
+    int32_t checkRet = CheckStreamInfo(streamInfo);
+    if (checkRet != SUCCESS) {
+        return checkRet;
+    }
     auto request = [this, streamInfo]() {
         if (streamInfo.streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
             Trace trace("HpaeInnerCapturerManager::CreateRendererStream id[" +
                 std::to_string(streamInfo.sessionId) + "]");
-            AUDIO_INFO_LOG("CreateCapRendererStream sessionID: %{public}d", streamInfo.sessionId);
+            HILOG_COMM_INFO("CreateCapRendererStream sessionID: %{public}d", streamInfo.sessionId);
             CreateRendererInputSessionInner(streamInfo);
             SetSessionStateForRenderer(streamInfo.sessionId, HPAE_SESSION_PREPARED);
             sinkInputNodeMap_[streamInfo.sessionId]->SetState(HPAE_SESSION_PREPARED);
@@ -192,13 +198,25 @@ int32_t HpaeInnerCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
         } else if (streamInfo.streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD) {
             Trace trace("HpaeInnerCapturerManager::CreateCapturerStream id[" +
                 std::to_string(streamInfo.sessionId) + "]");
-            AUDIO_INFO_LOG("CreateCapCapturerStream sessionID: %{public}d", streamInfo.sessionId);
+            HILOG_COMM_INFO("CreateCapCapturerStream sessionID: %{public}d", streamInfo.sessionId);
             CreateCapturerInputSessionInner(streamInfo);
             SetSessionStateForCapturer(streamInfo.sessionId, HPAE_SESSION_PREPARED);
             capturerSessionNodeMap_[streamInfo.sessionId].isMoveAble = streamInfo.isMoveAble;
         }
     };
     SendRequestInner(request, __func__);
+    return SUCCESS;
+}
+
+int32_t HpaeInnerCapturerManager::CheckStreamInfo(const HpaeStreamInfo &streamInfo)
+{
+    if (streamInfo.frameLen == 0) {
+        AUDIO_ERR_LOG("FrameLen is 0.");
+        return ERROR;
+    } else if (streamInfo.frameLen > FRAME_LENGTH_LIMIT) {
+        AUDIO_ERR_LOG("FrameLen is over-sized.");
+        return ERROR;
+    }
     return SUCCESS;
 }
 
@@ -269,9 +287,15 @@ int32_t HpaeInnerCapturerManager::Init(bool isReload)
     return SUCCESS;
 }
  
-void HpaeInnerCapturerManager::InitSinkInner(bool isReload)
+int32_t HpaeInnerCapturerManager::InitSinkInner(bool isReload)
 {
     Trace trace("HpaeInnerCapturerManager::InitSinkInner");
+    int32_t checkRet = CheckFramelen();
+    if (checkRet != SUCCESS) {
+        TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
+                        sinkInfo_.deviceName, ERR_INVALID_PARAM);
+        return checkRet;
+    }
     HpaeNodeInfo nodeInfo;
     nodeInfo.channels = sinkInfo_.channels;
     nodeInfo.format = sinkInfo_.format;
@@ -286,6 +310,19 @@ void HpaeInnerCapturerManager::InitSinkInner(bool isReload)
     hpaeInnerCapSinkNode_->InnerCapturerSinkInit();
     isInit_.store(true);
     TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT :INIT_DEVICE_RESULT, sinkInfo_.deviceName, SUCCESS);
+    return SUCCESS;
+}
+
+int32_t HpaeInnerCapturerManager::CheckFramelen()
+{
+    if (sinkInfo_.frameLen == 0) {
+        AUDIO_ERR_LOG("FrameLen is 0.");
+        return ERROR;
+    } else if (sinkInfo_.frameLen > FRAME_LENGTH_LIMIT) {
+        AUDIO_ERR_LOG("FrameLen is over-sized.");
+        return ERROR;
+    }
+    return SUCCESS;
 }
 
 bool HpaeInnerCapturerManager::DeactivateThread()
@@ -679,6 +716,7 @@ int32_t HpaeInnerCapturerManager::CreateRendererInputSessionInner(const HpaeStre
     nodeInfo.streamType = streamInfo.streamType;
     nodeInfo.sessionId = streamInfo.sessionId;
     nodeInfo.samplingRate = (AudioSamplingRate)streamInfo.samplingRate;
+    nodeInfo.customSampleRate = streamInfo.customSampleRate;
     nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
@@ -734,7 +772,7 @@ void HpaeInnerCapturerManager::DeleteRendererInputNodeSession(const std::shared_
         sceneTypeToProcessClusterCount_--;
         uint32_t sessionId = sinkInputNode->GetSessionId();
         if (sceneTypeToProcessClusterCount_ == 0) {
-            AUDIO_INFO_LOG("need to erase rendererSceneCluster, last stream: %{public}u", sessionId);
+            HILOG_COMM_INFO("need to erase rendererSceneCluster, last stream: %{public}u", sessionId);
         } else {
             AUDIO_INFO_LOG("%{public}u is not last stream, no need erase rendererSceneCluster", sessionId);
         }

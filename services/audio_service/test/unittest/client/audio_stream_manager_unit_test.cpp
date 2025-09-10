@@ -311,5 +311,19 @@ HWTEST(AudioStreamManagerUnitTest, IsCapturerFocusAvailable_001, TestSize.Level1
     int32_t result = AudioStreamManager::GetInstance()->IsCapturerFocusAvailable(capturerInfo);
     EXPECT_NE(result, 0);
 }
+
+/**
+ * @tc.name  : Test IsIntelligentNoiseReductionEnabledForCurrentDevice API
+ * @tc.type  : FUNC
+ * @tc.number: IsIntelligentNoiseReductionEnabledForCurrentDevice_001
+ * @tc.desc  : Test IsIntelligentNoiseReductionEnabledForCurrentDevice interface.
+ */
+HWTEST(AudioStreamManagerUnitTest, IsIntelligentNoiseReductionEnabledForCurrentDevice_001, TestSize.Level1)
+{
+    SourceType sourceType = SourceType::SOURCE_TYPE_MIC;
+    bool result = AudioStreamManager::GetInstance()->IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType);
+
+    EXPECT_EQ(result, false);
+}
 } // namespace AudioStandard
 } // namespace OHOS

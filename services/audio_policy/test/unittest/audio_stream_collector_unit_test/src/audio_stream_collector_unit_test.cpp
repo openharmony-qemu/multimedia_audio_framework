@@ -1413,6 +1413,28 @@ HWTEST_F(AudioStreamCollectorUnitTest, IsMediaPlaying_Test01, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test AudioStreamCollector
+* @tc.number: IsStreamRunning_001
+* @tc.desc  : Test IsStreamRunning().
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, IsStreamRunning_001, TestSize.Level4)
+{
+    AudioStreamCollector collector;
+    auto rendererChangeInfo1 = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo1->rendererState = RENDERER_RUNNING;
+    rendererChangeInfo1->rendererInfo.streamUsage = STREAM_USAGE_VOICE_RINGTONE;
+    collector.audioRendererChangeInfos_.push_back(rendererChangeInfo1);
+    auto rendererChangeInfo2 = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo2->rendererState = RENDERER_NEW;
+    rendererChangeInfo2->rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    collector.audioRendererChangeInfos_.push_back(rendererChangeInfo2);
+
+    EXPECT_FALSE(collector.IsStreamRunning(STREAM_USAGE_MUSIC));
+    EXPECT_TRUE(collector.IsStreamRunning(STREAM_USAGE_VOICE_RINGTONE));
+    EXPECT_FALSE(collector.IsStreamRunning(STREAM_USAGE_VOICE_COMMUNICATION));
+}
+
+/**
 * @tc.name  : Test AudioStreamCollector.
 * @tc.number: UpdateRenderDeviceInfo_001
 * @tc.desc  : Test UpdateRenderDeviceInfo.

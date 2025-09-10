@@ -26,6 +26,7 @@
 #include "audio_dump_pcm.h"
 #include "volume_tools.h"
 #include "audio_schedule.h"
+#include "util/id_handler.h"
 #include "media_monitor_manager.h"
 #include "audio_enhance_chain_manager.h"
 #include "common/hdi_adapter_info.h"
@@ -389,6 +390,18 @@ int32_t AudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &reply
         return ERR_READ_FAILED;
     }
 
+    if (attr_.sourceType == SOURCE_TYPE_OFFLOAD_CAPTURE && frameInfo.frameEc != nullptr) {
+        if (memcpy_s(fdescEc->frame, fdescEc->frameLen, frameInfo.frameEc, fdescEc->frameLen) != EOK) {
+            AUDIO_ERR_LOG("copy desc ec fail");
+        } else {
+            replyBytesEc = frameInfo.replyBytesEc;
+        }
+
+        CheckUpdateState(fdesc->frame, replyBytes);
+        AudioCaptureFrameInfoFree(&frameInfo, false);
+        return SUCCESS;
+    }
+
     if (attr_.sourceType != SOURCE_TYPE_EC && frameInfo.frame != nullptr) {
         if (frameInfo.replyBytes - fdescEc->frameLen < fdesc->frameLen) {
             replyBytes = 0;
@@ -417,6 +430,13 @@ int32_t AudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &reply
 std::string AudioCaptureSource::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
     return "";
+}
+
+void AudioCaptureSource::SetAudioParameter(
+    const AudioParamKey key, const std::string &condition, const std::string &value)
+{
+    AUDIO_WARNING_LOG("not support");
+    return;
 }
 
 int32_t AudioCaptureSource::SetVolume(float left, float right)
@@ -733,6 +753,9 @@ enum AudioInputType AudioCaptureSource::ConvertToHDIAudioInputType(int32_t sourc
         case SOURCE_TYPE_LIVE:
             hdiAudioInputType = AUDIO_INPUT_LIVE_TYPE;
             break;
+        case SOURCE_TYPE_OFFLOAD_CAPTURE:
+            hdiAudioInputType = AUDIO_INPUT_OFFLOAD_CAPTURE_TYPE;
+            break;
         default:
             hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
             break;
@@ -749,7 +772,7 @@ void AudioCaptureSource::CheckAcousticEchoCancelerSupported(int32_t sourceType, 
     std::string value = deviceManager->GetAudioParameter("primary", AudioParamKey::PARAM_KEY_STATE,
         "source_type_live_aec_supported");
     if (value != "true") {
-        AUDIO_ERR_LOG("SOURCE_TYPE_LIVE not supported will be changed to SOURCE_TYPE_MIC");
+        HILOG_COMM_INFO("SOURCE_TYPE_LIVE not supported will be changed to SOURCE_TYPE_MIC");
         hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
     }
 }

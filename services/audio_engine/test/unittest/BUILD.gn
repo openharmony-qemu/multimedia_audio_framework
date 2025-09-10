@@ -433,6 +433,28 @@ ohos_unittest("hpae_remote_sink_output_node_test") {
   resource_config_file = "./resource/ohos_test.xml"
 }
 
+ohos_unittest("hpae_offload_sinkoutput_node_test") {
+  module_out_path = module_output_path
+  sources = [
+    "node/hpae_offload_sinkoutput_node_test.cpp",
+  ]
+
+  configs = [ ":audio_engine_private_config" ]
+
+  deps = [
+    "../../:audio_engine_manager",
+    "../../:audio_engine_node",
+    "../../:audio_engine_plugins",
+    "../../:audio_engine_utils",
+    "../../../audio_service:audio_common",
+    "../../../../frameworks/native/audioeffect:audio_effect",
+  ]
+
+  external_deps = engine_test_external_deps
+
+  resource_config_file = "./resource/ohos_test.xml"
+}
+
 ohos_unittest("hpae_output_cluster_test") {
   module_out_path = module_output_path
   sources = [

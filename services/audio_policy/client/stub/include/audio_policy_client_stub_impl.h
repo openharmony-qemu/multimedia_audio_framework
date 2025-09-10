@@ -35,9 +35,6 @@ public:
     int32_t AddVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb);
     int32_t RemoveVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb);
     size_t GetVolumeKeyEventCallbackSize() const;
-    int32_t AddVolumeDegreeCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb);
-    int32_t RemoveVolumeDegreeCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb);
-    size_t GetVolumeDegreeCallbackSize() const;
     int32_t AddSystemVolumeChangeCallback(const std::shared_ptr<SystemVolumeChangeCallback> &cb);
     int32_t RemoveSystemVolumeChangeCallback(const std::shared_ptr<SystemVolumeChangeCallback> &cb);
     size_t GetSystemVolumeChangeCallbackSize() const;
@@ -134,6 +131,11 @@ public:
     int32_t RemoveAudioSessionDeviceCallback();
     int32_t RemoveAudioSessionDeviceCallback(const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &cb);
     size_t GetAudioSessionDeviceCallbackSize() const;
+    int32_t AddAudioSessionInputDeviceCallback(
+        const std::shared_ptr<AudioSessionCurrentInputDeviceChangedCallback> &cb);
+    int32_t RemoveAudioSessionInputDeviceCallback(
+        const std::optional<std::shared_ptr<AudioSessionCurrentInputDeviceChangedCallback>> &cb);
+    size_t GetAudioSessionInputDeviceCallbackSize() const;
     int32_t AddAudioSceneChangedCallback(const int32_t clientId,
         const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &cb);
     int32_t RemoveAudioSceneChangedCallback(
@@ -148,7 +150,6 @@ public:
     int32_t OnRecreateCapturerStreamEvent(uint32_t sessionId, int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt &reason) override;
     int32_t OnVolumeKeyEvent(const VolumeEvent &volumeEvent) override;
-    int32_t OnVolumeDegreeEvent(const VolumeEvent &volumeEvent) override;
     int32_t OnAudioFocusInfoChange(const std::vector<std::map<AudioInterrupt, int32_t>> &focusInfoList) override;
     int32_t OnAudioFocusRequested(const AudioInterrupt &requestFocus) override;
     int32_t OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus) override;
@@ -181,6 +182,7 @@ public:
     int32_t OnAudioSceneChange(int32_t audioScene) override;
     int32_t OnAudioSessionStateChanged(int32_t stateChangeHint) override;
     int32_t OnAudioSessionCurrentDeviceChanged(const CurrentOutputDeviceChangedEvent &deviceChangedEvent) override;
+    int32_t OnAudioSessionCurrentInputDeviceChanged(const CurrentInputDeviceChangedEvent &deviceChangedEvent) override;
     int32_t OnFormatUnsupportedError(int32_t errorCode) override;
     int32_t OnStreamVolumeChange(const StreamVolumeEvent &streamVolumeEvent) override;
     int32_t OnSystemVolumeChange(const VolumeEvent &volumeEvent) override;
@@ -189,7 +191,6 @@ private:
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& desc);
 
     std::vector<std::weak_ptr<VolumeKeyEventCallback>> volumeKeyEventCallbackList_;
-    std::vector<std::weak_ptr<VolumeKeyEventCallback>> volumeDegreeCallbackList_;
     std::vector<std::pair<std::set<StreamUsage>,
         std::weak_ptr<StreamVolumeChangeCallback>>> streamVolumeChangeCallbackList_;
     std::vector<std::weak_ptr<SystemVolumeChangeCallback>> systemVolumeChangeCallbackList_;
@@ -213,6 +214,7 @@ private:
     std::vector<std::shared_ptr<AudioSessionCallback>> audioSessionCallbackList_;
     std::vector<std::weak_ptr<AudioSessionStateChangedCallback>> audioSessionStateCallbackList_;
     std::vector<std::weak_ptr<AudioSessionCurrentDeviceChangedCallback>> audioSessionDeviceCallbackList_;
+    std::vector<std::weak_ptr<AudioSessionCurrentInputDeviceChangedCallback>> audioSessionInputDeviceCallbackList_;
     std::vector<std::pair<int32_t, std::shared_ptr<AudioManagerMicrophoneBlockedCallback>>>
         microphoneBlockedCallbackList_;
     std::vector<std::shared_ptr<AudioManagerAudioSceneChangedCallback>> audioSceneChangedCallbackList_;
@@ -235,7 +237,6 @@ private:
     mutable std::mutex pOutputDeviceChangeMutex_;
     mutable std::mutex pInputDeviceChangeMutex_;
     mutable std::mutex volumeKeyEventMutex_;
-    mutable std::mutex volumeDegreeEventMutex_;
     mutable std::mutex deviceChangeMutex_;
     mutable std::mutex ringerModeMutex_;
     mutable std::mutex activeVolumeTypeChangeMutex_;
@@ -251,6 +252,7 @@ private:
     mutable std::mutex audioSessionMutex_;
     mutable std::mutex audioSessionStateMutex_;
     mutable std::mutex audioSessionDeviceMutex_;
+    mutable std::mutex audioSessionInputDeviceMutex_;
     mutable std::mutex microphoneBlockedMutex_;
     mutable std::mutex audioSceneChangedMutex_;
     mutable std::mutex formatUnsupportedErrorMutex_;

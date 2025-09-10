@@ -36,7 +36,7 @@ float Convert2Float(const uint8_t *ptr)
     return floatValue / 128.0f - 1.0f;
 }
 
-void AudioServerBalanceFuzzer(const uint8_t *rawData, size_t size, std::shared_ptr<AudioServer> AudioServerPtr)
+void AudioServerBalanceFuzzer(const uint8_t *rawData, size_t size, sptr<AudioServer> AudioServerPtr)
 {
     float balanceValue = Convert2Float(rawData);
     MessageParcel data;
@@ -52,7 +52,7 @@ bool Convert2Bool(const uint8_t *ptr)
     return (ptr[0] & 1) ? true : false;
 }
 
-void AudioServerMonoFuzzer(const uint8_t *rawData, size_t size, std::shared_ptr<AudioServer> AudioServerPtr)
+void AudioServerMonoFuzzer(const uint8_t *rawData, size_t size, sptr<AudioServer> AudioServerPtr)
 {
     bool monoState = Convert2Bool(rawData);
     MessageParcel data;
@@ -68,8 +68,8 @@ void AudioServerBalanceFuzzTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    std::shared_ptr<AudioServer> AudioServerPtr =
-        std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> AudioServerPtr =
+        sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     AudioServerBalanceFuzzer(rawData, size, AudioServerPtr);
     AudioServerMonoFuzzer(rawData, size, AudioServerPtr);
 }

@@ -91,6 +91,13 @@ int32_t PolicyProviderWrapper::GetMaxRendererInstances(int32_t &maxInstances)
     return SUCCESS;
 }
 
+int32_t PolicyProviderWrapper::IsSupportInnerCaptureOffload(bool &isSupported)
+{
+    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
+    isSupported = policyWorker_->IsSupportInnerCaptureOffload();
+    return SUCCESS;
+}
+
 int32_t PolicyProviderWrapper::NotifyCapturerRemoved(uint64_t sessionId)
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
@@ -115,6 +122,26 @@ int32_t PolicyProviderWrapper::UnloadModernInnerCapSink(int32_t innerCapId)
     return policyWorker_->UnloadModernInnerCapSink(innerCapId);
 #else
     (void)innerCapId;
+    return AUDIO_ERR;
+#endif
+}
+
+int32_t PolicyProviderWrapper::LoadModernOffloadCapSource()
+{
+#ifdef HAS_FEATURE_INNERCAPTURER
+    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
+    return policyWorker_->LoadModernOffloadCapSource();
+#else
+    return AUDIO_ERR;
+#endif
+}
+
+int32_t PolicyProviderWrapper::UnloadModernOffloadCapSource()
+{
+#ifdef HAS_FEATURE_INNERCAPTURER
+    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
+    return policyWorker_->UnloadModernOffloadCapSource();
+#else
     return AUDIO_ERR;
 #endif
 }

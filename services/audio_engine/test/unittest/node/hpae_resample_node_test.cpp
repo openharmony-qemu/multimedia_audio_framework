@@ -106,24 +106,6 @@ HWTEST_F(HpaeResampleNodeTest, testReset, TestSize.Level0)
     EXPECT_EQ(hpaeResampleNode2->Reset(), false);
 }
 
-HWTEST_F(HpaeResampleNodeTest, testHpaeReampleNodeProcess, TestSize.Level0)
-{
-    HpaeNodeInfo srcNodeInfo;
-    srcNodeInfo.nodeId = TEST_ID;
-    srcNodeInfo.frameLen = TEST_FRAMELEN1;
-    srcNodeInfo.samplingRate = SAMPLE_RATE_48000;
-    srcNodeInfo.channels = STEREO;
-    srcNodeInfo.format = SAMPLE_S32LE;
-    std::shared_ptr<HpaeSinkInputNode> hpaeSinkInputNode = std::make_shared<HpaeSinkInputNode>(srcNodeInfo);
-    HpaeNodeInfo dstNodeInfo;
-    dstNodeInfo.nodeId = TEST_ID;
-    dstNodeInfo.frameLen = TEST_FRAMELEN2;
-    dstNodeInfo.samplingRate = SAMPLE_RATE_32000;
-    dstNodeInfo.channels = CHANNEL_4;
-    dstNodeInfo.format = SAMPLE_F32LE;
-    std::shared_ptr<HpaeResampleNode> hpaeResampleNode = std::make_shared<HpaeResampleNode>(srcNodeInfo, dstNodeInfo);
-}
-
 HWTEST_F(HpaeResampleNodeTest, testSignalProcess_001, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
