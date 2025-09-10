@@ -1848,9 +1848,6 @@ int32_t AudioPolicyServer::SelectOutputDevice(const sptr<AudioRendererFilter> &a
 
 int32_t AudioPolicyServer::RestoreOutputDevice(const sptr<AudioRendererFilter> &audioRendererFilter)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
-        "SelectOutputDevice: No system permission");
-
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> restoreDescs;
     restoreDescs.push_back(std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_NONE,
         DeviceRole::OUTPUT_DEVICE));
