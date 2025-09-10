@@ -61,7 +61,6 @@ constexpr int32_t FRAME_LENGTH_960 = 960;
 constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
 constexpr int32_t DEFAULT_NODE_ID = 1;
 constexpr uint32_t MAXFRAMELEN = 38400;
-constexpr uint32_t ECTYPENUM = 3;
 const std::vector<AudioChannel> SUPPORTED_CHANNELS {
     MONO,
     STEREO,

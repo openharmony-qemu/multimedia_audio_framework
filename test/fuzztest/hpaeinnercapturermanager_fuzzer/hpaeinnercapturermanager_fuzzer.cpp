@@ -38,10 +38,6 @@ static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint32_t DEFAULT_FRAME_LENGTH1 = 960;
-const uint32_t DEFAULT_FRAME_LENGTH2 = 882;
-const uint32_t AUDIO_PER_SECOND_MS = 1000;
-const uint32_t LIMIT_SIZE = 20;
 static std::string g_rootPath = "/data/";
 static std::string g_rootCapturerPath = "/data/source_file_io_48000_2_s16le.pcm";
 const char* DEFAULT_TEST_DEVICE_CLASS = "file_io";
@@ -49,7 +45,6 @@ const char* DEFAULT_TEST_DEVICE_NETWORKID = "LocalDevice";
 const uint32_t DEFAULT_SESSION_ID = 123456;
 typedef void (*TestPtr)(const uint8_t *, size_t);
 constexpr uint32_t MAXFRAMELEN = 38400;
-constexpr uint32_t ECTYPENUM = 3;
 const std::vector<AudioChannel> SUPPORTED_CHANNELS {
     MONO,
     STEREO,
@@ -610,49 +605,6 @@ void HpaeInnerCapturerManagerOtherFuzzTest3()
 
 void HpaeInnerCapturerManagerReloadFuzzTest1()
 {
-    HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
-    auto hpaeInnerCapturerManager = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
-    hpaeInnerCapturerManager->Init();
-    WaitForMsgProcessing(hpaeInnerCapturerManager);
-    HpaeStreamInfo playStreamInfo = GetInCapPlayStreamInfo();
-    ++playStreamInfo.sessionId;
-    hpaeInnerCapturerManager->CreateStream(playStreamInfo);
-    WaitForMsgProcessing(hpaeInnerCapturerManager);
-    hpaeInnerCapturerManager->ReloadRenderManager(sinkInfo, false);
-    WaitForMsgProcessing(hpaeInnerCapturerManager);
-    hpaeInnerCapturerManager->ReloadRenderManager(sinkInfo, true);
-    WaitForMsgProcessing(hpaeInnerCapturerManager);
-    hpaeInnerCapturerManager->DeInit();
-    hpaeInnerCapturerManager->ReloadRenderManager(sinkInfo, true);
-    WaitForMsgProcessing(hpaeInnerCapturerManager);
-    hpaeInnerCapturerManager->DeInit();
-}
-
-void HpaeInnerCapturerManagerReloadFuzzTest2()
-{
-    HpaeSinkInfo sinkInfo = GetInCapFuzzSinkInfo();
-    auto hpaeInnerCapturerManager = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
-    hpaeInnerCapturerManager->Init();
-    WaitForMsgProcessing(hpaeInnerCapturerManager);
-    HpaeStreamInfo playStreamInfo = GetInCapPlayFuzzStreamInfo();
-    ++playStreamInfo.sessionId;
-    hpaeInnerCapturerManager->CreateStream(playStreamInfo);
-    WaitForMsgProcessing(hpaeInnerCapturerManager);
-    bool isReload = GetData<bool>();
-    hpaeInnerCapturerManager->ReloadRenderManager(sinkInfo, isReload);
-    WaitForMsgProcessing(hpaeInnerCapturerManager);
-    isReload = GetData<bool>();
-    hpaeInnerCapturerManager->ReloadRenderManager(sinkInfo, isReload);
-    WaitForMsgProcessing(hpaeInnerCapturerManager);
-    hpaeInnerCapturerManager->DeInit();
-    isReload = GetData<bool>();
-    hpaeInnerCapturerManager->ReloadRenderManager(sinkInfo, isReload);
-    WaitForMsgProcessing(hpaeInnerCapturerManager);
-    hpaeInnerCapturerManager->DeInit();
-}
-
-void HpaeInnerCapturerManagerReloadFuzzTest3()
-{
     HpaeSinkInfo sinkInfo = GetInCapFuzzSinkInfo();
     auto hpaeInnerCapturerManager = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
     hpaeInnerCapturerManager->Init();
@@ -722,7 +674,7 @@ void OnFadeDoneFuzzTest()
     hpaeInnerCapturerManager->DeInit();
 }
 
-typedef void (*TestFuncs[16])();
+typedef void (*TestFuncs[14])();
 
 TestFuncs g_testFuncs = {
     HpaeInnerCapturerManagerFuzzTest1,
@@ -735,8 +687,6 @@ TestFuncs g_testFuncs = {
     HpaeInnerCapturerManagerOtherFuzzTest2,
     HpaeInnerCapturerManagerOtherFuzzTest3,
     HpaeInnerCapturerManagerReloadFuzzTest1,
-    HpaeInnerCapturerManagerReloadFuzzTest2,
-    HpaeInnerCapturerManagerReloadFuzzTest3,
     MoveStreamFuzzTest,
     MoveAllStreamFuzzTest,
     OnNodeStatusUpdateFuzzTest,

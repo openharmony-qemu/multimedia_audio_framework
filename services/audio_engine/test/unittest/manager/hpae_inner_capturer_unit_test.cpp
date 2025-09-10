@@ -31,6 +31,8 @@ namespace AudioStandard {
 namespace HPAE {
 const uint32_t DEFAULT_SESSION_ID = 123456;
 const uint32_t OVERSIZED_FRAME_LENGTH = 38500;
+const uint32_t DEFAULT_FRAME_LENGTH_1 = 960;
+const uint32_t DEFAULT_FRAME_LENGTH_2 = 480;
 const float FRAME_LENGTH_IN_SECOND = 0.02;
 std::string g_rootPath = "/data/";
 
@@ -712,6 +714,23 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, CreateStream_004, TestSize.Level0)
     EXPECT_EQ(hpaeInnerCapturerManager_->IsInit(), true);
     HpaeStreamInfo streamInfo = GetInCapPlayStreamInfo();
     streamInfo.frameLen = OVERSIZED_FRAME_LENGTH;
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(streamInfo), ERROR);
+}
+
+/**
+ * @tc.name  : Test CreateStream
+ * @tc.type  : FUNC
+ * @tc.number: CreateStream_005
+ * @tc.desc  : Test CreateStream when framelen is not proportional.
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, CreateStream_005, TestSize.Level0)
+{
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->IsInit(), true);
+    HpaeStreamInfo streamInfo = GetInCapPlayStreamInfo();
+    streamInfo.frameLen = DEFAULT_FRAME_LENGTH_1;
+    sinkInfo.frameLen = DEFAULT_FRAME_LENGTH_2;
     EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(streamInfo), ERROR);
 }
 }  // namespace HPAE

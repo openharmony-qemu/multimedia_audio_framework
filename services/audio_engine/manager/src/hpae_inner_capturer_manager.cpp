@@ -28,7 +28,6 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-const uint32_t FRAME_LENGTH_LIMIT = 38400;
 // todo sinkInfo
 HpaeInnerCapturerManager::HpaeInnerCapturerManager(HpaeSinkInfo &sinkInfo)
     : sinkInfo_(sinkInfo), hpaeNoLockQueue_(CURRENT_REQUEST_COUNT)
@@ -181,7 +180,7 @@ int32_t HpaeInnerCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
         AUDIO_INFO_LOG("CreateStream not init");
         return ERR_INVALID_OPERATION;
     }
-    int32_t checkRet = CheckStreamInfo(streamInfo);
+    int32_t checkRet = CheckStreamInfo(streamInfo, sinkInfo_);
     if (checkRet != SUCCESS) {
         return checkRet;
     }
@@ -204,18 +203,6 @@ int32_t HpaeInnerCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
         }
     };
     SendRequestInner(request, __func__);
-    return SUCCESS;
-}
-
-int32_t HpaeInnerCapturerManager::CheckStreamInfo(const HpaeStreamInfo &streamInfo)
-{
-    if (streamInfo.frameLen == 0) {
-        AUDIO_ERR_LOG("FrameLen is 0.");
-        return ERROR;
-    } else if (streamInfo.frameLen > FRAME_LENGTH_LIMIT) {
-        AUDIO_ERR_LOG("FrameLen is over-sized.");
-        return ERROR;
-    }
     return SUCCESS;
 }
 
@@ -289,7 +276,7 @@ int32_t HpaeInnerCapturerManager::Init(bool isReload)
 int32_t HpaeInnerCapturerManager::InitSinkInner(bool isReload)
 {
     Trace trace("HpaeInnerCapturerManager::InitSinkInner");
-    int32_t checkRet = CheckFramelen();
+    int32_t checkRet = CheckFramelen(sinkInfo_);
     if (checkRet != SUCCESS) {
         TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,
                         sinkInfo_.deviceName, ERR_INVALID_PARAM);
@@ -309,18 +296,6 @@ int32_t HpaeInnerCapturerManager::InitSinkInner(bool isReload)
     hpaeInnerCapSinkNode_->InnerCapturerSinkInit();
     isInit_.store(true);
     TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT :INIT_DEVICE_RESULT, sinkInfo_.deviceName, SUCCESS);
-    return SUCCESS;
-}
-
-int32_t HpaeInnerCapturerManager::CheckFramelen()
-{
-    if (sinkInfo_.frameLen == 0) {
-        AUDIO_ERR_LOG("FrameLen is 0.");
-        return ERROR;
-    } else if (sinkInfo_.frameLen > FRAME_LENGTH_LIMIT) {
-        AUDIO_ERR_LOG("FrameLen is over-sized.");
-        return ERROR;
-    }
     return SUCCESS;
 }
 
