@@ -16,6 +16,8 @@
 #ifndef I_RENDERER_STREAM_H
 #define I_RENDERER_STREAM_H
 
+#include <functional>
+
 #include "i_stream.h"
 #include "audio_stream_info.h"
 #include "i_hpae_soft_link.h"
@@ -78,6 +80,7 @@ public:
 struct CaptureInfo {
     std::atomic<bool> isInnerCapEnabled = false;
     std::shared_ptr<IRendererStream> dupStream = nullptr;
+    std::optional<std::string> dualDeviceName = std::nullopt;
 };
 
 struct SoftLinkInfo {

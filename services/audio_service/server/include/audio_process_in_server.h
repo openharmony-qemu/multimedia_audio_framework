@@ -163,6 +163,7 @@ private:
     std::mutex innerCapStateMutex_;
     std::unordered_map<int32_t, bool> innerCapStates_;
     ProcessReleaseCallback *releaseCallback_ = nullptr;
+    std::mutex registerProcessCbLock_;
     sptr<IRemoteObject> object_ = nullptr;
     sptr<ProcessDeathRecipient> deathRecipient_ = nullptr;
 

@@ -15,6 +15,7 @@
   global:
     *CreateAudioAdapter*;
     *SetAbsVolumeStateToEffect*;
+    *SetSystemVolumeToEffect*;
   local:
     *;
 };

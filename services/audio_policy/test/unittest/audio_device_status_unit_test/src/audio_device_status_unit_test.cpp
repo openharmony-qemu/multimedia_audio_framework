@@ -223,10 +223,17 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_006, TestSize.Level1)
 HWTEST_F(AudioDeviceStatusUnitTest, GetModuleNameByType_001, TestSize.Level1)
 {
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
-    auto moduleName = audioDeviceStatus.GetModuleNameByType(TYPE_PRIMARY);
-    EXPECT_NE(moduleName, string(""));
-    moduleName = audioDeviceStatus.GetModuleNameByType(TYPE_INVALID);
-    EXPECT_EQ(moduleName, string(""));
+
+    unordered_map<ClassType, list<AudioModuleInfo>> deviceClassInfo;
+    AudioPolicyConfigManager::GetInstance().GetDeviceClassInfo(deviceClassInfo);
+    if (!deviceClassInfo.empty()) {
+        auto type = deviceClassInfo.cbegin()->first;
+        auto moduleName = audioDeviceStatus.GetModuleNameByType(type);
+        list<AudioModuleInfo> &moduleList = deviceClassInfo[type];
+        if (!moduleList.empty()) {
+            EXPECT_EQ(moduleName, moduleList.front().name);
+        }
+    }
 }
 
 /**
@@ -294,6 +301,25 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_008, TestSize.Level1)
     reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     ret = audioDeviceStatus.HandleDistributedDeviceUpdate(statusInfo, descForCb, reason);
     EXPECT_EQ(ret, SUCCESS);
+
+    DeviceStreamInfo deviceStreamInfo = {};
+    std::list<DeviceStreamInfo> streamInfoList = { deviceStreamInfo };
+    statusInfo.streamInfo = streamInfoList;
+    std::string testNetworkId = "testNetworkId_0";
+    auto res = strncpy_s(statusInfo.networkId, NETWORK_ID_SIZE, testNetworkId.c_str(), testNetworkId.size());
+    EXPECT_EQ(res, 0);
+    DeviceType devType = audioDeviceStatus.GetDeviceTypeFromPin(statusInfo.hdiPin);
+    std::shared_ptr<AudioDeviceDescriptor> audioDescriptor =
+        std::make_shared<AudioDeviceDescriptor>(devType, OUTPUT_DEVICE);
+    audioDescriptor->networkId_ = statusInfo.networkId;
+    audioDeviceStatus.audioConnectedDevice_.AddConnectedDevice(audioDescriptor);
+
+    statusInfo.isConnected = true;
+    reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
+    ret = audioDeviceStatus.HandleDistributedDeviceUpdate(statusInfo, descForCb, reason);
+    audioDeviceStatus.audioConnectedDevice_.DelConnectedDevice(audioDescriptor->networkId_,
+        audioDescriptor->deviceType_);
+    EXPECT_EQ(ret, SUCCESS_BUT_NOT_CONTINUE);
 }
 
 /**
@@ -801,6 +827,24 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_031, TestSize.Level1)
 
 /**
 * @tc.name : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_072
+* @tc.desc : Test HandleLocalDeviceConnected interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_072, TestSize.Level1)
+{
+    AudioDeviceDescriptor updatedDesc;
+    int32_t result;
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    updatedDesc.deviceType_ = DEVICE_TYPE_BT_SPP;
+
+    result = audioDeviceStatus.HandleLocalDeviceConnected(updatedDesc);
+
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name : Test AudioDeviceStatus.
 * @tc.number: AudioDeviceStatus_032
 * @tc.desc : Test HandleLocalDeviceDisconnected interface.
 */
@@ -878,6 +922,23 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_036, TestSize.Level1)
     int32_t result;
     AudioDeviceDescriptor updatedDesc;
     updatedDesc.deviceType_ = DEVICE_TYPE_USB_HEADSET;
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    result = audioDeviceStatus.HandleLocalDeviceDisconnected(updatedDesc);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_073
+* @tc.desc : Test HandleLocalDeviceDisconnected interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_073, TestSize.Level1)
+{
+    int32_t result;
+    AudioDeviceDescriptor updatedDesc;
+    updatedDesc.deviceType_ = DEVICE_TYPE_BT_SPP;
 
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
 

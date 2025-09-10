@@ -38,7 +38,6 @@ class ConcreteVolumeKeyEventCallback : public VolumeKeyEventCallback {
 public:
     ConcreteVolumeKeyEventCallback() {}
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override {}
-    void OnVolumeDegreeEvent(VolumeEvent volumeEvent) override {}
 };
 
 class ConcreteAudioFocusInfoChangeCallback : public AudioFocusInfoChangeCallback {

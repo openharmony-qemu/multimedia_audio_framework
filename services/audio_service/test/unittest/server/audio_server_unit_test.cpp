@@ -45,7 +45,7 @@ HWTEST(AudioServerUnitTest, CreatePlaybackCapturerManager_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioServerUnitTest CreatePlaybackCapturerManager_001 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     bool ret = false;
     audioServer->CreatePlaybackCapturerManager(ret);
     EXPECT_EQ(true, ret);
@@ -63,7 +63,7 @@ HWTEST(AudioServerUnitTest, SetIORoutes_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioServerUnitTest SetIORoutes_001 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     DeviceType type = DEVICE_TYPE_USB_ARM_HEADSET;
     DeviceFlag flag = ALL_DEVICES_FLAG;
     std::vector<DeviceType> deviceTypes;
@@ -84,7 +84,7 @@ HWTEST(AudioServerUnitTest, OnAddSystemAbility_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioServerUnitTest OnAddSystemAbility_001 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     const std::string deviceId = "";
     audioServer->OnAddSystemAbility(LAST_SYS_ABILITY_ID, deviceId);
 }
@@ -99,7 +99,7 @@ HWTEST(AudioServerUnitTest, InitMaxRendererStreamCntPerUid_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioServerUnitTest InitMaxRendererStreamCntPerUid_001 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     audioServer->InitMaxRendererStreamCntPerUid();
 }
@@ -114,7 +114,7 @@ HWTEST(AudioServerUnitTest, WriteServiceStartupError_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioServerUnitTest WriteServiceStartupError_001 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     audioServer->WriteServiceStartupError();
 }
@@ -129,7 +129,7 @@ HWTEST(AudioServerUnitTest, CheckMaxRendererInstances_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioServerUnitTest CheckMaxRendererInstances_001 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     int32_t ret = audioServer->CheckMaxRendererInstances();
     EXPECT_EQ(ret, SUCCESS);
@@ -145,7 +145,7 @@ HWTEST(AudioServerUnitTest, CheckMaxRendererInstances_002, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioServerUnitTest CheckMaxRendererInstances_002 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     AudioService::GetInstance()->currentRendererStreamCnt_ = 128;
     int32_t ret = audioServer->CheckMaxRendererInstances();
@@ -162,7 +162,7 @@ HWTEST(AudioServerUnitTest, CheckAndWaitAudioPolicyReady_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioServerUnitTest CheckAndWaitAudioPolicyReady_001 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     int32_t ret = audioServer->CheckAndWaitAudioPolicyReady();
     EXPECT_EQ(ret, SUCCESS);
@@ -178,7 +178,7 @@ HWTEST(AudioServerUnitTest, CheckAndWaitAudioPolicyReady_002, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioServerUnitTest CheckAndWaitAudioPolicyReady_002 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     audioServer->waitCreateStreamInServerCount_ = 6;
     int32_t ret = audioServer->CheckAndWaitAudioPolicyReady();
@@ -195,7 +195,7 @@ HWTEST(AudioServerUnitTest, CheckAndWaitAudioPolicyReady_003, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioServerUnitTest CheckAndWaitAudioPolicyReady_003 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     audioServer->isAudioPolicyReady_ = true;
     int32_t ret = audioServer->CheckAndWaitAudioPolicyReady();
@@ -212,7 +212,7 @@ HWTEST(AudioServerUnitTest, RegisterAudioCapturerSourceCallback_001, TestSize.Le
 {
     AUDIO_INFO_LOG("AudioServerUnitTest RegisterAudioCapturerSourceCallback_001 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     audioServer->RegisterAudioCapturerSourceCallback();
 }
@@ -227,7 +227,7 @@ HWTEST(AudioServerUnitTest, RegisterAudioRendererSinkCallback_001, TestSize.Leve
 {
     AUDIO_INFO_LOG("AudioServerUnitTest RegisterAudioRendererSinkCallback_001 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     audioServer->RegisterAudioRendererSinkCallback();
 }
@@ -242,7 +242,7 @@ HWTEST(AudioServerUnitTest, RegisterDataTransferStateChangeCallback_001, TestSiz
 {
     AUDIO_INFO_LOG("AudioServerUnitTest RegisterDataTransferStateChangeCallback_001 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     audioServer->RegisterDataTransferStateChangeCallback();
 }
@@ -257,7 +257,7 @@ HWTEST(AudioServerUnitTest, OnRenderSinkStateChange_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioServerUnitTest OnRenderSinkStateChange_001 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     uint32_t sinkId = 1;
     bool started = true;
@@ -274,7 +274,7 @@ HWTEST(AudioServerUnitTest, CheckHibernateState_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioServerUnitTest CheckHibernateState_001 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     bool hibernate = true;
     audioServer->CheckHibernateState(hibernate);
@@ -291,7 +291,7 @@ HWTEST(AudioServerUnitTest, CreateIpcOfflineStream_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioServerUnitTest CreateIpcOfflineStream_001 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     int32_t errorCode = 0;
     sptr<IRemoteObject> obj = nullptr;
@@ -309,7 +309,7 @@ HWTEST(AudioServerUnitTest, GetOfflineAudioEffectChains_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioServerUnitTest GetOfflineAudioEffectChains_001 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     std::vector<std::string> effectChains = {};
     int32_t ret = audioServer->GetOfflineAudioEffectChains(effectChains);
@@ -326,7 +326,7 @@ HWTEST(AudioServerUnitTest, GenerateSessionId_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioServerUnitTest GenerateSessionId_001 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     uint32_t sessionId = 1;
     int32_t ret = audioServer->GenerateSessionId(sessionId);
@@ -344,7 +344,7 @@ HWTEST(AudioServerUnitTest, GetAllSinkInputs_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioServerUnitTest GetAllSinkInputs_001 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     std::vector<SinkInput> sinkInputs = {};
     audioServer->GetAllSinkInputs(sinkInputs);
@@ -360,7 +360,7 @@ HWTEST(AudioServerUnitTest, NotifyAudioPolicyReady_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioServerUnitTest NotifyAudioPolicyReady_001 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     audioServer->NotifyAudioPolicyReady();
 }
@@ -376,7 +376,7 @@ HWTEST(AudioServerUnitTest, CheckCaptureLimit_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioServerUnitTest CheckCaptureLimit_001 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     AudioPlaybackCaptureConfig config;
     int32_t innerCapId = 0;
@@ -395,7 +395,7 @@ HWTEST(AudioServerUnitTest, SetInnerCapLimit_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioServerUnitTest SetInnerCapLimit_001 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     int32_t innerCapId = 0;
     int32_t ret = audioServer->SetInnerCapLimit(innerCapId);
@@ -413,7 +413,7 @@ HWTEST(AudioServerUnitTest, ReleaseCaptureLimit_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioServerUnitTest ReleaseCaptureLimit_001 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     int32_t innerCapId = 0;
     int32_t ret = audioServer->ReleaseCaptureLimit(innerCapId);
@@ -431,7 +431,7 @@ HWTEST(AudioServerUnitTest, LoadHdiAdapter_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioServerUnitTest LoadHdiAdapter_001 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     uint32_t devMgrType = 0;
     std::string adapterName = "test";
@@ -449,7 +449,7 @@ HWTEST(AudioServerUnitTest, UnloadHdiAdapter_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioServerUnitTest UnloadHdiAdapter_001 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     uint32_t devMgrType = 0;
     const std::string adapterName = "test";
@@ -467,7 +467,7 @@ HWTEST(AudioServerUnitTest, ParseAudioParameter_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioServerUnitTest ParseAudioParameter_001 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     EXPECT_FALSE(audioServer->isAudioParameterParsed_.load());
     audioServer->ParseAudioParameter();
@@ -484,7 +484,7 @@ HWTEST(AudioServerUnitTest, ParseAudioParameter_002, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioServerUnitTest ParseAudioParameter_002 start");
     int32_t systemAbilityId = 3001;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     EXPECT_FALSE(audioServer->isAudioParameterParsed_.load());
     audioServer->ParseAudioParameter();
@@ -501,7 +501,7 @@ HWTEST(AudioServerUnitTest, CacheExtraParameters_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioServerUnitTest CacheExtraParameters_001 start");
     int32_t systemAbilityId = 100;
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
     ASSERT_TRUE(audioServer != nullptr);
     const std::string key = "key-test";
     const std::vector<StringPair> kvpairs = {

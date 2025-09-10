@@ -107,7 +107,7 @@ void AudioServiceMoreFuzzTest()
     AudioPlaybackCaptureConfig newConfig;
     audioServicePtr->UpdateMuteControlSet(sessionId, true);
     audioServicePtr->UpdateMuteControlSet(sessionId, false);
-    audioServicePtr->EnableDualToneList(sessionId);
+    audioServicePtr->EnableDualStream(sessionId, "Speaker");
     audioServicePtr->OnCapturerFilterChange(sessionId, newConfig, 1);
     audioServicePtr->OnCapturerFilterRemove(sessionId, 1);
 
@@ -116,7 +116,7 @@ void AudioServiceMoreFuzzTest()
     audioServicePtr->GetIpcStream(config, ret);
 #ifdef HAS_FEATURE_INNERCAPTURER
     audioServicePtr->ShouldBeInnerCap(config, 1);
-    audioServicePtr->ShouldBeDualTone(config);
+    audioServicePtr->ShouldBeDualTone(config, "Speaker");
 
     audioServicePtr->OnInitInnerCapList(1);
     audioServicePtr->OnUpdateInnerCapList(1);

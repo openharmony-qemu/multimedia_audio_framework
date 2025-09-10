@@ -390,6 +390,14 @@ public:
      * @since 20
      */
     bool IsAudioLoopbackSupported(AudioLoopbackMode mode);
+
+    /**
+     * @brief Return if the system recording supports intelligent noise reduction for current device.
+     * @param SourceType sourceType used to decide the audio device and pipe type selection result.
+     * @return {@code true} if the system recording supports intelligent noise reduction for current device.
+     * @since 21
+     */
+    bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
 private:
     std::mutex rendererStateChangeCallbacksMutex_;
     std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> rendererStateChangeCallbacks_;

@@ -118,6 +118,7 @@ private:
     void WriteSmartPAStatusSysEvent(int32_t status);
     void UpdateSinkState(bool started);
     void WaitForDataLinkConnected();
+    void UpdateNearlinkOutputRoute();
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;

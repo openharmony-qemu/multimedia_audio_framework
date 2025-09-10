@@ -522,7 +522,7 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_024, TestSize.Level1)
  * @tc.name  : Test AudioCapturerPrivate API
  * @tc.type  : FUNC
  * @tc.number: AudioCapturerPrivate_025
- * @tc.desc  : Test AudioCapturerPrivate::SetClientInfo
+ * @tc.desc  : Test AudioCapturerPrivate::DecideStreamClassAndUpdateCapturerInfo
  */
 HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_025, TestSize.Level1)
 {
@@ -531,10 +531,8 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_025, TestSize.Level1)
     ASSERT_NE(capturer, nullptr);
 
     uint32_t flag = 0x6000;
-    IAudioStream::StreamClass streamClass = IAudioStream::StreamClass::PA_STREAM;
-
-    capturer->SetClientInfo(flag, streamClass);
-    EXPECT_EQ(capturer->capturerInfo_.pipeType, PIPE_TYPE_CALL_IN);
+    IAudioStream::StreamClass streamClass = capturer->DecideStreamClassAndUpdateCapturerInfo(flag);
+    EXPECT_EQ(streamClass, IAudioStream::StreamClass::VOIP_STREAM);
 }
 
 /**

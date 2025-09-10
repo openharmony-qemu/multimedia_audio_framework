@@ -110,12 +110,14 @@ private:
     int32_t DisConnectCapturerInputSessionInner(uint32_t sessionId);
     void SetSessionStateForRenderer(uint32_t sessionId, HpaeSessionState renderState);
     void SetSessionStateForCapturer(uint32_t sessionId, HpaeSessionState capturerState);
-    void SendRequestInner(Request &&request, bool isInit = false);
+    void SendRequestInner(Request &&request, const std::string &funcName, bool isInit = false);
     uint32_t GetSinkInputNodeIdInner();
     void AddSingleNodeToSinkInner(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect = true);
     void MoveAllStreamToNewSinkInner(const std::string &sinkName, const std::vector<uint32_t> &moveIds,
         MoveSessionType moveType);
-    void InitSinkInner(bool isReload = false);
+    int32_t InitSinkInner(bool isReload = false);
+    int32_t CheckFramelen();
+    int32_t CheckStreamInfo(const HpaeStreamInfo &streamInfo);
     uint32_t sinkInputNodeCounter_ = 0;
     int32_t sceneTypeToProcessClusterCount_ = 0;
     std::atomic<bool> isInit_ = false;

@@ -195,6 +195,7 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
     config.streamInfo.encoding = static_cast<AudioEncodingType>(curStreamParams_.encoding);
     config.streamInfo.format = static_cast<AudioSampleFormat>(curStreamParams_.format);
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(curStreamParams_.samplingRate);
+    config.streamInfo.customSampleRate = curStreamParams_.customSampleRate;
     config.streamInfo.channelLayout = static_cast<AudioChannelLayout>(curStreamParams_.channelLayout);
     config.originalSessionId = curStreamParams_.originalSessionId;
 
@@ -392,8 +393,8 @@ bool RendererInClientInner::CheckBufferNeedWrite()
 {
     uint32_t totalSizeInFrame = clientBuffer_->GetTotalSizeInFrame();
     size_t totalSizeInByte = totalSizeInFrame * sizePerFrameInByte_;
-    int32_t writableInFrame = clientBuffer_ -> GetWritableDataFrames();
-    size_t writableSizeInByte = writableInFrame * sizePerFrameInByte_;
+    int32_t writableInFrame = clientBuffer_->GetWritableDataFrames();
+    size_t writableSizeInByte = static_cast<size_t>(writableInFrame) * sizePerFrameInByte_;
 
     if (writableInFrame <= 0) {
         return false;
@@ -451,6 +452,22 @@ void RendererInClientInner::WaitForBufferNeedWrite()
     }
 }
 
+void RendererInClientInner::CallClientHandle()
+{
+    // call client write
+    std::shared_ptr<AudioRendererWriteCallback> cb = nullptr;
+    {
+        std::unique_lock<std::mutex> lockCb(writeCbMutex_);
+        cb = writeCb_;
+    }
+    if (cb != nullptr) {
+        Trace traceCb("RendererInClientInner::OnWriteData");
+        WatchTimeout guard("write interval too long"); // default time out 40ms
+        cb->OnWriteData(cbBufferSize_);
+        guard.CheckCurrTimeout();
+    }
+}
+
 bool RendererInClientInner::WriteCallbackFunc()
 {
     CHECK_AND_RETURN_RET_LOG(!cbThreadReleased_, false, "Callback thread released");
@@ -488,16 +505,7 @@ bool RendererInClientInner::WriteCallbackFunc()
     if (state_ != RUNNING) {
         return true;
     }
-    // call client write
-    std::shared_ptr<AudioRendererWriteCallback> cb = nullptr;
-    {
-        std::unique_lock<std::mutex> lockCb(writeCbMutex_);
-        cb = writeCb_;
-    }
-    if (cb != nullptr) {
-        Trace traceCb("RendererInClientInner::OnWriteData");
-        cb->OnWriteData(cbBufferSize_);
-    }
+    CallClientHandle();
 
     Trace traceQueuePush("RendererInClientInner::QueueWaitPush");
     std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
@@ -536,6 +544,7 @@ bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, b
 
 void RendererInClientInner::DfxWriteInterval()
 {
+    CHECK_AND_RETURN(renderMode_ == RENDER_MODE_NORMAL); // should only work in write mode.
     if (preWriteEndTime_ != 0 &&
         ((ClockTime::GetCurNano() / AUDIO_US_PER_SECOND) - preWriteEndTime_) > MAX_WRITE_INTERVAL_MS) {
         AUDIO_WARNING_LOG("[%{public}s] write interval too long cost %{public}" PRId64,

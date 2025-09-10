@@ -112,6 +112,30 @@ void IAudioStream::CreateStreamMap(std::map<std::pair<ContentType, StreamUsage>,
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_CALL_ASSISTANT)] = STREAM_VOICE_CALL_ASSISTANT;
 }
 
+int32_t IAudioStream::CheckRendererAudioStreamInfo(const AudioStreamParams info)
+{
+    if (!IsFormatValid(info.format) || !IsEncodingTypeValid(info.encoding) ||
+        !((info.customSampleRate == 0 && IsSamplingRateValid(info.samplingRate)) ||
+        (info.customSampleRate != 0 && IsCustomSampleRateValid(info.customSampleRate)))) {
+        AUDIO_ERR_LOG("Unsupported audio renderer parameter");
+        return ERR_NOT_SUPPORTED;
+    }
+    CHECK_AND_RETURN_RET(IsPlaybackChannelRelatedInfoValid(info.encoding, info.channels, info.channelLayout),
+        ERR_NOT_SUPPORTED);
+    return SUCCESS;
+}
+
+int32_t IAudioStream::CheckCapturerAudioStreamInfo(const AudioStreamParams info)
+{
+    if (!IsFormatValid(info.format) || !IsEncodingTypeValid(info.encoding) ||
+        !IsSamplingRateValid(info.samplingRate)) {
+        AUDIO_ERR_LOG("Unsupported audio capturer parameter");
+        return ERR_NOT_SUPPORTED;
+    }
+    CHECK_AND_RETURN_RET(IsRecordChannelRelatedInfoValid(info.channels, info.channelLayout), ERR_NOT_SUPPORTED);
+    return SUCCESS;
+}
+
 AudioStreamType IAudioStream::GetStreamType(ContentType contentType, StreamUsage streamUsage)
 {
     AudioStreamType streamType = STREAM_MUSIC;
@@ -282,6 +306,12 @@ bool IAudioStream::IsSamplingRateValid(uint32_t samplingRate)
     return isValidSamplingRate;
 }
 
+bool IAudioStream::IsCustomSampleRateValid(uint32_t customSampleRate)
+{
+    return (customSampleRate >= SAMPLE_RATE_8000 && customSampleRate <= SAMPLE_RATE_384000 &&
+        customSampleRate % SAMPLE_RATE_RESOLUTION_10 == 0) || customSampleRate == SAMPLE_RATE_11025;
+}
+
 bool IAudioStream::IsRendererChannelLayoutValid(uint64_t channelLayout)
 {
     bool isValidRendererChannelLayout = (find(RENDERER_SUPPORTED_CHANNELLAYOUTS.begin(),
@@ -299,7 +329,24 @@ bool IAudioStream::IsCapturerChannelLayoutValid(uint64_t channelLayout)
     return isValidCapturerChannelLayout;
 }
 
-bool IAudioStream::IsPlaybackChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout)
+bool IAudioStream::IsChannelLayoutMatchedWithChannel(uint8_t channel, uint64_t channelLayout, uint8_t encodingType)
+{
+    // for audio vivid, no need to match channel count with channel layout
+    CHECK_AND_RETURN_RET(encodingType != ENCODING_AUDIOVIVID, true);
+    // unknown channel layout is matched with any channel count
+    CHECK_AND_RETURN_RET(channelLayout != CH_LAYOUT_UNKNOWN, true);
+
+    if (((channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET) == 0) {
+        int32_t channelCount = __builtin_popcountll(channelLayout);
+        return channelCount == static_cast<int32_t>(channel);
+    }
+
+    uint64_t order = (channelLayout & CH_HOA_ORDNUM_MASK) >> CH_HOA_ORDNUM_OFFSET;
+    uint64_t channelCountHoa = (order + 1) * (order + 1);
+    return channelCountHoa == static_cast<uint64_t>(channel);
+}
+
+bool IAudioStream::IsPlaybackChannelRelatedInfoValid(uint8_t encodingType, uint8_t channels, uint64_t channelLayout)
 {
     if (!IsRendererChannelValid(channels)) {
         AUDIO_ERR_LOG("AudioStream: Invalid sink channel %{public}d", channels);
@@ -309,15 +356,25 @@ bool IAudioStream::IsPlaybackChannelRelatedInfoValid(uint8_t channels, uint64_t 
         AUDIO_ERR_LOG("AudioStream: Invalid sink channel layout");
         return false;
     }
+    if (!IsChannelLayoutMatchedWithChannel(channels, channelLayout, encodingType)) {
+        AUDIO_ERR_LOG("AudioStream: not matched sink channel and channel layout");
+        return false;
+    }
     return true;
 }
 
 bool IAudioStream::IsRecordChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout)
 {
     if (!IsCapturerChannelValid(channels)) {
+        AUDIO_ERR_LOG("AudioStream: Invalid source channel %{public}d", channels);
         return false;
     }
     if (!IsCapturerChannelLayoutValid(channelLayout)) {
+        AUDIO_ERR_LOG("AudioStream: Invalid source channel layout");
+        return false;
+    }
+    if (!IsChannelLayoutMatchedWithChannel(channels, channelLayout)) {
+        AUDIO_ERR_LOG("AudioStream: not matched source channel and channel layout");
         return false;
     }
     return true;

@@ -119,9 +119,9 @@ public:
     std::unique_ptr<AudioRingCache>& GetDupRingBuffer();
 
     // for dual tone
-    int32_t EnableDualTone();
+    int32_t EnableDualTone(const std::string &dupSinkName);
     int32_t DisableDualTone();
-    int32_t InitDualToneStream();
+    int32_t InitDualToneStream(const std::string &dupSinkName);
 
     void GetEAC3ControlParam();
     int32_t GetStreamManagerType() const noexcept;

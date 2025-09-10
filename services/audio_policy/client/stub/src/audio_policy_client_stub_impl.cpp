@@ -74,48 +74,6 @@ int32_t AudioPolicyClientStubImpl::OnVolumeKeyEvent(const VolumeEvent &volumeEve
     return SUCCESS;
 }
 
-int32_t AudioPolicyClientStubImpl::AddVolumeDegreeCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb)
-{
-    std::lock_guard<std::mutex> lockCbMap(volumeDegreeEventMutex_);
-    volumeDegreeCallbackList_.push_back(cb);
-    return SUCCESS;
-}
-
-int32_t AudioPolicyClientStubImpl::RemoveVolumeDegreeCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb)
-{
-    std::lock_guard<std::mutex> lockCbMap(volumeDegreeEventMutex_);
-    if (cb == nullptr) {
-        volumeDegreeCallbackList_.clear();
-        return SUCCESS;
-    }
-    auto it = find_if(volumeDegreeCallbackList_.begin(), volumeDegreeCallbackList_.end(),
-        [&cb](const std::weak_ptr<VolumeKeyEventCallback>& elem) {
-            return elem.lock() == cb;
-        });
-    if (it != volumeDegreeCallbackList_.end()) {
-        volumeDegreeCallbackList_.erase(it);
-    }
-    return SUCCESS;
-}
-
-size_t AudioPolicyClientStubImpl::GetVolumeDegreeCallbackSize() const
-{
-    std::lock_guard<std::mutex> lockCbMap(volumeDegreeEventMutex_);
-    return volumeDegreeCallbackList_.size();
-}
-
-int32_t AudioPolicyClientStubImpl::OnVolumeDegreeEvent(const VolumeEvent &volumeEvent)
-{
-    std::lock_guard<std::mutex> lockCbMap(volumeDegreeEventMutex_);
-    for (auto it = volumeDegreeCallbackList_.begin(); it != volumeDegreeCallbackList_.end(); ++it) {
-        std::shared_ptr<VolumeKeyEventCallback> volumeKeyEventCallback = (*it).lock();
-        if (volumeKeyEventCallback != nullptr) {
-            volumeKeyEventCallback->OnVolumeDegreeEvent(volumeEvent);
-        }
-    }
-    return SUCCESS;
-}
-
 int32_t AudioPolicyClientStubImpl::AddSystemVolumeChangeCallback(const std::shared_ptr<SystemVolumeChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(systemVolumeChangeMutex_);
@@ -776,6 +734,60 @@ int32_t AudioPolicyClientStubImpl::OnAudioSessionCurrentDeviceChanged(
         std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> deviceChangedCallback = (*it).lock();
         if (deviceChangedCallback != nullptr) {
             deviceChangedCallback->OnAudioSessionCurrentDeviceChanged(deviceChangedEvent);
+        }
+    }
+
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::AddAudioSessionInputDeviceCallback(
+    const std::shared_ptr<AudioSessionCurrentInputDeviceChangedCallback> &cb)
+{
+    AUDIO_INFO_LOG("AddAudioSessionInputDeviceCallback in");
+    std::lock_guard<std::mutex> lockCbMap(audioSessionInputDeviceMutex_);
+    audioSessionInputDeviceCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveAudioSessionInputDeviceCallback(
+    const std::optional<std::shared_ptr<AudioSessionCurrentInputDeviceChangedCallback>> &cb)
+{
+    AUDIO_INFO_LOG("RemoveAudioSessionInputDeviceCallback in");
+    std::lock_guard<std::mutex> lockCbMap(audioSessionInputDeviceMutex_);
+    if (cb.has_value()) {
+        auto it = find_if(audioSessionInputDeviceCallbackList_.begin(), audioSessionInputDeviceCallbackList_.end(),
+            [&cb](const std::weak_ptr<AudioSessionCurrentInputDeviceChangedCallback>& elem) {
+                return elem.lock() == cb.value();
+            });
+        if (it != audioSessionInputDeviceCallbackList_.end()) {
+            audioSessionInputDeviceCallbackList_.erase(it);
+            AUDIO_INFO_LOG("RemoveAudioSessionInputDeviceCallback remove cb succeed");
+        }
+    } else {
+        audioSessionInputDeviceCallbackList_.clear();
+    }
+    
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetAudioSessionInputDeviceCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(audioSessionInputDeviceMutex_);
+    return audioSessionInputDeviceCallbackList_.size();
+}
+
+int32_t AudioPolicyClientStubImpl::OnAudioSessionCurrentInputDeviceChanged(
+    const CurrentInputDeviceChangedEvent &deviceChangedEvent)
+{
+    AUDIO_INFO_LOG("OnAudioSessionCurrentInputDeviceChanged in");
+    std::lock_guard<std::mutex> lockCbMap(audioSessionInputDeviceMutex_);
+    for (auto it = audioSessionInputDeviceCallbackList_.begin();
+        it != audioSessionInputDeviceCallbackList_.end(); ++it) {
+        std::shared_ptr<AudioSessionCurrentInputDeviceChangedCallback> deviceChangedCallback = (*it).lock();
+        if (deviceChangedCallback != nullptr) {
+            CurrentInputDeviceChangedEvent change = deviceChangedEvent;
+            AudioDeviceDescriptor::MapInputDeviceType(change.devices);
+            deviceChangedCallback->OnAudioSessionCurrentInputDeviceChanged(change);
         }
     }
 

@@ -221,6 +221,8 @@ void AudioPolicyManagerThreeFuzzTest()
     std::shared_ptr<AudioInterruptCallback> interruptCallback;
     uint32_t clientUid = GetData<int32_t>();
     int32_t zoneId = GetData<int32_t>();
+    int32_t displayId = GetData<int32_t>();
+    int32_t mode = GetData<int32_t>();
     std::shared_ptr<AudioQueryClientTypeCallback> audioQueryClientTypeCallback;
     std::shared_ptr<AudioQueryBundleNameListCallback> audioQueryBundleNameListCallback;
     AudioInterrupt audioInterrupt;
@@ -251,6 +253,8 @@ void AudioPolicyManagerThreeFuzzTest()
     AudioPolicyManager::GetInstance().DeactivatePreemptMode();
     AudioPolicyManager::GetInstance().SetAudioManagerInterruptCallback(clientId, interruptCallback);
     AudioPolicyManager::GetInstance().UnsetAudioManagerInterruptCallback(clientId);
+    AudioPolicyManager::GetInstance().SetAppConcurrencyMode(appUid, mode);
+    AudioPolicyManager::GetInstance().SetAppSilentOnDisplay(displayId);
 }
 
 void AudioPolicyManagerFourFuzzTest()
@@ -483,10 +487,6 @@ void AudioPolicyManagerNiNeFuzzTest()
     vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     StreamUsage streamUsage = GetData<StreamUsage>();
     std::string address = "address";
-    int32_t volumeDegree = GetData<int32_t>();
-    AudioVolumeType volumeType = GetData<AudioVolumeType>();
-    int32_t volumeFlag = GetData<int32_t>();
-    uid_t uid = GetData<uid_t>();
 
     AudioPolicyManager::GetInstance().SetMicrophoneMutePersistent(isMute, type);
     AudioPolicyManager::GetInstance().GetPersistentMicMuteState();
@@ -500,9 +500,6 @@ void AudioPolicyManagerNiNeFuzzTest()
     AudioPolicyManager::GetInstance().GetSpatializationState(streamUsage);
     AudioPolicyManager::GetInstance().IsSpatializationSupported();
     AudioPolicyManager::GetInstance().IsSpatializationSupportedForDevice(address);
-    AudioPolicyManager::GetInstance().SetSystemVolumeDegree(volumeType, volumeDegree, volumeFlag, uid);
-    AudioPolicyManager::GetInstance().GetSystemVolumeDegree(volumeType, uid);
-    AudioPolicyManager::GetInstance().GetMinVolumeDegree(volumeType);
 }
 
 void AudioPolicyManagerDeviceOneFuzzTest()

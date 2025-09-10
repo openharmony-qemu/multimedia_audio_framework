@@ -94,7 +94,7 @@ void AudioServerSetSpatializationSceneTypeTest(const uint8_t *rawData, size_t si
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     uint32_t sizeMs = *reinterpret_cast<const uint32_t*>(rawData);
     data.WriteUint32(sizeMs);
-    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
 
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_SPATIALIZATION_SCENE_TYPE),
         data, reply, option);
@@ -111,7 +111,7 @@ void AudioServerUpdateSpatialDeviceTypeTest(const uint8_t *rawData, size_t size)
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     uint32_t sizeMs = *reinterpret_cast<const uint32_t*>(rawData);
     data.WriteUint32(sizeMs);
-    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
 
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_SPATIAL_DEVICE_TYPE),
         data, reply, option);
@@ -161,7 +161,7 @@ void AudioServerGetExtarAudioParametersTest(const uint8_t* rawData, size_t size)
         data.WriteString(static_cast<std::string>(subKey));
     }
 
-    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::GET_EXTRA_AUDIO_PARAMETERS),
@@ -191,7 +191,7 @@ void AudioServerSetExtraAudioParametersTest(const uint8_t* rawData, size_t size)
         data.WriteString(static_cast<std::string>(it->second));
     }
 
-    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_EXTRA_AUDIO_PARAMETERS),
@@ -214,7 +214,7 @@ void AudioServerUpdateRouteReqTest(const uint8_t* rawData, size_t size)
     data.WriteInt32(flag);
     data.WriteInt32(static_cast<int32_t>(a2dpOffloadFlag));
 
-    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_ROUTE_REQ),
@@ -244,7 +244,7 @@ void AudioServerUpdateActiveDevicesRouteTest(const uint8_t* rawData, size_t size
     BluetoothOffloadState a2dpOffloadFlag = *reinterpret_cast<const BluetoothOffloadState*>(rawData);
     data.WriteInt32(static_cast<int32_t>(a2dpOffloadFlag));
 
-    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_ROUTES_REQ),
@@ -265,7 +265,7 @@ void AudioServerUpdateDualToneStateTest(const uint8_t* rawData, size_t size)
     data.WriteBool(enable);
     data.WriteInt32(sessionId);
 
-    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_DUAL_TONE_REQ),
@@ -284,7 +284,7 @@ void AudioServerGetTransactionIdTest(const uint8_t* rawData, size_t size)
     DeviceRole deviceRole = *reinterpret_cast<const DeviceRole*>(rawData);
     data.WriteInt32(deviceType);
     data.WriteInt32(deviceRole);
-    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::GET_TRANSACTION_ID),
@@ -307,7 +307,7 @@ void AudioGetAudioParameterTest(const uint8_t* rawData, size_t size)
     data.WriteInt32(static_cast<int32_t>(key));
     data.WriteString(condition);
 
-    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::GET_REMOTE_AUDIO_PARAMETER),
@@ -332,7 +332,7 @@ void AudioSetAudioParameterTest(const uint8_t* rawData, size_t size)
     data.WriteString(condition);
     data.WriteString(value);
 
-    std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_REMOTE_AUDIO_PARAMETER),
@@ -360,7 +360,7 @@ void AudioCreateAudioProcessTest(const uint8_t* rawData, size_t size)
 
     config.Marshalling(data);
 
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
     audioServer->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIOPROCESS),
@@ -391,7 +391,7 @@ void AudioLoadAudioEffectLibrariesTest(const uint8_t* rawData, size_t size)
         data.WriteString(libName);
     }
 
-    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
     audioServer->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::LOAD_AUDIO_EFFECT_LIBRARIES),
@@ -502,9 +502,9 @@ void AudioRendererInServerTestSecond(std::shared_ptr<RendererInServer> renderer)
     renderer->EnableInnerCap(1);
     renderer->DisableInnerCap(1);
     renderer->InitDupStream(1);
-    renderer->EnableDualTone();
+    renderer->EnableDualTone("Speaker");
     renderer->DisableDualTone();
-    renderer->InitDualToneStream();
+    renderer->InitDualToneStream("Speaker");
     renderer->GetStreamManagerType();
     renderer->SetSilentModeAndMixWithOthers(isAppBack);
     renderer->SetClientVolume();
@@ -612,7 +612,7 @@ void AudioServerSetAsrAecModeFuzzTest(const uint8_t *rawData, size_t size)
         return;
     }
     int32_t asrAecMode =  *reinterpret_cast<const int32_t*>(rawData);
-    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SetAsrAecMode(asrAecMode);
 }
 
@@ -622,7 +622,7 @@ void AudioServerGetAsrAecModeFuzzTest(const uint8_t *rawData, size_t size)
         return;
     }
     int32_t asrAecMode =  *reinterpret_cast<const int32_t*>(rawData);
-    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->GetAsrAecMode(asrAecMode);
 }
 
@@ -632,7 +632,7 @@ void AudioServerGetAsrNoiseSuppressionModeFuzzTest(const uint8_t *rawData, size_
         return;
     }
     int32_t asrNoiseSuppressionMode =  *reinterpret_cast<const int32_t*>(rawData);
-    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->GetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
 }
 
@@ -642,7 +642,7 @@ void AudioServerSetAsrWhisperDetectionModeFuzzTest(const uint8_t *rawData, size_
         return;
     }
     int32_t asrNoiseSuppressionMode =  *reinterpret_cast<const int32_t*>(rawData);
-    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SetAsrWhisperDetectionMode(asrNoiseSuppressionMode);
 }
 
@@ -652,7 +652,7 @@ void AudioServerGetAsrWhisperDetectionModeFuzzTest(const uint8_t *rawData, size_
         return;
     }
     int32_t asrNoiseSuppressionMode =  *reinterpret_cast<const int32_t*>(rawData);
-    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->GetAsrWhisperDetectionMode(asrNoiseSuppressionMode);
 }
 
@@ -683,7 +683,7 @@ void AudioServerSetAsrVoiceSuppressionControlModeFuzzTest(const uint8_t *rawData
     AsrVoiceControlMode asrVoiceControlMode = AsrVoiceControlMode::AUDIO_SUPPRESSION_OPPOSITE;
     bool on = *reinterpret_cast<const bool*>(rawData);
     int32_t modifyVolume = *reinterpret_cast<const int32_t*>(rawData);
-    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SetAsrVoiceSuppressionControlMode(paramKey, asrVoiceControlMode, on, modifyVolume);
 }
 
@@ -694,7 +694,7 @@ void AudioServerSetAsrVoiceControlModeFuzzTest(const uint8_t *rawData, size_t si
     }
     int32_t asrVoiceControlMode =  *reinterpret_cast<const int32_t*>(rawData);
     bool on = *reinterpret_cast<const bool*>(rawData);
-    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SetAsrVoiceControlMode(asrVoiceControlMode, on);
 }
 
@@ -705,7 +705,7 @@ void AudioServerSetAsrVoiceMuteModeFuzzTest(const uint8_t *rawData, size_t size)
     }
     int32_t asrVoiceControlMode =  *reinterpret_cast<const int32_t*>(rawData);
     bool on = *reinterpret_cast<const bool*>(rawData);
-    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SetAsrVoiceMuteMode(asrVoiceControlMode, on);
 }
 
@@ -715,7 +715,7 @@ void AudioServerIsWhisperingFuzzTest(const uint8_t *rawData, size_t size)
         return;
     }
     int32_t whisperRes =  *reinterpret_cast<const int32_t*>(rawData);
-    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->IsWhispering(whisperRes);
 }
 
@@ -914,7 +914,7 @@ void AudioServerRemoveThreadFromGroupFuzzTest(const uint8_t *rawData, size_t siz
     int32_t pid = *reinterpret_cast<const int32_t*>(rawData);
     int32_t workgroupId = *reinterpret_cast<const int32_t*>(rawData);
     int32_t tokenId = *reinterpret_cast<const int32_t*>(rawData);
-    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->RemoveThreadFromGroup(pid, workgroupId, tokenId);
 }
 
@@ -926,11 +926,48 @@ void AudioServerGetVolumeBySessionIdFuzzTest(const uint8_t *rawData, size_t size
     uint32_t sessionId = GetData<uint32_t>();
     float volume = GetData<float>();
     AudioRendererDataTransferStateChangeInfo info;
-    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     CHECK_AND_RETURN(audioServerPtr != nullptr);
     audioServerPtr->GetVolumeBySessionId(sessionId, volume);
 }
 
+void AudioServerImproveAudioWorkgroupPrioFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    int32_t pid = GetData<int32_t>();
+    int32_t value1 = GetData<int32_t>();
+    unordered_map<int32_t, bool> threads = {{value1, true}};
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    audioServerPtr->ImproveAudioWorkgroupPrio(pid, threads);
+}
+
+void AudioServerRestoreAudioWorkgroupPrioFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    int32_t pid = GetData<int32_t>();
+    int32_t value1 = GetData<int32_t>();
+    int32_t value2 = GetData<int32_t>();
+    unordered_map<int32_t, int32_t> threads = {{value1, value2}};
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    audioServerPtr->RestoreAudioWorkgroupPrio(pid, threads);
+}
+
+void AudioServerGetPrivacyTypeAudioServerFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    uint32_t sessionId = GetData<uint32_t>();
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    int32_t privacyType;
+    int32_t ret;
+    audioServerPtr->GetPrivacyTypeAudioServer(sessionId, privacyType, ret);
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -983,5 +1020,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AudioServerHpaeDumpSourceOutputsInfoCbFuzzTest(data, size);
     OHOS::AudioStandard::AudioServerRemoveThreadFromGroupFuzzTest(data, size);
     OHOS::AudioStandard::AudioServerGetVolumeBySessionIdFuzzTest(data, size);
+    OHOS::AudioStandard::AudioServerImproveAudioWorkgroupPrioFuzzTest(data, size);
+    OHOS::AudioStandard::AudioServerRestoreAudioWorkgroupPrioFuzzTest(data, size);
+    OHOS::AudioStandard::AudioServerGetPrivacyTypeAudioServerFuzzTest(data, size);
     return 0;
 }

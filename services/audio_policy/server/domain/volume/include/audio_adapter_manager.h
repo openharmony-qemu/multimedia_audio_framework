@@ -48,7 +48,6 @@ struct AppConfigVolume {
 };
 
 const int32_t MAX_CACHE_AMOUNT = 10;
-static constexpr int32_t MAX_VOLUME_DEGREE = 100;
 class AudioAdapterManager : public IAudioPolicyInterface {
 public:
     static constexpr std::string_view SPLIT_STREAM_SINK = "libmodule-split-stream-sink.z.so";
@@ -168,7 +167,7 @@ public:
 
     bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false);
 
-    float CalculateVolumeDb(int32_t volumeLevel, int32_t maxDegree = MAX_VOLUME_LEVEL);
+    float CalculateVolumeDb(int32_t volumeLevel);
 
     int32_t SetSystemSoundUri(const std::string &key, const std::string &uri);
 
@@ -260,9 +259,6 @@ public:
     void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel,
         std::string networkId);
 
-    void HandleSaveVolumeDegree(DeviceType deviceType, AudioStreamType streamType,
-        int32_t volumeDegree, std::string networkId);
-
     void HandleStreamMuteStatus(AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
         const DeviceType &deviceType = DEVICE_TYPE_NONE, std::string networkId = LOCAL_NETWORK_ID);
 
@@ -306,11 +302,10 @@ public:
     int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object);
     void HandleDistributedDeviceVolume();
     void SetSleVoiceStatusFlag(bool isSleVoiceStatus);
-
-    int32_t SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree);
-    int32_t GetSystemVolumeDegree(AudioStreamType streamType);
-    int32_t GetMinVolumeDegree(AudioVolumeType volumeType);
-    void SendLoudVolumeModeToDsp(FunctionHoldType funcHoldType, bool state);
+    void SendLoudVolumeModeToDsp(LoudVolumeHoldType funcHoldType, bool state);
+    void SaveSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel);
+    int32_t GetSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType);
+    int32_t SetSystemVolumeToEffect(AudioStreamType streamType, float volume);
 private:
     friend class PolicyCallbackImpl;
 
@@ -322,7 +317,7 @@ private:
     static constexpr int32_t APP_MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t APP_DEFAULT_VOLUME_LEVEL = 25;
     static constexpr int32_t CONST_FACTOR = 100;
-    static constexpr int32_t DEFAULT_SAFE_VOLUME_TIMEOUT = 1140;
+    static constexpr int32_t DEFAULT_SAFE_VOLUME_TIMEOUT = 1080;
     static constexpr int32_t CONVERT_FROM_MS_TO_SECONDS = 1000;
     static constexpr float MIN_STREAM_VOLUME = 0.0f;
     static constexpr float MAX_STREAM_VOLUME = 1.0f;

@@ -107,6 +107,7 @@ public:
 
     int32_t SetNearlinkDeviceVolume(const std::string &macAddress, AudioVolumeType volumeType,
         const int32_t volume, bool internalCall = false);
+    int32_t SetNearlinkDeviceVolumeEx(AudioVolumeType volumeType, const int32_t volume);
 
     void UpdateGroupInfo(GroupType type, std::string groupName, int32_t& groupId, std::string networkId,
         bool connected, int32_t mappingId);
@@ -137,11 +138,7 @@ public:
     void OnTimerExpired();
     bool IsNeedForceControlVolumeType();
     AudioVolumeType GetForceControlVolumeType();
-    int32_t SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree,
-        int32_t zoneId);
-    int32_t GetSystemVolumeDegree(AudioStreamType streamType);
-    int32_t GetMinVolumeDegree(AudioVolumeType volumeType) const;
-    void SendLoudVolumeMode(FunctionHoldType funcHoldType, bool state, bool repeatTrigNotif = false);
+    void SendLoudVolumeMode(LoudVolumeHoldType funcHoldType, bool state, bool repeatTrigNotif = false);
 
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

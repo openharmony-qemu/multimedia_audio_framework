@@ -483,7 +483,7 @@ StreamManagerState HpaeSourceInputNode::GetSourceState(void)
 
 int32_t HpaeSourceInputNode::SetSourceState(StreamManagerState sourceState)
 {
-    AUDIO_INFO_LOG("Source[%{public}s] state change:[%{public}s]-->[%{public}s]",
+    HILOG_COMM_INFO("Source[%{public}s] state change:[%{public}s]-->[%{public}s]",
         GetDeviceClass().c_str(), ConvertStreamManagerState2Str(state_).c_str(),
         ConvertStreamManagerState2Str(sourceState).c_str());
     state_ = sourceState;

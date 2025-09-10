@@ -20,7 +20,7 @@
 #include "audio_policy_config_parser.h"
 #include "audio_source_strategy_parser.h"
 #include "audio_policy_utils.h"
-#include "audio_policy_service.h"
+#include "audio_core_service.h"
 #include "audio_ec_manager.h"
 
 namespace OHOS {
@@ -167,7 +167,7 @@ void AudioPolicyConfigManager::OnVoipConfigParsed(bool enableFastVoip)
 void AudioPolicyConfigManager::OnUpdateAnahsSupport(std::string anahsShowType)
 {
     AUDIO_INFO_LOG("show type: %{public}s", anahsShowType.c_str());
-    AudioPolicyService::GetAudioPolicyService().OnUpdateAnahsSupport(anahsShowType);
+    AudioCoreService::GetCoreService()->OnUpdateAnahsSupport(anahsShowType);
 }
 
 void AudioPolicyConfigManager::OnUpdateEac3Support(bool isSupported)
@@ -650,6 +650,26 @@ std::shared_ptr<AdapterPipeInfo> AudioPolicyConfigManager::GetNormalRecordAdapte
     return pipeIt->second;
 }
 
+bool AudioPolicyConfigManager::PreferMultiChannelPipe(std::shared_ptr<AudioStreamDescriptor> &desc)
+{
+    auto newDeviceDesc = desc->newDeviceDescs_.front();
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(newDeviceDesc->deviceType_,
+        newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_, newDeviceDesc->a2dpOffloadFlag_);
+    if (deviceInfo == nullptr) {
+        AUDIO_ERR_LOG("deviceInfo == nullptr");
+        return false;
+    }
+
+    auto pipeIt = deviceInfo->supportPipeMap_.find(AUDIO_OUTPUT_FLAG_MULTICHANNEL);
+    if (pipeIt->second != nullptr) {
+        AUDIO_INFO_LOG("adapterType:%{public}d", pipeIt->second->GetAdapterType());
+        if (pipeIt->second->GetAdapterType() != OHOS::AudioStandard::AudioAdapterType::TYPE_PRIMARY) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc,
     std::shared_ptr<PipeStreamPropInfo> &info)
 {
@@ -735,25 +755,42 @@ void AudioPolicyConfigManager::UpdateBasicStreamInfo(std::shared_ptr<AudioStream
     }
 }
 
+std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetSuitableStreamPropInfo(
+    std::list<std::shared_ptr<PipeStreamPropInfo>> &dynamicStreamPropInfos, uint32_t sampleRate)
+{
+    // Firstly match same channels, and then match sampleRate.The result is greater than and closest to target.
+    dynamicStreamPropInfos.sort([](const auto &a, const auto &b) {
+        if (a == nullptr) {
+            return true;
+        } else if (b == nullptr) {
+            return false;
+        } else {
+            return a->sampleRate_ < b->sampleRate_;
+        }
+    });
+
+    for (auto &streamProp : dynamicStreamPropInfos) {
+        CHECK_AND_RETURN_RET(!(streamProp && streamProp->sampleRate_ >= sampleRate), streamProp);
+    }
+
+    return dynamicStreamPropInfos.back();
+}
+
 std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetDynamicStreamPropInfoFromPipe(
     std::shared_ptr<AdapterPipeInfo> &info, AudioSampleFormat format, uint32_t sampleRate, AudioChannel channels)
 {
     std::unique_lock<std::mutex> lock(info->dynamicMtx_);
     CHECK_AND_RETURN_RET(info && !info->dynamicStreamPropInfos_.empty(), nullptr);
 
-    std::shared_ptr<PipeStreamPropInfo> defaultStreamProp = nullptr;
     AUDIO_INFO_LOG("use dynamic streamProp");
+    std::list<std::shared_ptr<PipeStreamPropInfo>> channelMatchInfos;
     for (auto &streamProp : info->dynamicStreamPropInfos_) {
-        CHECK_AND_CONTINUE(streamProp && streamProp->sampleRate_ >= sampleRate);
-        CHECK_AND_RETURN_RET(streamProp->sampleRate_ != sampleRate, streamProp);
-        // find min sampleRate bigger than music sampleRate, eg: 44100 -> 48000 when has 32000, 48000, 96000, 192000
-        CHECK_AND_CONTINUE(defaultStreamProp == nullptr || (defaultStreamProp != nullptr &&
-            defaultStreamProp->sampleRate_ > streamProp->sampleRate_));
-        defaultStreamProp = streamProp;
+        CHECK_AND_CONTINUE(streamProp && streamProp->channels_ == channels);
+        channelMatchInfos.push_back(streamProp);
     }
-    CHECK_AND_RETURN_RET_LOG(defaultStreamProp != nullptr, info->dynamicStreamPropInfos_.back(),
-        "not match any streamProp");
-    return defaultStreamProp;
+
+    return channelMatchInfos.size() == 0 ? GetSuitableStreamPropInfo(info->dynamicStreamPropInfos_, sampleRate)
+        : GetSuitableStreamPropInfo(channelMatchInfos, sampleRate);
 }
 
 std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoFromPipe(

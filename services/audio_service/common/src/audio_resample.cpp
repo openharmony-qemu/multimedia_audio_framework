@@ -36,24 +36,23 @@ bool AudioResample::IsResampleInit() const noexcept
 
 AudioResample::~AudioResample()
 {
-    if (!resampler_) {
-        return;
+    if (resampler_) {
+        resampler_ = nullptr;
     }
-    resampler_->Reset();
-    resampler_ = nullptr;
 }
 
 int32_t AudioResample::ProcessFloatResample(const std::vector<float> &input, std::vector<float> &output)
 {
-    if (!resampler_) {
+    if (resampler_ == nullptr) {
         return ERR_INVALID_PARAM;
     }
     Trace trace("AudioResample::ProcessFloatResample");
-    if (resampler_->GetChannels() <= 0) {
+    uint32_t channels = resampler_->GetChannels();
+    if (channels <= 0 || input.size() % channels != 0 || output.size() % channels != 0) {
         return ERR_INVALID_PARAM;
     }
-    uint32_t inSize = input.size() / resampler_->GetChannels();
-    uint32_t outSize = output.size() / resampler_->GetChannels();
+    uint32_t inSize = input.size() / channels;
+    uint32_t outSize = output.size() / channels;
     return resampler_->Process(input.data(), inSize, output.data(), outSize);
 }
 } // namespace AudioStandard

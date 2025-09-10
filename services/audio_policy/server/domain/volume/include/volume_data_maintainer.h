@@ -133,12 +133,9 @@ public:
     bool SaveMicMuteState(bool isMute);
     bool GetMicMuteState(bool &isMute);
     bool CheckOsAccountReady();
+    void SaveSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel);
+    int32_t GetSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType);
 
-    void SetVolumeDegree(AudioStreamType streamType, int32_t volumeDegree);
-    int32_t GetVolumeDegree(AudioStreamType streamType);
-    bool SaveVolumeDegree(DeviceType type, AudioStreamType streamType, int32_t volumeDegree,
-        std::string networkId = LOCAL_NETWORK_ID);
-    bool GetVolumeDegree(DeviceType deviceType, AudioStreamType streamType, std::string networkId = LOCAL_NETWORK_ID);
 private:
     static std::string GetVolumeKeyForDataShare(DeviceType deviceType, AudioStreamType streamType,
         std::string networkId = LOCAL_NETWORK_ID);
@@ -168,8 +165,8 @@ private:
 
     // Stores the mute status of audio streams used by the app.
     std::unordered_map<int32_t, std::unordered_map<AudioStreamType, bool>> appStreamMuteMap_;
-    std::unordered_map<AudioStreamType, int32_t> volumeDegreeMap_; // save system volume degree map
     bool isSettingsCloneHaveStarted_ = false;
+    std::unordered_map<DeviceType, std::unordered_map<AudioStreamType, int32_t>> deviceTypeToSystemVolumeForEffectMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

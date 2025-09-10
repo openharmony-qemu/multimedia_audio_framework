@@ -334,19 +334,6 @@ void CapturerInServer::UpdateBufferTimeStamp(size_t readLen)
     audioServerBuffer_->SetTimeStampInfo(curProcessPos_, timestamp);
 }
 
-void CapturerInServer::MuteVoice(const SourceType sourceType, BufferDesc &dstBuffer)
-{
-    bool muteState = false;
-    if (CoreServiceHandler::GetInstance().GetVoiceMuteState(streamIndex_, muteState)) {
-        if (muteState) {
-            AUDIO_DEBUG_LOG("session:%{public}d muted", streamIndex_);
-            int32_t ret = memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength,
-                0, dstBuffer.bufLength);
-            CHECK_AND_RETURN_LOG(ret == EOK, "Clear buffer fail, ret %{public}d.", ret);
-        }
-    }
-}
-
 // LCOV_EXCL_START
 void CapturerInServer::ReadData(size_t length)
 {
@@ -383,8 +370,6 @@ void CapturerInServer::ReadData(size_t length)
         LEGACY_MUTE_CAP) || muteFlag_) {
         dstBuffer.buffer = dischargeBuffer_.get(); // discharge valid data.
     }
-
-    MuteVoice(processConfig_.capturerInfo.sourceType, dstBuffer);
 
     if (muteFlag_) {
         memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
@@ -449,8 +434,6 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
         dstBuffer.buffer = dischargeBuffer_.get(); // discharge valid data.
     }
 
-    MuteVoice(processConfig_.capturerInfo.sourceType, dstBuffer);
-
     if (muteFlag_) {
         memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
     }
@@ -505,13 +488,12 @@ bool CapturerInServer::CheckBGCapture()
         return true;
     }
 
-    if (AudioService::GetInstance()->IsStreamInterruptResume(streamIndex_) &&
-        AudioService::GetInstance()->IsBackgroundCaptureAllowed(streamIndex_)) {
+    if (AudioService::GetInstance()->IsStreamInterruptResume(streamIndex_)) {
         AUDIO_WARNING_LOG("Stream:%{public}u Result:success Reason:resume", streamIndex_);
         return true;
     }
 
-    CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
+    CHECK_AND_RETURN_RET_LOG(Util::IsBackgroundSourceType(processConfig_.capturerInfo.sourceType) &&
         AudioService::GetInstance()->InForegroundList(processConfig_.appInfo.appUid), false, "Check failed");
 
     AudioService::GetInstance()->UpdateForegroundState(tokenId, true);
@@ -564,7 +546,7 @@ bool CapturerInServer::TurnOffMicIndicator(CapturerState capturerState)
     };
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
 
-    if (AudioService::GetInstance()->NeedRemoveBackgroundCaptureMap(streamIndex_)) {
+    if (AudioService::GetInstance()->NeedRemoveBackgroundCaptureMap(streamIndex_, capturerState)) {
         AudioService::GetInstance()->RemoveBackgroundCaptureMap(streamIndex_);
     }
     if (isMicIndicatorOn_) {
@@ -740,7 +722,6 @@ int32_t CapturerInServer::Stop()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
-    CoreServiceHandler::GetInstance().RemoveVoiceMuteState(streamIndex_);
     return SUCCESS;
 }
 // LCOV_EXCL_STOP

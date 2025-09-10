@@ -56,6 +56,7 @@ ohos_unittest("audio_renderer_unit_test") {
     "c_utils:utils",
     "eventhandler:libeventhandler",
     "hilog:libhilog",
+    "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "samgr:samgr_proxy",
@@ -141,6 +142,7 @@ ohos_unittest("renderer_capture_interrupt_unit_test") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "ipc:ipc_core",
   ]
 
   defines = []
@@ -184,6 +186,7 @@ ohos_unittest("capture_renderer_interrupt_unit_test") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "ipc:ipc_core",
   ]
 
   resource_config_file =

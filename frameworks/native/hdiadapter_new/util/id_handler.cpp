@@ -108,6 +108,8 @@ uint32_t IdHandler::GetCaptureIdByDeviceClass(const std::string &deviceClass, co
             return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_AI, HDI_ID_INFO_DEFAULT);
         }
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT);
+    } else if (deviceClass == "va") {
+        return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_VA, HDI_ID_INFO_VA);
     } else if (deviceClass == "usb") {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
     } else if (deviceClass == "a2dp") {
@@ -136,9 +138,9 @@ void IdHandler::IncInfoIdUseCount(uint32_t id)
     uint32_t infoId = id & HDI_ID_INFO_MASK;
     std::lock_guard<std::mutex> lock(infoIdMtx_);
     CHECK_AND_RETURN_LOG(infoIdMap_.count(infoId) != 0, "invalid id %{public}u", id);
-    infoIdMap_[infoId].useCount_++;
-    AUDIO_DEBUG_LOG("info: %{public}s, useCount: %{public}u", infoIdMap_[infoId].info_.c_str(),
-        infoIdMap_[infoId].useCount_.load());
+    std::lock_guard<std::mutex> useIdLock(infoIdMap_[infoId].useIdMtx_);
+    infoIdMap_[infoId].useIdSet_.insert(id);
+    AUDIO_INFO_LOG("infoId: %{public}u, useCount: %{public}zu", infoId, infoIdMap_[infoId].useIdSet_.size());
 }
 
 void IdHandler::DecInfoIdUseCount(uint32_t id)
@@ -146,14 +148,10 @@ void IdHandler::DecInfoIdUseCount(uint32_t id)
     uint32_t infoId = id & HDI_ID_INFO_MASK;
     std::lock_guard<std::mutex> lock(infoIdMtx_);
     CHECK_AND_RETURN_LOG(infoIdMap_.count(infoId) != 0, "invalid id %{public}u", id);
-    if (infoIdMap_[infoId].useCount_.load() > 0) {
-        infoIdMap_[infoId].useCount_--;
-        AUDIO_DEBUG_LOG("info: %{public}s, useCount: %{public}u", infoIdMap_[infoId].info_.c_str(),
-            infoIdMap_[infoId].useCount_.load());
-        if (infoIdMap_[infoId].useCount_.load() > 0) {
-            return;
-        }
-    }
+    std::lock_guard<std::mutex> useIdLock(infoIdMap_[infoId].useIdMtx_);
+    infoIdMap_[infoId].useIdSet_.erase(id);
+    AUDIO_INFO_LOG("infoId: %{public}u, useCount: %{public}zu", infoId, infoIdMap_[infoId].useIdSet_.size());
+    CHECK_AND_RETURN(infoIdMap_[infoId].useIdSet_.size() == 0);
     infoIdMap_.erase(infoId);
     std::lock_guard<std::mutex> freeLock(freeInfoIdMtx_);
     freeInfoIdSet_.emplace(infoId);

@@ -100,7 +100,7 @@ public:
     int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
 
 private:
-    void SendRequest(Request &&request, bool isInit = false);
+    void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
     int32_t StartRenderSink();
     bool IsMchDevice();
     int32_t CreateInputSession(const HpaeStreamInfo &streamInfo);
@@ -124,7 +124,10 @@ private:
     bool SetSessionFade(uint32_t sessionId, IOperation operation);
     void CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo);
     void CreateOutputClusterNodeInfo(HpaeNodeInfo &nodeInfo);
-    void InitManager(bool isReload = false);
+    int32_t InitManager(bool isReload = false);
+    int32_t CheckFramelen();
+    int32_t CheckStreamInfo(const HpaeStreamInfo &streamInfo);
+    void InitDefaultNodeInfo();
     void MoveStreamSync(uint32_t sessionId, const std::string &sinkName);
     void UpdateAppsUid();
     int32_t HandlePriPaPower(uint32_t sessionId);
@@ -146,7 +149,7 @@ private:
     std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeProcessCluster>> sceneClusterMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSinkInputNode>> sinkInputNodeMap_;
     std::unordered_map<HpaeProcessorType, uint32_t> toBeStoppedSceneTypeToSessionMap_;
-    std::unique_ptr<IHpaeOutputCluster> outputCluster_ = nullptr;
+    std::shared_ptr<IHpaeOutputCluster> outputCluster_ = nullptr;
     HpaeNoLockQueue hpaeNoLockQueue_;
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;
     std::atomic<bool> isInit_ = false;
@@ -157,6 +160,7 @@ private:
     std::vector<int32_t> appsUid_;
     std::shared_ptr<HpaeCoBufferNode> hpaeCoBufferNode_;
     bool isCollaborationEnabled_ = false;
+    int64_t noneStreamTime_ = 0; // if no stream, 3s time out to stop rendersink
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

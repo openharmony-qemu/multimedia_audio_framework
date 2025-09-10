@@ -267,6 +267,35 @@ public:
     virtual void GetSingleStreamVolumeImpl(float &volume) {}
 };
 
+class MockWriteCallback : public AudioRendererWriteCallback {
+public:
+    void OnWriteData(size_t length) {};
+};
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: CallClientHandle_001
+ * @tc.desc  : Test RendererInClientInner::CallClientHandle
+ */
+HWTEST(RendererInClientInnerUnitTest, CallClientHandle_001, TestSize.Level1)
+{
+    auto renderer = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getuid());
+
+    ASSERT_TRUE(renderer != nullptr);
+
+    renderer->writeCb_ = nullptr;
+    renderer->CallClientHandle();
+
+    auto mockCallBack = std::make_shared<MockWriteCallback>();
+
+    renderer->renderMode_ = AudioRenderMode::RENDER_MODE_CALLBACK;
+    int32_t ret = renderer->SetRendererWriteCallback(mockCallBack);
+
+    renderer->CallClientHandle();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
 /**
  * @tc.name  : Test RendererInClientInner API
  * @tc.type  : FUNC

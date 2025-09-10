@@ -518,13 +518,7 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointMix_001, TestSize.Level1)
     bool result = audioEndpointInner->UnlinkProcessStream(processStream);
     EXPECT_FALSE(result);
 
-    int32_t ret = audioEndpointInner->OnUpdateHandleInfo(processStream);
-    EXPECT_NE(SUCCESS, ret);
-
-    ret = audioEndpointInner->LinkProcessStream(processStream);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = audioEndpointInner->OnUpdateHandleInfo(processStream);
+    int32_t ret = audioEndpointInner->LinkProcessStream(processStream);
     EXPECT_EQ(SUCCESS, ret);
 
     AudioProcessConfig config = {};
@@ -1308,6 +1302,46 @@ HWTEST_F(AudioEndpointUnitTest, CheckPlaySignal_004, TestSize.Level1)
     audioEndpointInner->detectedTime_ = 1000;
     audioEndpointInner->CheckPlaySignal(buffer, 10);
     EXPECT_EQ(1000, audioEndpointInner->detectedTime_);
+}
+
+/*
+ * @tc.name  : Test IsDupRenderCallbackMode API
+ * @tc.type  : FUNC
+ * @tc.number: IsDupRenderCallbackMode_001
+ * @tc.desc  : Test IsDupRenderCallbackMode interface
+ */
+HWTEST(AudioEndpointInnerUnitTest, IsDupRenderCallbackMode_001, TestSize.Level1)
+{
+    EXPECT_EQ(AudioEndpointInner::IsDupRenderCallbackMode(1, true), false);
+    EXPECT_EQ(AudioEndpointInner::IsDupRenderCallbackMode(1, false), true);
+    EXPECT_EQ(AudioEndpointInner::IsDupRenderCallbackMode(0, true), false);
+    EXPECT_EQ(AudioEndpointInner::IsDupRenderCallbackMode(0, false), false);
+}
+
+/*
+ * @tc.name  : Test IsDupRenderCallbackMode API
+ * @tc.type  : FUNC
+ * @tc.number: IsDualStream_001
+ * @tc.desc  : Test IsDualStream interface
+ */
+HWTEST(AudioEndpointInnerUnitTest, IsDualStream_001, TestSize.Level1)
+{
+    CaptureInfo capInfo = {
+        .dualDeviceName = "Speaker"
+    };
+    EXPECT_EQ(AudioEndpointInner::IsDualStream(capInfo), true);
+}
+
+/*
+ * @tc.name  : Test IsDupRenderCallbackMode API
+ * @tc.type  : FUNC
+ * @tc.number: IsDualStream_002
+ * @tc.desc  : Test IsDualStream interface
+ */
+HWTEST(AudioEndpointInnerUnitTest, IsDualStream_002, TestSize.Level1)
+{
+    CaptureInfo capInfo;
+    EXPECT_EQ(AudioEndpointInner::IsDualStream(capInfo), false);
 }
 } // namespace AudioStandard
 } // namespace OHOS

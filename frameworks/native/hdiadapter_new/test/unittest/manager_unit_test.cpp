@@ -14,6 +14,7 @@
  */
 
 #include <iostream>
+#include <thread>
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include "audio_utils.h"
@@ -31,7 +32,44 @@ public:
     static void TearDownTestCase() {}
     virtual void SetUp() {}
     virtual void TearDown() {}
+    static void ThreadFunc(bool *isDone);
 };
+
+void ManagerUnitTest::ThreadFunc(bool *isDone)
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::unordered_map<uint32_t, uint32_t> renderMap;
+    std::unordered_map<uint32_t, uint32_t> captureMap;
+    int32_t num = 10;
+    int32_t mod = 2;
+
+    for (int i = 0; i < num; i++) {
+        if (i % mod == 0) {
+            uint32_t renderId = manager.GetRenderIdByDeviceClass("remote", "info", true);
+            manager.GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_REMOTE, "info", false);
+            renderMap[renderId]++;
+        } else {
+            uint32_t captureId = manager.GetCaptureIdByDeviceClass("remote", SOURCE_TYPE_MIC, "info", true);
+            captureMap[captureId]++;
+        }
+    }
+
+    for (auto &item : renderMap) {
+        uint32_t cnt = item.second;
+        for (uint32_t i = 0; i < cnt; i++) {
+            uint32_t id = item.first;
+            manager.ReleaseId(id);
+        }
+    }
+    for (auto &item : captureMap) {
+        uint32_t cnt = item.second;
+        for (uint32_t i = 0; i < cnt; i++) {
+            uint32_t id = item.first;
+            manager.ReleaseId(id);
+        }
+    }
+    *isDone = true;
+}
 
 /**
  * @tc.name   : Test Manager API
@@ -82,6 +120,37 @@ HWTEST_F(ManagerUnitTest, ManagerUnitTest_001, TestSize.Level1)
     manager.ReleaseDeviceManager(HDI_DEVICE_MANAGER_TYPE_NUM);
 
     HdiMonitor::ReportHdiException(LOCAL, CALL_HDI_FAILED, 0, "test report hdi");
+}
+
+/**
+ * @tc.name   : Test Manager API
+ * @tc.number : ManagerUnitTest_002
+ * @tc.desc   : Test manager action
+ */
+HWTEST_F(ManagerUnitTest, ManagerUnitTest_002, TestSize.Level1)
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    uint32_t id = manager.GetRenderIdByDeviceClass("remote", "info", true);
+    uint32_t oldId = id;
+    manager.ReleaseId(id);
+
+    int32_t num = 5;
+    for (int i = 0; i < num; i++) {
+        bool isDone0 = false;
+        bool isDone1 = false;
+
+        std::thread t0(ManagerUnitTest::ThreadFunc, &isDone0);
+        std::thread t1(ManagerUnitTest::ThreadFunc, &isDone1);
+
+        t0.join();
+        t1.join();
+
+        EXPECT_TRUE(isDone0);
+        EXPECT_TRUE(isDone1);
+    }
+
+    uint32_t newId = manager.GetRenderIdByDeviceClass("remote", "info1", true);
+    EXPECT_EQ(newId, oldId);
 }
 
 } // namespace AudioStandard

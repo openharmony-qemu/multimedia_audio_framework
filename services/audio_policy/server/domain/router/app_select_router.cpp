@@ -18,6 +18,8 @@
 
 #include "app_select_router.h"
 
+#include "audio_usr_select_manager.h"
+
 using namespace std;
 
 namespace OHOS {
@@ -59,6 +61,9 @@ shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetRecordCaptureDevice(Source
 {
     shared_ptr<AudioDeviceDescriptor> device =
         AudioDeviceManager::GetAudioDeviceManager().GetSelectedCaptureDevice(sessionID);
+    if (device == nullptr) {
+        device = AudioUsrSelectManager::GetAudioUsrSelectManager().GetCapturerDevice(clientUID, sourceType);
+    }
     if (device == nullptr) {
         device = AudioAffinityManager::GetAudioAffinityManager().GetCapturerDevice(clientUID);
     }

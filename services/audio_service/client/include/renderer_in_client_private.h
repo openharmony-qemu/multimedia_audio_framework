@@ -239,6 +239,7 @@ private:
     int32_t WriteCacheData(uint8_t *buffer, size_t bufferSize, bool speedCached, size_t oriBufferSize);
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
+    void CallClientHandle();
     bool WriteCallbackFunc();
     // for callback mode. Check status if not running, wait for start or release.
     bool WaitForRunning();
@@ -463,6 +464,8 @@ private:
     bool isUpEvent_ = false;
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
     int64_t preWriteEndTime_ = 0;
+    bool loudVolumeModeEnable_ = false;
+
     uint64_t lastFlushReadIndex_ = 0;
     uint64_t lastSpeedFlushReadIndex_ = 0;
     bool isDataLinkConnected_ = false;

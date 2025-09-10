@@ -37,8 +37,6 @@ public:
     int32_t GetPaIndexByPortName(const std::string &portName, uint32_t &ret) override;
 
     int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config, int32_t &ret) override;
-    int32_t GetVoiceMuteState(uint32_t sessionId, bool &muteState) override;
-    int32_t RemoveVoiceMuteState(uint32_t sessionId) override;
 private:
     ICoreServiceProvider *coreServiceWorker_;
 };

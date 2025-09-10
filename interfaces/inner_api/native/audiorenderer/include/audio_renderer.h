@@ -38,6 +38,8 @@ struct AudioRendererParams {
     AudioSampleFormat sampleFormat = SAMPLE_S16LE;
     /** Sampling rate */
     AudioSamplingRate sampleRate = SAMPLE_RATE_8000;
+    /** Custom Sampling Rate */
+    uint32_t customSampleRate = 0;
     /** Number of channels */
     AudioChannel channelCount = MONO;
     /** Encoding Type */
@@ -1109,6 +1111,14 @@ public:
      * @since 20
      */
     virtual void ResetFirstFrameState() {};
+
+    /**
+     * @brief check whether sampling rate is supported by audio renderer
+     *
+     * @param rates sampling rate
+     * @since 20
+     */
+    static bool CheckSupportedSamplingRates(uint32_t rates);
 
 private:
     static void SendRendererCreateError(const StreamUsage &sreamUsage,

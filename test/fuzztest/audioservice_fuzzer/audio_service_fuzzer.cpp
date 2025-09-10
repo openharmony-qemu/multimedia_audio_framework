@@ -695,7 +695,7 @@ void AudioServiceEnableDualToneListFuzzTest()
     int32_t sessionId = GetData<int32_t>();
     audioService->allRendererMap_.clear();
     audioService->allRendererMap_.insert(std::make_pair(sessionId, renderer));
-    audioService->EnableDualToneList(sessionId);
+    audioService->EnableDualStream(sessionId, "Speaker");
 }
 
 void AudioServiceDisableDualToneListFuzzTest()
@@ -716,10 +716,8 @@ void AudioServiceDisableDualToneListFuzzTest()
         renderer = std::make_shared<RendererInServer>(processConfig, streamListener);
     }
 
-    audioService->filteredDualToneRendererMap_.clear();
-    audioService->filteredDualToneRendererMap_.push_back(renderer);
     int32_t sessionId = GetData<int32_t>();
-    audioService->DisableDualToneList(sessionId);
+    audioService->DisableDualStream(sessionId);
 }
 
 void AudioServiceNotifyStreamVolumeChangedFuzzTest()

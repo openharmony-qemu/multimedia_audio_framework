@@ -94,6 +94,7 @@ public:
     int32_t FindAudioSessionZoneid(int32_t callerUid, int32_t callerPid, bool isActivate);
 
     void ReleaseAudioZoneByClientPid(pid_t clientPid);
+    bool CheckDeviceInAudioZone(AudioDeviceDescriptor device);
 
 private:
     AudioZoneService() = default;

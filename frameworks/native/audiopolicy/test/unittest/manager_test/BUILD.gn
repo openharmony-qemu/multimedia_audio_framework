@@ -45,5 +45,6 @@ ohos_unittest("audio_manager_unit_test") {
     "c_utils:utils",
     "googletest:gmock",
     "googletest:gtest",
+    "ipc:ipc_core",
   ]
 }

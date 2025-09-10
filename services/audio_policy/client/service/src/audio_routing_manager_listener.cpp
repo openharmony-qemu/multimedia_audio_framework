@@ -60,8 +60,7 @@ void AudioRoutingManagerListener::SetAudioDeviceRefinerCallback(const std::weak_
 }
 
 int32_t AudioRoutingManagerListener::OnAudioOutputDeviceRefined(
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs, int32_t routerType, int32_t streamUsage,
-    int32_t clientUid, int32_t audioPipeType)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs, const FetchDeviceInfo &fetchDeviceInfo)
 {
     std::unique_lock<std::mutex> lock(deviceRefinerCallbackMutex_);
     std::shared_ptr<AudioDeviceRefiner> audioDeviceRefinerCallback = audioDeviceRefinerCallback_.lock();
@@ -69,9 +68,19 @@ int32_t AudioRoutingManagerListener::OnAudioOutputDeviceRefined(
         ERR_CALLBACK_NOT_REGISTERED, "audioDeviceRefinerCallback_ is nullptr");
     lock.unlock();
 
-    return audioDeviceRefinerCallback->OnAudioOutputDeviceRefined(descs,
-        static_cast<RouterType>(routerType), static_cast<StreamUsage>(streamUsage), clientUid,
-        static_cast<AudioPipeType>(audioPipeType));
+    return audioDeviceRefinerCallback->OnAudioOutputDeviceRefined(descs, fetchDeviceInfo);
+}
+
+int32_t AudioRoutingManagerListener::OnAudioDupDeviceRefined(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs, const FetchDeviceInfo &fetchDeviceInfo)
+{
+    std::unique_lock<std::mutex> lock(deviceRefinerCallbackMutex_);
+    std::shared_ptr<AudioDeviceRefiner> audioDeviceRefinerCallback = audioDeviceRefinerCallback_.lock();
+    CHECK_AND_RETURN_RET_LOG(audioDeviceRefinerCallback != nullptr,
+        ERR_CALLBACK_NOT_REGISTERED, "audioDeviceRefinerCallback_ is nullptr");
+    lock.unlock();
+
+    return audioDeviceRefinerCallback->OnAudioDupDeviceRefined(descs, fetchDeviceInfo);
 }
 
 int32_t AudioRoutingManagerListener::OnDistributedOutputChange(bool isRemote)

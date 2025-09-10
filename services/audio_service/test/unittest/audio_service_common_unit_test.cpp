@@ -20,6 +20,8 @@
 #include "audio_process_config.h"
 #include "linear_pos_time_model.h"
 #include "oh_audio_buffer.h"
+#include "va_shared_buffer.h"
+#include "va_shared_buffer_operator.h"
 #include <thread>
 #include <gtest/gtest.h>
 
@@ -1866,5 +1868,459 @@ HWTEST(AudioServiceCommonUnitTest, Create_001, TestSize.Level1)
     std::unique_ptr<AudioRingCache> result = ringCache->Create(cacheSize);
     EXPECT_EQ(result, nullptr);
 }
+
+/**
+* @tc.name  : Test VASharedBuffer API
+* @tc.type  : FUNC
+* @tc.number: VASharedBuffer_001
+* @tc.desc  : Test VASharedBuffer interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, VASharedBuffer_001, TestSize.Level1)
+{
+    std::shared_ptr<VASharedBuffer> buffer = VASharedBuffer::CreateFromLocal(1024);
+    EXPECT_NE(buffer, nullptr);
+    VASharedMemInfo memInfo;
+    buffer->GetVASharedMemInfo(memInfo);
+    EXPECT_EQ(memInfo.dataMemCapacity_, 1024);
+    EXPECT_NE(memInfo.dataFd_, INVALID_FD);
+    EXPECT_NE(memInfo.statusMemCapacity_, 0);
+    EXPECT_NE(memInfo.statusFd_, INVALID_FD);
+}
+
+/**
+* @tc.name  : Test VASharedBuffer API
+* @tc.type  : FUNC
+* @tc.number: VASharedBuffer_002
+* @tc.desc  : Test VASharedBuffer interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, VASharedBuffer_002, TestSize.Level1)
+{
+    VASharedMemInfo memInfoInvalid;
+    memInfoInvalid.dataFd_ = -1;
+    memInfoInvalid.dataMemCapacity_ = -1;
+    memInfoInvalid.statusMemCapacity_ = 0;
+    memInfoInvalid.statusFd_ = INVALID_FD;
+    
+    std::shared_ptr<VASharedBuffer> bufferInvalid = VASharedBuffer::CreateFromRemote(memInfoInvalid);
+    EXPECT_EQ(nullptr, bufferInvalid);
+     
+    const uint32_t bufferCapacity = 1024;
+    std::shared_ptr<VASharedBuffer> bufferLocal = VASharedBuffer::CreateFromLocal(bufferCapacity);
+    EXPECT_NE(nullptr, bufferLocal);
+
+    VASharedMemInfo memInfo;
+    bufferLocal->GetVASharedMemInfo(memInfo);
+
+    std::shared_ptr<VASharedBuffer> bufferValid = VASharedBuffer::CreateFromRemote(memInfo);
+    EXPECT_NE(nullptr, bufferValid);
+}
+
+/**
+* @tc.name  : Test VASharedBuffer API
+* @tc.type  : FUNC
+* @tc.number: VASharedBuffer_003
+* @tc.desc  : Test VASharedBuffer interface.
+*/
+HWTEST(VAAudioSharedMemoryTest, VASharedBuffer_003, TestSize.Level1)
+{
+    std::shared_ptr<VASharedBuffer> buffer = VASharedBuffer::CreateFromLocal(1024);
+    EXPECT_NE(buffer, nullptr);
+    VASharedMemInfo memInfo;
+    memInfo.dataMemCapacity_ = 1024;
+    memInfo.dataFd_ = INVALID_FD;
+    memInfo.statusMemCapacity_ = sizeof(VASharedStatusInfo);
+    memInfo.statusFd_ = INVALID_FD;
+    EXPECT_EQ(buffer->Init(memInfo), SUCCESS);
+
+    std::shared_ptr<VAAudioSharedMemory> sharedMemory_ = VAAudioSharedMemory::CreateFromLocal(1024, "test_memory");
+    EXPECT_NE(sharedMemory_, nullptr);
+
+    EXPECT_NE(sharedMemory_->GetBase(), nullptr);
+    EXPECT_EQ(sharedMemory_->GetSize(), 1024);
+    EXPECT_EQ(sharedMemory_->GetName(), "test_memory");
+    EXPECT_NE(sharedMemory_->GetFd(), INVALID_FD);
+}
+
+/**
+* @tc.name  : Test VASharedBuffer API
+* @tc.type  : FUNC
+* @tc.number: VASharedBuffer_004
+* @tc.desc  : Test VASharedBuffer interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, VASharedBuffer_004, TestSize.Level1)
+{
+    VASharedBuffer sharedBuffer;
+    int32_t result = sharedBuffer.SizeCheck();
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test VASharedBuffer API
+* @tc.type  : FUNC
+* @tc.number: VASharedBuffer_005
+* @tc.desc  : Test VASharedBuffer interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, VASharedBuffer_005, TestSize.Level1)
+{
+    std::shared_ptr<VASharedBuffer> buffer = VASharedBuffer::CreateFromLocal(1024);
+    EXPECT_NE(buffer, nullptr);
+    VASharedMemInfo memInfo;
+    memInfo.dataMemCapacity_ = 1024;
+    memInfo.dataFd_ = INVALID_FD;
+    memInfo.statusMemCapacity_ = sizeof(VASharedStatusInfo);
+    memInfo.statusFd_ = INVALID_FD;
+    EXPECT_EQ(buffer->Init(memInfo), SUCCESS);
+    uint8_t *database = buffer->GetDataBase();
+    EXPECT_NE(database, nullptr);
+}
+
+/**
+* @tc.name  : Test VASharedBuffer API
+* @tc.type  : FUNC
+* @tc.number: VASharedBuffer_006
+* @tc.desc  : Test VASharedBuffer interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, VASharedBuffer_006, TestSize.Level1)
+{
+    std::shared_ptr<VASharedBuffer> buffer = VASharedBuffer::CreateFromLocal(1024);
+    EXPECT_NE(buffer, nullptr);
+
+    VASharedMemInfo memInfo;
+    memInfo.dataMemCapacity_ = 1024;
+    memInfo.dataFd_ = INVALID_FD;
+    memInfo.statusMemCapacity_ = sizeof(VASharedStatusInfo);
+    memInfo.statusFd_ = INVALID_FD;
+    EXPECT_EQ(buffer->Init(memInfo), SUCCESS);
+
+    size_t dataSize = buffer->GetDataSize();
+    EXPECT_EQ(dataSize, 1024);
+}
+
+/**
+* @tc.name  : Test VASharedBuffer API
+* @tc.type  : FUNC
+* @tc.number: VASharedBuffer_007
+* @tc.desc  : Test VASharedBuffer interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, VASharedBuffer_007, TestSize.Level1)
+{
+    std::shared_ptr<VASharedBuffer> buffer = VASharedBuffer::CreateFromLocal(1024);
+    EXPECT_NE(buffer, nullptr);
+    VASharedMemInfo memInfo;
+    memInfo.dataMemCapacity_ = 1024;
+    memInfo.dataFd_ = INVALID_FD;
+    memInfo.statusMemCapacity_ = sizeof(VASharedStatusInfo);
+    memInfo.statusFd_ = INVALID_FD;
+    EXPECT_EQ(buffer->Init(memInfo), SUCCESS);
+    sptr<Ashmem> ashmem = buffer->GetDataAshmem();
+    EXPECT_NE(ashmem, nullptr);
+}
+
+/* *
+* @tc.name  : Test VASharedBuffer API
+* @tc.type  : FUNC
+* @tc.number: VASharedBuffer_008
+* @tc.desc  : Test VASharedBuffer interface.
+
+HWTEST(AudioServiceCommonUnitTest, VASharedBuffer_008, TestSize.Level1)
+{
+    std::shared_ptr<VASharedBuffer> buffer = VASharedBuffer::CreateFromLocal(1024);
+    EXPECT_NE(buffer, nullptr);
+    VASharedMemInfo memInfo;
+    memInfo.dataMemCapacity_ = 1024;
+    memInfo.dataFd_ = INVALID_FD;
+    memInfo.statusMemCapacity_ = 0;
+    memInfo.statusFd_ = INVALID_FD;
+    EXPECT_EQ(buffer->Init(memInfo), SUCCESS);
+    uint8_t *statusInfoBase = buffer->GetStatusInfoBase();
+    EXPECT_EQ(statusInfoBase, nullptr);
+} */
+
+/**
+* @tc.name  : Test VASharedBuffer API
+* @tc.type  : FUNC
+* @tc.number: VASharedBuffer_009
+* @tc.desc  : Test VASharedBuffer interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, VASharedBuffer_009, TestSize.Level1)
+{
+    std::shared_ptr<VASharedBuffer> buffer = VASharedBuffer::CreateFromLocal(1024);
+    EXPECT_NE(buffer, nullptr);
+    VASharedMemInfo memInfo;
+    memInfo.dataMemCapacity_ = 1024;
+    memInfo.dataFd_ = INVALID_FD;
+    memInfo.statusMemCapacity_ = sizeof(VASharedStatusInfo);
+    memInfo.statusFd_ = INVALID_FD;
+    EXPECT_EQ(buffer->Init(memInfo), SUCCESS);
+
+    VASharedMemInfo retrievedMemInfo;
+    buffer->GetVASharedMemInfo(retrievedMemInfo);
+
+    EXPECT_EQ(retrievedMemInfo.dataMemCapacity_, 1024);
+    EXPECT_NE(retrievedMemInfo.statusMemCapacity_, 0);
+    EXPECT_NE(retrievedMemInfo.dataFd_, INVALID_FD);
+    EXPECT_NE(retrievedMemInfo.statusFd_, INVALID_FD);
+}
+
+/**
+* @tc.name  : Test VASharedBufferOperator API
+* @tc.type  : FUNC
+* @tc.number: VASharedBufferOperator_001
+* @tc.desc  : Test VASharedBufferOperator interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, VASharedBufferOperator_001, TestSize.Level1)
+{
+    std::shared_ptr<VASharedBuffer> buffer = VASharedBuffer::CreateFromLocal(1024);
+    EXPECT_NE(buffer, nullptr);
+    VASharedMemInfo memInfo;
+    memInfo.dataMemCapacity_ = 1024;
+    memInfo.dataFd_ = INVALID_FD;
+    memInfo.statusMemCapacity_ = sizeof(VASharedStatusInfo);
+    memInfo.statusFd_ = INVALID_FD;
+    EXPECT_EQ(buffer->Init(memInfo), SUCCESS);
+
+    VASharedBufferOperator* operator_ = new VASharedBufferOperator(*buffer);
+    EXPECT_NE(operator_, nullptr);
+
+    EXPECT_NE(operator_->dataAshmem_, nullptr);
+    EXPECT_EQ(operator_->capacity, 1024);
+    EXPECT_NE(operator_->statusInfo_, nullptr);
+
+    delete operator_;
+}
+
+/**
+* @tc.name   : Test VASharedBufferOperator API
+* @tc.type   : FUNC
+* @tc.number : VASharedBufferOperator_002
+* @tc.desc   : Test VASharedBufferOperator interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, VASharedBufferOperator_002, TestSize.Level1)
+{
+    std::shared_ptr<VASharedBuffer> buffer = VASharedBuffer::CreateFromLocal(1024);
+    EXPECT_NE(buffer, nullptr);
+    VASharedMemInfo memInfo;
+    memInfo.dataMemCapacity_ = 1024;
+    memInfo.dataFd_ = INVALID_FD;
+    memInfo.statusMemCapacity_ = sizeof(VASharedStatusInfo);
+    memInfo.statusFd_ = INVALID_FD;
+    EXPECT_EQ(buffer->Init(memInfo), SUCCESS);
+
+    VASharedBufferOperator *operator_ = new VASharedBufferOperator(*buffer);
+    EXPECT_NE(operator_, nullptr);
+
+    operator_->SetMinReadSize(100);
+    EXPECT_NE(operator_->minReadSize_, 100);
+    delete operator_;
+}
+
+/**
+* @tc.name   : Test VASharedBufferOperator API
+* @tc.type   : FUNC
+* @tc.number : VASharedBufferOperator_003
+* @tc.desc   : Test VASharedBufferOperator interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, VASharedBufferOperator_003, TestSize.Level1)
+{
+    std::shared_ptr<VASharedBuffer> buffer = VASharedBuffer::CreateFromLocal(1024);
+    EXPECT_NE(buffer, nullptr);
+    VASharedMemInfo memInfo;
+    memInfo.dataMemCapacity_ = 1024;
+    memInfo.dataFd_ = INVALID_FD;
+    memInfo.statusMemCapacity_ = sizeof(VASharedStatusInfo);
+    memInfo.statusFd_ = INVALID_FD;
+    EXPECT_EQ(buffer->Init(memInfo), SUCCESS);
+
+    VASharedBufferOperator* operator_ = new VASharedBufferOperator(*buffer);
+    EXPECT_NE(operator_, nullptr);
+
+    EXPECT_EQ(operator_->GetReadableSize(), 0);
+    operator_->Reset();
+    EXPECT_EQ(operator_->GetReadableSize(), 0);
+
+    uint8_t testData[50] = {0};
+    size_t writeSize = operator_->Write(testData, 50);
+    EXPECT_EQ(writeSize, 50);
+    EXPECT_EQ(operator_->GetReadableSize(), 50);
+    operator_->Reset();
+    EXPECT_EQ(operator_->GetReadableSize(), 0);
+    delete operator_;
+}
+
+/**
+* @tc.name   : Test VASharedBufferOperator API
+* @tc.type   : FUNC
+* @tc.number : VASharedBufferOperator_004
+* @tc.desc   : Test VASharedBufferOperator interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, VASharedBufferOperator_004, TestSize.Level1)
+{
+    std::shared_ptr<VASharedBuffer> buffer = VASharedBuffer::CreateFromLocal(1024);
+    EXPECT_NE(buffer, nullptr);
+    VASharedMemInfo memInfo;
+    memInfo.dataMemCapacity_ = 1024;
+    memInfo.dataFd_ = INVALID_FD;
+    memInfo.statusMemCapacity_ = sizeof(VASharedStatusInfo);
+    memInfo.statusFd_ = INVALID_FD;
+
+
+    EXPECT_EQ(buffer->Init(memInfo), SUCCESS);
+    VASharedBufferOperator* operator_ = new VASharedBufferOperator(*buffer);
+    EXPECT_NE(operator_, nullptr);
+    size_t readableSize = operator_->GetReadableSize();
+    EXPECT_EQ(readableSize, 0);
+    delete operator_;
+}
+
+/**
+* @tc.name   : Test VASharedBufferOperator API
+* @tc.type   : FUNC
+* @tc.number : VASharedBufferOperator_005
+* @tc.desc   : Test VASharedBufferOperator interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, VASharedBufferOperator_005, TestSize.Level1)
+{
+    std::shared_ptr<VASharedBuffer> buffer = VASharedBuffer::CreateFromLocal(1024);
+    EXPECT_NE(buffer, nullptr);
+    VASharedMemInfo memInfo;
+    memInfo.dataMemCapacity_ = 1024;
+    memInfo.dataFd_ = INVALID_FD;
+    memInfo.statusMemCapacity_ = sizeof(VASharedStatusInfo);
+    memInfo.statusFd_ = INVALID_FD;
+
+    EXPECT_EQ(buffer->Init(memInfo), SUCCESS);
+    VASharedBufferOperator* operator_ = new VASharedBufferOperator(*buffer);
+    EXPECT_NE(operator_, nullptr);
+
+    uint8_t testData[100] = {0};
+    for (int i = 0; i < 100; ++i) {
+        testData[i] = static_cast<uint8_t>(i);
+    }
+    size_t writeSize = operator_->Write(testData, 100);
+    EXPECT_EQ(writeSize, 100);
+
+    uint8_t readData[100] = {0};
+    size_t readSize = operator_->Read(readData, 100);
+    EXPECT_EQ(readSize, 100);
+
+    for (int i = 0; i < 100; ++i) {
+        EXPECT_EQ(readData[i], static_cast<uint8_t>(i));
+    }
+    EXPECT_EQ(operator_->GetReadableSize(), 0);
+    delete operator_;
+}
+
+/**
+* @tc.name   : Test VASharedBufferOperator API
+* @tc.type   : FUNC
+* @tc.number : VASharedBufferOperator_006
+* @tc.desc   : Test VASharedBufferOperator interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, VASharedBufferOperator_006, TestSize.Level1)
+{
+    std::shared_ptr<VASharedBuffer> buffer = VASharedBuffer::CreateFromLocal(1024);
+    EXPECT_NE(buffer, nullptr);
+    VASharedMemInfo memInfo;
+    memInfo.dataMemCapacity_ = 1024;
+    memInfo.dataFd_ = INVALID_FD;
+    memInfo.statusMemCapacity_ = sizeof(VASharedStatusInfo);
+    memInfo.statusFd_ = INVALID_FD;
+    EXPECT_EQ(buffer->Init(memInfo), SUCCESS);
+
+    VASharedBufferOperator* operator_ = new VASharedBufferOperator(*buffer);
+    EXPECT_NE(operator_, nullptr);
+
+    EXPECT_EQ(operator_->GetReadableSize(), 0);
+
+    uint8_t testData[50] = {0};
+    size_t writeSize = operator_->Write(testData, 50);
+    EXPECT_EQ(writeSize, 50);
+    EXPECT_EQ(operator_->GetReadableSize(), 50);
+
+    uint8_t readData[30] = {0};
+    size_t readSize = operator_->Read(readData, 30);
+    EXPECT_EQ(readSize, 30);
+    EXPECT_EQ(operator_->GetReadableSize(), 20);
+    
+    operator_->SetReadPosToWritePos();
+    EXPECT_EQ(operator_->GetReadableSize(), 0);
+    delete operator_;
+}
+
+/**
+* @tc.name   : Test VASharedBufferOperator API
+* @tc.type   : FUNC
+* @tc.number : VASharedBufferOperator_007
+* @tc.desc   : Test VASharedBufferOperator interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, VASharedBufferOperator_007, TestSize.Level1)
+{
+    std::shared_ptr<VASharedBuffer> buffer = VASharedBuffer::CreateFromLocal(1024);
+    EXPECT_NE(buffer, nullptr);
+
+    VASharedMemInfo memInfo;
+    memInfo.dataMemCapacity_ = 1024;
+    memInfo.dataFd_ = INVALID_FD;
+    memInfo.statusMemCapacity_ = sizeof(VASharedStatusInfo);
+    memInfo.statusFd_ = INVALID_FD;
+    EXPECT_EQ(buffer->Init(memInfo), SUCCESS);
+
+    VASharedBufferOperator* operator_ = new VASharedBufferOperator(*buffer);
+    EXPECT_NE(operator_, nullptr);
+
+    auto futex = operator_->GetFutex();
+    EXPECT_NE(futex, nullptr);
+    delete operator_;
+}
+
+/**
+* @tc.name   : Test VASharedBufferOperator API
+* @tc.type   : FUNC
+* @tc.number : VASharedBufferOperator_009
+* @tc.desc   : Test VASharedBufferOperator interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, VASharedBufferOperator_009, TestSize.Level1)
+{
+    std::shared_ptr<VASharedBuffer> buffer = VASharedBuffer::CreateFromLocal(1024);
+    EXPECT_NE(buffer, nullptr);
+    VASharedMemInfo memInfo;
+    memInfo.dataMemCapacity_ = 1024;
+    memInfo.dataFd_ = INVALID_FD;
+    memInfo.statusMemCapacity_ = sizeof(VASharedStatusInfo);
+    memInfo.statusFd_ = INVALID_FD;
+    EXPECT_EQ(buffer->Init(memInfo), SUCCESS);
+
+    VASharedBufferOperator* operator_ = new VASharedBufferOperator(*buffer);
+    EXPECT_NE(operator_, nullptr);
+   
+    operator_->SetMinReadSize(100);
+    bool enoughData = operator_->HasEnoughReadableData();
+    EXPECT_FALSE(enoughData);
+    delete operator_;
+}
+
+/**
+* @tc.name   : Test VASharedBufferOperator API
+* @tc.type   : FUNC
+* @tc.number : VASharedBufferOperator_0010
+* @tc.desc   : Test VASharedBufferOperator interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, VASharedBufferOperator_0010, TestSize.Level1)
+{
+    std::shared_ptr<VASharedBuffer> buffer = VASharedBuffer::CreateFromLocal(1024);
+    EXPECT_NE(buffer, nullptr);
+    VASharedMemInfo memInfo;
+    memInfo.dataMemCapacity_ = 1024;
+    memInfo.dataFd_ = INVALID_FD;
+    memInfo.statusMemCapacity_ = sizeof(VASharedStatusInfo);
+    memInfo.statusFd_ = INVALID_FD;
+    EXPECT_EQ(buffer->Init(memInfo), SUCCESS);
+
+    VASharedBufferOperator* SharedStatusInfo_ = new VASharedBufferOperator(*buffer);
+    EXPECT_NE(SharedStatusInfo_, nullptr);
+    SharedStatusInfo_->InitVASharedStatusInfo();
+    EXPECT_NE(SharedStatusInfo_->statusInfo_, nullptr);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

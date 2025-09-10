@@ -355,7 +355,8 @@ int32_t AudioCaptureSource::CaptureFrame(char *frame, uint64_t requestBytes, uin
     }
     CheckLatencySignal(reinterpret_cast<uint8_t *>(frame), replyBytes);
 
-    DumpData(frame, replyBytes);
+    HdiDfxUtils::PrintVolumeInfo(frame, replyBytes, attr_, logUtilsTag_, volumeDataCount_);
+    HdiDfxUtils::DumpData(frame, replyBytes, dumpFile_, dumpFileName_);
     CheckUpdateState(frame, requestBytes);
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     int64_t stampThreshold = 50; // 50ms
@@ -411,7 +412,8 @@ int32_t AudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &reply
             AUDIO_ERR_LOG("copy desc fail");
         } else {
             replyBytes = (attr_.sourceType == SOURCE_TYPE_EC) ? 0 : fdesc->frameLen;
-            DumpData(fdesc->frame, replyBytes);
+            HdiDfxUtils::PrintVolumeInfo(fdesc->frame, replyBytes, attr_, logUtilsTag_, volumeDataCount_);
+            HdiDfxUtils::DumpData(fdesc->frame, replyBytes, dumpFile_, dumpFileName_);
         }
     }
     if (frameInfo.frameEc != nullptr) {
@@ -430,6 +432,13 @@ int32_t AudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &reply
 std::string AudioCaptureSource::GetAudioParameter(const AudioParamKey key, const std::string &condition)
 {
     return "";
+}
+
+void AudioCaptureSource::SetAudioParameter(
+    const AudioParamKey key, const std::string &condition, const std::string &value)
+{
+    AUDIO_WARNING_LOG("not support");
+    return;
 }
 
 int32_t AudioCaptureSource::SetVolume(float left, float right)
@@ -765,7 +774,7 @@ void AudioCaptureSource::CheckAcousticEchoCancelerSupported(int32_t sourceType, 
     std::string value = deviceManager->GetAudioParameter("primary", AudioParamKey::PARAM_KEY_STATE,
         "source_type_live_aec_supported");
     if (value != "true") {
-        AUDIO_ERR_LOG("SOURCE_TYPE_LIVE not supported will be changed to SOURCE_TYPE_MIC");
+        HILOG_COMM_INFO("SOURCE_TYPE_LIVE not supported will be changed to SOURCE_TYPE_MIC");
         hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
     }
 }
@@ -1294,18 +1303,6 @@ int32_t AudioCaptureSource::DoStop(void)
     started_.store(false);
     callback_.OnCaptureState(false);
     return SUCCESS;
-}
-
-void AudioCaptureSource::DumpData(char *frame, uint64_t &replyBytes)
-{
-    BufferDesc buffer = { reinterpret_cast<uint8_t*>(frame), replyBytes, replyBytes };
-    AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,
-        static_cast<AudioSampleFormat>(attr_.format), static_cast<AudioChannel>(attr_.channel));
-    VolumeTools::DfxOperation(buffer, streamInfo, logUtilsTag_, volumeDataCount_);
-    if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
-        DumpFileUtil::WriteDumpFile(dumpFile_, frame, replyBytes);
-        AudioCacheMgr::GetInstance().CacheData(dumpFileName_, static_cast<void *>(frame), replyBytes);
-    }
 }
 
 void AudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)

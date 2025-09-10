@@ -19,7 +19,7 @@ import("../../../config.gni")
 import("../../../sensor.gni")
 
 ohos_fuzztest("AudioEffectChainFuzzTest") {
-  module_out_path = "audio_framework/audio_framework_route"
+  module_out_path = "audio_framework/audio_framework_engine"
   fuzz_config_file = "../audioeffectchain_fuzzer"
 
   include_dirs = [

@@ -45,7 +45,7 @@ public:
     bool IsSamePipe(std::shared_ptr<AudioPipeInfo> info, std::shared_ptr<AudioPipeInfo> cmpInfo);
 
     const std::vector<std::shared_ptr<AudioPipeInfo>> GetPipeList();
-    std::vector<std::shared_ptr<AudioPipeInfo>> GetUnusedPipe(DeviceType curOutputDeviceType);
+    std::vector<std::shared_ptr<AudioPipeInfo>> GetUnusedPipe();
     std::vector<std::shared_ptr<AudioPipeInfo>> GetUnusedRecordPipe();
     std::shared_ptr<AudioPipeInfo> GetPipeinfoByNameAndFlag(const std::string adapterName, const uint32_t routeFlag);
     std::string GetAdapterNameBySessionId(uint32_t sessionId);
@@ -74,6 +74,7 @@ public:
     void AddModemCommunicationId(uint32_t sessionId, std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void RemoveModemCommunicationId(uint32_t sessionId);
     std::shared_ptr<AudioStreamDescriptor> GetModemCommunicationStreamDescById(uint32_t sessionId);
+    std::shared_ptr<AudioStreamDescriptor> GetModemCommunicationStreamDesc();
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> GetModemCommunicationMap();
     void UpdateModemStreamStatus(AudioStreamStatus streamStatus);
     void UpdateModemStreamDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
@@ -85,6 +86,7 @@ public:
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllCapturerStreamDescs();
     std::shared_ptr<AudioPipeInfo> FindPipeBySessionId(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
         uint32_t sessionId);
+    bool IsStreamUsageActive(const StreamUsage &usage);
 
 private:
     bool IsSpecialPipe(uint32_t routeFlag);

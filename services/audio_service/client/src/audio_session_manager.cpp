@@ -110,6 +110,38 @@ int32_t AudioSessionManager::SetAudioSessionScene(const AudioSessionScene audioS
     return result;
 }
 
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioSessionManager::GetAvailableDevices(AudioDeviceUsage usage)
+{
+    auto descs = AudioPolicyManager::GetInstance().GetAvailableDevices(usage);
+    AudioDeviceDescriptor::MapInputDeviceType(descs);
+    return descs;
+}
+
+int32_t AudioSessionManager::SelectInputDevice(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor)
+{
+    return AudioPolicyManager::GetInstance().SelectInputDevice(audioDeviceDescriptor);
+}
+
+std::shared_ptr<AudioDeviceDescriptor> AudioSessionManager::GetSelectedInputDevice()
+{
+    return AudioPolicyManager::GetInstance().GetSelectedInputDevice();
+}
+
+int32_t AudioSessionManager::ClearSelectedInputDevice()
+{
+    return AudioPolicyManager::GetInstance().ClearSelectedInputDevice();
+}
+
+int32_t AudioSessionManager::PreferBluetoothAndNearlinkRecord(BluetoothAndNearlinkPreferredRecordCategory category)
+{
+    return AudioPolicyManager::GetInstance().PreferBluetoothAndNearlinkRecord(category);
+}
+
+BluetoothAndNearlinkPreferredRecordCategory AudioSessionManager::GetPreferBluetoothAndNearlinkRecord()
+{
+    return AudioPolicyManager::GetInstance().GetPreferBluetoothAndNearlinkRecord();
+}
+
 int32_t AudioSessionManager::SetAudioSessionStateChangeCallback(
     const std::shared_ptr<AudioSessionStateChangedCallback> &stateChangedCallback)
 {
@@ -176,6 +208,19 @@ int32_t AudioSessionManager::SetAudioSessionCurrentDeviceChangeCallback(
     return ret;
 }
 
+int32_t AudioSessionManager::SetAudioSessionCurrentInputDeviceChangeCallback(
+    const std::shared_ptr<AudioSessionCurrentInputDeviceChangedCallback> &deviceChangedCallback)
+{
+    AUDIO_INFO_LOG("in");
+    CHECK_AND_RETURN_RET_LOG(deviceChangedCallback != nullptr, ERR_INVALID_PARAM, "deviceChangedCallback is nullptr");
+
+    int32_t ret =
+        AudioPolicyManager::GetInstance().SetAudioSessionCurrentInputDeviceChangeCallback(deviceChangedCallback);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+        "SetAudioSessionCurrentInputDeviceChangeCallback ret:%{public}d", ret);
+    return ret;
+}
+
 int32_t AudioSessionManager::UnsetAudioSessionCurrentDeviceChangeCallback()
 {
     AUDIO_INFO_LOG("Unset all audio session device callbacks");
@@ -193,6 +238,16 @@ int32_t AudioSessionManager::UnsetAudioSessionCurrentDeviceChangeCallback(
 
     int32_t ret = AudioPolicyManager::GetInstance().UnsetAudioSessionCurrentDeviceChangeCallback(deviceChangedCallback);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "UnsetAudioSessionCurrentDeviceChangeCallback ret:%{public}d", ret);
+    return ret;
+}
+
+int32_t AudioSessionManager::UnsetAudioSessionCurrentInputDeviceChangeCallback(
+    const std::optional<std::shared_ptr<AudioSessionCurrentInputDeviceChangedCallback>> &callback)
+{
+    AUDIO_INFO_LOG("AudioSessionManager::UnsetAudioSessionCurrentInputDeviceChangeCallback");
+    int32_t ret = AudioPolicyManager::GetInstance().UnsetAudioSessionCurrentInputDeviceChangeCallback(callback);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+        "UnsetAudioSessionCurrentInputDeviceChangeCallback ret:%{public}d", ret);
     return ret;
 }
 
@@ -334,7 +389,7 @@ void AudioSessionRestoreParame::RecordAudioSessionOpt(const OperationType type, 
         }
 
         bool firstFound = false;
-        for (int idx = actions_.size() - 1; idx >= 0; idx--) {
+        for (int32_t idx = static_cast<int32_t>(actions_.size()) - 1; idx >= 0; idx--) {
             CHECK_AND_CONTINUE(actions_[idx] != nullptr);
             if (actions_[idx]->type != OperationType::AUDIO_SESSION_SET_SCENE) {
                 continue;

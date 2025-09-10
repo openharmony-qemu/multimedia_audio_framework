@@ -101,6 +101,22 @@ void OfflineAudioEffectServerChainProcessFuzzTest()
     serverChain->Process(inSize, outSize);
 }
 
+void OfflineAudioEffectServerChainGetOfflineAudioEffectChainsFuzzTest()
+{
+    shared_ptr<OfflineAudioEffectServerChain> serverChain = make_shared<OfflineAudioEffectServerChain>("serverChain");
+    CHECK_AND_RETURN(serverChain != nullptr);
+    std::vector<std::string> chainNamesVector = {"abc", "link", "source"};
+    serverChain->GetOfflineAudioEffectChains(chainNamesVector);
+}
+
+void OfflineAudioEffectServerChainReleaseFuzzTest()
+{
+    shared_ptr<OfflineAudioEffectServerChain> serverChain = make_shared<OfflineAudioEffectServerChain>("serverChain");
+    CHECK_AND_RETURN(serverChain != nullptr);
+    serverChain->Create();
+    serverChain->Release();
+}
+
 vector<TestFuncs> g_testFuncs = {
     OfflineAudioEffectServerChainInitDumpFuzzTest,
     OfflineAudioEffectServerChainCreateFuzzTest,
@@ -109,6 +125,8 @@ vector<TestFuncs> g_testFuncs = {
     OfflineAudioEffectServerChainGetEffectBufferSizeFuzzTest,
     OfflineAudioEffectServerChainPrepareFuzzTest,
     OfflineAudioEffectServerChainProcessFuzzTest,
+    OfflineAudioEffectServerChainGetOfflineAudioEffectChainsFuzzTest,
+    OfflineAudioEffectServerChainReleaseFuzzTest,
 };
 
 } // namespace AudioStandard

@@ -49,6 +49,9 @@ ohos_fuzztest("AudioPolicyServerFuzzTest") {
   if (audio_framework_feature_input) {
     defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
   }
+  if (audio_framework_feature_usb_audio) {
+    defines += [ "USB_ENABLE" ]
+  }
 
   sources = [ "audio_policy_server_fuzzer.cpp" ]
 

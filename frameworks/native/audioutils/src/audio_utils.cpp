@@ -45,6 +45,7 @@
 #include "privacy_error.h"
 
 using OHOS::Security::AccessToken::AccessTokenKit;
+using namespace std::chrono_literals;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -88,10 +89,6 @@ const int32_t DATA_INDEX_4 = 4;
 const int32_t DATA_INDEX_5 = 5;
 const int32_t STEREO_CHANNEL_COUNT = 2;
 const int BUNDLE_MGR_SERVICE_SYS_ABILITY_ID = 401;
-const int32_t MAX_VOLUME_DEGREE = 100;
-const int32_t NUM_DEGREES_PER_LEVEL = 7;
-const int32_t MAX_VOLUME_LEVEL = 15;
-const int32_t MIN_VOLUME_LEVEL = 0;
 
 const char* DUMP_PULSE_DIR = "/data/data/.pulse_dir/";
 const char* DUMP_SERVICE_DIR = "/data/local/tmp/";
@@ -165,6 +162,12 @@ static const std::unordered_map<DeviceType, std::string> DEVICE_TYPE_NAME_MAP = 
     {DEVICE_TYPE_INVALID, "INVALID"},
     {DEVICE_TYPE_REMOTE_CAST, "REMOTE_CAST"},
     {DEVICE_TYPE_HEARING_AID, "HEARING_AID"},
+    {DEVICE_TYPE_BT_SPP, "BT_SPP"},
+};
+
+static const std::set<SourceType> BACKGROUND_SOURCE_TYPE = {
+    SOURCE_TYPE_MIC,
+    SOURCE_TYPE_VOICE_COMMUNICATION,
 };
 
 uint32_t Util::GetSamplePerFrame(const AudioSampleFormat &format)
@@ -190,6 +193,11 @@ uint32_t Util::GetSamplePerFrame(const AudioSampleFormat &format)
     return audioPerSampleLength;
 }
 
+bool Util::IsBackgroundSourceType(const SourceType sourceType)
+{
+    return BACKGROUND_SOURCE_TYPE.find(sourceType) != BACKGROUND_SOURCE_TYPE.end();
+}
+
 bool Util::IsScoSupportSource(const SourceType sourceType)
 {
     return sourceType == SOURCE_TYPE_VOICE_RECOGNITION || sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION;
@@ -208,6 +216,16 @@ bool Util::IsRingerOrAlarmerStreamUsage(const StreamUsage &usage)
 bool Util::IsRingerAudioScene(const AudioScene &audioScene)
 {
     return audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING;
+}
+
+size_t Util::CalculatePcmSizeFromDurationCeiling(std::chrono::nanoseconds duration,
+    uint32_t sampleRate, uint32_t bytesPerSample)
+{
+    size_t sampleCount = duration * sampleRate / (1s);
+    if (((duration * sampleRate) % (1s)) > (0ns)) {
+        sampleCount++;
+    }
+    return sampleCount * bytesPerSample;
 }
 
 WatchTimeout::WatchTimeout(const std::string &funcName, int64_t timeoutNs) : funcName_(funcName), timeoutNs_(timeoutNs)
@@ -563,7 +581,7 @@ bool PermissionUtil::CheckCallingUidPermission(const std::vector<uid_t> &allowed
         return true;
     }
     for (const auto &uid : allowedUids) {
-        if (uid == callingUid) {
+        if (uid == static_cast<uid_t>(callingUid)) {
             return true;
         }
     }
@@ -1168,14 +1186,18 @@ template bool GetSysPara(const char *key, std::string &value);
 
 int32_t GetEngineFlag()
 {
+#ifdef SUPPORT_OLD_ENGINE
     std::string para = "const.multimedia.audio.proaudioEnable";
     static int32_t engineFlag = -1;
     if (engineFlag == -1) {
         bool res = GetSysPara(para.c_str(), engineFlag);
-        AUDIO_DEBUG_LOG("get %{public}s = %{public}d", para.c_str(), engineFlag);
+        AUDIO_INFO_LOG("get %{public}s = %{public}d", para.c_str(), engineFlag);
         CHECK_AND_RETURN_RET_LOG(res, engineFlag, "get %{public}s fail", para.c_str());
     }
     return engineFlag;
+#else
+    return 1;
+#endif
 }
 
 std::map<std::string, std::string> DumpFileUtil::g_lastPara = {};
@@ -1942,58 +1964,6 @@ std::set<StreamUsage>& VolumeUtils::GetStreamUsageSetForVolumeType(AudioVolumeTy
     } else {
         return defaultVolumeToStreamUsageMap_.count(volumeType) ? defaultVolumeToStreamUsageMap_[volumeType] : emptySet;
     }
-}
-
-int32_t VolumeUtils::VolumeDegreeToLevel(int32_t degree)
-{
-    if (degree < MIN_VOLUME_LEVEL || degree > MAX_VOLUME_DEGREE) {
-        return MIN_VOLUME_LEVEL;
-    }
-
-    if (degree == MIN_VOLUME_LEVEL) {
-        return MIN_VOLUME_LEVEL;
-    }
-
-    if (degree == MAX_VOLUME_DEGREE) {
-        return MAX_VOLUME_LEVEL;
-    }
-
-    int32_t level = (degree - 1) / NUM_DEGREES_PER_LEVEL + 1;
-    return level;
-}
-
-int32_t VolumeUtils::VolumeLevelToDegree(int32_t level)
-{
-    if (level < MIN_VOLUME_LEVEL || level > MAX_VOLUME_LEVEL) {
-        return MIN_VOLUME_LEVEL;
-    }
-
-    if (level == MIN_VOLUME_LEVEL) {
-        return MIN_VOLUME_LEVEL;
-    }
-
-    const int32_t base = 6;
-    const int32_t period = 3;
-    int32_t cycles = (level - 1) / period;
-    int32_t remainder = (level - 1) % period;
-    const int32_t REMAINDER_1 = 1;
-    const int32_t REMAINDER_2 = 2;
-    const int32_t REMAINDER_OFF = 7;
-    const int32_t NUM_DEGREES_PER_CYCLE = 20;
-
-    int32_t degree = base + cycles * NUM_DEGREES_PER_CYCLE;
-    switch (remainder) {
-        case REMAINDER_1:
-            degree += REMAINDER_1 * REMAINDER_OFF;
-            break;
-        case REMAINDER_2:
-            degree += REMAINDER_2 * REMAINDER_OFF;
-            break;
-        default:
-            break;
-    }
-
-    return degree;
 }
 
 std::string GetEncryptStr(const std::string &src)

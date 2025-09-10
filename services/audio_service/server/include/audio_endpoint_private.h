@@ -23,6 +23,7 @@
 #include "i_process_status_listener.h"
 #include "linear_pos_time_model.h"
 #include "audio_device_descriptor.h"
+#include "audio_performance_monitor.h"
 #include "i_stream_manager.h"
 #include "i_renderer_stream.h"
 #include "audio_utils.h"
@@ -53,11 +54,13 @@ private:
 
 class AudioEndpointInner : public AudioEndpoint {
 public:
+    static constexpr int64_t INVALID_DELAY_STOP_HDI_TIME_NO_RUNNING_NS = -1;
     AudioEndpointInner(EndpointType type, uint64_t id, const AudioProcessConfig &clientConfig);
     ~AudioEndpointInner();
 
     bool Config(const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo) override;
-    bool StartDevice(EndpointStatus preferredState = INVALID);
+    bool StartDevice(EndpointStatus preferredState = INVALID,
+        int64_t delayStopTime_ = INVALID_DELAY_STOP_HDI_TIME_NO_RUNNING_NS);
     void HandleStartDeviceFailed();
     bool StopDevice();
 
@@ -65,8 +68,6 @@ public:
     int32_t OnStart(IAudioProcessStream *processStream) override;
     // when audio process pause.
     int32_t OnPause(IAudioProcessStream *processStream) override;
-    // when audio process request update handle info.
-    int32_t OnUpdateHandleInfo(IAudioProcessStream *processStream) override;
 
     /**
      * Call LinkProcessStream when first create process or link other process with this endpoint.
@@ -103,11 +104,12 @@ public:
 
     // for inner-cap
     bool ShouldInnerCap(int32_t innerCapId) override;
-    int32_t EnableFastInnerCap(int32_t innerCapId) override;
+    int32_t EnableFastInnerCap(int32_t innerCapId,
+        const std::optional<std::string> &dualDeviceName = std::nullopt) override;
     int32_t DisableFastInnerCap() override;
     int32_t DisableFastInnerCap(int32_t innerCapId) override;
 
-    int32_t InitDupStream(int32_t innerCapId);
+    int32_t InitDupStream(int32_t innerCapId, const std::optional<std::string> &dualDeviceName = std::nullopt);
 
     EndpointStatus GetStatus() override;
 
@@ -160,6 +162,7 @@ private:
     bool CheckAllBufferReady(int64_t checkTime, uint64_t curWritePos);
     void WaitAllProcessReady(uint64_t curWritePos);
     void CheckSyncInfo(uint64_t curWritePos);
+    void CheckJank(uint64_t curWritePos);
     bool ProcessToEndpointDataHandle(uint64_t curWritePos, std::function<void()> &moveClientIndex);
     void ProcessToDupStream(const std::vector<AudioStreamData> &audioDataList, AudioStreamData &dstStreamData,
         int32_t innerCapId);
@@ -226,6 +229,11 @@ private:
     bool NeedUseTempBuffer(const RingBufferWrapper &ringBuffer, size_t spanSizeInByte);
     void PrepareStreamDataBuffer(size_t i, size_t spanSizeInByte,
         RingBufferWrapper &ringBuffer, AudioStreamData &streamData);
+    int32_t WriteDupBufferInnerForWriteModeInner(const BufferDesc &bufferDesc, int32_t innerCapId);
+    int32_t WriteDupBufferInnerForCallbackModeInner(const BufferDesc &bufferDesc, int32_t innerCapId);
+
+    static bool IsDupRenderCallbackMode(int32_t engineFlag, bool isDualStream);
+    static bool IsDualStream(const CaptureInfo &capInfo);
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
     static constexpr int64_t TWO_MILLISECOND_DURATION = 2000000; // 2ms
@@ -263,6 +271,7 @@ private:
     };
     
     EndpointType endpointType_;
+    AdapterType adapterType_ = ADAPTER_TYPE_FAST;
     int32_t id_ = 0;
     std::mutex listLock_;
     std::vector<IAudioProcessStream *> processList_;

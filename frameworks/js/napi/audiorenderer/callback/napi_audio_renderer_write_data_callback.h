@@ -25,7 +25,7 @@ namespace OHOS {
 namespace AudioStandard {
 class NapiRendererWriteDataCallback : public AudioRendererWriteCallback {
 public:
-    NapiRendererWriteDataCallback(napi_env env, NapiAudioRenderer *napiRenderer);
+    NapiRendererWriteDataCallback(napi_env env, NapiAudioRenderer *napiRenderer, size_t bufferSize);
     virtual ~NapiRendererWriteDataCallback();
     void OnWriteData(size_t length) override;
 
@@ -35,17 +35,18 @@ public:
     bool GetWriteDTsfnFlag();
 
 private:
-    struct RendererWriteDataJsCallback {
+    struct RendererWriteDataJsCallback : public RefBase {
         std::shared_ptr<AutoRef> callback = nullptr;
         std::string callbackName = "unknown";
         BufferDesc bufDesc {};
         NapiAudioRenderer *rendererNapiObj;
+        bool enqueued = false;
     };
 
     static void WorkCallbackRendererWriteDataInner(RendererWriteDataJsCallback *event);
     static void SafeJsCallbackWriteDataWork(napi_env env, napi_value js_cb, void *context, void *data);
     static void WriteDataTsfnFinalize(napi_env env, void *data, void *hint);
-    void OnJsRendererWriteDataCallback(std::unique_ptr<RendererWriteDataJsCallback> &jsCb);
+    void OnJsRendererWriteDataCallback(sptr<RendererWriteDataJsCallback> &jsCb);
     static void CheckWriteDataCallbackResult(napi_env env, BufferDesc &bufDesc, napi_value result);
 
     std::mutex mutex_;
@@ -54,7 +55,8 @@ private:
     NapiAudioRenderer *napiRenderer_;
     bool regArWriteDataTsfn_ = false;
     napi_threadsafe_function arWriteDataTsfn_ = nullptr;
-
+    const size_t bufferSize_ = 0;
+    const std::unique_ptr<uint8_t[]> callbackBuffer_ = nullptr;
 #if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
     static vector<NapiAudioRenderer*> activeRenderers_;
 #endif

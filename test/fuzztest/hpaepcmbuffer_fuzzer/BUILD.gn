@@ -17,7 +17,7 @@ import("../../../accessibility.gni")
 import("../../../config.gni")
 
 ohos_fuzztest("HpaePcmBufferFuzzTest") {
-  module_out_path = "audio_framework/audio_framework_route"
+  module_out_path = "audio_framework/audio_framework_engine"
   fuzz_config_file = "../hpaepcmbuffer_fuzzer"
 
   include_dirs = [

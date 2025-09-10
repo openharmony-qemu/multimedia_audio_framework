@@ -28,6 +28,7 @@
 #include "napi_param_utils.h"
 #include "audio_errors.h"
 #include "audio_manager_log.h"
+#include "napi_dfx_utils.h"
 #ifdef FEATURE_HIVIEW_ENABLE
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
 #include "xpower_event_js.h"
@@ -384,6 +385,10 @@ napi_value NapiAudioManager::SetVolume(napi_env env, napi_callback_info info)
         auto *napiAudioManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioManagerStatus(napiAudioManager, context),
             "audio manager state is error.");
+
+        NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+            "setVolume", context->volType);
+
         context->intValue = napiAudioManager->audioMngr_->SetVolume(
             NapiAudioEnum::GetNativeAudioVolumeType(context->volType), context->volLevel);
         if (context->intValue != SUCCESS) {
@@ -424,6 +429,10 @@ napi_value NapiAudioManager::GetVolume(napi_env env, napi_callback_info info)
         auto *napiAudioManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioManagerStatus(napiAudioManager, context),
             "audio manager state is error.");
+
+        NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+            "getVolume", context->volType);
+
         context->volLevel = napiAudioManager->audioMngr_->GetVolume(
             NapiAudioEnum::GetNativeAudioVolumeType(context->volType));
     };
@@ -461,6 +470,10 @@ napi_value NapiAudioManager::GetMaxVolume(napi_env env, napi_callback_info info)
         auto *napiAudioManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioManagerStatus(napiAudioManager, context),
             "audio manager state is error.");
+
+        NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+            "getMaxVolume", context->volType);
+
         context->intValue = napiAudioManager->audioMngr_->GetMaxVolume(
             NapiAudioEnum::GetNativeAudioVolumeType(context->volType));
     };
@@ -498,6 +511,10 @@ napi_value NapiAudioManager::GetMinVolume(napi_env env, napi_callback_info info)
         auto *napiAudioManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioManagerStatus(napiAudioManager, context),
             "audio manager state is error.");
+
+        NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+            "getMinVolume", context->volType);
+
         context->intValue = napiAudioManager->audioMngr_->GetMinVolume(
             NapiAudioEnum::GetNativeAudioVolumeType(context->volType));
     };
@@ -575,6 +592,10 @@ napi_value NapiAudioManager::SetStreamMute(napi_env env, napi_callback_info info
         auto *napiAudioManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioManagerStatus(napiAudioManager, context),
             "audio manager state is error.");
+
+        NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+            "mute", context->volType);
+
         context->intValue = napiAudioManager->audioMngr_->SetMute(
             NapiAudioEnum::GetNativeAudioVolumeType(context->volType), context->isMute);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "SetMute failed",
@@ -614,6 +635,10 @@ napi_value NapiAudioManager::IsStreamMute(napi_env env, napi_callback_info info)
         auto *napiAudioManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioManagerStatus(napiAudioManager, context),
             "audio manager state is error.");
+
+        NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+            "isMute", context->volType);
+
         context->isMute = napiAudioManager->audioMngr_->IsStreamMute(
             NapiAudioEnum::GetNativeAudioVolumeType(context->volType));
     };
@@ -651,6 +676,10 @@ napi_value NapiAudioManager::IsStreamActive(napi_env env, napi_callback_info inf
         auto *napiAudioManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioManagerStatus(napiAudioManager, context),
             "audio manager state is error.");
+
+        NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+            "isActive", context->volType);
+
         context->isActive = napiAudioManager->audioMngr_->IsStreamActive(
             NapiAudioEnum::GetNativeAudioVolumeType(context->volType));
     };
@@ -1568,7 +1597,7 @@ napi_value NapiAudioManager::GetCollaborativeManager(napi_env env, napi_callback
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
-    
+
     napi_status status;
     size_t argCount = 0;
 

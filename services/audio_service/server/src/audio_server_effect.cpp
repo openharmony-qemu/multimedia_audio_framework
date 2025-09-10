@@ -131,24 +131,6 @@ int32_t AudioServer::UpdateSpatialDeviceType(int32_t spatialDeviceType)
 }
 // LCOV_EXCL_STOP
 
-int32_t AudioServer::SetSystemVolumeToEffect(const AudioStreamType streamType, float volume)
-{
-    AudioVolumeType systemVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-
-    int32_t engineFlag = GetEngineFlag();
-    if (engineFlag == 1) {
-        HPAE::IHpaeManager::GetHpaeManager().SetEffectSystemVolume(systemVolumeType, volume);
-    } else {
-        AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-        CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
-        AUDIO_INFO_LOG("streamType: %{public}d, systemVolume: %{public}f", streamType, volume);
-        audioEffectChainManager->SetEffectSystemVolume(systemVolumeType, volume);
-
-        audioEffectChainManager->EffectVolumeUpdate();
-    }
-    return SUCCESS;
-}
-
 // LCOV_EXCL_START
 int32_t AudioServer::SetSpatializationSceneType(int32_t spatializationSceneType)
 {

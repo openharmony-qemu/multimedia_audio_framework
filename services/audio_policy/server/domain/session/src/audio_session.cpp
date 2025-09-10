@@ -490,6 +490,15 @@ bool AudioSession::IsSessionOutputDeviceChanged(const std::shared_ptr<AudioDevic
     return deviceDescriptor_.IsSameDeviceDescPtr(desc);
 }
 
+bool AudioSession::IsSessionInputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> desc)
+{
+    std::lock_guard<std::mutex> lock(sessionMutex_);
+    CHECK_AND_RETURN_RET_LOG(desc != nullptr, true, "input device desc is nullptr");
+    CHECK_AND_RETURN_RET(!inputDeviceDescriptor_.IsSameDeviceDescPtr(desc), true);
+    inputDeviceDescriptor_ = AudioDeviceDescriptor(desc);
+    return false;
+}
+
 StreamUsage AudioSession::GetSessionStreamUsage()
 {
     std::lock_guard<std::mutex> lock(sessionMutex_);

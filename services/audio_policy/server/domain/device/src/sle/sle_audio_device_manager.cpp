@@ -234,9 +234,9 @@ int32_t SleAudioDeviceManager::SetDeviceAbsVolume(const std::string &device, Aud
 
     int32_t ret = SUCCESS;
     if (streamType == STREAM_MUSIC) {
-        ret = SetDeviceAbsVolume(device, static_cast<uint32_t>(volume), 0x00000002); // MEDIA
+        ret = SetDeviceAbsVolume(device, static_cast<uint32_t>(volume), SLE_AUDIO_STREAM_MUSIC);
     } else {
-        ret = SetDeviceAbsVolume(device, static_cast<uint32_t>(volume), 0x00000004); // VOICE_CALL
+        ret = SetDeviceAbsVolume(device, static_cast<uint32_t>(volume), SLE_AUDIO_STREAM_VOICE_CALL);
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "set device to nearlink failed");
 
@@ -306,7 +306,8 @@ void SleAudioDeviceManager::UpdateStreamTypeMap(const std::string &deviceAddr, u
 {
     std::lock_guard<std::mutex> lock(startedSleStreamTypeMutex_);
     auto &sessionSet = startedSleStreamType_[deviceAddr][streamType];
-    AUDIO_INFO_LOG("sle streamType %{public}u sessionId %{public}d", streamType, sessionId);
+    AUDIO_INFO_LOG("sle device %{public}s, add [%{public}d] streamType %{public}u sessionId %{public}d",
+        AudioPolicyUtils::GetInstance().GetEncryptAddr(deviceAddr).c_str(), isAdd, streamType, sessionId);
     if (isAdd) {
         sessionSet.insert(sessionId);
     } else {

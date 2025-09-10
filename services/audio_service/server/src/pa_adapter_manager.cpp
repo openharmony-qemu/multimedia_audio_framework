@@ -91,7 +91,8 @@ PaAdapterManager::PaAdapterManager(ManagerType type)
     managerType_ = type;
 }
 
-int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream)
+int32_t PaAdapterManager::CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream,
+    std::optional<std::string_view> originDeviceName)
 {
     AUDIO_DEBUG_LOG("Create renderer start");
     int32_t ret = InitPaContext();

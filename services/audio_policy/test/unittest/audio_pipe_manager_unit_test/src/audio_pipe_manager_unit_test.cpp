@@ -279,8 +279,7 @@ HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_001, TestSize.Level1)
     pipe1->streamDescriptors_.clear();
     audioPipeManager->AddAudioPipeInfo(pipe1);
 
-    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    auto unusedPipes = audioPipeManager->GetUnusedPipe(deviceType);
+    auto unusedPipes = audioPipeManager->GetUnusedPipe();
     EXPECT_EQ(unusedPipes.size(), 1);
     EXPECT_EQ(unusedPipes[0]->routeFlag_, AUDIO_OUTPUT_FLAG_FAST);
 }
@@ -300,8 +299,7 @@ HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_002, TestSize.Level1)
     pipe1->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
     pipe1->streamDescriptors_.push_back(std::make_shared<AudioStreamDescriptor>());
     audioPipeManager->AddAudioPipeInfo(pipe1);
-    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    auto unusedPipes = audioPipeManager->GetUnusedPipe(deviceType);
+    auto unusedPipes = audioPipeManager->GetUnusedPipe();
     EXPECT_EQ(unusedPipes.size(), 0);
 }
 
@@ -320,50 +318,7 @@ HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_003, TestSize.Level1)
     pipe1->routeFlag_ = 0;
     pipe1->streamDescriptors_.clear();
     audioPipeManager->AddAudioPipeInfo(pipe1);
-    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    auto unusedPipes = audioPipeManager->GetUnusedPipe(deviceType);
-    EXPECT_EQ(unusedPipes.size(), 0);
-}
-
-/**
- * @tc.name: GetUnusedPipe_004
- * @tc.desc: Test GetUnusedPipe when pipe meets streamDescriptors empty, routeFlag is not special but a2dp is unused.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_004, TestSize.Level4)
-{
-    auto audioPipeManager = AudioPipeManager::GetPipeManager();
-    audioPipeManager->curPipeList_.clear();
-
-    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
-    pipe1->adapterName_ = "a2dp";
-    pipe1->routeFlag_ = 0;
-    pipe1->streamDescriptors_.clear();
-    audioPipeManager->AddAudioPipeInfo(pipe1);
-    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
-    auto unusedPipes = audioPipeManager->GetUnusedPipe(deviceType);
-    EXPECT_EQ(unusedPipes.size(), 1);
-}
-
-/**
- * @tc.name: GetUnusedPipe_005
- * @tc.desc: Test GetUnusedPipe when pipe meets streamDescriptors empty, routeFlag is not special nut a2dp is used.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_005, TestSize.Level4)
-{
-    auto audioPipeManager = AudioPipeManager::GetPipeManager();
-    audioPipeManager->curPipeList_.clear();
-
-    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
-    pipe1->adapterName_ = "a2dp";
-    pipe1->routeFlag_ = 0;
-    pipe1->streamDescriptors_.clear();
-    audioPipeManager->AddAudioPipeInfo(pipe1);
-    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    auto unusedPipes = audioPipeManager->GetUnusedPipe(deviceType);
+    auto unusedPipes = audioPipeManager->GetUnusedPipe();
     EXPECT_EQ(unusedPipes.size(), 0);
 }
 
@@ -556,7 +511,7 @@ HWTEST_F(AudioPipeManagerUnitTest, GetProcessDeviceInfoBySessionId_001, TestSize
     desc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
     pipeInfo->streamDescriptors_.push_back(desc);
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
-    
+
     AudioStreamInfo info;
     uint32_t targetSessionId = 123;
     auto result = audioPipeManager->GetProcessDeviceInfoBySessionId(targetSessionId, info);
@@ -1259,6 +1214,22 @@ HWTEST_F(AudioPipeManagerUnitTest, AudioStreamDescriptor_GetNewDevicesTypeString
 }
 
 /**
+ * @tc.name: AudioStreamDescriptor_GetNewDupDevicesTypeString_001
+ * @tc.desc: Test AudioStreamDescriptor GetNewDevicesTypeString.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, AudioStreamDescriptor_GetNewDupDevicesTypeString_001, TestSize.Level2)
+{
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->sessionId_ = 1;
+    desc->newDupDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    desc->newDupDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
+
+    std::string out = desc->GetNewDupDevicesTypeString();
+    EXPECT_EQ(out, "SPEAKER");
+}
+
+/**
  * @tc.name: GetAllCapturerStreamDescs_001
  * @tc.desc: Test GetAllCapturerStreamDescs when finding capture stream descriptors.
  * @tc.type: FUNC
@@ -1268,7 +1239,7 @@ HWTEST_F(AudioPipeManagerUnitTest, GetAllCapturerStreamDescs_001, TestSize.Level
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
- 
+
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
     pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
     std::shared_ptr<AudioStreamDescriptor> desc1 = std::make_shared<AudioStreamDescriptor>();
@@ -1277,14 +1248,14 @@ HWTEST_F(AudioPipeManagerUnitTest, GetAllCapturerStreamDescs_001, TestSize.Level
     desc2->audioMode_ = AUDIO_MODE_RECORD;
     pipeInfo->streamDescriptors_.push_back(desc1);
     pipeInfo->streamDescriptors_.push_back(desc2);
- 
+
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
     auto result = audioPipeManager->GetAllCapturerStreamDescs();
     EXPECT_EQ(result.size(), 2);
     EXPECT_EQ(result[0], desc1);
     EXPECT_EQ(result[1], desc2);
 }
- 
+
 /**
  * @tc.name: GetAllCapturerStreamDescs_002
  * @tc.desc: Test GetAllCapturerStreamDescs when no capture stream descriptors are found.
@@ -1295,14 +1266,14 @@ HWTEST_F(AudioPipeManagerUnitTest, GetAllCapturerStreamDescs_002, TestSize.Level
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
     audioPipeManager->curPipeList_.clear();
- 
+
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
     pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
     std::shared_ptr<AudioStreamDescriptor> desc1 = std::make_shared<AudioStreamDescriptor>();
     std::shared_ptr<AudioStreamDescriptor> desc2 = std::make_shared<AudioStreamDescriptor>();
     pipeInfo->streamDescriptors_.push_back(desc1);
     pipeInfo->streamDescriptors_.push_back(desc2);
- 
+
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
     auto result = audioPipeManager->GetAllCapturerStreamDescs();
     EXPECT_EQ(result.size(), 0);

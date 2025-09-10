@@ -40,6 +40,7 @@ static const char* ADAPTER_TYPE_USB = "usb";
 static const char* ADAPTER_TYPE_DP = "dp";
 static const char* ADAPTER_TYPE_ACCESSORY = "accessory";
 static const char* ADAPTER_TYPE_SLE = "sle";
+static const char* ADAPTER_TYPE_VA = "va";
 
 struct PairHash {
     template <class T1, class T2>
@@ -67,6 +68,7 @@ enum class AudioAdapterType {
     TYPE_ACCESSORY,
     TYPE_SLE,
     TYPE_HEARING_AID,
+    TYPE_VA,
     TYPE_INVALID
 };
 
@@ -150,6 +152,7 @@ public:
     std::weak_ptr<PolicyAdapterInfo> adapterInfo_;
     std::list<std::shared_ptr<PipeStreamPropInfo>> streamPropInfos_ {};
     std::list<std::shared_ptr<AttributeInfo>> attributeInfos_ {};
+    AudioAdapterType GetAdapterType();
 
     // for dynamic
     std::mutex dynamicMtx_;

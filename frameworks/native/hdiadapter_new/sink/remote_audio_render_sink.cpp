@@ -41,9 +41,6 @@ const std::unordered_map<std::string, AudioCategory> RemoteAudioRenderSink::SPLI
     { std::string(COMMUNICATION_STREAM_TYPE), AudioCategory::AUDIO_IN_COMMUNICATION },
 };
 
-const int8_t SPLIT_FLAG = 1; // flag indicates support split stream
-const int8_t NOSPLIT_FLAG = 0;
-
 RemoteAudioRenderSink::RemoteAudioRenderSink(const std::string &deviceNetworkId)
     : deviceNetworkId_(deviceNetworkId)
 {
@@ -461,14 +458,14 @@ int32_t RemoteAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &appsUid
     return ERR_NOT_SUPPORTED;
 }
 
-int32_t RemoteAudioRenderSink::SplitRenderFrame(char &data, uint64_t len, uint64_t &writeLen, const char *streamType,
-    const char *audioStreamType)
+int32_t RemoteAudioRenderSink::SplitRenderFrame(char &data, uint64_t len, uint64_t &writeLen,
+    const char *splitStreamType)
 {
     Trace trace("RemoteAudioRenderSink::SplitRenderFrame");
-    AUDIO_DEBUG_LOG("in, type: %{public}s", streamType);
-    auto it = SPLIT_STREAM_MAP.find(streamType);
+    AUDIO_DEBUG_LOG("in, type: %{public}s", splitStreamType);
+    auto it = SPLIT_STREAM_MAP.find(splitStreamType);
     CHECK_AND_RETURN_RET_LOG(it != SPLIT_STREAM_MAP.end(), ERR_INVALID_PARAM, "invalid stream type");
-    return RenderFrame(data, len, writeLen, it->second, true, audioStreamType);
+    return RenderFrame(data, len, writeLen, it->second);
 }
 
 void RemoteAudioRenderSink::DumpInfo(std::string &dumpString)
@@ -657,22 +654,7 @@ void RemoteAudioRenderSink::CheckUpdateState(char *data, uint64_t len)
     }
 }
 
-int8_t RemoteAudioRenderSink::ConvertStr2Int(const char *str)
-{
-    if (str == nullptr) {
-        AUDIO_ERR_LOG("str is null");
-        return 0;
-    }
-    int8_t streamType = std::stoi(str);
-    if (streamType < INT8_MIN || streamType > INT8_MAX) {
-        AUDIO_ERR_LOG("Invalid str: %{public}s", str);
-        return 0;
-    }
-    return streamType;
-}
-
-int32_t RemoteAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen, AudioCategory type,
-    bool isSplitFrame, const char *audioStreamType)
+int32_t RemoteAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen, AudioCategory type)
 {
     CHECK_AND_RETURN_RET_LOG(renderInited_.load(), ERR_ILLEGAL_STATE, "not create, invalid state");
     AUDIO_DEBUG_LOG("type: %{public}d", type);
@@ -685,19 +667,8 @@ int32_t RemoteAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &w
     }
 
     std::vector<int8_t> bufferVec(len);
-    int32_t ret = ERROR;
-    if (isSplitFrame) {
-        CHECK_AND_RETURN_RET_LOG(audioStreamType != nullptr, ERR_INVALID_HANDLE, "audioStreamType is nullptr");
-        int8_t streamType = ConvertStr2Int(audioStreamType);
-        ret = memcpy_s(bufferVec.data(), len, &data, len);
-        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED, "copy fail, error code: %{public}d", ret);
-        bufferVec.push_back(streamType);
-        bufferVec.push_back(SPLIT_FLAG);
-    } else {
-        ret = memcpy_s(bufferVec.data(), len, &data, len);
-        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED, "copy fail, error code: %{public}d", ret);
-        bufferVec.push_back(NOSPLIT_FLAG);
-    }
+    int32_t ret = memcpy_s(bufferVec.data(), len, &data, len);
+    CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED, "copy fail, error code: %{public}d", ret);
 
     BufferDesc buffer = { reinterpret_cast<uint8_t *>(&data), len, len };
     AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate), AudioEncodingType::ENCODING_PCM,

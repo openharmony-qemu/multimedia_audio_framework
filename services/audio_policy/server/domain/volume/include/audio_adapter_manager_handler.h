@@ -40,7 +40,6 @@ public:
         VOLUME_DATABASE_SAVE,
         STREAM_MUTE_STATUS_UPDATE,
         RINGER_MODE_UPDATE,
-        VOLUME_DEGREE_DATABASE_SAVE,
     };
 
     struct VolumeDataEvent {
@@ -53,7 +52,6 @@ public:
         AudioStreamType streamType_;
         int32_t volumeLevel_;
         std::string networkId_;
-        int32_t volumeDegree_;
     };
 
     struct StreamMuteStatusEvent {
@@ -80,8 +78,6 @@ public:
     bool SendKvDataUpdate(const bool &isFirstBoot);
     bool SendSaveVolume(const DeviceType &deviceType, const AudioStreamType &streamType, const int32_t &volumeLevel,
         std::string networkId = "LocalDevice");
-    bool SendSaveVolumeDegree(DeviceType deviceType, AudioStreamType streamType, int32_t volumeDegree,
-        std::string networkId = "LocalDevice");
     bool SendStreamMuteStatusUpdate(const AudioStreamType &streamType, const bool &mute,
         const StreamUsage &streamUsage, const DeviceType &deviceType = DEVICE_TYPE_NONE,
         std::string networkId = LOCAL_NETWORK_ID);
@@ -94,7 +90,6 @@ private:
     /* Handle Event*/
     void HandleUpdateKvDataEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleVolumeDataBaseSave(const AppExecFwk::InnerEvent::Pointer &event);
-    void HandleVolumeDegreeDataBaseSave(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleUpdateStreamMuteStatus(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleUpdateRingerMode(const AppExecFwk::InnerEvent::Pointer &event);
 

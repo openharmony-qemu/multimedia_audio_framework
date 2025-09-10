@@ -25,12 +25,20 @@
 #include "i_hpae_manager.h"
 #include "i_hpae_renderer_manager.h"
 #include "hpae_policy_manager.h"
+#include "high_resolution_timer.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
 class HpaeManager;
+
+struct PendingStateTransition {
+    uint32_t sessionId = 0;
+    HpaeSessionState state = HPAE_SESSION_INVALID;
+    IOperation operation = OPERATION_INVALID;
+    TimePoint time;
+};
 
 class HpaeManagerThread {
 public:
@@ -185,6 +193,15 @@ public:
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
     void AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume) override;
     void DeleteStreamVolumeToEffect(const std::string stringSessionID) override;
+    uint64_t ProcessPendingTransitionsAndGetNextDelay();
+    // interfaces for injector
+    void UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo) override;
+    void AddCaptureInjector(
+        const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType) override;
+    void RemoveCaptureInjector(
+        const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType) override;
+    int32_t PeekAudioData(
+        const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo) override;
 private:
     int32_t CloseOutAudioPort(std::string sinkName);
     int32_t CloseInAudioPort(std::string sourceName);
@@ -238,6 +255,9 @@ private:
     bool CheckMoveSinkInput(uint32_t sinkInputId, const std::string &sinkName);
     bool CheckMoveSourceOutput(uint32_t sourceOutputId, const std::string &sourceName);
     void CreateCoreSourceManager();
+    void DequeuePendingTransition(uint32_t sessionId);
+    void EnqueuePendingTransition(uint32_t sessionId, HpaeSessionState state, IOperation operation);
+    bool IsValidUpdateStatus(IOperation operation, HpaeSessionState currentState);
 
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;
@@ -261,6 +281,7 @@ private:
     std::string coreSource_ = "";
     std::atomic<int32_t> sinkSourceIndex_ = 0;
     std::atomic<bool> isInit_ = false;
+    std::list<PendingStateTransition> pendingTransitionsTracker_;
 
     HpaeNoLockQueue hpaeNoLockQueue_;
 
@@ -270,6 +291,7 @@ private:
     std::unordered_map<std::string, std::string> deviceDumpSinkInfoMap_;
     std::unordered_map<HpaeMsgCode, std::function<void(const std::any &)>> handlers_;
     std::string effectLiveState_ = "";
+    std::mutex mutex_;
 };
 
 }  // namespace HPAE

@@ -51,6 +51,9 @@ public:
     AudioStreamAction streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
     mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> oldDeviceDescs_ = {};
     mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDescs_ = {};
+    // for dup device
+    mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> oldDupDeviceDescs_ = {};
+    mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDupDeviceDescs_ = {};
     std::string bundleName_ = "";
 
     AudioStreamDescriptor() = default;
@@ -67,6 +70,7 @@ public:
     // log and dump
     void Dump(std::string &dumpString);
     std::string GetNewDevicesTypeString();
+    std::string GetNewDupDevicesTypeString();
     std::string GetNewDevicesInfo();
     std::string GetDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> desc);
 
@@ -91,9 +95,24 @@ public:
         return (streamStatus_ == STREAM_STATUS_STARTED);
     }
 
+    StreamUsage GetRenderUsage() const
+    {
+        return rendererInfo_.streamUsage;
+    }
+
+    AudioPrivacyType GetRenderPrivacyType() const
+    {
+        return rendererInfo_.privacyType;
+    }
+
     void SetStatus(AudioStreamStatus status)
     {
         streamStatus_ = status;
+    }
+
+    AudioStreamStatus GetStatus() const
+    {
+        return streamStatus_;
     }
 
     void SetAction(AudioStreamAction action)
@@ -204,6 +223,18 @@ public:
             }
         }
         newDeviceDescs_ = devices;
+    }
+
+    void UpdateNewDeviceWithoutCheck(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices)
+    {
+        std::lock_guard<std::mutex> lock(lock_);
+        newDeviceDescs_ = devices;
+    }
+
+    void UpdateOldDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices)
+    {
+        std::lock_guard<std::mutex> lock(lock_);
+        oldDeviceDescs_ = devices;
     }
 
     bool IsDeviceRemote()

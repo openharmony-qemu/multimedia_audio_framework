@@ -93,8 +93,7 @@ public:
 
     // zone debug interfaces
     int32_t FindZoneByPid(int32_t pid);
-    int32_t CreateAudioInterruptZone(const int32_t zoneId, AudioZoneFocusStrategy focusStrategy =
-        AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY);
+    int32_t CreateAudioInterruptZone(const int32_t zoneId, const AudioZoneContext &context);
     int32_t ReleaseAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func);
     int32_t MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func);
     int32_t InjectInterruptToAudioZone(const int32_t zoneId, const AudioFocusList &interrupts);
@@ -202,7 +201,8 @@ private:
     void UpdateFocusStrategy(const std::string &bundleName,
         AudioFocusEntry &focusEntry, bool isExistMediaStream, bool isIncomingMediaStream);
     bool IsMediaStream(AudioStreamType audioStreamType);
-    std::string GetRealBundleName(uint32_t uid);
+    std::string GetAudioInterruptBundleName(const AudioInterrupt &audioInterrupt);
+    std::string GetCurrentBundleName(uint32_t uid);
     void UpdateAudioFocusStrategy(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
         AudioFocusEntry &focusEntry);
     void UpdateMuteAudioFocusStrategy(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
@@ -245,7 +245,8 @@ private:
         std::list<int32_t> &removeFocusInfoPidList);
     void PrintLogsOfFocusStrategyBaseMusic(const AudioInterrupt &audioInterrupt);
     void UpdateMicFocusStrategy(SourceType existSourceType, SourceType incomingSourceType,
-        const std::string &bundleName, AudioFocusEntry &focusEntry);
+        const AudioStreamType &existStreamType, const AudioStreamType &incomingStreamType,
+        const std::string &currentBundleName, const std::string &incomingBundleName, AudioFocusEntry &focusEntry);
     bool CheckWindowState(const int32_t pid);
     void UpdateWindowFocusStrategy(const int32_t &currentPid, const int32_t &incomingPid,
         const AudioStreamType &existStreamType, const AudioStreamType &incomingStreamType,
@@ -334,9 +335,6 @@ private:
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &activeInterrupt);
     void ReportRecordGetFocusFail(const AudioInterrupt &incomingInterrupt,
         const AudioInterrupt &activeInterrupt, int32_t reason);
-    void HandleVoiceCallAndTranscriptionFocus(
-        std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap,
-        const AudioInterrupt &currentInterrupt, const AudioInterrupt &newInterrupt);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;

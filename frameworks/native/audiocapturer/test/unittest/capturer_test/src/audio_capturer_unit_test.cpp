@@ -2381,10 +2381,10 @@ HWTEST(AudioCapturerUnitTest, IsDeviceChanged_001, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioCapturePrivate.
-* @tc.number: GetStreamDescBySwitchInfo_001
-* @tc.desc  : Test GetStreamDescBySwitchInfo - switchInfo to streamDesc.
+* @tc.number: GenerateStreamDesc_001
+* @tc.desc  : Test GenerateStreamDesc - switchInfo to streamDesc.
 */
-HWTEST(AudioCapturerUnitTest, GetStreamDescBySwitchInfo_001, TestSize.Level1)
+HWTEST(AudioCapturerUnitTest, GenerateStreamDesc_001, TestSize.Level1)
 {
     IAudioStream::SwitchInfo switchInfo;
     switchInfo.params.format = 1;
@@ -2396,7 +2396,7 @@ HWTEST(AudioCapturerUnitTest, GetStreamDescBySwitchInfo_001, TestSize.Level1)
     AppInfo appInfo = {};
     RestoreInfo restoreInfo = {};
     std::shared_ptr<AudioCapturerPrivate> capture = std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = capture->GetStreamDescBySwitchInfo(switchInfo, restoreInfo);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = capture->GenerateStreamDesc(switchInfo, restoreInfo);
 
     EXPECT_EQ(streamDesc->streamInfo_.format, static_cast<AudioSampleFormat>(switchInfo.params.format));
     EXPECT_EQ(streamDesc->streamInfo_.samplingRate, static_cast<AudioSamplingRate>(switchInfo.params.samplingRate));

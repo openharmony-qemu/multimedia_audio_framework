@@ -68,8 +68,8 @@ private:
     bool isOutputClusterConnected_ = false;
     std::set<HpaeProcessorType> connectedProcessCluster_;
 #ifdef ENABLE_HOOK_PCM
-    std::unique_ptr<HpaePcmDumper> inputPcmDumper_;
-    std::unique_ptr<HpaePcmDumper> outputPcmDumper_;
+    std::unique_ptr<HpaePcmDumper> inputPcmDumper_ = nullptr;
+    std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
 #endif
 };
 }  // namespace HPAE

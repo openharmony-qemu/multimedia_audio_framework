@@ -123,11 +123,12 @@ struct HpaeDfxNodeInfo {
     uint32_t frameLen;
     size_t historyFrameCount;
     AudioSamplingRate samplingRate;
+    uint32_t customSampleRate = 0;
     AudioSampleFormat format = AudioSampleFormat::SAMPLE_F32LE;
     AudioChannel channels;
     AudioChannelLayout channelLayout = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
     FadeType fadeType = NONE_FADE;
-    AudioStreamType streamType;
+    AudioStreamType streamType = STREAM_DEFAULT;
     HpaeProcessorType sceneType;
     std::string deviceClass;
     std::string deviceNetId;

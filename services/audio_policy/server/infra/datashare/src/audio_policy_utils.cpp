@@ -36,6 +36,7 @@ namespace AudioStandard {
 
 static constexpr int32_t NS_PER_MS = 1000000;
 static constexpr int32_t MS_PER_S = 1000;
+static constexpr int32_t NEARLINK_API_VERSION = 20;
 static const char* SETTINGS_DATA_FIELD_VALUE = "VALUE";
 static const char* SETTINGS_DATA_FIELD_KEYWORD = "KEYWORD";
 static const char* PREDICATES_STRING = "settings.general.device_name";
@@ -43,6 +44,7 @@ static const char* SETTINGS_DATA_BASE_URI =
     "datashare:///com.ohos.settingsdata/entry/settingsdata/SETTINGSDATA?Proxy=true";
 static const char* SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settingsdata.DataAbility";
 static const char* AUDIO_SERVICE_PKG = "audio_manager_service";
+static const std::string NEARLINK_LIST = "audio_nearlink_list";
 
 std::map<std::string, ClassType> AudioPolicyUtils::portStrToEnum = {
     {PRIMARY_SPEAKER, TYPE_PRIMARY},
@@ -155,7 +157,7 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
         ErasePreferredDeviceByType(preferredType);
     }
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Set preferredType %{public}d failed, ret: %{public}d", preferredType, ret);
+        HILOG_COMM_INFO("Set preferredType %{public}d failed, ret: %{public}d", preferredType, ret);
     }
     return ret;
 }
@@ -371,6 +373,7 @@ std::string AudioPolicyUtils::GetOutputDeviceClassBySinkPortName(std::string sin
         {BLUETOOTH_SPEAKER, A2DP_CLASS},
         {USB_SPEAKER, USB_CLASS},
         {PRIMARY_DIRECT_VOIP, DIRECT_VOIP_CLASS},
+        {PRIMARY_MMAP_VOIP, MMAP_VOIP_CLASS},
         {DP_SINK, DP_CLASS},
         {FILE_SINK, FILE_CLASS},
         {REMOTE_CAST_INNER_CAPTURER_SINK_NAME, REMOTE_CLASS},
@@ -751,6 +754,42 @@ bool AudioPolicyUtils::IsDataShareReady()
     } else {
         AUDIO_WARNING_LOG("DataShareHelper::Create failed: E_DATA_SHARE_NOT_READY");
         return false;
+    }
+}
+
+int32_t AudioPolicyUtils::SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object)
+{
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "object is nullptr");
+    queryBundleNameListCallback_ = iface_cast<IStandardAudioPolicyManagerListener>(object);
+    CHECK_AND_RETURN_RET_LOG(queryBundleNameListCallback_ != nullptr, ERR_CALLBACK_NOT_REGISTERED,
+        "queryBundleNameListCallback_ is nullptr");
+    return SUCCESS;
+}
+
+bool AudioPolicyUtils::IsBundleNameInList(const std::string &bundleName, const std::string &listType)
+{
+    bool isBundleNameExist = false;
+    CHECK_AND_RETURN_RET_LOG(queryBundleNameListCallback_ != nullptr, false, "queryBundleNameListCallback_ is nullptr");
+    queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName, listType, isBundleNameExist);
+    return isBundleNameExist;
+}
+
+bool AudioPolicyUtils::IsSupportedNearlink(const std::string &bundleName, int32_t apiVersion, bool hasSystemPermission)
+{
+    return hasSystemPermission ||
+        (apiVersion >= NEARLINK_API_VERSION && !IsBundleNameInList(bundleName, NEARLINK_LIST));
+}
+
+bool AudioPolicyUtils::IsWirelessDevice(DeviceType deviceType)
+{
+    switch (deviceType) {
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_NEARLINK:
+        case DEVICE_TYPE_NEARLINK_IN:
+            return true;
+        default:
+            return false;
     }
 }
 

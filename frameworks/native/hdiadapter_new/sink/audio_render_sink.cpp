@@ -486,6 +486,7 @@ int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFla
         CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED, "select scene fail, ret: %{public}d", ret);
     }
     bool isRingingToDefaultScene = false;
+    bool isChangeScene = false;
     if (audioScene != currentAudioScene_) {
         if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT) {
             forceSetRouteFlag_ = true;
@@ -495,6 +496,7 @@ int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFla
             isRingingToDefaultScene = true;
         }
         currentAudioScene_ = audioScene;
+        isChangeScene = true;
     }
 
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
@@ -502,11 +504,24 @@ int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFla
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
     deviceManager->SetAudioScene(currentAudioScene_);
 
+    if (isChangeScene && currentAudioScene_ == AUDIO_SCENE_DEFAULT &&
+        currentActiveDevice_ == DEVICE_TYPE_NEARLINK) {
+        UpdateNearlinkOutputRoute();
+    }
+
     if (isRingingToDefaultScene) {
         AUDIO_INFO_LOG("ringing scene to default scene");
         return SUCCESS;
     }
     return SUCCESS;
+}
+
+void AudioRenderSink::UpdateNearlinkOutputRoute(void)
+{
+    AUDIO_INFO_LOG("update nearlink output route");
+    std::vector<DeviceType> outputDevices;
+    outputDevices.push_back(currentActiveDevice_);
+    DoSetOutputRoute(outputDevices);
 }
 
 int32_t AudioRenderSink::GetAudioScene(void)
@@ -780,6 +795,8 @@ AudioPortPin AudioRenderSink::GetAudioPortPin(void) const noexcept
             return PIN_OUT_USB_EXT;
         case DEVICE_TYPE_HDMI:
              return PIN_OUT_HDMI;
+        case DEVICE_TYPE_NEARLINK:
+            return PIN_OUT_NEARLINK;
         case DEVICE_TYPE_NONE:
             return PIN_NONE;
         default:

@@ -50,8 +50,6 @@ HWTEST_F(HpaePcmProcessTest, constructHpaePcmProcess, TestSize.Level0)
     for (int i = 0; i < TEST_FREAME_LEN; i++) {
         testData[i] = i;
         EXPECT_EQ(hpaePcmProcess[i], i);
-        const float testValue = hpaePcmProcess[i];
-        EXPECT_EQ(hpaePcmProcess[i], testValue);
     }
     EXPECT_EQ(&testData[0], hpaePcmProcess.Begin());
     EXPECT_EQ(&testData[TEST_FREAME_LEN - 1], hpaePcmProcess.End() - 1);

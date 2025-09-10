@@ -21,6 +21,7 @@
 #include "audio_stream_change_info.h"
 #include "microphone_descriptor.h"
 #include "timestamp.h"
+#include "audio_capturer_options.h"
 
 namespace OHOS {
 namespace AudioStandard {

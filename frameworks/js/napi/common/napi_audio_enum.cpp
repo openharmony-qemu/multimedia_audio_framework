@@ -133,6 +133,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::deviceTypeMap = {
     {"WIRED_HEADPHONES", DEVICE_TYPE_WIRED_HEADPHONES},
     {"BLUETOOTH_SCO", DEVICE_TYPE_BLUETOOTH_SCO},
     {"BLUETOOTH_A2DP", DEVICE_TYPE_BLUETOOTH_A2DP},
+    {"BT_SPP", DEVICE_TYPE_BT_SPP},
     {"NEARLINK", DEVICE_TYPE_NEARLINK},
     {"HEARING_AID", DEVICE_TYPE_HEARING_AID},
     {"MIC", DEVICE_TYPE_MIC},
@@ -230,7 +231,8 @@ const std::map<std::string, int32_t> NapiAudioEnum::effectModeMap = {
 
 const std::map<std::string, int32_t> NapiAudioEnum::audioPrivacyTypeMap = {
     {"PRIVACY_TYPE_PUBLIC", PRIVACY_TYPE_PUBLIC},
-    {"PRIVACY_TYPE_PRIVATE", PRIVACY_TYPE_PRIVATE}
+    {"PRIVACY_TYPE_PRIVATE", PRIVACY_TYPE_PRIVATE},
+    {"PRIVACY_TYPE_SHARED", PRIVACY_TYPE_SHARED},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::deviceChangeTypeMap = {
@@ -514,7 +516,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioLoopbackStatusMap = {
 const std::map<std::string, int32_t> NapiAudioEnum::audioLoopbackReverbPresetMap = {
     {"ORIGINAL", REVERB_PRESET_ORIGINAL},
     {"KTV", REVERB_PRESET_KTV},
-    {"THEATRE", REVERB_PRESET_THEATRE},
+    {"THEATER", REVERB_PRESET_THEATER},
     {"CONCERT", REVERB_PRESET_CONCERT},
 };
 
@@ -1489,6 +1491,23 @@ bool NapiAudioEnum::IsValidSourceType(int32_t intValue)
     }
 }
 
+bool NapiAudioEnum::IsLegalBluetoothAndNearlinkPreferredRecordCategory(uint32_t category)
+{
+    bool result = false;
+    switch (category) {
+        case BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE:
+        case BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_DEFAULT:
+        case BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_LOW_LATENCY:
+        case BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_HIGH_QUALITY:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
 bool NapiAudioEnum::IsLegalDeviceUsage(int32_t usage)
 {
     bool result = false;
@@ -1874,7 +1893,7 @@ bool NapiAudioEnum::IsLegalInputArgumentAudioLoopbackReverbPreset(int32_t preset
     switch (preset) {
         case AudioLoopbackReverbPreset::REVERB_PRESET_ORIGINAL:
         case AudioLoopbackReverbPreset::REVERB_PRESET_KTV:
-        case AudioLoopbackReverbPreset::REVERB_PRESET_THEATRE:
+        case AudioLoopbackReverbPreset::REVERB_PRESET_THEATER:
         case AudioLoopbackReverbPreset::REVERB_PRESET_CONCERT:
             result = true;
             break;

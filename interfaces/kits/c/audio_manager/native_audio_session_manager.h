@@ -179,6 +179,36 @@ typedef enum {
 } OH_AudioSession_DeactivatedReason;
 
 /**
+ * @brief Enumerates the categories application prefer to use
+ * when recording with bluetooth and nearlink.
+ *
+ * @since 21
+ */
+typedef enum {
+    /**
+     * @brief Not prefer to use bluetooth and nearlink record.
+     */
+    PREFERRED_NONE = 0,
+
+    /**
+     * @brief Prefer to use bluetooth and nearlink record.
+     * However, whether to use low latency or high quality recording
+     * dpends on system.
+     */
+    PREFERRED_DEFAULT = 1,
+
+    /**
+     * @brief Prefer to use bluetooth and nearlink low latency mode to record.
+     */
+    PREFERRED_LOW_LATENCY = 2,
+
+    /**
+     * @brief Prefer to use bluetooth and nearlink high quality mode to record.
+     */
+    PREFERRED_HIGH_QUALITY = 3,
+} OH_AudioSession_BluetoothAndNearlinkPreferredRecordCategory;
+
+/**
  * @brief declare the audio session strategy
  *
  * @since 12
@@ -223,6 +253,40 @@ typedef struct OH_AudioSession_StateChangedEvent {
  */
 typedef void (*OH_AudioSession_StateChangedCallback) (
     OH_AudioSession_StateChangedEvent event);
+
+/**
+ * @brief This function pointer will point to the callback function that
+ *     is used to return the changing audio device descriptors.
+ *     There may be more than one audio device descriptor returned.
+ *
+ * @param type the {@link OH_AudioDevice_ChangeType} is connect or disconnect.
+ * @param audioDeviceDescriptorArray the {@link OH_AudioDeviceDescriptorArray}
+ *     pointer variable which will be set the audio device descriptors value.
+ *     Do not release the audioDeviceDescriptorArray pointer separately
+ *     instead call {@link OH_AudioSessionManager_ReleaseDevices} to release the DeviceDescriptor array
+ *     when it is no use anymore.
+ * @since 21
+ */
+typedef void (*OH_AudioSession_AvailableDeviceChangedCallback) (
+    OH_AudioDevice_ChangeType type,
+    OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray);
+
+/**
+ * @brief This function pointer will point to the callback function that
+ *     is used to return the audio session input device change event.
+ *
+ * @param audioDeviceDescriptorArray the {@link OH_AudioDeviceDescriptorArray}
+ *     pointer variable which will be set the audio input device descriptors value.
+ *     Do not release the audioDeviceDescriptorArray pointer separately
+ *     instead call {@link OH_AudioSessionManager_ReleaseDevices}
+ *     to release the DeviceDescriptor array when it is no use anymore.
+ * @param changeReason the {@link #OH_AudioStream_DeviceChangeReason} indicates
+ *     that why does the input device changes.
+ * @since 21
+ */
+typedef void (*OH_AudioSession_CurrentInputDeviceChangedCallback) (
+    OH_AudioDeviceDescriptorArray *devices,
+    OH_AudioStream_DeviceChangeReason changeReason);
 
 /**
  * @brief This function pointer will point to the callback function that

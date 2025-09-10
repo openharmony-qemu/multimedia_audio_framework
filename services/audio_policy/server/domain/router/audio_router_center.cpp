@@ -202,14 +202,18 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     }
     if (audioDeviceRefinerCb_ != nullptr &&
         !NeedSkipSelectAudioOutputDeviceRefined(streamUsage, descs)) {
-        audioDeviceRefinerCb_->OnAudioOutputDeviceRefined(descs, routerType,
-            callStreamUsage, clientUID, PIPE_TYPE_NORMAL_OUT);
+        FetchDeviceInfo fetchDeviceInfo = {};
+        fetchDeviceInfo.streamUsage = callStreamUsage;
+        fetchDeviceInfo.routerType = routerType;
+        fetchDeviceInfo.clientUID = clientUID;
+        fetchDeviceInfo.audioPipeType = PIPE_TYPE_NORMAL_OUT;
+        audioDeviceRefinerCb_->OnAudioOutputDeviceRefined(descs, fetchDeviceInfo);
     }
     if (descs.size() > 0 && descs[0] != nullptr) {
         int32_t audioId_ = descs[0]->deviceId_;
         DeviceType type = descs[0]->deviceType_;
         descs[0]->routerType_ = routerType;
-        AUDIO_PRERELEASE_LOGI("[%{public}s] usage:%{public}d uid:%{public}d size:[%{public}zu], 1st type:[%{public}d], "
+        HILOG_COMM_INFO("[%{public}s] usage:%{public}d uid:%{public}d size:[%{public}zu], 1st type:[%{public}d], "
             "id:[%{public}d], router:%{public}d ", caller.c_str(), streamUsage,
             clientUID, descs.size(), type, audioId_, routerType);
     }
@@ -217,7 +221,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutputDevices(StreamUsage streamUsage,
-    int32_t clientUID, std::string caller, const RouterType &bypassType)
+    int32_t clientUID, std::string caller, const RouterType &bypassType, AudioPrivacyType privacyType)
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     RouterType routerType = ROUTER_TYPE_NONE;
@@ -233,12 +237,32 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
         descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
         return descs;
     }
-    FetchDeviceInfo info = {
-        .streamUsage = streamUsage,
-        .clientUID = clientUID,
-        .caller = caller,
-    };
+    FetchDeviceInfo info = {};
+    info.streamUsage = streamUsage;
+    info.clientUID = clientUID;
+    info.caller = caller;
+    info.privacyType = privacyType;
     return FetchOutputDevicesInner(info, routerType, bypassType, descs);
+}
+
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchDupDevices(
+    const FetchDeviceInfo &fetchDeviceInfo)
+{
+    vector<shared_ptr<AudioDeviceDescriptor>> descs;
+    RouterType routerType = ROUTER_TYPE_NONE;
+
+    if (audioDeviceRefinerCb_ != nullptr) {
+        FetchDeviceInfo info = {};
+        info.streamUsage = fetchDeviceInfo.streamUsage;
+        info.clientUID = fetchDeviceInfo.clientUID;
+        info.routerType = ROUTER_TYPE_NONE;
+        info.audioPipeType = PIPE_TYPE_NORMAL_OUT;
+        info.privacyType = fetchDeviceInfo.privacyType;
+
+        audioDeviceRefinerCb_->OnAudioDupDeviceRefined(descs, info);
+    }
+
+    return descs;
 }
 
 int32_t AudioRouterCenter::NotifyDistributedOutputChange(bool isRemote)

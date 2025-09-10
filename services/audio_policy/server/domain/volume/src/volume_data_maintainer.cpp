@@ -34,6 +34,7 @@ const int32_t INVALIAD_SETTINGS_CLONE_STATUS = -1;
 const int32_t SETTINGS_CLONING_STATUS = 1;
 const int32_t SETTINGS_CLONED_STATUS = 0;
 constexpr int32_t MAX_SAFE_STATUS = 2;
+constexpr int32_t DEFAULT_SYSTEM_VOLUME_FOR_EFFECT = 5;
 
 static const std::vector<VolumeDataMaintainer::VolumeDataMaintainerStreamType> VOLUME_MUTE_STREAM_TYPE = {
     // all volume types except STREAM_ALL
@@ -116,29 +117,6 @@ bool VolumeDataMaintainer::SaveVolume(DeviceType type, AudioStreamType streamTyp
     return SaveVolumeInternal(type, streamForVolumeMap, volumeLevel, networkId);
 }
 
-bool VolumeDataMaintainer::SaveVolumeDegree(DeviceType type, AudioStreamType streamTypeIn,
-    int32_t volumeDegree, std::string networkId)
-{
-    std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
-    AudioStreamType streamType = VolumeUtils::GetVolumeTypeFromStreamType(streamTypeIn);
-
-    std::string volumeKey = GetVolumeKeyForDataShare(type, streamType, networkId);
-    if (!volumeKey.compare("")) {
-        AUDIO_ERR_LOG("[device %{public}d, streamType %{public}d] is not supported for datashare",
-            type, streamType);
-        return false;
-    }
-    volumeKey += "_degree";
-
-    AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    ErrCode ret = audioSettingProvider.PutIntValue(volumeKey, volumeDegree, "system");
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Save Volume To DataBase volumeMap failed");
-        return false;
-    }
-    return true;
-}
-
 bool VolumeDataMaintainer::SaveVolumeInternal(DeviceType type, AudioStreamType streamType, int32_t volumeLevel,
     std::string networkId)
 {
@@ -167,38 +145,6 @@ bool VolumeDataMaintainer::GetVolume(DeviceType deviceType, AudioStreamType stre
     std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
     AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     return GetVolumeInternal(deviceType, streamForVolumeMap, networkId);
-}
-
-bool VolumeDataMaintainer::GetVolumeDegree(DeviceType deviceType, AudioStreamType streamTypeIn, std::string networkId)
-{
-    std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
-    AudioStreamType streamType = VolumeUtils::GetVolumeTypeFromStreamType(streamTypeIn);
-    // Voice call assistant stream is full volume by default
-    if (streamType == STREAM_VOICE_CALL_ASSISTANT) {
-        return true;
-    }
-    std::string volumeKey = GetVolumeKeyForDataShare(deviceType, streamType, networkId);
-    if (!volumeKey.compare("")) {
-        AUDIO_ERR_LOG("[device %{public}d, streamType %{public}d] is not supported for datashare",
-            deviceType, streamType);
-        return false;
-    }
-    volumeKey += "_degree";
-
-    AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    int32_t volumeValue = 0;
-    ErrCode ret = audioSettingProvider.GetIntValue(volumeKey, volumeValue, "system");
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Get streamType %{public}d, deviceType %{public}d, Volume FromDataBase volumeMap failed.",
-            streamType, deviceType);
-        return false;
-    } else {
-        volumeDegreeMap_[streamType] = volumeValue;
-        AUDIO_PRERELEASE_LOGI("Get streamType %{public}d, deviceType %{public}d, "\
-            "Volume FromDataBase volumeMap from datashare %{public}d.", streamType, deviceType, volumeValue);
-    }
-
-    return true;
 }
 
 bool VolumeDataMaintainer::GetVolumeInternal(DeviceType deviceType, AudioStreamType streamType, std::string networkId)
@@ -1100,19 +1046,23 @@ std::string VolumeDataMaintainer::GetMuteKeyForDataShare(DeviceType deviceType, 
     return type + deviceTypeName;
 }
 
-void VolumeDataMaintainer::SetVolumeDegree(AudioStreamType streamType, int32_t volumeDegree)
+void VolumeDataMaintainer::SaveSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType,
+    int32_t volumeLevel)
 {
     std::lock_guard<ffrt::mutex> lock(volumeMutex_);
-    AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    volumeDegreeMap_[streamForVolumeMap] = volumeDegree;
+    deviceTypeToSystemVolumeForEffectMap_[deviceType][streamType] = volumeLevel;
 }
 
-int32_t VolumeDataMaintainer::GetVolumeDegree(AudioStreamType streamType)
+int32_t VolumeDataMaintainer::GetSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType)
 {
     std::lock_guard<ffrt::mutex> lock(volumeMutex_);
-    AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    return volumeDegreeMap_[streamForVolumeMap];
-}
+    if (deviceTypeToSystemVolumeForEffectMap_.find(deviceType) != deviceTypeToSystemVolumeForEffectMap_.end() &&
+        deviceTypeToSystemVolumeForEffectMap_[deviceType].find(streamType) !=
+        deviceTypeToSystemVolumeForEffectMap_[deviceType].end()) {
+        return deviceTypeToSystemVolumeForEffectMap_[deviceType][streamType];
+    }
 
+    return DEFAULT_SYSTEM_VOLUME_FOR_EFFECT;
+}
 } // namespace AudioStandard
 } // namespace OHOS

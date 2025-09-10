@@ -264,6 +264,8 @@ AudioAdapterType PolicyAdapterInfo::GetAdapterType(const std::string &adapterNam
         return AudioAdapterType::TYPE_ACCESSORY;
     } else if (adapterName == ADAPTER_TYPE_SLE) {
         return AudioAdapterType::TYPE_SLE;
+    } else if (adapterName == ADAPTER_TYPE_VA) {
+        return AudioAdapterType::TYPE_VA;
     } else {
         return AudioAdapterType::TYPE_INVALID;
     }
@@ -378,6 +380,15 @@ void PipeStreamPropInfo::SelfCheck()
                 pipeInfoPtr->name_.c_str(), deviceName.c_str());
         }
     }
+}
+
+AudioAdapterType AdapterPipeInfo::GetAdapterType()
+{
+    auto adapter = adapterInfo_.lock();
+    if (adapter) {
+        return adapter->GetTypeEnum();
+    }
+    return OHOS::AudioStandard::AudioAdapterType::TYPE_INVALID;
 }
 
 AudioSourceStrategyData& AudioSourceStrategyData::GetInstance()

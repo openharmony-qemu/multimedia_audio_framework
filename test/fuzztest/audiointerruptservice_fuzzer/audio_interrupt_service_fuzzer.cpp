@@ -158,8 +158,9 @@ void CreateAudioInterruptZoneFuzzTest(const uint8_t *rawData, size_t size)
     std::set<int32_t> pids;
     pids.insert(data.ReadInt32());
     int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
+    AudioZoneContext context;
 
-    interruptService->CreateAudioInterruptZone(zoneId);
+    interruptService->CreateAudioInterruptZone(zoneId, context);
 }
 
 void ReleaseAudioInterruptZoneFuzzTest(const uint8_t *rawData, size_t size)

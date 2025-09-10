@@ -76,6 +76,7 @@
 #include "audio_background_manager.h"
 #include "audio_global_config_manager.h"
 #include "sle_audio_device_manager.h"
+#include "va_device_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -185,7 +186,7 @@ public:
         AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(
-        AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID);
+        AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID, const int32_t uid = -1);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(
         AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID);
@@ -232,6 +233,7 @@ public:
     int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
+    bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
     bool getFastControlParam();
 
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
@@ -281,7 +283,8 @@ private:
         audioCapturerSession_(AudioCapturerSession::GetInstance()),
         audioDeviceLock_(AudioDeviceLock::GetInstance()),
         audioDeviceStatus_(AudioDeviceStatus::GetInstance()),
-        sleAudioDeviceManager_(SleAudioDeviceManager::GetInstance())
+        sleAudioDeviceManager_(SleAudioDeviceManager::GetInstance()),
+        vaDeviceManager_(VADeviceManager::GetInstance())
     {
         deviceStatusListener_ = std::make_unique<DeviceStatusListener>(*this);
     }
@@ -322,6 +325,7 @@ private:
     BluetoothOffloadState GetA2dpOffloadFlag();
     void SetDefaultAdapterEnable(bool isEnable);
     bool IsDevicePlaybackSupported(const AudioProcessConfig &config, const AudioDeviceDescriptor &deviceInfo);
+    bool CheckVoipAnrOn(std::vector<AudioEffectPropertyV3> &property);
 private:
 
     static bool isBtListenerRegistered;
@@ -414,6 +418,7 @@ private:
     AudioDeviceLock& audioDeviceLock_;
     AudioDeviceStatus& audioDeviceStatus_;
     SleAudioDeviceManager& sleAudioDeviceManager_;
+    VADeviceManager& vaDeviceManager_;
 };
 
 class SafeVolumeEventSubscriber : public EventFwk::CommonEventSubscriber {
