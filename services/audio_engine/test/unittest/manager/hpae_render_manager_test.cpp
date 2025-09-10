@@ -530,7 +530,7 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerTransStreamUsage, TestSize.
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
     sinkInfo.lib = "libmodule-split-stream-sink.z.so";
-    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
 
     EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
