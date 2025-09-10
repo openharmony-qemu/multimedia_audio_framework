@@ -326,6 +326,7 @@ std::string RemoteOffloadAudioRenderSink::GetAudioParameter(const AudioParamKey 
 
 int32_t RemoteOffloadAudioRenderSink::SetVolume(float left, float right)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     std::lock_guard<std::mutex> lock(switchDeviceMutex_);
     Trace trace("RemoteOffloadAudioRenderSink::SetVolume");
 
@@ -657,6 +658,7 @@ void RemoteOffloadAudioRenderSink::SetAudioBalanceValue(float audioBalance)
 
 int32_t RemoteOffloadAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     std::lock_guard<std::mutex> lock(switchDeviceMutex_);
     AUDIO_INFO_LOG("set offload mute %{public}d", mute);
 
@@ -780,6 +782,8 @@ void RemoteOffloadAudioRenderSink::RegistOffloadHdiCallback(std::function<void(c
         .callback_ = new RemoteOffloadHdiCallbackImpl(this),
         .serviceCallback_ = callback,
     };
+    std::lock_guard<std::mutex> lock(sinkMutex_);
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     int32_t ret = audioRender_->RegCallback(hdiCallback_.callback_, (int8_t)0);
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("fail, error code: %{public}d", ret);
