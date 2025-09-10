@@ -729,6 +729,7 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, CreateStream_005, TestSize.Level0)
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->IsInit(), true);
     HpaeStreamInfo streamInfo = GetInCapPlayStreamInfo();
+    HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
     streamInfo.frameLen = DEFAULT_FRAME_LENGTH_1;
     sinkInfo.frameLen = DEFAULT_FRAME_LENGTH_2;
     EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(streamInfo), ERROR);
