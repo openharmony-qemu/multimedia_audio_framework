@@ -763,6 +763,7 @@ int32_t RemoteOffloadAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &
 int32_t RemoteOffloadAudioRenderSink::Drain(AudioDrainType type)
 {
     Trace trace("RemoteOffloadAudioRenderSink::Drain");
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     auto drainType = static_cast<AudioDrainNotifyType>(type);
     int32_t ret = audioRender_->DrainBuffer(drainType);
@@ -788,6 +789,7 @@ void RemoteOffloadAudioRenderSink::RegistOffloadHdiCallback(std::function<void(c
 int32_t RemoteOffloadAudioRenderSink::SetBufferSize(uint32_t sizeMs)
 {
     Trace trace("RemoteOffloadAudioRenderSink::SetBufferSize");
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     CHECK_AND_RETURN_RET_LOG(!isFlushing_.load(), ERR_OPERATION_FAILED, "during flushing");
 
