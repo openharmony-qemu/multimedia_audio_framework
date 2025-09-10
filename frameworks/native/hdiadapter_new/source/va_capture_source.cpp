@@ -100,7 +100,7 @@ int32_t VACaptureSource::CreateCapture()
     std::shared_ptr<VAInputStreamAttribute> attribute = MakeVAStreamAttributeFromIAudioSourceAttr();
     sptr<IRemoteObject> inputStreamRemote;
     int ret = deviceController_->OpenInputStream(*prop, *attribute, inputStreamRemote);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "openInputStream failed");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "openInputStream failed ret = %{pubilc}d", ret);
     
     CHECK_AND_RETURN_RET_LOG(inputStreamRemote != nullptr, ERR_OPERATION_FAILED, "inputStreamRemote is nullptr");
     inputStream_ = iface_cast<IVAInputStream>(inputStreamRemote);
@@ -206,7 +206,7 @@ int32_t VACaptureSource::Stop(void)
     stopThread.detach();
 
     int64_t stopTimestamp = ClockTime::GetCurNano();
-    PrintDfx(stopTimestamp - startTimestamp);
+    PrintDfx((stopTimestamp - startTimestamp) / AUDIO_NS_PER_SECOND);
     return SUCCESS;
 }
 
