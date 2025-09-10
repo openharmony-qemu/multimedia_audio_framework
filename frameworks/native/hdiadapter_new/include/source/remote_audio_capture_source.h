@@ -22,6 +22,7 @@
 #include <v1_0/iaudio_manager.h>
 #include "adapter/i_device_manager.h"
 #include "util/callback_wrapper.h"
+#include "util/hdi_dfx_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -91,7 +92,7 @@ private:
     static constexpr uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 10;
     static constexpr int32_t HALF_FACTOR = 2;
     static constexpr uint32_t AUDIO_BUFFER_SIZE = 16 * 1024;
-    static constexpr const char *DUMP_REMOTE_CAPTURE_SOURCE_FILENAME = "dump_remote_audiosource.pcm";
+    static constexpr const char *DUMP_REMOTE_CAPTURE_SOURCE_FILENAME = "dump_remote_audiosource";
 
     const std::string deviceNetworkId_ = "";
     IAudioSourceAttr attr_ = {};
@@ -111,6 +112,9 @@ private:
     int captureFrameNum_ = 0;
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
+    // for dfx log
+    std::string logUtilsTag_ = "RemoteAudioSource";
+    mutable int64_t volumeDataCount_ = 0;
     bool muteState_ = false;
 };
 
