@@ -346,6 +346,19 @@ HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_002, TestSize
 }
 
 /**
+ * @tc.name: Pro_Audio_ReloadAudioPort_003
+ * @tc.desc: test reload audio port source
+ * @tc.type: FUNC
+ */
+HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_003, TestSize.Level1)
+{
+    AudioModuleInfo moduleInfo = InitSourceAudioModeInfo();
+    moduleInfo.lib = "libmodule-inner-capturer-sink.z.so";
+    int32_t portId = impl_->ReloadAudioPort(moduleInfo.lib, moduleInfo);
+    EXPECT_EQ(portId, -1);
+}
+
+/**
  * @tc.name: Pro_Audio_ReloadAudioPort_004
  * @tc.desc: test reload audio port sink
  * @tc.type: FUNC
@@ -373,6 +386,36 @@ HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_005, TestSize
     EXPECT_EQ(ERROR, ret);
     portId = impl_->ReloadAudioPort(moduleInfo.lib, moduleInfo);
     EXPECT_GE(portId, 0);
+}
+
+/**
+ * @tc.name: Pro_Audio_ReloadAudioPort_006
+ * @tc.desc: test reload audio port sink
+ * @tc.type: FUNC
+ */
+HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_006, TestSize.Level1)
+{
+    AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
+    int32_t portId = impl_->OpenAudioPort(moduleInfo.lib, moduleInfo);
+    EXPECT_EQ(portId, -1);
+    portId = impl_->ReloadAudioPort(moduleInfo.lib, moduleInfo);
+    EXPECT_EQ(portId, -1);
+}
+
+/**
+ * @tc.name: Pro_Audio_ReloadAudioPort_007
+ * @tc.desc: test reload audio port sink
+ * @tc.type: FUNC
+ */
+HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_007, TestSize.Level1)
+{
+    AudioModuleInfo moduleInfo = InitSourceAudioModeInfo();
+    int32_t portId = impl_->OpenAudioPort(moduleInfo.lib, moduleInfo);
+    EXPECT_EQ(portId, -1);
+    int32_t ret = impl_->CloseAudioPort(portId);
+    EXPECT_EQ(ERROR, ret);
+    portId = impl_->ReloadAudioPort(moduleInfo.lib, moduleInfo);
+    EXPECT_EQ(portId, -1);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

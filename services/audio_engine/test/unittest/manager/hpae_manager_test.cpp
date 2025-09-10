@@ -1518,7 +1518,7 @@ HWTEST_F(HpaeManagerUnitTest, HpaeRenderManagerReloadTest002, TestSize.Level1)
     std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
     hpaeManager_->RegisterSerivceCallback(callback);
     AudioModuleInfo audioModuleInfo = GetSourceAudioModeInfo();
-    audioModuleInfo.lib = "libmodule-hdi-inner.z.so";
+    audioModuleInfo.lib = "libmodule-inner-capturer-sink.z.so";
     EXPECT_EQ(hpaeManager_->ReloadAudioPort(audioModuleInfo), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
 }
