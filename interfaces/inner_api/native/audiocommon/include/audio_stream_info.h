@@ -265,13 +265,13 @@ enum AudioPreloadType {
 
 struct AudioStreamParams {
     uint32_t samplingRate = 0;
-    // Add customSampleRate
-    uint32_t customSampleRate = 0;
     uint8_t encoding = 0;
     uint8_t format = 0;
     uint8_t channels = 0;
     uint64_t channelLayout = 0ULL;
     uint32_t originalSessionId = 0;
+    // Add customSampleRate
+    uint32_t customSampleRate = 0;
 };
 
 // sampling rate
