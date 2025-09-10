@@ -630,13 +630,13 @@ int32_t HpaeCapturerManager::InitCapturer()
     return SUCCESS;
 }
 
-int32_t HpaeCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceInfo)
+int32_t HpaeCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceInfo, bool isReload)
 {
     if (IsInit()) {
         DeInit();
     }
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
-    auto request = [this, sourceInfo] {
+    auto request = [this, sourceInfo, isReload] {
         // disconnect
         std::vector<HpaeCaptureMoveInfo> moveInfos;
         for (const auto &it : sourceOutputNodeMap_) {
@@ -655,7 +655,7 @@ int32_t HpaeCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceIn
         int32_t ret = InitCapturerManager();
         if (ret != SUCCESS) {
             AUDIO_INFO_LOG("re-Init HpaeCapturerManager failed");
-            TriggerCallback(INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
+            TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
             return;
         }
         AUDIO_INFO_LOG("re-Init HpaeCapturerManager success");
@@ -664,7 +664,7 @@ int32_t HpaeCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceIn
         for (const auto &moveInfo : moveInfos) {
             AddSingleNodeToSource(moveInfo, true);
         }
-        TriggerCallback(INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
+        TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
         TriggerCallback(INIT_SOURCE_RESULT, sourceInfo_.sourceType);
     };
     SendRequest(request, __func__, true);
@@ -736,9 +736,9 @@ int32_t HpaeCapturerManager::CheckFramelen()
 int32_t HpaeCapturerManager::Init(bool isReload)
 {
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
-    auto request = [this] {
+    auto request = [this, isReload] {
         int32_t ret = InitCapturerManager();
-        TriggerCallback(INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
+        TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "Init HpaeCapturerManager failed");
         TriggerCallback(INIT_SOURCE_RESULT, sourceInfo_.sourceType);
         AUDIO_INFO_LOG("Init HpaeCapturerManager success");

@@ -55,7 +55,7 @@ public:
     virtual int32_t AddNodeToSource(const HpaeCaptureMoveInfo &moveInfo) = 0;
     virtual int32_t AddAllNodesToSource(const std::vector<HpaeCaptureMoveInfo> &moveInfos, bool isConnect) = 0;
     virtual std::string GetThreadName() = 0;
-    virtual int32_t ReloadCaptureManager(const HpaeSourceInfo &sourceInfo) = 0;
+    virtual int32_t ReloadCaptureManager(const HpaeSourceInfo &sourceInfo, bool isReload = false) = 0;
     virtual int32_t DumpSourceInfo() { return 0; };
     virtual void UploadDumpSourceInfo(std::string &deviceName);
     virtual void OnNotifyDfxNodeInfo(bool isConnect, uint32_t preNodeId, HpaeDfxNodeInfo &nodeInfo);
