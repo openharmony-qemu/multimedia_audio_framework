@@ -277,6 +277,7 @@ ErrCode AudioSettingProvider::RegisterObserver(const sptr<AudioSettingObserver> 
     auto uri = AssembleUri(observer->GetKey(), tableType);
     if (!isDataShareReady_) {
         AUDIO_WARNING_LOG("DataShareHelper is not ready");
+        IPCSkeleton::SetCallingIdentity(callingIdentity);
         return ERR_NO_INIT;
     }
     auto helper = CreateDataShareHelper(tableType);
