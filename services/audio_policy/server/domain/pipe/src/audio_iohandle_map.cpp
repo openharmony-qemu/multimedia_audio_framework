@@ -310,7 +310,7 @@ void AudioIOHandleMap::DoUnmutePort(int32_t muteDuration, const std::string &por
 }
 
 int32_t AudioIOHandleMap::ReloadPortAndUpdateIOHandle(std::shared_ptr<AudioPipeInfo> &pipeInfo,
-    const AudioModuleInfo &moduleInfo, bool softLinkFlag)
+    const AudioModuleInfo &moduleInfo, bool softLinkFlag) 
 {
     std::string oldModuleName = pipeInfo->moduleInfo_.name;
     AudioIOHandle ioHandle;
