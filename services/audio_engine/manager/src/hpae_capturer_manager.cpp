@@ -659,7 +659,7 @@ int32_t HpaeCapturerManager::InitCapturerManager()
     HpaeNodeInfo nodeInfo;
     HpaeNodeInfo ecNodeInfo;
     HpaeNodeInfo micRefNodeInfo;
-    int32_t checkRet = CheckFramelen(sourceInfo_);
+    int32_t checkRet = CheckSourceInfoFramelen(sourceInfo_);
     if (checkRet != SUCCESS) {
         return checkRet;
     }
