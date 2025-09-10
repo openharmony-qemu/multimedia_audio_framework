@@ -148,17 +148,6 @@ void RoundStreamInfo(HpaeStreamInfo &streamInfo)
     }
 }
 
-void RoundNodeInfo(HpaeNodeInfo &nodeInfo)
-{
-    RoundVal(nodeInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
-    RoundVal(nodeInfo.channels, SUPPORTED_CHANNELS);
-    RoundVal(nodeInfo.format, AUDIO_SUPPORTED_FORMATS);
-    nodeInfo.frameLen = GetData<size_t>();
-    if (GetData<bool>()) {
-        nodeInfo.frameLen %= MAXFRAMELEN;
-    }
-}
-
 HpaeSinkInfo GetInCapSinkInfo()
 {
     HpaeSinkInfo sinkInfo;
@@ -359,8 +348,11 @@ void HpaeInnerCapturerManagerAddNodeToSinkFuzzTest1()
     hpaeInnerCapturerManager->Start(playSencondStreamInfo.sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     HpaeNodeInfo playSencondNodeInfo;
-    playSencondNodeInfo.sessionId = playSencondStreamInfo.sessionId + 1;
-    RoundNodeInfo(playSencondNodeInfo);
+    playSencondNodeInfo.sessionId = GetData<uint32_t>();
+    playSencondNodeInfo.channels = STEREO;
+    playSencondNodeInfo.format = SAMPLE_S16LE;
+    playSencondNodeInfo.frameLen = GetData<uint64_t>();
+    playSencondNodeInfo.samplingRate = SAMPLE_RATE_44100;
     playSencondNodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
     playSencondNodeInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     playSencondNodeInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -401,7 +393,10 @@ void HpaeInnerCapturerManagerAddNodeToSinkFuzzTest2()
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     HpaeNodeInfo playSencondNodeInfo;
     playSencondNodeInfo.sessionId = GetData<uint32_t>();
-    RoundNodeInfo(playSencondNodeInfo);
+    playSencondNodeInfo.channels = STEREO;
+    playSencondNodeInfo.format = SAMPLE_S16LE;
+    playSencondNodeInfo.frameLen = GetData<uint64_t>();
+    playSencondNodeInfo.samplingRate = SAMPLE_RATE_44100;
     playSencondNodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
     playSencondNodeInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     playSencondNodeInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -447,7 +442,15 @@ void HpaeInnerCapturerManagerAddNodeToSinkFuzzTest3()
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     HpaeNodeInfo playSencondNodeInfo;
     playSencondNodeInfo.sessionId = GetData<uint32_t>();
-    RoundNodeInfo(playSencondNodeInfo);
+    HpaeNodeInfo playSencondNodeInfo;
+    playSencondNodeInfo.sessionId = GetData<uint32_t>();
+    playSencondNodeInfo.channels = STEREO;
+    playSencondNodeInfo.format = SAMPLE_S16LE;
+    playSencondNodeInfo.frameLen = GetData<uint64_t>();
+    playSencondNodeInfo.samplingRate = SAMPLE_RATE_44100;
+    playSencondNodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
+    playSencondNodeInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    playSencondNodeInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
     playSencondNodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
     playSencondNodeInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     playSencondNodeInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;

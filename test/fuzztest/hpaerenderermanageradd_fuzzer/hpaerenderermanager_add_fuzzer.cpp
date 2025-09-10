@@ -138,18 +138,6 @@ void RoundStreamInfo(HpaeStreamInfo &streamInfo)
     }
 }
 
-void RoundNodeInfo(HpaeNodeInfo &nodeInfo)
-{
-    RoundVal(nodeInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
-    RoundVal(nodeInfo.channels, SUPPORTED_CHANNELS);
-    RoundVal(nodeInfo.format, AUDIO_SUPPORTED_FORMATS);
-    nodeInfo.frameLen = GetData<size_t>();
-    if (GetData<bool>()) {
-        nodeInfo.frameLen %= MAXFRAMELEN;
-    }
-}
-
-
 static void InitHpaeSinkInfo(HpaeSinkInfo &sinkInfo)
 {
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -171,7 +159,10 @@ static void InitRenderStreamInfo(HpaeStreamInfo &streamInfo)
 static void InitNodeInfo(HpaeNodeInfo &nodeInfo)
 {
     nodeInfo.nodeId = DEFAULT_NODE_ID;
-    RoundNodeInfo(nodeInfo);
+    nodeInfo.frameLen = FRAME_LENGTH_960;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
     nodeInfo.sceneType = HPAE_SCENE_RECORD;
     nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
 }
