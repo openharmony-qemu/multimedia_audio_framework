@@ -360,6 +360,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(std::string &sceneTy
         AudioEffectDescriptor descriptor;
         descriptor.libraryName = effectToLibraryNameMap_[effect];
         descriptor.effectName = effect;
+        CHECK_AND_CONTINUE_LOG(effectToLibraryEntryMap_[effect] != nullptr, "null AudioEffectLibEntry");
         int32_t ret = effectToLibraryEntryMap_[effect]->audioEffectLibHandle->createEffect(descriptor, &handle);
         CHECK_AND_CONTINUE_LOG(ret == 0, "EffectToLibraryEntryMap[%{public}s] createEffect fail", effect.c_str());
 
