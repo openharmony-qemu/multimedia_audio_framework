@@ -889,6 +889,30 @@ enum AudioDeviceUsage : uint32_t {
     D_ALL_DEVICES = 15,
 };
 
+enum BluetoothAndNearlinkPreferredRecordCategory : uint32_t {
+    /**
+     * @brief Not prefer to use bluetooth and nearlink record.
+     */
+    PREFERRED_NONE = 0,
+
+    /**
+     * @brief Prefer to use bluetooth and nearlink record.
+     * However, whether to use low latency or high quality recording
+     * dpends on system.
+     */
+    PREFERRED_DEFAULT = 1,
+
+    /**
+     * @brief Prefer to use bluetooth and nearlink low latency mode to record.
+     */
+    PREFERRED_LOW_LATENCY = 2,
+
+    /**
+     * @brief Prefer to use bluetooth and nearlink high quality mode to record.
+     */
+    PREFERRED_HIGH_QUALITY = 3,
+};
+
 enum FilterMode : uint32_t {
     INCLUDE = 0,
     EXCLUDE,

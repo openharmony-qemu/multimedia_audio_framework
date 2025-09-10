@@ -168,8 +168,8 @@ public:
     OH_AudioCommon_Result SelectMediaInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     OH_AudioDeviceDescriptor *GetSelectedMediaInputDevice();
     OH_AudioCommon_Result ClearSelectedMediaInputDevice();
-    OH_AudioCommon_Result PreferBluetoothAndNearlinkRecord(bool enable);
-    bool IsPreferredBluetoothAndNearlinkRecord();
+    OH_AudioCommon_Result PreferBluetoothAndNearlinkRecord(BluetoothAndNearlinkPreferredRecordCategory category);
+    BluetoothAndNearlinkPreferredRecordCategory GetPreferredBluetoothAndNearlinkRecord();
 
     OH_AudioCommon_Result SetAvailableDeviceChangeCallback(
         AudioDeviceUsage deviceUsage, OH_AudioSession_AvailableDeviceChangedCallback callback);

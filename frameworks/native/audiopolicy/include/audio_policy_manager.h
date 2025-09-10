@@ -429,9 +429,9 @@ public:
 
     int32_t ClearSelectedInputDevice();
 
-    int32_t PreferBluetoothAndNearlinkRecord(bool isPreferred);
+    int32_t PreferBluetoothAndNearlinkRecord(BluetoothAndNearlinkPreferredRecordCategory category);
 
-    bool GetPreferBluetoothAndNearlinkRecord();
+    BluetoothAndNearlinkPreferredRecordCategory GetPreferBluetoothAndNearlinkRecord();
 
     int32_t SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,
         const std::shared_ptr<AudioManagerAvailableDeviceChangeCallback>& callback);

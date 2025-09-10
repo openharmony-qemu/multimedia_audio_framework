@@ -1106,9 +1106,9 @@ int32_t AudioCoreService::SelectInputDeviceByUid(const std::shared_ptr<AudioDevi
     int32_t uid)
 {
     int32_t result = SUCCESS;
-    audioUsrSelectManager_.SelectInputDeviceByUid(selectedDesc, uid);
+    bool isNeedRoute = audioUsrSelectManager_.SelectInputDeviceByUid(selectedDesc, uid);
     AudioScene scene = audioSceneManager_.GetAudioScene(true);
-    CHECK_AND_RETURN_RET(scene != AUDIO_SCENE_PHONE_CALL && scene != AUDIO_SCENE_PHONE_CHAT, result);
+    CHECK_AND_RETURN_RET(scene != AUDIO_SCENE_PHONE_CALL && scene != AUDIO_SCENE_PHONE_CHAT && isNeedRoute, result);
     result = FetchInputDeviceAndRoute("SelectInputDeviceByUid");
     return result;
 }
@@ -1124,17 +1124,18 @@ int32_t AudioCoreService::ClearSelectedInputDeviceByUid(int32_t uid)
     return SUCCESS;
 }
 
-int32_t AudioCoreService::PreferBluetoothAndNearlinkRecordByUid(int32_t uid, bool isPreferred)
+int32_t AudioCoreService::PreferBluetoothAndNearlinkRecordByUid(int32_t uid,
+    BluetoothAndNearlinkPreferredRecordCategory category)
 {
     int32_t result = SUCCESS;
-    audioUsrSelectManager_.PreferBluetoothAndNearlinkRecordByUid(uid, isPreferred);
+    audioUsrSelectManager_.PreferBluetoothAndNearlinkRecordByUid(uid, category);
     AudioScene scene = audioSceneManager_.GetAudioScene(true);
     CHECK_AND_RETURN_RET(scene != AUDIO_SCENE_PHONE_CALL && scene != AUDIO_SCENE_PHONE_CHAT, result);
     result = FetchInputDeviceAndRoute("SelectInputDeviceByUid");
     return result;
 }
 
-bool AudioCoreService::GetPreferBluetoothAndNearlinkRecordByUid(int32_t uid)
+BluetoothAndNearlinkPreferredRecordCategory AudioCoreService::GetPreferBluetoothAndNearlinkRecordByUid(int32_t uid)
 {
     return audioUsrSelectManager_.GetPreferBluetoothAndNearlinkRecordByUid(uid);
 }
