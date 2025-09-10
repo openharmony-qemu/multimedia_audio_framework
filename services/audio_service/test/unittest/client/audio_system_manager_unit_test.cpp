@@ -169,7 +169,7 @@ HWTEST(AudioSystemManagerUnitTest, GetDeviceMinVolume_002, TestSize.Level1)
  * @tc.number: IsStreamMute_001
  * @tc.desc  : Test IsStreamMute interface.
  */
-HWTEST(AudioSystemManagerUnitTest, IsStreamMute_001, TestSize.Level1)
+HWTEST(AudioSystemManagerUnitTest, , TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMute_001 start");
     bool result = AudioSystemManager::GetInstance()->IsStreamMute(STREAM_MUSIC);
@@ -189,7 +189,7 @@ HWTEST(AudioSystemManagerUnitTest, IsStreamMute_001, TestSize.Level1)
  * @tc.name  : Test IsStreamMute API
  * @tc.type  : FUNC
  * @tc.number: IsStreamMute_002
- * @tc.desc  : Test IsStreamMute interface.
+ * @tc.desc  : Test IsStreamMute interface1.
  */
 HWTEST(AudioSystemManagerUnitTest, IsStreamMute_002, TestSize.Level1)
 {
