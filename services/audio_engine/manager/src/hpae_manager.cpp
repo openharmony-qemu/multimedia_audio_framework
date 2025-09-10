@@ -298,35 +298,35 @@ int32_t HpaeManager::CreateRendererManager(const AudioModuleInfo &audioModuleInf
     return SUCCESS;
 }
 
-int32_t HpaeManager::CreateCaptureManager(HpaeSourceInfo &soureInfo, uint32_t sinkSourceIndex, bool isReload)
+int32_t HpaeManager::CreateCaptureManager(HpaeSourceInfo &sourceInfo, uint32_t sinkSourceIndex, bool isReload)
 {
     sinkSourceIndex_.fetch_add(1);
     sourceInfo.sourceId = sinkSourceIndex;
     auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     capturerManager->RegisterSendMsgCallback(weak_from_this());
-    capturerManagerMap_[soureInfo.sourceName] = capturerManager;
-    sourceNameSourceIdMap_[soureInfo.sourceName] = sinkSourceIndex;
-    sourceIdSourceNameMap_[sinkSourceIndex] = soureInfo.sourceName;
+    capturerManagerMap_[sourceInfo.sourceName] = capturerManager;
+    sourceNameSourceIdMap_[sourceInfo.sourceName] = sinkSourceIndex;
+    sourceIdSourceNameMap_[sinkSourceIndex] = sourceInfo.sourceName;
     if (defaultSource_ == "" && coreSource_ == "") {
         CreateCoreSourceManager();
     }
-    capturerManagerMap_[soureInfo.sourceName]->Init(isReload);
+    capturerManagerMap_[sourceInfo.sourceName]->Init(isReload);
     AUDIO_INFO_LOG(
-        "open source name: %{public}s end sourceIndex is %{public}u", soureInfo.sourceName.c_str(), sinkSourceIndex);
+        "open source name: %{public}s end sourceIndex is %{public}u", sourceInfo.sourceName.c_str(), sinkSourceIndex);
     return SUCCESS;
 }
 
-int32_t HpaeManager::ReloadCaptureManager(HpaeSourceInfo &soureInfo, bool isReload)
+int32_t HpaeManager::ReloadCaptureManager(HpaeSourceInfo &sourceInfo, bool isReload)
 {
     if (isReload) {
-        sourceIdSourceNameMap_.erase(sourceNameSourceIdMap_[soureInfo.sourceName]);
+        sourceIdSourceNameMap_.erase(sourceNameSourceIdMap_[sourceInfo.sourceName]);
         uint32_t sinkSourceIndex = static_cast<uint32_t>(sinkSourceIndex_.load());
-        soureInfo.sourceId = sinkSourceIndex;
+        sourceInfo.sourceId = sinkSourceIndex;
         sinkSourceIndex_.fetch_add(1);
-        sourceIdSourceNameMap_[sinkSourceIndex] = soureInfo.sourceName;
-        sourceNameSourceIdMap_[soureInfo.sourceName] = sinkSourceIndex;
+        sourceIdSourceNameMap_[sinkSourceIndex] = sourceInfo.sourceName;
+        sourceNameSourceIdMap_[sourceInfo.sourceName] = sinkSourceIndex;
     }
-    rendererManagerMap_[soureInfo.sourceName]->ReloadRenderManager(sinkInfo, isReload);
+    rendererManagerMap_[sourceInfo.sourceName]->ReloadCaptureManager(sourceInfo, isReload);
     return SUCCESS;
 }
 
@@ -467,16 +467,16 @@ uint32_t HpaeManager::ReloadAudioPort(const AudioModuleInfo &audioModuleInfo)
             int32_t ret = TransModuleInfoToHpaeSourceInfo(audioModuleInfo, sourceInfo);
             if (ret != SUCCESS) {
                 OnCallbackOpenOrReloadFailed(true);
-                return ret;
+                return;
             }
             if (SafeGetMap(capturerManagerMap_, audioModuleInfo.name)) {
-                ReloadCaptureManager(audioModuleInfo, true);
+                ReloadCaptureManager(sourceInfo, true);
                 return;
             }
         
             AUDIO_INFO_LOG("currect device:%{public}s not exist.", audioModuleInfo.name.c_str());
             uint32_t sinkSourceIndex = static_cast<uint32_t>(sinkSourceIndex_.load());
-            CreateCaptureManager(audioModuleInfo, sinkSourceIndex, true);
+            CreateCaptureManager(sourceInfo, sinkSourceIndex, true);
         } else {
             AUDIO_ERR_LOG("currect device:%{public}s not support reload.", audioModuleInfo.name.c_str());
             OnCallbackOpenOrReloadFailed(true);

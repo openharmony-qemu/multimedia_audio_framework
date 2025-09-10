@@ -233,7 +233,7 @@ private:
     void CreateStreamForCapInner(const HpaeStreamInfo &streamInfo);
     int32_t CreateRendererManager(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex,
         bool isReload = false);
-    int32_t CreateCaptureManager(HpaeSourceInfo &soureInfo, uint32_t sinkSourceIndex, bool isReload = false);
+    int32_t CreateCaptureManager(HpaeSourceInfo &sourceInfo, uint32_t sinkSourceIndex, bool isReload = false);
     void UpdateStatus(const std::weak_ptr<IStreamStatusCallback> &callback, IOperation operation, uint32_t sessionId);
 
     std::shared_ptr<IHpaeRendererManager> GetRendererManagerById(uint32_t sessionId);
@@ -244,7 +244,7 @@ private:
 
     void MoveToPreferSink(const std::string& name, std::shared_ptr<AudioServiceHpaeCallback> &serviceCallback);
     int32_t ReloadRenderManager(const AudioModuleInfo &audioModuleInfo, bool isReload = false);
-    int32_t ReloadCaptureManager(HpaeSourceInfo &soureInfo, bool isReload = false);
+    int32_t ReloadCaptureManager(HpaeSourceInfo &sourceInfo, bool isReload = false);
     void DestroyCapture(uint32_t sessionId);
     void LoadEffectLive();
 
