@@ -1365,7 +1365,8 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
 
     memset_s(static_cast<void *>(effectHdiInput_), sizeof(effectHdiInput_), 0, sizeof(effectHdiInput_));
     if (spatializationEnabled_) {
-        if ((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) && (!btOffloadSupported_)) {
+        if (((deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) || (deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) &&
+            (!btOffloadSupported_)) {
             AUDIO_INFO_LOG("A2dp-hal, enter ARM processing");
             btOffloadEnabled_ = false;
             SetSpatializationEnabledToChains();
