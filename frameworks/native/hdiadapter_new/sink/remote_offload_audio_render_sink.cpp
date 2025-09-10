@@ -326,7 +326,7 @@ std::string RemoteOffloadAudioRenderSink::GetAudioParameter(const AudioParamKey 
 
 int32_t RemoteOffloadAudioRenderSink::SetVolume(float left, float right)
 {
-    std::lock_guard<std::mutex> lock(sinkMutex_);
+    std::lock_guard<std::mutex> sinkLock(sinkMutex_);
     std::lock_guard<std::mutex> lock(switchDeviceMutex_);
     Trace trace("RemoteOffloadAudioRenderSink::SetVolume");
 
@@ -658,7 +658,7 @@ void RemoteOffloadAudioRenderSink::SetAudioBalanceValue(float audioBalance)
 
 int32_t RemoteOffloadAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
 {
-    std::lock_guard<std::mutex> lock(sinkMutex_);
+    std::lock_guard<std::mutex> sinkLock(sinkMutex_);
     std::lock_guard<std::mutex> lock(switchDeviceMutex_);
     AUDIO_INFO_LOG("set offload mute %{public}d", mute);
 
