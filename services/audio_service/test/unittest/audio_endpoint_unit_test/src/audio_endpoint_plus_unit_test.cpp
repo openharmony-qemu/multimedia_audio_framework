@@ -61,6 +61,8 @@ public:
     MOCK_METHOD(uint32_t, GetSpanSizeInFrame, (), (override));
     MOCK_METHOD(uint32_t, GetByteSizePerFrame, (), (override));
 
+    MOCK_METHOD(StreamStatus, GetStreamInServerStatus, (), (override));
+
     // Non-pure virtual methods (with default implementations in interface)
     MOCK_METHOD(void, EnableStandby, (), (override));
 

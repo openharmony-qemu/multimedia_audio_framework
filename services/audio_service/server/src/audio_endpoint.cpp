@@ -1992,13 +1992,9 @@ void AudioEndpointInner::WriteToProcessBuffers(const BufferDesc &readBuf)
     CheckRecordSignal(readBuf.buffer, readBuf.bufLength);
     std::lock_guard<std::mutex> lock(listLock_);
     for (size_t i = 0; i < processBufferList_.size(); i++) {
-        CHECK_AND_CONTINUE_LOG(processBufferList_[i] != nullptr, "process buffer %{public}zu is null.", i);
-        if (processBufferList_[i]->GetStreamStatus() &&
-            processBufferList_[i]->GetStreamStatus()->load() != STREAM_RUNNING) {
-            AUDIO_WARNING_LOG("process buffer %{public}zu not running, stream status %{public}d.",
-                i, processBufferList_[i]->GetStreamStatus()->load());
-            continue;
-        }
+        CHECK_AND_CONTINUE_LOG(processBufferList_[i] != nullptr &&
+            processList_[i] != nullptr, "process buffer %{public}zu is null.", i);
+        CHECK_AND_CONTINUE(processList_[i]->GetStreamInServerStatus() == STREAM_RUNNING);
 
         int32_t ret = WriteToSpecialProcBuf(processBufferList_[i], readBuf, processList_[i]->GetConvertedBuffer(),
             processList_[i]->GetMuteState());
