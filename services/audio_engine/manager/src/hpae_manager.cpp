@@ -326,7 +326,7 @@ int32_t HpaeManager::ReloadCaptureManager(HpaeSourceInfo &sourceInfo, bool isRel
         sourceIdSourceNameMap_[sinkSourceIndex] = sourceInfo.sourceName;
         sourceNameSourceIdMap_[sourceInfo.sourceName] = sinkSourceIndex;
     }
-    rendererManagerMap_[sourceInfo.sourceName]->ReloadCaptureManager(sourceInfo, isReload);
+    capturerManagerMap_[sourceInfo.sourceName]->ReloadCaptureManager(sourceInfo, isReload);
     return SUCCESS;
 }
 
