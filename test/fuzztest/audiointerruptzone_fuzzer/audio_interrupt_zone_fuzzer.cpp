@@ -81,7 +81,7 @@ void AudioInterruptZoneManagerForceStopAudioFocusInZoneFuzzTest()
     if (audioInterruptZoneManager->service_ == nullptr) {
         return;
     }
-    audioInterruptZoneManager->service_->sessionService_ = std::make_shared<AudioSessionService>();
+
     audioInterruptZoneManager->service_->handler_ = std::make_shared<AudioPolicyServerHandler>();
     int32_t zoneId = g_fuzzUtils.GetData<int32_t>();
     AudioInterrupt interrupt;
