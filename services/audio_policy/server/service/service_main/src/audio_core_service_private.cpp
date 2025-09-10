@@ -2798,7 +2798,7 @@ void AudioCoreService::UpdateStreamDevicesForStart(
     streamDesc->UpdateOldDevice(streamDesc->newDeviceDescs_);
     
     StreamUsage streamUsage = StreamUsage::STREAM_USAGE_INVALID;
-    streamUsage = audioSessionService_->GetAudioSessionStreamUsage(GetRealPid(streamDesc));
+    streamUsage = audioSessionService_.GetAudioSessionStreamUsage(GetRealPid(streamDesc));
     streamUsage = (streamUsage != StreamUsage::STREAM_USAGE_INVALID) ? streamUsage :
     streamDesc->rendererInfo_.streamUsage;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;

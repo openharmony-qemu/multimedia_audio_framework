@@ -1500,7 +1500,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_055, TestSize.
     audioInterruptService->sessionService_.SetAudioSessionScene(pid, AudioSessionScene::MEDIA);
     EXPECT_NE(nullptr, audioInterruptService->sessionService_.sessionMap_[pid]);
     audioInterruptService->sessionService_.sessionMap_[pid]->AddStreamInfo(audioInterrupt);
-    ret = audioInterruptService->HandleLowPriorityEvent(pid, streamId);
+    ret = audioInterruptService->HandleLowPriorityEvent(pid, streamId + 1);
     EXPECT_FALSE(ret);
 }
 

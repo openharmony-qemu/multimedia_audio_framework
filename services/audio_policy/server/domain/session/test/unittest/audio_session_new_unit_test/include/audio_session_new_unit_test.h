@@ -30,6 +30,8 @@ public:
     void SetUp(void);
     // TearDown: Called after each test cases
     void TearDown(void);
+private:
+    AudioSessionService &audioSessionService_ {OHOS::Singleton<AudioSessionService>::GetInstance()};
 };
 } // namespace AudioStandard
 } // namespace OHOS

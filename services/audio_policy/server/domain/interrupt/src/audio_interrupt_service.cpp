@@ -337,6 +337,7 @@ void AudioInterruptService::DelayToDeactivateStreamsInAudioSession(
         int32_t ret = audioInterruptService->DeactivateStreamsInAudioSession(zoneId, callerPid, streamsInSession);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("Deactivate streams in audio session failed, pid %{public}d", callerPid);
+            return;
         }
         // Sleep for 50 milliseconds to allow streams in the session to stop.
         std::this_thread::sleep_for(std::chrono::milliseconds(50));

@@ -1243,9 +1243,9 @@ void AudioPolicyServerHandler::HandleAudioSessionInputDeviceChangeEvent(const Ap
 
             CHECK_AND_CONTINUE_LOG((deviceChangedEvent.devices.size() > 0) &&
                 (deviceChangedEvent.devices[0] != nullptr), "get invalid preferred output devices list");
-            bool IsSessionInputDeviceChanged =
-                audioSessionService.IsSessionInputDeviceChanged(deviceChangedEvent.devices[0]);
-            CHECK_AND_CONTINUE_LOG((!IsSessionInputDeviceChanged ||
+            bool isSessionInputDeviceChanged =
+                audioSessionService.IsSessionInputDeviceChanged(it->first, deviceChangedEvent.devices[0]);
+            CHECK_AND_CONTINUE_LOG((!isSessionInputDeviceChanged ||
                 (eventContextObj->reason_ == AudioStreamDeviceChangeReason::AUDIO_SESSION_ACTIVATE)),
                 "device of session %{public}d is not changed", it->first);
             deviceChangedEvent.changeReason = eventContextObj->reason_;

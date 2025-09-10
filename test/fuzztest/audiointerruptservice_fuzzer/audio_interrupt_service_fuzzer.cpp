@@ -46,15 +46,14 @@ public:
         if (interruptService == nullptr) {
             return;
         }
-
         AudioSessionStrategy strategy;
-        interruptService->sessionService_->sessionMap_.insert(
+        interruptService->sessionService_.sessionMap_.insert(
             std::make_pair(id, std::make_shared<AudioSession>(id, strategy, audioSessionService_)));
     }
 
     ~AudioSessionServiceBuilder()
     {
-        audioSessionService_.sessionService_.clear();
+        audioSessionService_.sessionMap_.clear();
         audioSessionService_.timeOutCallback_.reset();
     }
 private:
@@ -749,7 +748,7 @@ void AudioInterruptServicePrintLogsOfFocusStrategyBaseMusicFuzzTest(const uint8_
     }
 
     AudioInterrupt audioInterrupt;
-    CreateAudioSessionService(interruptService, 0);
+    AudioSessionServiceBuilder(interruptService, 0);
     AudioFocusType audioFocusType;
     audioFocusType.streamType = AudioStreamType::STREAM_MUSIC;
     std::pair<AudioFocusType, AudioFocusType> focusPair = std::make_pair(audioFocusType, audioInterrupt.audioFocusType);
@@ -998,7 +997,8 @@ void AudioInterruptServiceHandleLowPriorityEventFuzzTest(const uint8_t *rawData,
     if (interruptService->sessionService_.sessionMap_[pid] == nullptr) {
         return;
     }
-    interruptService->sessionService_.sessionMap_[pid]->audioSessionScene_ = *reinterpret_cast<const AudioSessionScene *>(rawData);
+    interruptService->sessionService_.sessionMap_[pid]->audioSessionScene_ =
+        *reinterpret_cast<const AudioSessionScene *>(rawData);
     interruptService->sessionService_.sessionMap_[pid]->state_ = *reinterpret_cast<const AudioSessionState *>(rawData);
     interruptService->handler_ = make_shared<AudioPolicyServerHandler>();
     interruptService->HandleLowPriorityEvent(pid, streamId);

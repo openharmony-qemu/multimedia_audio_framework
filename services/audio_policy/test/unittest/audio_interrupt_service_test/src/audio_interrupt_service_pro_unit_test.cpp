@@ -781,9 +781,6 @@ HWTEST_F(AudioInterruptServiceUnitTest, ShouldCallbackToClient_007, TestSize.Lev
 */
 HWTEST_F(AudioInterruptServiceUnitTest, AudioInterruptStrategy_001, TestSize.Level1)
 {
-    auto audioInterruptService = std::make_shared<AudioInterruptService>();
-    EXPECT_NE(audioInterruptService, nullptr);
-
     int32_t fakePid = 123;
     AudioInterrupt incomingInterrupt1;
     incomingInterrupt1.pid = fakePid;
@@ -799,12 +796,12 @@ HWTEST_F(AudioInterruptServiceUnitTest, AudioInterruptStrategy_001, TestSize.Lev
 
     AudioFocusEntry focusEntry;
     focusEntry.hintType = INTERRUPT_HINT_PAUSE;
-    audioInterruptService->UpdateMuteAudioFocusStrategy(incomingInterrupt1, incomingInterrupt2, focusEntry);
+    audioInterruptService_->UpdateMuteAudioFocusStrategy(incomingInterrupt1, incomingInterrupt2, focusEntry);
     EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_MUTE);
 
     focusEntry.hintType = INTERRUPT_HINT_PAUSE;
 
-    audioInterruptService->UpdateMuteAudioFocusStrategy(incomingInterrupt2, incomingInterrupt1, focusEntry);
+    audioInterruptService_->UpdateMuteAudioFocusStrategy(incomingInterrupt2, incomingInterrupt1, focusEntry);
     EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_MUTE);
 }
 

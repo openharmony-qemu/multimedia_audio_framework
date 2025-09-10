@@ -553,5 +553,17 @@ int32_t AudioSessionService::FillCurrentOutputDeviceChangedEvent(
     return SUCCESS;
 }
 
+bool AudioSessionService::IsSessionInputDeviceChanged(
+    int32_t callerPid, const std::shared_ptr<AudioDeviceDescriptor> desc)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(callerPid);
+    if (session != sessionMap_.end()) {
+        return session->second->IsSessionInputDeviceChanged(desc);
+    }
+
+    return false;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

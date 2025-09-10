@@ -128,7 +128,6 @@ void AudioSessionServiceActivateAudioSessionFuzzTest()
     auto &audioSessionService = AudioSessionServiceBuilder().GetAudioSessionService();
     int32_t callerPid = GetData<int32_t>();
     AudioSessionStrategy strategy;
-    std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = nullptr;
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionService);
     audioSessionService.sessionMap_.insert(make_pair(callerPid, audioSession));
     audioSessionService.ActivateAudioSession(callerPid, strategy);

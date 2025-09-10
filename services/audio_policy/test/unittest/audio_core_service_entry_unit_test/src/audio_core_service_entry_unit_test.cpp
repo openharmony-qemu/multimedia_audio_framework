@@ -941,7 +941,6 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_044, TestSize.Level1)
     EXPECT_NE(audioStreamDescriptor->newDeviceDescs_.size(), 0);
 
     audioCoreService->isFirstScreenOn_ = true;
-    audioCoreService->audioSessionService_ = nullptr;
     audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test");
     EXPECT_NE(audioStreamDescriptor->newDeviceDescs_.size(), 0);
 }

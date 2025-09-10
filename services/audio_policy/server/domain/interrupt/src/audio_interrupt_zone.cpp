@@ -126,6 +126,7 @@ void AudioInterruptZoneManager::ForceStopAudioFocusInZone(int32_t zoneId, const 
 {
     AUDIO_DEBUG_LOG("force stop interrupt %{public}d,%{public}d,%{public}d of zone %{public}d",
         interrupt.uid, interrupt.pid, interrupt.streamId, zoneId);
+    CHECK_AND_RETURN_LOG(service_ != nullptr, "interrupt service is nullptr");
 
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
     if (service_->handler_ != nullptr) {

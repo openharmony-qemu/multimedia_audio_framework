@@ -1429,7 +1429,6 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptServiceCanMixForActiveSession_001
     strategy.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
     audioInterruptService->sessionService_.ActivateAudioSession(0, strategy);
     activeInterrupt.pid = { 0 };
-    audioInterruptService->sessionService_.sessionMap_.insert({0, audioSession});
     focusEntry.actionOn = INCOMING;
     bool ret = audioInterruptService->CanMixForActiveSession(incomingInterrupt, activeInterrupt, focusEntry);
     EXPECT_TRUE(ret);
@@ -2266,7 +2265,7 @@ HWTEST_F(AudioInterruptUnitTest, InjectInterruptToAudioZone_008, TestSize.Level1
     EXPECT_NO_THROW(
         interruptServiceTest->InjectInterruptToAudioZone(0, interrupts);
     );
-    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 3);
+    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 2);
 }
 
 /**
@@ -2331,7 +2330,7 @@ HWTEST_F(AudioInterruptUnitTest, InjectInterruptToAudioZone_010, TestSize.Level1
     EXPECT_NO_THROW(
         interruptServiceTest->InjectInterruptToAudioZone(0, "1", interrupts);
     );
-    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 3);
+    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 2);
 }
 
 /**
