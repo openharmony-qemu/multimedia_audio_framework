@@ -125,7 +125,7 @@ int32_t AudioCaptureSourceUnitTest::AudioCaptureCaptureFrameEc002(
 {
     int8_t* frameEc = nullptr;
     frameEc = new int8_t[DEFAULT_SIZE];
-    frameInfo->frameEc = frameEc.data();
+    frameInfo->frameEc = frameEc;
     return 0;
 }
 

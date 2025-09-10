@@ -135,7 +135,6 @@ interface IAudioPolicy {
     void GetMinStreamVolume([out] float retVolume);
     void GetMaxStreamVolume([out] float retVolume);
     void GetMaxRendererInstances([out] int ret);
-    void IsSupportInnerCaptureOffload([out] boolean ret);
     void IsVolumeUnadjustable([out] boolean retIsUnadjustable);
     void AdjustVolumeByStep([in] int adjustType);
     void AdjustSystemVolumeByStep([in] int volumeType, [in] int adjustType);
@@ -300,5 +299,6 @@ interface IAudioPolicy {
     void GetAudioZoneByName([in] String name, [out] int zoneId);
     void AddStreamsToAudioZone([in] int zoneId, [in] List<AudioZoneStream> streams);
     void RemoveStreamsFromAudioZone([in] int zoneId, [in] List<AudioZoneStream> streams);
+    void IsSupportInnerCaptureOffload([out] boolean ret);
 }
 
