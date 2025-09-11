@@ -22,6 +22,7 @@
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
+#include "util/hdi_dfx_utils.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 

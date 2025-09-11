@@ -26,7 +26,6 @@
 #include "util/audio_running_lock.h"
 #include "util/ring_buffer_handler.h"
 #include "util/callback_wrapper.h"
-#include "util/hdi_dfx_utils.h"
 #include "audio_primary_source_clock.h"
 
 namespace OHOS {

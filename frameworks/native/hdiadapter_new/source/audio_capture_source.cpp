@@ -27,6 +27,7 @@
 #include "volume_tools.h"
 #include "audio_schedule.h"
 #include "util/id_handler.h"
+#include "util/hdi_dfx_utils.h"
 #include "media_monitor_manager.h"
 #include "audio_enhance_chain_manager.h"
 #include "common/hdi_adapter_info.h"
