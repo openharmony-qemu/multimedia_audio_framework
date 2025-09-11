@@ -37,12 +37,12 @@ HpaePolicyManager &HpaePolicyManager::GetInstance()
 
 HpaePolicyManager::HpaePolicyManager()
 {
-    AUDIO_DEBUG_LOG("Hpae policy manager created");
+    AUDIO_DEBUG_LOG("created");
 }
 
 HpaePolicyManager::~HpaePolicyManager()
 {
-    AUDIO_WARNING_LOG("Hpae policy manager destroyed");
+    AUDIO_WARNING_LOG("destroyed");
 }
 
 void HpaePolicyManager::InitAudioEffectChainManager(const std::vector<EffectChain> &effectChains,

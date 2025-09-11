@@ -122,17 +122,12 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.deviceName = deviceName;
     streamInfo.isMoveAble = isMoveAble_;
     streamInfo.privacyType = processConfig_.privacyType;
-    AUDIO_INFO_LOG("InitParams channels %{public}u  end", streamInfo.channels);
-    AUDIO_INFO_LOG("InitParams channelLayout %{public}" PRIu64 " end", streamInfo.channelLayout);
-    AUDIO_INFO_LOG("InitParams samplingRate %{public}u  end", streamInfo.customSampleRate == 0 ?
-                    streamInfo.samplingRate : streamInfo.customSampleRate);
-    AUDIO_INFO_LOG("InitParams format %{public}u  end", streamInfo.format);
-    AUDIO_INFO_LOG("InitParams frameLen %{public}zu  end", streamInfo.frameLen);
-    AUDIO_INFO_LOG("InitParams streamType %{public}u  end", streamInfo.streamType);
-    AUDIO_INFO_LOG("InitParams sessionId %{public}u  end", streamInfo.sessionId);
-    AUDIO_INFO_LOG("InitParams streamClassType %{public}u  end", streamInfo.streamClassType);
-    AUDIO_INFO_LOG("InitParams sourceType %{public}d  end", streamInfo.sourceType);
-    AUDIO_INFO_LOG("InitParams fadeType %{public}d  end", streamInfo.fadeType);
+    AUDIO_INFO_LOG("channels %{public}u channelLayout %{public}" PRIu64 " samplingRate %{public}u format %{public}u " 
+        "frameLen %{public}zu streamType %{public}u sessionId %{public}u streamClassType %{public}u "
+        "sourceType %{public}d fadeType %{public}d", streamInfo.channels, streamInfo.channelLayout,
+        streamInfo.customSampleRate == 0 ? streamInfo.samplingRate : streamInfo.customSampleRate, streamInfo.format,
+        streamInfo.frameLen, streamInfo.streamType, streamInfo.sessionId, streamInfo.streamClassType,
+        streamInfo.sourceType, streamInfo.fadeType);
     auto &hpaeManager = IHpaeManager::GetHpaeManager();
     int32_t ret = hpaeManager.CreateStream(streamInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "CreateStream is error");
@@ -166,7 +161,7 @@ int32_t HpaeRendererStreamImpl::StartWithSyncId(const int32_t &syncId)
     int32_t ret = IHpaeManager::GetHpaeManager().StartWithSyncId(HPAE_STREAM_CLASS_TYPE_PLAY,
         processConfig_.originalSessionId, syncId);
     if (ret != 0) {
-        AUDIO_ERR_LOG("StartWithSyncId is error!");
+        AUDIO_ERR_LOG("error!");
         return ERR_INVALID_PARAM;
     }
     return SUCCESS;
@@ -177,7 +172,7 @@ int32_t HpaeRendererStreamImpl::Pause(bool isStandby)
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     int32_t ret = IHpaeManager::GetHpaeManager().Pause(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
-        AUDIO_ERR_LOG("Pause is error!");
+        AUDIO_ERR_LOG("error!");
         return ERR_INVALID_PARAM;
     }
     return SUCCESS;
@@ -188,7 +183,7 @@ int32_t HpaeRendererStreamImpl::Flush()
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     int32_t ret = IHpaeManager::GetHpaeManager().Flush(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
-        AUDIO_ERR_LOG("Flush is error");
+        AUDIO_ERR_LOG("ErrorCode: %{public}d", ret);
         return ERR_INVALID_PARAM;
     }
     return SUCCESS;
@@ -199,7 +194,7 @@ int32_t HpaeRendererStreamImpl::Drain(bool stopFlag)
     AUDIO_INFO_LOG("[%{public}u] Enter %{public}d", streamIndex_, stopFlag);
     int32_t ret = IHpaeManager::GetHpaeManager().Drain(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
-        AUDIO_ERR_LOG("Drain is error");
+        AUDIO_ERR_LOG("ErrorCode: %{public}d", ret);
         return ERR_INVALID_PARAM;
     }
     return SUCCESS;
@@ -210,7 +205,7 @@ int32_t HpaeRendererStreamImpl::Stop()
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     int32_t ret = IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
-        AUDIO_ERR_LOG("Stop is error!");
+        AUDIO_ERR_LOG("ErrorCode: %{public}d", ret);
         return ERR_INVALID_PARAM;
     }
     state_ = STOPPING;
@@ -229,7 +224,7 @@ int32_t HpaeRendererStreamImpl::Release()
     std::string tempStringSessionId = std::to_string(streamIndex_);
     IHpaeManager::GetHpaeManager().DeleteStreamVolumeToEffect(tempStringSessionId);
     if (ret != 0) {
-        AUDIO_ERR_LOG("Release is error");
+        AUDIO_ERR_LOG("ErrorCode: %{public}d", ret);
         return ERR_INVALID_PARAM;
     }
     state_ = RELEASED;
@@ -297,7 +292,7 @@ int32_t HpaeRendererStreamImpl::GetRemoteOffloadSpeedPosition(uint64_t &framePos
     uint64_t frames = framesUS * processConfig_.streamInfo.samplingRate / AUDIO_US_PER_S;
     framePosition = lastHdiFramePosition_ + frames;
     timestamp = static_cast<uint64_t>(timeNSec + timeSec * AUDIO_NS_PER_SECOND);
-    AUDIO_DEBUG_LOG("HpaeRendererStreamImpl::GetSpeedPosition frame: %{public}" PRIu64, framePosition);
+    AUDIO_DEBUG_LOG("frame: %{public}" PRIu64, framePosition);
     return SUCCESS;
 }
 
@@ -329,8 +324,8 @@ int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint
     framePosition = framePosition_;
     uint64_t mutePaddingFrames = mutePaddingFrames_.load();
     framePosition = (framePosition > mutePaddingFrames) ? (framePosition - mutePaddingFrames) : 0;
-    AUDIO_DEBUG_LOG("HpaeRendererStreamImpl::GetCurrentPosition Latency info: framePosition: %{public}" PRIu64
-        ", latency %{public}" PRIu64, framePosition, latency);
+    AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ", latency %{public}" PRIu64,
+        framePosition, latency);
     return SUCCESS;
 }
 
@@ -377,10 +372,10 @@ int32_t HpaeRendererStreamImpl::SetRate(int32_t rate)
 
 int32_t HpaeRendererStreamImpl::SetAudioEffectMode(int32_t effectMode)
 {
-    AUDIO_INFO_LOG("SetAudioEffectMode: %{public}d", effectMode);
+    AUDIO_INFO_LOG("effectMode: %{public}d", effectMode);
     int32_t ret = IHpaeManager::GetHpaeManager().SetAudioEffectMode(processConfig_.originalSessionId, effectMode);
     if (ret != 0) {
-        AUDIO_ERR_LOG("SetAudioEffectMode is error");
+        AUDIO_ERR_LOG("ErrorCode: %{public}d", ret);
         return ERR_INVALID_PARAM;
     }
     effectMode_ = effectMode;
@@ -395,7 +390,7 @@ int32_t HpaeRendererStreamImpl::GetAudioEffectMode(int32_t &effectMode)
 
 int32_t HpaeRendererStreamImpl::SetPrivacyType(int32_t privacyType)
 {
-    AUDIO_DEBUG_LOG("SetInnerCapturerState: %{public}d", privacyType);
+    AUDIO_DEBUG_LOG("privacyType: %{public}d", privacyType);
     privacyType_ = privacyType;
     return SUCCESS;
 }
@@ -510,7 +505,7 @@ int32_t HpaeRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
 
     size_t writableSize = result.size;
     if (targetSize > writableSize) {
-        AUDIO_ERR_LOG("Enqueue buffer overflow, targetSize: %{public}zu, writableSize: %{public}zu",
+        AUDIO_ERR_LOG("overflow, targetSize: %{public}zu, writableSize: %{public}zu",
             targetSize, writableSize);
     }
 
@@ -518,7 +513,7 @@ int32_t HpaeRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
     BufferWrap bufferWrap = {bufferDesc.buffer, writeSize};
     result = ringBuffer_->Enqueue(bufferWrap);
     if (result.ret != OPERATION_SUCCESS) {
-        AUDIO_ERR_LOG("Enqueue buffer failed, ret:%{public}d size:%{public}zu", result.ret, result.size);
+        AUDIO_ERR_LOG("failed, ret:%{public}d size:%{public}zu", result.ret, result.size);
         return ERROR;
     }
     DumpFileUtil::WriteDumpFile(dumpEnqueueIn_, bufferDesc.buffer, writeSize);
@@ -579,7 +574,7 @@ int32_t HpaeRendererStreamImpl::OffloadSetVolume(float volume)
 
 int32_t HpaeRendererStreamImpl::SetOffloadDataCallbackState(int32_t state)
 {
-    AUDIO_INFO_LOG("SetOffloadDataCallbackState state: %{public}d", state);
+    AUDIO_INFO_LOG("state: %{public}d", state);
     if (!offloadEnable_) {
         return ERR_OPERATION_FAILED;
     }
@@ -638,7 +633,7 @@ int32_t HpaeRendererStreamImpl::SetOffloadMode(int32_t state, bool isAppBack)
         "SetOffloadPolicy failed, errcode is %{public}d", ret);
     offloadStatePolicy_.store(statePolicy);
 #else
-    AUDIO_INFO_LOG("SetStreamOffloadMode not available, FEATURE_POWER_MANAGER no define");
+    AUDIO_INFO_LOG("not available, FEATURE_POWER_MANAGER no define");
 #endif
     return SUCCESS;
 }
@@ -687,16 +682,16 @@ void HpaeRendererStreamImpl::BlockStream() noexcept
 
 int32_t HpaeRendererStreamImpl::SetClientVolume(float clientVolume)
 {
-    AUDIO_PRERELEASE_LOGI("set client volume success");
     if (clientVolume < MIN_FLOAT_VOLUME || clientVolume > MAX_FLOAT_VOLUME) {
-        AUDIO_ERR_LOG("SetClientVolume with invalid clientVolume %{public}f", clientVolume);
+        AUDIO_ERR_LOG("invalid clientVolume %{public}f", clientVolume);
         return ERR_INVALID_PARAM;
     }
+    AUDIO_PRERELEASE_LOGI("clientVolume %{public}f", clientVolume);
     int32_t ret = IHpaeManager::GetHpaeManager().SetClientVolume(processConfig_.originalSessionId, clientVolume);
     std::string tempStringSessionId = std::to_string(processConfig_.originalSessionId);
     IHpaeManager::GetHpaeManager().AddStreamVolumeToEffect(tempStringSessionId, clientVolume);
     if (ret != 0) {
-        AUDIO_ERR_LOG("SetClientVolume is error");
+        AUDIO_ERR_LOG("ErrorCode: %{public}d", ret);
         return ERR_INVALID_PARAM;
     }
     clientVolume_ = clientVolume;
@@ -705,9 +700,9 @@ int32_t HpaeRendererStreamImpl::SetClientVolume(float clientVolume)
 
 int32_t HpaeRendererStreamImpl::SetLoudnessGain(float loudnessGain)
 {
-    AUDIO_INFO_LOG("set loudnessGain: %{public}f", loudnessGain);
+    AUDIO_INFO_LOG("loudnessGain: %{public}f", loudnessGain);
     int32_t ret = IHpaeManager::GetHpaeManager().SetLoudnessGain(processConfig_.originalSessionId, loudnessGain);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_INVALID_PARAM, "SetLoudnessGain is error");
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_INVALID_PARAM, "error");
     return SUCCESS;
 }
 
