@@ -364,6 +364,7 @@ private:
     void SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, int32_t volumeLevel);
     int32_t SetVolumeDb(AudioStreamType streamType);
     int32_t SetVolumeDb(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType);
+    int32_t SetSystemVolumeToEffect(AudioStreamType streamType);
     int32_t SetAppVolumeDb(int32_t appUid);
     void SetAudioVolume(AudioStreamType streamType, float volumeDb);
     void SetAudioVolume(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType, float volumeDb);
