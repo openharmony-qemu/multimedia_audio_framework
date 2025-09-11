@@ -31,6 +31,7 @@ static constexpr float MAX_SINK_VOLUME_LEVEL = 1.0;
 static constexpr uint32_t DEFAULT_MULTICHANNEL_FRAME_LEN_MS = 20;
 static constexpr uint32_t MS_PER_SECOND = 1000;
 static constexpr uint32_t BASE_TEN = 10;
+static constexpr uint32_t FRAME_LENGTH_LIMIT = 38400;
 
 static std::map<AudioStreamType, HpaeProcessorType> g_streamTypeToSceneTypeMap = {
     {STREAM_MUSIC, HPAE_SCENE_MUSIC},
@@ -488,6 +489,62 @@ void TransStreamInfoToStreamDumpInfo(const std::unordered_map<uint32_t, HpaeSess
                 .startTime = sessionInfo.startTime
             };
         });
+}
+
+int32_t CheckStreamInfo(const HpaeStreamInfo &streamInfo, const HpaeSinkInfo &sinkInfo)
+{
+    if (streamInfo.frameLen == 0) {
+        AUDIO_ERR_LOG("FrameLen is 0.");
+        return ERROR;
+    } else if (streamInfo.frameLen > FRAME_LENGTH_LIMIT) {
+        AUDIO_ERR_LOG("FrameLen is over-sized.");
+        return ERROR;
+    }
+    if (streamInfo.frameLen * sinkInfo.samplingRate != streamInfo.samplingRate * sinkInfo.frameLen) {
+        AUDIO_ERR_LOG("Framelen is not proportional.");
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
+int32_t CheckSourceAndStreamInfo(const HpaeStreamInfo &streamInfo, const HpaeSourceInfo &sourceInfo)
+{
+    if (streamInfo.frameLen == 0) {
+        AUDIO_ERR_LOG("FrameLen is 0.");
+        return ERROR;
+    } else if (streamInfo.frameLen > FRAME_LENGTH_LIMIT) {
+        AUDIO_ERR_LOG("FrameLen is over-sized.");
+        return ERROR;
+    }
+    if (streamInfo.frameLen * sourceInfo.samplingRate != streamInfo.samplingRate * sourceInfo.frameLen) {
+        AUDIO_ERR_LOG("Framelen is not proportional.");
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
+int32_t CheckFramelen(const HpaeSinkInfo &sinkInfo)
+{
+    if (sinkInfo.frameLen == 0) {
+        AUDIO_ERR_LOG("FrameLen is 0.");
+        return ERROR;
+    } else if (sinkInfo.frameLen > FRAME_LENGTH_LIMIT) {
+        AUDIO_ERR_LOG("FrameLen is over-sized.");
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
+int32_t CheckSourceInfoFramelen(const HpaeSourceInfo &sourceInfo)
+{
+    if (sourceInfo.frameLen == 0) {
+        AUDIO_ERR_LOG("FrameLen is 0.");
+        return ERROR;
+    } else if (sourceInfo.frameLen > FRAME_LENGTH_LIMIT) {
+        AUDIO_ERR_LOG("FrameLen is over-sized.");
+        return ERROR;
+    }
+    return SUCCESS;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

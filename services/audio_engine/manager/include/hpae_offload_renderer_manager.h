@@ -105,8 +105,6 @@ private:
     void MoveAllStreamToNewSink(const std::string &sinkName, const std::vector<uint32_t> &moveIds,
         MoveSessionType moveType);
     int32_t InitSinkInner(bool isReload = false);
-    int32_t CheckFramelen();
-    int32_t CheckStreamInfo(const HpaeStreamInfo &streamInfo);
     void UpdateAppsUid();
 
     HpaeRenderSessionInfo sessionInfo_;
