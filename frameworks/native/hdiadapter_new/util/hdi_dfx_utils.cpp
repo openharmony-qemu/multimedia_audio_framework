@@ -22,7 +22,7 @@
 namespace OHOS {
 namespace AudioStandard {
 void HdiDfxUtils::PrintVolumeInfo(char *data, uint64_t &len, const IAudioSourceAttr &attr, std::string logUtilsTag,
-    int64_t volumeDataCount)
+    int64_t &volumeDataCount)
 {
     BufferDesc buffer = { reinterpret_cast<uint8_t*>(data), len, len };
     AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr.sampleRate), AudioEncodingType::ENCODING_PCM,

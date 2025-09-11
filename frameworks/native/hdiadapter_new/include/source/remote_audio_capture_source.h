@@ -22,7 +22,6 @@
 #include <v1_0/iaudio_manager.h>
 #include "adapter/i_device_manager.h"
 #include "util/callback_wrapper.h"
-#include "util/hdi_dfx_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
