@@ -72,6 +72,8 @@ public:
     bool IsSessionInputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     StreamUsage GetSessionStreamUsage();
     bool IsBackGroundApp(void);
+    void MarkSystemApp(void);
+    bool IsSystemApp(void);
 
 private:
     StreamUsage GetStreamUsageInner();
@@ -101,6 +103,7 @@ private:
     AudioDeviceDescriptor inputDeviceDescriptor_;
     std::shared_ptr<AudioPipeManager> pipeManager_ = nullptr;
     AudioDeviceManager &deviceManager_;
+    bool isSystemApp_ {false};
 };
 } // namespace AudioStandard
 } // namespace OHOS

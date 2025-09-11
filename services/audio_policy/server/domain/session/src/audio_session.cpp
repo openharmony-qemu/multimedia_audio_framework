@@ -169,6 +169,8 @@ void AudioSession::Dump(std::string &dumpString)
         callerPid_, static_cast<int32_t>(defaultDeviceType_));
     AppendFormat(dumpString, "    - pid: %d, AudioSession state is: %u.\n",
         callerPid_, static_cast<uint32_t>(state_));
+    AppendFormat(dumpString, "    - pid: %d, isSystemApp: %u.\n",
+        callerPid_, static_cast<uint32_t>(isSystemApp_));
     AppendFormat(dumpString, "    - pid: %d, Streams in session are:\n", callerPid_);
     for (auto &it : streamsInSession_) {
         AppendFormat(dumpString, "        - StreamId is: %u, streamType is: %u\n",
@@ -458,6 +460,16 @@ bool AudioSession::IsBackGroundApp(void)
     }
 
     return state == static_cast<uint8_t>(AppExecFwk::AppProcessState::APP_STATE_BACKGROUND);
+}
+
+void AudioSession::MarkSystemApp(void)
+{
+    isSystemApp_ = true;
+}
+
+bool AudioSession::IsSystemApp(void)
+{
+    return isSystemApp_;
 }
 
 } // namespace AudioStandard

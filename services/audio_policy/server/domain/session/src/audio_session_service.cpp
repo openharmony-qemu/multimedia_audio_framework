@@ -565,5 +565,25 @@ bool AudioSessionService::IsSessionInputDeviceChanged(
     return false;
 }
 
+void AudioSessionService::MarkSystemApp(int32_t pid)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(pid);
+    if (session != sessionMap_.end()) {
+        session->second->MarkSystemApp();
+    }
+}
+
+bool AudioSessionService::IsSystemApp(int32_t pid)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(pid);
+    if (session != sessionMap_.end()) {
+        return session->second->IsSystemApp();
+    }
+
+    return false;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

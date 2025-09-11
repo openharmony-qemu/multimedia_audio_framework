@@ -322,6 +322,7 @@ private:
     void TryHandleStreamCallbackInSession(const int32_t zoneId, const AudioInterrupt &incomingInterrupt);
     bool HasAudioSessionFakeInterrupt(const int32_t zoneId, const int32_t callerPid);
     int32_t HandleExistStreamsForSession(const int32_t zoneId, const int32_t callerPid, bool &updateScene);
+    void ReactivateAudioInterrupts(const int32_t zoneId, const int32_t callerPid, bool &updateScene);
     AudioScene GetHighestPriorityAudioSceneFromAudioSession(
         const AudioInterrupt &audioInterrupt, const AudioScene &audioScene) const;
     void DelayToDeactivateStreamsInAudioSession(

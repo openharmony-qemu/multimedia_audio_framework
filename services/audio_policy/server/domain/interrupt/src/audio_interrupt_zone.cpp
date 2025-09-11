@@ -286,6 +286,7 @@ AudioFocusIterator AudioInterruptZoneManager::QueryAudioFocusFromZone(int32_t zo
 
 void AudioInterruptZoneManager::RemoveAudioZoneInterrupts(int32_t zoneId, const AudioFocusIterator &focus)
 {
+    CHECK_AND_RETURN_LOG(service_ != nullptr, "service is nullptr");
     for (auto &it : focus) {
         service_->sessionService_.RemoveStreamInfo(it->first.pid, it->first.streamId);
         AUDIO_DEBUG_LOG("remove interrupt %{public}d from zone %{public}d",
