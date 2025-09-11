@@ -1278,5 +1278,33 @@ HWTEST_F(AudioPipeManagerUnitTest, GetAllCapturerStreamDescs_002, TestSize.Level
     auto result = audioPipeManager->GetAllCapturerStreamDescs();
     EXPECT_EQ(result.size(), 0);
 }
+
+/**
+ * @tc.name: IsStreamUsageActive_001
+ * @tc.desc: Test IsStreamUsageActive.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsStreamUsageActive_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->rendererInfo_.streamUsage = STREAM_USAGE_ALARM;
+    desc->streamStatus_ = STREAM_STATUS_STARTED;
+    pipeInfo->streamDescriptors_.push_back(desc);
+
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+    EXPECT_TRUE(audioPipeManager->IsStreamUsageActive(STREAM_USAGE_ALARM));
+    EXPECT_FALSE(audioPipeManager->IsStreamUsageActive(STREAM_USAGE_VOICE_RINGTONE));
+
+    desc->streamStatus_ = STREAM_STATUS_STOPPED;
+    pipeInfo->streamDescriptors_.push_back(desc);
+
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+    EXPECT_FALSE(audioPipeManager->IsStreamUsageActive(STREAM_USAGE_ALARM));
+}
 } // namespace AudioStandard
 } // namespace OHOS
