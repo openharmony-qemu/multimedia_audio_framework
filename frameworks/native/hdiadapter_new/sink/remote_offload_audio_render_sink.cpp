@@ -783,7 +783,7 @@ void RemoteOffloadAudioRenderSink::RegistOffloadHdiCallback(std::function<void(c
         .serviceCallback_ = callback,
     };
     std::lock_guard<std::mutex> lock(sinkMutex_);
-    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
+    CHECK_AND_RETURN_LOG(audioRender_ != nullptr, "render is nullptr");
     int32_t ret = audioRender_->RegCallback(hdiCallback_.callback_, (int8_t)0);
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("fail, error code: %{public}d", ret);
