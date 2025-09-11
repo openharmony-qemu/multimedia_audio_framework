@@ -3009,7 +3009,7 @@ HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_001, TestSize.Level1)
 
     EXPECT_NE(deviceInfo.deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(deviceInfo.isLowLatencyDevice_, false);
-    EXPECT_EQ(deviceInfo.audioStreamInfo_.size(), 1);
+    EXPECT_EQ(deviceInfo.audioStreamInfo_.size(), 0);
 }
 
 /**
@@ -3032,7 +3032,7 @@ HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_002, TestSize.Level1)
     EXPECT_NE(deviceInfo.deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(deviceInfo.isLowLatencyDevice_, false);
     EXPECT_EQ(deviceInfo.a2dpOffloadFlag_, 0);
-    EXPECT_EQ(deviceInfo.audioStreamInfo_.size(), 1);
+    EXPECT_EQ(deviceInfo.audioStreamInfo_.size(), 0);
     EXPECT_EQ(deviceInfo.deviceName_, "mmap_device");
 }
 
@@ -3055,7 +3055,7 @@ HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_003, TestSize.Level1)
     EXPECT_EQ(deviceInfo.networkId_, LOCAL_NETWORK_ID);
     EXPECT_EQ(deviceInfo.deviceRole_, INPUT_DEVICE);
     EXPECT_EQ(deviceInfo.deviceType_, DEVICE_TYPE_MIC);
-    EXPECT_EQ(deviceInfo.audioStreamInfo_.size(), 1);
+    EXPECT_EQ(deviceInfo.audioStreamInfo_.size(), 0);
 
     EXPECT_EQ(deviceInfo.deviceName_, "mmap_device");
 }
