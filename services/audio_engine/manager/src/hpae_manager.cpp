@@ -773,6 +773,7 @@ bool HpaeManager::CheckMoveSourceOutput(uint32_t sourceOutputId, const std::stri
         return false;
     }
     std::shared_ptr<IHpaeCapturerManager> oldCaptureManager = GetCapturerManagerById(sourceOutputId);
+    HpaeStreamInfo stream = capturerIdStreamInfoMap_[sourceOutputId].streamInfo;
     if (oldCaptureManager == nullptr) {
         HILOG_COMM_INFO("move session:%{public}u failed,can not find source.", sourceOutputId);
         HpaeStreamMoveMonitor::ReportStreamMoveException(stream.uid, sourceOutputId,
@@ -811,6 +812,7 @@ bool HpaeManager::CheckMoveSinkInput(uint32_t sinkInputId, const std::string &si
         return false;
     }
     std::shared_ptr<IHpaeRendererManager> oldRendererManager = GetRendererManagerById(sinkInputId);
+    HpaeStreamInfo stream = rendererIdStreamInfoMap_[sinkInputId].streamInfo;
     if (oldRendererManager == nullptr) {
         HILOG_COMM_INFO("move session:%{public}u failed,can not find sink", sinkInputId);
         HpaeStreamMoveMonitor::ReportStreamMoveException(stream.uid, sinkInputId, HPAE_STREAM_CLASS_TYPE_PLAY,
