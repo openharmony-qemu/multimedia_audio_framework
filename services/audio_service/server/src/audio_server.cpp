@@ -432,6 +432,7 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
     for (decltype(args.size()) index = 0; index < args.size(); ++index) {
         argQue.push(args[index]);
     }
+    std::lock_guard<std::mutex> lock(hpaeDumpMutex_);
     std::string dumpString;
     int32_t res = 0;
 #ifdef SUPPORT_OLD_ENGINE

@@ -408,6 +408,7 @@ private:
     std::condition_variable isAudioPolicyReadyCv_;
 
     int32_t waitCreateStreamInServerCount_ = 0;
+    std::mutex hpaeDumpMutex_;
     std::shared_ptr<IAudioServerHpaeDump> hpaeDumpObj_ = nullptr;
 
     std::mutex audioDataTransferMutex_;
