@@ -442,15 +442,10 @@ void HpaeInnerCapturerManagerAddNodeToSinkFuzzTest3()
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     HpaeNodeInfo playSencondNodeInfo;
     playSencondNodeInfo.sessionId = GetData<uint32_t>();
-    HpaeNodeInfo playSencondNodeInfo;
-    playSencondNodeInfo.sessionId = GetData<uint32_t>();
     playSencondNodeInfo.channels = STEREO;
     playSencondNodeInfo.format = SAMPLE_S16LE;
     playSencondNodeInfo.frameLen = GetData<uint64_t>();
     playSencondNodeInfo.samplingRate = SAMPLE_RATE_44100;
-    playSencondNodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
-    playSencondNodeInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
-    playSencondNodeInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
     playSencondNodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
     playSencondNodeInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     playSencondNodeInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
