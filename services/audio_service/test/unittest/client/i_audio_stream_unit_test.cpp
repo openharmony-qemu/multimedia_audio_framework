@@ -127,16 +127,22 @@ HWTEST(IAudioStreamUnitTest, IsStreamSupported_002, TestSize.Level1)
  */
 HWTEST(IAudioStreamUnitTest, GetByteSizePerFrame_004, TestSize.Level1)
 {
-    AudioStreamParams params = {SAMPLE_RATE_48000, 100, SAMPLE_F32LE, 0};
+    AudioStreamParams params;
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.encoding = ENCODING_PCM;
+    params.format = SAMPLE_F32LE;
+    params.channels = 0;
     size_t result = 0;
     int32_t ret = IAudioStream::GetByteSizePerFrame(params, result);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 
-    params = {SAMPLE_RATE_48000, 100, SAMPLE_S32LE, 17};
+    params.format = SAMPLE_S32LE;
+    params.channels = 17;
     ret = IAudioStream::GetByteSizePerFrame(params, result);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 
-    params = {SAMPLE_RATE_48000, 100, SAMPLE_S32LE, 5};
+    params.format = SAMPLE_S32LE;
+    params.channels = 5;
     ret = IAudioStream::GetByteSizePerFrame(params, result);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -204,19 +210,21 @@ HWTEST(IAudioStreamUnitTest, IsRecordChannelRelatedInfoValid_001, TestSize.Level
 HWTEST(IAudioStreamUnitTest, IsStreamSupported_003, TestSize.Level1)
 {
     int32_t streamFlags = STREAM_FLAG_FAST;
-    std::uint8_t channels = 0;
-    std::uint8_t format = SAMPLE_S16LE;
-    AudioStreamParams params = {SAMPLE_RATE_11025, SAMPLE_S16LE, format, channels};
+    AudioStreamParams params;
+    params.samplingRate = SAMPLE_RATE_11025;
+    params.encoding = ENCODING_PCM;
+    params.format = SAMPLE_S16LE;
+    params.channels = 0;
     bool result = IAudioStream::IsStreamSupported(streamFlags, params);
     EXPECT_FALSE(result);
 
-    channels = 2;
-    format = SAMPLE_S16LE;
-    params = {SAMPLE_RATE_48000, SAMPLE_S16LE, format, channels};
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.format = SAMPLE_S16LE;
+    params.channels = STEREO;
     result = IAudioStream::IsStreamSupported(streamFlags, params);
     EXPECT_TRUE(result);
 
-    
+    streamFlags = AUDIO_FLAG_VOIP_DIRECT;
     result = IAudioStream::IsStreamSupported(2, params);
     EXPECT_TRUE(result);
 }
