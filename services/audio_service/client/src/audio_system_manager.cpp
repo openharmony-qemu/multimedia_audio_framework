@@ -2598,5 +2598,10 @@ std::shared_ptr<AudioSystemManager::WorkgroupPrioRecorder> AudioSystemManager::G
     }
     return nullptr;
 }
+
+void AudioSystemManager::CleanUpResource()
+{
+    AudioPolicyManager::GetInstance().CleanUpResource();
+}
 } // namespace AudioStandard
 } // namespace OHOS
