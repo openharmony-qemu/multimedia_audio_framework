@@ -51,7 +51,7 @@ namespace {
     static constexpr int64_t LINK_RECORDER_DELAY_STOP_HDI_TIME_NS = 2000000000; // 2000ms = 2000 * 1000 * 1000ns
     static constexpr int64_t WAIT_CLIENT_STANDBY_TIME_NS = 1000000000; // 1s = 1000 * 1000 * 1000ns
     static constexpr int64_t DELAY_STOP_HDI_TIME_WHEN_NO_RUNNING_NS = 1000000000; // 1s
-    static constexpr int32_t SLEEP_TIME_IN_DEFAULT = 400; // 400ms
+    static constexpr int32_t SLEEP_TIME_IN_DEFAULT = 1500; // 1.5s
     static constexpr int64_t DELTA_TO_REAL_READ_START_TIME = 0; // 0ms
     const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 40;
     static const int32_t START_DEVICE_TIMEOUT = 10; // 10s
