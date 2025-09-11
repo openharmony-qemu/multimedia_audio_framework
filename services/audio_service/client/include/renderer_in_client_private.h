@@ -221,6 +221,7 @@ public:
     void NotifyRouteUpdate(uint32_t routeFlag, const std::string &networkId) override;
     bool GetStopFlag() const override;
     void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
+    bool IsRestoreNeeded() override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
@@ -295,7 +296,6 @@ private:
 
     bool CheckBufferValid(const BufferDesc &bufDesc);
 
-    bool IsRestoreNeeded();
     void RecordDropPosition(size_t dataLength);
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;

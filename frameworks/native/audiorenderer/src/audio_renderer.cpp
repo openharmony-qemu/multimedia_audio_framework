@@ -1024,8 +1024,23 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
     return StartSwitchProcess(restoreInfo, targetClass, callingFunc);
 }
 
+bool AudioRendererPrivate::IsRestoreOrStopNeeded()
+{
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+    }
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, false, "audio stream is null");
+    return audioStream_->IsRestoreNeeded() || audioStream_->GetStopFlag();
+}
+
 int32_t AudioRendererPrivate::AsyncCheckAudioRenderer(std::string callingFunc)
 {
+    // Check first to avoid redundant instructions consumption in thread switching
+    if (!IsRestoreOrStopNeeded()) {
+        return SUCCESS;
+    }
+
     if (switchStreamInNewThreadTaskCount_.fetch_add(1) > 0) {
         return SUCCESS;
     }

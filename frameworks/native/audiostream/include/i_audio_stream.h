@@ -335,6 +335,8 @@ public:
     virtual void NotifyRouteUpdate(uint32_t routeFlag, const std::string &networkId) {}
 
     virtual void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) {}
+
+    virtual bool IsRestoreNeeded() { return false; }
 };
 } // namespace AudioStandard
 } // namespace OHOS

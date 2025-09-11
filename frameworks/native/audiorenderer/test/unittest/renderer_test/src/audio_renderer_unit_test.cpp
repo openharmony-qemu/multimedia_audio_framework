@@ -4607,5 +4607,42 @@ HWTEST(AudioRendererUnitTest, NotifyForcedEvent_001, TestSize.Level1)
     EXPECT_FALSE(AudioRenderer::CheckSupportedSamplingRates(RenderUT::SAMPLE_RATE_384001));
     EXPECT_FALSE(AudioRenderer::CheckSupportedSamplingRates(RenderUT::SAMPLE_RATE_16001));
 }
+
+/**
+ * @tc.name  : AudioRenderer_IsRestoreOrStopNeeded_001
+ * @tc.number: IsRestoreOrStopNeeded_001
+ * @tc.desc  : Test IsRestoreOrStopNeeded() for different cases
+ */
+HWTEST(AudioRendererUnitTest, IsRestoreOrStopNeeded_001, TestSize.Level4)
+{
+    AppInfo appInfo = {};
+    auto testRendererInner = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo);
+
+    int32_t curTid = gettid();
+    // To test matching case
+    testRendererInner->callbackLoopTid_ = curTid;
+    bool needRestore = testRendererInner->IsRestoreOrStopNeeded();
+    EXPECT_EQ(false, needRestore);
+
+    // To test not matching case
+    testRendererInner->callbackLoopTid_ = curTid + 1;
+    needRestore = testRendererInner->IsRestoreOrStopNeeded();
+    EXPECT_EQ(false, needRestore);
+}
+
+/**
+ * @tc.name  : AudioRenderer_AsyncCheckAudioRenderer_001
+ * @tc.number: AsyncCheckAudioRenderer_001
+ * @tc.desc  : Test AsyncCheckAudioRenderer() for different cases
+ */
+HWTEST(AudioRendererUnitTest, AsyncCheckAudioRenderer_001, TestSize.Level4)
+{
+    AppInfo appInfo = {};
+    auto testRendererInner = std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo);
+
+    // Test not need restore case
+    int32_t res = testRendererInner->AsyncCheckAudioRenderer("Test");
+    EXPECT_EQ(SUCCESS, res);
+}
 } // namespace AudioStandard
 } // namespace OHOS

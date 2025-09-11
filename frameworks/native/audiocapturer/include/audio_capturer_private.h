@@ -165,6 +165,8 @@ private:
     std::shared_ptr<AudioStreamDescriptor> GenerateStreamDesc(
         const IAudioStream::SwitchInfo &switchInfo, const RestoreInfo &restoreInfo);
     int32_t HandleCreateFastStreamError(AudioStreamParams &audioStreamParams);
+    bool IsRestoreOrStopNeeded();
+
     std::shared_ptr<InputDeviceChangeWithInfoCallbackImpl> inputDeviceChangeCallback_ = nullptr;
     bool isSwitching_ = false;
     mutable std::shared_mutex switchStreamMutex_;

@@ -87,6 +87,7 @@ public:
     MOCK_METHOD(bool, GetStopFlag, (), (const, override));
     MOCK_METHOD(void, JoinCallbackLoop, (), (override));
     MOCK_METHOD(void, SetAudioHapticsSyncId, (const int32_t &audioHapticsSyncId), (override));
+    MOCK_METHOD(bool, IsRestoreNeeded, (), (override));
 };
 
 class FastSystemStreamUnitTest : public testing::Test {

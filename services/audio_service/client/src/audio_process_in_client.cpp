@@ -153,6 +153,8 @@ public:
 
     void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
 
+    bool IsRestoreNeeded() override;
+
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
 
@@ -200,8 +202,6 @@ private:
     bool WaitIfBufferEmpty(const BufferDesc &bufDesc);
 
     void ExitStandByIfNeed();
-
-    bool IsRestoreNeeded();
 
     void WaitForReadableSpace() const;
 private:
@@ -1656,6 +1656,8 @@ void AudioProcessInClientInner::DoFadeInOut(const BufferDesc &buffDesc)
 
 bool AudioProcessInClientInner::IsRestoreNeeded()
 {
+    CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, false, "buffer null");
+
     RestoreStatus restoreStatus = audioBuffer_->GetRestoreStatus();
     if (restoreStatus == NEED_RESTORE) {
         return true;
