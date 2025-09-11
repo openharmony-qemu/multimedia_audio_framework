@@ -370,6 +370,7 @@ int32_t FastAudioStream::SetMute(bool mute, StateChangeCmdType cmdType)
 
 bool FastAudioStream::GetMute()
 {
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "GetMute failed: null process");
     return processClient_->GetMute();
 }
 
@@ -391,6 +392,7 @@ int32_t FastAudioStream::SetDuckVolume(float volume)
 
 float FastAudioStream::GetDuckVolume()
 {
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, 1.0f, "GetDuckVolume failed: null process"); // 1.0f for default
     return processClient_->GetDuckVolume();
 }
 
