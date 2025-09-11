@@ -127,7 +127,6 @@ HWTEST(IAudioStreamUnitTest, IsStreamSupported_002, TestSize.Level1)
  */
 HWTEST(IAudioStreamUnitTest, GetByteSizePerFrame_004, TestSize.Level1)
 {
-
     AudioStreamParams params;
     params.samplingRate = SAMPLE_RATE_48000;
     params.encoding = ENCODING_PCM;
