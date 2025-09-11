@@ -823,7 +823,7 @@ int32_t HpaeRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo, b
         AUDIO_INFO_LOG("ReloadRenderManager deviceName %{public}s", sinkInfo.deviceName.c_str());
         
         for (const auto &it : sinkInputNodeMap_) {
-            DeleteProcessCluster(it.first);
+            DeleteConnectInputProcessor(it.second);
         }
         AUDIO_INFO_LOG("delete device:%{public}s all input processor end", sinkInfo.deviceName.c_str());
         sinkInfo_ = sinkInfo;
