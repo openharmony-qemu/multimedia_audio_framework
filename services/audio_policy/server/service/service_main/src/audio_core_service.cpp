@@ -1012,19 +1012,17 @@ int32_t AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &
 
 void AudioCoreService::RegisteredTrackerClientDied(pid_t uid, pid_t pid)
 {
-    UpdateDefaultOutputDeviceWhenStopping(static_cast<int32_t>(uid));
-    UpdateInputDeviceWhenStopping(static_cast<int32_t>(uid));
+    int32_t curUid = static_cast<int32_t>(uid);
+    int32_t curPid = static_cast<int32_t>(pid);
+    UpdateDefaultOutputDeviceWhenStopping(curUid);
+    UpdateInputDeviceWhenStopping(curUid);
 
-    audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptor(static_cast<int32_t>(uid));
-    streamCollector_.RegisteredTrackerClientDied(static_cast<int32_t>(uid), static_cast<int32_t>(pid));
+    audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptor(curUid);
+    streamCollector_.RegisteredTrackerClientDied(curUid, curPid);
     CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager is nullptr");
-    std::vector<uint32_t> sessionIds = pipeManager_->GetStreamIdsByUid(uid,
-        (AUDIO_OUTPUT_FLAG_FAST | AUDIO_INPUT_FLAG_FAST));
+    auto sessionIds = pipeManager_->GetStreamIdsByUidAndPid(curUid, curPid);
     for (auto sessionId : sessionIds) {
         ReleaseClient(sessionId);
-    }
-    sessionIds = pipeManager_->GetStreamIdsByUid(uid);
-    for (auto sessionId : sessionIds) {
         UnsetAudioRouteCallback(sessionId);
     }
     FetchOutputDeviceAndRoute("RegisteredTrackerClientDied");

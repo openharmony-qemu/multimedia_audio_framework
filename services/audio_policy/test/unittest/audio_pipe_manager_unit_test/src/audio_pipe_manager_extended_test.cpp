@@ -184,25 +184,26 @@ HWTEST_F(AudioPipeManagerExtendedUnitTest, AudioPipeManager_007, TestSize.Level4
 
 /**
  * @tc.name: AudioPipeManager_008
- * @tc.desc: Test AudioPipeManager GetStreamIdsByUid.
+ * @tc.desc: Test AudioPipeManager GetStreamIdsByUidAndPid.
  * @tc.type: FUNC
  */
 HWTEST_F(AudioPipeManagerExtendedUnitTest, AudioPipeManager_008, TestSize.Level4)
 {
     auto pipeInfo = std::make_shared<AudioPipeInfo>();
     pipeInfo->moduleInfo_.name = PRIMARY_CLASS;
-    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
     auto streamDescriptor1 = std::make_shared<AudioStreamDescriptor>();
     streamDescriptor1->callerUid_ = 1;
+    streamDescriptor1->callerPid_ = 1;
     auto streamDescriptor2 = std::make_shared<AudioStreamDescriptor>();
     streamDescriptor2->callerUid_ = 2;
+    streamDescriptor2->callerPid_ = 2;
     pipeInfo->streamDescriptors_.push_back(streamDescriptor1);
     pipeInfo->streamDescriptors_.push_back(streamDescriptor2);
     sPipeManager_->AddAudioPipeInfo(pipeInfo);
 
-    uint32_t uid = 1;
-    uint32_t routeFlagMask = AUDIO_INPUT_FLAG_NORMAL;
-    EXPECT_EQ(sPipeManager_->GetStreamIdsByUid(uid).size(), 1);
+    int32_t uid = 1;
+    int32_t pid = 1;
+    EXPECT_EQ(sPipeManager_->GetStreamIdsByUidAndPid(uid, pid).size(), 1);
 }
 
 /**

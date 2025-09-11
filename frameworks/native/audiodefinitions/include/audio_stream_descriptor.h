@@ -183,6 +183,11 @@ public:
         return (routeFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER);
     }
 
+    bool IsSamePidUid(int32_t uid, int32_t pid) const
+    {
+        return callerPid_ == pid && callerUid_ == uid;
+    }
+
     bool IsNoRunningOffload() const
     {
         return IsRouteOffload() && !IsRunning();
