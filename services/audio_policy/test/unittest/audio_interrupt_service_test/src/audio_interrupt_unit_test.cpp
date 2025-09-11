@@ -881,14 +881,21 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptServiceCanMixForIncomingSession_0
     auto interruptService = GetTnterruptServiceTest();
     auto server = GetPolicyServerTest();
     interruptService->Init(server);
+    int32_t pid = 1;
     AudioInterrupt incomingInterrupt;
+    incomingInterrupt.pid = pid;
     AudioInterrupt activeInterrupt;
     AudioFocusEntry focusEntry;
     strategyTest.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
-    int32_t ret = interruptService->ActivateAudioSession(0, incomingInterrupt.pid, strategyTest);
+    int32_t ret = interruptService->ActivateAudioSession(0, pid, strategyTest);
     EXPECT_EQ(SUCCESS, ret);
 
     focusEntry.isReject = true;
+    EXPECT_TRUE(interruptService->CanMixForIncomingSession(incomingInterrupt, activeInterrupt, focusEntry));
+    auto session = interruptService->sessionService_.sessionMap_.find(pid);
+    ASERRT_TRUE(session != interruptService->sessionService_.sessionMap_.end());
+    ASERRT_NE(nullptr, session->second);
+    session->second->isSystemApp_ = false;
     EXPECT_FALSE(interruptService->CanMixForIncomingSession(incomingInterrupt, activeInterrupt, focusEntry));
 }
 
@@ -1531,13 +1538,19 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptServiceCanMixForActiveSession_006
     focusEntry.hintType = INTERRUPT_HINT_PAUSE;
     AudioSessionStrategy strategy;
     strategy.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
-    std::shared_ptr<AudioSession> audioSession = std::make_shared<AudioSession>(0, strategy, audioSessionStateMonitor_);
+    std::shared_ptr<AudioSession> audioSession =
+        std::make_shared<AudioSession>(0, strategy, audioSessionStateMonitor_);
+    ASSERT_NE(nullptr, audioSession);
     activeInterrupt.pid = { 0 };
     audioInterruptService->sessionService_.sessionMap_.insert({0, audioSession});
     incomingInterrupt.audioFocusType.streamType = STREAM_VOICE_CALL;
     activeInterrupt.audioFocusType.streamType = STREAM_VOICE_CALL;
     bool ret = audioInterruptService->CanMixForActiveSession(incomingInterrupt, activeInterrupt, focusEntry);
     EXPECT_FALSE(ret);
+    audioInterruptService->sessionService_.sessionMap_[0]->isSystemApp_ = true;
+    audioInterruptService->sessionService_.sessionMap_[0]->state_ = AudioSessionState::SESSION_ACTIVE;
+    ret = audioInterruptService->CanMixForActiveSession(incomingInterrupt, activeInterrupt, focusEntry);
+    EXPECT_TRUE(ret);
 }
 
 /**

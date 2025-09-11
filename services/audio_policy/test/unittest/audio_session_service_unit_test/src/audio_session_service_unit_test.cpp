@@ -669,5 +669,26 @@ HWTEST_F(AudioSessionServiceUnitTest, NotifyAppStateChangeTest, TestSize.Level1)
     audioSessionService_.NotifyAppStateChange(fakeSessionId, false);
 }
 
+/**
+* @tc.name  : Test IsSystemApp
+* @tc.number: IsSystemAppTest
+* @tc.desc  : Test IsSystemApp
+*/
+HWTEST_F(AudioSessionServiceUnitTest, IsSystemAppTest, TestSize.Level1)
+{
+    int32_t callerPid = 1;
+    audioSessionService_.MarkSystemApp(callerPid);
+    EXPECT_FALSE(audioSessionService_.IsSystemApp(callerPid));
+
+    AudioSessionStrategy strategy;
+    std::shared_ptr<AudioSession> audioSession =
+        std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
+    ASSERT_NE(nullptr, audioSession);
+    audioSessionService_.sessionMap_[callerPid] = audioSession;
+    EXPECT_FALSE(audioSessionService_.IsSystemApp(callerPid));
+    audioSessionService_.MarkSystemApp(callerPid);
+    EXPECT_TRUE(audioSessionService_.IsSystemApp(callerPid));
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
