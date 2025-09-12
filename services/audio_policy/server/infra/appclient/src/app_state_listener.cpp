@@ -76,10 +76,9 @@ void AppStateListener::OnAppStateChanged(const AppExecFwk::AppProcessData& appPr
 void AppStateListener::HandleAppStateChange(int32_t pid, int32_t uid, int32_t state)
 {
     auto pos = DFX_APPSTATE_MAP.find(static_cast<AppExecFwk::ApplicationState>(state));
-    auto appState = (pos == DFX_APPSTATE_MAP.end()) ? DFX_APP_STATE_UNKNOWN : pos->second;
-    CHECK_AND_RETURN_LOG(pos != DFX_APPSTATE_MAP.end(), "invalid app state%{public}d", state);
+    CHECK_AND_RETURN(pos != DFX_APPSTATE_MAP.end());
+    auto appState = pos->second;
 
-    AUDIO_INFO_LOG("app state changed, pid=%{public}d state=%{public}d", pid, state);
     auto &manager = DfxMsgManager::GetInstance();
     if (appState == DFX_APP_STATE_START) {
         if (manager.CheckCanAddAppInfo(uid)) {
@@ -95,11 +94,9 @@ void AppStateListener::HandleAppStateChange(int32_t pid, int32_t uid, int32_t st
 void AppStateListener::HandleBackgroundAppStateChange(int32_t pid, int32_t uid, int32_t state)
 {
     auto pos = BACKGROUND_APPSTATE_MAP.find(static_cast<AppExecFwk::ApplicationState>(state));
-    auto appState = (pos == BACKGROUND_APPSTATE_MAP.end()) ? STATE_UNKNOWN : pos->second;
-    CHECK_AND_RETURN_LOG(pos != BACKGROUND_APPSTATE_MAP.end(), "invalid app state%{public}d", state);
+    CHECK_AND_RETURN(pos != BACKGROUND_APPSTATE_MAP.end());
+    auto appState = pos->second;
 
-    AUDIO_INFO_LOG("Background app state changed, uid=%{public}d pid=%{public}d state=%{public}d",
-        uid, pid, state);
     AudioBackgroundManager::GetInstance().NotifyAppStateChange(uid, pid, appState);
 }
 }
