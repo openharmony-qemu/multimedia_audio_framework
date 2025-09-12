@@ -105,17 +105,16 @@ int32_t AudioInterruptZoneManager::ReleaseAudioInterruptZone(const int32_t zoneI
 
     bool updateScene = false;
     auto &releaseZone = tempMap[zoneId];
-    CHECK_AND_RETURN_RET_LOG(releaseZone->context.backStrategy_ != MediaBackStrategy::KEEP,
-        SUCCESS, "zone %{public}d does not need to be stopped", zoneId);
     for (auto it = releaseZone->audioFocusInfoList.begin(); it != releaseZone->audioFocusInfoList.end(); it++) {
-        if ((it->second != ACTIVE && it->second != DUCK) ||
+        if (((it->second != ACTIVE && it->second != DUCK) ||
             (it->first.streamUsage == STREAM_USAGE_UNKNOWN ||
             it->first.streamUsage == STREAM_USAGE_MEDIA ||
-            it->first.streamUsage == STREAM_USAGE_MOVIE)) {
+            it->first.streamUsage == STREAM_USAGE_MOVIE)) &&
+            releaseZone->context.backStrategy_ == MediaBackStrategy::STOP) {
             ForceStopAudioFocusInZone(zoneId, it->first);
         } else {
             int32_t destZoneId = func(it->first.uid, it->first.deviceTag, "", it->first.streamUsage);
-            service_->ActivateAudioInterruptInternal(zoneId, it->first, false, updateScene);
+            service_->ActivateAudioInterruptInternal(destZoneId, it->first, false, updateScene);
         }
     }
 
