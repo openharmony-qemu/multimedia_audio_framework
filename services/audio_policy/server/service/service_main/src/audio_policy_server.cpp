@@ -4395,7 +4395,7 @@ int32_t AudioPolicyServer::EnableSystemVolumeProxy(int32_t zoneId, bool enable)
 int32_t AudioPolicyServer::GetAudioInterruptForZone(int32_t zoneId,
     std::vector<std::map<AudioInterrupt, int32_t>> &retList)
 {
-    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+    CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "audio zone id is invalid");
     retList = ToIpcInterrupts(AudioZoneService::GetInstance().GetAudioInterruptForZone(zoneId));
     return SUCCESS;
 }
@@ -4403,7 +4403,7 @@ int32_t AudioPolicyServer::GetAudioInterruptForZone(int32_t zoneId,
 int32_t AudioPolicyServer::GetAudioInterruptForZone(int32_t zoneId, const std::string &deviceTag,
     std::vector<std::map<AudioInterrupt, int32_t>> &retList)
 {
-    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+    CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "audio zone id is invalid");
     retList = ToIpcInterrupts(AudioZoneService::GetInstance().GetAudioInterruptForZone(zoneId, deviceTag));
     return SUCCESS;
 }
@@ -4411,7 +4411,7 @@ int32_t AudioPolicyServer::GetAudioInterruptForZone(int32_t zoneId, const std::s
 // LCOV_EXCL_START
 int32_t AudioPolicyServer::EnableAudioZoneInterruptReport(int32_t zoneId, const std::string &deviceTag, bool enable)
 {
-    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+    CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "audio zone id is invalid");
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     return AudioZoneService::GetInstance().EnableAudioZoneInterruptReport(clientPid, zoneId, deviceTag, enable);
@@ -4420,9 +4420,9 @@ int32_t AudioPolicyServer::EnableAudioZoneInterruptReport(int32_t zoneId, const 
 int32_t AudioPolicyServer::InjectInterruptToAudioZone(int32_t zoneId,
     const std::vector<std::map<AudioInterrupt, int32_t>> &interruptsIn)
 {
-    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+    CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "audio zone id is invalid");
     size_t size = interruptsIn.size();
-    CHECK_AND_RETURN_RET_LOG(size > 0 && size < MAX_SIZE, ERR_INVALID_PARAM,
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size < MAX_SIZE, ERR_INVALID_PARAM,
         "invalid interrupt size: %{public}zu", size);
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     auto interrupts = FromIpcInterrupts(interruptsIn);
@@ -4432,9 +4432,9 @@ int32_t AudioPolicyServer::InjectInterruptToAudioZone(int32_t zoneId,
 int32_t AudioPolicyServer::InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
     const std::vector<std::map<AudioInterrupt, int32_t>> &interruptsIn)
 {
-    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+    CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "audio zone id is invalid");
     size_t size = interruptsIn.size();
-    CHECK_AND_RETURN_RET_LOG(size > 0 && size < MAX_SIZE, ERR_INVALID_PARAM,
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size < MAX_SIZE, ERR_INVALID_PARAM,
         "invalid interrupt size: %{public}zu", size);
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     auto interrupts = FromIpcInterrupts(interruptsIn);
