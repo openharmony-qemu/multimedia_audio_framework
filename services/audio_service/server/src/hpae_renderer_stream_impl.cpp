@@ -85,7 +85,7 @@ HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig,
 }
 HpaeRendererStreamImpl::~HpaeRendererStreamImpl()
 {
-    AUDIO_INFO_LOG("~HpaeRendererStreamImpl [%{public}u]", streamIndex_);
+    AUDIO_INFO_LOG("index: %{public}u", streamIndex_);
     if (dumpEnqueueIn_ != nullptr) {
         DumpFileUtil::CloseDumpFile(&dumpEnqueueIn_);
     }
@@ -148,7 +148,7 @@ int32_t HpaeRendererStreamImpl::Start()
     std::string tempStringSessionId = std::to_string(streamIndex_);
     IHpaeManager::GetHpaeManager().AddStreamVolumeToEffect(tempStringSessionId, clientVolume_);
     if (ret != 0) {
-        AUDIO_ERR_LOG("Start is error!");
+        AUDIO_ERR_LOG("ErrorCode: %{public}d", ret);
         return ERR_INVALID_PARAM;
     }
     return SUCCESS;
@@ -161,7 +161,7 @@ int32_t HpaeRendererStreamImpl::StartWithSyncId(const int32_t &syncId)
     int32_t ret = IHpaeManager::GetHpaeManager().StartWithSyncId(HPAE_STREAM_CLASS_TYPE_PLAY,
         processConfig_.originalSessionId, syncId);
     if (ret != 0) {
-        AUDIO_ERR_LOG("error!");
+        AUDIO_ERR_LOG("ErrorCode: %{public}d", ret);
         return ERR_INVALID_PARAM;
     }
     return SUCCESS;
@@ -172,7 +172,7 @@ int32_t HpaeRendererStreamImpl::Pause(bool isStandby)
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     int32_t ret = IHpaeManager::GetHpaeManager().Pause(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
-        AUDIO_ERR_LOG("error!");
+        AUDIO_ERR_LOG("ErrorCode: %{public}d", ret);
         return ERR_INVALID_PARAM;
     }
     return SUCCESS;
@@ -702,7 +702,7 @@ int32_t HpaeRendererStreamImpl::SetLoudnessGain(float loudnessGain)
 {
     AUDIO_INFO_LOG("loudnessGain: %{public}f", loudnessGain);
     int32_t ret = IHpaeManager::GetHpaeManager().SetLoudnessGain(processConfig_.originalSessionId, loudnessGain);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_INVALID_PARAM, "error");
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_INVALID_PARAM, "ErrorCode: %{public}d", ret);
     return SUCCESS;
 }
 
