@@ -2872,10 +2872,13 @@ bool AudioInterruptService::ShouldCallbackToClient(uint32_t uid, int32_t streamI
     }
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, true, "error for g_adProxy null");
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("error for g_adProxy null");
+        IPCSkeleton::SetCallingIdentity(identity);
+        return true;
+    }
     AUDIO_INFO_LOG("mute flag is: %{public}d", muteFlag);
     gsp->SetNonInterruptMute(streamId, muteFlag);
-    IPCSkeleton::SetCallingIdentity(identity);
     return false;
 }
 
