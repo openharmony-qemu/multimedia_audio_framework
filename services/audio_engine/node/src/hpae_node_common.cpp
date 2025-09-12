@@ -491,7 +491,7 @@ void TransStreamInfoToStreamDumpInfo(const std::unordered_map<uint32_t, HpaeSess
         });
 }
 
-int32_t CheckStreamInfo(const HpaeStreamInfo &streamInfo, const HpaeSinkInfo &sinkInfo)
+int32_t CheckStreamInfo(const HpaeStreamInfo &streamInfo)
 {
     if (streamInfo.frameLen == 0) {
         AUDIO_ERR_LOG("FrameLen is 0.");
