@@ -291,7 +291,7 @@ int32_t HpaeRendererStreamImpl::GetRemoteOffloadSpeedPosition(uint64_t &framePos
 
     uint64_t frames = framesUS * processConfig_.streamInfo.samplingRate / AUDIO_US_PER_S;
     framePosition = lastHdiFramePosition_ + frames;
-    timestamp = static_cast<uint64_t>(timeNSec + timeSec * AUDIO_NS_PER_SECOND);
+    timestamp = static_cast<uint64_t>(ClockTime::GetCurNano());
     AUDIO_DEBUG_LOG("frame: %{public}" PRIu64, framePosition);
     return SUCCESS;
 }
