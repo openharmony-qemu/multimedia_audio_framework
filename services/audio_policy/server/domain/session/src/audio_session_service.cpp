@@ -175,7 +175,7 @@ std::shared_ptr<AudioSession> AudioSessionService::GetAudioSessionByPid(const in
     AUDIO_INFO_LOG("GetAudioSessionByPid: callerPid %{public}d", callerPid);
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
     if (sessionMap_.count(callerPid) == 0) {
-        AUDIO_ERR_LOG("The audio seesion of pid %{public}d is not found!", callerPid);
+        AUDIO_WARNING_LOG("The audio sesion of pid %{public}d is not found!", callerPid);
         return nullptr;
     }
     return sessionMap_[callerPid];
