@@ -573,12 +573,12 @@ float AudioPolicyManager::GetLowPowerVolume(int32_t streamId)
     return outVolume;
 }
 
-AudioStreamInfo AudioPolicyManager::GetFastStreamInfo()
+AudioStreamInfo AudioPolicyManager::GetFastStreamInfo(uint32_t sessionId)
 {
     AudioStreamInfo streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, streamInfo, "audio policy manager proxy is NULL.");
-    gsp->GetFastStreamInfo(streamInfo);
+    gsp->GetFastStreamInfo(streamInfo, sessionId);
     return streamInfo;
 }
 

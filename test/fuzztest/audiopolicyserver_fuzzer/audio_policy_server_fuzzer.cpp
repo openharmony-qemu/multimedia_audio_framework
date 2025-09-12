@@ -437,7 +437,8 @@ void AudioPolicyServerGetFastStreamInfoFuzzTest()
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
     AudioStreamInfo streamInfo;
-    audioPolicyServer->GetFastStreamInfo(streamInfo);
+    uint32_t sessionId = GetData<uint32_t>();
+    audioPolicyServer->GetFastStreamInfo(streamInfo, sessionId);
 }
 
 void AudioPolicyServerGetLowPowerVolumeFuzzTest()

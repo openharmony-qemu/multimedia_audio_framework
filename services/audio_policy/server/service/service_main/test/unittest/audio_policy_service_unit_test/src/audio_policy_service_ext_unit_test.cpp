@@ -211,13 +211,19 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_006, TestSize.Lev
 
 /**
 * @tc.name  : Test AudioPolicyService.
-* @tc.number: AudioPolicyServiceTest_007
-* @tc.desc  : Test GetFastStreamInfo interfaces.
+* @tc.number: AudioPolicyServiceTest_07
+* @tc.desc  : Test LoadModernOffloadCapSource interfaces.
 */
-HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_007, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_07, TestSize.Level1)
 {
-    auto ret = AudioPolicyService::GetAudioPolicyService().GetFastStreamInfo();
-    EXPECT_EQ(SAMPLE_RATE_48000, ret.samplingRate);
+    auto ret0 = AudioPolicyService::GetAudioPolicyService().LoadModernOffloadCapSource();
+    EXPECT_EQ(SUCCESS, ret0);
+
+    AudioIOHandle audioIOHandle = 1003;
+    AudioPolicyService::GetAudioPolicyService().audioIOHandleMap_.IOHandles_["offloadCapturerSource"] = audioIOHandle;
+
+    auto ret1 = AudioPolicyService::GetAudioPolicyService().LoadModernOffloadCapSource();
+    EXPECT_EQ(SUCCESS, ret1);
 }
 
 /**
@@ -357,23 +363,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_016, TestSize.Lev
     propertyArray.property.push_back(tmp);
     auto ret = AudioPolicyService::GetAudioPolicyService().SetAudioEffectProperty(propertyArray);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
-}
-
-/**
-* @tc.name  : Test AudioPolicyService.
-* @tc.number: AudioPolicyServiceTest_017
-* @tc.desc  : Test LoadModernOffloadCapSource interfaces.
-*/
-HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_017, TestSize.Level1)
-{
-    auto ret0 = AudioPolicyService::GetAudioPolicyService().LoadModernOffloadCapSource();
-    EXPECT_EQ(SUCCESS, ret0);
-
-    AudioIOHandle audioIOHandle = 1003;
-    AudioPolicyService::GetAudioPolicyService().audioIOHandleMap_.IOHandles_["offloadCapturerSource"] = audioIOHandle;
-
-    auto ret1 = AudioPolicyService::GetAudioPolicyService().LoadModernOffloadCapSource();
-    EXPECT_EQ(SUCCESS, ret1);
 }
 } // namespace AudioStandard
 } // namespace OHOS

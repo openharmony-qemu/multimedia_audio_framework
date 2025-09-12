@@ -419,7 +419,7 @@ HWTEST(AudioPolicyManager, GetFastStreamInfo_001, TestSize.Level2)
 {
     auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
 
-    AudioStreamInfo streamInfo = audioPolicyManager_->GetFastStreamInfo();
+    AudioStreamInfo streamInfo = audioPolicyManager_->GetFastStreamInfo(0);
 
     EXPECT_EQ(streamInfo.samplingRate, SAMPLE_RATE_48000);
     EXPECT_EQ(streamInfo.encoding, ENCODING_PCM);
