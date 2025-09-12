@@ -206,8 +206,7 @@ void HpaeProcessCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer 
 void HpaeProcessCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
     uint32_t sessionId = preNode->GetNodeInfo().sessionId;
-    AUDIO_INFO_LOG(
-        "sessionId is %{public}u, streamType is %{public}d, sceneType is %{public}d",
+    AUDIO_INFO_LOG("sessionId is %{public}u, streamType is %{public}d, sceneType is %{public}d",
         sessionId, preNode->GetNodeInfo().streamType, preNode->GetNodeInfo().sceneType);
     if (SafeGetMap(idConverterMap_, sessionId)) {
         idConverterMap_[sessionId]->DisConnect(preNode);
