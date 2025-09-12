@@ -832,6 +832,9 @@ int32_t AudioInterruptService::UnsetAudioInterruptCallback(const int32_t zoneId,
 
 bool AudioInterruptService::AudioInterruptIsActiveInFocusList(const int32_t zoneId, const uint32_t incomingStreamId)
 {
+    if (mutedGameSessionId_.find(incomingStreamId) != mutedGameSessionId_.end()) {
+        return true;
+    }
     auto itZone = zonesMap_.find(zoneId);
     if (itZone == zonesMap_.end()) {
         AUDIO_ERR_LOG("Can not find zoneid");
@@ -2874,6 +2877,13 @@ bool AudioInterruptService::ShouldCallbackToClient(uint32_t uid, int32_t streamI
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, true, "error for g_adProxy null");
     AUDIO_INFO_LOG("mute flag is: %{public}d", muteFlag);
+    if (muteFlag) {
+        mutedGameSessionId_.insert(streamId);
+    } else {
+        if (mutedGameSessionId_.find(streamId) != mutedGameSessionId_.end()) {
+            mutedGameSessionId_.erase(streamId);
+        }
+    }
     gsp->SetNonInterruptMute(streamId, muteFlag);
     IPCSkeleton::SetCallingIdentity(identity);
     return false;

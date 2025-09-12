@@ -366,6 +366,7 @@ private:
     AudioStreamType defaultVolumeType_ = STREAM_MUSIC;
 
     std::mutex audioServerProxyMutex_;
+    std::unordered_set<uint32_t> mutedGameSessionId_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
