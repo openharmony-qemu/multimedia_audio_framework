@@ -643,7 +643,7 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_029, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc;
     selectedDesc.push_back(deviceDescriptor);
 
-    auto ret = eventEntry->SelectOutputDevice(audioRendererFilter, selectedDesc);
+    auto ret = eventEntry->SelectOutputDevice(audioRendererFilter, selectedDesc, 1);
     EXPECT_EQ(ret, SUCCESS);
 }
 
