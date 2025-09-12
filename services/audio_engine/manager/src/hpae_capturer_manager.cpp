@@ -77,8 +77,7 @@ int32_t HpaeCapturerManager::CaptureEffectCreate(const HpaeProcessorType &proces
 int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInfo)
 {
     AUDIO_INFO_LOG("CreateStream sessionId %{public}u deviceName %{public}s",
-            streamInfo.sessionId,
-            sourceInfo_.deviceName.c_str());
+        streamInfo.sessionId, sourceInfo_.deviceName.c_str());
     HpaeNodeInfo nodeInfo;
     nodeInfo.channels = streamInfo.channels;
     nodeInfo.format = streamInfo.format;

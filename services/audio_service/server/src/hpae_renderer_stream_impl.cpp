@@ -122,7 +122,7 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.deviceName = deviceName;
     streamInfo.isMoveAble = isMoveAble_;
     streamInfo.privacyType = processConfig_.privacyType;
-    AUDIO_INFO_LOG("channels %{public}u channelLayout %{public}" PRIu64 " samplingRate %{public}u format %{public}u " 
+    AUDIO_INFO_LOG("channels %{public}u channelLayout %{public}" PRIu64 " samplingRate %{public}u format %{public}u "
         "frameLen %{public}zu streamType %{public}u sessionId %{public}u streamClassType %{public}u "
         "sourceType %{public}d fadeType %{public}d", streamInfo.channels, streamInfo.channelLayout,
         streamInfo.customSampleRate == 0 ? streamInfo.samplingRate : streamInfo.customSampleRate, streamInfo.format,

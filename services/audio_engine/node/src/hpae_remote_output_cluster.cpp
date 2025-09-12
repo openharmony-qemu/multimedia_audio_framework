@@ -100,8 +100,8 @@ void HpaeRemoteOutputCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBu
     HpaeNodeInfo nodeInfo = GetNodeInfo();
     HpaeProcessorType sceneType = preNodeInfo.sceneType;
     AUDIO_INFO_LOG("input sceneType is %{public}u input rate is %{public}u, ch is %{public}u"
-    "output rate is %{public}u, ch is %{public}u preNode name %{public}s, curNode name is %{public}s",
-    sceneType, preNodeInfo.samplingRate, preNodeInfo.channels, nodeInfo.samplingRate, nodeInfo.channels
+        "output rate is %{public}u, ch is %{public}u preNode name %{public}s, curNode name is %{public}s",
+        sceneType, preNodeInfo.samplingRate, preNodeInfo.channels, nodeInfo.samplingRate, nodeInfo.channels,
         preNodeInfo.nodeName.c_str(), nodeInfo.nodeName.c_str());
     nodeInfo.sceneType = sceneType;
     nodeInfo.streamType = preNodeInfo.streamType;
