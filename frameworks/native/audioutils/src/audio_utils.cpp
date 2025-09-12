@@ -221,7 +221,7 @@ bool Util::IsRingerAudioScene(const AudioScene &audioScene)
 size_t Util::CalculatePcmSizeFromDurationCeiling(std::chrono::nanoseconds duration,
     uint32_t sampleRate, uint32_t bytesPerSample)
 {
-    size_t sampleCount = duration * sampleRate / (1s);
+    size_t sampleCount = static_cast<size_t>((duration * sampleRate) / (1s));
     if (((duration * sampleRate) % (1s)) > (0ns)) {
         sampleCount++;
     }
