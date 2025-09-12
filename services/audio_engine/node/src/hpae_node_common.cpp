@@ -500,26 +500,6 @@ int32_t CheckStreamInfo(const HpaeStreamInfo &streamInfo, const HpaeSinkInfo &si
         AUDIO_ERR_LOG("FrameLen is over-sized.");
         return ERROR;
     }
-    if (streamInfo.frameLen * sinkInfo.samplingRate != streamInfo.samplingRate * sinkInfo.frameLen) {
-        AUDIO_ERR_LOG("Framelen is not proportional.");
-        return ERROR;
-    }
-    return SUCCESS;
-}
-
-int32_t CheckSourceAndStreamInfo(const HpaeStreamInfo &streamInfo, const HpaeSourceInfo &sourceInfo)
-{
-    if (streamInfo.frameLen == 0) {
-        AUDIO_ERR_LOG("FrameLen is 0.");
-        return ERROR;
-    } else if (streamInfo.frameLen > FRAME_LENGTH_LIMIT) {
-        AUDIO_ERR_LOG("FrameLen is over-sized.");
-        return ERROR;
-    }
-    if (streamInfo.frameLen * sourceInfo.samplingRate != streamInfo.samplingRate * sourceInfo.frameLen) {
-        AUDIO_ERR_LOG("Framelen is not proportional.");
-        return ERROR;
-    }
     return SUCCESS;
 }
 

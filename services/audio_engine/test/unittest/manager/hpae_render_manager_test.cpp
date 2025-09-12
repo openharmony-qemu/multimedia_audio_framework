@@ -1788,34 +1788,6 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerCreateStream_002, Te
 }
 
 /**
- * @tc.name  : Test HpaeOffloadRendererManagerCreateStream_003
- * @tc.type  : FUNC
- * @tc.number: HpaeOffloadRendererManagerCreateStream_003
- * @tc.desc  : Test HpaeOffloadRendererManagerCreateStream when frameLen is not proportional.
- */
-HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerCreateStream_003, TestSize.Level1)
-{
-    HpaeSinkInfo sinkInfo;
-    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
-    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
-    sinkInfo.frameLen = FRAME_LENGTH_960;
-    sinkInfo.samplingRate = SAMPLE_RATE_48000;
-    sinkInfo.format = SAMPLE_F32LE;
-    sinkInfo.channels = STEREO;
-    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
-    bool isReload = true;
-    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
-    EXPECT_EQ(hpaeRendererManager->Init(isReload), SUCCESS);
-    WaitForMsgProcessing(hpaeRendererManager);
-    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
-    HpaeStreamInfo streamInfo;
-    streamInfo.frameLen = FRAME_LENGTH_882;
-    EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo), ERROR);
-}
-
-/**
  * @tc.name  : Test HpaeRendererManagerCreateStream_001
  * @tc.type  : FUNC
  * @tc.number: HpaeRendererManagerCreateStream_001
@@ -1868,34 +1840,6 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStream_002, TestSize.
     EXPECT_EQ(hpaeRendererManager->IsInit(), true);
     HpaeStreamInfo streamInfo;
     streamInfo.frameLen = OVERSIZED_FRAME_LENGTH;
-    EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo), ERROR);
-}
-
-/**
- * @tc.name  : Test HpaeRendererManagerCreateStream_003
- * @tc.type  : FUNC
- * @tc.number: HpaeRendererManagerCreateStream_003
- * @tc.desc  : Test HpaeRendererManagerCreateStream when frameLen is not proportional.
- */
-HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStream_003, TestSize.Level1)
-{
-    HpaeSinkInfo sinkInfo;
-    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
-    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
-    sinkInfo.frameLen = FRAME_LENGTH_960;
-    sinkInfo.samplingRate = SAMPLE_RATE_48000;
-    sinkInfo.format = SAMPLE_F32LE;
-    sinkInfo.channels = STEREO;
-    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
-    bool isReload = true;
-    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
-    EXPECT_EQ(hpaeRendererManager->Init(isReload), SUCCESS);
-    WaitForMsgProcessing(hpaeRendererManager);
-    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
-    HpaeStreamInfo streamInfo;
-    streamInfo.frameLen = FRAME_LENGTH_882;
     EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo), ERROR);
 }
 }  // namespace
