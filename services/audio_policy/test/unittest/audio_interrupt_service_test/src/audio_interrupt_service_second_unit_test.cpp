@@ -333,13 +333,17 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_011, TestSize.
     focusEntry.actionOn = CURRENT;
     audioInterruptService->focusCfgMap_[focusPair] = focusEntry;
 
-    int ret = audioInterruptService->sessionService_.SetAudioSessionScene(audioInterrupt.pid, AudioSessionScene::MEDIA);
+    int ret =
+        audioInterruptService->sessionService_.SetAudioSessionScene(audioInterrupt.pid, AudioSessionScene::MEDIA);
     EXPECT_EQ(SUCCESS, ret);
-    audioInterruptService->sessionService_.sessionMap_[audioInterrupt.pid]->audioSessionScene_ = AudioSessionScene::MEDIA;
-    audioInterruptService->sessionService_.sessionMap_[audioInterrupt.pid]->state_ = AudioSessionState::SESSION_NEW;
+    audioInterruptService->sessionService_.sessionMap_[audioInterrupt.pid]->audioSessionScene_ =
+        AudioSessionScene::MEDIA;
+    audioInterruptService->sessionService_.sessionMap_[audioInterrupt.pid]->state_ =
+        AudioSessionState::SESSION_NEW;
     audioInterruptService->PrintLogsOfFocusStrategyBaseMusic(audioInterrupt);
 
-    audioInterruptService->sessionService_.sessionMap_[audioInterrupt.pid]->state_ = AudioSessionState::SESSION_ACTIVE;
+    audioInterruptService->sessionService_.sessionMap_[audioInterrupt.pid]->state_ =
+        AudioSessionState::SESSION_ACTIVE;
     audioInterruptService->PrintLogsOfFocusStrategyBaseMusic(audioInterrupt);
 }
 

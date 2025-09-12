@@ -80,6 +80,7 @@ public:
     bool IsSessionInputDeviceChanged(int32_t callerPid, const std::shared_ptr<AudioDeviceDescriptor> desc);
     void MarkSystemApp(int32_t pid);
     bool IsSystemApp(int32_t pid);
+    bool IsSystemAppWithMixStrategy(int32_t pid);
 
 private:
     int32_t DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout = false);

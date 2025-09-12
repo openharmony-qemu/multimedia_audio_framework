@@ -177,8 +177,9 @@ std::shared_ptr<AudioSession> AudioSessionService::CreateAudioSession(
     int32_t callerPid, AudioSessionStrategy strategy)
 {
     std::shared_ptr<AudioSession> audioSession = nullptr;
-    if (sessionMap_.count(callerPid) != 0) {
-        audioSession = sessionMap_[callerPid];
+    auto session = sessionMap_.find(callerPid);
+    if (session != sessionMap_.end()) {
+        audioSession = session->second;
         AUDIO_INFO_LOG("The audio seesion of pid %{public}d has already been created", callerPid);
     } else {
         audioSession = std::make_shared<AudioSession>(callerPid, strategy, *this);
@@ -417,6 +418,7 @@ bool AudioSessionService::IsAudioRendererEmpty(const int32_t callerPid)
 
 AudioConcurrencyMode AudioSessionService::GetSessionStrategy(int32_t callerPid)
 {
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
     auto session = sessionMap_.find(callerPid);
     if (session == sessionMap_.end()) {
         return AudioConcurrencyMode::INVALID;
@@ -541,6 +543,11 @@ int32_t AudioSessionService::FillCurrentOutputDeviceChangedEvent(
         return ERROR;
     }
 
+    if (deviceChangedEvent.devices.size() == 0) {
+        AUDIO_ERR_LOG("Device info is empty, pid: %{public}d!", callerPid);
+        return ERROR;
+    }
+
     CHECK_AND_RETURN_RET((!session->second->IsSessionOutputDeviceChanged(deviceChangedEvent.devices[0]) ||
         (changeReason == AudioStreamDeviceChangeReason::AUDIO_SESSION_ACTIVATE)), ERROR,
         "device of session %{public}d is not changed", callerPid);
@@ -579,7 +586,19 @@ bool AudioSessionService::IsSystemApp(int32_t pid)
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
     auto session = sessionMap_.find(pid);
     if (session != sessionMap_.end()) {
-        return session->second->IsSystemApp();
+        return session->second->IsActivated() && session->second->IsSystemApp();
+    }
+
+    return false;
+}
+
+bool AudioSessionService::IsSystemAppWithMixStrategy(int32_t pid)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(pid);
+    if (session != sessionMap_.end()) {
+        return session->second->IsActivated() && session->second->IsSystemApp() &&
+               session->second->GetSessionStrategy().concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS;
     }
 
     return false;

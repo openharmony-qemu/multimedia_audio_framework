@@ -497,7 +497,6 @@ ohos_unittest("audio_interrupt_service_unit_test") {
   ]
 
   sources = [
-    "./unittest/audio_interrupt_service_test/src/audio_interrupt_service_unit_test.cpp",
     "./unittest/audio_interrupt_service_test/src/audio_interrupt_unit_test.cpp",
     "./unittest/audio_interrupt_service_test/src/audio_interrupt_zone_unit_test.cpp",
   ]

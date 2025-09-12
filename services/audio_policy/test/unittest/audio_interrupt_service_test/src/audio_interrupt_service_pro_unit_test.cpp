@@ -19,7 +19,7 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
-void AudioInterruptServiceUnitTest::SetUpTestCase(void){}
+void AudioInterruptServiceUnitTest::SetUpTestCase(void) {}
 void AudioInterruptServiceUnitTest::TearDownTestCase(void) {}
 
 void AudioInterruptServiceUnitTest::SetUp(void)
@@ -435,7 +435,8 @@ HWTEST_F(AudioInterruptServiceUnitTest, CanMixForActiveSession_001, TestSize.Lev
     focusEntry.hintType = INTERRUPT_HINT_PAUSE;
     AudioSessionStrategy strategy;
     strategy.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
-    std::shared_ptr<AudioSession> session = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
+    std::shared_ptr<AudioSession> session =
+        std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
     session->state_ = AudioSessionState::SESSION_ACTIVE;
     audioInterruptService_->sessionService_.sessionMap_[callerPid] = session;
     EXPECT_FALSE(audioInterruptService_->CanMixForActiveSession(incomingInterrupt, activeInterrupt, focusEntry));

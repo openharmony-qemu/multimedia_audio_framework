@@ -104,7 +104,7 @@ public:
 
     ~AudioSessionServiceBuilder()
     {
-        audioSessionService_.sessionService_.clear();
+        audioSessionService_.sessionMap_.clear();
         audioSessionService_.timeOutCallback_.reset();
     }
 private:

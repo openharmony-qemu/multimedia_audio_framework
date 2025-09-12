@@ -73,7 +73,7 @@ public:
     StreamUsage GetSessionStreamUsage();
     bool IsBackGroundApp(void);
     void MarkSystemApp(void);
-    bool IsSystemApp(void);
+    bool IsSystemApp(void) const;
 
 private:
     StreamUsage GetStreamUsageInner();

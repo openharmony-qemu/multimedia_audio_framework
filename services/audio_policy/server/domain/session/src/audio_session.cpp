@@ -467,7 +467,7 @@ void AudioSession::MarkSystemApp(void)
     isSystemApp_ = true;
 }
 
-bool AudioSession::IsSystemApp(void)
+bool AudioSession::IsSystemApp(void) const
 {
     return isSystemApp_;
 }

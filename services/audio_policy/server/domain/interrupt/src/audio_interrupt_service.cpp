@@ -492,6 +492,13 @@ bool AudioInterruptService::IsAudioSessionActivated(const int32_t callerPid)
 bool AudioInterruptService::IsCanMixInterrupt(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt)
 {
+    if (sessionService_.IsSystemAppWithMixStrategy(incomingInterrupt.pid) ||
+        sessionService_.IsSystemAppWithMixStrategy(activeInterrupt.pid)) {
+        AUDIO_INFO_LOG("System app can mix with others anyway, incomingPid: %{public}d, activePid: %{public}d",
+            incomingInterrupt.pid, activeInterrupt.pid);
+        return true;
+    }
+
     if (incomingInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
         (activeInterrupt.audioFocusType.streamType == STREAM_VOICE_CALL ||
         activeInterrupt.audioFocusType.streamType == STREAM_VOICE_COMMUNICATION)) {
@@ -515,7 +522,15 @@ bool AudioInterruptService::IsCanMixInterrupt(const AudioInterrupt &incomingInte
 bool AudioInterruptService::CanMixForSession(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt, const AudioFocusEntry &focusEntry)
 {
-    if (focusEntry.isReject && incomingInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID) {
+    if (sessionService_.IsSystemAppWithMixStrategy(incomingInterrupt.pid) ||
+        sessionService_.IsSystemAppWithMixStrategy(activeInterrupt.pid)) {
+        AUDIO_INFO_LOG("System app can mix with others anyway, incomingPid: %{public}d, activePid: %{public}d",
+            incomingInterrupt.pid, activeInterrupt.pid);
+        return true;
+    }
+
+    if (focusEntry.isReject &&
+        incomingInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID) {
         // The incoming stream is a capturer and the default policy is deny incoming.
         AUDIO_INFO_LOG("The incoming audio capturer should be denied!");
         return false;
@@ -561,11 +576,6 @@ bool AudioInterruptService::CanMixForIncomingSession(const AudioInterrupt &incom
             return false;
         }
 
-        if (sessionService_.IsSystemApp(incomingInterrupt.pid)) {
-            AUDIO_INFO_LOG("System app can mix with others anyway, pid: %{public}d", incomingInterrupt.pid);
-            return true;
-        }
-
         // The concurrencyMode of incoming session is MIX_WITH_OTHERS. Need to check the priority.
         if (IsIncomingStreamLowPriority(focusEntry)) {
             bool isSameType = AudioSessionService::IsSameTypeForAudioSession(
@@ -598,11 +608,6 @@ bool AudioInterruptService::CanMixForActiveSession(const AudioInterrupt &incomin
             AUDIO_INFO_LOG("The concurrency mode of active session is %{public}d",
                 static_cast<int32_t>(concurrencyMode));
             return false;
-        }
-
-        if (sessionService_.IsSystemApp(activeInterrupt.pid)) {
-            AUDIO_INFO_LOG("System app can mix with others anyway, pid: %{public}d", activeInterrupt.pid);
-            return true;
         }
 
         // The concurrencyMode of active session is MIX_WITH_OTHERS. Need to check the priority.
@@ -2017,7 +2022,7 @@ void AudioInterruptService::ReactivateAudioInterrupts(
 {
     auto itZone = zonesMap_.find(zoneId);
     if (itZone == zonesMap_.end() || itZone->second == nullptr) {
-        AUDIO_ERR_LOG("Can not find zone, no need to reactivate audio interrupt for pid = %{public}d", callerPid);
+        AUDIO_INFO_LOG("Can not find focus, no need to reactivate audio interrupt for pid: %{public}d", callerPid);
         return;
     }
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = itZone->second->audioFocusInfoList;
@@ -2027,7 +2032,7 @@ void AudioInterruptService::ReactivateAudioInterrupts(
     2. and to handle the state transition when the audio session resumes from a paused state.
     */
     auto isStreamFocusPresent = [&](const std::pair<AudioInterrupt, AudioFocuState> &pair) {
-        return pair.first.pid == callerPid;
+        return pair.first.pid == callerPid && pair.second != PLACEHOLDER;
     };
 
     bool tempUpdateScene = false;
@@ -2036,7 +2041,7 @@ void AudioInterruptService::ReactivateAudioInterrupts(
             updateScene = true;
             int32_t ret = ActivateAudioInterruptCoreProcedure(zoneId, it.first, true, tempUpdateScene);
             if (ret != SUCCESS) {
-                AUDIO_ERR_LOG("ActivateAudioInterruptCoreProcedure failed for pid = %{public}d", it.first.pid);
+                AUDIO_ERR_LOG("ActivateAudioInterruptCoreProcedure failed for pid = %{public}d", callerPid);
             }
         }
     }
