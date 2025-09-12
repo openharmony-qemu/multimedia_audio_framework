@@ -177,6 +177,7 @@ HWTEST(AudioEnhanceChainUnitTest, CreateAllEnhanceModuleFailWithCmdFail, TestSiz
         SetCommandRet(cmd, SUCCESS);
     }
     ClearCommandRetMap();
+    chain->ReleaseAllEnhanceModule();
 }
 
 HWTEST(AudioEnhanceChainUnitTest, CreateAllEnhanceModuleSucc, TestSize.Level1)
@@ -190,6 +191,7 @@ HWTEST(AudioEnhanceChainUnitTest, CreateAllEnhanceModuleSucc, TestSize.Level1)
     moduleParas.emplace_back(para);
     EXPECT_EQ(chain->CreateAllEnhanceModule(moduleParas), 0);
     EXPECT_EQ(chain->IsEmptyEnhanceHandles(), false);
+    chain->ReleaseAllEnhanceModule();
 }
 
 HWTEST(AudioEnhanceChainUnitTest, SetThreadHandler_Fail, TestSize.Level1)
@@ -208,6 +210,7 @@ HWTEST(AudioEnhanceChainUnitTest, InitCommandSucc, TestSize.Level1)
     AudioEffectLibrary lib = { 0, "name", "implementor", CheckEffectTest, CreateEffectTestSucc, ReleaseEffectTest };
     CreateModuleForChain(chain, &lib);
     EXPECT_EQ(chain->InitCommand(), 0);
+    chain->ReleaseAllEnhanceModule();
 }
 
 HWTEST(AudioEnhanceChainUnitTest, SetEnhancePropertySucc, TestSize.Level1)
@@ -222,6 +225,7 @@ HWTEST(AudioEnhanceChainUnitTest, SetEnhancePropertySucc, TestSize.Level1)
     AudioEffectLibrary lib = { 0, "name", "implementor", CheckEffectTest, CreateEffectTestSucc, ReleaseEffectTest };
     CreateModuleForChain(chain, &lib);
     EXPECT_EQ(chain->SetEnhanceProperty(enhance, property), SUCCESS);
+    chain->ReleaseAllEnhanceModule();
 }
 
 HWTEST(AudioEnhanceChainUnitTest, SetEmptyInputDevice, TestSize.Level1)
@@ -259,6 +263,7 @@ HWTEST(AudioEnhanceChainUnitTest, UpdateInputDeviceSucc, TestSize.Level1)
     std::string newDevice = "newDevice";
     std::string newDeviceName = "newDeviceName";
     EXPECT_EQ(chain->SetInputDevice(inputDevice, deviceName), SUCCESS);
+    chain->ReleaseAllEnhanceModule();
 }
 
 HWTEST(AudioEnhanceChainUnitTest, SetFoldStateSucc, TestSize.Level1)
@@ -282,6 +287,7 @@ HWTEST(AudioEnhanceChainUnitTest, UpdateFoldStateSucc, TestSize.Level1)
     EXPECT_EQ(chain->SetFoldState(state), SUCCESS);
     const uint32_t newState = 3;
     EXPECT_EQ(chain->SetFoldState(newState), SUCCESS);
+    chain->ReleaseAllEnhanceModule();
 }
 
 HWTEST(AudioEnhanceChainUnitTest, SetEnhanceParamSucc, TestSize.Level1)
@@ -295,6 +301,7 @@ HWTEST(AudioEnhanceChainUnitTest, SetEnhanceParamSucc, TestSize.Level1)
     const uint32_t systemVol = 10;
     EXPECT_EQ(chain->SetEnhanceParam(false, systemVol), SUCCESS);
     EXPECT_EQ(chain->SetEnhanceParam(true, systemVol), SUCCESS);
+    chain->ReleaseAllEnhanceModule();
 }
 
 HWTEST(AudioEnhanceChainUnitTest, GetAlgoConfigSucc, TestSize.Level1)
@@ -363,6 +370,7 @@ HWTEST(AudioEnhanceChainUnitTest, ApplyEmptyEnhanceChain, TestSize.Level1)
     std::vector<int16_t> output(micDataLen);
     EXPECT_EQ(chain->GetOutputDataFromChain(output.data(), output.size() * sizeof(int16_t)), SUCCESS);
     EXPECT_THAT(output, ElementsAreArray(micInput));
+    chain->ReleaseAllEnhanceModule();
 }
 
 HWTEST(AudioEnhanceChainUnitTest, ApplyEnhanceChainSucc, TestSize.Level1)
@@ -393,6 +401,7 @@ HWTEST(AudioEnhanceChainUnitTest, ApplyEnhanceChainSucc, TestSize.Level1)
     std::vector<int16_t> output(dataLen);
     EXPECT_EQ(chain->GetOutputDataFromChain(output.data(), output.size() * sizeof(int16_t)), SUCCESS);
     EXPECT_THAT(output, ElementsAreArray(targetOut));
+    chain->ReleaseAllEnhanceModule();
 }
 } // AudioStandard
 } // OHOS
