@@ -48,7 +48,7 @@ ProAudioServiceAdapterImpl::ProAudioServiceAdapterImpl(unique_ptr<AudioServiceAd
 
 bool ProAudioServiceAdapterImpl::Connect()
 {
-    AUDIO_INFO_LOG("Connected RegiesterServiceCallback");
+    AUDIO_INFO_LOG("Enter");
     IHpaeManager::GetHpaeManager().RegisterSerivceCallback(shared_from_this());
     CHECK_AND_RETURN_RET_LOG(g_audioServiceAdapterCallback != nullptr, false,
         "g_audioServiceAdapterCallback is nullptr");
@@ -82,7 +82,6 @@ int32_t ProAudioServiceAdapterImpl::ReloadAudioPort(const std::string &audioPort
         AUDIO_ERR_LOG("Timeout");
         return ERROR;
     }
-    AUDIO_INFO_LOG("Leave");
     return AudioPortIndex_;
 }
 
@@ -105,7 +104,6 @@ int32_t ProAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, const Au
         AUDIO_ERR_LOG("Timeout");
         return ERROR;
     }
-    AUDIO_INFO_LOG("Leave");
     return AudioPortIndex_;
 }
 
@@ -134,7 +132,6 @@ int32_t ProAudioServiceAdapterImpl::CloseAudioPort(int32_t audioHandleIndex)
         return ERROR;
     }
 
-    AUDIO_INFO_LOG("Leave");
     return SUCCESS;
 }
 
@@ -170,7 +167,6 @@ bool ProAudioServiceAdapterImpl::SetSinkMute(const std::string &sinkName, bool i
     } else {
         IHpaeManager::GetHpaeManager().SetSinkMute(sinkName, isMute, isSync);
     }
-    AUDIO_INFO_LOG("Leave");
     return SUCCESS;
 }
 
@@ -211,7 +207,6 @@ std::vector<SinkInfo> ProAudioServiceAdapterImpl::GetAllSinks()
         AUDIO_ERR_LOG("Timeout");
         sinks_.clear();
     }
-    AUDIO_INFO_LOG("Leave");
     return sinks_;
 }
 
@@ -305,7 +300,6 @@ int32_t ProAudioServiceAdapterImpl::SetSourceOutputMute(int32_t uid, bool setMut
         AUDIO_ERR_LOG("Timeout");
         return ERROR;
     }
-    AUDIO_INFO_LOG("Leave");
     return SourceOutputMuteStreamSet_;
 }
 
@@ -327,13 +321,12 @@ std::vector<SinkInput> ProAudioServiceAdapterImpl::GetAllSinkInputs()
         AUDIO_ERR_LOG("Timeout");
         sinkInputs_.clear();
     }
-    AUDIO_INFO_LOG("Leave");
     return sinkInputs_;
 }
 
 std::vector<SourceOutput> ProAudioServiceAdapterImpl::GetAllSourceOutputs()
 {
-    AUDIO_INFO_LOG("GetAllSourceOutputs");
+    AUDIO_INFO_LOG("Enter");
     AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::GetAllSourceOutputs", HPAE_SERVICE_IMPL_TIMEOUT,
         [](void *) {
             AUDIO_ERR_LOG("[xcollie] Timeout");
@@ -349,7 +342,6 @@ std::vector<SourceOutput> ProAudioServiceAdapterImpl::GetAllSourceOutputs()
         AUDIO_ERR_LOG("Timeout");
         sourceOutputs_.clear();
     }
-    AUDIO_INFO_LOG("Leave");
     return sourceOutputs_;
 }
 
@@ -360,7 +352,7 @@ void ProAudioServiceAdapterImpl::Disconnect()
 
 int32_t ProAudioServiceAdapterImpl::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
 {
-    AUDIO_INFO_LOG("GetAudioEffectProperty");
+    AUDIO_INFO_LOG("Enter");
     lock_guard<mutex> lock(lock_);
     isFinishGetAudioEffectPropertyV3_ = false;
     IHpaeManager::GetHpaeManager().GetAudioEffectProperty(propertyArray);
@@ -376,7 +368,7 @@ int32_t ProAudioServiceAdapterImpl::GetAudioEffectProperty(AudioEffectPropertyAr
 
 int32_t ProAudioServiceAdapterImpl::GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray)
 {
-    AUDIO_INFO_LOG("GetAudioEffectProperty");
+    AUDIO_INFO_LOG("Enter");
     lock_guard<mutex> lock(lock_);
     isFinishGetAudioEffectProperty_ = false;
     IHpaeManager::GetHpaeManager().GetAudioEffectProperty(propertyArray);
@@ -393,7 +385,7 @@ int32_t ProAudioServiceAdapterImpl::GetAudioEffectProperty(AudioEffectPropertyAr
 int32_t ProAudioServiceAdapterImpl::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray,
     DeviceType deviceType)
 {
-    AUDIO_INFO_LOG("GetAudioEnhancePropertyV3");
+    AUDIO_INFO_LOG("Enter");
     lock_guard<mutex> lock(lock_);
     isFinishGetAudioEnhancePropertyV3_ = false;
     IHpaeManager::GetHpaeManager().GetAudioEnhanceProperty(propertyArray);
@@ -410,7 +402,7 @@ int32_t ProAudioServiceAdapterImpl::GetAudioEnhanceProperty(AudioEffectPropertyA
 int32_t ProAudioServiceAdapterImpl::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
     DeviceType deviceType)
 {
-    AUDIO_INFO_LOG("GetAudioEnhanceProperty");
+    AUDIO_INFO_LOG("Enter");
     lock_guard<mutex> lock(lock_);
     isFinishGetAudioEnhanceProperty_ = false;
     IHpaeManager::GetHpaeManager().GetAudioEnhanceProperty(propertyArray);

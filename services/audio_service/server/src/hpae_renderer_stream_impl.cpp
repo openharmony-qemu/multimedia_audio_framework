@@ -85,7 +85,7 @@ HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig,
 }
 HpaeRendererStreamImpl::~HpaeRendererStreamImpl()
 {
-    AUDIO_INFO_LOG("index: %{public}u", streamIndex_);
+    AUDIO_INFO_LOG("destructor %{public}u", streamIndex_);
     if (dumpEnqueueIn_ != nullptr) {
         DumpFileUtil::CloseDumpFile(&dumpEnqueueIn_);
     }
