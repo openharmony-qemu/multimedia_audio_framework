@@ -330,7 +330,7 @@ int32_t HpaeOffloadRendererManager::Stop(uint32_t sessionId)
             if (curNode_->GetState() == HPAE_SESSION_RUNNING) {
                 sinkOutputNode_->StopStream();
             }
-        }        
+        }
         node->SetState(HPAE_SESSION_STOPPED);
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(), OPERATION_STOPPED);
     };
@@ -825,7 +825,7 @@ int32_t HpaeOffloadRendererManager::SetLoudnessGain(uint32_t sessionId, float lo
         if (sessionId == curNode_->GetSessionId()) {
             CHECK_AND_RETURN_LOG(loudnessGainNode_, "session id %{public}d is not connected", sessionId);
             loudnessGainNode_->SetLoudnessGain(loudnessGain);
-        }  
+        }
     };
     SendRequest(request, __func__);
     return SUCCESS;
