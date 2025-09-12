@@ -2879,6 +2879,7 @@ bool AudioInterruptService::ShouldCallbackToClient(uint32_t uid, int32_t streamI
     }
     AUDIO_INFO_LOG("mute flag is: %{public}d", muteFlag);
     gsp->SetNonInterruptMute(streamId, muteFlag);
+    IPCSkeleton::SetCallingIdentity(identity);
     return false;
 }
 
