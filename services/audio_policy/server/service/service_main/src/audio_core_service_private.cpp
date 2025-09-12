@@ -2845,29 +2845,6 @@ void AudioCoreService::SelectA2dpType(std::shared_ptr<AudioStreamDescriptor> &st
         streamDesc->newDeviceDescs_[0] != nullptr, "Invalid stream desc");
     CHECK_AND_RETURN(streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP); // no need log
     vector<Bluetooth::A2dpStreamInfo> allSessionInfos;
-    Bluetooth::A2dpStreamInfo a2dpStreamInfo;
-    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
-    streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
-
-    for (auto &changeInfo : audioRendererChangeInfos) {
-        a2dpStreamInfo.sessionId = changeInfo->sessionId;
-        a2dpStreamInfo.streamType = streamCollector_.GetStreamType(changeInfo->sessionId);
-        StreamUsage tempStreamUsage = changeInfo->rendererInfo.streamUsage;
-        AudioSpatializationState spatialState =
-            AudioSpatializationService::GetAudioSpatializationService().GetSpatializationState(tempStreamUsage);
-        a2dpStreamInfo.isSpatialAudio = spatialState.spatializationEnabled;
-        allSessionInfos.push_back(a2dpStreamInfo);
-    }
-    if (isCreateProcess) {
-        a2dpStreamInfo.sessionId = static_cast<int32_t>(streamDesc->sessionId_);
-        StreamUsage tempStreamUsage = streamDesc->rendererInfo_.streamUsage;
-        a2dpStreamInfo.streamType =
-            streamCollector_.GetStreamType(streamDesc->rendererInfo_.contentType, tempStreamUsage);
-        AudioSpatializationState spatialState =
-            AudioSpatializationService::GetAudioSpatializationService().GetSpatializationState(tempStreamUsage);
-        a2dpStreamInfo.isSpatialAudio = spatialState.spatializationEnabled;
-        allSessionInfos.push_back(a2dpStreamInfo);
-    }
     auto flag =
         static_cast<BluetoothOffloadState>(Bluetooth::AudioA2dpManager::A2dpOffloadSessionRequest(allSessionInfos));
     streamDesc->newDeviceDescs_[0]->a2dpOffloadFlag_ = flag;
