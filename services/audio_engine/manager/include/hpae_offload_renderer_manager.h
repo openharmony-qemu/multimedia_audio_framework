@@ -97,7 +97,7 @@ public:
 private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
     int32_t StartRenderSink();
-    int32_t CreateInputSession(const HpaeStreamInfo &streamInfo);
+    std::shared_ptr<HpaeSinkInputNode> CreateInputSession(const HpaeStreamInfo &streamInfo);
     int32_t ConnectInputSession();
     int32_t DisConnectInputSession();
     void DeleteInputSession();
@@ -108,9 +108,12 @@ private:
     int32_t CheckFramelen();
     int32_t CheckStreamInfo(const HpaeStreamInfo &streamInfo);
     void UpdateAppsUid();
-
-    HpaeRenderSessionInfo sessionInfo_;
-    std::shared_ptr<HpaeSinkInputNode> sinkInputNode_ = nullptr;
+    void AddNodeToMap(std::shared_ptr<HpaeSinkInputNode> node);
+    void RemoveNodeFromMap(uint32_t sessionId);
+    void SetCurrentNode();
+    
+    std::shared_ptr<HpaeSinkInputNode> curNode_ = nullptr;
+    std::unordered_map<uint32_t, std::shared_ptr<HpaeSinkInputNode>> sinkInputNodeMap_;
     std::shared_ptr<HpaeAudioFormatConverterNode> converterForLoudness_ = nullptr;
     std::shared_ptr<HpaeAudioFormatConverterNode> converterForOutput_ = nullptr;
     std::shared_ptr<HpaeLoudnessGainNode> loudnessGainNode_ = nullptr;
