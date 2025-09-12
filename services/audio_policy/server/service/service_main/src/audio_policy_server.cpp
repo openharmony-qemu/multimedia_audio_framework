@@ -1909,16 +1909,26 @@ int32_t AudioPolicyServer::UnexcludeOutputDevices(int32_t audioDevUsageIn,
     return audioDeviceLock_.UnexcludeOutputDevices(audioDevUsage, newAudioDeviceDescriptors);
 }
 
+int32_t AudioPolicyServer::CheckAndGetApiVersion(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs,
+    bool hasSystemPermission)
+{
+    if (hasSystemPermission && !HasUsbDevice(deviceDescs)) {
+        return 0;
+    }
+    return GetApiTargetVersion();
+}
+
 int32_t AudioPolicyServer::GetExcludedDevices(int32_t audioDevUsageIn,
     vector<shared_ptr<AudioDeviceDescriptor>> &device)
 {
     AudioDeviceUsage audioDevUsage = static_cast<AudioDeviceUsage>(audioDevUsageIn);
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(hasSystemPermission, ERR_PERMISSION_DENIED,
         "No system permission");
 
     device = audioDeviceLock_.GetExcludedDevices(audioDevUsage);
 
-    int32_t apiVersion = GetApiTargetVersion();
+    int32_t apiVersion = CheckAndGetApiVersion(device, hasSystemPermission);
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
     clientInfo.isSupportedNearlink_ = audioPolicyUtils_.IsSupportedNearlink(AudioBundleManager::GetBundleName(),
         apiVersion, true);
@@ -1952,7 +1962,7 @@ int32_t AudioPolicyServer::GetDevices(int32_t deviceFlagIn,
 
     deviceDescs = eventEntry_->GetDevices(deviceFlag);
 
-    int32_t apiVersion = GetApiTargetVersion();
+    int32_t apiVersion = CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
     clientInfo.isSupportedNearlink_ = audioPolicyUtils_.IsSupportedNearlink(AudioBundleManager::GetBundleName(),
         apiVersion, hasSystemPermission);
@@ -1998,13 +2008,14 @@ int32_t AudioPolicyServer::GetDevicesInner(int32_t deviceFlagIn,
 int32_t AudioPolicyServer::GetOutputDevice(const sptr<AudioRendererFilter> &audioRendererFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
 {
-    if (!PermissionUtil::VerifySystemPermission()) {
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
         AUDIO_ERR_LOG("only for system app");
         return ERR_INVALID_OPERATION;
     }
     deviceDescs = audioPolicyService_.GetOutputDevice(audioRendererFilter);
 
-    int32_t apiVersion = GetApiTargetVersion();
+    int32_t apiVersion = CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
     clientInfo.isSupportedNearlink_ = audioPolicyUtils_.IsSupportedNearlink(AudioBundleManager::GetBundleName(),
         apiVersion, true);
@@ -2022,13 +2033,14 @@ int32_t AudioPolicyServer::GetOutputDevice(const sptr<AudioRendererFilter> &audi
 int32_t AudioPolicyServer::GetInputDevice(const sptr<AudioCapturerFilter> &audioCapturerFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
 {
-    if (!PermissionUtil::VerifySystemPermission()) {
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
         AUDIO_ERR_LOG("only for system app");
         return ERR_INVALID_OPERATION;
     }
     deviceDescs = audioPolicyService_.GetInputDevice(audioCapturerFilter);
 
-    int32_t apiVersion = GetApiTargetVersion();
+    int32_t apiVersion = CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
     clientInfo.isSupportedNearlink_ = audioPolicyUtils_.IsSupportedNearlink(AudioBundleManager::GetBundleName(),
         apiVersion, true);
@@ -2070,8 +2082,8 @@ int32_t AudioPolicyServer::GetPreferredOutputDeviceDescriptors(const AudioRender
         audioPolicyService_.UpdateDescWhenNoBTPermission(deviceDescs);
     }
 
-    int32_t apiVersion = GetApiTargetVersion();
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    int32_t apiVersion = CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
     clientInfo.isSupportedNearlink_ = audioPolicyUtils_.IsSupportedNearlink(AudioBundleManager::GetBundleName(),
         apiVersion, hasSystemPermission);
@@ -2099,10 +2111,11 @@ int32_t AudioPolicyServer::GetPreferredInputDeviceDescriptors(const AudioCapture
     if (!hasBTPermission) {
         audioPolicyService_.UpdateDescWhenNoBTPermission(deviceDescs);
     }
-    int32_t apiVersion = GetApiTargetVersion();
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    int32_t apiVersion = CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
     clientInfo.isSupportedNearlink_ = audioPolicyUtils_.IsSupportedNearlink(AudioBundleManager::GetBundleName(),
-        apiVersion, PermissionUtil::VerifySystemPermission());
+        apiVersion, hasSystemPermission);
     for (auto &desc : deviceDescs) {
         CHECK_AND_RETURN_RET_LOG(desc, ERR_MEMORY_ALLOC_FAILED, "nullptr");
         desc->SetClientInfo(clientInfo);
@@ -3828,7 +3841,7 @@ int32_t AudioPolicyServer::GetAvailableDevices(int32_t usageIn,
         }
     }
 
-    int32_t apiVersion = GetApiTargetVersion();
+    int32_t apiVersion = CheckAndGetApiVersion(deviceDevices, hasSystemPermission);
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
     clientInfo.isSupportedNearlink_ = audioPolicyUtils_.IsSupportedNearlink(AudioBundleManager::GetBundleName(),
         apiVersion, hasSystemPermission);
