@@ -469,7 +469,6 @@ int32_t HpaeOffloadSinkOutputNode::ProcessRenderFrame()
     auto now = std::chrono::high_resolution_clock::now();
     auto ret = audioRendererSink_->RenderFrame(*renderFrameData, renderFrameData_.size(), writeLen);
     if (ret == SUCCESS && writeLen == 0 && !firstWriteHdi_) {
-        AUDIO_INFO_LOG("offload renderFrame full");
         return OFFLOAD_FULL;
     }
     if (!(ret == SUCCESS && writeLen == renderFrameData_.size())) {
