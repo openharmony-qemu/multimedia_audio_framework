@@ -118,10 +118,7 @@ int32_t HpaeOffloadRendererManager::CreateStream(const HpaeStreamInfo &streamInf
     if (!IsInit()) {
         return ERR_INVALID_OPERATION;
     }
-    int32_t checkRet = CheckStreamInfo(streamInfo);
-    if (checkRet != SUCCESS) {
-        return checkRet;
-    }
+    CHECK_AND_RETURN_RET_LOG(CheckStreamInfo(streamInfo) == SUCCESS, ERROR, "Check StreamInfo ERROR");
     auto request = [this, streamInfo]() {
         CreateInputSession(streamInfo);
         sessionInfo_.state = HPAE_SESSION_PREPARED;
