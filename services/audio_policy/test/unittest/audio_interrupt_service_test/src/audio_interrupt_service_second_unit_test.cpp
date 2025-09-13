@@ -1808,6 +1808,10 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_064, TestSize.
     ret = audioInterruptService->ShouldCallbackToClient(uid, streamId, interruptEvent);
     EXPECT_EQ(false, ret);
 
+    interruptEvent.hintType = INTERRUPT_HINT_RESUME;
+    ret = audioInterruptService->ShouldCallbackToClient(uid, streamId, interruptEvent);
+    EXPECT_EQ(false, ret);
+
     interruptEvent.hintType = INTERRUPT_HINT_MUTE;
     ret = audioInterruptService->ShouldCallbackToClient(uid, streamId, interruptEvent);
     EXPECT_EQ(false, ret);
@@ -1861,6 +1865,39 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_066, TestSize.
     audioInterruptService->zonesMap_[zoneId] = audioInterruptZone;
     audioInterruptService->RemoveClient(zoneId, streamId);
     EXPECT_EQ(false, audioInterrupt.isAudioSessionInterrupt);
+}
+
+/**
+ * @tc.name  : Test AudioInterruptService
+ * @tc.number: AudioInterruptService_071
+ * @tc.desc  : Test AudioInterruptIsActiveInFocusList
+*/
+HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_071, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+    uint32_t streamId = 1;
+    int32_t zoneId = 0;
+    auto ret = audioInterruptService->AudioInterruptIsActiveInFocusList(zoneId, streamId);
+    EXPECT_EQ(ret, false);
+    auto audioInterruptZone = make_shared<AudioInterruptZone>();
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.streamId = streamId;
+    audioInterruptZone->audioFocusInfoList.push_back({audioInterrupt, ACTIVE});
+    audioInterruptService->zonesMap_[0] = audioInterruptZone;
+    ret = audioInterruptService->AudioInterruptIsActiveInFocusList(zoneId, streamId);
+    EXPECT_EQ(ret, true);
+    audioInterruptService->mutedGameSessionId_.insert(streamId);
+    audioInterruptZone->audioFocusInfoList.clear();
+    audioInterruptZone->audioFocusInfoList.push_back({audioInterrupt, PAUSE});
+    audioInterruptService->zonesMap_[0] = audioInterruptZone;
+    ret = audioInterruptService->AudioInterruptIsActiveInFocusList(zoneId, streamId);
+    EXPECT_EQ(ret, true);
+    audioInterruptZone->audioFocusInfoList.clear();
+    audioInterruptService->mutedGameSessionId_.clear();
+    audioInterruptService->zonesMap_[0] = audioInterruptZone;
+    ret = audioInterruptService->AudioInterruptIsActiveInFocusList(zoneId, streamId);
+    EXPECT_EQ(ret, false);
 }
 } // namespace AudioStandard
 } // namespace OHOS
