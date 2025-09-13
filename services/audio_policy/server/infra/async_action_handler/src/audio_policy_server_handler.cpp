@@ -1162,7 +1162,6 @@ void AudioPolicyServerHandler::HandleAudioSessionDeviceChangeEvent(const AppExec
         clientCallbacksMap = clientCallbacksMap_;
     }
 
-    std::shared_ptr<AudioSession> audioSession = nullptr;
     for (auto it = audioPolicyClientProxyAPSCbsMap.begin(); it != audioPolicyClientProxyAPSCbsMap.end(); ++it) {
         if ((eventContextObj->callerPid_ != -1) && (it->first != eventContextObj->callerPid_)) {
             AUDIO_INFO_LOG("current callerPid is %{public}d, not %{public}d", it->first, eventContextObj->callerPid_);
@@ -1178,28 +1177,25 @@ void AudioPolicyServerHandler::HandleAudioSessionDeviceChangeEvent(const AppExec
         if ((clientCallbacksMap.count(it->first) > 0) &&
             (clientCallbacksMap[it->first].count(CALLBACK_AUDIO_SESSION_DEVICE) > 0) &&
             (clientCallbacksMap[it->first][CALLBACK_AUDIO_SESSION_DEVICE])) {
-            std::shared_ptr<AudioSessionService> audioSessionService = AudioSessionService::GetAudioSessionService();
-            audioSession = audioSessionService->GetAudioSessionByPid(it->first);
-            if ((audioSession == nullptr) || (!audioSession->IsActivated())) {
+            AudioSessionService &audioSessionService = OHOS::Singleton<AudioSessionService>::GetInstance();
+            if (!audioSessionService.IsAudioSessionActivated(it->first)) {
                 continue;
             }
 
             CurrentOutputDeviceChangedEvent deviceChangedEvent;
             AudioRendererInfo rendererInfo;
-            rendererInfo.streamUsage = audioSession->GetSessionStreamUsage();
+            rendererInfo.streamUsage = audioSessionService.GetAudioSessionStreamUsage(it->first);
             deviceChangedEvent.devices = AudioCoreService::GetCoreService()->GetEventEntry()->
                 GetPreferredOutputDeviceDescriptors(rendererInfo);
 
             CHECK_AND_CONTINUE_LOG((deviceChangedEvent.devices.size() > 0) &&
                 (deviceChangedEvent.devices[0] != nullptr), "get invalid preferred output devices list");
-            CHECK_AND_CONTINUE_LOG((!audioSession->IsSessionOutputDeviceChanged(deviceChangedEvent.devices[0]) ||
-                (eventContextObj->reason_ == AudioStreamDeviceChangeReason::AUDIO_SESSION_ACTIVATE)),
-                "device of session %{public}d is not changed", it->first);
 
-            deviceChangedEvent.changeReason = eventContextObj->reason_;
-            deviceChangedEvent.recommendedAction = audioSession->IsRecommendToStopAudio(eventContextObj) ?
-                OutputDeviceChangeRecommendedAction::RECOMMEND_TO_STOP :
-                OutputDeviceChangeRecommendedAction::RECOMMEND_TO_CONTINUE;
+            int32_t ret = audioSessionService.FillCurrentOutputDeviceChangedEvent(
+                it->first, eventContextObj->reason_, eventContextObj->descriptor, deviceChangedEvent);
+            if (ret != SUCCESS) {
+                continue;
+            }
 
             sessionDeviceChangeCb->OnAudioSessionCurrentDeviceChanged(deviceChangedEvent);
         }
@@ -1219,7 +1215,6 @@ void AudioPolicyServerHandler::HandleAudioSessionInputDeviceChangeEvent(const Ap
         clientCallbacksMap = clientCallbacksMap_;
     }
 
-    std::shared_ptr<AudioSession> audioSession = nullptr;
     for (auto it = audioPolicyClientProxyAPSCbsMap.begin(); it != audioPolicyClientProxyAPSCbsMap.end(); ++it) {
         if ((eventContextObj->callerPid_ != -1) && (it->first != eventContextObj->callerPid_)) {
             AUDIO_INFO_LOG("current callerPid is %{public}d, not %{public}d", it->first, eventContextObj->callerPid_);
@@ -1235,9 +1230,8 @@ void AudioPolicyServerHandler::HandleAudioSessionInputDeviceChangeEvent(const Ap
         if ((clientCallbacksMap.count(it->first) > 0) &&
             (clientCallbacksMap[it->first].count(CALLBACK_AUDIO_SESSION_INPUT_DEVICE) > 0) &&
             (clientCallbacksMap[it->first][CALLBACK_AUDIO_SESSION_INPUT_DEVICE])) {
-            std::shared_ptr<AudioSessionService> audioSessionService = AudioSessionService::GetAudioSessionService();
-            audioSession = audioSessionService->GetAudioSessionByPid(it->first);
-            if ((audioSession == nullptr) || (!audioSession->IsActivated())) {
+            AudioSessionService &audioSessionService = OHOS::Singleton<AudioSessionService>::GetInstance();
+            if (!audioSessionService.IsAudioSessionActivated(it->first)) {
                 continue;
             }
 
@@ -1249,7 +1243,9 @@ void AudioPolicyServerHandler::HandleAudioSessionInputDeviceChangeEvent(const Ap
 
             CHECK_AND_CONTINUE_LOG((deviceChangedEvent.devices.size() > 0) &&
                 (deviceChangedEvent.devices[0] != nullptr), "get invalid preferred output devices list");
-            CHECK_AND_CONTINUE_LOG((!audioSession->IsSessionInputDeviceChanged(deviceChangedEvent.devices[0]) ||
+            bool isSessionInputDeviceChanged =
+                audioSessionService.IsSessionInputDeviceChanged(it->first, deviceChangedEvent.devices[0]);
+            CHECK_AND_CONTINUE_LOG((!isSessionInputDeviceChanged ||
                 (eventContextObj->reason_ == AudioStreamDeviceChangeReason::AUDIO_SESSION_ACTIVATE)),
                 "device of session %{public}d is not changed", it->first);
             deviceChangedEvent.changeReason = eventContextObj->reason_;

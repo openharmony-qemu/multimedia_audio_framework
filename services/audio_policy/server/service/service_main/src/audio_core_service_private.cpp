@@ -2144,7 +2144,7 @@ int32_t AudioCoreService::SetDefaultOutputDevice(const DeviceType deviceType, co
     CHECK_AND_RETURN_RET_LOG(pipeManager_->GetStreamDescById(sessionID) != nullptr, ERR_NOT_SUPPORTED,
         "sessionId is not exist");
 
-    if ((audioSessionService_ != nullptr) && (!audioSessionService_->IsStreamAllowedToSetDevice(sessionID))) {
+    if (!audioSessionService_.IsStreamAllowedToSetDevice(sessionID)) {
         AUDIO_ERR_LOG("current stream is contained in a session which had set default output device");
         return ERR_NOT_SUPPORTED;
     }
@@ -2798,9 +2798,7 @@ void AudioCoreService::UpdateStreamDevicesForStart(
     streamDesc->UpdateOldDevice(streamDesc->newDeviceDescs_);
     
     StreamUsage streamUsage = StreamUsage::STREAM_USAGE_INVALID;
-    if (audioSessionService_ != nullptr) {
-        streamUsage = audioSessionService_->GetAudioSessionStreamUsage(GetRealPid(streamDesc));
-    }
+    streamUsage = audioSessionService_.GetAudioSessionStreamUsage(GetRealPid(streamDesc));
     streamUsage = (streamUsage != StreamUsage::STREAM_USAGE_INVALID) ? streamUsage :
     streamDesc->rendererInfo_.streamUsage;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;

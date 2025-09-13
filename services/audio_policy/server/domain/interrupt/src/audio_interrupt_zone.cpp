@@ -126,16 +126,14 @@ void AudioInterruptZoneManager::ForceStopAudioFocusInZone(int32_t zoneId, const 
 {
     AUDIO_DEBUG_LOG("force stop interrupt %{public}d,%{public}d,%{public}d of zone %{public}d",
         interrupt.uid, interrupt.pid, interrupt.streamId, zoneId);
+    CHECK_AND_RETURN_LOG(service_ != nullptr, "interrupt service is nullptr");
 
-    CHECK_AND_RETURN_LOG(service_->sessionService_ != nullptr, "session service is nullptr");
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
     if (service_->handler_ != nullptr) {
         service_->handler_->SendInterruptEventWithStreamIdCallback(interruptEvent, interrupt.streamId);
     }
 
-    auto audioSession = service_->sessionService_->GetAudioSessionByPid(interrupt.pid);
-    CHECK_AND_RETURN_LOG(audioSession != nullptr, "audio session is nullptr");
-    audioSession->RemoveStreamInfo(interrupt.streamId);
+    service_->sessionService_.RemoveStreamInfo(interrupt.pid, interrupt.streamId);
 }
 
 int32_t AudioInterruptZoneManager::MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func)
@@ -288,12 +286,9 @@ AudioFocusIterator AudioInterruptZoneManager::QueryAudioFocusFromZone(int32_t zo
 
 void AudioInterruptZoneManager::RemoveAudioZoneInterrupts(int32_t zoneId, const AudioFocusIterator &focus)
 {
-    CHECK_AND_RETURN_LOG(service_->sessionService_ != nullptr, "session service is nullptr");
+    CHECK_AND_RETURN_LOG(service_ != nullptr, "service is nullptr");
     for (auto &it : focus) {
-        auto audioSession = service_->sessionService_->GetAudioSessionByPid(it->first.pid);
-        if (audioSession != nullptr) {
-            audioSession->RemoveStreamInfo(it->first.streamId);
-        }
+        service_->sessionService_.RemoveStreamInfo(it->first.pid, it->first.streamId);
         AUDIO_DEBUG_LOG("remove interrupt %{public}d from zone %{public}d",
             it->first.streamId, zoneId);
         service_->zonesMap_[zoneId]->audioFocusInfoList.erase(it);

@@ -30,12 +30,8 @@ typedef void (*TestFuncs)();
 std::shared_ptr<AudioSession> CreateAudioSession()
 {
     AudioSessionStrategy strategy;
-    std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = nullptr;
-    if (g_fuzzUtils.GetData<bool>()) {
-        auto audioSessionService = std::make_shared<AudioSessionService>();
-        audioSessionStateMonitor = std::static_pointer_cast<AudioSessionStateMonitor>(audioSessionService);
-    }
-    return std::make_shared<AudioSession>(g_fuzzUtils.GetData<int32_t>(), strategy, audioSessionStateMonitor);
+    auto &audioSessionService = OHOS::Singleton<AudioSessionService>::GetInstance();
+    return std::make_shared<AudioSession>(g_fuzzUtils.GetData<int32_t>(), strategy, audioSessionService);
 }
 
 void SetAudioSessionSceneFuzzTest()
@@ -210,15 +206,6 @@ void GetSessionStrategyFuzzTest()
     audioSession->GetSessionStrategy();
 }
 
-void ShouldExcludeStreamTypeFuzzTest()
-{
-    auto audioSession = CreateAudioSession();
-    CHECK_AND_RETURN(audioSession != nullptr);
-    AudioInterrupt audioInterrupt;
-    audioInterrupt.audioFocusType.streamType = g_fuzzUtils.GetData<AudioStreamType>();
-    audioSession->ShouldExcludeStreamType(audioInterrupt);
-}
-
 void IsAudioRendererEmptyFuzzTest()
 {
     auto audioSession = CreateAudioSession();
@@ -260,7 +247,8 @@ void IsRecommendToStopAudioFuzzTest()
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
-    audioSession->IsRecommendToStopAudio(std::make_shared<AudioPolicyServerHandler::EventContextObj>());
+    audioSession->IsRecommendToStopAudio(
+        AudioStreamDeviceChangeReason::OVERRODE, std::make_shared<AudioDeviceDescriptor>());
 }
 
 void IsSessionOutputDeviceChangedFuzzTest()
@@ -304,7 +292,6 @@ vector<TestFuncs> g_testFuncs = {
     EnableDefaultDeviceFuzzTest,
     GetStreamUsageInnerFuzzTest,
     GetSessionStrategyFuzzTest,
-    ShouldExcludeStreamTypeFuzzTest,
     IsAudioRendererEmptyFuzzTest,
     GetSessionDefaultOutputDeviceFuzzTest,
     IsStreamContainedInCurrentSessionFuzzTest,

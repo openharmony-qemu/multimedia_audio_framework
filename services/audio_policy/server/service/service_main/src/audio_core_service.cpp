@@ -82,7 +82,7 @@ AudioCoreService::AudioCoreService()
       sleAudioDeviceManager_(SleAudioDeviceManager::GetInstance()),
       audioUsrSelectManager_(AudioUsrSelectManager::GetAudioUsrSelectManager()),
       audioPipeSelector_(AudioPipeSelector::GetPipeSelector()),
-      audioSessionService_(AudioSessionService::GetAudioSessionService()),
+      audioSessionService_(OHOS::Singleton<AudioSessionService>::GetInstance()),
       pipeManager_(AudioPipeManager::GetPipeManager())
 {
     AUDIO_INFO_LOG("Ctor");
@@ -729,12 +729,7 @@ int32_t AudioCoreService::GetPreferredOutputStreamType(AudioRendererInfo &render
 
 int32_t AudioCoreService::GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType)
 {
-    if (audioSessionService_ == nullptr) {
-        AUDIO_ERR_LOG("GetSessionDefaultOutputDevice audioSessionService_ is nullptr!");
-        return ERR_UNKNOWN;
-    }
-
-    deviceType = audioSessionService_->GetSessionDefaultOutputDevice(callerPid);
+    deviceType = audioSessionService_.GetSessionDefaultOutputDevice(callerPid);
     return SUCCESS;
 }
 
@@ -743,12 +738,7 @@ int32_t AudioCoreService::SetSessionDefaultOutputDevice(const int32_t callerPid,
     CHECK_AND_RETURN_RET_LOG(AudioPolicyConfigManager::GetInstance().GetHasEarpiece(), ERR_NOT_SUPPORTED,
         "the device has no earpiece");
 
-    if (audioSessionService_ == nullptr) {
-        AUDIO_ERR_LOG("SetSessionDefaultOutputDevice audioSessionService_ is nullptr!");
-        return ERR_UNKNOWN;
-    }
-
-    return audioSessionService_->SetSessionDefaultOutputDevice(callerPid, deviceType);
+    return audioSessionService_.SetSessionDefaultOutputDevice(callerPid, deviceType);
 }
 
 int32_t AudioCoreService::GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo)

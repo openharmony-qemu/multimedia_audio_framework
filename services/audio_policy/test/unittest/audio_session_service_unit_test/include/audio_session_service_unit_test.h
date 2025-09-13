@@ -18,9 +18,15 @@
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#include "audio_session_state_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
+class AudioSessionStateMonitorStub : public AudioSessionStateMonitor {
+public:
+    virtual void OnAudioSessionTimeOut(int32_t pid) override {}
+};
 
 class AudioSessionServiceUnitTest : public testing::Test {
 public:
@@ -32,6 +38,9 @@ public:
     void SetUp(void);
     // TearDown: Called after each test cases
     void TearDown(void);
+private:
+    AudioSessionStateMonitorStub audioSessionStateMonitor_;
+    AudioSessionService &audioSessionService_ {OHOS::Singleton<AudioSessionService>::GetInstance()};
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -66,11 +66,8 @@ void AppStateListener::OnAppStateChanged(const AppExecFwk::AppProcessData& appPr
             (appProcessData.appState == AppExecFwk::ApplicationState::APP_STATE_BACKGROUND));
     }
 
-    std::shared_ptr<AudioSessionService> sessionService = AudioSessionService::GetAudioSessionService();
-    if (sessionService != nullptr) {
-        sessionService->NotifyAppStateChange(appProcessData.pid,
-            (appProcessData.appState == AppExecFwk::ApplicationState::APP_STATE_BACKGROUND));
-    }
+    OHOS::Singleton<AudioSessionService>::GetInstance().NotifyAppStateChange(appProcessData.pid,
+        (appProcessData.appState == AppExecFwk::ApplicationState::APP_STATE_BACKGROUND));
 }
 
 void AppStateListener::HandleAppStateChange(int32_t pid, int32_t uid, int32_t state)
