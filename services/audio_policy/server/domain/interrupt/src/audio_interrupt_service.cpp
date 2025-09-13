@@ -1020,8 +1020,8 @@ void AudioInterruptService::ResetNonInterruptControl(AudioInterrupt audioInterru
     if (!IsGameAvoidCallbackCase(audioInterrupt)) {
         return;
     }
-    if (mutedGameSessionId_.find(streamId) != mutedGameSessionId_.end()) {
-        mutedGameSessionId_.erase(streamId);
+    if (mutedGameSessionId_.find(audioInterrupt.streamId) != mutedGameSessionId_.end()) {
+        mutedGameSessionId_.erase(audioInterrupt.streamId);
     }
     AUDIO_INFO_LOG("Reset non-interrupt control for %{public}u", audioInterrupt.streamId);
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
