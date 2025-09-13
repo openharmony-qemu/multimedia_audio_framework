@@ -1474,5 +1474,12 @@ void AudioCoreService::SetFirstScreenOn()
 {
     isFirstScreenOn_ = true;
 }
+
+bool AudioCoreService::IsA2dpOffloadStream(uint sessionId)
+{
+    auto streamDesc = pipeManager_->GetStreamDescById(sessionId);
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, false, "can't find sessionId: %{public}d", sessionId);
+    return streamDesc->IsA2dpOffloadStream();
+}
 } // namespace AudioStandard
 } // namespace OHOS

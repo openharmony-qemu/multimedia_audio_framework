@@ -92,7 +92,7 @@ public:
 
     float GetSingleStreamVolume(int32_t streamId);
 
-    AudioStreamInfo GetFastStreamInfo();
+    AudioStreamInfo GetFastStreamInfo(uint32_t sessionId);
 
     int32_t SetStreamMute(AudioVolumeType volumeType, bool mute, bool isLegacy = false,
         const DeviceType &deviceType = DEVICE_TYPE_NONE);

@@ -481,35 +481,6 @@ HWTEST_F(AudioPolicyServiceExtendedUnitTest, GetDistributedRoutingRoleInfo_001, 
 
 /**
 * @tc.name  : Test AudioPolicyService.
-* @tc.number: GetFastStreamInfo_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceExtendedUnitTest, GetFastStreamInfo_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceExtendedUnitTest GetFastStreamInfo_001 start");
-    ASSERT_NE(nullptr, GetServerPtr());
-    GetPermission();
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.OnFastFormatParsed(AudioSampleFormat::SAMPLE_S32LE);
-    auto res = GetServerPtr()->audioPolicyService_.GetFastStreamInfo();
-    ASSERT_EQ(AudioSampleFormat::SAMPLE_S32LE, res.format);
-}
-
-/**
-* @tc.name  : Test AudioPolicyService.
-* @tc.number: GetFastStreamInfo_002
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceExtendedUnitTest, GetFastStreamInfo_002, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceExtendedUnitTest GetFastStreamInfo_002 start");
-    ASSERT_NE(nullptr, GetServerPtr());
-    GetPermission();
-    auto res = GetServerPtr()->audioPolicyService_.GetFastStreamInfo();
-    ASSERT_NE(AudioSampleFormat::SAMPLE_S16LE, res.format);
-}
-
-/**
-* @tc.name  : Test AudioPolicyService.
 * @tc.number: GetActiveOutputDeviceDescriptor_001
 * @tc.desc  : Test AudioPolicyService interfaces.
 */

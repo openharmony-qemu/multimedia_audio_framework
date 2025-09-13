@@ -106,6 +106,8 @@ public:
 
     bool IsDistributedSpeaker() const;
 
+    bool IsA2dpOffload() const;
+
     bool IsSpeakerOrEarpiece() const;
 
     bool IsRemote() const;

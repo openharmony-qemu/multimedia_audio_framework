@@ -1257,9 +1257,19 @@ int32_t AudioPolicyServer::SetLowPowerVolume(int32_t streamId, float volume)
     return streamCollector_.SetLowPowerVolume(streamId, volume);
 }
 
-int32_t AudioPolicyServer::GetFastStreamInfo(AudioStreamInfo &streamInfo)
+int32_t AudioPolicyServer::GetFastStreamInfo(AudioStreamInfo &streamInfo, uint32_t sessionId)
 {
-    streamInfo = audioPolicyService_.GetFastStreamInfo();
+    streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    streamInfo.format = audioConfigManager_.GetFastFormat();
+
+    // change to SAMPLE_S16LE for bluetooth
+    if (streamInfo.format == SAMPLE_S32LE) {
+        AUDIO_INFO_LOG("Before change fast format is %{public}d", streamInfo.format);
+        bool isA2dpOffload = coreService_->IsA2dpOffloadStream(sessionId);
+        DeviceType deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+        streamInfo.format = (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP && !isA2dpOffload) ? SAMPLE_S16LE : SAMPLE_S32LE;
+    }
+    AUDIO_INFO_LOG("Fast format is %{public}d", streamInfo.format);
     return SUCCESS;
 }
 

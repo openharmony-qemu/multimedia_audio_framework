@@ -270,20 +270,6 @@ int32_t AudioPolicyService::NotifyWakeUpCapturerRemoved()
     return SUCCESS;
 }
 
-AudioStreamInfo AudioPolicyService::GetFastStreamInfo()
-{
-    AudioStreamInfo streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    streamInfo.format = audioConfigManager_.GetFastFormat();
-
-    // change to SAMPLE_S16LE for bluetooth
-    if (streamInfo.format == SAMPLE_S32LE) {
-        DeviceType deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-        streamInfo.format = deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ? SAMPLE_S16LE : SAMPLE_S32LE;
-    }
-    AUDIO_INFO_LOG("Fast format is %{public}d", streamInfo.format);
-    return streamInfo;
-}
-
 bool AudioPolicyService::IsAbsVolumeSupported()
 {
     return audioPolicyManager_.IsAbsVolumeScene();

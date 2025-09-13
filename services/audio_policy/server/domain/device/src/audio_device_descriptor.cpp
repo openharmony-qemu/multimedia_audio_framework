@@ -519,6 +519,12 @@ bool AudioDeviceDescriptor::IsDistributedSpeaker() const
     return deviceType_ == DEVICE_TYPE_SPEAKER && networkId_ != "LocalDevice";
 }
 
+bool AudioDeviceDescriptor::IsA2dpOffload() const
+{
+    return deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag_ == A2DP_OFFLOAD;
+}
+
+
 bool AudioDeviceDescriptor::IsSpeakerOrEarpiece() const
 {
     return (networkId_ == LOCAL_NETWORK_ID && deviceType_ == DEVICE_TYPE_SPEAKER) ||
