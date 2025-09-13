@@ -198,10 +198,7 @@ int32_t HpaeCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
         AUDIO_ERR_LOG("HpaeCapturerManager is not init");
         return ERR_INVALID_OPERATION;
     }
-    int32_t checkRet = CheckSourceAndStreamInfo(streamInfo, sourceInfo_);
-    if (checkRet != SUCCESS) {
-        return checkRet;
-    }
+    CHECK_AND_RETURN_RET_LOG(CheckStreamInfo(streamInfo) == SUCCESS, ERROR, "Check StreamInfo ERROR");
     auto request = [this, streamInfo]() {
         AUDIO_INFO_LOG("CreateStream sessionId %{public}u deviceName %{public}s",
             streamInfo.sessionId,
@@ -664,10 +661,7 @@ int32_t HpaeCapturerManager::InitCapturerManager()
     HpaeNodeInfo nodeInfo;
     HpaeNodeInfo ecNodeInfo;
     HpaeNodeInfo micRefNodeInfo;
-    int32_t checkRet = CheckSourceInfoFramelen(sourceInfo_);
-    if (checkRet != SUCCESS) {
-        return checkRet;
-    }
+    CHECK_AND_RETURN_RET_LOG(CheckSourceInfoFramelen(sourceInfo_) == SUCCESS, ERROR, "Check SourceInfo ERROR");
     nodeInfo.deviceClass = sourceInfo_.deviceClass;
     nodeInfo.channels = sourceInfo_.channels;
     nodeInfo.format = sourceInfo_.format;
