@@ -323,7 +323,6 @@ void ProxyDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
 
 PipeInfoGuard::PipeInfoGuard(uint32_t sessionId)
 {
-    AUDIO_INFO_LOG("SessionId: %{public}u", sessionId);
     sessionId_ = sessionId;
 }
 
@@ -337,7 +336,6 @@ PipeInfoGuard::~PipeInfoGuard()
 
 void PipeInfoGuard::SetReleaseFlag(bool flag)
 {
-    AUDIO_INFO_LOG("Flag: %{public}d", flag);
     releaseFlag_ = flag;
 }
 
@@ -2186,8 +2184,6 @@ bool AudioServer::VerifyClientPermission(const std::string &permissionName,
     Security::AccessToken::AccessTokenID tokenId)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
-    AUDIO_INFO_LOG("[%{public}s] for uid:%{public}d tokenId:%{public}u", permissionName.c_str(), callerUid, tokenId);
-
 #ifdef AUDIO_BUILD_VARIANT_ROOT
     // Root users should be whitelisted
     if (callerUid == ROOT_UID) {
@@ -2201,7 +2197,8 @@ bool AudioServer::VerifyClientPermission(const std::string &permissionName,
     }
     int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(clientTokenId, permissionName);
     CHECK_AND_RETURN_RET_LOG(res == Security::AccessToken::PermissionState::PERMISSION_GRANTED,
-        false, "Permission denied [tid:%{public}d]", clientTokenId);
+        false, "Permission denied [tid:%{public}d], [%{public}s] for uid:%{public}d tokenId:%{public}u",
+        clientTokenId, permissionName.c_str(), callerUid, tokenId);
 
     return true;
 }
