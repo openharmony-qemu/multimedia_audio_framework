@@ -2086,6 +2086,51 @@ std::string GetBundleNameByToken(const uint32_t &tokenIdNum)
         return tokenInfo.processName;
     }
 }
+
+static std::unordered_map<AudioSampleFormat, std::string> g_formatToStringMap = {
+    {SAMPLE_U8, "s8"},
+    {SAMPLE_S16LE, "s16le"},
+    {SAMPLE_S24LE, "s24le"},
+    {SAMPLE_S32LE, "s32le"},
+    {SAMPLE_F32LE, "f32le"}
+};
+std::string ConvertToStringForFormat(const AudioSampleFormat format)
+{
+    std::string formatStr = "s16le";
+    auto it = g_formatToStringMap.find(format);
+    if (it != g_formatToStringMap.end()) {
+        formatStr = it->second;
+    }
+    return formatStr;
+}
+
+std::string ConvertToStringForSampleRate(const AudioSamplingRate sampleRate)
+{
+    return std::to_string(static_cast<int32_t>(sampleRate));
+}
+
+std::string ConvertToStringForChannel(const AudioChannel channel)
+{
+    return std::to_string(static_cast<int32_t>(channel));
+}
+
+uint8_t* ReallocVectorBufferAndClear(std::vector<uint8_t> &buffer, const size_t bufLength)
+{
+    buffer.assign(bufLength, 0);
+    return buffer.data();
+}
+
+bool g_injectSwitch = system::GetBoolParameter("const.multimedia.audio.inject", false);
+bool IsInjectEnable()
+{
+    return g_injectSwitch;
+}
+
+void SetInjectEnable(bool injectSwitch)
+{
+    g_injectSwitch = injectSwitch;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
 

@@ -164,8 +164,9 @@ public:
 private:
     AudioService();
     void DelayCallReleaseEndpoint(std::string endpointName);
+    bool IsSameAudioStreamInfoNotIncludeSample(AudioStreamInfo &newStreamInfo, AudioStreamInfo &oldStreamInfo);
     ReuseEndpointType GetReuseEndpointType(AudioDeviceDescriptor &deviceInfo,
-        const std::string &deviceKey, AudioStreamInfo &streamInfo);
+        const std::string &deviceKey, AudioStreamInfo &streamInfo, int32_t endpointFlag);
     void InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
     void InsertCapturer(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);
 #ifdef HAS_FEATURE_INNERCAPTURER

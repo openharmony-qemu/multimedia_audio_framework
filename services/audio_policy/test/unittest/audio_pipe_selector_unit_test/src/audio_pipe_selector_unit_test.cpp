@@ -595,6 +595,95 @@ HWTEST_F(AudioPipeSelectorUnitTest, ProcessConcurrency_001, TestSize.Level4)
 }
 
 /**
+ * @tc.name: UpdateProcessConcurrency_001
+ * @tc.desc: Test UpdateProcessConcurrency with CALL_IN pipes and PLAY_BOTH action modification.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, UpdateProcessConcurrency_001, TestSize.Level4)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    AudioPipeType existingPipe = PIPE_TYPE_CALL_IN;
+    AudioPipeType commingPipe = PIPE_TYPE_CALL_IN;
+    ConcurrencyAction action = CONCEDE_INCOMING; // Initial action
+
+    SetInjectEnable(true);
+    audioPipeSelector->UpdateProcessConcurrency(existingPipe, commingPipe, action);
+
+    // Verify that action is updated to PLAY_BOTH when both pipes are CALL_IN and injection is enabled
+    EXPECT_EQ(action, PLAY_BOTH);
+}
+
+/**
+ * @tc.name: UpdateProcessConcurrency_002
+ * @tc.desc: Test UpdateProcessConcurrency with different pipe types and no action modification.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, UpdateProcessConcurrency_002, TestSize.Level4)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    AudioPipeType existingPipe = PIPE_TYPE_LOWLATENCY_OUT;
+    AudioPipeType commingPipe = PIPE_TYPE_CALL_IN;
+    ConcurrencyAction originalAction = CONCEDE_EXISTING;
+    ConcurrencyAction action = originalAction;
+
+    SetInjectEnable(true);
+    audioPipeSelector->UpdateProcessConcurrency(existingPipe, commingPipe, action);
+
+    // Verify that action remains unchanged when pipe types are different
+    EXPECT_EQ(action, originalAction);
+}
+
+/**
+ * @tc.name: UpdateProcessConcurrency_003
+ * @tc.desc: Test UpdateProcessConcurrency with action already set to PLAY_BOTH and no modification.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, UpdateProcessConcurrency_003, TestSize.Level4)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    AudioPipeType existingPipe = PIPE_TYPE_CALL_IN;
+    AudioPipeType commingPipe = PIPE_TYPE_CALL_IN;
+    ConcurrencyAction originalAction = PLAY_BOTH;
+    ConcurrencyAction action = originalAction;
+
+    SetInjectEnable(true);
+    audioPipeSelector->UpdateProcessConcurrency(existingPipe, commingPipe, action);
+
+    // Verify that action remains PLAY_BOTH when it's already set
+    EXPECT_EQ(action, originalAction);
+}
+
+/**
+ * @tc.name: UpdateProcessConcurrency_004
+ * @tc.desc: Test UpdateProcessConcurrency with various CALL_IN scenarios and action modification.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, UpdateProcessConcurrency_004, TestSize.Level4)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    SetInjectEnable(true);
+
+    // Test case 1: Both pipes are CALL_IN, injection enabled, action should be updated to PLAY_BOTH
+    ConcurrencyAction action = CONCEDE_INCOMING;
+    audioPipeSelector->UpdateProcessConcurrency(PIPE_TYPE_CALL_IN, PIPE_TYPE_CALL_IN, action);
+    EXPECT_EQ(action, PLAY_BOTH);
+
+    // Test case 2: Different pipe types, action should remain unchanged
+    action = CONCEDE_EXISTING;
+    audioPipeSelector->UpdateProcessConcurrency(PIPE_TYPE_CALL_IN, PIPE_TYPE_LOWLATENCY_OUT, action);
+    EXPECT_EQ(action, CONCEDE_EXISTING);
+
+    // Test case 3: Same pipe types but not CALL_IN, action should remain unchanged
+    action = CONCEDE_INCOMING;
+    audioPipeSelector->UpdateProcessConcurrency(PIPE_TYPE_LOWLATENCY_OUT, PIPE_TYPE_LOWLATENCY_OUT, action);
+    EXPECT_EQ(action, CONCEDE_INCOMING);
+}
+
+/**
  * @tc.name: AudioPipeSelectorUnitTest_MoveStreamsToNormalPipes_001
  * @tc.number: MoveStreamsToNormalPipes_001
  * @tc.desc: Test MoveStreamsToNormalPipes different cases

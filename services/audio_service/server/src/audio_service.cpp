@@ -1248,14 +1248,35 @@ void AudioService::CheckBeforeRecordEndpointCreate(bool isRecord)
     }
 }
 
+bool AudioService::IsSameAudioStreamInfoNotIncludeSample(AudioStreamInfo &newStreamInfo,
+                                                         AudioStreamInfo &oldStreamInfo)
+{
+    return newStreamInfo.encoding == oldStreamInfo.encoding &&
+           newStreamInfo.format == oldStreamInfo.format &&
+           newStreamInfo.channels == oldStreamInfo.channels &&
+           newStreamInfo.channelLayout == oldStreamInfo.channelLayout;
+}
+
 // must be called with processListMutex_ lock hold
 ReuseEndpointType AudioService::GetReuseEndpointType(AudioDeviceDescriptor &deviceInfo,
-    const std::string &deviceKey, AudioStreamInfo &streamInfo)
+    const std::string &deviceKey, AudioStreamInfo &streamInfo, int32_t endpointFlag)
 {
     if (endpointList_.find(deviceKey) == endpointList_.end()) {
         return ReuseEndpointType::CREATE_ENDPOINT;
     }
-    bool reuse = streamInfo == endpointList_[deviceKey]->GetAudioStreamInfo();
+
+    bool reuse = false;
+    AudioStreamInfo oldStreamInfo = endpointList_[deviceKey]->GetAudioStreamInfo();
+    if (IsInjectEnable() && endpointList_[deviceKey]->GetDeviceRole() == INPUT_DEVICE &&
+        endpointFlag == AUDIO_FLAG_VOIP_FAST) {
+        /* capture voip fast support resample, so can reuse at not same sample */
+        if (IsSameAudioStreamInfoNotIncludeSample(streamInfo, oldStreamInfo)) {
+            reuse = true;
+        }
+    } else {
+        reuse = streamInfo == oldStreamInfo;
+    }
+
     return reuse ? ReuseEndpointType::REUSE_ENDPOINT : ReuseEndpointType::RECREATE_ENDPOINT;
 }
 
@@ -1265,7 +1286,7 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(AudioDevi
     // Create shared stream.
     int32_t endpointFlag = isVoipStream ? AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;
     std::string deviceKey = AudioEndpoint::GenerateEndpointKey(deviceInfo, endpointFlag);
-    ReuseEndpointType type = GetReuseEndpointType(deviceInfo, deviceKey, streamInfo);
+    ReuseEndpointType type = GetReuseEndpointType(deviceInfo, deviceKey, streamInfo, endpointFlag);
     std::shared_ptr<AudioEndpoint> endpoint = nullptr;
 
     switch (type) {

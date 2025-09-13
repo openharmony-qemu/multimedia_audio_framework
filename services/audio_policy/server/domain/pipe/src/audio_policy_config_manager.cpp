@@ -720,6 +720,23 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
     } // if not match, choose first?
 }
 
+void AudioPolicyConfigManager::UpdateStreamSampleInfo(std::shared_ptr<AudioStreamDescriptor> desc,
+                                                      AudioStreamInfo &streamInfo)
+{
+    CHECK_AND_RETURN(IsInjectEnable());
+
+    if (desc->routeFlag_ != (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST)) {
+        return;
+    }
+
+    /* voip fast support resample, but hal only support 16k or 48k, so need config hal
+       16k or 48k first here, then do resample in endpoint */
+    if ((desc->streamInfo_.samplingRate != SAMPLE_RATE_16000) &&
+        (desc->streamInfo_.samplingRate != SAMPLE_RATE_48000)) {
+        desc->streamInfo_.samplingRate = SAMPLE_RATE_48000;
+    }
+}
+
 void AudioPolicyConfigManager::UpdateBasicStreamInfo(std::shared_ptr<AudioStreamDescriptor> desc,
     std::shared_ptr<AdapterPipeInfo> pipeInfo, AudioStreamInfo &streamInfo)
 {
@@ -736,6 +753,8 @@ void AudioPolicyConfigManager::UpdateBasicStreamInfo(std::shared_ptr<AudioStream
     if (desc->routeFlag_ == AUDIO_INPUT_FLAG_FAST) {
         streamInfo.channels = desc->streamInfo_.channels == MONO ? STEREO : desc->streamInfo_.channels;
     }
+
+    UpdateStreamSampleInfo(desc, streamInfo);
 
     if (pipeInfo->streamPropInfos_.empty()) {
         AUDIO_WARNING_LOG("streamPropInfos_ is empty!");

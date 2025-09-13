@@ -32,6 +32,7 @@
 #include "audio_performance_monitor.h"
 #include "core_service_handler.h"
 #include "stream_dfx_manager.h"
+#include "format_converter.h"
 #ifdef RESSCHE_ENABLE
 #include "res_type.h"
 #include "res_sched_client.h"
@@ -901,6 +902,166 @@ void AudioProcessInServer::NotifyXperfOnPlayback(AudioMode audioMode, XperfEvent
 StreamStatus AudioProcessInServer::GetStreamInServerStatus()
 {
     return streamStatusInServer_;
+}
+
+int32_t AudioProcessInServer::WriteToRingBuffer(RingBufferWrapper &writeBuf, const BufferDesc &buffer)
+{
+    CHECK_AND_RETURN_RET_LOG(buffer.buffer != nullptr && buffer.bufLength > 0, ERR_WRITE_FAILED, "failed");
+    return writeBuf.CopyInputBufferValueToCurBuffer(RingBufferWrapper{
+        .basicBufferDescs = {{
+            {.buffer = buffer.buffer, .bufLength = buffer.bufLength},
+            {.buffer = nullptr, .bufLength = 0}}},
+        .dataLength = buffer.bufLength
+    });
+}
+
+void AudioProcessInServer::SetCaptureStreamInfo(AudioStreamInfo &srcInfo, AudioCaptureDataProcParams &procParams)
+{
+    srcInfo.channels = STEREO;
+    srcInfo.format = procParams.isConvertReadFormat_ ? SAMPLE_F32LE : SAMPLE_S16LE;
+    srcInfo.samplingRate = procParams.srcSamplingRate;
+}
+
+int32_t AudioProcessInServer::CaptureDataResampleProcess(const size_t bufLen,
+                                                         BufferDesc &outBuf,
+                                                         AudioStreamInfo &srcInfo,
+                                                         AudioCaptureDataProcParams &procParams)
+{
+    uint32_t srcRate = static_cast<uint32_t>(srcInfo.samplingRate);
+    uint32_t dstRate = static_cast<uint32_t>(processConfig_.streamInfo.samplingRate);
+
+    /* no need resample */
+    if (srcRate == dstRate) {
+        /* if already convert, data is not readbuf, need update to new buff */
+        if (procParams.isConvertReadFormat_) {
+            outBuf.buffer = procParams.captureConvBuffer_.data();
+            outBuf.bufLength = bufLen;
+        }
+        return SUCCESS;
+    }
+
+    AUDIO_INFO_LOG("Audio capture resample, srcRate:%{public}u, dstRate:%{public}u", srcRate, dstRate);
+    int32_t ret;
+    float *resampleInBuff = nullptr;
+    if (srcInfo.format != SAMPLE_F32LE) {
+        BufferDesc convBufTmp = {ReallocVectorBufferAndClear(procParams.captureConvBuffer_, bufLen), bufLen};
+        ret = FormatConverter::S16StereoToF32Stereo(outBuf, convBufTmp);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Convert s16 stereo to f32 stereo failed");
+        srcInfo.format = SAMPLE_F32LE;
+        resampleInBuff = reinterpret_cast<float*>(convBufTmp.buffer);
+    } else {
+        resampleInBuff = reinterpret_cast<float*>(procParams.captureConvBuffer_.data());
+    }
+
+    if (resampler_ == nullptr) {
+        resampler_ = std::make_unique<HPAE::ProResampler>(srcRate, dstRate, srcInfo.channels, 1);
+    }
+    uint32_t resampleBuffSize = bufLen / srcInfo.channels;  // resampler inner will multiply channels
+    float *resampleOutBuff =
+        reinterpret_cast<float*>(ReallocVectorBufferAndClear(procParams.rendererConvBuffer_, bufLen));
+    ret = resampler_->Process(resampleInBuff, resampleBuffSize, resampleOutBuff, resampleBuffSize);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Capture data resample failed");
+
+    outBuf.buffer = reinterpret_cast<uint8_t*>(resampleOutBuff);
+    outBuf.bufLength = bufLen;
+
+    return SUCCESS;
+}
+
+int32_t AudioProcessInServer::CapturerDataFormatAndChnConv(RingBufferWrapper &writeBuf,
+                                                           BufferDesc &resampleOutBuf,
+                                                           const AudioStreamInfo &srcInfo,
+                                                           const AudioStreamInfo &dstInfo)
+{
+    AudioChannel srcChn = srcInfo.channels;
+    AudioChannel dstChn = dstInfo.channels;
+    AudioSampleFormat srcFormat = srcInfo.format;
+    AudioSampleFormat dstFormat = dstInfo.format;
+    FormatKey key{srcChn, srcFormat, dstChn, dstFormat};
+    FormatHandlerMap formatHanlders = FormatConverter::GetFormatHandlers();
+
+    auto it = formatHanlders.find(key);
+    if (it != formatHanlders.end()) {
+        bool isDoConvert = false;
+        int32_t ret = it->second(resampleOutBuf, convertedBuffer_, isDoConvert);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "Convert format failed");
+
+        if (isDoConvert) {
+            ret = WriteToRingBuffer(writeBuf, convertedBuffer_);
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "write to client buffer failed");
+            ret = memset_s(static_cast<void *>(convertedBuffer_.buffer), convertedBuffer_.bufLength, 0,
+                           convertedBuffer_.bufLength);
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "memset converted buffer to 0 failed");
+            return SUCCESS;
+        } else {
+            return WriteToRingBuffer(writeBuf, resampleOutBuf);
+        }
+    }
+
+    return ERR_NOT_SUPPORTED;
+}
+
+int32_t AudioProcessInServer::HandleCapturerDataParams(RingBufferWrapper &writeBuf,
+                                                       AudioCaptureDataProcParams &procParams)
+{
+    AudioStreamInfo srcInfo = {};
+    SetCaptureStreamInfo(srcInfo, procParams);
+
+    size_t bufLen = procParams.readBuf_.bufLength * 2; // unit of byte, 2 is int16_t to float
+    BufferDesc resampleOutBuf = procParams.readBuf_;
+    int32_t ret = CaptureDataResampleProcess(bufLen, resampleOutBuf, srcInfo, procParams);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "capture data resample failed");
+
+    ret = CapturerDataFormatAndChnConv(writeBuf, resampleOutBuf, srcInfo, processConfig_.streamInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "capture data convert failed");
+
+    return SUCCESS;
+}
+
+int32_t AudioProcessInServer::WriteToSpecialProcBuf(AudioCaptureDataProcParams &procParams)
+{
+    std::shared_ptr<OHAudioBufferBase> procBuf = procParams.procBuf_;
+    CHECK_AND_RETURN_RET_LOG(procBuf != nullptr, ERR_INVALID_HANDLE, "process buffer is null.");
+    uint64_t curWritePos = procBuf->GetCurWriteFrame();
+    Trace trace("WriteProcessData-<" + std::to_string(curWritePos));
+
+    int32_t writeAbleSize = procBuf->GetWritableDataFrames();
+    uint32_t dstSpanSizeInframe = procParams.dstSpanSizeInframe_;
+    if (writeAbleSize <= 0 || static_cast<uint32_t>(writeAbleSize) <= dstSpanSizeInframe) {
+        AUDIO_WARNING_LOG("client read too slow: curWritePos:%{public}" PRIu64" writeAbleSize:%{public}d",
+            curWritePos, writeAbleSize);
+        return ERR_OPERATION_FAILED;
+    }
+
+    RingBufferWrapper ringBuffer;
+    int32_t ret = procBuf->GetAllWritableBufferFromPosFrame(curWritePos, ringBuffer);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "get write buffer fail, ret %{public}d.", ret);
+
+    uint32_t totalSizeInFrame;
+    uint32_t byteSizePerFrame;
+    procBuf->GetSizeParameter(totalSizeInFrame, byteSizePerFrame);
+    CHECK_AND_RETURN_RET_LOG(byteSizePerFrame > 0, ERR_OPERATION_FAILED, "byteSizePerFrame is 0");
+    uint32_t writeableSizeInFrame = ringBuffer.dataLength / byteSizePerFrame;
+    if (writeableSizeInFrame > dstSpanSizeInframe) {
+        ringBuffer.dataLength = dstSpanSizeInframe * byteSizePerFrame;
+    }
+
+    if (GetMuteState()) {
+        ringBuffer.SetBuffersValueWithSpecifyDataLen(0);
+    } else {
+        ret = HandleCapturerDataParams(ringBuffer, procParams);
+    }
+
+    CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_WRITE_FAILED, "memcpy data to process buffer fail, "
+        "curWritePos %{public}" PRIu64", ret %{public}d.", curWritePos, ret);
+
+    procBuf->SetHandleInfo(curWritePos, ClockTime::GetCurNano());
+    ret = procBuf->SetCurWriteFrame(curWritePos + dstSpanSizeInframe);
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("set procBuf next write frame fail, ret %{public}d.", ret);
+        return ERR_OPERATION_FAILED;
+    }
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

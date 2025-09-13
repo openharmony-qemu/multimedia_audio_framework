@@ -30,13 +30,14 @@ public:
     int32_t PeekAudioData(const uint32_t sinkPortIndex, uint8_t *buffer, const size_t bufferSize,
         AudioStreamInfo &streamInfo);
     void SetSinkPortIdx(uint32_t sinkPortIdx);
-    int32_t GetSinkPortIdx();
+    uint32_t GetSinkPortIdx();
+    AudioModuleInfo &GetModuleInfo();
 private:
     AudioInjectorService();
     AudioInjectorService(const AudioInjectorService&) = delete;
     AudioInjectorService& operator=(const AudioInjectorService&) = delete;
 private:
-    AudioModuleInfo moudleInfo_;
+    AudioModuleInfo moduleInfo_;
     uint32_t sinkPortIndex_;
 };
 } //  namespace AudioStandard

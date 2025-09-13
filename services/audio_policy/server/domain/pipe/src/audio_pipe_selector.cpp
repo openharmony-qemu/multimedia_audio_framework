@@ -381,13 +381,24 @@ bool AudioPipeSelector::IsSameAdapter(std::shared_ptr<AudioStreamDescriptor> str
     return false;
 }
 
+void AudioPipeSelector::UpdateProcessConcurrency(AudioPipeType existingPipe, AudioPipeType commingPipe,
+                                                 ConcurrencyAction &action)
+{
+    /* becasue call in indicate voip and cell, so can't modify xml */
+    CHECK_AND_RETURN(IsInjectEnable() && action != PLAY_BOTH);
+    if (existingPipe == PIPE_TYPE_CALL_IN && commingPipe == PIPE_TYPE_CALL_IN) {
+        action = PLAY_BOTH;
+    }
+}
+
 bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor> existingStream,
     std::shared_ptr<AudioStreamDescriptor> incomingStream,
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove)
 {
-    ConcurrencyAction action = action = AudioStreamCollector::GetAudioStreamCollector().GetConcurrencyAction(
-        GetPipeType(existingStream->routeFlag_, existingStream->audioMode_),
-        GetPipeType(incomingStream->routeFlag_, incomingStream->audioMode_));
+    AudioPipeType existingPipe = GetPipeType(existingStream->routeFlag_, existingStream->audioMode_);
+    AudioPipeType commingPipe = GetPipeType(incomingStream->routeFlag_, incomingStream->audioMode_);
+    ConcurrencyAction action = AudioStreamCollector::GetAudioStreamCollector().GetConcurrencyAction(
+        existingPipe, commingPipe);
     action = IsSameAdapter(existingStream, incomingStream) ? action : PLAY_BOTH;
     // No running offload can not concede incoming special pipe
     if (action == CONCEDE_INCOMING && existingStream->IsNoRunningOffload()) {
@@ -399,6 +410,9 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
         action,
         existingStream->GetSessionId(), existingStream->GetRoute(),
         incomingStream->GetSessionId(), incomingStream->GetRoute());
+
+    /* temporary handle */
+    UpdateProcessConcurrency(existingPipe, commingPipe, action);
 
     bool isUpdate = false;
     switch (action) {
