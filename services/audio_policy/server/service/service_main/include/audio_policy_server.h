@@ -183,6 +183,9 @@ public:
 
     int32_t UnexcludeOutputDevices(int32_t audioDevUsage,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) override;
+    
+    int32_t CheckAndGetApiVersion(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs,
+        bool hasSystemPermission);
 
     int32_t GetExcludedDevices(int32_t audioDevUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) override;
