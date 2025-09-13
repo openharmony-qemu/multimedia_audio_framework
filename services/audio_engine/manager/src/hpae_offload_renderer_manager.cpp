@@ -21,6 +21,8 @@
 #include "audio_errors.h"
 #include "hpae_node_common.h"
 #include "audio_engine_log.h"
+#include "hpae_message_queue_monitor.h"
+#include "hpae_stream_move_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -66,7 +68,7 @@ int32_t HpaeOffloadRendererManager::CreateInputSession(const HpaeStreamInfo &str
 int32_t HpaeOffloadRendererManager::AddNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node)
 {
     auto request = [this, node]() { AddSingleNodeToSink(node); };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -106,7 +108,7 @@ int32_t HpaeOffloadRendererManager::AddAllNodesToSink(
             AddSingleNodeToSink(it, isConnect);
         }
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -120,7 +122,7 @@ int32_t HpaeOffloadRendererManager::CreateStream(const HpaeStreamInfo &streamInf
         sessionInfo_.state = HPAE_SESSION_PREPARED;
         sinkInputNode_->SetState(HPAE_SESSION_PREPARED);
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -145,7 +147,7 @@ int32_t HpaeOffloadRendererManager::DestroyStream(uint32_t sessionId)
         AUDIO_INFO_LOG("DestroyStream sessionId %{public}u", sessionId);
         DeleteInputSession();
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -190,7 +192,7 @@ int32_t HpaeOffloadRendererManager::Start(uint32_t sessionId)
         }
         sessionInfo_.state = HPAE_SESSION_RUNNING;
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -222,7 +224,7 @@ int32_t HpaeOffloadRendererManager::Pause(uint32_t sessionId)
         sessionInfo_.state = HPAE_SESSION_PAUSED;
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionInfo_.state, OPERATION_PAUSED);
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -237,7 +239,7 @@ int32_t HpaeOffloadRendererManager::Flush(uint32_t sessionId)
         // flush sinkoutput cache
         sinkOutputNode_->FlushStream();
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -253,7 +255,7 @@ int32_t HpaeOffloadRendererManager::Drain(uint32_t sessionId)
                 UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionInfo_.state, OPERATION_DRAINED);
         }
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -272,7 +274,7 @@ int32_t HpaeOffloadRendererManager::Stop(uint32_t sessionId)
         }
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionInfo_.state, OPERATION_STOPPED);
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -312,7 +314,7 @@ int32_t HpaeOffloadRendererManager::MoveAllStream(const std::string &sinkName, c
         auto request = [this, sinkName, sessionIds, moveType]() {
             MoveAllStreamToNewSink(sinkName, sessionIds, moveType);
         };
-        SendRequest(request);
+        SendRequest(request, __func__);
     }
     return SUCCESS;
 }
@@ -324,12 +326,16 @@ int32_t HpaeOffloadRendererManager::MoveStream(uint32_t sessionId, const std::st
             AUDIO_ERR_LOG("[StartMove] session:%{public}d failed,sink [offload] --> [%{public}s]",
                 sessionId, sinkName.c_str());
             TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, MOVE_SINGLE, sinkName);
+            HpaeStreamMoveMonitor::ReportStreamMoveException(0, sessionId, HPAE_STREAM_CLASS_TYPE_PLAY,
+                "offload", sinkName, "not find session node");
             return;
         }
 
         if (sinkName.empty()) {
             AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,sinkName is empty", sessionId);
             TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, MOVE_SINGLE, sinkName);
+            HpaeStreamMoveMonitor::ReportStreamMoveException(sinkInputNode_->GetAppUid(), sessionId,
+                HPAE_STREAM_CLASS_TYPE_PLAY, "offload", sinkName, "sinkName is empty");
             return;
         }
 
@@ -339,7 +345,7 @@ int32_t HpaeOffloadRendererManager::MoveStream(uint32_t sessionId, const std::st
         std::string name = sinkName;
         TriggerCallback(MOVE_SINK_INPUT, inputNode, name);
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -357,7 +363,7 @@ int32_t HpaeOffloadRendererManager::SuspendStreamManager(bool isSuspend)
             sinkOutputNode_->RenderSinkStart();
         }
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -366,7 +372,7 @@ int32_t HpaeOffloadRendererManager::SetMute(bool isMute)
     auto request = [this, isMute]() {
         isMute_ = isMute;  // todo: set to sinkoutputnode
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -393,7 +399,7 @@ int32_t HpaeOffloadRendererManager::ReloadRenderManager(const HpaeSinkInfo &sink
             ConnectInputSession();
         }
     };
-    SendRequest(request, true);
+    SendRequest(request, __func__, true);
     hpaeSignalProcessThread_->ActivateThread(shared_from_this());
     return SUCCESS;
 }
@@ -404,7 +410,7 @@ int32_t HpaeOffloadRendererManager::Init(bool isReload)
     auto request = [this, isReload] {
         InitSinkInner(isReload);
     };
-    SendRequest(request, true);
+    SendRequest(request, __func__, true);
     hpaeSignalProcessThread_->ActivateThread(shared_from_this());
     return SUCCESS;
 }
@@ -536,7 +542,7 @@ int32_t HpaeOffloadRendererManager::RegisterWriteCallback(
             sessionId);
         sinkInputNode_->RegisterWriteCallback(callback);
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -575,7 +581,7 @@ int32_t HpaeOffloadRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t
             sinkOutputNode_->SetPolicyState(state);
         }
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -605,7 +611,7 @@ int32_t HpaeOffloadRendererManager::SetOffloadRenderCallbackType(uint32_t sessio
             sinkOutputNode_->SetOffloadRenderCallbackType(type);
         }
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -618,7 +624,7 @@ void HpaeOffloadRendererManager::SetSpeed(uint32_t sessionId, float speed)
         CHECK_AND_RETURN_LOG(sinkOutputNode_, "sinkOutputNode is nullptr");
         sinkOutputNode_->SetSpeed(speed);
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
 }
 
 std::vector<SinkInput> HpaeOffloadRendererManager::GetAllSinkInputsInfo()
@@ -648,11 +654,20 @@ HpaeSinkInfo HpaeOffloadRendererManager::GetSinkInfo()
     return sinkInfo_;
 }
 
-void HpaeOffloadRendererManager::SendRequest(Request &&request, bool isInit)
+void HpaeOffloadRendererManager::SendRequest(Request &&request, const std::string &funcName, bool isInit)
 {
-    CHECK_AND_RETURN_LOG(isInit || IsInit(), "HpaeOffloadRendererManager not init");
+    if (!isInit && !IsInit()) {
+        AUDIO_ERR_LOG("HpaeOffloadRendererManager not init, %{public}s excute failed", funcName.c_str());
+        HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_OFFLOAD_MANAGER_TYPE, funcName,
+            "HpaeOffloadRendererManager not init");
+        return;
+    }
     hpaeNoLockQueue_.PushRequest(std::move(request));
-    CHECK_AND_RETURN_LOG(hpaeSignalProcessThread_, "hpaeSignalProcessThread_ offloadrenderer is nullptr");
+    if (hpaeSignalProcessThread_ == nullptr) {
+        AUDIO_ERR_LOG("hpaeSignalProcessThread_ is nullptr, %{public}s excute failed", funcName.c_str());
+        HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_OFFLOAD_MANAGER_TYPE, funcName, "thread is nullptr");
+        return;
+    }
     hpaeSignalProcessThread_->Notify();
 }
 
@@ -691,7 +706,7 @@ int32_t HpaeOffloadRendererManager::DumpSinkInfo()
         AUDIO_INFO_LOG("DumpSinkInfo deviceName %{public}s", sinkInfo_.deviceName.c_str());
         UploadDumpSinkInfo(sinkInfo_.deviceName);
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -713,7 +728,7 @@ int32_t HpaeOffloadRendererManager::SetLoudnessGain(uint32_t sessionId, float lo
         CHECK_AND_RETURN_LOG(loudnessGainNode_, "session id %{public}d is not connected", sessionId);
         loudnessGainNode_->SetLoudnessGain(loudnessGain);
     };
-    SendRequest(request);
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
