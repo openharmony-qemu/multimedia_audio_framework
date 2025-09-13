@@ -2557,9 +2557,9 @@ void AudioAdapterManager::InitMuteStatusMap(bool isFirstBoot)
             }
         }
         TransferMuteStatus();
-    } else {
-        LoadMuteStatusMap();
     }
+    // reLoad the current device mute status
+    LoadMuteStatusMap();
 }
 
 void  AudioAdapterManager::CheckAndDealMuteStatus(const DeviceType &deviceType, const AudioStreamType &streamType)
