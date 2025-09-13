@@ -1808,6 +1808,10 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_064, TestSize.
     ret = audioInterruptService->ShouldCallbackToClient(uid, streamId, interruptEvent);
     EXPECT_EQ(false, ret);
 
+    interruptEvent.hintType = INTERRUPT_HINT_RESUME;
+    ret = audioInterruptService->ShouldCallbackToClient(uid, streamId, interruptEvent);
+    EXPECT_EQ(false, ret);
+
     interruptEvent.hintType = INTERRUPT_HINT_MUTE;
     ret = audioInterruptService->ShouldCallbackToClient(uid, streamId, interruptEvent);
     EXPECT_EQ(false, ret);
@@ -1861,6 +1865,23 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_066, TestSize.
     audioInterruptService->zonesMap_[zoneId] = audioInterruptZone;
     audioInterruptService->RemoveClient(zoneId, streamId);
     EXPECT_EQ(false, audioInterrupt.isAudioSessionInterrupt);
+}
+
+/**
+ * @tc.name  : Test AudioInterruptService
+ * @tc.number: AudioInterruptService_071
+ * @tc.desc  : Test AudioInterruptIsActiveInFocusList
+*/
+HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_071, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    uint32_t streamId = 1;
+    int32_t zoneId = 0;
+    audioInterruptService->mutedGameSessionId_.insert(streamId);
+    auto ret = audioInterruptService->AudioInterruptIsActiveInFocusList(zoneId, streamId);
+    EXPECT_EQ(ret, true);
 }
 } // namespace AudioStandard
 } // namespace OHOS
