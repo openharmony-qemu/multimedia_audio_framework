@@ -331,6 +331,8 @@ int32_t AudioA2dpOffloadManager::HandleA2dpDeviceOutOffload(BluetoothOffloadStat
 
     OffloadStopPlaying(allRunningSessions);
     SetA2dpOffloadFlag(a2dpOffloadFlag);
+    DeviceType dev = audioActiveDevice_.GetCurrentOutputDeviceType();
+    AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(dev);
 
     return SUCCESS;
 #else
@@ -348,6 +350,8 @@ int32_t AudioA2dpOffloadManager::HandleA2dpDeviceInOffload(BluetoothOffloadState
     GetA2dpOffloadCodecAndSendToDsp();
 
     OffloadStartPlaying(allRunningSessions);
+    DeviceType dev = audioActiveDevice_.GetCurrentOutputDeviceType();
+    AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(dev);
 
     AudioServerProxy::GetInstance().UpdateEffectBtOffloadSupportedProxy(true);
 
