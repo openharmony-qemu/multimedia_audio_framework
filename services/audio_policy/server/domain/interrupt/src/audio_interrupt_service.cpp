@@ -832,9 +832,6 @@ int32_t AudioInterruptService::UnsetAudioInterruptCallback(const int32_t zoneId,
 
 bool AudioInterruptService::AudioInterruptIsActiveInFocusList(const int32_t zoneId, const uint32_t incomingStreamId)
 {
-    if (mutedGameSessionId_.find(incomingStreamId) != mutedGameSessionId_.end()) {
-        return true;
-    }
     auto itZone = zonesMap_.find(zoneId);
     if (itZone == zonesMap_.end()) {
         AUDIO_ERR_LOG("Can not find zoneid");
@@ -850,6 +847,16 @@ bool AudioInterruptService::AudioInterruptIsActiveInFocusList(const int32_t zone
     if (iter != audioFocusInfoList.end()) {
         return true;
     }
+    auto isPresentPause = [incomingStreamId] (const std::pair<AudioInterrupt, AudioFocuState> &pair) {
+        return pair.first.streamId == incomingStreamId && (pair.second == PAUSE);
+    };
+    if (mutedGameSessionId_.find(incomingStreamId) != mutedGameSessionId_.end()) {
+        auto iter = std::find_if(audioFocusInfoList.begin(), audioFocusInfoList.end(), isPresentPause);
+        if (iter != audioFocusInfoList.end()) {
+            return true;
+        }
+    }
+
     return false;
 }
 
@@ -1012,6 +1019,9 @@ void AudioInterruptService::ResetNonInterruptControl(AudioInterrupt audioInterru
 {
     if (!IsGameAvoidCallbackCase(audioInterrupt)) {
         return;
+    }
+    if (mutedGameSessionId_.find(streamId) != mutedGameSessionId_.end()) {
+        mutedGameSessionId_.erase(streamId);
     }
     AUDIO_INFO_LOG("Reset non-interrupt control for %{public}u", audioInterrupt.streamId);
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
