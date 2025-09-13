@@ -525,6 +525,11 @@ RestoreStatus OHAudioBuffer::SetRestoreStatus(RestoreStatus restoreStatus)
     return ohAudioBufferBase_.SetRestoreStatus(restoreStatus);
 }
 
+RestoreStatus OHAudioBuffer::GetRestoreStatus()
+{
+    return ohAudioBufferBase_.GetRestoreStatus();
+}
+
 void OHAudioBuffer::SetStopFlag(bool isNeedStop)
 {
     ohAudioBufferBase_.SetStopFlag(isNeedStop);

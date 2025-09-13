@@ -1868,6 +1868,22 @@ bool CapturerInClientInner::GetStopFlag() const
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "Client OHAudioBuffer is nullptr");
     return clientBuffer_->GetStopFlag();
 }
+
+bool CapturerInClientInner::IsRestoreNeeded()
+{
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "buffer null");
+
+    RestoreStatus restoreStatus = clientBuffer_->GetRestoreStatus();
+    if (restoreStatus == NEED_RESTORE) {
+        return true;
+    }
+
+    if (restoreStatus == NEED_RESTORE_TO_NORMAL) {
+        return true;
+    }
+
+    return false;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // FAST_AUDIO_STREAM_H

@@ -1243,5 +1243,11 @@ bool FastAudioStream::GetStopFlag() const
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "processClient_ is null");
     return processClient_->GetStopFlag();
 }
+
+bool FastAudioStream::IsRestoreNeeded()
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "processClient_ is null");
+    return processClient_->IsRestoreNeeded();
+}
 } // namespace AudioStandard
 } // namespace OHOS
