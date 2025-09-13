@@ -1496,6 +1496,12 @@ public:
     * @test
     */
     int32_t ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
+    
+    /**
+    * @brief clean resouce.
+    * @test
+    */
+    void CleanUpResource();
 
     class WorkgroupPrioRecorder {
     public:
