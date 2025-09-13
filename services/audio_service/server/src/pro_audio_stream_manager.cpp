@@ -205,19 +205,19 @@ std::shared_ptr<IRendererStream> ProAudioStreamManager::CreateRendererStream(Aud
 int32_t ProAudioStreamManager::CreateCapturer(AudioProcessConfig processConfig,
                                               std::shared_ptr<ICapturerStream> &stream)
 {
-    AUDIO_ERR_LOG("Unsupported operation: CreateCapturer!");
+    AUDIO_ERR_LOG("Unsupported operation");
     return SUCCESS;
 }
 
 int32_t ProAudioStreamManager::ReleaseCapturer(uint32_t streamIndex)
 {
-    AUDIO_ERR_LOG("Unsupported operation: ReleaseCapturer!");
+    AUDIO_ERR_LOG("Unsupported operation");
     return SUCCESS;
 }
 
 int32_t ProAudioStreamManager::AddUnprocessStream(int32_t appUid)
 {
-    AUDIO_ERR_LOG("Unsupported operation: AddUnprocessStream!");
+    AUDIO_ERR_LOG("Unsupported operation");
     return SUCCESS;
 }
 

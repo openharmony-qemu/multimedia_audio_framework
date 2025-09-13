@@ -155,7 +155,7 @@ bool HpaeManager::SetSinkMute(const std::string &sinkName, bool isMute, bool isS
 {
     auto request = [this, sinkName, isMute, isSync]() {
         // todo for device change
-        AUDIO_INFO_LOG("HpaeManager::SetSinkMute sinkName: %{public}s isMute: %{public}d, isSync: %{public}d",
+        AUDIO_INFO_LOG("SetSinkMute sinkName: %{public}s isMute: %{public}d, isSync: %{public}d",
             sinkName.c_str(),
             isMute,
             isSync);
@@ -196,7 +196,6 @@ int32_t HpaeManager::GetAllSinks()
     auto request = [this]() {
         std::vector<SinkInfo> sinks;
         // todo for device change
-        AUDIO_INFO_LOG("HpaeManager::GetAllSinks end");
         if (auto serviceCallback = serviceCallback_.lock()) {
             serviceCallback->OnGetAllSinksCb(SUCCESS, sinks);
         }
@@ -215,7 +214,7 @@ int32_t HpaeManager::DeInit()
     }
     hpaeNoLockQueue_.HandleRequests();  // todo suspend
     isInit_.store(false);
-    AUDIO_INFO_LOG("HpaeManager::DeInit end");
+    AUDIO_INFO_LOG("success");
     return SUCCESS;
 }
 
@@ -223,7 +222,7 @@ int32_t HpaeManager::RegisterSerivceCallback(const std::weak_ptr<AudioServiceHpa
 {
     auto request = [this, callback]() {
         serviceCallback_ = callback;
-        AUDIO_INFO_LOG("HpaeManager::RegisterSerivceCallback end");
+        AUDIO_INFO_LOG("RegisterSerivceCallback end");
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -233,7 +232,7 @@ int32_t HpaeManager::RegisterHpaeDumpCallback(const std::weak_ptr<AudioServiceHp
 {
     auto request = [this, callback]() {
         dumpCallback_ = callback;
-        AUDIO_INFO_LOG("HpaeManager::RegisterHpaeDumpCallback end");
+        AUDIO_INFO_LOG("RegisterHpaeDumpCallback end");
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -418,7 +417,7 @@ int32_t HpaeManager::OpenVirtualAudioPort(const AudioModuleInfo &audioModuleInfo
     sinkNameSinkIdMap_[audioModuleInfo.name] = sinkSourceIndex;
     sinkIdSinkNameMap_[sinkSourceIndex] = audioModuleInfo.name;
     rendererManagerMap_[audioModuleInfo.name]->Init();
-    AUDIO_INFO_LOG("HpaeManager::OpenAudioPort name: %{public}s end sinkIndex is %{public}u",
+    AUDIO_INFO_LOG("OpenAudioPort name: %{public}s end sinkIndex is %{public}u",
         audioModuleInfo.name.c_str(),
         sinkSourceIndex);
     return SUCCESS;
@@ -683,7 +682,6 @@ int32_t HpaeManager::GetSourceInfoByIdx(const int32_t &sourceIdx,
 int32_t HpaeManager::SetDefaultSink(std::string name)
 {
     CHECK_AND_RETURN_RET_LOG(!name.empty(), ERROR_INVALID_PARAM, "invalid sink name");
-    AUDIO_INFO_LOG("HpaeManager::SetDefaultSink name: %{public}s", name.c_str());
     auto request = [this, name]() {
         AUDIO_INFO_LOG("SetDefaultSink name: %{public}s", name.c_str());
         if (name == defaultSink_) {
@@ -748,7 +746,6 @@ int32_t HpaeManager::SetDefaultSource(std::string name)
 
 int32_t HpaeManager::GetAllSinkInputs()
 {
-    AUDIO_INFO_LOG("GetAllSinkInputs");
     auto request = [this]() {
         std::vector<SinkInput> results;
         std::transform(sinkInputs_.begin(), sinkInputs_.end(), std::back_inserter(results), [](const auto &pair) {
@@ -792,7 +789,6 @@ void HpaeManager::MoveToPreferSink(const std::string &name, std::shared_ptr<Audi
 
 int32_t HpaeManager::GetAllSourceOutputs()
 {
-    AUDIO_INFO_LOG("GetAllSourceOutputs");
     auto request = [this]() {
         std::vector<SourceOutput> results;
         std::transform(sourceOutputs_.begin(), sourceOutputs_.end(), std::back_inserter(results), [](const auto &pair) {
@@ -979,7 +975,7 @@ void HpaeManager::Invoke(HpaeMsgCode cmdID, const std::any &args)
         SendRequest(request, __func__);
         return;
     };
-    AUDIO_ERR_LOG("HpaeManager::Invoke cmdID %{public}d not found", (int32_t)cmdID);
+    AUDIO_ERR_LOG("cmdID %{public}d not found", (int32_t)cmdID);
 }
 
 void HpaeManager::InvokeSync(HpaeMsgCode cmdID, const std::any &args)
@@ -989,7 +985,7 @@ void HpaeManager::InvokeSync(HpaeMsgCode cmdID, const std::any &args)
         it->second(args);
         return;
     };
-    AUDIO_ERR_LOG("HpaeManager::InvokeSync cmdID %{public}d not found", (int32_t)cmdID);
+    AUDIO_ERR_LOG("cmdID %{public}d not found", (int32_t)cmdID);
 }
 
 template <typename... Args>
@@ -1190,11 +1186,7 @@ void HpaeManager::HandleUpdateStatus(
 {
     // log limit
     if (operation != OPERATION_UNDERFLOW) {
-        AUDIO_INFO_LOG("HpaeManager::HandleUpdateStatus sessionid:%{public}u "
-                       "status:%{public}d operation:%{public}d",
-            sessionId,
-            status,
-            operation);
+        AUDIO_INFO_LOG("sessionid:%{public}u status:%{public}d operation:%{public}d", sessionId, status, operation);
     }
     if (operation == OPERATION_INVALID) {
         // maybe dosomething while move sink inputs
@@ -1236,7 +1228,7 @@ void HpaeManager::UpdateStatus(const std::weak_ptr<IStreamStatusCallback> &callb
 
 void HpaeManager::HandleDumpSinkInfo(std::string deviceName, std::string dumpStr)
 {
-    AUDIO_INFO_LOG("HpaeManager::HandleDumpSinkInfo deviceName:%{public}s dumpStr:%{public}s",
+    AUDIO_INFO_LOG("deviceName:%{public}s dumpStr:%{public}s",
         deviceName.c_str(),
         dumpStr.c_str());
     if (auto ptr = dumpCallback_.lock()) {
@@ -1246,7 +1238,7 @@ void HpaeManager::HandleDumpSinkInfo(std::string deviceName, std::string dumpStr
 
 void HpaeManager::HandleDumpSourceInfo(std::string deviceName, std::string dumpStr)
 {
-    AUDIO_INFO_LOG("HpaeManager::HandleDumpSourceInfo deviceName:%{public}s dumpStr:%{public}s",
+    AUDIO_INFO_LOG("deviceName:%{public}s dumpStr:%{public}s",
         deviceName.c_str(),
         dumpStr.c_str());
     if (auto ptr = dumpCallback_.lock()) {
@@ -1347,7 +1339,7 @@ void HpaeManager::DequeuePendingTransition(uint32_t sessionId)
     while (it != pendingTransitionsTracker_.end()) {
         if (it->sessionId == sessionId) {
             it = pendingTransitionsTracker_.erase(it);
-            AUDIO_INFO_LOG("DequeuePendingTransition sessionid:%{public}u", sessionId);
+            AUDIO_INFO_LOG("sessionid:%{public}u", sessionId);
             break;
         } else {
             ++it;
@@ -1550,7 +1542,7 @@ int32_t HpaeManager::Start(HpaeStreamClassType streamClassType, uint32_t session
         CHECK_AND_RETURN_LOG(ShouldNotSkipProcess(streamClassType, sessionId),
             "Start session: %{public}u failed, session already released", sessionId);
         AUDIO_INFO_LOG(
-            "HpaeManager::Start sessionId: %{public}u streamClassType:%{public}d", sessionId, streamClassType);
+            "Start sessionId: %{public}u streamClassType:%{public}d", sessionId, streamClassType);
         if (SetMovingStreamState(streamClassType, sessionId, HPAE_SESSION_RUNNING,
             HPAE_SESSION_RUNNING, OPERATION_STARTED)) {
             return;
@@ -1595,7 +1587,7 @@ int32_t HpaeManager::StartWithSyncId(HpaeStreamClassType streamClassType, uint32
         CHECK_AND_RETURN_LOG(ShouldNotSkipProcess(streamClassType, sessionId),
             "StartWithSyncId session: %{public}u failed, session already released", sessionId);
         AUDIO_INFO_LOG(
-            "HpaeManager::StartWithSyncId sessionId: %{public}u streamClassType:%{public}d syncId: %{public}d",
+            "StartWithSyncId sessionId: %{public}u streamClassType:%{public}d syncId: %{public}d",
             sessionId, streamClassType, syncId);
         if (SetMovingStreamState(streamClassType, sessionId, HPAE_SESSION_RUNNING,
             HPAE_SESSION_RUNNING, OPERATION_STARTED)) {
@@ -1626,7 +1618,7 @@ int32_t HpaeManager::Pause(HpaeStreamClassType streamClassType, uint32_t session
         CHECK_AND_RETURN_LOG(ShouldNotSkipProcess(streamClassType, sessionId),
             "Pause session: %{public}u failed, session already released", sessionId);
         AUDIO_INFO_LOG(
-            "HpaeManager::Pause sessionId: %{public}u streamClassType:%{public}d", sessionId, streamClassType);
+            "Pause sessionId: %{public}u streamClassType:%{public}d", sessionId, streamClassType);
         if (SetMovingStreamState(streamClassType, sessionId, HPAE_SESSION_PAUSED,
             HPAE_SESSION_PAUSING, OPERATION_PAUSED)) {
             return;
@@ -1669,7 +1661,7 @@ int32_t HpaeManager::Flush(HpaeStreamClassType streamClassType, uint32_t session
         CHECK_AND_RETURN_LOG(ShouldNotSkipProcess(streamClassType, sessionId),
             "Flush session: %{public}u failed, session already released", sessionId);
         AUDIO_INFO_LOG(
-            "HpaeManager::Flush sessionId: %{public}u streamClassType:%{public}d", sessionId, streamClassType);
+            "Flush sessionId: %{public}u streamClassType:%{public}d", sessionId, streamClassType);
         if (SetMovingStreamState(streamClassType, sessionId,
             HPAE_SESSION_INVALID, HPAE_SESSION_INVALID, OPERATION_FLUSHED)) {
             return;
@@ -1712,7 +1704,7 @@ int32_t HpaeManager::Drain(HpaeStreamClassType streamClassType, uint32_t session
         CHECK_AND_RETURN_LOG(ShouldNotSkipProcess(streamClassType, sessionId),
             "Drain session: %{public}u failed, session already released", sessionId);
         AUDIO_INFO_LOG(
-            "HpaeManager::Drain sessionId: %{public}u streamClassType:%{public}d", sessionId, streamClassType);
+            "Drain sessionId: %{public}u streamClassType:%{public}d", sessionId, streamClassType);
         if (SetMovingStreamState(streamClassType, sessionId,
             HPAE_SESSION_INVALID, HPAE_SESSION_INVALID, OPERATION_DRAINED)) {
             return;
@@ -1753,7 +1745,7 @@ int32_t HpaeManager::Stop(HpaeStreamClassType streamClassType, uint32_t sessionI
         CHECK_AND_RETURN_LOG(ShouldNotSkipProcess(streamClassType, sessionId),
             "Stop session: %{public}u failed, session already released", sessionId);
         AUDIO_INFO_LOG(
-            "HpaeManager::Stop sessionId: %{public}u streamClassType:%{public}d", sessionId, streamClassType);
+            "Stop sessionId: %{public}u streamClassType:%{public}d", sessionId, streamClassType);
         if (SetMovingStreamState(streamClassType, sessionId, HPAE_SESSION_STOPPED,
             HPAE_SESSION_STOPPING, OPERATION_STOPPED)) {
             return;

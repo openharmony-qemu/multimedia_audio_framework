@@ -45,7 +45,7 @@ HpaeRemoteSinkOutputNode::HpaeRemoteSinkOutputNode(HpaeNodeInfo &nodeInfo, HpaeS
     outputCommunicationPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeRemoteSinkOutputNode_Out_Communication_bit_" +
         std::to_string(GetBitWidth()) + "_ch_" + std::to_string(GetChannelCount()) + "_rate_" +
         std::to_string(GetSampleRate()) + ".pcm");
-    AUDIO_INFO_LOG("HpaeRemoteSinkOutputNode name is %{public}s", sinkOutAttr_.adapterName.c_str());
+    AUDIO_INFO_LOG("name is %{public}s", sinkOutAttr_.adapterName.c_str());
 #endif
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeRemoteSinkOutputNode");
@@ -147,7 +147,7 @@ void HpaeRemoteSinkOutputNode::DoProcess()
         auto ret = audioRendererSink_->SplitRenderFrame(*renderFrameData, renderFrameData_.size(),
             writeLen, std::to_string(static_cast<int>(splitStreamType)).c_str());
         if (ret != SUCCESS || writeLen != renderFrameData_.size()) {
-            AUDIO_ERR_LOG("HpaeRemoteSinkOutputNode: RenderFrame failed, SplitStreamType %{public}d", splitStreamType);
+            AUDIO_ERR_LOG("RenderFrame failed, SplitStreamType %{public}d", splitStreamType);
         }
     }
     HandleRemoteTiming(); // used to control remote RenderFrame tempo.
@@ -245,11 +245,8 @@ int32_t HpaeRemoteSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("HpaeRemoteSinkOutputNode: name %{public}s, RenderSinkInit Elapsed: %{public}" PRId64
-                   " ms ret: %{public}d",
-        sinkOutAttr_.adapterName.c_str(),
-        interval,
-        ret);
+    AUDIO_INFO_LOG("name %{public}s, RenderSinkInit Elapsed: %{public}" PRId64 " ms ret: %{public}d",
+        sinkOutAttr_.adapterName.c_str(), interval, ret);
     std::string adapterName = sinkOutAttr_.adapterName;
     outputMediaPcmDumper_ = std::make_unique<HpaePcmDumper>(
         "HpaeRemoteSinkOutputNode_Media_" + adapterName + "_bit_" + std::to_string(GetBitWidth()) + "_ch_" +
@@ -280,9 +277,7 @@ int32_t HpaeRemoteSinkOutputNode::RenderSinkDeInit(void)
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("HpaeRemoteSinkOutputNode: name %{public}s, RenderSinkDeInit Elapsed: %{public}" PRId64 " ms",
-        sinkOutAttr_.adapterName.c_str(),
-        interval);
+    AUDIO_INFO_LOG("name %{public}s, Elapsed: %{public}" PRId64 " ms", sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     return SUCCESS;
 }
@@ -344,9 +339,7 @@ int32_t HpaeRemoteSinkOutputNode::RenderSinkStart(void)
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("HpaeRemoteSinkOutputNode: name %{public}s, RenderSinkStart Elapsed: %{public}" PRId64 " ms",
-        sinkOutAttr_.adapterName.c_str(),
-        interval);
+    AUDIO_INFO_LOG("name %{public}s, Elapsed: %{public}" PRId64 " ms", sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     SetSinkState(STREAM_MANAGER_RUNNING);
     remoteTimePoint_ = std::chrono::high_resolution_clock::now();
@@ -371,8 +364,7 @@ int32_t HpaeRemoteSinkOutputNode::RenderSinkStop(void)
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("HpaeRemoteSinkOutputNode: name %{public}s, RenderSinkStop Elapsed: %{public}" PRId64 " ms",
-        sinkOutAttr_.adapterName.c_str(), interval);
+    AUDIO_INFO_LOG("name %{public}s, Elapsed: %{public}" PRId64 " ms", sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     return SUCCESS;
 }

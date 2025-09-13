@@ -27,7 +27,7 @@ constexpr uint64_t SHIFT_32_OFFSET = 32;
 HpaeNoLockQueue::HpaeNoLockQueue(size_t maxRequestCount)
 {
     if (maxRequestCount > MAX_REQUEST_COUNT) {
-        AUDIO_WARNING_LOG("[HpaeNoLockQueue] maxRequestCount %{public}zu is beyound Max Count", maxRequestCount);
+        AUDIO_WARNING_LOG("maxRequestCount %{public}zu is beyound Max Count", maxRequestCount);
         maxRequestCount = MAX_REQUEST_COUNT;
     }
     InitQueue(maxRequestCount);
@@ -35,7 +35,7 @@ HpaeNoLockQueue::HpaeNoLockQueue(size_t maxRequestCount)
 
 HpaeNoLockQueue::~HpaeNoLockQueue()
 {
-    AUDIO_INFO_LOG("HpaeNoLockQueue destroyed");
+    AUDIO_INFO_LOG(" destroyed");
 }
 void HpaeNoLockQueue::InitQueue(size_t maxRequestCount)
 {
@@ -49,7 +49,7 @@ void HpaeNoLockQueue::InitQueue(size_t maxRequestCount)
     }
     requestQueue_[maxRequestCount - 1].nextRequestIndex = INVALID_REQUEST_ID;
     requestHeadIndex_ = INVALID_REQUEST_ID;
-    AUDIO_INFO_LOG("Init Queue size is %{public}zu", maxRequestCount);
+    AUDIO_INFO_LOG("size is %{public}zu", maxRequestCount);
 }
 void HpaeNoLockQueue::PushRequest(Request &&request)
 {
