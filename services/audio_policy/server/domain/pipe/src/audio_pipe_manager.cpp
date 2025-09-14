@@ -317,10 +317,7 @@ int32_t AudioPipeManager::GetClientUidBySessionId(uint32_t sessionId)
         for (auto &desc : pipeInfo->streamDescriptors_) {
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
             if (desc->sessionId_ == sessionId) {
-                if (desc->callerUid_ == MEDIA_SERVICE_UID) {
-                    return desc->appInfo_.appUid;
-                }
-                return desc->callerUid_;
+                return desc->callerUid_ == MEDIA_SERVICE_UID ? desc->appInfo_.appUid : desc->callerUid_;
             }
         }
     }

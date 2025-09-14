@@ -1558,7 +1558,7 @@ int32_t AudioDeviceManager::RemoveSelectedInputDevice(const uint32_t sessionID)
 
 shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSelectedCaptureDevice(const uint32_t sessionID)
 {
-    shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>();;
+    shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>();
     if (sessionID == 0 || !selectedInputDeviceInfo_.count(sessionID)) {
         return devDesc;
     }

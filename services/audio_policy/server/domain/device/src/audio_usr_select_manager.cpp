@@ -175,44 +175,11 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfo(UpdateType updateType, int32_
     AUDIO_INFO_LOG("UpdateRecordDeviceInfo updateType:%{public}d", updateType);
     switch (updateType) {
         case UpdateType::START_CLIENT:
-            if (index < 0) {
-                RecordDeviceInfo recordDeviceInfo {
-                    .uid_ = uid,
-                    .sourceType_ = sourceType,
-                    .activeSelectedDevice_ =
-                        AudioStateManager::GetAudioStateManager().GetPreferredRecordCaptureDevice(),
-                    .appPreferredDevices_ = {{{sessionId, desc}}}
-                };
-                recordDeviceInfoList_.emplace(recordDeviceInfoList_.begin(), recordDeviceInfo);
-            } else {
-                for (auto &recordInfo : recordDeviceInfoList_) {
-                    if (recordInfo.uid_ == uid) {
-                        recordInfo.sourceType_ = sourceType;
-                    }
-                }
-            }
+            UpdateRecordDeviceInfoForStartInner(index, uid, sourceType, sessionId
+                const std::shared_ptr<AudioDeviceDescriptor> &desc);
             break;
         case UpdateType::APP_SELECT:
-            if (index < 0) {
-                if (desc->deviceType_ != DEVICE_TYPE_NONE) {
-                    RecordDeviceInfo recordDeviceInfo {
-                        .uid_ = uid,
-                        .sourceType_ = SourceType::SOURCE_TYPE_INVALID,
-                        .selectedDevice_ = desc,
-                        .activeSelectedDevice_ = std::make_shared<AudioDeviceDescriptor>()
-                    };
-                    recordDeviceInfoList_.push_back(recordDeviceInfo);
-                }
-            } else {
-                recordDeviceInfoList_[index].selectedDevice_ = desc;
-                recordDeviceInfoList_[index].activeSelectedDevice_ = desc;
-                if (recordDeviceInfoList_[index].sourceType_ != SourceType::SOURCE_TYPE_INVALID &&
-                    appIsBackStatesMap_.find(uid) != appIsBackStatesMap_.end() &&
-                    appIsBackStatesMap_[uid] == AppIsBackState::STATE_FOREGROUND) {
-                    std::rotate(recordDeviceInfoList_.begin(), recordDeviceInfoList_.begin() + index,
-                        recordDeviceInfoList_.begin() + index + 1);
-                }
-            }
+            UpdateRecordDeviceInfoForSelectInner(index, uid, desc);
             break;
         case UpdateType::SYSTEM_SELECT:
             if (desc->deviceType_ != DEVICE_TYPE_NONE) {
@@ -226,32 +193,10 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfo(UpdateType updateType, int32_
             }
             break;
         case UpdateType::APP_PREFER:
-            if (index < 0) {
-                RecordDeviceInfo recordDeviceInfo {
-                    .uid_ = uid,
-                    .appPreferredDevices_ = {{{sessionId, desc}}}
-                };
-                recordDeviceInfoList_.push_back(recordDeviceInfo);
-            } else {
-                for (auto &appPreferredDevices : recordDeviceInfoList_[index].appPreferredDevices_) {
-                    auto it = appPreferredDevices.find(sessionId);
-                    if (it != appPreferredDevices.end()) {
-                        it->second = desc;
-                    }
-                }
-            }
+            UpdateRecordDeviceInfoForPreferInner(index, uid, sessionId, desc)
             break;
         case UpdateType::STOP_CLIENT:
-            if (index >= 0) {
-                if (recordDeviceInfoList_[index].appPreferredDevices_.size() > 0 ||
-                    recordDeviceInfoList_[index].selectedDevice_->deviceType_ != DEVICE_TYPE_NONE) {
-                    recordDeviceInfoList_[index].sourceType_ = SourceType::SOURCE_TYPE_INVALID;
-                    std::rotate(recordDeviceInfoList_.begin() + index, recordDeviceInfoList_.begin() + index + 1,
-                        recordDeviceInfoList_.end());
-                } else {
-                    recordDeviceInfoList_.erase(recordDeviceInfoList_.begin() + index);
-                }
-            }
+            UpdateRecordDeviceInfoForStopInner(index);
             break;
         case UpdateType::RELEASE_CLIENT:
             if (index >= 0) {
@@ -260,6 +205,85 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfo(UpdateType updateType, int32_
             break;
         default:
             return;
+    }
+}
+
+void UpdateRecordDeviceInfoForStartInner(int32_t index, int32_t uid, int32_t sessionId, SourceType sourceType
+    const std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    if (index < 0) {
+        RecordDeviceInfo recordDeviceInfo {
+            .uid_ = uid,
+            .sourceType_ = sourceType,
+            .activeSelectedDevice_ =
+                AudioStateManager::GetAudioStateManager().GetPreferredRecordCaptureDevice(),
+            .appPreferredDevices_ = {{{sessionId, desc}}}
+        };
+        recordDeviceInfoList_.emplace(recordDeviceInfoList_.begin(), recordDeviceInfo);
+    } else {
+        for (auto &recordInfo : recordDeviceInfoList_) {
+            if (recordInfo.uid_ == uid) {
+                recordInfo.sourceType_ = sourceType;
+            }
+        }
+    }
+}
+
+void UpdateRecordDeviceInfoForSelectInner(int32_t index, int32_t uid,
+    const std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    if (index < 0) {
+        if (desc->deviceType_ != DEVICE_TYPE_NONE) {
+            RecordDeviceInfo recordDeviceInfo {
+                .uid_ = uid,
+                .sourceType_ = SourceType::SOURCE_TYPE_INVALID,
+                .selectedDevice_ = desc,
+                .activeSelectedDevice_ = std::make_shared<AudioDeviceDescriptor>()
+            };
+            recordDeviceInfoList_.push_back(recordDeviceInfo);
+        }
+    } else {
+        recordDeviceInfoList_[index].selectedDevice_ = desc;
+        recordDeviceInfoList_[index].activeSelectedDevice_ = desc;
+        if (recordDeviceInfoList_[index].sourceType_ != SourceType::SOURCE_TYPE_INVALID &&
+            appIsBackStatesMap_.find(uid) != appIsBackStatesMap_.end() &&
+            appIsBackStatesMap_[uid] == AppIsBackState::STATE_FOREGROUND) {
+            std::rotate(recordDeviceInfoList_.begin(), recordDeviceInfoList_.begin() + index,
+                recordDeviceInfoList_.begin() + index + 1);
+        }
+    }
+}
+
+void UpdateRecordDeviceInfoForPreferInner(int32_t index, int32_t uid, int32_t sessionId,
+    const std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    if (index < 0) {
+        RecordDeviceInfo recordDeviceInfo {
+            .uid_ = uid,
+            .appPreferredDevices_ = {{{sessionId, desc}}}
+        };
+        recordDeviceInfoList_.push_back(recordDeviceInfo);
+    } else {
+        for (auto &appPreferredDevices : recordDeviceInfoList_[index].appPreferredDevices_) {
+            auto it = appPreferredDevices.find(sessionId);
+            if (it != appPreferredDevices.end()) {
+                it->second = desc;
+            }
+        }
+    }
+}
+
+void UpdateRecordDeviceInfoForStopInner(int32_t index)
+{
+    if (index >= 0) {
+        if (recordDeviceInfoList_[index].appPreferredDevices_.size() > 0 ||
+            recordDeviceInfoList_[index].selectedDevice_->deviceType_ != DEVICE_TYPE_NONE) {
+            recordDeviceInfoList_[index].sourceType_ = SourceType::SOURCE_TYPE_INVALID;
+            std::rotate(recordDeviceInfoList_.begin() + index, recordDeviceInfoList_.begin() + index + 1,
+                recordDeviceInfoList_.end());
+        } else {
+            recordDeviceInfoList_.erase(recordDeviceInfoList_.begin() + index);
+        }
     }
 }
 
