@@ -100,7 +100,8 @@ int32_t SleAudioDeviceManager::StartPlaying(const std::string &device, uint32_t 
 {
     CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
-    AUDIO_INFO_LOG("sle streamType %{public}u", streamType);
+    AUDIO_INFO_LOG("device [%{public}s] sle streamType [%{public}u]",
+        AudioPolicyUtils::GetInstance().GetEncryptAddr(device).c_str(), streamType);
     std::lock_guard<std::mutex> lock(startedSleStreamTypeMutex_);
     int32_t ret = ERROR;
     if (!startedSleStreamType_[device][streamType].empty()) {
@@ -116,7 +117,8 @@ int32_t SleAudioDeviceManager::StopPlaying(const std::string &device, uint32_t s
     CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
     int32_t ret = ERROR;
-    AUDIO_INFO_LOG("sle streamType %{public}u", streamType);
+    AUDIO_INFO_LOG("device [%{public}s] sle streamType [%{public}u]",
+        AudioPolicyUtils::GetInstance().GetEncryptAddr(device).c_str(), streamType);
     callback_->StopPlaying(device, streamType, ret);
     return ret;
 }
@@ -385,8 +387,7 @@ void SleAudioDeviceManager::ResetSleStreamTypeCount(const std::shared_ptr<AudioD
         StopPlaying(deviceDesc->macAddress_, streamType);
     }
 
-    auto ret = SetActiveSinkDevice(deviceDesc->macAddress_, SLE_AUDIO_STREAM_NONE);
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "set active device failed, ret: %{public}d", ret);
+    SetActiveSinkDevice(deviceDesc->macAddress_, SLE_AUDIO_STREAM_NONE);
 
     startedSleStreamType_.erase(it);
 }

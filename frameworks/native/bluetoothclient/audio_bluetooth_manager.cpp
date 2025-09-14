@@ -465,7 +465,7 @@ int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
     AudioXCollie audioXCollie("AudioHfpManager::SetActiveHfpDevice", BT_SET_ACTIVE_DEVICE_TIMEOUT,
         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     BluetoothRemoteDevice device;
-    if (HfpBluetoothDeviceManager::GetConnectedHfpBluetoothDevice(macAddress, device) != SUCCESS) {
+    if (macAddress != "" && HfpBluetoothDeviceManager::GetConnectedHfpBluetoothDevice(macAddress, device) != SUCCESS) {
         AUDIO_ERR_LOG("SetActiveHfpDevice failed for the HFP device, %{public}s does not exist.",
             GetEncryptAddr(macAddress).c_str());
         return ERROR;

@@ -751,22 +751,24 @@ int32_t AudioAdapterManager::SetVolumeDb(AudioStreamType streamType)
     if (streamType == STREAM_VOICE_CALL_ASSISTANT) {
         volumeDb = 1.0f;
     }
-
-    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERR_OPERATION_FAILED,
-        "SetSystemVolumeLevel failed audio adapter null");
-
     AUDIO_INFO_LOG("streamType:%{public}d volumeDb:%{public}f volume:%{public}d devicetype:%{public}d",
         streamType, volumeDb, volumeLevel, currentActiveDevice_.deviceType_);
+    SetSystemVolumeToEffect(streamType);
+    SetAudioVolume(streamType, volumeDb);
 
+    return SUCCESS;
+}
+
+int32_t AudioAdapterManager::SetSystemVolumeToEffect(AudioStreamType streamType)
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERR_OPERATION_FAILED,
+        "SetSystemVolumeLevel failed audio adapter null");
     // audio volume
     int32_t volumeLevelTemp = GetSystemVolumeForEffect(currentActiveDevice_.deviceType_, streamType);
     float volumeDbTemp = CalculateVolumeDbNonlinear(streamType, currentActiveDevice_.deviceType_, volumeLevelTemp);
     AUDIO_INFO_LOG("SetSystemVolumeToEffect streamType: %{public}d, volumeDb: %{public}f, deviceType: %{public}d",
         streamType, volumeDbTemp, currentActiveDevice_.deviceType_);
-    audioServiceAdapter_->SetSystemVolumeToEffect(streamType, volumeDbTemp);
-    SetAudioVolume(streamType, volumeDb);
-
-    return SUCCESS;
+    return audioServiceAdapter_->SetSystemVolumeToEffect(streamType, volumeDbTemp);
 }
 
 void AudioAdapterManager::SetAppAudioVolume(int32_t appUid, float volumeDb)
