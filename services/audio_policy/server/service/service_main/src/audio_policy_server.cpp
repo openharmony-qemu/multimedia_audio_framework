@@ -3858,6 +3858,7 @@ int32_t AudioPolicyServer::GetAvailableDevices(int32_t usageIn,
         apiVersion, hasSystemPermission);
     for (auto &desc : deviceDevices) {
         CHECK_AND_RETURN_RET_LOG(desc, ERR_MEMORY_ALLOC_FAILED, "nullptr");
+        desc->descriptorType_ = AudioDeviceDescriptor::AUDIO_DEVICE_DESCRIPTOR;
         desc->SetClientInfo(clientInfo);
     }
 
