@@ -43,9 +43,8 @@ shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetCallCaptureDevice(SourceTy
 {
     shared_ptr<AudioDeviceDescriptor> device =
         AudioDeviceManager::GetAudioDeviceManager().GetSelectedCaptureDevice(sessionID);
-    if (device == nullptr) {
-        device = AudioAffinityManager::GetAudioAffinityManager().GetCapturerDevice(clientUID);
-    }
+    CHECK_AND_RETURN_RET(device == nullptr || device->deviceType_ == DEVICE_TYPE_NONE, device);
+    device = AudioAffinityManager::GetAudioAffinityManager().GetCapturerDevice(clientUID);
     return device;
 }
 
@@ -61,12 +60,10 @@ shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetRecordCaptureDevice(Source
 {
     shared_ptr<AudioDeviceDescriptor> device =
         AudioDeviceManager::GetAudioDeviceManager().GetSelectedCaptureDevice(sessionID);
-    if (device == nullptr) {
-        device = AudioUsrSelectManager::GetAudioUsrSelectManager().GetCapturerDevice(clientUID, sourceType);
-    }
-    if (device == nullptr) {
-        device = AudioAffinityManager::GetAudioAffinityManager().GetCapturerDevice(clientUID);
-    }
+    CHECK_AND_RETURN_RET(device == nullptr || device->deviceType_ == DEVICE_TYPE_NONE, device);
+    device = AudioUsrSelectManager::GetAudioUsrSelectManager().GetCapturerDevice(clientUID, sessionID, sourceType);
+    CHECK_AND_RETURN_RET(device == nullptr || device->deviceType_ == DEVICE_TYPE_NONE, device);
+    device = AudioAffinityManager::GetAudioAffinityManager().GetCapturerDevice(clientUID);
     return device;
 }
 

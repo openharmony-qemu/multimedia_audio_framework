@@ -125,23 +125,6 @@ HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_GetSelectedInputDe
 
 /**
 * @tc.name  : Test AudioUsrSelectManager.
-* @tc.number: AudioUsrSelectManager_ClearSelectedInputDeviceByUid_001
-* @tc.desc  : Test ClearSelectedInputDeviceByUid interface.
-*/
-HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_ClearSelectedInputDeviceByUid_001, TestSize.Level1)
-{
-    AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
-    int32_t uid = 321;
-    audioUsrSelectManager.ClearSelectedInputDeviceByUid(uid);
-    EXPECT_EQ(audioUsrSelectManager.selectedDevices_.size(), 1);
-
-    uid = 123;
-    audioUsrSelectManager.ClearSelectedInputDeviceByUid(uid);
-    EXPECT_EQ(audioUsrSelectManager.selectedDevices_.size(), 0);
-}
-
-/**
-* @tc.name  : Test AudioUsrSelectManager.
 * @tc.number: AudioUsrSelectManager_PreferBluetoothAndNearlinkRecordByUid_001
 * @tc.desc  : Test PreferBluetoothAndNearlinkRecordByUid interface.
 */
@@ -169,25 +152,6 @@ HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_GetPreferBluetooth
 
     EXPECT_EQ(audioUsrSelectManager.GetPreferBluetoothAndNearlinkRecordByUid(123), PREFERRED_DEFAULT);
     EXPECT_EQ(audioUsrSelectManager.GetPreferBluetoothAndNearlinkRecordByUid(321), PREFERRED_NONE);
-}
-
-/**
-* @tc.name  : Test AudioUsrSelectManager.
-* @tc.number: AudioUsrSelectManager_GetRealUid_001
-* @tc.desc  : Test GetRealUid interface.
-*/
-HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_GetRealUid_001, TestSize.Level1)
-{
-    AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
-
-    auto stream = std::make_shared<AudioStreamDescriptor>();
-    stream->streamStatus_ = STREAM_STATUS_STARTED;
-    stream->callerUid_ = 123;
-    EXPECT_EQ(audioUsrSelectManager.GetRealUid(stream), 123);
-
-    stream->callerUid_ = 1013;
-    stream->appInfo_.appUid = 321;
-    EXPECT_EQ(audioUsrSelectManager.GetRealUid(stream), 321);
 }
 
 /**

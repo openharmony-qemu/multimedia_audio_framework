@@ -67,6 +67,7 @@ public:
     void UpdateRendererPipeInfos(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos);
     void UpdateCapturerPipeInfos(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos);
     uint32_t PcmOffloadSessionCount();
+    int32_t GetClientUidBySessionId(uint32_t sessionId);
 
     void Dump(std::string &dumpString);
     bool IsModemCommunicationIdExist();
