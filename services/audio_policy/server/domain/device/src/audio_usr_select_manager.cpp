@@ -176,7 +176,7 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfo(UpdateType updateType, int32_
     AUDIO_INFO_LOG("UpdateRecordDeviceInfo updateType:%{public}d", updateType);
     switch (updateType) {
         case UpdateType::START_CLIENT:
-            UpdateRecordDeviceInfoForStartInner(index, uid, sourceType, sessionId, desc);
+            UpdateRecordDeviceInfoForStartInner(index, uid, sessionId, sourceType, desc);
             break;
         case UpdateType::APP_SELECT:
             UpdateRecordDeviceInfoForSelectInner(index, uid, desc);
