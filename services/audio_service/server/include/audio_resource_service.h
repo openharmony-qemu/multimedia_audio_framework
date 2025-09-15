@@ -1,4 +1,3 @@
-dd
 /*
  * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -86,7 +85,7 @@ public:
     };
 private:
     int32_t AudioWorkgroupCheck(int32_t pid);
-    AudioWorkgroup *GetAudioWorkgroupPtr(int32_t pid, int32_t workgroupId);
+    std::shared_ptr<AudioWorkgroup> GetAudioWorkgroup(int32_t pid, int32_t workgroupId);
     int32_t RegisterAudioWorkgroupMonitor(int32_t pid, int32_t groupId, const sptr<IRemoteObject> &object);
     int32_t GetThreadsNumPerProcess(int32_t pid);
     void DumpAudioWorkgroupMap();
