@@ -218,8 +218,9 @@ int32_t MultichannelAudioRenderSink::RenderFrame(char &data, uint64_t len, uint6
     CheckUpdateState(&data, len);
     if (switchDeviceMute_) {
         Trace trace("MultichannelAudioRenderSink::RenderFrame::switch");
-        writeLen = len;
-        return SUCCESS;
+        if (memset_s(reinterpret_cast<void *>(&data), static_cast<size_t>(len), 0, static_cast<size_t>(len)) != EOK) {
+            AUDIO_WARNING_LOG("call memset_s fail");
+        }
     }
     if (emptyFrameCount_ > 0) {
         Trace trace("MultichannelAudioRenderSink::RenderFrame::renderEmpty");
@@ -228,7 +229,7 @@ int32_t MultichannelAudioRenderSink::RenderFrame(char &data, uint64_t len, uint6
         }
         --emptyFrameCount_;
         if (emptyFrameCount_ == 0) {
-            switchDeviceCV_.notify_all();
+            updateActiveDeviceCV_.notify_all();
         }
     }
 
@@ -410,7 +411,7 @@ int32_t MultichannelAudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> 
 
     emptyFrameCount_ = 5; // 5: frame count before update route
     std::unique_lock<std::mutex> lock(switchDeviceMutex_);
-    switchDeviceCV_.wait_for(lock, std::chrono::milliseconds(SLEEP_TIME_FOR_EMPTY_FRAME), [this] {
+    updateActiveDeviceCV_.wait_for(lock, std::chrono::milliseconds(SLEEP_TIME_FOR_EMPTY_FRAME), [this] {
         if (emptyFrameCount_ == 0) {
             AUDIO_INFO_LOG("wait for empty frame end");
             return true;
@@ -725,5 +726,29 @@ void MultichannelAudioRenderSink::UpdateSinkState(bool started)
         started);
 }
 
+int32_t MultichannelAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
+{
+    std::lock_guard<std::mutex> lock(switchDeviceMutex_);
+    AUDIO_INFO_LOG("set multichannel mute %{public}d", mute);
+
+    if (mute) {
+        muteCount_++;
+        if (switchDeviceMute_) {
+            AUDIO_INFO_LOG("multichannel already muted");
+            return SUCCESS;
+        }
+        switchDeviceMute_ = true;
+    } else {
+        muteCount_--;
+        if (muteCount_ > 0) {
+            AUDIO_WARNING_LOG("multichannel not all unmuted");
+            return SUCCESS;
+        }
+        switchDeviceMute_ = false;
+        muteCount_ = 0;
+    }
+
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS
