@@ -1,4 +1,3 @@
-dd
 /*
  * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -299,11 +298,11 @@ void ResourceServiceStopGroupFuzzTest()
     AudioResourceService::GetInstance()->StopGroup(pid, workgroupId);
 }
 
-void ResourceServiceGetAudioWorkgroupPtrFuzzTest()
+void ResourceServiceGetAudioWorkgroupFuzzTest()
 {
     int32_t pid = g_fuzzUtils.GetData<int32_t>();
     int32_t workgroupId = g_fuzzUtils.GetData<int32_t>();
-    AudioResourceService::GetInstance()->GetAudioWorkgroupPtr(pid, workgroupId);
+    AudioResourceService::GetInstance()->GetAudioWorkgroup(pid, workgroupId);
 }
 
 void ResourceServiceGetThreadsNumPerProcessFuzzTest()
@@ -998,7 +997,7 @@ vector<TestFuncs> g_testFuncs = {
     ResourceServiceRemoveThreadFromGroupFuzzTest,
     ResourceServiceStartGroupFuzzTest,
     ResourceServiceStopGroupFuzzTest,
-    ResourceServiceGetAudioWorkgroupPtrFuzzTest,
+    ResourceServiceGetAudioWorkgroupFuzzTest,
     ResourceServiceGetThreadsNumPerProcessFuzzTest,
     ResourceServiceIsProcessHasSystemPermissionFuzzTest,
     ResourceServiceRegisterAudioWorkgroupMonitorFuzzTest,
