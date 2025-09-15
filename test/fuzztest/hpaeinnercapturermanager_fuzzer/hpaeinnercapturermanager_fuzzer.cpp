@@ -42,9 +42,9 @@ static std::string g_rootPath = "/data/";
 static std::string g_rootCapturerPath = "/data/source_file_io_48000_2_s16le.pcm";
 const char* DEFAULT_TEST_DEVICE_CLASS = "file_io";
 const char* DEFAULT_TEST_DEVICE_NETWORKID = "LocalDevice";
+const uint32_t DEFAULT_FRAME_LENGTH = 960;
 const uint32_t DEFAULT_SESSION_ID = 123456;
 typedef void (*TestPtr)(const uint8_t *, size_t);
-constexpr uint32_t MAXFRAMELEN = 38400;
 const std::vector<AudioChannel> SUPPORTED_CHANNELS {
     MONO,
     STEREO,
@@ -128,24 +128,14 @@ void RoundVal(T &roundVal, const std::vector<T>& list)
 
 void RoundSinkInfo(HpaeSinkInfo &sinkInfo)
 {
-    RoundVal(sinkInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
     RoundVal(sinkInfo.channels, SUPPORTED_CHANNELS);
     RoundVal(sinkInfo.format, AUDIO_SUPPORTED_FORMATS);
-    sinkInfo.frameLen = GetData<size_t>();
-    if (GetData<bool>()) {
-        sinkInfo.frameLen %= MAXFRAMELEN;
-    }
 }
 
 void RoundStreamInfo(HpaeStreamInfo &streamInfo)
 {
-    RoundVal(streamInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
     RoundVal(streamInfo.channels, SUPPORTED_CHANNELS);
     RoundVal(streamInfo.format, AUDIO_SUPPORTED_FORMATS);
-    streamInfo.frameLen = GetData<size_t>();
-    if (GetData<bool>()) {
-        streamInfo.frameLen %= MAXFRAMELEN;
-    }
 }
 
 HpaeSinkInfo GetInCapSinkInfo()
@@ -157,6 +147,12 @@ HpaeSinkInfo GetInCapSinkInfo()
     sinkInfo.filePath = g_rootPath + "constructHpaeInnerCapturerManagerTest.pcm";
     RoundSinkInfo(sinkInfo);
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    sinkInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    if (GetData<bool>()) {
+        sinkInfo.frameLen = GetData<uint64_t>();
+        sinkInfo.samplingRate = GetData<uint64_t>();
+    }
     return sinkInfo;
 }
 
@@ -169,6 +165,12 @@ HpaeSinkInfo GetInCapFuzzSinkInfo()
     sinkInfo.filePath = g_rootPath + "constructHpaeInnerCapturerManagerTest.pcm";
     RoundSinkInfo(sinkInfo);
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    sinkInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    if (GetData<bool>()) {
+        sinkInfo.frameLen = GetData<uint64_t>();
+        sinkInfo.samplingRate = GetData<uint64_t>();
+    }
     return sinkInfo;
 }
 
@@ -180,6 +182,12 @@ HpaeStreamInfo GetInCapPlayStreamInfo()
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
     streamInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    streamInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    if (GetData<bool>()) {
+        streamInfo.frameLen = GetData<uint64_t>();
+        streamInfo.samplingRate = GetData<uint64_t>();
+    }
     return streamInfo;
 }
 
@@ -191,6 +199,12 @@ HpaeStreamInfo GetInCapPlayFuzzStreamInfo()
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
     streamInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    streamInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    if (GetData<bool>()) {
+        streamInfo.frameLen = GetData<uint64_t>();
+        streamInfo.samplingRate = GetData<uint64_t>();
+    }
     return streamInfo;
 }
 
@@ -202,6 +216,12 @@ static HpaeStreamInfo GetInCapRecordStreamInfo()
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_RECORD;
     streamInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    streamInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    if (GetData<bool>()) {
+        streamInfo.frameLen = GetData<uint64_t>();
+        streamInfo.samplingRate = GetData<uint64_t>();
+    }
     return streamInfo;
 }
 
@@ -213,6 +233,12 @@ static HpaeStreamInfo GetInCapRecordFuzzStreamInfo()
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_RECORD;
     streamInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    streamInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    if (GetData<bool>()) {
+        streamInfo.frameLen = GetData<uint64_t>();
+        streamInfo.samplingRate = GetData<uint64_t>();
+    }
     return streamInfo;
 }
 
@@ -351,8 +377,12 @@ void HpaeInnerCapturerManagerAddNodeToSinkFuzzTest1()
     playSencondNodeInfo.sessionId = GetData<uint32_t>();
     playSencondNodeInfo.channels = STEREO;
     playSencondNodeInfo.format = SAMPLE_S16LE;
-    playSencondNodeInfo.frameLen = GetData<uint64_t>();
+    playSencondNodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
     playSencondNodeInfo.samplingRate = SAMPLE_RATE_44100;
+    if (GetData<bool>()) {
+        playSencondNodeInfo.frameLen = GetData<T>();
+        playSencondNodeInfo.samplingRate = GetData<T>();
+    }
     playSencondNodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
     playSencondNodeInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     playSencondNodeInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -395,8 +425,12 @@ void HpaeInnerCapturerManagerAddNodeToSinkFuzzTest2()
     playSencondNodeInfo.sessionId = GetData<uint32_t>();
     playSencondNodeInfo.channels = STEREO;
     playSencondNodeInfo.format = SAMPLE_S16LE;
-    playSencondNodeInfo.frameLen = GetData<uint64_t>();
+    playSencondNodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
     playSencondNodeInfo.samplingRate = SAMPLE_RATE_44100;
+    if (GetData<bool>()) {
+        playSencondNodeInfo.frameLen = GetData<T>();
+        playSencondNodeInfo.samplingRate = GetData<T>();
+    }
     playSencondNodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
     playSencondNodeInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     playSencondNodeInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -444,8 +478,12 @@ void HpaeInnerCapturerManagerAddNodeToSinkFuzzTest3()
     playSencondNodeInfo.sessionId = GetData<uint32_t>();
     playSencondNodeInfo.channels = STEREO;
     playSencondNodeInfo.format = SAMPLE_S16LE;
-    playSencondNodeInfo.frameLen = GetData<uint64_t>();
+    playSencondNodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
     playSencondNodeInfo.samplingRate = SAMPLE_RATE_44100;
+    if (GetData<bool>()) {
+        playSencondNodeInfo.frameLen = GetData<T>();
+        playSencondNodeInfo.samplingRate = GetData<T>();
+    }
     playSencondNodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
     playSencondNodeInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     playSencondNodeInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
