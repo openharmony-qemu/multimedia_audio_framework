@@ -37,6 +37,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr uint32_t BOOTUP_MUSIC_UID = 1003;
 constexpr uint32_t MEDIA_SA_UID = 1013;
 constexpr uint32_t THP_EXTRA_SA_UID = 5000;
 static const int32_t INTERRUPT_SERVICE_TIMEOUT = 10; // 10s
@@ -2867,6 +2868,7 @@ uint8_t AudioInterruptService::GetAppState(int32_t appPid)
 
 void AudioInterruptService::WriteStartDfxMsg(InterruptDfxBuilder &dfxBuilder, const AudioInterrupt &audioInterrupt)
 {
+    CHECK_AND_RETURN_LOG(audioInterrupt.uid != BOOTUP_MUSIC_UID, "The caller is BootAnimation. Don't write dfx msg.");
     CHECK_AND_RETURN_LOG(dfxCollector_ != nullptr, "dfxCollector is null");
     auto& [infoIdx, effectIdx] = dfxCollector_->GetDfxIndexes(audioInterrupt.streamId);
     if (!dfxBuilder.GetResult().interruptEffectVec.empty()) {
