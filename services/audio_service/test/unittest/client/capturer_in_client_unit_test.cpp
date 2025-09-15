@@ -157,6 +157,8 @@ public:
     virtual int32_t GetPrivacyType(int32_t &privacyType) override { return 0; } // renderer only
 
     virtual int32_t SetOffloadMode(int32_t state, bool isAppBack) override { return 0; } // renderer only
+    
+    virtual int32_t SetTarget(int32_t target, int32_t &ret) override { return 0; } // renderer only
 
     virtual int32_t UnsetOffloadMode() override { return 0; } // renderer only
 

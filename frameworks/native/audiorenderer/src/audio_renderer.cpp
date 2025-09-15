@@ -2956,5 +2956,19 @@ int32_t AudioRendererPrivate::HandleCreateFastStreamError(AudioStreamParams &aud
     audioStream_->NotifyRouteUpdate(flag, networkId);
     return ret;
 }
+
+int32_t AudioRendererPrivate::SetTarget(RenderTarget target) const
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    return currentStream->SetRenderTarget(target);
+}
+
+RenderTarget AudioRendererPrivate::GetTarget() const
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, NORMAL_PLAYBACK, "audioStream_ is nullptr");
+    return currentStream->GetRenderTarget();
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

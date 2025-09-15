@@ -101,6 +101,8 @@ public:
 
     virtual int32_t SetOffloadMode(int32_t state, bool isAppBack) override { return 0; } // renderer only
 
+    virtual int32_t SetTarget(int32_t target, int32_t &ret) override { return 0; } // renderer only
+
     virtual int32_t UnsetOffloadMode() override { return 0; } // renderer only
 
     virtual int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
@@ -2720,6 +2722,42 @@ HWTEST(RendererInClientInnerUnitTest, WriteCallbackFunc_001, TestSize.Level4)
     ptrRendererInClientInner->state_ = State::RUNNING;
     bool ret  = ptrRendererInClientInner->WriteCallbackFunc();
     EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: SetRenderTarget_001
+ * @tc.desc  : Test RendererInClientInner::SetRenderTarget
+ */
+HWTEST(RendererInClientInnerUnitTest, SetRenderTarget_001, TestSize.Level1)
+{
+    AudioStreamType eStreamType = AudioStreamType::STREAM_DEFAULT;
+    int32_t appUid = 1;
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(eStreamType, appUid);
+
+    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+    
+    auto ret = ptrRendererInClientInner->SetRenderTarget(NORMAL_PLAYBACK);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: GetRenderTarget_001
+ * @tc.desc  : Test RendererInClientInner::GetRenderTarget
+ */
+HWTEST(RendererInClientInnerUnitTest, GetRenderTarget_001, TestSize.Level1)
+{
+    AudioStreamType eStreamType = AudioStreamType::STREAM_DEFAULT;
+    int32_t appUid = 1;
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(eStreamType, appUid);
+
+    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+
+    auto ret = ptrRendererInClientInner->GetRenderTarget();
+    EXPECT_EQ(ret, NORMAL_PLAYBACK);
 }
 } // namespace AudioStandard
 } // namespace OHOS

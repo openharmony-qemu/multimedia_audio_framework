@@ -2365,6 +2365,12 @@ void RendererInServer::InitDupBuffer(int32_t innerCapId)
         innerCapId, streamIndex_);
 }
 
+int32_t RendererInServer::SetTarget(int32_t target, int32_t &ret)
+{
+    ret = SUCCESS;
+    return SUCCESS;
+}
+
 int32_t RendererInServer::InitSoftLink(int32_t innerCapId)
 {
     std::lock_guard<std::mutex> lock(softLinkMutex_);
