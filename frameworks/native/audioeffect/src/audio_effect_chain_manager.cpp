@@ -832,6 +832,7 @@ int32_t AudioEffectChainManager::SetHdiParam(const AudioEffectScene &sceneType)
     if (audioEffectHdiParam_->UpdateHdiState(effectHdiInput_) != SUCCESS) {
         AUDIO_WARNING_LOG("set hdi room mode failed");
         return ERROR;
+    }
     return SUCCESS;
 }
 
