@@ -56,9 +56,9 @@ public:
 
     struct StreamMuteStatusEvent {
         StreamMuteStatusEvent() = delete;
-        StreamMuteStatusEvent(const AudioStreamType &streamType, const bool &mute, const StreamUsage &streamUsage,
+        StreamMuteStatusEvent(const AudioStreamType &streamType, const bool &mute,
             const DeviceType &deviceType, const std::string &networkId) : streamType_(streamType), mute_(mute),
-            streamUsage_(streamUsage), deviceType_(deviceType), networkId_(networkId)
+            deviceType_(deviceType), networkId_(networkId)
         {}
         AudioStreamType streamType_;
         bool mute_;
@@ -79,7 +79,7 @@ public:
     bool SendSaveVolume(const DeviceType &deviceType, const AudioStreamType &streamType, const int32_t &volumeLevel,
         std::string networkId = "LocalDevice");
     bool SendStreamMuteStatusUpdate(const AudioStreamType &streamType, const bool &mute,
-        const StreamUsage &streamUsage, const DeviceType &deviceType = DEVICE_TYPE_NONE,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE,
         std::string networkId = LOCAL_NETWORK_ID);
     bool SendRingerModeUpdate(const AudioRingerMode &ringerMode);
 
