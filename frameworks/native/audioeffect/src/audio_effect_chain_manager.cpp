@@ -994,7 +994,7 @@ int32_t AudioEffectChainManager::SetSpatializationSceneType(AudioSpatializationS
     AUDIO_INFO_LOG("spatialization scene type is set to be %{public}d", spatializationSceneType);
     spatializationSceneType_ = spatializationSceneType;
 
-    if (!spatializationEnabled_ || (GetDeviceTypeName() != "DEVICE_TYPE_BLUETOOTH_A2DP")) {
+    if (!spatializationEnabled_ || !IsDeviceTypeSupportingSpatialization()) {
         return SUCCESS;
     }
 
@@ -1396,9 +1396,6 @@ void AudioEffectChainManager::UpdateSpatializationEnabled(AudioSpatializationSta
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("set hdi destroy failed");
         }
-        if (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-            AUDIO_INFO_LOG("delete all chains if device type is bt.");
-        }
         btOffloadEnabled_ = false;
     }
     SetSpatializationEnabledToChains();
@@ -1417,19 +1414,15 @@ void AudioEffectChainManager::UpdateEffectBtOffloadSupported(const bool &isSuppo
     if (isSupported == btOffloadSupported_) {
         return;
     }
-    if (!isSupported) {
-        btOffloadSupported_ = isSupported;
-        AUDIO_INFO_LOG("btOffloadSupported_ off, device disconnect from %{public}d", deviceType_);
-        return;
-    }
 
     if (!spatializationEnabled_) {
         btOffloadSupported_ = isSupported;
-        AUDIO_INFO_LOG("btOffloadSupported_ on, but spatialization is off, do nothing");
+        AUDIO_INFO_LOG("btOffloadSupported_ %{public}d, but spatialization is off, do nothing", btOffloadSupported_);
         return;
     }
     // Release ARM, try offload to DSP
-    AUDIO_INFO_LOG("btOffloadSupported_ on, try offload effect on device %{public}d", deviceType_);
+    AUDIO_INFO_LOG("btOffloadSupported_ %{public}d, try offload effect on device %{public}d",
+        btOffloadSupported_, deviceType_);
     AudioSpatializationState oldState = {spatializationEnabled_, headTrackingEnabled_};
     AudioSpatializationState offState = {false, false};
     UpdateSpatializationStateInner(offState);
@@ -2023,6 +2016,12 @@ int32_t AudioEffectChainManager::EffectApAbsVolumeStateUpdate(const bool absVolu
     }
 
     return SUCCESS;
+}
+
+bool AudioEffectChainManager::IsDeviceTypeSupportingSpatialization()
+{
+    return (deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) || (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) ||
+        (deviceType_ == DEVICE_TYPE_NEARLINK);
 }
 } // namespace AudioStandard
 } // namespace OHOS
