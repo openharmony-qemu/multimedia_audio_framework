@@ -144,7 +144,8 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
             audioStateManager_.SetPreferredRecordCaptureDevice(desc);
             {
                 RecordDeviceInfo info {.uid_ = uid, .activeSelectedDevice_ = desc};
-                AudioUsrSelectManager::GetAudioUsrSelectManager().UpdateRecordDeviceInfo(UpdateType::SYSTEM_SELECT, info);
+                AudioUsrSelectManager::GetAudioUsrSelectManager().UpdateRecordDeviceInfo(
+                    UpdateType::SYSTEM_SELECT, info);
             }
             break;
         case AUDIO_RING_RENDER:
