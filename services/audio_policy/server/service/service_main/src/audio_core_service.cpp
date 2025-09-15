@@ -517,9 +517,10 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     } else {
         int32_t inputRet = ActivateInputDevice(streamDesc);
         CHECK_AND_RETURN_RET_LOG(inputRet == SUCCESS, inputRet, "Activate input device failed");
-        audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::START_CLIENT, GetRealUid(streamDesc),
-            streamDesc->sessionId_, streamDesc->capturerInfo_.sourceType,
-            AudioDeviceManager::GetAudioDeviceManager().GetSelectedCaptureDevice(sessionId));
+        RecordDeviceInfo info {
+            .uid_ = GetRealUid(streamDesc), .sourceType_ = streamDesc->capturerInfo_.sourceType,
+            .activeSelectedDevice_ = audioStateManager_.GetPreferredRecordCaptureDevice()};
+        audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::START_CLIENT, info);
         CheckAndSetCurrentInputDevice(deviceDesc);
         audioActiveDevice_.UpdateActiveDeviceRoute(
             streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG,
@@ -538,9 +539,8 @@ int32_t AudioCoreService::PauseClient(uint32_t sessionId)
     pipeManager_->PauseClient(sessionId);
     std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
-        audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::STOP_CLIENT, GetRealUid(streamDesc),
-            streamDesc->sessionId_, streamDesc->capturerInfo_.sourceType,
-            AudioDeviceManager::GetAudioDeviceManager().GetSelectedCaptureDevice(sessionId));
+        RecordDeviceInfo info {.uid_ = GetRealUid(streamDesc)};
+        audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::STOP_CLIENT, info);
     }
     return SUCCESS;
 }
@@ -550,9 +550,8 @@ int32_t AudioCoreService::StopClient(uint32_t sessionId)
     pipeManager_->StopClient(sessionId);
     std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
-        audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::STOP_CLIENT, GetRealUid(streamDesc),
-            streamDesc->sessionId_, streamDesc->capturerInfo_.sourceType,
-            AudioDeviceManager::GetAudioDeviceManager().GetSelectedCaptureDevice(sessionId));
+        RecordDeviceInfo info {.uid_ = GetRealUid(streamDesc)};
+        audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::STOP_CLIENT, info);
     }
     return SUCCESS;
 }
@@ -569,9 +568,8 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
     }
     std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
-        audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::RELEASE_CLIENT, GetRealUid(streamDesc),
-            streamDesc->sessionId_, streamDesc->capturerInfo_.sourceType,
-            AudioDeviceManager::GetAudioDeviceManager().GetSelectedCaptureDevice(sessionId));
+        RecordDeviceInfo info {.uid_ = GetRealUid(streamDesc)};
+        audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::RELEASE_CLIENT, info);
     }
     pipeManager_->RemoveClient(sessionId);
     audioOffloadStream_.UnsetOffloadStatus(sessionId);
@@ -642,9 +640,6 @@ int32_t AudioCoreService::SetInputDevice(const DeviceType deviceType, const uint
     const SourceType sourceType, bool isRunning)
 {
     int32_t ret = audioDeviceManager_.SetInputDevice(deviceType, sessionID, sourceType, isRunning);
-    audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::APP_PREFER,
-        pipeManager_->GetClientUidBySessionId(sessionID), sessionID, sourceType,
-        AudioDeviceManager::GetAudioDeviceManager().GetSelectedCaptureDevice(sessionID));
     if (ret == NEED_TO_FETCH) {
         FetchInputDeviceAndRoute("SetInputDevice");
         return SUCCESS;
@@ -1132,8 +1127,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::GetSelectedInputDeviceB
 
 int32_t AudioCoreService::ClearSelectedInputDeviceByUid(int32_t uid)
 {
-    audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::APP_SELECT, uid, -1, SourceType::SOURCE_TYPE_INVALID,
-        std::make_shared<AudioDeviceDescriptor>());
+    RecordDeviceInfo info {.uid_ = uid, .selectedDevice_ = std::make_shared<AudioDeviceDescriptor>()};
+    audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::APP_SELECT, info);
     return SUCCESS;
 }
 

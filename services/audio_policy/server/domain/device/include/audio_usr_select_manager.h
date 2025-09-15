@@ -41,11 +41,12 @@ enum UpdateType {
 };
 
 struct RecordDeviceInfo {
-    int32_t uid_;
+    int32_t uid_{-1};
     SourceType sourceType_{SourceType::SOURCE_TYPE_INVALID};
     AudioDevicePtr selectedDevice_{std::make_shared<AudioDeviceDescriptor>()};
     AudioDevicePtr activeSelectedDevice_{std::make_shared<AudioDeviceDescriptor>()};
-    std::list<std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> appPreferredDevices_{};
+    BluetoothAndNearlinkPreferredRecordCategory appPreferredCategory_{
+        BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE};
 };
 
 class AudioUsrSelectManager {
@@ -62,8 +63,7 @@ public:
     void PreferBluetoothAndNearlinkRecordByUid(int32_t uid, BluetoothAndNearlinkPreferredRecordCategory category);
     BluetoothAndNearlinkPreferredRecordCategory GetPreferBluetoothAndNearlinkRecordByUid(int32_t uid);
     std::shared_ptr<AudioDeviceDescriptor> GetCapturerDevice(int32_t uid, int32_t sessionId, SourceType sourceType);
-    void UpdateRecordDeviceInfo(UpdateType updateType, int32_t uid, int32_t sessionId, SourceType sourceType,
-        const std::shared_ptr<AudioDeviceDescriptor> &desc);
+    void UpdateRecordDeviceInfo(UpdateType updateType, RecordDeviceInfo info);
     void UpdateAppIsBackState(int32_t uid, AppIsBackState appState);
 
 private:
