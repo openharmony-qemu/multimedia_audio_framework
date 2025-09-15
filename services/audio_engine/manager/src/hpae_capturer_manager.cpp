@@ -186,7 +186,7 @@ void HpaeCapturerManager::SetSessionState(uint32_t sessionId, HpaeSessionState c
 {
     sessionNodeMap_[sessionId].state = capturerState;
     sourceOutputNodeMap_[sessionId]->SetState(capturerState);
-}f
+}
 
 int32_t HpaeCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
 {
