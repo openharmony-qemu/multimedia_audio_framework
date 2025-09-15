@@ -171,12 +171,12 @@ int32_t AudioUsrSelectManager::GetIdFromRecordDeviceInfoList(int32_t uid)
 void AudioUsrSelectManager::UpdateRecordDeviceInfo(UpdateType updateType, int32_t uid, int32_t sessionId,
     SourceType sourceType, const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     int32_t index = GetIdFromRecordDeviceInfoList(uid);
     AUDIO_INFO_LOG("UpdateRecordDeviceInfo updateType:%{public}d", updateType);
     switch (updateType) {
         case UpdateType::START_CLIENT:
-            UpdateRecordDeviceInfoForStartInner(index, uid, sourceType, sessionId,
-                const std::shared_ptr<AudioDeviceDescriptor> &desc);
+            UpdateRecordDeviceInfoForStartInner(index, uid, sourceType, sessionId, desc);
             break;
         case UpdateType::APP_SELECT:
             UpdateRecordDeviceInfoForSelectInner(index, uid, desc);
@@ -289,6 +289,7 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfoForStopInner(int32_t index)
 
 void AudioUsrSelectManager::UpdateAppIsBackState(int32_t uid, AppIsBackState appState)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     switch (appState) {
         case AppIsBackState::STATE_END:
             appIsBackStatesMap_.erase(uid);
