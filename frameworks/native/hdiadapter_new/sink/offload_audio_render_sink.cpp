@@ -32,7 +32,7 @@ namespace OHOS {
 namespace AudioStandard {
 OffloadAudioRenderSink::~OffloadAudioRenderSink()
 {
-    if (sinkInited_.load()) {
+    if (sinkInited_) {
         DeInit();
     }
     CheckFlushThread();
