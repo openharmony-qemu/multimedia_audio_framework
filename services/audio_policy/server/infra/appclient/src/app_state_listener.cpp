@@ -31,6 +31,7 @@
 #include "audio_bundle_manager.h"
 #include "audio_stream_monitor.h"
 #include "audio_session_service.h"
+#include "audio_usr_select_manager.h"
 
 
 namespace OHOS {
