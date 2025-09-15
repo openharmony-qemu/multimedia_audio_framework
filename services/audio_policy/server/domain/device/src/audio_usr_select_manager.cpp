@@ -175,7 +175,7 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfo(UpdateType updateType, int32_
     AUDIO_INFO_LOG("UpdateRecordDeviceInfo updateType:%{public}d", updateType);
     switch (updateType) {
         case UpdateType::START_CLIENT:
-            UpdateRecordDeviceInfoForStartInner(index, uid, sourceType, sessionId
+            UpdateRecordDeviceInfoForStartInner(index, uid, sourceType, sessionId,
                 const std::shared_ptr<AudioDeviceDescriptor> &desc);
             break;
         case UpdateType::APP_SELECT:
@@ -193,7 +193,7 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfo(UpdateType updateType, int32_
             }
             break;
         case UpdateType::APP_PREFER:
-            UpdateRecordDeviceInfoForPreferInner(index, uid, sessionId, desc)
+            UpdateRecordDeviceInfoForPreferInner(index, uid, sessionId, desc);
             break;
         case UpdateType::STOP_CLIENT:
             UpdateRecordDeviceInfoForStopInner(index);
@@ -208,8 +208,8 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfo(UpdateType updateType, int32_
     }
 }
 
-void UpdateRecordDeviceInfoForStartInner(int32_t index, int32_t uid, int32_t sessionId, SourceType sourceType
-    const std::shared_ptr<AudioDeviceDescriptor> &desc)
+void AudioUsrSelectManager::UpdateRecordDeviceInfoForStartInner(int32_t index, int32_t uid, int32_t sessionId,
+    SourceType sourceType, const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     if (index < 0) {
         RecordDeviceInfo recordDeviceInfo {
@@ -229,7 +229,7 @@ void UpdateRecordDeviceInfoForStartInner(int32_t index, int32_t uid, int32_t ses
     }
 }
 
-void UpdateRecordDeviceInfoForSelectInner(int32_t index, int32_t uid,
+void AudioUsrSelectManager::UpdateRecordDeviceInfoForSelectInner(int32_t index, int32_t uid,
     const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     if (index < 0) {
@@ -254,7 +254,7 @@ void UpdateRecordDeviceInfoForSelectInner(int32_t index, int32_t uid,
     }
 }
 
-void UpdateRecordDeviceInfoForPreferInner(int32_t index, int32_t uid, int32_t sessionId,
+void AudioUsrSelectManager::UpdateRecordDeviceInfoForPreferInner(int32_t index, int32_t uid, int32_t sessionId,
     const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     if (index < 0) {
@@ -273,7 +273,7 @@ void UpdateRecordDeviceInfoForPreferInner(int32_t index, int32_t uid, int32_t se
     }
 }
 
-void UpdateRecordDeviceInfoForStopInner(int32_t index)
+void AudioUsrSelectManager::UpdateRecordDeviceInfoForStopInner(int32_t index)
 {
     if (index >= 0) {
         if (recordDeviceInfoList_[index].appPreferredDevices_.size() > 0 ||
@@ -287,7 +287,7 @@ void UpdateRecordDeviceInfoForStopInner(int32_t index)
     }
 }
 
-void UpdateAppIsBackState(int32_t uid, AppIsBackState appState)
+void AudioUsrSelectManager::UpdateAppIsBackState(int32_t uid, AppIsBackState appState)
 {
     switch (appState) {
         case AppIsBackState::STATE_END:
