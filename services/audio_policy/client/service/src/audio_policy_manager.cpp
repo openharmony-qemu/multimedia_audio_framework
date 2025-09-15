@@ -97,8 +97,9 @@ const sptr<IAudioPolicy> AudioPolicyManager::GetAudioPolicyManagerProxy(bool blo
     CHECK_AND_RETURN_RET_LOG(gsp, nullptr, "gsp is null");
 
     AUDIO_DEBUG_LOG("Init g_apProxy is assigned.");
-
-    if (RegisterDeathRecipientInner(gsp->AsObject())) {
+    sptr<IRemoteObject> object = gsp->AsObject();
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, gsp, "Object is NULL.");
+    if (!object->IsProxyObject() || RegisterDeathRecipientInner(object)) {
         g_apProxy = gsp;
     }
 
