@@ -26,7 +26,7 @@ const size_t CURRENT_REQUEST_COUNT = 10000;
 using Request = std::function<void()>;
 struct RequestNode {
     RequestNode() = default;
-    RequestNode(const RequestNode &requestNode) : nextRequestIndex()
+    RequestNode(const RequestNode &requestNode) : nextRequestIndex(), request(requestNode.request)
     {}
     RequestNode& operator=(const RequestNode& requestNode) = delete;
     Request request;
