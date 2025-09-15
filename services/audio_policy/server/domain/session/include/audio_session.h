@@ -67,7 +67,7 @@ public:
     bool IsStreamContainedInCurrentSession(const uint32_t &streamId);
     bool GetAndClearNeedToFetchFlag();
     bool IsRecommendToStopAudio(AudioStreamDeviceChangeReason changeReason,
-        const std::shared_ptr<AudioDeviceDescriptor> descriptor);
+        const std::shared_ptr<AudioDeviceDescriptor> desc);
     bool IsSessionOutputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     bool IsSessionInputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     StreamUsage GetSessionStreamUsage();
@@ -78,9 +78,6 @@ public:
 private:
     StreamUsage GetStreamUsageInner();
     bool IsLegalDevice(const DeviceType deviceType);
-    bool IsCurrentDevicePrivateDevice(const std::shared_ptr<AudioDeviceDescriptor> desc);
-    bool IsDeviceContainedInVector(std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices,
-        const std::shared_ptr<AudioDeviceDescriptor> desc);
     void UpdateVoipStreamsDefaultOutputDevice();
     bool CanCurrentStreamSetDefaultOutputDevice(const AudioInterrupt &interrupt);
     int32_t EnableSingleVoipStreamDefaultOutputDevice(const AudioInterrupt &interrupt);
