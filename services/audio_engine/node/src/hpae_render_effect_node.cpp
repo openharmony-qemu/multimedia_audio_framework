@@ -60,7 +60,7 @@ HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
             collaborativeOutput_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
         }
     }
-    AUDIO_INFO_LOG("render effect node created, scene type: %{public}s", sceneType_.c_str());
+    AUDIO_INFO_LOG("created, scene type: %{public}s", sceneType_.c_str());
 #ifdef ENABLE_HOOK_PCM
     if (sceneType_ == "SCENE_COLLABORATIVE") {
         directPcmDumper_ = std::make_unique<HpaePcmDumper>(
@@ -132,7 +132,7 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
 {
     AUDIO_DEBUG_LOG("render effect node signal process in");
     if (inputs.empty()) {
-        AUDIO_WARNING_LOG("HpaeRenderEffectNode inputs size is empty");
+        AUDIO_WARNING_LOG("inputs size is empty");
         return nullptr;
     }
     auto rate = "rate[" + std::to_string(inputs[0]->GetSampleRate()) + "]_";
@@ -187,46 +187,46 @@ int32_t HpaeRenderEffectNode::SplitCollaborativeData()
 
 int32_t HpaeRenderEffectNode::AudioRendererCreate(HpaeNodeInfo &nodeInfo)
 {
-    AUDIO_INFO_LOG("notify audio effect when audio renderer create in");
+    AUDIO_INFO_LOG("in");
     int32_t ret = CreateAudioEffectChain(nodeInfo);
     if (ret != 0) {
-        AUDIO_WARNING_LOG("create audio effect chain failed, ret: %{public}d", ret);
+        AUDIO_WARNING_LOG("failed, ret: %{public}d", ret);
     }
-    AUDIO_INFO_LOG("notify audio effect when audio renderer create out");
+    AUDIO_INFO_LOG("out");
     return SUCCESS;
 }
 
 int32_t HpaeRenderEffectNode::AudioRendererStart(HpaeNodeInfo &nodeInfo)
 {
-    AUDIO_INFO_LOG("notify audio effect when audio renderer start in");
+    AUDIO_INFO_LOG("in");
     ModifyAudioEffectChainInfo(nodeInfo, ADD_AUDIO_EFFECT_CHAIN_INFO);
-    AUDIO_INFO_LOG("notify audio effect when audio renderer start out");
+    AUDIO_INFO_LOG("out");
     return SUCCESS;
 }
 
 int32_t HpaeRenderEffectNode::AudioRendererStop(HpaeNodeInfo &nodeInfo)
 {
-    AUDIO_INFO_LOG("notify audio effect when audio renderer stop in");
+    AUDIO_INFO_LOG("in");
     ModifyAudioEffectChainInfo(nodeInfo, REMOVE_AUDIO_EFFECT_CHAIN_INFO);
-    AUDIO_INFO_LOG("notify audio effect when audio renderer stop out");
+    AUDIO_INFO_LOG("out");
     return SUCCESS;
 }
 
 int32_t HpaeRenderEffectNode::AudioRendererRelease(HpaeNodeInfo &nodeInfo)
 {
-    AUDIO_INFO_LOG("notify audio effect when audio renderer release in");
+    AUDIO_INFO_LOG("in");
     int32_t ret = ReleaseAudioEffectChain(nodeInfo);
     if (ret != 0) {
-        AUDIO_WARNING_LOG("release audio effect chain failed, ret: %{public}d", ret);
+        AUDIO_WARNING_LOG("failed, ret: %{public}d", ret);
     }
     ModifyAudioEffectChainInfo(nodeInfo, REMOVE_AUDIO_EFFECT_CHAIN_INFO);
-    AUDIO_INFO_LOG("notify audio effect when audio renderer release out");
+    AUDIO_INFO_LOG("out");
     return SUCCESS;
 }
 
 int32_t HpaeRenderEffectNode::CreateAudioEffectChain(HpaeNodeInfo &nodeInfo)
 {
-    AUDIO_INFO_LOG("Create Audio Effect Chain In, sessionID is %{public}u, sceneType is %{public}d",
+    AUDIO_INFO_LOG("sessionID is %{public}u, sceneType is %{public}d",
         nodeInfo.sessionId, nodeInfo.effectInfo.effectScene);
     // todo: deal with remote case
     // todo: if boot music, do not create audio effect
@@ -249,14 +249,14 @@ int32_t HpaeRenderEffectNode::CreateAudioEffectChain(HpaeNodeInfo &nodeInfo)
     }
     int32_t ret = audioEffectChainManager->CreateAudioEffectChainDynamic(sceneType);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "create effect chain fail");
-    AUDIO_INFO_LOG("Create Audio Effect Chain Success, sessionID is %{public}u, sceneType is %{public}d",
+    AUDIO_INFO_LOG("Success, sessionID is %{public}u, sceneType is %{public}d",
         nodeInfo.sessionId, nodeInfo.effectInfo.effectScene);
     return SUCCESS;
 }
 
 int32_t HpaeRenderEffectNode::ReleaseAudioEffectChain(HpaeNodeInfo &nodeInfo)
 {
-    AUDIO_INFO_LOG("Release Audio Effect Chain In, sessionID is %{public}u, sceneType is %{public}d",
+    AUDIO_INFO_LOG("sessionID is %{public}u, sceneType is %{public}d",
         nodeInfo.sessionId, nodeInfo.effectInfo.effectScene);
     // todo: deal with remote case
     // todo: if boot music, do not release audio effect
@@ -279,7 +279,7 @@ int32_t HpaeRenderEffectNode::ReleaseAudioEffectChain(HpaeNodeInfo &nodeInfo)
     }
     int32_t ret = audioEffectChainManager->ReleaseAudioEffectChainDynamic(sceneType);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "release effect chain fail");
-    AUDIO_INFO_LOG("Release Audio Effect Chain Success, sessionID is %{public}u, sceneType is %{public}d",
+    AUDIO_INFO_LOG("Success, sessionID is %{public}u, sceneType is %{public}d",
         nodeInfo.sessionId, nodeInfo.effectInfo.effectScene);
     return SUCCESS;
 }
@@ -428,7 +428,7 @@ void HpaeRenderEffectNode::InitEffectBufferFromDisConnect()
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "null audioEffectChainManager");
     audioEffectChainManager->InitAudioEffectChainDynamic(sceneType_);
-    AUDIO_INFO_LOG("begin InitEffectBuffer from DisConnect, sceneType:%{public}s", sceneType_.c_str());
+    AUDIO_INFO_LOG("sceneType:%{public}s", sceneType_.c_str());
 }
 } // namespace HPAE
 } // namespace AudioStandard

@@ -87,7 +87,7 @@ int32_t HpaeCapturerStreamImpl::Start()
 {
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     int32_t ret = IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_INVALID_PARAM, "Start failed!");
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_INVALID_PARAM, "ErrorCode: %{public}d", ret);
     state_ = RUNNING;
     return SUCCESS;
 }
@@ -96,7 +96,7 @@ int32_t HpaeCapturerStreamImpl::Pause(bool isStandby)
 {
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     int32_t ret = IHpaeManager::GetHpaeManager().Pause(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "Pause error!");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "ErrorCode: %{public}d", ret);
     return SUCCESS;
 }
 
@@ -125,7 +125,7 @@ int32_t HpaeCapturerStreamImpl::Flush()
 {
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     int32_t ret = IHpaeManager::GetHpaeManager().Flush(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "Flush error!");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "ErrorCode: %{public}d", ret);
     return SUCCESS;
 }
 
@@ -133,7 +133,7 @@ int32_t HpaeCapturerStreamImpl::Stop()
 {
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     int32_t ret = IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "Stop failed");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "ErrorCode: %{public}d", ret);
     state_ = STOPPING;
     return SUCCESS;
 }
@@ -141,13 +141,13 @@ int32_t HpaeCapturerStreamImpl::Stop()
 int32_t HpaeCapturerStreamImpl::Release()
 {
     if (state_ == RUNNING) {
-        AUDIO_ERR_LOG("%{public}u Release state_ is RUNNING", processConfig_.originalSessionId);
+        AUDIO_ERR_LOG("%{public}u state_ is RUNNING", processConfig_.originalSessionId);
         IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
     }
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     int32_t ret = IHpaeManager::GetHpaeManager().Release(HPAE_STREAM_CLASS_TYPE_RECORD,
         processConfig_.originalSessionId);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "Release is error");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "ErrorCode: %{public}d", ret);
     state_ = RELEASED;
     // to do check closeaudioport
     if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_WAKEUP) {

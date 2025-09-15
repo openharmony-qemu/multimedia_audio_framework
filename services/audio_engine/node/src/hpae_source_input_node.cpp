@@ -463,7 +463,7 @@ int32_t HpaeSourceInputNode::CapturerSourceStop(void)
     Trace trace("HpaeSourceInputNode::CapturerSourceStop");
     SetSourceState(STREAM_MANAGER_SUSPENDED);
     if (audioCapturerSource_->Stop() != SUCCESS) {
-        AUDIO_ERR_LOG("CapturerSourceStop error, sourceInputNode[%{public}u]", sourceInputNodeType_);
+        AUDIO_ERR_LOG("stop error, sourceInputNode[%{public}u]", sourceInputNodeType_);
     }
     return SUCCESS;
 }

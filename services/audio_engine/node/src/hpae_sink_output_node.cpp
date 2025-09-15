@@ -41,7 +41,7 @@ HpaeSinkOutputNode::HpaeSinkOutputNode(HpaeNodeInfo &nodeInfo)
       renderFrameData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)),
       interleveData_(nodeInfo.frameLen * nodeInfo.channels)
 {
-    AUDIO_INFO_LOG("HpaeSinkOutputNode name is %{public}s", sinkOutAttr_.adapterName.c_str());
+    AUDIO_INFO_LOG("name is %{public}s", sinkOutAttr_.adapterName.c_str());
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeSinkOutputNode");
     if (auto callback = GetNodeStatusCallback().lock()) {
@@ -98,7 +98,7 @@ void HpaeSinkOutputNode::DoProcess()
     renderFrameTimes_ += MS_PER_FRAME;
     auto ret = audioRendererSink_->RenderFrame(*renderFrameData, renderFrameData_.size(), writeLen);
     if (ret != SUCCESS || writeLen != renderFrameData_.size()) {
-        AUDIO_ERR_LOG("HpaeSinkOutputNode: RenderFrame failed");
+        AUDIO_ERR_LOG("RenderFrame failed");
         if (GetDeviceClass() != "remote") {
             periodTimer_.Stop();
             uint64_t usedTimeUs = periodTimer_.Elapsed<std::chrono::microseconds>();
@@ -110,7 +110,7 @@ void HpaeSinkOutputNode::DoProcess()
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t elapsed = timer.Elapsed();
-    AUDIO_DEBUG_LOG("HpaeSinkOutputNode :name %{public}s, RenderFrame elapsed time: %{public}" PRId64 " ms",
+    AUDIO_DEBUG_LOG("name %{public}s, RenderFrame elapsed time: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(),
         elapsed);
     intervalTimer_.Start();
@@ -207,11 +207,8 @@ int32_t HpaeSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("HpaeSinkOutputNode: name %{public}s, RenderSinkInit Elapsed: %{public}" PRId64
-                   " ms ret: %{public}d",
-        sinkOutAttr_.adapterName.c_str(),
-        interval,
-        ret);
+    AUDIO_INFO_LOG("name %{public}s, RenderSinkInit Elapsed: %{public}" PRId64 " ms ret: %{public}d",
+        sinkOutAttr_.adapterName.c_str(), interval, ret);
     std::string adapterName = sinkOutAttr_.adapterName;
 #endif
     return ret;
@@ -231,7 +228,7 @@ int32_t HpaeSinkOutputNode::RenderSinkDeInit(void)
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("HpaeSinkOutputNode: name %{public}s, RenderSinkDeInit Elapsed: %{public}" PRId64 " ms",
+    AUDIO_INFO_LOG("name %{public}s, RenderSinkDeInit Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(),
         interval);
 #endif
@@ -281,7 +278,7 @@ int32_t HpaeSinkOutputNode::RenderSinkStart(void)
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("HpaeSinkOutputNode: name %{public}s, RenderSinkStart Elapsed: %{public}" PRId64 " ms",
+    AUDIO_INFO_LOG("name %{public}s, RenderSinkStart Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(),
         interval);
 #endif
@@ -315,7 +312,7 @@ int32_t HpaeSinkOutputNode::RenderSinkStop(void)
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
-    AUDIO_INFO_LOG("HpaeSinkOutputNode: name %{public}s, RenderSinkStop Elapsed: %{public}" PRId64 " ms",
+    AUDIO_INFO_LOG("name %{public}s, RenderSinkStop Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     return SUCCESS;
