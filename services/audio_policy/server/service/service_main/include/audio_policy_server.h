@@ -881,6 +881,7 @@ private:
     std::atomic<bool> isInitSettingsData_ = false;
     std::atomic<bool> isScreenOffOrLock_ = false;
     std::atomic<bool> isInitRingtoneReady_ = false;
+    std::atomic<bool> isRingtoneEL2Ready_ = false;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     std::mutex volUpHistoryMutex_;
     std::deque<int64_t> volUpHistory_;
