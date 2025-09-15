@@ -2024,5 +2024,21 @@ int32_t AudioEffectChainManager::EffectApAbsVolumeStateUpdate(const bool absVolu
 
     return SUCCESS;
 }
+
+bool AudioEffectChainManager::ExistAudioEffectChainArm(const std::string sceneType, const AudioEffectMode effectMode)
+{
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    if (effectMode == EFFECT_NONE) {
+        return false;
+    }
+    const std::unordered_map<AudioEffectMode, std::string> &audioSupportedSceneModes = GetAudioSupportedSceneModes();
+    std::string sceneMode = audioSupportedSceneModes.find(effectMode)->second;
+    std::string effectChainKey = sceneType + "_&_" + sceneMode + "_&_" + GetDeviceTypeName();
+    if (!sceneTypeAndModeToEffectChainNameMap_.count(effectChainKey)) {
+        AUDIO_ERR_LOG("EffectChain key [%{public}s] does not exist", effectChainKey.c_str());
+        return false;
+    }
+    return true;
+}
 } // namespace AudioStandard
 } // namespace OHOS

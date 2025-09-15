@@ -3986,5 +3986,66 @@ HWTEST(AudioEffectChainManagerUnitTest, SetAbsVolumeStateToEffect_001, TestSize.
     EXPECT_EQ(ret, SUCCESS);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
+
+/**
+* @tc.name   : Test ExistAudioEffectChainArm API
+* @tc.number : ExistAudioEffectChainArm_001
+* @tc.desc   : Test ExistAudioEffectChainArm interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ExistAudioEffectChainArm_001, TestSize.Level1)
+{
+    std::string sceneType = "SCENE_MUSIC";
+    AudioEffectMode effectMode = EFFECT_NONE;
+    auto headTracker = std::make_shared<HeadTracker>();
+    std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
+    ASSERT_TRUE(audioEffectChain != nullptr);
+
+    int32_t ret = AudioEffectChainManager::GetInstance()->ExistAudioEffectChainArm(sceneType, effectMode);
+    EXPECT_EQ(ret, false);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test ExistAudioEffectChainArm API
+* @tc.number : ExistAudioEffectChainArm_002
+* @tc.desc   : Test ExistAudioEffectChainArm interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ExistAudioEffectChainArm_002, TestSize.Level1)
+{
+    std::string sceneType = "SCENE_UNKNOWN";
+    AudioEffectMode effectMode = EFFECT_DEFAULT;
+    auto headTracker = std::make_shared<HeadTracker>();
+    std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
+    ASSERT_TRUE(audioEffectChain != nullptr);
+
+    int32_t ret = AudioEffectChainManager::GetInstance()->ExistAudioEffectChainArm(sceneType, effectMode);
+    EXPECT_EQ(ret, false);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test ExistAudioEffectChainArm API
+* @tc.number : ExistAudioEffectChainArm_003
+* @tc.desc   : Test ExistAudioEffectChainArm interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, ExistAudioEffectChainArm_003, TestSize.Level1)
+{
+    std::string sceneType = "SCENE_MUSIC";
+    AudioEffectMode effectMode = EFFECT_DEFAULT;
+    auto headTracker = std::make_shared<HeadTracker>();
+    std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>(sceneType, headTracker);
+    ASSERT_TRUE(audioEffectChain != nullptr);
+
+    std::string deviceType = AudioEffectChainManager::GetInstance()->GetDeviceTypeName();
+    std::string effectChainKey = sceneType + "_&_EFFECT_DEFAULT_&_" + deviceType;
+    int32_t ret = AudioEffectChainManager::GetInstance()->ExistAudioEffectChainArm(sceneType, effectMode);
+    
+    if (!AudioEffectChainManager::GetInstance()->sceneTypeAndModeToEffectChainNameMap_.count(effectChainKey)) {
+        EXPECT_EQ(ret, false);
+    } else {
+        EXPECT_EQ(ret, true);
+    }
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
 } // namespace AudioStandard
 } // namespace OHOS

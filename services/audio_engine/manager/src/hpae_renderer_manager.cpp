@@ -252,9 +252,11 @@ HpaeProcessorType HpaeRendererManager::TransToProperSceneType(StreamUsage stream
 HpaeProcessorType HpaeRendererManager::GetProcessorType(uint32_t sessionId)
 {
     HpaeNodeInfo nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
-    if ((sessionNodeMap_[sessionId].bypass || nodeInfo.effectInfo.effectMode == EFFECT_NONE) &&
-        (!isSplitProcessorType(nodeInfo.sceneType))) {
-            return HPAE_SCENE_EFFECT_NONE;
+    std::string sceneType = TransProcessorTypeToSceneType(nodeInfo.sceneType);
+    bool ret = AudioEffectChainManager::GetInstance()->ExistAudioEffectChainArm(sceneType,
+        nodeInfo.effectInfo.effectMode);
+    if ((!isSplitProcessorType(nodeInfo.sceneType)) && (sessionNodeMap_[sessionId].bypass || ret == false)) {
+        return HPAE_SCENE_EFFECT_NONE;
     }
     return nodeInfo.sceneType;
 }
