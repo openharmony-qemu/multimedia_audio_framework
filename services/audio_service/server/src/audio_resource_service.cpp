@@ -1,4 +1,3 @@
-dd
 /*
  * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -124,11 +123,12 @@ int32_t AudioResourceService::ReleaseAudioWorkgroup(int32_t pid, int32_t workgro
         return ERR_OPERATION_FAILED;
     }
 
+    auto group = GetAudioWorkgroup(pid, workgroupId);
+    CHECK_AND_RETURN_RET_LOG(group != nullptr, ERR_INVALID_PARAM, "AudioWorkgroup operated is not exist");
+
     Trace trace("[WorkgroupInServer] WorkgroupInServer pid:" + std::to_string(pid) +
         " workgroupId:" + std::to_string(workgroupId));
 
-    AudioWorkgroup *group = GetAudioWorkgroupPtr(pid, workgroupId);
-    CHECK_AND_RETURN_RET_LOG(group != nullptr, ERR_INVALID_PARAM, "AudioWorkgroup operated is not exsit");
     ConcurrentTask::IntervalReply reply;
     OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().SetAudioDeadline(
         ConcurrentTask::AUDIO_DDL_DESTROY_GRP, -1, workgroupId, reply);
@@ -138,18 +138,32 @@ int32_t AudioResourceService::ReleaseAudioWorkgroup(int32_t pid, int32_t workgro
     }
 
     std::lock_guard<std::mutex> lock(workgroupLock_);
-    auto workgroupPtr = audioWorkgroupMap_[pid].groups[workgroupId];
-    if (workgroupPtr) {
-        auto deathIt = deathRecipientMap_.find(workgroupPtr);
-        if (deathIt != deathRecipientMap_.end()) {
-            ReleaseWorkgroupDeathRecipient(workgroupPtr, deathIt->second.first);
-        }
+    auto pidIt = audioWorkgroupMap_.find(pid);
+    if (pidIt == audioWorkgroupMap_.end()) {
+        AUDIO_ERR_LOG("[WorkgroupInServer] ReleaseAudioWorkgroup pid:%{public}d already removed", pid);
+        return ERR_INVALID_PARAM;
+ 
+ 
+    }
+ 
+    auto &groups = pidIt->second.groups;
+    auto grpIt = groups.find(workgroupId);
+    if (grpIt == groups.end() || !grpIt->second) {
+        AUDIO_ERR_LOG("[WorkgroupInServer] ReleaseAudioWorkgroup pid:%{public}d grpId:%{public}d not exist",
+            pid, workgroupId);
+        return ERR_INVALID_PARAM;
+    }
+ 
+    auto deathIt = deathRecipientMap_.find(grpIt->second);
+    if (deathIt != deathRecipientMap_.end()) {
+        ReleaseWorkgroupDeathRecipient(grpIt->second, deathIt->second.first);
+    }
+ 
+    groups.erase(grpIt);
+    if (groups.empty()) {
+        audioWorkgroupMap_.erase(pidIt);
     }
 
-    audioWorkgroupMap_[pid].groups.erase(workgroupId);
-    if (audioWorkgroupMap_[pid].groups.size() == 0) {
-        audioWorkgroupMap_.erase(pid);
-    }
     DumpAudioWorkgroupMap();
     return SUCCESS;
 }
@@ -160,8 +174,8 @@ int32_t AudioResourceService::AddThreadToGroup(int32_t pid, int32_t workgroupId,
         AUDIO_ERR_LOG("[WorkgroupInServer] main thread pid=%{public}d is not allowed to be added", pid);
         return ERR_OPERATION_FAILED;
     }
-    AudioWorkgroup *group = GetAudioWorkgroupPtr(pid, workgroupId);
-    CHECK_AND_RETURN_RET_LOG(group != nullptr, ERR_INVALID_PARAM, "AudioWorkgroup operated is not exsit");
+    auto group = GetAudioWorkgroup(pid, workgroupId);
+    CHECK_AND_RETURN_RET_LOG(group != nullptr, ERR_INVALID_PARAM, "AudioWorkgroup operated is not exist");
 
     if (GetThreadsNumPerProcess(pid) >= AUDIO_MAX_RT_THREADS) {
         AUDIO_ERR_LOG("error: Maximum 4 threads can be added per process");
@@ -174,37 +188,46 @@ int32_t AudioResourceService::AddThreadToGroup(int32_t pid, int32_t workgroupId,
 
 int32_t AudioResourceService::RemoveThreadFromGroup(int32_t pid, int32_t workgroupId, int32_t tokenId)
 {
-    AudioWorkgroup *group = GetAudioWorkgroupPtr(pid, workgroupId);
-    CHECK_AND_RETURN_RET_LOG(group != nullptr, ERR_INVALID_PARAM, "AudioWorkgroup operated is not exsit");
+    auto group = GetAudioWorkgroup(pid, workgroupId);
+    CHECK_AND_RETURN_RET_LOG(group != nullptr, ERR_INVALID_PARAM, "AudioWorkgroup operated is not exist");
     int32_t ret = group->RemoveThread(tokenId);
     return ret;
 }
 
 int32_t AudioResourceService::StartGroup(int32_t pid, int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime)
 {
-    AudioWorkgroup *group = GetAudioWorkgroupPtr(pid, workgroupId);
-    CHECK_AND_RETURN_RET_LOG(group != nullptr, ERR_INVALID_PARAM, "AudioWorkgroup operated is not exsit");
+    auto group = GetAudioWorkgroup(pid, workgroupId);
+    CHECK_AND_RETURN_RET_LOG(group != nullptr, ERR_INVALID_PARAM, "AudioWorkgroup operated is not exist");
     int32_t ret = group->Start(startTime, deadlineTime);
     return ret;
 }
  
 int32_t AudioResourceService::StopGroup(int32_t pid, int32_t workgroupId)
 {
-    AudioWorkgroup *group = GetAudioWorkgroupPtr(pid, workgroupId);
-    CHECK_AND_RETURN_RET_LOG(group != nullptr, ERR_INVALID_PARAM, "AudioWorkgroup operated is not exsit");
+    auto group = GetAudioWorkgroup(pid, workgroupId);
+    CHECK_AND_RETURN_RET_LOG(group != nullptr, ERR_INVALID_PARAM, "AudioWorkgroup operated is not exist");
     int32_t ret = group->Stop();
     return ret;
 }
 
-AudioWorkgroup *AudioResourceService::GetAudioWorkgroupPtr(int32_t pid, int32_t workgroupId)
+std::shared_ptr<AudioWorkgroup> AudioResourceService::GetAudioWorkgroup(int32_t pid, int32_t workgroupId)
 {
     std::lock_guard<std::mutex> lock(workgroupLock_);
-    std::shared_ptr<AudioWorkgroup> group_ptr = audioWorkgroupMap_[pid].groups[workgroupId];
-    if (!group_ptr) {
-        AUDIO_ERR_LOG("[WorkgroupInServer] get AudioWorkgroup ptr failed\n");
+    auto pidIt = audioWorkgroupMap_.find(pid);
+    if (pidIt == audioWorkgroupMap_.end()) {
+        AUDIO_ERR_LOG("[WorkgroupInServer] GetAudioWorkgroup: pid:%{public}d not found", pid);
         return nullptr;
     }
-    return group_ptr.get();
+ 
+    auto &groups = pidIt->second.groups;
+    auto grpIt = groups.find(workgroupId);
+    if (grpIt == groups.end() || !grpIt->second) {
+        AUDIO_ERR_LOG("[WorkgroupInServer] GetAudioWorkgroup: workgroupId=%{public}d"
+            " not found for pid=%{public}d", workgroupId, pid);
+        return nullptr;
+    }
+ 
+    return grpIt->second;
 }
 
 AudioResourceService::AudioWorkgroupDeathRecipient::AudioWorkgroupDeathRecipient()
