@@ -75,7 +75,7 @@ private:
         SourceType sourceType, BluetoothAndNearlinkPreferredRecordCategory category);
     std::shared_ptr<AudioDeviceDescriptor> GetPreferDevice();
     int32_t GetIdFromRecordDeviceInfoList(int32_t uid);
-    void UpdateRecordDeviceInfoForStartInner(int32_t index, int32_t uid, int32_t sessionId, SourceType sourceType
+    void UpdateRecordDeviceInfoForStartInner(int32_t index, int32_t uid, int32_t sessionId, SourceType sourceType,
         const std::shared_ptr<AudioDeviceDescriptor> &desc);
     void UpdateRecordDeviceInfoForSelectInner(int32_t index, int32_t uid,
         const std::shared_ptr<AudioDeviceDescriptor> &desc);
