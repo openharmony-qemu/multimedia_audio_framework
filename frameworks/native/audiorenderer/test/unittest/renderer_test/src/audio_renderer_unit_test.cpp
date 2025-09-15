@@ -4470,7 +4470,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_RestoreAudioInLoop_001, TestSize.Le
     int32_t tryCounter = 1;
     bool restoreResult = false;
     audioRenderer->RestoreAudioInLoop(restoreResult, tryCounter);
-    EXPECT_EQ(false, restoreResult);
+    EXPECT_EQ(true, restoreResult);
 
     bool isReleased = audioRenderer->Release();
     EXPECT_EQ(true, isReleased);
