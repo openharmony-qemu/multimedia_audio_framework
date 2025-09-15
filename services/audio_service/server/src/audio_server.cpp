@@ -2304,7 +2304,10 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
 
     // All record streams should be checked for MICROPHONE_PERMISSION
     bool res = VerifyClientPermission(MICROPHONE_PERMISSION, tokenId);
-    CHECK_AND_RETURN_RET_LOG(res, false, "Check record permission failed: No permission.");
+    if (!res) {
+        HILOG_COMM_INFO("Check record permission failed: No permission.");
+        return false;
+    }
 
     if (sourceType == SOURCE_TYPE_ULTRASONIC && config.callerUid != UID_MSDP_SA) {
         return false;
@@ -2318,8 +2321,10 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
         return true;
     }
 
-    CHECK_AND_RETURN_RET(HandleCheckRecorderBackgroundCapture(config), false,
-        "VerifyBackgroundCapture failed for callerUid:%{public}d", config.callerUid);
+    if (!HandleCheckRecorderBackgroundCapture(config)) {
+        HILOG_COMM_INFO("VerifyBackgroundCapture failed for callerUid:%{public}d", config.callerUid);
+        return false;
+    }
     return true;
 }
 // LCOV_EXCL_STOP

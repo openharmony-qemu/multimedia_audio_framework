@@ -528,7 +528,7 @@ int32_t AudioStreamCollector::UpdateCapturerStreamInternal(AudioStreamChangeInfo
 
 int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &streamChangeInfo)
 {
-    AUDIO_INFO_LOG("UpdateCapturerStream client %{public}d state %{public}d session %{public}d",
+    HILOG_COMM_INFO("UpdateCapturerStream client %{public}d state %{public}d session %{public}d",
         streamChangeInfo.audioCapturerChangeInfo.clientUID, streamChangeInfo.audioCapturerChangeInfo.capturerState,
         streamChangeInfo.audioCapturerChangeInfo.sessionId);
 
