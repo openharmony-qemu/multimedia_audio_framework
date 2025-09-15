@@ -110,9 +110,8 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     AUDIO_INFO_LOG("channels %{public}u channelLayout %{public}" PRIu64 " samplingRate %{public}u format %{public}u "
         "frameLen %{public}zu streamType %{public}u sessionId %{public}u streamClassType %{public}u "
         "sourceType %{public}d fadeType %{public}d", streamInfo.channels, streamInfo.channelLayout,
-        streamInfo.customSampleRate == 0 ? streamInfo.samplingRate : streamInfo.customSampleRate, streamInfo.format,
-        streamInfo.frameLen, streamInfo.streamType, streamInfo.sessionId, streamInfo.streamClassType,
-        streamInfo.sourceType, streamInfo.fadeType);
+        streamInfo.samplingRate, streamInfo.format,streamInfo.frameLen, streamInfo.streamType,
+        streamInfo.sessionId, streamInfo.streamClassType, streamInfo.sourceType, streamInfo.fadeType);
     auto &hpaeManager = IHpaeManager::GetHpaeManager();
     int32_t ret = hpaeManager.CreateStream(streamInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "CreateStream is error");
