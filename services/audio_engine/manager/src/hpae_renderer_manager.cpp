@@ -443,7 +443,7 @@ void HpaeRendererManager::ConnectProcessCluster(uint32_t sessionId, HpaeProcesso
 void HpaeRendererManager::ConnectInputCluster(uint32_t sessionId, HpaeProcessorType sceneType)
 {
     sceneClusterMap_[sceneType]->Connect(sinkInputNodeMap_[sessionId]);
-    sinkInputNodeMap_[sessionId]->isConnected_ = true;
+    sinkInputNodeMap_[sessionId]->connectedProcessorType_ = sceneType;
 }
 
 void HpaeRendererManager::ConnectOutputCluster(uint32_t sessionId, HpaeProcessorType sceneType)
