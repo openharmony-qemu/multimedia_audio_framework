@@ -680,6 +680,10 @@ HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_034, Test
 
     int32_t ret = multichannelAudioRenderSink->SetSinkMuteForSwitchDevice(true);
     EXPECT_EQ(ret, SUCCESS);
+    ret = multichannelAudioRenderSink->SetSinkMuteForSwitchDevice(true);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = multichannelAudioRenderSink->SetSinkMuteForSwitchDevice(false);
+    EXPECT_EQ(ret, SUCCESS);
     ret = multichannelAudioRenderSink->SetSinkMuteForSwitchDevice(false);
     EXPECT_EQ(ret, SUCCESS);
 }
