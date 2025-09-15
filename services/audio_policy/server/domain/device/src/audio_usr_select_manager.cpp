@@ -67,7 +67,7 @@ void AudioUsrSelectManager::PreferBluetoothAndNearlinkRecordByUid(int32_t uid,
     AUDIO_INFO_LOG("prefer to use bluetooth and nearlink to record, uid: %{public}d, category: %{public}d",
         uid, category);
     RecordDeviceInfo info {.uid_ = uid, .appPreferredCategory_ = category};
-    audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::APP_PREFER, info);
+    UpdateRecordDeviceInfo(UpdateType::APP_PREFER, info);
     auto it =
         std::find(isPreferredBluetoothAndNearlinkRecord_.begin(), isPreferredBluetoothAndNearlinkRecord_.end(), uid);
     if (it != isPreferredBluetoothAndNearlinkRecord_.end()) {
@@ -173,7 +173,7 @@ int32_t AudioUsrSelectManager::GetIdFromRecordDeviceInfoList(int32_t uid)
 void AudioUsrSelectManager::UpdateRecordDeviceInfo(UpdateType updateType, RecordDeviceInfo info)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    int32_t index = GetIdFromRecordDeviceInfoList(uid);
+    int32_t index = GetIdFromRecordDeviceInfoList(info.uid_);
     AUDIO_INFO_LOG("UpdateRecordDeviceInfo updateType:%{public}d", updateType);
     switch (updateType) {
         case UpdateType::START_CLIENT:
@@ -241,8 +241,8 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfoForSelectInner(int32_t index, 
         recordDeviceInfoList_[index].selectedDevice_ = info.selectedDevice_;
         recordDeviceInfoList_[index].activeSelectedDevice_ = info.selectedDevice_;
         if (recordDeviceInfoList_[index].sourceType_ != SourceType::SOURCE_TYPE_INVALID &&
-            appIsBackStatesMap_.find(uid) != appIsBackStatesMap_.end() &&
-            appIsBackStatesMap_[uid] == AppIsBackState::STATE_FOREGROUND) {
+            appIsBackStatesMap_.find(info.uid_) != appIsBackStatesMap_.end() &&
+            appIsBackStatesMap_[info.uid_] == AppIsBackState::STATE_FOREGROUND) {
             std::rotate(recordDeviceInfoList_.begin(), recordDeviceInfoList_.begin() + index,
                 recordDeviceInfoList_.begin() + index + 1);
         }
