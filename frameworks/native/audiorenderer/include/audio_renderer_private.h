@@ -293,6 +293,9 @@ private:
     AudioLoopThread taskLoop_ = AudioLoopThread("OS_Recreate");
     int32_t audioHapticsSyncId_ = 0;
     bool releaseFlag_ = false;
+    std::condition_variable taskLoopCv_;
+    std::mutex inRestoreMtx_;
+    bool inRestoreFlag = false;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {
