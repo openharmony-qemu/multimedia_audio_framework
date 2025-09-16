@@ -653,7 +653,7 @@ void AudioAdapterManager::HandleSaveVolume(DeviceType deviceType, AudioStreamTyp
     volumeDataMaintainer_.SaveVolume(deviceType, streamType, volumeLevel, networkId);
 }
 
-void AudioAdapterManager::HandleStreamMuteStatus(AudioStreamType streamType, bool mute, StreamUsage streamUsage,
+void AudioAdapterManager::HandleStreamMuteStatus(AudioStreamType streamType, bool mute,
     const DeviceType &deviceType, std::string networkId)
 {
     if (deviceType != DEVICE_TYPE_NONE) {
@@ -958,7 +958,7 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(std::shared_ptr<AudioDeviceDe
     volumeDataExtMaintainer_[device->GetKey()]->SetStreamMuteStatus(streamType, mute);
 
     if (handler_ != nullptr) {
-        handler_->SendStreamMuteStatusUpdate(streamType, mute, streamUsage, deviceType, device->networkId_);
+        handler_->SendStreamMuteStatusUpdate(streamType, mute, deviceType, device->networkId_);
     }
     return SetVolumeDb(device, streamType);
 }
@@ -1025,7 +1025,7 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, b
         volumeDataMaintainer_.SaveMuteStatusWithDatabaseVolumeName(
             currentActiveDevice_.volumeBehavior_.databaseVolumeName, streamType, mute);
     } else if (handler_ != nullptr) {
-        handler_->SendStreamMuteStatusUpdate(streamType, mute, streamUsage, deviceType, networkId);
+        handler_->SendStreamMuteStatusUpdate(streamType, mute, deviceType, networkId);
     }
 
     // Achieve the purpose of adjusting the mute status by adjusting the stream volume.
@@ -2399,9 +2399,11 @@ void AudioAdapterManager::ResetRemoteCastDeviceVolume()
     for (auto &streamType: defaultVolumeTypeList_) {
         AudioStreamType streamAlias = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
         int32_t volumeLevel = GetMaxVolumeLevel(streamAlias);
-        volumeDataMaintainer_.SaveVolume(DEVICE_TYPE_REMOTE_CAST, streamType, volumeLevel);
-        if (streamType != STREAM_RING) {
-            volumeDataMaintainer_.SaveMuteStatus(DEVICE_TYPE_REMOTE_CAST, streamType, false);
+        if (handler_ != nullptr) {
+            handler_->SendSaveVolume(DEVICE_TYPE_REMOTE_CAST, streamType, volumeLevel, LOCAL_NETWORK_ID);
+            if (streamType != STREAM_RING) {
+                handler_->SendStreamMuteStatusUpdate(streamType, false, DEVICE_TYPE_REMOTE_CAST, LOCAL_NETWORK_ID);
+            }
         }
     }
 }
