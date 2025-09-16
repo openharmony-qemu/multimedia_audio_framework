@@ -60,7 +60,6 @@ constexpr int32_t TEST_SLEEP_TIME_40 = 40;
 constexpr int32_t FRAME_LENGTH_960 = 960;
 constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
 constexpr int32_t DEFAULT_NODE_ID = 1;
-constexpr uint32_t MAXFRAMELEN = 38400;
 const std::vector<AudioChannel> SUPPORTED_CHANNELS {
     MONO,
     STEREO,
@@ -118,24 +117,14 @@ void RoundVal(T &roundVal, const std::vector<T>& list)
 
 void RoundSinkInfo(HpaeSinkInfo &sinkInfo)
 {
-    RoundVal(sinkInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
     RoundVal(sinkInfo.channels, SUPPORTED_CHANNELS);
     RoundVal(sinkInfo.format, AUDIO_SUPPORTED_FORMATS);
-    sinkInfo.frameLen = GetData<size_t>();
-    if (GetData<bool>()) {
-        sinkInfo.frameLen %= MAXFRAMELEN;
-    }
 }
 
 void RoundStreamInfo(HpaeStreamInfo &streamInfo)
 {
-    RoundVal(streamInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
     RoundVal(streamInfo.channels, SUPPORTED_CHANNELS);
     RoundVal(streamInfo.format, AUDIO_SUPPORTED_FORMATS);
-    streamInfo.frameLen = GetData<size_t>();
-    if (GetData<bool>()) {
-        streamInfo.frameLen %= MAXFRAMELEN;
-    }
 }
 
 static void InitHpaeSinkInfo(HpaeSinkInfo &sinkInfo)
@@ -144,6 +133,8 @@ static void InitHpaeSinkInfo(HpaeSinkInfo &sinkInfo)
     sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
     sinkInfo.filePath = "g_rootCapturerPath";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
     RoundSinkInfo(sinkInfo);
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
 }
@@ -154,6 +145,8 @@ static void InitRenderStreamInfo(HpaeStreamInfo &streamInfo)
     streamInfo.sessionId = TEST_STREAM_SESSION_ID;
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    streamInfo.frameLen = FRAME_LENGTH_960;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
 }
 
 static void InitNodeInfo(HpaeNodeInfo &nodeInfo)
@@ -169,6 +162,9 @@ static void InitNodeInfo(HpaeNodeInfo &nodeInfo)
 
 void WaitForMsgProcessing(std::shared_ptr<IHpaeRendererManager> &hpaeRendererManager)
 {
+    if (!hpaeRendererManager->IsInit()) {
+        return;
+    }
     while (hpaeRendererManager->IsMsgProcessing()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_20));
     }

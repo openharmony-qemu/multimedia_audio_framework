@@ -152,7 +152,10 @@ int32_t HpaeOffloadRendererManager::CreateStream(const HpaeStreamInfo &streamInf
     if (!IsInit()) {
         return ERR_INVALID_OPERATION;
     }
-    CHECK_AND_RETURN_RET_LOG(CheckStreamInfo(streamInfo) == SUCCESS, ERROR, "Check StreamInfo ERROR");
+    int32_t checkRet = CheckStreamInfo(streamInfo);
+    if (checkRet != SUCCESS) {
+        return checkRet;
+    }
     auto request = [this, streamInfo]() {
         auto node = CreateInputSession(streamInfo);
         node->SetState(HPAE_SESSION_PREPARED);
@@ -712,6 +715,7 @@ int32_t HpaeOffloadRendererManager::GetSinkInputInfo(uint32_t sessionId, HpaeSin
     CHECK_AND_RETURN_RET_LOG(node, ERR_INVALID_OPERATION,
         "GetSinkInputInfo not find sessionId %{public}u", sessionId);
     sinkInputInfo.nodeInfo = node->GetNodeInfo();
+    sinkInputInfo.rendererSessionInfo.state = node->GetState();
     return SUCCESS;
 }
 
