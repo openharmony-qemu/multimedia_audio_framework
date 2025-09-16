@@ -259,7 +259,7 @@ public:
     void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel,
         std::string networkId);
 
-    void HandleStreamMuteStatus(AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
+    void HandleStreamMuteStatus(AudioStreamType streamType, bool mute,
         const DeviceType &deviceType = DEVICE_TYPE_NONE, std::string networkId = LOCAL_NETWORK_ID);
 
     void HandleRingerMode(AudioRingerMode ringerMode);

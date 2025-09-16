@@ -18,7 +18,7 @@ import("../../../config.gni")
 import("../../../bluetooth_part.gni")
 
 ohos_fuzztest("AudioPolicyServiceFuzzTest") {
-  module_out_path = "audio_framework/audio_framework_route"
+  module_out_path = "audio_framework/audio_framework_policy"
   fuzz_config_file = "../audiopolicyservice_fuzzer"
 
   include_dirs = [

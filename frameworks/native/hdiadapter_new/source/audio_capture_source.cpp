@@ -383,6 +383,7 @@ int32_t AudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &reply
         return NonblockingCaptureFrameWithEc(fdescEc, replyBytesEc);
     }
 
+    AudioCapturerSourceTsRecorder recorder(replyBytes, audioSrcClock_);
     struct AudioFrameLen frameLen = { fdesc->frameLen, fdescEc->frameLen };
     struct AudioCaptureFrameInfo frameInfo = {};
     int32_t ret = audioCapture_->CaptureFrameEc(audioCapture_, &frameLen, &frameInfo);
@@ -390,6 +391,9 @@ int32_t AudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &reply
         AUDIO_ERR_LOG("fail, ret: %{public}x", ret);
         AudioCaptureFrameInfoFree(&frameInfo, false);
         return ERR_READ_FAILED;
+    }
+    if (audioSrcClock_ != nullptr && audioSrcClock_->GetFrameCnt() == 0) {
+        audioSrcClock_->SetFirstTimestampFromHdi(GetFirstTimeStampFromAlgo(adapterNameCase_));
     }
 
     if (attr_.sourceType == SOURCE_TYPE_OFFLOAD_CAPTURE && frameInfo.frameEc != nullptr) {

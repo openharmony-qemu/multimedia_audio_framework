@@ -653,7 +653,7 @@ void AudioAdapterManager::HandleSaveVolume(DeviceType deviceType, AudioStreamTyp
     volumeDataMaintainer_.SaveVolume(deviceType, streamType, volumeLevel, networkId);
 }
 
-void AudioAdapterManager::HandleStreamMuteStatus(AudioStreamType streamType, bool mute, StreamUsage streamUsage,
+void AudioAdapterManager::HandleStreamMuteStatus(AudioStreamType streamType, bool mute,
     const DeviceType &deviceType, std::string networkId)
 {
     if (deviceType != DEVICE_TYPE_NONE) {
@@ -958,7 +958,7 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(std::shared_ptr<AudioDeviceDe
     volumeDataExtMaintainer_[device->GetKey()]->SetStreamMuteStatus(streamType, mute);
 
     if (handler_ != nullptr) {
-        handler_->SendStreamMuteStatusUpdate(streamType, mute, streamUsage, deviceType, device->networkId_);
+        handler_->SendStreamMuteStatusUpdate(streamType, mute, deviceType, device->networkId_);
     }
     return SetVolumeDb(device, streamType);
 }
@@ -1025,7 +1025,7 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, b
         volumeDataMaintainer_.SaveMuteStatusWithDatabaseVolumeName(
             currentActiveDevice_.volumeBehavior_.databaseVolumeName, streamType, mute);
     } else if (handler_ != nullptr) {
-        handler_->SendStreamMuteStatusUpdate(streamType, mute, streamUsage, deviceType, networkId);
+        handler_->SendStreamMuteStatusUpdate(streamType, mute, deviceType, networkId);
     }
 
     // Achieve the purpose of adjusting the mute status by adjusting the stream volume.
@@ -2399,9 +2399,11 @@ void AudioAdapterManager::ResetRemoteCastDeviceVolume()
     for (auto &streamType: defaultVolumeTypeList_) {
         AudioStreamType streamAlias = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
         int32_t volumeLevel = GetMaxVolumeLevel(streamAlias);
-        volumeDataMaintainer_.SaveVolume(DEVICE_TYPE_REMOTE_CAST, streamType, volumeLevel);
-        if (streamType != STREAM_RING) {
-            volumeDataMaintainer_.SaveMuteStatus(DEVICE_TYPE_REMOTE_CAST, streamType, false);
+        if (handler_ != nullptr) {
+            handler_->SendSaveVolume(DEVICE_TYPE_REMOTE_CAST, streamType, volumeLevel, LOCAL_NETWORK_ID);
+            if (streamType != STREAM_RING) {
+                handler_->SendStreamMuteStatusUpdate(streamType, false, DEVICE_TYPE_REMOTE_CAST, LOCAL_NETWORK_ID);
+            }
         }
     }
 }
@@ -3049,6 +3051,11 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
         if (minVolIndex != 0) {
             AUDIO_INFO_LOG("Min volume index not zero, use min db: %{public}0.1f", volumePoints[0].dbValue / 100.0f);
             return exp((volumePoints[0].dbValue / 100.0f) * 0.115129f);
+        }
+        // for smart display, position 0 and decibel 0,return 1.0f
+        if (volumePoints[0].dbValue == 0) {
+            AUDIO_INFO_LOG("volumePoints[0]dbValue == 0, return 1.0f");
+            return 1.0f;
         }
         AUDIO_DEBUG_LOG("position = 0, return 0.0");
         return 0.0f;

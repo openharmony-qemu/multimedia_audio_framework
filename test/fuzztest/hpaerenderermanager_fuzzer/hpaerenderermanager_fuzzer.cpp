@@ -550,13 +550,13 @@ void RefreshProcessClusterByDeviceFuzzTest()
     rendererManager->RefreshProcessClusterByDevice();
 }
 
-void DeleteInputSessionForMoveFuzzTest()
+void DeleteInputSessionFuzzTest()
 {
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
     auto rendererManager = HpaeRendererManager(sinkInfo);
     uint32_t sessionId = GetData<uint32_t>();
-    rendererManager.DeleteInputSessionForMove(sessionId);
+    rendererManager.DeleteInputSession(sessionId);
 }
 
 void DeleteProcessClusterFuzzTest()
@@ -675,7 +675,7 @@ TestFuncs g_testFuncs[] = {
     CreateDefaultProcessClusterFuzzTest,
     CreateProcessClusterInnerSwitchCaseFuzzTest,
     RefreshProcessClusterByDeviceFuzzTest,
-    DeleteInputSessionForMoveFuzzTest,
+    DeleteInputSessionFuzzTest,
     DeleteProcessClusterFuzzTest,
     ConnectInputSessionFuzzTest,
     DisConnectInputSessionFuzzTest,
