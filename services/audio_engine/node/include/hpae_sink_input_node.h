@@ -58,6 +58,7 @@ public:
     float GetSpeed();
     uint64_t GetLatency();
     bool isConnected_ = false;
+    HpaeProcessorType connectedProcessorType_ = HPAE_SCENE_UNCONNECTED;
 private:
     int32_t GetDataFromSharedBuffer();
     int32_t OnStreamInfoChange(bool needata = true);

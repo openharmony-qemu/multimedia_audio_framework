@@ -3050,6 +3050,11 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
             AUDIO_INFO_LOG("Min volume index not zero, use min db: %{public}0.1f", volumePoints[0].dbValue / 100.0f);
             return exp((volumePoints[0].dbValue / 100.0f) * 0.115129f);
         }
+        // for smart display, position 0 and decibel 0,return 1.0f
+        if (volumePoints[0].dbValue == 0) {
+            AUDIO_INFO_LOG("volumePoints[0]dbValue == 0, return 1.0f");
+            return 1.0f;
+        }
         AUDIO_DEBUG_LOG("position = 0, return 0.0");
         return 0.0f;
     } else if (position >= static_cast<int32_t>(pointSize)) {

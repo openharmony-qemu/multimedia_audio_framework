@@ -838,7 +838,7 @@ private:
     void UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID);
     void UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID);
     void ChangeVolumeOnVoiceAssistant(AudioStreamType &streamInFocus);
-    AudioStreamType GetCurrentStreamInFocus();
+    AudioStreamType GetCurrentStreamInFocus(int32_t zoneId = 0);
 
     AudioEffectService &audioEffectService_;
     AudioAffinityManager &audioAffinityManager_;
