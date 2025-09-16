@@ -2050,7 +2050,7 @@ bool AudioEffectChainManager::ExistAudioEffectChainArm(const std::string sceneTy
     std::string sceneMode = audioSupportedSceneModes.find(effectMode)->second;
     std::string effectChainKey = sceneType + "_&_" + sceneMode + "_&_" + GetDeviceTypeName();
     if (!sceneTypeAndModeToEffectChainNameMap_.count(effectChainKey)) {
-        AUDIO_ERR_LOG("EffectChain key [%{public}s] does not exist", effectChainKey.c_str());
+        AUDIO_INFO_LOG("EffectChain key [%{public}s] does not exist in arm", effectChainKey.c_str());
         return false;
     }
     return true;
