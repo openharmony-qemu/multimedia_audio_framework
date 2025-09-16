@@ -59,7 +59,7 @@ int32_t AudioResourceService::AudioWorkgroupCheck(int32_t pid)
     std::lock_guard<std::mutex> lock(workgroupLock_);
     if (inGroup) {
         if (audioWorkgroupMap_[pid].groups.size() >= AUDIO_MAX_GRP_PER_PROCESS) {
-            AUDIO_INFO_LOG("[WorkgroupInServer] pid=%{public}d more than 4 groups is not allowed\n", pid);
+            AUDIO_INFO_LOG("[WorkgroupInServer] pid=%{public}d more than 2 groups is not allowed\n", pid);
             return ERR_NOT_SUPPORTED;
         }
     } else {
@@ -89,7 +89,7 @@ int32_t AudioResourceService::CreateAudioWorkgroup(int32_t pid, const sptr<IRemo
     int ret = AudioWorkgroupCheck(pid);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_SUPPORTED, "[WorkgroupInServer]:"
         "1, Maximum 2 processes can create deadline workgroup."
-        "2, Maximum 4 workgroups can be created per process.");
+        "2, Maximum 2 workgroups can be created per process.");
 
     ConcurrentTask::IntervalReply reply;
     OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().SetAudioDeadline(
@@ -142,8 +142,6 @@ int32_t AudioResourceService::ReleaseAudioWorkgroup(int32_t pid, int32_t workgro
     if (pidIt == audioWorkgroupMap_.end()) {
         AUDIO_ERR_LOG("[WorkgroupInServer] ReleaseAudioWorkgroup pid:%{public}d already removed", pid);
         return ERR_INVALID_PARAM;
- 
- 
     }
  
     auto &groups = pidIt->second.groups;
