@@ -60,61 +60,29 @@ std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::GetSelectedInputDe
     return index > -1 ? recordDeviceInfoList_[index].selectedDevice_ : invalidDesc;
 }
 
-void AudioUsrSelectManager::PreferBluetoothAndNearlinkRecordByUid(int32_t uid,
-    BluetoothAndNearlinkPreferredRecordCategory category)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_INFO_LOG("prefer to use bluetooth and nearlink to record, uid: %{public}d, category: %{public}d",
-        uid, category);
-    RecordDeviceInfo info {.uid_ = uid, .appPreferredCategory_ = category};
-    UpdateRecordDeviceInfo(UpdateType::APP_PREFER, info);
-    auto it =
-        std::find(isPreferredBluetoothAndNearlinkRecord_.begin(), isPreferredBluetoothAndNearlinkRecord_.end(), uid);
-    if (it != isPreferredBluetoothAndNearlinkRecord_.end()) {
-        isPreferredBluetoothAndNearlinkRecord_.erase(it);
-        categoryMap_.erase(uid);
-    }
-
-    if (category != BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE) {
-        isPreferredBluetoothAndNearlinkRecord_.push_front(uid);
-        categoryMap_[uid] = category;
-    }
-}
-
 BluetoothAndNearlinkPreferredRecordCategory AudioUsrSelectManager::GetPreferBluetoothAndNearlinkRecordByUid(
     int32_t uid)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-
-    auto it =
-        std::find(isPreferredBluetoothAndNearlinkRecord_.begin(), isPreferredBluetoothAndNearlinkRecord_.end(), uid);
-    if (it != isPreferredBluetoothAndNearlinkRecord_.end()) {
-        return categoryMap_[uid];
-    }
-    return BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE;
+    int index = GetIdFromRecordDeviceInfoList(uid);
+    CHECK_AND_RETURN_RET(index >= 0, BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE);
+    return recordDeviceInfoList_[index].appPreferredCategory_;
 }
 
-std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::GetCapturerDevice(
-    int32_t uid, int32_t sessionId, SourceType sourceType)
+std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::GetCapturerDevice(int32_t uid, SourceType sourceType)
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
+    int index = GetIdFromRecordDeviceInfoList(uid);
     std::shared_ptr<AudioDeviceDescriptor> capturerDevice = std::make_shared<AudioDeviceDescriptor>();
     CHECK_AND_RETURN_RET(!recordDeviceInfoList_.empty(), capturerDevice);
+    CHECK_AND_RETURN_RET(recordDeviceInfoList_[0].sourceType_ != SourceType::SOURCE_TYPE_INVALID,
+        recordDeviceInfoList_[index].activeSelectedDevice_);
 
-    std::shared_ptr<AudioDeviceDescriptor> appPreferredDevice = GetPreferDevice(uid);
+    std::shared_ptr<AudioDeviceDescriptor> appPreferredDevice = GetPreferDevice();
     capturerDevice = recordDeviceInfoList_[0].activeSelectedDevice_->deviceType_ == DEVICE_TYPE_NONE ?
         appPreferredDevice : recordDeviceInfoList_[0].activeSelectedDevice_;
-    int index = GetIdFromRecordDeviceInfoList(uid);
-    return JudgeFinalSelectDevice(capturerDevice, sourceType, recordDeviceInfoList_[index].appPreferredCategory_);
-}
-
-std::list<std::pair<int32_t, AudioDevicePtr>>::iterator AudioUsrSelectManager::findDevice(int32_t uid)
-{
-    return std::find_if(selectedDevices_.begin(), selectedDevices_.end(),
-        [uid](const std::pair<int32_t, AudioDevicePtr>& device) {
-        return device.first == uid;
-    });
+    return JudgeFinalSelectDevice(capturerDevice, sourceType, recordDeviceInfoList_[0].appPreferredCategory_);
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::JudgeFinalSelectDevice(
@@ -139,10 +107,9 @@ std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::JudgeFinalSelectDe
     return isConnected ? desc : std::make_shared<AudioDeviceDescriptor>();
 }
 
-std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::GetPreferDevice(int32_t uid)
+std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::GetPreferDevice()
 {
-    int index = GetIdFromRecordDeviceInfoList(uid);
-    CHECK_AND_RETURN_RET(recordDeviceInfoList_[index].appPreferredCategory_ !=
+    CHECK_AND_RETURN_RET(recordDeviceInfoList_[0].appPreferredCategory_ !=
         BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE, std::make_shared<AudioDeviceDescriptor>());
     std::vector<DeviceType> types = {
         DEVICE_TYPE_NEARLINK,
@@ -220,6 +187,8 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfoForStartInner(int32_t index, R
         recordDeviceInfoList_.emplace(recordDeviceInfoList_.begin(), recordDeviceInfo);
     } else {
         recordDeviceInfoList_[index].sourceType_ = info.sourceType_;
+        recordDeviceInfoList_[index].activeSelectedDevice_ = info.activeSelectedDevice_ != DEVICE_TYPE_NONE ?
+            info.activeSelectedDevice_ : recordDeviceInfoList_[index].selectedDevice_;
         std::rotate(recordDeviceInfoList_.begin(), recordDeviceInfoList_.begin() + index,
             recordDeviceInfoList_.begin() + index + 1);
     }
@@ -231,7 +200,6 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfoForSelectInner(int32_t index, 
         if (info.selectedDevice_->deviceType_ != DEVICE_TYPE_NONE) {
             RecordDeviceInfo recordDeviceInfo {
                 .uid_ = info.uid_,
-                .sourceType_ = SourceType::SOURCE_TYPE_INVALID,
                 .selectedDevice_ = info.selectedDevice_,
                 .activeSelectedDevice_ = std::make_shared<AudioDeviceDescriptor>()
             };

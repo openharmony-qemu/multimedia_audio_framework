@@ -151,6 +151,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role)
     descriptorType_ = AUDIO_DEVICE_DESCRIPTOR;
     spatializationSupported_ = false;
     isVrSupported_ = true;
+    hightQualityRecordingSupported_ = false;
 }
 
 AudioDeviceDescriptor::~AudioDeviceDescriptor()
@@ -182,6 +183,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
     descriptorType_ = AUDIO_DEVICE_DESCRIPTOR;
     spatializationSupported_ = false;
     isVrSupported_ = true;
+    hightQualityRecordingSupported_ = false;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor)

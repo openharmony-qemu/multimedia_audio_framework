@@ -60,9 +60,8 @@ public:
     // Set media render device selected by the user
     bool SelectInputDeviceByUid(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, int32_t uid);
     std::shared_ptr<AudioDeviceDescriptor> GetSelectedInputDeviceByUid(int32_t uid);
-    void PreferBluetoothAndNearlinkRecordByUid(int32_t uid, BluetoothAndNearlinkPreferredRecordCategory category);
     BluetoothAndNearlinkPreferredRecordCategory GetPreferBluetoothAndNearlinkRecordByUid(int32_t uid);
-    std::shared_ptr<AudioDeviceDescriptor> GetCapturerDevice(int32_t uid, int32_t sessionId, SourceType sourceType);
+    std::shared_ptr<AudioDeviceDescriptor> GetCapturerDevice(int32_t uid, SourceType sourceType);
     void UpdateRecordDeviceInfo(UpdateType updateType, RecordDeviceInfo info);
     void UpdateAppIsBackState(int32_t uid, AppIsBackState appState);
 
@@ -70,19 +69,15 @@ private:
     AudioUsrSelectManager() {};
     ~AudioUsrSelectManager() {};
 
-    std::list<std::pair<int32_t, AudioDevicePtr>>::iterator findDevice(int32_t uid);
     std::shared_ptr<AudioDeviceDescriptor> JudgeFinalSelectDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc,
         SourceType sourceType, BluetoothAndNearlinkPreferredRecordCategory category);
-    std::shared_ptr<AudioDeviceDescriptor> GetPreferDevice(int32_t uid);
+    std::shared_ptr<AudioDeviceDescriptor> GetPreferDevice();
     int32_t GetIdFromRecordDeviceInfoList(int32_t uid);
     void UpdateRecordDeviceInfoForStartInner(int32_t index, RecordDeviceInfo info);
     void UpdateRecordDeviceInfoForSelectInner(int32_t index, RecordDeviceInfo info);
     void UpdateRecordDeviceInfoForPreferInner(int32_t index, RecordDeviceInfo info);
     void UpdateRecordDeviceInfoForStopInner(int32_t index);
 
-    std::list<std::pair<int32_t, AudioDevicePtr>> selectedDevices_;
-    std::list<int32_t> isPreferredBluetoothAndNearlinkRecord_;
-    std::unordered_map<int32_t, BluetoothAndNearlinkPreferredRecordCategory> categoryMap_;
     std::mutex mutex_;
     std::vector<RecordDeviceInfo> recordDeviceInfoList_;
     std::map<int32_t, AppIsBackState> appIsBackStatesMap_;

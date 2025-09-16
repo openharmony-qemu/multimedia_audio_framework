@@ -1136,7 +1136,8 @@ int32_t AudioCoreService::PreferBluetoothAndNearlinkRecordByUid(int32_t uid,
     BluetoothAndNearlinkPreferredRecordCategory category)
 {
     int32_t result = SUCCESS;
-    audioUsrSelectManager_.PreferBluetoothAndNearlinkRecordByUid(uid, category);
+    RecordDeviceInfo info {.uid_ = uid, .appPreferredCategory_ = category};
+    audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::APP_PREFER, info);
     AudioScene scene = audioSceneManager_.GetAudioScene(true);
     CHECK_AND_RETURN_RET(scene != AUDIO_SCENE_PHONE_CALL && scene != AUDIO_SCENE_PHONE_CHAT, result);
     result = FetchInputDeviceAndRoute("SelectInputDeviceByUid");
