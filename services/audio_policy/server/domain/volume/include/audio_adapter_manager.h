@@ -306,6 +306,7 @@ public:
     void SaveSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel);
     int32_t GetSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType);
     int32_t SetSystemVolumeToEffect(AudioStreamType streamType, float volume);
+    void SaveSystemVolumeForSwitchDevice(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel);
 private:
     friend class PolicyCallbackImpl;
 
