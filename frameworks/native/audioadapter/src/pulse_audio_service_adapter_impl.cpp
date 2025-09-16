@@ -170,13 +170,13 @@ int32_t PulseAudioServiceAdapterImpl::ReloadAudioPort(const std::string &audioPo
     const AudioModuleInfo &audioModuleInfo)
 {
     AUDIO_PRERELEASE_LOGE("ReloadAudioPort enter the INCORRECT func.");
-    return 0;
+    return -1;
 }
 
 int32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, const AudioModuleInfo& audioModuleInfo)
 {
     AUDIO_PRERELEASE_LOGE("OpenAudioPort enter the INCORRECT func.");
-    return 0;
+    return -1;
 }
 
 uint32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, string moduleArgs)
