@@ -184,7 +184,7 @@ HWTEST_F(VADeviceManagerUnitTest, VADeviceManagerUnitTest_008, TestSize.Level1) 
     streamProp.channelLayout_ = CH_LAYOUT_2POINT1;
     streamProp.sampleRate_ = 44100;
     streamProp.samplesPerCycle_ = 1024;
-    vaDevice->->configuration_.properties_.push_back(streamProp);
+    vaDevice->configuration_.properties_.push_back(streamProp);
 
     auto desc = vaDeviceManager.ConvertVADeviceToDescriptor(vaDevice);
     auto streamInfo = desc->audioStreamInfo_.front();
