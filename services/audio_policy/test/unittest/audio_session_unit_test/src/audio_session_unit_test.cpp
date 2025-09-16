@@ -17,6 +17,7 @@
 #include "audio_errors.h"
 #include "audio_session.h"
 #include "audio_session_service.h"
+#include "audio_device_manager.h"
 #include "audio_session_unit_test.h"
 
 using namespace testing::ext;
@@ -264,6 +265,15 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_013, TestSize.Level1)
     AudioSessionStrategy strategy;
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
     EXPECT_FALSE(audioSession->IsRecommendToStopAudio(AudioStreamDeviceChangeReason::UNKNOWN, nullptr));
+
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+
+    ASSERT_GT(AudioDeviceManager::GetAudioDeviceManager().privacyDeviceList_.size(), 0);
+    DevicePrivacyInfo privacyInfo = *(AudioDeviceManager::GetAudioDeviceManager().privacyDeviceList_.begin());
+    audioSession->deviceDescriptor_.deviceType_ = privacyInfo.deviceType;
+    audioSession->deviceDescriptor_.deviceUsage_ = privacyInfo.deviceUsage;
+    audioSession->deviceDescriptor_.deviceCategory_ = privacyInfo.deviceCategory;
+    EXPECT_TRUE(audioSession->IsRecommendToStopAudio(AudioStreamDeviceChangeReason::UNKNOWN, desc));
 }
 
 /**
@@ -371,5 +381,22 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_018, TestSize.Level1)
     int32_t ret = audioSession->EnableVoipStreamsDefaultOutputDevice();
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+* @tc.name  : Test IsSessionOutputDeviceChanged
+* @tc.number: AudioSessionUnitTest_019
+* @tc.desc  : Test IsSessionOutputDeviceChanged function
+*/
+HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_019, TestSize.Level1)
+{
+    int32_t callerPid = 1;
+    AudioSessionStrategy strategy;
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
+    std::shared_ptr<AudioDeviceDescriptor> desc =
+        std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    bool ret = audioSession->IsSessionOutputDeviceChanged(desc);
+    EXPECT_TRUE(ret);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

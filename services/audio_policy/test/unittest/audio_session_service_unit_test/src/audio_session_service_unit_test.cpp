@@ -700,5 +700,39 @@ HWTEST_F(AudioSessionServiceUnitTest, IsSystemAppTest, TestSize.Level1)
     EXPECT_TRUE(audioSessionService_.IsSystemAppWithMixStrategy(callerPid));
 }
 
+/**
+* @tc.name  : Test FillCurrentOutputDeviceChangedEvent
+* @tc.number: AudioSessionServiceUnitTest_027
+* @tc.desc  : Test FillCurrentOutputDeviceChangedEvent
+*/
+HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_027, TestSize.Level1)
+{
+    int32_t callerPid = 1;
+    CurrentOutputDeviceChangedEvent deviceChangeEvent;
+    AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
+
+    int32_t ret = audioSessionService_.FillCurrentOutputDeviceChangedEvent(callerPid, reason, deviceChangeEvent);
+    EXPECT_EQ(ret, ERROR);
+
+    callerPid = 888;
+    audioSessionService_.sessionMap_[callerPid] = nullptr;
+    ret = audioSessionService_.FillCurrentOutputDeviceChangedEvent(callerPid, reason, deviceChangeEvent);
+    EXPECT_EQ(ret, ERROR);
+
+    AudioSessionStrategy strategy;
+    std::shared_ptr<AudioSession> audioSession =
+        std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
+    audioSessionService_.sessionMap_[callerPid] = audioSession;
+
+    std::shared_ptr<AudioDeviceDescriptor> ptr = std::make_shared<AudioDeviceDescriptor>();
+    deviceChangeEvent.devices.push_back(ptr);
+    ret = audioSessionService_.FillCurrentOutputDeviceChangedEvent(callerPid, reason, deviceChangeEvent);
+    EXPECT_EQ(ret, ERROR);
+
+    reason = AudioStreamDeviceChangeReason::AUDIO_SESSION_ACTIVATE;
+    ret = audioSessionService_.FillCurrentOutputDeviceChangedEvent(callerPid, reason, deviceChangeEvent);
+    EXPECT_EQ(ret, ERROR);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

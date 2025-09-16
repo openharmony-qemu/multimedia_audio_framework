@@ -108,6 +108,7 @@ public:
     bool ExistSameRemoteDeviceByMacAddress(std::shared_ptr<AudioDeviceDescriptor> desc);
     shared_ptr<AudioDeviceDescriptor> GetActiveScoDevice(std::string scoMac, DeviceRole role);
     std::shared_ptr<AudioDeviceDescriptor> GetExistedDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
+    AudioDevicePrivacyType GetDevicePrivacyType(const shared_ptr<AudioDeviceDescriptor> &devDesc);
 
 private:
     AudioDeviceManager();
@@ -164,6 +165,7 @@ private:
     bool UpdateEnableState(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     bool UpdateExceptionFlag(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     AudioStreamDeviceChangeReasonExt UpdateDeviceUsage(const shared_ptr<AudioDeviceDescriptor> &deviceDesc);
+    bool IsDescMatchedInVector(const shared_ptr<AudioDeviceDescriptor> &devDesc, list<DevicePrivacyInfo> &deviceList);
 
     void RemoveVirtualConnectedDevice(const shared_ptr<AudioDeviceDescriptor> &devDesc);
 

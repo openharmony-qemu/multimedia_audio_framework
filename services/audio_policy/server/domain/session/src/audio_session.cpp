@@ -396,41 +396,29 @@ bool AudioSession::IsStreamContainedInCurrentSession(const uint32_t &streamId)
     return false;
 }
 
-bool AudioSession::IsDeviceContainedInVector(std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices,
+bool AudioSession::IsRecommendToStopAudio(AudioStreamDeviceChangeReason changeReason,
     const std::shared_ptr<AudioDeviceDescriptor> desc)
-{
-    return std::find(devices.begin(), devices.end(), desc) != devices.end();
-}
-
-bool AudioSession::IsCurrentDevicePrivateDevice(const std::shared_ptr<AudioDeviceDescriptor> desc)
-{
-    return IsDeviceContainedInVector(deviceManager_.GetCommRenderPrivacyDevices(), desc) ||
-        IsDeviceContainedInVector(deviceManager_.GetMediaRenderPrivacyDevices(), desc);
-}
-
-bool AudioSession::IsRecommendToStopAudio(
-    AudioStreamDeviceChangeReason changeReason,
-    const std::shared_ptr<AudioDeviceDescriptor> descriptor)
 {
     bool ret = false;
 
-    if ((changeReason == AudioStreamDeviceChangeReason::OVERRODE) || (descriptor == nullptr)) {
+    if ((changeReason == AudioStreamDeviceChangeReason::OVERRODE) || (desc == nullptr)) {
         return ret;
     }
 
-    if (IsCurrentDevicePrivateDevice(std::make_shared<AudioDeviceDescriptor>(deviceDescriptor_)) &&
-        (!IsCurrentDevicePrivateDevice(descriptor))) {
+    if ((deviceManager_.GetDevicePrivacyType(std::make_shared<AudioDeviceDescriptor>(deviceDescriptor_)) ==
+        AudioDevicePrivacyType::TYPE_PRIVACY) && (deviceManager_.GetDevicePrivacyType(desc) !=
+        AudioDevicePrivacyType::TYPE_PRIVACY)) {
         ret = true;
     }
 
-    deviceDescriptor_ = AudioDeviceDescriptor(descriptor);
+    deviceDescriptor_ = AudioDeviceDescriptor(desc);
     return ret;
 }
 
 bool AudioSession::IsSessionOutputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> desc)
 {
-    CHECK_AND_RETURN_RET_LOG(desc != nullptr, true, "input device desc is nullptr");
-    return deviceDescriptor_.IsSameDeviceDescPtr(desc);
+    CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "input device desc is nullptr");
+    return !deviceDescriptor_.IsSameDeviceDescPtr(desc);
 }
 
 bool AudioSession::IsSessionInputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> desc)
