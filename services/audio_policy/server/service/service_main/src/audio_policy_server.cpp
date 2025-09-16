@@ -3790,6 +3790,13 @@ int32_t AudioPolicyServer::ClearSelectedInputDevice()
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::PreferBluetoothAndNearlinkRecord(uint32_t category)
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    return eventEntry_->PreferBluetoothAndNearlinkRecordByUid(callerUid,
+        static_cast<BluetoothAndNearlinkPreferredRecordCategory>(category));
+}
+
 int32_t AudioPolicyServer::GetPreferBluetoothAndNearlinkRecord(uint32_t &category)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
