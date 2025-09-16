@@ -187,8 +187,8 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfoForStartInner(int32_t index, R
         recordDeviceInfoList_.emplace(recordDeviceInfoList_.begin(), recordDeviceInfo);
     } else {
         recordDeviceInfoList_[index].sourceType_ = info.sourceType_;
-        recordDeviceInfoList_[index].activeSelectedDevice_ = info.activeSelectedDevice_ != DEVICE_TYPE_NONE ?
-            info.activeSelectedDevice_ : recordDeviceInfoList_[index].selectedDevice_;
+        recordDeviceInfoList_[index].activeSelectedDevice_ = info.activeSelectedDevice_->deviceType_ !=
+            DEVICE_TYPE_NONE ? info.activeSelectedDevice_ : recordDeviceInfoList_[index].selectedDevice_;
         std::rotate(recordDeviceInfoList_.begin(), recordDeviceInfoList_.begin() + index,
             recordDeviceInfoList_.begin() + index + 1);
     }
