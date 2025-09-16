@@ -1124,7 +1124,7 @@ int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
     AsyncCheckAudioRenderer("Write");
 
     std::unique_lock<std::mutex> lock(inRestoreMtx_);
-    taskLoopCv_wait(lock, [this] {
+    taskLoopCv_.wait(lock, [this] {
         return inRestoreFlag == false;
     });
     MockPcmData(buffer, bufferSize);
@@ -1143,7 +1143,7 @@ int32_t AudioRendererPrivate::Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t 
     AsyncCheckAudioRenderer("Write");
 
     std::unique_lock<std::mutex> lock(inRestoreMtx_);
-    taskLoopCv_wait(lock, [this] {
+    taskLoopCv_.wait(lock, [this] {
         return inRestoreFlag == false;
     });
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
