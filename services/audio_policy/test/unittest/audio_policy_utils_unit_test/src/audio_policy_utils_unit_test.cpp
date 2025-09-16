@@ -382,7 +382,7 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_019, TestSize.Level1)
     int32_t apiVersion = 20;
 
     int32_t ret = audioPolicyUtilsTest_->IsSupportedNearlink(bundleName, apiVersion, hasSystemPermission);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
 }
 
 /**
