@@ -722,7 +722,7 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_027, TestSize.
     AudioSessionStrategy strategy;
     std::shared_ptr<AudioSession> audioSession =
         std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
-    audioSessionService_.sessionMap[callerPid] = audioSession;
+    audioSessionService_.sessionMap_[callerPid] = audioSession;
 
     std::shared_ptr<AudioDeviceDescriptor> ptr = std::make_shared<AudioDeviceDescriptor>();
     deviceChangeEvent.devices.push_back(ptr);
