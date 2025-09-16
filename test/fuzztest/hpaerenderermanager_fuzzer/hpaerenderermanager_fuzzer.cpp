@@ -58,6 +58,24 @@ constexpr int32_t TEST_SLEEP_TIME_40 = 40;
 constexpr int32_t FRAME_LENGTH_960 = 960;
 constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
 constexpr int32_t DEFAULT_NODE_ID = 1;
+const std::vector<AudioChannel> SUPPORTED_CHANNELS {
+    MONO,
+    STEREO,
+    CHANNEL_3,
+    CHANNEL_4,
+    CHANNEL_5,
+    CHANNEL_6,
+    CHANNEL_7,
+    CHANNEL_8,
+    CHANNEL_9,
+    CHANNEL_10,
+    CHANNEL_11,
+    CHANNEL_12,
+    CHANNEL_13,
+    CHANNEL_14,
+    CHANNEL_15,
+    CHANNEL_16,
+};
 
 template<class T>
 T GetData()
@@ -85,6 +103,28 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
+template<class T>
+void RoundVal(T &roundVal, const std::vector<T>& list)
+{
+    if (GetData<bool>()) {
+        roundVal = GetData<T>();
+    } else {
+        roundVal = list[GetData<uint32_t>()%list.size()];
+    }
+}
+
+void RoundSinkInfo(HpaeSinkInfo &sinkInfo)
+{
+    RoundVal(sinkInfo.channels, SUPPORTED_CHANNELS);
+    RoundVal(sinkInfo.format, AUDIO_SUPPORTED_FORMATS);
+}
+
+void RoundStreamInfo(HpaeStreamInfo &streamInfo)
+{
+    RoundVal(streamInfo.channels, SUPPORTED_CHANNELS);
+    RoundVal(streamInfo.format, AUDIO_SUPPORTED_FORMATS);
+}
+
 static void InitHpaeSinkInfo(HpaeSinkInfo &sinkInfo)
 {
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -93,20 +133,18 @@ static void InitHpaeSinkInfo(HpaeSinkInfo &sinkInfo)
     sinkInfo.filePath = "g_rootCapturerPath";
     sinkInfo.frameLen = FRAME_LENGTH_960;
     sinkInfo.samplingRate = SAMPLE_RATE_48000;
-    sinkInfo.format = SAMPLE_F32LE;
-    sinkInfo.channels = STEREO;
+    RoundSinkInfo(sinkInfo);
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
 }
 
 static void InitRenderStreamInfo(HpaeStreamInfo &streamInfo)
 {
-    streamInfo.channels = STEREO;
-    streamInfo.samplingRate = SAMPLE_RATE_44100;
-    streamInfo.format = SAMPLE_S16LE;
-    streamInfo.frameLen = FRAME_LENGTH_960;
+    RoundStreamInfo(streamInfo);
     streamInfo.sessionId = TEST_STREAM_SESSION_ID;
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    streamInfo.frameLen = FRAME_LENGTH_960;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
 }
 
 static void InitNodeInfo(HpaeNodeInfo &nodeInfo)
@@ -122,6 +160,9 @@ static void InitNodeInfo(HpaeNodeInfo &nodeInfo)
 
 void WaitForMsgProcessing(std::shared_ptr<IHpaeRendererManager> &hpaeRendererManager)
 {
+    if (!hpaeRendererManager->IsInit()) {
+        return;
+    }
     while (hpaeRendererManager->IsMsgProcessing()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_20));
     }

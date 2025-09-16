@@ -135,10 +135,6 @@ static void InitHpaeSinkInfo(HpaeSinkInfo &sinkInfo)
     sinkInfo.filePath = "g_rootCapturerPath";
     sinkInfo.frameLen = FRAME_LENGTH_960;
     sinkInfo.samplingRate = SAMPLE_RATE_48000;
-    if (GetData<bool>()) {
-        sinkInfo.frameLen = GetData<uint64_t>();
-        RoundVal(sinkInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
-    }
     RoundSinkInfo(sinkInfo);
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
 }
@@ -151,10 +147,6 @@ static void InitRenderStreamInfo(HpaeStreamInfo &streamInfo)
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
     streamInfo.frameLen = FRAME_LENGTH_960;
     streamInfo.samplingRate = SAMPLE_RATE_48000;
-    if (GetData<bool>()) {
-        streamInfo.frameLen = GetData<uint64_t>();
-        RoundVal(streamInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
-    }
 }
 
 static void InitNodeInfo(HpaeNodeInfo &nodeInfo)
@@ -162,10 +154,6 @@ static void InitNodeInfo(HpaeNodeInfo &nodeInfo)
     nodeInfo.nodeId = DEFAULT_NODE_ID;
     nodeInfo.frameLen = FRAME_LENGTH_960;
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
-    if (GetData<bool>()) {
-        nodeInfo.frameLen = GetData<size_t>();
-        RoundVal(nodeInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
-    }
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_S16LE;
     nodeInfo.sceneType = HPAE_SCENE_RECORD;
@@ -174,6 +162,9 @@ static void InitNodeInfo(HpaeNodeInfo &nodeInfo)
 
 void WaitForMsgProcessing(std::shared_ptr<IHpaeRendererManager> &hpaeRendererManager)
 {
+    if (!hpaeRendererManager->IsInit()) {
+        return;
+    }
     while (hpaeRendererManager->IsMsgProcessing()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_20));
     }

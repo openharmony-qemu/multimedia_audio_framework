@@ -163,10 +163,6 @@ void InitSourceInfo(HpaeSourceInfo &sourceInfo)
     sourceInfo.filePath = g_rootCapturerPath;
     sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
     sourceInfo.samplingRate = SAMPLE_RATE_48000;
-    if (GetData<bool>()) {
-        sourceInfo.frameLen = GetData<uint64_t>();
-        RoundVal(sourceInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
-    }
     RoundSourceInfo(sourceInfo);
 }
 
@@ -179,10 +175,6 @@ void InitReloadStreamInfo(HpaeStreamInfo &streamInfo)
     streamInfo.deviceName = "Built_in_mic";
     streamInfo.frameLen = DEFAULT_FRAME_LENGTH;
     streamInfo.samplingRate = SAMPLE_RATE_48000;
-    if (GetData<bool>()) {
-        streamInfo.frameLen = GetData<uint64_t>();
-        RoundVal(streamInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
-    }
 }
 
 void InitReloadSourceInfo(HpaeSourceInfo &sourceInfo, HpaeSourceInfo &newSourceInfo)
@@ -193,10 +185,6 @@ void InitReloadSourceInfo(HpaeSourceInfo &sourceInfo, HpaeSourceInfo &newSourceI
     sourceInfo.filePath = g_rootCapturerPath;
     sourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
     sourceInfo.samplingRate = SAMPLE_RATE_48000;
-    if (GetData<bool>()) {
-        sourceInfo.frameLen = GetData<uint64_t>();
-        RoundVal(sourceInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
-    }
     RoundSourceInfo(sourceInfo);
 
     newSourceInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -205,10 +193,6 @@ void InitReloadSourceInfo(HpaeSourceInfo &sourceInfo, HpaeSourceInfo &newSourceI
     newSourceInfo.filePath = g_rootCapturerPath;
     newSourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
     newSourceInfo.samplingRate = SAMPLE_RATE_48000;
-    if (GetData<bool>()) {
-        newSourceInfo.frameLen = GetData<uint64_t>();
-        RoundVal(newSourceInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
-    }
     RoundSourceInfo(newSourceInfo);
 }
 
@@ -217,10 +201,6 @@ void GetFuzzNodeInfo(HpaeNodeInfo &nodeInfo)
     nodeInfo.nodeId = GetData<uint32_t>();
     nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
-    if (GetData<bool>()) {
-        nodeInfo.frameLen = GetData<uint64_t>();
-        RoundVal(nodeInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
-    }
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_S16LE;
     nodeInfo.sceneType = HPAE_SCENE_RECORD;
