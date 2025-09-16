@@ -199,7 +199,7 @@ int32_t HpaeCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
         AUDIO_ERR_LOG("not init");
         return ERR_INVALID_OPERATION;
     }
-    int32_t checkRet = CheckStreamInfo(streamInfo);	
+    int32_t checkRet = CheckStreamInfo(streamInfo);
     if (checkRet != SUCCESS) {
         return checkRet;
     }

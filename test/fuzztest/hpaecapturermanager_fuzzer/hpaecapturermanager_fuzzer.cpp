@@ -165,7 +165,7 @@ void InitSourceInfo(HpaeSourceInfo &sourceInfo)
     sourceInfo.samplingRate = SAMPLE_RATE_48000;
     if (GetData<bool>()) {
         sourceInfo.frameLen = GetData<uint64_t>();
-        sourceInfo.samplingRate = GetData<uint64_t>();
+        RoundVal(sourceInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
     }
     RoundSourceInfo(sourceInfo);
 }
@@ -181,7 +181,7 @@ void InitReloadStreamInfo(HpaeStreamInfo &streamInfo)
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     if (GetData<bool>()) {
         streamInfo.frameLen = GetData<uint64_t>();
-        streamInfo.samplingRate = GetData<uint64_t>();
+        RoundVal(streamInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
     }
 }
 
@@ -195,7 +195,7 @@ void InitReloadSourceInfo(HpaeSourceInfo &sourceInfo, HpaeSourceInfo &newSourceI
     sourceInfo.samplingRate = SAMPLE_RATE_48000;
     if (GetData<bool>()) {
         sourceInfo.frameLen = GetData<uint64_t>();
-        sourceInfo.samplingRate = GetData<uint64_t>();
+        RoundVal(sourceInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
     }
     RoundSourceInfo(sourceInfo);
 
@@ -207,7 +207,7 @@ void InitReloadSourceInfo(HpaeSourceInfo &sourceInfo, HpaeSourceInfo &newSourceI
     newSourceInfo.samplingRate = SAMPLE_RATE_48000;
     if (GetData<bool>()) {
         newSourceInfo.frameLen = GetData<uint64_t>();
-        newSourceInfo.samplingRate = GetData<uint64_t>();
+        RoundVal(newSourceInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
     }
     RoundSourceInfo(newSourceInfo);
 }
@@ -219,7 +219,7 @@ void GetFuzzNodeInfo(HpaeNodeInfo &nodeInfo)
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     if (GetData<bool>()) {
         nodeInfo.frameLen = GetData<uint64_t>();
-        nodeInfo.samplingRate = GetData<uint64_t>();
+        RoundVal(nodeInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
     }
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_S16LE;

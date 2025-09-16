@@ -152,7 +152,7 @@ int32_t HpaeOffloadRendererManager::CreateStream(const HpaeStreamInfo &streamInf
     if (!IsInit()) {
         return ERR_INVALID_OPERATION;
     }
-    int32_t checkRet = CheckStreamInfo(streamInfo);	
+    int32_t checkRet = CheckStreamInfo(streamInfo);
     if (checkRet != SUCCESS) {
         return checkRet;
     }

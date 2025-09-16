@@ -137,7 +137,7 @@ static void InitHpaeSinkInfo(HpaeSinkInfo &sinkInfo)
     sinkInfo.samplingRate = SAMPLE_RATE_48000;
     if (GetData<bool>()) {
         sinkInfo.frameLen = GetData<uint64_t>();
-        sinkInfo.samplingRate = GetData<uint64_t>();
+        RoundVal(sinkInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
     }
     RoundSinkInfo(sinkInfo);
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
@@ -153,7 +153,7 @@ static void InitRenderStreamInfo(HpaeStreamInfo &streamInfo)
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     if (GetData<bool>()) {
         streamInfo.frameLen = GetData<uint64_t>();
-        streamInfo.samplingRate = GetData<uint64_t>();
+        RoundVal(streamInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
     }
 }
 
@@ -163,8 +163,8 @@ static void InitNodeInfo(HpaeNodeInfo &nodeInfo)
     nodeInfo.frameLen = FRAME_LENGTH_960;
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     if (GetData<bool>()) {
-        nodeInfo.frameLen = GetData<uint64_t>();
-        nodeInfo.samplingRate = GetData<uint64_t>();
+        nodeInfo.frameLen = GetData<size_t>();
+        RoundVal(nodeInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
     }
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_S16LE;

@@ -151,7 +151,7 @@ HpaeSinkInfo GetInCapSinkInfo()
     sinkInfo.samplingRate = SAMPLE_RATE_48000;
     if (GetData<bool>()) {
         sinkInfo.frameLen = GetData<uint64_t>();
-        sinkInfo.samplingRate = GetData<uint64_t>();
+        RoundVal(sinkInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
     }
     return sinkInfo;
 }
@@ -169,7 +169,7 @@ HpaeSinkInfo GetInCapFuzzSinkInfo()
     sinkInfo.samplingRate = SAMPLE_RATE_48000;
     if (GetData<bool>()) {
         sinkInfo.frameLen = GetData<uint64_t>();
-        sinkInfo.samplingRate = GetData<uint64_t>();
+        RoundVal(sinkInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
     }
     return sinkInfo;
 }
@@ -186,7 +186,7 @@ HpaeStreamInfo GetInCapPlayStreamInfo()
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     if (GetData<bool>()) {
         streamInfo.frameLen = GetData<uint64_t>();
-        streamInfo.samplingRate = GetData<uint64_t>();
+        RoundVal(streamInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
     }
     return streamInfo;
 }
@@ -203,7 +203,7 @@ HpaeStreamInfo GetInCapPlayFuzzStreamInfo()
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     if (GetData<bool>()) {
         streamInfo.frameLen = GetData<uint64_t>();
-        streamInfo.samplingRate = GetData<uint64_t>();
+        RoundVal(streamInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
     }
     return streamInfo;
 }
@@ -220,7 +220,7 @@ static HpaeStreamInfo GetInCapRecordStreamInfo()
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     if (GetData<bool>()) {
         streamInfo.frameLen = GetData<uint64_t>();
-        streamInfo.samplingRate = GetData<uint64_t>();
+        RoundVal(streamInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
     }
     return streamInfo;
 }
@@ -237,7 +237,7 @@ static HpaeStreamInfo GetInCapRecordFuzzStreamInfo()
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     if (GetData<bool>()) {
         streamInfo.frameLen = GetData<uint64_t>();
-        streamInfo.samplingRate = GetData<uint64_t>();
+        RoundVal(streamInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
     }
     return streamInfo;
 }
@@ -380,8 +380,8 @@ void HpaeInnerCapturerManagerAddNodeToSinkFuzzTest1()
     playSencondNodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
     playSencondNodeInfo.samplingRate = SAMPLE_RATE_44100;
     if (GetData<bool>()) {
-        playSencondNodeInfo.frameLen = GetData<T>();
-        playSencondNodeInfo.samplingRate = GetData<T>();
+        playSencondNodeInfo.frameLen = GetData<uint64_t>();
+        RoundVal(playSencondNodeInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
     }
     playSencondNodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
     playSencondNodeInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
@@ -428,8 +428,8 @@ void HpaeInnerCapturerManagerAddNodeToSinkFuzzTest2()
     playSencondNodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
     playSencondNodeInfo.samplingRate = SAMPLE_RATE_44100;
     if (GetData<bool>()) {
-        playSencondNodeInfo.frameLen = GetData<T>();
-        playSencondNodeInfo.samplingRate = GetData<T>();
+        playSencondNodeInfo.frameLen = GetData<uint64_t>();
+        RoundVal(playSencondNodeInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
     }
     playSencondNodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
     playSencondNodeInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
@@ -481,8 +481,8 @@ void HpaeInnerCapturerManagerAddNodeToSinkFuzzTest3()
     playSencondNodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
     playSencondNodeInfo.samplingRate = SAMPLE_RATE_44100;
     if (GetData<bool>()) {
-        playSencondNodeInfo.frameLen = GetData<T>();
-        playSencondNodeInfo.samplingRate = GetData<T>();
+        playSencondNodeInfo.frameLen = GetData<uint64_t>();
+        RoundVal(playSencondNodeInfo.samplingRate, AUDIO_SUPPORTED_SAMPLING_RATES);
     }
     playSencondNodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
     playSencondNodeInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
