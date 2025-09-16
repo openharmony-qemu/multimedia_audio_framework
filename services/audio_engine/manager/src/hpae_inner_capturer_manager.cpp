@@ -35,7 +35,7 @@ HpaeInnerCapturerManager::HpaeInnerCapturerManager(HpaeSinkInfo &sinkInfo)
 
 HpaeInnerCapturerManager::~HpaeInnerCapturerManager()
 {
-    AUDIO_INFO_LOG("destructor inner capturer sink.");
+    AUDIO_INFO_LOG("destructor");
     if (isInit_.load()) {
         DeInit();
     }
@@ -174,7 +174,7 @@ int32_t HpaeInnerCapturerManager::MoveStream(uint32_t sessionId, const std::stri
 int32_t HpaeInnerCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
 {
     if (!IsInit()) {
-        AUDIO_INFO_LOG("CreateStream not init");
+        AUDIO_INFO_LOG("not init");
         return ERR_INVALID_OPERATION;
     }
     auto request = [this, streamInfo]() {
@@ -851,7 +851,7 @@ void HpaeInnerCapturerManager::SetSessionStateForCapturer(uint32_t sessionId, Hp
 void HpaeInnerCapturerManager::SendRequestInner(Request &&request, const std::string &funcName, bool isInit)
 {
     if (!isInit && !IsInit()) {
-        AUDIO_INFO_LOG("HpaeInnerCapturerManager not init, %{public}s excute failed", funcName.c_str());
+        AUDIO_INFO_LOG("not init, %{public}s excute failed", funcName.c_str());
         HpaeMessageQueueMonitor::ReportMessageQueueException(HPAE_INNER_CAPTURE_MANAGER_TYPE,
             funcName, "HpaeInnerCapturerManager not init");
         return;

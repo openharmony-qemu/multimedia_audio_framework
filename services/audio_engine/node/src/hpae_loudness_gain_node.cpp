@@ -52,7 +52,7 @@ HpaeLoudnessGainNode::HpaeLoudnessGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
     pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, nodeInfo.channelLayout),
     loudnessGainOutput_(pcmBufferInfo_)
 {
-    AUDIO_INFO_LOG("HpaeLoudnessGainNode created");
+    AUDIO_INFO_LOG("created");
     dlHandle_ = dlopen(LOUDNESSGAIN_PATH.c_str(), 1);
     if (!dlHandle_) {
         AUDIO_ERR_LOG("<log error> dlopen lib %{public}s Fail", LOUDNESSGAIN_PATH.c_str());
@@ -161,7 +161,7 @@ void HpaeLoudnessGainNode::CheckUpdateInfo(HpaePcmBuffer *input)
 
 int32_t HpaeLoudnessGainNode::ReleaseHandle(float loudnessGain)
 {
-    AUDIO_INFO_LOG("Releasing handle...");
+    AUDIO_INFO_LOG("Releasing...");
     CHECK_AND_RETURN_RET_LOG(handle_, ERROR, "no handle.");
     int32_t ret = audioEffectLibHandle_->releaseEffect(handle_);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "handle releasing failed.");

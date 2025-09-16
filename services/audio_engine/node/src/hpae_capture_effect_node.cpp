@@ -38,7 +38,7 @@ HpaeCaptureEffectNode::HpaeCaptureEffectNode(HpaeNodeInfo &nodeInfo)
     auto item = audioEnhanceSupportedSceneTypes.find(nodeInfo.effectInfo.enhanceScene);
     if (item != audioEnhanceSupportedSceneTypes.end()) {
         sceneType_ = item->second;
-        AUDIO_INFO_LOG("HpaeCaptureEffectNode created scenetype: [%{public}s]", sceneType_.c_str());
+        AUDIO_INFO_LOG("scenetype: [%{public}s]", sceneType_.c_str());
     } else {
         AUDIO_ERR_LOG("scenetype: %{public}u not supported", nodeInfo.effectInfo.enhanceScene);
     }
@@ -65,7 +65,7 @@ HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcess(const std::vector<HpaePcmBuf
     Trace trace("[" + sceneType_ + "]HpaeRenderEffectNode::SignalProcess inputs num[" +
         std::to_string(inputs.size()) + "]");
     if (inputs.empty()) {
-        AUDIO_WARNING_LOG("HpaeCaptureEffectNode inputs size is empty, SessionId:%{public}d", GetSessionId());
+        AUDIO_WARNING_LOG("inputs size is empty, SessionId:%{public}d", GetSessionId());
         return nullptr;
     }
 
@@ -124,7 +124,7 @@ void HpaeCaptureEffectNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<
     HpaeNodeInfo &nodeInfo)
 {
     CHECK_AND_RETURN_LOG(!inputStream_.CheckIfDisConnected(preNode->GetOutputPort(nodeInfo)),
-        "HpaeCaptureEffectNode[%{public}u] has disconnected with preNode", GetNodeId());
+        "%{public}u has disconnected with preNode", GetNodeId());
     inputStream_.DisConnect(preNode->GetOutputPort(nodeInfo, true));
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
@@ -177,7 +177,7 @@ int32_t HpaeCaptureEffectNode::CaptureEffectCreate(uint64_t sceneKeyCode, Captur
     enhanceAttr.ecChannels = attr.ecChannels;
     enhanceAttr.micRefChannels = attr.micRefChannels;
     int32_t ret = audioEnhanceChainManager->CreateAudioEnhanceChainDynamic(sceneKeyCode, enhanceAttr);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "CreateAudioEnhanceChainDynamic failed, ret:%{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "failed, ret:%{public}d", ret);
 
     AudioBufferConfig micConfig = {};
     AudioBufferConfig ecConfig = {};

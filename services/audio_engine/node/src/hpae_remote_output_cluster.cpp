@@ -32,7 +32,7 @@ HpaeRemoteOutputCluster::HpaeRemoteOutputCluster(HpaeNodeInfo &nodeInfo, HpaeSin
     : HpaeNode(nodeInfo), hpaeSinkOutputNode_(std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo))
 {
     frameLenMs_ = nodeInfo.frameLen * MILLISECOND_PER_SECOND / nodeInfo.samplingRate;
-    AUDIO_INFO_LOG("HpaeRemoteOutputCluster frameLenMs_:%{public}u ms,"
+    AUDIO_INFO_LOG("frameLenMs_:%{public}u ms,"
         "timeoutThdFrames_:%{public}u", frameLenMs_, timeoutThdFrames_);
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("HpaeRemoteOutputCluster");
@@ -69,7 +69,7 @@ void HpaeRemoteOutputCluster::DoProcess()
     }
     if (hpaeSinkOutputNode_->GetPreOutNum() == 0) {
         int32_t ret = hpaeSinkOutputNode_->RenderSinkStop();
-        AUDIO_INFO_LOG("HpaeRemoteOutputCluster timeout RenderSinkStop ret :%{public}d", ret);
+        AUDIO_INFO_LOG("timeout RenderSinkStop ret :%{public}d", ret);
     }
 }
 
@@ -100,12 +100,12 @@ void HpaeRemoteOutputCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBu
     HpaeNodeInfo &preNodeInfo = preNode->GetSharedInstance()->GetNodeInfo();
     HpaeNodeInfo nodeInfo = GetNodeInfo();
     HpaeProcessorType sceneType = preNodeInfo.sceneType;
-    AUDIO_INFO_LOG("HpaeRemoteOutputCluster input sceneType is %{public}u", sceneType);
-    AUDIO_INFO_LOG("HpaeRemoteOutputCluster input rate is %{public}u, ch is %{public}u",
+    AUDIO_INFO_LOG("input sceneType is %{public}u", sceneType);
+    AUDIO_INFO_LOG("input rate is %{public}u, ch is %{public}u",
         preNodeInfo.samplingRate, preNodeInfo.channels);
-    AUDIO_INFO_LOG(" HpaeRemoteOutputCluster output rate is %{public}u, ch is %{public}u",
+    AUDIO_INFO_LOG("output rate is %{public}u, ch is %{public}u",
         nodeInfo.samplingRate, nodeInfo.channels);
-    AUDIO_INFO_LOG(" HpaeRemoteOutputCluster preNode name %{public}s, curNode name is %{public}s",
+    AUDIO_INFO_LOG("preNode name %{public}s, curNode name is %{public}s",
         preNodeInfo.nodeName.c_str(), nodeInfo.nodeName.c_str());
     nodeInfo.sceneType = sceneType;
     if (!SafeGetMap(sceneConverterMap_, sceneType)) {
@@ -125,7 +125,7 @@ void HpaeRemoteOutputCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePc
 {
     HpaeNodeInfo &preNodeInfo = preNode->GetSharedInstance()->GetNodeInfo();
     HpaeProcessorType sceneType = preNodeInfo.sceneType;
-    AUDIO_INFO_LOG("HpaeRemoteOutputCluster input sceneType is %{public}u", preNodeInfo.sceneType);
+    AUDIO_INFO_LOG("input sceneType is %{public}u", preNodeInfo.sceneType);
     if (SafeGetMap(sceneConverterMap_, sceneType)) {
         sceneConverterMap_[sceneType]->DisConnect(preNode);
         sceneMixerMap_[sceneType]->DisConnect(sceneConverterMap_[sceneType]);
@@ -204,8 +204,7 @@ int32_t HpaeRemoteOutputCluster::SetTimeoutStopThd(uint32_t timeoutThdMs)
     if (frameLenMs_ != 0) {
         timeoutThdFrames_ = timeoutThdMs / frameLenMs_;
     }
-    AUDIO_INFO_LOG(
-        "SetTimeoutStopThd: timeoutThdFrames_:%{public}u, timeoutThdMs :%{public}u", timeoutThdFrames_, timeoutThdMs);
+    AUDIO_INFO_LOG("timeoutThdFrames_:%{public}u, timeoutThdMs :%{public}u", timeoutThdFrames_, timeoutThdMs);
     return SUCCESS;
 }
 

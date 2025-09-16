@@ -89,7 +89,7 @@ HpaePcmBuffer *HpaeResampleNode::SignalProcess(const std::vector<HpaePcmBuffer *
 {
     Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeResampleNode::SignalProcess");
     if (inputs.empty()) {
-        AUDIO_WARNING_LOG("HpaeResampleNode inputs size is empty, SessionId:%{public}d", GetSessionId());
+        AUDIO_WARNING_LOG("inputs size is empty, SessionId:%{public}d", GetSessionId());
         return nullptr;
     }
     if (inputs.size() != 1) {

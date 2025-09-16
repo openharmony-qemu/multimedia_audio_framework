@@ -31,7 +31,7 @@ HpaeSourceProcessCluster::HpaeSourceProcessCluster(HpaeNodeInfo& nodeInfo)
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("HpaeSourceProcessCluster");
 #endif
-    AUDIO_INFO_LOG("Create scene ProcessCluster, sceneType = %{public}u", nodeInfo.sceneType);
+    AUDIO_INFO_LOG("sceneType = %{public}u", nodeInfo.sceneType);
 }
 
 HpaeSourceProcessCluster::~HpaeSourceProcessCluster()
@@ -106,7 +106,7 @@ OutputPort<HpaePcmBuffer *> *HpaeSourceProcessCluster::GetOutputPort(HpaeNodeInf
     }
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(fmtConverterNodeMap_, sourceOutputNodeKey),
         captureEffectNode_->GetOutputPort(),
-        "HpaeSourceProcessCluster not find the sourceOutputNodeKey = %{public}s", sourceOutputNodeKey.c_str());
+        "not find the sourceOutputNodeKey = %{public}s", sourceOutputNodeKey.c_str());
     if (isDisConnect && fmtConverterNodeMap_[sourceOutputNodeKey]->GetOutputPortNum() <= 1) {
         // disconnect fmtConverterNode->upEffectNode
         AUDIO_INFO_LOG("disconnect fmtConverterNode between effectnode[[%{public}s] and sourceoutputnode[%{public}s]",

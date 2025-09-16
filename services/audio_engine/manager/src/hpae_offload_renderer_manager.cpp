@@ -37,7 +37,7 @@ HpaeOffloadRendererManager::HpaeOffloadRendererManager(HpaeSinkInfo &sinkInfo)
 
 HpaeOffloadRendererManager::~HpaeOffloadRendererManager()
 {
-    AUDIO_INFO_LOG("destructor offload renderer");
+    AUDIO_INFO_LOG("destructor");
     if (isInit_.load()) {
         DeInit();
     }
@@ -417,7 +417,7 @@ int32_t HpaeOffloadRendererManager::Init(bool isReload)
 
 void HpaeOffloadRendererManager::InitSinkInner(bool isReload)
 {
-    AUDIO_INFO_LOG("HpaeOffloadRendererManager::init");
+    AUDIO_INFO_LOG("init");
     HpaeNodeInfo nodeInfo;
     nodeInfo.channels = sinkInfo_.channels;
     nodeInfo.format = sinkInfo_.format;
@@ -431,7 +431,7 @@ void HpaeOffloadRendererManager::InitSinkInner(bool isReload)
     sinkOutputNode_ = std::make_unique<HpaeOffloadSinkOutputNode>(nodeInfo);
     sinkOutputNode_->SetTimeoutStopThd(sinkInfo_.suspendTime);
     // if failed, RenderSinkInit will failed either, so no need to deal ret
-    AUDIO_INFO_LOG("HpaeOffloadRendererManager::GetRenderSinkInstance");
+    AUDIO_INFO_LOG("GetRenderSinkInstance");
     sinkOutputNode_->GetRenderSinkInstance(sinkInfo_.deviceClass, sinkInfo_.deviceNetId);
     IAudioSinkAttr attr;
     attr.adapterName = sinkInfo_.adapterName.c_str();
@@ -447,7 +447,7 @@ void HpaeOffloadRendererManager::InitSinkInner(bool isReload)
     int32_t ret = sinkOutputNode_->RenderSinkInit(attr);
     isInit_.store(true);
     TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT, sinkInfo_.deviceName, ret);
-    AUDIO_INFO_LOG("HpaeOffloadRendererManager::inited");
+    AUDIO_INFO_LOG("inited");
 }
 
 bool HpaeOffloadRendererManager::DeactivateThread()

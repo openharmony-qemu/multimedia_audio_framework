@@ -51,9 +51,9 @@ HpaeGainNode::HpaeGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePlu
     }
     audioVolume->SetHistoryVolume(GetSessionId(), curSystemGain);
     audioVolume->Monitor(GetSessionId(), true);
-    AUDIO_INFO_LOG("HpaeGainNode curSystemGain:%{public}f streamType :%{public}d", curSystemGain, GetStreamType());
+    AUDIO_INFO_LOG("curSystemGain:%{public}f streamType :%{public}d", curSystemGain, GetStreamType());
     AUDIO_INFO_LOG(
-        "HpaeGainNode SessionId:%{public}u deviceClass :%{public}s", GetSessionId(), GetDeviceClass().c_str());
+        "SessionId:%{public}u deviceClass :%{public}s", GetSessionId(), GetDeviceClass().c_str());
 #ifdef ENABLE_HOOK_PCM
     outputPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeGainNodeOut_id_" + std::to_string(GetSessionId()) + "_ch_" +
                                                        std::to_string(GetChannelCount()) + "_rate_" +
@@ -75,7 +75,7 @@ HpaeGainNode::~HpaeGainNode()
 HpaePcmBuffer *HpaeGainNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)
 {
     if (inputs.empty()) {
-        AUDIO_WARNING_LOG("HpaeGainNode inputs size is empty, SessionId:%{public}d", GetSessionId());
+        AUDIO_WARNING_LOG("inputs size is empty, SessionId:%{public}d", GetSessionId());
         return nullptr;
     }
     auto rate = "rate[" + std::to_string(inputs[0]->GetSampleRate()) + "]_";
@@ -83,7 +83,7 @@ HpaePcmBuffer *HpaeGainNode::SignalProcess(const std::vector<HpaePcmBuffer *> &i
     auto len = "len[" + std::to_string(inputs[0]->GetFrameLen()) + "]";
     Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeGainNode::SignalProcess " + rate + ch + len);
     if (fadeOutState_ == FadeOutState::DONE_FADEOUT) {
-        AUDIO_INFO_LOG("HpaeGainNode: fadeout done, set session %{public}d silence", GetSessionId());
+        AUDIO_INFO_LOG("fadeout done, set session %{public}d silence", GetSessionId());
         SilenceData(inputs[0]);
     }
     float *inputData = (float *)inputs[0]->GetPcmDataBuffer();

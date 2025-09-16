@@ -36,7 +36,7 @@ ProResampler::ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels,
 {
     if (inRate_ == SAMPLE_RATE_11025) { // for 11025, process input 40ms per time and output 20ms per time
         buf11025_.reserve(expectedOutFrameLen_ * channels_ * BUFFER_EXPAND_SIZE + ADD_SIZE);
-        AUDIO_INFO_LOG("Proresampler input 11025hz, output resample rate %{public}d, buf11025_ size %{public}d",
+        AUDIO_INFO_LOG("input 11025hz, output resample rate %{public}d, buf11025_ size %{public}d",
             outRate_, expectedOutFrameLen_ * channels_ * BUFFER_EXPAND_SIZE + ADD_SIZE);
         expectedInFrameLen_ = inRate_ * FRAME_LEN_20MS * BUFFER_EXPAND_SIZE / MS_PER_SECOND;
     } else {
@@ -44,11 +44,11 @@ ProResampler::ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels,
     }
     int32_t errRet;
     state_ = SingleStagePolyphaseResamplerInit(channels_, inRate_, outRate_, quality_, &errRet);
-    CHECK_AND_RETURN_LOG(state_, "Proresampler: Init failed! failed with error %{public}s.",
+    CHECK_AND_RETURN_LOG(state_, "Init failed! failed with error %{public}s.",
         ErrCodeToString(errRet).c_str());
     
     SingleStagePolyphaseResamplerSkipHalfTaps(state_);
-    AUDIO_INFO_LOG("Proresampler: Init success inRate: %{public}d, outRate: %{public}d, channels: %{public}d, "
+    AUDIO_INFO_LOG("Init success inRate: %{public}d, outRate: %{public}d, channels: %{public}d, "
         "quality: %{public}d.", inRate_, outRate_, channels_, quality_);
 }
 
@@ -56,7 +56,7 @@ int32_t ProResampler::Process(const float *inBuffer, uint32_t inFrameSize, float
     uint32_t outFrameSize)
 {
     CHECK_AND_RETURN_RET_LOG(state_ != nullptr, RESAMPLER_ERR_ALLOC_FAILED,
-        "ProResampler Process: resampler is %{public}s", ErrCodeToString(RESAMPLER_ERR_ALLOC_FAILED).c_str());
+        "Process: resampler is %{public}s", ErrCodeToString(RESAMPLER_ERR_ALLOC_FAILED).c_str());
     if (inRate_ == SAMPLE_RATE_11025) {
         return Process11025SampleRate(inBuffer, inFrameSize, outBuffer, outFrameSize);
     } else {
@@ -71,7 +71,7 @@ int32_t ProResampler::ProcessOtherSampleRate(const float *inBuffer, uint32_t inF
     std::vector<float> tmpOutBuf(expectedOutFrameSize * channels_, 0.0f);
     int32_t ret =
         SingleStagePolyphaseResamplerProcess(state_, inBuffer, &inFrameSize, tmpOutBuf.data(), &outFrameSize);
-    CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "ProResampler process failed with error %{public}s",
+    CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "process failed with error %{public}s",
         ErrCodeToString(ret).c_str());
     
     uint32_t fillSize = expectedOutFrameSize - outFrameSize > 0 ? expectedOutFrameSize - outFrameSize : 0;
@@ -141,11 +141,11 @@ int32_t ProResampler::UpdateRates(uint32_t inRate, uint32_t outRate)
     if (inRate_ == SAMPLE_RATE_11025) {
         expectedInFrameLen_ = inRate_ * FRAME_LEN_20MS * BUFFER_EXPAND_SIZE / MS_PER_SECOND;
     }
-    CHECK_AND_RETURN_RET_LOG(state_ != nullptr, RESAMPLER_ERR_ALLOC_FAILED, "ProResampler: resampler is null");
+    CHECK_AND_RETURN_RET_LOG(state_ != nullptr, RESAMPLER_ERR_ALLOC_FAILED, "resampler is null");
     
     int32_t ret = SingleStagePolyphaseResamplerSetRate(state_, inRate_, outRate_);
     CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret,
-        "ProResampler update rate failed with error code %{public}s", ErrCodeToString(ret).c_str());
+        "update rate failed with error code %{public}s", ErrCodeToString(ret).c_str());
     return ret;
 }
 
@@ -153,15 +153,15 @@ int32_t ProResampler::UpdateChannels(uint32_t channels)
 {
     uint32_t oldChannels = channels_;
     channels_ = channels;
-    CHECK_AND_RETURN_RET_LOG(state_ != nullptr, RESAMPLER_ERR_ALLOC_FAILED, "ProResampler: resampler is null");
+    CHECK_AND_RETURN_RET_LOG(state_ != nullptr, RESAMPLER_ERR_ALLOC_FAILED, "resampler is null");
     SingleStagePolyphaseResamplerFree(state_);
 
     int32_t errRet = RESAMPLER_ERR_SUCCESS;
     state_ = SingleStagePolyphaseResamplerInit(channels_, inRate_, outRate_, quality_, &errRet);
     CHECK_AND_RETURN_RET_LOG(state_ && (errRet == RESAMPLER_ERR_SUCCESS), errRet,
-        "Proresampler: update work channels failed with error %{public}s.", ErrCodeToString(errRet).c_str());
+        "update work channels failed with error %{public}s.", ErrCodeToString(errRet).c_str());
 
-    AUDIO_INFO_LOG("Proresampler: update work channel success old channels: %{public}d, new channels: %{public}d",
+    AUDIO_INFO_LOG("update work channel success old channels: %{public}d, new channels: %{public}d",
         oldChannels, channels_);
 
     return SingleStagePolyphaseResamplerSkipHalfTaps(state_);
@@ -195,7 +195,7 @@ ProResampler &ProResampler::operator=(ProResampler &&other) noexcept
 
 void ProResampler::Reset()
 {
-    CHECK_AND_RETURN_LOG(state_ != nullptr, "ProResampler: resampler is null");
+    CHECK_AND_RETURN_LOG(state_ != nullptr, "resampler is null");
     SingleStagePolyphaseResamplerResetMem(state_);
     SingleStagePolyphaseResamplerSkipHalfTaps(state_);
 }

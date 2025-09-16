@@ -35,12 +35,11 @@ HpaeOutputCluster::HpaeOutputCluster(HpaeNodeInfo &nodeInfo)
     SetNodeName("HpaeOutputCluster");
 #endif
     if (mixerNode_->SetupAudioLimiter() != SUCCESS) {
-        AUDIO_INFO_LOG("HpaeOutputCluster mixerNode SetupAudioLimiter failed!");
+        AUDIO_INFO_LOG("mixerNode SetupAudioLimiter failed!");
     }
     hpaeSinkOutputNode_->Connect(mixerNode_);
     frameLenMs_ = nodeInfo.frameLen * MILLISECOND_PER_SECOND / nodeInfo.samplingRate;
-    AUDIO_INFO_LOG(
-        "HpaeOutputCluster frameLenMs_:%{public}u ms, timeoutThdFrames_:%{public}u", frameLenMs_, timeoutThdFrames_);
+    AUDIO_INFO_LOG("frameLenMs_:%{public}u ms, timeoutThdFrames_:%{public}u", frameLenMs_, timeoutThdFrames_);
 }
 
 HpaeOutputCluster::~HpaeOutputCluster()
@@ -64,7 +63,7 @@ void HpaeOutputCluster::DoProcess()
     if (timeoutStopCount_ > timeoutThdFrames_) {
         int32_t ret = hpaeSinkOutputNode_->RenderSinkStop();
         timeoutStopCount_ = 0;
-        AUDIO_INFO_LOG("HpaeOutputCluster timeout RenderSinkStop ret :%{public}d", ret);
+        AUDIO_INFO_LOG("timeout RenderSinkStop ret :%{public}d", ret);
     }
 }
 
@@ -94,8 +93,7 @@ void HpaeOutputCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *
     HpaeNodeInfo &preNodeInfo = preNode->GetSharedInstance()->GetNodeInfo();
     HpaeNodeInfo &curNodeInfo = GetNodeInfo();
     HpaeProcessorType sceneType = preNodeInfo.sceneType;
-    AUDIO_INFO_LOG("HpaeOutputCluster input sceneType is %{public}u, "
-        "input:[%{public}u_%{public}u], output:[%{public}u_%{public}u], "
+    AUDIO_INFO_LOG("input sceneType is %{public}u, input:[%{public}u_%{public}u], output:[%{public}u_%{public}u], "
         "preNode name %{public}s, curNode name %{public}s, "
         "mixer id %{public}u, SinkOut id %{public}u", preNodeInfo.sceneType,
         preNodeInfo.samplingRate, preNodeInfo.channels,
@@ -118,7 +116,7 @@ void HpaeOutputCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffe
 {
     HpaeNodeInfo &preNodeInfo = preNode->GetSharedInstance()->GetNodeInfo();
     HpaeProcessorType sceneType = preNodeInfo.sceneType;
-    AUDIO_INFO_LOG("HpaeOutputCluster input sceneType is %{public}u", preNodeInfo.sceneType);
+    AUDIO_INFO_LOG("input sceneType is %{public}u", preNodeInfo.sceneType);
     if (SafeGetMap(sceneConverterMap_, sceneType)) {
         sceneConverterMap_[sceneType]->DisConnect(preNode);
         mixerNode_->DisConnect(sceneConverterMap_[sceneType]);
@@ -203,8 +201,7 @@ int32_t HpaeOutputCluster::SetTimeoutStopThd(uint32_t timeoutThdMs)
     if (frameLenMs_ != 0) {
         timeoutThdFrames_ = timeoutThdMs / frameLenMs_;
     }
-    AUDIO_INFO_LOG(
-        "SetTimeoutStopThd: timeoutThdFrames_:%{public}u, timeoutThdMs :%{public}u", timeoutThdFrames_, timeoutThdMs);
+    AUDIO_INFO_LOG("timeoutThdFrames_:%{public}u, timeoutThdMs :%{public}u", timeoutThdFrames_, timeoutThdMs);
     return SUCCESS;
 }
 
