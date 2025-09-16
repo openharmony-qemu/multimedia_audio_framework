@@ -204,6 +204,9 @@ private:
     std::atomic<uint32_t> switchStreamInNewThreadTaskCount_ = 0;
 
     AudioLoopThread taskLoop_ = AudioLoopThread("OS_Recreate");
+    std::condition_variable taskLoopCv_;
+    std::mutex inRestoreMtx_;
+    bool inRestoreFlag = false;
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {
