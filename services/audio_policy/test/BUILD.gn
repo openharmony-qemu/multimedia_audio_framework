@@ -4810,6 +4810,16 @@ ohos_unittest("audio_state_manager_unit_test") {
 
   use_exceptions = true
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
+  
   cflags = [
     "-Wall",
     "-Werror",
