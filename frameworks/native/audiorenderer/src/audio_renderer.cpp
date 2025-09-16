@@ -1045,13 +1045,16 @@ int32_t AudioRendererPrivate::AsyncCheckAudioRenderer(std::string callingFunc)
         return SUCCESS;
     }
     auto weakRenderer = weak_from_this();
-    taskLoop_.PostTask([weakRenderer, callingFunc] () {
+    taskLoop_.PostTask([weakRenderer, callingFunc, this] () {
         auto sharedRenderer = weakRenderer.lock();
         CHECK_AND_RETURN_LOG(sharedRenderer, "render is null");
         uint32_t taskCount;
         do {
             taskCount = sharedRenderer->switchStreamInNewThreadTaskCount_.load();
+            inRestoreFlag = true;
             sharedRenderer->CheckAudioRenderer(callingFunc + "withNewThread");
+            inRestoreFlag = false;
+            taskLoopCv_.notify_all();
         } while (sharedRenderer->switchStreamInNewThreadTaskCount_.fetch_sub(taskCount) > taskCount);
     });
     return SUCCESS;
@@ -1119,6 +1122,11 @@ int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
 {
     Trace trace("AudioRenderer::Write");
     AsyncCheckAudioRenderer("Write");
+
+    std::unique_lock<std::mutex> lock(inRestoreMtx_);
+    taskLoopCv_wait(lock, [this] {
+        return inRestoreFlag == false;
+    });
     MockPcmData(buffer, bufferSize);
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
@@ -1133,6 +1141,11 @@ int32_t AudioRendererPrivate::Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t 
 {
     Trace trace("Write");
     AsyncCheckAudioRenderer("Write");
+
+    std::unique_lock<std::mutex> lock(inRestoreMtx_);
+    taskLoopCv_wait(lock, [this] {
+        return inRestoreFlag == false;
+    });
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     int32_t size = currentStream->Write(pcmBuffer, pcmSize, metaBuffer, metaSize);
