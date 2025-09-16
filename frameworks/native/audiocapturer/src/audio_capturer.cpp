@@ -767,13 +767,16 @@ int32_t AudioCapturerPrivate::AsyncCheckAudioCapturer(std::string callingFunc)
         return SUCCESS;
     }
     auto weakCapturer = weak_from_this();
-    taskLoop_.PostTask([weakCapturer, callingFunc] () {
+    taskLoop_.PostTask([weakCapturer, callingFunc, this] () {
         auto sharedCapturer = weakCapturer.lock();
         CHECK_AND_RETURN_LOG(sharedCapturer, "capturer is null");
         uint32_t taskCount;
         do {
             taskCount = sharedCapturer->switchStreamInNewThreadTaskCount_.load();
+            inRestoreFlag = true;
             sharedCapturer->CheckAudioCapturer(callingFunc + "withNewThread");
+            inRestoreFlag = false;
+            taskLoopCv_.notify_all();
         } while (sharedCapturer->switchStreamInNewThreadTaskCount_.fetch_sub(taskCount) > taskCount);
     });
     return SUCCESS;
@@ -828,6 +831,11 @@ int32_t AudioCapturerPrivate::Read(uint8_t &buffer, size_t userSize, bool isBloc
     Trace trace("AudioCapturer::Read");
     CheckSignalData(&buffer, userSize);
     AsyncCheckAudioCapturer("Read");
+
+    std::unique_lock<std::mutex> lock(inRestoreMtx_);
+    taskLoopCv_.wait(lock, [this] {
+        return inRestoreFlag == false;
+    });
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     int size = currentStream->Read(buffer, userSize, isBlockingRead);
