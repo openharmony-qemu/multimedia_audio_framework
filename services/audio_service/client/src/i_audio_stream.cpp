@@ -120,7 +120,8 @@ int32_t IAudioStream::CheckRendererAudioStreamInfo(const AudioStreamParams info)
         AUDIO_ERR_LOG("Unsupported audio renderer parameter");
         return ERR_NOT_SUPPORTED;
     }
-    CHECK_AND_RETURN_RET(IsPlaybackChannelRelatedInfoValid(info.channels, info.channelLayout), ERR_NOT_SUPPORTED);
+    CHECK_AND_RETURN_RET(IsPlaybackChannelRelatedInfoValid(info.encoding, info.channels, info.channelLayout),
+        ERR_NOT_SUPPORTED);
     return SUCCESS;
 }
 
@@ -248,7 +249,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
     Trace trace("IAudioStream::GetRecordStream");
     if (streamClass == FAST_STREAM || streamClass == VOIP_STREAM) {
 #ifdef SUPPORT_LOW_LATENCY
-        AUDIO_INFO_LOG("Create fast record stream");
+        HILOG_COMM_INFO("Create fast record stream");
         return std::make_shared<FastAudioStream>(eStreamType, AUDIO_MODE_RECORD, appUid);
 #else
         (void)params;
@@ -257,7 +258,7 @@ std::shared_ptr<IAudioStream> IAudioStream::GetRecordStream(StreamClass streamCl
 #endif
     }
     if (streamClass == PA_STREAM) {
-        AUDIO_INFO_LOG("Create ipc record stream");
+        HILOG_COMM_INFO("Create ipc record stream");
         return CapturerInClient::GetInstance(eStreamType, appUid);
     }
     return nullptr;
@@ -328,7 +329,24 @@ bool IAudioStream::IsCapturerChannelLayoutValid(uint64_t channelLayout)
     return isValidCapturerChannelLayout;
 }
 
-bool IAudioStream::IsPlaybackChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout)
+bool IAudioStream::IsChannelLayoutMatchedWithChannel(uint8_t channel, uint64_t channelLayout, uint8_t encodingType)
+{
+    // for audio vivid, no need to match channel count with channel layout
+    CHECK_AND_RETURN_RET(encodingType != ENCODING_AUDIOVIVID, true);
+    // unknown channel layout is matched with any channel count
+    CHECK_AND_RETURN_RET(channelLayout != CH_LAYOUT_UNKNOWN, true);
+
+    if (((channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET) == 0) {
+        int32_t channelCount = __builtin_popcountll(channelLayout);
+        return channelCount == static_cast<int32_t>(channel);
+    }
+
+    uint64_t order = (channelLayout & CH_HOA_ORDNUM_MASK) >> CH_HOA_ORDNUM_OFFSET;
+    uint64_t channelCountHoa = (order + 1) * (order + 1);
+    return channelCountHoa == static_cast<uint64_t>(channel);
+}
+
+bool IAudioStream::IsPlaybackChannelRelatedInfoValid(uint8_t encodingType, uint8_t channels, uint64_t channelLayout)
 {
     if (!IsRendererChannelValid(channels)) {
         AUDIO_ERR_LOG("AudioStream: Invalid sink channel %{public}d", channels);
@@ -336,6 +354,10 @@ bool IAudioStream::IsPlaybackChannelRelatedInfoValid(uint8_t channels, uint64_t 
     }
     if (!IsRendererChannelLayoutValid(channelLayout)) {
         AUDIO_ERR_LOG("AudioStream: Invalid sink channel layout");
+        return false;
+    }
+    if (!IsChannelLayoutMatchedWithChannel(channels, channelLayout, encodingType)) {
+        AUDIO_ERR_LOG("AudioStream: not matched sink channel and channel layout");
         return false;
     }
     return true;
@@ -349,6 +371,10 @@ bool IAudioStream::IsRecordChannelRelatedInfoValid(uint8_t channels, uint64_t ch
     }
     if (!IsCapturerChannelLayoutValid(channelLayout)) {
         AUDIO_ERR_LOG("AudioStream: Invalid source channel layout");
+        return false;
+    }
+    if (!IsChannelLayoutMatchedWithChannel(channels, channelLayout)) {
+        AUDIO_ERR_LOG("AudioStream: not matched source channel and channel layout");
         return false;
     }
     return true;

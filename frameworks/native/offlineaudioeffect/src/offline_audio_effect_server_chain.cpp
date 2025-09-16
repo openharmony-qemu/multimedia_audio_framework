@@ -162,7 +162,6 @@ int32_t OfflineAudioEffectServerChain::Create()
     int8_t output[MAX_REPLY_LEN] = {0};
     uint32_t replyLen = MAX_REPLY_LEN;
 
-    std::lock_guard<std::mutex> lock(offlineChainMutex_);
     CHECK_AND_RETURN_RET_LOG(controller_, ERROR, "enable failed, controller is nullptr");
     ret = controller_->SendCommand(controller_, AUDIO_EFFECT_COMMAND_ENABLE,
         static_cast<int8_t *>(input), MAX_CMD_LEN, output, &replyLen);
@@ -182,7 +181,6 @@ int32_t OfflineAudioEffectServerChain::SetConfig(AudioStreamInfo inInfo, AudioSt
     AUDIO_INFO_LOG("%{public}d %{public}d %{public}hhu %{public}hhu %{public}" PRIu64 " OutStreamInfo set",
         outInfo.samplingRate, outInfo.encoding, outInfo.format, outInfo.channels, outInfo.channelLayout);
 
-    std::lock_guard<std::mutex> lock(offlineChainMutex_);
     offlineConfig_.inputCfg = {inInfo.samplingRate, inInfo.channels, inInfo.format};
     offlineConfig_.outputCfg = {outInfo.samplingRate, outInfo.channels, outInfo.format};
 
@@ -206,7 +204,6 @@ int32_t OfflineAudioEffectServerChain::SetParam(const std::vector<uint8_t> &para
 {
     CHECK_AND_RETURN_RET_LOG(param.size() < PARAM_MAX_SIZE, ERROR,
         "set param failed, param size %{public}zu is too large", param.size());
-    std::lock_guard<std::mutex> lock(offlineChainMutex_);
     std::vector<uint8_t> myParam = param;
     int8_t output[MAX_REPLY_LEN] = {0};
     uint32_t replyLen = MAX_REPLY_LEN;
@@ -220,7 +217,6 @@ int32_t OfflineAudioEffectServerChain::SetParam(const std::vector<uint8_t> &para
 
 int32_t OfflineAudioEffectServerChain::GetEffectBufferSize(uint32_t &inBufferSize, uint32_t &outBufferSize)
 {
-    std::lock_guard<std::mutex> lock(offlineChainMutex_);
     CHECK_AND_RETURN_RET_LOG(inBufferSize_ != 0, ERROR, "inBufferSize_ do not init");
     CHECK_AND_RETURN_RET_LOG(outBufferSize_ != 0, ERROR, "inBufferSize_ do not init");
     inBufferSize = inBufferSize_;
@@ -233,16 +229,29 @@ int32_t OfflineAudioEffectServerChain::GetEffectBufferSize(uint32_t &inBufferSiz
 int32_t OfflineAudioEffectServerChain::Prepare(const std::shared_ptr<AudioSharedMemory> &bufferIn,
     const std::shared_ptr<AudioSharedMemory> &bufferOut)
 {
-    std::lock_guard<std::mutex> lock(offlineChainMutex_);
     serverBufferIn_ = bufferIn;
     serverBufferOut_ = bufferOut;
+    int8_t input[MAX_REPLY_LEN] = {0};
+    int8_t output[MAX_REPLY_LEN] = {0};
+    uint32_t replyLen = MAX_REPLY_LEN;
+
+    if (controller_) {
+        int32_t ret = controller_->SendCommand(controller_, AUDIO_EFFECT_COMMAND_RESET,
+            input, MAX_REPLY_LEN, output, &replyLen);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("%{public}s effect COMMAND_RESET failed, errCode is %{public}d", chainName_.c_str(), ret);
+        } else {
+            firstProcess_ = 0;
+        }
+    } else {
+        AUDIO_ERR_LOG("reset failed, controller is nullptr");
+    }
     AUDIO_INFO_LOG("Prepare in server done");
     return SUCCESS;
 }
 
 int32_t OfflineAudioEffectServerChain::Process(uint32_t inSize, uint32_t outSize)
 {
-    std::lock_guard<std::mutex> lock(offlineChainMutex_);
     CHECK_AND_RETURN_RET_LOG(serverBufferIn_ && serverBufferIn_->GetBase(), ERROR, "serverBufferIn_ is nullptr");
     CHECK_AND_RETURN_RET_LOG(serverBufferOut_ && serverBufferOut_->GetBase(), ERROR, "serverBufferOut_ is nullptr");
 
@@ -267,6 +276,7 @@ int32_t OfflineAudioEffectServerChain::Process(uint32_t inSize, uint32_t outSize
     ret = memcpy_s(reinterpret_cast<int8_t *>(serverBufferOut_->GetBase()), outSize,
         output.rawData, output.frameCount * GetFormatByteSize(offlineConfig_.outputCfg.format));
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "memcpy failed, ret:%{public}d", ret);
+    firstProcess_ = true;
     FreeIfNotNull(output.rawData);
 
     DumpFileUtil::WriteDumpFile(dumpFileOut_, serverBufferOut_->GetBase(), outSize);
@@ -278,7 +288,6 @@ int32_t OfflineAudioEffectServerChain::Release()
     auto model = InitEffectModel();
     CHECK_AND_RETURN_RET_LOG(model, ERROR, "model is nullptr");
 
-    std::lock_guard<std::mutex> lock(offlineChainMutex_);
     int32_t ret = model->DestroyEffectController(model, &controllerId_);
     controller_ = nullptr;
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR,

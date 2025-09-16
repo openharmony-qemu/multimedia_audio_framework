@@ -52,8 +52,8 @@ public:
 
 typedef AudioSafeVolumeNotification* CreateSafeVolumeNotification();
 
-const int32_t LOUD_ICON_WIDTH = 24;
-const int32_t LOUD_ICON_HEIGHT = 24;
+const int32_t LOUD_ICON_WIDTH = 120;
+const int32_t LOUD_ICON_HEIGHT = 120;
 
 const std::string LOUD_VOLUME_ICON_ID = "loud_volume_notification_icon";
 const std::string LOUD_VOLUME_FEATURE_TITTLE_ID = "notification_feature_loud_volume_tittle";

@@ -31,6 +31,7 @@ static constexpr float MAX_SINK_VOLUME_LEVEL = 1.0;
 static constexpr uint32_t DEFAULT_MULTICHANNEL_FRAME_LEN_MS = 20;
 static constexpr uint32_t MS_PER_SECOND = 1000;
 static constexpr uint32_t BASE_TEN = 10;
+static constexpr uint32_t FRAME_LENGTH_LIMIT = 38400;
 
 static std::map<AudioStreamType, HpaeProcessorType> g_streamTypeToSceneTypeMap = {
     {STREAM_MUSIC, HPAE_SCENE_MUSIC},
@@ -424,27 +425,27 @@ bool CheckSourceInfoIsDifferent(const HpaeSourceInfo &info, const HpaeSourceInfo
 
 void PrintAudioModuleInfo(const AudioModuleInfo &audioModuleInfo)
 {
-    AUDIO_INFO_LOG("rate: %{public}s ch: %{public}s buffersize: %{public}s ",
+    AUDIO_INFO_LOG("rate: %{public}s ch: %{public}s buffersize: %{public}s",
         audioModuleInfo.rate.c_str(),
         audioModuleInfo.channels.c_str(),
         audioModuleInfo.bufferSize.c_str());
-    AUDIO_INFO_LOG("format: %{public}s name: %{public}s  lib: %{public}s ",
+    AUDIO_INFO_LOG("format: %{public}s name: %{public}s  lib: %{public}s",
         audioModuleInfo.format.c_str(),
         audioModuleInfo.name.c_str(),
         audioModuleInfo.lib.c_str());
-    AUDIO_INFO_LOG("deviceType: %{public}s  className: %{public}s  adapterName: %{public}s ",
+    AUDIO_INFO_LOG("deviceType: %{public}s  className: %{public}s  adapterName: %{public}s",
         audioModuleInfo.deviceType.c_str(),
         audioModuleInfo.className.c_str(),
         audioModuleInfo.adapterName.c_str());
-    AUDIO_INFO_LOG("OpenMicSpeaker: %{public}s networkId: %{public}s fileName: %{public}s ",
+    AUDIO_INFO_LOG("OpenMicSpeaker: %{public}s networkId: %{public}s fileName: %{public}s",
         audioModuleInfo.OpenMicSpeaker.c_str(),
         audioModuleInfo.networkId.c_str(),
         audioModuleInfo.fileName.c_str());
-    AUDIO_INFO_LOG("fixedLatency: %{public}s sinkLatency: %{public}s renderInIdleState: %{public}s ",
+    AUDIO_INFO_LOG("fixedLatency: %{public}s sinkLatency: %{public}s renderInIdleState: %{public}s",
         audioModuleInfo.fixedLatency.c_str(),
         audioModuleInfo.sinkLatency.c_str(),
         audioModuleInfo.renderInIdleState.c_str());
-    AUDIO_INFO_LOG("sceneName: %{public}s sourceType: %{public}s offloadEnable: %{public}s ",
+    AUDIO_INFO_LOG("sceneName: %{public}s sourceType: %{public}s offloadEnable: %{public}s",
         audioModuleInfo.sceneName.c_str(),
         audioModuleInfo.sourceType.c_str(),
         audioModuleInfo.offloadEnable.c_str());
@@ -488,6 +489,42 @@ void TransStreamInfoToStreamDumpInfo(const std::unordered_map<uint32_t, HpaeSess
                 .startTime = sessionInfo.startTime
             };
         });
+}
+
+int32_t CheckStreamInfo(const HpaeStreamInfo &streamInfo)
+{
+    if (streamInfo.frameLen == 0) {
+        AUDIO_ERR_LOG("FrameLen is 0.");
+        return ERROR;
+    } else if (streamInfo.frameLen > FRAME_LENGTH_LIMIT) {
+        AUDIO_ERR_LOG("FrameLen is over-sized.");
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
+int32_t CheckFramelen(const HpaeSinkInfo &sinkInfo)
+{
+    if (sinkInfo.frameLen == 0) {
+        AUDIO_ERR_LOG("FrameLen is 0.");
+        return ERROR;
+    } else if (sinkInfo.frameLen > FRAME_LENGTH_LIMIT) {
+        AUDIO_ERR_LOG("FrameLen is over-sized.");
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
+int32_t CheckSourceInfoFramelen(const HpaeSourceInfo &sourceInfo)
+{
+    if (sourceInfo.frameLen == 0) {
+        AUDIO_ERR_LOG("FrameLen is 0.");
+        return ERROR;
+    } else if (sourceInfo.frameLen > FRAME_LENGTH_LIMIT) {
+        AUDIO_ERR_LOG("FrameLen is over-sized.");
+        return ERROR;
+    }
+    return SUCCESS;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

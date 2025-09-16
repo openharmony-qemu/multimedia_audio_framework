@@ -141,6 +141,8 @@ public:
     virtual void JoinCallbackLoop() = 0;
 
     virtual void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) = 0;
+
+    virtual bool IsRestoreNeeded() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

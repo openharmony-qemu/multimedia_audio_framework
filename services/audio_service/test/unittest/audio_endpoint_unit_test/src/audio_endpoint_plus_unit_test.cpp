@@ -33,6 +33,8 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+static int64_t WAIT_TIME_HALF_MILLISECOND = 500000; // 0.5ms
+static int64_t WAIT_TIME_EIGHT_MILLISECOND = 8000000; // 8ms
 class MockAudioProcessStream : public IAudioProcessStream {
 public:
     // Pure virtual methods
@@ -58,6 +60,8 @@ public:
 
     MOCK_METHOD(uint32_t, GetSpanSizeInFrame, (), (override));
     MOCK_METHOD(uint32_t, GetByteSizePerFrame, (), (override));
+
+    MOCK_METHOD(StreamStatus, GetStreamInServerStatus, (), (override));
 
     // Non-pure virtual methods (with default implementations in interface)
     MOCK_METHOD(void, EnableStandby, (), (override));
@@ -152,7 +156,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_001, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -172,7 +176,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_002, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -192,7 +196,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_003, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -214,7 +218,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_004, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -257,7 +261,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_005, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -289,7 +293,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_006, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -313,7 +317,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_007, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -338,7 +342,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_008, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -363,7 +367,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_009, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -388,7 +392,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_010, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -415,7 +419,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_011, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -444,7 +448,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_012, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -473,7 +477,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_013, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -496,7 +500,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_014, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -521,7 +525,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_015, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -546,7 +550,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_016, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -571,7 +575,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_017, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -609,7 +613,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_018, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -632,7 +636,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_019, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -653,7 +657,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_020, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -674,7 +678,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_021, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -699,7 +703,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_022, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -723,7 +727,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_023, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -746,7 +750,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_024, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -768,7 +772,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_025, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -796,7 +800,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_026, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -826,7 +830,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_027, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -848,122 +852,6 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_027, TestSize.Level1)
 /*
  * @tc.name  : Test AudioEndpointInner API
  * @tc.type  : FUNC
- * @tc.number: AudioEndpointInner_028
- * @tc.desc  : Test AudioEndpointInner::HandleCapturerDataParams()
- */
-HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_028, TestSize.Level1)
-{
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
-    uint64_t id = 123;
-    int32_t ret = 0;
-    AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
-
-    ASSERT_NE(audioEndpointInner, nullptr);
-
-    RingBufferWrapper writeBuf;
-    BufferDesc readBuf;
-    BufferDesc convertedBuffer;
-    audioEndpointInner->clientConfig_.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    audioEndpointInner->clientConfig_.streamInfo.channels = AudioChannel::STEREO;
-
-    ret = audioEndpointInner->HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
-    EXPECT_EQ(ret, ERR_WRITE_FAILED);
-
-    audioEndpointInner->clientConfig_.streamInfo.format = AudioSampleFormat::SAMPLE_F32LE;
-    audioEndpointInner->clientConfig_.streamInfo.channels = AudioChannel::STEREO;
-
-    ret = audioEndpointInner->HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
-    EXPECT_NE(ret, 0);
-
-    audioEndpointInner->clientConfig_.streamInfo.format = AudioSampleFormat::SAMPLE_F32LE;
-    audioEndpointInner->clientConfig_.streamInfo.channels = AudioChannel::MONO;
-
-    ret = audioEndpointInner->HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
-    EXPECT_NE(ret, 0);
-}
-
-/*
- * @tc.name  : Test AudioEndpointInner API
- * @tc.type  : FUNC
- * @tc.number: AudioEndpointInner_029
- * @tc.desc  : Test AudioEndpointInner::HandleCapturerDataParams()
- */
-HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_029, TestSize.Level1)
-{
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
-    uint64_t id = 123;
-    int32_t ret = 0;
-    AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
-
-    ASSERT_NE(audioEndpointInner, nullptr);
-
-    RingBufferWrapper writeBuf;
-    BufferDesc readBuf;
-    BufferDesc convertedBuffer;
-    audioEndpointInner->clientConfig_.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    audioEndpointInner->clientConfig_.streamInfo.channels = AudioChannel::CHANNEL_3;
-
-    ret = audioEndpointInner->HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
-    EXPECT_NE(ret, 0);
-}
-
-/*
- * @tc.name  : Test AudioEndpointInner API
- * @tc.type  : FUNC
- * @tc.number: AudioEndpointInner_030
- * @tc.desc  : Test AudioEndpointInner::HandleCapturerDataParams()
- */
-HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_030, TestSize.Level1)
-{
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
-    uint64_t id = 123;
-    int32_t ret = 0;
-    AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
-
-    ASSERT_NE(audioEndpointInner, nullptr);
-
-    RingBufferWrapper writeBuf;
-    BufferDesc readBuf;
-    BufferDesc convertedBuffer;
-    audioEndpointInner->clientConfig_.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
-    audioEndpointInner->clientConfig_.streamInfo.channels = AudioChannel::CHANNEL_3;
-
-    ret = audioEndpointInner->HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
-    EXPECT_NE(ret, 0);
-}
-
-/*
- * @tc.name  : Test AudioEndpointInner API
- * @tc.type  : FUNC
- * @tc.number: AudioEndpointInner_031
- * @tc.desc  : Test AudioEndpointInner::HandleCapturerDataParams()
- */
-HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_031, TestSize.Level1)
-{
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
-    uint64_t id = 123;
-    int32_t ret = 0;
-    AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
-
-    ASSERT_NE(audioEndpointInner, nullptr);
-
-    RingBufferWrapper writeBuf;
-    BufferDesc readBuf;
-    BufferDesc convertedBuffer;
-    audioEndpointInner->clientConfig_.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    audioEndpointInner->clientConfig_.streamInfo.channels = AudioChannel::STEREO;
-
-    ret = audioEndpointInner->HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
-    EXPECT_EQ(ret, ERR_WRITE_FAILED);
-}
-
-/*
- * @tc.name  : Test AudioEndpointInner API
- * @tc.type  : FUNC
  * @tc.number: AudioEndpointInner_032
  * @tc.desc  : Test AudioEndpointInner::CheckRecordSignal()
  */
@@ -972,7 +860,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_032, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -998,7 +886,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_033, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -1016,40 +904,6 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_033, TestSize.Level1)
 /*
  * @tc.name  : Test AudioEndpointInner API
  * @tc.type  : FUNC
- * @tc.number: AudioEndpointInner_034
- * @tc.desc  : Test AudioEndpointInner::WriteToSpecialProcBuf()
- */
-HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_034, TestSize.Level1)
-{
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
-    uint64_t id = 123;
-    AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
-
-    ASSERT_NE(audioEndpointInner, nullptr);
-
-    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
-    uint32_t totalSizeInFrame = 0;
-    uint32_t spanSizeInFrame = 0;
-    uint32_t byteSizePerFrame = 0;
-    const std::shared_ptr<OHAudioBufferBase> procBuf = std::make_shared<OHAudioBufferBase>(bufferHolder,
-        totalSizeInFrame, byteSizePerFrame);
-    procBuf->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
-
-    EXPECT_NE(nullptr, procBuf);
-
-    BufferDesc readBuf2;
-    const BufferDesc readBuf = readBuf2;
-    BufferDesc convertedBuffer2;
-    const BufferDesc convertedBuffer = convertedBuffer2;
-    bool muteFlag = true;
-
-    audioEndpointInner->WriteToSpecialProcBuf(procBuf, readBuf, convertedBuffer, muteFlag);
-}
-
-/*
- * @tc.name  : Test AudioEndpointInner API
- * @tc.type  : FUNC
  * @tc.number: AudioEndpointInner_035
  * @tc.desc  : Test AudioEndpointInner::PrepareNextLoop()
  */
@@ -1058,7 +912,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_035, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -1089,7 +943,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_036, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -1112,7 +966,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_037, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -1164,7 +1018,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_039, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -1199,13 +1053,68 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_040, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
     uint64_t curWritePos = 0;
 
     audioEndpointInner->WaitAllProcessReady(curWritePos);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioEndpointInner_WaitAllReady_001
+ * @tc.desc  : Test AudioEndpointInner::WaitAllProcessReady() will wait between 1~5ms
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_WaitAllReady_001, TestSize.Level1)
+{
+    AudioProcessConfig clientConfig = {};
+    auto endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_MMAP, 0, clientConfig.audioMode);
+
+    ASSERT_NE(endpoint, nullptr);
+
+    endpoint->readTimeModel_.ConfigSampleRate(SAMPLE_RATE_48000);
+    uint64_t curWritePos = 0;
+    endpoint->readTimeModel_.ResetFrameStamp(curWritePos, ClockTime::GetCurNano());
+    int64_t time = ClockTime::GetCurNano();
+    endpoint->WaitAllProcessReady(curWritePos);
+    time = ClockTime::GetCurNano() - time;
+    EXPECT_GE(time, WAIT_TIME_HALF_MILLISECOND);
+    time = ClockTime::GetCurNano();
+    curWritePos = 1200; // 25ms
+    endpoint->WaitAllProcessReady(curWritePos);
+    time = ClockTime::GetCurNano() - time;
+    EXPECT_GE(WAIT_TIME_EIGHT_MILLISECOND, time);
+}
+
+/*
+ * @tc.name  : Test CheckJank API
+ * @tc.type  : FUNC
+ * @tc.number: CheckJank_001
+ * @tc.desc  : Test AudioEndpointInner::CheckJank()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, CheckJank_001, TestSize.Level1)
+{
+    AudioProcessConfig clientConfig = {};
+    auto endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_MMAP, 0, clientConfig.audioMode);
+
+    uint32_t totalSizeInFrame = 8;
+    uint32_t spanSizeInFrame = 2;
+    uint32_t byteSizePerFrame = 4;
+    endpoint->dstAudioBuffer_ = std::make_shared<OHAudioBuffer>(AUDIO_SERVER_SHARED, totalSizeInFrame,
+        spanSizeInFrame, byteSizePerFrame);
+    EXPECT_NE(endpoint->dstAudioBuffer_, nullptr);
+    endpoint->syncInfoSize_ = 0;
+    endpoint->CheckJank(0);
+
+    endpoint->syncInfoSize_ = 8;
+    endpoint->dstSpanSizeInframe_ = 0;
+    endpoint->CheckJank(0);
+
+    endpoint->isStarted_ = true;
+    endpoint->CheckJank(0);
 }
 
 /*
@@ -1219,7 +1128,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_041, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
     ASSERT_NE(audioEndpointInner, nullptr);
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
@@ -1251,7 +1160,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_042, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
     ASSERT_NE(audioEndpointInner, nullptr);
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
@@ -1286,7 +1195,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_043, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -1305,7 +1214,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_044, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -1324,7 +1233,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_045, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -1343,7 +1252,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_046, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -1363,7 +1272,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_047, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -1382,7 +1291,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_048, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -1437,7 +1346,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_051, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -1456,7 +1365,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_052, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -1477,7 +1386,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_053, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -1498,7 +1407,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_054, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -1520,7 +1429,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_055, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -1542,7 +1451,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_056, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -1561,7 +1470,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_057, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -1582,7 +1491,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_058, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -1605,7 +1514,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_059, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -1633,7 +1542,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_060, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -1670,7 +1579,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_061, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
@@ -1704,7 +1613,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, IsInvalidBuffer_001, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
     uint8_t buffer[1] = {1};
     bool result = audioEndpointInner->IsInvalidBuffer(buffer, sizeof(buffer), SAMPLE_U8);
     EXPECT_FALSE(result);
@@ -1721,7 +1630,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, IsInvalidBuffer_002, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
     uint8_t buffer[1] = {0};
     bool result = audioEndpointInner->IsInvalidBuffer(buffer, sizeof(buffer), SAMPLE_U8);
     EXPECT_TRUE(result);
@@ -1738,7 +1647,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, IsInvalidBuffer_003, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
     int16_t buffer[1] = {1};
     bool result = audioEndpointInner->IsInvalidBuffer(reinterpret_cast<uint8_t*>(buffer), sizeof(buffer), SAMPLE_S16LE);
     EXPECT_FALSE(result);
@@ -1755,7 +1664,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, IsInvalidBuffer_004, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
     int16_t buffer[1] = {0};
     bool result = audioEndpointInner->IsInvalidBuffer(reinterpret_cast<uint8_t*>(buffer), sizeof(buffer), SAMPLE_S16LE);
     EXPECT_TRUE(result);
@@ -1772,7 +1681,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, IsInvalidBuffer_005, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointnIner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointnIner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
     uint8_t buffer[1] = {0};
     bool result = audioEndpointnIner->IsInvalidBuffer(buffer, sizeof(buffer), static_cast<AudioSampleFormat>(-1));
     EXPECT_FALSE(result);
@@ -1789,7 +1698,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, CheckAudioHapticsSync_001, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointnIner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointnIner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
     audioEndpointnIner->audioHapticsSyncId_ = 1;
     audioEndpointnIner->fastRenderId_ = 1;
     audioEndpointnIner->dstSpanSizeInframe_ = 100;
@@ -1810,7 +1719,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, CheckAudioHapticsSync_002, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointnIner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointnIner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
     audioEndpointnIner->audioHapticsSyncId_ = 1;
     audioEndpointnIner->fastRenderId_ = 1;
     audioEndpointnIner->dstSpanSizeInframe_ = 100;
@@ -1833,7 +1742,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, IsNearlinkAbsVolSupportStream_001, TestSize.
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointnIner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointnIner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
     EXPECT_TRUE(audioEndpointnIner->IsNearlinkAbsVolSupportStream(DEVICE_TYPE_NEARLINK, STREAM_MUSIC));
 
     EXPECT_TRUE(audioEndpointnIner->IsNearlinkAbsVolSupportStream(DEVICE_TYPE_NEARLINK, STREAM_VOICE_CALL));
@@ -1850,7 +1759,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, CheckSyncInfo_001, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointnIner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointnIner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
     audioEndpointnIner->dstSpanSizeInframe_ = 0;
     audioEndpointnIner->CheckSyncInfo(100);
     EXPECT_EQ(audioEndpointnIner->dstSpanSizeInframe_, 0);
@@ -1867,7 +1776,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, ProcessToDupStream_001, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointnIner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointnIner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
     std::vector<AudioStreamData> audioDataList;
     AudioStreamData dstStreamData;
     int32_t innerCapId = 1;
@@ -1887,7 +1796,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, ProcessToDupStream_001, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
     ASSERT_NE(audioEndpointInner, nullptr);
     CaptureInfo captureInfo;
     
@@ -1905,7 +1814,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_008, TestSize.Level1)
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
 
     ASSERT_NE(audioEndpointInner, nullptr);
 

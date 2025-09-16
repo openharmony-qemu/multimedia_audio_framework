@@ -272,5 +272,29 @@ HWTEST_F(AudioStreamDescriptorUnitTest, WriteDeviceDescVectorToParcel_001, TestS
 }
 
 
+/**
+ * @tc.name   : Test IsSamePidUid
+ * @tc.number : IsSamePidUid_001
+ * @tc.desc   : Test IsSamePidUid
+ */
+HWTEST_F(AudioStreamDescriptorUnitTest, IsSamePidUid_001, TestSize.Level1)
+{
+    AudioStreamDescriptor audioStreamDescriptor;
+    audioStreamDescriptor.callerUid_ = 1;
+    audioStreamDescriptor.callerPid_ = 1;
+
+    bool ret = audioStreamDescriptor.IsSamePidUid(0, 0);
+    EXPECT_EQ(ret, false);
+
+    ret = audioStreamDescriptor.IsSamePidUid(0, 1);
+    EXPECT_EQ(ret, false);
+
+    ret = audioStreamDescriptor.IsSamePidUid(1, 0);
+    EXPECT_EQ(ret, false);
+
+    ret = audioStreamDescriptor.IsSamePidUid(1, 1);
+    EXPECT_TRUE(ret);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

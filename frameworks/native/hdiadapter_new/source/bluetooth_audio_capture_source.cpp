@@ -568,7 +568,11 @@ int32_t BluetoothAudioCaptureSource::DoStop(void)
 #endif
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
-    CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
+    if (!started_) {
+        AUDIO_ERR_LOG("not start, invalid state");
+        callback_.OnCaptureState(false);
+        return ERR_OPERATION_FAILED;
+    }
     int32_t ret = audioCapture_->control.Stop(reinterpret_cast<AudioHandle>(audioCapture_));
     CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED, "stop fail");
     started_ = false;

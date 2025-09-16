@@ -95,9 +95,24 @@ public:
         return (streamStatus_ == STREAM_STATUS_STARTED);
     }
 
+    StreamUsage GetRenderUsage() const
+    {
+        return rendererInfo_.streamUsage;
+    }
+
+    AudioPrivacyType GetRenderPrivacyType() const
+    {
+        return rendererInfo_.privacyType;
+    }
+
     void SetStatus(AudioStreamStatus status)
     {
         streamStatus_ = status;
+    }
+
+    AudioStreamStatus GetStatus() const
+    {
+        return streamStatus_;
     }
 
     void SetAction(AudioStreamAction action)
@@ -168,6 +183,11 @@ public:
         return (routeFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER);
     }
 
+    bool IsSamePidUid(int32_t uid, int32_t pid) const
+    {
+        return callerPid_ == pid && callerUid_ == uid;
+    }
+
     bool IsNoRunningOffload() const
     {
         return IsRouteOffload() && !IsRunning();
@@ -190,6 +210,15 @@ public:
         return newDeviceDescs_[0]->getType();
     }
 
+    bool IsA2dpOffloadStream()
+    {
+        std::lock_guard<std::mutex> lock(lock_);
+        if (newDeviceDescs_.size() < 1 || newDeviceDescs_[0] == nullptr) {
+            return false;
+        }
+        return newDeviceDescs_[0]->IsA2dpOffload();
+    }
+
     void AddNewDevice(std::shared_ptr<AudioDeviceDescriptor> device)
     {
         if (device == nullptr) {
@@ -208,6 +237,18 @@ public:
             }
         }
         newDeviceDescs_ = devices;
+    }
+
+    void UpdateNewDeviceWithoutCheck(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices)
+    {
+        std::lock_guard<std::mutex> lock(lock_);
+        newDeviceDescs_ = devices;
+    }
+
+    void UpdateOldDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices)
+    {
+        std::lock_guard<std::mutex> lock(lock_);
+        oldDeviceDescs_ = devices;
     }
 
     bool IsDeviceRemote()

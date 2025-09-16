@@ -1382,7 +1382,7 @@ void AudioCoreServicePrivateHandleDualStartClientFuzzTest()
     audioCoreService->HandleDualStartClient(activeDevices, audioStreamDescriptor);
 }
 
-void AudioCoreServicePrivateHandlePlaybackStreamInA2dpFuzzTest()
+void AudioCoreServicePrivateSelectA2dpTypeFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
@@ -1395,7 +1395,7 @@ void AudioCoreServicePrivateHandlePlaybackStreamInA2dpFuzzTest()
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor1 = std::make_shared<AudioDeviceDescriptor>();
     audioStreamDescriptor->oldDeviceDescs_.push_back(audioDeviceDescriptor1);
     bool isCreateProcess = true;
-    audioCoreService->HandlePlaybackStreamInA2dp(audioStreamDescriptor, isCreateProcess);
+    audioCoreService->SelectA2dpType(audioStreamDescriptor, isCreateProcess);
 }
 
 void AudioCoreServicePrivateGetDisableFastStreamParamFuzzTest()
@@ -1910,7 +1910,7 @@ TestFuncs g_testFuncs[] = {
     AudioCoreServicePrivateHandleOutputStreamInRunningFuzzTest,
     AudioCoreServicePrivateHandleInputStreamInRunningFuzzTest,
     AudioCoreServicePrivateHandleDualStartClientFuzzTest,
-    AudioCoreServicePrivateHandlePlaybackStreamInA2dpFuzzTest,
+    AudioCoreServicePrivateSelectA2dpTypeFuzzTest,
     AudioCoreServicePrivateGetDisableFastStreamParamFuzzTest,
     AudioCoreServicePrivateActivateNearlinkDeviceFuzzTest,
     AudioCoreServicePrivateSwitchActiveHearingAidDeviceFuzzTest,

@@ -56,6 +56,7 @@ bool AudioSpatializationManager::IsSpatializationEnabled()
 bool AudioSpatializationManager::IsSpatializationEnabled(
     const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice)
 {
+    CHECK_AND_RETURN_RET_LOG(selectedAudioDevice != nullptr, false, "selectedAudioDevice is nullptr");
     return AudioPolicyManager::GetInstance().IsSpatializationEnabled(selectedAudioDevice->macAddress_);
 }
 
@@ -83,6 +84,7 @@ bool AudioSpatializationManager::IsHeadTrackingEnabled()
 bool AudioSpatializationManager::IsHeadTrackingEnabled(
     const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice)
 {
+    CHECK_AND_RETURN_RET_LOG(selectedAudioDevice != nullptr, false, "selectedAudioDevice is nullptr");
     return AudioPolicyManager::GetInstance().IsHeadTrackingEnabled(selectedAudioDevice->macAddress_);
 }
 
@@ -141,6 +143,7 @@ bool AudioSpatializationManager::IsSpatializationSupported()
 bool AudioSpatializationManager::IsSpatializationSupportedForDevice(
     const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice)
 {
+    CHECK_AND_RETURN_RET_LOG(selectedAudioDevice != nullptr, false, "selectedAudioDevice is nullptr");
     return AudioPolicyManager::GetInstance().IsSpatializationSupportedForDevice(selectedAudioDevice->macAddress_);
 }
 
@@ -152,6 +155,7 @@ bool AudioSpatializationManager::IsHeadTrackingSupported()
 bool AudioSpatializationManager::IsHeadTrackingSupportedForDevice(
     const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice)
 {
+    CHECK_AND_RETURN_RET_LOG(selectedAudioDevice != nullptr, false, "selectedAudioDevice is nullptr");
     return AudioPolicyManager::GetInstance().IsHeadTrackingSupportedForDevice(selectedAudioDevice->macAddress_);
 }
 

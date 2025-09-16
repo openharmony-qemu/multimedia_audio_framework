@@ -101,8 +101,8 @@ napi_value NapiAudioSessionMgr::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("selectMediaInputDevice", SelectMediaInputDevice),
         DECLARE_NAPI_FUNCTION("getSelectedMediaInputDevice", GetSelectedMediaInputDevice),
         DECLARE_NAPI_FUNCTION("clearSelectedMediaInputDevice", ClearSelectedMediaInputDevice),
-        DECLARE_NAPI_FUNCTION("preferBluetoothAndNearlinkRecord", PreferBluetoothAndNearlinkRecord),
-        DECLARE_NAPI_FUNCTION("getPreferBluetoothAndNearlinkRecord", GetPreferBluetoothAndNearlinkRecord),
+        DECLARE_NAPI_FUNCTION("setBluetoothAndNearlinkPreferredRecordCategory", PreferBluetoothAndNearlinkRecord),
+        DECLARE_NAPI_FUNCTION("getBluetoothAndNearlinkPreferredRecordCategory", GetPreferBluetoothAndNearlinkRecord),
     };
 
     status = napi_define_class(env, AUDIO_SESSION_MGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -481,6 +481,7 @@ void NapiAudioSessionMgr::RegisterAvaiableDeviceChangeCallback(napi_env env, nap
 napi_value NapiAudioSessionMgr::On(napi_env env, napi_callback_info info)
 {
     const size_t requireArgc = ARGS_TWO;
+    const size_t maxArgc = ARGS_THREE;
     size_t argc = ARGS_THREE;
 
     napi_value undefinedResult = nullptr;
@@ -489,7 +490,8 @@ napi_value NapiAudioSessionMgr::On(napi_env env, napi_callback_info info)
     napi_value args[requireArgc + PARAM1] = {nullptr, nullptr, nullptr};
     napi_value jsThis = nullptr;
     napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok && argc == requireArgc, NapiAudioError::ThrowErrorAndReturn(env,
+    bool isArgcCountRight = argc == requireArgc || argc == maxArgc;
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && isArgcCountRight, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"),
         "status for arguments error");
 
@@ -501,11 +503,14 @@ napi_value NapiAudioSessionMgr::On(napi_env env, napi_callback_info info)
     std::string callbackName = NapiParamUtils::GetStringArgument(env, args[PARAM0]);
     AUDIO_DEBUG_LOG("AudioStreamMgrNapi: On callbackName: %{public}s", callbackName.c_str());
 
-    napi_valuetype handler = napi_undefined;
-    napi_typeof(env, args[PARAM1], &handler);
-    CHECK_AND_RETURN_RET_LOG(
-        handler == napi_function, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
-        "incorrect parameter types: The type of handler must be function"), "handler is invalid");
+    if (argc == requireArgc) {
+        napi_valuetype handler = napi_undefined;
+        napi_typeof(env, args[PARAM1], &handler);
+        CHECK_AND_RETURN_RET_LOG(
+            handler == napi_function, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+            "incorrect parameter types: The type of handler must be function"), "handler is invalid");
+    }
+
     RegisterCallback(env, jsThis, args, callbackName);
     return undefinedResult;
 }
@@ -843,6 +848,7 @@ napi_value NapiAudioSessionMgr::SelectMediaInputDevice(napi_env env, napi_callba
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
             NAPI_ERR_INVALID_PARAM);
+        context->deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
         NapiParamUtils::GetAudioDeviceDescriptor(env, context->deviceDescriptor,
             context->bArgTransFlag, argv[PARAM0]);
     };
@@ -975,9 +981,13 @@ napi_value NapiAudioSessionMgr::PreferBluetoothAndNearlinkRecord(napi_env env, n
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
             NAPI_ERR_INPUT_INVALID);
-        context->status = NapiParamUtils::GetValueBoolean(env, context->isTrue, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "GetValueBoolean failed",
+        context->status = NapiParamUtils::GetValueUInt32(env, context->category, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "GetValueInt32 failed",
             NAPI_ERR_INPUT_INVALID);
+        if (!NapiAudioEnum::IsLegalBluetoothAndNearlinkPreferredRecordCategory(context->category)) {
+            NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
+                "parameter verification failed: category wrong value");
+        }
     };
     context->GetCbInfo(env, info, inputParser);
 
@@ -994,8 +1004,9 @@ napi_value NapiAudioSessionMgr::PreferBluetoothAndNearlinkRecord(napi_env env, n
         CHECK_AND_RETURN_LOG(CheckAudioSessionStatus(napiSessionMgr, context),
             "context object state is error.");
 
+        auto category = static_cast<BluetoothAndNearlinkPreferredRecordCategory>(context->category);
         context->intValue =
-            napiSessionMgr->audioSessionMngr_->PreferBluetoothAndNearlinkRecord(context->isTrue);
+            napiSessionMgr->audioSessionMngr_->PreferBluetoothAndNearlinkRecord(category);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "PreferBluetoothAndNearlinkRecord failed",
             NAPI_ERR_SYSTEM);
     };

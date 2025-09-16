@@ -61,7 +61,7 @@ public:
     int32_t AddNodeToSource(const HpaeCaptureMoveInfo &moveInfo) override;
     int32_t AddAllNodesToSource(const std::vector<HpaeCaptureMoveInfo> &moveInfos, bool isConnect) override;
     std::string GetThreadName() override;
-    int32_t ReloadCaptureManager(const HpaeSourceInfo &sourceInfo) override;
+    int32_t ReloadCaptureManager(const HpaeSourceInfo &sourceInfo, bool isReload = false) override;
     int32_t DumpSourceInfo() override;
     std::string GetDeviceHDFDumpInfo() override;
 

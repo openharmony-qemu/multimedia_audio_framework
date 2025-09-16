@@ -56,6 +56,7 @@
 #include "audio_effect_map.h"
 
 #include "media_monitor_manager.h"
+#include "parameters.h"
 
 using namespace OHOS::HiviewDFX;
 using namespace OHOS::AppExecFwk;
@@ -85,6 +86,7 @@ RendererInClientInner::RendererInClientInner(AudioStreamType eStreamType, int32_
 {
     AUDIO_INFO_LOG("Create with StreamType:%{public}d appUid:%{public}d ", eStreamType_, appUid_);
     audioStreamTracker_ = std::make_unique<AudioStreamTracker>(AUDIO_MODE_PLAYBACK, appUid);
+    loudVolumeModeEnable_ = OHOS::system::GetBoolParameter("const.audio.loudvolume", false);
     state_ = NEW;
 }
 
@@ -854,11 +856,6 @@ int32_t RendererInClientInner::Enqueue(const BufferDesc &bufDesc)
     CHECK_AND_RETURN_RET_LOG(curStreamParams_.encoding != ENCODING_AUDIOVIVID ||
             converter_ != nullptr && converter_->CheckInputValid(bufDesc),
         ERR_INVALID_PARAM, "Invalid buffer desc");
-    // allow opensles enqueue self buffer
-    if ((rendererInfo_.playerType != PLAYER_TYPE_OPENSL_ES) && !CheckBufferValid(bufDesc)) {
-        AUDIO_WARNING_LOG("Invalid bufLength:%{public}zu or dataLength:%{public}zu, should be %{public}zu",
-            bufDesc.bufLength, bufDesc.dataLength, cbBufferSize_);
-    }
 
     BufferDesc temp = bufDesc;
 
@@ -990,10 +987,7 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     mutePlayStartTime_ = 0;
     Trace trace("RendererInClientInner::StartAudioStream " + std::to_string(sessionId_));
     std::unique_lock<std::mutex> statusLock(statusMutex_);
-    if (state_ != PREPARED && state_ != STOPPED && state_ != PAUSED) {
-        AUDIO_ERR_LOG("Start failed Illegal state:%{public}d", state_.load());
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(state_ == PREPARED || state_ == STOPPED || state_ == PAUSED, false, "Start failed");
 
     hasFirstFrameWrited_ = false;
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
@@ -1013,8 +1007,12 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     }
 
     waitLock.unlock();
+    if (loudVolumeModeEnable_) {
+        AudioPolicyManager::GetInstance().ReloadLoudVolumeMode(eStreamType_, LOUD_VOLUME_SWITCH_AUTO);
+    }
 
     HILOG_COMM_INFO("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
+
     UpdateTracker("RUNNING");
 
     FlushBeforeStart();
@@ -1516,7 +1514,8 @@ void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
     info.renderPeriodPositionCb = rendererPeriodPositionCallback_;
 
     info.rendererWriteCallback = writeCb_;
-    info.unprocessSamples = unprocessedFramesBytes_.load() + lastSwitchPosition_[Timestamp::Timestampbase::MONOTONIC];
+    info.unprocessSamples = unprocessedFramesBytes_.load() +
+        lastSwitchPositionWithSpeed_[Timestamp::Timestampbase::MONOTONIC];
 }
 
 IAudioStream::StreamClass RendererInClientInner::GetStreamClass()

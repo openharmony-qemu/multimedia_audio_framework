@@ -22,7 +22,6 @@
 #include "audio_session_info.h"
 #include "audio_device_info.h"
 #include "audio_device_descriptor.h"
-#include "audio_policy_server_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -38,10 +37,14 @@ class AudioSessionStateMonitor;
 class AudioDeviceManager;
 class AudioPipeManager;
 
+/*
+ * AudioSession is an inner class of AudioSessionService, no mutex is added to AudioSession,
+ * and classes other than AudioSessionService are not allowed to directly access AudioSession.
+ */
 class AudioSession {
 public:
     AudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy,
-        const std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor);
+        AudioSessionStateMonitor &audioSessionStateMonitor);
     ~AudioSession();
     bool IsSceneParameterSet();
     int32_t SetAudioSessionScene(AudioSessionScene audioSessionScene);
@@ -53,7 +56,6 @@ public:
     void ClearStreamInfo(void);
     uint32_t GetFakeStreamId();
     void SaveFakeStreamId(uint32_t fakeStreamId);
-    bool ShouldExcludeStreamType(const AudioInterrupt &audioInterrupt);
     void Dump(std::string &dumpString);
     int32_t Activate(const AudioSessionStrategy strategy);
     int32_t Deactivate();
@@ -64,18 +66,18 @@ public:
     void GetSessionDefaultOutputDevice(DeviceType &deviceType);
     bool IsStreamContainedInCurrentSession(const uint32_t &streamId);
     bool GetAndClearNeedToFetchFlag();
-    bool IsRecommendToStopAudio(const std::shared_ptr<AudioPolicyServerHandler::EventContextObj> eventContextObj);
+    bool IsRecommendToStopAudio(AudioStreamDeviceChangeReason changeReason,
+        const std::shared_ptr<AudioDeviceDescriptor> desc);
     bool IsSessionOutputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     bool IsSessionInputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     StreamUsage GetSessionStreamUsage();
     bool IsBackGroundApp(void);
+    void MarkSystemApp(void);
+    bool IsSystemApp(void) const;
 
 private:
     StreamUsage GetStreamUsageInner();
     bool IsLegalDevice(const DeviceType deviceType);
-    bool IsCurrentDevicePrivateDevice(const std::shared_ptr<AudioDeviceDescriptor> desc);
-    bool IsDeviceContainedInVector(std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices,
-        const std::shared_ptr<AudioDeviceDescriptor> desc);
     void UpdateVoipStreamsDefaultOutputDevice();
     bool CanCurrentStreamSetDefaultOutputDevice(const AudioInterrupt &interrupt);
     int32_t EnableSingleVoipStreamDefaultOutputDevice(const AudioInterrupt &interrupt);
@@ -84,11 +86,10 @@ private:
     void UpdateSingleVoipStreamDefaultOutputDevice(const AudioInterrupt &interrupt);
     bool IsSessionDefaultDeviceEnabled();
     bool IsOutputDeviceConfigurableByStreamUsage(const StreamUsage &streamUsage);
-    std::mutex sessionMutex_;
     int32_t callerPid_;
     bool needToFetch_ = false;
-    AudioSessionStrategy strategy_;
-    std::weak_ptr<AudioSessionStateMonitor> audioSessionStateMonitor_;
+    AudioSessionStrategy strategy_ {AudioConcurrencyMode::INVALID};
+    AudioSessionStateMonitor &audioSessionStateMonitor_;
     AudioSessionScene audioSessionScene_ {AudioSessionScene::INVALID};
     // These are streams included in audiosession focus.
     std::vector<AudioInterrupt> streamsInSession_;
@@ -99,6 +100,7 @@ private:
     AudioDeviceDescriptor inputDeviceDescriptor_;
     std::shared_ptr<AudioPipeManager> pipeManager_ = nullptr;
     AudioDeviceManager &deviceManager_;
+    bool isSystemApp_ {false};
 };
 } // namespace AudioStandard
 } // namespace OHOS

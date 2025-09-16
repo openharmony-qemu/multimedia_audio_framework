@@ -1595,5 +1595,43 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetOverflowCount_001, TestSize.Leve
     audioCapturer->Release();
 }
 #endif
+
+/**
+ * @tc.name  : AudioCapturer_IsRestoreOrStopNeeded_001
+ * @tc.number: IsRestoreOrStopNeeded_001
+ * @tc.desc  : Test IsRestoreOrStopNeeded() for different cases
+ */
+HWTEST(AudioCapturerUnitTest, IsRestoreOrStopNeeded_001, TestSize.Level4)
+{
+    AppInfo appInfo = {};
+    auto testCapturerInner = std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+
+    int32_t curTid = gettid();
+    // To test matching case
+    testCapturerInner->callbackLoopTid_ = curTid;
+    bool needRestore = testCapturerInner->IsRestoreOrStopNeeded();
+    EXPECT_EQ(false, needRestore);
+
+    // To test not matching case
+    testCapturerInner->callbackLoopTid_ = curTid + 1;
+    needRestore = testCapturerInner->IsRestoreOrStopNeeded();
+    EXPECT_EQ(false, needRestore);
+}
+
+/**
+ * @tc.name  : AudioCapturer_AsyncCheckAudioCapturer_001
+ * @tc.number: AsyncCheckAudioCapturer_001
+ * @tc.desc  : Test AsyncCheckAudioCapturer() for different cases
+ */
+HWTEST(AudioCapturerUnitTest, AsyncCheckAudioCapturer_001, TestSize.Level4)
+{
+    AppInfo appInfo = {};
+    auto testCapturerInner = std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+
+    // Test not need restore case
+    int32_t res = testCapturerInner->AsyncCheckAudioCapturer("Test");
+    EXPECT_EQ(SUCCESS, res);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

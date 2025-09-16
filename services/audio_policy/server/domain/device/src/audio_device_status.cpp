@@ -952,8 +952,17 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
     audioVolumeManager_.UpdateGroupInfo(INTERRUPT_TYPE, GROUP_NAME_DEFAULT, deviceDesc.interruptGroupId_, networkId,
         statusInfo.isConnected, statusInfo.mappingInterruptId);
     if (statusInfo.isConnected) {
-        if (audioConnectedDevice_.GetConnectedDeviceByType(networkId, devType) != nullptr) {
-            return ERROR;
+        std::shared_ptr<AudioDeviceDescriptor> connDevDesc = audioConnectedDevice_.GetConnectedDeviceByType(networkId,
+            devType);
+        if (connDevDesc != nullptr) {
+            CHECK_AND_RETURN_RET(!statusInfo.streamInfo.empty(), ERROR);
+
+            // Remote device may connect twice, and device capability will be carried in either time. So we need to
+            // update device capability even if device is already connected, and return not success to avoid doing
+            // other connection logic.
+            connDevDesc->SetDeviceCapability(statusInfo.streamInfo, 0);
+            AUDIO_INFO_LOG("Update capability");
+            return SUCCESS_BUT_NOT_CONTINUE;
         }
         int32_t ret = ActivateNewDevice(statusInfo.networkId, devType,
             statusInfo.connectType == ConnectType::CONNECT_TYPE_DISTRIBUTED);

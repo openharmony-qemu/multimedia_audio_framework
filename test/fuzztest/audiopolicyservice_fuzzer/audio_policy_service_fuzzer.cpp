@@ -399,15 +399,6 @@ void AudioPolicyServiceNotifyWakeUpCapturerRemovedFuzztest(const uint8_t *rawDat
     GetServerPtr()->audioPolicyService_.NotifyWakeUpCapturerRemoved();
 }
 
-void AudioPolicyServiceGetFastStreamInfoFuzztest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    GetServerPtr()->audioPolicyService_.GetFastStreamInfo();
-}
-
 void AudioPolicyServiceIsAbsVolumeSupportedFuzztest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -947,7 +938,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioPolicyServiceGetDistributedRoutingRoleInfoFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceNotifyCapturerAddedFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceNotifyWakeUpCapturerRemovedFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceGetFastStreamInfoFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceIsAbsVolumeSupportedFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetDevicesFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetPreferredInputDeviceDescriptorsFuzztest,

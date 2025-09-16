@@ -132,12 +132,12 @@ int32_t AudioSessionManager::ClearSelectedInputDevice()
     return AudioPolicyManager::GetInstance().ClearSelectedInputDevice();
 }
 
-int32_t AudioSessionManager::PreferBluetoothAndNearlinkRecord(bool isPreferred)
+int32_t AudioSessionManager::PreferBluetoothAndNearlinkRecord(BluetoothAndNearlinkPreferredRecordCategory category)
 {
-    return AudioPolicyManager::GetInstance().PreferBluetoothAndNearlinkRecord(isPreferred);
+    return AudioPolicyManager::GetInstance().PreferBluetoothAndNearlinkRecord(category);
 }
 
-bool AudioSessionManager::GetPreferBluetoothAndNearlinkRecord()
+BluetoothAndNearlinkPreferredRecordCategory AudioSessionManager::GetPreferBluetoothAndNearlinkRecord()
 {
     return AudioPolicyManager::GetInstance().GetPreferBluetoothAndNearlinkRecord();
 }

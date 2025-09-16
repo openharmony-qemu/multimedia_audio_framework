@@ -419,6 +419,8 @@ bool RendererInClientInner::CheckBufferNeedWrite()
 
 bool RendererInClientInner::IsRestoreNeeded()
 {
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "buffer null");
+
     RestoreStatus restoreStatus = clientBuffer_->GetRestoreStatus();
     if (restoreStatus == NEED_RESTORE) {
         return true;
@@ -449,6 +451,22 @@ void RendererInClientInner::WaitForBufferNeedWrite()
         });
     if (futexRes != SUCCESS) {
         AUDIO_ERR_LOG("futex err: %{public}d", futexRes);
+    }
+}
+
+void RendererInClientInner::CallClientHandle()
+{
+    // call client write
+    std::shared_ptr<AudioRendererWriteCallback> cb = nullptr;
+    {
+        std::unique_lock<std::mutex> lockCb(writeCbMutex_);
+        cb = writeCb_;
+    }
+    if (cb != nullptr) {
+        Trace traceCb("RendererInClientInner::OnWriteData");
+        WatchTimeout guard("write interval too long"); // default time out 40ms
+        cb->OnWriteData(cbBufferSize_);
+        guard.CheckCurrTimeout();
     }
 }
 
@@ -489,16 +507,7 @@ bool RendererInClientInner::WriteCallbackFunc()
     if (state_ != RUNNING) {
         return true;
     }
-    // call client write
-    std::shared_ptr<AudioRendererWriteCallback> cb = nullptr;
-    {
-        std::unique_lock<std::mutex> lockCb(writeCbMutex_);
-        cb = writeCb_;
-    }
-    if (cb != nullptr) {
-        Trace traceCb("RendererInClientInner::OnWriteData");
-        cb->OnWriteData(cbBufferSize_);
-    }
+    CallClientHandle();
 
     Trace traceQueuePush("RendererInClientInner::QueueWaitPush");
     std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
@@ -537,6 +546,7 @@ bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, b
 
 void RendererInClientInner::DfxWriteInterval()
 {
+    CHECK_AND_RETURN(renderMode_ == RENDER_MODE_NORMAL); // should only work in write mode.
     if (preWriteEndTime_ != 0 &&
         ((ClockTime::GetCurNano() / AUDIO_US_PER_SECOND) - preWriteEndTime_) > MAX_WRITE_INTERVAL_MS) {
         AUDIO_WARNING_LOG("[%{public}s] write interval too long cost %{public}" PRId64,

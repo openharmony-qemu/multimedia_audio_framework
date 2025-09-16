@@ -197,7 +197,7 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     const std::shared_ptr<AudioClientTracker> &proxyObj,
     const AudioPlaybackCaptureConfig &config)
 {
-    AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d, stream type:"
+    HILOG_COMM_INFO("AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d, stream type:"
         " %{public}d, encoding type: %{public}d", info.samplingRate, info.channels, info.format, eStreamType_,
         info.encoding);
     AudioXCollie guard("CapturerInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
@@ -1867,6 +1867,22 @@ bool CapturerInClientInner::GetStopFlag() const
 {
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "Client OHAudioBuffer is nullptr");
     return clientBuffer_->GetStopFlag();
+}
+
+bool CapturerInClientInner::IsRestoreNeeded()
+{
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "buffer null");
+
+    RestoreStatus restoreStatus = clientBuffer_->GetRestoreStatus();
+    if (restoreStatus == NEED_RESTORE) {
+        return true;
+    }
+
+    if (restoreStatus == NEED_RESTORE_TO_NORMAL) {
+        return true;
+    }
+
+    return false;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -3700,5 +3700,32 @@ HWTEST(AudioPolicyUnitTest, IsIntelligentNoiseReductionEnabledForCurrentDevice_0
     int32_t ret = server->IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType, isSupport);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: CheckAndGetApiVersion_001
+* @tc.desc  : AudioPolicyServer::CheckAndGetApiVersion.
+*/
+HWTEST(AudioPolicyUnitTest, CheckAndGetApiVersion_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    bool hasSystemPermission = false;
+
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    desc->hasPair_ = false;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs;
+
+    int32_t apiVersion = server->CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
+    EXPECT_EQ(apiVersion, 0);
+    hasSystemPermission = true;
+    apiVersion = server->CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
+    EXPECT_EQ(apiVersion, 0);
+    deviceDescs.push_back(desc);
+    apiVersion = server->CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
+    EXPECT_EQ(apiVersion, 0);
+}
 } // AudioStandard
 } // OHOS

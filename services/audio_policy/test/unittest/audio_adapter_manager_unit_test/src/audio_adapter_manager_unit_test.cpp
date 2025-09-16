@@ -111,9 +111,8 @@ HWTEST_F(AudioAdapterManagerUnitTest, HandleStreamMuteStatus_001, TestSize.Level
 {
     AudioStreamType streamType = STREAM_MUSIC;
     bool mute = true;
-    StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
     DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    AudioAdapterManager::GetInstance().HandleStreamMuteStatus(streamType, mute, streamUsage, deviceType);
+    AudioAdapterManager::GetInstance().HandleStreamMuteStatus(streamType, mute, deviceType);
     EXPECT_TRUE(mute);
 }
 
@@ -127,9 +126,8 @@ HWTEST_F(AudioAdapterManagerUnitTest, HandleStreamMuteStatus_002, TestSize.Level
 {
     AudioStreamType streamType = STREAM_MUSIC;
     bool mute = true;
-    StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
     DeviceType deviceType = DEVICE_TYPE_NONE;
-    AudioAdapterManager::GetInstance().HandleStreamMuteStatus(streamType, mute, streamUsage, deviceType);
+    AudioAdapterManager::GetInstance().HandleStreamMuteStatus(streamType, mute, deviceType);
     EXPECT_TRUE(mute);
 }
 

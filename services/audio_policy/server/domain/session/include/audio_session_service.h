@@ -18,9 +18,11 @@
 
 #include <mutex>
 #include <vector>
+#include "singleton.h"
 #include "audio_session.h"
 #include "audio_session_state_monitor.h"
 #include "audio_device_info.h"
+#include "audio_session_device_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -31,13 +33,10 @@ public:
     virtual void OnSessionTimeout(const int32_t pid) = 0;
 };
 
-class AudioSessionService : public AudioSessionStateMonitor, public std::enable_shared_from_this<AudioSessionService> {
+class AudioSessionService : public AudioSessionStateMonitor {
+    DECLARE_SINGLETON(AudioSessionService)
 public:
-    AudioSessionService();
-    ~AudioSessionService() override;
-
     // Audio session manager interfaces
-    static std::shared_ptr<AudioSessionService> GetAudioSessionService(void);
     int32_t ActivateAudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy);
     int32_t DeactivateAudioSession(const int32_t callerPid);
     bool IsAudioSessionActivated(const int32_t callerPid);
@@ -47,7 +46,6 @@ public:
 
     // other public interfaces
     int32_t SetSessionTimeOutCallback(const std::shared_ptr<SessionTimeOutCallback> &timeOutCallback);
-    std::shared_ptr<AudioSession> GetAudioSessionByPid(const int32_t callerPid);
 
     // Dump AudioSession Info
     void AudioSessionInfoDump(std::string &dumpString);
@@ -63,18 +61,33 @@ public:
     bool ShouldExcludeStreamType(const AudioInterrupt &audioInterrupt);
     std::vector<AudioInterrupt> GetStreams(int32_t callerPid);
     AudioInterrupt GenerateFakeAudioInterrupt(int32_t callerPid);
-    void RemoveStreamInfo(const AudioInterrupt &audioInterrupt);
+    void AddStreamInfo(const AudioInterrupt &audioInterrupt);
+    void RemoveStreamInfo(const int32_t callerPid, const uint32_t streamId);
     void ClearStreamInfo(const int32_t callerPid);
+    bool IsStreamInfoEmpty(const int32_t callerPid);
+    bool IsAudioRendererEmpty(const int32_t callerPid);
+    AudioConcurrencyMode GetSessionStrategy(int32_t callerPid);
     bool ShouldAudioSessionProcessHintType(InterruptHint hintType);
     bool ShouldAudioStreamProcessHintType(InterruptHint hintType);
     static bool IsSameTypeForAudioSession(const AudioStreamType incomingType, const AudioStreamType existedType);
     void NotifyAppStateChange(const int32_t pid, bool isBackState);
     bool HasStreamForDeviceType(int32_t callerPid, DeviceType deviceType);
+    int32_t FillCurrentOutputDeviceChangedEvent(
+        int32_t callerPid,
+        AudioStreamDeviceChangeReason changeReason,
+        CurrentOutputDeviceChangedEvent &deviceChangedEvent);
+    bool IsSessionInputDeviceChanged(int32_t callerPid, const std::shared_ptr<AudioDeviceDescriptor> desc);
+    void MarkSystemApp(int32_t pid);
+    bool IsSystemApp(int32_t pid);
+    bool IsSystemAppWithMixStrategy(int32_t pid);
 
 private:
     int32_t DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout = false);
-    std::shared_ptr<AudioSessionStateMonitor> GetSelfSharedPtr() override;
     void GenerateFakeStreamId(int32_t callerPid);
+    std::shared_ptr<AudioSession> CreateAudioSession(
+        int32_t callerPid, AudioSessionStrategy strategy = {AudioConcurrencyMode::INVALID});
+    bool IsAudioSessionFocusModeInner(int32_t callerPid);
+    bool ShouldExcludeStreamTypeInner(const AudioInterrupt &audioInterrupt);
 
 private:
     std::mutex sessionServiceMutex_;

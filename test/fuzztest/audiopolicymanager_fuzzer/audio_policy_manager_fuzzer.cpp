@@ -184,6 +184,7 @@ void AudioPolicyManagerTwoFuzzTest()
     AudioCapturerInfo capturerInfo;
     int32_t clientId = GetData<int32_t>();
     std::shared_ptr<AudioFocusInfoChangeCallback> callback;
+    uint32_t sessionId = GetData<uint32_t>();
 
     AudioPolicyManager::GetInstance().GetSelfAppVolumeLevel(volumeLevel);
     AudioPolicyManager::GetInstance().GetAppVolumeLevel(appUid, volumeLevel);
@@ -192,7 +193,7 @@ void AudioPolicyManagerTwoFuzzTest()
     AudioPolicyManager::GetInstance().GetStreamMute(volumeType);
     AudioPolicyManager::GetInstance().SetLowPowerVolume(streamId, volume);
     AudioPolicyManager::GetInstance().GetLowPowerVolume(streamId);
-    AudioPolicyManager::GetInstance().GetFastStreamInfo();
+    AudioPolicyManager::GetInstance().GetFastStreamInfo(sessionId);
     AudioPolicyManager::GetInstance().GetSingleStreamVolume(streamId);
     AudioPolicyManager::GetInstance().IsStreamActive(volumeType);
     AudioPolicyManager::GetInstance().IsStreamActiveByStreamUsage(streamUsage);

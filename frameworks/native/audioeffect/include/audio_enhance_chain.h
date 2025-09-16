@@ -77,6 +77,7 @@ public:
     void GetAlgoConfig(AudioBufferConfig &micConfig, AudioBufferConfig &ecConfig, AudioBufferConfig &micRefConfig);
     uint64_t GetChainId(void) const;
     ScenePriority GetScenePriority(void) const;
+    void ReleaseAllEnhanceModule(void);
     int32_t CreateAllEnhanceModule(const std::vector<EnhanceModulePara> &moduleParas);
     int32_t SetEnhanceProperty(const std::string &effect, const std::string &property);
     int32_t SetEnhanceParam(bool mute, uint32_t systemVol);
@@ -89,7 +90,6 @@ public:
 
 private:
     void InitAudioEnhanceChain();
-    void ReleaseAllEnhanceModule();
     int32_t DeinterleaverData(uint8_t *src, uint32_t channel, uint8_t *dst, uint32_t offset);
     int32_t SetPropertyToHandle(AudioEffectHandle handle, const std::string &property);
     int32_t SetEnhanceParamToHandle(AudioEffectHandle handle);
@@ -101,6 +101,7 @@ private:
     int32_t ProcessSetInputDevice(const std::string &inputDevice, const std::string &deviceName);
     int32_t ProcessSetEnhanceProperty(const std::string &enhance, const std::string &property);
     int32_t ProcessApplyEnhanceChain(void);
+    int32_t ProcessReleaseAllEnhanceModule(void);
     int32_t WriteChainOutputData(void *buf, size_t bufSize);
     int32_t CacheChainInputData(const EnhanceTransBuffer &transBuf);
     int32_t InitSingleEnhanceModule(AudioEffectHandle enhanceHandle, const std::string &enhanceProp);

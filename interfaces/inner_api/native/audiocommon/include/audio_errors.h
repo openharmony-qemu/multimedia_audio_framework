@@ -182,6 +182,9 @@ const int32_t ERR_SET_VOL_FAILED_BY_VOLUME_CONTROL_DISABLED = BASE_AUDIO_ERR_OFF
 
 /** Unknown error */
 const int32_t  ERR_UNKNOWN = BASE_AUDIO_ERR_OFFSET - 200;
+
+/** success but not continue */
+const int32_t SUCCESS_BUT_NOT_CONTINUE = BASE_AUDIO_ERR_OFFSET - 300;
 }  // namespace AudioStandard
 }  // namespace OHOS
 #endif  // AUDIO_ERRORS_H

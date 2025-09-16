@@ -319,5 +319,265 @@ HWTEST(AudioUtilsUnitTest, XperfAdapterNeedNotifyXperf_004, TestSize.Level1)
 {
     EXPECT_EQ(XperfAdapter::GetInstance().NeedNotifyXperf(STREAM_USAGE_NOTIFICATION_RINGTONE), false);
 }
+
+/**
+ * @tc.name  : Test CalculatePcmSizeFromDurationCeiling API
+ * @tc.type  : FUNC
+ * @tc.number: CalculatePcmSizeFromDurationCeiling
+ * @tc.desc  : Test CalculatePcmSizeFromDurationCeiling.
+ */
+HWTEST(AudioUtilsUnitTest, CalculatePcmSizeFromDurationCeiling, TestSize.Level1)
+{
+    EXPECT_EQ(Util::CalculatePcmSizeFromDurationCeiling(20ms, 48000, 4), 3840);
+
+    EXPECT_EQ(Util::CalculatePcmSizeFromDurationCeiling(1ns, 48000, 4), 4);
+
+    EXPECT_EQ(Util::CalculatePcmSizeFromDurationCeiling(20ms + 1ns, 48000, 4), 3844);
+}
+
+/**
+ * @tc.name  : Test ConvertToStringForFormat API
+ * @tc.type  : FUNC
+ * @tc.number: ConvertToStringForFormat_001
+ * @tc.desc  : Test ConvertToStringForFormat with all supported sample formats.
+ */
+HWTEST(AudioUtilsUnitTest, ConvertToStringForFormat_001, TestSize.Level1)
+{
+    EXPECT_EQ(ConvertToStringForFormat(SAMPLE_U8), "s8");
+    EXPECT_EQ(ConvertToStringForFormat(SAMPLE_S16LE), "s16le");
+    EXPECT_EQ(ConvertToStringForFormat(SAMPLE_S24LE), "s24le");
+    EXPECT_EQ(ConvertToStringForFormat(SAMPLE_S32LE), "s32le");
+    EXPECT_EQ(ConvertToStringForFormat(SAMPLE_F32LE), "f32le");
+}
+
+/**
+ * @tc.name  : Test ConvertToStringForFormat API with unsupported format
+ * @tc.type  : FUNC
+ * @tc.number: ConvertToStringForFormat_002
+ * @tc.desc  : Test ConvertToStringForFormat with unsupported sample format returns default value.
+ */
+HWTEST(AudioUtilsUnitTest, ConvertToStringForFormat_002, TestSize.Level1)
+{
+    // Test with unsupported format (assuming 999 is not in the map)
+    AudioSampleFormat unsupportedFormat = static_cast<AudioSampleFormat>(999);
+    EXPECT_EQ(ConvertToStringForFormat(unsupportedFormat), "s16le");
+}
+
+/**
+ * @tc.name  : Test ConvertToStringForSampleRate API
+ * @tc.type  : FUNC
+ * @tc.number: ConvertToStringForSampleRate_001
+ * @tc.desc  : Test ConvertToStringForSampleRate with various sampling rates.
+ */
+HWTEST(AudioUtilsUnitTest, ConvertToStringForSampleRate_001, TestSize.Level1)
+{
+    EXPECT_EQ(ConvertToStringForSampleRate(SAMPLE_RATE_8000), "8000");
+    EXPECT_EQ(ConvertToStringForSampleRate(SAMPLE_RATE_11025), "11025");
+    EXPECT_EQ(ConvertToStringForSampleRate(SAMPLE_RATE_12000), "12000");
+    EXPECT_EQ(ConvertToStringForSampleRate(SAMPLE_RATE_16000), "16000");
+    EXPECT_EQ(ConvertToStringForSampleRate(SAMPLE_RATE_22050), "22050");
+    EXPECT_EQ(ConvertToStringForSampleRate(SAMPLE_RATE_24000), "24000");
+    EXPECT_EQ(ConvertToStringForSampleRate(SAMPLE_RATE_32000), "32000");
+    EXPECT_EQ(ConvertToStringForSampleRate(SAMPLE_RATE_44100), "44100");
+    EXPECT_EQ(ConvertToStringForSampleRate(SAMPLE_RATE_48000), "48000");
+    EXPECT_EQ(ConvertToStringForSampleRate(SAMPLE_RATE_64000), "64000");
+    EXPECT_EQ(ConvertToStringForSampleRate(SAMPLE_RATE_88200), "88200");
+    EXPECT_EQ(ConvertToStringForSampleRate(SAMPLE_RATE_96000), "96000");
+    EXPECT_EQ(ConvertToStringForSampleRate(SAMPLE_RATE_176400), "176400");
+    EXPECT_EQ(ConvertToStringForSampleRate(SAMPLE_RATE_192000), "192000");
+    EXPECT_EQ(ConvertToStringForSampleRate(SAMPLE_RATE_384000), "384000");
+}
+
+/**
+ * @tc.name  : Test ConvertToStringForSampleRate API with custom values
+ * @tc.type  : FUNC
+ * @tc.number: ConvertToStringForSampleRate_002
+ * @tc.desc  : Test ConvertToStringForSampleRate with custom sampling rate values.
+ */
+HWTEST(AudioUtilsUnitTest, ConvertToStringForSampleRate_002, TestSize.Level1)
+{
+    // Test with some arbitrary values to ensure conversion works correctly
+    AudioSamplingRate customRate1 = static_cast<AudioSamplingRate>(22050);
+    AudioSamplingRate customRate2 = static_cast<AudioSamplingRate>(32000);
+    AudioSamplingRate customRate3 = static_cast<AudioSamplingRate>(96000);
+
+    EXPECT_EQ(ConvertToStringForSampleRate(customRate1), "22050");
+    EXPECT_EQ(ConvertToStringForSampleRate(customRate2), "32000");
+    EXPECT_EQ(ConvertToStringForSampleRate(customRate3), "96000");
+}
+
+/**
+ * @tc.name  : Test ConvertToStringForChannel API
+ * @tc.type  : FUNC
+ * @tc.number: ConvertToStringForChannel_001
+ * @tc.desc  : Test ConvertToStringForChannel with various channel configurations.
+ */
+HWTEST(AudioUtilsUnitTest, ConvertToStringForChannel_001, TestSize.Level1)
+{
+    EXPECT_EQ(ConvertToStringForChannel(CHANNEL_UNKNOW), "0");
+    EXPECT_EQ(ConvertToStringForChannel(MONO), "1");
+    EXPECT_EQ(ConvertToStringForChannel(STEREO), "2");
+    EXPECT_EQ(ConvertToStringForChannel(CHANNEL_3), "3");
+    EXPECT_EQ(ConvertToStringForChannel(CHANNEL_4), "4");
+    EXPECT_EQ(ConvertToStringForChannel(CHANNEL_5), "5");
+    EXPECT_EQ(ConvertToStringForChannel(CHANNEL_6), "6");
+    EXPECT_EQ(ConvertToStringForChannel(CHANNEL_7), "7");
+    EXPECT_EQ(ConvertToStringForChannel(CHANNEL_8), "8");
+    EXPECT_EQ(ConvertToStringForChannel(CHANNEL_9), "9");
+    EXPECT_EQ(ConvertToStringForChannel(CHANNEL_10), "10");
+    EXPECT_EQ(ConvertToStringForChannel(CHANNEL_11), "11");
+    EXPECT_EQ(ConvertToStringForChannel(CHANNEL_12), "12");
+    EXPECT_EQ(ConvertToStringForChannel(CHANNEL_13), "13");
+    EXPECT_EQ(ConvertToStringForChannel(CHANNEL_14), "14");
+    EXPECT_EQ(ConvertToStringForChannel(CHANNEL_15), "15");
+    EXPECT_EQ(ConvertToStringForChannel(CHANNEL_16), "16");
+}
+
+/**
+ * @tc.name  : Test ConvertToStringForChannel API with custom values
+ * @tc.type  : FUNC
+ * @tc.number: ConvertToStringForChannel_002
+ * @tc.desc  : Test ConvertToStringForChannel with custom channel values.
+ */
+HWTEST(AudioUtilsUnitTest, ConvertToStringForChannel_002, TestSize.Level1)
+{
+    // Test with some arbitrary channel counts beyond the defined enums
+    AudioChannel customChannel1 = static_cast<AudioChannel>(17);
+    AudioChannel customChannel2 = static_cast<AudioChannel>(24);
+    AudioChannel customChannel3 = static_cast<AudioChannel>(32);
+
+    EXPECT_EQ(ConvertToStringForChannel(customChannel1), "17");
+    EXPECT_EQ(ConvertToStringForChannel(customChannel2), "24");
+    EXPECT_EQ(ConvertToStringForChannel(customChannel3), "32");
+}
+
+/**
+ * @tc.name  : Test ReallocVectorBufferAndClear API with zero length
+ * @tc.type  : FUNC
+ * @tc.number: ReallocVectorBufferAndClear_001
+ * @tc.desc  : Test ReallocVectorBufferAndClear with zero buffer length.
+ */
+HWTEST(AudioUtilsUnitTest, ReallocVectorBufferAndClear_001, TestSize.Level1)
+{
+    std::vector<uint8_t> buffer = {1, 2, 3, 4, 5};
+
+    uint8_t* result = ReallocVectorBufferAndClear(buffer, 0);
+
+    EXPECT_EQ(buffer.size(), 0);
+    EXPECT_EQ(result, buffer.data());
+}
+
+/**
+ * @tc.name  : Test ReallocVectorBufferAndClear API with positive length
+ * @tc.type  : FUNC
+ * @tc.number: ReallocVectorBufferAndClear_002
+ * @tc.desc  : Test ReallocVectorBufferAndClear with positive buffer length.
+ */
+HWTEST(AudioUtilsUnitTest, ReallocVectorBufferAndClear_002, TestSize.Level1)
+{
+    std::vector<uint8_t> buffer = {1, 2, 3, 4, 5};
+    const size_t newLength = 10;
+
+    uint8_t* result = ReallocVectorBufferAndClear(buffer, newLength);
+    
+    EXPECT_EQ(buffer.size(), newLength);
+    EXPECT_EQ(result, buffer.data());
+
+    // Verify all elements are cleared to zero
+    for (size_t i = 0; i < newLength; i++) {
+        EXPECT_EQ(buffer[i], 0);
+    }
+}
+
+/**
+ * @tc.name  : Test ReallocVectorBufferAndClear API with larger length
+ * @tc.type  : FUNC
+ * @tc.number: ReallocVectorBufferAndClear_003
+ * @tc.desc  : Test ReallocVectorBufferAndClear with larger buffer length than original.
+ */
+HWTEST(AudioUtilsUnitTest, ReallocVectorBufferAndClear_003, TestSize.Level1)
+{
+    std::vector<uint8_t> buffer = {1, 2, 3};
+    const size_t newLength = 8;
+
+    uint8_t* result = ReallocVectorBufferAndClear(buffer, newLength);
+    
+    EXPECT_EQ(buffer.size(), newLength);
+    EXPECT_EQ(result, buffer.data());
+
+    // Verify all elements are cleared to zero
+    for (size_t i = 0; i < newLength; i++) {
+        EXPECT_EQ(buffer[i], 0);
+    }
+}
+
+/**
+ * @tc.name  : Test ReallocVectorBufferAndClear API with smaller length
+ * @tc.type  : FUNC
+ * @tc.number: ReallocVectorBufferAndClear_004
+ * @tc.desc  : Test ReallocVectorBufferAndClear with smaller buffer length than original.
+ */
+HWTEST(AudioUtilsUnitTest, ReallocVectorBufferAndClear_004, TestSize.Level1)
+{
+    std::vector<uint8_t> buffer = {1, 2, 3, 4, 5};
+    const size_t newLength = 2;
+
+    uint8_t* result = ReallocVectorBufferAndClear(buffer, newLength);
+
+    EXPECT_EQ(buffer.size(), newLength);
+    EXPECT_EQ(result, buffer.data());
+
+    // Verify all elements are cleared to zero
+    for (size_t i = 0; i < newLength; i++) {
+        EXPECT_EQ(buffer[i], 0);
+    }
+}
+
+/**
+ * @tc.name  : Test ReallocVectorBufferAndClear API return value
+ * @tc.type  : FUNC
+ * @tc.number: ReallocVectorBufferAndClear_005
+ * @tc.desc  : Test that ReallocVectorBufferAndClear returns correct pointer.
+ */
+HWTEST(AudioUtilsUnitTest, ReallocVectorBufferAndClear_005, TestSize.Level1)
+{
+    std::vector<uint8_t> buffer;
+    const size_t newLength = 5;
+
+    uint8_t* result = ReallocVectorBufferAndClear(buffer, newLength);
+
+    EXPECT_EQ(result, buffer.data());
+    EXPECT_NE(result, nullptr);
+    EXPECT_EQ(buffer.size(), newLength);
+}
+
+/**
+ * @tc.name  : Test ReallocVectorBufferAndClear API with typical audio buffer sizes
+ * @tc.type  : FUNC
+ * @tc.number: ReallocVectorBufferAndClear_006
+ * @tc.desc  : Test ReallocVectorBufferAndClear with typical audio buffer sizes.
+ */
+HWTEST(AudioUtilsUnitTest, ReallocVectorBufferAndClear_006, TestSize.Level1)
+{
+    std::vector<uint8_t> buffer;
+
+    // Test with typical audio buffer sizes (frames * channels * sample size)
+    uint8_t* result1 = ReallocVectorBufferAndClear(buffer, 1024);  // 1KB buffer
+    EXPECT_EQ(buffer.size(), 1024);
+    EXPECT_EQ(result1, buffer.data());
+
+    uint8_t* result2 = ReallocVectorBufferAndClear(buffer, 4096);  // 4KB buffer
+    EXPECT_EQ(buffer.size(), 4096);
+    EXPECT_EQ(result2, buffer.data());
+
+    uint8_t* result3 = ReallocVectorBufferAndClear(buffer, 16384); // 16KB buffer
+    EXPECT_EQ(buffer.size(), 16384);
+    EXPECT_EQ(result3, buffer.data());
+
+    // Verify all elements are cleared to zero
+    for (size_t i = 0; i < buffer.size(); i++) {
+        EXPECT_EQ(buffer[i], 0);
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

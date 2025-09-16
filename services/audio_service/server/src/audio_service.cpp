@@ -49,7 +49,7 @@ static const uint32_t VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME = 60; // 60ms
 static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
 #endif
 static const uint32_t BLOCK_HIBERNATE_CALLBACK_IN_MS = 5000; // 5s
-static const uint32_t RECHECK_SINK_STATE_IN_US = 100000; // 100ms
+static const uint32_t RECHECK_SINK_STATE_IN_US = 300000; // 300ms
 static const int32_t MEDIA_SERVICE_UID = 1013;
 static const int32_t RENDERER_STREAM_CNT_PER_UID_LIMIT = 40;
 static const int32_t INVALID_APP_UID = -1;
@@ -1248,14 +1248,35 @@ void AudioService::CheckBeforeRecordEndpointCreate(bool isRecord)
     }
 }
 
+bool AudioService::IsSameAudioStreamInfoNotIncludeSample(AudioStreamInfo &newStreamInfo,
+                                                         AudioStreamInfo &oldStreamInfo)
+{
+    return newStreamInfo.encoding == oldStreamInfo.encoding &&
+           newStreamInfo.format == oldStreamInfo.format &&
+           newStreamInfo.channels == oldStreamInfo.channels &&
+           newStreamInfo.channelLayout == oldStreamInfo.channelLayout;
+}
+
 // must be called with processListMutex_ lock hold
 ReuseEndpointType AudioService::GetReuseEndpointType(AudioDeviceDescriptor &deviceInfo,
-    const std::string &deviceKey, AudioStreamInfo &streamInfo)
+    const std::string &deviceKey, AudioStreamInfo &streamInfo, int32_t endpointFlag)
 {
     if (endpointList_.find(deviceKey) == endpointList_.end()) {
         return ReuseEndpointType::CREATE_ENDPOINT;
     }
-    bool reuse = streamInfo == endpointList_[deviceKey]->GetAudioStreamInfo();
+
+    bool reuse = false;
+    AudioStreamInfo oldStreamInfo = endpointList_[deviceKey]->GetAudioStreamInfo();
+    if (IsInjectEnable() && endpointList_[deviceKey]->GetDeviceRole() == INPUT_DEVICE &&
+        endpointFlag == AUDIO_FLAG_VOIP_FAST) {
+        /* capture voip fast support resample, so can reuse at not same sample */
+        if (IsSameAudioStreamInfoNotIncludeSample(streamInfo, oldStreamInfo)) {
+            reuse = true;
+        }
+    } else {
+        reuse = streamInfo == oldStreamInfo;
+    }
+
     return reuse ? ReuseEndpointType::REUSE_ENDPOINT : ReuseEndpointType::RECREATE_ENDPOINT;
 }
 
@@ -1265,7 +1286,7 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(AudioDevi
     // Create shared stream.
     int32_t endpointFlag = isVoipStream ? AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;
     std::string deviceKey = AudioEndpoint::GenerateEndpointKey(deviceInfo, endpointFlag);
-    ReuseEndpointType type = GetReuseEndpointType(deviceInfo, deviceKey, streamInfo);
+    ReuseEndpointType type = GetReuseEndpointType(deviceInfo, deviceKey, streamInfo, endpointFlag);
     std::shared_ptr<AudioEndpoint> endpoint = nullptr;
 
     switch (type) {
@@ -1554,10 +1575,10 @@ void AudioService::CheckHibernateState(bool onHibernate)
     if (onHibernate) {
         bool ret = true;
         if (allRunningSinks_.empty()) {
-            // Sleep for 100ms and recheck to avoid another sink start right after first check.
-            AUDIO_INFO_LOG("No running sinks, sleep for 100ms and check again");
+            // Sleep for 300ms and recheck to avoid another sink start right after first check.
+            AUDIO_INFO_LOG("No running sinks, sleep for 300ms and check again");
             lock.unlock(); // Unlock so that other running sinks can be added
-            usleep(RECHECK_SINK_STATE_IN_US); // sleep for 100ms
+            usleep(RECHECK_SINK_STATE_IN_US); // sleep for 300ms
             lock.lock();
             CHECK_AND_RETURN_LOG(!allRunningSinks_.empty(), "No running sinks, continue to hibernate");
         }

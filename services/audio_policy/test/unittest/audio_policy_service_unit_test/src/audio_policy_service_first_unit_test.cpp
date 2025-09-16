@@ -591,7 +591,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SelectOutputDevice_001, TestSize.Level1)
     deviceDescriptorVector.push_back(audioDeviceDescriptor);
 
     int32_t result = GetServerPtr()->audioPolicyService_.audioRecoveryDevice_.SelectOutputDevice(
-        audioRendererFilter, deviceDescriptorVector);
+        audioRendererFilter, deviceDescriptorVector, 1);
     EXPECT_EQ(SUCCESS, result);
 }
 
@@ -646,7 +646,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SelectOutputDevice_003, TestSize.Level1)
     deviceDescriptorVector.push_back(audioDeviceDescriptor);
 
     int32_t result = GetServerPtr()->audioPolicyService_.audioRecoveryDevice_.SelectOutputDevice(
-        audioRendererFilter, deviceDescriptorVector);
+        audioRendererFilter, deviceDescriptorVector, 1);
     EXPECT_EQ(SUCCESS, result);
 }
 

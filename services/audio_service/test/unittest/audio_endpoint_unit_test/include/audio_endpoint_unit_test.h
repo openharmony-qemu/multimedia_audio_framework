@@ -31,6 +31,7 @@ public:
     // TearDown: Called after each test cases
     void TearDown(void);
 };
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_ENDPOINT_UNIT_TEST_H

@@ -1490,6 +1490,12 @@ public:
     */
     int32_t GetVolumeBySessionId(const uint32_t &sessionId, float &volume);
 
+    /**
+    * @brief clean resouce.
+    * @test
+    */
+    void CleanUpResource();
+
     class WorkgroupPrioRecorder {
     public:
         WorkgroupPrioRecorder(int32_t grpId);

@@ -24,6 +24,7 @@
 #include "xpower_event_js.h"
 #endif
 #endif
+#include "audio_utils.h"
 #include "napi_param_utils.h"
 #include "napi_audio_error.h"
 #include "napi_audio_enum.h"
@@ -235,6 +236,7 @@ unique_ptr<NapiAudioRenderer> NapiAudioRenderer::CreateAudioRendererNativeObject
         rendererOptions.rendererInfo.isOffloadAllowed = false;
     }
     rendererOptions.rendererInfo.playerType = PLAYER_TYPE_ARKTS_AUDIO_RENDERER;
+    rendererNapi->rendererOptions_ = rendererOptions;
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     rendererNapi->audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions);
 #else
@@ -2304,7 +2306,14 @@ void NapiAudioRenderer::RegisterRendererWriteDataCallback(napi_env env, napi_val
         AUDIO_WARNING_LOG("writeData already subscribed. The old writeData function will be overwritten.");
     }
 
-    napiRenderer->rendererWriteDataCallbackNapi_ = std::make_shared<NapiRendererWriteDataCallback>(env, napiRenderer);
+    CHECK_AND_RETURN_LOG(napiRenderer->rendererOptions_.has_value(), "rendererOptions_ has no value");
+    const auto &streamInfo = napiRenderer->rendererOptions_->streamInfo;
+    uint32_t sampleRate = streamInfo.samplingRate;
+    uint32_t bytesPerSample = (streamInfo.channels * Util::GetSamplePerFrame(streamInfo.format));
+    size_t bufferSize = Util::CalculatePcmSizeFromDurationCeiling(
+        std::chrono::microseconds(MAX_CBBUF_IN_USEC), sampleRate, bytesPerSample);
+    napiRenderer->rendererWriteDataCallbackNapi_ = std::make_shared<NapiRendererWriteDataCallback>(
+        env, napiRenderer, bufferSize);
     napiRenderer->audioRenderer_->SetRenderMode(RENDER_MODE_CALLBACK);
     CHECK_AND_RETURN_LOG(napiRenderer->rendererWriteDataCallbackNapi_ != nullptr, "writeDataCbNapi_ is nullpur");
     int32_t ret = napiRenderer->audioRenderer_->SetRendererWriteCallback(napiRenderer->rendererWriteDataCallbackNapi_);

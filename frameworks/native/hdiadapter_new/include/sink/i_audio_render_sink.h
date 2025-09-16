@@ -112,8 +112,8 @@ public:
     virtual int32_t UnLockOffloadRunningLock(void) NOT_SUPPORT_RET
 
     // remote extend function
-    virtual int32_t SplitRenderFrame(char &data, uint64_t len, uint64_t &writeLen, const char *streamType,
-        const char *audioStreamType = nullptr) NOT_SUPPORT_RET
+    virtual int32_t SplitRenderFrame(char &data, uint64_t len, uint64_t &writeLen,
+        const char *splitStreamType) NOT_SUPPORT_RET
         
     // primary extend function
     virtual int32_t SetDeviceConnectedFlag(bool flag) NOT_SUPPORT_RET

@@ -79,6 +79,7 @@ public:
 };
 
 enum HpaeProcessorType {
+    HPAE_SCENE_UNCONNECTED = -1,
     HPAE_SCENE_DEFAULT = 0,
     HPAE_SCENE_MUSIC = 1,
     HPAE_SCENE_GAME = 2,
@@ -128,7 +129,7 @@ struct HpaeDfxNodeInfo {
     AudioChannel channels;
     AudioChannelLayout channelLayout = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
     FadeType fadeType = NONE_FADE;
-    AudioStreamType streamType;
+    AudioStreamType streamType = STREAM_DEFAULT;
     HpaeProcessorType sceneType;
     std::string deviceClass;
     std::string deviceNetId;

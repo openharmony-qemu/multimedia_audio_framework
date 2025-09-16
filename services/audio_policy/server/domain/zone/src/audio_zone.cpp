@@ -485,5 +485,17 @@ pid_t AudioZone::GetClientPid()
 {
     return zoneClientPid_;
 }
+
+bool AudioZone::CheckDeviceInZone(AudioDeviceDescriptor device)
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    for (const auto &it : devices_) {
+        if (it.second && it.first->deviceType_ == device.deviceType_ &&
+            it.first->networkId_ == device.networkId_) {
+            return true;
+        }
+    }
+    return false;
+}
 } // namespace AudioStandard
 } // namespace OHOS

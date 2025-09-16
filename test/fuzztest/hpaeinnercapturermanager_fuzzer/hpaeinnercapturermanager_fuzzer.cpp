@@ -22,6 +22,8 @@
 #include <string>
 #undef private
 #include "audio_info.h"
+#include "audio_stream_info.h"
+#include "audio_ec_info.h"
 #include "hpae_inner_capturer_manager.h"
 #include "i_hpae_renderer_manager.h"
 #include "audio_engine_log.h"
@@ -36,16 +38,31 @@ static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint32_t DEFAULT_FRAME_LENGTH1 = 960;
-const uint32_t DEFAULT_FRAME_LENGTH2 = 882;
-const uint32_t AUDIO_PER_SECOND_MS = 1000;
-const uint32_t LIMIT_SIZE = 20;
 static std::string g_rootPath = "/data/";
 static std::string g_rootCapturerPath = "/data/source_file_io_48000_2_s16le.pcm";
 const char* DEFAULT_TEST_DEVICE_CLASS = "file_io";
 const char* DEFAULT_TEST_DEVICE_NETWORKID = "LocalDevice";
+const uint32_t DEFAULT_FRAME_LENGTH = 960;
 const uint32_t DEFAULT_SESSION_ID = 123456;
 typedef void (*TestPtr)(const uint8_t *, size_t);
+const std::vector<AudioChannel> SUPPORTED_CHANNELS {
+    MONO,
+    STEREO,
+    CHANNEL_3,
+    CHANNEL_4,
+    CHANNEL_5,
+    CHANNEL_6,
+    CHANNEL_7,
+    CHANNEL_8,
+    CHANNEL_9,
+    CHANNEL_10,
+    CHANNEL_11,
+    CHANNEL_12,
+    CHANNEL_13,
+    CHANNEL_14,
+    CHANNEL_15,
+    CHANNEL_16,
+};
 
 template<class T>
 T GetData()
@@ -99,6 +116,28 @@ int32_t ReadDataCb::OnStreamData(AudioCallBackCapturerStreamInfo &callBackStream
     return SUCCESS;
 }
 
+template<class T>
+void RoundVal(T &roundVal, const std::vector<T>& list)
+{
+    if (GetData<bool>()) {
+        roundVal = GetData<T>();
+    } else {
+        roundVal = list[GetData<uint32_t>()%list.size()];
+    }
+}
+
+void RoundSinkInfo(HpaeSinkInfo &sinkInfo)
+{
+    RoundVal(sinkInfo.channels, SUPPORTED_CHANNELS);
+    RoundVal(sinkInfo.format, AUDIO_SUPPORTED_FORMATS);
+}
+
+void RoundStreamInfo(HpaeStreamInfo &streamInfo)
+{
+    RoundVal(streamInfo.channels, SUPPORTED_CHANNELS);
+    RoundVal(streamInfo.format, AUDIO_SUPPORTED_FORMATS);
+}
+
 HpaeSinkInfo GetInCapSinkInfo()
 {
     HpaeSinkInfo sinkInfo;
@@ -106,11 +145,10 @@ HpaeSinkInfo GetInCapSinkInfo()
     sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
     sinkInfo.filePath = g_rootPath + "constructHpaeInnerCapturerManagerTest.pcm";
-    sinkInfo.samplingRate = SAMPLE_RATE_48000;
-    sinkInfo.frameLen = DEFAULT_FRAME_LENGTH1;
-    sinkInfo.format = SAMPLE_F32LE;
-    sinkInfo.channels = STEREO;
+    RoundSinkInfo(sinkInfo);
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    sinkInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
     return sinkInfo;
 }
 
@@ -121,67 +159,62 @@ HpaeSinkInfo GetInCapFuzzSinkInfo()
     sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
     sinkInfo.filePath = g_rootPath + "constructHpaeInnerCapturerManagerTest.pcm";
-    sinkInfo.samplingRate = SAMPLE_RATE_48000;
-    sinkInfo.frameLen = GetData<size_t>();
-    sinkInfo.format = SAMPLE_F32LE;
-    sinkInfo.channels = STEREO;
+    RoundSinkInfo(sinkInfo);
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    sinkInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
     return sinkInfo;
 }
 
 HpaeStreamInfo GetInCapPlayStreamInfo()
 {
     HpaeStreamInfo streamInfo;
-    streamInfo.channels = STEREO;
-    streamInfo.samplingRate = SAMPLE_RATE_44100;
-    streamInfo.frameLen = DEFAULT_FRAME_LENGTH2;
-    streamInfo.format = SAMPLE_S16LE;
+    RoundStreamInfo(streamInfo);
     streamInfo.sessionId = DEFAULT_SESSION_ID;
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
     streamInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    streamInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
     return streamInfo;
 }
 
 HpaeStreamInfo GetInCapPlayFuzzStreamInfo()
 {
     HpaeStreamInfo streamInfo;
-    streamInfo.channels = STEREO;
-    streamInfo.samplingRate = SAMPLE_RATE_44100;
-    streamInfo.frameLen = (SAMPLE_RATE_44100 / AUDIO_PER_SECOND_MS) * (GetData<size_t>() % LIMIT_SIZE + 1);
-    streamInfo.format = SAMPLE_S16LE;
+    RoundStreamInfo(streamInfo);
     streamInfo.sessionId = GetData<uint32_t>();
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
     streamInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    streamInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
     return streamInfo;
 }
 
 static HpaeStreamInfo GetInCapRecordStreamInfo()
 {
     HpaeStreamInfo streamInfo;
-    streamInfo.channels = STEREO;
-    streamInfo.samplingRate = SAMPLE_RATE_44100;
-    streamInfo.frameLen = DEFAULT_FRAME_LENGTH2;
-    streamInfo.format = SAMPLE_S16LE;
+    RoundStreamInfo(streamInfo);
     streamInfo.sessionId = DEFAULT_SESSION_ID + 1;
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_RECORD;
     streamInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    streamInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
     return streamInfo;
 }
 
 static HpaeStreamInfo GetInCapRecordFuzzStreamInfo()
 {
     HpaeStreamInfo streamInfo;
-    streamInfo.channels = STEREO;
-    streamInfo.samplingRate = SAMPLE_RATE_44100;
-    streamInfo.frameLen = (SAMPLE_RATE_44100 / AUDIO_PER_SECOND_MS) * (GetData<size_t>() % LIMIT_SIZE + 1);
-    streamInfo.format = SAMPLE_S16LE;
+    RoundStreamInfo(streamInfo);
     streamInfo.sessionId = GetData<uint32_t>();
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_RECORD;
     streamInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    streamInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
     return streamInfo;
 }
 
@@ -317,10 +350,10 @@ void HpaeInnerCapturerManagerAddNodeToSinkFuzzTest1()
     hpaeInnerCapturerManager->Start(playSencondStreamInfo.sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     HpaeNodeInfo playSencondNodeInfo;
-    playSencondNodeInfo.sessionId = playSencondStreamInfo.sessionId + 1;
+    playSencondNodeInfo.sessionId = GetData<uint32_t>();
     playSencondNodeInfo.channels = STEREO;
     playSencondNodeInfo.format = SAMPLE_S16LE;
-    playSencondNodeInfo.frameLen = DEFAULT_FRAME_LENGTH2;
+    playSencondNodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
     playSencondNodeInfo.samplingRate = SAMPLE_RATE_44100;
     playSencondNodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
     playSencondNodeInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
@@ -364,7 +397,7 @@ void HpaeInnerCapturerManagerAddNodeToSinkFuzzTest2()
     playSencondNodeInfo.sessionId = GetData<uint32_t>();
     playSencondNodeInfo.channels = STEREO;
     playSencondNodeInfo.format = SAMPLE_S16LE;
-    playSencondNodeInfo.frameLen = GetData<uint64_t>();
+    playSencondNodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
     playSencondNodeInfo.samplingRate = SAMPLE_RATE_44100;
     playSencondNodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
     playSencondNodeInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
@@ -413,7 +446,7 @@ void HpaeInnerCapturerManagerAddNodeToSinkFuzzTest3()
     playSencondNodeInfo.sessionId = GetData<uint32_t>();
     playSencondNodeInfo.channels = STEREO;
     playSencondNodeInfo.format = SAMPLE_S16LE;
-    playSencondNodeInfo.frameLen = GetData<uint64_t>();
+    playSencondNodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
     playSencondNodeInfo.samplingRate = SAMPLE_RATE_44100;
     playSencondNodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
     playSencondNodeInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
@@ -572,49 +605,6 @@ void HpaeInnerCapturerManagerOtherFuzzTest3()
 
 void HpaeInnerCapturerManagerReloadFuzzTest1()
 {
-    HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
-    auto hpaeInnerCapturerManager = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
-    hpaeInnerCapturerManager->Init();
-    WaitForMsgProcessing(hpaeInnerCapturerManager);
-    HpaeStreamInfo playStreamInfo = GetInCapPlayStreamInfo();
-    ++playStreamInfo.sessionId;
-    hpaeInnerCapturerManager->CreateStream(playStreamInfo);
-    WaitForMsgProcessing(hpaeInnerCapturerManager);
-    hpaeInnerCapturerManager->ReloadRenderManager(sinkInfo, false);
-    WaitForMsgProcessing(hpaeInnerCapturerManager);
-    hpaeInnerCapturerManager->ReloadRenderManager(sinkInfo, true);
-    WaitForMsgProcessing(hpaeInnerCapturerManager);
-    hpaeInnerCapturerManager->DeInit();
-    hpaeInnerCapturerManager->ReloadRenderManager(sinkInfo, true);
-    WaitForMsgProcessing(hpaeInnerCapturerManager);
-    hpaeInnerCapturerManager->DeInit();
-}
-
-void HpaeInnerCapturerManagerReloadFuzzTest2()
-{
-    HpaeSinkInfo sinkInfo = GetInCapFuzzSinkInfo();
-    auto hpaeInnerCapturerManager = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
-    hpaeInnerCapturerManager->Init();
-    WaitForMsgProcessing(hpaeInnerCapturerManager);
-    HpaeStreamInfo playStreamInfo = GetInCapPlayFuzzStreamInfo();
-    ++playStreamInfo.sessionId;
-    hpaeInnerCapturerManager->CreateStream(playStreamInfo);
-    WaitForMsgProcessing(hpaeInnerCapturerManager);
-    bool isReload = GetData<bool>();
-    hpaeInnerCapturerManager->ReloadRenderManager(sinkInfo, isReload);
-    WaitForMsgProcessing(hpaeInnerCapturerManager);
-    isReload = GetData<bool>();
-    hpaeInnerCapturerManager->ReloadRenderManager(sinkInfo, isReload);
-    WaitForMsgProcessing(hpaeInnerCapturerManager);
-    hpaeInnerCapturerManager->DeInit();
-    isReload = GetData<bool>();
-    hpaeInnerCapturerManager->ReloadRenderManager(sinkInfo, isReload);
-    WaitForMsgProcessing(hpaeInnerCapturerManager);
-    hpaeInnerCapturerManager->DeInit();
-}
-
-void HpaeInnerCapturerManagerReloadFuzzTest3()
-{
     HpaeSinkInfo sinkInfo = GetInCapFuzzSinkInfo();
     auto hpaeInnerCapturerManager = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
     hpaeInnerCapturerManager->Init();
@@ -684,7 +674,7 @@ void OnFadeDoneFuzzTest()
     hpaeInnerCapturerManager->DeInit();
 }
 
-typedef void (*TestFuncs[16])();
+typedef void (*TestFuncs[14])();
 
 TestFuncs g_testFuncs = {
     HpaeInnerCapturerManagerFuzzTest1,
@@ -697,8 +687,6 @@ TestFuncs g_testFuncs = {
     HpaeInnerCapturerManagerOtherFuzzTest2,
     HpaeInnerCapturerManagerOtherFuzzTest3,
     HpaeInnerCapturerManagerReloadFuzzTest1,
-    HpaeInnerCapturerManagerReloadFuzzTest2,
-    HpaeInnerCapturerManagerReloadFuzzTest3,
     MoveStreamFuzzTest,
     MoveAllStreamFuzzTest,
     OnNodeStatusUpdateFuzzTest,

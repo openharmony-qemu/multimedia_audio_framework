@@ -202,11 +202,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     }
     if (audioDeviceRefinerCb_ != nullptr &&
         !NeedSkipSelectAudioOutputDeviceRefined(streamUsage, descs)) {
-        FetchDeviceInfo fetchDeviceInfo = {};
-        fetchDeviceInfo.streamUsage = callStreamUsage;
-        fetchDeviceInfo.routerType = routerType;
-        fetchDeviceInfo.clientUID = clientUID;
-        fetchDeviceInfo.audioPipeType = PIPE_TYPE_NORMAL_OUT;
+        FetchDeviceInfo fetchDeviceInfo = { callStreamUsage, streamUsage,
+            clientUID, routerType, PIPE_TYPE_NORMAL_OUT, PRIVACY_TYPE_PUBLIC };
         audioDeviceRefinerCb_->OnAudioOutputDeviceRefined(descs, fetchDeviceInfo);
     }
     if (descs.size() > 0 && descs[0] != nullptr) {

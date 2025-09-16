@@ -2843,6 +2843,58 @@ HWTEST_F(AudioCoreServicePrivateTest, MuteSinkPortForSwitchDevice_001, TestSize.
 
 /**
  * @tc.name  : Test AudioCoreService.
+ * @tc.number: CheckAndSleepBeforeVoiceCallDeviceSet_001
+ * @tc.desc  : Test AudioCoreService::CheckAndSleepBeforeVoiceCallDeviceSet()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckAndSleepBeforeVoiceCallDeviceSet_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    // Test1
+    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+
+    auto start = std::chrono::steady_clock::now();
+    audioCoreService->CheckAndSleepBeforeVoiceCallDeviceSet(reason);
+    auto end = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    uint32_t deltaUs = 3000; // 3ms
+    EXPECT_LE(duration, deltaUs);
+
+    // Test2
+    reason = AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE;
+    auto info = std::make_shared<AudioRendererChangeInfo>();
+    info->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    info->rendererState = RENDERER_RUNNING;
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.push_back(info);
+
+    start = std::chrono::steady_clock::now();
+    audioCoreService->CheckAndSleepBeforeVoiceCallDeviceSet(reason);
+    end = std::chrono::steady_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    EXPECT_LE(duration, deltaUs);
+
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
+
+    // Test3
+    info->rendererInfo.streamUsage = STREAM_USAGE_VOICE_RINGTONE;
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.push_back(info);
+
+    start = std::chrono::steady_clock::now();
+    audioCoreService->CheckAndSleepBeforeVoiceCallDeviceSet(reason);
+    end = std::chrono::steady_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    uint32_t targetTime = 120000; //120ms
+    EXPECT_GE(duration, targetTime);
+
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
  * @tc.number: CheckAndSleepBeforeRingDualDeviceSet_001
  * @tc.desc  : Test AudioCoreService::CheckAndSleepBeforeRingDualDeviceSet()
  */

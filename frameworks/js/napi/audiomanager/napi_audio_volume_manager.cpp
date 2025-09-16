@@ -1141,12 +1141,10 @@ napi_value NapiAudioVolumeManager::GetVolumeGroupManager(napi_env env, napi_call
     auto complete = [env, context](napi_value &output) {
         if (context->audioGroupManager == nullptr) {
             AUDIO_ERR_LOG("Failed to get group manager!");
-            NapiAudioVolumeGroupManager::isConstructSuccess_ = NAPI_ERR_INVALID_PARAM;
             output = NapiParamUtils::GetUndefinedValue(env);
         } else {
             output = NapiAudioVolumeGroupManager::CreateAudioVolumeGroupManagerWrapper(env, context->groupId);
         }
-        NapiAudioVolumeGroupManager::isConstructSuccess_ = SUCCESS;
     };
     return NapiAsyncWork::Enqueue(env, context, "GetVolumeGroupManager", executor, complete);
 }
@@ -1172,7 +1170,6 @@ napi_value NapiAudioVolumeManager::GetVolumeGroupManagerSync(napi_env env, napi_
 
     if (AudioSystemManager::GetInstance()->GetGroupManager(groupId) == nullptr) {
         AUDIO_ERR_LOG("Failed to get group manager!");
-        NapiAudioVolumeGroupManager::isConstructSuccess_ = NAPI_ERR_INVALID_PARAM;
         result = NapiParamUtils::GetUndefinedValue(env);
     } else {
         result = NapiAudioVolumeGroupManager::CreateAudioVolumeGroupManagerWrapper(env, groupId);

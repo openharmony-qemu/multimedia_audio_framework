@@ -130,7 +130,8 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PrivacyPriorityRouter::GetRingRen
 shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRecordCaptureDevice(SourceType sourceType,
     int32_t clientUID, const uint32_t sessionID)
 {
-    if (Util::IsScoSupportSource(sourceType)) {
+    const bool isScoSupportSource = Util::IsScoSupportSource(sourceType);
+    if (isScoSupportSource) {
         vector<shared_ptr<AudioDeviceDescriptor>> descs =
             AudioDeviceManager::GetAudioDeviceManager().GetRecongnitionCapturePrivacyDevices();
         shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(CALL_INPUT_DEVICES, descs);
@@ -142,6 +143,14 @@ shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetRecordCaptureDevice(
     }
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetMediaCapturePrivacyDevices();
+    // a2dp_in exclusion for SOURCE_TYPE_VOICE_TRANSCRIPTION and SOURCE_TYPE_VOICE_RECOGNITION
+    if (isScoSupportSource) {
+        auto isA2dpInputDevice = [](const std::shared_ptr<AudioDeviceDescriptor> &desc) {
+            return desc != nullptr && desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+        };
+        descs.erase(
+            remove_if(descs.begin(), descs.end(), isA2dpInputDevice), descs.end());
+    }
     shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(MEDIA_INPUT_DEVICES, descs);
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, make_shared<AudioDeviceDescriptor>(), "nullptr desc");
     AUDIO_DEBUG_LOG("sourceType %{public}d clientUID %{public}d fetch device %{public}d", sourceType,

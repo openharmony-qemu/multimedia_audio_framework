@@ -83,6 +83,7 @@ HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_001, TestSize.Level1)
     EXPECT_NE(AudioHfpManager::SetActiveHfpDevice("33:33:33"), SUCCESS);
     EXPECT_EQ(AudioHfpManager::SetActiveHfpDevice(HFP_DEVICE_MAC1), SUCCESS);
     EXPECT_EQ(AudioHfpManager::SetActiveHfpDevice(HFP_DEVICE_MAC2), SUCCESS);
+    EXPECT_EQ(AudioHfpManager::SetActiveHfpDevice(""), SUCCESS);
 }
 
 /**

@@ -530,7 +530,7 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerTransStreamUsage, TestSize.
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
     sinkInfo.lib = "libmodule-split-stream-sink.z.so";
-    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
 
     EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
@@ -554,6 +554,14 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerTransStreamUsage, TestSize.
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
     EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PAUSED);
+
+    hpaeRendererManager->sinkInputNodeMap_[streamInfo.sessionId]->SetState(HPAE_SESSION_PAUSING);
+    EXPECT_EQ(hpaeRendererManager->sinkInputNodeMap_[streamInfo.sessionId]->state_, HPAE_SESSION_PAUSING);
+    hpaeRendererManager->TriggerStreamState(streamInfo.sessionId,
+                                            hpaeRendererManager->sinkInputNodeMap_[streamInfo.sessionId]);
+    hpaeRendererManager->sinkInputNodeMap_[streamInfo.sessionId]->SetState(HPAE_SESSION_PAUSED);
+    hpaeRendererManager->SetSessionState(streamInfo.sessionId, HPAE_SESSION_PAUSED);
+    EXPECT_EQ(hpaeRendererManager->sessionNodeMap_[streamInfo.sessionId].state, HPAE_SESSION_PAUSED);
     EXPECT_EQ(hpaeRendererManager->Start(streamInfo.sessionId) == SUCCESS, true);
     // offload need enable after start
     hpaeRendererManager->SetOffloadPolicy(streamInfo.sessionId, 0);
@@ -566,6 +574,14 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerTransStreamUsage, TestSize.
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
     EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_STOPPED);
+
+    hpaeRendererManager->sinkInputNodeMap_[streamInfo.sessionId]->SetState(HPAE_SESSION_STOPPING);
+    EXPECT_EQ(hpaeRendererManager->sinkInputNodeMap_[streamInfo.sessionId]->state_, HPAE_SESSION_STOPPING);
+    hpaeRendererManager->TriggerStreamState(streamInfo.sessionId,
+                                            hpaeRendererManager->sinkInputNodeMap_[streamInfo.sessionId]);
+    hpaeRendererManager->sinkInputNodeMap_[streamInfo.sessionId]->SetState(HPAE_SESSION_STOPPED);
+    hpaeRendererManager->SetSessionState(streamInfo.sessionId, HPAE_SESSION_STOPPED);
+    EXPECT_EQ(hpaeRendererManager->sessionNodeMap_[streamInfo.sessionId].state, HPAE_SESSION_STOPPED);
     EXPECT_EQ(hpaeRendererManager->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo), ERR_INVALID_OPERATION);
@@ -1825,5 +1841,38 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStream_002, TestSize.
     HpaeStreamInfo streamInfo;
     streamInfo.frameLen = OVERSIZED_FRAME_LENGTH;
     EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo), ERROR);
+}
+
+/**
+ * @tc.name: DisConnectInputCluster
+ * @tc.type: FUNC
+ * @tc.number: DisConnectInputCluster_001
+ * @tc.desc: Test DisConnectInputCluster
+ */
+HWTEST_F(HpaeRendererManagerTest, DisConnectInputCluster_001, TestSize.Level0)
+{
+    uint32_t sessionId = 10000;
+    HpaeSinkInfo sinkInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    hpaeRendererManager->sessionNodeMap_[sessionId].bypass = true;
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = sessionId;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.effectMode = EFFECT_DEFAULT;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeRendererManager->DisConnectInputCluster(sessionId, HPAE_SCENE_MUSIC);
+    hpaeRendererManager->sessionNodeMap_[sessionId].bypass = false;
+    hpaeRendererManager->DisConnectInputCluster(sessionId, HPAE_SCENE_MUSIC);
+
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
 }  // namespace

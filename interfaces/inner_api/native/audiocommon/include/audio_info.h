@@ -889,6 +889,30 @@ enum AudioDeviceUsage : uint32_t {
     D_ALL_DEVICES = 15,
 };
 
+enum BluetoothAndNearlinkPreferredRecordCategory : uint32_t {
+    /**
+     * @brief Not prefer to use bluetooth and nearlink record.
+     */
+    PREFERRED_NONE = 0,
+
+    /**
+     * @brief Prefer to use bluetooth and nearlink record.
+     * However, whether to use low latency or high quality recording
+     * dpends on system.
+     */
+    PREFERRED_DEFAULT = 1,
+
+    /**
+     * @brief Prefer to use bluetooth and nearlink low latency mode to record.
+     */
+    PREFERRED_LOW_LATENCY = 2,
+
+    /**
+     * @brief Prefer to use bluetooth and nearlink high quality mode to record.
+     */
+    PREFERRED_HIGH_QUALITY = 3,
+};
+
 enum FilterMode : uint32_t {
     INCLUDE = 0,
     EXCLUDE,
@@ -1968,16 +1992,17 @@ enum RenderTarget {
 
 struct FetchDeviceInfo : public Parcelable {
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
+    StreamUsage preStreamUsage = STREAM_USAGE_UNKNOWN;
     int32_t clientUID = -1;
     RouterType routerType = ROUTER_TYPE_NONE;
     AudioPipeType audioPipeType = PIPE_TYPE_UNKNOWN;
     AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
     std::string caller = "";
 
-    FetchDeviceInfo(StreamUsage streamUsage, int32_t clientUID,
+    FetchDeviceInfo(StreamUsage streamUsage, StreamUsage preStreamUsage, int32_t clientUID,
         RouterType routerType, AudioPipeType audioPipeType, AudioPrivacyType privacyType)
-        : streamUsage(streamUsage), clientUID(clientUID), routerType(routerType),
-          audioPipeType(audioPipeType), privacyType(privacyType)
+        : streamUsage(streamUsage), preStreamUsage(preStreamUsage), clientUID(clientUID),
+          routerType(routerType), audioPipeType(audioPipeType), privacyType(privacyType)
     {}
 
     FetchDeviceInfo() = default;
@@ -1985,6 +2010,7 @@ struct FetchDeviceInfo : public Parcelable {
     bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteInt32(static_cast<int32_t>(streamUsage)) &&
+            parcel.WriteInt32(static_cast<int32_t>(preStreamUsage)) &&
             parcel.WriteInt32(clientUID) &&
             parcel.WriteInt32(static_cast<int32_t>(routerType)) &&
             parcel.WriteInt32(static_cast<int32_t>(audioPipeType)) &&
@@ -2000,6 +2026,7 @@ struct FetchDeviceInfo : public Parcelable {
         }
 
         info->streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+        info->preStreamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
         info->clientUID = parcel.ReadInt32();
         info->routerType = static_cast<RouterType>(parcel.ReadInt32());
         info->audioPipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
@@ -2012,6 +2039,7 @@ struct FetchDeviceInfo : public Parcelable {
     void UnmarshallingSelf(Parcel &parcel)
     {
         streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+        preStreamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
         clientUID = parcel.ReadInt32();
         routerType = static_cast<RouterType>(parcel.ReadInt32());
         audioPipeType = static_cast<AudioPipeType>(parcel.ReadInt32());

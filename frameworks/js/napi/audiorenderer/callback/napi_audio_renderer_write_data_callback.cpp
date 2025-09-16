@@ -28,8 +28,10 @@ static const int32_t WRITE_CALLBACK_TIMEOUT_IN_MS = 1000; // 1s
 #if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
 vector<NapiAudioRenderer*> NapiRendererWriteDataCallback::activeRenderers_;
 #endif
-NapiRendererWriteDataCallback::NapiRendererWriteDataCallback(napi_env env, NapiAudioRenderer *napiRenderer)
-    : env_(env), napiRenderer_(napiRenderer)
+NapiRendererWriteDataCallback::NapiRendererWriteDataCallback(napi_env env, NapiAudioRenderer *napiRenderer,
+    size_t bufferSize)
+    : env_(env), napiRenderer_(napiRenderer), bufferSize_(bufferSize),
+    callbackBuffer_(std::make_unique<uint8_t[]>(bufferSize))
 {
     AUDIO_DEBUG_LOG("instance create");
 #if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
@@ -113,7 +115,7 @@ void NapiRendererWriteDataCallback::OnWriteData(size_t length)
     std::lock_guard<std::mutex> lock(mutex_);
     CHECK_AND_RETURN_LOG(rendererWriteDataCallback_ != nullptr, "Cannot find the reference of writeData callback");
 
-    std::unique_ptr<RendererWriteDataJsCallback> cb = std::make_unique<RendererWriteDataJsCallback>();
+    sptr<RendererWriteDataJsCallback> cb = sptr<RendererWriteDataJsCallback>::MakeSptr();
     cb->callback = rendererWriteDataCallback_;
     cb->callbackName = WRITE_DATA_CALLBACK_NAME;
     cb->bufDesc.buffer = nullptr;
@@ -124,37 +126,28 @@ void NapiRendererWriteDataCallback::OnWriteData(size_t length)
         AUDIO_INFO_LOG("OnWriteData audioRenderer_ is null.");
         return;
     }
-    napiRenderer_->audioRenderer_->GetBufferDesc(cb->bufDesc);
-    if (cb->bufDesc.buffer == nullptr) {
-        return;
-    }
-    if (length > cb->bufDesc.bufLength) {
-        cb->bufDesc.dataLength = cb->bufDesc.bufLength;
-    } else {
-        cb->bufDesc.dataLength = length;
-    }
+    CHECK_AND_RETURN_LOG(bufferSize_ >= length, "buffersize: %{public}zu, lenth: %{public}zu", bufferSize_, length);
+
+    cb->bufDesc.buffer = callbackBuffer_.get();
+    cb->bufDesc.bufLength = length;
+    cb->bufDesc.dataLength = length;
 
     return OnJsRendererWriteDataCallback(cb);
 }
 
-void NapiRendererWriteDataCallback::OnJsRendererWriteDataCallback(std::unique_ptr<RendererWriteDataJsCallback> &jsCb)
+void NapiRendererWriteDataCallback::OnJsRendererWriteDataCallback(sptr<RendererWriteDataJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
-        AUDIO_ERR_LOG("OnJsRendererWriteDataCallback: jsCb.get() is null");
-        return;
-    }
-
-    RendererWriteDataJsCallback *event = jsCb.release();
+    RendererWriteDataJsCallback *event = jsCb.GetRefPtr();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
 
     auto obj = static_cast<NapiAudioRenderer *>(napiRenderer_);
     NapiAudioRenderer *napiRenderer = ObjectRefMap<NapiAudioRenderer>::IncreaseRef(obj);
     if (napiRenderer == nullptr) {
         AUDIO_ERR_LOG("napiRenderer is null");
-        delete event;
         return;
     }
-    
+
+    event->IncStrongRef(nullptr);
     napi_acquire_threadsafe_function(arWriteDataTsfn_);
     napi_call_threadsafe_function(arWriteDataTsfn_, event, napi_tsfn_blocking);
 
@@ -163,14 +156,15 @@ void NapiRendererWriteDataCallback::OnJsRendererWriteDataCallback(std::unique_pt
     }
     std::unique_lock<std::mutex> writeCallbackLock(napiRenderer_->writeCallbackMutex_);
     bool ret = napiRenderer_->writeCallbackCv_.wait_for(writeCallbackLock,
-        std::chrono::milliseconds(WRITE_CALLBACK_TIMEOUT_IN_MS), [this] () {
-            return napiRenderer_->enqueued_;
+        std::chrono::milliseconds(WRITE_CALLBACK_TIMEOUT_IN_MS), [event] () {
+            return event->enqueued;
         });
-    if (!ret) {
-        AUDIO_ERR_LOG("Client OnWriteData operation timed out");
-    }
-    napiRenderer_->enqueued_ = false;
+    CHECK_AND_RETURN_LOG(ret, "Client OnWriteData operation timed out");
     writeCallbackLock.unlock();
+
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
+    napiRenderer_->audioRenderer_->Enqueue(event->bufDesc);
+#endif
 }
 
 void NapiRendererWriteDataCallback::CheckWriteDataCallbackResult(napi_env env, BufferDesc &bufDesc, napi_value result)
@@ -193,15 +187,12 @@ void NapiRendererWriteDataCallback::SafeJsCallbackWriteDataWork(
 {
     RendererWriteDataJsCallback *event = reinterpret_cast<RendererWriteDataJsCallback *>(data);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
-    std::shared_ptr<RendererWriteDataJsCallback> safeContext(
-        static_cast<RendererWriteDataJsCallback*>(data),
-        [](RendererWriteDataJsCallback *ptr) {
-            delete ptr;
-    });
+    sptr<RendererWriteDataJsCallback> safeContext(event);
+    event->DecStrongRef(nullptr);
     WorkCallbackRendererWriteDataInner(event);
     CHECK_AND_RETURN_LOG(event->rendererNapiObj != nullptr, "NapiAudioRenderer object is nullptr");
     std::unique_lock<std::mutex> writeCallbackLock(event->rendererNapiObj->writeCallbackMutex_);
-    event->rendererNapiObj->enqueued_ = true;
+    event->enqueued = true;
     event->rendererNapiObj->writeCallbackCv_.notify_all();
     writeCallbackLock.unlock();
     auto napiObj = static_cast<NapiAudioRenderer *>(event->rendererNapiObj);
@@ -250,8 +241,6 @@ void NapiRendererWriteDataCallback::WorkCallbackRendererWriteDataInner(RendererW
         } else {
             AUDIO_INFO_LOG("NapiRendererWriteDataCallback is finalize.");
         }
-#else
-        event->rendererNapiObj->audioRenderer_->Enqueue(event->bufDesc);
 #endif
     } while (0);
     napi_close_handle_scope(env, scope);

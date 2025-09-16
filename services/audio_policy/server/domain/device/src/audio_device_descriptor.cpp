@@ -508,7 +508,8 @@ bool AudioDeviceDescriptor::IsPairedDeviceDesc(const AudioDeviceDescriptor &devi
 {
     return ((deviceDescriptor.deviceRole_ == INPUT_DEVICE && deviceRole_ == OUTPUT_DEVICE) ||
         (deviceDescriptor.deviceRole_ == OUTPUT_DEVICE && deviceRole_ == INPUT_DEVICE)) &&
-        deviceDescriptor.deviceType_ == deviceType_ &&
+        (deviceDescriptor.deviceType_ == deviceType_ ||
+            (IsNearlinkDevice(deviceDescriptor.deviceType_) && IsNearlinkDevice(deviceType_))) &&
         deviceDescriptor.macAddress_ == macAddress_ &&
         deviceDescriptor.networkId_ == networkId_;
 }
@@ -517,6 +518,12 @@ bool AudioDeviceDescriptor::IsDistributedSpeaker() const
 {
     return deviceType_ == DEVICE_TYPE_SPEAKER && networkId_ != "LocalDevice";
 }
+
+bool AudioDeviceDescriptor::IsA2dpOffload() const
+{
+    return deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag_ == A2DP_OFFLOAD;
+}
+
 
 bool AudioDeviceDescriptor::IsSpeakerOrEarpiece() const
 {

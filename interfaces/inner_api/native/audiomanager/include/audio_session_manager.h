@@ -341,9 +341,9 @@ public:
      */
     int32_t ClearSelectedInputDevice();
 
-    int32_t PreferBluetoothAndNearlinkRecord(bool isPreferred);
+    int32_t PreferBluetoothAndNearlinkRecord(BluetoothAndNearlinkPreferredRecordCategory category);
 
-    bool GetPreferBluetoothAndNearlinkRecord();
+    BluetoothAndNearlinkPreferredRecordCategory GetPreferBluetoothAndNearlinkRecord();
 
 private:
     std::mutex setDefaultOutputDeviceMutex_;

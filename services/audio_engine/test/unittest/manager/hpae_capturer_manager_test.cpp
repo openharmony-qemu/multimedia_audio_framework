@@ -312,6 +312,8 @@ HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerReloadTest, TestSize.Level1
     EXPECT_EQ(sourceOutputInfo.capturerSessionInfo.state, HPAE_SESSION_PREPARED);
     EXPECT_EQ(capturerManager->ReloadCaptureManager(newSourceInfo) == SUCCESS, true);
     WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->ReloadCaptureManager(newSourceInfo, true) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);
     EXPECT_EQ(capturerManager->DeInit() == SUCCESS, true);
     WaitForMsgProcessing(capturerManager);
@@ -662,6 +664,7 @@ HWTEST_F(HpaeCapturerManagerTest, ReloadCaptureManager_002, TestSize.Level0)
 
     capturerManager->isInit_ = true;
     EXPECT_EQ(capturerManager->ReloadCaptureManager(sourceInfo), SUCCESS);
+    EXPECT_EQ(capturerManager->ReloadCaptureManager(sourceInfo, true), SUCCESS);
 }
 
 /*

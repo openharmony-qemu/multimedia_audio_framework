@@ -91,126 +91,99 @@ T GetData()
     return object;
 }
 
+class AudioSessionServiceBuilder {
+public:
+    AudioSessionService& GetAudioSessionService()
+    {
+        return audioSessionService_;
+    }
+
+    AudioSessionServiceBuilder()
+    {
+    }
+
+    ~AudioSessionServiceBuilder()
+    {
+        audioSessionService_.sessionMap_.clear();
+        audioSessionService_.timeOutCallback_.reset();
+    }
+private:
+    AudioSessionService &audioSessionService_ {OHOS::Singleton<AudioSessionService>::GetInstance()};
+};
+
+
 void AudioSessionServiceIsSameTypeForAudioSessionFuzzTest()
 {
-    auto audioSessionService = std::make_shared<AudioSessionService>();
-    if (g_testAudioStreamTypes.size() == 0 || audioSessionService == nullptr) {
+    auto &audioSessionService = AudioSessionServiceBuilder().GetAudioSessionService();
+    if (g_testAudioStreamTypes.size() == 0) {
         return;
     }
     AudioStreamType incomingType = g_testAudioStreamTypes[GetData<uint32_t>() % g_testAudioStreamTypes.size()];
     AudioStreamType existedType = g_testAudioStreamTypes[GetData<uint32_t>() % g_testAudioStreamTypes.size()];
-    audioSessionService->IsSameTypeForAudioSession(incomingType, existedType);
+    audioSessionService.IsSameTypeForAudioSession(incomingType, existedType);
 }
 
 void AudioSessionServiceActivateAudioSessionFuzzTest()
 {
-    auto audioSessionService = std::make_shared<AudioSessionService>();
-    if (audioSessionService == nullptr) {
-        return;
-    }
+    auto &audioSessionService = AudioSessionServiceBuilder().GetAudioSessionService();
     int32_t callerPid = GetData<int32_t>();
     AudioSessionStrategy strategy;
-    std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = nullptr;
-    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
-    bool ifNull = GetData<bool>();
-    if (ifNull) {
-        audioSession = nullptr;
-    }
-    audioSessionService->sessionMap_.insert(make_pair(callerPid, audioSession));
-    audioSessionService->ActivateAudioSession(callerPid, strategy);
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionService);
+    audioSessionService.sessionMap_.insert(make_pair(callerPid, audioSession));
+    audioSessionService.ActivateAudioSession(callerPid, strategy);
 }
 
 void AudioSessionServiceDeactivateAudioSessionFuzzTest()
 {
-    auto audioSessionService = std::make_shared<AudioSessionService>();
-    if (audioSessionService == nullptr) {
-        return;
-    }
+    auto &audioSessionService = AudioSessionServiceBuilder().GetAudioSessionService();
     int32_t callerPid = GetData<int32_t>();
     AudioSessionStrategy strategy;
-    std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = nullptr;
-    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionService);
     bool isAddMap = GetData<bool>();
     if (isAddMap) {
-        audioSessionService->sessionMap_.insert(make_pair(callerPid, audioSession));
+        audioSessionService.sessionMap_.insert(make_pair(callerPid, audioSession));
     }
-    audioSessionService->DeactivateAudioSession(callerPid);
+    audioSessionService.DeactivateAudioSession(callerPid);
 }
 
 void AudioSessionServiceIsAudioSessionActivatedFuzzTest()
 {
-    auto audioSessionService = std::make_shared<AudioSessionService>();
-    if (audioSessionService == nullptr) {
-        return;
-    }
+    auto &audioSessionService = AudioSessionServiceBuilder().GetAudioSessionService();
     int32_t callerPid = GetData<int32_t>();
     AudioSessionStrategy strategy;
-    std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = nullptr;
-    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionService);
     bool isAddMap = GetData<bool>();
     if (isAddMap) {
-        audioSessionService->sessionMap_.insert(make_pair(callerPid, audioSession));
+        audioSessionService.sessionMap_.insert(make_pair(callerPid, audioSession));
     }
-    audioSessionService->IsAudioSessionActivated(callerPid);
+    audioSessionService.IsAudioSessionActivated(callerPid);
 }
 
 void AudioSessionServiceSetSessionTimeOutCallbackFuzzTest()
 {
-    auto audioSessionService = std::make_shared<AudioSessionService>();
-    if (audioSessionService == nullptr) {
-        return;
-    }
+    auto &audioSessionService = AudioSessionServiceBuilder().GetAudioSessionService();
 
     std::shared_ptr<SessionTimeOutCallback> timeOutCallback = nullptr;
-    audioSessionService->SetSessionTimeOutCallback(timeOutCallback);
-}
-
-void AudioSessionServiceGetAudioSessionByPidFuzzTest()
-{
-    auto audioSessionService = std::make_shared<AudioSessionService>();
-    if (audioSessionService == nullptr) {
-        return;
-    }
-    int32_t callerPid = GetData<int32_t>();
-    AudioSessionStrategy strategy;
-    std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = nullptr;
-    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
-    bool isAddMap = GetData<bool>();
-    if (isAddMap) {
-        audioSessionService->sessionMap_.insert(make_pair(callerPid, audioSession));
-    }
-
-    audioSessionService->GetAudioSessionByPid(callerPid);
+    audioSessionService.SetSessionTimeOutCallback(timeOutCallback);
 }
 
 void AudioSessionServiceOnAudioSessionTimeOutFuzzTest()
 {
-    auto audioSessionService = std::make_shared<AudioSessionService>();
-    if (audioSessionService == nullptr) {
-        return;
-    }
+    auto &audioSessionService = AudioSessionServiceBuilder().GetAudioSessionService();
     int32_t callerPid = GetData<int32_t>();
 
-    audioSessionService->OnAudioSessionTimeOut(callerPid);
+    audioSessionService.OnAudioSessionTimeOut(callerPid);
 }
 
 void AudioSessionServiceAudioSessionInfoDumpFuzzTest()
 {
-    auto audioSessionService = std::make_shared<AudioSessionService>();
-    if (audioSessionService == nullptr) {
-        return;
-    }
+    auto &audioSessionService = AudioSessionServiceBuilder().GetAudioSessionService();
     int32_t callerPid = GetData<int32_t>();
     std::string dumpString = "test";
     AudioSessionStrategy strategy;
-    std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = nullptr;
-    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
-    bool isNull = GetData<bool>();
-    if (isNull) {
-        audioSession = nullptr;
-    }
-    audioSessionService->sessionMap_.insert(make_pair(callerPid, audioSession));
-    audioSessionService->AudioSessionInfoDump(dumpString);
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionService);
+    audioSessionService.sessionMap_.insert(make_pair(callerPid, audioSession));
+    audioSessionService.AudioSessionInfoDump(dumpString);
 }
 
 TestPtr g_testPtrs[] = {
@@ -219,7 +192,6 @@ TestPtr g_testPtrs[] = {
     AudioSessionServiceDeactivateAudioSessionFuzzTest,
     AudioSessionServiceIsAudioSessionActivatedFuzzTest,
     AudioSessionServiceSetSessionTimeOutCallbackFuzzTest,
-    AudioSessionServiceGetAudioSessionByPidFuzzTest,
     AudioSessionServiceOnAudioSessionTimeOutFuzzTest,
     AudioSessionServiceAudioSessionInfoDumpFuzzTest,
 };

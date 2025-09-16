@@ -122,7 +122,7 @@ void AudioEndpointInner::ZeroVolumeCheck(const int32_t vol)
             ClockTime::GetCurNano() - zeroVolumeStartTime_ > DELAY_STOP_HDI_TIME_FOR_ZERO_VOLUME_NS) {
             zeroVolumeState_ = ACTIVE;
             HandleZeroVolumeStopEvent();
-            AudioPerformanceMonitor::GetInstance().RecordTimeStamp(adapterType_, INIT_LASTWRITTEN_TIME);
+            AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(adapterType_);
         }
     } else {
         if (zeroVolumeState_ == INACTIVE) {
@@ -188,7 +188,8 @@ void AudioEndpointInner::CheckStandBy()
     if (endpointStatus_ == IDEL) {
         // delay call sink stop when no process running
         AUDIO_INFO_LOG("status is IDEL, need delay call stop");
-        delayStopTime_ = ClockTime::GetCurNano() + ((clientConfig_.audioMode == AUDIO_MODE_PLAYBACK)
+        AudioMode audioMode = GetAudioMode();
+        delayStopTime_ = ClockTime::GetCurNano() + ((audioMode == AUDIO_MODE_PLAYBACK)
             ? PLAYBACK_DELAY_STOP_HDI_TIME_NS : RECORDER_DELAY_STOP_HDI_TIME_NS);
     }
 }

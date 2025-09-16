@@ -356,6 +356,7 @@ public:
     size_t GetDataSize();
     RestoreStatus CheckRestoreStatus();
     RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus);
+    RestoreStatus GetRestoreStatus();
     void GetRestoreInfo(RestoreInfo &restoreInfo);
     void SetRestoreInfo(RestoreInfo restoreInfo);
 

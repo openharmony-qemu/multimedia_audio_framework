@@ -116,8 +116,6 @@ private:
     void MoveAllStreamToNewSinkInner(const std::string &sinkName, const std::vector<uint32_t> &moveIds,
         MoveSessionType moveType);
     int32_t InitSinkInner(bool isReload = false);
-    int32_t CheckFramelen();
-    int32_t CheckStreamInfo(const HpaeStreamInfo &streamInfo);
     uint32_t sinkInputNodeCounter_ = 0;
     int32_t sceneTypeToProcessClusterCount_ = 0;
     std::atomic<bool> isInit_ = false;

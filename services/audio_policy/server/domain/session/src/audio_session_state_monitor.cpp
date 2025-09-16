@@ -24,24 +24,19 @@ namespace AudioStandard {
 
 class AudioSessionStateMonitorCallback : public AudioPolicyStateMonitorCallback {
 public:
-    AudioSessionStateMonitorCallback(int32_t pid, const std::shared_ptr<AudioSessionStateMonitor> &stateMonitor)
+    AudioSessionStateMonitorCallback(int32_t pid, AudioSessionStateMonitor &stateMonitor)
         : pid(pid), stateMonitor_(stateMonitor)
     {}
     
     void OnTimeOut() override
     {
-        auto monitor = stateMonitor_.lock();
-        if (monitor == nullptr) {
-            AUDIO_ERR_LOG("stateMonitor_ is nullptr");
-            return;
-        }
-        monitor->OnAudioSessionTimeOut(pid);
-        monitor->RemoveFromMonitorMap(pid);
+        stateMonitor_.OnAudioSessionTimeOut(pid);
+        stateMonitor_.RemoveFromMonitorMap(pid);
     }
 
 private:
     int32_t pid;
-    std::weak_ptr<AudioSessionStateMonitor> stateMonitor_;
+    AudioSessionStateMonitor &stateMonitor_;
 };
 
 void AudioSessionStateMonitor::StartMonitor(int32_t pid, time_t duration)
@@ -53,7 +48,7 @@ void AudioSessionStateMonitor::StartMonitor(int32_t pid, time_t duration)
     }
     lock.unlock();
 
-    auto cb = std::make_shared<AudioSessionStateMonitorCallback>(pid, GetSelfSharedPtr());
+    auto cb = std::make_shared<AudioSessionStateMonitorCallback>(pid, *this);
     int32_t cbId = DelayedSingleton<AudioPolicyStateMonitor>::GetInstance()->RegisterCallback(
         cb, duration, CallbackType::ONE_TIME);
     if (cbId == INVALID_CB_ID) {

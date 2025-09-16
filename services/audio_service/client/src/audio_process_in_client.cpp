@@ -153,6 +153,8 @@ public:
 
     void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
 
+    bool IsRestoreNeeded() override;
+
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
 
@@ -200,8 +202,6 @@ private:
     bool WaitIfBufferEmpty(const BufferDesc &bufDesc);
 
     void ExitStandByIfNeed();
-
-    bool IsRestoreNeeded();
 
     void WaitForReadableSpace() const;
 private:
@@ -369,7 +369,7 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
     bool ret = AudioProcessInClient::CheckIfSupport(config);
     CHECK_AND_RETURN_RET_LOG(config.audioMode != AUDIO_MODE_PLAYBACK || ret, nullptr,
         "CheckIfSupport failed!");
-    AudioStreamInfo targetStreamInfo = AudioPolicyManager::GetInstance().GetFastStreamInfo();
+    AudioStreamInfo targetStreamInfo = AudioPolicyManager::GetInstance().GetFastStreamInfo(config.originalSessionId);
     sptr<IStandardAudioService> gasp = AudioProcessInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, nullptr, "Create failed, can not get service.");
     AudioProcessConfig resetConfig = config;
@@ -1124,10 +1124,6 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc)
         bufDesc.dataLength <= bufDesc.bufLength, ERR_INVALID_PARAM,
         "bufDesc error, bufLen %{public}zu, dataLen %{public}zu, spanSize %{public}zu.",
         bufDesc.bufLength, bufDesc.dataLength, clientSpanSizeInByte_);
-    // check if this buffer is form us.
-    if (bufDesc.buffer != callbackBuffer_.get()) {
-        AUDIO_WARNING_LOG("the buffer is not created by client.");
-    }
 
     if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
         if (memset_s(callbackBuffer_.get(), clientSpanSizeInByte_, 0, clientSpanSizeInByte_) != EOK) {
@@ -1150,9 +1146,8 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc)
     int32_t ret = WriteDataChunk(bufDesc, clientRemainSizeInFrame);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "writedataChunk failed, err: %{public}d", ret);
 
-    if (memset_s(callbackBuffer_.get(), clientSpanSizeInByte_, 0, clientSpanSizeInByte_) != EOK) {
-        AUDIO_WARNING_LOG("reset callback buffer fail.");
-    }
+    JUDGE_AND_WARNING_LOG(memset_s(bufDesc.buffer, bufDesc.bufLength, 0, bufDesc.bufLength) != EOK,
+        "reset callback buffer fail.");
 
     return SUCCESS;
 }
@@ -1661,6 +1656,8 @@ void AudioProcessInClientInner::DoFadeInOut(const BufferDesc &buffDesc)
 
 bool AudioProcessInClientInner::IsRestoreNeeded()
 {
+    CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, false, "buffer null");
+
     RestoreStatus restoreStatus = audioBuffer_->GetRestoreStatus();
     if (restoreStatus == NEED_RESTORE) {
         return true;

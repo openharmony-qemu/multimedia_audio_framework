@@ -318,19 +318,13 @@ int32_t AudioIOHandleMap::ReloadPortAndUpdateIOHandle(std::shared_ptr<AudioPipeI
         "can not find %{public}s in io map", oldModuleName.c_str());
     DelIOHandleInfo(oldModuleName);
 
-    AUDIO_INFO_LOG("[close-module] %{public}s, id:%{public}d, paIndex: %{public}u",
-        oldModuleName.c_str(), ioHandle, pipeInfo->paIndex_);
-    int32_t result = AudioPolicyManagerFactory::GetAudioPolicyManager().CloseAudioPort(ioHandle,
-        pipeInfo->paIndex_);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "CloseAudioPort failed %{public}d", result);
-
     uint32_t paIndex = 0;
-    ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo, paIndex);
+    ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().ReloadAudioPort(moduleInfo, paIndex);
     CHECK_AND_RETURN_RET_LOG(ioHandle != HDI_INVALID_ID, ERR_INVALID_HANDLE,
-        "OpenAudioPort failed ioHandle[%{public}u]", ioHandle);
+        "ReloadAudioPort failed ioHandle[%{public}u]", ioHandle);
     CHECK_AND_RETURN_RET_LOG(paIndex != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
-        "OpenAudioPort failed paId[%{public}u]", paIndex);
-    AUDIO_INFO_LOG("[open-module] %{public}s, id:%{public}d, paIndex: %{public}u",
+        "ReloadAudioPort failed paId[%{public}u]", paIndex);
+    AUDIO_INFO_LOG("[reload-module] %{public}s, id:%{public}d, paIndex: %{public}u",
         moduleInfo.name.c_str(), ioHandle, paIndex);
 
     pipeInfo->id_ = ioHandle;

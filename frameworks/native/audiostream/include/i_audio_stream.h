@@ -136,7 +136,9 @@ public:
     static bool IsCustomSampleRateValid(uint32_t customSampleRate);
     static bool IsRendererChannelLayoutValid(uint64_t channelLayout);
     static bool IsCapturerChannelLayoutValid(uint64_t channelLayout);
-    static bool IsPlaybackChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout);
+    static bool IsChannelLayoutMatchedWithChannel(uint8_t channel, uint64_t channelLayout,
+        uint8_t encodingType = ENCODING_PCM);
+    static bool IsPlaybackChannelRelatedInfoValid(uint8_t encodingType, uint8_t channels, uint64_t channelLayout);
     static bool IsRecordChannelRelatedInfoValid(uint8_t channels, uint64_t channelLayout);
     static inline bool IsFastStreamClass(StreamClass streamClass)
     {
@@ -335,6 +337,8 @@ public:
     virtual void NotifyRouteUpdate(uint32_t routeFlag, const std::string &networkId) {}
 
     virtual void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) {}
+
+    virtual bool IsRestoreNeeded() { return false; }
 };
 } // namespace AudioStandard
 } // namespace OHOS

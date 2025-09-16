@@ -51,17 +51,19 @@ std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackService>> AudioPolicy
 
 std::weak_ptr<AudioSessionManagerPolicyServiceDiedCallback> AudioPolicyManager::audioSessionManagerCb_;
 std::mutex AudioPolicyManager::serverDiedSessionManagerCbkMutex_;
+sptr<AudioServerDeathRecipient> g_deathRecipient = nullptr;
 
 static bool RegisterDeathRecipientInner(sptr<IRemoteObject> object)
 {
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, false, "Object is NULL.");
     pid_t pid = 0;
     pid_t uid = 0;
-    sptr<AudioServerDeathRecipient> deathRecipient = new(std::nothrow) AudioServerDeathRecipient(pid, uid);
-    CHECK_AND_RETURN_RET(deathRecipient != nullptr, false);
-    deathRecipient->SetNotifyCb(
+    g_deathRecipient = new(std::nothrow) AudioServerDeathRecipient(pid, uid);
+    CHECK_AND_RETURN_RET(g_deathRecipient != nullptr, false);
+    g_deathRecipient->SetNotifyCb(
         [] (pid_t pid, pid_t uid) { AudioPolicyManager::AudioPolicyServerDied(pid, uid); });
     AUDIO_DEBUG_LOG("Register audio policy server death recipient");
-    CHECK_AND_RETURN_RET_LOG(object->AddDeathRecipient(deathRecipient), false, "AddDeathRecipient failed");
+    CHECK_AND_RETURN_RET_LOG(object->AddDeathRecipient(g_deathRecipient), false, "AddDeathRecipient failed");
     return true;
 }
 
@@ -95,12 +97,37 @@ const sptr<IAudioPolicy> AudioPolicyManager::GetAudioPolicyManagerProxy(bool blo
     CHECK_AND_RETURN_RET_LOG(gsp, nullptr, "gsp is null");
 
     AUDIO_DEBUG_LOG("Init g_apProxy is assigned.");
-
-    if (RegisterDeathRecipientInner(gsp->AsObject())) {
+    sptr<IRemoteObject> object = gsp->AsObject();
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, gsp, "Object is NULL.");
+    if (!object->IsProxyObject() || RegisterDeathRecipientInner(object)) {
         g_apProxy = gsp;
     }
 
     return gsp;
+}
+
+void AudioPolicyManager::CleanUpResource()
+{
+    lock_guard<mutex> lock(g_apProxyMutex);
+
+    if (g_apProxy == nullptr) {
+        AUDIO_INFO_LOG("g_apProxy is null.");
+        return;
+    }
+
+    sptr<IRemoteObject> object = g_apProxy->AsObject();
+    if (object == nullptr) {
+        AUDIO_INFO_LOG("object is null.");
+        return;
+    }
+
+    if (g_deathRecipient != nullptr) {
+        AUDIO_INFO_LOG("Remove DeathRecipient Success.");
+        object->RemoveDeathRecipient(g_deathRecipient);
+        g_deathRecipient = nullptr;
+    }
+    g_apProxy = nullptr;
+    AUDIO_INFO_LOG("Remove DeathRecipient end.");
 }
 
 static const sptr<IAudioPolicy> RecoverAndGetAudioPolicyManagerProxy()
@@ -476,6 +503,15 @@ AudioStreamType AudioPolicyManager::GetSystemActiveVolumeType(const int32_t clie
     return static_cast<AudioStreamType>(streamType);
 }
 
+bool AudioPolicyManager::ReloadLoudVolumeMode(AudioStreamType streamType, SetLoudVolMode setVolMode)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    bool ret = false;
+    gsp->ReloadLoudVolumeMode(static_cast<int32_t>(streamType), static_cast<int32_t>(setVolMode), ret);
+    return ret;
+}
+
 int32_t AudioPolicyManager::GetSelfAppVolumeLevel(int32_t &volumeLevel)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -538,12 +574,12 @@ float AudioPolicyManager::GetLowPowerVolume(int32_t streamId)
     return outVolume;
 }
 
-AudioStreamInfo AudioPolicyManager::GetFastStreamInfo()
+AudioStreamInfo AudioPolicyManager::GetFastStreamInfo(uint32_t sessionId)
 {
     AudioStreamInfo streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, streamInfo, "audio policy manager proxy is NULL.");
-    gsp->GetFastStreamInfo(streamInfo);
+    gsp->GetFastStreamInfo(streamInfo, sessionId);
     return streamInfo;
 }
 

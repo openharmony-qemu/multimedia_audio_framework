@@ -36,9 +36,14 @@ void AudioInjectorService::SetSinkPortIdx(uint32_t sinkPortIdx)
     sinkPortIndex_ = sinkPortIdx;
 }
 
-int32_t AudioInjectorService::GetSinkPortIdx()
+uint32_t AudioInjectorService::GetSinkPortIdx()
 {
     return sinkPortIndex_;
+}
+
+AudioModuleInfo &AudioInjectorService::GetModuleInfo()
+{
+    return moduleInfo_;
 }
 }  //  namespace AudioStandard
 }  //  namespace OHOS

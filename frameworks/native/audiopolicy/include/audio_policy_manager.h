@@ -78,6 +78,8 @@ public:
 
     AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid);
 
+    bool ReloadLoudVolumeMode(AudioStreamType streamType, SetLoudVolMode setVolMode);
+
     int32_t GetSystemVolumeLevel(AudioVolumeType volumeType, int32_t uid = 0);
 
     int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
@@ -90,7 +92,7 @@ public:
 
     float GetSingleStreamVolume(int32_t streamId);
 
-    AudioStreamInfo GetFastStreamInfo();
+    AudioStreamInfo GetFastStreamInfo(uint32_t sessionId);
 
     int32_t SetStreamMute(AudioVolumeType volumeType, bool mute, bool isLegacy = false,
         const DeviceType &deviceType = DEVICE_TYPE_NONE);
@@ -149,6 +151,8 @@ public:
     int32_t SetRingerModeLegacy(AudioRingerMode ringMode);
 
     int32_t SetRingerMode(AudioRingerMode ringMode);
+
+    void CleanUpResource();
 
 #ifdef FEATURE_DTMF_TONE
     std::vector<int32_t> GetSupportedTones(const std::string &countryCode);
@@ -425,9 +429,9 @@ public:
 
     int32_t ClearSelectedInputDevice();
 
-    int32_t PreferBluetoothAndNearlinkRecord(bool isPreferred);
+    int32_t PreferBluetoothAndNearlinkRecord(BluetoothAndNearlinkPreferredRecordCategory category);
 
-    bool GetPreferBluetoothAndNearlinkRecord();
+    BluetoothAndNearlinkPreferredRecordCategory GetPreferBluetoothAndNearlinkRecord();
 
     int32_t SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,
         const std::shared_ptr<AudioManagerAvailableDeviceChangeCallback>& callback);

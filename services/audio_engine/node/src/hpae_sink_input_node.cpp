@@ -47,7 +47,7 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
       interleveData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)),
       totalFrames_(0)
 {
-    AUDIO_INFO_LOG("sinkinput sessionId %{public}d, channelcount %{public}d, channelLayout %{public}" PRIu64 ", "
+    AUDIO_INFO_LOG("sessionId %{public}d, channelcount %{public}d, channelLayout %{public}" PRIu64 ", "
         "frameLen %{public}d", nodeInfo.sessionId, inputAudioBuffer_.GetChannelCount(),
         inputAudioBuffer_.GetChannelLayout(), inputAudioBuffer_.GetFrameLen());
 
@@ -57,7 +57,7 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
             nodeInfo.customSampleRate, nodeInfo.channelLayout, nodeInfo.historyFrameCount};
         pcmInfo.isMultiFrames = true;
         historyBuffer_ = std::make_unique<HpaePcmBuffer>(pcmInfo);
-        AUDIO_INFO_LOG("HpaeSinkInputNode::historybuffer created");
+        AUDIO_INFO_LOG("historybuffer created");
     } else {
         historyBuffer_ = nullptr;
     }
@@ -86,7 +86,7 @@ void HpaeSinkInputNode::CheckAndDestroyHistoryBuffer()
     // historyBuffer_ has no data, check if historyFrameCount is 0 and destroy it
     if (nodeInfo.historyFrameCount == 0) {
         if (historyBuffer_) {
-            AUDIO_INFO_LOG("HpaeSinkInputNode::historyBuffer_ useless, destroy it");
+            AUDIO_INFO_LOG("historyBuffer_ useless, destroy it");
         }
         historyBuffer_ = nullptr;
     } else if (historyBuffer_ == nullptr) {  // this case need to create historyBuffer_
@@ -95,7 +95,7 @@ void HpaeSinkInputNode::CheckAndDestroyHistoryBuffer()
             nodeInfo.customSampleRate, nodeInfo.channelLayout, nodeInfo.historyFrameCount};
         pcmInfo.isMultiFrames = true;
         historyBuffer_ = std::make_unique<HpaePcmBuffer>(pcmInfo);
-        AUDIO_INFO_LOG("HpaeSinkInputNode::historybuffer created");
+        AUDIO_INFO_LOG("historybuffer created");
     }
 }
 
@@ -267,7 +267,7 @@ void HpaeSinkInputNode::RewindHistoryBuffer(uint64_t rewindTime, uint64_t hdiFra
 {
     CHECK_AND_RETURN_LOG(historyBuffer_, "historyBuffer_ is nullptr");
     hdiFramePosition_.store(hdiFramePosition);
-    AUDIO_INFO_LOG("HpaeSinkInputNode::rewind %{public}zu frames", ConvertUsToFrameCount(rewindTime, GetNodeInfo()));
+    AUDIO_INFO_LOG("rewind %{public}zu frames", ConvertUsToFrameCount(rewindTime, GetNodeInfo()));
     historyBuffer_->RewindBuffer(ConvertUsToFrameCount(rewindTime, GetNodeInfo()));
     OnStreamInfoChange(false);
 }
@@ -305,7 +305,8 @@ float HpaeSinkInputNode::GetSpeed()
 
 uint64_t HpaeSinkInputNode::GetLatency()
 {
-    return historyBuffer_ ? historyBuffer_->GetCurFrames() * GetFrameLen() : 0;
+    uint64_t samples = historyBuffer_ ? historyBuffer_->GetCurFrames() * GetFrameLen() : 0;
+    return samples * AUDIO_US_PER_SECOND / GetSampleRate();
 }
 
 int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)

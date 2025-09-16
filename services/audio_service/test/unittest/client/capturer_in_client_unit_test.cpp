@@ -264,23 +264,23 @@ void Init(std::shared_ptr<CapturerInClientInner> capturerInClientInner)
  */
 HWTEST(CapturerInClientUnitTest, OnOperationHandled_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     Operation operation = Operation::UPDATE_STREAM;
     int64_t result = 1;
-    int32_t ret = capturerInClientInner_->OnOperationHandled(operation, result);
+    int32_t ret = capturerInClientInner->OnOperationHandled(operation, result);
     EXPECT_EQ(ret, SUCCESS);
 
     operation = Operation::BUFFER_OVERFLOW;
-    ret = capturerInClientInner_->OnOperationHandled(operation, result);
+    ret = capturerInClientInner->OnOperationHandled(operation, result);
     EXPECT_EQ(ret, SUCCESS);
 
     operation = Operation::RESTORE_SESSION;
-    ret = capturerInClientInner_->OnOperationHandled(operation, result);
+    ret = capturerInClientInner->OnOperationHandled(operation, result);
     EXPECT_EQ(ret, SUCCESS);
 
     operation = Operation::START_STREAM;
-    ret = capturerInClientInner_->OnOperationHandled(operation, result);
+    ret = capturerInClientInner->OnOperationHandled(operation, result);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -292,12 +292,12 @@ HWTEST(CapturerInClientUnitTest, OnOperationHandled_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, RegisterTracker_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->streamTrackerRegistered_ = false;
+    capturerInClientInner->streamTrackerRegistered_ = false;
     std::shared_ptr<AudioClientTracker> proxyObj;
-    capturerInClientInner_->RegisterTracker(proxyObj);
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    capturerInClientInner->RegisterTracker(proxyObj);
+    EXPECT_NE(capturerInClientInner, nullptr);
 }
 
 /**
@@ -308,13 +308,13 @@ HWTEST(CapturerInClientUnitTest, RegisterTracker_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, RegisterTracker_002, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->audioStreamTracker_ = nullptr;
-    capturerInClientInner_->streamTrackerRegistered_ = true;
+    capturerInClientInner->audioStreamTracker_ = nullptr;
+    capturerInClientInner->streamTrackerRegistered_ = true;
     std::shared_ptr<AudioClientTracker> proxyObj;
-    capturerInClientInner_->RegisterTracker(proxyObj);
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    capturerInClientInner->RegisterTracker(proxyObj);
+    EXPECT_NE(capturerInClientInner, nullptr);
 }
 
 /**
@@ -325,13 +325,13 @@ HWTEST(CapturerInClientUnitTest, RegisterTracker_002, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, RegisterTracker_003, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->audioStreamTracker_ = nullptr;
-    capturerInClientInner_->streamTrackerRegistered_ = false;
+    capturerInClientInner->audioStreamTracker_ = nullptr;
+    capturerInClientInner->streamTrackerRegistered_ = false;
     std::shared_ptr<AudioClientTracker> proxyObj;
-    capturerInClientInner_->RegisterTracker(proxyObj);
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    capturerInClientInner->RegisterTracker(proxyObj);
+    EXPECT_NE(capturerInClientInner, nullptr);
 }
 
 /**
@@ -343,14 +343,14 @@ HWTEST(CapturerInClientUnitTest, RegisterTracker_003, TestSize.Level1)
 HWTEST(CapturerInClientUnitTest, RegisterTracker_004, TestSize.Level1)
 {
     int32_t clientUid = 0;
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->audioStreamTracker_ = std::make_unique<AudioStreamTracker>(AudioMode::AUDIO_MODE_PLAYBACK,
+    capturerInClientInner->audioStreamTracker_ = std::make_unique<AudioStreamTracker>(AudioMode::AUDIO_MODE_PLAYBACK,
         clientUid);
-    capturerInClientInner_->streamTrackerRegistered_ = true;
+    capturerInClientInner->streamTrackerRegistered_ = true;
     std::shared_ptr<AudioClientTracker> proxyObj;
-    capturerInClientInner_->RegisterTracker(proxyObj);
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    capturerInClientInner->RegisterTracker(proxyObj);
+    EXPECT_NE(capturerInClientInner, nullptr);
 }
 
 /**
@@ -362,14 +362,14 @@ HWTEST(CapturerInClientUnitTest, RegisterTracker_004, TestSize.Level1)
 HWTEST(CapturerInClientUnitTest, RegisterTracker_005, TestSize.Level1)
 {
     int32_t clientUid = 0;
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->audioStreamTracker_ = std::make_unique<AudioStreamTracker>(AudioMode::AUDIO_MODE_PLAYBACK,
+    capturerInClientInner->audioStreamTracker_ = std::make_unique<AudioStreamTracker>(AudioMode::AUDIO_MODE_PLAYBACK,
         clientUid);
-    capturerInClientInner_->streamTrackerRegistered_ = false;
+    capturerInClientInner->streamTrackerRegistered_ = false;
     std::shared_ptr<AudioClientTracker> proxyObj;
-    capturerInClientInner_->RegisterTracker(proxyObj);
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    capturerInClientInner->RegisterTracker(proxyObj);
+    EXPECT_NE(capturerInClientInner, nullptr);
 }
 
 /**
@@ -380,12 +380,12 @@ HWTEST(CapturerInClientUnitTest, RegisterTracker_005, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, UpdateTracker_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->audioStreamTracker_ = nullptr;
+    capturerInClientInner->audioStreamTracker_ = nullptr;
     std::string updateCase = " ";
-    capturerInClientInner_->UpdateTracker(updateCase);
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    capturerInClientInner->UpdateTracker(updateCase);
+    EXPECT_NE(capturerInClientInner, nullptr);
 }
 
 /**
@@ -396,9 +396,9 @@ HWTEST(CapturerInClientUnitTest, UpdateTracker_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Init(capturerInClientInner_);
+    Init(capturerInClientInner);
     std::shared_ptr<AudioClientTracker> proxyObj;
     AudioStreamParams info;
     info.format = AudioSampleFormat::SAMPLE_U8;
@@ -406,8 +406,8 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_001, TestSize.Level1)
     info.samplingRate = AudioSamplingRate::SAMPLE_RATE_8000;
     info.channels = AudioChannel::MONO;
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
-    capturerInClientInner_->state_ = NEW;
-    int32_t ret = capturerInClientInner_->SetAudioStreamInfo(info, proxyObj);
+    capturerInClientInner->state_ = NEW;
+    int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
     EXPECT_NE(ret, SUCCESS);
 }
 
@@ -419,7 +419,7 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_002, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     std::shared_ptr<AudioClientTracker> proxyObj;
     AudioStreamParams info;
@@ -428,8 +428,8 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_002, TestSize.Level1)
     info.samplingRate = AudioSamplingRate::SAMPLE_RATE_8000;
     info.channels = AudioChannel::MONO;
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
-    capturerInClientInner_->state_ = NEW;
-    int32_t ret = capturerInClientInner_->SetAudioStreamInfo(info, proxyObj);
+    capturerInClientInner->state_ = NEW;
+    int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
     EXPECT_NE(ret, SUCCESS);
 }
 
@@ -441,7 +441,7 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_002, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_003, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     std::shared_ptr<AudioClientTracker> proxyObj;
     AudioStreamParams info;
@@ -450,8 +450,8 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_003, TestSize.Level1)
     info.samplingRate = AudioSamplingRate::SAMPLE_RATE_8000;
     info.channels = AudioChannel::MONO;
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
-    capturerInClientInner_->state_ = NEW;
-    int32_t ret = capturerInClientInner_->SetAudioStreamInfo(info, proxyObj);
+    capturerInClientInner->state_ = NEW;
+    int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
 
@@ -463,7 +463,7 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_003, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_004, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     std::shared_ptr<AudioClientTracker> proxyObj;
     AudioStreamParams info;
@@ -472,8 +472,8 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_004, TestSize.Level1)
     info.samplingRate = static_cast<AudioSamplingRate>(600);
     info.channels = AudioChannel::MONO;
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
-    capturerInClientInner_->state_ = NEW;
-    int32_t ret = capturerInClientInner_->SetAudioStreamInfo(info, proxyObj);
+    capturerInClientInner->state_ = NEW;
+    int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
 
@@ -485,7 +485,7 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_004, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_005, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     std::shared_ptr<AudioClientTracker> proxyObj;
     AudioStreamParams info;
@@ -494,8 +494,8 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_005, TestSize.Level1)
     info.samplingRate = static_cast<AudioSamplingRate>(600);
     info.channels = AudioChannel::MONO;
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
-    capturerInClientInner_->state_ = NEW;
-    int32_t ret = capturerInClientInner_->SetAudioStreamInfo(info, proxyObj);
+    capturerInClientInner->state_ = NEW;
+    int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
 
@@ -507,7 +507,7 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_005, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_006, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     std::shared_ptr<AudioClientTracker> proxyObj;
     AudioStreamParams info;
@@ -516,8 +516,8 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_006, TestSize.Level1)
     info.samplingRate = static_cast<AudioSamplingRate>(600);
     info.channels = AudioChannel::MONO;
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
-    capturerInClientInner_->state_ = NEW;
-    int32_t ret = capturerInClientInner_->SetAudioStreamInfo(info, proxyObj);
+    capturerInClientInner->state_ = NEW;
+    int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
 
@@ -529,7 +529,7 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_006, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_007, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     std::shared_ptr<AudioClientTracker> proxyObj;
     AudioStreamParams info;
@@ -538,8 +538,8 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_007, TestSize.Level1)
     info.samplingRate = AudioSamplingRate::SAMPLE_RATE_8000;
     info.channels = AudioChannel::MONO;
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
-    capturerInClientInner_->state_ = NEW;
-    int32_t ret = capturerInClientInner_->SetAudioStreamInfo(info, proxyObj);
+    capturerInClientInner->state_ = NEW;
+    int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
 
@@ -551,7 +551,7 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_007, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_008, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     std::shared_ptr<AudioClientTracker> proxyObj;
     AudioStreamParams info;
@@ -560,8 +560,8 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_008, TestSize.Level1)
     info.samplingRate = static_cast<AudioSamplingRate>(600);
     info.channels = AudioChannel::MONO;
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
-    capturerInClientInner_->state_ = NEW;
-    int32_t ret = capturerInClientInner_->SetAudioStreamInfo(info, proxyObj);
+    capturerInClientInner->state_ = NEW;
+    int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
 
@@ -573,7 +573,7 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_008, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_009, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     std::shared_ptr<AudioClientTracker> proxyObj;
     AudioStreamParams info;
@@ -582,8 +582,8 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_009, TestSize.Level1)
     info.samplingRate = AudioSamplingRate::SAMPLE_RATE_8000;
     info.channels = AudioChannel::CHANNEL_7;
     info.channelLayout = static_cast<AudioChannelLayout>(99999);
-    capturerInClientInner_->state_ = NEW;
-    int32_t ret = capturerInClientInner_->SetAudioStreamInfo(info, proxyObj);
+    capturerInClientInner->state_ = NEW;
+    int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
 
@@ -595,9 +595,9 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_009, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_010, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Init(capturerInClientInner_);
+    Init(capturerInClientInner);
     std::shared_ptr<AudioClientTracker> proxyObj;
     AudioStreamParams info;
     info.format = AudioSampleFormat::SAMPLE_U8;
@@ -605,8 +605,8 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_010, TestSize.Level1)
     info.samplingRate = AudioSamplingRate::SAMPLE_RATE_8000;
     info.channels = AudioChannel::MONO;
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
-    capturerInClientInner_->state_ = INVALID;
-    int32_t ret = capturerInClientInner_->SetAudioStreamInfo(info, proxyObj);
+    capturerInClientInner->state_ = INVALID;
+    int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
     EXPECT_NE(ret, SUCCESS);
 }
 
@@ -618,12 +618,12 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_010, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, GetAudioServerProxy_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Init(capturerInClientInner_);
-    capturerInClientInner_->GetAudioServerProxy();
-    capturerInClientInner_->GetAudioServerProxy();
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    Init(capturerInClientInner);
+    capturerInClientInner->GetAudioServerProxy();
+    capturerInClientInner->GetAudioServerProxy();
+    EXPECT_NE(capturerInClientInner, nullptr);
 }
 
 /**
@@ -634,17 +634,17 @@ HWTEST(CapturerInClientUnitTest, GetAudioServerProxy_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, OnHandle_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Init(capturerInClientInner_);
+    Init(capturerInClientInner);
     uint32_t code = RENDERER_PERIOD_REACHED_EVENT;
     int64_t data = 0;
-    capturerInClientInner_->OnHandle(code, data);
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    capturerInClientInner->OnHandle(code, data);
+    EXPECT_NE(capturerInClientInner, nullptr);
 
     code = CAPTURER_PERIOD_REACHED_EVENT;
-    capturerInClientInner_->OnHandle(code, data);
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    capturerInClientInner->OnHandle(code, data);
+    EXPECT_NE(capturerInClientInner, nullptr);
 }
 
 /**
@@ -655,13 +655,13 @@ HWTEST(CapturerInClientUnitTest, OnHandle_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, HandleCapturerMarkReachedEvent_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Init(capturerInClientInner_);
-    capturerInClientInner_->capturerPositionCallback_ = nullptr;
+    Init(capturerInClientInner);
+    capturerInClientInner->capturerPositionCallback_ = nullptr;
     int64_t data = 16;
-    capturerInClientInner_->HandleCapturerMarkReachedEvent(data);
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    capturerInClientInner->HandleCapturerMarkReachedEvent(data);
+    EXPECT_NE(capturerInClientInner, nullptr);
 }
 
 /**
@@ -672,14 +672,14 @@ HWTEST(CapturerInClientUnitTest, HandleCapturerMarkReachedEvent_001, TestSize.Le
  */
 HWTEST(CapturerInClientUnitTest, HandleCapturerMarkReachedEvent_002, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Init(capturerInClientInner_);
-    capturerInClientInner_->capturerPositionCallback_ = std::make_shared<CapturerPositionCallbackTest>();
-    ASSERT_TRUE(capturerInClientInner_->capturerPositionCallback_ != nullptr);
+    Init(capturerInClientInner);
+    capturerInClientInner->capturerPositionCallback_ = std::make_shared<CapturerPositionCallbackTest>();
+    ASSERT_TRUE(capturerInClientInner->capturerPositionCallback_ != nullptr);
     int64_t data = 16;
-    capturerInClientInner_->HandleCapturerMarkReachedEvent(data);
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    capturerInClientInner->HandleCapturerMarkReachedEvent(data);
+    EXPECT_NE(capturerInClientInner, nullptr);
 }
 
 /**
@@ -690,13 +690,13 @@ HWTEST(CapturerInClientUnitTest, HandleCapturerMarkReachedEvent_002, TestSize.Le
  */
 HWTEST(CapturerInClientUnitTest, HandleCapturerPeriodReachedEvent_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Init(capturerInClientInner_);
-    capturerInClientInner_->capturerPeriodPositionCallback_ = nullptr;
+    Init(capturerInClientInner);
+    capturerInClientInner->capturerPeriodPositionCallback_ = nullptr;
     int64_t data = 16;
-    capturerInClientInner_->HandleCapturerPeriodReachedEvent(data);
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    capturerInClientInner->HandleCapturerPeriodReachedEvent(data);
+    EXPECT_NE(capturerInClientInner, nullptr);
 }
 
 /**
@@ -707,14 +707,14 @@ HWTEST(CapturerInClientUnitTest, HandleCapturerPeriodReachedEvent_001, TestSize.
  */
 HWTEST(CapturerInClientUnitTest, HandleCapturerPeriodReachedEvent_002, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Init(capturerInClientInner_);
+    Init(capturerInClientInner);
     auto callback = std::make_shared<CapturerPeriodPositionCallbackTest>();
     int64_t data = 16;
-    capturerInClientInner_->SetCapturerPeriodPositionCallback(data, callback);
-    capturerInClientInner_->HandleCapturerPeriodReachedEvent(data);
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    capturerInClientInner->SetCapturerPeriodPositionCallback(data, callback);
+    capturerInClientInner->HandleCapturerPeriodReachedEvent(data);
+    EXPECT_NE(capturerInClientInner, nullptr);
 }
 
 /**
@@ -725,13 +725,13 @@ HWTEST(CapturerInClientUnitTest, HandleCapturerPeriodReachedEvent_002, TestSize.
  */
 HWTEST(CapturerInClientUnitTest, ParamsToStateCmdType_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Init(capturerInClientInner_);
+    Init(capturerInClientInner);
     int64_t params = HANDLER_PARAM_NEW;
     State state;
     StateChangeCmdType cmdType;
-    int32_t ret = capturerInClientInner_->ParamsToStateCmdType(params, state, cmdType);
+    int32_t ret = capturerInClientInner->ParamsToStateCmdType(params, state, cmdType);
     EXPECT_EQ(state, NEW);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -744,13 +744,13 @@ HWTEST(CapturerInClientUnitTest, ParamsToStateCmdType_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, ParamsToStateCmdType_002, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Init(capturerInClientInner_);
+    Init(capturerInClientInner);
     int64_t params = HANDLER_PARAM_RELEASED;
     State state;
     StateChangeCmdType cmdType;
-    int32_t ret = capturerInClientInner_->ParamsToStateCmdType(params, state, cmdType);
+    int32_t ret = capturerInClientInner->ParamsToStateCmdType(params, state, cmdType);
     EXPECT_EQ(state, RELEASED);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -763,28 +763,28 @@ HWTEST(CapturerInClientUnitTest, ParamsToStateCmdType_002, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, ParamsToStateCmdType_003, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Init(capturerInClientInner_);
+    Init(capturerInClientInner);
     int64_t params = HANDLER_PARAM_STOPPING;
     State state;
     StateChangeCmdType cmdType;
-    int32_t ret = capturerInClientInner_->ParamsToStateCmdType(params, state, cmdType);
+    int32_t ret = capturerInClientInner->ParamsToStateCmdType(params, state, cmdType);
     EXPECT_EQ(state, STOPPING);
     EXPECT_EQ(ret, SUCCESS);
 
     params = HANDLER_PARAM_RUNNING_FROM_SYSTEM;
-    ret = capturerInClientInner_->ParamsToStateCmdType(params, state, cmdType);
+    ret = capturerInClientInner->ParamsToStateCmdType(params, state, cmdType);
     EXPECT_EQ(cmdType, CMD_FROM_SYSTEM);
     EXPECT_EQ(ret, SUCCESS);
 
     params = HANDLER_PARAM_PAUSED_FROM_SYSTEM;
-    ret = capturerInClientInner_->ParamsToStateCmdType(params, state, cmdType);
+    ret = capturerInClientInner->ParamsToStateCmdType(params, state, cmdType);
     EXPECT_EQ(cmdType, CMD_FROM_SYSTEM);
     EXPECT_EQ(ret, SUCCESS);
 
     params = HANDLER_PARAM_INVALID;
-    ret = capturerInClientInner_->ParamsToStateCmdType(params, state, cmdType);
+    ret = capturerInClientInner->ParamsToStateCmdType(params, state, cmdType);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -796,13 +796,13 @@ HWTEST(CapturerInClientUnitTest, ParamsToStateCmdType_003, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, ParamsToStateCmdType_004, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Init(capturerInClientInner_);
+    Init(capturerInClientInner);
     int64_t params = HANDLER_PARAM_PAUSED;
     State state;
     StateChangeCmdType cmdType;
-    int32_t ret = capturerInClientInner_->ParamsToStateCmdType(params, state, cmdType);
+    int32_t ret = capturerInClientInner->ParamsToStateCmdType(params, state, cmdType);
     EXPECT_EQ(state, PAUSED);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -815,13 +815,13 @@ HWTEST(CapturerInClientUnitTest, ParamsToStateCmdType_004, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, StateCmdTypeToParams_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Init(capturerInClientInner_);
+    Init(capturerInClientInner);
     int64_t params;
     State state = State::RUNNING;
     StateChangeCmdType cmdType = CMD_FROM_SYSTEM;
-    int32_t ret = capturerInClientInner_->StateCmdTypeToParams(params, state, cmdType);
+    int32_t ret = capturerInClientInner->StateCmdTypeToParams(params, state, cmdType);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(params, HANDLER_PARAM_RUNNING_FROM_SYSTEM);
 }
@@ -834,13 +834,13 @@ HWTEST(CapturerInClientUnitTest, StateCmdTypeToParams_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, StateCmdTypeToParams_002, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Init(capturerInClientInner_);
+    Init(capturerInClientInner);
     int64_t params;
     State state = State::PAUSED;
     StateChangeCmdType cmdType = CMD_FROM_SYSTEM;
-    int32_t ret = capturerInClientInner_->StateCmdTypeToParams(params, state, cmdType);
+    int32_t ret = capturerInClientInner->StateCmdTypeToParams(params, state, cmdType);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(params, HANDLER_PARAM_PAUSED_FROM_SYSTEM);
 }
@@ -853,13 +853,13 @@ HWTEST(CapturerInClientUnitTest, StateCmdTypeToParams_002, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, StateCmdTypeToParams_003, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Init(capturerInClientInner_);
+    Init(capturerInClientInner);
     int64_t params;
     State state = State::NEW;
     StateChangeCmdType cmdType = CMD_FROM_SYSTEM;
-    int32_t ret = capturerInClientInner_->StateCmdTypeToParams(params, state, cmdType);
+    int32_t ret = capturerInClientInner->StateCmdTypeToParams(params, state, cmdType);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(params, HANDLER_PARAM_INVALID);
 }
@@ -872,12 +872,12 @@ HWTEST(CapturerInClientUnitTest, StateCmdTypeToParams_003, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, ConstructConfig_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Init(capturerInClientInner_);
-    capturerInClientInner_->capturerInfo_.capturerFlags = 1;
-    AudioProcessConfig ret = capturerInClientInner_->ConstructConfig();
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    Init(capturerInClientInner);
+    capturerInClientInner->capturerInfo_.capturerFlags = 1;
+    AudioProcessConfig ret = capturerInClientInner->ConstructConfig();
+    EXPECT_NE(capturerInClientInner, nullptr);
 }
 
 /**
@@ -888,11 +888,11 @@ HWTEST(CapturerInClientUnitTest, ConstructConfig_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, InitCacheBuffer_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Init(capturerInClientInner_);
+    Init(capturerInClientInner);
     size_t size = 32 * 1024 * 1024;
-    int32_t ret = capturerInClientInner_->InitCacheBuffer(size);
+    int32_t ret = capturerInClientInner->InitCacheBuffer(size);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
 
@@ -905,14 +905,14 @@ HWTEST(CapturerInClientUnitTest, InitCacheBuffer_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, GetBufferSize_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Init(capturerInClientInner_);
-    capturerInClientInner_->state_ = State::NEW;
-    capturerInClientInner_->capturerMode_ = CAPTURE_MODE_CALLBACK;
+    Init(capturerInClientInner);
+    capturerInClientInner->state_ = State::NEW;
+    capturerInClientInner->capturerMode_ = CAPTURE_MODE_CALLBACK;
     size_t bufferSize = 0;
-    int32_t ret = capturerInClientInner_->GetBufferSize(bufferSize);
-    EXPECT_EQ(bufferSize, capturerInClientInner_->cbBufferSize_);
+    int32_t ret = capturerInClientInner->GetBufferSize(bufferSize);
+    EXPECT_EQ(bufferSize, capturerInClientInner->cbBufferSize_);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -924,11 +924,11 @@ HWTEST(CapturerInClientUnitTest, GetBufferSize_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, SetStreamCallback_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     auto callback = std::make_shared<AudioStreamCallbackTest>();
     callback = nullptr;
-    int32_t ret = capturerInClientInner_->SetStreamCallback(callback);
+    int32_t ret = capturerInClientInner->SetStreamCallback(callback);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
@@ -940,11 +940,11 @@ HWTEST(CapturerInClientUnitTest, SetStreamCallback_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, SetStreamCallback_002, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     auto callback = std::make_shared<AudioStreamCallbackTest>();
-    capturerInClientInner_->state_ = State::RUNNING;
-    int32_t ret = capturerInClientInner_->SetStreamCallback(callback);
+    capturerInClientInner->state_ = State::RUNNING;
+    int32_t ret = capturerInClientInner->SetStreamCallback(callback);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -956,11 +956,11 @@ HWTEST(CapturerInClientUnitTest, SetStreamCallback_002, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, InitCallbackBuffer_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     u_int64_t bufferDurationInUs = 3000000;
-    capturerInClientInner_->InitCallbackBuffer(bufferDurationInUs);
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    capturerInClientInner->InitCallbackBuffer(bufferDurationInUs);
+    EXPECT_NE(capturerInClientInner, nullptr);
 }
 
 /**
@@ -971,11 +971,11 @@ HWTEST(CapturerInClientUnitTest, InitCallbackBuffer_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, SetCaptureMode_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->capturerMode_ = AudioCaptureMode::CAPTURE_MODE_NORMAL;
+    capturerInClientInner->capturerMode_ = AudioCaptureMode::CAPTURE_MODE_NORMAL;
     AudioCaptureMode captureMode = AudioCaptureMode::CAPTURE_MODE_NORMAL;
-    int32_t ret = capturerInClientInner_->SetCaptureMode(captureMode);
+    int32_t ret = capturerInClientInner->SetCaptureMode(captureMode);
     usleep(SHORT_SLEEP_TIME);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -988,17 +988,18 @@ HWTEST(CapturerInClientUnitTest, SetCaptureMode_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, SetCaptureMode_002, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->state_ = State::INVALID;
-    capturerInClientInner_->capturerMode_ = AudioCaptureMode::CAPTURE_MODE_NORMAL;
+    Init(capturerInClientInner);
+    capturerInClientInner->state_ = State::INVALID;
+    capturerInClientInner->capturerMode_ = AudioCaptureMode::CAPTURE_MODE_NORMAL;
     AudioCaptureMode captureMode = AudioCaptureMode::CAPTURE_MODE_CALLBACK;
-    int32_t ret = capturerInClientInner_->SetCaptureMode(captureMode);
+    int32_t ret = capturerInClientInner->SetCaptureMode(captureMode);
     EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
 
-    capturerInClientInner_->capturerMode_ = AudioCaptureMode::CAPTURE_MODE_CALLBACK;
+    capturerInClientInner->capturerMode_ = AudioCaptureMode::CAPTURE_MODE_CALLBACK;
     captureMode = AudioCaptureMode::CAPTURE_MODE_NORMAL;
-    ret = capturerInClientInner_->SetCaptureMode(captureMode);
+    ret = capturerInClientInner->SetCaptureMode(captureMode);
     usleep(SHORT_SLEEP_TIME);
     EXPECT_EQ(ret, ERR_INCORRECT_MODE);
 }
@@ -1011,18 +1012,19 @@ HWTEST(CapturerInClientUnitTest, SetCaptureMode_002, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, SetCaptureMode_003, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->capturerMode_ = AudioCaptureMode::CAPTURE_MODE_NORMAL;
+    Init(capturerInClientInner);
+    capturerInClientInner->capturerMode_ = AudioCaptureMode::CAPTURE_MODE_NORMAL;
     AudioCaptureMode captureMode = AudioCaptureMode::CAPTURE_MODE_CALLBACK;
-    capturerInClientInner_->state_ = State::NEW;
-    capturerInClientInner_->streamParams_.samplingRate = SAMPLE_RATE_11025;
-    capturerInClientInner_->spanSizeInFrame_ = 1;
-    int32_t ret = capturerInClientInner_->SetCaptureMode(captureMode);
+    capturerInClientInner->state_ = State::NEW;
+    capturerInClientInner->streamParams_.samplingRate = SAMPLE_RATE_11025;
+    capturerInClientInner->spanSizeInFrame_ = 1;
+    int32_t ret = capturerInClientInner->SetCaptureMode(captureMode);
     EXPECT_EQ(ret, SUCCESS);
 
-    capturerInClientInner_->state_ = State::PREPARED;
-    ret = capturerInClientInner_->SetCaptureMode(captureMode);
+    capturerInClientInner->state_ = State::PREPARED;
+    ret = capturerInClientInner->SetCaptureMode(captureMode);
     usleep(SHORT_SLEEP_TIME);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -1035,14 +1037,15 @@ HWTEST(CapturerInClientUnitTest, SetCaptureMode_003, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, SetCaptureMode_004, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->capturerMode_ = AudioCaptureMode::CAPTURE_MODE_NORMAL;
+    Init(capturerInClientInner);
+    capturerInClientInner->capturerMode_ = AudioCaptureMode::CAPTURE_MODE_NORMAL;
     AudioCaptureMode captureMode = AudioCaptureMode::CAPTURE_MODE_CALLBACK;
-    capturerInClientInner_->state_ = State::PREPARED;
-    capturerInClientInner_->streamParams_.samplingRate = SAMPLE_RATE_11025;
-    capturerInClientInner_->spanSizeInFrame_ = 1;
-    int32_t ret = capturerInClientInner_->SetCaptureMode(captureMode);
+    capturerInClientInner->state_ = State::PREPARED;
+    capturerInClientInner->streamParams_.samplingRate = SAMPLE_RATE_11025;
+    capturerInClientInner->spanSizeInFrame_ = 1;
+    int32_t ret = capturerInClientInner->SetCaptureMode(captureMode);
     usleep(SHORT_SLEEP_TIME);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -1055,15 +1058,16 @@ HWTEST(CapturerInClientUnitTest, SetCaptureMode_004, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, SetCaptureMode_005, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->capturerMode_ = AudioCaptureMode::CAPTURE_MODE_NORMAL;
+    Init(capturerInClientInner);
+    capturerInClientInner->capturerMode_ = AudioCaptureMode::CAPTURE_MODE_NORMAL;
     AudioCaptureMode captureMode = AudioCaptureMode::CAPTURE_MODE_CALLBACK;
-    capturerInClientInner_->state_ = State::NEW;
-    capturerInClientInner_->streamParams_.samplingRate = SAMPLE_RATE_11025;
-    capturerInClientInner_->cbThreadReleased_ = true;
-    capturerInClientInner_->spanSizeInFrame_ = 1;
-    int32_t ret = capturerInClientInner_->SetCaptureMode(captureMode);
+    capturerInClientInner->state_ = State::NEW;
+    capturerInClientInner->streamParams_.samplingRate = SAMPLE_RATE_11025;
+    capturerInClientInner->cbThreadReleased_ = true;
+    capturerInClientInner->spanSizeInFrame_ = 1;
+    int32_t ret = capturerInClientInner->SetCaptureMode(captureMode);
     usleep(SHORT_SLEEP_TIME);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -1076,14 +1080,15 @@ HWTEST(CapturerInClientUnitTest, SetCaptureMode_005, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, ReadCallbackFunc_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
     BufferDesc temp;
     temp.buffer = nullptr;
-    capturerInClientInner_->cbBufferQueue_.Push(temp);
-    capturerInClientInner_->state_ = State::RUNNING;
-    auto ret = capturerInClientInner_->ReadCallbackFunc();
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    capturerInClientInner->cbBufferQueue_.Push(temp);
+    capturerInClientInner->state_ = State::RUNNING;
+    auto ret = capturerInClientInner->ReadCallbackFunc();
+    EXPECT_NE(capturerInClientInner, nullptr);
     EXPECT_EQ(ret, false);
 }
 
@@ -1095,15 +1100,16 @@ HWTEST(CapturerInClientUnitTest, ReadCallbackFunc_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, ReadCallbackFunc_002, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
     BufferDesc temp;
     temp.buffer = nullptr;
-    capturerInClientInner_->cbBufferQueue_.Push(temp);
-    capturerInClientInner_->state_ = State::RUNNING;
-    capturerInClientInner_->cbThreadReleased_ = false;
-    auto ret = capturerInClientInner_->ReadCallbackFunc();
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    capturerInClientInner->cbBufferQueue_.Push(temp);
+    capturerInClientInner->state_ = State::RUNNING;
+    capturerInClientInner->cbThreadReleased_ = false;
+    auto ret = capturerInClientInner->ReadCallbackFunc();
+    EXPECT_NE(capturerInClientInner, nullptr);
     EXPECT_EQ(ret, false);
 }
 
@@ -1115,12 +1121,13 @@ HWTEST(CapturerInClientUnitTest, ReadCallbackFunc_002, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, ReadCallbackFunc_003, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->state_ = State::STOPPED;
-    capturerInClientInner_->cbThreadReleased_ = false;
-    auto ret = capturerInClientInner_->ReadCallbackFunc();
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    Init(capturerInClientInner);
+    capturerInClientInner->state_ = State::STOPPED;
+    capturerInClientInner->cbThreadReleased_ = false;
+    auto ret = capturerInClientInner->ReadCallbackFunc();
+    EXPECT_NE(capturerInClientInner, nullptr);
     EXPECT_EQ(ret, true);
 }
 
@@ -1132,16 +1139,17 @@ HWTEST(CapturerInClientUnitTest, ReadCallbackFunc_003, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, ReadCallbackFunc_004, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
     BufferDesc temp;
     uint8_t bufferTest = 10;
     temp.buffer = &bufferTest;
-    capturerInClientInner_->cbBufferQueue_.Push(temp);
-    capturerInClientInner_->state_ = State::RUNNING;
-    capturerInClientInner_->cbThreadReleased_ = false;
-    auto ret = capturerInClientInner_->ReadCallbackFunc();
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    capturerInClientInner->cbBufferQueue_.Push(temp);
+    capturerInClientInner->state_ = State::RUNNING;
+    capturerInClientInner->cbThreadReleased_ = false;
+    auto ret = capturerInClientInner->ReadCallbackFunc();
+    EXPECT_NE(capturerInClientInner, nullptr);
     EXPECT_EQ(ret, true);
 }
 
@@ -1153,15 +1161,16 @@ HWTEST(CapturerInClientUnitTest, ReadCallbackFunc_004, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, GetBufferDesc_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->capturerMode_ = CAPTURE_MODE_CALLBACK;
+    Init(capturerInClientInner);
+    capturerInClientInner->capturerMode_ = CAPTURE_MODE_CALLBACK;
     BufferDesc bufferDesc;
-    int32_t ret = capturerInClientInner_->GetBufferDesc(bufferDesc);
+    int32_t ret = capturerInClientInner->GetBufferDesc(bufferDesc);
     EXPECT_EQ(ret, SUCCESS);
 
-    capturerInClientInner_->capturerMode_ = CAPTURE_MODE_NORMAL;
-    ret = capturerInClientInner_->GetBufferDesc(bufferDesc);
+    capturerInClientInner->capturerMode_ = CAPTURE_MODE_NORMAL;
+    ret = capturerInClientInner->GetBufferDesc(bufferDesc);
     EXPECT_EQ(ret, ERR_INCORRECT_MODE);
 }
 
@@ -1173,15 +1182,16 @@ HWTEST(CapturerInClientUnitTest, GetBufferDesc_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, GetBufQueueState_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->capturerMode_ = CAPTURE_MODE_CALLBACK;
+    Init(capturerInClientInner);
+    capturerInClientInner->capturerMode_ = CAPTURE_MODE_CALLBACK;
     BufferQueueState bufState;
-    int32_t ret = capturerInClientInner_->GetBufQueueState(bufState);
+    int32_t ret = capturerInClientInner->GetBufQueueState(bufState);
     EXPECT_EQ(ret, SUCCESS);
 
-    capturerInClientInner_->capturerMode_ = CAPTURE_MODE_NORMAL;
-    ret = capturerInClientInner_->GetBufQueueState(bufState);
+    capturerInClientInner->capturerMode_ = CAPTURE_MODE_NORMAL;
+    ret = capturerInClientInner->GetBufQueueState(bufState);
     EXPECT_EQ(ret, ERR_INCORRECT_MODE);
 }
 
@@ -1193,11 +1203,12 @@ HWTEST(CapturerInClientUnitTest, GetBufQueueState_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, Enqueue_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->capturerMode_ = CAPTURE_MODE_CALLBACK;
+    Init(capturerInClientInner);
+    capturerInClientInner->capturerMode_ = CAPTURE_MODE_CALLBACK;
     BufferDesc bufferDesc;
-    int32_t ret = capturerInClientInner_->Enqueue(bufferDesc);
+    int32_t ret = capturerInClientInner->Enqueue(bufferDesc);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1209,26 +1220,27 @@ HWTEST(CapturerInClientUnitTest, Enqueue_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, Enqueue_002, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->capturerMode_ = CAPTURE_MODE_CALLBACK;
-    capturerInClientInner_->cbBufferSize_ = 16;
+    Init(capturerInClientInner);
+    capturerInClientInner->capturerMode_ = CAPTURE_MODE_CALLBACK;
+    capturerInClientInner->cbBufferSize_ = 16;
     BufferDesc bufferDesc;
     bufferDesc.bufLength = 16;
     bufferDesc.dataLength = 16;
-    int32_t ret = capturerInClientInner_->Enqueue(bufferDesc);
+    int32_t ret = capturerInClientInner->Enqueue(bufferDesc);
     EXPECT_EQ(ret, SUCCESS);
 
     bufferDesc.bufLength = VALUE_FIF;
-    ret = capturerInClientInner_->Enqueue(bufferDesc);
+    ret = capturerInClientInner->Enqueue(bufferDesc);
     EXPECT_EQ(ret, ERR_INVALID_INDEX);
 
     bufferDesc.dataLength = VALUE_FIF;
-    ret = capturerInClientInner_->Enqueue(bufferDesc);
+    ret = capturerInClientInner->Enqueue(bufferDesc);
     EXPECT_EQ(ret, ERR_INVALID_INDEX);
 
     bufferDesc.bufLength = 16;
-    ret = capturerInClientInner_->Enqueue(bufferDesc);
+    ret = capturerInClientInner->Enqueue(bufferDesc);
     EXPECT_EQ(ret, ERR_INVALID_INDEX);
 }
 
@@ -1240,21 +1252,22 @@ HWTEST(CapturerInClientUnitTest, Enqueue_002, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, Enqueue_003, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->capturerMode_ = CAPTURE_MODE_CALLBACK;
-    capturerInClientInner_->cbBufferSize_ = 16;
+    Init(capturerInClientInner);
+    capturerInClientInner->capturerMode_ = CAPTURE_MODE_CALLBACK;
+    capturerInClientInner->cbBufferSize_ = 16;
     BufferDesc bufferDesc;
     bufferDesc.bufLength = 16;
     bufferDesc.dataLength = 16;
     uint8_t buffer_ = 1;
     bufferDesc.buffer = &buffer_;
-    int32_t ret = capturerInClientInner_->Enqueue(bufferDesc);
+    int32_t ret = capturerInClientInner->Enqueue(bufferDesc);
     EXPECT_EQ(ret, SUCCESS);
 
-    capturerInClientInner_->cbBuffer_.reset(new uint8_t[VALUE_TEN]);
-    bufferDesc.buffer = capturerInClientInner_->cbBuffer_.get();
-    ret = capturerInClientInner_->Enqueue(bufferDesc);
+    capturerInClientInner->cbBuffer_.reset(new uint8_t[VALUE_TEN]);
+    bufferDesc.buffer = capturerInClientInner->cbBuffer_.get();
+    ret = capturerInClientInner->Enqueue(bufferDesc);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1266,11 +1279,12 @@ HWTEST(CapturerInClientUnitTest, Enqueue_003, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, Clear_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->capturerMode_ = CAPTURE_MODE_CALLBACK;
-    capturerInClientInner_->cbBuffer_.reset(new uint8_t[VALUE_TEN]);
-    int32_t ret = capturerInClientInner_->Clear();
+    Init(capturerInClientInner);
+    capturerInClientInner->capturerMode_ = CAPTURE_MODE_CALLBACK;
+    capturerInClientInner->cbBuffer_.reset(new uint8_t[VALUE_TEN]);
+    int32_t ret = capturerInClientInner->Clear();
     EXPECT_NE(ret, ERR_INCORRECT_MODE);
 }
 
@@ -1282,12 +1296,13 @@ HWTEST(CapturerInClientUnitTest, Clear_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, StartAudioStream_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->state_ = State::RUNNING;
+    Init(capturerInClientInner);
+    capturerInClientInner->state_ = State::RUNNING;
     StateChangeCmdType cmdType = CMD_FROM_CLIENT;
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
-    bool ret = capturerInClientInner_->StartAudioStream(cmdType, reason);
+    bool ret = capturerInClientInner->StartAudioStream(cmdType, reason);
     EXPECT_EQ(ret, false);
 }
 
@@ -1299,15 +1314,16 @@ HWTEST(CapturerInClientUnitTest, StartAudioStream_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, StartAudioStream_002, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->audioStreamTracker_ = nullptr;
-    capturerInClientInner_->state_ = State::PREPARED;
-    capturerInClientInner_->notifiedOperation_ = Operation::PAUSE_STREAM;
-    capturerInClientInner_->notifiedResult_ = ERR_ILLEGAL_STATE;
+    Init(capturerInClientInner);
+    capturerInClientInner->audioStreamTracker_ = nullptr;
+    capturerInClientInner->state_ = State::PREPARED;
+    capturerInClientInner->notifiedOperation_ = Operation::PAUSE_STREAM;
+    capturerInClientInner->notifiedResult_ = ERR_ILLEGAL_STATE;
     StateChangeCmdType cmdType = CMD_FROM_CLIENT;
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
-    bool ret = capturerInClientInner_->StartAudioStream(cmdType, reason);
+    bool ret = capturerInClientInner->StartAudioStream(cmdType, reason);
     EXPECT_EQ(ret, false);
 }
 
@@ -1319,15 +1335,16 @@ HWTEST(CapturerInClientUnitTest, StartAudioStream_002, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, StartAudioStream_003, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->audioStreamTracker_ = nullptr;
-    capturerInClientInner_->state_ = State::PREPARED;
-    capturerInClientInner_->notifiedOperation_ = Operation::PAUSE_STREAM;
-    capturerInClientInner_->notifiedResult_ = SUCCESS;
+    Init(capturerInClientInner);
+    capturerInClientInner->audioStreamTracker_ = nullptr;
+    capturerInClientInner->state_ = State::PREPARED;
+    capturerInClientInner->notifiedOperation_ = Operation::PAUSE_STREAM;
+    capturerInClientInner->notifiedResult_ = SUCCESS;
     StateChangeCmdType cmdType = CMD_FROM_CLIENT;
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
-    bool ret = capturerInClientInner_->StartAudioStream(cmdType, reason);
+    bool ret = capturerInClientInner->StartAudioStream(cmdType, reason);
     EXPECT_EQ(ret, false);
 }
 
@@ -1339,10 +1356,11 @@ HWTEST(CapturerInClientUnitTest, StartAudioStream_003, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, StopAudioStream_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->state_ = State::STOPPED;
-    bool ret = capturerInClientInner_->StopAudioStream();
+    Init(capturerInClientInner);
+    capturerInClientInner->state_ = State::STOPPED;
+    bool ret = capturerInClientInner->StopAudioStream();
     EXPECT_EQ(ret, true);
 }
 
@@ -1354,13 +1372,13 @@ HWTEST(CapturerInClientUnitTest, StopAudioStream_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, UpdateLatencyTimestamp_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Init(capturerInClientInner_);
+    Init(capturerInClientInner);
     std::string timestamp = "";
     bool isRenderer = false;
-    capturerInClientInner_->UpdateLatencyTimestamp(timestamp, isRenderer);
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    capturerInClientInner->UpdateLatencyTimestamp(timestamp, isRenderer);
+    EXPECT_NE(capturerInClientInner, nullptr);
 }
 
 /**
@@ -1371,12 +1389,13 @@ HWTEST(CapturerInClientUnitTest, UpdateLatencyTimestamp_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, UpdateLatencyTimestamp_002, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
     std::string timestamp = "";
     bool isRenderer = false;
-    capturerInClientInner_->UpdateLatencyTimestamp(timestamp, isRenderer);
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    capturerInClientInner->UpdateLatencyTimestamp(timestamp, isRenderer);
+    EXPECT_NE(capturerInClientInner, nullptr);
 }
 
 /**
@@ -1387,13 +1406,14 @@ HWTEST(CapturerInClientUnitTest, UpdateLatencyTimestamp_002, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, HandleCapturerRead_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
     size_t readSize = VALUE_FIVE;
     size_t userSize = 0;
     uint8_t buffer = 0;
     bool isBlockingRead = false;
-    int32_t ret = capturerInClientInner_->HandleCapturerRead(readSize, userSize, buffer, isBlockingRead);
+    int32_t ret = capturerInClientInner->HandleCapturerRead(readSize, userSize, buffer, isBlockingRead);
     EXPECT_EQ(ret, 5);
 }
 
@@ -1405,17 +1425,17 @@ HWTEST(CapturerInClientUnitTest, HandleCapturerRead_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, HandleCapturerRead_002, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Init(capturerInClientInner_);
+    Init(capturerInClientInner);
     size_t readSize = VALUE_FIVE;
     size_t userSize = 16;
     uint8_t buffer = 0;
     bool isBlockingRead = false;
-    capturerInClientInner_->ringCache_->writeIndex_ = VALUE_FIVE;
-    capturerInClientInner_->ringCache_->readIndex_ = 0;
-    capturerInClientInner_->ringCache_->cacheTotalSize_ = VALUE_SIX;
-    int32_t ret = capturerInClientInner_->HandleCapturerRead(readSize, userSize, buffer, isBlockingRead);
+    capturerInClientInner->ringCache_->writeIndex_ = VALUE_FIVE;
+    capturerInClientInner->ringCache_->readIndex_ = 0;
+    capturerInClientInner->ringCache_->cacheTotalSize_ = VALUE_SIX;
+    int32_t ret = capturerInClientInner->HandleCapturerRead(readSize, userSize, buffer, isBlockingRead);
     EXPECT_NE(ret, OPERATION_FAILED);
 }
 
@@ -1427,14 +1447,15 @@ HWTEST(CapturerInClientUnitTest, HandleCapturerRead_002, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, Read_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->state_ = State::NEW;
+    Init(capturerInClientInner);
+    capturerInClientInner->state_ = State::NEW;
     size_t userSize = 16;
     uint8_t buffer = 0;
     bool isBlockingRead = false;
-    capturerInClientInner_->readLogTimes_ = MAX_TIMES;
-    int32_t ret = capturerInClientInner_->Read(buffer, userSize, isBlockingRead);
+    capturerInClientInner->readLogTimes_ = MAX_TIMES;
+    int32_t ret = capturerInClientInner->Read(buffer, userSize, isBlockingRead);
     EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
 }
 
@@ -1446,12 +1467,13 @@ HWTEST(CapturerInClientUnitTest, Read_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, HandleCapturerPositionChanges_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
     size_t byteRead = 1;
-    capturerInClientInner_->sizePerFrameInByte_ = 0;
-    capturerInClientInner_->HandleCapturerPositionChanges(byteRead);
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    capturerInClientInner->sizePerFrameInByte_ = 0;
+    capturerInClientInner->HandleCapturerPositionChanges(byteRead);
+    EXPECT_NE(capturerInClientInner, nullptr);
 }
 
 /**
@@ -1462,15 +1484,16 @@ HWTEST(CapturerInClientUnitTest, HandleCapturerPositionChanges_001, TestSize.Lev
  */
 HWTEST(CapturerInClientUnitTest, HandleCapturerPositionChanges_002, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
     size_t byteRead = 1;
-    capturerInClientInner_->capturerMarkPosition_ = false;
-    capturerInClientInner_->totalBytesRead_ = VALUE_EIGHT;
-    capturerInClientInner_->sizePerFrameInByte_ = VALUE_FOUR;
-    capturerInClientInner_->capturerMarkPosition_ = VALUE_FOUR;
-    capturerInClientInner_->HandleCapturerPositionChanges(byteRead);
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    capturerInClientInner->capturerMarkPosition_ = false;
+    capturerInClientInner->totalBytesRead_ = VALUE_EIGHT;
+    capturerInClientInner->sizePerFrameInByte_ = VALUE_FOUR;
+    capturerInClientInner->capturerMarkPosition_ = VALUE_FOUR;
+    capturerInClientInner->HandleCapturerPositionChanges(byteRead);
+    EXPECT_NE(capturerInClientInner, nullptr);
 }
 
 /**
@@ -1481,29 +1504,30 @@ HWTEST(CapturerInClientUnitTest, HandleCapturerPositionChanges_002, TestSize.Lev
  */
 HWTEST(CapturerInClientUnitTest, HandleCapturerPositionChanges_003, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
     size_t byteRead = 1;
-    capturerInClientInner_->capturerMarkPosition_ = true;
-    capturerInClientInner_->capturerPeriodRead_ = VALUE_EIGHT;
-    capturerInClientInner_->capturerPeriodSize_ = VALUE_FOUR;
-    capturerInClientInner_->HandleCapturerPositionChanges(byteRead);
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    capturerInClientInner->capturerMarkPosition_ = true;
+    capturerInClientInner->capturerPeriodRead_ = VALUE_EIGHT;
+    capturerInClientInner->capturerPeriodSize_ = VALUE_FOUR;
+    capturerInClientInner->HandleCapturerPositionChanges(byteRead);
+    EXPECT_NE(capturerInClientInner, nullptr);
 
-    capturerInClientInner_->capturerPeriodRead_ = VALUE_EIGHT;
-    capturerInClientInner_->capturerPeriodSize_ = 0;
-    capturerInClientInner_->HandleCapturerPositionChanges(byteRead);
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    capturerInClientInner->capturerPeriodRead_ = VALUE_EIGHT;
+    capturerInClientInner->capturerPeriodSize_ = 0;
+    capturerInClientInner->HandleCapturerPositionChanges(byteRead);
+    EXPECT_NE(capturerInClientInner, nullptr);
 
-    capturerInClientInner_->capturerPeriodRead_ = VALUE_FOUR;
-    capturerInClientInner_->capturerPeriodSize_ = VALUE_EIGHT;
-    capturerInClientInner_->HandleCapturerPositionChanges(byteRead);
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    capturerInClientInner->capturerPeriodRead_ = VALUE_FOUR;
+    capturerInClientInner->capturerPeriodSize_ = VALUE_EIGHT;
+    capturerInClientInner->HandleCapturerPositionChanges(byteRead);
+    EXPECT_NE(capturerInClientInner, nullptr);
 
-    capturerInClientInner_->capturerPeriodRead_ = VALUE_INVALID;
-    capturerInClientInner_->capturerPeriodSize_ = 0;
-    capturerInClientInner_->HandleCapturerPositionChanges(byteRead);
-    EXPECT_NE(capturerInClientInner_, nullptr);
+    capturerInClientInner->capturerPeriodRead_ = VALUE_INVALID;
+    capturerInClientInner->capturerPeriodSize_ = 0;
+    capturerInClientInner->HandleCapturerPositionChanges(byteRead);
+    EXPECT_NE(capturerInClientInner, nullptr);
 }
 
 /**
@@ -1514,15 +1538,16 @@ HWTEST(CapturerInClientUnitTest, HandleCapturerPositionChanges_003, TestSize.Lev
  */
 HWTEST(CapturerInClientUnitTest, SetBufferSizeInMsec_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
     int32_t bufferSizeInMsec = 16;
-    capturerInClientInner_->capturerMode_ = CAPTURE_MODE_CALLBACK;
-    int32_t ret = capturerInClientInner_->SetBufferSizeInMsec(bufferSizeInMsec);
+    capturerInClientInner->capturerMode_ = CAPTURE_MODE_CALLBACK;
+    int32_t ret = capturerInClientInner->SetBufferSizeInMsec(bufferSizeInMsec);
     EXPECT_EQ(ret, SUCCESS);
 
-    capturerInClientInner_->capturerMode_ = CAPTURE_MODE_NORMAL;
-    ret = capturerInClientInner_->SetBufferSizeInMsec(bufferSizeInMsec);
+    capturerInClientInner->capturerMode_ = CAPTURE_MODE_NORMAL;
+    ret = capturerInClientInner->SetBufferSizeInMsec(bufferSizeInMsec);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1534,11 +1559,11 @@ HWTEST(CapturerInClientUnitTest, SetBufferSizeInMsec_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, GetFastStatus_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    ASSERT_NE(capturerInClientInner_, nullptr);
+    Init(capturerInClientInner);
 
-    auto ret = capturerInClientInner_->GetFastStatus();
+    auto ret = capturerInClientInner->GetFastStatus();
     EXPECT_EQ(ret, FASTSTATUS_NORMAL);
 }
 
@@ -1550,9 +1575,9 @@ HWTEST(CapturerInClientUnitTest, GetFastStatus_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, RestoreAudioStream_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Init(capturerInClientInner_);
+    Init(capturerInClientInner);
     std::shared_ptr<AudioClientTracker> proxyObj = std::make_shared<AudioClientTrackerTest>();
     AudioStreamParams info;
     info.format = AudioSampleFormat::SAMPLE_U8;
@@ -1560,26 +1585,26 @@ HWTEST(CapturerInClientUnitTest, RestoreAudioStream_001, TestSize.Level1)
     info.samplingRate = AudioSamplingRate::SAMPLE_RATE_8000;
     info.channels = AudioChannel::MONO;
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
-    capturerInClientInner_->streamParams_ = info;
-    capturerInClientInner_->proxyObj_ = std::make_shared<AudioClientTrackerTest>();
-    capturerInClientInner_->state_ = State::RUNNING;
-    bool ret = capturerInClientInner_->RestoreAudioStream();
+    capturerInClientInner->streamParams_ = info;
+    capturerInClientInner->proxyObj_ = std::make_shared<AudioClientTrackerTest>();
+    capturerInClientInner->state_ = State::RUNNING;
+    bool ret = capturerInClientInner->RestoreAudioStream();
     EXPECT_NE(ret, VALUE_EIGHT);
 
-    capturerInClientInner_->state_ = State::PAUSED;
-    ret = capturerInClientInner_->RestoreAudioStream();
+    capturerInClientInner->state_ = State::PAUSED;
+    ret = capturerInClientInner->RestoreAudioStream();
     EXPECT_NE(ret, VALUE_EIGHT);
 
-    capturerInClientInner_->state_ = State::STOPPED;
-    ret = capturerInClientInner_->RestoreAudioStream();
+    capturerInClientInner->state_ = State::STOPPED;
+    ret = capturerInClientInner->RestoreAudioStream();
     EXPECT_NE(ret, VALUE_EIGHT);
 
-    capturerInClientInner_->state_ = State::STOPPING;
-    ret = capturerInClientInner_->RestoreAudioStream();
+    capturerInClientInner->state_ = State::STOPPING;
+    ret = capturerInClientInner->RestoreAudioStream();
     EXPECT_NE(ret, VALUE_EIGHT);
 
-    capturerInClientInner_->state_ = State::PREPARED;
-    ret = capturerInClientInner_->RestoreAudioStream();
+    capturerInClientInner->state_ = State::PREPARED;
+    ret = capturerInClientInner->RestoreAudioStream();
     EXPECT_NE(ret, VALUE_EIGHT);
 }
 
@@ -1591,18 +1616,19 @@ HWTEST(CapturerInClientUnitTest, RestoreAudioStream_001, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, RestoreAudioStream_002, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
     AudioStreamParams info;
     info.format = AudioSampleFormat::SAMPLE_U8;
     info.encoding = AudioEncodingType::ENCODING_AUDIOVIVID;
     info.samplingRate = AudioSamplingRate::SAMPLE_RATE_8000;
     info.channels = AudioChannel::MONO;
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
-    capturerInClientInner_->streamParams_ = info;
-    capturerInClientInner_->proxyObj_ = std::make_shared<AudioClientTrackerTest>();
-    capturerInClientInner_->state_ = State::RUNNING;
-    bool ret = capturerInClientInner_->RestoreAudioStream();
+    capturerInClientInner->streamParams_ = info;
+    capturerInClientInner->proxyObj_ = std::make_shared<AudioClientTrackerTest>();
+    capturerInClientInner->state_ = State::RUNNING;
+    bool ret = capturerInClientInner->RestoreAudioStream();
     EXPECT_NE(ret, VALUE_EIGHT);
 }
 
@@ -1616,6 +1642,7 @@ HWTEST(CapturerInClientUnitTest, PauseAudioStream_001, TestSize.Level1)
 {
     std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
 
     StateChangeCmdType cmdType = CMD_FROM_CLIENT;
     capturerInClientInner->state_ = PREPARED;
@@ -1638,6 +1665,7 @@ HWTEST(CapturerInClientUnitTest, PauseAudioStream_002, TestSize.Level1)
 {
     std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
 
     StateChangeCmdType cmdType = CMD_FROM_CLIENT;
     capturerInClientInner->state_ = RUNNING;
@@ -1660,6 +1688,7 @@ HWTEST(CapturerInClientUnitTest, PauseAudioStream_003, TestSize.Level1)
 {
     std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
 
     StateChangeCmdType cmdType = CMD_FROM_CLIENT;
     capturerInClientInner->state_ = RUNNING;
@@ -1680,6 +1709,7 @@ HWTEST(CapturerInClientUnitTest, FlushAudioStream_001, TestSize.Level1)
 {
     std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
     size_t size = 8 * 1024;
     capturerInClientInner->ringCache_ = std::make_unique<AudioRingCache>(size);
 
@@ -1705,6 +1735,7 @@ HWTEST(CapturerInClientUnitTest, FlushAudioStream_002, TestSize.Level1)
 {
     std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
     size_t size = 8 * 1024;
     capturerInClientInner->ringCache_ = std::make_unique<AudioRingCache>(size);
 
@@ -1730,6 +1761,7 @@ HWTEST(CapturerInClientUnitTest, FlushAudioStream_003, TestSize.Level1)
 {
     std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
     size_t size = 8 * 1024;
     capturerInClientInner->ringCache_ = std::make_unique<AudioRingCache>(size);
 
@@ -1751,6 +1783,7 @@ HWTEST(CapturerInClientUnitTest, FlushCbBuffer_001, TestSize.Level1)
 {
     std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
 
     capturerInClientInner->capturerMode_ = CAPTURE_MODE_CALLBACK;
     auto ret = capturerInClientInner->FlushCbBuffer();
@@ -1771,6 +1804,7 @@ HWTEST(CapturerInClientUnitTest, FlushCbBuffer_002, TestSize.Level1)
 {
     std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
 
     capturerInClientInner->cbBuffer_.reset(new uint8_t[VALUE_TEN]);
     capturerInClientInner->capturerMode_ = CAPTURE_MODE_CALLBACK;
@@ -1793,7 +1827,7 @@ HWTEST(CapturerInClientUnitTest, FetchDeviceForSplitStream_001, TestSize.Level1)
     int32_t clientUid = 0;
     std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    ASSERT_TRUE(capturerInClientInner != nullptr);
+    Init(capturerInClientInner);
 
     capturerInClientInner->audioStreamTracker_ = nullptr;
     capturerInClientInner->FetchDeviceForSplitStream();
@@ -1801,6 +1835,7 @@ HWTEST(CapturerInClientUnitTest, FetchDeviceForSplitStream_001, TestSize.Level1)
     capturerInClientInner->audioStreamTracker_ = std::make_unique<AudioStreamTracker>(AudioMode::AUDIO_MODE_PLAYBACK,
         clientUid);
     capturerInClientInner->FetchDeviceForSplitStream();
+    EXPECT_EQ(false, capturerInClientInner->IsRestoreNeeded());
 }
 
 /**
@@ -1814,7 +1849,7 @@ HWTEST(CapturerInClientUnitTest, SetSwitchInfoTimestamp_001, TestSize.Level1)
     // prepare object
     std::shared_ptr<CapturerInClientInner> testCapturerInClientObj =
         std::make_shared<CapturerInClientInner>(STREAM_DEFAULT, getpid());
-    ASSERT_TRUE(testCapturerInClientObj != nullptr);
+    Init(testCapturerInClientObj);
  
     // start test
     std::vector<std::pair<uint64_t, uint64_t>> testLastFramePosAndTimePair = {
@@ -1836,6 +1871,7 @@ HWTEST(CapturerInClientUnitTest, GetFrameCount_001, TestSize.Level1)
 {
     std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
     uint32_t frameCount = -111;
 
     int32_t result = capturerInClientInner->GetFrameCount(frameCount);
@@ -1855,6 +1891,7 @@ HWTEST(CapturerInClientUnitTest, WaitForRunning_001, TestSize.Level1)
 {
     std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
     capturerInClientInner->state_ = RUNNING;
     bool result = capturerInClientInner->WaitForRunning();
     EXPECT_TRUE(result);
@@ -1870,6 +1907,7 @@ HWTEST(CapturerInClientUnitTest, WaitForRunning_002, TestSize.Level1)
 {
     std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
     capturerInClientInner->state_ = PAUSED;
     capturerInClientInner->cbThreadReleased_ = true;
     bool result = capturerInClientInner->WaitForRunning();
@@ -1886,6 +1924,7 @@ HWTEST(CapturerInClientUnitTest, StopAudioStream_002, TestSize.Level1)
 {
     std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
     capturerInClientInner->state_ = State::INVALID;
     bool result = capturerInClientInner->StopAudioStream();
     EXPECT_FALSE(result);
@@ -1901,6 +1940,7 @@ HWTEST(CapturerInClientUnitTest, StopAudioStream_003, TestSize.Level1)
 {
     std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
     capturerInClientInner->ipcStream_ = nullptr;
     bool result = capturerInClientInner->StopAudioStream();
     EXPECT_FALSE(result);
@@ -1916,6 +1956,7 @@ HWTEST(CapturerInClientUnitTest, FlushCbBuffer_003, TestSize.Level1)
 {
     std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
     capturerInClientInner->cbBuffer_ = std::make_unique<uint8_t[]>(10);
     capturerInClientInner->cbBufferSize_ = 10;
     auto ret = capturerInClientInner->FlushCbBuffer();
@@ -1933,6 +1974,7 @@ HWTEST(CapturerInClientUnitTest, FetchDeviceForSplitStream_002, TestSize.Level2)
     int32_t clientUid = 0;
     std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
     capturerInClientInner->SetRestoreStatus(NO_NEED_FOR_RESTORE);
     capturerInClientInner->FetchDeviceForSplitStream();
 
@@ -1950,6 +1992,7 @@ HWTEST(CapturerInClientUnitTest, FetchDeviceForSplitStream_003, TestSize.Level2)
     int32_t clientUid = 0;
     std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
     capturerInClientInner->SetRestoreStatus(NEED_RESTORE);
     capturerInClientInner->audioStreamTracker_ = nullptr;
     capturerInClientInner->FetchDeviceForSplitStream();
@@ -1965,12 +2008,13 @@ HWTEST(CapturerInClientUnitTest, FetchDeviceForSplitStream_003, TestSize.Level2)
  */
 HWTEST(CapturerInClientUnitTest, OnOperationHandled_002, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
     Operation operation = Operation::RESTORE_SESSION;
     int64_t result = 1;
-    capturerInClientInner_->audioStreamTracker_ = nullptr;
-    int32_t ret = capturerInClientInner_->OnOperationHandled(operation, result);
+    capturerInClientInner->audioStreamTracker_ = nullptr;
+    int32_t ret = capturerInClientInner->OnOperationHandled(operation, result);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1984,6 +2028,7 @@ HWTEST(CapturerInClientUnitTest, GetFrameCount_002, TestSize.Level1)
 {
     std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
     uint32_t frameCount = -111;
     capturerInClientInner->capturerMode_ = CAPTURE_MODE_CALLBACK;
 
@@ -1999,11 +2044,12 @@ HWTEST(CapturerInClientUnitTest, GetFrameCount_002, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, Clear_002, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->capturerMode_ = CAPTURE_MODE_NORMAL;
-    capturerInClientInner_->cbBuffer_.reset(new uint8_t[VALUE_TEN]);
-    int32_t ret = capturerInClientInner_->Clear();
+    Init(capturerInClientInner);
+    capturerInClientInner->capturerMode_ = CAPTURE_MODE_NORMAL;
+    capturerInClientInner->cbBuffer_.reset(new uint8_t[VALUE_TEN]);
+    int32_t ret = capturerInClientInner->Clear();
     EXPECT_EQ(ret, ERR_INCORRECT_MODE);
 }
 
@@ -2017,6 +2063,7 @@ HWTEST(CapturerInClientUnitTest, StopAudioStream_004, TestSize.Level1)
 {
     std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
     capturerInClientInner->state_ = State::PAUSED;
     capturerInClientInner->capturerMode_ = CAPTURE_MODE_CALLBACK;
     capturerInClientInner->ipcStream_ = std::make_shared<IpcStreamTest>().get();
@@ -2033,15 +2080,40 @@ HWTEST(CapturerInClientUnitTest, StopAudioStream_004, TestSize.Level1)
  */
 HWTEST(CapturerInClientUnitTest, Read_002, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner_->state_ = State::NEW;
+    Init(capturerInClientInner);
+    capturerInClientInner->state_ = State::NEW;
     size_t userSize = 16;
     uint8_t buffer = 0;
     bool isBlockingRead = false;
-    capturerInClientInner_->readLogTimes_ = VALUE_TEN;
-    int32_t ret = capturerInClientInner_->Read(buffer, userSize, isBlockingRead);
+    capturerInClientInner->readLogTimes_ = VALUE_TEN;
+    int32_t ret = capturerInClientInner->Read(buffer, userSize, isBlockingRead);
     EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+}
+
+/**
+ * @tc.name  : CapturerInClient_IsRestoreNeeded_001
+ * @tc.type  : FUNC
+ * @tc.number: IsRestoreNeeded_001
+ * @tc.desc  : Test CapturerInClient IsRestoreNeeded() different cases
+ */
+HWTEST(CapturerInClientUnitTest, IsRestoreNeeded_001, TestSize.Level4)
+{
+    auto testCapturerClient = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(testCapturerClient);
+
+    testCapturerClient->clientBuffer_->
+        ohAudioBufferBase_.basicBufferInfo_->restoreStatus.store(NO_NEED_FOR_RESTORE);
+    EXPECT_EQ(testCapturerClient->IsRestoreNeeded(), false);
+
+    testCapturerClient->clientBuffer_->
+        ohAudioBufferBase_.basicBufferInfo_->restoreStatus.store(NEED_RESTORE);
+    EXPECT_EQ(testCapturerClient->IsRestoreNeeded(), true);
+
+    testCapturerClient->clientBuffer_->
+        ohAudioBufferBase_.basicBufferInfo_->restoreStatus.store(NEED_RESTORE_TO_NORMAL);
+    EXPECT_EQ(testCapturerClient->IsRestoreNeeded(), true);
 }
 } // namespace AudioStandard
 } // namespace OHOS

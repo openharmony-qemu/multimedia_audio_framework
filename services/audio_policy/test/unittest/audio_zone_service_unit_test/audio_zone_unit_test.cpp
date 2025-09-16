@@ -220,12 +220,13 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_007, TestSize.Level1)
     AudioZoneContext context;
     auto zoneId = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context, 0);
     AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, 20);
-    std::shared_ptr<AudioSessionService> sessionService = AudioSessionService::GetAudioSessionService();
-    int ret = sessionService->SetAudioSessionScene(fakePid, AudioSessionScene::MEDIA);
+    AudioSessionService &audioSessionService = OHOS::Singleton<AudioSessionService>::GetInstance();
+    int ret = audioSessionService.SetAudioSessionScene(fakePid, AudioSessionScene::MEDIA);
     EXPECT_EQ(SUCCESS, ret);
     ret = AudioZoneService::GetInstance().FindAudioSessionZoneid(fakeUid, fakePid, false);
     EXPECT_EQ(ret, 0);
     AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
+    audioSessionService.sessionMap_.clear();
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -323,7 +323,6 @@ void ProxyDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
 
 PipeInfoGuard::PipeInfoGuard(uint32_t sessionId)
 {
-    AUDIO_INFO_LOG("SessionId: %{public}u", sessionId);
     sessionId_ = sessionId;
 }
 
@@ -337,7 +336,6 @@ PipeInfoGuard::~PipeInfoGuard()
 
 void PipeInfoGuard::SetReleaseFlag(bool flag)
 {
-    AUDIO_INFO_LOG("Flag: %{public}d", flag);
     releaseFlag_ = flag;
 }
 
@@ -432,6 +430,7 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
     for (decltype(args.size()) index = 0; index < args.size(); ++index) {
         argQue.push(args[index]);
     }
+    std::lock_guard<std::mutex> lock(hpaeDumpMutex_);
     std::string dumpString;
     int32_t res = 0;
 #ifdef SUPPORT_OLD_ENGINE
@@ -1415,12 +1414,12 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
     if (flag == DeviceFlag::INPUT_DEVICES_FLAG) {
         UpdateDeviceForAllSource(source, type);
     } else if (flag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
-        sink->UpdateActiveDevice(deviceTypes);
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
+        sink->UpdateActiveDevice(deviceTypes);
     } else if (flag == DeviceFlag::ALL_DEVICES_FLAG) {
         UpdateDeviceForAllSource(source, type);
-        sink->UpdateActiveDevice(deviceTypes);
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
+        sink->UpdateActiveDevice(deviceTypes);
     } else {
         AUDIO_ERR_LOG("SetIORoutes invalid device flag");
         return ERR_INVALID_PARAM;
@@ -2185,8 +2184,6 @@ bool AudioServer::VerifyClientPermission(const std::string &permissionName,
     Security::AccessToken::AccessTokenID tokenId)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
-    AUDIO_INFO_LOG("[%{public}s] for uid:%{public}d tokenId:%{public}u", permissionName.c_str(), callerUid, tokenId);
-
 #ifdef AUDIO_BUILD_VARIANT_ROOT
     // Root users should be whitelisted
     if (callerUid == ROOT_UID) {
@@ -2200,7 +2197,8 @@ bool AudioServer::VerifyClientPermission(const std::string &permissionName,
     }
     int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(clientTokenId, permissionName);
     CHECK_AND_RETURN_RET_LOG(res == Security::AccessToken::PermissionState::PERMISSION_GRANTED,
-        false, "Permission denied [tid:%{public}d]", clientTokenId);
+        false, "Permission denied [tid:%{public}d], [%{public}s] for uid:%{public}d tokenId:%{public}u",
+        clientTokenId, permissionName.c_str(), callerUid, tokenId);
 
     return true;
 }
@@ -2306,7 +2304,10 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
 
     // All record streams should be checked for MICROPHONE_PERMISSION
     bool res = VerifyClientPermission(MICROPHONE_PERMISSION, tokenId);
-    CHECK_AND_RETURN_RET_LOG(res, false, "Check record permission failed: No permission.");
+    if (!res) {
+        HILOG_COMM_INFO("Check record permission failed: No permission.");
+        return false;
+    }
 
     if (sourceType == SOURCE_TYPE_ULTRASONIC && config.callerUid != UID_MSDP_SA) {
         return false;
@@ -2320,8 +2321,10 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
         return true;
     }
 
-    CHECK_AND_RETURN_RET(HandleCheckRecorderBackgroundCapture(config), false,
-        "VerifyBackgroundCapture failed for callerUid:%{public}d", config.callerUid);
+    if (!HandleCheckRecorderBackgroundCapture(config)) {
+        HILOG_COMM_INFO("VerifyBackgroundCapture failed for callerUid:%{public}d", config.callerUid);
+        return false;
+    }
     return true;
 }
 // LCOV_EXCL_STOP

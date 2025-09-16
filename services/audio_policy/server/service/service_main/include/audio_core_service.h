@@ -137,8 +137,9 @@ public:
             int32_t uid);
         std::shared_ptr<AudioDeviceDescriptor> GetSelectedInputDeviceByUid(int32_t uid);
         int32_t ClearSelectedInputDeviceByUid(int32_t uid);
-        int32_t PreferBluetoothAndNearlinkRecordByUid(int32_t uid, bool isPreferred);
-        bool GetPreferBluetoothAndNearlinkRecordByUid(int32_t uid);
+        int32_t PreferBluetoothAndNearlinkRecordByUid(int32_t uid,
+            BluetoothAndNearlinkPreferredRecordCategory category);
+        BluetoothAndNearlinkPreferredRecordCategory GetPreferBluetoothAndNearlinkRecordByUid(int32_t uid);
         void NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value);
         int32_t OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo, AudioStreamInfo streamInfo);
         void CloseWakeUpAudioCapturer();
@@ -257,8 +258,8 @@ private:
     int32_t SelectInputDeviceByUid(const std::shared_ptr<AudioDeviceDescriptor> &selectedDesc, int32_t uid);
     std::shared_ptr<AudioDeviceDescriptor> GetSelectedInputDeviceByUid(int32_t uid);
     int32_t ClearSelectedInputDeviceByUid(int32_t uid);
-    int32_t PreferBluetoothAndNearlinkRecordByUid(int32_t uid, bool isPreferred);
-    bool GetPreferBluetoothAndNearlinkRecordByUid(int32_t uid);
+    int32_t PreferBluetoothAndNearlinkRecordByUid(int32_t uid, BluetoothAndNearlinkPreferredRecordCategory category);
+    BluetoothAndNearlinkPreferredRecordCategory GetPreferBluetoothAndNearlinkRecordByUid(int32_t uid);
     void NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value);
     int32_t OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo, AudioStreamInfo streamInfo);
     void CloseWakeUpAudioCapturer();
@@ -318,6 +319,7 @@ private:
     void SetFirstScreenOn();
     void FetchOutputDupDevice(std::string caller, uint32_t sessionId,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    bool IsA2dpOffloadStream(uint sessionId);
 private:
     static std::string GetEncryptAddr(const std::string &addr);
     int32_t FetchRendererPipesAndExecute(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
@@ -359,6 +361,7 @@ private:
     int32_t SwitchActiveHearingAidDevice(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     int32_t LoadHearingAidModule(DeviceType deviceType, const AudioStreamInfo &audioStreamInfo,
         std::string networkId, std::string sinkName, SourceType sourceType);
+    int32_t SetSleVoiceStatusFlag(AudioScene audioScene);
 #ifdef BLUETOOTH_ENABLE
     void RegisterBluetoothDeathCallback();
     static void BluetoothServiceCrashedCallback(pid_t pid, pid_t uid);
@@ -471,6 +474,7 @@ private:
         bool &isNeedTriggerCallback, std::string &oldSinkName, const AudioStreamDeviceChangeReasonExt reason);
     void MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason);
+    void CheckAndSleepBeforeVoiceCallDeviceSet(const AudioStreamDeviceChangeReasonExt reason);
     void CheckAndSleepBeforeRingDualDeviceSet(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason);
     void SleepForSwitchDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -493,7 +497,9 @@ private:
     bool HandleInputStreamInRunning(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void HandleDualStartClient(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
-    void HandlePlaybackStreamInA2dp(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
+    void SelectA2dpType(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
+    void UpdateStreamDevicesForCreate(std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller);
+    void UpdateStreamDevicesForStart(std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller);
     bool IsNoRunningStream(std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs);
     void UpdateActiveDeviceAndVolumeBeforeMoveSession(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason);
@@ -504,7 +510,7 @@ private:
     void UpdateRemoteOffloadModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName);
     void UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInfo);
     void NotifyRouteUpdate(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
-    void ResetNearlinkDeviceState(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
+    void ResetNearlinkDeviceState(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, bool isRunning = true);
 
     // For offload
     void CheckAndUpdateOffloadEnableForStream(
@@ -552,7 +558,7 @@ private:
     SleAudioDeviceManager &sleAudioDeviceManager_;
     AudioUsrSelectManager &audioUsrSelectManager_;
     std::shared_ptr<AudioPipeSelector> audioPipeSelector_;
-    std::shared_ptr<AudioSessionService> audioSessionService_ = nullptr;
+    AudioSessionService &audioSessionService_;
 
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
     std::shared_ptr<DeviceStatusListener> deviceStatusListener_;

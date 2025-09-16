@@ -40,6 +40,8 @@
 #define AUDIO_NS_PER_MILLISECOND 1000000
 #define AUDIO_NS_PER_SECOND ((uint64_t)1000000000)
 
+#define UINT32_INVALID_VALUE 0xFFFFFFFF
+
 #define FLOAT_EPS 1e-9f
 #define OFFSET_BIT_24 3
 #define BIT_DEPTH_TWO 2
@@ -51,7 +53,6 @@ namespace OHOS {
 namespace AudioStandard {
 const uint32_t STRING_BUFFER_SIZE = 4096;
 const size_t MILLISECOND_PER_SECOND = 1000;
-const int32_t GET_EXTRA_PARAM_LEN = 200;
 const uint32_t AUDIO_ID = 1041;
 
 // Ringer or alarmer dual tone
@@ -79,6 +80,9 @@ public:
     static uint32_t GetSamplePerFrame(const AudioSampleFormat &format);
 
     static bool IsBackgroundSourceType(const SourceType sourceType);
+
+    static size_t CalculatePcmSizeFromDurationCeiling(std::chrono::nanoseconds duration,
+        uint32_t sampleRate, uint32_t bytesPerSample);
 };
 
 class Trace {
@@ -591,6 +595,15 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> FromIpcInterrupts(
     const std::vector<std::map<AudioInterrupt, int32_t>> &from);
 
 std::string GetBundleNameByToken(const uint32_t &tokenIdNum);
+
+std::string ConvertToStringForFormat(const AudioSampleFormat format);
+std::string ConvertToStringForSampleRate(const AudioSamplingRate sampleRate);
+std::string ConvertToStringForChannel(const AudioChannel channel);
+
+uint8_t* ReallocVectorBufferAndClear(std::vector<uint8_t> &buffer, const size_t bufLength);
+bool IsInjectEnable();
+void SetInjectEnable(bool injectSwitch);
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

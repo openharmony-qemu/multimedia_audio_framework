@@ -18,9 +18,15 @@
 
 #include "gtest/gtest.h"
 #include "audio_interrupt_service.h"
+#include "audio_session_state_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
+class AudioSessionStateMonitorStub : public AudioSessionStateMonitor {
+public:
+    virtual void OnAudioSessionTimeOut(int32_t pid) override {}
+};
 
 class AudioInterruptUnitTest : public testing::Test {
 public:
@@ -32,6 +38,8 @@ public:
     void SetUp(void);
     // TearDown: Called after each test cases
     void TearDown(void);
+private:
+    AudioSessionStateMonitorStub audioSessionStateMonitor_;
 };
 
 class AudioInterruptZoneUnitTest : public testing::Test {
@@ -59,6 +67,7 @@ public:
 
 private:
     std::shared_ptr<AudioInterruptService> audioInterruptService_ = nullptr;
+    AudioSessionStateMonitorStub audioSessionStateMonitor_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

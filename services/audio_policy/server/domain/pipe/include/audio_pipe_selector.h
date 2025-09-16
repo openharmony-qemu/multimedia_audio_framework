@@ -19,6 +19,7 @@
 #include "audio_pipe_manager.h"
 #include "audio_stream_info.h"
 #include "audio_policy_config_manager.h"
+#include "audio_concurrency_parser.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -39,6 +40,8 @@ private:
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo);
     void ScanPipeListForStreamDesc(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfoList,
         std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    void UpdateProcessConcurrency(AudioPipeType existingPipe, AudioPipeType commingPipe,
+                                  ConcurrencyAction &action);
     bool ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor> existingStream,
         std::shared_ptr<AudioStreamDescriptor> incomingStream,
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove);

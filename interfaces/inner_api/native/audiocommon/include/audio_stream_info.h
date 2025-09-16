@@ -265,13 +265,13 @@ enum AudioPreloadType {
 
 struct AudioStreamParams {
     uint32_t samplingRate = 0;
-    // Add customSampleRate
-    uint32_t customSampleRate = 0;
     uint8_t encoding = 0;
     uint8_t format = 0;
     uint8_t channels = 0;
     uint64_t channelLayout = 0ULL;
     uint32_t originalSessionId = 0;
+    // Add customSampleRate
+    uint32_t customSampleRate = 0;
 };
 
 // sampling rate
@@ -558,15 +558,10 @@ const std::vector<StreamUsage> AUDIO_SUPPORTED_STREAM_USAGES {
     STREAM_USAGE_VOICE_CALL_ASSISTANT,
 };
 
-enum FunctionHoldType {
-    FUNCTION_HOLD_INVALID = -1,
-    FUNCTION_HOLD_MUSIC,
-    FUNCTION_HOLD_SYSTEM,
-};
-
 enum SetLoudVolMode {
     LOUD_VOLUME_SWITCH_INVALID = -1,
-    LOUD_VOLUME_SWITCH_UNSET,
+    LOUD_VOLUME_SWITCH_AUTO,
+    LOUD_VOLUME_SWITCH_PAUSE,
     LOUD_VOLUME_SWITCH_OFF,
     LOUD_VOLUME_SWITCH_ON,
 };

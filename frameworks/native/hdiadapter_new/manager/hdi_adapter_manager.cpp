@@ -138,7 +138,7 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterManager::GetRenderSink(uint32_t rend
         return renderSinks_[renderId].sink_;
     }
     if (!tryCreate) {
-        AUDIO_ERR_LOG("no available sink, renderId: %{public}u", renderId);
+        AUDIO_WARNING_LOG("no available sink, renderId: %{public}u", renderId);
         return nullptr;
     }
     AUDIO_INFO_LOG("create sink, renderId: %{public}u", renderId);
@@ -163,7 +163,7 @@ std::shared_ptr<IAudioCaptureSource> HdiAdapterManager::GetCaptureSource(uint32_
         return captureSources_[captureId].source_;
     }
     if (!tryCreate) {
-        AUDIO_ERR_LOG("no available source, captureId: %{public}u", captureId);
+        AUDIO_WARNING_LOG("no available source, captureId: %{public}u", captureId);
         return nullptr;
     }
     AUDIO_INFO_LOG("create source, captureId: %{public}u", captureId);

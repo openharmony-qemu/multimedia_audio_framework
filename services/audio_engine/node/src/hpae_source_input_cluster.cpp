@@ -124,7 +124,7 @@ OutputPort<HpaePcmBuffer *> *HpaeSourceInputCluster::GetOutputPort(HpaeNodeInfo 
     }
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(fmtConverterNodeMap_, preNodeKey),
         sourceInputNode_->GetOutputPort(nodeInfo),
-        "HpaeSourceProcessCluster not find the preNodeKey = %{public}s", preNodeKey.c_str());
+        "not find the preNodeKey = %{public}s", preNodeKey.c_str());
     if (isDisConnect && fmtConverterNodeMap_[preNodeKey]->GetOutputPortNum() <= 1) {
         AUDIO_INFO_LOG("disconnect fmtConverterNode between preNode[%{public}s] and sourceInputNode[%{public}s]",
             preNodeKey.c_str(), inputNodeKey.c_str());

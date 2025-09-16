@@ -297,33 +297,7 @@ HWTEST(AudioServiceUnitTest, RestoreAudioStream_001, TestSize.Level1)
     ret = fastAudioStream->RestoreAudioStream(needStoreState);
     EXPECT_EQ(ret, 0);
 }
-/**
- * @tc.name  : Test JoincallbackLoop API
- * @tc.type  : FUNC
- * @tc.number: JoincallbackLoop_001
- * @tc.desc  : Test JoincallbackLoop interface using unsupported parameters.
- */
-HWTEST(AudioServiceUnitTest, JoinCallbackLoop_001, TestSize.Level1)
-{
-    AudioProcessConfig config;
-    config.appInfo.appPid = getpid();
-    config.appInfo.appUid = getuid();
 
-    config.audioMode = AUDIO_MODE_PLAYBACK;
-
-    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
-    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
-    config.rendererInfo.rendererFlags = RENDERER_FLAGS;
-
-    config.streamInfo.channels = STEREO;
-    config.streamInfo.encoding = ENCODING_PCM;
-    config.streamInfo.format = SAMPLE_S16LE;
-    config.streamInfo.samplingRate = SAMPLE_RATE_64000;
-    std::unique_ptr<FastAudioStream> fastAudioStream = std::make_unique<FastAudioStream>(config.streamType,
-        AUDIO_MODE_PLAYBACK, config.appInfo.appUid);
-    fastAudioStream->JoinCallbackLoop();
-    EXPECT_NE(fastAudioStream, nullptr);
-}
 /**
  * @tc.name  : Test SetDefaultoutputDevice API
  * @tc.type  : FUNC
@@ -1588,7 +1562,7 @@ HWTEST(AudioServiceUnitTest, DelayCallReleaseEndpoint_001, TestSize.Level1)
     AudioService *audioService = AudioService::GetInstance();
     AudioProcessConfig clientConfig = {};
     std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_MMAP,
-        123, clientConfig);
+        123, clientConfig.audioMode);
     EXPECT_NE(nullptr, endpoint);
     string endpointName = endpoint->GetEndpointName();
     audioService->endpointList_[endpointName] = endpoint;
@@ -1693,7 +1667,7 @@ HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_001, TestSize.Level1)
 
     AudioProcessConfig clientConfig = {};
     std::shared_ptr<AudioEndpoint> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_VOIP_MMAP,
-        123, clientConfig);
+        123, clientConfig.audioMode);
     EXPECT_NE(nullptr, endpoint);
 
     bool isSwitchStream = false;
@@ -1716,7 +1690,7 @@ HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_002, TestSize.Level1)
 
     AudioProcessConfig clientConfig = {};
     std::shared_ptr<AudioEndpoint> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_MMAP,
-        123, clientConfig);
+        123, clientConfig.audioMode);
     EXPECT_NE(nullptr, endpoint);
 
     bool isSwitchStream = false;
@@ -1739,7 +1713,7 @@ HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_003, TestSize.Level1)
 
     AudioProcessConfig clientConfig = {};
     std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_MMAP,
-        123, clientConfig);
+        123, clientConfig.audioMode);
     EXPECT_NE(nullptr, endpoint);
 
     endpoint->deviceInfo_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
@@ -1952,7 +1926,7 @@ HWTEST(AudioServiceUnitTest, FilterAllFastProcess_002, TestSize.Level1)
 
     AudioProcessConfig clientConfig = {};
     std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_VOIP_MMAP,
-        123, clientConfig);
+        123, clientConfig.audioMode);
     EXPECT_NE(endpoint, nullptr);
     endpoint->deviceInfo_.deviceRole_ = OUTPUT_DEVICE;
 
@@ -1985,7 +1959,7 @@ HWTEST(AudioServiceUnitTest, CheckDisableFastInner_001, TestSize.Level1)
 
     AudioProcessConfig clientConfig = {};
     std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_VOIP_MMAP,
-        123, clientConfig);
+        123, clientConfig.audioMode);
     int32_t ret = audioService->CheckDisableFastInner(endpoint);
     EXPECT_EQ(ret, SUCCESS);
 
@@ -2012,7 +1986,7 @@ HWTEST(AudioServiceUnitTest, HandleFastCapture_001, TestSize.Level1)
 
     AudioProcessConfig clientConfig = {};
     std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_VOIP_MMAP,
-        123, clientConfig);
+        123, clientConfig.audioMode);
     EXPECT_NE(endpoint, nullptr);
 
     int32_t ret = audioService->HandleFastCapture(captureIds, audioprocess, endpoint);
@@ -2232,9 +2206,9 @@ HWTEST(AudioServiceUnitTest, CheckBeforeRecordEndpointCreate_001, TestSize.Level
     std::string endpointName = "test";
     AudioProcessConfig clientConfig = {};
     std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_VOIP_MMAP,
-        123, clientConfig);
+        123, clientConfig.audioMode);
     EXPECT_NE(endpoint, nullptr);
-    endpoint->clientConfig_.audioMode = AudioMode::AUDIO_MODE_RECORD;
+    endpoint->audioMode_ = AudioMode::AUDIO_MODE_RECORD;
     AudioService::GetInstance()->endpointList_[endpointName] = endpoint;
     AudioService::GetInstance()->CheckBeforeRecordEndpointCreate(isRecord);
 }
@@ -2251,9 +2225,9 @@ HWTEST(AudioServiceUnitTest, CheckBeforeRecordEndpointCreate_002, TestSize.Level
     std::string endpointName = "test";
     AudioProcessConfig clientConfig = {};
     std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_VOIP_MMAP,
-        123, clientConfig);
+        123, clientConfig.audioMode);
     EXPECT_NE(endpoint, nullptr);
-    endpoint->clientConfig_.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
+    endpoint->audioMode_ = AudioMode::AUDIO_MODE_PLAYBACK;
     AudioService::GetInstance()->endpointList_[endpointName] = endpoint;
     AudioService::GetInstance()->CheckBeforeRecordEndpointCreate(isRecord);
 }
@@ -2291,7 +2265,7 @@ HWTEST(AudioServiceUnitTest, NotifyStreamVolumeChanged_002, TestSize.Level1)
     AudioService::GetInstance()->endpointList_.clear();
     AudioProcessConfig clientConfig = {};
     std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_VOIP_MMAP,
-        123, clientConfig);
+        123, clientConfig.audioMode);
     EXPECT_NE(endpoint, nullptr);
     AudioService::GetInstance()->endpointList_[endpointName] = endpoint;
     auto ret = AudioService::GetInstance()->NotifyStreamVolumeChanged(streamType, volume);
@@ -2620,9 +2594,9 @@ HWTEST(AudioServiceUnitTest, ForceStopAudioStream_002, TestSize.Level1)
     audioprocess->sessionId_ = 1;
 
     std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_VOIP_MMAP,
-        123, config);
+        123, config.audioMode);
     EXPECT_NE(endpoint, nullptr);
-    endpoint->clientConfig_.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
+    endpoint->audioMode_ = AudioMode::AUDIO_MODE_PLAYBACK;
     AudioService::GetInstance()->linkedPairedList_.push_back(std::make_pair(audioprocess, endpoint));
 
     StopAudioType stopAudioType = STOP_ALL;
@@ -3035,7 +3009,6 @@ HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_001, TestSize.Level1)
 
     EXPECT_NE(deviceInfo.deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(deviceInfo.isLowLatencyDevice_, false);
-    EXPECT_EQ(deviceInfo.audioStreamInfo_.size(), 1);
 }
 
 /**
@@ -3058,7 +3031,6 @@ HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_002, TestSize.Level1)
     EXPECT_NE(deviceInfo.deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(deviceInfo.isLowLatencyDevice_, false);
     EXPECT_EQ(deviceInfo.a2dpOffloadFlag_, 0);
-    EXPECT_EQ(deviceInfo.audioStreamInfo_.size(), 1);
     EXPECT_EQ(deviceInfo.deviceName_, "mmap_device");
 }
 
@@ -3081,8 +3053,6 @@ HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_003, TestSize.Level1)
     EXPECT_EQ(deviceInfo.networkId_, LOCAL_NETWORK_ID);
     EXPECT_EQ(deviceInfo.deviceRole_, INPUT_DEVICE);
     EXPECT_EQ(deviceInfo.deviceType_, DEVICE_TYPE_MIC);
-    EXPECT_EQ(deviceInfo.audioStreamInfo_.size(), 1);
-
     EXPECT_EQ(deviceInfo.deviceName_, "mmap_device");
 }
 
@@ -3159,7 +3129,7 @@ HWTEST(AudioServiceUnitTest, LinkProcessToEndpoint_001, TestSize.Level1)
     sptr<AudioProcessInServer> audioprocess =  AudioProcessInServer::Create(config, AudioService::GetInstance());
     EXPECT_NE(audioprocess, nullptr);
     std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_VOIP_MMAP,
-        123, config);
+        123, config.audioMode);
     EXPECT_NE(AudioService::GetInstance()->LinkProcessToEndpoint(audioprocess, endpoint), SUCCESS);
 }
 

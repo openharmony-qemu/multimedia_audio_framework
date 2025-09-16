@@ -23,6 +23,7 @@
 #include "audio_volume_manager.h"
 
 #include "media_monitor_manager.h"
+#include "audio_zone_service.h"
 #include <fstream>
 
 namespace OHOS {
@@ -527,7 +528,7 @@ int32_t AudioStreamCollector::UpdateCapturerStreamInternal(AudioStreamChangeInfo
 
 int32_t AudioStreamCollector::UpdateCapturerStream(AudioStreamChangeInfo &streamChangeInfo)
 {
-    AUDIO_INFO_LOG("UpdateCapturerStream client %{public}d state %{public}d session %{public}d",
+    HILOG_COMM_INFO("UpdateCapturerStream client %{public}d state %{public}d session %{public}d",
         streamChangeInfo.audioCapturerChangeInfo.clientUID, streamChangeInfo.audioCapturerChangeInfo.capturerState,
         streamChangeInfo.audioCapturerChangeInfo.sessionId);
 
@@ -588,6 +589,8 @@ int32_t AudioStreamCollector::UpdateRendererDeviceInfo(AudioDeviceDescriptor &ou
         if (!(*it)->outputDeviceInfo.IsSameDeviceInfo(outputDeviceInfo)) {
             AUDIO_DEBUG_LOG("UpdateRendererDeviceInfo: old device: %{public}d new device: %{public}d",
                 (*it)->outputDeviceInfo.deviceType_, outputDeviceInfo.deviceType_);
+            CHECK_AND_CONTINUE_LOG(!AudioZoneService::GetInstance().CheckDeviceInAudioZone(
+                (*it)->outputDeviceInfo), "skip callback when device in zone");
             (*it)->outputDeviceInfo = outputDeviceInfo;
             deviceInfoUpdated = true;
         }
@@ -1892,6 +1895,19 @@ bool AudioStreamCollector::IsVoipStreamActive()
             ((changeInfo->rendererInfo).streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
             (changeInfo->rendererInfo).streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) &&
             changeInfo->rendererState == RENDERER_RUNNING) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool AudioStreamCollector::IsStreamRunning(StreamUsage streamUsage)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (auto &changeInfo: audioRendererChangeInfos_) {
+        if (changeInfo != nullptr &&
+            ((changeInfo->rendererInfo).streamUsage == streamUsage &&
+            changeInfo->rendererState == RENDERER_RUNNING)) {
             return true;
         }
     }

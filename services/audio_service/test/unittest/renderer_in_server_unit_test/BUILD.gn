@@ -62,6 +62,7 @@ ohos_unittest("renderer_in_server_unit_test") {
     "../../../../../frameworks/native/audiopolicy/include",
     "../../../../../frameworks/native/audioclock/include",
     "../../../../audio_engine/manager/include",
+    "../../../../audio_engine/plugin/resample/include",
   ]
 
   configs = [ ":module_private_config" ]
@@ -152,6 +153,7 @@ ohos_unittest("renderer_in_server_second_unit_test") {
     "../../../../../frameworks/native/audioclock/include",
     "../../../../../services/audio_engine/manager/include",
     "../../../../../services/audio_engine/buffer",
+    "../../../../../services/audio_engine/plugin/resample/include",
   ]
 
   configs = [ ":module_private_config" ]
@@ -210,6 +212,7 @@ ohos_unittest("renderer_in_server_third_unit_test") {
     "../../../../../frameworks/native/audiopolicy/include",
     "../../../../../frameworks/native/audioclock/include",
     "../../../../../services/audio_engine/manager/include",
+    "../../../../../services/audio_engine/plugin/resample/include",
   ]
 
   configs = [ ":module_private_config" ]
