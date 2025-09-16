@@ -205,8 +205,8 @@ private:
 
     AudioLoopThread taskLoop_ = AudioLoopThread("OS_Recreate");
     std::condition_variable taskLoopCv_;
-    std::mutex inRestoreMtx_;
-    bool inRestoreFlag = false;
+    std::mutex inSwitchingMtx_;
+    bool inSwitchingFlag_ = false;
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {
