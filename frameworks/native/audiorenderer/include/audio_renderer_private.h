@@ -294,8 +294,8 @@ private:
     int32_t audioHapticsSyncId_ = 0;
     bool releaseFlag_ = false;
     std::condition_variable taskLoopCv_;
-    std::mutex inRestoreMtx_;
-    bool inRestoreFlag = false;
+    std::mutex inSwitchingMtx_;
+    bool inSwitchingFlag_ = false;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {
