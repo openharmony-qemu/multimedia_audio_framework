@@ -254,6 +254,8 @@ private:
     // zone debug interfaces
     void WriteFocusMigrateEvent(const int32_t &toZoneId);
     void WriteServiceStartupError();
+    // systemapp debug interfaces
+    void WriteCallSessionEvent(int32_t strategyValue);
 
     // interfaces about audio session.
     void AddActiveInterruptToSession(const int32_t callerPid);
