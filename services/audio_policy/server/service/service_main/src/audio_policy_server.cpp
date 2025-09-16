@@ -2425,7 +2425,7 @@ int32_t AudioPolicyServer::SetMicrophoneMuteAudioConfig(bool isMute)
 int32_t AudioPolicyServer::SetMicrophoneMutePersistent(bool isMute, int32_t typeIn)
 {
     PolicyType type = static_cast<PolicyType>(typeIn);
-    AUDIO_INFO_LOG("Entered %{public}s isMute:%{public}d, type:%{public}d", __func__, isMute, type);
+    HILOG_COMM_INFO("Entered %{public}s isMute:%{public}d, type:%{public}d", __func__, isMute, type);
     bool hasPermission = VerifyPermission(MICROPHONE_CONTROL_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(hasPermission, ERR_PERMISSION_DENIED,
         "MICROPHONE_CONTROL_PERMISSION permission denied");
