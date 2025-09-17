@@ -221,6 +221,8 @@ public:
     void NotifyRouteUpdate(uint32_t routeFlag, const std::string &networkId) override;
     bool GetStopFlag() const override;
     void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
+    int32_t SetRenderTarget(RenderTarget renderTarget) override;
+    RenderTarget GetRenderTarget() override;
     bool IsRestoreNeeded() override;
 
 private:
@@ -315,7 +317,7 @@ private:
     bool streamTrackerRegistered_ = false;
 
     std::atomic<bool> needSetThreadPriority_ = true;
-
+    RenderTarget renderTarget_ = NORMAL_PLAYBACK;
     AudioStreamParams curStreamParams_ = {0}; // in plan next: replace it with AudioRendererParams
     AudioStreamParams streamParams_ = {0};
 

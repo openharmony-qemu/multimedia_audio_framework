@@ -1982,6 +1982,14 @@ enum XperfEventId : int32_t {
     XPERF_EVENT_MAX = 4,
 };
 
+/**
+ * Enumerates the audio playback target
+ */
+enum RenderTarget {
+    NORMAL_PLAYBACK = 0,
+    INJECT_TO_VOICE_COMMUNICATION_CAPTURE = 1
+};
+
 struct FetchDeviceInfo : public Parcelable {
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
     StreamUsage preStreamUsage = STREAM_USAGE_UNKNOWN;
