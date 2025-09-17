@@ -66,6 +66,9 @@ int32_t TransDeviceInfoToString(const T& info, std::string &config)
 }
 void TransStreamInfoToStreamDumpInfo(const std::unordered_map<uint32_t, HpaeSessionInfo> &streamInfoMap,
     std::vector<HpaeInputOutputInfo> &dumpInfo);
+void TransSinkInfoToNodeInfo(const HpaeSinkInfo &sinkInfo, const std::weak_ptr<INodeCallback> &statusCallback,
+    HpaeNodeInfo &nodeInfo);
+size_t CaculateFrameLenByNodeInfo(HpaeNodeInfo &nodeInfo);
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
