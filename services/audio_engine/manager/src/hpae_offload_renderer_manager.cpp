@@ -57,8 +57,10 @@ std::shared_ptr<HpaeSinkInputNode> HpaeOffloadRendererManager::CreateInputSessio
     nodeInfo.customSampleRate = streamInfo.customSampleRate;
     nodeInfo.sceneType = TransStreamTypeToSceneType(streamInfo.streamType);
     nodeInfo.effectInfo = streamInfo.effectInfo;
+    nodeInfo.fadeType = streamInfo.fadeType;
     nodeInfo.historyFrameCount = nodeInfo.frameLen ?
-        HISTORY_INTERVAL_S * nodeInfo.samplingRate / nodeInfo.frameLen : 0;
+        HISTORY_INTERVAL_S * (nodeInfo.customSampleRate ? nodeInfo.customSampleRate : nodeInfo.samplingRate)
+        / nodeInfo.frameLen : 0;
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
@@ -114,7 +116,8 @@ void HpaeOffloadRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeS
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     // 7s history buffer to rewind
-    nodeInfo.historyFrameCount = HISTORY_INTERVAL_S * nodeInfo.samplingRate / nodeInfo.frameLen;
+    nodeInfo.historyFrameCount = HISTORY_INTERVAL_S * (nodeInfo.customSampleRate ?
+        nodeInfo.customSampleRate : nodeInfo.samplingRate) / nodeInfo.frameLen;
     nodeInfo.statusCallback = weak_from_this();
     node->SetNodeInfo(nodeInfo);
     uint32_t sessionId = nodeInfo.sessionId;
