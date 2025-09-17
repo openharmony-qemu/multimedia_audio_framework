@@ -60,18 +60,9 @@ int32_t HpaeRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo
 {
     Trace trace("[" + std::to_string(streamInfo.sessionId) + "]HpaeRendererManager::CreateInputSession");
     HpaeNodeInfo nodeInfo;
-    nodeInfo.channels = streamInfo.channels;
-    nodeInfo.format = streamInfo.format;
-    nodeInfo.frameLen = streamInfo.frameLen;
-    nodeInfo.channelLayout = (AudioChannelLayout)streamInfo.channelLayout;
-    nodeInfo.streamType = streamInfo.streamType;
-    nodeInfo.sessionId = streamInfo.sessionId;
-    nodeInfo.samplingRate = static_cast<AudioSamplingRate>(streamInfo.samplingRate);
-    nodeInfo.customSampleRate = streamInfo.customSampleRate;
+    ConfigNodeInfo(nodeInfo, streamInfo);
     nodeInfo.sceneType = TransToProperSceneType(streamInfo.effectInfo.streamUsage, streamInfo.effectInfo.effectScene);
-    nodeInfo.effectInfo = streamInfo.effectInfo;
     TransNodeInfoForCollaboration(nodeInfo, isCollaborationEnabled_);
-    nodeInfo.fadeType = streamInfo.fadeType;
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
