@@ -25,6 +25,7 @@
 #include "ability.h"
 #endif
 #include "audio_stream_manager.h"
+#include "audio_capturer_options.h"
 #include "timestamp.h"
 
 namespace ANI::Audio {

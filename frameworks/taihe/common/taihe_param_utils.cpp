@@ -608,17 +608,20 @@ AudioDeviceDescriptor TaiheParamUtils::SetDeviceDescriptor(
     const OHOS::AudioStandard::AudioDeviceDescriptor &deviceInfo)
 {
     std::vector<int32_t> sampleRatesVec;
-    for (const auto &samplingRate : deviceInfo.audioStreamInfo_.samplingRate) {
+    sampleRatesVec.resize(deviceInfo.GetDeviceStreamInfo().samplingRate.size());
+    for (const auto &samplingRate : deviceInfo.GetDeviceStreamInfo().samplingRate) {
         sampleRatesVec.emplace_back(static_cast<int32_t>(samplingRate));
     }
     std::vector<int32_t> channelCountsVec;
-    for (const auto &channel : deviceInfo.audioStreamInfo_.channels) {
+    std::set<OHOS::AudioStandard::AudioChannel> channelSet = deviceInfo.GetDeviceStreamInfo().GetChannels();
+    channelCountsVec.resize(channelSet.size());
+    for (const auto &channel : channelSet) {
         channelCountsVec.emplace_back(static_cast<int32_t>(channel));
     }
     std::vector<int32_t> channelMasksVec = {deviceInfo.channelMasks_};
     std::vector<int32_t> channelIndexMasksVec = {deviceInfo.channelIndexMasks_};
     std::vector<AudioEncodingType> encodingVec = {
-        TaiheAudioEnum::ToTaiheAudioEncodingType(deviceInfo.audioStreamInfo_.encoding)
+        TaiheAudioEnum::ToTaiheAudioEncodingType(deviceInfo.GetDeviceStreamInfo().encoding)
     };
     taihe::array<AudioEncodingType> encodingArray = taihe::array<AudioEncodingType>(encodingVec);
     AudioDeviceDescriptor taiheDescriptor {
@@ -678,10 +681,7 @@ void TaiheParamUtils::ConvertDeviceInfoToAudioDeviceDescriptor(
     audioDeviceDescriptor->volumeGroupId_ = deviceInfo.volumeGroupId_;
     audioDeviceDescriptor->networkId_ = deviceInfo.networkId_;
     audioDeviceDescriptor->displayName_ = deviceInfo.displayName_;
-    audioDeviceDescriptor->audioStreamInfo_.samplingRate = deviceInfo.audioStreamInfo_.samplingRate;
-    audioDeviceDescriptor->audioStreamInfo_.encoding = deviceInfo.audioStreamInfo_.encoding;
-    audioDeviceDescriptor->audioStreamInfo_.format = deviceInfo.audioStreamInfo_.format;
-    audioDeviceDescriptor->audioStreamInfo_.channels = deviceInfo.audioStreamInfo_.channels;
+    audioDeviceDescriptor->audioStreamInfo_ = deviceInfo.audioStreamInfo_;
 }
 
 taihe::array<AudioDeviceDescriptor> TaiheParamUtils::SetValueDeviceInfo(
