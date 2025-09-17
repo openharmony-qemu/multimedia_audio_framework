@@ -1373,6 +1373,8 @@ void AudioAdapterManager::SaveSystemVolumeForSwitchDevice(DeviceType deviceType,
     int32_t volumeLevel)
 {
     if (deviceType != DEVICE_TYPE_BLUETOOTH_A2DP || streamType != STREAM_MUSIC) {
+        // volume manager no save BLUETOOTH_A2DP abs volume, so this value is wrongs
+        // BLUETOOTH_A2DP abs volume save in other place
         SaveSystemVolumeForEffect(deviceType, streamType, volumeLevel);
     }
 }
