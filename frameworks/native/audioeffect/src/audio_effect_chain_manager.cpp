@@ -2039,5 +2039,21 @@ bool AudioEffectChainManager::IsDeviceTypeSupportingSpatialization()
     return (deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) || (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) ||
         (deviceType_ == DEVICE_TYPE_NEARLINK);
 }
+
+bool AudioEffectChainManager::ExistAudioEffectChainArm(const std::string sceneType, const AudioEffectMode effectMode)
+{
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    if (effectMode == EFFECT_NONE) {
+        return false;
+    }
+    const std::unordered_map<AudioEffectMode, std::string> &audioSupportedSceneModes = GetAudioSupportedSceneModes();
+    std::string sceneMode = audioSupportedSceneModes.find(effectMode)->second;
+    std::string effectChainKey = sceneType + "_&_" + sceneMode + "_&_" + GetDeviceTypeName();
+    if (!sceneTypeAndModeToEffectChainNameMap_.count(effectChainKey)) {
+        AUDIO_INFO_LOG("EffectChain key [%{public}s] does not exist in arm", effectChainKey.c_str());
+        return false;
+    }
+    return true;
+}
 } // namespace AudioStandard
 } // namespace OHOS

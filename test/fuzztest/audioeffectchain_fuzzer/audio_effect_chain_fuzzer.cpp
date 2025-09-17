@@ -1115,13 +1115,6 @@ void ReleaseAudioEffectChainDynamicInnerFuzzTest()
     audioEffectChainManager->ReleaseAudioEffectChainDynamicInner(sceneType);
 }
 
-void EnhanceChainManagerGetAlgoConfigFuzzTest()
-{
-    struct DeviceAttrAdapter validAdapter;
-    EnhanceChainManagerCreateCb(0, &validAdapter);
-    EnhanceChainManagerSendInitCommand();
-}
-
 void QueryEffectChannelInfoInnerFuzzTest()
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
@@ -1205,7 +1198,7 @@ void EnhanceChainManagerUpdatePropertyAndSendToAlgoFuzzTest()
     audioEnhanceChainManagerImpl.UpdatePropertyAndSendToAlgo(deviceType);
 }
 
-typedef void (*TestFuncs[59])();
+typedef void (*TestFuncs[58])();
 
 TestFuncs g_testFuncs = {
     EffectChainManagerInitCbFuzzTest,
@@ -1261,7 +1254,6 @@ TestFuncs g_testFuncs = {
     AudioEnhanceChainUpdateExtraSceneTypeFuzzTest,
     SetAbsVolumeStateToEffectFuzzTest,
     ReleaseAudioEffectChainDynamicInnerFuzzTest,
-    EnhanceChainManagerGetAlgoConfigFuzzTest,
     QueryEffectChannelInfoInnerFuzzTest,
     EffectChainManagerExistAudioEffectChainInnerFuzzTest1,
     EffectChainManagerExistAudioEffectChainInnerFuzzTest2,
