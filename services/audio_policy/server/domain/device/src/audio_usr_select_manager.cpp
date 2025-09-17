@@ -189,7 +189,7 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfoForStartInner(int32_t index, R
         recordDeviceInfoList_[index].sourceType_ = info.sourceType_;
         recordDeviceInfoList_[index].activeSelectedDevice_ = info.activeSelectedDevice_->deviceType_ !=
             DEVICE_TYPE_NONE ? info.activeSelectedDevice_ : recordDeviceInfoList_[index].selectedDevice_;
-        if (index < recordDeviceInfoList_.size() - 1) {
+        if (index < static_cast<int32_t>(recordDeviceInfoList_.size()) - 1) {
             std::rotate(recordDeviceInfoList_.begin(), recordDeviceInfoList_.begin() + index,
                 recordDeviceInfoList_.begin() + index + 1);
         }
@@ -213,7 +213,7 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfoForSelectInner(int32_t index, 
         if (recordDeviceInfoList_[index].sourceType_ != SourceType::SOURCE_TYPE_INVALID &&
             appIsBackStatesMap_.find(info.uid_) != appIsBackStatesMap_.end() &&
             appIsBackStatesMap_[info.uid_] == AppIsBackState::STATE_FOREGROUND) {
-            if (index < recordDeviceInfoList_.size() - 1) {
+            if (index < static_cast<int32_t>(recordDeviceInfoList_.size()) - 1) {
                 std::rotate(recordDeviceInfoList_.begin(), recordDeviceInfoList_.begin() + index,
                     recordDeviceInfoList_.begin() + index + 1);
             }
@@ -241,7 +241,7 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfoForStopInner(int32_t index)
                 BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE ||
             recordDeviceInfoList_[index].selectedDevice_->deviceType_ != DEVICE_TYPE_NONE) {
             recordDeviceInfoList_[index].sourceType_ = SourceType::SOURCE_TYPE_INVALID;
-            if (index < recordDeviceInfoList_.size() - 1)
+            if (index < static_cast<int32_t>(recordDeviceInfoList_.size()) - 1) {
                 std::rotate(recordDeviceInfoList_.begin() + index, recordDeviceInfoList_.begin() + index + 1,
                     recordDeviceInfoList_.end());
             }
