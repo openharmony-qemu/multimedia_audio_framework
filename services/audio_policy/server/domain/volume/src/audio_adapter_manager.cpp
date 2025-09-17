@@ -252,6 +252,8 @@ void AudioAdapterManager::HandleKvData(bool isFirstBoot)
     // Make sure that the volume value is applied.
     auto iter = defaultVolumeTypeList_.begin();
     while (iter != defaultVolumeTypeList_.end()) {
+        int32_t volumeLevelTemp = volumeDataMaintainer_.GetStreamVolume(*iter);
+        SaveSystemVolumeForSwitchDevice(currentActiveDevice_.deviceType_, *iter, volumeLevelTemp);
         SetVolumeDb(*iter);
         iter++;
     }
@@ -1357,9 +1359,7 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
     while (iter != defaultVolumeTypeList_.end()) {
         // update volume level and mute status for each stream type
         int32_t volumeLevelTemp = volumeDataMaintainer_.GetStreamVolume(*iter);
-        if (deviceDescriptor.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP || *iter != STREAM_MUSIC) {
-            SaveSystemVolumeForEffect(deviceDescriptor.deviceType_, *iter, volumeLevelTemp);
-        }
+        SaveSystemVolumeForSwitchDevice(deviceDescriptor.deviceType_, *iter, volumeLevelTemp);
         SetVolumeDb(*iter);
         AUDIO_INFO_LOG("volume: %{public}d, mute: %{public}d for stream type %{public}d, deviceType: %{public}d",
             volumeLevelTemp, volumeDataMaintainer_.GetStreamMute(*iter), *iter, deviceDescriptor.deviceType_);
@@ -1367,6 +1367,16 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
     }
 
     UpdateVolumeForLowLatency();
+}
+
+void AudioAdapterManager::SaveSystemVolumeForSwitchDevice(DeviceType deviceType, AudioStreamType streamType,
+    int32_t volumeLevel)
+{
+    if (deviceType != DEVICE_TYPE_BLUETOOTH_A2DP || streamType != STREAM_MUSIC) {
+        // volume manager no save BLUETOOTH_A2DP abs volume, so this value is wrongs
+        // BLUETOOTH_A2DP abs volume save in other place
+        SaveSystemVolumeForEffect(deviceType, streamType, volumeLevel);
+    }
 }
 
 int32_t AudioAdapterManager::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName)
@@ -2585,6 +2595,8 @@ void  AudioAdapterManager::CheckAndDealMuteStatus(const DeviceType &deviceType, 
         volumeDataMaintainer_.SaveMuteStatus(deviceType, streamType, false, currentActiveDevice_.networkId_);
     }
     if (currentActiveDevice_.deviceType_ == deviceType) {
+        int32_t volumeLevelTemp = volumeDataMaintainer_.GetStreamVolume(streamType);
+        SaveSystemVolumeForSwitchDevice(currentActiveDevice_.deviceType_, streamType, volumeLevelTemp);
         SetVolumeDb(streamType);
     }
 }
