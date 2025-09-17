@@ -23,8 +23,6 @@
 #include "audio_log.h"
 
 namespace ANI::Audio {
-using namespace taihe;
-using namespace ohos::multimedia::audio;
 
 struct AutoRef {
     AutoRef(std::shared_ptr<uintptr_t> cb)

@@ -46,7 +46,6 @@ public:
     std::shared_ptr<OHOS::AudioStandard::TonePlayer> tonePlayer_;
 
 private:
-    static std::unique_ptr<OHOS::AudioStandard::AudioRendererInfo> sRendererInfo_;
     static std::mutex createMutex_;
     static int32_t isConstructSuccess_;
 };

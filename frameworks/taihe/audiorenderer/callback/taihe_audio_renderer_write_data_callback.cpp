@@ -174,9 +174,9 @@ void TaiheRendererWriteDataCallback::SafeJsCallbackWriteDataWork(RendererWriteDa
             std::reinterpret_pointer_cast<taihe::callback<AudioDataCallbackResult(array_view<uint8_t>)>>(
                 event->callback->cb_);
         CHECK_AND_BREAK_LOG(cacheCallback != nullptr, "%{public}s get reference value fail", request.c_str());
-        (*cacheCallback)(TaiheParamUtils::ToTaiheArrayBuffer(event->bufDesc.buffer, event->bufDesc.dataLength));
-        CheckWriteDataCallbackResult(event->bufDesc,
-            (*cacheCallback)(TaiheParamUtils::ToTaiheArrayBuffer(event->bufDesc.buffer, event->bufDesc.dataLength)));
+        AudioDataCallbackResult result =
+            (*cacheCallback)(TaiheParamUtils::ToTaiheArrayBuffer(event->bufDesc.buffer, event->bufDesc.dataLength));
+        CheckWriteDataCallbackResult(event->bufDesc, result);
         CHECK_AND_BREAK_LOG(event->rendererTaiheObj != nullptr && event->rendererTaiheObj->audioRenderer_ != nullptr,
             "audioRenderer_ is null");
 #if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)

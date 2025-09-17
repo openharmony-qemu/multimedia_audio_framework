@@ -47,14 +47,11 @@ TonePlayer TonePlayerImpl::CreateTonePlayerWrapper(
         rendererInfo->rendererFlags = 0;
     }
 
-    if (rendererInfo.get() == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "rendererInfo.get() is invalid");
-        return make_holder<TonePlayerImpl, TonePlayer>();
-    }
     auto tonePlayer = OHOS::AudioStandard::TonePlayer::Create(cacheDir, *(rendererInfo.get()));
     if (tonePlayer  == nullptr) {
-        AUDIO_ERR_LOG("Toneplayer Create failed");
         TonePlayerImpl::isConstructSuccess_ = TAIHE_ERR_PERMISSION_DENIED;
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "Toneplayer Create failed");
+        return make_holder<TonePlayerImpl, TonePlayer>();
     }
     return make_holder<TonePlayerImpl, TonePlayer>(tonePlayer);
 }

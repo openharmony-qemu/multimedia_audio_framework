@@ -108,11 +108,6 @@ std::shared_ptr<AudioRendererImpl> AudioRendererImpl::CreateAudioRendererNativeO
 #endif
     if (audioRendererImpl->audioRenderer_ == nullptr) {
         AUDIO_ERR_LOG("Renderer Create failed");
-        AudioRendererImpl::isConstructSuccess_ = TAIHE_ERR_SYSTEM;
-        return nullptr;
-    }
-
-    if (audioRendererImpl->audioRenderer_ == nullptr) {
         CreateRendererFailed();
         return nullptr;
     }
@@ -417,7 +412,7 @@ taihe::array<AudioDeviceDescriptor> AudioRendererImpl::GetCurrentOutputDevicesSy
     OHOS::AudioStandard::AudioDeviceDescriptor deviceInfo(OHOS::AudioStandard::AudioDeviceDescriptor::DEVICE_INFO);
     int32_t ret = audioRenderer_->GetCurrentOutputDevices(deviceInfo);
     if (ret != OHOS::AudioStandard::SUCCESS) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "GetCurrentInputDevices failure!");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "GetCurrentOutputDevices failure!");
         return taihe::array<AudioDeviceDescriptor>(nullptr, DEFAULT_ARRAY_SIZE);
     }
     return TaiheParamUtils::SetValueDeviceInfo(deviceInfo);

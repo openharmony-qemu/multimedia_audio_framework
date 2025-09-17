@@ -36,6 +36,6 @@ void TaiheAudioRendererPolicyServiceDiedCallback::OnAudioPolicyServiceDied()
 {
     CHECK_AND_RETURN_LOG(renderer_ != nullptr, "renderer_ is null");
     renderer_->DestroyCallbacks();
-    AUDIO_INFO_LOG("AudioRendererTaihe::UnegisterRendererDeviceChangeCallback is successful");
+    AUDIO_INFO_LOG("AudioRendererTaihe::UnregisterRendererDeviceChangeCallback is successful");
 }
 } // namespace ANI::Audio
