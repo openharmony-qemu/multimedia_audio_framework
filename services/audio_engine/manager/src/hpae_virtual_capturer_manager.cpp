@@ -316,6 +316,20 @@ void HpaeVirtualCapturerManager::SetSessionState(HpaeCaptureMoveInfo &streamInfo
     CHECK_AND_RETURN_LOG(streamInfo.sourceOutputNode, "streamInfo.sourceOutputNode is nullptr");
     streamInfo.sourceOutputNode->SetState(capturerState);
 }
+
+int32_t HpaeVirtualCapturerManager::AddCaptureInjector(
+    const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, const SourceType &sourceType)
+{
+    AUDIO_ERR_LOG("Unsupported operation");
+    return SUCCESS;
+}
+
+int32_t HpaeVirtualCapturerManager::RemoveCaptureInjector(
+    const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, const SourceType &sourceType)
+{
+    AUDIO_ERR_LOG("Unsupported operation");
+    return SUCCESS;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

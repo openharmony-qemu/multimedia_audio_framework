@@ -611,7 +611,7 @@ void HpaeManagerImpl::RemoveCaptureInjector(
 }
 
 int32_t HpaeManagerImpl::PeekAudioData(
-    const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo)
+    const uint32_t &sinkPortIndex, uint8_t **buffer, size_t bufferSize, AudioStreamInfo &streamInfo)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
     return manager_->PeekAudioData(sinkPortIndex, buffer, bufferSize, streamInfo);

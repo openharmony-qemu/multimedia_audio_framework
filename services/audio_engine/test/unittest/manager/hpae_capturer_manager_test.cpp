@@ -1066,6 +1066,47 @@ HWTEST_F(HpaeCapturerManagerTest, CreateStream_003, TestSize.Level1)
     EXPECT_EQ(capturerManager->IsInit(), true);
     EXPECT_EQ(capturerManager->CreateStream(streamInfo), ERROR);
 }
+
+/**
+ * @tc.name  : Test AddRemoveCaptureInjectorTest
+ * @tc.type  : FUNC
+ * @tc.number: AddRemoveCaptureInjectorTest
+ * @tc.desc  : Test AddCapturerInjector and RemoveCapturerInjector func
+ */
+HWTEST_F(HpaeCapturerManagerTest, AddRemoveCaptureInjectorTest, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.sourceType = SOURCE_TYPE_MIC;
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    
+    HpaeProcessorType sceneType = TransSourceTypeToSceneType(streamInfo.sourceType);
+    auto it = capturerManager->sceneClusterMap_.find(sceneType);
+    ASSERT_EQ(it != capturerManager->sceneClusterMap_.end(), true);
+    auto sceneCluster = it->second;
+    ASSERT_EQ(sceneCluster != nullptr, true);
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.deviceClass = sourceInfo.deviceClass;
+    nodeInfo.channels = sourceInfo.channels;
+    nodeInfo.format = sourceInfo.format;
+    nodeInfo.frameLen = sourceInfo.frameLen;
+    nodeInfo.samplingRate = sourceInfo.samplingRate;
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
+    nodeInfo.statusCallback = capturerManager;
+    std::shared_ptr<HpaeSourceInputNode> preNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+    EXPECT_EQ(capturerManager->AddCaptureInjector(preNode, streamInfo.sourceType), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(preNode.use_count(), 2);
+    EXPECT_EQ(capturerManager->RemoveCaptureInjector(preNode, streamInfo.sourceType), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(preNode.use_count(), 1);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
