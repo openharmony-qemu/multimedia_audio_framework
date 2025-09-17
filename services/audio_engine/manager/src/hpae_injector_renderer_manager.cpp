@@ -226,7 +226,11 @@ void HpaeInjectorRendererManager::HandleMsg()
 int32_t HpaeInjectorRendererManager::Init(bool isReload)
 {
     // after set sinkoutputnode
-    CHECK_AND_RETURN_RET_LOG(sinkOutputNode_ != nullptr, ERR_INVALID_OPERATION, "init fail, sinkOutputNode is null");
+    if (sinkOutputNode_ == nullptr) {
+        AUDIO_ERR_LOG("init fail, sinkoutputnode is null");
+        TriggerCallback(INIT_DEVICE_RESULT, sinkInfo_.deviceName, ERROR);
+        return ERR_ILLEGAL_STATE;
+    }
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     auto request = [this, isReload] {
         InitManager(isReload);
@@ -714,4 +718,4 @@ bool HpaeInjectorRendererManager::CheckIsStreamRunning()
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
-}  // namespace OHOS
+}  // namespace OHOS

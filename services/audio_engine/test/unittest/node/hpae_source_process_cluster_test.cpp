@@ -144,11 +144,12 @@ HWTEST_F(HpaeSourceProcessClusterTest, EffectNodeNotNullTest, TestSize.Level1)
     nodeInfo.statusCallback = testStatuscallback;
     std::shared_ptr<HpaeSourceProcessCluster> hpaeSourceProcessCluster =
         std::make_shared<HpaeSourceProcessCluster>(nodeInfo);
-    std::shared_ptr<HpaeSourceInputNode> inputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
-    hpaeSourceProcessCluster->Connect(inputNode);
-    EXPECT_EQ(inputNode.use_count(), 2);
-    hpaeSourceProcessCluster->DisConnect(inputNode);
-    EXPECT_EQ(inputNode.use_count(), 1);
+    std::shared_ptr<HpaeSourceInputCluster> inputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    EXPECT_EQ(inputCluster->fmtConverterNodeMap_.size(), 0);
+    hpaeSourceProcessCluster->Connect(inputCluster);
+    EXPECT_EQ(inputCluster->fmtConverterNodeMap_.size(), 1);
+    hpaeSourceProcessCluster->DisConnect(inputCluster);
+    EXPECT_EQ(inputCluster->fmtConverterNodeMap_.size(), 1);
 }
 
 HWTEST_F(HpaeSourceProcessClusterTest, HpaeSourceProcessClusterCreateEffectTest, TestSize.Level1)

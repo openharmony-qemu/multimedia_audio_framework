@@ -50,7 +50,7 @@ public:
     uint32_t GetLatency();
     bool GetIsReadFinished();
     int32_t PeekAudioData(uint8_t **buffer, const size_t &bufferSize, AudioStreamInfo &audioStreamInfo);
-    int32_t ReloadNode(hpaeNodeInfo nodeInfo);
+    int32_t ReloadNode(HpaeNodeInfo nodeInfo);
 private:
     size_t GetRingCacheSize();
 private:
@@ -67,4 +67,4 @@ private:
 }  // namespace AudioStandard
 }  // namespace OHOS
 
-#endif
+#endif

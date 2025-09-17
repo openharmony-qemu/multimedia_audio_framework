@@ -31,7 +31,7 @@ static constexpr uint32_t DEFAULT_FRAME_LEN_MS = 20;
 static constexpr uint32_t MS_PER_SECOND = 1000;
 
 class HpaeSinkVirtualOutputNodeTest : public testing::Test {
-protected:
+public:
     void SetUp() override {
         nodeInfo_.nodeId = 1;
         nodeInfo_.samplingRate = SAMPLE_RATE_48000;

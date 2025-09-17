@@ -1911,7 +1911,7 @@ HWTEST_F(HpaeManagerUnitTest, InjectorUpdataAudioPortInfoTest, TestSize.Level1)
     int32_t injectorPortId = callback->GetPortId();
 
     auto it = hpaeManager_->sinkVirtualOutputNodeMap_.find(injectorPortId);
-    EXPECT_EQ(it != hpaeManager_->sinkVirtualOutputNodeMap_.end(), true);
+    ASSERT_EQ(it != hpaeManager_->sinkVirtualOutputNodeMap_.end(), true);
     auto sinkOutputNode = it->second;
     ASSERT_EQ(sinkOutputNode != nullptr, true);
     HpaeNodeInfo &nodeInfo = sinkOutputNode->GetNodeInfo();

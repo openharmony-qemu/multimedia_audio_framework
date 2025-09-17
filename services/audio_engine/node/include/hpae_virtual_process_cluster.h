@@ -15,7 +15,7 @@
 
 #ifndef HPAE_VIRTUAL_PROCESS_CLUSTER_H
 #define HPAE_VIRTUAL_PROCESS_CLUSTER_H
-#include "hpae_mixer_node.h"\
+#include "hpae_mixer_node.h"
 #include "hpae_audio_format_converter_node.h"
 #include "hpae_gain_node.h"
 
@@ -48,4 +48,4 @@ private:
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
-#endif // HPAE_VIRTUAL_PROCESS_CLUSTER_H
+#endif // HPAE_VIRTUAL_PROCESS_CLUSTER_H

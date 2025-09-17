@@ -268,7 +268,7 @@ int32_t HpaeManager::ReloadRenderManager(const AudioModuleInfo &audioModuleInfo,
         sinkNameSinkIdMap_[audioModuleInfo.name] = sinkSourceIndex;
     }
 
-    if (sinkInfo.deviceName == "Virtual_Injector") { // todo : rewrite correct name
+    if (sinkInfo.deviceName == "Virtual_Injector") {
         std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
         sinkVirtualOutputNodeMap_[sinkInfo.sinkId] = sinkVirtualOutputNodeMap_[oldId];
         HpaeNodeInfo nodeInfo;
@@ -301,7 +301,7 @@ int32_t HpaeManager::CreateRendererManager(const AudioModuleInfo &audioModuleInf
         AUDIO_INFO_LOG("SetDefaultSink name: %{public}s", defaultSink_.c_str());
     }
 
-    if (audioModuleInfo.name == "Virtual_Injector") { // todo : rewrite correct name
+    if (audioModuleInfo.name == "Virtual_Injector") {
         std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
         HpaeNodeInfo nodeInfo;
         TransSinkInfoToNodeInfo(sinkInfo, rendererManager, nodeInfo);
@@ -2628,7 +2628,7 @@ int32_t HpaeManager::PeekAudioData(
     auto sinkVirtualOutputNode = SafeGetMap(sinkVirtualOutputNodeMap_, sinkPortIndex);
     CHECK_AND_RETURN_RET_LOG(sinkVirtualOutputNode != nullptr, ERROR_INVALID_PARAM,
         "sinkPort[%{public}u] not exit", sinkPortIndex);
-    return sinkVirtualOutputNode->PeekAudioData(buffer, bufferSize, audioStreamInfo);
+    return sinkVirtualOutputNode->PeekAudioData(buffer, bufferSize, streamInfo);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
