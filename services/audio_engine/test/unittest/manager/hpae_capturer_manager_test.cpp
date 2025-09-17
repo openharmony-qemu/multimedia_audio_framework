@@ -1090,7 +1090,7 @@ HWTEST_F(HpaeCapturerManagerTest, AddRemoveCaptureInjectorTest, TestSize.Level1)
     auto it = capturerManager->sceneClusterMap_.find(sceneType);
     ASSERT_EQ(it != capturerManager->sceneClusterMap_.end(), true);
     auto sceneCluster = it->second;
-    ASSERT_EQ(sceneCluster != nullptr , true);
+    ASSERT_EQ(sceneCluster != nullptr, true);
     HpaeNodeInfo nodeInfo;
     nodeInfo.deviceClass = sourceInfo.deviceClass;
     nodeInfo.channels = sourceInfo.channels;

@@ -43,7 +43,8 @@ public:
     void ConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode, HpaeNodeInfo &nodeInfo) override;
     void DisConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode,
         HpaeNodeInfo &nodeInfo) override;
-    virtual bool GetCapturerEffectConfig(HpaeNodeInfo& nodeInfo, HpaeSourceBufferType type = HPAE_SOURCE_BUFFER_TYPE_MIC);
+    virtual bool GetCapturerEffectConfig(HpaeNodeInfo& nodeInfo,
+        HpaeSourceBufferType type = HPAE_SOURCE_BUFFER_TYPE_MIC);
     virtual int32_t CaptureEffectCreate(uint64_t sceneKeyCode, CaptureEffectAttr attr);
     int32_t CaptureEffectRelease(uint64_t sceneKeyCode);
 protected:

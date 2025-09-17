@@ -32,10 +32,11 @@ static constexpr uint32_t MS_PER_SECOND = 1000;
 
 class HpaeSinkVirtualOutputNodeTest : public testing::Test {
 public:
-    void SetUp() override {
+    void SetUp() override 
+    {
         nodeInfo_.nodeId = 1;
         nodeInfo_.samplingRate = SAMPLE_RATE_48000;
-        nodeInfo_.frameLen = 960; // 20ms at 48kHz
+        nodeInfo_.frameLen = 960; // 960 for framelen
         nodeInfo_.channels = STEREO;
         nodeInfo_.format = SAMPLE_F32LE;
         nodeInfo_.sessionId = 1001; // 1001 for sessionid
@@ -49,8 +50,7 @@ public:
 
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, ConstructHpaeSinkVirtualOutputNode, TestSize.Level1)
 {
-    std::shared_ptr<HpaeSinkVirtualOutputNode> node = 
-        std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);    
+    std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
     ASSERT_NE(node, nullptr);
     EXPECT_EQ(node->GetSampleRate(), nodeInfo_.samplingRate);
     EXPECT_EQ(node->GetFrameLen(), nodeInfo_.frameLen);
@@ -62,9 +62,7 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, ConstructHpaeSinkVirtualOutputNode, Test
 
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, PeekAudioDataInvalidBufferSize, TestSize.Level1)
 {
-    std::shared_ptr<HpaeSinkVirtualOutputNode> node = 
-        std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
-    
+    std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
     uint8_t* buffer = nullptr;
     size_t invalidSize = nodeInfo_.frameLen * nodeInfo_.channels * GetSizeFromFormat(nodeInfo_.format) - 1;
     AudioStreamInfo audioStreamInfo;
@@ -75,9 +73,7 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, PeekAudioDataInvalidBufferSize, TestSize
 
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, PeekAudioDataSuccess, TestSize.Level1)
 {
-    std::shared_ptr<HpaeSinkVirtualOutputNode> node = 
-        std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
-    
+    std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
     uint8_t* buffer = nullptr;
     size_t validSize = nodeInfo_.frameLen * nodeInfo_.channels * GetSizeFromFormat(nodeInfo_.format);
     AudioStreamInfo audioStreamInfo;
@@ -89,8 +85,7 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, PeekAudioDataSuccess, TestSize.Level1)
 
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, ResetNode, TestSize.Level1)
 {
-    std::shared_ptr<HpaeSinkVirtualOutputNode> node = 
-        std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
+    std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
     std::shared_ptr<HpaeSinkInputNode> inputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo_);
     node->Connect(inputNode);
     bool result = node->Reset();
@@ -99,8 +94,7 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, ResetNode, TestSize.Level1)
 
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, ResetAllNodes, TestSize.Level1)
 {
-    std::shared_ptr<HpaeSinkVirtualOutputNode> node = 
-        std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
+    std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
     
     bool result = node->ResetAll();
     EXPECT_TRUE(result);
@@ -108,8 +102,7 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, ResetAllNodes, TestSize.Level1)
 
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, GetSharedInstance, TestSize.Level1)
 {
-    std::shared_ptr<HpaeSinkVirtualOutputNode> node = 
-        std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
+    std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
     
     std::shared_ptr<HpaeNode> sharedInstance = node->GetSharedInstance();
     EXPECT_EQ(sharedInstance, node);
@@ -117,8 +110,7 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, GetSharedInstance, TestSize.Level1)
 
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, GetOutputPort, TestSize.Level1)
 {
-    std::shared_ptr<HpaeSinkVirtualOutputNode> node = 
-        std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
+    std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
     
     OutputPort<HpaePcmBuffer*>* port = node->GetOutputPort();
     EXPECT_NE(port, nullptr);
@@ -127,16 +119,14 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, GetOutputPort, TestSize.Level1)
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, RenderSinkInitNullRingCache, TestSize.Level1)
 {
     HpaeNodeInfo info = nodeInfo_;
-    std::shared_ptr<HpaeSinkVirtualOutputNode> node = 
-        std::make_shared<HpaeSinkVirtualOutputNode>(info);
+    std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(info);
     node->ringCache_.reset();
     EXPECT_NE(node->RenderSinkInit(), SUCCESS);
 }
 
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, RenderSinkInitSuccess, TestSize.Level1)
 {
-    std::shared_ptr<HpaeSinkVirtualOutputNode> node = 
-        std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
+    std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
     
     int32_t result = node->RenderSinkInit();
     EXPECT_EQ(result, SUCCESS);
@@ -145,8 +135,7 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, RenderSinkInitSuccess, TestSize.Level1)
 
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, RenderSinkDeInit, TestSize.Level1)
 {
-    std::shared_ptr<HpaeSinkVirtualOutputNode> node = 
-        std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
+    std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
     
     int32_t result = node->RenderSinkDeInit();
     EXPECT_EQ(result, SUCCESS);
@@ -155,9 +144,7 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, RenderSinkDeInit, TestSize.Level1)
 
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, RenderSinkStart, TestSize.Level1)
 {
-    std::shared_ptr<HpaeSinkVirtualOutputNode> node = 
-        std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
-    
+    std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
     int32_t result = node->RenderSinkStart();
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(node->GetState(), STREAM_MANAGER_RUNNING);
@@ -165,8 +152,7 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, RenderSinkStart, TestSize.Level1)
 
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, RenderSinkStop, TestSize.Level1)
 {
-    std::shared_ptr<HpaeSinkVirtualOutputNode> node = 
-        std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
+    std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
     
     int32_t result = node->RenderSinkStop();
     EXPECT_EQ(result, SUCCESS);
@@ -175,18 +161,14 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, RenderSinkStop, TestSize.Level1)
 
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, GetPreOutNum, TestSize.Level1)
 {
-    std::shared_ptr<HpaeSinkVirtualOutputNode> node = 
-        std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
-    
+    std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
     size_t num = node->GetPreOutNum();
     EXPECT_GE(num, 0);
 }
 
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, SetSinkState, TestSize.Level1)
 {
-    std::shared_ptr<HpaeSinkVirtualOutputNode> node = 
-        std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
-    
+    std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
     int32_t result = node->SetSinkState(STREAM_MANAGER_RUNNING);
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(node->GetState(), STREAM_MANAGER_RUNNING);
@@ -194,25 +176,20 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, SetSinkState, TestSize.Level1)
 
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, GetLatency, TestSize.Level1)
 {
-    std::shared_ptr<HpaeSinkVirtualOutputNode> node = 
-        std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
-    
+    std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
     uint32_t latency = node->GetLatency();
     EXPECT_EQ(latency, 0);
 }
 
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, GetIsReadFinished, TestSize.Level1)
 {
-    std::shared_ptr<HpaeSinkVirtualOutputNode> node = 
-        std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
-    
+    std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
     EXPECT_EQ(node->GetIsReadFinished(), true);
 }
 
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, ReloadNode, TestSize.Level1)
 {
-    std::shared_ptr<HpaeSinkVirtualOutputNode> node = 
-        std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
+    std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
     
     HpaeNodeInfo newInfo = nodeInfo_;
     newInfo.samplingRate = SAMPLE_RATE_44100;
@@ -231,13 +208,9 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, ReloadNode, TestSize.Level1)
 
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, GetRingCacheSize, TestSize.Level1)
 {
-    std::shared_ptr<HpaeSinkVirtualOutputNode> node = 
-        std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
-    
-    size_t expectedSize = nodeInfo_.channels * 
-                         static_cast<size_t>(GetSizeFromFormat(nodeInfo_.format)) *
-                         nodeInfo_.samplingRate * DEFAULT_FRAME_LEN_MS / MS_PER_SECOND *
-                         DEFAULT_RING_BUFFER_NUM;
+    std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
+    size_t expectedSize = nodeInfo_.channels * nodeInfo_.samplingRate * DEFAULT_FRAME_LEN_MS *
+        DEFAULT_RING_BUFFER_NUM * static_cast<size_t>(GetSizeFromFormat(nodeInfo_.format)) / MS_PER_SECOND;
     
     size_t actualSize = node->GetRingCacheSize();
     EXPECT_EQ(actualSize, expectedSize);
@@ -245,8 +218,7 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, GetRingCacheSize, TestSize.Level1)
 
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, HpaeSinkVirtualOutputNodeTestReload, TestSize.Level1)
 {
-    std::shared_ptr<HpaeSinkVirtualOutputNode> node = 
-        std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
+    std::shared_ptr<HpaeSinkVirtualOutputNode> node = std::make_shared<HpaeSinkVirtualOutputNode>(nodeInfo_);
     node->ringCache_ = nullptr;
     EXPECT_EQ(node->ringCache_ == nullptr, true);
     node->ReloadNode(nodeInfo_);

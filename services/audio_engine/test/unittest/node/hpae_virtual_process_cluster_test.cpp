@@ -70,7 +70,6 @@ HWTEST_F(HpaeVirtualProcessClusterTest, DestructorCleansUpResources, TestSize.Le
     std::shared_ptr<HpaeSinkInputNode> preNode = std::make_shared<HpaeSinkInputNode>(nodeInfo1);
     cluster->Connect(preNode);
     EXPECT_EQ(cluster->GetConnectSinkInputNum(), 1);
-    
 }
 
 HWTEST_F(HpaeVirtualProcessClusterTest, DoProcessDelegatesToMixerNode, TestSize.Level0)
@@ -154,7 +153,7 @@ HWTEST_F(HpaeVirtualProcessClusterTest, ConnectSameSessionIdNoDuplicates, TestSi
 
 HWTEST_F(HpaeVirtualProcessClusterTest, DisConnectRemovesNodesFromMaps, TestSize.Level0)
 {
-   HpaeNodeInfo nodeInfo = GetNodeInfo();
+    HpaeNodeInfo nodeInfo = GetNodeInfo();
     std::shared_ptr<HpaeVirtualProcessCluster> cluster = std::make_shared<HpaeVirtualProcessCluster>(nodeInfo);
     
     HpaeNodeInfo preNodeInfo = GetNodeInfo();

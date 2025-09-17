@@ -537,7 +537,7 @@ int32_t HpaeInjectorRendererManager::SetSinkVirtualOutputNode(
     return SUCCESS;
 }
 
-void HpaeInjectorRendererManager::InitManager(bool isReload) 
+void HpaeInjectorRendererManager::InitManager(bool isReload)
 {
     AUDIO_INFO_LOG("init devicename:%{public}s", sinkInfo_.deviceName.c_str());
     HpaeNodeInfo nodeInfo = sinkOutputNode_ ->GetNodeInfo();

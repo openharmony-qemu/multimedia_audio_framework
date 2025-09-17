@@ -42,7 +42,7 @@ public:
 
 class MockHpaeCaptureEffectNode : public HpaeCaptureEffectNode {
 public:
-    MockHpaeCaptureEffectNode(HpaeNodeInfo &nodeInfo) : HpaeCaptureEffectNode(nodeInfo) {}
+    explicit MockHpaeCaptureEffectNode(HpaeNodeInfo &nodeInfo) : HpaeCaptureEffectNode(nodeInfo) {}
     MOCK_METHOD(int32_t, CaptureEffectCreate, (uint64_t sceneKeyCode, CaptureEffectAttr attr), (override));
     MOCK_METHOD(bool, GetCapturerEffectConfig, (HpaeNodeInfo & nodeInfo, HpaeSourceBufferType type), (override));
 };
