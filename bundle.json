@@ -92,6 +92,7 @@
             "opensles",
             "qos_manager",
             "media_foundation",
+            "runtime_core",
             "usb_manager",
             "frame_aware_sched",
             "window_manager"
@@ -110,6 +111,7 @@
               "//foundation/multimedia/audio_framework/frameworks/cj:cj_multimedia_audio_ffi",
               "//foundation/multimedia/audio_framework/frameworks/native/ohaudio:ohaudio",
               "//foundation/multimedia/audio_framework/frameworks/native/opensles:opensles",
+              "//foundation/multimedia/audio_framework/frameworks/taihe:audio_framework_taihe",
               "//foundation/multimedia/audio_framework/services/audio_service:audio_sasdk"
             ],
             "service_group": [
@@ -121,6 +123,9 @@
             ]
           },
           "inner_kits": [
+            {
+              "name": "//foundation/multimedia/audio_framework/frameworks/taihe:copy_taihe"
+            },
             {
                 "header": {
                   "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiosasdk/include",
