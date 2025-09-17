@@ -546,6 +546,21 @@ size_t CaculateFrameLenByNodeInfo(HpaeNodeInfo &nodeInfo)
 {
     return nodeInfo.samplingRate * DEFAULT_FRAME_LEN_MS / MS_PER_SECOND;
 }
+
+void ConfigNodeInfo(HpaeNodeInfo &nodeInfo, const HpaeStreamInfo &streamInfo)
+{
+    nodeInfo.channels = streamInfo.channels;
+    nodeInfo.format = streamInfo.format;
+    nodeInfo.frameLen = streamInfo.frameLen;
+    nodeInfo.streamType = streamInfo.streamType;
+    nodeInfo.sessionId = streamInfo.sessionId;
+    nodeInfo.customSampleRate = streamInfo.customSampleRate;
+    nodeInfo.channelLayout = (AudioChannelLayout)streamInfo.channelLayout;
+    nodeInfo.samplingRate = static_cast<AudioSamplingRate>(streamInfo.samplingRate);
+    nodeInfo.effectInfo = streamInfo.effectInfo;
+    nodeInfo.fadeType = streamInfo.fadeType;
+    nodeInfo.sourceType = streamInfo.sourceType;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -4534,7 +4534,7 @@ static int32_t PaHdiSinkNewInitThread(pa_module *m, pa_modargs *ma, struct Userd
     }
 
     if (!strcmp(u->sink->name, "Speaker") || !strcmp(u->sink->name, MCH_SINK_NAME) ||
-        !strcmp(u->sink->name, OFFLOAD_SINK_NAME)) {
+        !strcmp(u->sink->name, OFFLOAD_SINK_NAME) || IsSinkNameDp(u->sink->name)) {
         pa_module_hook_connect(m, &m->core->hooks[PA_CORE_HOOK_SINK_INPUT_PUT], PA_HOOK_EARLY,
             (pa_hook_cb_t)SinkInputPutCb, u);
     }
