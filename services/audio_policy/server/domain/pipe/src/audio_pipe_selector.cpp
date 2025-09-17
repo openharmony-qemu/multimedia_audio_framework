@@ -420,6 +420,7 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
             break;
         case CONCEDE_INCOMING:
             incomingStream->ResetToNormalRoute(false);
+            CheckAndHandleOffloadConcedeScene(incomingStream);
             break;
         case CONCEDE_EXISTING:
             // If action is concede existing, maybe also need to concede incoming
@@ -434,6 +435,7 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
             }
             // Set stream route flag to normal here so it will not affect later streams in loop
             existingStream->ResetToNormalRoute(true);
+            CheckAndHandleOffloadConcedeScene(existingStream);
             break;
         default:
             break;
@@ -632,6 +634,16 @@ void AudioPipeSelector::ProcessModemCommunicationConcurrency(
         AudioPipeManager::GetPipeManager()->GetModemCommunicationStreamDesc();
     for (auto &streamDesc : streamDescs) {
         ProcessConcurrency(modemCommStream, streamDesc, streamsMoveToNormal);
+    }
+}
+
+// Once a stream is conceded from offload to normal, it cannot be restored to offload
+void AudioPipeSelector::CheckAndHandleOffloadConcedeScene(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "StreamDesc is nullptr");
+    if (streamDesc->IsSelectFlagOffload() && streamDesc->IsRouteNormal()) {
+        AUDIO_INFO_LOG("Session %{public}u has been conceded to FORCED_NORMAL", streamDesc->sessionId_);
+        streamDesc->SetOriginalFlagForcedNormal();
     }
 }
 

@@ -200,6 +200,16 @@ public:
         return (oldRouteFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER);
     }
 
+    bool IsSelectFlagOffload() const
+    {
+        return (audioFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER);
+    }
+
+    void SetOriginalFlagForcedNormal()
+    {
+        rendererInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
+    }
+
     // Device funcs above
     DeviceType GetMainNewDeviceType()
     {
