@@ -836,14 +836,14 @@ void AudioDeviceManager::AddAvailableDevicesByUsage(const AudioDeviceUsage usage
 std::shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetExistedDevice(
     const std::shared_ptr<AudioDeviceDescriptor> &device)
 {
-    CHECK_AND_RETURN_RET_LOG(device != nullptr, nullptr, "device is nullptr");
+    CHECK_AND_RETURN_RET_LOG(device->deviceType_ != DEVICE_TYPE_NONE, device, "device is nullptr");
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     for (const auto &dev : connectedDevices_) {
         if (dev->IsSameDeviceInfo(*device)) {
             return make_shared<AudioDeviceDescriptor>(dev);
         }
     }
-    return nullptr;
+    return make_shared<AudioDeviceDescriptor>();
 }
 
 bool AudioDeviceManager::IsExistedDevice(const std::shared_ptr<AudioDeviceDescriptor> &device,
@@ -1588,7 +1588,7 @@ int32_t AudioDeviceManager::RemoveSelectedInputDevice(const uint32_t sessionID)
 
 shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSelectedCaptureDevice(const uint32_t sessionID)
 {
-    shared_ptr<AudioDeviceDescriptor> devDesc = nullptr;
+    shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>();
     if (sessionID == 0 || !selectedInputDeviceInfo_.count(sessionID)) {
         return devDesc;
     }

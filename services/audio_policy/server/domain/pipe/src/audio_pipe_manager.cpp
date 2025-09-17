@@ -22,6 +22,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 const uint32_t FIRST_SESSIONID = 100000;
+const int32_t MEDIA_SERVICE_UID = 1013;
 constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
 AudioPipeManager::AudioPipeManager()
 {
@@ -306,6 +307,21 @@ std::shared_ptr<AudioStreamDescriptor> AudioPipeManager::GetStreamDescByIdInner(
         }
     }
     return nullptr;
+}
+
+int32_t AudioPipeManager::GetClientUidBySessionId(uint32_t sessionId)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            if (desc->sessionId_ == sessionId) {
+                return desc->callerUid_ == MEDIA_SERVICE_UID ? desc->appInfo_.appUid : desc->callerUid_;
+            }
+        }
+    }
+    return -1;
 }
 
 int32_t AudioPipeManager::GetStreamCount(const std::string adapterName, const uint32_t routeFlag)
