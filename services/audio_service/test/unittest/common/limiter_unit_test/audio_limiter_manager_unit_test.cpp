@@ -250,7 +250,8 @@ HWTEST_F(AudioLimiterManagerUnitTest, GetLatency_002, TestSize.Level1)
     ret = limiterManager->SetLimiterConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, SUCCESS);
     ret = limiterManager->GetLatency(sinkIndex);
-    EXPECT_EQ(ret, TEST_MAX_REQUEST * AUDIO_MS_PER_S/ (SAMPLE_F32LE * SAMPLE_RATE_48000 * STEREO * PROC_COUNT));
+    EXPECT_EQ(ret, TEST_MAX_REQUEST * AUDIO_MS_PER_S / (static_cast<uint8_t>(SAMPLE_F32LE) *
+            static_cast<uint32_t>(SAMPLE_RATE_48000) * static_cast<uint8_t>(STEREO) * PROC_COUNT));
 }
 } // namespace AudioStandard
 } // namespace OHOS

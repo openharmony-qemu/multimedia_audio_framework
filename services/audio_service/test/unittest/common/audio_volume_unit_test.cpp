@@ -1447,11 +1447,11 @@ HWTEST_F(AudioVolumeUnitTest, GetCurVolume_001, TestSize.Level1)
 HWTEST_F(AudioVolumeUnitTest, GetStopFadeoutState_003, TestSize.Level1)
 {
     uint32_t streamIndex = -1;
-    float result = GetStopFadeoutState(streamIndex);
+    auto result = static_cast<FadePauseState>(GetStopFadeoutState(streamIndex));
     EXPECT_EQ(result, INVALID_STATE);
 
     streamIndex = 1;
-    result = GetStopFadeoutState(streamIndex);
+    result = static_cast<FadePauseState>(GetStopFadeoutState(streamIndex));
     EXPECT_EQ(result, INVALID_STATE);
 }
 
