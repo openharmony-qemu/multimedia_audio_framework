@@ -57,7 +57,6 @@ std::shared_ptr<HpaeSinkInputNode> HpaeOffloadRendererManager::CreateInputSessio
     nodeInfo.customSampleRate = streamInfo.customSampleRate;
     nodeInfo.sceneType = TransStreamTypeToSceneType(streamInfo.streamType);
     nodeInfo.effectInfo = streamInfo.effectInfo;
-    nodeInfo.fadeType = streamInfo.fadeType;
     nodeInfo.historyFrameCount = nodeInfo.frameLen ?
         HISTORY_INTERVAL_S * (nodeInfo.customSampleRate ? nodeInfo.customSampleRate : nodeInfo.samplingRate)
         / nodeInfo.frameLen : 0;
