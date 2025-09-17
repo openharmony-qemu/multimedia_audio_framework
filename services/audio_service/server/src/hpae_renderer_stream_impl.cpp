@@ -145,7 +145,7 @@ int32_t HpaeRendererStreamImpl::Start()
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     ClockTime::GetAllTimeStamp(timestamp_);
     int32_t ret = IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
-    if (processConfig.streamInfo.customSampleRate != 0) {
+    if (processConfig_.streamInfo.customSampleRate != 0) {
         noWaitDataFlag_ = false;
     }
     std::string tempStringSessionId = std::to_string(streamIndex_);
