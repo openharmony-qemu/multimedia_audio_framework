@@ -2035,5 +2035,95 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetDuckFactor_003, TestS
     int32_t ret = rendererInServer->SetDuckFactor(duckFactor);
     EXPECT_NE(SUCCESS, ret);
 }
+
+/**
+ * @tc.name  : Test SetTarget API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerSetTarget_001
+ * @tc.desc  : wzwzwz
+ */
+HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, rendererInServer);
+    int32_t ret = rendererInServer->Init();
+    rendererInServer->lastTarget_ = NORMAL_PLAYBACK;
+    rendererInServer->SetTarget(NORMAL_PLAYBACK, ret);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test SetTarget API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerSetTarget_002
+ * @tc.desc  : wzwzwz
+ */
+HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, rendererInServer);
+    int32_t ret = rendererInServer->Init();
+    rendererInServer->lastTarget_ = NORMAL_PLAYBACK;
+    rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
+    EXPECT_NE(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test SetTarget API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerSetTarget_003
+ * @tc.desc  : wzwzwz
+ */
+HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_003, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, rendererInServer);
+    int32_t ret = rendererInServer->Init();
+    rendererInServer->lastTarget_ = NORMAL_PLAYBACK;
+    rendererInServer->status_ = I_STATUS_IDLE;
+    rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
+    EXPECT_NE(SUCCESS, ret);
+
+    rendererInServer->status_ = I_STATUS_INVALID;
+    rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
+    EXPECT_NE(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test SetTarget API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerSetTarget_004
+ * @tc.desc  : wzwzwz
+ */
+HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_004, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, rendererInServer);
+    int32_t ret = rendererInServer->Init();
+    rendererInServer->lastTarget_ = NORMAL_PLAYBACK;
+    rendererInServer->status_ = I_STATUS_PAUSED;
+    rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
+    EXPECT_NE(SUCCESS, ret);
+
+    rendererInServer->status_ = I_STATUS_INVALID;
+    rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
+    EXPECT_NE(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test SetTarget API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerSetTarget_005
+ * @tc.desc  : wzwzwz
+ */
+HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_005, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, rendererInServer);
+    int32_t ret = rendererInServer->Init();
+    rendererInServer->lastTarget_ = NORMAL_PLAYBACK;
+    rendererInServer->status_ = I_STATUS_STOPPED;
+    rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
+    EXPECT_NE(SUCCESS, ret);
+
+    rendererInServer->status_ = I_STATUS_INVALID;
+    rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
+    EXPECT_NE(SUCCESS, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS

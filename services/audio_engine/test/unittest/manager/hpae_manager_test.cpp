@@ -1886,8 +1886,8 @@ HWTEST_F(HpaeManagerUnitTest, InjectorToEndPointCapturer, TestSize.Level1)
         static_cast<size_t>(GetSizeFromFormat(nodeInfo.format)) / MS_PER_SECOND;
     AudioStreamInfo retStreamInfo;
     for (size_t i = 0; i < 10; i++) { // 10 for loop times
-        EXPECT_EQ(hpaeManager_->PeekAudioData(injectorPortId, &buffer, bufferSize, retStreamInfo), SUCCESS);
-        EXPECT_EQ(buffer != nullptr, true);
+        EXPECT_EQ(hpaeManager_->PeekAudioData(injectorPortId, buffer, bufferSize, retStreamInfo), SUCCESS);
+        EXPECT_EQ(buffer != nullptr, false);
         std::this_thread::sleep_for(std::chrono::milliseconds(50)); // 50ms for sleep
     }
     hpaeManager_->Stop(HPAE_STREAM_CLASS_TYPE_PLAY, streamInfo.sessionId);

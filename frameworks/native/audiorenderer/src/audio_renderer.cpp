@@ -2280,7 +2280,6 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
         streamDesc, flag, switchInfo.params.originalSessionId, networkId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "CreateRendererClient failed");
 
-    bool switchResult = false;
     // create new IAudioStream
     targetClass = DecideStreamClassAndUpdateRendererInfo(flag);
     std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetPlaybackStream(targetClass, switchInfo.params,
@@ -2293,7 +2292,7 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     AUDIO_INFO_LOG("SetSwitchInfo, audioFlag: %{public}u", flag);
     // set new stream info. When switch to fast stream failed, call SetSwitchInfo again
     // and switch to normal ipc stream to avoid silence.
-    switchResult = SetSwitchInfo(switchInfo, newAudioStream);
+    bool switchResult = SetSwitchInfo(switchInfo, newAudioStream);
     if (!switchResult && switchInfo.rendererInfo.originalFlag != AUDIO_FLAG_NORMAL) {
         AUDIO_ERR_LOG("Re-create stream failed, create normal ipc stream");
         if (restoreInfo.restoreReason == SERVER_DIED) {
@@ -2321,6 +2320,7 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     // Otherwise GetBufferDesc will return the buffer pointer of oldStream (causing Use-After-Free).
     UpdateRendererAudioStream(newAudioStream);
     newAudioStream->NotifyRouteUpdate(flag, networkId);
+    newAudioStream->SetRenderTarget(switchInfo.target);
 
     // Start new stream if old stream was in running state.
     // When restoring for audio server died, no need for restart.

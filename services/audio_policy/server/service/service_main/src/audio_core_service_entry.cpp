@@ -601,5 +601,18 @@ int32_t AudioCoreService::EventEntry::ReleaseOffloadPipe(AudioIOHandle id, uint3
     coreService_->isOffloadInRelease_[type].store(false);
     return SUCCESS;
 }
+
+int32_t AudioCoreService::EventEntry::SetRendererTarget(RenderTarget target, RenderTarget lastTarget,
+    uint32_t sessionId)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->SetRendererTarget(target, lastTarget, sessionId);
+}
+
+int32_t AudioCoreService::EventEntry::StartInjection(uint32_t sessionId)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->StartInjection(sessionId);
+}
 }
 }

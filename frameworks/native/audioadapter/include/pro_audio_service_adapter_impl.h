@@ -60,6 +60,10 @@ public:
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
     int32_t SetAbsVolumeStateToEffect(const bool absVolumeState) override;
     int32_t SetSystemVolumeToEffect(AudioStreamType streamType, float volume) override;
+    int32_t AddCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
+        const SourceType &sourceType) override;
+    int32_t RemoveCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
+        const SourceType &sourceType) override;
     // callback Member functions
     virtual void OnOpenAudioPortCb(int32_t portId) override;
     virtual void OnReloadAudioPortCb(int32_t portId) override;

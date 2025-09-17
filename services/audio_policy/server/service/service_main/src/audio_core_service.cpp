@@ -83,7 +83,8 @@ AudioCoreService::AudioCoreService()
       audioUsrSelectManager_(AudioUsrSelectManager::GetAudioUsrSelectManager()),
       audioPipeSelector_(AudioPipeSelector::GetPipeSelector()),
       audioSessionService_(OHOS::Singleton<AudioSessionService>::GetInstance()),
-      pipeManager_(AudioPipeManager::GetPipeManager())
+      pipeManager_(AudioPipeManager::GetPipeManager()),
+      audioInjectorPolicy_(AudioInjectorPolicy::GetInstance())
 {
     AUDIO_INFO_LOG("Ctor");
 }
@@ -1520,6 +1521,36 @@ int32_t AudioCoreService::ActiveA2dpAndLoadModule(AudioDeviceDescriptor &desc)
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "LoadA2dpModule failed %{public}d", result);
 #endif
     return result;
+}
+
+int32_t AudioCoreService::SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId)
+{
+    int32_t ret = ERROR;
+    if (lastTarget == NORMAL_PLAYBACK && target == INJECT_TO_VOICE_COMMUNICATION_CAPTURE) {
+        ret = PlayBackToInjection(sessionId);
+    } else if (lastTarget == INJECT_TO_VOICE_COMMUNICATION_CAPTURE && target == NORMAL_PLAYBACK) {
+        ret = InjectionToPlayBack(sessionId);
+    }
+    return ret;
+}
+
+int32_t AudioCoreService::StartInjection(uint32_t streamId)
+{
+    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERR_NULL_POINTER, "pipeManager_ is null");
+    if (pipeManager_->IsCaptureVoipCall() == NO_VOIP) {
+        return ERR_ILLEGAL_STATE;
+    }
+    int32_t ret = ERROR;
+    ret = audioInjectorPolicy_.AddCaptureInjector();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "AddCaptureInjector failed");
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(streamId);
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERROR, "get streamDesc failed");
+    streamDesc->rendererTarget_ = INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
+    ret = AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnForcedDeviceSelected",
+        AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "move stream in failed");
+    audioInjectorPolicy_.AddStreamDescriptor(streamId, streamDesc);
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

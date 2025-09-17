@@ -262,6 +262,13 @@ public:
 
     virtual float CalculateVolumeDbNonlinear(AudioStreamType streamType, DeviceType deviceType,
         int32_t volumeLevel) = 0;
+    
+    virtual int32_t AddCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
+        const SourceType &sourceType) = 0;
+    virtual int32_t RemoveCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
+        const SourceType &sourceType) = 0;
+    virtual int32_t AddCaptureInjector() = 0;
+    virtual int32_t RemoveCaptureInjector() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

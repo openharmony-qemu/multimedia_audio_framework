@@ -37,6 +37,8 @@ public:
     int32_t GetPaIndexByPortName(const std::string &portName, uint32_t &ret) override;
 
     int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config, int32_t &ret) override;
+    int32_t SetRendererTarget(uint32_t target, uint32_t lastTarget, uint32_t sessionId, int32_t &ret) override;
+    int32_t StartInjection(uint32_t streamId, int32_t &ret) override;
 private:
     ICoreServiceProvider *coreServiceWorker_;
 };

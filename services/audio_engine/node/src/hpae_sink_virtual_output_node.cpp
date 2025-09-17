@@ -82,7 +82,7 @@ void HpaeSinkVirtualOutputNode::DoProcess()
     }
 }
 
-int32_t HpaeSinkVirtualOutputNode::PeekAudioData(uint8_t **buffer, const size_t &bufferSize,
+int32_t HpaeSinkVirtualOutputNode::PeekAudioData(uint8_t *buffer, const size_t &bufferSize,
     AudioStreamInfo &audioStreamInfo)
 {
     Trace trace("HpaeSinkVirtualOutputNode::PeekAudioData" + GetTraceInfo());
@@ -91,7 +91,7 @@ int32_t HpaeSinkVirtualOutputNode::PeekAudioData(uint8_t **buffer, const size_t 
     ConvertFromFloat(GetBitWidth(), GetChannelCount() * GetFrameLen(), outputAudioBuffer_.GetPcmDataBuffer(),
         renderFrameData_.data());
     CHECK_AND_RETURN_RET_LOG(bufferSize == outputAudioBuffer_.DataSize(), ERROR_INVALID_PARAM, "buffersize error");
-    *buffer = reinterpret_cast<uint8_t *>(renderFrameData_.data());
+    buffer = reinterpret_cast<uint8_t *>(renderFrameData_.data());
     return SUCCESS;
 }
 

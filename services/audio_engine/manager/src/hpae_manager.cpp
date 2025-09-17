@@ -2622,7 +2622,7 @@ void HpaeManager::RemoveCaptureInjector(
 }
 
 int32_t HpaeManager::PeekAudioData(
-    const uint32_t &sinkPortIndex, uint8_t **buffer, size_t bufferSize, AudioStreamInfo &streamInfo)
+    const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo)
 {
     std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
     auto sinkVirtualOutputNode = SafeGetMap(sinkVirtualOutputNodeMap_, sinkPortIndex);
