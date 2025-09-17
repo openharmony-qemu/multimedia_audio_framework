@@ -32,21 +32,22 @@ static constexpr uint32_t MS_PER_SECOND = 1000;
 
 class HpaeSinkVirtualOutputNodeTest : public testing::Test {
 public:
-    void SetUp() override 
-    {
-        nodeInfo_.nodeId = 1;
-        nodeInfo_.samplingRate = SAMPLE_RATE_48000;
-        nodeInfo_.frameLen = 960; // 960 for framelen
-        nodeInfo_.channels = STEREO;
-        nodeInfo_.format = SAMPLE_F32LE;
-        nodeInfo_.sessionId = 1001; // 1001 for sessionid
-        nodeInfo_.statusCallback.reset();
-    }
-
-    void TearDown() override {}
+    void SetUp();
+    void TearDown() {}
 
     HpaeNodeInfo nodeInfo_;
 };
+
+void HpaeSinkVirtualOutputNodeTest::SetUp()
+{
+    nodeInfo_.nodeId = 1;
+    nodeInfo_.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo_.frameLen = 960; // 960 for framelen
+    nodeInfo_.channels = STEREO;
+    nodeInfo_.format = SAMPLE_F32LE;
+    nodeInfo_.sessionId = 1001; // 1001 for sessionid
+    nodeInfo_.statusCallback.reset();
+}
 
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, ConstructHpaeSinkVirtualOutputNode, TestSize.Level1)
 {
