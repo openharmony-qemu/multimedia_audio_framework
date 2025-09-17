@@ -330,6 +330,18 @@ bool AudioDeviceManager::IsConnectedDevices(const std::shared_ptr<AudioDeviceDes
     return isConnectedDevice;
 }
 
+bool AudioDeviceManager::HasConnectedA2dp()
+{
+    auto isPresent = [](const shared_ptr<AudioDeviceDescriptor> &desc) {
+        return desc != nullptr &&
+            desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
+            desc->connectState_ != VIRTUAL_CONNECTED;
+    };
+
+    auto it = find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
+    return it != connectedDevices_.end();
+}
+
 void AudioDeviceManager::UpdateVirtualDevices(const std::shared_ptr<AudioDeviceDescriptor> &devDesc, bool isConnected)
 {
     CHECK_AND_RETURN_LOG(devDesc != nullptr, "Invalid device descriptor");

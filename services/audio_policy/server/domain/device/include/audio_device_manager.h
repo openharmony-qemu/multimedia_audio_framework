@@ -83,6 +83,7 @@ public:
     void OnReceiveUpdateDeviceNameEvent(const std::string macAddress, const std::string deviceName);
     bool IsDeviceConnected(std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptors);
     bool IsConnectedDevices(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
+    bool HasConnectedA2dp();
     bool IsVirtualConnectedDevice(const std::shared_ptr<AudioDeviceDescriptor> &selectedDesc);
     int32_t UpdateDeviceDescDeviceId(std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
