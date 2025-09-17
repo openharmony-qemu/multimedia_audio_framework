@@ -131,6 +131,7 @@ ohos_shared_library("audio_setting_provider") {
     "../../services/audio_policy/server/infra/datashare/include",
     "../../services/audio_policy/server/domain/device/src/pnp",
     "../../interfaces/inner_api/native/audiocommon/include",
+    "../../interfaces/inner_api/native/audiocapturer/include",
   ]
 
   sources = [ "server/infra/datashare/src/audio_setting_provider.cpp" ]
@@ -602,6 +603,8 @@ audio_ohos_library("audio_policy_client") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "ipc:ipc_core",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
     "samgr:samgr_proxy",
   ]
   subsystem_name = "multimedia"

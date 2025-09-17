@@ -957,12 +957,6 @@ void AudioCoreService::ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pi
 int32_t AudioCoreService::FetchCapturerPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
     uint32_t &audioFlag, uint32_t &sessionId)
 {
-    if (sessionId == 0) {
-        streamDesc->sessionId_ = GenerateSessionId();
-        sessionId = streamDesc->sessionId_;
-        AUDIO_INFO_LOG("Generate sessionId: %{public}u for stream", sessionId);
-    }
-
     if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         AUDIO_INFO_LOG("[PipeFetchInfo] playbackcapture, no need fetch pipe");
         audioFlag = AUDIO_INPUT_FLAG_NORMAL;

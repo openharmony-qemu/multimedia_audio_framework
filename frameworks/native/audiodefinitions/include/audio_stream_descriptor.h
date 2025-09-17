@@ -49,6 +49,7 @@ public:
     int32_t callerPid_ = -1;
     AudioStreamStatus streamStatus_ = STREAM_STATUS_NEW;
     AudioStreamAction streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
+    AudioDeviceDescriptor preferredInputDevice = {};
     mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> oldDeviceDescs_ = {};
     mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDescs_ = {};
     // for dup device
