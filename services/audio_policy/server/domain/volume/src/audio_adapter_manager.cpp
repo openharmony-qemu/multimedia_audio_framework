@@ -1372,8 +1372,8 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
 void AudioAdapterManager::SaveSystemVolumeForSwitchDevice(DeviceType deviceType, AudioStreamType streamType,
     int32_t volumeLevel)
 {
-    if (deviceDescriptor.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP || *iter != STREAM_MUSIC) {
-        SaveSystemVolumeForEffect(deviceDescriptor.deviceType_, *iter, volumeLevelTemp);
+    if (deviceType != DEVICE_TYPE_BLUETOOTH_A2DP || streamType != STREAM_MUSIC) {
+        SaveSystemVolumeForEffect(deviceType, streamType, volumeLevelTemp);
     }
 }
 
