@@ -63,7 +63,6 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList = AudioPipeManager::GetPipeManager()->GetPipeList();
 
     ScanPipeListForStreamDesc(pipeInfoList, streamDesc);
-    CheckAndHandleOffloadConcedeScene(streamDesc);
     AUDIO_INFO_LOG("Original Pipelist size: %{public}zu, stream routeFlag: 0x%{public}x to fetch",
         pipeInfoList.size(), streamDesc->routeFlag_);
 
@@ -421,6 +420,7 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
             break;
         case CONCEDE_INCOMING:
             incomingStream->ResetToNormalRoute(false);
+            CheckAndHandleOffloadConcedeScene(incomingStream);
             break;
         case CONCEDE_EXISTING:
             // If action is concede existing, maybe also need to concede incoming
