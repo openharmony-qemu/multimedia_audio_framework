@@ -48,15 +48,8 @@ HpaeOffloadRendererManager::~HpaeOffloadRendererManager()
 std::shared_ptr<HpaeSinkInputNode> HpaeOffloadRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo)
 {
     HpaeNodeInfo nodeInfo;
-    nodeInfo.channels = streamInfo.channels;
-    nodeInfo.format = streamInfo.format;
-    nodeInfo.frameLen = streamInfo.frameLen;
-    nodeInfo.streamType = streamInfo.streamType;
-    nodeInfo.sessionId = streamInfo.sessionId;
-    nodeInfo.samplingRate = static_cast<AudioSamplingRate>(streamInfo.samplingRate);
-    nodeInfo.customSampleRate = streamInfo.customSampleRate;
+    ConfigNodeInfo(nodeInfo, streamInfo);
     nodeInfo.sceneType = TransStreamTypeToSceneType(streamInfo.streamType);
-    nodeInfo.effectInfo = streamInfo.effectInfo;
     nodeInfo.historyFrameCount = nodeInfo.frameLen ?
         HISTORY_INTERVAL_S * nodeInfo.samplingRate / nodeInfo.frameLen : 0;
     nodeInfo.statusCallback = weak_from_this();

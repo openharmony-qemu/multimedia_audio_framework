@@ -684,14 +684,8 @@ int32_t HpaeInnerCapturerManager::CreateRendererInputSessionInner(const HpaeStre
     Trace trace("[" + std::to_string(streamInfo.sessionId) +
         "]HpaeInnerCapturerManager::CreateRendererInputSessionInner");
     HpaeNodeInfo nodeInfo;
-    nodeInfo.channels = streamInfo.channels;
-    nodeInfo.format = streamInfo.format;
-    nodeInfo.frameLen = streamInfo.frameLen;
+    ConfigNodeInfo(nodeInfo, streamInfo);
     nodeInfo.nodeId = GetSinkInputNodeIdInner();
-    nodeInfo.streamType = streamInfo.streamType;
-    nodeInfo.sessionId = streamInfo.sessionId;
-    nodeInfo.samplingRate = (AudioSamplingRate)streamInfo.samplingRate;
-    nodeInfo.customSampleRate = streamInfo.customSampleRate;
     nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
@@ -716,14 +710,8 @@ int32_t HpaeInnerCapturerManager::CreateCapturerInputSessionInner(const HpaeStre
     Trace trace("[" + std::to_string(streamInfo.sessionId) +
         "]HpaeInnerCapturerManager::CreateCapturerInputSessionInner");
     HpaeNodeInfo nodeInfo;
-    nodeInfo.channels = streamInfo.channels;
-    nodeInfo.format = streamInfo.format;
-    nodeInfo.frameLen = streamInfo.frameLen;
-    nodeInfo.streamType = streamInfo.streamType;
-    nodeInfo.sessionId = streamInfo.sessionId;
-    nodeInfo.samplingRate = (AudioSamplingRate)streamInfo.samplingRate;
+    ConfigNodeInfo(nodeInfo, streamInfo);
     nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
-    nodeInfo.sourceType = streamInfo.sourceType;
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
