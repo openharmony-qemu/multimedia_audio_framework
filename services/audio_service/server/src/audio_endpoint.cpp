@@ -39,6 +39,7 @@
 #include "audio_volume.h"
 #include "audio_stream_monitor.h"
 #include "simd_utils.h"
+#include "audio_endpoint_sink_adapter.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -59,6 +60,7 @@ namespace {
     static const int32_t ONE_MINUTE = 60;
     const int32_t DUP_COMMON_LEN = 40; // 40 -> 40ms
     const int32_t DUP_DEFAULT_LEN = 20; // 20 -> 20ms
+    static std::shared_ptr<AudioEndpointSinkAdapter> checker = AudioEndpointSinkAdapter::GetInstance();
 }
 
 std::string AudioEndpoint::GenerateEndpointKey(AudioDeviceDescriptor &deviceInfo, int32_t endpointFlag)
@@ -395,6 +397,9 @@ void AudioEndpointInner::Release()
         AUDIO_DEBUG_LOG("AudioEndpoint join update thread end");
     }
 
+    if (checker != nullptr) {
+        checker->RemoveOperation(fastRenderId_);
+    }
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
     std::shared_ptr<IAudioCaptureSource> source = HdiAdapterManager::GetInstance().GetCaptureSource(fastCaptureId_);
     if (sink != nullptr) {
@@ -474,7 +479,7 @@ bool AudioEndpointInner::ConfigInputPoint(const AudioDeviceDescriptor &deviceInf
     bool ret = writeTimeModel_.ConfigSampleRate(dstStreamInfo_.samplingRate);
     CHECK_AND_RETURN_RET_LOG(ret != false, false, "Config LinearPosTimeModel failed.");
 
-    endpointStatus_ = UNLINKED;
+    UpdateEndpointStatus(UNLINKED);
     isInited_.store(true);
     endpointWorkThread_ = std::thread([this] { this->RecordEndpointWorkLoopFuc(); });
     pthread_setname_np(endpointWorkThread_.native_handle(), "OS_AudioEpLoop");
@@ -527,7 +532,7 @@ std::shared_ptr<IAudioCaptureSource> AudioEndpointInner::GetFastSource(const std
 
 void AudioEndpointInner::StartThread(const IAudioSinkAttr &attr)
 {
-    endpointStatus_ = UNLINKED;
+    UpdateEndpointStatus(UNLINKED);
     isInited_.store(true);
     endpointWorkThread_ = std::thread([this] { this->EndpointWorkLoopFuc(); });
     pthread_setname_np(endpointWorkThread_.native_handle(), "OS_AudioEpLoop");
@@ -577,6 +582,10 @@ bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo, AudioSt
         sink->DeInit();
         HdiAdapterManager::GetInstance().ReleaseId(fastRenderId_);
         return false;
+    }
+
+    if (checker != nullptr) {
+        checker->AddOperation(fastRenderId_, GetEndpointName(), GetStatus());
     }
 
     Volume vol = {true, 1.0f, 0};
@@ -854,7 +863,7 @@ bool AudioEndpointInner::StartDevice(EndpointStatus preferredState, int64_t dela
 
     CHECK_AND_RETURN_RET_LOG(endpointStatus_ == IDEL, false, "Endpoint status is %{public}s",
         GetStatusStr(endpointStatus_).c_str());
-    endpointStatus_ = STARTING;
+    UpdateEndpointStatus(STARTING);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
     std::shared_ptr<IAudioCaptureSource> source = HdiAdapterManager::GetInstance().GetCaptureSource(fastCaptureId_);
     if ((deviceInfo_.deviceRole_ == INPUT_DEVICE && (source == nullptr || source->Start() != SUCCESS)) ||
@@ -877,10 +886,10 @@ bool AudioEndpointInner::StartDevice(EndpointStatus preferredState, int64_t dela
 
     std::unique_lock<std::mutex> lock(loopThreadLock_);
     needReSyncPosition_ = true;
-    endpointStatus_ = IsAnyProcessRunningInner() ? RUNNING : IDEL;
+    UpdateEndpointStatus(IsAnyProcessRunningInner() ? RUNNING : IDEL);
     if (preferredState != INVALID) {
         AUDIO_INFO_LOG("Preferred state: %{public}d, current: %{public}d", preferredState, endpointStatus_.load());
-        endpointStatus_ = preferredState;
+        UpdateEndpointStatus(preferredState);
     }
     workThreadCV_.notify_all();
     AUDIO_DEBUG_LOG("StartDevice out, status is %{public}s", GetStatusStr(endpointStatus_).c_str());
@@ -896,9 +905,9 @@ void AudioEndpointInner::HandleStartDeviceFailed()
         deviceInfo_.deviceRole_, endpointType_, processList_.size());
     isStarted_ = false;
     if (processList_.size() <= 1) { // The endpoint only has the current stream
-        endpointStatus_ = UNLINKED;
+        UpdateEndpointStatus(UNLINKED);
     } else {
-        endpointStatus_ = IDEL;
+        UpdateEndpointStatus(IDEL);
     }
     workThreadCV_.notify_all();
 }
@@ -947,7 +956,7 @@ bool AudioEndpointInner::StopDevice()
 
     AUDIO_INFO_LOG("StopDevice with status:%{public}s", GetStatusStr(endpointStatus_).c_str());
     // todo
-    endpointStatus_ = STOPPING;
+    UpdateEndpointStatus(STOPPING);
     // Clear data buffer to avoid noise in some case.
     if (dstAudioBuffer_ != nullptr) {
         int32_t ret = memset_s(dstAudioBuffer_->GetDataBase(), dstAudioBuffer_->GetDataSize(), 0,
@@ -971,9 +980,17 @@ bool AudioEndpointInner::StopDevice()
             false, "Source stop failed.");
     } else {
         std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
-        CHECK_AND_RETURN_RET_LOG(sink != nullptr && sink->Stop() == SUCCESS, false, "Sink stop failed.");
+        bool status = false;
+        if (checker != nullptr) {
+            AUDIO_INFO_LOG("AudioEndpointSinkAdapter CheckOtherKeysRunning");
+            status = checker->IsOtherEndpointRunning(fastRenderId_, GetEndpointName());
+        }
+        if (!status) {
+            AUDIO_INFO_LOG("no other endpoint is running, so stop all streams belong to this renderid.");
+            CHECK_AND_RETURN_RET_LOG(sink != nullptr && sink->Stop() == SUCCESS, false, "Sink stop failed.");
+        }
     }
-    endpointStatus_ = STOPPED;
+    UpdateEndpointStatus(STOPPED);
     isStarted_ = false;
     AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(adapterType_);
     return true;
@@ -996,7 +1013,7 @@ int32_t AudioEndpointInner::OnStart(IAudioProcessStream *processStream)
     }
 
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(adapterType_, INIT_LASTWRITTEN_TIME);
-    endpointStatus_ = RUNNING;
+    UpdateEndpointStatus(RUNNING);
     delayStopTime_ = INT64_MAX;
     return SUCCESS;
 }
@@ -1005,7 +1022,7 @@ int32_t AudioEndpointInner::OnPause(IAudioProcessStream *processStream)
 {
     AUDIO_PRERELEASE_LOGI("OnPause endpoint status:%{public}s", GetStatusStr(endpointStatus_).c_str());
     if (endpointStatus_ == RUNNING) {
-        endpointStatus_ = IsAnyProcessRunning() ? RUNNING : IDEL;
+        UpdateEndpointStatus(IsAnyProcessRunning() ? RUNNING : IDEL);
     }
     if (endpointStatus_ == IDEL) {
         // delay call sink stop when no process running
@@ -1057,7 +1074,7 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
     }
 
     if (endpointStatus_ == UNLINKED) {
-        endpointStatus_ = IDEL; // handle push_back in IDEL
+        UpdateEndpointStatus(IDEL); // handle push_back in IDEL
         if (isDeviceRunningInIdel_) {
             delayStopTime_ = INT64_MAX;
             CHECK_AND_RETURN_RET_LOG(StartDevice(), ERR_OPERATION_FAILED, "StartDevice failed");
@@ -1077,7 +1094,7 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
         }
         // needEndpointRunning = true
         if (isDeviceRunningInIdel_) {
-            endpointStatus_ = IsAnyProcessRunning() ? RUNNING : IDEL;
+            UpdateEndpointStatus(IsAnyProcessRunning() ? RUNNING : IDEL);
         } else {
             // needEndpointRunning = true & isDeviceRunningInIdel_ = false
             // KeepWorkloopRunning will wait on IDEL
@@ -1140,9 +1157,9 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
     }
     if (processList_.size() == 0) {
         StopDevice();
-        endpointStatus_ = UNLINKED;
+        UpdateEndpointStatus(UNLINKED);
     } else if (!IsAnyProcessRunningInner()) {
-        endpointStatus_ = IDEL;
+        UpdateEndpointStatus(IDEL);
         delayStopTime_ = DELAY_STOP_HDI_TIME_WHEN_NO_RUNNING_NS;
     }
 
@@ -2469,6 +2486,14 @@ int32_t AudioEndpointInner::RemoveCaptureInjector(const uint32_t &sinkPortIndex,
     isNeedInject_ = false;
 
     return SUCCESS;
+}
+void AudioEndpointInner::UpdateEndpointStatus(AudioEndpoint::EndpointStatus newStatus)
+{
+    endpointStatus_ = newStatus;
+    // update the status corresponding to getEndpointName in the map
+    if (checker != nullptr) {
+        checker->UpdateStatus(fastRenderId_, GetEndpointName(), endpointStatus_.load());
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS
