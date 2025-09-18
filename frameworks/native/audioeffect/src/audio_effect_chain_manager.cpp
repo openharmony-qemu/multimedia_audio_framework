@@ -1589,7 +1589,6 @@ uint32_t AudioEffectChainManager::GetSceneTypeToChainCount(const std::string &sc
         }
     }
     return 0;
-
 }
 // LCOV_EXCL_STOP
 
