@@ -1003,6 +1003,10 @@ int32_t RendererInServer::StartInner()
 {
     AUDIO_INFO_LOG("sessionId: %{public}u", streamIndex_);
     int32_t ret = 0;
+    if (lastTarget_ == INJECT_TO_VOICE_COMMUNICATION_CAPTURE) {
+        ret = CoreServiceHandler::GetInstance().StartInjection(streamIndex_);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "StartInjection failed");
+    }
     if (standByEnable_) {
         return StartInnerDuringStandby();
     } else {
@@ -2365,11 +2369,6 @@ void RendererInServer::InitDupBuffer(int32_t innerCapId)
         innerCapId, streamIndex_);
 }
 
-int32_t RendererInServer::SetTarget(int32_t target, int32_t &ret)
-{
-    ret = SUCCESS;
-    return SUCCESS;
-}
 
 int32_t RendererInServer::InitSoftLink(int32_t innerCapId)
 {
@@ -2479,6 +2478,22 @@ bool RendererInServer::IsMovieStream()
 {
     return processConfig_.streamType == STREAM_MOVIE &&
     processConfig_.rendererInfo.originalFlag == AUDIO_FLAG_PCM_OFFLOAD;
+}
+
+int32_t RendererInServer::SetTarget(RenderTarget target, int32_t &ret)
+{
+    if (target == lastTarget_) {
+        ret = SUCCESS;
+        return ret;
+    }
+    if (status_ == I_STATUS_IDLE || status_ == I_STATUS_PAUSED || status_ == I_STATUS_STOPPED) {
+        ret = CoreServiceHandler::GetInstance().SetRendererTarget(target, lastTarget_, streamIndex_);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "CoreServiceHandler::SetRendererTarget failed");
+        lastTarget_ = target;
+        return ret;
+    }
+    ret = ERR_ILLEGAL_STATE;
+    return ret;
 }
 } // namespace AudioStandard
 } // namespace OHOS

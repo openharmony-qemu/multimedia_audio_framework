@@ -3188,5 +3188,40 @@ int32_t AudioCoreService::SetSleVoiceStatusFlag(AudioScene audioScene)
     }
     return SUCCESS;
 }
+
+int32_t AudioCoreService::PlayBackToInjection(uint32_t sessionId)
+{
+    if (!PermissionUtil::VerifySystemPermission()) {
+        return ERR_SYSTEM_PERMISSION_DENIED;
+    }
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    if (!PermissionUtil::VerifyPermission(INJECT_PLAYBACK_TO_AUDIO_CAPTURE_PERMISSION, tokenId)) {
+        return ERR_PERMISSION_DENIED;
+    }
+    if (pipeManager_->IsCaptureVoipCall() == NO_VOIP) {
+        return ERR_ILLEGAL_STATE;
+    }
+    int32_t ret = audioInjectorPolicy_.Init();
+
+    return ret;
+}
+
+int32_t AudioCoreService::InjectionToPlayBack(uint32_t sessionId)
+{
+    int32_t ret = ERROR;
+    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "pipeManager_ is null");
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERROR, "get streamDesc failed");
+    streamDesc->rendererTarget_ = NORMAL_PLAYBACK;
+    ret = AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnForcedDeviceSelected",
+        AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "move stream out failed");
+    audioInjectorPolicy_.RemoveStreamDescriptor(sessionId);
+    ret = audioInjectorPolicy_.RemoveCaptureInjector();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "RemoveCaptureInjector failed");
+    ret = audioInjectorPolicy_.DeInit();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "DeInit failed");
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

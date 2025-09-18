@@ -535,6 +535,7 @@ audio_ohos_library("audio_service") {
     "server/src/audio_server_hpae_dump.cpp",
     "server/src/audio_workgroup.cpp",
     "server/src/config/audio_param_parser.cpp",
+    "server/src/audio_injector_service.cpp",
   ]
 
   configs = [ ":audio_service_config" ]

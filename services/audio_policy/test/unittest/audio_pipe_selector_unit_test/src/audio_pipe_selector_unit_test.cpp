@@ -1047,5 +1047,49 @@ HWTEST_F(AudioPipeSelectorUnitTest, CheckAndHandleOffloadConcedeScene_004, TestS
     audioPipeSelector->CheckAndHandleOffloadConcedeScene(streamDesc);
     EXPECT_NE(streamDesc->rendererInfo_.originalFlag, AUDIO_FLAG_FORCED_NORMAL);
 }
+
+/**
+ * @tc.name: ProcessNewPipeList_003
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, ProcessNewPipeList_003, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc1 = std::make_shared<AudioStreamDescriptor>();
+    streamDesc1->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    streamDesc1->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc1->streamAction_ = AUDIO_STREAM_ACTION_NEW;
+    streamDesc1->sessionId_ = 100001;
+    streamDesc1->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc1->createTimeStamp_ = 1;
+    streamDesc1->rendererTarget_ = 1;
+    streamDescs.push_back(streamDesc1);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc2 = std::make_shared<AudioStreamDescriptor>();
+    streamDesc2->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    streamDesc2->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc2->streamAction_ = AUDIO_STREAM_ACTION_NEW;
+    streamDesc2->sessionId_ = 100001;
+    streamDesc2->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc2->createTimeStamp_ = 1;
+    streamDesc2->rendererTarget_ = 0;
+    streamDescs.push_back(streamDesc2);
+
+    std::vector<std::shared_ptr<AudioPipeInfo>> newPipeInfoList{};
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->adapterName_ = "primary";
+    pipe1->routeFlag_ = 1;
+    newPipeInfoList.push_back(pipe1);
+
+    std::shared_ptr<AudioPipeInfo> pipe2 = std::make_shared<AudioPipeInfo>();
+    pipe2->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    newPipeInfoList.push_back(pipe2);
+
+    audioPipeSelector->ProcessNewPipeList(newPipeInfoList, streamDescs);
+    EXPECT_TRUE(newPipeInfoList.size() == 2);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

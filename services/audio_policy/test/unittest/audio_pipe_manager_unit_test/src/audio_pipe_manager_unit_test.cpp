@@ -1306,5 +1306,107 @@ HWTEST_F(AudioPipeManagerUnitTest, IsStreamUsageActive_001, TestSize.Level1)
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
     EXPECT_FALSE(audioPipeManager->IsStreamUsageActive(STREAM_USAGE_ALARM));
 }
+
+/**
+ * @tc.name: IsCaptureVoipCall_001
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    EXPECT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+    auto pipeList01 = audioPipeManager->GetPipeList();
+    EXPECT_EQ(pipeList01.size(), 0);
+
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->adapterName_ = "aaa";
+    pipe1->routeFlag_ = 1;
+    pipe1->id_ = 123;
+    audioPipeManager->AddAudioPipeInfo(pipe1);
+
+    audioPipeManager->IsCaptureVoipCall();
+    
+    EXPECT_EQ(pipeList01.size(), 1);
+}
+
+/**
+ * @tc.name: IsCaptureVoipCall_002
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    EXPECT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+    auto pipeList01 = audioPipeManager->GetPipeList();
+    EXPECT_EQ(pipeList01.size(), 0);
+
+    std::shared_ptr<AudioPipeInfo> pipe2 = std::make_shared<AudioPipeInfo>();
+    pipe2->adapterName_ = "bbb";
+    pipe2->routeFlag_ = 0x4000;
+    pipe2->id_ = 456;
+    audioPipeManager->AddAudioPipeInfo(pipe2);
+
+    audioPipeManager->IsCaptureVoipCall();
+    
+    EXPECT_EQ(pipeList01.size(), 1);
+}
+
+/**
+ * @tc.name: IsCaptureVoipCall_003
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_003, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    EXPECT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+    auto pipeList01 = audioPipeManager->GetPipeList();
+    EXPECT_EQ(pipeList01.size(), 0);
+
+    std::shared_ptr<AudioPipeInfo> pipe3 = std::make_shared<AudioPipeInfo>();
+    pipe3->adapterName_ = "ccc";
+    pipe3->routeFlag_ = 0x6000;
+    pipe3->id_ = 789;
+    audioPipeManager->AddAudioPipeInfo(pipe3);
+    
+    audioPipeManager->IsCaptureVoipCall();
+    
+    EXPECT_EQ(pipeList01.size(), 1);
+}
+
+/**
+ * @tc.name: GetPaIndexByName_001
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetPaIndexByName_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    EXPECT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+    auto pipeList01 = audioPipeManager->GetPipeList();
+    EXPECT_EQ(pipeList01.size(), 0);
+
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->name_ = "aaa";
+    pipe1->routeFlag_ = 1;
+    pipe1->id_ = 123;
+    audioPipeManager->AddAudioPipeInfo(pipe1);
+
+    uint32_t ret = audioPipeManager->GetPaIndexByName("abc");
+    EXPECT_EQ(0xFFFFFFFF, ret);
+
+    ret = audioPipeManager->GetPaIndexByName("aaa");
+    EXPECT_EQ(123, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS

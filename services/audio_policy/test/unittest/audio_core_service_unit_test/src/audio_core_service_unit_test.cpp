@@ -1611,5 +1611,52 @@ HWTEST_F(AudioCoreServiceUnitTest, SetSleVoiceStatusFlag_001, TestSize.Level1)
     ret = audioCoreService->SetSleVoiceStatusFlag(AUDIO_SCENE_PHONE_CALL);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: SetRendererTarget_001
+* @tc.desc  : wzwzwz
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetRendererTarget_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_EQ(audioCoreService, nullptr);
+    int32_t ret = ERROR;
+    ret = audioCoreService->SetRendererTarget(NORMAL_PLAYBACK, INJECT_TO_VOICE_COMMUNICATION_CAPTURE, 1111);
+    EXPECT_NE(ret, SUCCESS);
+    ret = audioCoreService->SetRendererTarget(NORMAL_PLAYBACK, NORMAL_PLAYBACK, 1111);
+    EXPECT_NE(ret, SUCCESS);
+    ret = audioCoreService->SetRendererTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, NORMAL_PLAYBACK, 1111);
+    EXPECT_NE(ret, SUCCESS);
+    ret = audioCoreService->SetRendererTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE,
+        INJECT_TO_VOICE_COMMUNICATION_CAPTURE, 1111);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: StartInjection_001
+* @tc.desc  : wzwzwz
+*/
+HWTEST_F(AudioCoreServiceUnitTest, StartInjection_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    int32_t ret = audioCoreService->StartInjection(1111);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: PlayBackToInjection_001
+* @tc.desc  : wzwzwz
+*/
+HWTEST_F(AudioCoreServiceUnitTest, PlayBackToInjection_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    int32_t ret = audioCoreService->PlayBackToInjection(1111);
+    EXPECT_NE(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

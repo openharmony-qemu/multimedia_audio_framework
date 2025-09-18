@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 #include "audio_injector_service.h"
+#include "i_hpae_manager.h"
+#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -22,13 +24,15 @@ AudioInjectorService::AudioInjectorService()
 
 int32_t AudioInjectorService::UpdateAudioInfo(AudioModuleInfo &info)
 {
-    return 0;
+    HPAE::IHpaeManager::GetHpaeManager().UpdateAudioPortInfo(sinkPortIndex_, info);
+    return SUCCESS;
 }
 
 int32_t AudioInjectorService::PeekAudioData(const uint32_t sinkPortIndex, uint8_t *buffer, const size_t bufferSize,
     AudioStreamInfo &streamInfo)
 {
-    return 0;
+    HPAE::IHpaeManager::GetHpaeManager().PeekAudioData(sinkPortIndex, buffer, bufferSize, streamInfo);
+    return SUCCESS;
 }
 
 void AudioInjectorService::SetSinkPortIdx(uint32_t sinkPortIdx)

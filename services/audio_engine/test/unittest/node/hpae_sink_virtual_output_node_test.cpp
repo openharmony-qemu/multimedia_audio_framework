@@ -68,7 +68,7 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, PeekAudioDataInvalidBufferSize, TestSize
     size_t invalidSize = nodeInfo_.frameLen * nodeInfo_.channels * GetSizeFromFormat(nodeInfo_.format) - 1;
     AudioStreamInfo audioStreamInfo;
     
-    int32_t result = node->PeekAudioData(&buffer, invalidSize, audioStreamInfo);
+    int32_t result = node->PeekAudioData(buffer, invalidSize, audioStreamInfo);
     EXPECT_EQ(result, ERROR_INVALID_PARAM);
 }
 
@@ -79,7 +79,7 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, PeekAudioDataSuccess, TestSize.Level1)
     size_t validSize = nodeInfo_.frameLen * nodeInfo_.channels * GetSizeFromFormat(nodeInfo_.format);
     AudioStreamInfo audioStreamInfo;
     
-    int32_t result = node->PeekAudioData(&buffer, validSize, audioStreamInfo);
+    int32_t result = node->PeekAudioData(buffer, validSize, audioStreamInfo);
     EXPECT_EQ(result, SUCCESS);
     EXPECT_NE(buffer, nullptr);
 }

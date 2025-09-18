@@ -2020,5 +2020,26 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerDestroySoftLink_001, TestS
     ret = server->DestroySoftLink(3);
     EXPECT_NE(SUCCESS, ret);
 }
+
+/**
+ * @tc.name  : Test StartInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerStartInner_001
+ * @tc.desc  : wzwzwz
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerStartInner_001, TestSize.Level1)
+{
+    auto server = std::make_shared<RendererInServer>(processConfig, streamListener);
+    ASSERT_TRUE(server != nullptr);
+
+    int32_t ret = server->Init();
+    server->standByEnable_ = true;
+    server->OnStatusUpdate(OPERATION_PAUSED);
+    server->playerDfx_ = nullptr;
+    server->lastTarget_ = INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
+
+    ret = server->StartInner();
+    EXPECT_NE(SUCCESS, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS

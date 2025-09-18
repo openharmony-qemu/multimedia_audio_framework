@@ -104,6 +104,7 @@ group("audio_policy_unittest_packages") {
     ":audio_device_manager_unit_test",
     ":user_select_router_unit_test",
     ":user_select_router_ext_unit_test",
+    ":audio_injector_policy_unit_test",
     "../server/domain/pipe/test/unittest:pipe_domain_unit_test_group",
     "../client/stub:client_stub_unit_test_group"
   ]
@@ -6645,4 +6646,41 @@ ohos_unittest("user_select_router_ext_unit_test") {
     defines += [ "FEATURE_DEVICE_MANAGER" ]
     external_deps += [ "device_manager:devicemanagersdk" ]
   }
+}
+
+ohos_unittest("audio_injector_policy_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = ["./unittest/audio_injector_policy_unit_test/include",
+                  "../../audio_policy/server/service/service_main/include",
+                  "../../audio_policy/common/include",
+                  "../../audio_policy/server/domain/device/include",
+                  "../../audio_policy/server/common/include",
+                  "../../../frameworks/native/audioutils/include",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  deps = [ "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+           "../../../services/audio_policy:audio_policy_client",
+           "../../../services/audio_policy:audio_policy_service",
+           "../../audio_policy:audio_policy_service_static",
+   ]
+  external_deps = [
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "os_account:os_account_innerkits",
+    "samgr:samgr_proxy",
+  ]
+
+  sources = [ "./unittest/audio_injector_policy_unit_test/src/audio_injector_policy_unit_test.cpp" ]
 }

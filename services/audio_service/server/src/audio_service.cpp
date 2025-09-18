@@ -2097,5 +2097,15 @@ int32_t AudioService::DisableDualStream(const uint32_t sessionId)
     AUDIO_ERR_LOG("%{public}u failed", sessionId);
     return ERR_OPERATION_FAILED;
 }
+
+std::shared_ptr<AudioEndpoint> AudioService::GetEndPointByType(AudioEndpoint::EndpointType type)
+{
+    for (auto pair : endpointList_) {
+        if (pair.second->GetEndpointType() == type) {
+            return pair.second;
+        }
+    }
+    return nullptr;
+}
 } // namespace AudioStandard
 } // namespace OHOS

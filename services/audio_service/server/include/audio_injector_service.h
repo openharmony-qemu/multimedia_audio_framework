@@ -34,6 +34,7 @@ public:
     AudioModuleInfo &GetModuleInfo();
 private:
     AudioInjectorService();
+    ~AudioInjectorService() = default;
     AudioInjectorService(const AudioInjectorService&) = delete;
     AudioInjectorService& operator=(const AudioInjectorService&) = delete;
 private:

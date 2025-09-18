@@ -17,6 +17,7 @@
 #endif
 
 #include "audio_pipe_manager.h"
+#include "audio_injector_policy.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -611,6 +612,36 @@ bool AudioPipeManager::IsStreamUsageActive(const StreamUsage &usage)
         }
     }
     return false;
+}
+
+int32_t AudioPipeManager::IsCaptureVoipCall()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto it = curPipeList_.rbegin(); it != curPipeList_.rend(); ++it) {
+        CHECK_AND_CONTINUE_LOG((*it) != nullptr, "it is null");
+        if ((*it)->routeFlag_ & AUDIO_INPUT_FLAG_VOIP) {
+            AudioInjectorPolicy &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+            audioInjectorPolicy.SetCapturePortIdx((*it)->paIndex_);
+            if ((*it)->routeFlag_ & AUDIO_INPUT_FLAG_FAST) {
+                return FAST_VOIP;
+            } else {
+                return NORMAL_VOIP;
+            }
+        }
+    }
+    return NO_VOIP;
+}
+
+uint32_t AudioPipeManager::GetPaIndexByName(std::string portName)
+{
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto iter = curPipeList_.begin(); iter != curPipeList_.end(); iter++) {
+        CHECK_AND_CONTINUE_LOG((*iter) != nullptr, "iter is null");
+        if ((*iter)->name_ == portName) {
+            return (*iter)->paIndex_;
+        }
+    }
+    return HDI_INVALID_ID;
 }
 } // namespace AudioStandard
 } // namespace OHOS
