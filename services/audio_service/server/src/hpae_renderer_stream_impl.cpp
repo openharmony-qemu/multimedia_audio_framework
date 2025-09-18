@@ -290,6 +290,7 @@ int32_t HpaeRendererStreamImpl::GetRemoteOffloadSpeedPosition(uint64_t &framePos
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "get latency fail");
 
     // Here, latency and sampling count are calculated, and latency is exposed to the client as 0.
+    std::shared_lock<std::shared_mutex> lock(latencyMutex_);
     latency = static_cast<uint64_t>(curLatencyUS) * processConfig_.streamInfo.samplingRate / AUDIO_US_PER_S;
 
     uint64_t frames = framesUS * processConfig_.streamInfo.samplingRate / AUDIO_US_PER_S;
@@ -302,17 +303,18 @@ int32_t HpaeRendererStreamImpl::GetRemoteOffloadSpeedPosition(uint64_t &framePos
 int32_t HpaeRendererStreamImpl::GetSpeedPosition(uint64_t &framePosition, uint64_t &timestamp,
     uint64_t &latency, int32_t base)
 {
-    std::shared_lock<std::shared_mutex> lock(latencyMutex_);
-
     int32_t ret = GetRemoteOffloadSpeedPosition(framePosition, timestamp, latency);
     CHECK_AND_RETURN_RET(ret == ERR_NOT_SUPPORTED, ret);
 
+    uint64_t latencyUs = 0;
+    GetLatencyInner(timestamp, latencyUs, base);
+
+    std::shared_lock<std::shared_mutex> lock(latencyMutex_);
+    latencyUs += latency_;
+    AUDIO_DEBUG_LOG("pipe latency: %{public}" PRIu64, latency_);
     framePosition = lastHdiFramePosition_ + framePosition_ - lastFramePosition_;
     uint64_t mutePaddingFrames = mutePaddingFrames_.load();
     framePosition = (framePosition > mutePaddingFrames) ? (framePosition - mutePaddingFrames) : 0;
-
-    uint64_t latencyUs = 0;
-    GetLatencyInner(timestamp, latencyUs, base);
     latency = latencyUs * static_cast<uint64_t>(processConfig_.streamInfo.samplingRate) / AUDIO_US_PER_S;
     return SUCCESS;
 }
@@ -320,9 +322,11 @@ int32_t HpaeRendererStreamImpl::GetSpeedPosition(uint64_t &framePosition, uint64
 int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp,
     uint64_t &latency, int32_t base)
 {
-    std::shared_lock<std::shared_mutex> lock(latencyMutex_);
     uint64_t latencyUs = 0;
     GetLatencyInner(timestamp, latencyUs, base);
+    std::shared_lock<std::shared_mutex> lock(latencyMutex_);
+    latencyUs += latency_;
+    AUDIO_DEBUG_LOG("pipe latency: %{public}" PRIu64, latency_);
     latency = latencyUs * static_cast<uint64_t>(processConfig_.streamInfo.samplingRate) / AUDIO_US_PER_S;
     framePosition = framePosition_;
     uint64_t mutePaddingFrames = mutePaddingFrames_.load();
@@ -334,10 +338,12 @@ int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint
 
 int32_t HpaeRendererStreamImpl::GetLatency(uint64_t &latency)
 {
-    std::shared_lock<std::shared_mutex> lock(latencyMutex_);
     uint64_t timestamp = 0;
     int32_t base = Timestamp::Timestampbase::MONOTONIC;
     GetLatencyInner(timestamp, latency, base);
+    std::shared_lock<std::shared_mutex> lock(latencyMutex_);
+    latency += latency_;
+    AUDIO_DEBUG_LOG("pipe latency: %{public}" PRIu64, latency_);
     return SUCCESS;
 }
 
@@ -352,8 +358,8 @@ void HpaeRendererStreamImpl::GetLatencyInner(uint64_t &timestamp, uint64_t &late
     if (audioRendererSink) {
         audioRendererSink->GetLatency(sinkLatency);
     }
-    latencyUs = latency_;
-    latencyUs += sinkLatency * AUDIO_US_PER_MS;
+
+    latencyUs = sinkLatency * AUDIO_US_PER_MS;
     latencyUs += a2dpOffloadLatency * AUDIO_US_PER_MS;
     latencyUs += nearlinkLatency * AUDIO_US_PER_MS;
     std::vector<uint64_t> timestampCurrent = {0};
@@ -361,9 +367,9 @@ void HpaeRendererStreamImpl::GetLatencyInner(uint64_t &timestamp, uint64_t &late
     timestamp = timestampCurrent[baseUsed];
 
     AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ", latencyUs %{public}" PRIu64
-        ", base %{public}d, timestamp %{public}" PRIu64 ", pipe latency: %{public}" PRIu64
+        ", base %{public}d, timestamp %{public}" PRIu64
         ", sink latency: %{public}u ms, a2dp offload latency: %{public}u ms, nearlink latency: %{public}u ms",
-        framePosition_, latencyUs, base, timestamp, latency_, sinkLatency, a2dpOffloadLatency, nearlinkLatency);
+        framePosition_, latencyUs, base, timestamp, sinkLatency, a2dpOffloadLatency, nearlinkLatency);
 }
 
 int32_t HpaeRendererStreamImpl::SetRate(int32_t rate)
