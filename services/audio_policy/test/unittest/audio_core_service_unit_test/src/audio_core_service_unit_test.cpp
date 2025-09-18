@@ -1637,6 +1637,36 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_0
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateRingerOrAlarmerDualDeviceOutputRouter_004 end");
 }
 
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: UpdateRingerOrAlarmerDualDeviceOutputRouter_005
+* @tc.desc  : Test UpdateRingerOrAlarmerDualDeviceOutputRouter() when device type is error
+*/
+HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_005, TestSize.Level4)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateRingerOrAlarmerDualDeviceOutputRouter_005 start");
+
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    ASSERT_NE(audioDeviceDescriptor, nullptr);
+
+    audioCoreService->SetRingerMode(AudioRingerMode::RINGER_MODE_SILENT);
+
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_REMOTE_CAST;
+    streamDesc->newDeviceDescs_.push_back(std::move(audioDeviceDescriptor));
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_ALARM;
+
+    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
+
+    EXPECT_EQ(audioCoreService->audioVolumeManager_.IsRingerModeMute(), false);
+
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateRingerOrAlarmerDualDeviceOutputRouter_005 end");
+}
 
 /**
 * @tc.name  : Test AudioCoreService
