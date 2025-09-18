@@ -34,10 +34,10 @@ const int32_t TONE_TYPE_ARR[ARGS_LOAD_MAX] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 
 class TonePlayerImpl {
 public:
     TonePlayerImpl() : tonePlayer_(nullptr) {}
-    explicit TonePlayerImpl(std::shared_ptr<OHOS::AudioStandard::TonePlayer> &obj);
+    explicit TonePlayerImpl(std::shared_ptr<OHOS::AudioStandard::TonePlayer> obj);
     ~TonePlayerImpl() = default;
 
-    static TonePlayer CreateTonePlayerWrapper(std::unique_ptr<OHOS::AudioStandard::AudioRendererInfo> &rendererInfo);
+    static TonePlayer CreateTonePlayerWrapper(std::unique_ptr<OHOS::AudioStandard::AudioRendererInfo> rendererInfo);
 
     void LoadSync(ToneType type);
     void ReleaseSync();

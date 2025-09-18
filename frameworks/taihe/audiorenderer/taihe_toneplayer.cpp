@@ -25,7 +25,7 @@ namespace ANI::Audio {
 std::mutex TonePlayerImpl::createMutex_;
 int32_t TonePlayerImpl::isConstructSuccess_ = OHOS::AudioStandard::SUCCESS;
 
-TonePlayerImpl::TonePlayerImpl(std::shared_ptr<OHOS::AudioStandard::TonePlayer> &obj)
+TonePlayerImpl::TonePlayerImpl(std::shared_ptr<OHOS::AudioStandard::TonePlayer> obj)
 {
     if (obj != nullptr) {
         tonePlayer_ = obj;
@@ -33,7 +33,7 @@ TonePlayerImpl::TonePlayerImpl(std::shared_ptr<OHOS::AudioStandard::TonePlayer> 
 }
 
 TonePlayer TonePlayerImpl::CreateTonePlayerWrapper(
-    std::unique_ptr<OHOS::AudioStandard::AudioRendererInfo> &rendererInfo)
+    std::unique_ptr<OHOS::AudioStandard::AudioRendererInfo> rendererInfo)
 {
     std::lock_guard<std::mutex> lock(TonePlayerImpl::createMutex_);
     if (rendererInfo == nullptr) {
@@ -58,7 +58,7 @@ TonePlayer TonePlayerImpl::CreateTonePlayerWrapper(
 
 void TonePlayerImpl::LoadSync(ToneType type)
 {
-    int32_t toneType = type;
+    int32_t toneType = static_cast<int32_t>(type);
     if (tonePlayer_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "tonePlayer_ is nullptr");
         return;
@@ -71,7 +71,10 @@ void TonePlayerImpl::LoadSync(ToneType type)
 
 void TonePlayerImpl::ReleaseSync()
 {
-    CHECK_AND_RETURN_LOG(tonePlayer_ != nullptr, "tonePlayer_ is null.");
+    if (tonePlayer_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "tonePlayer_ is nullptr");
+        return;
+    }
     bool isTrue = tonePlayer_->Release();
     if (!isTrue) {
         TaiheAudioError::ThrowError(TAIHE_ERR_SYSTEM);
@@ -80,7 +83,10 @@ void TonePlayerImpl::ReleaseSync()
 
 void TonePlayerImpl::StopSync()
 {
-    CHECK_AND_RETURN_LOG(tonePlayer_ != nullptr, "tonePlayer_ is null.");
+    if (tonePlayer_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "tonePlayer_ is nullptr");
+        return;
+    }
     bool isTrue = tonePlayer_->StopTone();
     if (!isTrue) {
         TaiheAudioError::ThrowError(TAIHE_ERR_SYSTEM);
@@ -89,7 +95,10 @@ void TonePlayerImpl::StopSync()
 
 void TonePlayerImpl::StartSync()
 {
-    CHECK_AND_RETURN_LOG(tonePlayer_ != nullptr, "tonePlayer_ is null.");
+    if (tonePlayer_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "tonePlayer_ is nullptr");
+        return;
+    }
     bool isTrue = tonePlayer_->StartTone();
     if (!isTrue) {
         TaiheAudioError::ThrowError(TAIHE_ERR_SYSTEM);
@@ -112,7 +121,7 @@ TonePlayer CreateTonePlayerSync(AudioRendererInfo const &options)
         TaiheAudioError::ThrowError(TAIHE_ERR_SYSTEM);
         return make_holder<TonePlayerImpl, TonePlayer>();
     }
-    return TonePlayerImpl::CreateTonePlayerWrapper(audioRendererInfo);
+    return TonePlayerImpl::CreateTonePlayerWrapper(std::move(audioRendererInfo));
 }
 } // namespace ANI::Audio
 
