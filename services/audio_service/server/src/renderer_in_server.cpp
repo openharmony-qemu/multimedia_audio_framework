@@ -1819,7 +1819,7 @@ int32_t RendererInServer::UnsetOffloadMode()
 
     for (auto &softInfo : softLinkInfos_) {
         if (!IsEnabledAndValidSoftLink(softInfo.second)) {
-            AUDIO_INFO_LOG("The soft link is not valid %{public}d", oftInfo.first);
+            AUDIO_INFO_LOG("The soft link is not valid %{public}d", softInfo.first);
             continue;
         }
         if (status_ == I_STATUS_STARTED) {
