@@ -1172,7 +1172,6 @@ int32_t AudioPolicyService::LoadModernOffloadCapSource()
     moduleInfo.bufferSize = "3840"; // 20ms
 
     moduleInfo.className = "offload";
-    moduleInfo.adapterName = "primary";
     moduleInfo.offloadEnable = "true";
     moduleInfo.role = "source";
     moduleInfo.sourceType = std::to_string(SourceType::SOURCE_TYPE_OFFLOAD_CAPTURE);

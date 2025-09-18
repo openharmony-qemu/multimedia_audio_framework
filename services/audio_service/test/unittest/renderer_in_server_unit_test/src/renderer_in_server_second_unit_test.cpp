@@ -1735,6 +1735,8 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerUnsetOffloadMode_001, Test
     server->offloadEnable_ = true;
     server->status_ = I_STATUS_IDLE;
     server->Init();
+    std::shared_ptr<HPAE::IHpaeSoftLink> softLink =
+        std::make_shared<HPAE::HpaeSoftLink>(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
 
     server->softLinkInfos_[0].isSoftLinkEnabled = false;
     server->softLinkInfos_[0].softLink = nullptr;
