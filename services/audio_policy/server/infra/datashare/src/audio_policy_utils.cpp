@@ -347,6 +347,9 @@ std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType, uint32_t 
                 portName = PRIMARY_MIC;
             }
             break;
+        case DeviceType::DEVICE_TYPE_BT_SPP:
+            portName = VIRTUAL_AUDIO;
+            break;
         case InternalDeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
             portName = USB_MIC;
             break;

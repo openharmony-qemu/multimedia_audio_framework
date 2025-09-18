@@ -50,6 +50,7 @@ public:
     uint32_t rendererTarget_ = 0;
     AudioStreamStatus streamStatus_ = STREAM_STATUS_NEW;
     AudioStreamAction streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
+    AudioDeviceDescriptor preferredInputDevice = {};
     mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> oldDeviceDescs_ = {};
     mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDescs_ = {};
     // for dup device
