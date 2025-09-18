@@ -686,8 +686,8 @@ int32_t HpaeRendererManager::Pause(uint32_t sessionId)
             "Pause not find sessionId %{public}u", sessionId);
         if (!SetSessionFade(sessionId, OPERATION_PAUSED)) {
             DisConnectInputSession(sessionId);
-            isNeedInitEffectBufferFlag_ = false;
         }
+        isNeedInitEffectBufferFlag_ = false;
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -744,8 +744,8 @@ int32_t HpaeRendererManager::Stop(uint32_t sessionId)
             "Stop not find sessionId %{public}u", sessionId);
         if (!SetSessionFade(sessionId, OPERATION_STOPPED)) {
             DisConnectInputSession(sessionId);
-            isNeedInitEffectBufferFlag_ = fasle;
         }
+        isNeedInitEffectBufferFlag_ = false;
     };
     SendRequest(request, __func__);
     return SUCCESS;
