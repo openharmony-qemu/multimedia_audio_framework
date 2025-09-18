@@ -143,6 +143,10 @@ ohos_unittest("audio_policy_server_extended_test") {
     defines += [ "DETECT_SOUNDBOX" ]
   }
 
+  if (audio_framework_feature_wireless_default_exclude) {
+    defines += [ "WIRELESS_DEFAULT_EXCLUDE" ]
+  }
+
   if (audio_framework_config_policy_enable) {
     defines += [ "USE_CONFIG_POLICY" ]
   }
@@ -508,7 +512,7 @@ ohos_unittest("audio_policy_dump_unit_test") {
   ]
 
   use_exceptions = true
-  
+
   cflags = [
     "-Wall",
     "-Werror",
