@@ -82,8 +82,6 @@ ProResampler::ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels,
 int32_t ProResampler::Process(const float *inBuffer, uint32_t inFrameLen, float *outBuffer,
     uint32_t outFrameLen)
 {
-    CHECK_AND_RETURN_RET_LOG(state_ != nullptr, RESAMPLER_ERR_ALLOC_FAILED,
-        "resampler is %{public}s", ErrCodeToString(RESAMPLER_ERR_ALLOC_FAILED).c_str());
     CHECK_AND_RETURN_RET_LOG(state_ != nullptr, RESAMPLER_ERR_ALLOC_FAILED, "resampler state is invalid");
     CHECK_AND_RETURN_RET_LOG((0 <= inFrameLen) && (inFrameLen <= MAX_FRAME_LEN) &&
         (0 <= outFrameLen) && (outFrameLen <= MAX_FRAME_LEN), RESAMPLER_ERR_ALLOC_FAILED, "inFrameLen %{public}d"
