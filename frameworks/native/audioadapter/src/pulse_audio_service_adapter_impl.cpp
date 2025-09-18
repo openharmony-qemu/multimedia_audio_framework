@@ -606,8 +606,6 @@ vector<SourceOutput> PulseAudioServiceAdapterImpl::GetAllSourceOutputs()
 
     CHECK_AND_RETURN_RET_LOG(mContext != nullptr, userData->sourceOutputList, "mContext is nullptr");
 
-    CHECK_AND_RETURN_RET_LOG(isSetDefaultSource_, userData->sourceOutputList, "default source has not been set.");
-
     PaLockGuard palock(mMainLoop);
 
     pa_operation *operation = pa_context_get_source_output_info_list(mContext,
