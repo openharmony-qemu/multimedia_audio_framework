@@ -402,6 +402,10 @@ audio_ohos_library("audio_policy_service") {
     defines += [ "DETECT_SOUNDBOX" ]
   }
 
+  if (audio_framework_feature_wireless_default_exclude) {
+    defines += [ "WIRELESS_DEFAULT_EXCLUDE" ]
+  }
+
   if (audio_framework_config_policy_enable) {
     defines += [ "USE_CONFIG_POLICY" ]
     external_deps += [ "config_policy:configpolicy_util" ]

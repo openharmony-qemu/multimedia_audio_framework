@@ -2254,6 +2254,10 @@ ohos_unittest("audio_policy_server_unit_test") {
     defines += [ "DETECT_SOUNDBOX" ]
   }
 
+  if (audio_framework_feature_wireless_default_exclude) {
+    defines += [ "WIRELESS_DEFAULT_EXCLUDE" ]
+  }
+
   if (audio_framework_config_policy_enable) {
     defines += [ "USE_CONFIG_POLICY" ]
   }
@@ -4820,7 +4824,7 @@ ohos_unittest("audio_state_manager_unit_test") {
     ubsan = false
     blocklist = "${audio_framework_root}/cfi_blocklist.txt"
   }
-  
+
   cflags = [
     "-Wall",
     "-Werror",

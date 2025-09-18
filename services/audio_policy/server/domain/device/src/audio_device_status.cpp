@@ -72,6 +72,19 @@ static std::string GetField(const std::string &src, const char* field, const cha
     return end == std::string::npos ? src.substr(pos) : src.substr(pos, end - pos);
 }
 
+static bool CheckNeedExclude(const AudioDeviceDescriptor &desc, bool isConnected)
+{
+    bool exclude{false};
+#ifdef WIRELESS_DEFAULT_EXCLUDE
+    exclude = true;
+#endif
+    AUDIO_INFO_LOG("isConnected=%{public}d, exclude=%{public}d", isConnected, exclude);
+    CHECK_AND_RETURN_RET(isConnected && exclude, false);
+    vector<shared_ptr<AudioDeviceDescriptor>> descs{make_shared<AudioDeviceDescriptor>(desc)};
+    AudioCoreService::GetCoreService()->ExcludeOutputDevices(D_ALL_DEVICES, descs);
+    return true;
+}
+
 static void GetDPModuleInfo(AudioModuleInfo &moduleInfo, string deviceInfo)
 {
     auto rate_begin = deviceInfo.find("rate=");
@@ -1189,7 +1202,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
     TriggerDeviceChangedCallback(descForCb, isConnected);
     TriggerAvailableDeviceChangedCallback(descForCb, isConnected);
 
-    if (!isActualConnection) {
+    if (!isActualConnection || CheckNeedExclude(updatedDesc, isConnected)) {
         return;
     }
     // fetch input&output device
