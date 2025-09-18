@@ -426,6 +426,42 @@ HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeForSwitchDevice_004, TestSize.Leve
 
 /**
 * @tc.name  : Test AudioVolumeManager.
+* @tc.number: SetVolumeForSwitchDevice_005
+* @tc.desc  : Test AudioVolumeManager::SetVolumeForSwitchDevice interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeForSwitchDevice_005, TestSize.Level1)
+{
+    AudioVolumeManager &audioVolumeManager(AudioVolumeManager::GetInstance());
+    AudioSceneManager &audioSceneManager(AudioSceneManager::GetInstance());
+    AudioDeviceDescriptor audioDeviceDescriptor;
+
+    audioSceneManager.audioScene_ = AUDIO_SCENE_DEFAULT;
+    audioVolumeManager.increaseNIsShowing_ = true;
+    int32_t ret = audioVolumeManager.SetVolumeForSwitchDevice(
+        audioDeviceDescriptor, PORT_NONE, false);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: SetVolumeForSwitchDevice_006
+* @tc.desc  : Test AudioVolumeManager::SetVolumeForSwitchDevice interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeForSwitchDevice_006, TestSize.Level1)
+{
+    AudioVolumeManager &audioVolumeManager(AudioVolumeManager::GetInstance());
+    AudioSceneManager &audioSceneManager(AudioSceneManager::GetInstance());
+    AudioDeviceDescriptor audioDeviceDescriptor;
+
+    audioSceneManager.audioScene_ = AUDIO_SCENE_DEFAULT;
+    audioVolumeManager.restoreNIsShowing_ = true;
+    int32_t ret = audioVolumeManager.SetVolumeForSwitchDevice(
+        audioDeviceDescriptor, PORT_NONE, false);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
 * @tc.number: AudioVolumeManager_016
 * @tc.desc  : Test SetAbsVolumeSceneAsync interface.
 */

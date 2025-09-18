@@ -236,6 +236,9 @@ int32_t AudioVolumeManager::GetSystemVolumeLevelNoMuteState(AudioStreamType stre
 int32_t AudioVolumeManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor,
     const std::string &newSinkName, bool enableSetVoiceCallVolume)
 {
+    std::thread cancelSafeNotificationThrd(&AudioVolumeManager::CancelSafeVolumeNotificationWhenSwitchDevice, this);
+    cancelSafeNotificationThrd.detach();
+
     Trace trace("AudioVolumeManager::SetVolumeForSwitchDevice:" + std::to_string(deviceDescriptor.deviceType_));
     // Load volume from KvStore and set volume for each stream type
     audioPolicyManager_.SetVolumeForSwitchDevice(deviceDescriptor);
@@ -730,6 +733,19 @@ void AudioVolumeManager::CancelSafeVolumeNotification(int32_t notificationId)
 #ifndef TEST_COVERAGE
     dlclose(libHandle);
 #endif
+}
+
+void AudioVolumeManager::CancelSafeVolumeNotificationWhenSwitchDevice()
+{
+    if (increaseNIsShowing_) {
+        CancelSafeVolumeNotification(INCREASE_VOLUME_NOTIFICATION_ID);
+        increaseNIsShowing_ = false;
+    }
+
+    if (restoreNIsShowing_) {
+        CancelSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
+        restoreNIsShowing_ = false;
+    }
 }
 
 int32_t AudioVolumeManager::DealWithSafeVolume(const int32_t volumeLevel, bool isBtDevice)
