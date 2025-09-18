@@ -1550,7 +1550,11 @@ void AudioCoreService::UpdateRingerOrAlarmerDualDeviceOutputRouter(
         audioActiveDevice_.UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG,
             streamDesc->newDeviceDescs_.front()->deviceName_, streamDesc->newDeviceDescs_.front()->networkId_);
     }
-
+    if (streamUsage == STREAM_USAGE_ALARM) {
+        audioVolumeManager_.SetRingerModeMute(true);
+        shouldUpdateDeviceDueToDualTone_ = true;
+        return;
+    }
     AudioRingerMode ringerMode = audioPolicyManager_.GetRingerMode();
     if (ringerMode != RINGER_MODE_NORMAL &&
         IsRingerOrAlarmerDualDevicesRange(streamDesc->newDeviceDescs_.front()->getType()) &&
