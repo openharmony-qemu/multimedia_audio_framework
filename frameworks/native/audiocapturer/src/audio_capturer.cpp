@@ -310,7 +310,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
     ret = AudioPolicyManager::GetInstance().CreateCapturerClient(streamDesc, flag, audioStreamParams.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateCapturerClient failed");
-    AUDIO_INFO_LOG("StreamClientState for Capturer::CreateClient. id %{public}u, flag :%{public}u",
+    HILOG_COMM_INFO("StreamClientState for Capturer::CreateClient. id %{public}u, flag :%{public}u",
         audioStreamParams.originalSessionId, flag);
 
     streamClass = DecideStreamClassAndUpdateCapturerInfo(flag);
@@ -787,7 +787,7 @@ bool AudioCapturerPrivate::Start()
         lock = std::unique_lock<std::shared_mutex>(capturerMutex_);
     }
     Trace trace("KeyAction AudioCapturer::Start " + std::to_string(sessionID_));
-    AUDIO_INFO_LOG("StreamClientState for Capturer::Start. id %{public}u, sourceType: %{public}d",
+    HILOG_COMM_INFO("StreamClientState for Capturer::Start. id %{public}u, sourceType: %{public}d",
         sessionID_, audioInterrupt_.audioFocusType.sourceType);
 
     CapturerState state = GetStatusInner();
@@ -887,7 +887,7 @@ bool AudioCapturerPrivate::Pause() const
         lock = std::unique_lock<std::shared_mutex>(capturerMutex_);
     }
     Trace trace("KeyAction AudioCapturer::Pause " + std::to_string(sessionID_));
-    AUDIO_INFO_LOG("StreamClientState for Capturer::Pause. id %{public}u", sessionID_);
+    HILOG_COMM_INFO("StreamClientState for Capturer::Pause. id %{public}u", sessionID_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
 
     // When user is intentionally pausing , Deactivate to remove from audio focus info list
@@ -908,7 +908,7 @@ bool AudioCapturerPrivate::Stop() const
         lock = std::unique_lock<std::shared_mutex>(capturerMutex_);
     }
     Trace trace("KeyAction AudioCapturer::Stop " + std::to_string(sessionID_));
-    AUDIO_INFO_LOG("StreamClientState for Capturer::Stop. id %{public}u", sessionID_);
+    HILOG_COMM_INFO("StreamClientState for Capturer::Stop. id %{public}u", sessionID_);
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
 
     WriteOverflowEvent();
@@ -934,7 +934,7 @@ bool AudioCapturerPrivate::Flush() const
 bool AudioCapturerPrivate::Release()
 {
     Trace trace("KeyAction AudioCapturer::Release" + std::to_string(sessionID_));
-    AUDIO_INFO_LOG("StreamClientState for Capturer::Release. id %{public}u", sessionID_);
+    HILOG_COMM_INFO("StreamClientState for Capturer::Release. id %{public}u", sessionID_);
     std::unique_lock<std::shared_mutex> releaseLock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         releaseLock = std::unique_lock<std::shared_mutex>(capturerMutex_);

@@ -72,6 +72,7 @@ private:
         std::shared_ptr<AudioPipeInfo> &pipe);
     void ProcessModemCommunicationConcurrency(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsMoveToNormal);
+    void CheckAndHandleOffloadConcedeScene(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
 
     AudioPolicyConfigManager& configManager_;
 };

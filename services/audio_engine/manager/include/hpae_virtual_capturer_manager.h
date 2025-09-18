@@ -65,6 +65,11 @@ public:
     int32_t DumpSourceInfo() override;
     std::string GetDeviceHDFDumpInfo() override;
 
+    int32_t AddCaptureInjector(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode,
+        const SourceType &sourceType) override;
+    int32_t RemoveCaptureInjector(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode,
+        const SourceType &sourceType) override;
+
 private:
     void SetSessionState(HpaeCaptureMoveInfo &streamInfo, HpaeSessionState capturerState);
 

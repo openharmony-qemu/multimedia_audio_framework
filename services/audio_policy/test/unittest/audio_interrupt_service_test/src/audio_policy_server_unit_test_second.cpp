@@ -458,6 +458,29 @@ HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_221, TestSize.Level4)
 }
 
 /**
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: AudioPolicyServer_224
+ * @tc.desc  : Test OnReceiveEvent.
+ */
+HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_224, TestSize.Level4)
+{
+    int32_t systemAbilityId = 0;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId);
+    ASSERT_NE(audioPolicyServer, nullptr);
+
+    EventFwk::CommonEventData eventData;
+    OHOS::EventFwk::Want want;
+    want.SetAction("usual.event.DATA_SHARE_READY");
+    eventData.SetWant(want);
+    audioPolicyServer->isRingtoneEL2Ready_ = false;
+    audioPolicyServer->OnReceiveEvent(eventData);
+    EXPECT_EQ(audioPolicyServer->isRingtoneEL2Ready_, true);
+    // branch testing
+    audioPolicyServer->OnReceiveEvent(eventData);
+    EXPECT_EQ(audioPolicyServer->isRingtoneEL2Ready_, true);
+}
+
+/**
 * @tc.name  : IsContinueAddVolTest_001
 * @tc.number: IsContinueAddVolTest_001
 * @tc.desc  : test false case with call once

@@ -33,6 +33,14 @@ namespace OHOS {
 namespace AudioStandard {
 DirectAudioRenderSink::~DirectAudioRenderSink()
 {
+    std::unique_lock<std::mutex> lock(sinkMutex_);
+    if (started_) {
+        started_ = false;
+    }
+    lock.unlock();
+    if (testThread_.joinable()) {
+        testThread_.join();
+    }
 }
  
 int32_t DirectAudioRenderSink::Init(const IAudioSinkAttr &attr)
@@ -100,7 +108,7 @@ int32_t DirectAudioRenderSink::Start(void)
 
 void DirectAudioRenderSink::StartTestThread(void)
 {
-    std::thread([this]() {
+    testThread_ = std::thread([this]() {
         bool keepRunning = true;
         while (keepRunning) {
             std::unique_lock<std::mutex> lock(sinkMutex_);
@@ -109,7 +117,7 @@ void DirectAudioRenderSink::StartTestThread(void)
             lock.unlock();
             std::this_thread::sleep_for(std::chrono::milliseconds(TEST_CALLBACK_TIME));
         }
-    }).detach();
+    });
 }
  
 int32_t DirectAudioRenderSink::Stop(void)

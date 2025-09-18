@@ -49,6 +49,7 @@ protected:
     static uint32_t usbId_;
     static std::shared_ptr<IAudioCaptureSource> primarySource_;
     static std::shared_ptr<IAudioCaptureSource> usbSource_;
+    static std::shared_ptr<AudioCapturerSourceClock> audioSrcClock_;
     static IAudioSourceAttr attr_;
 };
 
@@ -56,6 +57,7 @@ uint32_t AudioCaptureSourceUnitTest::primaryId_ = 0;
 uint32_t AudioCaptureSourceUnitTest::usbId_ = 0;
 std::shared_ptr<IAudioCaptureSource> AudioCaptureSourceUnitTest::primarySource_ = nullptr;
 std::shared_ptr<IAudioCaptureSource> AudioCaptureSourceUnitTest::usbSource_ = nullptr;
+std::shared_ptr<AudioCapturerSourceClock> AudioCaptureSourceUnitTest::audioSrcClock_ = nullptr;
 IAudioSourceAttr AudioCaptureSourceUnitTest::attr_ = {};
 
 void AudioCaptureSourceUnitTest::SetUpTestCase()
@@ -384,7 +386,8 @@ HWTEST_F(AudioCaptureSourceUnitTest, PrimarySourceUnitTest_015, TestSize.Level1)
         .frameLen = bufferEc.size(),
     };
     EXPECT_EQ(offloadSource_->CaptureFrameWithEc(&fdesc, replyBytes, &fdescEc, replyBytesEc), SUCCESS);
-
+    audioSrcClock_ = std::make_shared<AudioCapturerSourceClock>();
+    CapturerClockManager::GetInstance().RegisterAudioSourceClock(0, audioSrcClock_);
     offloadSource_->audioCapture_->CaptureFrameEc = AudioCaptureCaptureFrameEc002;
     EXPECT_EQ(offloadSource_->CaptureFrameWithEc(&fdesc, replyBytes, &fdescEc, replyBytesEc), SUCCESS);
     offloadSource_->attr_.sourceType = SOURCE_TYPE_LIVE;

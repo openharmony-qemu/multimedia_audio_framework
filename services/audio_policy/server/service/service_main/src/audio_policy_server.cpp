@@ -620,7 +620,7 @@ int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
     if (volumeApplyToAll_) {
         streamInFocus = AudioStreamType::STREAM_ALL;
     } else {
-        streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetCurrentStreamInFocus());
+        streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetCurrentStreamInFocus(zoneId));
     }
     bool active = false;
     IsStreamActive(streamInFocus, active);
@@ -980,6 +980,9 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
         AUDIO_INFO_LOG("receive SCREEN_OFF or SCREEN_LOCKED action, control audio volume change if stream is active");
         isScreenOffOrLock_ = true;
     } else if (action == "usual.event.SCREEN_UNLOCKED") {
+        if (isRingtoneEL2Ready_ == false) {
+            isRingtoneEL2Ready_ =  CallRingtoneLibrary() == SUCCESS;
+        }
         AUDIO_INFO_LOG("receive SCREEN_UNLOCKED action, can change volume");
         isScreenOffOrLock_ = false;
     } else if (action == "usual.event.LOCALE_CHANGED" || action == "usual.event.USER_STARTED") {
@@ -1313,22 +1316,24 @@ int32_t AudioPolicyServer::AdjustVolumeByStep(int32_t adjustTypeIn)
         return ERR_PERMISSION_DENIED;
     }
 
+    int32_t zoneId = AudioZoneService::GetInstance().CheckZoneExist(audioVolumeManager_.GetVolumeAdjustZoneId()) ?
+        audioVolumeManager_.GetVolumeAdjustZoneId() : 0;
     AudioStreamType streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(
-        GetCurrentStreamInFocus());
+        GetCurrentStreamInFocus(zoneId));
     if (streamInFocus == AudioStreamType::STREAM_DEFAULT) {
         streamInFocus = AudioStreamType::STREAM_MUSIC;
     }
 
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     int32_t volumeLevelInInt = 0;
-    if (adjustType == VolumeAdjustType::VOLUME_UP && GetStreamMuteInternal(streamInFocus)) {
-        SetStreamMuteInternal(streamInFocus, false, false);
+    if (adjustType == VolumeAdjustType::VOLUME_UP && GetStreamMuteInternal(streamInFocus, zoneId)) {
+        SetStreamMuteInternal(streamInFocus, false, false, DEVICE_TYPE_NONE, zoneId);
         if (!VolumeUtils::IsPCVolumeEnable()) {
             AUDIO_DEBUG_LOG("phone need return");
             return SUCCESS;
         }
     }
-    volumeLevelInInt = GetSystemVolumeLevelInternal(streamInFocus);
+    volumeLevelInInt = GetSystemVolumeLevelInternal(streamInFocus, zoneId);
     int32_t minRet = -1;
     GetMinVolumeLevel(streamInFocus, minRet);
     int32_t maxRet = -1;
@@ -1349,7 +1354,7 @@ int32_t AudioPolicyServer::AdjustVolumeByStep(int32_t adjustTypeIn)
         volumeLevelInInt;
     volumeLevelInInt = volumeLevelInInt < minRet ? minRet :
         volumeLevelInInt;
-    int32_t ret = SetSystemVolumeLevelInternal(streamInFocus, volumeLevelInInt, false);
+    int32_t ret = SetSystemVolumeLevelInternal(streamInFocus, volumeLevelInInt, false, zoneId);
     return ret;
 }
 
@@ -2420,7 +2425,7 @@ int32_t AudioPolicyServer::SetMicrophoneMuteAudioConfig(bool isMute)
 int32_t AudioPolicyServer::SetMicrophoneMutePersistent(bool isMute, int32_t typeIn)
 {
     PolicyType type = static_cast<PolicyType>(typeIn);
-    AUDIO_INFO_LOG("Entered %{public}s isMute:%{public}d, type:%{public}d", __func__, isMute, type);
+    HILOG_COMM_INFO("Entered %{public}s isMute:%{public}d, type:%{public}d", __func__, isMute, type);
     bool hasPermission = VerifyPermission(MICROPHONE_CONTROL_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(hasPermission, ERR_PERMISSION_DENIED,
         "MICROPHONE_CONTROL_PERMISSION permission denied");
@@ -2821,10 +2826,10 @@ void AudioPolicyServer::OnAudioStreamRemoved(const uint64_t sessionID)
     audioPolicyServerHandler_->SendCapturerRemovedEvent(sessionID, false);
 }
 
-AudioStreamType AudioPolicyServer::GetCurrentStreamInFocus()
+AudioStreamType AudioPolicyServer::GetCurrentStreamInFocus(int32_t zoneId)
 {
     int32_t streamType = STREAM_DEFAULT;
-    GetStreamInFocus(DEFAULT_ZONEID, streamType);
+    GetStreamInFocus(zoneId, streamType);
     CHECK_AND_RETURN_RET(audioVolumeManager_.IsNeedForceControlVolumeType(), static_cast<AudioStreamType>(streamType));
     AUDIO_INFO_LOG("force volume type, type:%{public}d", audioVolumeManager_.GetForceControlVolumeType());
     return audioVolumeManager_.GetForceControlVolumeType();

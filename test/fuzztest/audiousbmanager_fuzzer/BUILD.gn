@@ -21,7 +21,7 @@ import("../../../config.gni")
 audio_framework_root = "../../.."
 
 ohos_fuzztest("AudioUsbManagerFuzzTest") {
-  module_out_path = "audio_framework/audio_framework_route"
+  module_out_path = "audio_framework/audio_framework_policy"
   fuzz_config_file = "../audiousbmanager_fuzzer"
 
   include_dirs = [

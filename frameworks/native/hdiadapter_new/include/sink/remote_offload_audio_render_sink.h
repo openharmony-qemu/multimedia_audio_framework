@@ -144,6 +144,8 @@ private:
     void CalcHdiPosition(uint64_t frames, int64_t timeSec, int64_t timeNanoSec);
     void FlushResetPosition();
     int32_t EstimateRenderPosition();
+    int32_t FlushInner(void);
+    void CheckFlushThread();
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -220,6 +222,7 @@ private:
     int64_t lastSystemTimeNS_ = 0;
     int64_t lastHdiTimeSec_ = 0;
     int64_t lastHdiTimeNanoSec_ = 0;
+    std::shared_ptr<std::thread> flushThread_;
 };
 
 } // namespace AudioStandard

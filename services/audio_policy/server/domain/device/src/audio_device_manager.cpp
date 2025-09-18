@@ -129,6 +129,36 @@ bool AudioDeviceManager::DeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor>
     return false;
 }
 
+bool AudioDeviceManager::IsDescMatchedInVector(const shared_ptr<AudioDeviceDescriptor> &devDesc,
+    list<DevicePrivacyInfo> &deviceList)
+{
+    for (auto &devInfo : deviceList) {
+        if ((devInfo.deviceType == devDesc->deviceType_) &&
+            (devInfo.deviceUsage & devDesc->deviceUsage_) &&
+            ((devInfo.deviceCategory == devDesc->deviceCategory_) ||
+            (devInfo.deviceCategory & devDesc->deviceCategory_) != 0)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+AudioDevicePrivacyType AudioDeviceManager::GetDevicePrivacyType(const shared_ptr<AudioDeviceDescriptor> &devDesc)
+{
+    CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, AudioDevicePrivacyType::TYPE_NEGATIVE, "devDesc is nullptr");
+
+    if (IsDescMatchedInVector(devDesc, privacyDeviceList_)) {
+        return AudioDevicePrivacyType::TYPE_PRIVACY;
+    }
+
+    if (IsDescMatchedInVector(devDesc, publicDeviceList_)) {
+        return AudioDevicePrivacyType::TYPE_PUBLIC;
+    }
+
+    return AudioDevicePrivacyType::TYPE_NEGATIVE;
+}
+
 void AudioDeviceManager::FillArrayWhenDeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor> &devDesc,
     AudioDevicePrivacyType privacyType, DeviceRole devRole, DeviceUsage devUsage, string logName,
     vector<shared_ptr<AudioDeviceDescriptor>> &descArray)
@@ -298,6 +328,18 @@ bool AudioDeviceManager::IsConnectedDevices(const std::shared_ptr<AudioDeviceDes
     AUDIO_INFO_LOG("isConnectedDevice %{public}d, connected list %{public}s", isConnectedDevice,
         AudioPolicyUtils::GetInstance().GetDevicesStr(connectedDevices_).c_str());
     return isConnectedDevice;
+}
+
+bool AudioDeviceManager::HasConnectedA2dp()
+{
+    auto isPresent = [](const shared_ptr<AudioDeviceDescriptor> &desc) {
+        return desc != nullptr &&
+            desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
+            desc->connectState_ != VIRTUAL_CONNECTED;
+    };
+
+    auto it = find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
+    return it != connectedDevices_.end();
 }
 
 void AudioDeviceManager::UpdateVirtualDevices(const std::shared_ptr<AudioDeviceDescriptor> &devDesc, bool isConnected)
@@ -806,14 +848,14 @@ void AudioDeviceManager::AddAvailableDevicesByUsage(const AudioDeviceUsage usage
 std::shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetExistedDevice(
     const std::shared_ptr<AudioDeviceDescriptor> &device)
 {
-    CHECK_AND_RETURN_RET_LOG(device != nullptr, nullptr, "device is nullptr");
+    CHECK_AND_RETURN_RET_LOG(device->deviceType_ != DEVICE_TYPE_NONE, device, "device is nullptr");
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     for (const auto &dev : connectedDevices_) {
         if (dev->IsSameDeviceInfo(*device)) {
             return make_shared<AudioDeviceDescriptor>(dev);
         }
     }
-    return nullptr;
+    return make_shared<AudioDeviceDescriptor>();
 }
 
 bool AudioDeviceManager::IsExistedDevice(const std::shared_ptr<AudioDeviceDescriptor> &device,
@@ -1558,7 +1600,7 @@ int32_t AudioDeviceManager::RemoveSelectedInputDevice(const uint32_t sessionID)
 
 shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSelectedCaptureDevice(const uint32_t sessionID)
 {
-    shared_ptr<AudioDeviceDescriptor> devDesc = nullptr;
+    shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>();
     if (sessionID == 0 || !selectedInputDeviceInfo_.count(sessionID)) {
         return devDesc;
     }

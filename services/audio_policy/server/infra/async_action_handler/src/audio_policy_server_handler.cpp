@@ -1192,7 +1192,7 @@ void AudioPolicyServerHandler::HandleAudioSessionDeviceChangeEvent(const AppExec
                 (deviceChangedEvent.devices[0] != nullptr), "get invalid preferred output devices list");
 
             int32_t ret = audioSessionService.FillCurrentOutputDeviceChangedEvent(
-                it->first, eventContextObj->reason_, eventContextObj->descriptor, deviceChangedEvent);
+                it->first, eventContextObj->reason_, deviceChangedEvent);
             if (ret != SUCCESS) {
                 continue;
             }

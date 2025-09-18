@@ -79,6 +79,7 @@ public:
 };
 
 enum HpaeProcessorType {
+    HPAE_SCENE_UNCONNECTED = -1,
     HPAE_SCENE_DEFAULT = 0,
     HPAE_SCENE_MUSIC = 1,
     HPAE_SCENE_GAME = 2,

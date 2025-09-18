@@ -159,6 +159,7 @@ public:
     ProcessClusterOperation CheckProcessClusterInstances(const std::string &sceneType);
     int32_t GetOutputChannelInfo(const std::string &sceneType, uint32_t &channels, uint64_t &channelLayout);
     int32_t DeleteStreamVolume(const std::string StringSessionID);
+    bool ExistAudioEffectChainArm(const std::string sceneType, const AudioEffectMode effectMode);
 private:
     int32_t SetAudioEffectChainDynamic(std::string &sceneType, const std::string &effectMode);
     void UpdateSensorState();
@@ -213,6 +214,7 @@ private:
     int32_t NotifyAndCreateAudioEffectChain(const std::string &sceneType);
     void WaitAndReleaseEffectChain(const std::string &sceneType, const std::string &sceneTypeAndDeviceKey,
         const std::string &defaultSceneTypeAndDeviceKey, int32_t ret);
+    bool IsDeviceTypeSupportingSpatialization();
     std::string GetEffectChainByMode(std::string effectChainKey);
     std::map<std::string, std::shared_ptr<AudioEffectLibEntry>> effectToLibraryEntryMap_;
     std::map<std::string, std::string> effectToLibraryNameMap_;

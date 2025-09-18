@@ -78,6 +78,7 @@ public:
 
     void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
+    int32_t SetSinkMuteForSwitchDevice(bool mute) override;
 private:
     static uint32_t PcmFormatToBit(AudioSampleFormat format);
     static AudioFormat ConvertToHdiFormat(AudioSampleFormat format);
@@ -130,11 +131,8 @@ private:
     int64_t last10FrameStartTime_ = 0;
     bool startUpdate_ = false;
     int renderFrameNum_ = 0;
-    // for device switch
-    std::mutex switchDeviceMutex_;
-    std::atomic<bool> switchDeviceMute_ = false;
     std::atomic<int32_t> emptyFrameCount_ = 0;
-    std::condition_variable switchDeviceCV_;
+    std::condition_variable updateActiveDeviceCV_;
     // for dfx log
     int32_t logMode_ = 0;
     std::string logUtilsTag_ = "MultichannelSink";
@@ -147,6 +145,10 @@ private:
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
     AudioScene currentAudioScene_ = AUDIO_SCENE_DEFAULT;
     std::mutex sinkMutex_;
+    // for device switch
+    std::mutex switchDeviceMutex_;
+    int32_t muteCount_ = 0;
+    std::atomic<bool> switchDeviceMute_ = false;
 };
 
 } // namespace AudioStandard

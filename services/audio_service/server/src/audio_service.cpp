@@ -1473,12 +1473,12 @@ void AudioService::SetNonInterruptMuteForProcess(const uint32_t sessionId, const
     for (auto paired : linkedPairedList_) {
         if (paired.first == nullptr) {
             AUDIO_ERR_LOG("processInServer is nullptr");
-            return;
+            continue;
         }
         if (paired.first->GetSessionId() == sessionId) {
             AUDIO_INFO_LOG("linkedPairedList_ has sessionId");
             paired.first->SetNonInterruptMute(muteFlag);
-            return;
+            break;
         }
     }
     processListLock.unlock();

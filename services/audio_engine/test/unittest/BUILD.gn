@@ -232,6 +232,48 @@ ohos_unittest("hpae_sink_output_node_test") {
   resource_config_file = "./resource/ohos_test.xml"
 }
 
+ohos_unittest("hpae_sink_virtual_output_node_test") {
+  module_out_path = module_output_path
+  sources = [
+    "common/test_case_common.cpp",
+    "node/hpae_sink_virtual_output_node_test.cpp",
+  ]
+
+  configs = [ ":audio_engine_private_config" ]
+
+  deps = [
+    "../../:audio_engine_manager",
+    "../../:audio_engine_node",
+    "../../:audio_engine_utils",
+    "../../../audio_service:audio_common",
+  ]
+
+  external_deps = engine_test_external_deps
+
+  resource_config_file = "./resource/ohos_test.xml"
+}
+
+ohos_unittest("hpae_virtual_process_cluster_test") {
+  module_out_path = module_output_path
+  sources = [
+    "common/test_case_common.cpp",
+    "node/hpae_virtual_process_cluster_test.cpp",
+  ]
+
+  configs = [ ":audio_engine_private_config" ]
+
+  deps = [
+    "../../:audio_engine_manager",
+    "../../:audio_engine_node",
+    "../../:audio_engine_utils",
+    "../../../audio_service:audio_common",
+  ]
+
+  external_deps = engine_test_external_deps
+
+  resource_config_file = "./resource/ohos_test.xml"
+}
+
 ohos_unittest("hpae_source_process_cluster_test") {
   module_out_path = module_output_path
   sources = [

@@ -210,7 +210,6 @@ public:
         std::string networkId) = 0;
 
     virtual void HandleStreamMuteStatus(AudioStreamType streamType, bool mute,
-        StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
         const DeviceType &deviceType = DEVICE_TYPE_NONE,
         std::string networkId = LOCAL_NETWORK_ID) = 0;
 

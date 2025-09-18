@@ -37,12 +37,7 @@ int32_t HpaeVirtualCapturerManager::CreateStream(const HpaeStreamInfo &streamInf
     std::lock_guard<std::mutex> lock(captureMutex_);
     AUDIO_INFO_LOG("Create output node:%{public}d", streamInfo.sessionId);
     HpaeNodeInfo nodeInfo;
-    nodeInfo.channels = streamInfo.channels;
-    nodeInfo.format = streamInfo.format;
-    nodeInfo.frameLen = streamInfo.frameLen;
-    nodeInfo.streamType = streamInfo.streamType;
-    nodeInfo.sessionId = streamInfo.sessionId;
-    nodeInfo.samplingRate = (AudioSamplingRate)streamInfo.samplingRate;
+    ConfigNodeInfo(nodeInfo, streamInfo);
     HpaeProcessorType sceneType = TransSourceTypeToSceneType(streamInfo.sourceType);
     nodeInfo.sceneType = sceneType;
     nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
@@ -320,6 +315,20 @@ void HpaeVirtualCapturerManager::SetSessionState(HpaeCaptureMoveInfo &streamInfo
     streamInfo.sessionInfo.state = capturerState;
     CHECK_AND_RETURN_LOG(streamInfo.sourceOutputNode, "streamInfo.sourceOutputNode is nullptr");
     streamInfo.sourceOutputNode->SetState(capturerState);
+}
+
+int32_t HpaeVirtualCapturerManager::AddCaptureInjector(
+    const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, const SourceType &sourceType)
+{
+    AUDIO_ERR_LOG("Unsupported operation");
+    return SUCCESS;
+}
+
+int32_t HpaeVirtualCapturerManager::RemoveCaptureInjector(
+    const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode, const SourceType &sourceType)
+{
+    AUDIO_ERR_LOG("Unsupported operation");
+    return SUCCESS;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -83,6 +83,7 @@ public:
     int32_t GetSpeedPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base);
     int32_t GetLatency(uint64_t &latency);
     int32_t SetRate(int32_t rate);
+    int32_t SetTarget(int32_t target, int32_t &ret);
     int32_t SetLowPowerVolume(float volume);
     int32_t GetLowPowerVolume(float &volume);
     int32_t SetAudioEffectMode(int32_t effectMode);

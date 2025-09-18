@@ -16,7 +16,7 @@ import("//build/ohos.gni")
 import("//build/test.gni")
 
 ohos_fuzztest("AudioPolicyConfigManagerFuzzTest") {
-  module_out_path = "audio_framework/audio_framework_route"
+  module_out_path = "audio_framework/audio_framework_policy"
   fuzz_config_file = "../audiopolicyconfigmanager_fuzzer"
 
   include_dirs = [
