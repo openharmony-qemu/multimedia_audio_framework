@@ -579,7 +579,6 @@ int32_t AudioCoreService::EventEntry::SetWakeUpAudioCapturerFromAudioServer(cons
 
 uint32_t AudioCoreService::EventEntry::GetPaIndexByPortName(const std::string &portName)
 {
-    std::lock_guard<std::shared_mutex> lock(eventMutex_);
     return coreService_->GetPaIndexByPortName(portName);
 }
 

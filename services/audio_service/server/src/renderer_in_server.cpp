@@ -1822,7 +1822,11 @@ int32_t RendererInServer::UnsetOffloadMode()
     int32_t ret = stream_->UnsetOffloadMode();
 
     for (auto &softInfo : softLinkInfos_) {
-        if (IsEnabledAndValidSoftLink(softInfo.second) && status_ == I_STATUS_STARTED) {
+        if (!IsEnabledAndValidSoftLink(softInfo.second)) {
+            AUDIO_INFO_LOG("The soft link is not valid %{public}d", softInfo.first);
+            continue;
+        }
+        if (status_ == I_STATUS_STARTED) {
             softInfo.second.softLink->Stop();
         }
         if (!captureInfos_.count(softInfo.first) || !captureInfos_[softInfo.first].isInnerCapEnabled) {
