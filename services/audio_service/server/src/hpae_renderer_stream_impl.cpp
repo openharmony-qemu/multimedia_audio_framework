@@ -483,7 +483,7 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
             CHECK_AND_RETURN_RET(mutePaddingFrames != 0, SUCCESS);
             mutePaddingFrames_.fetch_add(mutePaddingFrames);
             noWaitDataFlag_ = true;
-            AUDIO_INFO_LOG("Padding mute frames %{public}zu", mutePaddingFrames);
+            AUDIO_INFO_LOG("Padding mute frames %{public}zu, sessionId %{public}u", mutePaddingFrames, streamIndex_);
         }
     } else { // write buffer
         return WriteDataFromRingBuffer(callBackStreamInfo.forceData,
@@ -754,7 +754,7 @@ int32_t HpaeRendererStreamImpl::WriteDataFromRingBuffer(bool forceData, int8_t *
     size_t mutePaddingFrames = (byteSizePerFrame_ == 0) ? 0 : (mutePaddingSize / byteSizePerFrame_);
     CHECK_AND_RETURN_RET(mutePaddingFrames != 0, SUCCESS);
     mutePaddingFrames_.fetch_add(mutePaddingFrames);
-    AUDIO_INFO_LOG("Padding mute frames %{public}zu", mutePaddingFrames);
+    AUDIO_INFO_LOG("Padding mute frames %{public}zu, sessionId %{public}u", mutePaddingFrames, streamIndex_);
     return SUCCESS;
 }
 
