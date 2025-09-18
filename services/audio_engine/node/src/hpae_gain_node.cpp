@@ -247,7 +247,7 @@ void HpaeGainNode::DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t chan
 bool HpaeGainNode::IsSilentData(HpaePcmBuffer *pcmBuffer)
 {
     float *data = pcmBuffer->GetPcmDataBuffer();
-    size_t length = pcmBuffer->Size() / sizeof(float);
+    size_t length = pcmBuffer->DataSize() / sizeof(float);
     AUDIO_DEBUG_LOG("HpaeGainNode::Data length:%{public}zu", length);
     return std::all_of(data, data + length, [](float value) {
         return fabs(value) < EPSILON;

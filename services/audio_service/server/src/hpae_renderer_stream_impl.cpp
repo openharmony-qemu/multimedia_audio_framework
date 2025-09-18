@@ -145,6 +145,9 @@ int32_t HpaeRendererStreamImpl::Start()
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     ClockTime::GetAllTimeStamp(timestamp_);
     int32_t ret = IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
+    if (processConfig_.streamInfo.customSampleRate != 0) {
+        noWaitDataFlag_ = false;
+    }
     std::string tempStringSessionId = std::to_string(streamIndex_);
     IHpaeManager::GetHpaeManager().AddStreamVolumeToEffect(tempStringSessionId, clientVolume_);
     if (ret != 0) {
@@ -470,7 +473,7 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
                 int chToFill = (processConfig_.streamInfo.format == SAMPLE_U8) ? 0x7f : 0;
                 memset_s(callBackStreamInfo.inputData + requestDataLen,
                     mutePaddingSize, chToFill, mutePaddingSize);
-                requestDataLen = callBackStreamInfo.forceData ? requestDataLen : 0;
+                requestDataLen = callBackStreamInfo.forceData && noWaitDataFlag_ ? requestDataLen : 0;
             }
             callBackStreamInfo.requestDataLen = requestDataLen;
             int32_t ret = writeCallback->OnWriteData(callBackStreamInfo.inputData,
@@ -479,6 +482,7 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
             size_t mutePaddingFrames = (byteSizePerFrame_ == 0) ? 0 : (mutePaddingSize / byteSizePerFrame_);
             CHECK_AND_RETURN_RET(mutePaddingFrames != 0, SUCCESS);
             mutePaddingFrames_.fetch_add(mutePaddingFrames);
+            noWaitDataFlag_ = true;
             AUDIO_INFO_LOG("Padding mute frames %{public}zu", mutePaddingFrames);
         }
     } else { // write buffer

@@ -61,52 +61,52 @@ ProResampler::ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels,
         "quality: %{public}d.", inRate_, outRate_, channels_, quality_);
 }
 
-int32_t ProResampler::Process(const float *inBuffer, uint32_t inFrameSize, float *outBuffer,
-    uint32_t outFrameSize)
+int32_t ProResampler::Process(const float *inBuffer, uint32_t inFrameLen, float *outBuffer,
+    uint32_t outFrameLen)
 {
     CHECK_AND_RETURN_RET_LOG(state_ != nullptr, RESAMPLER_ERR_ALLOC_FAILED,
         "resampler is %{public}s", ErrCodeToString(RESAMPLER_ERR_ALLOC_FAILED).c_str());
     if (inRate_ == SAMPLE_RATE_11025) {
-        return Process11025SampleRate(inBuffer, inFrameSize, outBuffer, outFrameSize);
+        return Process11025SampleRate(inBuffer, inFrameLen, outBuffer, outFrameLen);
     } else if (inRate_ % CUSTOM_SAMPLE_RATE_MULTIPLES != 0) {
-        return Process10HzSampleRate(inBuffer, inFrameSize, outBuffer, outFrameSize);
+        return Process10HzSampleRate(inBuffer, inFrameLen, outBuffer, outFrameLen);
     } else {
-        return ProcessOtherSampleRate(inBuffer, inFrameSize, outBuffer, outFrameSize);
+        return ProcessOtherSampleRate(inBuffer, inFrameLen, outBuffer, outFrameLen);
     }
 }
 
-int32_t ProResampler::ProcessOtherSampleRate(const float *inBuffer, uint32_t inFrameSize, float *outBuffer,
-    uint32_t outFrameSize)
+int32_t ProResampler::ProcessOtherSampleRate(const float *inBuffer, uint32_t inFrameLen, float *outBuffer,
+    uint32_t outFrameLen)
 {
-    uint32_t expectedOutFrameSize = outFrameSize;
-    std::vector<float> tmpOutBuf(expectedOutFrameSize * channels_, 0.0f);
+    uint32_t expectedOutFrameLen = outFrameLen;
+    std::vector<float> tmpOutBuf(expectedOutFrameLen * channels_, 0.0f);
     int32_t ret =
-        SingleStagePolyphaseResamplerProcess(state_, inBuffer, &inFrameSize, tmpOutBuf.data(), &outFrameSize);
+        SingleStagePolyphaseResamplerProcess(state_, inBuffer, &inFrameLen, tmpOutBuf.data(), &outFrameLen);
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "process failed with error %{public}s",
         ErrCodeToString(ret).c_str());
     
-    uint32_t fillSize = expectedOutFrameSize - outFrameSize > 0 ? expectedOutFrameSize - outFrameSize : 0;
+    uint32_t fillSize = expectedOutFrameLen > outFrameLen ? expectedOutFrameLen - outFrameLen : 0;
     ret = memset_s(outBuffer, fillSize * channels_ * sizeof(float), 0, fillSize * channels_ * sizeof(float));
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "memset_s failed with error %{public}d", ret);
 
     ret = memcpy_s(outBuffer + fillSize * channels_,
-        (expectedOutFrameSize - fillSize) * channels_ * sizeof(float),
-        tmpOutBuf.data(), outFrameSize * channels_ * sizeof(float));
-    CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "memset_s failed with error %{public}d", ret);
+        (expectedOutFrameLen - fillSize) * channels_ * sizeof(float),
+        tmpOutBuf.data(), outFrameLen * channels_ * sizeof(float));
+    CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "memcpy_s failed with error %{public}d", ret);
     return ret;
 }
 
-int32_t ProResampler::Process11025SampleRate(const float *inBuffer, uint32_t inFrameSize, float *outBuffer,
-    uint32_t outFrameSize)
+int32_t ProResampler::Process11025SampleRate(const float *inBuffer, uint32_t inFrameLen, float *outBuffer,
+    uint32_t outFrameLen)
 {
-    CHECK_AND_RETURN_RET_LOG(outFrameSize >= expectedOutFrameLen_, RESAMPLER_ERR_INVALID_ARG,
-        "output frame size %{public}d is not valid", outFrameSize);
-    CHECK_AND_RETURN_RET_LOG(((inFrameSize == 0) || (inFrameSize == expectedInFrameLen_)), RESAMPLER_ERR_INVALID_ARG,
-        "input frame size %{public}d is not valid", inFrameSize);
-    if (inFrameSize == 0) {
-        int32_t ret = RESAMPLER_ERR_SUCCESS;
+    CHECK_AND_RETURN_RET_LOG(outFrameLen >= expectedOutFrameLen_, RESAMPLER_ERR_INVALID_ARG,
+        "output frame size %{public}d is not valid", outFrameLen);
+    CHECK_AND_RETURN_RET_LOG(((inFrameLen == 0) || (inFrameLen == expectedInFrameLen_)), RESAMPLER_ERR_INVALID_ARG,
+        "input frame size %{public}d is not valid", inFrameLen);
+    int32_t ret = RESAMPLER_ERR_SUCCESS;
+    if (inFrameLen == 0) {
         if (buf11025Index_ > 0) { // output second half of 11025 buffer
-            ret = memcpy_s(outBuffer, outFrameSize * channels_ * sizeof(float),
+            ret = memcpy_s(outBuffer, outFrameLen * channels_ * sizeof(float),
                 buf11025_.data() + buf11025Index_,  expectedOutFrameLen_ * channels_ * sizeof(float));
             CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "memcpy_s failed with error %{public}d", ret);
             
@@ -114,20 +114,19 @@ int32_t ProResampler::Process11025SampleRate(const float *inBuffer, uint32_t inF
                 buf11025_.capacity() * sizeof(float));
             buf11025Index_ = 0;
         } else { // no data left in buffer, the only thing can be done is to return 0s
-            ret = memset_s(outBuffer, outFrameSize * channels_ * sizeof(float), 0,
-                outFrameSize * channels_ * sizeof(float));
+            ret = memset_s(outBuffer, outFrameLen * channels_ * sizeof(float), 0,
+                outFrameLen * channels_ * sizeof(float));
         }
         return ret;
     }
     std::vector<float> tmpOutBuf(expectedOutFrameLen_ * channels_ * BUFFER_EXPAND_SIZE_2, 0.0f);
     uint32_t tmpOutFrameLen = expectedOutFrameLen_ * BUFFER_EXPAND_SIZE_2;
     uint32_t reserveOutFrameLen = tmpOutFrameLen;
-    int32_t ret =
-        SingleStagePolyphaseResamplerProcess(state_, inBuffer, &inFrameSize, tmpOutBuf.data(), &tmpOutFrameLen);
+    ret = SingleStagePolyphaseResamplerProcess(state_, inBuffer, &inFrameLen, tmpOutBuf.data(), &tmpOutFrameLen);
     CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret, "Process failed with error %{public}s",
         ErrCodeToString(ret).c_str());
 
-    uint32_t fillSize = reserveOutFrameLen - tmpOutFrameLen > 0 ? reserveOutFrameLen - tmpOutFrameLen : 0;
+    uint32_t fillSize = reserveOutFrameLen > tmpOutFrameLen ? reserveOutFrameLen - tmpOutFrameLen : 0;
     ret = memset_s(buf11025_.data(), fillSize * channels_ * sizeof(float), 0, fillSize * channels_ * sizeof(float));
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "memset_s failed with error %{public}d", ret);
 
@@ -137,24 +136,24 @@ int32_t ProResampler::Process11025SampleRate(const float *inBuffer, uint32_t inF
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "memcpy_s failed with error %{public}d", ret);
 
     // output first half of data
-    ret = memcpy_s(outBuffer, outFrameSize * channels_ * sizeof(float),
+    ret = memcpy_s(outBuffer, outFrameLen * channels_ * sizeof(float),
         buf11025_.data(), expectedOutFrameLen_ * channels_ * sizeof(float));
     buf11025Index_ = expectedOutFrameLen_ * channels_;
     return ret;
 }
 
 // Process 10Hz resolution custom sample rate that is not multiples of 50, 100ms input
-int32_t ProResampler::Process10HzSampleRate(const float *inBuffer, uint32_t inFrameSize, float *outBuffer,
-    uint32_t outFrameSize)
+int32_t ProResampler::Process10HzSampleRate(const float *inBuffer, uint32_t inFrameLen, float *outBuffer,
+    uint32_t outFrameLen)
 {
-    CHECK_AND_RETURN_RET_LOG(outFrameSize >= expectedOutFrameLen_, RESAMPLER_ERR_INVALID_ARG,
-        "output frame size %{public}d is not valid", outFrameSize);
-    CHECK_AND_RETURN_RET_LOG(((inFrameSize == 0) || (inFrameSize == expectedInFrameLen_)), RESAMPLER_ERR_INVALID_ARG,
-        "input frame size %{public}d is not valid", inFrameSize);
-    if (inFrameSize == 0) {
-        int32_t ret = RESAMPLER_ERR_SUCCESS;
+    CHECK_AND_RETURN_RET_LOG(outFrameLen >= expectedOutFrameLen_, RESAMPLER_ERR_INVALID_ARG,
+        "output frame size %{public}d is not valid", outFrameLen);
+    CHECK_AND_RETURN_RET_LOG(((inFrameLen == 0) || (inFrameLen == expectedInFrameLen_)), RESAMPLER_ERR_INVALID_ARG,
+        "input frame size %{public}d is not valid", inFrameLen);
+    int32_t ret = RESAMPLER_ERR_SUCCESS;
+    if (inFrameLen == 0) {
         if (bufFor100msIndex_ > 0) { // output 2nd, 3rd, 4th, 5th part of 100ms buffer
-            ret = memcpy_s(outBuffer, outFrameSize * channels_ * sizeof(float),
+            ret = memcpy_s(outBuffer, outFrameLen * channels_ * sizeof(float),
                 bufFor100ms_.data() + bufFor100msIndex_,  expectedOutFrameLen_ * channels_ * sizeof(float));
             CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "memcpy_s failed with error %{public}d", ret);
             bufFor100msIndex_ += expectedOutFrameLen_ * channels_;
@@ -164,20 +163,19 @@ int32_t ProResampler::Process10HzSampleRate(const float *inBuffer, uint32_t inFr
                     bufFor100ms_.capacity() * sizeof(float));
             }
         } else { // no data left in buffer, the only thing can be done is to return 0s
-            ret = memset_s(outBuffer, outFrameSize * channels_ * sizeof(float), 0,
-                outFrameSize * channels_ * sizeof(float));
+            ret = memset_s(outBuffer, outFrameLen * channels_ * sizeof(float), 0,
+                outFrameLen * channels_ * sizeof(float));
         }
         return ret;
     }
     std::vector<float> tmpOutBuf(expectedOutFrameLen_ * channels_ * BUFFER_EXPAND_SIZE_5, 0.0f);
     uint32_t tmpOutFrameLen = expectedOutFrameLen_ * BUFFER_EXPAND_SIZE_5;
     uint32_t reserveOutFrameLen = tmpOutFrameLen;
-    int32_t ret =
-        SingleStagePolyphaseResamplerProcess(state_, inBuffer, &inFrameSize, tmpOutBuf.data(), &tmpOutFrameLen);
+    ret = SingleStagePolyphaseResamplerProcess(state_, inBuffer, &inFrameLen, tmpOutBuf.data(), &tmpOutFrameLen);
     CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret, "Process failed with error %{public}s",
         ErrCodeToString(ret).c_str());
 
-    uint32_t fillSize = reserveOutFrameLen - tmpOutFrameLen > 0 ? reserveOutFrameLen - tmpOutFrameLen : 0;
+    uint32_t fillSize = reserveOutFrameLen > tmpOutFrameLen ? reserveOutFrameLen - tmpOutFrameLen : 0;
     ret = memset_s(bufFor100ms_.data(), fillSize * channels_ * sizeof(float), 0, fillSize * channels_ * sizeof(float));
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "memset_s failed with error %{public}d", ret);
 
@@ -187,7 +185,7 @@ int32_t ProResampler::Process10HzSampleRate(const float *inBuffer, uint32_t inFr
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "memcpy_s failed with error %{public}d", ret);
 
     // output 1st part of data
-    ret = memcpy_s(outBuffer, outFrameSize * channels_ * sizeof(float),
+    ret = memcpy_s(outBuffer, outFrameLen * channels_ * sizeof(float),
         bufFor100ms_.data(), expectedOutFrameLen_ * channels_ * sizeof(float));
     bufFor100msIndex_ = expectedOutFrameLen_ * channels_;
     return ret;
