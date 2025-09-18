@@ -1589,6 +1589,7 @@ uint32_t AudioEffectChainManager::GetSceneTypeToChainCount(const std::string &sc
         }
     }
     return 0;
+
 }
 // LCOV_EXCL_STOP
 
@@ -1792,6 +1793,10 @@ bool AudioEffectChainManager::ExistAudioEffectChainInner(const std::string &scen
     // if the effectChain exist, see if it is empty
     if (!sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) ||
         sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] == nullptr) {
+        return false;
+    }
+    if (sceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey) &&
+        sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] == 0) {
         return false;
     }
     auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
