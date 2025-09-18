@@ -3182,8 +3182,9 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateHearingAidCall_001, TestSize
     ASSERT_EQ(audioCoreService->hearingAidCallFlag_, false);
 
     audioCoreService->CheckAndUpdateHearingAidCall(DeviceType::DEVICE_TYPE_HEARING_AID);
-    bool ret = audioCoreService->audioIOHandleMap_.CheckIOHandleExist("Built_in_mic");
-    ASSERT_EQ(ret, false);
+    auto ret = AudioPipeManager::GetPipeManager()->GetPipeinfoByNameAndFlag("hearing_aid",
+        AUDIO_OUTPUT_FLAG_NORMAL);
+    ASSERT_EQ(ret, nullptr);
 }
 
 /**
