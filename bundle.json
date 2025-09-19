@@ -53,6 +53,7 @@
             "accessibility",
             "bluetooth",
             "bundle_framework",
+            "background_task_mgr",
             "c_utils",
             "cellular_data",
             "common_event_service",
@@ -89,15 +90,17 @@
             "bounds_checking_function",
             "pulseaudio",
             "libuv",
+            "libxml2",
             "cJSON",
             "opensles",
+            "openssl",
             "qos_manager",
             "media_foundation",
             "runtime_core",
             "usb_manager",
             "frame_aware_sched",
             "window_manager"
-            ],
+          ],
           "third_party": [
             "libxml2",
             "openssl"
