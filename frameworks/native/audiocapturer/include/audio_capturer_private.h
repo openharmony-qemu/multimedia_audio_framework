@@ -166,6 +166,7 @@ private:
         const IAudioStream::SwitchInfo &switchInfo, const RestoreInfo &restoreInfo);
     int32_t HandleCreateFastStreamError(AudioStreamParams &audioStreamParams);
     bool IsRestoreOrStopNeeded();
+    void SetInSwitchingFlag(bool inSwitchingFlag);
 
     std::shared_ptr<InputDeviceChangeWithInfoCallbackImpl> inputDeviceChangeCallback_ = nullptr;
     bool isSwitching_ = false;
