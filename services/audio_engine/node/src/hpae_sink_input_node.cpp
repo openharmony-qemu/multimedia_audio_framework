@@ -35,7 +35,6 @@ const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
 static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 static constexpr uint32_t FRAME_LEN_100MS = 100;
 static constexpr uint32_t FRAME_LEN_20MS = 20;
-constexpr int32_t STANDBY_THRESHOLD = 9; // 9 standby is about 40ms
 
 HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo),
