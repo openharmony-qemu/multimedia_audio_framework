@@ -53,8 +53,10 @@ HpaeProcessCluster::HpaeProcessCluster(HpaeNodeInfo nodeInfo, HpaeSinkInfo &sink
     mixerNode_ = std::make_shared<HpaeMixerNode>(nodeInfo);
     if (TransProcessorTypeToSceneType(nodeInfo.sceneType) != "SCENE_EXTRA") {
         renderEffectNode_ = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+        renderNoneEffectNode_ = nullptr;
     } else {
         renderEffectNode_ = nullptr;
+        renderNoneEffectNode_ = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     }
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("HpaeProcessCluster");
@@ -259,36 +261,64 @@ int32_t HpaeProcessCluster::GetNodeInputFormatInfo(uint32_t sessionId, AudioBasi
     return renderEffectNode_->GetExpectedInputChannelInfo(basicFormat);
 }
 
-int32_t HpaeProcessCluster::AudioRendererCreate(HpaeNodeInfo &nodeInfo)
+int32_t HpaeProcessCluster::AudioRendererCreate(HpaeNodeInfo &nodeInfo, HpaeSinkInfo sinkInfo)
 {
-    if (renderEffectNode_ == nullptr) {
-        return 0;
+    if (renderEffectNode_ != nullptr) {
+        return renderEffectNode_->AudioRendererCreate(nodeInfo);
+    } else if (renderNoneEffectNode_ != nullptr) {
+        CHECK_AND_RETURN_RET_LOG(sinkInfo.deviceClass != "remote", SUCCESS,
+            "sessionId %{public}u, deviceClass: remote, no need send message to effect", nodeInfo.sessionId);
+        CHECK_AND_RETURN_RET_LOG(sinkInfo.deviceName != "DP_MCH_speaker", SUCCESS,
+            "sessionId %{public}u, deviceName: DP_MCH_speaker, no need send message to effect", nodeInfo.sessionId);
+        return renderNoneEffectNode_->AudioRendererCreate(nodeInfo);
     }
-    return renderEffectNode_->AudioRendererCreate(nodeInfo);
+
+    return 0;
 }
 
-int32_t HpaeProcessCluster::AudioRendererStart(HpaeNodeInfo &nodeInfo)
+int32_t HpaeProcessCluster::AudioRendererStart(HpaeNodeInfo &nodeInfo, HpaeSinkInfo sinkInfo)
 {
-    if (renderEffectNode_ == nullptr) {
-        return 0;
+    if (renderEffectNode_ != nullptr) {
+        return renderEffectNode_->AudioRendererStart(nodeInfo);
+    } else if (renderNoneEffectNode_ != nullptr) {
+        CHECK_AND_RETURN_RET_LOG(sinkInfo.deviceClass != "remote", SUCCESS,
+            "sessionId %{public}u, deviceClass: remote, no need send message to effect", nodeInfo.sessionId);
+        CHECK_AND_RETURN_RET_LOG(sinkInfo.deviceName != "DP_MCH_speaker", SUCCESS,
+            "sessionId %{public}u, deviceName: DP_MCH_speaker, no need send message to effect", nodeInfo.sessionId);
+        return renderNoneEffectNode_->AudioRendererStart(nodeInfo);
     }
-    return renderEffectNode_->AudioRendererStart(nodeInfo);
+
+    return 0;
 }
 
-int32_t HpaeProcessCluster::AudioRendererStop(HpaeNodeInfo &nodeInfo)
+int32_t HpaeProcessCluster::AudioRendererStop(HpaeNodeInfo &nodeInfo, HpaeSinkInfo sinkInfo)
 {
-    if (renderEffectNode_ == nullptr) {
-        return 0;
+    if (renderEffectNode_ != nullptr) {
+        return renderEffectNode_->AudioRendererStop(nodeInfo);
+    } else if (renderNoneEffectNode_ != nullptr) {
+        CHECK_AND_RETURN_RET_LOG(sinkInfo.deviceClass != "remote", SUCCESS,
+            "sessionId %{public}u, deviceClass: remote, no need send message to effect", nodeInfo.sessionId);
+        CHECK_AND_RETURN_RET_LOG(sinkInfo.deviceName != "DP_MCH_speaker", SUCCESS,
+            "sessionId %{public}u, deviceName: DP_MCH_speaker, no need send message to effect", nodeInfo.sessionId);
+        return renderNoneEffectNode_->AudioRendererStop(nodeInfo);
     }
-    return renderEffectNode_->AudioRendererStop(nodeInfo);
+
+    return 0;
 }
 
-int32_t HpaeProcessCluster::AudioRendererRelease(HpaeNodeInfo &nodeInfo)
+int32_t HpaeProcessCluster::AudioRendererRelease(HpaeNodeInfo &nodeInfo, HpaeSinkInfo sinkInfo)
 {
-    if (renderEffectNode_ == nullptr) {
-        return 0;
+    if (renderEffectNode_ != nullptr) {
+        return renderEffectNode_->AudioRendererRelease(nodeInfo);
+    } else if (renderNoneEffectNode_ != nullptr) {
+        CHECK_AND_RETURN_RET_LOG(sinkInfo.deviceClass != "remote", SUCCESS,
+            "sessionId %{public}u, deviceClass: remote, no need send message to effect", nodeInfo.sessionId);
+        CHECK_AND_RETURN_RET_LOG(sinkInfo.deviceName != "DP_MCH_speaker", SUCCESS,
+            "sessionId %{public}u, deviceName: DP_MCH_speaker, no need send message to effect", nodeInfo.sessionId);
+        return renderNoneEffectNode_->AudioRendererRelease(nodeInfo);
     }
-    return renderEffectNode_->AudioRendererRelease(nodeInfo);
+
+    return 0;
 }
 
 std::shared_ptr<HpaeGainNode> HpaeProcessCluster::GetGainNodeById(uint32_t sessionId) const

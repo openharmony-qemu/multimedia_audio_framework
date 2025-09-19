@@ -39,10 +39,10 @@ public:
     int32_t GetGainNodeCount();
     int32_t GetConverterNodeCount();
     int32_t GetPreOutNum();
-    int32_t AudioRendererCreate(HpaeNodeInfo &nodeInfo);
-    int32_t AudioRendererStart(HpaeNodeInfo &nodeInfo);
-    int32_t AudioRendererStop(HpaeNodeInfo &nodeInfo);
-    int32_t AudioRendererRelease(HpaeNodeInfo &nodeInfo);
+    int32_t AudioRendererCreate(HpaeNodeInfo &nodeInfo, HpaeSinkInfo sinkInfo);
+    int32_t AudioRendererStart(HpaeNodeInfo &nodeInfo, HpaeSinkInfo sinkInfo);
+    int32_t AudioRendererStop(HpaeNodeInfo &nodeInf, HpaeSinkInfo sinkInfo);
+    int32_t AudioRendererRelease(HpaeNodeInfo &nodeInfo, HpaeSinkInfo sinkInfo);
     int32_t GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override;
     std::shared_ptr<HpaeGainNode> GetGainNodeById(uint32_t id) const;
     std::shared_ptr<HpaeAudioFormatConverterNode> GetConverterNodeById(uint32_t id) const;
@@ -59,6 +59,7 @@ private:
     void CreateLoudnessGainNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);
     std::shared_ptr<HpaeMixerNode> mixerNode_;
     std::shared_ptr<HpaeRenderEffectNode> renderEffectNode_ = nullptr;
+    std::shared_ptr<HpaeRenderEffectNode> renderNoneEffectNode_ = nullptr;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeAudioFormatConverterNode>> idConverterMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeGainNode>> idGainMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeLoudnessGainNode>> idLoudnessGainNodeMap_;

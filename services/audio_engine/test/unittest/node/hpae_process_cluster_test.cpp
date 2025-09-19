@@ -45,6 +45,19 @@ const float LOUDNESS_GAIN = 1.0f;
 constexpr uint32_t SAMPLE_RATE_16010 = 16010;
 constexpr uint32_t SAMPLE_RATE_16050 = 16050;
 
+static HpaeSinkInfo GetRenderTestSinkInfo()
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.frameLen = SAMPLE_RATE_48000 * FRAME_LENGTH_IN_SECOND;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    return sinkInfo;
+}
 
 class HpaeProcessClusterTest : public testing::Test {
 public:
@@ -330,24 +343,45 @@ HWTEST_F(HpaeProcessClusterTest, testEffectNode_001, TestSize.Level0)
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
-    HpaeSinkInfo dummySinkInfo;
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
 
     std::shared_ptr<HpaeProcessCluster> hpaeProcessCluster =
-        std::make_shared<HpaeProcessCluster>(nodeInfo, dummySinkInfo);
+        std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
     hpaeProcessCluster->DoProcess();
-    EXPECT_EQ(hpaeProcessCluster->AudioRendererCreate(nodeInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererCreate(nodeInfo, sinkInfo), 0);
     hpaeProcessCluster->DoProcess();
-    EXPECT_EQ(hpaeProcessCluster->AudioRendererStart(nodeInfo), 0);
-    EXPECT_EQ(hpaeProcessCluster->AudioRendererStop(nodeInfo), 0);
-    EXPECT_EQ(hpaeProcessCluster->AudioRendererRelease(nodeInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererStart(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererStop(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererRelease(nodeInfo, sinkInfo), 0);
 
     nodeInfo.sceneType = HPAE_SCENE_SPLIT_MEDIA;
     hpaeProcessCluster =
-        std::make_shared<HpaeProcessCluster>(nodeInfo, dummySinkInfo);
-    EXPECT_EQ(hpaeProcessCluster->AudioRendererCreate(nodeInfo), 0);
-    EXPECT_EQ(hpaeProcessCluster->AudioRendererStart(nodeInfo), 0);
-    EXPECT_EQ(hpaeProcessCluster->AudioRendererStop(nodeInfo), 0);
-    EXPECT_EQ(hpaeProcessCluster->AudioRendererRelease(nodeInfo), 0);
+        std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererCreate(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererStart(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererStop(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererRelease(nodeInfo, sinkInfo), 0);
+
+    nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
+    hpaeProcessCluster =
+        std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererCreate(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererStart(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererStop(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererRelease(nodeInfo, sinkInfo), 0);
+    
+    sinkInfo.deviceClass = "remote";
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererCreate(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererStart(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererStop(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererRelease(nodeInfo, sinkInfo), 0);
+
+    sinkInfo.deviceName = "DP_MCH_speaker";
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererCreate(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererStart(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererStop(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererRelease(nodeInfo, sinkInfo), 0);
+    
 }
 
 HWTEST_F(HpaeProcessClusterTest, testGetNodeInputFormatInfo, TestSize.Level0)
@@ -388,7 +422,8 @@ HWTEST_F(HpaeProcessClusterTest, testGetNodeInputFormatInfo, TestSize.Level0)
     nodeInfo.sceneType = HPAE_SCENE_MUSIC;
     hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo, dummySinkInfo);
     hpaeProcessCluster->Connect(dummySinkInputNode);
-    EXPECT_EQ(hpaeProcessCluster->AudioRendererCreate(nodeInfo), SUCCESS);
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererCreate(nodeInfo, sinkInfo), SUCCESS);
     
     hpaeProcessCluster->SetLoudnessGain(DEFAULT_NODEID_NUM_FIRST, LOUDNESS_GAIN);
     ret = hpaeProcessCluster->GetNodeInputFormatInfo(nodeInfo.sessionId, basicFormat);
