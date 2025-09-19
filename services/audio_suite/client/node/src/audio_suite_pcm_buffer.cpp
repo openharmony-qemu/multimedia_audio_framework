@@ -61,6 +61,15 @@ int32_t AudioSuitePcmBuffer::ResizePcmBuffer(uint32_t sampleRate, uint32_t chann
     InitPcmProcess();
     return 0;
 }
+
+AudioSuitePcmBuffer &AudioSuitePcmBuffer::operator+=(AudioSuitePcmBuffer &other)
+{
+    for (size_t i = 0; i < pcmProcessVec_.size(); ++i) {
+        pcmProcessVec_[i] += other[i];
+    }
+    return *this;
+}
+
 }
 }
 }

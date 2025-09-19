@@ -109,8 +109,19 @@ public:
         InitPcmProcess();
     }
 
+    HPAE::HpaePcmProcess &operator[](size_t index)
+    {
+        return pcmProcessVec_[index];
+    }
+
+    const HPAE::HpaePcmProcess &operator[](size_t index) const
+    {
+        return pcmProcessVec_[index];
+    }
+
     int32_t InitPcmProcess();
     int32_t ResizePcmBuffer(uint32_t sampleRate, uint32_t channelCount);
+    AudioSuitePcmBuffer &operator+=(AudioSuitePcmBuffer &other);
 private:
     std::vector<float, AlignedAllocator<float, MEMORY_ALIGN_BYTE_NUM>> pcmDataBuffer_;
     std::vector<HPAE::HpaePcmProcess> pcmProcessVec_;
