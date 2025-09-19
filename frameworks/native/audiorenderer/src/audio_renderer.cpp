@@ -1055,15 +1055,15 @@ int32_t AudioRendererPrivate::AsyncCheckAudioRenderer(std::string callingFunc)
         return SUCCESS;
     }
     auto weakRenderer = weak_from_this();
-    taskLoop_.PostTask([weakRenderer, callingFunc, this] () {
+    taskLoop_.PostTask([weakRenderer, callingFunc] () {
         auto sharedRenderer = weakRenderer.lock();
         CHECK_AND_RETURN_LOG(sharedRenderer, "render is null");
         uint32_t taskCount;
         do {
             taskCount = sharedRenderer->switchStreamInNewThreadTaskCount_.load();
-            SetInSwitchingFlag(true);
+            sharedRenderer->SetInSwitchingFlag(true);
             sharedRenderer->CheckAudioRenderer(callingFunc + "withNewThread");
-            SetInSwitchingFlag(false);
+            sharedRenderer->SetInSwitchingFlag(false);
         } while (sharedRenderer->switchStreamInNewThreadTaskCount_.fetch_sub(taskCount) > taskCount);
     });
     return SUCCESS;
