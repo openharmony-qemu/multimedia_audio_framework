@@ -1631,6 +1631,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamTy
 #endif
     if (streamType == STREAM_ALL) {
         for (auto audioStreamType : GET_STREAM_ALL_VOLUME_TYPES) {
+            mute = GetStreamMuteInternal(audioStreamType, zoneId);
             AUDIO_INFO_LOG("SetVolume of STREAM_ALL, SteamType = %{public}d, mute = %{public}d, level = %{public}d",
                 audioStreamType, mute, volumeLevel);
             int32_t setResult = SetSingleStreamVolume(audioStreamType, volumeLevel, isUpdateUi, mute, zoneId);
