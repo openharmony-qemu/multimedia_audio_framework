@@ -314,8 +314,8 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
     auto writeCallback = writeCallback_.lock();
     CHECK_AND_RETURN_RET_LOG(writeCallback, ERROR, "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
     bool needData = !(historyBuffer_ && historyBuffer_->GetCurFrames()) && isPullData;
-    // offload enbale, underrun 9 times, request force write data; 9 times about 40ms
-    bool forceData = offloadEnable_ ? (standbyCounter_ > STANDBY_THRESHOLD ? true : false) : true;
+    // offload enbale, never force data
+    bool forceData = offloadEnable_ ? false : true;
     uint64_t latency = 0;
     auto nodeCallback = GetNodeStatusCallback().lock();
     if (nodeCallback) {
