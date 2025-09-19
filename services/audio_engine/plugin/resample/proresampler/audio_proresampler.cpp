@@ -43,7 +43,7 @@ ProResampler::ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels,
     : inRate_(inRate), outRate_(outRate), channels_(channels), quality_(quality),
     expectedOutFrameLen_(outRate_ * FRAME_LEN_20MS / MS_PER_SECOND)
 {
-    CHECK_AND_RETURN_LOG(inRate == outRate,
+    CHECK_AND_RETURN_LOG(inRate != outRate,
         "input and output rate of ProResampler should be different! Same Rate: %{public}d", inRate);
     
     CHECK_AND_RETURN_LOG((inRate_ >= MIN_SAMPLE_RATE) && (inRate_ <= MAX_SAMPLE_RATE) &&
@@ -51,10 +51,10 @@ ProResampler::ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels,
         "resampler input and output sample rate should be within [8000, 384000]. "
         "inRate_ %{public}d, outRate_ %{public}d is not valid", inRate_, outRate_);
     
-    CHECK_AND_RETURN_LOG((channels_ > 0) && (channels_ <= MAX_CHANNELS), "invalid channel number: %{public}d, "
+    CHECK_AND_RETURN_LOG(channels_ <= MAX_CHANNELS, "invalid channel number: %{public}d, "
         "channel number should within [1, 10]", channels_);
     
-    CHECK_AND_RETURN_LOG((quality >= 0) && (quality <= MAX_QUALITY), "invalid quality level: %{public}d", quality);
+    CHECK_AND_RETURN_LOG(quality <= MAX_QUALITY, "invalid quality level: %{public}d", quality);
 
     if (inRate_ == SAMPLE_RATE_11025) { // for 11025, process input 40ms per time and output 20ms per time
         buf11025_.reserve(expectedOutFrameLen_ * channels_ * BUFFER_EXPAND_SIZE_2 + ADD_SIZE);
@@ -83,9 +83,9 @@ int32_t ProResampler::Process(const float *inBuffer, uint32_t inFrameLen, float 
     uint32_t outFrameLen)
 {
     CHECK_AND_RETURN_RET_LOG(state_ != nullptr, RESAMPLER_ERR_ALLOC_FAILED, "resampler state is invalid");
-    CHECK_AND_RETURN_RET_LOG((0 <= inFrameLen) && (inFrameLen <= MAX_FRAME_LEN) &&
-        (0 <= outFrameLen) && (outFrameLen <= MAX_FRAME_LEN), RESAMPLER_ERR_ALLOC_FAILED, "inFrameLen %{public}d"
-        "or outFrameLen %{public}d out of valid range", inFrameLen, outFrameLen);
+    CHECK_AND_RETURN_RET_LOG((inFrameLen <= MAX_FRAME_LEN) && (outFrameLen <= MAX_FRAME_LEN),
+        RESAMPLER_ERR_ALLOC_FAILED, "inFrameLen %{public}d or outFrameLen %{public}d out of valid range",
+        inFrameLen, outFrameLen);
     if (inRate_ == SAMPLE_RATE_11025) {
         return Process11025SampleRate(inBuffer, inFrameLen, outBuffer, outFrameLen);
     } else if (inRate_ % CUSTOM_SAMPLE_RATE_MULTIPLES != 0) {
@@ -213,6 +213,8 @@ int32_t ProResampler::Process10HzSampleRate(const float *inBuffer, uint32_t inFr
 
 int32_t ProResampler::UpdateRates(uint32_t inRate, uint32_t outRate)
 {
+    CHECK_AND_RETURN_RET_LOG(inRate != outRate, RESAMPLER_ERR_INVALID_ARG,
+        "input and output rate of ProResampler should be different! Same Rate: %{public}d", inRate);
     CHECK_AND_RETURN_RET_LOG((inRate >= MIN_SAMPLE_RATE) && (inRate <= MAX_SAMPLE_RATE) &&
         (outRate >= MIN_SAMPLE_RATE) && (outRate <= MAX_SAMPLE_RATE), RESAMPLER_ERR_INVALID_ARG,
         "resampler input and output sample rate should be within [8000, 384000]. "
@@ -235,7 +237,7 @@ int32_t ProResampler::UpdateRates(uint32_t inRate, uint32_t outRate)
 
 int32_t ProResampler::UpdateChannels(uint32_t channels)
 {
-    CHECK_AND_RETURN_RET_LOG((channels > 0) && (channels <= MAX_CHANNELS), RESAMPLER_ERR_ALLOC_FAILED,
+    CHECK_AND_RETURN_RET_LOG(channels <= MAX_CHANNELS, RESAMPLER_ERR_INVALID_ARG,
         "invalid channel number: %{public}d, channel number should within [1, 10]", channels);
     CHECK_AND_RETURN_RET_LOG(state_ != nullptr, RESAMPLER_ERR_ALLOC_FAILED, "resampler is null");
 
