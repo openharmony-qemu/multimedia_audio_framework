@@ -161,6 +161,7 @@ private:
     std::shared_ptr<HpaeCoBufferNode> hpaeCoBufferNode_;
     bool isCollaborationEnabled_ = false;
     int64_t noneStreamTime_ = 0; // if no stream, 3s time out to stop rendersink
+    bool isNeedInitEffectBufferFlag_ = false;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard
