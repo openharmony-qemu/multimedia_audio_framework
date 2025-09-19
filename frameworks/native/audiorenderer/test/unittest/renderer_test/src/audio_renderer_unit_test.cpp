@@ -3728,6 +3728,38 @@ HWTEST(AudioRendererUnitTest, InitAudioInterruptCallback_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test InitAudioInterruptCallback_002
+ * @tc.number: InitAudioInterruptCallback_002
+ * @tc.desc  : Test InitAudioInterruptCallback_002
+ */
+HWTEST(AudioRendererUnitTest, InitAudioInterruptCallback_002, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    appInfo.appUid = 20020095;
+    audioRendererPrivate->audioInterrupt_.streamId = 1;
+    audioRendererPrivate->InitAudioInterruptCallback(true);
+    EXPECT_EQ(audioRendererPrivate->audioInterrupt_.streamId, 1);
+}
+
+/**
+ * @tc.name  : Test InitAudioInterruptCallback_003
+ * @tc.number: InitAudioInterruptCallback_003
+ * @tc.desc  : Test InitAudioInterruptCallback_003
+ */
+HWTEST(AudioRendererUnitTest, InitAudioInterruptCallback_003, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    appInfo.appUid = 1;
+    audioRendererPrivate->audioInterrupt_.streamId = 1;
+    audioRendererPrivate->InitAudioInterruptCallback(true);
+    EXPECT_EQ(audioRendererPrivate->audioInterrupt_.streamId, 1);
+}
+
+/**
  * @tc.name  : Test IsDirectVoipParams
  * @tc.number: IsDirectVoipParams
  * @tc.desc  : Test IsDirectVoipParams

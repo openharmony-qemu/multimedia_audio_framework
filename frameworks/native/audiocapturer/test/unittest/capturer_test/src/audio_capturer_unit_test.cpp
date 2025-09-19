@@ -2707,6 +2707,38 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetTimeStampInfo_004, TestSize.Leve
 #endif
 
 /**
+ * @tc.name  : Test InitAudioInterruptCallback_001
+ * @tc.number: InitAudioInterruptCallback_001
+ * @tc.desc  : Test InitAudioInterruptCallback_001
+ */
+HWTEST(AudioCapturerUnitTest, InitAudioInterruptCallback_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MEDIA, appInfo, true);
+    appInfo.appUid = 20020095;
+    audioCapturer->audioInterrupt_.streamId = 1;
+    audioCapturer->InitAudioInterruptCallback();
+    EXPECT_EQ(audioCapturer->audioInterrupt_.streamId, 1);
+}
+
+/**
+ * @tc.name  : Test InitAudioInterruptCallback_002
+ * @tc.number: InitAudioInterruptCallback_002
+ * @tc.desc  : Test InitAudioInterruptCallback_002
+ */
+HWTEST(AudioCapturerUnitTest, InitAudioInterruptCallback_002, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MEDIA, appInfo, true);
+    appInfo.appUid = 1;
+    audioCapturer->audioInterrupt_.streamId = 1;
+    audioCapturer->InitAudioInterruptCallback();
+    EXPECT_EQ(audioCapturer->audioInterrupt_.streamId, 1);
+}
+
+/**
  * @tc.name  : Test SetInterruptStrategy_001.
  * @tc.number: SetInterruptStrategy.
  * @tc.desc  : Test SetInterruptStrategy at different capturer state.

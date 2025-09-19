@@ -536,6 +536,10 @@ int32_t AudioCapturerPrivate::InitAudioInterruptCallback()
     audioInterrupt_.uid = appInfo_.appUid;
     audioInterrupt_.audioFocusType.sourceType = capturerInfo_.sourceType;
     audioInterrupt_.sessionStrategy = strategy_;
+    audioInterrupt_.bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName(appInfo_.appUid);
+    if (audioInterrupt_.bundleName.empty()) {
+        audioInterrupt_.bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName();
+    }
     if (audioInterrupt_.audioFocusType.sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE) {
         isVoiceCallCapturer_ = true;
         audioInterrupt_.audioFocusType.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
