@@ -1117,7 +1117,7 @@ void AudioEffectChainManager::SetSpatializationEnabledToChains()
         }
 
         if (btOffloadEnabled_ == false) {
-            audioEffectChain->SetSpatializationEnabledForFading(spatializationEnabled_); 
+            audioEffectChain->SetSpatializationEnabledForFading(spatializationEnabled_);
         } else {
             audioEffectChain->SetSpatializationEnabledForFading(false);
         }

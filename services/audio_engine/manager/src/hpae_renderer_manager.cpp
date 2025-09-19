@@ -198,7 +198,7 @@ void HpaeRendererManager::CreateProcessCluster(HpaeNodeInfo &nodeInfo)
     CreateProcessClusterInner(nodeInfo, processClusterDecision);
 
     CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
-            "could not find processorType %{public}d", nodeInfo.sceneType);
+        "could not find processorType %{public}d", nodeInfo.sceneType);
     if (!sessionNodeMap_[nodeInfo.sessionId].bypass) {
         sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]++;
     }
@@ -413,16 +413,19 @@ void HpaeRendererManager::ConnectProcessCluster(uint32_t sessionId, HpaeProcesso
             toBeStoppedSceneTypeToSessionMap_.erase(tmpSceneType);
         } else {
             if (SafeGetMap(sinkInputNodeMap_, sessionIdToStop)) {
-                sceneClusterMap_[sceneType]->AudioRendererStop(sinkInputNodeMap_[sessionIdToStop]->GetNodeInfo(), sinkInfo_);
+                sceneClusterMap_[sceneType]->AudioRendererStop(sinkInputNodeMap_[sessionIdToStop]->GetNodeInfo(),
+                    sinkInfo_);
             }
             toBeStoppedSceneTypeToSessionMap_.erase(tmpSceneType);
-            int32_t ret = sceneClusterMap_[sceneType]->AudioRendererStart(sinkInputNodeMap_[sessionId]->GetNodeInfo(), sinkInfo_);
+            int32_t ret = sceneClusterMap_[sceneType]->AudioRendererStart(sinkInputNodeMap_[sessionId]->GetNodeInfo(),
+                sinkInfo_);
             if (ret != SUCCESS) {
                 AUDIO_WARNING_LOG("update audio effect when starting failed, ret = %{public}d", ret);
             }
         }
     } else {
-        int32_t ret = sceneClusterMap_[sceneType]->AudioRendererStart(sinkInputNodeMap_[sessionId]->GetNodeInfo(), sinkInfo_);
+        int32_t ret = sceneClusterMap_[sceneType]->AudioRendererStart(sinkInputNodeMap_[sessionId]->GetNodeInfo(),
+            sinkInfo_);
         if (ret != SUCCESS) {
             AUDIO_WARNING_LOG("update audio effect when starting failed, ret = %{public}d", ret);
         }

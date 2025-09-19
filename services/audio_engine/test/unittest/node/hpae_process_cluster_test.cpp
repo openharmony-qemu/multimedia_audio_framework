@@ -41,6 +41,7 @@ const size_t DEFAULT_FRAMELEN_SECOND = 960;
 const int32_t DEFAULT_TEST_VALUE_FIRST = 100;
 const int32_t DEFAULT_TEST_VALUE_SECOND = 200;
 const float LOUDNESS_GAIN = 1.0f;
+const float FRAME_LENGTH_IN_SECOND = 0.02;
 
 constexpr uint32_t SAMPLE_RATE_16010 = 16010;
 constexpr uint32_t SAMPLE_RATE_16050 = 16050;
@@ -369,7 +370,7 @@ HWTEST_F(HpaeProcessClusterTest, testEffectNode_001, TestSize.Level0)
     EXPECT_EQ(hpaeProcessCluster->AudioRendererStart(nodeInfo, sinkInfo), 0);
     EXPECT_EQ(hpaeProcessCluster->AudioRendererStop(nodeInfo, sinkInfo), 0);
     EXPECT_EQ(hpaeProcessCluster->AudioRendererRelease(nodeInfo, sinkInfo), 0);
-    
+
     sinkInfo.deviceClass = "remote";
     EXPECT_EQ(hpaeProcessCluster->AudioRendererCreate(nodeInfo, sinkInfo), 0);
     EXPECT_EQ(hpaeProcessCluster->AudioRendererStart(nodeInfo, sinkInfo), 0);
@@ -381,7 +382,6 @@ HWTEST_F(HpaeProcessClusterTest, testEffectNode_001, TestSize.Level0)
     EXPECT_EQ(hpaeProcessCluster->AudioRendererStart(nodeInfo, sinkInfo), 0);
     EXPECT_EQ(hpaeProcessCluster->AudioRendererStop(nodeInfo, sinkInfo), 0);
     EXPECT_EQ(hpaeProcessCluster->AudioRendererRelease(nodeInfo, sinkInfo), 0);
-    
 }
 
 HWTEST_F(HpaeProcessClusterTest, testGetNodeInputFormatInfo, TestSize.Level0)
