@@ -54,20 +54,6 @@ EffectChainManagerParam DEFAULT_EFFECT_CHAIN_MANAGER_PARAM{
 };
 
 std::vector<std::shared_ptr<AudioEffectLibEntry>> DEFAULT_EFFECT_LIBRARY_LIST = {};
-
-static HpaeSinkInfo GetRenderTestSinkInfo()
-{
-    HpaeSinkInfo sinkInfo;
-    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
-    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.samplingRate = SAMPLE_RATE_48000;
-    sinkInfo.frameLen = SAMPLE_RATE_48000 * FRAME_LENGTH_IN_SECOND;
-    sinkInfo.format = SAMPLE_F32LE;
-    sinkInfo.channels = STEREO;
-    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
-    return sinkInfo;
-}
 class HpaeRenderEffectNodeTest : public testing::Test {
 public:
     void SetUp();
@@ -90,9 +76,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, testCreate_001, TestSize.Level0)
     nodeInfo.format = SAMPLE_F32LE;
     std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     nodeInfo.effectInfo.effectScene = (AudioEffectScene)0xff;
-
-    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
-    EXPECT_EQ(hpaeRenderEffectNode->AudioRendererCreate(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeRenderEffectNode->AudioRendererCreate(nodeInfo), 0);
     EXPECT_NE(hpaeRenderEffectNode->ReleaseAudioEffectChain(nodeInfo), 0);
 }
 
@@ -106,8 +90,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, testCreate_002, TestSize.Level0)
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
-    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
-    EXPECT_EQ(hpaeRenderEffectNode->AudioRendererCreate(nodeInfo, sinkInfo), 0);
+    EXPECT_EQ(hpaeRenderEffectNode->AudioRendererCreate(nodeInfo), 0);
     HpaeNodeInfo nodeInfo2 = nodeInfo;
     nodeInfo2.nodeId += idOffset;
     EXPECT_NE(hpaeRenderEffectNode->ReleaseAudioEffectChain(nodeInfo2), 0);
