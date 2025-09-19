@@ -180,6 +180,24 @@ const int32_t ERR_PRO_STREAM_NOT_SUPPORTED = BASE_AUDIO_ERR_OFFSET - 39;
 /** failed to set volume because isVolumeControlDisabled is true */
 const int32_t ERR_SET_VOL_FAILED_BY_VOLUME_CONTROL_DISABLED = BASE_AUDIO_ERR_OFFSET - 40;
 
+/** unsupported audio format, such as unsupported sample, channelCount format etc. */
+const int32_t ERR_AUDIO_SUITE_UNSUPPORTED_FORMAT = BASE_AUDIO_ERR_OFFSET - 41;
+
+/** audio engine not exist. */
+const int32_t ERR_AUDIO_SUITE_ENGINE_NOT_EXIST = BASE_AUDIO_ERR_OFFSET - 42;
+
+/** audio pipeline not exist. */
+const int32_t ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST = BASE_AUDIO_ERR_OFFSET - 43;
+
+/** audio node not exist. */
+const int32_t ERR_AUDIO_SUITE_NODE_NOT_EXIST = BASE_AUDIO_ERR_OFFSET - 44;
+
+/** the connect or disconnect betwen the nodes is unsupported. */
+const int32_t ERR_AUDIO_SUITE_UNSUPPORT_CONNECT = BASE_AUDIO_ERR_OFFSET - 45;
+
+/** The number of created pipelines or nodes exceeds the system specification. */
+const int32_t ERR_AUDIO_SUITE_CREATED_EXCEED_SYSTEM_LIMITS = BASE_AUDIO_ERR_OFFSET - 46;
+
 /** Unknown error */
 const int32_t  ERR_UNKNOWN = BASE_AUDIO_ERR_OFFSET - 200;
 

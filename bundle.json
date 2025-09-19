@@ -122,6 +122,7 @@
               "//foundation/multimedia/audio_framework/sa_profile:audio_service_sa_profile",
               "//foundation/multimedia/audio_framework/services/audio_service:audio_service_packages",
               "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_packages",
+              "//foundation/multimedia/audio_framework/services/audio_suite:audio_suite_packages",
               "//foundation/multimedia/audio_framework/frameworks/native/pulseaudio/modules:pa_extend_modules",
               "//foundation/multimedia/audio_framework/frameworks/native/audioclock:audio_clock"
             ]
@@ -292,6 +293,16 @@
                   "audio_zone_manager.h"
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/frameworks/native/audiopolicy/include"
+              }
+            },
+            {
+              "type": "none",
+              "name": "//foundation/multimedia/audio_framework/services/audio_suite:audio_suite",
+              "header": {
+                "header_files": [
+                  "audio_suite_manager.h"
+                ],
+                "header_base": "//foundation/multimedia/audio_framework/frameworks/native/audiosuite/include"
               }
             }
           ],
