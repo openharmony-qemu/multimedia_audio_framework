@@ -274,6 +274,7 @@ uint32_t HpaeGainNode::GetFadeLength(uint32_t &byteLength, HpaePcmBuffer *input)
         default:
             break;
     }
+    return index;
 }
 
 uint32_t HpaeGainNode::GetFadeInLength(uint32_t &byteLength, HpaePcmBuffer *input)
