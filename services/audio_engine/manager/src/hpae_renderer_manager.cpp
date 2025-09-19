@@ -608,7 +608,8 @@ void HpaeRendererManager::OnDisConnectProcessCluster(HpaeProcessorType sceneType
             if (toBeStoppedSceneTypeToSessionMap_.count(sceneType) &&
                 SafeGetMap(sinkInputNodeMap_, toBeStoppedSceneTypeToSessionMap_[sceneType])) {
                 sceneClusterMap_[sceneType]->
-                    AudioRendererStop(sinkInputNodeMap_[toBeStoppedSceneTypeToSessionMap_[sceneType]]->GetNodeInfo(), sinkInfo_);
+                    AudioRendererStop(sinkInputNodeMap_[toBeStoppedSceneTypeToSessionMap_[sceneType]]->GetNodeInfo(),
+                        sinkInfo_);
             }
             toBeStoppedSceneTypeToSessionMap_.erase(sceneType);
         }
