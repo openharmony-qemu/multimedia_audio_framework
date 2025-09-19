@@ -206,7 +206,7 @@ int32_t PlaybackCapturerManager::CheckCaptureLimit(const AudioPlaybackCaptureCon
 
 uint32_t PlaybackCapturerManager::GetFilterIndex()
 {
-    for (int32_t index = 1; index <= innerCapLimit_; index++) {
+    for (uint32_t index = 1; index <= innerCapLimit_; index++) {
         if (filters_.count(index) > 0) {
             continue;
         } else {
