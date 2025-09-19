@@ -270,9 +270,9 @@ public:
 
     void SetAudioServerProxy(sptr<IStandardAudioService> gsp);
 
-    void SetOffloadSessionId(uint32_t sessionId);
+    void SetOffloadSessionId(uint32_t sessionId, OffloadAdapter offloadAdapter);
 
-    void ResetOffloadSessionId();
+    void ResetOffloadSessionId(OffloadAdapter offloadAdapter);
 
     int32_t SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel);
 
@@ -491,7 +491,7 @@ private:
     bool isAllCopyDone_ = false;
     bool isNeedConvertSafeTime_ = false;
     sptr<IStandardAudioService> audioServerProxy_ = nullptr;
-    std::optional<uint32_t> offloadSessionID_;
+    std::optional<uint32_t> offloadSessionID_[OFFLOAD_IN_ADAPTER_SIZE] = {};
     std::mutex audioVolumeMutex_;
     std::mutex activeDeviceMutex_;
     std::mutex volumeDataMapMutex_;
