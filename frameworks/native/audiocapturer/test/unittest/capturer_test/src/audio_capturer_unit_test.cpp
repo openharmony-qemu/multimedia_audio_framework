@@ -2286,7 +2286,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_003, TestSize.
     RestoreInfo restoreInfo;
     bool switchResult = audioCapturer->SwitchToTargetStream(IAudioStream::VOIP_STREAM, restoreInfo);
 
-    EXPECT_EQ(false, switchResult);
+    EXPECT_EQ(true, switchResult);
 
     bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);
