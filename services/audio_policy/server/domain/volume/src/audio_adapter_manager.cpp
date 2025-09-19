@@ -3277,6 +3277,14 @@ void AudioAdapterManager::NotifyAccountsChanged(const int &id)
     UpdateVolumeForLowLatency();
 }
 
+void AudioAdapterManager::MuteMediaWhenAccountsChanged()
+{
+    AUDIO_INFO_LOG("mute media when accounts changed!");
+    volumeDataMaintainer_.SetStreamMuteStatus(STREAM_MUSIC, true);
+    SetVolumeDb(STREAM_MUSIC);
+    UpdateVolumeForLowLatency();
+}
+
 int32_t AudioAdapterManager::DoRestoreData()
 {
     isLoaded_ = false;

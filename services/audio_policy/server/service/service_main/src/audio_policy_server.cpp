@@ -4715,6 +4715,7 @@ void AudioPolicyServer::SendVolumeKeyEventToRssWhenAccountsChanged()
 void AudioPolicyServer::NotifyAccountsChanged(const int &id)
 {
     CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService_ is nullptr");
+    audioPolicyService_.MuteMediaWhenAccountsChanged();
     interruptService_->ClearAudioFocusInfoListOnAccountsChanged(id);
     // Asynchronous clear audio focus infos
     usleep(WAIT_CLEAR_AUDIO_FOCUSINFOS_TIME_US);

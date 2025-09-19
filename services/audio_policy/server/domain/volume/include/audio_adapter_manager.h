@@ -229,6 +229,8 @@ public:
 
     void NotifyAccountsChanged(const int &id);
 
+    void MuteMediaWhenAccountsChanged();
+
     void SafeVolumeDump(std::string &dumpString);
 
     int32_t DoRestoreData();

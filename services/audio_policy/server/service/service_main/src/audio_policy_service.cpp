@@ -879,6 +879,11 @@ void AudioPolicyService::NotifyAccountsChanged(const int &id)
     AudioServerProxy::GetInstance().NotifyAccountsChanged();
 }
 
+void AudioPolicyService::MuteMediaWhenAccountsChanged()
+{
+    audioPolicyManager_.MuteMediaWhenAccountsChanged();
+}
+
 void AudioPolicyService::LoadHdiEffectModel()
 {
     return AudioServerProxy::GetInstance().LoadHdiEffectModelProxy();

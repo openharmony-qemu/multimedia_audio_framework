@@ -198,6 +198,8 @@ public:
 
     virtual void NotifyAccountsChanged(const int &id) = 0;
 
+    virtual void MuteMediaWhenAccountsChanged() = 0;
+
     virtual int32_t GetCurActivateCount() const = 0;
 
     virtual void HandleKvData(bool isFirstBoot) = 0;
