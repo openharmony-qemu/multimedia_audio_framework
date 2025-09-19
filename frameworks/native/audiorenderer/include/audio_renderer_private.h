@@ -245,6 +245,7 @@ private:
     void SetReleaseFlagWithLock(bool releaseFlag);
     void SetReleaseFlagNoLock(bool releaseFlag);
     bool IsRestoreOrStopNeeded();
+    void SetInSwitchingFlag(bool inSwitchingFlag);
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
