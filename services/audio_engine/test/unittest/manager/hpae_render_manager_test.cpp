@@ -2166,7 +2166,7 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_001, 
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
 
     EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
-    WaitForMsgProcessing(offloadManager);    
+    WaitForMsgProcessing(offloadManager);
     offloadManager->SetCurrentNode();
     EXPECT_NE(offloadManager->curNode_, nullptr);
 }
