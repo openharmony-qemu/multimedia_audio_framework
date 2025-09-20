@@ -17,7 +17,6 @@
 #endif
 #include "channel_converter.h"
 #include "audio_engine_log.h"
-#include <algorithm>
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -48,6 +47,7 @@ static uint32_t GetFormatSize(AudioSampleFormat format)
             break;
         default:
             AUDIO_ERR_LOG("unsupported format %{public}d", format);
+            break;
     }
     return sampleSize;
 }
@@ -58,9 +58,9 @@ int32_t ChannelConverter::SetParam(AudioChannelInfo inChannelInfo, AudioChannelI
     AudioSampleFormat format, bool mixLfe)
 {
     CHECK_AND_RETURN_RET_LOG((inChannelInfo.numChannels >= 0) && (inChannelInfo.numChannels <= MAX_CHANNELS),
-        DMIX_ERR_INVALID_ARG, "invalid input channels");
+        MIX_ERR_INVALID_ARG, "invalid input channels");
     CHECK_AND_RETURN_RET_LOG((outChannelInfo.numChannels >= 0) && (outChannelInfo.numChannels <= MAX_CHANNELS),
-        DMIX_ERR_INVALID_ARG, "invalid output channels");
+        MIX_ERR_INVALID_ARG, "invalid output channels");
     inChannelInfo_.channelLayout = inChannelInfo.channelLayout;
     outChannelInfo_.channelLayout = outChannelInfo.channelLayout;
     inChannelInfo_.numChannels = inChannelInfo.numChannels;
@@ -147,8 +147,8 @@ int32_t ChannelConverter::Process(uint32_t frameLen, float* in, uint32_t inByteS
     uint32_t expectOutByteSize = frameLen * outChannelInfo_.numChannels * workSize_;
     if ((expectInByteSize > inByteSize) || (expectOutByteSize > outByteSize)) {
         AUDIO_ERR_LOG("unexpected inByteSize %{public}d or outByteSize %{public}d", inByteSize, outByteSize);
-        int32_t ret = memcpy_s(out, outByteSize, in, min(inByteSize, outByteSize));
-        CHECK_AND_RETURN_RET_LOG(ret == EOK, DMIX_ERR_ALLOC_FAILED, "memcpy failed when processing unexpected len");
+        int32_t ret = memcpy_s(out, outByteSize, in, Min(inByteSize, outByteSize));
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, MIX_ERR_ALLOC_FAILED, "memcpy failed when processing unexpected len");
         return MIX_ERR_ALLOC_FAILED;
     }
 

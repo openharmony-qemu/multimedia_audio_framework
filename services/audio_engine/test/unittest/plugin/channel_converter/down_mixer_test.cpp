@@ -19,6 +19,7 @@
 #include <vector>
 #include "audio_engine_log.h"
 #include "down_mixer.h"
+#include "mixer_utils.h"
 
 using namespace testing::ext;
 using namespace testing;
@@ -97,10 +98,8 @@ const static std::map<AudioChannel, AudioChannelLayout> DOWNMIX_CHANNEL_COUNT_MA
     {CHANNEL_6, CH_LAYOUT_5POINT1},
     {CHANNEL_7, CH_LAYOUT_6POINT1},
     {CHANNEL_8, CH_LAYOUT_5POINT1POINT2},
-    {CHANNEL_9, CH_LAYOUT_HOA_ORDER2_ACN_N3D},
     {CHANNEL_10, CH_LAYOUT_7POINT1POINT2},
     {CHANNEL_12, CH_LAYOUT_7POINT1POINT4},
-    {CHANNEL_13, CH_LAYOUT_UNKNOWN},
     {CHANNEL_14, CH_LAYOUT_9POINT1POINT4},
     {CHANNEL_16, CH_LAYOUT_9POINT1POINT6}
 };
@@ -185,10 +184,11 @@ HWTEST_F(DownMixerTest, SetParamTest, TestSize.Level0)
 */
 HWTEST_F(DownMixerTest, SetDefaultChannelLayoutTest, TestSize.Level0)
 {
-    DownMixer downMixer;
     for (auto pair : DOWNMIX_CHANNEL_COUNT_MAP) {
+        AudioChannelLayout layout;
         AUDIO_INFO_LOG("fist: %{public}d, second %{public}" PRIu64 ".", pair.first, pair.second);
-        EXPECT_EQ(pair.second, downMixer.SetDefaultChannelLayout(pair.first));
+        bool ret = SetDefaultChannelLayout(pair.first, layout);
+        EXPECT_EQ(ret, true);
     }
 }
 

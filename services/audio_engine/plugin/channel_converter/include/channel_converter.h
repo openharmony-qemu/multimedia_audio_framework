@@ -37,7 +37,7 @@ private:
     int32_t MixProcess(bool isDmix, uint32_t frameLen, float* in, float* out);
     void UpmixGainAttenuation();
     DownMixer downMixer_;
-    float mixTable_[MAX_CHANNELS][MAX_CHANNELS] = {0};
+    float mixTable_[MAX_CHANNELS][MAX_CHANNELS] = {{0}};
     AudioChannelInfo inChannelInfo_;
     AudioChannelInfo outChannelInfo_;
     AudioSampleFormat workFormat_ = INVALID_WIDTH;  // work format, for now only supports float

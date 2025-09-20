@@ -12,7 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef LOG_TAG
+#define LOG_TAG "HpaeMixerUtils"
+#endif
 #include "mixer_utils.h"
+#include "audio_engine_log.h"
+#include <cinttypes>
 #include <map>
 namespace OHOS {
 namespace AudioStandard {
@@ -51,7 +56,6 @@ static std::map<AudioChannel, AudioChannelLayout> DEFAULT_CHANNEL_MAP = {
     {CHANNEL_6, CH_LAYOUT_5POINT1},
     {CHANNEL_7, CH_LAYOUT_6POINT1},
     {CHANNEL_8, CH_LAYOUT_5POINT1POINT2},
-    {CHANNEL_9, CH_LAYOUT_HOA_ORDER2_ACN_N3D},
     {CHANNEL_10, CH_LAYOUT_7POINT1POINT2},
     {CHANNEL_12, CH_LAYOUT_7POINT1POINT4},
     {CHANNEL_14, CH_LAYOUT_9POINT1POINT4},
@@ -269,7 +273,6 @@ static void MixTopCenter(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::p
     uint64_t outChLayout, std::map<uint64_t, uint32_t> &channelPosMap)
 {
     uint32_t inPos = pos_to_bit.first;
-    uint64_t inBit = pos_to_bit.second;
     uint64_t existMiddleOuts =  outChLayout & (MASK_MIDDLE_FRONT | MASK_MIDDLE_REAR);
     uint64_t existTopOuts =  outChLayout & (MASK_TOP_FRONT | MASK_TOP_REAR);
     uint32_t outChannelCount = BitCounts(outChLayout);
@@ -413,7 +416,6 @@ static void MixTopRear(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pai
 static void MixLfe(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> pos_to_bit,
    std::pair<uint64_t, uint64_t> chMskPair, std::map<uint64_t, uint32_t> &channelPosMap)
 {
-    uint64_t inLayout = chMskPair.first;
     uint64_t outChLayout = chMskPair.second;
     uint64_t existLfeOuts = outChLayout & MASK_LFE;
     uint64_t existLfe2In = chMskPair.first & LOW_FREQUENCY_2;
@@ -506,9 +508,9 @@ static int32_t SetUpGeneralMixingTableInner(float (&coeffTable)[MAX_CHANNELS][MA
 int32_t SetUpGeneralMixingTable(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], AudioChannelInfo inChannelInfo,
     AudioChannelInfo outChannelInfo, bool mixLfe)
 {
-    CHECK_AND_RETURN_RET_LOG(inChannelInfo.numChannels <= coeffTable[0].size(), MIX_ERR_INVALID_ARG,
+    CHECK_AND_RETURN_RET_LOG(inChannelInfo.numChannels <= MAX_CHANNELS, MIX_ERR_INVALID_ARG,
        "column size of coeffTable not enough");
-    CHECK_AND_RETURN_RET_LOG(outChannelInfo.numChannels <= coeffTable[0], MIX_ERR_INVALID_ARG,
+    CHECK_AND_RETURN_RET_LOG(outChannelInfo.numChannels <= MAX_CHANNELS, MIX_ERR_INVALID_ARG,
        "row size of coeffTable not enough");
     CHECK_AND_RETURN_RET_LOG(IsValidChLayout(inChannelInfo.channelLayout, inChannelInfo.numChannels),
         MIX_ERR_INVALID_ARG, "invalid input channel info");
@@ -522,10 +524,9 @@ int32_t SetUpGeneralMixingTable(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS],
         }
         return MIX_ERR_SUCCESS;
     }
-    // for HOA output set them to default channelLayout
-    if (CheckIsHOA(outChannelInfo.channelLayout)) {
-        outChannelInfo.channelLayout = SetDefaultChannelLayout(static_cast<AudioChannel>(outChannelInfo.numChannels));
-    }
+    // for now, genneral mixer does not support HOA output
+    CHECK_AND_RETURN_RET_LOG(!CheckIsHOA(outChannelInfo.channelLayout), MIX_ERR_INVALID_ARG,
+        "mixer does not support HOA output");
     // when output is Mono, Mono downmix: add up all the intputs and normalize, nomalization will be done in downmixer
     // for downmix, coeffTable is used as coeffTable[out][in]
     if (outChannelInfo.channelLayout == CH_LAYOUT_MONO) {
@@ -543,28 +544,26 @@ int32_t SetUpGeneralMixingTable(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS],
         return MIX_ERR_SUCCESS;
     }
     // here, input and output channellayout must at least have front left and front right
-    CHECK_AND_RETURN_RET_LOG((inChannelInfo.channelLayout & CH_LAYOUT_STEREO == CH_LAYOUT_STEREO) &&
-        (outChannelInfo.channelLayout & CH_LAYOUT_STEREO == CH_LAYOUT_STEREO), MIX_ERR_INVALID_ARG,
+    CHECK_AND_RETURN_RET_LOG(((inChannelInfo.channelLayout & CH_LAYOUT_STEREO) == CH_LAYOUT_STEREO) &&
+        ((outChannelInfo.channelLayout & CH_LAYOUT_STEREO) == CH_LAYOUT_STEREO), MIX_ERR_INVALID_ARG,
         "input channelLayout %{public}" PRIu64 " or output channelLayout %{public}" PRIu64 " is invalid. "
         "Must at least have FRONR_LEFT and FRONT_RIGHT", inChannelInfo.channelLayout, outChannelInfo.channelLayout);
 
     return SetUpGeneralMixingTableInner(coeffTable, inChannelInfo, outChannelInfo, mixLfe);
 }
 
-AudioChannelLayout SetDefaultChannelLayout(AudioChannel channels)
+bool SetDefaultChannelLayout(AudioChannel channels, AudioChannelLayout &channelLayout)
 {
-    CHECK_AND_RETURN_RET_LOG(DEFAULT_CHANNEL_MAP.find(channels) == DEFAULT_CHANNEL_MAP.end(), CH_LAYOUT_UNKNOWN,
-        "invalid channel count");
-    return DEFAULT_CHANNEL_MAP[channels];
+    CHECK_AND_RETURN_RET_LOG(DEFAULT_CHANNEL_MAP.find(channels) != DEFAULT_CHANNEL_MAP.end(), false,
+        "invalid channel count %{public}d", channels);
+    channelLayout = DEFAULT_CHANNEL_MAP[channels];
+    return true;
 }
 
 bool IsValidChLayout(AudioChannelLayout &chLayout, uint32_t chCounts)
 {
-    if (chCounts < MONO || chCounts > CHANNEL_16) {
-        return false;
-    }
     if (chLayout == CH_LAYOUT_UNKNOWN || BitCounts(chLayout) != chCounts) {
-        chLayout = SetDefaultChannelLayout((AudioChannel)chCounts);
+        return SetDefaultChannelLayout(static_cast<AudioChannel>(chCounts), chLayout);
     }
     return true;
 }

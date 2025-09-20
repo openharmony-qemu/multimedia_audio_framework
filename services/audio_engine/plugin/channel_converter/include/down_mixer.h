@@ -59,8 +59,7 @@ private:
     AudioChannelLayout outLayout_ = CH_LAYOUT_UNKNOWN;
     uint32_t outChannels_ = 0;
     uint32_t formatSize_ = INVALID_WIDTH; // work format, for now only supports float
-    bool isInLayoutHOA_ = false;
-    float downMixTable_[MAX_CHANNELS][MAX_CHANNELS] = {0};
+    float downMixTable_[MAX_CHANNELS][MAX_CHANNELS] = {{0}};
     bool mixLfe_ = true;
     bool isInitialized_ = false;
 

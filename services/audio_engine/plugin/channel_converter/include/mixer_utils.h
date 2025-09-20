@@ -12,67 +12,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef DOWN_MIXER_H
-#define DOWN_MIXER_H
+#ifndef MIXER_UTILS_H
+#define MIXER_UTILS_H
 #include <vector>
 #include "audio_stream_info.h"
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+constexpr uint32_t MAX_CHANNELS = 16;
+// max framelength is sample rate 192000, 10s
+constexpr uint32_t MAX_CHANNEL_CONVERT_FRAME_LENGTH = SAMPLE_RATE_192000 * 10;
+constexpr float COEF_ZERO_F = 0.0f;
+constexpr float COEF_0DB_F = 1.0f;
+constexpr float COEF_M3DB_F = 0.7071f;
+constexpr float COEF_M6DB_F = 0.5f;
+constexpr float COEF_M435DB_F = 0.6057f;
+constexpr float COEF_M45DB_F = 0.5946f;
+constexpr float COEF_M9DB_F = 0.3544f;
+constexpr float COEF_M899DB_F = 0.3552f;
+constexpr float COEF_M12DB_F = 0.2509f;
 
-class DownMixer {
-public:
-    DownMixer();
-    void GetDownMixTable(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS]) const;
-    int32_t SetParam(AudioChannelInfo inChannelInfo_, AudioChannelInfo outChannelInfo_,
-        uint32_t formatSize, bool mixLfe);
-    void Reset();
-private:
-    void SetupStereoDmixTable();
-    void Setup5Point1DmixTable();
-    void Setup5Point1Point2DmixTable();
-    void Setup5Point1Point4DmixTable();
-    void Setup7Point1DmixTable();
-    void Setup7Point1Point2DmixTable();
-    void Setup7Point1Point4DmixTable();
-    void ResetSelf();
-    int32_t SetupDownMixTable();
-    /**** helper functions for settiing up specific downmix table ***/
-    void SetupStereoDmixTablePart1(uint64_t bit_t, uint32_t i);
-    void SetupStereoDmixTablePart2(uint64_t bit_t, uint32_t i);
-    void Setup5Point1DmixTablePart1(uint64_t bit_t, uint32_t i);
-    void Setup5Point1DmixTablePart2(uint64_t bit_t, uint32_t i);
-    void Setup5Point1Point2DmixTablePart1(uint64_t bit_t, uint32_t i);
-    void Setup5Point1Point2DmixTablePart2(uint64_t bit_t, uint32_t i);
-    void Setup5Point1Point4DmixTablePart1(uint64_t bit_t, uint32_t i);
-    void Setup5Point1Point4DmixTablePart2(uint64_t bit_t, uint32_t i);
-    void Setup7Point1DmixTablePart1(uint64_t bit_t, uint32_t i);
-    void Setup7Point1DmixTablePart2(uint64_t bit_t, uint32_t i);
-    void Setup7Point1Point2DmixTablePart1(uint64_t bit_t, uint32_t i);
-    void Setup7Point1Point2DmixTablePart2(uint64_t bit_t, uint32_t i);
-    void Setup7Point1Point4DmixTablePart1(uint64_t bit_t, uint32_t i);
-    void Setup7Point1Point4DmixTablePart2(uint64_t bit_t, uint32_t i);
-    void NormalizeDMixTable();
-
-    AudioChannelLayout inLayout_ = CH_LAYOUT_UNKNOWN;
-    uint32_t inChannels_ = 0;
-    AudioChannelLayout outLayout_ = CH_LAYOUT_UNKNOWN;
-    uint32_t outChannels_ = 0;
-    uint32_t formatSize_ = INVALID_WIDTH; // work format, for now only supports float
-    bool isInLayoutHOA_ = false;
-    float downMixTable_[MAX_CHANNELS][MAX_CHANNELS] = {0};
-    bool mixLfe_ = true;
-    bool isInitialized_ = false;
-
-    uint32_t gSl_ = 6;
-    uint32_t gSr_ = 7;
-    uint32_t gTfl_ = 8;
-    uint32_t gTfr_ = 9;
-    uint32_t gTbl_ = 10;
-    uint32_t gTbr_ = 11;
-    uint32_t gTsl_ = 12;
-    uint32_t gTsr_ = 13;
+enum {
+    MIX_ERR_SUCCESS = 0,
+    MIX_ERR_ALLOC_FAILED = -1,
+    MIX_ERR_INVALID_ARG = -2
 };
+
+// used for setting up general mixing table for downmixing and upmixing
+int32_t SetUpGeneralMixingTable(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], AudioChannelInfo inChannelInfo,
+    AudioChannelInfo outChannelInfo, bool mixLfe);
+
+bool SetDefaultChannelLayout(AudioChannel channels, AudioChannelLayout &channelLayout);
+
+bool IsValidChLayout(AudioChannelLayout &chLayout, AudioChannel chCounts);
+
+uint32_t BitCounts(uint64_t bits);
+
+bool CheckIsHOA(AudioChannelLayout layout);
 } // HPAE
 } // AudioStandard
 } // OHOS

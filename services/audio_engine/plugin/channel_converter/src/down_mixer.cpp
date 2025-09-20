@@ -15,11 +15,10 @@
 #ifndef LOG_TAG
 #define LOG_TAG "HpaeDownMixer"
 #endif
+#include "down_mixer.h"
 #include <algorithm>
 #include <cinttypes>
 #include "securec.h"
-#include "down_mixer.h"
-#include "mixer_utils"
 #include "audio_engine_log.h"
 
 namespace OHOS {
@@ -43,33 +42,7 @@ static constexpr uint32_t INDEX_NINE = 9;
 static constexpr uint32_t INDEX_TEN = 10;
 static constexpr uint32_t INDEX_ELEVEN = 11;
 
-// channel masks for downmixing general output channel layout
-static constexpr uint64_t MASK_MIDDLE_FRONT = FRONT_LEFT | FRONT_RIGHT | FRONT_CENTER |
-FRONT_LEFT_OF_CENTER | FRONT_RIGHT_OF_CENTER | WIDE_LEFT | WIDE_RIGHT;
-
-static constexpr uint64_t MASK_MIDDLE_REAR = BACK_LEFT | BACK_RIGHT | BACK_CENTER
-| SIDE_LEFT
-| SIDE_RIGHT;
-
-static constexpr uint64_t MASK_TOP_FRONT = TOP_FRONT_LEFT
-| TOP_FRONT_CENTER
-| TOP_FRONT_RIGHT;
-
-static constexpr uint64_t MASK_TOP_REAR = TOP_CENTER
-| TOP_BACK_LEFT
-| TOP_BACK_CENTER
-| TOP_BACK_RIGHT
-| TOP_SIDE_LEFT
-| TOP_SIDE_RIGHT;
-
-static constexpr uint64_t MASK_BOTTOM = BOTTOM_FRONT_CENTER
-| BOTTOM_FRONT_LEFT
-| BOTTOM_FRONT_RIGHT;
-
-static constexpr uint64_t MASK_LFE = LOW_FREQUENCY
-| LOW_FREQUENCY_2;
-
-DownMixer::DownMixer(){}
+DownMixer::DownMixer() {}
 
 // setParam
 int32_t DownMixer::SetParam(AudioChannelInfo inChannelInfo, AudioChannelInfo outChannelInfo,
@@ -96,23 +69,20 @@ int32_t DownMixer::SetParam(AudioChannelInfo inChannelInfo, AudioChannelInfo out
 int32_t DownMixer::SetupDownMixTable()
 {
     if ((!IsValidChLayout(inLayout_, inChannels_)) || (!IsValidChLayout(outLayout_, outChannels_))
-        || inLayout_ == outLayout_ || inChannels_ <= outChannels_) {
+        || (inLayout_ == outLayout_) || (inChannels_ <= outChannels_)) {
         AUDIO_ERR_LOG("invalid input or output channellayout: input channel count %{public}d, "
             "inLayout_ %{public}" PRIu64 "output channel count %{public}d, outLayout_ %{public}" PRIu64 "",
             inChannels_, inLayout_, outChannels_, outLayout_);
         return MIX_ERR_INVALID_ARG;
     }
     // for HOA intput, use the first channel input for every output channel
-    if(CheckIsHOA(inLayout_)) {
+    if (CheckIsHOA(inLayout_)) {
         for (uint32_t i = 0; i < outChannels_; i++) {
             downMixTable_[i][0] = COEF_0DB_F;
         }
         return MIX_ERR_SUCCESS;
     }
-    // for HOA output set them to default channelLayout
-    if (CheckIsHOA(outLayout_)) {
-        outLayout_ = SetDefaultChannelLayout(static_cast<AudioChannels>(outChannels_));
-    }
+
     int32_t ret = MIX_ERR_SUCCESS;
     switch (outLayout_) {
         case CH_LAYOUT_STEREO: {

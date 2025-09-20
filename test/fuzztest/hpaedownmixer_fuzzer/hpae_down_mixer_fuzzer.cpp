@@ -195,9 +195,8 @@ void SetParamFuzzTest()
 
 void SetDefaultChannelLayoutFuzzTest()
 {
-    DownMixer downMixer;
     for (auto pair : DOWNMIX_CHANNEL_COUNT_MAP) {
-        downMixer.SetDefaultChannelLayout(pair.first);
+        SetDefaultChannelLayout(pair.first, pair.second);
     }
     downMixer.CheckIsHOA(CH_LAYOUT_HOA_ORDER2_ACN_SN3D);
     downMixer.CheckIsHOA(CH_LAYOUT_UNKNOWN);
