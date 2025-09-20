@@ -26,6 +26,7 @@
 #include "audio_suite_pipeline.h"
 #include "audio_suite_input_node.h"
 #include "audio_suite_output_node.h"
+#include "audio_suite_mixer_node.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -259,10 +260,15 @@ std::shared_ptr<AudioNode> AudioSuitePipeline::CreateNodeForType(AudioNodeBuilde
     AudioFormat audioFormat = builder.nodeFormat;
 
     if (builder.nodeType == NODE_TYPE_INPUT) {
+        AUDIO_INFO_LOG("Create AudioInputNode");
         node = std::make_shared<AudioInputNode>(audioFormat);
     } else if (builder.nodeType == NODE_TYPE_OUTPUT) {
+        AUDIO_INFO_LOG("Create AudioOutputNode");
         outputNode_ = std::make_shared<AudioOutputNode>(audioFormat);
         node = std::static_pointer_cast<AudioNode>(outputNode_);
+    } else if (builder.nodeType == NODE_TYPE_AUDIO_MIXER) {
+        AUDIO_INFO_LOG("Create AudioSuiteMixerNode");
+        node = std::make_shared<AudioSuiteMixerNode>(NODE_TYPE_AUDIO_MIXER, audioFormat);
     }
 
     return node;
