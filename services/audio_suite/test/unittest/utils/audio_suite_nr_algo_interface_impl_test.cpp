@@ -29,9 +29,9 @@ using namespace AudioSuite;
 using namespace testing::ext;
 
 namespace {
-static std::string g_inputPcmFilePath = "/data/ainr_source_16000_1_S16LE.pcm";
-static std::string g_targetPcmFilePath = "/data/ainr_dest_16000_1_S16LE.pcm";
-static std::string g_outputPcmFilePath = "/data/ainr_ut_output_16000_1_S16LE.pcm";
+static std::string g_inputPcmFilePath = "/data/audiosuite/nr/ainr_input_16000_1_S16LE.pcm";
+static std::string g_targetPcmFilePath = "/data/audiosuite/nr/ainr_target_16000_1_S16LE.pcm";
+static std::string g_outputPcmFilePath = "/data/audiosuite/nr/ainr_output_16000_1_S16LE.pcm";
 
 class AudioSuiteNrAlgoInterfaceImplUnitTest : public testing::Test {
 public:

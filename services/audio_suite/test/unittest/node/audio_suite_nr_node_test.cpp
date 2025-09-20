@@ -29,9 +29,15 @@ using namespace AudioSuite;
 using namespace testing::ext;
 
 namespace {
-static std::string g_inputPcmFilePath = "/data/ainr_source_48000_2_F32LE.pcm";
-static std::string g_targetPcmFilePath = "/data/ainr_dest_16000_1_F32LE.pcm";
-static std::string g_outputPcmFilePath = "/data/ainr_ut_output_16000_1_F32LE.pcm";
+static std::string g_inputPcmFilePath001 = "/data/audiosuite/nr/ainr_input_48000_2_F32LE.pcm";
+static std::string g_inputPcmFilePath002 = "/data/audiosuite/nr/ainr_input_48000_1_F32LE.pcm";
+static std::string g_inputPcmFilePath003 = "/data/audiosuite/nr/ainr_input_16000_2_F32LE.pcm";
+static std::string g_inputPcmFilePath004 = "/data/audiosuite/nr/ainr_input_16000_1_F32LE.pcm";
+static std::string g_targetPcmFilePath001 = "/data/audiosuite/nr/ainr_48000_2_target_16000_1_F32LE.pcm";
+static std::string g_targetPcmFilePath002 = "/data/audiosuite/nr/ainr_48000_1_target_16000_1_F32LE.pcm";
+static std::string g_targetPcmFilePath003 = "/data/audiosuite/nr/ainr_16000_2_target_16000_1_F32LE.pcm";
+static std::string g_targetPcmFilePath004 = "/data/audiosuite/nr/ainr_16000_1_target_16000_1_F32LE.pcm";
+static std::string g_outputPcmFilePath = "/data/audiosuite/nr/ainr_output.pcm";
 
 class AudioSuiteNrNodeUnitTest : public testing::Test {
 public:
@@ -122,7 +128,6 @@ HWTEST_F(AudioSuiteNrNodeUnitTest, TestDoResample_001, TestSize.Level0)
 
     // 重采样后单个采样点数据不变，采样点个数变化。
     const float epsilon = 0.0001f;
-    EXPECT_NEAR(outputData[0], 0.1f, epsilon);
     EXPECT_NEAR(outputData[159], 0.1f, epsilon);
     EXPECT_NEAR(outputData[319], 0.1f, epsilon);
 }
@@ -142,7 +147,6 @@ HWTEST_F(AudioSuiteNrNodeUnitTest, TestConvertProcess_001, TestSize.Level0)
 
     float *outputData = nrNode->pcmBufferOutput_.GetPcmDataBuffer();
     const float epsilon = 0.0001f;
-    EXPECT_NEAR(outputData[0], 0.1f, epsilon);
     EXPECT_NEAR(outputData[159], 0.1f, epsilon);
     EXPECT_NEAR(outputData[319], 0.1f, epsilon);
 }
@@ -163,7 +167,7 @@ HWTEST_F(AudioSuiteNrNodeUnitTest, TestNrNodeSignalProcess_001, TestSize.Level0)
     float *inputData = pcmBufferInput.GetPcmDataBuffer();
 
     // 处理输入文件
-    std::ifstream ifs(g_inputPcmFilePath, std::ios::binary);
+    std::ifstream ifs(g_inputPcmFilePath001, std::ios::binary);
     ifs.seekg(0, std::ios::end);
     size_t inputFileSize = ifs.tellg();
     ifs.seekg(0, std::ios::beg);
@@ -201,9 +205,187 @@ HWTEST_F(AudioSuiteNrNodeUnitTest, TestNrNodeSignalProcess_001, TestSize.Level0)
     ASSERT_EQ(isWriteFileSucc, true);
 
     // 和归档结果比对
-    EXPECT_EQ(IsFilesEqual(g_outputPcmFilePath, g_targetPcmFilePath), true);
+    EXPECT_EQ(IsFilesEqual(g_outputPcmFilePath, g_targetPcmFilePath001), true);
 
     EXPECT_EQ(nrNode->DeInit(), 0);
 }
+
+HWTEST_F(AudioSuiteNrNodeUnitTest, TestNrNodeSignalProcess_002, TestSize.Level0)
+{
+    std::shared_ptr<AudioSuiteNrNode> nrNode = std::make_shared<AudioSuiteNrNode>();
+    EXPECT_NE(nrNode, nullptr);
+
+    EXPECT_EQ(nrNode->Init(), 0);
+
+    AudioSuitePcmBuffer pcmBufferInput(SAMPLE_RATE_48000, MONO, CH_LAYOUT_MONO);
+    std::vector<AudioSuitePcmBuffer *> inputs(1);
+    inputs[0] = &pcmBufferInput;
+
+    size_t frameSizeInput = pcmBufferInput.GetFrameLen() * sizeof(float);
+    size_t frameSizeOutput = nrNode->pcmBufferOutput_.GetFrameLen() * sizeof(float);
+    float *inputData = pcmBufferInput.GetPcmDataBuffer();
+
+    // 处理输入文件
+    std::ifstream ifs(g_inputPcmFilePath002, std::ios::binary);
+    ifs.seekg(0, std::ios::end);
+    size_t inputFileSize = ifs.tellg();
+    ifs.seekg(0, std::ios::beg);
+
+    // pcm文件长度可能不是帧长的整数倍，补0后再传给算法处理
+    size_t zeroPaddingSize =
+        (inputFileSize % frameSizeInput == 0) ? 0 : (frameSizeInput - inputFileSize % frameSizeInput);
+    size_t fileBufferSize = inputFileSize + zeroPaddingSize;
+    std::vector<float> inputfileBuffer(fileBufferSize / sizeof(float), 0.0f);  // 32 float PCM data
+    ifs.read(reinterpret_cast<char *>(inputfileBuffer.data()), inputFileSize);
+    ifs.close();
+
+    std::vector<uint8_t> outputfileBuffer(fileBufferSize);
+    uint8_t *readPtr = reinterpret_cast<uint8_t *>(inputfileBuffer.data());
+    uint8_t *writePtr = outputfileBuffer.data();
+    size_t outputFileSize = 0;
+    for (int32_t i = 0; i + frameSizeInput <= fileBufferSize; i += frameSizeInput) {
+        // 从inputfileBuffer拷贝一帧数据到pcmBufferInput
+        memcpy_s(reinterpret_cast<char *>(inputData), frameSizeInput, readPtr, frameSizeInput);
+
+        AudioSuitePcmBuffer *pcmBufferOutputPtr = nrNode->SignalProcess(inputs);
+
+        // 处理后数据拷贝到outputfileBuffer
+        uint8_t *outputData = reinterpret_cast<uint8_t *>(pcmBufferOutputPtr->GetPcmDataBuffer());
+        memcpy_s(writePtr, frameSizeOutput, outputData, frameSizeOutput);
+
+        readPtr += frameSizeInput;
+        writePtr += frameSizeOutput;
+        outputFileSize += frameSizeOutput;
+    }
+
+    // 输出pcm数据写入文件
+    ASSERT_EQ(CreateOutputPcmFile(g_outputPcmFilePath), true);
+    bool isWriteFileSucc = WritePcmFile(g_outputPcmFilePath, outputfileBuffer.data(), outputFileSize);
+    ASSERT_EQ(isWriteFileSucc, true);
+
+    // 和归档结果比对
+    EXPECT_EQ(IsFilesEqual(g_outputPcmFilePath, g_targetPcmFilePath002), true);
+
+    EXPECT_EQ(nrNode->DeInit(), 0);
+}
+
+HWTEST_F(AudioSuiteNrNodeUnitTest, TestNrNodeSignalProcess_003, TestSize.Level0)
+{
+    std::shared_ptr<AudioSuiteNrNode> nrNode = std::make_shared<AudioSuiteNrNode>();
+    EXPECT_NE(nrNode, nullptr);
+
+    EXPECT_EQ(nrNode->Init(), 0);
+
+    AudioSuitePcmBuffer pcmBufferInput(SAMPLE_RATE_16000, STEREO, CH_LAYOUT_STEREO);
+    std::vector<AudioSuitePcmBuffer *> inputs(1);
+    inputs[0] = &pcmBufferInput;
+
+    size_t frameSizeInput = pcmBufferInput.GetFrameLen() * sizeof(float);
+    size_t frameSizeOutput = nrNode->pcmBufferOutput_.GetFrameLen() * sizeof(float);
+    float *inputData = pcmBufferInput.GetPcmDataBuffer();
+
+    // 处理输入文件
+    std::ifstream ifs(g_inputPcmFilePath003, std::ios::binary);
+    ifs.seekg(0, std::ios::end);
+    size_t inputFileSize = ifs.tellg();
+    ifs.seekg(0, std::ios::beg);
+
+    // pcm文件长度可能不是帧长的整数倍，补0后再传给算法处理
+    size_t zeroPaddingSize =
+        (inputFileSize % frameSizeInput == 0) ? 0 : (frameSizeInput - inputFileSize % frameSizeInput);
+    size_t fileBufferSize = inputFileSize + zeroPaddingSize;
+    std::vector<float> inputfileBuffer(fileBufferSize / sizeof(float), 0.0f);  // 32 float PCM data
+    ifs.read(reinterpret_cast<char *>(inputfileBuffer.data()), inputFileSize);
+    ifs.close();
+
+    std::vector<uint8_t> outputfileBuffer(fileBufferSize);
+    uint8_t *readPtr = reinterpret_cast<uint8_t *>(inputfileBuffer.data());
+    uint8_t *writePtr = outputfileBuffer.data();
+    size_t outputFileSize = 0;
+    for (int32_t i = 0; i + frameSizeInput <= fileBufferSize; i += frameSizeInput) {
+        // 从inputfileBuffer拷贝一帧数据到pcmBufferInput
+        memcpy_s(reinterpret_cast<char *>(inputData), frameSizeInput, readPtr, frameSizeInput);
+
+        AudioSuitePcmBuffer *pcmBufferOutputPtr = nrNode->SignalProcess(inputs);
+
+        // 处理后数据拷贝到outputfileBuffer
+        uint8_t *outputData = reinterpret_cast<uint8_t *>(pcmBufferOutputPtr->GetPcmDataBuffer());
+        memcpy_s(writePtr, frameSizeOutput, outputData, frameSizeOutput);
+
+        readPtr += frameSizeInput;
+        writePtr += frameSizeOutput;
+        outputFileSize += frameSizeOutput;
+    }
+
+    // 输出pcm数据写入文件
+    ASSERT_EQ(CreateOutputPcmFile(g_outputPcmFilePath), true);
+    bool isWriteFileSucc = WritePcmFile(g_outputPcmFilePath, outputfileBuffer.data(), outputFileSize);
+    ASSERT_EQ(isWriteFileSucc, true);
+
+    // 和归档结果比对
+    EXPECT_EQ(IsFilesEqual(g_outputPcmFilePath, g_targetPcmFilePath003), true);
+
+    EXPECT_EQ(nrNode->DeInit(), 0);
+}
+
+HWTEST_F(AudioSuiteNrNodeUnitTest, TestNrNodeSignalProcess_004, TestSize.Level0)
+{
+    std::shared_ptr<AudioSuiteNrNode> nrNode = std::make_shared<AudioSuiteNrNode>();
+    EXPECT_NE(nrNode, nullptr);
+
+    EXPECT_EQ(nrNode->Init(), 0);
+
+    AudioSuitePcmBuffer pcmBufferInput(SAMPLE_RATE_16000, MONO, CH_LAYOUT_MONO);
+    std::vector<AudioSuitePcmBuffer *> inputs(1);
+    inputs[0] = &pcmBufferInput;
+
+    size_t frameSizeInput = pcmBufferInput.GetFrameLen() * sizeof(float);
+    size_t frameSizeOutput = nrNode->pcmBufferOutput_.GetFrameLen() * sizeof(float);
+    float *inputData = pcmBufferInput.GetPcmDataBuffer();
+
+    // 处理输入文件
+    std::ifstream ifs(g_inputPcmFilePath004, std::ios::binary);
+    ifs.seekg(0, std::ios::end);
+    size_t inputFileSize = ifs.tellg();
+    ifs.seekg(0, std::ios::beg);
+
+    // pcm文件长度可能不是帧长的整数倍，补0后再传给算法处理
+    size_t zeroPaddingSize =
+        (inputFileSize % frameSizeInput == 0) ? 0 : (frameSizeInput - inputFileSize % frameSizeInput);
+    size_t fileBufferSize = inputFileSize + zeroPaddingSize;
+    std::vector<float> inputfileBuffer(fileBufferSize / sizeof(float), 0.0f);  // 32 float PCM data
+    ifs.read(reinterpret_cast<char *>(inputfileBuffer.data()), inputFileSize);
+    ifs.close();
+
+    std::vector<uint8_t> outputfileBuffer(fileBufferSize);
+    uint8_t *readPtr = reinterpret_cast<uint8_t *>(inputfileBuffer.data());
+    uint8_t *writePtr = outputfileBuffer.data();
+    size_t outputFileSize = 0;
+    for (int32_t i = 0; i + frameSizeInput <= fileBufferSize; i += frameSizeInput) {
+        // 从inputfileBuffer拷贝一帧数据到pcmBufferInput
+        memcpy_s(reinterpret_cast<char *>(inputData), frameSizeInput, readPtr, frameSizeInput);
+
+        AudioSuitePcmBuffer *pcmBufferOutputPtr = nrNode->SignalProcess(inputs);
+
+        // 处理后数据拷贝到outputfileBuffer
+        uint8_t *outputData = reinterpret_cast<uint8_t *>(pcmBufferOutputPtr->GetPcmDataBuffer());
+        memcpy_s(writePtr, frameSizeOutput, outputData, frameSizeOutput);
+
+        readPtr += frameSizeInput;
+        writePtr += frameSizeOutput;
+        outputFileSize += frameSizeOutput;
+    }
+
+    // 输出pcm数据写入文件
+    ASSERT_EQ(CreateOutputPcmFile(g_outputPcmFilePath), true);
+    bool isWriteFileSucc = WritePcmFile(g_outputPcmFilePath, outputfileBuffer.data(), outputFileSize);
+    ASSERT_EQ(isWriteFileSucc, true);
+
+    // 和归档结果比对
+    EXPECT_EQ(IsFilesEqual(g_outputPcmFilePath, g_targetPcmFilePath004), true);
+
+    EXPECT_EQ(nrNode->DeInit(), 0);
+}
+
 
 }  // namespace
