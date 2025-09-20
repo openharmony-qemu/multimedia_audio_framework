@@ -61,6 +61,7 @@ audio_ohos_library("audio_suite") {
     "../audio_engine/buffer",
     "../audio_engine/plugin/resample/include",
     "../audio_service/common/include/limiter",
+    "../../interfaces/inner_api/native/audiocommon/include/",
   ]
 
   sources = [
@@ -75,6 +76,8 @@ audio_ohos_library("audio_suite") {
     "client/utils/src/audio_suite_algo_interface.cpp",
     "client/utils/src/audio_suite_common.cpp",
     "client/node/src/audio_suite_mixer_node.cpp",
+    "client/node/src/audio_suite_aiss_node.cpp",
+    "client/utils/src/audio_suite_aiss_algo_interface_impl.cpp",
   ]
 
   deps = [

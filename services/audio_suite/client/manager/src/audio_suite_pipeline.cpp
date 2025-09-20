@@ -25,6 +25,7 @@
 #include "audio_suite_log.h"
 #include "audio_suite_pipeline.h"
 #include "audio_suite_input_node.h"
+#include "audio_suite_aiss_node.h"
 #include "audio_suite_output_node.h"
 #include "audio_suite_mixer_node.h"
 
@@ -269,6 +270,9 @@ std::shared_ptr<AudioNode> AudioSuitePipeline::CreateNodeForType(AudioNodeBuilde
     } else if (builder.nodeType == NODE_TYPE_AUDIO_MIXER) {
         AUDIO_INFO_LOG("Create AudioSuiteMixerNode");
         node = std::make_shared<AudioSuiteMixerNode>(NODE_TYPE_AUDIO_MIXER, audioFormat);
+    } else if (builder.nodeType == NODE_TYPE_AUDIO_SEPARATION) {
+        AUDIO_INFO_LOG("Create AudioSuiteAissNode");
+        node = std::make_shared<AudioSuiteAissNode>(NODE_TYPE_AUDIO_SEPARATION, audioFormat);
     }
 
     return node;

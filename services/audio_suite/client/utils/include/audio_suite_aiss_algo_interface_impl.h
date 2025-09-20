@@ -17,6 +17,8 @@
 #define AUDIO_SUITE_AISS_ALGO_INTERFACE_IMPL_H
 
 #include "audio_suite_algo_interface.h"
+#include "audio_effect.h"
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -25,36 +27,44 @@ namespace AudioSuite {
 class AudioSuiteAissAlgoInterfaceImpl : public AudioSuiteAlgoInterface {
 public:
     AudioSuiteAissAlgoInterfaceImpl() = default;
+
     ~AudioSuiteAissAlgoInterfaceImpl() = default;
 
-    int32_t Init() override
-    {
-        return SUCCESS;
-    }
+    int32_t Init() override;
 
-    int32_t Deinit() override
-    {
-        return SUCCESS;
-    }
+    int32_t Deinit() override;
 
-    int32_t SetParameter(const std::string& paramType, const std::string& paramValue) override
-    {
-        return SUCCESS;
-    }
+    int32_t SetParameter(const std::string& paramType, const std::string& paramValue) override;
 
-    int32_t GetParameter(const std::string& paramType, std::string& paramValue) override
-    {
-        return SUCCESS;
-    }
+    int32_t GetParameter(const std::string& paramType, std::string& paramValue) override;
 
-    int32_t Apply(std::vector<uint8_t*>& v1, std::vector<uint8_t*>& v2) override
-    {
-        return SUCCESS;
-    }
+    int32_t Apply(std::vector<uint8_t*>& v1, std::vector<uint8_t*>& v2) override;
+private:
+    int32_t CheckFilePath(std::string &filePath);
+
+    int32_t InitIOBufferConfig();
+
+    int32_t InitConfig();
+
+    int32_t InitAudioEffectParam();
+
+    int32_t InitAudioEffectProperty();
+
+    void SeparateChannels(const int32_t &frameLength, float *input, float *humanOutput, float *bkgOutput);
+
+    void* soHandle_{ nullptr };
+
+    AudioEffectLibrary* audioEffectLibHandle_{ nullptr };
+
+    AudioEffectHandle algoHandle_{ nullptr };
+
+    AudioBuffer inAudioBuffer_;
+
+    AudioBuffer outAudioBuffer_;
 };
 
-}
-}
-}
-
-#endif
+} // namespace AudioSuite
+} // namespace AudioStandard
+} // namespace OHOS
+ 
+#endif // AUDIO_SUITE_AISS_ALGO_INTERFACE_IMPL_H

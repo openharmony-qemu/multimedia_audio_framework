@@ -93,12 +93,12 @@ protected:
     virtual AudioSuitePcmBuffer* SignalProcess(const std::vector<AudioSuitePcmBuffer*>& inputs) = 0;
     virtual void HandleTapCallback(AudioSuitePcmBuffer* pcmBuffer);
     std::vector<AudioSuitePcmBuffer*>& ReadProcessNodePreOutputData();
+    std::unordered_set<std::shared_ptr<AudioNode>> finishedPrenodeSet;
 
 private:
     Tap tap_;
     HPAE::ChannelConverter channelConverter_;
     std::unique_ptr<HPAE::ProResampler> proResampler_ = nullptr;
-    std::unordered_set<std::shared_ptr<AudioNode>> finishedPrenodeSet;
 };
 
 }
