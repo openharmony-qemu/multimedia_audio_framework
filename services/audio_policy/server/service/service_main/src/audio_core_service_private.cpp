@@ -2083,17 +2083,17 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
 {
     Trace trace("IsStreamSupportLowpower");
     if (!streamDesc->rendererInfo_.isOffloadAllowed) {
-        AUDIO_INFO_LOG("normal stream because renderInfo not support offload.");
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream because renderInfo not support offload.");
         return false;
     }
     if (GetRealUid(streamDesc) == AUDIO_EXT_UID) {
-        AUDIO_INFO_LOG("the extra uid not support offload.");
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "the extra uid not support offload.");
         return false;
     }
     if (streamDesc->streamInfo_.channels > STEREO &&
         (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MOVIE ||
          streamDesc->rendererInfo_.originalFlag != AUDIO_FLAG_PCM_OFFLOAD)) {
-        AUDIO_INFO_LOG("normal stream because channels.");
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream because channels.");
         return false;
     }
 
@@ -2101,13 +2101,14 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
         streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_AUDIOBOOK &&
         (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MOVIE ||
          streamDesc->rendererInfo_.originalFlag != AUDIO_FLAG_PCM_OFFLOAD)) {
-        AUDIO_INFO_LOG("normal stream because streamUsage.");
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream because streamUsage.");
         return false;
     }
 
     if (streamDesc->rendererInfo_.playerType == PLAYER_TYPE_SOUND_POOL ||
         streamDesc->rendererInfo_.playerType == PLAYER_TYPE_OPENSL_ES) {
-        AUDIO_INFO_LOG("normal stream beacuse playerType %{public}d.", streamDesc->rendererInfo_.playerType);
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream beacuse playerType %{public}d.",
+            streamDesc->rendererInfo_.playerType);
         return false;
     }
 
@@ -2115,7 +2116,7 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
         AudioSpatializationService::GetAudioSpatializationService().GetSpatializationState();
     bool effectOffloadFlag = AudioServerProxy::GetInstance().GetEffectOffloadEnabledProxy();
     if (spatialState.spatializationEnabled && !effectOffloadFlag) {
-        AUDIO_INFO_LOG("spatialization effect in arm, Skipped.");
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "spatialization effect in arm, Skipped.");
         return false;
     }
 
@@ -2125,7 +2126,8 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
         (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP ||
         streamDesc->newDeviceDescs_[0]->a2dpOffloadFlag_ != A2DP_OFFLOAD) &&
         streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_NEARLINK) {
-        AUDIO_INFO_LOG("normal stream, deviceType: %{public}d", streamDesc->newDeviceDescs_[0]->deviceType_);
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream, deviceType: %{public}d",
+            streamDesc->newDeviceDescs_[0]->deviceType_);
         return false;
     }
     return true;
@@ -2840,7 +2842,7 @@ void AudioCoreService::SelectA2dpType(std::shared_ptr<AudioStreamDescriptor> &st
     auto flag =
         static_cast<BluetoothOffloadState>(Bluetooth::AudioA2dpManager::A2dpOffloadSessionRequest(allSessionInfos));
     streamDesc->newDeviceDescs_[0]->a2dpOffloadFlag_ = flag;
-    AUDIO_INFO_LOG("A2dp offload flag:%{public}d isCreate:%{public}s", flag, isCreateProcess ? "true" : "false");
+    JUDGE_AND_INFO_LOG(isCreateProcess, "A2dp offload flag:%{public}d", flag);
 #endif
 }
 

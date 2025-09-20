@@ -324,7 +324,7 @@ bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDe
 
     if (streamDesc->streamInfo_.encoding == ENCODING_AUDIOVIVID &&
         policyConfigMananger_.PreferMultiChannelPipe(streamDesc)) {
-        AUDIO_INFO_LOG("AudioVivid encoding and MultiChannelPipe supported");
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "AudioVivid encoding and MultiChannelPipe supported");
         return true;
     }
 
@@ -332,7 +332,8 @@ bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDe
     if (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_SPEAKER &&
         (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP ||
         streamDesc->newDeviceDescs_[0]->a2dpOffloadFlag_ != A2DP_OFFLOAD)) {
-        AUDIO_INFO_LOG("normal stream, deviceType: %{public}d", streamDesc->newDeviceDescs_[0]->deviceType_);
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream, deviceType: %{public}d",
+            streamDesc->newDeviceDescs_[0]->deviceType_);
         return false;
     }
     if (streamDesc->streamInfo_.channels <= STEREO ||
@@ -342,7 +343,7 @@ bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDe
     }
     // The multi-channel algorithm needs to be supported in the dsp
     bool isSupported = AudioServerProxy::GetInstance().GetEffectOffloadEnabledProxy();
-    AUDIO_INFO_LOG("effect offload enable is %{public}d", isSupported);
+    JUDGE_AND_INFO_LOG(isCreateProcess_, "effect offload enable is %{public}d", isSupported);
     return isSupported;
 }
 
@@ -357,11 +358,11 @@ bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescript
     if (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MUSIC ||
         streamDesc->streamInfo_.samplingRate < SAMPLE_RATE_48000 ||
         streamDesc->streamInfo_.format < SAMPLE_S24LE) {
-            AUDIO_INFO_LOG("normal stream because stream info");
+            JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream because stream info");
             return false;
         }
     if (streamDesc->streamInfo_.samplingRate > SAMPLE_RATE_192000) {
-        AUDIO_INFO_LOG("sample rate over 192k");
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "sample rate over 192k");
         return false;
     }
     return true;
@@ -429,7 +430,9 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
         default:
             break;
     }
+    isCreateProcess_ = isCreateProcess;
     streamDesc->audioFlag_ = SetFlagForSpecialStream(streamDesc, isCreateProcess);
+    isCreateProcess_ = false;
 }
 
 AudioFlag AudioCoreService::SetFlagForMmapStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
