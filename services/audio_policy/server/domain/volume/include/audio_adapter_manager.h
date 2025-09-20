@@ -299,6 +299,7 @@ public:
     void HandleHearingAidVolume(AudioStreamType streamType);
     void RegisterDoNotDisturbStatus();
     void RegisterDoNotDisturbStatusWhiteList();
+    void RegisterMdmMuteSwitchCallback();
     int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object);
     void HandleDistributedDeviceVolume();
     void SetSleVoiceStatusFlag(bool isSleVoiceStatus);

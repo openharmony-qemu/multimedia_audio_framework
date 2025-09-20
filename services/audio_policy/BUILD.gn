@@ -283,6 +283,7 @@ audio_ohos_library("audio_policy_service") {
     "server/service/service_main/src/audio_core_service_utils.cpp",
     "server/domain/pipe/src/audio_pipe_manager.cpp",
     "server/domain/pipe/src/audio_pipe_selector.cpp",
+    "server/domain/volume/src/audio_mute_factor_manager.cpp",
   ]
 
   defines = []

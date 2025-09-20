@@ -25,6 +25,7 @@
 #include "audio_stream_info.h"
 #include "media_monitor_manager.h"
 #include "audio_stream_monitor.h"
+#include "audio_mute_factor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -121,7 +122,8 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
         sysVolume = itSV->second.isMuted_ ? 0.0f : 1.0f;
     }
     int32_t doNotDisturbStatusVolume = static_cast<int32_t>(GetDoNotDisturbStatusVolume(streamType, appUid, sessionId));
-    volumes->volume = sysVolume * volumes->volumeStream * doNotDisturbStatusVolume;
+    float mdmMuteStatus = AudioMuteFactorManager::GetInstance().GetMuteStatus() ? 0.0f : 1.0f;
+    volumes->volume = sysVolume * volumes->volumeStream * doNotDisturbStatusVolume * mdmMuteStatus;
     if (it != streamVolume_.end() && !IsSameVolume(it->second.monitorVolume_, volumes->volume)) {
         it->second.monitorVolume_ = volumes->volume;
         it->second.monitorVolumeLevel_ = volumeLevel;

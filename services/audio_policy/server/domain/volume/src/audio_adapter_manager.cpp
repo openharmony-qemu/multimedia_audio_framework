@@ -28,6 +28,7 @@
 #include "audio_volume.h"
 #include "audio_utils.h"
 #include "audio_zone_service.h"
+#include "adio_mute_factor_manager.h"
 
 using namespace std;
 
@@ -166,6 +167,17 @@ bool AudioAdapterManager::Init()
 
     isVolumeUnadjustable_ = system::GetBoolParameter("const.multimedia.audio.fixedvolume", false);
     AUDIO_INFO_LOG("Get fixdvolume parameter success %{public}d", isVolumeUnadjustable_);
+
+    char mdmMuteStatus[6] = {0};
+    ret = GetParameter("persist.edm.unmute_device_disallowed", "false", mdmMuteStatus, sizeof(mdmMuteStatus));
+    if(ret > 0) {
+        bool isMdmMute = (strcmp(mdmMuteStatus, "true") == 0);
+        AudioMuteFactorManager::GetInstance().SetMdmMuteStatus(isMdmMute);
+        AUDIO_INFO_LOG("Get mdmMuteStatus success %{public}d", isMdmMute);
+    } else {
+        AUDIO_ERR_LOG("Get mdmMuteStatus failed %{public}d", ret);
+    }
+    RegisterMdmMuteSwitchCallback();
 
     handler_ = std::make_shared<AudioAdapterManagerHandler>();
     return true;
@@ -3418,6 +3430,21 @@ void AudioAdapterManager::RegisterDoNotDisturbStatusWhiteList()
         AUDIO_ERR_LOG("RegisterObserver doNotDisturbStatus WhiteList failed! Err: %{public}d", ret);
     } else {
         AUDIO_INFO_LOG("Register doNotDisturbStatus WhiteList successfully");
+    }
+}
+
+void AudioAdapterManager::RegisterMdmMuteSwitchCallback()
+{
+    int ret = WatchParameter("persist.edm.unmute_device_disallowed",
+        [](const char* key, const char* value, void* context) {
+            bool isMute = strcmp(value, "true") == 0;
+            AUDIO_INFO_LOG("mdmMuteStatus = %{public}d", isMute);
+            AudioMuteFactorManager& audioMuteFactorManager = AudioMuteFactorManager::GetInstance();
+            audioMuteFactorManager.SetMdmMuteStatus(isMute);
+        },
+        nullptr);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("Register mdmMuteStatus failed! Err: %{public}d", ret);
     }
 }
 
