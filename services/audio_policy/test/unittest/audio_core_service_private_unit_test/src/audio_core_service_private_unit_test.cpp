@@ -2045,6 +2045,7 @@ HWTEST_F(AudioCoreServicePrivateTest, HandleFetchOutputWhenNoRunningStream_001, 
     EXPECT_EQ(ret, SUCCESS);
 }
 
+
 /**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: CheckModemScene_001
