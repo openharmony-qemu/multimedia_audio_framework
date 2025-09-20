@@ -129,6 +129,7 @@ private:
     void UpdateDeviceList(AudioDeviceDescriptor &updatedDesc, bool isConnected,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb,
         AudioStreamDeviceChangeReasonExt &reason);
+    int32_t UpdateNearlinkDeviceVolume(AudioDeviceDescriptor &updatedDesc);
 #ifdef BLUETOOTH_ENABLE
     void CheckAndActiveHfpDevice(AudioDeviceDescriptor &desc);
 #endif
