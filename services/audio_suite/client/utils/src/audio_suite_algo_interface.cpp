@@ -27,7 +27,7 @@ std::shared_ptr<AudioSuiteAlgoInterface> AudioSuiteAlgoInterface::CreateAlgoInte
         case AlgoType::AUDIO_NODE_TYPE_EQUALIZER:
             return std::make_shared<AudioSuiteEqAlgoInterfaceImpl>();
         case AlgoType::AUDIO_NODE_TYPE_NOISE_REDUCTION:
-            return std::make_shared<AudioSuiteAnrAlgoInterfaceImpl>();
+            return std::make_shared<AudioSuiteNrAlgoInterfaceImpl>();
         case AlgoType::AUDIO_NODE_TYPE_AUDIO_SEPARATION:
             return std::make_shared<AudioSuiteAissAlgoInterfaceImpl>();
         default:

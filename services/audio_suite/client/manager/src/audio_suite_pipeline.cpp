@@ -26,6 +26,7 @@
 #include "audio_suite_pipeline.h"
 #include "audio_suite_input_node.h"
 #include "audio_suite_output_node.h"
+#include "audio_suite_nr_node.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -263,6 +264,8 @@ std::shared_ptr<AudioNode> AudioSuitePipeline::CreateNodeForType(AudioNodeBuilde
     } else if (builder.nodeType == NODE_TYPE_OUTPUT) {
         outputNode_ = std::make_shared<AudioOutputNode>(audioFormat);
         node = std::static_pointer_cast<AudioNode>(outputNode_);
+    } else if (builder.nodeType == NODE_TYPE_NOISE_REDUCTION) {
+        node = std::make_shared<AudioSuiteNrNode>();
     }
 
     return node;
