@@ -27,6 +27,7 @@
 #include "audio_suite_input_node.h"
 #include "audio_suite_output_node.h"
 #include "audio_suite_mixer_node.h"
+#include "audio_suite_eq_node.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -156,7 +157,7 @@ int32_t AudioSuitePipeline::Stop()
             TriggerCallback(STOP_PIPELINE, ERR_ILLEGAL_STATE);
         }
 
-        for (const auto& [nodeId, node] : nodeMap_) {
+        for (const auto &[nodeId, node] : nodeMap_) {
             if (node != nullptr) {
                 node->Flush();
                 node->SetAudioNodeDataFinishedFlag(false);
@@ -220,8 +221,7 @@ int32_t AudioSuitePipeline::CreateNode(AudioNodeBuilder builder)
 int32_t AudioSuitePipeline::CreateNodeCheckParme(AudioNodeBuilder builder)
 {
     if (pipelineWorkMode_ == PIPELINE_REALTIME_MODE) {
-        if ((builder.nodeType != NODE_TYPE_INPUT) &&
-            (builder.nodeType != NODE_TYPE_OUTPUT) &&
+        if ((builder.nodeType != NODE_TYPE_INPUT) && (builder.nodeType != NODE_TYPE_OUTPUT) &&
             (builder.nodeType != NODE_TYPE_EQUALIZER)) {
             AUDIO_ERR_LOG("pipline in REALTIME mode, only can craet input, output and equalizer node.");
             return ERR_NOT_SUPPORTED;
@@ -269,6 +269,9 @@ std::shared_ptr<AudioNode> AudioSuitePipeline::CreateNodeForType(AudioNodeBuilde
     } else if (builder.nodeType == NODE_TYPE_AUDIO_MIXER) {
         AUDIO_INFO_LOG("Create AudioSuiteMixerNode");
         node = std::make_shared<AudioSuiteMixerNode>(NODE_TYPE_AUDIO_MIXER, audioFormat);
+    } else if (builder.nodeType == NODE_TYPE_EQUALIZER) {
+        AUDIO_INFO_LOG("Create AudioSuiteEqNode");
+        node = std::make_shared<AudioSuiteEqNode>();
     }
 
     return node;
@@ -419,9 +422,8 @@ int32_t AudioSuitePipeline::SetAudioFormat(uint32_t nodeId, AudioFormat audioFor
     return SUCCESS;
 }
 
-
-int32_t AudioSuitePipeline::SetWriteDataCallback(uint32_t nodeId,
-    std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback)
+int32_t AudioSuitePipeline::SetWriteDataCallback(
+    uint32_t nodeId, std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback)
 {
     auto request = [this, nodeId, callback]() {
         if (pipelineState_ != PIPELINE_STOPPED) {
@@ -456,8 +458,8 @@ int32_t AudioSuitePipeline::SetWriteDataCallback(uint32_t nodeId,
     return SUCCESS;
 }
 
-int32_t AudioSuitePipeline::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId,
-    AudioNodePortType srcPortType, AudioNodePortType destPortType)
+int32_t AudioSuitePipeline::ConnectNodes(
+    uint32_t srcNodeId, uint32_t destNodeId, AudioNodePortType srcPortType, AudioNodePortType destPortType)
 {
     auto request = [this, srcNodeId, destNodeId, srcPortType]() {
         if (srcNodeId == destNodeId) {
@@ -499,7 +501,10 @@ int32_t AudioSuitePipeline::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId
         }
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("ConnectNodes failed, ret = %{public}d, srcNodeId = %{public}d, "
-                "destNodeId = %{public}d.", ret, srcNodeId, destNodeId);
+                          "destNodeId = %{public}d.",
+                ret,
+                srcNodeId,
+                destNodeId);
             TriggerCallback(SET_WRITEDATA_CALLBACK, ret);
             return;
         }
@@ -587,7 +592,8 @@ int32_t AudioSuitePipeline::DisConnectNodes(uint32_t srcNodeId, uint32_t destNod
 
         if (!IsDirectConnected(srcNodeId, destNodeId)) {
             AUDIO_ERR_LOG("DisConnectNodes failed, srcNodeId = %{public}d not connet destNodeId = %{public}d.",
-                srcNodeId, destNodeId);
+                srcNodeId,
+                destNodeId);
             TriggerCallback(DISCONNECT_NODES, ERR_INVALID_PARAM);
         }
 
@@ -599,7 +605,10 @@ int32_t AudioSuitePipeline::DisConnectNodes(uint32_t srcNodeId, uint32_t destNod
         }
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("DisConnectNodes failed, ret = %{public}d, srcNodeId = %{public}d, "
-                "destNodeId = %{public}d.", ret, srcNodeId, destNodeId);
+                          "destNodeId = %{public}d.",
+                ret,
+                srcNodeId,
+                destNodeId);
             TriggerCallback(SET_WRITEDATA_CALLBACK, ret);
             return;
         }
@@ -614,8 +623,8 @@ int32_t AudioSuitePipeline::DisConnectNodes(uint32_t srcNodeId, uint32_t destNod
     return SUCCESS;
 }
 
-int32_t AudioSuitePipeline::DisConnectNodesForRun(uint32_t srcNodeId, uint32_t destNodeId,
-    std::shared_ptr<AudioNode> srcNode, std::shared_ptr<AudioNode> destNode)
+int32_t AudioSuitePipeline::DisConnectNodesForRun(
+    uint32_t srcNodeId, uint32_t destNodeId, std::shared_ptr<AudioNode> srcNode, std::shared_ptr<AudioNode> destNode)
 {
     if (outputNode_ == nullptr) {
         AUDIO_ERR_LOG("DisConnectNodes failed, pipeline running, can not find output node.");
@@ -642,7 +651,6 @@ int32_t AudioSuitePipeline::DisConnectNodesForRun(uint32_t srcNodeId, uint32_t d
     return destNode->DisConnect(srcNode);
 }
 
-
 void AudioSuitePipeline::RemovceForwardConnet(uint32_t nodeId, std::shared_ptr<AudioNode> node)
 {
     if (reverseConnections_.find(nodeId) == reverseConnections_.end()) {
@@ -650,7 +658,7 @@ void AudioSuitePipeline::RemovceForwardConnet(uint32_t nodeId, std::shared_ptr<A
     }
 
     auto vec = reverseConnections_[nodeId];
-    for (const auto& srcNodeId : vec) {
+    for (const auto &srcNodeId : vec) {
         if (nodeMap_.find(srcNodeId) == nodeMap_.end()) {
             continue;
         }
@@ -672,7 +680,7 @@ void AudioSuitePipeline::RemovceBackwardConnet(uint32_t nodeId, std::shared_ptr<
     }
 
     auto destNodeId = connections_[nodeId];
-    if (nodeMap_.find(destNodeId) ==  nodeMap_.end()) {
+    if (nodeMap_.find(destNodeId) == nodeMap_.end()) {
         return;
     }
 
@@ -700,15 +708,15 @@ void AudioSuitePipeline::ClearNodeConnections(uint32_t srcNodeId, uint32_t destN
         return;
     }
 
-    std::vector<uint32_t>& vec = it->second;
+    std::vector<uint32_t> &vec = it->second;
     vec.erase(std::remove(vec.begin(), vec.end(), srcNodeId), vec.end());
     if (vec.empty()) {
         reverseConnections_.erase(destNodeId);
     }
 }
 
-int32_t AudioSuitePipeline::InstallTap(uint32_t nodeId, AudioNodePortType portType,
-    std::shared_ptr<SuiteNodeReadTapDataCallback> callback)
+int32_t AudioSuitePipeline::InstallTap(
+    uint32_t nodeId, AudioNodePortType portType, std::shared_ptr<SuiteNodeReadTapDataCallback> callback)
 {
     auto request = [this, nodeId, portType, callback]() {
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
@@ -727,7 +735,9 @@ int32_t AudioSuitePipeline::InstallTap(uint32_t nodeId, AudioNodePortType portTy
         int32_t ret = node->InstallTap(portType, callback);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("InstallTap failed, ret = %{public}d, nodeId = %{public}d, portType = %{public}d.",
-                ret, nodeId, static_cast<int32_t>(portType));
+                ret,
+                nodeId,
+                static_cast<int32_t>(portType));
             TriggerCallback(INSTALL_NODE_TAP, ret);
             return;
         }
@@ -760,7 +770,9 @@ int32_t AudioSuitePipeline::RemoveTap(uint32_t nodeId, AudioNodePortType portTyp
         int32_t ret = node->RemoveTap(portType);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("RemoveTap failed, ret = %{public}d, nodeId = %{public}d, portType = %{public}d.",
-                ret, nodeId, static_cast<int32_t>(portType));
+                ret,
+                nodeId,
+                static_cast<int32_t>(portType));
             TriggerCallback(REMOVE_NODE_TAP, ret);
             return;
         }
@@ -841,7 +853,7 @@ bool AudioSuitePipeline::CheckPipelineNode(uint32_t startNodeId)
         nodeQueue.pop();
 
         if (visitedNodes.find(currentNodeId) != visitedNodes.end()) {
-            return false; // ring
+            return false;  // ring
         }
 
         visitedNodes.insert(currentNodeId);
