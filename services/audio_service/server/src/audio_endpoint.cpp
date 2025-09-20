@@ -1388,7 +1388,7 @@ AudioEndpointInner::VolumeResult AudioEndpointInner::CalculateVolume(size_t i)
 
     int32_t doNotDisturbStatusVolume = static_cast<int32_t>(AudioVolume::GetInstance()->GetDoNotDisturbStatusVolume(
         streamType, appUid, processList_[i]->GetAudioSessionId()));
-    float mdmMuteStatus = AudioVolume::GetInstance()->GetMdmMuteStatus() ? 0.0f : 1.0f;
+    float mdmMuteStatus = AudioMuteFactorManager::GetInstance()->GetMdmMuteStatus() ? 0.0f : 1.0f;
     float appVolume = AudioVolume::GetInstance()->GetAppVolume(appUid, volumeMode);
     int32_t volumeFromOhaudioBuffer = processBufferList_[i]->GetStreamVolume() *
         processBufferList_[i]->GetDuckFactor() * processBufferList_[i]->GetMuteFactor() * (1 << VOLUME_SHIFT_NUMBER);

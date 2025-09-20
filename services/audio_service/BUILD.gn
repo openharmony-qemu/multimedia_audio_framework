@@ -86,6 +86,7 @@ ohos_shared_library("audio_common") {
     "common/src/app_bundle_manager.cpp",
     "common/src/va_shared_buffer.cpp",
     "common/src/va_shared_buffer_operator.cpp",
+    "common/src/audio_mute_factor_manager.cpp",
   ]
 
   cflags = [
