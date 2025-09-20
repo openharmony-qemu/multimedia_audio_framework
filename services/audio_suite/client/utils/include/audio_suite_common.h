@@ -39,7 +39,7 @@ public:
 
     ~AudioSuiteRingBuffer()
     {
-        if (buffer_ == nullptr) {
+        if (buffer_ != nullptr) {
             delete[] buffer_;
             buffer_ = nullptr;
         }
