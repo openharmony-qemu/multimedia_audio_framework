@@ -23,6 +23,7 @@
 #include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_suite_log.h"
+#include "audio_suite_eq_node.h"
 #include "audio_suite_pipeline.h"
 #include "audio_suite_input_node.h"
 #include "audio_suite_output_node.h"
@@ -263,6 +264,9 @@ std::shared_ptr<AudioNode> AudioSuitePipeline::CreateNodeForType(AudioNodeBuilde
     if (builder.nodeType == NODE_TYPE_INPUT) {
         AUDIO_INFO_LOG("Create AudioInputNode");
         node = std::make_shared<AudioInputNode>(audioFormat);
+    }  else if (builder.nodeType == NODE_TYPE_EQUALIZER) {
+        AUDIO_INFO_LOG("Create AudioSuiteEqNode");
+        node = std::make_shared<AudioSuiteEqNode>();
     } else if (builder.nodeType == NODE_TYPE_OUTPUT) {
         AUDIO_INFO_LOG("Create AudioOutputNode");
         outputNode_ = std::make_shared<AudioOutputNode>(audioFormat);
