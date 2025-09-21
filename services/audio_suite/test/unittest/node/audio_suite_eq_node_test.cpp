@@ -54,7 +54,7 @@ HWTEST_F(AudioSuiteEqNodeTest, testAudioSuiteEqNodeSignalProcess, TestSize.Level
     std::string name = "EqualizerMode";
     eq.SetOptions(name, eqValue);
     std::vector<AudioSuitePcmBuffer *> inputs;
-    std::string filename = "test.pcm";
+    std::string filename = "/data/48000_2_16f.pcm";
     std::ifstream file(filename, std::ios::binary | std::ios::ate);
     file.seekg(0, std::ios::beg);
     const uint32_t sampleRate = 48000;
@@ -62,7 +62,7 @@ HWTEST_F(AudioSuiteEqNodeTest, testAudioSuiteEqNodeSignalProcess, TestSize.Level
     const AudioChannelLayout layout = CH_LAYOUT_STEREO;
     AudioSuitePcmBuffer *buffer = new AudioSuitePcmBuffer(sampleRate, channelCount, layout);
     const size_t frameBytes = 48000 * 0.02 * 2 * 2;
-    std::ofstream outFile("testOut.pcm", std::ios::binary | std::ios::out);
+    std::ofstream outFile("/data/48000_2_16fOut.pcm", std::ios::binary | std::ios::out);
     if (!outFile) {
         delete buffer;
         file.close();
