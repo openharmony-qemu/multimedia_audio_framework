@@ -3260,103 +3260,6 @@ HWTEST(AudioEffectChainManagerUnitTest, SendEffectApVolume_003, TestSize.Level1)
 }
 
 /**
-* @tc.name   : Test QueryHdiSupportedChannelInfo API
-* @tc.number : QueryHdiSupportedChannelInfo_001
-* @tc.desc   : Test QueryHdiSupportedChannelInfo interface.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, QueryHdiSupportedChannelInfo_001, TestSize.Level1)
-{
-    uint32_t channels = 0;
-    uint64_t channelLayout = 0;
-    auto ret = AudioEffectChainManager::GetInstance()->QueryHdiSupportedChannelInfo(channels, channelLayout);
-    EXPECT_EQ(ret, SUCCESS);
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
-* @tc.name   : Test QueryHdiSupportedChannelInfo API
-* @tc.number : QueryHdiSupportedChannelInfo_002
-* @tc.desc   : Test QueryHdiSupportedChannelInfo interface.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, QueryHdiSupportedChannelInfo_002, TestSize.Level1)
-{
-    uint32_t channels = 0;
-    uint64_t channelLayout = 10;
-    SessionEffectInfo sessionEffectInfo;
-    sessionEffectInfo.channelLayout = 1;
-    std::set<std::string> sceneType = {"123"};
-    AudioEffectChainManager::GetInstance()->sceneTypeToSessionIDMap_.insert({"test", sceneType});
-    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.insert({"123", sessionEffectInfo});
-
-    auto ret = AudioEffectChainManager::GetInstance()->QueryHdiSupportedChannelInfo(channels, channelLayout);
-    EXPECT_EQ(ret, ERROR);
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
-* @tc.name   : Test QueryHdiSupportedChannelInfo API
-* @tc.number : QueryHdiSupportedChannelInfo_003
-* @tc.desc   : Test QueryHdiSupportedChannelInfo interface.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, QueryHdiSupportedChannelInfo_003, TestSize.Level1)
-{
-    uint32_t channels = 0;
-    uint64_t channelLayout = 10;
-    SessionEffectInfo sessionEffectInfo;
-    sessionEffectInfo.channelLayout = 1;
-    sessionEffectInfo.channels = 5;
-    std::set<std::string> sceneType = {"123"};
-    AudioEffectChainManager::GetInstance()->initializedLogFlag_ = false;
-    AudioEffectChainManager::GetInstance()->sceneTypeToSessionIDMap_.insert({"test", sceneType});
-    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.insert({"123", sessionEffectInfo});
-
-    auto ret = AudioEffectChainManager::GetInstance()->QueryHdiSupportedChannelInfo(channels, channelLayout);
-    EXPECT_EQ(ret, ERROR);
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
-* @tc.name   : Test QueryHdiSupportedChannelInfo API
-* @tc.number : QueryHdiSupportedChannelInfo_004
-* @tc.desc   : Test QueryHdiSupportedChannelInfo interface.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, QueryHdiSupportedChannelInfo_004, TestSize.Level1)
-{
-    uint32_t channels = 0;
-    uint64_t channelLayout = 10;
-    SessionEffectInfo sessionEffectInfo;
-    sessionEffectInfo.channelLayout = 1;
-    sessionEffectInfo.channels = 20;
-    std::set<std::string> sceneType = {"123"};
-    AudioEffectChainManager::GetInstance()->isInitialized_ = true;
-    AudioEffectChainManager::GetInstance()->sceneTypeToSessionIDMap_.insert({"test", sceneType});
-    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.insert({"123", sessionEffectInfo});
-
-    auto ret = AudioEffectChainManager::GetInstance()->QueryHdiSupportedChannelInfo(channels, channelLayout);
-    EXPECT_EQ(ret, SUCCESS);
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
-* @tc.name   : Test QueryHdiSupportedChannelInfo API
-* @tc.number : QueryHdiSupportedChannelInfo_005
-* @tc.desc   : Test QueryHdiSupportedChannelInfo interface.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, QueryHdiSupportedChannelInfo_005, TestSize.Level1)
-{
-    uint32_t channels = 0;
-    uint64_t channelLayout = CH_LAYOUT_STEREO;
-    SessionEffectInfo sessionEffectInfo;
-    sessionEffectInfo.channels = 0;
-    std::set<std::string> sceneType = {"123"};
-    AudioEffectChainManager::GetInstance()->sceneTypeToSessionIDMap_.insert({"test", sceneType});
-
-    auto ret = AudioEffectChainManager::GetInstance()->QueryHdiSupportedChannelInfo(channels, channelLayout);
-    EXPECT_EQ(ret, SUCCESS);
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
 * @tc.name   : Test SendAudioParamToHDI API
 * @tc.number : SendAudioParamToHDI_001
 * @tc.desc   : Test SendAudioParamToHDI interface.
@@ -4046,6 +3949,20 @@ HWTEST(AudioEffectChainManagerUnitTest, ExistAudioEffectChainArm_003, TestSize.L
         EXPECT_EQ(ret, true);
     }
     AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test IsChannelLayoutSupportForDspEffect API
+* @tc.number : IsChannelLayoutSupportForDspEffect_004
+* @tc.desc   : Test IsChannelLayoutSupportForDspEffect interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, IsChannelLayoutSupportForDspEffect_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEffectHdiParam> audioEffectHdiParam = std::make_shared<AudioEffectHdiParam>();
+    AudioEffectChainManager::GetInstance()->audioEffectHdiParam_ = audioEffectHdiParam;
+    AudioEffectChainManager::GetInstance()->InitHdiState();
+    bool ret = AudioEffectChainManager::GetInstance()->IsChannelLayoutSupportForDspEffect(CH_LAYOUT_6POINT0_FRONT);
+    EXPECT_EQ(ret, false);
 }
 } // namespace AudioStandard
 } // namespace OHOS

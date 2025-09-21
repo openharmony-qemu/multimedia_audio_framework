@@ -453,27 +453,6 @@ void AudioEffectChainStreamVolumeUpdateFuzzTest()
     audioEffectChainManager->StreamVolumeUpdate(sessionIDString, streamVolume);
 }
 
-void AudioEffectChainQueryHdiSupportedChannelInfoFuzzTest()
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    if (audioEffectChainManager == nullptr) {
-        return;
-    }
-
-    uint32_t channels = GetData<uint32_t>();
-    uint64_t channelLayout = GetData<uint64_t>();
-    SessionEffectInfo sessionEffectInfo;
-    sessionEffectInfo.channelLayout = GetData<uint64_t>();
-    sessionEffectInfo.channels = GetData<uint32_t>();
-    std::set<std::string> sceneType = {"123"};
-    audioEffectChainManager->isInitialized_ = GetData<bool>();
-    audioEffectChainManager->sceneTypeToSessionIDMap_.insert({"test", sceneType});
-    audioEffectChainManager->sessionIDToEffectInfoMap_.insert({"123", sessionEffectInfo});
-
-    audioEffectChainManager->QueryHdiSupportedChannelInfo(channels, channelLayout);
-    audioEffectChainManager->ResetInfo();
-}
-
 void AudioEffectChainUpdateEffectBtOffloadSupportedFuzzTest()
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
@@ -1217,7 +1196,6 @@ TestFuncs g_testFuncs = {
     AudioEnhanceChainFuzzTest,
     AudioEffectChainGetOutputChannelInfoFuzzTest,
     AudioEffectChainStreamVolumeUpdateFuzzTest,
-    AudioEffectChainQueryHdiSupportedChannelInfoFuzzTest,
     AudioEffectChainUpdateEffectBtOffloadSupportedFuzzTest,
     AudioEffectChainLoadEffectPropertiesFuzzTest,
     AudioEffectChainSetAudioEffectPropertyFuzzTest,

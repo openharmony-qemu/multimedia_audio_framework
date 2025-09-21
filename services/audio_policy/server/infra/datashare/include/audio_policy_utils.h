@@ -34,6 +34,7 @@
 
 #include "audio_a2dp_offload_flag.h"
 #include "audio_policy_config_manager.h"
+#include "audio_pipe_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -94,6 +95,8 @@ public:
     bool IsSupportedNearlink(const std::string &bundleName, int32_t apiVersion, bool hasSystemPermission);
 
     bool IsWirelessDevice(DeviceType deviceType);
+
+    void UpdateMultiChannelModuleInfo(AudioPipeInfo &info, std::shared_ptr<PipeStreamPropInfo> streamPropInfo);
 private:
     AudioPolicyUtils() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),

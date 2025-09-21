@@ -616,6 +616,12 @@ int32_t HpaeManagerImpl::PeekAudioData(
     CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
     return manager_->PeekAudioData(sinkPortIndex, buffer, bufferSize, streamInfo);
 }
+
+bool HpaeManagerImpl::IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout)
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, false, "manager is nullptr");
+    return manager_->IsChannelLayoutSupportForDspEffect(channelLayout);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

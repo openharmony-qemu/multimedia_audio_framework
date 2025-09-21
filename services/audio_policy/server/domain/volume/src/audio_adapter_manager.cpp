@@ -3489,6 +3489,12 @@ int32_t AudioAdapterManager::RemoveCaptureInjector(const uint32_t &sinkPortIndex
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     return audioServiceAdapter_->RemoveCaptureInjector(sinkPortIndex, sourcePortIndex, sourceType);
 }
+
+bool AudioAdapterManager::IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout)
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERROR, "audioServiceAdapter is null");
+    return audioServiceAdapter_->IsChannelLayoutSupportForDspEffect(channelLayout);
+}
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

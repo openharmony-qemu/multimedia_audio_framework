@@ -247,6 +247,14 @@ public:
         const SourceType &sourceType) = 0;
     virtual int32_t RemoveCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
         const SourceType &sourceType) = 0;
+
+    /**
+     * @brief Check is channelLayout support for multichannel render manager
+     *
+     * @return {@link true} if support, {@link false} otherwise
+     */
+    virtual bool IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout) NOT_SUPPORT_RET
+
     virtual ~AudioServiceAdapter();
 };
 } // namespace AudioStandard
