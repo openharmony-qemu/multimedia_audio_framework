@@ -868,14 +868,6 @@ void AudioVolumeManagerGetPositionInVolumePointsFuzzTest(const uint8_t *rawData,
     audioAdapterManager->GetPositionInVolumePoints(volumePoints, idx);
 }
 
-void AudioVolumeManagerInitVolumeMapIndexFuzzTest(const uint8_t *rawData, size_t size)
-{
-    AudioStreamType streamType = g_testAudioStreamTypes[static_cast<uint32_t>(size) % g_testAudioStreamTypes.size()];
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    audioAdapterManager->defaultVolumeTypeList_.push_back(streamType);
-    audioAdapterManager->InitVolumeMapIndex();
-}
-
 void AudioVolumeManagerUpdateVolumeMapIndexFuzzTest(const uint8_t *rawData, size_t size)
 {
     static const vector<DeviceVolumeType> testDeviceVolumeTypes = {
@@ -1127,7 +1119,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioVolumeManagerGetSystemSoundUriFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerGetSystemVolumeInDbFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerGetPositionInVolumePointsFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerInitVolumeMapIndexFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerUpdateVolumeMapIndexFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerSetAbsVolumeSceneFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerSetAbsVolumeMuteFuzzTest,

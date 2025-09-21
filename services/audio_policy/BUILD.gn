@@ -235,6 +235,7 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/volume/src/audio_adapter_manager.cpp",
     "server/domain/volume/src/audio_adapter_manager_handler.cpp",
     "server/domain/volume/src/volume_data_maintainer.cpp",
+    "server/domain/volume/src/audio_volume_utils.cpp",
     "server/domain/router/app_select_router.cpp",
     "server/domain/router/audio_router_center.cpp",
     "server/domain/router/cockpit_phone_router.cpp",

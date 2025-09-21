@@ -84,7 +84,7 @@ public:
     void SetVgsVolumeSupported(bool isVgsSupported);
     std::vector<AdjustStreamVolumeInfo> GetStreamVolumeInfo(AdjustStreamVolume volumeType);
     void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string invocationTime, uint32_t code);
-    void SetCurrentActiveDevice(DeviceType currentActiveDevice);
+    void SetScoActive(bool isActive);
     void SetDoNotDisturbStatusVolume(uint32_t sessionId, float volume);
     uint32_t GetDoNotDisturbStatusVolume(int32_t volumeType, int32_t appUid, uint32_t sessionId);
     void SetDoNotDisturbStatusWhiteListVolume(std::vector<std::map<std::string, std::string>>
@@ -118,7 +118,7 @@ private:
     std::shared_ptr<FixedSizeList<AdjustStreamVolumeInfo>> setDuckVolumeInfo_ =
         std::make_shared<FixedSizeList<AdjustStreamVolumeInfo>>(MAX_STREAM_CACHE_AMOUNT);
 
-    DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
+    bool isScoActive_ = false;
     std::unordered_map<uint32_t, float> doNotDisturbStatusWhiteListVolume_ {};
     bool isDoNotDisturbStatus_ = false;
 };

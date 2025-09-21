@@ -481,5 +481,23 @@ void AudioConnectedDevice::RegisterNameMonitorHelper()
     dataShareHelper->Release();
 }
 
+bool AudioConnectedDevice::IsEmpty()
+{
+    std::shared_lock<std::shared_mutex> lock(mutex_);
+    return connectedDevices_.empty();
+}
+
+std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetDeviceByDeviceType(DeviceType type,
+    std::string networkId)
+{
+    CHECK_AND_RETURN_RET_LOG(!IsEmpty(), defaultOutputDevice_, "no device connected");
+    std::shared_ptr<AudioDeviceDescriptor> device = GetConnectedDeviceByType(networkId, type);
+    CHECK_AND_RETURN(device == nullptr, device);
+    
+    device = std::make_shared<AudioDeviceDescriptor>(type, OUTPUT_DEVICE);
+    device->networkId_ = networkId;
+    AUDIO_ERROR_LOG("Get device failed, make new %{puublic}s", device->GetName().c_str());
+    return device;
+}
 }
 }

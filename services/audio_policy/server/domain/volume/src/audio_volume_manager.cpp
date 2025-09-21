@@ -31,6 +31,7 @@
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
 #include "sle_audio_device_manager.h"
+#include "audio_active_device.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -241,7 +242,7 @@ int32_t AudioVolumeManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor devic
 
     Trace trace("AudioVolumeManager::SetVolumeForSwitchDevice:" + std::to_string(deviceDescriptor.deviceType_));
     // Load volume from KvStore and set volume for each stream type
-    audioPolicyManager_.SetVolumeForSwitchDevice(deviceDescriptor);
+    audioPolicyManager_.UpdateVolumeForStreams();
 
     // The volume of voice_call needs to be adjusted separately
     if (enableSetVoiceCallVolume && audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_PHONE_CALL) {
@@ -404,7 +405,7 @@ int32_t AudioVolumeManager::SetAdjustVolumeForZone(int32_t zoneId)
 {
     if (zoneId == 0) {
         AudioDeviceDescriptor currentActiveDevice = audioActiveDevice_.GetCurrentOutputDevice();
-        audioPolicyManager_.SetVolumeForSwitchDevice(currentActiveDevice);
+        audioPolicyManager_.UpdateVolumeForStreams();
     }
     return audioPolicyManager_.SetAdjustVolumeForZone(zoneId);
 }
