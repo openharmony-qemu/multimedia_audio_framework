@@ -42,8 +42,8 @@ public:
     };
 };
 namespace {
-    const std::string INPUT_PATH = "/data/AISSInput.pcm";
-    const std::string OUTPUT_PATH = "/data/output.pcm";
+    const std::string INPUT_PATH = "/data/aiss_48000_2_S32LE.pcm";
+    const std::string OUTPUT_PATH = "/data/aiss_output.pcm";
     const std::string HUMAN_PATH = "/data/humanSound.pcm";
     const std::string BKG_PATH = "/data/bkgSound.pcm";
     constexpr uint32_t FRAME_LEN_MS = 20;

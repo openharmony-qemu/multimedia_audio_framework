@@ -27,10 +27,10 @@
 #include "audio_suite_algo_interface.h"
 
 namespace {
-    const std::string INPUT_PATH = "/data/qianqianquege.wav";
-    const std::string OUT_PATH = "/data/qianqianquege_aiss_output.wav";
-    const std::string HUMAN_PATH = "/data/qianqianquege_aiss_humanSound.wav";
-    const std::string BKG_PATH = "/data/qianqianquege_aiss_bkgSound.wav";
+    const std::string INPUT_PATH = "/data/aiss_48000_2_S32LE.wav";
+    const std::string OUT_PATH = "/data/aiss_output.wav";
+    const std::string HUMAN_PATH = "/data/aiss_humanSound.wav";
+    const std::string BKG_PATH = "/data/aiss_bkgSound.wav";
     constexpr uint32_t FRAME_LEN_MS = 20;
     constexpr uint32_t DEFAULT_SAMPLING_RATE = 48000;
     constexpr uint32_t DEFAULT_CHANNELS_IN = 2;
