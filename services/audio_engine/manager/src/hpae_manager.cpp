@@ -116,7 +116,6 @@ HpaeManager::HpaeManager() : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT)  // todo Me
 
 HpaeManager::~HpaeManager()
 {
-    AUDIO_INFO_LOG("~HpaeManager");
     if (IsInit()) {
         DeInit();
     }

@@ -301,7 +301,7 @@ void HpaeManagerFuzzTest::StreamSetUp()
     hpaeManager_->OpenAudioPort(sourceAudioModuleInfo2);
     hpaeManager_->SetDefaultSource(sourceAudioModuleInfo2.name);
     WaitForMsgProcessing(hpaeManager_);
-    sourcePortId_ = callback->GetPortId();
+    sourcePortId2_ = callback->GetPortId();
     rendererStreamInfo_ = GetRenderStreamInfo();
     hpaeManager_->CreateStream(rendererStreamInfo_);
     streamInfo_ = GetCaptureStreamInfo();
@@ -364,10 +364,9 @@ void HpaeManagerFuzzTest::InitFunc()
 void HpaeManagerFuzzTest::TearDown()
 {
     hpaeManager_->CloseAudioPort(sinkPortId_);
+    hpaeManager_->CloseAudioPort(sinkPortId2_);
     hpaeManager_->CloseAudioPort(sourcePortId_);
-    hpaeManager_->Release(rendererStreamInfo_.streamClassType, rendererStreamInfo_.sessionId);
-    hpaeManager_->Release(streamInfo_.streamClassType, streamInfo_.sessionId);
-    hpaeManager_->Release(capStreamInfo_.streamClassType, capStreamInfo_.sessionId);
+    hpaeManager_->CloseAudioPort(sourcePortId2_);
     hpaeManager_->DeInit();
 }
 
