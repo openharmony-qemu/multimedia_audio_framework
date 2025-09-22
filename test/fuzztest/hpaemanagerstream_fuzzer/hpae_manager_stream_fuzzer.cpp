@@ -312,6 +312,50 @@ void HpaeManagerFuzzTest::StreamSetUp()
     Fisrt();
     InitFunc();
 }
+void HpaeManagerFuzzTest::InitStreamFunc()
+{
+    
+    renderStreamFunc_.clear();
+    renderStreamFunc_.push_back([=, this]() {
+        hpaeManager_->Start(rendererStreamInfo_.streamClassType,rendererStreamInfo_.sessionId);
+    });
+    renderStreamFunc_.push_back([=, this]() {
+        hpaeManager_->StartWithSyncId(rendererStreamInfo_.streamClassType, rendererStreamInfo_.sessionId, 1);
+    });
+    renderStreamFunc_.push_back([=, this]() {
+        hpaeManager_->Pause(rendererStreamInfo_.streamClassType, rendererStreamInfo_.sessionId);
+    });
+    renderStreamFunc_.push_back([=, this]() {
+        hpaeManager_->Flush(rendererStreamInfo_.streamClassType, rendererStreamInfo_.sessionId);
+    });
+    renderStreamFunc_.push_back([=, this]() {
+        hpaeManager_->Drain(rendererStreamInfo_.streamClassType, rendererStreamInfo_.sessionId);
+    });
+    renderStreamFunc_.push_back([=, this]() {
+        hpaeManager_->Stop(rendererStreamInfo_.streamClassType, rendererStreamInfo_.sessionId);
+    });
+
+    capturerStreamFunc_.clear();
+    capturerStreamFunc_.push_back([=, this]() {
+        hpaeManager_->Start(streamInfo_.streamClassType, streamInfo_.sessionId);
+    });
+    capturerStreamFunc_.push_back([=, this]() {
+        hpaeManager_->StartWithSyncId(streamInfo_.streamClassType, streamInfo_.sessionId, 1);
+    });
+    capturerStreamFunc_.push_back([=, this]() {
+        hpaeManager_->Pause(streamInfo_.streamClassType, streamInfo_.sessionId);
+    });
+    capturerStreamFunc_.push_back([=, this]() {
+        hpaeManager_->Flush(streamInfo_.streamClassType, streamInfo_.sessionId);
+    });
+    capturerStreamFunc_.push_back([=, this]() {
+        hpaeManager_->Drain(streamInfo_.streamClassType, streamInfo_.sessionId);
+    });
+    capturerStreamFunc_.push_back([=, this]() {
+        hpaeManager_->Stop(streamInfo_.streamClassType, streamInfo_.sessionId);
+    });
+
+}
 
 void HpaeManagerFuzzTest::InitFunc()
 {
@@ -324,53 +368,27 @@ void HpaeManagerFuzzTest::InitFunc()
     hpaeManager_->GetSessionInfo(rendererStreamInfo_.streamClassType, rendererStreamInfo_.sessionId, sessionInfo);
     hpaeManager_->GetSessionInfo(streamInfo_.streamClassType, streamInfo_.sessionId, sessionInfo);
 
-    renderStreamFunc_.clear();
-    renderStreamFunc_.push_back([=, this]() {hpaeManager_->Start(rendererStreamInfo_.streamClassType,
-        rendererStreamInfo_.sessionId);});
-    renderStreamFunc_.push_back([=, this]() {hpaeManager_->StartWithSyncId(rendererStreamInfo_.streamClassType,
-        rendererStreamInfo_.sessionId, 1);});
-    renderStreamFunc_.push_back([=, this]() {hpaeManager_->Pause(rendererStreamInfo_.streamClassType,
-        rendererStreamInfo_.sessionId);});
-    renderStreamFunc_.push_back([=, this]() {hpaeManager_->Flush(rendererStreamInfo_.streamClassType,
-        rendererStreamInfo_.sessionId);});
-    renderStreamFunc_.push_back([=, this]() {hpaeManager_->Drain(rendererStreamInfo_.streamClassType,
-        rendererStreamInfo_.sessionId);});
-    renderStreamFunc_.push_back([=, this]() {hpaeManager_->Stop(rendererStreamInfo_.streamClassType,
-        rendererStreamInfo_.sessionId);});
-
-    capturerStreamFunc_.clear();
-    capturerStreamFunc_.push_back([=, this]() {hpaeManager_->Start(streamInfo_.streamClassType,
-        streamInfo_.sessionId);});
-    capturerStreamFunc_.push_back([=, this]() {hpaeManager_->StartWithSyncId(streamInfo_.streamClassType,
-        streamInfo_.sessionId, 1);});
-    capturerStreamFunc_.push_back([=, this]() {hpaeManager_->Pause(streamInfo_.streamClassType,
-        streamInfo_.sessionId);});
-    capturerStreamFunc_.push_back([=, this]() {hpaeManager_->Flush(streamInfo_.streamClassType,
-        streamInfo_.sessionId);});
-    capturerStreamFunc_.push_back([=, this]() {hpaeManager_->Drain(streamInfo_.streamClassType,
-        streamInfo_.sessionId);});
-    capturerStreamFunc_.push_back([=, this]() {hpaeManager_->Stop(streamInfo_.streamClassType,
-        streamInfo_.sessionId);});
+    InitStreamFunc();
 
     moveStreamFunc_.clear();
     uint32_t sessionId = sinkInputIdList_[GetData<uint32_t>() % sinkInputIdList_.size()];
     std::string sinkName = sinkNameList_[GetData<uint32_t>() % sinkNameList_.size()];
-    moveStreamFunc_.push_back([=, this]() {hpaeManager_->MoveSinkInputByIndexOrName(sessionId, 0, sinkName);});
+    moveStreamFunc_.push_back([=, this]() { hpaeManager_->MoveSinkInputByIndexOrName(sessionId, 0, sinkName);} );
     sessionId = sourceOutputIdList_[GetData<uint32_t>() % sourceOutputIdList_.size()];
     std::string sourceName = sourceNameList_[GetData<uint32_t>() % sourceNameList_.size()];
-    moveStreamFunc_.push_back([=, this]() {hpaeManager_->MoveSourceOutputByIndexOrName(sessionId, 0, sourceName);});
+    moveStreamFunc_.push_back([=, this]() { hpaeManager_->MoveSourceOutputByIndexOrName(sessionId, 0, sourceName); });
 
     errorStreamFunc_.clear();
     
     uint32_t index = GetData<uint32_t>() % HpaeStreamClassTypeVec.size();
     HpaeStreamClassType streamClassType = HpaeStreamClassTypeVec[index];
     sessionId = GetData<uint32_t>();
-    errorStreamFunc_.push_back([=, this]() {hpaeManager_->Start(streamClassType, sessionId);});
-    errorStreamFunc_.push_back([=, this]() {hpaeManager_->StartWithSyncId(streamClassType, sessionId, 1);});
-    errorStreamFunc_.push_back([=, this]() {hpaeManager_->Pause(streamClassType, sessionId);});
-    errorStreamFunc_.push_back([=, this]() {hpaeManager_->Flush(streamClassType, sessionId);});
-    errorStreamFunc_.push_back([=, this]() {hpaeManager_->Drain(streamClassType, sessionId);});
-    errorStreamFunc_.push_back([=, this]() {hpaeManager_->Stop(streamClassType, sessionId);});
+    errorStreamFunc_.push_back([=, this]() { hpaeManager_->Start(streamClassType, sessionId); });
+    errorStreamFunc_.push_back([=, this]() { hpaeManager_->StartWithSyncId(streamClassType, sessionId, 1); });
+    errorStreamFunc_.push_back([=, this]() { hpaeManager_->Pause(streamClassType, sessionId); });
+    errorStreamFunc_.push_back([=, this]() { hpaeManager_->Flush(streamClassType, sessionId); });
+    errorStreamFunc_.push_back([=, this]() { hpaeManager_->Drain(streamClassType, sessionId); });
+    errorStreamFunc_.push_back([=, this]() { hpaeManager_->Stop(streamClassType, sessionId); });
 }
 
 void HpaeManagerFuzzTest::TearDown()
@@ -447,15 +465,15 @@ void HpaeManagerFuzzTest::HpaeManagerEffectTest()
     effectFunc_.clear();
     uint32_t sessionId = sessionIdList_[GetData<uint32_t>() % sessionIdList_.size()];
     int32_t value = GetData<int32_t>();
-    effectFunc_.push_back([=, this]() {hpaeManager_->SetRate(sessionId, value);});
-    effectFunc_.push_back([&, this]() {hpaeManager_->GetAudioEffectMode(sessionId, value);});
-    effectFunc_.push_back([=, this]() {hpaeManager_->SetPrivacyType(sessionId, value);});
-    effectFunc_.push_back([=, this]() {hpaeManager_->GetWritableSize(sessionId);});
+    effectFunc_.push_back([=, this]() { hpaeManager_->SetRate(sessionId, value); });
+    effectFunc_.push_back([&, this]() { hpaeManager_->GetAudioEffectMode(sessionId, value); });
+    effectFunc_.push_back([=, this]() { hpaeManager_->SetPrivacyType(sessionId, value); });
+    effectFunc_.push_back([=, this]() { hpaeManager_->GetWritableSize(sessionId); });
 
-    effectFunc_.push_back([=, this]() {hpaeManager_->UpdateMaxLength(sessionId, TEST_SLEEP_TIME_20);});
-    effectFunc_.push_back([=, this]() {hpaeManager_->SetOffloadRenderCallbackType(sessionId, value);});
-    effectFunc_.push_back([=, this]() {hpaeManager_->SetOffloadPolicy(sessionId, value);});
-    effectFunc_.push_back([=, this]() {hpaeManager_->SetSpeed(sessionId, value);});
+    effectFunc_.push_back([=, this]() { hpaeManager_->UpdateMaxLength(sessionId, TEST_SLEEP_TIME_20); });
+    effectFunc_.push_back([=, this]() { hpaeManager_->SetOffloadRenderCallbackType(sessionId, value); });
+    effectFunc_.push_back([=, this]() { hpaeManager_->SetOffloadPolicy(sessionId, value); });
+    effectFunc_.push_back([=, this]() { hpaeManager_->SetSpeed(sessionId, value); });
     for (size_t i = 0; i < NUM_2; i++) {
         uint32_t index = GetData<uint32_t>() % effectFunc_.size();
         effectFunc_[index]();
@@ -470,10 +488,10 @@ void HpaeManagerFuzzTest::HpaeManagerEffectTest2()
     uint32_t sessionId = sessionIdList_[GetData<uint32_t>() % sessionIdList_.size()];
     bool value1 = GetData<bool>();
     bool value2 = GetData<bool>();
-    effectFunc_.push_back([=, this]() {hpaeManager_->UpdateSpatializationState(sessionId, value1, value2);});
-    effectFunc_.push_back([=, this]() {hpaeManager_->UpdateEffectBtOffloadSupported(value1);});
-    effectFunc_.push_back([=, this]() {hpaeManager_->SetMicrophoneMuteInfo(value1);});
-    effectFunc_.push_back([=, this]() {hpaeManager_->SetMicrophoneMuteInfo(value1);});
+    effectFunc_.push_back([=, this]() { hpaeManager_->UpdateSpatializationState(sessionId, value1, value2); });
+    effectFunc_.push_back([=, this]() { hpaeManager_->UpdateEffectBtOffloadSupported(value1); });
+    effectFunc_.push_back([=, this]() { hpaeManager_->SetMicrophoneMuteInfo(value1); });
+    effectFunc_.push_back([=, this]() { hpaeManager_->SetMicrophoneMuteInfo(value1); });
     for (size_t i = 0; i < NUM_2; i++) {
         uint32_t index = GetData<uint32_t>() % effectFunc_.size();
         effectFunc_[index]();
