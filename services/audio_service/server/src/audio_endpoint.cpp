@@ -63,13 +63,12 @@ namespace {
 
 std::string AudioEndpoint::GenerateEndpointKey(AudioDeviceDescriptor &deviceInfo, int32_t endpointFlag)
 {
-    // All primary sinks share one endpoint
-    int32_t endpointId = 0;
+    std::string key = deviceInfo.networkId_;
     if (deviceInfo.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        endpointId = deviceInfo.deviceId_;
+        // blueTooth need extra information
+        key = key + "_" +  std::to_string(deviceInfo.deviceId_) + "_" + std::to_string(deviceInfo.a2dpOffloadFlag_);
     }
-    return deviceInfo.networkId_ + "_" + std::to_string(endpointId) + "_" +
-        std::to_string(deviceInfo.deviceRole_) + "_" + std::to_string(endpointFlag);
+    return key + "_" + std::to_string(deviceInfo.deviceRole_) + "_" + std::to_string(endpointFlag);
 }
 
 std::shared_ptr<AudioEndpoint> AudioEndpoint::CreateEndpoint(EndpointType type, uint64_t id,
