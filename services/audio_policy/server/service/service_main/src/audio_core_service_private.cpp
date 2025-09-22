@@ -215,6 +215,7 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
             // Do nothing
         }
     }
+    audioIOHandleMap_.NotifyUnmutePort();
     pipeManager_->UpdateRendererPipeInfos(pipeInfos);
     RemoveUnusedPipe();
     NotifyRouteUpdate(streamDescs);
@@ -1270,7 +1271,6 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
     }
 
     streamCollector_.UpdateRendererDeviceInfo(newDeviceDesc);
-    audioIOHandleMap_.NotifyUnmutePort();
 }
 
 void AudioCoreService::OnMicrophoneBlockedUpdate(DeviceType devType, DeviceBlockStatus status)
@@ -1830,7 +1830,6 @@ void AudioCoreService::TriggerRecreateRendererStreamCallbackEntry(shared_ptr<Aud
     const AudioStreamDeviceChangeReasonExt reason)
 {
     TriggerRecreateRendererStreamCallback(streamDesc, reason);
-    audioIOHandleMap_.NotifyUnmutePort();
 }
 
 CapturerState AudioCoreService::HandleStreamStatusToCapturerState(AudioStreamStatus status)
@@ -2589,7 +2588,7 @@ void AudioCoreService::SleepForSwitchDevice(std::shared_ptr<AudioStreamDescripto
             {BASE_DEVICE_SWITCH_SLEEP_US, OLD_DEVICE_UNAVAILABLE_EXTRA_SLEEP_US}
         },
         {
-            [&]() { return reason.IsUnknown() || oldSinkName == REMOTE_CAST_INNER_CAPTURER_SINK_NAME; },
+            [&]() { return reason.IsUnknown() && oldSinkName == REMOTE_CAST_INNER_CAPTURER_SINK_NAME; },
             {BASE_DEVICE_SWITCH_SLEEP_US}
         },
     };
