@@ -1726,4 +1726,97 @@ HWTEST_F(HpaeRendererManagerTest, DisConnectInputCluster_001, TestSize.Level0)
     EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
+
+/**
+ * @tc.name  : Test HpaeOffloadRendererManagerSetCurrentNode_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeOffloadRendererManagerSetCurrentNode_001
+ * @tc.desc  : Test SetCurrentNode when curNode_ already exists.
+ */
+HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "SetCurrentNodeTest001.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    bool isReload = true;
+    std::shared_ptr<HpaeOffloadRendererManager> offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    EXPECT_EQ(offloadManager->Init(isReload), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+    EXPECT_EQ(offloadManager->IsInit(), true);
+  
+    HpaeStreamInfo streamInfo;
+    streamInfo.channels = STEREO;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    streamInfo.format = SAMPLE_F32LE;
+    streamInfo.frameLen = FRAME_LENGTH_960;
+    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+
+    EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+    offloadManager->SetCurrentNode();
+    EXPECT_NE(offloadManager->curNode_, nullptr);
+}
+
+/**
+ * @tc.name  : Test HpaeOffloadRendererManagerSetCurrentNode_002
+ * @tc.type  : FUNC
+ * @tc.number: HpaeOffloadRendererManagerSetCurrentNode_002
+ * @tc.desc  : Test SetCurrentNode when curNode_ is nullptr.
+ */
+HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_002, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "SetCurrentNodeTest002.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    std::shared_ptr<HpaeOffloadRendererManager> offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    EXPECT_EQ(offloadManager->Init(), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+    EXPECT_EQ(offloadManager->IsInit(), true);
+  
+    HpaeStreamInfo streamInfo1;
+    streamInfo1.channels = STEREO;
+    streamInfo1.samplingRate = SAMPLE_RATE_48000;
+    streamInfo1.format = SAMPLE_F32LE;
+    streamInfo1.frameLen = FRAME_LENGTH_960;
+    streamInfo1.sessionId = TEST_STREAM_SESSION_ID;
+    streamInfo1.streamType = STREAM_MUSIC;
+    streamInfo1.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+
+    EXPECT_EQ(offloadManager->CreateStream(streamInfo1), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+
+    HpaeStreamInfo streamInfo2;
+    streamInfo2.channels = STEREO;
+    streamInfo2.samplingRate = SAMPLE_RATE_48000;
+    streamInfo2.format = SAMPLE_F32LE;
+    streamInfo2.frameLen = FRAME_LENGTH_960;
+    streamInfo2.sessionId = 100000;
+    streamInfo2.streamType = STREAM_MUSIC;
+    streamInfo2.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+
+    EXPECT_EQ(offloadManager->CreateStream(streamInfo2), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+    EXPECT_EQ(offloadManager->Start(streamInfo2.sessionId), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+    offloadManager->RemoveNodeFromMap(TEST_STREAM_SESSION_ID);
+    EXPECT_EQ(offloadManager->curNode_, nullptr);
+    offloadManager->SetCurrentNode();
+    EXPECT_NE(offloadManager->curNode_, nullptr);
+}
 }  // namespace
