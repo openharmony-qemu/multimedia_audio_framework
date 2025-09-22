@@ -23,6 +23,7 @@
 #include "audio_pipe_manager.h"
 #include "audio_service_enum.h"
 
+
 namespace OHOS {
 namespace AudioStandard {
 enum VoIpType {
@@ -71,6 +72,7 @@ private:
     bool isOpened_;
     bool isConnected_;
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> rendererStreamMap_ = {};
+    std::set<uint32_t> restoreVoipIdSet_ = {};
     AudioIOHandleMap &audioIOHandleMap_;
     IAudioPolicyInterface &audioPolicyManager_;
     std::shared_ptr<AudioPipeManager> pipeManager_ = nullptr;

@@ -708,6 +708,9 @@ public:
     bool IsCollaborativePlaybackEnabledForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
     int32_t ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
+    void AddVoipSessionId(uint32_t sessionId);
+    void RemoveVoipSessionId(uint32_t sessionId);
+    bool IsContainRestoreVoip();
 
 private:
     AudioPolicyManager() {}
@@ -748,6 +751,8 @@ private:
 
     static std::weak_ptr<AudioSessionManagerPolicyServiceDiedCallback> audioSessionManagerCb_;
     static std::mutex serverDiedSessionManagerCbkMutex_;
+
+    std::set<uint32_t> restoreVoipIdSet_ = {};
 };
 } // namespce AudioStandard
 } // namespace OHOS

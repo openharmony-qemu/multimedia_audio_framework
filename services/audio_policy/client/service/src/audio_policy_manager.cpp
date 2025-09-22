@@ -3298,6 +3298,24 @@ int32_t AudioPolicyManager::CheckAudioPolicyClientRegisted()
     return result;
 }
 
+void AudioPolicyManager::AddVoipSessionId(uint32_t sessionId)
+{
+    restoreVoipIdSet_.insert(sessionId);
+}
+
+void AudioPolicyManager::RemoveVoipSessionId(uint32_t sessionId)
+{
+    restoreVoipIdSet_.erase(sessionId);
+}
+
+bool AudioPolicyManager::IsContainRestoreVoip()
+{
+    if (restoreVoipIdSet_.size() == 0) {
+        return false;
+    }
+    return true;
+}
+
 AudioPolicyManager& AudioPolicyManager::GetInstance()
 {
     static AudioPolicyManager policyManager;

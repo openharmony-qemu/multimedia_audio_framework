@@ -1360,7 +1360,7 @@ void AudioService::Dump(std::string &dumpString)
         item.second->Dump(dumpString);
     }
 #endif
-    // dump voip and direct
+    // dump normal, voip and direct
     {
         std::lock_guard<std::mutex> lock(rendererMapMutex_);
         for (const auto &item : allRendererMap_) {
@@ -2066,6 +2066,17 @@ int32_t AudioService::DisableDualStreamForFastStream(const uint32_t sessionId)
 
     return SUCCESS;
 }
+
+std::shared_ptr<AudioEndpoint> AudioService::GetEndPointByType(AudioEndpoint::EndpointType type)
+{
+    for (const auto &pair : endpointList_) {
+        CHECK_AND_CONTINUE(pair.second != nullptr);
+        if (pair.second->GetEndpointType() == type) {
+            return pair.second;
+        }
+    }
+    return nullptr;
+}
 #endif
 
 int32_t AudioService::EnableDualStream(const uint32_t sessionId, const std::string &dupSinkName)
@@ -2096,16 +2107,6 @@ int32_t AudioService::DisableDualStream(const uint32_t sessionId)
 
     AUDIO_ERR_LOG("%{public}u failed", sessionId);
     return ERR_OPERATION_FAILED;
-}
-
-std::shared_ptr<AudioEndpoint> AudioService::GetEndPointByType(AudioEndpoint::EndpointType type)
-{
-    for (auto pair : endpointList_) {
-        if (pair.second->GetEndpointType() == type) {
-            return pair.second;
-        }
-    }
-    return nullptr;
 }
 } // namespace AudioStandard
 } // namespace OHOS

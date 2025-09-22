@@ -137,6 +137,9 @@ public:
     int32_t GetActualStreamManagerType() const noexcept;
     
     bool Dump(std::string &dumpString);
+    bool DumpNormal(std::string &dumpString);
+    bool DumpVoipAndDirect(std::string &dumpString);
+    void DumpCommonInfo(std::string &dumpString);
     void SetNonInterruptMute(const bool muteFlag);
     RestoreStatus RestoreSession(RestoreInfo restoreInfo);
     int32_t StopSession();
@@ -289,7 +292,7 @@ private:
     std::unordered_map<int32_t, SoftLinkInfo> softLinkInfos_;
     FILE *dumpSoftLink = nullptr;
 
-    RenderTarget lastTarget_;
+    RenderTarget lastTarget_ = NORMAL_PLAYBACK;
 };
 } // namespace AudioStandard
 } // namespace OHOS
