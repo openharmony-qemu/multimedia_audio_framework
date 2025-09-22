@@ -2200,7 +2200,7 @@ int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream(const AudioStream
         string deviceInfo = AudioServerProxy::GetInstance().GetAudioParameterProxy(LOCAL_NETWORK_ID, USB_DEVICE,
             condition);
         if (!deviceInfo.empty()) {
-            AUDIO_DEBUG_LOG("[GetAudioParameterProxy]deviceInfo: %{public}s", deviceInfo);
+            AUDIO_DEBUG_LOG("[GetAudioParameterProxy]deviceInfo: %{public}s", deviceInfo.c_str());
         }
     }
     OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice(), reason);
