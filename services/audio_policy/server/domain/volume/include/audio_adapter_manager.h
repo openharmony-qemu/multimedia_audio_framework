@@ -300,6 +300,7 @@ public:
     void RegisterDoNotDisturbStatus();
     void RegisterDoNotDisturbStatusWhiteList();
     void RegisterMdmMuteSwitchCallback();
+    void MdmMuteSwitchCallback(bool isMute);
     int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object);
     void HandleDistributedDeviceVolume();
     void SetSleVoiceStatusFlag(bool isSleVoiceStatus);
