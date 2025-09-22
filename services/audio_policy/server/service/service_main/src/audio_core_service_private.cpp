@@ -809,13 +809,13 @@ int32_t AudioCoreService::LoadSplitModule(const std::string &splitArgs, const st
         pipeManager_->GetStreamDescsByIoHandle(oldModuleId);
     audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleName);
 
-    AudioModuleInfo moudleInfo = AudioPolicyUtils::GetInstance().ConstructRemoteAudioModuleInfo(networkId,
+    AudioModuleInfo moduleInfo = AudioPolicyUtils::GetInstance().ConstructRemoteAudioModuleInfo(networkId,
         OUTPUT_DEVICE, DEVICE_TYPE_SPEAKER);
-    moudleInfo.lib = "libmodule-split-stream-sink.z.so";
-    moudleInfo.extra = splitArgs;
-    moudleInfo.needEmptyChunk = false;
+    moduleInfo.lib = "libmodule-split-stream-sink.z.so";
+    moduleInfo.extra = splitArgs;
+    moduleInfo.needEmptyChunk = true;
 
-    int32_t openRet = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleName, moudleInfo);
+    int32_t openRet = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleName, moduleInfo);
     if (openRet != 0) {
         AUDIO_ERR_LOG("open fail, OpenPortAndInsertIOHandle ret: %{public}d", openRet);
     }

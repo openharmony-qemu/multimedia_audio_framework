@@ -51,23 +51,25 @@ void HpaeRemoteOutputCluster::DoProcess()
 {
     Trace trace("HpaeRemoteOutputCluster::DoProcess");
     hpaeSinkOutputNode_->DoProcess();
-    std::vector<HpaeProcessorType> needErased;
-    for (auto &mixerNode : sceneMixerMap_) {
-        if (mixerNode.second->GetPreOutNum() == 0) {
-            ++sceneStopCountMap_[mixerNode.first];
+    
+    for (auto mixerNodeIt = sceneMixerMap_.begin(); mixerNodeIt != sceneMixerMap_.end();) {
+        if (sceneMixerMap_.size() == 1 && mixerNodeIt->second->GetPreOutNum() == 0) {
+            ++stopCount_;
+            break;
         } else {
-            sceneStopCountMap_[mixerNode.first] = 0;
+            stopCount_ = 0;
         }
-        if (sceneStopCountMap_[mixerNode.first] > timeoutThdFrames_) {
-            needErased.emplace_back(mixerNode.first);
-            hpaeSinkOutputNode_->DisConnect(mixerNode.second);
+        if (mixerNodeIt->second->GetPreOutNum() == 0) {
+            hpaeSinkOutputNode_->DisConnect(mixerNodeIt->second);
+            mixerNodeIt = sceneMixerMap_.erase(mixerNodeIt);
+        } else {
+            ++mixerNodeIt;
         }
     }
-    for (auto sceneType : needErased) {
-        sceneMixerMap_.erase(sceneType);
-    }
-    if (hpaeSinkOutputNode_->GetPreOutNum() == 0) {
+    if (stopCount_ > timeoutThdFrames_) {
+        sceneMixerMap_.clear();
         int32_t ret = hpaeSinkOutputNode_->RenderSinkStop();
+        stopCount_ = 0;
         AUDIO_INFO_LOG("timeout RenderSinkStop ret :%{public}d", ret);
     }
 }
@@ -111,7 +113,6 @@ void HpaeRemoteOutputCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBu
     }
     if (!SafeGetMap(sceneMixerMap_, sceneType)) {
         sceneMixerMap_[sceneType] = std::make_shared<HpaeMixerNode>(nodeInfo);
-        sceneStopCountMap_[sceneType] = 0;
         hpaeSinkOutputNode_->Connect(sceneMixerMap_[sceneType]);
     }
     sceneMixerMap_[sceneType]->Connect(sceneConverterMap_[sceneType]);
