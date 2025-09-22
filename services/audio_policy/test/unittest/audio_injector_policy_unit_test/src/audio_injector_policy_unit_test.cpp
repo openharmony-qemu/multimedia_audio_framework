@@ -154,5 +154,32 @@ HWTEST_F(AudioInjectorPolicyUnitTest, RemoveCaptureInjector_002, TestSize.Level1
     int32_t ret = audioInjectorPolicy.RemoveCaptureInjector();
     EXPECT_EQ(SUCCESS, ret);
 }
+
+/**
+ * @tc.name: SetInjectorStreamsMute_001
+ * @tc.desc: Test SetInjectorStreamsMute
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, SetInjectorStreamsMute_001, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc1 = std::make_shared<AudioStreamDescriptor>();
+    audioInjectorPolicy.rendererStreamMap_[1111] = streamDesc1;
+    audioInjectorPolicy.SetInjectorStreamsMute(true);
+}
+
+/**
+ * @tc.name: SetInjectorStreamsMute_002
+ * @tc.desc: Test SetInjectorStreamsMute
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, SetInjectorStreamsMute_002, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    audioInjectorPolicy.rendererStreamMap_.clear();
+    audioInjectorPolicy.SetInjectorStreamsMute(true);
+}
 } // namespace AudioStandard
 } // namespace OHOS

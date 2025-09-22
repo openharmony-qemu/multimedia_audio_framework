@@ -1597,8 +1597,14 @@ int32_t AudioCoreService::SetRendererTarget(RenderTarget target, RenderTarget la
     int32_t ret = ERROR;
     if (lastTarget == NORMAL_PLAYBACK && target == INJECT_TO_VOICE_COMMUNICATION_CAPTURE) {
         ret = PlayBackToInjection(sessionId);
+        if (ret == SUCCESS) {
+            AudioInjectorPolicy::GetInstance().AddInjectorStreamId(sessionId);
+        }
     } else if (lastTarget == INJECT_TO_VOICE_COMMUNICATION_CAPTURE && target == NORMAL_PLAYBACK) {
         ret = InjectionToPlayBack(sessionId);
+        if (ret == SUCCESS) {
+            AudioInjectorPolicy::GetInstance().DeleteInjectorStreamId(sessionId);
+        }
     }
     return ret;
 }

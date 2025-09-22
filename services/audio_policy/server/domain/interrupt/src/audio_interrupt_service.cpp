@@ -35,6 +35,7 @@
 #include "audio_zone_service.h"
 #include "audio_server_proxy.h"
 #include "standalone_mode_manager.h"
+#include "audio_injector_policy.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -892,6 +893,10 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(
             AUDIO_ERR_LOG("ActivateAudioInterrupt timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::unique_lock<std::mutex> lock(mutex_);
+    AudioInjectorPolicy &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    if (audioInjectorPolicy.IsActivateInterruptStreamId(audioInterrupt.streamId)) {
+        return SUCCESS;
+    }
     bool updateScene = false;
     int32_t ret = ActivateAudioInterruptCoreProcedure(zoneId, audioInterrupt, isUpdatedAudioStrategy, updateScene);
     if (ret != SUCCESS || !updateScene) {
@@ -1051,12 +1056,17 @@ int32_t AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId, co
 
     DeactivateAudioInterruptInternal(zoneId, currAudioInterrupt);
 
+    AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
     if (HasAudioSessionFakeInterrupt(zoneId, currAudioInterrupt.pid)) {
-        AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
         // If there is an event of (interrupt + set scene), ActivateAudioInterrupt and DeactivateAudioInterrupt may
         // experience deadlocks, due to mutex_ and deviceStatusUpdateSharedMutex_ waiting for each other
         lock.unlock();
         UpdateAudioSceneFromInterrupt(targetAudioScene, DEACTIVATE_AUDIO_INTERRUPT, zoneId);
+    }
+    if (handler_ != nullptr && targetAudioScene == AUDIO_SCENE_PHONE_CHAT &&
+        currAudioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        AudioInjectorPolicy &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+        audioInjectorPolicy.SendInterruptEventToInjectorStreams(handler_);
     }
 
     return SUCCESS;
@@ -2363,6 +2373,10 @@ void AudioInterruptService::UpdateAudioSceneFromInterrupt(const AudioScene audio
     if (currentAudioScene != audioScene) {
         HILOG_COMM_INFO("currentScene: %{public}d, targetScene: %{public}d, changeType: %{public}d",
             currentAudioScene, audioScene, changeType);
+        if (handler_ != nullptr && currentAudioScene == AUDIO_SCENE_PHONE_CHAT) {
+            AudioInjectorPolicy &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+            audioInjectorPolicy.SendInterruptEventToInjectorStreams(handler_);
+        }
     }
 
     switch (changeType) {
