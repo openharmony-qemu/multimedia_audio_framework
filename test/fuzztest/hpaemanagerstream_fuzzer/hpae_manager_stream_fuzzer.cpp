@@ -41,7 +41,9 @@ constexpr int32_t TEST_SLEEP_TIME_20 = 20;
 constexpr int32_t TEST_SLEEP_TIME_40 = 40;
 constexpr int32_t FRAME_LENGTH = 882;
 constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
-
+constexpr int32_t TEST_RENDER_SESSION_ID = 123457;
+constexpr int32_t TEST_CAP_SESSION_ID = 123458;
+bool g_isFirst = false;
 typedef void (*TestFuncs)();
 
 vector<AudioSpatializationSceneType> AudioSpatializationSceneTypeVec {
@@ -87,6 +89,22 @@ vector<HpaeStreamClassType> HpaeStreamClassTypeVec = {
     HPAE_STREAM_CLASS_TYPE_PLAY,
     HPAE_STREAM_CLASS_TYPE_RECORD,
 };
+
+vector<EffectChain> DEFAULT_EFFECT_CHAINS = {
+    {"EFFECTCHAIN_SPK_MUSIC", {"apply1", "apply2", "apply3"}, ""},
+    {"EFFECTCHAIN_BT_MUSIC", {}, ""}
+};
+
+EffectChainManagerParam DEFAULT_EFFECT_CHAIN_MANAGER_PARAM{
+    3,
+    "SCENE_DEFAULT",
+    {},
+    {{"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
+        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"}},
+    {{"effect1", "property1"}, {"effect4", "property5"}, {"effect1", "property4"}}
+};
+
+vector<shared_ptr<AudioEffectLibEntry>> DEFAULT_EFFECT_LIBRARY_LIST = {};
 
 template<class T>
 T GetData()
@@ -152,9 +170,23 @@ HPAE::HpaeStreamInfo GetRenderStreamInfo()
     streamInfo.samplingRate = SAMPLE_RATE_44100;
     streamInfo.format = SAMPLE_S16LE;
     streamInfo.frameLen = FRAME_LENGTH;
-    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
+    streamInfo.sessionId = TEST_RENDER_SESSION_ID;
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.streamClassType = HPAE::HPAE_STREAM_CLASS_TYPE_PLAY;
+    return streamInfo;
+}
+
+HPAE::HpaeStreamInfo GetCapStreamInfo()
+{
+    HPAE::HpaeStreamInfo streamInfo;
+    streamInfo.channels = STEREO;
+    streamInfo.samplingRate = SAMPLE_RATE_44100;
+    streamInfo.format = SAMPLE_S16LE;
+    streamInfo.frameLen = FRAME_LENGTH;
+    streamInfo.sessionId = TEST_CAP_SESSION_ID;
+    streamInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    streamInfo.streamClassType = HPAE::HPAE_STREAM_CLASS_TYPE_PLAY;
+    streamInfo.deviceName = "Speaker_File";
     return streamInfo;
 }
 
@@ -192,549 +224,286 @@ HPAE::HpaeStreamInfo GetCaptureStreamInfo()
     streamInfo.streamClassType = HPAE::HPAE_STREAM_CLASS_TYPE_RECORD;
     return streamInfo;
 }
-
-void InitFuzzTest()
+void HpaeManagerFuzzTest::Fisrt()
 {
-    std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
-    hpaeManager_->Init();
-    hpaeManager_->IsInit();
-    sleep(1);
-    hpaeManager_->IsRunning();
-    hpaeManager_->DeInit();
-    hpaeManager_->IsInit();
-    sleep(1);
-    hpaeManager_->IsRunning();
-    hpaeManager_->DeInit();
-    hpaeManager_ = nullptr;
-}
-
-void HpaeRenderStreamManagerFuzzTest()
-{
-    std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
-    hpaeManager_->Init();
-
-    std::shared_ptr<HpaeAudioServiceCallbackFuzzTest> callback = std::make_shared<HpaeAudioServiceCallbackFuzzTest>();
-    hpaeManager_->RegisterSerivceCallback(callback);
-    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
-    hpaeManager_->OpenAudioPort(audioModuleInfo);
-    hpaeManager_->SetDefaultSink(audioModuleInfo.name);
-    HpaeStreamInfo streamInfo = GetRenderStreamInfo();
-    hpaeManager_->CreateStream(streamInfo);
-    bool mute = GetData<bool>();
-    bool isSync = GetData<bool>();
-    hpaeManager_->SetSinkMute(audioModuleInfo.name, true, true);
-    hpaeManager_->SetSinkMute(audioModuleInfo.name, false, true);
-    bool isSuspend = GetData<bool>();
-    hpaeManager_->SuspendAudioDevice(audioModuleInfo.name, true);
-    hpaeManager_->SuspendAudioDevice(audioModuleInfo.name, false);
+    CHECK_AND_RETURN(!g_isFirst);
+    g_isFirst = true;
     hpaeManager_->GetAllSinkInputs();
-    hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
-
-    hpaeManager_->GetAllSinkInputs();
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->DeInit();
-    WaitForMsgProcessing(hpaeManager_);
-}
-
-void HpaeRenderStreamManagerFuzzTest2()
-{
-    std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
-    hpaeManager_->Init();
-
-    std::shared_ptr<HpaeAudioServiceCallbackFuzzTest> callback = std::make_shared<HpaeAudioServiceCallbackFuzzTest>();
-    hpaeManager_->RegisterSerivceCallback(callback);
-    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
-    hpaeManager_->OpenAudioPort(audioModuleInfo);
-    hpaeManager_->SetDefaultSink(audioModuleInfo.name);
-    HpaeStreamInfo streamInfo = GetRenderStreamInfo();
-    hpaeManager_->CreateStream(streamInfo);
-    bool mute = GetData<bool>();
-    bool isSync = GetData<bool>();
-    hpaeManager_->SetSinkMute(audioModuleInfo.name, mute, isSync);
-    bool isSuspend = GetData<bool>();
-    hpaeManager_->SuspendAudioDevice(audioModuleInfo.name, isSuspend);
-
-    hpaeManager_->GetAllSinkInputs();
-    uint32_t sessionId = GetData<uint32_t>();
-    uint32_t index = GetData<uint32_t>() % HpaeStreamClassTypeVec.size();
-    HpaeStreamClassType streamClassType = HpaeStreamClassTypeVec[index];
-    hpaeManager_->Release(streamClassType, sessionId);
-
-    hpaeManager_->GetAllSinkInputs();
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->DeInit();
-    WaitForMsgProcessing(hpaeManager_);
-}
-
-void HpaeRenderStreamManagerFuzzTest3()
-{
-    std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
-    hpaeManager_->Init();
-    hpaeManager_->IsInit();
-
-    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
-    hpaeManager_->OpenAudioPort(audioModuleInfo);
-    hpaeManager_->SetDefaultSink(audioModuleInfo.name);
-    HpaeStreamInfo streamInfo = GetRenderStreamInfo();
-    hpaeManager_->CreateStream(streamInfo);
-
-    uint32_t sessionId = GetData<uint32_t>();
-    uint32_t index = GetData<uint32_t>() % HpaeStreamClassTypeVec.size();
-    HpaeStreamClassType streamClassType = HpaeStreamClassTypeVec[index];
-
-    HpaeSessionInfo sessionInfo;
-    hpaeManager_->GetSessionInfo(streamClassType, sessionId, sessionInfo);
-    hpaeManager_->Start(streamClassType, sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamClassType, sessionId, sessionInfo);
-
-    int32_t syncId = GetData<int32_t>();
-    hpaeManager_->StartWithSyncId(streamClassType, sessionId, syncId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamClassType, sessionId, sessionInfo);
-
-    hpaeManager_->Pause(streamClassType, sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamClassType, sessionId, sessionInfo);
-
-    hpaeManager_->Stop(streamClassType, sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamClassType, sessionId, sessionInfo);
-
-    hpaeManager_->Release(streamClassType, sessionId);
-    hpaeManager_->Release(streamClassType, sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamClassType, sessionId, sessionInfo);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->DeInit();
-    WaitForMsgProcessing(hpaeManager_);
-}
-
-void HpaeRenderStreamManagerFuzzTest4()
-{
-    std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
-    hpaeManager_->Init();
-    hpaeManager_->IsInit();
-
-    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
-    hpaeManager_->OpenAudioPort(audioModuleInfo);
-    hpaeManager_->SetDefaultSink(audioModuleInfo.name);
-
-    HpaeStreamInfo streamInfo = GetRenderStreamInfo();
-    hpaeManager_->CreateStream(streamInfo);
-    WaitForMsgProcessing(hpaeManager_);
-
-    HpaeSessionInfo sessionInfo;
-    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
-
-    hpaeManager_->Start(streamInfo.streamClassType, streamInfo.sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
-
-    int32_t syncId = GetData<int32_t>();
-    hpaeManager_->StartWithSyncId(streamInfo.streamClassType, streamInfo.sessionId, syncId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
-
-    hpaeManager_->Pause(streamInfo.streamClassType, streamInfo.sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
-
-    hpaeManager_->Stop(streamInfo.streamClassType, streamInfo.sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
-
-    hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->DeInit();
-    WaitForMsgProcessing(hpaeManager_);
-}
-
-void HpaeCaptureStreamManagerFuzzTest()
-{
-    std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
-    hpaeManager_->Init();
-    hpaeManager_->IsInit();
-
-    std::shared_ptr<HpaeAudioServiceCallbackFuzzTest> callback = std::make_shared<HpaeAudioServiceCallbackFuzzTest>();
-    hpaeManager_->RegisterSerivceCallback(callback);
-    AudioModuleInfo audioModuleInfo = GetSourceAudioModeInfo();
-    hpaeManager_->OpenAudioPort(audioModuleInfo);
-    hpaeManager_->SetDefaultSource(audioModuleInfo.name);
-    HpaeStreamInfo streamInfo = GetCaptureStreamInfo();
-    hpaeManager_->CreateStream(streamInfo);
-    WaitForMsgProcessing(hpaeManager_);
-    int32_t fuzzPortId = GetData<int32_t>();
-    bool mute = GetData<bool>();
-    hpaeManager_->SetSourceOutputMute(fuzzPortId, mute);
+    hpaeManager_->GetAllSinks();
+    hpaeManager_->GetSessionInfo(streamInfo_.streamClassType, streamInfo_.sessionId, sessionInfo);
+    hpaeManager_->NotifySettingsDataReady();
+    hpaeManager_->NotifyAccountsChanged();
+    hpaeManager_->IsAcousticEchoCancelerSupported(SOURCE_TYPE_LIVE);
+    std::vector<std::string> subKeys;
+    std::vector<std::pair<std::string, std::string>> result;
+    subKeys.push_back("live_effect_supported");
+    hpaeManager_->GetEffectLiveParameter(subKeys, result);
+    std::vector<std::pair<std::string, std::string>> params;
+    params.push_back({"live_effect_enable", "NRON"});
+    hpaeManager_->SetEffectLiveParameter(params);
+    hpaeManager_->SetSourceOutputMute(sourcePortId_, true);
     hpaeManager_->GetAllSourceOutputs();
-    hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->DeInit();
+    hpaeManager_->DumpSourceOutputsInfo();
+    hpaeManager_->DumpSinkInputsInfo();
+     AudioEffectPropertyArrayV3 propertyV3;
+    hpaeManager_->GetAudioEffectProperty(propertyV3);
+    hpaeManager_->SetAudioEffectProperty(propertyV3);  
+    AudioEffectPropertyArray property;
+    hpaeManager_->GetAudioEffectProperty(property);
+    hpaeManager_->SetAudioEffectProperty(property); 
+    AudioEnhancePropertyArray propertyEn;
+    hpaeManager_->GetAudioEnhanceProperty(propertyEn, DEVICE_TYPE_SPEAKER);
+    hpaeManager_->SetAudioEnhanceProperty(propertyEn, DEVICE_TYPE_SPEAKER);
+    hpaeManager_->GetAudioEnhanceProperty(propertyV3, DEVICE_TYPE_SPEAKER);
+    hpaeManager_->SetAudioEnhanceProperty(propertyV3, DEVICE_TYPE_SPEAKER);
+    hpaeManager_->UpdateExtraSceneType("123", "456", "789");
+    hpaeManager_->UpdateSpatialDeviceType(EARPHONE_TYPE_INEAR);
+    hpaeManager_->SetOutputDevice(TEST_STREAM_SESSION_ID, DEVICE_TYPE_SPEAKER);
+    hpaeManager_->InitHdiState();
+    hpaeManager_->AddStreamVolumeToEffect("123", 1.0);
+    hpaeManager_->DeleteStreamVolumeToEffect("123");
     WaitForMsgProcessing(hpaeManager_);
 }
 
-void HpaeCaptureStreamManagerFuzzTest2()
+void HpaeManagerFuzzTest::StreamSetUp()
 {
-    std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
+    hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
     hpaeManager_->Init();
     hpaeManager_->IsInit();
 
     std::shared_ptr<HpaeAudioServiceCallbackFuzzTest> callback = std::make_shared<HpaeAudioServiceCallbackFuzzTest>();
     hpaeManager_->RegisterSerivceCallback(callback);
-    AudioModuleInfo audioModuleInfo = GetSourceAudioModeInfo();
-    hpaeManager_->OpenAudioPort(audioModuleInfo);
-    hpaeManager_->SetDefaultSource(audioModuleInfo.name);
-    WaitForMsgProcessing(hpaeManager_);
-    int32_t portId = callback->GetPortId();
-    HpaeStreamInfo streamInfo = GetCaptureStreamInfo();
-    hpaeManager_->CreateStream(streamInfo);
-
-    hpaeManager_->SetSourceOutputMute(portId, true);
-
-    callback->GetSetSourceOutputMuteResult();
-    hpaeManager_->SetSourceOutputMute(portId, false);
-
-    hpaeManager_->GetAllSourceOutputs();
-
-    hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->DeInit();
-    WaitForMsgProcessing(hpaeManager_);
-}
-
-void HpaeCaptureStreamManagerFuzzTest3()
-{
-    std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
-    hpaeManager_->Init();
-    hpaeManager_->IsInit();
-
-    AudioModuleInfo audioModuleInfo = GetSourceAudioModeInfo();
-    hpaeManager_->OpenAudioPort(audioModuleInfo);
-    hpaeManager_->SetDefaultSource(audioModuleInfo.name);
-    HpaeStreamInfo streamInfo = GetCaptureStreamInfo();
-    hpaeManager_->CreateStream(streamInfo);
-    WaitForMsgProcessing(hpaeManager_);
-
-    HpaeSessionInfo sessionInfo;
-    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
-    hpaeManager_->Start(streamInfo.streamClassType, streamInfo.sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
-
-    hpaeManager_->Pause(streamInfo.streamClassType, streamInfo.sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
-
-    hpaeManager_->Stop(streamInfo.streamClassType, streamInfo.sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
-
-    hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
-    hpaeManager_->DeInit();
-    WaitForMsgProcessing(hpaeManager_);
-}
-
-void HpaeRenderStreamManagerMoveFuzzTest()
-{
-    std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
-    hpaeManager_->Init();
-    hpaeManager_->IsInit();
-
-    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
-    hpaeManager_->OpenAudioPort(audioModuleInfo);
-    hpaeManager_->SetDefaultSink(audioModuleInfo.name);
-    AudioModuleInfo audioModuleInfo1 = GetSinkAudioModeInfo("Speaker_File1");
-    hpaeManager_->OpenAudioPort(audioModuleInfo1);
-    HpaeStreamInfo streamInfo = GetRenderStreamInfo();
-    hpaeManager_->CreateStream(streamInfo);
-    float volume = GetData<float>();
-    hpaeManager_->SetClientVolume(streamInfo.sessionId, volume);
-    float loudnessGain = GetData<float>();
-    hpaeManager_->SetLoudnessGain(streamInfo.sessionId, loudnessGain);
-    int32_t rate = GetData<int32_t>();
-    hpaeManager_->SetRate(streamInfo.sessionId, rate);
-    WaitForMsgProcessing(hpaeManager_);
-
-    HpaeSessionInfo sessionInfo;
-    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
-    hpaeManager_->MoveSinkInputByIndexOrName(streamInfo.sessionId, 1, "Speaker_File1");
-    hpaeManager_->Start(streamInfo.streamClassType, streamInfo.sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
-
-    hpaeManager_->MoveSinkInputByIndexOrName(streamInfo.sessionId, 0, "Speaker_File");
-    hpaeManager_->Pause(streamInfo.streamClassType, streamInfo.sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
-
-    hpaeManager_->MoveSinkInputByIndexOrName(streamInfo.sessionId, 1, "Speaker_File1");
-    hpaeManager_->Stop(streamInfo.streamClassType, streamInfo.sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
-
-    hpaeManager_->MoveSinkInputByIndexOrName(streamInfo.sessionId, 0, "Speaker_File");
-    hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
-
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
-    hpaeManager_->DeInit();
-    WaitForMsgProcessing(hpaeManager_);
-}
-
-void HpaeRenderStreamManagerMoveFuzzTest2()
-{
-    std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
-    hpaeManager_->Init();
-    hpaeManager_->IsInit();
-
-    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
-    hpaeManager_->OpenAudioPort(audioModuleInfo);
-    hpaeManager_->SetDefaultSink(audioModuleInfo.name);
-    AudioModuleInfo audioModuleInfo1 = GetSinkAudioModeInfo("Speaker_File1");
-    hpaeManager_->OpenAudioPort(audioModuleInfo1);
-    HpaeStreamInfo streamInfo = GetRenderStreamInfo();
-    hpaeManager_->CreateStream(streamInfo);
-    WaitForMsgProcessing(hpaeManager_);
-    uint32_t sessionId = GetData<uint32_t>();
-    float volume = GetData<float>();
-    hpaeManager_->SetClientVolume(sessionId, volume);
-    float loudnessGain = GetData<float>();
-    hpaeManager_->SetLoudnessGain(sessionId, loudnessGain);
-    int32_t rate = GetData<int32_t>();
-    hpaeManager_->SetRate(sessionId, rate);
-    WaitForMsgProcessing(hpaeManager_);
-    HpaeSessionInfo sessionInfo;
-    uint32_t index = GetData<uint32_t>() % HpaeStreamClassTypeVec.size();
-    HpaeStreamClassType streamClassType = HpaeStreamClassTypeVec[index];
-    hpaeManager_->GetSessionInfo(streamClassType, sessionId, sessionInfo);
-    uint32_t sinkIndex = GetData<uint32_t>();
-    hpaeManager_->MoveSinkInputByIndexOrName(sessionId, sinkIndex, "Speaker_File1");
-    hpaeManager_->Start(streamClassType, sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamClassType, sessionId, sessionInfo);
-
-    sinkIndex = GetData<uint32_t>();
-    hpaeManager_->MoveSinkInputByIndexOrName(sessionId, sinkIndex, "Speaker_File");
-    hpaeManager_->Pause(streamClassType, sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamClassType, sessionId, sessionInfo);
-
-    uint32_t sinkIndex2 = GetData<uint32_t>();
-    sinkIndex = GetData<uint32_t>();
-    hpaeManager_->MoveSinkInputByIndexOrName(sessionId, sinkIndex, "Speaker_File1");
-    hpaeManager_->Stop(streamClassType, sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamClassType, sessionId, sessionInfo);
-
-    sinkIndex = GetData<uint32_t>();
-    hpaeManager_->MoveSinkInputByIndexOrName(sessionId, sinkIndex, "Speaker_File");
-    hpaeManager_->Release(streamClassType, sessionId);
-
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamClassType, sessionId, sessionInfo);
-    hpaeManager_->DeInit();
-    WaitForMsgProcessing(hpaeManager_);
-}
-
-void HpaeCaptureStreamManagerMoveTest()
-{
-    std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
-    hpaeManager_->Init();
-    hpaeManager_->IsInit();
-
-    AudioModuleInfo audioModuleInfo = GetSourceAudioModeInfo();
-    hpaeManager_->OpenAudioPort(audioModuleInfo);
-    AudioModuleInfo audioModuleInfo1 = GetSourceAudioModeInfo("mic1");
-    hpaeManager_->OpenAudioPort(audioModuleInfo1);
-    hpaeManager_->SetDefaultSource(audioModuleInfo.name);
-    HpaeStreamInfo streamInfo = GetCaptureStreamInfo();
-    hpaeManager_->CreateStream(streamInfo);
-    WaitForMsgProcessing(hpaeManager_);
-    HpaeSessionInfo sessionInfo;
-    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
-
-    hpaeManager_->MoveSourceOutputByIndexOrName(streamInfo.sessionId, 1, "mic1");
-    hpaeManager_->Start(streamInfo.streamClassType, streamInfo.sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
-
-    hpaeManager_->MoveSourceOutputByIndexOrName(streamInfo.sessionId, 0, "mic");
-    hpaeManager_->Pause(streamInfo.streamClassType, streamInfo.sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
-
-    hpaeManager_->MoveSourceOutputByIndexOrName(streamInfo.sessionId, 1, "mic1");
-    hpaeManager_->Stop(streamInfo.streamClassType, streamInfo.sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
-
-    hpaeManager_->MoveSourceOutputByIndexOrName(streamInfo.sessionId, 0, "mic");
-    hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
-    hpaeManager_->DeInit();
-    WaitForMsgProcessing(hpaeManager_);
-}
-
-void HpaeCaptureStreamManagerMoveTest2()
-{
-    std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
-    hpaeManager_->Init();
-    hpaeManager_->IsInit();
-
-    AudioModuleInfo audioModuleInfo = GetSourceAudioModeInfo();
-    hpaeManager_->OpenAudioPort(audioModuleInfo);
-    AudioModuleInfo audioModuleInfo1 = GetSourceAudioModeInfo("mic1");
-    hpaeManager_->OpenAudioPort(audioModuleInfo1);
-    hpaeManager_->SetDefaultSource(audioModuleInfo.name);
-    HpaeStreamInfo streamInfo = GetCaptureStreamInfo();
-    hpaeManager_->CreateStream(streamInfo);
-    WaitForMsgProcessing(hpaeManager_);
-    uint32_t sessionId = GetData<uint32_t>();
-    HpaeSessionInfo sessionInfo;
-    uint32_t index = GetData<uint32_t>() % HpaeStreamClassTypeVec.size();
-    HpaeStreamClassType streamClassType = HpaeStreamClassTypeVec[index];
-    hpaeManager_->GetSessionInfo(streamClassType, sessionId, sessionInfo);
-    uint32_t sourceIndex = GetData<uint32_t>();
-    hpaeManager_->MoveSourceOutputByIndexOrName(sessionId, sourceIndex, "mic1");
-    hpaeManager_->Start(streamClassType, sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamClassType, sessionId, sessionInfo);
-
-    sourceIndex = GetData<uint32_t>();
-    hpaeManager_->MoveSourceOutputByIndexOrName(sessionId, sourceIndex, "mic");
-    hpaeManager_->Pause(streamClassType, sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamClassType, sessionId, sessionInfo);
-    sourceIndex = GetData<uint32_t>();
-    hpaeManager_->MoveSourceOutputByIndexOrName(sessionId, sourceIndex, "mic1");
-    hpaeManager_->Stop(streamClassType, sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamClassType, sessionId, sessionInfo);
-    sourceIndex = GetData<uint32_t>();
-    hpaeManager_->MoveSourceOutputByIndexOrName(sessionId, sourceIndex, "mic");
-    hpaeManager_->Release(streamClassType, sessionId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->GetSessionInfo(streamClassType, sessionId, sessionInfo);
-    hpaeManager_->DeInit();
-    WaitForMsgProcessing(hpaeManager_);
-}
-
-void HpaeManagerDumpStreamInfoTest()
-{
-    std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
-    hpaeManager_->Init();
-
-    hpaeManager_->IsInit();
-    std::shared_ptr<HpaeAudioServiceCallbackFuzzTest> callback = std::make_shared<HpaeAudioServiceCallbackFuzzTest>();
-    hpaeManager_->RegisterSerivceCallback(callback);
-
-    AudioModuleInfo sinkAudioModuleInfo = GetSinkAudioModeInfo();
-    hpaeManager_->OpenAudioPort(sinkAudioModuleInfo);
-    WaitForMsgProcessing(hpaeManager_);
-    int32_t sinkPortId = callback->GetPortId();
-    AudioModuleInfo sourceAudioModuleInfo = GetSourceAudioModeInfo();
-    hpaeManager_->OpenAudioPort(sourceAudioModuleInfo);
-    WaitForMsgProcessing(hpaeManager_);
-    int32_t sourcePortId = callback->GetPortId();
-
     std::shared_ptr<HpaeAudioServiceDumpCallbackUnitTest> dumpCallback =
         std::make_shared<HpaeAudioServiceDumpCallbackUnitTest>();
     hpaeManager_->RegisterHpaeDumpCallback(dumpCallback);
 
-    HpaeStreamInfo rendererStreamInfo = GetRenderStreamInfo();
-    hpaeManager_->CreateStream(rendererStreamInfo);
-    hpaeManager_->DumpSinkInputsInfo();
-    WaitForMsgProcessing(hpaeManager_);
-    dumpCallback->GetSinkInputsSize();
-    hpaeManager_->ShouldNotSkipProcess(rendererStreamInfo.streamClassType, rendererStreamInfo.sessionId);
-
-    HpaeStreamInfo capturerStreamInfo = GetCaptureStreamInfo();
-    capturerStreamInfo.deviceName = sourceAudioModuleInfo.name;
-    hpaeManager_->CreateStream(capturerStreamInfo);
-    hpaeManager_->DumpSourceOutputsInfo();
-    WaitForMsgProcessing(hpaeManager_);
-    dumpCallback->GetSourceOutputsSize();
-
-    hpaeManager_->ShouldNotSkipProcess(capturerStreamInfo.streamClassType, capturerStreamInfo.sessionId);
-
-    hpaeManager_->ShouldNotSkipProcess(HPAE_STREAM_CLASS_TYPE_INVALID, TEST_STREAM_SESSION_ID);
-    hpaeManager_->CloseAudioPort(sinkPortId);
-    hpaeManager_->CloseAudioPort(sourcePortId);
-    WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->DeInit();
-    WaitForMsgProcessing(hpaeManager_);
-}
-
-void HpaeManagerDumpStreamInfoTest2()
-{
-    std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
-    hpaeManager_->Init();
-
-    hpaeManager_->IsInit();
-    std::shared_ptr<HpaeAudioServiceCallbackFuzzTest> callback = std::make_shared<HpaeAudioServiceCallbackFuzzTest>();
-    hpaeManager_->RegisterSerivceCallback(callback);
-
     AudioModuleInfo sinkAudioModuleInfo = GetSinkAudioModeInfo();
     hpaeManager_->OpenAudioPort(sinkAudioModuleInfo);
+    hpaeManager_->SetDefaultSink(sinkAudioModuleInfo.name);
     WaitForMsgProcessing(hpaeManager_);
-    int32_t sinkPortId = GetData<int32_t>();
+    sinkPortId_ = callback->GetPortId();
+
+    AudioModuleInfo sinkAudioModuleInfo2 = GetSinkAudioModeInfo("Speaker_File1");
+    hpaeManager_->OpenAudioPort(sinkAudioModuleInfo2);
+    hpaeManager_->SetDefaultSink(sinkAudioModuleInfo2.name);
+    WaitForMsgProcessing(hpaeManager_);
+    sinkPortId2_ = callback->GetPortId();
+
     AudioModuleInfo sourceAudioModuleInfo = GetSourceAudioModeInfo();
     hpaeManager_->OpenAudioPort(sourceAudioModuleInfo);
+    hpaeManager_->SetDefaultSource(sourceAudioModuleInfo.name);
     WaitForMsgProcessing(hpaeManager_);
-    int32_t sourcePortId = GetData<int32_t>();
+    sourcePortId_ = callback->GetPortId();
 
-    std::shared_ptr<HpaeAudioServiceDumpCallbackUnitTest> dumpCallback =
-        std::make_shared<HpaeAudioServiceDumpCallbackUnitTest>();
-    hpaeManager_->RegisterHpaeDumpCallback(dumpCallback);
-    HpaeStreamInfo rendererStreamInfo = GetRenderStreamInfo();
-    hpaeManager_->CreateStream(rendererStreamInfo);
-
-    hpaeManager_->DumpSinkInputsInfo();
+    AudioModuleInfo sourceAudioModuleInfo2 = GetSourceAudioModeInfo("mic1");
+    hpaeManager_->OpenAudioPort(sourceAudioModuleInfo2);
+    hpaeManager_->SetDefaultSource(sourceAudioModuleInfo2.name);
     WaitForMsgProcessing(hpaeManager_);
-    dumpCallback->GetSinkInputsSize();
-    uint32_t sessionId = GetData<uint32_t>();
+    sourcePortId_ = callback->GetPortId();
+    SetStreamVolume
+    rendererStreamInfo_ = GetRenderStreamInfo();
+    hpaeManager_->CreateStream(rendererStreamInfo_);
+    streamInfo_ = GetCaptureStreamInfo();
+    hpaeManager_->CreateStream(streamInfo_);
+    capStreamInfo_ = GetCaptreamInfo();
+    hpaeManager_->CreateStream(capStreamInfo_);
+    WaitForMsgProcessing(hpaeManager_);
+    Fisrt();
+    InitFunc();
+}
+
+void HpaeManagerFuzzTest::InitFunc()
+{
+    sourceOutputIdList_ = {streamInfo_.sessionId, GetData<uint32_t>()};
+    sinkInputIdList_ = {rendererStreamInfo_.sessionId, GetData<uint32_t>()};
+    sourceNameList_ = {"mic", "mic1","test"};
+    sinkNameList_ = {"Speaker_File", "Speaker_File1", "test", ""};
+    sessionIdList_ = {streamInfo_.sessionId, rendererStreamInfo_.sessionId, GetData<uint32_t>()};
+    HpaeSessionInfo sessionInfo;
+    hpaeManager_->GetSessionInfo(rendererStreamInfo_.streamClassType, rendererStreamInfo_.sessionId, sessionInfo);
+    hpaeManager_->GetSessionInfo(streamInfo_.streamClassType, streamInfo_.sessionId, sessionInfo);
+
+    renderStreamFunc_.clear();
+    renderStreamFunc_.push_back([this]() {hpaeManager_->Start(rendererStreamInfo_.streamClassType, rendererStreamInfo_.sessionId);});
+    renderStreamFunc_.push_back([this]() {hpaeManager_->StartWithSyncId(rendererStreamInfo_.streamClassType, rendererStreamInfo_.sessionId, 1);});
+    renderStreamFunc_.push_back([this]() {hpaeManager_->Pause(rendererStreamInfo_.streamClassType, rendererStreamInfo_.sessionId);});
+    renderStreamFunc_.push_back([this]() {hpaeManager_->Flush(rendererStreamInfo_.streamClassType, rendererStreamInfo_.sessionId);});
+    renderStreamFunc_.push_back([this]() {hpaeManager_->Drain(rendererStreamInfo_.streamClassType, rendererStreamInfo_.sessionId);});
+    renderStreamFunc_.push_back([this]() {hpaeManager_->Stop(rendererStreamInfo_.streamClassType, rendererStreamInfo_.sessionId);});
+
+    capturerStreamFunc_.clear();
+    capturerStreamFunc_.push_back([this]() {hpaeManager_->Start(streamInfo_.streamClassType, streamInfo_.sessionId);});
+    capturerStreamFunc_.push_back([this]() {hpaeManager_->StartWithSyncId(streamInfo_.streamClassType, streamInfo_.sessionId, 1);});
+    capturerStreamFunc_.push_back([this]() {hpaeManager_->Pause(streamInfo_.streamClassType, streamInfo_.sessionId);});
+    capturerStreamFunc_.push_back([this]() {hpaeManager_->Flush(streamInfo_.streamClassType, streamInfo_.sessionId);});
+    capturerStreamFunc_.push_back([this]() {hpaeManager_->Drain(streamInfo_.streamClassType, streamInfo_.sessionId);});
+    capturerStreamFunc_.push_back([this]() {hpaeManager_->Stop(streamInfo_.streamClassType, streamInfo_.sessionId);});
+
+    moveStreamFunc_.clear();
+    uint32_t sessionId = sinkInputIdList_[GetData<uint32_t>() % sinkInputIdList_.size()];
+    std::string sinkName = sinkNameList_[GetData<uint32_t>() % sinkNameList_.size()];
+    moveStreamFunc_.push_back([this]() {hpaeManager_->MoveSinkInputByIndexOrName(sessionId, 0, sinkName);});
+    sessionId = sourceOutputIdList_[GetData<uint32_t>() % sourceOutputIdList_.size()];
+    std::string sourceName = sourceNameList_[GetData<uint32_t>() % sourceNameList_.size()];
+    moveStreamFunc_.push_back([this]() {hpaeManager_->MoveSourceOutputByIndexOrName(sessionId, 0, sourceName);});
+
+    errorStreamFunc_.clear();
+    
     uint32_t index = GetData<uint32_t>() % HpaeStreamClassTypeVec.size();
     HpaeStreamClassType streamClassType = HpaeStreamClassTypeVec[index];
-
-    hpaeManager_->ShouldNotSkipProcess(streamClassType, sessionId);
-    HpaeStreamInfo capturerStreamInfo = GetCaptureStreamInfo();
-    capturerStreamInfo.deviceName = sourceAudioModuleInfo.name;
-    hpaeManager_->CreateStream(capturerStreamInfo);
-    hpaeManager_->DumpSourceOutputsInfo();
-    dumpCallback->GetSourceOutputsSize();
     sessionId = GetData<uint32_t>();
-    index = GetData<uint32_t>() % HpaeStreamClassTypeVec.size();
-    streamClassType = HpaeStreamClassTypeVec[index];
-    hpaeManager_->ShouldNotSkipProcess(streamClassType, sessionId);
+    errorStreamFunc_.push_back([this]() {hpaeManager_->Start(streamClassType, sessionId);});
+    errorStreamFunc_.push_back([this]() {hpaeManager_->StartWithSyncId(streamClassType, sessionId, 1);});
+    errorStreamFunc_.push_back([this]() {hpaeManager_->Pause(streamClassType, sessionId);});
+    errorStreamFunc_.push_back([this]() {hpaeManager_->Flush(streamClassType, sessionId);});
+    errorStreamFunc_.push_back([this]() {hpaeManager_->Drain(streamClassTypee, sessionId);});
+    errorStreamFunc_.push_back([this]() {hpaeManager_->Stop(streamClassType, sessionId);});
+}
 
-    hpaeManager_->CloseAudioPort(sinkPortId);
-    hpaeManager_->CloseAudioPort(sourcePortId);
-    WaitForMsgProcessing(hpaeManager_);
+void HpaeManagerFuzzTest::TearDown()
+{
+    hpaeManager_->CloseAudioPort(sinkPortId_);
+    hpaeManager_->CloseAudioPort(sourcePortId_);
+    hpaeManager_->Release(rendererStreamInfo_.streamClassType, rendererStreamInfo_.sessionId);
+    hpaeManager_->Release(streamInfo_.streamClassType, streamInfo_.sessionId);
+    hpaeManager_->Release(capStreamInfo_.streamClassType, capStreamInfo_.sessionId);
     hpaeManager_->DeInit();
-    WaitForMsgProcessing(hpaeManager_);
+}
+
+void HpaeManagerFuzzTest::DumpFuzzTest()
+{
+    StreamSetUp();
+    std::string sinkName = sinkNameList_[GetData<uint32_t>() % sinkNameList_.size()];
+    hpaeManager_->DumpSinkInfo(sinkName);
+    std::string sourceName = sourceNameList_[GetData<uint32_t>() % sourceNameList_.size()];
+    hpaeManager_->DumpSourceInfo(sourceName);
+    HpaeDeviceInfo devicesInfo_;
+    hpaeManager_->DumpAllAvailableDevice(devicesInfo_);
+    hpaeManager_->DumpSourceInfo(audioModuleInfo1.name);
+    bool mute = GetData<bool>();
+    bool isSync = GetData<bool>();
+    hpaeManager_->SetSinkMute(sinkName, mute, isSync);
+    bool isSuspend = GetData<bool>();
+    hpaeManager_->SuspendAudioDevice(sinkName, isSuspend);
+    uint32_t index = GetData<uint32_t>() % HpaeStreamClassTypeVec.size();
+    HpaeStreamClassType streamClassType = HpaeStreamClassTypeVec[index];
+    uint32_t sessionId = sessionIdList_[GetData<uint32_t>() % sessionIdList_.size()];
+    hpaeManager_->ShouldNotSkipProcess(streamClassType, sessionId);
+    TearDown();
+}
+
+void HpaeManagerFuzzTest::StreamManagerFuzzTest()
+{
+    StreamSetUp();
+    for (size_t i = 0; i < renderStreamFunc_.size() + 1; i++) {
+        uint32_t index = GetData<uint32_t>() % renderStreamFunc_.size();
+        renderStreamFunc_[index]();
+        index = GetData<uint32_t>() % capturerStreamFunc_.size();
+        capturerStreamFunc_[index]();
+        index = GetData<uint32_t>() % errorStreamFunc_.size();
+        errorStreamFunc_[index]();
+    }
+    TearDown();
+}
+
+void HpaeManagerFuzzTest::MoveStreamManagerFuzzTest()
+{
+    StreamSetUp();
+    for (size_t i = 0; i < renderStreamFunc_.size() + 1; i++) {
+        uint32_t index = GetData<uint32_t>() % moveStreamFunc_.size();
+        moveStreamFunc_[index]();
+        index = GetData<uint32_t>() % renderStreamFunc_.size();
+        renderStreamFunc_[index]();
+        index = GetData<uint32_t>() % capturerStreamFunc_.size();
+        capturerStreamFunc_[index]();
+        index = GetData<uint32_t>() % errorStreamFunc_.size();
+        errorStreamFunc_[index]();
+    }
+    TearDown();
+}
+
+void HpaeManagerFuzzTest::HpaeManagerEffectTest()
+{
+    StreamSetUp();
+    std::vector<EffectChain> enhanceChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
+    EffectChainManagerParam managerParam;
+    std::vector<std::shared_ptr<AudioEffectLibEntry>> enhanceLibraryList;
+    hpaeManager_->InitAudioEnhanceChainManager(enhanceChains, managerParam, enhanceLibraryList);
+    hpaeManager_->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+
+    effectFunc_.clear();
+    uint32_t sessionId = sessionIdList_[GetData<uint32_t>() % sessionIdList_.size()];
+    int32_t value = GetData<int32_t>();
+    effectFunc_.push_back([this]() {hpaeManager_->SetRate(sessionId, value);});
+    effectFunc_.push_back([this]() {hpaeManager_->GetAudioEffectMode(sessionId, value);});
+    effectFunc_.push_back([this]() {hpaeManager_->SetPrivacyType(sessionId, value);});
+    effectFunc_.push_back([this]() {hpaeManager_->GetWritableSize(sessionId);});
+
+    effectFunc_.push_back([this]() {hpaeManager_->UpdateMaxLength(sessionId, TEST_SLEEP_TIME_20);});
+    effectFunc_.push_back([this]() {hpaeManager_->SetOffloadRenderCallbackType(sessionId, value);});
+    effectFunc_.push_back([this]() {hpaeManager_->SetOffloadPolicy(sessionId, value)});
+    effectFunc_.push_back([this]() {hpaeManager_->SetSpeed(sessionId, value)});
+    for(size_t i = 0; i < 2; i++) {
+        uint32_t index = GetData<uint32_t>() % effectFunc_.size();
+        effectFunc_[index]();
+    }
+    TearDown();
+}
+
+void HpaeManagerFuzzTest::HpaeManagerEffectTest2()
+{
+    StreamSetUp();
+    effectFunc_.clear();
+    uint32_t sessionId = sessionIdList_[GetData<uint32_t>() % sessionIdList_.size()];
+    bool value1 = GetData<bool>();
+    bool value2 = GetData<bool>();
+    effectFunc_.push_back([this]() {hpaeManager_->UpdateSpatializationState(sessionId, value1, value2);});
+    effectFunc_.push_back([this]() {hpaeManager_->UpdateEffectBtOffloadSupported(value1);});
+    effectFunc_.push_back([this]() {hpaeManager_->SetMicrophoneMuteInfo(value1);});
+    effectFunc_.push_back([this]() {hpaeManager_->SetMicrophoneMuteInfo(value1);});
+    for(size_t i = 0; i < 2; i++) {
+        uint32_t index = GetData<uint32_t>() % effectFunc_.size();
+        effectFunc_[index]();
+    }
+    TearDown();
+}
+
+void DumpFuzzTest()
+{
+    HpaeManagerFuzzTest t;
+    t.DumpFuzzTest();
+}
+
+void StreamManagerFuzzTest()
+{
+    HpaeManagerFuzzTest t;
+    t.DumpFuzzTest();
+}
+
+void MoveStreamManagerFuzzTest()
+{
+    HpaeManagerFuzzTest t;
+    t.DumpFuzzTest();
+}
+
+void HpaeManagerEffectTest()
+{
+    HpaeManagerFuzzTest t;
+    t.DumpFuzzTest();
+}
+
+void HpaeManagerEffectTest2()
+{
+    HpaeManagerFuzzTest t;
+    t.DumpFuzzTest();
 }
 
 TestFuncs g_testFuncs[] = {
-    InitFuzzTest,
-    HpaeRenderStreamManagerFuzzTest,
-    HpaeRenderStreamManagerFuzzTest2,
-    HpaeRenderStreamManagerFuzzTest3,
-    HpaeRenderStreamManagerFuzzTest4,
-    HpaeCaptureStreamManagerFuzzTest,
-    HpaeCaptureStreamManagerFuzzTest2,
-    HpaeCaptureStreamManagerFuzzTest3,
-    HpaeRenderStreamManagerMoveFuzzTest,
-    HpaeRenderStreamManagerMoveFuzzTest2,
-    HpaeCaptureStreamManagerMoveTest,
-    HpaeCaptureStreamManagerMoveTest2,
-    HpaeManagerDumpStreamInfoTest,
-    HpaeManagerDumpStreamInfoTest2,
+    DumpFuzzTest,
+    StreamManagerFuzzTest,
+    MoveStreamManagerFuzzTest,
+    HpaeManagerEffectTest,
+    HpaeManagerEffectTest2,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

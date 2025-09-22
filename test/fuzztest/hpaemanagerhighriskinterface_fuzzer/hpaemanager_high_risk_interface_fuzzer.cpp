@@ -223,11 +223,11 @@ void HpaeManagerFuzzTest::StreamSetUp()
     AudioModuleInfo sinkAudioModuleInfo = GetSinkAudioModeInfo();
     hpaeManager_->OpenAudioPort(sinkAudioModuleInfo);
     WaitForMsgProcessing(hpaeManager_);
-    int32_t sinkPortId = callback->GetPortId();
+    sinkPortId_ = callback->GetPortId();
     AudioModuleInfo sourceAudioModuleInfo = GetSourceAudioModeInfo();
     hpaeManager_->OpenAudioPort(sourceAudioModuleInfo);
     WaitForMsgProcessing(hpaeManager_);
-    int32_t sourcePortId = callback->GetPortId();
+    sourcePortId_ = callback->GetPortId();
     std::shared_ptr<HpaeAudioServiceDumpCallbackUnitTest> dumpCallback =
         std::make_shared<HpaeAudioServiceDumpCallbackUnitTest>();
     hpaeManager_->RegisterHpaeDumpCallback(dumpCallback);
@@ -251,16 +251,22 @@ void HpaeManagerFuzzTest::AudioPortSetUp()
     AudioModuleInfo sinkAudioModuleInfo = GetSinkAudioModeInfo();
     hpaeManager_->OpenAudioPort(sinkAudioModuleInfo);
     WaitForMsgProcessing(hpaeManager_);
+    sinkPortId_ = callback->GetPortId();
     AudioModuleInfo sourceAudioModuleInfo = GetSourceAudioModeInfo();
     hpaeManager_->OpenAudioPort(sourceAudioModuleInfo);
+    WaitForMsgProcessing(hpaeManager_);
+    sourcePortId_ = callback->GetPortId();
     audioPortNameList_ = {"Speaker_File", "mic", "test"};
     libList_ = {"libmodule-hdi-source.z.so", "libmodule-inner-capturer-sink.z.so", "libmodule-hdi-sink.z.so", "test"};
 }
 
 void HpaeManagerFuzzTest::TearDown()
 {
+    hpaeManager_->CloseAudioPort(sinkPortId_);
+    hpaeManager_->CloseAudioPort(sourcePortId_);
     hpaeManager_->DeInit();
 }
+
 void HpaeManagerFuzzTest::HpaeCaptureStreamManagerMoveFuzzTest()
 {
     StreamSetUp();

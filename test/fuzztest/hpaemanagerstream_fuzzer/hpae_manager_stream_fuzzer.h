@@ -12,13 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#ifndef HPAE_MANAGER_STREAM_FUZZER_H
-#define HPAE_MANAGER_STREAM_FUZZER_H
+#ifndef HPAE_MANAGER_CONTROL_FUZZER_H
+#define HPAE_MANAGER_CONTROL_FUZZER_H
 
 #include "audio_service_hpae_callback.h"
 #include "audio_info.h"
 #include "hpae_manager.h"
+namespace OHOS {
+namespace AudioStandard {
 class HpaeAudioServiceCallbackFuzzTest : public OHOS::AudioStandard::AudioServiceHpaeCallback {
 public:
     ~HpaeAudioServiceCallbackFuzzTest() override {}
@@ -186,4 +187,39 @@ private:
     std::vector<OHOS::AudioStandard::SinkInfo> sinks_;
 };
 
-#endif // HPAE_MANAGER_STREAM_FUZZER_H
+class HpaeManagerFuzzTest {
+public:
+    void SetUp();
+    void TearDown();
+
+    void DumpFuzzTest();
+    void StreamManagerFuzzTest();
+    void MoveStreamManagerFuzzTest();
+    void HpaeManagerEffectTest();
+    void HpaeManagerEffectTest2();
+    std::shared_ptr<HPAE::HpaeManager> hpaeManager_;
+    std::vector<std::string> sourceNameList_;
+    std::vector<std::string> sinkNameList_;
+    std::vector<std::string> audioPortNameList_;
+    std::vector<std::string> libList_;
+    std::vector<uint32_t> sourceOutputIdList_;
+    std::vector<uint32_t> sinkInputIdList_;
+    std::vector<uint32_t> renderSessionIdList;
+    std::vector<uint32_t> captureSessionIdList;
+    std::vector<uint32_t> sessionIdList_;
+    std::vector<std::function<void()>> renderStreamFunc_;
+    std::vector<std::function<void()>> captureStreamFunc_;
+    std::vector<std::function<void()>> moveStreamFunc_;
+    std::vector<std::function<void()>> errorStreamFunc_;
+    std::vector<std::function<void()>> effectFunc_;
+    HpaeStreamInfo rendererStreamInfo_;
+    HpaeStreamInfo streamInfo_;
+    HpaeStreamInfo capStreamInfo_;
+    int32_t sinkPortId_ = -1;
+    int32_t sinkPortId2_ = -1;
+    int32_t sourcePortId_ = -1;
+    int32_t sourcePortId2_ = -1;
+};
+} // namespace AudioStandard
+} // namespace OHOS
+#endif // HPAE_MANAGER_CONTROL_FUZZER_H
