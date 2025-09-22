@@ -101,14 +101,13 @@ private:
     bool SetSessionFade(uint32_t sessionId, IOperation operation);
     void SetSessionState(uint32_t sessionId, HpaeSessionState state);
     void TriggerStreamState(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode> &inputNode);
-    void DeinitInner(bool isMoveDefault, bool fromReload = false);
     bool CheckIsStreamRunning();
 private:
     std::shared_ptr<HpaeSinkVirtualOutputNode> sinkOutputNode_ = nullptr;
     std::shared_ptr<HpaeVirtualProcessCluster> sceneCluster_ = nullptr;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSinkInputNode>> sinkInputNodeMap_;
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;
-    
+
     HpaeNoLockQueue hpaeNoLockQueue_;
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;
     std::atomic<bool> isInit_ = false;
@@ -118,4 +117,4 @@ private:
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
-#endif // HPAE_INJECTOR_RENDER_MANAGER_H
+#endif // HPAE_INJECTOR_RENDER_MANAGER_H
