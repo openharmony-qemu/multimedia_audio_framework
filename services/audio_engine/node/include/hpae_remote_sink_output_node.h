@@ -58,6 +58,7 @@ public:
 
 private:
     void NotifyStreamTypeChange(AudioStreamType type, HpaeSplitStreamType splitStreamType);
+    void NotifyStreamUsageChange(StreamUsage usage, HpaeSplitStreamType splitStreamType);
     void HandleRemoteTiming();
     void HandlePcmDumping(HpaeSplitStreamType streamType, char* data, size_t size);
     InputPort<HpaePcmBuffer *> inputStream_;
@@ -76,6 +77,7 @@ private:
     std::unique_ptr<HpaePcmDumper> outputCommunicationPcmDumper_ = nullptr;
 #endif
     bool needEmptyChunk_ = true;
+    std::unordered_map<HpaeSplitStreamType, StreamUsage> usageMap_;
 };
 
 }  // namespace HPAE

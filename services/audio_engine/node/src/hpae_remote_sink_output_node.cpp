@@ -28,7 +28,10 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+namespace {
 const std::string STREAM_TYPE_CHANGE = "stream_type_change";
+const std::string STREAM_USAGE_CHANGE = "stream_usage_change";
+}
 HpaeRemoteSinkOutputNode::HpaeRemoteSinkOutputNode(HpaeNodeInfo &nodeInfo, HpaeSinkInfo &sinkInfo)
     : HpaeNode(nodeInfo),
       renderFrameData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)),
@@ -118,6 +121,27 @@ void HpaeRemoteSinkOutputNode::NotifyStreamTypeChange(AudioStreamType type, Hpae
     SetNodeInfo(nodeInfo);
 }
 
+void HpaeRemoteSinkOutputNode::NotifyStreamUsageChange(StreamUsage usage, HpaeSplitStreamType splitStreamType)
+{
+    if (usage == this->usageMap_[splitStreamType]) {
+        return;
+    }
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
+    if (deviceManager == nullptr) {
+        AUDIO_ERR_LOG("device manager is nullptr");
+        return;
+    }
+    int32_t renderId = audioRendererSink_->GetHdiRenderId(splitStreamType);
+    if (renderId < 0) {
+        AUDIO_ERR_LOG("the render id is less then zero");
+        return;
+    }
+    AudioParamKey key = AudioParamKey::PARAM_KEY_STATE;
+    std::string setValue = std::to_string(renderId) + '-' + std::to_string(usage);
+    deviceManager->SetAudioParameter(this->GetNodeInfo().deviceNetId, key, STREAM_USAGE_CHANGE, setValue);
+}
+
 void HpaeRemoteSinkOutputNode::DoProcess()
 {
     auto rate = "rate[" + std::to_string(GetSampleRate()) + "]_";
@@ -137,6 +161,8 @@ void HpaeRemoteSinkOutputNode::DoProcess()
         HpaeSplitStreamType splitStreamType = outputData->GetSplitStreamType();
         AudioStreamType type = outputData->GetAudioStreamType();
         NotifyStreamTypeChange(type, splitStreamType);
+        NotifyStreamUsageChange(outputData->IsValid() ? outputData->GetAudioStreamUsage() : STREAM_USAGE_UNKNOWN,
+            splitStreamType);
         ConvertFromFloat(
             GetBitWidth(), GetChannelCount() * GetFrameLen(), outputData->GetPcmDataBuffer(), renderFrameData_.data());
         uint64_t writeLen = 0;
