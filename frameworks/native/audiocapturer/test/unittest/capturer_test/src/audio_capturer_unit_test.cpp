@@ -2736,5 +2736,21 @@ HWTEST(AudioCapturerUnitTest, SetInterruptStrategy_001, TestSize.Level1)
     EXPECT_EQ(ERR_ILLEGAL_STATE, result);
     audioCapturer->Release();
 }
+
+/**
+ * @tc.name  : Test SetInSwitchingFlag_001.
+ * @tc.number: SetInSwitchingFlag.
+ * @tc.desc  : Test SetInSwitchingFlag when inSwitchingFlag is true or false.
+ */
+HWTEST(AudioCapturerUnitTest, SetInSwitchingFlag_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    audioCapturer->SetInSwitchingFlag(true);
+    EXPECT_TRUE(audioCapturer->inSwitchingFlag_);
+    audioCapturer->SetInSwitchingFlag(false);
+    EXPECT_FALSE(audioCapturer->inSwitchingFlag_);
+}
 } // namespace AudioStandard
 } // namespace OHOS
