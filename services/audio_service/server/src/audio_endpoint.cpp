@@ -2016,16 +2016,22 @@ void AudioEndpointInner::InjectToCaptureDataProc(const BufferDesc &readBuf)
     BufferDesc rendererOrgDesc = {};
     int32_t ret = PeekRendererInjectData(readBuf, rendererOrgDesc, streamInfo);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "peek renderer data fail.");
+    DumpFileUtil::WriteDumpFile(dumpPeekDup_, static_cast<void *>(rendererOrgDesc.buffer),
+        rendererOrgDesc.bufLength);
 
     /* convert format */
     BufferDesc rendererConvDesc = {};
     BufferDesc captureConvDesc = {};
     ret = ConvertDataFormat(readBuf, rendererOrgDesc, streamInfo, rendererConvDesc, captureConvDesc);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "convert format data fail.");
-
+    DumpFileUtil::WriteDumpFile(dumpCovRendDup_, static_cast<void *>(rendererConvDesc.buffer),
+        rendererConvDesc.bufLength);
+    DumpFileUtil::WriteDumpFile(dumpCovCapDup_, static_cast<void *>(captureConvDesc.buffer),
+        captureConvDesc.bufLength);
     /* mix */
     size_t floatBufLength = readBuf.bufLength * 2; // unit of byte, 2 is int16_t to float
     float *mixBuff = MixRendererAndCaptureData(floatBufLength, rendererConvDesc, captureConvDesc);
+    DumpFileUtil::WriteDumpFile(dumpMixDup_, static_cast<void *>(mixBuff), floatBufLength);
 
     /* limit */
     float *outBuff = reinterpret_cast<float*>(ReallocVectorBufferAndClear(captureConvBuffer_,
@@ -2453,6 +2459,22 @@ int32_t AudioEndpointInner::AddCaptureInjector(const uint32_t &sinkPortIndex, co
     isNeedInject_ = true;
     injectSinkPortIdx_ = sinkPortIndex;
 
+    dupPeekName_ = GetEndpointName() + "injector_peek_dup_" + std::to_string(dstStreamInfo_.samplingRate) + "_" +
+        std::to_string(dstStreamInfo_.channels) + "_" + std::to_string(dstStreamInfo_.format) + ".pcm";
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dupPeekName_, &dumpPeekDup_);
+
+    dupCovRendName_ = GetEndpointName() + "injector_convRender_dup_" + std::to_string(dstStreamInfo_.samplingRate) +
+        "_" + std::to_string(dstStreamInfo_.channels) + "_" + std::to_string(SAMPLE_F32LE) + ".pcm";
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dupCovRendName_, &dumpCovRendDup_);
+
+    dupCovCapName_ = GetEndpointName() + "injector_convCapture_dup_" + std::to_string(dstStreamInfo_.samplingRate) +
+        "_" + std::to_string(dstStreamInfo_.channels) + "_" + std::to_string(SAMPLE_F32LE) + ".pcm";
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dupCovCapName_, &dumpCovCapDup_);
+
+    dupMixName_ = GetEndpointName() + "injector_mix_dup_" + std::to_string(dstStreamInfo_.samplingRate) + "_" +
+        std::to_string(dstStreamInfo_.channels) + "_" + std::to_string(SAMPLE_F32LE) + ".pcm";
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dupMixName_, &dumpMixDup_);
+
     return SUCCESS;
 }
 
@@ -2468,6 +2490,10 @@ int32_t AudioEndpointInner::RemoveCaptureInjector(const uint32_t &sinkPortIndex,
     injectSinkPortIdx_ = UINT32_INVALID_VALUE;
     isNeedInject_ = false;
 
+    DumpFileUtil::CloseDumpFile(&dumpPeekDup_);
+    DumpFileUtil::CloseDumpFile(&dumpCovRendDup_);
+    DumpFileUtil::CloseDumpFile(&dumpCovCapDup_);
+    DumpFileUtil::CloseDumpFile(&dumpMixDup_);
     return SUCCESS;
 }
 } // namespace AudioStandard
