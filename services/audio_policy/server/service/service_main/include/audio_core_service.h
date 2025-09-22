@@ -626,6 +626,7 @@ private:
         .type = CAST_TYPE_NULL
     };
     bool isFirstScreenOn_ = false;
+    bool isCreateProcess_ = false;
 
     AudioInjectorPolicy &audioInjectorPolicy_;
 };
