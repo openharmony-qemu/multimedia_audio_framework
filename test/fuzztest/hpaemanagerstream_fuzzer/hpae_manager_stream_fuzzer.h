@@ -193,6 +193,7 @@ public:
     void TearDown();
     void Fisrt();
     void InitFunc();
+    void InitStreamFunc();
 
     void DumpFuzzTest();
     void StreamManagerFuzzTest();

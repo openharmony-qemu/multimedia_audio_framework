@@ -314,10 +314,9 @@ void HpaeManagerFuzzTest::StreamSetUp()
 }
 void HpaeManagerFuzzTest::InitStreamFunc()
 {
-    
     renderStreamFunc_.clear();
     renderStreamFunc_.push_back([=, this]() {
-        hpaeManager_->Start(rendererStreamInfo_.streamClassType,rendererStreamInfo_.sessionId);
+        hpaeManager_->Start(rendererStreamInfo_.streamClassType, rendererStreamInfo_.sessionId);
     });
     renderStreamFunc_.push_back([=, this]() {
         hpaeManager_->StartWithSyncId(rendererStreamInfo_.streamClassType, rendererStreamInfo_.sessionId, 1);
@@ -354,7 +353,6 @@ void HpaeManagerFuzzTest::InitStreamFunc()
     capturerStreamFunc_.push_back([=, this]() {
         hpaeManager_->Stop(streamInfo_.streamClassType, streamInfo_.sessionId);
     });
-
 }
 
 void HpaeManagerFuzzTest::InitFunc()
@@ -373,7 +371,7 @@ void HpaeManagerFuzzTest::InitFunc()
     moveStreamFunc_.clear();
     uint32_t sessionId = sinkInputIdList_[GetData<uint32_t>() % sinkInputIdList_.size()];
     std::string sinkName = sinkNameList_[GetData<uint32_t>() % sinkNameList_.size()];
-    moveStreamFunc_.push_back([=, this]() { hpaeManager_->MoveSinkInputByIndexOrName(sessionId, 0, sinkName);} );
+    moveStreamFunc_.push_back([=, this]() { hpaeManager_->MoveSinkInputByIndexOrName(sessionId, 0, sinkName); });
     sessionId = sourceOutputIdList_[GetData<uint32_t>() % sourceOutputIdList_.size()];
     std::string sourceName = sourceNameList_[GetData<uint32_t>() % sourceNameList_.size()];
     moveStreamFunc_.push_back([=, this]() { hpaeManager_->MoveSourceOutputByIndexOrName(sessionId, 0, sourceName); });
