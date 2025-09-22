@@ -339,7 +339,7 @@ void HpaeManagerFuzzTest::InitFunc()
         rendererStreamInfo_.sessionId);});
 
     capturerStreamFunc_.clear();
-    capturerStreamFunc_.push_back([=, this]() {hpaeManager_->Start(streamInfo_.streamClassType,\
+    capturerStreamFunc_.push_back([=, this]() {hpaeManager_->Start(streamInfo_.streamClassType,
         streamInfo_.sessionId);});
     capturerStreamFunc_.push_back([=, this]() {hpaeManager_->StartWithSyncId(streamInfo_.streamClassType,
         streamInfo_.sessionId, 1);});
