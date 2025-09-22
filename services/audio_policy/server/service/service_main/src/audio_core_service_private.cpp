@@ -44,6 +44,7 @@ const uid_t MCU_UID = 7500;
 const uid_t TV_SERVICE_UID = 7501;
 const int32_t AUDIO_EXT_UID = 1041;
 constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
+constexpr int32_t REMOTE_USER_TERMINATED = 200;
 static const int VOLUME_LEVEL_DEFAULT_SIZE = 3;
 static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
 static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
@@ -2795,7 +2796,7 @@ void AudioCoreService::UpdateStreamDevicesForStart(
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "Invalid stream desc");
     AUDIO_INFO_LOG("[DeviceFetchStart] for stream %{public}d", streamDesc->sessionId_);
     streamDesc->UpdateOldDevice(streamDesc->newDeviceDescs_);
-    
+
     StreamUsage streamUsage = StreamUsage::STREAM_USAGE_INVALID;
     streamUsage = audioSessionService_.GetAudioSessionStreamUsage(GetRealPid(streamDesc));
     streamUsage = (streamUsage != StreamUsage::STREAM_USAGE_INVALID) ? streamUsage :
@@ -2826,7 +2827,7 @@ void AudioCoreService::UpdateStreamDevicesForCreate(
     streamDesc->UpdateOldDevice(streamDesc->newDeviceDescs_);
     auto devices = audioRouterCenter_.FetchOutputDevices(streamDesc->GetRenderUsage(),
         GetRealUid(streamDesc), caller, RouterType::ROUTER_TYPE_NONE, streamDesc->GetRenderPrivacyType());
-    
+
     streamDesc->UpdateNewDeviceWithoutCheck(devices);
     HILOG_COMM_INFO("[DeviceFetchInfo] device %{public}s for stream %{public}d",
         streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->GetSessionId());
@@ -2930,20 +2931,33 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
 
         int32_t result = std::visit(runDeviceActivationFlow, audioStreamConfig);
         if (result != SUCCESS) {
-            AUDIO_ERR_LOG("Nearlink device activation failed, macAddress: %{public}s",
-                GetEncryptAddr(deviceDesc->macAddress_).c_str());
-            deviceDesc->exceptionFlag_ = true;
-            audioDeviceManager_.UpdateDevicesListInfo(deviceDesc, EXCEPTION_FLAG_UPDATE);
-            if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK) {
-                FetchOutputDeviceAndRoute("ActivateNearlinkDevice", reason);
-            } else {
-                FetchInputDeviceAndRoute("ActivateNearlinkDevice", reason);
-            }
+            AUDIO_ERR_LOG("Nearlink device activation failed, macAddress: %{public}s, result: %{public}d",
+                GetEncryptAddr(deviceDesc->macAddress_).c_str(), result);
+            HandleNearlinkErrResult(result, deviceDesc);
+            FetchOutputDeviceAndRoute("ActivateNearlinkDevice", reason);
+            FetchInputDeviceAndRoute("ActivateNearlinkDevice", reason);
             return ERROR;
         }
         sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc);
     }
     return SUCCESS;
+}
+
+void AudioCoreService::HandleNearlinkErrResult(int32_t result, shared_ptr<AudioDeviceDescriptor> devDesc)
+{
+    CHECK_AND_RETURN(result != SUCCESS);
+    if (result == REMOTE_USER_TERMINATED) {
+        auto deviceDescriptor = make_shared<AudioDeviceDescriptor>(devDesc);
+        AUDIO_INFO_LOG("Set connect state to SUSPEND_CONNECTED");
+        deviceDescriptor->connectState_ = SUSPEND_CONNECTED;
+        deviceDescriptor->deviceType_ = DEVICE_TYPE_NEARLINK;
+        audioDeviceManager_.UpdateDevicesListInfo(deviceDescriptor, CONNECTSTATE_UPDATE);
+        deviceDescriptor->deviceType_ = DEVICE_TYPE_NEARLINK_IN;
+        audioDeviceManager_.UpdateDevicesListInfo(deviceDescriptor, CONNECTSTATE_UPDATE);
+    } else {
+        devDesc->exceptionFlag_ = true;
+        audioDeviceManager_.UpdateDevicesListInfo(devDesc, EXCEPTION_FLAG_UPDATE);
+    }
 }
 
 int32_t AudioCoreService::SwitchActiveHearingAidDevice(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor)
