@@ -98,21 +98,18 @@ int32_t RendererInServer::ConfigServerBuffer()
         return SUCCESS;
     }
     stream_->GetSpanSizePerFrame(spanSizeInFrame_);
-    int32_t engineFlag = GetEngineFlag();
-    if (engineFlag == 1) {
-        engineTotalSizeInFrame_ = processConfig_.rendererInfo.playerType == PLAYER_TYPE_TONE_PLAYER ?
-            spanSizeInFrame_ * 4 : spanSizeInFrame_ * 2; // default 2 frames, 4 frames for toneplayer
-    } else {
-        engineTotalSizeInFrame_ = spanSizeInFrame_ * DEFAULT_SPAN_SIZE;
-    }
+    // default to 2, 40ms cache size for write mode
+    engineTotalSizeInFrame_ = spanSizeInFrame_ * DEFAULT_SPAN_SIZE;
+
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
     if (engineTotalSizeInFrame_ == 0 || spanSizeInFrame_ == 0 || engineTotalSizeInFrame_ % spanSizeInFrame_ != 0) {
         AUDIO_ERR_LOG("ConfigProcessBuffer: ERR_INVALID_PARAM");
         return ERR_INVALID_PARAM;
     }
 
-    size_t maxClientCbBufferInFrame = MAX_CBBUF_IN_USEC * processConfig_.streamInfo.samplingRate / AUDIO_US_PER_S;
-    bufferTotalSizeInFrame_ = engineTotalSizeInFrame_ + maxClientCbBufferInFrame;
+    // 100 * 2 + 20 = 220ms, buffer total size.
+    bufferTotalSizeInFrame_ = (MAX_CBBUF_IN_USEC * DEFAULT_SPAN_SIZE + MIN_CBBUF_IN_USEC) *
+        processConfig_.streamInfo.samplingRate / AUDIO_US_PER_S;
 
     spanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame_;
     CHECK_AND_RETURN_RET_LOG(spanSizeInByte_ != 0, ERR_OPERATION_FAILED, "Config oh audio buffer failed!");
@@ -751,7 +748,9 @@ int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
     size_t requestDataInFrame = requestDataLen / byteSizePerFrame_;
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
-    Trace trace1(traceTag_ + " OnWriteData"); // RendererInServer::sessionid:100001 WriteData
+    CHECK_AND_RETURN_RET_LOG(spanSizeInFrame_ != 0, ERR_OPERATION_FAILED, "invalid span size");
+    int64_t cacheCount = audioServerBuffer_->GetReadableDataFrames() / spanSizeInFrame_;
+    Trace trace1(traceTag_ + " OnWriteData cacheCount:" + std::to_string(cacheCount));
     if (requestDataLen == 0 || currentReadFrame + requestDataInFrame > currentWriteFrame) {
         Trace trace2(traceTag_ + " near underrun"); // RendererInServer::sessionid:100001 near underrun
         if (!offloadEnable_) {
