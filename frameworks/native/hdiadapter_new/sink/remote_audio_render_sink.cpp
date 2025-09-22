@@ -468,6 +468,18 @@ int32_t RemoteAudioRenderSink::SplitRenderFrame(char &data, uint64_t len, uint64
     return RenderFrame(data, len, writeLen, it->second);
 }
 
+int32_t RemoteAudioRenderSink::GetHdiRenderId(HpaeSplitStreamType splitStreamType)
+{
+    auto it = SPLIT_STREAM_MAP.find(splitStreamType);
+    CHECK_AND_RETURN_RET_LOG(it != SPLIT_STREAM_MAP.end(), ERR_INVALID_PARAM, "invalid splitStreamType");
+    AudioCategory type = it->second;
+    std::shared_lock<std::shared_mutex> wrapperLock(renderWrapperMutex_);
+    auto wrapperItem = this->audioRenderWrapperMap_.find(type);
+    CHECK_AND_RETURN_RET_LOG(wrapperItem != this->audioRenderWrapperMap_.end(), ERR_INVALID_PARAM,
+        "invalid AudioCategroy");
+    return wrapperItem->second.hdiRenderId_;
+}
+
 void RemoteAudioRenderSink::DumpInfo(std::string &dumpString)
 {
     dumpString += "type: RemoteSink\tstarted: " + std::string(started_.load() ? "true" : "false") +

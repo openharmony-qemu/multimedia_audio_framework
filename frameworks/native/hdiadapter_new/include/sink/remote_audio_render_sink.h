@@ -92,6 +92,8 @@ public:
     int32_t SplitRenderFrame(char &data, uint64_t len, uint64_t &writeLen,
         HpaeSplitStreamType splitStreamType) override;
 
+    int32_t GetHdiRenderId(HpaeSplitStreamType splitStreamType) override;
+
     void DumpInfo(std::string &dumpString) override;
 
     void OnAudioParamChange(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
