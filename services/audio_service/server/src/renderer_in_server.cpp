@@ -2152,9 +2152,34 @@ static std::string GetManagerTypeStr(ManagerType type)
 
 bool RendererInServer::Dump(std::string &dumpString)
 {
+    bool ret = false;
+    ret = DumpNormal(dumpString);
+    CHECK_AND_RETURN_RET_LOG(ret == false, true, "DumpNormal");
+    ret = DumpVoipAndDirect(dumpString);
+    CHECK_AND_RETURN_RET_LOG(ret == false, true, "DumpVoipAndDirect");
+    return ret;
+}
+
+bool RendererInServer::DumpNormal(std::string &dumpString)
+{
+    if (managerType_ != PLAYBACK) {
+        return false;
+    }
+    DumpCommonInfo(dumpString);
+    return true;
+}
+
+bool RendererInServer::DumpVoipAndDirect(std::string &dumpString)
+{
     if (managerType_ != DIRECT_PLAYBACK && managerType_ != VOIP_PLAYBACK) {
         return false;
     }
+    DumpCommonInfo(dumpString);
+    return true;
+}
+
+void RendererInServer::DumpCommonInfo(std::string &dumpString)
+{
     // dump audio stream info
     dumpString += "audio stream info:\n";
     AppendFormat(dumpString, "  - session id:%u\n", streamIndex_);
@@ -2175,7 +2200,6 @@ bool RendererInServer::Dump(std::string &dumpString)
     }
 
     dumpString += "\n";
-    return true;
 }
 
 void RendererInServer::SetNonInterruptMute(const bool muteFlag)

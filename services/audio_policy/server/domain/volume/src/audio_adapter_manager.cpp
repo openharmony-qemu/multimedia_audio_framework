@@ -3476,18 +3476,18 @@ int32_t AudioAdapterManager::RemoveCaptureInjector()
     return audioServerProxy_->RemoveCaptureInjector(rendererPortIdx);
 }
 
-int32_t AudioAdapterManager::AddCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
+void AudioAdapterManager::AddCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
     const SourceType &sourceType)
 {
-    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
-    return audioServiceAdapter_->AddCaptureInjector(sinkPortIndex, sourcePortIndex, sourceType);
+    CHECK_AND_RETURN_LOG(audioServiceAdapter_ != nullptr, "ServiceAdapter is null");
+    audioServiceAdapter_->AddCaptureInjector(sinkPortIndex, sourcePortIndex, sourceType);
 }
 
-int32_t AudioAdapterManager::RemoveCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
+void AudioAdapterManager::RemoveCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
     const SourceType &sourceType)
 {
-    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
-    return audioServiceAdapter_->RemoveCaptureInjector(sinkPortIndex, sourcePortIndex, sourceType);
+    CHECK_AND_RETURN_LOG(audioServiceAdapter_ != nullptr, "ServiceAdapter is null");
+    audioServiceAdapter_->RemoveCaptureInjector(sinkPortIndex, sourcePortIndex, sourceType);
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

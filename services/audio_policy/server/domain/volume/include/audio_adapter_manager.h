@@ -309,9 +309,9 @@ public:
     int32_t GetSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType);
     int32_t SetSystemVolumeToEffect(AudioStreamType streamType, float volume);
     void SaveSystemVolumeForSwitchDevice(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel);
-    int32_t AddCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
+    void AddCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
         const SourceType &sourceType);
-    int32_t RemoveCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
+    void RemoveCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
         const SourceType &sourceType);
     int32_t AddCaptureInjector();
     int32_t RemoveCaptureInjector();

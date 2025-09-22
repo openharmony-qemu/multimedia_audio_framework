@@ -285,6 +285,7 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/pipe/src/audio_pipe_manager.cpp",
     "server/domain/pipe/src/audio_pipe_selector.cpp",
     "server/service/service_main/src/audio_injector_policy.cpp",
+    "client/service/src/audio_policy_manager.cpp",
   ]
 
   defines = []

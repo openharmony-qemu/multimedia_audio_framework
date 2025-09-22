@@ -70,6 +70,7 @@ ohos_shared_library("audio_capturer") {
   deps = [
     "../../../services/audio_service:audio_common",
     "../../../services/audio_policy:audio_policy_client",
+    "../../../services/audio_policy:audio_policy_service",
     "../../../services/audio_service:audio_client",
     "../audiodefinitions:audio_definitions",
     "../audioutils:audio_utils",
@@ -89,6 +90,9 @@ ohos_shared_library("audio_capturer") {
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "samgr:samgr_proxy",
+    "os_account:os_account_innerkits",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
   ]
 
   version_script = "../../../audio_framework.versionscript"
