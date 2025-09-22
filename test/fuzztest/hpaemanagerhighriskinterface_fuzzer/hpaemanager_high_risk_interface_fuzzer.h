@@ -206,6 +206,9 @@ public:
     std::vector<uint32_t> sinkInputIdList_;
     std::vector<uint32_t> renderSessionIdList;
     std::vector<uint32_t> captureSessionIdList;
+
+    int32_t sinkPortId_ = -1;
+    int32_t sourcePortId_ = -1;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -327,7 +327,6 @@ group("audio_fuzz_test") {
     "fuzztest/hpaemanagerimpl_fuzzer:fuzztest",
     "fuzztest/hpaemanagerstream_fuzzer:fuzztest",
     "fuzztest/hpaemixernode_fuzzer:fuzztest",
-    "fuzztest/hpaemanagercontrol_fuzzer:fuzztest",
     "fuzztest/hpaemanagerhighriskinterface_fuzzer:fuzztest",
     "fuzztest/hpaenolockqueue_fuzzer:fuzztest",
     "fuzztest/hpaeoffloadrenderermanager_fuzzer:fuzztest",
