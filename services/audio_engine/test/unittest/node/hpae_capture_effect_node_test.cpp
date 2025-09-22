@@ -279,6 +279,29 @@ HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_007, TestSize.Leve
     inputs.emplace_back(&hpaePcmBuffer);
     EXPECT_EQ(hpaeCaptureEffectNode->SignalProcess(inputs), hpaeCaptureEffectNode->outPcmBuffer_.get());
 }
+
+/*
+ * tc.name   : Test HpaeCaptureEffectNode API
+ * tc.type   : FUNC
+ * tc.number : HpaeCaptureEffectNodeTest_008
+ * tc.desc   : Test HpaeCaptureEffectNodeTest_008
+ */
+HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_008, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
+    std::shared_ptr<HpaeCaptureEffectNode> hpaeCaptureEffectNode = std::make_shared<HpaeCaptureEffectNode>(nodeInfo);
+    AudioChannelLayout channelLayout = CH_LAYOUT_UNKNOW;
+    uint32_t channel = 1;
+    hpaeCaptureEffectNode->GetCaptureEffectMicChannelLayout(channel, channelLayout);
+    EXPECT_EQ(channelLayout, CH_LAYOUT_UNKNOW);
+    channel = 2;
+    hpaeCaptureEffectNode->GetCaptureEffectMicChannelLayout(channel, channelLayout);
+    EXPECT_EQ(channelLayout, CH_LAYOUT_STEREO);
+    channel = 4;
+    hpaeCaptureEffectNode->GetCaptureEffectMicChannelLayout(channel, channelLayout);
+    EXPECT_EQ(channelLayout, CH_LAYOUT_QUAD_SIDE);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
