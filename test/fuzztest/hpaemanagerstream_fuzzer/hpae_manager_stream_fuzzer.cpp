@@ -246,12 +246,12 @@ void HpaeManagerFuzzTest::Fisrt()
     hpaeManager_->GetAllSourceOutputs();
     hpaeManager_->DumpSourceOutputsInfo();
     hpaeManager_->DumpSinkInputsInfo();
-     AudioEffectPropertyArrayV3 propertyV3;
+    AudioEffectPropertyArrayV3 propertyV3;
     hpaeManager_->GetAudioEffectProperty(propertyV3);
-    hpaeManager_->SetAudioEffectProperty(propertyV3);  
+    hpaeManager_->SetAudioEffectProperty(propertyV3);
     AudioEffectPropertyArray property;
     hpaeManager_->GetAudioEffectProperty(property);
-    hpaeManager_->SetAudioEffectProperty(property); 
+    hpaeManager_->SetAudioEffectProperty(property);
     AudioEnhancePropertyArray propertyEn;
     hpaeManager_->GetAudioEnhanceProperty(propertyEn, DEVICE_TYPE_SPEAKER);
     hpaeManager_->SetAudioEnhanceProperty(propertyEn, DEVICE_TYPE_SPEAKER);
@@ -317,7 +317,7 @@ void HpaeManagerFuzzTest::InitFunc()
 {
     sourceOutputIdList_ = {streamInfo_.sessionId, GetData<uint32_t>()};
     sinkInputIdList_ = {rendererStreamInfo_.sessionId, GetData<uint32_t>()};
-    sourceNameList_ = {"mic", "mic1","test"};
+    sourceNameList_ = {"mic", "mic1", "test"};
     sinkNameList_ = {"Speaker_File", "Speaker_File1", "test", ""};
     sessionIdList_ = {streamInfo_.sessionId, rendererStreamInfo_.sessionId, GetData<uint32_t>()};
     HpaeSessionInfo sessionInfo;
@@ -325,20 +325,32 @@ void HpaeManagerFuzzTest::InitFunc()
     hpaeManager_->GetSessionInfo(streamInfo_.streamClassType, streamInfo_.sessionId, sessionInfo);
 
     renderStreamFunc_.clear();
-    renderStreamFunc_.push_back([=, this]() {hpaeManager_->Start(rendererStreamInfo_.streamClassType, rendererStreamInfo_.sessionId);});
-    renderStreamFunc_.push_back([=, this]() {hpaeManager_->StartWithSyncId(rendererStreamInfo_.streamClassType, rendererStreamInfo_.sessionId, 1);});
-    renderStreamFunc_.push_back([=, this]() {hpaeManager_->Pause(rendererStreamInfo_.streamClassType, rendererStreamInfo_.sessionId);});
-    renderStreamFunc_.push_back([=, this]() {hpaeManager_->Flush(rendererStreamInfo_.streamClassType, rendererStreamInfo_.sessionId);});
-    renderStreamFunc_.push_back([=, this]() {hpaeManager_->Drain(rendererStreamInfo_.streamClassType, rendererStreamInfo_.sessionId);});
-    renderStreamFunc_.push_back([=, this]() {hpaeManager_->Stop(rendererStreamInfo_.streamClassType, rendererStreamInfo_.sessionId);});
+    renderStreamFunc_.push_back([=, this]() {hpaeManager_->Start(rendererStreamInfo_.streamClassType,
+        rendererStreamInfo_.sessionId);});
+    renderStreamFunc_.push_back([=, this]() {hpaeManager_->StartWithSyncId(rendererStreamInfo_.streamClassType,
+        rendererStreamInfo_.sessionId, 1);});
+    renderStreamFunc_.push_back([=, this]() {hpaeManager_->Pause(rendererStreamInfo_.streamClassType,
+        rendererStreamInfo_.sessionId);});
+    renderStreamFunc_.push_back([=, this]() {hpaeManager_->Flush(rendererStreamInfo_.streamClassType,
+        rendererStreamInfo_.sessionId);});
+    renderStreamFunc_.push_back([=, this]() {hpaeManager_->Drain(rendererStreamInfo_.streamClassType,
+        rendererStreamInfo_.sessionId);});
+    renderStreamFunc_.push_back([=, this]() {hpaeManager_->Stop(rendererStreamInfo_.streamClassType,
+        rendererStreamInfo_.sessionId);});
 
     capturerStreamFunc_.clear();
-    capturerStreamFunc_.push_back([=, this]() {hpaeManager_->Start(streamInfo_.streamClassType, streamInfo_.sessionId);});
-    capturerStreamFunc_.push_back([=, this]() {hpaeManager_->StartWithSyncId(streamInfo_.streamClassType, streamInfo_.sessionId, 1);});
-    capturerStreamFunc_.push_back([=, this]() {hpaeManager_->Pause(streamInfo_.streamClassType, streamInfo_.sessionId);});
-    capturerStreamFunc_.push_back([=, this]() {hpaeManager_->Flush(streamInfo_.streamClassType, streamInfo_.sessionId);});
-    capturerStreamFunc_.push_back([=, this]() {hpaeManager_->Drain(streamInfo_.streamClassType, streamInfo_.sessionId);});
-    capturerStreamFunc_.push_back([=, this]() {hpaeManager_->Stop(streamInfo_.streamClassType, streamInfo_.sessionId);});
+    capturerStreamFunc_.push_back([=, this]() {hpaeManager_->Start(streamInfo_.streamClassType,\
+        streamInfo_.sessionId);});
+    capturerStreamFunc_.push_back([=, this]() {hpaeManager_->StartWithSyncId(streamInfo_.streamClassType,
+        streamInfo_.sessionId, 1);});
+    capturerStreamFunc_.push_back([=, this]() {hpaeManager_->Pause(streamInfo_.streamClassType,
+        streamInfo_.sessionId);});
+    capturerStreamFunc_.push_back([=, this]() {hpaeManager_->Flush(streamInfo_.streamClassType,
+        streamInfo_.sessionId);});
+    capturerStreamFunc_.push_back([=, this]() {hpaeManager_->Drain(streamInfo_.streamClassType,
+        streamInfo_.sessionId);});
+    capturerStreamFunc_.push_back([=, this]() {hpaeManager_->Stop(streamInfo_.streamClassType,
+        streamInfo_.sessionId);});
 
     moveStreamFunc_.clear();
     uint32_t sessionId = sinkInputIdList_[GetData<uint32_t>() % sinkInputIdList_.size()];
@@ -429,7 +441,8 @@ void HpaeManagerFuzzTest::HpaeManagerEffectTest()
     EffectChainManagerParam managerParam;
     std::vector<std::shared_ptr<AudioEffectLibEntry>> enhanceLibraryList;
     hpaeManager_->InitAudioEnhanceChainManager(enhanceChains, managerParam, enhanceLibraryList);
-    hpaeManager_->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    hpaeManager_->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_EFFECT_CHAIN_MANAGER_PARAM,
+        DEFAULT_EFFECT_LIBRARY_LIST);
 
     effectFunc_.clear();
     uint32_t sessionId = sessionIdList_[GetData<uint32_t>() % sessionIdList_.size()];
@@ -443,7 +456,7 @@ void HpaeManagerFuzzTest::HpaeManagerEffectTest()
     effectFunc_.push_back([=, this]() {hpaeManager_->SetOffloadRenderCallbackType(sessionId, value);});
     effectFunc_.push_back([=, this]() {hpaeManager_->SetOffloadPolicy(sessionId, value);});
     effectFunc_.push_back([=, this]() {hpaeManager_->SetSpeed(sessionId, value);});
-    for(size_t i = 0; i < 2; i++) {
+    for (size_t i = 0; i < NUM_2; i++) {
         uint32_t index = GetData<uint32_t>() % effectFunc_.size();
         effectFunc_[index]();
     }
@@ -461,7 +474,7 @@ void HpaeManagerFuzzTest::HpaeManagerEffectTest2()
     effectFunc_.push_back([=, this]() {hpaeManager_->UpdateEffectBtOffloadSupported(value1);});
     effectFunc_.push_back([=, this]() {hpaeManager_->SetMicrophoneMuteInfo(value1);});
     effectFunc_.push_back([=, this]() {hpaeManager_->SetMicrophoneMuteInfo(value1);});
-    for(size_t i = 0; i < 2; i++) {
+    for (size_t i = 0; i < NUM_2; i++) {
         uint32_t index = GetData<uint32_t>() % effectFunc_.size();
         effectFunc_[index]();
     }

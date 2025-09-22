@@ -209,7 +209,6 @@ public:
 
     int32_t sinkPortId_ = -1;
     int32_t sourcePortId_ = -1;
-
 };
 } // namespace AudioStandard
 } // namespace OHOS
