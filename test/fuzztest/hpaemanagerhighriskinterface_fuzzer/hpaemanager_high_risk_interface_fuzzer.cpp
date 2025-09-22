@@ -290,12 +290,21 @@ void HpaeManagerFuzzTest::HpaeRenderStreamManagerMoveFuzzTest()
 void HpaeManagerFuzzTest::OpenAudioPortFuzzTest()
 {
     AudioPortSetUp();
+    std::shared_ptr<HpaeAudioServiceCallbackFuzzTest> callback = std::make_shared<HpaeAudioServiceCallbackFuzzTest>();
+    hpaeManager_->RegisterSerivceCallback(callback);
     AudioModuleInfo audioModuleInfo = GetSourceAudioModeInfo();
     hpaeManager_->OpenAudioPort(audioModuleInfo);
+    WaitForMsgProcessing(hpaeManager_);
+    int32_t portId = callback->GetPortId();
     audioModuleInfo.lib = libList_[GetData<uint32_t>() % libList_.size()];
     audioModuleInfo.name = audioPortNameList_[GetData<uint32_t>() % audioPortNameList_.size()];
     audioModuleInfo.className = DeviceClassList[GetData<uint32_t>() % DeviceClassList.size()];
     hpaeManager_->OpenAudioPort(audioModuleInfo);
+    WaitForMsgProcessing(hpaeManager_);
+    int32_t portId2 = callback->GetPortId();
+    hpaeManager_->CloseAudioPort(GetData<int32_t>());
+    hpaeManager_->CloseAudioPort(portId);
+    hpaeManager_->CloseAudioPort(portId2);
     TearDown();
 }
 

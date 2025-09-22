@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef HPAE_MANAGER_CONTROL_FUZZER_H
-#define HPAE_MANAGER_CONTROL_FUZZER_H
+#ifndef HPAE_MANAGER_STREAM_FUZZER_H
+#define HPAE_MANAGER_STREAM_FUZZER_H
 
 #include "audio_service_hpae_callback.h"
 #include "audio_info.h"
@@ -224,4 +224,4 @@ public:
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // HPAE_MANAGER_CONTROL_FUZZER_H
+#endif // HPAE_MANAGER_STREAM_FUZZER_H
