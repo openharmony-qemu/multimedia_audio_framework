@@ -580,7 +580,6 @@ int32_t AudioCoreService::ActivateA2dpDeviceWhenDescEnabled(shared_ptr<AudioDevi
     const AudioStreamDeviceChangeReasonExt reason)
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_NULL_POINTER, "invalid deviceDesc");
-    AUDIO_INFO_LOG("Desc isEnabled %{public}d", desc->isEnable_);
     if (desc->isEnable_) {
         return ActivateA2dpDevice(desc, reason);
     }
