@@ -2152,6 +2152,45 @@ static std::string GetManagerTypeStr(ManagerType type)
 
 bool RendererInServer::Dump(std::string &dumpString)
 {
+    bool ret = false;
+    ret = DumpNormal(dumpString);
+    CHECK_AND_RETURN_RET_LOG(ret == false, true, "DumpNormal");
+    ret = DumpVoipAndDirect(dumpString);
+    CHECK_AND_RETURN_RET_LOG(ret == false, true, "DumpVoipAndDirect");
+    return ret;
+}
+
+bool RendererInServer::DumpNormal(std::string &dumpString)
+{
+    if (managerType_ != PLAYBACK) {
+        return false;
+    }
+    // dump audio stream info
+    dumpString += "audio stream info:\n";
+    AppendFormat(dumpString, "  - session id:%u\n", streamIndex_);
+    AppendFormat(dumpString, "  - appid:%d\n", processConfig_.appInfo.appPid);
+    AppendFormat(dumpString, "  - stream type:%d\n", processConfig_.streamType);
+
+    AppendFormat(dumpString, "  - samplingRate: %d\n", processConfig_.streamInfo.samplingRate);
+    AppendFormat(dumpString, "  - channels: %u\n", processConfig_.streamInfo.channels);
+    AppendFormat(dumpString, "  - format: %u\n", processConfig_.streamInfo.format);
+    AppendFormat(dumpString, "  - device type: %u\n", processConfig_.deviceType);
+    AppendFormat(dumpString, "  - sink type: %s\n", GetManagerTypeStr(managerType_).c_str());
+    AppendFormat(dumpString, "  - renderer target: %d\n", lastTarget_);
+
+    // dump status info
+    AppendFormat(dumpString, "  - Current stream status: %s\n", GetStatusStr(status_.load()).c_str());
+    if (audioServerBuffer_ != nullptr) {
+        AppendFormat(dumpString, "  - Current read position: %u\n", audioServerBuffer_->GetCurReadFrame());
+        AppendFormat(dumpString, "  - Current write position: %u\n", audioServerBuffer_->GetCurWriteFrame());
+    }
+
+    dumpString += "\n";
+    return true;
+}
+
+bool RendererInServer::DumpVoipAndDirect(std::string &dumpString)
+{
     if (managerType_ != DIRECT_PLAYBACK && managerType_ != VOIP_PLAYBACK) {
         return false;
     }

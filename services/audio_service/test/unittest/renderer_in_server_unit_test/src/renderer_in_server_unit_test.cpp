@@ -2962,6 +2962,23 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDump_018, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test DumpNormal API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerDumpNormal_001
+ * @tc.desc  : Test DumpNormal interface.
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerDumpNormal_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, rendererInServer);
+
+    std::string dump="";
+    rendererInServer->Init();
+    rendererInServer->managerType_ = VOIP_PLAYBACK;
+
+    EXPECT_FALSE(rendererInServer->DumpNormal(dump));
+}
+
+/**
  * @tc.name  : Test StandByCheck API
  * @tc.type  : FUNC
  * @tc.number: RendererInServerStandByCheck_001
