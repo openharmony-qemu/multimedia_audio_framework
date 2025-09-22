@@ -785,7 +785,7 @@ int32_t AudioCapturerPrivate::AsyncCheckAudioCapturer(std::string callingFunc)
             taskCount = sharedCapturer->switchStreamInNewThreadTaskCount_.load();
             sharedCapturer->SetInSwitchingFlag(true);
             sharedCapturer->CheckAudioCapturer(callingFunc + "withNewThread");
-            sharedCapturer->SetInSwitchingFlag(false);    
+            sharedCapturer->SetInSwitchingFlag(false);
         } while (sharedCapturer->switchStreamInNewThreadTaskCount_.fetch_sub(taskCount) > taskCount);
     });
     return SUCCESS;
