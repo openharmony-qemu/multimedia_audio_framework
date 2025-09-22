@@ -242,7 +242,7 @@ public:
         sourceBufferType_ = type;
     }
 
-    HpaeSplitStreamType GetSplitStreamType()
+    HpaeSplitStreamType GetSplitStreamType() const
     {
         return splitStreamType_;
     }
@@ -257,9 +257,19 @@ public:
         streamType_ = type;
     }
 
-    AudioStreamType GetAudioStreamType()
+    AudioStreamType GetAudioStreamType() const
     {
         return streamType_;
+    }
+
+    void SetAudioStreamUsage(StreamUsage usage)
+    {
+        streamUsage_ = usage;
+    }
+
+    StreamUsage GetAudioStreamUsage() const
+    {
+        return streamUsage_;
     }
 
 private:
@@ -281,6 +291,7 @@ private:
     HpaeSourceBufferType sourceBufferType_ = HPAE_SOURCE_BUFFER_TYPE_DEFAULT;
     HpaeSplitStreamType splitStreamType_ = STREAM_TYPE_DEFAULT;
     AudioStreamType streamType_ = STREAM_DEFAULT;
+    StreamUsage streamUsage_ = STREAM_USAGE_INVALID;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

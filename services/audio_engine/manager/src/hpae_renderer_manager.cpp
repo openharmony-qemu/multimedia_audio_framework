@@ -389,7 +389,7 @@ int32_t HpaeRendererManager::ConnectInputSession(uint32_t sessionId)
     return SUCCESS;
 }
 
-void HpaeRendererManager::UpdateStreamType(const std::shared_ptr<HpaeNode> sourceNode,
+void HpaeRendererManager::UpdateStreamProp(const std::shared_ptr<HpaeNode> sourceNode,
     std::shared_ptr<HpaeNode> dstNode)
 {
     if (sourceNode == nullptr || dstNode == nullptr) {
@@ -398,6 +398,7 @@ void HpaeRendererManager::UpdateStreamType(const std::shared_ptr<HpaeNode> sourc
     }
     HpaeNodeInfo tmpNodeInfo = dstNode->GetNodeInfo();
     tmpNodeInfo.streamType = sourceNode->GetNodeInfo().streamType;
+    tmpNodeInfo.effectInfo.streamUsage = sourceNode->GetNodeInfo().effectInfo.streamUsage;
     dstNode->SetNodeInfo(tmpNodeInfo);
 }
 
@@ -428,7 +429,7 @@ void HpaeRendererManager::ConnectProcessCluster(uint32_t sessionId, HpaeProcesso
         }
     }
     // update node info for processcluster
-    UpdateStreamType(sinkInputNodeMap_[sessionId], sceneClusterMap_[sceneType]->GetSharedInstance());
+    UpdateStreamProp(sinkInputNodeMap_[sessionId], sceneClusterMap_[sceneType]->GetSharedInstance());
     ConnectInputCluster(sessionId, sceneType);
     ConnectOutputCluster(sessionId, sceneType);
     std::shared_ptr<HpaeSinkInputNode> sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);

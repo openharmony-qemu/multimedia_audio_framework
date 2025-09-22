@@ -199,6 +199,7 @@ void HpaeProcessCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer 
     // update mixer node info
     HpaeNodeInfo tmpNodeinfo = mixerNode_->GetNodeInfo();
     tmpNodeinfo.streamType = preNodeInfo.streamType;
+    tmpNodeinfo.effectInfo.streamUsage = preNodeInfo.effectInfo.streamUsage;
     mixerNode_->SetNodeInfo(tmpNodeinfo);
     mixerNode_->EnableProcess(true);
 }
