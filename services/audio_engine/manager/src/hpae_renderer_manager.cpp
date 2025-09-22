@@ -389,16 +389,16 @@ int32_t HpaeRendererManager::ConnectInputSession(uint32_t sessionId)
     return SUCCESS;
 }
 
-void HpaeRendererManager::UpdateStreamProp(const std::shared_ptr<HpaeNode> sourceNode,
-    std::shared_ptr<HpaeNode> dstNode)
+void HpaeRendererManager::UpdateStreamProp(const std::shared_ptr<const HpaeNode> &sourceNode,
+    const std::shared_ptr<HpaeNode> &dstNode)
 {
     if (sourceNode == nullptr || dstNode == nullptr) {
         AUDIO_ERR_LOG("copy node err, node is null");
         return;
     }
     HpaeNodeInfo tmpNodeInfo = dstNode->GetNodeInfo();
-    tmpNodeInfo.streamType = sourceNode->GetNodeInfo().streamType;
-    tmpNodeInfo.effectInfo.streamUsage = sourceNode->GetNodeInfo().effectInfo.streamUsage;
+    tmpNodeInfo.streamType = sourceNode->GetStreamType();
+    tmpNodeInfo.effectInfo.streamUsage = sourceNode->GetEffectStreamUsage();
     dstNode->SetNodeInfo(tmpNodeInfo);
 }
 

@@ -108,9 +108,14 @@ public:
         return nodeInfo_.sessionId;
     }
 
-    virtual AudioStreamType GetStreamType()
+    virtual AudioStreamType GetStreamType() const
     {
         return nodeInfo_.streamType;
+    }
+
+    virtual StreamUsage GetEffectStreamUsage() const
+    {
+        return nodeInfo_.effectInfo.streamUsage;
     }
 
     virtual HpaeProcessorType GetSceneType()
