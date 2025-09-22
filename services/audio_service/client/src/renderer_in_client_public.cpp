@@ -66,6 +66,7 @@ namespace AudioStandard {
 namespace {
 const uint64_t OLD_BUF_DURATION_IN_USEC = 92880; // This value is used for compatibility purposes.
 static constexpr int CB_QUEUE_CAPACITY = 3;
+constexpr uint32_t TONE_PLAYER_CACHE_SIZE = 4;
 const uint64_t AUDIO_FIRST_FRAME_LATENCY = 120; //ms
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 9; // 9S
 static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
@@ -1308,6 +1309,7 @@ void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize)
     size_t minCbBufferSize =
         static_cast<size_t>(MIN_CBBUF_IN_USEC * curStreamParams_.samplingRate / AUDIO_US_PER_S) * sizePerFrameInByte_;
     size_t preferredCbBufferSize = static_cast<size_t>(frameSize) * sizePerFrameInByte_;
+    SetCacheSize(frameSize);
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
     cbBufferSize_ = (preferredCbBufferSize > maxCbBufferSize || preferredCbBufferSize < minCbBufferSize) ?
         (preferredCbBufferSize > maxCbBufferSize ? maxCbBufferSize : minCbBufferSize) : preferredCbBufferSize;
@@ -1435,6 +1437,9 @@ int32_t RendererInClientInner::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         uint64_t bufferDurationInUs = bufferSizeInMsec_ * AUDIO_US_PER_MS;
         InitCallbackBuffer(bufferDurationInUs);
+    }
+    if (rendererInfo_.playerType == PLAYER_TYPE_TONE_PLAYER) {
+        SetCacheSize(TONE_PLAYER_CACHE_SIZE * spanSizeInFrame_);
     }
     return SUCCESS;
 }

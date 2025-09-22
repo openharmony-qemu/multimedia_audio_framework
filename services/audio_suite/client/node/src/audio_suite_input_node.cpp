@@ -99,7 +99,6 @@ int32_t AudioInputNode::DisConnect(const std::shared_ptr<AudioNode>& preNode)
 
 std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> AudioInputNode::GetOutputPort(AudioNodePortType type)
 {
-    CHECK_AND_RETURN_RET(outputStream_ == nullptr, outputStream_);
     return outputStream_;
 }
 
@@ -270,6 +269,7 @@ int32_t AudioInputNode::PushDataToCache(uint8_t* rawData, uint32_t dataSize)
             return ERR_OPERATION_FAILED;
         }
         cachedBuffer_.PushData(out, outSize);
+        delete[] out;
     } else {
         cachedBuffer_.PushData(rawData, dataSize);
     }
@@ -308,15 +308,19 @@ int32_t AudioInputNode::DoResample(uint8_t* inData, uint32_t inSize, AudioSampli
     uint32_t singleHandleOutSize = AudioSamplingRate::SAMPLE_RATE_16000 * SINGLE_FRAME_DURATION / SECONDS_TO_MS;
     uint32_t singleFrameHandleOutSize = AudioSamplingRate::SAMPLE_RATE_16000 *
         SINGLE_FRAME_DURATION_SAMPLE_RATE_11025 / SECONDS_TO_MS;
+    int32_t ret = SUCCESS;
     for (uint32_t i = 0; i < frameNum; i++) {
-        int32_t ret = DoResampleProcess(inFloatData + singleInSize * channelNum * i, singleInSize,
+        ret = DoResampleProcess(inFloatData + singleInSize * channelNum * i, singleInSize,
             out + singleFrameHandleOutSize * channelNum * i, singleHandleOutSize);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "AudioInputNode::DoResample fail");
+        CHECK_AND_BREAK_LOG(ret == SUCCESS, "AudioInputNode::DoResample fail");
         ret = DoResampleProcess(inFloatData + singleInSize * channelNum * i, 0,
             out + singleFrameHandleOutSize * channelNum * i + singleHandleOutSize * channelNum, singleHandleOutSize);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "AudioInputNode::DoResample fail");
+        CHECK_AND_BREAK_LOG(ret == SUCCESS, "AudioInputNode::DoResample fail");
     }
-    return SUCCESS;
+    if (format.format != AudioSampleFormat::SAMPLE_F32LE) {
+        delete[] inFloatData;
+    }
+    return ret;
 }
 
 int32_t AudioInputNode::GeneratePushBuffer()

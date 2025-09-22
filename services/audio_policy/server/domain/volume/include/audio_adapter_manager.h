@@ -349,7 +349,7 @@ private:
           audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
           volumeDataMaintainer_(),
           audioActiveDevice_(AudioActiveDevice::GetInstance()),
-          audioConnectDevice_(AudioConnectDevice::GetInstance())
+          audioConnectedDevice_(AudioConnectedDevice::GetInstance())
     {}
 
     AudioStreamType GetStreamIDByType(std::string streamType);
@@ -446,7 +446,6 @@ private:
     std::mutex systemSoundMutex_;
     std::unordered_map<std::string, std::string> systemSoundUriMap_;
     StreamVolumeInfoMap streamVolumeInfos_;
-    AudioDeviceDescriptor currentActiveDevice_;
     AudioRingerMode ringerMode_ = RINGER_MODE_NORMAL;
     int32_t safeVolume_ = 0;
     SafeStatus safeStatus_ = SAFE_ACTIVE;
@@ -470,7 +469,7 @@ private:
     AudioDeviceManager &audioDeviceManager_;
     VolumeDataMaintainer volumeDataMaintainer_;
     AudioActiveDevice &audioActiveDevice_;
-    AudioConnectDevice &audioConnectDevice_;
+    AudioConnectedDevice &audioConnectedDevice_;
 
     std::unordered_map<std::string, std::shared_ptr<VolumeDataMaintainer>> volumeDataExtMaintainer_;
     bool isVolumeUnadjustable_ = false;

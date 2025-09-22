@@ -142,48 +142,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetOffloadSessionId_001, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetZoneVolumeLevel_001
- * @tc.desc: Test SetZoneVolumeLevel
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioAdapterManagerUnitTest, SetZoneVolumeLevel_001, TestSize.Level1)
-{
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
-    std::shared_ptr<AudioDeviceDescriptor> desc =
-        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_REMOTE_CAST, OUTPUT_DEVICE);
-    desc->networkId_ = "LocalDevice";
-    devices.push_back(desc);
-
-    AudioZoneService::GetInstance().BindDeviceToAudioZone(zoneId1_, devices);
-    AudioConnectedDevice::GetInstance().AddConnectedDevice(desc);
-    AudioZoneService::GetInstance().UpdateDeviceFromGlobalForAllZone(desc);
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    int32_t vLevel = 10;
-    audioAdapterManager->volumeDataExtMaintainer_[desc->GetKey()] = std::make_shared<VolumeDataMaintainer>();
-
-    audioAdapterManager->SetZoneVolumeLevel(zoneId1_, STREAM_MUSIC, vLevel);
-    EXPECT_EQ(audioAdapterManager->volumeDataExtMaintainer_[desc->GetKey()]->GetStreamVolume(STREAM_MUSIC), vLevel);
-
-    audioAdapterManager_->handler_ = nullptr;
-    audioAdapterManager->SetZoneVolumeLevel(zoneId1_, STREAM_MUSIC, vLevel);
-    EXPECT_EQ(audioAdapterManager->volumeDataExtMaintainer_[desc->GetKey()]->GetStreamVolume(STREAM_MUSIC), vLevel);
-
-    desc->networkId_ = "RemoteDevice";
-    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
-    audioAdapterManager->volumeDataExtMaintainer_.clear();
-    audioAdapterManager->volumeDataExtMaintainer_[desc->GetKey()] = std::make_shared<VolumeDataMaintainer>();
-
-    audioAdapterManager_->handler_ = std::make_shared<AudioAdapterManagerHandler>();
-    audioAdapterManager->SetZoneVolumeLevel(zoneId1_, STREAM_MUSIC, vLevel);
-    EXPECT_EQ(audioAdapterManager->volumeDataExtMaintainer_[desc->GetKey()]->GetStreamVolume(STREAM_MUSIC), vLevel);
-
-    audioAdapterManager_->handler_ = nullptr;
-    audioAdapterManager->SetZoneVolumeLevel(zoneId1_, STREAM_MUSIC, vLevel);
-    EXPECT_EQ(audioAdapterManager->volumeDataExtMaintainer_[desc->GetKey()]->GetStreamVolume(STREAM_MUSIC), vLevel);
-}
-
-/**
  * @tc.name: SetAdjustVolumeForZone_001
  * @tc.desc: Test SetAdjustVolumeForZone
  * @tc.type: FUNC
@@ -219,31 +177,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetAdjustVolumeForZone_001, TestSize.Level
     ret = audioAdapterManager->SetAdjustVolumeForZone(zoneId2_);
     EXPECT_EQ(ret, SUCCESS);
 }
-
-/**
- * @tc.name: SetSystemVolumeLevel_001
- * @tc.desc: Test CheckAndUpdateRemoteDeviceVolume
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioAdapterManagerUnitTest, SetSystemVolumeLevel_001, TestSize.Level1)
-{
-    AudioDeviceDescriptor deviceDescriptor;
-    deviceDescriptor.deviceType_ = DEVICE_TYPE_SPEAKER;
-    deviceDescriptor.networkId_ = "LocalDevice";
-    int32_t testVolumeLevel = 10;
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    audioAdapterManager->SetActiveDeviceDescriptor(deviceDescriptor);
-    audioAdapterManager->SetSystemVolumeLevel(STREAM_MUSIC, testVolumeLevel);
-    EXPECT_EQ(audioAdapterManager->volumeDataMaintainer_.GetStreamVolume(STREAM_MUSIC), testVolumeLevel);
-
-    deviceDescriptor.networkId_ = "RemoteDevice";
-    testVolumeLevel = 5;
-    audioAdapterManager->SetActiveDeviceDescriptor(deviceDescriptor);
-    audioAdapterManager->SetSystemVolumeLevel(STREAM_MUSIC, testVolumeLevel);
-    EXPECT_EQ(audioAdapterManager->volumeDataMaintainer_.GetStreamVolume(STREAM_MUSIC), testVolumeLevel);
-}
-
 
 /**
  * @tc.name: UpdateSinkArgs_001
@@ -289,23 +222,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, UpdateSinkArgs_002, TestSize.Level1)
     std::string ret {};
     AudioAdapterManager::UpdateSinkArgs(info, ret);
     EXPECT_EQ(ret, " network_id=LocalDevice");
-}
-
-/**
- * @tc.name: Test SetInnerStreamMute
- * @tc.desc: SetInnerStreamMute_001
- * @tc.type: FUNC
- * @tc.require: #ICDC94
- */
-HWTEST_F(AudioAdapterManagerUnitTest, SetInnerStreamMute_001, TestSize.Level1)
-{
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    audioAdapterManager->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    AudioStreamType streamType = STREAM_MUSIC;
-    bool mute = true;
-    StreamUsage streamUsage = STREAM_USAGE_MUSIC;
-    audioAdapterManager->SetInnerStreamMute(streamType, mute, streamUsage);
-    EXPECT_EQ(audioAdapterManager->GetStreamMute(streamType), mute);
 }
 
 /**

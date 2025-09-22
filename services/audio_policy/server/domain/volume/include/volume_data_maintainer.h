@@ -87,7 +87,7 @@ public:
 
     VolumeDataMaintainer()
         : audioActiveDevice_(AudioActiveDevice::GetInstance()),
-          audioConnectedDevice_(AudioConnectedDevice::GetInstance());
+          audioConnectedDevice_(AudioConnectedDevice::GetInstance())
     {
         AUDIO_LOGI("VolumeDataMaintainer Create");
     }
@@ -168,6 +168,10 @@ private:
 
     void LoadDeviceVolumeMapFromDb(std::shared_ptr<AudioDeviceDescriptor> &device);
     void LoadDeviceMuteMapFromDb(std::shared_ptr<AudioDeviceDescriptor> &device);
+    int32_t SaveMuteStatusInternal(
+        std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType, bool muteStatus);
+    int32_t VolumeDataMaintainer::GetMuteStatusInternal(
+        std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType);
 
     void WriteVolumeDbAccessExceptionEvent(int32_t errorCase, int32_t errorMsg);
 
@@ -176,12 +180,12 @@ private:
     ffrt::mutex volumeForMapMutex_;
 
     AudioActiveDevice& audioActiveDevice_;
-    audioConnectDevice_& audioConnectDevice_;
+    AudioConnectedDevice& audioConnectedDevice_;
 
     std::unordered_map<std::string,
-        std::unordered_map<AudioStreamType, bool> muteStatusMap_;
+        std::unordered_map<AudioStreamType, bool>> muteStatusMap_;
     std::unordered_map<std::string,
-        std::unordered_map<AudioStreamType, int32_t> volumeLevelMap_;
+        std::unordered_map<AudioStreamType, int32_t>> volumeLevelMap_;
     std::unordered_map<int32_t, int32_t> appVolumeLevelMap_; // save App volume map
     std::unordered_map<int32_t, std::unordered_map<int32_t, bool>> appMuteStatusMap_; // save App volume Mutestatus map
     std::vector<AudioStreamType> volumeList_;

@@ -239,13 +239,13 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_DestroyNode(OH_AudioNode* audioNode);
  * @brief Request to get audio node enable status
  *
  * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode()
- * @param audioNoedEnable node enable status, which will be returned as the output parameter.
+ * @param audioNodeEnable node enable status, which will be returned as the output parameter.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parame nullptr.
  * @since 21
  */
 OH_AudioSuite_Result OH_AudioSuiteEngine_GetNodeEnableStatus(
-    OH_AudioNode* audioNode, OH_AudioNodeEnable* audioNoedEnable);
+    OH_AudioNode* audioNode, OH_AudioNodeEnable* audioNodeEnable);
 
 /**
  * @brief Request to set audio enable/disable status, input node and output node can not be set enable or disable
@@ -253,12 +253,12 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_GetNodeEnableStatus(
  * it only pull data but not process it
  *
  * @param audioNode Reference created by OH_AudioSuiteEngine_CreateNode()
- * @param audioNoedEnable enable/disable
+ * @param audioNodeEnable enable/disable
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parame nullptr.
  * @since 21
  */
-OH_AudioSuite_Result OH_AudioSuiteEngine_EnableNode(OH_AudioNode* audioNode, OH_AudioNodeEnable audioNoedEnable);
+OH_AudioSuite_Result OH_AudioSuiteEngine_EnableNode(OH_AudioNode* audioNode, OH_AudioNodeEnable audioNodeEnable);
 
 /**
  * @brief Set the audio format for input and output nodes, specify the audio format of the audio source for
@@ -309,7 +309,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_DisConnectNodes(OH_AudioNode* sourceAud
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parame nullptr or not valid value.
  * @since 21
  */
-OH_AudioSuite_Result OH_AudioSuiteEngine_SetEquailizerMode(OH_AudioNode* audioNode, OH_EqualizerMode eqMode);
+OH_AudioSuite_Result OH_AudioSuiteEngine_SetEqualizerMode(OH_AudioNode* audioNode, OH_EqualizerMode eqMode);
 
 /**
  * @brief Set equalier frequency band gains of audio node.
@@ -338,13 +338,13 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_SetSoundFiledType(OH_AudioNode* audioNo
  * @brief Set environment type of audio node.
  *
  * @param audioNode Reference created by OH_AudioSuitEngine_CreateNode()
- * @param enviromentType The environment type
+ * @param environmentType The environment type
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parame nullptr or not valid value.
  * @since 21
  */
 OH_AudioSuite_Result OH_AudioSuiteEngine_SetEnvironmentType(
-    OH_AudioNode* audioNode, OH_EnvironmentType enviromentType);
+    OH_AudioNode* audioNode, OH_EnvironmentType environmentType);
 
 /**
  * @brief Set voice beautifier type of audio node.

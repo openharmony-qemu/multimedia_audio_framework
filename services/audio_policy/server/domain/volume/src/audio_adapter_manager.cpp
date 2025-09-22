@@ -661,7 +661,7 @@ int32_t AudioAdapterManager::SetVolumeDb(std::shared_ptr<AudioDeviceDescriptor> 
         volumeDb = 1.0f;
     }
     AUDIO_INFO_LOG("streamType:%{public}d volumeDb:%{public}f volume:%{public}d devicetype:%{public}d",
-        streamType, volumeDb, volumeLevel, currentActiveDevice_.deviceType_);
+        streamType, volumeDb, volumeLevel, device->deviceType_);
     SetSystemVolumeToEffect(streamType);
     SetAudioVolume(device, streamType, volumeDb);
 }
@@ -710,10 +710,10 @@ void AudioAdapterManager::SetAudioVolume(std::shared_ptr<AudioDeviceDescriptor> 
     }
     auto audioVolume = AudioVolume::GetInstance();
     CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null");
-    if (currentActiveDevice_.IsDistributedSpeaker()) {
+    if (device->IsDistributedSpeaker()) {
         SystemVolume systemVolume(volumeType, REMOTE_CLASS, volumeDb, volumeLevel, isMuted);
         audioVolume->SetSystemVolume(systemVolume);
-        SetOffloadVolume(volumeType, volumeDb, REMOTE_CLASS, currentActiveDevice_.networkId_);
+        SetOffloadVolume(volumeType, volumeDb, REMOTE_CLASS, device->networkId_);
         return;
     }
     if (device->deviceType_ == DEVICE_TYPE_NEARLINK) {
@@ -2972,7 +2972,6 @@ void AudioAdapterManager::UpdateVolumeForLowLatency()
     Trace trace("AudioAdapterManager::UpdateVolumeForLowLatency");
     // update volumes for low latency streams when loading volumes from the database.
     Volume vol = {false, 1.0f, 0};
-    DeviceType curOutputDeviceType = currentActiveDevice_.deviceType_;
     for (auto iter = VOLUME_TYPE_LIST.begin(); iter != VOLUME_TYPE_LIST.end(); iter++) {
         for (auto &desc : audioActiveDevice_.GetActiveOutputDevices()) {
             vol.isMute = GetStreamMuteInternal(desc, *iter);
@@ -3093,11 +3092,11 @@ void AudioAdapterManager::UpdateVolumeWhenDeviceConnect(
 {
     CHECK_AND_RETURN_LOG(desc != nullptr, "UptdateVolumeWhenDeviceConnect desc is null");
     if (zoneId > 0) {
-        volumeDataExtMaintainer_[desc->GetKey()]->InitDeviceVolumeMapFromDb(desc);
-        volumeDataExtMaintainer_[desc->GetKey()]->InitDeviceMuteMapFromDb(desc);
+        volumeDataExtMaintainer_[desc->GetKey()]->InitDeviceVolumeMap(desc);
+        volumeDataExtMaintainer_[desc->GetKey()]->InitDeviceMuteMap(desc);
     } else {
-        volumeDataMaintainer_->InitDeviceVolumeMapFromDb(desc);
-        volumeDataMaintainer_->InitDeviceMuteMapFromDb(desc);
+        volumeDataMaintainer_.InitDeviceVolumeMap(desc);
+        volumeDataMaintainer_.InitDeviceMuteMap(desc);
     }
     
     AUDIO_INFO_LOG("update ok");

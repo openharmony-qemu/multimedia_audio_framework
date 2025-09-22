@@ -896,6 +896,7 @@ ohos_unittest("audio_process_in_client_unit_test") {
     defines += [ "SUPPORT_LOW_LATENCY" ]
     sources += [
       "../../../../services/audio_service/server/src/audio_endpoint.cpp",
+      "../../../../services/audio_service/server/src/audio_endpoint_sink_adapter.cpp",
       "../../../../services/audio_service/server/src/audio_endpoint_performance.cpp",
     ]
   }
@@ -1023,6 +1024,7 @@ ohos_unittest("audio_process_in_client_second_unit_test") {
     defines += [ "SUPPORT_LOW_LATENCY" ]
     sources += [
       "../../../../services/audio_service/server/src/audio_endpoint.cpp",
+      "../../../../services/audio_service/server/src/audio_endpoint_sink_adapter.cpp",
       "../../../../services/audio_service/server/src/audio_endpoint_performance.cpp",
       "../../../../services/audio_service/server/src/audio_endpoint_separate.cpp",
     ]
@@ -1157,6 +1159,7 @@ ohos_unittest("capturer_in_server_unit_test") {
     defines += [ "SUPPORT_LOW_LATENCY" ]
     sources += [
       "../../../../services/audio_service/server/src/audio_endpoint.cpp",
+      "../../../../services/audio_service/server/src/audio_endpoint_sink_adapter.cpp",
       "../../../../services/audio_service/server/src/audio_endpoint_performance.cpp",
     ]
   }

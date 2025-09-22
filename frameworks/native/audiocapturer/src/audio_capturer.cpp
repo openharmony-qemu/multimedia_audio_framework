@@ -36,6 +36,7 @@ static constexpr uid_t UID_MSDP_SA = 6699;
 static constexpr int32_t WRITE_OVERFLOW_NUM = 100;
 static constexpr int32_t AUDIO_SOURCE_TYPE_INVALID_5 = 5;
 static constexpr uint32_t BLOCK_INTERRUPT_CALLBACK_IN_MS = 1000; // 1000ms
+static constexpr uint32_t BLOCK_INTERRUPT_OVERTIMES_IN_MS = 3000; // 3s
 static constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
 static constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
 static constexpr uint32_t DECIMAL_BASE = 10;
@@ -761,6 +762,15 @@ bool AudioCapturerPrivate::IsRestoreOrStopNeeded()
     return audioStream_->IsRestoreNeeded() || audioStream_->GetStopFlag();
 }
 
+void AudioCapturerPrivate::SetInSwitchingFlag(bool inSwitchingFlag)
+{
+    std::unique_lock<std::mutex> lock(inSwitchingMtx_);
+    inSwitchingFlag_ = inSwitchingFlag;
+    if (!inSwitchingFlag_) {
+        taskLoopCv_.notify_all();
+    }
+}
+
 int32_t AudioCapturerPrivate::AsyncCheckAudioCapturer(std::string callingFunc)
 {
     // Check first to avoid redundant instructions consumption in thread switching
@@ -778,7 +788,9 @@ int32_t AudioCapturerPrivate::AsyncCheckAudioCapturer(std::string callingFunc)
         uint32_t taskCount;
         do {
             taskCount = sharedCapturer->switchStreamInNewThreadTaskCount_.load();
+            sharedCapturer->SetInSwitchingFlag(true);
             sharedCapturer->CheckAudioCapturer(callingFunc + "withNewThread");
+            sharedCapturer->SetInSwitchingFlag(false);
         } while (sharedCapturer->switchStreamInNewThreadTaskCount_.fetch_sub(taskCount) > taskCount);
     });
     return SUCCESS;
@@ -833,6 +845,11 @@ int32_t AudioCapturerPrivate::Read(uint8_t &buffer, size_t userSize, bool isBloc
     Trace trace("AudioCapturer::Read");
     CheckSignalData(&buffer, userSize);
     AsyncCheckAudioCapturer("Read");
+
+    std::unique_lock<std::mutex> lock(inSwitchingMtx_);
+    taskLoopCv_.wait_for(lock, std::chrono::milliseconds(BLOCK_INTERRUPT_OVERTIMES_IN_MS), [this] {
+        return inSwitchingFlag_ == false;
+    });
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     int size = currentStream->Read(buffer, userSize, isBlockingRead);

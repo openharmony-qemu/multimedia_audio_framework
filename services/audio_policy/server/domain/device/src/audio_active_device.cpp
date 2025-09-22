@@ -499,14 +499,13 @@ bool AudioActiveDevice::IsDeviceInActiveOutputDevices(DeviceType type, bool isRe
 
 void AudioActiveDevice::SortDevicesByPriority(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
 {
-    std::sort(descs.begin(), descs.end(),
-        [this] (const std::shared_ptr<AudioDeviceDescriptor>& a, const std::shared_ptr<AudioDeviceDescriptor>& b) {
-                if (!a || !b) {
-                    return a < b;
-                }
-                return audioDeviceManager_.GetDevicePriority(a) < audioDeviceManager_.GetDevicePriority(b);
-            }
-    );
+    std::sort(descs.begin(), descs.end(), [this] (const std::shared_ptr<AudioDeviceDescriptor> &a,
+                                                  const std::shared_ptr<AudioDeviceDescriptor> &b) {
+        if (!a || !b) {
+            return a < b;
+        }
+        return audioDeviceManager_.GetDevicePriority(a) < audioDeviceManager_.GetDevicePriority(b);
+    });
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(AudioVolumeType volumeType)

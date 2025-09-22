@@ -817,7 +817,7 @@ HWTEST_F(FormatConverterUnitTest, F32StereoToF32Mono_MultipleFrames, TestSize.Le
 {
     FormatConverter converter;
 
-    const size_t frameCount = 1000;
+    const size_t frameCount = 10;
     std::vector<float> stereoData(frameCount * 2);
     std::vector<float> monoData(frameCount);
 

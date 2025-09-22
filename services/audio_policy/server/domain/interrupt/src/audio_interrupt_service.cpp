@@ -916,6 +916,12 @@ int32_t AudioInterruptService::ActivateAudioInterruptCoreProcedure(
         return ERR_FOCUS_DENIED;
     }
 
+    if (audioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
+        bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+        CHECK_AND_RETURN_RET_LOG(hasSystemPermission, ERR_FOCUS_DENIED,
+            "VOICE_TRANSCRIPTION failed: no system permission.");
+    }
+
     return ActivateAudioInterruptInternal(zoneId, audioInterrupt, isUpdatedAudioStrategy, updateScene);
 }
 

@@ -64,7 +64,7 @@ public:
 
     int32_t CreateNode(uint32_t pipelineId, AudioNodeBuilder& builder) override;
     int32_t DestroyNode(uint32_t nodeId) override;
-    int32_t EnableNode(uint32_t nodeId, AudioNodeEnable audioNoedEnable) override;
+    int32_t EnableNode(uint32_t nodeId, AudioNodeEnable audioNodeEnable) override;
     int32_t GetNodeEnableStatus(uint32_t nodeId) override;
     int32_t SetAudioFormat(uint32_t nodeId, AudioFormat audioFormat) override;
     int32_t SetWriteDataCallback(uint32_t nodeId,

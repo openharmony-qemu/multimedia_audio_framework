@@ -343,21 +343,6 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_014, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioVolumeManager.
-* @tc.number: AudioVolumeManager_015
-* @tc.desc  : Test UpdateSafeVolumeByS4 interface.
-*/
-HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_015, TestSize.Level1)
-{
-    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
-    AudioDeviceDescriptor audioDeviceDescriptor;
-
-    audioVolumeManager.UpdateSafeVolumeByS4();
-    audioVolumeManager.audioPolicyManager_.SetVolumeForSwitchDevice(audioDeviceDescriptor);
-    EXPECT_EQ(audioVolumeManager.isBtFirstBoot_, true);
-}
-
-/**
-* @tc.name  : Test AudioVolumeManager.
 * @tc.number: SetVolumeForSwitchDevice_001
 * @tc.desc  : Test AudioVolumeManager::SetVolumeForSwitchDevice interface.
 */

@@ -2414,6 +2414,10 @@ ohos_unittest("audio_collaborative_service_unit_test") {
     "../../audio_policy:audio_policy_service_static",
     "../../audio_policy:audio_setting_provider",
   ]
+
+  if (bluetooth_part_enable == true) {
+    external_deps += [ "bluetooth:btframework" ]
+  }
 }
 
 ohos_unittest("stream_filter_router_unit_test") {
@@ -3126,6 +3130,10 @@ ohos_unittest("audio_stream_collector_unit_test") {
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_client",
   ]
+
+  if (bluetooth_part_enable == true) {
+    external_deps += [ "bluetooth:btframework" ]
+  }
 }
 
 ohos_unittest("audio_stream_collector_pro_unit_test") {
@@ -3217,6 +3225,10 @@ ohos_unittest("audio_stream_collector_pro_unit_test") {
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_client",
   ]
+
+  if (bluetooth_part_enable == true) {
+    external_deps += [ "bluetooth:btframework" ]
+  }
 }
 
 ohos_unittest("audio_effect_service_test") {
@@ -3671,6 +3683,10 @@ ohos_unittest("volume_data_maintainer_unit_test") {
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
     "../../audio_policy:audio_policy_service_static",
   ]
+
+  if (bluetooth_part_enable == true) {
+    external_deps += [ "bluetooth:btframework" ]
+  }
 }
 
 ohos_unittest("audio_policy_manager_unit_test") {
@@ -6687,4 +6703,8 @@ ohos_unittest("audio_injector_policy_unit_test") {
   ]
 
   sources = [ "./unittest/audio_injector_policy_unit_test/src/audio_injector_policy_unit_test.cpp" ]
+
+  if (bluetooth_part_enable == true) {
+    external_deps += [ "bluetooth:btframework" ]
+  }
 }

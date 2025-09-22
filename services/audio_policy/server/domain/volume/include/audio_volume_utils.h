@@ -25,7 +25,7 @@
 #include "audio_info.h"
 #include "audio_utils.h"
 #include "audio_volume_config.h"
-#include "audio_volume_parse.h"
+#include "audio_volume_parser.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -100,7 +100,7 @@ public:
 private:
     AudioVolumeUtils();
     ~AudioVolumeUtils();
-    std::map<AudioVolumeType, std::shared_ptr<StreamVolumeInfo>> streamVolumeInfoMap_;
+    std::map<AudioVolumeType, std::shared_ptr<StreamVolumeInfo>> streamVolumeInfos_;
 };
 }
 }

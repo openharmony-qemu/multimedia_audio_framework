@@ -712,6 +712,23 @@ HWTEST_F(AudioCoreServiceUnitTest, SetDisplayName_001, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioCoreService.
+* @tc.number: HandleNearlinkErrResult_001
+* @tc.desc  : Test HandleNearlinkErrResult
+*/
+HWTEST_F(AudioCoreServiceUnitTest, HandleNearlinkErrResult_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest HandleNearlinkErrResult_001 start");
+    auto coreSvc = AudioCoreService::GetCoreService();
+    int32_t result = 200;
+    auto devDesc = make_shared<AudioDeviceDescriptor>();
+    coreSvc->HandleNearlinkErrResult(result, devDesc);
+    result = 404;
+    coreSvc->HandleNearlinkErrResult(result, devDesc);
+    EXPECT_NE(devDesc, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
 * @tc.number: TriggerFetchDevice_001
 * @tc.desc  : Test TriggerFetchDevice - will return error because not init coreService.
 */
