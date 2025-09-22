@@ -3435,12 +3435,21 @@ void AudioAdapterManager::RegisterDoNotDisturbStatusWhiteList()
 
 void AudioAdapterManager::RegisterMdmMuteSwitchCallback()
 {
+    std::weak_ptr<AudioAdapterManager> weakThis = shared_from_this();
     int ret = WatchParameter("persist.edm.unmute_device_disallowed",
-        [](const char* key, const char* value, void* context) {
+        [weakThis](const char* key, const char* value, void* context) {
+            auto self = weakThis.lock();
+            if (!self) {
+                AUDIO_ERR_LOG("AudioAdapterManager instance destroyed before WatchParameter callback");
+                return;
+            }
             bool isMute = strcmp(value, "true") == 0;
             AUDIO_INFO_LOG("mdmMuteStatus = %{public}d", isMute);
             AudioMuteFactorManager& audioMuteFactorManager = AudioMuteFactorManager::GetInstance();
             audioMuteFactorManager.SetMdmMuteStatus(isMute);
+            for(auto &streamType : self->defaultVolumeTypeList_) {
+                SetVolumeDb(streamType);
+            }
         },
         nullptr);
     if (ret != 0) {
