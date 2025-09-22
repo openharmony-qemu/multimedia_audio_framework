@@ -45,7 +45,7 @@ public:
 
     virtual int32_t CreateNode(uint32_t pipelineId, AudioNodeBuilder &builder) = 0;
     virtual int32_t DestroyNode(uint32_t nodeId) = 0;
-    virtual int32_t EnableNode(uint32_t nodeId, AudioNodeEnable audioNoedEnable) = 0;
+    virtual int32_t EnableNode(uint32_t nodeId, AudioNodeEnable audioNodeEnable) = 0;
     virtual int32_t GetNodeEnableStatus(uint32_t nodeId) = 0;
     virtual int32_t SetAudioFormat(uint32_t nodeId, AudioFormat audioFormat) = 0;
     virtual int32_t SetWriteDataCallback(uint32_t nodeId,
