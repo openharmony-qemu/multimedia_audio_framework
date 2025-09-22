@@ -189,8 +189,10 @@ private:
 
 class HpaeManagerFuzzTest {
 public:
-    void SetUp();
+    void StreamSetUp();
     void TearDown();
+    void Fisrt();
+    void InitFunc();
 
     void DumpFuzzTest();
     void StreamManagerFuzzTest();
@@ -208,13 +210,13 @@ public:
     std::vector<uint32_t> captureSessionIdList;
     std::vector<uint32_t> sessionIdList_;
     std::vector<std::function<void()>> renderStreamFunc_;
-    std::vector<std::function<void()>> captureStreamFunc_;
+    std::vector<std::function<void()>> capturerStreamFunc_;
     std::vector<std::function<void()>> moveStreamFunc_;
     std::vector<std::function<void()>> errorStreamFunc_;
     std::vector<std::function<void()>> effectFunc_;
-    HpaeStreamInfo rendererStreamInfo_;
-    HpaeStreamInfo streamInfo_;
-    HpaeStreamInfo capStreamInfo_;
+    HPAE::HpaeStreamInfo rendererStreamInfo_;
+    HPAE::HpaeStreamInfo streamInfo_;
+    HPAE::HpaeStreamInfo capStreamInfo_;
     int32_t sinkPortId_ = -1;
     int32_t sinkPortId2_ = -1;
     int32_t sourcePortId_ = -1;
