@@ -103,7 +103,7 @@ int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInf
         clusterNodeInfo.channels = sourceInfo_.channels;
         clusterNodeInfo.format = sourceInfo_.format;
         clusterNodeInfo.samplingRate = sourceInfo_.samplingRate;
-        clusterNodeInfo.frameLen = CaculateFrameLenByNodeInfo(nodeInfo);
+        clusterNodeInfo.frameLen = CaculateFrameLenByNodeInfo(clusterNodeInfo);
         clusterNodeInfo.statusCallback = weak_from_this();
         clusterNodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
         sceneClusterMap_[sceneType] = std::make_shared<HpaeSourceProcessCluster>(clusterNodeInfo);
