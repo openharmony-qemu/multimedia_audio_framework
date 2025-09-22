@@ -20,6 +20,7 @@
 #include <memory>
 #include <algorithm>
 #include "audio_stream_info.h"
+#include "audio_info.h"
 #include "hpae_pcm_process.h"
 namespace OHOS {
 namespace AudioStandard {
@@ -31,13 +32,6 @@ enum HpaeSourceBufferType {
     HPAE_SOURCE_BUFFER_TYPE_MIC,
     HPAE_SOURCE_BUFFER_TYPE_EC,
     HPAE_SOURCE_BUFFER_TYPE_MICREF,
-};
-
-enum HpaeSplitStreamType {
-    STREAM_TYPE_DEFAULT = 0,
-    STREAM_TYPE_MEDIA = 1,
-    STREAM_TYPE_COMMUNICATION = 2,
-    STREAM_TYPE_NAVIGATION = 13
 };
 
 enum PcmBufferState : uint32_t {

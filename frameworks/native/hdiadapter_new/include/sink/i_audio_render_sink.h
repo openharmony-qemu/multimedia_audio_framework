@@ -113,7 +113,7 @@ public:
 
     // remote extend function
     virtual int32_t SplitRenderFrame(char &data, uint64_t len, uint64_t &writeLen,
-        const char *splitStreamType) NOT_SUPPORT_RET
+        HpaeSplitStreamType splitStreamType) NOT_SUPPORT_RET
         
     // primary extend function
     virtual int32_t SetDeviceConnectedFlag(bool flag) NOT_SUPPORT_RET

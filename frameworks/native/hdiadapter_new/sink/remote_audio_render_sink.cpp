@@ -35,10 +35,10 @@ using namespace OHOS::HDI::DistributedAudio::Audio::V1_0;
 
 namespace OHOS {
 namespace AudioStandard {
-const std::unordered_map<std::string, AudioCategory> RemoteAudioRenderSink::SPLIT_STREAM_MAP = {
-    { std::string(MEDIA_STREAM_TYPE), AudioCategory::AUDIO_IN_MEDIA },
-    { std::string(NAVIGATION_STREAM_TYPE), AudioCategory::AUDIO_IN_NAVIGATION },
-    { std::string(COMMUNICATION_STREAM_TYPE), AudioCategory::AUDIO_IN_COMMUNICATION },
+const std::unordered_map<HpaeSplitStreamType, AudioCategory> RemoteAudioRenderSink::SPLIT_STREAM_MAP = {
+    { HpaeSplitStreamType::STREAM_TYPE_MEDIA, AudioCategory::AUDIO_IN_MEDIA },
+    { HpaeSplitStreamType::STREAM_TYPE_NAVIGATION, AudioCategory::AUDIO_IN_NAVIGATION },
+    { HpaeSplitStreamType::STREAM_TYPE_COMMUNICATION, AudioCategory::AUDIO_IN_COMMUNICATION },
 };
 
 RemoteAudioRenderSink::RemoteAudioRenderSink(const std::string &deviceNetworkId)
@@ -459,10 +459,10 @@ int32_t RemoteAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &appsUid
 }
 
 int32_t RemoteAudioRenderSink::SplitRenderFrame(char &data, uint64_t len, uint64_t &writeLen,
-    const char *splitStreamType)
+    HpaeSplitStreamType splitStreamType)
 {
     Trace trace("RemoteAudioRenderSink::SplitRenderFrame");
-    AUDIO_DEBUG_LOG("in, type: %{public}s", splitStreamType);
+    AUDIO_DEBUG_LOG("in, type: %{public}d", splitStreamType);
     auto it = SPLIT_STREAM_MAP.find(splitStreamType);
     CHECK_AND_RETURN_RET_LOG(it != SPLIT_STREAM_MAP.end(), ERR_INVALID_PARAM, "invalid stream type");
     return RenderFrame(data, len, writeLen, it->second);
@@ -558,9 +558,15 @@ void RemoteAudioRenderSink::InitSplitStream(const char *splitStreamStr, std::vec
     }
     sort(splitStreamStrVector.begin(), splitStreamStrVector.end());
     for (auto &splitStream : splitStreamStrVector) {
-        auto it = SPLIT_STREAM_MAP.find(splitStream);
+        int32_t singleArgNum = 0;
+        auto converResult = std::from_chars(splitStream.data(), splitStream.data() + splitStream.size(), singleArgNum);
+        if (converResult.ec != std::errc() || converResult.ptr != (splitStream.data() + splitStream.size())) {
+            AUDIO_WARNING_LOG("conversion failed, stream type %{public}s", splitStream.c_str());
+            continue;
+        }
+        auto it = SPLIT_STREAM_MAP.find(static_cast<HpaeSplitStreamType>(singleArgNum));
         if (it == SPLIT_STREAM_MAP.end()) {
-            AUDIO_ERR_LOG("invalid stream type %{public}s", splitStream.c_str());
+            AUDIO_WARNING_LOG("invalid stream type %{public}s", splitStream.c_str());
             continue;
         }
         splitStreamVector.push_back(it->second);
