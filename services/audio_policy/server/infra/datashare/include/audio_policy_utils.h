@@ -96,7 +96,7 @@ public:
 
     bool IsWirelessDevice(DeviceType deviceType);
 
-    void UpdateMultiChannelModuleInfo(AudioPipeInfo &info, std::shared_ptr<PipeStreamPropInfo> streamPropInfo);
+    void UpdateMultiChannelStreamInfo(std::shared_ptr<PipeStreamPropInfo> streamPropInfo);
 private:
     AudioPolicyUtils() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),

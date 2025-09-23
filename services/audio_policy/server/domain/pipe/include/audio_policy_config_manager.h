@@ -92,8 +92,8 @@ public:
 
     uint32_t GetRouteFlag(std::shared_ptr<AudioStreamDescriptor> &desc);
     void GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<PipeStreamPropInfo> &info);
-    std::shared_ptr<PipeStreamPropInfo> GetStreamPropInfoFromPipe(std::shared_ptr<AdapterPipeInfo> &info,
-        AudioSampleFormat format, uint32_t sampleRate, AudioChannel channels);
+    std::shared_ptr<PipeStreamPropInfo> GetStreamPropInfoFromPipe(std::shared_ptr<AudioStreamDescriptor> &desc,
+        std::shared_ptr<AdapterPipeInfo> &info, AudioSampleFormat format, uint32_t sampleRate, AudioChannel channels);
     bool SupportImplicitConversion(uint32_t routeFlag);
     void GetTargetSourceTypeAndMatchingFlag(SourceType source, bool &useMatchingPropInfo);
     DirectPlaybackMode GetDirectPlaybackSupport(std::shared_ptr<AudioDeviceDescriptor> desc,

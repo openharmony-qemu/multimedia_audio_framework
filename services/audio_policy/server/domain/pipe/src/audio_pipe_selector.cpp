@@ -492,7 +492,6 @@ static void FillSpecialPipeInfo(AudioPipeInfo &info, std::shared_ptr<AdapterPipe
         info.moduleInfo_.className = "multichannel";
         info.moduleInfo_.fileName = "mch_dump_file";
         info.moduleInfo_.fixedLatency = "1"; // for fix max request
-        AudioPolicyUtils::GetInstance().UpdateMultiChannelModuleInfo(info, streamPropInfo);
         AUDIO_INFO_LOG("Buffer size: %{public}s channels: %{public}s channelLayout:%{public}s",
             info.moduleInfo_.bufferSize.c_str(), info.moduleInfo_.channels.c_str(),
             info.moduleInfo_.channelLayout.c_str());
