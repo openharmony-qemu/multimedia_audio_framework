@@ -29,7 +29,6 @@
 
 #include "media_monitor_manager.h"
 #include "audio_stream_descriptor.h"
-#include "audio_injector_policy.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -15,8 +15,9 @@
 #include "audio_injector_policy.h"
 #include "audio_core_service.h"
 #include "audio_device_info.h"
-#include "audio_server_proxy.h"
 #include "audio_policy_manager_factory.h"
+#include "audio_server_proxy.h"
+
 namespace OHOS {
 namespace AudioStandard {
 AudioInjectorPolicy::AudioInjectorPolicy()
@@ -134,6 +135,27 @@ uint32_t AudioInjectorPolicy::GetRendererPortIdx()
 AudioModuleInfo& AudioInjectorPolicy::GetAudioModuleInfo()
 {
     return moduleInfo_;
+}
+
+void AudioInjectorPolicy::AddVoipSessionId(uint32_t sessionId)
+{
+    std::lock_guard<std::shared_mutex> lock(injectLock_);
+    restoreVoipIdSet_.insert(sessionId);
+}
+
+void AudioInjectorPolicy::RemoveVoipSessionId(uint32_t sessionId)
+{
+    std::lock_guard<std::shared_mutex> lock(injectLock_);
+    restoreVoipIdSet_.erase(sessionId);
+}
+
+bool AudioInjectorPolicy::IsContainRestoreVoip()
+{
+    std::lock_guard<std::shared_mutex> lock(injectLock_);
+    if (restoreVoipIdSet_.size() == 0) {
+        return false;
+    }
+    return true;
 }
 
 int32_t AudioInjectorPolicy::AddCaptureInjector()

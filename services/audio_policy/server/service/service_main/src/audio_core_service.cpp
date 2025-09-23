@@ -1590,7 +1590,7 @@ int32_t AudioCoreService::SetRendererTarget(RenderTarget target, RenderTarget la
 int32_t AudioCoreService::StartInjection(uint32_t streamId)
 {
     CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERR_NULL_POINTER, "pipeManager_ is null");
-    bool restoredVoip = AudioPolicyManager::GetInstance().IsContainRestoreVoip();
+    bool restoredVoip = AudioInjectorPolicy::GetInstance().IsContainRestoreVoip();
     if (pipeManager_->IsCaptureVoipCall() == NO_VOIP && !restoredVoip) {
         return ERR_ILLEGAL_STATE;
     }

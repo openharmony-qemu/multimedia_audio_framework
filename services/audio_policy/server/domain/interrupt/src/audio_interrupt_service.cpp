@@ -224,13 +224,13 @@ void AudioInterruptService::HandleSessionTimeOutEvent(const int32_t pid)
 
 void AudioInterruptService::WriteCallSessionEvent(int32_t strategyValue)
 {
-    auto uid = IPCSkeleton::GetCallingUid();
+    /*auto uid = IPCSkeleton::GetCallingUid();
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::HAP_CALL_AUDIO_SESSION,
         Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
     bean->Add("CLIENT_UID", static_cast<int32_t>(uid));
     bean->Add("SYSTEMHAP_SET_FOCUSSTRATEGY", strategyValue);
-    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);*/
 }
 
 int32_t AudioInterruptService::ActivateAudioSession(const int32_t zoneId, const int32_t callerPid,
