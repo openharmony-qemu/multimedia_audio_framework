@@ -585,12 +585,13 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         }
         streamCollector_.UpdateRendererDeviceInfo(deviceDesc);
     } else {
-        int32_t inputRet = ActivateInputDevice(streamDesc);
-        CHECK_AND_RETURN_RET_LOG(inputRet == SUCCESS, inputRet, "Activate input device failed");
         RecordDeviceInfo info {
             .uid_ = GetRealUid(streamDesc), .sourceType_ = streamDesc->capturerInfo_.sourceType,
             .activeSelectedDevice_ = audioStateManager_.GetPreferredRecordCaptureDevice()};
         audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::START_CLIENT, info);
+        FetchInputDeviceAndRoute("StartClient");
+        int32_t inputRet = ActivateInputDevice(streamDesc);
+        CHECK_AND_RETURN_RET_LOG(inputRet == SUCCESS, inputRet, "Activate input device failed");
         CheckAndSetCurrentInputDevice(deviceDesc);
         audioActiveDevice_.UpdateActiveDeviceRoute(
             streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG,
