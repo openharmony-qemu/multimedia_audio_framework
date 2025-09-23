@@ -56,7 +56,7 @@ void HpaeSignalProcessThread::Run()
     int32_t setPriority = GetIntParameter("const.multimedia.audio_setPriority", 1);
     SetThreadQosLevelAsync(setPriority);
     while (running_.load() && streamManager_.lock() != nullptr) {
-        SleepUtilNotify(0);
+        SleepUntilNotify(0);
         if (streamManager_.lock()) {
             streamManager_.lock()->HandleMsg();
             streamManager_.lock()->Process();
@@ -66,7 +66,7 @@ void HpaeSignalProcessThread::Run()
     ResetThreadQosLevel();
 }
 
-void HpaeSignalProcessThread::SleepUtilNotify(int64_t sleepInUs)
+void HpaeSignalProcessThread::SleepUntilNotify(int64_t sleepInUs)
 {
     std::unique_lock<std::mutex> lock(mutex_);
     auto duration = std::chrono::microseconds(sleepInUs);
