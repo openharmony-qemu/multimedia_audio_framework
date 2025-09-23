@@ -115,6 +115,7 @@ void LocalDeviceManager::AllAdapterSetMicMute(bool isMute)
 void LocalDeviceManager::SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
     const std::string &condition, const std::string &value)
 {
+    Trace trace("LocalDeviceManager::SetAudioParameter" + std::to_string(key));
     AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
 
     std::shared_ptr<LocalAdapterWrapper> wrapper = GetAdapter(adapterName);
