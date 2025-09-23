@@ -17,8 +17,6 @@
     *AudioPolicyManager*;
     *AudioServiceLoad*;
     *ParseGlobalConfigXml*;
-    *AddVoipSessionId*;
-    *RemoveVoipSessionId*;
   local:
     *;
 };

@@ -14,10 +14,6 @@
 1.0 {
   global:
     *ParseGlobalConfigXml*;
-    *AddVoipSessionId*;
-    *RemoveVoipSessionId*;
-    *GetInstance*;
-    *AudioInjectorPolicy*;
   local:
     *;
 };

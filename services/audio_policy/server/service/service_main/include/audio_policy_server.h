@@ -350,9 +350,6 @@ public:
     int32_t IsIntelligentNoiseReductionEnabledForCurrentDevice(int32_t sourceType, bool &ret) override;
     int32_t SetKaraokeParameters(const std::string &parameters, bool &ret) override;
 
-    int32_t AddVoipSessionId(uint32_t sessionId) override;
-    int32_t RemoveVoipSessionId(uint32_t sessionId) override;
-
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
 
     int32_t GetPreferredOutputDeviceDescriptors(const AudioRendererInfo &rendererInfo, bool forceNoBTPermission,

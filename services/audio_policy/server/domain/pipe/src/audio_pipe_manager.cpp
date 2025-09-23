@@ -617,15 +617,19 @@ bool AudioPipeManager::IsStreamUsageActive(const StreamUsage &usage)
 int32_t AudioPipeManager::IsCaptureVoipCall()
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    AudioInjectorPolicy &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
     for (auto it = curPipeList_.rbegin(); it != curPipeList_.rend(); ++it) {
         CHECK_AND_CONTINUE_LOG((*it) != nullptr, "it is null");
-        if ((*it)->routeFlag_ & AUDIO_INPUT_FLAG_VOIP) {
-            AudioInjectorPolicy &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
-            audioInjectorPolicy.SetCapturePortIdx((*it)->paIndex_);
-            if ((*it)->routeFlag_ & AUDIO_INPUT_FLAG_FAST) {
-                return FAST_VOIP;
-            } else {
-                return NORMAL_VOIP;
+        for (const auto &stream : (*it)->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(stream != nullptr, "stream is null");
+            if (stream->IsRunning()) {
+                if (stream->routeFlag_ & AUDIO_INPUT_FLAG_VOIP) {
+                    audioInjectorPolicy.SetCapturePortIdx((*it)->paIndex_);
+                    return NORMAL_VOIP;
+                } else if (stream->routeFlag_ & AUDIO_INPUT_FLAG_VOIP_FAST) {
+                    audioInjectorPolicy.SetCapturePortIdx((*it)->paIndex_);
+                    return FAST_VOIP;
+                }
             }
         }
     }

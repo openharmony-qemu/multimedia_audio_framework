@@ -1523,7 +1523,6 @@ void AudioCapturerPrivate::InitSwitchInfo(IAudioStream::StreamClass targetClass,
 
     if (targetClass == IAudioStream::VOIP_STREAM) {
         switchInfo.capturerInfo.originalFlag = AUDIO_FLAG_VOIP_FAST;
-        AudioPolicyManager::GetInstance().AddVoipSessionId(sessionID_);
     }
     switchInfo.captureMode = audioCaptureMode_;
     switchInfo.params.originalSessionId = sessionID_;
@@ -1652,9 +1651,6 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
     // Create and start new stream.
     switchResult = GenerateNewStream(targetClass, restoreInfo, previousState, switchInfo);
     CHECK_AND_RETURN_RET_LOG(switchResult, false, "Generate new stream failed");
-    if (targetClass == IAudioStream::VOIP_STREAM) {
-        AudioPolicyManager::GetInstance().RemoveVoipSessionId(sessionID_);
-    }
 
     // Activate audio interrupt again when restoring for audio server died.
     if (restoreInfo.restoreReason == SERVER_DIED) {

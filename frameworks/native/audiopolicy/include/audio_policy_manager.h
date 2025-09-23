@@ -708,8 +708,6 @@ public:
     bool IsCollaborativePlaybackEnabledForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
     int32_t ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
-    void AddVoipSessionId(uint32_t sessionId);
-    void RemoveVoipSessionId(uint32_t sessionId);
 
 private:
     AudioPolicyManager() {}

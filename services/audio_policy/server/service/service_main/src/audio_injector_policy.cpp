@@ -33,7 +33,7 @@ int32_t AudioInjectorPolicy::Init()
 {
     std::lock_guard<std::shared_mutex> lock(injectLock_);
     if (!isOpened_) {
-        AUDIO_INFO_LOG("first time to open port");
+        AUDIO_INFO_LOG("first time to open port!!!");
         AudioModuleInfo moduleInfo = {};
         moduleInfo.lib = "libmodule-hdi-sink.z.so";
         std::string name = VIRTUAL_INJECTOR;
@@ -135,27 +135,6 @@ uint32_t AudioInjectorPolicy::GetRendererPortIdx()
 AudioModuleInfo& AudioInjectorPolicy::GetAudioModuleInfo()
 {
     return moduleInfo_;
-}
-
-void AudioInjectorPolicy::AddVoipSessionId(uint32_t sessionId)
-{
-    std::lock_guard<std::shared_mutex> lock(injectLock_);
-    restoreVoipIdSet_.insert(sessionId);
-}
-
-void AudioInjectorPolicy::RemoveVoipSessionId(uint32_t sessionId)
-{
-    std::lock_guard<std::shared_mutex> lock(injectLock_);
-    restoreVoipIdSet_.erase(sessionId);
-}
-
-bool AudioInjectorPolicy::IsContainRestoreVoip()
-{
-    std::lock_guard<std::shared_mutex> lock(injectLock_);
-    if (restoreVoipIdSet_.size() == 0) {
-        return false;
-    }
-    return true;
 }
 
 int32_t AudioInjectorPolicy::AddCaptureInjector()

@@ -23,7 +23,6 @@
 #include "audio_pipe_manager.h"
 #include "audio_service_enum.h"
 
-
 namespace OHOS {
 namespace AudioStandard {
 enum VoIpType {
@@ -56,10 +55,6 @@ public:
     int32_t AddCaptureInjector();
     int32_t RemoveCaptureInjector();
 
-    void AddVoipSessionId(uint32_t sessionId);
-    void RemoveVoipSessionId(uint32_t sessionId);
-    bool IsContainRestoreVoip();
-
     void AddInjectorStreamId(const uint32_t streamId);
     void DeleteInjectorStreamId(const uint32_t streamId);
     bool IsActivateInterruptStreamId(const uint32_t streamId);
@@ -77,7 +72,6 @@ private:
     bool isOpened_;
     bool isConnected_;
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> rendererStreamMap_ = {};
-    std::set<uint32_t> restoreVoipIdSet_ = {};
     AudioIOHandleMap &audioIOHandleMap_;
     IAudioPolicyInterface &audioPolicyManager_;
     std::shared_ptr<AudioPipeManager> pipeManager_ = nullptr;

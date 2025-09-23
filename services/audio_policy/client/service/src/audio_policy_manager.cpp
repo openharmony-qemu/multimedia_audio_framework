@@ -3298,20 +3298,6 @@ int32_t AudioPolicyManager::CheckAudioPolicyClientRegisted()
     return result;
 }
 
-void AudioPolicyManager::AddVoipSessionId(uint32_t sessionId)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "audio policy manager proxy is NULL.");
-    gsp->AddVoipSessionId(sessionId);
-}
-
-void AudioPolicyManager::RemoveVoipSessionId(uint32_t sessionId)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "audio policy manager proxy is NULL.");
-    gsp->RemoveVoipSessionId(sessionId);
-}
-
 AudioPolicyManager& AudioPolicyManager::GetInstance()
 {
     static AudioPolicyManager policyManager;

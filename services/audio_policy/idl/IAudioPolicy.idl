@@ -294,8 +294,6 @@ interface IAudioPolicy {
     void SetAppConcurrencyMode([in] int appUid, [in] int mode);
     void SetAppSilentOnDisplay([in] int displayId);
     void IsIntelligentNoiseReductionEnabledForCurrentDevice([in] int sourceType, [out] boolean ret);
-    void AddVoipSessionId([in] unsigned int sessionId);
-    void RemoveVoipSessionId([in] unsigned int sessionId);
 
     // WARNING: above functions correspond with AudioPolicyInterfaceCode
     void GetAudioZoneByName([in] String name, [out] int zoneId);
