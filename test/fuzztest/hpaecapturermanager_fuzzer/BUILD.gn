@@ -17,7 +17,7 @@ import("../../../accessibility.gni")
 import("../../../config.gni")
 
 ohos_fuzztest("HpaeCapturerManagerFuzzTest") {
-  module_out_path = "audio_framework/audio_framework_engine"
+  module_out_path = "audio_framework/audio_framework_route"
   fuzz_config_file = "../hpaecapturermanager_fuzzer"
 
   include_dirs = [
@@ -94,6 +94,7 @@ ohos_fuzztest("HpaeCapturerManagerFuzzTest") {
       "accessibility:accessibilityconfig",
     ]
   }
+  resource_config_file = "../../resource/audio_renderer/ohos_test.xml"
 
 defines = []
   if (use_libfuzzer || use_clang_coverage) {

@@ -48,4 +48,11 @@
             <option name="push" value="test_audiofile/test_44100_2.wav -> /data" src="res"/>
         </preparer>
     </target>
+    <target name="HpaeCapturerManagerFuzzTest">
+        <preparer>
+            <option name="shell" value="mkdir -p /data/"/>
+            <option name="push" value="source_file_io_48000_2_s16le.pcm -> /data/" src="res"/>
+            <option name="shell" value="restorecon /data/"/>
+        </preparer>
+    </target>
 </configuration>
