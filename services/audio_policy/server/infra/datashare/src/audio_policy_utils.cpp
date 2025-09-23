@@ -806,12 +806,12 @@ void AudioPolicyUtils::UpdateMultiChannelStreamInfo(std::shared_ptr<PipeStreamPr
     if (!AudioPolicyManagerFactory::GetAudioPolicyManager().
         IsChannelLayoutSupportForDspEffect(streamPropInfo->channelLayout_)) {
         AUDIO_INFO_LOG("not support channelLayout:%{public}" PRIu64, streamPropInfo->channelLayout_);
-        streamPropInfo->bufferSize =
-            std::to_string(((streamPropInfo->bufferSize_ * static_cast<uint8_t>(CHANNEL_6)) /
-            std::stoul(info.moduleInfo_.channels)));
         // use default 5.1 channel for multi-channel pipe
-        streamPropInfo->channels = std::to_string(static_cast<uint8_t>(CHANNEL_6));
-        streamPropInfo->channelLayout = std::to_string(static_cast<uint64_t>(CH_LAYOUT_5POINT1));
+        streamPropInfo->bufferSize_ =
+            ((streamPropInfo->bufferSize_ * static_cast<uint32_t>(CHANNEL_6)) /
+            static_cast<uint32_t>(streamPropInfo->channels));
+        streamPropInfo->channels = CHANNEL_6;
+        streamPropInfo->channelLayout = CH_LAYOUT_5POINT1;
     }
 }
 } // namespace AudioStandard
