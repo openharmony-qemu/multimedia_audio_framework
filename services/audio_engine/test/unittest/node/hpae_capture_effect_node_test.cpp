@@ -291,14 +291,14 @@ HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_008, TestSize.Leve
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
     std::shared_ptr<HpaeCaptureEffectNode> hpaeCaptureEffectNode = std::make_shared<HpaeCaptureEffectNode>(nodeInfo);
-    AudioChannelLayout channelLayout = CH_LAYOUT_UNKNOW;
-    uint32_t channel = 1;
+    AudioChannelLayout channelLayout = CH_LAYOUT_UNKNOWN;
+    uint32_t channel = 1; // 1 is mono
     hpaeCaptureEffectNode->GetCaptureEffectMicChannelLayout(channel, channelLayout);
-    EXPECT_EQ(channelLayout, CH_LAYOUT_UNKNOW);
-    channel = 2;
+    EXPECT_EQ(channelLayout, CH_LAYOUT_UNKNOWN);
+    channel = 2; // 2 is stereo
     hpaeCaptureEffectNode->GetCaptureEffectMicChannelLayout(channel, channelLayout);
     EXPECT_EQ(channelLayout, CH_LAYOUT_STEREO);
-    channel = 4;
+    channel = 4; // 4 is QUAD_SIDE
     hpaeCaptureEffectNode->GetCaptureEffectMicChannelLayout(channel, channelLayout);
     EXPECT_EQ(channelLayout, CH_LAYOUT_QUAD_SIDE);
 }

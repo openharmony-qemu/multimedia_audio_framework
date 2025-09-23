@@ -62,7 +62,7 @@ bool HpaeCaptureEffectNode::Reset()
 
 HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)
 {
-    Trace trace("[" + sceneType_ + "]HpaeRenderEffectNode::SignalProcess inputs num[" +
+    Trace trace("[" + sceneType_ + "]HpaeCaptureEffectNode::SignalProcess inputs num[" +
         std::to_string(inputs.size()) + "]");
     if (inputs.empty()) {
         AUDIO_WARNING_LOG("inputs size is empty, SessionId:%{public}d", GetSessionId());
@@ -213,7 +213,7 @@ int32_t HpaeCaptureEffectNode::CaptureEffectCreate(uint64_t sceneKeyCode, Captur
     micCache_.resize(micBufferLength_);
     micRefCache_.resize(micrefBufferLength_);
     cacheDataOut_.resize(maxLength);
-    AudioChannelLayout channelLayout = CH_LAYOUT_UNKNOW;
+    AudioChannelLayout channelLayout = CH_LAYOUT_UNKNOWN;
     GetCaptureEffectMicChannelLayout(micConfig.channels, channelLayout);
     PcmBufferInfo pcmBufferInfo(micConfig.channels, FRAME_LEN * (micConfig.samplingRate / MILLISECOND_PER_SECOND),
         micConfig.samplingRate, channelLayout);
