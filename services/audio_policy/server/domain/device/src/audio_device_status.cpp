@@ -426,12 +426,16 @@ int32_t AudioDeviceStatus::HandleLocalDeviceConnected(AudioDeviceDescriptor &upd
 {
     DeviceStreamInfo audioStreamInfo = updatedDesc.GetDeviceStreamInfo();
     if (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        if (updatedDesc.connectState_ != VIRTUAL_CONNECTED && !audioDeviceManager_.HasConnectedA2dp()) {
-            int32_t result = AudioCoreService::GetCoreService()->ActiveA2dpAndLoadModule(updatedDesc);
-            CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "ActiveA2dpAndLoadModule failed");
-        }
         A2dpDeviceConfigInfo configInfo = {audioStreamInfo, false};
         audioA2dpDevice_.AddA2dpDevice(updatedDesc.macAddress_, configInfo);
+        if (updatedDesc.connectState_ != VIRTUAL_CONNECTED && !audioDeviceManager_.HasConnectedA2dp()) {
+            int32_t result = AudioCoreService::GetCoreService()->SwitchActiveA2dpDevice(
+                std::make_shared<AudioDeviceDescriptor>(updatedDesc));
+            CHECK_AND_RETURN_RET(result != SUCCESS, result);
+            AUDIO_ERR_LOG("ActiveA2dpAndLoadModule failed");
+            audioA2dpDevice_.DelA2dpDevice(updatedDesc.macAddress_);
+            return result;
+        }
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
         A2dpDeviceConfigInfo configInfo = {audioStreamInfo, false};
         audioA2dpDevice_.AddA2dpInDevice(updatedDesc.macAddress_, configInfo);
@@ -1206,8 +1210,6 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
         && AudioSpatializationService::GetAudioSpatializationService().
         IsSpatializationSupportedForDevice(updatedDesc.macAddress_)
         && AudioSpatializationService::GetAudioSpatializationService().IsSpatializationSupported();
-    updatedDesc.hightQualityRecordingSupported_ = (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN);
-    UpdateDeviceList(updatedDesc, isConnected, descForCb, reason);
 
     TriggerDeviceChangedCallback(descForCb, isConnected);
     TriggerAvailableDeviceChangedCallback(descForCb, isConnected);

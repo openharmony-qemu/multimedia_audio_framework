@@ -16,44 +16,32 @@ import("//build/test.gni")
 import("../../../accessibility.gni")
 import("../../../config.gni")
 
-ohos_fuzztest("HpaeManagerControlFuzzTest") {
-  module_out_path = "audio_framework/audio_framework_engine"
-  fuzz_config_file = "../hpaemanagercontrol_fuzzer"
+ohos_fuzztest("AudioCoreServicePrivateMoreFuzzTest") {
+  module_out_path = "audio_framework/audio_framework_route"
+  fuzz_config_file = "../audiocoreserviceprivatemore_fuzzer"
 
   include_dirs = [
     "../../../services/audio_policy/server/include/service",
     "../../../services/audio_policy/server/include",
+    "../../../frameworks/native/audioutils/include",
     "../../../services/audio_service/common/include/limiter/",
-    "../../../services/audio_engine/manager/include",
-    "../../../services/audio_engine/test/unittest/common",
-    "../../../services/audio_service/server/include",
   ]
-
   cflags = [
     "-g",
     "-O0",
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
     "-fno-access-control",
-    "-DENABLE_HIDUMP_DFX",
-    "-DENABLE_HOOK_PCM",
   ]
+  configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
 
-  configs = [
-    "../../../services/audio_policy:audio_policy_public_config",
-    "../../../services/audio_engine:audio_engine_node_config",
-  ]
-
-  sources = [ "hpae_manager_control_fuzzer.cpp" ]
+  sources = [ "audio_core_service_private_more_fuzzer.cpp" ]
 
   deps = [
     "../../../frameworks/native/audioutils:audio_utils",
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
     "../../../services/audio_policy:audio_policy_service_static",
     "../../../services/audio_service:audio_common",
-    "../../../frameworks/native/audioclock:audio_clock",
-    "../../../services/audio_engine:audio_engine_manager",
-    "../../../services/audio_engine:audio_engine_utils",
   ]
 
   external_deps = [
@@ -91,6 +79,7 @@ ohos_fuzztest("HpaeManagerControlFuzzTest") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "bluetooth:btframework"
+    
   ]
   if (sonic_enable == true) {
     external_deps += [ "pulseaudio:sonic" ]
@@ -106,17 +95,9 @@ ohos_fuzztest("HpaeManagerControlFuzzTest") {
   if (use_libfuzzer || use_clang_coverage) {
     defines += [ "TEST_COVERAGE" ]
   }
-  if (audio_framework_feature_dtmf_tone) {
-    defines += [ "FEATURE_DTMF_TONE" ]
-  }
-  if (audio_framework_feature_input) {
-    defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
-  }
 }
-
-
 
 group("fuzztest") {
   testonly = true
-  deps = [ ":HpaeManagerControlFuzzTest" ]
+  deps = [ ":AudioCoreServicePrivateMoreFuzzTest" ]
 }

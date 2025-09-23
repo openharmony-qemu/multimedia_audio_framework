@@ -91,9 +91,9 @@ HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_004, TestSize.Le
 {
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
-    desc->macAddress_ = "00:11:22:33:44:55";
+    desc->macAddress_ = "00:11:22:33:44:99";
     AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
-    std::string scoMac = "00:11:22:33:44:55";
+    std::string scoMac = "00:11:22:33:44:99";
     auto result = AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac,
         DeviceRole::OUTPUT_DEVICE);
     ASSERT_NE(result, nullptr);

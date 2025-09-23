@@ -875,6 +875,7 @@ private:
 
     std::shared_ptr<AudioInterruptService> interruptService_;
     AudioSessionService &sessionService_;
+    AudioInjectorPolicy &audioInjectorPolicy_;
     std::shared_ptr<AudioCoreService> coreService_;
     std::shared_ptr<AudioCoreService::EventEntry> eventEntry_;
 

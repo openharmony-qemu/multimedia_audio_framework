@@ -247,6 +247,7 @@ private:
     void SetReleaseFlagWithLock(bool releaseFlag);
     void SetReleaseFlagNoLock(bool releaseFlag);
     bool IsRestoreOrStopNeeded();
+    void SetInSwitchingFlag(bool inSwitchingFlag);
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
@@ -295,6 +296,9 @@ private:
     AudioLoopThread taskLoop_ = AudioLoopThread("OS_Recreate");
     int32_t audioHapticsSyncId_ = 0;
     bool releaseFlag_ = false;
+    std::condition_variable taskLoopCv_;
+    std::mutex inSwitchingMtx_;
+    bool inSwitchingFlag_ = false;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {

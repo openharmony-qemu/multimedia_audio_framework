@@ -760,6 +760,7 @@ bool AudioServer::SetEffectLiveParameter(const std::vector<std::pair<std::string
     AUDIO_INFO_LOG("SetEffectLiveParameter not support");
     return false;
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioServer::SetExtraParameters(const std::string &key,
     const std::vector<StringPair> &kvpairs)
@@ -805,7 +806,6 @@ int32_t AudioServer::SetExtraParameters(const std::string &key,
     deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", value);
     return SUCCESS;
 }
-// LCOV_EXCL_STOP
 
 bool AudioServer::ProcessKeyValuePairs(const std::string &key,
     const std::vector<std::pair<std::string, std::string>> &kvpairs,

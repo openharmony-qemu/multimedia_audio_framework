@@ -221,6 +221,11 @@ private:
     StreamStatus streamStatusInServer_ = STREAM_INVALID;
 
     std::unique_ptr<HPAE::ProResampler> resampler_ = nullptr;
+
+    std::string dumpResampleName_;
+    std::string dumpFACName_;
+    FILE *dumpResample_ = nullptr;
+    FILE *dumpFAC_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -16,6 +16,9 @@
 #include "audio_core_service.h"
 #include "audio_device_info.h"
 #include "audio_policy_manager_factory.h"
+#include "audio_server_proxy.h"
+
+>>>>>>> master
 namespace OHOS {
 namespace AudioStandard {
 AudioInjectorPolicy::AudioInjectorPolicy()
@@ -189,6 +192,45 @@ int32_t AudioInjectorPolicy::RemoveCaptureInjector()
         isConnected_ = false;
     }
     return SUCCESS;
+}
+
+void AudioInjectorPolicy::AddInjectorStreamId(const uint32_t streamId)
+{
+    std::lock_guard<std::shared_mutex> lock(injectLock_);
+    injectorStreamIds_.insert(streamId);
+}
+
+void AudioInjectorPolicy::DeleteInjectorStreamId(const uint32_t streamId)
+{
+    std::lock_guard<std::shared_mutex> lock(injectLock_);
+    injectorStreamIds_.erase(streamId);
+}
+
+bool AudioInjectorPolicy::IsActivateInterruptStreamId(const uint32_t streamId)
+{
+    std::lock_guard<std::shared_mutex> lock(injectLock_);
+    return injectorStreamIds_.count(streamId) > 0;
+}
+
+void AudioInjectorPolicy::SendInterruptEventToInjectorStreams(const std::shared_ptr<AudioPolicyServerHandler> &handler)
+{
+    std::lock_guard<std::shared_mutex> lock(injectLock_);
+    InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE,
+            INTERRUPT_HINT_STOP, 1.0f};
+    for (const auto& pair : rendererStreamMap_) {
+        if (handler != nullptr) {
+            handler->SendInterruptEventWithStreamIdCallback(interruptEvent, pair.first);
+        }
+    }
+}
+
+int32_t AudioInjectorPolicy::SetInjectorStreamsMute(bool newMicrophoneMute)
+{
+    int32_t ret = SUCCESS;
+    for (const auto& pair : rendererStreamMap_) {
+        ret = AudioServerProxy::GetInstance().SetNonInterruptMuteProxy(pair.first, newMicrophoneMute);
+    }
+    return ret;
 }
 }  //  namespace AudioStandard
 }  //  namespace OHOS
