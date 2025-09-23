@@ -44,6 +44,7 @@
 #include "va_device_manager.h"
 #include "standalone_mode_manager.h"
 
+
 using OHOS::Security::AccessToken::PrivacyKit;
 using OHOS::Security::AccessToken::TokenIdKit;
 using namespace std;
@@ -5394,6 +5395,18 @@ int32_t AudioPolicyServer::IsIntelligentNoiseReductionEnabledForCurrentDevice(in
 {
     ret = audioPolicyService_.IsIntelligentNoiseReductionEnabledForCurrentDevice(
         static_cast<SourceType>(sourceType));
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::AddVoipSessionId(uint32_t sessionId)
+{
+    AudioInjectorPolicy::GetInstance().AddVoipSessionId(sessionId);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::RemoveVoipSessionId(uint32_t sessionId)
+{
+    AudioInjectorPolicy::GetInstance().AddVoipSessionId(sessionId);
     return SUCCESS;
 }
 } // namespace AudioStandard

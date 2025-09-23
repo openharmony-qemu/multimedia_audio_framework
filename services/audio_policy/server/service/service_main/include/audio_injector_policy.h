@@ -54,6 +54,9 @@ public:
     AudioModuleInfo& GetAudioModuleInfo();
     int32_t AddCaptureInjector();
     int32_t RemoveCaptureInjector();
+    void AddVoipSessionId(uint32_t sessionId);
+    void RemoveVoipSessionId(uint32_t sessionId);
+    bool IsContainRestoreVoip();
 
 private:
     AudioInjectorPolicy();

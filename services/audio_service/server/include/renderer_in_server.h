@@ -139,7 +139,8 @@ public:
     bool Dump(std::string &dumpString);
     bool DumpNormal(std::string &dumpString);
     bool DumpVoipAndDirect(std::string &dumpString);
-    void DumpCommonInfo(std::string &dumpString);
+    void DumpStreamInfo(std::string &dumpString);
+    void DumpStatusInfo(std::string &dumpString);
     void SetNonInterruptMute(const bool muteFlag);
     RestoreStatus RestoreSession(RestoreInfo restoreInfo);
     int32_t StopSession();
