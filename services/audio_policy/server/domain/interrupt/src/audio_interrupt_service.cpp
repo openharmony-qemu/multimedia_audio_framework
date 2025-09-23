@@ -31,11 +31,11 @@
 #include "dfx_msg_manager.h"
 #include "audio_bundle_manager.h"
 #include "istandard_audio_service.h"
-#include "session_manager_lite.h"
 #include "audio_zone_service.h"
 #include "audio_server_proxy.h"
 #include "standalone_mode_manager.h"
 #include "audio_injector_policy.h"
+#include "window_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1886,35 +1886,17 @@ bool AudioInterruptService::IsMicSource(SourceType sourceType)
             sourceType == SOURCE_TYPE_VOICE_COMMUNICATION);
 }
 
-bool AudioInterruptService::CheckWindowState(const int32_t pid)
-{
-    auto sceneSessionManager = Rosen::SessionManagerLite::GetInstance().GetSceneSessionManagerLiteProxy();
-    if (sceneSessionManager == nullptr) {
-        AUDIO_INFO_LOG("AudioInterruptService null manager");
-        return false;
-    }
-    std::vector<Rosen::MainWindowState> windowStates;
-    Rosen::WSError ret = sceneSessionManager->GetMainWindowStatesByPid(pid, windowStates);
-    if (ret != Rosen::WSError::WS_OK || windowStates.empty()) {
-        AUDIO_INFO_LOG("AudioInterruptService fail GetWindow");
-        return false;
-    }
-    for (auto &windowState : windowStates) {
-        if (windowState.isVisible_ && (windowState.state_ == (int32_t) Rosen::SessionState::STATE_ACTIVE ||
-            windowState.state_ == (int32_t) Rosen::SessionState::STATE_FOREGROUND)) {
-            AUDIO_INFO_LOG("AudioInterruptService app window front desk");
-            return true;
-        }
-    }
-    return false;
-}
-
 void AudioInterruptService::UpdateWindowFocusStrategy(const int32_t &currentPid, const int32_t &incomingPid,
     const AudioStreamType &existStreamType, const AudioStreamType &incomingStreamType, AudioFocusEntry &focusEntry)
 {
-    if (!CheckWindowState(currentPid) || !CheckWindowState(incomingPid)) {
-        AUDIO_INFO_LOG("currentWindowState: %{public}d incomingWindowState: %{public}d"
-            " Not all front desk audio access", CheckWindowState(currentPid), CheckWindowState(incomingPid));
+    if (currentPid == incomingPid) {
+        return;
+    }
+    bool isCurTargetWindowState = WindowUtils::CheckWindowState(currentPid);
+    bool isIncomingTargetWindowState = WindowUtils::CheckWindowState(incomingPid);
+    if (!isCurTargetWindowState || !isIncomingTargetWindowState) {
+        AUDIO_INFO_LOG("currentWindowState: %{public}d incomingWindowState: %{public}d Not all front desk audio access",
+            isCurTargetWindowState, isIncomingTargetWindowState);
         return;
     }
     if ((existStreamType == STREAM_MUSIC ||
