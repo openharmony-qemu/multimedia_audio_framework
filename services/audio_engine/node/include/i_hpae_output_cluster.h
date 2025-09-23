@@ -46,6 +46,7 @@ public:
     virtual int32_t SetSyncId(int32_t syncId) { return 0; };
     virtual uint32_t GetLatency() { return 0; };
     virtual void UpdateStreamInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> preNode) {};
+    virtual bool IsProcessBypassed() { return false; } // only normal outputcluster need bypass
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

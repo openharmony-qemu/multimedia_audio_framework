@@ -43,6 +43,7 @@ enum HpaeSplitStreamType {
 enum PcmBufferState : uint32_t {
     PCM_BUFFER_STATE_INVALID = 1, // bit 0
     PCM_BUFFER_STATE_SILENCE = 2, // bit 1
+    PCM_BUFFER_STATE_SILENCE = 1 << 2, // bit 2
 };
 
 // redefine allocator to ensure memory alignment
@@ -125,12 +126,17 @@ public:
 
     bool IsValid() const
     {
-        return (pcmBufferInfo_.state & PCM_BUFFER_STATE_INVALID) != PCM_BUFFER_STATE_INVALID;
+        return (pcmBufferInfo_.state & PCM_BUFFER_STATE_INVALID) == 0;
     }
 
     bool IsSilence() const
     {
-        return (pcmBufferInfo_.state & PCM_BUFFER_STATE_SILENCE) == PCM_BUFFER_STATE_SILENCE;
+        return (pcmBufferInfo_.state & PCM_BUFFER_STATE_SILENCE) != 0;
+    }
+
+    bool IsBypass() const
+    {
+        return (pcmBufferInfo_.state & PCM_BUFFER_STATE_BYPASS) != 0;
     }
 
     uint32_t GetBufferState() const
@@ -197,6 +203,7 @@ public:
     bool UpdateWritePos(size_t writePos);
     void SetBufferValid(bool valid);
     void SetBufferSilence(bool silence);
+    void SetBufferBypass(bool bypass);
     void SetBufferState(uint32_t state);
     size_t GetCurFrames() const;
 

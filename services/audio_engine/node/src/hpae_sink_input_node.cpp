@@ -105,6 +105,7 @@ int32_t HpaeSinkInputNode::GetDataFromSharedBuffer()
 
 bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
 {
+    inputAudioBuffer_.SetBufferBypass(false);
     auto nodeCallback = GetNodeStatusCallback().lock();
     if ((GetDeviceClass() == DEVICE_CLASS_OFFLOAD || GetDeviceClass() == DEVICE_CLASS_REMOTE_OFFLOAD) &&
         !offloadEnable_) {
@@ -136,6 +137,7 @@ bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
                 isDrain_ = false;
             }
             standbyCounter_++;
+            inputAudioBuffer_.SetBufferBypass(bypassOnUnderrun_);
         } else {
             standbyCounter_ = 0;
         }
@@ -314,7 +316,7 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
     CHECK_AND_RETURN_RET_LOG(writeCallback, ERROR, "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
     bool needData = !(historyBuffer_ && historyBuffer_->GetCurFrames()) && isPullData;
     // offload enbale, never force data
-    bool forceData = offloadEnable_ ? false : true;
+    bool forceData = offloadEnable_ ? false : !bypassOnUnderrun_;
     uint64_t latency = 0;
     auto nodeCallback = GetNodeStatusCallback().lock();
     if (nodeCallback) {
@@ -335,6 +337,11 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
     };
     ClockTime::GetAllTimeStamp(streamInfo_.timestamp);
     return writeCallback->OnStreamData(streamInfo_);
+}
+
+int32_t HpaeSinkInputNode::SetBypassOnUnderrun(bool bypassOnUnderrun)
+{
+    bypassOnUnderrun_ = bypassOnUnderrun;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

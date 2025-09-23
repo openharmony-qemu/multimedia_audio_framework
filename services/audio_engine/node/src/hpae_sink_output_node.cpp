@@ -83,6 +83,7 @@ void HpaeSinkOutputNode::DoProcess()
     std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
     CHECK_AND_RETURN(!outputVec.empty());
     HpaePcmBuffer *outputData = outputVec.front();
+    CHECK_AND_RETURN(!(bypassed_ = outputData->IsBypass()));
     HandlePaPower(outputData);
     ConvertFromFloat(
         GetBitWidth(), GetChannelCount() * GetFrameLen(), outputData->GetPcmDataBuffer(), renderFrameData_.data());
@@ -425,6 +426,11 @@ void HpaeSinkOutputNode::HandleHapticParam(uint64_t syncTime)
             ";haptic_offset=" + std::to_string(syncTime);
         audioRendererSink_->SetAudioParameter(key, condition, param);
     }
+}
+
+bool HpaeSinkOutputNode::IsProcessBypassed()
+{
+    return bypassed_;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

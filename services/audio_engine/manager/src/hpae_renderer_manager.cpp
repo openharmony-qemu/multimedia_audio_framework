@@ -38,6 +38,9 @@ namespace AudioStandard {
 namespace HPAE {
 namespace {
     constexpr float SUSPEND_TIME_OUT_S = 3.1; // prevent stop not success
+    constexpr int64_t AUDIO_NS_PER_US = 1000;
+    constexpr int64_t BUFFER_DURATION_US = 20 * 1000; // 20ms
+    constexpr int64_t UNDERRUN_BYPASS_DURATION_NS = 60 * 1000 * 1000; // 60ms
 }
 HpaeRendererManager::HpaeRendererManager(HpaeSinkInfo &sinkInfo)
     : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT), sinkInfo_(sinkInfo)
@@ -1066,19 +1069,21 @@ void HpaeRendererManager::Process()
     Trace trace("HpaeRendererManager::Process");
     if (outputCluster_ != nullptr && IsRunning()) {
         UpdateAppsUid();
+        OneStreamEnableBypassOnUnderrun();
         // no stream running & over 3s need stop
         if (appsUid_.empty()) {
             int64_t now = ClockTime::GetCurNano();
             noneStreamTime_ = noneStreamTime_ == 0 ? now : noneStreamTime_;
             if (now - noneStreamTime_ > SUSPEND_TIME_OUT_S * AUDIO_NS_PER_SECOND) {
                 outputCluster_->Stop();
-            } else {
-                outputCluster_->DoProcess();
+                return;
             }
         } else {
             noneStreamTime_ = 0;
-            outputCluster_->DoProcess();
         }
+        outputCluster_->DoProcess();
+        ResetBypassFlags();
+        SleepIfBypassOnUnderrun();
     }
 }
 
@@ -1444,6 +1449,43 @@ bool HpaeRendererManager::IsClusterDisConnected(HpaeProcessorType sceneType)
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(sceneClusterMap_, sceneType), true,
         "sceneType %{public}d not in sceneClusterMap", sceneType);
     return (sceneClusterMap_[sceneType]->GetPreOutNum() == 0 && !sceneClusterMap_[sceneType]->GetConnectedFlag());
+}
+
+void HpaeRendererManager::OneStreamEnableBypassOnUnderrun()
+{
+    CHECK_AND_RETURN(sinkInfo_.deviceClass != "remote");
+    if (appsUid_.size() == 1 && enableBypassOnUnderrun_) {
+        for (auto [id, node] : sinkInputNodeMap_) {
+            if (node->GetState() == HPAE_SESSION_RUNNING) {
+                node->SetBypassOnUnderrun(true);
+            }
+        }
+    }
+}
+
+void HpaeRendererManager::ResetAllBypassFlags()
+{
+    CHECK_AND_RETURN(sinkInfo_.deviceClass != "remote");
+    for (auto [id, node] : sinkInputNodeMap_) {
+        node->SetBypassOnUnderrun(false);
+    }
+}
+
+void HpaeRendererManager::SleepIfBypassOnUnderrun()
+{
+    CHECK_AND_RETURN(sinkInfo_.deviceClass != "remote");
+    if (outputCluster_->IsProcessBypassed()) {
+        lastOnUnderrunTime_ = lastOnUnderrunTime_ == 0 ? ClockTime::GetCurNano() : lastOnUnderrunTime_;
+        int64_t sleepTimeInNs = lastOnUnderrunTime_ + UNDERRUN_BYPASS_DURATION_NS - ClockTime::GetCurNano();
+        CHECK_AND_RETURN(hpaeSignalProcessThread_);
+        enableBypassOnUnderrun_ = sleepTimeInNs > 0;
+        CHECK_AND_RETURN(enableBypassOnUnderrun_);
+        Trace trace("HpaeRendererManager::sleep " + sleepTimeInNs.to_string() + "us when bypass underrun");
+        hpaeSignalProcessThread_->SleepUtilNotify(std::max(BUFFER_DURATION_US, sleepTimeInNs / AUDIO_NS_PER_US));
+    } else {
+        lastOnUnderrunTime_ = 0;
+        enableBypassOnUnderrun_ = true;
+    }
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -39,6 +39,7 @@ public:
     {
         return recvSignal_.load();
     }
+    void SleepUtilNotify(uint64_t sleepInUs);
 private:
 
     std::atomic<bool> running_;
@@ -47,6 +48,8 @@ private:
     std::thread thread_;
     std::condition_variable condition_;
     std::mutex mutex_;
+
+    bool enableBypassOnUnderrun_ = true;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

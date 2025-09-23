@@ -56,13 +56,7 @@ void HpaeSignalProcessThread::Run()
     int32_t setPriority = GetIntParameter("const.multimedia.audio_setPriority", 1);
     SetThreadQosLevelAsync(setPriority);
     while (running_.load() && streamManager_.lock() != nullptr) {
-        {
-            std::unique_lock<std::mutex> lock(mutex_);
-            condition_.wait(lock, [this] {
-                return !running_.load() || streamManager_.lock()->IsRunning() ||
-                    streamManager_.lock()->IsMsgProcessing() || recvSignal_.load();
-            });
-        }
+        SleepUtilNotify(0);
         if (streamManager_.lock()) {
             streamManager_.lock()->HandleMsg();
             streamManager_.lock()->Process();
@@ -72,6 +66,22 @@ void HpaeSignalProcessThread::Run()
     ResetThreadQosLevel();
 }
 
+void HpaeSignalProcessThread::SleepUtilNotify(int64_t sleepInUs)
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+    auto duration = std::chrono::microseconds(sleepInUs);
+    auto cond = [this] {
+        return !running_.load() || 
+               streamManager_.lock()->IsRunning() ||
+               streamManager_.lock()->IsMsgProcessing() || 
+               recvSignal_.load();
+    };
+    if (sleepInUs > 0) {
+        condition_.wait_for(lock, duration, cond);
+    } else {
+        condition_.wait(lock, cond);
+    }
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
