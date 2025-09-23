@@ -820,9 +820,9 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoF
     CHECK_AND_RETURN_RET(propInfo == nullptr, propInfo);
 
     // update multichannel stream info
-    if (info->name_ == "multichannel_output") {
+    if (info && info->name_ == "multichannel_output") {
         for (auto &streamProp : info->streamPropInfos_) {
-            if (streamProp->channelLayout_ == channelLayout) {
+            if (streamProp && streamProp->channelLayout_ == channelLayout) {
                 AudioPolicyUtils::GetInstance().UpdateMultiChannelStreamInfo(streamProp);
                 return streamProp;
             }

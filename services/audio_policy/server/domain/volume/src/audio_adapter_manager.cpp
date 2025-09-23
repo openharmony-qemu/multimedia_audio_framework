@@ -3492,7 +3492,7 @@ int32_t AudioAdapterManager::RemoveCaptureInjector(const uint32_t &sinkPortIndex
 
 bool AudioAdapterManager::IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout)
 {
-    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERROR, "audioServiceAdapter is null");
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, false, "audioServiceAdapter is null");
     return audioServiceAdapter_->IsChannelLayoutSupportForDspEffect(channelLayout);
 }
 // LCOV_EXCL_STOP

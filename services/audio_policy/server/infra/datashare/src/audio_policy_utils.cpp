@@ -809,9 +809,9 @@ void AudioPolicyUtils::UpdateMultiChannelStreamInfo(std::shared_ptr<PipeStreamPr
         // use default 5.1 channel for multi-channel pipe
         streamPropInfo->bufferSize_ =
             ((streamPropInfo->bufferSize_ * static_cast<uint32_t>(CHANNEL_6)) /
-            static_cast<uint32_t>(streamPropInfo->channels));
-        streamPropInfo->channels = CHANNEL_6;
-        streamPropInfo->channelLayout = CH_LAYOUT_5POINT1;
+            static_cast<uint32_t>(streamPropInfo->channels_));
+        streamPropInfo->channels_ = CHANNEL_6;
+        streamPropInfo->channelLayout_ = CH_LAYOUT_5POINT1;
     }
 }
 } // namespace AudioStandard
