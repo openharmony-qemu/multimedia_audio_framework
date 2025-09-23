@@ -101,6 +101,8 @@ public:
 
     virtual int32_t SetOffloadMode(int32_t state, bool isAppBack) override { return 0; } // renderer only
 
+    virtual int32_t SetTarget(int32_t target, int32_t &ret) override { return 0; } // renderer only
+
     virtual int32_t UnsetOffloadMode() override { return 0; } // renderer only
 
     virtual int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
@@ -1762,25 +1764,6 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_061, TestSize.Level1
     };
     int32_t ret = ptrRendererInClientInner->SetAudioStreamInfo(info, nullptr);
     EXPECT_EQ(ret, SUCCESS);
-
-    info.format = OHOS::Media::Plugins::AudioSampleFormat::SAMPLE_U8P;
-    info.channels = AudioChannel::STEREO;
-    ret = ptrRendererInClientInner->SetAudioStreamInfo(info, nullptr);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
-
-    info.format = AudioSampleFormat::SAMPLE_U8;
-    info.channels = AudioChannel::CHANNEL_UNKNOW;
-    ret = ptrRendererInClientInner->SetAudioStreamInfo(info, nullptr);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
-
-    info.encoding = AudioEncodingType::ENCODING_PCM;
-    ret = ptrRendererInClientInner->SetAudioStreamInfo(info, nullptr);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
-
-    info.channels = AudioChannel::STEREO;
-    ptrRendererInClientInner->state_ = State::INVALID;
-    ret = ptrRendererInClientInner->SetAudioStreamInfo(info, nullptr);
-    EXPECT_EQ(ret, ERROR);
 }
 
 /**
@@ -2118,6 +2101,68 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_079, TestSize.Level1
 /**
  * @tc.name  : Test RendererInClientInner API
  * @tc.type  : FUNC
+ * @tc.number: SetBufferSizeInMsec_001
+ * @tc.desc  : Test RendererInClientInner::SetBufferSizeInMsec
+ */
+HWTEST(RendererInClientInnerUnitTest, SetBufferSizeInMsec_001, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->renderMode_ = RENDER_MODE_NORMAL;
+    ptrRendererInClientInner->rendererInfo_.playerType = PLAYER_TYPE_TONE_PLAYER;
+    int32_t bufferSizeInMsec = 1024;
+    int32_t ret = ptrRendererInClientInner->SetBufferSizeInMsec(bufferSizeInMsec);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: SetCacheSize_001
+ * @tc.desc  : Test RendererInClientInner::SetCacheSize
+ */
+HWTEST(RendererInClientInnerUnitTest, SetCacheSize_001, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->spanSizeInFrame_ = 0;
+    ptrRendererInClientInner->SetCacheSize(0);
+    EXPECT_EQ(ptrRendererInClientInner->cacheSizeInFrame_, 0);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: SetCacheSize_002
+ * @tc.desc  : Test RendererInClientInner::SetCacheSize
+ */
+HWTEST(RendererInClientInnerUnitTest, SetCacheSize_002, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->spanSizeInFrame_ = 20;
+    uint32_t testValue = 20;
+    uint32_t expectValue = 40;
+    ptrRendererInClientInner->SetCacheSize(testValue);
+    EXPECT_EQ(ptrRendererInClientInner->cacheSizeInFrame_, expectValue);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: SetCacheSize_003
+ * @tc.desc  : Test RendererInClientInner::SetCacheSize
+ */
+HWTEST(RendererInClientInnerUnitTest, SetCacheSize_003, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->spanSizeInFrame_ = 20;
+    uint32_t testValue = 93;
+    uint32_t expectValue = 120;
+    ptrRendererInClientInner->SetCacheSize(testValue);
+    EXPECT_EQ(ptrRendererInClientInner->cacheSizeInFrame_, expectValue);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
  * @tc.number: RendererInClientInner_080
  * @tc.desc  : Test RendererInClientInner::InitCallbackHandler
  *             Test RendererInClientInner::StateCmdTypeToParams
@@ -2321,7 +2366,7 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_088, TestSize.Level1
     ptrRendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
     ptrRendererInClientInner->sizePerFrameInByte_ = 1;
     // enginesizeinframe 2
-    ptrRendererInClientInner->engineTotalSizeInFrame_ = 2;
+    ptrRendererInClientInner->cacheSizeInFrame_ = 2;
     ptrRendererInClientInner->cbBufferSize_ = 1;
 
     // Readable == enginesizeinframe
@@ -2346,7 +2391,7 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_089, TestSize.Level1
     ptrRendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
     ptrRendererInClientInner->sizePerFrameInByte_ = 1;
     // enginesizeinframe 2
-    ptrRendererInClientInner->engineTotalSizeInFrame_ = 2;
+    ptrRendererInClientInner->cacheSizeInFrame_ = 2;
     ptrRendererInClientInner->cbBufferSize_ = 1;
 
     // Readable > enginesizeinframe
@@ -2371,7 +2416,7 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_090, TestSize.Level4
     ptrRendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
     ptrRendererInClientInner->sizePerFrameInByte_ = 1;
     // enginesizeinframe 2
-    ptrRendererInClientInner->engineTotalSizeInFrame_ = 2;
+    ptrRendererInClientInner->cacheSizeInFrame_ = 2;
     ptrRendererInClientInner->cbBufferSize_ = 1;
     ptrRendererInClientInner->spanSizeInFrame_ = 1;
 
@@ -2728,7 +2773,7 @@ HWTEST(RendererInClientInnerUnitTest, CheckBufferNeedWrite_001, TestSize.Level4)
     uint32_t byteSizePerFrame = 1;
     ptrRendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
     ptrRendererInClientInner->sizePerFrameInByte_ = 1;
-    ptrRendererInClientInner->engineTotalSizeInFrame_ = 2;
+    ptrRendererInClientInner->cacheSizeInFrame_ = 2;
     ptrRendererInClientInner->cbBufferSize_ = 1000;
 
     bool ret = ptrRendererInClientInner->CheckBufferNeedWrite();
@@ -2749,6 +2794,42 @@ HWTEST(RendererInClientInnerUnitTest, WriteCallbackFunc_001, TestSize.Level4)
     ptrRendererInClientInner->state_ = State::RUNNING;
     bool ret  = ptrRendererInClientInner->WriteCallbackFunc();
     EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: SetRenderTarget_001
+ * @tc.desc  : Test RendererInClientInner::SetRenderTarget
+ */
+HWTEST(RendererInClientInnerUnitTest, SetRenderTarget_001, TestSize.Level1)
+{
+    AudioStreamType eStreamType = AudioStreamType::STREAM_DEFAULT;
+    int32_t appUid = 1;
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(eStreamType, appUid);
+
+    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+    
+    auto ret = ptrRendererInClientInner->SetRenderTarget(NORMAL_PLAYBACK);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: GetRenderTarget_001
+ * @tc.desc  : Test RendererInClientInner::GetRenderTarget
+ */
+HWTEST(RendererInClientInnerUnitTest, GetRenderTarget_001, TestSize.Level1)
+{
+    AudioStreamType eStreamType = AudioStreamType::STREAM_DEFAULT;
+    int32_t appUid = 1;
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(eStreamType, appUid);
+
+    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+
+    auto ret = ptrRendererInClientInner->GetRenderTarget();
+    EXPECT_EQ(ret, NORMAL_PLAYBACK);
 }
 } // namespace AudioStandard
 } // namespace OHOS

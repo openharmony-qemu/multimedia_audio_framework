@@ -29,6 +29,7 @@ static constexpr uint32_t DEFAULT_MULTICHANNEL_NUM = 6;
 static constexpr uint32_t DEFAULT_MULTICHANNEL_CHANNELLAYOUT = 1551;
 static constexpr float MAX_SINK_VOLUME_LEVEL = 1.0;
 static constexpr uint32_t DEFAULT_MULTICHANNEL_FRAME_LEN_MS = 20;
+static constexpr uint32_t DEFAULT_FRAME_LEN_MS = 20;
 static constexpr uint32_t MS_PER_SECOND = 1000;
 static constexpr uint32_t BASE_TEN = 10;
 static constexpr uint32_t FRAME_LENGTH_LIMIT = 38400;
@@ -525,6 +526,40 @@ int32_t CheckSourceInfoFramelen(const HpaeSourceInfo &sourceInfo)
         return ERROR;
     }
     return SUCCESS;
+}
+
+void TransSinkInfoToNodeInfo(const HpaeSinkInfo &sinkInfo, const std::weak_ptr<INodeCallback> &statusCallback,
+    HpaeNodeInfo &nodeInfo)
+{
+    nodeInfo.channels = sinkInfo.channels;
+    nodeInfo.format = sinkInfo.format;
+    nodeInfo.frameLen = sinkInfo.frameLen;
+    nodeInfo.nodeId = 0;
+    nodeInfo.samplingRate = sinkInfo.samplingRate;
+    nodeInfo.sceneType = HPAE_SCENE_EFFECT_OUT;
+    nodeInfo.deviceNetId = sinkInfo.deviceNetId;
+    nodeInfo.deviceClass = sinkInfo.deviceClass;
+    nodeInfo.statusCallback = statusCallback;
+}
+
+size_t CaculateFrameLenByNodeInfo(HpaeNodeInfo &nodeInfo)
+{
+    return nodeInfo.samplingRate * DEFAULT_FRAME_LEN_MS / MS_PER_SECOND;
+}
+
+void ConfigNodeInfo(HpaeNodeInfo &nodeInfo, const HpaeStreamInfo &streamInfo)
+{
+    nodeInfo.channels = streamInfo.channels;
+    nodeInfo.format = streamInfo.format;
+    nodeInfo.frameLen = streamInfo.frameLen;
+    nodeInfo.streamType = streamInfo.streamType;
+    nodeInfo.sessionId = streamInfo.sessionId;
+    nodeInfo.customSampleRate = streamInfo.customSampleRate;
+    nodeInfo.channelLayout = static_cast<AudioChannelLayout>(streamInfo.channelLayout);
+    nodeInfo.samplingRate = static_cast<AudioSamplingRate>(streamInfo.samplingRate);
+    nodeInfo.effectInfo = streamInfo.effectInfo;
+    nodeInfo.fadeType = streamInfo.fadeType;
+    nodeInfo.sourceType = streamInfo.sourceType;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -161,9 +161,8 @@ void AudioVolumeManagerHandleStreamMuteStatusFuzzTest(const uint8_t *rawData, si
     uint32_t index = static_cast<uint32_t>(size);
     AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
     bool mute = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
-    StreamUsage streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
     DeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
-    AudioAdapterManager::GetInstance().HandleStreamMuteStatus(streamType, mute, streamUsage, deviceType);
+    AudioAdapterManager::GetInstance().HandleStreamMuteStatus(streamType, mute, deviceType);
 }
 
 void AudioVolumeManagerSetOffloadVolumeFuzzTest(const uint8_t *rawData, size_t size)

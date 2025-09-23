@@ -32,6 +32,9 @@ public:
     int32_t SetupAudioLimiter();
     int32_t InitAudioLimiter();
     virtual void SetNodeInfo(HpaeNodeInfo& nodeInfo) override;
+    void ConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode, HpaeNodeInfo &nodeInfo) override;
+    void DisConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode,
+        HpaeNodeInfo &nodeInfo) override;
 protected:
     HpaePcmBuffer *SignalProcess(const std::vector<HpaePcmBuffer *> &inputs) override;
 private:

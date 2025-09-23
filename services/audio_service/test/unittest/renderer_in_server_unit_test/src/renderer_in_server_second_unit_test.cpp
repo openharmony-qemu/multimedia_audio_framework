@@ -1735,6 +1735,8 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerUnsetOffloadMode_001, Test
     server->offloadEnable_ = true;
     server->status_ = I_STATUS_IDLE;
     server->Init();
+    std::shared_ptr<HPAE::IHpaeSoftLink> softLink =
+        std::make_shared<HPAE::HpaeSoftLink>(1, 1, HPAE::SoftLinkMode::OFFLOADINNERCAP_AID);
 
     server->softLinkInfos_[0].isSoftLinkEnabled = false;
     server->softLinkInfos_[0].softLink = nullptr;
@@ -2018,6 +2020,27 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerDestroySoftLink_001, TestS
     ret = server->DestroySoftLink(1);
     ret = server->DestroySoftLink(2);
     ret = server->DestroySoftLink(3);
+    EXPECT_NE(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test StartInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerStartInner_001
+ * @tc.desc  : wzwzwz
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerStartInner_001, TestSize.Level1)
+{
+    auto server = std::make_shared<RendererInServer>(processConfig, streamListener);
+    ASSERT_TRUE(server != nullptr);
+
+    int32_t ret = server->Init();
+    server->standByEnable_ = true;
+    server->OnStatusUpdate(OPERATION_PAUSED);
+    server->playerDfx_ = nullptr;
+    server->lastTarget_ = INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
+
+    ret = server->StartInner();
     EXPECT_NE(SUCCESS, ret);
 }
 } // namespace AudioStandard

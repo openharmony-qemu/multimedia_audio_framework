@@ -44,6 +44,7 @@ const uid_t MCU_UID = 7500;
 const uid_t TV_SERVICE_UID = 7501;
 const int32_t AUDIO_EXT_UID = 1041;
 constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
+constexpr int32_t REMOTE_USER_TERMINATED = 200;
 static const int VOLUME_LEVEL_DEFAULT_SIZE = 3;
 static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
 static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
@@ -215,6 +216,7 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
             // Do nothing
         }
     }
+    audioIOHandleMap_.NotifyUnmutePort();
     pipeManager_->UpdateRendererPipeInfos(pipeInfos);
     RemoveUnusedPipe();
     NotifyRouteUpdate(streamDescs);
@@ -957,12 +959,6 @@ void AudioCoreService::ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pi
 int32_t AudioCoreService::FetchCapturerPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
     uint32_t &audioFlag, uint32_t &sessionId)
 {
-    if (sessionId == 0) {
-        streamDesc->sessionId_ = GenerateSessionId();
-        sessionId = streamDesc->sessionId_;
-        AUDIO_INFO_LOG("Generate sessionId: %{public}u for stream", sessionId);
-    }
-
     if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         AUDIO_INFO_LOG("[PipeFetchInfo] playbackcapture, no need fetch pipe");
         audioFlag = AUDIO_INPUT_FLAG_NORMAL;
@@ -1276,7 +1272,6 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
     }
 
     streamCollector_.UpdateRendererDeviceInfo(newDeviceDesc);
-    audioIOHandleMap_.NotifyUnmutePort();
 }
 
 void AudioCoreService::OnMicrophoneBlockedUpdate(DeviceType devType, DeviceBlockStatus status)
@@ -1550,7 +1545,11 @@ void AudioCoreService::UpdateRingerOrAlarmerDualDeviceOutputRouter(
         audioActiveDevice_.UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG,
             streamDesc->newDeviceDescs_.front()->deviceName_, streamDesc->newDeviceDescs_.front()->networkId_);
     }
-
+    if (streamUsage == STREAM_USAGE_ALARM) {
+        audioVolumeManager_.SetRingerModeMute(true);
+        shouldUpdateDeviceDueToDualTone_ = true;
+        return;
+    }
     AudioRingerMode ringerMode = audioPolicyManager_.GetRingerMode();
     if (ringerMode != RINGER_MODE_NORMAL &&
         IsRingerOrAlarmerDualDevicesRange(streamDesc->newDeviceDescs_.front()->getType()) &&
@@ -1832,7 +1831,6 @@ void AudioCoreService::TriggerRecreateRendererStreamCallbackEntry(shared_ptr<Aud
     const AudioStreamDeviceChangeReasonExt reason)
 {
     TriggerRecreateRendererStreamCallback(streamDesc, reason);
-    audioIOHandleMap_.NotifyUnmutePort();
 }
 
 CapturerState AudioCoreService::HandleStreamStatusToCapturerState(AudioStreamStatus status)
@@ -2089,17 +2087,17 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
 {
     Trace trace("IsStreamSupportLowpower");
     if (!streamDesc->rendererInfo_.isOffloadAllowed) {
-        AUDIO_INFO_LOG("normal stream because renderInfo not support offload.");
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream because renderInfo not support offload.");
         return false;
     }
     if (GetRealUid(streamDesc) == AUDIO_EXT_UID) {
-        AUDIO_INFO_LOG("the extra uid not support offload.");
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "the extra uid not support offload.");
         return false;
     }
     if (streamDesc->streamInfo_.channels > STEREO &&
         (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MOVIE ||
          streamDesc->rendererInfo_.originalFlag != AUDIO_FLAG_PCM_OFFLOAD)) {
-        AUDIO_INFO_LOG("normal stream because channels.");
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream because channels.");
         return false;
     }
 
@@ -2107,13 +2105,14 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
         streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_AUDIOBOOK &&
         (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MOVIE ||
          streamDesc->rendererInfo_.originalFlag != AUDIO_FLAG_PCM_OFFLOAD)) {
-        AUDIO_INFO_LOG("normal stream because streamUsage.");
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream because streamUsage.");
         return false;
     }
 
     if (streamDesc->rendererInfo_.playerType == PLAYER_TYPE_SOUND_POOL ||
         streamDesc->rendererInfo_.playerType == PLAYER_TYPE_OPENSL_ES) {
-        AUDIO_INFO_LOG("normal stream beacuse playerType %{public}d.", streamDesc->rendererInfo_.playerType);
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream beacuse playerType %{public}d.",
+            streamDesc->rendererInfo_.playerType);
         return false;
     }
 
@@ -2121,7 +2120,7 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
         AudioSpatializationService::GetAudioSpatializationService().GetSpatializationState();
     bool effectOffloadFlag = AudioServerProxy::GetInstance().GetEffectOffloadEnabledProxy();
     if (spatialState.spatializationEnabled && !effectOffloadFlag) {
-        AUDIO_INFO_LOG("spatialization effect in arm, Skipped.");
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "spatialization effect in arm, Skipped.");
         return false;
     }
 
@@ -2131,7 +2130,8 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
         (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP ||
         streamDesc->newDeviceDescs_[0]->a2dpOffloadFlag_ != A2DP_OFFLOAD) &&
         streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_NEARLINK) {
-        AUDIO_INFO_LOG("normal stream, deviceType: %{public}d", streamDesc->newDeviceDescs_[0]->deviceType_);
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream, deviceType: %{public}d",
+            streamDesc->newDeviceDescs_[0]->deviceType_);
         return false;
     }
     return true;
@@ -2196,6 +2196,14 @@ int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream(const AudioStream
     if (audioSceneManager_.GetAudioScene(true) != AUDIO_SCENE_DEFAULT) {
         audioActiveDevice_.UpdateActiveDeviceRoute(descs.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG,
             descs.front()->deviceName_, descs.front()->networkId_);
+    }
+    if (descs.front()->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        string condition = string("address=") + descs.front()->macAddress_ + " role=" + to_string(OUTPUT_DEVICE);
+        string deviceInfo = AudioServerProxy::GetInstance().GetAudioParameterProxy(LOCAL_NETWORK_ID, USB_DEVICE,
+            condition);
+        if (!deviceInfo.empty()) {
+            AUDIO_DEBUG_LOG("[GetAudioParameterProxy]deviceInfo: %{public}s", deviceInfo.c_str());
+        }
     }
     OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice(), reason);
     return SUCCESS;
@@ -2589,7 +2597,7 @@ void AudioCoreService::SleepForSwitchDevice(std::shared_ptr<AudioStreamDescripto
             {BASE_DEVICE_SWITCH_SLEEP_US, OLD_DEVICE_UNAVAILABLE_EXTRA_SLEEP_US}
         },
         {
-            [&]() { return reason.IsUnknown() || oldSinkName == REMOTE_CAST_INNER_CAPTURER_SINK_NAME; },
+            [&]() { return reason.IsUnknown() && oldSinkName == REMOTE_CAST_INNER_CAPTURER_SINK_NAME; },
             {BASE_DEVICE_SWITCH_SLEEP_US}
         },
     };
@@ -2796,7 +2804,7 @@ void AudioCoreService::UpdateStreamDevicesForStart(
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "Invalid stream desc");
     AUDIO_INFO_LOG("[DeviceFetchStart] for stream %{public}d", streamDesc->sessionId_);
     streamDesc->UpdateOldDevice(streamDesc->newDeviceDescs_);
-    
+
     StreamUsage streamUsage = StreamUsage::STREAM_USAGE_INVALID;
     streamUsage = audioSessionService_.GetAudioSessionStreamUsage(GetRealPid(streamDesc));
     streamUsage = (streamUsage != StreamUsage::STREAM_USAGE_INVALID) ? streamUsage :
@@ -2827,7 +2835,7 @@ void AudioCoreService::UpdateStreamDevicesForCreate(
     streamDesc->UpdateOldDevice(streamDesc->newDeviceDescs_);
     auto devices = audioRouterCenter_.FetchOutputDevices(streamDesc->GetRenderUsage(),
         GetRealUid(streamDesc), caller, RouterType::ROUTER_TYPE_NONE, streamDesc->GetRenderPrivacyType());
-    
+
     streamDesc->UpdateNewDeviceWithoutCheck(devices);
     HILOG_COMM_INFO("[DeviceFetchInfo] device %{public}s for stream %{public}d",
         streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->GetSessionId());
@@ -2846,7 +2854,7 @@ void AudioCoreService::SelectA2dpType(std::shared_ptr<AudioStreamDescriptor> &st
     auto flag =
         static_cast<BluetoothOffloadState>(Bluetooth::AudioA2dpManager::A2dpOffloadSessionRequest(allSessionInfos));
     streamDesc->newDeviceDescs_[0]->a2dpOffloadFlag_ = flag;
-    AUDIO_INFO_LOG("A2dp offload flag:%{public}d isCreate:%{public}s", flag, isCreateProcess ? "true" : "false");
+    JUDGE_AND_INFO_LOG(isCreateProcess, "A2dp offload flag:%{public}d", flag);
 #endif
 }
 
@@ -2931,20 +2939,33 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
 
         int32_t result = std::visit(runDeviceActivationFlow, audioStreamConfig);
         if (result != SUCCESS) {
-            AUDIO_ERR_LOG("Nearlink device activation failed, macAddress: %{public}s",
-                GetEncryptAddr(deviceDesc->macAddress_).c_str());
-            deviceDesc->exceptionFlag_ = true;
-            audioDeviceManager_.UpdateDevicesListInfo(deviceDesc, EXCEPTION_FLAG_UPDATE);
-            if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK) {
-                FetchOutputDeviceAndRoute("ActivateNearlinkDevice", reason);
-            } else {
-                FetchInputDeviceAndRoute("ActivateNearlinkDevice", reason);
-            }
+            AUDIO_ERR_LOG("Nearlink device activation failed, macAddress: %{public}s, result: %{public}d",
+                GetEncryptAddr(deviceDesc->macAddress_).c_str(), result);
+            HandleNearlinkErrResult(result, deviceDesc);
+            FetchOutputDeviceAndRoute("ActivateNearlinkDevice", reason);
+            FetchInputDeviceAndRoute("ActivateNearlinkDevice", reason);
             return ERROR;
         }
         sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc);
     }
     return SUCCESS;
+}
+
+void AudioCoreService::HandleNearlinkErrResult(int32_t result, shared_ptr<AudioDeviceDescriptor> devDesc)
+{
+    CHECK_AND_RETURN(result != SUCCESS);
+    if (result == REMOTE_USER_TERMINATED) {
+        auto deviceDescriptor = make_shared<AudioDeviceDescriptor>(devDesc);
+        AUDIO_INFO_LOG("Set connect state to SUSPEND_CONNECTED");
+        deviceDescriptor->connectState_ = SUSPEND_CONNECTED;
+        deviceDescriptor->deviceType_ = DEVICE_TYPE_NEARLINK;
+        audioDeviceManager_.UpdateDevicesListInfo(deviceDescriptor, CONNECTSTATE_UPDATE);
+        deviceDescriptor->deviceType_ = DEVICE_TYPE_NEARLINK_IN;
+        audioDeviceManager_.UpdateDevicesListInfo(deviceDescriptor, CONNECTSTATE_UPDATE);
+    } else {
+        devDesc->exceptionFlag_ = true;
+        audioDeviceManager_.UpdateDevicesListInfo(devDesc, EXCEPTION_FLAG_UPDATE);
+    }
 }
 
 int32_t AudioCoreService::SwitchActiveHearingAidDevice(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor)
@@ -3186,6 +3207,41 @@ int32_t AudioCoreService::SetSleVoiceStatusFlag(AudioScene audioScene)
     } else {
         audioPolicyManager_.SetSleVoiceStatusFlag(true);
     }
+    return SUCCESS;
+}
+
+int32_t AudioCoreService::PlayBackToInjection(uint32_t sessionId)
+{
+    if (!PermissionUtil::VerifySystemPermission()) {
+        return ERR_SYSTEM_PERMISSION_DENIED;
+    }
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    if (!PermissionUtil::VerifyPermission(INJECT_PLAYBACK_TO_AUDIO_CAPTURE_PERMISSION, tokenId)) {
+        return ERR_PERMISSION_DENIED;
+    }
+    if (pipeManager_->IsCaptureVoipCall() == NO_VOIP) {
+        return ERR_ILLEGAL_STATE;
+    }
+    int32_t ret = audioInjectorPolicy_.Init();
+
+    return ret;
+}
+
+int32_t AudioCoreService::InjectionToPlayBack(uint32_t sessionId)
+{
+    int32_t ret = ERROR;
+    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "pipeManager_ is null");
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERROR, "get streamDesc failed");
+    streamDesc->rendererTarget_ = NORMAL_PLAYBACK;
+    ret = AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnForcedDeviceSelected",
+        AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "move stream out failed");
+    audioInjectorPolicy_.RemoveStreamDescriptor(sessionId);
+    ret = audioInjectorPolicy_.RemoveCaptureInjector();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "RemoveCaptureInjector failed");
+    ret = audioInjectorPolicy_.DeInit();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "DeInit failed");
     return SUCCESS;
 }
 } // namespace AudioStandard

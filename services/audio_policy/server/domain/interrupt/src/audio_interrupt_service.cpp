@@ -38,6 +38,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr uint32_t BOOTUP_MUSIC_UID = 1003;
 constexpr uint32_t MEDIA_SA_UID = 1013;
 constexpr uint32_t THP_EXTRA_SA_UID = 5000;
 static const int32_t INTERRUPT_SERVICE_TIMEOUT = 10; // 10s
@@ -220,6 +221,17 @@ void AudioInterruptService::HandleSessionTimeOutEvent(const int32_t pid)
     }
 }
 
+void AudioInterruptService::WriteCallSessionEvent(int32_t strategyValue)
+{
+    auto uid = IPCSkeleton::GetCallingUid();
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::HAP_CALL_AUDIO_SESSION,
+        Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
+    bean->Add("CLIENT_UID", static_cast<int32_t>(uid));
+    bean->Add("SYSTEMHAP_SET_FOCUSSTRATEGY", strategyValue);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
 int32_t AudioInterruptService::ActivateAudioSession(const int32_t zoneId, const int32_t callerPid,
     const AudioSessionStrategy &strategy, const bool isStandalone)
 {
@@ -241,6 +253,7 @@ int32_t AudioInterruptService::ActivateAudioSession(const int32_t zoneId, const 
 
     if (PermissionUtil::VerifySystemPermission()) {
         sessionService_.MarkSystemApp(callerPid);
+        WriteCallSessionEvent(static_cast<int32_t>(strategy.concurrencyMode));
     }
 
     bool updateScene = false;
@@ -257,9 +270,7 @@ int32_t AudioInterruptService::ActivateAudioSession(const int32_t zoneId, const 
         if (result != SUCCESS) {
             AUDIO_INFO_LOG(
                 "Process focus for AudioSession, pid: %{public}d, result: %{public}d, updateScene: %{public}d",
-                callerPid,
-                result,
-                updateScene);
+                callerPid, result, updateScene);
             return result;
         }
     // audio session v1
@@ -905,6 +916,12 @@ int32_t AudioInterruptService::ActivateAudioInterruptCoreProcedure(
         return ERR_FOCUS_DENIED;
     }
 
+    if (audioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
+        bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+        CHECK_AND_RETURN_RET_LOG(hasSystemPermission, ERR_FOCUS_DENIED,
+            "VOICE_TRANSCRIPTION failed: no system permission.");
+    }
+
     return ActivateAudioInterruptInternal(zoneId, audioInterrupt, isUpdatedAudioStrategy, updateScene);
 }
 
@@ -952,7 +969,7 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
 void AudioInterruptService::PrintLogsOfFocusStrategyBaseMusic(const AudioInterrupt &audioInterrupt)
 {
     // The log printed by this function is critical, so please do not modify it.
-    std::string bundleName = (AudioBundleManager::GetBundleInfoFromUid(audioInterrupt.uid)).name;
+    std::string bundleName = GetAudioInterruptBundleName(audioInterrupt);
 
     AudioFocusType audioFocusType;
     audioFocusType.streamType = AudioStreamType::STREAM_MUSIC;
@@ -1590,8 +1607,8 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
             ++iterActive;
         }
         uint8_t appstate = GetAppState(currentInterrupt.pid);
-        auto info = AudioBundleManager::GetBundleInfoFromUid(currentInterrupt.uid);
-        dfxBuilder.WriteEffectMsg(appstate, info.name, currentInterrupt, interruptEvent.hintType);
+        std::string bundleName = GetAudioInterruptBundleName(currentInterrupt);
+        dfxBuilder.WriteEffectMsg(appstate, bundleName, currentInterrupt, interruptEvent.hintType);
         SendActiveInterruptEvent(activeStreamId, interruptEvent, incomingInterrupt, currentInterrupt);
     }
 
@@ -1779,7 +1796,7 @@ void AudioInterruptService::UpdateAudioFocusStrategy(const AudioInterrupt &curre
     AudioFocusType incomingAudioFocusType = incomingInterrupt.audioFocusType;
     AudioFocusType existAudioFocusType = currentInterrupt.audioFocusType;
     std::string bundleName = GetAudioInterruptBundleName(incomingInterrupt);
-    std::string currentBundleName = GetCurrentBundleName(static_cast<int32_t>(currentUid));
+    std::string currentBundleName = GetAudioInterruptBundleName(currentInterrupt);
     CHECK_AND_RETURN_LOG(!bundleName.empty(), "bundleName is empty");
     AudioStreamType existStreamType = existAudioFocusType.streamType;
     AudioStreamType incomingStreamType = incomingAudioFocusType.streamType;
@@ -2931,6 +2948,7 @@ uint8_t AudioInterruptService::GetAppState(int32_t appPid)
 
 void AudioInterruptService::WriteStartDfxMsg(InterruptDfxBuilder &dfxBuilder, const AudioInterrupt &audioInterrupt)
 {
+    CHECK_AND_RETURN_LOG(audioInterrupt.uid != BOOTUP_MUSIC_UID, "The caller is BootAnimation. Don't write dfx msg.");
     CHECK_AND_RETURN_LOG(dfxCollector_ != nullptr, "dfxCollector is null");
     auto& [infoIdx, effectIdx] = dfxCollector_->GetDfxIndexes(audioInterrupt.streamId);
     if (!dfxBuilder.GetResult().interruptEffectVec.empty()) {

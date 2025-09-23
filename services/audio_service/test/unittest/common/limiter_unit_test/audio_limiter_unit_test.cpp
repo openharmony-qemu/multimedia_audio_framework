@@ -160,8 +160,8 @@ HWTEST_F(AudioLimiterUnitTest, GetLatency_001, TestSize.Level1)
     int32_t ret = limiter->SetConfig(BUFFER_SIZE_20MS_2CH_48000HZ_FLOAT, SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO);
     EXPECT_EQ(ret, SUCCESS);
     ret = limiter->GetLatency();
-    EXPECT_EQ(ret, BUFFER_SIZE_20MS_2CH_48000HZ_FLOAT * AUDIO_MS_PER_S /
-        (SAMPLE_F32LE * SAMPLE_RATE_48000 * STEREO * PROC_COUNT));
+    EXPECT_EQ(ret, BUFFER_SIZE_20MS_2CH_48000HZ_FLOAT * AUDIO_MS_PER_S / (static_cast<uint8_t>(SAMPLE_F32LE) *
+            static_cast<uint32_t>(SAMPLE_RATE_48000) * static_cast<uint8_t>(STEREO) * PROC_COUNT));
 }
 
 /**

@@ -60,6 +60,7 @@
 #include "audio_resource_service.h"
 #include "audio_manager_listener.h"
 #include "app_bundle_manager.h"
+#include "audio_injector_service.h"
 #ifdef SUPPORT_OLD_ENGINE
 #define PA
 #ifdef PA
@@ -1414,12 +1415,12 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
     if (flag == DeviceFlag::INPUT_DEVICES_FLAG) {
         UpdateDeviceForAllSource(source, type);
     } else if (flag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
-        sink->UpdateActiveDevice(deviceTypes);
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
+        sink->UpdateActiveDevice(deviceTypes);
     } else if (flag == DeviceFlag::ALL_DEVICES_FLAG) {
         UpdateDeviceForAllSource(source, type);
-        sink->UpdateActiveDevice(deviceTypes);
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
+        sink->UpdateActiveDevice(deviceTypes);
     } else {
         AUDIO_ERR_LOG("SetIORoutes invalid device flag");
         return ERR_INVALID_PARAM;
@@ -2285,6 +2286,10 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
 #endif
 
     AUDIO_INFO_LOG("check for uid:%{public}d source type:%{public}d", config.callerUid, sourceType);
+    if (sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
+        bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+        CHECK_AND_RETURN_RET_LOG(hasSystemPermission, false, "VOICE_TRANSCRIPTION failed: no system permission.");
+    }
 
     if (sourceType == SOURCE_TYPE_VOICE_CALL) {
         bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
@@ -2304,7 +2309,10 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
 
     // All record streams should be checked for MICROPHONE_PERMISSION
     bool res = VerifyClientPermission(MICROPHONE_PERMISSION, tokenId);
-    CHECK_AND_RETURN_RET_LOG(res, false, "Check record permission failed: No permission.");
+    if (!res) {
+        HILOG_COMM_INFO("Check record permission failed: No permission.");
+        return false;
+    }
 
     if (sourceType == SOURCE_TYPE_ULTRASONIC && config.callerUid != UID_MSDP_SA) {
         return false;
@@ -2318,8 +2326,10 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
         return true;
     }
 
-    CHECK_AND_RETURN_RET(HandleCheckRecorderBackgroundCapture(config), false,
-        "VerifyBackgroundCapture failed for callerUid:%{public}d", config.callerUid);
+    if (!HandleCheckRecorderBackgroundCapture(config)) {
+        HILOG_COMM_INFO("VerifyBackgroundCapture failed for callerUid:%{public}d", config.callerUid);
+        return false;
+    }
     return true;
 }
 // LCOV_EXCL_STOP
@@ -3165,6 +3175,27 @@ int32_t AudioServer::GetPrivacyTypeAudioServer(uint32_t sessionId, int32_t &priv
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, SUCCESS, "%{public}u err", sessionId);
     privacyType = static_cast<int32_t>(type);
     return SUCCESS;
+}
+
+int32_t AudioServer::AddCaptureInjector(uint32_t sinkPortidx, std::string &rate, std::string &format,
+    std::string &channels)
+{
+    auto ptr = AudioService::GetInstance()->GetEndPointByType(AudioEndpoint::EndpointType::TYPE_VOIP_MMAP);
+    CHECK_AND_RETURN_RET_LOG(ptr != nullptr, ERROR, "endpoint not exist!");
+    int32_t ret = ptr->AddCaptureInjector(sinkPortidx, SOURCE_TYPE_VOICE_COMMUNICATION);
+    AudioModuleInfo &info = AudioInjectorService::GetInstance().GetModuleInfo();
+    rate = info.rate;
+    format = info.format;
+    channels = info.channels;
+    return ret;
+}
+
+int32_t AudioServer::RemoveCaptureInjector(uint32_t sinkPortidx)
+{
+    auto ptr = AudioService::GetInstance()->GetEndPointByType(AudioEndpoint::EndpointType::TYPE_VOIP_MMAP);
+    CHECK_AND_RETURN_RET_LOG(ptr != nullptr, ERROR, "endpoint not exist!");
+    int32_t ret = ptr->RemoveCaptureInjector(sinkPortidx, SOURCE_TYPE_VOICE_COMMUNICATION);
+    return ret;
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

@@ -17,6 +17,7 @@
 #define HPAE_SOURCE_PROCESS_CLUSTER_H
 #include "hpae_capture_effect_node.h"
 #include "hpae_audio_format_converter_node.h"
+#include "hpae_mixer_node.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -39,19 +40,28 @@ public:
     void ConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode, HpaeNodeInfo &nodeInfo) override;
     void DisConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode,
         HpaeNodeInfo &nodeInfo) override;
+    // connect injector
+    void ConnectInjector(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode);
+    void DisConnectInjector(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode);
+
     bool GetCapturerEffectConfig(HpaeNodeInfo& nodeInfo, HpaeSourceBufferType type = HPAE_SOURCE_BUFFER_TYPE_MIC);
 
     size_t GetOutputPortNum();
     int32_t CaptureEffectCreate(uint64_t sceneKeyCode, CaptureEffectAttr attr);
     int32_t CaptureEffectRelease(uint64_t sceneKeyCode);
+    bool IsEffectNodeValid();
 
     // for ut test
+    uint32_t GetMixerNodeUseCount();
     uint32_t GetCapturerEffectNodeUseCount();
     uint32_t GetConverterNodeCount();
     size_t GetPreOutNum();
 private:
     std::shared_ptr<HpaeCaptureEffectNode> captureEffectNode_;
+    std::shared_ptr<HpaeMixerNode> mixerNode_;
     std::unordered_map<std::string, std::shared_ptr<HpaeAudioFormatConverterNode>> fmtConverterNodeMap_;
+    std::unordered_map<std::shared_ptr<OutputNode<HpaePcmBuffer*>>,
+        std::shared_ptr<HpaeAudioFormatConverterNode>> injectorFmtConverterNodeMap_;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

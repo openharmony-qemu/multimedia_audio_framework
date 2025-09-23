@@ -1086,7 +1086,7 @@ describe("AudioGroupManagerJsUnitTest", function () {
             try {
                 let value = audioVolumeGroupManager.isMuteSync(audio.AudioVolumeType.VOICE_ASSISTANT);
                 console.info(`The mute status of VOICE_ASSISTANT stream is obtained ${value}.`);
-                expect(value).assertEqual(false);
+                expect(value).assertEqual(true);
                 done();
             } catch (err) {
                 console.error(`Failed to obtain VOICE_ASSISTANT mute status. ${err}`);

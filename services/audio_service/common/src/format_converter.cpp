@@ -276,7 +276,7 @@ int32_t FormatConverter::F32StereoToF32Mono(const BufferDesc &srcDesc, const Buf
 {
     const size_t half = 2; // stereo has 2 channels
     if (srcDesc.bufLength == 0 || dstDesc.bufLength == 0 ||
-        srcDesc.bufLength != dstDesc.bufLength / half ||
+        srcDesc.bufLength / half != dstDesc.bufLength ||
         srcDesc.buffer == nullptr || dstDesc.buffer == nullptr) {
         return -1;
     }

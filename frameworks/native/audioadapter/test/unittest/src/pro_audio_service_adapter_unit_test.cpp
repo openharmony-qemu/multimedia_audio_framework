@@ -395,7 +395,7 @@ HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_005, TestSize
  */
 HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_006, TestSize.Level1)
 {
-    AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
+    AudioModuleInfo moduleInfo = InitSourceAudioModeInfo();
     int32_t portId = impl_->OpenAudioPort(moduleInfo.lib, moduleInfo);
     EXPECT_EQ(portId, -1);
     portId = impl_->ReloadAudioPort(moduleInfo.lib, moduleInfo);

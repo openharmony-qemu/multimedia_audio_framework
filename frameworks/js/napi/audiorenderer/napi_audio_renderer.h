@@ -60,6 +60,7 @@ private:
         int32_t audioRendererRate;
         int32_t rendererFlags;
         int32_t interruptMode;
+        int32_t target;
         bool isTrue;
         uint64_t time;
         size_t bufferLen;
@@ -142,6 +143,8 @@ private:
     static napi_value GetSilentModeAndMixWithOthers(napi_env env, napi_callback_info info);
     static napi_value SetDefaultOutputDevice(napi_env env, napi_callback_info info);
     static napi_value GetCallback(size_t argc, napi_value *argv);
+    static napi_value SetTarget(napi_env env, napi_callback_info info);
+    static napi_value GetTarget(napi_env env, napi_callback_info info);
 
     static napi_status WriteArrayBufferToNative(std::shared_ptr<AudioRendererAsyncContext> context);
 

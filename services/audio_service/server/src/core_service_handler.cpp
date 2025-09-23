@@ -114,5 +114,21 @@ uint32_t CoreServiceHandler::GetPaIndexByPortName(const std::string &portName)
     iCoreServiceProvider_->GetPaIndexByPortName(portName, ret);
     return ret;
 }
+
+int32_t CoreServiceHandler::SetRendererTarget(uint32_t target, uint32_t lastTarget, uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
+    int32_t ret = ERROR;
+    iCoreServiceProvider_->SetRendererTarget(target, lastTarget, sessionId, ret);
+    return ret;
+}
+
+int32_t CoreServiceHandler::StartInjection(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
+    int32_t ret = ERROR;
+    iCoreServiceProvider_->StartInjection(sessionId, ret);
+    return ret;
+}
 } // namespace AudioStandard
 } // namespace OHOS

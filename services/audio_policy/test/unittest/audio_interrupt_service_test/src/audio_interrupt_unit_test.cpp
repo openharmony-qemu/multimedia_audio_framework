@@ -413,6 +413,20 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_018, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test WriteCallSessionEvent.
+* @tc.number: WriteCallSessionEventTest
+* @tc.desc  : Test WriteCallSessionEvent.
+*/
+HWTEST_F(AudioInterruptUnitTest, WriteCallSessionEventTest, TestSize.Level1)
+{
+    int32_t value = 1;
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    EXPECT_NO_THROW(
+        interruptServiceTest->WriteCallSessionEvent(value);
+    );
+}
+
+/**
 * @tc.name  : Test AudioInterruptService.
 * @tc.number: AudioInterruptService_019
 * @tc.desc  : Test SendFocusChangeEvent.

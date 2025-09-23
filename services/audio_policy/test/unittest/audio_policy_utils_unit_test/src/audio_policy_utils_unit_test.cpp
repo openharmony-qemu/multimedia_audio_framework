@@ -382,7 +382,7 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_019, TestSize.Level1)
     int32_t apiVersion = 20;
 
     int32_t ret = audioPolicyUtilsTest_->IsSupportedNearlink(bundleName, apiVersion, hasSystemPermission);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
 }
 
 /**
@@ -416,6 +416,32 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_020, TestSize.Level1)
     type = DeviceType::DEVICE_TYPE_SPEAKER;
     ret = audioPolicyUtilsTest_->IsWirelessDevice(type);
     EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyUtils
+ * @tc.number: ClearScoDeviceSuspendState_001
+ * @tc.desc  : Test ClearScoDeviceSuspendState
+ */
+HWTEST(AudioPolicyUtilsUnitTest, ClearScoDeviceSuspendState_001, TestSize.Level1)
+{
+    auto &devMan = AudioDeviceManager::GetAudioDeviceManager();
+    string macAddress1 = "sdfs1";
+    string macAddress2 = "sdfs2";
+    AudioDeviceDescriptor desc;
+    desc.deviceId_ = 114514;
+    desc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    desc.macAddress_ = macAddress1;
+    desc.networkId_ = LOCAL_NETWORK_ID;
+    devMan.AddNewDevice(make_shared<AudioDeviceDescriptor>(desc));
+    desc.deviceId_ = 114515;
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    desc.macAddress_ = macAddress2;
+    devMan.AddNewDevice(make_shared<AudioDeviceDescriptor>(desc));
+    auto &utils = AudioPolicyUtils::GetInstance();
+    utils.ClearScoDeviceSuspendState(macAddress1);
+    utils.ClearScoDeviceSuspendState(macAddress2);
+    EXPECT_EQ(devMan.ExistsByType(DEVICE_TYPE_NEARLINK), true);
 }
 
 } // namespace AudioStandard

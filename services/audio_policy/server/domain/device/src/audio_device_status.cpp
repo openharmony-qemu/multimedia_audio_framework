@@ -72,6 +72,19 @@ static std::string GetField(const std::string &src, const char* field, const cha
     return end == std::string::npos ? src.substr(pos) : src.substr(pos, end - pos);
 }
 
+static bool CheckNeedExclude(const AudioDeviceDescriptor &desc, bool isConnected)
+{
+    bool exclude{false};
+#ifdef WIRELESS_DEFAULT_EXCLUDE
+    exclude = true;
+#endif
+    AUDIO_INFO_LOG("isConnected=%{public}d, exclude=%{public}d", isConnected, exclude);
+    CHECK_AND_RETURN_RET(isConnected && exclude, false);
+    vector<shared_ptr<AudioDeviceDescriptor>> descs{make_shared<AudioDeviceDescriptor>(desc)};
+    AudioCoreService::GetCoreService()->ExcludeOutputDevices(D_ALL_DEVICES, descs);
+    return true;
+}
+
 static void GetDPModuleInfo(AudioModuleInfo &moduleInfo, string deviceInfo)
 {
     auto rate_begin = deviceInfo.find("rate=");
@@ -413,6 +426,10 @@ int32_t AudioDeviceStatus::HandleLocalDeviceConnected(AudioDeviceDescriptor &upd
 {
     DeviceStreamInfo audioStreamInfo = updatedDesc.GetDeviceStreamInfo();
     if (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        if (updatedDesc.connectState_ != VIRTUAL_CONNECTED && !audioDeviceManager_.HasConnectedA2dp()) {
+            int32_t result = AudioCoreService::GetCoreService()->ActiveA2dpAndLoadModule(updatedDesc);
+            CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "ActiveA2dpAndLoadModule failed");
+        }
         A2dpDeviceConfigInfo configInfo = {audioStreamInfo, false};
         audioA2dpDevice_.AddA2dpDevice(updatedDesc.macAddress_, configInfo);
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
@@ -438,13 +455,23 @@ int32_t AudioDeviceStatus::HandleLocalDeviceConnected(AudioDeviceDescriptor &upd
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Load accessory failed.");
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_NEARLINK) {
         SleAudioDeviceManager::GetInstance().AddNearlinkDevice(updatedDesc);
-        audioVolumeManager_.SetNearlinkDeviceVolume(updatedDesc.macAddress_, STREAM_MUSIC,
-            SleAudioDeviceManager::GetInstance().GetVolumeLevelByVolumeType(STREAM_MUSIC, updatedDesc));
+        UpdateNearlinkDeviceVolume(updatedDesc);
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_HEARING_AID) {
         A2dpDeviceConfigInfo configInfo = {audioStreamInfo, false};
         audioA2dpDevice_.AddHearingAidDevice(updatedDesc.macAddress_, configInfo);
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_BT_SPP) {
         AUDIO_INFO_LOG("not supported");
+    }
+    return SUCCESS;
+}
+
+int32_t AudioDeviceStatus::UpdateNearlinkDeviceVolume(AudioDeviceDescriptor &updatedDesc)
+{
+    audioVolumeManager_.SetNearlinkDeviceVolume(updatedDesc.macAddress_, STREAM_MUSIC,
+        SleAudioDeviceManager::GetInstance().GetVolumeLevelByVolumeType(STREAM_MUSIC, updatedDesc));
+    if (!VolumeUtils::IsPCVolumeEnable()) {
+        audioVolumeManager_.SetNearlinkDeviceVolume(updatedDesc.macAddress_, STREAM_VOICE_ASSISTANT,
+            audioVolumeManager_.GetMaxVolumeLevel(STREAM_VOICE_ASSISTANT));
     }
     return SUCCESS;
 }
@@ -1179,12 +1206,13 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
         && AudioSpatializationService::GetAudioSpatializationService().
         IsSpatializationSupportedForDevice(updatedDesc.macAddress_)
         && AudioSpatializationService::GetAudioSpatializationService().IsSpatializationSupported();
+    updatedDesc.hightQualityRecordingSupported_ = (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN);
     UpdateDeviceList(updatedDesc, isConnected, descForCb, reason);
 
     TriggerDeviceChangedCallback(descForCb, isConnected);
     TriggerAvailableDeviceChangedCallback(descForCb, isConnected);
 
-    if (!isActualConnection) {
+    if (!isActualConnection || CheckNeedExclude(updatedDesc, isConnected)) {
         return;
     }
     // fetch input&output device
@@ -1206,9 +1234,9 @@ void AudioDeviceStatus::UpdateDeviceList(AudioDeviceDescriptor &updatedDesc,  bo
         // deduplicate
         audioConnectedDevice_.DelConnectedDevice(updatedDesc.networkId_, updatedDesc.deviceType_,
             updatedDesc.macAddress_, updatedDesc.deviceRole_);
-        audioDeviceCommon_.UpdateConnectedDevicesWhenConnecting(updatedDesc, descForCb);
         int32_t result = HandleLocalDeviceConnected(updatedDesc);
         CHECK_AND_RETURN_LOG(result == SUCCESS, "Connect local device failed.");
+        audioDeviceCommon_.UpdateConnectedDevicesWhenConnecting(updatedDesc, descForCb);
         reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
     } else {
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);

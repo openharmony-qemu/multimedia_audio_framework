@@ -47,6 +47,8 @@ public:
         AudioStreamInfo &streamInfo, bool isReloadProcess);
     uint32_t GenerateSessionId();
     int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config);
+    int32_t SetRendererTarget(uint32_t target, uint32_t lastTarget, uint32_t sessionId);
+    int32_t StartInjection(uint32_t sessionId);
 private:
     CoreServiceHandler();
     sptr<ICoreServiceProviderIpc> iCoreServiceProvider_ = nullptr;

@@ -142,6 +142,11 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
             break;
         case AUDIO_RECORD_CAPTURE:
             audioStateManager_.SetPreferredRecordCaptureDevice(desc);
+            {
+                RecordDeviceInfo info {.uid_ = uid, .activeSelectedDevice_ = desc};
+                AudioUsrSelectManager::GetAudioUsrSelectManager().UpdateRecordDeviceInfo(
+                    UpdateType::SYSTEM_SELECT, info);
+            }
             break;
         case AUDIO_RING_RENDER:
         case AUDIO_TONE_RENDER:
@@ -185,9 +190,13 @@ void AudioPolicyUtils::ClearScoDeviceSuspendState(std::string macAddress)
 {
     AUDIO_DEBUG_LOG("Clear sco suspend state %{public}s", GetEncryptAddr(macAddress).c_str());
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = audioDeviceManager_.GetDevicesByFilter(
-        DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_ROLE_NONE, macAddress, "", SUSPEND_CONNECTED);
+        DEVICE_TYPE_NONE, DEVICE_ROLE_NONE, macAddress, "", SUSPEND_CONNECTED);
     for (const auto &desc : descs) {
-        desc->connectState_ = DEACTIVE_CONNECTED;
+        if (desc->deviceType_ == DEVICE_TYPE_NEARLINK || desc->deviceType_  == DEVICE_TYPE_NEARLINK_IN) {
+            desc->connectState_ = CONNECTED;
+        } else if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+            desc->connectState_ = DEACTIVE_CONNECTED;
+        }
     }
 }
 
@@ -341,6 +350,9 @@ std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType, uint32_t 
             } else {
                 portName = PRIMARY_MIC;
             }
+            break;
+        case DeviceType::DEVICE_TYPE_BT_SPP:
+            portName = VIRTUAL_AUDIO;
             break;
         case InternalDeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
             portName = USB_MIC;

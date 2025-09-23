@@ -179,6 +179,7 @@ private:
     int32_t HandleA2dpAbsVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType curDeviceType);
     int32_t HandleNearlinkDeviceAbsVolume(AudioStreamType streamType, int32_t volumeLevel,
         DeviceType curDeviceType);
+    void CancelSafeVolumeNotificationWhenSwitchDevice();
 private:
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
     volatile Volume *volumeVector_ = nullptr;
@@ -219,8 +220,8 @@ private:
     std::mutex notifyMutex_;
     int32_t btRestoreVol_ = 0;
     int32_t wiredRestoreVol_ = 0;
-    bool restoreNIsShowing_ = false;
-    bool increaseNIsShowing_ = false;
+    std::atomic<bool> restoreNIsShowing_ = false;
+    std::atomic<bool> increaseNIsShowing_ = false;
 
     std::mutex defaultDeviceLoadMutex_;
     std::atomic<bool> isPrimaryMicModuleInfoLoaded_ = false;

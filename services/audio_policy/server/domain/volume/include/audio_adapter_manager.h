@@ -229,6 +229,8 @@ public:
 
     void NotifyAccountsChanged(const int &id);
 
+    void MuteMediaWhenAccountsChanged();
+
     void SafeVolumeDump(std::string &dumpString);
 
     int32_t DoRestoreData();
@@ -259,7 +261,7 @@ public:
     void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel,
         std::string networkId);
 
-    void HandleStreamMuteStatus(AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
+    void HandleStreamMuteStatus(AudioStreamType streamType, bool mute,
         const DeviceType &deviceType = DEVICE_TYPE_NONE, std::string networkId = LOCAL_NETWORK_ID);
 
     void HandleRingerMode(AudioRingerMode ringerMode);
@@ -306,6 +308,13 @@ public:
     void SaveSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel);
     int32_t GetSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType);
     int32_t SetSystemVolumeToEffect(AudioStreamType streamType, float volume);
+    void SaveSystemVolumeForSwitchDevice(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel);
+    int32_t AddCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
+        const SourceType &sourceType);
+    int32_t RemoveCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
+        const SourceType &sourceType);
+    int32_t AddCaptureInjector();
+    int32_t RemoveCaptureInjector();
 private:
     friend class PolicyCallbackImpl;
 

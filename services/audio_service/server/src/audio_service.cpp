@@ -1473,12 +1473,12 @@ void AudioService::SetNonInterruptMuteForProcess(const uint32_t sessionId, const
     for (auto paired : linkedPairedList_) {
         if (paired.first == nullptr) {
             AUDIO_ERR_LOG("processInServer is nullptr");
-            return;
+            continue;
         }
         if (paired.first->GetSessionId() == sessionId) {
             AUDIO_INFO_LOG("linkedPairedList_ has sessionId");
             paired.first->SetNonInterruptMute(muteFlag);
-            return;
+            break;
         }
     }
     processListLock.unlock();
@@ -2096,6 +2096,16 @@ int32_t AudioService::DisableDualStream(const uint32_t sessionId)
 
     AUDIO_ERR_LOG("%{public}u failed", sessionId);
     return ERR_OPERATION_FAILED;
+}
+
+std::shared_ptr<AudioEndpoint> AudioService::GetEndPointByType(AudioEndpoint::EndpointType type)
+{
+    for (auto pair : endpointList_) {
+        if (pair.second->GetEndpointType() == type) {
+            return pair.second;
+        }
+    }
+    return nullptr;
 }
 } // namespace AudioStandard
 } // namespace OHOS

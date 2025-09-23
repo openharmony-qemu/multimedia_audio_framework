@@ -198,6 +198,8 @@ public:
 
     virtual void NotifyAccountsChanged(const int &id) = 0;
 
+    virtual void MuteMediaWhenAccountsChanged() = 0;
+
     virtual int32_t GetCurActivateCount() const = 0;
 
     virtual void HandleKvData(bool isFirstBoot) = 0;
@@ -210,7 +212,6 @@ public:
         std::string networkId) = 0;
 
     virtual void HandleStreamMuteStatus(AudioStreamType streamType, bool mute,
-        StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
         const DeviceType &deviceType = DEVICE_TYPE_NONE,
         std::string networkId = LOCAL_NETWORK_ID) = 0;
 
@@ -263,6 +264,13 @@ public:
 
     virtual float CalculateVolumeDbNonlinear(AudioStreamType streamType, DeviceType deviceType,
         int32_t volumeLevel) = 0;
+    
+    virtual int32_t AddCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
+        const SourceType &sourceType) = 0;
+    virtual int32_t RemoveCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
+        const SourceType &sourceType) = 0;
+    virtual int32_t AddCaptureInjector() = 0;
+    virtual int32_t RemoveCaptureInjector() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

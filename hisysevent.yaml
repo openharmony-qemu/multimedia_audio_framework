@@ -333,6 +333,17 @@ MOVE_STREAM_EXCEPTION:
   STREAM_TYPE: {type: UINT32, desc: stream type}
   ERROR_DESCRIPTION: {type: STRING, desc: error description}
 
+DESIGNATE_AUDIO_CAPTURE_DEVICE:
+  __BASE: {type: STATISTIC, level: CRITICAL, desc: designate  voice recognition audio capture device}
+  APP_NAME: {type: STRING, arrsize: 100, desc: application/process name}
+  STREAM_TYPE: {type: UINT8, arrsize: 100, desc: source type of audio capture stream}
+  DEVICE_TYPE: {type: UINT8, arrsize: 100, desc: audio device type}
+
+INCORRECT_SELECT_BT_SPP_DEVICE:
+  __BASE: {type: FAULT, level: CRITICAL, desc: incorrect selection of BT_SPP device during non-voice recognition}
+  APP_NAME: {type: STRING, arrsize: 100, desc: application/process name}
+  STREAM_TYPE: {type: UINT8, arrsize: 100, desc: source type of audio capture stream}
+
 VOLUME_API_INVOKE:
   __BASE: {type: STATISTIC, level: CRITICAL, desc: Ivocation of volume-related APIs}
   APP_NAME: {type: STRING, desc: application name}

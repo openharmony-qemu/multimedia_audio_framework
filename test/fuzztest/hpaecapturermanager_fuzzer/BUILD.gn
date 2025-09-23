@@ -24,6 +24,7 @@ ohos_fuzztest("HpaeCapturerManagerFuzzTest") {
     "../../../frameworks/native/audioschedule/include",
     "../../../frameworks/native/hdiadapter_new/include/manager",
     "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../services/audio_service/common/include/limiter",
     "../../../services/audio_service/server/include",
     "../../../services/audio_engine/buffer",
     "../../../services/audio_engine/manager/include",

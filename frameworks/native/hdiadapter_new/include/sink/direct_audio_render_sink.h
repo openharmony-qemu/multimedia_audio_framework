@@ -19,6 +19,7 @@
 #include "sink/i_audio_render_sink.h"
 #include <iostream>
 #include <cstring>
+#include <thread>
 #include "v5_0/iaudio_manager.h"
 #include "audio_utils.h"
 #include "util/audio_running_lock.h"
@@ -125,6 +126,7 @@ private:
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
     std::mutex sinkMutex_;
+    std::thread testThread_;
 };
 
 } // namespace AudioStandard

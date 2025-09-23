@@ -87,6 +87,13 @@
         }                                              \
     } while (0)
 
+#define RETURN_RET_IF(cond, ret)                       \
+    do {                                               \
+        if ((cond)) {                                  \
+            return ret;                                \
+        }                                              \
+    } while (0)
+
 #define CHECK_AND_CONTINUE(cond)                       \
     if (1) {                                           \
         if (!(cond)) {                                 \

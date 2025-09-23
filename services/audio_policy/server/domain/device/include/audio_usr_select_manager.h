@@ -31,6 +31,24 @@ namespace OHOS {
 namespace AudioStandard {
 typedef std::shared_ptr<AudioDeviceDescriptor> AudioDevicePtr;
 
+enum UpdateType {
+    START_CLIENT,
+    APP_SELECT,
+    SYSTEM_SELECT,
+    APP_PREFER,
+    STOP_CLIENT,
+    RELEASE_CLIENT,
+};
+
+struct RecordDeviceInfo {
+    int32_t uid_{-1};
+    SourceType sourceType_{SourceType::SOURCE_TYPE_INVALID};
+    AudioDevicePtr selectedDevice_{std::make_shared<AudioDeviceDescriptor>()};
+    AudioDevicePtr activeSelectedDevice_{std::make_shared<AudioDeviceDescriptor>()};
+    BluetoothAndNearlinkPreferredRecordCategory appPreferredCategory_{
+        BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE};
+};
+
 class AudioUsrSelectManager {
 public:
     static AudioUsrSelectManager& GetAudioUsrSelectManager()
@@ -42,29 +60,27 @@ public:
     // Set media render device selected by the user
     bool SelectInputDeviceByUid(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, int32_t uid);
     std::shared_ptr<AudioDeviceDescriptor> GetSelectedInputDeviceByUid(int32_t uid);
-    void ClearSelectedInputDeviceByUid(int32_t uid);
-    void PreferBluetoothAndNearlinkRecordByUid(int32_t uid, BluetoothAndNearlinkPreferredRecordCategory category);
     BluetoothAndNearlinkPreferredRecordCategory GetPreferBluetoothAndNearlinkRecordByUid(int32_t uid);
-    void EnableSelectInputDevice(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &inputStreamDescs);
-    void DisableSelectInputDevice();
     std::shared_ptr<AudioDeviceDescriptor> GetCapturerDevice(int32_t uid, SourceType sourceType);
+    void UpdateRecordDeviceInfo(UpdateType updateType, RecordDeviceInfo info);
+    void UpdateAppIsBackState(int32_t uid, AppIsBackState appState);
 
 private:
     AudioUsrSelectManager() {};
     ~AudioUsrSelectManager() {};
 
-    std::list<std::pair<int32_t, AudioDevicePtr>>::iterator findDevice(int32_t uid);
-    int32_t GetRealUid(const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     std::shared_ptr<AudioDeviceDescriptor> JudgeFinalSelectDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc,
         SourceType sourceType, BluetoothAndNearlinkPreferredRecordCategory category);
     std::shared_ptr<AudioDeviceDescriptor> GetPreferDevice();
+    int32_t GetIdFromRecordDeviceInfoList(int32_t uid);
+    void UpdateRecordDeviceInfoForStartInner(int32_t index, RecordDeviceInfo info);
+    void UpdateRecordDeviceInfoForSelectInner(int32_t index, RecordDeviceInfo info);
+    void UpdateRecordDeviceInfoForPreferInner(int32_t index, RecordDeviceInfo info);
+    void UpdateRecordDeviceInfoForStopInner(int32_t index);
 
-    std::list<std::pair<int32_t, AudioDevicePtr>> selectedDevices_;
-    std::list<int32_t> isPreferredBluetoothAndNearlinkRecord_;
-    std::unordered_map<int32_t, BluetoothAndNearlinkPreferredRecordCategory> categoryMap_;
-    AudioDevicePtr capturerDevice_ = nullptr;
-    bool isEnabled_ = false;
     std::mutex mutex_;
+    std::vector<RecordDeviceInfo> recordDeviceInfoList_;
+    std::map<int32_t, AppIsBackState> appIsBackStatesMap_;
 };
 
 } // namespace AudioStandard

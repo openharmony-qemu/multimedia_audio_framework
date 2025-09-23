@@ -39,6 +39,8 @@ public:
     virtual int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config) = 0;
 
     virtual ~ICoreServiceProvider() = default;
+    virtual int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId) = 0;
+    virtual int32_t StartInjection(uint32_t sessionId) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -166,6 +166,124 @@ HWTEST_F(AudioCoreServiceUnitTest, CreateCapturerClient_001, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioCoreService.
+* @tc.number: CreateCapturerClient_002
+* @tc.desc  : Test CreateCapturerClient - Create stream with (S32 48k STEREO) will be successful..
+*/
+HWTEST_F(AudioCoreServiceUnitTest, CreateCapturerClient_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest CreateCapturerClient_002 start");
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
+    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MOVIE;
+
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->callerUid_ = getuid();
+    uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
+    uint32_t sessionId = 0;
+
+    auto result = GetServerPtr()->eventEntry_->CreateCapturerClient(streamDesc, flag, sessionId);
+
+    EXPECT_NE(sessionId, 0);
+    EXPECT_EQ(result, SUCCESS);
+
+    EXPECT_FALSE(streamDesc->newDeviceDescs_.empty());
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: CreateCapturerClient_003
+* @tc.desc  : Test CreateCapturerClient - Create stream with (S32 48k STEREO) will be successful..
+*/
+HWTEST_F(AudioCoreServiceUnitTest, CreateCapturerClient_003, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest CreateCapturerClient_003 start");
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
+    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MOVIE;
+
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->callerUid_ = getuid();
+    uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
+    uint32_t originalSessionId = 1;
+    auto result = GetServerPtr()->eventEntry_->CreateCapturerClient(streamDesc, flag, originalSessionId);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: SetPreferredInputDeviceIfValid_001
+* @tc.desc  : Test CreateCapturerClient - Create stream with (S32 48k STEREO) will be successful..
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetPreferredInputDeviceIfValid_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->preferredInputDevice.deviceType_ = DEVICE_TYPE_INVALID;
+    streamDesc->sessionId_ = 1;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+
+    AudioCoreService audioCoreService;
+
+    EXPECT_NO_THROW(audioCoreService.SetPreferredInputDeviceIfValid(streamDesc));
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: SetPreferredInputDeviceIfValid_002
+* @tc.desc  : Test CreateCapturerClient - Create stream with (S32 48k STEREO) will be successful..
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetPreferredInputDeviceIfValid_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->preferredInputDevice.deviceType_ = DEVICE_TYPE_BT_SPP;
+    streamDesc->sessionId_ = 1;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_INVALID;
+
+    AudioCoreService audioCoreService;
+
+    EXPECT_NO_THROW(audioCoreService.SetPreferredInputDeviceIfValid(streamDesc));
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: WriteDesignateAudioCaptureDeviceEvent_001
+* @tc.desc  : Test CreateCapturerClient - Create stream with (S32 48k STEREO) will be successful..
+*/
+HWTEST_F(AudioCoreServiceUnitTest, WriteDesignateAudioCaptureDeviceEvent_001, TestSize.Level1)
+{
+    AudioCoreService service;
+    int32_t clientUID = 1;
+    SourceType sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    int32_t deviceType = 0;
+
+    EXPECT_NO_THROW(service.WriteDesignateAudioCaptureDeviceEvent(clientUID, sourceType, deviceType));
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: WriteIncorrectSelectBTSPPEvent_001
+* @tc.desc  : Test CreateCapturerClient - Create stream with (S32 48k STEREO) will be successful..
+*/
+HWTEST_F(AudioCoreServiceUnitTest, WriteIncorrectSelectBTSPPEvent_001, TestSize.Level1)
+{
+    AudioCoreService service;
+    int32_t clientUID = 1;
+    SourceType sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+
+    EXPECT_NO_THROW(service.WriteIncorrectSelectBTSPPEvent(clientUID, sourceType));
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
 * @tc.number: SetDefaultOutputDevice_001
 * @tc.desc  : Test SetDefaultOutputDevice - Set DEVICE_TYPE_SPEAKER as default device to nonexistent session.
 */
@@ -590,6 +708,23 @@ HWTEST_F(AudioCoreServiceUnitTest, SetDisplayName_001, TestSize.Level1)
     isLocalDevice = false;
     GetServerPtr()->coreService_->audioConnectedDevice_.SetDisplayName("deviceY", isLocalDevice);
     GetServerPtr()->coreService_->audioConnectedDevice_.SetDisplayName("deviceZ", isLocalDevice);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: HandleNearlinkErrResult_001
+* @tc.desc  : Test HandleNearlinkErrResult
+*/
+HWTEST_F(AudioCoreServiceUnitTest, HandleNearlinkErrResult_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest HandleNearlinkErrResult_001 start");
+    auto coreSvc = AudioCoreService::GetCoreService();
+    int32_t result = 200;
+    auto devDesc = make_shared<AudioDeviceDescriptor>();
+    coreSvc->HandleNearlinkErrResult(result, devDesc);
+    result = 404;
+    coreSvc->HandleNearlinkErrResult(result, devDesc);
+    EXPECT_NE(devDesc, nullptr);
 }
 
 /**
@@ -1519,6 +1654,36 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_0
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateRingerOrAlarmerDualDeviceOutputRouter_004 end");
 }
 
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: UpdateRingerOrAlarmerDualDeviceOutputRouter_005
+* @tc.desc  : Test UpdateRingerOrAlarmerDualDeviceOutputRouter() when device type is error
+*/
+HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_005, TestSize.Level4)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateRingerOrAlarmerDualDeviceOutputRouter_005 start");
+
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    ASSERT_NE(audioDeviceDescriptor, nullptr);
+
+    audioCoreService->SetRingerMode(AudioRingerMode::RINGER_MODE_SILENT);
+
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_REMOTE_CAST;
+    streamDesc->newDeviceDescs_.push_back(std::move(audioDeviceDescriptor));
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_ALARM;
+
+    audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
+
+    EXPECT_EQ(audioCoreService->audioVolumeManager_.IsRingerModeMute(), false);
+
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateRingerOrAlarmerDualDeviceOutputRouter_005 end");
+}
 
 /**
 * @tc.name  : Test AudioCoreService
@@ -1610,6 +1775,53 @@ HWTEST_F(AudioCoreServiceUnitTest, SetSleVoiceStatusFlag_001, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
     ret = audioCoreService->SetSleVoiceStatusFlag(AUDIO_SCENE_PHONE_CALL);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: SetRendererTarget_001
+* @tc.desc  : wzwzwz
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetRendererTarget_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_EQ(audioCoreService, nullptr);
+    int32_t ret = ERROR;
+    ret = audioCoreService->SetRendererTarget(NORMAL_PLAYBACK, INJECT_TO_VOICE_COMMUNICATION_CAPTURE, 1111);
+    EXPECT_NE(ret, SUCCESS);
+    ret = audioCoreService->SetRendererTarget(NORMAL_PLAYBACK, NORMAL_PLAYBACK, 1111);
+    EXPECT_NE(ret, SUCCESS);
+    ret = audioCoreService->SetRendererTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, NORMAL_PLAYBACK, 1111);
+    EXPECT_NE(ret, SUCCESS);
+    ret = audioCoreService->SetRendererTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE,
+        INJECT_TO_VOICE_COMMUNICATION_CAPTURE, 1111);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: StartInjection_001
+* @tc.desc  : wzwzwz
+*/
+HWTEST_F(AudioCoreServiceUnitTest, StartInjection_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    int32_t ret = audioCoreService->StartInjection(1111);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: PlayBackToInjection_001
+* @tc.desc  : wzwzwz
+*/
+HWTEST_F(AudioCoreServiceUnitTest, PlayBackToInjection_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    int32_t ret = audioCoreService->PlayBackToInjection(1111);
+    EXPECT_NE(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

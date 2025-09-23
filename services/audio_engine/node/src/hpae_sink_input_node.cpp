@@ -35,7 +35,6 @@ const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
 static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 static constexpr uint32_t FRAME_LEN_100MS = 100;
 static constexpr uint32_t FRAME_LEN_20MS = 20;
-constexpr int32_t STANDBY_THRESHOLD = 9; // 9 standby is about 40ms
 
 HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo),
@@ -314,8 +313,8 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
     auto writeCallback = writeCallback_.lock();
     CHECK_AND_RETURN_RET_LOG(writeCallback, ERROR, "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
     bool needData = !(historyBuffer_ && historyBuffer_->GetCurFrames()) && isPullData;
-    // offload enbale, underrun 9 times, request force write data; 9 times about 40ms
-    bool forceData = offloadEnable_ ? (standbyCounter_ > STANDBY_THRESHOLD ? true : false) : true;
+    // offload enbale, never force data
+    bool forceData = offloadEnable_ ? false : true;
     uint64_t latency = 0;
     auto nodeCallback = GetNodeStatusCallback().lock();
     if (nodeCallback) {

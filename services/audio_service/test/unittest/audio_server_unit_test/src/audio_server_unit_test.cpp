@@ -774,6 +774,10 @@ HWTEST_F(AudioServerUnitTest, AudioServerCheckRecorderPermission_001, TestSize.L
     ret = audioServer->CheckRecorderPermission(config);
     EXPECT_TRUE(ret);
 
+    config.capturerInfo.sourceType = SOURCE_TYPE_VOICE_TRANSCRIPTION;
+    ret = audioServer->CheckRecorderPermission(config);
+    EXPECT_TRUE(ret);
+
     config.appInfo.appUid = 0;
     ret = audioServer->CheckRecorderPermission(config);
     EXPECT_TRUE(ret);

@@ -521,6 +521,7 @@ void AudioRenderSink::UpdateNearlinkOutputRoute(void)
     AUDIO_INFO_LOG("update nearlink output route");
     std::vector<DeviceType> outputDevices;
     outputDevices.push_back(currentActiveDevice_);
+    currentDevicesSize_ = static_cast<int32_t>(outputDevices.size());
     DoSetOutputRoute(outputDevices);
 }
 

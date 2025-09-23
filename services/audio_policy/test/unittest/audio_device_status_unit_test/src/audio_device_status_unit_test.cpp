@@ -662,19 +662,100 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_025, TestSize.Level1)
 }
 
 /**
-* @tc.name : Test AudioDeviceStatus.
-* @tc.number: AudioDeviceStatus_026
-* @tc.desc : Test HandleLocalDeviceConnected interface.
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: HandleLocalDeviceConnected_001
+* @tc.desc  : Test HandleLocalDeviceConnected virtual connected DEVICE_TYPE_BLUETOOTH_A2DP.
 */
-HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_026, TestSize.Level1)
+HWTEST_F(AudioDeviceStatusUnitTest, HandleLocalDeviceConnected_001, TestSize.Level1)
 {
-    AudioDeviceDescriptor updatedDesc;
-    int32_t result;
+    AudioDeviceStatus &audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    audioDeviceStatus.audioDeviceManager_.connectedDevices_.clear();
 
-    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
-    updatedDesc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    desc.macAddress_ = "00:11:22:33:44:55";
+    desc.connectState_ = VIRTUAL_CONNECTED;
 
-    result = audioDeviceStatus.HandleLocalDeviceConnected(updatedDesc);
+    int32_t result = audioDeviceStatus.HandleLocalDeviceConnected(desc);
+    audioDeviceStatus.audioDeviceManager_.connectedDevices_.clear();
+
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: HandleLocalDeviceConnected_002
+* @tc.desc  : Test HandleLocalDeviceConnected first connected DEVICE_TYPE_BLUETOOTH_A2DP.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, HandleLocalDeviceConnected_002, TestSize.Level1)
+{
+    AudioDeviceStatus &audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    audioDeviceStatus.audioDeviceManager_.connectedDevices_.clear();
+
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    desc.macAddress_ = "00:11:22:33:44:55";
+    desc.connectState_ = CONNECTED;
+
+    int32_t result = audioDeviceStatus.HandleLocalDeviceConnected(desc);
+    audioDeviceStatus.audioDeviceManager_.connectedDevices_.clear();
+
+    EXPECT_NE(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: HandleLocalDeviceConnected_003
+* @tc.desc  : Test HandleLocalDeviceConnected first connected DEVICE_TYPE_BLUETOOTH_A2DP.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, HandleLocalDeviceConnected_003, TestSize.Level1)
+{
+    AudioDeviceStatus &audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    audioDeviceStatus.audioDeviceManager_.connectedDevices_.clear();
+
+    AudioDeviceDescriptor descA;
+    descA.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    descA.macAddress_ = "00:11:22:33:44:55";
+    descA.connectState_ = VIRTUAL_CONNECTED;
+    audioDeviceStatus.audioDeviceManager_.connectedDevices_.push_back(
+        std::make_shared<AudioDeviceDescriptor>(descA));
+
+    AudioDeviceDescriptor descB;
+    descB.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    descB.macAddress_ = "11:22:33:44:55:66";
+    descB.connectState_ = CONNECTED;
+
+    int32_t result = audioDeviceStatus.HandleLocalDeviceConnected(descB);
+    audioDeviceStatus.audioDeviceManager_.connectedDevices_.clear();
+
+    EXPECT_NE(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: HandleLocalDeviceConnected_004
+* @tc.desc  : Test HandleLocalDeviceConnected second connected DEVICE_TYPE_BLUETOOTH_A2DP.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, HandleLocalDeviceConnected_004, TestSize.Level1)
+{
+    AudioDeviceStatus &audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    audioDeviceStatus.audioDeviceManager_.connectedDevices_.clear();
+
+    AudioDeviceDescriptor descA;
+    descA.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    descA.macAddress_ = "00:11:22:33:44:55";
+    descA.connectState_ = CONNECTED;
+    audioDeviceStatus.audioDeviceManager_.connectedDevices_.push_back(
+        std::make_shared<AudioDeviceDescriptor>(descA));
+
+    AudioDeviceDescriptor descB;
+    descB.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    descB.macAddress_ = "11:22:33:44:55:66";
+    descB.connectState_ = CONNECTED;
+
+    int32_t result = audioDeviceStatus.HandleLocalDeviceConnected(descB);
+    audioDeviceStatus.audioDeviceManager_.connectedDevices_.clear();
+
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -750,10 +831,10 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_070, TestSize.Level1)
 
 /**
 * @tc.name : Test AudioDeviceStatus.
-* @tc.number: HandleLocalDeviceConnected_001
+* @tc.number: HandleLocalDeviceConnected_005
 * @tc.desc : Test HandleLocalDeviceConnected interface.
 */
-HWTEST_F(AudioDeviceStatusUnitTest, HandleLocalDeviceConnected_001, TestSize.Level1)
+HWTEST_F(AudioDeviceStatusUnitTest, HandleLocalDeviceConnected_005, TestSize.Level1)
 {
     AudioDeviceDescriptor updatedDesc;
     int32_t result;
@@ -1640,6 +1721,29 @@ HWTEST_F(AudioDeviceStatusUnitTest, GetPaIndexByPortName_001, TestSize.Level1)
     audioDeviceStatus.audioIOHandleMap_.AddIOHandleInfo(portName, moduleId);
     uint32_t ret = audioDeviceStatus.GetPaIndexByPortName(portName);
     EXPECT_NE(ret, moduleId);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: UpdateNearlinkDeviceVolume_001
+* @tc.desc  : Test UpdateNearlinkDeviceVolume interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, UpdateNearlinkDeviceVolume_001, TestSize.Level1)
+{
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    desc.deviceCategory_ = CATEGORY_DEFAULT;
+    desc.macAddress_ = "";
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    int32_t result;
+    VolumeUtils::SetPCVolumeEnable(true);
+    result = audioDeviceStatus.UpdateNearlinkDeviceVolume(desc);
+    EXPECT_EQ(result, SUCCESS);
+
+    VolumeUtils::SetPCVolumeEnable(false);
+    result = audioDeviceStatus.UpdateNearlinkDeviceVolume(desc);
+    EXPECT_EQ(result, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

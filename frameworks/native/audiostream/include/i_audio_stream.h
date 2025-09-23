@@ -112,6 +112,7 @@ public:
         std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePairWithSpeed = {
             Timestamp::Timestampbase::BASESIZE, {0, 0}
         };
+        RenderTarget target = NORMAL_PLAYBACK;
     };
 
     virtual ~IAudioStream() = default;
@@ -180,6 +181,8 @@ public:
     virtual int32_t SetSpeed(float speed) = 0;
     virtual int32_t SetPitch(float pitch) = 0;
     virtual float GetSpeed() = 0;
+    virtual int32_t SetRenderTarget(RenderTarget target) { return 0; }
+    virtual RenderTarget GetRenderTarget() { return NORMAL_PLAYBACK; }
 
     virtual void SetUnderflowCount(uint32_t underflowCount) = 0;
     virtual void SetOverflowCount(uint32_t overflowCount) = 0;
