@@ -1819,4 +1819,183 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_002, 
     offloadManager->SetCurrentNode();
     EXPECT_NE(offloadManager->curNode_, nullptr);
 }
+
+/**
+ * @tc.name  : Test OneStreamEnableBypassOnUnderrun_RemoteDevice
+ * @tc.type  : FUNC
+ * @tc.number: OneStreamEnableBypassOnUnderrun_001
+ * @tc.desc  : Test OneStreamEnableBypassOnUnderrun when device class is remote, should do nothing.
+ */
+HWTEST_F(HpaeRendererManagerTest, OneStreamEnableBypassOnUnderrun_001, TestSize.Level1)
+{
+    sinkInfo_.deviceClass = "remote";
+    appsUid_ = {123};
+    enableBypassOnUnderrun_ = true;
+    
+    auto node = CreateTestNode(HPAE_SESSION_RUNNING);
+    sinkInputNodeMap_[1] = node;
+    
+    OneStreamEnableBypassOnUnderrun();
+    
+    EXPECT_FALSE(node->bypassOnUnderrun_);
+}
+
+/**
+ * @tc.name  : Test OneStreamEnableBypassOnUnderrun_MultipleApps
+ * @tc.type  : FUNC
+ * @tc.number: OneStreamEnableBypassOnUnderrun_002
+ * @tc.desc  : Test OneStreamEnableBypassOnUnderrun when multiple apps exist, should not set bypass.
+ */
+HWTEST_F(HpaeRendererManagerTest, OneStreamEnableBypassOnUnderrun_002, TestSize.Level1)
+{
+    sinkInfo_.deviceClass = "local";
+    appsUid_ = {123, 456};
+    enableBypassOnUnderrun_ = true;
+    
+    auto node = CreateTestNode(HPAE_SESSION_RUNNING);
+    sinkInputNodeMap_[1] = node;
+    
+    OneStreamEnableBypassOnUnderrun();
+    
+    EXPECT_FALSE(node->bypassOnUnderrun_);
+}
+
+/**
+ * @tc.name  : Test OneStreamEnableBypassOnUnderrun_BypassDisabled
+ * @tc.type  : FUNC
+ * @tc.number: OneStreamEnableBypassOnUnderrun_003
+ * @tc.desc  : Test OneStreamEnableBypassOnUnderrun when bypass is disabled, should not set bypass.
+ */
+HWTEST_F(HpaeRendererManagerTest, OneStreamEnableBypassOnUnderrun_003, TestSize.Level1)
+{
+    sinkInfo_.deviceClass = "local";
+    appsUid_ = {123};
+    enableBypassOnUnderrun_ = false;
+    
+    auto node = CreateTestNode(HPAE_SESSION_RUNNING);
+    sinkInputNodeMap_[1] = node;
+    
+    OneStreamEnableBypassOnUnderrun();
+    
+    EXPECT_FALSE(node->bypassOnUnderrun_);
+}
+
+/**
+ * @tc.name  : Test OneStreamEnableBypassOnUnderrun_ValidCondition
+ * @tc.type  : FUNC
+ * @tc.number: OneStreamEnableBypassOnUnderrun_004
+ * @tc.desc  : Test OneStreamEnableBypassOnUnderrun with valid condition, should set bypass for running nodes only.
+ */
+HWTEST_F(HpaeRendererManagerTest, OneStreamEnableBypassOnUnderrun_004, TestSize.Level1)
+{
+    sinkInfo_.deviceClass = "local";
+    appsUid_ = {123};
+    enableBypassOnUnderrun_ = true;
+    
+    auto runningNode = CreateTestNode(HPAE_SESSION_RUNNING);
+    auto pausedNode = CreateTestNode(HPAE_SESSION_PAUSED);
+    
+    sinkInputNodeMap_[1] = runningNode;
+    sinkInputNodeMap_[2] = pausedNode;
+    
+    OneStreamEnableBypassOnUnderrun();
+    
+    EXPECT_TRUE(runningnode->bypassOnUnderrun_);
+    EXPECT_FALSE(pausednode->bypassOnUnderrun_);
+}
+
+/**
+ * @tc.name  : Test SleepIfBypassOnUnderrun_RemoteDevice
+ * @tc.type  : FUNC
+ * @tc.number: SleepIfBypassOnUnderrun_001
+ * @tc.desc  : Test SleepIfBypassOnUnderrun when device class is remote, should do nothing.
+ */
+HWTEST_F(HpaeRendererManagerTest, SleepIfBypassOnUnderrun_001, TestSize.Level1)
+{
+    sinkInfo_.deviceClass = "remote";
+    outputCluster_->SetProcessBypassed(true);
+    lastOnUnderrunTime_ = 1000;
+    
+    SleepIfBypassOnUnderrun();
+    
+    EXPECT_EQ(lastOnUnderrunTime_, 1000);
+}
+
+/**
+ * @tc.name  : Test SleepIfBypassOnUnderrun_NotBypassed
+ * @tc.type  : FUNC
+ * @tc.number: SleepIfBypassOnUnderrun_002
+ * @tc.desc  : Test SleepIfBypassOnUnderrun when not bypassed, should reset state.
+ */
+HWTEST_F(HpaeRendererManagerTest, SleepIfBypassOnUnderrun_002, TestSize.Level1)
+{
+    sinkInfo_.deviceClass = "local";
+    outputCluster_->SetProcessBypassed(false);
+    lastOnUnderrunTime_ = 1000;
+    
+    SleepIfBypassOnUnderrun();
+    
+    EXPECT_EQ(lastOnUnderrunTime_, 0);
+    EXPECT_TRUE(enableBypassOnUnderrun_);
+}
+
+/**
+ * @tc.name  : Test SleepIfBypassOnUnderrun_BypassedNegativeSleepTime
+ * @tc.type  : FUNC
+ * @tc.number: SleepIfBypassOnUnderrun_003
+ * @tc.desc  : Test SleepIfBypassOnUnderrun when bypassed with negative sleep time, should not sleep.
+ */
+HWTEST_F(HpaeRendererManagerTest, SleepIfBypassOnUnderrun_003, TestSize.Level1)
+{
+    sinkInfo_.deviceClass = "local";
+    outputCluster_->SetProcessBypassed(true);
+    
+    // Set lastOnUnderrunTime_ to long ago so sleep time becomes negative
+    mockClock_->SetCurrentTime(ClockTime::GetCurNano());
+    lastOnUnderrunTime_ = mockClock_->GetCurNano() - UNDERRUN_BYPASS_DURATION_NS - 1000;
+    
+    SleepIfBypassOnUnderrun();
+    
+    EXPECT_FALSE(enableBypassOnUnderrun_);
+}
+
+/**
+ * @tc.name  : Test SleepIfBypassOnUnderrun_BypassedPositiveSleepTime
+ * @tc.type  : FUNC
+ * @tc.number: SleepIfBypassOnUnderrun_004
+ * @tc.desc  : Test SleepIfBypassOnUnderrun when bypassed with positive sleep time, should sleep.
+ */
+HWTEST_F(HpaeRendererManagerTest, SleepIfBypassOnUnderrun_004, TestSize.Level1)
+{
+    sinkInfo_.deviceClass = "local";
+    outputCluster_->SetProcessBypassed(true);
+    
+    // Set lastOnUnderrunTime_ to recent time so sleep time is positive
+    mockClock_->SetCurrentTime(ClockTime::GetCurNano());
+    lastOnUnderrunTime_ = mockClock_->GetCurNano() - UNDERRUN_BYPASS_DURATION_NS / 2;
+    
+    SleepIfBypassOnUnderrun();
+    
+    EXPECT_TRUE(enableBypassOnUnderrun_);
+}
+
+/**
+ * @tc.name  : Test SleepIfBypassOnUnderrun_FirstTimeBypass
+ * @tc.type  : FUNC
+ * @tc.number: SleepIfBypassOnUnderrun_005
+ * @tc.desc  : Test SleepIfBypassOnUnderrun when first time bypassed, should set lastOnUnderrunTime_.
+ */
+HWTEST_F(HpaeRendererManagerTest, SleepIfBypassOnUnderrun_005, TestSize.Level1)
+{
+    sinkInfo_.deviceClass = "local";
+    outputCluster_->SetProcessBypassed(true);
+    lastOnUnderrunTime_ = 0;
+    
+    int64_t beforeTime = mockClock_->GetCurNano();
+    
+    SleepIfBypassOnUnderrun();
+    
+    EXPECT_GE(lastOnUnderrunTime_, beforeTime);
+    EXPECT_LE(lastOnUnderrunTime_, mockClock_->GetCurNano());
+}
 }  // namespace

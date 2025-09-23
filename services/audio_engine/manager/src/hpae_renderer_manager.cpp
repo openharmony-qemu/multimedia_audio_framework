@@ -1463,14 +1463,6 @@ void HpaeRendererManager::OneStreamEnableBypassOnUnderrun()
     }
 }
 
-void HpaeRendererManager::ResetAllBypassFlags()
-{
-    CHECK_AND_RETURN(sinkInfo_.deviceClass != "remote");
-    for (auto [id, node] : sinkInputNodeMap_) {
-        node->SetBypassOnUnderrun(false);
-    }
-}
-
 void HpaeRendererManager::SleepIfBypassOnUnderrun()
 {
     CHECK_AND_RETURN(sinkInfo_.deviceClass != "remote");
@@ -1485,6 +1477,14 @@ void HpaeRendererManager::SleepIfBypassOnUnderrun()
     } else {
         lastOnUnderrunTime_ = 0;
         enableBypassOnUnderrun_ = true;
+    }
+}
+
+void HpaeRendererManager::ResetAllBypassFlags()
+{
+    CHECK_AND_RETURN(sinkInfo_.deviceClass != "remote");
+    for (auto [id, node] : sinkInputNodeMap_) {
+        node->SetBypassOnUnderrun(false);
     }
 }
 }  // namespace HPAE
