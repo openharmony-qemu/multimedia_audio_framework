@@ -75,7 +75,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::GetCapturerDevice(
 
     int index = GetIdFromRecordDeviceInfoList(uid);
     std::shared_ptr<AudioDeviceDescriptor> capturerDevice = std::make_shared<AudioDeviceDescriptor>();
-    CHECK_AND_RETURN_RET(!recordDeviceInfoList_.empty(), capturerDevice);
+    CHECK_AND_RETURN_RET(index > 0 && !recordDeviceInfoList_.empty(), capturerDevice);
     CHECK_AND_RETURN_RET(recordDeviceInfoList_[0].sourceType_ != SourceType::SOURCE_TYPE_INVALID,
         recordDeviceInfoList_[index].activeSelectedDevice_);
 
