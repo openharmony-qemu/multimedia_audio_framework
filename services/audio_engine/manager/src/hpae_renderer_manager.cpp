@@ -1082,7 +1082,7 @@ void HpaeRendererManager::Process()
             noneStreamTime_ = 0;
         }
         outputCluster_->DoProcess();
-        ResetBypassFlags();
+        ResetAllBypassFlags();
         SleepIfBypassOnUnderrun();
     }
 }
@@ -1472,7 +1472,7 @@ void HpaeRendererManager::SleepIfBypassOnUnderrun()
         CHECK_AND_RETURN(hpaeSignalProcessThread_);
         enableBypassOnUnderrun_ = sleepTimeInNs > 0;
         CHECK_AND_RETURN(enableBypassOnUnderrun_);
-        Trace trace("HpaeRendererManager::sleep " + sleepTimeInNs.to_string() + "us when bypass underrun");
+        Trace trace("HpaeRendererManager::sleep " + std::to_string(sleepTimeInNs) + "us when bypass underrun");
         hpaeSignalProcessThread_->SleepUtilNotify(std::max(BUFFER_DURATION_US, sleepTimeInNs / AUDIO_NS_PER_US));
     } else {
         lastOnUnderrunTime_ = 0;

@@ -84,7 +84,6 @@ HpaeRenderEffectNode::~HpaeRenderEffectNode()
 
 void HpaeRenderEffectNode::DoProcess()
 {
-    HpaePcmBuffer *tempOut = nullptr;
     std::vector<HpaePcmBuffer *>& preOutputs = inputStream_.ReadPreOutputData();
     if (sceneType_ != "SCENE_COLLABORATIVE") {
         HpaePluginNode::DoProcess();

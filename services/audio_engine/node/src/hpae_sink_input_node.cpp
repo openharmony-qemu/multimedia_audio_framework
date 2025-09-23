@@ -339,7 +339,7 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
     return writeCallback->OnStreamData(streamInfo_);
 }
 
-int32_t HpaeSinkInputNode::SetBypassOnUnderrun(bool bypassOnUnderrun)
+void HpaeSinkInputNode::SetBypassOnUnderrun(bool bypassOnUnderrun)
 {
     bypassOnUnderrun_ = bypassOnUnderrun;
 }
