@@ -656,7 +656,7 @@ int32_t AudioVolumeManager::SetNearlinkDeviceVolume(const std::string &macAddres
     }
 
     SleAudioDeviceManager::GetInstance().SetNearlinkDeviceMute(macAddress, streamType, mute);
-    audioPolicyManager_.SetAbsVolumeMute(mute);
+    audioPolicyManager_.SetAbsVolumeMuteNearlink(mute);
     AUDIO_INFO_LOG("success for macaddress:[%{public}s], volume value:[%{public}d], streamType [%{public}d]",
         GetEncryptAddr(macAddress).c_str(), sVolumeLevel, streamType);
     CHECK_AND_RETURN_RET_LOG(sVolumeLevel == volumeLevel, ERR_UNKNOWN, "safevolume did not deal");

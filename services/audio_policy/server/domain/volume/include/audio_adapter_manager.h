@@ -205,6 +205,8 @@ public:
 
     void SetAbsVolumeMute(std::shared_ptr<AudioDeviceDescriptor> &device, bool mute);
 
+    void SetAbsVolumeMuteNearlink(bool mute);
+
     void SetDataShareReady(std::atomic<bool> isDataShareReady);
 
     bool IsAbsVolumeMute() const;
@@ -476,6 +478,7 @@ private:
     bool testModeOn_ {false};
     std::atomic<float> getSystemVolumeInDb_  {0.0f};
     std::atomic<bool> isSleVoiceStatus_ {false};
+    std::atomic<bool> isAbsVolumeMuteNearlink_ {false};
     bool useNonlinearAlgo_ = false;
     bool isAbsVolumeScene_ = false;
     bool isAbsVolumeMute_ = false;

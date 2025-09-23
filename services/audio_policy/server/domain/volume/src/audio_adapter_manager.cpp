@@ -718,7 +718,7 @@ void AudioAdapterManager::SetAudioVolume(std::shared_ptr<AudioDeviceDescriptor> 
     }
     if (device->deviceType_ == DEVICE_TYPE_NEARLINK) {
         if (volumeType == STREAM_MUSIC && !isSleVoiceStatus_.load()) {
-            isMuted = IsAbsVolumeMute();
+            isMuted = isAbsVolumeMuteNearlink_.load();
             volumeDb = isMuted ? 0.0f : 0.63957f; //  0.63957 = -4dB
         } else if (volumeType == STREAM_VOICE_CALL) {
             volumeDb = 1.0f;
@@ -2858,10 +2858,20 @@ void AudioAdapterManager::SetAbsVolumeMute(bool mute)
     }
 }
 
-
 bool AudioAdapterManager::IsAbsVolumeMute() const
 {
     return isAbsVolumeMute_;
+}
+
+void AudioAdapterManager::SetAbsVolumeMuteNearlink(bool mute)
+{
+    AUDIO_INFO_LOG("SetAbsVolumeMuteNearlink: %{public}d", mute);
+    isAbsVolumeMuteNearlink_ = mute;
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_NEARLINK) {
+        SetVolumeDb(STREAM_MUSIC);
+    } else {
+        AUDIO_INFO_LOG("The currentActiveDevice is not nearlink device");
+    }
 }
 
 void AudioAdapterManager::NotifyAccountsChanged(const int &id)

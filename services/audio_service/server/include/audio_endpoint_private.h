@@ -384,6 +384,16 @@ private:
     std::vector<uint8_t> rendererConvBuffer_; // reuse for resample proc, 7.5k, need consider free
     std::vector<uint8_t> captureConvBuffer_;  // reuse for limit proc, 7.5k, need consider free
     std::shared_ptr<AudioLimiter> limiter_ = nullptr;
+
+    //for inject dump pcm
+    FILE *dumpPeekDup_ = nullptr; // client to inject peek dump file
+    FILE *dumpCovRendDup_ = nullptr; // client to inject convertRender dump file
+    FILE *dumpCovCapDup_ = nullptr; // client to inject convertCapture dump file
+    FILE *dumpMixDup_ = nullptr; // client to inject mix dump file
+    std::string dupPeekName_ = "";
+    std::string dupCovRendName_ = "";
+    std::string dupCovCapName_ = "";
+    std::string dupMixName_ = "";
 };
 } // namespace AudioStandard
 } // namespace OHOS

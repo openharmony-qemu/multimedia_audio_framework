@@ -156,6 +156,8 @@ public:
 
     virtual void SetAbsVolumeMute(std::shared_ptr<AudioDeviceDescriptor> &device, bool mute) = 0;
 
+    virtual void SetAbsVolumeMuteNearlink(bool mute) = 0;
+
     virtual void SetDataShareReady(std::atomic<bool> isDataShareReady) = 0;
 
     virtual bool IsAbsVolumeMute() const = 0;

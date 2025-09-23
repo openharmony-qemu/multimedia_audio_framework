@@ -359,5 +359,25 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetAudioSourceAttr_001, TestSize.Level1)
     EXPECT_EQ(attr.channelLayout, 263); // 263 = 100000111
 }
 
+/**
+ * @tc.name: Test SetAbsVolumeMuteNearlink
+ * @tc.number: SetAbsVolumeMuteNearlink_001
+ * @tc.type: FUNC
+ * @tc.desc: test nearlink device volume mute
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetAbsVolumeMuteNearlink_001, TestSize.Level1)
+{
+    audioAdapterManager_->currentActiveDevice_.deviceType_ = DEVICE_TYPE_NEARLINK;
+    bool mute = true;
+    audioAdapterManager_->SetAbsVolumeMuteNearlink(mute);
+    int32_t ret = audioAdapterManager_->SetVolumeDb(STREAM_MUSIC);
+    EXPECT_EQ(ret, SUCCESS);
+
+    audioAdapterManager_->currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    audioAdapterManager_->SetAbsVolumeMuteNearlink(mute);
+    ret = audioAdapterManager_->SetVolumeDb(STREAM_MUSIC);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
