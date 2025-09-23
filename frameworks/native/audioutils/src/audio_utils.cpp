@@ -1926,20 +1926,21 @@ AudioVolumeType VolumeUtils::GetVolumeTypeFromStreamUsage(StreamUsage streamUsag
     return STREAM_MUSIC;
 }
 
+std::map<AudioVolumeType, std::vector<StreamUsage>> VolumeUtils::streamToStreamUsageMap_ = {
+    {STREAM_RING, {STREAM_USAGE_VOICE_RINGTONE}},
+    {STREAM_VOICE_CALL, {STREAM_USAGE_VOICE_MODEM_COMMUNICATION, STREAM_USAGE_VOICE_COMMUNICATION}},
+    {STREAM_VOICE_ASSISTANT, {STREAM_USAGE_VOICE_ASSISTANT}},
+    {STREAM_ALARM, {STREAM_USAGE_ALARM}},
+    {STREAM_ACCESSIBILITY, {STREAM_USAGE_ACCESSIBILITY}},
+    {STREAM_SYSTEM, {STREAM_USAGE_SYSTEM}},
+    {STREAM_ULTRASONIC, {STREAM_USAGE_ULTRASONIC}},
+    {STREAM_MUSIC, {STREAM_USAGE_MUSIC}}
+};
+
 std::vector<StreamUsage> VolumeUtils::GetStreamUsageByVolumeTypeForFetchDevice(AudioVolumeType volumeType)
 {
-    std::map<AudioVolumeType, std::vector<StreamUsage>> defaultMap = {
-        {STREAM_RING, {STREAM_USAGE_VOICE_RINGTONE}},
-        {STREAM_VOICE_CALL, {STREAM_USAGE_VOICE_MODEM_COMMUNICATION, STREAM_USAGE_VOICE_COMMUNICATION}},
-        {STREAM_VOICE_ASSISTANT, {STREAM_USAGE_VOICE_ASSISTANT}},
-        {STREAM_ALARM, {STREAM_USAGE_ALARM}},
-        {STREAM_ACCESSIBILITY, {STREAM_USAGE_ACCESSIBILITY}},
-        {STREAM_SYSTEM, {STREAM_USAGE_SYSTEM}},
-        {STREAM_ULTRASONIC, {STREAM_USAGE_ULTRASONIC}},
-        {STREAM_MUSIC, {STREAM_USAGE_MUSIC}}
-    };
-    auto it = defaultMap.find(volumeType);
-    if (it != defaultMap.end()) {
+    auto it = streamToStreamUsageMap_.find(volumeType);
+    if (it != streamToStreamUsageMap_.end()) {
         return it->second;
     }
     return {STREAM_USAGE_MUSIC};

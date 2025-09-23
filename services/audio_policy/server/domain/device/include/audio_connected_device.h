@@ -88,6 +88,8 @@ private:
     std::mutex dmDeviceMtx_;
     std::unordered_map<std::string, DmDevice> dmDeviceMap_;
     std::shared_mutex mutex_;
+    std::shared_ptr<AudioDeviceDescriptor> defaultOutputDevice_ =
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
 };
 }
 }

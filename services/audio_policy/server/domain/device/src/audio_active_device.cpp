@@ -46,6 +46,9 @@ const uint32_t USER_NOT_SELECT_BT = 1;
 const uint32_t USER_SELECT_BT = 2;
 #endif
 
+
+static const int32_t MEDIA_SERVICE_UID = 1013;
+
 bool AudioActiveDevice::GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, AudioStreamInfo &streamInfo)
 {
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
@@ -453,7 +456,6 @@ void AudioActiveDevice::UpdateStreamUsageDeviceMap(std::shared_ptr<AudioStreamDe
 void AudioActiveDevice::UpdateStreamDeviceMap(std::string source)
 {
     std::lock_guard<std::mutex> lock(deviceForVolumeMutex_);
-    AUDIO_INFO_LOG("update for %{public}s", source.c_str());
     std::vector<std::shared_ptr<AudioStreamDescriptor>> descs =
         AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescs();
     activeOutputDevices_.clear();
@@ -511,13 +513,13 @@ void AudioActiveDevice::SortDevicesByPriority(std::vector<std::shared_ptr<AudioD
 std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(AudioVolumeType volumeType)
 {
     std::lock_guard<std::mutex> lock(deviceForVolumeMutex_);
-    CHECK_AND_RETURN_RET_LOG(!audioConnectDevice_.IsEmpty(), defaultOutputDevice_, "no device connected");
+    CHECK_AND_RETURN_RET_LOG(!audioConnectedDevice_.IsEmpty(), defaultOutputDevice_, "no device connected");
     AudioVolumeType type = VolumeUtils::GetVolumeTypeFromStreamType(volumeType);
     if (type == STREAM_ALL) {
         type = STREAM_MUSIC;
     }
-    if (Util::IsDualToneStreamType(streamType)) {
-        return GetDeviceByDeviceType(DEVICE_TYPE_SPEAKER);
+    if (Util::IsDualToneStreamType(volumeType)) {
+        return audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_SPEAKER);
     }
     if (volumeTypeDeviceMap_.contains(type) && !volumeTypeDeviceMap_[type].empty() &&
         volumeTypeDeviceMap_[type].front() != nullptr) {
@@ -540,7 +542,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(Aud
 std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(StreamUsage usage)
 {
     std::lock_guard<std::mutex> lock(deviceForVolumeMutex_);
-    CHECK_AND_RETURN_RET_LOG(!audioConnectDevice_.IsEmpty(), defaultOutputDevice_, "no device connected");
+    CHECK_AND_RETURN_RET_LOG(!audioConnectedDevice_.IsEmpty(), defaultOutputDevice_, "no device connected");
     if (streamUsageDeviceMap_.contains(usage) && !streamUsageDeviceMap_[usage].empty() &&
         streamUsageDeviceMap_[usage].front() != nullptr) {
         AUDIO_INFO_LOG("Get Device %{public}s for stream %{public}d from map",
@@ -554,14 +556,14 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(Str
 std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume()
 {
     std::lock_guard<std::mutex> lock(deviceForVolumeMutex_);
-    CHECK_AND_RETURN_RET_LOG(!audioConnectDevice_.IsEmpty(), defaultOutputDevice_, "no device connected");
+    CHECK_AND_RETURN_RET_LOG(!audioConnectedDevice_.IsEmpty(), defaultOutputDevice_, "no device connected");
     std::vector<StreamUsage> typeList = {
         STREAM_USAGE_VOICE_MODEM_COMMUNICATION,
         STREAM_USAGE_VOICE_COMMUNICATION,
         STREAM_USAGE_VIDEO_COMMUNICATION,
-        STREAM_USAGE_MESSAGE,
+        STREAM_USAGE_VOICE_MESSAGE,
         STREAM_USAGE_NOTIFICATION,
-        STREAM_USAGE_ASSISTANT,
+        STREAM_USAGE_VOICE_ASSISTANT,
         STREAM_USAGE_RINGTONE,
         STREAM_USAGE_ALARM,
         STREAM_USAGE_NAVIGATION,
@@ -586,7 +588,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(int
 {
     std::vector<std::shared_ptr<AudioStreamDescriptor>> descs =
         AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescs();
-    stc::vector<stdd::shared_ptr<AudioDeviceDescriptor>> tmp;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> tmp;
     for (auto desc : descs) {
         CHECK_AND_CONTINUE(desc != nullptr);
         CHECK_AND_CONTINUE(GetRealUid(desc) == appUid);
@@ -622,5 +624,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioActiveDevice::GetActive
         copy.push_back(newDevice);
     }
     return copy;
+}
 }
 }

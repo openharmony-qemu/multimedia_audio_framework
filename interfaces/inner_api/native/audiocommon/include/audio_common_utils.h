@@ -45,6 +45,7 @@ private:
     static std::unordered_map<AudioVolumeType, std::set<StreamUsage>> pcVolumeToStreamUsageMap_;
     static std::unordered_map<StreamUsage, AudioStreamType> streamUsageMap_;
     static std::unordered_set<AudioVolumeType> audioVolumeTypeSet_;
+    static std::map<AudioVolumeType, std::vector<StreamUsage>> streamToStreamUsageMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

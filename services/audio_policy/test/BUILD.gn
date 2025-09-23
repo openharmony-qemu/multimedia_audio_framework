@@ -2362,6 +2362,10 @@ ohos_unittest("audio_spatialization_service_unit_test") {
     "../../audio_policy:audio_policy_service_static",
     "../../audio_policy:audio_setting_provider",
   ]
+
+  if (bluetooth_part_enable == true) {
+    external_deps += [ "bluetooth:btframework" ]
+  }
 }
 
 ohos_unittest("audio_collaborative_service_unit_test") {

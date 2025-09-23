@@ -397,7 +397,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
         audioActiveDevice_.GetCurrentOutputDeviceMacAddr() == updatedDesc.macAddress_) {
         audioA2dpOffloadFlag_.SetA2dpOffloadFlag(NO_A2DP_DEVICE);
     }
-    AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceDisconnect(updatedDesc);
+    AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceDisconnect(devDesc);
 }
 
 void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(

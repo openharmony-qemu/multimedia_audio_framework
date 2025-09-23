@@ -98,8 +98,8 @@ public:
     bool IsDistributedDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc);
 
 private:
-    AudioVolumeUtils();
-    ~AudioVolumeUtils();
+    AudioVolumeUtils() {};
+    ~AudioVolumeUtils() {};
     std::map<AudioVolumeType, std::shared_ptr<StreamVolumeInfo>> streamVolumeInfos_;
 };
 }

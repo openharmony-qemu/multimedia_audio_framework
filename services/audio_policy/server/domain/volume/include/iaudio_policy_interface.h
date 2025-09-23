@@ -154,7 +154,7 @@ public:
 
     virtual bool IsAbsVolumeScene() const = 0;
 
-    virtual void SetAbsVolumeMute(std::shared_ptr<AudioDeviceDescriptor> &device, bool mute) = 0;
+    virtual void SetAbsVolumeMute(bool mute) = 0;
 
     virtual void SetAbsVolumeMuteNearlink(bool mute) = 0;
 
@@ -271,9 +271,9 @@ public:
         const SourceType &sourceType) = 0;
     virtual int32_t AddCaptureInjector() = 0;
     virtual int32_t RemoveCaptureInjector() = 0;
-    virtual void UpdateVolumeWhenDeviceConnect(const std::shared_ptr<AudioDeviceDescriptor> &device,
+    virtual void UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDeviceDescriptor> &device,
         int32_t zoneId = 0) = 0;
-    virtual void UpdateVolumeWhenDeviceDisconnect(const std::shared_ptr<AudioDeviceDescriptor> &device) = 0;
+    virtual void UpdateVolumeWhenDeviceDisconnect(std::shared_ptr<AudioDeviceDescriptor> &device) = 0;
     virtual void QueryDeviceVolumeBehavior(std::shared_ptr<AudioDeviceDescriptor> &device) = 0;
 };
 } // namespace AudioStandard

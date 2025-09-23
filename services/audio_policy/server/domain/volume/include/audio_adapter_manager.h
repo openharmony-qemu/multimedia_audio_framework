@@ -203,7 +203,7 @@ public:
 
     bool IsAbsVolumeScene() const;
 
-    void SetAbsVolumeMute(std::shared_ptr<AudioDeviceDescriptor> &device, bool mute);
+    void SetAbsVolumeMute(bool mute);
 
     void SetAbsVolumeMuteNearlink(bool mute);
 
@@ -315,9 +315,11 @@ public:
         const SourceType &sourceType);
     int32_t AddCaptureInjector();
     int32_t RemoveCaptureInjector();
-    void UpdateVolumeWhenDeviceConnect(const std::shared_ptr<AudioDeviceDescriptor> &device, int32_t zoneId = 0);
-    void UpdateVolumeWhenDeviceDisconnect(const std::shared_ptr<AudioDeviceDescriptor> &device);
+    void UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDeviceDescriptor> &device, int32_t zoneId = 0);
+    void UpdateVolumeWhenDeviceDisconnect(std::shared_ptr<AudioDeviceDescriptor> &device);
     void QueryDeviceVolumeBehavior(std::shared_ptr<AudioDeviceDescriptor> &device);
+    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType, std::shared_ptr<AudioDeviceDescriptor> desc);
+    int32_t GetMinVolumeLevel(AudioVolumeType volumeType, std::shared_ptr<AudioDeviceDescriptor> desc);
 
 private:
     friend class PolicyCallbackImpl;
@@ -390,8 +392,8 @@ private:
     bool GetStreamMuteInternal(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType);
     int32_t GetStreamVolumeInternal(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType);
     int32_t SetRingerModeInternal(AudioRingerMode ringerMode);
-    int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, StreamUsage streamUsage,
-        const DeviceType &deviceType = DEVICE_TYPE_NONE, std::string networkId = LOCAL_NETWORK_ID);
+    int32_t SetStreamMuteInternal(std::shared_ptr<AudioDeviceDescriptor> &device,
+        AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN);
     int32_t GetDefaultVolumeLevel(std::unordered_map<AudioStreamType, int32_t> &volumeLevelMapTemp,
         AudioVolumeType volumeType, DeviceType deviceType) const;
     void InitKVStoreInternal(void);
@@ -403,8 +405,8 @@ private:
     void InitSafeStatus(bool isFirstBoot);
     void InitSafeTime(bool isFirstBoot);
     void ConvertSafeTime(void);
-    void UpdateSafeVolume(std::shared_ptr<AudioDeviceDescriptor> &device);
-    void UpdateUsbSafeVolume();
+    void UpdateSafeVolume();
+    void UpdateUsbSafeVolume(std::shared_ptr<AudioDeviceDescriptor> &device);
     void CheckAndDealMuteStatus(const DeviceType &deviceType, const AudioStreamType &streamType);
     void SetVolumeCallbackAfterClone();
     void SetFirstBoot(bool isFirst);
@@ -414,8 +416,7 @@ private:
     AudioIOHandle OpenNotPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex);
     void GetSinkIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
     void GetSourceIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
-    int32_t IsHandleStreamMute(std::shared_ptr<AudioDeviceDescriptor> &device,
-        AudioStreamType streamType, bool mute, StreamUsage streamUsage);
+    int32_t IsHandleStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage);
     static void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args);
     void UpdateVolumeForLowLatency();
     bool IsDistributedVolumeType(AudioStreamType streamType);

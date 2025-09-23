@@ -1686,7 +1686,7 @@ bool AudioDeviceManager::ExistSameRemoteDeviceByMacAddress(std::shared_ptr<Audio
     return false;
 }
 
-int32_t AudioDeviceDescriptor::GetDevicePriority(const std::shared_ptr<AudioDeviceDescriptor> &desc)
+int32_t AudioDeviceManager::GetDevicePriority(const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     if (DeviceAttrMatch(desc, TYPE_PRIVACY, OUTPUT_DEVICE, ALL_USAGE)) {
         return PRIORITY_PRIVACY;
@@ -1702,6 +1702,5 @@ int32_t AudioDeviceDescriptor::GetDevicePriority(const std::shared_ptr<AudioDevi
     }
     return PRIORITY_BASE;
 }
-
 }
 }

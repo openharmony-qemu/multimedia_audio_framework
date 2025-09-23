@@ -23,7 +23,8 @@ audio_framework_root = "../../../../../.."
 ohos_unittest("audio_spatialization_service_extended_test") {
   module_out_path = "audio_framework/audio_framework_policy/audio_policy"
   include_dirs = [
-    "./unittest/audio_spatialization_service_unit_test/include",
+    "../server/include",
+    "./unittest/audio_spatialization_service_unit_test/include"
   ]
 
   use_exceptions = true

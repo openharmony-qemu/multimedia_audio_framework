@@ -91,9 +91,9 @@ void AudioVolumeUtils::GetDefaultVolumeLevelFromConfig(const std::shared_ptr<Aud
     
     volumeLevel = streamVolumeInfos_[internalVolumeType]->defaultLevel;
 
-    std::shared_ptr<SteamVolumeInfo> streamvolumeInfo = streamVolumeInfos_[internalVolumeType];
+    std::shared_ptr<StreamVolumeInfo> streamVolumeInfo = streamVolumeInfos_[internalVolumeType];
     DeviceVolumeType deviceVolumeType = DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.find(desc->deviceType_)->second;
-    CHECK_AND_RETURN_LOG(streamvolumeInfo->deviceVolumeInfos.contains(deviceVolumeType),
+    CHECK_AND_RETURN_LOG(streamVolumeInfo->deviceVolumeInfos.contains(deviceVolumeType),
         "deviceVolumeInfos not contain device volume type");
     auto deviceVolumeInfoIt = streamVolumeInfo->deviceVolumeInfos[deviceVolumeType];
     CHECK_AND_RETURN_LOG(deviceVolumeInfoIt != nullptr, "deviceVolumeInfoIt is null");
@@ -170,9 +170,9 @@ void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(const std::shared_ptr<AudioDe
     
     volumeLevel = streamVolumeInfos_[internalVolumeType]->maxLevel;
 
-    std::shared_ptr<SteamVolumeInfo> streamvolumeInfo = streamVolumeInfos_[internalVolumeType];
+    std::shared_ptr<StreamVolumeInfo> streamVolumeInfo = streamVolumeInfos_[internalVolumeType];
     DeviceVolumeType deviceVolumeType = DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.find(desc->deviceType_)->second;
-    CHECK_AND_RETURN_LOG(streamvolumeInfo->deviceVolumeInfos.contains(deviceVolumeType),
+    CHECK_AND_RETURN_LOG(streamVolumeInfo->deviceVolumeInfos.contains(deviceVolumeType),
         "deviceVolumeInfos not contain device volume type");
     auto deviceVolumeInfoIt = streamVolumeInfo->deviceVolumeInfos[deviceVolumeType];
     CHECK_AND_RETURN_LOG(deviceVolumeInfoIt != nullptr, "deviceVolumeInfoIt is null");
@@ -213,9 +213,9 @@ void AudioVolumeUtils::GetMinVolumeLevelFromConfig(const std::shared_ptr<AudioDe
     
     volumeLevel = streamVolumeInfos_[internalVolumeType]->minLevel;
 
-    std::shared_ptr<SteamVolumeInfo> streamvolumeInfo = streamVolumeInfos_[internalVolumeType];
+    std::shared_ptr<StreamVolumeInfo> streamVolumeInfo = streamVolumeInfos_[internalVolumeType];
     DeviceVolumeType deviceVolumeType = DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.find(desc->deviceType_)->second;
-    CHECK_AND_RETURN_LOG(streamvolumeInfo->deviceVolumeInfos.contains(deviceVolumeType),
+    CHECK_AND_RETURN_LOG(streamVolumeInfo->deviceVolumeInfos.contains(deviceVolumeType),
         "deviceVolumeInfos not contain device volume type");
     auto deviceVolumeInfoIt = streamVolumeInfo->deviceVolumeInfos[deviceVolumeType];
     CHECK_AND_RETURN_LOG(deviceVolumeInfoIt != nullptr, "deviceVolumeInfoIt is null");
