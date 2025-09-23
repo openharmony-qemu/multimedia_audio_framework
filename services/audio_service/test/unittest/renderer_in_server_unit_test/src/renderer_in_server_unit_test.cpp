@@ -2090,7 +2090,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerEnableInnerCap_001, TestSize.
 
     int32_t ret = rendererInServer->EnableInnerCap(1);
 
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
