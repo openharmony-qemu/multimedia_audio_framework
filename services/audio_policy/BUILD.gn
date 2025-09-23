@@ -51,6 +51,7 @@ config("audio_policy_public_config") {
     "server/include",
     "server/infra/async_action_handler/include",
     "server/infra/state_monitor",
+    "server/infra/window/include",
     "server/stub/include",
     "server/proxy/include",
     "server/domain/interrupt/include",
@@ -206,6 +207,7 @@ audio_ohos_library("audio_policy_service") {
     "server/infra/ipc_proxy/src/audio_policy_client_holder.cpp",
     "server/infra/ipc_proxy/src/audio_server_proxy.cpp",
     "server/infra/state_monitor/audio_policy_state_monitor.cpp",
+    "server/infra/window/window_utils.cpp",
     "server/common/src/audio_group_handle.cpp",
     "server/service/service_main/src/audio_policy_server.cpp",
     "server/infra/async_action_handler/src/audio_policy_server_handler.cpp",
@@ -384,6 +386,7 @@ audio_ohos_library("audio_policy_service") {
     "samgr:samgr_proxy",
     "window_manager:session_manager_lite",
     "window_manager:libwm_lite",
+    "window_manager:libwm",
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
