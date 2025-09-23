@@ -18,9 +18,9 @@ import("../../../appgallery.gni")
 import("../../../bluetooth_part.gni")
 import("../../../config.gni")
 
-ohos_fuzztest("HpaeProresamplerProcessFuzzTest") {
+ohos_fuzztest("HpaeChannelConverterFuzzTest") {
   module_out_path = "audio_framework/audio_framework_engine"
-  fuzz_config_file = "../hpaeproresamplerprocess_fuzzer"
+  fuzz_config_file = "../hpaechannelconverter_fuzzer"
 
   include_dirs = [
     "../../../services/audio_engine/node/include",
@@ -37,7 +37,7 @@ ohos_fuzztest("HpaeProresamplerProcessFuzzTest") {
   ]
 
   sources = [
-    "hpae_proresampler_process_fuzzer.cpp",
+    "hpae_channel_converter_fuzzer.cpp",
   ]
 
   cflags_cc = [ "-std=c++20" ]
@@ -66,5 +66,5 @@ ohos_fuzztest("HpaeProresamplerProcessFuzzTest") {
 
 group("fuzztest") {
   testonly = true
-  deps = [ ":HpaeProresamplerProcessFuzzTest" ]
+  deps = [ ":HpaeChannelConverterFuzzTest" ]
 }
