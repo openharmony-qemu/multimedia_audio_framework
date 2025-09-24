@@ -26,6 +26,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
+constexpr uint64_t AUDIO_CAPTURER_CLOCK_LOG_TIME_NS = 1000'000'000; // 1s
 CapturerClock::CapturerClock(uint32_t capturerSampleRate)
     : capturerSampleRate_(capturerSampleRate)
 {
@@ -43,7 +44,11 @@ bool CapturerClock::GetTimeStampByPosition(uint64_t capturerPos, uint64_t& times
 
     if (capturerPos == position_) {
         timestamp = timestamp_;
-        AUDIO_DEBUG_LOG("timestamp:%{public}" PRIu64, timestamp);
+        if (logTimestamp_ == 0 || timestamp-logTimestamp_ >= AUDIO_CAPTURER_CLOCK_LOG_TIME_NS) {
+            logTimestamp_ = timestamp;
+            AUDIO_INFO_LOG("capPos:%{public}" PRIu64 " capPts:%{public}" PRIu64 " sysPts:%{public}" PRIu64,
+            capturerPos, logTimestamp_, ClockTime::GetCurNano());
+        }
         return true;
     }
 
@@ -60,8 +65,12 @@ bool CapturerClock::GetTimeStampByPosition(uint64_t capturerPos, uint64_t& times
         tsDetla = posDetla * AUDIO_NS_PER_SECOND / capturerSampleRate_;
         timestamp = timestamp_ + tsDetla;
     }
-    AUDIO_DEBUG_LOG("timestamp:%{public}" PRIu64 "posDetla:%{public}" PRIu64
-        " tsDetla:%{public}" PRIu64, timestamp, posDetla, tsDetla);
+    if (logTimestamp_ == 0 || timestamp-logTimestamp_ >= AUDIO_CAPTURER_CLOCK_LOG_TIME_NS) {
+        logTimestamp_ = timestamp;
+        AUDIO_WARNING_LOG("Pos:%{public}" PRIu64 " posDetla:%{public}" PRIu64 " tsDetla:%{public}" PRIu64
+            " capPos:%{public}" PRIu64 " capPts:%{public}" PRIu64 " sysPts:%{public}" PRIu64, position_,
+            posDetla, tsDetla, capturerPos, logTimestamp_, ClockTime::GetCurNano());
+    }
     return true;
 }
 

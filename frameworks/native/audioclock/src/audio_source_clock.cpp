@@ -27,6 +27,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
+constexpr uint64_t AUDIO_SOURCE_CLOCK_LOG_TIME_NS = 1000'000'000; // 1s
 enum AudioByteSize : int32_t {
     BYTE_SIZE_SAMPLE_U8 = 1,
     BYTE_SIZE_SAMPLE_S16 = 2,
@@ -99,6 +100,11 @@ void AudioSourceClock::Renew(uint32_t posIncSize)
             continue;
         }
         clock->SetTimeStampByPosition(timestamp, sampleRate_, positionInc);
+    }
+    if (logTimestamp_ == 0 || (timestamp - logTimestamp_ >= AUDIO_SOURCE_CLOCK_LOG_TIME_NS)) {
+        logTimestamp_ = timestamp;
+        AUDIO_INFO_LOG("posInc:%{public}u sizePPos_:%{public}u srcPts:%{public}" PRIu64
+            " sysPts:%{public}" PRIu64, positionInc, sizePerPos_, logTimestamp_, ClockTime::GetCurNano());
     }
 }
 
