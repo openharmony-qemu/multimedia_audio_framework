@@ -1051,7 +1051,7 @@ void AudioRendererPrivate::SetInSwitchingFlag(bool inSwitchingFlag)
 int32_t AudioRendererPrivate::AsyncCheckAudioRenderer(std::string callingFunc)
 {
     // Check first to avoid redundant instructions consumption in thread switching
-    if (!IsRestoreOrStopNeeded(callingFunc)) {
+    if (!IsRestoreOrStopNeeded()) {
         return SUCCESS;
     }
 

@@ -1983,7 +1983,7 @@ HWTEST(FastAudioStreamUnitTest, IsRestoreNeeded_002, TestSize.Level4)
     fastAudioStream->processClient_ = mockProcessClient;
     fastAudioStream->spkProcClientCb_ = nullptr;
     fastAudioStream->micProcClientCb_ = nullptr;
-    
+
     EXPECT_EQ(fastAudioStream->IsRestoreNeeded(), true);
 }
 
