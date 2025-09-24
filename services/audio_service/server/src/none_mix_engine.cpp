@@ -28,6 +28,7 @@
 #include "audio_volume.h"
 #include "format_converter.h"
 #include "audio_service.h"
+#inlcude "audio_mute_factor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -521,7 +522,8 @@ int32_t NoneMixEngine::InitSink(uint32_t channel, AudioSampleFormat format, uint
     if (ret != SUCCESS) {
         return ret;
     }
-    float volume = 1.0f;
+    auto mdmMute = AudioMuteFactorManager::GetInstance().GetMdmMuteStatus();
+    float volume = mdmMute ? 0.0f : 1.0f;
     ret = sink->SetVolume(volume, volume);
     uChannel_ = attr.channel;
     uSampleRate_ = attr.sampleRate;

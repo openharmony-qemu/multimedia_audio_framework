@@ -31,6 +31,7 @@
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
 #include "sle_audio_device_manager.h"
+#include "audio_mute_factor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -156,8 +157,9 @@ bool AudioVolumeManager::SetSharedVolume(AudioVolumeType streamType, DeviceType 
     volumeVector_[index].volumeInt = vol.volumeInt;
     AUDIO_INFO_LOG("Success Set Shared Volume with StreamType:%{public}d, DeviceType:%{public}d, volume:%{public}d",
         streamType, deviceType, vol.volumeInt);
-
-    AudioServerProxy::GetInstance().NotifyStreamVolumeChangedProxy(streamType, vol.volumeFloat);
+    auto mumMute = AudioMuteFactorManager::GetInstance().GetMdmMuteStatus();
+    float volumeActual = mdmMute ? 0.0f : vol.volumeFloat;
+    AudioServerProxy::GetInstance().NotifyStreamVolumeChangedProxy(streamType, volumeActual);
     return true;
 }
 

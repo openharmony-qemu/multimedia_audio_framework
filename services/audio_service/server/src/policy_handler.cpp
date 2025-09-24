@@ -24,6 +24,7 @@
 #include "audio_errors.h"
 #include "audio_common_log.h"
 #include "audio_utils.h"
+#include "audio_mute_factor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -128,8 +129,9 @@ bool PolicyHandler::GetSharedVolume(AudioVolumeType streamType, DeviceType devic
         index >= IPolicyProvider::GetVolumeVectorSize()) {
         return false;
     }
+    audo mdmMute = AudioMuteFactorManager::GetInstance().GetMdmMuteStatus();
     vol.isMute = volumeVector_[index].isMute;
-    vol.volumeFloat = volumeVector_[index].volumeFloat;
+    vol.volumeFloat = mdmMute ? 0.0f : volumeVector_[index].volumeFloat;
     vol.volumeInt = volumeVector_[index].volumeInt;
     return true;
 }
