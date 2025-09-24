@@ -24,6 +24,7 @@ config("audio_config") {
     "../../../interfaces/inner_api/native/audiomanager/include",
     "../../../interfaces/inner_api/native/audiorenderer/include",
     "../../../interfaces/inner_api/native/audiostream/include",
+    "../../../interfaces/inner_api/native/audiosuite/include",
     "../../../services/audio_service/client/include",
   ]
 
@@ -49,6 +50,7 @@ ohos_shared_library("ohaudio") {
     "../../../interfaces/kits/c/audio_renderer/",
     "../../../interfaces/kits/c/audio_capturer/",
     "../../../interfaces/kits/c/audio_manager/",
+    "../../../interfaces/kits/c/audio_suite/",
     "../../native/audiopolicy/include/",
   ]
 
@@ -67,10 +69,13 @@ ohos_shared_library("ohaudio") {
     "./OHAudioVolumeManager.cpp",
     "./OHAudioWorkgroup.cpp",
     "./OHAudioResourceManager.cpp",
+    "./OHAudioSuiteEngine.cpp",
+    "./OHAudioSuiteNodeBuilder.cpp",
   ]
 
   deps = [
     "../../../services/audio_service:audio_client",
+    "../../../services/audio_suite:audio_suite",
     "../audiocapturer:audio_capturer",
     "../audiorenderer:audio_renderer",
   ]

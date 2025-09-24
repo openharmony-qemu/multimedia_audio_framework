@@ -49,7 +49,7 @@ public:
     int32_t SetSinkState(StreamManagerState sinkState);
     uint32_t GetLatency();
     bool GetIsReadFinished();
-    int32_t PeekAudioData(uint8_t **buffer, const size_t &bufferSize, AudioStreamInfo &audioStreamInfo);
+    int32_t PeekAudioData(uint8_t *buffer, const size_t &bufferSize, AudioStreamInfo &streamInfo);
     int32_t ReloadNode(HpaeNodeInfo nodeInfo);
 private:
     size_t GetRingCacheSize();

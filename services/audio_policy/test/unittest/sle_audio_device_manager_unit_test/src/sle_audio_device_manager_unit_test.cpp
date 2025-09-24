@@ -1250,9 +1250,9 @@ HWTEST(SleAudioDeviceManagerUnitTest, SetDeviceAbsVolume_005, TestSize.Level1)
     sleAudioDeviceManager_->AddNearlinkDevice(deviceDesc);
 
     int32_t ret = sleAudioDeviceManager_->SetDeviceAbsVolume(device, streamType1, volume);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
     ret = sleAudioDeviceManager_->SetDeviceAbsVolume(device, streamType2, volume);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

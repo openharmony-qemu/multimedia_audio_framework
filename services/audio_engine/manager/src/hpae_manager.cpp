@@ -658,7 +658,7 @@ int32_t HpaeManager::CloseAudioPort(int32_t audioHandleIndex)
             AUDIO_INFO_LOG("CloseAudioPort index: %{public}d name %{public}s",
                 audioHandleIndex, sinkIdSinkNameMap_[audioHandleIndex].c_str());
             ret = CloseOutAudioPort(sinkIdSinkNameMap_[audioHandleIndex]);
-        } else {
+        } else if (sourceIdSourceNameMap_.find(audioHandleIndex) != sourceIdSourceNameMap_.end()) {
             AUDIO_INFO_LOG("CloseAudioPort index: %{public}d name %{public}s",
                 audioHandleIndex, sourceIdSourceNameMap_[audioHandleIndex].c_str());
             ret = CloseInAudioPort(sourceIdSourceNameMap_[audioHandleIndex]);
@@ -2622,7 +2622,7 @@ void HpaeManager::RemoveCaptureInjector(
 }
 
 int32_t HpaeManager::PeekAudioData(
-    const uint32_t &sinkPortIndex, uint8_t **buffer, size_t bufferSize, AudioStreamInfo &streamInfo)
+    const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo)
 {
     std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
     auto sinkVirtualOutputNode = SafeGetMap(sinkVirtualOutputNodeMap_, sinkPortIndex);

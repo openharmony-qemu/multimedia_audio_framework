@@ -555,7 +555,7 @@ void ConfigNodeInfo(HpaeNodeInfo &nodeInfo, const HpaeStreamInfo &streamInfo)
     nodeInfo.streamType = streamInfo.streamType;
     nodeInfo.sessionId = streamInfo.sessionId;
     nodeInfo.customSampleRate = streamInfo.customSampleRate;
-    nodeInfo.channelLayout = (AudioChannelLayout)streamInfo.channelLayout;
+    nodeInfo.channelLayout = static_cast<AudioChannelLayout>(streamInfo.channelLayout);
     nodeInfo.samplingRate = static_cast<AudioSamplingRate>(streamInfo.samplingRate);
     nodeInfo.effectInfo = streamInfo.effectInfo;
     nodeInfo.fadeType = streamInfo.fadeType;

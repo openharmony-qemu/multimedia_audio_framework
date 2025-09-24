@@ -95,16 +95,16 @@ private:
     uint32_t captureId_ = HDI_INVALID_ID;
     IAudioSourceAttr attr_ = {};
     SourceCallbackWrapper callback_ = {};
-    bool sourceInited_ = false;
-    bool started_ = false;
+    std::atomic<bool> sourceInited_ = false;
+    std::atomic<bool> started_ = false;
     std::mutex statusMutex_;
-    
+
     float maxAmplitude_ = 0;
     int64_t lastGetMaxAmplitudeTime_ = 0;
     int64_t last10FrameStartTime_ = 0;
     bool startUpdate_ = false;
     int captureFrameNum_ = 0;
-    
+
     int32_t logMode_ = 0;
     FILE* dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
@@ -115,8 +115,7 @@ private:
 
     int32_t CreateCapture();
     int32_t InitOperator();
-    int32_t DoStop(void);
-    void PrintDfx(int64_t useTime);
+    void PrintUsageTimeDfx(int64_t useTime);
 
     std::shared_ptr<VAAudioStreamProperty> MakeVAStreamPropertyFromIAudioSourceAttr();
     std::shared_ptr<VAInputStreamAttribute> MakeVAStreamAttributeFromIAudioSourceAttr();

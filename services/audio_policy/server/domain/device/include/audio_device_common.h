@@ -48,6 +48,7 @@
 #include "audio_offload_stream.h"
 #include "audio_volume_manager.h"
 #include "audio_ec_manager.h"
+#include "audio_adapter_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {

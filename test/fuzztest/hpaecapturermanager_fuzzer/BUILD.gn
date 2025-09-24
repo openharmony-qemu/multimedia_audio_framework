@@ -95,6 +95,7 @@ ohos_fuzztest("HpaeCapturerManagerFuzzTest") {
       "accessibility:accessibilityconfig",
     ]
   }
+  resource_config_file = "../../resource/audio_renderer/ohos_test.xml"
 
 defines = []
   if (use_libfuzzer || use_clang_coverage) {

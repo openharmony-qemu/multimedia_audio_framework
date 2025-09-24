@@ -164,7 +164,6 @@ void AudioCapturerSession::HandleRemoteCastDevice(bool isConnected, AudioStreamI
             updatedDesc.macAddress_);
         audioDeviceCommon_.UpdateConnectedDevicesWhenConnecting(updatedDesc, descForCb);
         LoadInnerCapturerSink(REMOTE_CAST_INNER_CAPTURER_SINK_NAME, streamInfo);
-        audioPolicyManager_.ResetRemoteCastDeviceVolume();
     } else {
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
         AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("HandleRemoteCastDevice_1",

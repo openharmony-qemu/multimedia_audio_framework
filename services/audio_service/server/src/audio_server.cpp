@@ -60,6 +60,7 @@
 #include "audio_resource_service.h"
 #include "audio_manager_listener.h"
 #include "app_bundle_manager.h"
+#include "audio_injector_service.h"
 #ifdef SUPPORT_OLD_ENGINE
 #define PA
 #ifdef PA
@@ -759,6 +760,7 @@ bool AudioServer::SetEffectLiveParameter(const std::vector<std::pair<std::string
     AUDIO_INFO_LOG("SetEffectLiveParameter not support");
     return false;
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioServer::SetExtraParameters(const std::string &key,
     const std::vector<StringPair> &kvpairs)
@@ -804,7 +806,6 @@ int32_t AudioServer::SetExtraParameters(const std::string &key,
     deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", value);
     return SUCCESS;
 }
-// LCOV_EXCL_STOP
 
 bool AudioServer::ProcessKeyValuePairs(const std::string &key,
     const std::vector<std::pair<std::string, std::string>> &kvpairs,
@@ -2285,6 +2286,10 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
 #endif
 
     AUDIO_INFO_LOG("check for uid:%{public}d source type:%{public}d", config.callerUid, sourceType);
+    if (sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
+        bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+        CHECK_AND_RETURN_RET_LOG(hasSystemPermission, false, "VOICE_TRANSCRIPTION failed: no system permission.");
+    }
 
     if (sourceType == SOURCE_TYPE_VOICE_CALL) {
         bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
@@ -3170,6 +3175,27 @@ int32_t AudioServer::GetPrivacyTypeAudioServer(uint32_t sessionId, int32_t &priv
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, SUCCESS, "%{public}u err", sessionId);
     privacyType = static_cast<int32_t>(type);
     return SUCCESS;
+}
+
+int32_t AudioServer::AddCaptureInjector(uint32_t sinkPortidx, std::string &rate, std::string &format,
+    std::string &channels)
+{
+    auto ptr = AudioService::GetInstance()->GetEndPointByType(AudioEndpoint::EndpointType::TYPE_VOIP_MMAP);
+    CHECK_AND_RETURN_RET_LOG(ptr != nullptr, ERROR, "endpoint not exist!");
+    int32_t ret = ptr->AddCaptureInjector(sinkPortidx, SOURCE_TYPE_VOICE_COMMUNICATION);
+    AudioModuleInfo &info = AudioInjectorService::GetInstance().GetModuleInfo();
+    rate = info.rate;
+    format = info.format;
+    channels = info.channels;
+    return ret;
+}
+
+int32_t AudioServer::RemoveCaptureInjector(uint32_t sinkPortidx)
+{
+    auto ptr = AudioService::GetInstance()->GetEndPointByType(AudioEndpoint::EndpointType::TYPE_VOIP_MMAP);
+    CHECK_AND_RETURN_RET_LOG(ptr != nullptr, ERROR, "endpoint not exist!");
+    int32_t ret = ptr->RemoveCaptureInjector(sinkPortidx, SOURCE_TYPE_VOICE_COMMUNICATION);
+    return ret;
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

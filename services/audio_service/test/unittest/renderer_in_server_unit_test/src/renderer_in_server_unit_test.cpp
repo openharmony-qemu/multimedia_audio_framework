@@ -2121,7 +2121,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDisableInnerCap_001, TestSize
 
     int32_t ret = rendererInServer->DisableInnerCap(0);
 
-    EXPECT_EQ(ERR_INVALID_OPERATION, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**

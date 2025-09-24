@@ -1881,13 +1881,15 @@ HWTEST_F(HpaeManagerUnitTest, InjectorToEndPointCapturer, TestSize.Level1)
     hpaeManager_->Start(HPAE_STREAM_CLASS_TYPE_PLAY, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
 
-    uint8_t *buffer = nullptr;
     size_t bufferSize = nodeInfo.samplingRate * nodeInfo.channels * DEFAULT_FRAME_LEN_MS *
         static_cast<size_t>(GetSizeFromFormat(nodeInfo.format)) / MS_PER_SECOND;
+    std::vector<uint8_t> buffer(bufferSize);
     AudioStreamInfo retStreamInfo;
     for (size_t i = 0; i < 10; i++) { // 10 for loop times
-        EXPECT_EQ(hpaeManager_->PeekAudioData(injectorPortId, &buffer, bufferSize, retStreamInfo), SUCCESS);
-        EXPECT_EQ(buffer != nullptr, true);
+        EXPECT_EQ(hpaeManager_->PeekAudioData(injectorPortId, buffer.data(), bufferSize, retStreamInfo), SUCCESS);
+        EXPECT_EQ(retStreamInfo.format, nodeInfo.format);
+        EXPECT_EQ(retStreamInfo.samplingRate, nodeInfo.samplingRate);
+        EXPECT_EQ(retStreamInfo.channels, nodeInfo.channels);
         std::this_thread::sleep_for(std::chrono::milliseconds(50)); // 50ms for sleep
     }
     hpaeManager_->Stop(HPAE_STREAM_CLASS_TYPE_PLAY, streamInfo.sessionId);
@@ -1896,7 +1898,7 @@ HWTEST_F(HpaeManagerUnitTest, InjectorToEndPointCapturer, TestSize.Level1)
     WaitForMsgProcessing(hpaeManager_);
 }
 
-HWTEST_F(HpaeManagerUnitTest, InjectorUpdataAudioPortInfoTest, TestSize.Level1)
+HWTEST_F(HpaeManagerUnitTest, InjectorUpdataAudioPortInfoAndReloadTest, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -1929,6 +1931,12 @@ HWTEST_F(HpaeManagerUnitTest, InjectorUpdataAudioPortInfoTest, TestSize.Level1)
     hpaeManager_->UpdateAudioPortInfo(injectorPortId, moduleInfo);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_NE(moduleInfo.channels, std::to_string(nodeInfo.channels));
+
+    moduleInfo.channels = "2";
+    moduleInfo.rate = "44100";
+    hpaeManager_->ReloadRenderManager(moduleInfo, false);
+    EXPECT_EQ(moduleInfo.channels, std::to_string(nodeInfo.channels));
+    EXPECT_EQ(moduleInfo.rate, std::to_string(nodeInfo.samplingRate));
 
     hpaeManager_->CloseAudioPort(injectorPortId);
     WaitForMsgProcessing(hpaeManager_);

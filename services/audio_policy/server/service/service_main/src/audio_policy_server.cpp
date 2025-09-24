@@ -43,6 +43,7 @@
 #include "va_device_broker_stub_impl.h"
 #include "va_device_manager.h"
 #include "standalone_mode_manager.h"
+#include "audio_injector_policy.h"
 
 using OHOS::Security::AccessToken::PrivacyKit;
 using OHOS::Security::AccessToken::TokenIdKit;
@@ -162,7 +163,8 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
       usbManager_(AudioUsbManager::GetInstance()),
 #endif
       audioActiveDevice_(AudioActiveDevice::GetInstance()),
-      sessionService_(OHOS::Singleton<AudioSessionService>::GetInstance())
+      sessionService_(OHOS::Singleton<AudioSessionService>::GetInstance()),
+      audioInjectorPolicy_(AudioInjectorPolicy::GetInstance())
 
 {
     volumeStep_ = system::GetIntParameter("const.multimedia.audio.volumestep", 1);
@@ -2394,6 +2396,7 @@ int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute, bool isLegacy)
         AUDIO_INFO_LOG("SendMicStateUpdatedCallback when set common mic mute state:%{public}d, isLegacy:%{public}d",
             newMicrophoneMute, isLegacy);
         audioPolicyServerHandler_->SendMicStateUpdatedCallback(micStateChangeEvent);
+        audioInjectorPolicy_.SetInjectorStreamsMute(newMicrophoneMute);
     }
     return ret;
 }
@@ -2448,6 +2451,7 @@ int32_t AudioPolicyServer::SetMicrophoneMutePersistent(bool isMute, int32_t type
         micStateChangeEvent.mute = newMicrophoneMute;
         AUDIO_INFO_LOG("SendMicStateUpdatedCallback when set persistent mic mute state:%{public}d", newMicrophoneMute);
         audioPolicyServerHandler_->SendMicStateUpdatedCallback(micStateChangeEvent);
+        audioInjectorPolicy_.SetInjectorStreamsMute(newMicrophoneMute);
     }
     return ret;
 }
@@ -4715,6 +4719,7 @@ void AudioPolicyServer::SendVolumeKeyEventToRssWhenAccountsChanged()
 void AudioPolicyServer::NotifyAccountsChanged(const int &id)
 {
     CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService_ is nullptr");
+    audioPolicyService_.MuteMediaWhenAccountsChanged();
     interruptService_->ClearAudioFocusInfoListOnAccountsChanged(id);
     // Asynchronous clear audio focus infos
     usleep(WAIT_CLEAR_AUDIO_FOCUSINFOS_TIME_US);

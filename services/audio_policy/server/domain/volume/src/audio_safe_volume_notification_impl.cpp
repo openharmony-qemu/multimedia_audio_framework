@@ -273,6 +273,7 @@ bool AudioLoudVolumeNotificationImpl::GetPixelMap()
         return false;
     }
 
+    uint32_t errorCode = 0;
     std::unique_ptr<uint8_t[]> resourceData;
     size_t resourceDataLength = 0;
     auto ret = GetMediaDataByName(LOUD_VOLUME_ICON_ID.c_str(), resourceDataLength, resourceData);
@@ -283,7 +284,6 @@ bool AudioLoudVolumeNotificationImpl::GetPixelMap()
     }
 
     Media::SourceOptions opts;
-    uint32_t errorCode = 0;
     std::unique_ptr<Media::ImageSource> imageSource =
         Media::ImageSource::CreateImageSource(resourceData.get(), resourceDataLength, opts, errorCode);
     Media::DecodeOptions decodeOpts;

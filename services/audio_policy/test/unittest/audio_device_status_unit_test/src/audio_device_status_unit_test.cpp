@@ -1722,5 +1722,28 @@ HWTEST_F(AudioDeviceStatusUnitTest, GetPaIndexByPortName_001, TestSize.Level1)
     uint32_t ret = audioDeviceStatus.GetPaIndexByPortName(portName);
     EXPECT_NE(ret, moduleId);
 }
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: UpdateNearlinkDeviceVolume_001
+* @tc.desc  : Test UpdateNearlinkDeviceVolume interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, UpdateNearlinkDeviceVolume_001, TestSize.Level1)
+{
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    desc.deviceCategory_ = CATEGORY_DEFAULT;
+    desc.macAddress_ = "";
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    int32_t result;
+    VolumeUtils::SetPCVolumeEnable(true);
+    result = audioDeviceStatus.UpdateNearlinkDeviceVolume(desc);
+    EXPECT_EQ(result, SUCCESS);
+
+    VolumeUtils::SetPCVolumeEnable(false);
+    result = audioDeviceStatus.UpdateNearlinkDeviceVolume(desc);
+    EXPECT_EQ(result, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

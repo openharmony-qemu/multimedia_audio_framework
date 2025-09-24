@@ -44,6 +44,8 @@ struct AudioCapturerParams {
     AudioSampleFormat audioSampleFormat = SAMPLE_S16LE;
     /** Audio Channel Layout */
     AudioChannelLayout channelLayout = CH_LAYOUT_UNKNOWN;
+    /** preferred Input Device */
+    AudioDeviceDescriptor preferredInputDevice;
 };
 
 class AudioCapturerCallback {

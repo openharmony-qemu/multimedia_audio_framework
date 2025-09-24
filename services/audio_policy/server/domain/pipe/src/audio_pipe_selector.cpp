@@ -22,6 +22,8 @@
 #include "audio_definition_adapter_info.h"
 #include "audio_policy_utils.h"
 #include <algorithm>
+#include "audio_service_enum.h"
+#include "audio_injector_policy.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -165,13 +167,22 @@ void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipe
 {
     std::string adapterName{};
     for (auto &streamDesc : streamDescs) {
-        std::string streamDescAdapterName = GetAdapterNameByStreamDesc(streamDesc);
-        // find if curStream's prefer pipe has already exist
-        auto newPipeIter = std::find_if(newPipeInfoList.begin(), newPipeInfoList.end(),
-            [&](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
-                return newPipeInfo->routeFlag_ == streamDesc->routeFlag_ &&
-                    newPipeInfo->adapterName_ == streamDescAdapterName;
-            });
+        std::vector<std::shared_ptr<AudioPipeInfo>>::iterator newPipeIter = newPipeInfoList.end();
+        if (streamDesc->rendererTarget_ == INJECT_TO_VOICE_COMMUNICATION_CAPTURE) {
+            std::string streamDescAdapterName = AudioInjectorPolicy::GetInstance().GetAdapterName();
+            newPipeIter = std::find_if(newPipeInfoList.begin(), newPipeInfoList.end(),
+                [&](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
+                    return newPipeInfo->adapterName_ == streamDescAdapterName;
+                });
+        } else {
+            std::string streamDescAdapterName = GetAdapterNameByStreamDesc(streamDesc);
+            // find if curStream's prefer pipe has already exist
+            newPipeIter = std::find_if(newPipeInfoList.begin(), newPipeInfoList.end(),
+                [&](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
+                    return newPipeInfo->routeFlag_ == streamDesc->routeFlag_ &&
+                        newPipeInfo->adapterName_ == streamDescAdapterName;
+                });
+        }
         if (newPipeIter != newPipeInfoList.end()) {
             (*newPipeIter)->streamDescriptors_.push_back(streamDesc);
             (*newPipeIter)->streamDescMap_[streamDesc->sessionId_] = streamDesc;

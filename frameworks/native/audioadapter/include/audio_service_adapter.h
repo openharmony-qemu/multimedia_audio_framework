@@ -242,6 +242,11 @@ public:
      * @return int32_t the result, only supports proaudio for now.
      */
     virtual int32_t SetSystemVolumeToEffect(AudioStreamType streamType, float volume) NOT_SUPPORT_RET
+
+    virtual int32_t AddCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
+        const SourceType &sourceType) = 0;
+    virtual int32_t RemoveCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
+        const SourceType &sourceType) = 0;
     virtual ~AudioServiceAdapter();
 };
 } // namespace AudioStandard

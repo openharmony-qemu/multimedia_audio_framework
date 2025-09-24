@@ -82,16 +82,21 @@ void HpaeSinkVirtualOutputNode::DoProcess()
     }
 }
 
-int32_t HpaeSinkVirtualOutputNode::PeekAudioData(uint8_t **buffer, const size_t &bufferSize,
-    AudioStreamInfo &audioStreamInfo)
+int32_t HpaeSinkVirtualOutputNode::PeekAudioData(uint8_t *buffer, const size_t &bufferSize,
+    AudioStreamInfo &streamInfo)
 {
-    Trace trace("HpaeSinkVirtualOutputNode::PeekAudioData" + GetTraceInfo());
+    Trace trace("HpaeSinkVirtualOutputNode::PeekAudioData " + GetTraceInfo());
     std::lock_guard<std::mutex> lock(mutex_);
     DoProcess();
-    ConvertFromFloat(GetBitWidth(), GetChannelCount() * GetFrameLen(), outputAudioBuffer_.GetPcmDataBuffer(),
-        renderFrameData_.data());
-    CHECK_AND_RETURN_RET_LOG(bufferSize == outputAudioBuffer_.DataSize(), ERROR_INVALID_PARAM, "buffersize error");
-    *buffer = reinterpret_cast<uint8_t *>(renderFrameData_.data());
+    CHECK_AND_RETURN_RET_LOG(buffer != nullptr, ERROR_INVALID_PARAM, "Invalid nullptr buffer provided");
+    memset_s(buffer, bufferSize, 0, bufferSize);
+    uint64_t length = bufferSize / GetBitWidth();
+    ConvertFromFloat(GetBitWidth(), std::min(static_cast<uint64_t>(GetChannelCount() * GetFrameLen()), length),
+        outputAudioBuffer_.GetPcmDataBuffer(), buffer);
+
+    streamInfo.format = GetBitWidth();
+    streamInfo.samplingRate = GetSampleRate();
+    streamInfo.channels = GetChannelCount();
     return SUCCESS;
 }
 

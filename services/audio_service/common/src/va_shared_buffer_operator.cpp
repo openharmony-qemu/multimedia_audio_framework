@@ -134,6 +134,8 @@ size_t VASharedBufferOperator::Read(uint8_t *data, size_t dataSize)
 
     WakeFutex();
 
+    AUDIO_DEBUG_LOG("request readsize:%{public}zu, actual:%{public}zu", dataSize, readSize);
+
     return readSize;
 }
 

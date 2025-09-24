@@ -170,13 +170,13 @@ int32_t PulseAudioServiceAdapterImpl::ReloadAudioPort(const std::string &audioPo
     const AudioModuleInfo &audioModuleInfo)
 {
     AUDIO_PRERELEASE_LOGE("ReloadAudioPort enter the INCORRECT func.");
-    return 0;
+    return -1;
 }
 
 int32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, const AudioModuleInfo& audioModuleInfo)
 {
     AUDIO_PRERELEASE_LOGE("OpenAudioPort enter the INCORRECT func.");
-    return 0;
+    return -1;
 }
 
 uint32_t PulseAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, string moduleArgs)
@@ -606,8 +606,6 @@ vector<SourceOutput> PulseAudioServiceAdapterImpl::GetAllSourceOutputs()
 
     CHECK_AND_RETURN_RET_LOG(mContext != nullptr, userData->sourceOutputList, "mContext is nullptr");
 
-    CHECK_AND_RETURN_RET_LOG(isSetDefaultSource_, userData->sourceOutputList, "default source has not been set.");
-
     PaLockGuard palock(mMainLoop);
 
     pa_operation *operation = pa_context_get_source_output_info_list(mContext,
@@ -956,6 +954,18 @@ void PulseAudioServiceAdapterImpl::PaSubscribeCb(pa_context *c, pa_subscription_
         default:
             break;
     }
+}
+
+int32_t PulseAudioServiceAdapterImpl::AddCaptureInjector(const uint32_t &sinkPortIndex,
+    const uint32_t &sourcePortIndex, const SourceType &sourceType)
+{
+    return SUCCESS;
+}
+
+int32_t PulseAudioServiceAdapterImpl::RemoveCaptureInjector(const uint32_t &sinkPortIndex,
+    const uint32_t &sourcePortIndex, const SourceType &sourceType)
+{
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

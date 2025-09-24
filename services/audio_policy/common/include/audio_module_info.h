@@ -33,6 +33,7 @@ static const char* A2DP_CLASS = "a2dp";
 static const char* HEARING_AID_CLASS = "hearing_aid";
 static const char* USB_CLASS = "usb";
 static const char* DP_CLASS = "dp";
+static const char* DP_MCH_CLASS = "dp_multichannel";
 static const char* ACCESSORY_CLASS = "accessory";
 static const char* FILE_CLASS = "file_io";
 static const char* REMOTE_CLASS = "remote";

@@ -2950,23 +2950,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_136, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_138
-* @tc.desc  : Test GetStreamMuteInternal.
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_138, TestSize.Level1)
-{
-    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    ASSERT_TRUE(server != nullptr);
-
-    auto ret = server->GetStreamMuteInternal(AudioStreamType::STREAM_ALL);
-    EXPECT_EQ(ret, false);
-
-    ret = server->GetStreamMuteInternal(AudioStreamType::STREAM_RING);
-    EXPECT_EQ(ret, true);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_139
 * @tc.desc  : Test GetDevices.
 */

@@ -23,6 +23,7 @@
 #include "audio_device_parser.h"
 #include "audio_policy_utils.h"
 #include "audio_bluetooth_manager.h"
+#include "audio_adapter_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -94,7 +95,7 @@ void AudioDeviceManager::OnXmlParsingCompleted(
 }
 
 bool AudioDeviceManager::DeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor> &devDesc,
-    AudioDevicePrivacyType &privacyType, DeviceRole &devRole, DeviceUsage &devUsage)
+    AudioDevicePrivacyType privacyType, DeviceRole devRole, DeviceUsage devUsage)
 {
     list<DevicePrivacyInfo> deviceList;
     if (privacyType == TYPE_PRIVACY) {
@@ -972,11 +973,10 @@ int32_t AudioDeviceManager::SetDeviceVolumeBehavior(const std::string &networkId
             continue;
         }
         // Find the target device.
-        desc->volumeBehavior_.isReady = true;
-        desc->volumeBehavior_.isVolumeControlDisabled = volumeBehavior.isVolumeControlDisabled;
-        desc->volumeBehavior_.databaseVolumeName = volumeBehavior.databaseVolumeName;
+        desc->volumeBehavior_ = volumeBehavior;
         AUDIO_INFO_LOG("isVolumeControlDisabled [%{public}d], databaseVolumeName [%{public}s]",
             volumeBehavior.isVolumeControlDisabled, volumeBehavior.databaseVolumeName.c_str());
+        AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(desc);
     }
     return SUCCESS;
 }
@@ -1684,6 +1684,23 @@ bool AudioDeviceManager::ExistSameRemoteDeviceByMacAddress(std::shared_ptr<Audio
         }
     }
     return false;
+}
+
+int32_t AudioDeviceManager::GetDevicePriority(const std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    if (DeviceAttrMatch(desc, TYPE_PRIVACY, OUTPUT_DEVICE, ALL_USAGE)) {
+        return PRIORITY_PRIVACY;
+    }
+    if (DeviceAttrMatch(desc, TYPE_PUBLIC, OUTPUT_DEVICE, ALL_USAGE)) {
+        return PRIORITY_PUBLIC;
+    }
+    if (desc->deviceType_ == DEVICE_TYPE_SPEAKER && desc->networkId_ != LOCAL_NETWORK_ID) {
+        return PRIORITY_DISTRIBUTED;
+    }
+    if (desc->deviceType_ == DEVICE_TYPE_REMOTE_CAST) {
+        return PRIORITY_DISTRIBUTED;
+    }
+    return PRIORITY_BASE;
 }
 }
 }

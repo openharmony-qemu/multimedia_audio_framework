@@ -48,6 +48,7 @@
 #include "audio_event_utils.h"
 #include "audio_stream_id_allocator.h"
 #include "i_hpae_soft_link.h"
+#include "audio_injector_policy.h"
 namespace OHOS {
 namespace AudioStandard {
 enum OffloadType {
@@ -178,6 +179,10 @@ public:
         std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
         int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config) override;
         int32_t ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type);
+        int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId) override;
+        int32_t StartInjection(uint32_t sessionId) override;
+        int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
+            uint32_t &timeStamp) override;
 private:
         std::shared_ptr<AudioCoreService> coreService_;
         std::shared_mutex eventMutex_;
@@ -204,6 +209,9 @@ private:
     int32_t CreateRendererClient(
         std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId,
         std::string &networkId);
+    void SetPreferredInputDeviceIfValid(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    void WriteDesignateAudioCaptureDeviceEvent(int32_t clientUID, SourceType sourceType, int32_t deviceType);
+    void WriteIncorrectSelectBTSPPEvent(int32_t clientUID, SourceType sourceType);
     int32_t CreateCapturerClient(
         std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId);
     int32_t StartClient(uint32_t sessionId);
@@ -320,7 +328,10 @@ private:
     void FetchOutputDupDevice(std::string caller, uint32_t sessionId,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     bool IsA2dpOffloadStream(uint sessionId);
-    int32_t ActiveA2dpAndLoadModule(AudioDeviceDescriptor &desc);
+    int32_t SwitchActiveA2dpDevice(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
+    int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId);
+    int32_t StartInjection(uint32_t sessionId);
+    int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
 private:
     static std::string GetEncryptAddr(const std::string &addr);
     int32_t FetchRendererPipesAndExecute(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
@@ -345,9 +356,9 @@ private:
         const AudioStreamDeviceChangeReasonExt reason);
     int32_t ActivateA2dpDevice(std::shared_ptr<AudioDeviceDescriptor> desc,
         const AudioStreamDeviceChangeReasonExt reason);
-    int32_t SwitchActiveA2dpDevice(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     int32_t ActivateNearlinkDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+    void HandleNearlinkErrResult(int32_t result, shared_ptr<AudioDeviceDescriptor> devDesc);
     int32_t LoadA2dpModule(DeviceType deviceType, const AudioStreamInfo &audioStreamInfo,
         std::string networkId, std::string sinkName, SourceType sourceType);
     int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, DeviceType deviceType,
@@ -358,6 +369,7 @@ private:
     void GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo,
         SourceType sourceType);
     void RecordSelectDevice(const std::string &history);
+    std::string ParsePreferredInputDeviceHistory(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsSameDevice(shared_ptr<AudioDeviceDescriptor> &desc, const AudioDeviceDescriptor &deviceInfo);
     int32_t SwitchActiveHearingAidDevice(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     int32_t LoadHearingAidModule(DeviceType deviceType, const AudioStreamInfo &audioStreamInfo,
@@ -529,6 +541,8 @@ private:
     void CheckOpenHearingAidCall(const bool isModemCallRunning, const DeviceType type);
     std::shared_ptr<AudioDeviceDescriptor> GetCaptureClientDevice(
         std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t sessionId);
+    int32_t PlayBackToInjection(uint32_t sessionId);
+    int32_t InjectionToPlayBack(uint32_t sessionId);
 
 private:
     std::shared_ptr<EventEntry> eventEntry_;
@@ -615,6 +629,9 @@ private:
         .type = CAST_TYPE_NULL
     };
     bool isFirstScreenOn_ = false;
+    bool isCreateProcess_ = false;
+
+    AudioInjectorPolicy &audioInjectorPolicy_;
 };
 }
 }
