@@ -282,6 +282,7 @@ ohos_unittest("audio_policy_global_parser_unit_test") {
     "hilog:libhilog",
     "init:libbegetutil",
     "kv_store:distributeddata_inner",
+    "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",

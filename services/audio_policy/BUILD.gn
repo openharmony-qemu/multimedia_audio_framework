@@ -375,6 +375,7 @@ audio_ohos_library("audio_policy_service") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "ipc:ipc_core",
+    "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
@@ -389,7 +390,6 @@ audio_ohos_library("audio_policy_service") {
   public_external_deps = [ "ffrt:libffrt" ]
 
   public_external_deps += [
-    "libxml2:libxml2",
     "openssl:libcrypto_shared",
   ]
 

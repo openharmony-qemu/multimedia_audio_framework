@@ -78,6 +78,7 @@
             "input",
             "ipc",
             "kv_store",
+            "libxml2",
             "napi",
             "os_account",
             "power_manager",
@@ -99,7 +100,6 @@
             "window_manager"
             ],
           "third_party": [
-            "libxml2",
             "openssl"
           ]
         },
