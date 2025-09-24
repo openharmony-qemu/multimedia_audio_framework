@@ -157,7 +157,7 @@ AudioSuitePcmBuffer *AudioSuiteMixerNode::preChannelProcess(AudioSuitePcmBuffer 
     AudioChannelInfo inChannelInfo = {input->GetChannelLayout(), input->GetChannelCount()};
     AudioChannelInfo outChannelInfo = {CH_LAYOUT_STEREO, STEREO};
     int ret = SetChannelConvertProcessParam(inChannelInfo, outChannelInfo, SAMPLE_F32LE, true);
-    CHECK_AND_RETURN_RET_LOG(ret == HPAE::DMIX_ERR_SUCCESS, nullptr,
+    CHECK_AND_RETURN_RET_LOG(ret == HPAE::MIX_ERR_SUCCESS, nullptr,
         "Set channel convert processParam failed with error code %{public}d", ret);
 
     uint32_t formatChannelSrcBufSize = input->GetFrameLen() * SAMPLE_F32LE;
@@ -165,7 +165,7 @@ AudioSuitePcmBuffer *AudioSuiteMixerNode::preChannelProcess(AudioSuitePcmBuffer 
     ret = ChannelConvertProcess(input->GetFrameLen() / input->GetChannelCount(),
         input->GetPcmDataBuffer(), formatChannelSrcBufSize, channelOutput_.GetPcmDataBuffer(),
         channelConvertOutputBytes);
-    CHECK_AND_RETURN_RET_LOG(ret == HPAE::DMIX_ERR_SUCCESS, nullptr,
+    CHECK_AND_RETURN_RET_LOG(ret == HPAE::MIX_ERR_SUCCESS, nullptr,
         "Channel convert process failed with error code %{public}d", ret);
 
     return &channelOutput_;

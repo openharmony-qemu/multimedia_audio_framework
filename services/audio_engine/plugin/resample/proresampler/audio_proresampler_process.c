@@ -12,7 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#ifndef LOG_TAG
+#define LOG_TAG "AudioProResamplerProcess"
+#endif
 #include <stdlib.h>
 #include <math.h>
 #include <limits.h>
@@ -205,7 +207,7 @@ static int32_t CalculateFilter(SingleStagePolyphaseResamplerState* state)
         phi0 += 1.0 / pFactor;
     }
     GainCompensation(state, pFactor);
-    return 0;
+    return RESAMPLER_ERR_SUCCESS;
 }
 
 /*====== Filter multiplication function for general cases =====*/
@@ -1342,8 +1344,8 @@ static int32_t UpdateResamplerState(SingleStagePolyphaseResamplerState* state)
         }
     }
 
-    CalculateFilter(state);
-
+    int32_t ret = CalculateFilter(state);
+    CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret, "CalculateFilter fail with error code %{public}d", ret);
     /* Here's the place where we update the filter memory to take into account
        the change in filter length. It's probably the messiest part of the code
        due to handling of lots of corner cases. */
@@ -1446,7 +1448,8 @@ SingleStagePolyphaseResamplerState* SingleStagePolyphaseResamplerInit(uint32_t n
     state->magicSamples = 0;
     state->subfilterNum = 0;
 
-    SingleStagePolyphaseResamplerSetQuality(state, quality);
+    int32_t ret = SingleStagePolyphaseResamplerSetQuality(state, quality);
+    CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, "fail to set quality with err code %{public}d", ret);
     filterErr = SingleStagePolyphaseResamplerSetRate(state, decimateFactor, interpolateFactor);
     filterErr = UpdateResamplerState(state);
     if (filterErr == RESAMPLER_ERR_SUCCESS) {
@@ -1585,6 +1588,7 @@ int32_t SingleStagePolyphaseResamplerSkipHalfTaps(SingleStagePolyphaseResamplerS
 
 void SingleStagePolyphaseResamplerFree(SingleStagePolyphaseResamplerState* state)
 {
+    CHECK_AND_RETURN_LOG(state != NULL, "no need to free SingleStagePolyphaseResampler");
     free(state->inputMemory);
     state->inputMemory = NULL;
     free(state->filterCoefficients);

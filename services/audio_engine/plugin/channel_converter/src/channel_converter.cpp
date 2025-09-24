@@ -21,10 +21,6 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 static constexpr uint32_t MAX_FRAME_LENGTH = SAMPLE_RATE_192000 * 10; // max framelength is sample rate 192000, 10s
-static inline uint32_t Min(uint32_t a, uint32_t b)
-{
-    return a < b ? a : b;
-}
 
 static uint32_t GetFormatSize(AudioSampleFormat format)
 {

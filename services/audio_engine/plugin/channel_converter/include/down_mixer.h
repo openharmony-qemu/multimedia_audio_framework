@@ -16,6 +16,7 @@
 #define DOWN_MIXER_H
 #include <vector>
 #include "audio_stream_info.h"
+#include "mixer_utils.h"
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {

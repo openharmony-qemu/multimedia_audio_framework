@@ -44,7 +44,7 @@ int32_t SetUpGeneralMixingTable(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS],
 
 bool SetDefaultChannelLayout(AudioChannel channels, AudioChannelLayout &channelLayout);
 
-bool IsValidChLayout(AudioChannelLayout &chLayout, AudioChannel chCounts);
+bool IsValidChLayout(AudioChannelLayout &chLayout, uint32_t chCounts);
 
 uint32_t BitCounts(uint64_t bits);
 

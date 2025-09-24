@@ -250,6 +250,7 @@ static void MixBottom(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair
                 if (outChLayout & BOTTOM_FRONT_CENTER) {
                     coeffTable[channelPosMap[BOTTOM_FRONT_CENTER]][inPos] = COEF_0DB_F;
                 }
+                break;
             default:
                 break;
         }
@@ -510,24 +511,26 @@ int32_t SetUpGeneralMixingTable(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS],
     AudioChannelInfo outChannelInfo, bool mixLfe)
 {
     CHECK_AND_RETURN_RET_LOG(inChannelInfo.numChannels <= MAX_CHANNELS, MIX_ERR_INVALID_ARG,
-       "column size of coeffTable not enough");
+        "column size of coeffTable not enough");
     CHECK_AND_RETURN_RET_LOG(outChannelInfo.numChannels <= MAX_CHANNELS, MIX_ERR_INVALID_ARG,
-       "row size of coeffTable not enough");
+        "row size of coeffTable not enough");
     CHECK_AND_RETURN_RET_LOG(IsValidChLayout(inChannelInfo.channelLayout, inChannelInfo.numChannels),
         MIX_ERR_INVALID_ARG, "invalid input channel info");
     CHECK_AND_RETURN_RET_LOG(IsValidChLayout(outChannelInfo.channelLayout, outChannelInfo.numChannels),
         MIX_ERR_INVALID_ARG, "invalid output channel info");
     
+    // for now, genneral mixer does not support HOA output
+    CHECK_AND_RETURN_RET_LOG(!CheckIsHOA(outChannelInfo.channelLayout), MIX_ERR_INVALID_ARG,
+        "mixer does not support HOA output");
+    
     // for HOA intput, use the first channel input for every output channel
-    if(CheckIsHOA(inChannelInfo.channelLayout)) {
+    if (CheckIsHOA(inChannelInfo.channelLayout)) {
         for (uint32_t i = 0; i < outChannelInfo.numChannels; i++) {
             coeffTable[i][0] = COEF_0DB_F;
         }
         return MIX_ERR_SUCCESS;
     }
-    // for now, genneral mixer does not support HOA output
-    CHECK_AND_RETURN_RET_LOG(!CheckIsHOA(outChannelInfo.channelLayout), MIX_ERR_INVALID_ARG,
-        "mixer does not support HOA output");
+
     // when output is Mono, Mono downmix: add up all the intputs and normalize, nomalization will be done in downmixer
     // for downmix, coeffTable is used as coeffTable[out][in]
     if (outChannelInfo.channelLayout == CH_LAYOUT_MONO) {
