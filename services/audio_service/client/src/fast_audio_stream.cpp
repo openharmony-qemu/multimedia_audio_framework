@@ -1182,7 +1182,7 @@ void FastAudioStream::SetRestoreInfo(RestoreInfo &restoreInfo)
 
 RestoreStatus FastAudioStream::CheckRestoreStatus()
 {
-    if (spkProcClientCb_ == nullptr && micProcClientCb_ == nullptr) {
+    if (!IsDataCallbackSet()) {
         AUDIO_INFO_LOG("Fast stream without callback, restore to normal");
         renderMode_ = RENDER_MODE_NORMAL;
         captureMode_ = CAPTURE_MODE_NORMAL;

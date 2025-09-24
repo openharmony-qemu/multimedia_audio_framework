@@ -1961,9 +1961,11 @@ HWTEST_F(FastSystemStreamUnitTest, GetDefaultOutputDevice_001, TestSize.Level1)
  * @tc.number: IsRestoreNeeded_001
  * @tc.desc  : Test FastAudioStream IsRestoreNeeded() when processClient_ is null
  */
-HWTEST(FastAudioStreamUnitTest, IsRestoreNeeded_001, TestSize.Level4)
+HWTEST(FastAudioStreamUnitTest, IsRestoreNeeded_001, TestSize.Level1)
 {
-    auto fastAudioStream = std::make_shared<FastAudioStream>();
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
 
     fastAudioStream->processClient_ = nullptr;
     EXPECT_EQ(fastAudioStream->IsRestoreNeeded(), false);
@@ -1975,11 +1977,13 @@ HWTEST(FastAudioStreamUnitTest, IsRestoreNeeded_001, TestSize.Level4)
  * @tc.number: IsRestoreNeeded_002
  * @tc.desc  : Test FastAudioStream IsRestoreNeeded() when processClient_ not null but no callback set
  */
-HWTEST(FastAudioStreamUnitTest, IsRestoreNeeded_002, TestSize.Level4)
+HWTEST(FastAudioStreamUnitTest, IsRestoreNeeded_002, TestSize.Level1)
 {
-    auto fastAudioStream = std::make_shared<FastAudioStream>();
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
 
-    auto mockProcessClient = std::make_shared<MockProcessClient>();
+    auto mockProcessClient = std::make_shared<MockAudioProcessInClient>();
     fastAudioStream->processClient_ = mockProcessClient;
     fastAudioStream->spkProcClientCb_ = nullptr;
     fastAudioStream->micProcClientCb_ = nullptr;
@@ -1993,14 +1997,19 @@ HWTEST(FastAudioStreamUnitTest, IsRestoreNeeded_002, TestSize.Level4)
  * @tc.number: IsRestoreNeeded_003
  * @tc.desc  : Test FastAudioStream IsRestoreNeeded() when spk callback set and processClient return false
  */
-HWTEST(FastAudioStreamUnitTest, IsRestoreNeeded_003, TestSize.Level4)
+HWTEST(FastAudioStreamUnitTest, IsRestoreNeeded_003, TestSize.Level1)
 {
-    auto fastAudioStream = std::make_shared<FastAudioStream>();
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
 
-    auto mockProcessClient = std::make_shared<MockProcessClient>();
+    auto mockProcessClient = std::make_shared<MockAudioProcessInClient>();
     EXPECT_CALL(*mockProcessClient, IsRestoreNeeded()).WillOnce(Return(false));
     fastAudioStream->processClient_ = mockProcessClient;
-    fastAudioStream->spkProcClientCb_ = std::make_shared<MockSpkProcClientCb>();
+    std::shared_ptr<AudioRendererWriteCallback> spkCallback = std::make_shared<AudioRendererWriteCallbackTest>();
+    AudioStreamParams tempParams = {};
+    auto audioStream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, tempParams, STREAM_MUSIC, getpid());
+    fastAudioStream->spkProcClientCb_ = std::make_shared<FastAudioStreamRenderCallback>(spkCallback, *audioStream);
     fastAudioStream->micProcClientCb_ = nullptr;
 
     EXPECT_EQ(fastAudioStream->IsRestoreNeeded(), false);
@@ -2012,15 +2021,18 @@ HWTEST(FastAudioStreamUnitTest, IsRestoreNeeded_003, TestSize.Level4)
  * @tc.number: IsRestoreNeeded_004
  * @tc.desc  : Test FastAudioStream IsRestoreNeeded() when mic callback set and processClient return true
  */
-HWTEST(FastAudioStreamUnitTest, IsRestoreNeeded_004, TestSize.Level4)
+HWTEST(FastAudioStreamUnitTest, IsRestoreNeeded_004, TestSize.Level1)
 {
-    auto fastAudioStream = std::make_shared<FastAudioStream>();
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
 
-    auto mockProcessClient = std::make_shared<MockProcessClient>();
+    auto mockProcessClient = std::make_shared<MockAudioProcessInClient>();
     EXPECT_CALL(*mockProcessClient, IsRestoreNeeded()).WillOnce(Return(true));
     fastAudioStream->processClient_ = mockProcessClient;
     fastAudioStream->spkProcClientCb_ = nullptr;
-    fastAudioStream->micProcClientCb_ = std::make_shared<MockMicProcClientCb>();
+    std::shared_ptr<AudioCapturerReadCallback> micCallback = std::make_shared<AudioCapturerReadCallbackTest>();
+    fastAudioStream->micProcClientCb_ = std::make_shared<FastAudioStreamCaptureCallback>(micCallback);
 
     EXPECT_EQ(fastAudioStream->IsRestoreNeeded(), true);
 }
@@ -2031,15 +2043,23 @@ HWTEST(FastAudioStreamUnitTest, IsRestoreNeeded_004, TestSize.Level4)
  * @tc.number: IsRestoreNeeded_005
  * @tc.desc  : Test FastAudioStream IsRestoreNeeded() when both callbacks set and processClient return false
  */
-HWTEST(FastAudioStreamUnitTest, IsRestoreNeeded_005, TestSize.Level4)
+HWTEST(FastAudioStreamUnitTest, IsRestoreNeeded_005, TestSize.Level1)
 {
-    auto fastAudioStream = std::make_shared<FastAudioStream>();
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
 
-    auto mockProcessClient = std::make_shared<MockProcessClient>();
+    auto mockProcessClient = std::make_shared<MockAudioProcessInClient>();
     EXPECT_CALL(*mockProcessClient, IsRestoreNeeded()).WillOnce(Return(false));
     fastAudioStream->processClient_ = mockProcessClient;
-    fastAudioStream->spkProcClientCb_ = std::make_shared<MockSpkProcClientCb>();
-    fastAudioStream->micProcClientCb_ = std::make_shared<MockMicProcClientCb>();
+
+    std::shared_ptr<AudioRendererWriteCallback> spkCallback = std::make_shared<AudioRendererWriteCallbackTest>();
+    AudioStreamParams tempParams = {};
+    auto audioStream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, tempParams, STREAM_MUSIC, getpid());
+    fastAudioStream->spkProcClientCb_ = std::make_shared<FastAudioStreamRenderCallback>(spkCallback, *audioStream);
+
+    std::shared_ptr<AudioCapturerReadCallback> micCallback = std::make_shared<AudioCapturerReadCallbackTest>();
+    fastAudioStream->micProcClientCb_ = std::make_shared<FastAudioStreamCaptureCallback>(micCallback);
 
     EXPECT_EQ(fastAudioStream->IsRestoreNeeded(), false);
 }
