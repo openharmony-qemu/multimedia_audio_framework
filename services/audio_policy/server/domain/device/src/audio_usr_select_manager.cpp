@@ -48,7 +48,8 @@ bool AudioUsrSelectManager::SelectInputDeviceByUid(const std::shared_ptr<AudioDe
     }
 
     RecordDeviceInfo info {.uid_ = uid, .selectedDevice_ = desc};
-    UpdateRecordDeviceInfo(UpdateType::APP_SELECT, info);
+    int index = GetIdFromRecordDeviceInfoList(uid);
+    UpdateRecordDeviceInfoForSelectInner(index, info);
     return !isVirtualDevice;
 }
 
