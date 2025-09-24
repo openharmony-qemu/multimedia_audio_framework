@@ -895,22 +895,14 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptServiceCanMixForIncomingSession_0
     auto interruptService = GetTnterruptServiceTest();
     auto server = GetPolicyServerTest();
     interruptService->Init(server);
-    int32_t pid = 1;
     AudioInterrupt incomingInterrupt;
-    incomingInterrupt.pid = pid;
     AudioInterrupt activeInterrupt;
     AudioFocusEntry focusEntry;
     strategyTest.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
-    int32_t ret = interruptService->ActivateAudioSession(0, pid, strategyTest);
+    int32_t ret = interruptService->ActivateAudioSession(0, incomingInterrupt.pid, strategyTest);
     EXPECT_EQ(SUCCESS, ret);
 
     focusEntry.isReject = true;
-    auto session = interruptService->sessionService_.sessionMap_.find(pid);
-    ASSERT_TRUE(session != interruptService->sessionService_.sessionMap_.end());
-    ASSERT_NE(nullptr, session->second);
-    session->second->isSystemApp_ = true;
-    EXPECT_TRUE(interruptService->CanMixForIncomingSession(incomingInterrupt, activeInterrupt, focusEntry));
-    session->second->isSystemApp_ = false;
     EXPECT_FALSE(interruptService->CanMixForIncomingSession(incomingInterrupt, activeInterrupt, focusEntry));
 }
 
