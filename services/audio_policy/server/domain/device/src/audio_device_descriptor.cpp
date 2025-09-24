@@ -152,6 +152,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role)
     spatializationSupported_ = false;
     isVrSupported_ = true;
     modemCallSupported_ = true;
+    highQualityRecordingSupported_ = false;
 }
 
 AudioDeviceDescriptor::~AudioDeviceDescriptor()
@@ -184,6 +185,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
     spatializationSupported_ = false;
     isVrSupported_ = true;
     modemCallSupported_ = true;
+    highQualityRecordingSupported_ = false;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor)
@@ -219,6 +221,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     isVrSupported_ = deviceDescriptor.isVrSupported_;
     clientInfo_ = deviceDescriptor.clientInfo_;
     modemCallSupported_ = deviceDescriptor.modemCallSupported_;
+    highQualityRecordingSupported_ = deviceDescriptor.highQualityRecordingSupported_;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
@@ -255,6 +258,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     isVrSupported_ = deviceDescriptor->isVrSupported_;
     clientInfo_ = deviceDescriptor->clientInfo_;
     modemCallSupported_ = deviceDescriptor->modemCallSupported_;
+    highQualityRecordingSupported_ = deviceDescriptor->highQualityRecordingSupported_;
 }
 
 DeviceType AudioDeviceDescriptor::getType() const
@@ -337,7 +341,8 @@ bool AudioDeviceDescriptor::MarshallingInner(Parcel &parcel) const
         parcel.WriteInt32(routerType_) &&
         parcel.WriteInt32(isVrSupported_) &&
         parcel.WriteInt32(static_cast<int32_t>(deviceUsage_)) &&
-        parcel.WriteBool(modemCallSupported_);
+        parcel.WriteBool(modemCallSupported_) &&
+        parcel.WriteBool(highQualityRecordingSupported_);
 }
 
 void AudioDeviceDescriptor::FixApiCompatibility(int apiVersion, DeviceRole deviceRole,
@@ -398,7 +403,8 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
         parcel.WriteInt32(routerType_) &&
         parcel.WriteInt32(isVrSupported_) &&
         parcel.WriteInt32(static_cast<int32_t>(deviceUsage_)) &&
-        parcel.WriteBool(modemCallSupported_);
+        parcel.WriteBool(modemCallSupported_) &&
+        parcel.WriteBool(highQualityRecordingSupported_);
 }
 
 void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
@@ -433,6 +439,7 @@ void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
     isVrSupported_ = parcel.ReadInt32();
     deviceUsage_ = static_cast<DeviceUsage>(parcel.ReadInt32());
     modemCallSupported_ = parcel.ReadBool();
+    highQualityRecordingSupported_ = parcel.ReadBool();
 }
 
 AudioDeviceDescriptor *AudioDeviceDescriptor::Unmarshalling(Parcel &parcel)

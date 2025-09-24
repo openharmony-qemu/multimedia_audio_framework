@@ -1211,6 +1211,8 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
         && AudioSpatializationService::GetAudioSpatializationService().
         IsSpatializationSupportedForDevice(updatedDesc.macAddress_)
         && AudioSpatializationService::GetAudioSpatializationService().IsSpatializationSupported();
+    updatedDesc.highQualityRecordingSupported_ = (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN);
+    UpdateDeviceList(updatedDesc, isConnected, descForCb, reason);
 
     TriggerDeviceChangedCallback(descForCb, isConnected);
     TriggerAvailableDeviceChangedCallback(descForCb, isConnected);
