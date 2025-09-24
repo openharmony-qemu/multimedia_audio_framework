@@ -69,12 +69,12 @@ bool AudioPolicyConfigManager::Init(bool isRefresh)
     }
 
     std::unique_ptr<AudioSourceStrategyParser> audioSourceStrategyParser = make_unique<AudioSourceStrategyParser>();
-    if (audioSourceStrategyParser != nullptr) {
-        if (!audioSourceStrategyParser->LoadConfig()) {
-            AUDIO_WARNING_LOG("Audio SourceStrategy Load Configuration failed");
-        }
+    CHECK_AND_RETURN_RET_LOG(audioSourceStrategyParser != nullptr, false, "AudioSourceStrategyParser create failed");
+    ret = audioSourceStrategyParser->LoadConfig();
+    if (ret == false) {
+        AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio SourceStrategy Load Configuration failed");
+        AUDIO_ERR_LOG("Audio SourceStrategy Load Configuration failed");
     }
-    
 
     xmlHasLoaded_ = true;
     return ret;
