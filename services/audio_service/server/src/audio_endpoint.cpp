@@ -588,7 +588,7 @@ bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo, AudioSt
     }
 
     Volume vol = {true, 1.0f, 0};
-    DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
+    DeviceType deviceType = AudioVolume::GetInstance()->GetCurrentActiveDevice();
     if ((streamType == STREAM_VOICE_COMMUNICATION || streamType == STREAM_VOICE_CALL) &&
         endpointType_ == TYPE_VOIP_MMAP) {
         PolicyHandler::GetInstance().GetSharedVolume(STREAM_VOICE_CALL, deviceType, vol);

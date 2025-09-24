@@ -1749,5 +1749,19 @@ HWTEST_F(AudioVolumeUnitTest, SetOffloadEnable_002, TestSize.Level1)
     uint32_t ret = AudioVolume::GetInstance()->GetOffloadEnable(streamIndex);
     EXPECT_EQ(ret, 0);
 }
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetCurrentActiveDevice_001
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, GetCurrentActiveDevice_001, TestSize.Level1)
+{
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+    AudioVolume::GetInstance()->currentActiveDevice_ = deviceType;
+    DeviceType ret = AudioVolume::GetInstance()->GetCurrentActiveDevice();
+    EXPECT_EQ(ret, deviceType);
+}
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS
