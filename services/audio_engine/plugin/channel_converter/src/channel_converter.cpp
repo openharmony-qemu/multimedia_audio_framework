@@ -145,12 +145,10 @@ int32_t ChannelConverter::Process(uint32_t frameLen, float* in, uint32_t inByteS
 
     uint32_t expectInByteSize = frameLen * inChannelInfo_.numChannels * workSize_;
     uint32_t expectOutByteSize = frameLen * outChannelInfo_.numChannels * workSize_;
-    if ((expectInByteSize > inByteSize) || (expectOutByteSize > outByteSize)) {
-        AUDIO_ERR_LOG("unexpected inByteSize %{public}d or outByteSize %{public}d", inByteSize, outByteSize);
-        int32_t ret = memcpy_s(out, outByteSize, in, Min(inByteSize, outByteSize));
-        CHECK_AND_RETURN_RET_LOG(ret == EOK, MIX_ERR_ALLOC_FAILED, "memcpy failed when processing unexpected len");
-        return MIX_ERR_ALLOC_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(expectInByteSize <= inByteSize, MIX_ERR_INVALID_ARG, "expected byte size %{public}d "
+        "smaller than input byte size %{public}d, cannot process", expectInByteSize, inByteSize);
+    CHECK_AND_RETURN_RET_LOG(expectOutByteSize <= outByteSize, MIX_ERR_INVALID_ARG, "expected byte size %{public}d"
+        "samller than output byte size %{public}d, cannot process", expectOutByteSize, outByteSize);
 
     // upmix
     if (inChannelInfo_.numChannels < outChannelInfo_.numChannels) {
