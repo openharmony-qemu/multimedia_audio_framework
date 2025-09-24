@@ -3061,8 +3061,10 @@ void AudioAdapterManager::MdmMuteSwitchCallback(bool isMute)
     for(auto &streamType : defaultVolumeTypeList_) {
         SetVolumeDb(streamType);
         if(streamType == STREAM_VOICE_CALL) {
-            int32_t volumeLevel = isMute ? 0 : GetStreamVolume(streamType);
-            AudioServerProxy::GetInstance().NotifyStreamVolumeChangeProxy(streamType, volumeLevel);
+            int32_t volumeLevel = GetStreamVolume(streamType);
+            DeviceType curOutputDeviceType = currentActiveDevice_.deviceType_;
+            float volumeFloat = isMute ? 0 : GetSystemVolumeInDb(streamType, volumeLevel, curOutputDeviceType);
+            AudioServerProxy::GetInstance().NotifyStreamVolumeChangedProxy(streamType, volumeFloat);
         }
     }
 }
