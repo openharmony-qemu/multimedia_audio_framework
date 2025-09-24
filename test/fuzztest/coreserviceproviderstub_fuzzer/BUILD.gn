@@ -57,6 +57,7 @@ ohos_fuzztest("CoreServiceProviderStubFuzzTest") {
   ]
 
   external_deps = [
+    "ability_runtime:ability_connect_callback_stub",
     "ability_runtime:extension_manager",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",

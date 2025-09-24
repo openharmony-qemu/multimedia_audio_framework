@@ -278,7 +278,8 @@ void AudioCoreService::BluetoothScoFetch(std::shared_ptr<AudioStreamDescriptor> 
     if (streamDesc->streamStatus_ != STREAM_STATUS_STARTED) {
         return;
     }
-    if (Util::IsScoSupportSource(streamDesc->capturerInfo_.sourceType)) {
+    bool hasRunningRecognitionCapturerStream = streamCollector_.HasRunningRecognitionCapturerStream();
+    if (Util::IsScoSupportSource(streamDesc->capturerInfo_.sourceType) || hasRunningRecognitionCapturerStream) {
         ret = ScoInputDeviceFetchedForRecongnition(true, desc->macAddress_, desc->connectState_);
     } else {
         ret = Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true), true);
@@ -3217,9 +3218,6 @@ int32_t AudioCoreService::PlayBackToInjection(uint32_t sessionId)
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     if (!PermissionUtil::VerifyPermission(INJECT_PLAYBACK_TO_AUDIO_CAPTURE_PERMISSION, tokenId)) {
         return ERR_PERMISSION_DENIED;
-    }
-    if (pipeManager_->IsCaptureVoipCall() == NO_VOIP) {
-        return ERR_ILLEGAL_STATE;
     }
     int32_t ret = audioInjectorPolicy_.Init();
 

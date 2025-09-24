@@ -32,6 +32,8 @@ public:
         AudioVolumeType volumeType);
     static std::vector<AudioVolumeType> GetSupportedAudioVolumeTypes();
     static std::vector<StreamUsage> GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType);
+    static std::vector<StreamUsage> GetStreamUsageByVolumeTypeForFetchDevice(AudioVolumeType volumeType);
+
 private:
     static std::set<StreamUsage>& GetStreamUsageSetForVolumeType(AudioVolumeType volumeType);
 
@@ -43,6 +45,7 @@ private:
     static std::unordered_map<AudioVolumeType, std::set<StreamUsage>> pcVolumeToStreamUsageMap_;
     static std::unordered_map<StreamUsage, AudioStreamType> streamUsageMap_;
     static std::unordered_set<AudioVolumeType> audioVolumeTypeSet_;
+    static std::map<AudioVolumeType, std::vector<StreamUsage>> streamToStreamUsageMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

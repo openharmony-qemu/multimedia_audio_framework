@@ -132,7 +132,7 @@ public:
 
     virtual int32_t SuspendAudioDevice(std::string &name, bool isSuspend) = 0;
 
-    virtual void SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor) = 0;
+    virtual void UpdateVolumeForStreams() = 0;
 
     virtual bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false) = 0;
 
@@ -165,8 +165,6 @@ public:
     virtual float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType) = 0;
 
     virtual std::string GetModuleArgs(const AudioModuleInfo &audioModuleInfo) const = 0;
-
-    virtual void ResetRemoteCastDeviceVolume() = 0;
 
     virtual void HandleDpConnection() = 0;
 
@@ -273,6 +271,10 @@ public:
         const SourceType &sourceType) = 0;
     virtual int32_t AddCaptureInjector() = 0;
     virtual int32_t RemoveCaptureInjector() = 0;
+    virtual void UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDeviceDescriptor> &device,
+        int32_t zoneId = 0) = 0;
+    virtual void UpdateVolumeWhenDeviceDisconnect(std::shared_ptr<AudioDeviceDescriptor> &device) = 0;
+    virtual void QueryDeviceVolumeBehavior(std::shared_ptr<AudioDeviceDescriptor> &device) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -57,6 +57,10 @@ ohos_fuzztest("AudioCollaborativeServiceFuzzTest") {
   ]
 
   defines = []
+
+  if (bluetooth_part_enable == true) {
+    external_deps += [ "bluetooth:btframework" ]
+  }
 }
 
 group("fuzztest") {

@@ -29,6 +29,13 @@ using namespace std;
 
 constexpr int32_t NEED_TO_FETCH = 1;
 
+enum DEVICE_PRIORITY {
+    PRIORITY_PRIVACY,
+    PRIORITY_PUBLIC,
+    PRIORITY_BASE,
+    PRIORITY_DISTRIBUTED,
+};
+
 typedef function<bool(const std::shared_ptr<AudioDeviceDescriptor> &desc)> IsPresentFunc;
 class AudioDeviceManager {
 public:
@@ -110,12 +117,13 @@ public:
     shared_ptr<AudioDeviceDescriptor> GetActiveScoDevice(std::string scoMac, DeviceRole role);
     std::shared_ptr<AudioDeviceDescriptor> GetExistedDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
     AudioDevicePrivacyType GetDevicePrivacyType(const shared_ptr<AudioDeviceDescriptor> &devDesc);
+    int32_t GetDevicePriority(const std::shared_ptr<AudioDeviceDescriptor> &desc);
 
 private:
     AudioDeviceManager();
     ~AudioDeviceManager() {};
-    bool DeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor> &devDesc, AudioDevicePrivacyType &privacyType,
-        DeviceRole &devRole, DeviceUsage &devUsage);
+    bool DeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor> &devDesc, AudioDevicePrivacyType privacyType,
+        DeviceRole devRole, DeviceUsage devUsage);
 
     void FillArrayWhenDeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor> &devDesc,
         AudioDevicePrivacyType privacyType, DeviceRole devRole, DeviceUsage devUsage, string logName,

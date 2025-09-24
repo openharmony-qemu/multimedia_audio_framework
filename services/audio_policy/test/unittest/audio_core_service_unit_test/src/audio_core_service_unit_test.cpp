@@ -1680,7 +1680,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_0
 
     audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
 
-    EXPECT_EQ(audioCoreService->audioVolumeManager_.IsRingerModeMute(), false);
+    EXPECT_EQ(audioCoreService->audioVolumeManager_.IsRingerModeMute(), true);
 
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateRingerOrAlarmerDualDeviceOutputRouter_005 end");
 }

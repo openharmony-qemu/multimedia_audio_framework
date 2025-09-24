@@ -343,21 +343,6 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_014, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioVolumeManager.
-* @tc.number: AudioVolumeManager_015
-* @tc.desc  : Test UpdateSafeVolumeByS4 interface.
-*/
-HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_015, TestSize.Level1)
-{
-    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
-    AudioDeviceDescriptor audioDeviceDescriptor;
-
-    audioVolumeManager.UpdateSafeVolumeByS4();
-    audioVolumeManager.audioPolicyManager_.SetVolumeForSwitchDevice(audioDeviceDescriptor);
-    EXPECT_EQ(audioVolumeManager.isBtFirstBoot_, true);
-}
-
-/**
-* @tc.name  : Test AudioVolumeManager.
 * @tc.number: SetVolumeForSwitchDevice_001
 * @tc.desc  : Test AudioVolumeManager::SetVolumeForSwitchDevice interface.
 */
@@ -795,24 +780,6 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_032, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioVolumeManager.
-* @tc.number: AudioVolumeManager_033
-* @tc.desc  : Test DeviceIsSupportSafeVolume interface.
-*/
-HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_033, TestSize.Level1)
-{
-    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
-    ASSERT_TRUE(audioVolumeManager != nullptr);
-
-    AudioAdapterManager audioAdapterManager;
-    audioAdapterManager.currentActiveDevice_.deviceCategory_ = BT_SOUNDBOX;
-    audioVolumeManager->audioPolicyManager_ = audioAdapterManager;
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    auto ret = audioVolumeManager->DeviceIsSupportSafeVolume();
-    EXPECT_EQ(ret, true);
-}
-
-/**
-* @tc.name  : Test AudioVolumeManager.
 * @tc.number: AudioVolumeManager_034
 * @tc.desc  : Test HandleNearlinkDeviceAbsVolume interface.
 */
@@ -1067,72 +1034,6 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_045, TestSize.Level1)
 
     streamType = STREAM_VOICE_CALL_ASSISTANT;
     audioVolumeManager->SetNearlinkDeviceVolume(macAddress, streamType, volumeLevel, internalCall);
-}
-
-/**
-* @tc.name  : Test AudioVolumeManager.
-* @tc.number: AudioVolumeManager_046
-* @tc.desc  : Test SelectDealSafeVolume interface.
-*/
-HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_046, TestSize.Level1)
-{
-    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
-    ASSERT_TRUE(audioVolumeManager != nullptr);
-
-    int32_t volumeLevel = 1000;
-    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
-    AudioStreamType streamType = STREAM_MUSIC;
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_NEARLINK;
-
-    AudioAdapterManager audioAdapterManager;
-    audioAdapterManager.currentActiveDevice_.deviceCategory_ = BT_SOUNDBOX;
-    audioVolumeManager->audioPolicyManager_ = audioAdapterManager;
-    auto ret = audioVolumeManager->SelectDealSafeVolume(streamType, volumeLevel, deviceType);
-    EXPECT_EQ(ret, volumeLevel);
-}
-
-/**
-* @tc.name  : Test AudioVolumeManager.
-* @tc.number: AudioVolumeManager_047
-* @tc.desc  : Test SelectDealSafeVolume interface.
-*/
-HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_047, TestSize.Level1)
-{
-    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
-    ASSERT_TRUE(audioVolumeManager != nullptr);
-
-    int32_t volumeLevel = 1000;
-    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
-    AudioStreamType streamType = STREAM_MUSIC;
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_NEARLINK;
-
-    AudioAdapterManager audioAdapterManager;
-    audioAdapterManager.currentActiveDevice_.deviceCategory_ = BT_CAR;
-    audioVolumeManager->audioPolicyManager_ = audioAdapterManager;
-    auto ret = audioVolumeManager->SelectDealSafeVolume(streamType, volumeLevel, deviceType);
-    EXPECT_EQ(ret, volumeLevel);
-}
-
-/**
-* @tc.name  : Test AudioVolumeManager.
-* @tc.number: AudioVolumeManager_048
-* @tc.desc  : Test SelectDealSafeVolume interface.
-*/
-HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_048, TestSize.Level1)
-{
-    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
-    ASSERT_TRUE(audioVolumeManager != nullptr);
-
-    int32_t volumeLevel = 1000;
-    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
-    AudioStreamType streamType = STREAM_MUSIC;
-    audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_NEARLINK;
-
-    AudioAdapterManager audioAdapterManager;
-    audioAdapterManager.currentActiveDevice_.deviceCategory_ = BT_WATCH;
-    audioVolumeManager->audioPolicyManager_ = audioAdapterManager;
-    audioVolumeManager->isBtFirstBoot_ = true;
-    audioVolumeManager->SelectDealSafeVolume(streamType, volumeLevel, deviceType);
 }
 
 /**
