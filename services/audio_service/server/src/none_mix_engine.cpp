@@ -28,7 +28,7 @@
 #include "audio_volume.h"
 #include "format_converter.h"
 #include "audio_service.h"
-#inlcude "audio_mute_factor_manager.h"
+#include "audio_mute_factor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {

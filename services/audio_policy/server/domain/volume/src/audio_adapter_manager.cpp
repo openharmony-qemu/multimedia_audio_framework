@@ -28,7 +28,8 @@
 #include "audio_volume.h"
 #include "audio_utils.h"
 #include "audio_zone_service.h"
-#include "adio_mute_factor_manager.h"
+#include "audio_mute_factor_manager.h"
+#include "audio_server_proxy.h"
 
 using namespace std;
 
@@ -3059,6 +3060,11 @@ void AudioAdapterManager::MdmMuteSwitchCallback(bool isMute)
     audioMuteFactorManager.SetMdmMuteStatus(isMute);
     for(auto &streamType : defaultVolumeTypeList_) {
         SetVolumeDb(streamType);
+        if(streamType == STREAM_VOICE_CALL) {
+            bool mdmMute = audioMuteFactorManger.GetMdmMuteStatus();
+            int32_t volumeLevel = mdmMute ? 0 : GetStreamVolume(streamType);
+            AudioServerProxy::GetInstance().NotifyStreamVolumeChangeProxy(streamType, volumeLevel);
+        }
     }
 }
 
