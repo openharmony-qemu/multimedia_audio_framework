@@ -55,4 +55,5 @@ interface ICoreServiceProviderIpc {
     void StartInjection(
         [in] unsigned int target,
         [out] int ret);
+    void A2dpOffloadGetRenderPosition([out] unsigned int delayValue, [out] unsigned long sendDataSize, [out] unsigned int timeStamp, [out] int ret);
 }

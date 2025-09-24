@@ -1605,5 +1605,29 @@ int32_t AudioCoreService::StartInjection(uint32_t streamId)
     audioInjectorPolicy_.AddStreamDescriptor(streamId, streamDesc);
     return SUCCESS;
 }
+
+int32_t AudioCoreService::A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
+                                                       uint32_t &timeStamp)
+{
+    Trace trace("AudioCoreService::A2dpOffloadGetRenderPosition");
+#ifdef BLUETOOTH_ENABLE
+    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    AUDIO_DEBUG_LOG("GetRenderPosition, deviceType: %{public}d, a2dpOffloadFlag: %{public}d",
+        audioA2dpOffloadFlag_.GetA2dpOffloadFlag(), curOutputDeviceType);
+    int32_t ret = SUCCESS;
+    if (curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP &&
+        audioActiveDevice_.GetCurrentOutputDeviceNetworkId() == LOCAL_NETWORK_ID &&
+        audioA2dpOffloadFlag_.GetA2dpOffloadFlag() == A2DP_OFFLOAD) {
+        ret = Bluetooth::AudioA2dpManager::GetRenderPosition(delayValue, sendDataSize, timeStamp);
+    } else {
+        delayValue = 0;
+        sendDataSize = 0;
+        timeStamp = 0;
+    }
+    return ret;
+#else
+    return SUCCESS;
+#endif
+}
 } // namespace AudioStandard
 } // namespace OHOS
