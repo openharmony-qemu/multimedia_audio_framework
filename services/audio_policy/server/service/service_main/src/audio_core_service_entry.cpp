@@ -614,7 +614,8 @@ int32_t AudioCoreService::EventEntry::StartInjection(uint32_t sessionId)
     return coreService_->StartInjection(sessionId);
 }
 
-int32_t AudioCoreService::EventEntry::A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp)
+int32_t AudioCoreService::EventEntry::A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
+                                                                   uint32_t &timeStamp)
 {
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
     return coreService_->A2dpOffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
