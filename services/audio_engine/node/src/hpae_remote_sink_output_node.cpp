@@ -101,6 +101,18 @@ void HpaeRemoteSinkOutputNode::HandlePcmDumping(HpaeSplitStreamType streamType, 
     }
 }
 
+void HpaeRemoteSinkOutputNode::NotifyHdiSetParamEvent(const std::string &key, uint32_t renderId, uint32_t typeOrUsage)
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
+    if (deviceManager == nullptr) {
+        AUDIO_ERR_LOG("device manager is nullptr");
+        return;
+    }
+    std::string val = std::to_string(renderId) + '-' + std::to_string(typeOrUsage);
+    deviceManager->SetAudioParameter(this->GetNodeInfo().deviceNetId, AudioParamKey::PARAM_KEY_STATE, key, val);
+}
+
 void HpaeRemoteSinkOutputNode::NotifyStreamTypeChange(AudioStreamType type, HpaeSplitStreamType splitStreamType)
 {
     if (splitStreamType != STREAM_TYPE_MEDIA) {
@@ -110,13 +122,12 @@ void HpaeRemoteSinkOutputNode::NotifyStreamTypeChange(AudioStreamType type, Hpae
     if (type == nodeInfo.streamType) {
         return;
     }
-    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
-    if (deviceManager == nullptr) {
+    int32_t renderId = audioRendererSink_->GetHdiRenderId(splitStreamType);
+    if (renderId < 0) {
+        AUDIO_ERR_LOG("the render id is less then zero");
         return;
     }
-    AudioParamKey key = AudioParamKey::PARAM_KEY_STATE;
-    deviceManager->SetAudioParameter(nodeInfo.deviceNetId, key, STREAM_TYPE_CHANGE, std::to_string(type));
+    this->NotifyHdiSetParamEvent(STREAM_TYPE_CHANGE, static_cast<uint32_t>(renderId), static_cast<uint32_t>(type));
     nodeInfo.streamType = type;
     SetNodeInfo(nodeInfo);
 }
@@ -126,20 +137,13 @@ void HpaeRemoteSinkOutputNode::NotifyStreamUsageChange(StreamUsage usage, HpaeSp
     if (usage == this->usageMap_[splitStreamType]) {
         return;
     }
-    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
-    if (deviceManager == nullptr) {
-        AUDIO_ERR_LOG("device manager is nullptr");
-        return;
-    }
     int32_t renderId = audioRendererSink_->GetHdiRenderId(splitStreamType);
     if (renderId < 0) {
         AUDIO_ERR_LOG("the render id is less then zero");
         return;
     }
-    AudioParamKey key = AudioParamKey::PARAM_KEY_STATE;
-    std::string setValue = std::to_string(renderId) + '-' + std::to_string(usage);
-    deviceManager->SetAudioParameter(this->GetNodeInfo().deviceNetId, key, STREAM_USAGE_CHANGE, setValue);
+    this->NotifyHdiSetParamEvent(STREAM_USAGE_CHANGE, static_cast<uint32_t>(renderId), static_cast<uint32_t>(usage));
+    this->usageMap_[splitStreamType] = usage;
 }
 
 void HpaeRemoteSinkOutputNode::DoProcess()

@@ -57,6 +57,10 @@ public:
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid);
 
 private:
+    /**
+     * @brief service for NotifyStreamTypeChange and NotifyStreamUsageChange
+     */
+    void NotifyHdiSetParamEvent(const std::string &key, uint32_t renderId, uint32_t typeOrUsage);
     void NotifyStreamTypeChange(AudioStreamType type, HpaeSplitStreamType splitStreamType);
     void NotifyStreamUsageChange(StreamUsage usage, HpaeSplitStreamType splitStreamType);
     void HandleRemoteTiming();
