@@ -1170,7 +1170,8 @@ void AudioCoreService::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc,
     if (isConnected && isActualConnection
         && devType == DEVICE_TYPE_BLUETOOTH_SCO
         && updatedDesc.deviceCategory_ != BT_UNWEAR_HEADPHONE
-        && !audioDeviceManager_.GetScoState()) {
+        && !audioDeviceManager_.GetScoState()
+        && updatedDesc.deviceCategory_ != BT_WATCH) {
         Bluetooth::AudioHfpManager::SetActiveHfpDevice(macAddress);
     }
 #endif
