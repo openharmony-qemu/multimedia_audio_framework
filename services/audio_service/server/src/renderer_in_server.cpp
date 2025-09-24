@@ -2152,9 +2152,36 @@ static std::string GetManagerTypeStr(ManagerType type)
 
 bool RendererInServer::Dump(std::string &dumpString)
 {
+    bool ret = false;
+    ret = DumpNormal(dumpString);
+    CHECK_AND_RETURN_RET_LOG(ret == false, true, "DumpNormal");
+    ret = DumpVoipAndDirect(dumpString);
+    CHECK_AND_RETURN_RET_LOG(ret == false, true, "DumpVoipAndDirect");
+    return ret;
+}
+
+bool RendererInServer::DumpNormal(std::string &dumpString)
+{
+    if (managerType_ != PLAYBACK) {
+        return false;
+    }
+    DumpStreamInfo(dumpString);
+    AppendFormat(dumpString, "  - stream type:%d\n", lastTarget_);
+    DumpStatusInfo(dumpString);
+    return true;
+}
+
+bool RendererInServer::DumpVoipAndDirect(std::string &dumpString)
+{
     if (managerType_ != DIRECT_PLAYBACK && managerType_ != VOIP_PLAYBACK) {
         return false;
     }
+    DumpStreamInfo(dumpString);
+    DumpStatusInfo(dumpString);
+    return true;
+}
+void RendererInServer::DumpStreamInfo(std::string &dumpString)
+{
     // dump audio stream info
     dumpString += "audio stream info:\n";
     AppendFormat(dumpString, "  - session id:%u\n", streamIndex_);
@@ -2166,7 +2193,10 @@ bool RendererInServer::Dump(std::string &dumpString)
     AppendFormat(dumpString, "  - format: %u\n", processConfig_.streamInfo.format);
     AppendFormat(dumpString, "  - device type: %u\n", processConfig_.deviceType);
     AppendFormat(dumpString, "  - sink type: %s\n", GetManagerTypeStr(managerType_).c_str());
-
+}
+    
+void RendererInServer::DumpStatusInfo(std::string &dumpString)
+{
     // dump status info
     AppendFormat(dumpString, "  - Current stream status: %s\n", GetStatusStr(status_.load()).c_str());
     if (audioServerBuffer_ != nullptr) {
@@ -2175,7 +2205,6 @@ bool RendererInServer::Dump(std::string &dumpString)
     }
 
     dumpString += "\n";
-    return true;
 }
 
 void RendererInServer::SetNonInterruptMute(const bool muteFlag)

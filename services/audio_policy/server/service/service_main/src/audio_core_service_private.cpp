@@ -3224,9 +3224,6 @@ int32_t AudioCoreService::PlayBackToInjection(uint32_t sessionId)
     if (!PermissionUtil::VerifyPermission(INJECT_PLAYBACK_TO_AUDIO_CAPTURE_PERMISSION, tokenId)) {
         return ERR_PERMISSION_DENIED;
     }
-    if (pipeManager_->IsCaptureVoipCall() == NO_VOIP) {
-        return ERR_ILLEGAL_STATE;
-    }
     int32_t ret = audioInjectorPolicy_.Init();
 
     return ret;
