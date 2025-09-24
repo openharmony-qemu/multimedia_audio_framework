@@ -223,6 +223,7 @@ private:
     int32_t InitializeAudioProcessConfig(AudioProcessConfig &config, const AudioStreamParams &info);
     int32_t SetCallbacksWhenRestore();
     void RegisterThreadPriorityOnStart(StateChangeCmdType cmdType);
+    bool IsDataCallbackSet() const
 
     AudioStreamType eStreamType_;
     AudioMode eMode_;

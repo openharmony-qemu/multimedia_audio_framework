@@ -1954,5 +1954,94 @@ HWTEST_F(FastSystemStreamUnitTest, GetDefaultOutputDevice_001, TestSize.Level1)
 
     EXPECT_EQ(result, DeviceType::DEVICE_TYPE_SPEAKER);
 }
+
+/**
+ * @tc.name  : FastAudioStream_IsRestoreNeeded_001
+ * @tc.type  : FUNC
+ * @tc.number: IsRestoreNeeded_001
+ * @tc.desc  : Test FastAudioStream IsRestoreNeeded() when processClient_ is null
+ */
+HWTEST(FastAudioStreamUnitTest, IsRestoreNeeded_001, TestSize.Level4)
+{
+    auto fastAudioStream = std::make_shared<FastAudioStream>();
+
+    fastAudioStream->processClient_ = nullptr;
+    EXPECT_EQ(fastAudioStream->IsRestoreNeeded(), false);
+}
+
+/**
+ * @tc.name  : FastAudioStream_IsRestoreNeeded_002
+ * @tc.type  : FUNC
+ * @tc.number: IsRestoreNeeded_002
+ * @tc.desc  : Test FastAudioStream IsRestoreNeeded() when processClient_ not null but no callback set
+ */
+HWTEST(FastAudioStreamUnitTest, IsRestoreNeeded_002, TestSize.Level4)
+{
+    auto fastAudioStream = std::make_shared<FastAudioStream>();
+
+    auto mockProcessClient = std::make_shared<MockProcessClient>();
+    fastAudioStream->processClient_ = mockProcessClient;
+    fastAudioStream->spkProcClientCb_ = nullptr;
+    fastAudioStream->micProcClientCb_ = nullptr;
+    
+    EXPECT_EQ(fastAudioStream->IsRestoreNeeded(), true);
+}
+
+/**
+ * @tc.name  : FastAudioStream_IsRestoreNeeded_003
+ * @tc.type  : FUNC
+ * @tc.number: IsRestoreNeeded_003
+ * @tc.desc  : Test FastAudioStream IsRestoreNeeded() when spk callback set and processClient return false
+ */
+HWTEST(FastAudioStreamUnitTest, IsRestoreNeeded_003, TestSize.Level4)
+{
+    auto fastAudioStream = std::make_shared<FastAudioStream>();
+
+    auto mockProcessClient = std::make_shared<MockProcessClient>();
+    EXPECT_CALL(*mockProcessClient, IsRestoreNeeded()).WillOnce(Return(false));
+    fastAudioStream->processClient_ = mockProcessClient;
+    fastAudioStream->spkProcClientCb_ = std::make_shared<MockSpkProcClientCb>();
+    fastAudioStream->micProcClientCb_ = nullptr;
+
+    EXPECT_EQ(fastAudioStream->IsRestoreNeeded(), false);
+}
+
+/**
+ * @tc.name  : FastAudioStream_IsRestoreNeeded_004
+ * @tc.type  : FUNC
+ * @tc.number: IsRestoreNeeded_004
+ * @tc.desc  : Test FastAudioStream IsRestoreNeeded() when mic callback set and processClient return true
+ */
+HWTEST(FastAudioStreamUnitTest, IsRestoreNeeded_004, TestSize.Level4)
+{
+    auto fastAudioStream = std::make_shared<FastAudioStream>();
+
+    auto mockProcessClient = std::make_shared<MockProcessClient>();
+    EXPECT_CALL(*mockProcessClient, IsRestoreNeeded()).WillOnce(Return(true));
+    fastAudioStream->processClient_ = mockProcessClient;
+    fastAudioStream->spkProcClientCb_ = nullptr;
+    fastAudioStream->micProcClientCb_ = std::make_shared<MockMicProcClientCb>();
+
+    EXPECT_EQ(fastAudioStream->IsRestoreNeeded(), true);
+}
+
+/**
+ * @tc.name  : FastAudioStream_IsRestoreNeeded_005
+ * @tc.type  : FUNC
+ * @tc.number: IsRestoreNeeded_005
+ * @tc.desc  : Test FastAudioStream IsRestoreNeeded() when both callbacks set and processClient return false
+ */
+HWTEST(FastAudioStreamUnitTest, IsRestoreNeeded_005, TestSize.Level4)
+{
+    auto fastAudioStream = std::make_shared<FastAudioStream>();
+
+    auto mockProcessClient = std::make_shared<MockProcessClient>();
+    EXPECT_CALL(*mockProcessClient, IsRestoreNeeded()).WillOnce(Return(false));
+    fastAudioStream->processClient_ = mockProcessClient;
+    fastAudioStream->spkProcClientCb_ = std::make_shared<MockSpkProcClientCb>();
+    fastAudioStream->micProcClientCb_ = std::make_shared<MockMicProcClientCb>();
+
+    EXPECT_EQ(fastAudioStream->IsRestoreNeeded(), false);
+}
 } // namespace AudioStandard
 } // namespace OHOS
