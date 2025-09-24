@@ -560,6 +560,7 @@ void AudioEcManager::ActivateArmDevice(const string& address, const DeviceRole r
             } else {
                 AUDIO_INFO_LOG("just save arm usb source module info, rate=%{public}s", moduleInfo.rate.c_str());
                 usbSourceModuleInfo_ = moduleInfo;
+                audioConfigManager_.UpdateDynamicCapturerConfig(ClassType::TYPE_USB, moduleInfo);
             }
         } else {
             int32_t ret = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
