@@ -69,7 +69,7 @@ bool AudioSourceStrategyParser::LoadConfig()
 #else
     const char *path = AUDIO_SOURCE_STRATEGY_CONFIG_FILE;
 #endif
-    CHECK_AND_RETURN_RET_LOG(path != nullptr && *path != '\0', false, "invalid path!");
+    CHECK_AND_RETURN_RET_LOG(path != nullptr && *path != '\0', ERROR, "invalid path!");
     if (curNode_->Config(path, nullptr, 0) != SUCCESS) {
         AUDIO_ERR_LOG("load path: %{public}s fail!", path);
         curNode_->FreeDoc();
@@ -78,7 +78,7 @@ bool AudioSourceStrategyParser::LoadConfig()
     }
 
     AUDIO_INFO_LOG("LoadConfig enter success");
-    CHECK_AND_RETURN_RET_LOG(curNode_->IsNodeValid(), false, "root element is null");
+    CHECK_AND_RETURN_RET_LOG(curNode_->IsNodeValid(), ERROR, "root element is null");
     if (!curNode_->CompareName("audio_source_strategy")) {
         AUDIO_ERR_LOG("Missing tag - audio_source_strategy in : %s", AUDIO_SOURCE_STRATEGY_CONFIG_FILE);
         curNode_->FreeDoc();
@@ -88,7 +88,7 @@ bool AudioSourceStrategyParser::LoadConfig()
 
     AUDIO_INFO_LOG("LoadConfig audio_source_strategy success");
     curNode_->MoveToChildren();
-    CHECK_AND_RETURN_RET_LOG(curNode_->IsNodeValid(), false, "Missing child: %s", AUDIO_SOURCE_STRATEGY_CONFIG_FILE);
+    CHECK_AND_RETURN_RET_LOG(curNode_->IsNodeValid(), ERROR, "Missing child: %s", AUDIO_SOURCE_STRATEGY_CONFIG_FILE);
 
     std::shared_ptr<std::map<SourceType, AudioSourceStrategyType>> sourceStrategyMap =
         std::make_shared<std::map<SourceType, AudioSourceStrategyType>>();
