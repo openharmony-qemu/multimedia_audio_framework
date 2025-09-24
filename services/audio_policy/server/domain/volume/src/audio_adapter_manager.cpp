@@ -2055,9 +2055,7 @@ IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audi
     if (!audioModuleInfo.deviceType.empty()) {
         attr.deviceType = std::stoi(audioModuleInfo.deviceType);
     }
-    if (audioModuleInfo.className == "multichannel") {
-        attr.channelLayout = HDI_DEFAULT_MULTICHANNEL_CHANNELLAYOUT;
-    }
+    attr.channelLayout = static_cast<uint64_t>(std::stoul(audioModuleInfo.channelLayout));
     return attr;
 }
 

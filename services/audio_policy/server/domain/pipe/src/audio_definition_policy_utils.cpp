@@ -205,49 +205,12 @@ uint32_t AudioDefinitionPolicyUtils::PcmFormatToBytes(AudioSampleFormat format)
 
 AudioChannel AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(AudioChannelLayout layout)
 {
-    AudioChannel channel = AudioChannel::CHANNEL_UNKNOW;
-    switch (layout) {
-        case AudioChannelLayout::CH_LAYOUT_MONO:
-            channel = AudioChannel::MONO;
-            break;
-        case AudioChannelLayout::CH_LAYOUT_STEREO:
-            channel = AudioChannel::STEREO;
-            break;
-        case AudioChannelLayout::CH_LAYOUT_2POINT1:
-        case AudioChannelLayout::CH_LAYOUT_3POINT0:
-            channel = AudioChannel::CHANNEL_3;
-            break;
-        case AudioChannelLayout::CH_LAYOUT_3POINT1:
-        case AudioChannelLayout::CH_LAYOUT_4POINT0:
-        case AudioChannelLayout::CH_LAYOUT_QUAD:
-            channel = AudioChannel::CHANNEL_4;
-            break;
-        case AudioChannelLayout::CH_LAYOUT_5POINT0:
-        case AudioChannelLayout::CH_LAYOUT_2POINT1POINT2:
-            channel = AudioChannel::CHANNEL_5;
-            break;
-        case AudioChannelLayout::CH_LAYOUT_5POINT1:
-        case AudioChannelLayout::CH_LAYOUT_HEXAGONAL:
-        case AudioChannelLayout::CH_LAYOUT_3POINT1POINT2:
-            channel = AudioChannel::CHANNEL_6;
-            break;
-        case AudioChannelLayout::CH_LAYOUT_7POINT0:
-            channel = AudioChannel::CHANNEL_7;
-            break;
-        case AudioChannelLayout::CH_LAYOUT_7POINT1:
-            channel = AudioChannel::CHANNEL_8;
-            break;
-        case AudioChannelLayout::CH_LAYOUT_7POINT1POINT2:
-            channel = AudioChannel::CHANNEL_10;
-            break;
-        case AudioChannelLayout::CH_LAYOUT_7POINT1POINT4:
-            channel = AudioChannel::CHANNEL_12;
-            break;
-        default:
-            channel = AudioChannel::CHANNEL_UNKNOW;
-            break;
+    if (((channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET) == 0) {
+        return static_cast<AudioChannel>(__builtin_popcountll(channelLayout));
     }
-    return channel;
+
+    int32_t order = (channelLayout & CH_HOA_ORDNUM_MASK) >> CH_HOA_ORDNUM_OFFSET;
+    return static_cast<AudioChannel>((order + 1) * (order + 1));
 }
 }
 }
