@@ -136,13 +136,11 @@ void AudioEnhanceChain::InitAudioEnhanceChain()
 
 AudioEnhanceChain::~AudioEnhanceChain()
 {
-    threadHandler_ = nullptr;
-    ReleaseAllEnhanceModule();
     DumpFileUtil::CloseDumpFile(&dumpFileIn_);
     DumpFileUtil::CloseDumpFile(&dumpFileOut_);
 }
 
-void AudioEnhanceChain::ReleaseAllEnhanceModule()
+int32_t AudioEnhanceChain::ProcessReleaseAllEnhanceModule(void)
 {
     for (auto &module : enhanceModules_) {
         if (module.libHandle != nullptr) {
@@ -150,6 +148,20 @@ void AudioEnhanceChain::ReleaseAllEnhanceModule()
         }
     }
     enhanceModules_.clear();
+    return SUCCESS;
+}
+
+void AudioEnhanceChain::ReleaseAllEnhanceModule(void)
+{
+    auto task = [self = weak_from_this()]() {
+        if (auto chain = self.lock(); chain != nullptr) {
+            chain->ProcessReleaseAllEnhanceModule();
+        }
+    };
+    if (threadHandler_ != nullptr) {
+        threadHandler_->EnsureTask(task);
+    }
+    threadHandler_ = nullptr;
 }
 
 int32_t AudioEnhanceChain::SetThreadHandler(const std::shared_ptr<ThreadHandler> &threadHandler)

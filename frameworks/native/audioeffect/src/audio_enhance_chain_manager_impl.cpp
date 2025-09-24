@@ -408,6 +408,10 @@ int32_t AudioEnhanceChainManagerImpl::ReleaseAudioEnhanceChainDynamic(uint64_t s
 {
     std::lock_guard<std::mutex> lock(chainManagerMutex_);
 
+    auto chain = ChainPool::GetInstance().GetChainById(sceneKeyCode);
+    if (chain != nullptr) {
+        chain->ReleaseAllEnhanceModule();
+    }
     AUDIO_INFO_LOG("release chain: %{public}" PRIu64, sceneKeyCode);
     ChainPool::GetInstance().DeleteChain(sceneKeyCode);
 
