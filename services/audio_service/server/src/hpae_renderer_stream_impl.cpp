@@ -256,7 +256,7 @@ uint32_t HpaeRendererStreamImpl::GetA2dpOffloadLatency()
     uint32_t a2dpOffloadTimestamp = 0;
     auto& handle = CoreServiceHandler::GetInstance();
     int32_t ret = handle.A2dpOffloadGetRenderPosition(
-            a2dpOffloadLatency, a2dpOffloadSendDataSize, a2dpOffloadTimestamp);
+        a2dpOffloadLatency, a2dpOffloadSendDataSize, a2dpOffloadTimestamp);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("A2dpOffloadGetRenderPosition failed!");
     }
