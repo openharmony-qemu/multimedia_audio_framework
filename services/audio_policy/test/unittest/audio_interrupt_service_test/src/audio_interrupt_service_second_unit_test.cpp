@@ -19,6 +19,7 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
+const int32_t DEFAULT_ZONE_ID = 0;
 void AudioInterruptServiceSecondUnitTest::SetUpTestCase(void) {}
 void AudioInterruptServiceSecondUnitTest::TearDownTestCase(void) {}
 void AudioInterruptServiceSecondUnitTest::SetUp(void) {}
@@ -1840,6 +1841,26 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_068, TestSize.
     audioInterruptZone->audioFocusInfoList.push_back({audioInterrupt, STOP});
     audioInterruptService->ReactivateAudioInterrupts(zoneId, pid, updateScene);
     EXPECT_TRUE(updateScene);
+}
+
+/**
+ * @tc.name  : Test ActivateAudioInterruptCoreProcedure
+ * @tc.number: ActivateAudioInterruptCoreProcedure01
+ * @tc.desc  : Test ActivateAudioInterruptCoreProcedure
+ */
+HWTEST_F(AudioInterruptServiceSecondUnitTest, ActivateAudioInterruptCoreProcedure01, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_VOICE_TRANSCRIPTION;
+    audioInterrupt.audioFocusType.isPlay = true;
+    audioInterrupt.callbackType = INTERRUPT_EVENT_CALLBACK_DEFAULT;
+
+    bool updateScene = false;
+    int32_t ret = audioInterruptService->ActivateAudioInterruptCoreProcedure(DEFAULT_ZONE_ID,
+        audioInterrupt, false, updateScene);
+    EXPECT_EQ(ret, ERR_FOCUS_DENIED);
 }
 
 } // namespace AudioStandard

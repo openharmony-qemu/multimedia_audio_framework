@@ -108,12 +108,13 @@ const std::unordered_map<DeviceType, std::vector<std::string>> DEVICE_CLASS_MAP 
     {DEVICE_TYPE_WIRED_HEADPHONES, {PRIMARY_CLASS, MCH_CLASS}},
     {DEVICE_TYPE_USB_ARM_HEADSET, {PRIMARY_CLASS, USB_CLASS}},
     {DEVICE_TYPE_REMOTE_CAST, {REMOTE_CAST_INNER_CAPTURER_SINK_NAME}},
-    {DEVICE_TYPE_DP, {DP_CLASS}},
+    {DEVICE_TYPE_DP, {DP_CLASS, DP_MCH_CLASS}},
     {DEVICE_TYPE_FILE_SINK, {FILE_CLASS}},
     {DEVICE_TYPE_FILE_SOURCE, {FILE_CLASS}},
-    {DEVICE_TYPE_HDMI, {PRIMARY_CLASS}},
+    {DEVICE_TYPE_HDMI, {PRIMARY_CLASS, DP_CLASS, DP_MCH_CLASS}},
     {DEVICE_TYPE_ACCESSORY, {ACCESSORY_CLASS}},
     {DEVICE_TYPE_HEARING_AID, {HEARING_AID_CLASS}},
+    {DEVICE_TYPE_LINE_DIGITAL, {DP_CLASS, DP_MCH_CLASS}}
 };
 } // namespace
 
@@ -826,7 +827,7 @@ void AudioAdapterManager::SetAudioVolume(AudioStreamType streamType, float volum
     }
     if (GetActiveDevice() == DEVICE_TYPE_NEARLINK) {
         if (volumeType == STREAM_MUSIC && !isSleVoiceStatus_.load()) {
-            isMuted = IsAbsVolumeMute();
+            isMuted = isAbsVolumeMuteNearlink_.load();
             volumeDb = isMuted ? 0.0f : 0.63957f; //  0.63957 = -4dB
         } else if (volumeType == STREAM_VOICE_CALL) {
             volumeDb = 1.0f;
@@ -995,10 +996,7 @@ int32_t AudioAdapterManager::SetInnerStreamMute(AudioStreamType streamType, bool
     }
     // set stream mute status to mem.
     volumeDataMaintainer_.SetStreamMuteStatus(streamType, mute);
-
-    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_NEARLINK) {
-        SetAbsVolumeMute(mute);
-    }
+    SetAbsVolumeMuteNearlink(mute);
 
     int32_t volume = GetSystemVolumeLevel(streamType);
     VolumeEvent volumeEvent = VolumeEvent(streamType, volume, false);
@@ -3251,18 +3249,27 @@ void AudioAdapterManager::SetAbsVolumeMute(bool mute)
 {
     AUDIO_INFO_LOG("SetAbsVolumeMute: %{public}d", mute);
     isAbsVolumeMute_ = mute;
-    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
-        currentActiveDevice_.deviceType_ == DEVICE_TYPE_NEARLINK) {
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         SetVolumeDb(STREAM_MUSIC);
     } else {
-        AUDIO_INFO_LOG("The currentActiveDevice is not A2DP or nearlink device");
+        AUDIO_INFO_LOG("The currentActiveDevice is not A2DP device");
     }
 }
-
 
 bool AudioAdapterManager::IsAbsVolumeMute() const
 {
     return isAbsVolumeMute_;
+}
+
+void AudioAdapterManager::SetAbsVolumeMuteNearlink(bool mute)
+{
+    AUDIO_INFO_LOG("SetAbsVolumeMuteNearlink: %{public}d", mute);
+    isAbsVolumeMuteNearlink_ = mute;
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_NEARLINK) {
+        SetVolumeDb(STREAM_MUSIC);
+    } else {
+        AUDIO_INFO_LOG("The currentActiveDevice is not nearlink device");
+    }
 }
 
 void AudioAdapterManager::NotifyAccountsChanged(const int &id)
@@ -3274,6 +3281,14 @@ void AudioAdapterManager::NotifyAccountsChanged(const int &id)
             CheckAndDealMuteStatus(deviceType, streamType);
         }
     }
+    UpdateVolumeForLowLatency();
+}
+
+void AudioAdapterManager::MuteMediaWhenAccountsChanged()
+{
+    AUDIO_INFO_LOG("mute media when accounts changed!");
+    volumeDataMaintainer_.SetStreamMuteStatus(STREAM_MUSIC, true);
+    SetVolumeDb(STREAM_MUSIC);
     UpdateVolumeForLowLatency();
 }
 

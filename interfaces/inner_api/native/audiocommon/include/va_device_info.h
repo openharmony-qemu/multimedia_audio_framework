@@ -42,8 +42,8 @@ enum VADeviceType {
 
 struct VAAudioStreamProperty : public Parcelable {
     AudioEncodingType encoding_;
-    int32_t sampleRate_;
-    int32_t samplesPerCycle_;
+    uint32_t sampleRate_;
+    uint32_t samplesPerCycle_;
     AudioSampleFormat sampleFormat_;
     AudioChannelLayout channelLayout_;
 
@@ -52,8 +52,8 @@ struct VAAudioStreamProperty : public Parcelable {
     bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteInt32(static_cast<int32_t>(encoding_)) &&
-            parcel.WriteInt32(sampleRate_) &&
-            parcel.WriteInt32(samplesPerCycle_) &&
+            parcel.WriteUint32(sampleRate_) &&
+            parcel.WriteUint32(samplesPerCycle_) &&
             parcel.WriteInt32(static_cast<uint8_t>(sampleFormat_)) &&
             parcel.WriteUint64(static_cast<uint64_t>(channelLayout_));
     }
@@ -61,8 +61,8 @@ struct VAAudioStreamProperty : public Parcelable {
     void UnmarshallingSelf(Parcel& parcel)
     {
         encoding_ = static_cast<AudioEncodingType>(parcel.ReadInt32());
-        sampleRate_ = parcel.ReadInt32();
-        samplesPerCycle_ = parcel.ReadInt32();
+        sampleRate_ = parcel.ReadUint32();
+        samplesPerCycle_ = parcel.ReadUint32();
         sampleFormat_ = static_cast<AudioSampleFormat>(parcel.ReadUint8());
         channelLayout_ = static_cast<AudioChannelLayout>(parcel.ReadUint64());
     }

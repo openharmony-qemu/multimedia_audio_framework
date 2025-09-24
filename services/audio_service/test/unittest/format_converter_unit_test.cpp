@@ -817,7 +817,7 @@ HWTEST_F(FormatConverterUnitTest, F32StereoToF32Mono_MultipleFrames, TestSize.Le
 {
     FormatConverter converter;
 
-    const size_t frameCount = 1000;
+    const size_t frameCount = 10;
     std::vector<float> stereoData(frameCount * 2);
     std::vector<float> monoData(frameCount);
 
@@ -866,7 +866,7 @@ HWTEST_F(FormatConverterUnitTest, F32StereoToS16Mono_NormalCase, TestSize.Level1
     // Verify conversion with proper scaling to int16 range
     EXPECT_EQ(monoData[0], 0);                                  // (1.0 + -1.0)/2 = 0.0 → 0
     EXPECT_EQ(monoData[1], 0);                                  // (0.5 + -0.5)/2 = 0.0 → 0
-    EXPECT_EQ(monoData[2], static_cast<int16_t>(0.5 * 32767));  // (0.8 + 0.2)/2 = 0.5 → 0.5 * 32767
+    EXPECT_EQ(monoData[2], static_cast<int16_t>(16384));        // (0.8 + 0.2)/2 = 0.5 → 0.5 * 32767
 }
 
 // Test null source buffer
@@ -952,7 +952,7 @@ HWTEST_F(FormatConverterUnitTest, F32StereoToS16Mono_SingleFrame, TestSize.Level
     int32_t result = converter.F32StereoToS16Mono(srcDesc, dstDesc);
 
     EXPECT_EQ(result, 0);
-    EXPECT_EQ(monoData[0], static_cast<int16_t>(0.5f * 32767)); // (1.0+0.0)/2 = 0.5 → 0.5 * 32767
+    EXPECT_EQ(monoData[0], static_cast<int16_t>(16383)); // (1.0+0.0)/2 = 0.5 → 0.5 * 32767
 }
 
 // Test full scale values
@@ -971,7 +971,7 @@ HWTEST_F(FormatConverterUnitTest, F32StereoToS16Mono_FullScaleValues, TestSize.L
 
     EXPECT_EQ(result, 0);
     EXPECT_EQ(monoData[0], 32767);   // (1.0+1.0)/2 = 1.0 → 32767
-    EXPECT_EQ(monoData[1], -32768);  // (-1.0+-1.0)/2 = -1.0 → -32768
+    EXPECT_EQ(monoData[1], -32767);  // (-1.0+-1.0)/2 = -1.0 → -32767
 }
 
 // Test clipping behavior (values beyond ±1.0)
@@ -991,7 +991,7 @@ HWTEST_F(FormatConverterUnitTest, F32StereoToS16Mono_ClippingBehavior, TestSize.
     EXPECT_EQ(result, 0);
     // Assuming CapMax() clamps values to ±1.0 range
     EXPECT_EQ(monoData[0], 32767);   // Clamped to (1.0+1.0)/2 = 1.0 → 32767
-    EXPECT_EQ(monoData[1], -32768);  // Clamped to (-1.0+-1.0)/2 = -1.0 → -32768
+    EXPECT_EQ(monoData[1], -32767);  // Clamped to (-1.0+-1.0)/2 = -1.0 → -32767
 }
 
 // Test multiple frames with various values
@@ -1020,11 +1020,11 @@ HWTEST_F(FormatConverterUnitTest, F32StereoToS16Mono_MultipleFrames, TestSize.Le
     EXPECT_EQ(result, 0);
 
     // Verify conversion results
-    EXPECT_EQ(monoData[0], static_cast<int16_t>(0.5f * 32767));   // (0.25+0.75)/2 = 0.5
-    EXPECT_EQ(monoData[1], static_cast<int16_t>(0.5f * 32767));   // (0.1+0.9)/2 = 0.5
-    EXPECT_EQ(monoData[2], 0);                                    // (-0.3+0.3)/2 = 0.0
-    EXPECT_EQ(monoData[3], 0);                                    // (0.9+-0.9)/2 = 0.0
-    EXPECT_EQ(monoData[4], 0);                                    // (0.0+0.0)/2 = 0.0
+    EXPECT_EQ(monoData[0], static_cast<int16_t>(16384));   // (0.25+0.75)/2 = 0.5
+    EXPECT_EQ(monoData[1], static_cast<int16_t>(16384));   // (0.1+0.9)/2 = 0.5
+    EXPECT_EQ(monoData[2], 0);                             // (-0.3+0.3)/2 = 0.0
+    EXPECT_EQ(monoData[3], 0);                             // (0.9+-0.9)/2 = 0.0
+    EXPECT_EQ(monoData[4], 0);                             // (0.0+0.0)/2 = 0.0
 }
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS

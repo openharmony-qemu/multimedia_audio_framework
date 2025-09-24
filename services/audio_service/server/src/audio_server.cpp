@@ -760,6 +760,7 @@ bool AudioServer::SetEffectLiveParameter(const std::vector<std::pair<std::string
     AUDIO_INFO_LOG("SetEffectLiveParameter not support");
     return false;
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioServer::SetExtraParameters(const std::string &key,
     const std::vector<StringPair> &kvpairs)
@@ -805,7 +806,6 @@ int32_t AudioServer::SetExtraParameters(const std::string &key,
     deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", value);
     return SUCCESS;
 }
-// LCOV_EXCL_STOP
 
 bool AudioServer::ProcessKeyValuePairs(const std::string &key,
     const std::vector<std::pair<std::string, std::string>> &kvpairs,
@@ -2286,6 +2286,10 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
 #endif
 
     AUDIO_INFO_LOG("check for uid:%{public}d source type:%{public}d", config.callerUid, sourceType);
+    if (sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
+        bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+        CHECK_AND_RETURN_RET_LOG(hasSystemPermission, false, "VOICE_TRANSCRIPTION failed: no system permission.");
+    }
 
     if (sourceType == SOURCE_TYPE_VOICE_CALL) {
         bool hasSystemPermission = PermissionUtil::VerifySystemPermission();

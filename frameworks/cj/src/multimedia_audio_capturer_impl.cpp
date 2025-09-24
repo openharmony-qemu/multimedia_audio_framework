@@ -263,11 +263,13 @@ void MMAAudioCapturerImpl::RegisterCArrCallback(int32_t callbackType, void (*cal
         if (func == nullptr) {
             AUDIO_ERR_LOG("Register read_data event failure!");
             *errorCode = CJ_ERR_SYSTEM;
+            return;
         }
         auto ret = audioCapturer_->SetCaptureMode(CAPTURE_MODE_CALLBACK);
         if (ret != SUCCESS_CODE) {
             AUDIO_ERR_LOG("SetCaptureMode failure!");
             *errorCode = CJ_ERR_SYSTEM;
+            return;
         }
         capturerReadDataCb_->RegisterFunc(func, audioCapturer_);
         ret = audioCapturer_->SetCapturerReadCallback(capturerReadDataCb_);

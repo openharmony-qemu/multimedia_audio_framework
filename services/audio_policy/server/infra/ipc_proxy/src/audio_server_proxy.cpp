@@ -704,7 +704,7 @@ void AudioServerProxy::SendInterruptEventToAudioServerProxy(InterruptEventIntern
     int32_t sessionId)
 {
     AUDIO_INFO_LOG("hintType:%{public}d for stream:%{public}u", interruptEvent.hintType, sessionId);
-    const sptr gsp = GetAudioServerProxy();
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "error for audio server proxy null");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     gsp->SendInterruptEventToAudioServer(sessionId, interruptEvent);
@@ -713,7 +713,7 @@ void AudioServerProxy::SendInterruptEventToAudioServerProxy(InterruptEventIntern
 
 int32_t AudioServerProxy::GetPrivacyType(const uint32_t sessionId, AudioPrivacyType &privacyType)
 {
-    const sptr gsp = GetAudioServerProxy();
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "error for audio server proxy null");
     int32_t ret = ERROR;
     int32_t type;
@@ -722,6 +722,16 @@ int32_t AudioServerProxy::GetPrivacyType(const uint32_t sessionId, AudioPrivacyT
     IPCSkeleton::SetCallingIdentity(identity);
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     privacyType = static_cast<AudioPrivacyType>(type);
+    return ret;
+}
+
+int32_t AudioServerProxy::SetNonInterruptMuteProxy(uint32_t sessionId, bool muteFlag)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "error for audio server proxy null");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t ret = gsp->SetNonInterruptMute(sessionId, muteFlag);
+    IPCSkeleton::SetCallingIdentity(identity);
     return ret;
 }
 }

@@ -195,7 +195,8 @@ public:
     bool isVrSupported_ = true;
     mutable std::optional<ClientInfo> clientInfo_ = std::nullopt;
     VolumeBehavior volumeBehavior_;
-    bool hightQualityRecordingSupported_ = false;
+    bool modemCallSupported_ = true;
+    bool highQualityRecordingSupported_ = false;
 
 private:
     bool IsOutput()

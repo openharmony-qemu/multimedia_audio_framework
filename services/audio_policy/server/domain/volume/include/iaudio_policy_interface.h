@@ -156,6 +156,8 @@ public:
 
     virtual void SetAbsVolumeMute(bool mute) = 0;
 
+    virtual void SetAbsVolumeMuteNearlink(bool mute) = 0;
+
     virtual void SetDataShareReady(std::atomic<bool> isDataShareReady) = 0;
 
     virtual bool IsAbsVolumeMute() const = 0;
@@ -197,6 +199,8 @@ public:
     virtual AudioDeviceDescriptor GetActiveDeviceDescriptor() = 0;
 
     virtual void NotifyAccountsChanged(const int &id) = 0;
+
+    virtual void MuteMediaWhenAccountsChanged() = 0;
 
     virtual int32_t GetCurActivateCount() const = 0;
 

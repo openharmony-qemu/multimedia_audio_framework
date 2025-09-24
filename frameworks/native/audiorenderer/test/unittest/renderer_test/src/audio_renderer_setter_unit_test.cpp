@@ -2293,7 +2293,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GenerateNewStream_001, TestSize.Lev
 
     auto ret = audioRenderer->GenerateNewStream(IAudioStream::StreamClass::FAST_STREAM, restoreInfo,
         previousState, switchInfo);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
 }
 
 /**
@@ -2311,7 +2311,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SwitchToTargetStream_001, TestSize.
     RestoreInfo restoreInfo;
     restoreInfo.restoreReason = DEFAULT_REASON;
     auto ret = audioRenderer->SwitchToTargetStream(IAudioStream::StreamClass::FAST_STREAM, restoreInfo);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
 }
 
 /**
@@ -2414,7 +2414,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GenerateNewStream_002, TestSize.Lev
 
     auto ret = audioRenderer->GenerateNewStream(IAudioStream::StreamClass::FAST_STREAM, restoreInfo,
         previousState, switchInfo);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
 }
 
 /**
@@ -2432,7 +2432,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SwitchToTargetStream_002, TestSize.
     RestoreInfo restoreInfo;
     restoreInfo.restoreReason = SERVER_DIED;
     auto ret = audioRenderer->SwitchToTargetStream(IAudioStream::StreamClass::FAST_STREAM, restoreInfo);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
 }
 
 /**

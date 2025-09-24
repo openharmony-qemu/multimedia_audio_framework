@@ -452,7 +452,6 @@ void AudioActiveDevice::UpdateStreamUsageDeviceMap(std::shared_ptr<AudioStreamDe
 
 void AudioActiveDevice::UpdateStreamDeviceMap(std::string source)
 {
-    AUDIO_INFO_LOG("update for %{public}s", source.c_str());
     std::vector<std::shared_ptr<AudioStreamDescriptor>> descs =
         AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescs();
     activeOutputDevices_.clear();

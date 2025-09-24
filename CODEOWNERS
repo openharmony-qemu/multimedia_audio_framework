@@ -14,6 +14,6 @@
  */
  services/audio_policy/common/include/audio_policy_ipc_interface_code.h @leonchan5
  services/audio_service/client/include/pulseaudio_ipc_interface_code.h @leonchan5
- services/audio_policy/server/infra/config/file/audio_interrupt_policy_config.xml @hao-liangfei @caihdl
+ services/audio_policy/server/infra/config/file/audio_interrupt_policy_config.xml @hao-liangfei @caixuejiang
  services/audio_service/idl/IStandardAudioService.idl @boxwall @magekkkk @gisaac @madedi426 @tom_guo
  services/audio_policy/idl/IAudioPolicy.idl @boxwall @magekkkk @gisaac @madedi426 @tom_guo

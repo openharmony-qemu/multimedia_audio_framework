@@ -203,6 +203,8 @@ public:
 
     void SetAbsVolumeMute(bool mute);
 
+    void SetAbsVolumeMuteNearlink(bool mute);
+
     void SetDataShareReady(std::atomic<bool> isDataShareReady);
 
     bool IsAbsVolumeMute() const;
@@ -228,6 +230,8 @@ public:
     int32_t GetStreamVolume(AudioStreamType streamType);
 
     void NotifyAccountsChanged(const int &id);
+
+    void MuteMediaWhenAccountsChanged();
 
     void SafeVolumeDump(std::string &dumpString);
 
@@ -472,6 +476,7 @@ private:
     bool testModeOn_ {false};
     std::atomic<float> getSystemVolumeInDb_  {0.0f};
     std::atomic<bool> isSleVoiceStatus_ {false};
+    std::atomic<bool> isAbsVolumeMuteNearlink_ {false};
     bool useNonlinearAlgo_ = false;
     bool isAbsVolumeScene_ = false;
     bool isAbsVolumeMute_ = false;

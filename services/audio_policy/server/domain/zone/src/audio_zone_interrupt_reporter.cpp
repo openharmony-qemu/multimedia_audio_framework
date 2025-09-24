@@ -103,7 +103,8 @@ AudioZoneInterruptReporter::ReporterVector AudioZoneInterruptReporter::CreateRep
     int32_t zoneId,
     std::shared_ptr<AudioInterruptService> interruptService,
     std::shared_ptr<AudioZoneClientManager> zoneClientManager,
-    AudioZoneInterruptReason reason)
+    AudioZoneInterruptReason reason,
+    AudioFocusList injectFocusList)
 {
     ReporterVector vec;
     CHECK_AND_RETURN_RET_LOG(interruptService != nullptr && zoneClientManager != nullptr, vec,
@@ -124,6 +125,7 @@ AudioZoneInterruptReporter::ReporterVector AudioZoneInterruptReporter::CreateRep
             rep->deviceTag_ = it.second;
             rep->reportReason_ = reason;
             rep->oldFocusList_ = rep->GetFocusList();
+            rep->injectFocusList_ = injectFocusList;
             vec.emplace_back(rep);
             AUDIO_DEBUG_LOG("create reporter with zone %{public}d, device %{public}s"
                 " for client %{public}d of reason %{public}d",
@@ -146,12 +148,15 @@ AudioZoneFocusList AudioZoneInterruptReporter::GetFocusList()
     return focusList;
 }
 
-void AudioZoneInterruptReporter::ReportInterrupt()
+void AudioZoneInterruptReporter::ReportInterrupt(const string &deviceTag)
 {
     CHECK_AND_RETURN_LOG(interruptService_!= nullptr && zoneClientManager_!= nullptr,
         "interruptService or zoneClientManager is null");
 
     AudioZoneFocusList newFocusList = GetFocusList();
+    if (!deviceTag.empty()) {
+        CHECK_AND_RETURN_LOG(!IsFocusListEqual(injectFocusList_, newFocusList), "inject focus not change");
+    }
     CHECK_AND_RETURN_LOG(!IsFocusListEqual(oldFocusList_, newFocusList), "focus not change");
 
     AUDIO_INFO_LOG("report audio zone %{public}d device %{public}s interrupt to"
