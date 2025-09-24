@@ -482,6 +482,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_012, TestSize.Level1)
     int32_t strategy = 0;
     auto policyServerTest = GetPolicyServerUnitTest();
     EXPECT_EQ(policyServerTest->ActivateAudioSession(strategy), SUCCESS);
+    EXPECT_EQ(policyServerTest->DeactivateAudioSession(), SUCCESS);
 }
 
 /**
