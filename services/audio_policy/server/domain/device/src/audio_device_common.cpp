@@ -397,6 +397,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
         audioActiveDevice_.GetCurrentOutputDeviceMacAddr() == updatedDesc.macAddress_) {
         audioA2dpOffloadFlag_.SetA2dpOffloadFlag(NO_A2DP_DEVICE);
     }
+    AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceDisconnect(devDesc);
 }
 
 void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
@@ -421,9 +422,10 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     }
     descForCb.push_back(audioDescriptor);
     AudioPolicyUtils::GetInstance().UpdateDisplayName(audioDescriptor);
+    AudioAdapterManager::GetInstance().QueryDeviceVolumeBehavior(audioDescriptor);
     audioConnectedDevice_.AddConnectedDevice(audioDescriptor);
     audioDeviceManager_.AddNewDevice(audioDescriptor);
-
+    AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(audioDescriptor);
     if (updatedDesc.connectState_ == VIRTUAL_CONNECTED) {
         AUDIO_INFO_LOG("The device is virtual device, no need to update preferred device");
         return; // No need to update preferred device for virtual device
