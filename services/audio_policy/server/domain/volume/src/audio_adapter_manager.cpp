@@ -3062,18 +3062,6 @@ void AudioAdapterManager::MdmMuteSwitchCallback(bool isMute)
     }
 }
 
-void AudioAdapterManager::HandleHearingAidVolume(AudioStreamType streamType)
-{
-    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_HEARING_AID) {
-        if (streamType == STREAM_MUSIC || streamType == STREAM_VOICE_CALL ||
-            streamType == STREAM_VOICE_ASSISTANT) {
-            int32_t defaultVolume = static_cast<int32_t>(std::ceil(GetMaxVolumeLevel(streamType) * 0.8));
-            AUDIO_INFO_LOG("first time switch hearingAid, use default volume");
-            SetSystemVolumeLevel(streamType, defaultVolume);
-        }
-    }
-}
-
 void AudioAdapterManager::SaveSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType,
     int32_t volumeLevel)
 {
