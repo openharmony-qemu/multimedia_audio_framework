@@ -205,11 +205,11 @@ uint32_t AudioDefinitionPolicyUtils::PcmFormatToBytes(AudioSampleFormat format)
 
 AudioChannel AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(AudioChannelLayout layout)
 {
-    if (((channelLayout & CH_MODE_MASK) >> CH_MODE_OFFSET) == 0) {
-        return static_cast<AudioChannel>(__builtin_popcountll(channelLayout));
+    if (((layout & CH_MODE_MASK) >> CH_MODE_OFFSET) == 0) {
+        return static_cast<AudioChannel>(__builtin_popcountll(layout));
     }
 
-    int32_t order = (channelLayout & CH_HOA_ORDNUM_MASK) >> CH_HOA_ORDNUM_OFFSET;
+    int32_t order = (layout & CH_HOA_ORDNUM_MASK) >> CH_HOA_ORDNUM_OFFSET;
     return static_cast<AudioChannel>((order + 1) * (order + 1));
 }
 }
