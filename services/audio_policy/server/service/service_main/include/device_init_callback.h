@@ -39,7 +39,7 @@ class DeviceStatusCallbackImpl : public DistributedHardware::DeviceStatusCallbac
 public:
     explicit DeviceStatusCallbackImpl();
     ~DeviceStatusCallbackImpl() override {};
-    void OnDeviceChanged(const DistributedHardware::DmDeviceBasicInfo &dmDeviceBasicInfo) override;
+    void OnDeviceChanged(const DistributedHardware::DmDeviceBasicInfo &dmDeviceBasicInfo) override {};
     void OnDeviceOnline(const DistributedHardware::DmDeviceBasicInfo &deviceBasicInfo) override {};
     void OnDeviceOffline(const DistributedHardware::DmDeviceBasicInfo &deviceBasicInfo) override {};
     void OnDeviceReady(const DistributedHardware::DmDeviceBasicInfo &deviceBasicInfo) override {};
