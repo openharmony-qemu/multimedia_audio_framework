@@ -25,7 +25,7 @@ class DownMixer {
 public:
     DownMixer();
     void GetDownMixTable(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS]) const;
-    int32_t SetParam(AudioChannelInfo inChannelInfo_, AudioChannelInfo outChannelInfo_,
+    int32_t SetParam(AudioChannelInfo inChannelInfo, AudioChannelInfo outChannelInfo,
         uint32_t formatSize, bool mixLfe);
     void Reset();
 private:
