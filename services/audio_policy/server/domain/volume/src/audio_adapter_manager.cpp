@@ -833,15 +833,18 @@ int32_t AudioAdapterManager::SetInnerStreamMute(AudioStreamType streamType, bool
     if (isSetStreamMute == SUCCESS) {
         return SUCCESS;
     }
-    // set stream mute status to mem.
-    auto desc = audioActiveDevice_.GetDeviceForVolume(streamType);
-    volumeDataMaintainer_.SaveMuteToMap(desc, streamType, mute);
-    SetAbsVolumeMuteNearlink(mute);
+    // if current mute status is same for set, not set mute
+    if (volumeDataMaintainer_.GetStreamMute(streamType) != mute) {
+        // set stream mute status to mem.
+        auto desc = audioActiveDevice_.GetDeviceForVolume(streamType);
+        volumeDataMaintainer_.SaveMuteToMap(desc, streamType, mute);
+        SetAbsVolumeMuteNearlink(mute);
 
-    int32_t volume = GetSystemVolumeLevel(streamType);
-    VolumeEvent volumeEvent = VolumeEvent(streamType, volume, false);
-    if (audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
+        int32_t volume = GetSystemVolumeLevel(streamType);
+        VolumeEvent volumeEvent = VolumeEvent(streamType, volume, false);
+        if (audioPolicyServerHandler_ != nullptr) {
+            audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
+        }
     }
 
     return SetVolumeDb(desc, streamType);
