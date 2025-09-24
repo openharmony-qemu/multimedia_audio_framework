@@ -35,6 +35,7 @@
 #include "policy_handler.h"
 #include "audio_volume.h"
 #include "audio_limiter_manager.h"
+#include "core_service_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -578,10 +579,10 @@ uint32_t PaRendererStreamImpl::GetA2dpOffloadLatency()
     uint32_t a2dpOffloadLatency = 0;
     uint64_t a2dpOffloadSendDataSize = 0;
     uint32_t a2dpOffloadTimestamp = 0;
-    auto& handle = PolicyHandler::GetInstance();
-    int32_t ret = handle.OffloadGetRenderPosition(a2dpOffloadLatency, a2dpOffloadSendDataSize, a2dpOffloadTimestamp);
+    auto& handle = CoreServiceHandler::GetInstance();
+    int32_t ret = handle.A2dpOffloadGetRenderPosition(a2dpOffloadLatency, a2dpOffloadSendDataSize, a2dpOffloadTimestamp);
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("OffloadGetRenderPosition failed");
+        AUDIO_ERR_LOG("A2dpOffloadGetRenderPosition failed");
     }
     return a2dpOffloadLatency;
 }
