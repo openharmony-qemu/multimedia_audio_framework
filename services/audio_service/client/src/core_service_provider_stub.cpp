@@ -105,5 +105,12 @@ int32_t CoreServiceProviderWrapper::StartInjection(uint32_t streamId, int32_t &r
     ret = coreServiceWorker_->StartInjection(streamId);
     return SUCCESS;
 }
+
+int32_t CoreServiceProviderWrapper::A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp, int32_t &ret)
+{
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    ret = coreServiceWorker_->A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS
