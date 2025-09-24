@@ -1606,7 +1606,8 @@ int32_t AudioCoreService::StartInjection(uint32_t streamId)
     return SUCCESS;
 }
 
-int32_t AudioCoreService::A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp)
+int32_t AudioCoreService::A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
+                                                       uint32_t &timeStamp)
 {
     Trace trace("AudioCoreService::A2dpOffloadGetRenderPosition");
 #ifdef BLUETOOTH_ENABLE
