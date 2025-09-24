@@ -834,9 +834,10 @@ int32_t AudioAdapterManager::SetInnerStreamMute(AudioStreamType streamType, bool
         return SUCCESS;
     }
     // if current mute status is same for set, not set mute
-    if (volumeDataMaintainer_.GetStreamMute(streamType) != mute) {
+    bool currentMuteStatus = getStreamMute(streamType);
+    auto desc = audioActiveDevice_.GetDeviceForVolume(streamType);
+    if (currentMuteStatus != mute) {
         // set stream mute status to mem.
-        auto desc = audioActiveDevice_.GetDeviceForVolume(streamType);
         volumeDataMaintainer_.SaveMuteToMap(desc, streamType, mute);
         SetAbsVolumeMuteNearlink(mute);
 
