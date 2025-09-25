@@ -246,14 +246,16 @@ int32_t ProResampler::UpdateRates(uint32_t inRate, uint32_t outRate)
 
 int32_t ProResampler::UpdateChannels(uint32_t channels)
 {
-    CHECK_AND_RETURN_RET_LOG(channels <= MAX_CHANNELS, RESAMPLER_ERR_INVALID_ARG,
-        "invalid channel number: %{public}d, channel number should within [1, 10]", channels);
+    // if update channel, the only way to update SingleStagePolyphaseResampler is to create a new one
+    SingleStagePolyphaseResamplerFree(state_);
+    if (channels > MAX_CHANNELS) {
+        channels_ = channels;
+        AUDIO_INFO_LOG("invalid channel number: %{public}d, channel number should within [1, 16]", channels);
+        return RESAMPLER_ERR_INVALID_ARG;
+    }
     AUDIO_INFO_LOG("update work channel success old channel: %{public}d, new channel: %{public}d",
         channels_, channels);
     channels_ = channels;
-    // if update channel, the only way to update SingleStagePolyphaseResampler is to create a new one
-    SingleStagePolyphaseResamplerFree(state_);
-
     int32_t errRet = RESAMPLER_ERR_SUCCESS;
     state_ = SingleStagePolyphaseResamplerInit(channels_, inRate_, outRate_, quality_, &errRet);
     CHECK_AND_RETURN_RET_LOG(state_ && (errRet == RESAMPLER_ERR_SUCCESS), errRet,
