@@ -561,40 +561,6 @@ enum AudioLoopbackState {
     LOOPBACK_STATE_DESTROYED,
 };
 
-enum AudioLoopbackReverbPreset {
-    /**
-     * A preset that keep the original reverberation without any enhancement.
-     */
-    REVERB_PRESET_ORIGINAL = 1,
-    /**
-     * A preset representing a reverberation effect with karaoke-like acoustic characteristics.
-     */
-    REVERB_PRESET_KTV = 2,
-    /**
-     * A preset representing a reverberation effect with theater-like acoustic characteristics.
-     */
-    REVERB_PRESET_THEATER = 3,
-    /**
-     * A preset representing a reverberation effect with concert-like acoustic characteristics.
-     */
-    REVERB_PRESET_CONCERT = 4,
-};
-
-enum AudioLoopbackEqualizerPreset {
-    /**
-     * A preset that keep the original frequency response without any enhancement.
-     */
-    EQUALIZER_PRESET_FLAT = 1,
-    /**
-     * A preset representing a equalizer that can enhance the fullness of the vocie
-     */
-    EQUALIZER_PRESET_FULL = 2,
-    /**
-     * A preset representing a equalizer that can enhance the brightness of the vocie
-     */
-    EQUALIZER_PRESET_BRIGHT = 3,
-};
-
 struct AudioRendererInfo : public Parcelable {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
