@@ -360,5 +360,69 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetAudioSourceAttr_001, TestSize.Level1)
     IAudioSourceAttr attr = audioAdapterManager->GetAudioSourceAttr(info);
     EXPECT_EQ(attr.channelLayout, 263); // 263 = 100000111
 }
+
+/**
+ * @tc.name: Test GetMaxVolumeLevel_New
+ * @tc.number: GetMaxVolumeLevel_New
+ * @tc.type: FUNC
+ * @tc.desc: GetMaxVolumeLevel_New
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetMaxVolumeLevel_New, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    int32_t ret = audioAdapterManager->GetMaxVolumeLevel(STREAM_APP, desc);
+    EXPECT_EQ(ret, audioAdapterManager->appConfigVolume_.maxVolume);
+    ret = audioAdapterManager->GetMinVolumeLevel(STREAM_APP, desc);
+    EXPECT_EQ(ret, audioAdapterManager->appConfigVolume_.minVolume);
+}
+
+/**
+ * @tc.name: Test SetAudioVolume
+ * @tc.number: SetAudioVolume
+ * @tc.type: FUNC
+ * @tc.desc: SetAudioVolume
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetAudioVolume, TestSize.Level1)
+{
+    auto ad = std::make_shared<AudioAdapterManager>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    AudioStreamType type = STREAM_MUSIC;
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    ad->isAbsVolumeScene_ = true;
+    ad->SetAudioVolume(desc, type, 0);
+    EXPECT_EQ(ad->IsAbsVolumeScene(), true);
+
+    type = STREAM_APP;
+    ad->SetAudioVolume(desc, type, 0);
+    EXPECT_EQ(ad->IsAbsVolumeScene(), true);
+    
+    ad->isAbsVolumeScene_ = false;
+    ad->SetAudioVolume(desc, type, 0);
+    EXPECT_EQ(ad->IsAbsVolumeScene(), false);
+
+    type = STREAM_MUSIC;
+    ad->SetAudioVolume(desc, type, 0);
+    EXPECT_EQ(ad->IsAbsVolumeScene(), false);
+
+    desc->deviceType_ = DEVICE_TYPE_NEARLINK;
+
+    ad->isAbsVolumeScene_ = true;
+    ad->SetAudioVolume(desc, type, 0);
+    EXPECT_EQ(ad->IsAbsVolumeScene(), true);
+
+    type = STREAM_APP;
+    ad->SetAudioVolume(desc, type, 0);
+    EXPECT_EQ(ad->IsAbsVolumeScene(), true);
+    
+    ad->isAbsVolumeScene_ = false;
+    ad->SetAudioVolume(desc, type, 0);
+    EXPECT_EQ(ad->IsAbsVolumeScene(), false);
+
+    type = STREAM_MUSIC;
+    ad->SetAudioVolume(desc, type, 0);
+    EXPECT_EQ(ad->IsAbsVolumeScene(), false);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
