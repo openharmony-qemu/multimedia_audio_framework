@@ -98,7 +98,7 @@
     *SetAbsVolumeStateToEffect*;
     *DeleteStreamVolume*;
     *ExistAudioEffectChainArm*;
-    *IsChannelLayoutSupportForDspEffect*;
+    *IsChannelLayoutSupportedForDspEffect*;
   local:
     *;
 };

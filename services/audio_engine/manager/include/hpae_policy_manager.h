@@ -80,7 +80,7 @@ public:
     void SendInitCommandToAlgo();
     void AddStreamVolumeToEffect(const std::string stringSessionId, const float streamVolume);
     void DeleteStreamVolumeToEffect(const std::string stringSessionID);
-    bool IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout);
+    bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout);
 private:
     HpaePolicyManager();
 };

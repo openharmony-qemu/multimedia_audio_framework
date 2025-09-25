@@ -2008,7 +2008,7 @@ bool AudioEffectChainManager::ExistAudioEffectChainArm(const std::string sceneTy
     return true;
 }
 
-bool AudioEffectChainManager::IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout)
+bool AudioEffectChainManager::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout)
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     effectHdiInput_[0] = HDI_QUERY_CHANNELLAYOUT;

@@ -823,7 +823,7 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetDynamicStreamPr
 
 std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoFromPipe(
     std::shared_ptr<AdapterPipeInfo> &info,
-    AudioSampleFormat format, uint32_t sampleRate, AudioChannel channels, AudioChannelLayout channelLayout)
+    AudioSampleFormat format, uint32_t sampleRate, AudioChannel channels)
 {
     std::shared_ptr<PipeStreamPropInfo> propInfo = GetDynamicStreamPropInfoFromPipe(info, format, sampleRate, channels);
     CHECK_AND_RETURN_RET(propInfo == nullptr, propInfo);

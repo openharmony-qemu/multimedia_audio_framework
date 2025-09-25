@@ -233,11 +233,11 @@ void HpaePolicyManager::DeleteStreamVolumeToEffect(const std::string stringSessi
     audioEffectChainManager->DeleteStreamVolume(stringSessionId);
 }
 
-bool HpaePolicyManager::IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout)
+bool HpaePolicyManager::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, false, "null audioEffectChainManager");
-    return audioEffectChainManager->IsChannelLayoutSupportForDspEffect(channelLayout);
+    return audioEffectChainManager->IsChannelLayoutSupportedForDspEffect(channelLayout);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

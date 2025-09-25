@@ -2631,9 +2631,9 @@ int32_t HpaeManager::PeekAudioData(
     return sinkVirtualOutputNode->PeekAudioData(buffer, bufferSize, streamInfo);
 }
 
-bool HpaeManager::IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout)
+bool HpaeManager::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout)
 {
-    return HpaePolicyManager::GetInstance().IsChannelLayoutSupportForDspEffect(channelLayout);
+    return HpaePolicyManager::GetInstance().IsChannelLayoutSupportedForDspEffect(channelLayout);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

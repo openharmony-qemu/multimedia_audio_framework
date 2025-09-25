@@ -617,10 +617,10 @@ int32_t HpaeManagerImpl::PeekAudioData(
     return manager_->PeekAudioData(sinkPortIndex, buffer, bufferSize, streamInfo);
 }
 
-bool HpaeManagerImpl::IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout)
+bool HpaeManagerImpl::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, false, "manager is nullptr");
-    return manager_->IsChannelLayoutSupportForDspEffect(channelLayout);
+    return manager_->IsChannelLayoutSupportedForDspEffect(channelLayout);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

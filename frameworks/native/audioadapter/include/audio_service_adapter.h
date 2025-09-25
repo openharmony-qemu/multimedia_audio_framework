@@ -253,7 +253,7 @@ public:
      *
      * @return {@link true} if support, {@link false} otherwise
      */
-    virtual bool IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout) NOT_SUPPORT_RET
+    virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) NOT_SUPPORT_RET
 
     virtual ~AudioServiceAdapter();
 };

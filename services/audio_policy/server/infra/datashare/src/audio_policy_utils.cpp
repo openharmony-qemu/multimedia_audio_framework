@@ -801,18 +801,5 @@ bool AudioPolicyUtils::IsWirelessDevice(DeviceType deviceType)
     }
 }
 
-void AudioPolicyUtils::UpdateMultiChannelStreamInfo(std::shared_ptr<PipeStreamPropInfo> &streamPropInfo)
-{
-    if (!AudioPolicyManagerFactory::GetAudioPolicyManager().
-        IsChannelLayoutSupportedForDspEffect(streamPropInfo->channelLayout_)) {
-        AUDIO_INFO_LOG("not support channelLayout:%{public}" PRIu64, streamPropInfo->channelLayout_);
-        // use default 5.1 channel for multi-channel pipe
-        streamPropInfo->bufferSize_ =
-            ((streamPropInfo->bufferSize_ * static_cast<uint32_t>(CHANNEL_6)) /
-            static_cast<uint32_t>(streamPropInfo->channels_));
-        streamPropInfo->channels_ = CHANNEL_6;
-        streamPropInfo->channelLayout_ = CH_LAYOUT_5POINT1;
-    }
-}
 } // namespace AudioStandard
 } // namespace OHOS

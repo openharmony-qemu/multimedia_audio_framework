@@ -3488,10 +3488,10 @@ int32_t AudioAdapterManager::RemoveCaptureInjector(const uint32_t &sinkPortIndex
     return audioServiceAdapter_->RemoveCaptureInjector(sinkPortIndex, sourcePortIndex, sourceType);
 }
 
-bool AudioAdapterManager::IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout)
+bool AudioAdapterManager::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout)
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, false, "audioServiceAdapter is null");
-    return audioServiceAdapter_->IsChannelLayoutSupportForDspEffect(channelLayout);
+    return audioServiceAdapter_->IsChannelLayoutSupportedForDspEffect(channelLayout);
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

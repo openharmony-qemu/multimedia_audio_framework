@@ -149,7 +149,7 @@ public:
     int32_t PeekAudioData(
         const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo) override;
 
-    bool IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout) override;
+    bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) override;
 private:
     std::shared_ptr<HpaeManager> manager_;
 };

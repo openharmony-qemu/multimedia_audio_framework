@@ -272,7 +272,7 @@ public:
     virtual int32_t AddCaptureInjector() = 0;
     virtual int32_t RemoveCaptureInjector() = 0;
 
-    virtual bool IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout) = 0;
+    virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

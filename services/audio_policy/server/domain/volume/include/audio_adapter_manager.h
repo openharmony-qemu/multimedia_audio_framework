@@ -315,7 +315,7 @@ public:
         const SourceType &sourceType);
     int32_t AddCaptureInjector();
     int32_t RemoveCaptureInjector();
-    bool IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout);
+    bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout);
 private:
     friend class PolicyCallbackImpl;
 

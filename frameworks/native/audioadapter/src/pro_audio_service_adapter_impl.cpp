@@ -577,10 +577,10 @@ int32_t ProAudioServiceAdapterImpl::RemoveCaptureInjector(const uint32_t &sinkPo
     return SUCCESS;
 }
 
-bool ProAudioServiceAdapterImpl::IsChannelLayoutSupportForDspEffect(AudioChannelLayout channelLayout)
+bool ProAudioServiceAdapterImpl::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout)
 {
     lock_guard<mutex> lock(lock_);
-    return IHpaeManager::GetHpaeManager().IsChannelLayoutSupportForDspEffect(channelLayout);
+    return IHpaeManager::GetHpaeManager().IsChannelLayoutSupportedForDspEffect(channelLayout);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS
