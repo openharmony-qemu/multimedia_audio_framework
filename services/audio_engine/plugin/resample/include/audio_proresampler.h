@@ -24,6 +24,8 @@ namespace AudioStandard {
 namespace HPAE {
 class ProResampler : public Resampler {
 public:
+    // notice: inRate and outRate should be different, otherwise resampler will not process
+    // and will return RESAMPLER_ERR_ALLOC_FAILED in Process()
     ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels, uint32_t quality);
     ~ProResampler() override;
     // disable deep copy, enable move semantics to manage memory allocated by C malloc
