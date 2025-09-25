@@ -193,6 +193,17 @@ static void MixMidRearInner(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std
                 MixMidFront(coeffTable, {inPos, WIDE_RIGHT}, outChLayout, channelPosMap);
             }
             break;
+        case BACK_RIGHT:
+            if (outChLayout & BACK_RIGHT) {
+                coeffTable[channelPosMap[BACK_RIGHT]][inPos] = COEF_0DB_F;
+            } else if (outChLayout & SIDE_RIGHT) {
+                coeffTable[channelPosMap[SIDE_RIGHT]][inPos] = COEF_0DB_F;
+            } else if (outChLayout & BACK_CENTER) {
+                coeffTable[channelPosMap[BACK_CENTER]][inPos] = COEF_0DB_F;
+            } else {
+                MixMidFront(coeffTable, {inPos, WIDE_RIGHT}, outChLayout, channelPosMap);
+            }
+            break;
         default:
             break;
     }
@@ -229,17 +240,6 @@ static void MixMidRear(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pai
                 coeffTable[channelPosMap[BACK_CENTER]][inPos] = COEF_0DB_F;
             } else {
                 MixMidFront(coeffTable, {inPos, WIDE_LEFT}, outChLayout, channelPosMap);
-            }
-            break;
-        case BACK_RIGHT:
-            if (outChLayout & BACK_RIGHT) {
-                coeffTable[channelPosMap[BACK_RIGHT]][inPos] = COEF_0DB_F;
-            } else if (outChLayout & SIDE_RIGHT) {
-                coeffTable[channelPosMap[SIDE_RIGHT]][inPos] = COEF_0DB_F;
-            } else if (outChLayout & BACK_CENTER) {
-                coeffTable[channelPosMap[BACK_CENTER]][inPos] = COEF_0DB_F;
-            } else {
-                MixMidFront(coeffTable, {inPos, WIDE_RIGHT}, outChLayout, channelPosMap);
             }
             break;
         default:

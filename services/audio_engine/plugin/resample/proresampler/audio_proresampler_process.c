@@ -1405,7 +1405,7 @@ static int32_t SingleStagePolyphaseResamplerSetQuality(SingleStagePolyphaseResam
     return RESAMPLER_ERR_SUCCESS;
 }
 
-static void SingleStagePolyphaseResamplerSetParams(SingleStagePolyphaseResamplerState* state)
+static void SingleStagePolyphaseResamplerSetDefaultParams(SingleStagePolyphaseResamplerState* state)
 {
     CHECK_AND_RETURN_LOG(state != NULL, "resampler state is null");
     state->isInitialized = 0;
@@ -1423,8 +1423,6 @@ static void SingleStagePolyphaseResamplerSetParams(SingleStagePolyphaseResampler
     state->resamplerFunction = 0;
 
     state->cutoff = 1.f;
-    state->numChannels = numChannels;
-
     state->bufferSize = BUFFER_SIZE;
 
     state->inputIndex = 0;
@@ -1453,10 +1451,11 @@ SingleStagePolyphaseResamplerState* SingleStagePolyphaseResamplerInit(uint32_t n
         return NULL;
     }
 
-    SingleStagePolyphaseResamplerSetParams(state);
-    
+    state->numChannels = numChannels;
+    SingleStagePolyphaseResamplerSetDefaultParams(state);
+
     int32_t ret = SingleStagePolyphaseResamplerSetQuality(state, quality);
-    CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret, "fail to set quality with err code %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, NULL, "fail to set quality with err code %{public}d", ret);
     filterErr = SingleStagePolyphaseResamplerSetRate(state, decimateFactor, interpolateFactor);
     filterErr = UpdateResamplerState(state);
     if (filterErr == RESAMPLER_ERR_SUCCESS) {
