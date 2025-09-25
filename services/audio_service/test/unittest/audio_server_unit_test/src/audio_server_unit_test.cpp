@@ -2491,7 +2491,7 @@ HWTEST_F(AudioServerUnitTest, SetAsrVoiceMuteMode_001, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
     int32_t asrVoiceMuteMode = 0;
     bool on = true;
-    EXPECT_EQ(audioServer->SetAsrVoiceMuteMode(asrVoiceMuteMode, on), 0);
+    EXPECT_EQ(audioServer->SetAsrVoiceMuteMode(asrVoiceMuteMode, on), SUCCESS);
 }
 
 /**
