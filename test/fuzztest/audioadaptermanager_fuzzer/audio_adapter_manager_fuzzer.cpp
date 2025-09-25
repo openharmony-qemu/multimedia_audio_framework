@@ -216,7 +216,6 @@ void AudioVolumeManagerSetInnerStreamMuteFuzzTest(const uint8_t *rawData, size_t
     StreamUsage streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
     bool mute = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
     audioAdapterManager_->SetInnerStreamMute(streamType, mute, streamUsage);
-    audioAdapterManager_->SetInnerStreamMute(streamType, !mute, streamUsage);
 }
 
 void AudioVolumeManagerSetStreamMuteFuzzTest(const uint8_t *rawData, size_t size)
