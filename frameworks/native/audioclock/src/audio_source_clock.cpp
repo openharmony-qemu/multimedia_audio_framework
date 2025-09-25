@@ -101,7 +101,8 @@ void AudioSourceClock::Renew(uint32_t posIncSize)
         }
         clock->SetTimeStampByPosition(timestamp, sampleRate_, positionInc);
     }
-    if (logTimestamp_ == 0 || (timestamp - logTimestamp_ >= AUDIO_SOURCE_CLOCK_LOG_TIME_NS)) {
+    if (logTimestamp_ == 0 || (timestamp > logTimestamp_ &&
+        timestamp - logTimestamp_ >= AUDIO_SOURCE_CLOCK_LOG_TIME_NS)) {
         logTimestamp_ = timestamp;
         AUDIO_INFO_LOG("posInc:%{public}u sizePPos_:%{public}u srcPts:%{public}" PRIu64
             " sysPts:%{public}" PRIu64, positionInc, sizePerPos_, logTimestamp_, ClockTime::GetCurNano());

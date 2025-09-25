@@ -65,7 +65,8 @@ bool CapturerClock::GetTimeStampByPosition(uint64_t capturerPos, uint64_t& times
         tsDetla = posDetla * AUDIO_NS_PER_SECOND / capturerSampleRate_;
         timestamp = timestamp_ + tsDetla;
     }
-    if (logTimestamp_ == 0 || timestamp-logTimestamp_ >= AUDIO_CAPTURER_CLOCK_LOG_TIME_NS) {
+    if (logTimestamp_ == 0 || (timestamp > logTimestamp_ &&
+        timestamp - logTimestamp_ >= AUDIO_CAPTURER_CLOCK_LOG_TIME_NS)) {
         logTimestamp_ = timestamp;
         AUDIO_WARNING_LOG("Pos:%{public}" PRIu64 " posDetla:%{public}" PRIu64 " tsDetla:%{public}" PRIu64
             " capPos:%{public}" PRIu64 " capPts:%{public}" PRIu64 " sysPts:%{public}" PRIu64, position_,
