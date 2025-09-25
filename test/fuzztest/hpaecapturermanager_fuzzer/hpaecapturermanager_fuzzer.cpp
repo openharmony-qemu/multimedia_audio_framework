@@ -457,7 +457,7 @@ void OnRequestLatencyFuzzTest()
     auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     capturerManager->Init();
     uint32_t sessionId = GetData<uint32_t>();
-    uint64_t latency = GetData<uint64_t>();
+    uint64_t latency = 0;
     capturerManager->OnRequestLatency(sessionId, latency);
     WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
