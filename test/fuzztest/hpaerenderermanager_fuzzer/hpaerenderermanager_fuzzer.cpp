@@ -325,7 +325,7 @@ void HpaeRendererManagerProcessFuzzTest()
 
     HpaeStreamInfo streamInfo;
     InitRenderStreamInfo(streamInfo);
-    rendererManager->CreateStream(streamInfo)
+    rendererManager->CreateStream(streamInfo);
     WaitForMsgProcessing(rendererManager);
     rendererManager->HandleMsg();
     WaitForMsgProcessing(rendererManager);
