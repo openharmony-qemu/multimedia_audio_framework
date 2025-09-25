@@ -48,6 +48,7 @@
 #include "audio_offload_stream.h"
 #include "audio_volume_manager.h"
 #include "audio_ec_manager.h"
+#include "audio_adapter_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -248,7 +249,7 @@ private:
     bool isFirstScreenOn_ = false;
     bool isRingDualToneOnPrimarySpeaker_ = false;
     bool isHeadsetUnpluggedToSpkOrEpFlag_ = false;
-    std::vector<std::pair<AudioStreamType, StreamUsage>> streamsWhenRingDualOnPrimarySpeaker_;
+    std::vector<std::pair<uint32_t, AudioStreamType>> streamsWhenRingDualOnPrimarySpeaker_;
 
     IAudioPolicyInterface& audioPolicyManager_;
     AudioStreamCollector& streamCollector_;

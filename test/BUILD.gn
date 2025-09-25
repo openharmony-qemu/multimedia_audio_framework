@@ -220,6 +220,7 @@ group("audio_fuzz_test") {
     "fuzztest/audiocoreservice_fuzzer:fuzztest",
     "fuzztest/audiocoreserviceentry_fuzzer:fuzztest",
     "fuzztest/audiocoreserviceprivate_fuzzer:fuzztest",
+    "fuzztest/audiocoreserviceprivatemore_fuzzer:fuzztest",
     "fuzztest/audiodevicecommon_fuzzer:fuzztest",
     "fuzztest/audiodevicelock_fuzzer:fuzztest",
     "fuzztest/audiodevicestatus_fuzzer:fuzztest",

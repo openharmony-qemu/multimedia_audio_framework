@@ -31,6 +31,7 @@ enum VoIpType {
     FAST_VOIP = 2,
 };
 
+class AudioPolicyServerHandler;
 class AudioInjectorPolicy {
 public:
     static AudioInjectorPolicy& GetInstance()
@@ -54,6 +55,12 @@ public:
     int32_t AddCaptureInjector();
     int32_t RemoveCaptureInjector();
 
+    void AddInjectorStreamId(const uint32_t streamId);
+    void DeleteInjectorStreamId(const uint32_t streamId);
+    bool IsActivateInterruptStreamId(const uint32_t streamId);
+    void SendInterruptEventToInjectorStreams(const std::shared_ptr<AudioPolicyServerHandler> &handler);
+    int32_t SetInjectorStreamsMute(bool newMicrophoneMute);
+
 private:
     AudioInjectorPolicy();
     AudioInjectorPolicy(const AudioInjectorPolicy&) = delete;
@@ -69,6 +76,7 @@ private:
     IAudioPolicyInterface &audioPolicyManager_;
     std::shared_ptr<AudioPipeManager> pipeManager_ = nullptr;
     std::shared_mutex injectLock_;
+    std::unordered_set<uint32_t> injectorStreamIds_;
 };
 } //  namespace AudioStandard
 } //  namespace OHOS

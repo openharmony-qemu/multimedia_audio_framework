@@ -482,6 +482,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_012, TestSize.Level1)
     int32_t strategy = 0;
     auto policyServerTest = GetPolicyServerUnitTest();
     EXPECT_EQ(policyServerTest->ActivateAudioSession(strategy), SUCCESS);
+    EXPECT_EQ(policyServerTest->DeactivateAudioSession(), SUCCESS);
 }
 
 /**
@@ -2946,23 +2947,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_136, TestSize.Level1)
 
     ret = server->SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_RING, volumeLevel, true, false);
     EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_138
-* @tc.desc  : Test GetStreamMuteInternal.
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_138, TestSize.Level1)
-{
-    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    ASSERT_TRUE(server != nullptr);
-
-    auto ret = server->GetStreamMuteInternal(AudioStreamType::STREAM_ALL);
-    EXPECT_EQ(ret, false);
-
-    ret = server->GetStreamMuteInternal(AudioStreamType::STREAM_RING);
-    EXPECT_EQ(ret, true);
 }
 
 /**

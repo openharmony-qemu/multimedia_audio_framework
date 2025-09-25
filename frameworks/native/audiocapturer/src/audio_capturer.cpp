@@ -773,11 +773,6 @@ void AudioCapturerPrivate::SetInSwitchingFlag(bool inSwitchingFlag)
 
 int32_t AudioCapturerPrivate::AsyncCheckAudioCapturer(std::string callingFunc)
 {
-    // Check first to avoid redundant instructions consumption in thread switching
-    if (!IsRestoreOrStopNeeded()) {
-        return SUCCESS;
-    }
-
     if (switchStreamInNewThreadTaskCount_.fetch_add(1) > 0) {
         return SUCCESS;
     }

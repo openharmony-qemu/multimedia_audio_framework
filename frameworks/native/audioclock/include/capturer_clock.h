@@ -34,6 +34,7 @@ public:
 private:
     uint64_t position_ = 0;
     uint64_t timestamp_ = 0;
+    uint64_t logTimestamp_ = 0;
     uint32_t capturerSampleRate_ = 0;
     uint64_t lastPosInc_ = 0;
     bool isRunning_ = false;

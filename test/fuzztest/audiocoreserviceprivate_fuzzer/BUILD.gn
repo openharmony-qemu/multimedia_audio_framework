@@ -15,6 +15,7 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 import("../../../accessibility.gni")
 import("../../../config.gni")
+import("../../../bluetooth_part.gni")
 
 ohos_fuzztest("AudioCoreServicePrivateFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
@@ -91,7 +92,8 @@ ohos_fuzztest("AudioCoreServicePrivateFuzzTest") {
     ]
   }
 
-  defines = []
+  defines = [ "BLUETOOTH_ENABLE" ]
+
   if (use_libfuzzer || use_clang_coverage) {
     defines += [ "TEST_COVERAGE" ]
   }

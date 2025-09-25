@@ -539,7 +539,8 @@ void AudioPolicyUtils::UpdateEffectDefaultSink(DeviceType deviceType)
         case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
         case DeviceType::DEVICE_TYPE_HDMI:
-        case DeviceType::DEVICE_TYPE_LINE_DIGITAL: {
+        case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
+        case DeviceType::DEVICE_TYPE_NEARLINK: {
             std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
             AudioServerProxy::GetInstance().SetOutputDeviceSinkProxy(deviceType, sinkName);
             break;

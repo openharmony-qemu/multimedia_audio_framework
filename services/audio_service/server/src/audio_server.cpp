@@ -760,6 +760,7 @@ bool AudioServer::SetEffectLiveParameter(const std::vector<std::pair<std::string
     AUDIO_INFO_LOG("SetEffectLiveParameter not support");
     return false;
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioServer::SetExtraParameters(const std::string &key,
     const std::vector<StringPair> &kvpairs)
@@ -805,7 +806,6 @@ int32_t AudioServer::SetExtraParameters(const std::string &key,
     deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", value);
     return SUCCESS;
 }
-// LCOV_EXCL_STOP
 
 bool AudioServer::ProcessKeyValuePairs(const std::string &key,
     const std::vector<std::pair<std::string, std::string>> &kvpairs,
@@ -3180,21 +3180,29 @@ int32_t AudioServer::GetPrivacyTypeAudioServer(uint32_t sessionId, int32_t &priv
 int32_t AudioServer::AddCaptureInjector(uint32_t sinkPortidx, std::string &rate, std::string &format,
     std::string &channels)
 {
+    int32_t ret = ERROR; //if is not low latency, should return error
+#ifdef SUPPORT_LOW_LATENCY
     auto ptr = AudioService::GetInstance()->GetEndPointByType(AudioEndpoint::EndpointType::TYPE_VOIP_MMAP);
     CHECK_AND_RETURN_RET_LOG(ptr != nullptr, ERROR, "endpoint not exist!");
-    int32_t ret = ptr->AddCaptureInjector(sinkPortidx, SOURCE_TYPE_VOICE_COMMUNICATION);
+    ret = ptr->AddCaptureInjector(sinkPortidx, SOURCE_TYPE_VOICE_COMMUNICATION);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "add injector fail!");
     AudioModuleInfo &info = AudioInjectorService::GetInstance().GetModuleInfo();
     rate = info.rate;
     format = info.format;
     channels = info.channels;
+#endif
     return ret;
 }
 
 int32_t AudioServer::RemoveCaptureInjector(uint32_t sinkPortidx)
 {
+    int32_t ret = ERROR; //if is not low latency, should return error
+#ifdef SUPPORT_LOW_LATENCY
     auto ptr = AudioService::GetInstance()->GetEndPointByType(AudioEndpoint::EndpointType::TYPE_VOIP_MMAP);
     CHECK_AND_RETURN_RET_LOG(ptr != nullptr, ERROR, "endpoint not exist!");
-    int32_t ret = ptr->RemoveCaptureInjector(sinkPortidx, SOURCE_TYPE_VOICE_COMMUNICATION);
+    ret = ptr->RemoveCaptureInjector(sinkPortidx, SOURCE_TYPE_VOICE_COMMUNICATION);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "remove injector fail!");
+#endif
     return ret;
 }
 // LCOV_EXCL_STOP

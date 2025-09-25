@@ -127,17 +127,17 @@ HWTEST_F(AudioSuiteProcessNodeTest, ChannelConverterTestProcessTest, TestSize.Le
     std::vector<float> in(TEST_BUFFER_LEN * MONO, 0.0f);
     std::vector<float> out(TEST_BUFFER_LEN * STEREO, 0.0f);
     EXPECT_EQ(node_->SetChannelConvertProcessParam(inChannelInfo, outChannelInfo, SAMPLE_F32LE, MIX_FLE),
-        DMIX_ERR_SUCCESS);
+        MIX_ERR_SUCCESS);
     EXPECT_EQ(node_->ChannelConvertProcess(TEST_BUFFER_LEN, in.data(), in.size() * sizeof(float), out.data(),
-        out.size() * sizeof(float)), DMIX_ERR_SUCCESS);
+        out.size() * sizeof(float)), MIX_ERR_SUCCESS);
     // test downmix
     inChannelInfo.numChannels = CHANNEL_6;
     inChannelInfo.channelLayout = CH_LAYOUT_5POINT1;
     in.resize(TEST_BUFFER_LEN * CHANNEL_6, 0.0f);
     EXPECT_EQ(node_->SetChannelConvertProcessParam(inChannelInfo, outChannelInfo, SAMPLE_F32LE, MIX_FLE),
-        DMIX_ERR_SUCCESS);
+        MIX_ERR_SUCCESS);
     EXPECT_EQ(node_->ChannelConvertProcess(TEST_BUFFER_LEN, in.data(), in.size() * sizeof(float), out.data(),
-        out.size() * sizeof(float)), DMIX_ERR_SUCCESS);
+        out.size() * sizeof(float)), MIX_ERR_SUCCESS);
 }
 
 HWTEST_F(AudioSuiteProcessNodeTest, DoProcessDefaultTest, TestSize.Level0)
