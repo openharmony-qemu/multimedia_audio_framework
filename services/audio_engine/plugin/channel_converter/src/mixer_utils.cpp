@@ -16,9 +16,9 @@
 #define LOG_TAG "HpaeMixerUtils"
 #endif
 #include "mixer_utils.h"
-#include "audio_engine_log.h"
 #include <cinttypes>
 #include <map>
+#include "audio_engine_log.h"
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -78,29 +78,53 @@ uint32_t BitCounts(uint64_t bits)
     return num;
 }
 
-static void MixLfe(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> pos_to_bit,
-   std::pair<uint64_t, uint64_t> chMskPair, std::map<uint64_t, uint32_t> &channelPosMap);
-static void MixMidFront(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> pos_to_bit,
+static void MixLfe(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> posToBit,
+    std::pair<uint64_t, uint64_t> chMskPair, std::map<uint64_t, uint32_t> &channelPosMap);
+static void MixMidFront(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> posToBit,
     uint64_t outChLayout, std::map<uint64_t, uint32_t> &channelPosMap);
-static void MixMidRear(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> pos_to_bit,
+static void MixMidRear(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> posToBit,
     uint64_t outChLayout, std::map<uint64_t, uint32_t> &channelPosMap);
-static void MixTopCenter(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> pos_to_bit,
+static void MixTopCenter(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> posToBit,
     uint64_t outChLayout, std::map<uint64_t, uint32_t> &channelPosMap);
-static void MixTopFront(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> pos_to_bit,
+static void MixTopFront(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> posToBit,
     uint64_t outChLayout, std::map<uint64_t, uint32_t> &channelPosMap);
-static void MixTopRear(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> pos_to_bit,
+static void MixTopRear(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> posToBit,
     uint64_t outChLayout, std::map<uint64_t, uint32_t> &channelPosMap);
-static void MixBottom(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> pos_to_bit,
+static void MixBottom(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> posToBit,
     uint64_t outChLayout, std::map<uint64_t, uint32_t> &channelPosMap);
 
 // channel masks for downmixing general output channel layout
 /**** helper functions for setting up general mixing table ***/
 // inBit: switch for output
-static void MixMidFront(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> pos_to_bit,
+static void MixMidFrontInner(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> posToBit,
     uint64_t outChLayout, std::map<uint64_t, uint32_t> &channelPosMap)
 {
-    uint32_t inPos = pos_to_bit.first;
-    uint64_t inBit = pos_to_bit.second;
+    uint32_t inPos = posToBit.first;
+    uint64_t inBit = posToBit.second;
+    switch (inBit) {
+        case WIDE_LEFT:
+            if (outChLayout & WIDE_LEFT) {
+                coeffTable[channelPosMap[WIDE_LEFT]][inPos] = COEF_0DB_F;
+            } else if (outChLayout & FRONT_LEFT) {
+                coeffTable[channelPosMap[FRONT_LEFT]][inPos] = COEF_0DB_F;
+            }
+            break;
+        case WIDE_RIGHT:
+            if (outChLayout & WIDE_RIGHT) {
+                coeffTable[channelPosMap[WIDE_RIGHT]][inPos] = COEF_0DB_F;
+            } else if (outChLayout & FRONT_RIGHT) {
+                coeffTable[channelPosMap[FRONT_RIGHT]][inPos] = COEF_0DB_F;
+            }
+            break;
+        default:
+            break;
+    }
+}
+static void MixMidFront(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> posToBit,
+    uint64_t outChLayout, std::map<uint64_t, uint32_t> &channelPosMap)
+{
+    uint32_t inPos = posToBit.first;
+    uint64_t inBit = posToBit.second;
     switch (inBit) {
         // if falls here, the output channel layout must at least contains front left and front right
         case FRONT_LEFT:
@@ -136,30 +160,48 @@ static void MixMidFront(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pa
                 coeffTable[channelPosMap[FRONT_RIGHT]][inPos] = COEF_0DB_F;
             }
             break;
-        case WIDE_LEFT:
-            if (outChLayout & WIDE_LEFT) {
-                coeffTable[channelPosMap[WIDE_LEFT]][inPos] = COEF_0DB_F;
-            } else if (outChLayout & FRONT_LEFT) {
-                coeffTable[channelPosMap[FRONT_LEFT]][inPos] = COEF_0DB_F;
+        default:
+            MixMidFrontInner(coeffTable, posToBit, outChLayout, channelPosMap);
+            break;
+    }
+}
+static void MixMidRearInner(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> posToBit,
+    uint64_t outChLayout, std::map<uint64_t, uint32_t> &channelPosMap)
+{
+    uint32_t inPos = posToBit.first;
+    uint64_t inBit = posToBit.second;
+    switch (inBit) {
+        case SIDE_LEFT:
+            if (outChLayout & SIDE_LEFT) {
+                coeffTable[channelPosMap[SIDE_LEFT]][inPos] = COEF_0DB_F;
+            } else if (outChLayout & BACK_LEFT) {
+                coeffTable[channelPosMap[BACK_LEFT]][inPos] = COEF_0DB_F;
+            } else if (outChLayout & BACK_CENTER) {
+                coeffTable[channelPosMap[BACK_CENTER]][inPos] = COEF_0DB_F;
+            } else {
+                MixMidFront(coeffTable, {inPos, WIDE_LEFT}, outChLayout, channelPosMap);
             }
             break;
-        case WIDE_RIGHT:
-            if (outChLayout & WIDE_RIGHT) {
-                coeffTable[channelPosMap[WIDE_RIGHT]][inPos] = COEF_0DB_F;
-            } else if (outChLayout & FRONT_RIGHT) {
-                coeffTable[channelPosMap[FRONT_RIGHT]][inPos] = COEF_0DB_F;
+        case SIDE_RIGHT:
+            if (outChLayout & SIDE_RIGHT) {
+                coeffTable[channelPosMap[SIDE_RIGHT]][inPos] = COEF_0DB_F;
+            } else if (outChLayout & BACK_RIGHT) {
+                coeffTable[channelPosMap[BACK_RIGHT]][inPos] = COEF_0DB_F;
+            } else if (outChLayout & BACK_CENTER) {
+                coeffTable[channelPosMap[BACK_CENTER]][inPos] = COEF_0DB_F;
+            } else {
+                MixMidFront(coeffTable, {inPos, WIDE_RIGHT}, outChLayout, channelPosMap);
             }
             break;
         default:
             break;
     }
 }
-
-static void MixMidRear(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> pos_to_bit,
+static void MixMidRear(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> posToBit,
     uint64_t outChLayout, std::map<uint64_t, uint32_t> &channelPosMap)
 {
-    uint32_t inPos = pos_to_bit.first;
-    uint64_t inBit = pos_to_bit.second;
+    uint32_t inPos = posToBit.first;
+    uint64_t inBit = posToBit.second;
     switch (inBit) {
         case BACK_CENTER:
             if ((outChLayout & BACK_CENTER)) {
@@ -200,38 +242,17 @@ static void MixMidRear(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pai
                 MixMidFront(coeffTable, {inPos, WIDE_RIGHT}, outChLayout, channelPosMap);
             }
             break;
-        case SIDE_LEFT:
-            if (outChLayout & SIDE_LEFT) {
-                coeffTable[channelPosMap[SIDE_LEFT]][inPos] = COEF_0DB_F;
-            } else if (outChLayout & BACK_LEFT) {
-                coeffTable[channelPosMap[BACK_LEFT]][inPos] = COEF_0DB_F;
-            } else if (outChLayout & BACK_CENTER) {
-                coeffTable[channelPosMap[BACK_CENTER]][inPos] = COEF_0DB_F;
-            } else {
-                MixMidFront(coeffTable, {inPos, WIDE_LEFT}, outChLayout, channelPosMap);
-            }
-            break;
-        case SIDE_RIGHT:
-            if (outChLayout & SIDE_RIGHT) {
-                coeffTable[channelPosMap[SIDE_RIGHT]][inPos] = COEF_0DB_F;
-            } else if (outChLayout & BACK_RIGHT) {
-                coeffTable[channelPosMap[BACK_RIGHT]][inPos] = COEF_0DB_F;
-            } else if (outChLayout & BACK_CENTER) {
-                coeffTable[channelPosMap[BACK_CENTER]][inPos] = COEF_0DB_F;
-            } else {
-                MixMidFront(coeffTable, {inPos, WIDE_RIGHT}, outChLayout, channelPosMap);
-            }
-            break;
         default:
+            MixMidRearInner(coeffTable, posToBit, outChLayout, channelPosMap);
             break;
     }
 }
 
-static void MixBottom(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> pos_to_bit,
+static void MixBottom(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> posToBit,
     uint64_t outChLayout, std::map<uint64_t, uint32_t> &channelPosMap)
 {
-    uint32_t inPos = pos_to_bit.first;
-    uint64_t inBit = pos_to_bit.second;
+    uint32_t inPos = posToBit.first;
+    uint64_t inBit = posToBit.second;
     uint64_t existBottomOutput = (outChLayout & MASK_BOTTOM);
     if (existBottomOutput) {
         switch (inBit) {
@@ -271,16 +292,16 @@ static void MixBottom(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair
     }
 }
 
-static void MixTopCenter(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> pos_to_bit,
+static void MixTopCenter(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> posToBit,
     uint64_t outChLayout, std::map<uint64_t, uint32_t> &channelPosMap)
 {
-    uint32_t inPos = pos_to_bit.first;
+    uint32_t inPos = posToBit.first;
     uint64_t existMiddleOuts =  outChLayout & (MASK_MIDDLE_FRONT | MASK_MIDDLE_REAR);
     uint64_t existTopOuts =  outChLayout & (MASK_TOP_FRONT | MASK_TOP_REAR);
     uint32_t outChannelCount = BitCounts(outChLayout);
     if (existTopOuts) {
         uint64_t numChannels = BitCounts(existTopOuts);
-        float coeff = 1.0f / sqrt((float)numChannels);
+        float coeff = 1.0f / sqrt(static_cast<float>(numChannels));
         uint64_t bitMsk = existTopOuts;
         for (uint32_t i = 0; i < outChannelCount; i++) {
             uint64_t outBit = bitMsk & (~bitMsk + 1);
@@ -290,7 +311,7 @@ static void MixTopCenter(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::p
     }
     if (existMiddleOuts) {
         uint64_t numChannels = BitCounts(existMiddleOuts);
-        float coeff = 1.0f / sqrt((float)numChannels);
+        float coeff = 1.0f / sqrt(static_cast<float>(numChannels));
         uint64_t bitMsk = existMiddleOuts;
         for (uint32_t i = 0; i < outChannelCount; i++) {
             uint64_t outBit = bitMsk & (~bitMsk + 1);
@@ -300,12 +321,12 @@ static void MixTopCenter(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::p
     }
 }
 
-static void MixTopFront(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> pos_to_bit,
+static void MixTopFront(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> posToBit,
     uint64_t outChLayout, std::map<uint64_t, uint32_t> &channelPosMap)
 {
     uint64_t existTopFrontOut = outChLayout & MASK_TOP_FRONT;
-    uint32_t inPos = pos_to_bit.first;
-    uint64_t inBit = pos_to_bit.second;
+    uint32_t inPos = posToBit.first;
+    uint64_t inBit = posToBit.second;
     if (existTopFrontOut) {
         switch (inBit) {
             case TOP_FRONT_CENTER:
@@ -343,86 +364,98 @@ static void MixTopFront(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pa
         }
     }
 }
-
-static void MixTopRear(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> pos_to_bit,
-    uint64_t outChLayout, std::map<uint64_t, uint32_t> &channelPosMap)
+static void MixTopRearexistTopRearOuts(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS],
+    std::pair<uint32_t, uint64_t> posToBit, uint64_t outChLayout, std::map<uint64_t, uint32_t> &channelPosMap)
 {
-    uint64_t existTopRearOuts = outChLayout & MASK_TOP_REAR;
-    uint32_t inPos = pos_to_bit.first;
-    uint64_t inBit = pos_to_bit.second;
-    if (existTopRearOuts) {
-        switch (inBit) {
-            case TOP_BACK_CENTER:
-                if ((outChLayout & TOP_BACK_LEFT) && (outChLayout & TOP_BACK_RIGHT)) {
-                    coeffTable[channelPosMap[TOP_BACK_LEFT]][inPos] = COEF_M3DB_F;
-                    coeffTable[channelPosMap[TOP_BACK_RIGHT]][inPos] = COEF_M3DB_F;
-                } else if ((outChLayout & TOP_SIDE_LEFT) && (outChLayout & TOP_SIDE_RIGHT)) {
-                    coeffTable[channelPosMap[TOP_SIDE_LEFT]][inPos] = COEF_M3DB_F;
-                    coeffTable[channelPosMap[TOP_SIDE_RIGHT]][inPos] = COEF_M3DB_F;
-                }
-                break;
-            case TOP_BACK_LEFT:
-                if (outChLayout & TOP_SIDE_LEFT) {
-                    coeffTable[channelPosMap[TOP_SIDE_LEFT]][inPos] = COEF_0DB_F;
-                } else if (outChLayout & TOP_BACK_CENTER) {
-                    coeffTable[channelPosMap[TOP_BACK_CENTER]][inPos] = COEF_0DB_F;
-                }
-                break;
-            case TOP_BACK_RIGHT:
-                if (outChLayout & TOP_SIDE_RIGHT) {
-                    coeffTable[channelPosMap[TOP_SIDE_RIGHT]][inPos] = COEF_0DB_F;
-                } else if (outChLayout & TOP_BACK_CENTER) {
-                    coeffTable[channelPosMap[TOP_BACK_CENTER]][inPos] = COEF_0DB_F;
-                }
-                break;
-            case TOP_SIDE_LEFT:
-                if (outChLayout & TOP_BACK_LEFT) {
-                    coeffTable[channelPosMap[TOP_BACK_LEFT]][inPos] = COEF_0DB_F;
-                } else if (outChLayout & TOP_BACK_CENTER) {
-                    coeffTable[channelPosMap[TOP_BACK_CENTER]][inPos] = COEF_0DB_F;
-                }
-                break;
-            case TOP_SIDE_RIGHT:
-                if (outChLayout & TOP_BACK_RIGHT) {
-                    coeffTable[channelPosMap[TOP_BACK_RIGHT]][inPos] = COEF_0DB_F;
-                } else if (outChLayout & TOP_BACK_CENTER) {
-                    coeffTable[channelPosMap[TOP_BACK_CENTER]][inPos] = COEF_0DB_F;
-                }
-                break;
-            default:
-                break;
-        }
-    } else {
-        switch (inBit) {
-            case TOP_BACK_CENTER:
-                MixMidRear(coeffTable, {inPos, BACK_CENTER}, outChLayout, channelPosMap);
-                break;
-            case TOP_BACK_LEFT:
-                MixMidRear(coeffTable, {inPos, BACK_LEFT}, outChLayout, channelPosMap);
-                break;
-            case TOP_BACK_RIGHT:
-                MixMidRear(coeffTable, {inPos, BACK_RIGHT}, outChLayout, channelPosMap);
-                break;
-            case TOP_SIDE_LEFT:
-                MixMidRear(coeffTable, {inPos, SIDE_LEFT}, outChLayout, channelPosMap);
-                break;
-            case TOP_SIDE_RIGHT:
-                MixMidRear(coeffTable, {inPos, SIDE_RIGHT}, outChLayout, channelPosMap);
-                break;
-            default:
-                break;
-        }
+    uint32_t inPos = posToBit.first;
+    uint64_t inBit = posToBit.second;
+    switch (inBit) {
+        case TOP_BACK_CENTER:
+            if ((outChLayout & TOP_BACK_LEFT) && (outChLayout & TOP_BACK_RIGHT)) {
+                coeffTable[channelPosMap[TOP_BACK_LEFT]][inPos] = COEF_M3DB_F;
+                coeffTable[channelPosMap[TOP_BACK_RIGHT]][inPos] = COEF_M3DB_F;
+            } else if ((outChLayout & TOP_SIDE_LEFT) && (outChLayout & TOP_SIDE_RIGHT)) {
+                coeffTable[channelPosMap[TOP_SIDE_LEFT]][inPos] = COEF_M3DB_F;
+                coeffTable[channelPosMap[TOP_SIDE_RIGHT]][inPos] = COEF_M3DB_F;
+            }
+            break;
+        case TOP_BACK_LEFT:
+            if (outChLayout & TOP_SIDE_LEFT) {
+                coeffTable[channelPosMap[TOP_SIDE_LEFT]][inPos] = COEF_0DB_F;
+            } else if (outChLayout & TOP_BACK_CENTER) {
+                coeffTable[channelPosMap[TOP_BACK_CENTER]][inPos] = COEF_0DB_F;
+            }
+            break;
+        case TOP_BACK_RIGHT:
+            if (outChLayout & TOP_SIDE_RIGHT) {
+                coeffTable[channelPosMap[TOP_SIDE_RIGHT]][inPos] = COEF_0DB_F;
+            } else if (outChLayout & TOP_BACK_CENTER) {
+                coeffTable[channelPosMap[TOP_BACK_CENTER]][inPos] = COEF_0DB_F;
+            }
+            break;
+        case TOP_SIDE_LEFT:
+            if (outChLayout & TOP_BACK_LEFT) {
+                coeffTable[channelPosMap[TOP_BACK_LEFT]][inPos] = COEF_0DB_F;
+            } else if (outChLayout & TOP_BACK_CENTER) {
+                coeffTable[channelPosMap[TOP_BACK_CENTER]][inPos] = COEF_0DB_F;
+            }
+            break;
+        case TOP_SIDE_RIGHT:
+            if (outChLayout & TOP_BACK_RIGHT) {
+                coeffTable[channelPosMap[TOP_BACK_RIGHT]][inPos] = COEF_0DB_F;
+            } else if (outChLayout & TOP_BACK_CENTER) {
+                coeffTable[channelPosMap[TOP_BACK_CENTER]][inPos] = COEF_0DB_F;
+            }
+            break;
+        default:
+            break;
     }
 }
 
-static void MixLfe(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> pos_to_bit,
-   std::pair<uint64_t, uint64_t> chMskPair, std::map<uint64_t, uint32_t> &channelPosMap)
+static void MixTopRearOthers(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> posToBit,
+    uint64_t outChLayout, std::map<uint64_t, uint32_t> &channelPosMap)
+{
+    uint32_t inPos = posToBit.first;
+    uint64_t inBit = posToBit.second;
+    switch (inBit) {
+        case TOP_BACK_CENTER:
+            MixMidRear(coeffTable, {inPos, BACK_CENTER}, outChLayout, channelPosMap);
+            break;
+        case TOP_BACK_LEFT:
+            MixMidRear(coeffTable, {inPos, BACK_LEFT}, outChLayout, channelPosMap);
+            break;
+        case TOP_BACK_RIGHT:
+            MixMidRear(coeffTable, {inPos, BACK_RIGHT}, outChLayout, channelPosMap);
+            break;
+        case TOP_SIDE_LEFT:
+            MixMidRear(coeffTable, {inPos, SIDE_LEFT}, outChLayout, channelPosMap);
+            break;
+        case TOP_SIDE_RIGHT:
+            MixMidRear(coeffTable, {inPos, SIDE_RIGHT}, outChLayout, channelPosMap);
+            break;
+        default:
+            break;
+    }
+}
+static void MixTopRear(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> posToBit,
+    uint64_t outChLayout, std::map<uint64_t, uint32_t> &channelPosMap)
+{
+    uint64_t existTopRearOuts = outChLayout & MASK_TOP_REAR;
+    if (existTopRearOuts) {
+        MixTopRearexistTopRearOuts(coeffTable, posToBit, outChLayout, channelPosMap);
+    } else {
+        MixTopRearOthers(coeffTable, posToBit, outChLayout, channelPosMap);
+    }
+}
+
+static void MixLfe(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::pair<uint32_t, uint64_t> posToBit,
+    std::pair<uint64_t, uint64_t> chMskPair, std::map<uint64_t, uint32_t> &channelPosMap)
 {
     uint64_t outChLayout = chMskPair.second;
     uint64_t existLfeOuts = outChLayout & MASK_LFE;
     uint64_t existLfe2In = chMskPair.first & LOW_FREQUENCY_2;
-    uint32_t inPos = pos_to_bit.first;
-    uint64_t inBit = pos_to_bit.second;
+    uint32_t inPos = posToBit.first;
+    uint64_t inBit = posToBit.second;
     if (existLfeOuts) {
         switch (inBit) {
             case LOW_FREQUENCY:

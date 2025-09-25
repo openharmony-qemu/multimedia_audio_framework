@@ -38,6 +38,7 @@ private:
     void Setup7Point1Point4DmixTable();
     void ResetSelf();
     int32_t SetupDownMixTable();
+    int32_t SetupDownMixTableInner();
     /**** helper functions for settiing up specific downmix table ***/
     void SetupStereoDmixTablePart1(uint64_t bit_t, uint32_t i);
     void SetupStereoDmixTablePart2(uint64_t bit_t, uint32_t i);

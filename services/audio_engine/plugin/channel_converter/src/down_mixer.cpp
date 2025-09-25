@@ -66,23 +66,8 @@ int32_t DownMixer::SetParam(AudioChannelInfo inChannelInfo, AudioChannelInfo out
     return ret;
 }
 
-int32_t DownMixer::SetupDownMixTable()
+int32_t DownMixer::SetupDownMixTableInner()
 {
-    if ((!IsValidChLayout(inLayout_, inChannels_)) || (!IsValidChLayout(outLayout_, outChannels_))
-        || (inLayout_ == outLayout_) || (inChannels_ <= outChannels_)) {
-        AUDIO_ERR_LOG("invalid input or output channellayout: input channel count %{public}d, "
-            "inLayout_ %{public}" PRIu64 "output channel count %{public}d, outLayout_ %{public}" PRIu64 "",
-            inChannels_, inLayout_, outChannels_, outLayout_);
-        return MIX_ERR_INVALID_ARG;
-    }
-    // for HOA intput, use the first channel input for every output channel
-    if (CheckIsHOA(inLayout_)) {
-        for (uint32_t i = 0; i < outChannels_; i++) {
-            downMixTable_[i][0] = COEF_0DB_F;
-        }
-        return MIX_ERR_SUCCESS;
-    }
-
     int32_t ret = MIX_ERR_SUCCESS;
     switch (outLayout_) {
         case CH_LAYOUT_STEREO: {
@@ -120,6 +105,25 @@ int32_t DownMixer::SetupDownMixTable()
             break;
         }
     }
+    return ret;
+}
+
+int32_t DownMixer::SetupDownMixTable()
+{
+    CHECK_AND_RETURN_RET_LOG(IsValidChLayout(inLayout_, inChannels_) && IsValidChLayout(outLayout_, outChannels_) &&
+        (inLayout_ != outLayout_) && (inChannels_ > outChannels_), MIX_ERR_INVALID_ARG,
+        "input channel count %{public}d, inLayout_ %{public}" PRIu64 " or output channel count %{public}d, "
+        "outLayout_ %{public}" PRIu64 "is invalid", inChannels_, inLayout_, outChannels_, outLayout_);
+
+    // for HOA intput, use the first channel input for every output channel
+    if (CheckIsHOA(inLayout_)) {
+        for (uint32_t i = 0; i < outChannels_; i++) {
+            downMixTable_[i][0] = COEF_0DB_F;
+        }
+        return MIX_ERR_SUCCESS;
+    }
+
+    int32_t ret = SetupDownMixTableInner();
     NormalizeDMixTable();
     isInitialized_ = (ret == MIX_ERR_SUCCESS);
     return ret;
