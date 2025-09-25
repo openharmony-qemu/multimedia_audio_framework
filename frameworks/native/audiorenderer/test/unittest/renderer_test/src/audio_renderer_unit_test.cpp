@@ -4676,5 +4676,21 @@ HWTEST(AudioRendererUnitTest, AsyncCheckAudioRenderer_001, TestSize.Level4)
     int32_t res = testRendererInner->AsyncCheckAudioRenderer("Test");
     EXPECT_EQ(SUCCESS, res);
 }
+
+/**
+ * @tc.name  : Test SetInSwitchingFlag_001.
+ * @tc.number: SetInSwitchingFlag.
+ * @tc.desc  : Test SetInSwitchingFlag when inSwitchingFlag is true or false.
+ */
+HWTEST(AudioRendererUnitTest, SetInSwitchingFlag_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    audioRendererPrivate->SetInSwitchingFlag(true);
+    EXPECT_TRUE(audioRendererPrivate->inSwitchingFlag_);
+    audioRendererPrivate->SetInSwitchingFlag(false);
+    EXPECT_FALSE(audioRendererPrivate->inSwitchingFlag_);
+}
 } // namespace AudioStandard
 } // namespace OHOS

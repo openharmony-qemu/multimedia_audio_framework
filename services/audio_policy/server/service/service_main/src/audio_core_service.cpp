@@ -324,7 +324,7 @@ bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDe
 
     if (streamDesc->streamInfo_.encoding == ENCODING_AUDIOVIVID &&
         policyConfigMananger_.PreferMultiChannelPipe(streamDesc)) {
-        AUDIO_INFO_LOG("AudioVivid encoding and MultiChannelPipe supported");
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "AudioVivid encoding and MultiChannelPipe supported");
         return true;
     }
 
@@ -332,7 +332,8 @@ bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDe
     if (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_SPEAKER &&
         (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP ||
         streamDesc->newDeviceDescs_[0]->a2dpOffloadFlag_ != A2DP_OFFLOAD)) {
-        AUDIO_INFO_LOG("normal stream, deviceType: %{public}d", streamDesc->newDeviceDescs_[0]->deviceType_);
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream, deviceType: %{public}d",
+            streamDesc->newDeviceDescs_[0]->deviceType_);
         return false;
     }
     if (streamDesc->streamInfo_.channels <= STEREO ||
@@ -342,7 +343,7 @@ bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDe
     }
     // The multi-channel algorithm needs to be supported in the dsp
     bool isSupported = AudioServerProxy::GetInstance().GetEffectOffloadEnabledProxy();
-    AUDIO_INFO_LOG("effect offload enable is %{public}d", isSupported);
+    JUDGE_AND_INFO_LOG(isCreateProcess_, "effect offload enable is %{public}d", isSupported);
     return isSupported;
 }
 
@@ -357,11 +358,11 @@ bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescript
     if (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MUSIC ||
         streamDesc->streamInfo_.samplingRate < SAMPLE_RATE_48000 ||
         streamDesc->streamInfo_.format < SAMPLE_S24LE) {
-            AUDIO_INFO_LOG("normal stream because stream info");
+            JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream because stream info");
             return false;
         }
     if (streamDesc->streamInfo_.samplingRate > SAMPLE_RATE_192000) {
-        AUDIO_INFO_LOG("sample rate over 192k");
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "sample rate over 192k");
         return false;
     }
     return true;
@@ -429,7 +430,9 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
         default:
             break;
     }
+    isCreateProcess_ = isCreateProcess;
     streamDesc->audioFlag_ = SetFlagForSpecialStream(streamDesc, isCreateProcess);
+    isCreateProcess_ = false;
 }
 
 AudioFlag AudioCoreService::SetFlagForMmapStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
@@ -582,12 +585,13 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         }
         streamCollector_.UpdateRendererDeviceInfo(deviceDesc);
     } else {
-        int32_t inputRet = ActivateInputDevice(streamDesc);
-        CHECK_AND_RETURN_RET_LOG(inputRet == SUCCESS, inputRet, "Activate input device failed");
         RecordDeviceInfo info {
             .uid_ = GetRealUid(streamDesc), .sourceType_ = streamDesc->capturerInfo_.sourceType,
             .activeSelectedDevice_ = audioStateManager_.GetPreferredRecordCaptureDevice()};
         audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::START_CLIENT, info);
+        FetchInputDeviceAndRoute("StartClient");
+        int32_t inputRet = ActivateInputDevice(streamDesc);
+        CHECK_AND_RETURN_RET_LOG(inputRet == SUCCESS, inputRet, "Activate input device failed");
         CheckAndSetCurrentInputDevice(deviceDesc);
         audioActiveDevice_.UpdateActiveDeviceRoute(
             streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG,
@@ -1566,36 +1570,19 @@ bool AudioCoreService::IsA2dpOffloadStream(uint sessionId)
     return streamDesc->IsA2dpOffloadStream();
 }
 
-int32_t AudioCoreService::ActiveA2dpAndLoadModule(AudioDeviceDescriptor &desc)
-{
-    int32_t result = ERROR;
-#ifdef BLUETOOTH_ENABLE
-    result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(desc.macAddress_);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "SetActiveA2dpDevice failed %{public}d", result);
-
-    DeviceStreamInfo deviceStreamInfo = desc.GetDeviceStreamInfo();
-    AudioStreamInfo audioStreamInfo = {};
-    CHECK_AND_RETURN_RET_LOG(!deviceStreamInfo.samplingRate.empty(), ERROR, "no samplingRate");
-    audioStreamInfo.samplingRate = *deviceStreamInfo.samplingRate.rbegin();
-    audioStreamInfo.format = deviceStreamInfo.format;
-    const auto &channels = deviceStreamInfo.GetChannels();
-    CHECK_AND_RETURN_RET_LOG(!channels.empty(), ERROR, "no channels");
-    audioStreamInfo.channels = *channels.rbegin();
-    std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(DEVICE_TYPE_BLUETOOTH_A2DP);
-    result = LoadA2dpModule(DEVICE_TYPE_BLUETOOTH_A2DP, audioStreamInfo,
-        desc.networkId_, sinkName, SOURCE_TYPE_INVALID);
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "LoadA2dpModule failed %{public}d", result);
-#endif
-    return result;
-}
-
 int32_t AudioCoreService::SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId)
 {
     int32_t ret = ERROR;
     if (lastTarget == NORMAL_PLAYBACK && target == INJECT_TO_VOICE_COMMUNICATION_CAPTURE) {
         ret = PlayBackToInjection(sessionId);
+        if (ret == SUCCESS) {
+            AudioInjectorPolicy::GetInstance().AddInjectorStreamId(sessionId);
+        }
     } else if (lastTarget == INJECT_TO_VOICE_COMMUNICATION_CAPTURE && target == NORMAL_PLAYBACK) {
         ret = InjectionToPlayBack(sessionId);
+        if (ret == SUCCESS) {
+            AudioInjectorPolicy::GetInstance().DeleteInjectorStreamId(sessionId);
+        }
     }
     return ret;
 }
@@ -1617,6 +1604,30 @@ int32_t AudioCoreService::StartInjection(uint32_t streamId)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "move stream in failed");
     audioInjectorPolicy_.AddStreamDescriptor(streamId, streamDesc);
     return SUCCESS;
+}
+
+int32_t AudioCoreService::A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
+                                                       uint32_t &timeStamp)
+{
+    Trace trace("AudioCoreService::A2dpOffloadGetRenderPosition");
+#ifdef BLUETOOTH_ENABLE
+    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    AUDIO_DEBUG_LOG("GetRenderPosition, deviceType: %{public}d, a2dpOffloadFlag: %{public}d",
+        audioA2dpOffloadFlag_.GetA2dpOffloadFlag(), curOutputDeviceType);
+    int32_t ret = SUCCESS;
+    if (curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP &&
+        audioActiveDevice_.GetCurrentOutputDeviceNetworkId() == LOCAL_NETWORK_ID &&
+        audioA2dpOffloadFlag_.GetA2dpOffloadFlag() == A2DP_OFFLOAD) {
+        ret = Bluetooth::AudioA2dpManager::GetRenderPosition(delayValue, sendDataSize, timeStamp);
+    } else {
+        delayValue = 0;
+        sendDataSize = 0;
+        timeStamp = 0;
+    }
+    return ret;
+#else
+    return SUCCESS;
+#endif
 }
 } // namespace AudioStandard
 } // namespace OHOS

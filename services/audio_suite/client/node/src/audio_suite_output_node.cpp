@@ -129,8 +129,8 @@ uint8_t* AudioOutputNode::GetProcessedAudioData(size_t &bytes)
     size_t frameLen = buffer->GetFrameLen();
     bytes = frameLen * sizeof(float);
     SetAudioNodeDataFinishedFlag(buffer->GetIsFinished());
-    AUDIO_INFO_LOG("PCM data: floatData=%{public}p, frameLen=%{public}zu, bytes=%{public}zu, FinishedFlag: %{public}d",
-        floatData, frameLen, bytes, GetAudioNodeDataFinishedFlag());
+    AUDIO_INFO_LOG("PCM data frameLen=%{public}zu, bytes=%{public}zu, FinishedFlag: %{public}d",
+        frameLen, bytes, GetAudioNodeDataFinishedFlag());
 
     if (floatData == nullptr || frameLen == 0 || bytes == 0) {
         SetAudioNodeDataFinishedFlag(false);

@@ -165,7 +165,7 @@ int32_t AudioSuiteEngine::DestroyPipeline(uint32_t pipelineId)
 
         if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
             AUDIO_ERR_LOG("engine destroy pipeline failed, pipeline id is invailed.");
-            managerCallback_.OnDestoryPipeline(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            managerCallback_.OnDestroyPipeline(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
             return;
         }
 
@@ -174,13 +174,13 @@ int32_t AudioSuiteEngine::DestroyPipeline(uint32_t pipelineId)
             auto ret = pipeline->DeInit();
             if (ret != SUCCESS) {
                 AUDIO_ERR_LOG("engine Destroy pipeline failed, pipeline deinit failed, ret = %{public}d.", ret);
-                managerCallback_.OnDestoryPipeline(ret);
+                managerCallback_.OnDestroyPipeline(ret);
                 return;
             }
         }
 
         pipelineMap_.erase(pipelineId);
-        managerCallback_.OnDestoryPipeline(SUCCESS);
+        managerCallback_.OnDestroyPipeline(SUCCESS);
     };
 
     SendRequest(request, __func__);
@@ -330,9 +330,9 @@ int32_t AudioSuiteEngine::DestroyNode(uint32_t nodeId)
     return SUCCESS;
 }
 
-int32_t AudioSuiteEngine::EnableNode(uint32_t nodeId, AudioNodeEnable audioNoedEnable)
+int32_t AudioSuiteEngine::EnableNode(uint32_t nodeId, AudioNodeEnable audioNodeEnable)
 {
-    auto request = [this, nodeId, audioNoedEnable]() {
+    auto request = [this, nodeId, audioNodeEnable]() {
         AUDIO_INFO_LOG("EnableNode enter");
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
             AUDIO_ERR_LOG("engine EnableNode node failed, node id=%{public}d is invailed.", nodeId);
@@ -354,7 +354,7 @@ int32_t AudioSuiteEngine::EnableNode(uint32_t nodeId, AudioNodeEnable audioNoedE
             return;
         }
 
-        int32_t ret = pipeline->EnableNode(nodeId, audioNoedEnable);
+        int32_t ret = pipeline->EnableNode(nodeId, audioNodeEnable);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("pipeline EnableNode node failed, ret = %{public}d.", ret);
             managerCallback_.OnEnableNode(ret);

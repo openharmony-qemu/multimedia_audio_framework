@@ -545,7 +545,7 @@ void AudioPolicyConfigManager::GetTargetSourceTypeAndMatchingFlag(SourceType sou
     }
 }
 
-AudioSampleFormat AudioPolicyConfigManager::ParseFormat(std::string format)
+AudioSampleFormat AudioPolicyConfigManager::ParseFormat(const std::string format)
 {
     auto it = AudioDefinitionPolicyUtils::formatStrToEnum.find(format);
     if (it != AudioDefinitionPolicyUtils::formatStrToEnum.end()) {

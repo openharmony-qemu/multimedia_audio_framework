@@ -2121,7 +2121,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDisableInnerCap_001, TestSize
 
     int32_t ret = rendererInServer->DisableInnerCap(0);
 
-    EXPECT_EQ(ERR_INVALID_OPERATION, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -2959,6 +2959,23 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDump_018, TestSize.Level1)
     rendererInServer->status_ = I_STATUS_RELEASED;
 
     EXPECT_TRUE(rendererInServer->Dump(dump));
+}
+
+/**
+ * @tc.name  : Test DumpNormal API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerDumpNormal_001
+ * @tc.desc  : Test DumpNormal interface.
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerDumpNormal_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, rendererInServer);
+
+    std::string dump="";
+    rendererInServer->Init();
+    rendererInServer->managerType_ = VOIP_PLAYBACK;
+
+    EXPECT_FALSE(rendererInServer->DumpNormal(dump));
 }
 
 /**

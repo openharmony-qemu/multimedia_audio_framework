@@ -353,9 +353,9 @@ int32_t AudioSuitePipeline::DestroyNodeForRun(uint32_t nodeId, std::shared_ptr<A
     return SUCCESS;
 }
 
-int32_t AudioSuitePipeline::EnableNode(uint32_t nodeId, AudioNodeEnable audioNoedEnable)
+int32_t AudioSuitePipeline::EnableNode(uint32_t nodeId, AudioNodeEnable audioNodeEnable)
 {
-    auto request = [this, nodeId, audioNoedEnable]() {
+    auto request = [this, nodeId, audioNodeEnable]() {
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
             AUDIO_ERR_LOG("EnableNode node failed, node id is invailed.");
             TriggerCallback(SET_ENABLE_NODE, ERR_INVALID_PARAM);
@@ -375,7 +375,7 @@ int32_t AudioSuitePipeline::EnableNode(uint32_t nodeId, AudioNodeEnable audioNoe
             return;
         }
 
-        node->SetNodeEnableStatus(audioNoedEnable);
+        node->SetNodeEnableStatus(audioNodeEnable);
         TriggerCallback(SET_ENABLE_NODE, SUCCESS);
     };
 

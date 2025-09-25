@@ -181,6 +181,8 @@ public:
         int32_t ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type);
         int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId) override;
         int32_t StartInjection(uint32_t sessionId) override;
+        int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
+            uint32_t &timeStamp) override;
 private:
         std::shared_ptr<AudioCoreService> coreService_;
         std::shared_mutex eventMutex_;
@@ -326,9 +328,10 @@ private:
     void FetchOutputDupDevice(std::string caller, uint32_t sessionId,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     bool IsA2dpOffloadStream(uint sessionId);
-    int32_t ActiveA2dpAndLoadModule(AudioDeviceDescriptor &desc);
+    int32_t SwitchActiveA2dpDevice(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId);
     int32_t StartInjection(uint32_t sessionId);
+    int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
 private:
     static std::string GetEncryptAddr(const std::string &addr);
     int32_t FetchRendererPipesAndExecute(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
@@ -353,9 +356,9 @@ private:
         const AudioStreamDeviceChangeReasonExt reason);
     int32_t ActivateA2dpDevice(std::shared_ptr<AudioDeviceDescriptor> desc,
         const AudioStreamDeviceChangeReasonExt reason);
-    int32_t SwitchActiveA2dpDevice(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     int32_t ActivateNearlinkDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+    void HandleNearlinkErrResult(int32_t result, shared_ptr<AudioDeviceDescriptor> devDesc);
     int32_t LoadA2dpModule(DeviceType deviceType, const AudioStreamInfo &audioStreamInfo,
         std::string networkId, std::string sinkName, SourceType sourceType);
     int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, DeviceType deviceType,
@@ -515,7 +518,7 @@ private:
         const AudioStreamDeviceChangeReasonExt reason);
     void CheckAndSetCurrentOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, int32_t sessionId);
     void CheckAndSetCurrentInputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
-    void ClearRingMuteWhenCallStart(bool pre, bool after);
+    void ClearRingMuteWhenCallStart(bool pre, bool after, std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void CheckForRemoteDeviceState(std::shared_ptr<AudioDeviceDescriptor> desc);
     void UpdateRemoteOffloadModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName);
     void UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInfo);
@@ -584,7 +587,7 @@ private:
     std::deque<std::string> selectDeviceHistory_;
 
     // dual tone for same sinks
-    std::vector<std::pair<AudioStreamType, StreamUsage>> streamsWhenRingDualOnPrimarySpeaker_;
+    std::vector<std::pair<uint32_t, AudioStreamType>> streamsWhenRingDualOnPrimarySpeaker_;
     bool isRingDualToneOnPrimarySpeaker_ = false;
 
     // Save the relationship of uid and session id.
@@ -626,6 +629,7 @@ private:
         .type = CAST_TYPE_NULL
     };
     bool isFirstScreenOn_ = false;
+    bool isCreateProcess_ = false;
 
     AudioInjectorPolicy &audioInjectorPolicy_;
 };

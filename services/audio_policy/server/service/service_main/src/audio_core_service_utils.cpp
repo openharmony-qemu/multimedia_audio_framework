@@ -19,6 +19,7 @@
 #include "audio_core_service_utils.h"
 #include "audio_policy_manager_factory.h"
 #include "audio_scene_manager.h"
+#include "audio_volume.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -48,7 +49,7 @@ bool AudioCoreServiceUtils::IsOverRunPlayback(AudioMode &mode, RendererState ren
 }
 
 bool AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
-    const int32_t sessionId)
+    const int32_t sessionId, AudioStreamCollector& streamCollector_)
 {
     if (descs.size() !=  AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT) {
         return false;
@@ -64,7 +65,10 @@ bool AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(const std::vector<std
         return false;
     }
     AUDIO_INFO_LOG("ring dual tone on primary speaker and mute music.");
-    AudioPolicyManagerFactory::GetAudioPolicyManager().SetInnerStreamMute(STREAM_MUSIC, true, STREAM_USAGE_MUSIC);
+    AudioStreamType streamType = streamCollector_.GetStreamType(sessionId);
+    if (streamType == STREAM_MUSIC) {
+        AudioVolume::GetInstance()->SetStreamVolumeMute(sessionId, true);
+    }
     return true;
 }
 

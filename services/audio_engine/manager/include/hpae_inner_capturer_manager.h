@@ -24,7 +24,6 @@
 #include "i_renderer_stream.h"
 #include "hpae_signal_process_thread.h"
 #include "hpae_sink_input_node.h"
-#include "hpae_resample_node.h"
 #include "hpae_inner_cap_sink_node.h"
 #include "hpae_source_output_node.h"
 #include "hpae_source_process_cluster.h"

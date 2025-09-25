@@ -1746,6 +1746,10 @@ bool AudioEffectChainManager::ExistAudioEffectChainInner(const std::string &scen
         sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] == nullptr) {
         return false;
     }
+    if (sceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey) &&
+        sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] == 0) {
+        return false;
+    }
     auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
     return !audioEffectChain->IsEmptyEffectHandles();
 }

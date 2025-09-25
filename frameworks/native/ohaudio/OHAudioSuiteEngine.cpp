@@ -229,23 +229,23 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_DestroyNode(OH_AudioNode *audioNode)
 }
 
 OH_AudioSuite_Result OH_AudioSuiteEngine_GetNodeEnableStatus(
-    OH_AudioNode *audioNode, OH_AudioNodeEnable *audioNoedEnable)
+    OH_AudioNode *audioNode, OH_AudioNodeEnable *audioNodeEnable)
 {
     OHAudioNode *node = ConvertAudioNode(audioNode);
     CHECK_AND_RETURN_RET_LOG(node != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "GetNodeEnableStatus node is nullptr");
-    CHECK_AND_RETURN_RET_LOG(audioNoedEnable != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "GetNodeEnableStatus audioNoedEnable is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioNodeEnable != nullptr,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "GetNodeEnableStatus audioNodeEnable is nullptr");
 
     OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
     CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
         AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "GetNodeEnableStatus suiteEngine is nullptr");
 
-    int32_t error = suiteEngine->GetNodeEnableStatus(node, audioNoedEnable);
+    int32_t error = suiteEngine->GetNodeEnableStatus(node, audioNodeEnable);
     return ConvertError(error);
 }
 
-OH_AudioSuite_Result OH_AudioSuiteEngine_EnableNode(OH_AudioNode *audioNode, OH_AudioNodeEnable audioNoedEnable)
+OH_AudioSuite_Result OH_AudioSuiteEngine_EnableNode(OH_AudioNode *audioNode, OH_AudioNodeEnable audioNodeEnable)
 {
     OHAudioNode *node = ConvertAudioNode(audioNode);
     CHECK_AND_RETURN_RET_LOG(node != nullptr,
@@ -255,7 +255,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_EnableNode(OH_AudioNode *audioNode, OH_
     CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
         AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "DestroyNode suiteEngine is nullptr");
 
-    int32_t error = suiteEngine->EnableNode(node, audioNoedEnable);
+    int32_t error = suiteEngine->EnableNode(node, audioNodeEnable);
     return ConvertError(error);
 }
 
@@ -310,15 +310,15 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_DisConnectNodes(OH_AudioNode *sourceAud
     return ConvertError(error);
 }
 
-OH_AudioSuite_Result OH_AudioSuiteEngine_SetEquailizerMode(OH_AudioNode *audioNode, OH_EqualizerMode eqMode)
+OH_AudioSuite_Result OH_AudioSuiteEngine_SetEqualizerMode(OH_AudioNode *audioNode, OH_EqualizerMode eqMode)
 {
     OHAudioNode *node = ConvertAudioNode(audioNode);
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM, "SetEquailizerMode node is nullptr");
+    CHECK_AND_RETURN_RET_LOG(node != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM, "SetEqualizerMode node is nullptr");
     OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
     CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "SetEquailizerMode suiteEngine is nullptr");
+        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "SetEqualizerMode suiteEngine is nullptr");
 
-    int32_t error = suiteEngine->SetEquailizerMode(node, eqMode);
+    int32_t error = suiteEngine->SetEqualizerMode(node, eqMode);
     return ConvertError(error);
 }
 
@@ -339,16 +339,16 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_SetEqualizerFrequencyBandGains(
 OH_AudioSuite_Result OH_AudioSuiteEngine_SetSoundFiledType(OH_AudioNode *audioNode, OH_SoundFieldType soundFieldType)
 {
     OHAudioNode *node = ConvertAudioNode(audioNode);
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM, "SetSoundFiledType node is nullptr");
+    CHECK_AND_RETURN_RET_LOG(node != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM, "SetSoundFieldType node is nullptr");
     OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
     CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "SetSoundFiledType suiteEngine is nullptr");
+        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "SetSoundFieldType suiteEngine is nullptr");
 
-    int32_t error = suiteEngine->SetSoundFiledType(node, soundFieldType);
+    int32_t error = suiteEngine->SetSoundFieldType(node, soundFieldType);
     return ConvertError(error);
 }
 
-OH_AudioSuite_Result OH_AudioSuiteEngine_SetEnvironmentType(OH_AudioNode *audioNode, OH_EnvironmentType enviromentType)
+OH_AudioSuite_Result OH_AudioSuiteEngine_SetEnvironmentType(OH_AudioNode *audioNode, OH_EnvironmentType environmentType)
 {
     OHAudioNode *node = ConvertAudioNode(audioNode);
     CHECK_AND_RETURN_RET_LOG(node != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM, "SetEnvironmentType node is nullptr");
@@ -356,7 +356,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_SetEnvironmentType(OH_AudioNode *audioN
     CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
         AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "SetEnvironmentType suiteEngine is nullptr");
 
-    int32_t error = suiteEngine->SetEnvironmentType(node, enviromentType);
+    int32_t error = suiteEngine->SetEnvironmentType(node, environmentType);
     return ConvertError(error);
 }
 
@@ -495,7 +495,7 @@ int32_t OHAudioSuiteEngine::GetPipelineState(OHAudioSuitePipeline *audioPipeline
 
     uint32_t pipelineId = audioPipeline->GetPipelineId();
     AudioSuitePipelineState pipelineState = PIPELINE_STOPPED;
-    uint32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetPipelineState(pipelineId, pipelineState);
+    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetPipelineState(pipelineId, pipelineState);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetPipelineState failed, ret = %{public}d.", ret);
 
     *state = static_cast<OH_AudioSuite_PipelineState>(pipelineState);
@@ -581,7 +581,7 @@ int32_t OHAudioSuiteEngine::GetNodeEnableStatus(OHAudioNode *node, OH_AudioNodeE
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "GetNodeEnableStatus failed, node is nullptr.");
     CHECK_AND_RETURN_RET_LOG(enable != nullptr, ERR_INVALID_PARAM, "GetNodeEnableStatus failed, enable is nullptr.");
     CHECK_AND_RETURN_RET_LOG((node->GetNodeType() != NODE_TYPE_INPUT) && (node->GetNodeType() != NODE_TYPE_OUTPUT),
-        ERR_NOT_SUPPORTED, "GetNodeEnableStatus failed, enable type %{pulibc}d not support option.",
+        ERR_NOT_SUPPORTED, "GetNodeEnableStatus failed, enable type %{public}d not support option.",
         static_cast<int32_t>(node->GetNodeType()));
     uint32_t nodeId = node->GetNodeId();
 
@@ -597,7 +597,7 @@ int32_t OHAudioSuiteEngine::EnableNode(OHAudioNode *node, OH_AudioNodeEnable ena
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "EnableNode failed, node is nullptr.");
     CHECK_AND_RETURN_RET_LOG((node->GetNodeType() != NODE_TYPE_INPUT) && (node->GetNodeType() != NODE_TYPE_OUTPUT),
-        ERR_NOT_SUPPORTED, "GetNodeEnableStatus failed, enable type %{pulibc}d not support option.",
+        ERR_NOT_SUPPORTED, "GetNodeEnableStatus failed, enable type %{public}d not support option.",
         static_cast<int32_t>(node->GetNodeType()));
     uint32_t nodeId = node->GetNodeId();
 
@@ -612,7 +612,7 @@ int32_t OHAudioSuiteEngine::SetAudioFormat(OHAudioNode *node, OH_AudioFormat *au
     CHECK_AND_RETURN_RET_LOG(audioFormat != nullptr, ERR_INVALID_PARAM,
         "SetAudioFormat failed, audioFormat is nullptr.");
     CHECK_AND_RETURN_RET_LOG((node->GetNodeType() == NODE_TYPE_INPUT) || (node->GetNodeType() == NODE_TYPE_OUTPUT),
-        ERR_NOT_SUPPORTED, "GetNodeEnableStatus failed, enable type %{pulibc}d not support option.",
+        ERR_NOT_SUPPORTED, "GetNodeEnableStatus failed, enable type %{public}d not support option.",
         static_cast<int32_t>(node->GetNodeType()));
 
     uint32_t nodeId = node->GetNodeId();
@@ -646,15 +646,15 @@ int32_t OHAudioSuiteEngine::DisConnectNodes(OHAudioNode *srcNode, OHAudioNode *d
     return ret;
 }
 
-int32_t OHAudioSuiteEngine::SetEquailizerMode(OHAudioNode *node, OH_EqualizerMode eqMode)
+int32_t OHAudioSuiteEngine::SetEqualizerMode(OHAudioNode *node, OH_EqualizerMode eqMode)
 {
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "SetEquailizerMode failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_EQUALIZER, ERR_NOT_SUPPORTED, "SetEquailizerMode "
+    CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "SetEqualizerMode failed, node is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_EQUALIZER, ERR_NOT_SUPPORTED, "SetEqualizerMode "
         "failed, node type = %d{public}d must is EQUALIZER type.", static_cast<int32_t>(node->GetNodeType()));
     uint32_t nodeId = node->GetNodeId();
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().SetEquailizerMode(
+    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().SetEqualizerMode(
         nodeId, static_cast<EqualizerMode>(eqMode));
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetEquailizerMode failed, ret = %{public}d.", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetEqualizerMode failed, ret = %{public}d.", ret);
     return ret;
 }
 
@@ -681,23 +681,23 @@ int32_t OHAudioSuiteEngine::SetEqualizerFrequencyBandGains(
     return ret;
 }
 
-int32_t OHAudioSuiteEngine::SetSoundFiledType(
+int32_t OHAudioSuiteEngine::SetSoundFieldType(
     OHAudioNode *node, OH_SoundFieldType soundFieldType)
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM,
         "SetEqualizerFrequencyBandGains failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_SOUND_FIELD, ERR_NOT_SUPPORTED, "SetSoundFiledType "
+    CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_SOUND_FIELD, ERR_NOT_SUPPORTED, "SetSoundFieldType "
         "failed, node type = %d{public}d must is SOUND_FIELD type.", static_cast<int32_t>(node->GetNodeType()));
 
     uint32_t nodeId = node->GetNodeId();
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().SetSoundFiledType(
+    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().SetSoundFieldType(
         nodeId, static_cast<SoundFieldType>(soundFieldType));
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetSoundFiledType failed, ret = %{public}d.", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetSoundFieldType failed, ret = %{public}d.", ret);
     return ret;
 }
 
 int32_t OHAudioSuiteEngine::SetEnvironmentType(
-    OHAudioNode *node, OH_EnvironmentType enviromentType)
+    OHAudioNode *node, OH_EnvironmentType environmentType)
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "SetEnvironmentType failed, node is nullptr.");
     CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_ENVIRONMENT_EFFECT, ERR_NOT_SUPPORTED,
@@ -706,7 +706,7 @@ int32_t OHAudioSuiteEngine::SetEnvironmentType(
 
     uint32_t nodeId = node->GetNodeId();
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().SetEnvironmentType(
-        nodeId, static_cast<EnvironmentType>(enviromentType));
+        nodeId, static_cast<EnvironmentType>(environmentType));
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetEnvironmentType failed, ret = %{public}d.", ret);
     return ret;
 }

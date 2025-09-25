@@ -99,7 +99,7 @@ typedef enum {
      *
      * @since 22
      */
-    AUDIOSUITE_NODE_TYPE_SPACE_REDNER = 8,
+    AUDIOSUITE_NODE_TYPE_SPACE_RENDER = 8,
     /**
      * Voice beautifier node type.
      *

@@ -18,9 +18,9 @@ import("../../../appgallery.gni")
 import("../../../bluetooth_part.gni")
 import("../../../config.gni")
 
-ohos_fuzztest("HpaeDownMixerFuzzTest") {
+ohos_fuzztest("HpaeProresamplerFuzzTest") {
   module_out_path = "audio_framework/audio_framework_engine"
-  fuzz_config_file = "../hpaedownmixer_fuzzer"
+  fuzz_config_file = "../hpaeproresampler_fuzzer"
 
   include_dirs = [
     "../../../services/audio_engine/node/include",
@@ -37,7 +37,7 @@ ohos_fuzztest("HpaeDownMixerFuzzTest") {
   ]
 
   sources = [
-    "hpae_down_mixer_fuzzer.cpp",
+    "hpae_proresampler_fuzzer.cpp",
   ]
 
   cflags_cc = [ "-std=c++20" ]
@@ -66,5 +66,5 @@ ohos_fuzztest("HpaeDownMixerFuzzTest") {
 
 group("fuzztest") {
   testonly = true
-  deps = [ ":HpaeDownMixerFuzzTest" ]
+  deps = [ ":HpaeProresamplerFuzzTest" ]
 }
