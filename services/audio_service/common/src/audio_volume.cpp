@@ -661,6 +661,12 @@ void AudioVolume::SetScoActive(bool isActive)
     isScoActive_ = isActive;
 }
 
+DeviceType AudioVolume::GetCurrentActiveDevice()
+{
+    AUDIO_INFO_LOG("GetCurrentActiveDevice %{public}d", currentActiveDevice_);
+    return currentActiveDevice_;
+}
+
 void AudioVolume::SetOffloadType(uint32_t streamIndex, int32_t offloadType)
 {
     std::unique_lock<std::shared_mutex> lock(fadeoutMutex_);
