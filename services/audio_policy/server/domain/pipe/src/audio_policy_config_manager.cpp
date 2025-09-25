@@ -691,11 +691,16 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
         return;
     }
 
-    if (desc->routeFlag == AUDIO_OUTPUT_FLAG_MULTICHANNEL) {
-        GetStreamPropInfoForMultiChannel(desc, pipeIt->second, temp.channelLayout);
+    // dynamic?
+    if (desc->routeFlag_ == AUDIO_OUTPUT_FLAG_MULTICHANNEL) {
+        auto streamProp = GetStreamPropInfoForMultiChannel(desc, pipeIt->second, temp.channelLayout);
+        if (streamProp != nullptr) {
+            info = streamProp;
+            return;
+        }
     }
 
-    auto streamProp = GetStreamPropInfoFromPipe(pipeIt->second, temp.format, temp.samplingRate, temp.channels, temp.channelLayout);
+    auto streamProp = GetStreamPropInfoFromPipe(pipeIt->second, temp.format, temp.samplingRate, temp.channels);
     if (streamProp != nullptr) {
         info = streamProp;
         return;
@@ -894,25 +899,26 @@ bool AudioPolicyConfigManager::IsStreamPropMatch(const AudioStreamInfo &streamIn
 }
 
 std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoForMultiChannel(
-    std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<PipeStreamPropInfo> &info,
+    std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<AdapterPipeInfo> &info,
     AudioChannelLayout channelLayout)
 {
     auto tempStreamProp = info->streamPropInfos_.front();
 
     // for audiovivid, need convert to 5.1.2 channelLayout
     if (desc->streamInfo_.encoding == AudioEncodingType::ENCODING_AUDIOVIVID) {
-        tempStreamProp.bufferSize_ = ((tempStreamProp->bufferSize_ * static_cast<uint32_t>(CHANNEL_8)) /
+        tempStreamProp->bufferSize_ = ((tempStreamProp->bufferSize_ * static_cast<uint32_t>(CHANNEL_8)) /
             static_cast<uint32_t>(tempStreamProp->channels_));
         tempStreamProp->channels_ = CHANNEL_8;
         tempStreamProp->channelLayout_ = CH_LAYOUT_5POINT1POINT2;
     }
 
     // for pcm, need match channelLayout
-    if (desc->streamInfo_.encoding == AudioEncodingType::ENCODING_PCM)
-    for (auto &streamProp : info->streamPropInfos_) {
-        if (streamProp && streamProp->channelLayout_ == channelLayout) {
-            tempStreamProp = streamProp;
-            break;
+    if (desc->streamInfo_.encoding == AudioEncodingType::ENCODING_PCM) {
+        for (auto &streamProp : info->streamPropInfos_) {
+            if (streamProp && streamProp->channelLayout_ == channelLayout) {
+                tempStreamProp = streamProp;
+                break;
+            }
         }
     }
 
@@ -924,7 +930,7 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoF
     AUDIO_INFO_LOG("not support channelLayout:%{public}" PRIu64, tempStreamProp->channelLayout_);
     // use default 5.1 channelLayout for multi channel pipe
     tempStreamProp->bufferSize_ =
-        ((streamPropInfo->bufferSize_ * static_cast<uint32_t>(CHANNEL_6)) /
+        ((tempStreamProp->bufferSize_ * static_cast<uint32_t>(CHANNEL_6)) /
         static_cast<uint32_t>(tempStreamProp->channels_));
     tempStreamProp->channels_ = CHANNEL_6;
     tempStreamProp->channelLayout_ = CH_LAYOUT_5POINT1;
