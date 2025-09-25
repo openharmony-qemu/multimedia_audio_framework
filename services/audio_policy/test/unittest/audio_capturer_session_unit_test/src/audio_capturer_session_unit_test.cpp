@@ -1051,13 +1051,11 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_048, TestSize.Level1) {
 
     auto streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->sessionId_ = 1;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_MESSAGE;
     streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
     streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
 
     auto streamDescSecond = std::make_shared<AudioStreamDescriptor>();
     streamDescSecond->sessionId_ = 2;
-    streamDescSecond->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_MESSAGE;
     streamDescSecond->streamStatus_ = STREAM_STATUS_STARTED;
     streamDescSecond->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
 
