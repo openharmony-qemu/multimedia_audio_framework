@@ -1316,6 +1316,7 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
             break;
         case AudioStreamType::STREAM_RING:
         case AudioStreamType::STREAM_DTMF:
+        case AudioStreamType::STREAM_VOICE_RING:
             result = NapiAudioEnum::RINGTONE;
             break;
         case AudioStreamType::STREAM_MUSIC:
