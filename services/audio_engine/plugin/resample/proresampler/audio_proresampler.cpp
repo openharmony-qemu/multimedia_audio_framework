@@ -213,8 +213,6 @@ int32_t ProResampler::Process10HzSampleRate(const float *inBuffer, uint32_t inFr
 
 int32_t ProResampler::UpdateRates(uint32_t inRate, uint32_t outRate)
 {
-    CHECK_AND_RETURN_RET_LOG(inRate != outRate, RESAMPLER_ERR_INVALID_ARG,
-        "input and output rate of ProResampler should be different! Same Rate: %{public}d", inRate);
     CHECK_AND_RETURN_RET_LOG((inRate >= MIN_SAMPLE_RATE) && (inRate <= MAX_SAMPLE_RATE) &&
         (outRate >= MIN_SAMPLE_RATE) && (outRate <= MAX_SAMPLE_RATE), RESAMPLER_ERR_INVALID_ARG,
         "resampler input and output sample rate should be within [8000, 384000]. "
@@ -228,6 +226,11 @@ int32_t ProResampler::UpdateRates(uint32_t inRate, uint32_t outRate)
         expectedInFrameLen_ = inRate_ * FRAME_LEN_20MS * BUFFER_EXPAND_SIZE_2 / MS_PER_SECOND;
     } else if (inRate_ % CUSTOM_SAMPLE_RATE_MULTIPLES != 0) {
         expectedInFrameLen_ = inRate_ * FRAME_LEN_20MS * BUFFER_EXPAND_SIZE_5 / MS_PER_SECOND;
+    }
+    if (inRate_ == outRate_) {
+        SingleStagePolyphaseResamplerFree(state_);
+        AUDIO_INFO_LOG("inRate and outRate should not be the same value %{public}d", inRate_);
+        return RESAMPLER_ERR_INVALID_ARG;
     }
     if (state_ == nullptr) { // resampler can be updated from an invalid state to valid state
         int32_t errRet = RESAMPLER_ERR_SUCCESS;
