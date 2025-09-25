@@ -310,10 +310,11 @@ void HpaeOffloadRendererManagerMoveAllStreamFuzzTest()
     offloadRendererManager->Init();
     string sinkName = "";
     vector<uint32_t> sessionIds;
-    uint32_t index = g_fuzzUtils.GetData<uint32_t>() % MoveSessionTypeVec.size();
-    MoveSessionType moveSessionType = MoveSessionTypeVec[index];
-    offloadRendererManager->MoveAllStream(sinkName, sessionIds, moveSessionType);
-    WaitForMsgProcessing(offloadRendererManager);
+    for (size_t i = 0; i < MoveSessionTypeVec.size(); i++) {
+        MoveSessionType moveSessionType = MoveSessionTypeVec[i];
+        offloadRendererManager->MoveAllStream(sinkName, sessionIds, moveSessionType);
+        WaitForMsgProcessing(offloadRendererManager);
+    }
     offloadRendererManager->DeInit();
 }
 
