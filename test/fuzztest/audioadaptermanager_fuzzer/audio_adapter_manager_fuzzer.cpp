@@ -151,8 +151,14 @@ void AudioVolumeManagerHandleStreamMuteStatusFuzzTest(const uint8_t *rawData, si
 
 void AudioVolumeManagerSetOffloadSessionIdFuzzTest(const uint8_t *rawData, size_t size)
 {
+    vector<OffloadAdapter> testOffloadAdapters = {
+        OFFLOAD_IN_PRIMARY,
+        OFFLOAD_IN_REMOTE,
+    };
     uint32_t sessionId = static_cast<uint32_t>(size);
-    AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId);
+    uint32_t index = static_cast<uint32_t>(size);
+    OffloadAdapter adapter = testOffloadAdapters[index % testOffloadAdapters.size()];
+    AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId, adapter);
 }
 
 void AudioVolumeManagerConnectServiceAdapterFuzzTest(const uint8_t *rawData, size_t size)

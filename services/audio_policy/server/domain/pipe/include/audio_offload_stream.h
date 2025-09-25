@@ -28,12 +28,6 @@
 namespace OHOS {
 namespace AudioStandard {
 
-enum OffloadAdapter : uint32_t {
-    OFFLOAD_IN_PRIMARY = 0,
-    OFFLOAD_IN_REMOTE,
-    OFFLOAD_IN_ADAPTER_SIZE
-};
-
 enum OffloadAction : uint32_t {
     OFFLOAD_NEW = 0,
     OFFLOAD_MOVE_IN,
@@ -71,8 +65,8 @@ private:
     }
     ~AudioOffloadStream() {}
 
-    void SetOffloadStatusInternal(uint32_t sessionId);
-    void UnsetOffloadStatusInternal(uint32_t sessionId);
+    void SetOffloadStatusInternal(uint32_t sessionId, OffloadAdapter offloadAdapter);
+    void UnsetOffloadStatusInternal(uint32_t sessionId, OffloadAdapter offloadAdapter);
 
 private:
     IAudioPolicyInterface &audioPolicyManager_;

@@ -39,6 +39,12 @@ enum LoudVolumeHoldType {
     LOUD_VOLUME_MODE_VOICE,
 };
 
+enum OffloadAdapter : uint32_t {
+    OFFLOAD_IN_PRIMARY = 0,
+    OFFLOAD_IN_REMOTE,
+    OFFLOAD_IN_ADAPTER_SIZE
+};
+
 class IAudioPolicyInterface {
 public:
     virtual ~IAudioPolicyInterface() {}
@@ -219,9 +225,9 @@ public:
 
     virtual void SetAudioServerProxy(sptr<IStandardAudioService> gsp) = 0;
 
-    virtual void SetOffloadSessionId(uint32_t sessionId) = 0;
+    virtual void SetOffloadSessionId(uint32_t sessionId, OffloadAdapter offloadAdapter) = 0;
 
-    virtual void ResetOffloadSessionId() = 0;
+    virtual void ResetOffloadSessionId(OffloadAdapter offloadAdapter) = 0;
 
     virtual int32_t SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel) = 0;
 

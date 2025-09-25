@@ -613,10 +613,16 @@ int32_t AudioAdapterManager::SetAppVolumeDb(int32_t appUid)
         volumeDb, volumeLevel, desc->deviceType_, totalVolume,
         desc->IsDistributedSpeaker());
     if (desc->IsDistributedSpeaker()) {
-        totalVolume = audioVolume->GetVolume(offloadSessionID_.value(), STREAM_MUSIC, REMOTE_CLASS, &volumes);
+        CHECK_AND_RETURN_RET_LOG(offloadSessionID_[OFFLOAD_IN_REMOTE].has_value(), SUCCESS,
+            "remote offload session id is null");
+        totalVolume = audioVolume->GetVolume(offloadSessionID_[OFFLOAD_IN_REMOTE].value(), STREAM_MUSIC, REMOTE_CLASS,
+            &volumes);
         SetOffloadVolume(STREAM_MUSIC, totalVolume, REMOTE_CLASS, desc->networkId_);
     } else {
-        totalVolume = audioVolume->GetVolume(offloadSessionID_.value(), STREAM_MUSIC, OFFLOAD_CLASS, &volumes);
+        CHECK_AND_RETURN_RET_LOG(offloadSessionID_[OFFLOAD_IN_PRIMARY].has_value(), SUCCESS,
+            "offload session id is null");
+        totalVolume = audioVolume->GetVolume(offloadSessionID_[OFFLOAD_IN_PRIMARY].value(), STREAM_MUSIC,
+            OFFLOAD_CLASS, &volumes);
         SetOffloadVolume(STREAM_MUSIC, totalVolume, OFFLOAD_CLASS);
     }
     return SUCCESS;
@@ -634,10 +640,16 @@ int32_t AudioAdapterManager::SetAppVolumeMutedDB(int32_t appUid, bool muted)
     AUDIO_INFO_LOG("appUid:%{public}d muted:%{public}d devicetype:%{public}d volumeDb:%{public}f isDs:%{public}d",
         appUid, muted, desc->deviceType_, volumeDb, desc->IsDistributedSpeaker());
     if (desc->IsDistributedSpeaker()) {
-        volumeDb = audioVolume->GetVolume(offloadSessionID_.value(), STREAM_MUSIC, REMOTE_CLASS, &volumes);
+        CHECK_AND_RETURN_RET_LOG(offloadSessionID_[OFFLOAD_IN_REMOTE].has_value(), SUCCESS,
+            "remote offload session id is null");
+        volumeDb = audioVolume->GetVolume(offloadSessionID_[OFFLOAD_IN_REMOTE].value(), STREAM_MUSIC, REMOTE_CLASS,
+            &volumes);
         SetOffloadVolume(STREAM_MUSIC, volumeDb, REMOTE_CLASS, desc->networkId_);
     } else {
-        volumeDb = audioVolume->GetVolume(offloadSessionID_.value(), STREAM_MUSIC, OFFLOAD_CLASS, &volumes);
+        CHECK_AND_RETURN_RET_LOG(offloadSessionID_[OFFLOAD_IN_PRIMARY].has_value(), SUCCESS,
+            "offload session id is null");
+        volumeDb = audioVolume->GetVolume(offloadSessionID_[OFFLOAD_IN_PRIMARY].value(), STREAM_MUSIC, OFFLOAD_CLASS,
+            &volumes);
         SetOffloadVolume(STREAM_MUSIC, volumeDb, OFFLOAD_CLASS);
     }
     return SUCCESS;
@@ -752,9 +764,11 @@ void AudioAdapterManager::SetOffloadVolume(AudioStreamType streamType, float vol
     }
     CHECK_AND_RETURN_LOG(audioServerProxy_ != nullptr, "audioServerProxy_ null");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    if (offloadSessionID_.has_value()) { // need stream volume and system volume
+    OffloadAdapter adapter = (deviceClass == REMOTE_CLASS) ? OFFLOAD_IN_REMOTE : OFFLOAD_IN_PRIMARY;
+    if (offloadSessionID_[adapter].has_value()) { // need stream volume and system volume
         struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-        volume = AudioVolume::GetInstance()->GetVolume(offloadSessionID_.value(), streamType, deviceClass, &volumes);
+        volume = AudioVolume::GetInstance()->GetVolume(offloadSessionID_[adapter].value(), streamType, deviceClass,
+            &volumes);
         std::string routeDeviceClass = deviceClass == REMOTE_CLASS ? "remote_offload" : "offload";
         AUDIO_INFO_LOG("routeDeviceClass:%{public}s, networkId:%{public}s, volume:%{public}f", routeDeviceClass.c_str(),
             networkId.c_str(), volume);
@@ -763,21 +777,21 @@ void AudioAdapterManager::SetOffloadVolume(AudioStreamType streamType, float vol
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
-void AudioAdapterManager::SetOffloadSessionId(uint32_t sessionId)
+void AudioAdapterManager::SetOffloadSessionId(uint32_t sessionId, OffloadAdapter offloadAdapter)
 {
     if (sessionId < MIN_STREAMID || sessionId > MAX_STREAMID) {
         AUDIO_PRERELEASE_LOGE("set sessionId[%{public}d] error", sessionId);
     } else {
         AUDIO_PRERELEASE_LOGI("set sessionId[%{public}d]", sessionId);
     }
-    offloadSessionID_ = sessionId;
+    offloadSessionID_[offloadAdapter] = sessionId;
 }
 
-void AudioAdapterManager::ResetOffloadSessionId()
+void AudioAdapterManager::ResetOffloadSessionId(OffloadAdapter offloadAdapter)
 {
-    if (offloadSessionID_.has_value()) {
-        AUDIO_PRERELEASE_LOGI("reset offload sessionId[%{public}d]", offloadSessionID_.value());
-        offloadSessionID_.reset();
+    if (offloadSessionID_[offloadAdapter].has_value()) {
+        AUDIO_PRERELEASE_LOGI("reset offload sessionId[%{public}d]", offloadSessionID_[offloadAdapter].value());
+        offloadSessionID_[offloadAdapter].reset();
     }
 }
 
