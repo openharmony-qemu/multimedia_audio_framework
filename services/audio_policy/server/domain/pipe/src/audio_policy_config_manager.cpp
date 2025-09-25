@@ -691,8 +691,8 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
         return;
     }
 
-    // dynamic?
-    if (desc->routeFlag_ == AUDIO_OUTPUT_FLAG_MULTICHANNEL) {
+    // dynamic
+    if (pipeIt->second->name_ == "multichannel_output") {
         auto streamProp = GetStreamPropInfoForMultiChannel(desc, pipeIt->second, temp.channelLayout);
         if (streamProp != nullptr) {
             info = streamProp;
@@ -923,7 +923,7 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoF
     }
 
     if (AudioPolicyManagerFactory::GetAudioPolicyManager().
-        IsChannelLayoutSupportForDspEffect(tempStreamProp->channelLayout_)) {
+        IsChannelLayoutSupportedForDspEffect(tempStreamProp->channelLayout_)) {
         return tempStreamProp;
     }
 
