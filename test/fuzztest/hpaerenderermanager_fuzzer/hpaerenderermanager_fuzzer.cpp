@@ -318,27 +318,22 @@ void HpaeRendererManagerProcessFuzzTest()
 {
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
-    auto rendererManager = HpaeRendererManager(sinkInfo);
-    rendererManager.Init();
-    rendererManager.Process();
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
+    rendererManager->Process();
     WaitForMsgProcessing(rendererManager);
 
     HpaeStreamInfo streamInfo;
     InitRenderStreamInfo(streamInfo);
-    rendererManager.CreateStream(streamInfo)
+    rendererManager->CreateStream(streamInfo)
     WaitForMsgProcessing(rendererManager);
-    rendererManager.StartRenderSink();
-    rendererManager.CheckIsStreamRunning();
-    rendererManager.HandleMsg();
+    rendererManager->HandleMsg();
     WaitForMsgProcessing(rendererManager);
-    rendererManager.IsMsgProcessing();
+    rendererManager->IsMsgProcessing();
     WaitForMsgProcessing(rendererManager);
-    rendererManager.EnableCollaboration();
+    rendererManager->DeactivateThread();
     WaitForMsgProcessing(rendererManager);
-    rendererManager.DisableCollaboration();
-    rendererManager.DeactivateThread();
-    WaitForMsgProcessing(rendererManager);
-    rendererManager.DeInit();
+    rendererManager->DeInit();
 }
 
 void HpaeRendererManagerSetClientVolumeFuzzTest()
@@ -609,6 +604,14 @@ void DisConnectInputSessionFuzzTest()
     rendererManager.DisConnectInputSession(sessionId);
 }
 
+void CheckIsStreamRunningFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = HpaeRendererManager(sinkInfo);
+    rendererManager.CheckIsStreamRunning();
+}
+
 void CreateOutputClusterNodeInfoFuzzTest()
 {
     HpaeSinkInfo sinkInfo;
@@ -617,6 +620,14 @@ void CreateOutputClusterNodeInfoFuzzTest()
     HpaeNodeInfo nodeinfo;
     InitNodeInfo(nodeinfo);
     rendererManager.CreateOutputClusterNodeInfo(nodeinfo);
+}
+
+void StartRenderSinkFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = HpaeRendererManager(sinkInfo);
+    rendererManager.StartRenderSink();
 }
 
 void SetSpeedFuzzTest()
@@ -637,6 +648,15 @@ void ReConnectNodeForCollaborationFuzzTest()
     auto rendererManager = HpaeRendererManager(sinkInfo);
     uint32_t sessionId = GetData<uint32_t>();
     rendererManager.ReConnectNodeForCollaboration(sessionId);
+}
+
+void EnableAndDisableCollaborationFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto rendererManager = HpaeRendererManager(sinkInfo);
+    rendererManager.EnableCollaboration();
+    rendererManager.DisableCollaboration();
 }
 
 typedef void (*TestFuncs)();
@@ -668,9 +688,12 @@ TestFuncs g_testFuncs[] = {
     DeleteProcessClusterFuzzTest,
     ConnectInputSessionFuzzTest,
     DisConnectInputSessionFuzzTest,
+    CheckIsStreamRunningFuzzTest,
     CreateOutputClusterNodeInfoFuzzTest,
+    StartRenderSinkFuzzTest,
     SetSpeedFuzzTest,
     ReConnectNodeForCollaborationFuzzTest,
+    EnableAndDisableCollaborationFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)
