@@ -358,6 +358,5 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetAudioSourceAttr_001, TestSize.Level1)
     IAudioSourceAttr attr = audioAdapterManager->GetAudioSourceAttr(info);
     EXPECT_EQ(attr.channelLayout, 263); // 263 = 100000111
 }
-
 } // namespace AudioStandard
 } // namespace OHOS
