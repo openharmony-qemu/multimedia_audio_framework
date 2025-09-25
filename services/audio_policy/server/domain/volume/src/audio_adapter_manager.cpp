@@ -2971,7 +2971,12 @@ void AudioAdapterManager::UpdateVolumeForLowLatency()
     auto descs = audioActiveDevice_.GetActiveOutputDevices();
     for (auto iter = defaultVolumeTypeList_.begin(); iter != defaultVolumeTypeList_.end(); iter++) {
         for (auto &desc : descs) {
-            vol.isMute = GetStreamMuteInternal(desc, *iter);
+            if (*iter == STREAM_MUSIC && desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP
+                && IsAbsVolumeScene()) {
+                vol.isMute = isAbsVolumeMute_;
+            } else {
+                vol.isMute = GetStreamMuteInternal(desc, *iter);
+            }
             vol.volumeInt = static_cast<uint32_t>(GetSystemVolumeLevelNoMuteState(*iter));
             vol.volumeFloat = GetSystemVolumeInDb(*iter, (vol.isMute ? 0 : vol.volumeInt), desc->deviceType_);
             AudioVolumeManager::GetInstance().SetSharedVolume(*iter, desc->deviceType_, vol);
