@@ -197,12 +197,13 @@ void HpaeRendererManager::CreateProcessCluster(HpaeNodeInfo &nodeInfo)
     int32_t processClusterDecision = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
     CreateProcessClusterInner(nodeInfo, processClusterDecision);
 
-    CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
-        "could not find processorType %{public}d", nodeInfo.sceneType);
+    HpaeProcessorType sceneTypeConnect = GetProcessorType(nodeInfo.sessionId);
+    CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, sceneTypeConnect),
+        "could not find processorType %{public}d", sceneTypeConnect);
     if (!sessionNodeMap_[nodeInfo.sessionId].bypass) {
-        sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]++;
+        sceneTypeToProcessClusterCountMap_[sceneTypeConnect]++;
     }
-    int32_t ret = sceneClusterMap_[nodeInfo.sceneType]->AudioRendererCreate(nodeInfo, sinkInfo_);
+    int32_t ret = sceneClusterMap_[sceneTypeConnect]->AudioRendererCreate(nodeInfo, sinkInfo_);
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("update audio effect when creating failed, ret = %{public}d", ret);
     }
@@ -623,7 +624,11 @@ void HpaeRendererManager::DisConnectInputCluster(uint32_t sessionId, HpaeProcess
     sinkInputNodeMap_[sessionId]->connectedProcessorType_ = HPAE_SCENE_UNCONNECTED;
 
     if (sessionNodeMap_[sessionId].bypass) {
-        AUDIO_INFO_LOG("none processCluster has no effectNode");
+        CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, HPAE_SCENE_EFFECT_NONE),
+            "could not find processorType HPAE_SCENE_EFFECT_NONE");
+        AUDIO_INFO_LOG("none processCluster need send message to effectNode");
+        sceneClusterMap_[HPAE_SCENE_EFFECT_NONE]->AudioRendererRelease(sinkInputNodeMap_[sessionId]->GetNodeInfo(),
+            sinkInfo_);
         return;
     }
 
