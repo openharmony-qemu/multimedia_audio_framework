@@ -429,8 +429,8 @@ void HpaeRendererManager::ConnectProcessCluster(uint32_t sessionId, HpaeProcesso
     }
     // update node info for processcluster
     UpdateStreamType(sinkInputNodeMap_[sessionId], sceneClusterMap_[sceneType]->GetSharedInstance());
-    ConnectInputCluster(sessionId, sceneType);
     ConnectOutputCluster(sessionId, sceneType);
+    ConnectInputCluster(sessionId, sceneType);
     std::shared_ptr<HpaeSinkInputNode> sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
     CHECK_AND_RETURN_LOG(sinkInputNode != nullptr, "sinkInputNode is nullptr");
     sceneClusterMap_[sceneType]->SetLoudnessGain(sessionId, sinkInputNode->GetLoudnessGain());
