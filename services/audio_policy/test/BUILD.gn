@@ -5511,6 +5511,15 @@ ohos_unittest("audio_capturer_session_unit_test") {
     "-fno-access-control",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
+
   external_deps = [
     "bluetooth:btframework",
     "c_utils:utils",
