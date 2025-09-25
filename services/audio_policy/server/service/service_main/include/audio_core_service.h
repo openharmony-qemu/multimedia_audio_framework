@@ -518,7 +518,7 @@ private:
         const AudioStreamDeviceChangeReasonExt reason);
     void CheckAndSetCurrentOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, int32_t sessionId);
     void CheckAndSetCurrentInputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
-    void ClearRingMuteWhenCallStart(bool pre, bool after);
+    void ClearRingMuteWhenCallStart(bool pre, bool after, std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void CheckForRemoteDeviceState(std::shared_ptr<AudioDeviceDescriptor> desc);
     void UpdateRemoteOffloadModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName);
     void UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInfo);
@@ -587,7 +587,7 @@ private:
     std::deque<std::string> selectDeviceHistory_;
 
     // dual tone for same sinks
-    std::vector<std::pair<AudioStreamType, StreamUsage>> streamsWhenRingDualOnPrimarySpeaker_;
+    std::vector<std::pair<uint32_t, AudioStreamType>> streamsWhenRingDualOnPrimarySpeaker_;
     bool isRingDualToneOnPrimarySpeaker_ = false;
 
     // Save the relationship of uid and session id.

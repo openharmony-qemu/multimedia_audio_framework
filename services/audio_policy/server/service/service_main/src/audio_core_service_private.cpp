@@ -32,6 +32,7 @@
 #include "audio_collaborative_service.h"
 #include "audio_stream_id_allocator.h"
 #include "ipc_skeleton.h"
+#include "audio_volume.h"
 #include "audio_bundle_manager.h"
 
 namespace OHOS {
@@ -533,11 +534,14 @@ void AudioCoreService::UpdateDefaultOutputDeviceWhenStopping(int32_t uid)
             streamCollector_.GetStreamType(sessionID) == STREAM_ALARM)) {
             AUDIO_INFO_LOG("disable primary speaker dual tone when ringer renderer died");
             isRingDualToneOnPrimarySpeaker_ = false;
-            for (std::pair<AudioStreamType, StreamUsage> stream : streamsWhenRingDualOnPrimarySpeaker_) {
-                audioPolicyManager_.SetInnerStreamMute(stream.first, false, stream.second);
+            for (std::pair<uint32_t, AudioStreamType> stream : streamsWhenRingDualOnPrimarySpeaker_) {
+                AudioVolume::GetInstance()->SetStreamVolumeMute(stream.first, false);
             }
             streamsWhenRingDualOnPrimarySpeaker_.clear();
-            audioPolicyManager_.SetInnerStreamMute(STREAM_MUSIC, false, STREAM_USAGE_MUSIC);
+            AudioStreamType streamType = streamCollector_.GetStreamType(sessionID);
+            if (streamType == STREAM_MUSIC) {
+                AudioVolume::GetInstance()->SetStreamVolumeMute(sessionID, false);
+            }
         }
     }
 }
@@ -1607,8 +1611,8 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
                 deviceType, streamDesc->sessionId_);
             AudioStreamType streamType = streamCollector_.GetStreamType(streamDesc->sessionId_);
             if (!AudioCoreServiceUtils::IsDualStreamWhenRingDual(streamType)) {
-                streamsWhenRingDualOnPrimarySpeaker_.push_back(make_pair(streamType, streamUsage));
-                audioPolicyManager_.SetInnerStreamMute(streamType, true, streamUsage);
+                streamsWhenRingDualOnPrimarySpeaker_.push_back(make_pair(streamDesc->sessionId_, streamType));
+                AudioVolume::GetInstance()->SetStreamVolumeMute(streamDesc->sessionId_, true);
             }
             shouldUpdateDeviceDueToDualTone_ = true;
         } else {
@@ -1672,15 +1676,19 @@ bool AudioCoreService::IsRingerOrAlarmerDualDevicesRange(const InternalDeviceTyp
     }
 }
 
-void AudioCoreService::ClearRingMuteWhenCallStart(bool pre, bool after)
+void AudioCoreService::ClearRingMuteWhenCallStart(bool pre, bool after,
+    std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
     CHECK_AND_RETURN_LOG(pre == true && after == false, "ringdual not cancel by call");
     AUDIO_INFO_LOG("disable primary speaker dual tone when call start and ring not over");
-    for (std::pair<AudioStreamType, StreamUsage> stream : streamsWhenRingDualOnPrimarySpeaker_) {
-        audioPolicyManager_.SetInnerStreamMute(stream.first, false, stream.second);
+    for (std::pair<uint32_t, AudioStreamType> stream : streamsWhenRingDualOnPrimarySpeaker_) {
+        AudioVolume::GetInstance()->SetStreamVolumeMute(stream.first, false);
     }
     streamsWhenRingDualOnPrimarySpeaker_.clear();
-    audioPolicyManager_.SetInnerStreamMute(STREAM_MUSIC, false, STREAM_USAGE_MUSIC);
+    AudioStreamType streamType = streamCollector_.GetStreamType(streamDesc->GetSessionId());
+    if (streamType == STREAM_MUSIC) {
+        AudioVolume::GetInstance()->SetStreamVolumeMute(streamDesc->GetSessionId(), false);
+    }
 }
 
 bool AudioCoreService::SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDescriptor> streamDesc)
@@ -1727,8 +1735,8 @@ bool AudioCoreService::SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDes
             }
             bool pre = isRingDualToneOnPrimarySpeaker_;
             isRingDualToneOnPrimarySpeaker_ = AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(
-                streamDesc->newDeviceDescs_, sessionId);
-            ClearRingMuteWhenCallStart(pre, isRingDualToneOnPrimarySpeaker_);
+                streamDesc->newDeviceDescs_, sessionId, streamCollector_);
+            ClearRingMuteWhenCallStart(pre, isRingDualToneOnPrimarySpeaker_, streamDesc);
             audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices);
         }
         return true;
@@ -2427,11 +2435,14 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
         usleep(RING_DUAL_END_DELAY_US);
         FetchOutputDeviceAndRoute("UpdateTracker_2");
         CHECK_AND_RETURN_LOG(!isRingDualToneOnPrimarySpeaker_, "no need to execute SetInnerStreamMute false");
-        for (std::pair<AudioStreamType, StreamUsage> stream :  streamsWhenRingDualOnPrimarySpeaker_) {
-            audioPolicyManager_.SetInnerStreamMute(stream.first, false, stream.second);
+        for (std::pair<uint32_t, AudioStreamType> stream :  streamsWhenRingDualOnPrimarySpeaker_) {
+            AudioVolume::GetInstance()->SetStreamVolumeMute(stream.first, false);
         }
         streamsWhenRingDualOnPrimarySpeaker_.clear();
-        audioPolicyManager_.SetInnerStreamMute(STREAM_MUSIC, false, STREAM_USAGE_MUSIC);
+        AudioStreamType streamType = streamCollector_.GetStreamType(streamChangeInfo.audioRendererChangeInfo.sessionId);
+        if (streamType == STREAM_MUSIC) {
+            AudioVolume::GetInstance()->SetStreamVolumeMute(streamChangeInfo.audioRendererChangeInfo.sessionId, false);
+        }
     }
 }
 
