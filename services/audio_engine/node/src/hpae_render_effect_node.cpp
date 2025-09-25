@@ -84,12 +84,12 @@ HpaeRenderEffectNode::~HpaeRenderEffectNode()
 
 void HpaeRenderEffectNode::DoProcess()
 {
-    std::vector<HpaePcmBuffer *>& preOutputs = inputStream_.ReadPreOutputData();
     if (sceneType_ != "SCENE_COLLABORATIVE") {
         HpaePluginNode::DoProcess();
         return;
     }
 
+    std::vector<HpaePcmBuffer *>& preOutputs = inputStream_.ReadPreOutputData();
     if (enableProcess_ && !preOutputs.empty() && directOutput_ && collaborativeOutput_) {
         SignalProcess(preOutputs);
         int32_t ret = SplitCollaborativeData();

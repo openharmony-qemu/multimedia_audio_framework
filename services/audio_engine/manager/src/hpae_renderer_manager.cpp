@@ -1473,7 +1473,8 @@ void HpaeRendererManager::SleepIfBypassOnUnderrun()
         enableBypassOnUnderrun_ = sleepTimeInNs > 0;
         CHECK_AND_RETURN(enableBypassOnUnderrun_);
         Trace trace("HpaeRendererManager::sleep " + std::to_string(sleepTimeInNs) + "us when bypass underrun");
-        hpaeSignalProcessThread_->SleepUntilNotify(std::max(BUFFER_DURATION_US, sleepTimeInNs / AUDIO_NS_PER_US));
+        // sleep atmost 20ms
+        hpaeSignalProcessThread_->SleepUntilNotify(std::min(BUFFER_DURATION_US, sleepTimeInNs / AUDIO_NS_PER_US));
     } else {
         lastOnUnderrunTime_ = 0;
         enableBypassOnUnderrun_ = true;

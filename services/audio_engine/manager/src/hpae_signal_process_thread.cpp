@@ -55,12 +55,17 @@ void HpaeSignalProcessThread::Run()
 {
     int32_t setPriority = GetIntParameter("const.multimedia.audio_setPriority", 1);
     SetThreadQosLevelAsync(setPriority);
-    while (running_.load() && streamManager_.lock() != nullptr) {
-        SleepUntilNotify(0);
-        if (streamManager_.lock()) {
-            streamManager_.lock()->HandleMsg();
-            streamManager_.lock()->Process();
+    auto manager = streamManager_.lock();
+    while (running_.load() && manager != nullptr) {
+        {
+            std::unique_lock<std::mutex> lock(mutex_);
+            condition_.wait(lock, [this, manager] {
+                return !running_.load() || manager->IsRunning() ||
+                    manager->IsMsgProcessing() || recvSignal_.load();
+            });
         }
+        manager->HandleMsg();
+        manager->Process();
         recvSignal_.store(false);
     }
     ResetThreadQosLevel();
@@ -68,19 +73,15 @@ void HpaeSignalProcessThread::Run()
 
 void HpaeSignalProcessThread::SleepUntilNotify(int64_t sleepInUs)
 {
+    auto manager = streamManager_.lock();
+    CHECK_AND_RETURN(manager);
     std::unique_lock<std::mutex> lock(mutex_);
     auto duration = std::chrono::microseconds(sleepInUs);
-    auto cond = [this] {
-        return !running_.load() || 
-               streamManager_.lock()->IsRunning() ||
-               streamManager_.lock()->IsMsgProcessing() || 
+    condition_.wait_for(lock, duration, [this, manager] {
+        return !running_.load() ||
+               manager->IsMsgProcessing() ||
                recvSignal_.load();
-    };
-    if (sleepInUs > 0) {
-        condition_.wait_for(lock, duration, cond);
-    } else {
-        condition_.wait(lock, cond);
-    }
+    });
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
