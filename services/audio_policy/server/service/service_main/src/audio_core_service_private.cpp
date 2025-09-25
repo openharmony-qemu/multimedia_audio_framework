@@ -3218,7 +3218,6 @@ void AudioCoreService::UpdateRouteForCollaboration(InternalDeviceType deviceType
 
 int32_t AudioCoreService::SetSleVoiceStatusFlag(AudioScene audioScene)
 {
-    CHECK_AND_RETURN_RET(audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_NEARLINK, ERROR);
     if (audioScene == AUDIO_SCENE_DEFAULT) {
         audioPolicyManager_.SetSleVoiceStatusFlag(false);
     } else {

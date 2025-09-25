@@ -1121,7 +1121,10 @@ void AudioAdapterManager::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
 {
     isSleVoiceStatus_ = isSleVoiceStatus;
     AUDIO_INFO_LOG("SetSleVoiceStatusFlag: %{public}d", isSleVoiceStatus);
-    SetVolumeDb(STREAM_MUSIC);
+    CHECK_AND_RETURN_LOG(audioActiveDevice_.IsDeviceInActiveOutputDevices(DEVICE_TYPE_NEARLINK, false),
+        "SetSleVoiceStatusFlag the currentActiveDevice is not nearlink device");
+    auto desc = audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_NEARLINK);
+    SetVolumeDb(desc, STREAM_MUSIC);
 }
 
 void AudioAdapterManager::UpdateVolumeForStreams()
@@ -2838,10 +2841,6 @@ void AudioAdapterManager::SetAbsVolumeMute(bool mute)
     auto descA2DP = audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_BLUETOOTH_A2DP);
     if (descA2DP != nullptr) {
         SetVolumeDb(descA2DP, STREAM_MUSIC);
-    }
-    auto descNEARLINK = audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_NEARLINK);
-    if (descNEARLINK != nullptr) {
-        SetVolumeDb(descNEARLINK, STREAM_MUSIC);
     }
 }
 
