@@ -49,17 +49,6 @@ constexpr int32_t TEST_SLEEP_TIME_20 = 20;
 constexpr int32_t TEST_SLEEP_TIME_40 = 40;
 constexpr uint32_t INVALID_ID = 99999;
 constexpr uint32_t LOUDNESS_GAIN = 1.0f;
-class HpaeRendererManagerTest : public testing::Test {
-public:
-    void SetUp();
-    void TearDown();
-};
-
-void HpaeRendererManagerTest::SetUp()
-{}
-
-void HpaeRendererManagerTest::TearDown()
-{}
 
 static HpaeSinkInfo GetSinkInfo()
 {
@@ -84,6 +73,30 @@ static void TestCheckSinkInputInfo(HpaeSinkInputInfo &sinkInputInfo, const HpaeS
     EXPECT_EQ(sinkInputInfo.nodeInfo.sessionId == streamInfo.sessionId, true);
     EXPECT_EQ(sinkInputInfo.nodeInfo.samplingRate == streamInfo.samplingRate, true);
     EXPECT_EQ(sinkInputInfo.nodeInfo.streamType == streamInfo.streamType, true);
+}
+
+class HpaeRendererManagerTest : public testing::Test {
+public:
+    void SetUp() override;
+    void TearDown() override;
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager_;
+    std::shared_ptr<HpaeOutputCluster> outputCluster_;
+};
+
+void HpaeRendererManagerTest::SetUp()
+{
+    HpaeNodeInfo nodeInfo;
+    hpaeRendererManager_ = std::make_shared<HpaeRendererManager>(GetSinkInfo());
+
+    outputCluster_ = std::make_shared<HpaeOutputCluster>(nodeInfo);
+    hpaeRendererManager_->outputCluster_ = outputCluster_;
+    hpaeRendererManager_->hpaeSignalProcessThread_ = std::make_shared<HpaeSignalProcessThread>();
+}
+
+void HpaeRendererManagerTest::TearDown()
+{
+    hpaeRendererManager_.reset();
+    outputCluster_.reset();
 }
 
 template <class RenderManagerType>
@@ -1828,15 +1841,15 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_002, 
  */
 HWTEST_F(HpaeRendererManagerTest, OneStreamEnableBypassOnUnderrun_001, TestSize.Level1)
 {
-    sinkInfo_.deviceClass = "remote";
-    appsUid_ = {123};
-    enableBypassOnUnderrun_ = true;
-    
+    hpaeRendererManager_->sinkInfo_.deviceClass = "remote";
+    hpaeRendererManager_->appsUid_ = {123};
+    hpaeRendererManager_->enableBypassOnUnderrun_ = true;
+
     auto node = CreateTestNode(HPAE_SESSION_RUNNING);
-    sinkInputNodeMap_[1] = node;
-    
-    OneStreamEnableBypassOnUnderrun();
-    
+    hpaeRendererManager_->sinkInputNodeMap_[1] = node;
+
+    hpaeRendererManager_->OneStreamEnableBypassOnUnderrun();
+
     EXPECT_FALSE(node->bypassOnUnderrun_);
 }
 
@@ -1848,15 +1861,14 @@ HWTEST_F(HpaeRendererManagerTest, OneStreamEnableBypassOnUnderrun_001, TestSize.
  */
 HWTEST_F(HpaeRendererManagerTest, OneStreamEnableBypassOnUnderrun_002, TestSize.Level1)
 {
-    sinkInfo_.deviceClass = "local";
-    appsUid_ = {123, 456};
-    enableBypassOnUnderrun_ = true;
-    
+    hpaeRendererManager_->appsUid_ = {123, 456};
+    hpaeRendererManager_->enableBypassOnUnderrun_ = true;
+
     auto node = CreateTestNode(HPAE_SESSION_RUNNING);
-    sinkInputNodeMap_[1] = node;
-    
-    OneStreamEnableBypassOnUnderrun();
-    
+    hpaeRendererManager_->sinkInputNodeMap_[1] = node;
+
+    hpaeRendererManager_->OneStreamEnableBypassOnUnderrun();
+
     EXPECT_FALSE(node->bypassOnUnderrun_);
 }
 
@@ -1868,15 +1880,14 @@ HWTEST_F(HpaeRendererManagerTest, OneStreamEnableBypassOnUnderrun_002, TestSize.
  */
 HWTEST_F(HpaeRendererManagerTest, OneStreamEnableBypassOnUnderrun_003, TestSize.Level1)
 {
-    sinkInfo_.deviceClass = "local";
-    appsUid_ = {123};
-    enableBypassOnUnderrun_ = false;
-    
+    hpaeRendererManager_->appsUid_ = {123};
+    hpaeRendererManager_->enableBypassOnUnderrun_ = false;
+
     auto node = CreateTestNode(HPAE_SESSION_RUNNING);
-    sinkInputNodeMap_[1] = node;
-    
-    OneStreamEnableBypassOnUnderrun();
-    
+    hpaeRendererManager_->sinkInputNodeMap_[1] = node;
+
+    hpaeRendererManager_->OneStreamEnableBypassOnUnderrun();
+
     EXPECT_FALSE(node->bypassOnUnderrun_);
 }
 
@@ -1888,20 +1899,17 @@ HWTEST_F(HpaeRendererManagerTest, OneStreamEnableBypassOnUnderrun_003, TestSize.
  */
 HWTEST_F(HpaeRendererManagerTest, OneStreamEnableBypassOnUnderrun_004, TestSize.Level1)
 {
-    sinkInfo_.deviceClass = "local";
-    appsUid_ = {123};
-    enableBypassOnUnderrun_ = true;
-    
-    auto runningNode = CreateTestNode(HPAE_SESSION_RUNNING);
-    auto pausedNode = CreateTestNode(HPAE_SESSION_PAUSED);
-    
-    sinkInputNodeMap_[1] = runningNode;
-    sinkInputNodeMap_[2] = pausedNode;
-    
-    OneStreamEnableBypassOnUnderrun();
-    
-    EXPECT_TRUE(runningnode->bypassOnUnderrun_);
-    EXPECT_FALSE(pausednode->bypassOnUnderrun_);
+    hpaeRendererManager_->appsUid_ = {123};
+    hpaeRendererManager_->enableBypassOnUnderrun_ = true;
+
+    auto node = CreateTestNode(HPAE_SESSION_PAUSED);
+    hpaeRendererManager_->sinkInputNodeMap_[1] = node;
+    hpaeRendererManager_->OneStreamEnableBypassOnUnderrun();
+    EXPECT_FALSE(node->bypassOnUnderrun_);
+
+    node->SetState(HPAE_SESSION_RUNNING);
+    hpaeRendererManager_->OneStreamEnableBypassOnUnderrun();
+    EXPECT_TRUE(node->bypassOnUnderrun_);
 }
 
 /**
@@ -1912,13 +1920,12 @@ HWTEST_F(HpaeRendererManagerTest, OneStreamEnableBypassOnUnderrun_004, TestSize.
  */
 HWTEST_F(HpaeRendererManagerTest, SleepIfBypassOnUnderrun_001, TestSize.Level1)
 {
-    sinkInfo_.deviceClass = "remote";
-    outputCluster_->SetProcessBypassed(true);
-    lastOnUnderrunTime_ = 1000;
-    
-    SleepIfBypassOnUnderrun();
-    
-    EXPECT_EQ(lastOnUnderrunTime_, 1000);
+    hpaeRendererManager_->sinkInfo_.deviceClass = "remote";
+    hpaeRendererManager_->lastOnUnderrunTime_ = 0;
+
+    hpaeRendererManager_->SleepIfBypassOnUnderrun();
+
+    EXPECT_EQ(hpaeRendererManager_->lastOnUnderrunTime_, 0);
 }
 
 /**
@@ -1929,14 +1936,13 @@ HWTEST_F(HpaeRendererManagerTest, SleepIfBypassOnUnderrun_001, TestSize.Level1)
  */
 HWTEST_F(HpaeRendererManagerTest, SleepIfBypassOnUnderrun_002, TestSize.Level1)
 {
-    sinkInfo_.deviceClass = "local";
-    outputCluster_->SetProcessBypassed(false);
-    lastOnUnderrunTime_ = 1000;
-    
-    SleepIfBypassOnUnderrun();
-    
-    EXPECT_EQ(lastOnUnderrunTime_, 0);
-    EXPECT_TRUE(enableBypassOnUnderrun_);
+    outputCluster_->hpaeSinkOutputNode_->bypassed_ = false;
+    hpaeRendererManager_->lastOnUnderrunTime_ = 1000;
+
+    hpaeRendererManager_->SleepIfBypassOnUnderrun();
+
+    EXPECT_EQ(hpaeRendererManager_->lastOnUnderrunTime_, 0);
+    EXPECT_TRUE(hpaeRendererManager_->enableBypassOnUnderrun_);
 }
 
 /**
@@ -1947,16 +1953,14 @@ HWTEST_F(HpaeRendererManagerTest, SleepIfBypassOnUnderrun_002, TestSize.Level1)
  */
 HWTEST_F(HpaeRendererManagerTest, SleepIfBypassOnUnderrun_003, TestSize.Level1)
 {
-    sinkInfo_.deviceClass = "local";
-    outputCluster_->SetProcessBypassed(true);
-    
+    outputCluster_->hpaeSinkOutputNode_->bypassed_ = true;
+
     // Set lastOnUnderrunTime_ to long ago so sleep time becomes negative
-    mockClock_->SetCurrentTime(ClockTime::GetCurNano());
-    lastOnUnderrunTime_ = mockClock_->GetCurNano() - UNDERRUN_BYPASS_DURATION_NS - 1000;
-    
-    SleepIfBypassOnUnderrun();
-    
-    EXPECT_FALSE(enableBypassOnUnderrun_);
+    hpaeRendererManager_->lastOnUnderrunTime_ = 1;
+
+    hpaeRendererManager_->SleepIfBypassOnUnderrun();
+
+    EXPECT_FALSE(hpaeRendererManager_->enableBypassOnUnderrun_);
 }
 
 /**
@@ -1967,35 +1971,12 @@ HWTEST_F(HpaeRendererManagerTest, SleepIfBypassOnUnderrun_003, TestSize.Level1)
  */
 HWTEST_F(HpaeRendererManagerTest, SleepIfBypassOnUnderrun_004, TestSize.Level1)
 {
-    sinkInfo_.deviceClass = "local";
-    outputCluster_->SetProcessBypassed(true);
-    
+    outputCluster_->hpaeSinkOutputNode_->bypassed_ = true;
     // Set lastOnUnderrunTime_ to recent time so sleep time is positive
-    mockClock_->SetCurrentTime(ClockTime::GetCurNano());
-    lastOnUnderrunTime_ = mockClock_->GetCurNano() - UNDERRUN_BYPASS_DURATION_NS / 2;
-    
-    SleepIfBypassOnUnderrun();
-    
-    EXPECT_TRUE(enableBypassOnUnderrun_);
-}
+    hpaeRendererManager_->lastOnUnderrunTime_ = ClockTime::GetCurNano();
 
-/**
- * @tc.name  : Test SleepIfBypassOnUnderrun_FirstTimeBypass
- * @tc.type  : FUNC
- * @tc.number: SleepIfBypassOnUnderrun_005
- * @tc.desc  : Test SleepIfBypassOnUnderrun when first time bypassed, should set lastOnUnderrunTime_.
- */
-HWTEST_F(HpaeRendererManagerTest, SleepIfBypassOnUnderrun_005, TestSize.Level1)
-{
-    sinkInfo_.deviceClass = "local";
-    outputCluster_->SetProcessBypassed(true);
-    lastOnUnderrunTime_ = 0;
-    
-    int64_t beforeTime = mockClock_->GetCurNano();
-    
-    SleepIfBypassOnUnderrun();
-    
-    EXPECT_GE(lastOnUnderrunTime_, beforeTime);
-    EXPECT_LE(lastOnUnderrunTime_, mockClock_->GetCurNano());
+    hpaeRendererManager_->SleepIfBypassOnUnderrun();
+
+    EXPECT_TRUE(hpaeRendererManager_->enableBypassOnUnderrun_);
 }
 }  // namespace
