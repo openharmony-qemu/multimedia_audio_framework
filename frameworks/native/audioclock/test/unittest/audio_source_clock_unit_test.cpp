@@ -72,7 +72,7 @@ void AudioSourceClockUnitTest::TearDownTestCase()
 HWTEST_F(AudioSourceClockUnitTest, AudioSourceClockUnitTest_001, TestSize.Level1)
 {
     EXPECT_EQ(srcClock_->sizePerPos_, 4);   // 4:data size
-    
+
     srcClock_->logTimestamp_ = 0;
     srcClock_->Renew(MOCK_POSITION_INC);
     EXPECT_TRUE(capturerClock_->timestamp_ == 0);
