@@ -268,7 +268,7 @@ int32_t HpaeManager::ReloadRenderManager(const AudioModuleInfo &audioModuleInfo,
         sinkNameSinkIdMap_[audioModuleInfo.name] = sinkSourceIndex;
     }
 
-    if (sinkInfo.deviceName == "Virtual_Injector") {
+    if (sinkInfo.deviceName == VIRTUAL_INJECTOR) {
         std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
         sinkVirtualOutputNodeMap_[sinkInfo.sinkId] = sinkVirtualOutputNodeMap_[oldId];
         HpaeNodeInfo nodeInfo;
@@ -301,7 +301,7 @@ int32_t HpaeManager::CreateRendererManager(const AudioModuleInfo &audioModuleInf
         AUDIO_INFO_LOG("SetDefaultSink name: %{public}s", defaultSink_.c_str());
     }
 
-    if (audioModuleInfo.name == "Virtual_Injector") {
+    if (audioModuleInfo.name == VIRTUAL_INJECTOR) {
         std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
         HpaeNodeInfo nodeInfo;
         TransSinkInfoToNodeInfo(sinkInfo, rendererManager, nodeInfo);
@@ -597,7 +597,7 @@ void HpaeManager::AddPreferSinkForDefaultChange(bool isAdd, const std::string &s
 int32_t HpaeManager::CloseOutAudioPort(std::string sinkName)
 {
     std::unique_lock<std::mutex> lock(sinkVirtualOutputNodeMapMutex_, std::defer_lock);
-    if (sinkName == "Virtual_Injector") {
+    if (sinkName == VIRTUAL_INJECTOR) {
         lock.lock();
     }
     if (!SafeGetMap(rendererManagerMap_, sinkName)) {
@@ -617,7 +617,7 @@ int32_t HpaeManager::CloseOutAudioPort(std::string sinkName)
     AddPreferSinkForDefaultChange(isChangeDefaultSink, sinkName);
     rendererManagerMap_[sinkName]->DeInit(sinkName != defaultSink_);
     if (sinkName != defaultSink_) {
-        if (sinkName == "Virtual_Injector") {
+        if (sinkName == VIRTUAL_INJECTOR) {
             sinkVirtualOutputNodeMap_.erase(sinkNameSinkIdMap_[sinkName]);
         }
         rendererManagerMap_.erase(sinkName);
