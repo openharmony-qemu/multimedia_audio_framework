@@ -49,6 +49,7 @@
 #include "audio_stream_id_allocator.h"
 #include "i_hpae_soft_link.h"
 #include "audio_injector_policy.h"
+#include "client_type_manager.h"
 namespace OHOS {
 namespace AudioStandard {
 enum OffloadType {
@@ -524,6 +525,7 @@ private:
     void UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInfo);
     void NotifyRouteUpdate(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     void ResetNearlinkDeviceState(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, bool isRunning = true);
+    int32_t ForceRemoveSleStreamType(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
 
     // For offload
     void CheckAndUpdateOffloadEnableForStream(
