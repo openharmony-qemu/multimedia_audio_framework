@@ -1313,6 +1313,7 @@
                 <focus_type value="STREAM_VOICE_COMMUNICATION" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="STREAM_VOICE_RING" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="STREAM_VOICE_CALL_ASSISTANT" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="STREAM_VOICE_CALL" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_RECOGNITION" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_PLAYBACK_CAPTURE" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_ULTRASONIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
@@ -1324,7 +1325,6 @@
             <private>
                 <focus_type value="STREAM_INTERNAL_FORCE_STOP" is_forced="true" action_type="STOP" action_on="existing"/>
                 <focus_type value="SOURCE_TYPE_VOICE_CALL" is_forced="true" action_type="STOP" action_on="existing"/>
-                <focus_type value="STREAM_VOICE_CALL" is_forced="true" action_type="STOP" action_on="existing"/>
             </private>
         </focus_table>
     </focus_type>
