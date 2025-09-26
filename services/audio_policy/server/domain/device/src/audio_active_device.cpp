@@ -499,6 +499,16 @@ bool AudioActiveDevice::IsDeviceInActiveOutputDevices(DeviceType type, bool isRe
     return isExist != activeOutputDevices_.end();
 }
 
+bool AudioActiveDevice::IsDeviceInActiveOutputDevices(std::shared_ptr<AudioDeviceDescriptor> desc)
+{
+    std::lock_guard<std::mutex> lock(deviceForVolumeMutex_);
+    auto isExist = std::find_if(activeOutputDevices_.begin(), activeOutputDevices_.end(),
+        [desc](std::shared_ptr<AudioDeviceDescriptor> &device) {
+            return desc->IsSameDeviceDesc(device);
+        });
+    return isExist != activeOutputDevices_.end();
+}
+
 void AudioActiveDevice::SortDevicesByPriority(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
 {
     std::sort(descs.begin(), descs.end(), [this] (const std::shared_ptr<AudioDeviceDescriptor> &a,

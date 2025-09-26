@@ -664,7 +664,8 @@ int32_t AudioAdapterManager::SetVolumeDb(std::shared_ptr<AudioDeviceDescriptor> 
         * (GetStreamMuteInternal(device, streamType) ? 0 : 1);
     // Save volume in local prop for bootanimation
     SaveRingtoneVolumeToLocal(streamType, volumeLevel);
-
+    CHECK_AND_RETURN_RET_LOG(audioActiveDevice_.IsDeviceInActiveOutputDevices(device),
+        SUCCESS, "device not active, no need to update volume");
     float volumeDb = 1.0f;
     if (useNonlinearAlgo_) {
         volumeDb = CalculateVolumeDbNonlinear(streamType, device->deviceType_, volumeLevel);
@@ -1174,13 +1175,13 @@ void AudioAdapterManager::UpdateVolumeForStreams()
     auto streamDescs = AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescs();
     for (auto &streamDesc : streamDescs) {
         AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamUsage(streamDesc->rendererInfo_.streamUsage);
-        for (auto &desc : streamDesc->newDeviceDescs_) {
-            int32_t volumeLevel = GetStreamVolumeInternal(desc, volumeType);
-            SaveSystemVolumeForSwitchDevice(desc, volumeType, volumeLevel);
-            SetVolumeDb(desc, volumeType);
-            AUDIO_INFO_LOG("volume: %{public}d, mute: %{public}d for stream type %{public}d, device: %{public}s",
-                volumeLevel, GetStreamMuteInternal(desc, volumeType), volumeType, desc->GetName().c_str());
-        }
+        auto desc = streamDesc->newDeviceDescs_.front();
+        CHECK_AND_CONTINUE(desc != nullptr);
+        int32_t volumeLevel = GetStreamVolumeInternal(desc, volumeType);
+        SaveSystemVolumeForSwitchDevice(desc, volumeType, volumeLevel);
+        SetVolumeDb(desc, volumeType);
+        AUDIO_INFO_LOG("volume: %{public}d, mute: %{public}d for stream type %{public}d, device: %{public}s",
+            volumeLevel, GetStreamMuteInternal(desc, volumeType), volumeType, desc->GetName().c_str());
     }
     UpdateVolumeForLowLatency();
 }
