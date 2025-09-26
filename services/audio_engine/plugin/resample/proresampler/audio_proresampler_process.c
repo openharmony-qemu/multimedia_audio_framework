@@ -12,7 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#ifndef LOG_TAG
+#define LOG_TAG "AudioProResamplerProcess"
+#endif
 #include <stdlib.h>
 #include <math.h>
 #include <limits.h>
@@ -205,7 +207,7 @@ static int32_t CalculateFilter(SingleStagePolyphaseResamplerState* state)
         phi0 += 1.0 / pFactor;
     }
     GainCompensation(state, pFactor);
-    return 0;
+    return RESAMPLER_ERR_SUCCESS;
 }
 
 /*====== Filter multiplication function for general cases =====*/
@@ -1342,8 +1344,8 @@ static int32_t UpdateResamplerState(SingleStagePolyphaseResamplerState* state)
         }
     }
 
-    CalculateFilter(state);
-
+    int32_t ret = CalculateFilter(state);
+    CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret, "CalculateFilter fail with error code %{public}d", ret);
     /* Here's the place where we update the filter memory to take into account
        the change in filter length. It's probably the messiest part of the code
        due to handling of lots of corner cases. */
@@ -1403,6 +1405,31 @@ static int32_t SingleStagePolyphaseResamplerSetQuality(SingleStagePolyphaseResam
     return RESAMPLER_ERR_SUCCESS;
 }
 
+static void SingleStagePolyphaseResamplerSetDefaultParams(SingleStagePolyphaseResamplerState* state)
+{
+    CHECK_AND_RETURN_LOG(state != NULL, "resampler state is null");
+    state->isInitialized = 0;
+    state->isStarted = 0;
+    state->decimateFactor = 0;
+    state->interpolateFactor = 0;
+    state->polyphaseFactor = 0;
+    state->gainCorrection = 0;
+    state->quality = -1;
+    state->filterCoefficientsSize = 0;
+    state->inputMemorySize = 0;
+    state->filterLength = 0;
+    state->filterCoefficients = NULL;
+    state->inputMemory = NULL;
+    state->resamplerFunction = 0;
+
+    state->cutoff = 1.f;
+    state->bufferSize = BUFFER_SIZE;
+
+    state->inputIndex = 0;
+    state->magicSamples = 0;
+    state->subfilterNum = 0;
+}
+
 SingleStagePolyphaseResamplerState* SingleStagePolyphaseResamplerInit(uint32_t numChannels,
     uint32_t decimateFactor, uint32_t interpolateFactor, int32_t quality, int32_t* err)
 {
@@ -1423,30 +1450,12 @@ SingleStagePolyphaseResamplerState* SingleStagePolyphaseResamplerInit(uint32_t n
         }
         return NULL;
     }
-    state->isInitialized = 0;
-    state->isStarted = 0;
-    state->decimateFactor = 0;
-    state->interpolateFactor = 0;
-    state->polyphaseFactor = 0;
-    state->gainCorrection = 0;
-    state->quality = -1;
-    state->filterCoefficientsSize = 0;
-    state->inputMemorySize = 0;
-    state->filterLength = 0;
-    state->filterCoefficients = NULL;
-    state->inputMemory = NULL;
-    state->resamplerFunction = 0;
 
-    state->cutoff = 1.f;
     state->numChannels = numChannels;
+    SingleStagePolyphaseResamplerSetDefaultParams(state);
 
-    state->bufferSize = BUFFER_SIZE;
-
-    state->inputIndex = 0;
-    state->magicSamples = 0;
-    state->subfilterNum = 0;
-
-    SingleStagePolyphaseResamplerSetQuality(state, quality);
+    int32_t ret = SingleStagePolyphaseResamplerSetQuality(state, quality);
+    CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, NULL, "fail to set quality with err code %{public}d", ret);
     filterErr = SingleStagePolyphaseResamplerSetRate(state, decimateFactor, interpolateFactor);
     filterErr = UpdateResamplerState(state);
     if (filterErr == RESAMPLER_ERR_SUCCESS) {
@@ -1585,6 +1594,7 @@ int32_t SingleStagePolyphaseResamplerSkipHalfTaps(SingleStagePolyphaseResamplerS
 
 void SingleStagePolyphaseResamplerFree(SingleStagePolyphaseResamplerState* state)
 {
+    CHECK_AND_RETURN_LOG(state != NULL, "no need to free SingleStagePolyphaseResampler");
     free(state->inputMemory);
     state->inputMemory = NULL;
     free(state->filterCoefficients);

@@ -30,6 +30,7 @@
 #include "audio_event_utils.h"
 #include "audio_recovery_device.h"
 #include "audio_bundle_manager.h"
+#include "audio_volume.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -960,7 +961,7 @@ void AudioDeviceCommon::UpdateRoute(std::shared_ptr<AudioRendererChangeInfo> &re
                 deviceType, rendererChangeInfo->sessionId);
             AudioStreamType streamType = streamCollector_.GetStreamType(rendererChangeInfo->sessionId);
             if (!IsDualStreamWhenRingDual(streamType)) {
-                streamsWhenRingDualOnPrimarySpeaker_.push_back(make_pair(streamType, streamUsage));
+                streamsWhenRingDualOnPrimarySpeaker_.push_back(make_pair(rendererChangeInfo->sessionId, streamType));
                 audioPolicyManager_.SetStreamMute(streamType, true, streamUsage);
             }
         } else {
@@ -994,8 +995,8 @@ void AudioDeviceCommon::ClearRingMuteWhenCallStart(bool pre, bool after)
 {
     CHECK_AND_RETURN_LOG(pre == true && after == false, "ringdual not cancel by call");
     AUDIO_INFO_LOG("disable primary speaker dual tone when call start and ring not over");
-    for (std::pair<AudioStreamType, StreamUsage> stream : streamsWhenRingDualOnPrimarySpeaker_) {
-        audioPolicyManager_.SetStreamMute(stream.first, false, stream.second);
+    for (std::pair<uint32_t, AudioStreamType> stream : streamsWhenRingDualOnPrimarySpeaker_) {
+        AudioVolume::GetInstance()->SetStreamVolumeMute(stream.first, false);
     }
     streamsWhenRingDualOnPrimarySpeaker_.clear();
     audioPolicyManager_.SetStreamMute(STREAM_MUSIC, false, STREAM_USAGE_MUSIC);

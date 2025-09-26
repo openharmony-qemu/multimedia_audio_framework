@@ -22,19 +22,22 @@ namespace HPAE {
 
 class ChannelConverter {
 public:
-    ChannelConverter() = default;
+    ChannelConverter();
     int32_t Process(uint32_t framesize, float* in, uint32_t inLen, float* out, uint32_t outLen);
     // input and output stream format must be workFormat
     int32_t SetParam(AudioChannelInfo inChannelInfo, AudioChannelInfo outChannelInfo,
         AudioSampleFormat workFormat, bool mixLfe);
+    void GetMixTable(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS]) const;
     AudioChannelInfo GetInChannelInfo() const;
     AudioChannelInfo GetOutChannelInfo() const;
     int32_t SetInChannelInfo(AudioChannelInfo inChannelInfo);
     int32_t SetOutChannelInfo(AudioChannelInfo outChannelInfo);
     void Reset();
 private:
-    int32_t Upmix(uint32_t frameSize, float* in, uint32_t inLen, float* out, uint32_t outLen);
+    int32_t MixProcess(bool isDmix, uint32_t frameLen, float* in, float* out);
+    void UpmixGainAttenuation();
     DownMixer downMixer_;
+    float mixTable_[MAX_CHANNELS][MAX_CHANNELS] = {{0}};
     AudioChannelInfo inChannelInfo_;
     AudioChannelInfo outChannelInfo_;
     AudioSampleFormat workFormat_ = INVALID_WIDTH;  // work format, for now only supports float

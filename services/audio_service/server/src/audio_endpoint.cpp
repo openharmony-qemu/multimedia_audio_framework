@@ -65,11 +65,9 @@ namespace {
 
 std::string AudioEndpoint::GenerateEndpointKey(AudioDeviceDescriptor &deviceInfo, int32_t endpointFlag)
 {
-    std::string key = deviceInfo.networkId_;
-    if (deviceInfo.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        // blueTooth need extra information
-        key = key + "_" +  std::to_string(deviceInfo.deviceId_) + "_" + std::to_string(deviceInfo.a2dpOffloadFlag_);
-    }
+    bool isA2dp = deviceInfo.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && deviceInfo.a2dpOffloadFlag_ != A2DP_OFFLOAD;
+    // All primary sinks share one endpoint
+    std::string key = deviceInfo.networkId_ + "_"  + (isA2dp ? std::to_string(deviceInfo.deviceId_) : "0");
     return key + "_" + std::to_string(deviceInfo.deviceRole_) + "_" + std::to_string(endpointFlag);
 }
 
@@ -588,7 +586,7 @@ bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo, AudioSt
     }
 
     Volume vol = {true, 1.0f, 0};
-    DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
+    DeviceType deviceType = AudioVolume::GetInstance()->GetCurrentActiveDevice();
     if ((streamType == STREAM_VOICE_COMMUNICATION || streamType == STREAM_VOICE_CALL) &&
         endpointType_ == TYPE_VOIP_MMAP) {
         PolicyHandler::GetInstance().GetSharedVolume(STREAM_VOICE_CALL, deviceType, vol);

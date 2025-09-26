@@ -542,6 +542,20 @@ HWTEST(VolumeDataMaintainerUnitTest, SetDataShareReady_001, TestSize.Level4)
 
 /**
  * @tc.name  : Test VolumeDataMaintainer.
+ * @tc.number: SetDataShareReady_001.
+ * @tc.desc  : Test SetDataShareReady API.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, SetDataShareReady_002, TestSize.Level4)
+{
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
+    std::atomic<bool> isDataShareReady = true;
+    volumeDataMaintainerRet->SetDataShareReady(std::atomic_load(&isDataShareReady));
+    AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    EXPECT_TRUE(audioSettingProvider.isDataShareReady_);
+}
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer.
  * @tc.number: GetAppVolume_001.
  * @tc.desc  : Test GetAppVolume API.
  */
@@ -621,5 +635,132 @@ HWTEST(VolumeDataMaintainerUnitTest, GetMuteKeyForDatabaseVolumeName_001, TestSi
     ret = volumeDataMaintainerRet->GetMuteKeyForDatabaseVolumeName(databaseVolumeName, streamType);
     EXPECT_EQ(ret, expect);
 }
+
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer.
+ * @tc.number: GetMuteKeyForDatabaseVolumeName_001.
+ * @tc.desc  : Test GetMuteKeyForDatabaseVolumeName API.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, GetVolumeKey, TestSize.Level4)
+{
+    std::shared_ptr<VolumeDataMaintainer> vd = std::make_shared<VolumeDataMaintainer>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    EXPECT_NE(vd->GetVolumeKey(desc, STREAM_RING), "");
+    EXPECT_NE(vd->GetVolumeKey(desc, STREAM_MUSIC), "");
+
+    desc->volumeBehavior_.isReady = true;
+    EXPECT_NE(vd->GetVolumeKey(desc, STREAM_MUSIC), "");
+    desc->volumeBehavior_.databaseVolumeName = "Test";
+    EXPECT_NE(vd->GetVolumeKey(desc, STREAM_MUSIC), "");
+
+    desc->volumeBehavior_.databaseVolumeName = "";
+    EXPECT_NE(vd->GetVolumeKey(desc, STREAM_MUSIC), "");
+}
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer.
+ * @tc.number: GetMuteKeyForDatabaseVolumeName_001.
+ * @tc.desc  : Test GetMuteKeyForDatabaseVolumeName API.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, GetMuteKey, TestSize.Level4)
+{
+    std::shared_ptr<VolumeDataMaintainer> vd = std::make_shared<VolumeDataMaintainer>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    EXPECT_NE(vd->GetMuteKey(desc, STREAM_RING), "");
+    EXPECT_NE(vd->GetMuteKey(desc, STREAM_MUSIC), "");
+
+    desc->volumeBehavior_.isReady = true;
+    EXPECT_NE(vd->GetMuteKey(desc, STREAM_MUSIC), "");
+    desc->volumeBehavior_.databaseVolumeName = "Test";
+    EXPECT_NE(vd->GetMuteKey(desc, STREAM_MUSIC), "");
+
+    desc->volumeBehavior_.databaseVolumeName = "";
+    EXPECT_NE(vd->GetMuteKey(desc, STREAM_MUSIC), "");
+}
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer.
+ * @tc.number: LoadDeviceVolumeMapFromDb.
+ * @tc.desc  : Test GetMuteKeyForDatabaseVolumeName API.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, LoadDeviceVolumeMapFromDb, TestSize.Level4)
+{
+    std::shared_ptr<VolumeDataMaintainer> vd = std::make_shared<VolumeDataMaintainer>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+
+    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    vd->LoadDeviceVolumeMapFromDb(desc);
+    EXPECT_EQ(vd->volumeList_.size(), 0);
+    
+    desc->networkId_ = "111";
+    vd->LoadDeviceVolumeMapFromDb(desc);
+    EXPECT_EQ(vd->volumeList_.size(), 3);
+
+    desc->volumeBehavior_.isReady = true;
+    vd->LoadDeviceVolumeMapFromDb(desc);
+    EXPECT_EQ(vd->volumeList_.size(), 3);
+
+    desc->volumeBehavior_.databaseVolumeName = "Test";
+    vd->LoadDeviceVolumeMapFromDb(desc);
+    EXPECT_EQ(vd->volumeList_.size(), 3);
+
+    desc->volumeBehavior_.isReady = false;
+    vd->LoadDeviceVolumeMapFromDb(desc);
+    EXPECT_EQ(vd->volumeList_.size(), 3);
+}
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer.
+ * @tc.number: SaveVolumeToDb.
+ * @tc.desc  : Test GetMuteKeyForDatabaseVolumeName API.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, SaveVolumeToDb, TestSize.Level4)
+{
+    std::shared_ptr<VolumeDataMaintainer> vd = std::make_shared<VolumeDataMaintainer>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+
+    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    int32_t tmp = 0;
+    EXPECT_EQ(vd->SaveVolumeToDb(desc, STREAM_MUSIC, tmp), ERROR);
+    
+    desc->networkId_ = "111";
+    EXPECT_EQ(vd->SaveVolumeToDb(desc, STREAM_MUSIC, tmp), SUCCESS);
+
+    desc->volumeBehavior_.isReady = true;
+    EXPECT_EQ(vd->SaveVolumeToDb(desc, STREAM_MUSIC, tmp), SUCCESS);
+
+    desc->volumeBehavior_.databaseVolumeName = "Test";
+    EXPECT_EQ(vd->SaveVolumeToDb(desc, STREAM_MUSIC, tmp), ERROR);
+}
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer.
+ * @tc.number: LoadDeviceMuteFromDb.
+ * @tc.desc  : Test GetMuteKeyForDatabaseVolumeName API.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, LoadDeviceMuteMapFromDb, TestSize.Level4)
+{
+    std::shared_ptr<VolumeDataMaintainer> vd = std::make_shared<VolumeDataMaintainer>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+
+    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    vd->LoadDeviceMuteMapFromDb(desc);
+    EXPECT_EQ(vd->volumeList_.size(), 0);
+    desc->networkId_ = "111";
+    vd->LoadDeviceMuteMapFromDb(desc);
+    EXPECT_EQ(vd->volumeList_.size(), 3);
+
+    EXPECT_EQ(vd->GetMuteStatusInternal(desc, STREAM_MUSIC), ERROR);
+    EXPECT_EQ(vd->SaveMuteToDb(desc, STREAM_MUSIC, true), ERROR);
+    EXPECT_EQ(vd->LoadVolumeFromDb(desc, STREAM_MUSIC), 0);
+    desc->deviceType_ = DEVICE_TYPE_INVALID;
+    EXPECT_EQ(vd->GetMuteStatusInternal(desc, STREAM_MUSIC), ERROR);
+    EXPECT_EQ(vd->SaveMuteToDb(desc, STREAM_MUSIC, true), ERROR);
+    EXPECT_EQ(vd->LoadVolumeFromDb(desc, STREAM_MUSIC), 0);
+}
+
 } // AudioStandardnamespace
 } // OHOSnamespace

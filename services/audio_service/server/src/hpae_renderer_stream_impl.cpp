@@ -31,7 +31,7 @@
 #include "i_hpae_manager.h"
 #include "audio_stream_info.h"
 #include "audio_effect_map.h"
-#include "down_mixer.h"
+#include "mixer_utils.h"
 #include "policy_handler.h"
 #include "audio_engine_log.h"
 #include "core_service_handler.h"
@@ -88,7 +88,7 @@ HpaeRendererStreamImpl::~HpaeRendererStreamImpl()
 {
     AUDIO_INFO_LOG("destructor %{public}u", streamIndex_);
     if (dumpEnqueueIn_ != nullptr) {
-        DumpFileUtil::CloseDumpFile(&dumpEnqueueIn_);
+    DumpFileUtil::CloseDumpFile(&dumpEnqueueIn_);
     }
 }
 
@@ -101,7 +101,9 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.format = processConfig_.streamInfo.format;
     streamInfo.channelLayout = processConfig_.streamInfo.channelLayout;
     if (streamInfo.channelLayout == CH_LAYOUT_UNKNOWN) {
-        streamInfo.channelLayout = DownMixer::SetDefaultChannelLayout((AudioChannel)streamInfo.channels);
+        AudioChannelLayout layout;
+        SetDefaultChannelLayout(static_cast<AudioChannel>(streamInfo.channels), layout);
+        streamInfo.channelLayout = layout;
     }
     streamInfo.frameLen = spanSizeInFrame_;
     streamInfo.sessionId = processConfig_.originalSessionId;

@@ -792,5 +792,21 @@ HWTEST(AudioUtilsPlusUnitTest, ReportEvent_001, TestSize.Level4)
         static_cast<DetectEvent>(100), 1, PIPE_TYPE_UNKNOWN, ADAPTER_TYPE_UNKNOWN, 0);
     EXPECT_NE(AudioPerformanceMonitor::GetInstance().overTimeLastReportTime_, ClockTime::GetRealNano());
 }
+
+/**
+* @tc.name  : Test GetStreamUsageByVolumeTypeForFetchDevice
+* @tc.type  : FUNC
+* @tc.number: GetStreamUsageByVolumeTypeForFetchDevice
+* @tc.desc  : Test GetStreamUsageByVolumeTypeForFetchDevice
+*/
+HWTEST(AudioUtilsPlusUnitTest, GetStreamUsageByVolumeTypeForFetchDevice, TestSize.Level4)
+{
+    std::vector<StreamUsage> usages =
+        VolumeUtils::GetStreamUsageByVolumeTypeForFetchDevice(STREAM_MUSIC);
+    EXPECT_EQ(usages.size(), 1);
+    usages = VolumeUtils::GetStreamUsageByVolumeTypeForFetchDevice(STREAM_ALL);
+    EXPECT_EQ(usages.size(), 1);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

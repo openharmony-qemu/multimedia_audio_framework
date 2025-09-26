@@ -107,6 +107,8 @@ private:
     void UpdateStreamUsageDeviceMap(std::shared_ptr<AudioStreamDescriptor> desc);
     void SortDevicesByPriority(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
     int32_t GetRealUid(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    bool IsAvailableFrontDeviceInVector(
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs);
 
 private:
     std::mutex curOutputDevice_; // lock this mutex to operate currentActiveDevice_
