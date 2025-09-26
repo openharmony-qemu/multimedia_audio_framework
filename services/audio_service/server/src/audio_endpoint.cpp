@@ -1440,7 +1440,8 @@ bool AudioEndpointInner::PrepareRingBuffer(size_t i, uint64_t curRead, RingBuffe
     if (ringBuffer.dataLength > spanSizeInByte) {
         ringBuffer.dataLength = spanSizeInByte;
     }
-    
+
+    processList_[i]->UpdateStreamInfo();
     return true;
 }
 

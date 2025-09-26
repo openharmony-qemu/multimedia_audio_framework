@@ -148,6 +148,7 @@ public:
     uint32_t GetByteSizePerFrame() override;
 
     int32_t WriteToSpecialProcBuf(AudioCaptureDataProcParams &procParams) override;
+    void UpdateStreamInfo() override;
 public:
     const AudioProcessConfig processConfig_;
 
@@ -168,6 +169,7 @@ private:
     int32_t CapturerDataFormatAndChnConv(RingBufferWrapper &writeBuf, BufferDesc &resampleOutBuf,
                                          const AudioStreamInfo &srcInfo, const AudioStreamInfo &dstInfo);
     int32_t WriteToRingBuffer(RingBufferWrapper &writeBuf, const BufferDesc &buffer);
+    void RemoveStreamInfo();
 private:
     std::atomic<bool> muteFlag_ = false;
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
@@ -217,6 +219,8 @@ private:
     std::shared_ptr<AudioStreamChecker> audioStreamChecker_ = nullptr;
     
     std::atomic<int32_t> audioHapticsSyncId_ = 0;
+    uint32_t audioCheckFreq_ = 0;
+    std::atomic<uint32_t> checkCount_ = 0;
 
     StreamStatus streamStatusInServer_ = STREAM_INVALID;
 

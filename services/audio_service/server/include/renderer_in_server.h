@@ -199,6 +199,10 @@ private:
     bool IsEnabledAndValidSoftLink(SoftLinkInfo& softLinkInfo);
     bool IsEnabledAndValidDupStream(CaptureInfo& captureInfo);
     void HandleOffloadStream(const int32_t captureId, const CaptureInfo& captureInfo);
+    void UpdateStreamInfo();
+    void RemoveStreamInfo();
+    void OnWriteDataFinish();
+    void PauseInner();
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -294,6 +298,9 @@ private:
     FILE *dumpSoftLink = nullptr;
 
     RenderTarget lastTarget_ = NORMAL_PLAYBACK;
+
+    uint32_t audioCheckFreq_ = 0;
+    std::atomic<uint32_t> checkCount_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

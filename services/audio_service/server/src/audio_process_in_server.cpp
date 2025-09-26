@@ -32,6 +32,7 @@
 #include "audio_performance_monitor.h"
 #include "core_service_handler.h"
 #include "stream_dfx_manager.h"
+#include "audio_stream_concurrency_detector.h"
 #include "format_converter.h"
 #ifdef RESSCHE_ENABLE
 #include "res_type.h"
@@ -48,6 +49,23 @@ sptr<AudioProcessInServer> AudioProcessInServer::Create(const AudioProcessConfig
 {
     sptr<AudioProcessInServer> process = new(std::nothrow) AudioProcessInServer(processConfig, releaseCallback);
     return process;
+}
+
+void AudioProcessInServer::UpdateStreamInfo()
+{
+    CHECK_AND_RETURN_LOG(checkCount_ <= audioCheckFreq_, "the stream had been already checked");
+
+    if ((audioCheckFreq_ == checkCount_) || (checkCount_ == 0)) {
+        AudioStreamConcurrencyDetector::GetInstance().UpdateWriteTime(processConfig_, sessionId_);
+    }
+
+    checkCount_++;
+}
+
+void AudioProcessInServer::RemoveStreamInfo()
+{
+    AudioStreamConcurrencyDetector::GetInstance().RemoveStream(processConfig_, sessionId_);
+    checkCount_ = 0;
 }
 
 AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConfig,
@@ -390,6 +408,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_STOP);
     HILOG_COMM_INFO("Pause in server success!");
     streamStatusInServer_ = STREAM_PAUSED;
+    RemoveStreamInfo();
     return SUCCESS;
 }
 
@@ -464,6 +483,7 @@ int32_t AudioProcessInServer::Stop(int32_t stage)
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_STOP);
     HILOG_COMM_INFO("Stop in server success!");
     streamStatusInServer_ = STREAM_STOPPED;
+    RemoveStreamInfo();
     return SUCCESS;
 }
 
@@ -489,6 +509,7 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_RELEASE);
     HILOG_COMM_INFO("notify service release result: %{public}d", ret);
     streamStatusInServer_ = STREAM_RELEASED;
+    RemoveStreamInfo();
     return SUCCESS;
 }
 
@@ -685,6 +706,7 @@ int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
     CHECK_AND_RETURN_RET_LOG(streamStatus_ != nullptr, ERR_OPERATION_FAILED, "Create process buffer failed.");
     isBufferConfiged_ = true;
     isInited_ = true;
+    audioCheckFreq_ = threshold * AUDIO_MS_PER_SECOND / spanTime;
     return SUCCESS;
 }
 
