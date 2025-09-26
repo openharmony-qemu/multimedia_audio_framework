@@ -2585,6 +2585,7 @@ void HpaeManager::AddCaptureInjector(
     const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType)
 {
     auto request = [this, sinkPortIndex, sourcePortIndex, sourceType] {
+        AUDIO_INFO_LOG("add injection from sink[%{public}u] to source[%{public}u]", sinkPortIndex, sourcePortIndex);
         CHECK_AND_RETURN_LOG(sinkIdSinkNameMap_.find(sinkPortIndex) != sinkIdSinkNameMap_.end(),
             "sinkPortIndex[%{public}u] not exit", sinkPortIndex);
         std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
@@ -2605,6 +2606,7 @@ void HpaeManager::RemoveCaptureInjector(
     const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType)
 {
     auto request = [this, sinkPortIndex, sourcePortIndex, sourceType] {
+        AUDIO_INFO_LOG("remove injection from sink[%{public}u] to source[%{public}u]", sinkPortIndex, sourcePortIndex);
         CHECK_AND_RETURN_LOG(sinkIdSinkNameMap_.find(sinkPortIndex) != sinkIdSinkNameMap_.end(),
             "sinkPortIndex[%{public}u] not exit", sinkPortIndex);
         std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
