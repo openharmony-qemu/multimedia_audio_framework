@@ -41,6 +41,7 @@ namespace {
     constexpr int64_t AUDIO_NS_PER_US = 1000;
     constexpr int64_t BUFFER_DURATION_US = 20 * 1000; // 20ms
     constexpr int64_t UNDERRUN_BYPASS_DURATION_NS = 60 * 1000 * 1000; // 60ms
+    const std::string REMOTE_DEVICE_CLASS = "remote";
 }
 HpaeRendererManager::HpaeRendererManager(HpaeSinkInfo &sinkInfo)
     : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT), sinkInfo_(sinkInfo)
@@ -57,6 +58,11 @@ HpaeRendererManager::~HpaeRendererManager()
 bool HpaeRendererManager::IsMchDevice()
 {
     return sinkInfo_.deviceName == "MCH_Speaker" || sinkInfo_.deviceName == "DP_MCH_speaker";
+}
+
+bool HpaeRendererManager::IsRemoteDevice()
+{
+    return sinkInfo_.deviceClass == REMOTE_DEVICE_CLASS;
 }
 
 int32_t HpaeRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo)
@@ -226,7 +232,7 @@ HpaeProcessorType HpaeRendererManager::TransToProperSceneType(StreamUsage stream
 {
     if (sinkInfo_.lib == "libmodule-split-stream-sink.z.so") {
         return TransStreamUsageToSplitSceneType(streamUsage, sinkInfo_.splitMode);
-    } else if (sinkInfo_.deviceClass == "remote" || IsMchDevice()) {
+    } else if (IsRemoteDevice() || IsMchDevice()) {
         return HPAE_SCENE_EFFECT_NONE;
     } else {
         return TransEffectSceneToSceneType(effectScene);
@@ -1453,7 +1459,7 @@ bool HpaeRendererManager::IsClusterDisConnected(HpaeProcessorType sceneType)
 
 void HpaeRendererManager::OneStreamEnableBypassOnUnderrun()
 {
-    CHECK_AND_RETURN(sinkInfo_.deviceClass != "remote");
+    CHECK_AND_RETURN(!IsRemoteDevice());
     if (appsUid_.size() == 1 && enableBypassOnUnderrun_) {
         for (auto [id, node] : sinkInputNodeMap_) {
             if (node->GetState() == HPAE_SESSION_RUNNING) {
@@ -1465,7 +1471,7 @@ void HpaeRendererManager::OneStreamEnableBypassOnUnderrun()
 
 void HpaeRendererManager::SleepIfBypassOnUnderrun()
 {
-    CHECK_AND_RETURN(sinkInfo_.deviceClass != "remote");
+    CHECK_AND_RETURN(!IsRemoteDevice());
     if (outputCluster_->IsProcessBypassed()) {
         lastOnUnderrunTime_ = lastOnUnderrunTime_ == 0 ? ClockTime::GetCurNano() : lastOnUnderrunTime_;
         int64_t sleepTimeInNs = lastOnUnderrunTime_ + UNDERRUN_BYPASS_DURATION_NS - ClockTime::GetCurNano();
@@ -1483,7 +1489,7 @@ void HpaeRendererManager::SleepIfBypassOnUnderrun()
 
 void HpaeRendererManager::ResetAllBypassFlags()
 {
-    CHECK_AND_RETURN(sinkInfo_.deviceClass != "remote");
+    CHECK_AND_RETURN(!IsRemoteDevice());
     for (auto [id, node] : sinkInputNodeMap_) {
         node->SetBypassOnUnderrun(false);
     }

@@ -103,6 +103,7 @@ private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
     int32_t StartRenderSink();
     bool IsMchDevice();
+    bool IsRemoteDevice();
     int32_t CreateInputSession(const HpaeStreamInfo &streamInfo);
     int32_t DeleteInputSession(uint32_t sessionId);
     bool isSplitProcessorType(HpaeProcessorType sceneType);
