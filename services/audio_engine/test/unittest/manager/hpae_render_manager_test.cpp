@@ -27,6 +27,7 @@
 #include "hpae_sink_virtual_output_node.h"
 #include "hpae_node_common.h"
 #include "hpae_mocks.h"
+#include "audio_utils.h"
 #include <thread>
 #include <chrono>
 #include <cstdio>

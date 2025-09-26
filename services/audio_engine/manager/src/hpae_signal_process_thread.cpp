@@ -15,6 +15,7 @@
 #include "hpae_signal_process_thread.h"
 #include "audio_qosmanager.h"
 #include "parameter.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
