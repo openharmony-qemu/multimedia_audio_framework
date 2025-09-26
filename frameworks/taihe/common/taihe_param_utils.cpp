@@ -608,13 +608,13 @@ AudioDeviceDescriptor TaiheParamUtils::SetDeviceDescriptor(
     const OHOS::AudioStandard::AudioDeviceDescriptor &deviceInfo)
 {
     std::vector<int32_t> sampleRatesVec;
-    sampleRatesVec.resize(deviceInfo.GetDeviceStreamInfo().samplingRate.size());
+    sampleRatesVec.reserve(deviceInfo.GetDeviceStreamInfo().samplingRate.size());
     for (const auto &samplingRate : deviceInfo.GetDeviceStreamInfo().samplingRate) {
         sampleRatesVec.emplace_back(static_cast<int32_t>(samplingRate));
     }
     std::vector<int32_t> channelCountsVec;
     std::set<OHOS::AudioStandard::AudioChannel> channelSet = deviceInfo.GetDeviceStreamInfo().GetChannels();
-    channelCountsVec.resize(channelSet.size());
+    channelCountsVec.reserve(channelSet.size());
     for (const auto &channel : channelSet) {
         channelCountsVec.emplace_back(static_cast<int32_t>(channel));
     }
