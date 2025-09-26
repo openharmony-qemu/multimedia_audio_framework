@@ -76,6 +76,7 @@ ohos_unittest("hpae_render_manager_test") {
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
     "../../../../frameworks/native/audioeffect:audio_effect",
+    "../../../../frameworks/native/audioutils:audio_utils",
   ]
 
   external_deps = engine_test_external_deps

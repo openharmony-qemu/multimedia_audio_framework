@@ -75,6 +75,14 @@ static void TestCheckSinkInputInfo(HpaeSinkInputInfo &sinkInputInfo, const HpaeS
     EXPECT_EQ(sinkInputInfo.nodeInfo.streamType == streamInfo.streamType, true);
 }
 
+static std::shared_ptr<HpaeSinkInputNode> CreateTestNode(OHOS::AudioStandard::HPAE::HpaeSessionState state)
+{
+    HpaeNodeInfo nodeinfo;
+    std::shared_ptr<HpaeSinkInputNode> node = std::make_shared<HpaeSinkInputNode>(nodeinfo);
+    node->SetState(state);
+    return node;
+}
+
 class HpaeRendererManagerTest : public testing::Test {
 public:
     void SetUp() override;
@@ -86,7 +94,8 @@ public:
 void HpaeRendererManagerTest::SetUp()
 {
     HpaeNodeInfo nodeInfo;
-    hpaeRendererManager_ = std::make_shared<HpaeRendererManager>(GetSinkInfo());
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    hpaeRendererManager_ = std::make_shared<HpaeRendererManager>(sinkInfo);
 
     outputCluster_ = std::make_shared<HpaeOutputCluster>(nodeInfo);
     hpaeRendererManager_->outputCluster_ = outputCluster_;

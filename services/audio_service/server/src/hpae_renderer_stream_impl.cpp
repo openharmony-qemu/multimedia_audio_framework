@@ -252,7 +252,7 @@ int32_t HpaeRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
 
 uint32_t HpaeRendererStreamImpl::GetA2dpOffloadLatency()
 {
-    Trace trace("PaRendererStreamImpl::GetA2dpOffloadLatency");
+    Trace trace("HpaeRendererStreamImpl::GetA2dpOffloadLatency");
     uint32_t a2dpOffloadLatency = 0;
     uint64_t a2dpOffloadSendDataSize = 0;
     uint32_t a2dpOffloadTimestamp = 0;
@@ -267,7 +267,7 @@ uint32_t HpaeRendererStreamImpl::GetA2dpOffloadLatency()
 
 uint32_t HpaeRendererStreamImpl::GetNearlinkLatency()
 {
-    Trace trace("PaRendererStreamImpl::GetNearlinkLatency");
+    Trace trace("HpaeRendererStreamImpl::GetNearlinkLatency");
     uint32_t nearlinkLatency = 0;
     auto &handler = PolicyHandler::GetInstance();
     int32_t ret = handler.NearlinkGetRenderPosition(nearlinkLatency);
@@ -501,6 +501,7 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
             CHECK_AND_RETURN_RET(mutePaddingFrames != 0, SUCCESS);
             mutePaddingFrames_.fetch_add(mutePaddingFrames);
             noWaitDataFlag_ = true;
+            Trace trace("HpaeRendererStreamImpl::underrun mute frames " + std::to_string(mutePaddingFrames));
             AUDIO_INFO_LOG("Padding mute frames %{public}zu, sessionId %{public}u", mutePaddingFrames, streamIndex_);
         }
     } else { // write buffer
