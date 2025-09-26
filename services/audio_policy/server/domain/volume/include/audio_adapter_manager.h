@@ -423,6 +423,10 @@ private:
     void GetHdiSourceTypeToAudioSourceAttr(IAudioSourceAttr &attr, int32_t sourceType) const;
     void UpdateSafeVolumeInner(std::shared_ptr<AudioDeviceDescriptor> &device);
     int32_t GetVolumeLevel(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType);
+    void SaveVolumeToDbAsync(std::shared_ptr<AudioDeviceDescriptor> desc,
+        AudioStreamType streamType, int32_t volumeLevel);
+    void SaveMuteToDbAsync(std::shared_ptr<AudioDeviceDescriptor> desc,
+        AudioStreamType streamType, bool mute);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
