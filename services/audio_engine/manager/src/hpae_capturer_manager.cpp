@@ -489,6 +489,10 @@ void HpaeCapturerManager::Process()
     Trace trace("HpaeCapturerManager::Process");
     if (IsRunning()) {
         UpdateAppsUidAndSessionId();
+        if (appsUid_.empty()) {
+            CapturerSourceStop();
+            return;
+        }
         for (const auto &sourceOutputNodePair : sourceOutputNodeMap_) {
             if (sourceOutputNodePair.second->GetState() == HPAE_SESSION_RUNNING) {
                 sourceOutputNodePair.second->DoProcess();
