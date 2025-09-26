@@ -30,17 +30,6 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
     const int32_t VALUE_HUNDRED = 100;
-    const std::map<AudioLoopbackReverbPreset, std::string> audioLoopbackReverbPresetMap = {
-        {REVERB_PRESET_ORIGINAL, "disable"},
-        {REVERB_PRESET_KTV, "ktv"},
-        {REVERB_PRESET_THEATER, "theatre"},
-        {REVERB_PRESET_CONCERT, "concert"},
-    };
-    const std::map<AudioLoopbackEqualizerPreset, std::string> audioLoopbackEqualizerPresetMap = {
-        {EQUALIZER_PRESET_FLAT, "disable"},
-        {EQUALIZER_PRESET_FULL, "full"},
-        {EQUALIZER_PRESET_BRIGHT, "bright"},
-    };
 }
 
 std::shared_ptr<AudioLoopback> AudioLoopback::CreateAudioLoopback(AudioLoopbackMode mode, const AppInfo &appInfo)
@@ -173,46 +162,6 @@ int32_t AudioLoopbackPrivate::SetVolume(float volume)
         CHECK_AND_RETURN_RET_LOG(SetKaraokeParameters(parameters), ERROR, "SetVolume failed");
     }
     return SUCCESS;
-}
-
-bool AudioLoopbackPrivate::SetReverbPreset(AudioLoopbackReverbPreset preset)
-{
-    std::unique_lock<std::mutex> stateLock(stateMutex_);
-    auto it = audioLoopbackReverbPresetMap.find(preset);
-    CHECK_AND_RETURN_RET_LOG(it != audioLoopbackReverbPresetMap.end(), false, "preset invalid");
-    currentReverbPreset_ = preset;
-    karaokeParams_["Karaoke_reverb_mode"] = it->second;
-    if (currentState_ == LOOPBACK_STATE_RUNNING) {
-        std::string parameters = "Karaoke_reverb_mode=" + karaokeParams_["Karaoke_reverb_mode"];
-        CHECK_AND_RETURN_RET_LOG(SetKaraokeParameters(parameters), false, "SetReverbPreset failed");
-    }
-    return true;
-}
-
-AudioLoopbackReverbPreset AudioLoopbackPrivate::GetReverbPreset()
-{
-    std::unique_lock<std::mutex> stateLock(stateMutex_);
-    return currentReverbPreset_;
-}
-
-bool AudioLoopbackPrivate::SetEqualizerPreset(AudioLoopbackEqualizerPreset preset)
-{
-    std::unique_lock<std::mutex> stateLock(stateMutex_);
-    auto it = audioLoopbackEqualizerPresetMap.find(preset);
-    CHECK_AND_RETURN_RET_LOG(it != audioLoopbackEqualizerPresetMap.end(), false, "preset invalid");
-    currentEqualizerPreset_ = preset;
-    karaokeParams_["Karaoke_eq_mode"] = it->second;
-    if (currentState_ == LOOPBACK_STATE_RUNNING) {
-        std::string parameters = "Karaoke_eq_mode=" + karaokeParams_["Karaoke_eq_mode"];
-        CHECK_AND_RETURN_RET_LOG(SetKaraokeParameters(parameters), false, "SetEqualizerPreset failed");
-    }
-    return true;
-}
-
-AudioLoopbackEqualizerPreset AudioLoopbackPrivate::GetEqualizerPreset()
-{
-    std::unique_lock<std::mutex> stateLock(stateMutex_);
-    return currentEqualizerPreset_;
 }
 
 bool AudioLoopbackPrivate::SetKaraokeParameters(const std::string &parameters)

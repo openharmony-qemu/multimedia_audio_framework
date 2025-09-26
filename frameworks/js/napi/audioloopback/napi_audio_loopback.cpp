@@ -66,10 +66,6 @@ napi_value NapiAudioLoopback::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("enable", Enable),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
-        DECLARE_NAPI_FUNCTION("setReverbPreset", SetReverbPreset),
-        DECLARE_NAPI_FUNCTION("getReverbPreset", GetReverbPreset),
-        DECLARE_NAPI_FUNCTION("setEqualizerPreset", SetEqualizerPreset),
-        DECLARE_NAPI_FUNCTION("getEqualizerPreset", GetEqualizerPreset),
     };
 
     napi_property_descriptor static_prop[] = {
@@ -500,111 +496,6 @@ bool NapiAudioLoopback::CheckAudioLoopbackStatus(NapiAudioLoopback *napi,
         return false;
     }
     return true;
-}
-
-NapiAudioLoopback* NapiAudioLoopback::GetParamWithSync(const napi_env &env, napi_callback_info info,
-    size_t &argc, napi_value *args)
-{
-    NapiAudioLoopback *napiLoopback = nullptr;
-    napi_value jsThis = nullptr;
-    napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok && jsThis != nullptr, nullptr, "status error");
-    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiLoopback));
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "napi_unwrap failed");
-    CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr, nullptr, "napiLoopback is nullptr");
-    CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, nullptr, "loopback_ is nullptr");
-    return napiLoopback;
-}
-
-napi_value NapiAudioLoopback::SetReverbPreset(napi_env env, napi_callback_info info)
-{
-    napi_value result = nullptr;
-    size_t argc = ARGS_ONE;
-    napi_value argv[ARGS_ONE] = {};
-    NapiAudioLoopback *napiLoopback = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argcCount invalid");
-    napi_valuetype valueType = napi_undefined;
-    napi_typeof(env, argv[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of mode must be number"),
-        "valueType invaild");
-    int32_t preset;
-    NapiParamUtils::GetValueInt32(env, preset, argv[PARAM0]);
-
-    if (!NapiAudioEnum::IsLegalInputArgumentAudioLoopbackReverbPreset(preset)) {
-        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
-            "parameter verification failed: The param of mode must be enum AudioLoopbackReverbPreset");
-        return result;
-    }
-    CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
-    CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_NO_MEMORY), "loopback_ is nullptr");
-    bool ret = napiLoopback->loopback_->SetReverbPreset(static_cast<AudioLoopbackReverbPreset>(preset));
-    napi_get_boolean(env, ret, &result);
-    return result;
-}
-
-napi_value NapiAudioLoopback::GetReverbPreset(napi_env env, napi_callback_info info)
-{
-    size_t argc = PARAM0;
-    NapiAudioLoopback *napiLoopback = GetParamWithSync(env, info, argc, nullptr);
-    CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
-    CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_NO_MEMORY), "loopback_ is nullptr");
-    int32_t reverbPreset = static_cast<int32_t>(napiLoopback->loopback_->GetReverbPreset());
-    napi_value result = nullptr;
-    napi_status status = NapiParamUtils::SetValueInt32(env, reverbPreset, result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "SetValueInt32 failed");
-    return result;
-}
-
-napi_value NapiAudioLoopback::SetEqualizerPreset(napi_env env, napi_callback_info info)
-{
-    napi_value result = nullptr;
-    size_t argc = ARGS_ONE;
-    napi_value argv[ARGS_ONE] = {};
-    NapiAudioLoopback *napiLoopback = GetParamWithSync(env, info, argc, argv);
-    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argcCount invalid");
-
-    napi_valuetype valueType = napi_undefined;
-    napi_typeof(env, argv[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of mode must be number"),
-        "valueType invaild");
-    int32_t preset;
-    NapiParamUtils::GetValueInt32(env, preset, argv[PARAM0]);
-
-    if (!NapiAudioEnum::IsLegalInputArgumentAudioLoopbackEqualizerPreset(preset)) {
-        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
-            "parameter verification failed: The param of mode must be enum AudioLoopbackEqualizerPreset");
-        return result;
-    }
-    CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
-    CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_NO_MEMORY), "loopback_ is nullptr");
-    bool ret = napiLoopback->loopback_->SetEqualizerPreset(static_cast<AudioLoopbackEqualizerPreset>(preset));
-    napi_get_boolean(env, ret, &result);
-    return result;
-}
-
-napi_value NapiAudioLoopback::GetEqualizerPreset(napi_env env, napi_callback_info info)
-{
-    size_t argc = PARAM0;
-    NapiAudioLoopback *napiLoopback = GetParamWithSync(env, info, argc, nullptr);
-    CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
-    CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_NO_MEMORY), "loopback_ is nullptr");
-    int32_t reverbPreset = static_cast<int32_t>(napiLoopback->loopback_->GetEqualizerPreset());
-    napi_value result = nullptr;
-    napi_status status = NapiParamUtils::SetValueInt32(env, reverbPreset, result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "SetValueInt32 failed");
-    return result;
 }
 } // namespace AudioStandard
 } // namespace OHOS

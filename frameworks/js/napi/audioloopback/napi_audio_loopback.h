@@ -71,12 +71,6 @@ private:
 
     static bool CheckContextStatus(std::shared_ptr<AudioLoopbackAsyncContext> context);
     static bool CheckAudioLoopbackStatus(NapiAudioLoopback *napi, std::shared_ptr<AudioLoopbackAsyncContext> context);
-    static NapiAudioLoopback* GetParamWithSync(const napi_env &env, napi_callback_info info,
-        size_t &argc, napi_value *args);
-    static napi_value SetReverbPreset(napi_env env, napi_callback_info info);
-    static napi_value GetReverbPreset(napi_env env, napi_callback_info info);
-    static napi_value SetEqualizerPreset(napi_env env, napi_callback_info info);
-    static napi_value GetEqualizerPreset(napi_env env, napi_callback_info info);
 
     static std::mutex createMutex_;
     static int32_t isConstructSuccess_;
