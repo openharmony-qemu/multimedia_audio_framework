@@ -35,6 +35,7 @@ public:
     int32_t SetLoudnessGain(float loudnessGain);
     float GetLoudnessGain();
     bool IsLoudnessAlgoOn();
+    uint64_t GetLatency(uint32_t sessionId = 0) override;
 
 protected:
     HpaePcmBuffer *SignalProcess(const std::vector<HpaePcmBuffer *> &inputs) override;

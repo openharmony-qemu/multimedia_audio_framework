@@ -748,7 +748,26 @@ void HpaeOffloadRendererManager::OnNodeStatusUpdate(uint32_t sessionId, IOperati
 
 void HpaeOffloadRendererManager::OnRequestLatency(uint32_t sessionId, uint64_t &latency)
 {
-    latency = sinkOutputNode_->GetLatency();
+    uint32_t processLatency = 0;
+
+    if (converterForLoudness_) {
+        processLatency += converterForLoudness_->GetLatency();
+    }
+
+    if (loudnessGainNode_) {
+        processLatency += loudnessGainNode_->GetLatency();
+    }
+
+    if (converterForOutput_) {
+        processLatency += converterForOutput_->GetLatency();
+    }
+
+    if (sinkOutputNode_) {
+        processLatency += sinkOutputNode_->GetLatency();
+    }
+
+    latency += processLatency;
+    return;
 }
 
 void HpaeOffloadRendererManager::OnRewindAndFlush(uint64_t rewindTime, uint64_t hdiFramePosition)

@@ -430,6 +430,13 @@ void HpaeRenderEffectNode::InitEffectBufferFromDisConnect()
     audioEffectChainManager->InitAudioEffectChainDynamic(sceneType_);
     AUDIO_INFO_LOG("sceneType:%{public}s", sceneType_.c_str());
 }
+
+uint64_t HpaeRenderEffectNode::GetLatency(uint32_t sessionId)
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, 0, "null audioEffectChainManager");
+    return audioEffectChainManager->GetLatency(std::to_string(sessionId)) * AUDIO_US_PER_MS;
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

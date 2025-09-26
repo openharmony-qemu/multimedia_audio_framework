@@ -265,6 +265,21 @@ int32_t HpaeRemoteOutputCluster::UpdateAppsUid(const std::vector<int32_t> &appsU
 {
     return hpaeSinkOutputNode_->UpdateAppsUid(appsUid);
 }
+
+uint64_t HpaeRemoteOutputCluster::GetLatency(HpaeProcessorType sceneType)
+{
+    uint64_t latency = 0;
+
+    if (SafeGetMap(sceneConverterMap_, sceneType)) {
+        latency += sceneConverterMap_[sceneType]->GetLatency();
+    }
+
+    if (SafeGetMap(sceneMixerMap_, sceneType)) {
+        latency += sceneMixerMap_[sceneType]->GetLatency();
+    }
+
+    return latency;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

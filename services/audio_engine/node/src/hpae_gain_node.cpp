@@ -291,6 +291,11 @@ uint32_t HpaeGainNode::GetFadeInLength(uint32_t &byteLength, HpaePcmBuffer *inpu
     }
     return index;
 }
+
+uint64_t HpaeGainNode::GetLatency(uint32_t sessionId)
+{
+    return 0;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

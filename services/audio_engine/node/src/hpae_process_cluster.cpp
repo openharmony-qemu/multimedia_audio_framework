@@ -328,6 +328,33 @@ int32_t HpaeProcessCluster::SetLoudnessGain(uint32_t sessionId, float loudnessGa
         "sessionId %{public}d loudnessGainNode doesNodeExists", sessionId);
     return loudneesGainNode->SetLoudnessGain(loudnessGain);
 }
+
+uint64_t HpaeProcessCluster::GetLatency(uint32_t sessionId)
+{
+    uint64_t latency = 0;
+
+    if (SafeGetMap(idConverterMap_, sessionId)) {
+        latency += idConverterMap_[sessionId]->GetLatency();
+    }
+
+    if (SafeGetMap(idLoudnessGainNodeMap_, sessionId)) {
+        latency += idLoudnessGainNodeMap_[sessionId]->GetLatency();
+    }
+
+    if (SafeGetMap(idGainMap_, sessionId)) {
+        latency += idGainMap_[sessionId]->GetLatency();
+    }
+
+    if (mixerNode_) {
+        latency += mixerNode_->GetLatency();
+    }
+
+    if (renderEffectNode_) {
+        latency += renderEffectNode_->GetLatency(sessionId);
+    }
+
+    return latency;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

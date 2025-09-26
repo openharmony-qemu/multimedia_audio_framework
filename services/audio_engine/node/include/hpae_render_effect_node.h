@@ -41,6 +41,7 @@ public:
     int32_t GetExpectedInputChannelInfo(AudioBasicFormat &basicFormat);
     void InitEffectBuffer(const uint32_t sessionId);
     void InitEffectBufferFromDisConnect();
+    uint64_t GetLatency(uint32_t sessionId = 0) override;
 protected:
     HpaePcmBuffer* SignalProcess(const std::vector<HpaePcmBuffer*> &inputs) override;
 private:

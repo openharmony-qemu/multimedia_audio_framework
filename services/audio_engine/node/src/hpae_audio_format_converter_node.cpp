@@ -368,6 +368,11 @@ void HpaeAudioFormatConverterNode::DisConnectWithInfo(const std::shared_ptr<Outp
     }
 #endif
 }
+
+uint64_t HpaeAudioFormatConverterNode::GetLatency(uint32_t sessionId)
+{
+    return 0;
+}
 } // Hpae
 } // AudioStandard
 } // OHOS

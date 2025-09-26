@@ -235,6 +235,12 @@ void HpaeMixerNode::DrainProcess()
         }
     }
 }
+
+uint64_t HpaeMixerNode::GetLatency(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET(limiter_ != nullptr, 0);
+    return limiter_->GetLatency() * AUDIO_US_PER_MS;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

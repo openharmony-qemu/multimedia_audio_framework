@@ -39,6 +39,7 @@ public:
     virtual bool IsEnableProcess();
     HpaePluginNode(const HpaePluginNode& others) = delete;
     void SetSourceNode(bool isSourceNode);
+    uint64_t GetLatency(uint32_t sessionId = 0) = 0;
 private:
     PcmBufferInfo pcmBufferInfo_;
 protected:
