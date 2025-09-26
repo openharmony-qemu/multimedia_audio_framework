@@ -3961,7 +3961,7 @@ HWTEST(AudioEffectChainManagerUnitTest, IsChannelLayoutSupportedForDspEffect_001
     std::shared_ptr<AudioEffectHdiParam> audioEffectHdiParam = std::make_shared<AudioEffectHdiParam>();
     AudioEffectChainManager::GetInstance()->audioEffectHdiParam_ = audioEffectHdiParam;
     AudioEffectChainManager::GetInstance()->InitHdiState();
-    bool ret = AudioEffectChainManager::GetInstance()->IsChannelLayoutSupported ForDspEffect(CH_LAYOUT_6POINT0_FRONT);
+    bool ret = AudioEffectChainManager::GetInstance()->IsChannelLayoutSupportedForDspEffect(CH_LAYOUT_6POINT0_FRONT);
     EXPECT_EQ(ret, false);
 }
 } // namespace AudioStandard
