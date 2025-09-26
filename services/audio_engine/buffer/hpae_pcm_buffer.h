@@ -43,7 +43,7 @@ enum HpaeSplitStreamType {
 enum PcmBufferState : uint32_t {
     PCM_BUFFER_STATE_INVALID = 1, // bit 0
     PCM_BUFFER_STATE_SILENCE = 2, // bit 1
-    PCM_BUFFER_STATE_SILENCE = 1 << 2, // bit 2
+    PCM_BUFFER_STATE_BYPASS = 1 << 2, // bit 2
 };
 
 // redefine allocator to ensure memory alignment
