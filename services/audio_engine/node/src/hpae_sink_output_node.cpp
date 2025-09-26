@@ -83,7 +83,8 @@ void HpaeSinkOutputNode::DoProcess()
     std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
     CHECK_AND_RETURN(!outputVec.empty());
     HpaePcmBuffer *outputData = outputVec.front();
-    CHECK_AND_RETURN(!(bypassed_ = outputData->IsBypass()));
+    bypassed_ = outputData->IsBypass();
+    CHECK_AND_RETURN(!bypassed_);
     HandlePaPower(outputData);
     ConvertFromFloat(
         GetBitWidth(), GetChannelCount() * GetFrameLen(), outputData->GetPcmDataBuffer(), renderFrameData_.data());
