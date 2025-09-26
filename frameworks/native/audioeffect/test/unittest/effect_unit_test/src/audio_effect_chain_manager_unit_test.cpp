@@ -3952,16 +3952,16 @@ HWTEST(AudioEffectChainManagerUnitTest, ExistAudioEffectChainArm_003, TestSize.L
 }
 
 /**
-* @tc.name   : Test IsChannelLayoutSupportForDspEffect API
-* @tc.number : IsChannelLayoutSupportForDspEffect_004
-* @tc.desc   : Test IsChannelLayoutSupportForDspEffect interface.
+* @tc.name   : Test IsChannelLayoutSupportedForDspEffect API
+* @tc.number : IsChannelLayoutSupportedForDspEffect_004
+* @tc.desc   : Test IsChannelLayoutSupportedForDspEffect interface.
 */
-HWTEST(AudioEffectChainManagerUnitTest, IsChannelLayoutSupportForDspEffect_001, TestSize.Level1)
+HWTEST(AudioEffectChainManagerUnitTest, IsChannelLayoutSupportedForDspEffect_001, TestSize.Level1)
 {
     std::shared_ptr<AudioEffectHdiParam> audioEffectHdiParam = std::make_shared<AudioEffectHdiParam>();
     AudioEffectChainManager::GetInstance()->audioEffectHdiParam_ = audioEffectHdiParam;
     AudioEffectChainManager::GetInstance()->InitHdiState();
-    bool ret = AudioEffectChainManager::GetInstance()->IsChannelLayoutSupportForDspEffect(CH_LAYOUT_6POINT0_FRONT);
+    bool ret = AudioEffectChainManager::GetInstance()->IsChannelLayoutSupported ForDspEffect(CH_LAYOUT_6POINT0_FRONT);
     EXPECT_EQ(ret, false);
 }
 } // namespace AudioStandard

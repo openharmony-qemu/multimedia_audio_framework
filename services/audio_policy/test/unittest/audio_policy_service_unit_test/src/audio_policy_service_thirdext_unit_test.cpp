@@ -1552,26 +1552,11 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetStreamPropInfo_001, TestSize.Level
 */
 HWTEST_F(AudioPolicyServiceFourthUnitTest, GetStreamPropInfo_002, TestSize.Level1)
 {
-    uint32_t routerFlag = AUDIO_OUTPUT_FLAG_MULTICHANNEL;
+    uint32_t routerFlag = 520; // for multichannel_output
     AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
     EXPECT_EQ(manager.Init(true), true);
     AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
     configData.Reorganize();
-
-    std::shared_ptr<PipeStreamPropInfo> propInfo = std::make_shared<PipeStreamPropInfo>();
-    propInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
-    propInfo->sampleRate_ = AudioSamplingRate::SAMPLE_RATE_48000;
-    propInfo->channels_ = AudioChannel::STEREO;
-    propInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_4POINT0;
-    std::shared_ptr<AdapterPipeInfo> pipeInfo = std::make_shared<AdapterPipeInfo>();
-    pipeInfo->streamPropInfos_ = {propInfo};
-    pipeInfo->name_ = "multichannel_output";
-
-    std::shared_ptr<AdapterDeviceInfo> deviceInfo = std::make_shared<AdapterDeviceInfo>();
-    deviceInfo->supportPipeMap_.insert({routerFlag, pipeInfo});
-    std::set<std::shared_ptr<AdapterDeviceInfo>> deviceInfoSet = {deviceInfo};
-    auto devicekey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
-    configData.deviceInfoMap.insert({devicekey, deviceInfoSet});
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
