@@ -1934,7 +1934,7 @@ HWTEST_F(HpaeManagerUnitTest, InjectorUpdataAudioPortInfoAndReloadTest, TestSize
 
     moduleInfo.channels = "2";
     moduleInfo.rate = "44100";
-    hpaeManager_->ReloadRenderManager(moduleInfo, false);
+    hpaeManager_->ReloadRenderManager(moduleInfo, true);
     EXPECT_EQ(moduleInfo.channels, std::to_string(nodeInfo.channels));
     EXPECT_EQ(moduleInfo.rate, std::to_string(nodeInfo.samplingRate));
 
