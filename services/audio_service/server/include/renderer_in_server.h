@@ -137,6 +137,10 @@ public:
     int32_t GetActualStreamManagerType() const noexcept;
     
     bool Dump(std::string &dumpString);
+    bool DumpNormal(std::string &dumpString);
+    bool DumpVoipAndDirect(std::string &dumpString);
+    void DumpStreamInfo(std::string &dumpString);
+    void DumpStatusInfo(std::string &dumpString);
     void SetNonInterruptMute(const bool muteFlag);
     RestoreStatus RestoreSession(RestoreInfo restoreInfo);
     int32_t StopSession();
@@ -151,6 +155,7 @@ public:
     int32_t InitSoftLink(int32_t innerCapId);
     int32_t DestroySoftLink(int32_t innerCapId);
     int32_t InitSoftLinkVolume(std::shared_ptr<HPAE::IHpaeSoftLink> softLinkPtr);
+    int32_t SetTarget(RenderTarget target, int32_t &ret);
 public:
     const AudioProcessConfig processConfig_;
 private:
@@ -287,6 +292,8 @@ private:
 
     std::unordered_map<int32_t, SoftLinkInfo> softLinkInfos_;
     FILE *dumpSoftLink = nullptr;
+
+    RenderTarget lastTarget_ = NORMAL_PLAYBACK;
 };
 } // namespace AudioStandard
 } // namespace OHOS

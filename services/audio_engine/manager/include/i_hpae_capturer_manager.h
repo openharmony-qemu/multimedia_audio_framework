@@ -60,6 +60,10 @@ public:
     virtual void UploadDumpSourceInfo(std::string &deviceName);
     virtual void OnNotifyDfxNodeInfo(bool isConnect, uint32_t preNodeId, HpaeDfxNodeInfo &nodeInfo);
     virtual std::string GetDeviceHDFDumpInfo() = 0;
+    virtual int32_t AddCaptureInjector(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode,
+        const SourceType &sourceType) = 0;
+    virtual int32_t RemoveCaptureInjector(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode,
+        const SourceType &sourceType) = 0;
 private:
 #ifdef ENABLE_HIDUMP_DFX
     HpaeDfxTree dfxTree_;

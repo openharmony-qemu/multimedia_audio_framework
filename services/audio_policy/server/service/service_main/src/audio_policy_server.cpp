@@ -43,6 +43,7 @@
 #include "va_device_broker_stub_impl.h"
 #include "va_device_manager.h"
 #include "standalone_mode_manager.h"
+#include "audio_injector_policy.h"
 
 using OHOS::Security::AccessToken::PrivacyKit;
 using OHOS::Security::AccessToken::TokenIdKit;
@@ -162,7 +163,8 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
       usbManager_(AudioUsbManager::GetInstance()),
 #endif
       audioActiveDevice_(AudioActiveDevice::GetInstance()),
-      sessionService_(OHOS::Singleton<AudioSessionService>::GetInstance())
+      sessionService_(OHOS::Singleton<AudioSessionService>::GetInstance()),
+      audioInjectorPolicy_(AudioInjectorPolicy::GetInstance())
 
 {
     volumeStep_ = system::GetIntParameter("const.multimedia.audio.volumestep", 1);
@@ -980,6 +982,9 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
         AUDIO_INFO_LOG("receive SCREEN_OFF or SCREEN_LOCKED action, control audio volume change if stream is active");
         isScreenOffOrLock_ = true;
     } else if (action == "usual.event.SCREEN_UNLOCKED") {
+        if (isRingtoneEL2Ready_ == false) {
+            isRingtoneEL2Ready_ =  CallRingtoneLibrary() == SUCCESS;
+        }
         AUDIO_INFO_LOG("receive SCREEN_UNLOCKED action, can change volume");
         isScreenOffOrLock_ = false;
     } else if (action == "usual.event.LOCALE_CHANGED" || action == "usual.event.USER_STARTED") {
@@ -1628,9 +1633,10 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamTy
 #endif
     if (streamType == STREAM_ALL) {
         for (auto audioStreamType : GET_STREAM_ALL_VOLUME_TYPES) {
+            bool isMutedForType = GetStreamMuteInternal(audioStreamType, zoneId);
             AUDIO_INFO_LOG("SetVolume of STREAM_ALL, SteamType = %{public}d, mute = %{public}d, level = %{public}d",
-                audioStreamType, mute, volumeLevel);
-            int32_t setResult = SetSingleStreamVolume(audioStreamType, volumeLevel, isUpdateUi, mute, zoneId);
+                audioStreamType, isMutedForType, volumeLevel);
+            int32_t setResult = SetSingleStreamVolume(audioStreamType, volumeLevel, isUpdateUi, isMutedForType, zoneId);
             if (setResult != SUCCESS && setResult != ERR_SET_VOL_FAILED_BY_SAFE_VOL &&
                 setResult != ERR_SET_VOL_FAILED_BY_VOLUME_CONTROL_DISABLED) {
                 return setResult;
@@ -2391,6 +2397,7 @@ int32_t AudioPolicyServer::SetMicrophoneMuteCommon(bool isMute, bool isLegacy)
         AUDIO_INFO_LOG("SendMicStateUpdatedCallback when set common mic mute state:%{public}d, isLegacy:%{public}d",
             newMicrophoneMute, isLegacy);
         audioPolicyServerHandler_->SendMicStateUpdatedCallback(micStateChangeEvent);
+        audioInjectorPolicy_.SetInjectorStreamsMute(newMicrophoneMute);
     }
     return ret;
 }
@@ -2422,7 +2429,7 @@ int32_t AudioPolicyServer::SetMicrophoneMuteAudioConfig(bool isMute)
 int32_t AudioPolicyServer::SetMicrophoneMutePersistent(bool isMute, int32_t typeIn)
 {
     PolicyType type = static_cast<PolicyType>(typeIn);
-    AUDIO_INFO_LOG("Entered %{public}s isMute:%{public}d, type:%{public}d", __func__, isMute, type);
+    HILOG_COMM_INFO("Entered %{public}s isMute:%{public}d, type:%{public}d", __func__, isMute, type);
     bool hasPermission = VerifyPermission(MICROPHONE_CONTROL_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(hasPermission, ERR_PERMISSION_DENIED,
         "MICROPHONE_CONTROL_PERMISSION permission denied");
@@ -2445,6 +2452,7 @@ int32_t AudioPolicyServer::SetMicrophoneMutePersistent(bool isMute, int32_t type
         micStateChangeEvent.mute = newMicrophoneMute;
         AUDIO_INFO_LOG("SendMicStateUpdatedCallback when set persistent mic mute state:%{public}d", newMicrophoneMute);
         audioPolicyServerHandler_->SendMicStateUpdatedCallback(micStateChangeEvent);
+        audioInjectorPolicy_.SetInjectorStreamsMute(newMicrophoneMute);
     }
     return ret;
 }
@@ -4712,6 +4720,7 @@ void AudioPolicyServer::SendVolumeKeyEventToRssWhenAccountsChanged()
 void AudioPolicyServer::NotifyAccountsChanged(const int &id)
 {
     CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService_ is nullptr");
+    audioPolicyService_.MuteMediaWhenAccountsChanged();
     interruptService_->ClearAudioFocusInfoListOnAccountsChanged(id);
     // Asynchronous clear audio focus infos
     usleep(WAIT_CLEAR_AUDIO_FOCUSINFOS_TIME_US);

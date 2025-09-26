@@ -53,12 +53,10 @@ VACaptureSource::~VACaptureSource()
 
 int32_t VACaptureSource::Init(const IAudioSourceAttr &attr)
 {
+    AUDIO_INFO_LOG("VACaptureSource::Init called");
     std::lock_guard<std::mutex> lock(statusMutex_);
     attr_ = attr;
-    if (sourceInited_) {
-        AUDIO_WARNING_LOG("va source already inited");
-        return SUCCESS;
-    }
+    CHECK_AND_RETURN_RET_LOG(!sourceInited_.load(), SUCCESS, "va source already inited");
     logMode_ = system::GetIntParameter("persist.multimedia.audiolog.switch", 0);
 
     int ret = CreateCapture();
@@ -66,7 +64,7 @@ int32_t VACaptureSource::Init(const IAudioSourceAttr &attr)
     ret = InitOperator();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "va init operator failed");
 
-    sourceInited_ = true;
+    sourceInited_.store(true);
 
     if (audioSrcClock_ != nullptr) {
         audioSrcClock_->Init(attr.sampleRate, attr.format, attr.channel);
@@ -100,7 +98,7 @@ int32_t VACaptureSource::CreateCapture()
     std::shared_ptr<VAInputStreamAttribute> attribute = MakeVAStreamAttributeFromIAudioSourceAttr();
     sptr<IRemoteObject> inputStreamRemote;
     int ret = deviceController_->OpenInputStream(*prop, *attribute, inputStreamRemote);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "openInputStream failed ret = %{pubilc}d", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "openInputStream failed ret = %{public}d", ret);
     
     CHECK_AND_RETURN_RET_LOG(inputStreamRemote != nullptr, ERR_OPERATION_FAILED, "inputStreamRemote is nullptr");
     inputStream_ = iface_cast<IVAInputStream>(inputStreamRemote);
@@ -143,25 +141,34 @@ int32_t VACaptureSource::InitOperator()
 
 void VACaptureSource::DeInit(void)
 {
-    std::lock_guard<std::mutex> lock(statusMutex_);
-    Trace trace("VACaptureSource::DeInit");
+    AUDIO_INFO_LOG("VACaptureSource::DeInit called");
 
+    Trace trace("VACaptureSource::DeInit");
+    CHECK_AND_RETURN_LOG(sourceInited_.load(), "sourceInited_ is false");
     CHECK_AND_RETURN_LOG(inputStream_ != nullptr, "input stream is null");
+
+    if (started_.load()) {
+        AUDIO_WARNING_LOG("va capture source is still started.");
+        Stop();
+    }
+
+    std::lock_guard<std::mutex> lock(statusMutex_);
     inputStream_->Close();
 
-    sourceInited_ = false;
-    started_ = false;
+    sourceInited_.store(false);
+    started_.store(false);
     inputStream_ = nullptr;
     bufferOperator_ = nullptr;
 }
 
 bool VACaptureSource::IsInited(void)
 {
-    return sourceInited_;
+    return sourceInited_.load();
 }
 
 int32_t VACaptureSource::Start(void)
 {
+    AUDIO_INFO_LOG("VACaptureSource::Start called");
     CHECK_AND_RETURN_RET_LOG(bufferOperator_ != nullptr && inputStream_ != nullptr, ERR_OPERATION_FAILED, "BadStatus");
     std::lock_guard<std::mutex> lock(statusMutex_);
 
@@ -170,12 +177,8 @@ int32_t VACaptureSource::Start(void)
                     std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
-    if (started_) {
-        AUDIO_WARNING_LOG("va capture source is already started.");
-        Stop();
-    }
+    CHECK_AND_RETURN_RET_LOG(!started_.load(), ERR_OPERATION_FAILED, "va capture source already started.");
 
-    CHECK_AND_RETURN_RET_LOG(bufferOperator_ != nullptr, ERR_OPERATION_FAILED, "buffer operator is null");
     bufferOperator_->Reset();
 
     if (audioSrcClock_ != nullptr) {
@@ -184,7 +187,7 @@ int32_t VACaptureSource::Start(void)
     callback_.OnCaptureState(true);
     int ret = inputStream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "va start failed");
-    started_ = true;
+    started_.store(true);
 
     startTimestamp = ClockTime::GetCurNano();
     return SUCCESS;
@@ -193,30 +196,17 @@ int32_t VACaptureSource::Start(void)
 int32_t VACaptureSource::Stop(void)
 {
     Trace trace("VACaptureSource::Stop");
+    AUDIO_INFO_LOG("VACaptureSource::Stop called");
+    std::lock_guard<std::mutex> lock(statusMutex_);
     CHECK_AND_RETURN_RET_LOG(inputStream_ != nullptr, ERR_OPERATION_FAILED, "input stream is null");
-    std::promise<void> promiseEnsureLock;
-    auto futurePromiseEnsureLock = promiseEnsureLock.get_future();
-
-    std::thread stopThread([&promiseEnsureLock, this] {
-            std::lock_guard<std::mutex>lock(statusMutex_);
-            promiseEnsureLock.set_value();
-            DoStop();
-        });
-    futurePromiseEnsureLock.get();
-    stopThread.detach();
-
-    int64_t stopTimestamp = ClockTime::GetCurNano();
-    PrintDfx((stopTimestamp - startTimestamp) / AUDIO_NS_PER_SECOND);
-    return SUCCESS;
-}
-
-int32_t VACaptureSource::DoStop(void)
-{
-    CHECK_AND_RETURN_RET_LOG(inputStream_ != nullptr, ERR_OPERATION_FAILED, "input stream is null");
+    CHECK_AND_RETURN_RET_LOG(started_.load(), SUCCESS, "already stopped");
+    
     int ret = inputStream_->Stop();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "stop fail");
-    started_ = false;
+    started_.store(false);
     callback_.OnCaptureState(false);
+    int64_t stopTimestamp = ClockTime::GetCurNano();
+    PrintUsageTimeDfx((stopTimestamp - startTimestamp) / AUDIO_NS_PER_SECOND);
     return SUCCESS;
 }
 
@@ -284,7 +274,7 @@ void VACaptureSource::SetAudioParameter(const AudioParamKey key, const std::stri
     deviceController_->SetParameters(std::to_string(static_cast<int>(key)), value);
 }
 
-void VACaptureSource::PrintDfx(int64_t useTime)
+void VACaptureSource::PrintUsageTimeDfx(int64_t useTime)
 {
     auto ret = HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "AUDIO_DEVICE_UTILIZATION_STATS",
         HiviewDFX::HiSysEvent::EventType::STATISTIC,
@@ -385,7 +375,7 @@ void VACaptureSource::SetInvalidState(void)
 
 void VACaptureSource::DumpInfo(std::string &dumpString)
 {
-    dumpString += "type: VASource\tstarted: " + std::string(started_ ? "true" : "false") + "\n";
+    dumpString += "type: VASource\tstarted: " + std::string(started_.load() ? "true" : "false") + "\n";
 }
 
 void VACaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)

@@ -81,6 +81,7 @@ ohos_shared_library("audio_engine_plugins") {
   sources = [
     "plugin/channel_converter/src/channel_converter.cpp",
     "plugin/channel_converter/src/down_mixer.cpp",
+    "plugin/channel_converter/src/mixer_utils.cpp",
     "plugin/resample/proresampler/audio_proresampler.cpp",
     "plugin/resample/proresampler/audio_proresampler_process.c",
   ]
@@ -172,15 +173,16 @@ ohos_shared_library("audio_engine_node") {
     "node/src/hpae_plugin_node.cpp",
     "node/src/hpae_process_cluster.cpp",
     "node/src/hpae_render_effect_node.cpp",
-    "node/src/hpae_resample_node.cpp",
     "node/src/hpae_sink_input_node.cpp",
     "node/src/hpae_sink_output_node.cpp",
+    "node/src/hpae_sink_virtual_output_node.cpp",
     "node/src/hpae_source_input_cluster.cpp",
     "node/src/hpae_source_input_node.cpp",
     "node/src/hpae_source_output_node.cpp",
     "node/src/hpae_source_process_cluster.cpp",
     "node/src/hpae_remote_sink_output_node.cpp",
     "node/src/hpae_remote_output_cluster.cpp",
+    "node/src/hpae_virtual_process_cluster.cpp",
   ]
 
   deps = [
@@ -238,6 +240,7 @@ ohos_shared_library("audio_engine_manager") {
     "manager/src/i_hpae_manager.cpp",
     "manager/src/i_hpae_renderer_manager.cpp",
     "manager/src/hpae_virtual_capturer_manager.cpp",
+    "manager/src/hpae_injector_renderer_manager.cpp",
   ]
 
   deps = [

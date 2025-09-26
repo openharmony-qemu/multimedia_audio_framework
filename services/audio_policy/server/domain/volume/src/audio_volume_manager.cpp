@@ -31,6 +31,7 @@
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
 #include "sle_audio_device_manager.h"
+#include "audio_active_device.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -236,9 +237,12 @@ int32_t AudioVolumeManager::GetSystemVolumeLevelNoMuteState(AudioStreamType stre
 int32_t AudioVolumeManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor,
     const std::string &newSinkName, bool enableSetVoiceCallVolume)
 {
+    std::thread cancelSafeNotificationThrd(&AudioVolumeManager::CancelSafeVolumeNotificationWhenSwitchDevice, this);
+    cancelSafeNotificationThrd.detach();
+
     Trace trace("AudioVolumeManager::SetVolumeForSwitchDevice:" + std::to_string(deviceDescriptor.deviceType_));
     // Load volume from KvStore and set volume for each stream type
-    audioPolicyManager_.SetVolumeForSwitchDevice(deviceDescriptor);
+    audioPolicyManager_.UpdateVolumeForStreams();
 
     // The volume of voice_call needs to be adjusted separately
     if (enableSetVoiceCallVolume && audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_PHONE_CALL) {
@@ -401,7 +405,7 @@ int32_t AudioVolumeManager::SetAdjustVolumeForZone(int32_t zoneId)
 {
     if (zoneId == 0) {
         AudioDeviceDescriptor currentActiveDevice = audioActiveDevice_.GetCurrentOutputDevice();
-        audioPolicyManager_.SetVolumeForSwitchDevice(currentActiveDevice);
+        audioPolicyManager_.UpdateVolumeForStreams();
     }
     return audioPolicyManager_.SetAdjustVolumeForZone(zoneId);
 }
@@ -652,7 +656,7 @@ int32_t AudioVolumeManager::SetNearlinkDeviceVolume(const std::string &macAddres
     }
 
     SleAudioDeviceManager::GetInstance().SetNearlinkDeviceMute(macAddress, streamType, mute);
-    audioPolicyManager_.SetAbsVolumeMute(mute);
+    audioPolicyManager_.SetAbsVolumeMuteNearlink(mute);
     AUDIO_INFO_LOG("success for macaddress:[%{public}s], volume value:[%{public}d], streamType [%{public}d]",
         GetEncryptAddr(macAddress).c_str(), sVolumeLevel, streamType);
     CHECK_AND_RETURN_RET_LOG(sVolumeLevel == volumeLevel, ERR_UNKNOWN, "safevolume did not deal");
@@ -730,6 +734,19 @@ void AudioVolumeManager::CancelSafeVolumeNotification(int32_t notificationId)
 #ifndef TEST_COVERAGE
     dlclose(libHandle);
 #endif
+}
+
+void AudioVolumeManager::CancelSafeVolumeNotificationWhenSwitchDevice()
+{
+    if (increaseNIsShowing_) {
+        CancelSafeVolumeNotification(INCREASE_VOLUME_NOTIFICATION_ID);
+        increaseNIsShowing_ = false;
+    }
+
+    if (restoreNIsShowing_) {
+        CancelSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
+        restoreNIsShowing_ = false;
+    }
 }
 
 int32_t AudioVolumeManager::DealWithSafeVolume(const int32_t volumeLevel, bool isBtDevice)

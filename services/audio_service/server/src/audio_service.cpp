@@ -1360,7 +1360,7 @@ void AudioService::Dump(std::string &dumpString)
         item.second->Dump(dumpString);
     }
 #endif
-    // dump voip and direct
+    // dump normal, voip and direct
     {
         std::lock_guard<std::mutex> lock(rendererMapMutex_);
         for (const auto &item : allRendererMap_) {
@@ -1473,12 +1473,12 @@ void AudioService::SetNonInterruptMuteForProcess(const uint32_t sessionId, const
     for (auto paired : linkedPairedList_) {
         if (paired.first == nullptr) {
             AUDIO_ERR_LOG("processInServer is nullptr");
-            return;
+            continue;
         }
         if (paired.first->GetSessionId() == sessionId) {
             AUDIO_INFO_LOG("linkedPairedList_ has sessionId");
             paired.first->SetNonInterruptMute(muteFlag);
-            return;
+            break;
         }
     }
     processListLock.unlock();
@@ -2065,6 +2065,17 @@ int32_t AudioService::DisableDualStreamForFastStream(const uint32_t sessionId)
     }
 
     return SUCCESS;
+}
+
+std::shared_ptr<AudioEndpoint> AudioService::GetEndPointByType(AudioEndpoint::EndpointType type)
+{
+    for (const auto &pair : endpointList_) {
+        CHECK_AND_CONTINUE(pair.second != nullptr);
+        if (pair.second->GetEndpointType() == type) {
+            return pair.second;
+        }
+    }
+    return nullptr;
 }
 #endif
 

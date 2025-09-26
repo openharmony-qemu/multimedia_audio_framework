@@ -245,7 +245,6 @@ private:
     void UpdateMicFocusStrategy(SourceType existSourceType, SourceType incomingSourceType,
         const AudioStreamType &existStreamType, const AudioStreamType &incomingStreamType,
         const std::string &currentBundleName, const std::string &incomingBundleName, AudioFocusEntry &focusEntry);
-    bool CheckWindowState(const int32_t pid);
     void UpdateWindowFocusStrategy(const int32_t &currentPid, const int32_t &incomingPid,
         const AudioStreamType &existStreamType, const AudioStreamType &incomingStreamType,
         AudioFocusEntry &focusTypess);
@@ -254,6 +253,8 @@ private:
     // zone debug interfaces
     void WriteFocusMigrateEvent(const int32_t &toZoneId);
     void WriteServiceStartupError();
+    // systemapp debug interfaces
+    void WriteCallSessionEvent(int32_t strategyValue);
 
     // interfaces about audio session.
     void AddActiveInterruptToSession(const int32_t callerPid);

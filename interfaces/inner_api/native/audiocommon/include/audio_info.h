@@ -88,12 +88,14 @@ const char* MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SET
 const char* ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTIFICATION_POLICY";
 const char* CAPTURER_VOICE_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO";
 const char* RECORD_VOICE_CALL_PERMISSION = "ohos.permission.RECORD_VOICE_CALL";
+const char* INJECT_PLAYBACK_TO_AUDIO_CAPTURE_PERMISSION = "ohos.permission.INJECT_PLAYBACK_TO_AUDIO_CAPTURE";
 
 const char* PRIMARY_WAKEUP = "Built_in_wakeup";
 const char* INNER_CAPTURER_SINK = "InnerCapturerSink_";
 const char* OFFLOAD_CAPTURER_SOURCE = "InnerCapturerSource";
 const char* REMOTE_CAST_INNER_CAPTURER_SINK_NAME = "RemoteCastInnerCapturer";
 const char* DUP_STREAM = "DupStream";
+const char* VIRTUAL_INJECTOR = "Virtual_Injector";
 }
 
 //#ifdef FEATURE_DTMF_TONE  cant contain this macro due to idl dependency
@@ -1980,6 +1982,14 @@ enum XperfEventId : int32_t {
     XPERF_EVENT_RELEASE = 2,
     XPERF_EVENT_FAULT = 3,
     XPERF_EVENT_MAX = 4,
+};
+
+/**
+ * Enumerates the audio playback target
+ */
+enum RenderTarget {
+    NORMAL_PLAYBACK = 0,
+    INJECT_TO_VOICE_COMMUNICATION_CAPTURE = 1
 };
 
 struct FetchDeviceInfo : public Parcelable {

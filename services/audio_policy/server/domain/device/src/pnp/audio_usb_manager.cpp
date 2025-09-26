@@ -321,6 +321,7 @@ void AudioUsbManager::HandleAudioDeviceEvent(pair<UsbAudioDevice, bool> &&p)
     lock_guard<mutex> lock(mutex_);
     auto it = find(audioDevices_.begin(), audioDevices_.end(), p.first);
     if (p.second) {
+        CHECK_AND_RETURN_LOG(initialized_, "Not initialized");
         soundCardMap_ = GetUsbSoundCardMap();
         CHECK_AND_RETURN_LOG(FillUsbAudioDevice(p.first), "Error: FillUsbAudioDevice Failed");
         UpdateDevice(p.first, it);

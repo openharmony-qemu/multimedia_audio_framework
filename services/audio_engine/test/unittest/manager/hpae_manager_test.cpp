@@ -41,6 +41,8 @@ constexpr int32_t TEST_STREAM_UID = 111111;
 constexpr int32_t TEST_SLEEP_TIME_20 = 20;
 constexpr int32_t TEST_SLEEP_TIME_40 = 40;
 constexpr int32_t SESSION_ID_NOEXIST = 100000;
+constexpr uint32_t DEFAULT_FRAME_LEN_MS = 20;
+constexpr uint32_t MS_PER_SECOND = 1000;
 
 class HpaeManagerUnitTest : public testing::Test {
 public:
@@ -1795,5 +1797,148 @@ HWTEST_F(HpaeManagerUnitTest, CloseInCoreAudioPort_005, TestSize.Level1)
     hpaeManager_->defaultSource_ = "mic";
     hpaeManager_->coreSource_ = "mic";
     EXPECT_EQ(hpaeManager_->CloseInAudioPort(sourceName), SUCCESS);
+}
+
+HWTEST_F(HpaeManagerUnitTest, InjectorToPrimaryCapturer, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    sleep(1);
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    hpaeManager_->RegisterSerivceCallback(callback);
+    AudioModuleInfo moduleInfo = GetSinkAudioModeInfo("Virtual_Injector");
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(moduleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    int32_t injectorPortId = callback->GetPortId();
+
+    auto it = hpaeManager_->sinkVirtualOutputNodeMap_.find(injectorPortId);
+    EXPECT_EQ(it != hpaeManager_->sinkVirtualOutputNodeMap_.end(), true);
+    auto sinkOutputNode = it->second;
+    EXPECT_EQ(sinkOutputNode != nullptr, true);
+    HpaeNodeInfo nodeInfo = sinkOutputNode->GetNodeInfo();
+    EXPECT_EQ(moduleInfo.channels, std::to_string(nodeInfo.channels));
+    EXPECT_EQ(moduleInfo.rate, std::to_string(nodeInfo.samplingRate));
+
+    AudioModuleInfo moduleInfo2 = GetSourceAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(moduleInfo2), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    int32_t capturerPortId = callback->GetPortId();
+
+    HpaeStreamInfo streamInfo = GetRenderStreamInfo();
+    streamInfo.deviceName = moduleInfo.name;
+    hpaeManager_->CreateStream(streamInfo);
+    WaitForMsgProcessing(hpaeManager_);
+
+    HpaeStreamInfo streamInfo2 = GetCaptureStreamInfo();
+    streamInfo2.deviceName = moduleInfo2.name;
+    streamInfo2.sourceType = SOURCE_TYPE_MIC;
+    hpaeManager_->CreateStream(streamInfo2);
+    WaitForMsgProcessing(hpaeManager_);
+
+    hpaeManager_->AddCaptureInjector(injectorPortId, capturerPortId, streamInfo2.sourceType);
+    hpaeManager_->Start(HPAE_STREAM_CLASS_TYPE_RECORD, streamInfo2.sessionId);
+    hpaeManager_->Start(HPAE_STREAM_CLASS_TYPE_PLAY, streamInfo.sessionId);
+    sleep(3); // 3s for sleep
+    hpaeManager_->Stop(HPAE_STREAM_CLASS_TYPE_PLAY, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->Stop(HPAE_STREAM_CLASS_TYPE_RECORD, streamInfo2.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->RemoveCaptureInjector(injectorPortId, capturerPortId, streamInfo2.sourceType);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->CloseAudioPort(injectorPortId);
+    hpaeManager_->CloseAudioPort(capturerPortId);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
+HWTEST_F(HpaeManagerUnitTest, InjectorToEndPointCapturer, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    sleep(1);
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    hpaeManager_->RegisterSerivceCallback(callback);
+
+    AudioModuleInfo moduleInfo = GetSinkAudioModeInfo("Virtual_Injector");
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(moduleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    int32_t injectorPortId = callback->GetPortId();
+
+    auto it = hpaeManager_->sinkVirtualOutputNodeMap_.find(injectorPortId);
+    EXPECT_EQ(it != hpaeManager_->sinkVirtualOutputNodeMap_.end(), true);
+    auto sinkOutputNode = it->second;
+    ASSERT_EQ(sinkOutputNode != nullptr, true);
+    HpaeNodeInfo nodeInfo = sinkOutputNode->GetNodeInfo();
+    EXPECT_EQ(moduleInfo.channels, std::to_string(nodeInfo.channels));
+    EXPECT_EQ(moduleInfo.rate, std::to_string(nodeInfo.samplingRate));
+
+    HpaeStreamInfo streamInfo = GetRenderStreamInfo();
+    streamInfo.deviceName = moduleInfo.name;
+    hpaeManager_->CreateStream(streamInfo);
+    WaitForMsgProcessing(hpaeManager_);
+
+    hpaeManager_->Start(HPAE_STREAM_CLASS_TYPE_PLAY, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+
+    size_t bufferSize = nodeInfo.samplingRate * nodeInfo.channels * DEFAULT_FRAME_LEN_MS *
+        static_cast<size_t>(GetSizeFromFormat(nodeInfo.format)) / MS_PER_SECOND;
+    std::vector<uint8_t> buffer(bufferSize);
+    AudioStreamInfo retStreamInfo;
+    for (size_t i = 0; i < 10; i++) { // 10 for loop times
+        EXPECT_EQ(hpaeManager_->PeekAudioData(injectorPortId, buffer.data(), bufferSize, retStreamInfo), SUCCESS);
+        EXPECT_EQ(retStreamInfo.format, nodeInfo.format);
+        EXPECT_EQ(retStreamInfo.samplingRate, nodeInfo.samplingRate);
+        EXPECT_EQ(retStreamInfo.channels, nodeInfo.channels);
+        std::this_thread::sleep_for(std::chrono::milliseconds(50)); // 50ms for sleep
+    }
+    hpaeManager_->Stop(HPAE_STREAM_CLASS_TYPE_PLAY, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->CloseAudioPort(injectorPortId);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
+HWTEST_F(HpaeManagerUnitTest, InjectorUpdataAudioPortInfoAndReloadTest, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    sleep(1);
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    hpaeManager_->RegisterSerivceCallback(callback);
+
+    AudioModuleInfo moduleInfo = GetSinkAudioModeInfo("Virtual_Injector");
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(moduleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    int32_t injectorPortId = callback->GetPortId();
+
+    auto it = hpaeManager_->sinkVirtualOutputNodeMap_.find(injectorPortId);
+    ASSERT_EQ(it != hpaeManager_->sinkVirtualOutputNodeMap_.end(), true);
+    auto sinkOutputNode = it->second;
+    ASSERT_EQ(sinkOutputNode != nullptr, true);
+    HpaeNodeInfo &nodeInfo = sinkOutputNode->GetNodeInfo();
+    EXPECT_EQ(moduleInfo.channels, std::to_string(nodeInfo.channels));
+    EXPECT_EQ(moduleInfo.rate, std::to_string(nodeInfo.samplingRate));
+
+    moduleInfo.channels = "4";
+    moduleInfo.rate = "16000";
+    hpaeManager_->UpdateAudioPortInfo(injectorPortId, moduleInfo);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(moduleInfo.channels, std::to_string(nodeInfo.channels));
+    EXPECT_EQ(moduleInfo.rate, std::to_string(nodeInfo.samplingRate));
+
+    moduleInfo.channels = "0";
+    hpaeManager_->UpdateAudioPortInfo(injectorPortId, moduleInfo);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_NE(moduleInfo.channels, std::to_string(nodeInfo.channels));
+
+    moduleInfo.channels = "2";
+    moduleInfo.rate = "44100";
+    hpaeManager_->ReloadRenderManager(moduleInfo, false);
+    EXPECT_EQ(moduleInfo.channels, std::to_string(nodeInfo.channels));
+    EXPECT_EQ(moduleInfo.rate, std::to_string(nodeInfo.samplingRate));
+
+    hpaeManager_->CloseAudioPort(injectorPortId);
+    WaitForMsgProcessing(hpaeManager_);
 }
 }  // namespace

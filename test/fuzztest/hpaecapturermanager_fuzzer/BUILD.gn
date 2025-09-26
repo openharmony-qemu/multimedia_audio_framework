@@ -24,6 +24,7 @@ ohos_fuzztest("HpaeCapturerManagerFuzzTest") {
     "../../../frameworks/native/audioschedule/include",
     "../../../frameworks/native/hdiadapter_new/include/manager",
     "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../services/audio_service/common/include/limiter",
     "../../../services/audio_service/server/include",
     "../../../services/audio_engine/buffer",
     "../../../services/audio_engine/manager/include",
@@ -94,6 +95,7 @@ ohos_fuzztest("HpaeCapturerManagerFuzzTest") {
       "accessibility:accessibilityconfig",
     ]
   }
+  resource_config_file = "../../resource/audio_renderer/ohos_test.xml"
 
 defines = []
   if (use_libfuzzer || use_clang_coverage) {

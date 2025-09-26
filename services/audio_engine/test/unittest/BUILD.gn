@@ -81,6 +81,26 @@ ohos_unittest("hpae_render_manager_test") {
   external_deps = engine_test_external_deps
 }
 
+ohos_unittest("hpae_injector_renderer_manager_test") {
+  module_out_path = module_output_path
+  sources = [
+    "common/test_case_common.cpp",
+    "manager/hpae_render_manager_test.cpp",
+  ]
+
+  configs = [ ":audio_engine_private_config" ]
+
+  deps = [
+    "../../:audio_engine_manager",
+    "../../:audio_engine_node",
+    "../../:audio_engine_utils",
+    "../../../audio_service:audio_common",
+    "../../../../frameworks/native/audioeffect:audio_effect",
+  ]
+
+  external_deps = engine_test_external_deps
+}
+
 ohos_unittest("hpae_capturer_manager_test") {
   module_out_path = module_output_path
   sources = [
@@ -225,6 +245,48 @@ ohos_unittest("hpae_sink_output_node_test") {
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
     "../../../../frameworks/native/audioeffect:audio_effect",
+  ]
+
+  external_deps = engine_test_external_deps
+
+  resource_config_file = "./resource/ohos_test.xml"
+}
+
+ohos_unittest("hpae_sink_virtual_output_node_test") {
+  module_out_path = module_output_path
+  sources = [
+    "common/test_case_common.cpp",
+    "node/hpae_sink_virtual_output_node_test.cpp",
+  ]
+
+  configs = [ ":audio_engine_private_config" ]
+
+  deps = [
+    "../../:audio_engine_manager",
+    "../../:audio_engine_node",
+    "../../:audio_engine_utils",
+    "../../../audio_service:audio_common",
+  ]
+
+  external_deps = engine_test_external_deps
+
+  resource_config_file = "./resource/ohos_test.xml"
+}
+
+ohos_unittest("hpae_virtual_process_cluster_test") {
+  module_out_path = module_output_path
+  sources = [
+    "common/test_case_common.cpp",
+    "node/hpae_virtual_process_cluster_test.cpp",
+  ]
+
+  configs = [ ":audio_engine_private_config" ]
+
+  deps = [
+    "../../:audio_engine_manager",
+    "../../:audio_engine_node",
+    "../../:audio_engine_utils",
+    "../../../audio_service:audio_common",
   ]
 
   external_deps = engine_test_external_deps
@@ -527,28 +589,6 @@ ohos_unittest("hpae_process_cluster_test") {
   sources = [
     "common/test_case_common.cpp",
     "node/hpae_process_cluster_test.cpp",
-  ]
-
-  configs = [ ":audio_engine_private_config" ]
-
-  deps = [
-    "../../:audio_engine_manager",
-    "../../:audio_engine_node",
-    "../../:audio_engine_utils",
-    "../../../audio_service:audio_common",
-    "../../../../frameworks/native/audioeffect:audio_effect",
-  ]
-
-  external_deps = engine_test_external_deps
-
-  resource_config_file = "./resource/ohos_test.xml"
-}
-
-ohos_unittest("hpae_resample_node_test") {
-  module_out_path = module_output_path
-  sources = [
-    "common/test_case_common.cpp",
-    "node/hpae_resample_node_test.cpp",
   ]
 
   configs = [ ":audio_engine_private_config" ]

@@ -18,6 +18,7 @@
 #include "hpae_sink_input_node.h"
 #include "hpae_mixer_node.h"
 #include "hpae_sink_output_node.h"
+#include "hpae_source_input_cluster.h"
 #include "test_case_common.h"
 #include "audio_errors.h"
 
@@ -122,4 +123,21 @@ HWTEST_F(HpaeMixerNodeTest, testHpaePlayOutConnectNode, TestSize.Level0)
     EXPECT_EQ(hpaeMixerNode->GetPreOutNum(), 0);
 }
 
+HWTEST_F(HpaeMixerNodeTest, testMixerConnectWithInfo, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    std::shared_ptr<HpaeMixerNode> hpaeMixerNode = std::make_shared<HpaeMixerNode>(nodeInfo);
+    nodeInfo.channels = MONO;
+    std::shared_ptr<HpaeSourceInputCluster> cluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    EXPECT_EQ(cluster->fmtConverterNodeMap_.size() == 0, true);
+    hpaeMixerNode->ConnectWithInfo(cluster, hpaeMixerNode->GetNodeInfo());
+    EXPECT_EQ(cluster->fmtConverterNodeMap_.size() == 1, true);
+    hpaeMixerNode->DisConnectWithInfo(cluster, hpaeMixerNode->GetNodeInfo());
+    EXPECT_EQ(cluster->fmtConverterNodeMap_.size() == 1, true); // not delete convertnode, equal 1
+}
 } // namespace

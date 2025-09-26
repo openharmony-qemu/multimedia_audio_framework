@@ -221,6 +221,8 @@ public:
     void NotifyRouteUpdate(uint32_t routeFlag, const std::string &networkId) override;
     bool GetStopFlag() const override;
     void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
+    int32_t SetRenderTarget(RenderTarget renderTarget) override;
+    RenderTarget GetRenderTarget() override;
     bool IsRestoreNeeded() override;
 
 private:
@@ -239,6 +241,7 @@ private:
 
     int32_t WriteCacheData(uint8_t *buffer, size_t bufferSize, bool speedCached, size_t oriBufferSize);
 
+    void SetCacheSize(uint32_t cacheSizeInFrame);
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
     void CallClientHandle();
     bool WriteCallbackFunc();
@@ -315,7 +318,7 @@ private:
     bool streamTrackerRegistered_ = false;
 
     std::atomic<bool> needSetThreadPriority_ = true;
-
+    RenderTarget renderTarget_ = NORMAL_PLAYBACK;
     AudioStreamParams curStreamParams_ = {0}; // in plan next: replace it with AudioRendererParams
     AudioStreamParams streamParams_ = {0};
 
@@ -330,7 +333,7 @@ private:
 
     size_t cacheSizeInByte_ = 0;
     uint32_t spanSizeInFrame_ = 0;
-    uint64_t engineTotalSizeInFrame_ = 0;
+    std::atomic<uint32_t> cacheSizeInFrame_ = 0;
     size_t clientSpanSizeInByte_ = 0;
     size_t sizePerFrameInByte_ = 4; // 16bit 2ch as default
 

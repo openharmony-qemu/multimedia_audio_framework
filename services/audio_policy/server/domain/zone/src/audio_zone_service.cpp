@@ -625,9 +625,8 @@ int32_t AudioZoneService::InjectInterruptToAudioZone(int32_t zoneId, const std::
     }
     
     CHECK_AND_RETURN_RET_LOG(tmp != nullptr, ERROR, "interruptService_ tmp is nullptr");
-    auto reporters = AudioZoneInterruptReporter::CreateReporter(zoneId,
-        tmp, zoneClientManager_,
-        AudioZoneInterruptReason::REMOTE_INJECT);
+    auto reporters = AudioZoneInterruptReporter::CreateReporter(zoneId, tmp, zoneClientManager_,
+        AudioZoneInterruptReason::REMOTE_INJECT, interrupts);
     int32_t ret;
     if (deviceTag.empty()) {
         ret = tmp->InjectInterruptToAudioZone(zoneId, interrupts);
@@ -635,7 +634,7 @@ int32_t AudioZoneService::InjectInterruptToAudioZone(int32_t zoneId, const std::
         ret = tmp->InjectInterruptToAudioZone(zoneId, deviceTag, interrupts);
     }
     for (auto &report : reporters) {
-        report->ReportInterrupt();
+        report->ReportInterrupt(deviceTag);
     }
     return ret;
 }

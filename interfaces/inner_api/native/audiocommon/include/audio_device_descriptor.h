@@ -122,6 +122,8 @@ public:
 
     std::string GetKey();
 
+    std::string GetName();
+
     struct AudioDeviceDescriptorHash {
         size_t operator()(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor) const
         {
@@ -195,6 +197,8 @@ public:
     bool isVrSupported_ = true;
     mutable std::optional<ClientInfo> clientInfo_ = std::nullopt;
     VolumeBehavior volumeBehavior_;
+    bool modemCallSupported_ = true;
+    bool highQualityRecordingSupported_ = false;
 
 private:
     bool IsOutput()

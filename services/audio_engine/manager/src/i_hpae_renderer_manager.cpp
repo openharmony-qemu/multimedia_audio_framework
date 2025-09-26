@@ -20,6 +20,7 @@
 #include "hpae_renderer_manager.h"
 #include "hpae_offload_renderer_manager.h"
 #include "hpae_inner_capturer_manager.h"
+#include "hpae_injector_renderer_manager.h"
 #include "audio_engine_log.h"
 
 namespace OHOS {
@@ -36,6 +37,8 @@ std::shared_ptr<IHpaeRendererManager> IHpaeRendererManager::CreateRendererManage
     } else if ((sinkInfo.deviceName.compare(0, DEVICE_NAME_INNER_CAP.length(), DEVICE_NAME_INNER_CAP) == 0)
         || sinkInfo.deviceName == DEVICE_NAME_CAST_INNER_CAP) {
         return std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
+    } else if (sinkInfo.deviceName == "Virtual_Injector") { // todo : rewrite device name
+        return std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
     }
     return std::make_shared<HpaeRendererManager>(sinkInfo);
 }
@@ -63,6 +66,13 @@ void IHpaeRendererManager::OnNotifyDfxNodeInfo(bool isConnect, uint32_t preNodeI
         dfxTree_.Remove(nodeInfo.nodeId);
     }
 #endif
+};
+
+int32_t IHpaeRendererManager::SetSinkVirtualOutputNode(
+    const std::shared_ptr<HpaeSinkVirtualOutputNode> &sinkVirtualOutputNode)
+{
+    AUDIO_ERR_LOG("Unsupported operation");
+    return ERROR;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -98,21 +98,18 @@ int32_t RendererInServer::ConfigServerBuffer()
         return SUCCESS;
     }
     stream_->GetSpanSizePerFrame(spanSizeInFrame_);
-    int32_t engineFlag = GetEngineFlag();
-    if (engineFlag == 1) {
-        engineTotalSizeInFrame_ = processConfig_.rendererInfo.playerType == PLAYER_TYPE_TONE_PLAYER ?
-            spanSizeInFrame_ * 4 : spanSizeInFrame_ * 2; // default 2 frames, 4 frames for toneplayer
-    } else {
-        engineTotalSizeInFrame_ = spanSizeInFrame_ * DEFAULT_SPAN_SIZE;
-    }
+    // default to 2, 40ms cache size for write mode
+    engineTotalSizeInFrame_ = spanSizeInFrame_ * DEFAULT_SPAN_SIZE;
+
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
     if (engineTotalSizeInFrame_ == 0 || spanSizeInFrame_ == 0 || engineTotalSizeInFrame_ % spanSizeInFrame_ != 0) {
         AUDIO_ERR_LOG("ConfigProcessBuffer: ERR_INVALID_PARAM");
         return ERR_INVALID_PARAM;
     }
 
-    size_t maxClientCbBufferInFrame = MAX_CBBUF_IN_USEC * processConfig_.streamInfo.samplingRate / AUDIO_US_PER_S;
-    bufferTotalSizeInFrame_ = engineTotalSizeInFrame_ + maxClientCbBufferInFrame;
+    // 100 * 2 + 20 = 220ms, buffer total size.
+    bufferTotalSizeInFrame_ = (MAX_CBBUF_IN_USEC * DEFAULT_SPAN_SIZE + MIN_CBBUF_IN_USEC) *
+        processConfig_.streamInfo.samplingRate / AUDIO_US_PER_S;
 
     spanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame_;
     CHECK_AND_RETURN_RET_LOG(spanSizeInByte_ != 0, ERR_OPERATION_FAILED, "Config oh audio buffer failed!");
@@ -751,7 +748,9 @@ int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
     size_t requestDataInFrame = requestDataLen / byteSizePerFrame_;
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
-    Trace trace1(traceTag_ + " OnWriteData"); // RendererInServer::sessionid:100001 WriteData
+    CHECK_AND_RETURN_RET_LOG(spanSizeInFrame_ != 0, ERR_OPERATION_FAILED, "invalid span size");
+    int64_t cacheCount = audioServerBuffer_->GetReadableDataFrames() / spanSizeInFrame_;
+    Trace trace1(traceTag_ + " OnWriteData cacheCount:" + std::to_string(cacheCount));
     if (requestDataLen == 0 || currentReadFrame + requestDataInFrame > currentWriteFrame) {
         Trace trace2(traceTag_ + " near underrun"); // RendererInServer::sessionid:100001 near underrun
         if (!offloadEnable_) {
@@ -1003,6 +1002,10 @@ int32_t RendererInServer::StartInner()
 {
     AUDIO_INFO_LOG("sessionId: %{public}u", streamIndex_);
     int32_t ret = 0;
+    if (lastTarget_ == INJECT_TO_VOICE_COMMUNICATION_CAPTURE) {
+        ret = CoreServiceHandler::GetInstance().StartInjection(streamIndex_);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "StartInjection failed");
+    }
     if (standByEnable_) {
         return StartInnerDuringStandby();
     } else {
@@ -1818,7 +1821,11 @@ int32_t RendererInServer::UnsetOffloadMode()
     int32_t ret = stream_->UnsetOffloadMode();
 
     for (auto &softInfo : softLinkInfos_) {
-        if (IsEnabledAndValidSoftLink(softInfo.second) && status_ == I_STATUS_STARTED) {
+        if (!IsEnabledAndValidSoftLink(softInfo.second)) {
+            AUDIO_INFO_LOG("The soft link is not valid %{public}d", softInfo.first);
+            continue;
+        }
+        if (status_ == I_STATUS_STARTED) {
             softInfo.second.softLink->Stop();
         }
         if (!captureInfos_.count(softInfo.first) || !captureInfos_[softInfo.first].isInnerCapEnabled) {
@@ -2145,9 +2152,36 @@ static std::string GetManagerTypeStr(ManagerType type)
 
 bool RendererInServer::Dump(std::string &dumpString)
 {
+    bool ret = false;
+    ret = DumpNormal(dumpString);
+    CHECK_AND_RETURN_RET_LOG(ret == false, true, "DumpNormal");
+    ret = DumpVoipAndDirect(dumpString);
+    CHECK_AND_RETURN_RET_LOG(ret == false, true, "DumpVoipAndDirect");
+    return ret;
+}
+
+bool RendererInServer::DumpNormal(std::string &dumpString)
+{
+    if (managerType_ != PLAYBACK) {
+        return false;
+    }
+    DumpStreamInfo(dumpString);
+    AppendFormat(dumpString, "  - stream type:%d\n", lastTarget_);
+    DumpStatusInfo(dumpString);
+    return true;
+}
+
+bool RendererInServer::DumpVoipAndDirect(std::string &dumpString)
+{
     if (managerType_ != DIRECT_PLAYBACK && managerType_ != VOIP_PLAYBACK) {
         return false;
     }
+    DumpStreamInfo(dumpString);
+    DumpStatusInfo(dumpString);
+    return true;
+}
+void RendererInServer::DumpStreamInfo(std::string &dumpString)
+{
     // dump audio stream info
     dumpString += "audio stream info:\n";
     AppendFormat(dumpString, "  - session id:%u\n", streamIndex_);
@@ -2159,7 +2193,10 @@ bool RendererInServer::Dump(std::string &dumpString)
     AppendFormat(dumpString, "  - format: %u\n", processConfig_.streamInfo.format);
     AppendFormat(dumpString, "  - device type: %u\n", processConfig_.deviceType);
     AppendFormat(dumpString, "  - sink type: %s\n", GetManagerTypeStr(managerType_).c_str());
-
+}
+    
+void RendererInServer::DumpStatusInfo(std::string &dumpString)
+{
     // dump status info
     AppendFormat(dumpString, "  - Current stream status: %s\n", GetStatusStr(status_.load()).c_str());
     if (audioServerBuffer_ != nullptr) {
@@ -2168,7 +2205,6 @@ bool RendererInServer::Dump(std::string &dumpString)
     }
 
     dumpString += "\n";
-    return true;
 }
 
 void RendererInServer::SetNonInterruptMute(const bool muteFlag)
@@ -2365,6 +2401,7 @@ void RendererInServer::InitDupBuffer(int32_t innerCapId)
         innerCapId, streamIndex_);
 }
 
+
 int32_t RendererInServer::InitSoftLink(int32_t innerCapId)
 {
     std::lock_guard<std::mutex> lock(softLinkMutex_);
@@ -2473,6 +2510,22 @@ bool RendererInServer::IsMovieStream()
 {
     return processConfig_.streamType == STREAM_MOVIE &&
     processConfig_.rendererInfo.originalFlag == AUDIO_FLAG_PCM_OFFLOAD;
+}
+
+int32_t RendererInServer::SetTarget(RenderTarget target, int32_t &ret)
+{
+    if (target == lastTarget_) {
+        ret = SUCCESS;
+        return ret;
+    }
+    if (status_ == I_STATUS_IDLE || status_ == I_STATUS_PAUSED || status_ == I_STATUS_STOPPED) {
+        ret = CoreServiceHandler::GetInstance().SetRendererTarget(target, lastTarget_, streamIndex_);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "CoreServiceHandler::SetRendererTarget failed");
+        lastTarget_ = target;
+        return ret;
+    }
+    ret = ERR_ILLEGAL_STATE;
+    return ret;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -421,6 +421,7 @@ audio_ohos_library("audio_process_service") {
       "server/src/audio_endpoint.cpp",
       "server/src/audio_endpoint_performance.cpp",
       "server/src/audio_process_in_server.cpp",
+      "server/src/audio_endpoint_sink_adapter.cpp",
     ]
   }
 
@@ -535,6 +536,7 @@ audio_ohos_library("audio_service") {
     "server/src/audio_server_hpae_dump.cpp",
     "server/src/audio_workgroup.cpp",
     "server/src/config/audio_param_parser.cpp",
+    "server/src/audio_injector_service.cpp",
   ]
 
   configs = [ ":audio_service_config" ]

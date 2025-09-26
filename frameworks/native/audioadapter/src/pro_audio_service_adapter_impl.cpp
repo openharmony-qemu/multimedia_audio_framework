@@ -560,6 +560,20 @@ int32_t ProAudioServiceAdapterImpl::SetSystemVolumeToEffect(AudioStreamType stre
     IHpaeManager::GetHpaeManager().SetEffectSystemVolume(streamType, volume);
     return SUCCESS;
 }
+
+void ProAudioServiceAdapterImpl::AddCaptureInjector(const uint32_t &sinkPortIndex,
+    const uint32_t &sourcePortIndex, const SourceType &sourceType)
+{
+    lock_guard<mutex> lock(lock_);
+    IHpaeManager::GetHpaeManager().AddCaptureInjector(sinkPortIndex, sourcePortIndex, sourceType);
+}
+
+void ProAudioServiceAdapterImpl::RemoveCaptureInjector(const uint32_t &sinkPortIndex,
+    const uint32_t &sourcePortIndex, const SourceType &sourceType)
+{
+    lock_guard<mutex> lock(lock_);
+    IHpaeManager::GetHpaeManager().RemoveCaptureInjector(sinkPortIndex, sourcePortIndex, sourceType);
+}
 }  // namespace AudioStandard
 }  // namespace OHOS
 

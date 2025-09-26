@@ -31,6 +31,7 @@
 #include "audio_bundle_manager.h"
 #include "audio_stream_monitor.h"
 #include "audio_session_service.h"
+#include "audio_usr_select_manager.h"
 
 
 namespace OHOS {
@@ -95,6 +96,7 @@ void AppStateListener::HandleBackgroundAppStateChange(int32_t pid, int32_t uid, 
     auto appState = pos->second;
 
     AudioBackgroundManager::GetInstance().NotifyAppStateChange(uid, pid, appState);
+    AudioUsrSelectManager::GetAudioUsrSelectManager().UpdateAppIsBackState(uid, appState);
 }
 }
 }

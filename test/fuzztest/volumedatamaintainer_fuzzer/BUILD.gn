@@ -14,9 +14,10 @@
 import("//build/config/features.gni")
 import("//build/test.gni")
 import("../../../config.gni")
+import("../../../bluetooth_part.gni")
 
 ohos_fuzztest("VolumeDataMaintainerFuzzTest") {
-  module_out_path = "audio_framework/audio_framework_route"
+  module_out_path = "audio_framework/audio_framework_policy"
   fuzz_config_file = "../volumedatamaintainer_fuzzer"
 
   include_dirs = [
@@ -50,6 +51,9 @@ ohos_fuzztest("VolumeDataMaintainerFuzzTest") {
   ]
 
   defines = []
+  if (bluetooth_part_enable == true) {
+    external_deps += [ "bluetooth:btframework" ]
+  }
 }
 
 group("fuzztest") {

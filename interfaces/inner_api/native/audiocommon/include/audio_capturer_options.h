@@ -45,6 +45,7 @@ struct AudioCapturerOptions {
     AudioCapturerInfo capturerInfo;
     AudioPlaybackCaptureConfig playbackCaptureConfig;
     AudioSessionStrategy strategy = { AudioConcurrencyMode::INVALID };
+    AudioDeviceDescriptor preferredInputDevice;
 };
 }  //namespace AudioStandard
 }  //namespace OHOS

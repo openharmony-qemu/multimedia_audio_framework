@@ -352,6 +352,11 @@ void GetStopFadeoutStateFuzzTest()
     audioVolume->GetStopFadeoutState(streamIndex);
 }
 
+void GetCurrentActiveDeviceFuzzTest()
+{
+    AudioVolume::GetInstance()->GetCurrentActiveDevice();
+}
+
 void RemoveStopFadeoutStateFuzzTest()
 {
     uint32_t streamIndex = GetData<uint32_t>();
@@ -398,6 +403,7 @@ TestFuncs g_testFuncs[] = {
     GetStopFadeoutStateFuzzTest,
     RemoveStopFadeoutStateFuzzTest,
     SetVgsVolumeSupportedFuzzTest,
+    GetCurrentActiveDeviceFuzzTest,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)

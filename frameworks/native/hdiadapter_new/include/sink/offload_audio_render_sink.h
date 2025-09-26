@@ -108,6 +108,8 @@ private:
     void CheckUpdateState(char *data, uint64_t len);
     int32_t SetVolumeInner(float left, float right);
     void UpdateSinkState(bool started);
+    int32_t FlushInner(void);
+    void CheckFlushThread();
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -164,6 +166,7 @@ private:
     std::string dumpFileName_ = "";
     std::atomic<uint64_t> renderPos_ = 0;
     std::mutex sinkMutex_;
+    std::shared_ptr<std::thread> flushThread_;
 };
 
 } // namespace AudioStandard

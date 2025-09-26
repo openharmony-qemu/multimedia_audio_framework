@@ -554,6 +554,11 @@ const std::map<std::string, int32_t> NapiAudioEnum::effectFlagMap = {
     {"CAPTURE_EFFECT_FLAG", CAPTURE_EFFECT_FLAG},
 };
 
+const std::map<std::string, int32_t> NapiAudioEnum::renderTargetMap = {
+    {"PLAYBACK", NORMAL_PLAYBACK},
+    {"INJECT_TO_VOICE_COMMUNICATION_CAPTURE", INJECT_TO_VOICE_COMMUNICATION_CAPTURE},
+};
+
 NapiAudioEnum::NapiAudioEnum()
     : env_(nullptr) {
 }
@@ -722,6 +727,7 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("OutputDeviceChangeRecommendedAction",
             CreateEnumObject(env, outputDeviceChangeRecommendedActionMap)),
         DECLARE_NAPI_PROPERTY("EffectFlag", CreateEnumObject(env, effectFlagMap)),
+        DECLARE_NAPI_PROPERTY("RenderTarget", CreateEnumObject(env, renderTargetMap)),
     };
     return napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
 }
@@ -1185,6 +1191,21 @@ bool NapiAudioEnum::IsLegalCapturerType(int32_t type)
     return result;
 }
 
+bool NapiAudioEnum::IsLegalRenderTargetType(int32_t type)
+{
+    bool result = false;
+    switch (type) {
+        case NORMAL_PLAYBACK:
+        case INJECT_TO_VOICE_COMMUNICATION_CAPTURE:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
 bool NapiAudioEnum::IsLegalInputArgumentVolType(int32_t inputType)
 {
     bool result = false;
@@ -1295,6 +1316,7 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
             break;
         case AudioStreamType::STREAM_RING:
         case AudioStreamType::STREAM_DTMF:
+        case AudioStreamType::STREAM_VOICE_RING:
             result = NapiAudioEnum::RINGTONE;
             break;
         case AudioStreamType::STREAM_MUSIC:

@@ -400,31 +400,10 @@ HWTEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_ForceDataTrue_OffloadDisabled
     EXPECT_EQ(result, SUCCESS);
 }
 
-// Test case when forceData is true (offloadEnable is true and standbyCounter exceeds threshold)
-HWTEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_ForceDataTrue_StandbyExceedThreshold, TestSize.Level0) {
+// Test case when forceData is false (offloadEnable is true)
+HWTEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_ForceDataFalse_OffloadEnabled, TestSize.Level0) {
     node_->historyBuffer_ = nullptr;
     node_->offloadEnable_ = true;
-    node_->standbyCounter_ = 10; // Exceeds STANDBY_THRESHOLD (9)
-
-    EXPECT_CALL(*mockNodeCallback_, OnRequestLatency(_, _)).WillOnce(SetArgReferee<1>(5));
-
-    // Verify that needData is true and forceData is true
-    EXPECT_CALL(*mockStreamCallback_, OnStreamData(_))
-        .WillOnce([&](AudioCallBackStreamInfo& info) {
-            EXPECT_TRUE(info.needData);
-            EXPECT_TRUE(info.forceData);
-            return SUCCESS;
-        });
-
-    int32_t result = node_->OnStreamInfoChange(true);
-    EXPECT_EQ(result, SUCCESS);
-}
-
-// Test case when forceData is false (offloadEnable is true and standbyCounter is below threshold)
-HWTEST_F(HpaeSinkInputNodeTest, OnStreamInfoChange_ForceDataFalse_StandbyBelowThreshold, TestSize.Level0) {
-    node_->historyBuffer_ = nullptr;
-    node_->offloadEnable_ = true;
-    node_->standbyCounter_ = 5; // Below STANDBY_THRESHOLD (9)
 
     EXPECT_CALL(*mockNodeCallback_, OnRequestLatency(_, _)).WillOnce(SetArgReferee<1>(5));
 

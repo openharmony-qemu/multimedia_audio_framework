@@ -132,7 +132,7 @@ HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_004, TestSize.Le
     uint64_t replyBytes = 0;
     std::vector<char> buffer{'8', '8', '8', '8', '8', '8', '8', '8'};
     int32_t ret = source_->CaptureFrame(buffer.data(), buffer.size(), replyBytes);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**

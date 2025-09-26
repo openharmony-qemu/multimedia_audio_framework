@@ -48,17 +48,11 @@ HpaeOffloadRendererManager::~HpaeOffloadRendererManager()
 std::shared_ptr<HpaeSinkInputNode> HpaeOffloadRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo)
 {
     HpaeNodeInfo nodeInfo;
-    nodeInfo.channels = streamInfo.channels;
-    nodeInfo.format = streamInfo.format;
-    nodeInfo.frameLen = streamInfo.frameLen;
-    nodeInfo.streamType = streamInfo.streamType;
-    nodeInfo.sessionId = streamInfo.sessionId;
-    nodeInfo.samplingRate = static_cast<AudioSamplingRate>(streamInfo.samplingRate);
-    nodeInfo.customSampleRate = streamInfo.customSampleRate;
+    ConfigNodeInfo(nodeInfo, streamInfo);
     nodeInfo.sceneType = TransStreamTypeToSceneType(streamInfo.streamType);
-    nodeInfo.effectInfo = streamInfo.effectInfo;
     nodeInfo.historyFrameCount = nodeInfo.frameLen ?
-        HISTORY_INTERVAL_S * nodeInfo.samplingRate / nodeInfo.frameLen : 0;
+        HISTORY_INTERVAL_S * (nodeInfo.customSampleRate ? nodeInfo.customSampleRate : nodeInfo.samplingRate)
+        / nodeInfo.frameLen : 0;
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
@@ -114,7 +108,8 @@ void HpaeOffloadRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeS
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     // 7s history buffer to rewind
-    nodeInfo.historyFrameCount = HISTORY_INTERVAL_S * nodeInfo.samplingRate / nodeInfo.frameLen;
+    nodeInfo.historyFrameCount = HISTORY_INTERVAL_S * (nodeInfo.customSampleRate ?
+        nodeInfo.customSampleRate : nodeInfo.samplingRate) / nodeInfo.frameLen;
     nodeInfo.statusCallback = weak_from_this();
     node->SetNodeInfo(nodeInfo);
     uint32_t sessionId = nodeInfo.sessionId;
@@ -152,7 +147,10 @@ int32_t HpaeOffloadRendererManager::CreateStream(const HpaeStreamInfo &streamInf
     if (!IsInit()) {
         return ERR_INVALID_OPERATION;
     }
-    CHECK_AND_RETURN_RET_LOG(CheckStreamInfo(streamInfo) == SUCCESS, ERROR, "Check StreamInfo ERROR");
+    int32_t checkRet = CheckStreamInfo(streamInfo);
+    if (checkRet != SUCCESS) {
+        return checkRet;
+    }
     auto request = [this, streamInfo]() {
         auto node = CreateInputSession(streamInfo);
         node->SetState(HPAE_SESSION_PREPARED);
@@ -712,6 +710,7 @@ int32_t HpaeOffloadRendererManager::GetSinkInputInfo(uint32_t sessionId, HpaeSin
     CHECK_AND_RETURN_RET_LOG(node, ERR_INVALID_OPERATION,
         "GetSinkInputInfo not find sessionId %{public}u", sessionId);
     sinkInputInfo.nodeInfo = node->GetNodeInfo();
+    sinkInputInfo.rendererSessionInfo.state = node->GetState();
     return SUCCESS;
 }
 

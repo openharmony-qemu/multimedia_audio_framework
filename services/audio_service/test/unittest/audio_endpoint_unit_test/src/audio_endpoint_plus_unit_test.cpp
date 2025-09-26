@@ -26,6 +26,7 @@
 #include "audio_stream_info.h"
 #include "policy_handler.h"
 #include "audio_endpoint.cpp"
+#include "audio_endpoint_sink_adapter.cpp"
 #include "audio_system_manager.h"
 #include "audio_utils.h"
 

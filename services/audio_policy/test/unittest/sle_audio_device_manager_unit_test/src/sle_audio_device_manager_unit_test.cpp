@@ -403,6 +403,23 @@ HWTEST(SleAudioDeviceManagerUnitTest, GetSleStreamType_002, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test GetSleStreamTypeByStreamUsage.
+ * @tc.number: GetSleStreamType_003
+ * @tc.desc  : Test SleAudioDeviceManager::GetSleStreamTypeByStreamUsage && GetSleStreamTypeBySourceType.
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, GetSleStreamType_003, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    
+    StreamUsage streamUsage = STREAM_USAGE_MUSIC;
+    bool isGame = true;
+
+    uint32_t ret = sleAudioDeviceManager_->GetSleStreamTypeByStreamUsage(streamUsage, isGame);
+    EXPECT_EQ(ret, SLE_AUDIO_STREAM_GAME);
+}
+
+/**
  * @tc.name  : Test GetSourceTypesBySleStreamType && GetStreamUsagesBySleStreamType.
  * @tc.number: BySleStreamType_001
  * @tc.desc  : Test SleAudioDeviceManager::GetSourceTypesBySleStreamType && GetStreamUsagesBySleStreamType.
@@ -1250,9 +1267,9 @@ HWTEST(SleAudioDeviceManagerUnitTest, SetDeviceAbsVolume_005, TestSize.Level1)
     sleAudioDeviceManager_->AddNearlinkDevice(deviceDesc);
 
     int32_t ret = sleAudioDeviceManager_->SetDeviceAbsVolume(device, streamType1, volume);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
     ret = sleAudioDeviceManager_->SetDeviceAbsVolume(device, streamType2, volume);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

@@ -157,6 +157,8 @@ public:
     virtual int32_t GetPrivacyType(int32_t &privacyType) override { return 0; } // renderer only
 
     virtual int32_t SetOffloadMode(int32_t state, bool isAppBack) override { return 0; } // renderer only
+    
+    virtual int32_t SetTarget(int32_t target, int32_t &ret) override { return 0; } // renderer only
 
     virtual int32_t UnsetOffloadMode() override { return 0; } // renderer only
 
@@ -406,7 +408,7 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_001, TestSize.Level1)
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
     capturerInClientInner->state_ = NEW;
     int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -431,6 +433,7 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_002, TestSize.Level1)
     EXPECT_NE(ret, SUCCESS);
 }
 
+
 /**
  * @tc.name  : Test SetAudioStreamInfo API
  * @tc.type  : FUNC
@@ -443,14 +446,14 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_003, TestSize.Level1)
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     std::shared_ptr<AudioClientTracker> proxyObj;
     AudioStreamParams info;
-    info.format = AudioSampleFormat::SAMPLE_F32LE;
-    info.encoding = AudioEncodingType::ENCODING_INVALID;
+    info.format = AudioSampleFormat::SAMPLE_U8;
+    info.encoding = AudioEncodingType::ENCODING_AUDIOVIVID;
     info.samplingRate = AudioSamplingRate::SAMPLE_RATE_8000;
-    info.channels = AudioChannel::MONO;
+    info.channels = 99;
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
     capturerInClientInner->state_ = NEW;
     int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -460,138 +463,6 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_003, TestSize.Level1)
  * @tc.desc  : Test SetAudioStreamInfo interface.
  */
 HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_004, TestSize.Level1)
-{
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
-        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    std::shared_ptr<AudioClientTracker> proxyObj;
-    AudioStreamParams info;
-    info.format = AudioSampleFormat::SAMPLE_F32LE;
-    info.encoding = AudioEncodingType::ENCODING_INVALID;
-    info.samplingRate = static_cast<AudioSamplingRate>(600);
-    info.channels = AudioChannel::MONO;
-    info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
-    capturerInClientInner->state_ = NEW;
-    int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
-}
-
-/**
- * @tc.name  : Test SetAudioStreamInfo API
- * @tc.type  : FUNC
- * @tc.number: SetAudioStreamInfo_005
- * @tc.desc  : Test SetAudioStreamInfo interface.
- */
-HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_005, TestSize.Level1)
-{
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
-        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    std::shared_ptr<AudioClientTracker> proxyObj;
-    AudioStreamParams info;
-    info.format = AudioSampleFormat::SAMPLE_F32LE;
-    info.encoding = AudioEncodingType::ENCODING_AUDIOVIVID;
-    info.samplingRate = static_cast<AudioSamplingRate>(600);
-    info.channels = AudioChannel::MONO;
-    info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
-    capturerInClientInner->state_ = NEW;
-    int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
-}
-
-/**
- * @tc.name  : Test SetAudioStreamInfo API
- * @tc.type  : FUNC
- * @tc.number: SetAudioStreamInfo_006
- * @tc.desc  : Test SetAudioStreamInfo interface.
- */
-HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_006, TestSize.Level1)
-{
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
-        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    std::shared_ptr<AudioClientTracker> proxyObj;
-    AudioStreamParams info;
-    info.format = AudioSampleFormat::SAMPLE_U8;
-    info.encoding = AudioEncodingType::ENCODING_INVALID;
-    info.samplingRate = static_cast<AudioSamplingRate>(600);
-    info.channels = AudioChannel::MONO;
-    info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
-    capturerInClientInner->state_ = NEW;
-    int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
-}
-
-/**
- * @tc.name  : Test SetAudioStreamInfo API
- * @tc.type  : FUNC
- * @tc.number: SetAudioStreamInfo_007
- * @tc.desc  : Test SetAudioStreamInfo interface.
- */
-HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_007, TestSize.Level1)
-{
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
-        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    std::shared_ptr<AudioClientTracker> proxyObj;
-    AudioStreamParams info;
-    info.format = AudioSampleFormat::SAMPLE_U8;
-    info.encoding = AudioEncodingType::ENCODING_INVALID;
-    info.samplingRate = AudioSamplingRate::SAMPLE_RATE_8000;
-    info.channels = AudioChannel::MONO;
-    info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
-    capturerInClientInner->state_ = NEW;
-    int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
-}
-
-/**
- * @tc.name  : Test SetAudioStreamInfo API
- * @tc.type  : FUNC
- * @tc.number: SetAudioStreamInfo_008
- * @tc.desc  : Test SetAudioStreamInfo interface.
- */
-HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_008, TestSize.Level1)
-{
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
-        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    std::shared_ptr<AudioClientTracker> proxyObj;
-    AudioStreamParams info;
-    info.format = AudioSampleFormat::SAMPLE_U8;
-    info.encoding = AudioEncodingType::ENCODING_AUDIOVIVID;
-    info.samplingRate = static_cast<AudioSamplingRate>(600);
-    info.channels = AudioChannel::MONO;
-    info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
-    capturerInClientInner->state_ = NEW;
-    int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
-}
-
-/**
- * @tc.name  : Test SetAudioStreamInfo API
- * @tc.type  : FUNC
- * @tc.number: SetAudioStreamInfo_009
- * @tc.desc  : Test SetAudioStreamInfo interface.
- */
-HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_009, TestSize.Level1)
-{
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
-        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    std::shared_ptr<AudioClientTracker> proxyObj;
-    AudioStreamParams info;
-    info.format = AudioSampleFormat::SAMPLE_U8;
-    info.encoding = AudioEncodingType::ENCODING_AUDIOVIVID;
-    info.samplingRate = AudioSamplingRate::SAMPLE_RATE_8000;
-    info.channels = AudioChannel::CHANNEL_7;
-    info.channelLayout = static_cast<AudioChannelLayout>(99999);
-    capturerInClientInner->state_ = NEW;
-    int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
-}
-
-/**
- * @tc.name  : Test SetAudioStreamInfo API
- * @tc.type  : FUNC
- * @tc.number: SetAudioStreamInfo_010
- * @tc.desc  : Test SetAudioStreamInfo interface.
- */
-HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_010, TestSize.Level1)
 {
     std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
@@ -605,7 +476,7 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_010, TestSize.Level1)
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
     capturerInClientInner->state_ = INVALID;
     int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

@@ -56,8 +56,8 @@ private:
     uint32_t outRate_;
     uint32_t channels_;
     uint32_t quality_;
-    uint32_t expectedOutFrameLen_;
-    uint32_t expectedInFrameLen_;
+    uint32_t expectedOutFrameLen_ = 0;
+    uint32_t expectedInFrameLen_ = 0;
     SingleStagePolyphaseResamplerState* state_ = nullptr;
 };
 } // HPAE

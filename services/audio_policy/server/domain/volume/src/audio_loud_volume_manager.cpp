@@ -91,6 +91,10 @@ bool LoudVolumeManager::GetLoudVolumeHoldMap(LoudVolumeHoldType funcHoldType, bo
 bool LoudVolumeManager::ReloadLoudVolumeModeSwitch(LoudVolumeHoldType funcHoldType, SetLoudVolMode setVolMode)
 {
     bool isHolding = false;
+    if (funcHoldType != LOUD_VOLUME_MODE_MUSIC && funcHoldType != LOUD_VOLUME_MODE_VOICE) {
+        AUDIO_ERR_LOG("funHoldType error : %{public}d", funcHoldType);
+        return false;
+    }
     bool isInLoudVolumeMode = GetLoudVolumeHoldMap(funcHoldType, isHolding);
     switch (setVolMode) {
         case LOUD_VOLUME_SWITCH_ON:

@@ -552,6 +552,7 @@ void HpaeOffloadSinkOutputNode::OffloadSetHdiVolume()
 
 void HpaeOffloadSinkOutputNode::OffloadCallback(const RenderCallbackType type)
 {
+    CHECK_AND_RETURN_LOG(audioRendererSink_, "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
     Trace trace("HpaeOffloadSinkOutputNode::OffloadCallback");
     switch (type) {
         case CB_NONBLOCK_WRITE_COMPLETED: {

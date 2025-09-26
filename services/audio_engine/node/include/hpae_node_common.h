@@ -49,6 +49,7 @@ void RecoverNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo);
 int32_t CheckFramelen(const HpaeSinkInfo &sinkInfo);
 int32_t CheckStreamInfo(const HpaeStreamInfo &streamInfo);
 int32_t CheckSourceInfoFramelen(const HpaeSourceInfo &sourceInfo);
+void ConfigNodeInfo(HpaeNodeInfo &nodeInfo, const HpaeStreamInfo &streamInfo);
 
 // for hidumper device / stream info trans, param should be HpaeSinkInfo / HpaeSourceInfo / HpaeStreamInfo
 template <typename T>
@@ -66,6 +67,9 @@ int32_t TransDeviceInfoToString(const T& info, std::string &config)
 }
 void TransStreamInfoToStreamDumpInfo(const std::unordered_map<uint32_t, HpaeSessionInfo> &streamInfoMap,
     std::vector<HpaeInputOutputInfo> &dumpInfo);
+void TransSinkInfoToNodeInfo(const HpaeSinkInfo &sinkInfo, const std::weak_ptr<INodeCallback> &statusCallback,
+    HpaeNodeInfo &nodeInfo);
+size_t CaculateFrameLenByNodeInfo(HpaeNodeInfo &nodeInfo);
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

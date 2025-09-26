@@ -124,6 +124,8 @@ public:
     MOCK_METHOD(void, SetInterruptEventCallbackType, (InterruptEventCallbackType callbackType), (override));
     MOCK_METHOD(void, SetAudioHapticsSyncId, (int32_t audioHapticsSyncId), (override));
     MOCK_METHOD(void, ResetFirstFrameState, (), (override));
+    MOCK_METHOD(int32_t, SetTarget, (RenderTarget target), (const, override));
+    MOCK_METHOD(RenderTarget, GetTarget, (), (const, override));
 };
 
 } // namespace AudioStandard

@@ -2383,5 +2383,31 @@ HWTEST(IpcStreamInServerUnitTest, RegisterThreadPriority_001, TestSize.Level4)
     auto ret = ipcStreamInServerRet.RegisterThreadPriority(tidRet, clientBundleNameRet, METHOD_START);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test IpcStreamInServer API
+ * @tc.type  : FUNC
+ * @tc.number: SetTarget_001
+ * @tc.desc  : Test SetTarget interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, SetTarget_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+    int32_t target = 1;
+    int32_t ret = 0;
+    auto result = ipcStreamInServerRet.SetTarget(target, ret);
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
+    result = ipcStreamInServerRet.SetTarget(target, ret);
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+    ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
+        ipcStreamInServerRet.streamListenerHolder_);
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
+    result = ipcStreamInServerRet.SetTarget(target, ret);
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+}
 }
 }

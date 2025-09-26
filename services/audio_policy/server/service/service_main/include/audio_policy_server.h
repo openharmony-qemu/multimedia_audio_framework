@@ -872,6 +872,7 @@ private:
 
     std::shared_ptr<AudioInterruptService> interruptService_;
     AudioSessionService &sessionService_;
+    AudioInjectorPolicy &audioInjectorPolicy_;
     std::shared_ptr<AudioCoreService> coreService_;
     std::shared_ptr<AudioCoreService::EventEntry> eventEntry_;
 
@@ -881,6 +882,7 @@ private:
     std::atomic<bool> isInitSettingsData_ = false;
     std::atomic<bool> isScreenOffOrLock_ = false;
     std::atomic<bool> isInitRingtoneReady_ = false;
+    std::atomic<bool> isRingtoneEL2Ready_ = false;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     std::mutex volUpHistoryMutex_;
     std::deque<int64_t> volUpHistory_;
