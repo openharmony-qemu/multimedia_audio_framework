@@ -361,8 +361,8 @@ void HpaeProcessClusterAudioRendererStopFuzzTest()
     }
     HpaeNodeInfo nodeInfoTest;
     GetTestNodeInfo(nodeInfoTest);
-    hpaeProcessCluster->AudioRendererStart(nodeInfoTest);
-    hpaeProcessCluster->AudioRendererStop(nodeInfoTest);
+    hpaeProcessCluster->AudioRendererStart(nodeInfoTest, dummySinkInfo);
+    hpaeProcessCluster->AudioRendererStop(nodeInfoTest, dummySinkInfo);
 }
 
 void HpaeProcessClusterGetConverterNodeByIdFuzzTest()
