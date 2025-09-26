@@ -84,6 +84,7 @@ public:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs);
     void UpdateStreamDeviceMap(std::string source);
     bool IsDeviceInActiveOutputDevices(DeviceType type, bool isRemote);
+    bool IsDeviceInActiveOutputDevices(std::shared_ptr<AudioDeviceDescriptor> desc);
 
     std::shared_ptr<AudioDeviceDescriptor> GetDeviceForVolume(StreamUsage streamUsage);
     std::shared_ptr<AudioDeviceDescriptor> GetDeviceForVolume(AudioStreamType streamType);
