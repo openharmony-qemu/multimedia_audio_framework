@@ -1463,6 +1463,7 @@ void HpaeRendererManager::OneStreamEnableBypassOnUnderrun()
     if (appsUid_.size() == 1 && enableBypassOnUnderrun_) {
         for (auto [id, node] : sinkInputNodeMap_) {
             if (node->GetState() == HPAE_SESSION_RUNNING) {
+                CHECK_AND_RETURN_LOG(node, "nullptr in map");
                 node->SetBypassOnUnderrun(true);
             }
         }
@@ -1491,6 +1492,7 @@ void HpaeRendererManager::ResetAllBypassFlags()
 {
     CHECK_AND_RETURN(!IsRemoteDevice());
     for (auto [id, node] : sinkInputNodeMap_) {
+        CHECK_AND_RETURN_LOG(node, "nullptr in map");
         node->SetBypassOnUnderrun(false);
     }
 }
