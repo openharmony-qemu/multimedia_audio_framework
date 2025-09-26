@@ -59,8 +59,6 @@ public:
     virtual std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> GetOutputPort(AudioNodePortType type) override
     {
         if (!outputStream_) {
-            AUDIO_INFO_LOG("AudioSuiteProcessNode::GetOutputPort: node type = %{public}d outputStream initialized.",
-                GetNodeType());
             outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
         }
         return outputStream_;
