@@ -1033,6 +1033,8 @@ int32_t HpaeCapturerManager::AddCaptureInjector(const std::shared_ptr<OutputNode
     const SourceType &sourceType)
 {
     auto request = [this, sinkOutputNode, sourceType] {
+        Trace trace("HpaeCapturerManager::AddCaptureInjector");
+        AUDIO_INFO_LOG("add capture injector");
         HpaeProcessorType sceneType = TransSourceTypeToSceneType(sourceType);
         auto sceneCluster = SafeGetMap(sceneClusterMap_, sceneType);
         CHECK_AND_RETURN_LOG(sceneCluster != nullptr, "sourceType[%{public}d] cluster not exit", sourceType);
@@ -1046,6 +1048,8 @@ int32_t HpaeCapturerManager::RemoveCaptureInjector(const std::shared_ptr<OutputN
     const SourceType &sourceType)
 {
     auto request = [this, sinkOutputNode, sourceType] {
+        Trace trace("HpaeCapturerManager::RemoveCaptureInjector");
+        AUDIO_INFO_LOG("remove capture injector");
         HpaeProcessorType sceneType = TransSourceTypeToSceneType(sourceType);
         auto sceneCluster = SafeGetMap(sceneClusterMap_, sceneType);
         CHECK_AND_RETURN_LOG(sceneCluster != nullptr, "sourceType[%{public}d] cluster not exit", sourceType);

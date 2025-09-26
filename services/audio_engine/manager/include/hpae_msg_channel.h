@@ -133,6 +133,7 @@ struct HpaeDfxNodeInfo {
     HpaeProcessorType sceneType;
     std::string deviceClass;
     std::string deviceNetId;
+    std::string deviceName;
     std::string nodeName;
     SourceType sourceType;
 };

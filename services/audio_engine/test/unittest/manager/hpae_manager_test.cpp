@@ -1807,7 +1807,7 @@ HWTEST_F(HpaeManagerUnitTest, InjectorToPrimaryCapturer, TestSize.Level1)
     EXPECT_EQ(hpaeManager_->IsInit(), true);
     std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
     hpaeManager_->RegisterSerivceCallback(callback);
-    AudioModuleInfo moduleInfo = GetSinkAudioModeInfo("Virtual_Injector");
+    AudioModuleInfo moduleInfo = GetSinkAudioModeInfo(VIRTUAL_INJECTOR);
     EXPECT_EQ(hpaeManager_->OpenAudioPort(moduleInfo), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     int32_t injectorPortId = callback->GetPortId();
@@ -1860,7 +1860,7 @@ HWTEST_F(HpaeManagerUnitTest, InjectorToEndPointCapturer, TestSize.Level1)
     std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
     hpaeManager_->RegisterSerivceCallback(callback);
 
-    AudioModuleInfo moduleInfo = GetSinkAudioModeInfo("Virtual_Injector");
+    AudioModuleInfo moduleInfo = GetSinkAudioModeInfo(VIRTUAL_INJECTOR);
     EXPECT_EQ(hpaeManager_->OpenAudioPort(moduleInfo), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     int32_t injectorPortId = callback->GetPortId();
@@ -1907,7 +1907,7 @@ HWTEST_F(HpaeManagerUnitTest, InjectorUpdataAudioPortInfoAndReloadTest, TestSize
     std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
     hpaeManager_->RegisterSerivceCallback(callback);
 
-    AudioModuleInfo moduleInfo = GetSinkAudioModeInfo("Virtual_Injector");
+    AudioModuleInfo moduleInfo = GetSinkAudioModeInfo(VIRTUAL_INJECTOR);
     EXPECT_EQ(hpaeManager_->OpenAudioPort(moduleInfo), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     int32_t injectorPortId = callback->GetPortId();
@@ -1934,7 +1934,7 @@ HWTEST_F(HpaeManagerUnitTest, InjectorUpdataAudioPortInfoAndReloadTest, TestSize
 
     moduleInfo.channels = "2";
     moduleInfo.rate = "44100";
-    hpaeManager_->ReloadRenderManager(moduleInfo, false);
+    hpaeManager_->ReloadRenderManager(moduleInfo, true);
     EXPECT_EQ(moduleInfo.channels, std::to_string(nodeInfo.channels));
     EXPECT_EQ(moduleInfo.rate, std::to_string(nodeInfo.samplingRate));
 
