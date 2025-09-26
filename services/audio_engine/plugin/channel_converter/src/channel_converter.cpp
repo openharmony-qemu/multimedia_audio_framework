@@ -53,14 +53,15 @@ ChannelConverter::ChannelConverter() {}
 int32_t ChannelConverter::SetParam(AudioChannelInfo inChannelInfo, AudioChannelInfo outChannelInfo,
     AudioSampleFormat format, bool mixLfe)
 {
-    CHECK_AND_RETURN_RET_LOG((inChannelInfo.numChannels >= 0) && (inChannelInfo.numChannels <= MAX_CHANNELS),
-        MIX_ERR_INVALID_ARG, "invalid input channels");
-    CHECK_AND_RETURN_RET_LOG((outChannelInfo.numChannels >= 0) && (outChannelInfo.numChannels <= MAX_CHANNELS),
-        MIX_ERR_INVALID_ARG, "invalid output channels");
+    isInitialized_ = false;
     inChannelInfo_.channelLayout = inChannelInfo.channelLayout;
     outChannelInfo_.channelLayout = outChannelInfo.channelLayout;
     inChannelInfo_.numChannels = inChannelInfo.numChannels;
     outChannelInfo_.numChannels = outChannelInfo.numChannels;
+    CHECK_AND_RETURN_RET_LOG((inChannelInfo.numChannels >= 0) && (inChannelInfo.numChannels <= MAX_CHANNELS),
+        MIX_ERR_INVALID_ARG, "invalid input channels");
+    CHECK_AND_RETURN_RET_LOG((outChannelInfo.numChannels >= 0) && (outChannelInfo.numChannels <= MAX_CHANNELS),
+        MIX_ERR_INVALID_ARG, "invalid output channels");
     workFormat_ = format;
     workSize_ = GetFormatSize(format);
     mixLfe_ = mixLfe;
