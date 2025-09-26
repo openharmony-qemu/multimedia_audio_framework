@@ -13,6 +13,10 @@
  * limitations under the License.
  */
 
+#ifndef LOG_TAG
+#define LOG_TAG "AudioSuiteEqAlgoInterface"
+#endif
+
 #include <dlfcn.h>
 #include <vector>
 #include <sstream>
@@ -49,33 +53,37 @@ short AudioSuiteEqAlgoInterfaceImpl::changeFormat(int high, int low)
 int32_t AudioSuiteEqAlgoInterfaceImpl::Init()
 {
     if (IsEqAlgoInit()) {
-        AUDIO_INFO_LOG("AudioSuiteEqAlgoInterfaceImpl already inited");
-        return -1;
+        AUDIO_ERR_LOG("AudioSuiteEqAlgoInterfaceImpl already inited");
+        return ERROR;
     }
     std::string soPath = "/system/lib64/libimedia_sws.z.so";
     libHandle_ = dlopen(soPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
     if (libHandle_ == nullptr) {
-        AUDIO_INFO_LOG("dlopen algo: %{private}s so fail", soPath.c_str());
-        return -1;
+        AUDIO_ERR_LOG("dlopen algo: %{private}s so fail", soPath.c_str());
+        return ERROR;
     }
     algoApi_.getSize = reinterpret_cast<FuniMedia_Eq_GetSize>(dlsym(libHandle_, "iMedia_Eq_GetSize"));
     algoApi_.initAlgo = reinterpret_cast<FuniMedia_Eq_Init>(dlsym(libHandle_, "iMedia_Eq_Init"));
     algoApi_.applyAlgo = reinterpret_cast<FuniMedia_Eq_Apply>(dlsym(libHandle_, "iMedia_Eq_Apply"));
     algoApi_.setPara = reinterpret_cast<FuniMedia_Eq_SetParams>(dlsym(libHandle_, "iMedia_Eq_SetParams"));
     algoApi_.getPara = reinterpret_cast<FuniMedia_Eq_GetParams>(dlsym(libHandle_, "iMedia_Eq_GetParams"));
-    algoApi_.getVersion = reinterpret_cast<FuniMedia_Eq_GetVersion>(dlsym(libHandle_, "iMedia_Eq_GetVersion"));
 
+    if (algoApi_.getSize == nullptr) {
+        AUDIO_ERR_LOG("Failed to get symbol iMedia_Eq_GetSize");
+        return ERROR;
+    }
     int32_t result = algoApi_.getSize(&stSize);
     if (IMEDIA_SWS_EOK != result) {
-        AUDIO_INFO_LOG("iMedia_Eq_GetSize ERROR: %{public}d", result);
+        AUDIO_ERR_LOG("iMedia_Eq_GetSize ERROR: %{public}d", result);
         return result;
     }
 
     runBuf_.resize(stSize.iStrSize);
     scratchBuf_.resize(stSize.iScracthSize);
-
     isEqAlgoInit_ = true;
-    AUDIO_INFO_LOG("ALGO Init end");
+    AUDIO_INFO_LOG("ALGO Init End, size of runBuf: %{public}d, size of scratchBuf: %{public}d",
+        stSize.iStrSize,
+        stSize.iScracthSize);
     return SUCCESS;
 }
 
@@ -83,9 +91,10 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::Deinit()
 {
     isEqAlgoInit_ = false;
     if (libHandle_ != nullptr) {
-        static_cast<void>(dlclose(libHandle_));
+        int32_t ret = dlclose(libHandle_);
+        CHECK_AND_RETURN_RET_LOG(ret != 0, ret, "dlclose failed: %{public}s", dlerror());
+        libHandle_ = nullptr;
     }
-    libHandle_ = nullptr;
     static_cast<void>(memset_s(&algoApi_, sizeof(algoApi_), 0, sizeof(algoApi_)));
     AUDIO_INFO_LOG("AudioSuiteEqAlgoInterfaceImpl::Deinit end");
     return true;
@@ -117,7 +126,8 @@ std::vector<int> ParseStringToIntArray(const std::string &str, char delimiter)
 int32_t AudioSuiteEqAlgoInterfaceImpl::SetParameter(const std::string &sEQLGain, const std::string &sEQRGain)
 {
     AUDIO_INFO_LOG("Set eq param start");
-    para.sEQLRBands = EQUALIZER_BANDS_NUM;
+    para.sFrameLen = IMEDIA_SWS_FRAME_LEN;
+    para.sEQLRBands = changeFormat(EQUALIZER_BANDS_NUM, EQUALIZER_BANDS_NUM);
 
     std::vector<int> gainsL = ParseStringToIntArray(sEQLGain, ':');
     std::vector<int> gainsR = ParseStringToIntArray(sEQRGain, ':');
@@ -142,31 +152,12 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::SetParameter(const std::string &sEQLGain,
     } else {
         AUDIO_INFO_LOG("iMedia_Eq_Init Success");
     }
-    return SUCCESS;
-}
 
-int32_t AudioSuiteEqAlgoInterfaceImpl::GetParameter(const std::string &oldtype, std::string &type)
-{
-    type += "[";
-    for (int i = 0; i < EQUALIZER_BANDS_NUM; i++) {
-        type += oldtype[i];
-        if (i != oldtype[i]) {
-            type += ",";
-        }
-    }
-    type += "]";
-    return -1;
-    // iMedia_EqGetParams(); //获取算法信息
-}
-
-int32_t AudioSuiteEqAlgoInterfaceImpl::Apply(std::vector<uint8_t *> &pcmInBuf, std::vector<uint8_t *> &pcmOutBuf)
-{
     frameLen = IMEDIA_SWS_FRAME_LEN * ALGO_CHANNEL_NUM;
     frameBytes = frameLen * ALGO_SAMPLE_WIDTH / ONE_BYTE_WIDTH;
-    std::vector<IMEDIA_INT32> dataIn(frameLen);
-    std::vector<IMEDIA_INT32> dataOut(frameLen);
+    dataIn.resize(frameLen);
+    dataOut.resize(frameLen);
 
-    AUDIO_INFO_LOG("iMedia_SWS_DATA stData Init start");
     stData.piDataIn = dataIn.data();
     stData.piDataOut = dataOut.data();
     stData.iSize = IMEDIA_SWS_FRAME_LEN;
@@ -174,7 +165,17 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::Apply(std::vector<uint8_t *> &pcmInBuf, s
     stData.iData_Format16 = 1;
     stData.iData_Channel = ALGO_CHANNEL_NUM;
     stData.iMasterVolume = MASTERVOLUME;
+    AUDIO_INFO_LOG("iMedia_SWS_DATA stData Init Success");
+    return SUCCESS;
+}
 
+int32_t AudioSuiteEqAlgoInterfaceImpl::GetParameter(const std::string &oldtype, std::string &type)
+{
+    return SUCCESS;
+}
+
+int32_t AudioSuiteEqAlgoInterfaceImpl::Apply(std::vector<uint8_t *> &pcmInBuf, std::vector<uint8_t *> &pcmOutBuf)
+{
     int32_t result = -1;
     size_t start = 0;
     size_t i = 0;
@@ -183,7 +184,6 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::Apply(std::vector<uint8_t *> &pcmInBuf, s
     if (libHandle_ == nullptr) {
         AUDIO_INFO_LOG("Apply: libHandle_ == nullptr");
     }
-    AUDIO_INFO_LOG("iMedia_Eq_Apply Start");
 
     while (frameBytes >= start + frameLen) {
         frameLen = frameLen < frameBytes - start ? frameLen : frameBytes - start;
@@ -193,7 +193,6 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::Apply(std::vector<uint8_t *> &pcmInBuf, s
         }
 
         result = algoApi_.applyAlgo(runBuf_.data(), scratchBuf_.data(), scratchBuf_.size(), &stData);
-        AUDIO_INFO_LOG("applyAlgo end");
         if (IMEDIA_SWS_EOK != result) {
             AUDIO_ERR_LOG("iMedia_SWS_Apply ERROR:%{public}d", result);
             return result;
@@ -204,7 +203,6 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::Apply(std::vector<uint8_t *> &pcmInBuf, s
         }
         start = start + frameLen < frameBytes ? start + frameLen : frameBytes;
     }
-    AUDIO_INFO_LOG("iMedia_Eq_Apply End");
     return result;
 }
 }  // namespace AudioSuite

@@ -119,7 +119,7 @@ int32_t AudioSuiteMixerNode::InitAudioLimiter()
 
 AudioSuitePcmBuffer *AudioSuiteMixerNode::preProcess(AudioSuitePcmBuffer *input)
 {
-    AUDIO_INFO_LOG("Channel: %{public}d, SampleRate: %{public}d",
+    AUDIO_DEBUG_LOG("Channel: %{public}d, SampleRate: %{public}d",
         input->GetChannelCount(), input->GetSampleRate());
 
     if (input->GetSampleRate() != rate_) {
