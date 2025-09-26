@@ -762,7 +762,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineCreateNodeForTypeTes
 
     audioNodeBuilder.nodeType = NODE_TYPE_NOISE_REDUCTION;
     std::shared_ptr<AudioNode> effNode = audioSuitePipeline.CreateNodeForType(audioNodeBuilder);
-    EXPECT_TRUE(effNode == nullptr);
+    EXPECT_TRUE(effNode != nullptr);
 }
 
 HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineEnableNodeNodeTest, TestSize.Level0)
