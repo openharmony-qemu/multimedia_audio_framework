@@ -100,7 +100,6 @@ void HpaeRendererManagerTest::SetUp()
 
     outputCluster_ = std::make_shared<HpaeOutputCluster>(nodeInfo);
     hpaeRendererManager_->outputCluster_ = outputCluster_;
-    hpaeRendererManager_->hpaeSignalProcessThread_ = std::make_shared<HpaeSignalProcessThread>();
 }
 
 void HpaeRendererManagerTest::TearDown()
