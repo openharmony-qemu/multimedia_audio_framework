@@ -787,15 +787,15 @@ void AudioStreamCollector::PostReclaimMemoryTask()
         return;
     }
     if (isActivatedMemReclaiTask_.load() && !CheckAudioStateIdle()) {
-        if (system::GetParameter("persist.ace.testmode.enabled", "0") != "1") {
-            return;
-        }
         AUDIO_INFO_LOG("clear reclaim memory task");
         audioPolicyServerHandler_->RemoveTask(RECLAIM_MEMORY);
         isActivatedMemReclaiTask_.store(false);
         return;
     }
     if (!isActivatedMemReclaiTask_.load() && CheckAudioStateIdle()) {
+        if (system::GetParameter("persist.ace.testmode.enabled", "0") != "1") {
+            return;
+        }
         AUDIO_INFO_LOG("start reclaim memory task");
         auto task = [this]() {
             ReclaimMem();
