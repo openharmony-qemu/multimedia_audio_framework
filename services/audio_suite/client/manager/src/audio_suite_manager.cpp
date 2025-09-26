@@ -109,18 +109,18 @@ int32_t AudioSuiteManager::DestroyPipeline(uint32_t pipelineId)
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
 
-    isFinishDestoryPipeline_ = false;
+    isFinishDestroyPipeline_ = false;
     int32_t ret = suiteEngine_->DestroyPipeline(pipelineId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine DestroyPipeline failed, ret = %{public}d", ret);
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return isFinishDestoryPipeline_;
+        return isFinishDestroyPipeline_;
     });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "DestroyPipeline timeout");
 
     AUDIO_INFO_LOG("DestroyPipeline leave");
-    return destoryPipelineResult_;
+    return destroyPipelineResult_;
 }
 
 int32_t AudioSuiteManager::StartPipeline(uint32_t pipelineId)
@@ -160,7 +160,7 @@ int32_t AudioSuiteManager::StopPipeline(uint32_t pipelineId)
     });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "StopPipeline timeout");
 
-    AUDIO_INFO_LOG("StartPipeline leave");
+    AUDIO_INFO_LOG("StopPipeline leave");
     return stopPipelineResult_;
 }
 
@@ -228,14 +228,14 @@ int32_t AudioSuiteManager::DestroyNode(uint32_t nodeId)
     return destroyNodeResult_;
 }
 
-int32_t AudioSuiteManager::EnableNode(uint32_t nodeId, AudioNodeEnable audioNoedEnable)
+int32_t AudioSuiteManager::EnableNode(uint32_t nodeId, AudioNodeEnable audioNodeEnable)
 {
     AUDIO_INFO_LOG("EnableNode enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
 
     isFinishEnableNode_ = false;
-    int32_t ret = suiteEngine_->EnableNode(nodeId, audioNoedEnable);
+    int32_t ret = suiteEngine_->EnableNode(nodeId, audioNodeEnable);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine EnableNode failed, ret = %{public}d", ret);
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
@@ -352,9 +352,9 @@ int32_t AudioSuiteManager::DisConnectNodes(uint32_t srcNodeId, uint32_t destNode
     return disConnectNodesResult_;
 }
 
-int32_t AudioSuiteManager::SetEquailizerMode(uint32_t nodeId, EqualizerMode eqMode)
+int32_t AudioSuiteManager::SetEqualizerMode(uint32_t nodeId, EqualizerMode eqMode)
 {
-    AUDIO_INFO_LOG("SetEquailizerMode enter.");
+    AUDIO_INFO_LOG("SetEqualizerMode enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
 
@@ -362,7 +362,7 @@ int32_t AudioSuiteManager::SetEquailizerMode(uint32_t nodeId, EqualizerMode eqMo
     std::string name = "EqualizerMode";
     std::string value = std::to_string(static_cast<int32_t>(eqMode));
     int32_t ret = suiteEngine_->SetOptions(nodeId, name, value);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine SetEquailizerMode failed, ret = %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine SetEqualizerMode failed, ret = %{public}d", ret);
     return ret;
 }
 
@@ -385,9 +385,9 @@ int32_t AudioSuiteManager::SetEqualizerFrequencyBandGains(uint32_t nodeId, Audio
     return ret;
 }
 
-int32_t AudioSuiteManager::SetSoundFiledType(uint32_t nodeId, SoundFieldType soundFieldType)
+int32_t AudioSuiteManager::SetSoundFieldType(uint32_t nodeId, SoundFieldType soundFieldType)
 {
-    AUDIO_INFO_LOG("SetSoundFiledType enter.");
+    AUDIO_INFO_LOG("SetSoundFieldType enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
 
@@ -395,11 +395,11 @@ int32_t AudioSuiteManager::SetSoundFiledType(uint32_t nodeId, SoundFieldType sou
     std::string name = "SoundFieldType";
     std::string value = std::to_string(static_cast<int32_t>(soundFieldType));
     int32_t ret = suiteEngine_->SetOptions(nodeId, name, value);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine SetSoundFiledType failed, ret = %{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine SetSoundFieldType failed, ret = %{public}d", ret);
     return ret;
 }
 
-int32_t AudioSuiteManager::SetEnvironmentType(uint32_t nodeId, EnvironmentType enviromentType)
+int32_t AudioSuiteManager::SetEnvironmentType(uint32_t nodeId, EnvironmentType environmentType)
 {
     AUDIO_INFO_LOG("EnvironmentType enter.");
     std::lock_guard<std::mutex> lock(lock_);
@@ -407,7 +407,7 @@ int32_t AudioSuiteManager::SetEnvironmentType(uint32_t nodeId, EnvironmentType e
 
     // check
     std::string name = "EnvironmentType";
-    std::string value = std::to_string(static_cast<int32_t>(enviromentType));
+    std::string value = std::to_string(static_cast<int32_t>(environmentType));
     int32_t ret = suiteEngine_->SetOptions(nodeId, name, value);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine EnvironmentType failed, ret = %{public}d", ret);
     return ret;
@@ -498,12 +498,12 @@ void AudioSuiteManager::OnCreatePipeline(int32_t result, uint32_t pipelineId)
     callbackCV_.notify_all();
 }
 
-void AudioSuiteManager::OnDestoryPipeline(int32_t result)
+void AudioSuiteManager::OnDestroyPipeline(int32_t result)
 {
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    AUDIO_INFO_LOG("OnDestoryPipeline result: %{public}d", result);
-    isFinishDestoryPipeline_ = true;
-    destoryPipelineResult_ = result;
+    AUDIO_INFO_LOG("OnDestroyPipeline result: %{public}d", result);
+    isFinishDestroyPipeline_ = true;
+    destroyPipelineResult_ = result;
     callbackCV_.notify_all();
 }
 
@@ -573,7 +573,7 @@ void AudioSuiteManager::OnGetNodeEnable(AudioNodeEnable enable)
 void AudioSuiteManager::OnSetAudioFormat(int32_t result)
 {
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    AUDIO_INFO_LOG("OnEnableNode enter");
+    AUDIO_INFO_LOG("OnSetAudioFormat enter");
     isFinishSetFormat_ = true;
     setFormatResult_ = result;
     callbackCV_.notify_all();

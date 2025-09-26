@@ -89,7 +89,7 @@ HWTEST_F(ManagerUnitTest, ManagerUnitTest_001, TestSize.Level1)
     EXPECT_EQ(id, HDI_INVALID_ID);
 
     id = manager.GetCaptureIdByDeviceClass("offload", SOURCE_TYPE_MIC);
-    EXPECT_EQ(id, HDI_INVALID_ID);
+    EXPECT_EQ(id, 0X1700);
 
     id = manager.GetCaptureIdByDeviceClass("invalid", SOURCE_TYPE_MIC);
     EXPECT_EQ(id, HDI_INVALID_ID);

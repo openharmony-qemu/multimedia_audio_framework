@@ -31,10 +31,11 @@
 #include "dfx_msg_manager.h"
 #include "audio_bundle_manager.h"
 #include "istandard_audio_service.h"
-#include "session_manager_lite.h"
 #include "audio_zone_service.h"
 #include "audio_server_proxy.h"
 #include "standalone_mode_manager.h"
+#include "audio_injector_policy.h"
+#include "window_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -892,6 +893,10 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(
             AUDIO_ERR_LOG("ActivateAudioInterrupt timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::unique_lock<std::mutex> lock(mutex_);
+    AudioInjectorPolicy &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    if (audioInjectorPolicy.IsActivateInterruptStreamId(audioInterrupt.streamId)) {
+        return SUCCESS;
+    }
     bool updateScene = false;
     int32_t ret = ActivateAudioInterruptCoreProcedure(zoneId, audioInterrupt, isUpdatedAudioStrategy, updateScene);
     if (ret != SUCCESS || !updateScene) {
@@ -914,6 +919,12 @@ int32_t AudioInterruptService::ActivateAudioInterruptCoreProcedure(
         InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
         SendInterruptEventToIncomingStream(interruptEvent, audioInterrupt);
         return ERR_FOCUS_DENIED;
+    }
+
+    if (audioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
+        bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+        CHECK_AND_RETURN_RET_LOG(hasSystemPermission, ERR_FOCUS_DENIED,
+            "VOICE_TRANSCRIPTION failed: no system permission.");
     }
 
     return ActivateAudioInterruptInternal(zoneId, audioInterrupt, isUpdatedAudioStrategy, updateScene);
@@ -1045,12 +1056,17 @@ int32_t AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId, co
 
     DeactivateAudioInterruptInternal(zoneId, currAudioInterrupt);
 
+    AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
     if (HasAudioSessionFakeInterrupt(zoneId, currAudioInterrupt.pid)) {
-        AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
         // If there is an event of (interrupt + set scene), ActivateAudioInterrupt and DeactivateAudioInterrupt may
         // experience deadlocks, due to mutex_ and deviceStatusUpdateSharedMutex_ waiting for each other
         lock.unlock();
         UpdateAudioSceneFromInterrupt(targetAudioScene, DEACTIVATE_AUDIO_INTERRUPT, zoneId);
+    }
+    if (handler_ != nullptr && targetAudioScene == AUDIO_SCENE_PHONE_CHAT &&
+        currAudioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        AudioInjectorPolicy &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+        audioInjectorPolicy.SendInterruptEventToInjectorStreams(handler_);
     }
 
     return SUCCESS;
@@ -1870,35 +1886,17 @@ bool AudioInterruptService::IsMicSource(SourceType sourceType)
             sourceType == SOURCE_TYPE_VOICE_COMMUNICATION);
 }
 
-bool AudioInterruptService::CheckWindowState(const int32_t pid)
-{
-    auto sceneSessionManager = Rosen::SessionManagerLite::GetInstance().GetSceneSessionManagerLiteProxy();
-    if (sceneSessionManager == nullptr) {
-        AUDIO_INFO_LOG("AudioInterruptService null manager");
-        return false;
-    }
-    std::vector<Rosen::MainWindowState> windowStates;
-    Rosen::WSError ret = sceneSessionManager->GetMainWindowStatesByPid(pid, windowStates);
-    if (ret != Rosen::WSError::WS_OK || windowStates.empty()) {
-        AUDIO_INFO_LOG("AudioInterruptService fail GetWindow");
-        return false;
-    }
-    for (auto &windowState : windowStates) {
-        if (windowState.isVisible_ && (windowState.state_ == (int32_t) Rosen::SessionState::STATE_ACTIVE ||
-            windowState.state_ == (int32_t) Rosen::SessionState::STATE_FOREGROUND)) {
-            AUDIO_INFO_LOG("AudioInterruptService app window front desk");
-            return true;
-        }
-    }
-    return false;
-}
-
 void AudioInterruptService::UpdateWindowFocusStrategy(const int32_t &currentPid, const int32_t &incomingPid,
     const AudioStreamType &existStreamType, const AudioStreamType &incomingStreamType, AudioFocusEntry &focusEntry)
 {
-    if (!CheckWindowState(currentPid) || !CheckWindowState(incomingPid)) {
-        AUDIO_INFO_LOG("currentWindowState: %{public}d incomingWindowState: %{public}d"
-            " Not all front desk audio access", CheckWindowState(currentPid), CheckWindowState(incomingPid));
+    if (currentPid == incomingPid) {
+        return;
+    }
+    bool isCurTargetWindowState = WindowUtils::CheckWindowState(currentPid);
+    bool isIncomingTargetWindowState = WindowUtils::CheckWindowState(incomingPid);
+    if (!isCurTargetWindowState || !isIncomingTargetWindowState) {
+        AUDIO_INFO_LOG("currentWindowState: %{public}d incomingWindowState: %{public}d Not all front desk audio access",
+            isCurTargetWindowState, isIncomingTargetWindowState);
         return;
     }
     if ((existStreamType == STREAM_MUSIC ||
@@ -2357,6 +2355,10 @@ void AudioInterruptService::UpdateAudioSceneFromInterrupt(const AudioScene audio
     if (currentAudioScene != audioScene) {
         HILOG_COMM_INFO("currentScene: %{public}d, targetScene: %{public}d, changeType: %{public}d",
             currentAudioScene, audioScene, changeType);
+        if (handler_ != nullptr && currentAudioScene == AUDIO_SCENE_PHONE_CHAT) {
+            AudioInjectorPolicy &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+            audioInjectorPolicy.SendInterruptEventToInjectorStreams(handler_);
+        }
     }
 
     switch (changeType) {

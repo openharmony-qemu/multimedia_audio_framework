@@ -32,6 +32,7 @@
 #include "audio_a2dp_offload_flag.h"
 #include "audio_a2dp_device.h"
 #include "audio_iohandle_map.h"
+#include "audio_connected_device.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -84,12 +85,19 @@ public:
     void UpdateStreamDeviceMap(std::string source);
     bool IsDeviceInActiveOutputDevices(DeviceType type, bool isRemote);
 
+    std::shared_ptr<AudioDeviceDescriptor> GetDeviceForVolume(StreamUsage streamUsage);
+    std::shared_ptr<AudioDeviceDescriptor> GetDeviceForVolume(AudioStreamType streamType);
+    std::shared_ptr<AudioDeviceDescriptor> GetDeviceForVolume();
+    std::shared_ptr<AudioDeviceDescriptor> GetDeviceForVolume(int32_t appUid);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetActiveOutputDevices();
+
 private:
     AudioActiveDevice()
         : audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
         audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
-        audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()) {}
+        audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
+        audioConnectedDevice_(AudioConnectedDevice::GetInstance()) {}
     ~AudioActiveDevice() {}
     void WriteOutputRouteChangeEvent(std::shared_ptr<AudioDeviceDescriptor> &desc,
         const AudioStreamDeviceChangeReason reason);
@@ -97,23 +105,32 @@ private:
     void HandleNegtiveBt(DeviceType deviceType);
     void UpdateVolumeTypeDeviceMap(std::shared_ptr<AudioStreamDescriptor> desc);
     void UpdateStreamUsageDeviceMap(std::shared_ptr<AudioStreamDescriptor> desc);
+    void SortDevicesByPriority(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
+    int32_t GetRealUid(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    bool IsAvailableFrontDeviceInVector(
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs);
 
 private:
     std::mutex curOutputDevice_; // lock this mutex to operate currentActiveDevice_
     AudioDeviceDescriptor currentActiveDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
     std::mutex curInputDevice_; // lock this mutex to operate currentActiveInputDevice_
     AudioDeviceDescriptor currentActiveInputDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
+    
+    std::mutex deviceForVolumeMutex_;
 
     std::string activeBTDevice_;
     std::string activeBTInDevice_;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> activeOutputDevices_;
     std::unordered_map<AudioVolumeType, std::vector<std::shared_ptr<AudioDeviceDescriptor>>> volumeTypeDeviceMap_;
     std::unordered_map<StreamUsage, std::vector<std::shared_ptr<AudioDeviceDescriptor>>> streamUsageDeviceMap_;
+    std::shared_ptr<AudioDeviceDescriptor> defaultOutputDevice_ =
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
 
     AudioDeviceManager &audioDeviceManager_;
     AudioAffinityManager &audioAffinityManager_;
     AudioA2dpDevice& audioA2dpDevice_;
     AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;
+    AudioConnectedDevice& audioConnectedDevice_;
 };
 
 }

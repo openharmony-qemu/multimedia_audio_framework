@@ -257,8 +257,8 @@ HWTEST(OHAudioSuiteUnitTest, OH_AudioSuiteEngine_EnableNode_001, TestSize.Level0
     ret = OH_AudioSuiteEngine_CreateNode(pipeline, builder, &audioNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
-    OH_AudioNodeEnable audioNoedEnable;
-    ret = OH_AudioSuiteEngine_GetNodeEnableStatus(audioNode, &audioNoedEnable);
+    OH_AudioNodeEnable audioNodeEnable;
+    ret = OH_AudioSuiteEngine_GetNodeEnableStatus(audioNode, &audioNodeEnable);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORT_OPERATION);
 
     ret = OH_AudioSuiteEngine_EnableNode(audioNode, AUDIOSUITE_NODE_ENABLE);
@@ -301,8 +301,8 @@ HWTEST(OHAudioSuiteUnitTest, OH_AudioSuiteEngine_EnableNode_002, TestSize.Level0
     ret = OH_AudioSuiteEngine_CreateNode(pipeline, builder, &audioNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
-    OH_AudioNodeEnable audioNoedEnable;
-    ret = OH_AudioSuiteEngine_GetNodeEnableStatus(audioNode, &audioNoedEnable);
+    OH_AudioNodeEnable audioNodeEnable;
+    ret = OH_AudioSuiteEngine_GetNodeEnableStatus(audioNode, &audioNodeEnable);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORT_OPERATION);
 
     ret = OH_AudioSuiteEngine_EnableNode(audioNode, AUDIOSUITE_NODE_ENABLE);
@@ -352,7 +352,7 @@ HWTEST(OHAudioSuiteUnitTest, OH_AudioSuiteEngine_Effect_Setopt_001, TestSize.Lev
     ret = OH_AudioSuiteEngine_CreateNode(pipeline, builder, &audioNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
-    ret = OH_AudioSuiteEngine_SetEquailizerMode(audioNode, EQUALIZER_ROCK_MODE);
+    ret = OH_AudioSuiteEngine_SetEqualizerMode(audioNode, EQUALIZER_ROCK_MODE);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORT_OPERATION);
 
     OH_EqualizerFrequencyBandGains gains = {0};

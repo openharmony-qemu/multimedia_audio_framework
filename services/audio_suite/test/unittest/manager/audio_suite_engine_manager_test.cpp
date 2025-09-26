@@ -42,7 +42,7 @@ public:
 
 class MockAudioSuiteManagerCallback : public AudioSuiteManagerCallback {
 public:
-    MOCK_METHOD(void, OnDestoryPipeline, (int32_t result), (override));
+    MOCK_METHOD(void, OnDestroyPipeline, (int32_t result), (override));
     MOCK_METHOD(void, OnCreatePipeline, (int32_t result, uint32_t pipelineId), (override));
     MOCK_METHOD(void, OnStartPipeline, (int32_t result), (override));
     MOCK_METHOD(void, OnStopPipeline, (int32_t result), (override));
@@ -69,7 +69,7 @@ public:
     {
         EXPECT_EQ(pipelineId, INVALID_PIPELINE_ID);
     }
-    void OnDestoryPipeline(int32_t result) override
+    void OnDestroyPipeline(int32_t result) override
     {
         return;
     }
@@ -164,7 +164,7 @@ public:
     {
         return 0;
     }
-    int32_t EnableNode(uint32_t nodeId, AudioNodeEnable audioNoedEnable) override
+    int32_t EnableNode(uint32_t nodeId, AudioNodeEnable audioNodeEnable) override
     {
         return 0;
     }
@@ -406,14 +406,14 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, enableNodeTest, TestSize.Level0)
     engineManger.Init();
     EXPECT_EQ(engineManger.IsInit(), true);
     
-    AudioNodeEnable audioNoedEnable = static_cast<AudioNodeEnable>(1);
+    AudioNodeEnable audioNodeEnable = static_cast<AudioNodeEnable>(1);
     engineManger.nodeMap_[1] = 3;
-    int32_t result = engineManger.EnableNode(1, audioNoedEnable);
-    result = engineManger.EnableNode(2, audioNoedEnable);
+    int32_t result = engineManger.EnableNode(1, audioNodeEnable);
+    result = engineManger.EnableNode(2, audioNodeEnable);
 
     engineManger.nodeMap_[5] = 6;
     engineManger.pipelineMap_[6] = std::make_shared<IAudioSuitePipelineTestImpl>();
-    result = engineManger.EnableNode(5, audioNoedEnable);
+    result = engineManger.EnableNode(5, audioNodeEnable);
     EXPECT_EQ(result, SUCCESS);
 }
 

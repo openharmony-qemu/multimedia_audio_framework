@@ -81,6 +81,7 @@ ohos_shared_library("audio_engine_plugins") {
   sources = [
     "plugin/channel_converter/src/channel_converter.cpp",
     "plugin/channel_converter/src/down_mixer.cpp",
+    "plugin/channel_converter/src/mixer_utils.cpp",
     "plugin/resample/proresampler/audio_proresampler.cpp",
     "plugin/resample/proresampler/audio_proresampler_process.c",
   ]
@@ -172,7 +173,6 @@ ohos_shared_library("audio_engine_node") {
     "node/src/hpae_plugin_node.cpp",
     "node/src/hpae_process_cluster.cpp",
     "node/src/hpae_render_effect_node.cpp",
-    "node/src/hpae_resample_node.cpp",
     "node/src/hpae_sink_input_node.cpp",
     "node/src/hpae_sink_output_node.cpp",
     "node/src/hpae_sink_virtual_output_node.cpp",

@@ -121,11 +121,11 @@ public:
     int32_t ConnectNodes(OHAudioNode *srcNode, OHAudioNode *destNode,
         OH_AudioNode_Port_Type sourcePortType, OH_AudioNode_Port_Type destPortType);
     int32_t DisConnectNodes(OHAudioNode *srcNode, OHAudioNode *destNode);
-    int32_t SetEquailizerMode(OHAudioNode *node, OH_EqualizerMode eqMode);
+    int32_t SetEqualizerMode(OHAudioNode *node, OH_EqualizerMode eqMode);
     int32_t SetEqualizerFrequencyBandGains(
         OHAudioNode *node, OH_EqualizerFrequencyBandGains frequencyBandGains);
-    int32_t SetSoundFiledType(OHAudioNode *node, OH_SoundFieldType soundFieldType);
-    int32_t SetEnvironmentType(OHAudioNode *node, OH_EnvironmentType enviromentType);
+    int32_t SetSoundFieldType(OHAudioNode *node, OH_SoundFieldType soundFieldType);
+    int32_t SetEnvironmentType(OHAudioNode *node, OH_EnvironmentType environmentType);
     int32_t SetVoiceBeautifierType(
         OHAudioNode *node, OH_VoiceBeautifierType voiceBeautifierType);
     int32_t InstallTap(OHAudioNode *node,

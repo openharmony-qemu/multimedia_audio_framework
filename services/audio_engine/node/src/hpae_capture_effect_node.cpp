@@ -62,7 +62,7 @@ bool HpaeCaptureEffectNode::Reset()
 
 HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)
 {
-    Trace trace("[" + sceneType_ + "]HpaeRenderEffectNode::SignalProcess inputs num[" +
+    Trace trace("[" + sceneType_ + "]HpaeCaptureEffectNode::SignalProcess inputs num[" +
         std::to_string(inputs.size()) + "]");
     if (inputs.empty()) {
         AUDIO_WARNING_LOG("inputs size is empty, SessionId:%{public}d", GetSessionId());
@@ -141,6 +141,17 @@ bool HpaeCaptureEffectNode::GetCapturerEffectConfig(HpaeNodeInfo& nodeInfo, Hpae
     return true;
 }
 
+void HpaeCaptureEffectNode::GetCaptureEffectMicChannelLayout(uint32_t channels, AudioChannelLayout &channelLayout)
+{
+    if (channels == 2) { // 2 is stereo
+        channelLayout = CH_LAYOUT_STEREO;
+    } else if (channels == 4) { // 4 is QUAD_SIDE
+        channelLayout = CH_LAYOUT_QUAD_SIDE;
+    } else {
+        AUDIO_WARNING_LOG("channel is not meet expectations");
+    }
+}
+
 void HpaeCaptureEffectNode::SetCapturerEffectConfig(AudioBufferConfig micConfig, AudioBufferConfig ecConfig,
     AudioBufferConfig micrefConfig)
 {
@@ -152,6 +163,7 @@ void HpaeCaptureEffectNode::SetCapturerEffectConfig(AudioBufferConfig micConfig,
     micInfo.samplingRate = static_cast<AudioSamplingRate>(micConfig.samplingRate);
     micInfo.channels = static_cast<AudioChannel>(micConfig.channels);
     micInfo.format = static_cast<AudioSampleFormat>(micConfig.format / BITLENGTH - 1);
+    GetCaptureEffectMicChannelLayout(micConfig.channels, micInfo.channelLayout);
     ecInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_EC;
     ecInfo.frameLen = FRAME_LEN * (ecConfig.samplingRate / MILLISECOND_PER_SECOND);
     ecInfo.samplingRate = static_cast<AudioSamplingRate>(ecConfig.samplingRate);
@@ -201,8 +213,10 @@ int32_t HpaeCaptureEffectNode::CaptureEffectCreate(uint64_t sceneKeyCode, Captur
     micCache_.resize(micBufferLength_);
     micRefCache_.resize(micrefBufferLength_);
     cacheDataOut_.resize(maxLength);
+    AudioChannelLayout channelLayout = CH_LAYOUT_UNKNOWN;
+    GetCaptureEffectMicChannelLayout(micConfig.channels, channelLayout);
     PcmBufferInfo pcmBufferInfo(micConfig.channels, FRAME_LEN * (micConfig.samplingRate / MILLISECOND_PER_SECOND),
-        micConfig.samplingRate);
+        micConfig.samplingRate, channelLayout);
     outPcmBuffer_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
     if (outPcmBuffer_ == nullptr) {
         AUDIO_ERR_LOG("create effect out pcm buffer fail");

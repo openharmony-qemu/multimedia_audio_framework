@@ -170,10 +170,6 @@ void AudioEffectChainManager::SetSpkOffloadState()
             spkOffloadEnabled_ = false;
         }
 
-        if (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && (btOffloadEnabled_)) {
-            return;
-        }
-
         AUDIO_INFO_LOG("recover all chains if device type not bt.");
         RecoverAllChains();
     }
@@ -1119,7 +1115,12 @@ void AudioEffectChainManager::SetSpatializationEnabledToChains()
         if (audioEffectChain == nullptr) {
             continue;
         }
-        audioEffectChain->SetSpatializationEnabledForFading(spatializationEnabled_);
+
+        if (btOffloadEnabled_ == false) {
+            audioEffectChain->SetSpatializationEnabledForFading(spatializationEnabled_);
+        } else {
+            audioEffectChain->SetSpatializationEnabledForFading(false);
+        }
     }
 }
 // LCOV_EXCL_STOP
@@ -1792,6 +1793,10 @@ bool AudioEffectChainManager::ExistAudioEffectChainInner(const std::string &scen
     // if the effectChain exist, see if it is empty
     if (!sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) ||
         sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] == nullptr) {
+        return false;
+    }
+    if (sceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey) &&
+        sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] == 0) {
         return false;
     }
     auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];

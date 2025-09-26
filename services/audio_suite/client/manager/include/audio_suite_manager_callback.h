@@ -23,7 +23,7 @@ namespace AudioSuite {
 class AudioSuiteManagerCallback {
 public:
     virtual void OnCreatePipeline(int32_t result, uint32_t pipelineId) = 0;
-    virtual void OnDestoryPipeline(int32_t result) = 0;
+    virtual void OnDestroyPipeline(int32_t result) = 0;
     virtual void OnStartPipeline(int32_t result) = 0;
     virtual void OnStopPipeline(int32_t result) = 0;
     virtual void OnGetPipelineState(AudioSuitePipelineState state) = 0;

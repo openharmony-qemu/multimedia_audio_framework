@@ -2044,6 +2044,27 @@ HWTEST_F(AudioCoreServicePrivateTest, HandleFetchOutputWhenNoRunningStream_001, 
     auto ret = audioCoreService->HandleFetchOutputWhenNoRunningStream(AudioStreamDeviceChangeReason::UNKNOWN);
     EXPECT_EQ(ret, SUCCESS);
 }
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: HandleFetchOutputWhenNoRunningStream_003
+ * @tc.desc  : Test AudioCoreService::HandleFetchOutputWhenNoRunningStream, fetch output when no running stream.
+ */
+
+HWTEST_F(AudioCoreServicePrivateTest, HandleFetchOutputWhenNoRunningStream_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    EXPECT_NE(desc, nullptr);
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    EXPECT_NE(deviceDesc, nullptr);
+    deviceDesc->deviceType_ = DeviceType::DEVICE_TYPE_USB_ARM_HEADSET;
+    desc->newDeviceDescs_.push_back(deviceDesc);
+
+    auto ret = audioCoreService->HandleFetchOutputWhenNoRunningStream(AudioStreamDeviceChangeReason::UNKNOWN);
+    EXPECT_EQ(ret, SUCCESS);
+}
 
 /**
  * @tc.name  : Test AudioCoreService.

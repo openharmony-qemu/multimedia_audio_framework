@@ -45,7 +45,7 @@ public:
     uint32_t CreateNode(
         uint32_t pipelineId, AudioNodeBuilder& builder) override;
     int32_t DestroyNode(uint32_t nodeId) override;
-    int32_t EnableNode(uint32_t nodeId, AudioNodeEnable audioNoedEnable) override;
+    int32_t EnableNode(uint32_t nodeId, AudioNodeEnable audioNodeEnable) override;
     int32_t GetNodeEnableStatus(uint32_t nodeId, AudioNodeEnable &nodeEnable) override;
     int32_t SetAudioFormat(uint32_t nodeId, AudioFormat audioFormat) override;
     int32_t SetOnWriteDataCallback(uint32_t nodeId,
@@ -58,16 +58,16 @@ public:
     int32_t RemoveTap(uint32_t nodeId, AudioNodePortType portType) override;
     int32_t RenderFrame(uint32_t pipelineId,
         uint8_t *audioData, int32_t frameSize, int32_t *writeLen, bool *finishedFlag) override;
-    int32_t SetEquailizerMode(uint32_t nodeId, EqualizerMode eqMode) override;
+    int32_t SetEqualizerMode(uint32_t nodeId, EqualizerMode eqMode) override;
     int32_t SetEqualizerFrequencyBandGains(
         uint32_t nodeId, AudioEqualizerFrequencyBandGains frequencyBandGains) override;
-    int32_t SetSoundFiledType(uint32_t nodeId, SoundFieldType soundFieldType) override;
-    int32_t SetEnvironmentType(uint32_t nodeId, EnvironmentType enviromentType) override;
+    int32_t SetSoundFieldType(uint32_t nodeId, SoundFieldType soundFieldType) override;
+    int32_t SetEnvironmentType(uint32_t nodeId, EnvironmentType environmentType) override;
     int32_t SetVoiceBeautifierType(uint32_t nodeId, VoiceBeautifierType voiceBeautifierType) override;
 
     // callback Member functions
     void OnCreatePipeline(int32_t result, uint32_t pipelineId) override;
-    void OnDestoryPipeline(int32_t result) override;
+    void OnDestroyPipeline(int32_t result) override;
     void OnStartPipeline(int32_t result) override;
     void OnStopPipeline(int32_t result) override;
     void OnGetPipelineState(AudioSuitePipelineState state) override;
@@ -94,8 +94,8 @@ private:
     bool isFinishCreatePipeline_ = false;
     uint32_t engineCreatePipelineId_ = INVALID_PIPELINE_ID;
     int32_t engineCreateResult_ = 0;
-    bool isFinishDestoryPipeline_ = false;
-    int32_t destoryPipelineResult_ = 0;
+    bool isFinishDestroyPipeline_ = false;
+    int32_t destroyPipelineResult_ = 0;
     bool isFinishStartPipeline_ = false;
     int32_t startPipelineResult_ = 0;
     bool isFinishStopPipeline_ = false;

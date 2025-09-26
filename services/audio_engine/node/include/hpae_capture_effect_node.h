@@ -50,6 +50,7 @@ public:
 protected:
     HpaePcmBuffer *SignalProcess(const std::vector<HpaePcmBuffer*> &inputs) override;
 private:
+    void GetCaptureEffectMicChannelLayout(uint32_t channels, AudioChannelLayout &channelLayout);
     void SetCapturerEffectConfig(AudioBufferConfig micConfig, AudioBufferConfig ecConfig,
         AudioBufferConfig micrefConfig);
 

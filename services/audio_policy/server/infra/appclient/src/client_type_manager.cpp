@@ -77,10 +77,9 @@ void ClientTypeManager::SetQueryClientTypeCallback(const sptr<IStandardAudioPoli
 ClientType ClientTypeManager::GetClientTypeByUid(uint32_t uid)
 {
     std::lock_guard<ffrt::mutex> lock(clientTypeMapMutex_);
-    AUDIO_INFO_LOG("uid %{public}u", uid);
     auto it = clientTypeMap_.find(uid);
     if (it == clientTypeMap_.end()) {
-        AUDIO_INFO_LOG("Cannot find uid");
+        AUDIO_INFO_LOG("Cannot find uid %{public}u", uid);
         return CLIENT_TYPE_OTHERS;
     }
     return it->second;

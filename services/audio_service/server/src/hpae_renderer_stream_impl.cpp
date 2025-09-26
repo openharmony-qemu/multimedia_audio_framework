@@ -31,9 +31,10 @@
 #include "i_hpae_manager.h"
 #include "audio_stream_info.h"
 #include "audio_effect_map.h"
-#include "down_mixer.h"
+#include "mixer_utils.h"
 #include "policy_handler.h"
 #include "audio_engine_log.h"
+#include "core_service_handler.h"
 
 using namespace OHOS::AudioStandard::HPAE;
 namespace OHOS {
@@ -87,7 +88,7 @@ HpaeRendererStreamImpl::~HpaeRendererStreamImpl()
 {
     AUDIO_INFO_LOG("destructor %{public}u", streamIndex_);
     if (dumpEnqueueIn_ != nullptr) {
-        DumpFileUtil::CloseDumpFile(&dumpEnqueueIn_);
+    DumpFileUtil::CloseDumpFile(&dumpEnqueueIn_);
     }
 }
 
@@ -100,7 +101,9 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.format = processConfig_.streamInfo.format;
     streamInfo.channelLayout = processConfig_.streamInfo.channelLayout;
     if (streamInfo.channelLayout == CH_LAYOUT_UNKNOWN) {
-        streamInfo.channelLayout = DownMixer::SetDefaultChannelLayout((AudioChannel)streamInfo.channels);
+        AudioChannelLayout layout;
+        SetDefaultChannelLayout(static_cast<AudioChannel>(streamInfo.channels), layout);
+        streamInfo.channelLayout = layout;
     }
     streamInfo.frameLen = spanSizeInFrame_;
     streamInfo.sessionId = processConfig_.originalSessionId;
@@ -253,10 +256,11 @@ uint32_t HpaeRendererStreamImpl::GetA2dpOffloadLatency()
     uint32_t a2dpOffloadLatency = 0;
     uint64_t a2dpOffloadSendDataSize = 0;
     uint32_t a2dpOffloadTimestamp = 0;
-    auto& handle = PolicyHandler::GetInstance();
-    int32_t ret = handle.OffloadGetRenderPosition(a2dpOffloadLatency, a2dpOffloadSendDataSize, a2dpOffloadTimestamp);
+    auto& handle = CoreServiceHandler::GetInstance();
+    int32_t ret = handle.A2dpOffloadGetRenderPosition(
+        a2dpOffloadLatency, a2dpOffloadSendDataSize, a2dpOffloadTimestamp);
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("OffloadGetRenderPosition failed!");
+        AUDIO_ERR_LOG("A2dpOffloadGetRenderPosition failed!");
     }
     return a2dpOffloadLatency;
 }
@@ -583,7 +587,7 @@ int32_t HpaeRendererStreamImpl::OffloadSetVolume(float volume)
     if (!offloadEnable_) {
         return ERR_OPERATION_FAILED;
     }
-    std::shared_ptr<IAudioRenderSink> audioRendererSinkInstance = GetRenderSinkInstance(deviceClass_, "");
+    std::shared_ptr<IAudioRenderSink> audioRendererSinkInstance = GetRenderSinkInstance(deviceClass_, deviceNetId_);
     if (audioRendererSinkInstance == nullptr) {
         AUDIO_ERR_LOG("Renderer is null.");
         return ERROR;
