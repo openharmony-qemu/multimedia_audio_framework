@@ -748,7 +748,7 @@ void HpaeOffloadRendererManager::OnNodeStatusUpdate(uint32_t sessionId, IOperati
 
 void HpaeOffloadRendererManager::OnRequestLatency(uint32_t sessionId, uint64_t &latency)
 {
-    uint32_t processLatency = 0;
+    uint64_t processLatency = 0;
 
     if (converterForLoudness_) {
         processLatency += converterForLoudness_->GetLatency();

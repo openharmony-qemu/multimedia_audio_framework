@@ -1853,11 +1853,17 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_002, 
     EXPECT_NE(offloadManager->curNode_, nullptr);
 }
 
+/**
+ * @tc.name  : Test HpaeRendererGetLatency_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRendererGetLatency_001
+ * @tc.desc  : Test get latency via legal state.
+ */
 HWTEST_F(HpaeRendererManagerTest, HpaeRendererGetLatency_001, TestSize.Level0)
 {
     std::cout << "test renderer manager" << std::endl;
-    TestIRendererManagerSetLoudnessGain<HpaeRendererManager>();
+    TestIRendererManagerOnRequestLatency<HpaeRendererManager>();
     std::cout << "test offload" << std::endl;
-    TestIRendererManagerSetLoudnessGain<HpaeOffloadRendererManager>();
+    TestIRendererManagerOnRequestLatency<HpaeOffloadRendererManager>();
 }
 }  // namespace
