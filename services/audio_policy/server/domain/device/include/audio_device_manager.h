@@ -111,8 +111,8 @@ public:
     void GetAllConnectedDeviceByType(std::string networkId, DeviceType deviceType,
         std::string macAddress, DeviceRole deviceRole, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
     bool IsSessionSetDefaultDevice(uint32_t sessionId);
-    bool ExistsByType(DeviceType devType) const;
-    bool ExistsByTypeAndAddress(DeviceType devType, const string &address) const;
+    bool ExistsByType(DeviceType devType);
+    bool ExistsByTypeAndAddress(DeviceType devType, const string &address);
     bool ExistSameRemoteDeviceByMacAddress(std::shared_ptr<AudioDeviceDescriptor> desc);
     shared_ptr<AudioDeviceDescriptor> GetActiveScoDevice(std::string scoMac, DeviceRole role);
     std::shared_ptr<AudioDeviceDescriptor> GetExistedDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
