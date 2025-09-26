@@ -424,5 +424,25 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetAudioVolume, TestSize.Level1)
     EXPECT_EQ(ad->IsAbsVolumeScene(), false);
 }
 
+/**
+ * @tc.name: GetDeviceVolume_001
+ * @tc.desc: Test GetDeviceVolume
+ * @tc.type: FUNC
+ * @tc.require: #ICMEH8
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetDeviceVolume_001, TestSize.Level1)
+{
+    audioAdapterManager_->Init();
+    AudioStreamType streamType = STREAM_MUSIC;
+    int32_t volumeLevel = 5;
+    DeviceType deviceType = DEVICE_TYPE_WIRED_HEADSET;
+    int32_t minVolume = audioAdapterManager_->GetMinVolumeLevel(streamType);
+    int32_t maxVolume = audioAdapterManager_->GetMaxVolumeLevel(streamType);
+    ASSERT_TRUE(volumeLevel >= minVolume && volumeLevel <= maxVolume);
+    int32_t result = audioAdapterManager_->SaveSpecifiedDeviceVolume(streamType, volumeLevel, deviceType);
+    ASSERT_EQ(result, 0);
+    auto volume = audioAdapterManager_->GetDeviceVolume(deviceType, streamType);
+    EXPECT_EQ(volume, volumeLevel);
+}
 } // namespace AudioStandard
 } // namespace OHOS
