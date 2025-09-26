@@ -3042,9 +3042,10 @@ void AudioAdapterManager::RegisterMdmMuteSwitchCallback()
 {
     int ret = WatchParameter("persist.edm.unmute_device_disallowed",
         [](const char* key, const char* value, void* context) {
+            CHECK_AND_RETURN_LOG(value != nullptr, "value is null");
             bool isMute = strcmp(value, "true") == 0;
+            CHECK_AND_RETURN_LOG(context != nullptr, "context is null");
             AudioAdapterManager* audioAdapterManager = static_cast<AudioAdapterManager*>(context);
-            CHECK_AND_RETURN_LOG(audioAdapterManager != nullptr, "context is null");
             audioAdapterManager->MdmMuteSwitchCallback(isMute);
         },
         this);

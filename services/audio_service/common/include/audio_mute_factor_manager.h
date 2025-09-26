@@ -11,8 +11,6 @@ public:
 	AudioMuteFactorManager(const AudioMuteFactorManager&) = delete;
 	AudioMuteFactorManager& operator=(const AudioMuteFactorManager&) = delete;
 
-	bool Initialize();
-
 	bool GetMdmMuteStatus() const;
 
 	void SetMdmMuteStatus(bool mdmMute);
