@@ -1655,16 +1655,18 @@ bool AudioDeviceManager::IsSessionSetDefaultDevice(uint32_t sessionId)
     return selectedDefaultOutputDeviceInfo_.find(sessionId) != selectedDefaultOutputDeviceInfo_.end();
 }
 
-bool AudioDeviceManager::ExistsByType(DeviceType devType) const
+bool AudioDeviceManager::ExistsByType(DeviceType devType)
 {
+    std::lock_guard<std::mutex> lg(currentActiveDevicesMutex_);
     auto it = find_if(connectedDevices_.cbegin(), connectedDevices_.cend(), [devType](auto &item) {
         return item->deviceType_ == devType;
     });
     return it != connectedDevices_.cend();
 }
 
-bool AudioDeviceManager::ExistsByTypeAndAddress(DeviceType devType, const string &address) const
+bool AudioDeviceManager::ExistsByTypeAndAddress(DeviceType devType, const string &address)
 {
+    std::lock_guard<std::mutex> lg(currentActiveDevicesMutex_);
     auto it = find_if(connectedDevices_.cbegin(), connectedDevices_.cend(), [devType, &address](auto &item) {
         return item->deviceType_ == devType && item->macAddress_ == address;
     });

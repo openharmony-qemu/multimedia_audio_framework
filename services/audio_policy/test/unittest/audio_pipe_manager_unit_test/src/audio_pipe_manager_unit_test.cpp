@@ -1332,9 +1332,9 @@ HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_001, TestSize.Level1)
 
     audioPipeManager->AddAudioPipeInfo(pipe1);
 
-    audioPipeManager->IsCaptureVoipCall();
+    int ret = audioPipeManager->IsCaptureVoipCall();
     
-    EXPECT_EQ(pipeList01.size(), 1);
+    EXPECT_EQ(ret, 0);
 }
 
 /**
@@ -1363,9 +1363,9 @@ HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_002, TestSize.Level1)
 
     audioPipeManager->AddAudioPipeInfo(pipe1);
 
-    audioPipeManager->IsCaptureVoipCall();
+    int ret = audioPipeManager->IsCaptureVoipCall();
     
-    EXPECT_EQ(pipeList01.size(), 1);
+    EXPECT_EQ(ret, 1);
 }
 
 
@@ -1385,7 +1385,7 @@ HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_003, TestSize.Level1)
 
     std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
     pipe1->adapterName_ = "aaa";
-    pipe1->routeFlag_ = 0x4000;
+    pipe1->routeFlag_ = 0x8000;
     pipe1->id_ = 123;
 
     std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
@@ -1395,9 +1395,9 @@ HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_003, TestSize.Level1)
 
     audioPipeManager->AddAudioPipeInfo(pipe1);
 
-    audioPipeManager->IsCaptureVoipCall();
+    int ret = audioPipeManager->IsCaptureVoipCall();
     
-    EXPECT_EQ(pipeList01.size(), 1);
+    EXPECT_EQ(ret, 2);
 }
 
 /**
@@ -1417,7 +1417,7 @@ HWTEST_F(AudioPipeManagerUnitTest, GetPaIndexByName_001, TestSize.Level1)
     std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
     pipe1->name_ = "aaa";
     pipe1->routeFlag_ = 1;
-    pipe1->id_ = 123;
+    pipe1->paIndex_ = 123;
     audioPipeManager->AddAudioPipeInfo(pipe1);
 
     uint32_t ret = audioPipeManager->GetPaIndexByName("abc");

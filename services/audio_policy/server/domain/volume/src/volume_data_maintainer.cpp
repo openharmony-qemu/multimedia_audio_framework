@@ -946,7 +946,7 @@ int32_t VolumeDataMaintainer::GetMuteStatusInternal(
         return ERROR;
     } else {
         muteStatusMap_[device->GetName()][streamType] = muteStatus;
-        AUDIO_DEBUG_LOG("Get MuteStatus From DataBase muteStatus from datashare %{public}d", muteStatus);
+        AUDIO_INFO_LOG("Get MuteStatus From DataBase muteStatus from datashare %{public}d", muteStatus);
     }
 
     return SUCCESS;
@@ -1035,7 +1035,7 @@ int32_t VolumeDataMaintainer::LoadVolumeFromDb(std::shared_ptr<AudioDeviceDescri
         AUDIO_ERR_LOG("Get volumeLevel From DataBase failed");
         return 0;
     } else {
-        AUDIO_DEBUG_LOG("Get volumeLevel From DataBase volumeLevel from datashare %{public}d", volumeLevel);
+        AUDIO_INFO_LOG("Get volumeLevel From DataBase volumeLevel from datashare %{public}d", volumeLevel);
     }
     return volumeLevel;
 }

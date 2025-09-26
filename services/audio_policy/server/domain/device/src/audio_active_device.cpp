@@ -510,6 +510,18 @@ void AudioActiveDevice::SortDevicesByPriority(std::vector<std::shared_ptr<AudioD
     });
 }
 
+bool AudioActiveDevice::IsAvailableFrontDeviceInVector(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs)
+{
+    if (descs.empty()) {
+        return false;
+    }
+    if (descs.front() == nullptr) {
+        return false;
+    }
+    return true;
+}
+
 std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(AudioVolumeType volumeType)
 {
     std::lock_guard<std::mutex> lock(deviceForVolumeMutex_);
@@ -521,8 +533,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(Aud
     if (Util::IsDualToneStreamType(volumeType)) {
         return audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_SPEAKER);
     }
-    if (volumeTypeDeviceMap_.contains(type) && !volumeTypeDeviceMap_[type].empty() &&
-        volumeTypeDeviceMap_[type].front() != nullptr) {
+    if (volumeTypeDeviceMap_.contains(type)
+        && IsAvailableFrontDeviceInVector(volumeTypeDeviceMap_[type])) {
         AUDIO_INFO_LOG("Get Device %{public}s for stream %{public}d from map",
             volumeTypeDeviceMap_[type].front()->GetName().c_str(), type);
         return volumeTypeDeviceMap_[type].front();
@@ -543,8 +555,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(Str
 {
     std::lock_guard<std::mutex> lock(deviceForVolumeMutex_);
     CHECK_AND_RETURN_RET_LOG(!audioConnectedDevice_.IsEmpty(), defaultOutputDevice_, "no device connected");
-    if (streamUsageDeviceMap_.contains(usage) && !streamUsageDeviceMap_[usage].empty() &&
-        streamUsageDeviceMap_[usage].front() != nullptr) {
+    if (streamUsageDeviceMap_.contains(usage)
+        && IsAvailableFrontDeviceInVector(streamUsageDeviceMap_[usage])) {
         AUDIO_INFO_LOG("Get Device %{public}s for stream %{public}d from map",
             streamUsageDeviceMap_[usage].front()->GetName().c_str(), usage);
         return streamUsageDeviceMap_[usage].front();
@@ -576,8 +588,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume()
         STREAM_USAGE_ENFORCED_TONE
     };
     for (StreamUsage usage : typeList) {
-        CHECK_AND_CONTINUE(streamUsageDeviceMap_.contains(usage) && !streamUsageDeviceMap_[usage].empty() &&
-            streamUsageDeviceMap_[usage].front() != nullptr);
+        CHECK_AND_CONTINUE(streamUsageDeviceMap_.contains(usage)
+            && IsAvailableFrontDeviceInVector(streamUsageDeviceMap_[usage]));
         return streamUsageDeviceMap_[usage].front();
     }
     return AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(
@@ -593,14 +605,11 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(int
         CHECK_AND_CONTINUE(desc != nullptr);
         CHECK_AND_CONTINUE(GetRealUid(desc) == appUid);
         tmp.push_back(desc->newDeviceDescs_.front());
-        return desc->newDeviceDescs_.front();
     }
-    if (tmp.empty()) {
-        return GetDeviceForVolume();
-    } else {
-        SortDevicesByPriority(tmp);
-        return tmp.front();
-    }
+    CHECK_AND_RETURN_RET_LOG(!tmp.empty(), GetDeviceForVolume(),
+        "no uid %{public}d in active", appUid);
+    SortDevicesByPriority(tmp);
+    return tmp.front();
 }
 
 int32_t AudioActiveDevice::GetRealUid(std::shared_ptr<AudioStreamDescriptor> streamDesc)

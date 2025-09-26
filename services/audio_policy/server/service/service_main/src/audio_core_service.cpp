@@ -182,6 +182,9 @@ int32_t AudioCoreService::CreateRendererClient(
         AUDIO_INFO_LOG("Generate session id %{public}u for stream", sessionId);
     }
 
+    ClientTypeManager::GetInstance()->GetAndSaveClientType(GetRealUid(streamDesc),
+        AudioBundleManager::GetBundleNameFromUid(GetRealUid(streamDesc)));
+
     UpdateStreamDevicesForCreate(streamDesc, "CreateRendererClient");
     // Modem stream need special process, because there are no real hdi output or input in fwk.
     // Input also need to be handled because capturer won't be created, only has renderer.
@@ -547,10 +550,8 @@ void AudioCoreService::CheckForRemoteDeviceState(std::shared_ptr<AudioDeviceDesc
 
 int32_t AudioCoreService::StartClient(uint32_t sessionId)
 {
-    if (pipeManager_->IsModemCommunicationIdExist(sessionId)) {
-        AUDIO_INFO_LOG("Modem communication ring, directly return");
-        return SUCCESS;
-    }
+    CHECK_AND_RETURN_RET_LOG(!pipeManager_->IsModemCommunicationIdExist(sessionId), SUCCESS,
+        "Modem communication ring, directly return");
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_NULL_POINTER, "Cannot find session %{public}u", sessionId);
@@ -599,7 +600,8 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         streamCollector_.UpdateCapturerDeviceInfo(deviceDesc);
     }
     streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
-    sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc);
+    bool isGameApp = ClientTypeManager::GetInstance()->GetClientTypeByUid(GetRealUid(streamDesc)) != CLIENT_TYPE_GAME;
+    sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc, false, isGameApp);
 
     CheckForRemoteDeviceState(deviceDesc);
     return SUCCESS;
@@ -613,6 +615,7 @@ int32_t AudioCoreService::PauseClient(uint32_t sessionId)
         RecordDeviceInfo info {.uid_ = GetRealUid(streamDesc)};
         audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::STOP_CLIENT, info);
     }
+    ForceRemoveSleStreamType(streamDesc);
     return SUCCESS;
 }
 
@@ -624,6 +627,7 @@ int32_t AudioCoreService::StopClient(uint32_t sessionId)
         RecordDeviceInfo info {.uid_ = GetRealUid(streamDesc)};
         audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::STOP_CLIENT, info);
     }
+    ForceRemoveSleStreamType(streamDesc);
     return SUCCESS;
 }
 
@@ -631,9 +635,8 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
 {
     if (pipeManager_->IsModemCommunicationIdExist(sessionId)) {
         AUDIO_INFO_LOG("Modem communication, sessionId %{public}u", sessionId);
-        bool isRemoved = true;
         sleAudioDeviceManager_.UpdateSleStreamTypeCount(pipeManager_->GetModemCommunicationStreamDescById(sessionId),
-            isRemoved);
+            true);
         pipeManager_->RemoveModemCommunicationId(sessionId);
         return SUCCESS;
     }
@@ -642,6 +645,7 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
         RecordDeviceInfo info {.uid_ = GetRealUid(streamDesc)};
         audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::RELEASE_CLIENT, info);
     }
+    ForceRemoveSleStreamType(streamDesc);
     pipeManager_->RemoveClient(sessionId);
     audioOffloadStream_.UnsetOffloadStatus(sessionId);
     RemoveUnusedPipe();
