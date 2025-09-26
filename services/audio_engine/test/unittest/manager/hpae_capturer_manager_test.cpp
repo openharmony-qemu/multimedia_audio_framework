@@ -21,7 +21,6 @@
 #include "audio_errors.h"
 #include "hpae_capturer_manager.h"
 #include "hpae_node_common.h"
-#include "hpae_audio_source_mock.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
