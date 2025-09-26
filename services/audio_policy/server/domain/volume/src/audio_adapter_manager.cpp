@@ -544,7 +544,7 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
     // Save the volume to volumeLevelMap_.
     volumeDataMaintainer_.SaveVolumeToMap(desc, streamType, volumeLevel);
     // Save the volume to database
-    volumeDataMaintainer_.SaveVolumeToDb(desc, streamType, volumeLevel);
+    SaveVolumeToDbAsync(desc, streamType, volumeLevel);
 
     return SetVolumeDb(desc, streamType);
 }
@@ -573,14 +573,14 @@ void AudioAdapterManager::HandleSaveVolume(DeviceType deviceType, AudioStreamTyp
     std::string networkId)
 {
     auto desc = audioConnectedDevice_.GetDeviceByDeviceType(deviceType);
-    volumeDataMaintainer_.SaveVolumeToDb(desc, streamType, volumeLevel);
+    SaveVolumeToDbAsync(desc, streamType, volumeLevel);
 }
 
 void AudioAdapterManager::HandleStreamMuteStatus(AudioStreamType streamType, bool mute,
     const DeviceType &deviceType, std::string networkId)
 {
     auto desc = audioConnectedDevice_.GetDeviceByDeviceType(deviceType, networkId);
-    volumeDataMaintainer_.SaveMuteToDb(desc, streamType, mute);
+    SaveMuteToDbAsync(desc, streamType, mute);
 }
 
 void AudioAdapterManager::HandleRingerMode(AudioRingerMode ringerMode)
@@ -967,10 +967,9 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(std::shared_ptr<AudioDeviceDe
     }
     if (AudioZoneService::GetInstance().CheckDeviceInAudioZone(device)) {
         volumeDataExtMaintainer_[device->GetKey()]->SaveMuteToMap(device, streamType, mute);
-        volumeDataExtMaintainer_[device->GetKey()]->SaveMuteToDb(device, streamType, mute);
     } else {
         volumeDataMaintainer_.SaveMuteToMap(device, streamType, mute);
-        volumeDataMaintainer_.SaveMuteToDb(device, streamType, mute);
+        SaveMuteToDbAsync(device, streamType, mute);
     }
     return SetVolumeDb(device, streamType);
 }
@@ -2108,7 +2107,7 @@ void AudioAdapterManager::UpdateUsbSafeVolume(std::shared_ptr<AudioDeviceDescrip
         AUDIO_INFO_LOG("1st connect wired device:%{public}d after boot, update current volume to safevolume",
             device->deviceType_);
         volumeDataMaintainer_.SaveVolumeToMap(device, STREAM_MUSIC, safeVolume_);
-        volumeDataMaintainer_.SaveVolumeToDb(device, STREAM_MUSIC, safeVolume_);
+        SaveVolumeToDbAsync(device, STREAM_MUSIC, safeVolume_);
         isWiredBoot_ = false;
     }
 }
@@ -2139,7 +2138,7 @@ void AudioAdapterManager::UpdateSafeVolumeInner(std::shared_ptr<AudioDeviceDescr
                 AUDIO_INFO_LOG("1st connect bt device:%{public}d after boot, update current volume to safevolume",
                     device->deviceType_);
                 volumeDataMaintainer_.SaveVolumeToMap(device, STREAM_MUSIC, safeVolume_);
-                volumeDataMaintainer_.SaveVolumeToDb(device, STREAM_MUSIC, safeVolume_);
+                SaveVolumeToDbAsync(device, STREAM_MUSIC, safeVolume_);
                 isBtBoot_ = false;
             }
             break;
@@ -2214,7 +2213,7 @@ void AudioAdapterManager::CloneVolumeMap(void)
             }
             int32_t volumeLevel = TransferByteArrayToType<int>(value.Data());
             // clone data to VolumeToShareData
-            volumeDataMaintainer_.SaveVolumeToDb(desc, streamType, volumeLevel);
+            SaveVolumeToDbAsync(desc, streamType, volumeLevel);
         }
     }
 
@@ -2273,7 +2272,7 @@ void  AudioAdapterManager::CheckAndDealMuteStatus(const DeviceType &deviceType, 
         if (desc->deviceType_ == deviceType) {
             SetStreamMuteInternal(desc, streamType, muteStateForStreamRing);
         }
-        volumeDataMaintainer_.SaveMuteToDb(desc, streamType, muteStateForStreamRing);
+        SaveMuteToDbAsync(desc, streamType, muteStateForStreamRing);
     }
     int32_t volumeLevel = volumeDataMaintainer_.LoadVolumeFromDb(desc, streamType);
     SaveSystemVolumeForSwitchDevice(desc, streamType, volumeLevel);
@@ -2317,7 +2316,7 @@ void AudioAdapterManager::CloneMuteStatusMap(void)
             if (desc->deviceType_ == deviceType) {
                 SetStreamMuteInternal(desc, streamType, muteStatus);
             }
-            volumeDataMaintainer_.SaveMuteToDb(desc, streamType, muteStatus);
+            SaveMuteToDbAsync(desc, streamType, muteStatus);
         }
     }
     isNeedCopyMuteData_ = false;
@@ -3130,5 +3129,22 @@ void AudioAdapterManager::UpdateVolumeWhenDeviceDisconnect(std::shared_ptr<Audio
     volumeDataMaintainer_.DeInitDeviceMuteMap(desc);
     AUDIO_INFO_LOG("update ok");
 }
+
+void AudioAdapterManager::SaveVolumeToDbAsync(std::shared_ptr<AudioDeviceDescriptor> desc,
+    AudioStreamType streamType, int32_t volumeLevel)
+{
+    std::thread([this, desc, streamType, volumeLevel]() {
+        volumeDataMaintainer_.SaveVolumeToDb(desc, streamType, volumeLevel);
+    }).detach();
+}
+
+void AudioAdapterManager::SaveMuteToDbAsync(std::shared_ptr<AudioDeviceDescriptor> desc,
+    AudioStreamType streamType, bool mute)
+{
+    std::thread([this, desc, streamType, mute]() {
+        volumeDataMaintainer_.SaveMuteToDb(desc, streamType, mute);
+    }).detach();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
