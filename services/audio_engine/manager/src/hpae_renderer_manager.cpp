@@ -1476,8 +1476,8 @@ void HpaeRendererManager::OneStreamEnableBypassOnUnderrun()
     CHECK_AND_RETURN(!IsRemoteDevice());
     if (appsUid_.size() == 1 && enableBypassOnUnderrun_) {
         for (auto [id, node] : sinkInputNodeMap_) {
+            CHECK_AND_RETURN_LOG(node, "nullptr in map");
             if (node->GetState() == HPAE_SESSION_RUNNING) {
-                CHECK_AND_RETURN_LOG(node, "nullptr in map");
                 node->SetBypassOnUnderrun(true);
             }
         }
