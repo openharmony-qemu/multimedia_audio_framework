@@ -98,6 +98,7 @@
             "media_foundation",
             "runtime_core",
             "usb_manager",
+            "ringtone_library",
             "frame_aware_sched",
             "window_manager"
           ],
