@@ -1593,8 +1593,9 @@ int32_t AudioCoreService::SetRendererTarget(RenderTarget target, RenderTarget la
 
 int32_t AudioCoreService::StartInjection(uint32_t streamId)
 {
+    bool isConnected = audioInjectorPolicy_.GetIsConnected();
     CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERR_NULL_POINTER, "pipeManager_ is null");
-    if (pipeManager_->IsCaptureVoipCall() == NO_VOIP) {
+    if (!isConnected && pipeManager_->IsCaptureVoipCall() == NO_VOIP) {
         return ERR_ILLEGAL_STATE;
     }
     int32_t ret = ERROR;
@@ -1608,6 +1609,16 @@ int32_t AudioCoreService::StartInjection(uint32_t streamId)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "move stream in failed");
     audioInjectorPolicy_.AddStreamDescriptor(streamId, streamDesc);
     return SUCCESS;
+}
+
+void AudioCoreService::RemoveIdForInjector(uint32_t streamId)
+{
+    audioInjectorPolicy_.RemoveStreamDescriptor(streamId);
+}
+
+void AudioCoreService::ReleaseCaptureInjector(uint32_t streamId)
+{
+    audioInjectorPolicy_.ReleaseCaptureInjector(streamId);
 }
 
 int32_t AudioCoreService::A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,

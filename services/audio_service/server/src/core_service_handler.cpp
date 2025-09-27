@@ -131,6 +131,18 @@ int32_t CoreServiceHandler::StartInjection(uint32_t sessionId)
     return ret;
 }
 
+void CoreServiceHandler::RemoveIdForInjector(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_LOG(iCoreServiceProvider_ != nullptr, "iCoreServiceProvider_ is nullptr!");
+    iCoreServiceProvider_->RemoveIdForInjector(sessionId);
+}
+
+void CoreServiceHandler::ReleaseCaptureInjector(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_LOG(iCoreServiceProvider_ != nullptr, "iCoreServiceProvider_ is nullptr!");
+    iCoreServiceProvider_->ReleaseCaptureInjector(sessionId);
+}
+
 int32_t CoreServiceHandler::A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
                                                          uint32_t &timeStamp)
 {

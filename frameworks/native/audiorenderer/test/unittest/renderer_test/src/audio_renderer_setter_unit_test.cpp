@@ -2418,6 +2418,30 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GenerateNewStream_002, TestSize.Lev
 }
 
 /**
+* @tc.name  : Test GenerateNewStream.
+* @tc.number: Audio_Renderer_GenerateNewStream_003
+* @tc.desc  : Test GenerateNewStream interface.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GenerateNewStream_003, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioRendererPrivate> audioRenderer =
+        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioRenderer);
+
+    RestoreInfo restoreInfo;
+    restoreInfo.restoreReason = DEFAULT_REASON;
+    RendererState previousState = RENDERER_NEW;
+    IAudioStream::SwitchInfo switchInfo;
+    switchInfo.eStreamType = STREAM_MUSIC;
+    switchInfo.target = INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
+
+    auto ret = audioRenderer->GenerateNewStream(IAudioStream::StreamClass::FAST_STREAM, restoreInfo,
+        previousState, switchInfo);
+    EXPECT_EQ(ret, false);
+}
+
+/**
 * @tc.name  : Test SwitchToTargetStream.
 * @tc.number: Audio_Renderer_SwitchToTargetStream_002
 * @tc.desc  : Test SwitchToTargetStream interface.

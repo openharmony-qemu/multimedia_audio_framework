@@ -616,6 +616,20 @@ int32_t AudioCoreService::EventEntry::StartInjection(uint32_t sessionId)
     return coreService_->StartInjection(sessionId);
 }
 
+void AudioCoreService::EventEntry::RemoveIdForInjector(uint32_t streamId)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    return coreService_->RemoveIdForInjector(streamId);
+}
+
+void AudioCoreService::EventEntry::ReleaseCaptureInjector(uint32_t streamId)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    return coreService_->ReleaseCaptureInjector(streamId);
+}
+
 int32_t AudioCoreService::EventEntry::A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
                                                                    uint32_t &timeStamp)
 {

@@ -3263,7 +3263,6 @@ int32_t AudioCoreService::InjectionToPlayBack(uint32_t sessionId)
         AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "move stream out failed");
     audioInjectorPolicy_.RemoveStreamDescriptor(sessionId);
-    ret = audioInjectorPolicy_.RemoveCaptureInjector();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "RemoveCaptureInjector failed");
     ret = audioInjectorPolicy_.DeInit();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "DeInit failed");
