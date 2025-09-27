@@ -2125,7 +2125,6 @@ void AudioAdapterManager::UpdateSafeVolumeInner(std::shared_ptr<AudioDeviceDescr
             break;
         case DEVICE_TYPE_BLUETOOTH_SCO:
         case DEVICE_TYPE_BLUETOOTH_A2DP:
-        case DEVICE_TYPE_NEARLINK:
             if (GetStreamVolumeInternal(device, STREAM_MUSIC) <= safeVolume_) {
                 AUDIO_INFO_LOG("1st connect bt device volume is safe");
                 isBtBoot_ = false;
@@ -2141,6 +2140,20 @@ void AudioAdapterManager::UpdateSafeVolumeInner(std::shared_ptr<AudioDeviceDescr
                 volumeDataMaintainer_.SaveVolumeToMap(device, STREAM_MUSIC, safeVolume_);
                 SaveVolumeToDbAsync(device, STREAM_MUSIC, safeVolume_);
                 isBtBoot_ = false;
+            }
+            break;
+        case DEVICE_TYPE_NEARLINK:
+            if (GetStreamVolumeInternal(device, STREAM_MUSIC) <= safeVolume_) {
+                AUDIO_INFO_LOG("1st connect sle device volume is safe");
+                isSleBoot_ = false;
+                return;
+            }
+            if (isSleBoot_ || safeStatusSle_) {
+                AUDIO_INFO_LOG("1st connect sle device:%{public}d after boot, update current volume to safevolume",
+                    device->deviceType_);
+                volumeDataMaintainer_.SaveVolumeToMap(device, STREAM_MUSIC, safeVolume_);
+                volumeDataMaintainer_.SaveVolumeToDb(device, STREAM_MUSIC, safeVolume_);
+                isSleBoot_ = false;
             }
             break;
         default:
@@ -2347,10 +2360,15 @@ void AudioAdapterManager::InitSafeStatus(bool isFirstBoot)
                 (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP)) {
                 volumeDataMaintainer_.SaveSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP, SAFE_ACTIVE);
             }
+            if (!volumeDataMaintainer_.GetSafeStatus(DEVICE_TYPE_NEARLINK, safeStatusSle_) &&
+                (deviceType == DEVICE_TYPE_NEARLINK)) {
+                volumeDataMaintainer_.SaveSafeStatus(DEVICE_TYPE_NEARLINK, SAFE_ACTIVE);
+            }
         }
     } else {
         volumeDataMaintainer_.GetSafeStatus(DEVICE_TYPE_WIRED_HEADSET, safeStatus_);
         volumeDataMaintainer_.GetSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP, safeStatusBt_);
+        volumeDataMaintainer_.GetSafeStatus(DEVICE_TYPE_NEARLINK, safeStatusSle_);
     }
 }
 
@@ -2367,12 +2385,17 @@ void AudioAdapterManager::InitSafeTime(bool isFirstBoot)
                 (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP)) {
                 volumeDataMaintainer_.SaveSafeVolumeTime(DEVICE_TYPE_BLUETOOTH_A2DP, 0);
             }
+            if (!volumeDataMaintainer_.GetSafeVolumeTime(DEVICE_TYPE_NEARLINK, safeActiveSleTime_) &&
+                (deviceType == DEVICE_TYPE_NEARLINK)) {
+                volumeDataMaintainer_.SaveSafeVolumeTime(DEVICE_TYPE_NEARLINK, 0);
+            }
             ConvertSafeTime();
             isNeedConvertSafeTime_ = false;
         }
     } else {
         volumeDataMaintainer_.GetSafeVolumeTime(DEVICE_TYPE_WIRED_HEADSET, safeActiveTime_);
         volumeDataMaintainer_.GetSafeVolumeTime(DEVICE_TYPE_BLUETOOTH_A2DP, safeActiveBtTime_);
+        volumeDataMaintainer_.GetSafeVolumeTime(DEVICE_TYPE_NEARLINK, safeActiveSleTime_);
         if (isNeedConvertSafeTime_) {
             ConvertSafeTime();
             isNeedConvertSafeTime_ = false;
@@ -2391,6 +2414,10 @@ void AudioAdapterManager::ConvertSafeTime(void)
         safeActiveBtTime_ = safeActiveBtTime_ / CONVERT_FROM_MS_TO_SECONDS;
         volumeDataMaintainer_.SaveSafeVolumeTime(DEVICE_TYPE_BLUETOOTH_A2DP, safeActiveBtTime_);
     }
+    if (safeActiveSleTime_ > 0) {
+        safeActiveSleTime_ = safeActiveSleTime_ / CONVERT_FROM_MS_TO_SECONDS;
+        volumeDataMaintainer_.SaveSafeVolumeTime(DEVICE_TYPE_NEARLINK, safeActiveSleTime_);
+    }
 }
 
 SafeStatus AudioAdapterManager::GetCurrentDeviceSafeStatus(DeviceType deviceType)
@@ -2404,9 +2431,11 @@ SafeStatus AudioAdapterManager::GetCurrentDeviceSafeStatus(DeviceType deviceType
             return safeStatus_;
         case DEVICE_TYPE_BLUETOOTH_SCO:
         case DEVICE_TYPE_BLUETOOTH_A2DP:
-        case DEVICE_TYPE_NEARLINK:
             volumeDataMaintainer_.GetSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP, safeStatusBt_);
             return safeStatusBt_;
+        case DEVICE_TYPE_NEARLINK:
+            volumeDataMaintainer_.GetSafeStatus(DEVICE_TYPE_NEARLINK, safeStatusSle_);
+            return safeStatusSle_;
         default:
             AUDIO_ERR_LOG("current device : %{public}d is not support", deviceType);
             break;
@@ -2428,6 +2457,9 @@ int64_t AudioAdapterManager::GetCurentDeviceSafeTime(DeviceType deviceType)
         case DEVICE_TYPE_BLUETOOTH_A2DP:
             volumeDataMaintainer_.GetSafeVolumeTime(DEVICE_TYPE_BLUETOOTH_A2DP, safeActiveBtTime_);
             return safeActiveBtTime_;
+        case DEVICE_TYPE_NEARLINK:
+            volumeDataMaintainer_.GetSafeVolumeTime(DEVICE_TYPE_NEARLINK, safeActiveSleTime_);
+            return safeActiveSleTime_;
         default:
             AUDIO_ERR_LOG("current device : %{public}d is not support", deviceType);
             break;
@@ -2449,6 +2481,9 @@ int32_t AudioAdapterManager::GetRestoreVolumeLevel(DeviceType deviceType)
         case DEVICE_TYPE_BLUETOOTH_A2DP:
             volumeDataMaintainer_.GetRestoreVolumeLevel(DEVICE_TYPE_BLUETOOTH_A2DP, safeActiveBtVolume_);
             return safeActiveBtVolume_;
+        case DEVICE_TYPE_NEARLINK:
+            volumeDataMaintainer_.GetRestoreVolumeLevel(DEVICE_TYPE_NEARLINK, safeActiveSleVolume_);
+            return safeActiveSleVolume_;
         default:
             AUDIO_ERR_LOG("current device : %{public}d is not support", deviceType);
             break;
@@ -2463,6 +2498,8 @@ int32_t AudioAdapterManager::SetDeviceSafeStatus(DeviceType deviceType, SafeStat
         safeStatusBt_ = status;
     } else if (deviceType == DEVICE_TYPE_WIRED_HEADSET) {
         safeStatus_ = status;
+    } else if (deviceType == DEVICE_TYPE_NEARLINK) {
+        safeStatusSle_ = status;
     }
     bool ret = volumeDataMaintainer_.SaveSafeStatus(deviceType, status);
     CHECK_AND_RETURN_RET(ret, ERROR, "SaveSafeStatus failed");
@@ -2475,6 +2512,8 @@ int32_t AudioAdapterManager::SetDeviceSafeTime(DeviceType deviceType, int64_t ti
         safeActiveBtTime_ = time;
     } else if (deviceType == DEVICE_TYPE_WIRED_HEADSET) {
         safeActiveTime_ = time;
+    } else if (deviceType == DEVICE_TYPE_NEARLINK) {
+        safeActiveSleTime_ = time;
     }
     bool ret = volumeDataMaintainer_.SaveSafeVolumeTime(deviceType, time);
     CHECK_AND_RETURN_RET(ret, ERROR, "SetDeviceSafeTime failed");
@@ -2487,6 +2526,8 @@ int32_t AudioAdapterManager::SetRestoreVolumeLevel(DeviceType deviceType, int32_
         safeActiveBtVolume_ = volume;
     } else if (deviceType == DEVICE_TYPE_WIRED_HEADSET) {
         safeActiveVolume_ = volume;
+    } else if (deviceType == DEVICE_TYPE_NEARLINK) {
+        safeActiveSleVolume_ = volume;
     }
     bool ret = volumeDataMaintainer_.SetRestoreVolumeLevel(deviceType, volume);
     CHECK_AND_RETURN_RET(ret, ERROR, "SetRestoreVolumeLevel failed");
@@ -2950,18 +2991,23 @@ void AudioAdapterManager::SafeVolumeDump(std::string &dumpString)
     if (isSafeBoot_) {
         safeStatusBt_ = GetCurrentDeviceSafeStatus(DEVICE_TYPE_BLUETOOTH_A2DP);
         safeStatus_ = GetCurrentDeviceSafeStatus(DEVICE_TYPE_WIRED_HEADSET);
+        safeStatusSle_ = GetCurrentDeviceSafeStatus(DEVICE_TYPE_NEARLINK);
         safeActiveBtTime_ = GetCurentDeviceSafeTime(DEVICE_TYPE_BLUETOOTH_A2DP);
         safeActiveTime_ = GetCurentDeviceSafeTime(DEVICE_TYPE_WIRED_HEADSET);
+        safeActiveSleTime_ = GetCurentDeviceSafeTime(DEVICE_TYPE_NEARLINK);
         isSafeBoot_ = false;
     }
     std::string statusBt = (safeStatusBt_ == SAFE_ACTIVE) ? "SAFE_ACTIVE" : "SAFE_INACTIVE";
     std::string status = (safeStatus_ == SAFE_ACTIVE) ? "SAFE_ACTIVE" : "SAFE_INACTIVE";
+    std::string statusSle = (safeStatusSle_ == SAFE_ACTIVE) ? "SAFE_ACTIVE" : "SAFE_INACTIVE";
     AppendFormat(dumpString, "  - ringerMode: %d\n", ringerMode_);
     AppendFormat(dumpString, "  - SafeVolume: %d\n", safeVolume_);
     AppendFormat(dumpString, "  - BtSafeStatus: %s\n", statusBt.c_str());
     AppendFormat(dumpString, "  - SafeStatus: %s\n", status.c_str());
+    AppendFormat(dumpString, "  - SleSafeStatus: %s\n", statusSle.c_str());
     AppendFormat(dumpString, "  - ActiveBtSafeTime: %lld\n", safeActiveBtTime_);
     AppendFormat(dumpString, "  - ActiveSafeTime: %lld\n", safeActiveTime_);
+    AppendFormat(dumpString, "  - ActiveSleSafeTime: %lld\n", safeActiveSleTime_);
 }
 
 void AudioAdapterManager::SetVgsVolumeSupported(bool isVgsSupported)
