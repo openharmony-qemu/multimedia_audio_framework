@@ -74,6 +74,7 @@ ohos_shared_library("audio_common") {
     "common/src/dfx/player_dfx_writer.cpp",
     "common/src/dfx/recorder_dfx_writer.cpp",
     "common/src/dfx/stream_dfx_manager.cpp",
+    "common/src/dfx/audio_stream_concurrency_detector.cpp",
     "common/src/format_converter.cpp",
     "common/src/futex_tool.cpp",
     "common/src/limiter/audio_limiter.cpp",
@@ -116,6 +117,7 @@ ohos_shared_library("audio_common") {
     "samgr:samgr_proxy",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
+    "init:libbegetutil",
   ]
 
   if (sonic_enable == true) {
