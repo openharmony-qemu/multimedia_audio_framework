@@ -144,43 +144,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetOffloadSessionId_001, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetAdjustVolumeForZone_001
- * @tc.desc: Test SetAdjustVolumeForZone
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioAdapterManagerUnitTest, SetAdjustVolumeForZone_001, TestSize.Level1)
-{
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    auto ret = audioAdapterManager->SetAdjustVolumeForZone(0);
-    EXPECT_EQ(ret, SUCCESS);
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
-    std::shared_ptr<AudioDeviceDescriptor> desc =
-        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_REMOTE_CAST, OUTPUT_DEVICE);
-    desc->networkId_ = "LocalDevice";
-    devices.push_back(desc);
-    AudioZoneService::GetInstance().BindDeviceToAudioZone(zoneId1_, devices);
-    AudioConnectedDevice::GetInstance().AddConnectedDevice(desc);
-    AudioZoneService::GetInstance().UpdateDeviceFromGlobalForAllZone(desc);
-
-    ret = audioAdapterManager->SetAdjustVolumeForZone(zoneId2_);
-    EXPECT_EQ(ret, SUCCESS);
-
-    audioAdapterManager->volumeDataExtMaintainer_[desc->GetKey()] = std::make_shared<VolumeDataMaintainer>();
-    ret = audioAdapterManager->SetAdjustVolumeForZone(zoneId2_);
-    EXPECT_EQ(ret, SUCCESS);
-
-    audioAdapterManager->volumeDataExtMaintainer_.clear();
-    desc->networkId_ = "RemoteDevice";
-    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
-
-    audioAdapterManager->volumeDataExtMaintainer_[desc->GetKey()] = std::make_shared<VolumeDataMaintainer>();
-    ret = audioAdapterManager->SetAdjustVolumeForZone(zoneId2_);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
  * @tc.name: UpdateSinkArgs_001
  * @tc.desc: Test UpdateSinkArgs all args have value
  * @tc.type: FUNC
