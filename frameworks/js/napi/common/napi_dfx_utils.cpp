@@ -56,8 +56,8 @@ static const char* GetFuncReadable(bool direction, uint8_t functionType)
     }
 }
  
-void NapiDfxUtils::ReportAudioMainThreadEvent(std::string bundleName, bool direction,
-    uint8_t usageOrSourceType, uint8_t functionType)
+void NapiDfxUtils::ReportAudioMainThreadEvent(int32_t uid, bool direction,
+        uint8_t usageOrSourceType, uint8_t functionType)
 {
     const char* typeStr = direction ? "Capture" : "Renderer";
     const char* keyStr  = direction ? "sourceType" : "usage";
@@ -65,16 +65,17 @@ void NapiDfxUtils::ReportAudioMainThreadEvent(std::string bundleName, bool direc
  
     AUDIO_INFO_LOG("type=%{public}s, %{public}s=%{public}d, funcId=%{public}d(%{public}s)",
         typeStr, keyStr, usageOrSourceType, functionType, funcStr);
-
-    auto ret = HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "PROCESS_AUDIO_BY_MAINTHREAD",
-        HiviewDFX::HiSysEvent::EventType::STATISTIC,
-        "BUNDLENAME", bundleName,
-        "AUDIODIRECTION", direction,
-        "AUDIOSTREAM", usageOrSourceType,
-        "CALLFUNC", functionType);
-    if (ret) {
-        AUDIO_ERR_LOG("write event fail: PROCESS_AUDIO_BY_MAINTHREAD, ret = %{public}d", ret);
-    }
+ 
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::PROCESS_IN_MAINTHREAD,
+        Media::MediaMonitor::EventType::BEHAVIOR_EVENT);
+    CHECK_AND_RETURN_LOG(bean != nullptr, "bean is nullptr");
+ 
+    bean->Add("UID", uid);
+    bean->Add("AUDIODIRECTION", direction);
+    bean->Add("AUDIOSTREAM", usageOrSourceType);
+    bean->Add("CALLFUNC", functionType);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 } // namespace AudioStandard
 } // namespace OHOS
