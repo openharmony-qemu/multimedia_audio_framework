@@ -249,7 +249,7 @@ void HpaeRendererManager::RefreshProcessClusterByDeviceInner(const std::shared_p
     int32_t processClusterDecision = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
     if ((processClusterDecision != USE_NONE_PROCESSCLUSTER && sessionNodeMap_[nodeInfo.sessionId].bypass) ||
         (processClusterDecision == USE_NONE_PROCESSCLUSTER && !sessionNodeMap_[nodeInfo.sessionId].bypass)) {
-        AUDIO_INFO_LOG("current processCluster is incorrect, refresh to %{public}d", processClusterDecision);
+        AUDIO_INFO_LOG("refresh to %{public}d", processClusterDecision);
         TriggerStreamState(nodeInfo.sessionId, node);
         DeleteProcessCluster(nodeInfo.sessionId);
         CreateProcessClusterAndConnect(nodeInfo);
@@ -638,7 +638,8 @@ void HpaeRendererManager::DisConnectInputCluster(uint32_t sessionId, HpaeProcess
 
 void HpaeRendererManager::DisConnectOutputCluster(HpaeProcessorType sceneType)
 {
-    if (SafeGetMap(sceneClusterMap_, sceneType) && sceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
+    if (SafeGetMap(sceneClusterMap_, sceneType) && sceneClusterMap_[sceneType]->GetPreOutNum() == 0 &&
+        sceneClusterMap_[sceneType]->GetConnectedFlag) {
         sceneClusterMap_[sceneType]->DisConnectMixerNode();
         if (outputCluster_ != nullptr) {
             outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
