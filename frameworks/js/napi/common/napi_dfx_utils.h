@@ -38,7 +38,7 @@ public:
     };
  
     static void ReportAudioMainThreadEvent(int32_t uid, bool direction,
-            uint8_t usageOrSourceType, uint8_t functionType);
+        uint8_t usageOrSourceType, uint8_t functionType);
 };
 } // namespace AudioStandard
 } // namespace OHOS
