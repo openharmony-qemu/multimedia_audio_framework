@@ -415,7 +415,7 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
     if (action == CONCEDE_INCOMING && existingStream->IsNoRunningOffload()) {
         action = CONCEDE_EXISTING;
     }
-    AUDIO_INFO_LOG("Action: %{public}u "
+    JUDGE_AND_INFO_LOG(action != PLAY_BOTH, "Action: %{public}u "
         "existingStream id: %{public}u, routeFlag: %{public}u; "
         "incomingStream id: %{public}u, routeFlag: %{public}u",
         action,
