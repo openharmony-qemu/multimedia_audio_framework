@@ -85,13 +85,13 @@ int32_t AudioLimiter::SetConfig(int32_t inputFrameBytes, int32_t bytePerSample, 
 
     latency_ = static_cast<uint32_t>(newAlgoFrameLen * AUDIO_MS_PER_S / (sampleRate * channels));
 
-    if (bufHis_.capacity() < newAlgoFrameLen) {
+    if (bufHis_.capacity() < static_cast<size_t>(newAlgoFrameLen)) {
         bufHis_.assign(newAlgoFrameLen + 1, 0);
     } else {
         memset_s(bufHis_.data(), bufHis_.capacity() * sizeof(float), 0, bufHis_.capacity() * sizeof(float));
     }
 
-    CHECK_AND_RETURN_RET_LOG(bufHis_.capacity() > newAlgoFrameLen,
+    CHECK_AND_RETURN_RET_LOG(bufHis_.capacity() > static_cast<size_t>(newAlgoFrameLen),
         ERR_MEMORY_ALLOC_FAILED,
         "allocate limit algorithm buffer failed, buffer capacity %{public}zu, requestLen %{public}d",
         bufHis_.capacity(),
@@ -125,7 +125,7 @@ int32_t AudioLimiter::Process(int32_t inputSampleCount, float *inBuffer, float *
     CHECK_AND_RETURN_RET_LOG(
         inBuffer != nullptr && outBuffer != nullptr, ERR_NULL_POINTER, "AudioLimiter Process Error, buffer is nullptr");
 
-    CHECK_AND_RETURN_RET_LOG(algoFrameLen_ > 0 && bufHis_.capacity() > algoFrameLen_,
+    CHECK_AND_RETURN_RET_LOG(algoFrameLen_ > 0 && bufHis_.capacity() > static_cast<size_t>(algoFrameLen_),
         ERR_NOT_STARTED,
         "could not do process before SetConfig success");
 
