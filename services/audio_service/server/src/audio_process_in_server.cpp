@@ -987,14 +987,19 @@ int32_t AudioProcessInServer::CaptureDataResampleProcess(const size_t bufLen,
     if (resampler_ == nullptr) {
         resampler_ = std::make_unique<HPAE::ProResampler>(srcRate, dstRate, srcInfo.channels, 1);
     }
-    uint32_t resampleBuffSize = bufLen / srcInfo.channels;  // resampler inner will multiply channels
+
+    uint32_t formatByte = PcmFormatToBits(srcInfo.format);
+    uint32_t channels = static_cast<uint32_t>(srcInfo.channels);
+    uint32_t resampleInBuffSize = bufLen / (channels * formatByte);
+    uint32_t resampleOutBuffSize = spanSizeInframe_;
+    uint32_t outBuffLen = spanSizeInframe_ * byteSizePerFrame_;
     float *resampleOutBuff =
-        reinterpret_cast<float*>(ReallocVectorBufferAndClear(procParams.rendererConvBuffer_, bufLen));
-    ret = resampler_->Process(resampleInBuff, resampleBuffSize, resampleOutBuff, resampleBuffSize);
+        reinterpret_cast<float*>(ReallocVectorBufferAndClear(procParams.rendererConvBuffer_, outBuffLen));
+    ret = resampler_->Process(resampleInBuff, resampleInBuffSize, resampleOutBuff, resampleOutBuffSize);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Capture data resample failed");
 
     outBuf.buffer = reinterpret_cast<uint8_t*>(resampleOutBuff);
-    outBuf.bufLength = bufLen;
+    outBuf.bufLength = outBuffLen;
 
     return SUCCESS;
 }
@@ -1042,11 +1047,13 @@ int32_t AudioProcessInServer::HandleCapturerDataParams(RingBufferWrapper &writeB
     BufferDesc resampleOutBuf = procParams.readBuf_;
     int32_t ret = CaptureDataResampleProcess(bufLen, resampleOutBuf, srcInfo, procParams);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "capture data resample failed");
-    DumpFileUtil::WriteDumpFile(dumpResample_, static_cast<void *>(resampleOutBuf.buffer), bufLen);
+    DumpFileUtil::WriteDumpFile(dumpResample_, static_cast<void *>(resampleOutBuf.buffer),
+        resampleOutBuf.bufLength);
 
     ret = CapturerDataFormatAndChnConv(writeBuf, resampleOutBuf, srcInfo, processConfig_.streamInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "capture data convert failed");
-    DumpFileUtil::WriteDumpFile(dumpFAC_, static_cast<void *>(writeBuf.basicBufferDescs[0].buffer), bufLen);
+    DumpFileUtil::WriteDumpFile(dumpFAC_, static_cast<void *>(writeBuf.basicBufferDescs[0].buffer),
+        writeBuf.dataLength);
 
     return SUCCESS;
 }
