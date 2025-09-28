@@ -170,6 +170,7 @@ private:
                                          const AudioStreamInfo &srcInfo, const AudioStreamInfo &dstInfo);
     int32_t WriteToRingBuffer(RingBufferWrapper &writeBuf, const BufferDesc &buffer);
     void RemoveStreamInfo();
+    bool IsNeedRecordResampleConv(AudioSamplingRate srcSamplingRate);
 private:
     std::atomic<bool> muteFlag_ = false;
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
