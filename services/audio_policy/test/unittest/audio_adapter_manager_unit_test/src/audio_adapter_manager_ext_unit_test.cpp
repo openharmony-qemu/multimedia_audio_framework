@@ -34,69 +34,6 @@ std::shared_ptr<AudioInterruptService> GetInterruptServiceTest()
 }
 
 /**
- * @tc.name: SetAudioVolumeThree_001
- * @tc.desc: Test SetAudioVolume
- * @tc.type: FUNC
- * @tc.require: #ICDC94
- */
-HWTEST_F(AudioAdapterManagerExtUnitTest, SetAudioVolumeThree_001, TestSize.Level4)
-{
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    EXPECT_NE(audioAdapterManager, nullptr);
-    std::shared_ptr<AudioDeviceDescriptor> desc =
-        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
-    desc->networkId_ = "";
-    AudioStreamType streamType = STREAM_MUSIC;
-    float volumeDb = 0.0f;
-    audioAdapterManager->volumeDataExtMaintainer_[desc->GetKey()] = std::make_shared<VolumeDataMaintainer>();
-    EXPECT_NO_THROW(
-        audioAdapterManager->SetAudioVolume(desc, streamType, volumeDb);
-    );
-}
-
-/**
- * @tc.name: SetAudioVolumeThree_002
- * @tc.desc: Test SetAudioVolume
- * @tc.type: FUNC
- * @tc.require: #ICDC94
- */
-HWTEST_F(AudioAdapterManagerExtUnitTest, SetAudioVolumeThree_002, TestSize.Level4)
-{
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    EXPECT_NE(audioAdapterManager, nullptr);
-    std::shared_ptr<AudioDeviceDescriptor> desc =
-        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
-    AudioStreamType streamType = STREAM_MUSIC;
-    desc->networkId_ = "LocalDevice";
-    float volumeDb = 0.0f;
-    audioAdapterManager->volumeDataExtMaintainer_[desc->GetKey()] = std::make_shared<VolumeDataMaintainer>();
-    EXPECT_NO_THROW(
-        audioAdapterManager->SetAudioVolume(desc, streamType, volumeDb);
-    );
-}
-
-/**
- * @tc.name: SetAudioVolumeThree_003
- * @tc.desc: Test SetAudioVolume
- * @tc.type: FUNC
- * @tc.require: #ICDC94
- */
-HWTEST_F(AudioAdapterManagerExtUnitTest, SetAudioVolumeThree_003, TestSize.Level4)
-{
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    EXPECT_NE(audioAdapterManager, nullptr);
-    std::shared_ptr<AudioDeviceDescriptor> desc =
-        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NONE, OUTPUT_DEVICE);
-    AudioStreamType streamType = STREAM_MUSIC;
-    desc->networkId_ = "LocalDevice";
-    float volumeDb = 0.0f;
-    audioAdapterManager->volumeDataExtMaintainer_[desc->GetKey()] = std::make_shared<VolumeDataMaintainer>();
-    EXPECT_NO_THROW(
-        audioAdapterManager->SetAudioVolume(desc, streamType, volumeDb);
-    );
-}
-
-/**
  * @tc.name: SetOffloadVolume_001
  * @tc.desc: Test SetOffloadVolume
  * @tc.type: FUNC

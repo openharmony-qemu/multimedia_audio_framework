@@ -408,32 +408,6 @@ bool AudioAdapterManager::IsAppRingMuted(int32_t appUid)
 
 int32_t AudioAdapterManager::SetAdjustVolumeForZone(int32_t zoneId)
 {
-    std::lock_guard<std::mutex> lock(volumeDataMapMutex_);
-    volumeAdjustZoneId_ = zoneId;
-    if (zoneId == 0) {
-        return SUCCESS;
-    }
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices =
-        AudioZoneService::GetInstance().FetchOutputDevices(zoneId, STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
-    CHECK_AND_RETURN_RET_LOG(devices.size() >= 1 && devices[0] != nullptr, ERR_OPERATION_FAILED,
-        "zone device error");
-    if (volumeDataExtMaintainer_.find(devices[0]->GetKey()) == volumeDataExtMaintainer_.end()) {
-        volumeDataExtMaintainer_[devices[0]->GetKey()] = std::make_shared<VolumeDataMaintainer>();
-        if (devices[0]->IsDistributedSpeaker()) {
-            for (auto streamType : DISTRIBUTED_VOLUME_TYPE_LIST) {
-                int32_t maxVolumeLevel = GetMaxVolumeLevel(streamType, devices[0]);
-                volumeDataExtMaintainer_[devices[0]->GetKey()]->SaveVolumeToMap(devices[0], streamType, maxVolumeLevel);
-                volumeDataExtMaintainer_[devices[0]->GetKey()]->SaveMuteToMap(devices[0], streamType, false);
-            }
-        } else {
-            UpdateVolumeWhenDeviceConnect(devices[0], zoneId);
-        }
-        auto iter = defaultVolumeTypeList_.begin();
-        while (iter != defaultVolumeTypeList_.end()) {
-            SetVolumeDb(devices[0], *iter);
-            iter++;
-        }
-    }
     return SUCCESS;
 }
 
@@ -460,8 +434,6 @@ bool AudioAdapterManager::GetZoneMute(int32_t zoneId, AudioStreamType streamType
         AudioZoneService::GetInstance().FetchOutputDevices(zoneId, STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
     CHECK_AND_RETURN_RET_LOG(devices.size() >= 1 && devices[0] != nullptr, false,
         "zone device error");
-    CHECK_AND_RETURN_RET_LOG(volumeDataExtMaintainer_.find(devices[0]->GetKey()) !=
-        volumeDataExtMaintainer_.end(), false, "volumeDataExtMaintainer_ error");
     return GetStreamMuteInternal(devices[0], streamType);
 }
 
@@ -472,12 +444,10 @@ int32_t AudioAdapterManager::GetZoneVolumeLevel(int32_t zoneId, AudioStreamType 
         AudioZoneService::GetInstance().FetchOutputDevices(zoneId, STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
     CHECK_AND_RETURN_RET_LOG(devices.size() >= 1 && devices[0] != nullptr, ERR_OPERATION_FAILED,
         "zone device error");
-    CHECK_AND_RETURN_RET_LOG(volumeDataExtMaintainer_.find(devices[0]->GetKey()) !=
-        volumeDataExtMaintainer_.end(), ERR_OPERATION_FAILED, "volumeDataExtMaintainer_ error");
     if (GetStreamMuteInternal(devices[0], streamType)) {
         return MIN_VOLUME_LEVEL;
     }
-    return volumeDataExtMaintainer_[devices[0]->GetKey()]->LoadVolumeFromMap(devices[0], streamType);
+    return volumeDataMaintainer_.LoadVolumeFromMap(devices[0], streamType);
 }
 
 int32_t AudioAdapterManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute)
@@ -503,9 +473,7 @@ int32_t AudioAdapterManager::SetZoneVolumeLevel(int32_t zoneId, AudioStreamType 
     CHECK_AND_RETURN_RET_LOG(volumeLevel >= mimRet && volumeLevel <= maxRet, ERR_OPERATION_FAILED,
         "volumeLevel not in scope,mimRet:%{public}d maxRet:%{public}d", mimRet, maxRet);
 
-    CHECK_AND_RETURN_RET_LOG(volumeDataExtMaintainer_.find(devices[0]->GetKey()) != volumeDataExtMaintainer_.end(),
-        ERR_OPERATION_FAILED, "volumeDataExtMaintainer_ error");
-    volumeDataExtMaintainer_[devices[0]->GetKey()]->SaveVolumeToMap(devices[0], streamType, volumeLevel);
+    volumeDataMaintainer_.SaveVolumeToMap(devices[0], streamType, volumeLevel);
     return SetVolumeDb(devices[0], streamType);
 }
 
@@ -928,9 +896,6 @@ int32_t AudioAdapterManager::GetStreamVolume(AudioStreamType streamType)
 int32_t AudioAdapterManager::GetStreamVolumeInternal(std::shared_ptr<AudioDeviceDescriptor> &device,
     AudioStreamType streamType)
 {
-    if (AudioZoneService::GetInstance().CheckDeviceInAudioZone(device)) {
-        return volumeDataExtMaintainer_[device->GetKey()]->LoadVolumeFromMap(device, streamType);
-    }
     return volumeDataMaintainer_.LoadVolumeFromMap(device, streamType);
 }
 
@@ -943,9 +908,6 @@ bool AudioAdapterManager::GetStreamMute(AudioStreamType streamType)
 bool AudioAdapterManager::GetStreamMuteInternal(std::shared_ptr<AudioDeviceDescriptor> &device,
     AudioStreamType streamType)
 {
-    if (AudioZoneService::GetInstance().CheckDeviceInAudioZone(device)) {
-        return volumeDataExtMaintainer_[device->GetKey()]->LoadMuteFromMap(device, streamType);
-    }
     return volumeDataMaintainer_.LoadMuteFromMap(device, streamType);
 }
 
@@ -966,12 +928,8 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(std::shared_ptr<AudioDeviceDe
             streamType, mute);
         return SUCCESS;
     }
-    if (AudioZoneService::GetInstance().CheckDeviceInAudioZone(device)) {
-        volumeDataExtMaintainer_[device->GetKey()]->SaveMuteToMap(device, streamType, mute);
-    } else {
-        volumeDataMaintainer_.SaveMuteToMap(device, streamType, mute);
-        SaveMuteToDbAsync(device, streamType, mute);
-    }
+    volumeDataMaintainer_.SaveMuteToMap(device, streamType, mute);
+    SaveMuteToDbAsync(device, streamType, mute);
     return SetVolumeDb(device, streamType);
 }
 
@@ -3108,18 +3066,11 @@ void AudioAdapterManager::QueryDeviceVolumeBehavior(std::shared_ptr<AudioDeviceD
     AUDIO_INFO_LOG("query ok");
 }
 
-void AudioAdapterManager::UpdateVolumeWhenDeviceConnect(
-    std::shared_ptr<AudioDeviceDescriptor> &desc, int32_t zoneId)
+void AudioAdapterManager::UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     CHECK_AND_RETURN_LOG(desc != nullptr, "UptdateVolumeWhenDeviceConnect desc is null");
-    if (zoneId > 0) {
-        volumeDataExtMaintainer_[desc->GetKey()]->InitDeviceVolumeMap(desc);
-        volumeDataExtMaintainer_[desc->GetKey()]->InitDeviceMuteMap(desc);
-    } else {
-        volumeDataMaintainer_.InitDeviceVolumeMap(desc);
-        volumeDataMaintainer_.InitDeviceMuteMap(desc);
-    }
-    
+    volumeDataMaintainer_.InitDeviceVolumeMap(desc);
+    volumeDataMaintainer_.InitDeviceMuteMap(desc);
     AUDIO_INFO_LOG("update ok");
 }
 

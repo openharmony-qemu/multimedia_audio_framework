@@ -346,7 +346,7 @@ void AudioDeviceCommon::RemoveOfflineDevice(const AudioDeviceDescriptor& updated
 }
 
 void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDeviceDescriptor& updatedDesc,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb, bool updateVolume)
 {
     RemoveOfflineDevice(updatedDesc);
     AUDIO_INFO_LOG("[%{public}s], devType:[%{public}d]", __func__, updatedDesc.deviceType_);
@@ -398,6 +398,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
         audioActiveDevice_.GetCurrentOutputDeviceMacAddr() == updatedDesc.macAddress_) {
         audioA2dpOffloadFlag_.SetA2dpOffloadFlag(NO_A2DP_DEVICE);
     }
+    CHECK_AND_RETURN_LOG(updateVolume, "no need to updateVolume");
     AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceDisconnect(devDesc);
 }
 
