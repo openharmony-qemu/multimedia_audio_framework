@@ -29,7 +29,7 @@ namespace AudioSuite {
 
 class AudioSuiteMixerNode : public AudioSuiteProcessNode {
 public:
-    AudioSuiteMixerNode(AudioNodeType nodeType, AudioFormat &audioFormat);
+    AudioSuiteMixerNode();
     virtual ~AudioSuiteMixerNode();
     bool Reset() override;
 protected:
@@ -58,7 +58,6 @@ private:
 
     uint32_t rate_sampleRate_ = SAMPLE_RATE_192000;
     uint32_t rate_channelCount_ = STEREO;
-    uint32_t rate_inputsampleRate_ = 0;
 
     AudioSamplingRate mixrate_ = SAMPLE_RATE_8000;
 };
