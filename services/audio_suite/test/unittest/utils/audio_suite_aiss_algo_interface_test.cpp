@@ -87,6 +87,16 @@ namespace {
         ASSERT_EQ(impl.Deinit(), SUCCESS);
     }
 
+    HWTEST_F(AudioSuiteAissAlgoInterfaceImplTest, ParameterTest, TestSize.Level0)
+    {
+        AudioSuiteAissAlgoInterfaceImpl impl;
+        std::string paramType = "Property";
+        std::string paramValue = "AISSVX";
+        ASSERT_EQ(impl.SetParameter(paramType, paramValue), SUCCESS);
+        ASSERT_EQ(impl.GetParameter(paramType, paramValue), SUCCESS);
+        ASSERT_EQ("AISSVX", paramValue);
+    }
+
     HWTEST_F(AudioSuiteAissAlgoInterfaceImplTest, ApplyProcessTest, TestSize.Level0)
     {
         AudioSuiteAissAlgoInterfaceImpl impl;
