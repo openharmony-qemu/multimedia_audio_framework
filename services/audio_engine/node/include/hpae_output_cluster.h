@@ -52,6 +52,9 @@ public:
     int32_t SetPriPaPower(void) override;
     int32_t SetSyncId(int32_t syncId) override;
     uint32_t GetLatency() override;
+
+    bool IsProcessBypassed() override;
+
 private:
     std::shared_ptr<HpaeMixerNode> mixerNode_ = nullptr;
     std::shared_ptr<HpaeSinkOutputNode> hpaeSinkOutputNode_ = nullptr;
@@ -61,6 +64,8 @@ private:
     uint32_t timeoutStopCount_ = 0;
     uint32_t frameLenMs_ = FRAME_LEN_MS_DEFAULT_MS;
     std::set<HpaeProcessorType> connectedProcessCluster_;
+
+    bool bypassed_ = false;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard
