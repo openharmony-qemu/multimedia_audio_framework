@@ -100,7 +100,10 @@ public:
         const AudioStreamInfo &streamInfo);
     bool IsStreamPropMatch(const AudioStreamInfo &streamInfo, std::list<std::shared_ptr<PipeStreamPropInfo>> &infos);
     bool PreferMultiChannelPipe(std::shared_ptr<AudioStreamDescriptor> &desc);
-    
+    std::shared_ptr<PipeStreamPropInfo> GetStreamPropInfoForMultiChannel(
+        std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<AdapterPipeInfo> &info,
+        AudioChannelLayout channelLayout);
+
     AudioPolicyConfigManager() : audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
         audioPolicyConfig_(AudioPolicyConfigData::GetInstance())
     {

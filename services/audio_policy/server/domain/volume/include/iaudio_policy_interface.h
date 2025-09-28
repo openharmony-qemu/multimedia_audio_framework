@@ -277,10 +277,12 @@ public:
         const SourceType &sourceType) = 0;
     virtual int32_t AddCaptureInjector() = 0;
     virtual int32_t RemoveCaptureInjector() = 0;
+
     virtual void UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDeviceDescriptor> &device,
         int32_t zoneId = 0) = 0;
     virtual void UpdateVolumeWhenDeviceDisconnect(std::shared_ptr<AudioDeviceDescriptor> &device) = 0;
     virtual void QueryDeviceVolumeBehavior(std::shared_ptr<AudioDeviceDescriptor> &device) = 0;
+    virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

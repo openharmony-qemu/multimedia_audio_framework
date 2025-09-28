@@ -2635,6 +2635,11 @@ int32_t HpaeManager::PeekAudioData(
         "sinkPort[%{public}u] not exit", sinkPortIndex);
     return sinkVirtualOutputNode->PeekAudioData(buffer, bufferSize, streamInfo);
 }
+
+bool HpaeManager::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout)
+{
+    return HpaePolicyManager::GetInstance().IsChannelLayoutSupportedForDspEffect(channelLayout);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

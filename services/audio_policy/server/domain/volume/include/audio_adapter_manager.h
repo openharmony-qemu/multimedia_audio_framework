@@ -320,6 +320,7 @@ public:
     void QueryDeviceVolumeBehavior(std::shared_ptr<AudioDeviceDescriptor> &device);
     int32_t GetMaxVolumeLevel(AudioVolumeType volumeType, std::shared_ptr<AudioDeviceDescriptor> desc);
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType, std::shared_ptr<AudioDeviceDescriptor> desc);
+    bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout);
 
 private:
     friend class PolicyCallbackImpl;

@@ -736,7 +736,9 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::ConvertToStreamDesc
     streamDesc->streamInfo_.customSampleRate = audioStreamParams.customSampleRate;
     streamDesc->streamInfo_.channels = static_cast<AudioChannel>(audioStreamParams.channels);
     streamDesc->streamInfo_.encoding = static_cast<AudioEncodingType>(audioStreamParams.encoding);
-    streamDesc->streamInfo_.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.channelLayout);
+    streamDesc->streamInfo_.channelLayout = audioStream_->ConvertChannelsToDefaultChannelLayout(
+        static_cast<AudioChannel>(audioStreamParams.channels),
+        static_cast<AudioChannelLayout>(audioStreamParams.channelLayout));
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
     streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->rendererInfo_ = rendererInfo_;

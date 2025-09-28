@@ -1850,8 +1850,8 @@ IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audi
     if (!audioModuleInfo.deviceType.empty()) {
         attr.deviceType = std::stoi(audioModuleInfo.deviceType);
     }
-    if (audioModuleInfo.className == "multichannel") {
-        attr.channelLayout = HDI_DEFAULT_MULTICHANNEL_CHANNELLAYOUT;
+    if (!audioModuleInfo.channelLayout.empty()) {
+        attr.channelLayout = static_cast<uint64_t>(std::stoul(audioModuleInfo.channelLayout));
     }
     return attr;
 }
@@ -3147,5 +3147,10 @@ void AudioAdapterManager::SaveMuteToDbAsync(std::shared_ptr<AudioDeviceDescripto
     }).detach();
 }
 
+bool AudioAdapterManager::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout)
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, false, "audioServiceAdapter is null");
+    return audioServiceAdapter_->IsChannelLayoutSupportedForDspEffect(channelLayout);
+}
 } // namespace AudioStandard
 } // namespace OHOS

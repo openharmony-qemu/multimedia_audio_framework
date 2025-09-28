@@ -691,6 +691,15 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
         return;
     }
 
+    // dynamic
+    if (pipeIt->second->name_ == "multichannel_output") {
+        auto streamProp = GetStreamPropInfoForMultiChannel(desc, pipeIt->second, temp.channelLayout);
+        if (streamProp != nullptr) {
+            info = streamProp;
+            return;
+        }
+    }
+
     auto streamProp = GetStreamPropInfoFromPipe(pipeIt->second, temp.format, temp.samplingRate, temp.channels);
     if (streamProp != nullptr) {
         info = streamProp;
@@ -813,7 +822,8 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetDynamicStreamPr
 }
 
 std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoFromPipe(
-    std::shared_ptr<AdapterPipeInfo> &info, AudioSampleFormat format, uint32_t sampleRate, AudioChannel channels)
+    std::shared_ptr<AdapterPipeInfo> &info,
+    AudioSampleFormat format, uint32_t sampleRate, AudioChannel channels)
 {
     std::shared_ptr<PipeStreamPropInfo> propInfo = GetDynamicStreamPropInfoFromPipe(info, format, sampleRate, channels);
     CHECK_AND_RETURN_RET(propInfo == nullptr, propInfo);
@@ -886,6 +896,45 @@ bool AudioPolicyConfigManager::IsStreamPropMatch(const AudioStreamInfo &streamIn
         }
     }
     return false;
+}
+
+std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoForMultiChannel(
+    std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<AdapterPipeInfo> &info,
+    AudioChannelLayout channelLayout)
+{
+    auto tempStreamProp = info->streamPropInfos_.front();
+
+    // for audiovivid, need convert to 5.1.2 channelLayout
+    if (desc->streamInfo_.encoding == AudioEncodingType::ENCODING_AUDIOVIVID) {
+        tempStreamProp->bufferSize_ = ((tempStreamProp->bufferSize_ * static_cast<uint32_t>(CHANNEL_8)) /
+            static_cast<uint32_t>(tempStreamProp->channels_));
+        tempStreamProp->channels_ = CHANNEL_8;
+        tempStreamProp->channelLayout_ = CH_LAYOUT_5POINT1POINT2;
+    }
+
+    // for pcm, need match channelLayout
+    if (desc->streamInfo_.encoding == AudioEncodingType::ENCODING_PCM) {
+        for (auto &streamProp : info->streamPropInfos_) {
+            if (streamProp && streamProp->channelLayout_ == channelLayout) {
+                tempStreamProp = streamProp;
+                break;
+            }
+        }
+    }
+
+    if (AudioPolicyManagerFactory::GetAudioPolicyManager().
+        IsChannelLayoutSupportedForDspEffect(tempStreamProp->channelLayout_)) {
+        return tempStreamProp;
+    }
+
+    AUDIO_INFO_LOG("not support channelLayout:%{public}" PRIu64, tempStreamProp->channelLayout_);
+    // use default 5.1 channelLayout for multi channel pipe
+    tempStreamProp->bufferSize_ =
+        ((tempStreamProp->bufferSize_ * static_cast<uint32_t>(CHANNEL_6)) /
+        static_cast<uint32_t>(tempStreamProp->channels_));
+    tempStreamProp->channels_ = CHANNEL_6;
+    tempStreamProp->channelLayout_ = CH_LAYOUT_5POINT1;
+    return tempStreamProp;
 }
 }
 }
