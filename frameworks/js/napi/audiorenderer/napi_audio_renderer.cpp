@@ -683,7 +683,8 @@ napi_value NapiAudioRenderer::Write(napi_env env, napi_callback_info info)
             AudioRendererInfo rendererInfo = {};
             napiAudioRenderer->audioRenderer_->GetRendererInfo(rendererInfo);
             std::string bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName();
-            NapiDfxUtils::ReportAudioMainThreadEvent(bundleName, NapiDfxUtils::SteamDirection::playback,
+            int32_t appUid = static_cast<int32_t>(getuid());
+            NapiDfxUtils::ReportAudioMainThreadEvent(appUid, NapiDfxUtils::SteamDirection::playback,
                 rendererInfo.streamUsage, NapiDfxUtils::MainThreadCallFunc::write);
         }
     }
@@ -2348,7 +2349,8 @@ void NapiAudioRenderer::RegisterRendererWriteDataCallback(napi_env env, napi_val
         AudioRendererInfo rendererInfo = {};
         napiRenderer->audioRenderer_->GetRendererInfo(rendererInfo);
         std::string bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName();
-        NapiDfxUtils::ReportAudioMainThreadEvent(bundleName, NapiDfxUtils::SteamDirection::playback,
+        int32_t appUid = static_cast<int32_t>(getuid());
+        NapiDfxUtils::ReportAudioMainThreadEvent(appUid, NapiDfxUtils::SteamDirection::playback,
             rendererInfo.streamUsage, NapiDfxUtils::MainThreadCallFunc::writeCb);
     }
 
