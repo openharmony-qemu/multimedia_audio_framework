@@ -138,7 +138,7 @@ ohos_shared_library("audio") {
     "napi:ace_napi",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "hisysevent::libhisysevent",
+    "hisysevent:libhisysevent",
   ]
 
   if (audio_framework_feature_hiview_enable) {
