@@ -683,8 +683,8 @@ napi_value NapiAudioRenderer::Write(napi_env env, napi_callback_info info)
             AudioRendererInfo rendererInfo = {};
             napiAudioRenderer->audioRenderer_->GetRendererInfo(rendererInfo);
             std::string bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName();
-            NapiDfxUtils::ReportAudioMainThreadEvent(bundleName, NapiDfxUtils::SteamDirection::PLAYBACK,
-                rendererInfo.streamUsage, NapiDfxUtils::MainThreadCallFunc::WRITE);
+            NapiDfxUtils::ReportAudioMainThreadEvent(bundleName, NapiDfxUtils::SteamDirection::playback,
+                rendererInfo.streamUsage, NapiDfxUtils::MainThreadCallFunc::write);
         }
     }
 
@@ -2348,8 +2348,8 @@ void NapiAudioRenderer::RegisterRendererWriteDataCallback(napi_env env, napi_val
         AudioRendererInfo rendererInfo = {};
         napiRenderer->audioRenderer_->GetRendererInfo(rendererInfo);
         std::string bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName();
-        NapiDfxUtils::ReportAudioMainThreadEvent(bundleName, NapiDfxUtils::SteamDirection::PLAYBACK,
-            rendererInfo.streamUsage, NapiDfxUtils::MainThreadCallFunc::WRITECB);
+        NapiDfxUtils::ReportAudioMainThreadEvent(bundleName, NapiDfxUtils::SteamDirection::playback,
+            rendererInfo.streamUsage, NapiDfxUtils::MainThreadCallFunc::writeCb);
     }
 
     AUDIO_INFO_LOG("Register Callback is successful");
