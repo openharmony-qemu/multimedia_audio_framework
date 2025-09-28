@@ -82,6 +82,9 @@ public:
         return channelConverter_.Process(framesize, in, inLen, out, outLen);
     }
 
+    int32_t ConvertProcess(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer,
+                           AudioSuitePcmBuffer *tmpPcmBuffer);
+
 protected:
     std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> outputStream_;
     std::shared_ptr<InputPort<AudioSuitePcmBuffer*>> inputStream_;
@@ -91,6 +94,9 @@ protected:
     std::unordered_set<std::shared_ptr<AudioNode>> finishedPrenodeSet;
 
 private:
+    int32_t CopyPcmBuffer(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer);
+    int32_t ChannelConvert(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer);
+    int32_t Resample(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer);
     Tap tap_;
     HPAE::ChannelConverter channelConverter_;
     std::unique_ptr<HPAE::ProResampler> proResampler_ = nullptr;

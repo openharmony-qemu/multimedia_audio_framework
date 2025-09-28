@@ -54,9 +54,14 @@ HWTEST_F(AudioSuiteNrAlgoInterfaceImplUnitTest, TestNrAlgoInitAndDeinit_001, Tes
     AudioSuiteNrAlgoInterfaceImpl nrAlgo;
     EXPECT_EQ(nrAlgo.Init(), 0);
     EXPECT_EQ(nrAlgo.Deinit(), 0);
+
+    EXPECT_EQ(nrAlgo.Deinit(), 0);
+
+    EXPECT_EQ(nrAlgo.Init(), 0);
+    EXPECT_EQ(nrAlgo.Deinit(), 0);
 }
 
-HWTEST_F(AudioSuiteNrAlgoInterfaceImplUnitTest, TestNrAlgoApply_001, TestSize.Level0)
+HWTEST_F(AudioSuiteNrAlgoInterfaceImplUnitTest, TestNrAlgoApplyOK_001, TestSize.Level0)
 {
     AudioSuiteNrAlgoInterfaceImpl nrAlgo;
     std::vector<uint8_t *> audioInputs(1);
@@ -73,7 +78,20 @@ HWTEST_F(AudioSuiteNrAlgoInterfaceImplUnitTest, TestNrAlgoApply_001, TestSize.Le
     EXPECT_EQ(nrAlgo.Deinit(), 0);
 }
 
-HWTEST_F(AudioSuiteNrAlgoInterfaceImplUnitTest, TestNrAlgoApply_002, TestSize.Level0)
+HWTEST_F(AudioSuiteNrAlgoInterfaceImplUnitTest, TestNrAlgoApplyNOK_002, TestSize.Level0)
+{
+    AudioSuiteNrAlgoInterfaceImpl nrAlgo;
+    std::vector<uint8_t *> audioInputs(1);
+    std::vector<uint8_t *> audioOutputs(1);
+    std::vector<int16_t> dataIn(AUDIO_AINR_PCM_16K_FRAME_LEN, 0);
+    std::vector<int16_t> dataOut(AUDIO_AINR_PCM_16K_FRAME_LEN, 0);
+    audioInputs[0] = reinterpret_cast<uint8_t *>(dataIn.data());
+    audioOutputs[0] = reinterpret_cast<uint8_t *>(dataOut.data());
+
+    EXPECT_EQ(nrAlgo.Apply(audioInputs, audioOutputs), ERROR);
+}
+
+HWTEST_F(AudioSuiteNrAlgoInterfaceImplUnitTest, TestNrAlgoApplyPcmFile_003, TestSize.Level0)
 {
     AudioSuiteNrAlgoInterfaceImpl nrAlgo;
     std::vector<uint8_t *> audioInputs(1);
@@ -82,18 +100,19 @@ HWTEST_F(AudioSuiteNrAlgoInterfaceImplUnitTest, TestNrAlgoApply_002, TestSize.Le
 
     EXPECT_EQ(nrAlgo.Init(), 0);
 
-    // 处理输入文件
+    // Read inputfile
     std::ifstream ifs(g_inputPcmFilePath, std::ios::binary);
     ifs.seekg(0, std::ios::end);
     size_t fileSize = ifs.tellg();
     ifs.seekg(0, std::ios::beg);
-    // pcm文件长度可能不是帧长的整数倍，补0后再传给算法处理
+    // Padding zero then send to algo
     size_t zeroPaddingSize = (fileSize % frameSize == 0) ? 0 : (frameSize - fileSize % frameSize);
     size_t fileBufferSize = fileSize + zeroPaddingSize;
     std::vector<int16_t> inputfileBuffer(fileBufferSize / sizeof(int16_t), 0);  // 16-bit PCM file
     ifs.read(reinterpret_cast<char *>(inputfileBuffer.data()), fileSize);
     ifs.close();
 
+    // Apply algorithm
     std::vector<uint8_t> outputfileBuffer(fileBufferSize);
     uint8_t *frameInputPtr = reinterpret_cast<uint8_t *>(inputfileBuffer.data());
     uint8_t *frameOutputPtr = outputfileBuffer.data();
@@ -105,12 +124,12 @@ HWTEST_F(AudioSuiteNrAlgoInterfaceImplUnitTest, TestNrAlgoApply_002, TestSize.Le
         frameOutputPtr += frameSize;
     }
 
-    // 输出pcm数据写入文件
+    // write to outputfile
     ASSERT_EQ(CreateOutputPcmFile(g_outputPcmFilePath), true);
     bool isWriteFileSucc = WritePcmFile(g_outputPcmFilePath, outputfileBuffer.data(), fileSize);
     ASSERT_EQ(isWriteFileSucc, true);
 
-    // 和归档结果比对
+    // compare result
     EXPECT_EQ(IsFilesEqual(g_outputPcmFilePath, g_targetPcmFilePath), true);
 
     EXPECT_EQ(nrAlgo.Deinit(), 0);

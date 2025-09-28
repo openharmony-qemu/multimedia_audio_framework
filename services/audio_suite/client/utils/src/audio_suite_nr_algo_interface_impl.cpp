@@ -42,10 +42,20 @@ AudioSuiteNrAlgoInterfaceImpl::AudioSuiteNrAlgoInterfaceImpl()
 AudioSuiteNrAlgoInterfaceImpl::~AudioSuiteNrAlgoInterfaceImpl()
 {
     AUDIO_INFO_LOG("AudioSuiteNrAlgoInterfaceImpl::~AudioSuiteNrAlgoInterfaceImpl()");
+    Deinit();
 }
 
-int32_t AudioSuiteNrAlgoInterfaceImpl::LoadAlgorithmFunction(void)
+int32_t AudioSuiteNrAlgoInterfaceImpl::Init()
 {
+    AUDIO_INFO_LOG("start init ainr algorithm");
+
+    // load algorithm so
+    std::string soPath = ALGO_PATH_BASE + ALGO_SO_NAME;
+    libHandle_ = dlopen(soPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
+    CHECK_AND_RETURN_RET_LOG(libHandle_ != nullptr, ERROR, "dlopen algo: %{private}s so fail, error: %{public}s",
+        soPath.c_str(), dlerror());
+
+    // load functions in ainr algorithm so
     algoApi_.getVersion = reinterpret_cast<FunAudioAinrGetVersion>(dlsym(libHandle_, "AudioAinrGetVersion"));
     algoApi_.getSize = reinterpret_cast<FunAudioAinrGetSize>(dlsym(libHandle_, "AudioAinrGetSize"));
     algoApi_.initAlgo = reinterpret_cast<FunAudioAinrInit>(dlsym(libHandle_, "AudioAinrInit"));
@@ -53,60 +63,29 @@ int32_t AudioSuiteNrAlgoInterfaceImpl::LoadAlgorithmFunction(void)
 
     bool loadAlgoApiFail = algoApi_.getVersion == nullptr || algoApi_.getSize == nullptr ||
                            algoApi_.initAlgo == nullptr || algoApi_.applyAlgo == nullptr;
-
-    return loadAlgoApiFail ? ERROR : SUCCESS;
-}
-
-int32_t AudioSuiteNrAlgoInterfaceImpl::ApplyAndWaitReady(void)
-{
-    AUDIO_INFO_LOG("start load ainr algo so");
-
-    std::string soPath = ALGO_PATH_BASE + ALGO_SO_NAME;
-    libHandle_ = dlopen(soPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
-    if (libHandle_ == nullptr) {
-        AUDIO_ERR_LOG("dlopen algo: %{private}s so fail, error: %{public}s", soPath.c_str(), dlerror());
+    if (loadAlgoApiFail) {
+        AUDIO_ERR_LOG("load ainr algorithm function fail");
+        Deinit();
         return ERROR;
     }
 
-    if (LoadAlgorithmFunction() != SUCCESS) {
-        AUDIO_ERR_LOG("LoadAlgorithmFunction fail");
-        UnApply();
-        return ERROR;
-    }
-
-    AUDIO_INFO_LOG("end load ainr algo so");
-    return SUCCESS;
-}
-
-
-void AudioSuiteNrAlgoInterfaceImpl::UnApply(void)
-{
-    AUDIO_INFO_LOG("start unload ainr algo so");
-
-    if (libHandle_ != nullptr) {
-        static_cast<void>(dlclose(libHandle_));
-    }
-    libHandle_ = nullptr;
-    static_cast<void>(memset_s(&algoApi_, sizeof(algoApi_), 0, sizeof(algoApi_)));
-
-    AUDIO_INFO_LOG("end unload ainr algo so");
-}
-
-int32_t AudioSuiteNrAlgoInterfaceImpl::Init()
-{
-    AUDIO_INFO_LOG("start init ainr algorithm");
-
-    int32_t ret = ApplyAndWaitReady();
-    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
-
+    // allocate memory for ainr algorithm
     int32_t chanSize = 0;
-    ret = algoApi_.getSize(&chanSize);
-    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_AINR_EOK, ret, "Get ainr algo chanSize fail, error: %{public}d", ret);
-    AUDIO_INFO_LOG("Get ainr algo chanSize: %{public}d", chanSize);
-
+    int32_t ret = algoApi_.getSize(&chanSize);
+    if (ret != AUDIO_AINR_EOK || chanSize <= 0) {
+        AUDIO_ERR_LOG("Get ainr algorithm chanSize error, ret: %{public}d, chanSize: %{public}d", ret, chanSize);
+        Deinit();
+        return ERROR;
+    }
     algoHandle_ = std::make_unique<signed char[]>(chanSize);
+
+    // init ainr algorithm
     ret = algoApi_.initAlgo(algoHandle_.get(), &algoDefaultConfig_, static_cast<uint32_t>(chanSize));
-    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_AINR_EOK, ret, "Init ainr algo fail, ret: %{public}d", ret);
+    if (ret != AUDIO_AINR_EOK) {
+        AUDIO_ERR_LOG("Init ainr algorithm fail, ret: %{public}d", ret);
+        Deinit();
+        return ERROR;
+    }
 
     AUDIO_INFO_LOG("end init ainr algorithm");
     return SUCCESS;
@@ -116,8 +95,12 @@ int32_t AudioSuiteNrAlgoInterfaceImpl::Deinit()
 {
     AUDIO_INFO_LOG("start deinit ainr algorithm");
 
+    if (libHandle_ != nullptr) {
+        static_cast<void>(dlclose(libHandle_));
+        libHandle_ = nullptr;
+    }
+    static_cast<void>(memset_s(&algoApi_, sizeof(algoApi_), 0, sizeof(algoApi_)));
     algoHandle_.reset();
-    UnApply();
     
     AUDIO_INFO_LOG("end deinit ainr algorithm");
     return SUCCESS;
@@ -125,17 +108,15 @@ int32_t AudioSuiteNrAlgoInterfaceImpl::Deinit()
 
 int32_t AudioSuiteNrAlgoInterfaceImpl::Apply(std::vector<uint8_t *> &audioInputs, std::vector<uint8_t *> &audioOutputs)
 {
-    AUDIO_INFO_LOG("start apply ainr algorithm");
+    AUDIO_DEBUG_LOG("Apply ainr algorithm");
+    
+    CHECK_AND_RETURN_RET_LOG(
+        !audioInputs.empty() && !audioOutputs.empty(), ERROR, "Invalid audioInputs or audioOutputs");
 
-    if (audioInputs.empty() ||  audioOutputs.empty()) {
-        AUDIO_ERR_LOG("Apply para check fail, input or output list is empty");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(
+        audioInputs[0] != nullptr && audioOutputs[0] != nullptr, ERROR, "Apply input para is nullptr");
 
-    if (audioInputs[0] == nullptr || audioOutputs[0] == nullptr) {
-        AUDIO_ERR_LOG("Apply para check fail, input or output is nullptr");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(algoHandle_ != nullptr, ERROR, "Apply para algoHandle_ is nullptr, need init first");
 
     AudioAinrDataTransferStruct audioData = AudioAinrDataTransferStruct();
     audioData.dataIn = reinterpret_cast<int16_t *>(audioInputs[0]);

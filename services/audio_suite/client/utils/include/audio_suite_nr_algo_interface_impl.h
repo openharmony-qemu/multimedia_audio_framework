@@ -47,9 +47,6 @@ public:
     int32_t Apply(std::vector<uint8_t *> &audioInputs, std::vector<uint8_t *> &audioOutputs) override;
 
 private:
-    int32_t LoadAlgorithmFunction(void);
-    int32_t ApplyAndWaitReady(void);
-    void UnApply(void);
     AinrAlgoApi algoApi_{0};
     std::unique_ptr<signed char[]> algoHandle_{nullptr};
     AudioAinrStruSysConfig algoDefaultConfig_{0};
