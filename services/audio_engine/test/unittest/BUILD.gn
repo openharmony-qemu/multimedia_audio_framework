@@ -85,7 +85,7 @@ ohos_unittest("hpae_injector_renderer_manager_test") {
   module_out_path = module_output_path
   sources = [
     "common/test_case_common.cpp",
-    "manager/hpae_render_manager_test.cpp",
+    "manager/hpae_injector_renderer_manager_test.cpp",
   ]
 
   configs = [ ":audio_engine_private_config" ]

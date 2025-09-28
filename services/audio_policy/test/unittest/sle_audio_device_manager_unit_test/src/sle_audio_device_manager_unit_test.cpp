@@ -403,6 +403,23 @@ HWTEST(SleAudioDeviceManagerUnitTest, GetSleStreamType_002, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test GetSleStreamTypeByStreamUsage.
+ * @tc.number: GetSleStreamType_003
+ * @tc.desc  : Test SleAudioDeviceManager::GetSleStreamTypeByStreamUsage && GetSleStreamTypeBySourceType.
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, GetSleStreamType_003, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    
+    StreamUsage streamUsage = STREAM_USAGE_MUSIC;
+    bool isGame = true;
+
+    uint32_t ret = sleAudioDeviceManager_->GetSleStreamTypeByStreamUsage(streamUsage, isGame);
+    EXPECT_EQ(ret, SLE_AUDIO_STREAM_GAME);
+}
+
+/**
  * @tc.name  : Test GetSourceTypesBySleStreamType && GetStreamUsagesBySleStreamType.
  * @tc.number: BySleStreamType_001
  * @tc.desc  : Test SleAudioDeviceManager::GetSourceTypesBySleStreamType && GetStreamUsagesBySleStreamType.

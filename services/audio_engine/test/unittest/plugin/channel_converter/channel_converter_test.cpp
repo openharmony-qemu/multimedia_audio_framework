@@ -98,7 +98,7 @@ void ChannelConverterTest::TearDown() {}
  * @tc.number : SetParam
  * @tc.desc : Test SetParam interface with normal input and output channelLayout
 */
-HWTEST_F(ChannelConverterTest, ChannelConverterTestSetParam001, TestSize.Level0)
+HWTEST_F(ChannelConverterTest, ChannelConverterTestSetParam_001, TestSize.Level0)
 {
     AudioChannelInfo inChannelInfo;
     AudioChannelInfo outChannelInfo;
@@ -132,7 +132,7 @@ HWTEST_F(ChannelConverterTest, ChannelConverterTestSetParam001, TestSize.Level0)
  * @tc.number : SetParam
  * @tc.desc : Test SetParam interface with HOA input and output
 */
-HWTEST_F(ChannelConverterTest, ChannelConverterTestSetParam002, TestSize.Level0)
+HWTEST_F(ChannelConverterTest, ChannelConverterTestSetParam_002, TestSize.Level0)
 {
     AudioChannelInfo inChannelInfo = {CH_LAYOUT_HOA_ORDER1_ACN_N3D, BitCounts(CH_LAYOUT_HOA_ORDER1_ACN_N3D)};
     AudioChannelInfo outChannelInfo = {CH_LAYOUT_9POINT1POINT4, BitCounts(CH_LAYOUT_9POINT1POINT4)};
@@ -154,7 +154,7 @@ HWTEST_F(ChannelConverterTest, ChannelConverterTestSetParam002, TestSize.Level0)
  * @tc.number : SetParam
  * @tc.desc : Test SetParam interface with invalid channel number, channel number of 11, 13, 15 are not supported
 */
-HWTEST_F(ChannelConverterTest, ChannelConverterTestSetParam003, TestSize.Level0)
+HWTEST_F(ChannelConverterTest, ChannelConverterTestSetParam_003, TestSize.Level0)
 {
     AudioChannelInfo inChannelInfo;
     AudioChannelInfo outChannelInfo = {CH_LAYOUT_9POINT1POINT4, BitCounts(CH_LAYOUT_9POINT1POINT4)};
@@ -164,10 +164,15 @@ HWTEST_F(ChannelConverterTest, ChannelConverterTestSetParam003, TestSize.Level0)
         inChannelInfo.numChannels = numChannels;
         int32_t ret = converter.SetParam(inChannelInfo, outChannelInfo, SAMPLE_F32LE, MIX_FLE);
         EXPECT_EQ(ret, MIX_ERR_INVALID_ARG);
+        EXPECT_EQ(converter.GetInChannelInfo().channelLayout, inChannelInfo.channelLayout);
+        EXPECT_EQ(converter.GetInChannelInfo().numChannels, inChannelInfo.numChannels);
+        EXPECT_EQ(converter.GetOutChannelInfo().channelLayout, outChannelInfo.channelLayout);
+        EXPECT_EQ(converter.GetOutChannelInfo().numChannels, outChannelInfo.numChannels);
+        EXPECT_EQ(converter.isInitialized_, false);
     }
 }
 
-HWTEST_F(ChannelConverterTest, ChannelConverterTestProcessTest, TestSize.Level0)
+HWTEST_F(ChannelConverterTest, ChannelConverterProcessTest_001, TestSize.Level0)
 {
     // test upmix
     AudioChannelInfo inChannelInfo;
@@ -190,6 +195,23 @@ HWTEST_F(ChannelConverterTest, ChannelConverterTestProcessTest, TestSize.Level0)
     EXPECT_EQ(channelConverter.SetParam(inChannelInfo, outChannelInfo, SAMPLE_F32LE, MIX_FLE), MIX_ERR_SUCCESS);
     EXPECT_EQ(channelConverter.Process(TEST_BUFFER_LEN, in.data(), in.size() * sizeof(float), out.data(),
         out.size() * sizeof(float)), MIX_ERR_SUCCESS);
+}
+
+HWTEST_F(ChannelConverterTest, ChannelConverterProcessTest_002, TestSize.Level0)
+{
+    // test process when channelConverter is invalid
+    AudioChannelInfo inChannelInfo;
+    AudioChannelInfo outChannelInfo;
+    inChannelInfo.numChannels = NUM_11;
+    inChannelInfo.channelLayout = CH_LAYOUT_UNKNOWN;
+    outChannelInfo.numChannels = NUM_13;
+    outChannelInfo.channelLayout = CH_LAYOUT_UNKNOWN;
+    ChannelConverter channelConverter;
+    std::vector<float> in(TEST_BUFFER_LEN * NUM_11, 0.0f);
+    std::vector<float> out(TEST_BUFFER_LEN * NUM_13, 0.0f);
+    EXPECT_EQ(channelConverter.SetParam(inChannelInfo, outChannelInfo, SAMPLE_F32LE, MIX_FLE), MIX_ERR_INVALID_ARG);
+    EXPECT_EQ(channelConverter.Process(TEST_BUFFER_LEN, in.data(), in.size() * sizeof(float), out.data(),
+        out.size() * sizeof(float)), MIX_ERR_ALLOC_FAILED);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

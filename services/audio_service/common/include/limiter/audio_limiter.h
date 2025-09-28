@@ -19,6 +19,8 @@
 #include <cstdio>
 #include <cstdint>
 #include <string>
+#include <vector>
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -26,12 +28,12 @@ class AudioLimiter {
 public:
     AudioLimiter(int32_t sinkIndex);
     ~AudioLimiter();
-    int32_t SetConfig(int32_t maxRequest, int32_t biteSize, int32_t sampleRate, int32_t channels);
-    int32_t Process(int32_t frameLen, float *inBuffer, float *outBuffer);
+    int32_t SetConfig(int32_t inputFrameBytes, int32_t bytePerSample, int32_t sampleRate, int32_t channels);
+    int32_t Process(int32_t inputSampleCount, float *inBuffer, float *outBuffer);
     uint32_t GetLatency();
+
 private:
-    void ProcessAlgo(int algoFrameLen, float *inBuffer, float *outBuffer);
-    void ReleaseBuffer();
+    void ProcessAlgo(float *inBuffer, float *outBuffer);
     uint32_t latency_;
     int32_t sinkIndex_;
     int32_t algoFrameLen_;
@@ -44,7 +46,7 @@ private:
     float levelRelease_;
     float gainAttack_;
     float gainRelease_;
-    float *bufHis_;
+    std::vector<float> bufHis_;
     uint32_t sampleRate_;
     uint32_t channels_;
     FILE *dumpFileInput_ = nullptr;
@@ -53,6 +55,6 @@ private:
     std::string dumpFileNameOut_ = "";
 };
 
-} // namespace AudioStandard
-} // namespace OHOS
-#endif // AUDIO_LIMITER_H
+}  // namespace AudioStandard
+}  // namespace OHOS
+#endif  // AUDIO_LIMITER_H

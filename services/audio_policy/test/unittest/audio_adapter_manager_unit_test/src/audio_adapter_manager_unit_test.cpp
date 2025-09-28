@@ -132,13 +132,15 @@ HWTEST_F(AudioAdapterManagerUnitTest, IsHandleStreamMute_002, TestSize.Level1)
 HWTEST_F(AudioAdapterManagerUnitTest, SetOffloadSessionId_001, TestSize.Level1)
 {
     uint32_t sessionId = MIN_STREAMID - 1;
-    AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId);
+    OffloadAdapter adapter = OFFLOAD_IN_PRIMARY;
+    AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId, adapter);
 
     sessionId = MAX_STREAMID + 1;
-    AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId);
+    adapter = OFFLOAD_IN_REMOTE;
+    AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId, adapter);
 
     sessionId = MIN_STREAMID + 1;
-    AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId);
+    AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId, adapter);
 }
 
 /**
@@ -357,6 +359,90 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetAudioSourceAttr_001, TestSize.Level1)
     info.channelLayout = "263"; // 263 = 100000111
     IAudioSourceAttr attr = audioAdapterManager->GetAudioSourceAttr(info);
     EXPECT_EQ(attr.channelLayout, 263); // 263 = 100000111
+}
+
+/**
+ * @tc.name: Test GetMaxVolumeLevel_New
+ * @tc.number: GetMaxVolumeLevel_New
+ * @tc.type: FUNC
+ * @tc.desc: GetMaxVolumeLevel_New
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetMaxVolumeLevel_New, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    int32_t ret = audioAdapterManager->GetMaxVolumeLevel(STREAM_APP, desc);
+    EXPECT_EQ(ret, audioAdapterManager->appConfigVolume_.maxVolume);
+    ret = audioAdapterManager->GetMinVolumeLevel(STREAM_APP, desc);
+    EXPECT_EQ(ret, audioAdapterManager->appConfigVolume_.minVolume);
+}
+
+/**
+ * @tc.name: Test SetAudioVolume
+ * @tc.number: SetAudioVolume
+ * @tc.type: FUNC
+ * @tc.desc: SetAudioVolume
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetAudioVolume, TestSize.Level1)
+{
+    auto ad = std::make_shared<AudioAdapterManager>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    AudioStreamType type = STREAM_MUSIC;
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    ad->isAbsVolumeScene_ = true;
+    ad->SetAudioVolume(desc, type, 0);
+    EXPECT_EQ(ad->IsAbsVolumeScene(), true);
+
+    type = STREAM_APP;
+    ad->SetAudioVolume(desc, type, 0);
+    EXPECT_EQ(ad->IsAbsVolumeScene(), true);
+    
+    ad->isAbsVolumeScene_ = false;
+    ad->SetAudioVolume(desc, type, 0);
+    EXPECT_EQ(ad->IsAbsVolumeScene(), false);
+
+    type = STREAM_MUSIC;
+    ad->SetAudioVolume(desc, type, 0);
+    EXPECT_EQ(ad->IsAbsVolumeScene(), false);
+
+    desc->deviceType_ = DEVICE_TYPE_NEARLINK;
+
+    ad->isAbsVolumeScene_ = true;
+    ad->SetAudioVolume(desc, type, 0);
+    EXPECT_EQ(ad->IsAbsVolumeScene(), true);
+
+    type = STREAM_APP;
+    ad->SetAudioVolume(desc, type, 0);
+    EXPECT_EQ(ad->IsAbsVolumeScene(), true);
+    
+    ad->isAbsVolumeScene_ = false;
+    ad->SetAudioVolume(desc, type, 0);
+    EXPECT_EQ(ad->IsAbsVolumeScene(), false);
+
+    type = STREAM_MUSIC;
+    ad->SetAudioVolume(desc, type, 0);
+    EXPECT_EQ(ad->IsAbsVolumeScene(), false);
+}
+
+/**
+ * @tc.name: GetDeviceVolume_001
+ * @tc.desc: Test GetDeviceVolume
+ * @tc.type: FUNC
+ * @tc.require: #ICMEH8
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetDeviceVolume_001, TestSize.Level1)
+{
+    audioAdapterManager_->Init();
+    AudioStreamType streamType = STREAM_MUSIC;
+    int32_t volumeLevel = 5;
+    DeviceType deviceType = DEVICE_TYPE_WIRED_HEADSET;
+    int32_t minVolume = audioAdapterManager_->GetMinVolumeLevel(streamType);
+    int32_t maxVolume = audioAdapterManager_->GetMaxVolumeLevel(streamType);
+    ASSERT_TRUE(volumeLevel >= minVolume && volumeLevel <= maxVolume);
+    int32_t result = audioAdapterManager_->SaveSpecifiedDeviceVolume(streamType, volumeLevel, deviceType);
+    ASSERT_EQ(result, 0);
+    auto volume = audioAdapterManager_->GetDeviceVolume(deviceType, streamType);
+    EXPECT_EQ(volume, volumeLevel);
 }
 } // namespace AudioStandard
 } // namespace OHOS

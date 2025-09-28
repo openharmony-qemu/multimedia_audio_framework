@@ -128,6 +128,11 @@ public:
         return nodeInfo_.deviceNetId;
     }
 
+    virtual std::string GetDeviceName()
+    {
+        return nodeInfo_.deviceName;
+    }
+
     virtual std::string GetNodeName()
     {
         return nodeInfo_.nodeName;

@@ -55,6 +55,7 @@ int32_t DownMixer::SetParam(AudioChannelInfo inChannelInfo, AudioChannelInfo out
     outChannels_ = outChannelInfo.numChannels;
     mixLfe_ = mixLfe;
 
+    isInitialized_ = false;
     CHECK_AND_RETURN_RET_LOG((inChannels_ >= 0) && (inChannels_ <= MAX_CHANNELS), MIX_ERR_INVALID_ARG,
         "invalid input channels");
     CHECK_AND_RETURN_RET_LOG((outChannels_ >= 0) && (outChannels_ <= MAX_CHANNELS), MIX_ERR_INVALID_ARG,

@@ -170,10 +170,6 @@ void AudioEffectChainManager::SetSpkOffloadState()
             spkOffloadEnabled_ = false;
         }
 
-        if (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && (btOffloadEnabled_)) {
-            return;
-        }
-
         AUDIO_INFO_LOG("recover all chains if device type not bt.");
         RecoverAllChains();
     }
@@ -1071,7 +1067,12 @@ void AudioEffectChainManager::SetSpatializationEnabledToChains()
         if (audioEffectChain == nullptr) {
             continue;
         }
-        audioEffectChain->SetSpatializationEnabledForFading(spatializationEnabled_);
+
+        if (btOffloadEnabled_ == false) {
+            audioEffectChain->SetSpatializationEnabledForFading(spatializationEnabled_);
+        } else {
+            audioEffectChain->SetSpatializationEnabledForFading(false);
+        }
     }
 }
 // LCOV_EXCL_STOP

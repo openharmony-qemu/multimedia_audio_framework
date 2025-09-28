@@ -67,8 +67,7 @@ int32_t HpaeVirtualCapturerManager::Start(uint32_t sessionId)
     std::lock_guard<std::mutex> lock(captureMutex_);
     CHECK_AND_RETURN_RET_LOG(captureStream_.find(sessionId) != captureStream_.end(), SUCCESS,
         "sessionId %{public}u is not exist", sessionId);
-    auto captureInfo = captureStream_[sessionId];
-    SetSessionState(captureInfo, HPAE_SESSION_RUNNING);
+    SetSessionState(captureStream_[sessionId], HPAE_SESSION_RUNNING);
     return SUCCESS;
 }
 
@@ -78,8 +77,7 @@ int32_t HpaeVirtualCapturerManager::Pause(uint32_t sessionId)
     std::lock_guard<std::mutex> lock(captureMutex_);
     CHECK_AND_RETURN_RET_LOG(captureStream_.find(sessionId) != captureStream_.end(), SUCCESS,
         "sessionId %{public}u is not exist", sessionId);
-    auto captureInfo = captureStream_[sessionId];
-    SetSessionState(captureInfo, HPAE_SESSION_PAUSED);
+    SetSessionState(captureStream_[sessionId], HPAE_SESSION_PAUSED);
     TriggerSyncCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
         HPAE_SESSION_PAUSED, OPERATION_PAUSED);
     return SUCCESS;
@@ -110,8 +108,7 @@ int32_t HpaeVirtualCapturerManager::Stop(uint32_t sessionId)
     std::lock_guard<std::mutex> lock(captureMutex_);
     CHECK_AND_RETURN_RET_LOG(captureStream_.find(sessionId) != captureStream_.end(), SUCCESS,
         "sessionId %{public}u is not exist", sessionId);
-    auto captureInfo = captureStream_[sessionId];
-    SetSessionState(captureInfo, HPAE_SESSION_STOPPED);
+    SetSessionState(captureStream_[sessionId], HPAE_SESSION_STOPPED);
     TriggerSyncCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
         HPAE_SESSION_STOPPED, OPERATION_STOPPED);
     return SUCCESS;
@@ -166,7 +163,7 @@ int32_t HpaeVirtualCapturerManager::SetStreamMute(uint32_t sessionId, bool isMut
         "sessionId %{public}u is not exist", sessionId);
     auto captureInfo = captureStream_[sessionId];
     CHECK_AND_RETURN_RET_LOG(captureInfo.sourceOutputNode, SUCCESS, "captureInfo.sourceOutputNode is nullptr");
-    captureInfo.sourceOutputNode->SetMute(isMute);
+    captureStream_[sessionId].sourceOutputNode->SetMute(isMute);
     return SUCCESS;
 }
 
