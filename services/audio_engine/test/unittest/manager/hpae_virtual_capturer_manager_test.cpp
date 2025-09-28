@@ -155,7 +155,7 @@ HWTEST_F(HpaeVirtualCapturerManagerTest, HpaeVirtualCapturerManagerPause_001, Te
     EXPECT_EQ(stream.sessionInfo.state, HPAE_SESSION_PAUSED);
     EXPECT_EQ(stream.sourceOutputNode->GetState(), HPAE_SESSION_PAUSED);
 }
-}
+
 
 /*
  * tc.name   : Test HpaeVirtualCapturerManager API
