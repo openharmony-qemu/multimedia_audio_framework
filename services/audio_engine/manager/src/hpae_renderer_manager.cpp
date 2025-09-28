@@ -639,7 +639,7 @@ void HpaeRendererManager::DisConnectInputCluster(uint32_t sessionId, HpaeProcess
 void HpaeRendererManager::DisConnectOutputCluster(HpaeProcessorType sceneType)
 {
     if (SafeGetMap(sceneClusterMap_, sceneType) && sceneClusterMap_[sceneType]->GetPreOutNum() == 0 &&
-        sceneClusterMap_[sceneType]->GetConnectedFlag) {
+        sceneClusterMap_[sceneType]->GetConnectedFlag()) {
         sceneClusterMap_[sceneType]->DisConnectMixerNode();
         if (outputCluster_ != nullptr) {
             outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
