@@ -171,32 +171,6 @@ void AudioSuiteProcessNode::HandleTapCallback(AudioSuitePcmBuffer* pcmBuffer)
         pcmBuffer->GetFrameLen() * sizeof(float));
 }
 
-int32_t AudioSuiteProcessNode::SetUpResample(uint32_t inRate, uint32_t outRate, uint32_t channels, uint32_t quality)
-{
-    if (proResampler_ == nullptr) {
-        proResampler_ = std::make_unique<HPAE::ProResampler>(inRate, outRate, channels, quality);
-        return RESAMPLER_ERR_SUCCESS;
-    }
-
-    proResampler_->Reset();
-    int32_t ret = proResampler_->UpdateRates(inRate, outRate);
-    CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret,
-        "ProResampler update rate failed with error code %{public}d", ret);
-
-    ret = proResampler_->UpdateChannels(channels);
-    CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret,
-        "ProResampler update Channels failed with error code %{public}d", ret);
-
-    return ret;
-}
-
-int32_t AudioSuiteProcessNode::DoResampleProcess(const float *inBuffer, uint32_t inFrameSize,
-    float *outBuffer, uint32_t outFrameSize)
-{
-    CHECK_AND_RETURN_RET_LOG(proResampler_ != nullptr, ERROR, "ProResampler_ is nullptr");
-    return proResampler_->Process(inBuffer, inFrameSize, outBuffer, outFrameSize);
-}
-
 }
 }
 }

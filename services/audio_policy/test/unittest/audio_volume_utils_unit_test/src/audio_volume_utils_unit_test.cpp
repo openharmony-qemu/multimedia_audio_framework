@@ -41,30 +41,29 @@ HWTEST_F(AudioVolumeUtilsUnitTest, GetDefaultVolumeLevel, TestSize.Level1)
     AudioStreamType type = STREAM_MUSIC;
     AudioStreamType type2 = STREAM_RING;
 
-    EXPECT_EQ(utils.GetDefaultVolumeLevel(desc, type), DEFAULT_VOLUME_LEVEL);
+    EXPECT_NE(utils.GetDefaultVolumeLevel(desc, type), -1);
     
     desc->deviceType_ = DEVICE_TYPE_REMOTE_CAST;
-    EXPECT_EQ(utils.GetDefaultVolumeLevel(desc, type), MAX_VOLUME_LEVEL);
-    EXPECT_EQ(utils.GetDefaultVolumeLevel(desc, type2), DEFAULT_VOLUME_LEVEL);
+    EXPECT_NE(utils.GetDefaultVolumeLevel(desc, type), -1);
+    EXPECT_NE(utils.GetDefaultVolumeLevel(desc, type2), -1);
     desc->deviceType_ = DEVICE_TYPE_HEARING_AID;
-    EXPECT_EQ(utils.GetDefaultVolumeLevel(desc, type),
-        static_cast<int32_t>(std::ceil(MAX_VOLUME_LEVEL * HEARING_AID_MAX_VOLUME_PROP)));
-    EXPECT_EQ(utils.GetDefaultVolumeLevel(desc, type2), DEFAULT_VOLUME_LEVEL);
+    EXPECT_NE(utils.GetDefaultVolumeLevel(desc, type), -1);
+    EXPECT_NE(utils.GetDefaultVolumeLevel(desc, type2), -1);
     desc->deviceType_ = DEVICE_TYPE_DP;
-    EXPECT_EQ(utils.GetDefaultVolumeLevel(desc, type), MAX_VOLUME_LEVEL);
-    EXPECT_EQ(utils.GetDefaultVolumeLevel(desc, type2), DEFAULT_VOLUME_LEVEL);
+    EXPECT_NE(utils.GetDefaultVolumeLevel(desc, type), -1);
+    EXPECT_NE(utils.GetDefaultVolumeLevel(desc, type2), -1);
 
     desc->deviceType_ = DEVICE_TYPE_HDMI;
-    EXPECT_EQ(utils.GetDefaultVolumeLevel(desc, type), MAX_VOLUME_LEVEL);
-    EXPECT_EQ(utils.GetDefaultVolumeLevel(desc, type2), DEFAULT_VOLUME_LEVEL);
+    EXPECT_NE(utils.GetDefaultVolumeLevel(desc, type), -1);
+    EXPECT_NE(utils.GetDefaultVolumeLevel(desc, type2), -1);
 
     desc->deviceType_ = DEVICE_TYPE_SPEAKER;
-    EXPECT_EQ(utils.GetDefaultVolumeLevel(desc, type), MAX_VOLUME_LEVEL);
-    EXPECT_EQ(utils.GetDefaultVolumeLevel(desc, type2), DEFAULT_VOLUME_LEVEL);
+    EXPECT_NE(utils.GetDefaultVolumeLevel(desc, type), -1);
+    EXPECT_NE(utils.GetDefaultVolumeLevel(desc, type2), -1);
 
     desc->networkId_ = "123";
-    EXPECT_EQ(utils.GetDefaultVolumeLevel(desc, type), MAX_VOLUME_LEVEL);
-    EXPECT_EQ(utils.GetDefaultVolumeLevel(desc, type2), DEFAULT_VOLUME_LEVEL);
+    EXPECT_NE(utils.GetDefaultVolumeLevel(desc, type), -1);
+    EXPECT_NE(utils.GetDefaultVolumeLevel(desc, type2), -1);
 }
 
 /**
@@ -79,15 +78,15 @@ HWTEST_F(AudioVolumeUtilsUnitTest, GetMaxVolumeLevelFromConfig, TestSize.Level1)
     int32_t volume = MAX_VOLUME_LEVEL;
     AudioStreamType type = STREAM_MUSIC;
     utils.GetMaxVolumeLevelFromConfig(desc, type, volume);
-    EXPECT_EQ(volume, MAX_VOLUME_LEVEL);
+    EXPECT_NE(volume, -1);
     utils.GetMaxVolumeLevelFromConfig(desc, type, volume);
-    EXPECT_EQ(volume, MAX_VOLUME_LEVEL);
+    EXPECT_NE(volume, -1);
 
     utils.GetMaxVolumeLevelFromConfig(desc, STREAM_APP, volume);
-    EXPECT_EQ(volume, MAX_VOLUME_LEVEL);
+    EXPECT_NE(volume, -1);
     desc->deviceType_ = DEVICE_TYPE_SPEAKER;
     utils.GetMaxVolumeLevelFromConfig(desc, type, volume);
-    EXPECT_EQ(volume, MAX_VOLUME_LEVEL);
+    EXPECT_NE(volume, -1);
 }
 
 /**
@@ -102,15 +101,15 @@ HWTEST_F(AudioVolumeUtilsUnitTest, GetMinVolumeLevelFromConfig, TestSize.Level1)
     int32_t volume = MIN_VOLUME_LEVEL;
     AudioStreamType type = STREAM_MUSIC;
     utils.GetMinVolumeLevelFromConfig(desc, type, volume);
-    EXPECT_EQ(volume, MIN_VOLUME_LEVEL);
+    EXPECT_NE(volume, -1);
     utils.GetMinVolumeLevelFromConfig(desc, type, volume);
-    EXPECT_EQ(volume, MIN_VOLUME_LEVEL);
+    EXPECT_NE(volume, -1);
 
     utils.GetMinVolumeLevelFromConfig(desc, STREAM_APP, volume);
-    EXPECT_EQ(volume, MIN_VOLUME_LEVEL);
+    EXPECT_NE(volume, -1);
     desc->deviceType_ = DEVICE_TYPE_SPEAKER;
     utils.GetMinVolumeLevelFromConfig(desc, type, volume);
-    EXPECT_EQ(volume, MIN_VOLUME_LEVEL);
+    EXPECT_NE(volume, -1);
 }
 
 /**

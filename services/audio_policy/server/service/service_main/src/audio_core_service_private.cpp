@@ -2962,8 +2962,6 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
 
         ResetNearlinkDeviceState(deviceDesc, isRunning);
 
-        std::string sinkPort = AudioPolicyUtils::GetInstance().GetSinkPortName(DEVICE_TYPE_BLUETOOTH_A2DP);
-        audioPolicyManager_.SuspendAudioDevice(sinkPort, true);
         Bluetooth::AudioHfpManager::SetActiveHfpDevice("");
 
         int32_t result = std::visit(runDeviceActivationFlow, audioStreamConfig);

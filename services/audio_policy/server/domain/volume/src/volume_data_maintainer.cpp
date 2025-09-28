@@ -856,7 +856,7 @@ int32_t VolumeDataMaintainer::SaveVolumeToDb(std::shared_ptr<AudioDeviceDescript
             "Save volume to datashare success, volumeLevel %{public}d",
             device->GetName().c_str(), streamType, volumeLevel);
     }
-    return true;
+    return SUCCESS;
 }
 void VolumeDataMaintainer::SaveVolumeToMap(std::shared_ptr<AudioDeviceDescriptor> device,
     AudioStreamType streamType, int32_t volumeLevel)

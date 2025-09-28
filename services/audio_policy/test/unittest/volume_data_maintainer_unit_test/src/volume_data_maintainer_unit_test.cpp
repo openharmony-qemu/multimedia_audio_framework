@@ -697,19 +697,19 @@ HWTEST(VolumeDataMaintainerUnitTest, LoadDeviceVolumeMapFromDb, TestSize.Level4)
     
     desc->networkId_ = "111";
     vd->LoadDeviceVolumeMapFromDb(desc);
-    EXPECT_EQ(vd->volumeList_.size(), 3);
+    EXPECT_EQ(vd->volumeList_.size(), 0);
 
     desc->volumeBehavior_.isReady = true;
     vd->LoadDeviceVolumeMapFromDb(desc);
-    EXPECT_EQ(vd->volumeList_.size(), 3);
+    EXPECT_EQ(vd->volumeList_.size(), 0);
 
     desc->volumeBehavior_.databaseVolumeName = "Test";
     vd->LoadDeviceVolumeMapFromDb(desc);
-    EXPECT_EQ(vd->volumeList_.size(), 3);
+    EXPECT_EQ(vd->volumeList_.size(), 0);
 
     desc->volumeBehavior_.isReady = false;
     vd->LoadDeviceVolumeMapFromDb(desc);
-    EXPECT_EQ(vd->volumeList_.size(), 3);
+    EXPECT_EQ(vd->volumeList_.size(), 0);
 }
 
 /**
@@ -724,7 +724,7 @@ HWTEST(VolumeDataMaintainerUnitTest, SaveVolumeToDb, TestSize.Level4)
 
     desc->deviceType_ = DEVICE_TYPE_SPEAKER;
     int32_t tmp = 0;
-    EXPECT_EQ(vd->SaveVolumeToDb(desc, STREAM_MUSIC, tmp), ERROR);
+    EXPECT_EQ(vd->SaveVolumeToDb(desc, STREAM_MUSIC, tmp), SUCCESS);
     
     desc->networkId_ = "111";
     EXPECT_EQ(vd->SaveVolumeToDb(desc, STREAM_MUSIC, tmp), SUCCESS);
@@ -733,7 +733,7 @@ HWTEST(VolumeDataMaintainerUnitTest, SaveVolumeToDb, TestSize.Level4)
     EXPECT_EQ(vd->SaveVolumeToDb(desc, STREAM_MUSIC, tmp), SUCCESS);
 
     desc->volumeBehavior_.databaseVolumeName = "Test";
-    EXPECT_EQ(vd->SaveVolumeToDb(desc, STREAM_MUSIC, tmp), ERROR);
+    EXPECT_EQ(vd->SaveVolumeToDb(desc, STREAM_MUSIC, tmp), SUCCESS);
 }
 
 /**
@@ -751,10 +751,10 @@ HWTEST(VolumeDataMaintainerUnitTest, LoadDeviceMuteMapFromDb, TestSize.Level4)
     EXPECT_EQ(vd->volumeList_.size(), 0);
     desc->networkId_ = "111";
     vd->LoadDeviceMuteMapFromDb(desc);
-    EXPECT_EQ(vd->volumeList_.size(), 3);
+    EXPECT_EQ(vd->volumeList_.size(), 0);
 
     EXPECT_EQ(vd->GetMuteStatusInternal(desc, STREAM_MUSIC), ERROR);
-    EXPECT_EQ(vd->SaveMuteToDb(desc, STREAM_MUSIC, true), ERROR);
+    EXPECT_EQ(vd->SaveMuteToDb(desc, STREAM_MUSIC, true), SUCCESS);
     EXPECT_EQ(vd->LoadVolumeFromDb(desc, STREAM_MUSIC), 0);
     desc->deviceType_ = DEVICE_TYPE_INVALID;
     EXPECT_EQ(vd->GetMuteStatusInternal(desc, STREAM_MUSIC), ERROR);

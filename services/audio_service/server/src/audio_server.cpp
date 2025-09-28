@@ -2839,7 +2839,7 @@ int32_t AudioServer::GenerateSessionId(uint32_t &sessionId)
 {
     int32_t uid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(GENERATE_SESSIONID_UID_SET.count(uid) == 1, ERROR, "uid is %{public}d, not mcu uid", uid);
-    sessionId = PolicyHandler::GetInstance().GenerateSessionId(uid);
+    sessionId = CoreServiceHandler::GetInstance().GenerateSessionId();
     return SUCCESS;
 }
 

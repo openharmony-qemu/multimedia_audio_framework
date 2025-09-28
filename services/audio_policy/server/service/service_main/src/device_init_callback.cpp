@@ -76,7 +76,13 @@ void DeviceStatusCallbackImpl::OnDeviceChanged(const DistributedHardware::DmDevi
     auto dmDev = ParseDmDevice(dmDeviceInfo);
     if (!dmDev.deviceName_.empty()) {
         AudioConnectedDevice::GetInstance().UpdateDmDeviceMap(std::move(dmDev), true);
+        return;
     }
+    DmDevice dmDevCommon {};
+    dmDevCommon.deviceName_ = dmDeviceInfo.deviceName;
+    dmDevCommon.networkId_ = dmDeviceInfo.networkId;
+    dmDevCommon.dmDeviceType_ = dmDeviceInfo.deviceTypeId;
+    AudioConnectedDevice::GetInstance().UpdateDmDeviceMap(std::move(dmDevCommon), true);
 }
 
 void DeviceStatusCallbackImpl::OnDeviceOnline(const DistributedHardware::DmDeviceInfo &dmDeviceInfo)
@@ -86,7 +92,13 @@ void DeviceStatusCallbackImpl::OnDeviceOnline(const DistributedHardware::DmDevic
     auto dmDev = ParseDmDevice(dmDeviceInfo);
     if (!dmDev.deviceName_.empty()) {
         AudioConnectedDevice::GetInstance().UpdateDmDeviceMap(std::move(dmDev), true);
+        return;
     }
+    DmDevice dmDevCommon {};
+    dmDevCommon.deviceName_ = dmDeviceInfo.deviceName;
+    dmDevCommon.networkId_ = dmDeviceInfo.networkId;
+    dmDevCommon.dmDeviceType_ = dmDeviceInfo.deviceTypeId;
+    AudioConnectedDevice::GetInstance().UpdateDmDeviceMap(std::move(dmDevCommon), true);
 }
 
 void DeviceStatusCallbackImpl::OnDeviceOffline(const DistributedHardware::DmDeviceInfo &dmDeviceInfo)

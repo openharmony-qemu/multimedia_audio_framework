@@ -238,17 +238,6 @@ void EffectChainManagerReturnEffectChannelInfoFuzzTest()
 #endif
 }
 
-void EffectChainManagerQueryHdiSupportedChannelLayoutFuzzTest()
-{
-#ifdef SUPPORT_OLD_ENGINE
-    uint32_t channels = GetData<uint32_t>();
-    uint64_t channelLayout = GetData<uint64_t>();
-    // Intentionally test with nullptr for fuzzing
-    EffectChainManagerQueryHdiSupportedChannelLayout(nullptr, nullptr);
-    EffectChainManagerQueryHdiSupportedChannelLayout(&channels, &channelLayout);
-#endif
-}
-
 void EffectChainManagerSceneCheckFuzzTest()
 {
 #ifdef SUPPORT_OLD_ENGINE
@@ -425,7 +414,6 @@ FuzzFunc *g_fuzzFuncs[] = {
     ConvertChLayoutToPaChMapFuzzTest,
     EffectChainManagerDeleteSessionInfoFuzzTest,
     EffectChainManagerReturnEffectChannelInfoFuzzTest,
-    EffectChainManagerQueryHdiSupportedChannelLayoutFuzzTest,
     EffectChainManagerSceneCheckFuzzTest,
     EffectChainManagerGetSceneCountFuzzTest,
     AudioEnhanceChainMoreFuzzTest,

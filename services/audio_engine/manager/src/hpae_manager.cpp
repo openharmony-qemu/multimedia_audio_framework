@@ -948,8 +948,6 @@ int32_t HpaeManager::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t s
 
         std::string name = rendererIdSinkNameMap_[sinkInputId];
         if (sinkName == name) {
-            HILOG_COMM_INFO("sink:%{public}s is the same, no need move session:%{public}u", sinkName.c_str(),
-                sinkInputId);
             if (auto serviceCallback = serviceCallback_.lock()) {
                 serviceCallback->OnMoveSinkInputByIndexOrNameCb(SUCCESS);
             }
@@ -2634,6 +2632,11 @@ int32_t HpaeManager::PeekAudioData(
     CHECK_AND_RETURN_RET_LOG(sinkVirtualOutputNode != nullptr, ERROR_INVALID_PARAM,
         "sinkPort[%{public}u] not exit", sinkPortIndex);
     return sinkVirtualOutputNode->PeekAudioData(buffer, bufferSize, streamInfo);
+}
+
+bool HpaeManager::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout)
+{
+    return HpaePolicyManager::GetInstance().IsChannelLayoutSupportedForDspEffect(channelLayout);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
