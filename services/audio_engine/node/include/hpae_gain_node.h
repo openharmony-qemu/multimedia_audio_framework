@@ -40,7 +40,7 @@ public:
 protected:
     HpaePcmBuffer *SignalProcess(const std::vector<HpaePcmBuffer *> &inputs) override;
 private:
-    bool isInnerCapturer_ = false;
+    bool isInnerCapturerOrInjector_ = false;
     float preGain_ = 1.0f;
     float curGain_ = 1.0f;
     bool isGainChanged_ = false;

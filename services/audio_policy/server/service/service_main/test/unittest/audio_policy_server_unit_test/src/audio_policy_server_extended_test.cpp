@@ -224,6 +224,9 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_009, TestSize.Level4)
 {
     audioPolicyServer_->interruptService_ = std::make_shared<AudioInterruptService>();
     audioPolicyServer_->audioPolicyServerHandler_ = DelayedSingleton<AudioPolicyServerHandler>::GetInstance();
+    audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
+    audioPolicyServer_->coreService_->Init();
+    audioPolicyServer_->eventEntry_ = audioPolicyServer_->coreService_->GetEventEntry();
 
     pid_t pid = 1;
     pid_t uid = 1;

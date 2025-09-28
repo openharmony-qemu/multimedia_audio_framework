@@ -103,6 +103,7 @@ private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
     int32_t StartRenderSink();
     bool IsMchDevice();
+    bool IsRemoteDevice();
     int32_t CreateInputSession(const HpaeStreamInfo &streamInfo);
     int32_t DeleteInputSession(uint32_t sessionId);
     bool isSplitProcessorType(HpaeProcessorType sceneType);
@@ -141,10 +142,14 @@ private:
     int32_t DeleteProcessClusterInner(uint32_t sessionId, HpaeProcessorType sceneType);
     void RefreshProcessClusterByDeviceInner(const std::shared_ptr<HpaeSinkInputNode> &node);
     void TriggerStreamState(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode> &node);
-    void UpdateStreamType(const std::shared_ptr<HpaeNode> sourceNode, std::shared_ptr<HpaeNode> dstNode);
+    void UpdateStreamProp(const std::shared_ptr<const HpaeNode> &sourceNode, const std::shared_ptr<HpaeNode> &dstNode);
     bool IsClusterDisConnected(HpaeProcessorType sceneType);
 
 private:
+    void OneStreamEnableBypassOnUnderrun();
+    void SleepIfBypassOnUnderrun();
+    void ResetAllBypassFlags();
+
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;
     std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeProcessCluster>> sceneClusterMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSinkInputNode>> sinkInputNodeMap_;
@@ -162,6 +167,9 @@ private:
     bool isCollaborationEnabled_ = false;
     int64_t noneStreamTime_ = 0; // if no stream, 3s time out to stop rendersink
     bool isNeedInitEffectBufferFlag_ = false;
+
+    int32_t lastOnUnderrunTime_ = 0;
+    bool enableBypassOnUnderrun_ = true;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

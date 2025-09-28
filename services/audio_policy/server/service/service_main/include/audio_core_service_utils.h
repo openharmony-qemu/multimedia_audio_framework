@@ -36,7 +36,7 @@ public:
     static bool IsDualStreamWhenRingDual(AudioStreamType streamType);
     static bool IsOverRunPlayback(AudioMode &mode, RendererState rendererState);
     static bool IsRingDualToneOnPrimarySpeaker(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
-        const int32_t sessionId);
+        const int32_t sessionId, AudioStreamCollector& streamCollector_);
     static bool NeedDualHalToneInStatus(AudioRingerMode mode, StreamUsage usage,
         bool isPcVolumeEnable, bool isMusicMute);
     static bool IsDualOnActive();

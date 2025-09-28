@@ -1680,7 +1680,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_0
 
     audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
 
-    EXPECT_EQ(audioCoreService->audioVolumeManager_.IsRingerModeMute(), false);
+    EXPECT_EQ(audioCoreService->audioVolumeManager_.IsRingerModeMute(), true);
 
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateRingerOrAlarmerDualDeviceOutputRouter_005 end");
 }
@@ -1785,7 +1785,7 @@ HWTEST_F(AudioCoreServiceUnitTest, SetSleVoiceStatusFlag_001, TestSize.Level1)
 HWTEST_F(AudioCoreServiceUnitTest, SetRendererTarget_001, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_EQ(audioCoreService, nullptr);
+    EXPECT_NE(audioCoreService, nullptr);
     int32_t ret = ERROR;
     ret = audioCoreService->SetRendererTarget(NORMAL_PLAYBACK, INJECT_TO_VOICE_COMMUNICATION_CAPTURE, 1111);
     EXPECT_NE(ret, SUCCESS);

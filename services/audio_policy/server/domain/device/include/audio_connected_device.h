@@ -77,6 +77,9 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> GetUsbDeviceDescriptor(const std::string &address, const DeviceRole role);
     void UpdateSpatializationSupported(const std::string macAddress, const bool support);
     void RegisterNameMonitorHelper();
+    bool IsEmpty();
+    std::shared_ptr<AudioDeviceDescriptor> GetDeviceByDeviceType(DeviceType type,
+        std::string networkId = LOCAL_NETWORK_ID);
 private:
     AudioConnectedDevice() {}
     ~AudioConnectedDevice() {}
@@ -85,6 +88,8 @@ private:
     std::mutex dmDeviceMtx_;
     std::unordered_map<std::string, DmDevice> dmDeviceMap_;
     std::shared_mutex mutex_;
+    std::shared_ptr<AudioDeviceDescriptor> defaultOutputDevice_ =
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
 };
 }
 }

@@ -37,7 +37,7 @@ std::shared_ptr<IHpaeRendererManager> IHpaeRendererManager::CreateRendererManage
     } else if ((sinkInfo.deviceName.compare(0, DEVICE_NAME_INNER_CAP.length(), DEVICE_NAME_INNER_CAP) == 0)
         || sinkInfo.deviceName == DEVICE_NAME_CAST_INNER_CAP) {
         return std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
-    } else if (sinkInfo.deviceName == "Virtual_Injector") { // todo : rewrite device name
+    } else if (sinkInfo.deviceName == VIRTUAL_INJECTOR) {
         return std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
     }
     return std::make_shared<HpaeRendererManager>(sinkInfo);

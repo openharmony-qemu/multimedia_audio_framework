@@ -108,9 +108,14 @@ public:
         return nodeInfo_.sessionId;
     }
 
-    virtual AudioStreamType GetStreamType()
+    virtual AudioStreamType GetStreamType() const
     {
         return nodeInfo_.streamType;
+    }
+
+    virtual StreamUsage GetEffectStreamUsage() const
+    {
+        return nodeInfo_.effectInfo.streamUsage;
     }
 
     virtual HpaeProcessorType GetSceneType()
@@ -126,6 +131,11 @@ public:
     virtual std::string GetDeviceNetId()
     {
         return nodeInfo_.deviceNetId;
+    }
+
+    virtual std::string GetDeviceName()
+    {
+        return nodeInfo_.deviceName;
     }
 
     virtual std::string GetNodeName()

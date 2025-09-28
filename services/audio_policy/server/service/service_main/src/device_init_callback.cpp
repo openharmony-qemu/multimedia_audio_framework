@@ -69,15 +69,6 @@ DeviceStatusCallbackImpl::DeviceStatusCallbackImpl()
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
 }
 
-void DeviceStatusCallbackImpl::OnDeviceChanged(const DistributedHardware::DmDeviceBasicInfo &dmDeviceBasicInfo)
-{
-    std::string strDeviceName(dmDeviceBasicInfo.deviceName);
-    AUDIO_INFO_LOG("OnDeviceChanged");
-
-    //OnDeviceChanged listeren did not report networkId information
-    AudioConnectedDevice::GetInstance().SetDisplayName(strDeviceName, false);
-}
-
 void DeviceStatusCallbackImpl::OnDeviceChanged(const DistributedHardware::DmDeviceInfo &dmDeviceInfo)
 {
     AUDIO_INFO_LOG("Entry. dmDeviceType=%{public}d, networkId=%{public}s",

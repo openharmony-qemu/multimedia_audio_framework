@@ -51,8 +51,8 @@ ProResampler::ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels,
         "resampler input and output sample rate should be within [8000, 384000]. "
         "inRate_ %{public}d, outRate_ %{public}d is not valid", inRate_, outRate_);
     
-    CHECK_AND_RETURN_LOG(channels_ <= MAX_CHANNELS, "invalid channel number: %{public}d, "
-        "channel number should within [1, 10]", channels_);
+    CHECK_AND_RETURN_LOG((channels_ > 0) && (channels_ <= MAX_CHANNELS), "invalid channel number: %{public}d, "
+        "channel number should within [1, 16]", channels_);
     
     CHECK_AND_RETURN_LOG(quality <= MAX_QUALITY, "invalid quality level: %{public}d", quality);
 
@@ -213,15 +213,20 @@ int32_t ProResampler::Process10HzSampleRate(const float *inBuffer, uint32_t inFr
 
 int32_t ProResampler::UpdateRates(uint32_t inRate, uint32_t outRate)
 {
-    CHECK_AND_RETURN_RET_LOG(inRate != outRate, RESAMPLER_ERR_INVALID_ARG,
-        "input and output rate of ProResampler should be different! Same Rate: %{public}d", inRate);
-    CHECK_AND_RETURN_RET_LOG((inRate >= MIN_SAMPLE_RATE) && (inRate <= MAX_SAMPLE_RATE) &&
-        (outRate >= MIN_SAMPLE_RATE) && (outRate <= MAX_SAMPLE_RATE), RESAMPLER_ERR_INVALID_ARG,
-        "resampler input and output sample rate should be within [8000, 384000]. "
-        "inRate_ %{public}d, outRate_ %{public}d is not valid", inRate, outRate);
-    CHECK_AND_RETURN_RET_LOG(state_ != nullptr, RESAMPLER_ERR_ALLOC_FAILED, "resampler is null");
+    AUDIO_INFO_LOG("ProResampler inRate update: %{public}d -> %{public}d, outRate update: %{public}d -> %{public}d",
+        inRate_, inRate, outRate_, outRate);
     inRate_ = inRate;
     outRate_ = outRate;
+    // resampler change from valid state to invalid state
+    if ((inRate < MIN_SAMPLE_RATE) || (inRate > MAX_SAMPLE_RATE) || (outRate < MIN_SAMPLE_RATE) ||
+        (outRate > MAX_SAMPLE_RATE) || (inRate_ == outRate_)) {
+        AUDIO_ERR_LOG("resampler set to invalid state, input and output sample rate should be within [8000, 384000]"
+            "and be different");
+        CHECK_AND_RETURN_RET(state_ != nullptr, RESAMPLER_ERR_INVALID_ARG);
+        SingleStagePolyphaseResamplerFree(state_);
+        state_ = nullptr;
+        return RESAMPLER_ERR_INVALID_ARG;
+    }
     expectedOutFrameLen_ = outRate_ * FRAME_LEN_20MS / MS_PER_SECOND;
     expectedInFrameLen_ = inRate_ * FRAME_LEN_20MS / MS_PER_SECOND;
     if (inRate_ == SAMPLE_RATE_11025) {
@@ -229,7 +234,13 @@ int32_t ProResampler::UpdateRates(uint32_t inRate, uint32_t outRate)
     } else if (inRate_ % CUSTOM_SAMPLE_RATE_MULTIPLES != 0) {
         expectedInFrameLen_ = inRate_ * FRAME_LEN_20MS * BUFFER_EXPAND_SIZE_5 / MS_PER_SECOND;
     }
-    
+    if (state_ == nullptr) { // resampler can be updated from an invalid state to valid state
+        int32_t errRet = RESAMPLER_ERR_SUCCESS;
+        state_ = SingleStagePolyphaseResamplerInit(channels_, inRate_, outRate_, quality_, &errRet);
+        CHECK_AND_RETURN_RET_LOG(state_ && (errRet == RESAMPLER_ERR_SUCCESS), errRet,
+            "error code %{public}s", ErrCodeToString(errRet).c_str());
+        return SingleStagePolyphaseResamplerSkipHalfTaps(state_);
+    }
     int32_t ret = SingleStagePolyphaseResamplerSetRate(state_, inRate_, outRate_);
     CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret, "error code %{public}s", ErrCodeToString(ret).c_str());
     return ret;
@@ -237,16 +248,19 @@ int32_t ProResampler::UpdateRates(uint32_t inRate, uint32_t outRate)
 
 int32_t ProResampler::UpdateChannels(uint32_t channels)
 {
-    CHECK_AND_RETURN_RET_LOG(channels <= MAX_CHANNELS, RESAMPLER_ERR_INVALID_ARG,
-        "invalid channel number: %{public}d, channel number should within [1, 10]", channels);
-    CHECK_AND_RETURN_RET_LOG(state_ != nullptr, RESAMPLER_ERR_ALLOC_FAILED, "resampler is null");
-
-    AUDIO_INFO_LOG("update work channel success old channel: %{public}d, new channel: %{public}d",
-        channels_, channels);
-    
+    // if update channel, the only way to update SingleStagePolyphaseResampler is to create a new one
+    AUDIO_INFO_LOG("update work channel %{public}d -> %{public}d", channels_, channels);
     channels_ = channels;
-    SingleStagePolyphaseResamplerFree(state_);
-
+    if ((channels_ <= 0) || (channels_ > MAX_CHANNELS)) {
+        AUDIO_ERR_LOG("resampler set to invalid state, channel number should within [1, 16]");
+        CHECK_AND_RETURN_RET(state_ != nullptr, RESAMPLER_ERR_INVALID_ARG);
+        SingleStagePolyphaseResamplerFree(state_);
+        state_ = nullptr;
+        return RESAMPLER_ERR_INVALID_ARG;
+    }
+    if (state_ != nullptr) {
+        SingleStagePolyphaseResamplerFree(state_);
+    }
     int32_t errRet = RESAMPLER_ERR_SUCCESS;
     state_ = SingleStagePolyphaseResamplerInit(channels_, inRate_, outRate_, quality_, &errRet);
     CHECK_AND_RETURN_RET_LOG(state_ && (errRet == RESAMPLER_ERR_SUCCESS), errRet,
@@ -266,9 +280,7 @@ ProResampler::ProResampler(ProResampler &&other) noexcept
 ProResampler &ProResampler::operator=(ProResampler &&other) noexcept
 {
     if (this != &other) {
-        if (state_ != nullptr) {
-            SingleStagePolyphaseResamplerFree(state_);
-        }
+        SingleStagePolyphaseResamplerFree(state_);
         inRate_ = other.inRate_;
         outRate_ = other.outRate_;
         channels_ = other.channels_;
@@ -310,10 +322,8 @@ uint32_t ProResampler::GetQuality() const
 
 ProResampler::~ProResampler()
 {
-    if (state_ != nullptr) {
-        SingleStagePolyphaseResamplerFree(state_);
-        state_ = nullptr;
-    }
+    CHECK_AND_RETURN(state_ != nullptr);
+    SingleStagePolyphaseResamplerFree(state_);
 }
 
 std::string ProResampler::ErrCodeToString(int32_t errCode)

@@ -58,6 +58,9 @@ public:
     int32_t SetSinkState(StreamManagerState sinkState);
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid);
     uint32_t GetLatency();
+
+    bool IsProcessBypassed();
+
 private:
     void HandleRemoteTiming();
     void HandlePaPower(HpaePcmBuffer *pcmBuffer);
@@ -82,6 +85,8 @@ private:
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer intervalTimer_;
 #endif
+
+    bool bypassed_ = false;
 };
 
 }  // namespace HPAE

@@ -75,6 +75,16 @@
 #define STREAM_TYPE_NAVIGATION "13"
 #define STREAM_TYPE_VIDEO_COMMUNICATION "17"
 
+/**
+ * remote device splite stream enum
+ */
+enum HpaeSplitStreamType {
+    STREAM_TYPE_DEFAULT = 0,
+    STREAM_TYPE_MEDIA_NUM = 1,
+    STREAM_TYPE_COMMUNICATION_NUM = 2,
+    STREAM_TYPE_NAVIGATION_NUM = 13
+};
+
 char g_splitArr[MAX_PARTS][ARG_LEN] = {0};
 int g_splitNums = 0;
 
@@ -102,7 +112,8 @@ PA_MODULE_USAGE(
         "buffer_size=<custom buffer size>"
         "formats=<semi-colon separated sink formats>");
 
-static ssize_t SplitRenderWrite(struct SinkAdapter *sinkAdapter, pa_memchunk *pchunk, char *streamType);
+static ssize_t SplitRenderWrite(struct SinkAdapter *sinkAdapter, pa_memchunk *pchunk,
+    uint32_t splitStreamType);
 
 struct userdata {
     pa_core *core;
@@ -932,7 +943,7 @@ finish:
     AUDIO_DEBUG_LOG("Thread shutting down");
 }
 
-static void ProcessSplitHdiRender(struct userdata *u, pa_memchunk *chunk, char *streamType)
+static void ProcessSplitHdiRender(struct userdata *u, pa_memchunk *chunk, uint32_t splitStreamType)
 {
     CHECK_AND_RETURN_LOG(u != NULL, "u is null");
     CHECK_AND_RETURN_LOG(chunk != NULL, "chunk is null");
@@ -944,7 +955,7 @@ static void ProcessSplitHdiRender(struct userdata *u, pa_memchunk *chunk, char *
         pa_memblock_unref(chunk->memblock);
     } else if (!u->isHDISinkStarted) {
         pa_memblock_unref(chunk->memblock);
-    } else if (SplitRenderWrite(u->sinkAdapter, chunk, streamType) < 0) {
+    } else if (SplitRenderWrite(u->sinkAdapter, chunk, splitStreamType) < 0) {
         u->bytesDropped += chunk->length;
         AUDIO_ERR_LOG("RenderWrite failed");
     }
@@ -972,15 +983,15 @@ static void ThreadFuncWriteHDI(void *userdata)
 
         switch (code) {
             case HDI_RENDER_MEDIA: {
-                ProcessSplitHdiRender(u, &chunk, STREAM_TYPE_MEDIA);
+                ProcessSplitHdiRender(u, &chunk, STREAM_TYPE_MEDIA_NUM);
                 break;
             }
             case HDI_RENDER_COMMUNICATION: {
-                ProcessSplitHdiRender(u, &chunk, STREAM_TYPE_COMMUNICATION);
+                ProcessSplitHdiRender(u, &chunk, STREAM_TYPE_COMMUNICATION_NUM);
                 break;
             }
             case HDI_RENDER_NAVIGATION: {
-                ProcessSplitHdiRender(u, &chunk, STREAM_TYPE_NAVIGATION);
+                ProcessSplitHdiRender(u, &chunk, STREAM_TYPE_NAVIGATION_NUM);
                 break;
             }
             case QUIT:
@@ -993,7 +1004,7 @@ static void ThreadFuncWriteHDI(void *userdata)
     } while (!quit);
 }
 
-static ssize_t SplitRenderWrite(struct SinkAdapter *sinkAdapter, pa_memchunk *pchunk, char *streamType)
+static ssize_t SplitRenderWrite(struct SinkAdapter *sinkAdapter, pa_memchunk *pchunk, uint32_t splitStreamType)
 {
     size_t index;
     size_t length;
@@ -1011,7 +1022,7 @@ static ssize_t SplitRenderWrite(struct SinkAdapter *sinkAdapter, pa_memchunk *pc
         uint64_t writeLen = 0;
 
         int32_t ret = sinkAdapter->SinkAdapterSplitRenderFrame(sinkAdapter, ((char*)p + index),
-            (uint64_t)length, &writeLen, streamType);
+            (uint64_t)length, &writeLen, splitStreamType);
         if (writeLen > length) {
             AUDIO_ERR_LOG("Error writeLen > actual bytes. Length: %zu, Written: %" PRIu64 " bytes, %d ret",
                          length, writeLen, ret);

@@ -26,6 +26,7 @@ ohos_unittest("audio_server_unit_test") {
   sources = [ "./src/audio_server_unit_test.cpp" ]
 
   include_dirs = [
+    "../include",
     "../../../server/include",
     "../../../../audio_service/common/include",
     "../../../../audio_service/common",

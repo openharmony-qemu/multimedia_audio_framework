@@ -15,27 +15,26 @@
 #include "securec.h"
 #include "hpae_format_convert.h"
 
-
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-constexpr float FLOAT_EPS  = 1e-6f;
+constexpr float FLOAT_EPS = 1e-6f;
 constexpr int OFFSET_BIT_24 = 3;
 constexpr int BIT_DEPTH_TWO = 2;
 constexpr int BIT_8 = 8;
 constexpr int BIT_16 = 16;
-constexpr int  BIT_32 = 32;
+constexpr int BIT_32 = 32;
 
 static uint32_t Read24Bit(const uint8_t *p)
 {
-    return ((uint32_t) p[BIT_DEPTH_TWO] << BIT_16) | ((uint32_t) p[1] << BIT_8) | ((uint32_t) p[0]);
+    return ((uint32_t)p[BIT_DEPTH_TWO] << BIT_16) | ((uint32_t)p[1] << BIT_8) | ((uint32_t)p[0]);
 }
 
 static void Write24Bit(uint8_t *p, uint32_t u)
 {
-    p[BIT_DEPTH_TWO] = (uint8_t) (u >> BIT_16);
-    p[1] = (uint8_t) (u >> BIT_8);
-    p[0] = (uint8_t) u;
+    p[BIT_DEPTH_TWO] = (uint8_t)(u >> BIT_16);
+    p[1] = (uint8_t)(u >> BIT_8);
+    p[0] = (uint8_t)u;
 }
 
 static void ConvertFromU8ToFloat(unsigned n, const uint8_t *a, float *b)
@@ -93,7 +92,7 @@ static void ConvertFromFloatTo16Bit(unsigned n, const float *a, int16_t *b)
     for (; n > 0; n--) {
         float tmp = *a++;
         float v = CapMax(tmp) * (1 << (BIT_16 - 1));
-        *(b++) = (int16_t) v;
+        *(b++) = (int16_t)v;
     }
 }
 
@@ -102,7 +101,7 @@ static void ConvertFromFloatTo24Bit(unsigned n, const float *a, uint8_t *b)
     for (; n > 0; n--) {
         float tmp = *a++;
         float v = CapMax(tmp) * (1U << (BIT_32 - 1));
-        Write24Bit(b, ((int32_t) v) >> BIT_8);
+        Write24Bit(b, ((int32_t)v) >> BIT_8);
         b += OFFSET_BIT_24;
     }
 }
@@ -112,31 +111,35 @@ static void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b)
     for (; n > 0; n--) {
         float tmp = *a++;
         float v = CapMax(tmp) * (1U << (BIT_32 - 1));
-        *(b++) = (int32_t) v;
+        *(b++) = (int32_t)v;
     }
 }
 
-void ConvertToFloat(AudioSampleFormat format, unsigned n, void *src, float *dst)
+void ConvertToFloat(AudioSampleFormat format, unsigned inputSampleCount, void *src, float *dst)
 {
+    if (!src || !dst) {
+        return;
+    }
+
     int32_t ret;
     switch (format) {
         case SAMPLE_U8:
-            ConvertFromU8ToFloat(n, (const uint8_t *)src, dst);
+            ConvertFromU8ToFloat(inputSampleCount, (const uint8_t *)src, dst);
             break;
         case SAMPLE_S16LE:
-            ConvertFrom16BitToFloat(n, (const int16_t *)src, dst);
+            ConvertFrom16BitToFloat(inputSampleCount, (const int16_t *)src, dst);
             break;
         case SAMPLE_S24LE:
-            ConvertFrom24BitToFloat(n, (const uint8_t *)src, dst);
+            ConvertFrom24BitToFloat(inputSampleCount, (const uint8_t *)src, dst);
             break;
         case SAMPLE_S32LE:
-            ConvertFrom32BitToFloat(n, (const int32_t *)src, dst);
+            ConvertFrom32BitToFloat(inputSampleCount, (const int32_t *)src, dst);
             break;
         default:
-            ret = memcpy_s(dst, n * sizeof(float), (const float *)src, n * sizeof(float));
+            ret = memcpy_s(dst, inputSampleCount * sizeof(float), (const float *)src, inputSampleCount * sizeof(float));
             if (ret != 0) {
                 float *srcFloat = (float *)src;
-                for (uint32_t i = 0; i < n; i++) {
+                for (uint32_t i = 0; i < inputSampleCount; i++) {
                     dst[i] = srcFloat[i];
                 }
             }
@@ -144,31 +147,37 @@ void ConvertToFloat(AudioSampleFormat format, unsigned n, void *src, float *dst)
     }
 }
 
-void ConvertFromFloat(AudioSampleFormat format, unsigned n, float *src, void *dst)
+void ConvertFromFloat(AudioSampleFormat format, unsigned inputSampleCount, float *src, void *dst)
 {
+    if (!src || !dst) {
+        return;
+    }
+
     int32_t ret;
     switch (format) {
         case SAMPLE_U8:
-            ConvertFromFloatToU8(n, src, (uint8_t *)dst);
+            ConvertFromFloatToU8(inputSampleCount, src, (uint8_t *)dst);
             break;
         case SAMPLE_S16LE:
-            ConvertFromFloatTo16Bit(n, src, (int16_t *)dst);
+            ConvertFromFloatTo16Bit(inputSampleCount, src, (int16_t *)dst);
             break;
         case SAMPLE_S24LE:
-            ConvertFromFloatTo24Bit(n, src, (uint8_t *)dst);
+            ConvertFromFloatTo24Bit(inputSampleCount, src, (uint8_t *)dst);
             break;
         case SAMPLE_S32LE:
-            ConvertFromFloatTo32Bit(n, src, (int32_t *)dst);
+            ConvertFromFloatTo32Bit(inputSampleCount, src, (int32_t *)dst);
             break;
         default:
-            ret = memcpy_s(dst, n * sizeof(float), src, n * sizeof(float));
+            ret = memcpy_s(dst, inputSampleCount * sizeof(float), src, inputSampleCount * sizeof(float));
             if (ret != 0) {
                 float *dstFloat = (float *)dst;
-                for (uint32_t i = 0; i < n; i++) {
+                for (uint32_t i = 0; i < inputSampleCount; i++) {
                     dstFloat[i] = src[i];
                 }
             }
             break;
     }
 }
-}}}
+}  // namespace HPAE
+}  // namespace AudioStandard
+}  // namespace OHOS

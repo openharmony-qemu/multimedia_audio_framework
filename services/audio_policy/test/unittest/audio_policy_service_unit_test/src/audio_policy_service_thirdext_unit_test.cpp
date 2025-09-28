@@ -1547,6 +1547,42 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetStreamPropInfo_001, TestSize.Level
 
 /**
 * @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: GetStreamPropInfo_002
+* @tc.desc  : Test GetStreamPropInfo
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetStreamPropInfo_002, TestSize.Level1)
+{
+    uint32_t routerFlag = 520; // for multichannel_output
+    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(manager.Init(true), true);
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    configData.Reorganize();
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.front()->deviceRole_ = OUTPUT_DEVICE;
+    streamDesc->newDeviceDescs_.front()->networkId_ = "LocalDevice";
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_4POINT0;
+    streamDesc->routeFlag_ = AUDIO_OUTPUT_FLAG_MULTICHANNEL;
+    streamDesc->streamInfo_.encoding == AudioEncodingType::ENCODING_AUDIOVIVID;
+
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    manager.GetStreamPropInfo(streamDesc, streamPropInfo);
+    EXPECT_EQ(streamPropInfo->channels_, AudioChannel::CHANNEL_6);
+    EXPECT_EQ(streamPropInfo->channelLayout_, AudioChannelLayout::CH_LAYOUT_5POINT1);
+    streamDesc->streamInfo_.encoding == AudioEncodingType::ENCODING_PCM;
+    manager.GetStreamPropInfo(streamDesc, streamPropInfo);
+    EXPECT_EQ(streamPropInfo->channels_, AudioChannel::CHANNEL_6);
+    EXPECT_EQ(streamPropInfo->channelLayout_, AudioChannelLayout::CH_LAYOUT_5POINT1);
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
 * @tc.number: UpdateBasicStreamInfo_001
 * @tc.desc  : Test UpdateBasicStreamInfo
 */

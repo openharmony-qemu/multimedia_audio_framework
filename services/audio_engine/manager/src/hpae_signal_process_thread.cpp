@@ -15,6 +15,7 @@
 #include "hpae_signal_process_thread.h"
 #include "audio_qosmanager.h"
 #include "parameter.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -55,23 +56,34 @@ void HpaeSignalProcessThread::Run()
 {
     int32_t setPriority = GetIntParameter("const.multimedia.audio_setPriority", 1);
     SetThreadQosLevelAsync(setPriority);
-    while (running_.load() && streamManager_.lock() != nullptr) {
+    auto manager = streamManager_.lock();
+    while (running_.load() && manager != nullptr) {
         {
             std::unique_lock<std::mutex> lock(mutex_);
-            condition_.wait(lock, [this] {
-                return !running_.load() || streamManager_.lock()->IsRunning() ||
-                    streamManager_.lock()->IsMsgProcessing() || recvSignal_.load();
+            condition_.wait(lock, [this, manager] {
+                return !running_.load() || manager->IsRunning() ||
+                    manager->IsMsgProcessing() || recvSignal_.load();
             });
         }
-        if (streamManager_.lock()) {
-            streamManager_.lock()->HandleMsg();
-            streamManager_.lock()->Process();
-        }
+        manager->HandleMsg();
+        manager->Process();
         recvSignal_.store(false);
     }
     ResetThreadQosLevel();
 }
 
+void HpaeSignalProcessThread::SleepUntilNotify(int64_t sleepInUs)
+{
+    auto manager = streamManager_.lock();
+    CHECK_AND_RETURN(manager);
+    std::unique_lock<std::mutex> lock(mutex_);
+    auto duration = std::chrono::microseconds(sleepInUs);
+    condition_.wait_for(lock, duration, [this, manager] {
+        return !running_.load() ||
+               manager->IsMsgProcessing() ||
+               recvSignal_.load();
+    });
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
