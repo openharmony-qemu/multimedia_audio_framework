@@ -25,9 +25,11 @@
 #endif
 #endif
 #include "audio_utils.h"
+#include "audio_system_manager.h"
 #include "napi_param_utils.h"
 #include "napi_audio_error.h"
 #include "napi_audio_enum.h"
+#include "napi_dfx_utils.h"
 #include "napi_audio_renderer_callback.h"
 #include "napi_renderer_position_callback.h"
 #include "napi_renderer_data_request_callback.h"
@@ -44,6 +46,8 @@ int32_t NapiAudioRenderer::isConstructSuccess_ = SUCCESS;
 std::unique_ptr<AudioRendererOptions> NapiAudioRenderer::sRendererOptions_ = nullptr;
 static constexpr double MIN_LOUDNESS_GAIN_IN_DOUBLE = -90.0;
 static constexpr double MAX_LOUDNESS_GAIN_IN_DOUBLE = 24.0;
+std::atomic<bool> NapiAudioRenderer::firstWriteCalled_{false};
+std::atomic<bool> NapiAudioRenderer::firstRegWriteCbCalled_{false};
 
 NapiAudioRenderer::NapiAudioRenderer()
     : audioRenderer_(nullptr), contentType_(CONTENT_TYPE_MUSIC), streamUsage_(STREAM_USAGE_MEDIA), env_(nullptr) {}
@@ -668,6 +672,20 @@ napi_value NapiAudioRenderer::Write(napi_env env, napi_callback_info info)
         AUDIO_ERR_LOG("Write failed : no memory");
         NapiAudioError::ThrowError(env, "Write failed : no memory", NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    if ((!firstWriteCalled_.exchange(true, std::memory_order_relaxed)) &&
+        (getpid() == gettid())) {
+        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioRenderer = objectGuard.GetPtr();
+        if (CheckAudioRendererStatus(napiAudioRenderer, context) == true) {
+            AudioRendererInfo rendererInfo = {};
+            napiAudioRenderer->audioRenderer_->GetRendererInfo(rendererInfo);
+            std::string bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName();
+            NapiDfxUtils::ReportAudioMainThreadEvent(bundleName, NapiDfxUtils::SteamDirection::PLAYBACK,
+                rendererInfo.streamUsage, NapiDfxUtils::MainThreadCallFunc::WRITE);
+        }
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
@@ -2323,6 +2341,15 @@ void NapiAudioRenderer::RegisterRendererWriteDataCallback(napi_env env, napi_val
     cb->AddCallbackReference(cbName, argv[PARAM1]);
     if (!cb->GetWriteDTsfnFlag()) {
         cb->CreateWriteDTsfn(env);
+    }
+
+    if ((!firstRegWriteCbCalled_.exchange(true, std::memory_order_relaxed)) &&
+        (getpid() == gettid())) {
+        AudioRendererInfo rendererInfo = {};
+        napiRenderer->audioRenderer_->GetRendererInfo(rendererInfo);
+        std::string bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName();
+        NapiDfxUtils::ReportAudioMainThreadEvent(bundleName, NapiDfxUtils::SteamDirection::PLAYBACK,
+            rendererInfo.streamUsage, NapiDfxUtils::MainThreadCallFunc::WRITECB);
     }
 
     AUDIO_INFO_LOG("Register Callback is successful");

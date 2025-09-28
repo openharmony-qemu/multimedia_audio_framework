@@ -15,7 +15,9 @@
 
 #include <cstdio>
 #include "napi_dfx_utils.h"
+#include "hisysevent.h"
 #include "audio_common_log.h"
+#include "audio_info.h"
 #ifndef CROSS_PLATFORM
 #include "media_monitor_manager.h"
 #include "media_monitor_info.h"
@@ -35,6 +37,44 @@ void NapiDfxUtils::SendVolumeApiInvokeEvent(int32_t uid, const std::string &func
     bean->Add("PARAM_VALUE", paramValue);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 #endif
+}
+
+static const char* GetFuncReadable(bool direction, uint8_t functionType)
+{
+    if (direction == NapiDfxUtils::SteamDirection::PLAYBACK) {
+        switch (functionType) {
+            case 0: return "Write";
+            case 1: return "RegisterRendererWriteDataCallback";
+            default: return "UnknownRendererFunc";
+        }
+    } else {
+        switch (functionType) {
+            case 0: return "Read";
+            case 1: return "RegisterCaptureReadDataCallback";
+            default: return "UnknownCaptureFunc";
+        }
+    }
+}
+ 
+void NapiDfxUtils::ReportAudioMainThreadEvent(std::string bundleName, bool direction,
+        uint8_t usageOrSourceType, uint8_t functionType)
+{
+    const char* typeStr = direction ? "Capture" : "Renderer";
+    const char* keyStr  = direction ? "sourceType" : "usage";
+    const char* funcStr = GetFuncReadable(direction, functionType);
+ 
+    AUDIO_INFO_LOG("type=%{public}s, %{public}s=%{public}d, funcId=%{public}d(%{public}s)",
+        typeStr, keyStr, usageOrSourceType, functionType, funcStr);
+
+    auto ret = HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "PROCESS_AUDIO_BY_MAINTHREAD",
+        HiviewDFX::HiSysEvent::EventType::STATISTIC,
+        "BUNDLENAME", bundleName,
+        "AUDIODIRECTION", direction,
+        "AUDIOSTREAM", usageOrSourceType,
+        "CALLFUNC", functionType);
+    if (ret) {
+        AUDIO_ERR_LOG("write event fail: PROCESS_AUDIO_BY_MAINTHREAD, ret = %{public}d", ret);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

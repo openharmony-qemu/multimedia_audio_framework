@@ -23,9 +23,11 @@
 #endif
 #endif
 #include "audio_errors.h"
+#include "audio_system_manager.h"
 #include "napi_audio_error.h"
 #include "napi_param_utils.h"
 #include "napi_audio_enum.h"
+#include "napi_dfx_utils.h"
 #include "napi_audio_capturer_callbacks.h"
 #include "napi_capturer_position_callback.h"
 #include "napi_capturer_period_position_callback.h"
