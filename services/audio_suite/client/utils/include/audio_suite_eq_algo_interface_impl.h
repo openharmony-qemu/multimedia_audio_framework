@@ -16,9 +16,10 @@
 #ifndef AUDIO_SUITE_EQ_ALGO_INTERFACE_IMPL_H
 #define AUDIO_SUITE_EQ_ALGO_INTERFACE_IMPL_H
 #define EQUALIZER_BANDS_NUM (10)
-#define ALGO_CHANNEL_NUM (2)
-#define ALGO_SAMPLE_WIDTH (16)
-#define MASTERVOLUME (15)
+#define ALGO_CHANNEL_NUM (2)    // 算法声道数规格
+#define ALGO_BYTE_NUM (2)       // 算法单帧字节数规格
+#define ALGO_SAMPLE_WIDTH (16)  // 算法单帧位深规格
+#define MASTERVOLUME (15)       // 算法音量设置
 #define ONE_BYTE_WIDTH (8)
 #define TWO_BYTES_WIDTH (16)
 
@@ -37,7 +38,6 @@ using FuniMedia_Eq_Init = int (*)(void *, void *, IMEDIA_INT32 iScratchBufLen, c
 using FuniMedia_Eq_Apply = int (*)(void *, void *, IMEDIA_INT32 iScratchBufLen, iMedia_SWS_DATA *);
 using FuniMedia_Eq_SetParams = int (*)(void *, void *, IMEDIA_INT32 iScratchBufLen, const iMedia_Eq_PARA *);
 using FuniMedia_Eq_GetParams = int (*)(void *, iMedia_Eq_PARA *);
-using FuniMedia_Eq_GetVersion = int (*)(iMedia_SWS_PST_VERSION *);
 
 struct EqAlgoApi {
     FuniMedia_Eq_GetSize getSize{nullptr};
@@ -45,7 +45,6 @@ struct EqAlgoApi {
     FuniMedia_Eq_Apply applyAlgo{nullptr};
     FuniMedia_Eq_SetParams setPara{nullptr};
     FuniMedia_Eq_GetParams getPara{nullptr};
-    FuniMedia_Eq_GetVersion getVersion{nullptr};
 };
 
 class AudioSuiteEqAlgoInterfaceImpl : public AudioSuiteAlgoInterface {
@@ -73,6 +72,8 @@ private:
     void *libHandle_{nullptr};
     EqAlgoApi algoApi_{0};
     iMedia_SWS_DATA stData;
+    std::vector<IMEDIA_INT32> dataIn;
+    std::vector<IMEDIA_INT32> dataOut;
 };
 
 }  // namespace AudioSuite

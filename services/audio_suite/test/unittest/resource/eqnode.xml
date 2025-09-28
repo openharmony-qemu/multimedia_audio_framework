@@ -18,7 +18,7 @@
         <preparer>
             <option name="shell" value="mkdir -p /data/"/>
             <option name="push" value="44100_2_32f.pcm -> /data/" src="res"/>
-            <option name="push" value="48000_2_16f.pcm -> /data/" src="res"/>
+            <option name="push" value="48000_2_16.pcm -> /data/" src="res"/>
             <option name="shell" value="restorecon /data/"/>
         </preparer>
     </target>
