@@ -318,7 +318,6 @@ static uint32_t GetByteSizeByFormat(enum AudioSampleFormat format)
 
 void CapturerInServer::UpdateBufferTimeStamp(size_t readLen)
 {
-    CHECK_AND_RETURN_LOG(capturerClock_ != nullptr, "capturerClock_ is nullptr!");
     uint64_t timestamp = 0;
     uint32_t sizePerPos = static_cast<uint32_t>(GetByteSizeByFormat(processConfig_.streamInfo.format)) *
         processConfig_.streamInfo.channels;
