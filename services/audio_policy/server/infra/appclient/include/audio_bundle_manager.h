@@ -26,7 +26,12 @@ public:
     static std::string GetBundleName();
     static std::string GetBundleNameFromUid(int32_t callingUid);
     static AppExecFwk::BundleInfo GetBundleInfo();
+    static void RemoveBundleInfoByUid(int32_t callingUid);
     static AppExecFwk::BundleInfo GetBundleInfoFromUid(int32_t callingUid);
+
+private:
+    static std::mutex bundleInfoMapMutex_;
+    static std::unordered_map<int32_t, AppExecFwk::BundleInfo> bundleInfoMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
