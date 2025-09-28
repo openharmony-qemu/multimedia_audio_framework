@@ -1053,13 +1053,12 @@ int32_t AudioProcessInServer::HandleCapturerDataParams(RingBufferWrapper &writeB
 
 int32_t AudioProcessInServer::WriteToSpecialProcBuf(AudioCaptureDataProcParams &procParams)
 {
-    std::shared_ptr<OHAudioBufferBase> procBuf = procParams.procBuf_;
-    CHECK_AND_RETURN_RET_LOG(procBuf != nullptr, ERR_INVALID_HANDLE, "process buffer is null.");
-    uint64_t curWritePos = procBuf->GetCurWriteFrame();
+    CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_INVALID_HANDLE, "process buffer is null.");
+    uint64_t curWritePos = processBuffer_->GetCurWriteFrame();
     Trace trace("WriteProcessData-<" + std::to_string(curWritePos));
 
-    int32_t writeAbleSize = procBuf->GetWritableDataFrames();
-    uint32_t dstSpanSizeInframe = procParams.dstSpanSizeInframe_;
+    int32_t writeAbleSize = processBuffer_->GetWritableDataFrames();
+    uint32_t dstSpanSizeInframe = spanSizeInframe_;
     if (writeAbleSize <= 0 || static_cast<uint32_t>(writeAbleSize) <= dstSpanSizeInframe) {
         AUDIO_WARNING_LOG("client read too slow: curWritePos:%{public}" PRIu64" writeAbleSize:%{public}d",
             curWritePos, writeAbleSize);
@@ -1067,12 +1066,12 @@ int32_t AudioProcessInServer::WriteToSpecialProcBuf(AudioCaptureDataProcParams &
     }
 
     RingBufferWrapper ringBuffer;
-    int32_t ret = procBuf->GetAllWritableBufferFromPosFrame(curWritePos, ringBuffer);
+    int32_t ret = processBuffer_->GetAllWritableBufferFromPosFrame(curWritePos, ringBuffer);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "get write buffer fail, ret %{public}d.", ret);
 
     uint32_t totalSizeInFrame;
     uint32_t byteSizePerFrame;
-    procBuf->GetSizeParameter(totalSizeInFrame, byteSizePerFrame);
+    processBuffer_->GetSizeParameter(totalSizeInFrame, byteSizePerFrame);
     CHECK_AND_RETURN_RET_LOG(byteSizePerFrame > 0, ERR_OPERATION_FAILED, "byteSizePerFrame is 0");
     uint32_t writeableSizeInFrame = ringBuffer.dataLength / byteSizePerFrame;
     if (writeableSizeInFrame > dstSpanSizeInframe) {
@@ -1088,10 +1087,10 @@ int32_t AudioProcessInServer::WriteToSpecialProcBuf(AudioCaptureDataProcParams &
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_WRITE_FAILED, "memcpy data to process buffer fail, "
         "curWritePos %{public}" PRIu64", ret %{public}d.", curWritePos, ret);
 
-    procBuf->SetHandleInfo(curWritePos, ClockTime::GetCurNano());
-    ret = procBuf->SetCurWriteFrame(curWritePos + dstSpanSizeInframe);
+    processBuffer_->SetHandleInfo(curWritePos, ClockTime::GetCurNano());
+    ret = processBuffer_->SetCurWriteFrame(curWritePos + dstSpanSizeInframe);
     if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("set procBuf next write frame fail, ret %{public}d.", ret);
+        AUDIO_WARNING_LOG("set processBuffer_ next write frame fail, ret %{public}d.", ret);
         return ERR_OPERATION_FAILED;
     }
     return SUCCESS;
