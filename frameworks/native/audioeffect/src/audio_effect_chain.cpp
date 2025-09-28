@@ -179,6 +179,7 @@ void AudioEffectChain::ReleaseEffectChain()
 
 int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32_t &replyData)
 {
+    Trace trace("AudioEffectChain::SetEffectParamToHandle");
     AudioEffectConfig tmpIoBufferConfig = ioBufferConfig_;
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &tmpIoBufferConfig};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
@@ -266,6 +267,8 @@ static int32_t CheckHandleAndRelease(AudioEffectHandle handle, AudioEffectLibrar
 void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibrary *libHandle,
     AudioEffectScene currSceneType, const std::string &effectName, const std::string &effectProperty)
 {
+    Trace trace("AudioEffectChain::AddEffectHandle currSceneType: " +
+        std::to_string(static_cast<int32_t>(currSceneType)) + " effectName: " + effectName);
     int32_t ret;
     int32_t replyData = 0;
     int32_t latencyData = 0;
@@ -319,12 +322,14 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
 
 int32_t AudioEffectChain::UpdateEffectParam()
 {
+    Trace trace("AudioEffectChain::UpdateEffectParam");
     std::lock_guard<std::mutex> lock(reloadMutex_);
     return UpdateEffectParamInner();
 }
 
 void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t frameLen, AudioEffectProcInfo procInfo)
 {
+    Trace trace("AudioEffectChain::ApplyEffectChain");
     size_t inTotlen = frameLen * ioBufferConfig_.inputCfg.channels * sizeof(float);
     size_t outTotlen = frameLen * ioBufferConfig_.outputCfg.channels * sizeof(float);
     DumpFileUtil::WriteDumpFile(dumpFileInput_, static_cast<void *>(bufIn), inTotlen);
