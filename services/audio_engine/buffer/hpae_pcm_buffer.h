@@ -20,6 +20,7 @@
 #include <memory>
 #include <algorithm>
 #include "audio_stream_info.h"
+#include "audio_info.h"
 #include "hpae_pcm_process.h"
 namespace OHOS {
 namespace AudioStandard {
@@ -31,13 +32,6 @@ enum HpaeSourceBufferType {
     HPAE_SOURCE_BUFFER_TYPE_MIC,
     HPAE_SOURCE_BUFFER_TYPE_EC,
     HPAE_SOURCE_BUFFER_TYPE_MICREF,
-};
-
-enum HpaeSplitStreamType {
-    STREAM_TYPE_DEFAULT = 0,
-    STREAM_TYPE_MEDIA = 1,
-    STREAM_TYPE_COMMUNICATION = 2,
-    STREAM_TYPE_NAVIGATION = 13
 };
 
 enum PcmBufferState : uint32_t {
@@ -248,7 +242,7 @@ public:
         sourceBufferType_ = type;
     }
 
-    HpaeSplitStreamType GetSplitStreamType()
+    HpaeSplitStreamType GetSplitStreamType() const
     {
         return splitStreamType_;
     }
@@ -263,9 +257,19 @@ public:
         streamType_ = type;
     }
 
-    AudioStreamType GetAudioStreamType()
+    AudioStreamType GetAudioStreamType() const
     {
         return streamType_;
+    }
+
+    void SetAudioStreamUsage(StreamUsage usage)
+    {
+        streamUsage_ = usage;
+    }
+
+    StreamUsage GetAudioStreamUsage() const
+    {
+        return streamUsage_;
     }
 
 private:
@@ -287,6 +291,7 @@ private:
     HpaeSourceBufferType sourceBufferType_ = HPAE_SOURCE_BUFFER_TYPE_DEFAULT;
     HpaeSplitStreamType splitStreamType_ = STREAM_TYPE_DEFAULT;
     AudioStreamType streamType_ = STREAM_DEFAULT;
+    StreamUsage streamUsage_ = STREAM_USAGE_INVALID;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard
