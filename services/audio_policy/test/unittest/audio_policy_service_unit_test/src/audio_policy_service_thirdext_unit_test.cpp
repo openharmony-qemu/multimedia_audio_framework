@@ -1606,7 +1606,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_001, TestSize.
     manager.UpdateStreamSampleInfo(desc, streamInfo);
     
     // Should return early without modifying sampling rate
-    EXPECT_EQ(desc->streamInfo_.samplingRate, SAMPLE_RATE_44100);
+    EXPECT_EQ(streamInfo.samplingRate, SAMPLE_RATE_44100);
 }
 
 /**
@@ -1626,7 +1626,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_002, TestSize.
     manager.UpdateStreamSampleInfo(desc, streamInfo);
     
     // Should not modify since it's already 16000
-    EXPECT_EQ(desc->streamInfo_.samplingRate, SAMPLE_RATE_16000);
+    EXPECT_EQ(streamInfo.samplingRate, SAMPLE_RATE_16000);
 }
 
 /**
@@ -1646,7 +1646,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_003, TestSize.
     manager.UpdateStreamSampleInfo(desc, streamInfo);
     
     // Should not modify since it's already 48000
-    EXPECT_EQ(desc->streamInfo_.samplingRate, SAMPLE_RATE_48000);
+    EXPECT_EQ(streamInfo.samplingRate, SAMPLE_RATE_48000);
 }
 
 /**
@@ -1666,7 +1666,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_004, TestSize.
     manager.UpdateStreamSampleInfo(desc, streamInfo);
 
     // Should change from 44100 to 48000
-    EXPECT_EQ(desc->streamInfo_.samplingRate, SAMPLE_RATE_48000);
+    EXPECT_EQ(streamInfo.samplingRate, SAMPLE_RATE_48000);
 }
 /**
  * @tc.name  : Test UpdateStreamSampleInfo API
@@ -1701,7 +1701,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_005, TestSize.
         manager.UpdateStreamSampleInfo(desc, streamInfo);
         
         // All unsupported rates should be changed to 48000
-        EXPECT_EQ(desc->streamInfo_.samplingRate, SAMPLE_RATE_48000);
+        EXPECT_EQ(streamInfo.samplingRate, SAMPLE_RATE_48000);
     }
 }
 
