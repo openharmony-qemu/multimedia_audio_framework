@@ -27,7 +27,7 @@ public:
     virtual void OnStartPipeline(int32_t result) = 0;
     virtual void OnStopPipeline(int32_t result) = 0;
     virtual void OnGetPipelineState(AudioSuitePipelineState state) = 0;
-    virtual void OnCreateNode(uint32_t nodeId) = 0;
+    virtual void OnCreateNode(int32_t result, uint32_t nodeId) = 0;
     virtual void OnDestroyNode(int32_t result) = 0;
     virtual void OnEnableNode(int32_t result) = 0;
     virtual void OnGetNodeEnable(AudioNodeEnable enable) = 0;

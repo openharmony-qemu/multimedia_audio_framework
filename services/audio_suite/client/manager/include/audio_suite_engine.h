@@ -95,7 +95,7 @@ private:
     void HandleStartPipeline(int32_t result);
     void HandleStopPipeline(int32_t result);
     void HandleGetPipelineState(AudioSuitePipelineState state);
-    void HandleCreateNode(uint32_t nodeId, uint32_t pipelineId);
+    void HandleCreateNode(int32_t result, uint32_t nodeId, uint32_t pipelineId);
     void HandleDestroyNode(int32_t result, uint32_t nodeId);
     void HandleEnableNode(int32_t result);
     void HandleGetEnableNode(AudioNodeEnable enable);

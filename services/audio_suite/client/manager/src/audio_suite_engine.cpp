@@ -75,13 +75,21 @@ int32_t AudioSuiteEngine::Init()
 
 int32_t AudioSuiteEngine::DeInit()
 {
+    isInit_.store(false);
     if (engineThread_ != nullptr) {
         engineThread_->DeactivateThread();
         engineThread_ = nullptr;
     }
     engineNoLockQueue_.HandleRequests();
 
-    isInit_.store(false);
+    nodeMap_.clear();
+    for (auto& [id, pipeline] : pipelineMap_) {
+        if (pipeline != nullptr) {
+            pipeline->DeInit();
+        }
+    }
+    pipelineMap_.clear();
+
     AUDIO_INFO_LOG("AudioSuiteEngine::DeInit end");
     return SUCCESS;
 }
@@ -106,18 +114,15 @@ bool AudioSuiteEngine::IsMsgProcessing()
 
 void AudioSuiteEngine::HandleMsg()
 {
-    AUDIO_INFO_LOG("enter HandleMsg.");
     engineNoLockQueue_.HandleRequests();
 }
 
 void AudioSuiteEngine::SendRequest(Request &&request, std::string funcName)
 {
     Trace trace("sendrequest::" + funcName);
-    AUDIO_INFO_LOG("sendrequest:: funcName = %{public}s.", funcName.c_str());
     engineNoLockQueue_.PushRequest(std::move(request));
     CHECK_AND_RETURN_LOG(engineThread_, "engineThread_ is nullptr");
     engineThread_->Notify();
-    AUDIO_INFO_LOG("sendrequest exit :: funcName = %{public}s.", funcName.c_str());
 }
 
 int32_t AudioSuiteEngine::CreatePipeline()
@@ -158,7 +163,7 @@ int32_t AudioSuiteEngine::CreatePipeline()
 
 int32_t AudioSuiteEngine::DestroyPipeline(uint32_t pipelineId)
 {
-    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not create pipeline.");
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not Destroy pipeline.");
 
     auto request = [this, pipelineId]() {
         AUDIO_INFO_LOG("DestroyPipeline enter");
@@ -189,7 +194,7 @@ int32_t AudioSuiteEngine::DestroyPipeline(uint32_t pipelineId)
 
 int32_t AudioSuiteEngine::StartPipeline(uint32_t pipelineId)
 {
-    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not create pipeline.");
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not Start pipeline.");
 
     auto request = [this, pipelineId]() {
         AUDIO_INFO_LOG("StartPipeline enter");
@@ -216,6 +221,8 @@ int32_t AudioSuiteEngine::StartPipeline(uint32_t pipelineId)
 
 int32_t AudioSuiteEngine::StopPipeline(uint32_t pipelineId)
 {
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not stop pipeline.");
+
     auto request = [this, pipelineId]() {
         AUDIO_INFO_LOG("StopPipeline enter");
 
@@ -241,6 +248,8 @@ int32_t AudioSuiteEngine::StopPipeline(uint32_t pipelineId)
 
 int32_t AudioSuiteEngine::GetPipelineState(uint32_t pipelineId)
 {
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not get pipeline state.");
+
     auto request = [this, pipelineId]() {
         AUDIO_INFO_LOG("GetPipelineState enter");
 
@@ -266,26 +275,28 @@ int32_t AudioSuiteEngine::GetPipelineState(uint32_t pipelineId)
 
 int32_t AudioSuiteEngine::CreateNode(uint32_t pipelineId, AudioNodeBuilder& builder)
 {
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not CreateNode.");
+
     auto request = [this, pipelineId, builder]() {
         AUDIO_INFO_LOG("CreateNode enter");
 
         if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
             AUDIO_ERR_LOG("engine CreateNode node failed, pipeline id is invailed.");
-            managerCallback_.OnCreateNode(INVALID_NODE_ID);
+            managerCallback_.OnCreateNode(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, INVALID_NODE_ID);
             return;
         }
 
         std::shared_ptr<IAudioSuitePipeline> pipeline = pipelineMap_[pipelineId];
         if (pipeline == nullptr) {
             AUDIO_ERR_LOG("engine CreateNode failed, pipeline is nullptr.");
-            managerCallback_.OnCreateNode(INVALID_NODE_ID);
+            managerCallback_.OnCreateNode(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, INVALID_NODE_ID);
             return;
         }
 
         int32_t ret = pipeline->CreateNode(builder);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("pipeline CreateNode node failed, ret = %{public}d.", ret);
-            managerCallback_.OnCreateNode(INVALID_NODE_ID);
+            managerCallback_.OnCreateNode(ret, INVALID_NODE_ID);
             return;
         }
     };
@@ -296,25 +307,27 @@ int32_t AudioSuiteEngine::CreateNode(uint32_t pipelineId, AudioNodeBuilder& buil
 
 int32_t AudioSuiteEngine::DestroyNode(uint32_t nodeId)
 {
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not DestroyNode.");
+
     auto request = [this, nodeId]() {
         AUDIO_INFO_LOG("DestroyNode enter");
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
             AUDIO_ERR_LOG("engine DestroyNode node failed, node id=%{public}d is invailed.", nodeId);
-            managerCallback_.OnDestroyNode(ERR_INVALID_PARAM);
+            managerCallback_.OnDestroyNode(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
         }
 
         auto pipelineId = nodeMap_[nodeId];
         if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
             AUDIO_ERR_LOG("engine DestroyNode node failed, pipelineId id=%{public}d is invailed.", pipelineId);
-            managerCallback_.OnDestroyNode(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            managerCallback_.OnDestroyNode(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
         }
 
         auto pipeline = pipelineMap_[pipelineId];
         if (pipeline == nullptr) {
             AUDIO_ERR_LOG("pipeline DestroyNode node failed, pipeline is nullptr.");
-            managerCallback_.OnDestroyNode(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            managerCallback_.OnDestroyNode(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
         }
 
@@ -332,6 +345,8 @@ int32_t AudioSuiteEngine::DestroyNode(uint32_t nodeId)
 
 int32_t AudioSuiteEngine::EnableNode(uint32_t nodeId, AudioNodeEnable audioNodeEnable)
 {
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not enableNode.");
+
     auto request = [this, nodeId, audioNodeEnable]() {
         AUDIO_INFO_LOG("EnableNode enter");
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
@@ -343,14 +358,14 @@ int32_t AudioSuiteEngine::EnableNode(uint32_t nodeId, AudioNodeEnable audioNodeE
         auto pipelineId = nodeMap_[nodeId];
         if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
             AUDIO_ERR_LOG("engine EnableNode node failed, node id=%{public}d is invailed.", nodeId);
-            managerCallback_.OnEnableNode(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            managerCallback_.OnEnableNode(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
         }
 
         auto pipeline = pipelineMap_[pipelineId];
         if (pipeline == nullptr) {
             AUDIO_ERR_LOG("pipeline EnableNode node failed, pipeline is nullptr.");
-            managerCallback_.OnEnableNode(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            managerCallback_.OnEnableNode(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
         }
 
@@ -368,6 +383,8 @@ int32_t AudioSuiteEngine::EnableNode(uint32_t nodeId, AudioNodeEnable audioNodeE
 
 int32_t AudioSuiteEngine::GetNodeEnableStatus(uint32_t nodeId)
 {
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not get node status.");
+
     auto request = [this, nodeId]() {
         AUDIO_INFO_LOG("GetNodeEnableStatus enter");
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
@@ -404,25 +421,27 @@ int32_t AudioSuiteEngine::GetNodeEnableStatus(uint32_t nodeId)
 
 int32_t AudioSuiteEngine::SetAudioFormat(uint32_t nodeId, AudioFormat audioFormat)
 {
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not SetAudioFormat.");
+
     auto request = [this, nodeId, audioFormat]() {
         AUDIO_INFO_LOG("SetAudioFormat enter");
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
             AUDIO_ERR_LOG("engine SetAudioFormat node failed, node id=%{public}d is invailed.", nodeId);
-            managerCallback_.OnSetAudioFormat(ERR_INVALID_PARAM);
+            managerCallback_.OnSetAudioFormat(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
         }
 
         auto pipelineId = nodeMap_[nodeId];
         if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
             AUDIO_ERR_LOG("engine SetAudioFormat node failed, node id=%{public}d is invailed.", nodeId);
-            managerCallback_.OnSetAudioFormat(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            managerCallback_.OnSetAudioFormat(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
         }
 
         auto pipeline = pipelineMap_[pipelineId];
         if (pipeline == nullptr) {
             AUDIO_ERR_LOG("pipeline SetAudioFormat node failed, pipeline is nullptr.");
-            managerCallback_.OnSetAudioFormat(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            managerCallback_.OnSetAudioFormat(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
         }
 
@@ -441,25 +460,27 @@ int32_t AudioSuiteEngine::SetAudioFormat(uint32_t nodeId, AudioFormat audioForma
 int32_t AudioSuiteEngine::SetWriteDataCallback(uint32_t nodeId,
     std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback)
 {
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not SetWriteDataCallback.");
+
     auto request = [this, nodeId, callback]() {
         AUDIO_INFO_LOG("SetWriteDataCallback enter");
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
             AUDIO_ERR_LOG("engine SetWriteDataCallback node failed, node id=%{public}d is invailed.", nodeId);
-            managerCallback_.OnWriteDataCallback(ERR_INVALID_PARAM);
+            managerCallback_.OnWriteDataCallback(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
         }
 
         auto pipelineId = nodeMap_[nodeId];
         if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
             AUDIO_ERR_LOG("engine SetWriteDataCallback node failed, node id=%{public}d is invailed.", nodeId);
-            managerCallback_.OnWriteDataCallback(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            managerCallback_.OnWriteDataCallback(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
         }
 
         auto pipeline = pipelineMap_[pipelineId];
         if (pipeline == nullptr) {
             AUDIO_ERR_LOG("pipeline SetWriteDataCallback node failed, pipeline is nullptr.");
-            managerCallback_.OnSetAudioFormat(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            managerCallback_.OnWriteDataCallback(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
         }
 
@@ -478,32 +499,34 @@ int32_t AudioSuiteEngine::SetWriteDataCallback(uint32_t nodeId,
 int32_t AudioSuiteEngine::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId,
     AudioNodePortType srcPortType, AudioNodePortType destPortType)
 {
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not ConnectNodes.");
+
     auto request = [this, srcNodeId, destNodeId, srcPortType, destPortType]() {
         AUDIO_INFO_LOG("ConnectNodes enter");
         if ((nodeMap_.find(srcNodeId) == nodeMap_.end()) || (nodeMap_.find(destNodeId) == nodeMap_.end())) {
             AUDIO_ERR_LOG("ConnectNodes, srcNodeId %{public}d or destNodeId %{public}d is invail.",
                 srcNodeId, destNodeId);
-            managerCallback_.OnConnectNodes(ERR_INVALID_PARAM);
+            managerCallback_.OnConnectNodes(ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
             return;
         }
 
         if (nodeMap_[srcNodeId] != nodeMap_[destNodeId]) {
             AUDIO_ERR_LOG("ConnectNodes failed, not in one pipeline");
-            managerCallback_.OnConnectNodes(ERR_INVALID_PARAM);
+            managerCallback_.OnConnectNodes(ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
             return;
         }
 
         auto pipelineId = nodeMap_[destNodeId];
         if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
             AUDIO_ERR_LOG("ConnectNodes failed, pipelineId=%{public}d is invailed.", pipelineId);
-            managerCallback_.OnConnectNodes(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            managerCallback_.OnConnectNodes(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
         }
 
         auto pipeline = pipelineMap_[pipelineId];
         if (pipeline == nullptr) {
             AUDIO_ERR_LOG("pipeline ConnectNodes node failed, pipeline is nullptr.");
-            managerCallback_.OnConnectNodes(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            managerCallback_.OnConnectNodes(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
         }
 
@@ -521,32 +544,34 @@ int32_t AudioSuiteEngine::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId,
 
 int32_t AudioSuiteEngine::DisConnectNodes(uint32_t srcNodeId, uint32_t destNodeId)
 {
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not DisConnectNodes.");
+
     auto request = [this, srcNodeId, destNodeId]() {
         AUDIO_INFO_LOG("DisConnectNodes enter");
         if ((nodeMap_.find(srcNodeId) == nodeMap_.end()) || (nodeMap_.find(destNodeId) == nodeMap_.end())) {
             AUDIO_ERR_LOG("DisConnectNodes, srcNodeId %{public}d or destNodeId %{public}d is invail.",
                 srcNodeId, destNodeId);
-            managerCallback_.OnDisConnectNodes(ERR_INVALID_PARAM);
+            managerCallback_.OnDisConnectNodes(ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
             return;
         }
 
         if (nodeMap_[srcNodeId] != nodeMap_[destNodeId]) {
             AUDIO_ERR_LOG("DisConnectNodes failed, not in one pipeline");
-            managerCallback_.OnDisConnectNodes(ERR_INVALID_PARAM);
+            managerCallback_.OnDisConnectNodes(ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
             return;
         }
 
         auto pipelineId = nodeMap_[destNodeId];
         if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
             AUDIO_ERR_LOG("DisConnectNodes failed, pipelineId=%{public}d is invailed.", pipelineId);
-            managerCallback_.OnDisConnectNodes(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            managerCallback_.OnDisConnectNodes(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
         }
 
         auto pipeline = pipelineMap_[pipelineId];
         if (pipeline == nullptr) {
             AUDIO_ERR_LOG("pipeline DisConnectNodes node failed, pipeline is nullptr.");
-            managerCallback_.OnDisConnectNodes(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            managerCallback_.OnDisConnectNodes(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
         }
 
@@ -565,25 +590,27 @@ int32_t AudioSuiteEngine::DisConnectNodes(uint32_t srcNodeId, uint32_t destNodeI
 int32_t AudioSuiteEngine::InstallTap(uint32_t nodeId, AudioNodePortType portType,
     std::shared_ptr<SuiteNodeReadTapDataCallback> callback)
 {
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not InstallTap.");
+
     auto request = [this, nodeId, portType, callback]() {
         AUDIO_INFO_LOG("InstallTap enter");
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
             AUDIO_ERR_LOG("InstallTap failed, nodeId %{public}d is invail.", nodeId);
-            managerCallback_.OnInstallTap(ERR_INVALID_PARAM);
+            managerCallback_.OnInstallTap(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
         }
 
         auto pipelineId = nodeMap_[nodeId];
         if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
             AUDIO_ERR_LOG("InstallTap failed, pipelineId=%{public}d is invailed.", pipelineId);
-            managerCallback_.OnInstallTap(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            managerCallback_.OnInstallTap(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
         }
 
         auto pipeline = pipelineMap_[pipelineId];
         if (pipeline == nullptr) {
             AUDIO_ERR_LOG("pipeline InstallTap node failed, pipeline is nullptr.");
-            managerCallback_.OnInstallTap(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            managerCallback_.OnInstallTap(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
         }
 
@@ -601,25 +628,27 @@ int32_t AudioSuiteEngine::InstallTap(uint32_t nodeId, AudioNodePortType portType
 
 int32_t AudioSuiteEngine::RemoveTap(uint32_t nodeId, AudioNodePortType portType)
 {
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not RemoveTap.");
+
     auto request = [this, nodeId, portType]() {
         AUDIO_INFO_LOG("RemoveTap enter");
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
             AUDIO_ERR_LOG("RemoveTap failed, nodeId %{public}d is invail.", nodeId);
-            managerCallback_.OnRemoveTap(ERR_INVALID_PARAM);
+            managerCallback_.OnRemoveTap(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
         }
 
         auto pipelineId = nodeMap_[nodeId];
         if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
             AUDIO_ERR_LOG("RemoveTap failed, pipelineId=%{public}d is invailed.", pipelineId);
-            managerCallback_.OnRemoveTap(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            managerCallback_.OnRemoveTap(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
         }
 
         auto pipeline = pipelineMap_[pipelineId];
         if (pipeline == nullptr) {
             AUDIO_ERR_LOG("pipeline RemoveTap node failed, pipeline is nullptr.");
-            managerCallback_.OnRemoveTap(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            managerCallback_.OnRemoveTap(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
         }
 
@@ -638,6 +667,8 @@ int32_t AudioSuiteEngine::RemoveTap(uint32_t nodeId, AudioNodePortType portType)
 int32_t AudioSuiteEngine::RenderFrame(uint32_t pipelineId,
     uint8_t *audioData, int32_t frameSize, int32_t *writeLen, bool *finishedFlag)
 {
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not RenderFrame.");
+
     auto request = [this, pipelineId, audioData, frameSize, writeLen, finishedFlag]() {
         AUDIO_INFO_LOG("AudioSuiteEngine::RenderFrame enter request");
 
@@ -663,6 +694,8 @@ int32_t AudioSuiteEngine::RenderFrame(uint32_t pipelineId,
 
 int32_t AudioSuiteEngine::SetOptions(uint32_t nodeId, std::string name, std::string value)
 {
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not SetOptions.");
+
     auto request = [this, nodeId, name, value]() {
         AUDIO_INFO_LOG("SetOptions enter");
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
@@ -734,12 +767,12 @@ void AudioSuiteEngine::HandleGetPipelineState(AudioSuitePipelineState state)
     managerCallback_.OnGetPipelineState(state);
 }
 
-void AudioSuiteEngine::HandleCreateNode(uint32_t nodeId, uint32_t pipelineId)
+void AudioSuiteEngine::HandleCreateNode(int32_t result, uint32_t nodeId, uint32_t pipelineId)
 {
     if (nodeId != INVALID_NODE_ID) {
         nodeMap_[nodeId] = pipelineId;
     }
-    managerCallback_.OnCreateNode(nodeId);
+    managerCallback_.OnCreateNode(result, nodeId);
 }
 
 void AudioSuiteEngine::HandleDestroyNode(int32_t result, uint32_t nodeId)

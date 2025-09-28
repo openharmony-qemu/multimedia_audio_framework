@@ -42,8 +42,8 @@ public:
     int32_t GetPipelineState(uint32_t pipelineId, AudioSuitePipelineState &state) override;
 
     // node
-    uint32_t CreateNode(
-        uint32_t pipelineId, AudioNodeBuilder& builder) override;
+    int32_t CreateNode(
+        uint32_t pipelineId, AudioNodeBuilder& builder, uint32_t &nodeId) override;
     int32_t DestroyNode(uint32_t nodeId) override;
     int32_t EnableNode(uint32_t nodeId, AudioNodeEnable audioNodeEnable) override;
     int32_t GetNodeEnableStatus(uint32_t nodeId, AudioNodeEnable &nodeEnable) override;
@@ -71,7 +71,7 @@ public:
     void OnStartPipeline(int32_t result) override;
     void OnStopPipeline(int32_t result) override;
     void OnGetPipelineState(AudioSuitePipelineState state) override;
-    void OnCreateNode(uint32_t nodeId) override;
+    void OnCreateNode(int32_t result, uint32_t nodeId) override;
     void OnDestroyNode(int32_t result) override;
     void OnEnableNode(int32_t result) override;
     void OnGetNodeEnable(AudioNodeEnable enable) override;
@@ -103,6 +103,7 @@ private:
     bool isFinishGetPipelineState_ = false;
     AudioSuitePipelineState getPipelineState_ = PIPELINE_STOPPED;
     bool isFinishCreateNode_ = false;
+    int32_t engineCreateNodeResult_ = 0;
     uint32_t engineCreateNodeId_ = INVALID_NODE_ID;
     bool isFinishDestroyNode_ = false;
     int32_t destroyNodeResult_ = 0;
