@@ -1924,10 +1924,8 @@ void AudioEndpointInner::WriteToProcessBuffers(const BufferDesc &readBuf)
             processList_[i] != nullptr, "process buffer %{public}zu is null.", i);
         CHECK_AND_CONTINUE(processList_[i]->GetStreamInServerStatus() == STREAM_RUNNING);
 
-        AudioCaptureDataProcParams procParams(readBuf, processBufferList_[i],
-                                              captureConvBuffer_, rendererConvBuffer_);
+        AudioCaptureDataProcParams procParams(readBuf, captureConvBuffer_, rendererConvBuffer_);
         procParams.isConvertReadFormat_ = isConvertReadFormat_;
-        procParams.dstSpanSizeInframe_ = dstSpanSizeInframe_;
         procParams.srcSamplingRate = dstStreamInfo_.samplingRate;
         int32_t ret = processList_[i]->WriteToSpecialProcBuf(procParams);
         CHECK_AND_CONTINUE_LOG(ret == SUCCESS,
