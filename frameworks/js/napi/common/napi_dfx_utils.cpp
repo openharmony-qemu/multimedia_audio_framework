@@ -41,7 +41,7 @@ void NapiDfxUtils::SendVolumeApiInvokeEvent(int32_t uid, const std::string &func
 
 static const char* GetFuncReadable(bool direction, uint8_t functionType)
 {
-    if (direction == NapiDfxUtils::SteamDirection::PLAYBACK) {
+    if (direction == NapiDfxUtils::SteamDirection::playback) {
         switch (functionType) {
             case 0: return "Write";
             case 1: return "RegisterRendererWriteDataCallback";
