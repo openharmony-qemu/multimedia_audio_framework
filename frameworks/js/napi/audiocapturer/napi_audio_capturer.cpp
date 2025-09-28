@@ -606,8 +606,8 @@ napi_value NapiAudioCapturer::Read(napi_env env, napi_callback_info info)
             nullptr, "context object state is error.");
         AudioCapturerInfo capturerInfo = {};
         napiAudioCapturer->audioCapturer_->GetCapturerInfo(capturerInfo);
-        std::string bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName();
-        NapiDfxUtils::ReportAudioMainThreadEvent(bundleName, NapiDfxUtils::SteamDirection::capture,
+        int32_t appUid = static_cast<int32_t>(getuid());
+        NapiDfxUtils::ReportAudioMainThreadEvent(appUid, NapiDfxUtils::SteamDirection::capture,
             capturerInfo.sourceType, NapiDfxUtils::MainThreadCallFunc::read);
     }
 
@@ -1304,8 +1304,8 @@ void NapiAudioCapturer::RegisterCapturerReadDataCallback(napi_env env, napi_valu
         (getpid() == gettid())) {
         AudioCapturerInfo capturerInfo = {};
         napiCapturer->audioCapturer_->GetCapturerInfo(capturerInfo);
-        std::string bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName();
-        NapiDfxUtils::ReportAudioMainThreadEvent(bundleName, NapiDfxUtils::SteamDirection::capture,
+        int32_t appUid = static_cast<int32_t>(getuid());
+        NapiDfxUtils::ReportAudioMainThreadEvent(appUid, NapiDfxUtils::SteamDirection::capture,
             capturerInfo.sourceType, NapiDfxUtils::MainThreadCallFunc::readCb);
     }
 
