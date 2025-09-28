@@ -1850,7 +1850,9 @@ IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audi
     if (!audioModuleInfo.deviceType.empty()) {
         attr.deviceType = std::stoi(audioModuleInfo.deviceType);
     }
-    attr.channelLayout = static_cast<uint64_t>(std::stoul(audioModuleInfo.channelLayout));
+    if (!audioModuleInfo.channelLayout.empty()) {
+        attr.channelLayout = static_cast<uint64_t>(std::stoul(audioModuleInfo.channelLayout));
+    }
     return attr;
 }
 
