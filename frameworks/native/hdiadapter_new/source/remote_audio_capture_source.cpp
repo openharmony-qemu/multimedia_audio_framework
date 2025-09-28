@@ -287,6 +287,7 @@ int32_t RemoteAudioCaptureSource::GetPresentationPosition(uint64_t &frames, int6
 
 float RemoteAudioCaptureSource::GetMaxAmplitude(void)
 {
+    CHECK_AND_RETURN_RET_LOG(started_.load(), static_cast<float>(0), "not start, return zero");
     lastGetMaxAmplitudeTime_ = ClockTime::GetCurNano();
     startUpdate_ = true;
     return maxAmplitude_;
@@ -469,7 +470,6 @@ void RemoteAudioCaptureSource::CheckUpdateState(char *frame, size_t replyBytes)
             captureFrameNum_ = 0;
             if (last10FrameStartTime_ > lastGetMaxAmplitudeTime_) {
                 startUpdate_ = false;
-                maxAmplitude_ = 0;
             }
         }
     }

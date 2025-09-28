@@ -546,7 +546,6 @@ void BluetoothAudioCaptureSource::CheckUpdateState(char *frame, size_t replyByte
             captureFrameNum_ = 0;
             if (last10FrameStartTime_ > lastGetMaxAmplitudeTime_) {
                 startUpdate_ = false;
-                maxAmplitude_ = 0;
             }
         }
     }

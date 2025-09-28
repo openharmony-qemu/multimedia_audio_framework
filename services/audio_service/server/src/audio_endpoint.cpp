@@ -1673,7 +1673,6 @@ void AudioEndpointInner::CheckUpdateState(char *frame, uint64_t replyBytes)
             renderFrameNum_ = 0;
             if (last10FrameStartTime_ > lastGetMaxAmplitudeTime_) {
                 startUpdate_ = false;
-                maxAmplitude_ = 0;
             }
         }
     }
