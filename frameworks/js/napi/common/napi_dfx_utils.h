@@ -37,7 +37,7 @@ public:
         static constexpr uint8_t readCb = 1;
     };
  
-    static void ReportAudioMainThreadEvent(std::string bundleName, bool direction,
+    static void ReportAudioMainThreadEvent(int32_t uid, bool direction,
             uint8_t usageOrSourceType, uint8_t functionType);
 };
 } // namespace AudioStandard
