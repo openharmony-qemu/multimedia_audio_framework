@@ -56,7 +56,7 @@ private:
     std::shared_ptr<HpaeRemoteSinkOutputNode> hpaeSinkOutputNode_ = nullptr;
     std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeAudioFormatConverterNode>> sceneConverterMap_;
     std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeMixerNode>> sceneMixerMap_;
-    std::unordered_map<HpaeProcessorType, uint32_t> sceneStopCountMap_;
+    uint32_t stopCount_ = 0;
     uint32_t timeoutThdFrames_ = TIME_OUT_STOP_THD_DEFAULT_FRAME;
     uint32_t frameLenMs_ = FRAME_LEN_MS_DEFAULT_MS;
     std::set<HpaeProcessorType> connectedProcessCluster_;

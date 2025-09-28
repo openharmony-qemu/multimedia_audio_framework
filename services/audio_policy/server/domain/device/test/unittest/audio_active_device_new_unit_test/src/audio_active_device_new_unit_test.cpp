@@ -20,7 +20,7 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
-
+static const int32_t MEDIA_SERVICE_UID = 1013;
 void AudioActiveDeviceNewUnitTest::SetUpTestCase(void) {}
 void AudioActiveDeviceNewUnitTest::TearDownTestCase(void) {}
 void AudioActiveDeviceNewUnitTest::SetUp(void) {}
@@ -295,5 +295,111 @@ HWTEST_F(AudioActiveDeviceNewUnitTest, SetCallDeviceActive_002, TestSize.Level4)
     );
     EXPECT_EQ(result, SUCCESS);
 }
+
+/**
+* @tc.name  : Test SortDevicesByPriority.
+* @tc.number: SortDevicesByPriority.
+* @tc.desc  : Test SortDevicesByPriority.
+*/
+HWTEST_F(AudioActiveDeviceNewUnitTest, SortDevicesByPriority, TestSize.Level4)
+{
+    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
+    descs.push_back(nullptr);
+    descs.push_back(nullptr);
+
+    audioActiveDevice->SortDevicesByPriority(descs);
+    EXPECT_EQ(descs.size(), 2);
+
+    descs[0] = std::make_shared<AudioDeviceDescriptor>();
+    descs[0]->deviceType_ = DEVICE_TYPE_SPEAKER;
+    descs[0]->deviceRole_ = OUTPUT_DEVICE;
+    descs[0]->macAddress_ = "";
+
+    audioActiveDevice->SortDevicesByPriority(descs);
+    EXPECT_EQ(descs.size(), 2);
+
+    descs[0] = nullptr;
+    descs[1] = std::make_shared<AudioDeviceDescriptor>();
+    descs[1]->deviceType_ = DEVICE_TYPE_EARPIECE;
+    descs[1]->deviceRole_ = OUTPUT_DEVICE;
+    descs[1]->macAddress_ = "";
+
+    audioActiveDevice->SortDevicesByPriority(descs);
+    EXPECT_EQ(descs.size(), 2);
+
+    descs[0] = std::make_shared<AudioDeviceDescriptor>();
+    descs[0]->deviceType_ = DEVICE_TYPE_SPEAKER;
+    descs[0]->deviceRole_ = OUTPUT_DEVICE;
+    descs[0]->macAddress_ = "";
+
+    audioActiveDevice->SortDevicesByPriority(descs);
+    EXPECT_EQ(descs.size(), 2);
+}
+
+/**
+* @tc.name  : Test GetDeviceForVolume.
+* @tc.number: GetDeviceForVolume.
+* @tc.desc  : Test GetDeviceForVolume.
+*/
+HWTEST_F(AudioActiveDeviceNewUnitTest, GetDeviceForVolume_001, TestSize.Level4)
+{
+    auto tmp = std::make_shared<AudioActiveDevice>();
+    EXPECT_NE(tmp->GetDeviceForVolume(STREAM_ALL), nullptr);
+    EXPECT_NE(tmp->GetDeviceForVolume(STREAM_MUSIC), nullptr);
+    EXPECT_NE(tmp->GetDeviceForVolume(STREAM_RING), nullptr);
+    tmp->volumeTypeDeviceMap_[STREAM_MUSIC] = {};
+    EXPECT_NE(tmp->GetDeviceForVolume(STREAM_MUSIC), nullptr);
+    tmp->volumeTypeDeviceMap_[STREAM_MUSIC].push_back(std::make_shared<AudioDeviceDescriptor>());
+    EXPECT_NE(tmp->GetDeviceForVolume(STREAM_MUSIC), nullptr);
+}
+
+/**
+* @tc.name  : Test GetDeviceForVolume.
+* @tc.number: GetDeviceForVolume.
+* @tc.desc  : Test GetDeviceForVolume.
+*/
+HWTEST_F(AudioActiveDeviceNewUnitTest, GetDeviceForVolume_002, TestSize.Level4)
+{
+    auto tmp = std::make_shared<AudioActiveDevice>();
+    EXPECT_NE(tmp->GetDeviceForVolume(STREAM_USAGE_MUSIC), nullptr);
+    tmp->streamUsageDeviceMap_[STREAM_USAGE_MUSIC] = {};
+    EXPECT_NE(tmp->GetDeviceForVolume(STREAM_USAGE_MUSIC), nullptr);
+    tmp->streamUsageDeviceMap_[STREAM_USAGE_MUSIC].push_back(std::make_shared<AudioDeviceDescriptor>());
+    EXPECT_NE(tmp->GetDeviceForVolume(STREAM_USAGE_MUSIC), nullptr);
+}
+
+/**
+* @tc.name  : Test GetDeviceForVolume.
+* @tc.number: GetDeviceForVolume.
+* @tc.desc  : Test GetDeviceForVolume.
+*/
+HWTEST_F(AudioActiveDeviceNewUnitTest, IsAvailableFrontDeviceInVector, TestSize.Level4)
+{
+    auto tmp = std::make_shared<AudioActiveDevice>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
+    EXPECT_NE(tmp->IsAvailableFrontDeviceInVector(descs), false);
+    descs.push_back(nullptr);
+    EXPECT_NE(tmp->IsAvailableFrontDeviceInVector(descs), false);
+    descs[0] = std::make_shared<AudioDeviceDescriptor>();
+    EXPECT_NE(tmp->IsAvailableFrontDeviceInVector(descs), true);
+}
+
+/**
+* @tc.name  : Test GetDeviceForVolume.
+* @tc.number: GetDeviceForVolume.
+* @tc.desc  : Test GetDeviceForVolume.
+*/
+HWTEST_F(AudioActiveDeviceNewUnitTest, GetRealUid, TestSize.Level4)
+{
+    auto tmp = std::make_shared<AudioActiveDevice>();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->callerUid_ = 0;
+    EXPECT_NE(tmp->GetRealUid(streamDesc), 0);
+    streamDesc->callerUid_ = MEDIA_SERVICE_UID;
+    streamDesc->appInfo_.appUid = 0;
+    EXPECT_NE(tmp->GetRealUid(streamDesc), 0);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

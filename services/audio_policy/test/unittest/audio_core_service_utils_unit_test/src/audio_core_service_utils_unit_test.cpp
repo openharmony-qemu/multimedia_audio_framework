@@ -15,6 +15,7 @@
 
 #include "audio_core_service_utils_unit_test.h"
 #include "audio_scene_manager.h"
+#include "audio_stream_collector.h"
 using namespace testing::ext;
 
 namespace OHOS {
@@ -74,26 +75,28 @@ HWTEST(AudioCoreServiceUtilsTest, AudioCoreServiceUtils_003, TestSize.Level1)
     desc3->deviceType_ = DEVICE_TYPE_DP;
     desc3->networkId_ = LOCAL_NETWORK_ID;
 
-    EXPECT_FALSE(AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(descs, 0));
+    AudioStreamCollector& streamCollector = AudioStreamCollector::GetAudioStreamCollector();
+
+    EXPECT_FALSE(AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(descs, 0, streamCollector));
 
     descs.push_back(desc3);
     descs.push_back(desc1);
-    EXPECT_FALSE(AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(descs, 0));
+    EXPECT_FALSE(AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(descs, 0, streamCollector));
 
     descs.clear();
     descs.push_back(desc1);
     descs.push_back(desc3);
-    EXPECT_FALSE(AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(descs, 0));
+    EXPECT_FALSE(AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(descs, 0, streamCollector));
 
     descs.clear();
     descs.push_back(desc1);
     descs.push_back(desc2);
-    EXPECT_FALSE(AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(descs, 0));
+    EXPECT_FALSE(AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(descs, 0, streamCollector));
 
     descs.clear();
     descs.push_back(desc2);
     descs.push_back(desc1);
-    EXPECT_TRUE(AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(descs, 0));
+    EXPECT_TRUE(AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(descs, 0, streamCollector));
 }
 
 /**

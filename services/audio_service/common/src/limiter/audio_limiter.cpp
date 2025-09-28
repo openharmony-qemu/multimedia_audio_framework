@@ -33,8 +33,9 @@ const float LEVEL_RELEASE = 0.7f;
 const float GAIN_ATTACK = 0.1f;
 const float GAIN_RELEASE = 0.6f;
 const int32_t AUDIO_FORMAT_PCM_FLOAT = 4;
-const int32_t PROC_COUNT = 4;  // process 4 times
-const int32_t AUDIO_LMT_ALGO_CHANNEL = 2;    // 2 channel for stereo
+const int32_t PROC_COUNT = 4;              // process 4 times
+const int32_t AUDIO_LMT_ALGO_CHANNEL = 2;  // 2 channel for stereo
+const int32_t AUDIO_LMT_ALGO_BYTE_PER_SAMPLE = sizeof(float);
 
 AudioLimiter::AudioLimiter(int32_t sinkIndex)
 {
@@ -50,7 +51,6 @@ AudioLimiter::AudioLimiter(int32_t sinkIndex)
     algoFrameLen_ = 0;
     curMaxLev_ = 0.0f;
     gain_ = 0.0f;
-    bufHis_ = nullptr;
     channels_ = 0;
     sampleRate_ = 0;
     AUDIO_INFO_LOG("AudioLimiter");
@@ -58,76 +58,111 @@ AudioLimiter::AudioLimiter(int32_t sinkIndex)
 
 AudioLimiter::~AudioLimiter()
 {
-    ReleaseBuffer();
     DumpFileUtil::CloseDumpFile(&dumpFileInput_);
     DumpFileUtil::CloseDumpFile(&dumpFileOutput_);
     AUDIO_INFO_LOG("~AudioLimiter");
 }
 
-void AudioLimiter::ReleaseBuffer()
+int32_t AudioLimiter::SetConfig(int32_t inputFrameBytes, int32_t bytePerSample, int32_t sampleRate, int32_t channels)
 {
-    if (bufHis_ != nullptr) {
-        delete[] bufHis_;
-        bufHis_ = nullptr;
-    }
-    return;
-}
+    // reset
+    algoFrameLen_ = 0;
 
-int32_t AudioLimiter::SetConfig(int32_t maxRequest, int32_t biteSize, int32_t sampleRate, int32_t channels)
-{
-    CHECK_AND_RETURN_RET_LOG(maxRequest > 0 && biteSize > 0 && sampleRate > 0 && channels == AUDIO_LMT_ALGO_CHANNEL,
-        ERROR, "Invalid input parameters");
-    algoFrameLen_ = maxRequest / (biteSize * PROC_COUNT);
-    latency_ = static_cast<uint32_t>(algoFrameLen_ * AUDIO_MS_PER_S / (sampleRate * channels));
-    AUDIO_INFO_LOG("maxRequest = %{public}d, biteSize = %{public}d, sampleRate = %{public}d, channels = %{public}d,"
-        "algoFrameLen_ = %{public}d, latency_ = %{public}d",
-        maxRequest, biteSize, sampleRate, channels, algoFrameLen_, latency_);
-    bufHis_ = new (std::nothrow) float[algoFrameLen_ + 1]();
-    CHECK_AND_RETURN_RET_LOG(bufHis_ != nullptr, ERROR, "allocate limit algorithm buffer failed");
+    CHECK_AND_RETURN_RET_LOG(inputFrameBytes > 0 && sampleRate > 0 && channels == AUDIO_LMT_ALGO_CHANNEL &&
+                                 bytePerSample == AUDIO_LMT_ALGO_BYTE_PER_SAMPLE,
+        ERR_INVALID_PARAM,
+        "Invalid input parameters");
+    CHECK_AND_RETURN_RET_LOG((inputFrameBytes / bytePerSample) % PROC_COUNT == 0,
+        ERR_INVALID_PARAM,
+        "Invalid inputFrameBytes, frameLen must be an even number, intput frameLen is %{public}d",
+        inputFrameBytes / (bytePerSample * channels));
+
+    int32_t newAlgoFrameLen = inputFrameBytes / (bytePerSample * PROC_COUNT);
+    CHECK_AND_RETURN_RET_LOG(newAlgoFrameLen > 0,
+        ERR_INVALID_PARAM,
+        "Invalid inputFrameBytes, min request frameBytes is %{public}d",
+        bytePerSample * PROC_COUNT * channels);
+
+    latency_ = static_cast<uint32_t>(newAlgoFrameLen * AUDIO_MS_PER_S / (sampleRate * channels));
+
+    if (bufHis_.capacity() < static_cast<size_t>(newAlgoFrameLen)) {
+        bufHis_.assign(newAlgoFrameLen + 1, 0);
+    } else {
+        memset_s(bufHis_.data(), bufHis_.capacity() * sizeof(float), 0, bufHis_.capacity() * sizeof(float));
+    }
+
+    CHECK_AND_RETURN_RET_LOG(bufHis_.capacity() > static_cast<size_t>(newAlgoFrameLen),
+        ERR_MEMORY_ALLOC_FAILED,
+        "allocate limit algorithm buffer failed, buffer capacity %{public}zu, requestLen %{public}d",
+        bufHis_.capacity(),
+        newAlgoFrameLen);
+    algoFrameLen_ = newAlgoFrameLen;
+
     sampleRate_ = static_cast<uint32_t>(sampleRate);
     channels_ = static_cast<uint32_t>(channels);
-    dumpFileNameIn_ = std::to_string(sinkIndex_) + "_limiter_in_" + GetTime() + "_" + std::to_string(sampleRate) + "_"
-        + std::to_string(channels) + "_" + std::to_string(format_) + ".pcm";
+    dumpFileNameIn_ = std::to_string(sinkIndex_) + "_limiter_in_" + GetTime() + "_" + std::to_string(sampleRate) + "_" +
+                      std::to_string(channels) + "_" + std::to_string(format_) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileNameIn_, &dumpFileInput_);
-    dumpFileNameOut_ = std::to_string(sinkIndex_) + "_limiter_out_" + GetTime() + "_" + std::to_string(sampleRate) + "_"
-        + std::to_string(channels) + "_" + std::to_string(format_) + ".pcm";
+    dumpFileNameOut_ = std::to_string(sinkIndex_) + "_limiter_out_" + GetTime() + "_" + std::to_string(sampleRate) +
+                       "_" + std::to_string(channels) + "_" + std::to_string(format_) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileNameOut_, &dumpFileOutput_);
+
+    AUDIO_INFO_LOG("SetConfig Success, inputFrameBytes = %{public}d, bytePerSample = %{public}d, sampleRate = "
+                   "%{public}d, channels = %{public}d,"
+                   "newAlgoFrameLen = %{public}d, latency = %{public}d",
+        inputFrameBytes,
+        bytePerSample,
+        sampleRate,
+        channels,
+        algoFrameLen_,
+        latency_);
 
     return SUCCESS;
 }
 
-int32_t AudioLimiter::Process(int32_t frameLen, float *inBuffer, float *outBuffer)
+int32_t AudioLimiter::Process(int32_t inputSampleCount, float *inBuffer, float *outBuffer)
 {
-    CHECK_AND_RETURN_RET_LOG(algoFrameLen_ * PROC_COUNT == frameLen, ERROR,
-        "error, algoFrameLen_ = %{public}d, frameLen = %{public}d", algoFrameLen_, frameLen);
+    CHECK_AND_RETURN_RET_LOG(
+        inBuffer != nullptr && outBuffer != nullptr, ERR_NULL_POINTER, "AudioLimiter Process Error, buffer is nullptr");
+
+    CHECK_AND_RETURN_RET_LOG(algoFrameLen_ > 0 && bufHis_.capacity() > static_cast<size_t>(algoFrameLen_),
+        ERR_NOT_STARTED,
+        "could not do process before SetConfig success");
+
+    CHECK_AND_RETURN_RET_LOG(algoFrameLen_ * PROC_COUNT == inputSampleCount,
+        ERR_INVALID_PARAM,
+        "error, requestSample = %{public}d, inputSample = %{public}d",
+        algoFrameLen_ * PROC_COUNT,
+        inputSampleCount);
+
     int32_t ptrIndex = 0;
     if (dumpFileInput_ == nullptr) {
-        dumpFileNameIn_ = std::to_string(sinkIndex_) + "_limiter_in_" + GetTime() + "_" +
-            std::to_string(sampleRate_) + "_" + std::to_string(channels_) + "_" + std::to_string(format_) + ".pcm";
+        dumpFileNameIn_ = std::to_string(sinkIndex_) + "_limiter_in_" + GetTime() + "_" + std::to_string(sampleRate_) +
+                          "_" + std::to_string(channels_) + "_" + std::to_string(format_) + ".pcm";
         DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileNameIn_, &dumpFileInput_);
         AUDIO_DEBUG_LOG("Reopen dump file: %{public}s", dumpFileNameIn_.c_str());
     }
     if (dumpFileOutput_ == nullptr) {
         dumpFileNameOut_ = std::to_string(sinkIndex_) + "_limiter_out_" + GetTime() + "_" +
-            std::to_string(sampleRate_) + "_" + std::to_string(channels_) + "_" + std::to_string(format_) + ".pcm";
+                           std::to_string(sampleRate_) + "_" + std::to_string(channels_) + "_" +
+                           std::to_string(format_) + ".pcm";
         DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileNameOut_, &dumpFileOutput_);
         AUDIO_DEBUG_LOG("Reopen dump file: %{public}s", dumpFileNameOut_.c_str());
     }
-    DumpFileUtil::WriteDumpFile(dumpFileInput_, static_cast<void *>(inBuffer), frameLen * sizeof(float));
+    DumpFileUtil::WriteDumpFile(dumpFileInput_, static_cast<void *>(inBuffer), inputSampleCount * sizeof(float));
     for (int32_t i = 0; i < PROC_COUNT; i++) {
-        ProcessAlgo(algoFrameLen_, inBuffer + ptrIndex, outBuffer + ptrIndex);
+        ProcessAlgo(inBuffer + ptrIndex, outBuffer + ptrIndex);
         ptrIndex += algoFrameLen_;
     }
-    DumpFileUtil::WriteDumpFile(dumpFileOutput_, static_cast<void *>(outBuffer), frameLen * sizeof(float));
+    DumpFileUtil::WriteDumpFile(dumpFileOutput_, static_cast<void *>(outBuffer), inputSampleCount * sizeof(float));
     return SUCCESS;
 }
 
-void AudioLimiter::ProcessAlgo(int algoFrameLen, float *inBuffer, float *outBuffer)
+void AudioLimiter::ProcessAlgo(float *inBuffer, float *outBuffer)
 {
     // calculate envelope energy
-    CHECK_AND_RETURN_LOG(algoFrameLen > 0, "algoFrameLen is invalid");
     float maxEnvelopeLevel = 0.0f;
-    for (int32_t i = 0; i < algoFrameLen - 1; i += AUDIO_LMT_ALGO_CHANNEL) {
+    for (int32_t i = 0; i < algoFrameLen_ - 1; i += AUDIO_LMT_ALGO_CHANNEL) {
         float tempBufInLeft = inBuffer[i];
         float tempBufInRight = inBuffer[i + 1];
         float tempLevel = std::max(std::abs(tempBufInLeft), std::abs(tempBufInRight));
@@ -146,11 +181,11 @@ void AudioLimiter::ProcessAlgo(int algoFrameLen, float *inBuffer, float *outBuff
     float lastGain = gain_;
     float coeff = gain_ > targetGain ? gainAttack_ : gainRelease_;
     gain_ = coeff * gain_ + (1 - coeff) * targetGain;
-    float deltaGain = (gain_ - lastGain) * AUDIO_LMT_ALGO_CHANNEL / algoFrameLen;
+    float deltaGain = (gain_ - lastGain) * AUDIO_LMT_ALGO_CHANNEL / algoFrameLen_;
 
     // apply gain
-    if (algoFrameLen % AUDIO_LMT_ALGO_CHANNEL == 0) {
-        for (int32_t i = 0; i < algoFrameLen; i += AUDIO_LMT_ALGO_CHANNEL) {
+    if (algoFrameLen_ % AUDIO_LMT_ALGO_CHANNEL == 0) {
+        for (int32_t i = 0; i < algoFrameLen_; i += AUDIO_LMT_ALGO_CHANNEL) {
             lastGain += deltaGain;
             outBuffer[i] = bufHis_[i] * lastGain;
             outBuffer[i + 1] = bufHis_[i + 1] * lastGain;
@@ -158,16 +193,16 @@ void AudioLimiter::ProcessAlgo(int algoFrameLen, float *inBuffer, float *outBuff
             bufHis_[i + 1] = inBuffer[i + 1];
         }
     } else {
-        outBuffer[0] = bufHis_[0];
-        bufHis_[0] = bufHis_[algoFrameLen];
-        for (int32_t i = 1; i < algoFrameLen - 1; i += AUDIO_LMT_ALGO_CHANNEL) {
+        outBuffer[0] = bufHis_[0] * lastGain;
+        bufHis_[0] = bufHis_[algoFrameLen_];
+        for (int32_t i = 1; i < algoFrameLen_ - 1; i += AUDIO_LMT_ALGO_CHANNEL) {
             lastGain += deltaGain;
             outBuffer[i] = bufHis_[i] * lastGain;
             outBuffer[i + 1] = bufHis_[i + 1] * lastGain;
             bufHis_[i] = inBuffer[i - 1];
             bufHis_[i + 1] = inBuffer[i];
         }
-        bufHis_[algoFrameLen] = inBuffer[algoFrameLen - 1];
+        bufHis_[algoFrameLen_] = inBuffer[algoFrameLen_ - 1];
     }
 }
 
@@ -175,5 +210,5 @@ uint32_t AudioLimiter::GetLatency()
 {
     return latency_;
 }
-} // namespace AudioStandard
-} // namespace OHOS
+}  // namespace AudioStandard
+}  // namespace OHOS

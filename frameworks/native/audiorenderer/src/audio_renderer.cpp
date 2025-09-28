@@ -56,6 +56,7 @@ static constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 60;
 constexpr int32_t TIME_OUT_SECONDS = 10;
 constexpr int32_t START_TIME_OUT_SECONDS = 15;
 static constexpr uint32_t BLOCK_INTERRUPT_CALLBACK_IN_MS = 1000; // 1000ms
+static constexpr uint32_t BLOCK_INTERRUPT_OVERTIMES_IN_MS = 3000; // 3s
 static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 static constexpr int32_t UID_MEDIA = 1013;
@@ -735,7 +736,9 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::ConvertToStreamDesc
     streamDesc->streamInfo_.customSampleRate = audioStreamParams.customSampleRate;
     streamDesc->streamInfo_.channels = static_cast<AudioChannel>(audioStreamParams.channels);
     streamDesc->streamInfo_.encoding = static_cast<AudioEncodingType>(audioStreamParams.encoding);
-    streamDesc->streamInfo_.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.channelLayout);
+    streamDesc->streamInfo_.channelLayout = audioStream_->ConvertChannelsToDefaultChannelLayout(
+        static_cast<AudioChannel>(audioStreamParams.channels),
+        static_cast<AudioChannelLayout>(audioStreamParams.channelLayout));
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
     streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->rendererInfo_ = rendererInfo_;
@@ -1038,6 +1041,15 @@ bool AudioRendererPrivate::IsRestoreOrStopNeeded()
     return audioStream_->IsRestoreNeeded() || audioStream_->GetStopFlag();
 }
 
+void AudioRendererPrivate::SetInSwitchingFlag(bool inSwitchingFlag)
+{
+    std::unique_lock<std::mutex> lock(inSwitchingMtx_);
+    inSwitchingFlag_ = inSwitchingFlag;
+    if (!inSwitchingFlag_) {
+        taskLoopCv_.notify_all();
+    }
+}
+
 int32_t AudioRendererPrivate::AsyncCheckAudioRenderer(std::string callingFunc)
 {
     // Check first to avoid redundant instructions consumption in thread switching
@@ -1055,7 +1067,9 @@ int32_t AudioRendererPrivate::AsyncCheckAudioRenderer(std::string callingFunc)
         uint32_t taskCount;
         do {
             taskCount = sharedRenderer->switchStreamInNewThreadTaskCount_.load();
+            sharedRenderer->SetInSwitchingFlag(true);
             sharedRenderer->CheckAudioRenderer(callingFunc + "withNewThread");
+            sharedRenderer->SetInSwitchingFlag(false);
         } while (sharedRenderer->switchStreamInNewThreadTaskCount_.fetch_sub(taskCount) > taskCount);
     });
     return SUCCESS;
@@ -1123,6 +1137,11 @@ int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
 {
     Trace trace("AudioRenderer::Write");
     AsyncCheckAudioRenderer("Write");
+
+    std::unique_lock<std::mutex> lock(inSwitchingMtx_);
+    taskLoopCv_.wait_for(lock, std::chrono::milliseconds(BLOCK_INTERRUPT_OVERTIMES_IN_MS), [this] {
+        return inSwitchingFlag_ == false;
+    });
     MockPcmData(buffer, bufferSize);
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
@@ -1137,6 +1156,11 @@ int32_t AudioRendererPrivate::Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t 
 {
     Trace trace("Write");
     AsyncCheckAudioRenderer("Write");
+
+    std::unique_lock<std::mutex> lock(inSwitchingMtx_);
+    taskLoopCv_.wait_for(lock, std::chrono::milliseconds(BLOCK_INTERRUPT_OVERTIMES_IN_MS), [this] {
+        return inSwitchingFlag_ == false;
+    });
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     int32_t size = currentStream->Write(pcmBuffer, pcmSize, metaBuffer, metaSize);

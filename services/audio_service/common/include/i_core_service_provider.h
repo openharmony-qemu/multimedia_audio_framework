@@ -41,6 +41,7 @@ public:
     virtual ~ICoreServiceProvider() = default;
     virtual int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId) = 0;
     virtual int32_t StartInjection(uint32_t sessionId) = 0;
+    virtual int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

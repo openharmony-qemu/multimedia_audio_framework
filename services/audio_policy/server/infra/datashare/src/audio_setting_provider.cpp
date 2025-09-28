@@ -550,8 +550,8 @@ int32_t AudioSettingProvider::StringToInt32(const std::string &str, int32_t &res
         return ERROR;
     }
 
-    const auto *first = str.data();
-    const auto *last = first +str.size();
+    const auto *first = s.data();
+    const auto *last = first + s.size();
     std::from_chars_result res = std::from_chars(first, last, result);
     if (res.ec == std::errc{} && res.ptr ==last) {
         return SUCCESS;
@@ -574,8 +574,8 @@ int64_t AudioSettingProvider::StringToInt64(const std::string &str, int64_t &res
         return ERROR;
     }
 
-    const auto *first = str.data();
-    const auto *last = first +str.size();
+    const auto *first = s.data();
+    const auto *last = first + s.size();
     std::from_chars_result res = std::from_chars(first, last, result);
     if (res.ec == std::errc{} && res.ptr ==last) {
         return SUCCESS;

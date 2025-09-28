@@ -32,6 +32,7 @@
 #include "audio_performance_monitor.h"
 #include "core_service_handler.h"
 #include "stream_dfx_manager.h"
+#include "audio_stream_concurrency_detector.h"
 #include "format_converter.h"
 #ifdef RESSCHE_ENABLE
 #include "res_type.h"
@@ -50,6 +51,23 @@ sptr<AudioProcessInServer> AudioProcessInServer::Create(const AudioProcessConfig
     return process;
 }
 
+void AudioProcessInServer::UpdateStreamInfo()
+{
+    CHECK_AND_RETURN_LOG(checkCount_ <= audioCheckFreq_, "the stream had been already checked");
+
+    if ((audioCheckFreq_ == checkCount_) || (checkCount_ == 0)) {
+        AudioStreamConcurrencyDetector::GetInstance().UpdateWriteTime(processConfig_, sessionId_);
+    }
+
+    checkCount_++;
+}
+
+void AudioProcessInServer::RemoveStreamInfo()
+{
+    AudioStreamConcurrencyDetector::GetInstance().RemoveStream(processConfig_, sessionId_);
+    checkCount_ = 0;
+}
+
 AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConfig,
     ProcessReleaseCallback *releaseCallback) : processConfig_(processConfig), releaseCallback_(releaseCallback)
 {
@@ -64,8 +82,7 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
     AudioChannel channels = processConfig_.streamInfo.channels;
     // eg: 100005_dump_process_server_audio_48000_2_1.pcm
     dumpFileName_ = std::to_string(sessionId_) + '_' + "_dump_process_server_audio_" +
-        std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) +
-        ".pcm";
+        std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
     playerDfx_ = std::make_unique<PlayerDfxWriter>(processConfig_.appInfo, sessionId_);
     recorderDfx_ = std::make_unique<RecorderDfxWriter>(processConfig_.appInfo, sessionId_);
@@ -78,6 +95,14 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
     audioStreamChecker_ = std::make_shared<AudioStreamChecker>(processConfig);
     AudioStreamMonitor::GetInstance().AddCheckForMonitor(processConfig.originalSessionId, audioStreamChecker_);
     streamStatusInServer_ = STREAM_IDEL;
+
+    dumpResampleName_ = std::to_string(sessionId_) + '_' + "_dump_resample_audio_" +
+        std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) + ".pcm";
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpResampleName_, &dumpResample_);
+
+    dumpFACName_ = std::to_string(sessionId_) + '_' + "_dump_fac_audio_" +
+        std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) + ".pcm";
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFACName_, &dumpFAC_);
 }
 
 AudioProcessInServer::~AudioProcessInServer()
@@ -92,6 +117,8 @@ AudioProcessInServer::~AudioProcessInServer()
         delete [] convertedBuffer_.buffer;
     }
     DumpFileUtil::CloseDumpFile(&dumpFile_);
+    DumpFileUtil::CloseDumpFile(&dumpResample_);
+    DumpFileUtil::CloseDumpFile(&dumpFAC_);
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_INVALID);
     }
@@ -381,6 +408,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_STOP);
     HILOG_COMM_INFO("Pause in server success!");
     streamStatusInServer_ = STREAM_PAUSED;
+    RemoveStreamInfo();
     return SUCCESS;
 }
 
@@ -455,6 +483,7 @@ int32_t AudioProcessInServer::Stop(int32_t stage)
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_STOP);
     HILOG_COMM_INFO("Stop in server success!");
     streamStatusInServer_ = STREAM_STOPPED;
+    RemoveStreamInfo();
     return SUCCESS;
 }
 
@@ -480,6 +509,7 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_RELEASE);
     HILOG_COMM_INFO("notify service release result: %{public}d", ret);
     streamStatusInServer_ = STREAM_RELEASED;
+    RemoveStreamInfo();
     return SUCCESS;
 }
 
@@ -676,6 +706,7 @@ int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
     CHECK_AND_RETURN_RET_LOG(streamStatus_ != nullptr, ERR_OPERATION_FAILED, "Create process buffer failed.");
     isBufferConfiged_ = true;
     isInited_ = true;
+    audioCheckFreq_ = threshold * AUDIO_MS_PER_SECOND / spanTime;
     return SUCCESS;
 }
 
@@ -1011,9 +1042,11 @@ int32_t AudioProcessInServer::HandleCapturerDataParams(RingBufferWrapper &writeB
     BufferDesc resampleOutBuf = procParams.readBuf_;
     int32_t ret = CaptureDataResampleProcess(bufLen, resampleOutBuf, srcInfo, procParams);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "capture data resample failed");
+    DumpFileUtil::WriteDumpFile(dumpResample_, static_cast<void *>(resampleOutBuf.buffer), bufLen);
 
     ret = CapturerDataFormatAndChnConv(writeBuf, resampleOutBuf, srcInfo, processConfig_.streamInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "capture data convert failed");
+    DumpFileUtil::WriteDumpFile(dumpFAC_, static_cast<void *>(writeBuf.basicBufferDescs[0].buffer), bufLen);
 
     return SUCCESS;
 }

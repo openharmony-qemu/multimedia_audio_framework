@@ -186,7 +186,7 @@ void AudioRendererCreateFuzzTest()
     HpaeSinkInfo dummySinkInfo;
     CreateHpaeInfo(nodeInfo, dummySinkInfo);
     auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo, dummySinkInfo);
-    hpaeProcessCluster->AudioRendererCreate(nodeInfo);
+    hpaeProcessCluster->AudioRendererCreate(nodeInfo, dummySinkInfo);
 }
 
 void AudioRendererStartFuzzTest()
@@ -195,7 +195,7 @@ void AudioRendererStartFuzzTest()
     HpaeSinkInfo dummySinkInfo;
     CreateHpaeInfo(nodeInfo, dummySinkInfo);
     auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo, dummySinkInfo);
-    hpaeProcessCluster->AudioRendererStart(nodeInfo);
+    hpaeProcessCluster->AudioRendererStart(nodeInfo, dummySinkInfo);
 }
 
 void AudioRendererStopFuzzTest()
@@ -204,7 +204,7 @@ void AudioRendererStopFuzzTest()
     HpaeSinkInfo dummySinkInfo;
     CreateHpaeInfo(nodeInfo, dummySinkInfo);
     auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo, dummySinkInfo);
-    hpaeProcessCluster->AudioRendererStop(nodeInfo);
+    hpaeProcessCluster->AudioRendererStop(nodeInfo, dummySinkInfo);
 }
 
 void AudioRendererReleaseFuzzTest()
@@ -213,7 +213,7 @@ void AudioRendererReleaseFuzzTest()
     HpaeSinkInfo dummySinkInfo;
     CreateHpaeInfo(nodeInfo, dummySinkInfo);
     auto hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo, dummySinkInfo);
-    hpaeProcessCluster->AudioRendererRelease(nodeInfo);
+    hpaeProcessCluster->AudioRendererRelease(nodeInfo, dummySinkInfo);
 }
 
 void GetNodeInputFormatInfoFuzzTest()

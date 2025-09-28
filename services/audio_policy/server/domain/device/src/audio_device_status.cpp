@@ -81,7 +81,8 @@ static bool CheckNeedExclude(const AudioDeviceDescriptor &desc, bool isConnected
     AUDIO_INFO_LOG("isConnected=%{public}d, exclude=%{public}d", isConnected, exclude);
     CHECK_AND_RETURN_RET(isConnected && exclude, false);
     vector<shared_ptr<AudioDeviceDescriptor>> descs{make_shared<AudioDeviceDescriptor>(desc)};
-    AudioCoreService::GetCoreService()->ExcludeOutputDevices(D_ALL_DEVICES, descs);
+    AudioCoreService::GetCoreService()->ExcludeOutputDevices(MEDIA_OUTPUT_DEVICES, descs);
+    AudioCoreService::GetCoreService()->ExcludeOutputDevices(CALL_OUTPUT_DEVICES, descs);
     return true;
 }
 
@@ -145,6 +146,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnect
     AudioDeviceDescriptor updatedDesc(devType, role == DEVICE_ROLE_NONE ?
         AudioPolicyUtils::GetInstance().GetDeviceRole(devType) : role);
     updatedDesc.hasPair_ = hasPair;
+    updatedDesc.modemCallSupported_ = !(updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET);
     UpdateLocalGroupInfo(isConnected, macAddress, deviceName, streamInfo, updatedDesc);
 
     if (isConnected) {
@@ -426,12 +428,16 @@ int32_t AudioDeviceStatus::HandleLocalDeviceConnected(AudioDeviceDescriptor &upd
 {
     DeviceStreamInfo audioStreamInfo = updatedDesc.GetDeviceStreamInfo();
     if (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        if (updatedDesc.connectState_ != VIRTUAL_CONNECTED && !audioDeviceManager_.HasConnectedA2dp()) {
-            int32_t result = AudioCoreService::GetCoreService()->ActiveA2dpAndLoadModule(updatedDesc);
-            CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "ActiveA2dpAndLoadModule failed");
-        }
         A2dpDeviceConfigInfo configInfo = {audioStreamInfo, false};
         audioA2dpDevice_.AddA2dpDevice(updatedDesc.macAddress_, configInfo);
+        if (updatedDesc.connectState_ != VIRTUAL_CONNECTED && !audioDeviceManager_.HasConnectedA2dp()) {
+            int32_t result = AudioCoreService::GetCoreService()->SwitchActiveA2dpDevice(
+                std::make_shared<AudioDeviceDescriptor>(updatedDesc));
+            CHECK_AND_RETURN_RET(result != SUCCESS, result);
+            AUDIO_ERR_LOG("ActiveA2dpAndLoadModule failed");
+            audioA2dpDevice_.DelA2dpDevice(updatedDesc.macAddress_);
+            return result;
+        }
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
         A2dpDeviceConfigInfo configInfo = {audioStreamInfo, false};
         audioA2dpDevice_.AddA2dpInDevice(updatedDesc.macAddress_, configInfo);
@@ -1206,7 +1212,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
         && AudioSpatializationService::GetAudioSpatializationService().
         IsSpatializationSupportedForDevice(updatedDesc.macAddress_)
         && AudioSpatializationService::GetAudioSpatializationService().IsSpatializationSupported();
-    updatedDesc.hightQualityRecordingSupported_ = (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN);
+    updatedDesc.highQualityRecordingSupported_ = (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN);
     UpdateDeviceList(updatedDesc, isConnected, descForCb, reason);
 
     TriggerDeviceChangedCallback(descForCb, isConnected);

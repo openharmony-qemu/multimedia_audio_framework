@@ -21,6 +21,9 @@
 #include "audio_ring_cache.h"
 #include "hpae_node.h"
 #include "hpae_pcm_buffer.h"
+#ifdef ENABLE_HOOK_PCM
+#include "hpae_pcm_dumper.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -49,7 +52,7 @@ public:
     int32_t SetSinkState(StreamManagerState sinkState);
     uint32_t GetLatency();
     bool GetIsReadFinished();
-    int32_t PeekAudioData(uint8_t *buffer, const size_t &bufferSize, AudioStreamInfo &audioStreamInfo);
+    int32_t PeekAudioData(uint8_t *buffer, const size_t &bufferSize, AudioStreamInfo &streamInfo);
     int32_t ReloadNode(HpaeNodeInfo nodeInfo);
 private:
     size_t GetRingCacheSize();
@@ -62,6 +65,9 @@ private:
     HpaePcmBuffer outputAudioBuffer_;
     std::mutex mutex_;
     StreamManagerState state_ = STREAM_MANAGER_NEW;
+#ifdef ENABLE_HOOK_PCM
+    std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
+#endif
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

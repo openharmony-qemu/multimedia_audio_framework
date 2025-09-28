@@ -561,20 +561,24 @@ int32_t ProAudioServiceAdapterImpl::SetSystemVolumeToEffect(AudioStreamType stre
     return SUCCESS;
 }
 
-int32_t ProAudioServiceAdapterImpl::AddCaptureInjector(const uint32_t &sinkPortIndex,
+void ProAudioServiceAdapterImpl::AddCaptureInjector(const uint32_t &sinkPortIndex,
     const uint32_t &sourcePortIndex, const SourceType &sourceType)
 {
     lock_guard<mutex> lock(lock_);
     IHpaeManager::GetHpaeManager().AddCaptureInjector(sinkPortIndex, sourcePortIndex, sourceType);
-    return SUCCESS;
 }
 
-int32_t ProAudioServiceAdapterImpl::RemoveCaptureInjector(const uint32_t &sinkPortIndex,
+void ProAudioServiceAdapterImpl::RemoveCaptureInjector(const uint32_t &sinkPortIndex,
     const uint32_t &sourcePortIndex, const SourceType &sourceType)
 {
     lock_guard<mutex> lock(lock_);
     IHpaeManager::GetHpaeManager().RemoveCaptureInjector(sinkPortIndex, sourcePortIndex, sourceType);
-    return SUCCESS;
+}
+
+bool ProAudioServiceAdapterImpl::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout)
+{
+    lock_guard<mutex> lock(lock_);
+    return IHpaeManager::GetHpaeManager().IsChannelLayoutSupportedForDspEffect(channelLayout);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

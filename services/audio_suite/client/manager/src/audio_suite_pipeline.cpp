@@ -26,7 +26,9 @@
 #include "audio_suite_eq_node.h"
 #include "audio_suite_pipeline.h"
 #include "audio_suite_input_node.h"
+#include "audio_suite_aiss_node.h"
 #include "audio_suite_output_node.h"
+#include "audio_suite_nr_node.h"
 #include "audio_suite_mixer_node.h"
 
 namespace OHOS {
@@ -270,9 +272,15 @@ std::shared_ptr<AudioNode> AudioSuitePipeline::CreateNodeForType(AudioNodeBuilde
         AUDIO_INFO_LOG("Create AudioOutputNode");
         outputNode_ = std::make_shared<AudioOutputNode>(audioFormat);
         node = std::static_pointer_cast<AudioNode>(outputNode_);
+    } else if (builder.nodeType == NODE_TYPE_NOISE_REDUCTION) {
+        AUDIO_INFO_LOG("Create AudioSuiteNrNode");
+        node = std::make_shared<AudioSuiteNrNode>();
     } else if (builder.nodeType == NODE_TYPE_AUDIO_MIXER) {
         AUDIO_INFO_LOG("Create AudioSuiteMixerNode");
-        node = std::make_shared<AudioSuiteMixerNode>(NODE_TYPE_AUDIO_MIXER, audioFormat);
+        node = std::make_shared<AudioSuiteMixerNode>();
+    } else if (builder.nodeType == NODE_TYPE_AUDIO_SEPARATION) {
+        AUDIO_INFO_LOG("Create AudioSuiteAissNode");
+        node = std::make_shared<AudioSuiteAissNode>(NODE_TYPE_AUDIO_SEPARATION, audioFormat);
     }
 
     return node;
@@ -345,9 +353,9 @@ int32_t AudioSuitePipeline::DestroyNodeForRun(uint32_t nodeId, std::shared_ptr<A
     return SUCCESS;
 }
 
-int32_t AudioSuitePipeline::EnableNode(uint32_t nodeId, AudioNodeEnable audioNoedEnable)
+int32_t AudioSuitePipeline::EnableNode(uint32_t nodeId, AudioNodeEnable audioNodeEnable)
 {
-    auto request = [this, nodeId, audioNoedEnable]() {
+    auto request = [this, nodeId, audioNodeEnable]() {
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
             AUDIO_ERR_LOG("EnableNode node failed, node id is invailed.");
             TriggerCallback(SET_ENABLE_NODE, ERR_INVALID_PARAM);
@@ -367,7 +375,7 @@ int32_t AudioSuitePipeline::EnableNode(uint32_t nodeId, AudioNodeEnable audioNoe
             return;
         }
 
-        node->SetNodeEnableStatus(audioNoedEnable);
+        node->SetNodeEnableStatus(audioNodeEnable);
         TriggerCallback(SET_ENABLE_NODE, SUCCESS);
     };
 

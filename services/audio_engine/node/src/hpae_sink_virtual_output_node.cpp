@@ -48,6 +48,13 @@ HpaeSinkVirtualOutputNode::HpaeSinkVirtualOutputNode(HpaeNodeInfo &nodeInfo)
     if (ringCache_ == nullptr) {
         AUDIO_ERR_LOG("ringCache create fail");
     }
+#ifdef ENABLE_HOOK_PCM
+    outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
+        "HpaeSinkVirtualOutputNode_id_" + std::to_string(GetSessionId()) + "_nodeId_" + std::to_string(GetNodeId()) +
+        "_ch_" + std::to_string(GetChannelCount()) +
+        "_rate_" + std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
+
+#endif
 }
 
 HpaeSinkVirtualOutputNode::~HpaeSinkVirtualOutputNode()
@@ -64,6 +71,14 @@ void HpaeSinkVirtualOutputNode::DoRenderProcess()
     std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
     CHECK_AND_RETURN(!outputVec.empty());
     HpaePcmBuffer *outputData = outputVec.front();
+
+#ifdef ENABLE_HOOK_PCM
+    if (outputPcmDumper_ != nullptr) {
+        outputPcmDumper_->CheckAndReopenHandle();
+        outputPcmDumper_->Dump((int8_t *)outputData->GetPcmDataBuffer(),
+            outputData->GetFrameLen() * sizeof(float) * outputData->GetChannelCount());
+    }
+#endif
 
     OptResult result = ringCache_->Enqueue(
         {reinterpret_cast<uint8_t *>(outputData->GetPcmDataBuffer()), outputData->DataSize()});
@@ -83,15 +98,20 @@ void HpaeSinkVirtualOutputNode::DoProcess()
 }
 
 int32_t HpaeSinkVirtualOutputNode::PeekAudioData(uint8_t *buffer, const size_t &bufferSize,
-    AudioStreamInfo &audioStreamInfo)
+    AudioStreamInfo &streamInfo)
 {
-    Trace trace("HpaeSinkVirtualOutputNode::PeekAudioData" + GetTraceInfo());
+    Trace trace("HpaeSinkVirtualOutputNode::PeekAudioData " + GetTraceInfo());
     std::lock_guard<std::mutex> lock(mutex_);
     DoProcess();
-    ConvertFromFloat(GetBitWidth(), GetChannelCount() * GetFrameLen(), outputAudioBuffer_.GetPcmDataBuffer(),
-        renderFrameData_.data());
-    CHECK_AND_RETURN_RET_LOG(bufferSize == outputAudioBuffer_.DataSize(), ERROR_INVALID_PARAM, "buffersize error");
-    buffer = reinterpret_cast<uint8_t *>(renderFrameData_.data());
+    CHECK_AND_RETURN_RET_LOG(buffer != nullptr, ERROR_INVALID_PARAM, "Invalid nullptr buffer provided");
+    memset_s(buffer, bufferSize, 0, bufferSize);
+    uint64_t length = bufferSize / GetBitWidth();
+    ConvertFromFloat(GetBitWidth(), std::min(static_cast<uint64_t>(GetChannelCount() * GetFrameLen()), length),
+        outputAudioBuffer_.GetPcmDataBuffer(), buffer);
+
+    streamInfo.format = GetBitWidth();
+    streamInfo.samplingRate = GetSampleRate();
+    streamInfo.channels = GetChannelCount();
     return SUCCESS;
 }
 
@@ -227,8 +247,8 @@ int32_t HpaeSinkVirtualOutputNode::ReloadNode(HpaeNodeInfo nodeInfo)
 
 size_t HpaeSinkVirtualOutputNode::GetRingCacheSize()
 {
-    size_t frameBytes = GetChannelCount() * static_cast<size_t>(GetSizeFromFormat(GetBitWidth())) *
-        GetSampleRate() * DEFAULT_FRAME_LEN_MS / MS_PER_SECOND;
+    size_t frameBytes = static_cast<size_t>(GetSizeFromFormat(GetBitWidth())) * GetSampleRate() *
+        DEFAULT_FRAME_LEN_MS / MS_PER_SECOND * GetChannelCount();
     return DEFAULT_RING_BUFFER_NUM * frameBytes;
 }
 }  // namespace HPAE

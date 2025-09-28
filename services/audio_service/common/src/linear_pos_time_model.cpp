@@ -74,7 +74,7 @@ bool LinearPosTimeModel::IsReasonable(uint64_t frame, int64_t nanoTime)
     } else {
         deltaFrame = -static_cast<int64_t>(stampFrame_ - frame);
     }
-    reasonableDeltaTime = stampNanoTime_ + deltaFrame * NANO_COUNT_PER_SECOND / (int64_t)sampleRate_;
+    reasonableDeltaTime = stampNanoTime_ + deltaFrame * (NANO_COUNT_PER_SECOND / static_cast<int64_t>(sampleRate_));
 
     // note: compare it with current time?
     if (nanoTime <= (reasonableDeltaTime + REASONABLE_BOUND_IN_NANO) &&
@@ -112,7 +112,7 @@ bool LinearPosTimeModel::CheckPosTimeReasonable(std::pair<uint64_t, int64_t> &pr
         return false;
     }
     int64_t deltaFrame = static_cast<int64_t>(next.first - pre.first);
-    int64_t deltaFrameTime = deltaFrame * NANO_COUNT_PER_SECOND / (int64_t)sampleRate_;
+    int64_t deltaFrameTime = deltaFrame * (NANO_COUNT_PER_SECOND / static_cast<int64_t>(sampleRate_));
     int64_t deltaTime = next.second - pre.second - deltaFrameTime;
 
     return std::abs(deltaTime) < REASONABLE_DELTA_BOUND_IN_NANO;
@@ -160,14 +160,14 @@ int64_t LinearPosTimeModel::GetTimeOfPos(uint64_t posInFrame)
                 " large, stampFrame: %{public}" PRIu64"", posInFrame, stampFrame_);
         }
         deltaFrame = static_cast<int64_t>(posInFrame - stampFrame_);
-        return stampNanoTime_ + deltaFrame * NANO_COUNT_PER_SECOND / (int64_t)sampleRate_;
+        return stampNanoTime_ + deltaFrame * (NANO_COUNT_PER_SECOND / static_cast<int64_t>(sampleRate_));
     } else {
         if (stampFrame_ - posInFrame >= (uint64_t)sampleRate_) {
             AUDIO_WARNING_LOG("posInFrame %{public}" PRIu64" is too"
                 " small, stampFrame: %{public}" PRIu64"", posInFrame, stampFrame_);
         }
         deltaFrame = static_cast<int64_t>(stampFrame_ - posInFrame);
-        return stampNanoTime_ - deltaFrame * NANO_COUNT_PER_SECOND / (int64_t)sampleRate_;
+        return stampNanoTime_ - deltaFrame * (NANO_COUNT_PER_SECOND / static_cast<int64_t>(sampleRate_));
     }
     return invalidTime;
 }

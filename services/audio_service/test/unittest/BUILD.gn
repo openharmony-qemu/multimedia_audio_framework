@@ -896,6 +896,7 @@ ohos_unittest("audio_process_in_client_unit_test") {
     defines += [ "SUPPORT_LOW_LATENCY" ]
     sources += [
       "../../../../services/audio_service/server/src/audio_endpoint.cpp",
+      "../../../../services/audio_service/server/src/audio_endpoint_sink_adapter.cpp",
       "../../../../services/audio_service/server/src/audio_endpoint_performance.cpp",
     ]
   }
@@ -1023,6 +1024,7 @@ ohos_unittest("audio_process_in_client_second_unit_test") {
     defines += [ "SUPPORT_LOW_LATENCY" ]
     sources += [
       "../../../../services/audio_service/server/src/audio_endpoint.cpp",
+      "../../../../services/audio_service/server/src/audio_endpoint_sink_adapter.cpp",
       "../../../../services/audio_service/server/src/audio_endpoint_performance.cpp",
       "../../../../services/audio_service/server/src/audio_endpoint_separate.cpp",
     ]
@@ -1157,6 +1159,7 @@ ohos_unittest("capturer_in_server_unit_test") {
     defines += [ "SUPPORT_LOW_LATENCY" ]
     sources += [
       "../../../../services/audio_service/server/src/audio_endpoint.cpp",
+      "../../../../services/audio_service/server/src/audio_endpoint_sink_adapter.cpp",
       "../../../../services/audio_service/server/src/audio_endpoint_performance.cpp",
     ]
   }
@@ -1168,6 +1171,32 @@ ohos_unittest("capturer_in_server_unit_test") {
   if (audio_framework_feature_offline_effect) {
     defines += [ "FEATURE_OFFLINE_EFFECT" ]
   }
+}
+
+ohos_unittest("audio_stream_concurrency_detector_unit_test") {
+  testonly = true
+  module_out_path = module_output_path
+
+  include_dirs = [ "../../interfaces/inner_api/native/audio_common/include" ]
+
+  sources = [ "./audio_stream_concurrency_detector_unit_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+  cflags = [ "-fno-access-control" ]
+
+  deps = [
+    "../../../audio_service:audio_common",
+    "../../../../frameworks/native/audioutils:audio_utils",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gmock",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "init:libbegetutil",
+  ]
 }
 
 ohos_unittest("audio_dump_pcm_unit_test") {

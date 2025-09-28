@@ -84,21 +84,12 @@ HpaeRenderEffectNode::~HpaeRenderEffectNode()
 
 void HpaeRenderEffectNode::DoProcess()
 {
-    HpaePcmBuffer *tempOut = nullptr;
-    std::vector<HpaePcmBuffer *>& preOutputs = inputStream_.ReadPreOutputData();
-    // if buffer is not valid, write silence data(invalid) to output
     if (sceneType_ != "SCENE_COLLABORATIVE") {
-        if (enableProcess_ && !preOutputs.empty()) {
-            tempOut = SignalProcess(preOutputs);
-            outputStream_.WriteDataToOutput(tempOut);
-        } else if (!preOutputs.empty()) {
-            outputStream_.WriteDataToOutput(preOutputs[0]);
-        } else {
-            outputStream_.WriteDataToOutput(&silenceData_);
-        }
+        HpaePluginNode::DoProcess();
         return;
     }
 
+    std::vector<HpaePcmBuffer *>& preOutputs = inputStream_.ReadPreOutputData();
     if (enableProcess_ && !preOutputs.empty() && directOutput_ && collaborativeOutput_) {
         SignalProcess(preOutputs);
         int32_t ret = SplitCollaborativeData();

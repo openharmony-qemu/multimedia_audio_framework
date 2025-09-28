@@ -120,9 +120,16 @@ HWTEST_F(HpaeVirtualCapturerManagerTest, HpaeVirtualCapturerManagerStart_001, Te
     auto capturerManager = std::make_shared<HpaeVirtualCapturerManager>();
     EXPECT_NE(capturerManager, nullptr);
 
-    uint32_t sessionId = DEFAULT_SESSION_ID;
-    int32_t ret = capturerManager->Start(sessionId);
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    int32_t ret = capturerManager->CreateStream(streamInfo);
     EXPECT_EQ(ret, SUCCESS);
+
+    uint32_t sessionId = streamInfo.sessionId;
+    ret = capturerManager->Start(sessionId);
+    HpaeCaptureMoveInfo stream = capturerManager->captureStream_[sessionId];
+    EXPECT_EQ(stream.sessionInfo.state, HPAE_SESSION_RUNNING);
+    EXPECT_EQ(stream.sourceOutputNode->GetState(), HPAE_SESSION_RUNNING);
 }
 
 /*
@@ -136,10 +143,19 @@ HWTEST_F(HpaeVirtualCapturerManagerTest, HpaeVirtualCapturerManagerPause_001, Te
     auto capturerManager = std::make_shared<HpaeVirtualCapturerManager>();
     EXPECT_NE(capturerManager, nullptr);
 
-    uint32_t sessionId = DEFAULT_SESSION_ID;
-    int32_t ret = capturerManager->Pause(sessionId);
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    int32_t ret = capturerManager->CreateStream(streamInfo);
     EXPECT_EQ(ret, SUCCESS);
+
+    uint32_t sessionId = streamInfo.sessionId;
+    ret = capturerManager->Pause(sessionId);
+    EXPECT_EQ(ret, SUCCESS);
+    HpaeCaptureMoveInfo stream = capturerManager->captureStream_[sessionId];
+    EXPECT_EQ(stream.sessionInfo.state, HPAE_SESSION_PAUSED);
+    EXPECT_EQ(stream.sourceOutputNode->GetState(), HPAE_SESSION_PAUSED);
 }
+
 
 /*
  * tc.name   : Test HpaeVirtualCapturerManager API
@@ -152,8 +168,13 @@ HWTEST_F(HpaeVirtualCapturerManagerTest, HpaeVirtualCapturerManagerFlush_001, Te
     auto capturerManager = std::make_shared<HpaeVirtualCapturerManager>();
     EXPECT_NE(capturerManager, nullptr);
 
-    uint32_t sessionId = DEFAULT_SESSION_ID;
-    int32_t ret = capturerManager->Flush(sessionId);
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    int32_t ret = capturerManager->CreateStream(streamInfo);
+    EXPECT_EQ(ret, SUCCESS);
+
+    uint32_t sessionId = streamInfo.sessionId;
+    ret = capturerManager->Flush(sessionId);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -168,8 +189,13 @@ HWTEST_F(HpaeVirtualCapturerManagerTest, HpaeVirtualCapturerManagerDrain_001, Te
     auto capturerManager = std::make_shared<HpaeVirtualCapturerManager>();
     EXPECT_NE(capturerManager, nullptr);
 
-    uint32_t sessionId = DEFAULT_SESSION_ID;
-    int32_t ret = capturerManager->Drain(sessionId);
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    int32_t ret = capturerManager->CreateStream(streamInfo);
+    EXPECT_EQ(ret, SUCCESS);
+
+    uint32_t sessionId = streamInfo.sessionId;
+    ret = capturerManager->Drain(sessionId);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -184,9 +210,17 @@ HWTEST_F(HpaeVirtualCapturerManagerTest, HpaeVirtualCapturerManagerStop_001, Tes
     auto capturerManager = std::make_shared<HpaeVirtualCapturerManager>();
     EXPECT_NE(capturerManager, nullptr);
 
-    uint32_t sessionId = DEFAULT_SESSION_ID;
-    int32_t ret = capturerManager->Stop(sessionId);
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    int32_t ret = capturerManager->CreateStream(streamInfo);
     EXPECT_EQ(ret, SUCCESS);
+
+    uint32_t sessionId = streamInfo.sessionId;
+    ret = capturerManager->Stop(sessionId);
+    EXPECT_EQ(ret, SUCCESS);
+    HpaeCaptureMoveInfo stream = capturerManager->captureStream_[sessionId];
+    EXPECT_EQ(stream.sessionInfo.state, HPAE_SESSION_STOPPED);
+    EXPECT_EQ(stream.sourceOutputNode->GetState(), HPAE_SESSION_STOPPED);
 }
 
 /*
@@ -200,8 +234,13 @@ HWTEST_F(HpaeVirtualCapturerManagerTest, HpaeVirtualCapturerManagerRelease_001, 
     auto capturerManager = std::make_shared<HpaeVirtualCapturerManager>();
     EXPECT_NE(capturerManager, nullptr);
 
-    uint32_t sessionId = DEFAULT_SESSION_ID;
-    int32_t ret = capturerManager->Release(sessionId);
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    int32_t ret = capturerManager->CreateStream(streamInfo);
+    EXPECT_EQ(ret, SUCCESS);
+
+    uint32_t sessionId = streamInfo.sessionId;
+    ret = capturerManager->Release(sessionId);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -216,8 +255,13 @@ HWTEST_F(HpaeVirtualCapturerManagerTest, HpaeVirtualCapturerManagerSetStreamMute
     auto capturerManager = std::make_shared<HpaeVirtualCapturerManager>();
     EXPECT_NE(capturerManager, nullptr);
 
-    uint32_t sessionId = DEFAULT_SESSION_ID;
-    int32_t ret = capturerManager->SetStreamMute(sessionId, true);
+    HpaeStreamInfo streamInfo;
+    InitStreamInfo(streamInfo);
+    int32_t ret = capturerManager->CreateStream(streamInfo);
+    EXPECT_EQ(ret, SUCCESS);
+
+    uint32_t sessionId = streamInfo.sessionId;
+    ret = capturerManager->SetStreamMute(sessionId, true);
     EXPECT_EQ(ret, SUCCESS);
 }
 

@@ -241,6 +241,7 @@ private:
 
     int32_t WriteCacheData(uint8_t *buffer, size_t bufferSize, bool speedCached, size_t oriBufferSize);
 
+    void SetCacheSize(uint32_t cacheSizeInFrame);
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
     void CallClientHandle();
     bool WriteCallbackFunc();
@@ -332,7 +333,7 @@ private:
 
     size_t cacheSizeInByte_ = 0;
     uint32_t spanSizeInFrame_ = 0;
-    uint64_t engineTotalSizeInFrame_ = 0;
+    std::atomic<uint32_t> cacheSizeInFrame_ = 0;
     size_t clientSpanSizeInByte_ = 0;
     size_t sizePerFrameInByte_ = 4; // 16bit 2ch as default
 

@@ -25,6 +25,24 @@ static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 static const size_t THRESHOLD = 10;
+const std::vector<AudioChannel> SUPPORTED_CHANNELS {
+    MONO,
+    STEREO,
+    CHANNEL_3,
+    CHANNEL_4,
+    CHANNEL_5,
+    CHANNEL_6,
+    CHANNEL_7,
+    CHANNEL_8,
+    CHANNEL_9,
+    CHANNEL_10,
+    CHANNEL_11,
+    CHANNEL_12,
+    CHANNEL_13,
+    CHANNEL_14,
+    CHANNEL_15,
+    CHANNEL_16,
+};
 
 typedef void (*TestFuncs)();
 
@@ -59,9 +77,32 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
+template<class T>
+void RoundVal(T &roundVal, const std::vector<T>& list)
+{
+    if (GetData<bool>()) {
+        roundVal = GetData<T>();
+    } else {
+        roundVal = list[GetData<uint32_t>()%list.size()];
+    }
+}
+
+void RoundStreamInfo(AudioStreamInfo &streamInfo)
+{
+    RoundVal(streamInfo.channels, SUPPORTED_CHANNELS);
+    RoundVal(streamInfo.format, AUDIO_SUPPORTED_FORMATS);
+}
+
+void InitAudioStreamInfo(AudioStreamInfo &streamInfo)
+{
+    RoundStreamInfo(streamInfo);
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+}
+
 void StartFuzzTest()
 {
     AudioProcessConfig config = {};
+    InitAudioStreamInfo(config.streamInfo);
     auto stream = std::make_shared<HpaeCapturerStreamImpl>(config);
     stream->Start();
 }
@@ -69,6 +110,7 @@ void StartFuzzTest()
 void PauseFuzzTest()
 {
     AudioProcessConfig config = {};
+    InitAudioStreamInfo(config.streamInfo);
     auto stream = std::make_shared<HpaeCapturerStreamImpl>(config);
     stream->Pause();
 }
@@ -76,6 +118,7 @@ void PauseFuzzTest()
 void FlushFuzzTest()
 {
     AudioProcessConfig config = {};
+    InitAudioStreamInfo(config.streamInfo);
     auto stream = std::make_shared<HpaeCapturerStreamImpl>(config);
     stream->Flush();
 }
@@ -83,6 +126,7 @@ void FlushFuzzTest()
 void StopFuzzTest()
 {
     AudioProcessConfig config = {};
+    InitAudioStreamInfo(config.streamInfo);
     auto stream = std::make_shared<HpaeCapturerStreamImpl>(config);
     stream->Stop();
 }
@@ -90,6 +134,7 @@ void StopFuzzTest()
 void ReleaseFuzzTest()
 {
     AudioProcessConfig config = {};
+    InitAudioStreamInfo(config.streamInfo);
     config.capturerInfo.sourceType = SOURCE_TYPE_WAKEUP;
     auto stream = std::make_shared<HpaeCapturerStreamImpl>(config);
     stream->Start();
@@ -99,6 +144,7 @@ void ReleaseFuzzTest()
 void GetStreamFrameReadFuzzTest()
 {
     AudioProcessConfig config = {};
+    InitAudioStreamInfo(config.streamInfo);
     auto stream = std::make_shared<HpaeCapturerStreamImpl>(config);
     uint64_t frameRead = 0;
     stream->GetStreamFramesRead(frameRead);
@@ -107,6 +153,7 @@ void GetStreamFrameReadFuzzTest()
 void GetCurrentTimeStampFuzzTest()
 {
     AudioProcessConfig config = {};
+    InitAudioStreamInfo(config.streamInfo);
     auto stream = std::make_shared<HpaeCapturerStreamImpl>(config);
     uint64_t timeStamp = 0;
     stream->GetCurrentTimeStamp(timeStamp);
@@ -115,6 +162,7 @@ void GetCurrentTimeStampFuzzTest()
 void GetLatencyFuzzTest()
 {
     AudioProcessConfig config = {};
+    InitAudioStreamInfo(config.streamInfo);
     auto stream = std::make_shared<HpaeCapturerStreamImpl>(config);
     uint64_t latency = 0;
     stream->GetLatency(latency);
@@ -123,6 +171,7 @@ void GetLatencyFuzzTest()
 void OnStreamDataFuzzTest()
 {
     AudioProcessConfig config = {};
+    InitAudioStreamInfo(config.streamInfo);
     auto stream = std::make_shared<HpaeCapturerStreamImpl>(config);
     auto readCallback = std::make_shared<IIReadCallback>();
     stream->RegisterReadCallback(readCallback);
@@ -133,6 +182,7 @@ void OnStreamDataFuzzTest()
 void OnStatusUpdateFuzzTest()
 {
     AudioProcessConfig config = {};
+    InitAudioStreamInfo(config.streamInfo);
     auto stream = std::make_shared<HpaeCapturerStreamImpl>(config);
     auto statusCallback = std::make_shared<IIStatusCallback>();
     stream->RegisterStatusCallback(statusCallback);
@@ -142,6 +192,7 @@ void OnStatusUpdateFuzzTest()
 void BufferOperationFuzzTest()
 {
     AudioProcessConfig config = {};
+    InitAudioStreamInfo(config.streamInfo);
     auto stream = std::make_shared<HpaeCapturerStreamImpl>(config);
     stream->DequeueBuffer(0);
     BufferDesc bufferDesc;

@@ -39,6 +39,8 @@ HpaeInjectorRendererManager::~HpaeInjectorRendererManager()
     if (isInit_.load()) {
         DeInit();
     }
+    sceneCluster_ = nullptr;
+    sinkOutputNode_ = nullptr;
 }
 
 int32_t HpaeInjectorRendererManager::CreateStream(const HpaeStreamInfo &streamInfo)
@@ -78,7 +80,9 @@ int32_t HpaeInjectorRendererManager::Start(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeInjectorRendererManager::Start");
+        AUDIO_INFO_LOG("Start sessionId %{public}u, deviceName %{public}s", sessionId, sinkInfo_.deviceName.c_str());
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), "sessionId %{public}u not found", sessionId);
+        sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RUNNING);
         ConnectInputSession(sessionId);
         SetSessionState(sessionId, HPAE_SESSION_RUNNING);
         SetSessionFade(sessionId, OPERATION_STARTED);
@@ -91,6 +95,7 @@ int32_t HpaeInjectorRendererManager::Pause(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeInjectorRendererManager::Pause");
+        AUDIO_INFO_LOG("Pause sessionId %{public}u, deviceName %{public}s", sessionId, sinkInfo_.deviceName.c_str());
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), "sessionId %{public}u not found", sessionId);
         if (!SetSessionFade(sessionId, OPERATION_PAUSED)) {
             DisConnectInputSession(sessionId);
@@ -138,6 +143,7 @@ int32_t HpaeInjectorRendererManager::Stop(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeInjectorRendererManager::Stop");
+        AUDIO_INFO_LOG("Stop sessionId %{public}u, deviceName %{public}s", sessionId, sinkInfo_.deviceName.c_str());
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), "Stop not find sessionId %{public}u", sessionId);
         if (!SetSessionFade(sessionId, OPERATION_STOPPED)) {
             DisConnectInputSession(sessionId);
@@ -150,6 +156,7 @@ int32_t HpaeInjectorRendererManager::Stop(uint32_t sessionId)
 int32_t HpaeInjectorRendererManager::Release(uint32_t sessionId)
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeInjectorRendererManager::Release");
+    AUDIO_INFO_LOG("Release sessionId %{public}u, deviceName %{public}s", sessionId, sinkInfo_.deviceName.c_str());
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), ERROR,
         "Release not find sessionId %{public}u", sessionId);
     return DestroyStream(sessionId);
@@ -184,6 +191,7 @@ int32_t HpaeInjectorRendererManager::MoveAllStream(const std::string& sinkName, 
 
 int32_t HpaeInjectorRendererManager::SuspendStreamManager(bool isSuspend)
 {
+    Trace trace("HpaeRendererManager::SuspendStreamManager: " + std::to_string(isSuspend));
     auto request = [this, isSuspend]() {
         if (isSuspend_ == isSuspend) {
             return;
@@ -233,6 +241,7 @@ int32_t HpaeInjectorRendererManager::Init(bool isReload)
     }
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     auto request = [this, isReload] {
+        Trace trace("HpaeInjectorRendererManager::Init");
         InitManager(isReload);
     };
     SendRequest(request, __func__, true);
@@ -242,12 +251,7 @@ int32_t HpaeInjectorRendererManager::Init(bool isReload)
 
 int32_t HpaeInjectorRendererManager::DeInit(bool isMoveDefault)
 {
-    DeinitInner(isMoveDefault);
-    return SUCCESS;
-}
-
-void HpaeInjectorRendererManager::DeinitInner(bool isMoveDefault, bool fromReload)
-{
+    Trace trace("HpaeInjectorRendererManager::DeInit");
     if (hpaeSignalProcessThread_ != nullptr) {
         hpaeSignalProcessThread_->DeactivateThread();
         hpaeSignalProcessThread_ = nullptr;
@@ -263,11 +267,9 @@ void HpaeInjectorRendererManager::DeinitInner(bool isMoveDefault, bool fromReloa
         sinkOutputNode_->RenderSinkStop();
         sinkOutputNode_->RenderSinkDeInit();
         sinkOutputNode_->ResetAll();
-        if (!fromReload) {
-            sinkOutputNode_ = nullptr; // reload not delete sinkoutputnode
-        }
     }
     isInit_.store(false);
+    return SUCCESS;
 }
 
 bool HpaeInjectorRendererManager::IsInit()
@@ -339,6 +341,7 @@ int32_t HpaeInjectorRendererManager::RegisterWriteCallback(
     uint32_t sessionId, const std::weak_ptr<IStreamCallback> &callback)
 {
     auto request = [this, sessionId, callback]() {
+        AUDIO_INFO_LOG("RegisterWriteCallback sessionId %{public}u", sessionId);
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "RegisterWriteCallback not find sessionId %{public}u", sessionId);
         sinkInputNodeMap_[sessionId]->RegisterWriteCallback(callback);
@@ -435,6 +438,7 @@ int32_t HpaeInjectorRendererManager::AddAllNodesToSink(
             AddSingleNodeToSink(it, isConnect);
         }
     };
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -473,7 +477,12 @@ std::string HpaeInjectorRendererManager::GetThreadName()
 
 int32_t HpaeInjectorRendererManager::DumpSinkInfo()
 {
-    // todo : hidumper info
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERROR_ILLEGAL_STATE, "HpaeInjectorRendererManager not init");
+    auto request = [this]() {
+        AUDIO_INFO_LOG("DumpSinkInfo deviceName %{public}s", sinkInfo_.deviceName.c_str());
+        UploadDumpSinkInfo(sinkInfo_.deviceName);
+    };
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -486,7 +495,7 @@ int32_t HpaeInjectorRendererManager::ReloadRenderManager(const HpaeSinkInfo &sin
 
     if (IsInit()) {
         AUDIO_INFO_LOG("deinit:%{public}s before reload injector renderer manager", sinkInfo.deviceName.c_str());
-        DeinitInner(false, true);
+        DeInit();
     }
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     auto request = [this, sinkInfo, isReload]() {
@@ -509,8 +518,9 @@ int32_t HpaeInjectorRendererManager::ReloadRenderManager(const HpaeSinkInfo &sin
 
 std::string HpaeInjectorRendererManager::GetDeviceHDFDumpInfo()
 {
-    // todo : hidump info
-    return "";
+    std::string config;
+    TransDeviceInfoToString(sinkInfo_, config);
+    return config;
 }
 
 int32_t HpaeInjectorRendererManager::SetLoudnessGain(uint32_t sessionId, float loudnessGain)
@@ -565,8 +575,12 @@ int32_t HpaeInjectorRendererManager::CreateInputSession(const HpaeStreamInfo &st
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
+    nodeInfo.deviceName = sinkInfo_.deviceName;
     sinkInputNodeMap_[streamInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
-
+    AUDIO_INFO_LOG("streamType %{public}u, sessionId = %{public}u, current sceneType is %{public}d",
+        nodeInfo.streamType,
+        nodeInfo.sessionId,
+        nodeInfo.sceneType);
     return SUCCESS;
 }
 
@@ -581,9 +595,11 @@ void HpaeInjectorRendererManager::DeleteInputSession(const uint32_t &sessionId)
 int32_t HpaeInjectorRendererManager::ConnectInputSession(const uint32_t &sessionId)
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeInjectorRendererManager::ConnectInputSession");
+    AUDIO_INFO_LOG("connect input session:%{public}d", sessionId);
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), ERR_INVALID_PARAM,
         "connect fail, session %{public}u not found", sessionId);
-    CHECK_AND_RETURN_RET(sinkInputNodeMap_[sessionId]->GetState() != HPAE_SESSION_RUNNING, SUCCESS);
+    CHECK_AND_RETURN_RET(sinkInputNodeMap_[sessionId]->GetState() == HPAE_SESSION_RUNNING, SUCCESS);
+    CHECK_AND_RETURN_RET_LOG(sinkOutputNode_ != nullptr && sceneCluster_ != nullptr, ERROR, "manager maybe not init");
     sinkOutputNode_->Connect(sceneCluster_);
     sceneCluster_->Connect(sinkInputNodeMap_[sessionId]);
     if (sinkOutputNode_->GetState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
@@ -595,9 +611,10 @@ int32_t HpaeInjectorRendererManager::ConnectInputSession(const uint32_t &session
 int32_t HpaeInjectorRendererManager::DisConnectInputSession(const uint32_t &sessionId)
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeInjectorRendererManager::DisConnectInputSession");
+    AUDIO_INFO_LOG("disconnect input session:%{public}d", sessionId);
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), ERR_INVALID_PARAM,
         "disconnect fail, session %{public}u not found", sessionId);
-    CHECK_AND_RETURN_RET(sinkInputNodeMap_[sessionId]->GetState() != HPAE_SESSION_RUNNING, SUCCESS);
+    CHECK_AND_RETURN_RET(sinkOutputNode_ != nullptr && sceneCluster_ != nullptr, SUCCESS);
     sceneCluster_->DisConnect(sinkInputNodeMap_[sessionId]);
 
     if (sceneCluster_->GetConnectSinkInputNum() == 0) {

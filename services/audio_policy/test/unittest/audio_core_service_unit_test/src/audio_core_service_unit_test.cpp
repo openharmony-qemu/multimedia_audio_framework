@@ -712,6 +712,23 @@ HWTEST_F(AudioCoreServiceUnitTest, SetDisplayName_001, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioCoreService.
+* @tc.number: HandleNearlinkErrResult_001
+* @tc.desc  : Test HandleNearlinkErrResult
+*/
+HWTEST_F(AudioCoreServiceUnitTest, HandleNearlinkErrResult_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest HandleNearlinkErrResult_001 start");
+    auto coreSvc = AudioCoreService::GetCoreService();
+    int32_t result = 200;
+    auto devDesc = make_shared<AudioDeviceDescriptor>();
+    coreSvc->HandleNearlinkErrResult(result, devDesc);
+    result = 404;
+    coreSvc->HandleNearlinkErrResult(result, devDesc);
+    EXPECT_NE(devDesc, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
 * @tc.number: TriggerFetchDevice_001
 * @tc.desc  : Test TriggerFetchDevice - will return error because not init coreService.
 */
@@ -1663,7 +1680,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateRingerOrAlarmerDualDeviceOutputRouter_0
 
     audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
 
-    EXPECT_EQ(audioCoreService->audioVolumeManager_.IsRingerModeMute(), false);
+    EXPECT_EQ(audioCoreService->audioVolumeManager_.IsRingerModeMute(), true);
 
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateRingerOrAlarmerDualDeviceOutputRouter_005 end");
 }
@@ -1768,7 +1785,7 @@ HWTEST_F(AudioCoreServiceUnitTest, SetSleVoiceStatusFlag_001, TestSize.Level1)
 HWTEST_F(AudioCoreServiceUnitTest, SetRendererTarget_001, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_EQ(audioCoreService, nullptr);
+    EXPECT_NE(audioCoreService, nullptr);
     int32_t ret = ERROR;
     ret = audioCoreService->SetRendererTarget(NORMAL_PLAYBACK, INJECT_TO_VOICE_COMMUNICATION_CAPTURE, 1111);
     EXPECT_NE(ret, SUCCESS);

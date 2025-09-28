@@ -50,7 +50,6 @@ AudioFormat audioFormat = {
     SAMPLE_F32LE,
     SAMPLE_RATE_96000
 };
-AudioNodeType nodeType = NODE_TYPE_AUDIO_MIXER;
 const uint32_t SAMPLE_RATE = 44100;
 const uint32_t CHANNEL_COUNT = 2;
 const AudioChannelLayout LAY_OUT = CH_LAYOUT_STEREO;
@@ -77,14 +76,13 @@ void AudioSuiteMixerTest::TearDown()
 namespace {
 HWTEST_F(AudioSuiteMixerTest, constructHpaeMixerNode, TestSize.Level0)
 {
-    std::shared_ptr<AudioSuiteMixerNode> audioSuiteMixerNode =std::make_shared<AudioSuiteMixerNode>(nodeType,
-        audioFormat);
+    std::shared_ptr<AudioSuiteMixerNode> audioSuiteMixerNode =std::make_shared<AudioSuiteMixerNode>();
     EXPECT_EQ(audioSuiteMixerNode->GetSampleRate(), audioFormat.rate);
 }
 
 HWTEST_F(AudioSuiteMixerTest, constructHpaeMixerNodeReadFile, TestSize.Level0)
 {
-    AudioSuiteMixerNode mixer(nodeType, audioFormat);   //初始化一个节点
+    AudioSuiteMixerNode mixer;   //初始化一个节点
 
     std::ifstream file1(g_fileNameOne, std::ios::binary | std::ios::ate);
     std::ifstream file2(g_fileNameTwo, std::ios::binary | std::ios::ate);

@@ -103,7 +103,7 @@ int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInf
         clusterNodeInfo.channels = sourceInfo_.channels;
         clusterNodeInfo.format = sourceInfo_.format;
         clusterNodeInfo.samplingRate = sourceInfo_.samplingRate;
-        clusterNodeInfo.frameLen = CaculateFrameLenByNodeInfo(nodeInfo);
+        clusterNodeInfo.frameLen = CaculateFrameLenByNodeInfo(clusterNodeInfo);
         clusterNodeInfo.statusCallback = weak_from_this();
         clusterNodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
         sceneClusterMap_[sceneType] = std::make_shared<HpaeSourceProcessCluster>(clusterNodeInfo);
@@ -489,6 +489,10 @@ void HpaeCapturerManager::Process()
     Trace trace("HpaeCapturerManager::Process");
     if (IsRunning()) {
         UpdateAppsUidAndSessionId();
+        if (appsUid_.empty()) {
+            CapturerSourceStop();
+            return;
+        }
         for (const auto &sourceOutputNodePair : sourceOutputNodeMap_) {
             if (sourceOutputNodePair.second->GetState() == HPAE_SESSION_RUNNING) {
                 sourceOutputNodePair.second->DoProcess();
@@ -1029,6 +1033,8 @@ int32_t HpaeCapturerManager::AddCaptureInjector(const std::shared_ptr<OutputNode
     const SourceType &sourceType)
 {
     auto request = [this, sinkOutputNode, sourceType] {
+        Trace trace("HpaeCapturerManager::AddCaptureInjector");
+        AUDIO_INFO_LOG("add capture injector");
         HpaeProcessorType sceneType = TransSourceTypeToSceneType(sourceType);
         auto sceneCluster = SafeGetMap(sceneClusterMap_, sceneType);
         CHECK_AND_RETURN_LOG(sceneCluster != nullptr, "sourceType[%{public}d] cluster not exit", sourceType);
@@ -1042,6 +1048,8 @@ int32_t HpaeCapturerManager::RemoveCaptureInjector(const std::shared_ptr<OutputN
     const SourceType &sourceType)
 {
     auto request = [this, sinkOutputNode, sourceType] {
+        Trace trace("HpaeCapturerManager::RemoveCaptureInjector");
+        AUDIO_INFO_LOG("remove capture injector");
         HpaeProcessorType sceneType = TransSourceTypeToSceneType(sourceType);
         auto sceneCluster = SafeGetMap(sceneClusterMap_, sceneType);
         CHECK_AND_RETURN_LOG(sceneCluster != nullptr, "sourceType[%{public}d] cluster not exit", sourceType);

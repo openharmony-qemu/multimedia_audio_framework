@@ -170,10 +170,6 @@ void AudioEffectChainManager::SetSpkOffloadState()
             spkOffloadEnabled_ = false;
         }
 
-        if (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && (btOffloadEnabled_)) {
-            return;
-        }
-
         AUDIO_INFO_LOG("recover all chains if device type not bt.");
         RecoverAllChains();
     }
@@ -837,54 +833,6 @@ int32_t AudioEffectChainManager::SetHdiParam(const AudioEffectScene &sceneType)
 }
 
 // LCOV_EXCL_START
-int32_t AudioEffectChainManager::QueryHdiSupportedChannelInfo(uint32_t &channels, uint64_t &channelLayout)
-{
-    std::lock_guard<std::mutex> lock(dynamicMutex_);
-    uint32_t tmpChannelCount = DEFAULT_NUM_CHANNEL;
-    uint64_t tmpChannelLayout = DEFAULT_NUM_CHANNELLAYOUT;
-    if (sceneTypeToSessionIDMap_.size() == 0) {
-        return SUCCESS;
-    }
-    for (auto it = sceneTypeToSessionIDMap_.begin(); it != sceneTypeToSessionIDMap_.end(); it++) {
-        std::set<std::string> sessions = sceneTypeToSessionIDMap_[it->first];
-        for (auto s = sessions.begin(); s != sessions.end(); ++s) {
-            SessionEffectInfo info = sessionIDToEffectInfoMap_[*s];
-            if (info.channels > tmpChannelCount &&
-                info.channels <= DSP_MAX_NUM_CHANNEL &&
-                !ExistAudioEffectChainInner(it->first, info.sceneMode)) {
-                tmpChannelCount = info.channels;
-                tmpChannelLayout = info.channelLayout;
-            }
-        }
-    }
-    if (tmpChannelLayout != channelLayout) {
-        if (!isInitialized_) {
-            if (initializedLogFlag_) {
-                AUDIO_ERR_LOG("audioEffectChainManager has not been initialized");
-                initializedLogFlag_ = false;
-            }
-            return ERROR;
-        }
-        memset_s(static_cast<void *>(effectHdiInput_), sizeof(effectHdiInput_), 0, sizeof(effectHdiInput_));
-
-        effectHdiInput_[0] = HDI_QUERY_CHANNELLAYOUT;
-        uint64_t* tempChannelLayout = (uint64_t *)(effectHdiInput_ + 1);
-        *tempChannelLayout = tmpChannelLayout;
-        AUDIO_PRERELEASE_LOGI("set hdi channel: %{public}d", channels);
-        int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_);
-        if (ret != SUCCESS) {
-            channels = DEFAULT_MCH_NUM_CHANNEL;
-            channelLayout = DEFAULT_MCH_NUM_CHANNELLAYOUT;
-        } else {
-            channels = tmpChannelCount;
-            channelLayout = tmpChannelLayout;
-        }
-    }
-    return SUCCESS;
-}
-// LCOV_EXCL_STOP
-
-// LCOV_EXCL_START
 void AudioEffectChainManager::UpdateSensorState()
 {
     effectHdiInput_[0] = HDI_HEAD_MODE;
@@ -1119,7 +1067,12 @@ void AudioEffectChainManager::SetSpatializationEnabledToChains()
         if (audioEffectChain == nullptr) {
             continue;
         }
-        audioEffectChain->SetSpatializationEnabledForFading(spatializationEnabled_);
+
+        if (btOffloadEnabled_ == false) {
+            audioEffectChain->SetSpatializationEnabledForFading(spatializationEnabled_);
+        } else {
+            audioEffectChain->SetSpatializationEnabledForFading(false);
+        }
     }
 }
 // LCOV_EXCL_STOP
@@ -1794,6 +1747,10 @@ bool AudioEffectChainManager::ExistAudioEffectChainInner(const std::string &scen
         sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] == nullptr) {
         return false;
     }
+    if (sceneTypeToEffectChainCountMap_.count(sceneTypeAndDeviceKey) &&
+        sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] == 0) {
+        return false;
+    }
     auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
     return !audioEffectChain->IsEmptyEffectHandles();
 }
@@ -2051,6 +2008,20 @@ bool AudioEffectChainManager::ExistAudioEffectChainArm(const std::string sceneTy
     std::string effectChainKey = sceneType + "_&_" + sceneMode + "_&_" + GetDeviceTypeName();
     if (!sceneTypeAndModeToEffectChainNameMap_.count(effectChainKey)) {
         AUDIO_INFO_LOG("EffectChain key [%{public}s] does not exist in arm", effectChainKey.c_str());
+        return false;
+    }
+    return true;
+}
+
+bool AudioEffectChainManager::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout)
+{
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    effectHdiInput_[0] = HDI_QUERY_CHANNELLAYOUT;
+    uint64_t* tempChannelLayout = reinterpret_cast<uint64_t *>(effectHdiInput_ + 1);
+    *tempChannelLayout = channelLayout;
+    CHECK_AND_RETURN_RET_LOG(audioEffectHdiParam_ != nullptr, false, "audioEffectHdiParam_ is nullptr");
+    if (audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, deviceType_) != SUCCESS) {
+        AUDIO_WARNING_LOG("query channel layout support failed :%{public}" PRIu64, channelLayout);
         return false;
     }
     return true;

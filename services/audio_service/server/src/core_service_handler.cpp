@@ -130,5 +130,14 @@ int32_t CoreServiceHandler::StartInjection(uint32_t sessionId)
     iCoreServiceProvider_->StartInjection(sessionId, ret);
     return ret;
 }
+
+int32_t CoreServiceHandler::A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
+                                                         uint32_t &timeStamp)
+{
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
+    int32_t ret = ERROR;
+    iCoreServiceProvider_->A2dpOffloadGetRenderPosition(delayValue, sendDataSize, timeStamp, ret);
+    return ret;
+}
 } // namespace AudioStandard
 } // namespace OHOS
