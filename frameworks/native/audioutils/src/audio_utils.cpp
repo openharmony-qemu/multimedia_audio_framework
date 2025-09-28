@@ -2140,7 +2140,7 @@ uint8_t* ReallocVectorBufferAndClear(std::vector<uint8_t> &buffer, const size_t 
     return buffer.data();
 }
 
-bool g_injectSwitch = system::GetBoolParameter("const.multimedia.audio.inject", false);
+bool g_injectSwitch = system::GetBoolParameter("persist.multimedia.audio.inject", false);
 bool IsInjectEnable()
 {
     return g_injectSwitch;

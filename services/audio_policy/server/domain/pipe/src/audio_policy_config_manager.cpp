@@ -573,13 +573,13 @@ void AudioPolicyConfigManager::CheckDynamicCapturerConfig(std::shared_ptr<AudioS
 
 void AudioPolicyConfigManager::GetStreamPropInfoForRecord(
     std::shared_ptr<AudioStreamDescriptor> desc, std::shared_ptr<AdapterPipeInfo> adapterPipeInfo,
-    std::shared_ptr<PipeStreamPropInfo> &info, const AudioChannel &tempChannel)
+    std::shared_ptr<PipeStreamPropInfo> &info, const AudioStreamInfo &tempStreamInfo)
 {
     CHECK_AND_RETURN_LOG(desc != nullptr, "stream desc is nullptr");
     CHECK_AND_RETURN_LOG(adapterPipeInfo != nullptr, "adapterPipeInfo is nullptr");
     if (desc->routeFlag_ & AUDIO_INPUT_FLAG_FAST) {
         auto fastStreamPropinfo = GetStreamPropInfoFromPipe(
-            adapterPipeInfo, desc->streamInfo_.format, desc->streamInfo_.samplingRate, tempChannel);
+            adapterPipeInfo, desc->streamInfo_.format, tempStreamInfo.samplingRate, tempStreamInfo.channels);
         if (fastStreamPropinfo != nullptr) {
             AUDIO_INFO_LOG("Find fast streamPropInfo from %{public}s", adapterPipeInfo->name_.c_str());
             // Use *ptr to get copy and avoid modify the source data from XML
@@ -602,7 +602,7 @@ void AudioPolicyConfigManager::GetStreamPropInfoForRecord(
     GetTargetSourceTypeAndMatchingFlag(desc->capturerInfo_.sourceType, useMatchingPropInfo);
     if (useMatchingPropInfo) {
         auto streamProp = GetStreamPropInfoFromPipe(adapterPipeInfo, desc->streamInfo_.format,
-            desc->streamInfo_.samplingRate, tempChannel);
+            tempStreamInfo.samplingRate, tempStreamInfo.channels);
         if (streamProp != nullptr) {
             // Use *ptr to get copy and avoid modify the source data from XML
             *info = *streamProp;
@@ -687,7 +687,7 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
     UpdateBasicStreamInfo(desc, pipeIt->second, temp);
 
     if (desc->audioMode_ == AUDIO_MODE_RECORD) {
-        GetStreamPropInfoForRecord(desc, pipeIt->second, info, temp.channels);
+        GetStreamPropInfoForRecord(desc, pipeIt->second, info, temp);
         return;
     }
 
@@ -742,7 +742,7 @@ void AudioPolicyConfigManager::UpdateStreamSampleInfo(std::shared_ptr<AudioStrea
        16k or 48k first here, then do resample in endpoint */
     if ((desc->streamInfo_.samplingRate != SAMPLE_RATE_16000) &&
         (desc->streamInfo_.samplingRate != SAMPLE_RATE_48000)) {
-        desc->streamInfo_.samplingRate = SAMPLE_RATE_48000;
+        streamInfo.samplingRate = SAMPLE_RATE_48000;
     }
 }
 
