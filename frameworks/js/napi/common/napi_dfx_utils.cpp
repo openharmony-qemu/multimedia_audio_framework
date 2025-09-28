@@ -57,7 +57,7 @@ static const char* GetFuncReadable(bool direction, uint8_t functionType)
 }
  
 void NapiDfxUtils::ReportAudioMainThreadEvent(std::string bundleName, bool direction,
-        uint8_t usageOrSourceType, uint8_t functionType)
+    uint8_t usageOrSourceType, uint8_t functionType)
 {
     const char* typeStr = direction ? "Capture" : "Renderer";
     const char* keyStr  = direction ? "sourceType" : "usage";
