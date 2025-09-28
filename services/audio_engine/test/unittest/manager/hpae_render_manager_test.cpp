@@ -344,7 +344,7 @@ static void TestIRendererManagerSetLoudnessGain()
     EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->IsInit(), true);
-    // test SetLoundessGain when session is created but not connected
+    // test SetLoudnessGain when session is created but not connected
     HpaeStreamInfo streamInfo;
     streamInfo.channels = STEREO;
     streamInfo.samplingRate = SAMPLE_RATE_48000;
@@ -918,7 +918,6 @@ HWTEST_F(HpaeRendererManagerTest, StartWithSyncId_001, TestSize.Level0)
     EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->IsInit(), true);
-    // test SetLoundessGain when session is created but not connected
     HpaeStreamInfo streamInfo;
     streamInfo.channels = STEREO;
     streamInfo.samplingRate = SAMPLE_RATE_48000;
