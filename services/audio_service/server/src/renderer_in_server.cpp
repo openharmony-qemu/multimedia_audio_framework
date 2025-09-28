@@ -1115,7 +1115,6 @@ void RendererInServer::RecordStandbyTime(bool isStandby, bool isStandbyStart)
 
 void RendererInServer::PauseInner()
 {
-    StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(streamIndex_);
     XperfAdapter::GetInstance().ReportStateChangeEventIfNeed(XPERF_EVENT_STOP, processConfig_.rendererInfo.streamUsage,
         streamIndex_, processConfig_.appInfo.appPid, processConfig_.appInfo.appUid);

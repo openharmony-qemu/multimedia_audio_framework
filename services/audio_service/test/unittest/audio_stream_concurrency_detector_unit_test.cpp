@@ -44,6 +44,8 @@ HWTEST(AudioStreamConcurrencyDetectorTest, FlushReportFlag_001, TestSize.Level1)
 
     AudioStreamConcurrencyDetector::GetInstance().UpdateWriteTime(cfg, fakeStreamId);
     EXPECT_GT(AudioStreamConcurrencyDetector::GetInstance().streamConcurrInfoMap_.size(), 0);
+
+    AudioStreamConcurrencyDetector::GetInstance().RemoveStream(cfg, fakeStreamId);
 }
 
 /**
