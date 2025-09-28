@@ -127,7 +127,8 @@ namespace {
         AudioSuitePcmBuffer outputBuffer = impl->rateConvert(inputBuffer,
             TEST_CONVERT_SAMPLING_RATE, DEFAULT_CHANNELS_IN);
         EXPECT_EQ(TEST_CONVERT_SAMPLING_RATE, outputBuffer.GetSampleRate());
-        AudioSuitePcmBuffer channelBuffer = impl->channelConvert(inputBuffer, DEFAULT_SAMPLING_RATE, DEFAULT_CHANNELS_OUT);
+        AudioSuitePcmBuffer channelBuffer = impl->channelConvert(inputBuffer,
+            DEFAULT_SAMPLING_RATE, DEFAULT_CHANNELS_OUT);
         EXPECT_EQ(DEFAULT_CHANNELS_OUT, channelBuffer.GetChannelCount());
     }
 }
