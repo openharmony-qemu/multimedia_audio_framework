@@ -31,7 +31,8 @@ class AudioSuiteAissNode : public AudioSuiteProcessNode {
 public:
     explicit AudioSuiteAissNode();
     ~AudioSuiteAissNode() {
-        DeInit();
+        int32_t ret = DeInit();
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "AudioSuiteAissNode DeInit failed");
     }
     bool Reset() override;
     int32_t DoProcess() override;
