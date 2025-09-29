@@ -15,7 +15,6 @@
 
 #include <cstdio>
 #include "napi_dfx_utils.h"
-#include "hisysevent.h"
 #include "audio_common_log.h"
 #include "audio_info.h"
 #ifndef CROSS_PLATFORM
