@@ -179,7 +179,6 @@ void AudioEffectChain::ReleaseEffectChain()
 
 int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32_t &replyData)
 {
-    Trace trace("AudioEffectChain::SetEffectParamToHandle");
     AudioEffectConfig tmpIoBufferConfig = ioBufferConfig_;
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &tmpIoBufferConfig};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
@@ -643,6 +642,7 @@ int32_t AudioEffectChain::UpdateMultichannelIoBufferConfigInner()
 
 int32_t AudioEffectChain::UpdateEffectParamInner()
 {
+    Trace trace("AudioEffectChain::UpdateEffectParamInner");
     latency_ = 0;
     for (AudioEffectHandle handle : standByEffectHandles_) {
         int32_t replyData;
