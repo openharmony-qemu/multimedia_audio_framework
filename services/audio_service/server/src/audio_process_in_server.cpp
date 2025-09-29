@@ -651,6 +651,13 @@ int32_t AudioProcessInServer::InitBufferStatus()
     return SUCCESS;
 }
 
+bool AudioProcessInServer::IsNeedRecordResampleConv(AudioSamplingRate srcSamplingRate)
+{
+    return ((processConfig_.audioMode == AUDIO_MODE_RECORD) &&
+        (processConfig_.streamInfo.samplingRate != srcSamplingRate) &&
+        (processConfig_.streamInfo.format != SAMPLE_F32LE));    // resample already conv f32
+}
+
 int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
     uint32_t &spanSizeInframe, AudioStreamInfo &serverStreamInfo, const std::shared_ptr<OHAudioBufferBase> &buffer)
 {
@@ -670,7 +677,8 @@ int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
     uint32_t formatbyte = PcmFormatToBits(processConfig_.streamInfo.format);
     byteSizePerFrame_ = channel * formatbyte;
     if (serverStreamInfo.channels != processConfig_.streamInfo.channels ||
-        serverStreamInfo.format != processConfig_.streamInfo.format) {
+        serverStreamInfo.format != processConfig_.streamInfo.format ||
+        IsNeedRecordResampleConv(serverStreamInfo.samplingRate)) {
         size_t spanSizeInByte = 0;
         if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
             uint32_t serverByteSize = serverStreamInfo.channels * PcmFormatToBits(serverStreamInfo.format);
@@ -990,9 +998,10 @@ int32_t AudioProcessInServer::CaptureDataResampleProcess(const size_t bufLen,
 
     uint32_t formatByte = PcmFormatToBits(srcInfo.format);
     uint32_t channels = static_cast<uint32_t>(srcInfo.channels);
-    uint32_t resampleInBuffSize = bufLen / (channels * formatByte);
+    uint32_t byteSizePerFrame = channels * formatByte;
+    uint32_t resampleInBuffSize = bufLen / byteSizePerFrame;
     uint32_t resampleOutBuffSize = spanSizeInframe_;
-    uint32_t outBuffLen = spanSizeInframe_ * byteSizePerFrame_;
+    uint32_t outBuffLen = spanSizeInframe_ * byteSizePerFrame; // here need use src byteSize
     float *resampleOutBuff =
         reinterpret_cast<float*>(ReallocVectorBufferAndClear(procParams.rendererConvBuffer_, outBuffLen));
     ret = resampler_->Process(resampleInBuff, resampleInBuffSize, resampleOutBuff, resampleOutBuffSize);
