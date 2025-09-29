@@ -48,7 +48,7 @@ public:
     virtual int32_t StartPipeline(uint32_t pipelineId) = 0;
     virtual int32_t StopPipeline(uint32_t pipelineId) = 0;
     virtual int32_t GetPipelineState(uint32_t pipelineId, AudioSuitePipelineState &state) = 0;
-    virtual uint32_t CreateNode(uint32_t pipelineId, AudioNodeBuilder &builder) = 0;
+    virtual int32_t CreateNode(uint32_t pipelineId, AudioNodeBuilder &builder, uint32_t &nodeId) = 0;
     virtual int32_t DestroyNode(uint32_t nodeId) = 0;
     virtual int32_t EnableNode(uint32_t nodeId, AudioNodeEnable audioNodeEnable) = 0;
     virtual int32_t GetNodeEnableStatus(uint32_t nodeId, AudioNodeEnable &nodeEnable) = 0;

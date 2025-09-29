@@ -47,7 +47,7 @@ public:
     MOCK_METHOD(void, OnStartPipeline, (int32_t result), (override));
     MOCK_METHOD(void, OnStopPipeline, (int32_t result), (override));
     MOCK_METHOD(void, OnGetPipelineState, (AudioSuitePipelineState state), (override));
-    MOCK_METHOD(void, OnCreateNode, (uint32_t nodeId), (override));
+    MOCK_METHOD(void, OnCreateNode, (int32_t result, uint32_t nodeId), (override));
     MOCK_METHOD(void, OnDestroyNode, (int32_t result), (override));
     MOCK_METHOD(void, OnEnableNode, (int32_t result), (override));
     MOCK_METHOD(void, OnGetNodeEnable, (AudioNodeEnable enable), (override));
@@ -85,7 +85,7 @@ public:
     {
         return;
     }
-    void OnCreateNode(uint32_t nodeId) override
+    void OnCreateNode(int32_t result, uint32_t nodeId) override
     {
         return;
     }

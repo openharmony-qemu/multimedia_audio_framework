@@ -69,11 +69,13 @@ static OH_AudioSuite_Result ConvertError(int32_t err)
     } else if (err == OHOS::AudioStandard::ERR_AUDIO_SUITE_NODE_NOT_EXIST) {
         return AUDIOSUITE_ERROR_NODE_NOT_EXIST;
     } else if (err == OHOS::AudioStandard::ERR_AUDIO_SUITE_UNSUPPORT_CONNECT) {
-        return AUDIOSUITE_ERROR_UNSUPPORT_CONNECT;
+        return AUDIOSUITE_ERROR_UNSUPPORTED_CONNECT;
     } else if (err == OHOS::AudioStandard::ERR_NOT_SUPPORTED) {
         return AUDIOSUITE_ERROR_UNSUPPORT_OPERATION;
     } else if (err == OHOS::AudioStandard::ERR_AUDIO_SUITE_CREATED_EXCEED_SYSTEM_LIMITS) {
         return AUDIOSUITE_ERROR_CREATED_EXCEED_SYSTEM_LIMITS;
+    } else if (err == (int32_t)AUDIOSUITE_ERROR_REQUIRED_PARAMETERS_MISSED) {
+        return AUDIOSUITE_ERROR_REQUIRED_PARAMETERS_MISSED;
     }
     return AUDIOSUITE_ERROR_SYSTEM;
 }
@@ -411,6 +413,9 @@ namespace AudioStandard {
 
 using namespace OHOS::AudioStandard::AudioSuite;
 
+static constexpr int32_t EQ_FREQUENCY_BAND_GAINS_MIN = -10;
+static constexpr int32_t EQ_FREQUENCY_BAND_GAINS_MAX = 10;
+
 int32_t OHSuiteInputNodeWriteDataCallBack::OnWriteDataCallBack(void *audioData, int32_t audioDataSize, bool *finished)
 {
     CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, 0, "OnWriteDataCallBack callback is nullptr");
@@ -533,21 +538,24 @@ int32_t OHAudioSuiteEngine::CreateNode(
     }
 
     if (builder->GetNodeType() == NODE_TYPE_INPUT) {
-        CHECK_AND_RETURN_RET_LOG(builder->IsSetWriteDataCallBack() && builder->IsSetFormat(), ERR_NOT_SUPPORTED,
+        CHECK_AND_RETURN_RET_LOG(builder->IsSetWriteDataCallBack() && builder->IsSetFormat(),
+            static_cast<int32_t>(AUDIOSUITE_ERROR_REQUIRED_PARAMETERS_MISSED),
             "Create input Node must set WriteDataCallBack and audio format.");
     } else if (builder->GetNodeType() == NODE_TYPE_OUTPUT) {
-        CHECK_AND_RETURN_RET_LOG(!builder->IsSetWriteDataCallBack() && builder->IsSetFormat(), ERR_NOT_SUPPORTED,
-            "Create output Node, can not set WriteDataCallBack, must set aduio format.");
+        CHECK_AND_RETURN_RET_LOG(builder->IsSetFormat(),
+            static_cast<int32_t>(AUDIOSUITE_ERROR_REQUIRED_PARAMETERS_MISSED),
+            "Create output Node, must set aduio format.");
+        CHECK_AND_RETURN_RET_LOG(!builder->IsSetWriteDataCallBack(), ERR_NOT_SUPPORTED,
+            "Create output Node, can not set WriteDataCallBack.");
     } else {
         CHECK_AND_RETURN_RET_LOG(!builder->IsSetWriteDataCallBack() && !builder->IsSetFormat(), ERR_NOT_SUPPORTED,
             "Create effect Node, can not set WriteDataCallBack and format.");
     }
 
-    uint32_t nodeId = IAudioSuiteManager::GetAudioSuiteManager().CreateNode(pipelineId, nodeCfg);
-    if (nodeId == INVALID_NODE_ID) {
-        AUDIO_ERR_LOG("CreateNode from GetAudioSuiteManager failed.");
-        return ERR_OPERATION_FAILED;
-    }
+    uint32_t nodeId = INVALID_NODE_ID;
+    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().CreateNode(pipelineId, nodeCfg, nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CreateNode failed, ret = %{public}d.", ret);
+    CHECK_AND_RETURN_RET_LOG(nodeId != INVALID_PIPELINE_ID, ERR_OPERATION_FAILED, "CreateNode failed, nodeId invail");
 
     OHAudioNode *node = new OHAudioNode(nodeId, nodeCfg.nodeType);
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERROR, "CreateNode failed, malloc failed.");
@@ -560,7 +568,7 @@ int32_t OHAudioSuiteEngine::CreateNode(
     std::shared_ptr<OHSuiteInputNodeWriteDataCallBack> callback =
         std::make_shared<OHSuiteInputNodeWriteDataCallBack>(reinterpret_cast<OH_AudioNode *>(audioNode),
             builder->GetOnWriteDataCallBack(), builder->GetOnWriteUserData());
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().SetOnWriteDataCallback(nodeId, callback);
+    ret = IAudioSuiteManager::GetAudioSuiteManager().SetOnWriteDataCallback(nodeId, callback);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CreateNode SetOnWriteDataCallback failed, ret = %{public}d.", ret);
     return ret;
 }
@@ -674,6 +682,9 @@ int32_t OHAudioSuiteEngine::SetEqualizerFrequencyBandGains(
 
     for (uint32_t idx = 0; idx < (ohGainsNum < gainsNum ? ohGainsNum : gainsNum); idx++) {
         audioGains.gains[idx] = frequencyBandGains.gains[idx];
+        CHECK_AND_RETURN_RET_LOG((audioGains.gains[idx] >= EQ_FREQUENCY_BAND_GAINS_MIN) &&
+            (audioGains.gains[idx] <= EQ_FREQUENCY_BAND_GAINS_MAX), ERR_INVALID_PARAM,
+            "SetEqualizerFrequencyBandGains failed, input value %{public}d not in -10, 10.", audioGains.gains[idx]);
     }
 
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().SetEqualizerFrequencyBandGains(nodeId, audioGains);

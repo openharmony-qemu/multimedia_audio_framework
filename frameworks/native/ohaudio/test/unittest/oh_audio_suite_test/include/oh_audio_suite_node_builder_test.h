@@ -20,7 +20,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class OHAudioSuiteUnitTest : public testing::Test {
+class OHAudioSuiteNodeBuilderTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
