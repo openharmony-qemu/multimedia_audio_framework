@@ -234,9 +234,24 @@ int32_t HpaeOutputCluster::SetPriPaPower(void)
     return hpaeSinkOutputNode_->RenderSinkSetPriPaPower();
 }
 
-uint32_t HpaeOutputCluster::GetLatency()
+uint32_t HpaeOutputCluster::GetHdiLatency()
 {
     return hpaeSinkOutputNode_->GetLatency();
+}
+
+uint64_t HpaeOutputCluster::GetLatency(HpaeProcessorType sceneType)
+{
+    uint64_t latency = 0;
+
+    if (SafeGetMap(sceneConverterMap_, sceneType)) {
+        latency += sceneConverterMap_[sceneType]->GetLatency();
+    }
+
+    if (mixerNode_ != nullptr) {
+        latency += mixerNode_->GetLatency();
+    }
+
+    return latency;
 }
 
 int32_t HpaeOutputCluster::SetSyncId(int32_t syncId)

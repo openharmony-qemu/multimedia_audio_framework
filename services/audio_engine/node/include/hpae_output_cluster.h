@@ -51,7 +51,8 @@ public:
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) override;
     int32_t SetPriPaPower(void) override;
     int32_t SetSyncId(int32_t syncId) override;
-    uint32_t GetLatency() override;
+    uint32_t GetHdiLatency() override;
+    uint64_t GetLatency(HpaeProcessorType sceneType) override;
 
     bool IsProcessBypassed() override;
 
