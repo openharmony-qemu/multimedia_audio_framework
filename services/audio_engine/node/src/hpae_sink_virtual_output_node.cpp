@@ -88,6 +88,13 @@ void HpaeSinkVirtualOutputNode::DoRenderProcess()
 void HpaeSinkVirtualOutputNode::DoProcess()
 {
     Trace trace("HpaeSinkVirtualOutputNode::DoProcess " + GetTraceInfo());
+    std::lock_guard<std::mutex> lock(mutex_);
+    DoProcessInner();
+}
+
+void HpaeSinkVirtualOutputNode::DoProcessInner()
+{
+    Trace trace("HpaeSinkVirtualOutputNode::DoProcessInner " + GetTraceInfo());
     OptResult result = ringCache_->Dequeue(
         {reinterpret_cast<uint8_t *>(outputAudioBuffer_.GetPcmDataBuffer()), outputAudioBuffer_.DataSize()});
     CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "ringCache dequeue fail");
@@ -102,9 +109,14 @@ int32_t HpaeSinkVirtualOutputNode::PeekAudioData(uint8_t *buffer, const size_t &
 {
     Trace trace("HpaeSinkVirtualOutputNode::PeekAudioData " + GetTraceInfo());
     std::lock_guard<std::mutex> lock(mutex_);
-    DoProcess();
+    DoProcessInner();
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr, ERROR_INVALID_PARAM, "Invalid nullptr buffer provided");
     memset_s(buffer, bufferSize, 0, bufferSize);
+    if (bufferSize > outputAudioBuffer_.DataSize()) {
+        AUDIO_WARNING_LOG("peek buffersize > sinnVirtualOutputNode buffer size!");
+    } else if (bufferSize < outputAudioBuffer_.DataSize()) {
+        AUDIO_WARNING_LOG("peek buffersize < sinnVirtualOutputNode buffer size!");
+    }
     uint64_t length = bufferSize / GetBitWidth();
     ConvertFromFloat(GetBitWidth(), std::min(static_cast<uint64_t>(GetChannelCount() * GetFrameLen()), length),
         outputAudioBuffer_.GetPcmDataBuffer(), buffer);
@@ -247,7 +259,7 @@ int32_t HpaeSinkVirtualOutputNode::ReloadNode(HpaeNodeInfo nodeInfo)
 
 size_t HpaeSinkVirtualOutputNode::GetRingCacheSize()
 {
-    size_t frameBytes = static_cast<size_t>(GetSizeFromFormat(GetBitWidth())) * GetSampleRate() *
+    size_t frameBytes = static_cast<size_t>(GetSizeFromFormat(SAMPLE_F32LE)) * GetSampleRate() *
         DEFAULT_FRAME_LEN_MS / MS_PER_SECOND * GetChannelCount();
     return DEFAULT_RING_BUFFER_NUM * frameBytes;
 }

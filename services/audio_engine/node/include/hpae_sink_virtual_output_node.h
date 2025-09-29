@@ -55,6 +55,7 @@ public:
     int32_t PeekAudioData(uint8_t *buffer, const size_t &bufferSize, AudioStreamInfo &streamInfo);
     int32_t ReloadNode(HpaeNodeInfo nodeInfo);
 private:
+    void DoProcessInner();
     size_t GetRingCacheSize();
 private:
     InputPort<HpaePcmBuffer *> inputStream_;
