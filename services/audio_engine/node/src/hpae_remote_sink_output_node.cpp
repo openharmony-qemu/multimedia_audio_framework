@@ -128,8 +128,6 @@ void HpaeRemoteSinkOutputNode::NotifyStreamTypeChange(AudioStreamType type, Hpae
         return;
     }
     this->NotifyHdiSetParamEvent(STREAM_TYPE_CHANGE, static_cast<uint32_t>(renderId), static_cast<uint32_t>(type));
-    nodeInfo.streamType = type;
-    SetNodeInfo(nodeInfo);
 }
 
 void HpaeRemoteSinkOutputNode::NotifyStreamUsageChange(StreamUsage usage, HpaeSplitStreamType splitStreamType)
@@ -178,6 +176,10 @@ void HpaeRemoteSinkOutputNode::DoProcess()
             writeLen, splitStreamType);
         if (ret != SUCCESS || writeLen != renderFrameData_.size()) {
             AUDIO_ERR_LOG("RenderFrame failed, SplitStreamType %{public}d", splitStreamType);
+        } else {
+            HpaeNodeInfo nodeInfo = GetNodeInfo();
+            nodeInfo.streamType = type;
+            SetNodeInfo(nodeInfo);
         }
     }
     HandleRemoteTiming(); // used to control remote RenderFrame tempo.
