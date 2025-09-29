@@ -112,6 +112,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceB
 {
     std::shared_lock<std::shared_mutex> lock(mutex_);
     auto isPresent = [&deviceType] (const std::shared_ptr<AudioDeviceDescriptor> &desc) {
+        CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
         if (deviceType == desc->deviceType_) {
             return true;
         }
@@ -129,6 +130,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceB
 {
     std::shared_lock<std::shared_mutex> lock(mutex_);
     auto isPresent = [&networkId, &deviceType] (const std::shared_ptr<AudioDeviceDescriptor> &desc) {
+        CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
         if (deviceType == desc->deviceType_ && networkId == desc->networkId_) {
             return true;
         }
@@ -146,6 +148,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetConnectedDeviceB
 {
     std::shared_lock<std::shared_mutex> lock(mutex_);
     auto isPresent = [&networkId, &deviceType, &macAddress] (const std::shared_ptr<AudioDeviceDescriptor> &desc) {
+        CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
         if (deviceType == desc->deviceType_ && networkId == desc->networkId_ && macAddress == desc->macAddress_) {
             return true;
         }
