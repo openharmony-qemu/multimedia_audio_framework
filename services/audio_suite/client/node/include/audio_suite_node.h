@@ -34,6 +34,12 @@ namespace AudioStandard {
 namespace AudioSuite {
 static constexpr uint32_t MIN_START_NODE_ID = 100;
 
+struct PreResample {
+    uint32_t preInResample;
+    uint32_t preOutResample;
+    uint32_t preChannels;
+};
+
 class AudioNode;
 
 template <typename T>
@@ -181,9 +187,21 @@ public:
     {
         if (proResampler_ == nullptr) {
             proResampler_ = std::make_unique<HPAE::ProResampler>(inRate, outRate, channels, quality);
+                preResample_.preInResample = inRate;
+                preResample_.preOutResample = outRate;
+                preResample_.preChannels = channels;
                 return RESAMPLER_ERR_SUCCESS;
         }
  
+        bool noNeedUpdate = (inRate == preResample_.preInResample && outRate == preResample_.preOutResample &&
+            channels == preResample_.preChannels);
+        
+        CHECK_AND_RETURN_RET(!noNeedUpdate, RESAMPLER_ERR_SUCCESS);
+
+        preResample_.preInResample = inRate;
+        preResample_.preOutResample = outRate;
+        preResample_.preChannels = channels;
+
         proResampler_->Reset();
         int32_t ret = proResampler_->UpdateRates(inRate, outRate);
         CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret,
@@ -221,6 +239,7 @@ private:
     AudioNodeInfo audioNodeInfo_;
     inline static std::mutex nodeIdCounterMutex_;
     inline static uint32_t nodeIdCounter_ = MIN_START_NODE_ID;
+    struct PreResample preResample_ = {0};
 };
 
 class Tap {

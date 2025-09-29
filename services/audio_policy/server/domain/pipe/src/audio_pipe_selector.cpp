@@ -167,15 +167,17 @@ void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipe
 {
     std::string adapterName{};
     for (auto &streamDesc : streamDescs) {
+        CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is null");
+        std::string streamDescAdapterName = "";
         std::vector<std::shared_ptr<AudioPipeInfo>>::iterator newPipeIter = newPipeInfoList.end();
         if (streamDesc->rendererTarget_ == INJECT_TO_VOICE_COMMUNICATION_CAPTURE) {
-            std::string streamDescAdapterName = AudioInjectorPolicy::GetInstance().GetAdapterName();
+            streamDescAdapterName = AudioInjectorPolicy::GetInstance().GetAdapterName();
             newPipeIter = std::find_if(newPipeInfoList.begin(), newPipeInfoList.end(),
                 [&](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
                     return newPipeInfo->adapterName_ == streamDescAdapterName;
                 });
         } else {
-            std::string streamDescAdapterName = GetAdapterNameByStreamDesc(streamDesc);
+            streamDescAdapterName = GetAdapterNameByStreamDesc(streamDesc);
             // find if curStream's prefer pipe has already exist
             newPipeIter = std::find_if(newPipeInfoList.begin(), newPipeInfoList.end(),
                 [&](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
@@ -492,9 +494,9 @@ static void FillSpecialPipeInfo(AudioPipeInfo &info, std::shared_ptr<AdapterPipe
         info.moduleInfo_.className = "multichannel";
         info.moduleInfo_.fileName = "mch_dump_file";
         info.moduleInfo_.fixedLatency = "1"; // for fix max request
-        info.moduleInfo_.bufferSize =
-            std::to_string(((streamPropInfo->bufferSize_ / std::stoul(info.moduleInfo_.channels)) * STEREO));
-        AUDIO_INFO_LOG("Buffer size: %{public}s", info.moduleInfo_.bufferSize.c_str());
+        AUDIO_INFO_LOG("Buffer size: %{public}s channels: %{public}s channelLayout:%{public}s",
+            info.moduleInfo_.bufferSize.c_str(), info.moduleInfo_.channels.c_str(),
+            info.moduleInfo_.channelLayout.c_str());
     } else if (pipeInfoPtr->name_ == "offload_output") {
         info.moduleInfo_.className = "offload";
         info.moduleInfo_.offloadEnable = "1";

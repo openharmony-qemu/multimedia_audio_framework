@@ -339,10 +339,10 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_015, TestSize.Level1)
 
 /**
  * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreService_016
+ * @tc.number: OnDeviceStatusUpdated_001
  * @tc.desc  : Test AudioCoreService::EventEntry::OnDeviceStatusUpdated()
  */
-HWTEST(AudioCoreServiceEntryTest, AudioCoreService_016, TestSize.Level1)
+HWTEST(AudioCoreServiceEntryTest, OnDeviceStatusUpdated_001, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -357,10 +357,10 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_016, TestSize.Level1)
 
 /**
  * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreService_017
+ * @tc.number: OnDeviceStatusUpdated_002
  * @tc.desc  : Test AudioCoreService::EventEntry::OnDeviceStatusUpdated()
  */
-HWTEST(AudioCoreServiceEntryTest, AudioCoreService_017, TestSize.Level1)
+HWTEST(AudioCoreServiceEntryTest, OnDeviceStatusUpdated_002, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -371,6 +371,46 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_017, TestSize.Level1)
     bool isStop = true;
 
     eventEntry->OnDeviceStatusUpdated(statusInfo, isStop);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: OnDeviceStatusUpdated_003
+ * @tc.desc  : Test AudioCoreService::EventEntry::OnDeviceStatusUpdated()
+ */
+HWTEST(AudioCoreServiceEntryTest, OnDeviceStatusUpdated_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    EXPECT_NE(eventEntry, nullptr);
+
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    desc.deviceCategory_ = BT_WATCH;
+    bool isConnected = true;
+
+    eventEntry->OnDeviceStatusUpdated(desc, isConnected);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: OnDeviceStatusUpdated_004
+ * @tc.desc  : Test AudioCoreService::EventEntry::OnDeviceStatusUpdated()
+ */
+HWTEST(AudioCoreServiceEntryTest, OnDeviceStatusUpdated_004, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    EXPECT_NE(eventEntry, nullptr);
+
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    desc.deviceCategory_ = BT_HEADPHONE;
+    bool isConnected = true;
+
+    eventEntry->OnDeviceStatusUpdated(desc, isConnected);
 }
 
 /**

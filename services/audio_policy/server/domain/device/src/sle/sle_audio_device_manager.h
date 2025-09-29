@@ -71,12 +71,12 @@ public:
     int32_t GetRenderPosition(const std::string &device, uint32_t &delayValue) override;
 
     // Parameter Conversion Interface
-    int32_t SetActiveDevice(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage);
-    int32_t SetActiveDevice(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType);
-    int32_t StartPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage);
-    int32_t StopPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage);
-    int32_t StartPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType);
-    int32_t StopPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType);
+    int32_t SetActiveDevice(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage, bool isGameApp = false);
+    int32_t SetActiveDevice(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType, bool isGameApp = false);
+    int32_t StartPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage, bool isGameApp = false);
+    int32_t StopPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage, bool isGameApp = false);
+    int32_t StartPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType, bool isGameApp = false);
+    int32_t StopPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType, bool isGameApp = false);
     int32_t SendUserSelection(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage);
     int32_t SendUserSelection(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType);
     int32_t SetDeviceAbsVolume(const std::string &device, AudioStreamType streamType, int32_t volume);
@@ -84,7 +84,8 @@ public:
     // Core Device Management Methods
     int32_t AddNearlinkDevice(const AudioDeviceDescriptor &deviceDesc);
     int32_t RemoveNearlinkDevice(const AudioDeviceDescriptor &deviceDesc);
-    void UpdateSleStreamTypeCount(const std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isRemoved = false);
+    void UpdateSleStreamTypeCount(const std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isRemoved = false,
+        bool isGameApp = false);
     void ResetSleStreamTypeCount(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
     std::unordered_map<uint32_t, std::unordered_set<uint32_t>> GetNearlinkStreamTypeMapByDevice(
         const std::string &deviceAddr);
@@ -95,7 +96,7 @@ public:
         const int32_t volumeLevel);
     int32_t GetVolumeLevelByVolumeType(AudioVolumeType volumeType, const AudioDeviceDescriptor &deviceDesc);
 
-    uint32_t GetSleStreamTypeByStreamUsage(StreamUsage streamUsage) const;
+    uint32_t GetSleStreamTypeByStreamUsage(StreamUsage streamUsage, bool isGameApp = false) const;
     uint32_t GetSleStreamTypeBySourceType(SourceType sourceType) const;
     std::set<StreamUsage> GetStreamUsagesBySleStreamType(uint32_t streamType) const;
     std::set<SourceType> GetSourceTypesBySleStreamType(uint32_t streamType) const;

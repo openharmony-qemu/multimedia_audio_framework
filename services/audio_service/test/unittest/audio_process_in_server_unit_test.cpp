@@ -1190,38 +1190,15 @@ HWTEST(AudioProcessInServerUnitTest, GetSpanSizeInFrame_001, TestSize.Level4)
 }
 
 #ifdef ENABLE_INJECT
-class MockOHAudioBufferBase : public OHAudioBufferBase {
+class MockProResampler : public HPAE::ProResampler {
 public:
-    MOCK_METHOD(int32_t, GetWritableDataFrames, (), (override));
-    MOCK_METHOD(uint64_t, GetCurWriteFrame, (), (override));
-    MOCK_METHOD(int32_t, GetAllWritableBufferFromPosFrame, (uint64_t, RingBufferWrapper&), (override));
-    MOCK_METHOD(void, GetSizeParameter, (uint32_t&, uint32_t&), (override));
-    MOCK_METHOD(void, SetHandleInfo, (uint64_t, uint64_t), (override));
-    MOCK_METHOD(int32_t, SetCurWriteFrame, (uint64_t), (override));
-};
+    MockProResampler() : ProResampler(
+        44100,  // 44100 is inRateSample
+        48000,  // 48000 is outRateSample
+        2,      // 2 is channels
+        1       // 1 is quality
+    ) {}
 
-class MockAudioProcessInServer : public AudioProcessInServer {
-public:
-    using AudioProcessInServer::AudioProcessInServer;
-    MOCK_METHOD(int32_t, HandleCapturerDataParams, (RingBufferWrapper&, AudioCaptureDataProcParams&), ());
-    MOCK_METHOD(bool, GetMuteState, (), (const));
-};
-
-// Mock classes for dependencies
-class MockFormatConverter {
-public:
-    static MockFormatConverter* GetMockInstance()
-    {
-        static MockFormatConverter instance;
-        return &instance;
-    }
-    
-    MOCK_METHOD(FormatHandlerMap, GetFormatHandlers, ());
-    MOCK_METHOD(int32_t, S16StereoToF32Stereo, (const BufferDesc&, BufferDesc&));
-};
-
-class MockProResampler {
-public:
     static MockProResampler* GetMockInstance()
     {
         static MockProResampler instance;
@@ -1229,17 +1206,6 @@ public:
     }
     
     MOCK_METHOD(int32_t, Process, (const float*, uint32_t, float*, uint32_t));
-};
-
-class MockRingBufferWrapper {
-public:
-    static MockRingBufferWrapper* GetMockInstance()
-    {
-        static MockRingBufferWrapper instance;
-        return &instance;
-    }
-    
-    MOCK_METHOD(int32_t, Write, (const uint8_t*, size_t));
 };
 
 /**

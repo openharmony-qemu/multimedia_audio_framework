@@ -1182,7 +1182,7 @@ void FastAudioStream::SetRestoreInfo(RestoreInfo &restoreInfo)
 
 RestoreStatus FastAudioStream::CheckRestoreStatus()
 {
-    if (spkProcClientCb_ == nullptr && micProcClientCb_ == nullptr) {
+    if (!IsDataCallbackSet()) {
         AUDIO_INFO_LOG("Fast stream without callback, restore to normal");
         renderMode_ = RENDER_MODE_NORMAL;
         captureMode_ = CAPTURE_MODE_NORMAL;
@@ -1247,7 +1247,16 @@ bool FastAudioStream::GetStopFlag() const
 bool FastAudioStream::IsRestoreNeeded()
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "processClient_ is null");
+    // FastAudioStream only support callback mode, FastAudioStream without callback should be restored
+    if (!IsDataCallbackSet()) {
+        return true;
+    }
     return processClient_->IsRestoreNeeded();
+}
+
+bool FastAudioStream::IsDataCallbackSet() const
+{
+    return spkProcClientCb_ != nullptr || micProcClientCb_ != nullptr;
 }
 } // namespace AudioStandard
 } // namespace OHOS

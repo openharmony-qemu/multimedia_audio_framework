@@ -159,20 +159,6 @@ void HpaeNodeCommonConvertDatalenToUsFuzzTest()
     ConvertDatalenToUs(bufferSize, nodeInfo);
 }
 
-void HpaeNodeCommonAdjustMchSinkInfoFuzzTest()
-{
-    AudioModuleInfo audioModuleInfo;
-    audioModuleInfo.channelLayout = "CH_LAYOUT_STEREO";
-    HpaeSinkInfo sinkInfo;
-    sinkInfo.deviceName = "DP_MCH_speaker";
-    bool isTestString = g_fuzzUtils.GetData<bool>();
-    if (isTestString) {
-        sinkInfo.deviceName = "test_device_name";
-    }
-
-    AdjustMchSinkInfo(audioModuleInfo, sinkInfo);
-}
-
 void HpaeNodeCommonCheckSourceInfoIsDifferentFuzzTest()
 {
     HpaeSourceInfo oldInfo;
@@ -361,8 +347,8 @@ void HpaeProcessClusterAudioRendererStopFuzzTest()
     }
     HpaeNodeInfo nodeInfoTest;
     GetTestNodeInfo(nodeInfoTest);
-    hpaeProcessCluster->AudioRendererStart(nodeInfoTest);
-    hpaeProcessCluster->AudioRendererStop(nodeInfoTest);
+    hpaeProcessCluster->AudioRendererStart(nodeInfoTest, dummySinkInfo);
+    hpaeProcessCluster->AudioRendererStop(nodeInfoTest, dummySinkInfo);
 }
 
 void HpaeProcessClusterGetConverterNodeByIdFuzzTest()
@@ -590,7 +576,6 @@ vector<TestPtr> g_testPtrs = {
     HpaeNodeCommonTransProcessType2EnhanceSceneFuzzTest,
     HpaeNodeCommonConvertUsToFrameCountFuzzTest,
     HpaeNodeCommonConvertDatalenToUsFuzzTest,
-    HpaeNodeCommonAdjustMchSinkInfoFuzzTest,
     HpaeNodeCommonCheckSourceInfoIsDifferentFuzzTest,
     HpaeNodeCommonRecoverNodeInfoForCollaborationFuzzTest,
     HpaeProcessClusterDoProcessFuzzTest,

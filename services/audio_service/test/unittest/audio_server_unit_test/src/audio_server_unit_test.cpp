@@ -15,6 +15,7 @@
 
 #include "audio_server_unit_test.h"
 
+#include "audio_unit_test.h"
 #include "accesstoken_kit.h"
 #include "audio_utils.h"
 #include "audio_device_info.h"
@@ -42,6 +43,8 @@ static sptr<AudioServer> audioServer;
 
 void AudioServerUnitTest::SetUpTestCase(void)
 {
+    MockNative::GenerateNativeTokenID();
+    MockNative::Mock();
     audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     EXPECT_NE(nullptr, audioServer);
     audioServer->OnDump();
@@ -50,6 +53,7 @@ void AudioServerUnitTest::SetUpTestCase(void)
 void AudioServerUnitTest::TearDownTestCase(void)
 {
     audioServer->OnStop();
+    MockNative::Resume();
 }
 
 void AudioServerUnitTest::SetUp(void)
@@ -2134,9 +2138,8 @@ HWTEST_F(AudioServerUnitTest, CheckInnerRecorderPermission_002, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     AudioProcessConfig config;
-    config.appInfo.appTokenId = 12345;
     config.capturerInfo.sourceType = SOURCE_TYPE_REMOTE_CAST;
-    EXPECT_NE(audioServer->CheckInnerRecorderPermission(config), PERMISSION_GRANTED);
+    EXPECT_EQ(audioServer->CheckInnerRecorderPermission(config), PERMISSION_GRANTED);
 
     config.innerCapMode = MODERN_INNER_CAP;
     config.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
@@ -2488,7 +2491,7 @@ HWTEST_F(AudioServerUnitTest, SetAsrVoiceMuteMode_001, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
     int32_t asrVoiceMuteMode = 0;
     bool on = true;
-    EXPECT_EQ(audioServer->SetAsrVoiceMuteMode(asrVoiceMuteMode, on), ERR_SYSTEM_PERMISSION_DENIED);
+    EXPECT_EQ(audioServer->SetAsrVoiceMuteMode(asrVoiceMuteMode, on), SUCCESS);
 }
 
 /**

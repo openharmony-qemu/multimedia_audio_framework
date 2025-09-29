@@ -54,6 +54,7 @@ public:
     AudioModuleInfo& GetAudioModuleInfo();
     int32_t AddCaptureInjector();
     int32_t RemoveCaptureInjector();
+
     void AddInjectorStreamId(const uint32_t streamId);
     void DeleteInjectorStreamId(const uint32_t streamId);
     bool IsActivateInterruptStreamId(const uint32_t streamId);

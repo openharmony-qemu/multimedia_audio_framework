@@ -40,9 +40,6 @@ public:
     int32_t InstallTap(AudioNodePortType portType, std::shared_ptr<SuiteNodeReadTapDataCallback> callback) override;
     int32_t RemoveTap(AudioNodePortType portType) override;
     AudioSuiteProcessNode(const AudioSuiteProcessNode& others) = delete;
-    int32_t SetUpResample(uint32_t inRate, uint32_t outRate, uint32_t channels, uint32_t quality);
-    int32_t DoResampleProcess(const float *inBuffer, uint32_t inFrameSize,
-        float *outBuffer, uint32_t outFrameSize);
     AudioSamplingRate GetSampleRate()
     {
         return AudioNode::GetAudioNodeInfo().audioFormat.rate;
@@ -59,8 +56,6 @@ public:
     virtual std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> GetOutputPort(AudioNodePortType type) override
     {
         if (!outputStream_) {
-            AUDIO_INFO_LOG("AudioSuiteProcessNode::GetOutputPort: node type = %{public}d outputStream initialized.",
-                GetNodeType());
             outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
         }
         return outputStream_;

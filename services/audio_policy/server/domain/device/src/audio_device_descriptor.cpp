@@ -530,7 +530,7 @@ bool AudioDeviceDescriptor::IsPairedDeviceDesc(const AudioDeviceDescriptor &devi
 
 bool AudioDeviceDescriptor::IsDistributedSpeaker() const
 {
-    return deviceType_ == DEVICE_TYPE_SPEAKER && networkId_ != "LocalDevice";
+    return deviceType_ == DEVICE_TYPE_SPEAKER && networkId_ != LOCAL_NETWORK_ID;
 }
 
 bool AudioDeviceDescriptor::IsA2dpOffload() const
@@ -547,7 +547,7 @@ bool AudioDeviceDescriptor::IsSpeakerOrEarpiece() const
 
 bool AudioDeviceDescriptor::IsRemote() const
 {
-    return networkId_ != "LocalDevice";
+    return networkId_ != LOCAL_NETWORK_ID;
 }
 
 void AudioDeviceDescriptor::Dump(std::string &dumpString)
@@ -555,6 +555,14 @@ void AudioDeviceDescriptor::Dump(std::string &dumpString)
     AppendFormat(dumpString, "      - device %d: role %s type %d (%s) name: %s\n",
         deviceId_, IsOutput() ? "Output" : "Input",
         deviceType_, DeviceTypeToString(deviceType_), deviceName_.c_str());
+}
+
+std::string AudioDeviceDescriptor::GetName()
+{
+    if (networkId_ != LOCAL_NETWORK_ID && deviceType_ == DEVICE_TYPE_SPEAKER) {
+        return "DMSDP";
+    }
+    return GetDeviceTypeString();
 }
 
 std::string AudioDeviceDescriptor::GetDeviceTypeString()

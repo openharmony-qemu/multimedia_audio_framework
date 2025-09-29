@@ -26,6 +26,7 @@
 #include "accesstoken_kit.h"
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
+#include "audio_bundle_manager.h"
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 #include "input_manager.h"
@@ -482,6 +483,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_012, TestSize.Level1)
     int32_t strategy = 0;
     auto policyServerTest = GetPolicyServerUnitTest();
     EXPECT_EQ(policyServerTest->ActivateAudioSession(strategy), SUCCESS);
+    EXPECT_EQ(policyServerTest->DeactivateAudioSession(), SUCCESS);
 }
 
 /**
@@ -2950,23 +2952,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_136, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_138
-* @tc.desc  : Test GetStreamMuteInternal.
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_138, TestSize.Level1)
-{
-    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    ASSERT_TRUE(server != nullptr);
-
-    auto ret = server->GetStreamMuteInternal(AudioStreamType::STREAM_ALL);
-    EXPECT_EQ(ret, false);
-
-    ret = server->GetStreamMuteInternal(AudioStreamType::STREAM_RING);
-    EXPECT_EQ(ret, true);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_139
 * @tc.desc  : Test GetDevices.
 */
@@ -3726,6 +3711,21 @@ HWTEST(AudioPolicyUnitTest, CheckAndGetApiVersion_001, TestSize.Level1)
     deviceDescs.push_back(desc);
     apiVersion = server->CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
     EXPECT_EQ(apiVersion, 0);
+}
+
+/**
+* @tc.name  : Test GetBundleNameandGetBundleInfo.
+* @tc.number: GetBundleNameandGetBundleInfo_001
+* @tc.desc  : GetBundleNameandGetBundleInfo.
+*/
+HWTEST(AudioPolicyUnitTest, GetBundleNameandGetBundleInfo_001, TestSize.Level1)
+{
+    std::string callerName = AudioBundleManager::GetBundleName();
+    EXPECT_EQ(callerName, "");
+    AppExecFwk::BundleInfo bundleInfo = AudioBundleManager::GetBundleInfo();
+    bundleInfo = AudioBundleManager::GetBundleInfo();
+    callerName = AudioBundleManager::GetBundleName();
+    EXPECT_EQ(callerName, "");
 }
 } // AudioStandard
 } // OHOS

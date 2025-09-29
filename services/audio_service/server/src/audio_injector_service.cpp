@@ -15,24 +15,25 @@
 #include "audio_injector_service.h"
 #include "i_hpae_manager.h"
 #include "audio_errors.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
 AudioInjectorService::AudioInjectorService()
 {
+    sinkPortIndex_ = UINT32_INVALID_VALUE;
 }
 
-int32_t AudioInjectorService::UpdateAudioInfo(AudioModuleInfo &info)
+void AudioInjectorService::UpdateAudioInfo(AudioModuleInfo &info)
 {
     HPAE::IHpaeManager::GetHpaeManager().UpdateAudioPortInfo(sinkPortIndex_, info);
-    return SUCCESS;
 }
 
 int32_t AudioInjectorService::PeekAudioData(const uint32_t sinkPortIndex, uint8_t *buffer, const size_t bufferSize,
     AudioStreamInfo &streamInfo)
 {
-    HPAE::IHpaeManager::GetHpaeManager().PeekAudioData(sinkPortIndex, buffer, bufferSize, streamInfo);
-    return SUCCESS;
+    CHECK_AND_RETURN_RET_LOG(buffer != nullptr, ERROR, "buffer is null");
+    return HPAE::IHpaeManager::GetHpaeManager().PeekAudioData(sinkPortIndex, buffer, bufferSize, streamInfo);
 }
 
 void AudioInjectorService::SetSinkPortIdx(uint32_t sinkPortIdx)

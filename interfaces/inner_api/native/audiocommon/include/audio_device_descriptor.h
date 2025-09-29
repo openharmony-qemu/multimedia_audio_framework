@@ -122,6 +122,8 @@ public:
 
     std::string GetKey();
 
+    std::string GetName();
+
     struct AudioDeviceDescriptorHash {
         size_t operator()(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor) const
         {

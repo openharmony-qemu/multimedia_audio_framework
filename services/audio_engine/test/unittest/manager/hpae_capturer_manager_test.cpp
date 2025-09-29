@@ -1107,6 +1107,37 @@ HWTEST_F(HpaeCapturerManagerTest, AddRemoveCaptureInjectorTest, TestSize.Level1)
     WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(preNode.use_count(), 1);
 }
+
+/**
+ * @tc.name  : Test Process
+ * @tc.type  : FUNC
+ * @tc.number: Process_001
+ * @tc.desc  : Test Process.
+ */
+HWTEST_F(HpaeCapturerManagerTest, Process_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.sourceType = SOURCE_TYPE_MIC;
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+
+    EXPECT_EQ(capturerManager->Start(DEFAULT_SESSION_ID) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    capturerManager->Process();
+    EXPECT_EQ(capturerManager->IsRunning(), true);
+    EXPECT_EQ(capturerManager->Stop(DEFAULT_SESSION_ID) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsRunning(), false);
+    capturerManager->sourceInputClusterMap_[capturerManager->mainMicType_]->CapturerSourceStart();
+    capturerManager->Process();
+    EXPECT_EQ(capturerManager->IsRunning(), false);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

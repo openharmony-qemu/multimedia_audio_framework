@@ -39,6 +39,7 @@ protected:
     uint32_t sampleRate_ = 0;
     AudioSampleFormat format_ = AudioSampleFormat::INVALID_WIDTH;
     uint32_t channel_ = 0;
+    uint64_t logTimestamp_ = 0;
 
     std::vector<int32_t> sessionIdList_;
     std::mutex clockMtx_;
