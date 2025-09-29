@@ -116,8 +116,8 @@ int32_t SleAudioDeviceManager::StartPlaying(const std::string &device, uint32_t 
         return SUCCESS;
     }
     callback_->StartPlaying(device, streamType, ret);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "startplaying failed");
-    UpdateStreamIsStartedFlag(device, streamType);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "startplaying failed");
+    startedSleStreamType_[device][streamType].isStarted = true;
 
     return ret;
 }
@@ -332,7 +332,7 @@ void SleAudioDeviceManager::UpdateStreamTypeMap(const std::string &deviceAddr, u
     uint32_t sessionId, bool isAdd)
 {
     std::lock_guard<std::mutex> lock(startedSleStreamTypeMutex_);
-    auto &sessionSet = startedSleStreamType_[deviceAddr][streamType];
+    auto &sessionSet = startedSleStreamType_[deviceAddr][streamType].sessionIds;
     AUDIO_INFO_LOG("sle device %{public}s, add [%{public}d] streamType %{public}u sessionId %{public}d",
         AudioPolicyUtils::GetInstance().GetEncryptAddr(deviceAddr).c_str(), isAdd, streamType, sessionId);
     if (isAdd) {
@@ -341,6 +341,7 @@ void SleAudioDeviceManager::UpdateStreamTypeMap(const std::string &deviceAddr, u
         bool isErased = sessionSet.erase(sessionId) > 0;
         if (isErased && sessionSet.empty()) {
             StopPlaying(deviceAddr, streamType);
+            startedSleStreamType_[deviceAddr][streamType].isStarted = false;
         }
     }
 }
@@ -408,7 +409,7 @@ void SleAudioDeviceManager::ResetSleStreamTypeCount(const std::shared_ptr<AudioD
 
     for (const auto &pair : it->second) {
         uint32_t streamType = pair.first;
-        CHECK_AND_CONTINUE_LOG(!pair.second.empty(), "streamType %{public}u has no session", streamType);
+        CHECK_AND_CONTINUE_LOG(!pair.second.sessionIds.empty(), "streamType %{public}u has no session", streamType);
         StopPlaying(deviceDesc->macAddress_, streamType);
     }
 
@@ -426,7 +427,7 @@ std::unordered_map<uint32_t, std::unordered_set<uint32_t>> SleAudioDeviceManager
     if (it != startedSleStreamType_.end()) {
         for (const auto &pair : it->second) {
             uint32_t streamType = pair.first;
-            std::unordered_set<uint32_t> sessionSet = pair.second;
+            std::unordered_set<uint32_t> sessionSet = pair.second.sessionIds;
             if (!sessionSet.empty()) {
                 ret[streamType] = sessionSet;
             }
@@ -475,12 +476,6 @@ int32_t SleAudioDeviceManager::GetVolumeLevelByVolumeType(AudioVolumeType volume
         return deviceVolumeConfigInfo_[deviceDesc.macAddress_].second.volumeLevel;
     }
     return 0;
-}
-
-void SleAudioDeviceManager::UpdateStreamIsStartedFlag(const std::string &deviceAddr, uint32_t streamType)
-{
-    std::lock_guard<std::mutex> lock(startedSleStreamTypeMutex_);
-    startedSleStreamType_[deviceAddr][streamType].isStarted = true;
 }
 } // namespace AudioStandard
 } // namespace OHOS

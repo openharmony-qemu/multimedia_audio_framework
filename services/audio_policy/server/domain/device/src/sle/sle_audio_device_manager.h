@@ -107,9 +107,7 @@ private:
     void UpdateStreamTypeMap(const std::string &deviceAddr, uint32_t streamType, uint32_t sessionId, bool isAdd);
     bool IsNearlinkDevice(DeviceType deviceType);
     bool IsMoveToNearlinkDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
-    bool IsNearlinkMoveToOtherDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
-    void UpdateStreamIsStartedFlag(const std::string &deviceAddr, uint32_t streamType);
-    
+    bool IsNearlinkMoveToOtherDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc);    
 
     sptr<IStandardSleAudioOperationCallback> callback_ = nullptr;
 
