@@ -53,7 +53,7 @@ int32_t OffloadAudioRenderSink::Init(const IAudioSinkAttr &attr)
 
 void OffloadAudioRenderSink::DeInit(void)
 {
-    AUDIO_INFO_LOG("in");
+    AUDIO_WARNING_LOG("in");
     Trace trace("OffloadAudioRenderSink::DeInit");
     std::lock_guard<std::mutex> lock(sinkMutex_);
     std::lock_guard<std::mutex> switchDeviceLock(switchDeviceMutex_);
@@ -108,7 +108,7 @@ int32_t OffloadAudioRenderSink::Start(void)
 int32_t OffloadAudioRenderSink::Stop(void)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
-    AUDIO_INFO_LOG("in");
+    AUDIO_WARNING_LOG("in");
     Trace trace("OffloadAudioRenderSink::Stop");
     DeInitLatencyMeasurement();
     if (!started_) {

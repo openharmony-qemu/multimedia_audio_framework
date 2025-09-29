@@ -87,7 +87,7 @@ void AudioRenderSink::DeInit(void)
     sinkInited_ = false;
     started_ = false;
 
-    AUDIO_INFO_LOG("destroy render, hdiRenderId: %{public}u", hdiRenderId_);
+    AUDIO_WARNING_LOG("destroy render, hdiRenderId: %{public}u", hdiRenderId_);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN(deviceManager != nullptr);
@@ -147,7 +147,7 @@ int32_t AudioRenderSink::Start(void)
 int32_t AudioRenderSink::Stop(void)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
-    AUDIO_INFO_LOG("halName: %{public}s", halName_.c_str());
+    AUDIO_WARNING_LOG("halName: %{public}s", halName_.c_str());
     Trace trace("AudioRenderSink::Stop");
 #ifdef FEATURE_POWER_MANAGER
     if (runningLock_ != nullptr) {
