@@ -111,11 +111,14 @@ int32_t SleAudioDeviceManager::StartPlaying(const std::string &device, uint32_t 
         AudioPolicyUtils::GetInstance().GetEncryptAddr(device).c_str(), streamType);
     std::lock_guard<std::mutex> lock(startedSleStreamTypeMutex_);
     int32_t ret = ERROR;
-    if (!startedSleStreamType_[device][streamType].empty()) {
+    if (startedSleStreamType_[device][streamType].isStarted) {
         AUDIO_INFO_LOG("sle stream type %{public}u is already started", streamType);
         return SUCCESS;
     }
     callback_->StartPlaying(device, streamType, ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "startplaying failed");
+    UpdateStreamIsStartedFlag(device, streamType);
+
     return ret;
 }
 
@@ -472,6 +475,12 @@ int32_t SleAudioDeviceManager::GetVolumeLevelByVolumeType(AudioVolumeType volume
         return deviceVolumeConfigInfo_[deviceDesc.macAddress_].second.volumeLevel;
     }
     return 0;
+}
+
+void SleAudioDeviceManager::UpdateStreamIsStartedFlag(const std::string &deviceAddr, uint32_t streamType)
+{
+    std::lock_guard<std::mutex> lock(startedSleStreamTypeMutex_);
+    startedSleStreamType_[deviceAddr][streamType].isStarted = true;
 }
 } // namespace AudioStandard
 } // namespace OHOS

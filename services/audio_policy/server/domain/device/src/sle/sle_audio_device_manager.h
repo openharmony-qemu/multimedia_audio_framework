@@ -108,6 +108,8 @@ private:
     bool IsNearlinkDevice(DeviceType deviceType);
     bool IsMoveToNearlinkDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     bool IsNearlinkMoveToOtherDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void UpdateStreamIsStartedFlag(const std::string &deviceAddr, uint32_t streamType);
+    
 
     sptr<IStandardSleAudioOperationCallback> callback_ = nullptr;
 
@@ -115,8 +117,12 @@ private:
     std::unordered_map<std::string, std::pair<SleVolumeConfigInfo, SleVolumeConfigInfo>> deviceVolumeConfigInfo_;
 
     std::mutex startedSleStreamTypeMutex_;
-    // Maps device MAC -> (stream type ->set of session IDs)
-    std::unordered_map<std::string, std::unordered_map<uint32_t, std::unordered_set<uint32_t>>> startedSleStreamType_;
+    // Maps device MAC -> (stream type -> StreamTypeInfo (set of session IDs, flag of isStarted))
+    struct StreamTypeInfo{
+        std::unordered_set<uint32_t> sessionIds;
+        bool isStarted = false;
+    }
+    std::unordered_map<std::string, std::unordered_map<uint32_t, StreamTypeInfo>> startedSleStreamType_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
