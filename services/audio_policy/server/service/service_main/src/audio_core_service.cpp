@@ -168,8 +168,14 @@ void AudioCoreService::FetchOutputDupDevice(std::string caller, uint32_t session
     streamDesc->oldDupDeviceDescs_ = streamDesc->newDupDeviceDescs_;
     streamDesc->newDupDeviceDescs_ =
         audioRouterCenter_.FetchDupDevices(info);
-    HILOG_COMM_INFO("[DeviceFetchInfo] dup device %{public}s for stream %{public}d",
+    AUDIO_INFO_LOG("[DeviceFetchInfo] dup device %{public}s for stream %{public}d",
         streamDesc->GetNewDupDevicesTypeString().c_str(), sessionId);
+
+    UpdateDupDeviceOutputRoute(streamDesc);
+
+    if (audioPolicyServerHandler_ != nullptr && IsDupDeviceChange(streamDesc)) {
+        audioPolicyServerHandler_->SendPreferredOutputDeviceUpdated();
+    }
 }
 
 int32_t AudioCoreService::CreateRendererClient(
@@ -209,8 +215,7 @@ int32_t AudioCoreService::CreateRendererClient(
     CHECK_AND_RETURN_RET(bluetoothFetchResult == BLUETOOTH_FETCH_RESULT_DEFAULT, ERR_OPERATION_FAILED);
 
     UpdatePlaybackStreamFlag(streamDesc, true);
-    AUDIO_INFO_LOG("Target audioFlag 0x%{public}x for stream %{public}d",
-        streamDesc->audioFlag_, sessionId);
+    AUDIO_INFO_LOG("Target audioFlag 0x%{public}x for stream %{public}d", streamDesc->audioFlag_, sessionId);
 
     // Fetch pipe
     audioActiveDevice_.UpdateStreamDeviceMap("CreateRendererClient");
@@ -320,7 +325,7 @@ void AudioCoreService::WriteIncorrectSelectBTSPPEvent(int32_t clientUID, SourceT
         "STREAM_TYPE", sourceType);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "write event fail: INCORRECT_SELECT_BT_SPP_DEVICE, ret = %{public}d", ret);
 }
-    
+
 bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
     Trace trace("IsStreamSupportMultiChannel");
