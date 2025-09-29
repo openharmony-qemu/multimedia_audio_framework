@@ -35,10 +35,10 @@ using namespace OHOS::HDI::DistributedAudio::Audio::V1_0;
 
 namespace OHOS {
 namespace AudioStandard {
-const std::unordered_map<HpaeSplitStreamType, AudioCategory> RemoteAudioRenderSink::SPLIT_STREAM_MAP = {
-    { HpaeSplitStreamType::STREAM_TYPE_MEDIA, AudioCategory::AUDIO_IN_MEDIA },
-    { HpaeSplitStreamType::STREAM_TYPE_NAVIGATION, AudioCategory::AUDIO_IN_NAVIGATION },
-    { HpaeSplitStreamType::STREAM_TYPE_COMMUNICATION, AudioCategory::AUDIO_IN_COMMUNICATION },
+const std::unordered_map<SplitStreamType, AudioCategory> RemoteAudioRenderSink::SPLIT_STREAM_MAP = {
+    { SplitStreamType::STREAM_TYPE_MEDIA, AudioCategory::AUDIO_IN_MEDIA },
+    { SplitStreamType::STREAM_TYPE_NAVIGATION, AudioCategory::AUDIO_IN_NAVIGATION },
+    { SplitStreamType::STREAM_TYPE_COMMUNICATION, AudioCategory::AUDIO_IN_COMMUNICATION },
 };
 
 RemoteAudioRenderSink::RemoteAudioRenderSink(const std::string &deviceNetworkId)
@@ -459,7 +459,7 @@ int32_t RemoteAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &appsUid
 }
 
 int32_t RemoteAudioRenderSink::SplitRenderFrame(char &data, uint64_t len, uint64_t &writeLen,
-    HpaeSplitStreamType splitStreamType)
+    SplitStreamType splitStreamType)
 {
     Trace trace("RemoteAudioRenderSink::SplitRenderFrame");
     AUDIO_DEBUG_LOG("in, type: %{public}d", splitStreamType);
@@ -468,7 +468,7 @@ int32_t RemoteAudioRenderSink::SplitRenderFrame(char &data, uint64_t len, uint64
     return RenderFrame(data, len, writeLen, it->second);
 }
 
-int32_t RemoteAudioRenderSink::GetHdiRenderId(HpaeSplitStreamType splitStreamType)
+int32_t RemoteAudioRenderSink::GetHdiRenderId(SplitStreamType splitStreamType)
 {
     auto it = SPLIT_STREAM_MAP.find(splitStreamType);
     CHECK_AND_RETURN_RET_LOG(it != SPLIT_STREAM_MAP.end(), ERR_INVALID_PARAM, "invalid splitStreamType");
@@ -576,7 +576,7 @@ void RemoteAudioRenderSink::InitSplitStream(const char *splitStreamStr, std::vec
             AUDIO_WARNING_LOG("conversion failed, stream type %{public}s", splitStream.c_str());
             continue;
         }
-        auto it = SPLIT_STREAM_MAP.find(static_cast<HpaeSplitStreamType>(singleArgNum));
+        auto it = SPLIT_STREAM_MAP.find(static_cast<SplitStreamType>(singleArgNum));
         if (it == SPLIT_STREAM_MAP.end()) {
             AUDIO_WARNING_LOG("invalid stream type %{public}s", splitStream.c_str());
             continue;

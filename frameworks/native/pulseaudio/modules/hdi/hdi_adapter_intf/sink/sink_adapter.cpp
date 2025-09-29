@@ -342,7 +342,7 @@ int32_t SinkAdapterSplitRenderFrame(struct SinkAdapter *adapter, char *data, uin
     CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "get sink fail");
     CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_ILLEGAL_STATE, "sink not init");
 
-    return sink->SplitRenderFrame(*data, len, *writeLen, static_cast<HpaeSplitStreamType>(splitStreamType));
+    return sink->SplitRenderFrame(*data, len, *writeLen, static_cast<SplitStreamType>(splitStreamType));
 }
 
 int32_t SinkSetDeviceConnectedFlag(struct SinkAdapter *adapter, bool flag)

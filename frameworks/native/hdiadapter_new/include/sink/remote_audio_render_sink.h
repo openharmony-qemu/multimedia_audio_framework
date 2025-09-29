@@ -90,9 +90,9 @@ public:
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
     int32_t SplitRenderFrame(char &data, uint64_t len, uint64_t &writeLen,
-        HpaeSplitStreamType splitStreamType) override;
+        SplitStreamType splitStreamType) override;
 
-    int32_t GetHdiRenderId(HpaeSplitStreamType splitStreamType) override;
+    int32_t GetHdiRenderId(SplitStreamType splitStreamType) override;
 
     void DumpInfo(std::string &dumpString) override;
 
@@ -125,7 +125,7 @@ private:
     static constexpr const char *COMMUNICATION_STREAM_TYPE = "2";
     static constexpr const char *NAVIGATION_STREAM_TYPE = "13";
     static constexpr const char *DUMP_REMOTE_RENDER_SINK_FILENAME = "dump_remote_audiosink";
-    static const std::unordered_map<HpaeSplitStreamType, RemoteAudioCategory> SPLIT_STREAM_MAP;
+    static const std::unordered_map<SplitStreamType, RemoteAudioCategory> SPLIT_STREAM_MAP;
 
     const std::string deviceNetworkId_ = "";
     IAudioSinkAttr attr_ = {};

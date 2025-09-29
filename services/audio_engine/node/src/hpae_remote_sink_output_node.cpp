@@ -79,7 +79,7 @@ void HpaeRemoteSinkOutputNode::HandleRemoteTiming()
     AUDIO_DEBUG_LOG("remoteSleepTime_ %{public}lld", remoteSleepTime_.count());
 }
 
-void HpaeRemoteSinkOutputNode::HandlePcmDumping(HpaeSplitStreamType streamType, char* data, size_t size)
+void HpaeRemoteSinkOutputNode::HandlePcmDumping(SplitStreamType streamType, char* data, size_t size)
 {
     auto handleDump = [&](auto& dumper) {
         if (dumper) {
@@ -89,10 +89,10 @@ void HpaeRemoteSinkOutputNode::HandlePcmDumping(HpaeSplitStreamType streamType, 
     };
 
     switch (streamType) {
-        case HpaeSplitStreamType::STREAM_TYPE_MEDIA:
+        case SplitStreamType::STREAM_TYPE_MEDIA:
             handleDump(outputMediaPcmDumper_);
             break;
-        case HpaeSplitStreamType::STREAM_TYPE_NAVIGATION:
+        case SplitStreamType::STREAM_TYPE_NAVIGATION:
             handleDump(outputNavigationPcmDumper_);
             break;
         default:
@@ -113,7 +113,7 @@ void HpaeRemoteSinkOutputNode::NotifyHdiSetParamEvent(const std::string &key, ui
     deviceManager->SetAudioParameter(this->GetNodeInfo().deviceNetId, AudioParamKey::PARAM_KEY_STATE, key, val);
 }
 
-void HpaeRemoteSinkOutputNode::NotifyStreamTypeChange(AudioStreamType type, HpaeSplitStreamType splitStreamType)
+void HpaeRemoteSinkOutputNode::NotifyStreamTypeChange(AudioStreamType type, SplitStreamType splitStreamType)
 {
     if (splitStreamType != STREAM_TYPE_MEDIA) {
         return;
@@ -130,7 +130,7 @@ void HpaeRemoteSinkOutputNode::NotifyStreamTypeChange(AudioStreamType type, Hpae
     this->NotifyHdiSetParamEvent(STREAM_TYPE_CHANGE, static_cast<uint32_t>(renderId), static_cast<uint32_t>(type));
 }
 
-void HpaeRemoteSinkOutputNode::NotifyStreamUsageChange(StreamUsage usage, HpaeSplitStreamType splitStreamType)
+void HpaeRemoteSinkOutputNode::NotifyStreamUsageChange(StreamUsage usage, SplitStreamType splitStreamType)
 {
     if (usage == this->usageMap_[splitStreamType]) {
         return;
@@ -160,7 +160,7 @@ void HpaeRemoteSinkOutputNode::DoProcess()
         if (outputData == nullptr || (!outputData->IsValid() && !needEmptyChunk_)) {
             continue;
         }
-        HpaeSplitStreamType splitStreamType = outputData->GetSplitStreamType();
+        SplitStreamType splitStreamType = outputData->GetSplitStreamType();
         AudioStreamType type = outputData->GetAudioStreamType();
         NotifyStreamTypeChange(type, splitStreamType);
         NotifyStreamUsageChange(outputData->IsValid() ? outputData->GetAudioStreamUsage() : STREAM_USAGE_UNKNOWN,

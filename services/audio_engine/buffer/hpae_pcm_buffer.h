@@ -249,12 +249,12 @@ public:
         sourceBufferType_ = type;
     }
 
-    HpaeSplitStreamType GetSplitStreamType() const
+    SplitStreamType GetSplitStreamType() const
     {
         return splitStreamType_;
     }
 
-    void SetSplitStreamType(HpaeSplitStreamType type)
+    void SetSplitStreamType(SplitStreamType type)
     {
         splitStreamType_ = type;
     }
@@ -296,7 +296,7 @@ private:
     std::vector<HpaePcmProcess> pcmProcessVec_;
     PcmBufferInfo pcmBufferInfo_;
     HpaeSourceBufferType sourceBufferType_ = HPAE_SOURCE_BUFFER_TYPE_DEFAULT;
-    HpaeSplitStreamType splitStreamType_ = STREAM_TYPE_DEFAULT;
+    SplitStreamType splitStreamType_ = STREAM_TYPE_DEFAULT;
     AudioStreamType streamType_ = STREAM_DEFAULT;
     StreamUsage streamUsage_ = STREAM_USAGE_INVALID;
 };
