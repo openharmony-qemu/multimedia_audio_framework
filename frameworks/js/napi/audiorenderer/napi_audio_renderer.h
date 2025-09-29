@@ -193,6 +193,8 @@ private:
     static std::mutex createMutex_;
     static int32_t isConstructSuccess_;
     static std::unique_ptr<AudioRendererOptions> sRendererOptions_;
+    static std::atomic<bool> firstWriteCalled_;
+    static std::atomic<bool> firstRegWriteCbCalled_;
 
     ContentType contentType_;
     StreamUsage streamUsage_;

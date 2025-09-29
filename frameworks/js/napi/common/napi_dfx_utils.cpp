@@ -16,6 +16,7 @@
 #include <cstdio>
 #include "napi_dfx_utils.h"
 #include "audio_common_log.h"
+#include "audio_info.h"
 #ifndef CROSS_PLATFORM
 #include "media_monitor_manager.h"
 #include "media_monitor_info.h"
@@ -35,6 +36,45 @@ void NapiDfxUtils::SendVolumeApiInvokeEvent(int32_t uid, const std::string &func
     bean->Add("PARAM_VALUE", paramValue);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 #endif
+}
+
+static const char* GetFuncReadable(bool direction, uint8_t functionType)
+{
+    if (direction == NapiDfxUtils::SteamDirection::playback) {
+        switch (functionType) {
+            case 0: return "Write";
+            case 1: return "RegisterRendererWriteDataCallback";
+            default: return "UnknownRendererFunc";
+        }
+    } else {
+        switch (functionType) {
+            case 0: return "Read";
+            case 1: return "RegisterCaptureReadDataCallback";
+            default: return "UnknownCaptureFunc";
+        }
+    }
+}
+ 
+void NapiDfxUtils::ReportAudioMainThreadEvent(int32_t uid, bool direction,
+    uint8_t usageOrSourceType, uint8_t functionType)
+{
+    const char* typeStr = direction ? "Capture" : "Renderer";
+    const char* keyStr  = direction ? "sourceType" : "usage";
+    const char* funcStr = GetFuncReadable(direction, functionType);
+ 
+    AUDIO_INFO_LOG("type=%{public}s, %{public}s=%{public}d, funcId=%{public}d(%{public}s)",
+        typeStr, keyStr, usageOrSourceType, functionType, funcStr);
+ 
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::PROCESS_IN_MAINTHREAD,
+        Media::MediaMonitor::EventType::BEHAVIOR_EVENT);
+    CHECK_AND_RETURN_LOG(bean != nullptr, "bean is nullptr");
+ 
+    bean->Add("UID", uid);
+    bean->Add("AUDIODIRECTION", direction);
+    bean->Add("AUDIOSTREAM", usageOrSourceType);
+    bean->Add("CALLFUNC", functionType);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 } // namespace AudioStandard
 } // namespace OHOS

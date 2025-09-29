@@ -23,9 +23,11 @@
 #endif
 #endif
 #include "audio_errors.h"
+#include "audio_system_manager.h"
 #include "napi_audio_error.h"
 #include "napi_param_utils.h"
 #include "napi_audio_enum.h"
+#include "napi_dfx_utils.h"
 #include "napi_audio_capturer_callbacks.h"
 #include "napi_capturer_position_callback.h"
 #include "napi_capturer_period_position_callback.h"
@@ -39,6 +41,8 @@ static __thread napi_ref g_capturerConstructor = nullptr;
 std::unique_ptr<AudioCapturerOptions> NapiAudioCapturer::sCapturerOptions_ = nullptr;
 mutex NapiAudioCapturer::createMutex_;
 int32_t NapiAudioCapturer::isConstructSuccess_ = SUCCESS;
+std::atomic<bool> NapiAudioCapturer::firstReadCalled_{false};
+std::atomic<bool> NapiAudioCapturer::firstRegReadCbCalled_{false};
 
 NapiAudioCapturer::NapiAudioCapturer()
     : audioCapturer_(nullptr),  sourceType_(SOURCE_TYPE_MIC), env_(nullptr) {}
@@ -592,6 +596,21 @@ napi_value NapiAudioCapturer::Read(napi_env env, napi_callback_info info)
         NapiAudioError::ThrowError(env, NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
+
+    if ((!firstReadCalled_.exchange(true, std::memory_order_relaxed)) &&
+        (getpid() == gettid())) {
+        auto obj = reinterpret_cast<NapiAudioCapturer*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioCapturer = objectGuard.GetPtr();
+        CHECK_AND_RETURN_RET_LOG(CheckAudioCapturerStatus(napiAudioCapturer, context),
+            nullptr, "context object state is error.");
+        AudioCapturerInfo capturerInfo = {};
+        napiAudioCapturer->audioCapturer_->GetCapturerInfo(capturerInfo);
+        int32_t appUid = static_cast<int32_t>(getuid());
+        NapiDfxUtils::ReportAudioMainThreadEvent(appUid, NapiDfxUtils::SteamDirection::capture,
+            capturerInfo.sourceType, NapiDfxUtils::MainThreadCallFunc::read);
+    }
+
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
             NAPI_ERR_INVALID_PARAM);
@@ -1280,6 +1299,15 @@ void NapiAudioCapturer::RegisterCapturerReadDataCallback(napi_env env, napi_valu
         std::static_pointer_cast<NapiCapturerReadDataCallback>(napiCapturer->capturerReadDataCallbackNapi_);
     cb->AddCallbackReference(cbName, argv[PARAM1]);
     cb->CreateReadDataTsfn(env);
+
+    if ((!firstRegReadCbCalled_.exchange(true, std::memory_order_relaxed)) &&
+        (getpid() == gettid())) {
+        AudioCapturerInfo capturerInfo = {};
+        napiCapturer->audioCapturer_->GetCapturerInfo(capturerInfo);
+        int32_t appUid = static_cast<int32_t>(getuid());
+        NapiDfxUtils::ReportAudioMainThreadEvent(appUid, NapiDfxUtils::SteamDirection::capture,
+            capturerInfo.sourceType, NapiDfxUtils::MainThreadCallFunc::readCb);
+    }
 
     AUDIO_INFO_LOG("Register Callback is successful");
 }
