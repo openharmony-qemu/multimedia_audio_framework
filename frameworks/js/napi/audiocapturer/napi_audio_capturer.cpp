@@ -602,13 +602,13 @@ napi_value NapiAudioCapturer::Read(napi_env env, napi_callback_info info)
         auto obj = reinterpret_cast<NapiAudioCapturer*>(context->native);
         ObjectRefMap objectGuard(obj);
         auto *napiAudioCapturer = objectGuard.GetPtr();
-        CHECK_AND_RETURN_RET_LOG(CheckAudioCapturerStatus(napiAudioCapturer, context),
-            nullptr, "context object state is error.");
-        AudioCapturerInfo capturerInfo = {};
-        napiAudioCapturer->audioCapturer_->GetCapturerInfo(capturerInfo);
-        int32_t appUid = static_cast<int32_t>(getuid());
-        NapiDfxUtils::ReportAudioMainThreadEvent(appUid, NapiDfxUtils::SteamDirection::capture,
-            capturerInfo.sourceType, NapiDfxUtils::MainThreadCallFunc::read);
+        if (CheckAudioCapturerStatus(napiAudioCapturer, context) == true) {
+            AudioCapturerInfo capturerInfo = {};
+            napiAudioCapturer->audioCapturer_->GetCapturerInfo(capturerInfo);
+            int32_t appUid = static_cast<int32_t>(getuid());
+            NapiDfxUtils::ReportAudioMainThreadEvent(appUid, NapiDfxUtils::SteamDirection::capture,
+                capturerInfo.sourceType, NapiDfxUtils::MainThreadCallFunc::read);
+        }
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {

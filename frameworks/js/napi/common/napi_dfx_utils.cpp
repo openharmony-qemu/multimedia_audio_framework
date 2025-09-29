@@ -64,7 +64,8 @@ void NapiDfxUtils::ReportAudioMainThreadEvent(int32_t uid, bool direction,
  
     AUDIO_INFO_LOG("type=%{public}s, %{public}s=%{public}d, funcId=%{public}d(%{public}s)",
         typeStr, keyStr, usageOrSourceType, functionType, funcStr);
- 
+
+#ifndef CROSS_PLATFORM
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::PROCESS_IN_MAINTHREAD,
         Media::MediaMonitor::EventType::BEHAVIOR_EVENT);
@@ -75,6 +76,7 @@ void NapiDfxUtils::ReportAudioMainThreadEvent(int32_t uid, bool direction,
     bean->Add("AUDIOSTREAM", usageOrSourceType);
     bean->Add("CALLFUNC", functionType);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+#endif
 }
 } // namespace AudioStandard
 } // namespace OHOS
