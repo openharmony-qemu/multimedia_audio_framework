@@ -43,7 +43,6 @@ class AudioSuiteAissNodeTest : public testing::Test {
 public:
     void SetUp()
     {
-        AudioFormat audioFormat;
         impl = std::make_shared<AudioSuiteAissNode>();
     };
     void TearDown()
