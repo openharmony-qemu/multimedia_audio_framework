@@ -29,8 +29,10 @@ namespace AudioSuite {
  
 class AudioSuiteAissNode : public AudioSuiteProcessNode {
 public:
-    explicit AudioSuiteAissNode(AudioNodeType nodeType, AudioFormat audioFormat);
-    ~AudioSuiteAissNode() override = default;
+    explicit AudioSuiteAissNode();
+    ~AudioSuiteAissNode() {
+        DeInit();
+    }
     bool Reset() override;
     int32_t DoProcess() override;
     std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> GetOutputPort(AudioNodePortType portType) override;
@@ -45,7 +47,6 @@ protected:
     std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> bkgOutputStream_{ nullptr };
 private:
     AudioSuitePcmBuffer preProcess(AudioSuitePcmBuffer& input);
-    AudioSuitePcmBuffer afterProcess(AudioSuitePcmBuffer& input);
     AudioSuitePcmBuffer rateConvert(AudioSuitePcmBuffer input,
         uint32_t sampleRate, uint32_t channelCount);
     AudioSuitePcmBuffer channelConvert(AudioSuitePcmBuffer input,
@@ -55,8 +56,9 @@ private:
     bool isInit_ = false;
     Tap humanTap_;
     Tap bkgTap_;
-    AudioFormat audioFormat_;
     AudioSuitePcmBuffer tmpInput_;
+    AudioSuitePcmBuffer channelOutput_;
+    AudioSuitePcmBuffer rateOutput_;
     AudioSuitePcmBuffer tmpOutput_;
     AudioSuitePcmBuffer tmpHumanSoundOutput_;
     AudioSuitePcmBuffer tmpBkgSoundOutput_;

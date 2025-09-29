@@ -28,7 +28,9 @@ class AudioSuiteAissAlgoInterfaceImpl : public AudioSuiteAlgoInterface {
 public:
     AudioSuiteAissAlgoInterfaceImpl() = default;
 
-    ~AudioSuiteAissAlgoInterfaceImpl() = default;
+    ~AudioSuiteAissAlgoInterfaceImpl() {
+        Deinit();
+    }
 
     int32_t Init() override;
 

@@ -44,7 +44,7 @@ public:
     void SetUp()
     {
         AudioFormat audioFormat;
-        impl = std::make_shared<AudioSuiteAissNode>(NODE_TYPE_AUDIO_SEPARATION, audioFormat);
+        impl = std::make_shared<AudioSuiteAissNode>();
     };
     void TearDown()
     {
