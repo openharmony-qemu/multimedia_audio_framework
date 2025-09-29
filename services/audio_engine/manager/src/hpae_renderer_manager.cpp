@@ -466,7 +466,7 @@ void HpaeRendererManager::ConnectOutputCluster(uint32_t sessionId, HpaeProcessor
         outputCluster_->UpdateStreamInfo(sceneClusterMap_[sceneType]);
     }
     if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
-        uint32_t latency = outputCluster_->GetLatency();
+        uint32_t latency = outputCluster_->GetHdiLatency();
         hpaeCoBufferNode_->SetLatency(latency);
         hpaeCoBufferNode_->Connect(sceneClusterMap_[sceneType]);
         TriggerCallback(CONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
@@ -1235,7 +1235,21 @@ int32_t HpaeRendererManager::RegisterReadCallback(uint32_t sessionId,
 
 void HpaeRendererManager::OnRequestLatency(uint32_t sessionId, uint64_t &latency)
 {
-    // todo: add processLatency
+    CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), "not find sessionId %{public}u", sessionId);
+    HpaeProcessorType sceneType = (sinkInputNodeMap_[sessionId]->connectedProcessorType_ != HPAE_SCENE_UNCONNECTED) ?
+        sinkInputNodeMap_[sessionId]->connectedProcessorType_ : GetProcessorType(sessionId);
+
+    uint64_t processLatency = 0;
+
+    if (SafeGetMap(sceneClusterMap_, sceneType)) {
+        processLatency += sceneClusterMap_[sceneType]->GetLatency(sessionId);
+        if (outputCluster_) {
+            processLatency += outputCluster_->GetLatency(
+                sceneClusterMap_[sceneType]->GetSharedInstance()->GetNodeInfo().sceneType);
+        }
+    }
+
+    latency += processLatency;
     return;
 }
 

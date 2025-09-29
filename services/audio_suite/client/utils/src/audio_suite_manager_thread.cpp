@@ -55,10 +55,7 @@ void AudioSuiteManagerThread::Run()
             bool signal = recvSignal_.load();
             Trace trace("AudioSuite runFunc:" + std::to_string(signal) +
                 " isPorcessing:" + std::to_string(isProcessing));
-            AUDIO_INFO_LOG("sendrequest:: runFunc = %{public}s. isPorcessing = %{public}s",
-                std::to_string(signal).c_str(), std::to_string(isProcessing).c_str());
             condition_.wait(lock, [this] { return m_audioSuiteManager->IsMsgProcessing() || recvSignal_.load(); });
-            AUDIO_INFO_LOG("sendrequest:: thread start finish.");
         }
         m_audioSuiteManager->HandleMsg();
         recvSignal_.store(false);
