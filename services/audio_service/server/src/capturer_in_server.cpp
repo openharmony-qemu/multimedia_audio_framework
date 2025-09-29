@@ -752,6 +752,7 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
         status_ = I_STATUS_INVALID;
         return ret;
     }
+    CoreServiceHandler::GetInstance().ReleaseCaptureInjector(streamIndex_);
     if (status_ != I_STATUS_STOPPING &&
         status_ != I_STATUS_STOPPED) {
         HandleOperationStopped(CAPTURER_STAGE_STOP_BY_RELEASE);

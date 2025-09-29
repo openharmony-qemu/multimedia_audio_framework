@@ -108,6 +108,7 @@ HWTEST_F(AudioInjectorPolicyUnitTest, AddCaptureInjector_001, TestSize.Level1)
     auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
     audioInjectorPolicy.rendererStreamMap_.clear();
     audioInjectorPolicy.isConnected_ = false;
+    audioInjectorPolicy.voipType_ = NO_VOIP;
     audioInjectorPolicy.AddCaptureInjector();
 
     audioInjectorPolicy.isConnected_ = true;
@@ -126,12 +127,12 @@ HWTEST_F(AudioInjectorPolicyUnitTest, RemoveCaptureInjector_001, TestSize.Level1
     auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
     audioInjectorPolicy.isConnected_ = false;
     audioInjectorPolicy.rendererStreamMap_.clear();
-    audioInjectorPolicy.RemoveCaptureInjector();
+    audioInjectorPolicy.RemoveCaptureInjector(false);
     audioInjectorPolicy.isConnected_ = false;
     std::shared_ptr<AudioStreamDescriptor> streamDesc1 = std::make_shared<AudioStreamDescriptor>();
     audioInjectorPolicy.rendererStreamMap_.clear();
     audioInjectorPolicy.rendererStreamMap_[1111] = streamDesc1;
-    int32_t ret = audioInjectorPolicy.RemoveCaptureInjector();
+    int32_t ret = audioInjectorPolicy.RemoveCaptureInjector(false);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -146,12 +147,12 @@ HWTEST_F(AudioInjectorPolicyUnitTest, RemoveCaptureInjector_002, TestSize.Level1
     auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
     audioInjectorPolicy.isConnected_ = true;
     audioInjectorPolicy.rendererStreamMap_.clear();
-    audioInjectorPolicy.RemoveCaptureInjector();
+    audioInjectorPolicy.RemoveCaptureInjector(false);
     audioInjectorPolicy.isConnected_ = true;
     std::shared_ptr<AudioStreamDescriptor> streamDesc1 = std::make_shared<AudioStreamDescriptor>();
     audioInjectorPolicy.rendererStreamMap_.clear();
     audioInjectorPolicy.rendererStreamMap_[1111] = streamDesc1;
-    int32_t ret = audioInjectorPolicy.RemoveCaptureInjector();
+    int32_t ret = audioInjectorPolicy.RemoveCaptureInjector(false);
     EXPECT_EQ(SUCCESS, ret);
 }
 

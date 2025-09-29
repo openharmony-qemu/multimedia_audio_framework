@@ -2356,11 +2356,12 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
         AUDIO_INFO_LOG("Telephony scene , no need for start");
     } else if (previousState == RENDERER_RUNNING) {
         // restart audio stream
-        switchResult = newAudioStream->StartAudioStream(CMD_FROM_CLIENT,
-            static_cast<AudioStreamDeviceChangeReasonExt::ExtEnum>(restoreInfo.deviceChangeReason));
-        CHECK_AND_RETURN_RET_LOG(switchResult, false, "start new stream failed.");
+        if (switchInfo.target != INJECT_TO_VOICE_COMMUNICATION_CAPTURE) {
+            switchResult = newAudioStream->StartAudioStream(CMD_FROM_CLIENT,
+                static_cast<AudioStreamDeviceChangeReasonExt::ExtEnum>(restoreInfo.deviceChangeReason));
+            CHECK_AND_RETURN_RET_LOG(switchResult, false, "start new stream failed.");
+        }
     }
-
     isFastRenderer_ = IAudioStream::IsFastStreamClass(targetClass);
     return switchResult;
 }

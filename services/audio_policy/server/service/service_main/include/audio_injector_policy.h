@@ -25,7 +25,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-enum VoIpType {
+enum VoipType {
     NO_VOIP = 0,
     NORMAL_VOIP = 1,
     FAST_VOIP = 2,
@@ -52,8 +52,11 @@ public:
     void SetRendererPortIdx(uint32_t idx);
     uint32_t GetRendererPortIdx();
     AudioModuleInfo& GetAudioModuleInfo();
+    bool GetIsConnected();
+    void SetVoipType(VoipType type);
     int32_t AddCaptureInjector();
-    int32_t RemoveCaptureInjector();
+    int32_t RemoveCaptureInjector(bool noCapturer);
+    void ReleaseCaptureInjector(uint32_t streamId);
 
     void AddInjectorStreamId(const uint32_t streamId);
     void DeleteInjectorStreamId(const uint32_t streamId);
@@ -71,6 +74,7 @@ private:
     uint32_t renderPortIdx_;
     bool isOpened_;
     bool isConnected_;
+    VoipType voipType_;
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> rendererStreamMap_ = {};
     AudioIOHandleMap &audioIOHandleMap_;
     IAudioPolicyInterface &audioPolicyManager_;

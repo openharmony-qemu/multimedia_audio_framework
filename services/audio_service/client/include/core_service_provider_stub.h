@@ -39,6 +39,8 @@ public:
     int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config, int32_t &ret) override;
     int32_t SetRendererTarget(uint32_t target, uint32_t lastTarget, uint32_t sessionId, int32_t &ret) override;
     int32_t StartInjection(uint32_t streamId, int32_t &ret) override;
+    int32_t RemoveIdForInjector(uint32_t streamId) override;
+    int32_t ReleaseCaptureInjector(uint32_t streamId) override;
     int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue,
         uint64_t &sendDataSize, uint32_t &timeStamp, int32_t &ret) override;
 private:
