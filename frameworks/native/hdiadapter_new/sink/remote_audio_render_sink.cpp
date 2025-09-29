@@ -35,6 +35,10 @@ using namespace OHOS::HDI::DistributedAudio::Audio::V1_0;
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+const std::string STREAM_TYPE_CHANGE = "stream_type_change";
+const std::string STREAM_USAGE_CHANGE = "stream_usage_change";
+}
 const std::unordered_map<SplitStreamType, AudioCategory> RemoteAudioRenderSink::SPLIT_STREAM_MAP = {
     { SplitStreamType::STREAM_TYPE_MEDIA, AudioCategory::AUDIO_IN_MEDIA },
     { SplitStreamType::STREAM_TYPE_NAVIGATION, AudioCategory::AUDIO_IN_NAVIGATION },
@@ -468,7 +472,8 @@ int32_t RemoteAudioRenderSink::SplitRenderFrame(char &data, uint64_t len, uint64
     return RenderFrame(data, len, writeLen, it->second);
 }
 
-int32_t RemoteAudioRenderSink::GetHdiRenderId(SplitStreamType splitStreamType)
+int32_t RemoteAudioRenderSink::NotifyHdiEvent(SplitStreamType splitStreamType, const std::string &key,
+    const std::string &val)
 {
     auto it = SPLIT_STREAM_MAP.find(splitStreamType);
     CHECK_AND_RETURN_RET_LOG(it != SPLIT_STREAM_MAP.end(), ERR_INVALID_PARAM, "invalid splitStreamType");
@@ -477,8 +482,39 @@ int32_t RemoteAudioRenderSink::GetHdiRenderId(SplitStreamType splitStreamType)
     auto wrapperItem = this->audioRenderWrapperMap_.find(type);
     CHECK_AND_RETURN_RET_LOG(wrapperItem != this->audioRenderWrapperMap_.end(), ERR_INVALID_PARAM,
         "invalid AudioCategroy");
-    return wrapperItem->second.hdiRenderId_;
+    const uint32_t renderId = wrapperItem->second.hdiRenderId_;
+
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERR_NULL_POINTER, "device manager is nullptr");
+    std::string outputVal = std::to_string(renderId) + '-' + val;
+    deviceManager->SetAudioParameter(deviceNetworkId_, AudioParamKey::PARAM_KEY_STATE, key, outputVal);
+    return SUCCESS;
 }
+
+void RemoteAudioRenderSink::UpdateStreamInfo(const SplitStreamType splitStreamType, const AudioStreamType type, const StreamUsage usage)
+{
+    if (type != this->streamTypeMap_[splitStreamType]) {
+        this->UpdateStreamType(splitStreamType, type);
+    }
+    if (usage != this->streamUsageMap_[splitStreamType]) {
+        this->UpdateStreamUsage(splitStreamType, usage);
+    }
+}
+
+void RemoteAudioRenderSink::UpdateStreamType(const SplitStreamType splitStreamType, const AudioStreamType type)
+{
+    this->streamTypeMap_[splitStreamType] = type;
+    this->NotifyHdiEvent(splitStreamType, STREAM_TYPE_CHANGE, std::to_string(type));
+}
+
+void RemoteAudioRenderSink::UpdateStreamUsage(const SplitStreamType splitStreamType, const StreamUsage usage)
+{
+    this->streamUsageMap_[splitStreamType] = usage;
+    this->NotifyHdiEvent(splitStreamType, STREAM_USAGE_CHANGE, std::to_string(usage));
+}
+
+
 
 void RemoteAudioRenderSink::DumpInfo(std::string &dumpString)
 {

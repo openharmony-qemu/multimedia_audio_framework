@@ -114,12 +114,15 @@ public:
     // remote extend function
     virtual int32_t SplitRenderFrame(char &data, uint64_t len, uint64_t &writeLen,
         SplitStreamType splitStreamType) NOT_SUPPORT_RET
+
     /**
-     * @brief get hte corresponding render id for the splitStreamType
+     * @brief update stream type and usage, if changes, notify HDI.
      * @param splitStreamType the channel stream type, only split stream mode by head unit
-     * @return if ret >= 0, is render id, otherwise errCode
+     * @param type stream type
+     * @param usage stream usage
      */
-    virtual int32_t GetHdiRenderId(SplitStreamType splitStreamType) NOT_SUPPORT_RET;
+    virtual void UpdateStreamInfo(const SplitStreamType splitStreamType, const AudioStreamType type,
+        const StreamUsage usage) {};
 
     // primary extend function
     virtual int32_t SetDeviceConnectedFlag(bool flag) NOT_SUPPORT_RET

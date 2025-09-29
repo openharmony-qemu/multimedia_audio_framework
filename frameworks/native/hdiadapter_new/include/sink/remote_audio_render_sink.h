@@ -92,7 +92,7 @@ public:
     int32_t SplitRenderFrame(char &data, uint64_t len, uint64_t &writeLen,
         SplitStreamType splitStreamType) override;
 
-    int32_t GetHdiRenderId(SplitStreamType splitStreamType) override;
+    void UpdateStreamInfo(const SplitStreamType splitStreamType, const AudioStreamType type, const StreamUsage usage) override;
 
     void DumpInfo(std::string &dumpString) override;
 
@@ -113,6 +113,10 @@ private:
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen, RemoteAudioCategory type);
 
     void JoinStartThread();
+
+    void UpdateStreamType(const SplitStreamType splitStreamType, const AudioStreamType type);
+    void UpdateStreamUsage(const SplitStreamType splitStreamType, const StreamUsage usage);
+    int32_t NotifyHdiEvent(SplitStreamType splitStreamType, const std::string &key, const std::string &val);
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -154,6 +158,9 @@ private:
     // for dfx log
     std::string logUtilsTag_ = "RemoteSink";
     mutable int64_t volumeDataCount_ = 0;
+    // for dmsdp type and usage info
+    std::unordered_map<SplitStreamType, AudioStreamType> streamTypeMap_;
+    std::unordered_map<SplitStreamType, StreamUsage> streamUsageMap_;
 };
 
 } // namespace AudioStandard

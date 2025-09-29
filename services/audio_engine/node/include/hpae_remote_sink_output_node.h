@@ -57,12 +57,6 @@ public:
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid);
 
 private:
-    /**
-     * @brief service for NotifyStreamTypeChange and NotifyStreamUsageChange
-     */
-    void NotifyHdiSetParamEvent(const std::string &key, uint32_t renderId, uint32_t typeOrUsage);
-    void NotifyStreamTypeChange(AudioStreamType type, SplitStreamType splitStreamType);
-    void NotifyStreamUsageChange(StreamUsage usage, SplitStreamType splitStreamType);
     void HandleRemoteTiming();
     void HandlePcmDumping(SplitStreamType streamType, char* data, size_t size);
     InputPort<HpaePcmBuffer *> inputStream_;
