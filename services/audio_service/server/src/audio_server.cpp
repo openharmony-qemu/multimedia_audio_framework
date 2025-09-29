@@ -854,9 +854,14 @@ bool AudioServer::CacheExtraParameters(const std::string &key,
 void AudioServer::SetA2dpAudioParameter(const std::string &renderValue)
 {
     auto parmKey = AudioParamKey::A2DP_SUSPEND_STATE;
-
     std::shared_ptr<IAudioRenderSink> btSink = GetSinkByProp(HDI_ID_TYPE_BLUETOOTH);
-    CHECK_AND_RETURN_LOG(btSink != nullptr, "has no valid sink");
+    if (btSink == nullptr) {
+        AUDIO_WARNING_LOG("has no valid sink, need preStore a2dpParam.");
+        HdiAdapterManager::GetInstance().
+            UpdateSinkPrestoreInfo<std::pair<AudioParamKey, std::pair<std::string, std::string>>>(
+            PRESTORE_INFO_AUDIO_BT_PARAM, {parmKey, {"", renderValue}});
+        return;
+    }
     btSink->SetAudioParameter(parmKey, "", renderValue);
 
     if (AudioService::GetInstance()->HasBluetoothEndpoint()) {
