@@ -1577,6 +1577,26 @@ void AudioCoreService::UpdateRingerOrAlarmerDualDeviceOutputRouter(
     shouldUpdateDeviceDueToDualTone_ = true;
 }
 
+bool AudioCoreService::IsDupDeviceChange(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+{
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, false, "streamDesc is nullptr");
+
+    if (streamDesc->oldDupDeviceDescs_.size() != streamDesc->newDupDeviceDescs_.size()) {
+        return true;
+    }
+
+    if (streamDesc->newDupDeviceDescs_.size() == 0) {
+        return true;
+    }
+
+    if (streamDesc->newDupDeviceDescs_.front() != nullptr &&
+        streamDesc->newDupDeviceDescs_.front()->IsSameDeviceDescPtr(streamDesc->oldDupDeviceDescs_.front()) == false) {
+        return true;
+    }
+
+    return false;
+}
+
 void AudioCoreService::UpdateDupDeviceOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
@@ -1623,7 +1643,6 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
         } else {
             audioActiveDevice_.UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG,
                 streamDesc->newDeviceDescs_.front()->deviceName_, streamDesc->newDeviceDescs_.front()->networkId_);
-            UpdateDupDeviceOutputRoute(streamDesc);
         }
     }
 }
@@ -1696,15 +1715,11 @@ void AudioCoreService::ClearRingMuteWhenCallStart(bool pre, bool after,
     }
 }
 
-bool AudioCoreService::SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+bool AudioCoreService::GetRingerOrAlarmerDualDevices(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+    std::vector<std::pair<InternalDeviceType, DeviceFlag>> &activeDevices)
 {
-    CHECK_AND_RETURN_RET_LOG(streamDesc->newDeviceDescs_.size() > 0 &&
-        streamDesc->newDeviceDescs_.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT, false,
-        "audio devices not in range for ringer or alarmer.");
-    const int32_t sessionId = static_cast<int32_t>(streamDesc->sessionId_);
-    const StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
     bool allDevicesInDualDevicesRange = true;
-    std::vector<std::pair<InternalDeviceType, DeviceFlag>> activeDevices;
+
     for (size_t i = 0; i < streamDesc->newDeviceDescs_.size(); i++) {
         if (IsRingerOrAlarmerDualDevicesRange(streamDesc->newDeviceDescs_[i]->deviceType_)) {
             activeDevices.push_back(make_pair(streamDesc->newDeviceDescs_[i]->deviceType_,
@@ -1716,6 +1731,19 @@ bool AudioCoreService::SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDes
             break;
         }
     }
+
+    return allDevicesInDualDevicesRange;
+}
+
+bool AudioCoreService::SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+{
+    CHECK_AND_RETURN_RET_LOG(streamDesc->newDeviceDescs_.size() > 0 &&
+        streamDesc->newDeviceDescs_.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT, false,
+        "audio devices not in range for ringer or alarmer.");
+    const int32_t sessionId = static_cast<int32_t>(streamDesc->sessionId_);
+    const StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
+    std::vector<std::pair<InternalDeviceType, DeviceFlag>> activeDevices;
+    bool allDevicesInDualDevicesRange = GetRingerOrAlarmerDualDevices(streamDesc, activeDevices);
 
     AUDIO_INFO_LOG("select ringer/alarm sessionId:%{public}d, streamUsage:%{public}d", sessionId, streamUsage);
     if (!streamDesc->newDeviceDescs_.empty() && allDevicesInDualDevicesRange) {
@@ -1734,13 +1762,15 @@ bool AudioCoreService::SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDes
                 false, "no normal ringer mode and no alarm, dont dual hal tone.");
             UpdateDualToneState(true, sessionId);
         } else {
-            if (enableDualHalToneState_ && enableDualHalToneSessionId_ == sessionId) {
-                AUDIO_INFO_LOG("device unavailable, disable dual hal tone.");
-                UpdateDualToneState(false, enableDualHalToneSessionId_);
-            }
             bool pre = isRingDualToneOnPrimarySpeaker_;
             isRingDualToneOnPrimarySpeaker_ = AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(
                 streamDesc->newDeviceDescs_, sessionId, streamCollector_);
+            if (((isRingDualToneOnPrimarySpeaker_ == false && streamDesc->newDupDeviceDescs_.size() == 0) ||
+                isRingDualToneOnPrimarySpeaker_ == true) &&
+                enableDualHalToneState_ && enableDualHalToneSessionId_ == sessionId) {
+                AUDIO_INFO_LOG("device unavailable, disable dual hal tone.");
+                UpdateDualToneState(false, enableDualHalToneSessionId_);
+            }
             ClearRingMuteWhenCallStart(pre, isRingDualToneOnPrimarySpeaker_, streamDesc);
             audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices);
         }
@@ -2417,10 +2447,11 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
         FetchInputDeviceAndRoute("UpdateTracker");
     }
 
-    if (enableDualHalToneState_ && (mode == AUDIO_MODE_PLAYBACK)
-        && (rendererState == RENDERER_STOPPED || rendererState == RENDERER_RELEASED)) {
-        const int32_t sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
-        if ((sessionId == enableDualHalToneSessionId_) && Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
+    const int32_t sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
+    if (enableDualHalToneState_ && mode == AUDIO_MODE_PLAYBACK && sessionId == enableDualHalToneSessionId_) {
+        FetchOutputDeviceAndRoute("UpdateTracker_ForDualHalTone");
+        if ((rendererState == RENDERER_STOPPED || rendererState == RENDERER_RELEASED) &&
+            Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
             AUDIO_INFO_LOG("disable dual hal tone when ringer/alarm renderer stop/release.");
             UpdateDualToneState(false, enableDualHalToneSessionId_);
         }
@@ -2841,6 +2872,7 @@ void AudioCoreService::UpdateStreamDevicesForStart(
     AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d status %{public}u",
         streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->GetSessionId(), streamDesc->GetStatus());
     SelectA2dpType(streamDesc, false);
+
     FetchOutputDupDevice(caller, streamDesc->GetSessionId(), streamDesc);
 }
 
