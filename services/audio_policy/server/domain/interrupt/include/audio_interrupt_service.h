@@ -39,6 +39,13 @@
 namespace OHOS {
 namespace AudioStandard {
 
+struct CachedFocusInfo {
+    int32_t userId;
+    uint32_t sessionId;
+    InterruptEventInternal interruptEvent;
+    AudioInterrupt interrupt;
+};
+
 class AudioPolicyServerHandler;
 
 class SessionTimeOutCallback;
@@ -132,6 +139,9 @@ public:
         const int32_t appUid, std::unordered_set<int32_t> &uidActivedSessions);
     void ResumeFocusByStreamId(
         const int32_t streamId, const InterruptEventInternal interruptEventResume);
+    int32_t GetCurrentUserId();
+    void OnUserUnlocked(int32_t userId);
+
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
     static constexpr int32_t ZONEID_INVALID = -1;
@@ -140,6 +150,12 @@ private:
     static constexpr int32_t STREAM_DEFAULT_PRIORITY = 100;
 
     using InterruptIterator = std::list<std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator>;
+    std::unordered_map<int32_t, std::vector<CachedFocusInfo>> cachedFocusMap_;
+    std::mutex cachedFocusMutex_;
+    int32_t userId_;
+
+    void CacheFocusAndCallback(const uint32_t &sessionId, const InterruptEventInternal &interruptEvent,
+        const AudioInterrupt &audioInterrupt);
 
     // Inner class for death handler
     class AudioInterruptDeathRecipient : public IRemoteObject::DeathRecipient {
