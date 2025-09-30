@@ -177,7 +177,7 @@ void HpaeRemoteSinkOutputNode::DoProcess()
         if (ret != SUCCESS || writeLen != renderFrameData_.size()) {
             AUDIO_ERR_LOG("RenderFrame failed, SplitStreamType %{public}d", splitStreamType);
         } else {
-            HpaeNodeInfo nodeInfo = GetNodeInfo();
+            HpaeNodeInfo &nodeInfo = GetNodeInfo();
             nodeInfo.streamType = type;
             SetNodeInfo(nodeInfo);
         }
