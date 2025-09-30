@@ -731,7 +731,7 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_027, TestSize.
 
     reason = AudioStreamDeviceChangeReason::AUDIO_SESSION_ACTIVATE;
     ret = audioSessionService_.FillCurrentOutputDeviceChangedEvent(callerPid, reason, deviceChangeEvent);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 } // namespace AudioStandard
