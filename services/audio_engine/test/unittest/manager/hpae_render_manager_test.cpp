@@ -79,6 +79,7 @@ static void TestCheckSinkInputInfo(HpaeSinkInputInfo &sinkInputInfo, const HpaeS
 static std::shared_ptr<HpaeSinkInputNode> CreateTestNode(OHOS::AudioStandard::HPAE::HpaeSessionState state)
 {
     HpaeNodeInfo nodeinfo;
+    nodeinfo.streamType = STREAM_MUSIC;
     std::shared_ptr<HpaeSinkInputNode> node = std::make_shared<HpaeSinkInputNode>(nodeinfo);
     node->SetState(state);
     return node;

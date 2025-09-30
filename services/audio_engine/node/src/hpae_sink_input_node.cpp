@@ -173,7 +173,7 @@ void HpaeSinkInputNode::DoProcess()
         GetBitWidth(), GetChannelCount() * GetFrameLen(), interleveData_.data(), inputAudioBuffer_.GetPcmDataBuffer());
     AudioPipeType  pipeType = ConvertDeviceClassToPipe(GetDeviceClass());
     if (ret != 0) {
-        if (pipeType != PIPE_TYPE_UNKNOWN) {
+        if (pipeType != PIPE_TYPE_UNKNOWN || !bypassOnUnderrun_) {
             AudioPerformanceMonitor::GetInstance().RecordSilenceState(GetSessionId(), true, pipeType,
                 static_cast<uint32_t>(appUid_));
         }
@@ -341,6 +341,7 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
 
 void HpaeSinkInputNode::SetBypassOnUnderrun(bool bypassOnUnderrun)
 {
+    CHECK_AND_RETURN(GetStreamType() == STREAM_MUSIC || GetStreamType() == STREAM_SPEECH);
     bypassOnUnderrun_ = bypassOnUnderrun;
 }
 }  // namespace HPAE

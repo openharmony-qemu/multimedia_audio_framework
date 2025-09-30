@@ -29,6 +29,7 @@
 #include "hpae_pcm_dumper.h"
 #endif
 #include "audio_engine_log.h"
+#include "volume_tools_c.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -467,6 +468,10 @@ int32_t HpaeOffloadSinkOutputNode::ProcessRenderFrame()
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
     auto now = std::chrono::high_resolution_clock::now();
+    AudioRawFormat format{ GetBitWidth(), GetChannelCount() };
+    if (firstWriteHdi_) {
+        ProcessVol(renderFrameDataTemp_.data(), renderFrameData_.size(), format, 0, 1);
+    }
     auto ret = audioRendererSink_->RenderFrame(*renderFrameData, renderFrameData_.size(), writeLen);
     if (ret == SUCCESS && writeLen == 0 && !firstWriteHdi_) {
         return OFFLOAD_FULL;
