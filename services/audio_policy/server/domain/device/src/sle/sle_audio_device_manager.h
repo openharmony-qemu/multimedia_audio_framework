@@ -116,7 +116,7 @@ private:
 
     std::mutex startedSleStreamTypeMutex_;
     // Maps device MAC -> (stream type -> StreamTypeInfo (set of session IDs, flag of isStarted))
-    struct StreamTypeInfo{
+    struct StreamTypeInfo {
         std::unordered_set<uint32_t> sessionIds;
         bool isStarted = false;
     };
