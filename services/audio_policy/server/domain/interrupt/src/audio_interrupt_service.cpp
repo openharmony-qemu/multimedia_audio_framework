@@ -45,6 +45,8 @@ constexpr uint32_t THP_EXTRA_SA_UID = 5000;
 static const int32_t INTERRUPT_SERVICE_TIMEOUT = 10; // 10s
 static sptr<IStandardAudioService> g_adProxy = nullptr;
 const std::string DEFAULT_VOLUME_KEY = "default_volume_key_control";
+constexpr int32_t RETRY_TIME_S = 5;
+constexpr int64_t SLEEP_TIME_S = 1;
 
 static const map<InterruptHint, AudioFocuState> HINT_STATE_MAP = {
     {INTERRUPT_HINT_PAUSE, PAUSE},
@@ -937,6 +939,7 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
     HandleAppStreamType(zoneId, currAudioInterrupt);
     AudioStreamType streamType = currAudioInterrupt.audioFocusType.streamType;
     uint32_t incomingStreamId = currAudioInterrupt.streamId;
+    userId_ = GetCurrentUserId();
     AUDIO_INFO_LOG("streamId: %{public}u pid: %{public}d streamType: %{public}d zoneId: %{public}d"\
         "usage: %{public}d source: %{public}d",
         incomingStreamId, currAudioInterrupt.pid, streamType, zoneId,
@@ -1088,6 +1091,14 @@ int32_t AudioInterruptService::ClearAudioFocusInfoList()
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator it =
             audioInterruptZone->audioFocusInfoList.begin();
         while (it != audioInterruptZone->audioFocusInfoList.end()) {
+            if ((*it).first.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
+                (*it).first.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+                (*it).first.audioFocusType.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+                interruptEvent = {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_PAUSE, 1.0f};
+                CacheFocusAndCallback((*it).first.streamId, interruptEvent, (*it).first);
+            } else {
+                interruptEvent = {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
+            }
             if (!isPreemptMode_ &&
                 ((*it).first.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
                 (*it).first.streamUsage == STREAM_USAGE_VOICE_RINGTONE)) {
@@ -1101,6 +1112,61 @@ int32_t AudioInterruptService::ClearAudioFocusInfoList()
         }
     }
     return SUCCESS;
+}
+
+void AudioInterruptService::CacheFocusAndCallback(
+    const uint32_t &sessionId,
+    const InterruptEventInternal &interruptEvent,
+    const AudioInterrupt &audioInterrupt)
+{
+    std::lock_guard<std::mutex> lock(cachedFocusMutex_);
+    CachedFocusInfo info;
+    info.userId = userId_;
+    info.sessionId = sessionId;
+    info.interruptEvent = interruptEvent;
+    info.interrupt = audioInterrupt;
+    AUDIO_INFO_LOG("CacheFocusAndCallback : userID = %{public}d, sessionId = %{public}d,"\
+        "interruptEvent = %{public}d streamUsage_ = %{public}d",
+        userId_, sessionId, interruptEvent.hintType, audioInterrupt.streamUsage);
+    cachedFocusMap_[userId_].push_back(info);
+}
+
+void AudioInterruptService::OnUserUnlocked(int32_t userId)
+{
+    std::lock_guard<std::mutex> lock(cachedFocusMutex_);
+    auto it = cachedFocusMap_.find(userId);
+    if (it != cachedFocusMap_.end()) {
+        for (const auto &cachedInfo : it->second) {
+            // resume
+            InterruptEventInternal resumeEvent = {
+                INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_RESUME, 1.0f
+            };
+            AUDIO_INFO_LOG("OnUserUnlocked sessionId = %{public}d", cachedInfo.sessionId);
+            SendInterruptEventCallback(resumeEvent, cachedInfo.sessionId, cachedInfo.interrupt);
+        }
+        cachedFocusMap_.erase(userId);
+    }
+}
+
+int32_t AudioInterruptService::GetCurrentUserId()
+{
+    std::vector<int32_t> ids;
+    int32_t currentuserId = -1;
+    ErrCode result;
+    int32_t retry = RETRY_TIME_S;
+    while (retry--) {
+        result = AccountSA::OsAccountManager::QueryActiveOsAccountIds(ids);
+        if (result == ERR_OK && !ids.empty()) {
+            currentuserId = ids[0];
+            AUDIO_DEBUG_LOG("current userId is :%{public}d", currentuserId);
+            break;
+        }
+        sleep(SLEEP_TIME_S);
+    }
+    if (result != ERR_OK || ids.empty()) {
+        AUDIO_WARNING_LOG("current userId is empty");
+    }
+    return currentuserId;
 }
 
 int32_t AudioInterruptService::ActivatePreemptMode()

@@ -982,14 +982,21 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
         AUDIO_INFO_LOG("receive SCREEN_OFF or SCREEN_LOCKED action, control audio volume change if stream is active");
         isScreenOffOrLock_ = true;
     } else if (action == "usual.event.SCREEN_UNLOCKED") {
-        if (isRingtoneEL2Ready_ == false) {
-            isRingtoneEL2Ready_ =  CallRingtoneLibrary() == SUCCESS;
-        }
-        AUDIO_INFO_LOG("receive SCREEN_UNLOCKED action, can change volume");
-        isScreenOffOrLock_ = false;
+        UnlockEvent();
     } else if (action == "usual.event.LOCALE_CHANGED" || action == "usual.event.USER_STARTED") {
         CallRingtoneLibrary();
     }
+}
+
+void AudioPolicyServer::UnlockEvent()
+{
+    if (isRingtoneEL2Ready_ == false) {
+            isRingtoneEL2Ready_ =  CallRingtoneLibrary() == SUCCESS;
+        }
+    int32_t currentUserId = interruptService_->GetCurrentUserId();
+    AUDIO_INFO_LOG("receive SCREEN_UNLOCKED action, can change volume");
+    isScreenOffOrLock_ = false;
+    interruptService_->OnUserUnlocked(currentUserId);
 }
 
 void AudioPolicyServer::CheckSubscribePowerStateChange()
