@@ -119,7 +119,7 @@ private:
     struct StreamTypeInfo{
         std::unordered_set<uint32_t> sessionIds;
         bool isStarted = false;
-    }
+    };
     std::unordered_map<std::string, std::unordered_map<uint32_t, StreamTypeInfo>> startedSleStreamType_;
 };
 } // namespace AudioStandard
