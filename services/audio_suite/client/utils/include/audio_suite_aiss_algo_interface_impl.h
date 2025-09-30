@@ -28,8 +28,9 @@ class AudioSuiteAissAlgoInterfaceImpl : public AudioSuiteAlgoInterface {
 public:
     AudioSuiteAissAlgoInterfaceImpl() = default;
 
-    ~AudioSuiteAissAlgoInterfaceImpl() {
-        int32_t ret = Deinit();;
+    ~AudioSuiteAissAlgoInterfaceImpl()
+    {
+        int32_t ret = Deinit();
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "AudioSuiteAissAlgoInterfaceImpl Deinit failed");
     }
 

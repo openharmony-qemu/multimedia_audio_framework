@@ -30,7 +30,8 @@ namespace AudioSuite {
 class AudioSuiteAissNode : public AudioSuiteProcessNode {
 public:
     explicit AudioSuiteAissNode();
-    ~AudioSuiteAissNode() {
+    ~AudioSuiteAissNode()
+    {
         int32_t ret = DeInit();
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "AudioSuiteAissNode DeInit failed");
     }
