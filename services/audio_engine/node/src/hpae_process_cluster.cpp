@@ -365,25 +365,15 @@ uint64_t HpaeProcessCluster::GetLatency(uint32_t sessionId)
 {
     uint64_t latency = 0;
 
-    if (SafeGetMap(idConverterMap_, sessionId)) {
-        latency += idConverterMap_[sessionId]->GetLatency();
-    }
+    latency += SafeGetMap(idConverterMap_, sessionId) ? idConverterMap_[sessionId]->GetLatency() : 0;
 
-    if (SafeGetMap(idLoudnessGainNodeMap_, sessionId)) {
-        latency += idLoudnessGainNodeMap_[sessionId]->GetLatency();
-    }
+    latency += SafeGetMap(idLoudnessGainNodeMap_, sessionId) ? idLoudnessGainNodeMap_[sessionId]->GetLatency() : 0;
 
-    if (SafeGetMap(idGainMap_, sessionId)) {
-        latency += idGainMap_[sessionId]->GetLatency();
-    }
+    latency += SafeGetMap(idGainMap_, sessionId) ? idGainMap_[sessionId]->GetLatency() : 0;
 
-    if (mixerNode_) {
-        latency += mixerNode_->GetLatency();
-    }
+    latency += mixerNode_ ? mixerNode_->GetLatency() : 0;
 
-    if (renderEffectNode_) {
-        latency += renderEffectNode_->GetLatency(sessionId);
-    }
+    latency += renderEffectNode_ ? renderEffectNode_->GetLatency() : 0;
 
     return latency;
 }

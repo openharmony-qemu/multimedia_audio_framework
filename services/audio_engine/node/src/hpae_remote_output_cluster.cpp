@@ -278,13 +278,9 @@ uint64_t HpaeRemoteOutputCluster::GetLatency(HpaeProcessorType sceneType)
 {
     uint64_t latency = 0;
 
-    if (SafeGetMap(sceneConverterMap_, sceneType)) {
-        latency += sceneConverterMap_[sceneType]->GetLatency();
-    }
+    latency += SafeGetMap(sceneConverterMap_, sceneType) ? sceneConverterMap_[sceneType]->GetLatency() : 0;
 
-    if (SafeGetMap(sceneMixerMap_, sceneType)) {
-        latency += sceneMixerMap_[sceneType]->GetLatency();
-    }
+    latency += SafeGetMap(sceneMixerMap_, sceneType) ? sceneMixerMap_[sceneType]->GetLatency() : 0;
 
     return latency;
 }
