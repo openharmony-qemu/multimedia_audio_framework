@@ -309,5 +309,6 @@ interface IAudioPolicy {
     void IsSupportInnerCaptureOffload([out] boolean ret);
     void SelectPrivateDevice();
     void ForceSelectDevice([in] int devType, [in] String macAddress, [in] sptr<AudioRendererFilter> filter);
+    void RestoreDistributedDeviceInfo();
 }
 

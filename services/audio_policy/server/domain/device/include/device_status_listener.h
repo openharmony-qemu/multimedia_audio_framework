@@ -42,10 +42,15 @@ public:
     IDeviceStatusObserver &deviceObserver_;
     void OnPnpDeviceStatusChanged(const std::string &info);
     void OnMicrophoneBlocked(const std::string &info);
+    void OnDistributedServiceStatusChanged(bool isOnline);
 
     int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object);
     int32_t UnsetAudioDeviceAnahsCallback();
     void UpdateAnahsPlatformType(std::string anahsShowType);
+    bool IsDistributeServiceOnline() const;
+    void SendDistributeInfo(const std::string &info);
+    void WriteDistributedDeviceChangedEvent(const std::string &info, const DStatusInfo &statusInfo,
+        int32_t serviceStatus);
 
 private:
 #ifdef AUDIO_WIRED_DETECT
@@ -56,6 +61,7 @@ private:
     struct ServiceStatusListener *listener_;
     sptr<IStandardAudioAnahsManagerListener> audioDeviceAnahsCb_;
     std::string anahsShowType_ = "Dialog";
+    std::atomic<bool> isOnline_;
 };
 
 #ifdef AUDIO_WIRED_DETECT

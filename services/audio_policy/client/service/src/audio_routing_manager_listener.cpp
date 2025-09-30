@@ -118,5 +118,16 @@ int32_t AudioRoutingManagerListener::GetSplitInfoRefined(std::string &splitInfo)
 
     return audioDeviceRefinerCallback->GetSplitInfoRefined(splitInfo);
 }
+
+int32_t AudioRoutingManagerListener::OnDistributedServiceOnline()
+{
+    std::unique_lock lock(deviceRefinerCallbackMutex_);
+    std::shared_ptr<AudioDeviceRefiner> audioDeviceRefinerCallback = audioDeviceRefinerCallback_.lock();
+    CHECK_AND_RETURN_RET_LOG(audioDeviceRefinerCallback != nullptr,
+        ERR_CALLBACK_NOT_REGISTERED, "audioDeviceRefinerCallback_ is nullptr");
+    lock.unlock();
+
+    return audioDeviceRefinerCallback->OnDistributedServiceOnline();
+}
 } // namespace AudioStandard
 } // namespace OHOS

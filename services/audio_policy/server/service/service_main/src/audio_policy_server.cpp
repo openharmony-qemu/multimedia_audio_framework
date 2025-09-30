@@ -106,6 +106,7 @@ constexpr int32_t MAX_STREAM_USAGE_COUNT = StreamUsage::STREAM_USAGE_MAX + 1;
 constexpr int32_t MAX_SIZE = 1024;
 constexpr int32_t DEFAULT_UID = 0;
 constexpr int32_t DEFAULT_ZONEID = 0;
+constexpr int32_t RESTORE_INFO_LOCK_TIMEOUT_MS = 500; // 500ms
 
 constexpr int32_t UID_MEDIA = 1013;
 constexpr int32_t UID_MCU = 7500;
@@ -853,6 +854,7 @@ void AudioPolicyServer::AddAudioServiceOnStart()
         ConnectServiceAdapter();
         LoadEffectLibrary();
         isFirstAudioServiceStart_ = true;
+        distributeDeviceCond_.notify_all();
     } else {
         AUDIO_WARNING_LOG("OnAddSystemAbility audio service is not first start");
     }
@@ -5421,6 +5423,21 @@ int32_t AudioPolicyServer::IsIntelligentNoiseReductionEnabledForCurrentDevice(in
 {
     ret = audioPolicyService_.IsIntelligentNoiseReductionEnabledForCurrentDevice(
         static_cast<SourceType>(sourceType));
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::RestoreDistributedDeviceInfo()
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED, "uid permission denied");
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
+
+    AUDIO_INFO_LOG("start to restore device info");
+    std::unique_lock<std::mutex> lock(distributeDeviceMutex_);
+    bool canRestore = isFirstAudioServiceStart_.load() ||
+        distributeDeviceCond_.wait_for(lock, std::chrono::milliseconds(RESTORE_INFO_LOCK_TIMEOUT_MS),
+        [this]() { return isFirstAudioServiceStart_.load(); });
+    CHECK_AND_RETURN_RET_LOG(canRestore, ERROR, "restore device info timeout");
+    coreService_->RestoreDistributedDeviceInfo();
     return SUCCESS;
 }
 } // namespace AudioStandard

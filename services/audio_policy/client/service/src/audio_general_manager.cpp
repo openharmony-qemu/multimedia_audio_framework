@@ -472,5 +472,10 @@ int32_t AudioGeneralManager::SetSleAudioOperationCallback(const std::shared_ptr<
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
     return AudioPolicyManager::GetInstance().SetSleAudioOperationCallback(callback);
 }
+
+int32_t AudioGeneralManager::RestoreDistributedDeviceInfo()
+{
+    return AudioPolicyManager::GetInstance().RestoreDistributedDeviceInfo();
+}
 } // namespace AudioStandard
 } // namespace OHOS

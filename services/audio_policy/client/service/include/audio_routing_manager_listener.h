@@ -38,6 +38,7 @@ public:
         int32_t routerType, int32_t sourceType, int32_t clientUid, int32_t audioPipeType) override;
     int32_t GetSplitInfoRefined(std::string &splitInfo) override;
     int32_t OnDistributedOutputChange(bool isRemote) override;
+    int32_t OnDistributedServiceOnline() override;
 private:
     std::mutex deviceRefinerCallbackMutex_;
     std::weak_ptr<AudioDistributedRoutingRoleCallback> audioDistributedRoutingRoleCallback_;
