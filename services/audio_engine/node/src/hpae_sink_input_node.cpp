@@ -341,7 +341,6 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
 
 void HpaeSinkInputNode::SetBypassOnUnderrun(bool bypassOnUnderrun)
 {
-    CHECK_AND_RETURN(GetStreamType() == STREAM_MUSIC || GetStreamType() == STREAM_SPEECH);
     bypassOnUnderrun_ = bypassOnUnderrun;
 }
 }  // namespace HPAE
