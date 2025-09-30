@@ -113,6 +113,7 @@ constexpr int32_t UID_CAAS = 5527;
 constexpr int32_t UID_TELEPHONY = 1001;
 constexpr int32_t UID_DMSDP = 7071;
 constexpr int32_t UID_TV_SERVICE = 7501;
+constexpr int32_t UID_AAM_CONN_SVC = 7878;
 static const int32_t DATASHARE_SERVICE_TIMEOUT_SECONDS = 10; // 10s is better
 const std::set<int32_t> CALLBACK_TRUST_LIST = {
     UID_MEDIA,
@@ -120,7 +121,8 @@ const std::set<int32_t> CALLBACK_TRUST_LIST = {
     UID_CAAS,
     UID_TELEPHONY,
     UID_DMSDP,
-    UID_TV_SERVICE
+    UID_TV_SERVICE,
+    UID_AAM_CONN_SVC
 };
 const std::string NEARLINK_LIST = "audio_nearlink_list";
 

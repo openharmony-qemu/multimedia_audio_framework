@@ -109,6 +109,7 @@ const int32_t DEFAULT_MAX_RENDERER_INSTANCES = 128;
 const int32_t DEFAULT_MAX_LOOPBACK_INSTANCES = 1;
 const int32_t MCU_UID = 7500;
 const int32_t TV_SERVICE_UID = 7501;
+const int32_t AAM_CONN_SVC_UID = 7878;
 constexpr int32_t CHECK_ALL_RENDER_UID = -1;
 constexpr int64_t RENDER_DETECTION_CYCLE_NS = 10000000000;
 constexpr int32_t RENDER_BAD_FRAMES_RATIO = 100;
@@ -118,7 +119,8 @@ static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
 };
 static const std::set<int32_t> GENERATE_SESSIONID_UID_SET = {
     MCU_UID,
-    TV_SERVICE_UID
+    TV_SERVICE_UID,
+    AAM_CONN_SVC_UID
 };
 const int32_t RSS_THRESHOLD = 2;
 // using pass-in appInfo for uids:
