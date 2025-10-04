@@ -504,7 +504,7 @@ int32_t HpaeOffloadSinkOutputNode::WriteFrameToHdi(char *renderFrameData)
         return OFFLOAD_FULL;
     }
     if (!(ret == SUCCESS && writeLen == renderFrameData_.size())) {
-        AUDIO_ERR_LOG("offload renderFrame failed, errCode %{public}d, writelen %{public}" PRIu64 " bytes", ret, writeLen);
+        AUDIO_ERR_LOG("renderFrame failed, errCode %{public}d, writelen %{public}" PRIu64 " bytes", ret, writeLen);
         return OFFLOAD_WRITE_FAILED;
     }
 
