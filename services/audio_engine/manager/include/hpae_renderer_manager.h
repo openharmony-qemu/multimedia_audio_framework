@@ -168,7 +168,7 @@ private:
     int64_t noneStreamTime_ = 0; // if no stream, 3s time out to stop rendersink
     bool isNeedInitEffectBufferFlag_ = false;
 
-    int64s_t lastOnUnderrunTime_ = 0;
+    int64_t lastOnUnderrunTime_ = 0;
     bool enableBypassOnUnderrun_ = true;
 };
 }  // namespace HPAE

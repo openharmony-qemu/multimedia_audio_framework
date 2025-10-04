@@ -456,9 +456,10 @@ int32_t HpaeOffloadSinkOutputNode::ProcessRenderFrame()
     if (renderFrameData_.empty()) {
         return OFFLOAD_WRITE_FAILED;
     }
-    uint64_t writeLen = 0;
+
     renderFrameDataTemp_ = renderFrameData_;
     char *renderFrameData = (char *)renderFrameDataTemp_.data();
+
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer timer;
     timer.Start();
@@ -467,35 +468,17 @@ int32_t HpaeOffloadSinkOutputNode::ProcessRenderFrame()
     AUDIO_DEBUG_LOG("name %{public}s, RenderFrame interval: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
-    auto now = std::chrono::high_resolution_clock::now();
-    AudioRawFormat format{ GetBitWidth(), GetChannelCount() };
+
     if (firstWriteHdi_) {
+        AudioRawFormat format{ GetBitWidth(), GetChannelCount() };
         ProcessVol(renderFrameDataTemp_.data(), renderFrameData_.size(), format, 0, 1);
     }
-    auto ret = audioRendererSink_->RenderFrame(*renderFrameData, renderFrameData_.size(), writeLen);
-    if (ret == SUCCESS && writeLen == 0 && !firstWriteHdi_) {
-        return OFFLOAD_FULL;
+
+    int32_t result = WriteFrameToHdi(renderFrameData);
+    if (result != SUCCESS) {
+        return result;
     }
-    if (!(ret == SUCCESS && writeLen == renderFrameData_.size())) {
-        AUDIO_ERR_LOG("offload renderFrame failed, errCode is %{public}d", ret);
-        return OFFLOAD_WRITE_FAILED;
-    }
-    // calc written data length
-    writePos_ += ConvertDatalenToUs(renderFrameData_.size(), GetNodeInfo());
-    // now is the time to first write hdi
-    if (firstWriteHdi_) {
-        firstWriteHdi_ = false;
-        hdiPos_ = std::make_pair(0, now);
-        setHdiBufferSizeNum_ = OFFLOAD_SET_BUFFER_SIZE_NUM;
-        // if the hdi is flushing, it will block the volume setting.
-        // so the render frame judge it.
-        OffloadSetHdiVolume();
-        SetSpeed(speed_);
-        AUDIO_INFO_LOG("offload write pos: %{public}" PRIu64 " hdi pos: %{public}" PRIu64 " ",
-            writePos_, hdiPos_.first);
-    }
-    // hdi fallback, dont modify
-    SetBufferSizeWhileRenderFrame();
+
 #ifdef ENABLE_HOOK_PCM
     if (outputPcmDumper_) {
         outputPcmDumper_->Dump((int8_t *)renderFrameData, renderFrameData_.size());
@@ -506,7 +489,38 @@ int32_t HpaeOffloadSinkOutputNode::ProcessRenderFrame()
         sinkOutAttr_.adapterName.c_str(), elapsed);
     intervalTimer_.Start();
 #endif
+
     renderFrameData_.clear();
+    return SUCCESS;
+}
+
+int32_t HpaeOffloadSinkOutputNode::WriteFrameToHdi(char *renderFrameData)
+{
+    uint64_t writeLen = 0;
+    auto now = std::chrono::high_resolution_clock::now();
+
+    auto ret = audioRendererSink_->RenderFrame(*renderFrameData, renderFrameData_.size(), writeLen);
+    if (ret == SUCCESS && writeLen == 0 && !firstWriteHdi_) {
+        return OFFLOAD_FULL;
+    }
+    if (!(ret == SUCCESS && writeLen == renderFrameData_.size())) {
+        AUDIO_ERR_LOG("offload renderFrame failed, errCode %{public}d, writelen %{public}" PRIu64, ret, writelen);
+        return OFFLOAD_WRITE_FAILED;
+    }
+
+    writePos_ += ConvertDatalenToUs(renderFrameData_.size(), GetNodeInfo());
+
+    if (firstWriteHdi_) {
+        firstWriteHdi_ = false;
+        hdiPos_ = std::make_pair(0, now);
+        setHdiBufferSizeNum_ = OFFLOAD_SET_BUFFER_SIZE_NUM;
+        OffloadSetHdiVolume();
+        SetSpeed(speed_);
+        AUDIO_INFO_LOG("offload write pos: %{public}" PRIu64 " hdi pos: %{public}" PRIu64 " ",
+            writePos_, hdiPos_.first);
+    }
+
+    SetBufferSizeWhileRenderFrame();
     return SUCCESS;
 }
 

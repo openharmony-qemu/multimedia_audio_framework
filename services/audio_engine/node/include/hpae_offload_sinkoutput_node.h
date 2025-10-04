@@ -87,6 +87,8 @@ private:
     bool CheckIfSuspend();
     // check renderFrame ret to decide whether need sleep
     void OffloadNeedSleep(int32_t retType);
+    // renderFrame and set state
+    int32_t WriteFrameToHdi(char *renderFrameData);
 
     InputPort<HpaePcmBuffer*> inputStream_;
     std::vector<char> renderFrameData_;
