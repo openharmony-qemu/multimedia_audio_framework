@@ -471,7 +471,7 @@ int32_t HpaeOffloadSinkOutputNode::ProcessRenderFrame()
 
     if (firstWriteHdi_) {
         AudioRawFormat format{ GetBitWidth(), GetChannelCount() };
-        ProcessVol(renderFrameDataTemp_.data(), renderFrameData_.size(), format, 0, 1);
+        ProcessVol(reinterpret_cast<uint8_t *>(renderFrameDataTemp_.data()), renderFrameData_.size(), format, 0, 1);
     }
 
     int32_t result = WriteFrameToHdi(renderFrameData);
@@ -504,7 +504,7 @@ int32_t HpaeOffloadSinkOutputNode::WriteFrameToHdi(char *renderFrameData)
         return OFFLOAD_FULL;
     }
     if (!(ret == SUCCESS && writeLen == renderFrameData_.size())) {
-        AUDIO_ERR_LOG("offload renderFrame failed, errCode %{public}d, writelen %{public}" PRIu64, ret, writelen);
+        AUDIO_ERR_LOG("offload renderFrame failed, errCode %{public}d, writelen %{public}" PRIu64 " bytes", ret, writeLen);
         return OFFLOAD_WRITE_FAILED;
     }
 
