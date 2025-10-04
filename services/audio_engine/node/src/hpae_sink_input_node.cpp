@@ -173,7 +173,7 @@ void HpaeSinkInputNode::DoProcess()
         GetBitWidth(), GetChannelCount() * GetFrameLen(), interleveData_.data(), inputAudioBuffer_.GetPcmDataBuffer());
     AudioPipeType  pipeType = ConvertDeviceClassToPipe(GetDeviceClass());
     if (ret != 0) {
-        if (pipeType != PIPE_TYPE_UNKNOWN || !bypassOnUnderrun_) {
+        if (pipeType != PIPE_TYPE_UNKNOWN && !bypassOnUnderrun_) {
             AudioPerformanceMonitor::GetInstance().RecordSilenceState(GetSessionId(), true, pipeType,
                 static_cast<uint32_t>(appUid_));
         }
