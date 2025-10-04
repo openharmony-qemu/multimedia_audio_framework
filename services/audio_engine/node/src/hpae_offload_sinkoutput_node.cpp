@@ -458,7 +458,6 @@ int32_t HpaeOffloadSinkOutputNode::ProcessRenderFrame()
     }
 
     renderFrameDataTemp_ = renderFrameData_;
-    char *renderFrameData = (char *)renderFrameDataTemp_.data();
 
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer timer;
@@ -474,14 +473,14 @@ int32_t HpaeOffloadSinkOutputNode::ProcessRenderFrame()
         ProcessVol(reinterpret_cast<uint8_t *>(renderFrameDataTemp_.data()), renderFrameData_.size(), format, 0, 1);
     }
 
-    int32_t result = WriteFrameToHdi(renderFrameData);
+    int32_t result = WriteFrameToHdi();
     if (result != SUCCESS) {
         return result;
     }
 
 #ifdef ENABLE_HOOK_PCM
     if (outputPcmDumper_) {
-        outputPcmDumper_->Dump((int8_t *)renderFrameData, renderFrameData_.size());
+        outputPcmDumper_->Dump((int8_t *)renderFrameData_.data(), renderFrameData_.size());
     }
     timer.Stop();
     int64_t elapsed = timer.Elapsed();
@@ -494,12 +493,12 @@ int32_t HpaeOffloadSinkOutputNode::ProcessRenderFrame()
     return SUCCESS;
 }
 
-int32_t HpaeOffloadSinkOutputNode::WriteFrameToHdi(char *renderFrameData)
+int32_t HpaeOffloadSinkOutputNode::WriteFrameToHdi()
 {
     uint64_t writeLen = 0;
     auto now = std::chrono::high_resolution_clock::now();
 
-    auto ret = audioRendererSink_->RenderFrame(*renderFrameData, renderFrameData_.size(), writeLen);
+    auto ret = audioRendererSink_->RenderFrame(*renderFrameDataTemp_.data(), renderFrameData_.size(), writeLen);
     if (ret == SUCCESS && writeLen == 0 && !firstWriteHdi_) {
         return OFFLOAD_FULL;
     }
