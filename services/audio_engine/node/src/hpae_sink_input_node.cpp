@@ -316,7 +316,7 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
     CHECK_AND_RETURN_RET_LOG(writeCallback, ERROR, "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
     bool needData = !(historyBuffer_ && historyBuffer_->GetCurFrames()) && isPullData;
     // offload enbale, never force data
-    bool forceData = offloadEnable_ ? false : !bypassOnUnderrun_;
+    bool forceData = offloadEnable_ ? false : true;
     uint64_t latency = 0;
     auto nodeCallback = GetNodeStatusCallback().lock();
     if (nodeCallback) {
