@@ -173,7 +173,7 @@ void HpaeSinkInputNode::DoProcess()
         GetBitWidth(), GetChannelCount() * GetFrameLen(), interleveData_.data(), inputAudioBuffer_.GetPcmDataBuffer());
     AudioPipeType  pipeType = ConvertDeviceClassToPipe(GetDeviceClass());
     if (ret != 0) {
-        if (pipeType != PIPE_TYPE_UNKNOWN) {
+        if (pipeType != PIPE_TYPE_UNKNOWN && !bypassOnUnderrun_) {
             AudioPerformanceMonitor::GetInstance().RecordSilenceState(GetSessionId(), true, pipeType,
                 static_cast<uint32_t>(appUid_));
         }
@@ -315,8 +315,8 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
     auto writeCallback = writeCallback_.lock();
     CHECK_AND_RETURN_RET_LOG(writeCallback, ERROR, "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
     bool needData = !(historyBuffer_ && historyBuffer_->GetCurFrames()) && isPullData;
-    // offload enbale, never force data
-    bool forceData = offloadEnable_ ? false : !bypassOnUnderrun_;
+    // offload enable, never force data
+    bool forceData = offloadEnable_ ? false : true;
     uint64_t latency = 0;
     auto nodeCallback = GetNodeStatusCallback().lock();
     if (nodeCallback) {
