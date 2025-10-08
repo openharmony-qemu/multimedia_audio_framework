@@ -62,6 +62,7 @@ namespace {
     const float AUDIO_VOLOMUE_EPSILON = 0.0001;
     const int32_t OFFLOAD_INNER_CAP_PREBUF = 3;
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
+    const size_t DEFAULT_CACHE_SIZE = 5;
     constexpr int32_t DEFAULT_SPAN_SIZE = 2;
     constexpr size_t MSEC_PER_SEC = 1000;
     const int32_t DUP_OFFLOAD_LEN = 7000; // 7000 -> 7000ms
@@ -116,7 +117,8 @@ int32_t RendererInServer::ConfigServerBuffer()
     }
     stream_->GetSpanSizePerFrame(spanSizeInFrame_);
     // default to 2, 40ms cache size for write mode
-    engineTotalSizeInFrame_ = spanSizeInFrame_ * DEFAULT_SPAN_SIZE;
+    engineTotalSizeInFrame_ = spanSizeInFrame_ *
+        (processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_DIRECT ? DEFAULT_SPAN_SIZE : DEFAULT_CACHE_SIZE);
 
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
     if (engineTotalSizeInFrame_ == 0 || spanSizeInFrame_ == 0 || engineTotalSizeInFrame_ % spanSizeInFrame_ != 0) {
