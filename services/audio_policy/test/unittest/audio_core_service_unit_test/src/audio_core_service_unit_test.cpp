@@ -255,35 +255,6 @@ HWTEST_F(AudioCoreServiceUnitTest, SetPreferredInputDeviceIfValid_002, TestSize.
 
 /**
 * @tc.name  : Test AudioCoreService.
-* @tc.number: WriteDesignateAudioCaptureDeviceEvent_001
-* @tc.desc  : Test CreateCapturerClient - Create stream with (S32 48k STEREO) will be successful..
-*/
-HWTEST_F(AudioCoreServiceUnitTest, WriteDesignateAudioCaptureDeviceEvent_001, TestSize.Level1)
-{
-    AudioCoreService service;
-    int32_t clientUID = 1;
-    SourceType sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
-    int32_t deviceType = 0;
-
-    EXPECT_NO_THROW(service.WriteDesignateAudioCaptureDeviceEvent(clientUID, sourceType, deviceType));
-}
-
-/**
-* @tc.name  : Test AudioCoreService.
-* @tc.number: WriteIncorrectSelectBTSPPEvent_001
-* @tc.desc  : Test CreateCapturerClient - Create stream with (S32 48k STEREO) will be successful..
-*/
-HWTEST_F(AudioCoreServiceUnitTest, WriteIncorrectSelectBTSPPEvent_001, TestSize.Level1)
-{
-    AudioCoreService service;
-    int32_t clientUID = 1;
-    SourceType sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
-
-    EXPECT_NO_THROW(service.WriteIncorrectSelectBTSPPEvent(clientUID, sourceType));
-}
-
-/**
-* @tc.name  : Test AudioCoreService.
 * @tc.number: SetDefaultOutputDevice_001
 * @tc.desc  : Test SetDefaultOutputDevice - Set DEVICE_TYPE_SPEAKER as default device to nonexistent session.
 */

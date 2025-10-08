@@ -213,8 +213,7 @@ private:
         std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId,
         std::string &networkId);
     void SetPreferredInputDeviceIfValid(std::shared_ptr<AudioStreamDescriptor> streamDesc);
-    void WriteDesignateAudioCaptureDeviceEvent(int32_t clientUID, SourceType sourceType, int32_t deviceType);
-    void WriteIncorrectSelectBTSPPEvent(int32_t clientUID, SourceType sourceType);
+    void WriteDesignateAudioCaptureDeviceEvent(SourceType sourceType, int32_t deviceType, bool isNormalSelection);
     int32_t CreateCapturerClient(
         std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId);
     int32_t StartClient(uint32_t sessionId);

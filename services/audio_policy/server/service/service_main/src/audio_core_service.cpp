@@ -273,20 +273,21 @@ void AudioCoreService::SetPreferredInputDeviceIfValid(std::shared_ptr<AudioStrea
     CHECK_AND_RETURN_LOG(
         PermissionUtil::VerifySystemPermission(), "set preferred input device denied: no system permission");
 
-    auto preferredDevice = streamDesc->preferredInputDevice;
+    AudioDeviceDescriptor preferredDevice = streamDesc->preferredInputDevice;
     CHECK_AND_RETURN_LOG(preferredDevice.deviceType_ > DEVICE_TYPE_INVALID, "invalid deviceType");
 
     RecordSelectDevice(ParsePreferredInputDeviceHistory(streamDesc));
 
-    int32_t ret = AudioDeviceManager::GetAudioDeviceManager().SetInputDevice(
-        preferredDevice.deviceType_, streamDesc->sessionId_, streamDesc->capturerInfo_.sourceType, false);
-    CHECK_AND_RETURN_LOG(ret == NEED_TO_FETCH, "set preferred input device failed");
+    int32_t ret = AudioDeviceManager::GetAudioDeviceManager().SetPreferredInputDevice(
+        std::make_shared<AudioDeviceDescriptor>(preferredDevice),
+        streamDesc->sessionId_, streamDesc->capturerInfo_.sourceType);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "set preferred input device failed");
 
     if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
-        WriteDesignateAudioCaptureDeviceEvent(
-            GetRealUid(streamDesc), streamDesc->capturerInfo_.sourceType, preferredDevice.deviceType_);
+        WriteDesignateAudioCaptureDeviceEvent(streamDesc->capturerInfo_.sourceType, preferredDevice.deviceType_, true);
     } else if (preferredDevice.deviceType_ == DEVICE_TYPE_BT_SPP) {
-        WriteIncorrectSelectBTSPPEvent(GetRealUid(streamDesc), streamDesc->capturerInfo_.sourceType);
+        AUDIO_WARNING_LOG("BT SPP incorrectly selected as preferred input device in non-recognition session");
+        WriteDesignateAudioCaptureDeviceEvent(streamDesc->capturerInfo_.sourceType, preferredDevice.deviceType_, false);
     }
 }
 
@@ -303,27 +304,17 @@ std::string AudioCoreService::ParsePreferredInputDeviceHistory(std::shared_ptr<A
 }
 
 void AudioCoreService::WriteDesignateAudioCaptureDeviceEvent(
-    int32_t clientUID, SourceType sourceType, int32_t deviceType)
+    SourceType sourceType, int32_t deviceType, bool isNormalSelection)
 {
-    std::string appName = AudioBundleManager::GetBundleNameFromUid(clientUID);
+    std::string appName = AudioBundleManager::GetBundleName();
 
     auto ret = HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
         "DESIGNATE_AUDIO_CAPTURE_DEVICE", HiviewDFX::HiSysEvent::EventType::STATISTIC,
         "APP_NAME", appName.c_str(),
         "STREAM_TYPE", sourceType,
-        "DEVICE_TYPE", deviceType);
+        "DEVICE_TYPE", deviceType,
+        "ERROR_CODE", isNormalSelection ? 0 : 1);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "write event fail: DESIGNATE_AUDIO_CAPTURE_DEVICE, ret = %{public}d", ret);
-}
-
-void AudioCoreService::WriteIncorrectSelectBTSPPEvent(int32_t clientUID, SourceType sourceType)
-{
-    std::string appName = AudioBundleManager::GetBundleNameFromUid(clientUID);
-
-    auto ret = HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
-        "INCORRECT_SELECT_BT_SPP_DEVICE", HiviewDFX::HiSysEvent::EventType::FAULT,
-        "APP_NAME", appName.c_str(),
-        "STREAM_TYPE", sourceType);
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "write event fail: INCORRECT_SELECT_BT_SPP_DEVICE, ret = %{public}d", ret);
 }
 
 bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDescriptor> streamDesc)
