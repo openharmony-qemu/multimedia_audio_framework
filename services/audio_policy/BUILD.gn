@@ -388,7 +388,6 @@ audio_ohos_library("audio_policy_service") {
     "samgr:samgr_proxy",
     "window_manager:session_manager_lite",
     "window_manager:libwm_lite",
-    "window_manager:libwm",
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
