@@ -56,6 +56,7 @@ private:
     void UpdateAudioEffectChainInfo(HpaeNodeInfo &nodeInfo);
     bool IsByPassEffectZeroVolume(HpaePcmBuffer *pcmBuffer);
     int32_t SplitCollaborativeData();
+    bool OffloadRendererCheckNotifyEffect(const HpaeSinkInfo &sinkInfo);
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer effectOutput_;
     std::unique_ptr<HpaePcmBuffer> directOutput_ = nullptr;
