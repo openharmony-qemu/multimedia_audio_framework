@@ -471,6 +471,7 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
     {
         std::unique_lock<std::shared_mutex> lock(latencyMutex_);
         OnDeviceClassChange(callBackStreamInfo);
+        //The frame of renderFrame needs to be calculated in framepos.
         framePosition_ = callBackStreamInfo.framePosition + callBackStreamInfo.requestDataLen;
         timestamp_ = callBackStreamInfo.timestamp;
         latency_ = callBackStreamInfo.latency;

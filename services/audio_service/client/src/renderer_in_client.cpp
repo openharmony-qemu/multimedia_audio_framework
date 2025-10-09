@@ -709,7 +709,6 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     AudioWriteState currentState = audioWriteState_.load();
     uint64_t frames = bufferSize / sizePerFrameInByte_;
     currentState.unprocessedFramesBytes_ += frames;
-    audioWriteState_.store(currentState);
     if (!ProcessSpeed(buffer, bufferSize, speedCached)) {
         return bufferSize;
     }
