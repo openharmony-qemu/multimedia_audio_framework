@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef LOG_TAG
+#define LOG_TAG "AudioSuiteAissAlgoInterfaceImpl"
+#endif
 
 #include "audio_suite_aiss_algo_interface_impl.h"
 
@@ -73,7 +76,7 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::Init()
         Deinit();
         return ERROR;
     }
-    AUDIO_INFO_LOG("Audio effect handle get success");
+    AUDIO_DEBUG_LOG("Audio effect handle get success");
     AudioEffectDescriptor descriptor = {
         .libraryName = AISS_NAME,
         .effectName = AISS_NAME
@@ -84,14 +87,14 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::Init()
         Deinit();
         return ERROR;
     }
-    AUDIO_INFO_LOG("Create effect success");
+    AUDIO_DEBUG_LOG("Create effect success");
     if (InitIOBufferConfig() != SUCCESS || InitAudioEffectParam() != SUCCESS || InitConfig() != SUCCESS ||
         InitAudioEffectProperty() != SUCCESS) {
         AUDIO_ERR_LOG("Failed to init aiss algo param");
         Deinit();
         return ERROR;
     }
-    AUDIO_INFO_LOG("AudioSuiteAissAlgoInterfaceImpl Init success");
+    AUDIO_DEBUG_LOG("AudioSuiteAissAlgoInterfaceImpl Init success");
     inAudioBuffer_.frameLength = DEFAULT_FRAME_LEN;
     outAudioBuffer_.frameLength = DEFAULT_FRAME_LEN;
     return SUCCESS;
@@ -160,7 +163,7 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::Apply(std::vector<uint8_t*>& v1, std::v
     float* humanAudioBuf = reinterpret_cast<float *>(v2[1]);
     float* bkgAudioBuf = reinterpret_cast<float *>(v2[2]);
     SeparateChannels(outAudioBuffer_.frameLength, outAudioBuf, humanAudioBuf, bkgAudioBuf);
-    AUDIO_INFO_LOG("AudioSuiteAissAlgoInterfaceImpl Apply success");
+    AUDIO_DEBUG_LOG("AudioSuiteAissAlgoInterfaceImpl Apply success");
     return SUCCESS;
 }
 
@@ -177,7 +180,7 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::CheckFilePath(std::string &filePath)
         return ERROR;
     }
     filePath = buffer;
-    AUDIO_INFO_LOG("Check file path success, path: %s", filePath.c_str());
+    AUDIO_DEBUG_LOG("Check file path success, path: %s", filePath.c_str());
     return SUCCESS;
 }
 
@@ -204,7 +207,7 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::InitIOBufferConfig()
         AUDIO_ERR_LOG("EFFECT_CMD_ENABLE failed, return value is %d", ret);
         return ERROR;
     }
-    AUDIO_INFO_LOG("AudioSuiteAissAlgoInterfaceImpl::InitIOBufferConfig success");
+    AUDIO_DEBUG_LOG("AudioSuiteAissAlgoInterfaceImpl::InitIOBufferConfig success");
     return SUCCESS;
 }
 
@@ -226,7 +229,7 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::InitConfig()
         AUDIO_ERR_LOG("EFFECT_CMD_SET_CONFIG failed, return value %d", ret);
         return ERROR;
     }
-    AUDIO_INFO_LOG("AudioSuiteAissAlgoInterfaceImpl::InitConfig success");
+    AUDIO_DEBUG_LOG("AudioSuiteAissAlgoInterfaceImpl::InitConfig success");
     return SUCCESS;
 }
 
@@ -262,7 +265,7 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::InitAudioEffectParam()
         AUDIO_ERR_LOG("EFFECT_CMD_SET_PARAM failed, return value is %d", ret);
         return ERROR;
     }
-    AUDIO_INFO_LOG("AudioSuiteAissAlgoInterfaceImpl::InitAudioEffectParam success");
+    AUDIO_DEBUG_LOG("AudioSuiteAissAlgoInterfaceImpl::InitAudioEffectParam success");
     return SUCCESS;
 }
 
@@ -278,7 +281,7 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::InitAudioEffectProperty()
         AUDIO_ERR_LOG("EFFECT_CMD_SET_PROPERTY failed, return value is %d", ret);
         return ERROR;
     }
-    AUDIO_INFO_LOG("AudioSuiteAissAlgoInterfaceImpl::InitAudioEffectProperty success");
+    AUDIO_DEBUG_LOG("AudioSuiteAissAlgoInterfaceImpl::InitAudioEffectProperty success");
     return SUCCESS;
 }
 

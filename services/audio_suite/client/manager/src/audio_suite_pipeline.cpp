@@ -303,7 +303,7 @@ std::shared_ptr<AudioNode> AudioSuitePipeline::CreateNodeForType(AudioNodeBuilde
         node = std::make_shared<AudioSuiteMixerNode>();
     } else if (builder.nodeType == NODE_TYPE_AUDIO_SEPARATION) {
         AUDIO_INFO_LOG("Create AudioSuiteAissNode");
-        node = std::make_shared<AudioSuiteAissNode>(NODE_TYPE_AUDIO_SEPARATION, audioFormat);
+        node = std::make_shared<AudioSuiteAissNode>();
     } else {
         AUDIO_ERR_LOG("Create node failed, current type = %{public}d not support.",
             static_cast<int32_t>(builder.nodeType));
