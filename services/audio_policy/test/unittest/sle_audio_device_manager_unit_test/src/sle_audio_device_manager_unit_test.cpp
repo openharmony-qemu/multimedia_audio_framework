@@ -229,7 +229,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, MixAudioDeviceTest_004, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 
     uint32_t element = 100;
-    sleAudioDeviceManager_->startedSleStreamType_[device][streamType].insert(element);
+    sleAudioDeviceManager_->startedSleStreamType_[device][streamType].sessionIds.insert(element);
     ret = sleAudioDeviceManager_->StartPlaying(device, streamType);
     EXPECT_EQ(ret, SUCCESS);
 

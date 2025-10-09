@@ -115,8 +115,12 @@ private:
     std::unordered_map<std::string, std::pair<SleVolumeConfigInfo, SleVolumeConfigInfo>> deviceVolumeConfigInfo_;
 
     std::mutex startedSleStreamTypeMutex_;
-    // Maps device MAC -> (stream type ->set of session IDs)
-    std::unordered_map<std::string, std::unordered_map<uint32_t, std::unordered_set<uint32_t>>> startedSleStreamType_;
+    // Maps device MAC -> (stream type -> StreamTypeInfo (set of session IDs, flag of isStarted))
+    struct StreamTypeInfo {
+        std::unordered_set<uint32_t> sessionIds;
+        bool isStarted = false;
+    };
+    std::unordered_map<std::string, std::unordered_map<uint32_t, StreamTypeInfo>> startedSleStreamType_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
