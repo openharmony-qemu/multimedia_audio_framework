@@ -137,6 +137,7 @@ public:
     MockStreamCallback() = default;
     virtual ~MockStreamCallback() = default;
     MOCK_METHOD(int32_t, OnStreamData, (AudioCallBackStreamInfo&), (override));
+    MOCK_METHOD(bool, OnQueryUnderrun, (), (override));
 };
 } // namespace HPAE
 } // namespace AudioStandard

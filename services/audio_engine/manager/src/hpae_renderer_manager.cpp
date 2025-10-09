@@ -1489,14 +1489,14 @@ bool HpaeRendererManager::IsClusterDisConnected(HpaeProcessorType sceneType)
 }
 
 // if one stream underrun, and need to sleep, return true
-// if one stream underrun, and no need to sleep, return false, do not refresh lastOnUnderrunTime_
+// if one stream underrun, and need to doprocess instead of sleep, return false, do not refresh lastOnUnderrunTime_
 // if not one stream underrun, return false, refresh lastOnUnderrunTime_
 bool HpaeRendererManager::QueryOneStreamUnderrun()
 {
     CHECK_AND_RETURN_RET(!IsRemoteDevice() && appsUid_.size() == 1 && hpaeSignalProcessThread_, false);
     auto underrunFlag = false;
     for (auto [id, node] : sinkInputNodeMap_) {
-        CHECK_AND_RETURN_LOG(node, "nullptr in map", false);
+        CHECK_AND_RETURN_RET_LOG(node, false, "nullptr in map");
         if (node->GetState() == HPAE_SESSION_RUNNING) {
             underrunFlag = node->QueryUnderrun();
             break;
@@ -1506,7 +1506,7 @@ bool HpaeRendererManager::QueryOneStreamUnderrun()
         lastOnUnderrunTime_ = lastOnUnderrunTime_ == 0 ? ClockTime::GetCurNano() : lastOnUnderrunTime_;
         int64_t sleepTimeInNs = lastOnUnderrunTime_ + UNDERRUN_BYPASS_DURATION_NS - ClockTime::GetCurNano();
         Trace trace("HpaeRendererManager::sleep " + std::to_string(sleepTimeInNs) + "ns underrun");
-        CHECK_AND_RETURN(sleepTimeInNs > 0, false);
+        CHECK_AND_RETURN_RET(sleepTimeInNs > 0, false);
         // sleep atmost 10ms
         hpaeSignalProcessThread_->SleepUntilNotify(std::min(BUFFER_DURATION_US, sleepTimeInNs / AUDIO_NS_PER_US));
         return true;

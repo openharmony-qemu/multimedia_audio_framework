@@ -91,6 +91,8 @@ public:
     void TearDown() override;
     std::shared_ptr<HpaeRendererManager> hpaeRendererManager_;
     std::shared_ptr<HpaeOutputCluster> outputCluster_;
+    std::shared_ptr<HpaeSinkInputNode> sinkInputNode_;
+    std::shared_ptr<MockStreamCallback> mockCallback_;
 };
 
 void HpaeRendererManagerTest::SetUp()
@@ -101,6 +103,12 @@ void HpaeRendererManagerTest::SetUp()
 
     outputCluster_ = std::make_shared<HpaeOutputCluster>(nodeInfo);
     hpaeRendererManager_->outputCluster_ = outputCluster_;
+    hpaeRendererManager_->hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
+    sinkInputNode_ = CreateTestNode(HPAE_SESSION_RUNNING);
+    mockCallback_ = std::make_shared<NiceMock<MockStreamCallback>>();
+    sinkInputNode_->RegisterWriteCallback(mockCallback_);
+    hpaeRendererManager_->appsUid_ = {123};
+    hpaeRendererManager_->sinkInputNodeMap_[1] = sinkInputNode_;
 }
 
 void HpaeRendererManagerTest::TearDown()
@@ -1890,149 +1898,44 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererGetLatency_001, TestSize.Level0)
 }
 
 /**
- * @tc.name  : Test OneStreamEnableBypassOnUnderrun_RemoteDevice
+ * @tc.name  : Test QueryOneStreamUnderrun
  * @tc.type  : FUNC
- * @tc.number: OneStreamEnableBypassOnUnderrun_001
- * @tc.desc  : Test OneStreamEnableBypassOnUnderrun when device class is remote, should do nothing.
+ * @tc.number: QueryOneStreamUnderrun_001
+ * @tc.desc  : Test QueryOneStreamUnderrun when not one stream underrun.
  */
-HWTEST_F(HpaeRendererManagerTest, OneStreamEnableBypassOnUnderrun_001, TestSize.Level1)
+HWTEST_F(HpaeRendererManagerTest, QueryOneStreamUnderrun_001, TestSize.Level1)
 {
-    hpaeRendererManager_->sinkInfo_.deviceClass = "remote";
-    hpaeRendererManager_->appsUid_ = {123};
-    hpaeRendererManager_->enableBypassOnUnderrun_ = true;
-
-    auto node = CreateTestNode(HPAE_SESSION_RUNNING);
-    hpaeRendererManager_->sinkInputNodeMap_[1] = node;
-
-    hpaeRendererManager_->OneStreamEnableBypassOnUnderrun();
-
-    EXPECT_FALSE(node->bypassOnUnderrun_);
-}
-
-/**
- * @tc.name  : Test OneStreamEnableBypassOnUnderrun_MultipleApps
- * @tc.type  : FUNC
- * @tc.number: OneStreamEnableBypassOnUnderrun_002
- * @tc.desc  : Test OneStreamEnableBypassOnUnderrun when multiple apps exist, should not set bypass.
- */
-HWTEST_F(HpaeRendererManagerTest, OneStreamEnableBypassOnUnderrun_002, TestSize.Level1)
-{
-    hpaeRendererManager_->appsUid_ = {123, 456};
-    hpaeRendererManager_->enableBypassOnUnderrun_ = true;
-
-    auto node = CreateTestNode(HPAE_SESSION_RUNNING);
-    hpaeRendererManager_->sinkInputNodeMap_[1] = node;
-
-    hpaeRendererManager_->OneStreamEnableBypassOnUnderrun();
-
-    EXPECT_FALSE(node->bypassOnUnderrun_);
-}
-
-/**
- * @tc.name  : Test OneStreamEnableBypassOnUnderrun_BypassDisabled
- * @tc.type  : FUNC
- * @tc.number: OneStreamEnableBypassOnUnderrun_003
- * @tc.desc  : Test OneStreamEnableBypassOnUnderrun when bypass is disabled, should not set bypass.
- */
-HWTEST_F(HpaeRendererManagerTest, OneStreamEnableBypassOnUnderrun_003, TestSize.Level1)
-{
-    hpaeRendererManager_->appsUid_ = {123};
-    hpaeRendererManager_->enableBypassOnUnderrun_ = false;
-
-    auto node = CreateTestNode(HPAE_SESSION_RUNNING);
-    hpaeRendererManager_->sinkInputNodeMap_[1] = node;
-
-    hpaeRendererManager_->OneStreamEnableBypassOnUnderrun();
-
-    EXPECT_FALSE(node->bypassOnUnderrun_);
-}
-
-/**
- * @tc.name  : Test OneStreamEnableBypassOnUnderrun_ValidCondition
- * @tc.type  : FUNC
- * @tc.number: OneStreamEnableBypassOnUnderrun_004
- * @tc.desc  : Test OneStreamEnableBypassOnUnderrun with valid condition, should set bypass for running nodes only.
- */
-HWTEST_F(HpaeRendererManagerTest, OneStreamEnableBypassOnUnderrun_004, TestSize.Level1)
-{
-    hpaeRendererManager_->appsUid_ = {123};
-    hpaeRendererManager_->enableBypassOnUnderrun_ = true;
-
-    auto node = CreateTestNode(HPAE_SESSION_PAUSED);
-    hpaeRendererManager_->sinkInputNodeMap_[1] = node;
-    hpaeRendererManager_->OneStreamEnableBypassOnUnderrun();
-    EXPECT_FALSE(node->bypassOnUnderrun_);
-
-    node->SetState(HPAE_SESSION_RUNNING);
-    hpaeRendererManager_->OneStreamEnableBypassOnUnderrun();
-    EXPECT_TRUE(node->bypassOnUnderrun_);
-}
-
-/**
- * @tc.name  : Test SleepIfBypassOnUnderrun_RemoteDevice
- * @tc.type  : FUNC
- * @tc.number: SleepIfBypassOnUnderrun_001
- * @tc.desc  : Test SleepIfBypassOnUnderrun when device class is remote, should do nothing.
- */
-HWTEST_F(HpaeRendererManagerTest, SleepIfBypassOnUnderrun_001, TestSize.Level1)
-{
-    hpaeRendererManager_->sinkInfo_.deviceClass = "remote";
-    hpaeRendererManager_->lastOnUnderrunTime_ = 0;
-
-    hpaeRendererManager_->SleepIfBypassOnUnderrun();
-
-    EXPECT_EQ(hpaeRendererManager_->lastOnUnderrunTime_, 0);
-}
-
-/**
- * @tc.name  : Test SleepIfBypassOnUnderrun_NotBypassed
- * @tc.type  : FUNC
- * @tc.number: SleepIfBypassOnUnderrun_002
- * @tc.desc  : Test SleepIfBypassOnUnderrun when not bypassed, should reset state.
- */
-HWTEST_F(HpaeRendererManagerTest, SleepIfBypassOnUnderrun_002, TestSize.Level1)
-{
-    outputCluster_->hpaeSinkOutputNode_->bypassed_ = false;
-    hpaeRendererManager_->lastOnUnderrunTime_ = 1000;
-
-    hpaeRendererManager_->SleepIfBypassOnUnderrun();
-
-    EXPECT_EQ(hpaeRendererManager_->lastOnUnderrunTime_, 0);
-    EXPECT_TRUE(hpaeRendererManager_->enableBypassOnUnderrun_);
-}
-
-/**
- * @tc.name  : Test SleepIfBypassOnUnderrun_BypassedNegativeSleepTime
- * @tc.type  : FUNC
- * @tc.number: SleepIfBypassOnUnderrun_003
- * @tc.desc  : Test SleepIfBypassOnUnderrun when bypassed with negative sleep time, should not sleep.
- */
-HWTEST_F(HpaeRendererManagerTest, SleepIfBypassOnUnderrun_003, TestSize.Level1)
-{
-    outputCluster_->hpaeSinkOutputNode_->bypassed_ = true;
-
-    // Set lastOnUnderrunTime_ to long ago so sleep time becomes negative
     hpaeRendererManager_->lastOnUnderrunTime_ = 1;
 
-    hpaeRendererManager_->SleepIfBypassOnUnderrun();
+    EXPECT_CALL(*mockCallback_, OnQueryUnderrun())
+        .WillOnce(Return(false));
 
-    EXPECT_FALSE(hpaeRendererManager_->enableBypassOnUnderrun_);
+    EXPECT_FALSE(hpaeRendererManager_->QueryOneStreamUnderrun());
+    EXPECT_EQ(hpaeRendererManager_->lastOnUnderrunTime_, 0);
+
+    sinkInputNode_->SetState(HPAE_SESSION_PAUSED);
+    hpaeRendererManager_->lastOnUnderrunTime_ = 1;
+
+    EXPECT_FALSE(hpaeRendererManager_->QueryOneStreamUnderrun());
+    EXPECT_EQ(hpaeRendererManager_->lastOnUnderrunTime_, 0);
 }
 
 /**
- * @tc.name  : Test SleepIfBypassOnUnderrun_BypassedPositiveSleepTime
+ * @tc.name  : Test QueryOneStreamUnderrun
  * @tc.type  : FUNC
- * @tc.number: SleepIfBypassOnUnderrun_004
- * @tc.desc  : Test SleepIfBypassOnUnderrun when bypassed with positive sleep time, should sleep.
+ * @tc.number: QueryOneStreamUnderrun_002
+ * @tc.desc  : Test QueryOneStreamUnderrun when one stream underrun.
  */
-HWTEST_F(HpaeRendererManagerTest, SleepIfBypassOnUnderrun_004, TestSize.Level1)
+HWTEST_F(HpaeRendererManagerTest, QueryOneStreamUnderrun_002, TestSize.Level1)
 {
-    outputCluster_->hpaeSinkOutputNode_->bypassed_ = true;
-    // Set lastOnUnderrunTime_ to recent time so sleep time is positive
+    EXPECT_CALL(*mockCallback_, OnQueryUnderrun())
+        .WillOnce(Return(true))
+        .WillOnce(Return(true));
     hpaeRendererManager_->lastOnUnderrunTime_ = ClockTime::GetCurNano();
+    EXPECT_TRUE(hpaeRendererManager_->QueryOneStreamUnderrun());
 
-    hpaeRendererManager_->SleepIfBypassOnUnderrun();
-
-    EXPECT_TRUE(hpaeRendererManager_->enableBypassOnUnderrun_);
+    hpaeRendererManager_->lastOnUnderrunTime_ = 1;
+    EXPECT_FALSE(hpaeRendererManager_->QueryOneStreamUnderrun());
+    EXPECT_EQ(hpaeRendererManager_->lastOnUnderrunTime_, 1);
 }
 }  // namespace

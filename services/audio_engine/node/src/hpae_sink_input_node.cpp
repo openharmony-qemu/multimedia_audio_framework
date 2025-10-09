@@ -336,6 +336,13 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
     ClockTime::GetAllTimeStamp(streamInfo_.timestamp);
     return writeCallback->OnStreamData(streamInfo_);
 }
+
+bool HpaeSinkInputNode::QueryUnderrun()
+{
+    auto writeCallback = writeCallback_.lock();
+    CHECK_AND_RETURN_RET_LOG(writeCallback, false, "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
+    return writeCallback->OnQueryUnderrun();
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
