@@ -121,6 +121,7 @@ public:
 
     int32_t InitPcmProcess();
     int32_t ResizePcmBuffer(uint32_t sampleRate, uint32_t channelCount);
+    int32_t ResetPcmBuffer(uint32_t sampleRate, uint32_t channelCount, AudioChannelLayout channelLayout);
     AudioSuitePcmBuffer &operator+=(AudioSuitePcmBuffer &other);
 private:
     std::vector<float, AlignedAllocator<float, MEMORY_ALIGN_BYTE_NUM>> pcmDataBuffer_;

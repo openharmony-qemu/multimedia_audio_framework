@@ -18,6 +18,9 @@
 
 #include <string>
 #include <cstdint>
+#include <memory>
+#include <fstream>
+#include <vector>
 
 namespace OHOS {
 namespace AudioStandard {

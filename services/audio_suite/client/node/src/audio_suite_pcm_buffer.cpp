@@ -28,7 +28,7 @@ namespace AudioStandard {
 namespace AudioSuite {
 AudioSuitePcmBuffer::AudioSuitePcmBuffer(uint32_t sampleRate, uint32_t channelCount, AudioChannelLayout channelLayout)
 {
-    AUDIO_INFO_LOG("AudioSuitePcmBuffer::AudioSuitePcmBuffer, sampleRate:%{public}u, channelCount:%{public}u",
+    AUDIO_DEBUG_LOG("AudioSuitePcmBuffer::AudioSuitePcmBuffer, sampleRate:%{public}u, channelCount:%{public}u",
         sampleRate, channelCount);
     sampleRate_ = sampleRate;
     channelCount_ = channelCount;
@@ -36,25 +36,41 @@ AudioSuitePcmBuffer::AudioSuitePcmBuffer(uint32_t sampleRate, uint32_t channelCo
     frameLen_ = SINGLE_FRAME_DURATION * sampleRate * channelCount / SECONDS_TO_MS;
 
     pcmDataBuffer_.assign(frameLen_, 0.0f);
-    AUDIO_INFO_LOG("AudioSuitePcmBuffer::AudioSuitePcmBuffer, frameLen_:%{public}u", frameLen_);
+    AUDIO_DEBUG_LOG("AudioSuitePcmBuffer::AudioSuitePcmBuffer, frameLen_:%{public}u", frameLen_);
     InitPcmProcess();
 }
 
 int32_t AudioSuitePcmBuffer::InitPcmProcess()
 {
-    AUDIO_INFO_LOG("AudioSuitePcmBuffer::InitPcmProcess start");
+    AUDIO_DEBUG_LOG("AudioSuitePcmBuffer::InitPcmProcess start");
     pcmProcessVec_.clear();
     float* itr = pcmDataBuffer_.data();
     pcmProcessVec_.push_back(HPAE::HpaePcmProcess(itr, frameLen_));
-    AUDIO_INFO_LOG("AudioSuitePcmBuffer::InitPcmProcess, finish");
+    AUDIO_DEBUG_LOG("AudioSuitePcmBuffer::InitPcmProcess, finish");
     return 0;
 }
+
 int32_t AudioSuitePcmBuffer::ResizePcmBuffer(uint32_t sampleRate, uint32_t channelCount)
 {
-    AUDIO_INFO_LOG("AudioSuitePcmBuffer::ResizePcmBuffer, sampleRate:%{public}u, channelCount:%{public}u",
+    AUDIO_DEBUG_LOG("AudioSuitePcmBuffer::ResizePcmBuffer, sampleRate:%{public}u, channelCount:%{public}u",
         sampleRate, channelCount);
     sampleRate_ = sampleRate;
     channelCount_ = channelCount;
+    frameLen_ = SINGLE_FRAME_DURATION * sampleRate * channelCount / SECONDS_TO_MS;
+    pcmDataBuffer_.assign(frameLen_, 0.0f);
+    pcmProcessVec_.clear();
+    InitPcmProcess();
+    return 0;
+}
+
+int32_t AudioSuitePcmBuffer::ResetPcmBuffer(
+    uint32_t sampleRate, uint32_t channelCount, AudioChannelLayout channelLayout)
+{
+    AUDIO_DEBUG_LOG("AudioSuitePcmBuffer::ResetPcmBuffer, sampleRate:%{public}u, channelCount:%{public}u",
+        sampleRate, channelCount);
+    sampleRate_ = sampleRate;
+    channelCount_ = channelCount;
+    channelLayout_ = channelLayout;
     frameLen_ = SINGLE_FRAME_DURATION * sampleRate * channelCount / SECONDS_TO_MS;
     pcmDataBuffer_.assign(frameLen_, 0.0f);
     pcmProcessVec_.clear();

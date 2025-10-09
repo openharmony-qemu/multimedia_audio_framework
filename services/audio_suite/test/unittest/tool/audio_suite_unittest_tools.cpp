@@ -12,10 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#include <memory>
-#include <fstream>
-#include <vector>
 #include "audio_errors.h"
 #include "audio_suite_log.h"
 #include "audio_suite_unittest_tools.h"

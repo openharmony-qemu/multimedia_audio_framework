@@ -38,10 +38,10 @@
             <option name="push" value="ainr_input_48000_1_F32LE.pcm -> /data/audiosuite/nr/" src="res"/>
             <option name="push" value="ainr_input_16000_2_F32LE.pcm -> /data/audiosuite/nr/" src="res"/>
             <option name="push" value="ainr_input_16000_1_F32LE.pcm -> /data/audiosuite/nr/" src="res"/>
-            <option name="push" value="ainr_48000_2_target_16000_1_F32LE.pcm -> /data/audiosuite/nr/" src="res"/>
-            <option name="push" value="ainr_48000_1_target_16000_1_F32LE.pcm -> /data/audiosuite/nr/" src="res"/>
-            <option name="push" value="ainr_16000_2_target_16000_1_F32LE.pcm -> /data/audiosuite/nr/" src="res"/>
-            <option name="push" value="ainr_16000_1_target_16000_1_F32LE.pcm -> /data/audiosuite/nr/" src="res"/>
+            <option name="push" value="ainr_target_48000_2_to_16000_1_F32LE.pcm -> /data/audiosuite/nr/" src="res"/>
+            <option name="push" value="ainr_target_48000_1_to_16000_1_F32LE.pcm -> /data/audiosuite/nr/" src="res"/>
+            <option name="push" value="ainr_target_16000_2_to_16000_1_F32LE.pcm -> /data/audiosuite/nr/" src="res"/>
+            <option name="push" value="ainr_target_16000_1_to_16000_1_F32LE.pcm -> /data/audiosuite/nr/" src="res"/>
             <option name="shell" value="restorecon -R /data/audiosuite/nr/"/>
         </preparer>
     </target>
