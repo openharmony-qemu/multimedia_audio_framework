@@ -30,6 +30,7 @@
 #include "audio_suite_output_node.h"
 #include "audio_suite_nr_node.h"
 #include "audio_suite_mixer_node.h"
+#include "audio_suite_voice_beautifier_node.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -304,6 +305,9 @@ std::shared_ptr<AudioNode> AudioSuitePipeline::CreateNodeForType(AudioNodeBuilde
     } else if (builder.nodeType == NODE_TYPE_AUDIO_SEPARATION) {
         AUDIO_INFO_LOG("Create AudioSuiteAissNode");
         node = std::make_shared<AudioSuiteAissNode>();
+    } else if (builder.nodeType == NODE_TYPE_VOICE_BEAUTIFIER) {
+        AUDIO_INFO_LOG("Create AudioSuiteVoiceBeautifierNode");
+        node = std::make_shared<AudioSuiteVoiceBeautifierNode>();
     } else {
         AUDIO_ERR_LOG("Create node failed, current type = %{public}d not support.",
             static_cast<int32_t>(builder.nodeType));
