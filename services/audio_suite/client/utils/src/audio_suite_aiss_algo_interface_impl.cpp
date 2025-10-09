@@ -104,7 +104,6 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::Deinit()
 {
     if (algoHandle_ != nullptr && audioEffectLibHandle_ != nullptr) {
         audioEffectLibHandle_->releaseEffect(algoHandle_);
-        std::this_thread::sleep_for(std::chrono::seconds(1));
     }
     algoHandle_ = nullptr;
     audioEffectLibHandle_ = nullptr;
