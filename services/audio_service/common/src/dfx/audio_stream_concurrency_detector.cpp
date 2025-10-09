@@ -77,7 +77,7 @@ void AudioStreamConcurrencyDetector::UpdateRecord(const AudioProcessConfig &conf
 {
     streamConcurrInfoMap_[config.appInfo.appUid][config.rendererInfo.streamUsage][streamId].updateTime =
         static_cast<uint64_t>(
-        std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+        std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count());
 
     if (streamConcurrInfoMap_[config.appInfo.appUid][config.rendererInfo.streamUsage][streamId].startTime == 0) {
         streamConcurrInfoMap_[config.appInfo.appUid][config.rendererInfo.streamUsage][streamId].startTime =
