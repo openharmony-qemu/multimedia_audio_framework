@@ -219,6 +219,7 @@ int32_t HpaeRenderEffectNode::AudioOffloadRendererCreate(HpaeNodeInfo &nodeInfo,
 {
     CHECK_AND_RETURN_RET_LOG(OffloadRendererCheckNotifyEffectManager(sinkInfo) == true,
         ERR_INVALID_HANDLE, "no need to create");
+
     int32_t ret = CreateAudioEffectChain(nodeInfo);
     AUDIO_WARNING_LOG("out, ret: %{public}d", ret);
     return SUCCESS;
@@ -228,6 +229,7 @@ int32_t HpaeRenderEffectNode::AudioOffloadRendererStart(HpaeNodeInfo &nodeInfo, 
 {
     CHECK_AND_RETURN_RET_LOG(OffloadRendererCheckNotifyEffectManager(sinkInfo) == true,
         ERR_INVALID_HANDLE, "no need to start");
+
     ModifyAudioEffectChainInfo(nodeInfo, ADD_AUDIO_EFFECT_CHAIN_INFO);
     return SUCCESS;
 }
@@ -236,6 +238,7 @@ int32_t HpaeRenderEffectNode::AudioOffloadRendererStop(HpaeNodeInfo &nodeInfo, c
 {
     CHECK_AND_RETURN_RET_LOG(OffloadRendererCheckNotifyEffectManager(sinkInfo) == true,
         ERR_INVALID_HANDLE, "no need to stop");
+
     ModifyAudioEffectChainInfo(nodeInfo, REMOVE_AUDIO_EFFECT_CHAIN_INFO);
     return SUCCESS;
 }
@@ -244,6 +247,7 @@ int32_t HpaeRenderEffectNode::AudioOffloadRendererRelease(HpaeNodeInfo &nodeInfo
 {
     CHECK_AND_RETURN_RET_LOG(OffloadRendererCheckNotifyEffectManager(sinkInfo) == true,
         ERR_INVALID_HANDLE, "no need to release");
+
     int32_t ret = ReleaseAudioEffectChain(nodeInfo);
     AUDIO_WARNING_LOG("out, ret: %{public}d", ret);
     ModifyAudioEffectChainInfo(nodeInfo, REMOVE_AUDIO_EFFECT_CHAIN_INFO);
