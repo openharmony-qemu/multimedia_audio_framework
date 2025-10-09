@@ -1704,7 +1704,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, CheckAudioHapticsSync_001, TestSize.Level1)
     audioEndpointnIner->fastRenderId_ = 1;
     audioEndpointnIner->dstSpanSizeInframe_ = 100;
     std::shared_ptr<IAudioRenderSink> sink = nullptr;
-    HdiAdapterManager::GetInstance().DoSetSinkPrestoreInfo(sink);
+    HdiAdapterManager::GetInstance().DoSetSinkPrestoreInfo(sink, HDI_ID_TYPE_PRIMARY);
     audioEndpointnIner->CheckAudioHapticsSync(10);
     EXPECT_EQ(audioEndpointnIner->audioHapticsSyncId_, 0);
 }
@@ -1725,7 +1725,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, CheckAudioHapticsSync_002, TestSize.Level1)
     audioEndpointnIner->fastRenderId_ = 1;
     audioEndpointnIner->dstSpanSizeInframe_ = 100;
 
-    HdiAdapterManager::GetInstance().DoSetSinkPrestoreInfo(nullptr);
+    HdiAdapterManager::GetInstance().DoSetSinkPrestoreInfo(nullptr, HDI_ID_TYPE_PRIMARY);
 
     audioEndpointnIner->CheckAudioHapticsSync(10);
 
