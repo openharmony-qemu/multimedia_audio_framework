@@ -133,7 +133,7 @@ bool AudioAdapterManager::Init()
 
     char mdmMuteStatus[6] = {0};
     ret = GetParameter("persist.edm.unmute_device_disallowed", "false", mdmMuteStatus, sizeof(mdmMuteStatus));
-    if(ret > 0) {
+    if (ret > 0) {
         bool isMdmMute = (strcmp(mdmMuteStatus, "true") == 0);
         AudioMuteFactorManager::GetInstance().SetMdmMuteStatus(isMdmMute);
         AUDIO_INFO_LOG("Get mdmMuteStatus success %{public}d", isMdmMute);
@@ -3041,11 +3041,11 @@ void AudioAdapterManager::MdmMuteSwitchCallback(bool isMute)
     AUDIO_INFO_LOG("mdmMuteStatus = %{public}d", isMute);
     AudioMuteFactorManager& audioMuteFactorManager = AudioMuteFactorManager::GetInstance();
     audioMuteFactorManager.SetMdmMuteStatus(isMute);
-    for(auto &streamType : defaultVolumeTypeList_) {
+    for (auto &streamType : defaultVolumeTypeList_) {
         SetVolumeDb(streamType);
-        if(streamType == STREAM_VOICE_CALL) {
+        if (streamType == STREAM_VOICE_CALL) {
             int32_t volumeLevel = GetStreamVolume(streamType);
-            DeviceType curOutputDeviceType = audioA2dpDevice_.GetCurrentOutputDeviceType();
+            DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
             float volumeFloat = isMute ? 0 : GetSystemVolumeInDb(streamType, volumeLevel, curOutputDeviceType);
             AudioServerProxy::GetInstance().NotifyStreamVolumeChangedProxy(streamType, volumeFloat);
         }
