@@ -105,6 +105,7 @@ int32_t HpaeSinkInputNode::GetDataFromSharedBuffer()
 
 bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
 {
+    inputAudioBuffer_.SetBufferBypass(false);
     auto nodeCallback = GetNodeStatusCallback().lock();
     if ((GetDeviceClass() == DEVICE_CLASS_OFFLOAD || GetDeviceClass() == DEVICE_CLASS_REMOTE_OFFLOAD) &&
         !offloadEnable_) {
@@ -136,6 +137,7 @@ bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
                 isDrain_ = false;
             }
             standbyCounter_++;
+            inputAudioBuffer_.SetBufferBypass(bypassOnUnderrun_);
         } else {
             standbyCounter_ = 0;
         }
@@ -171,7 +173,7 @@ void HpaeSinkInputNode::DoProcess()
         GetBitWidth(), GetChannelCount() * GetFrameLen(), interleveData_.data(), inputAudioBuffer_.GetPcmDataBuffer());
     AudioPipeType  pipeType = ConvertDeviceClassToPipe(GetDeviceClass());
     if (ret != 0) {
-        if (pipeType != PIPE_TYPE_UNKNOWN) {
+        if (pipeType != PIPE_TYPE_UNKNOWN && !bypassOnUnderrun_) {
             AudioPerformanceMonitor::GetInstance().RecordSilenceState(GetSessionId(), true, pipeType,
                 static_cast<uint32_t>(appUid_));
         }
@@ -313,7 +315,7 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
     auto writeCallback = writeCallback_.lock();
     CHECK_AND_RETURN_RET_LOG(writeCallback, ERROR, "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
     bool needData = !(historyBuffer_ && historyBuffer_->GetCurFrames()) && isPullData;
-    // offload enbale, never force data
+    // offload enable, never force data
     bool forceData = offloadEnable_ ? false : true;
     uint64_t latency = 0;
     auto nodeCallback = GetNodeStatusCallback().lock();
@@ -335,6 +337,11 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
     };
     ClockTime::GetAllTimeStamp(streamInfo_.timestamp);
     return writeCallback->OnStreamData(streamInfo_);
+}
+
+void HpaeSinkInputNode::SetBypassOnUnderrun(bool bypassOnUnderrun)
+{
+    bypassOnUnderrun_ = bypassOnUnderrun;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

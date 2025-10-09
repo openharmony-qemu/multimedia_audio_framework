@@ -318,7 +318,6 @@ static uint32_t GetByteSizeByFormat(enum AudioSampleFormat format)
 
 void CapturerInServer::UpdateBufferTimeStamp(size_t readLen)
 {
-    CHECK_AND_RETURN_LOG(capturerClock_ != nullptr, "capturerClock_ is nullptr!");
     uint64_t timestamp = 0;
     uint32_t sizePerPos = static_cast<uint32_t>(GetByteSizeByFormat(processConfig_.streamInfo.format)) *
         processConfig_.streamInfo.channels;
@@ -327,7 +326,9 @@ void CapturerInServer::UpdateBufferTimeStamp(size_t readLen)
     CHECK_AND_RETURN_LOG(readLen >= 0, "readLen is illegal!");
     lastPosInc_ = static_cast<uint64_t>(readLen) / sizePerPos;
 
-    capturerClock_->GetTimeStampByPosition(curProcessPos_, timestamp);
+    if (capturerClock_ != nullptr) {
+        capturerClock_->GetTimeStampByPosition(curProcessPos_, timestamp);
+    }
 
     AUDIO_DEBUG_LOG("update buffer timestamp pos:%{public}" PRIu64 " ts:%{public}" PRIu64,
         curProcessPos_, timestamp);
@@ -751,6 +752,7 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
         status_ = I_STATUS_INVALID;
         return ret;
     }
+    CoreServiceHandler::GetInstance().ReleaseCaptureInjector(streamIndex_);
     if (status_ != I_STATUS_STOPPING &&
         status_ != I_STATUS_STOPPED) {
         HandleOperationStopped(CAPTURER_STAGE_STOP_BY_RELEASE);
@@ -760,7 +762,6 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
     }
     status_ = I_STATUS_RELEASED;
 
-    capturerClock_ = nullptr;
     CapturerClockManager::GetInstance().DeleteCapturerClock(streamIndex_);
 #ifdef HAS_FEATURE_INNERCAPTURER
     if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
@@ -806,6 +807,7 @@ int32_t CapturerInServer::UpdatePlaybackCaptureConfigInLegacy(const AudioPlaybac
 int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
 {
     Trace trace("UpdatePlaybackCaptureConfig:" + ProcessConfig::DumpInnerCapConfig(config));
+    std::lock_guard<std::mutex> lock(filterConfigLock_);
     CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE,
         ERR_INVALID_OPERATION, "This not a inner-cap source!");
 

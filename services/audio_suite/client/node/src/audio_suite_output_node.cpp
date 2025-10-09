@@ -235,7 +235,7 @@ int32_t AudioOutputNode::DoProcess(uint8_t *audioData, int32_t frameSize, int32_
     if (GetAudioNodeDataFinishedFlag() && cacheBuffer_.empty()) {
         AUDIO_INFO_LOG("AudioOutputNode finished completed.");
         *finished = true;
-        return ERROR;
+        return ERR_NOT_SUPPORTED;
     }
 
     int32_t audioDataOffset = 0;

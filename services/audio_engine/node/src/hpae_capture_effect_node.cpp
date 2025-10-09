@@ -233,6 +233,11 @@ int32_t HpaeCaptureEffectNode::CaptureEffectRelease(uint64_t sceneKeyCode)
     return audioEnhanceChainManager->ReleaseAudioEnhanceChainDynamic(sceneKeyCode);
 }
 
+uint64_t HpaeCaptureEffectNode::GetLatency(uint32_t sessionId)
+{
+    return 0;
+}
+
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

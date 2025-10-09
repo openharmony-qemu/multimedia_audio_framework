@@ -736,7 +736,9 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::ConvertToStreamDesc
     streamDesc->streamInfo_.customSampleRate = audioStreamParams.customSampleRate;
     streamDesc->streamInfo_.channels = static_cast<AudioChannel>(audioStreamParams.channels);
     streamDesc->streamInfo_.encoding = static_cast<AudioEncodingType>(audioStreamParams.encoding);
-    streamDesc->streamInfo_.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.channelLayout);
+    streamDesc->streamInfo_.channelLayout = audioStream_->ConvertChannelsToDefaultChannelLayout(
+        static_cast<AudioChannel>(audioStreamParams.channels),
+        static_cast<AudioChannelLayout>(audioStreamParams.channelLayout));
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
     streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->rendererInfo_ = rendererInfo_;
@@ -1050,6 +1052,11 @@ void AudioRendererPrivate::SetInSwitchingFlag(bool inSwitchingFlag)
 
 int32_t AudioRendererPrivate::AsyncCheckAudioRenderer(std::string callingFunc)
 {
+    // Check first to avoid redundant instructions consumption in thread switching
+    if (!IsRestoreOrStopNeeded()) {
+        return SUCCESS;
+    }
+
     if (switchStreamInNewThreadTaskCount_.fetch_add(1) > 0) {
         return SUCCESS;
     }
@@ -2349,11 +2356,12 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
         AUDIO_INFO_LOG("Telephony scene , no need for start");
     } else if (previousState == RENDERER_RUNNING) {
         // restart audio stream
-        switchResult = newAudioStream->StartAudioStream(CMD_FROM_CLIENT,
-            static_cast<AudioStreamDeviceChangeReasonExt::ExtEnum>(restoreInfo.deviceChangeReason));
-        CHECK_AND_RETURN_RET_LOG(switchResult, false, "start new stream failed.");
+        if (switchInfo.target != INJECT_TO_VOICE_COMMUNICATION_CAPTURE) {
+            switchResult = newAudioStream->StartAudioStream(CMD_FROM_CLIENT,
+                static_cast<AudioStreamDeviceChangeReasonExt::ExtEnum>(restoreInfo.deviceChangeReason));
+            CHECK_AND_RETURN_RET_LOG(switchResult, false, "start new stream failed.");
+        }
     }
-
     isFastRenderer_ = IAudioStream::IsFastStreamClass(targetClass);
     return switchResult;
 }

@@ -84,21 +84,12 @@ HpaeRenderEffectNode::~HpaeRenderEffectNode()
 
 void HpaeRenderEffectNode::DoProcess()
 {
-    HpaePcmBuffer *tempOut = nullptr;
-    std::vector<HpaePcmBuffer *>& preOutputs = inputStream_.ReadPreOutputData();
-    // if buffer is not valid, write silence data(invalid) to output
     if (sceneType_ != "SCENE_COLLABORATIVE") {
-        if (enableProcess_ && !preOutputs.empty()) {
-            tempOut = SignalProcess(preOutputs);
-            outputStream_.WriteDataToOutput(tempOut);
-        } else if (!preOutputs.empty()) {
-            outputStream_.WriteDataToOutput(preOutputs[0]);
-        } else {
-            outputStream_.WriteDataToOutput(&silenceData_);
-        }
+        HpaePluginNode::DoProcess();
         return;
     }
 
+    std::vector<HpaePcmBuffer *>& preOutputs = inputStream_.ReadPreOutputData();
     if (enableProcess_ && !preOutputs.empty() && directOutput_ && collaborativeOutput_) {
         SignalProcess(preOutputs);
         int32_t ret = SplitCollaborativeData();
@@ -228,7 +219,6 @@ int32_t HpaeRenderEffectNode::CreateAudioEffectChain(HpaeNodeInfo &nodeInfo)
 {
     AUDIO_INFO_LOG("sessionID is %{public}u, sceneType is %{public}d",
         nodeInfo.sessionId, nodeInfo.effectInfo.effectScene);
-    // todo: deal with remote case
     // todo: if boot music, do not create audio effect
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
@@ -238,12 +228,10 @@ int32_t HpaeRenderEffectNode::CreateAudioEffectChain(HpaeNodeInfo &nodeInfo)
         audioSupportedSceneTypes.end()) {
         sceneType = audioSupportedSceneTypes.at(nodeInfo.effectInfo.effectScene);
     }
-    // todo: could be removed
     if (!audioEffectChainManager->CheckAndAddSessionID(std::to_string(nodeInfo.sessionId))) {
         return SUCCESS;
     }
     audioEffectChainManager->UpdateSceneTypeList(sceneType, ADD_SCENE_TYPE);
-    // todo: should be considered
     if (audioEffectChainManager->GetOffloadEnabled()) {
         return SUCCESS;
     }
@@ -258,7 +246,6 @@ int32_t HpaeRenderEffectNode::ReleaseAudioEffectChain(HpaeNodeInfo &nodeInfo)
 {
     AUDIO_INFO_LOG("sessionID is %{public}u, sceneType is %{public}d",
         nodeInfo.sessionId, nodeInfo.effectInfo.effectScene);
-    // todo: deal with remote case
     // todo: if boot music, do not release audio effect
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERR_INVALID_HANDLE, "null audioEffectChainManager");
@@ -268,12 +255,10 @@ int32_t HpaeRenderEffectNode::ReleaseAudioEffectChain(HpaeNodeInfo &nodeInfo)
         audioSupportedSceneTypes.end()) {
         sceneType = audioSupportedSceneTypes.at(nodeInfo.effectInfo.effectScene);
     }
-    // todo: could be removed
     if (!audioEffectChainManager->CheckAndRemoveSessionID(std::to_string(nodeInfo.sessionId))) {
         return SUCCESS;
     }
     audioEffectChainManager->UpdateSceneTypeList(sceneType, REMOVE_SCENE_TYPE);
-    // todo: should be considered
     if (audioEffectChainManager->GetOffloadEnabled()) {
         return SUCCESS;
     }
@@ -429,6 +414,13 @@ void HpaeRenderEffectNode::InitEffectBufferFromDisConnect()
     CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "null audioEffectChainManager");
     audioEffectChainManager->InitAudioEffectChainDynamic(sceneType_);
     AUDIO_INFO_LOG("sceneType:%{public}s", sceneType_.c_str());
+}
+
+uint64_t HpaeRenderEffectNode::GetLatency(uint32_t sessionId)
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, 0, "null audioEffectChainManager");
+    return audioEffectChainManager->GetLatency(std::to_string(sessionId)) * AUDIO_US_PER_MS;
 }
 } // namespace HPAE
 } // namespace AudioStandard

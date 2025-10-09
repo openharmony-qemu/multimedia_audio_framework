@@ -81,7 +81,8 @@ static bool CheckNeedExclude(const AudioDeviceDescriptor &desc, bool isConnected
     AUDIO_INFO_LOG("isConnected=%{public}d, exclude=%{public}d", isConnected, exclude);
     CHECK_AND_RETURN_RET(isConnected && exclude, false);
     vector<shared_ptr<AudioDeviceDescriptor>> descs{make_shared<AudioDeviceDescriptor>(desc)};
-    AudioCoreService::GetCoreService()->ExcludeOutputDevices(D_ALL_DEVICES, descs);
+    AudioCoreService::GetCoreService()->ExcludeOutputDevices(MEDIA_OUTPUT_DEVICES, descs);
+    AudioCoreService::GetCoreService()->ExcludeOutputDevices(CALL_OUTPUT_DEVICES, descs);
     return true;
 }
 
@@ -1444,7 +1445,7 @@ void AudioDeviceStatus::RemoveDeviceFromGlobalOnly(std::shared_ptr<AudioDeviceDe
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
     AUDIO_INFO_LOG("remove device from global list only");
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
-    audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(desc, descForCb);
+    audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(desc, descForCb, false);
     AudioCoreService::GetCoreService()->GetEventEntry()->FetchOutputDeviceAndRoute("RemoveDeviceFromGlobalOnly");
     AudioCoreService::GetCoreService()->GetEventEntry()->FetchInputDeviceAndRoute("RemoveDeviceFromGlobalOnly");
 }

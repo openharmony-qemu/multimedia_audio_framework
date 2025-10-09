@@ -137,6 +137,10 @@ public:
     int32_t GetActualStreamManagerType() const noexcept;
     
     bool Dump(std::string &dumpString);
+    bool DumpNormal(std::string &dumpString);
+    bool DumpVoipAndDirect(std::string &dumpString);
+    void DumpStreamInfo(std::string &dumpString);
+    void DumpStatusInfo(std::string &dumpString);
     void SetNonInterruptMute(const bool muteFlag);
     RestoreStatus RestoreSession(RestoreInfo restoreInfo);
     int32_t StopSession();
@@ -195,6 +199,10 @@ private:
     bool IsEnabledAndValidSoftLink(SoftLinkInfo& softLinkInfo);
     bool IsEnabledAndValidDupStream(CaptureInfo& captureInfo);
     void HandleOffloadStream(const int32_t captureId, const CaptureInfo& captureInfo);
+    void UpdateStreamInfo();
+    void RemoveStreamInfo();
+    void OnWriteDataFinish();
+    void PauseInner();
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -289,7 +297,10 @@ private:
     std::unordered_map<int32_t, SoftLinkInfo> softLinkInfos_;
     FILE *dumpSoftLink = nullptr;
 
-    RenderTarget lastTarget_;
+    RenderTarget lastTarget_ = NORMAL_PLAYBACK;
+
+    uint32_t audioCheckFreq_ = 0;
+    std::atomic<uint32_t> checkCount_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

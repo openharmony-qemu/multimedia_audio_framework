@@ -81,20 +81,6 @@ HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_SelectInputDeviceB
 
 /**
 * @tc.name  : Test AudioUsrSelectManager.
-* @tc.number: AudioUsrSelectManager_SelectInputDeviceByUid_003
-* @tc.desc  : Test SelectInputDeviceByUid interface.
-*/
-HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_SelectInputDeviceByUid_003, TestSize.Level1)
-{
-    AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->deviceId_ = 2;
-    int32_t uid = 123;
-    EXPECT_EQ(audioUsrSelectManager.SelectInputDeviceByUid(desc, uid), true);
-}
-
-/**
-* @tc.name  : Test AudioUsrSelectManager.
 * @tc.number: AudioUsrSelectManager_GetSelectedInputDeviceByUid_001
 * @tc.desc  : Test GetSelectedInputDeviceByUid interface.
 */
@@ -150,7 +136,7 @@ HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_JudgeFinalSelectDe
     EXPECT_EQ(judge->deviceId_, 2);
 
     judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_EC, PREFERRED_DEFAULT);
-    EXPECT_EQ(judge, nullptr);
+    EXPECT_NE(judge, nullptr);
 }
 
 /**

@@ -305,7 +305,7 @@ void GetLatencyFuzzTest()
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
     auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
-    hpaeOutputCluster->GetLatency();
+    hpaeOutputCluster->GetHdiLatency();
 }
 
 typedef void (*TestFuncs[23])();

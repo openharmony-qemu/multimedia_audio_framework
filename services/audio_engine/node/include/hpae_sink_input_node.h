@@ -57,6 +57,9 @@ public:
     void SetSpeed(float speed);
     float GetSpeed();
     uint64_t GetLatency();
+
+    void SetBypassOnUnderrun(bool bypassOnUnderrun);
+
     bool isConnected_ = false;
     HpaeProcessorType connectedProcessorType_ = HPAE_SCENE_UNCONNECTED;
 private:
@@ -84,6 +87,8 @@ private:
     float speed_ = 1.0f;
     std::atomic<uint64_t> hdiFramePosition_ = 0;
     uint32_t standbyCounter_ = 0;
+
+    bool bypassOnUnderrun_ = false;
 };
 
 }  // namespace HPAE

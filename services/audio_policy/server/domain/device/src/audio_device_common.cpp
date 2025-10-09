@@ -30,6 +30,7 @@
 #include "audio_event_utils.h"
 #include "audio_recovery_device.h"
 #include "audio_bundle_manager.h"
+#include "audio_volume.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -183,6 +184,15 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPrefer
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
             audioRouterCenter_.FetchOutputDevices(rendererInfo.streamUsage,
                 -1, "GetPreferredOutputDeviceDescInner", bypassType);
+        for (size_t i = 0; i < descs.size(); i++) {
+            std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*descs[i]);
+            deviceList.push_back(devDesc);
+        }
+
+        FetchDeviceInfo info = { rendererInfo.streamUsage, rendererInfo.streamUsage, -1,
+            bypassType, PIPE_TYPE_NORMAL_OUT, PRIVACY_TYPE_PUBLIC };
+        info.caller = "GetPreferredOutputDeviceDescInner";
+        descs = audioRouterCenter_.FetchDupDevices(info);
         for (size_t i = 0; i < descs.size(); i++) {
             std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*descs[i]);
             deviceList.push_back(devDesc);
@@ -345,7 +355,7 @@ void AudioDeviceCommon::RemoveOfflineDevice(const AudioDeviceDescriptor& updated
 }
 
 void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDeviceDescriptor& updatedDesc,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb, bool updateVolume)
 {
     RemoveOfflineDevice(updatedDesc);
     AUDIO_INFO_LOG("[%{public}s], devType:[%{public}d]", __func__, updatedDesc.deviceType_);
@@ -397,6 +407,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
         audioActiveDevice_.GetCurrentOutputDeviceMacAddr() == updatedDesc.macAddress_) {
         audioA2dpOffloadFlag_.SetA2dpOffloadFlag(NO_A2DP_DEVICE);
     }
+    CHECK_AND_RETURN_LOG(updateVolume, "no need to updateVolume");
     AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceDisconnect(devDesc);
 }
 
@@ -960,7 +971,7 @@ void AudioDeviceCommon::UpdateRoute(std::shared_ptr<AudioRendererChangeInfo> &re
                 deviceType, rendererChangeInfo->sessionId);
             AudioStreamType streamType = streamCollector_.GetStreamType(rendererChangeInfo->sessionId);
             if (!IsDualStreamWhenRingDual(streamType)) {
-                streamsWhenRingDualOnPrimarySpeaker_.push_back(make_pair(streamType, streamUsage));
+                streamsWhenRingDualOnPrimarySpeaker_.push_back(make_pair(rendererChangeInfo->sessionId, streamType));
                 audioPolicyManager_.SetStreamMute(streamType, true, streamUsage);
             }
         } else {
@@ -994,8 +1005,8 @@ void AudioDeviceCommon::ClearRingMuteWhenCallStart(bool pre, bool after)
 {
     CHECK_AND_RETURN_LOG(pre == true && after == false, "ringdual not cancel by call");
     AUDIO_INFO_LOG("disable primary speaker dual tone when call start and ring not over");
-    for (std::pair<AudioStreamType, StreamUsage> stream : streamsWhenRingDualOnPrimarySpeaker_) {
-        audioPolicyManager_.SetStreamMute(stream.first, false, stream.second);
+    for (std::pair<uint32_t, AudioStreamType> stream : streamsWhenRingDualOnPrimarySpeaker_) {
+        AudioVolume::GetInstance()->SetStreamVolumeMute(stream.first, false);
     }
     streamsWhenRingDualOnPrimarySpeaker_.clear();
     audioPolicyManager_.SetStreamMute(STREAM_MUSIC, false, STREAM_USAGE_MUSIC);

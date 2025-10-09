@@ -207,7 +207,7 @@ bool HpaeAudioFormatConverterNode::CheckUpdateOutInfo()
         };
         HILOG_COMM_INFO("NodeId %{public}d, update out channels and channelLayout: channels %{public}d -> %{public}d",
             GetNodeId(), curOutChannelInfo.numChannels, numChannels);
-        CHECK_AND_RETURN_RET_LOG(channelConverter_.SetOutChannelInfo(newOutChannelInfo) == DMIX_ERR_SUCCESS, false,
+        CHECK_AND_RETURN_RET_LOG(channelConverter_.SetOutChannelInfo(newOutChannelInfo) == MIX_ERR_SUCCESS, false,
             "NodeId: %{public}d, Fail to set output channel info from effectNode!", GetNodeId());
         uint32_t resampleChannels = std::min(channelConverter_.GetInChannelInfo().numChannels, numChannels);
         if (resampleChannels != resampler_->GetChannels()) {
@@ -367,6 +367,11 @@ void HpaeAudioFormatConverterNode::DisConnectWithInfo(const std::shared_ptr<Outp
         callback->OnNotifyDfxNodeInfo(false, GetNodeId(), GetNodeInfo());
     }
 #endif
+}
+
+uint64_t HpaeAudioFormatConverterNode::GetLatency(uint32_t sessionId)
+{
+    return 0;
 }
 } // Hpae
 } // AudioStandard

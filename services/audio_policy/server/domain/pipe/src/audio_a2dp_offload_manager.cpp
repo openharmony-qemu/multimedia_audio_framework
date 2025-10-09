@@ -23,6 +23,7 @@
 #include "audio_spatialization_service.h"
 #include "audio_policy_utils.h"
 #include "audio_server_proxy.h"
+#include "i_hpae_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -32,6 +33,9 @@ const int32_t DATA_LINK_CONNECTING = 10;
 const int32_t DATA_LINK_CONNECTED = 11;
 const int32_t CONNECTION_TIMEOUT_IN_MS = 1000; // 1000ms
 const int32_t SESSION_ID_INVALID = 0;
+std::string OFFLOAD_STRING = "offload";
+std::string MULTICH_STRING = "multichannel";
+std::string PRIMARY_STRING = "primary";
 
 void AudioA2dpOffloadManager::OnA2dpPlayingStateChanged(const std::string &deviceAddress, int32_t playingState)
 {
@@ -90,6 +94,9 @@ void AudioA2dpOffloadManager::ConnectA2dpOffload(const std::string &deviceAddres
         return;
     }
 
+    HPAE::IHpaeManager::GetHpaeManager().SuspendAudioDevice(OFFLOAD_STRING, true);
+    HPAE::IHpaeManager::GetHpaeManager().SuspendAudioDevice(MULTICH_STRING, true);
+    HPAE::IHpaeManager::GetHpaeManager().SuspendAudioDevice(PRIMARY_STRING, true);
     std::thread switchThread(&AudioA2dpOffloadManager::WaitForConnectionCompleted, this);
     switchThread.detach();
     AUDIO_INFO_LOG("state change from %{public}d to %{public}d",
@@ -116,6 +123,9 @@ void AudioA2dpOffloadManager::WaitForConnectionCompleted()
         }
         std::vector<int32_t>().swap(connectionTriggerSessionIds_);
     }
+    HPAE::IHpaeManager::GetHpaeManager().SuspendAudioDevice(OFFLOAD_STRING, false);
+    HPAE::IHpaeManager::GetHpaeManager().SuspendAudioDevice(MULTICH_STRING, false);
+    HPAE::IHpaeManager::GetHpaeManager().SuspendAudioDevice(PRIMARY_STRING, false);
     waitLock.unlock();
     return;
 }

@@ -15,7 +15,7 @@
 
 #ifndef AUDIO_SUITE_EQ_NODE_H
 #define AUDIO_SUITE_EQ_NODE_H
-#define EQUALIZER_BANDS_NUM (10)
+#define RESAMPLE_QUALITY (5)
 
 #include <vector>
 #include <string>
@@ -49,10 +49,6 @@ public:
     bool SetEqMode(EqualizerMode type);
     int32_t SetOptions(std::string name, std::string value) override;
     std::shared_ptr<AudioSuiteEqAlgoInterfaceImpl> eqAlgoInterfaceImpl_;
-    AudioSuitePcmBuffer outPcmBuffer_;
-    std::vector<uint8_t *> tmpin;
-    std::vector<uint8_t *> tmpout;
-    std::string eqValue;
 
 protected:
     AudioSuitePcmBuffer *SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs) override;
@@ -65,6 +61,12 @@ private:
     int32_t CopyBuffer(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer);
     int32_t DoChannelConvert(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer);
     int32_t DoResample(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer);
+    std::vector<uint8_t> eqInputDataBuffer_;
+    std::vector<uint8_t> eqOutputDataBuffer_;
+    AudioSuitePcmBuffer outPcmBuffer_;
+    std::vector<uint8_t *> tmpin_;
+    std::vector<uint8_t *> tmpout_;
+    std::string eqValue_;
 };
 
 }  // namespace AudioSuite

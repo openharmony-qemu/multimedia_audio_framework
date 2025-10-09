@@ -26,6 +26,7 @@
 #include "accesstoken_kit.h"
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
+#include "audio_bundle_manager.h"
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 #include "input_manager.h"
@@ -482,6 +483,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_012, TestSize.Level1)
     int32_t strategy = 0;
     auto policyServerTest = GetPolicyServerUnitTest();
     EXPECT_EQ(policyServerTest->ActivateAudioSession(strategy), SUCCESS);
+    EXPECT_EQ(policyServerTest->DeactivateAudioSession(), SUCCESS);
 }
 
 /**
@@ -3709,6 +3711,21 @@ HWTEST(AudioPolicyUnitTest, CheckAndGetApiVersion_001, TestSize.Level1)
     deviceDescs.push_back(desc);
     apiVersion = server->CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
     EXPECT_EQ(apiVersion, 0);
+}
+
+/**
+* @tc.name  : Test GetBundleNameandGetBundleInfo.
+* @tc.number: GetBundleNameandGetBundleInfo_001
+* @tc.desc  : GetBundleNameandGetBundleInfo.
+*/
+HWTEST(AudioPolicyUnitTest, GetBundleNameandGetBundleInfo_001, TestSize.Level1)
+{
+    std::string callerName = AudioBundleManager::GetBundleName();
+    EXPECT_EQ(callerName, "");
+    AppExecFwk::BundleInfo bundleInfo = AudioBundleManager::GetBundleInfo();
+    bundleInfo = AudioBundleManager::GetBundleInfo();
+    callerName = AudioBundleManager::GetBundleName();
+    EXPECT_EQ(callerName, "");
 }
 } // AudioStandard
 } // OHOS

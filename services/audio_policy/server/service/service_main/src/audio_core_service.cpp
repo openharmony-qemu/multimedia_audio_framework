@@ -168,8 +168,14 @@ void AudioCoreService::FetchOutputDupDevice(std::string caller, uint32_t session
     streamDesc->oldDupDeviceDescs_ = streamDesc->newDupDeviceDescs_;
     streamDesc->newDupDeviceDescs_ =
         audioRouterCenter_.FetchDupDevices(info);
-    HILOG_COMM_INFO("[DeviceFetchInfo] dup device %{public}s for stream %{public}d",
+    AUDIO_INFO_LOG("[DeviceFetchInfo] dup device %{public}s for stream %{public}d",
         streamDesc->GetNewDupDevicesTypeString().c_str(), sessionId);
+
+    UpdateDupDeviceOutputRoute(streamDesc);
+
+    if (audioPolicyServerHandler_ != nullptr && IsDupDeviceChange(streamDesc)) {
+        audioPolicyServerHandler_->SendPreferredOutputDeviceUpdated();
+    }
 }
 
 int32_t AudioCoreService::CreateRendererClient(
@@ -181,6 +187,9 @@ int32_t AudioCoreService::CreateRendererClient(
         sessionId = streamDesc->sessionId_;
         AUDIO_INFO_LOG("Generate session id %{public}u for stream", sessionId);
     }
+
+    ClientTypeManager::GetInstance()->GetAndSaveClientType(GetRealUid(streamDesc),
+        AudioBundleManager::GetBundleNameFromUid(GetRealUid(streamDesc)));
 
     UpdateStreamDevicesForCreate(streamDesc, "CreateRendererClient");
     // Modem stream need special process, because there are no real hdi output or input in fwk.
@@ -206,8 +215,7 @@ int32_t AudioCoreService::CreateRendererClient(
     CHECK_AND_RETURN_RET(bluetoothFetchResult == BLUETOOTH_FETCH_RESULT_DEFAULT, ERR_OPERATION_FAILED);
 
     UpdatePlaybackStreamFlag(streamDesc, true);
-    AUDIO_INFO_LOG("Target audioFlag 0x%{public}x for stream %{public}d",
-        streamDesc->audioFlag_, sessionId);
+    AUDIO_INFO_LOG("Target audioFlag 0x%{public}x for stream %{public}d", streamDesc->audioFlag_, sessionId);
 
     // Fetch pipe
     audioActiveDevice_.UpdateStreamDeviceMap("CreateRendererClient");
@@ -317,7 +325,7 @@ void AudioCoreService::WriteIncorrectSelectBTSPPEvent(int32_t clientUID, SourceT
         "STREAM_TYPE", sourceType);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "write event fail: INCORRECT_SELECT_BT_SPP_DEVICE, ret = %{public}d", ret);
 }
-    
+
 bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
     Trace trace("IsStreamSupportMultiChannel");
@@ -547,10 +555,8 @@ void AudioCoreService::CheckForRemoteDeviceState(std::shared_ptr<AudioDeviceDesc
 
 int32_t AudioCoreService::StartClient(uint32_t sessionId)
 {
-    if (pipeManager_->IsModemCommunicationIdExist(sessionId)) {
-        AUDIO_INFO_LOG("Modem communication ring, directly return");
-        return SUCCESS;
-    }
+    CHECK_AND_RETURN_RET_LOG(!pipeManager_->IsModemCommunicationIdExist(sessionId), SUCCESS,
+        "Modem communication ring, directly return");
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_NULL_POINTER, "Cannot find session %{public}u", sessionId);
@@ -599,7 +605,8 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         streamCollector_.UpdateCapturerDeviceInfo(deviceDesc);
     }
     streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
-    sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc);
+    bool isGameApp = ClientTypeManager::GetInstance()->GetClientTypeByUid(GetRealUid(streamDesc)) != CLIENT_TYPE_GAME;
+    sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc, false, isGameApp);
 
     CheckForRemoteDeviceState(deviceDesc);
     return SUCCESS;
@@ -613,6 +620,7 @@ int32_t AudioCoreService::PauseClient(uint32_t sessionId)
         RecordDeviceInfo info {.uid_ = GetRealUid(streamDesc)};
         audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::STOP_CLIENT, info);
     }
+    ForceRemoveSleStreamType(streamDesc);
     return SUCCESS;
 }
 
@@ -624,6 +632,7 @@ int32_t AudioCoreService::StopClient(uint32_t sessionId)
         RecordDeviceInfo info {.uid_ = GetRealUid(streamDesc)};
         audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::STOP_CLIENT, info);
     }
+    ForceRemoveSleStreamType(streamDesc);
     return SUCCESS;
 }
 
@@ -631,9 +640,8 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
 {
     if (pipeManager_->IsModemCommunicationIdExist(sessionId)) {
         AUDIO_INFO_LOG("Modem communication, sessionId %{public}u", sessionId);
-        bool isRemoved = true;
         sleAudioDeviceManager_.UpdateSleStreamTypeCount(pipeManager_->GetModemCommunicationStreamDescById(sessionId),
-            isRemoved);
+            true);
         pipeManager_->RemoveModemCommunicationId(sessionId);
         return SUCCESS;
     }
@@ -642,6 +650,7 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
         RecordDeviceInfo info {.uid_ = GetRealUid(streamDesc)};
         audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::RELEASE_CLIENT, info);
     }
+    ForceRemoveSleStreamType(streamDesc);
     pipeManager_->RemoveClient(sessionId);
     audioOffloadStream_.UnsetOffloadStatus(sessionId);
     RemoveUnusedPipe();
@@ -1589,8 +1598,9 @@ int32_t AudioCoreService::SetRendererTarget(RenderTarget target, RenderTarget la
 
 int32_t AudioCoreService::StartInjection(uint32_t streamId)
 {
+    bool isConnected = audioInjectorPolicy_.GetIsConnected();
     CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERR_NULL_POINTER, "pipeManager_ is null");
-    if (pipeManager_->IsCaptureVoipCall() == NO_VOIP) {
+    if (!isConnected && pipeManager_->IsCaptureVoipCall() == NO_VOIP) {
         return ERR_ILLEGAL_STATE;
     }
     int32_t ret = ERROR;
@@ -1604,6 +1614,16 @@ int32_t AudioCoreService::StartInjection(uint32_t streamId)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "move stream in failed");
     audioInjectorPolicy_.AddStreamDescriptor(streamId, streamDesc);
     return SUCCESS;
+}
+
+void AudioCoreService::RemoveIdForInjector(uint32_t streamId)
+{
+    audioInjectorPolicy_.RemoveStreamDescriptor(streamId);
+}
+
+void AudioCoreService::ReleaseCaptureInjector(uint32_t streamId)
+{
+    audioInjectorPolicy_.ReleaseCaptureInjector(streamId);
 }
 
 int32_t AudioCoreService::A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,

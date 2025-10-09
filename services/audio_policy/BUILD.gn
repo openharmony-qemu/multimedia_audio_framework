@@ -81,6 +81,7 @@ config("audio_policy_public_config") {
     "../audio_service/client/include",
     "../audio_service/common/include",
     "../audio_service/common/include/dfx",
+    "../audio_service/server/include",
     "../audio_engine/manager/include",
     "../../frameworks/native/audioinnercall/include",
     "../../frameworks/native/audiorenderer/include",
@@ -388,7 +389,6 @@ audio_ohos_library("audio_policy_service") {
     "window_manager:session_manager_lite",
     "window_manager:libwm_lite",
     "init:libbeget_proxy",
-    "window_manager:libwm",
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]

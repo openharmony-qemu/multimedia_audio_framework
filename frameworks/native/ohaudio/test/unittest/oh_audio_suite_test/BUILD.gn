@@ -48,7 +48,10 @@ ohos_unittest("audio_oh_audio_suite_unit_test") {
     ":audio_ohaudio_config",
   ]
 
-  sources = [ "src/oh_audio_suite_unit_test.cpp" ]
+  sources = [
+    "src/oh_audio_suite_engine_test.cpp",
+    "src/oh_audio_suite_node_builder_test.cpp",
+  ]
 
   deps = [
     "${audio_framework_root}/frameworks/native/ohaudio:ohaudio",

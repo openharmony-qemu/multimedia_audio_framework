@@ -315,11 +315,11 @@ AudioSuitePcmBuffer AudioSuiteAissNode::channelConvert(AudioSuitePcmBuffer input
     uint32_t channelConvertOutputBytes = resampleOutputBytes * DEFAULT_CHANNEL_COUNT / input.GetChannelCount();
     AudioChannelInfo inChannelInfo = {input.GetChannelLayout(), input.GetChannelCount()};
     int32_t ret = SetChannelConvertProcessParam(inChannelInfo, audioFormat_.audioChannelInfo, SAMPLE_F32LE, true);
-    CHECK_AND_RETURN_RET_LOG(ret == HPAE::DMIX_ERR_SUCCESS, input,
+    CHECK_AND_RETURN_RET_LOG(ret == HPAE::MIX_ERR_SUCCESS, input,
         "Set Channel convert processParam failed with error code %{public}d", ret);
     ret = ChannelConvertProcess(input.GetFrameLen(), input.GetPcmDataBuffer(),
         formatOutputBytes, output.GetPcmDataBuffer(), channelConvertOutputBytes);
-    CHECK_AND_RETURN_RET_LOG(ret == HPAE::DMIX_ERR_SUCCESS, input,
+    CHECK_AND_RETURN_RET_LOG(ret == HPAE::MIX_ERR_SUCCESS, input,
         "Channel convert process failed with error code %{public}d", ret);
     AUDIO_INFO_LOG("AudioSuiteAissNode channelConvert success");
     return output;

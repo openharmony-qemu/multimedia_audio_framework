@@ -234,14 +234,30 @@ int32_t HpaeOutputCluster::SetPriPaPower(void)
     return hpaeSinkOutputNode_->RenderSinkSetPriPaPower();
 }
 
-uint32_t HpaeOutputCluster::GetLatency()
+uint32_t HpaeOutputCluster::GetHdiLatency()
 {
     return hpaeSinkOutputNode_->GetLatency();
+}
+
+uint64_t HpaeOutputCluster::GetLatency(HpaeProcessorType sceneType)
+{
+    uint64_t latency = 0;
+
+    latency += SafeGetMap(sceneConverterMap_, sceneType) ? sceneConverterMap_[sceneType]->GetLatency() : 0;
+
+    latency += mixerNode_ ? mixerNode_->GetLatency() : 0;
+
+    return latency;
 }
 
 int32_t HpaeOutputCluster::SetSyncId(int32_t syncId)
 {
     return hpaeSinkOutputNode_->RenderSinkSetSyncId(syncId);
+}
+
+bool HpaeOutputCluster::IsProcessBypassed()
+{
+    return hpaeSinkOutputNode_->IsProcessBypassed();
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -110,10 +110,6 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
     if (itSV != systemVolume_.end()) {
         volumes->volumeSystem = itSV->second.totalVolume_;
         volumeLevel = itSV->second.volumeLevel_;
-        if ((streamType == STREAM_VOICE_CALL || streamType == STREAM_VOICE_COMMUNICATION) &&
-            IsVgsVolumeSupported() && volumes->volumeSystem > 0.0f) {
-            volumes->volumeSystem = 1.0f;
-        }
     } else {
         AUDIO_ERR_LOG("no system volume, volumeType:%{public}d deviceClass%{public}s", volumeType, deviceClass.c_str());
     }
@@ -661,6 +657,12 @@ inline bool AudioVolume::IsVgsVolumeSupported() const
 void AudioVolume::SetScoActive(bool isActive)
 {
     isScoActive_ = isActive;
+}
+
+DeviceType AudioVolume::GetCurrentActiveDevice()
+{
+    AUDIO_INFO_LOG("GetCurrentActiveDevice %{public}d", currentActiveDevice_);
+    return currentActiveDevice_;
 }
 
 void AudioVolume::SetOffloadType(uint32_t streamIndex, int32_t offloadType)

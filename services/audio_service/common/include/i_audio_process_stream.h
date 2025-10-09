@@ -26,22 +26,18 @@ namespace AudioStandard {
 struct AudioCaptureDataProcParams {
     AudioCaptureDataProcParams(
         const BufferDesc &readBuf,
-        std::shared_ptr<OHAudioBufferBase> procBuf,
         std::vector<uint8_t> &captureConvBuffer,
         std::vector<uint8_t> &rendererConvBuffer
     ) : readBuf_(readBuf),
-        procBuf_(std::move(procBuf)),
         captureConvBuffer_(captureConvBuffer),
         rendererConvBuffer_(rendererConvBuffer)
     {
     }
 
     bool isConvertReadFormat_ = false;
-    uint32_t dstSpanSizeInframe_ = 0;
     AudioSamplingRate srcSamplingRate = SAMPLE_RATE_48000;
 
     const BufferDesc &readBuf_;
-    std::shared_ptr<OHAudioBufferBase> procBuf_;
     std::vector<uint8_t> &captureConvBuffer_;
     std::vector<uint8_t> &rendererConvBuffer_;
 };
@@ -99,6 +95,7 @@ public:
     virtual StreamStatus GetStreamStatus() {return STREAM_IDEL;}
     virtual int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) = 0;
     virtual int32_t GetAudioHapticsSyncId() = 0;
+    virtual void UpdateStreamInfo() {}
 
     virtual int32_t WriteToSpecialProcBuf(AudioCaptureDataProcParams &procParams)
     {

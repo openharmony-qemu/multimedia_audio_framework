@@ -2049,6 +2049,17 @@ struct FetchDeviceInfo : public Parcelable {
         caller = parcel.ReadString();
     }
 };
+
+/**
+ * remote device splite stream enum
+ */
+enum HpaeSplitStreamType {
+    STREAM_TYPE_DEFAULT = 0,
+    STREAM_TYPE_MEDIA = 1,
+    STREAM_TYPE_COMMUNICATION = 2,
+    STREAM_TYPE_NAVIGATION = 13
+};
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H

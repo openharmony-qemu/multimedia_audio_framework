@@ -224,8 +224,11 @@ HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorRendererManagerTest, TestS
     std::vector<SinkInput> vct = hpaeRendererManager->GetAllSinkInputsInfo();
     EXPECT_EQ(vct.size(), 0);
     EXPECT_EQ(hpaeRendererManager->RefreshProcessClusterByDevice(), SUCCESS);
-    EXPECT_EQ(hpaeRendererManager->DumpSinkInfo(), SUCCESS);
-    EXPECT_EQ(hpaeRendererManager->GetDeviceHDFDumpInfo() == "", true);
+    EXPECT_NE(hpaeRendererManager->DumpSinkInfo(), SUCCESS);
+    std::string config = TransFormatFromEnumToString(sinkInfo.format) + " " +
+        std::to_string(sinkInfo.channels) + "ch " +
+        std::to_string(sinkInfo.samplingRate) + "Hz";
+    EXPECT_EQ(hpaeRendererManager->GetDeviceHDFDumpInfo() == config, true);
     EXPECT_EQ(hpaeRendererManager->SetLoudnessGain(streamInfo.sessionId, 0.f), SUCCESS);
 
     EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
@@ -256,6 +259,7 @@ HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorRendererManagerReloadTest,
     EXPECT_EQ(hpaeRendererManager->ReloadRenderManager(sinkInfo), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    EXPECT_EQ(hpaeRendererManager->DumpSinkInfo(), SUCCESS);
 
     HpaeStreamInfo streamInfo;
     streamInfo.channels = STEREO;

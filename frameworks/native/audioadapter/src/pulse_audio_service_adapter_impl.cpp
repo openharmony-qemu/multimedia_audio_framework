@@ -956,16 +956,14 @@ void PulseAudioServiceAdapterImpl::PaSubscribeCb(pa_context *c, pa_subscription_
     }
 }
 
-int32_t PulseAudioServiceAdapterImpl::AddCaptureInjector(const uint32_t &sinkPortIndex,
+void PulseAudioServiceAdapterImpl::AddCaptureInjector(const uint32_t &sinkPortIndex,
     const uint32_t &sourcePortIndex, const SourceType &sourceType)
 {
-    return SUCCESS;
 }
 
-int32_t PulseAudioServiceAdapterImpl::RemoveCaptureInjector(const uint32_t &sinkPortIndex,
+void PulseAudioServiceAdapterImpl::RemoveCaptureInjector(const uint32_t &sinkPortIndex,
     const uint32_t &sourcePortIndex, const SourceType &sourceType)
 {
-    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

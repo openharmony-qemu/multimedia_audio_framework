@@ -69,15 +69,6 @@ DeviceStatusCallbackImpl::DeviceStatusCallbackImpl()
     AUDIO_INFO_LOG("Entered %{public}s", __func__);
 }
 
-void DeviceStatusCallbackImpl::OnDeviceChanged(const DistributedHardware::DmDeviceBasicInfo &dmDeviceBasicInfo)
-{
-    std::string strDeviceName(dmDeviceBasicInfo.deviceName);
-    AUDIO_INFO_LOG("OnDeviceChanged");
-
-    //OnDeviceChanged listeren did not report networkId information
-    AudioConnectedDevice::GetInstance().SetDisplayName(strDeviceName, false);
-}
-
 void DeviceStatusCallbackImpl::OnDeviceChanged(const DistributedHardware::DmDeviceInfo &dmDeviceInfo)
 {
     AUDIO_INFO_LOG("Entry. dmDeviceType=%{public}d, networkId=%{public}s",
@@ -85,7 +76,13 @@ void DeviceStatusCallbackImpl::OnDeviceChanged(const DistributedHardware::DmDevi
     auto dmDev = ParseDmDevice(dmDeviceInfo);
     if (!dmDev.deviceName_.empty()) {
         AudioConnectedDevice::GetInstance().UpdateDmDeviceMap(std::move(dmDev), true);
+        return;
     }
+    DmDevice dmDevCommon {};
+    dmDevCommon.deviceName_ = dmDeviceInfo.deviceName;
+    dmDevCommon.networkId_ = dmDeviceInfo.networkId;
+    dmDevCommon.dmDeviceType_ = dmDeviceInfo.deviceTypeId;
+    AudioConnectedDevice::GetInstance().UpdateDmDeviceMap(std::move(dmDevCommon), true);
 }
 
 void DeviceStatusCallbackImpl::OnDeviceOnline(const DistributedHardware::DmDeviceInfo &dmDeviceInfo)
@@ -95,7 +92,13 @@ void DeviceStatusCallbackImpl::OnDeviceOnline(const DistributedHardware::DmDevic
     auto dmDev = ParseDmDevice(dmDeviceInfo);
     if (!dmDev.deviceName_.empty()) {
         AudioConnectedDevice::GetInstance().UpdateDmDeviceMap(std::move(dmDev), true);
+        return;
     }
+    DmDevice dmDevCommon {};
+    dmDevCommon.deviceName_ = dmDeviceInfo.deviceName;
+    dmDevCommon.networkId_ = dmDeviceInfo.networkId;
+    dmDevCommon.dmDeviceType_ = dmDeviceInfo.deviceTypeId;
+    AudioConnectedDevice::GetInstance().UpdateDmDeviceMap(std::move(dmDevCommon), true);
 }
 
 void DeviceStatusCallbackImpl::OnDeviceOffline(const DistributedHardware::DmDeviceInfo &dmDeviceInfo)

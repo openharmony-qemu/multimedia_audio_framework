@@ -13,21 +13,26 @@
  * limitations under the License.
  */
 
-#ifndef OH_AUDIO_SUITE_UNIT_TEST_H
-#define OH_AUDIO_SUITE_UNIT_TEST_H
-
+#ifndef AUDIO_VOLUME_UTILS_UNIT_TEST_H
+#define AUDIO_VOLUME_UTILS_UNIT_TEST_H
+ 
 #include "gtest/gtest.h"
-
+#include "audio_volume_utils.h"
+ 
 namespace OHOS {
 namespace AudioStandard {
-class OHAudioSuiteUnitTest : public testing::Test {
+ 
+class AudioVolumeUtilsUnitTest : public testing::Test {
 public:
+    // SetUpTestCase: Called before all test cases
     static void SetUpTestCase(void);
+    // TearDownTestCase: Called after all test case
     static void TearDownTestCase(void);
+    // SetUp: Called before each test cases
     void SetUp(void);
+    // TearDown: Called after each test cases
     void TearDown(void);
 };
 } // namespace AudioStandard
 } // namespace OHOS
-
-#endif // OH_AUDIO_SUITE_UNIT_TEST_H
+#endif // AUDIO_VOLUME_UTILS_UNIT_TEST_H

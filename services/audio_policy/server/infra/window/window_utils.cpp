@@ -20,7 +20,6 @@
 #include "audio_log.h"
 #include "audio_errors.h"
 #include "session_manager_lite.h"
-#include "window_manager.h"
 #include "window_manager_lite.h"
 
 namespace OHOS {
@@ -45,7 +44,7 @@ int32_t WindowUtils::CheckVirtualDisplay(const int32_t pid, bool &isVirtualDispl
         }
     }
     std::unordered_map<uint64_t, Rosen::DisplayId> windowDisplayIdMap;
-    auto res = Rosen::WindowManager::GetInstance().GetDisplayIdByWindowId(windowIds, windowDisplayIdMap);
+    auto res = Rosen::WindowManagerLite::GetInstance().GetDisplayIdByWindowId(windowIds, windowDisplayIdMap);
     if (res != Rosen::WMError::WM_OK) {
         AUDIO_INFO_LOG("GetDisplayIdByWindowId failed, ret: %{public}d", res);
         return ERROR;

@@ -66,11 +66,9 @@ namespace {
 
 std::string AudioEndpoint::GenerateEndpointKey(AudioDeviceDescriptor &deviceInfo, int32_t endpointFlag)
 {
-    std::string key = deviceInfo.networkId_;
-    if (deviceInfo.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        // blueTooth need extra information
-        key = key + "_" +  std::to_string(deviceInfo.deviceId_) + "_" + std::to_string(deviceInfo.a2dpOffloadFlag_);
-    }
+    bool isA2dp = deviceInfo.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && deviceInfo.a2dpOffloadFlag_ != A2DP_OFFLOAD;
+    // All primary sinks share one endpoint
+    std::string key = deviceInfo.networkId_ + "_"  + (isA2dp ? std::to_string(deviceInfo.deviceId_) : "0");
     return key + "_" + std::to_string(deviceInfo.deviceRole_) + "_" + std::to_string(endpointFlag);
 }
 
@@ -589,7 +587,7 @@ bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo, AudioSt
     }
 
     Volume vol = {true, 1.0f, 0};
-    DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
+    DeviceType deviceType = AudioVolume::GetInstance()->GetCurrentActiveDevice();
     if ((streamType == STREAM_VOICE_COMMUNICATION || streamType == STREAM_VOICE_CALL) &&
         endpointType_ == TYPE_VOIP_MMAP) {
         PolicyHandler::GetInstance().GetSharedVolume(STREAM_VOICE_CALL, deviceType, vol);
@@ -1444,7 +1442,8 @@ bool AudioEndpointInner::PrepareRingBuffer(size_t i, uint64_t curRead, RingBuffe
     if (ringBuffer.dataLength > spanSizeInByte) {
         ringBuffer.dataLength = spanSizeInByte;
     }
-    
+
+    processList_[i]->UpdateStreamInfo();
     return true;
 }
 
@@ -1676,7 +1675,6 @@ void AudioEndpointInner::CheckUpdateState(char *frame, uint64_t replyBytes)
             renderFrameNum_ = 0;
             if (last10FrameStartTime_ > lastGetMaxAmplitudeTime_) {
                 startUpdate_ = false;
-                maxAmplitude_ = 0;
             }
         }
     }
@@ -1927,10 +1925,8 @@ void AudioEndpointInner::WriteToProcessBuffers(const BufferDesc &readBuf)
             processList_[i] != nullptr, "process buffer %{public}zu is null.", i);
         CHECK_AND_CONTINUE(processList_[i]->GetStreamInServerStatus() == STREAM_RUNNING);
 
-        AudioCaptureDataProcParams procParams(readBuf, processBufferList_[i],
-                                              captureConvBuffer_, rendererConvBuffer_);
+        AudioCaptureDataProcParams procParams(readBuf, captureConvBuffer_, rendererConvBuffer_);
         procParams.isConvertReadFormat_ = isConvertReadFormat_;
-        procParams.dstSpanSizeInframe_ = dstSpanSizeInframe_;
         procParams.srcSamplingRate = dstStreamInfo_.samplingRate;
         int32_t ret = processList_[i]->WriteToSpecialProcBuf(procParams);
         CHECK_AND_CONTINUE_LOG(ret == SUCCESS,

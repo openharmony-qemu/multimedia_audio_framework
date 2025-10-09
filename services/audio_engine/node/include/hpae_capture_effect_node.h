@@ -47,6 +47,7 @@ public:
         HpaeSourceBufferType type = HPAE_SOURCE_BUFFER_TYPE_MIC);
     virtual int32_t CaptureEffectCreate(uint64_t sceneKeyCode, CaptureEffectAttr attr);
     int32_t CaptureEffectRelease(uint64_t sceneKeyCode);
+    uint64_t GetLatency(uint32_t sessionId = 0) override;
 protected:
     HpaePcmBuffer *SignalProcess(const std::vector<HpaePcmBuffer*> &inputs) override;
 private:

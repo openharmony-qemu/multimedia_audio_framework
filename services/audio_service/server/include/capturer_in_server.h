@@ -90,6 +90,7 @@ private:
     bool needCheckBackground_ = false;
     bool isMicIndicatorOn_ = false;
 
+    std::mutex filterConfigLock_;
     AudioPlaybackCaptureConfig filterConfig_;
     std::weak_ptr<IStreamListener> streamListener_;
     AudioProcessConfig processConfig_;

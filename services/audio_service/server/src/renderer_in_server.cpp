@@ -45,6 +45,7 @@
 #include "i_hpae_manager.h"
 #include "stream_dfx_manager.h"
 #include "audio_stream_enum.h"
+#include "audio_stream_concurrency_detector.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -91,6 +92,22 @@ RendererInServer::~RendererInServer()
     AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
 }
 
+void RendererInServer::UpdateStreamInfo()
+{
+    CHECK_AND_RETURN_LOG(checkCount_ <= audioCheckFreq_, "the stream had been already checked");
+
+    if ((audioCheckFreq_ == checkCount_) || (checkCount_ == 0)) {
+        AudioStreamConcurrencyDetector::GetInstance().UpdateWriteTime(processConfig_, streamIndex_);
+    }
+    checkCount_++;
+}
+
+void RendererInServer::RemoveStreamInfo()
+{
+    AudioStreamConcurrencyDetector::GetInstance().RemoveStream(processConfig_, streamIndex_);
+    checkCount_ = 0;
+}
+
 int32_t RendererInServer::ConfigServerBuffer()
 {
     if (audioServerBuffer_ != nullptr) {
@@ -126,6 +143,8 @@ int32_t RendererInServer::ConfigServerBuffer()
         audioServerBuffer_->GetDataSize());
     int32_t ret = InitBufferStatus();
     AUDIO_DEBUG_LOG("Clear data buffer, ret:%{public}d", ret);
+    uint32_t spanTime = spanSizeInFrame_ * AUDIO_MS_PER_SECOND / processConfig_.streamInfo.samplingRate;
+    audioCheckFreq_ = threshold * AUDIO_MS_PER_SECOND / spanTime;
 
     isBufferConfiged_ = true;
     isInited_ = true;
@@ -743,6 +762,14 @@ void RendererInServer::ProcessFadeOutIfNeeded(RingBufferWrapper& ringBufferDesc,
     }
 }
 
+void RendererInServer::OnWriteDataFinish()
+{
+    standByCounter_ = 0;
+    lastWriteTime_ = ClockTime::GetCurNano();
+
+    UpdateStreamInfo();
+}
+
 int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
 {
     size_t requestDataInFrame = requestDataLen / byteSizePerFrame_;
@@ -795,8 +822,9 @@ int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
     } else {
         Trace trace3("RendererInServer::WriteData GetReadbuffer failed");
     }
-    standByCounter_ = 0;
-    lastWriteTime_ = ClockTime::GetCurNano();
+
+    OnWriteDataFinish();
+
     return SUCCESS;
 }
 
@@ -898,6 +926,8 @@ int32_t RendererInServer::OnWriteData(size_t length)
     if (mayNeedForceWrite) {
         return ERR_RENDERER_IN_SERVER_UNDERRUN;
     }
+
+    UpdateStreamInfo();
 
     return SUCCESS;
 }
@@ -1083,6 +1113,15 @@ void RendererInServer::RecordStandbyTime(bool isStandby, bool isStandbyStart)
     audioStreamChecker_->RecordStandbyTime(isStandbyStart);
 }
 
+void RendererInServer::PauseInner()
+{
+    AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(streamIndex_);
+    XperfAdapter::GetInstance().ReportStateChangeEventIfNeed(XPERF_EVENT_STOP, processConfig_.rendererInfo.streamUsage,
+        streamIndex_, processConfig_.appInfo.appPid, processConfig_.appInfo.appUid);
+
+    RemoveStreamInfo();
+}
+
 int32_t RendererInServer::Pause()
 {
     AUDIO_INFO_LOG("Pause.");
@@ -1136,10 +1175,8 @@ int32_t RendererInServer::Pause()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_PAUSE);
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_PAUSE, isStandbyTmp);
-    StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
-    AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(streamIndex_);
-    XperfAdapter::GetInstance().ReportStateChangeEventIfNeed(XPERF_EVENT_STOP, processConfig_.rendererInfo.streamUsage,
-        streamIndex_, processConfig_.appInfo.appPid, processConfig_.appInfo.appUid);
+    PauseInner();
+
     return SUCCESS;
 }
 
@@ -1272,6 +1309,9 @@ int32_t RendererInServer::Stop()
     XperfAdapter::GetInstance().ReportStateChangeEventIfNeed(XPERF_EVENT_STOP,
         processConfig_.rendererInfo.streamUsage, streamIndex_, processConfig_.appInfo.appPid,
         processConfig_.appInfo.appUid);
+
+    RemoveStreamInfo();
+
     return ret;
 }
 
@@ -1358,6 +1398,9 @@ int32_t RendererInServer::Release(bool isSwitchStream)
         status_ = I_STATUS_INVALID;
         return ret;
     }
+    if (lastTarget_ == INJECT_TO_VOICE_COMMUNICATION_CAPTURE) {
+        CoreServiceHandler::GetInstance().RemoveIdForInjector(streamIndex_);
+    }
     if (status_ != I_STATUS_STOPPING &&
         status_ != I_STATUS_STOPPED) {
         HandleOperationStopped(RENDERER_STAGE_STOP_BY_RELEASE);
@@ -1370,6 +1413,9 @@ int32_t RendererInServer::Release(bool isSwitchStream)
     XperfAdapter::GetInstance().ReportStateChangeEventIfNeed(XPERF_EVENT_RELEASE,
         processConfig_.rendererInfo.streamUsage, streamIndex_, processConfig_.appInfo.appPid,
         processConfig_.appInfo.appUid);
+
+    RemoveStreamInfo();
+
     return SUCCESS;
 }
 
@@ -2152,9 +2198,36 @@ static std::string GetManagerTypeStr(ManagerType type)
 
 bool RendererInServer::Dump(std::string &dumpString)
 {
+    bool ret = false;
+    ret = DumpNormal(dumpString);
+    CHECK_AND_RETURN_RET_LOG(ret == false, true, "DumpNormal");
+    ret = DumpVoipAndDirect(dumpString);
+    CHECK_AND_RETURN_RET_LOG(ret == false, true, "DumpVoipAndDirect");
+    return ret;
+}
+
+bool RendererInServer::DumpNormal(std::string &dumpString)
+{
+    if (managerType_ != PLAYBACK) {
+        return false;
+    }
+    DumpStreamInfo(dumpString);
+    AppendFormat(dumpString, "  - stream type:%d\n", lastTarget_);
+    DumpStatusInfo(dumpString);
+    return true;
+}
+
+bool RendererInServer::DumpVoipAndDirect(std::string &dumpString)
+{
     if (managerType_ != DIRECT_PLAYBACK && managerType_ != VOIP_PLAYBACK) {
         return false;
     }
+    DumpStreamInfo(dumpString);
+    DumpStatusInfo(dumpString);
+    return true;
+}
+void RendererInServer::DumpStreamInfo(std::string &dumpString)
+{
     // dump audio stream info
     dumpString += "audio stream info:\n";
     AppendFormat(dumpString, "  - session id:%u\n", streamIndex_);
@@ -2166,7 +2239,10 @@ bool RendererInServer::Dump(std::string &dumpString)
     AppendFormat(dumpString, "  - format: %u\n", processConfig_.streamInfo.format);
     AppendFormat(dumpString, "  - device type: %u\n", processConfig_.deviceType);
     AppendFormat(dumpString, "  - sink type: %s\n", GetManagerTypeStr(managerType_).c_str());
-
+}
+    
+void RendererInServer::DumpStatusInfo(std::string &dumpString)
+{
     // dump status info
     AppendFormat(dumpString, "  - Current stream status: %s\n", GetStatusStr(status_.load()).c_str());
     if (audioServerBuffer_ != nullptr) {
@@ -2175,7 +2251,6 @@ bool RendererInServer::Dump(std::string &dumpString)
     }
 
     dumpString += "\n";
-    return true;
 }
 
 void RendererInServer::SetNonInterruptMute(const bool muteFlag)
