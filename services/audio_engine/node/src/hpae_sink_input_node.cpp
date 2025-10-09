@@ -105,7 +105,6 @@ int32_t HpaeSinkInputNode::GetDataFromSharedBuffer()
 
 bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
 {
-    inputAudioBuffer_.SetBufferBypass(false);
     auto nodeCallback = GetNodeStatusCallback().lock();
     if ((GetDeviceClass() == DEVICE_CLASS_OFFLOAD || GetDeviceClass() == DEVICE_CLASS_REMOTE_OFFLOAD) &&
         !offloadEnable_) {
@@ -137,7 +136,6 @@ bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
                 isDrain_ = false;
             }
             standbyCounter_++;
-            inputAudioBuffer_.SetBufferBypass(bypassOnUnderrun_);
         } else {
             standbyCounter_ = 0;
         }
@@ -337,11 +335,6 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
     };
     ClockTime::GetAllTimeStamp(streamInfo_.timestamp);
     return writeCallback->OnStreamData(streamInfo_);
-}
-
-void HpaeSinkInputNode::SetBypassOnUnderrun(bool bypassOnUnderrun)
-{
-    bypassOnUnderrun_ = bypassOnUnderrun;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

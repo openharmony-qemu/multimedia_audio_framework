@@ -144,11 +144,9 @@ private:
     void TriggerStreamState(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode> &node);
     void UpdateStreamProp(const std::shared_ptr<const HpaeNode> &sourceNode, const std::shared_ptr<HpaeNode> &dstNode);
     bool IsClusterDisConnected(HpaeProcessorType sceneType);
+    bool QueryOneStreamUnderrun();
 
 private:
-    void OneStreamEnableBypassOnUnderrun();
-    void SleepIfBypassOnUnderrun();
-    void ResetAllBypassFlags();
 
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;
     std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeProcessCluster>> sceneClusterMap_;
@@ -169,7 +167,6 @@ private:
     bool isNeedInitEffectBufferFlag_ = false;
 
     int64_t lastOnUnderrunTime_ = 0;
-    bool enableBypassOnUnderrun_ = true;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

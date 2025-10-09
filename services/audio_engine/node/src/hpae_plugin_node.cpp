@@ -36,15 +36,7 @@ void HpaePluginNode::DoProcess()
 {
     HpaePcmBuffer *tempOut = nullptr;
     std::vector<HpaePcmBuffer *>& preOutputs = inputStream_.ReadPreOutputData();
-    // reset all the time
-    silenceData_.SetBufferBypass(false);
     if (!preOutputs.empty()) {
-        if (preOutputs[0] && preOutputs[0]->IsBypass()) {
-            Trace trace("[sceneType:" + std::to_string(GetSceneType()) + "]" + GetNodeName() + "::DoProcess bypass");
-            silenceData_.SetBufferBypass(true);
-            outputStream_.WriteDataToOutput(&silenceData_);
-            return;
-        }
         if (enableProcess_) {
             tempOut = SignalProcess(preOutputs);
             outputStream_.WriteDataToOutput(tempOut);
