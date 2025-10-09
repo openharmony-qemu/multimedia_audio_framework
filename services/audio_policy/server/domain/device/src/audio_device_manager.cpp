@@ -338,7 +338,7 @@ bool AudioDeviceManager::HasConnectedA2dp()
             desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
             desc->connectState_ != VIRTUAL_CONNECTED;
     };
-
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     auto it = find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
     return it != connectedDevices_.end();
 }
