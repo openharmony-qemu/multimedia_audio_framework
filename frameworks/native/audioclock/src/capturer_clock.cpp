@@ -59,6 +59,8 @@ bool CapturerClock::GetTimeStampByPosition(uint64_t capturerPos, uint64_t& times
     if (position_ > capturerPos) {
         posDetla = position_ - capturerPos;
         tsDetla = posDetla * AUDIO_NS_PER_SECOND / capturerSampleRate_;
+        CHECK_AND_RETURN_RET_LOG(timestamp_ > tsDetla, false, "timestamp suboverflow timestamp_=%{public}" PRIu64
+                                    "tsDetla=%{public}" PRIu64, timestamp_, tsDetla);
         timestamp = timestamp_ - tsDetla;
     } else {
         posDetla = capturerPos - position_;
