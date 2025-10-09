@@ -990,7 +990,7 @@ void AudioEffectChainManager::SendAudioParamToHDI(
     CHECK_AND_RETURN_LOG(StringConverter(value, effectHdiInput_[1]),
         "convert invalid bufferSize: %{public}s", value.c_str());
     CHECK_AND_RETURN_LOG(audioEffectHdiParam_ != nullptr, "audioEffectHdiParam_ is nullptr");
-    if (audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, device) != SUCCESS) {
+    if (audioEffectHdiParam_->UpdateHdiState(effectHdiInput_) != SUCCESS) {
         AUDIO_WARNING_LOG("set hdi parameter failed for code %{public}d and value %{public}s", code, value.c_str());
     }
 }
