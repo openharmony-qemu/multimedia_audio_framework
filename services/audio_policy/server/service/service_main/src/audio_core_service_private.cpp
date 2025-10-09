@@ -138,7 +138,9 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
 
         // started stream need to mute when switch device
         if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
+#ifndef MUTE_SINK_DISABLE
             MuteSinkPortForSwitchDevice(streamDesc, reason);
+#endif
         }
         UpdatePlaybackStreamFlag(streamDesc, false);
     }

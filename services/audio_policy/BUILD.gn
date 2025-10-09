@@ -292,6 +292,10 @@ audio_ohos_library("audio_policy_service") {
   ]
 
   defines = []
+  if (!audio_framework_feature_mutesink_enable) {
+    defines += [ "MUTE_SINK_DISABLE" ]
+  }
+
   if (audio_framework_feature_wired_audio) {
     defines += [ "AUDIO_WIRED_DETECT" ]
     sources += [
