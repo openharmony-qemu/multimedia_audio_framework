@@ -334,15 +334,18 @@ MOVE_STREAM_EXCEPTION:
   ERROR_DESCRIPTION: {type: STRING, desc: error description}
 
 DESIGNATE_AUDIO_CAPTURE_DEVICE:
-  __BASE: {type: STATISTIC, level: CRITICAL, desc: designate  voice recognition audio capture device}
-  APP_NAME: {type: STRING, arrsize: 100, desc: application/process name}
-  STREAM_TYPE: {type: UINT8, arrsize: 100, desc: source type of audio capture stream}
-  DEVICE_TYPE: {type: UINT8, arrsize: 100, desc: audio device type}
+  __BASE: {type: STATISTIC, level: CRITICAL, desc: designate voice recognition audio capture device}
+  APP_NAME: {type: STRING, desc: application/process name}
+  STREAM_TYPE: {type: UINT8, desc: source type of audio capture stream}
+  DEVICE_TYPE: {type: UINT8, desc: audio device type}
+  ERROR_CODE: {type: UINT8, desc: error code}
 
-INCORRECT_SELECT_BT_SPP_DEVICE:
-  __BASE: {type: FAULT, level: CRITICAL, desc: incorrect selection of BT_SPP device during non-voice recognition}
-  APP_NAME: {type: STRING, arrsize: 100, desc: application/process name}
-  STREAM_TYPE: {type: UINT8, arrsize: 100, desc: source type of audio capture stream}
+MODIFY_CAPTURE_DEVICE_SPECIALLY:
+  __BASE: {type: STATISTIC, level: CRITICAL, desc: trigger special rule modify audio capture device}
+  APP_NAME: {type: STRING, desc: application or process name}
+  STREAM_TYPE: {type: UINT8, desc: source type of audio capture stream}
+  DEVICE_TYPE_BEFORE_CHANGE: {type: UINT8, desc: audio device type before change}
+  DEVICE_TYPE_AFTER_CHANGE: {type: UINT8, desc: audio device type after change}
 
 VOLUME_API_INVOKE:
   __BASE: {type: STATISTIC, level: CRITICAL, desc: Ivocation of volume-related APIs}

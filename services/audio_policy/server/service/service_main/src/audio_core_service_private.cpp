@@ -552,6 +552,7 @@ void AudioCoreService::UpdateInputDeviceWhenStopping(int32_t uid)
     std::vector<uint32_t> sessionIDSet = streamCollector_.GetAllCapturerSessionIDForUID(uid);
     for (const auto &sessionID : sessionIDSet) {
         audioDeviceManager_.RemoveSelectedInputDevice(sessionID);
+        audioDeviceManager_.RemovePreferredInputDevice(sessionID);
     }
     FetchInputDeviceAndRoute("UpdateInputDeviceWhenStopping");
 }

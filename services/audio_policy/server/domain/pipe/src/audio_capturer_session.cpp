@@ -239,7 +239,7 @@ bool AudioCapturerSession::HandleNormalInputPipes(const std::vector<std::shared_
 {
     AUDIO_INFO_LOG("normal input");
     for (const auto &pipe : pipeList) {
-        if (pipe == nullptr || pipe->pipeRole_ != PIPE_ROLE_INPUT) {
+        if (pipe == nullptr || pipe->pipeRole_ != PIPE_ROLE_INPUT || IsIndependentPipe(pipe)) {
             continue;
         }
 
@@ -263,6 +263,12 @@ bool AudioCapturerSession::HandleNormalInputPipes(const std::vector<std::shared_
     AUDIO_INFO_LOG("find ret: %{public}d, session: %{public}d, sourceType: %{public}d",
         static_cast<int32_t>(hasSession), runningSessionInfo.sessionId_, runningSessionInfo.capturerInfo_.sourceType);
     return hasSession;
+}
+
+bool AudioCapturerSession::IsIndependentPipe(const std::shared_ptr<AudioPipeInfo> &pipe)
+{
+    CHECK_AND_RETURN_RET_LOG(pipe != nullptr, false, "pipe is nullptr");
+    return pipe->adapterName_ == ADAPTER_TYPE_VA;
 }
 
 bool AudioCapturerSession::IsStreamValid(const std::shared_ptr<AudioStreamDescriptor> &stream)
@@ -368,6 +374,8 @@ int32_t AudioCapturerSession::ReloadCaptureSession(uint32_t sessionId, SessionOp
 
     SessionInfo targetSession = sessionWithNormalSourceType_[sessionId];
     bool findRunningSessionRet = FindRunningNormalSession(targetSessionId, runningSessionInfo);
+    CHECK_AND_RETURN_RET_LOG(!(runningSessionInfo.capturerInfo_.sourceType == SOURCE_TYPE_MIC &&
+        IsVirtualAudioRecognitionSession(sessionId)), ERROR, "skipping reload: va recognition stream detected");
     switch (operation) {
         case SESSION_OPERATION_START:
             if (findRunningSessionRet &&
@@ -403,6 +411,24 @@ int32_t AudioCapturerSession::ReloadCaptureSession(uint32_t sessionId, SessionOp
     audioEcManager_.SetOpenedNormalSourceSessionId(targetSessionId);
 
     return SUCCESS;
+}
+
+bool AudioCapturerSession::IsVirtualAudioRecognitionSession(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET_LOG(sessionWithNormalSourceType_.count(sessionId) != 0,
+        false, "session %{public}d not found", sessionId);
+
+    const std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = AudioPipeManager::GetPipeManager()->GetPipeList();
+    std::shared_ptr<AudioPipeInfo> pipe = AudioPipeManager::GetPipeManager()->FindPipeBySessionId(pipeList, sessionId);
+    CHECK_AND_RETURN_RET_LOG(pipe != nullptr, false, "pipe is nullptr");
+
+    SessionInfo sessionInfo = sessionWithNormalSourceType_[sessionId];
+
+    bool isVARecognitionSession =
+        pipe->adapterName_ == ADAPTER_TYPE_VA && sessionInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION;
+    AUDIO_INFO_LOG("sessionID %{public}d isVARecognitionSession: %{public}s",
+        sessionId, isVARecognitionSession ? "true" : "false");
+    return isVARecognitionSession;
 }
 
 int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo,
