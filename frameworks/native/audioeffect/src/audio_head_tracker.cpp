@@ -28,7 +28,7 @@ std::mutex HeadTracker::headTrackerMutex_;
 
 const uint32_t ORDER_ONE = 1;
 const uint32_t HP_DATA_PRINT_COUNT_DEBUG = 20; // Print 3 times per second
-const uint32_t HP_DATA_PRINT_COUNT_INFO = 300; // Print once per 5 seconds
+const uint32_t HP_DATA_PRINT_COUNT_INFO = 180; // Print once per 3 seconds
 
 void HeadTracker::HeadPostureDataProcCb(SensorEvent *event)
 {
