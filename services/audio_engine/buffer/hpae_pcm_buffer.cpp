@@ -300,13 +300,6 @@ void HpaePcmBuffer::SetBufferSilence(bool silence)
         (pcmBufferInfo_.state | PCM_BUFFER_STATE_SILENCE) :
         (pcmBufferInfo_.state & ~PCM_BUFFER_STATE_SILENCE);
 }
-
-void HpaePcmBuffer::SetBufferBypass(bool bypass)
-{
-    pcmBufferInfo_.state = bypass ?
-        (pcmBufferInfo_.state | PCM_BUFFER_STATE_BYPASS) :
-        (pcmBufferInfo_.state & ~PCM_BUFFER_STATE_BYPASS);
-}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

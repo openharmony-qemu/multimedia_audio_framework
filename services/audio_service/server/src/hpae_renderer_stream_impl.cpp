@@ -785,6 +785,18 @@ void HpaeRendererStreamImpl::OnStatusUpdate(IOperation operation, uint32_t strea
     }
 }
 
+bool HpaeRendererStreamImpl::OnQueryUnderrun()
+{
+    if (isCallbackMode_) { // callback buffer
+        auto writeCallback = writeCallback_.lock();
+        CHECK_AND_RETURN_RET(writeCallback != nullptr, false);
+        size_t requestDataLen = 0;
+        writeCallback->GetAvailableSize(requestDataLen);
+        return requestDataLen == 0;
+    }
+    return false;
+}
+
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId)
 {
     uint32_t renderId = HDI_INVALID_ID;

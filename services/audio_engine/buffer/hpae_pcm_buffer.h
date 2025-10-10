@@ -37,7 +37,6 @@ enum HpaeSourceBufferType {
 enum PcmBufferState : uint32_t {
     PCM_BUFFER_STATE_INVALID = 1, // bit 0
     PCM_BUFFER_STATE_SILENCE = 2, // bit 1
-    PCM_BUFFER_STATE_BYPASS = 1 << 2, // bit 2
 };
 
 // redefine allocator to ensure memory alignment
@@ -128,11 +127,6 @@ public:
         return (pcmBufferInfo_.state & PCM_BUFFER_STATE_SILENCE) != 0;
     }
 
-    bool IsBypass() const
-    {
-        return (pcmBufferInfo_.state & PCM_BUFFER_STATE_BYPASS) != 0;
-    }
-
     uint32_t GetBufferState() const
     {
         return pcmBufferInfo_.state;
@@ -197,7 +191,6 @@ public:
     bool UpdateWritePos(size_t writePos);
     void SetBufferValid(bool valid);
     void SetBufferSilence(bool silence);
-    void SetBufferBypass(bool bypass);
     void SetBufferState(uint32_t state);
     size_t GetCurFrames() const;
 
