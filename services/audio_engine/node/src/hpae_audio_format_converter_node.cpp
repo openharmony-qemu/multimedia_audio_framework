@@ -146,7 +146,7 @@ int32_t HpaeAudioFormatConverterNode::ConverterProcess(float *srcData, float *ds
     uint32_t inRate = resampler_->GetInRate();
     uint32_t outRate = resampler_->GetOutRate();
  
-    uint32_t inputFrameLen = preNodeInfo_.frameLen;
+    uint32_t inputFrameLen = input->GetFrameLen();
     uint32_t outputFrameLen = converterOutput_.GetFrameLen();
     uint32_t inputFrameBytes = inputFrameLen * inChannelInfo.numChannels * sizeof(float);
     uint32_t outputFrameBytes = outputFrameLen * outChannelInfo.numChannels * sizeof(float);
