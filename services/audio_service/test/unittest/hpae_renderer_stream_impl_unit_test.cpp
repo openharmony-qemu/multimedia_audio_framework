@@ -880,10 +880,10 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_035, TestSize.Level1)
 /**
  * @tc.name  : Test OnQueryUnderrun.
  * @tc.type  : FUNC
- * @tc.number: HpaeRenderer_035
+ * @tc.number: HpaeRenderer_036
  * @tc.desc  : Test OnQueryUnderrun.
  */
-HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_035, TestSize.Level1)
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_036, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
     auto mockWriteCallback = std::make_shared<MockWriteCallback>();
