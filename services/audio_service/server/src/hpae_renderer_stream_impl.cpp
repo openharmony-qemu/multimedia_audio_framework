@@ -319,7 +319,7 @@ int32_t HpaeRendererStreamImpl::GetSpeedPosition(uint64_t &framePosition, uint64
     // latencyMutex_ begin
     latencyUs += latency_;
     AUDIO_DEBUG_LOG("pipe latency: %{public}" PRIu64, latency_);
-    framePosition = lastHdiFramePosition_ + framePosition_ - lastFramePosition_;
+    framePosition = lastHdiFramePosition_ + framePosition_.load() - lastFramePosition_;
     uint64_t mutePaddingFrames = mutePaddingFrames_.load();
     framePosition = (framePosition > mutePaddingFrames) ? (framePosition - mutePaddingFrames) : 0;
     latency = latencyUs * static_cast<uint64_t>(processConfig_.streamInfo.samplingRate) / AUDIO_US_PER_S;
@@ -337,7 +337,7 @@ int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint
     latencyUs += latency_;
     AUDIO_DEBUG_LOG("pipe latency: %{public}" PRIu64, latency_);
     latency = latencyUs * static_cast<uint64_t>(processConfig_.streamInfo.samplingRate) / AUDIO_US_PER_S;
-    framePosition = framePosition_;
+    framePosition = framePosition_.load();
     uint64_t mutePaddingFrames = mutePaddingFrames_.load();
     framePosition = (framePosition > mutePaddingFrames) ? (framePosition - mutePaddingFrames) : 0;
     AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ", latency %{public}" PRIu64,
@@ -381,7 +381,7 @@ void HpaeRendererStreamImpl::GetLatencyInner(uint64_t &timestamp, uint64_t &late
     AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ", latencyUs %{public}" PRIu64
         ", base %{public}d, timestamp %{public}" PRIu64
         ", sink latency: %{public}u ms, a2dp offload latency: %{public}u ms, nearlink latency: %{public}u ms",
-        framePosition_, latencyUs, base, timestamp, sinkLatency, a2dpOffloadLatency, nearlinkLatency);
+        framePosition_.load(), latencyUs, base, timestamp, sinkLatency, a2dpOffloadLatency, nearlinkLatency);
 }
 
 int32_t HpaeRendererStreamImpl::SetRate(int32_t rate)
@@ -471,7 +471,6 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
     {
         std::unique_lock<std::shared_mutex> lock(latencyMutex_);
         OnDeviceClassChange(callBackStreamInfo);
-        //The frame of renderFrame needs to be calculated in framepos.
         framePosition_ = callBackStreamInfo.framePosition;
         timestamp_ = callBackStreamInfo.timestamp;
         latency_ = callBackStreamInfo.latency;
@@ -498,7 +497,8 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
             int32_t ret = writeCallback->OnWriteData(callBackStreamInfo.inputData,
                 requestDataLen);
             CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
-            framePosition_ += callBackStreamInfo.requestDataLen;
+            //The frame of renderFrame needs to be calculated in framepos.
+            framePosition_.fetch_add(callBackStreamInfo.requestDataLen);
             size_t mutePaddingFrames = (byteSizePerFrame_ == 0) ? 0 : (mutePaddingSize / byteSizePerFrame_);
             CHECK_AND_RETURN_RET(mutePaddingFrames != 0, SUCCESS);
             mutePaddingFrames_.fetch_add(mutePaddingFrames);

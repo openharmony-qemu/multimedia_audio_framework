@@ -333,6 +333,7 @@ private:
 
     size_t cacheSizeInByte_ = 0;
     uint32_t spanSizeInFrame_ = 0;
+    uint64_t totalFrames = 0;
     std::atomic<uint32_t> cacheSizeInFrame_ = 0;
     size_t clientSpanSizeInByte_ = 0;
     size_t sizePerFrameInByte_ = 4; // 16bit 2ch as default
@@ -457,10 +458,9 @@ private:
     struct AudioWriteState {
         uint64_t unprocessedFramesBytes_;
         uint64_t totalBytesWrittenAfterFlush_;
-        uint64_t totalFrames;
-        AudioWriteState(uint64_t unprocessed = 0, uint64_t written = 0, uint64_t num = 0)
-            : unprocessedFramesBytes_(unprocessed), totalBytesWrittenAfterFlush_(written), totalFrames(num) {}
-    };
+        AudioWriteState(uint64_t unprocessed = 0, uint64_t written = 0)
+            : unprocessedFramesBytes_(unprocessed), totalBytesWrittenAfterFlush_(written) {}
+    };alFrames(num) 
     std::atomic<AudioWriteState> audioWriteState_;
 
     std::string traceTag_;
