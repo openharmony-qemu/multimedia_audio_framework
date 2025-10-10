@@ -1,0 +1,192 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef LOG_TAG
+#define LOG_TAG "AudioSuiteEnvAlgoInterface"
+#endif
+
+#include <dlfcn.h>
+#include <vector>
+#include <sstream>
+#include <iostream>
+#include "audio_suite_log.h"
+#include "audio_suite_env_algo_interface_impl.h"
+
+namespace OHOS {
+namespace AudioStandard {
+namespace AudioSuite {
+
+AudioSuiteEnvAlgoInterfaceImpl::AudioSuiteEnvAlgoInterfaceImpl()
+{}
+
+AudioSuiteEnvAlgoInterfaceImpl::~AudioSuiteEnvAlgoInterfaceImpl()
+{
+    if (isEnvAlgoInit_) {
+        Deinit();
+    }
+}
+
+int32_t AudioSuiteEnvAlgoInterfaceImpl::Init()
+{
+    if (isEnvAlgoInit_) {
+        AUDIO_ERR_LOG("AudioSuiteEnvAlgoInterfaceImpl already inited");
+        return ERROR;
+    }
+    std::string soPath = "/system/lib64/libimedia_sws.z.so";
+    libHandle_ = dlopen(soPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
+    CHECK_AND_RETURN_RET_LOG(libHandle_ != nullptr, ERROR, "dlopen algo: %{private}s so fail", soPath.c_str());
+
+    algoApi_.getSize = reinterpret_cast<FuniMedia_Env_GetSize>(dlsym(libHandle_, "iMedia_Env_GetSize"));
+    CHECK_AND_RETURN_RET_LOG(algoApi_.getSize != nullptr, ERROR, "Failed to get symbol iMedia_Env_GetSize");
+    algoApi_.initAlgo = reinterpret_cast<FuniMedia_Env_Init>(dlsym(libHandle_, "iMedia_Env_Init"));
+    CHECK_AND_RETURN_RET_LOG(algoApi_.initAlgo != nullptr, ERROR, "Failed to get symbol iMedia_Env_Init");
+    algoApi_.applyAlgo = reinterpret_cast<FuniMedia_Env_Apply>(dlsym(libHandle_, "iMedia_Env_Apply"));
+    CHECK_AND_RETURN_RET_LOG(algoApi_.applyAlgo != nullptr, ERROR, "Failed to get symbol iMedia_Env_Apply");
+    algoApi_.setPara = reinterpret_cast<FuniMedia_Env_SetParams>(dlsym(libHandle_, "iMedia_Env_SetParams"));
+    CHECK_AND_RETURN_RET_LOG(algoApi_.setPara != nullptr, ERROR, "Failed to get symbol iMedia_Env_SetParams");
+    algoApi_.getPara = reinterpret_cast<FuniMedia_Env_GetParams>(dlsym(libHandle_, "iMedia_Env_GetParams"));
+    CHECK_AND_RETURN_RET_LOG(algoApi_.getPara != nullptr, ERROR, "Failed to get symbol iMedia_Env_GetParams");
+
+    int32_t ret = algoApi_.getSize(&stSize);
+    CHECK_AND_RETURN_RET_LOG(ret == IMEDIA_SWS_EOK, ret, "iMedia_Env_GetSize ERROR: %{public}d", ret);
+
+    runBuf_.resize(stSize.iStrSize);
+    scratchBuf_.resize(stSize.iScracthSize);
+    isEnvAlgoInit_ = true;
+    AUDIO_INFO_LOG("ALGO Init End, size of runBuf: %{public}d, size of scratchBuf: %{public}d",
+        stSize.iStrSize,
+        stSize.iScracthSize);
+    return SUCCESS;
+}
+
+int32_t AudioSuiteEnvAlgoInterfaceImpl::Deinit()
+{
+    isEnvAlgoInit_ = false;
+    if (libHandle_ != nullptr) {
+        int32_t ret = dlclose(libHandle_);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "dlclose failed: %{public}s", dlerror());
+        libHandle_ = nullptr;
+    }
+    static_cast<void>(memset_s(&algoApi_, sizeof(algoApi_), 0, sizeof(algoApi_)));
+    AUDIO_INFO_LOG("AudioSuiteEnvAlgoInterfaceImpl::Deinit end");
+    return SUCCESS;
+}
+
+iMedia_Env_PARA StringToEnvMode(const std::string &modStr)
+{
+    if (modStr == "0") {
+        AUDIO_INFO_LOG("Set EnvMode to BROADCAST");
+        return IMEDIA_SWS_ENV_BROADCAST;
+    } else if (modStr == "1") {
+        AUDIO_INFO_LOG("Set EnvMode to TELEPHONE_RECEIVER");
+
+        return IMEDIA_SWS_ENV_TELEPHONE_RECEIVER;
+    } else if (modStr == "2") {
+        AUDIO_INFO_LOG("Set EnvMode to UNDER_WATER");
+        return IMEDIA_SWS_ENV_UNDER_WATER;
+    } else if (modStr == "3") {
+        AUDIO_INFO_LOG("Set EnvMode to PHONOGRAPH");
+        return IMEDIA_SWS_ENV_PHONOGRAPH;
+    } else {
+        AUDIO_ERR_LOG("Unknow EnvMode %{public}s, Set EnvMode to BROADCAST", modStr.c_str());
+        return IMEDIA_SWS_ENV_BROADCAST;
+    }
+}
+
+int32_t AudioSuiteEnvAlgoInterfaceImpl::SetParameter(const std::string &sEQLGain, const std::string &sEQRGain)
+{
+    para = StringToEnvMode(sEQLGain);
+    int32_t ret = algoApi_.initAlgo(runBuf_.data(), scratchBuf_.data(), stSize.iScracthSize, para);
+    if (IMEDIA_SWS_EOK != ret) {
+        AUDIO_ERR_LOG("iMedia_Env_Init ERROR: %{public}d", ret);
+        runBuf_.clear();
+        scratchBuf_.clear();
+        return ERROR;
+    } else {
+        AUDIO_INFO_LOG("iMedia_Env_Init Success");
+    }
+
+    ret = algoApi_.setPara(runBuf_.data(), scratchBuf_.data(), stSize.iScracthSize, para);
+    if (IMEDIA_SWS_EOK != ret) {
+        AUDIO_ERR_LOG("iMedia_Env_SetParams ERROR: %{public}d", ret);
+        runBuf_.clear();
+        scratchBuf_.clear();
+        return ERROR;
+    }
+
+    frameLen = IMEDIA_SWS_FRAME_LEN * ALGO_CHANNEL_NUM;
+    inputSamples = frameLen * AUDIO_DURATION;
+    dataIn.resize(frameLen);
+    dataOut.resize(frameLen);
+
+    stData.piDataIn = reinterpret_cast<IMEDIA_INT32 *>(dataIn.data());
+    stData.piDataOut = reinterpret_cast<IMEDIA_INT32 *>(dataOut.data());
+    stData.iSize = IMEDIA_SWS_FRAME_LEN;
+    stData.iEnable_SWS = 1;
+    stData.iData_Format16 = 1;
+    stData.iData_Channel = ALGO_CHANNEL_NUM;
+    stData.iMasterVolume = MASTERVOLUME;
+
+    AUDIO_INFO_LOG("Set Env Parameter Success");
+    return SUCCESS;
+}
+
+int32_t AudioSuiteEnvAlgoInterfaceImpl::GetParameter(const std::string &oldtype, std::string &type)
+{
+    iMedia_Env_PARA param;
+    algoApi_.getPara(runBuf_.data(), &param);
+    if (param != para) {
+        AUDIO_ERR_LOG("Set or get wrong param, set = %{public}d, get = %{public}d",
+            static_cast<int32_t>(para),
+            static_cast<int32_t>(param));
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
+int32_t AudioSuiteEnvAlgoInterfaceImpl::Apply(std::vector<uint8_t *> &pcmInBuf, std::vector<uint8_t *> &pcmOutBuf)
+{
+    int32_t ret = -1;
+    size_t start = 0;
+    size_t i = 0;
+
+    IMEDIA_INT16 *bufIn = reinterpret_cast<IMEDIA_INT16 *>(pcmInBuf[0]);
+    IMEDIA_INT16 *pcmOut = reinterpret_cast<IMEDIA_INT16 *>(pcmOutBuf[0]);
+    if (libHandle_ == nullptr) {
+        AUDIO_INFO_LOG("Apply: libHandle_ == nullptr");
+    }
+    AUDIO_DEBUG_LOG("iMedia_Env_Apply Start");
+
+    while (inputSamples >= start + frameLen) {
+        frameLen = frameLen < inputSamples - start ? frameLen : inputSamples - start;
+        for (i = 0; i < frameLen; i++) {
+            dataIn[i] = static_cast<IMEDIA_INT32>(bufIn[start + i]);
+            dataIn[i] <<= TWO_BYTES_WIDTH;
+        }
+
+        ret = algoApi_.applyAlgo(runBuf_.data(), scratchBuf_.data(), scratchBuf_.size(), &stData);
+        AUDIO_DEBUG_LOG("applyAlgo end");
+        CHECK_AND_RETURN_RET_LOG(ret == IMEDIA_SWS_EOK, ret, "iMedia_SWS_Apply ERROR:%{public}d", ret);
+        for (i = 0; i < frameLen; i++) {
+            pcmOut[start + i] = ((unsigned int)dataOut[i] >> TWO_BYTES_WIDTH);
+        }
+        start = start + frameLen < inputSamples ? start + frameLen : inputSamples;
+    }
+    AUDIO_DEBUG_LOG("iMedia_Env_Apply End");
+    return ret;
+}
+}  // namespace AudioSuite
+}  // namespace AudioStandard
+}  // namespace OHOS
