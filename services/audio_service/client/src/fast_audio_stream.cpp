@@ -624,6 +624,7 @@ float FastAudioStream::GetSpeed()
 // only call from StartAudioStream
 void FastAudioStream::RegisterThreadPriorityOnStart(StateChangeCmdType cmdType)
 {
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_NULL_POINTER, "process client is null.");
     pid_t tid;
     switch (rendererInfo_.playerType) {
         case PLAYER_TYPE_ARKTS_AUDIO_RENDERER:
@@ -1170,18 +1171,21 @@ int32_t FastAudioStream::SetCallbacksWhenRestore()
 
 void FastAudioStream::GetRestoreInfo(RestoreInfo &restoreInfo)
 {
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_NULL_POINTER, "process client is null.");
     processClient_->GetRestoreInfo(restoreInfo);
     return;
 }
 
 void FastAudioStream::SetRestoreInfo(RestoreInfo &restoreInfo)
 {
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_NULL_POINTER, "process client is null.");
     processClient_->SetRestoreInfo(restoreInfo);
     return;
 }
 
 RestoreStatus FastAudioStream::CheckRestoreStatus()
 {
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_NULL_POINTER, "process client is null.");
     if (!IsDataCallbackSet()) {
         AUDIO_INFO_LOG("Fast stream without callback, restore to normal");
         renderMode_ = RENDER_MODE_NORMAL;
@@ -1193,6 +1197,7 @@ RestoreStatus FastAudioStream::CheckRestoreStatus()
 
 RestoreStatus FastAudioStream::SetRestoreStatus(RestoreStatus restoreStatus)
 {
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_NULL_POINTER, "process client is null.");
     return processClient_->SetRestoreStatus(restoreStatus);
 }
 
