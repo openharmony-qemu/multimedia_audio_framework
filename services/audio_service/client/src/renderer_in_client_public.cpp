@@ -1520,8 +1520,8 @@ void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
     info.renderPeriodPositionCb = rendererPeriodPositionCallback_;
 
     info.rendererWriteCallback = writeCb_;
-    AudioWriteState state = audioWriteState_.load();
-    info.unprocessSamples = state.unprocessedFramesBytes_ + state.perPeriodFrame_ +
+    info.unprocessSamples = audioWriteState_.load().unprocessedFramesBytes_ +
+        audioWriteState_.load().perPeriodFrame_ +
         lastSwitchPositionWithSpeed_[Timestamp::Timestampbase::MONOTONIC];
 }
 

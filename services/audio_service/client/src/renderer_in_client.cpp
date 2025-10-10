@@ -750,11 +750,7 @@ void RendererInClientInner::ResetFramePosition()
     }
     dropPosition_ = 0;
     dropHdiPosition_ = 0;
-    AudioWriteState currentState = audioWriteState_.load();
-    currentState.unprocessedFramesBytes_ = 0;
-    currentState.totalBytesWrittenAfterFlush_ = 0;
-    currentState.perPeriodFrame_ = 0;
-    audioWriteState_.store(currentState);
+    audioWriteState_.store(AudioWriteState{});
     writtenAtSpeedChange_.store(WrittenFramesWithSpeed{0, speed_});
 }
 
