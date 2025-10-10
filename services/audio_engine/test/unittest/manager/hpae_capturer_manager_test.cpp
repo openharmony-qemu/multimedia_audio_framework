@@ -382,7 +382,7 @@ HWTEST_F(HpaeCapturerManagerTest, CreateOutputSession_003, TestSize.Level0)
     EXPECT_EQ(capturerManager->CreateOutputSession(streamInfo), SUCCESS);
     auto sourceOutputNode = capturerManager->sourceOutputNodeMap_[streamInfo.sessionId];
     EXPECT_NE(sourceOutputNode, nullptr);
-    EXPECT_EQ(sourceOutputNode->GetNodeInfo().sourceBufferType, HPAE_SOURCE_BUFFER_TYPE_MIC);
+    EXPECT_EQ(sourceOutputNode->GetNodeInfo().sourceBufferType, HPAE_SOURCE_BUFFER_TYPE_EC);
 }
 
 /*
