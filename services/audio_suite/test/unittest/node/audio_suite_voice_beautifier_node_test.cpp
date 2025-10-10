@@ -406,4 +406,130 @@ HWTEST_F(AudioSuiteVoiceBeautifierNodeTest, testAudioSuiteVoiceBeautifierNodeSig
     delete buffer;
 }
 
+HWTEST_F(AudioSuiteVoiceBeautifierNodeTest, testAudioSuiteVoiceBeautifierNodeSignalProcess009, TestSize.Level0)
+{
+    std::string value = std::to_string(static_cast<int32_t>(AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_THEATRE));
+    std::string name = "VoiceBeautifierType";
+    vb.SetOptions(name, value);
+    std::vector<AudioSuitePcmBuffer *> inputs;
+    AudioSuitePcmBuffer *buffer = new AudioSuitePcmBuffer(SAMPLE_RATE_48000, STEREO, CH_LAYOUT_STEREO);
+    inputs.push_back(buffer);
+    AudioSuitePcmBuffer *outPcmbuffer = nullptr;
+    outPcmbuffer = vb.SignalProcess(inputs);
+    float *data = outPcmbuffer->GetPcmDataBuffer();
+    bool res = true;
+    for (size_t i = 0; i < outPcmbuffer->GetFrameLen(); ++i) {
+        if (data[i] != 0.0f) {
+            res = false;
+        }
+    }
+    EXPECT_TRUE(res);
+    delete buffer;
+}
+
+HWTEST_F(AudioSuiteVoiceBeautifierNodeTest, testAudioSuiteVoiceBeautifierNodeSignalProcess010, TestSize.Level0)
+{
+    std::string value = std::to_string(static_cast<int32_t>(AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_THEATRE));
+    std::string name = "VoiceBeautifierType";
+    vb.SetOptions(name, value);
+    std::vector<AudioSuitePcmBuffer *> inputs;
+    AudioSuitePcmBuffer *buffer = new AudioSuitePcmBuffer(SAMPLE_RATE_96000, STEREO, CH_LAYOUT_STEREO);
+    inputs.push_back(buffer);
+    AudioSuitePcmBuffer *outPcmbuffer = nullptr;
+    outPcmbuffer = vb.SignalProcess(inputs);
+    float *data = outPcmbuffer->GetPcmDataBuffer();
+    bool res = true;
+    for (size_t i = 0; i < outPcmbuffer->GetFrameLen(); ++i) {
+        if (data[i] != 0.0f) {
+            res = false;
+        }
+    }
+    EXPECT_TRUE(res);
+    delete buffer;
+}
+
+HWTEST_F(AudioSuiteVoiceBeautifierNodeTest, testAudioSuiteVoiceBeautifierNodeSignalProcess011, TestSize.Level0)
+{
+    std::string value = std::to_string(static_cast<int32_t>(AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_THEATRE));
+    std::string name = "VoiceBeautifierType";
+    vb.SetOptions(name, value);
+    std::vector<AudioSuitePcmBuffer *> inputs;
+    AudioSuitePcmBuffer *buffer = new AudioSuitePcmBuffer(SAMPLE_RATE_48000, MONO, CH_LAYOUT_MONO);
+    inputs.push_back(buffer);
+    AudioSuitePcmBuffer *outPcmbuffer = nullptr;
+    outPcmbuffer = vb.SignalProcess(inputs);
+    float *data = outPcmbuffer->GetPcmDataBuffer();
+    bool res = true;
+    for (size_t i = 0; i < outPcmbuffer->GetFrameLen(); ++i) {
+        if (data[i] != 0.0f) {
+            res = false;
+        }
+    }
+    EXPECT_TRUE(res);
+    delete buffer;
+}
+
+HWTEST_F(AudioSuiteVoiceBeautifierNodeTest, testAudioSuiteVoiceBeautifierNodeSignalProcess012, TestSize.Level0)
+{
+    std::string value = std::to_string(static_cast<int32_t>(AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_THEATRE));
+    std::string name = "VoiceBeautifierTyp";
+    vb.SetOptions(name, value);
+    std::vector<AudioSuitePcmBuffer *> inputs;
+    AudioSuitePcmBuffer *buffer = new AudioSuitePcmBuffer(SAMPLE_RATE_48000, MONO, CH_LAYOUT_MONO);
+    inputs.push_back(buffer);
+    AudioSuitePcmBuffer *outPcmbuffer = nullptr;
+    outPcmbuffer = vb.SignalProcess(inputs);
+    float *data = outPcmbuffer->GetPcmDataBuffer();
+    bool res = true;
+    for (size_t i = 0; i < outPcmbuffer->GetFrameLen(); ++i) {
+        if (data[i] != 0.0f) {
+            res = false;
+        }
+    }
+    EXPECT_TRUE(res);
+    delete buffer;
+}
+
+HWTEST_F(AudioSuiteVoiceBeautifierNodeTest, testAudioSuiteVoiceBeautifierNodeSignalProcess013, TestSize.Level0)
+{
+    std::string value = std::to_string(static_cast<int32_t>(AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_NORMAL));
+    std::string name = "VoiceBeautifierType";
+    vb.SetOptions(name, value);
+    std::vector<AudioSuitePcmBuffer *> inputs;
+    AudioSuitePcmBuffer *outPcmbuffer = nullptr;
+    outPcmbuffer = vb.SignalProcess(inputs);
+    float *data = outPcmbuffer->GetPcmDataBuffer();
+    bool res = true;
+    for (size_t i = 0; i < outPcmbuffer->GetFrameLen(); ++i) {
+        if (data[i] != 0.0f) {
+            res = false;
+        }
+    }
+    EXPECT_TRUE(res);
+}
+
+HWTEST_F(AudioSuiteVoiceBeautifierNodeTest, testAudioSuiteVoiceBeautifierNodeSignalProcess014, TestSize.Level0)
+{
+    std::string value = std::to_string(static_cast<int32_t>(AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_THEATRE));
+    std::string name = "VoiceBeautifierType";
+    vb.SetOptions(name, value);
+    std::vector<AudioSuitePcmBuffer *> inputs;
+    inputs.push_back(nullptr);
+    AudioSuitePcmBuffer *outPcmbuffer = nullptr;
+    outPcmbuffer = vb.SignalProcess(inputs);
+    float *data = outPcmbuffer->GetPcmDataBuffer();
+    bool res = true;
+    for (size_t i = 0; i < outPcmbuffer->GetFrameLen(); ++i) {
+        if (data[i] != 0.0f) {
+            res = false;
+        }
+    }
+    EXPECT_TRUE(res);
+}
+
+HWTEST_F(AudioSuiteVoiceBeautifierNodeTest, testAudioSuiteVoiceBeautifierNodeSignalProcess015, TestSize.Level0)
+{
+    EXPECT_TRUE(vb.Reset());
+}
+
 }  // namespace

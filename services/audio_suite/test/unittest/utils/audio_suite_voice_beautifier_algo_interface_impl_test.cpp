@@ -122,4 +122,92 @@ HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestVbAlgoApply_002, TestSize.Le
     EXPECT_EQ(vbAlgo.Deinit(), 0);
 }
 
+HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestVbAlgoApply_003, TestSize.Level0)
+{
+    AudioSuiteVoiceBeautifierAlgoInterfaceImpl vbAlgo;
+    std::vector<uint8_t *> audioInputs(1);
+    std::vector<uint8_t *> audioOutputs(1);
+    std::vector<int16_t> dataIn(960 * 2, 0);
+    std::vector<int16_t> dataOut(960 * 2, 0);
+
+    EXPECT_EQ(vbAlgo.Init(), 0);
+    std::string value = std::to_string(static_cast<int32_t>(AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_CD));
+    std::string name = "VoiceBeautifierType";
+    EXPECT_EQ(vbAlgo.SetParameter(name, value), 0);
+    audioInputs[0] = nullptr;
+    audioOutputs[0] = nullptr;
+    EXPECT_EQ(vbAlgo.Apply(audioInputs, audioOutputs), ERROR);
+
+    EXPECT_EQ(vbAlgo.Deinit(), 0);
+}
+
+HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestVbAlgoApply_004, TestSize.Level0)
+{
+    AudioSuiteVoiceBeautifierAlgoInterfaceImpl vbAlgo;
+    std::vector<uint8_t *> audioInputs;
+    std::vector<uint8_t *> audioOutputs;
+    std::vector<int16_t> dataIn(960 * 2, 0);
+    std::vector<int16_t> dataOut(960 * 2, 0);
+
+    EXPECT_EQ(vbAlgo.Init(), 0);
+    std::string value = std::to_string(static_cast<int32_t>(AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_CD));
+    std::string name = "VoiceBeautifierType";
+    EXPECT_EQ(vbAlgo.SetParameter(name, value), 0);
+    EXPECT_EQ(vbAlgo.Apply(audioInputs, audioOutputs), ERROR);
+
+    EXPECT_EQ(vbAlgo.Deinit(), 0);
+}
+
+HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestVbAlgoApply_005, TestSize.Level0)
+{
+    AudioSuiteVoiceBeautifierAlgoInterfaceImpl vbAlgo;
+    std::vector<uint8_t *> audioInputs(1);
+    std::vector<uint8_t *> audioOutputs(1);
+    std::vector<int16_t> dataIn(960 * 2, 0);
+    std::vector<int16_t> dataOut(960 * 2, 0);
+
+    EXPECT_EQ(vbAlgo.Init(), 0);
+    std::string value = std::to_string(static_cast<int32_t>(AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_CD));
+    std::string name = "VoiceBeautifierType";
+    EXPECT_EQ(vbAlgo.SetParameter(name, value), 0);
+    audioInputs[0] = reinterpret_cast<uint8_t *>(dataIn.data());
+    audioOutputs[0] = reinterpret_cast<uint8_t *>(dataOut.data());
+    vbAlgo.inBuf_ = nullptr;
+    EXPECT_EQ(vbAlgo.Apply(audioInputs, audioOutputs), ERROR);
+
+    EXPECT_EQ(vbAlgo.Deinit(), 0);
+}
+
+HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestVbAlgoApply_006, TestSize.Level0)
+{
+    AudioSuiteVoiceBeautifierAlgoInterfaceImpl vbAlgo;
+    std::vector<uint8_t *> audioInputs(1);
+    std::vector<uint8_t *> audioOutputs(1);
+    std::vector<int16_t> dataIn(960 * 2, 0);
+    std::vector<int16_t> dataOut(960 * 2, 0);
+
+    EXPECT_EQ(vbAlgo.Init(), 0);
+    std::string value = std::to_string(static_cast<int32_t>(AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_CD));
+    std::string name = "VoiceBeautifierType";
+    EXPECT_EQ(vbAlgo.SetParameter(name, value), 0);
+    audioInputs[0] = reinterpret_cast<uint8_t *>(dataIn.data());
+    audioOutputs[0] = reinterpret_cast<uint8_t *>(dataOut.data());
+    vbAlgo.outBuf_ = nullptr;
+    EXPECT_EQ(vbAlgo.Apply(audioInputs, audioOutputs), ERROR);
+
+    EXPECT_EQ(vbAlgo.Deinit(), 0);
+}
+
+HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestVbAlgoApply_007, TestSize.Level0)
+{
+    AudioSuiteVoiceBeautifierAlgoInterfaceImpl vbAlgo;
+
+    EXPECT_EQ(vbAlgo.Init(), 0);
+    std::string value = std::to_string(10);
+    std::string name = "VoiceBeautifierType";
+    EXPECT_EQ(vbAlgo.SetParameter(name, value), ERROR);
+
+    EXPECT_EQ(vbAlgo.Deinit(), 0);
+}
+
 }  // namespace
