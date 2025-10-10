@@ -534,6 +534,7 @@ bool RendererInClientInner::WriteCallbackFunc()
 
 bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, bool &speedCached)
 {
+    AudioWriteState currentState = audioWriteState_.load();
     speedCached = false;
 #ifdef SONIC_ENABLE
     std::lock_guard lockSpeed(speedMutex_);
@@ -546,6 +547,7 @@ bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, b
         int32_t outBufferSize = 0;
         if (audioSpeed_->ChangeSpeedFunc(buffer, bufferSize, speedBuffer_, outBufferSize) == 0) {
             bufferSize = 0;
+            currentState.totalFrames = bufferSize / sizePerFrameInByte_;
             AUDIO_ERR_LOG("process speed error");
             return false;
         }
@@ -555,6 +557,7 @@ bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, b
         }
         buffer = speedBuffer_.get();
         bufferSize = static_cast<size_t>(outBufferSize);
+        currentState.totalFrames = bufferSize / sizePerFrameInByte_;
         speedCached = true;
     }
 #endif
@@ -707,8 +710,8 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     bool speedCached = false;
 
     AudioWriteState currentState = audioWriteState_.load();
-    uint64_t frames = bufferSize / sizePerFrameInByte_;
-    currentState.unprocessedFramesBytes_ += frames;
+    currentState.totalFrames = bufferSize / sizePerFrameInByte_;
+    currentState.unprocessedFramesBytes_ += totalFrames;
     if (!ProcessSpeed(buffer, bufferSize, speedCached)) {
         return bufferSize;
     }
@@ -722,7 +725,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     if (isBlendSet_) {
         audioBlend_.Process(buffer, bufferSize);
     }
-    currentState.totalBytesWrittenAfterFlush_ += frames;
+    currentState.totalBytesWrittenAfterFlush_ += totalFrames;
     audioWriteState_.store(currentState);
     int32_t result = WriteCacheData(buffer, bufferSize, speedCached, oriBufferSize);
     MonitorMutePlay(false);

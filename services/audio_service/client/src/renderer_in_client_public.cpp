@@ -1521,8 +1521,7 @@ void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
 
     info.rendererWriteCallback = writeCb_;
     AudioWriteState state = audioWriteState_.load();
-    uint64_t preUnprocessSamples = state.unprocessedFramesBytes_;
-    info.unprocessSamples = preUnprocessSamples +
+    info.unprocessSamples = state.unprocessedFramesBytes_; +
         lastSwitchPositionWithSpeed_[Timestamp::Timestampbase::MONOTONIC];
 }
 
@@ -1867,9 +1866,7 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     // between unprocessSamples and framesWritten there is sonic
     if (speedEnable_) {
         frameLatency += SONIC_LATENCY_IN_MS * curStreamParams_.samplingRate / AUDIO_MS_PER_SECOND;
-    } else {
-        frameLatency += curStreamParams_.samplingRate / AUDIO_MS_PER_SECOND;
-    }
+    } 
     
     // real frameposition
     uint64_t framePosition = unprocessSamples > frameLatency ? unprocessSamples - frameLatency : 0;
