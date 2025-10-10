@@ -123,6 +123,12 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
             UpdatePlaybackStreamFlag(streamDesc, false);
             continue;
         }
+        // started stream need to mute when switch device
+        if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
+#ifndef MUTE_SINK_DISABLE
+            MuteSinkPortForSwitchDevice(streamDesc, reason);
+#endif
+        }
         int32_t outputRet = ActivateOutputDevice(streamDesc, reason);
         CHECK_AND_CONTINUE_LOG(outputRet == SUCCESS, "Activate output device failed");
 
@@ -135,13 +141,7 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
         }
 
         CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
-
-        // started stream need to mute when switch device
-        if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
-#ifndef MUTE_SINK_DISABLE
-            MuteSinkPortForSwitchDevice(streamDesc, reason);
-#endif
-        }
+        
         UpdatePlaybackStreamFlag(streamDesc, false);
     }
     AudioDeviceDescriptor audioDeviceDescriptor = audioActiveDevice_.GetCurrentOutputDevice();
