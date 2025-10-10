@@ -2125,5 +2125,40 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_005, TestSize.
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
     EXPECT_NE(SUCCESS, ret);
 }
+
+/**
+ * @tc.name  : Test WriteDupBufferInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerWriteDupBufferInner_003
+ * @tc.desc  : test writeDupBufferInner interface in injector mode
+ */
+HWTEST_F(RendererInServerThirdUnitTest, RendererInServerWriteDupBufferInner_003, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_GAME;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+
+    CaptureInfo captureInfo;
+    captureInfo.isInnerCapEnabled = true;
+    captureInfo.dupStream = nullptr;
+    int32_t innerCapId = 1;
+    uint32_t streamIndex = 0;
+    auto streamCallbacks = std::make_shared<StreamCallbacks>(streamIndex);
+    server->lastTarget_ = INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
+    server->innerCapIdToDupStreamCallbackMap_.insert({innerCapId, streamCallbacks});
+    int32_t length = 10000;
+    server->innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() = AudioRingCache::Create(length);
+    
+    auto buffer = std::make_unique<uint8_t []>(length);
+    BufferDesc emptyBufferDesc = {buffer.get(), length, length};
+    memset_s(emptyBufferDesc.buffer, emptyBufferDesc.bufLength, 1, emptyBufferDesc.bufLength);
+    EXPECT_EQ(uint8_t(buffer[0]), 1);
+    EXPECT_EQ(server->WriteDupBufferInner(emptyBufferDesc, innerCapId), SUCCESS);
+
+    BufferWrap bufferWrap = {buffer.get(), length};
+    server->innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer()->Dequeue(bufferWrap);
+    EXPECT_EQ(uint8_t(buffer[0]), 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS
