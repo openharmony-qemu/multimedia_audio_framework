@@ -32,6 +32,7 @@ typedef void (*AppCallbackFunc)(void *pHndl);
 class HpaeSinkInputNode : public OutputNode<HpaePcmBuffer *> {
 public:
     HpaeSinkInputNode(HpaeNodeInfo &nodeInfo);
+    HpaeSinkInputNode(HpaeNodeInfo &nodeInfo, HpaeSinkInfo &sinkInfo);
     virtual ~HpaeSinkInputNode();
     virtual void DoProcess() override;
     virtual bool Reset() override;     // no implement, virtual class
@@ -87,6 +88,9 @@ private:
     float speed_ = 1.0f;
     std::atomic<uint64_t> hdiFramePosition_ = 0;
     uint32_t standbyCounter_ = 0;
+    uint32_t inputSize_ = 0;
+    uint32_t currentSize_ = 0;
+    uint32_t renderSize_ = 0;
 };
 
 }  // namespace HPAE

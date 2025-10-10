@@ -50,6 +50,8 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
         "frameLen %{public}d", nodeInfo.sessionId, inputAudioBuffer_.GetChannelCount(),
         inputAudioBuffer_.GetChannelLayout(), inputAudioBuffer_.GetFrameLen());
 
+    inputSize_ = nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format);
+    renderSize_ = inputSize_;
     if (nodeInfo.historyFrameCount > 0) {
         PcmBufferInfo pcmInfo = PcmBufferInfo{
             nodeInfo.channels, nodeInfo.frameLen, nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate :
@@ -69,6 +71,21 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeSinkInputNode");
 #endif
+}
+
+HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo, HpaeSinkInfo &sinkInfo): HpaeSinkInputNode(nodeInfo)
+{
+    uint32_t inputRate =  static_cast<uint32_t>(nodeInfo.samplingRate);
+    uint32_t outputRate = static_cast<uint32_t>(sinkInfo.samplingRate);
+    CHECK_AND_RETURN(nodeInfo.frameLen > 0 && sinkInfo.frameLen > 0);
+    CHECK_AND_RETURN((inputRate / nodeInfo.frameLen) != (outputRate / sinkInfo.frameLen));
+    uint32_t newFrameLen = sinkInfo.frameLen * inputRate / outputRate;
+    renderSize_ = newFrameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format);
+    uint32_t bufferSize = (newFrameLen + nodeInfo.frameLen) * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format);
+    interleveData_.resize(bufferSize);
+    pcmBufferInfo_.frameLen = newFrameLen;
+    inputAudioBuffer_.ReConfig(pcmBufferInfo_);
+    AUDIO_INFO_LOG("Update render frame length to %{public}u", newFrameLen);
 }
 
 HpaeSinkInputNode::~HpaeSinkInputNode()
@@ -162,15 +179,16 @@ void HpaeSinkInputNode::DoProcess()
     }
 
     int32_t ret = SUCCESS;
+    int32_t peekTimes = 0;
 
-    if (!ReadToAudioBuffer(ret)) {
-        return;
+    while ((currentSize_ < renderSize_) && peekTimes++ < 3) { // try 3 times
+        CHECK_AND_RETURN(ReadToAudioBuffer(ret));
+        currentSize_ +=  ret == SUCCESS ? inputSize_ : 0;
     }
 
-    ConvertToFloat(
-        GetBitWidth(), GetChannelCount() * GetFrameLen(), interleveData_.data(), inputAudioBuffer_.GetPcmDataBuffer());
+    ret = currentSize_ >= renderSize_ ? SUCCESS : ERROR;    
     AudioPipeType  pipeType = ConvertDeviceClassToPipe(GetDeviceClass());
-    if (ret != 0) {
+    if (ret != SUCCESS) {
         if (pipeType != PIPE_TYPE_UNKNOWN) {
             AudioPerformanceMonitor::GetInstance().RecordSilenceState(GetSessionId(), true, pipeType,
                 static_cast<uint32_t>(appUid_));
@@ -178,6 +196,12 @@ void HpaeSinkInputNode::DoProcess()
         Trace underflowTrace("[" + std::to_string(GetSessionId()) + "]HpaeSinkInputNode::DoProcess underflow");
         memset_s(inputAudioBuffer_.GetPcmDataBuffer(), inputAudioBuffer_.Size(), 0, inputAudioBuffer_.Size());
     } else {
+        ConvertToFloat(
+            GetBitWidth(), renderSize_ / GetSizeFromFormat(GetBitWidth()),
+            interleveData_.data(), inputAudioBuffer_.GetPcmDataBuffer());
+        std::copy(interleveData_.begin() + renderSize_, interleveData_.begin() + currentSize_,
+            interleveData_.begin());
+        currentSize_ -= renderSize_;
         if (pipeType != PIPE_TYPE_UNKNOWN) {
             AudioPerformanceMonitor::GetInstance().RecordSilenceState(GetSessionId(), false, pipeType,
                 static_cast<uint32_t>(appUid_));
@@ -230,6 +254,9 @@ void HpaeSinkInputNode::Flush()
         pcmInfo.isMultiFrames = true;
         historyBuffer_ = std::make_unique<HpaePcmBuffer>(pcmInfo);
     }
+
+    // reset interleveData_
+    memset_s(interleveData_.data(), interleveData_.size(), 0, interleveData_.size());
 }
 
 bool HpaeSinkInputNode::Drain()
@@ -326,8 +353,8 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
         .hdiFramePosition = hdiFramePosition_.exchange(0),
         .framesWritten = totalFrames_,
         .latency = latency,
-        .inputData = interleveData_.data(),
-        .requestDataLen = interleveData_.size(),
+        .inputData = interleveData_.data() + currentSize_,
+        .requestDataLen = inputSize_,
         .deviceClass = GetDeviceClass(),
         .deviceNetId = GetDeviceNetId(),
         .needData = needData,
