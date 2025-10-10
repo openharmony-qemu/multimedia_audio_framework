@@ -296,5 +296,31 @@ HWTEST_F(AudioStreamDescriptorUnitTest, IsSamePidUid_001, TestSize.Level1)
     EXPECT_TRUE(ret);
 }
 
+/**
+ * @tc.name   : AudioStreamDescriptor_IsMediaScene_001
+ * @tc.number : IsMediaScene_001
+ * @tc.desc   : Test IsMediaScene() with various streamUsage values
+ */
+HWTEST_F(AudioStreamDescriptorUnitTest, IsMediaScene_001, TestSize.Level2)
+{
+    testRendererStream_->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
+    EXPECT_TRUE(testRendererStream_->IsMediaScene());
+
+    testRendererStream_->rendererInfo_.streamUsage = STREAM_USAGE_MOVIE;
+    EXPECT_TRUE(testRendererStream_->IsMediaScene());
+
+    testRendererStream_->rendererInfo_.streamUsage = STREAM_USAGE_GAME;
+    EXPECT_TRUE(testRendererStream_->IsMediaScene());
+
+    testRendererStream_->rendererInfo_.streamUsage = STREAM_USAGE_AUDIOBOOK;
+    EXPECT_TRUE(testRendererStream_->IsMediaScene());
+
+    testRendererStream_->rendererInfo_.streamUsage = STREAM_USAGE_NOTIFICATION;
+    EXPECT_FALSE(testRendererStream_->IsMediaScene());
+
+    testRendererStream_->rendererInfo_.streamUsage = STREAM_USAGE_ALARM;
+    EXPECT_FALSE(testRendererStream_->IsMediaScene());
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
