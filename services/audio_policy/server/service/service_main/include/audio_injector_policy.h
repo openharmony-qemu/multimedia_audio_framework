@@ -55,8 +55,15 @@ public:
     bool GetIsConnected();
     void SetVoipType(VoipType type);
     int32_t AddCaptureInjector();
+    int32_t AddCaptureInjectorInner();
     int32_t RemoveCaptureInjector(bool noCapturer);
+    int32_t RemoveCaptureInjectorInner(bool noCapturer);
     void ReleaseCaptureInjector(uint32_t streamId);
+    void RebuildCaptureInjector(uint32_t streamId);
+    std::shared_ptr<AudioPipeInfo> FindCaptureVoipPipe(
+        std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, VoipType &type);
+    void FetchCapDeviceInjectPreProc(std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, bool &removeFlag);
+    void FetchCapDeviceInjectPostProc(std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, bool &removeFlag);
 
     void AddInjectorStreamId(const uint32_t streamId);
     void DeleteInjectorStreamId(const uint32_t streamId);
@@ -72,6 +79,7 @@ private:
     AudioModuleInfo moduleInfo_;
     uint32_t capturePortIdx_;
     uint32_t renderPortIdx_;
+    AudioIOHandle ioHandle_;
     bool isOpened_;
     bool isConnected_;
     VoipType voipType_;

@@ -1618,6 +1618,11 @@ void AudioCoreService::ReleaseCaptureInjector(uint32_t streamId)
     audioInjectorPolicy_.ReleaseCaptureInjector(streamId);
 }
 
+void AudioCoreService::RebuildCaptureInjector(uint32_t streamId)
+{
+    audioInjectorPolicy_.RebuildCaptureInjector(streamId);
+}
+
 int32_t AudioCoreService::A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
                                                        uint32_t &timeStamp)
 {

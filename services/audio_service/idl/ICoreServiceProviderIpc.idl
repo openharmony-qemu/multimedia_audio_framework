@@ -57,5 +57,6 @@ interface ICoreServiceProviderIpc {
         [out] int ret);
     void RemoveIdForInjector([in] unsigned int sessionId);
     void ReleaseCaptureInjector([in] unsigned int sessionId);
+    void RebuildCaptureInjector([in] unsigned int sessionId);
     void A2dpOffloadGetRenderPosition([out] unsigned int delayValue, [out] unsigned long sendDataSize, [out] unsigned int timeStamp, [out] int ret);
 }

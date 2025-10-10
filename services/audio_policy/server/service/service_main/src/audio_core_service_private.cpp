@@ -232,6 +232,9 @@ int32_t AudioCoreService::FetchCapturerPipesAndExecute(
     AUDIO_INFO_LOG("[PipeFetchStart] all %{public}zu input streams", streamDescs.size());
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = audioPipeSelector_->FetchPipesAndExecute(streamDescs);
 
+    bool removeFlag = false;
+    audioInjectorPolicy_.FetchCapDeviceInjectPreProc(pipeInfos, removeFlag);
+
     AUDIO_INFO_LOG("[PipeExecStart] for all Pipes");
     uint32_t audioFlag;
     for (auto &pipeInfo : pipeInfos) {
@@ -248,6 +251,8 @@ int32_t AudioCoreService::FetchCapturerPipesAndExecute(
     }
     pipeManager_->UpdateCapturerPipeInfos(pipeInfos);
     RemoveUnusedPipe();
+
+    audioInjectorPolicy_.FetchCapDeviceInjectPostProc(pipeInfos, removeFlag);
     return SUCCESS;
 }
 
@@ -3296,9 +3301,6 @@ int32_t AudioCoreService::InjectionToPlayBack(uint32_t sessionId)
         AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "move stream out failed");
     audioInjectorPolicy_.RemoveStreamDescriptor(sessionId);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "RemoveCaptureInjector failed");
-    ret = audioInjectorPolicy_.DeInit();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "DeInit failed");
     return SUCCESS;
 }
 } // namespace AudioStandard
