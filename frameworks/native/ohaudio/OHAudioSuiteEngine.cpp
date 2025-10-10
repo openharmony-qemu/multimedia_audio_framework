@@ -99,10 +99,14 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_Create(OH_AudioSuiteEngine **audioSuite
 
 OH_AudioSuite_Result OH_AudioSuiteEngine_Destroy(OH_AudioSuiteEngine *audioSuiteEngine)
 {
-    OHAudioSuiteEngine *suiteEngine = ConvertAudioSuiteEngine(audioSuiteEngine);
     CHECK_AND_RETURN_RET_LOG(audioSuiteEngine != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "Destroy audioSuiteEngine is nullptr");
-
+    OHAudioSuiteEngine *suiteEngine = ConvertAudioSuiteEngine(audioSuiteEngine);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "Destroy suiteEngine is nullptr");
+    if (suiteEngine != OHAudioSuiteEngine::GetInstance()) {
+        return AUDIOSUITE_ERROR_INVALID_PARAM;
+    }
     int32_t error = suiteEngine->DestroyEngine();
     return ConvertError(error);
 }
@@ -127,7 +131,6 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_DestroyPipeline(OH_AudioSuitePipeline *
     OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
     CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
         AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "DestroyPipeline suiteEngine is nullptr");
-
     int32_t error = suiteEngine->DestroyPipeline(pipeline);
     return ConvertError(error);
 }
@@ -225,7 +228,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_DestroyNode(OH_AudioNode *audioNode)
     OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
     CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
         AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "DestroyNode suiteEngine is nullptr");
-
+        
     int32_t error = suiteEngine->DestroyNode(node);
     return ConvertError(error);
 }
@@ -424,6 +427,14 @@ int32_t OHSuiteInputNodeWriteDataCallBack::OnWriteDataCallBack(void *audioData, 
     return callback_(audioNode_, userData_, audioData, audioDataSize, finished);
 }
 
+OHAudioSuiteEngine::~OHAudioSuiteEngine()
+{
+    int32_t result = DestroyEngine();
+    if (result != 0) {
+        AUDIO_ERR_LOG("OHAudiosuiteEngine::DestroyEngine failed.");
+    }
+}
+
 OHAudioSuiteEngine *OHAudioSuiteEngine::GetInstance()
 {
     static OHAudioSuiteEngine manager;
@@ -437,8 +448,14 @@ int32_t OHAudioSuiteEngine::CreateEngine()
 
 int32_t OHAudioSuiteEngine::DestroyEngine()
 {
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    std::unordered_set<OHAudioSuitePipeline*> tempPipelines(pipelines_.begin(), pipelines_.end());
+    for (auto pipeline : tempPipelines) {
+        RemovePipeline(pipeline);
+    }
+    pipelines_.clear();
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().DeInit();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DestroyEngine failed, ret = %{public}d.", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DestroyEngine DeInit failed, ret = %{public}d.", ret);
     return ret;
 }
 
@@ -455,6 +472,7 @@ int32_t OHAudioSuiteEngine::CreatePipeline(OH_AudioSuitePipeline **audioSuitePip
     OHAudioSuitePipeline *audioPipeline = new OHAudioSuitePipeline(pipelineId);
     CHECK_AND_RETURN_RET_LOG(audioPipeline != nullptr, ERR_MEMORY_ALLOC_FAILED,
         "CreatePipeline pipeline failed, malloc failed.");
+    AddPipeline(audioPipeline);
     *audioSuitePipeline = (OH_AudioSuitePipeline *)audioPipeline;
     return SUCCESS;
 }
@@ -463,10 +481,12 @@ int32_t OHAudioSuiteEngine::DestroyPipeline(OHAudioSuitePipeline *audioPipeline)
 {
     CHECK_AND_RETURN_RET_LOG(audioPipeline != nullptr, ERR_INVALID_PARAM,
         "DestroyPipeline failed, audioPipeline is nullptr.");
-
+    CHECK_AND_RETURN_RET_LOG(IsPipelineExists(audioPipeline), ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+        "OHAudioSuiteEngine::The pipeline does not exist.");
     uint32_t pipelineId = audioPipeline->GetPipelineId();
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().DestroyPipeline(pipelineId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DestroyPipeline failed, ret = %{public}d.", ret);
+    RemovePipeline(audioPipeline);
     return ret;
 }
 
@@ -562,6 +582,7 @@ int32_t OHAudioSuiteEngine::CreateNode(
 
     *audioNode = (OH_AudioNode *)node;
     if (!builder->IsSetWriteDataCallBack()) {
+        audioSuitePipeline->AddNode(node);
         return AUDIOSUITE_SUCCESS;
     }
 
@@ -570,17 +591,20 @@ int32_t OHAudioSuiteEngine::CreateNode(
             builder->GetOnWriteDataCallBack(), builder->GetOnWriteUserData());
     ret = IAudioSuiteManager::GetAudioSuiteManager().SetOnWriteDataCallback(nodeId, callback);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CreateNode SetOnWriteDataCallback failed, ret = %{public}d.", ret);
+    audioSuitePipeline->AddNode(node);
     return ret;
 }
 
 int32_t OHAudioSuiteEngine::DestroyNode(OHAudioNode *node)
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "DestroyNode failed, node is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+                             "OHAudioSuiteEngine::The node does not exist.");
     uint32_t nodeId = node->GetNodeId();
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().DestroyNode(nodeId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DestroyNode failed, ret = %{public}d.", ret);
 
-    delete node;
+    RemoveNode(node);
     return ret;
 }
 
@@ -671,6 +695,8 @@ int32_t OHAudioSuiteEngine::SetEqualizerFrequencyBandGains(
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM,
         "SetEqualizerFrequencyBandGains failed, node is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node),
+        ERR_AUDIO_SUITE_NODE_NOT_EXIST, "SetEqualizerFrequencyBandGains node is not exist");
     CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_EQUALIZER, ERR_NOT_SUPPORTED,
         "SetEqualizerFrequencyBandGains failed, node type = %d{public}d must is EQUALIZER type.",
         static_cast<int32_t>(node->GetNodeType()));
@@ -766,6 +792,83 @@ int32_t OHAudioSuiteEngine::RemoveTap(OHAudioNode *node, OH_AudioNode_Port_Type 
 
     IAudioSuiteManager::GetAudioSuiteManager().RemoveTap(nodeId, static_cast<AudioNodePortType>(portType));
     return SUCCESS;
+}
+
+void OHAudioSuiteEngine::AddPipeline(OHAudioSuitePipeline *pipeline)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    pipelines_.insert(pipeline);
+}
+
+void OHAudioSuiteEngine::RemovePipeline(OHAudioSuitePipeline *pipeline)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    if (pipeline != nullptr) {
+        pipelines_.erase(pipeline);
+        delete pipeline;
+    }
+}
+
+bool OHAudioSuiteEngine::IsPipelineExists(OHAudioSuitePipeline *pipeline)
+{
+    if (pipeline == nullptr) {
+        return false;
+    }
+
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    return pipelines_.find(pipeline) != pipelines_.end();
+}
+
+void OHAudioSuitePipeline::AddNode(OHAudioNode *node)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    nodes_.insert(node);
+}
+
+bool OHAudioSuitePipeline::IsNodeExists(OHAudioNode *node)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return nodes_.find(node) != nodes_.end();
+}
+
+void OHAudioSuitePipeline::RemoveNode(OHAudioNode *node)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (node != nullptr) {
+        nodes_.erase(node);
+        delete node;
+    }
+}
+OHAudioSuitePipeline::~OHAudioSuitePipeline()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (OHAudioNode* node : nodes_) {
+        if (node != nullptr) {
+            delete node;
+        }
+    }
+    nodes_.clear();
+}
+
+bool OHAudioSuiteEngine::IsNodeExists(OHAudioNode *node)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    for (auto pipeline : pipelines_) {
+        if (pipeline && node && pipeline->IsNodeExists(node)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void OHAudioSuiteEngine::RemoveNode(OHAudioNode *node)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    for (auto pipeline : pipelines_) {
+        if (pipeline && node && pipeline->IsNodeExists(node)) {
+            pipeline->RemoveNode(node);
+        }
+    }
 }
 
 }  // namespace AudioStandard
