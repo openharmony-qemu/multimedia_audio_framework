@@ -788,9 +788,9 @@ void HpaeRendererStreamImpl::OnStatusUpdate(IOperation operation, uint32_t strea
 bool HpaeRendererStreamImpl::OnQueryUnderrun()
 {
     if (isCallbackMode_) { // callback buffer
-        size_t requestDataLen = 0;
         auto writeCallback = writeCallback_.lock();
         CHECK_AND_RETURN_RET(writeCallback != nullptr, false);
+        size_t requestDataLen = 0;
         writeCallback->GetAvailableSize(requestDataLen);
         return requestDataLen == 0;
     }
