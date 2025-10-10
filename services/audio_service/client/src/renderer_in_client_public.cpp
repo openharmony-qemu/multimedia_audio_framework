@@ -1521,7 +1521,7 @@ void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
 
     info.rendererWriteCallback = writeCb_;
     AudioWriteState state = audioWriteState_.load();
-    info.unprocessSamples = state.unprocessedFramesBytes_ +
+    info.unprocessSamples = state.unprocessedFramesBytes_ + state.perPeriodFrame_ +
         lastSwitchPositionWithSpeed_[Timestamp::Timestampbase::MONOTONIC];
 }
 

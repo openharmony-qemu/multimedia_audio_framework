@@ -705,9 +705,10 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 
     size_t oriBufferSize = bufferSize;
     bool speedCached = false;
-
-    frames_ += bufferSize / sizePerFrameInByte_;
+    AudioWriteState currentState = audioWriteState_.load();
+    currentState.perPeriodFrame_ += bufferSize / sizePerFrameInByte_;
     if (!ProcessSpeed(buffer, bufferSize, speedCached)) {
+        audioWriteState_.store(currentState);
         return bufferSize;
     }
 
@@ -720,9 +721,9 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     if (isBlendSet_) {
         audioBlend_.Process(buffer, bufferSize);
     }
-    currentState.unprocessedFramesBytes_ += frames_;
+    currentState.unprocessedFramesBytes_ += currentState.perPeriodFrame_;
     currentState.totalBytesWrittenAfterFlush_ += bufferSize / sizePerFrameInByte_;
-    frames_ = 0;
+    currentState.perPeriodFrame_ = 0;
     audioWriteState_.store(currentState);
     int32_t result = WriteCacheData(buffer, bufferSize, speedCached, oriBufferSize);
     MonitorMutePlay(false);
@@ -752,6 +753,7 @@ void RendererInClientInner::ResetFramePosition()
     AudioWriteState currentState = audioWriteState_.load();
     currentState.unprocessedFramesBytes_ = 0;
     currentState.totalBytesWrittenAfterFlush_ = 0;
+    currentState.perPeriodFrame_ = 0;
     audioWriteState_.store(currentState);
     writtenAtSpeedChange_.store(WrittenFramesWithSpeed{0, speed_});
 }

@@ -497,8 +497,9 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
             int32_t ret = writeCallback->OnWriteData(callBackStreamInfo.inputData,
                 requestDataLen);
             CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
-            //The frame of renderFrame needs to be calculated in framepos.
-            framePosition_.fetch_add(callBackStreamInfo.requestDataLen);
+            //The framePosition callback from the engine lacks the length of the data written this time.
+            //The length needs to be accounted for in framePosition.
+            framePosition_.fetch_add(callBackStreamInfo.requestDataLen / byteSizePerFrame_);
             size_t mutePaddingFrames = (byteSizePerFrame_ == 0) ? 0 : (mutePaddingSize / byteSizePerFrame_);
             CHECK_AND_RETURN_RET(mutePaddingFrames != 0, SUCCESS);
             mutePaddingFrames_.fetch_add(mutePaddingFrames);
