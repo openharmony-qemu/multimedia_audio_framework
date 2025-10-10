@@ -624,7 +624,6 @@ float FastAudioStream::GetSpeed()
 // only call from StartAudioStream
 void FastAudioStream::RegisterThreadPriorityOnStart(StateChangeCmdType cmdType)
 {
-    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_NULL_POINTER, "process client is null.");
     pid_t tid;
     switch (rendererInfo_.playerType) {
         case PLAYER_TYPE_ARKTS_AUDIO_RENDERER:
@@ -650,6 +649,7 @@ void FastAudioStream::RegisterThreadPriorityOnStart(StateChangeCmdType cmdType)
         return;
     }
 
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_NULL_POINTER, "process client is null.");
     processClient_->RegisterThreadPriority(tid,
         AudioSystemManager::GetInstance()->GetSelfBundleName(processconfig_.appInfo.appUid), METHOD_START);
 }
