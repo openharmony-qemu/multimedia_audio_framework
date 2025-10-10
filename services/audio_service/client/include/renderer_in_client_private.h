@@ -457,7 +457,7 @@ private:
     struct AudioWriteState {
         uint64_t unprocessedFramesBytes_;
         uint64_t totalBytesWrittenAfterFlush_;
-        uint64_t totalFrames
+        uint64_t totalFrames;
         AudioWriteState(uint64_t unprocessed = 0, uint64_t written = 0, uint64_t num = 0)
             : unprocessedFramesBytes_(unprocessed), totalBytesWrittenAfterFlush_(written), totalFrames(num) {}
     };
