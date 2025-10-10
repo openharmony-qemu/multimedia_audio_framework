@@ -30,12 +30,14 @@ namespace {
 const std::string ALGO_PATH_BASE = "/system/lib64/";
 const std::string VM_ALGO_SO_NAME = "libaudio_voice_morph_bgm.z.so";
 constexpr int32_t DEFAULT_FRAME_LEN = 960; // single channel sample point number.
+constexpr int32_t DEFAULT_CHANNEL_COUNT = 2;
 }  // namespace
 
 AudioSuiteVoiceBeautifierAlgoInterfaceImpl::AudioSuiteVoiceBeautifierAlgoInterfaceImpl()
 {}
 
-AudioSuiteVoiceBeautifierAlgoInterfaceImpl::~AudioSuiteVoiceBeautifierAlgoInterfaceImpl(){
+AudioSuiteVoiceBeautifierAlgoInterfaceImpl::~AudioSuiteVoiceBeautifierAlgoInterfaceImpl()
+{
     Deinit();
 }
 
@@ -94,10 +96,12 @@ int32_t AudioSuiteVoiceBeautifierAlgoInterfaceImpl::Init()
     int32_t ret = ApplyAndWaitReady();
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
 
-    AudioVoiceMorphingMemSize* memSize = new AudioVoiceMorphingMemSize(); // use shared ptr
+    AudioVoiceMorphingMemSize* memSize = new AudioVoiceMorphingMemSize();
     ret = vmAlgoApi_.getSize(memSize);
     if (ret != AUDIO_VMP_EOK) {
         AUDIO_ERR_LOG("AudioVoiceMorphingGetsize fail");
+        delete memSize;
+        memSize = nullptr;
         return ERROR;
     }
     handle_ = new char[memSize->stateSize];
@@ -179,7 +183,7 @@ int32_t AudioSuiteVoiceBeautifierAlgoInterfaceImpl::SetParameter(
 }
 
 int32_t AudioSuiteVoiceBeautifierAlgoInterfaceImpl::Apply(
-        std::vector<uint8_t *> &audioInputs, std::vector<uint8_t *> &audioOutputs)
+    std::vector<uint8_t *> &audioInputs, std::vector<uint8_t *> &audioOutputs)
 {
     AUDIO_INFO_LOG("start apply vm algorithm");
 
@@ -190,6 +194,16 @@ int32_t AudioSuiteVoiceBeautifierAlgoInterfaceImpl::Apply(
 
     if (audioInputs[0] == nullptr || audioOutputs[0] == nullptr) {
         AUDIO_ERR_LOG("Apply para check fail, input or output is nullptr");
+        return ERROR;
+    }
+
+    if (!inBuf_) {
+        AUDIO_ERR_LOG("Init inBuf_ fail");
+        return ERROR;
+    }
+
+    if (!outBuf_) {
+        AUDIO_ERR_LOG("Init outBuf_ fail");
         return ERROR;
     }
 
@@ -205,18 +219,19 @@ int32_t AudioSuiteVoiceBeautifierAlgoInterfaceImpl::Apply(
 
     int16_t* inPcm = reinterpret_cast<int16_t *>(audioInputs[0]);
     int16_t* outPcm = reinterpret_cast<int16_t *>(audioOutputs[0]);
-
-    for (int32_t i = 0; i < DEFAULT_FRAME_LEN * 2; i++) {
+    int32_t offset = 16;
+    for (int32_t i = 0; i < DEFAULT_FRAME_LEN * DEFAULT_CHANNEL_COUNT; i++) {
         inBuf_[i] = inPcm[i];
-        inBuf_[i] <<= 16;
+        inBuf_[i] <<= offset;
     }
     int32_t ret = vmAlgoApi_.apply(&data, handle_, scratchBuf_);
     if (ret != AUDIO_VMP_EOK) {
         AUDIO_ERR_LOG("apply vmalgo fail.");
         return ERROR;
     }
-    for (int32_t i = 0; i < DEFAULT_FRAME_LEN * 2; i++) {
-        outPcm[i] = outBuf_[i] >> 16;
+
+    for (int32_t i = 0; i < DEFAULT_FRAME_LEN * DEFAULT_CHANNEL_COUNT; i++) {
+        outPcm[i] = outBuf_[i] >> offset;
     }
 
     return SUCCESS;

@@ -96,7 +96,7 @@ int32_t AudioSuiteVoiceBeautifierNode::SetOptions(std::string name, std::string 
         SetNodeEnableStatus(NODE_DISABLE);
         return SUCCESS;
     }
-    if (algoInterface_->SetParameter(name, value)) {
+    if (algoInterface_ != nullptr && algoInterface_->SetParameter(name, value)) {
         AUDIO_ERR_LOG("SetOptions fail.");
         DeInit();
         return ERROR;
@@ -105,8 +105,12 @@ int32_t AudioSuiteVoiceBeautifierNode::SetOptions(std::string name, std::string 
 }
 
 int32_t AudioSuiteVoiceBeautifierNode::CopyPcmBuffer(
-        AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer)
+    AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer)
 {
+    if (inputPcmBuffer == nullptr || outputPcmBuffer == nullptr) {
+        AUDIO_ERR_LOG("copypcmbuffer function get null paras.");
+        return ERROR;
+    }
     float *inputData = inputPcmBuffer->GetPcmDataBuffer();
     uint32_t inFrameSize = inputPcmBuffer->GetFrameLen() * sizeof(float);
     float *outputData = outputPcmBuffer->GetPcmDataBuffer();
@@ -190,7 +194,8 @@ int32_t AudioSuiteVoiceBeautifierNode::ConvertProcess(AudioSuitePcmBuffer *input
         ret = DoChannelConvert(inputPcmBuffer, &pcmBufferOutput_);
     } else {
         // 采样率和声道数都不同，先做声道转换。
-        channelConvertPcmBuffer_.ResetPcmBuffer(inputPcmBuffer->GetSampleRate(), VM_ALGO_CHANNEL_COUNT, VM_ALGO_CHANNEL_LAYOUT);
+        channelConvertPcmBuffer_.ResetPcmBuffer(inputPcmBuffer->GetSampleRate(),
+            VM_ALGO_CHANNEL_COUNT, VM_ALGO_CHANNEL_LAYOUT);
         ret = DoChannelConvert(inputPcmBuffer, &channelConvertPcmBuffer_);
         CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
         ret = DoResample(&channelConvertPcmBuffer_, &pcmBufferOutput_);
@@ -232,6 +237,10 @@ AudioSuitePcmBuffer *AudioSuiteVoiceBeautifierNode::SignalProcess(const std::vec
     vmAlgoOutputs[0] = algoOutputBuffer_.data();
 
     AUDIO_DEBUG_LOG("start apply algo.");
+    if (algoInterface_ == nullptr) {
+        AUDIO_ERR_LOG("AudioSuiteVoiceBeautifierNode algoInterface is null.");
+        return &pcmBufferOutput_;
+    }
     ret = algoInterface_->Apply(vmAlgoInputs, vmAlgoOutputs);
     if (ret != SUCCESS) {
         return &pcmBufferOutput_;
