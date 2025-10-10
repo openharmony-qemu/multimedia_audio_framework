@@ -55,8 +55,15 @@ public:
     virtual int32_t SetAudioFormat(uint32_t nodeId, AudioFormat audioFormat) = 0;
     virtual int32_t SetOnWriteDataCallback(uint32_t nodeId,
         std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback) = 0;
+    virtual int32_t GetSoundFiledType(uint32_t nodeId, SoundFieldType &soundFieldType) = 0;
+    virtual int32_t GetEqualizerFrequencyBandGains(uint32_t nodeId,
+        AudioEqualizerFrequencyBandGains &frequencyBandGains) = 0;
+    virtual int32_t GetVoiceBeautifierType(uint32_t nodeId,
+        VoiceBeautifierType &voiceBeautifierType) = 0;
+    virtual int32_t GetEnvironmentType(uint32_t nodeId, EnvironmentType &environmentType) = 0;
     virtual int32_t ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId,
         AudioNodePortType srcPortType, AudioNodePortType destPortType) = 0;
+    virtual int32_t ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) = 0;
     virtual int32_t DisConnectNodes(uint32_t srcNode, uint32_t destNode) = 0;
     virtual int32_t SetEqualizerMode(uint32_t nodeId, EqualizerMode eqMode);
     virtual int32_t SetEqualizerFrequencyBandGains(uint32_t nodeId, AudioEqualizerFrequencyBandGains gains);
@@ -68,6 +75,8 @@ public:
     virtual int32_t RemoveTap(uint32_t nodeId, AudioNodePortType portType) = 0;
     virtual int32_t RenderFrame(
         uint32_t pipelineId, uint8_t *audioData, int32_t frameSize, int32_t *writeLen, bool *finishedFlag) = 0;
+    virtual int32_t MultiRenderFrame(uint32_t pipelineId,
+        AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag) = 0;
 };
 
 }  // namespace AudioSuite

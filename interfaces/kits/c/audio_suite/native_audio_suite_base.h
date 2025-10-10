@@ -57,67 +57,55 @@ typedef enum {
      *
      * @since 22
      */
-    AUDIOSUITE_NODE_TYPE_INPUT = 1,
+    INPUT_NODE_TYPE_DEFAULT = 1,
     /**
      * output node type.
      *
      * @since 22
      */
-    AUDIOSUITE_NODE_TYPE_OUTPUT = 2,
+    OUT_NODE_TYPE_DEFAULT = 101,
     /**
      * Equalization node type.
      *
      * @since 22
      */
-    AUDIOSUITE_NODE_TYPE_EQUALIZER = 3,
+    EFFECT_NODE_TYPE_EQUALIZER = 201,
     /**
      * Noise reduction node type.
      *
      * @since 22
      */
-    AUDIOSUITE_NODE_TYPE_NOISE_REDUCTION = 4,
+    EFFECT_NODE_TYPE_NOISE_REDUCTION = 202,
     /**
      * Sound field node type.
      *
      * @since 22
      */
-    AUDIOSUITE_NODE_TYPE_SOUND_FIELD = 5,
+    EFFECT_NODE_TYPE_SOUND_FIELD = 203,
     /**
      * Audio Separation node type.
      *
      * @since 22
      */
-    AUDIOSUITE_NODE_TYPE_AUDIO_SEPARATION = 6,
-    /**
-     * Tempo Pitch node type.
-     *
-     * @since 22
-     */
-    AUDIOSUITE_NODE_TYPE_TEMPO_PITCH = 7,
-    /**
-     * Space Render node type.
-     *
-     * @since 22
-     */
-    AUDIOSUITE_NODE_TYPE_SPACE_RENDER = 8,
+    EFFECT_MULTII_OUTPUT_NODE_TYPE_AUDIO_SEPARATION = 204,
     /**
      * Voice beautifier node type.
      *
      * @since 22
      */
-    AUDIOSUITE_NODE_TYPE_VOICE_BEAUTIFIER = 9,
+    EFFECT_NODE_TYPE_VOICE_BEAUTIFIER = 205,
     /**
      * Scene effect node type.
      *
      * @since 22
      */
-    AUDIOSUITE_NODE_TYPE_ENVIRONMENT_EFFECT = 10,
+    EFFECT_NODE_TYPE_ENVIRONMENT_EFFECT = 206,
     /**
      * Audio mixer node type.
      *
      * @since 22
      */
-    AUDIOSUITE_NODE_TYPE_AUDIO_MIXER = 11,
+    EFFECT_NODE_TYPE_AUDIO_MIXER = 207,
 } OH_AudioNode_Type;
 
 /**
@@ -401,7 +389,7 @@ typedef struct OH_AudioFormat {
      */
     OH_AudioChannelLayout channelLayout;
     /**
-     * @brief Audio channel layout count.
+     * @brief Audio channel count.
      *
      * @since 22
      */
@@ -419,6 +407,27 @@ typedef struct OH_AudioFormat {
      */
     OH_Audio_SampleFormat sampleFormat;
 } OH_AudioFormat;
+
+typedef struct OH_AudioDataArray {
+    /**
+     * @brief Audio audioDataArray mail.
+     *
+     * @since 22
+     */
+    void **audioDataArray;
+    /**
+     * @brief Audio arraySize.
+     *
+     * @since 22
+     */
+    int arraySize;
+    /**
+     * @brief Audio requestFrameSize count.
+     *
+     * @since 22
+     */
+    int32_t requestFrameSize;
+} OH_AudioDataArray;
 
 /**
  * @brief Define the equalizer mode.
@@ -493,31 +502,31 @@ typedef enum {
      *
      * @since 22
      */
-    SOUND_FIELD_CLOSE = 1,
+    SOUND_FIELD_CLOSE = 0,
     /**
      * Front facing sound field type.
      *
      * @since 22
      */
-    SOUND_FIELD_FRONT_FACING = 2,
+    SOUND_FIELD_FRONT_FACING = 1,
     /**
      * Grand sound field type.
      *
      * @since 22
      */
-    SOUND_FIELD_GRAND = 3,
+    SOUND_FIELD_GRAND = 2,
     /**
      * Near sound field type.
      *
      * @since 22
      */
-    SOUND_FIELD_NEAR = 4,
+    SOUND_FIELD_NEAR = 3,
     /**
      * Near sound field type.
      *
      * @since 22
      */
-    SOUND_FIELD_WIDE = 5,
+    SOUND_FIELD_WIDE = 4,
 } OH_SoundFieldType;
 
 /**
@@ -531,31 +540,31 @@ typedef enum {
      *
      * @since 22
      */
-    ENVIRONMENT_TYPE_CLOSE = -1,
+    ENVIRONMENT_TYPE_CLOSE = 0,
     /**
      * Broadcast environment effect type.
      *
      * @since 22
      */
-    ENVIRONMENT_TYPE_BROADCAST = 0,
+    ENVIRONMENT_TYPE_BROADCAST = 1,
     /**
      * Earpiece environment effect type.
      *
      * @since 22
      */
-    ENVIRONMENT_TYPE_EARPIECE = 1,
+    ENVIRONMENT_TYPE_EARPIECE = 2,
     /**
      * Earpiece environment effect type.
      *
      * @since 22
      */
-    ENVIRONMENT_TYPE_UNDERWATER = 2,
+    ENVIRONMENT_TYPE_UNDERWATER = 3,
     /**
      * Gramophone environment effect type.
      *
      * @since 22
      */
-    ENVIRONMENT_TYPE_GRAMOPHONE = 3
+    ENVIRONMENT_TYPE_GRAMOPHONE = 4
 } OH_EnvironmentType;
 
 /**
@@ -565,37 +574,36 @@ typedef enum {
  */
 typedef enum {
     /**
+     * Normal voice beautifier type.
+     *
+     * @since 22
+     */
+    VOICE_BEAUTIFIER_TYPE_NORMAL = 0,
+    /**
      * Clear voice beautifier type.
      *
      * @since 22
      */
-    VOICE_BEAUTIFIER_TYPE_CLEAR,
+    VOICE_BEAUTIFIER_TYPE_CLEAR = 1,
     /**
      * Theatre voice beautifier type.
      *
      * @since 22
      */
-    VOICE_BEAUTIFIER_TYPE_THEATRE,
+    VOICE_BEAUTIFIER_TYPE_THEATRE = 2,
     /**
      * CD voice beautifier type.
      *
      * @since 22
      */
-    VOICE_BEAUTIFIER_TYPE_CD,
+    VOICE_BEAUTIFIER_TYPE_CD = 3,
     /**
-     * Studio voice beautifier type.
+     * Recording studio voice beautifier type.
      *
      * @since 22
      */
-    VOICE_BEAUTIFIER_TYPE_STUDIO,
-    /**
-     * Normal voice beautifier type.
-     *
-     * @since 22
-     */
-    VOICE_BEAUTIFIER_TYPE_NORMAL
+    VOICE_BEAUTIFIER_TYPE_RECORDING_STUDIO = 4
 } OH_VoiceBeautifierType;
-
 
 /**
  * @brief Define the number of equalizer frequency bands

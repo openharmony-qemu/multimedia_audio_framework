@@ -146,6 +146,37 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_RenderFrame(OH_AudioSuitePipeline* audi
     void* audioData, int32_t frameSize, int32_t* writeSize, bool* finishedFlag);
 
 /**
+ * @brief The application uses this interface for audio data processing.
+ *
+ * For most nodes, a piece of data is obtained from the preceding node, processed,
+ * and then passed on to the subsequent node.
+ * For nodes with multiple outputs, such as the {@link EFFECT_MULTII_OUTPUT_NODE_TYPE_AUDIO_SEPARATION},
+ * a piece of data is obtained from the preceding node, processed by an algorithm,
+ * and then multiple pieces of data are passed on to the subsequent nodes.
+ * If such nodes exist in the pipeline, this interface must be used to obtain the processed data.
+ * The size of the audioDataArray should correspond one-to-one with the number of data outputs from the node.
+ * For the audio source separation node, audioDataArray should have two elements:
+ * the first element carries the vocal sound, and the second element carries the background sound.
+ *
+ * @param audioSuitePipeline Reference created by OH_AudioSuiteEngine_CreatePipeline
+ * @param audioDataArray Audio data array pointer, where user should read,
+ * The size of each one-dimensional array should be consistent.
+ * @param arraySize AudioDataArray size.
+ * @param requestFrameSize Size of audio data user specified, it also the size of one-dimensional array.
+ * @param responseSize Size of audio data the system realy write,
+ * The system ensures that the data size filled for each one-dimensional array is consistent.
+ * @param finishedFlag This flag is used to indicate user whether all data processing has been completed.
+ * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
+ * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parame nullptr or not valid value.
+ * or {@link #AUDIOSUITE_ERROR_ENGINE_NOT_EXIST} if the engine is not created.
+ * or {@link AUDIOSUITE_ERROR_ILLEGAL_STATE} if the pipeline is in the Stop state.
+ * or {@link AUDIOSUITE_ERROR_UNSUPPORT_OPERATION} if in the last call, finishedFlag was set to true.
+ * @since 22
+ */
+OH_AudioSuite_Result OH_AudioSuiteEngine_MultiRenderFrame(OH_AudioSuitePipeline* audioSuitePipeline,
+    OH_AudioDataArray* audioDataArray, int32_t* responseSize, bool* finishedFlag);
+
+/**
  * @brief Create a audionodebuilder can be used to create an audio node,
  * The type of audio node to be created needs to be specified,
  * with the audio node type referenced from the OH_AudioNodeType definition.
@@ -167,6 +198,20 @@ OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_Create(OH_AudioNodeBuilder** build
  * @since 21
  */
 OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_Destroy(OH_AudioNodeBuilder* builder);
+
+/**
+ * @brief Reset audio node builder.
+ *
+ * If the application intends to reuse the builder to add new nodes
+ * and the properties of the new nodes differ from those of the previously created nodes,
+ * the application must call this interface to clear all properties, such as audio node type, e.t.c
+ *
+ * @param builder Reference created by OH_AudioSuiteNodeBuilder_Create
+ * @return {@link AUDIOSUITE_SUCCESS} if execution succeeds
+ * or {@link AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. builder is nullptr, e.t.c.
+ * @since 22
+ */
+OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_Reset(OH_AudioNodeBuilder* builder);
 
 /**
  * @brief Set the AudioFormat supported by the node, only nodes of input and output types support this setting.
@@ -288,6 +333,23 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_ConnectNodes(OH_AudioNode* sourceAudioN
     OH_AudioNode_Port_Type sourcePortType, OH_AudioNode_Port_Type destPortType);
 
 /**
+ * @brief Executing the connect command will link two nodes in sequence.
+ *
+ * Connect two nodes will alter the topology of the pipeline. This may result in partial data loss,
+ * so it is recommended to perform this command when the engine is in stopped state.
+ * Node connections follow a specific order: the input node is the starting point of the pipeline,
+ * multiple effect nodes can be connected in between, and the output node is the endpoint of the pipeline.
+ *
+ * @param sourceAudioNode source node Reference created by OH_AudioSuiteEngine_CreateNode
+ * @param destAudioNode dest node Reference created by OH_AudioSuiteEngine_CreateNode
+ * @return {@link AUDIOSUITE_SUCCESS} if execution succeeds
+ * or {@link AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. sourceAudioNode is nullptr, e.t.c.
+ * @since 22
+ */
+OH_AudioSuite_Result OH_AudioSuiteEngine_ConnectNodes_Change(
+    OH_AudioNode* sourceAudioNode, OH_AudioNode* destAudioNode);
+
+/**
  * @brief Executing the disconnect command will sever the connection between two nodes.
  * This command alters the pipeline's topology and may result in partial data loss.
  * It is recommended to perform this operation when the engine is in a stopped state.
@@ -397,6 +459,72 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_InstallTap(OH_AudioNode* audioNode, OH_
  * @since 21
  */
 OH_AudioSuite_Result OH_AudioSuiteEngine_RemoveTap(OH_AudioNode* audioNode, OH_AudioNode_Port_Type portType);
+
+/**
+ * @brief Set the audio node type to be created by the builder.
+ *
+ * When creating a node, other parameters are validated based on the node type.
+ * so this method needs to be executed for all types of nodes.
+ *
+ * @param builder Reference created by OH_AudioSuiteNodeBuilder_Create
+ * @param type Audio node type. {@link OH_AudioNode_Type}
+ * @return {@link AUDIOSUITE_SUCCESS} if execution succeeds
+ * or {@link AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. builder is nullptr, e.t.c.
+ * @since 22
+ */
+OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_SetNodeType(OH_AudioNodeBuilder* builder, OH_AudioNode_Type type);
+
+/**
+ * @brief Get environment type of audio node.
+ *
+ * @param audioNode Reference created by OH_AudioSuitEngine_CreateNode()
+ * @param environmentType Current environment type of audioNode.
+ * @return {@link AUDIOSUITE_SUCCESS} if execution succeeds
+ * or {@link AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioNode or
+ * environmentType is nullptr, e.t.c.
+ * @since 22
+ */
+OH_AudioSuite_Result OH_AudioSuiteEngine_GetEnvironmentType(
+    OH_AudioNode* audioNode, OH_EnvironmentType* environmentType);
+
+/**
+ * @brief Get sound field type of audio node.
+ *
+ * @param audioNode Reference created by OH_AudioSuitEngine_CreateNode().
+ * @param soundFieldType Current sound field type of audioNode.
+ * @return {@link AUDIOSUITE_SUCCESS} if execution succeeds
+ * or {@link AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioNode or
+ * soundFieldType is nullptr, e.t.c.
+ * @since 22
+ */
+OH_AudioSuite_Result OH_AudioSuiteEngine_GetSoundFiledType(
+    OH_AudioNode* audioNode, OH_SoundFieldType* soundFieldType);
+
+/**
+ * @brief Get equalier frequency band gains of audio node.
+ *
+ * @param audioNode Reference created by OH_AudioSuitEngine_CreateNode().
+ * @param frequencyBandGains Current equalizer frequency band gains of audioNode.
+ * @return {@link AUDIOSUITE_SUCCESS} if execution succeeds
+ * or {@link AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioNode or
+ * frequencyBandGains is nullptr, e.t.c.
+ * @since 22
+ */
+OH_AudioSuite_Result OH_AudioSuiteEngine_GetEqualizerFrequencyBandGains(
+    OH_AudioNode* audioNode, OH_EqualizerFrequencyBandGains* frequencyBandGains);
+
+/**
+ * @brief Get voice beautifier type of audio node.
+ *
+ * @param audioNode Reference created by OH_AudioSuitEngine_CreateNode()
+ * @param voiceBeautifierType Current voice beautifier type of audioNode.
+ * @return {@link AUDIOSUITE_SUCCESS} if execution succeeds
+ * or {@link AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is invalid, e.g. audioNode or
+ * voiceBeautifierType is nullptr, e.t.c.
+ * @since 22
+ */
+OH_AudioSuite_Result OH_AudioSuiteEngine_GetVoiceBeautifierType(
+    OH_AudioNode* audioNode, OH_VoiceBeautifierType* voiceBeautifierType);
 
 #ifdef __cplusplus
 }

@@ -125,6 +125,11 @@ int32_t AudioSuiteProcessNode::Connect(const std::shared_ptr<AudioNode>& preNode
     return SUCCESS;
 }
 
+int32_t AudioSuiteProcessNode::Connect(const std::shared_ptr<AudioNode>& preNode)
+{
+    return ERROR;
+}
+
 int32_t AudioSuiteProcessNode::DisConnect(const std::shared_ptr<AudioNode>& preNode)
 {
     if (!inputStream_) {

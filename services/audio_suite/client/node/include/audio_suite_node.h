@@ -79,6 +79,7 @@ public:
     virtual int32_t RemoveTap(AudioNodePortType portType) = 0;
     virtual int32_t Connect(const std::shared_ptr<AudioNode> &preNode,
     AudioNodePortType type) = 0;
+    virtual int32_t Connect(const std::shared_ptr<AudioNode> &preNode) = 0;
     virtual int32_t DisConnect(const std::shared_ptr<AudioNode> &preNode) = 0;
 
     virtual std::shared_ptr<AudioNode> GetSharedInstance()
@@ -104,6 +105,12 @@ public:
 
     virtual int32_t SetOptions(std::string name, std::string value)
     {
+        return ERROR;
+    }
+
+    virtual int32_t GetOptions(std::string name, std::string &value)
+    {
+        value = "";
         return ERROR;
     }
 
@@ -171,6 +178,26 @@ public:
     virtual AudioNodeEnable GetNodeEnableStatus()
     {
         return audioNodeInfo_.enableProcess_;
+    }
+
+    virtual std::string GetEnvironmentType()
+    {
+        return "";
+    }
+
+    virtual std::string GetSoundFiledType()
+    {
+        return "";
+    }
+
+    virtual std::string GetEqualizerFrequencyBandGains()
+    {
+        return "";
+    }
+
+    virtual std::string GetVoiceBeautifierType()
+    {
+        return "";
     }
     
     void ConvertToFloat(AudioSampleFormat format, unsigned n, void *src, float *dst)

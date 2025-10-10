@@ -48,6 +48,7 @@ AudioSuiteEngine::AudioSuiteEngine(AudioSuiteManagerCallback& callback)
     RegisterHandler(INSTALL_NODE_TAP, &AudioSuiteEngine::HandleInstallTap);
     RegisterHandler(REMOVE_NODE_TAP, &AudioSuiteEngine::HandleRemoveTap);
     RegisterHandler(RENDER_FRAME, &AudioSuiteEngine::HandleRenderFrame);
+    RegisterHandler(MULTI_RENDER_FRAME, &AudioSuiteEngine::HandleMultiRenderFrame);
 
     AUDIO_INFO_LOG("AudioEditEngine Create");
 }
@@ -542,6 +543,49 @@ int32_t AudioSuiteEngine::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId,
     return SUCCESS;
 }
 
+int32_t AudioSuiteEngine::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId)
+{
+    auto request = [this, srcNodeId, destNodeId]() {
+        AUDIO_INFO_LOG("ConnectNodes enter");
+        if ((nodeMap_.find(srcNodeId) == nodeMap_.end()) || (nodeMap_.find(destNodeId) == nodeMap_.end())) {
+            AUDIO_ERR_LOG("ConnectNodes, srcNodeId %{public}d or destNodeId %{public}d is invail.",
+                srcNodeId, destNodeId);
+            managerCallback_.OnConnectNodes(ERR_INVALID_PARAM);
+            return;
+        }
+
+        if (nodeMap_[srcNodeId] != nodeMap_[destNodeId]) {
+            AUDIO_ERR_LOG("ConnectNodes failed, not in one pipeline");
+            managerCallback_.OnConnectNodes(ERR_INVALID_PARAM);
+            return;
+        }
+
+        auto pipelineId = nodeMap_[destNodeId];
+        if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
+            AUDIO_ERR_LOG("ConnectNodes failed, pipelineId=%{public}d is invailed.", pipelineId);
+            managerCallback_.OnConnectNodes(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            return;
+        }
+
+        auto pipeline = pipelineMap_[pipelineId];
+        if (pipeline == nullptr) {
+            AUDIO_ERR_LOG("pipeline ConnectNodes node failed, pipeline is nullptr.");
+            managerCallback_.OnConnectNodes(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            return;
+        }
+
+        int32_t ret = pipeline->ConnectNodes(srcNodeId, destNodeId);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("ConnectNodes failed, ret = %{public}d.", ret);
+            managerCallback_.OnConnectNodes(ret);
+            return;
+        }
+    };
+
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
 int32_t AudioSuiteEngine::DisConnectNodes(uint32_t srcNodeId, uint32_t destNodeId)
 {
     CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not DisConnectNodes.");
@@ -692,6 +736,35 @@ int32_t AudioSuiteEngine::RenderFrame(uint32_t pipelineId,
     return SUCCESS;
 }
 
+int32_t AudioSuiteEngine::MultiRenderFrame(uint32_t pipelineId,
+    AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag)
+{
+    auto request = [
+        this, pipelineId, audioDataArray, responseSize, finishedFlag]()
+    {
+        AUDIO_INFO_LOG("AudioSuiteEngine::MultiRenderFrame enter request");
+
+        if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
+            AUDIO_ERR_LOG("engine MultiRenderFrame failed, pipeline id is invailed.");
+            managerCallback_.OnMultiRenderFrame(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            return;
+        }
+
+        std::shared_ptr<IAudioSuitePipeline> pipeline = pipelineMap_[pipelineId];
+        if (pipeline == nullptr) {
+            AUDIO_ERR_LOG("engine CreateNode failed, pipeline is nullptr.");
+            managerCallback_.OnMultiRenderFrame(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            return;
+        }
+
+        pipeline->MultiRenderFrame(reinterpret_cast<uint8_t **>(audioDataArray->audioDataArray),
+            audioDataArray->arraySize, audioDataArray->requestFrameSize, responseSize, finishedFlag);
+    };
+
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
 int32_t AudioSuiteEngine::SetOptions(uint32_t nodeId, std::string name, std::string value)
 {
     CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not SetOptions.");
@@ -718,6 +791,38 @@ int32_t AudioSuiteEngine::SetOptions(uint32_t nodeId, std::string name, std::str
         int32_t ret = pipeline->SetOptions(nodeId, name, value);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("pipeline SetOptions node failed, ret = %{public}d.", ret);
+            return;
+        }
+    };
+
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t AudioSuiteEngine::GetOptions(uint32_t nodeId, std::string name, std::string &value)
+{
+    auto request = [this, nodeId, name, &value]() {
+        AUDIO_INFO_LOG("GetOptions enter");
+        if (nodeMap_.find(nodeId) == nodeMap_.end()) {
+            AUDIO_ERR_LOG("engine GetOptions node failed, node id=%{public}d is invailed.", nodeId);
+            return;
+        }
+
+        auto pipelineId = nodeMap_[nodeId];
+        if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
+            AUDIO_ERR_LOG("engine GetOptions node failed, node id=%{public}d is invailed.", nodeId);
+            return;
+        }
+
+        auto pipeline = pipelineMap_[pipelineId];
+        if (pipeline == nullptr) {
+            AUDIO_ERR_LOG("pipeline InstallTap node failed, pipeline is nullptr.");
+            return;
+        }
+
+        int32_t ret = pipeline->GetOptions(nodeId, name, value);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("pipeline GetOptions node failed, ret = %{public}d.", ret);
             return;
         }
     };
@@ -825,6 +930,11 @@ void AudioSuiteEngine::HandleRemoveTap(int32_t result)
 void AudioSuiteEngine::HandleRenderFrame(int32_t result)
 {
     managerCallback_.OnRenderFrame(result);
+}
+
+void AudioSuiteEngine::HandleMultiRenderFrame(int32_t result)
+{
+    managerCallback_.OnMultiRenderFrame(result);
 }
 
 }  // namespace AudioSuite

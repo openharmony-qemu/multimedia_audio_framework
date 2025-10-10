@@ -36,6 +36,8 @@ public:
 
     OH_AudioSuite_Result SetFormat(OH_AudioFormat audioFormat);
     OH_AudioSuite_Result SetOnWriteDataCallback(OH_AudioNode_OnWriteDataCallBack callback, void *userData);
+    OH_AudioSuite_Result SetNodeType(OH_AudioNode_Type type);
+    OH_AudioSuite_Result Reset();
 
     AudioNodeType GetNodeType() const;
     bool IsSetFormat() const;

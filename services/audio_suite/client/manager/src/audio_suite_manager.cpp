@@ -333,6 +333,26 @@ int32_t AudioSuiteManager::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId,
     return connectNodesResult_;
 }
 
+int32_t AudioSuiteManager::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId)
+{
+    AUDIO_INFO_LOG("ConnectNodes enter.");
+    std::lock_guard<std::mutex> lock(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+
+    isFinishConnectNodes_ = false;
+    int32_t ret = suiteEngine_->ConnectNodes(srcNodeId, destNodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine ConnectNodes failed, ret = %{public}d", ret);
+
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return isFinishConnectNodes_;
+    });
+    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "ConnectNodes timeout");
+
+    AUDIO_INFO_LOG("ConnectNodes leave");
+    return connectNodesResult_;
+}
+
 int32_t AudioSuiteManager::DisConnectNodes(uint32_t srcNodeId, uint32_t destNodeId)
 {
     AUDIO_INFO_LOG("DisConnectNodes enter.");
@@ -428,6 +448,89 @@ int32_t AudioSuiteManager::SetVoiceBeautifierType(uint32_t nodeId, VoiceBeautifi
     return ret;
 }
 
+int32_t AudioSuiteManager::GetEnvironmentType(uint32_t nodeId, EnvironmentType &environmentType)
+{
+    AUDIO_INFO_LOG("GetEnvironmentType enter.");
+    std::lock_guard<std::mutex> lock(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+
+    // check
+    std::string name = "EnvironmentType";
+    std::string value = "";
+    int32_t ret = suiteEngine_->GetOptions(nodeId, name, value);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine EnvironmentType failed, ret = %{public}d", ret);
+    int32_t parseValue = StringToInt32(value);
+    if (parseValue < static_cast<int32_t>(EnvironmentType::AUDIO_SUITE_ENVIRONMENT_TYPE_CLOSE)
+        || parseValue > static_cast<int32_t>(EnvironmentType::AUDIO_SUITE_ENVIRONMENT_TYPE_GRAMOPHONE)) {
+        return ERROR;
+    }
+    environmentType = static_cast<EnvironmentType>(parseValue);
+    return SUCCESS;
+}
+
+int32_t AudioSuiteManager::GetSoundFiledType(uint32_t nodeId, SoundFieldType &soundFieldType)
+{
+    AUDIO_INFO_LOG("GetSoundFiledType enter.");
+    std::lock_guard<std::mutex> lock(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+
+    // check
+    std::string name = "SoundFieldType";
+    std::string value = "";
+    int32_t ret = suiteEngine_->GetOptions(nodeId, name, value);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine GetSoundFiledType failed, ret = %{public}d", ret);
+    int32_t parseValue = StringToInt32(value);
+    if (parseValue < static_cast<int32_t>(SoundFieldType::AUDIO_SUITE_SOUND_FIELD_CLOSE)
+        || parseValue > static_cast<int32_t>(SoundFieldType::AUDIO_SUITE_SOUND_FIELD_WIDE)) {
+        return ERROR;
+    }
+    soundFieldType = static_cast<SoundFieldType>(parseValue);
+    return SUCCESS;
+}
+
+int32_t AudioSuiteManager::GetEqualizerFrequencyBandGains(uint32_t nodeId,
+    AudioEqualizerFrequencyBandGains &frequencyBandGains)
+{
+    AUDIO_INFO_LOG("GetEqualizerFrequencyBandGains enter.");
+    std::lock_guard<std::mutex> lock(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+
+    // check
+    std::string name = "AudioEqualizerFrequencyBandGains";
+    std::string value = "";
+    int32_t ret = suiteEngine_->GetOptions(nodeId, name, value);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+        "engine GetEqualizerFrequencyBandGains failed, ret = %{public}d", ret);
+    int32_t parseValue[EQUALIZER_BAND_NUM];
+    ParseValue(value, parseValue);
+    for (size_t idx = 0; idx < sizeof(parseValue) / sizeof(parseValue[0]); idx++) {
+        frequencyBandGains.gains[idx] = parseValue[idx];
+    }
+    return SUCCESS;
+}
+
+int32_t AudioSuiteManager::GetVoiceBeautifierType(uint32_t nodeId,
+    VoiceBeautifierType &voiceBeautifierType)
+{
+    AUDIO_INFO_LOG("GetVoiceBeautifierType enter.");
+    std::lock_guard<std::mutex> lock(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+
+    // check
+    std::string name = "VoiceBeautifierType";
+    std::string value = "";
+    int32_t ret = suiteEngine_->GetOptions(nodeId, name, value);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+        "engine GetVoiceBeautifierType failed, ret = %{public}d", ret);
+    int32_t parseValue = StringToInt32(value);
+    if (parseValue < static_cast<int32_t>(VoiceBeautifierType::AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_CLEAR)
+        || parseValue > static_cast<int32_t>(VoiceBeautifierType::AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_STUDIO)) {
+        return ERROR;
+    }
+    voiceBeautifierType = static_cast<VoiceBeautifierType>(parseValue);
+    return SUCCESS;
+}
+
 int32_t AudioSuiteManager::InstallTap(uint32_t nodeId, AudioNodePortType portType,
     std::shared_ptr<SuiteNodeReadTapDataCallback> callback)
 {
@@ -487,6 +590,27 @@ int32_t AudioSuiteManager::RenderFrame(uint32_t pipelineId,
 
     AUDIO_INFO_LOG("RenderFrame leave");
     return renderFrameResult_;
+}
+
+int32_t AudioSuiteManager::MultiRenderFrame(uint32_t pipelineId,
+   AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag)
+{
+    std::lock_guard<std::mutex> lock(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+
+    isFinisMultiRenderFrame_ = false;
+    int32_t ret = suiteEngine_->MultiRenderFrame(
+        pipelineId, audioDataArray, responseSize, finishedFlag);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine RenderFrame failed, ret = %{public}d", ret);
+
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return isFinisMultiRenderFrame_;
+    });
+    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "MultiRenderFrame timeout");
+
+    AUDIO_INFO_LOG("MultiRenderFrame leave");
+    return MultiRenderFrameResult_;
 }
 
 void AudioSuiteManager::OnCreatePipeline(int32_t result, uint32_t pipelineId)
@@ -632,6 +756,15 @@ void AudioSuiteManager::OnRenderFrame(int32_t result)
     AUDIO_INFO_LOG("OnRenderFrame callback");
     isFinisRenderFrame_ = true;
     renderFrameResult_ = result;
+    callbackCV_.notify_all();
+}
+
+void AudioSuiteManager::OnMultiRenderFrame(int32_t result)
+{
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    AUDIO_INFO_LOG("OnMultiRenderFrame callback");
+    isFinisMultiRenderFrame_ = true;
+    MultiRenderFrameResult_ = result;
     callbackCV_.notify_all();
 }
 
