@@ -431,7 +431,7 @@ ohos_unittest("audio_suite_voice_beautifier_node_test") {
     "googletest:gtest",
     "hilog:libhilog",
   ]
-  resource_config_file = "./resource/ohos_test.xml"
+  resource_config_file = "./resource/vb_test.xml"
 }
 
 ohos_unittest("audio_suite_voice_beautifier_algo_interface_impl_test") {
@@ -452,5 +452,5 @@ ohos_unittest("audio_suite_voice_beautifier_algo_interface_impl_test") {
     "googletest:gtest",
     "hilog:libhilog",
   ]
-  resource_config_file = "./resource/ohos_test.xml"
+  resource_config_file = "./resource/vb_test.xml"
 }

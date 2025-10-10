@@ -296,6 +296,9 @@ std::shared_ptr<AudioNode> AudioSuitePipeline::CreateNodeForType(AudioNodeBuilde
         AUDIO_INFO_LOG("Create AudioOutputNode");
         outputNode_ = std::make_shared<AudioOutputNode>(audioFormat);
         node = std::static_pointer_cast<AudioNode>(outputNode_);
+    } else if (builder.nodeType == NODE_TYPE_VOICE_BEAUTIFIER) {
+        AUDIO_INFO_LOG("Create AudioSuiteVoiceBeautifierNode");
+        node = std::make_shared<AudioSuiteVoiceBeautifierNode>();
     } else if (builder.nodeType == NODE_TYPE_NOISE_REDUCTION) {
         AUDIO_INFO_LOG("Create AudioSuiteNrNode");
         node = std::make_shared<AudioSuiteNrNode>();
@@ -305,9 +308,6 @@ std::shared_ptr<AudioNode> AudioSuitePipeline::CreateNodeForType(AudioNodeBuilde
     } else if (builder.nodeType == NODE_TYPE_AUDIO_SEPARATION) {
         AUDIO_INFO_LOG("Create AudioSuiteAissNode");
         node = std::make_shared<AudioSuiteAissNode>();
-    } else if (builder.nodeType == NODE_TYPE_VOICE_BEAUTIFIER) {
-        AUDIO_INFO_LOG("Create AudioSuiteVoiceBeautifierNode");
-        node = std::make_shared<AudioSuiteVoiceBeautifierNode>();
     } else {
         AUDIO_ERR_LOG("Create node failed, current type = %{public}d not support.",
             static_cast<int32_t>(builder.nodeType));
