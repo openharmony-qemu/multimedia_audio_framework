@@ -454,8 +454,14 @@ private:
         float speed = 1.0;
     };
     std::atomic<WrittenFramesWithSpeed> writtenAtSpeedChange_; // afterSpeed
-    std::atomic<uint64_t> unprocessedFramesBytes_ = 0;
-    std::atomic<uint64_t> totalBytesWrittenAfterFlush_ = 0;
+    struct AudioWriteState {
+        uint64_t unprocessedFramesBytes_;
+        uint64_t totalBytesWrittenAfterFlush_;
+        uint64_t perPeriodFrame_;
+        AudioWriteState(uint64_t unprocessed = 0, uint64_t written = 0, uint64_t frame = 0)
+            : unprocessedFramesBytes_(unprocessed), totalBytesWrittenAfterFlush_(written), perPeriodFrame_(frame) {}
+    };
+    std::atomic<AudioWriteState> audioWriteState_;
 
     std::string traceTag_;
     std::string spatializationEnabled_ = "Invalid";

@@ -1519,7 +1519,8 @@ void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
     info.renderPeriodPositionCb = rendererPeriodPositionCallback_;
 
     info.rendererWriteCallback = writeCb_;
-    info.unprocessSamples = unprocessedFramesBytes_.load() +
+    info.unprocessSamples = audioWriteState_.load().unprocessedFramesBytes_ +
+        audioWriteState_.load().perPeriodFrame_ +
         lastSwitchPositionWithSpeed_[Timestamp::Timestampbase::MONOTONIC];
 }
 
@@ -1842,10 +1843,11 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency, base);
     // cal readIdx from last flush
     readIdx = readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0;
-
-    uint64_t unprocessSamples = unprocessedFramesBytes_.load();
+    
     // cal latency between readIdx and framesWritten
-    uint64_t samplesWritten = totalBytesWrittenAfterFlush_.load();
+    AudioWriteState state = audioWriteState_.load();
+    uint64_t unprocessSamples = state.unprocessedFramesBytes_;
+    uint64_t samplesWritten = state.totalBytesWrittenAfterFlush_;
     uint64_t deepLatency = samplesWritten > readIdx ? samplesWritten - readIdx : 0;
     // get position and speed since last change
     WrittenFramesWithSpeed fsPair = writtenAtSpeedChange_.load();
@@ -1861,7 +1863,10 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
         frameLatency = (deepLatency + latency) * speed_;
     }
     // between unprocessSamples and framesWritten there is sonic
-    frameLatency += SONIC_LATENCY_IN_MS * curStreamParams_.samplingRate / AUDIO_MS_PER_SECOND;
+    if (speedEnable_) {
+        frameLatency += SONIC_LATENCY_IN_MS * curStreamParams_.samplingRate / AUDIO_MS_PER_SECOND;
+    }
+    
     // real frameposition
     uint64_t framePosition = unprocessSamples > frameLatency ? unprocessSamples - frameLatency : 0;
     framePosition += dropPosition_.load();

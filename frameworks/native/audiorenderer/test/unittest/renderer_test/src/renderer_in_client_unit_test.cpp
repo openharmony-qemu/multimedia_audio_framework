@@ -1673,21 +1673,24 @@ HWTEST(RendererInClientInnerUnitTest, GetAudioTimestampInfo_001, TestSize.Level0
 
     Timestamp timestamp;
     ptrRendererInClientInner->state_ = State::RUNNING;
-    ptrRendererInClientInner->unprocessedFramesBytes_.store(500);
-    ptrRendererInClientInner->totalBytesWrittenAfterFlush_.store(50);
+
+    RendererInClientInner::AudioWriteState state = {500, 50};
+    ptrRendererInClientInner->audioWriteState_.store(state);
     for (auto i = 0; i < Timestamp::Timestampbase::BASESIZE; i++) {
         ptrRendererInClientInner->GetAudioTimestampInfo(timestamp,
             static_cast<Timestamp::Timestampbase>(i));
         EXPECT_EQ(timestamp.framePosition, 450); // latency = 50, frameposition = 500 - 50 = 450
     }
     ptrRendererInClientInner->SetSpeed(2.0); // lastspeed = 1.0, speed = 2.0, lastFrameWritten = 50
-    ptrRendererInClientInner->totalBytesWrittenAfterFlush_.store(200);
+    state = {500, 200};
+    ptrRendererInClientInner->audioWriteState_.store(state);
     for (auto i = 0; i < Timestamp::Timestampbase::BASESIZE; i++) {
         ptrRendererInClientInner->GetAudioTimestampInfo(timestamp,
             static_cast<Timestamp::Timestampbase>(i));
         EXPECT_EQ(timestamp.framePosition, 450); // latency = 50 + (200 - 50) * 2 = 350, frameposition = 150 < 450
     }
-    ptrRendererInClientInner->unprocessedFramesBytes_.store(1000);
+    state = {1000, 200};
+    ptrRendererInClientInner->audioWriteState_.store(state);
     for (auto i = 0; i < Timestamp::Timestampbase::BASESIZE; i++) {
         ptrRendererInClientInner->GetAudioTimestampInfo(timestamp,
             static_cast<Timestamp::Timestampbase>(i));
