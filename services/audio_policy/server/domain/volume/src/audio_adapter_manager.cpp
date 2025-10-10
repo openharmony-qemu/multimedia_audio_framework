@@ -3022,7 +3022,7 @@ void AudioAdapterManager::RegisterDoNotDisturbStatusWhiteList()
 
 void AudioAdapterManager::RegisterMdmMuteSwitchCallback()
 {
-    int ret = WatchParameter("persist.edm.unmute_device_disallowed",
+    int32_t ret = WatchParameter("persist.edm.unmute_device_disallowed",
         [](const char* key, const char* value, void* context) {
             CHECK_AND_RETURN_LOG(value != nullptr, "value is null");
             bool isMute = strcmp(value, "true") == 0;
@@ -3031,7 +3031,7 @@ void AudioAdapterManager::RegisterMdmMuteSwitchCallback()
             audioAdapterManager->MdmMuteSwitchCallback(isMute);
         },
         this);
-    if (ret != 0) {
+    if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Register mdmMuteStatus failed! Err: %{public}d", ret);
     }
 }

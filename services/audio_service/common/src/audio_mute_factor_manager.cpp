@@ -27,12 +27,12 @@ AudioMuteFactorManager& AudioMuteFactorManager::GetInstance()
 
 AudioMuteFactorManager::AudioMuteFactorManager()
 {
-    AUDIO_INFO_LOG("AudioMuteFactorManager construct");
+    AUDIO_INFO_LOG("Construct");
 }
 
 AudioMuteFactorManager::~AudioMuteFactorManager()
 {
-    AUDIO_INFO_LOG("AudioMuteFactorManager destruct");
+    AUDIO_INFO_LOG("Destruct");
 }
 
 bool AudioMuteFactorManager::GetMdmMuteStatus() const
@@ -40,7 +40,7 @@ bool AudioMuteFactorManager::GetMdmMuteStatus() const
     return isMdmMute_;
 }
 
-void AudioMuteFactorManager::SetMdmMuteStatus(bool mdmMute)
+void AudioMuteFactorManager::SetMdmMuteStatus(const bool mdmMute)
 {
     isMdmMute_ = mdmMute;
 }

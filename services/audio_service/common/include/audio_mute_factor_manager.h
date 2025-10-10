@@ -28,7 +28,7 @@ public:
 
     bool GetMdmMuteStatus() const;
 
-    void SetMdmMuteStatus(bool mdmMute);
+    void SetMdmMuteStatus(const bool mdmMute);
 
 private:
     AudioMuteFactorManager();

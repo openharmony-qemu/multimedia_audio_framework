@@ -125,9 +125,9 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
         it->second.monitorVolumeLevel_ = volumeLevel;
         AUDIO_INFO_LOG("volume,sessionId:%{public}u,volume:%{public}f,volumeType:%{public}d,devClass:%{public}s,"
             "volumeSystem:%{public}f,volumeStream:%{public}f,volumeApp:%{public}f,isVKB:%{public}d,isMuted:%{public}s,"
-            "doNotDisturbStatusVolume:%{public}d,", sessionId, volumes->volume, volumeType, deviceClass.c_str(),
+            "doNotDisturbStatusVolume:%{public}d,mdmStatus:%{public}f", sessionId, volumes->volume, volumeType, deviceClass.c_str(),
             volumes->volumeSystem, volumes->volumeStream, volumes->volumeApp, it->second.IsVirtualKeyboard(),
-            itSV != systemVolume_.end() ? (itSV->second.isMuted_ ? "T" : "F") : "null", doNotDisturbStatusVolume);
+            itSV != systemVolume_.end() ? (itSV->second.isMuted_ ? "T" : "F") : "null", doNotDisturbStatusVolume, mdmMuteStatus);
     }
     AudioStreamMonitor::GetInstance().UpdateMonitorVolume(sessionId, volumes->volume);
     return volumes->volume;
