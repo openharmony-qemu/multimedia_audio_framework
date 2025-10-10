@@ -1495,7 +1495,7 @@ bool HpaeRendererManager::QueryOneStreamUnderrun()
 {
     CHECK_AND_RETURN_RET(!IsRemoteDevice() && appsUid_.size() == 1 && hpaeSignalProcessThread_, false);
     auto underrunFlag = false;
-    for (auto [id, node] : sinkInputNodeMap_) {
+    for (const auto &[id, node] : sinkInputNodeMap_) {
         CHECK_AND_RETURN_RET_LOG(node, false, "nullptr in map");
         if (node->GetState() == HPAE_SESSION_RUNNING) {
             underrunFlag = node->QueryUnderrun();
