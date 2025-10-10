@@ -20,18 +20,6 @@
 extern "C" {
 #endif
 
-#ifdef arm_v7
-#define BYTE_ALIGN (0xFFFFFFF8)
-#endif
-
-#ifdef arm_v8
-#define BYTE_ALIGN (0xFFFFFFFFFFFFFFF8)
-#endif
-
-#ifndef BYTE_ALIGN
-#define BYTE_ALIGN (0xFFFFFFFFFFFFFFF8)
-#endif
-
 #define AUDIO_VMP_EOK 0
 
 typedef struct {
