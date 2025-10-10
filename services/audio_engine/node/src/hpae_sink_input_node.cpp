@@ -157,6 +157,7 @@ bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
             standbyCounter_ = 0;
         }
     }
+    ReportDataEvent(ret);
     inputAudioBuffer_.SetBufferValid(ret ? false : true);
     return true; // continue in DoProcess!
 }
@@ -179,33 +180,24 @@ void HpaeSinkInputNode::DoProcess()
     }
 
     int32_t ret = SUCCESS;
-    int32_t peekTimes = 0;
 
-    while ((currentSize_ < renderSize_) && peekTimes++ < 3) { // try 3 times
+    while ((currentSize_ < renderSize_)) {
         CHECK_AND_RETURN(ReadToAudioBuffer(ret));
-        currentSize_ +=  ret == SUCCESS ? inputSize_ : 0;
+        if (ret != SUCCESS) {
+            break;
+        }
+        currentSize_ += inputSize_;
     }
 
-    ret = currentSize_ >= renderSize_ ? SUCCESS : ERROR;    
-    AudioPipeType  pipeType = ConvertDeviceClassToPipe(GetDeviceClass());
     if (ret != SUCCESS) {
-        if (pipeType != PIPE_TYPE_UNKNOWN) {
-            AudioPerformanceMonitor::GetInstance().RecordSilenceState(GetSessionId(), true, pipeType,
-                static_cast<uint32_t>(appUid_));
-        }
-        Trace underflowTrace("[" + std::to_string(GetSessionId()) + "]HpaeSinkInputNode::DoProcess underflow");
         memset_s(inputAudioBuffer_.GetPcmDataBuffer(), inputAudioBuffer_.Size(), 0, inputAudioBuffer_.Size());
     } else {
         ConvertToFloat(
             GetBitWidth(), renderSize_ / GetSizeFromFormat(GetBitWidth()),
             interleveData_.data(), inputAudioBuffer_.GetPcmDataBuffer());
-        std::copy(interleveData_.begin() + renderSize_, interleveData_.begin() + currentSize_,
+        std::move(interleveData_.begin() + renderSize_, interleveData_.begin() + currentSize_,
             interleveData_.begin());
         currentSize_ -= renderSize_;
-        if (pipeType != PIPE_TYPE_UNKNOWN) {
-            AudioPerformanceMonitor::GetInstance().RecordSilenceState(GetSessionId(), false, pipeType,
-                static_cast<uint32_t>(appUid_));
-        }
         totalFrames_ += GetFrameLen();
         if (historyBuffer_) {
             historyBuffer_->StoreFrameData(inputAudioBuffer_);
@@ -369,6 +361,23 @@ bool HpaeSinkInputNode::QueryUnderrun()
     auto writeCallback = writeCallback_.lock();
     CHECK_AND_RETURN_RET_LOG(writeCallback, false, "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
     return writeCallback->OnQueryUnderrun();
+}
+
+void HpaeSinkInputNode::ReportDataEvent(int32_t &ret)
+{
+    AudioPipeType  pipeType = ConvertDeviceClassToPipe(GetDeviceClass());
+    if (ret != SUCCESS) {
+        if (pipeType != PIPE_TYPE_UNKNOWN) {
+            AudioPerformanceMonitor::GetInstance().RecordSilenceState(GetSessionId(), true, pipeType,
+                static_cast<uint32_t>(appUid_));
+        }
+        Trace underflowTrace("[" + std::to_string(GetSessionId()) + "]HpaeSinkInputNode::DoProcess underflow");
+    } else {
+        if (pipeType != PIPE_TYPE_UNKNOWN) {
+            AudioPerformanceMonitor::GetInstance().RecordSilenceState(GetSessionId(), false, pipeType,
+                static_cast<uint32_t>(appUid_));
+        }
+    }
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

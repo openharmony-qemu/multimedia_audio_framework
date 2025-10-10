@@ -68,6 +68,7 @@ private:
     int32_t OnStreamInfoChange(bool needata = true);
     void CheckAndDestroyHistoryBuffer();
     bool ReadToAudioBuffer(int32_t &ret);
+    void ReportDataEvent(int32_t &ret);
     std::weak_ptr<IStreamCallback> writeCallback_;
     AudioCallBackStreamInfo streamInfo_;
     PcmBufferInfo pcmBufferInfo_;
