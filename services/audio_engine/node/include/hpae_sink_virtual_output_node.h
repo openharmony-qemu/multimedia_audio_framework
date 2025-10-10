@@ -56,6 +56,7 @@ public:
     int32_t ReloadNode(HpaeNodeInfo nodeInfo);
 private:
     void DoProcessInner();
+    void SilenceData();
     size_t GetRingCacheSize();
 private:
     InputPort<HpaePcmBuffer *> inputStream_;

@@ -2364,7 +2364,9 @@ int32_t RendererInServer::WriteDupBufferInner(const BufferDesc &bufferDesc, int3
     AUDIO_DEBUG_LOG("targetSize: %{public}zu, writableSize: %{public}zu", targetSize, writableSize);
     size_t writeSize = std::min(writableSize, targetSize);
     BufferWrap bufferWrap = {bufferDesc.buffer, writeSize};
-    if (writeSize > 0) {
+    if (lastTarget_ == INJECT_TO_VOICE_COMMUNICATION_CAPTURE) {
+        WriteSilenceDupBuffer(bufferDesc, bufferWrap, innerCapId);
+    } else if (writeSize > 0) {
         result = innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer()->Enqueue(bufferWrap);
         if (result.ret != OPERATION_SUCCESS) {
             AUDIO_ERR_LOG("RingCache Enqueue failed ret:%{public}d size:%{public}zu", result.ret, result.size);
@@ -2372,6 +2374,19 @@ int32_t RendererInServer::WriteDupBufferInner(const BufferDesc &bufferDesc, int3
         DumpFileUtil::WriteDumpFile(dumpDupIn_, static_cast<void *>(bufferDesc.buffer), writeSize);
     }
     return SUCCESS;
+}
+
+void RendererInServer::WriteSilenceDupBuffer(const BufferDesc &bufferDesc, BufferWrap &bufferWrap, int32_t innerCapId)
+{
+    CHECK_AND_RETURN(bufferWrap.dataSize > 0);
+    auto buffer = std::make_unique<uint8_t []>(bufferWrap.dataSize);
+    bufferWrap.dataPtr = buffer.get();
+    memset_s(bufferWrap.dataPtr, bufferWrap.dataSize, 0, bufferWrap.dataSize);
+    OptResult result = innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer()->Enqueue(bufferWrap);
+    if (result.ret != OPERATION_SUCCESS) {
+        AUDIO_ERR_LOG("RingCache Enqueue failed ret:%{public}d size:%{public}zu", result.ret, result.size);
+    }
+    DumpFileUtil::WriteDumpFile(dumpDupIn_, static_cast<void *>(bufferDesc.buffer), bufferWrap.dataSize);
 }
 
 int32_t RendererInServer::SetSpeed(float speed)
