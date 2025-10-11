@@ -28,6 +28,8 @@
 #include "audio_volume.h"
 #include "audio_utils.h"
 #include "audio_zone_service.h"
+#include "audio_mute_factor_manager.h"
+#include "audio_server_proxy.h"
 
 using namespace std;
 
@@ -128,6 +130,17 @@ bool AudioAdapterManager::Init()
 
     isVolumeUnadjustable_ = system::GetBoolParameter("const.multimedia.audio.fixedvolume", false);
     AUDIO_INFO_LOG("Get fixdvolume parameter success %{public}d", isVolumeUnadjustable_);
+
+    char mdmMuteStatus[6] = {0};
+    ret = GetParameter("persist.edm.unmute_device_disallowed", "false", mdmMuteStatus, sizeof(mdmMuteStatus));
+    if (ret > 0) {
+        bool isMdmMute = (strcmp(mdmMuteStatus, "true") == 0);
+        AudioMuteFactorManager::GetInstance().SetMdmMuteStatus(isMdmMute);
+        AUDIO_INFO_LOG("Get mdmMuteStatus success %{public}d", isMdmMute);
+    } else {
+        AUDIO_ERR_LOG("Get mdmMuteStatus failed %{public}d", ret);
+    }
+    RegisterMdmMuteSwitchCallback();
 
     handler_ = std::make_shared<AudioAdapterManagerHandler>();
     return true;
@@ -3004,6 +3017,38 @@ void AudioAdapterManager::RegisterDoNotDisturbStatusWhiteList()
         AUDIO_ERR_LOG("RegisterObserver doNotDisturbStatus WhiteList failed! Err: %{public}d", ret);
     } else {
         AUDIO_INFO_LOG("Register doNotDisturbStatus WhiteList successfully");
+    }
+}
+
+void AudioAdapterManager::RegisterMdmMuteSwitchCallback()
+{
+    int32_t ret = WatchParameter("persist.edm.unmute_device_disallowed",
+        [](const char* key, const char* value, void* context) {
+            CHECK_AND_RETURN_LOG(value != nullptr, "value is null");
+            bool isMute = strcmp(value, "true") == 0;
+            CHECK_AND_RETURN_LOG(context != nullptr, "context is null");
+            AudioAdapterManager* audioAdapterManager = static_cast<AudioAdapterManager*>(context);
+            audioAdapterManager->MdmMuteSwitchCallback(isMute);
+        },
+        this);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Register mdmMuteStatus failed! Err: %{public}d", ret);
+    }
+}
+
+void AudioAdapterManager::MdmMuteSwitchCallback(bool isMute)
+{
+    AUDIO_INFO_LOG("mdmMuteStatus = %{public}d", isMute);
+    AudioMuteFactorManager& audioMuteFactorManager = AudioMuteFactorManager::GetInstance();
+    audioMuteFactorManager.SetMdmMuteStatus(isMute);
+    for (auto &streamType : defaultVolumeTypeList_) {
+        SetVolumeDb(streamType);
+        if (streamType == STREAM_VOICE_CALL) {
+            int32_t volumeLevel = GetStreamVolume(streamType);
+            DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+            float volumeFloat = isMute ? 0 : GetSystemVolumeInDb(streamType, volumeLevel, curOutputDeviceType);
+            AudioServerProxy::GetInstance().NotifyStreamVolumeChangedProxy(streamType, volumeFloat);
+        }
     }
 }
 
