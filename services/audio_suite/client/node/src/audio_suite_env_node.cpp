@@ -54,8 +54,8 @@ int32_t AudioSuiteEnvNode::Init()
 
 int32_t AudioSuiteEnvNode::DeInit()
 {
-    tmpin.resize(0);
-    tmpout.resize(0);
+    tmpin_.resize(0);
+    tmpout_.resize(0);
     if (envAlgoInterfaceImpl_ != nullptr) {
         envAlgoInterfaceImpl_->Deinit();
         envAlgoInterfaceImpl_ = nullptr;
@@ -144,14 +144,14 @@ AudioSuitePcmBuffer *AudioSuiteEnvNode::SignalProcess(const std::vector<AudioSui
         outPcmBuffer_.GetPcmDataBuffer(),
         static_cast<void *>(inputDataBuffer_.data()));
 
-    tmpin.resize(1);
-    tmpout.resize(1);
+    tmpin_.resize(1);
+    tmpout_.resize(1);
     uint8_t *inputPointer = inputDataBuffer_.data();
     uint8_t *outputPointer = outputDataBuffer_.data();
 
-    tmpin[0] = inputPointer;
-    tmpout[0] = outputPointer;
-    ret = envAlgoInterfaceImpl_->Apply(tmpin, tmpout);
+    tmpin_[0] = inputPointer;
+    tmpout_[0] = outputPointer;
+    ret = envAlgoInterfaceImpl_->Apply(tmpin_, tmpout_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, &outPcmBuffer_, "AudioSuiteEnvNode SignalProcess Apply failed");
 
     ConvertToFloat(

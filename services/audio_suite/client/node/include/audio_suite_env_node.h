@@ -39,23 +39,20 @@ public:
     int32_t SetOptions(std::string name, std::string value) override;
     std::shared_ptr<AudioSuiteEnvAlgoInterfaceImpl> envAlgoInterfaceImpl_;
     AudioSuitePcmBuffer outPcmBuffer_;
-    std::vector<uint8_t *> tmpin;
-    std::vector<uint8_t *> tmpout;
-    std::string eqValue;
 
 protected:
     AudioSuitePcmBuffer *SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs) override;
 
 private:
-    EqualizerMode currentEqMode;
     bool isInit_ = false;
-    AudioFormat audioFormat_;
     int32_t preProcess(AudioSuitePcmBuffer *inputPcmBuffer);
     int32_t CopyBuffer(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer);
     int32_t DoChannelConvert(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer);
     int32_t DoResample(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer);
     std::vector<uint8_t> inputDataBuffer_;
     std::vector<uint8_t> outputDataBuffer_;
+    std::vector<uint8_t *> tmpin_;
+    std::vector<uint8_t *> tmpout_;
 };
 
 }  // namespace AudioSuite

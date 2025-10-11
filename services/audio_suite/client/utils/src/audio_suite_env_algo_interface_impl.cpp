@@ -105,9 +105,9 @@ iMedia_Env_PARA StringToEnvMode(const std::string &modStr)
     }
 }
 
-int32_t AudioSuiteEnvAlgoInterfaceImpl::SetParameter(const std::string &sEQLGain, const std::string &sEQRGain)
+int32_t AudioSuiteEnvAlgoInterfaceImpl::SetParameter(const std::string &envType, const std::string &envType2)
 {
-    para = StringToEnvMode(sEQLGain);
+    para = StringToEnvMode(envType);
     int32_t ret = algoApi_.initAlgo(runBuf_.data(), scratchBuf_.data(), stSize.iScracthSize, para);
     if (IMEDIA_SWS_EOK != ret) {
         AUDIO_ERR_LOG("iMedia_Env_Init ERROR: %{public}d", ret);
