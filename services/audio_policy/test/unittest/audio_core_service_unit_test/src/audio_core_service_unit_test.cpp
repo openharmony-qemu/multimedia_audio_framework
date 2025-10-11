@@ -721,10 +721,50 @@ HWTEST_F(AudioCoreServiceUnitTest, HandleNearlinkErrResult_001, TestSize.Level1)
     auto coreSvc = AudioCoreService::GetCoreService();
     int32_t result = 200;
     auto devDesc = make_shared<AudioDeviceDescriptor>();
-    coreSvc->HandleNearlinkErrResult(result, devDesc);
+    coreSvc->HandleNearlinkErrResult(result, devDesc, true);
     result = 404;
-    coreSvc->HandleNearlinkErrResult(result, devDesc);
+    coreSvc->HandleNearlinkErrResult(result, devDesc, true);
     EXPECT_NE(devDesc, nullptr);
+    result = 201;
+    coreSvc->HandleNearlinkErrResult(result, devDesc, true);
+    EXPECT_EQ(devDesc->deviceUsage_, static_cast<DeviceUsage>(static_cast<uint32_t>(devDesc->deviceUsage_) &
+        ~static_cast<uint32_t>(DeviceUsage::VOICE)));
+    coreSvc->HandleNearlinkErrResult(result, devDesc, false);
+    EXPECT_EQ(devDesc->deviceUsage_, static_cast<DeviceUsage>(static_cast<uint32_t>(devDesc->deviceUsage_) &
+        ~static_cast<uint32_t>(DeviceUsage::MEDIA)));
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: IsVoiceStreamType_001
+* @tc.desc  : Test IsVoiceStreamType
+*/
+HWTEST_F(AudioCoreServiceUnitTest, IsVoiceStreamType_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsVoiceStreamType_001 start");
+    auto coreSvc = AudioCoreService::GetCoreService();
+    EXPECT_NE(coreSvc, nullptr);
+    EXPECT_TRUE(coreSvc->IsVoiceStreamType(StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION));
+    EXPECT_TRUE(coreSvc->IsVoiceStreamType(StreamUsage::STREAM_USAGE_NOTIFICATION_RINGTONE));
+    EXPECT_TRUE(coreSvc->IsVoiceStreamType(StreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION));
+    EXPECT_TRUE(coreSvc->IsVoiceStreamType(StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION));
+    EXPECT_TRUE(coreSvc->IsVoiceStreamType(StreamUsage::STREAM_USAGE_VOICE_RINGTONE));
+    EXPECT_FALSE(coreSvc->IsVoiceStreamType(StreamUsage::STREAM_USAGE_MUSIC));
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: IsVoiceSourceType_001
+* @tc.desc  : Test IsVoiceSourceType
+*/
+HWTEST_F(AudioCoreServiceUnitTest, IsVoiceSourceType_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsVoiceSourceType_001 start");
+    auto coreSvc = AudioCoreService::GetCoreService();
+    EXPECT_NE(coreSvc, nullptr);
+    EXPECT_TRUE(coreSvc->IsVoiceSourceType(SourceType::SOURCE_TYPE_VOICE_CALL));
+    EXPECT_TRUE(coreSvc->IsVoiceSourceType(SourceType::SOURCE_TYPE_VOICE_COMMUNICATION));
+    EXPECT_FALSE(coreSvc->IsVoiceSourceType(SourceType::SOURCE_TYPE_MIC));
 }
 
 /**

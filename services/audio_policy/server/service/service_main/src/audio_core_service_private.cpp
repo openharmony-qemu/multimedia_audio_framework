@@ -46,6 +46,7 @@ const uid_t TV_SERVICE_UID = 7501;
 const int32_t AUDIO_EXT_UID = 1041;
 constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
 constexpr int32_t REMOTE_USER_TERMINATED = 200;
+constexpr int32_t DUAL_CONNECTION_FAILURE = 201;
 static const int VOLUME_LEVEL_DEFAULT_SIZE = 3;
 static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
 static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
@@ -2931,6 +2932,39 @@ void AudioCoreService::ResetNearlinkDeviceState(const std::shared_ptr<AudioDevic
     }
 }
 
+bool AudioCoreService::IsVoiceStreamType(StreamUsage streamUsage)
+{
+    bool result = false;
+    switch (streamUsage) {
+        case StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION:
+        case StreamUsage::STREAM_USAGE_NOTIFICATION_RINGTONE:
+        case StreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION:
+        case StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
+        case StreamUsage::STREAM_USAGE_VOICE_RINGTONE:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool AudioCoreService::IsVoiceSourceType(SourceType sourceType)
+{
+    bool result = false;
+    switch (sourceType) {
+        case SourceType::SOURCE_TYPE_VOICE_CALL:
+        case SourceType::SOURCE_TYPE_VOICE_COMMUNICATION:
+             result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
 int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     const AudioStreamDeviceChangeReasonExt reason)
 {
@@ -2943,11 +2977,14 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
     std::variant<StreamUsage, SourceType> audioStreamConfig;
     bool isRunning = streamDesc->streamStatus_ == STREAM_STATUS_STARTED;
     bool isRecognitionSource = false;
+    bool isVoiceType = true;
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         audioStreamConfig = streamDesc->rendererInfo_.streamUsage;
+        isVoiceType = IsVoiceStreamType(streamDesc->rendererInfo_.streamUsage);
     } else {
         audioStreamConfig = streamDesc->capturerInfo_.sourceType;
         isRecognitionSource = Util::IsScoSupportSource(streamDesc->capturerInfo_.sourceType);
+        isVoiceType = IsVoiceSourceType(streamDesc->capturerInfo_.sourceType);
     }
     if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK || deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK_IN) {
         auto runDeviceActivationFlow = [this, &deviceDesc, &isRunning, &isGameApp](auto &&config) -> int32_t {
@@ -2970,7 +3007,7 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
         if (result != SUCCESS) {
             AUDIO_ERR_LOG("Nearlink device activation failed, macAddress: %{public}s, result: %{public}d",
                 GetEncryptAddr(deviceDesc->macAddress_).c_str(), result);
-            HandleNearlinkErrResult(result, deviceDesc);
+            HandleNearlinkErrResult(result, deviceDesc, isVoiceType);
             FetchOutputDeviceAndRoute("ActivateNearlinkDevice", reason);
             FetchInputDeviceAndRoute("ActivateNearlinkDevice", reason);
             return ERROR;
@@ -2980,7 +3017,8 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
     return SUCCESS;
 }
 
-void AudioCoreService::HandleNearlinkErrResult(int32_t result, shared_ptr<AudioDeviceDescriptor> devDesc)
+void AudioCoreService::HandleNearlinkErrResult(int32_t result, shared_ptr<AudioDeviceDescriptor> devDesc,
+    bool isVoiceType)
 {
     CHECK_AND_RETURN(result != SUCCESS);
     if (result == REMOTE_USER_TERMINATED) {
@@ -2991,6 +3029,15 @@ void AudioCoreService::HandleNearlinkErrResult(int32_t result, shared_ptr<AudioD
         audioDeviceManager_.UpdateDevicesListInfo(deviceDescriptor, CONNECTSTATE_UPDATE);
         deviceDescriptor->deviceType_ = DEVICE_TYPE_NEARLINK_IN;
         audioDeviceManager_.UpdateDevicesListInfo(deviceDescriptor, CONNECTSTATE_UPDATE);
+    } else if (result == DUAL_CONNECTION_FAILURE) {
+        if (isVoiceType) {
+            devDesc->deviceUsage_ = static_cast<DeviceUsage>(static_cast<uint32_t>(devDesc->deviceUsage_) &
+                ~static_cast<uint32_t>(DeviceUsage::VOICE));
+        } else {
+            devDesc->deviceUsage_ = static_cast<DeviceUsage>(static_cast<uint32_t>(devDesc->deviceUsage_) &
+                ~static_cast<uint32_t>(DeviceUsage::MEDIA));
+        }
+        audioDeviceManager_.UpdateDevicesListInfo(devDesc, USAGE_UPDATE);
     } else {
         devDesc->exceptionFlag_ = true;
         audioDeviceManager_.UpdateDevicesListInfo(devDesc, EXCEPTION_FLAG_UPDATE);
