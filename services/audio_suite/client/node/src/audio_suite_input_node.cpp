@@ -91,6 +91,12 @@ int32_t AudioInputNode::Connect(const std::shared_ptr<AudioNode>& preNode, Audio
     return ERROR;
 }
 
+int32_t AudioInputNode::Connect(const std::shared_ptr<AudioNode>& preNode)
+{
+    AUDIO_ERR_LOG("AudioInputNode::Connect not support opt");
+    return ERROR;
+}
+
 int32_t AudioInputNode::DisConnect(const std::shared_ptr<AudioNode>& preNode)
 {
     AUDIO_ERR_LOG("AudioInputNode::DisConnect not support opt");

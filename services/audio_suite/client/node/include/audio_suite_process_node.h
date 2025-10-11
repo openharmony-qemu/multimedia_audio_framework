@@ -35,6 +35,7 @@ public:
     virtual bool Reset() = 0;
     int32_t DoProcess() override;
     int32_t Connect(const std::shared_ptr<AudioNode>& preNode, AudioNodePortType type) override;
+    int32_t Connect(const std::shared_ptr<AudioNode>& preNode) override;
     int32_t DisConnect(const std::shared_ptr<AudioNode>& preNode) override;
     int32_t Flush() override;
     int32_t InstallTap(AudioNodePortType portType, std::shared_ptr<SuiteNodeReadTapDataCallback> callback) override;

@@ -570,6 +570,66 @@ int32_t AudioSuitePipeline::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId
     return SUCCESS;
 }
 
+int32_t AudioSuitePipeline::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId)
+{
+    auto request = [this, srcNodeId, destNodeId]() {
+        if (srcNodeId == destNodeId) {
+            AUDIO_ERR_LOG("ConnectNodes failed, srcNodeId can not same destNodeId.");
+            TriggerCallback(CONNECT_NODES, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
+            return;
+        }
+
+        if ((nodeMap_.find(srcNodeId) == nodeMap_.end()) || (nodeMap_.find(destNodeId) == nodeMap_.end())) {
+            AUDIO_ERR_LOG("ConnectNodes failed, node id is invailed.");
+            TriggerCallback(CONNECT_NODES, ERR_INVALID_PARAM);
+            return;
+        }
+
+        auto srcNode = nodeMap_[srcNodeId];
+        auto destNode = nodeMap_[destNodeId];
+        if ((srcNode == nullptr) || (destNode == nullptr)) {
+            AUDIO_ERR_LOG("ConnectNodes failed, node ptr is nullptr.");
+            TriggerCallback(CONNECT_NODES, ERR_AUDIO_SUITE_NODE_NOT_EXIST);
+            return;
+        }
+
+        if (((srcNode->GetNodeType() == NODE_TYPE_OUTPUT) || (destNode->GetNodeType() == NODE_TYPE_INPUT)) &&
+            ((srcNode->GetNodeType() == NODE_TYPE_AUDIO_SEPARATION) && (destNode->GetNodeType() != NODE_TYPE_OUTPUT))) {
+            AUDIO_ERR_LOG("ConnectNodes failed, node type error.");
+            TriggerCallback(CONNECT_NODES, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
+            return;
+        }
+
+        if (IsDirectConnected(srcNodeId, destNodeId)) {
+            AUDIO_INFO_LOG("srcNodeId = %{public}d and destNodeId = %{public}d already connet", srcNodeId, destNodeId);
+            TriggerCallback(CONNECT_NODES, SUCCESS);
+            return;
+        }
+
+        int32_t ret = SUCCESS;
+        if (pipelineState_ == PIPELINE_STOPPED) {
+            ret = ConnectNodesForStop(srcNodeId, destNodeId, srcNode, destNode);
+        } else {
+            ret = ConnectNodesForRun(srcNodeId, destNodeId, srcNode, destNode);
+        }
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("ConnectNodes failed, ret = %{public}d, srcNodeId = %{public}d, "
+                "destNodeId = %{public}d.", ret, srcNodeId, destNodeId);
+            TriggerCallback(CONNECT_NODES, ret);
+            return;
+        }
+
+        AddNodeConnections(srcNodeId, destNodeId);
+
+        AUDIO_INFO_LOG("ConnectNodes success.");
+        TriggerCallback(CONNECT_NODES, SUCCESS);
+        return;
+    };
+
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
 int32_t AudioSuitePipeline::ConnectNodesForStop(uint32_t srcNodeId, uint32_t destNodeId,
     std::shared_ptr<AudioNode> srcNode, std::shared_ptr<AudioNode> destNode, AudioNodePortType srcPortType)
 {
@@ -579,6 +639,17 @@ int32_t AudioSuitePipeline::ConnectNodesForStop(uint32_t srcNodeId, uint32_t des
     }
 
     return destNode->Connect(srcNode, srcPortType);
+}
+
+int32_t AudioSuitePipeline::ConnectNodesForStop(uint32_t srcNodeId, uint32_t destNodeId,
+    std::shared_ptr<AudioNode> srcNode, std::shared_ptr<AudioNode> destNode)
+{
+    RemovceBackwardConnet(srcNodeId, srcNode);
+    if (destNode->GetNodeType() != NODE_TYPE_AUDIO_MIXER) {
+        RemovceForwardConnet(destNodeId, destNode);
+    }
+
+    return destNode->Connect(srcNode);
 }
 
 int32_t AudioSuitePipeline::ConnectNodesForRun(uint32_t srcNodeId, uint32_t destNodeId,
@@ -615,6 +686,42 @@ int32_t AudioSuitePipeline::ConnectNodesForRun(uint32_t srcNodeId, uint32_t dest
 
     RemovceBackwardConnet(srcNodeId, srcNode);
     return destNode->Connect(srcNode, srcPortType);
+}
+
+int32_t AudioSuitePipeline::ConnectNodesForRun(uint32_t srcNodeId, uint32_t destNodeId,
+    std::shared_ptr<AudioNode> srcNode, std::shared_ptr<AudioNode> destNode)
+{
+    if (outputNode_ == nullptr) {
+        AUDIO_ERR_LOG("ConnectNodes failed, pipeline running, can not find output node.");
+        return ERR_ILLEGAL_STATE;
+    }
+
+    // srcNodeId in pipline running nodes
+    if (IsConnected(outputNode_->GetAudioNodeId(), srcNodeId)) {
+        AUDIO_ERR_LOG("ConnectNodes failed, pipeline running srcNode = %{public}d can not is used node.", srcNodeId);
+        return ERR_AUDIO_SUITE_UNSUPPORT_CONNECT;
+    }
+
+    // srcNodeId and destNodeId are not in pipline running nodes
+    if (!IsConnected(outputNode_->GetAudioNodeId(), destNodeId)) {
+        RemovceBackwardConnet(srcNodeId, srcNode);
+        RemovceForwardConnet(destNodeId, destNode);
+        return destNode->Connect(srcNode);
+    }
+
+    // destNodeId in pipline running nodes
+    if (destNode->GetNodeType() != NODE_TYPE_AUDIO_MIXER) {
+        AUDIO_ERR_LOG("Pipeline status is running, destNodeId = %{public}d type must mix node", destNodeId);
+        return ERR_AUDIO_SUITE_UNSUPPORT_CONNECT;
+    }
+    // srcNodeId must connet from inputNode and not rings
+    if (!CheckPipelineNode(srcNodeId)) {
+        AUDIO_ERR_LOG("Pipeline status is running, srcNodeId = %{public}d must connet from inputnode", srcNodeId);
+        return ERR_AUDIO_SUITE_UNSUPPORT_CONNECT;
+    }
+
+    RemovceBackwardConnet(srcNodeId, srcNode);
+    return destNode->Connect(srcNode);
 }
 
 int32_t AudioSuitePipeline::DisConnectNodes(uint32_t srcNodeId, uint32_t destNodeId)
@@ -873,6 +980,39 @@ int32_t AudioSuitePipeline::RenderFrame(uint8_t *audioData, int32_t frameSize, i
     return SUCCESS;
 }
 
+int32_t AudioSuitePipeline::MultiRenderFrame(
+    uint8_t **audioDataArray, int arraySize,
+    int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag)
+{
+    AUDIO_INFO_LOG("AudioSuitePipeline::MultiRenderFrame enter");
+    auto request = [this, audioDataArray, arraySize, requestFrameSize, responseSize, finishedFlag]() {
+        AUDIO_INFO_LOG("AudioSuitePipeline::MultiRenderFrame enter request");
+        if (pipelineState_ != PIPELINE_RUNNING) {
+            AUDIO_ERR_LOG("MultiRenderFrame failed, pipelineState state is not running.");
+            TriggerCallback(MULTI_RENDER_FRAME, ERR_ILLEGAL_STATE);
+            return;
+        }
+
+        if (outputNode_ == nullptr) {
+            AUDIO_ERR_LOG("MultiRenderFrame failed, outputNode_ is nullptr.");
+            TriggerCallback(MULTI_RENDER_FRAME, ERR_ILLEGAL_STATE);
+            return;
+        }
+
+        int32_t ret = outputNode_->DoProcess(audioDataArray, arraySize, requestFrameSize, responseSize, finishedFlag);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("MultiRenderFrame, ret = %{public}d.", ret);
+            TriggerCallback(MULTI_RENDER_FRAME, ret);
+            return;
+        }
+
+        TriggerCallback(MULTI_RENDER_FRAME, SUCCESS);
+    };
+
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
 int32_t AudioSuitePipeline::SetOptions(uint32_t nodeId, std::string name, std::string value)
 {
     CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "pipeline not init, can not SetOptions.");
@@ -887,6 +1027,35 @@ int32_t AudioSuitePipeline::SetOptions(uint32_t nodeId, std::string name, std::s
         int32_t ret = node->SetOptions(name, value);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("SetOptions, ret = %{public}d.", ret);
+            return;
+        }
+    };
+
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+int32_t AudioSuitePipeline::GetOptions(uint32_t nodeId, std::string name, std::string &value)
+{
+    auto request = [this, nodeId, name, &value]() {
+        if (pipelineState_ != PIPELINE_STOPPED) {
+            AUDIO_ERR_LOG("GetOptions failed, pipelineState status is not stopped.");
+            return;
+        }
+
+        if (nodeMap_.find(nodeId) == nodeMap_.end()) {
+            AUDIO_ERR_LOG("GetOptions failed, node id is invailed.");
+            return;
+        }
+
+        auto node = nodeMap_[nodeId];
+        if (node == nullptr) {
+            AUDIO_ERR_LOG("GetOptions failed, node ptr nullptr.");
+            return;
+        }
+        int32_t ret = node->GetOptions(name, value);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("GetOptions, ret = %{public}d.", ret);
             return;
         }
     };

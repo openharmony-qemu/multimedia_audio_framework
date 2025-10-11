@@ -32,6 +32,7 @@ public:
     ~AudioInputNode();
 
     int32_t Connect(const std::shared_ptr<AudioNode>& preNode, AudioNodePortType type) override;
+    int32_t Connect(const std::shared_ptr<AudioNode>& preNode) override;
     int32_t DisConnect(const std::shared_ptr<AudioNode>& preNode) override;
     int32_t Init() override;
     int32_t DeInit() override;

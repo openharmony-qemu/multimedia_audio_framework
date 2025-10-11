@@ -52,6 +52,11 @@ int32_t AudioOutputNode::Connect(const std::shared_ptr<AudioNode> &preNode,
     return SUCCESS;
 }
 
+int32_t AudioOutputNode::Connect(const std::shared_ptr<AudioNode> &preNode)
+{
+    return ERROR;
+}
+
 int32_t AudioOutputNode::DisConnect(const std::shared_ptr<AudioNode> &preNode)
 {
     inputStream_.DisConnect(preNode);
@@ -204,13 +209,13 @@ int32_t AudioOutputNode::FillRemainingAudioData(
                 cacheBuffer_.assign(byteData + copySize, byteData + bytes);
                 *finished = false;
                 AUDIO_INFO_LOG("Copying %{public}d bytes to audioData success,"
-                    " remain cacheBuffer size: %{public}zu DDDDDD", frameSize, cacheBuffer_.size());
+                    " remain cacheBuffer size: %{public}zu", frameSize, cacheBuffer_.size());
                 return SUCCESS;
             }
             if (bytesSize <= static_cast<size_t>(remainingBytes)) {
                 *finished = GetAudioNodeDataFinishedFlag();
                 AUDIO_INFO_LOG("Copying %{public}d remainingBytes to audioData success, cacheBuffer clear,"
-                    " finished: %{public}d EEEEEEE", frameSize, *finished);
+                    " finished: %{public}d", frameSize, *finished);
                 return SUCCESS;
             }
         }
@@ -220,7 +225,7 @@ int32_t AudioOutputNode::FillRemainingAudioData(
         }
     }
     *finished = GetAudioNodeDataFinishedFlag();
-    AUDIO_INFO_LOG("Copydata finished is %{public}d with %{public}d bytes written FFFFFFFF", *writeDataSize, *finished);
+    AUDIO_INFO_LOG("Copydata finished is %{public}d with %{public}d bytes written", *finished, *writeDataSize);
     return SUCCESS;
 }
 
@@ -262,6 +267,12 @@ int32_t AudioOutputNode::DoProcess(uint8_t *audioData, int32_t frameSize, int32_
             frameSize);
     }
     AUDIO_ERR_LOG("write error");
+    return ERROR;
+}
+
+int32_t AudioOutputNode::DoProcess(uint8_t **audioDataArray, int arraySize,
+    int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag)
+{
     return ERROR;
 }
 

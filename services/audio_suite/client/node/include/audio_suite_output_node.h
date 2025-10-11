@@ -32,6 +32,7 @@ public:
     virtual ~AudioOutputNode();
     virtual int32_t DoProcess() override;
     int32_t Connect(const std::shared_ptr<AudioNode> &preNode, AudioNodePortType type) override;
+    int32_t Connect(const std::shared_ptr<AudioNode> &preNode) override;
     int32_t InstallTap(AudioNodePortType portType, std::shared_ptr<SuiteNodeReadTapDataCallback> callback) override;
     int32_t DisConnect(const std::shared_ptr<AudioNode> &preNode) override;
     int32_t RemoveTap(AudioNodePortType portType) override;
@@ -39,6 +40,8 @@ public:
     int32_t Flush() override;
 
     int32_t DoProcess(uint8_t *audioData, int32_t frameSize, int32_t *writeDataSize, bool *finished);
+    int32_t DoProcess(uint8_t **audioDataArray, int arraySize,
+        int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag);
     std::vector<uint8_t> GetCacheBuffer();
     int32_t SetCacheBuffer(std::vector<uint8_t> cacheBuffer);
     uint8_t* GetProcessedAudioData(size_t &bytes);

@@ -60,6 +60,7 @@ public:
     MOCK_METHOD(int32_t, Flush, (), ());
     MOCK_METHOD(int32_t, RemoveTap, (AudioNodePortType portType), ());
     MOCK_METHOD(int32_t, Connect, (const std::shared_ptr<AudioNode> &preNode, AudioNodePortType type), ());
+    MOCK_METHOD(int32_t, Connect, (const std::shared_ptr<AudioNode> &preNode), ());
     MOCK_METHOD(int32_t, DisConnect, (const std::shared_ptr<AudioNode> &preNode), ());
     MOCK_METHOD(int32_t, InstallTap, (
         AudioNodePortType portType, std::shared_ptr<SuiteNodeReadTapDataCallback> callback), ());
