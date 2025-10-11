@@ -1590,7 +1590,7 @@ bool AudioCoreService::IsDupDeviceChange(std::shared_ptr<AudioStreamDescriptor> 
     }
 
     if (streamDesc->newDupDeviceDescs_.size() == 0) {
-        return true;
+        return false;
     }
 
     if (streamDesc->newDupDeviceDescs_.front() != nullptr &&
