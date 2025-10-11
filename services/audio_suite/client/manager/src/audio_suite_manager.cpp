@@ -593,7 +593,7 @@ int32_t AudioSuiteManager::RenderFrame(uint32_t pipelineId,
 }
 
 int32_t AudioSuiteManager::MultiRenderFrame(uint32_t pipelineId,
-   AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag)
+    AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag)
 {
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");

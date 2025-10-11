@@ -740,8 +740,7 @@ int32_t AudioSuiteEngine::MultiRenderFrame(uint32_t pipelineId,
     AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag)
 {
     auto request = [
-        this, pipelineId, audioDataArray, responseSize, finishedFlag]()
-    {
+        this, pipelineId, audioDataArray, responseSize, finishedFlag]() {
         AUDIO_INFO_LOG("AudioSuiteEngine::MultiRenderFrame enter request");
 
         if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {

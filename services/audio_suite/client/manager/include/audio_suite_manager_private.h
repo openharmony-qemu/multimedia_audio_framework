@@ -150,14 +150,16 @@ private:
 
 // tool
 template<typename T>
-void ParseValue(const std::string valueStr, T &result){
+void ParseValue(const std::string valueStr, T &result)
+{
     std::istringstream iss(valueStr);
     float value;
     iss >> value;
     result = static_cast<T>(value);
 }
 
-void ParseValue(const std::string &valueStr, int32_t *result) {
+void ParseValue(const std::string &valueStr, int32_t *result)
+{
     std::istringstream iss(valueStr);
     std::string token;
     std::vector<int32_t> temp;
@@ -175,7 +177,8 @@ void ParseValue(const std::string &valueStr, int32_t *result) {
     }
 }
 
-int32_t StringToInt32(std::string &str) {
+int32_t StringToInt32(std::string &str)
+{
     char* end;
     errno = 0; // 重置错误标志
     long value = std::strtol(str.c_str(), &end, 10); // 十进制转换
