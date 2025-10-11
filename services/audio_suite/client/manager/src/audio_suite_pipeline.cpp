@@ -575,7 +575,7 @@ int32_t AudioSuitePipeline::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId
     auto request = [this, srcNodeId, destNodeId]() {
         if (srcNodeId == destNodeId) {
             AUDIO_ERR_LOG("ConnectNodes failed, srcNodeId can not same destNodeId.");
-            TriggerCallback(CONNECT_NODES, ERR_INVALID_PARAM);
+            TriggerCallback(CONNECT_NODES, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
             return;
         }
 

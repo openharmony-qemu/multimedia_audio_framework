@@ -225,7 +225,7 @@ int32_t AudioOutputNode::FillRemainingAudioData(
         }
     }
     *finished = GetAudioNodeDataFinishedFlag();
-    AUDIO_INFO_LOG("Copydata finished is %{public}d with %{public}d bytes written", *writeDataSize, *finished);
+    AUDIO_INFO_LOG("Copydata finished is %{public}d with %{public}d bytes written", *finished, *writeDataSize);
     return SUCCESS;
 }
 
