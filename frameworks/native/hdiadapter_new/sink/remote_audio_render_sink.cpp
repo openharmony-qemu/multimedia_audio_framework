@@ -492,7 +492,8 @@ int32_t RemoteAudioRenderSink::NotifyHdiEvent(SplitStreamType splitStreamType, c
     return SUCCESS;
 }
 
-void RemoteAudioRenderSink::UpdateStreamInfo(const SplitStreamType splitStreamType, const AudioStreamType type, const StreamUsage usage)
+void RemoteAudioRenderSink::UpdateStreamInfo(const SplitStreamType splitStreamType, const AudioStreamType type,
+    const StreamUsage usage)
 {
     if (type != this->streamTypeMap_[splitStreamType]) {
         this->UpdateStreamType(splitStreamType, type);
@@ -513,8 +514,6 @@ void RemoteAudioRenderSink::UpdateStreamUsage(const SplitStreamType splitStreamT
     this->streamUsageMap_[splitStreamType] = usage;
     this->NotifyHdiEvent(splitStreamType, STREAM_USAGE_CHANGE, std::to_string(usage));
 }
-
-
 
 void RemoteAudioRenderSink::DumpInfo(std::string &dumpString)
 {

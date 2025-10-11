@@ -92,7 +92,8 @@ public:
     int32_t SplitRenderFrame(char &data, uint64_t len, uint64_t &writeLen,
         SplitStreamType splitStreamType) override;
 
-    void UpdateStreamInfo(const SplitStreamType splitStreamType, const AudioStreamType type, const StreamUsage usage) override;
+    void UpdateStreamInfo(const SplitStreamType splitStreamType, const AudioStreamType type,
+        const StreamUsage usage) override;
 
     void DumpInfo(std::string &dumpString) override;
 
