@@ -169,10 +169,20 @@ void ParseValue(const std::string &valueStr, int32_t *result)
     std::vector<int32_t> temp;
 
     while (std::getline(iss, token, ':')) {
-        token.erase(0, token.find_first_not_of(' ')); // 移除前导空格
-        token.erase(token.find_last_not_of(' ') + 1); // 移除后缀空格
-        if (!token.empty()) {
-            temp.push_back(std::stoi(token));
+        token.erase(0, token.find_first_not_of(' ')); // Remove leading spaces
+        token.erase(token.find_last_not_of(' ') + 1); // Remove trailing spaces
+         if (!token.empty()) {
+            char* end;
+            errno = 0;  // Reset error flag
+            long val = std::strtol(token.c_str(), &end, 10);
+            
+            // Check if conversion was fully successful and without overflow
+            if (end != token.c_str() + token.size() || // Not entire string consumed
+                errno == ERANGE || // Numeric overflow
+                val < INT32_MIN || val > INT32_MAX) { // Out of int32_t range
+                return; // Conversion failed, return immediately
+            }
+            temp.push_back(static_cast<int32_t>(val));
         }
     }
 
@@ -184,15 +194,15 @@ void ParseValue(const std::string &valueStr, int32_t *result)
 int32_t StringToInt32(std::string &str)
 {
     char* end;
-    errno = 0; // 重置错误标志
-    long value = std::strtol(str.c_str(), &end, 10); // 十进制转换
+    errno = 0; // Reset error flag
+    long value = std::strtol(str.c_str(), &end, 10); // Decimal conversion
 
-    // 检查整个字符串是否被解析
+    // Check if entire string was parsed
     if (end == str.c_str()) {
         return INT32_MAX;
     }
 
-    // 检查剩余字符是否仅为空白符（可选）
+    // Check if remaining characters are only whitespace (optional)
     while (*end != '\0') {
         if (!std::isspace(static_cast<unsigned char>(*end))) {
             return INT32_MAX;
@@ -200,7 +210,7 @@ int32_t StringToInt32(std::string &str)
         ++end;
     }
 
-    // 检查溢出/下溢
+    // Check overflow/underflow
     if (errno == ERANGE || value < INT32_MIN || value > INT32_MAX) {
         return INT32_MAX;
     }

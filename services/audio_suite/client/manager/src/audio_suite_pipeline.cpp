@@ -614,7 +614,7 @@ int32_t AudioSuitePipeline::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("ConnectNodes failed, ret = %{public}d, srcNodeId = %{public}d, "
                 "destNodeId = %{public}d.", ret, srcNodeId, destNodeId);
-            TriggerCallback(SET_WRITEDATA_CALLBACK, ret);
+            TriggerCallback(CONNECT_NODES, ret);
             return;
         }
 
@@ -1038,23 +1038,23 @@ int32_t AudioSuitePipeline::GetOptions(uint32_t nodeId, std::string name, std::s
 {
     auto request = [this, nodeId, name, &value]() {
         if (pipelineState_ != PIPELINE_STOPPED) {
-            AUDIO_ERR_LOG("SetOptions failed, pipelineState status is not stopped.");
+            AUDIO_ERR_LOG("GetOptions failed, pipelineState status is not stopped.");
             return;
         }
 
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
-            AUDIO_ERR_LOG("SetOptions failed, node id is invailed.");
+            AUDIO_ERR_LOG("GetOptions failed, node id is invailed.");
             return;
         }
 
         auto node = nodeMap_[nodeId];
         if (node == nullptr) {
-            AUDIO_ERR_LOG("SetOptions failed, node ptr nullptr.");
+            AUDIO_ERR_LOG("GetOptions failed, node ptr nullptr.");
             return;
         }
         int32_t ret = node->GetOptions(name, value);
         if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("SetOptions, ret = %{public}d.", ret);
+            AUDIO_ERR_LOG("GetOptions, ret = %{public}d.", ret);
             return;
         }
     };
