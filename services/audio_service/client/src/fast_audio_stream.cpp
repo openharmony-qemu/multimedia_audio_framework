@@ -1185,13 +1185,13 @@ void FastAudioStream::SetRestoreInfo(RestoreInfo &restoreInfo)
 
 RestoreStatus FastAudioStream::CheckRestoreStatus()
 {
-    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, RESTORE_ERROR, "process client is null.");
     if (!IsDataCallbackSet()) {
         AUDIO_INFO_LOG("Fast stream without callback, restore to normal");
         renderMode_ = RENDER_MODE_NORMAL;
         captureMode_ = CAPTURE_MODE_NORMAL;
         return NEED_RESTORE_TO_NORMAL;
     }
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, RESTORE_ERROR, "process client is null.");
     return processClient_->CheckRestoreStatus();
 }
 
