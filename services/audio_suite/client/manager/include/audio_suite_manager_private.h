@@ -173,9 +173,8 @@ void ParseValue(const std::string &valueStr, int32_t *result)
         token.erase(token.find_last_not_of(' ') + 1); // Remove trailing spaces
         if (!token.empty()) {
             char* end;
-            errno = 0;  // Reset error flag
+            errno = 0; // Reset error flag
             long val = std::strtol(token.c_str(), &end, 10);
-
             // Check if conversion was fully successful and without overflow
             if (end != token.c_str() + token.size() || // Not entire string consumed
                 errno == ERANGE || // Numeric overflow
