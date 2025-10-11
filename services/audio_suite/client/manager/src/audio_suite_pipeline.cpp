@@ -603,6 +603,7 @@ int32_t AudioSuitePipeline::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId
         if (IsDirectConnected(srcNodeId, destNodeId)) {
             AUDIO_INFO_LOG("srcNodeId = %{public}d and destNodeId = %{public}d already connet", srcNodeId, destNodeId);
             TriggerCallback(CONNECT_NODES, SUCCESS);
+            return;
         }
 
         int32_t ret = SUCCESS;
