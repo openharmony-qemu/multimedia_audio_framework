@@ -81,6 +81,8 @@ public:
     void BlockStream() noexcept override;
     int32_t OnStreamData(AudioCallBackStreamInfo& callBackStremInfo) override;
     void OnStatusUpdate(IOperation operation, uint32_t streamIndex) override;
+
+    bool OnQueryUnderrun() override;
 private:
     void SyncOffloadMode();
     void InitRingBuffer();
@@ -117,7 +119,7 @@ private:
 
     // latency position timeStamp
     std::shared_mutex latencyMutex_; // lock for variables related to position, latency, timestamp
-    uint64_t framePosition_ = 0;
+    std::atomic<uint64_t> framePosition_ = 0;
     uint64_t lastFramePosition_ = 0;
     uint64_t lastHdiFramePosition_ = 0;
     std::vector<uint64_t> timestamp_ = {Timestamp::Timestampbase::BASESIZE, 0};

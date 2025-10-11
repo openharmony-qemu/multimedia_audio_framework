@@ -37,6 +37,9 @@ constexpr int BUNDLE_MGR_SERVICE_SYS_ABILITY_ID = 401;
 
 namespace OHOS {
 namespace AudioStandard {
+std::mutex AudioBundleManager::bundleInfoMapMutex_;
+std::unordered_map<int32_t, AppExecFwk::BundleInfo> AudioBundleManager::bundleInfoMap_;
+
 int32_t AudioBundleManager::GetUidByBundleName(std::string bundleName, int userId)
 {
     AudioXCollie audioXCollie("AudioBundleManager::GetUidByBundleName",
@@ -61,6 +64,12 @@ int32_t AudioBundleManager::GetUidByBundleName(std::string bundleName, int userI
 
 std::string AudioBundleManager::GetBundleName()
 {
+    std::lock_guard<std::mutex> lock(bundleInfoMapMutex_);
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    auto it = bundleInfoMap_.find(callingUid);
+    if (it != bundleInfoMap_.end()) {
+        return bundleInfoMap_[callingUid].name;
+    }
     std::string bundleName = GetBundleNameFromUid(IPCSkeleton::GetCallingUid());
     return bundleName;
 }
@@ -90,7 +99,20 @@ std::string AudioBundleManager::GetBundleNameFromUid(int32_t callingUid)
 
 AppExecFwk::BundleInfo AudioBundleManager::GetBundleInfo()
 {
-    return GetBundleInfoFromUid(IPCSkeleton::GetCallingUid());
+    std::lock_guard<std::mutex> lock(bundleInfoMapMutex_);
+
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    auto it = bundleInfoMap_.find(callingUid);
+    if (it == bundleInfoMap_.end()) {
+        bundleInfoMap_[callingUid] = GetBundleInfoFromUid(callingUid);
+    }
+    return bundleInfoMap_[callingUid];
+}
+
+void AudioBundleManager::RemoveBundleInfoByUid(int32_t callingUid)
+{
+    std::lock_guard<std::mutex> lock(bundleInfoMapMutex_);
+    bundleInfoMap_.erase(callingUid);
 }
 
 AppExecFwk::BundleInfo AudioBundleManager::GetBundleInfoFromUid(int32_t callingUid)

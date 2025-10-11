@@ -94,7 +94,7 @@ OHAudioSuiteNodeBuilder::~OHAudioSuiteNodeBuilder()
 OH_AudioSuite_Result OHAudioSuiteNodeBuilder::SetFormat(OH_AudioFormat audioFormat)
 {
     CHECK_AND_RETURN_RET_LOG(((nodeType_ == NODE_TYPE_INPUT) || (nodeType_ == NODE_TYPE_OUTPUT)),
-        AUDIOSUITE_ERROR_INVALID_PARAM, "Set suite node format Error, only input and output node "
+        AUDIOSUITE_ERROR_UNSUPPORT_OPERATION, "Set suite node format Error, only input and output node "
         "support set, nodeType = %{public}d.", static_cast<int32_t>(nodeType_));
 
     CHECK_AND_RETURN_RET_LOG(CheckSamplingRateVaild(audioFormat.samplingRate), AUDIOSUITE_ERROR_UNSUPPORTED_FORMAT,
@@ -114,7 +114,7 @@ OH_AudioSuite_Result OHAudioSuiteNodeBuilder::SetFormat(OH_AudioFormat audioForm
 OH_AudioSuite_Result OHAudioSuiteNodeBuilder::SetOnWriteDataCallback(
     OH_AudioNode_OnWriteDataCallBack callback, void *userData)
 {
-    CHECK_AND_RETURN_RET_LOG(nodeType_ == NODE_TYPE_INPUT, AUDIOSUITE_ERROR_INVALID_PARAM,
+    CHECK_AND_RETURN_RET_LOG(nodeType_ == NODE_TYPE_INPUT, AUDIOSUITE_ERROR_UNSUPPORT_OPERATION,
         "SetOnWriteDataCallback Error, only input node support set.");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "SetOnWriteDataCallback failed, callback is nullptr");
@@ -141,6 +141,7 @@ bool OHAudioSuiteNodeBuilder::CheckSamplingRateVaild(int32_t samplingRate) const
         case AudioSamplingRate::SAMPLE_RATE_96000:
         case AudioSamplingRate::SAMPLE_RATE_176400:
         case AudioSamplingRate::SAMPLE_RATE_192000:
+        case AudioSamplingRate::SAMPLE_RATE_384000:
             return true;
         default:
             AUDIO_ERR_LOG("sampleFormat input value is invalid, %{public}d", samplingRate);
@@ -153,20 +154,6 @@ bool OHAudioSuiteNodeBuilder::CheckChannelCountVaild(int32_t channelCount) const
     switch (channelCount) {
         case AudioChannel::MONO:
         case AudioChannel::STEREO:
-        case AudioChannel::CHANNEL_3:
-        case AudioChannel::CHANNEL_4:
-        case AudioChannel::CHANNEL_5:
-        case AudioChannel::CHANNEL_6:
-        case AudioChannel::CHANNEL_7:
-        case AudioChannel::CHANNEL_8:
-        case AudioChannel::CHANNEL_9:
-        case AudioChannel::CHANNEL_10:
-        case AudioChannel::CHANNEL_11:
-        case AudioChannel::CHANNEL_12:
-        case AudioChannel::CHANNEL_13:
-        case AudioChannel::CHANNEL_14:
-        case AudioChannel::CHANNEL_15:
-        case AudioChannel::CHANNEL_16:
             return true;
         default:
             AUDIO_ERR_LOG("channelCount input value is invalid, %{public}d", channelCount);

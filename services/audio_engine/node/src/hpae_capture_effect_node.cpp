@@ -155,9 +155,9 @@ void HpaeCaptureEffectNode::GetCaptureEffectMicChannelLayout(uint32_t channels, 
 void HpaeCaptureEffectNode::SetCapturerEffectConfig(AudioBufferConfig micConfig, AudioBufferConfig ecConfig,
     AudioBufferConfig micrefConfig)
 {
-    HpaeNodeInfo micInfo = {};
-    HpaeNodeInfo ecInfo = {};
-    HpaeNodeInfo micrefInfo = {};
+    HpaeNodeInfo micInfo = GetNodeInfo();
+    HpaeNodeInfo ecInfo = GetNodeInfo();
+    HpaeNodeInfo micrefInfo = GetNodeInfo();
     micInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
     micInfo.frameLen = FRAME_LEN * (micConfig.samplingRate / MILLISECOND_PER_SECOND);
     micInfo.samplingRate = static_cast<AudioSamplingRate>(micConfig.samplingRate);
@@ -231,6 +231,11 @@ int32_t HpaeCaptureEffectNode::CaptureEffectRelease(uint64_t sceneKeyCode)
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager, ERR_ILLEGAL_STATE, "audioEnhanceChainManager is nullptr");
     return audioEnhanceChainManager->ReleaseAudioEnhanceChainDynamic(sceneKeyCode);
+}
+
+uint64_t HpaeCaptureEffectNode::GetLatency(uint32_t sessionId)
+{
+    return 0;
 }
 
 }  // namespace HPAE

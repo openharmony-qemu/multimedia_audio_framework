@@ -113,6 +113,7 @@ constexpr int32_t UID_CAAS = 5527;
 constexpr int32_t UID_TELEPHONY = 1001;
 constexpr int32_t UID_DMSDP = 7071;
 constexpr int32_t UID_TV_SERVICE = 7501;
+constexpr int32_t UID_AAM_CONN_SVC = 7878;
 static const int32_t DATASHARE_SERVICE_TIMEOUT_SECONDS = 10; // 10s is better
 const std::set<int32_t> CALLBACK_TRUST_LIST = {
     UID_MEDIA,
@@ -120,7 +121,8 @@ const std::set<int32_t> CALLBACK_TRUST_LIST = {
     UID_CAAS,
     UID_TELEPHONY,
     UID_DMSDP,
-    UID_TV_SERVICE
+    UID_TV_SERVICE,
+    UID_AAM_CONN_SVC
 };
 const std::string NEARLINK_LIST = "audio_nearlink_list";
 
@@ -982,14 +984,21 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
         AUDIO_INFO_LOG("receive SCREEN_OFF or SCREEN_LOCKED action, control audio volume change if stream is active");
         isScreenOffOrLock_ = true;
     } else if (action == "usual.event.SCREEN_UNLOCKED") {
-        if (isRingtoneEL2Ready_ == false) {
-            isRingtoneEL2Ready_ =  CallRingtoneLibrary() == SUCCESS;
-        }
-        AUDIO_INFO_LOG("receive SCREEN_UNLOCKED action, can change volume");
-        isScreenOffOrLock_ = false;
+        UnlockEvent();
     } else if (action == "usual.event.LOCALE_CHANGED" || action == "usual.event.USER_STARTED") {
         CallRingtoneLibrary();
     }
+}
+
+void AudioPolicyServer::UnlockEvent()
+{
+    if (isRingtoneEL2Ready_ == false) {
+            isRingtoneEL2Ready_ =  CallRingtoneLibrary() == SUCCESS;
+        }
+    int32_t currentUserId = interruptService_->GetCurrentUserId();
+    AUDIO_INFO_LOG("receive SCREEN_UNLOCKED action, can change volume");
+    isScreenOffOrLock_ = false;
+    interruptService_->OnUserUnlocked(currentUserId);
 }
 
 void AudioPolicyServer::CheckSubscribePowerStateChange()
@@ -3314,6 +3323,7 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid, pid_t uid)
     AUDIO_INFO_LOG("RegisteredTrackerClient died: remove entry, pid %{public}d uid %{public}d", pid, uid);
     audioAffinityManager_.DelSelectCapturerDevice(uid);
     audioAffinityManager_.DelSelectRendererDevice(uid);
+    AudioBundleManager::RemoveBundleInfoByUid(uid);
     std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
     eventEntry_->RegisteredTrackerClientDied(uid, pid);
     eventEntry_->ClearSelectedInputDeviceByUid(uid);
@@ -3332,6 +3342,7 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
     AUDIO_INFO_LOG("RegisteredStreamListenerClient died: remove entry, pid %{public}d uid %{public}d", pid, uid);
     audioAffinityManager_.DelSelectCapturerDevice(uid);
     audioAffinityManager_.DelSelectRendererDevice(uid);
+    AudioBundleManager::RemoveBundleInfoByUid(uid);
     StandaloneModeManager::GetInstance().ResumeAllStandaloneApp(pid);
     if (pid == lastMicMuteSettingPid_) {
         // The last app with the non-persistent microphone setting died, restore the default non-persistent value

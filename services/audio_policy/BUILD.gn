@@ -81,6 +81,7 @@ config("audio_policy_public_config") {
     "../audio_service/client/include",
     "../audio_service/common/include",
     "../audio_service/common/include/dfx",
+    "../audio_service/server/include",
     "../audio_engine/manager/include",
     "../../frameworks/native/audioinnercall/include",
     "../../frameworks/native/audiorenderer/include",
@@ -291,6 +292,10 @@ audio_ohos_library("audio_policy_service") {
   ]
 
   defines = []
+  if (!audio_framework_feature_mutesink_enable) {
+    defines += [ "MUTE_SINK_DISABLE" ]
+  }
+
   if (audio_framework_feature_wired_audio) {
     defines += [ "AUDIO_WIRED_DETECT" ]
     sources += [
@@ -387,7 +392,6 @@ audio_ohos_library("audio_policy_service") {
     "samgr:samgr_proxy",
     "window_manager:session_manager_lite",
     "window_manager:libwm_lite",
-    "window_manager:libwm",
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]

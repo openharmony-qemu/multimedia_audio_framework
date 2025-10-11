@@ -22,6 +22,8 @@
 #include "audio_policy_log.h"
 #include "audio_policy_utils.h"
 
+#include "client_type_manager.h"
+
 namespace OHOS {
 namespace AudioStandard {
 namespace {
@@ -51,6 +53,11 @@ const std::map<uint32_t, std::set<SourceType>> SOURCE_TYPE_TO_SLE_STREAM_TYPE = 
     {SLE_AUDIO_STREAM_VOICE_ASSISTANT, {SOURCE_TYPE_VOICE_RECOGNITION, SOURCE_TYPE_VOICE_TRANSCRIPTION}},
     {SLE_AUDIO_STREAM_RECORD, {SOURCE_TYPE_MIC, SOURCE_TYPE_ULTRASONIC, SOURCE_TYPE_VOICE_MESSAGE,
         SOURCE_TYPE_CAMCORDER, SOURCE_TYPE_UNPROCESSED, SOURCE_TYPE_LIVE}}
+};
+
+const std::vector<StreamUsage> GAME_FAST_SUPPORTED_USAGES = {
+    STREAM_USAGE_UNKNOWN, STREAM_USAGE_MEDIA, STREAM_USAGE_MUSIC, STREAM_USAGE_GAME, STREAM_USAGE_AUDIOBOOK,
+    STREAM_USAGE_MOVIE
 };
 } // namespace
 int32_t SleAudioDeviceManager::SetSleAudioOperationCallback(const sptr<IStandardSleAudioOperationCallback> &callback)
@@ -104,11 +111,14 @@ int32_t SleAudioDeviceManager::StartPlaying(const std::string &device, uint32_t 
         AudioPolicyUtils::GetInstance().GetEncryptAddr(device).c_str(), streamType);
     std::lock_guard<std::mutex> lock(startedSleStreamTypeMutex_);
     int32_t ret = ERROR;
-    if (!startedSleStreamType_[device][streamType].empty()) {
+    if (startedSleStreamType_[device][streamType].isStarted) {
         AUDIO_INFO_LOG("sle stream type %{public}u is already started", streamType);
         return SUCCESS;
     }
     callback_->StartPlaying(device, streamType, ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "startplaying failed");
+    startedSleStreamType_[device][streamType].isStarted = true;
+
     return ret;
 }
 
@@ -153,9 +163,18 @@ int32_t SleAudioDeviceManager::GetRenderPosition(const std::string &device, uint
     return callback_->GetRenderPosition(device, delayValue);
 }
 
-uint32_t SleAudioDeviceManager::GetSleStreamTypeByStreamUsage(StreamUsage streamUsage) const
+bool IsSupportedByGameFastPath(bool isGameApp, StreamUsage usage)
+{
+    return isGameApp && (std::find(GAME_FAST_SUPPORTED_USAGES.begin(), GAME_FAST_SUPPORTED_USAGES.end(), usage) !=
+        GAME_FAST_SUPPORTED_USAGES.end());
+}
+
+uint32_t SleAudioDeviceManager::GetSleStreamTypeByStreamUsage(StreamUsage streamUsage, bool isGameApp) const
 {
     for (const auto &pair : STREAM_USAGE_TO_SLE_STREAM_TYPE) {
+        if (IsSupportedByGameFastPath(isGameApp, streamUsage)) {
+            return SLE_AUDIO_STREAM_GAME;
+        }
         if (pair.second.find(streamUsage) != pair.second.end()) {
             return pair.first;
         }
@@ -191,37 +210,43 @@ std::set<SourceType> SleAudioDeviceManager::GetSourceTypesBySleStreamType(uint32
     return std::set<SourceType>();
 }
 
-int32_t SleAudioDeviceManager::SetActiveDevice(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage)
+int32_t SleAudioDeviceManager::SetActiveDevice(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage,
+    bool isGameApp)
 {
     CHECK_AND_RETURN_RET_LOG(IsNearlinkDevice(deviceDesc.deviceType_), ERROR, "device type is not nearlink");
-    return SetActiveSinkDevice(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage));
+    return SetActiveSinkDevice(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage, isGameApp));
 }
 
-int32_t SleAudioDeviceManager::SetActiveDevice(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType)
+int32_t SleAudioDeviceManager::SetActiveDevice(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType,
+    bool isGameApp)
 {
     CHECK_AND_RETURN_RET_LOG(IsNearlinkDevice(deviceDesc.deviceType_), ERROR, "device type is not nearlink");
     return SetActiveSinkDevice(deviceDesc.macAddress_, GetSleStreamTypeBySourceType(sourceType));
 }
 
-int32_t SleAudioDeviceManager::StartPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage)
+int32_t SleAudioDeviceManager::StartPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage,
+    bool isGameApp)
 {
     CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK, ERROR, "device type is not nearlink");
-    return StartPlaying(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage));
+    return StartPlaying(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage, isGameApp));
 }
 
-int32_t SleAudioDeviceManager::StartPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType)
+int32_t SleAudioDeviceManager::StartPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType,
+    bool isGameApp)
 {
     CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK_IN, ERROR, "device type is not nearlink");
     return StartPlaying(deviceDesc.macAddress_, GetSleStreamTypeBySourceType(sourceType));
 }
 
-int32_t SleAudioDeviceManager::StopPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage)
+int32_t SleAudioDeviceManager::StopPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage,
+    bool isGameApp)
 {
     CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK, ERROR, "device type is not nearlink");
-    return StopPlaying(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage));
+    return StopPlaying(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage, isGameApp));
 }
 
-int32_t SleAudioDeviceManager::StopPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType)
+int32_t SleAudioDeviceManager::StopPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType,
+    bool isGameApp)
 {
     CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK_IN, ERROR, "device type is not nearlink");
     return StopPlaying(deviceDesc.macAddress_, GetSleStreamTypeBySourceType(sourceType));
@@ -307,7 +332,7 @@ void SleAudioDeviceManager::UpdateStreamTypeMap(const std::string &deviceAddr, u
     uint32_t sessionId, bool isAdd)
 {
     std::lock_guard<std::mutex> lock(startedSleStreamTypeMutex_);
-    auto &sessionSet = startedSleStreamType_[deviceAddr][streamType];
+    auto &sessionSet = startedSleStreamType_[deviceAddr][streamType].sessionIds;
     AUDIO_INFO_LOG("sle device %{public}s, add [%{public}d] streamType %{public}u sessionId %{public}d",
         AudioPolicyUtils::GetInstance().GetEncryptAddr(deviceAddr).c_str(), isAdd, streamType, sessionId);
     if (isAdd) {
@@ -316,12 +341,13 @@ void SleAudioDeviceManager::UpdateStreamTypeMap(const std::string &deviceAddr, u
         bool isErased = sessionSet.erase(sessionId) > 0;
         if (isErased && sessionSet.empty()) {
             StopPlaying(deviceAddr, streamType);
+            startedSleStreamType_[deviceAddr][streamType].isStarted = false;
         }
     }
 }
 
 void SleAudioDeviceManager::UpdateSleStreamTypeCount(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-    bool isRemoved)
+    bool isRemoved, bool isGameApp)
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
 
@@ -331,7 +357,7 @@ void SleAudioDeviceManager::UpdateSleStreamTypeCount(const std::shared_ptr<Audio
     std::string oldDeviceAddr = "";
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
-        streamType = GetSleStreamTypeByStreamUsage(streamUsage);
+        streamType = GetSleStreamTypeByStreamUsage(streamUsage, isGameApp);
 
         if (IsNearlinkMoveToOtherDevice(streamDesc)) {
             oldDeviceAddr = streamDesc->oldDeviceDescs_[0]->macAddress_;
@@ -383,7 +409,7 @@ void SleAudioDeviceManager::ResetSleStreamTypeCount(const std::shared_ptr<AudioD
 
     for (const auto &pair : it->second) {
         uint32_t streamType = pair.first;
-        CHECK_AND_CONTINUE_LOG(!pair.second.empty(), "streamType %{public}u has no session", streamType);
+        CHECK_AND_CONTINUE_LOG(!pair.second.sessionIds.empty(), "streamType %{public}u has no session", streamType);
         StopPlaying(deviceDesc->macAddress_, streamType);
     }
 
@@ -401,7 +427,7 @@ std::unordered_map<uint32_t, std::unordered_set<uint32_t>> SleAudioDeviceManager
     if (it != startedSleStreamType_.end()) {
         for (const auto &pair : it->second) {
             uint32_t streamType = pair.first;
-            std::unordered_set<uint32_t> sessionSet = pair.second;
+            std::unordered_set<uint32_t> sessionSet = pair.second.sessionIds;
             if (!sessionSet.empty()) {
                 ret[streamType] = sessionSet;
             }

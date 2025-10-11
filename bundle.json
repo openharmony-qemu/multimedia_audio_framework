@@ -40,7 +40,8 @@
           "audio_framework_feature_file_io",
           "audio_framework_feature_inner_capturer",
           "audio_framework_feature_low_latency",
-          "audio_framework_feature_device_manager"
+          "audio_framework_feature_device_manager",
+          "audio_framework_feature_mutesink_enable"
         ],
         "adapted_system_type": [ "standard" ],
         "rom": "4500KB",
@@ -98,6 +99,7 @@
             "media_foundation",
             "runtime_core",
             "usb_manager",
+            "ringtone_library",
             "frame_aware_sched",
             "window_manager"
           ],

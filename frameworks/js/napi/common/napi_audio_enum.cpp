@@ -261,6 +261,8 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioVolumeTypeMap = {
     {"ACCESSIBILITY", NapiAudioEnum::ACCESSIBILITY},
     {"SYSTEM", NapiAudioEnum::SYSTEM},
     {"ULTRASONIC", NapiAudioEnum::ULTRASONIC},
+    {"NOTIFICATION", NapiAudioEnum::NOTIFICATION},
+    {"NAVIGATION", NapiAudioEnum::NAVIGATION},
     {"ALL", NapiAudioEnum::ALL}
 };
 
@@ -1587,6 +1589,7 @@ bool NapiAudioEnum::IsLegalInputArgumentStreamUsage(int32_t streamUsage)
         case STREAM_USAGE_ULTRASONIC:
         case STREAM_USAGE_VIDEO_COMMUNICATION:
         case STREAM_USAGE_VOICE_CALL_ASSISTANT:
+        case STREAM_USAGE_VOICE_RINGTONE:
             result = true;
             break;
         default:

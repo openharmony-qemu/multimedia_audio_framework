@@ -270,9 +270,9 @@ public:
 
     void SetAudioServerProxy(sptr<IStandardAudioService> gsp);
 
-    void SetOffloadSessionId(uint32_t sessionId);
+    void SetOffloadSessionId(uint32_t sessionId, OffloadAdapter offloadAdapter);
 
-    void ResetOffloadSessionId();
+    void ResetOffloadSessionId(OffloadAdapter offloadAdapter);
 
     int32_t SetDoubleRingVolumeDb(const AudioStreamType &streamType, const int32_t &volumeLevel);
 
@@ -315,11 +315,12 @@ public:
         const SourceType &sourceType);
     int32_t AddCaptureInjector();
     int32_t RemoveCaptureInjector();
-    void UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDeviceDescriptor> &device, int32_t zoneId = 0);
+    void UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDeviceDescriptor> &device);
     void UpdateVolumeWhenDeviceDisconnect(std::shared_ptr<AudioDeviceDescriptor> &device);
     void QueryDeviceVolumeBehavior(std::shared_ptr<AudioDeviceDescriptor> &device);
     int32_t GetMaxVolumeLevel(AudioVolumeType volumeType, std::shared_ptr<AudioDeviceDescriptor> desc);
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType, std::shared_ptr<AudioDeviceDescriptor> desc);
+    bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout);
 
 private:
     friend class PolicyCallbackImpl;
@@ -423,6 +424,10 @@ private:
     void GetHdiSourceTypeToAudioSourceAttr(IAudioSourceAttr &attr, int32_t sourceType) const;
     void UpdateSafeVolumeInner(std::shared_ptr<AudioDeviceDescriptor> &device);
     int32_t GetVolumeLevel(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType);
+    void SaveVolumeToDbAsync(std::shared_ptr<AudioDeviceDescriptor> desc,
+        AudioStreamType streamType, int32_t volumeLevel);
+    void SaveMuteToDbAsync(std::shared_ptr<AudioDeviceDescriptor> desc,
+        AudioStreamType streamType, bool mute);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
@@ -474,7 +479,6 @@ private:
     AudioActiveDevice &audioActiveDevice_;
     AudioConnectedDevice &audioConnectedDevice_;
 
-    std::unordered_map<std::string, std::shared_ptr<VolumeDataMaintainer>> volumeDataExtMaintainer_;
     bool isVolumeUnadjustable_ = false;
     bool testModeOn_ {false};
     std::atomic<float> getSystemVolumeInDb_  {0.0f};
@@ -491,7 +495,7 @@ private:
     bool isAllCopyDone_ = false;
     bool isNeedConvertSafeTime_ = false;
     sptr<IStandardAudioService> audioServerProxy_ = nullptr;
-    std::optional<uint32_t> offloadSessionID_;
+    std::optional<uint32_t> offloadSessionID_[OFFLOAD_IN_ADAPTER_SIZE] = {};
     std::mutex audioVolumeMutex_;
     std::mutex activeDeviceMutex_;
     std::mutex volumeDataMapMutex_;

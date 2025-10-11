@@ -177,6 +177,7 @@ private:
     int64_t GetLastAudioDuration();
     int32_t CreateDupBufferInner(int32_t innerCapId);
     int32_t WriteDupBufferInner(const BufferDesc &bufferDesc, int32_t innerCapId);
+    void WriteSilenceDupBuffer(const BufferDesc &bufferDesc, BufferWrap &bufferWrap, int32_t innerCapId);
     void ReConfigDupStreamCallback();
     void HandleOperationStopped(RendererStage stage);
     int32_t StartInnerDuringStandby();
@@ -199,6 +200,10 @@ private:
     bool IsEnabledAndValidSoftLink(SoftLinkInfo& softLinkInfo);
     bool IsEnabledAndValidDupStream(CaptureInfo& captureInfo);
     void HandleOffloadStream(const int32_t captureId, const CaptureInfo& captureInfo);
+    void UpdateStreamInfo();
+    void RemoveStreamInfo();
+    void OnWriteDataFinish();
+    void PauseInner();
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -294,6 +299,9 @@ private:
     FILE *dumpSoftLink = nullptr;
 
     RenderTarget lastTarget_ = NORMAL_PLAYBACK;
+
+    uint32_t audioCheckFreq_ = 0;
+    std::atomic<uint32_t> checkCount_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

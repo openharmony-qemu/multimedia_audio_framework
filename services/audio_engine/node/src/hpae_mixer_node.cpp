@@ -40,6 +40,7 @@ HpaeMixerNode::HpaeMixerNode(HpaeNodeInfo &nodeInfo)
 {
     mixedOutput_.SetSplitStreamType(nodeInfo.GetSplitStreamType());
     mixedOutput_.SetAudioStreamType(nodeInfo.streamType);
+    mixedOutput_.SetAudioStreamUsage(nodeInfo.effectInfo.streamUsage);
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeMixerNode");
 #endif
@@ -61,9 +62,17 @@ bool HpaeMixerNode::Reset()
 void HpaeMixerNode::SetNodeInfo(HpaeNodeInfo& nodeInfo)
 {
     mixedOutput_.SetAudioStreamType(nodeInfo.streamType);
+    mixedOutput_.SetAudioStreamUsage(nodeInfo.effectInfo.streamUsage);
     tmpOutput_.SetAudioStreamType(nodeInfo.streamType);
+    tmpOutput_.SetAudioStreamUsage(nodeInfo.effectInfo.streamUsage);
     silenceData_.SetAudioStreamType(nodeInfo.streamType);
+    silenceData_.SetAudioStreamUsage(nodeInfo.effectInfo.streamUsage);
     HpaeNode::SetNodeInfo(nodeInfo);
+    pcmBufferInfo_.ch = GetChannelCount();
+    pcmBufferInfo_.frameLen = GetFrameLen();
+    pcmBufferInfo_.rate = GetSampleRate();
+    mixedOutput_.ReConfig(pcmBufferInfo_);
+    tmpOutput_.ReConfig(pcmBufferInfo_);
 }
 
 void HpaeMixerNode::ConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode,
@@ -234,6 +243,12 @@ void HpaeMixerNode::DrainProcess()
             }
         }
     }
+}
+
+uint64_t HpaeMixerNode::GetLatency(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET(limiter_ != nullptr, 0);
+    return limiter_->GetLatency() * AUDIO_US_PER_MS;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

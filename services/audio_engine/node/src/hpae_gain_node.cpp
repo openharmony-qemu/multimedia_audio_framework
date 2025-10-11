@@ -40,10 +40,11 @@ static constexpr float EPSILON = 1e-6f;
 
 HpaeGainNode::HpaeGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo)
 {
-    isInnerCapturer_ = !GetDeviceClass().compare(0, strlen(INNER_CAPTURER_SINK), INNER_CAPTURER_SINK);
+    isInnerCapturerOrInjector_ = !GetDeviceClass().compare(0, strlen(INNER_CAPTURER_SINK), INNER_CAPTURER_SINK) ||
+        GetDeviceName() == VIRTUAL_INJECTOR;
     auto audioVolume = AudioVolume::GetInstance();
     float curSystemGain = 1.0f;
-    if (isInnerCapturer_) {
+    if (isInnerCapturerOrInjector_) {
         curSystemGain = audioVolume->GetStreamVolume(GetSessionId());
     } else {
         struct VolumeValues volumes;
@@ -212,7 +213,7 @@ void HpaeGainNode::DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t chan
     AudioVolume *audioVolume = AudioVolume::GetInstance();
     float curSystemGain = 1.0f;
     float preSystemGain = 1.0f;
-    if (isInnerCapturer_) {
+    if (isInnerCapturerOrInjector_) {
         curSystemGain = audioVolume->GetStreamVolume(GetSessionId());
         preSystemGain = audioVolume->GetHistoryVolume(GetSessionId());
     } else {
@@ -290,6 +291,11 @@ uint32_t HpaeGainNode::GetFadeInLength(uint32_t &byteLength, HpaePcmBuffer *inpu
         }
     }
     return index;
+}
+
+uint64_t HpaeGainNode::GetLatency(uint32_t sessionId)
+{
+    return 0;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

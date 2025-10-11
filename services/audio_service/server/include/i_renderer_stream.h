@@ -34,6 +34,7 @@ public:
 class IStreamCallback {
 public:
     virtual int32_t OnStreamData(AudioCallBackStreamInfo& callBackStremInfo) = 0;
+    virtual bool OnQueryUnderrun() { return false; };
 };
 
 class IRendererStream : public IStream {

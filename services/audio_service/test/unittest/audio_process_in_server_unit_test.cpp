@@ -1190,38 +1190,15 @@ HWTEST(AudioProcessInServerUnitTest, GetSpanSizeInFrame_001, TestSize.Level4)
 }
 
 #ifdef ENABLE_INJECT
-class MockOHAudioBufferBase : public OHAudioBufferBase {
+class MockProResampler : public HPAE::ProResampler {
 public:
-    MOCK_METHOD(int32_t, GetWritableDataFrames, (), (override));
-    MOCK_METHOD(uint64_t, GetCurWriteFrame, (), (override));
-    MOCK_METHOD(int32_t, GetAllWritableBufferFromPosFrame, (uint64_t, RingBufferWrapper&), (override));
-    MOCK_METHOD(void, GetSizeParameter, (uint32_t&, uint32_t&), (override));
-    MOCK_METHOD(void, SetHandleInfo, (uint64_t, uint64_t), (override));
-    MOCK_METHOD(int32_t, SetCurWriteFrame, (uint64_t), (override));
-};
+    MockProResampler() : ProResampler(
+        44100,  // 44100 is inRateSample
+        48000,  // 48000 is outRateSample
+        2,      // 2 is channels
+        1       // 1 is quality
+    ) {}
 
-class MockAudioProcessInServer : public AudioProcessInServer {
-public:
-    using AudioProcessInServer::AudioProcessInServer;
-    MOCK_METHOD(int32_t, HandleCapturerDataParams, (RingBufferWrapper&, AudioCaptureDataProcParams&), ());
-    MOCK_METHOD(bool, GetMuteState, (), (const));
-};
-
-// Mock classes for dependencies
-class MockFormatConverter {
-public:
-    static MockFormatConverter* GetMockInstance()
-    {
-        static MockFormatConverter instance;
-        return &instance;
-    }
-    
-    MOCK_METHOD(FormatHandlerMap, GetFormatHandlers, ());
-    MOCK_METHOD(int32_t, S16StereoToF32Stereo, (const BufferDesc&, BufferDesc&));
-};
-
-class MockProResampler {
-public:
     static MockProResampler* GetMockInstance()
     {
         static MockProResampler instance;
@@ -1229,17 +1206,6 @@ public:
     }
     
     MOCK_METHOD(int32_t, Process, (const float*, uint32_t, float*, uint32_t));
-};
-
-class MockRingBufferWrapper {
-public:
-    static MockRingBufferWrapper* GetMockInstance()
-    {
-        static MockRingBufferWrapper instance;
-        return &instance;
-    }
-    
-    MOCK_METHOD(int32_t, Write, (const uint8_t*, size_t));
 };
 
 /**
@@ -1255,7 +1221,7 @@ HWTEST(AudioProcessInServerUnitTest, WriteToSpecialProcBuf_001, TestSize.Level1)
     AudioProcessInServer audioProcessInServer(config, service);
 
     AudioCaptureDataProcParams procParams;
-    procParams.procBuf_ = nullptr; // Set null process buffer
+    audioProcessInServer.processBuffer_ = nullptr; // Set null process buffer
 
     auto result = audioProcessInServer.WriteToSpecialProcBuf(procParams);
     EXPECT_EQ(result, ERR_INVALID_HANDLE);
@@ -1275,8 +1241,8 @@ HWTEST(AudioProcessInServerUnitTest, WriteToSpecialProcBuf_002, TestSize.Level1)
 
     AudioCaptureDataProcParams procParams;
     auto mockProcBuf = std::make_shared<MockOHAudioBufferBase>();
-    procParams.procBuf_ = mockProcBuf;
-    procParams.dstSpanSizeInframe_ = 100; // Request more frames than available
+    audioProcessInServer.processBuffer_ = mockProcBuf;
+    audioProcessInServer.spanSizeInframe_ = 100; // Request more frames than available
 
     // Mock GetWritableDataFrames to return insufficient size
     EXPECT_CALL(*mockProcBuf, GetWritableDataFrames()).WillOnce(Return(50));
@@ -1300,8 +1266,8 @@ HWTEST(AudioProcessInServerUnitTest, WriteToSpecialProcBuf_003, TestSize.Level1)
 
     AudioCaptureDataProcParams procParams;
     auto mockProcBuf = std::make_shared<MockOHAudioBufferBase>();
-    procParams.procBuf_ = mockProcBuf;
-    procParams.dstSpanSizeInframe_ = 50;
+    audioProcessInServer.processBuffer_ = mockProcBuf;
+    audioProcessInServer.spanSizeInframe_ = 50;
 
     // Mock sufficient writable frames
     EXPECT_CALL(*mockProcBuf, GetWritableDataFrames()).WillOnce(Return(100));
@@ -1327,8 +1293,8 @@ HWTEST(AudioProcessInServerUnitTest, WriteToSpecialProcBuf_004, TestSize.Level1)
 
     AudioCaptureDataProcParams procParams;
     auto mockProcBuf = std::make_shared<MockOHAudioBufferBase>();
-    procParams.procBuf_ = mockProcBuf;
-    procParams.dstSpanSizeInframe_ = 50;
+    audioProcessInServer.processBuffer_ = mockProcBuf;
+    audioProcessInServer.spanSizeInframe_ = 50;
 
     // Mock sufficient writable frames
     EXPECT_CALL(*mockProcBuf, GetWritableDataFrames()).WillOnce(Return(100));
@@ -1359,8 +1325,8 @@ HWTEST(AudioProcessInServerUnitTest, WriteToSpecialProcBuf_005, TestSize.Level1)
 
     AudioCaptureDataProcParams procParams;
     auto mockProcBuf = std::make_shared<MockOHAudioBufferBase>();
-    procParams.procBuf_ = mockProcBuf;
-    procParams.dstSpanSizeInframe_ = 50;
+    audioProcessInServer.processBuffer_ = mockProcBuf;
+    audioProcessInServer.spanSizeInframe_ = 50;
 
     // Mock sufficient writable frames
     EXPECT_CALL(*mockProcBuf, GetWritableDataFrames()).WillOnce(Return(100));
@@ -1395,8 +1361,8 @@ HWTEST(AudioProcessInServerUnitTest, WriteToSpecialProcBuf_006, TestSize.Level1)
 
     AudioCaptureDataProcParams procParams;
     auto mockProcBuf = std::make_shared<MockOHAudioBufferBase>();
-    procParams.procBuf_ = mockProcBuf;
-    procParams.dstSpanSizeInframe_ = 50;
+    audioProcessInServer.processBuffer_ = mockProcBuf;
+    audioProcessInServer.spanSizeInframe_ = 50;
 
     // Mock sufficient writable frames
     EXPECT_CALL(*mockProcBuf, GetWritableDataFrames()).WillOnce(Return(100));
@@ -1429,8 +1395,8 @@ HWTEST(AudioProcessInServerUnitTest, WriteToSpecialProcBuf_007, TestSize.Level1)
 
     AudioCaptureDataProcParams procParams;
     auto mockProcBuf = std::make_shared<MockOHAudioBufferBase>();
-    procParams.procBuf_ = mockProcBuf;
-    procParams.dstSpanSizeInframe_ = 50;
+    audioProcessInServer.processBuffer_ = mockProcBuf;
+    audioProcessInServer.spanSizeInframe_ = 50;
 
     // Mock sufficient writable frames
     EXPECT_CALL(*mockProcBuf, GetWritableDataFrames()).WillOnce(Return(100));
@@ -1467,8 +1433,8 @@ HWTEST(AudioProcessInServerUnitTest, WriteToSpecialProcBuf_008, TestSize.Level1)
 
     AudioCaptureDataProcParams procParams;
     auto mockProcBuf = std::make_shared<MockOHAudioBufferBase>();
-    procParams.procBuf_ = mockProcBuf;
-    procParams.dstSpanSizeInframe_ = 50;
+    audioProcessInServer.processBuffer_ = mockProcBuf;
+    audioProcessInServer.spanSizeInframe_ = 50;
 
     // Mock sufficient writable frames
     EXPECT_CALL(*mockProcBuf, GetWritableDataFrames()).WillOnce(Return(100));

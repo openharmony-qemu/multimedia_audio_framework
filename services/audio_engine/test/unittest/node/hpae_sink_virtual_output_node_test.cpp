@@ -84,6 +84,13 @@ HWTEST_F(HpaeSinkVirtualOutputNodeTest, PeekAudioDataSuccess, TestSize.Level1)
     EXPECT_EQ(audioStreamInfo.format, nodeInfo_.format);
     EXPECT_EQ(audioStreamInfo.samplingRate, nodeInfo_.samplingRate);
     EXPECT_EQ(audioStreamInfo.channels, nodeInfo_.channels);
+
+    std::fill(buffer.begin(), buffer.end(), 1);
+    EXPECT_EQ(node->PeekAudioData(buffer.data(), validSize - 1, audioStreamInfo), SUCCESS);
+    EXPECT_EQ(buffer[0], 0);
+    std::fill(buffer.begin(), buffer.end(), 1);
+    EXPECT_EQ(node->PeekAudioData(buffer.data(), validSize + 1, audioStreamInfo), SUCCESS);
+    EXPECT_EQ(buffer[0], 0);
 }
 
 HWTEST_F(HpaeSinkVirtualOutputNodeTest, ResetNode, TestSize.Level1)

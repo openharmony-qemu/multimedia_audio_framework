@@ -159,5 +159,30 @@ HWTEST_F(AdapterUnitTest, AdapterUnitTest_007, TestSize.Level1)
     ASSERT_TRUE(sink != nullptr);
 }
 
+/**
+ * @tc.name   : Test DoSetSinkPrestoreInfo API
+ * @tc.number : DoSetSinkPrestoreInfo_001
+ * @tc.desc   : Test DoSetSinkPrestoreInfo_001
+ */
+HWTEST_F(AdapterUnitTest, DoSetSinkPrestoreInfo_001, TestSize.Level1)
+{
+    HdiAdapterFactory &fac = HdiAdapterFactory::GetInstance();
+    auto sink = fac.CreateBluetoothRenderSink("bluetooth");
+
+    HdiAdapterManager::GetInstance().
+        UpdateSinkPrestoreInfo<std::pair<AudioParamKey, std::pair<std::string, std::string>>>(
+            PRESTORE_INFO_AUDIO_BT_PARAM, {AudioParamKey::A2DP_SUSPEND_STATE, {"", "test"}});
+    HdiAdapterManager::GetInstance().DoSetSinkPrestoreInfo(sink, HDI_ID_TYPE_PRIMARY);
+
+    std::pair<AudioParamKey, std::pair<std::string, std::string>> param = {AudioParamKey::NONE, {"", ""}};
+    int32_t ret = HdiAdapterManager::GetInstance().sinkPrestoreInfo_.Get(PRESTORE_INFO_AUDIO_BT_PARAM, param);
+    EXPECT_EQ(param.second.second, "test");
+
+    HdiAdapterManager::GetInstance().DoSetSinkPrestoreInfo(sink, HDI_ID_TYPE_BLUETOOTH);
+    param = {AudioParamKey::NONE, {"", ""}};
+    ret = HdiAdapterManager::GetInstance().sinkPrestoreInfo_.Get(PRESTORE_INFO_AUDIO_BT_PARAM, param);
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

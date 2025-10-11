@@ -46,6 +46,7 @@ config("audio_engine_private_config") {
     "../../../audio_service/common/include/limiter",
     "../../../audio_policy/common/include",
     "../../../../frameworks/native/audioeffect/include",
+    "../../../../frameworks/native/audioutils/include",
     "../../../../frameworks/native/hdiadapter_new/include",
   ]
 }
@@ -76,6 +77,7 @@ ohos_unittest("hpae_render_manager_test") {
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
     "../../../../frameworks/native/audioeffect:audio_effect",
+    "../../../../frameworks/native/audioutils:audio_utils",
   ]
 
   external_deps = engine_test_external_deps
@@ -85,7 +87,7 @@ ohos_unittest("hpae_injector_renderer_manager_test") {
   module_out_path = module_output_path
   sources = [
     "common/test_case_common.cpp",
-    "manager/hpae_render_manager_test.cpp",
+    "manager/hpae_injector_renderer_manager_test.cpp",
   ]
 
   configs = [ ":audio_engine_private_config" ]
@@ -96,6 +98,7 @@ ohos_unittest("hpae_injector_renderer_manager_test") {
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
     "../../../../frameworks/native/audioeffect:audio_effect",
+    "../../../../frameworks/native/audioutils:audio_utils",
   ]
 
   external_deps = engine_test_external_deps

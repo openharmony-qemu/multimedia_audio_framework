@@ -31,7 +31,7 @@
 #include "i_hpae_manager.h"
 #include "audio_stream_info.h"
 #include "audio_effect_map.h"
-#include "down_mixer.h"
+#include "mixer_utils.h"
 #include "policy_handler.h"
 #include "audio_engine_log.h"
 #include "core_service_handler.h"
@@ -88,7 +88,7 @@ HpaeRendererStreamImpl::~HpaeRendererStreamImpl()
 {
     AUDIO_INFO_LOG("destructor %{public}u", streamIndex_);
     if (dumpEnqueueIn_ != nullptr) {
-        DumpFileUtil::CloseDumpFile(&dumpEnqueueIn_);
+    DumpFileUtil::CloseDumpFile(&dumpEnqueueIn_);
     }
 }
 
@@ -101,7 +101,9 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.format = processConfig_.streamInfo.format;
     streamInfo.channelLayout = processConfig_.streamInfo.channelLayout;
     if (streamInfo.channelLayout == CH_LAYOUT_UNKNOWN) {
-        streamInfo.channelLayout = DownMixer::SetDefaultChannelLayout((AudioChannel)streamInfo.channels);
+        AudioChannelLayout layout;
+        SetDefaultChannelLayout(static_cast<AudioChannel>(streamInfo.channels), layout);
+        streamInfo.channelLayout = layout;
     }
     streamInfo.frameLen = spanSizeInFrame_;
     streamInfo.sessionId = processConfig_.originalSessionId;
@@ -250,7 +252,7 @@ int32_t HpaeRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
 
 uint32_t HpaeRendererStreamImpl::GetA2dpOffloadLatency()
 {
-    Trace trace("PaRendererStreamImpl::GetA2dpOffloadLatency");
+    Trace trace("HpaeRendererStreamImpl::GetA2dpOffloadLatency");
     uint32_t a2dpOffloadLatency = 0;
     uint64_t a2dpOffloadSendDataSize = 0;
     uint32_t a2dpOffloadTimestamp = 0;
@@ -265,7 +267,7 @@ uint32_t HpaeRendererStreamImpl::GetA2dpOffloadLatency()
 
 uint32_t HpaeRendererStreamImpl::GetNearlinkLatency()
 {
-    Trace trace("PaRendererStreamImpl::GetNearlinkLatency");
+    Trace trace("HpaeRendererStreamImpl::GetNearlinkLatency");
     uint32_t nearlinkLatency = 0;
     auto &handler = PolicyHandler::GetInstance();
     int32_t ret = handler.NearlinkGetRenderPosition(nearlinkLatency);
@@ -317,7 +319,7 @@ int32_t HpaeRendererStreamImpl::GetSpeedPosition(uint64_t &framePosition, uint64
     // latencyMutex_ begin
     latencyUs += latency_;
     AUDIO_DEBUG_LOG("pipe latency: %{public}" PRIu64, latency_);
-    framePosition = lastHdiFramePosition_ + framePosition_ - lastFramePosition_;
+    framePosition = lastHdiFramePosition_ + framePosition_.load() - lastFramePosition_;
     uint64_t mutePaddingFrames = mutePaddingFrames_.load();
     framePosition = (framePosition > mutePaddingFrames) ? (framePosition - mutePaddingFrames) : 0;
     latency = latencyUs * static_cast<uint64_t>(processConfig_.streamInfo.samplingRate) / AUDIO_US_PER_S;
@@ -335,7 +337,7 @@ int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint
     latencyUs += latency_;
     AUDIO_DEBUG_LOG("pipe latency: %{public}" PRIu64, latency_);
     latency = latencyUs * static_cast<uint64_t>(processConfig_.streamInfo.samplingRate) / AUDIO_US_PER_S;
-    framePosition = framePosition_;
+    framePosition = framePosition_.load();
     uint64_t mutePaddingFrames = mutePaddingFrames_.load();
     framePosition = (framePosition > mutePaddingFrames) ? (framePosition - mutePaddingFrames) : 0;
     AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ", latency %{public}" PRIu64,
@@ -379,7 +381,7 @@ void HpaeRendererStreamImpl::GetLatencyInner(uint64_t &timestamp, uint64_t &late
     AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ", latencyUs %{public}" PRIu64
         ", base %{public}d, timestamp %{public}" PRIu64
         ", sink latency: %{public}u ms, a2dp offload latency: %{public}u ms, nearlink latency: %{public}u ms",
-        framePosition_, latencyUs, base, timestamp, sinkLatency, a2dpOffloadLatency, nearlinkLatency);
+        framePosition_.load(), latencyUs, base, timestamp, sinkLatency, a2dpOffloadLatency, nearlinkLatency);
 }
 
 int32_t HpaeRendererStreamImpl::SetRate(int32_t rate)
@@ -495,10 +497,14 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
             int32_t ret = writeCallback->OnWriteData(callBackStreamInfo.inputData,
                 requestDataLen);
             CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+            //The framePosition callback from the engine lacks the length of the data written this time.
+            //The length needs to be accounted for in framePosition.
+            framePosition_.fetch_add(callBackStreamInfo.requestDataLen / byteSizePerFrame_);
             size_t mutePaddingFrames = (byteSizePerFrame_ == 0) ? 0 : (mutePaddingSize / byteSizePerFrame_);
             CHECK_AND_RETURN_RET(mutePaddingFrames != 0, SUCCESS);
             mutePaddingFrames_.fetch_add(mutePaddingFrames);
             noWaitDataFlag_ = true;
+            Trace trace("HpaeRendererStreamImpl::underrun mute frames " + std::to_string(mutePaddingFrames));
             AUDIO_INFO_LOG("Padding mute frames %{public}zu, sessionId %{public}u", mutePaddingFrames, streamIndex_);
         }
     } else { // write buffer
@@ -780,6 +786,18 @@ void HpaeRendererStreamImpl::OnStatusUpdate(IOperation operation, uint32_t strea
     if (statusCallback) {
         statusCallback->OnStatusUpdate(operation);
     }
+}
+
+bool HpaeRendererStreamImpl::OnQueryUnderrun()
+{
+    if (isCallbackMode_) { // callback buffer
+        auto writeCallback = writeCallback_.lock();
+        CHECK_AND_RETURN_RET(writeCallback != nullptr, false);
+        size_t requestDataLen = 0;
+        writeCallback->GetAvailableSize(requestDataLen);
+        return requestDataLen == 0;
+    }
+    return false;
 }
 
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId)

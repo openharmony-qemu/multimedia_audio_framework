@@ -106,13 +106,17 @@ public:
         const SourceType sourceType, bool isRunning);
     int32_t RemoveSelectedInputDevice(const uint32_t sessionID);
     shared_ptr<AudioDeviceDescriptor> GetSelectedCaptureDevice(const uint32_t sessionID);
+    int32_t SetPreferredInputDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &devDesc, const uint32_t sessionID, const SourceType sourceType);
+    shared_ptr<AudioDeviceDescriptor> GetOnlinePreferredInputDevice(const uint32_t sessionID);
+    int32_t RemovePreferredInputDevice(const uint32_t sessionID);
     void Dump(std::string &dumpString);
     void UpdateVirtualDevices(const std::shared_ptr<AudioDeviceDescriptor> &devDesc, bool isConnected);
     void GetAllConnectedDeviceByType(std::string networkId, DeviceType deviceType,
         std::string macAddress, DeviceRole deviceRole, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
     bool IsSessionSetDefaultDevice(uint32_t sessionId);
-    bool ExistsByType(DeviceType devType) const;
-    bool ExistsByTypeAndAddress(DeviceType devType, const string &address) const;
+    bool ExistsByType(DeviceType devType);
+    bool ExistsByTypeAndAddress(DeviceType devType, const string &address);
     bool ExistSameRemoteDeviceByMacAddress(std::shared_ptr<AudioDeviceDescriptor> desc);
     shared_ptr<AudioDeviceDescriptor> GetActiveScoDevice(std::string scoMac, DeviceRole role);
     std::shared_ptr<AudioDeviceDescriptor> GetExistedDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
@@ -214,6 +218,8 @@ private:
     DeviceType remoteInfoDeviceType_ = DEVICE_TYPE_DEFAULT;
     std::mutex virtualDevicesMutex_;
     std::mutex descArrayMutex_;
+    unordered_map<uint32_t, std::pair<std::shared_ptr<AudioDeviceDescriptor>, SourceType>> preferredInputDeviceInfo_;
+    std::mutex preferredInputDeviceMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

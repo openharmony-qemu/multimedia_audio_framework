@@ -136,6 +136,20 @@ void AudioPipeSelector::UpdateDeviceStreamInfo(std::shared_ptr<AudioStreamDescri
     AUDIO_INFO_LOG("DeviceStreamInfo:%{public}s", info.c_str());
 }
 
+void AudioPipeSelector::ProcessRendererAndCapturerConcurrency(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+{
+    bool hasFastVoipCapturer = false;
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList = AudioPipeManager::GetPipeManager()->GetPipeList();
+    for (auto &curPipeInfo : pipeInfoList) {
+        CHECK_AND_CONTINUE(curPipeInfo->routeFlag_ == (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST));
+        hasFastVoipCapturer = true;
+        break;
+    }
+    CHECK_AND_RETURN((streamDesc->routeFlag_ == AUDIO_OUTPUT_FLAG_FAST) && hasFastVoipCapturer);
+    streamDesc->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    AUDIO_INFO_LOG("Set %{public}u to normal flag", streamDesc->GetSessionId());
+}
+
 // get each streamDesc's final routeFlag after concurrency
 void AudioPipeSelector::DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
@@ -156,6 +170,7 @@ void AudioPipeSelector::DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioSt
         // calculate concurrency in time order
         for (size_t curStreamDescIdx = 0; curStreamDescIdx < cmpStreamIdx; ++curStreamDescIdx) {
             ProcessConcurrency(streamDescs[curStreamDescIdx], streamDescs[cmpStreamIdx], streamsMoveToNormal);
+            ProcessRendererAndCapturerConcurrency(streamDescs[cmpStreamIdx]);
         }
     }
     ProcessModemCommunicationConcurrency(streamDescs, streamsMoveToNormal);
@@ -417,7 +432,7 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
     if (action == CONCEDE_INCOMING && existingStream->IsNoRunningOffload()) {
         action = CONCEDE_EXISTING;
     }
-    AUDIO_INFO_LOG("Action: %{public}u "
+    JUDGE_AND_INFO_LOG(action != PLAY_BOTH, "Action: %{public}u "
         "existingStream id: %{public}u, routeFlag: %{public}u; "
         "incomingStream id: %{public}u, routeFlag: %{public}u",
         action,
@@ -494,9 +509,9 @@ static void FillSpecialPipeInfo(AudioPipeInfo &info, std::shared_ptr<AdapterPipe
         info.moduleInfo_.className = "multichannel";
         info.moduleInfo_.fileName = "mch_dump_file";
         info.moduleInfo_.fixedLatency = "1"; // for fix max request
-        info.moduleInfo_.bufferSize =
-            std::to_string(((streamPropInfo->bufferSize_ / std::stoul(info.moduleInfo_.channels)) * STEREO));
-        AUDIO_INFO_LOG("Buffer size: %{public}s", info.moduleInfo_.bufferSize.c_str());
+        AUDIO_INFO_LOG("Buffer size: %{public}s channels: %{public}s channelLayout:%{public}s",
+            info.moduleInfo_.bufferSize.c_str(), info.moduleInfo_.channels.c_str(),
+            info.moduleInfo_.channelLayout.c_str());
     } else if (pipeInfoPtr->name_ == "offload_output") {
         info.moduleInfo_.className = "offload";
         info.moduleInfo_.offloadEnable = "1";

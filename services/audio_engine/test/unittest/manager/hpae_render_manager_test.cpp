@@ -27,6 +27,7 @@
 #include "hpae_sink_virtual_output_node.h"
 #include "hpae_node_common.h"
 #include "hpae_mocks.h"
+#include "audio_utils.h"
 #include <thread>
 #include <chrono>
 #include <cstdio>
@@ -49,17 +50,6 @@ constexpr int32_t TEST_SLEEP_TIME_20 = 20;
 constexpr int32_t TEST_SLEEP_TIME_40 = 40;
 constexpr uint32_t INVALID_ID = 99999;
 constexpr uint32_t LOUDNESS_GAIN = 1.0f;
-class HpaeRendererManagerTest : public testing::Test {
-public:
-    void SetUp();
-    void TearDown();
-};
-
-void HpaeRendererManagerTest::SetUp()
-{}
-
-void HpaeRendererManagerTest::TearDown()
-{}
 
 static HpaeSinkInfo GetSinkInfo()
 {
@@ -84,6 +74,47 @@ static void TestCheckSinkInputInfo(HpaeSinkInputInfo &sinkInputInfo, const HpaeS
     EXPECT_EQ(sinkInputInfo.nodeInfo.sessionId == streamInfo.sessionId, true);
     EXPECT_EQ(sinkInputInfo.nodeInfo.samplingRate == streamInfo.samplingRate, true);
     EXPECT_EQ(sinkInputInfo.nodeInfo.streamType == streamInfo.streamType, true);
+}
+
+static std::shared_ptr<HpaeSinkInputNode> CreateTestNode(OHOS::AudioStandard::HPAE::HpaeSessionState state)
+{
+    HpaeNodeInfo nodeinfo;
+    nodeinfo.streamType = STREAM_MUSIC;
+    std::shared_ptr<HpaeSinkInputNode> node = std::make_shared<HpaeSinkInputNode>(nodeinfo);
+    node->SetState(state);
+    return node;
+}
+
+class HpaeRendererManagerTest : public testing::Test {
+public:
+    void SetUp() override;
+    void TearDown() override;
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager_;
+    std::shared_ptr<HpaeOutputCluster> outputCluster_;
+    std::shared_ptr<HpaeSinkInputNode> sinkInputNode_;
+    std::shared_ptr<MockStreamCallback> mockCallback_;
+};
+
+void HpaeRendererManagerTest::SetUp()
+{
+    HpaeNodeInfo nodeInfo;
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    hpaeRendererManager_ = std::make_shared<HpaeRendererManager>(sinkInfo);
+
+    outputCluster_ = std::make_shared<HpaeOutputCluster>(nodeInfo);
+    hpaeRendererManager_->outputCluster_ = outputCluster_;
+    hpaeRendererManager_->hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
+    sinkInputNode_ = CreateTestNode(HPAE_SESSION_RUNNING);
+    mockCallback_ = std::make_shared<NiceMock<MockStreamCallback>>();
+    sinkInputNode_->RegisterWriteCallback(mockCallback_);
+    hpaeRendererManager_->appsUid_ = {123};
+    hpaeRendererManager_->sinkInputNodeMap_[1] = sinkInputNode_;
+}
+
+void HpaeRendererManagerTest::TearDown()
+{
+    hpaeRendererManager_.reset();
+    outputCluster_.reset();
 }
 
 template <class RenderManagerType>
@@ -344,7 +375,7 @@ static void TestIRendererManagerSetLoudnessGain()
     EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->IsInit(), true);
-    // test SetLoundessGain when session is created but not connected
+    // test SetLoudnessGain when session is created but not connected
     HpaeStreamInfo streamInfo;
     streamInfo.channels = STEREO;
     streamInfo.samplingRate = SAMPLE_RATE_48000;
@@ -366,6 +397,39 @@ static void TestIRendererManagerSetLoudnessGain()
     // test set loudness gain after start
     EXPECT_EQ(hpaeRendererManager->SetLoudnessGain(streamInfo.sessionId, LOUDNESS_GAIN) == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
+
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+template <class RenderManagerType>
+static void TestIRendererManagerOnRequestLatency()
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<RenderManagerType>(sinkInfo);
+
+    EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    HpaeStreamInfo streamInfo;
+    streamInfo.channels = STEREO;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    streamInfo.format = SAMPLE_F32LE;
+    streamInfo.frameLen = FRAME_LENGTH_960;
+    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+
+    EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->SetLoudnessGain(streamInfo.sessionId, LOUDNESS_GAIN) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->Start(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    // test set get latency after start
+    uint64_t latency = 0;
+    hpaeRendererManager->OnRequestLatency(streamInfo.sessionId, latency);
 
     EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
@@ -885,7 +949,6 @@ HWTEST_F(HpaeRendererManagerTest, StartWithSyncId_001, TestSize.Level0)
     EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->IsInit(), true);
-    // test SetLoundessGain when session is created but not connected
     HpaeStreamInfo streamInfo;
     streamInfo.channels = STEREO;
     streamInfo.samplingRate = SAMPLE_RATE_48000;
@@ -1818,5 +1881,61 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_002, 
     EXPECT_EQ(offloadManager->curNode_, nullptr);
     offloadManager->SetCurrentNode();
     EXPECT_NE(offloadManager->curNode_, nullptr);
+}
+
+/**
+ * @tc.name  : Test HpaeRendererGetLatency_001
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRendererGetLatency_001
+ * @tc.desc  : Test get latency via legal state.
+ */
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererGetLatency_001, TestSize.Level0)
+{
+    std::cout << "test renderer manager" << std::endl;
+    TestIRendererManagerOnRequestLatency<HpaeRendererManager>();
+    std::cout << "test offload" << std::endl;
+    TestIRendererManagerOnRequestLatency<HpaeOffloadRendererManager>();
+}
+
+/**
+ * @tc.name  : Test QueryOneStreamUnderrun
+ * @tc.type  : FUNC
+ * @tc.number: QueryOneStreamUnderrun_001
+ * @tc.desc  : Test QueryOneStreamUnderrun when not one stream underrun.
+ */
+HWTEST_F(HpaeRendererManagerTest, QueryOneStreamUnderrun_001, TestSize.Level1)
+{
+    hpaeRendererManager_->lastOnUnderrunTime_ = 1;
+
+    EXPECT_CALL(*mockCallback_, OnQueryUnderrun())
+        .WillOnce(Return(false));
+
+    EXPECT_FALSE(hpaeRendererManager_->QueryOneStreamUnderrun());
+    EXPECT_EQ(hpaeRendererManager_->lastOnUnderrunTime_, 0);
+
+    sinkInputNode_->SetState(HPAE_SESSION_PAUSED);
+    hpaeRendererManager_->lastOnUnderrunTime_ = 1;
+
+    EXPECT_FALSE(hpaeRendererManager_->QueryOneStreamUnderrun());
+    EXPECT_EQ(hpaeRendererManager_->lastOnUnderrunTime_, 0);
+}
+
+/**
+ * @tc.name  : Test QueryOneStreamUnderrun
+ * @tc.type  : FUNC
+ * @tc.number: QueryOneStreamUnderrun_002
+ * @tc.desc  : Test QueryOneStreamUnderrun when one stream underrun.
+ */
+HWTEST_F(HpaeRendererManagerTest, QueryOneStreamUnderrun_002, TestSize.Level1)
+{
+    EXPECT_CALL(*mockCallback_, OnQueryUnderrun())
+        .WillOnce(Return(true))
+        .WillOnce(Return(true));
+    hpaeRendererManager_->lastOnUnderrunTime_ = ClockTime::GetCurNano();
+    EXPECT_TRUE(hpaeRendererManager_->QueryOneStreamUnderrun());
+
+    hpaeRendererManager_->lastOnUnderrunTime_ = 1;
+    EXPECT_FALSE(hpaeRendererManager_->QueryOneStreamUnderrun());
+    EXPECT_EQ(hpaeRendererManager_->lastOnUnderrunTime_, 1);
 }
 }  // namespace

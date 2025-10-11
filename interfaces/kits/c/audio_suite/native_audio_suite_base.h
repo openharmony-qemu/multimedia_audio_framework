@@ -263,21 +263,26 @@ typedef enum {
      *
      * @since 22
      */
-    AUDIOSUITE_ERROR_UNSUPPORT_CONNECT = 8,
+    AUDIOSUITE_ERROR_UNSUPPORTED_CONNECT = 8,
     /**
-     * @error the operation of current pipeline or node is unsupported.
+     * @error Unsupported operation.
      *
      * @since 22
      */
     AUDIOSUITE_ERROR_UNSUPPORT_OPERATION = 9,
     /**
-     * @error The number of created pipelines or nodes exceeds the system specification.
+     * @error The application attempted to create an object that exceeds the system's maximum limit.
      *
      * @since 22
      */
     AUDIOSUITE_ERROR_CREATED_EXCEED_SYSTEM_LIMITS = 10,
+    /**
+     * @error Required parameters are missing.
+     *
+     * @since 22
+     */
+    AUDIOSUITE_ERROR_REQUIRED_PARAMETERS_MISSED = 11,
 } OH_AudioSuite_Result;
-
 /**
  * @brief Define the result of the callback function.
  *

@@ -29,26 +29,29 @@ HpaePluginNode::HpaePluginNode(HpaeNodeInfo& nodeInfo)
     silenceData_.SetBufferSilence(true);
     silenceData_.SetSplitStreamType(nodeInfo.GetSplitStreamType());
     silenceData_.SetAudioStreamType(nodeInfo.streamType);
+    silenceData_.SetAudioStreamUsage(nodeInfo.effectInfo.streamUsage);
 }
 
 void HpaePluginNode::DoProcess()
 {
     HpaePcmBuffer *tempOut = nullptr;
     std::vector<HpaePcmBuffer *>& preOutputs = inputStream_.ReadPreOutputData();
-    // if buffer is not valid, write silence data(invalid) to output
-    if (enableProcess_ && !preOutputs.empty()) {
-        tempOut = SignalProcess(preOutputs);
-        outputStream_.WriteDataToOutput(tempOut);
-    } else if (!preOutputs.empty()) {
+    if (!preOutputs.empty()) {
+        if (enableProcess_) {
+            tempOut = SignalProcess(preOutputs);
+            outputStream_.WriteDataToOutput(tempOut);
+            return;
+        }
         outputStream_.WriteDataToOutput(preOutputs[0]);
-    } else if (!enableProcess_ && preOutputs.empty()) {
+    }
+    if (!enableProcess_) {
         // use to drain data when disconnecting, now use for mixerNode of processCluster
         tempOut = SignalProcess(preOutputs);
         outputStream_.WriteDataToOutput(tempOut);
-    } else {
-        Trace trace("[sceneType:" + std::to_string(GetSceneType()) + "]" + GetNodeName() + "::DoProcess is_silence");
-        outputStream_.WriteDataToOutput(&silenceData_);
+        return;
     }
+    Trace trace("[sceneType:" + std::to_string(GetSceneType()) + "]" + GetNodeName() + "::DoProcess is_silence");
+    outputStream_.WriteDataToOutput(&silenceData_);
 }
 
 bool HpaePluginNode::Reset()

@@ -29,9 +29,11 @@ namespace AudioSuite {
 constexpr int REASAMPLE_QUAILTY = 5;
 constexpr int FRAME_TIME = 20;
 constexpr int CONVERSION = 1000;
+constexpr uint32_t CHANNEL_TWO = 2;
 
-AudioSuiteMixerNode::AudioSuiteMixerNode(AudioNodeType nodeType, AudioFormat &audioFormat)
-    :AudioSuiteProcessNode(nodeType, audioFormat),
+AudioSuiteMixerNode::AudioSuiteMixerNode()
+    :AudioSuiteProcessNode(NODE_TYPE_AUDIO_MIXER, AudioFormat{{CH_LAYOUT_STEREO, CHANNEL_TWO},
+        SAMPLE_F32LE, SAMPLE_RATE_96000}),
     rate_(SAMPLE_RATE_192000),
     mixerOutput_(rate_, STEREO, CH_LAYOUT_STEREO),
     tmpOutput_(rate_, STEREO, CH_LAYOUT_STEREO),
@@ -119,7 +121,7 @@ int32_t AudioSuiteMixerNode::InitAudioLimiter()
 
 AudioSuitePcmBuffer *AudioSuiteMixerNode::preProcess(AudioSuitePcmBuffer *input)
 {
-    AUDIO_INFO_LOG("Channel: %{public}d, SampleRate: %{public}d",
+    AUDIO_DEBUG_LOG("Channel: %{public}d, SampleRate: %{public}d",
         input->GetChannelCount(), input->GetSampleRate());
 
     if (input->GetSampleRate() != rate_) {
@@ -157,7 +159,7 @@ AudioSuitePcmBuffer *AudioSuiteMixerNode::preChannelProcess(AudioSuitePcmBuffer 
     AudioChannelInfo inChannelInfo = {input->GetChannelLayout(), input->GetChannelCount()};
     AudioChannelInfo outChannelInfo = {CH_LAYOUT_STEREO, STEREO};
     int ret = SetChannelConvertProcessParam(inChannelInfo, outChannelInfo, SAMPLE_F32LE, true);
-    CHECK_AND_RETURN_RET_LOG(ret == HPAE::DMIX_ERR_SUCCESS, nullptr,
+    CHECK_AND_RETURN_RET_LOG(ret == HPAE::MIX_ERR_SUCCESS, nullptr,
         "Set channel convert processParam failed with error code %{public}d", ret);
 
     uint32_t formatChannelSrcBufSize = input->GetFrameLen() * SAMPLE_F32LE;
@@ -165,7 +167,7 @@ AudioSuitePcmBuffer *AudioSuiteMixerNode::preChannelProcess(AudioSuitePcmBuffer 
     ret = ChannelConvertProcess(input->GetFrameLen() / input->GetChannelCount(),
         input->GetPcmDataBuffer(), formatChannelSrcBufSize, channelOutput_.GetPcmDataBuffer(),
         channelConvertOutputBytes);
-    CHECK_AND_RETURN_RET_LOG(ret == HPAE::DMIX_ERR_SUCCESS, nullptr,
+    CHECK_AND_RETURN_RET_LOG(ret == HPAE::MIX_ERR_SUCCESS, nullptr,
         "Channel convert process failed with error code %{public}d", ret);
 
     return &channelOutput_;
@@ -183,15 +185,9 @@ AudioSuitePcmBuffer *AudioSuiteMixerNode::preRateProcess(AudioSuitePcmBuffer *in
         rateOutput_.ResizePcmBuffer(sampleRate, channelCount);
     }
 
-    if (sampleRate != rate_sampleRate_ || input->GetSampleRate() != rate_inputsampleRate_) {
-        AUDIO_INFO_LOG("Rate:%{public}d Rate_:%{public}d inputRate:%{public}d inputRate_:%{public}d",
-            sampleRate, rate_sampleRate_, input->GetSampleRate(), rate_inputsampleRate_);
-        rate_sampleRate_ = sampleRate;
-        rate_inputsampleRate_ = input->GetSampleRate();
-        ret = SetUpResample(input->GetSampleRate(), rate_, input->GetChannelCount(), REASAMPLE_QUAILTY);
-        CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, nullptr,
-            "setup resample failed with error code %{public}d", ret);
-    }
+    ret = SetUpResample(input->GetSampleRate(), rate_, input->GetChannelCount(), REASAMPLE_QUAILTY);
+    CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, nullptr,
+        "setup resample failed with error code %{public}d", ret);
 
     uint32_t inFrameSize = input->GetFrameLen() / input->GetChannelCount();
     uint32_t outFrameSize = frameLen_;

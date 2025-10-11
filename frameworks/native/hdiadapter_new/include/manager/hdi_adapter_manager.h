@@ -99,7 +99,7 @@ private:
     void DecRefCount(uint32_t id);
     void DoRegistSinkCallback(uint32_t id, std::shared_ptr<IAudioRenderSink> sink);
     void DoRegistSourceCallback(uint32_t id, std::shared_ptr<IAudioCaptureSource> source);
-    void DoSetSinkPrestoreInfo(std::shared_ptr<IAudioRenderSink> sink);
+    void DoSetSinkPrestoreInfo(std::shared_ptr<IAudioRenderSink> sink, uint32_t type);
 
 private:
     std::unordered_map<uint32_t, RenderSinkInfo> renderSinks_;

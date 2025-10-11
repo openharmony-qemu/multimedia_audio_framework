@@ -85,6 +85,8 @@ public:
 
     void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
+    void SetBluetoothSinkParam(AudioParamKey key, std::string condition, std::string value) override;
+
 private:
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
         uint32_t &byteSizePerFrame, uint32_t &syncInfoSize) override;
@@ -106,6 +108,7 @@ private:
     void UpdateSinkState(bool started);
     bool IsValidState(void);
     bool IsSinkInited(void) override;
+    void SetAudioParameterInner(const std::string &value);
 
     // low latency
     int32_t PrepareMmapBuffer(void);
@@ -183,6 +186,19 @@ private:
     uint32_t bufferTotalFrameSize_ = 0;
     uint32_t eachReadFrameSize_ = 0;
     uint32_t syncInfoSize_ = 0;
+
+    struct A2dpParam {
+        AudioParamKey key = AudioParamKey::NONE;
+        std::string condition = "";
+        std::string value = "";
+    
+        bool empty() const
+        {
+            return key == AudioParamKey::NONE && condition.empty() && value.empty();
+        }
+    };
+
+    A2dpParam a2dpParam_;
 };
 
 } // namespace AudioStandard

@@ -44,13 +44,26 @@ int32_t AudioInjectorPolicy::Init()
         moduleInfo.rate = "48000";
         moduleInfo.bufferSize = "3840"; // 20ms
 
-        int32_t ret = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "open port failed");
+        uint32_t paIndex = 0;
+        AudioIOHandle ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo, paIndex);
+        CHECK_AND_RETURN_RET_LOG(paIndex != HDI_INVALID_ID, ERR_OPERATION_FAILED,
+            "OpenAudioPort failed paId[%{public}u]", paIndex);
+
+        std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+        pipeInfo->id_ = ioHandle;
+        pipeInfo->paIndex_ = paIndex;
+        pipeInfo->name_ = VIRTUAL_INJECTOR;
+        pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+        pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+        pipeInfo->adapterName_ = moduleInfo.adapterName;
+        pipeInfo->moduleInfo_ = moduleInfo;
+        pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+        pipeInfo->InitAudioStreamInfo();
+        AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipeInfo);
+        audioIOHandleMap_.AddIOHandleInfo(VIRTUAL_INJECTOR, ioHandle);
         isOpened_ = true;
         this->moduleInfo_ = moduleInfo;
-        CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "pipeManager_ is null");
-        renderPortIdx_ = pipeManager_->GetPaIndexByName(moduleInfo.name);
-        CHECK_AND_RETURN_RET_LOG(renderPortIdx_ != HDI_INVALID_ID, ERROR, "renderPortIdx error!");
+        renderPortIdx_ = paIndex;
     }
     return SUCCESS;
 }
@@ -83,6 +96,9 @@ int32_t AudioInjectorPolicy::RemoveStreamDescriptor(uint32_t renderId)
 {
     std::lock_guard<std::shared_mutex> lock(injectLock_);
     rendererStreamMap_.erase(renderId);
+    if (rendererStreamMap_.size() == 0) {
+        RemoveCaptureInjector(false);
+    }
     return SUCCESS;
 }
 
@@ -110,7 +126,6 @@ int32_t AudioInjectorPolicy::GetRendererStreamCount()
 
 void AudioInjectorPolicy::SetCapturePortIdx(uint32_t idx)
 {
-    std::lock_guard<std::shared_mutex> lock(injectLock_);
     capturePortIdx_ = idx;
 }
 
@@ -137,15 +152,44 @@ AudioModuleInfo& AudioInjectorPolicy::GetAudioModuleInfo()
     return moduleInfo_;
 }
 
+bool AudioInjectorPolicy::GetIsConnected()
+{
+    return isConnected_;
+}
+
+void AudioInjectorPolicy::SetVoipType(VoipType type)
+{
+    voipType_ = type;
+}
+
+void AudioInjectorPolicy::ReleaseCaptureInjector(uint32_t streamId)
+{
+    std::lock_guard<std::shared_mutex> lock(injectLock_);
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager_ is null");
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamVec = {};
+    auto pipeList = pipeManager_->GetPipeList();
+    for (auto it = pipeList.rbegin(); it != pipeList.rend(); ++it) {
+        CHECK_AND_CONTINUE_LOG((*it) != nullptr, "it is null");
+        if ((*it)->paIndex_ == capturePortIdx_) {
+            streamVec = (*it)->streamDescriptors_;
+            break;
+        }
+    }
+    if (streamVec.size() == 0) {
+        RemoveCaptureInjector(true);
+        return ;
+    }
+}
+
 int32_t AudioInjectorPolicy::AddCaptureInjector()
 {
     std::lock_guard<std::shared_mutex> lock(injectLock_);
     if (!isConnected_) {
         CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "pipeManager_ is null");
-        if (pipeManager_->IsCaptureVoipCall() == NORMAL_VOIP) {
+        if (voipType_ == NORMAL_VOIP) {
             audioPolicyManager_.AddCaptureInjector(renderPortIdx_, capturePortIdx_,
                 SOURCE_TYPE_VOICE_COMMUNICATION);
-        } else if (pipeManager_->IsCaptureVoipCall() == FAST_VOIP) {
+        } else if (voipType_ == FAST_VOIP) {
             int32_t ret = audioPolicyManager_.AddCaptureInjector();
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "AddCaptureInjector failed");
         }
@@ -154,11 +198,11 @@ int32_t AudioInjectorPolicy::AddCaptureInjector()
     return SUCCESS;
 }
     
-int32_t AudioInjectorPolicy::RemoveCaptureInjector()
+int32_t AudioInjectorPolicy::RemoveCaptureInjector(bool noCapturer)
 {
-    std::lock_guard<std::shared_mutex> lock(injectLock_);
-    int32_t ret = SUCCESS;
-    if (isConnected_ && rendererStreamMap_.size() == 0) {
+    // std::lock_guard<std::shared_mutex> lock(injectLock_);
+    bool flag = (rendererStreamMap_.size() == 0 || noCapturer);
+    if (isConnected_ && flag) {
         CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "pipeManager_ is null");
         if (pipeManager_->IsCaptureVoipCall() == NORMAL_VOIP) {
             audioPolicyManager_.RemoveCaptureInjector(renderPortIdx_, capturePortIdx_,
@@ -194,7 +238,7 @@ void AudioInjectorPolicy::SendInterruptEventToInjectorStreams(const std::shared_
 {
     std::lock_guard<std::shared_mutex> lock(injectLock_);
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE,
-            INTERRUPT_HINT_STOP, 1.0f};
+        INTERRUPT_HINT_PAUSE, 1.0f};
     for (const auto& pair : rendererStreamMap_) {
         if (handler != nullptr) {
             handler->SendInterruptEventWithStreamIdCallback(interruptEvent, pair.first);

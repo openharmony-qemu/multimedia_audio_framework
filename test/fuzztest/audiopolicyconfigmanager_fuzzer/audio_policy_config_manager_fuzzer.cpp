@@ -139,10 +139,12 @@ void GetStreamPropInfoForRecordFuzzTest()
     std::shared_ptr<PipeStreamPropInfo> info = nullptr;
     adapterPipeInfo->dynamicStreamPropInfos_.push_back(info);
     adapterPipeInfo->streamPropInfos_.push_back(info);
-    AudioChannel tempChannel = g_fuzzUtils.GetData<AudioChannel>();
+    AudioStreamInfo tempStreamInfo = {};
+    tempStreamInfo.samplingRate = g_fuzzUtils.GetData<AudioSamplingRate>();
+    tempStreamInfo.channels = g_fuzzUtils.GetData<AudioChannel>();
     AudioEcManager::GetInstance().Init(g_fuzzUtils.GetData<int32_t>(), g_fuzzUtils.GetData<int32_t>());
     AudioPolicyConfigManager::GetInstance().OnUpdateRouteSupport(g_fuzzUtils.GetData<bool>());
-    AudioPolicyConfigManager::GetInstance().GetStreamPropInfoForRecord(desc, adapterPipeInfo, info, tempChannel);
+    AudioPolicyConfigManager::GetInstance().GetStreamPropInfoForRecord(desc, adapterPipeInfo, info, tempStreamInfo);
 }
 
 void GetNormalRecordAdapterInfoFuzzTest()

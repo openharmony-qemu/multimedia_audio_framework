@@ -230,6 +230,7 @@ int32_t RendererInClientInner::InitSharedBuffer()
 
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && clientBuffer_ != nullptr, ret, "ResolveBuffer failed:%{public}d", ret);
     cacheSizeInFrame_ = engineSize;
+    AUDIO_INFO_LOG("using cache size:%{public}d", cacheSizeInFrame_.load());
 
     uint32_t totalSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
@@ -330,8 +331,6 @@ void RendererInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
         cbBufferSize_ = static_cast<size_t>(bufferDurationInUs * curStreamParams_.samplingRate / AUDIO_US_PER_S) *
             sizePerFrameInByte_;
     }
-    uint64_t durationInFrame = bufferDurationInUs * curStreamParams_.samplingRate / AUDIO_US_PER_S;
-    SetCacheSize(durationInFrame);
     AUDIO_INFO_LOG("duration %{public}" PRIu64 ", ecodingType: %{public}d, size: %{public}zu, metaSize: %{public}zu",
         bufferDurationInUs, curStreamParams_.encoding, cbBufferSize_, metaSize);
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
@@ -705,9 +704,10 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 
     size_t oriBufferSize = bufferSize;
     bool speedCached = false;
-
-    unprocessedFramesBytes_.fetch_add(bufferSize / sizePerFrameInByte_);
+    AudioWriteState currentState = audioWriteState_.load();
+    currentState.perPeriodFrame_ += bufferSize / sizePerFrameInByte_;
     if (!ProcessSpeed(buffer, bufferSize, speedCached)) {
+        audioWriteState_.store(currentState);
         return bufferSize;
     }
 
@@ -720,7 +720,10 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     if (isBlendSet_) {
         audioBlend_.Process(buffer, bufferSize);
     }
-    totalBytesWrittenAfterFlush_.fetch_add(bufferSize / sizePerFrameInByte_);
+    currentState.unprocessedFramesBytes_ += currentState.perPeriodFrame_;
+    currentState.totalBytesWrittenAfterFlush_ += bufferSize / sizePerFrameInByte_;
+    currentState.perPeriodFrame_ = 0;
+    audioWriteState_.store(currentState);
     int32_t result = WriteCacheData(buffer, bufferSize, speedCached, oriBufferSize);
     MonitorMutePlay(false);
     return result;
@@ -746,8 +749,7 @@ void RendererInClientInner::ResetFramePosition()
     }
     dropPosition_ = 0;
     dropHdiPosition_ = 0;
-    unprocessedFramesBytes_ = 0;
-    totalBytesWrittenAfterFlush_ = 0;
+    audioWriteState_.store(AudioWriteState{});
     writtenAtSpeedChange_.store(WrittenFramesWithSpeed{0, speed_});
 }
 
@@ -1027,7 +1029,9 @@ int32_t RendererInClientInner::SetSpeedInner(float speed)
         speedBuffer_ = std::make_unique<uint8_t[]>(MAX_SPEED_BUFFER_SIZE);
     }
     audioSpeed_->SetSpeed(speed);
-    writtenAtSpeedChange_.store(WrittenFramesWithSpeed{totalBytesWrittenAfterFlush_.load(), speed_});
+    AudioWriteState state = audioWriteState_.load();
+    uint64_t samplesWritten = state.totalBytesWrittenAfterFlush_;
+    writtenAtSpeedChange_.store(WrittenFramesWithSpeed{samplesWritten, speed_});
     speed_ = speed;
     speedEnable_ = true;
     AUDIO_DEBUG_LOG("SetSpeed %{public}f, OffloadEnable %{public}d", speed_, offloadEnable_);

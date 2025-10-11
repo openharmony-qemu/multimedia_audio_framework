@@ -41,6 +41,11 @@ public:
     int32_t GetExpectedInputChannelInfo(AudioBasicFormat &basicFormat);
     void InitEffectBuffer(const uint32_t sessionId);
     void InitEffectBufferFromDisConnect();
+    uint64_t GetLatency(uint32_t sessionId = 0) override;
+    int32_t AudioOffloadRendererCreate(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
+    int32_t AudioOffloadRendererStart(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
+    int32_t AudioOffloadRendererStop(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
+    int32_t AudioOffloadRendererRelease(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
 protected:
     HpaePcmBuffer* SignalProcess(const std::vector<HpaePcmBuffer*> &inputs) override;
 private:
@@ -51,6 +56,7 @@ private:
     void UpdateAudioEffectChainInfo(HpaeNodeInfo &nodeInfo);
     bool IsByPassEffectZeroVolume(HpaePcmBuffer *pcmBuffer);
     int32_t SplitCollaborativeData();
+    bool OffloadRendererCheckNotifyEffect(const HpaeSinkInfo &sinkInfo);
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer effectOutput_;
     std::unique_ptr<HpaePcmBuffer> directOutput_ = nullptr;

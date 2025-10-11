@@ -277,24 +277,6 @@ bool HpaePcmBuffer::UpdateWritePos(size_t writePos)
     return true;
 }
 
-void HpaePcmBuffer::SetBufferValid(bool valid)
-{
-    if (valid) {
-        pcmBufferInfo_.state &= ~PCM_BUFFER_STATE_INVALID;
-    } else {
-        pcmBufferInfo_.state |= PCM_BUFFER_STATE_INVALID;
-    }
-}
-
-void HpaePcmBuffer::SetBufferSilence(bool silence)
-{
-    if (silence) {
-        pcmBufferInfo_.state |= PCM_BUFFER_STATE_SILENCE;
-    } else {
-        pcmBufferInfo_.state &= ~PCM_BUFFER_STATE_SILENCE;
-    }
-}
-
 void HpaePcmBuffer::SetBufferState(uint32_t state)
 {
     pcmBufferInfo_.state = state;
@@ -303,6 +285,20 @@ void HpaePcmBuffer::SetBufferState(uint32_t state)
 size_t HpaePcmBuffer::GetCurFrames() const
 {
     return curFrames_.load();
+}
+
+void HpaePcmBuffer::SetBufferValid(bool valid)
+{
+    pcmBufferInfo_.state = valid ?
+        (pcmBufferInfo_.state & ~PCM_BUFFER_STATE_INVALID) :
+        (pcmBufferInfo_.state | PCM_BUFFER_STATE_INVALID);
+}
+
+void HpaePcmBuffer::SetBufferSilence(bool silence)
+{
+    pcmBufferInfo_.state = silence ?
+        (pcmBufferInfo_.state | PCM_BUFFER_STATE_SILENCE) :
+        (pcmBufferInfo_.state & ~PCM_BUFFER_STATE_SILENCE);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

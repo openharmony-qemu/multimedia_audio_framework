@@ -19,6 +19,7 @@
 #include <mutex>
 #include <cstdint>
 #include <unordered_map>
+#include <unordered_set>
 #include "native_audio_suite_engine.h"
 #include "audio_suite_manager.h"
 #include "OHAudioSuiteNodeBuilder.h"
@@ -81,20 +82,25 @@ private:
 class OHAudioSuitePipeline {
 public:
     explicit OHAudioSuitePipeline(uint32_t id) : pipelineId_(id) {};
-    ~OHAudioSuitePipeline() = default;
+    ~OHAudioSuitePipeline();
 
     uint32_t GetPipelineId() const
     {
         return pipelineId_;
     }
+    void AddNode(OHAudioNode *node);
+    bool IsNodeExists(OHAudioNode *node);
+    void RemoveNode(OHAudioNode *node);
 
 private:
     uint32_t pipelineId_ = AudioSuite::INVALID_PIPELINE_ID;
+    std::unordered_set<OHAudioNode*> nodes_;
+    std::mutex mutex_;
 };
 
 class OHAudioSuiteEngine {
 public:
-    ~OHAudioSuiteEngine() {};
+    ~OHAudioSuiteEngine();
 
     static OHAudioSuiteEngine *GetInstance();
 
@@ -136,6 +142,13 @@ private:
     explicit OHAudioSuiteEngine() {};
     OHAudioSuiteEngine(const OHAudioSuiteEngine&) = delete;
     OHAudioSuiteEngine& operator=(const OHAudioSuiteEngine&) = delete;
+    std::unordered_set<OHAudioSuitePipeline*> pipelines_;
+    std::recursive_mutex mutex_;
+    void AddPipeline(OHAudioSuitePipeline *pipeline);
+    void RemovePipeline(OHAudioSuitePipeline *pipeline);
+    void RemoveNode(OHAudioNode *node);
+    bool IsPipelineExists(OHAudioSuitePipeline *pipeline);
+    bool IsNodeExists(OHAudioNode *node);
 };
 
 } // namespace AudioStandard

@@ -116,6 +116,7 @@ private:
     std::shared_ptr<HpaeAudioFormatConverterNode> converterForOutput_ = nullptr;
     std::shared_ptr<HpaeLoudnessGainNode> loudnessGainNode_ = nullptr;
     std::unique_ptr<HpaeOffloadSinkOutputNode> sinkOutputNode_ = nullptr;
+    std::shared_ptr<HpaeRenderEffectNode> renderNoneEffectNode_ = nullptr;
     HpaeNoLockQueue hpaeNoLockQueue_;
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;
     std::atomic<bool> isInit_ = false;

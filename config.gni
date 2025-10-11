@@ -37,6 +37,7 @@ declare_args() {
   audio_framework_feature_low_latency = true
   audio_framework_feature_new_engine_flag = false
   audio_framework_feature_usb_audio = false
+  audio_framework_feature_mutesink_enable = true
 
   if (defined(global_parts_info) &&
       defined(global_parts_info.usb_usb_manager)) {

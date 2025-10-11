@@ -47,7 +47,7 @@ public:
     MOCK_METHOD(void, OnStartPipeline, (int32_t result), (override));
     MOCK_METHOD(void, OnStopPipeline, (int32_t result), (override));
     MOCK_METHOD(void, OnGetPipelineState, (AudioSuitePipelineState state), (override));
-    MOCK_METHOD(void, OnCreateNode, (uint32_t nodeId), (override));
+    MOCK_METHOD(void, OnCreateNode, (int32_t result, uint32_t nodeId), (override));
     MOCK_METHOD(void, OnDestroyNode, (int32_t result), (override));
     MOCK_METHOD(void, OnEnableNode, (int32_t result), (override));
     MOCK_METHOD(void, OnGetNodeEnable, (AudioNodeEnable enable), (override));
@@ -85,7 +85,7 @@ public:
     {
         return;
     }
-    void OnCreateNode(uint32_t nodeId) override
+    void OnCreateNode(int32_t result, uint32_t nodeId) override
     {
         return;
     }
@@ -762,7 +762,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineCreateNodeForTypeTes
 
     audioNodeBuilder.nodeType = NODE_TYPE_NOISE_REDUCTION;
     std::shared_ptr<AudioNode> effNode = audioSuitePipeline.CreateNodeForType(audioNodeBuilder);
-    EXPECT_TRUE(effNode == nullptr);
+    EXPECT_TRUE(effNode != nullptr);
 }
 
 HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineEnableNodeNodeTest, TestSize.Level0)

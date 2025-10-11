@@ -34,7 +34,10 @@ constexpr uint32_t HISTORY_INTERVAL_S = 7;  // 7s buffer for rewind
 
 HpaeOffloadRendererManager::HpaeOffloadRendererManager(HpaeSinkInfo &sinkInfo)
     : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT), sinkInfo_(sinkInfo)
-{}
+{
+    HpaeNodeInfo nodeInfo;
+    renderNoneEffectNode_ = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+}
 
 HpaeOffloadRendererManager::~HpaeOffloadRendererManager()
 {
@@ -56,6 +59,7 @@ std::shared_ptr<HpaeSinkInputNode> HpaeOffloadRendererManager::CreateInputSessio
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
+    nodeInfo.effectInfo = streamInfo.effectInfo;
     auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
     sinkInputNode->SetAppUid(streamInfo.uid);
     AddNodeToMap(sinkInputNode);
@@ -72,6 +76,7 @@ int32_t HpaeOffloadRendererManager::AddNodeToSink(const std::shared_ptr<HpaeSink
 void HpaeOffloadRendererManager::AddNodeToMap(std::shared_ptr<HpaeSinkInputNode> node)
 {
     sinkInputNodeMap_[node->GetSessionId()] = node;
+    renderNoneEffectNode_->AudioOffloadRendererCreate(node->GetNodeInfo(), sinkInfo_);
     if (curNode_ == nullptr) {
         curNode_ = node;
     }
@@ -79,6 +84,10 @@ void HpaeOffloadRendererManager::AddNodeToMap(std::shared_ptr<HpaeSinkInputNode>
 
 void HpaeOffloadRendererManager::RemoveNodeFromMap(uint32_t sessionId)
 {
+    auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
+    if (node != nullptr) {
+        renderNoneEffectNode_->AudioOffloadRendererRelease(node->GetNodeInfo(), sinkInfo_);
+    }
     sinkInputNodeMap_.erase(sessionId);
     if (curNode_ && curNode_->GetSessionId() == sessionId) {
         curNode_ = nullptr;
@@ -212,6 +221,7 @@ int32_t HpaeOffloadRendererManager::ConnectInputSession()
     loudnessGainNode_->SetLoudnessGain(curNode_->GetLoudnessGain());
     converterForLoudness_->Connect(curNode_);
     converterForLoudness_->RegisterCallback(this);
+    renderNoneEffectNode_->AudioOffloadRendererStart(curNode_->GetNodeInfo(), sinkInfo_);
 
     return SUCCESS;
 }
@@ -244,6 +254,7 @@ int32_t HpaeOffloadRendererManager::DisConnectInputSession()
     converterForLoudness_ = nullptr;
     loudnessGainNode_ = nullptr;
     converterForOutput_ = nullptr;
+    renderNoneEffectNode_->AudioOffloadRendererStop(curNode_->GetNodeInfo(), sinkInfo_);
     return SUCCESS;
 }
 
@@ -748,7 +759,26 @@ void HpaeOffloadRendererManager::OnNodeStatusUpdate(uint32_t sessionId, IOperati
 
 void HpaeOffloadRendererManager::OnRequestLatency(uint32_t sessionId, uint64_t &latency)
 {
-    latency = sinkOutputNode_->GetLatency();
+    uint64_t processLatency = 0;
+
+    if (converterForLoudness_) {
+        processLatency += converterForLoudness_->GetLatency();
+    }
+
+    if (loudnessGainNode_) {
+        processLatency += loudnessGainNode_->GetLatency();
+    }
+
+    if (converterForOutput_) {
+        processLatency += converterForOutput_->GetLatency();
+    }
+
+    if (sinkOutputNode_) {
+        processLatency += sinkOutputNode_->GetLatency();
+    }
+
+    latency += processLatency;
+    return;
 }
 
 void HpaeOffloadRendererManager::OnRewindAndFlush(uint64_t rewindTime, uint64_t hdiFramePosition)

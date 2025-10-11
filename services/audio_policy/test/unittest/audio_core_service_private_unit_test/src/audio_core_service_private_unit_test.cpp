@@ -1420,7 +1420,7 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_073, TestSize.Leve
     auto audioCoreService = AudioCoreService::GetCoreService();
     std::shared_ptr<AudioPolicyServerHandler> handler = std::make_shared<AudioPolicyServerHandler>();
     audioCoreService->SetCallbackHandler(handler);
-    
+
     audioCoreService->TriggerRecreateCapturerStreamCallback(streamDesc);
     EXPECT_NE(audioCoreService->audioPolicyServerHandler_, nullptr);
 
@@ -1436,7 +1436,7 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_073, TestSize.Leve
 HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_074, TestSize.Level2)
 {
     auto audioCoreService = AudioCoreService::GetCoreService();
-    
+
     CapturerState state = audioCoreService->HandleStreamStatusToCapturerState(STREAM_STATUS_NEW);
     EXPECT_EQ(state, CAPTURER_PREPARED);
 
@@ -2733,7 +2733,7 @@ HWTEST_F(AudioCoreServicePrivateTest, CaptureConcurrentCheck_001, TestSize.Level
         streamDescs[i]->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
         streamDescs[i]->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
         streamDescs[i]->rendererInfo_.streamUsage = STREAM_USAGE_MOVIE;
- 
+
         streamDescs[i]->audioMode_ = AUDIO_MODE_RECORD;
         streamDescs[i]->createTimeStamp_ = ClockTime::GetCurNano();
         streamDescs[i]->startTimeStamp_ = streamDescs[i]->createTimeStamp_ + 1;
@@ -2747,7 +2747,7 @@ HWTEST_F(AudioCoreServicePrivateTest, CaptureConcurrentCheck_001, TestSize.Level
     audioCoreService->WriteCapturerConcurrentEvent(dfxResult);
     AUDIO_INFO_LOG("AudioCoreServicePrivateTest CaptureConcurrentCheck_001 end");
 }
- 
+
 /**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: CaptureConcurrentCheck_002
@@ -2847,7 +2847,7 @@ HWTEST_F(AudioCoreServicePrivateTest, MuteSinkPortForSwitchDevice_001, TestSize.
     streamDesc->oldDeviceDescs_.push_back(oldDesc);
     streamDesc->oldDeviceDescs_.push_back(newDesc);
     audioCoreService->audioIOHandleMap_.SetMoveFinish(true);
-    
+
     audioCoreService->MuteSinkPortForSwitchDevice(streamDesc, reason);
     EXPECT_TRUE(audioCoreService->audioIOHandleMap_.moveDeviceFinished_.load());
     streamDesc->newDeviceDescs_.clear();
@@ -3222,6 +3222,84 @@ HWTEST_F(AudioCoreServicePrivateTest, ActivateOutputDevice_001, TestSize.Level1)
     auto audioCoreService = std::make_shared<AudioCoreService>();
     int32_t ret = audioCoreService->ActivateOutputDevice(streamDesc);
     ASSERT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name   : AudioCoreServicePrivateTest_IsDupDeviceChange_001
+ * @tc.number : IsDupDeviceChange_001
+ * @tc.desc   : Test IsDupDeviceChange() for nullptr
+ */
+HWTEST_F(AudioCoreServicePrivateTest, IsDupDeviceChange_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    bool isDeviceChange = audioCoreService->IsDupDeviceChange(nullptr);
+
+    EXPECT_EQ(isDeviceChange, false);
+}
+
+/**
+ * @tc.name   : AudioCoreServicePrivateTest_IsDupDeviceChange_002
+ * @tc.number : IsDupDeviceChange_002
+ * @tc.desc   : Test IsDupDeviceChange() for diff array size
+ */
+HWTEST_F(AudioCoreServicePrivateTest, IsDupDeviceChange_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+
+    std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    newDeviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(newDeviceDesc);
+
+    bool isDeviceChange = audioCoreService->IsDupDeviceChange(streamDesc);
+
+    EXPECT_EQ(isDeviceChange, true);
+}
+
+/**
+ * @tc.name   : AudioCoreServicePrivateTest_IsDupDeviceChange_003
+ * @tc.number : IsDupDeviceChange_003
+ * @tc.desc   : Test IsDupDeviceChange() for same device
+ */
+HWTEST_F(AudioCoreServicePrivateTest, IsDupDeviceChange_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+
+    std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    newDeviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(newDeviceDesc);
+
+    std::shared_ptr<AudioDeviceDescriptor> oldDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    oldDeviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->oldDeviceDescs_.push_back(oldDeviceDesc);
+
+    bool isDeviceChange = audioCoreService->IsDupDeviceChange(streamDesc);
+
+    EXPECT_EQ(isDeviceChange, false);
+}
+
+/**
+ * @tc.name   : AudioCoreServicePrivateTest_IsDupDeviceChange_004
+ * @tc.number : IsDupDeviceChange_004
+ * @tc.desc   : Test IsDupDeviceChange() for diff device
+ */
+HWTEST_F(AudioCoreServicePrivateTest, IsDupDeviceChange_004, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+
+    std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    newDeviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(newDeviceDesc);
+
+    std::shared_ptr<AudioDeviceDescriptor> oldDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    oldDeviceDesc->deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+    streamDesc->oldDeviceDescs_.push_back(oldDeviceDesc);
+
+    bool isDeviceChange = audioCoreService->IsDupDeviceChange(streamDesc);
+
+    EXPECT_EQ(isDeviceChange, true);
 }
 
 /**

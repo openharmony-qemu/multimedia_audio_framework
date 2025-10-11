@@ -126,15 +126,6 @@ constexpr uint32_t TEST_ERR_FRAME_LEN = 100;
 constexpr uint32_t TEST_FRAME_LEN = 10;
 constexpr bool MIX_FLE = true;
 
-static uint32_t BitCounts(uint64_t bits)
-{
-    uint32_t num = 0;
-    for (; bits != 0; bits &= bits - 1) {
-        num++;
-    }
-    return num;
-}
-
 template<class T>
 T GetData()
 {
@@ -195,13 +186,13 @@ void SetParamFuzzTest()
         }
     }
 
-    DownMixer downMixer;
     // make sure more coverage: SetDefaultChannelLayout
     for (auto pair : DOWNMIX_CHANNEL_COUNT_MAP) {
-        downMixer.SetDefaultChannelLayout(pair.first);
+        AudioChannelLayout layout;
+        SetDefaultChannelLayout(pair.first, layout);
     }
-    downMixer.CheckIsHOA(CH_LAYOUT_HOA_ORDER2_ACN_SN3D);
-    downMixer.CheckIsHOA(CH_LAYOUT_UNKNOWN);
+    CheckIsHOA(CH_LAYOUT_HOA_ORDER2_ACN_SN3D);
+    CheckIsHOA(CH_LAYOUT_UNKNOWN);
 }
 
 void DownMixProcesFuzzTest()

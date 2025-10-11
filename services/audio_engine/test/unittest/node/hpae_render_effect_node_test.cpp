@@ -74,9 +74,12 @@ HWTEST_F(HpaeRenderEffectNodeTest, testCreate_001, TestSize.Level0)
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceClass = "remote_offload";
     std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     nodeInfo.effectInfo.effectScene = (AudioEffectScene)0xff;
     EXPECT_EQ(hpaeRenderEffectNode->AudioRendererCreate(nodeInfo), 0);
+    EXPECT_EQ(hpaeRenderEffectNode->AudioOffloadRendererCreate(nodeInfo, sinkInfo), 0);
     EXPECT_NE(hpaeRenderEffectNode->ReleaseAudioEffectChain(nodeInfo), 0);
 }
 
@@ -89,8 +92,11 @@ HWTEST_F(HpaeRenderEffectNodeTest, testCreate_002, TestSize.Level0)
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceClass = "remote_offload";
     std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     EXPECT_EQ(hpaeRenderEffectNode->AudioRendererCreate(nodeInfo), 0);
+    EXPECT_EQ(hpaeRenderEffectNode->AudioOffloadRendererCreate(nodeInfo, sinkInfo), 0);
     HpaeNodeInfo nodeInfo2 = nodeInfo;
     nodeInfo2.nodeId += idOffset;
     EXPECT_NE(hpaeRenderEffectNode->ReleaseAudioEffectChain(nodeInfo2), 0);

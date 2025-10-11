@@ -229,7 +229,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, MixAudioDeviceTest_004, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 
     uint32_t element = 100;
-    sleAudioDeviceManager_->startedSleStreamType_[device][streamType].insert(element);
+    sleAudioDeviceManager_->startedSleStreamType_[device][streamType].sessionIds.insert(element);
     ret = sleAudioDeviceManager_->StartPlaying(device, streamType);
     EXPECT_EQ(ret, SUCCESS);
 
@@ -400,6 +400,23 @@ HWTEST(SleAudioDeviceManagerUnitTest, GetSleStreamType_002, TestSize.Level1)
 
     uint32_t result = sleAudioDeviceManager_->GetSleStreamTypeBySourceType(sourceType);
     EXPECT_EQ(result, SLE_AUDIO_STREAM_NONE);
+}
+
+/**
+ * @tc.name  : Test GetSleStreamTypeByStreamUsage.
+ * @tc.number: GetSleStreamType_003
+ * @tc.desc  : Test SleAudioDeviceManager::GetSleStreamTypeByStreamUsage && GetSleStreamTypeBySourceType.
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, GetSleStreamType_003, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    
+    StreamUsage streamUsage = STREAM_USAGE_MUSIC;
+    bool isGame = true;
+
+    uint32_t ret = sleAudioDeviceManager_->GetSleStreamTypeByStreamUsage(streamUsage, isGame);
+    EXPECT_EQ(ret, SLE_AUDIO_STREAM_GAME);
 }
 
 /**

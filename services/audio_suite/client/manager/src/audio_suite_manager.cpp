@@ -68,7 +68,7 @@ int32_t AudioSuiteManager::DeInit()
     AUDIO_INFO_LOG("DeInit enter.");
 
     std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_ILLEGAL_STATE, "suite engine not inited");
 
     int32_t ret = suiteEngine_->DeInit();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "suite engine deinit failed, ret = %{public}d.", ret);
@@ -107,7 +107,7 @@ int32_t AudioSuiteManager::DestroyPipeline(uint32_t pipelineId)
     AUDIO_INFO_LOG("DestroyPipeline enter.");
 
     std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, "suite engine not inited");
 
     isFinishDestroyPipeline_ = false;
     int32_t ret = suiteEngine_->DestroyPipeline(pipelineId);
@@ -127,7 +127,7 @@ int32_t AudioSuiteManager::StartPipeline(uint32_t pipelineId)
 {
     AUDIO_INFO_LOG("StartPipeline enter.");
     std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, "suite engine not inited");
 
     isFinishStartPipeline_ = false;
     int32_t ret = suiteEngine_->StartPipeline(pipelineId);
@@ -148,7 +148,7 @@ int32_t AudioSuiteManager::StopPipeline(uint32_t pipelineId)
     AUDIO_INFO_LOG("StopPipeline enter.");
 
     std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, "suite engine not inited");
 
     isFinishStopPipeline_ = false;
     int32_t ret = suiteEngine_->StopPipeline(pipelineId);
@@ -169,7 +169,7 @@ int32_t AudioSuiteManager::GetPipelineState(uint32_t pipelineId, AudioSuitePipel
     AUDIO_INFO_LOG("GetPipelineState enter.");
 
     std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, "suite engine not inited");
 
     isFinishGetPipelineState_ = false;
     getPipelineState_ = PIPELINE_STOPPED;
@@ -187,12 +187,13 @@ int32_t AudioSuiteManager::GetPipelineState(uint32_t pipelineId, AudioSuitePipel
     return SUCCESS;
 }
 
-uint32_t AudioSuiteManager::CreateNode(uint32_t pipelineId, AudioNodeBuilder &builder)
+int32_t AudioSuiteManager::CreateNode(uint32_t pipelineId, AudioNodeBuilder &builder, uint32_t &nodeId)
 {
     std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, INVALID_NODE_ID, "suite engine not inited");
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
 
     isFinishCreateNode_ = false;
+    engineCreateNodeResult_ = 0;
     int32_t ret = suiteEngine_->CreateNode(pipelineId, builder);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, INVALID_NODE_ID, "engine CreateNode failed, ret = %{public}d", ret);
 
@@ -203,16 +204,16 @@ uint32_t AudioSuiteManager::CreateNode(uint32_t pipelineId, AudioNodeBuilder &bu
     CHECK_AND_RETURN_RET_LOG(stopWaiting, INVALID_NODE_ID, "CreateNode timeout");
 
     AUDIO_INFO_LOG("CreateNode leave");
-    uint32_t nodeId = engineCreateNodeId_;
+    nodeId = engineCreateNodeId_;
     engineCreateNodeId_ = INVALID_NODE_ID;
-    return nodeId;
+    return engineCreateNodeResult_;
 }
 
 int32_t AudioSuiteManager::DestroyNode(uint32_t nodeId)
 {
     AUDIO_INFO_LOG("DestroyNode enter.");
     std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
     isFinishDestroyNode_ = false;
     int32_t ret = suiteEngine_->DestroyNode(nodeId);
@@ -232,7 +233,7 @@ int32_t AudioSuiteManager::EnableNode(uint32_t nodeId, AudioNodeEnable audioNode
 {
     AUDIO_INFO_LOG("EnableNode enter.");
     std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
     isFinishEnableNode_ = false;
     int32_t ret = suiteEngine_->EnableNode(nodeId, audioNodeEnable);
@@ -253,7 +254,7 @@ int32_t AudioSuiteManager::GetNodeEnableStatus(uint32_t nodeId, AudioNodeEnable 
     AUDIO_INFO_LOG("GetNodeEnableStatus enter.");
 
     std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
     isFinishGetNodeEnable_ = false;
     getNodeEnable_ = NODE_DISABLE;
@@ -275,7 +276,7 @@ int32_t AudioSuiteManager::SetAudioFormat(uint32_t nodeId, AudioFormat audioForm
 {
     AUDIO_INFO_LOG("SetAudioFormat enter.");
     std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
     isFinishSetFormat_ = false;
     int32_t ret = suiteEngine_->SetAudioFormat(nodeId, audioFormat);
@@ -295,7 +296,7 @@ int32_t AudioSuiteManager::SetOnWriteDataCallback(uint32_t nodeId,
     std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback)
 {
     std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
     isFinishSetWriteData_ = false;
     int32_t ret = suiteEngine_->SetWriteDataCallback(nodeId, callback);
@@ -316,7 +317,7 @@ int32_t AudioSuiteManager::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId,
 {
     AUDIO_INFO_LOG("ConnectNodes enter.");
     std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
     isFinishConnectNodes_ = false;
     int32_t ret = suiteEngine_->ConnectNodes(srcNodeId, destNodeId, srcPortType, destPortType);
@@ -336,7 +337,7 @@ int32_t AudioSuiteManager::DisConnectNodes(uint32_t srcNodeId, uint32_t destNode
 {
     AUDIO_INFO_LOG("DisConnectNodes enter.");
     std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
     isFinishDisConnectNodes_ = false;
     int32_t ret = suiteEngine_->DisConnectNodes(srcNodeId, destNodeId);
@@ -356,7 +357,7 @@ int32_t AudioSuiteManager::SetEqualizerMode(uint32_t nodeId, EqualizerMode eqMod
 {
     AUDIO_INFO_LOG("SetEqualizerMode enter.");
     std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
     // check
     std::string name = "EqualizerMode";
@@ -370,7 +371,7 @@ int32_t AudioSuiteManager::SetEqualizerFrequencyBandGains(uint32_t nodeId, Audio
 {
     AUDIO_INFO_LOG("SetEqualizerFrequencyBandGains enter.");
     std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
     // check
     std::string name = "AudioEqualizerFrequencyBandGains";
@@ -389,7 +390,7 @@ int32_t AudioSuiteManager::SetSoundFieldType(uint32_t nodeId, SoundFieldType sou
 {
     AUDIO_INFO_LOG("SetSoundFieldType enter.");
     std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
     // check
     std::string name = "SoundFieldType";
@@ -403,7 +404,7 @@ int32_t AudioSuiteManager::SetEnvironmentType(uint32_t nodeId, EnvironmentType e
 {
     AUDIO_INFO_LOG("EnvironmentType enter.");
     std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
     // check
     std::string name = "EnvironmentType";
@@ -417,7 +418,7 @@ int32_t AudioSuiteManager::SetVoiceBeautifierType(uint32_t nodeId, VoiceBeautifi
 {
     AUDIO_INFO_LOG("SetVoiceBeautifierType enter.");
     std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
     // check
     std::string name = "VoiceBeautifierType";
@@ -431,7 +432,7 @@ int32_t AudioSuiteManager::InstallTap(uint32_t nodeId, AudioNodePortType portTyp
     std::shared_ptr<SuiteNodeReadTapDataCallback> callback)
 {
     std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST,
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
         "InstallTap failed suite engine not inited");
 
     isFinisInstallTap_ = false;
@@ -451,7 +452,7 @@ int32_t AudioSuiteManager::InstallTap(uint32_t nodeId, AudioNodePortType portTyp
 int32_t AudioSuiteManager::RemoveTap(uint32_t nodeId, AudioNodePortType portType)
 {
     std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST,
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
         "InstallTap failed suite engine not inited");
 
     isFinisRemoveTap_ = false;
@@ -472,7 +473,7 @@ int32_t AudioSuiteManager::RenderFrame(uint32_t pipelineId,
     uint8_t *audioData, int32_t frameSize, int32_t *writeLen, bool *finishedFlag)
 {
     std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, "suite engine not inited");
 
     isFinisRenderFrame_ = false;
     int32_t ret = suiteEngine_->RenderFrame(pipelineId, audioData, frameSize, writeLen, finishedFlag);
@@ -534,11 +535,12 @@ void AudioSuiteManager::OnGetPipelineState(AudioSuitePipelineState state)
     callbackCV_.notify_all();
 }
 
-void AudioSuiteManager::OnCreateNode(uint32_t nodeId)
+void AudioSuiteManager::OnCreateNode(int32_t result, uint32_t nodeId)
 {
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_INFO_LOG("OnCreateNode enter");
     isFinishCreateNode_ = true;
+    engineCreateNodeResult_ = result;
     engineCreateNodeId_ = nodeId;
     callbackCV_.notify_all();
 }

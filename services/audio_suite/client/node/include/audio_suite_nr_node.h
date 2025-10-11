@@ -38,14 +38,12 @@ protected:
     AudioSuitePcmBuffer *SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs) override;
 
 private:
-    int32_t CopyPcmBuffer(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer);
-    int32_t DoChannelConvert(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer);
-    int32_t DoResample(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer);
-    int32_t ConvertProcess(AudioSuitePcmBuffer *inputPcmBuffer);
     AudioSuitePcmBuffer pcmBufferOutput_;
+    AudioSuitePcmBuffer pcmBufferTmp_;
     std::shared_ptr<AudioSuiteAlgoInterface> algoInterface_;
-    std::vector<uint8_t> algoInputBuffer_;
-    std::vector<uint8_t> algoOutputBuffer_;
+    std::unique_ptr<uint8_t[]> inputBuffer_{nullptr};
+    std::unique_ptr<uint8_t[]> outputBuffer_{nullptr};
+    size_t bufSize_{0};
 };
 
 }  // namespace AudioSuite

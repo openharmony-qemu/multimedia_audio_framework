@@ -574,6 +574,12 @@ void ProAudioServiceAdapterImpl::RemoveCaptureInjector(const uint32_t &sinkPortI
     lock_guard<mutex> lock(lock_);
     IHpaeManager::GetHpaeManager().RemoveCaptureInjector(sinkPortIndex, sourcePortIndex, sourceType);
 }
+
+bool ProAudioServiceAdapterImpl::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout)
+{
+    lock_guard<mutex> lock(lock_);
+    return IHpaeManager::GetHpaeManager().IsChannelLayoutSupportedForDspEffect(channelLayout);
+}
 }  // namespace AudioStandard
 }  // namespace OHOS
 

@@ -343,7 +343,6 @@ void VACaptureSource::CheckUpdateState(char *frame, size_t replyBytes)
             captureFrameNum_ = 0;
             if (last10FrameStartTime_ > lastGetMaxAmplitudeTime_) {
                 startUpdate_ = false;
-                maxAmplitude_ = 0;
             }
         }
     }

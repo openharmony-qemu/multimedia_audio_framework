@@ -27,7 +27,9 @@ using namespace testing;
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-constexpr int32_t NORMAL_FRAME_LEN = 960;
+static std::string g_rootPath = "/data/";
+constexpr int32_t FRAME_LENGTH_960 = 960;
+constexpr int32_t FRAME_LENGTH_1024 = 1024;
 constexpr int32_t NORMAL_ID = 1243;
 constexpr float LOUDNESS_GAIN = 1.0f;
 constexpr uint32_t SAMPLE_RATE_16010 = 16010;
@@ -47,7 +49,7 @@ static void AddFrameToBuffer(std::unique_ptr<HpaePcmBuffer> &buffer)
 
 static void PrepareNodeInfo(HpaeNodeInfo &nodeInfo)
 {
-    nodeInfo.frameLen = NORMAL_FRAME_LEN;
+    nodeInfo.frameLen = FRAME_LENGTH_960;
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
@@ -87,7 +89,7 @@ HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = NORMAL_ID;
-    nodeInfo.frameLen = NORMAL_FRAME_LEN;
+    nodeInfo.frameLen = FRAME_LENGTH_960;
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
@@ -114,7 +116,7 @@ HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode_001, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = NORMAL_ID;
-    nodeInfo.frameLen = NORMAL_FRAME_LEN;
+    nodeInfo.frameLen = FRAME_LENGTH_960;
     nodeInfo.samplingRate = SAMPLE_RATE_11025;
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
@@ -141,7 +143,7 @@ HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode_002, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = NORMAL_ID;
-    nodeInfo.frameLen = NORMAL_FRAME_LEN;
+    nodeInfo.frameLen = FRAME_LENGTH_960;
     nodeInfo.customSampleRate = SAMPLE_RATE_16010;
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
@@ -168,7 +170,7 @@ HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode_003, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = NORMAL_ID;
-    nodeInfo.frameLen = NORMAL_FRAME_LEN;
+    nodeInfo.frameLen = FRAME_LENGTH_960;
     nodeInfo.customSampleRate = SAMPLE_RATE_11025;
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
@@ -186,12 +188,49 @@ HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode_003, TestSize.Level0)
     EXPECT_EQ(retNi.customSampleRate, nodeInfo.customSampleRate);
 }
 
+/**
+ * @tc.name  : Test HpaeSinkInputNode construct
+ * @tc.number: constructHpaeSinkInputNode_004
+ * @tc.desc  : Test HpaeSinkInputNode when sinkinfo's framelen is not equal to nodeinfo framelen
+ */
+HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode_004, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    HpaeSinkInfo sinkInfo;
+    nodeInfo.nodeId = NORMAL_ID;
+    nodeInfo.frameLen = FRAME_LENGTH_960;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeSinkInputNodeTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_1024;
+    sinkInfo.samplingRate = SAMPLE_RATE_44100;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    std::unique_ptr<HpaeSinkInputNode> hpaeSinkInputNode =  std::make_unique<HpaeSinkInputNode>(nodeInfo, sinkInfo);
+    EXPECT_EQ(hpaeSinkInputNode->GetSampleRate(), nodeInfo.samplingRate);
+    EXPECT_EQ(hpaeSinkInputNode->GetFrameLen(), nodeInfo.frameLen);
+    EXPECT_EQ(hpaeSinkInputNode->GetChannelCount(), nodeInfo.channels);
+    EXPECT_EQ(hpaeSinkInputNode->GetBitWidth(), nodeInfo.format);
+    EXPECT_NE(hpaeSinkInputNode->inputSize_, hpaeSinkInputNode->renderSize_);
+    EXPECT_FALSE(hpaeSinkInputNode->pullDataFlag_);
+    HpaeNodeInfo &retNi = hpaeSinkInputNode->GetNodeInfo();
+    EXPECT_EQ(retNi.samplingRate, nodeInfo.samplingRate);
+    EXPECT_EQ(retNi.frameLen, nodeInfo.frameLen);
+    EXPECT_EQ(retNi.channels, nodeInfo.channels);
+    EXPECT_EQ(retNi.format, nodeInfo.format);
+    EXPECT_EQ(retNi.customSampleRate, 0);
+}
 
 HWTEST_F(HpaeSinkInputNodeTest, testSinkInputOutputCase, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = NORMAL_ID;
-    nodeInfo.frameLen = NORMAL_FRAME_LEN;
+    nodeInfo.frameLen = FRAME_LENGTH_960;
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
@@ -225,7 +264,7 @@ HWTEST_F(HpaeSinkInputNodeTest, testWriteDataToSinkInputDataCase, TestSize.Level
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = NORMAL_ID;
-    nodeInfo.frameLen = NORMAL_FRAME_LEN;
+    nodeInfo.frameLen = FRAME_LENGTH_960;
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
@@ -250,7 +289,7 @@ HWTEST_F(HpaeSinkInputNodeTest, testWriteDataToSinkInputAndSinkOutputDataCase, T
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = NORMAL_ID;
-    nodeInfo.frameLen = NORMAL_FRAME_LEN;
+    nodeInfo.frameLen = FRAME_LENGTH_960;
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
@@ -281,7 +320,7 @@ HWTEST_F(HpaeSinkInputNodeTest, testLoudnessGain, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = NORMAL_ID;
-    nodeInfo.frameLen = NORMAL_FRAME_LEN;
+    nodeInfo.frameLen = FRAME_LENGTH_960;
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
@@ -296,7 +335,7 @@ HWTEST_F(HpaeSinkInputNodeTest, testReadToAudioBuffer, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = NORMAL_ID;
-    nodeInfo.frameLen = NORMAL_FRAME_LEN;
+    nodeInfo.frameLen = FRAME_LENGTH_960;
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;

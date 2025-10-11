@@ -100,7 +100,7 @@ HWTEST_F(AudioLimiterAdapterUnitTest, LimiterManagerSetConfig_002, TestSize.Leve
     int32_t ret = LimiterManagerCreate(sinkIndex);
     EXPECT_EQ(ret, SUCCESS);
     ret = LimiterManagerSetConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, MONO);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
 /**

@@ -29,6 +29,8 @@ namespace OHOS {
 namespace Bluetooth {
 using namespace AudioStandard;
 
+static const uint32_t WAIT_A2DP_OFFLOAD_CLOSE_DELAY_US = 30000; // 30ms
+
 BluetoothScoManager &BluetoothScoManager::GetInstance()
 {
     static BluetoothScoManager scoManager;
@@ -366,6 +368,9 @@ int32_t BluetoothScoManager::ConnectSco(ScoCategory scoCategory, const Bluetooth
     int32_t ret = ERROR;
     if (scoCategory == ScoCategory::SCO_RECOGNITION) {
         ret = BluetoothHfpInterface::GetInstance().OpenVoiceRecognition(device);
+        // Ensure A2DP offload route is closed before enabling BT SCO route.
+        // Previously, inconsistency between uplink and downlink caused headset noise.
+        usleep(WAIT_A2DP_OFFLOAD_CLOSE_DELAY_US);
     } else {
         if (scoCategory == ScoCategory::SCO_DEFAULT) {
             scoCategory = ScoCategory::SCO_VIRTUAL;

@@ -109,7 +109,7 @@ public:
     MOCK_METHOD(int32_t, UnLockOffloadRunningLock, (), (override));
 
     MOCK_METHOD(int32_t, SplitRenderFrame,
-        (char &data, uint64_t len, uint64_t &writeLen, const char *splitStreamType), (override));
+        (char &data, uint64_t len, uint64_t &writeLen, HpaeSplitStreamType splitStreamType), (override));
     MOCK_METHOD(int32_t, UpdatePrimaryConnectionState, (uint32_t operation), (override));
     MOCK_METHOD(void, SetDmDeviceType, (uint16_t dmDeviceType, DeviceType deviceType), (override));
 
@@ -137,6 +137,7 @@ public:
     MockStreamCallback() = default;
     virtual ~MockStreamCallback() = default;
     MOCK_METHOD(int32_t, OnStreamData, (AudioCallBackStreamInfo&), (override));
+    MOCK_METHOD(bool, OnQueryUnderrun, (), (override));
 };
 } // namespace HPAE
 } // namespace AudioStandard

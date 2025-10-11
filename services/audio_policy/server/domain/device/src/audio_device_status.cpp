@@ -398,17 +398,19 @@ int32_t AudioDeviceStatus::HandleAccessoryDevice(DeviceType deviceType, const st
     // default samplerate of accessory is 16000
     GetParameter("hw.pencil.samplerate", "16000", sampleRate, sizeof(sampleRate));
 
-    auto rate_begin = defaulyAccessoryInfo.find("rate=");
-    auto rate_end = defaulyAccessoryInfo.find_first_of(" ", rate_begin);
-    CHECK_AND_RETURN_RET_LOG(rate_end > rate_begin, ERR_OPERATION_FAILED, "get rate failed");
-    defaulyAccessoryInfo.replace(rate_begin + std::strlen("rate="),
-        rate_end - rate_begin - std::strlen("rate="), sampleRate);
-    if (strncmp(sampleRate, "8000", sizeof("8000")) == 0) { // when double connect samplerate of accessory is 8000
-        auto size_begin = defaulyAccessoryInfo.find("buffer_size=");
-        auto size_end = defaulyAccessoryInfo.find_first_of(" ", size_begin);
-        CHECK_AND_RETURN_RET_LOG(size_end > size_begin, ERR_OPERATION_FAILED, "get size failed");
-        defaulyAccessoryInfo.replace(size_begin + std::strlen("buffer_size="),
-            size_end - size_begin - std::strlen("buffer_size="), DEFAULT_BUFFER_SIZE_8000);
+    if (std::strlen(sampleRate) > 0) {
+        auto rate_begin = defaulyAccessoryInfo.find("rate=");
+        auto rate_end = defaulyAccessoryInfo.find_first_of(" ", rate_begin);
+        CHECK_AND_RETURN_RET_LOG(rate_end > rate_begin, ERR_OPERATION_FAILED, "get rate failed");
+        defaulyAccessoryInfo.replace(rate_begin + std::strlen("rate="),
+            rate_end - rate_begin - std::strlen("rate="), sampleRate);
+        if (strncmp(sampleRate, "8000", sizeof("8000")) == 0) { // when double connect samplerate of accessory is 8000
+            auto size_begin = defaulyAccessoryInfo.find("buffer_size=");
+            auto size_end = defaulyAccessoryInfo.find_first_of(" ", size_begin);
+            CHECK_AND_RETURN_RET_LOG(size_end > size_begin, ERR_OPERATION_FAILED, "get size failed");
+            defaulyAccessoryInfo.replace(size_begin + std::strlen("buffer_size="),
+                size_end - size_begin - std::strlen("buffer_size="), DEFAULT_BUFFER_SIZE_8000);
+        }
     }
 
     AUDIO_INFO_LOG("device info from accessory hal is defaulyAccessoryInfo: %{public}s",
@@ -1445,7 +1447,7 @@ void AudioDeviceStatus::RemoveDeviceFromGlobalOnly(std::shared_ptr<AudioDeviceDe
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
     AUDIO_INFO_LOG("remove device from global list only");
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
-    audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(desc, descForCb);
+    audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(desc, descForCb, false);
     AudioCoreService::GetCoreService()->GetEventEntry()->FetchOutputDeviceAndRoute("RemoveDeviceFromGlobalOnly");
     AudioCoreService::GetCoreService()->GetEventEntry()->FetchInputDeviceAndRoute("RemoveDeviceFromGlobalOnly");
 }

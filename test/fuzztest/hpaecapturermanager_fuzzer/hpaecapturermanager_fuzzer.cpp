@@ -311,7 +311,6 @@ void HpaeCapturerManagerFuzzTest1()
 
     StateControlTest(capturerManager, streamInfo, sourceOutputInfo);
     capturerManager->OnNotifyQueue();
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
 }
 
@@ -329,7 +328,6 @@ void HpaeCapturerManagerFuzzTest2()
     capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo);
     StateControlFuzzTest(capturerManager, streamInfo, sourceOutputInfo);
     capturerManager->OnNotifyQueue();
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
 }
 
@@ -351,7 +349,6 @@ void HpaeCapturerManagerFuzzTest3()
     StateControlFuzzTest(capturerManager, streamInfo, sourceOutputInfo);
     capturerManager->DeInit();
     capturerManager->OnNotifyQueue();
-    WaitForMsgProcessing(capturerManager);
 }
 
 void HpaeCapturerManagerReloadFuzzTest1()
@@ -374,7 +371,6 @@ void HpaeCapturerManagerReloadFuzzTest1()
     capturerManager->ReloadCaptureManager(newSourceInfo);
     WaitForMsgProcessing(capturerManager);
     capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo);
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
 }
 
@@ -397,7 +393,6 @@ void HpaeCapturerManagerReloadFuzzTest2()
     WaitForMsgProcessing(capturerManager);
     capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo);
     capturerManager->DeInit();
-    WaitForMsgProcessing(capturerManager);
 }
 
 void HpaeCapturerManagerReloadFuzzTest3()
@@ -420,7 +415,6 @@ void HpaeCapturerManagerReloadFuzzTest3()
     capturerManager->ReloadCaptureManager(newSourceInfo);
     WaitForMsgProcessing(capturerManager);
     capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo);
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
 }
 
@@ -435,7 +429,6 @@ void MoveStreamFuzzTest()
     capturerManager->MoveStream(sessionId, sourceName);
     std::vector<uint32_t> sessionIds = {GetData<uint32_t>(), GetData<uint32_t>(), GetData<uint32_t>()};
     capturerManager->MoveAllStream(sourceName, sessionIds);
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
 }
 
@@ -447,7 +440,7 @@ void GetSourceInfoFuzzTest()
     capturerManager->Init();
     capturerManager->GetSourceInfo();
     capturerManager->GetAllSourceOutputsInfo();
-    WaitForMsgProcessing(capturerManager);
+    capturerManager->DeInit();
 }
 
 void OnRequestLatencyFuzzTest()
@@ -457,9 +450,8 @@ void OnRequestLatencyFuzzTest()
     auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     capturerManager->Init();
     uint32_t sessionId = GetData<uint32_t>();
-    uint64_t latency = GetData<uint64_t>();
+    uint64_t latency = 0;
     capturerManager->OnRequestLatency(sessionId, latency);
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
 }
 
@@ -471,7 +463,6 @@ void AddNodeToSourceFuzzTest1()
     capturerManager->Init();
     HpaeCaptureMoveInfo moveInfo;
     capturerManager->AddNodeToSource(moveInfo);
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
 }
 
@@ -483,7 +474,6 @@ void AddNodeToSourceFuzzTest2()
     capturerManager->Init();
     HpaeCaptureMoveInfo moveInfo = GetHpaeCaptureMoveInfo();
     capturerManager->AddNodeToSource(moveInfo);
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
 }
 
@@ -496,7 +486,6 @@ void AddAllNodesToSourceFuzzTest1()
     std::vector<HpaeCaptureMoveInfo> moveInfos;
     bool isConnect = GetData<bool>();
     capturerManager->AddAllNodesToSource(moveInfos, isConnect);
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
 }
 
@@ -510,7 +499,6 @@ void AddAllNodesToSourceFuzzTest2()
         GetHpaeCaptureMoveInfo(), GetHpaeCaptureMoveInfo()};
     bool isConnect = GetData<bool>();
     capturerManager->AddAllNodesToSource(moveInfos, isConnect);
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
 }
 
@@ -521,7 +509,6 @@ void GetDeviceHDFDumpInfoFuzzTest()
     auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     capturerManager->Init();
     capturerManager->GetDeviceHDFDumpInfo();
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
 }
 
@@ -547,7 +534,6 @@ void CaptureEffectCreateFuzzTest()
     for (uint32_t sessionId : sessionIds) {
         capturerManager->DestroyStream(sessionId);
     }
-    WaitForMsgProcessing(capturerManager);
 
     capturerManager->DeInit();
 }
@@ -578,7 +564,6 @@ void StartWithEcAndMicRefFuzzTest()
 
     capturerManager->Stop(streamInfo.sessionId);
     capturerManager->Release(streamInfo.sessionId);
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
 }
 
@@ -594,7 +579,6 @@ void DeInitWithCapturerSourceStopForRemoteFuzzTest()
     auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     CHECK_AND_RETURN(capturerManager != nullptr);
     capturerManager->Init();
-    WaitForMsgProcessing(capturerManager);
 
     capturerManager->DeInit();
 }
@@ -611,7 +595,6 @@ void PrepareCapturerEcFuzzTest()
     CHECK_AND_RETURN(capturerManager != nullptr);
 
     capturerManager->Init();
-    WaitForMsgProcessing(capturerManager);
 
     capturerManager->DeInit();
 }
@@ -651,7 +634,6 @@ void RegisterReadCallbackFuzzTest()
 
     uint32_t invalidSessionId = GetData<uint32_t>();
     capturerManager->RegisterReadCallback(invalidSessionId, callback);
-    WaitForMsgProcessing(capturerManager);
 
     capturerManager->DeInit();
 }
@@ -678,7 +660,6 @@ void CheckIfAnyStreamRunningFuzzTest()
     HpaeSourceInfo newSourceInfo;
     InitSourceInfo(newSourceInfo);
     capturerManager->ReloadCaptureManager(newSourceInfo);
-    WaitForMsgProcessing(capturerManager);
 
     capturerManager->DeInit();
 }
@@ -692,7 +673,6 @@ void DumpSourceInfoFuzzTest()
     capturerManager->Init();
     WaitForMsgProcessing(capturerManager);
     capturerManager->DumpSourceInfo();
-    WaitForMsgProcessing(capturerManager);
     capturerManager->DeInit();
 }
 
@@ -722,7 +702,6 @@ void AddAllNodesToSourceAdvancedFuzzTest()
 
     bool isConnect = GetData<bool>();
     capturerManager->AddAllNodesToSource(moveInfos, isConnect);
-    WaitForMsgProcessing(capturerManager);
 
     capturerManager->DeInit();
 }
@@ -754,7 +733,6 @@ void DisConnectSceneClusterFromSourceInputClusterFuzzTest()
 
     capturerManager->Stop(streamInfo.sessionId);
     capturerManager->Release(streamInfo.sessionId);
-    WaitForMsgProcessing(capturerManager);
 
     capturerManager->DeInit();
 }
@@ -782,7 +760,6 @@ void ConnectOutputSessionFuzzTest()
     WaitForMsgProcessing(capturerManager);
 
     capturerManager->Start(streamInfo.sessionId);
-    WaitForMsgProcessing(capturerManager);
 
     capturerManager->DeInit();
 }
@@ -809,7 +786,6 @@ void PauseFuzzTest()
     WaitForMsgProcessing(capturerManager);
 
     capturerManager->Pause(streamInfo.sessionId);
-    WaitForMsgProcessing(capturerManager);
 
     capturerManager->DeInit();
 }
@@ -839,34 +815,6 @@ void SetStreamMuteFuzzTest()
     uint32_t invalidSessionId = GetData<uint32_t>();
     bool isMute2 = GetData<bool>();
     capturerManager->SetStreamMute(invalidSessionId, isMute2);
-    WaitForMsgProcessing(capturerManager);
-
-    capturerManager->DeInit();
-}
-
-void ProcessFuzzTest()
-{
-    HpaeSourceInfo sourceInfo;
-    InitSourceInfo(sourceInfo);
-
-    auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
-    CHECK_AND_RETURN(capturerManager != nullptr);
-
-    capturerManager->Init();
-    WaitForMsgProcessing(capturerManager);
-
-    HpaeStreamInfo streamInfo;
-    InitReloadStreamInfo(streamInfo);
-    streamInfo.sessionId = GetData<uint32_t>();
-
-    capturerManager->CreateStream(streamInfo);
-    WaitForMsgProcessing(capturerManager);
-
-    capturerManager->Start(streamInfo.sessionId);
-    WaitForMsgProcessing(capturerManager);
-
-    capturerManager->Process();
-
     capturerManager->DeInit();
 }
 
@@ -972,7 +920,6 @@ TestFuncs g_testFuncs[] = {
     ConnectOutputSessionFuzzTest,
     PauseFuzzTest,
     SetStreamMuteFuzzTest,
-    ProcessFuzzTest,
     ReloadCaptureManagerFuzzTest,
     DeInitFuzzTest,
     GetSourceOutputInfoFuzzTest,

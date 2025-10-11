@@ -77,6 +77,11 @@ int32_t BluetoothAudioRenderSink::Init(const IAudioSinkAttr &attr)
     }
     int32_t ret = InitRender();
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    if (!a2dpParam_.empty()) {
+        SetAudioParameterInner(a2dpParam_.value);
+        AUDIO_INFO_LOG("Set a2dpParam %{public}s SUCCESS", a2dpParam_.value.c_str());
+        a2dpParam_ = {};
+    }
     sinkInited_ = true;
     ++sinkInitCount_;
     started_ = false;
@@ -341,13 +346,9 @@ void BluetoothAudioRenderSink::SetAudioParameter(const AudioParamKey key, const 
 {
     AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
     std::lock_guard<std::mutex> lock(sinkMutex_);
-    CHECK_AND_RETURN_LOG(audioRender_ != nullptr, "render is nullptr");
-    CHECK_AND_RETURN(IsValidState());
-    int32_t ret = audioRender_->attr.SetExtraParams(reinterpret_cast<AudioHandle>(audioRender_), value.c_str());
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("set parameter fail, error code: %{public}d", ret);
-    }
+    SetAudioParameterInner(value);
 
+    int32_t ret = 0;
     if (started_ && isBluetoothLowLatency_ && !strcmp(value.c_str(), "A2dpSuspended=0;")) {
         int32_t tryCount = 3;
         while (tryCount-- > 0) {
@@ -364,6 +365,16 @@ void BluetoothAudioRenderSink::SetAudioParameter(const AudioParamKey key, const 
                 usleep(WAIT_TIME_FOR_RETRY_IN_MICROSECOND);
             }
         }
+    }
+}
+
+// need to hold sinkMutex when call this func.
+void BluetoothAudioRenderSink::SetAudioParameterInner(const std::string &value)
+{
+    CHECK_AND_RETURN_LOG(audioRender_ != nullptr && IsValidState(), "render is nullptr");
+    int32_t ret = audioRender_->attr.SetExtraParams(reinterpret_cast<AudioHandle>(audioRender_), value.c_str());
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("set parameter fail, error code: %{public}d", ret);
     }
 }
 
@@ -811,7 +822,6 @@ void BluetoothAudioRenderSink::CheckUpdateState(char *data, uint64_t len)
             renderFrameNum_ = 0;
             if (last10FrameStartTime_ > lastGetMaxAmplitudeTime_) {
                 startUpdate_ = false;
-                maxAmplitude_ = 0;
             }
         }
     }
@@ -940,6 +950,15 @@ int32_t BluetoothAudioRenderSink::CheckBluetoothScenario(void)
         return ERR_NOT_STARTED;
     }
     return SUCCESS;
+}
+
+void BluetoothAudioRenderSink::SetBluetoothSinkParam(AudioParamKey key, std::string condition, std::string value)
+{
+    a2dpParam_.key = key;
+    a2dpParam_.condition = condition;
+    a2dpParam_.value = value;
+    AUDIO_INFO_LOG("SetBluetoothSinkParam key %{public}u, condition %{public}s, value %{public}s",
+        a2dpParam_.key, a2dpParam_.condition.c_str(), a2dpParam_.value.c_str());
 }
 
 } // namespace AudioStandard

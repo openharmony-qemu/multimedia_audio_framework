@@ -48,6 +48,16 @@ ohos_unittest("audio_suite_manager_test") {
     "manager/audio_suite_engine_manager_test.cpp",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+
   configs = [ ":audio_suite_unit_config" ]
 
   deps = [
@@ -71,6 +81,16 @@ ohos_unittest("audio_suite_node_test") {
     "node/audio_suite_pcm_buffer_test.cpp"
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+
   configs = [ ":audio_suite_unit_config" ]
 
   deps = [
@@ -89,6 +109,16 @@ ohos_unittest("audio_suite_eq_node_test") {
   sources = [
     "node/audio_suite_eq_node_test.cpp",
   ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
 
   configs = [ ":audio_suite_unit_config" ]
 
@@ -110,6 +140,16 @@ ohos_unittest("audio_suite_mixer_test") {
   sources = [
     "node/audio_suite_mixer_node_test.cpp",
   ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
 
   configs = [ ":audio_suite_unit_config" ]
 
@@ -134,6 +174,16 @@ ohos_unittest("audio_suite_utils_test") {
     "utils/audio_suite_common_test.cpp",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+
   configs = [ ":audio_suite_unit_config" ]
 
   deps = [
@@ -152,6 +202,16 @@ ohos_unittest("audio_suite_aiss_algo_interface_test") {
   sources = [
     "utils/audio_suite_aiss_algo_interface_test.cpp",
   ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
 
   configs = [ ":audio_suite_unit_config" ]
 
@@ -172,6 +232,16 @@ ohos_unittest("audio_suite_aiss_node_test") {
   sources = [
     "node/audio_suite_aiss_node_test.cpp",
   ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
 
   configs = [ ":audio_suite_unit_config" ]
 
@@ -226,6 +296,16 @@ ohos_unittest("audio_suite_algo_interface_test") {
     "utils/audio_suite_algo_interface_test.cpp",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+
   configs = [ ":audio_suite_unit_config" ]
 
   deps = [
@@ -246,6 +326,16 @@ ohos_unittest("audio_suite_nr_algo_interface_impl_test") {
     "utils/audio_suite_nr_algo_interface_impl_test.cpp",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+
   configs = [ ":audio_suite_unit_config" ]
 
   deps = [
@@ -263,8 +353,19 @@ ohos_unittest("audio_suite_nr_algo_interface_impl_test") {
 ohos_unittest("audio_suite_process_node_test") {
   module_out_path = module_output_path
   sources = [
+    "tool/audio_suite_unittest_tools.cpp",
     "node/audio_suite_process_node_test.cpp",
   ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
 
   configs = [ ":audio_suite_unit_config" ]
 
@@ -278,6 +379,7 @@ ohos_unittest("audio_suite_process_node_test") {
     "googletest:gmock",
     "hilog:libhilog",
   ]
+  resource_config_file = "./resource/process_node.xml"
 }
 
 ohos_unittest("audio_suite_nr_node_test") {
@@ -286,6 +388,16 @@ ohos_unittest("audio_suite_nr_node_test") {
     "tool/audio_suite_unittest_tools.cpp",
     "node/audio_suite_nr_node_test.cpp",
   ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
 
   configs = [ ":audio_suite_unit_config" ]
 

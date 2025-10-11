@@ -802,6 +802,7 @@ private:
     void SubscribePowerStateChangeEvents();
     void SubscribeCommonEvent(const std::string event);
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
+    void UnlockEvent();
     void HandleKvDataShareEvent();
     void InitMicrophoneMute();
     void InitKVStore();

@@ -109,6 +109,7 @@ const int32_t DEFAULT_MAX_RENDERER_INSTANCES = 128;
 const int32_t DEFAULT_MAX_LOOPBACK_INSTANCES = 1;
 const int32_t MCU_UID = 7500;
 const int32_t TV_SERVICE_UID = 7501;
+const int32_t AAM_CONN_SVC_UID = 7878;
 constexpr int32_t CHECK_ALL_RENDER_UID = -1;
 constexpr int64_t RENDER_DETECTION_CYCLE_NS = 10000000000;
 constexpr int32_t RENDER_BAD_FRAMES_RATIO = 100;
@@ -118,7 +119,8 @@ static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
 };
 static const std::set<int32_t> GENERATE_SESSIONID_UID_SET = {
     MCU_UID,
-    TV_SERVICE_UID
+    TV_SERVICE_UID,
+    AAM_CONN_SVC_UID
 };
 const int32_t RSS_THRESHOLD = 2;
 // using pass-in appInfo for uids:
@@ -854,9 +856,14 @@ bool AudioServer::CacheExtraParameters(const std::string &key,
 void AudioServer::SetA2dpAudioParameter(const std::string &renderValue)
 {
     auto parmKey = AudioParamKey::A2DP_SUSPEND_STATE;
-
     std::shared_ptr<IAudioRenderSink> btSink = GetSinkByProp(HDI_ID_TYPE_BLUETOOTH);
-    CHECK_AND_RETURN_LOG(btSink != nullptr, "has no valid sink");
+    if (btSink == nullptr) {
+        AUDIO_WARNING_LOG("has no valid sink, need preStore a2dpParam.");
+        HdiAdapterManager::GetInstance().
+            UpdateSinkPrestoreInfo<std::pair<AudioParamKey, std::pair<std::string, std::string>>>(
+            PRESTORE_INFO_AUDIO_BT_PARAM, {parmKey, {"", renderValue}});
+        return;
+    }
     btSink->SetAudioParameter(parmKey, "", renderValue);
 
     if (AudioService::GetInstance()->HasBluetoothEndpoint()) {
@@ -2839,7 +2846,7 @@ int32_t AudioServer::GenerateSessionId(uint32_t &sessionId)
 {
     int32_t uid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(GENERATE_SESSIONID_UID_SET.count(uid) == 1, ERROR, "uid is %{public}d, not mcu uid", uid);
-    sessionId = PolicyHandler::GetInstance().GenerateSessionId(uid);
+    sessionId = CoreServiceHandler::GetInstance().GenerateSessionId();
     return SUCCESS;
 }
 
