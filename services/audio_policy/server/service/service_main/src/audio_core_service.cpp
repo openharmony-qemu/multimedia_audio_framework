@@ -364,6 +364,9 @@ bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescript
         JUDGE_AND_INFO_LOG(isCreateProcess_, "sample rate over 192k");
         return false;
     }
+    auto ret = AudioSpatializationService::GetAudioSpatializationService().IsSpatializationEnabled(
+        streamDesc->newDeviceDescs_[0]->macAddress_);
+    CHECK_AND_RETURN_RET_LOG(ret == false, false, "Spatialization enabled");
     return true;
 }
 
