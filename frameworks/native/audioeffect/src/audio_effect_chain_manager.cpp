@@ -2053,7 +2053,7 @@ bool AudioEffectChainManager::ExistAudioEffectChainArm(const std::string sceneTy
         return false;
     }
     const std::unordered_map<AudioEffectMode, std::string> &audioSupportedSceneModes = GetAudioSupportedSceneModes();
-    CHECK_AND_RETURN_LOG(audioSupportedSceneModes.count(effectMode), false, "invalid effectMode");
+    CHECK_AND_RETURN_RET_LOG(audioSupportedSceneModes.count(effectMode), false, "invalid effectMode");
     std::string sceneMode = audioSupportedSceneModes.find(effectMode)->second;
     std::string effectChainKey = sceneType + "_&_" + sceneMode + "_&_" + GetDeviceTypeName();
     if (!sceneTypeAndModeToEffectChainNameMap_.count(effectChainKey)) {
