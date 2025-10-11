@@ -1048,6 +1048,10 @@ int32_t AudioSuitePipeline::GetOptions(uint32_t nodeId, std::string name, std::s
         }
 
         auto node = nodeMap_[nodeId];
+        if (node == nullptr) {
+            AUDIO_ERR_LOG("SetOptions failed, node ptr nullptr.");
+            return;
+        }
         int32_t ret = node->GetOptions(name, value);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("SetOptions, ret = %{public}d.", ret);

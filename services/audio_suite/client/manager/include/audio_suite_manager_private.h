@@ -160,6 +160,10 @@ void ParseValue(const std::string valueStr, T &result)
 
 void ParseValue(const std::string &valueStr, int32_t *result)
 {
+    if (result == nullptr) {
+        return;
+    }
+
     std::istringstream iss(valueStr);
     std::string token;
     std::vector<int32_t> temp;
