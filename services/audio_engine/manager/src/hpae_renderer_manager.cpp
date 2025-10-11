@@ -37,7 +37,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 namespace {
-    constexpr float SUSPEND_TIME_OUT_S = 3.1; // prevent stop not success
+    constexpr float SUSPEND_TIME_OUT_S = 3.5; // prevent stop not success
     constexpr int64_t AUDIO_NS_PER_US = 1000;
     constexpr int64_t BUFFER_DURATION_US = 20 * 1000; // 20ms
     constexpr int64_t UNDERRUN_BYPASS_DURATION_NS = 60 * 1000 * 1000; // 60ms
