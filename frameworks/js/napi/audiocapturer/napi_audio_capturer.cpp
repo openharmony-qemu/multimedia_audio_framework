@@ -597,6 +597,7 @@ napi_value NapiAudioCapturer::Read(napi_env env, napi_callback_info info)
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
+#ifndef IOS_PLATFORM
     if ((!firstReadCalled_.exchange(true, std::memory_order_relaxed)) &&
         (getpid() == gettid())) {
         auto obj = reinterpret_cast<NapiAudioCapturer*>(context->native);
@@ -610,6 +611,7 @@ napi_value NapiAudioCapturer::Read(napi_env env, napi_callback_info info)
                 capturerInfo.sourceType, NapiDfxUtils::MainThreadCallFunc::read);
         }
     }
+#endif
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
@@ -1300,6 +1302,7 @@ void NapiAudioCapturer::RegisterCapturerReadDataCallback(napi_env env, napi_valu
     cb->AddCallbackReference(cbName, argv[PARAM1]);
     cb->CreateReadDataTsfn(env);
 
+#ifndef IOS_PLATFORM
     if ((!firstRegReadCbCalled_.exchange(true, std::memory_order_relaxed)) &&
         (getpid() == gettid())) {
         AudioCapturerInfo capturerInfo = {};
@@ -1308,6 +1311,7 @@ void NapiAudioCapturer::RegisterCapturerReadDataCallback(napi_env env, napi_valu
         NapiDfxUtils::ReportAudioMainThreadEvent(appUid, NapiDfxUtils::SteamDirection::capture,
             capturerInfo.sourceType, NapiDfxUtils::MainThreadCallFunc::readCb);
     }
+#endif
 
     AUDIO_INFO_LOG("Register Callback is successful");
 }
