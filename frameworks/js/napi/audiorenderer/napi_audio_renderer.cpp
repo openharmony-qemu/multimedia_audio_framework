@@ -674,6 +674,7 @@ napi_value NapiAudioRenderer::Write(napi_env env, napi_callback_info info)
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
+#ifndef IOS_PLATFORM
     if ((!firstWriteCalled_.exchange(true, std::memory_order_relaxed)) &&
         (getpid() == gettid())) {
         auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
@@ -687,6 +688,7 @@ napi_value NapiAudioRenderer::Write(napi_env env, napi_callback_info info)
                 rendererInfo.streamUsage, NapiDfxUtils::MainThreadCallFunc::write);
         }
     }
+#endif
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
@@ -2343,6 +2345,7 @@ void NapiAudioRenderer::RegisterRendererWriteDataCallback(napi_env env, napi_val
         cb->CreateWriteDTsfn(env);
     }
 
+#ifndef IOS_PLATFORM
     if ((!firstRegWriteCbCalled_.exchange(true, std::memory_order_relaxed)) &&
         (getpid() == gettid())) {
         AudioRendererInfo rendererInfo = {};
@@ -2351,6 +2354,7 @@ void NapiAudioRenderer::RegisterRendererWriteDataCallback(napi_env env, napi_val
         NapiDfxUtils::ReportAudioMainThreadEvent(appUid, NapiDfxUtils::SteamDirection::playback,
             rendererInfo.streamUsage, NapiDfxUtils::MainThreadCallFunc::writeCb);
     }
+#endif
 
     AUDIO_INFO_LOG("Register Callback is successful");
 }
