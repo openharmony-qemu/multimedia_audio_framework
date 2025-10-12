@@ -228,6 +228,7 @@ public:
         preResample_.preInResample = inRate;
         preResample_.preOutResample = outRate;
         preResample_.preChannels = channels;
+
         proResampler_->Reset();
         int32_t ret = proResampler_->UpdateRates(inRate, outRate);
         CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret,
