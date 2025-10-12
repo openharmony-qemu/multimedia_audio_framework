@@ -62,16 +62,6 @@ public:
         return outputStream_;
     }
 
-    //FormatConvert
-    void ConvertToFloat(AudioSampleFormat format, unsigned n, void *src, float *dst)
-    {
-        HPAE::ConvertToFloat(format, n, src, dst);
-    }
-    void ConvertFromFloat(AudioSampleFormat format, unsigned n, float *src, void *dst)
-    {
-        HPAE::ConvertFromFloat(format, n, src, dst);
-    }
-
     //Remap
     int32_t SetChannelConvertProcessParam(AudioChannelInfo inChannelInfo, AudioChannelInfo outChannelInfo,
         AudioSampleFormat workFormat, bool mixLfe)
@@ -100,7 +90,6 @@ private:
     int32_t Resample(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer);
     Tap tap_;
     HPAE::ChannelConverter channelConverter_;
-    std::unique_ptr<HPAE::ProResampler> proResampler_ = nullptr;
 };
 
 }
