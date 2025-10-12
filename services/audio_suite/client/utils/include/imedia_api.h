@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 #ifndef __IMEDIA_API_H__
 #define __IMEDIA_API_H__
 
@@ -109,6 +109,29 @@ extern IMEDIA_INT32 iMedia_Eq_SetParams(
 extern IMEDIA_INT32 iMedia_Eq_GetParams(IMEDIA_VOID *pHandle, iMedia_Eq_PARA *pParams);
 
 extern IMEDIA_INT32 iMedia_Eq_GetVersion(iMedia_SWS_PST_VERSION *ppVersion);
+
+// 环境音配置参数
+typedef enum tagEnum_IMEDIA_Env_PARA {
+    IMEDIA_SWS_ENV_UNKNOW = -1,
+    IMEDIA_SWS_ENV_BROADCAST = 0,
+    IMEDIA_SWS_ENV_TELEPHONE_RECEIVER = 1,
+    IMEDIA_SWS_ENV_UNDER_WATER = 2,
+    IMEDIA_SWS_ENV_PHONOGRAPH = 3,
+    IMEDIA_SWS_ENV_TYPE_NUM
+} iMedia_Env_PARA;
+
+extern IMEDIA_INT32 iMedia_Env_GetSize(iMedia_SWS_MEM_SIZE *pMemSize);
+
+extern IMEDIA_INT32 iMedia_Env_Init(
+    IMEDIA_VOID *pHandle, IMEDIA_VOID *pScratchBuf, IMEDIA_INT32 iScratchBufLen, const iMedia_Env_PARA envType);
+
+extern IMEDIA_INT32 iMedia_Apply(
+    IMEDIA_VOID *pHandle, IMEDIA_VOID *pScratchBuf, IMEDIA_INT32 iScratchBufLen, iMedia_SWS_DATA *pDATA);
+
+extern IMEDIA_INT32 iMedia_Env_SetParams(
+    IMEDIA_VOID *pHandle, IMEDIA_VOID *pScratchBuf, IMEDIA_INT32 iScratchBufLen, const iMedia_Env_PARA envType);
+
+extern IMEDIA_INT32 iMedia_Env_GetParams(IMEDIA_VOID *pHandle, iMedia_Env_PARA *pEnvType);
 
 #ifdef __cplusplus
 }
