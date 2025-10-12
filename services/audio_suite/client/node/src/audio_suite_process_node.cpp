@@ -89,15 +89,13 @@ std::vector<AudioSuitePcmBuffer*>& AudioSuiteProcessNode::ReadProcessNodePreOutp
                 "finished, skip this outputport.", GetNodeType(), o.second->GetNodeType());
             continue;
         }
-        AudioSuitePcmBuffer* pcmData = o.first->PullOutputData();
-        if (pcmData != nullptr) {
-            AUDIO_DEBUG_LOG("node type = %{public}d send a pcmbuffer with isFinished: %{public}d to "
-                "node type = %{public}d", o.second->GetNodeType(), pcmData->GetIsFinished(), GetNodeType());
-            if (pcmData->GetIsFinished()) {
+        std::vector<AudioSuitePcmBuffer *> outputData = o.first->PullOutputData();
+        if (!outputData.empty() && (outputData[0] != nullptr)) {
+            if (outputData[0]->GetIsFinished()) {
                 finishedPrenodeSet.insert(o.second);
             }
-            isFinished = isFinished && pcmData->GetIsFinished();
-            preOutputs.emplace_back(std::move(pcmData));
+            isFinished = isFinished && outputData[0]->GetIsFinished();
+            preOutputs.insert(preOutputs.end(), outputData.begin(), outputData.end());
         }
     }
     AUDIO_DEBUG_LOG("set node type = %{public}d isFinished status: %{public}d.", GetNodeType(), isFinished);
@@ -199,7 +197,7 @@ int32_t AudioSuiteProcessNode::ChannelConvert(AudioSuitePcmBuffer *inputPcmBuffe
     AudioChannelInfo inChannelInfo = {inputPcmBuffer->GetChannelLayout(), inChannelCount};
     AudioChannelInfo outChannelInfo = {outputPcmBuffer->GetChannelLayout(), outChannelCount};
     bool mixLfe = true;
-    int32_t ret = channelConverter_.SetParam(inChannelInfo, outChannelInfo, SAMPLE_F32LE, mixLfe);
+    int32_t ret = SetChannelConvertProcessParam(inChannelInfo, outChannelInfo, SAMPLE_F32LE, mixLfe);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Do ChannelConvert: SetParam fail with error code: %{public}d", ret);
 
     uint32_t frameSize = inputPcmBuffer->GetFrameLen() / inChannelCount;
@@ -208,7 +206,7 @@ int32_t AudioSuiteProcessNode::ChannelConvert(AudioSuitePcmBuffer *inputPcmBuffe
     float *outputData = outputPcmBuffer->GetPcmDataBuffer();
     uint32_t outLen = outputPcmBuffer->GetFrameLen() * sizeof(float);
 
-    ret = channelConverter_.Process(frameSize, inputData, inLen, outputData, outLen);
+    ret = ChannelConvertProcess(frameSize, inputData, inLen, outputData, outLen);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Do ChannelConvert: Process fail with error code: %{public}d", ret);
 
     return SUCCESS;

@@ -33,7 +33,7 @@ public:
     {}
     void WriteDataToOutput(T data);
     OutputPort(const OutputPort &that) = delete;
-    T PullOutputData();
+    std::vector<T> PullOutputData();
     void AddInput(InputPort<T>* input);
     void RemoveInput(InputPort<T>* input);
     size_t GetInputNum() const;
@@ -113,12 +113,8 @@ std::vector<T>& InputPort<T>::ReadPreOutputData()
         if (o.first == nullptr) {
             continue;
         }
-        T pcmData = o.first->PullOutputData();
-        if (pcmData != nullptr && o.second != nullptr) {
-            AUDIO_INFO_LOG("InputPort::ReadPreOutputData: node type = %{public}d send a pcmbuffer with isFinished:"
-                "%{public}d.", o.second->GetNodeType(), pcmData->GetIsFinished());
-            inputData_.emplace_back(std::move(pcmData));
-        }
+        std::vector<T> outputData = o.first->PullOutputData();
+        inputData_.insert(inputData_.end(), outputData.begin(), outputData.end());
     }
     return inputData_;
 }
@@ -206,19 +202,20 @@ void OutputPort<T>::WriteDataToOutput(T data)
 }
 
 template <class T>
-T OutputPort<T>::PullOutputData()
+std::vector<T> OutputPort<T>::PullOutputData()
 {
     if (audioNode_ == nullptr) {
         AUDIO_ERR_LOG("OutputPort audioNode_ is empty");
-        return nullptr;
+        return std::vector<T>();
     }
     audioNode_->DoProcess();
     if (outputData_.empty()) {
         AUDIO_ERR_LOG("OutputPort outputData_ is empty");
-        return nullptr;
+        return std::vector<T>();
     }
-    T retValue = std::move(outputData_.back());
-    outputData_.pop_back();
+
+    std::vector<T> retValue = outputData_;
+    outputData_.clear();
     return retValue;
 }
 
