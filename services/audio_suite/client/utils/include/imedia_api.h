@@ -88,6 +88,34 @@ typedef struct tagSTRU_IMEDIA_SWS_VERSION {
 } iMedia_SWS_STRU_VERSION, *iMedia_SWS_PST_VERSION;
 #endif
 
+// 声场配置参数
+typedef enum tagEnum_IMEDIA_Surround_PARA {
+    IMEDIA_SWS_SOUROUND_BROAD = 0,          // 宽广
+    IMEDIA_SWS_SOUROUND_FRONT = 1,          // 前置
+    IMEDIA_SWS_SOUROUND_DEFAULT = 2,        // 聆听
+    IMEDIA_SWS_SOUROUND_GRAND = 3           // 宏大
+} iMedia_Surround_PARA;
+
+// 声场算法配置
+#define AUDIO_SURROUND_ENABLE_SWS           (1)    // SWS默认开
+#define AUDIO_SURROUND_MASTER_VOLUME        (15)   // 音量增益默认15
+#define AUDIO_SURROUND_PCM_16_BIT           (1)    // 声场算法支持位深 16bits
+#define AUDIO_SURROUND_PCM_48K_FRAME_LEN    (480)  // 声场算法处理帧长，480个采样点
+#define AUDIO_SURROUND_PCM_CHANNEL_NUM      (2)    // 声场算法支持2声道
+
+extern IMEDIA_INT32 iMedia_Surround_GetSize(iMedia_SWS_MEM_SIZE *pMemSize);
+
+extern IMEDIA_INT32 iMedia_Surround_Init(IMEDIA_VOID *pHandle, IMEDIA_VOID *pScratchBuf, IMEDIA_INT32 iScratchBufLen,
+    const iMedia_Surround_PARA surroundType);
+
+extern IMEDIA_INT32 iMedia_Surround_Apply(
+    IMEDIA_VOID *pHandle, IMEDIA_VOID *pScratchBuf, IMEDIA_INT32 iScratchBufLen, iMedia_SWS_DATA *pData);
+
+extern IMEDIA_INT32 iMedia_Surround_SetParams(IMEDIA_VOID *pHandle, IMEDIA_VOID *pScratchBuf,
+    IMEDIA_INT32 iScratchBufLen, const iMedia_Surround_PARA surroundType);
+
+extern IMEDIA_INT32 iMedia_Surround_GetParams(IMEDIA_VOID *pHandle, iMedia_Surround_PARA *pSurroundType);
+
 typedef struct tagSTRU_IMEDIA_Eq_PARA {
     IMEDIA_INT16 sFrameLen;  // 帧长，480；
     IMEDIA_INT16 sEQLRBands;

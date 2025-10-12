@@ -30,6 +30,7 @@
 #include "audio_suite_aiss_node.h"
 #include "audio_suite_output_node.h"
 #include "audio_suite_nr_node.h"
+#include "audio_suite_soundfield_node.h"
 #include "audio_suite_mixer_node.h"
 
 namespace OHOS {
@@ -302,6 +303,9 @@ std::shared_ptr<AudioNode> AudioSuitePipeline::CreateNodeForType(AudioNodeBuilde
     } else if (builder.nodeType == NODE_TYPE_NOISE_REDUCTION) {
         AUDIO_INFO_LOG("Create AudioSuiteNrNode");
         node = std::make_shared<AudioSuiteNrNode>();
+    } else if (builder.nodeType == NODE_TYPE_SOUND_FIELD) {
+        AUDIO_INFO_LOG("Create AudioSuiteSoundFieldNode");
+        node = std::make_shared<AudioSuiteSoundFieldNode>();
     } else if (builder.nodeType == NODE_TYPE_AUDIO_MIXER) {
         AUDIO_INFO_LOG("Create AudioSuiteMixerNode");
         node = std::make_shared<AudioSuiteMixerNode>();

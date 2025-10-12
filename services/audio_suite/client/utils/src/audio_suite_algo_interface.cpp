@@ -15,6 +15,7 @@
 
 #include "audio_suite_eq_algo_interface_impl.h"
 #include "audio_suite_nr_algo_interface_impl.h"
+#include "audio_suite_soundfield_algo_interface_impl.h"
 #include "audio_suite_aiss_algo_interface_impl.h"
 
 namespace OHOS {
@@ -28,6 +29,8 @@ std::shared_ptr<AudioSuiteAlgoInterface> AudioSuiteAlgoInterface::CreateAlgoInte
             return std::make_shared<AudioSuiteEqAlgoInterfaceImpl>();
         case AlgoType::AUDIO_NODE_TYPE_NOISE_REDUCTION:
             return std::make_shared<AudioSuiteNrAlgoInterfaceImpl>();
+        case AlgoType::AUDIO_NODE_TYPE_SOUND_FIELD:
+            return std::make_shared<AudioSuiteSoundFieldAlgoInterfaceImpl>();
         case AlgoType::AUDIO_NODE_TYPE_AUDIO_SEPARATION:
             return std::make_shared<AudioSuiteAissAlgoInterfaceImpl>();
         default:
