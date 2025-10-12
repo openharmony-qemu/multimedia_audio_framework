@@ -84,8 +84,6 @@ audio_ohos_library("audio_suite") {
     "client/node/src/audio_suite_mixer_node.cpp",
     "client/node/src/audio_suite_aiss_node.cpp",
     "client/utils/src/audio_suite_aiss_algo_interface_impl.cpp",
-    "client/utils/src/audio_suite_voice_beautifier_algo_interface_impl.cpp",
-    "client/node/src/audio_suite_voice_beautifier_node.cpp",
   ]
 
   deps = [

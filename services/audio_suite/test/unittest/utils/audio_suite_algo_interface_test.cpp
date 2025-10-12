@@ -40,11 +40,6 @@ HWTEST(AudioSuiteAlgoInterface, CreateAlgoInterfaceTest, TestSize.Level0) {
     EXPECT_NE(aissAlgo, nullptr);
     aissAlgo.reset();
 
-    auto vbAlgo = AudioSuiteAlgoInterface::CreateAlgoInterface(
-        AlgoType::AUDIO_NODE_TYPE_VOICE_BEAUTIFIER);
-    EXPECT_NE(vbAlgo, nullptr);
-    vbAlgo.reset();
-
     auto unknownAlgo = AudioSuiteAlgoInterface::CreateAlgoInterface(
         static_cast<AlgoType>(3));
     EXPECT_EQ(unknownAlgo, nullptr);

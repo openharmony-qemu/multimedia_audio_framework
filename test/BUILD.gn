@@ -141,8 +141,6 @@ group("audio_unit_test") {
     "../services/audio_suite/test/unittest:audio_suite_utils_test",
     "../services/audio_suite/test/unittest:audio_suite_algo_interface_test",
     "../services/audio_suite/test/unittest:audio_suite_process_node_test",
-    "../services/audio_suite/test/unittest:audio_suite_voice_beautifier_node_test",
-    "../services/audio_suite/test/unittest:audio_suite_voice_beautifier_algo_interface_impl_test",
   ]
 
   if (audio_framework_feature_opensl_es) {
