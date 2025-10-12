@@ -170,7 +170,7 @@ void AudioInjectorPolicy::ReleaseCaptureInjector(uint32_t streamId)
     auto pipeList = pipeManager_->GetPipeList();
     for (auto it = pipeList.rbegin(); it != pipeList.rend(); ++it) {
         CHECK_AND_CONTINUE_LOG((*it) != nullptr, "it is null");
-        if ((*it)->paIndex_ == capturePortIdx_) {
+        if ((*it)->paIndex_ == capturePortIdx_ && (*it)->pipeRole_ == PIPE_ROLE_INPUT) {
             streamVec = (*it)->streamDescriptors_;
             break;
         }
