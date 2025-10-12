@@ -41,10 +41,11 @@ HWTEST_F(AudioSuiteOutputPortTest, OutputPort_001, TestSize.Level0)
         std::make_shared<OutputPort<AudioSuitePcmBuffer *>>(inputNode);
     EXPECT_NE(outputPort, nullptr);
 
-    AudioSuitePcmBuffer* data = outputPort->PullOutputData();
-    EXPECT_NE(outputPort, nullptr);
+    std::vector<AudioSuitePcmBuffer *> data = outputPort->PullOutputData();
+    EXPECT_NE(data.size(), 0);
 
-    outputPort->WriteDataToOutput(data);
+    AudioSuitePcmBuffer *pcm = nullptr;
+    outputPort->WriteDataToOutput(pcm);
 }
 
 HWTEST_F(AudioSuiteOutputPortTest, OutputPortHandleInputPort_001, TestSize.Level0)

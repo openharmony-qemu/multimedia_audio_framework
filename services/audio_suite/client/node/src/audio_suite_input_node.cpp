@@ -331,7 +331,6 @@ int32_t AudioInputNode::DoResample(uint8_t* inData, uint32_t inSize, AudioSampli
 
 int32_t AudioInputNode::GeneratePushBuffer()
 {
-    AUDIO_INFO_LOG("AudioInputNode::GeneratePushBuffer");
     CHECK_AND_RETURN_RET_LOG(inputNodeBuffer_ != nullptr, ERR_INVALID_OPERATION,
         "AudioInputNode::SetAudioNodeFormat inputNodeBuffer_ is null");
     uint32_t needMinSize = GetFrameSizeAfterTransfer(GetAudioNodeFormat());
