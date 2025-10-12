@@ -109,7 +109,7 @@ private:
     void HandleDisConnectNodes(int32_t result);
     void HandleInstallTap(int32_t result);
     void HandleRemoveTap(int32_t result);
-    void HandleRenderFrame(int32_t result);
+    void HandleRenderFrame(int32_t result, uint32_t pipelineId);
     void HandleMultiRenderFrame(int32_t result);
 
 private:

@@ -99,12 +99,16 @@ public:
     void OnDisConnectNodes(int32_t result) override;
     void OnInstallTap(int32_t result) override;
     void OnRemoveTap(int32_t result) override;
-    void OnRenderFrame(int32_t result) override;
+    void OnRenderFrame(int32_t result, uint32_t pipelineId) override;
     void OnMultiRenderFrame(int32_t result) override;
 
 private:
     std::mutex lock_;
     std::shared_ptr<IAudioSuiteEngine> suiteEngine_ = nullptr;
+
+    std::unordered_map<uint32_t, std::shared_ptr<std::mutex>> pipelineLockMap_;
+    std::unordered_map<uint32_t, std::shared_ptr<std::mutex>> pipelineCallbackMutexMap_;
+    std::unordered_map<uint32_t, std::shared_ptr<std::condition_variable>> pipelineCallbackCVMap_;
 
     // for status operation wait and notify
     std::mutex callbackMutex_;
@@ -138,8 +142,8 @@ private:
     int32_t connectNodesResult_ = 0;
     bool isFinishDisConnectNodes_ = false;
     int32_t disConnectNodesResult_ = 0;
-    bool isFinisRenderFrame_ = false;
-    int32_t renderFrameResult_ = 0;
+    std::unordered_map<uint32_t, bool> isFinishRenderFrameMap_;
+    std::unordered_map<uint32_t, int32_t> renderFrameResultMap_;
     bool isFinisMultiRenderFrame_ = false;
     int32_t MultiRenderFrameResult_ = 0;
     bool isFinisInstallTap_ = false;

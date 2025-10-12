@@ -964,24 +964,24 @@ int32_t AudioSuitePipeline::RenderFrame(uint8_t *audioData, int32_t frameSize, i
         AUDIO_INFO_LOG("AudioSuitePipeline::RenderFrame enter request");
         if (pipelineState_ != PIPELINE_RUNNING) {
             AUDIO_ERR_LOG("RenderFrame failed, pipelineState state is not running.");
-            TriggerCallback(RENDER_FRAME, ERR_ILLEGAL_STATE);
+            TriggerCallback(RENDER_FRAME, ERR_ILLEGAL_STATE, id_);
             return;
         }
 
         if (outputNode_ == nullptr) {
             AUDIO_ERR_LOG("RenderFrame failed, outputNode_ is nullptr.");
-            TriggerCallback(RENDER_FRAME, ERR_ILLEGAL_STATE);
+            TriggerCallback(RENDER_FRAME, ERR_ILLEGAL_STATE, id_);
             return;
         }
 
         int32_t ret = outputNode_->DoProcess(audioData, frameSize, writeLen, finishedFlag);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("RenderFrame, ret = %{public}d.", ret);
-            TriggerCallback(RENDER_FRAME, ret);
+            TriggerCallback(RENDER_FRAME, ret, id_);
             return;
         }
 
-        TriggerCallback(RENDER_FRAME, SUCCESS);
+        TriggerCallback(RENDER_FRAME, SUCCESS, id_);
     };
 
     SendRequest(request, __func__);

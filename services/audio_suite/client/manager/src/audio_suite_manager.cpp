@@ -99,6 +99,10 @@ int32_t AudioSuiteManager::CreatePipeline(uint32_t &pipelineId)
     AUDIO_INFO_LOG("CreatePipeline leave");
     pipelineId = engineCreatePipelineId_;
     engineCreatePipelineId_ = INVALID_PIPELINE_ID;
+
+    pipelineLockMap_[pipelineId] = std::make_shared<std::mutex>();
+    pipelineCallbackMutexMap_[pipelineId] = std::make_shared<std::mutex>();
+    pipelineCallbackCVMap_[pipelineId] = std::make_shared<std::condition_variable>();
     return engineCreateResult_;
 }
 
@@ -109,6 +113,14 @@ int32_t AudioSuiteManager::DestroyPipeline(uint32_t pipelineId)
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, "suite engine not inited");
 
+    auto it = pipelineLockMap_.find(pipelineId);
+    CHECK_AND_RETURN_RET_LOG(it != pipelineLockMap_.end(), ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+                             "pipeline lock not exist");
+    auto &pipelineLock = it->second;
+    CHECK_AND_RETURN_RET_LOG(pipelineLock != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+                             "pipeline lock is null");
+    std::lock_guard<std::mutex> pipelineLockGuard(*pipelineLock);
+
     isFinishDestroyPipeline_ = false;
     int32_t ret = suiteEngine_->DestroyPipeline(pipelineId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine DestroyPipeline failed, ret = %{public}d", ret);
@@ -118,7 +130,11 @@ int32_t AudioSuiteManager::DestroyPipeline(uint32_t pipelineId)
         return isFinishDestroyPipeline_;
     });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "DestroyPipeline timeout");
-
+    isFinishRenderFrameMap_.erase(pipelineId);
+    renderFrameResultMap_.erase(pipelineId);
+    pipelineLockMap_.erase(pipelineId);
+    pipelineCallbackMutexMap_.erase(pipelineId);
+    pipelineCallbackCVMap_.erase(pipelineId);
     AUDIO_INFO_LOG("DestroyPipeline leave");
     return destroyPipelineResult_;
 }
@@ -575,21 +591,28 @@ int32_t AudioSuiteManager::RemoveTap(uint32_t nodeId, AudioNodePortType portType
 int32_t AudioSuiteManager::RenderFrame(uint32_t pipelineId,
     uint8_t *audioData, int32_t frameSize, int32_t *writeLen, bool *finishedFlag)
 {
-    std::lock_guard<std::mutex> lock(lock_);
+    auto it = pipelineLockMap_.find(pipelineId);
+    CHECK_AND_RETURN_RET_LOG(it != pipelineLockMap_.end(), ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+                             "pipeline lock not exist");
+    auto &pipelineLock = it->second;
+    CHECK_AND_RETURN_RET_LOG(pipelineLock != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+                             "pipeline lock is null");
+    std::lock_guard<std::mutex> lock(*pipelineLock);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, "suite engine not inited");
 
-    isFinisRenderFrame_ = false;
+    isFinishRenderFrameMap_[pipelineId] = false;
     int32_t ret = suiteEngine_->RenderFrame(pipelineId, audioData, frameSize, writeLen, finishedFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine RenderFrame failed, ret = %{public}d", ret);
 
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return isFinisRenderFrame_;
-    });
+    auto& callbackMutex = pipelineCallbackMutexMap_[pipelineId];
+    auto& callbackCV = pipelineCallbackCVMap_[pipelineId];
+    std::unique_lock<std::mutex> waitLock(*callbackMutex);
+    bool stopWaiting = callbackCV->wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS),
+        [this, pipelineId] { return isFinishRenderFrameMap_[pipelineId]; });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "RenderFrame timeout");
 
     AUDIO_INFO_LOG("RenderFrame leave");
-    return renderFrameResult_;
+    return renderFrameResultMap_[pipelineId];
 }
 
 int32_t AudioSuiteManager::MultiRenderFrame(uint32_t pipelineId,
@@ -750,13 +773,15 @@ void AudioSuiteManager::OnRemoveTap(int32_t result)
     callbackCV_.notify_all();
 }
 
-void AudioSuiteManager::OnRenderFrame(int32_t result)
+void AudioSuiteManager::OnRenderFrame(int32_t result, uint32_t pipelineId)
 {
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    auto& callbackMutex = pipelineCallbackMutexMap_[pipelineId];
+    auto& callbackCV = pipelineCallbackCVMap_[pipelineId];
+    std::unique_lock<std::mutex> waitLock(*callbackMutex);
     AUDIO_INFO_LOG("OnRenderFrame callback");
-    isFinisRenderFrame_ = true;
-    renderFrameResult_ = result;
-    callbackCV_.notify_all();
+    isFinishRenderFrameMap_[pipelineId] = true;
+    renderFrameResultMap_[pipelineId] = result;
+    callbackCV->notify_all();
 }
 
 void AudioSuiteManager::OnMultiRenderFrame(int32_t result)

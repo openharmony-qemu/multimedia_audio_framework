@@ -718,14 +718,14 @@ int32_t AudioSuiteEngine::RenderFrame(uint32_t pipelineId,
 
         if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
             AUDIO_ERR_LOG("engine RenderFrame failed, pipeline id is invailed.");
-            managerCallback_.OnRenderFrame(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            managerCallback_.OnRenderFrame(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, pipelineId);
             return;
         }
 
         std::shared_ptr<IAudioSuitePipeline> pipeline = pipelineMap_[pipelineId];
         if (pipeline == nullptr) {
             AUDIO_ERR_LOG("engine CreateNode failed, pipeline is nullptr.");
-            managerCallback_.OnRenderFrame(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+            managerCallback_.OnRenderFrame(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, pipelineId);
             return;
         }
 
@@ -926,9 +926,9 @@ void AudioSuiteEngine::HandleRemoveTap(int32_t result)
     managerCallback_.OnRemoveTap(result);
 }
 
-void AudioSuiteEngine::HandleRenderFrame(int32_t result)
+void AudioSuiteEngine::HandleRenderFrame(int32_t result, uint32_t pipelineId)
 {
-    managerCallback_.OnRenderFrame(result);
+    managerCallback_.OnRenderFrame(result, pipelineId);
 }
 
 void AudioSuiteEngine::HandleMultiRenderFrame(int32_t result)
