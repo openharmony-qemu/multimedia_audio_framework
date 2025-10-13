@@ -113,12 +113,14 @@ static void OutputFormatConvert(
     std::vector<uint8_t> outputData;
 
     inputFile.seekg(HEADER_SIZE, std::ios::beg);
+    bool exitFlag = true;
     while (exitFlag) {
         inputData.resize(inputLen, 0);
         outputData.resize(outputLen, 0);
 
         inputFile.read(reinterpret_cast<char *>(inputData.data()), inputLen);
         if (inputFile.eof()) {
+            exitFlag = false;
             break;
         }
 
