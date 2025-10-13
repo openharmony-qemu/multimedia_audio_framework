@@ -157,6 +157,436 @@ HWTEST_F(AudioInjectorPolicyUnitTest, RemoveCaptureInjector_002, TestSize.Level1
 }
 
 /**
+ * @tc.name: RebuildCaptureInjector_001
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, RebuildCaptureInjector_001, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    audioInjectorPolicy.isOpened_ = true;
+    audioInjectorPolicy.RebuildCaptureInjector(1111);
+    audioInjectorPolicy.isOpened_ = false;
+    EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
+    auto &pipelist = audioInjectorPolicy.pipeManager_->curPipeList_;
+    pipelist.clear();
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->paIndex_ = 1234;
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->sessionId_ = 4321;
+    pipe1->streamDescriptors_.push_back(desc);
+    EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
+    audioInjectorPolicy.pipeManager_->AddAudioPipeInfo(pipe1);
+    audioInjectorPolicy.capturePortIdx_ = 1111;
+    audioInjectorPolicy.RebuildCaptureInjector(1111);
+}
+
+/**
+ * @tc.name: RebuildCaptureInjector_002
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, RebuildCaptureInjector_002, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    audioInjectorPolicy.isOpened_ = true;
+    audioInjectorPolicy.RebuildCaptureInjector(1111);
+    audioInjectorPolicy.isOpened_ = false;
+    EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
+    auto &pipelist = audioInjectorPolicy.pipeManager_->curPipeList_;
+    pipelist.clear();
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->paIndex_ = 1234;
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->sessionId_ = 4321;
+    desc->streamStatus_ = STREAM_STATUS_STARTED;
+    pipe1->streamDescriptors_.push_back(desc);
+    EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
+    audioInjectorPolicy.pipeManager_->AddAudioPipeInfo(pipe1);
+    audioInjectorPolicy.capturePortIdx_ = 1234;
+    audioInjectorPolicy.RebuildCaptureInjector(4321);
+}
+
+/**
+ * @tc.name: RebuildCaptureInjector_003
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, RebuildCaptureInjector_003, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    audioInjectorPolicy.isOpened_ = true;
+    audioInjectorPolicy.RebuildCaptureInjector(1111);
+    audioInjectorPolicy.isOpened_ = false;
+    EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
+    auto &pipelist = audioInjectorPolicy.pipeManager_->curPipeList_;
+    pipelist.clear();
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->paIndex_ = 1234;
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->sessionId_ = 4321;
+    desc->streamStatus_ = STREAM_STATUS_STOPPED;
+    pipe1->streamDescriptors_.push_back(desc);
+    EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
+    audioInjectorPolicy.pipeManager_->AddAudioPipeInfo(pipe1);
+    audioInjectorPolicy.capturePortIdx_ = 1234;
+    audioInjectorPolicy.rendererStreamMap_.clear();
+    audioInjectorPolicy.RebuildCaptureInjector(4321);
+}
+
+/**
+ * @tc.name: RebuildCaptureInjector_004
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, RebuildCaptureInjector_004, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    audioInjectorPolicy.isOpened_ = true;
+    audioInjectorPolicy.RebuildCaptureInjector(1111);
+    audioInjectorPolicy.isOpened_ = false;
+    EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
+    auto &pipelist = audioInjectorPolicy.pipeManager_->curPipeList_;
+    pipelist.clear();
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->paIndex_ = 1234;
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->sessionId_ = 4321;
+    desc->streamStatus_ = STREAM_STATUS_STOPPED;
+    desc->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    pipe1->streamDescriptors_.push_back(desc);
+    EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
+    audioInjectorPolicy.pipeManager_->AddAudioPipeInfo(pipe1);
+    audioInjectorPolicy.capturePortIdx_ = 1234;
+    std::shared_ptr<AudioStreamDescriptor> stream = std::make_shared<AudioStreamDescriptor>();
+    audioInjectorPolicy.rendererStreamMap_[6789] = stream;
+    audioInjectorPolicy.RebuildCaptureInjector(4321);
+}
+
+/**
+ * @tc.name: RebuildCaptureInjector_006
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, RebuildCaptureInjector_006, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    audioInjectorPolicy.isOpened_ = true;
+    audioInjectorPolicy.RebuildCaptureInjector(1111);
+    audioInjectorPolicy.isOpened_ = false;
+    EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
+    auto &pipelist = audioInjectorPolicy.pipeManager_->curPipeList_;
+    pipelist.clear();
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->paIndex_ = 1234;
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->sessionId_ = 4321;
+    desc->streamStatus_ = STREAM_STATUS_STOPPED;
+    desc->routeFlag_ = AUDIO_INPUT_FLAG_VOIP;
+    desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    pipe1->streamDescriptors_.push_back(desc);
+    EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
+    audioInjectorPolicy.pipeManager_->AddAudioPipeInfo(pipe1);
+    audioInjectorPolicy.capturePortIdx_ = 1234;
+    std::shared_ptr<AudioStreamDescriptor> stream = std::make_shared<AudioStreamDescriptor>();
+    audioInjectorPolicy.rendererStreamMap_[6789] = stream;
+    audioInjectorPolicy.RebuildCaptureInjector(4321);
+}
+
+/**
+ * @tc.name: RebuildCaptureInjector_005
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, RebuildCaptureInjector_005, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    audioInjectorPolicy.isOpened_ = true;
+    audioInjectorPolicy.RebuildCaptureInjector(1111);
+    audioInjectorPolicy.isOpened_ = false;
+    EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
+    auto &pipelist = audioInjectorPolicy.pipeManager_->curPipeList_;
+    pipelist.clear();
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->paIndex_ = 1234;
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->sessionId_ = 4321;
+    desc->streamStatus_ = STREAM_STATUS_STOPPED;
+    desc->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_CALL;
+    pipe1->streamDescriptors_.push_back(desc);
+    EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
+    audioInjectorPolicy.pipeManager_->AddAudioPipeInfo(pipe1);
+    audioInjectorPolicy.capturePortIdx_ = 1234;
+    std::shared_ptr<AudioStreamDescriptor> stream = std::make_shared<AudioStreamDescriptor>();
+    audioInjectorPolicy.rendererStreamMap_[6789] = stream;
+    audioInjectorPolicy.RebuildCaptureInjector(4321);
+}
+
+/**
+ * @tc.name: FindCaptureVoipPipe_001
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, FindCaptureVoipPipe_001, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
+    auto &pipelist = audioInjectorPolicy.pipeManager_->curPipeList_;
+    pipelist.clear();
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->paIndex_ = 1234;
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->sessionId_ = 4321;
+    desc->streamStatus_ = STREAM_STATUS_STARTED;
+    desc->streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
+    desc->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    pipe1->streamDescriptors_.push_back(desc);
+    pipelist.push_back(pipe1);
+    VoipType type = VoipType::NO_VOIP;
+    audioInjectorPolicy.FindCaptureVoipPipe(pipelist, type);
+}
+
+/**
+ * @tc.name: FindCaptureVoipPipe_002
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, FindCaptureVoipPipe_002, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
+    auto &pipelist = audioInjectorPolicy.pipeManager_->curPipeList_;
+    pipelist.clear();
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->paIndex_ = 1234;
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->sessionId_ = 4321;
+    desc->streamStatus_ = STREAM_STATUS_STARTED;
+    desc->streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
+    desc->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_CALL;
+    pipe1->streamDescriptors_.push_back(desc);
+    pipelist.push_back(pipe1);
+    VoipType type = VoipType::NO_VOIP;
+    audioInjectorPolicy.FindCaptureVoipPipe(pipelist, type);
+}
+
+/**
+ * @tc.name: FindCaptureVoipPipe_003
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, FindCaptureVoipPipe_003, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
+    auto &pipelist = audioInjectorPolicy.pipeManager_->curPipeList_;
+    pipelist.clear();
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->paIndex_ = 1234;
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->sessionId_ = 4321;
+    desc->streamStatus_ = STREAM_STATUS_STARTED;
+    desc->streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
+    desc->routeFlag_ = AUDIO_INPUT_FLAG_VOIP;
+    desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_CALL;
+    pipe1->streamDescriptors_.push_back(desc);
+    pipelist.push_back(pipe1);
+    VoipType type = VoipType::NO_VOIP;
+    audioInjectorPolicy.FindCaptureVoipPipe(pipelist, type);
+}
+
+/**
+ * @tc.name: FindCaptureVoipPipe_004
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, FindCaptureVoipPipe_004, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
+    auto &pipelist = audioInjectorPolicy.pipeManager_->curPipeList_;
+    pipelist.clear();
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->paIndex_ = 1234;
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->sessionId_ = 4321;
+    desc->streamStatus_ = STREAM_STATUS_STARTED;
+    desc->streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
+    desc->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_CALL;
+    pipe1->streamDescriptors_.push_back(desc);
+    pipelist.push_back(pipe1);
+    VoipType type = VoipType::NO_VOIP;
+    audioInjectorPolicy.FindCaptureVoipPipe(pipelist, type);
+}
+
+/**
+ * @tc.name: FetchCapDeviceInjectPreProc_001
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, FetchCapDeviceInjectPreProc_001, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    audioInjectorPolicy.isOpened_ = false;
+    bool flag = true;
+    EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
+    auto &pipelist = audioInjectorPolicy.pipeManager_->curPipeList_;
+    pipelist.clear();
+    audioInjectorPolicy.FetchCapDeviceInjectPreProc(pipelist, flag);
+
+    audioInjectorPolicy.isOpened_ = true;
+    pipelist.clear();
+    audioInjectorPolicy.FetchCapDeviceInjectPreProc(pipelist, flag);
+}
+
+/**
+ * @tc.name: FetchCapDeviceInjectPreProc_002
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, FetchCapDeviceInjectPreProc_002, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    audioInjectorPolicy.isOpened_ = false;
+    bool flag = true;
+    EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
+    auto &pipelist = audioInjectorPolicy.pipeManager_->curPipeList_;
+    pipelist.clear();
+    audioInjectorPolicy.FetchCapDeviceInjectPreProc(pipelist, flag);
+
+    audioInjectorPolicy.isOpened_ = true;
+    pipelist.clear();
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->paIndex_ = 1234;
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->streamStatus_ = STREAM_STATUS_STARTED;
+    desc->streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
+    desc->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    pipe1->streamDescriptors_.push_back(desc);
+    pipelist.push_back(pipe1);
+    audioInjectorPolicy.capturePortIdx_ = 1234;
+    audioInjectorPolicy.FetchCapDeviceInjectPreProc(pipelist, flag);
+}
+
+/**
+ * @tc.name: FetchCapDeviceInjectPreProc_003
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, FetchCapDeviceInjectPreProc_003, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    bool flag = true;
+    EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
+    auto &pipelist = audioInjectorPolicy.pipeManager_->curPipeList_;
+    pipelist.clear();
+    audioInjectorPolicy.isOpened_ = true;
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->paIndex_ = 1234;
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->streamStatus_ = STREAM_STATUS_STARTED;
+    desc->streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
+    desc->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    pipe1->streamDescriptors_.push_back(desc);
+    pipelist.push_back(pipe1);
+    audioInjectorPolicy.capturePortIdx_ = 4321;
+    audioInjectorPolicy.FetchCapDeviceInjectPreProc(pipelist, flag);
+}
+
+/**
+ * @tc.name: FetchCapDeviceInjectPostProc_001
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, FetchCapDeviceInjectPostProc_001, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    audioInjectorPolicy.isOpened_ = false;
+    bool flag = true;
+    EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
+    auto &pipelist = audioInjectorPolicy.pipeManager_->curPipeList_;
+    pipelist.clear();
+    audioInjectorPolicy.FetchCapDeviceInjectPostProc(pipelist, flag);
+
+    audioInjectorPolicy.isOpened_ = true;
+    pipelist.clear();
+    audioInjectorPolicy.FetchCapDeviceInjectPostProc(pipelist, flag);
+}
+
+/**
+ * @tc.name: FetchCapDeviceInjectPostProc_002
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, FetchCapDeviceInjectPostProc_002, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    bool flag = true;
+    EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
+    auto &pipelist = audioInjectorPolicy.pipeManager_->curPipeList_;
+    pipelist.clear();
+    audioInjectorPolicy.isOpened_ = true;
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->paIndex_ = 1234;
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->streamStatus_ = STREAM_STATUS_STARTED;
+    desc->streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
+    desc->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    pipe1->streamDescriptors_.push_back(desc);
+    pipelist.push_back(pipe1);
+    audioInjectorPolicy.FetchCapDeviceInjectPostProc(pipelist, flag);
+}
+
+/**
+ * @tc.name: FetchCapDeviceInjectPostProc_003
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, FetchCapDeviceInjectPostProc_003, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    bool flag = false;
+    EXPECT_NE(nullptr, audioInjectorPolicy.pipeManager_);
+    auto &pipelist = audioInjectorPolicy.pipeManager_->curPipeList_;
+    pipelist.clear();
+    audioInjectorPolicy.isOpened_ = true;
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->paIndex_ = 1234;
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->streamStatus_ = STREAM_STATUS_STARTED;
+    desc->streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
+    desc->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    pipe1->streamDescriptors_.push_back(desc);
+    pipelist.push_back(pipe1);
+    audioInjectorPolicy.FetchCapDeviceInjectPostProc(pipelist, flag);
+}
+
+/**
  * @tc.name: SetInjectorStreamsMute_001
  * @tc.desc: Test SetInjectorStreamsMute
  * @tc.type: FUNC

@@ -120,6 +120,13 @@ int32_t CoreServiceProviderWrapper::ReleaseCaptureInjector(uint32_t streamId)
     return SUCCESS;
 }
 
+int32_t CoreServiceProviderWrapper::RebuildCaptureInjector(uint32_t streamId)
+{
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    coreServiceWorker_->RebuildCaptureInjector(streamId);
+    return SUCCESS;
+}
+
 int32_t CoreServiceProviderWrapper::A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
                                                                  uint32_t &timeStamp, int32_t &ret)
 {
