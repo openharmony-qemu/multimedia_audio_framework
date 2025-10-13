@@ -521,9 +521,6 @@ void AudioCoreService::CheckAndSetCurrentOutputDevice(std::shared_ptr<AudioDevic
     CHECK_AND_RETURN_LOG(!IsSameDevice(desc, audioActiveDevice_.GetCurrentOutputDevice()), "same device");
     audioActiveDevice_.SetCurrentOutputDevice(*(desc));
     std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkName(desc, sessionId);
-    if (audioDeviceManager_.IsDeviceConnected(desc)) {
-        audioVolumeManager_.SetVolumeForSwitchDevice(*(desc), sinkName);
-    }
     OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice(),
         AudioStreamDeviceChangeReason::STREAM_PRIORITY_CHANGED);
 }
@@ -579,6 +576,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         int32_t outputRet = ActivateOutputDevice(streamDesc);
         CHECK_AND_RETURN_RET_LOG(outputRet == SUCCESS, outputRet, "Activate output device failed");
         CheckAndSetCurrentOutputDevice(deviceDesc, streamDesc->sessionId_);
+        audioVolumeManager_.SetVolumeForSwitchDevice(deviceDesc);
         std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
         if (policyConfigMananger_.GetUpdateRouteSupport()) {
             UpdateOutputRoute(streamDesc);
