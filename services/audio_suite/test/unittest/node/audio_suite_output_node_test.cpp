@@ -73,12 +73,13 @@ static FormatConversionInfo info[] = {
     {"in_96000_2_f32le.wav", "out9.pcm", "compare_96000_1_u8.pcm",
         {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_96000},
         {{CH_LAYOUT_MONO, 1}, SAMPLE_U8, SAMPLE_RATE_96000}},
-    {"in_176400_2_f32le.wav", "out10.pcm", "compare_88200_1_u8.pcm", 
+    {"in_176400_2_f32le.wav", "out10.pcm", "compare_88200_1_u8.pcm",
         {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_176400},
         {{CH_LAYOUT_MONO, 1}, SAMPLE_U8, SAMPLE_RATE_88200}},
 };
 
 const uint32_t AUDIO_DATA_SIZE = 1024;
+const uint32_t HEADER_SIZE = 44;
 class AudioSuiteOutputNodeTest : public testing::Test {
 public:
     void SetUp() {};
@@ -111,7 +112,7 @@ static void OutputFormatConvert(
     std::vector<uint8_t> inputData;
     std::vector<uint8_t> outputData;
 
-    inputFile.seekg(44, std::ios::beg);
+    inputFile.seekg(HEADER_SIZE, std::ios::beg);
     while (true) {
         inputData.resize(inputLen, 0);
         outputData.resize(outputLen, 0);
