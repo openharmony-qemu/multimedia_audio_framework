@@ -639,7 +639,7 @@ void HpaeRendererManager::DisConnectInputCluster(uint32_t sessionId, HpaeProcess
         CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, HPAE_SCENE_EFFECT_NONE),
             "could not find processorType HPAE_SCENE_EFFECT_NONE");
         AUDIO_INFO_LOG("none processCluster need send message to effectNode");
-        sceneClusterMap_[HPAE_SCENE_EFFECT_NONE]->AudioRendererRelease(sinkInputNodeMap_[sessionId]->GetNodeInfo(),
+        sceneClusterMap_[HPAE_SCENE_EFFECT_NONE]->AudioRendererStop(sinkInputNodeMap_[sessionId]->GetNodeInfo(),
             sinkInfo_);
         return;
     }
