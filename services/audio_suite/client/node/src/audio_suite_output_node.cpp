@@ -79,10 +79,8 @@ int32_t AudioOutputNode::DeInit()
 
 void AudioOutputNode::SetAudioNodeFormat(AudioFormat audioFormat)
 {
-    AUDIO_INFO_LOG("numChannels:%{public}u, channelLayout:%{public}llu, "
-        "sampleFormat:%{public}u, sampleRate:%{public}d, encodingType:%{public}d",
-        audioFormat.audioChannelInfo.numChannels, audioFormat.audioChannelInfo.channelLayout,
-        audioFormat.format, audioFormat.rate, audioFormat.encodingType);
+    AUDIO_INFO_LOG("numChannels:%{public}u, sampleFormat:%{public}u, sampleRate:%{public}d, encodingType:%{public}d",
+        audioFormat.audioChannelInfo.numChannels, audioFormat.format, audioFormat.rate, audioFormat.encodingType);
     AudioNode::SetAudioNodeFormat(audioFormat);
     SetOutDataFormat(audioFormat.audioChannelInfo.numChannels,
         audioFormat.audioChannelInfo.channelLayout, audioFormat.format, audioFormat.rate);
