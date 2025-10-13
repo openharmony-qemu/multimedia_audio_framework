@@ -736,8 +736,8 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, SetSessionFade_001, TestSize.Level0)
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->Start(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
-    EXPECT_EQ(hpaeInnerCapturerManager_->SetSessionFade(streamInfo.sessionId, OPERATION_STARTED), ture);
-    EXPECT_EQ(hpaeInnerCapturerManager_->SetSessionFade(streamInfo.sessionId, OPERATION_PAUSED), ture);
+    EXPECT_EQ(hpaeInnerCapturerManager_->SetSessionFade(streamInfo.sessionId, OPERATION_STARTED), true);
+    EXPECT_EQ(hpaeInnerCapturerManager_->SetSessionFade(streamInfo.sessionId, OPERATION_PAUSED), true);
     hpaeInnerCapturerManager_->rendererSceneClusterMap_[HPAE_SCENE_EFFECT_NONE]->idGainMap_.clear();
     EXPECT_EQ(hpaeInnerCapturerManager_->SetSessionFade(streamInfo.sessionId, OPERATION_STARTED), false);
     EXPECT_EQ(hpaeInnerCapturerManager_->SetSessionFade(streamInfo.sessionId, OPERATION_PAUSED), false);
