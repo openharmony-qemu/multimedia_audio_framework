@@ -36,12 +36,135 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
+struct FormatConversionInfo {
+    std::string inputFileName;
+    std::string outputFileName;
+    std::string compareFileName;
+    AudioFormat inputFormat;
+    AudioFormat outputFormat;
+};
+
+static std::string g_outputNodeTestDir = "/data/audiosuite/outputnode/";
+static FormatConversionInfo g_info[] = {
+    {"in_44100_2_f32le.wav", "out1.pcm", "compare_44100_2_s16le.pcm",
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_44100},
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_S16LE, SAMPLE_RATE_44100}},
+    {"in_192000_2_f32le.wav", "out2.pcm", "compare_8000_1_u8.pcm",
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_192000},
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_U8, SAMPLE_RATE_8000}},
+    {"in_96000_2_f32le.wav", "out3.pcm", "compare_44100_1_s24le.pcm",
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_96000},
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_S24LE, SAMPLE_RATE_44100}},
+    {"in_12000_1_f32le.wav", "out4.pcm", "compare_24000_2_s24le.pcm",
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_F32LE, SAMPLE_RATE_12000},
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_S24LE, SAMPLE_RATE_24000}},
+    {"in_48000_1_f32le.wav", "out5.pcm", "compare_44100_2_s16le_2.pcm",
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_F32LE, SAMPLE_RATE_48000},
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_S16LE, SAMPLE_RATE_44100}},
+    {"in_32000_2_f32le.wav", "out6.pcm", "compare_64000_2_u8.pcm",
+        { {CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_32000},
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_U8, SAMPLE_RATE_64000}},
+    {"in_8000_2_f32le.wav", "out7.pcm", "compare_192000_1_u8.pcm",
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_8000},
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_U8, SAMPLE_RATE_192000}},
+    {"in_48000_2_f32le.wav", "out8.pcm", "compare_44100_1_u8.pcm",
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_48000},
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_U8, SAMPLE_RATE_44100}},
+    {"in_96000_2_f32le.wav", "out9.pcm", "compare_96000_1_u8.pcm",
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_96000},
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_U8, SAMPLE_RATE_96000}},
+    {"in_176400_2_f32le.wav", "out10.pcm", "compare_88200_1_u8.pcm",
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_176400},
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_U8, SAMPLE_RATE_88200}},
+};
+
 const uint32_t AUDIO_DATA_SIZE = 1024;
+const uint32_t HEADER_SIZE = 44;
 class AudioSuiteOutputNodeTest : public testing::Test {
 public:
     void SetUp() {};
     void TearDown() {};
 };
+
+static void OutputFormatConvert(
+    AudioFormat outputFormat, std::string inputFileName, AudioFormat inputFormat, string outputFileName)
+{
+    AudioOutputNode outputNode(outputFormat);
+    outputNode.Init();
+
+    std::ifstream inputFile(inputFileName, std::ios::binary | std::ios::ate);
+    if (!inputFile.is_open()) {
+        return;
+    }
+
+    std::ofstream outputFile(outputFileName, std::ios::binary);
+    if (!outputFile.is_open()) {
+        inputFile.close();
+        return;
+    }
+
+    outputNode.SetInDataFormat(inputFormat.audioChannelInfo.numChannels,
+        inputFormat.audioChannelInfo.channelLayout, inputFormat.format, inputFormat.rate);
+    size_t inputLen = (inputFormat.rate * inputFormat.audioChannelInfo.numChannels *
+        AudioSuiteUtil::GetSampleSize(inputFormat.format) * 20) / 1000;
+    size_t outputLen = (outputFormat.rate * outputFormat.audioChannelInfo.numChannels *
+        AudioSuiteUtil::GetSampleSize(outputFormat.format) * 20) / 1000;
+    std::vector<uint8_t> inputData;
+    std::vector<uint8_t> outputData;
+
+    inputFile.seekg(HEADER_SIZE, std::ios::beg);
+    bool exitFlag = true;
+    while (exitFlag) {
+        inputData.resize(inputLen, 0);
+        outputData.resize(outputLen, 0);
+
+        inputFile.read(reinterpret_cast<char *>(inputData.data()), inputLen);
+        if (inputFile.eof()) {
+            exitFlag = false;
+            break;
+        }
+
+        outputNode.FormatConversion(reinterpret_cast<float *>(inputData.data()), inputData.size(),
+            outputData.data(), outputData.size());
+        outputFile.write(reinterpret_cast<char *>(outputData.data()), outputData.size());
+    }
+
+    inputFile.close();
+    outputFile.close();
+}
+
+HWTEST_F(AudioSuiteOutputNodeTest, FormatConversion_001, TestSize.Level0)
+{
+    for (size_t idx = 0; idx < (sizeof(g_info) / sizeof(g_info[0])); idx++) {
+        AUDIO_INFO_LOG("start Convert file %{public}s", g_info[idx].inputFileName.c_str());
+        OutputFormatConvert(g_info[idx].outputFormat, g_outputNodeTestDir + g_info[idx].inputFileName,
+            g_info[idx].inputFormat, g_outputNodeTestDir + g_info[idx].outputFileName);
+
+        std::ifstream outFile(g_outputNodeTestDir + g_info[idx].outputFileName, std::ios::binary);
+        std::ifstream baseFile(g_outputNodeTestDir + g_info[idx].compareFileName, std::ios::binary);
+        ASSERT_TRUE(outFile.is_open());
+        ASSERT_TRUE(baseFile.is_open());
+
+        std::vector<char> out_data;
+        std::vector<char> base_data;
+
+        outFile.seekg(0, std::ios::end);
+        out_data.resize(outFile.tellg());
+        outFile.seekg(0, std::ios::beg);
+        outFile.read(out_data.data(), out_data.size());
+
+        baseFile.seekg(0, std::ios::end);
+        base_data.resize(baseFile.tellg());
+        baseFile.seekg(0, std::ios::beg);
+        baseFile.read(base_data.data(), base_data.size());
+
+        outFile.close();
+        baseFile.close();
+
+        AUDIO_INFO_LOG("out_data.size: %{public}zu base_data.size: %{public}zu", out_data.size(), base_data.size());
+        EXPECT_EQ(out_data, base_data);
+    }
+}
 
 HWTEST_F(AudioSuiteOutputNodeTest, AudioSuiteOutputNodeCreateTest, TestSize.Level0)
 {
