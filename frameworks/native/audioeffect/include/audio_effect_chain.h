@@ -73,8 +73,8 @@ public:
     void SetSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType);
     int32_t SetEffectProperty(const std::string &effect, const std::string &property);
     void SetStreamUsage(const int32_t streamUsage);
-    void GetInputChannelInfo(uint32_t &channels, uint64_t &channelLayout);
     int32_t updatePrimaryChannel();
+    void GetInputChannelInfo(uint32_t &channels, uint64_t &channelLayout);
     bool CheckChannelLayoutByReplyInfo(AudioEffectTransInfo info);
     void SetCurrChannelNoCheck(const uint32_t channel);
     void SetCurrChannelLayoutNoCheck(const uint64_t channelLayout);
