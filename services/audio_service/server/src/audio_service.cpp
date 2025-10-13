@@ -1,4 +1,3 @@
-dd
 /*
  * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -62,6 +61,13 @@ static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
     SOURCE_TYPE_WAKEUP,
     SOURCE_TYPE_VIRTUAL_CAPTURE,
     SOURCE_TYPE_REMOTE_CAST
+};
+static inline const std::unordered_set<AudioStreamType> workgroupSupportStreamTypeSet_ {
+    STREAM_MUSIC,
+    STREAM_MOVIE,
+    STREAM_SPEECH,
+    STREAM_NAVIGATION,
+    STREAM_VOICE_COMMUNICATION,
 };
 const size_t MAX_FG_LIST_SIZE = 10;
 }
@@ -1881,19 +1887,25 @@ int32_t AudioService::ForceStopAudioStream(StopAudioType audioType)
 
 float AudioService::GetSystemVolume()
 {
-    std::unique_lock<std::mutex> lock(musicOrVoipSystemVolumeMutex_);
-    return musicOrVoipSystemVolume_;
+    std::unique_lock<std::mutex> lock(audioWorkGroupSystemVolumeMutex_);
+    return audioWorkGroupSystemVolume_;
+}
+
+bool AudioService::IsStreamTypeFitWorkgroup(AudioStreamType streamType)
+{
+    return (workgroupSupportStreamTypeSet_.find(streamType) !=
+        workgroupSupportStreamTypeSet_.end()) ? true : false;
 }
 
 void AudioService::UpdateSystemVolume(AudioStreamType streamType, float volume)
 {
     AUDIO_INFO_LOG("[WorkgroupInServer] streamType:%{public}d, systemvolume:%{public}f", streamType, volume);
-    if ((streamType != STREAM_MUSIC) && (streamType != STREAM_VOICE_COMMUNICATION)) {
+    if (IsStreamTypeFitWorkgroup(streamType) != true) {
         return;
     }
     {
-        std::unique_lock<std::mutex> lock(musicOrVoipSystemVolumeMutex_);
-        musicOrVoipSystemVolume_ = volume;
+        std::unique_lock<std::mutex> lock(audioWorkGroupSystemVolumeMutex_);
+        audioWorkGroupSystemVolume_ = volume;
     }
     std::vector<int32_t> pids = AudioResourceService::GetInstance()->GetProcessesOfAudioWorkgroup();
     for (int32_t pid : pids) {
@@ -1921,8 +1933,7 @@ void AudioService::RenderersCheckForAudioWorkgroup(int32_t pid)
             if (renderer->processConfig_.appInfo.appPid != pid) {
                 continue;
             }
-            if ((renderer->processConfig_.streamType != STREAM_MUSIC) &&
-                (renderer->processConfig_.streamType != STREAM_VOICE_COMMUNICATION)) {
+            if (IsStreamTypeFitWorkgroup(renderer->processConfig_.streamType) != true) {
                 continue;
             }
             allRenderPerProcessMap[pid][renderer->processConfig_.originalSessionId]
