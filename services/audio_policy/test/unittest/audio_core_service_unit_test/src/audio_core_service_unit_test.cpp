@@ -1834,5 +1834,37 @@ HWTEST_F(AudioCoreServiceUnitTest, PlayBackToInjection_001, TestSize.Level1)
     int32_t ret = audioCoreService->PlayBackToInjection(1111);
     EXPECT_NE(ret, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test A2dpOffloadGetRenderPosition.
+ * @tc.number: A2dpOffloadGetRenderPosition_001
+ * @tc.desc  : Test A2dpOffloadGetRenderPosition interfaces.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, A2dpOffloadGetRenderPosition_001, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    uint32_t delayValue = 0;
+    uint64_t sendDataSize = 0;
+    uint32_t timeStamp = 0;
+    int32_t ret;
+
+    server->coreService_->audioActiveDevice_.currentActiveDevice_.deviceType_
+        = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
+    server->coreService_->audioActiveDevice_.currentActiveDevice_.networkId_ = LOCAL_NETWORK_ID;
+    ret = server->coreService_->OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
+    EXPECT_EQ(ret, SUCCESS);
+
+    server->coreService_->audioActiveDevice_.currentActiveDevice_.deviceType_
+        = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
+    server->coreService_->audioActiveDevice_.currentActiveDevice_.networkId_ = REMOTE_NETWORK_ID;
+    ret = server->coreService_->OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
+    EXPECT_EQ(ret, SUCCESS);
+
+    server->coreService_->audioActiveDevice_.currentActiveDevice_.deviceType_
+        = DeviceType::DEVICE_TYPE_SPEAKER;
+    server->coreService_->audioActiveDevice_.currentActiveDevice_.networkId_ = REMOTE_NETWORK_ID;
+    ret = server->coreService_->OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS
