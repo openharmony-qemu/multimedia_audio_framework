@@ -1894,13 +1894,13 @@ float AudioService::GetSystemVolume()
 bool AudioService::IsStreamTypeFitWorkgroup(AudioStreamType streamType)
 {
     return (workgroupSupportStreamTypeSet_.find(streamType) !=
-        workgroupSupportStreamTypeSet_.end()) ? true : false;
+        workgroupSupportStreamTypeSet_.end());
 }
 
 void AudioService::UpdateSystemVolume(AudioStreamType streamType, float volume)
 {
     AUDIO_INFO_LOG("[WorkgroupInServer] streamType:%{public}d, systemvolume:%{public}f", streamType, volume);
-    if (IsStreamTypeFitWorkgroup(streamType) != true) {
+    if (!IsStreamTypeFitWorkgroup(streamType)) {
         return;
     }
     {
@@ -1933,7 +1933,7 @@ void AudioService::RenderersCheckForAudioWorkgroup(int32_t pid)
             if (renderer->processConfig_.appInfo.appPid != pid) {
                 continue;
             }
-            if (IsStreamTypeFitWorkgroup(renderer->processConfig_.streamType) != true) {
+            if (!IsStreamTypeFitWorkgroup(renderer->processConfig_.streamType)) {
                 continue;
             }
             allRenderPerProcessMap[pid][renderer->processConfig_.originalSessionId]
