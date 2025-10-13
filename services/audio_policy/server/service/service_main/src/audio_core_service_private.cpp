@@ -2875,6 +2875,11 @@ void AudioCoreService::UpdateStreamDevicesForStart(
         streamDesc->audioFlag_, streamDesc->GetSessionId());
     AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d status %{public}u",
         streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->GetSessionId(), streamDesc->GetStatus());
+    if (streamDesc->IsMediaScene() && devices[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+        !streamDesc->oldDeviceDescs_.empty() && streamDesc->oldDeviceDescs_.front() &&
+        streamDesc->oldDeviceDescs_.front()->deviceType_ != devices[0]->deviceType_) {
+        WriteScoStateFaultEvent(devices[0]);
+    }
     SelectA2dpType(streamDesc, false);
 
     FetchOutputDupDevice(caller, streamDesc->GetSessionId(), streamDesc);
@@ -2894,6 +2899,9 @@ void AudioCoreService::UpdateStreamDevicesForCreate(
     streamDesc->UpdateNewDeviceWithoutCheck(devices);
     HILOG_COMM_INFO("[DeviceFetchInfo] device %{public}s for stream %{public}d",
         streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->GetSessionId());
+    if (streamDesc->IsMediaScene() && devices[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        WriteScoStateFaultEvent(devices[0]);
+    }
     SelectA2dpType(streamDesc, true);
     FetchOutputDupDevice(caller, streamDesc->GetSessionId(), streamDesc);
 }
@@ -3347,6 +3355,29 @@ int32_t AudioCoreService::InjectionToPlayBack(uint32_t sessionId)
     ret = audioInjectorPolicy_.DeInit();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "DeInit failed");
     return SUCCESS;
+}
+
+void AudioCoreService::WriteScoStateFaultEvent(const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
+{
+#ifdef BLUETOOTH_ENABLE
+    CHECK_AND_RETURN_LOG(devDesc != nullptr, "dev desc is null");
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipe manager is null");
+    std::string eventString = "";
+    eventString += "scene: " + std::to_string(audioSceneManager_.GetAudioScene())
+        + " sco type: " + std::to_string(Bluetooth::AudioHfpManager::GetScoCategory())
+        + " device type: " + std::to_string(devDesc->deviceType_)
+        + " dm device type: " + std::to_string(devDesc->dmDeviceType_);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs = pipeManager_->GetAllOutputStreamDescs();
+    for (auto &desc : outputStreamDescs) {
+        CHECK_AND_RETURN_LOG(desc != nullptr, "stream desc is null");
+        if (desc->streamStatus_ == STREAM_STATUS_STARTED || desc->audioFlag_ == AUDIO_OUTPUT_FLAG_VOIP)
+        eventString += " stream session id: " + std::to_string(desc->sessionId_)
+            + " stream status: " + std::to_string(desc->streamStatus_)
+            + " stream usage: " + std::to_string(desc->rendererInfo_.streamUsage)
+            + " bundle name: " + AudioBundleManager::GetBundleNameFromUid(desc->appInfo_.appUid);
+    }
+    AUDIO_INFO_LOG("Current audio: %{public}s", eventString.c_str());
+#endif
 }
 } // namespace AudioStandard
 } // namespace OHOS

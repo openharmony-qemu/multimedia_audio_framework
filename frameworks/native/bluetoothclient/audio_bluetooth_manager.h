@@ -147,6 +147,7 @@ public:
     static bool IsVirtualCall();
     static bool IsAudioScoStateConnect();
     static std::string GetAudioScoDeviceMac();
+    static ScoCategory GetScoCategory();
 
 private:
     static ScoCategory JudgeScoCategory();
