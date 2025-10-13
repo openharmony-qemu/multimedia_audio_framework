@@ -346,6 +346,7 @@ int32_t HpaeInnerCapturerManager::Start(uint32_t sessionId)
             sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RUNNING);
             ConnectRendererInputSessionInner(sessionId);
             SetSessionStateForRenderer(sessionId, HPAE_SESSION_RUNNING);
+            SetSessionFade(sessionId, OPERATION_STARTED);
         } else if (SafeGetMap(sourceOutputNodeMap_, sessionId)) {
             Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::StartCapturerStream");
             AUDIO_INFO_LOG("StartCapCapturerStream sessionId %{public}u", sessionId);
@@ -370,11 +371,9 @@ int32_t HpaeInnerCapturerManager::Pause(uint32_t sessionId)
         if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
             Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::PauseRendererStream");
             AUDIO_INFO_LOG("PauseCapRendererStream sessionId %{public}u", sessionId);
-            DisConnectRendererInputSessionInner(sessionId);
-            SetSessionStateForRenderer(sessionId, HPAE_SESSION_PAUSED);
-            sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_PAUSED);
-            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId,
-                HPAE_SESSION_PAUSED, OPERATION_PAUSED);
+            if (!SetSessionFade(sessionId, OPERATION_PAUSED)) {
+                DisConnectRendererInputSessionInner(sessionId);
+            }
         } else if (SafeGetMap(sourceOutputNodeMap_, sessionId)) {
             Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::PauseCapturerStream");
             AUDIO_INFO_LOG("PauseCapCapturerStream sessionId %{public}u", sessionId);
@@ -449,11 +448,9 @@ int32_t HpaeInnerCapturerManager::Stop(uint32_t sessionId)
         if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
             Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::StopRendererStream");
             AUDIO_INFO_LOG("StopCapRendererStream sessionId %{public}u", sessionId);
-            DisConnectRendererInputSessionInner(sessionId);
-            SetSessionStateForRenderer(sessionId, HPAE_SESSION_STOPPED);
-            sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_STOPPED);
-            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId,
-                HPAE_SESSION_STOPPED, OPERATION_STOPPED);
+            if (!SetSessionFade(sessionId, OPERATION_STOPPED)) {
+                DisConnectRendererInputSessionInner(sessionId);
+            }
         } else if (SafeGetMap(sourceOutputNodeMap_, sessionId)) {
             Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::StopCapturerStream");
             AUDIO_INFO_LOG("StopCapCapturerStream sessionId %{public}u", sessionId);
@@ -952,6 +949,36 @@ void HpaeInnerCapturerManager::SetSpeed(uint32_t sessionId, float speed)
         sinkInputNodeMap_[sessionId]->SetSpeed(speed);
     };
     SendRequestInner(request, __func__);
+}
+
+bool HpaeRendererManager::SetSessionFade(uint32_t sessionId, IOperation operation)
+{
+    CHECK_AND_RETURN_RET_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), false,
+        "can not get input node of session %{public}u", sessionId);
+    HpaeProcessorType sceneType = sinkInputNodeMap_[sessionId]->GetSceneType();
+    CHECK_AND_RETURN_RET_LOG(SafeGetMap(rendererSceneClusterMap_, sceneType), false,
+        "not fonund sceneType: %{public}d in rendererSceneClusterMap");
+
+    std::shared_ptr<HpaeGainNode> sessionGainNode = nullptr;
+    sessionGainNode = rendererSceneClusterMap_[sceneType]->GetGainNodeById(sessionId);
+    if (sessionGainNode == nullptr) {
+        AUDIO_WARNING_LOG("session %{public}d do not have gain node!", sessionId);
+        if (operation != OPERATION_STARTED) {
+            HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPED : HPAE_SESSION_PAUSED;
+            SetSessionStateForRenderer(sessionId, state);
+            sinkInputNodeMap_[sessionId]->SetState(state);
+            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, state, operation);
+        }
+        return false;
+    }
+    AUDIO_INFO_LOG("get gain node of session %{public}d operation %{public}d.", sessionId, operation);
+    if (operation != OPERATION_STARTED) {
+        HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPING : HPAE_SESSION_PAUSING;
+        SetSessionStateForRenderer(sessionId, state);
+        sinkInputNodeMap_[sessionId]->SetState(state);
+    }
+    sessionGainNode->SetFadeState(operation);
+    return true;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
