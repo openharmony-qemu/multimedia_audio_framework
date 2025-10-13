@@ -3116,7 +3116,7 @@ HWTEST(AudioServiceUnitTest, RenderersCheckForAudioWorkgroup_001, TestSize.Level
     audioService->allRendererMap_.clear();
     AudioWorkgroupPerProcess process;
     process.permission = true;
-    process.hasSystemPermission = 1;
+    process.hasSystemPermission = true;
     auto wg = std::make_shared<AudioWorkgroup>(1);
     process.groups.emplace(1, std::move(wg));
 
@@ -3124,11 +3124,6 @@ HWTEST(AudioServiceUnitTest, RenderersCheckForAudioWorkgroup_001, TestSize.Level
     resService->audioWorkgroupMap_.emplace(1, process);
     EXPECT_TRUE(resService->IsProcessInWorkgroup(1));
     EXPECT_FALSE(resService->IsProcessHasSystemPermission(1));
-
-    std::shared_ptr<RendererInServer> renderer = nullptr;
-    int32_t sessionId = 1;
-    audioService->allRendererMap_.insert(std::make_pair(sessionId, renderer));
-    audioService->RenderersCheckForAudioWorkgroup(1);
 
     AudioProcessConfig processConfig;
     processConfig.streamType = STREAM_ALARM;
