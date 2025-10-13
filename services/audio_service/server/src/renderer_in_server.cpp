@@ -2457,7 +2457,7 @@ void RendererInServer::InitDupBuffer(int32_t innerCapId)
     InitDupBufferInner(innerCapId);
 }
 
-void RendererInServer::InitDupBufferInner(int32_t innerCapId);
+void RendererInServer::InitDupBufferInner(int32_t innerCapId)
 {
     CHECK_AND_RETURN_LOG(innerCapIdToDupStreamCallbackMap_.find(innerCapId) != innerCapIdToDupStreamCallbackMap_.end(),
         "innerCapIdToDupStreamCallbackMap_ is no find innerCapId: %{public}d", innerCapId);
