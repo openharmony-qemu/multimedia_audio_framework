@@ -97,9 +97,9 @@ int32_t HpaeInjectorRendererManager::Pause(uint32_t sessionId)
         Trace trace("[" + std::to_string(sessionId) + "]HpaeInjectorRendererManager::Pause");
         AUDIO_INFO_LOG("Pause sessionId %{public}u, deviceName %{public}s", sessionId, sinkInfo_.deviceName.c_str());
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), "sessionId %{public}u not found", sessionId);
-        if (!SetSessionFade(sessionId, OPERATION_PAUSED)) {
-            DisConnectInputSession(sessionId);
-        }
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, HPAE_SESSION_PAUSED, OPERATION_PAUSED);
+        SetSessionState(sessionId, HPAE_SESSION_PAUSED);
+        DisConnectInputSession(sessionId);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -145,9 +145,9 @@ int32_t HpaeInjectorRendererManager::Stop(uint32_t sessionId)
         Trace trace("[" + std::to_string(sessionId) + "]HpaeInjectorRendererManager::Stop");
         AUDIO_INFO_LOG("Stop sessionId %{public}u, deviceName %{public}s", sessionId, sinkInfo_.deviceName.c_str());
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), "Stop not find sessionId %{public}u", sessionId);
-        if (!SetSessionFade(sessionId, OPERATION_STOPPED)) {
-            DisConnectInputSession(sessionId);
-        }
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, HPAE_SESSION_STOPPED, OPERATION_STOPPED);
+        SetSessionState(sessionId, HPAE_SESSION_STOPPED);
+        DisConnectInputSession(sessionId);
     };
     SendRequest(request, __func__);
     return SUCCESS;
