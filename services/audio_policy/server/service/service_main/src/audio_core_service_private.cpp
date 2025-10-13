@@ -1771,19 +1771,16 @@ int32_t AudioCoreService::MoveToLocalOutputDevice(std::vector<SinkInput> sinkInp
     // start move.
     uint32_t sinkId = -1; // invalid sink id, use sink name instead.
     for (size_t i = 0; i < sinkInputIds.size(); i++) {
-        AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
         std::string sinkName = localDeviceDescriptor->deviceType_ == DEVICE_TYPE_REMOTE_CAST ?
             "RemoteCastInnerCapturer" : pipeInfo->moduleInfo_.name;
-        AUDIO_INFO_LOG("Session %{public}d, sinkName %{public}s", sinkInputIds[i].streamId, sinkName.c_str());
         if (sinkName == BLUETOOTH_SPEAKER) {
             std::string activePort = BLUETOOTH_SPEAKER;
             audioPolicyManager_.SuspendAudioDevice(activePort, false);
         }
-        AUDIO_INFO_LOG("move for sinkInput [%{public}d], portName %{public}s pipeType %{public}d",
-            sinkInputIds[i].streamId, sinkName.c_str(), pipeType);
         int32_t ret = audioPolicyManager_.MoveSinkInputByIndexOrName(sinkInputIds[i].paStreamId, sinkId, sinkName);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR,
             "move [%{public}d] to local failed", sinkInputIds[i].streamId);
+        AUDIO_INFO_LOG("streamId %{public}d, sinkName %{public}s", sinkInputIds[i].streamId, sinkName.c_str());
         audioRouteMap_.AddRouteMapInfo(sinkInputIds[i].uid, LOCAL_NETWORK_ID, sinkInputIds[i].pid);
     }
 
@@ -2834,10 +2831,6 @@ void AudioCoreService::UpdateStreamDevicesForStart(
     AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(devices[0]->deviceType_);
 
     streamDesc->UpdateNewDevice(devices);
-    AUDIO_INFO_LOG("[AudioSession] streamUsage %{public}d renderer streamUsage %{public}d",
-        streamUsage, streamDesc->rendererInfo_.streamUsage);
-    AUDIO_INFO_LOG("Target audioFlag 0x%{public}x for stream %{public}u",
-        streamDesc->audioFlag_, streamDesc->GetSessionId());
     AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d status %{public}u",
         streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->GetSessionId(), streamDesc->GetStatus());
     SelectA2dpType(streamDesc, false);

@@ -188,8 +188,6 @@ void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipe
         if (newPipeIter != newPipeInfoList.end()) {
             (*newPipeIter)->streamDescriptors_.push_back(streamDesc);
             (*newPipeIter)->streamDescMap_[streamDesc->sessionId_] = streamDesc;
-            AUDIO_INFO_LOG("[PipeFetchInfo] use existing Pipe %{public}s for stream %{public}u, routeFlag %{public}d",
-                (*newPipeIter)->ToString().c_str(), streamDesc->sessionId_, streamDesc->routeFlag_);
             continue;
         }
         // if not find, need open

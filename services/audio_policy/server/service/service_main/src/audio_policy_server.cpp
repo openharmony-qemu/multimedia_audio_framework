@@ -5055,7 +5055,6 @@ int32_t AudioPolicyServer::NotifyFreezeStateChange(const std::set<int32_t> &pidL
 {
     constexpr size_t size = 100;
     CHECK_AND_RETURN_RET_LOG(pidList.size() <= size, ERROR, "pidList more than 100.");
-    AUDIO_INFO_LOG("In");
     auto callerUid = IPCSkeleton::GetCallingUid();
     // This function can only be used by RSS
     CHECK_AND_RETURN_RET_LOG(callerUid == UID_RESOURCE_SCHEDULE_SERVICE, ERROR,
@@ -5065,7 +5064,6 @@ int32_t AudioPolicyServer::NotifyFreezeStateChange(const std::set<int32_t> &pidL
 
 int32_t AudioPolicyServer::ResetAllProxy()
 {
-    AUDIO_INFO_LOG("In");
     auto callerUid = IPCSkeleton::GetCallingUid();
     // This function can only be used by RSS
     CHECK_AND_RETURN_RET_LOG(callerUid == UID_RESOURCE_SCHEDULE_SERVICE, ERROR,
