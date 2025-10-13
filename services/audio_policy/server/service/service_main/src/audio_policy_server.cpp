@@ -3323,6 +3323,7 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid, pid_t uid)
     AUDIO_INFO_LOG("RegisteredTrackerClient died: remove entry, pid %{public}d uid %{public}d", pid, uid);
     audioAffinityManager_.DelSelectCapturerDevice(uid);
     audioAffinityManager_.DelSelectRendererDevice(uid);
+    AudioBundleManager::RemoveBundleNameByUid(uid);
     AudioBundleManager::RemoveBundleInfoByUid(uid);
     std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
     eventEntry_->RegisteredTrackerClientDied(uid, pid);
@@ -3342,6 +3343,7 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
     AUDIO_INFO_LOG("RegisteredStreamListenerClient died: remove entry, pid %{public}d uid %{public}d", pid, uid);
     audioAffinityManager_.DelSelectCapturerDevice(uid);
     audioAffinityManager_.DelSelectRendererDevice(uid);
+    AudioBundleManager::RemoveBundleNameByUid(uid);
     AudioBundleManager::RemoveBundleInfoByUid(uid);
     StandaloneModeManager::GetInstance().ResumeAllStandaloneApp(pid);
     if (pid == lastMicMuteSettingPid_) {

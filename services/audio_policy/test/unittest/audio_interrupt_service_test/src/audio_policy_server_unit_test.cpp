@@ -3714,17 +3714,17 @@ HWTEST(AudioPolicyUnitTest, CheckAndGetApiVersion_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetBundleNameandGetBundleInfo.
-* @tc.number: GetBundleNameandGetBundleInfo_001
-* @tc.desc  : GetBundleNameandGetBundleInfo.
+* @tc.name  : Test GetBundleNameFromUidandGetBundleInfoFromUid.
+* @tc.number: GetBundleNameFromUidandGetBundleInfoFromUid_001
+* @tc.desc  : GetBundleNameFromUidandGetBundleInfoFromUid.
 */
-HWTEST(AudioPolicyUnitTest, GetBundleNameandGetBundleInfo_001, TestSize.Level1)
+HWTEST(AudioPolicyUnitTest, GetBundleNameFromUidandGetBundleInfoFromUid_001, TestSize.Level1)
 {
-    std::string callerName = AudioBundleManager::GetBundleName();
+    std::string callerName = AudioBundleManager::GetBundleNameFromUid(666);
     EXPECT_EQ(callerName, "");
-    AppExecFwk::BundleInfo bundleInfo = AudioBundleManager::GetBundleInfo();
-    bundleInfo = AudioBundleManager::GetBundleInfo();
-    callerName = AudioBundleManager::GetBundleName();
+    AppExecFwk::BundleInfo bundleInfo = AudioBundleManager::GetBundleInfoFromUid(666);
+    bundleInfo = AudioBundleManager::GetBundleInfoFromUid(666);
+    callerName = AudioBundleManager::GetBundleNameFromUid(666);
     EXPECT_EQ(callerName, "");
 }
 } // AudioStandard
