@@ -3125,6 +3125,7 @@ HWTEST(AudioServiceUnitTest, RenderersCheckForAudioWorkgroup_001, TestSize.Level
  
     AudioProcessConfig processConfig;
     processConfig.streamType = STREAM_MUSIC;
+    processConfig.appInfo.appPid = 1;
     std::shared_ptr<StreamListenerHolder> streamListenerHolder =
         std::make_shared<StreamListenerHolder>();
     EXPECT_NE(streamListenerHolder, nullptr);
