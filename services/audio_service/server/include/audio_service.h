@@ -1,4 +1,3 @@
-dd
 /*
  * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -202,6 +201,7 @@ private:
     void AddFilteredRender(int32_t innerCapId, std::shared_ptr<RendererInServer> renderer);
     bool IsMuteSwitchStream(uint32_t sessionId);
     float GetSystemVolume();
+    bool IsStreamTypeFitWorkgroup(AudioStreamType streamType);
     void UpdateSystemVolume(AudioStreamType streamType, float volume);
     void UpdateSessionMuteStatus(const uint32_t sessionId, const bool muteFlag);
     std::shared_ptr<RendererInServer> GetRendererInServerBySessionId(const uint32_t sessionId);
@@ -273,8 +273,8 @@ private:
     std::map<uint32_t, MuteStateChangeCallbck> muteStateCallbacks_{};
     std::mutex muteStateMapMutex_;
     std::map<uint32_t, bool> muteStateMap_{};
-    std::mutex musicOrVoipSystemVolumeMutex_;
-    float musicOrVoipSystemVolume_ = 0.0f;
+    std::mutex audioWorkGroupSystemVolumeMutex_;
+    float audioWorkGroupSystemVolume_ = 0.0f;
 
     std::mutex dualStreamMutex_;
 };
