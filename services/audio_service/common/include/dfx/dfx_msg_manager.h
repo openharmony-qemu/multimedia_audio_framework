@@ -121,6 +121,7 @@ private:
     std::unique_ptr<std::thread> timeThread_ = nullptr;
     std::atomic_bool startThread_ = true;
     std::time_t lastReportTime_{};
+    std::mutex appInfoMutex_;
     std::map<int32_t, DfxRunningAppInfo> appInfo_;
     std::atomic_bool isFull_ = false;
     std::atomic_int32_t reportedCnt_ = 0;
