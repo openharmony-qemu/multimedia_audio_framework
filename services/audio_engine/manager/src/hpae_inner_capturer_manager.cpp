@@ -951,7 +951,7 @@ void HpaeInnerCapturerManager::SetSpeed(uint32_t sessionId, float speed)
     SendRequestInner(request, __func__);
 }
 
-bool HpaeRendererManager::SetSessionFade(uint32_t sessionId, IOperation operation)
+bool HpaeInnerCapturerManager::SetSessionFade(uint32_t sessionId, IOperation operation)
 {
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), false,
         "can not get input node of session %{public}u", sessionId);
