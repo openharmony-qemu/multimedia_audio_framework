@@ -251,7 +251,7 @@ bool VolumeDataMaintainer::SetMuteAffectedToMuteStatusDataBase(int32_t affected)
             for (auto &device : DEVICE_TYPE_LIST) {
                 // save mute status to database
                 auto desc = audioConnectedDevice_.GetDeviceByDeviceType(device);
-                SaveMuteStatusInternal(desc, AUDIO_STREAMTYPE_MAP[streamtype], true);
+                SaveMuteToDb(desc, AUDIO_STREAMTYPE_MAP[streamtype], true);
             }
         }
     }
@@ -911,45 +911,37 @@ void VolumeDataMaintainer::LoadDeviceMuteMapFromDb(std::shared_ptr<AudioDeviceDe
 {
     CHECK_AND_RETURN_LOG(device != nullptr, "LoadDeviceMuteMapFromDb device is null");
     AUDIO_INFO_LOG("LoadDeviceMuteMapFromDb device %{public}s", device->GetName().c_str());
+    std::vector<BoolValueInfo> infos;
     std::vector<AudioStreamType> volumeList = volumeList_;
     if (AudioVolumeUtils::GetInstance().IsDistributedDevice(device)) {
         volumeList = DISTRIBUTED_VOLUME_TYPE_LIST;
     }
-    for (auto volumeType : volumeList) {
-        GetMuteStatusInternal(device, volumeType);
-    }
-}
-
-int32_t VolumeDataMaintainer::GetMuteStatusInternal(
-    std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType)
-{
-    std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
-    CHECK_AND_RETURN_RET_LOG(device != nullptr, ERROR, "device is null");
-    std::string muteKey = GetMuteKey(device, streamType);
-    if (!muteKey.compare("")) {
-        WriteVolumeDbAccessExceptionEvent(
-            static_cast<int32_t>(VolumeDbAccessExceptionFuncId::GET_MUTE_STATUS_INTERNAL_A),
-            ERR_READ_FAILED);
-        AUDIO_ERR_LOG("[device %{public}s, streamType %{public}d] is not supported for "\
-            "datashare", device->GetName().c_str(), streamType);
-        return ERROR;
+    for (auto stream : volumeList) {
+        BoolValueInfo info {
+            .key = GetVolumeKey(device, stream),
+            .defaultValue = false,
+            .value = false
+        };
+        infos.push_back(info);
+        AUDIO_INFO_LOG("Load mute by key: %{public}s", info.key.c_str());
     }
 
-    AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    bool muteStatus = false;
-    ErrCode ret = audioSettingProvider.GetBoolValue(muteKey, muteStatus, "system");
-    if (ret != SUCCESS) {
-        WriteVolumeDbAccessExceptionEvent(
-            static_cast<int32_t>(VolumeDbAccessExceptionFuncId::GET_MUTE_STATUS_INTERNAL_B),
-            static_cast<int32_t>(ret));
-        AUDIO_ERR_LOG("Get MuteStatus From DataBase muteStatus failed");
-        return ERROR;
+    bool readDb = false;
+    if (AudioVolumeUtils::GetInstance().IsDistributedDevice(device)) {
+        if (device->volumeBehavior_.isReady && device->volumeBehavior_.databaseVolumeName != "") {
+            readDb = true;
+        }
     } else {
-        muteStatusMap_[device->GetName()][streamType] = muteStatus;
-        AUDIO_INFO_LOG("Get MuteStatus From DataBase muteStatus from datashare %{public}d", muteStatus);
+        readDb = true;
     }
-
-    return SUCCESS;
+    if (readDb) {
+        std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
+        AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+        audioSettingProvider.GetBoolValues(infos, "system");
+    }
+    for (size_t i = 0; i < volumeList.size(); i++) {
+        SaveMuteToMap(device, volumeList[i], infos[i].value);
+    }
 }
 
 int32_t VolumeDataMaintainer::SaveMuteToDb(std::shared_ptr<AudioDeviceDescriptor> device,
@@ -957,33 +949,31 @@ int32_t VolumeDataMaintainer::SaveMuteToDb(std::shared_ptr<AudioDeviceDescriptor
 {
     CHECK_AND_RETURN_RET_LOG(device != nullptr, ERROR, "device is null");
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    return SaveMuteStatusInternal(device, volumeType, muteStatus);
-}
-
-int32_t VolumeDataMaintainer::SaveMuteStatusInternal(
-    std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType, bool muteStatus)
-{
-    std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
-    CHECK_AND_RETURN_RET_LOG(device != nullptr, ERROR, "device is null");
+    if (AudioVolumeUtils::GetInstance().IsDistributedDevice(device)) {
+        if (!device->volumeBehavior_.isReady) {
+            return SUCCESS;
+        }
+        if (device->volumeBehavior_.databaseVolumeName == "") {
+            return SUCCESS;
+        }
+    }
     std::string muteKey = GetMuteKey(device, streamType);
     if (!muteKey.compare("")) {
-        WriteVolumeDbAccessExceptionEvent(
-            static_cast<int32_t>(VolumeDbAccessExceptionFuncId::SAVE_MUTE_STATUS_INTERNAL),
-            ERR_READ_FAILED);
-        AUDIO_ERR_LOG("[device %{public}s, streamType %{public}d] is not supported for "\
-            "datashare", device->GetName().c_str(), streamType);
+        WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(
+            VolumeDbAccessExceptionFuncId::SAVE_MUTE_STATUS_INTERNAL), ERR_READ_FAILED);
+        AUDIO_ERR_LOG("[device %{public}s, streamType %{public}d] is not supported for datashare",
+            device->GetName().c_str(), streamType);
         return ERROR;
     }
 
+    std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
     AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     ErrCode ret = audioSettingProvider.PutBoolValue(muteKey, muteStatus, "system");
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("Failed to write mutestatus: %{public}d to setting db! Err: %{public}d", muteStatus, ret);
-    } else {
-        AUDIO_INFO_LOG("muteKey:%{public}s, muteStatus:%{public}d", muteKey.c_str(), muteStatus);
-    }
+    AUDIO_INFO_LOG("muteKey:%{public}s, muteStatus:%{public}d, res: %{public}d",
+        muteKey.c_str(), muteStatus, ret);
     return ret;
 }
+
 void VolumeDataMaintainer::SaveMuteToMap(std::shared_ptr<AudioDeviceDescriptor> device,
     AudioStreamType streamType, bool muteStatus)
 {
