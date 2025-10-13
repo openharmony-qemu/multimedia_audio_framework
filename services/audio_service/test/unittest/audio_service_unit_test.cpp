@@ -3108,7 +3108,7 @@ HWTEST(AudioServiceUnitTest, RenderersCheckForAudioWorkgroup_001, TestSize.Level
     audioService->RenderersCheckForAudioWorkgroup(1);
     EXPECT_FALSE(AudioResourceService::GetInstance()->IsProcessInWorkgroup(1));
     EXPECT_FALSE(AudioResourceService::GetInstance()->IsProcessHasSystemPermission(1));
-
+ 
     audioService->RenderersCheckForAudioWorkgroup(-1);
     EXPECT_FALSE(AudioResourceService::GetInstance()->IsProcessInWorkgroup(-1));
     EXPECT_FALSE(AudioResourceService::GetInstance()->IsProcessHasSystemPermission(-1));
@@ -3119,13 +3119,21 @@ HWTEST(AudioServiceUnitTest, RenderersCheckForAudioWorkgroup_001, TestSize.Level
     process.hasSystemPermission = 1;
     auto wg = std::make_shared<AudioWorkgroup>(1);
     process.groups.emplace(1, std::move(wg));
- 
+
     AudioResourceService *resService = AudioResourceService::GetInstance();
     resService->audioWorkgroupMap_.emplace(1, process);
- 
+    EXPECT_TRUE(resService->IsProcessInWorkgroup(1));
+    EXPECT_FALSE(resService->IsProcessHasSystemPermission(1));
+
+    std::shared_ptr<RendererInServer> renderer = nullptr;
+    int32_t sessionId = 1;
+    audioService->allRendererMap_.insert(std::make_pair(sessionId, renderer));
+    audioService->RenderersCheckForAudioWorkgroup(1);
+
     AudioProcessConfig processConfig;
-    processConfig.streamType = STREAM_MUSIC;
+    processConfig.streamType = STREAM_ALARM;
     processConfig.appInfo.appPid = 1;
+    processConfig.originalSessionId = 1;
     std::shared_ptr<StreamListenerHolder> streamListenerHolder =
         std::make_shared<StreamListenerHolder>();
     EXPECT_NE(streamListenerHolder, nullptr);
@@ -3135,13 +3143,6 @@ HWTEST(AudioServiceUnitTest, RenderersCheckForAudioWorkgroup_001, TestSize.Level
     EXPECT_NE(server1, nullptr);
     audioService->allRendererMap_[1] = server1;
     audioService->RenderersCheckForAudioWorkgroup(1);
-    audioService->allRendererMap_.clear();
-    processConfig.streamType = STREAM_ALARM;
-    std::shared_ptr<RendererInServer> server2 =
-        std::make_shared<RendererInServer>(processConfig, streamListener);
-    audioService->allRendererMap_[2] = server2;
-    EXPECT_TRUE(AudioResourceService::GetInstance()->IsProcessInWorkgroup(1));
-    EXPECT_FALSE(AudioResourceService::GetInstance()->IsProcessHasSystemPermission(1));
 }
 
 /**
