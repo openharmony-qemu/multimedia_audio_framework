@@ -3108,7 +3108,7 @@ HWTEST(AudioServiceUnitTest, RenderersCheckForAudioWorkgroup_001, TestSize.Level
     audioService->RenderersCheckForAudioWorkgroup(1);
     EXPECT_FALSE(AudioResourceService::GetInstance()->IsProcessInWorkgroup(1));
     EXPECT_FALSE(AudioResourceService::GetInstance()->IsProcessHasSystemPermission(1));
- 
+
     audioService->RenderersCheckForAudioWorkgroup(-1);
     EXPECT_FALSE(AudioResourceService::GetInstance()->IsProcessInWorkgroup(-1));
     EXPECT_FALSE(AudioResourceService::GetInstance()->IsProcessHasSystemPermission(-1));
