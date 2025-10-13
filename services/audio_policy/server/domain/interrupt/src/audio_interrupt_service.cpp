@@ -2703,7 +2703,7 @@ void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSe
             SendInterruptEvent(oldState, newState, iterActive, removeFocusInfo);
         }
 
-        if (removeFocusInfo && !IsGameAvoidCallbackCase(iterActive->first)) {
+        if (iterActive->first.deviceTag.empty() && removeFocusInfo && !IsGameAvoidCallbackCase(iterActive->first)) {
             AudioInterrupt interruptToRemove = iterActive->first;
             iterActive = audioFocusInfoList.erase(iterActive);
             iterNew = newAudioFocuInfoList.erase(iterNew);

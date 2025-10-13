@@ -255,6 +255,11 @@ int32_t AudioInterruptZoneManager::InjectInterruptToAudioZone(const int32_t zone
             itNew.first.deviceTag = deviceTag;
             activeFocusList.emplace_back(itNew);
         } else {
+            if (((*itOld)->second != ACTIVE && (*itOld)->second != DUCK) &&
+                (itNew.second == ACTIVE || itNew.second == DUCK)) {
+                activeFocusList.emplace_back(itNew);
+                continue;
+            }
             if ((*itOld)->second != itNew.second) {
                 AUDIO_DEBUG_LOG("ref interrupt %{public}d state from %{public}d to %{public}d",
                     itNew.first.streamId, (*itOld)->second, itNew.second);
