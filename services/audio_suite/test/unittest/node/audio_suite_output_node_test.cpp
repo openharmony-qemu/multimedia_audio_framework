@@ -44,8 +44,8 @@ struct FormatConversionInfo {
     AudioFormat outputFormat;
 };
 
-static std::string OUTPUT_NODE_TEST_DIR = "/data/audiosuite/outputnode/";
-static FormatConversionInfo info[] = {
+static std::string g_outputNodeTestDir = "/data/audiosuite/outputnode/";
+static FormatConversionInfo g_info[] = {
     {"in_44100_2_f32le.wav", "out1.pcm", "compare_44100_2_s16le.pcm",
         {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_44100},
         {{CH_LAYOUT_STEREO, 2}, SAMPLE_S16LE, SAMPLE_RATE_44100}},
@@ -113,7 +113,7 @@ static void OutputFormatConvert(
     std::vector<uint8_t> outputData;
 
     inputFile.seekg(HEADER_SIZE, std::ios::beg);
-    while (true) {
+    while (exitFlag) {
         inputData.resize(inputLen, 0);
         outputData.resize(outputLen, 0);
 
@@ -135,11 +135,11 @@ HWTEST_F(AudioSuiteOutputNodeTest, FormatConversion_001, TestSize.Level0)
 {
     for (size_t idx = 0; idx < (sizeof(info) / sizeof(info[0])); idx++) {
         AUDIO_INFO_LOG("start Convert file %{public}s", info[idx].inputFileName.c_str());
-        OutputFormatConvert(info[idx].outputFormat, OUTPUT_NODE_TEST_DIR + info[idx].inputFileName,
-            info[idx].inputFormat, OUTPUT_NODE_TEST_DIR + info[idx].outputFileName);
+        OutputFormatConvert(info[idx].outputFormat, g_outputNodeTestDir + info[idx].inputFileName,
+            info[idx].inputFormat, g_outputNodeTestDir + info[idx].outputFileName);
 
-        std::ifstream outFile(OUTPUT_NODE_TEST_DIR + info[idx].outputFileName, std::ios::binary);
-        std::ifstream baseFile(OUTPUT_NODE_TEST_DIR + info[idx].compareFileName, std::ios::binary);
+        std::ifstream outFile(g_outputNodeTestDir + info[idx].outputFileName, std::ios::binary);
+        std::ifstream baseFile(g_outputNodeTestDir + info[idx].compareFileName, std::ios::binary);
         ASSERT_TRUE(outFile.is_open());
         ASSERT_TRUE(baseFile.is_open());
 
