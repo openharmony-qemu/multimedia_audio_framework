@@ -1846,22 +1846,21 @@ HWTEST_F(AudioCoreServiceUnitTest, A2dpOffloadGetRenderPosition_001, TestSize.Le
     uint32_t delayValue = 0;
     uint64_t sendDataSize = 0;
     uint32_t timeStamp = 0;
-    int32_t ret;
 
-    server->coreService_->audioActiveDevice_.currentActiveDevice_.deviceType_
-        = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
+    server->coreService_->audioActiveDevice_.currentActiveDevice_.deviceType_ =
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
     server->coreService_->audioActiveDevice_.currentActiveDevice_.networkId_ = LOCAL_NETWORK_ID;
-    ret = server->coreService_->OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
+    int32_t ret = server->coreService_->OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
     EXPECT_EQ(ret, SUCCESS);
 
-    server->coreService_->audioActiveDevice_.currentActiveDevice_.deviceType_
-        = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
+    server->coreService_->audioActiveDevice_.currentActiveDevice_.deviceType_ =
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
     server->coreService_->audioActiveDevice_.currentActiveDevice_.networkId_ = REMOTE_NETWORK_ID;
     ret = server->coreService_->OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
     EXPECT_EQ(ret, SUCCESS);
 
-    server->coreService_->audioActiveDevice_.currentActiveDevice_.deviceType_
-        = DeviceType::DEVICE_TYPE_SPEAKER;
+    server->coreService_->audioActiveDevice_.currentActiveDevice_.deviceType_ =
+        DeviceType::DEVICE_TYPE_SPEAKER;
     server->coreService_->audioActiveDevice_.currentActiveDevice_.networkId_ = REMOTE_NETWORK_ID;
     ret = server->coreService_->OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
     EXPECT_EQ(ret, SUCCESS);
