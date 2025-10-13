@@ -567,3 +567,45 @@ ohos_unittest("audio_suite_nr_node_test") {
   ]
   resource_config_file = "./resource/ohos_test.xml"
 }
+
+ohos_unittest("audio_suite_voice_beautifier_node_test") {
+  module_out_path = module_output_path
+  sources = [
+    "tool/audio_suite_unittest_tools.cpp",
+    "node/audio_suite_voice_beautifier_node_test.cpp",
+  ]
+
+  configs = [ ":audio_suite_unit_config" ]
+
+  deps = [
+    "../../:audio_suite_static",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest",
+    "hilog:libhilog",
+  ]
+  resource_config_file = "./resource/vb_test.xml"
+}
+
+ohos_unittest("audio_suite_voice_beautifier_algo_interface_impl_test") {
+  module_out_path = module_output_path
+  sources = [
+    "tool/audio_suite_unittest_tools.cpp",
+    "utils/audio_suite_voice_beautifier_algo_interface_impl_test.cpp",
+  ]
+
+  configs = [ ":audio_suite_unit_config" ]
+
+  deps = [
+    "../../:audio_suite_static",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest",
+    "hilog:libhilog",
+  ]
+  resource_config_file = "./resource/vb_test.xml"
+}

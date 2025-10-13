@@ -106,7 +106,7 @@ std::vector<AudioSuitePcmBuffer*>& AudioSuiteProcessNode::ReadProcessNodePreOutp
 int32_t AudioSuiteProcessNode::Flush()
 {
     finishedPrenodeSet.clear();
-    return SUCCESS;
+    return DeInit();
 }
 
 int32_t AudioSuiteProcessNode::Connect(const std::shared_ptr<AudioNode>& preNode, AudioNodePortType type)

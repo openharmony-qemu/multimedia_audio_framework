@@ -17,6 +17,7 @@
 #include "audio_suite_nr_algo_interface_impl.h"
 #include "audio_suite_soundfield_algo_interface_impl.h"
 #include "audio_suite_aiss_algo_interface_impl.h"
+#include "audio_suite_voice_beautifier_algo_interface_impl.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -33,11 +34,13 @@ std::shared_ptr<AudioSuiteAlgoInterface> AudioSuiteAlgoInterface::CreateAlgoInte
             return std::make_shared<AudioSuiteSoundFieldAlgoInterfaceImpl>();
         case AlgoType::AUDIO_NODE_TYPE_AUDIO_SEPARATION:
             return std::make_shared<AudioSuiteAissAlgoInterfaceImpl>();
+        case AlgoType::AUDIO_NODE_TYPE_VOICE_BEAUTIFIER:
+            return std::make_shared<AudioSuiteVoiceBeautifierAlgoInterfaceImpl>();
         default:
             return nullptr;
     }
 }
 
-}
-}
-}
+}  // namespace AudioSuite
+}  // namespace AudioStandard
+}  // namespace OHOS
