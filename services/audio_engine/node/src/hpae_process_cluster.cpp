@@ -106,7 +106,6 @@ bool HpaeProcessCluster::ResetAll()
 std::shared_ptr<HpaeNode> HpaeProcessCluster::GetSharedInstance()
 {
     if (renderEffectNode_ != nullptr) {
-        AUDIO_INFO_LOG("renderEffectNode_id: %{public}u", renderEffectNode_->GetNodeId());
         return renderEffectNode_;
     }
     AUDIO_INFO_LOG("mixerNode_ id: %{public}u", mixerNode_->GetNodeId());
