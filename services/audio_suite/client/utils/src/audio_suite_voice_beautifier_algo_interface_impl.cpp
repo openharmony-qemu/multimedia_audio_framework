@@ -208,8 +208,8 @@ int32_t AudioSuiteVoiceBeautifierAlgoInterfaceImpl::Apply(
     }
 
     AudioVoiceMorphingData data = {
-        .dataIn = static_cast<int*>(inBuf_),
-        .dataOut = static_cast<int*>(outBuf_),
+        .dataIn = reinterpret_cast<int *>(inBuf_),
+        .dataOut = reinterpret_cast<int *>(outBuf_),
         .dataSize = DEFAULT_FRAME_LEN,
         .enableFlag = 1,
         .dataFormat = 1,
