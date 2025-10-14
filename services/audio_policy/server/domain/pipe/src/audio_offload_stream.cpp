@@ -56,7 +56,7 @@ void AudioOffloadStream::UnsetOffloadStatus(uint32_t sessionId)
     for (auto &iter : offloadSessionIdMap_) {
         if (iter.second == sessionId) {
             iter.second = NO_OFFLOAD_STREAM_SESSIONID;
-            CHECK_AND_RETURN_LOG(iter.first < OFFLOAD_IN_ADAPTER_SIZE, "Invalid offload adapter");
+            CHECK_AND_CONTINUE_LOG(iter.first < OFFLOAD_IN_ADAPTER_SIZE, "Invalid offload adapter");
             UnsetOffloadStatusInternal(sessionId, iter.first);
         }
     }
