@@ -148,7 +148,7 @@ public:
         return nodeInfo_.statusCallback;
     }
 
-    virtual std::string& GetTraceInfo()
+    virtual std::string GetTraceInfo()
     {
         CHECK_AND_RETURN_RET(traceInfo_.empty(), traceInfo_);
         auto rate = "rate[" + std::to_string(nodeInfo_.samplingRate) + "]_";
