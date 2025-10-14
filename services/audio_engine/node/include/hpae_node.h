@@ -23,6 +23,7 @@
 #include <sstream>
 #include "hpae_pcm_buffer.h"
 #include "hpae_define.h"
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
