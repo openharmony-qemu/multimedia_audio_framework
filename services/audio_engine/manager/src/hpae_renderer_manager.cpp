@@ -455,7 +455,8 @@ void HpaeRendererManager::ConnectProcessCluster(uint32_t sessionId, HpaeProcesso
 void HpaeRendererManager::ConnectInputCluster(uint32_t sessionId, HpaeProcessorType sceneType)
 {
     sceneClusterMap_[sceneType]->Connect(sinkInputNodeMap_[sessionId]);
-    sinkInputNodeMap_[sessionId]->connectedProcessorType_ = sceneType;
+    sinkInputNodeMap_[sessionId]->connectedProcessorType_ =
+        (sceneClusterMap_[sceneType] == sceneClusterMap_[HPAE_SCENE_DEFAULT]) ? HPAE_SCENE_DEFAULT : sceneType;
 }
 
 void HpaeRendererManager::ConnectOutputCluster(uint32_t sessionId, HpaeProcessorType sceneType)
@@ -1245,8 +1246,7 @@ void HpaeRendererManager::OnRequestLatency(uint32_t sessionId, uint64_t &latency
     if (SafeGetMap(sceneClusterMap_, sceneType)) {
         processLatency += sceneClusterMap_[sceneType]->GetLatency(sessionId);
         if (outputCluster_) {
-            processLatency += outputCluster_->GetLatency(
-                sceneClusterMap_[sceneType]->GetSharedInstance()->GetNodeInfo().sceneType);
+            processLatency += outputCluster_->GetLatency(sceneType);
         }
     }
 
