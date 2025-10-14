@@ -437,8 +437,6 @@ void AudioActiveDevice::UpdateVolumeTypeDeviceMap(std::shared_ptr<AudioStreamDes
     CHECK_AND_RETURN(!IsDeviceInVector(desc->newDeviceDescs_.front(), volumeTypeDeviceMap_[volumeType]));
 
     volumeTypeDeviceMap_[volumeType].push_back(desc->newDeviceDescs_.front());
-    AUDIO_INFO_LOG("volumeDeviceMap: %{public}d add deviceId %{public}d",
-        volumeType, desc->newDeviceDescs_.front()->deviceId_);
 }
 
 void AudioActiveDevice::UpdateStreamUsageDeviceMap(std::shared_ptr<AudioStreamDescriptor> desc)
@@ -449,8 +447,6 @@ void AudioActiveDevice::UpdateStreamUsageDeviceMap(std::shared_ptr<AudioStreamDe
         streamUsageDeviceMap_[desc->rendererInfo_.streamUsage]));
 
     streamUsageDeviceMap_[desc->rendererInfo_.streamUsage].push_back(desc->newDeviceDescs_.front());
-    AUDIO_INFO_LOG("streamUsageDeviceMap: %{public}d add deviceId %{public}d",
-        desc->rendererInfo_.streamUsage, desc->newDeviceDescs_.front()->deviceId_);
 }
 
 void AudioActiveDevice::UpdateStreamDeviceMap(std::string source)
