@@ -47,11 +47,16 @@ const int32_t AUDIO_EXT_UID = 1041;
 constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
 constexpr int32_t REMOTE_USER_TERMINATED = 200;
 constexpr int32_t DUAL_CONNECTION_FAILURE = 201;
-static const int32_t REFETCH_DEVICE = 4;
 static const int VOLUME_LEVEL_DEFAULT_SIZE = 3;
 static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
 static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
 static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
+static const int32_t REFETCH_DEVICE = 4;
+
+static const int32_t FIRST_STREAM_PRIORITY = 0;
+static const int32_t SECOND_STREAM_PRIORITY = 1;
+static const int32_t THIRD_STREAM_PRIORITY = 2;
+
 static const int64_t WAIT_MODEM_CALL_SET_VOLUME_TIME_US = 120000; // 120ms
 static const int64_t RING_DUAL_END_DELAY_US = 100000; // 100ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_MS = 1000000; // 1s
@@ -85,7 +90,6 @@ static const std::unordered_set<uid_t> skipAddSessionIdUidSet_ = {
     MCU_UID,
     TV_SERVICE_UID
 };
-
 }
 
 static const std::vector<std::string> SourceNames = {
@@ -2773,7 +2777,6 @@ int32_t AudioCoreService::ActivateOutputDevice(std::shared_ptr<AudioStreamDescri
     int32_t nearlinkFetchResult = ActivateNearlinkDevice(streamDesc);
     CheckAndWriteDeviceChangeExceptionEvent(nearlinkFetchResult == SUCCESS, reason,
         deviceDesc->deviceType_, deviceDesc->deviceRole_, nearlinkFetchResult, "nearlink fetch output device failed");
-    
     CHECK_AND_RETURN_RET_LOG(nearlinkFetchResult == SUCCESS, REFETCH_DEVICE, "nearlink fetch output device failed");
 
     if (deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
@@ -3387,23 +3390,23 @@ void AudioCoreService::WriteScoStateFaultEvent(const std::shared_ptr<AudioDevice
 
 void AudioCoreService::SortOutputStreamDescsForUsage(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
-    std::unordered_map<uint32_t,uint32_t> streamDescsPriority;
+    std::unordered_map<uint32_t, uint32_t> streamDescsPriority;
     for (auto streamDesc:streamDescs) {
         if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
             streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
-            streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_CALL_ASSISTANT){
-            streamDescsPriority[streamDesc->sessionId_] = 0;
+            streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_CALL_ASSISTANT) {
+            streamDescsPriority[streamDesc->sessionId_] = FIRST_STREAM_PRIORITY;
         } else if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_NOTIFICATION_RINGTONE ||
-                streamDesc->rendererInfo_->streamUsage == STREAM_USAGE_VOICE_RINGTONE){
-            streamDescsPriority[streamDesc->sessionId_] = 1;
+                streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
+            streamDescsPriority[streamDesc->sessionId_] = SECOND_STREAM_PRIORITY;
         } else {
-            streamDescsPriority[streamDesc->sessionId_] = 2;
+            streamDescsPriority[streamDesc->sessionId_] = THIRD_STREAM_PRIORITY;
         }
     }
-    std::sort(streamDescs.begin(),streamDescs.end(),
+    std::sort(streamDescs.begin(), streamDescs.end(),
         [&streamDescsPriority](const std::shared_ptr<AudioStreamDescriptor> &streamDescOne,
         const std::shared_ptr<AudioStreamDescriptor> &streamDescTwo) {
-            return streamDescsPriority[streamDescOne->sessionId_] < streamDescsPriority[streamDescTwo->sessionId_]
+            return streamDescsPriority[streamDescOne->sessionId_] < streamDescsPriority[streamDescTwo->sessionId_];
         });
 }
 } // namespace AudioStandard
