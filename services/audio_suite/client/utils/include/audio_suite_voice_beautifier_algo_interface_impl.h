@@ -70,8 +70,8 @@ private:
     void UnApply(void);
     void Release();
     VoiceMorphingAlgoApi vmAlgoApi_{0};
-    int32_t *inBuf_ = nullptr;
-    int32_t *outBuf_ = nullptr;
+    uint32_t *inBuf_ = nullptr;
+    uint32_t *outBuf_ = nullptr;
     char *handle_ = nullptr;
     char *scratchBuf_ = nullptr;
     void *libHandle_{nullptr};

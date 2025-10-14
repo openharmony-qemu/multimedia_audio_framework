@@ -108,7 +108,6 @@ std::vector<AudioSuitePcmBuffer*>& AudioSuiteProcessNode::ReadProcessNodePreOutp
 int32_t AudioSuiteProcessNode::Flush()
 {
     finishedPrenodeSet.clear();
-    CHECK_AND_RETURN_RET((DeInit() == SUCCESS && Init() == SUCCESS), ERROR);
     return SUCCESS;
 }
 

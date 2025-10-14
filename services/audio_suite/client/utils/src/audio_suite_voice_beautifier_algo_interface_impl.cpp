@@ -121,12 +121,12 @@ int32_t AudioSuiteVoiceBeautifierAlgoInterfaceImpl::Init()
     delete memSize;
     memSize = nullptr;
 
-    inBuf_ = new int32_t[sizeof(int32_t) * DEFAULT_FRAME_LEN * 2];
+    inBuf_ = new uint32_t[sizeof(int32_t) * DEFAULT_FRAME_LEN * 2];
     if (!inBuf_) {
         AUDIO_ERR_LOG("Init inBuf_ fail");
         return ERROR;
     }
-    outBuf_ = new int32_t[sizeof(int32_t) * DEFAULT_FRAME_LEN * 2];
+    outBuf_ = new uint32_t[sizeof(int32_t) * DEFAULT_FRAME_LEN * 2];
     if (!outBuf_) {
         AUDIO_ERR_LOG("Init outBuf_ fail");
         return ERROR;
@@ -208,8 +208,8 @@ int32_t AudioSuiteVoiceBeautifierAlgoInterfaceImpl::Apply(
     }
 
     AudioVoiceMorphingData data = {
-        .dataIn = inBuf_,
-        .dataOut = outBuf_,
+        .dataIn = static_cast<int>(inBuf_),
+        .dataOut = static_cast<int>(outBuf_),
         .dataSize = DEFAULT_FRAME_LEN,
         .enableFlag = 1,
         .dataFormat = 1,
