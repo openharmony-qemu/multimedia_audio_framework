@@ -1322,7 +1322,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetSpeed_Write_002, TestSize.Level1
             ((static_cast<size_t>(bytesToWrite) - bytesWritten) > minBytes)) {
             bytesWritten += audioRenderer->Write(buffer + static_cast<size_t>(bytesWritten),
                 bytesToWrite - static_cast<size_t>(bytesWritten), metaBuffer, RenderUT::AVS3METADATA_SIZE);
-            EXPECT_GE(ERROR, RenderUT::VALUE_ZERO);
+            EXPECT_GE(bytesWritten, RenderUT::VALUE_ZERO);
         }
         numBuffersToRender--;
     }
