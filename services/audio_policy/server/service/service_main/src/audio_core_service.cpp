@@ -38,6 +38,7 @@ static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
 static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
 static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
+static const int32_t REFETCH_DEVICE = 4;
 static constexpr int32_t MAX_TRY = 100;
 static constexpr int32_t DELAY_MS = 100;
 }
@@ -574,6 +575,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     CHECK_AND_RETURN_RET_LOG(deviceDesc, ERR_NULL_POINTER, "deviceDesc is nullptr");
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         int32_t outputRet = ActivateOutputDevice(streamDesc);
+        CHECK_AND_RETURN_RET_LOG(outputRet != REFETCH_DEVICE, SUCCESS, "Activate output device failed, refetch other device");
         CHECK_AND_RETURN_RET_LOG(outputRet == SUCCESS, outputRet, "Activate output device failed");
         CheckAndSetCurrentOutputDevice(deviceDesc, streamDesc->sessionId_);
         audioVolumeManager_.SetVolumeForSwitchDevice(deviceDesc);
@@ -589,6 +591,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::START_CLIENT, info);
         FetchInputDeviceAndRoute("StartClient");
         int32_t inputRet = ActivateInputDevice(streamDesc);
+        CHECK_AND_RETURN_RET_LOG(inputRet != REFETCH_DEVICE, SUCCESS, "Activate input device failed, refetch other device");
         CHECK_AND_RETURN_RET_LOG(inputRet == SUCCESS, inputRet, "Activate input device failed");
         CheckAndSetCurrentInputDevice(deviceDesc);
         audioActiveDevice_.UpdateActiveDeviceRoute(
@@ -1414,6 +1417,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> modemDescs;
     CheckModemScene(modemDescs, reason);
 
+    SortOutputStreamDescsForUsage(outputStreamDescs);
     for (auto &streamDesc : outputStreamDescs) {
         UpdateStreamDevicesForStart(streamDesc, caller + "FetchOutputDeviceAndRoute");
     }

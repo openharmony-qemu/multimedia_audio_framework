@@ -47,6 +47,7 @@ const int32_t AUDIO_EXT_UID = 1041;
 constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
 constexpr int32_t REMOTE_USER_TERMINATED = 200;
 constexpr int32_t DUAL_CONNECTION_FAILURE = 201;
+static const int32_t REFETCH_DEVICE = 4;
 static const int VOLUME_LEVEL_DEFAULT_SIZE = 3;
 static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
 static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
@@ -84,6 +85,7 @@ static const std::unordered_set<uid_t> skipAddSessionIdUidSet_ = {
     MCU_UID,
     TV_SERVICE_UID
 };
+
 }
 
 static const std::vector<std::string> SourceNames = {
@@ -2767,11 +2769,12 @@ int32_t AudioCoreService::ActivateOutputDevice(std::shared_ptr<AudioStreamDescri
     CheckAndWriteDeviceChangeExceptionEvent(bluetoothFetchResult == BLUETOOTH_FETCH_RESULT_DEFAULT, reason,
         deviceDesc->deviceType_, deviceDesc->deviceRole_, bluetoothFetchResult, "bluetooth fetch output device failed");
     CHECK_AND_RETURN_RET(bluetoothFetchResult == BLUETOOTH_FETCH_RESULT_DEFAULT, ERR_OPERATION_FAILED);
-
+    
     int32_t nearlinkFetchResult = ActivateNearlinkDevice(streamDesc);
     CheckAndWriteDeviceChangeExceptionEvent(nearlinkFetchResult == SUCCESS, reason,
         deviceDesc->deviceType_, deviceDesc->deviceRole_, nearlinkFetchResult, "nearlink fetch output device failed");
-    CHECK_AND_RETURN_RET_LOG(nearlinkFetchResult == SUCCESS, ERROR, "nearlink fetch output device failed");
+    
+    CHECK_AND_RETURN_RET_LOG(nearlinkFetchResult == SUCCESS, REFETCH_DEVICE, "nearlink fetch output device failed");
 
     if (deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
         audioEcManager_.ActivateArmDevice(deviceDesc->macAddress_, deviceDesc->deviceRole_);
@@ -2789,9 +2792,9 @@ int32_t AudioCoreService::ActivateInputDevice(std::shared_ptr<AudioStreamDescrip
     if (streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         BluetoothScoFetch(streamDesc);
     }
-
+    
     int32_t nearlinkFetchResult = ActivateNearlinkDevice(streamDesc);
-    CHECK_AND_RETURN_RET_LOG(nearlinkFetchResult == SUCCESS, ERROR, "nearlink fetch input device failed");
+    CHECK_AND_RETURN_RET_LOG(nearlinkFetchResult == SUCCESS, REFETCH_DEVICE, "nearlink fetch input device failed");
 
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0 &&
         streamDesc->newDeviceDescs_[0] != nullptr, ERR_INVALID_PARAM, "Invalid stream desc");
@@ -3056,7 +3059,7 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
             HandleNearlinkErrResult(result, deviceDesc, isVoiceType);
             FetchOutputDeviceAndRoute("ActivateNearlinkDevice", reason);
             FetchInputDeviceAndRoute("ActivateNearlinkDevice", reason);
-            return ERROR;
+            return REFETCH_DEVICE;
         }
         sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc, false, isGameApp);
     }
@@ -3380,6 +3383,28 @@ void AudioCoreService::WriteScoStateFaultEvent(const std::shared_ptr<AudioDevice
     }
     AUDIO_INFO_LOG("Current audio: %{public}s", eventString.c_str());
 #endif
+}
+
+void AudioCoreService::SortOutputStreamDescsForUsage(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
+{
+    std::unordered_map<uint32_t,uint32_t> streamDescsPriority;
+    for (auto streamDesc:streamDescs) {
+        if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+            streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
+            streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_CALL_ASSISTANT){
+            streamDescsPriority[streamDesc->sessionId_] = 0;
+        } else if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_NOTIFICATION_RINGTONE ||
+                streamDesc->rendererInfo_->streamUsage == STREAM_USAGE_VOICE_RINGTONE){
+            streamDescsPriority[streamDesc->sessionId_] = 1;
+        } else {
+            streamDescsPriority[streamDesc->sessionId_] = 2;
+        }
+    }
+    std::sort(streamDescs.begin(),streamDescs.end(),
+        [&streamDescsPriority](const std::shared_ptr<AudioStreamDescriptor> &streamDescOne,
+        const std::shared_ptr<AudioStreamDescriptor> &streamDescTwo) {
+            return streamDescsPriority[streamDescOne->sessionId_] < streamDescsPriority[streamDescTwo->sessionId_]
+        });
 }
 } // namespace AudioStandard
 } // namespace OHOS
