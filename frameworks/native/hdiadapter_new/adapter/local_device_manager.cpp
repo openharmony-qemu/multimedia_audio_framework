@@ -149,7 +149,7 @@ std::string LocalDeviceManager::GetAudioParameter(const std::string &adapterName
 
 int32_t LocalDeviceManager::SetVoiceVolume(const std::string &adapterName, float volume)
 {
-    AUDIO_INFO_LOG("set modem call, volume: %{public}f", volume);
+    AUDIO_INFO_LOG("set modem call, volume: %{public}f", volume);s
 
     Trace trace("LocalDeviceManager::SetVoiceVolume");
     std::shared_ptr<LocalAdapterWrapper> wrapper = GetAdapter(adapterName);
