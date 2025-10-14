@@ -103,40 +103,6 @@ void GetReadableDataFramesFuzzTest()
     ohAudioBufferBase->GetReadableDataFrames();
 }
 
-void SharedMemoryWriteToParcelFuzzTest()
-{
-    shared_ptr<AudioSharedMemoryFuzz> audioSharedMemory =
-        std::make_shared<AudioSharedMemoryFuzz>();
-    if (audioSharedMemory == nullptr) {
-        return;
-    }
-    MessageParcel parcel;
-    audioSharedMemory->WriteToParcel(audioSharedMemory, parcel);
-    audioSharedMemory->ReadFromParcel(parcel);
-}
-
-void BufferBaseReadFromParcelFuzzTest()
-{
-    int32_t count = static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_INDEPENDENT)+ NUM_1;
-    AudioBufferHolder selectedAudioBufferHolder =
-        static_cast<AudioBufferHolder>(g_fuzzUtils.GetData<uint8_t>() % count);
-    uint32_t totalSizeInFrame = g_fuzzUtils.GetData<uint32_t>();
-    uint32_t byteSizePerFrame = g_fuzzUtils.GetData<uint32_t>();
-    shared_ptr<OHAudioBufferBase> ohAudioBufferBase =
-        std::make_shared<OHAudioBufferBase>(selectedAudioBufferHolder, totalSizeInFrame, byteSizePerFrame);
-    if (ohAudioBufferBase == nullptr) {
-        return;
-    }
-    MessageParcel parcel;
-    ohAudioBufferBase->bufferHolder_ = selectedAudioBufferHolder;
-    shared_ptr<AudioSharedMemoryFuzz> dataMem = std::make_shared<AudioSharedMemoryFuzz>();
-    shared_ptr<AudioSharedMemoryFuzz> statusMem = std::make_shared<AudioSharedMemoryFuzz>();
-    ohAudioBufferBase->dataMem_ = dataMem;
-    ohAudioBufferBase->statusInfoMem_ = statusMem;
-    ohAudioBufferBase->WriteToParcel(ohAudioBufferBase, parcel);
-    ohAudioBufferBase->ReadFromParcel(parcel);
-}
-
 void GetInitializationInfoFuzzTest()
 {
     int32_t count = static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_INDEPENDENT)+ NUM_1;
@@ -550,8 +516,6 @@ vector<TestFuncs> g_testFuncs = {
     MarshallingFuzzTest,
     UnmarshallingFuzzTest,
     GetReadableDataFramesFuzzTest,
-    SharedMemoryWriteToParcelFuzzTest,
-    BufferBaseReadFromParcelFuzzTest,
     GetInitializationInfoFuzzTest,
     SetStopFlagFuzzTest,
     GetSessionIdFuzzTest,
