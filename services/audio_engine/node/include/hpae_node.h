@@ -156,6 +156,7 @@ public:
         auto len = "len[" + std::to_string(nodeInfo_.frameLen) + "]_";
         auto bit = "bit[" + std::to_string(static_cast<int32_t>(nodeInfo_.format)) + "]";
         traceInfo_ = rate + ch + len + bit;
+        return traceInfo_;
     }
 private:
     static uint32_t GenerateHpaeNodeId()
