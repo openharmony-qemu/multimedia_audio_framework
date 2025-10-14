@@ -391,13 +391,13 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
     CHECK_AND_RETURN_LOG(streamDesc, "Input param error");
 
     if (isCreateProcess && streamDesc->rendererInfo_.forceToNormal) {
-        AUDIO_INFO_LOG("client force create normal");
+        AUDIO_INFO_LOG("force create normal");
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
         return;
     }
 
     // fast/normal has done in audioRendererPrivate
-    CHECK_AND_RETURN_LOG(IsForcedNormal(streamDesc) == false, "Forced normal cases");
+    CHECK_AND_RETURN_LOG(IsForcedNormal(streamDesc) == false, "Forced normal");
 
     if (streamDesc->newDeviceDescs_.back()->deviceType_ == DEVICE_TYPE_REMOTE_CAST ||
         streamDesc->newDeviceDescs_.back()->networkId_ != LOCAL_NETWORK_ID) {

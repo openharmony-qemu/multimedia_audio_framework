@@ -824,23 +824,19 @@ void AudioStreamCollector::ReclaimMem()
 bool AudioStreamCollector::CheckAudioStateIdle()
 {
     if (audioRendererChangeInfos_.empty() && audioCapturerChangeInfos_.empty()) {
-        AUDIO_INFO_LOG("there are no tasks");
         return true;
     }
     for (const auto& rendererInfo : audioRendererChangeInfos_) {
         if (rendererInfo->rendererState == RENDERER_RUNNING) {
-            AUDIO_INFO_LOG("rendererInfo exist running task");
             return false;
         }
     }
     for (const auto& capturerInfo : audioCapturerChangeInfos_) {
         if (capturerInfo->capturerState == CAPTURER_RUNNING) {
-            AUDIO_INFO_LOG("capturerInfo exist running task");
             return false;
         }
     }
 
-    AUDIO_INFO_LOG("there are no tasks running");
     return true;
 }
 
