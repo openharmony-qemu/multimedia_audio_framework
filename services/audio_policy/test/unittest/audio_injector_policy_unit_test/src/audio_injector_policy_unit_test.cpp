@@ -612,5 +612,35 @@ HWTEST_F(AudioInjectorPolicyUnitTest, SetInjectorStreamsMute_002, TestSize.Level
     audioInjectorPolicy.rendererStreamMap_.clear();
     audioInjectorPolicy.SetInjectorStreamsMute(true);
 }
+
+/**
+ * @tc.name: SetAllRendererInjectStreamsMute_001
+ * @tc.desc: Test SetAllRendererInjectStreamsMute
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, SetAllRendererInjectStreamsMute_001, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc1 = std::make_shared<AudioStreamDescriptor>();
+    audioInjectorPolicy.rendererStreamMap_[1111] = streamDesc1;
+    audioInjectorPolicy.SetAllRendererInjectStreamsMute();
+    EXPECT_EQ(audioInjectorPolicy.rendererStreamMap_.size(), 1);
+}
+
+/**
+ * @tc.name: SetAllRendererInjectStreamsMute_002
+ * @tc.desc: Test SetAllRendererInjectStreamsMute
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, SetAllRendererInjectStreamsMute_002, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    audioInjectorPolicy.rendererStreamMap_.clear();
+    audioInjectorPolicy.isNeedSetMuteRenderer_ = true;
+    audioInjectorPolicy.SetAllRendererInjectStreamsMute();
+    EXPECT_EQ(audioInjectorPolicy.rendererStreamMap_.size(), 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS

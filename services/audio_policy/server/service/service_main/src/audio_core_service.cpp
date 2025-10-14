@@ -1608,6 +1608,7 @@ int32_t AudioCoreService::StartInjection(uint32_t streamId)
         AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "move stream in failed");
     audioInjectorPolicy_.AddStreamDescriptor(streamId, streamDesc);
+    audioInjectorPolicy_.SetAllRendererInjectStreamsMute();
     return SUCCESS;
 }
 
