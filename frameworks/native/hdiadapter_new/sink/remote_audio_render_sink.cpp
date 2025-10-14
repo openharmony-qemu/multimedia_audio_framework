@@ -488,8 +488,7 @@ int32_t RemoteAudioRenderSink::NotifyHdiEvent(SplitStreamType splitStreamType, c
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
     CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERR_NULL_POINTER, "device manager is nullptr");
     std::string outputVal = std::to_string(renderId) + '-' + val;
-    deviceManager->SetAudioParameter(deviceNetworkId_, AudioParamKey::PARAM_KEY_STATE, key, outputVal);
-    return SUCCESS;
+    return deviceManager->SetAudioParameter(deviceNetworkId_, AudioParamKey::PARAM_KEY_STATE, key, outputVal);
 }
 
 void RemoteAudioRenderSink::UpdateStreamInfo(const SplitStreamType splitStreamType, const AudioStreamType type,
@@ -505,14 +504,22 @@ void RemoteAudioRenderSink::UpdateStreamInfo(const SplitStreamType splitStreamTy
 
 void RemoteAudioRenderSink::UpdateStreamType(const SplitStreamType splitStreamType, const AudioStreamType type)
 {
-    this->streamTypeMap_[splitStreamType] = type;
-    this->NotifyHdiEvent(splitStreamType, STREAM_TYPE_CHANGE, std::to_string(type));
+    int32_t errCode = this->NotifyHdiEvent(splitStreamType, STREAM_TYPE_CHANGE, std::to_string(type));
+    if (errCode == SUCCESS) {
+        this->streamTypeMap_[splitStreamType] = type;
+    } else {
+        AUDIO_WARNING_LOG("UpdateStreamType failed, errCode: %{public}d", errCode);
+    }
 }
 
 void RemoteAudioRenderSink::UpdateStreamUsage(const SplitStreamType splitStreamType, const StreamUsage usage)
 {
-    this->streamUsageMap_[splitStreamType] = usage;
-    this->NotifyHdiEvent(splitStreamType, STREAM_USAGE_CHANGE, std::to_string(usage));
+    int32_t errCode = this->NotifyHdiEvent(splitStreamType, STREAM_USAGE_CHANGE, std::to_string(usage));
+    if (errCode == SUCCESS) {
+        this->streamUsageMap_[splitStreamType] = usage;
+    } else {
+        AUDIO_WARNING_LOG("UpdateStreamUsage failed, errCode: %{public}d", errCode);
+    }
 }
 
 void RemoteAudioRenderSink::DumpInfo(std::string &dumpString)
