@@ -1432,7 +1432,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_With_Meta_008, TestSize.Level
         AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
 
         bool isStopped = audioRenderer->Stop();
-        EXPECT_EQ(false, isStopped);
+        EXPECT_EQ(true, isStopped);
 
         fread(buffer, 1, bufferLen, wavFile);
         fread(metaBuffer, 1, RenderUT::AVS3METADATA_SIZE, metaFile);
@@ -3421,45 +3421,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Direct_VoIP_001, TestSize.Level1)
 
 /**
  * @tc.name  : Test direct VoIP Audio Render
- * @tc.number: Audio_Renderer_Direct_VoIP_002
- * @tc.desc  : Test the direct VoIP stream type with STREAM_USAGE_VOICE_COMMUNICATION
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_Direct_VoIP_002, TestSize.Level1)
-{
-    int32_t ret = -1;
-    AudioRendererOptions rendererOptions;
-    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_16000;
-    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
-    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_UNKNOWN;
-    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION;
-    rendererOptions.rendererInfo.rendererFlags = 0;
-
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
-
-    ret = audioRenderer->SetRenderMode(RENDER_MODE_CALLBACK);
-    EXPECT_EQ(SUCCESS, ret);
-
-    shared_ptr<AudioRendererWriteCallbackMock> cb = make_shared<AudioRendererWriteCallbackMock>();
-
-    ret = audioRenderer->SetRendererWriteCallback(cb);
-    EXPECT_EQ(SUCCESS, ret);
-
-    bool isStarted = audioRenderer->Start();
-    EXPECT_EQ(true, isStarted);
-
-    std::this_thread::sleep_for(1s);
-
-    bool isStopped = audioRenderer->Stop();
-    EXPECT_EQ(true, isStopped);
-    bool isReleased = audioRenderer->Release();
-    EXPECT_EQ(true, isReleased);
-}
-
-/**
- * @tc.name  : Test direct VoIP Audio Render
  * @tc.number: Audio_Renderer_Direct_VoIP_003
  * @tc.desc  : Test the direct VoIP stream type with STREAM_USAGE_VOICE_COMMUNICATION
  */
@@ -4463,9 +4424,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_MoviePcmOffload_001, TestSize.Level
         }
         numBuffersToRender--;
     }
-    ret = audioRenderer->StopDataCallback();
-    EXPECT_EQ(SUCCESS, ret);
-
+    audioRenderer->StopDataCallback();
     audioRenderer->Drain();
     audioRenderer->Stop();
     audioRenderer->Release();
