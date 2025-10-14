@@ -518,7 +518,7 @@ void RendererInServer::DoFadingOut(RingBufferWrapper& bufferDesc)
 {
     std::lock_guard<std::mutex> lock(fadeoutLock_);
     if (fadeoutFlag_ == DO_FADINGOUT) {
-        AUDIO_INFO_LOG("enter. format:%{public}u", processConfig_.streamInfo.format);
+        AUDIO_INFO_LOG("format:%{public}u", processConfig_.streamInfo.format);
         AudioChannel channel = processConfig_.streamInfo.channels;
         ChannelVolumes mapVols = VolumeTools::GetChannelVolumes(channel, FADINGOUT_BEGIN, FADINGOUT_END);
         int32_t ret = VolumeTools::Process(bufferDesc, processConfig_.streamInfo.format, mapVols);
@@ -1264,7 +1264,7 @@ int32_t RendererInServer::Drain(bool stopFlag)
         }
         status_ = I_STATUS_DRAINING;
     }
-    AUDIO_INFO_LOG("Start drain. stopFlag:%{public}d", stopFlag);
+    AUDIO_INFO_LOG("stopFlag:%{public}d", stopFlag);
     if (stopFlag) {
         std::lock_guard<std::mutex> lock(fadeoutLock_);
         AUDIO_INFO_LOG("fadeoutFlag_ = DO_FADINGOUT");
