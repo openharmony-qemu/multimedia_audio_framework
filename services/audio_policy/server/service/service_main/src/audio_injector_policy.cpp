@@ -362,13 +362,33 @@ void AudioInjectorPolicy::SendInterruptEventToInjectorStreams(const std::shared_
     }
 }
 
-int32_t AudioInjectorPolicy::SetInjectorStreamsMute(bool newMicrophoneMute)
+void AudioInjectorPolicy::SetAllRendererInjectStreamsMuteInner()
 {
-    int32_t ret = SUCCESS;
     for (const auto& pair : rendererStreamMap_) {
-        ret = AudioServerProxy::GetInstance().SetNonInterruptMuteProxy(pair.first, newMicrophoneMute);
+        AudioServerProxy::GetInstance().SetNonInterruptMuteProxy(pair.first, isNeedMuteRenderer_);
     }
-    return ret;
+}
+
+void AudioInjectorPolicy::SetAllRendererInjectStreamsMute()
+{
+    std::lock_guard<std::shared_mutex> lock(injectLock_);
+    if (isNeedSetMuteRenderer_) {
+        AUDIO_INFO_LOG("SetMuteRenderer_");
+        SetAllRendererInjectStreamsMuteInner();
+        isNeedSetMuteRenderer_ = false;
+    }
+}
+
+void AudioInjectorPolicy::SetInjectorStreamsMute(bool newMicrophoneMute)
+{
+    std::lock_guard<std::shared_mutex> lock(injectLock_);
+    isNeedMuteRenderer_ = newMicrophoneMute;
+    if (rendererStreamMap_.size() == 0) {
+        AUDIO_INFO_LOG("map is empty");
+        isNeedSetMuteRenderer_ = true;
+        return;
+    }
+    SetAllRendererInjectStreamsMuteInner();
 }
 }  //  namespace AudioStandard
 }  //  namespace OHOS
