@@ -1417,7 +1417,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> modemDescs;
     CheckModemScene(modemDescs, reason);
 
-    SortOutputStreamDescsForUsage(outputStreamDescs);
+    AudioCoreServiceUtils::SortOutputStreamDescsForUsage(outputStreamDescs);
     for (auto &streamDesc : outputStreamDescs) {
         UpdateStreamDevicesForStart(streamDesc, caller + "FetchOutputDeviceAndRoute");
     }

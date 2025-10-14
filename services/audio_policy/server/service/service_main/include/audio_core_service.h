@@ -537,7 +537,6 @@ private:
     void ResetNearlinkDeviceState(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, bool isRunning = true);
     int32_t ForceRemoveSleStreamType(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void WriteScoStateFaultEvent(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
-    void SortOutputStreamDescsForUsage(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
 
     // For offload
     void CheckAndUpdateOffloadEnableForStream(

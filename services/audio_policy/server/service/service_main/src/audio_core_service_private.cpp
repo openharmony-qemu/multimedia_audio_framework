@@ -53,10 +53,6 @@ static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
 static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
 static const int32_t REFETCH_DEVICE = 4;
 
-static const int32_t FIRST_STREAM_PRIORITY = 0;
-static const int32_t SECOND_STREAM_PRIORITY = 1;
-static const int32_t THIRD_STREAM_PRIORITY = 2;
-
 static const int64_t WAIT_MODEM_CALL_SET_VOLUME_TIME_US = 120000; // 120ms
 static const int64_t RING_DUAL_END_DELAY_US = 100000; // 100ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_MS = 1000000; // 1s
@@ -3386,28 +3382,6 @@ void AudioCoreService::WriteScoStateFaultEvent(const std::shared_ptr<AudioDevice
     }
     AUDIO_INFO_LOG("Current audio: %{public}s", eventString.c_str());
 #endif
-}
-
-void AudioCoreService::SortOutputStreamDescsForUsage(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
-{
-    std::unordered_map<uint32_t, uint32_t> streamDescsPriority;
-    for (auto streamDesc:streamDescs) {
-        if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
-            streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
-            streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_CALL_ASSISTANT) {
-            streamDescsPriority[streamDesc->sessionId_] = FIRST_STREAM_PRIORITY;
-        } else if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_NOTIFICATION_RINGTONE ||
-                streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
-            streamDescsPriority[streamDesc->sessionId_] = SECOND_STREAM_PRIORITY;
-        } else {
-            streamDescsPriority[streamDesc->sessionId_] = THIRD_STREAM_PRIORITY;
-        }
-    }
-    std::sort(streamDescs.begin(), streamDescs.end(),
-        [&streamDescsPriority](const std::shared_ptr<AudioStreamDescriptor> &streamDescOne,
-        const std::shared_ptr<AudioStreamDescriptor> &streamDescTwo) {
-            return streamDescsPriority[streamDescOne->sessionId_] < streamDescsPriority[streamDescTwo->sessionId_];
-        });
 }
 } // namespace AudioStandard
 } // namespace OHOS

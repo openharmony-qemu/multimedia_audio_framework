@@ -3422,59 +3422,5 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_007, 
     testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, stream);
     EXPECT_NE(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
 }
-
-/**
- * @tc.name  : Test SortOutputStreamDescsForUsage_001
- * @tc.number: SortOutputStreamDescsForUsage_001
- * @tc.desc  : Test AudioCoreService::SortOutputStreamDescsForUsage for communication or call assistant
- */
-HWTEST_F(AudioCoreServicePrivateTest, SortOutputStreamDescsForUsage_001, TestSize.Level1)
-{
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs;
-    
-    std::shared_ptr<AudioStreamDescriptor> streamDescOne = std::make_shared<AudioStreamDescriptor>();
-    streamDescOne->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
-    streamDescOne->sessionId_ = TEST_STREAM_1_SESSION_ID;
-    outputStreamDescs.push_back(streamDescOne);
-    
-    std::shared_ptr<AudioStreamDescriptor> streamDescOne = std::make_shared<AudioStreamDescriptor>();
-    streamDescOne->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_RINGTONE;
-    streamDescOne->sessionId_ = TEST_STREAM_2_SESSION_ID;
-    outputStreamDescs.push_back(streamDescOne);
-
-    std::shared_ptr<AudioStreamDescriptor> streamDescOne = std::make_shared<AudioStreamDescriptor>();
-    streamDescOne->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
-    streamDescOne->sessionId_ = TEST_STREAM_3_SESSION_ID;
-    outputStreamDescs.push_back(streamDescOne);
-
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_EQ(outputStreamDescs.front()->sessionId_, 1);
-    audioCoreService->SortOutputStreamDescsForUsage(outputStreamDescs);
-    EXPECT_EQ(outputStreamDescs.front()->sessionId_, TEST_STREAM_3_SESSION_ID);
-}
-
-/**
- * @tc.name  : Test SortOutputStreamDescsForUsage_002
- * @tc.number: SortOutputStreamDescsForUsage_002
- * @tc.desc  : Test AudioCoreService::SortOutputStreamDescsForUsage for ringtone
- */
-HWTEST_F(AudioCoreServicePrivateTest, SortOutputStreamDescsForUsage_002, TestSize.Level1)
-{
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs;
-    
-    std::shared_ptr<AudioStreamDescriptor> streamDescOne = std::make_shared<AudioStreamDescriptor>();
-    streamDescOne->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
-    streamDescOne->sessionId_ = TEST_STREAM_1_SESSION_ID;
-    outputStreamDescs.push_back(streamDescOne);
-    
-    std::shared_ptr<AudioStreamDescriptor> streamDescOne = std::make_shared<AudioStreamDescriptor>();
-    streamDescOne->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_RINGTONE;
-    streamDescOne->sessionId_ =TEST_STREAM_2_SESSION_ID;
-    outputStreamDescs.push_back(streamDescOne);
-
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    audioCoreService->SortOutputStreamDescsForUsage(outputStreamDescs);
-    EXPECT_EQ(outputStreamDescs.front()->sessionId_, TEST_STREAM_2_SESSION_ID);
-}
 } // namespace AudioStandard
 } // namespace OHOS
