@@ -487,7 +487,8 @@ int32_t AudioDeviceStatus::UpdateNearlinkDeviceVolume(AudioDeviceDescriptor &upd
 void AudioDeviceStatus::UpdateActiveA2dpDeviceWhenDisconnecting(const std::string& macAddress)
 {
     AUDIO_INFO_LOG("In");
-    if (audioA2dpDevice_.DelA2dpDevice(macAddress) == 0) {
+    audioA2dpDevice_.DelA2dpDevice(macAddress);
+    if (!audioDeviceManager_.HasConnectedA2dp()) {
         audioActiveDevice_.SetActiveBtDeviceMac("");
         audioIOHandleMap_.ClosePortAndEraseIOHandle(BLUETOOTH_SPEAKER);
         audioPolicyManager_.SetAbsVolumeScene(false);
