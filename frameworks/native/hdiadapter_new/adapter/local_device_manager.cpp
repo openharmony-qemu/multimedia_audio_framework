@@ -149,12 +149,17 @@ std::string LocalDeviceManager::GetAudioParameter(const std::string &adapterName
 
 int32_t LocalDeviceManager::SetVoiceVolume(const std::string &adapterName, float volume)
 {
-    AUDIO_INFO_LOG("set modem call, volume: %{public}f", volume);s
+    static const int32_t SET_VOICE_VOLUME_TIMEOUT = 10; // 10s is better
+    AUDIO_INFO_LOG("set modem call, volume: %{public}f", volume);
 
     Trace trace("LocalDeviceManager::SetVoiceVolume");
     std::shared_ptr<LocalAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, ERR_INVALID_HANDLE,
         "adapter %{public}s is nullptr", adapterName.c_str());
+    AudioXCollie audioXCollie("LocalDeviceManager::SetVoiceVolume", SET_VOICE_VOLUME_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("SetVoiceVolume timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     return wrapper->adapter_->SetVoiceVolume(wrapper->adapter_, volume);
 }
 
