@@ -316,7 +316,7 @@ int32_t HpaeRendererManager::DestroyStream(uint32_t sessionId)
         SetSessionState(sessionId, HPAE_SESSION_RELEASED);
         sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RELEASED);
         DeleteInputSession(sessionId);
-        isNeedInitEffectBufferFlag_ = false;
+        isNeedInitEffectBufferFlagMap_.erase(sessionId);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -569,7 +569,7 @@ int32_t HpaeRendererManager::Start(uint32_t sessionId)
         ConnectInputSession(sessionId);
         SetSessionState(sessionId, HPAE_SESSION_RUNNING);
         SetSessionFade(sessionId, OPERATION_STARTED);
-        isNeedInitEffectBufferFlag_ = true;
+        isNeedInitEffectBufferFlagMap_[sessionId] = true;
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -714,7 +714,7 @@ int32_t HpaeRendererManager::Pause(uint32_t sessionId)
         if (!SetSessionFade(sessionId, OPERATION_PAUSED)) {
             DisConnectInputSession(sessionId);
         }
-        isNeedInitEffectBufferFlag_ = false;
+        isNeedInitEffectBufferFlagMap_[sessionId] = false;
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -733,7 +733,7 @@ int32_t HpaeRendererManager::Flush(uint32_t sessionId)
             ? sinkInputNodeMap_[sessionId]->connectedProcessorType_ : GetProcessorType(sessionId);
         CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, sceneType),
             "Flush not find sceneType: %{public}d in sceneClusterMap", static_cast<int32_t>(sceneType));
-        if (isNeedInitEffectBufferFlag_ == true) {
+        if (isNeedInitEffectBufferFlagMap_[sessionId] == true) {
             sceneClusterMap_[sceneType]->InitEffectBuffer(sessionId);
         }
     };
@@ -772,7 +772,7 @@ int32_t HpaeRendererManager::Stop(uint32_t sessionId)
         if (!SetSessionFade(sessionId, OPERATION_STOPPED)) {
             DisConnectInputSession(sessionId);
         }
-        isNeedInitEffectBufferFlag_ = false;
+        isNeedInitEffectBufferFlagMap_[sessionId] = false;
     };
     SendRequest(request, __func__);
     return SUCCESS;
