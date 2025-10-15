@@ -246,6 +246,7 @@ int32_t AudioSuiteManager::CreateNode(uint32_t pipelineId, AudioNodeBuilder &bui
     }
 
     AUDIO_INFO_LOG("CreateNode leave");
+    WriteSuiteEngineUtilizationStatsEvent(builder.nodeType);
     nodeId = engineCreateNodeId_;
     engineCreateNodeId_ = INVALID_NODE_ID;
     return engineCreateNodeResult_;
@@ -681,6 +682,12 @@ int32_t AudioSuiteManager::MultiRenderFrame(uint32_t pipelineId,
 
 void AudioSuiteManager::OnCreatePipeline(int32_t result, uint32_t pipelineId)
 {
+    if (result != SUCCESS &&
+        result != ERR_AUDIO_SUITE_CREATED_EXCEED_SYSTEM_LIMITS) {
+        std::ostringstream errorDescription;
+        errorDescription << "engine CreatePipeline failed, ret = " << result;
+        WriteSuiteEngineExceptionEvent(PIPELINE_SCENE, CREATE_PIPELINE_ERROR, errorDescription.str());
+    }
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_INFO_LOG("OnCreatePipeline enter");
     isFinishCreatePipeline_ = true;
@@ -691,6 +698,12 @@ void AudioSuiteManager::OnCreatePipeline(int32_t result, uint32_t pipelineId)
 
 void AudioSuiteManager::OnDestroyPipeline(int32_t result)
 {
+    if (result != SUCCESS &&
+        result != ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST) {
+        std::ostringstream errorDescription;
+        errorDescription << "engine DestroyPipeline failed, ret = " << result;
+        WriteSuiteEngineExceptionEvent(PIPELINE_SCENE, DESTORY_PIPELINE_ERROR, errorDescription.str());
+    }
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_INFO_LOG("OnDestroyPipeline result: %{public}d", result);
     isFinishDestroyPipeline_ = true;
@@ -727,6 +740,11 @@ void AudioSuiteManager::OnGetPipelineState(AudioSuitePipelineState state)
 
 void AudioSuiteManager::OnCreateNode(int32_t result, uint32_t nodeId)
 {
+    if (result != SUCCESS) {
+        std::ostringstream errorDescription;
+        errorDescription << "engine CreateNode failed, ret = " << result;
+        WriteSuiteEngineExceptionEvent(NODE_SCENE, CREATE_NODE_ERROR, errorDescription.str());
+    }
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_INFO_LOG("OnCreateNode enter");
     isFinishCreateNode_ = true;
@@ -737,6 +755,11 @@ void AudioSuiteManager::OnCreateNode(int32_t result, uint32_t nodeId)
 
 void AudioSuiteManager::OnDestroyNode(int32_t result)
 {
+    if (result != SUCCESS) {
+        std::ostringstream errorDescription;
+        errorDescription << "engine DestroyNode failed, ret = " << result;
+        WriteSuiteEngineExceptionEvent(NODE_SCENE, DESTROY_NODE_ERROR, errorDescription.str());
+    }
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_INFO_LOG("OnDestroyNode enter");
     isFinishDestroyNode_ = true;
@@ -782,6 +805,12 @@ void AudioSuiteManager::OnWriteDataCallback(int32_t result)
 
 void AudioSuiteManager::OnConnectNodes(int32_t result)
 {
+    if (result != SUCCESS &&
+        result != ERR_AUDIO_SUITE_UNSUPPORT_CONNECT) {
+        std::ostringstream errorDescription;
+        errorDescription << "engine ConnectNodes failed, ret = " << result;
+        WriteSuiteEngineExceptionEvent(NODE_SCENE, CONNECT_NODE_ERROR, errorDescription.str());
+    }
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_INFO_LOG("OnConnectNodes enter");
     isFinishConnectNodes_ = true;
@@ -791,6 +820,12 @@ void AudioSuiteManager::OnConnectNodes(int32_t result)
 
 void AudioSuiteManager::OnDisConnectNodes(int32_t result)
 {
+    if (result != SUCCESS &&
+        result != ERR_AUDIO_SUITE_UNSUPPORT_CONNECT) {
+        std::ostringstream errorDescription;
+        errorDescription << "engine DisConnectNodes failed, ret = " << result;
+        WriteSuiteEngineExceptionEvent(NODE_SCENE, DISCONNECT_NODE_ERROR, errorDescription.str());
+    }
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_INFO_LOG("OnDisConnectNodes enter");
     isFinishDisConnectNodes_ = true;
@@ -818,6 +853,13 @@ void AudioSuiteManager::OnRemoveTap(int32_t result)
 
 void AudioSuiteManager::OnRenderFrame(int32_t result)
 {
+    if (result != SUCCESS &&
+        result != ERR_NOT_SUPPORTED &&
+        result != ERR_ILLEGAL_STATE) {
+        std::ostringstream errorDescription;
+        errorDescription << "engine RenderFrame failed, ret = " << result;
+        WriteSuiteEngineExceptionEvent(PIPELINE_SCENE, RENDER_PIPELINE_ERROR, errorDescription.str());
+    }
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_INFO_LOG("OnRenderFrame callback");
     isFinisRenderFrame_ = true;
@@ -827,11 +869,45 @@ void AudioSuiteManager::OnRenderFrame(int32_t result)
 
 void AudioSuiteManager::OnMultiRenderFrame(int32_t result)
 {
+    if (result != SUCCESS &&
+        result != ERR_NOT_SUPPORTED &&
+        result != ERR_ILLEGAL_STATE) {
+        std::ostringstream errorDescription;
+        errorDescription << "engine MultiRenderFrame failed, ret = " << result;
+        WriteSuiteEngineExceptionEvent(PIPELINE_SCENE, RENDER_PIPELINE_ERROR, errorDescription.str());
+    }
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_INFO_LOG("OnMultiRenderFrame callback");
     isFinisMultiRenderFrame_ = true;
     MultiRenderFrameResult_ = result;
     callbackCV_.notify_all();
+}
+
+void AudioSuiteManager::WriteSuiteEngineUtilizationStatsEvent(AudioNodeType nodeType)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::SUITE_ENGINE_UTILIZATION_STATS,
+        Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
+    std::string nodeTypeStr = "";
+    auto it = NODETYPE_TOSTRING_MAP.find(nodeType);
+    if (it != NODETYPE_TOSTRING_MAP.end()) {
+        nodeTypeStr = it->second;
+    }
+    bean->Add("CLIENT_UID", static_cast<int32_t>(getuid()));
+    bean->Add("AUDIO_NODE_TYPE", nodeTypeStr);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+ 
+void AudioSuiteManager::WriteSuiteEngineExceptionEvent(uint32_t scene, uint32_t result, std::string description)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::SUITE_ENGINE_EXCEPTION,
+        Media::MediaMonitor::EventType::FAULT_EVENT);
+    bean->Add("CLIENT_UID", static_cast<int32_t>(getuid()));
+    bean->Add("ERROR_SCENE", static_cast<int32_t>(scene));
+    bean->Add("ERROR_CASE", static_cast<int32_t>(result));
+    bean->Add("ERROR_DESCRIPTION", description);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 }  // namespace AudioSuite
