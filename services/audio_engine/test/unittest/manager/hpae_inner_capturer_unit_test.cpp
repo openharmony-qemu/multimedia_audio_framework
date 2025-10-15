@@ -742,6 +742,41 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, SetSessionFade_001, TestSize.Level0)
     EXPECT_EQ(hpaeInnerCapturerManager_->SetSessionFade(streamInfo.sessionId, OPERATION_STARTED), false);
     EXPECT_EQ(hpaeInnerCapturerManager_->SetSessionFade(streamInfo.sessionId, OPERATION_PAUSED), false);
 }
+
+/**
+ * @tc.name  : Test TriggerStreamState
+ * @tc.type  : FUNC
+ * @tc.number: TriggerStreamState_001
+ * @tc.desc  : Test TriggerStreamState
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, TriggerStreamState_001, TestSize.Level0)
+{
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->IsInit(), true);
+    HpaeStreamInfo streamInfo = GetInCapPlayStreamInfo();
+
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Start(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->SetSessionFade(streamInfo.sessionId, OPERATION_STARTED), true);
+    EXPECT_EQ(hpaeInnerCapturerManager_->sinkInputNodeMap_[streamInfo.sessionId]->GetState(), HPAE_SESSION_RUNNING);
+    hpaeInnerCapturerManager_->TriggerStreamState(streamInfo.sessionId,
+        hpaeInnerCapturerManager_->sinkInputNodeMap_[streamInfo.sessionId]);
+
+    EXPECT_EQ(hpaeInnerCapturerManager_->SetSessionFade(streamInfo.sessionId, OPERATION_STOPPED), true);
+    EXPECT_EQ(hpaeInnerCapturerManager_->sinkInputNodeMap_[streamInfo.sessionId]->GetState(), HPAE_SESSION_STOPPING);
+    hpaeInnerCapturerManager_->TriggerStreamState(streamInfo.sessionId,
+        hpaeInnerCapturerManager_->sinkInputNodeMap_[streamInfo.sessionId]);
+    EXPECT_EQ(hpaeInnerCapturerManager_->sinkInputNodeMap_[streamInfo.sessionId]->GetState(), HPAE_SESSION_STOPPED);
+
+    EXPECT_EQ(hpaeInnerCapturerManager_->SetSessionFade(streamInfo.sessionId, OPERATION_PAUSED), true);
+    EXPECT_EQ(hpaeInnerCapturerManager_->sinkInputNodeMap_[streamInfo.sessionId]->GetState(), HPAE_SESSION_PAUSING);
+    hpaeInnerCapturerManager_->TriggerStreamState(streamInfo.sessionId,
+        hpaeInnerCapturerManager_->sinkInputNodeMap_[streamInfo.sessionId]);
+    EXPECT_EQ(hpaeInnerCapturerManager_->sinkInputNodeMap_[streamInfo.sessionId]->GetState(), HPAE_SESSION_PAUSED);
+}
 }  // namespace HPAE
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS

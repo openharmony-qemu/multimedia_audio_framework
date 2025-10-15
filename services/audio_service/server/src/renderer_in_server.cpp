@@ -1083,7 +1083,6 @@ void RendererInServer::StartStreamByType()
         std::lock_guard<std::mutex> dupLock(dupMutex_);
         for (auto &capInfo : captureInfos_) {
             if (IsEnabledAndValidDupStream(capInfo.second)) {
-                InitDupBufferInner(capInfo.first);
                 capInfo.second.dupStream->Start();
             }
         }
