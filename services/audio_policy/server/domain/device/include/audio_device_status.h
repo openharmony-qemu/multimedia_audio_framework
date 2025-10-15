@@ -74,7 +74,9 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> GetDeviceByStatusInfo(const DStatusInfo &statusInfo);
     void OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop = false);
     int32_t OnServiceConnected(AudioServiceIndex serviceIndex);
-    void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress);
+    void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
+        sptr<AudioRendererFilter> filter = nullptr);
+    void OnPrivacyDeviceSelected();
     void OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc, DeviceType devType,
         std::string macAddress, std::string deviceName, bool isActualConnection, AudioStreamInfo streamInfo,
         bool isConnected);

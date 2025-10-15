@@ -114,7 +114,9 @@ public:
             const std::string &deviceName, const AudioStreamInfo &streamInfo) override;
         void OnServiceConnected(AudioServiceIndex serviceIndex) override;
         void OnServiceDisconnected(AudioServiceIndex serviceIndex) override;
-        void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress) override;
+        void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
+            sptr<AudioRendererFilter> filter = nullptr) override;
+        void OnPrivacyDeviceSelected() override;
         uint32_t GetPaIndexByPortName(const std::string &portName) override;
 
         // Functions related to assignment operations - device related
@@ -245,7 +247,9 @@ private:
         const std::string &deviceName, const AudioStreamInfo &streamInfo);
     int32_t OnServiceConnected(AudioServiceIndex serviceIndex);
     uint32_t GetPaIndexByPortName(const std::string &portName);
-    void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress);
+    void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
+        sptr<AudioRendererFilter> filter = nullptr);
+    void OnPrivacyDeviceSelected();
 
     // Functions related to assignment operations - device related
     int32_t SetAudioScene(AudioScene audioScene, const int32_t uid = INVALID_UID, const int32_t pid = INVALID_PID);

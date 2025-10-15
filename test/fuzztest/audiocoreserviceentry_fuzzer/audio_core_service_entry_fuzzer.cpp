@@ -306,6 +306,7 @@ void AudioCoreServiceEventEntryOnForcedDeviceSelectedFuzzTest()
     auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
     DeviceType devType = DeviceType::DEVICE_TYPE_USB_HEADSET;
     std::string macAddress = "11-22-33-44-55-66";
+    eventEntry->OnPrivacyDeviceSelected();
     eventEntry->OnForcedDeviceSelected(devType, macAddress);
 }
 

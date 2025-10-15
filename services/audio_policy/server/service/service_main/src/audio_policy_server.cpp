@@ -5404,6 +5404,19 @@ int32_t AudioPolicyServer::GetVADeviceController(const std::string& macAddress, 
 }
 
 
+int32_t AudioPolicyServer::SelectPrivateDevice()
+{
+    eventEntry_->OnPrivacyDeviceSelected();
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::ForceSelectDevice(int32_t devType, const std::string &macAddress,
+    const sptr<AudioRendererFilter> &filter)
+{
+    eventEntry_->OnForcedDeviceSelected(static_cast<DeviceType>(devType), macAddress, filter);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::IsIntelligentNoiseReductionEnabledForCurrentDevice(int32_t sourceType, bool &ret)
 {
     ret = audioPolicyService_.IsIntelligentNoiseReductionEnabledForCurrentDevice(
