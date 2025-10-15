@@ -41,7 +41,7 @@ private:
     void ScanPipeListForStreamDesc(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfoList,
         std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void UpdateProcessConcurrency(AudioPipeType existingPipe, AudioPipeType commingPipe,
-                                  ConcurrencyAction &action);
+        ConcurrencyAction &action);
     bool ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor> existingStream,
         std::shared_ptr<AudioStreamDescriptor> incomingStream,
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove);
