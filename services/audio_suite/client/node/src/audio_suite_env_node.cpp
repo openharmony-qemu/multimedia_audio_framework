@@ -26,8 +26,8 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 AudioSuiteEnvNode::AudioSuiteEnvNode()
-    : AudioSuiteProcessNode(
-          NODE_TYPE_EQUALIZER, AudioFormat{{CH_LAYOUT_STEREO, ALGO_CHANNEL_NUM}, SAMPLE_S16LE, SAMPLE_RATE_48000}),
+    : AudioSuiteProcessNode(NODE_TYPE_ENVIRONMENT_EFFECT,
+          AudioFormat{{CH_LAYOUT_STEREO, ALGO_CHANNEL_NUM}, SAMPLE_S16LE, SAMPLE_RATE_48000}),
       outPcmBuffer_(SAMPLE_RATE_48000, ALGO_CHANNEL_NUM, CH_LAYOUT_STEREO)
 {}
 
