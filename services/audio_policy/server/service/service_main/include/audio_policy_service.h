@@ -137,7 +137,10 @@ public:
 
     void OnServiceDisconnected(AudioServiceIndex serviceIndex);
 
-    void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress);
+    void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
+        sptr<AudioRendererFilter> filter = nullptr);
+
+    void OnPrivacyDeviceSelected();
 
     void LoadEffectLibrary();
 

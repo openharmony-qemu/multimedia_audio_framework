@@ -481,7 +481,7 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_021, TestSize.Level1)
 
     DeviceType devType = DEVICE_TYPE_SPEAKER;
     std::string macAddress = "macAddress";
-
+    eventEntry->OnPrivacyDeviceSelected();
     eventEntry->OnForcedDeviceSelected(devType, macAddress);
 }
 

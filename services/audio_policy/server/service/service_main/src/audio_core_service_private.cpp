@@ -1312,9 +1312,16 @@ int32_t AudioCoreService::OnServiceConnected(AudioServiceIndex serviceIndex)
     return audioDeviceStatus_.OnServiceConnected(serviceIndex);
 }
 
-void AudioCoreService::OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress)
+void AudioCoreService::OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
+    sptr<AudioRendererFilter> filter)
 {
-    audioDeviceStatus_.OnForcedDeviceSelected(devType, macAddress);
+    audioDeviceStatus_.OnForcedDeviceSelected(devType, macAddress, filter);
+}
+
+
+void AudioCoreService::OnPrivacyDeviceSelected()
+{
+    audioDeviceStatus_.OnPrivacyDeviceSelected();
 }
 
 void AudioCoreService::UpdateRemoteOffloadModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName)
