@@ -42,7 +42,7 @@ enum ErrorScene : uint32_t {
 };
 enum PipelineErrorCase : uint32_t {
     CREATE_PIPELINE_ERROR = 0,
-    DESTORY_PIPELINE_ERROR = 1,
+    DESTROY_PIPELINE_ERROR = 1,
     RENDER_PIPELINE_ERROR = 2,
 };
 enum NodeErrorCase : uint32_t {
@@ -152,7 +152,7 @@ int32_t AudioSuiteManager::DestroyPipeline(uint32_t pipelineId)
         return isFinishDestroyPipeline_;
     });
     if (!stopWaiting) {
-        WriteSuiteEngineExceptionEvent(PIPELINE_SCENE, DESTORY_PIPELINE_ERROR, "DestroyPipeline timeout");
+        WriteSuiteEngineExceptionEvent(PIPELINE_SCENE, DESTROY_PIPELINE_ERROR, "DestroyPipeline timeout");
         AUDIO_ERR_LOG("DestroyPipeline timeout");
         return ERROR;
     }
@@ -702,7 +702,7 @@ void AudioSuiteManager::OnDestroyPipeline(int32_t result)
         result != ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST) {
         std::ostringstream errorDescription;
         errorDescription << "engine DestroyPipeline failed, ret = " << result;
-        WriteSuiteEngineExceptionEvent(PIPELINE_SCENE, DESTORY_PIPELINE_ERROR, errorDescription.str());
+        WriteSuiteEngineExceptionEvent(PIPELINE_SCENE, DESTROY_PIPELINE_ERROR, errorDescription.str());
     }
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_INFO_LOG("OnDestroyPipeline result: %{public}d", result);
