@@ -23,6 +23,7 @@
 #include <sstream>
 #include "hpae_pcm_buffer.h"
 #include "hpae_define.h"
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -150,12 +151,13 @@ public:
 
     virtual std::string GetTraceInfo()
     {
-        std::ostringstream oss;
-        oss << "rate[" << nodeInfo_.samplingRate << "]_"
-            << "ch[" << static_cast<int32_t>(nodeInfo_.channels) << "]_"
-            << "len[" << nodeInfo_.frameLen << "]_"
-            << "bit[" << static_cast<int32_t>(nodeInfo_.format) << "]";
-        return oss.str();
+        CHECK_AND_RETURN_RET(traceInfo_.empty(), traceInfo_);
+        auto rate = "rate[" + std::to_string(nodeInfo_.samplingRate) + "]_";
+        auto ch = "ch[" + std::to_string(static_cast<int32_t>(nodeInfo_.channels)) + "]_";
+        auto len = "len[" + std::to_string(nodeInfo_.frameLen) + "]_";
+        auto bit = "bit[" + std::to_string(static_cast<int32_t>(nodeInfo_.format)) + "]";
+        traceInfo_ = rate + ch + len + bit;
+        return traceInfo_;
     }
 private:
     static uint32_t GenerateHpaeNodeId()
@@ -173,6 +175,7 @@ private:
     HpaeNodeInfo nodeInfo_;
     inline static std::mutex nodeIdCounterMutex_;
     inline static uint32_t nodeIdCounter_ = MIN_START_NODE_ID;
+    std::string traceInfo_;
 };
 
 template <typename T>
