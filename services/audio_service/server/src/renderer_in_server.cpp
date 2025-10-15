@@ -128,7 +128,8 @@ int32_t RendererInServer::ConfigServerBuffer()
 
     // 100 * 2 + 20 = 220ms, buffer total size.
     bufferTotalSizeInFrame_ = (MAX_CBBUF_IN_USEC * DEFAULT_SPAN_SIZE + MIN_CBBUF_IN_USEC) *
-        processConfig_.streamInfo.samplingRate / AUDIO_US_PER_S;
+        (processConfig_.streamInfo.customSampleRate == 0 ? processConfig_.streamInfo.samplingRate :
+        processConfig_.streamInfo.customSampleRate) / AUDIO_US_PER_S;
 
     spanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame_;
     CHECK_AND_RETURN_RET_LOG(spanSizeInByte_ != 0, ERR_OPERATION_FAILED, "Config oh audio buffer failed!");
