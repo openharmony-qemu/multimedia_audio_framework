@@ -144,16 +144,16 @@ HWTEST(AudioCoreServiceUtilsTest, SortOutputStreamDescsForUsage_001, TestSize.Le
     outputStreamDescs.push_back(streamDescOne);
     
     std::shared_ptr<AudioStreamDescriptor> streamDescTwo = std::make_shared<AudioStreamDescriptor>();
-    streamDescOne->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_RINGTONE;
-    streamDescOne->sessionId_ = TEST_STREAM_2_SESSION_ID;
+    streamDescTwo->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_RINGTONE;
+    streamDescTwo->sessionId_ = TEST_STREAM_2_SESSION_ID;
     outputStreamDescs.push_back(streamDescTwo);
 
     std::shared_ptr<AudioStreamDescriptor> streamDescThree = std::make_shared<AudioStreamDescriptor>();
-    streamDescOne->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
-    streamDescOne->sessionId_ = TEST_STREAM_3_SESSION_ID;
+    streamDescThree->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    streamDescThree->sessionId_ = TEST_STREAM_3_SESSION_ID;
     outputStreamDescs.push_back(streamDescThree);
 
-    EXPECT_EQ(outputStreamDescs.front()->sessionId_, 1);
+    EXPECT_EQ(outputStreamDescs.front()->sessionId_, TEST_STREAM_1_SESSION_ID);
     AudioCoreServiceUtils::SortOutputStreamDescsForUsage(outputStreamDescs);
     EXPECT_EQ(outputStreamDescs.front()->sessionId_, TEST_STREAM_3_SESSION_ID);
 }
@@ -173,10 +173,11 @@ HWTEST(AudioCoreServiceUtilsTest, SortOutputStreamDescsForUsage_002, TestSize.Le
     outputStreamDescs.push_back(streamDescOne);
     
     std::shared_ptr<AudioStreamDescriptor> streamDescTwo = std::make_shared<AudioStreamDescriptor>();
-    streamDescOne->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_RINGTONE;
-    streamDescOne->sessionId_ =TEST_STREAM_2_SESSION_ID;
+    streamDescTwo->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_RINGTONE;
+    streamDescTwo->sessionId_ =TEST_STREAM_2_SESSION_ID;
     outputStreamDescs.push_back(streamDescTwo);
 
+    EXPECT_EQ(outputStreamDescs.front()->sessionId_, TEST_STREAM_1_SESSION_ID);
     AudioCoreServiceUtils::SortOutputStreamDescsForUsage(outputStreamDescs);
     EXPECT_EQ(outputStreamDescs.front()->sessionId_, TEST_STREAM_2_SESSION_ID);
 }
