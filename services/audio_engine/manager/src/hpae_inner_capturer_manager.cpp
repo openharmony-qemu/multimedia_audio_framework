@@ -118,7 +118,7 @@ void HpaeInnerCapturerManager::MoveAllStreamToNewSinkInner(const std::string &si
     }
     for (const auto &it : sessionIds) {
         CHECK_AND_CONTINUE_LOG(SafeGetMap(sinkInputNodeMap_, it),
-            "session: %{public}u can not found in sinkInputNodeMap", it);
+            "sessionid: %{public}u can not found in sinkInputNodeMap", it);
         TriggerStreamState(it, sinkInputNodeMap_[it]);
         DeleteRendererInputSessionInner(it);
     }
@@ -244,7 +244,7 @@ int32_t HpaeInnerCapturerManager::ReloadRenderManager(const HpaeSinkInfo &sinkIn
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     auto request = [this, sinkInfo, isReload]() {
         for (const auto &it: sinkInputNodeMap_) {
-            CHECK_AND_CONTINUE_LOG(it.second != nullptr, "session: %{public}u can not found in sinkInputNodeMap",
+            CHECK_AND_CONTINUE_LOG(it.second != nullptr, "sessionid: %{public}u can not found in sinkInputNodeMap",
                 it.first);
             TriggerStreamState(it.first, it.second);
             DeleteRendererInputNodeSession(it.second);

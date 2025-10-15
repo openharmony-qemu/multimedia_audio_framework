@@ -490,7 +490,7 @@ void HpaeRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
     }
     for (const auto &it : sessionIds) {
         CHECK_AND_CONTINUE_LOG(SafeGetMap(sinkInputNodeMap_, it),
-            "session: %{public}u can not found in sinkInputNodeMap", it);
+            "sessionid: %{public}u can not found in sinkInputNodeMap", it);
         TriggerStreamState(it, sinkInputNodeMap_[it]);
         DeleteInputSession(it);
     }
