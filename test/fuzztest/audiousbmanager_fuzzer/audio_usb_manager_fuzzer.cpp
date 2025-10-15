@@ -40,7 +40,9 @@ public:
     void OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop = false) override {};
     void OnServiceConnected(AudioServiceIndex serviceIndex) override {};
     void OnServiceDisconnected(AudioServiceIndex serviceIndex) override {};
-    void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress) override {};
+    void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
+        sptr<AudioRendererFilter> filter = nullptr) override {};
+    void OnPrivacyDeviceSelected() override {};
     void OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected) override {};
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand) override {};
 

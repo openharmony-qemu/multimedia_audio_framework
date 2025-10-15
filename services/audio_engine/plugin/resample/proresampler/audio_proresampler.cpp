@@ -82,10 +82,14 @@ ProResampler::ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels,
 int32_t ProResampler::Process(const float *inBuffer, uint32_t inFrameLen, float *outBuffer,
     uint32_t outFrameLen)
 {
+    CHECK_AND_RETURN_RET_LOG(outBuffer != nullptr, RESAMPLER_ERR_INVALID_ARG, "out buffer ptr is nullptr");
     CHECK_AND_RETURN_RET_LOG(state_ != nullptr, RESAMPLER_ERR_ALLOC_FAILED, "resampler state is invalid");
     CHECK_AND_RETURN_RET_LOG((inFrameLen <= MAX_FRAME_LEN) && (outFrameLen <= MAX_FRAME_LEN),
-        RESAMPLER_ERR_ALLOC_FAILED, "inFrameLen %{public}d or outFrameLen %{public}d out of valid range",
-        inFrameLen, outFrameLen);
+        RESAMPLER_ERR_ALLOC_FAILED,
+        "inFrameLen %{public}d or outFrameLen %{public}d out of valid range",
+        inFrameLen,
+        outFrameLen);
+        
     if (inRate_ == SAMPLE_RATE_11025) {
         return Process11025SampleRate(inBuffer, inFrameLen, outBuffer, outFrameLen);
     } else if (inRate_ % CUSTOM_SAMPLE_RATE_MULTIPLES != 0) {
@@ -98,6 +102,7 @@ int32_t ProResampler::Process(const float *inBuffer, uint32_t inFrameLen, float 
 int32_t ProResampler::ProcessOtherSampleRate(const float *inBuffer, uint32_t inFrameLen, float *outBuffer,
     uint32_t outFrameLen)
 {
+    CHECK_AND_RETURN_RET_LOG(inBuffer != nullptr, RESAMPLER_ERR_INVALID_ARG, "in buffer ptr is nullptr");
     uint32_t expectedOutFrameLen = outFrameLen;
     std::vector<float> tmpOutBuf(expectedOutFrameLen * channels_, 0.0f);
     int32_t ret =
@@ -139,6 +144,8 @@ int32_t ProResampler::Process11025SampleRate(const float *inBuffer, uint32_t inF
         }
         return ret;
     }
+    CHECK_AND_RETURN_RET_LOG(inBuffer != nullptr, RESAMPLER_ERR_INVALID_ARG, "in buffer ptr is nullptr");
+
     std::vector<float> tmpOutBuf(expectedOutFrameLen_ * channels_ * BUFFER_EXPAND_SIZE_2, 0.0f);
     uint32_t tmpOutFrameLen = expectedOutFrameLen_ * BUFFER_EXPAND_SIZE_2;
     uint32_t reserveOutFrameLen = tmpOutFrameLen;
@@ -188,6 +195,8 @@ int32_t ProResampler::Process10HzSampleRate(const float *inBuffer, uint32_t inFr
         }
         return ret;
     }
+    CHECK_AND_RETURN_RET_LOG(inBuffer != nullptr, RESAMPLER_ERR_INVALID_ARG, "in buffer ptr is nullptr");
+
     std::vector<float> tmpOutBuf(expectedOutFrameLen_ * channels_ * BUFFER_EXPAND_SIZE_5, 0.0f);
     uint32_t tmpOutFrameLen = expectedOutFrameLen_ * BUFFER_EXPAND_SIZE_5;
     uint32_t reserveOutFrameLen = tmpOutFrameLen;

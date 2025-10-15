@@ -116,6 +116,8 @@ public:
     int32_t GetPipelineState(OHAudioSuitePipeline *audioPipeline, OH_AudioSuite_PipelineState *state);
     int32_t RenderFrame(OHAudioSuitePipeline *audioPipeline,
         uint8_t *audioData, int32_t frameSize, int32_t *writeSize, bool *finishedFlag);
+    int32_t MultiRenderFrame(OHAudioSuitePipeline *audioPipeline,
+        AudioSuite::AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag);
 
     // node
     int32_t CreateNode(
@@ -126,6 +128,7 @@ public:
     int32_t SetAudioFormat(OHAudioNode *node, OH_AudioFormat *audioFormat);
     int32_t ConnectNodes(OHAudioNode *srcNode, OHAudioNode *destNode,
         OH_AudioNode_Port_Type sourcePortType, OH_AudioNode_Port_Type destPortType);
+    int32_t ConnectNodes(OHAudioNode *srcNode, OHAudioNode *destNode);
     int32_t DisConnectNodes(OHAudioNode *srcNode, OHAudioNode *destNode);
     int32_t SetEqualizerMode(OHAudioNode *node, OH_EqualizerMode eqMode);
     int32_t SetEqualizerFrequencyBandGains(
@@ -134,6 +137,12 @@ public:
     int32_t SetEnvironmentType(OHAudioNode *node, OH_EnvironmentType environmentType);
     int32_t SetVoiceBeautifierType(
         OHAudioNode *node, OH_VoiceBeautifierType voiceBeautifierType);
+    int32_t GetEnvironmentType(OHAudioNode *node, OH_EnvironmentType *environmentType);
+    int32_t GetSoundFiledType(OHAudioNode *node, OH_SoundFieldType *soundFieldType);
+    int32_t GetEqualizerFrequencyBandGains(OHAudioNode *node,
+        OH_EqualizerFrequencyBandGains *frequencyBandGains);
+    int32_t GetVoiceBeautifierType(OHAudioNode *node,
+        OH_VoiceBeautifierType *voiceBeautifierType);
     int32_t InstallTap(OHAudioNode *node,
         OH_AudioNode_Port_Type portType, OH_AudioNode_OnReadTapDataCallback callback, void *userData);
     int32_t RemoveTap(OHAudioNode *node, OH_AudioNode_Port_Type portType);

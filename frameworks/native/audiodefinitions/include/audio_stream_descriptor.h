@@ -150,6 +150,14 @@ public:
             (audioFlag_ == AUDIO_OUTPUT_FLAG_MULTICHANNEL);
     }
 
+    bool IsMediaScene() const
+    {
+        return (rendererInfo_.streamUsage == STREAM_USAGE_MUSIC) ||
+            (rendererInfo_.streamUsage == STREAM_USAGE_MOVIE) ||
+            (rendererInfo_.streamUsage == STREAM_USAGE_GAME) ||
+            (rendererInfo_.streamUsage == STREAM_USAGE_AUDIOBOOK);
+    }
+
     // Route funcs above
     uint32_t GetRoute() const
     {

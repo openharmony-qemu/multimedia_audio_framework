@@ -31,7 +31,7 @@ static constexpr AudioSamplingRate ENV_ALGO_SAMPLE_RATE = SAMPLE_RATE_48000;
 static constexpr AudioSampleFormat ENV_ALGO_SAMPLE_FORMAT = SAMPLE_S16LE;
 static constexpr AudioChannel ENV_ALGO_CHANNEL_COUNT = STEREO;
 static constexpr AudioChannelLayout ENV_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
-}
+}  // namespace
 
 AudioSuiteEnvNode::AudioSuiteEnvNode()
     : AudioSuiteProcessNode(NODE_TYPE_ENVIRONMENT_EFFECT,
@@ -112,8 +112,10 @@ AudioSuitePcmBuffer *AudioSuiteEnvNode::SignalProcess(const std::vector<AudioSui
     ret = envAlgoInterfaceImpl_->Apply(tmpin_, tmpout_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, &outPcmBuffer_, "AudioSuiteEnvNode SignalProcess Apply failed");
 
-    ConvertToFloat(
-        ENV_ALGO_SAMPLE_FORMAT, outPcmBuffer_.GetFrameLen(), outputDataBuffer_.data(), outPcmBuffer_.GetPcmDataBuffer());
+    ConvertToFloat(ENV_ALGO_SAMPLE_FORMAT,
+        outPcmBuffer_.GetFrameLen(),
+        outputDataBuffer_.data(),
+        outPcmBuffer_.GetPcmDataBuffer());
     return &outPcmBuffer_;
 }
 

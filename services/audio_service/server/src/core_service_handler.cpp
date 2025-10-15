@@ -143,6 +143,12 @@ void CoreServiceHandler::ReleaseCaptureInjector(uint32_t sessionId)
     iCoreServiceProvider_->ReleaseCaptureInjector(sessionId);
 }
 
+void CoreServiceHandler::RebuildCaptureInjector(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_LOG(iCoreServiceProvider_ != nullptr, "iCoreServiceProvider_ is nullptr!");
+    iCoreServiceProvider_->RebuildCaptureInjector(sessionId);
+}
+
 int32_t CoreServiceHandler::A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
                                                          uint32_t &timeStamp)
 {

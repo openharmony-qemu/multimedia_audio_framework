@@ -53,20 +53,23 @@ void HpaeRemoteOutputCluster::DoProcess()
     hpaeSinkOutputNode_->DoProcess();
     
     for (auto mixerNodeIt = sceneMixerMap_.begin(); mixerNodeIt != sceneMixerMap_.end();) {
-        if (sceneMixerMap_.size() == 1 && mixerNodeIt->second->GetPreOutNum() == 0) {
+        if (mixerNodeIt->second->GetPreOutNum() != 0) {
+            ++mixerNodeIt;
+            stopCount_ = 0;
+            continue;
+        }
+        if (sceneMixerMap_.size() == 1) {
             ++stopCount_;
             break;
-        } else {
-            stopCount_ = 0;
         }
-        if (mixerNodeIt->second->GetPreOutNum() == 0) {
-            hpaeSinkOutputNode_->DisConnect(mixerNodeIt->second);
-            mixerNodeIt = sceneMixerMap_.erase(mixerNodeIt);
-        } else {
-            ++mixerNodeIt;
-        }
+        hpaeSinkOutputNode_->DisConnect(mixerNodeIt->second);
+        mixerNodeIt = sceneMixerMap_.erase(mixerNodeIt);
     }
+    
     if (stopCount_ > timeoutThdFrames_) {
+        if (!sceneMixerMap_.empty()) {
+            hpaeSinkOutputNode_->DisConnect(sceneMixerMap_.begin()->second);
+        }
         sceneMixerMap_.clear();
         int32_t ret = hpaeSinkOutputNode_->RenderSinkStop();
         stopCount_ = 0;

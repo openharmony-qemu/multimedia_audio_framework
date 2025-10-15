@@ -3303,6 +3303,24 @@ HWTEST_F(AudioCoreServicePrivateTest, IsDupDeviceChange_004, TestSize.Level1)
 }
 
 /**
+ * @tc.name   : AudioCoreServicePrivateTest_IsDupDeviceChange_005
+ * @tc.number : IsDupDeviceChange_005
+ * @tc.desc   : Test IsDupDeviceChange() for no dup device
+ */
+HWTEST_F(AudioCoreServicePrivateTest, IsDupDeviceChange_005, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->oldDeviceDescs_.clear();
+    streamDesc->newDeviceDescs_.clear();
+
+    bool isDeviceChange = audioCoreService->IsDupDeviceChange(streamDesc);
+
+    EXPECT_EQ(isDeviceChange, false);
+}
+
+/**
  * @tc.name   : AudioCoreServicePrivateTest_CheckAndUpdateOffloadEnableForStream_001
  * @tc.number : CheckAndUpdateOffloadEnableForStream_001
  * @tc.desc   : Test CheckAndUpdateOffloadEnableForStream() for offload new case

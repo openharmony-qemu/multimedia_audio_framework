@@ -15,15 +15,9 @@
 
 #ifndef AUDIO_SUITE_ENV_NODE_H
 #define AUDIO_SUITE_ENV_NODE_H
-#define RESAMPLE_QUALITY (5)
 
-#include <vector>
-#include <string>
-#include <iostream>
 #include "audio_suite_env_algo_interface_impl.h"
 #include "audio_suite_process_node.h"
-#include "audio_suite_log.h"
-#include "audio_suite_info.h"
 
 namespace OHOS {
 namespace AudioStandard {

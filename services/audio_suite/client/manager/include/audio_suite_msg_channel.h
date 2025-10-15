@@ -37,6 +37,7 @@ enum PipelineMsgCode {
     INSTALL_NODE_TAP,
     REMOVE_NODE_TAP,
     RENDER_FRAME,
+    MULTI_RENDER_FRAME,
 };
 
 class ISendMsgCallback {

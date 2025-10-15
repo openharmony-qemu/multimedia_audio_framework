@@ -124,7 +124,7 @@ void AudioVolumeUtils::GetDefaultVolumeLevelForDistributedDevice(const std::shar
         GetDefaultVolumeLevelFromConfig(tmp, streamType, volumeLevel);
         return;
     }
-    volumeLevel = MAX_VOLUME_LEVEL;
+    volumeLevel = GetMaxVolumeLevel(desc, streamType);
 }
 
 void AudioVolumeUtils::GetDefaultVolumeLevelForHearingAidDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc,
@@ -136,7 +136,8 @@ void AudioVolumeUtils::GetDefaultVolumeLevelForHearingAidDevice(const std::share
         GetDefaultVolumeLevelFromConfig(tmp, streamType, volumeLevel);
         return;
     }
-    volumeLevel = static_cast<int32_t>(std::ceil(MAX_VOLUME_LEVEL * HEARING_AID_MAX_VOLUME_PROP));
+    int32_t maxVolumeLevel = GetMaxVolumeLevel(desc, volumeType);
+    volumeLevel = static_cast<int32_t>(std::ceil(maxVolumeLevel * HEARING_AID_MAX_VOLUME_PROP));
 }
 
 int32_t AudioVolumeUtils::GetMaxVolumeLevel(const std::shared_ptr<AudioDeviceDescriptor> &desc,

@@ -236,7 +236,7 @@ int32_t AudioEffectChain::SetEffectProperty(const std::string &effect, const std
 {
     std::lock_guard<std::mutex> lock(reloadMutex_);
     int32_t ret = 0;
-    int32_t size = standByEffectHandles_.size();
+    int32_t size = static_cast<int32_t>(standByEffectHandles_.size());
     for (int32_t index = 0; index < size; index++) {
         auto &handle = standByEffectHandles_[index];
         auto const &effectName = effectNames_[index];
@@ -350,7 +350,6 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
     audioBufIn_.frameLength = frameLen;
     audioBufOut_.frameLength = frameLen;
     std::lock_guard<std::mutex> lock(reloadMutex_);
-
     for (size_t i = 0; i < standByEffectHandles_.size(); ++i) {
 #ifdef SENSOR_ENABLE
         if ((!procInfo.btOffloadEnabled) && procInfo.headTrackingEnabled) {
@@ -508,6 +507,7 @@ void AudioEffectChain::SetSpatialDeviceType(AudioSpatialDeviceType spatialDevice
 
     return;
 }
+
 void AudioEffectChain::SetCurrChannelNoCheck(const uint32_t channel)
 {
     currChannelNoCheck_ = channel;

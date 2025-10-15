@@ -1365,11 +1365,9 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_052, TestSize.Level1)
 HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_053, TestSize.Level1)
 {
     std::string address = "00:11:22:33:44:55";
-    std::string device = "00:00:00:00:00:00";
-    A2dpDeviceConfigInfo config;
 
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
-    audioDeviceStatus.audioA2dpDevice_.AddA2dpInDevice(device, config);
+    audioDeviceStatus.audioDeviceManager_.connectedDevices_.clear();
 
     audioDeviceStatus.UpdateActiveA2dpDeviceWhenDisconnecting(address);
     EXPECT_NE(audioDeviceStatus.audioPolicyServerHandler_, nullptr);
@@ -1383,13 +1381,19 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_053, TestSize.Level1)
 HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_054, TestSize.Level1)
 {
     std::string address = "00:11:22:33:44:55";
-    std::string device = address;
-    A2dpDeviceConfigInfo config;
 
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
-    audioDeviceStatus.audioA2dpDevice_.AddA2dpInDevice(device, config);
+    audioDeviceStatus.audioDeviceManager_.connectedDevices_.clear();
+
+    AudioDeviceDescriptor descA;
+    descA.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    descA.macAddress_ = "11:22:33:44:55:66";
+    descA.connectState_ = CONNECTED;
+    audioDeviceStatus.audioDeviceManager_.connectedDevices_.push_back(
+        std::make_shared<AudioDeviceDescriptor>(descA));
 
     audioDeviceStatus.UpdateActiveA2dpDeviceWhenDisconnecting(address);
+    audioDeviceStatus.audioDeviceManager_.connectedDevices_.clear();
     EXPECT_NE(audioDeviceStatus.audioPolicyServerHandler_, nullptr);
 }
 

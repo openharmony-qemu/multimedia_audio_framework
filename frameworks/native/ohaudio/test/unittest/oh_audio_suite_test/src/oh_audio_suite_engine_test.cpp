@@ -47,7 +47,7 @@ static void CreateNode(OH_AudioSuitePipeline *pipeline, OH_AudioNode_Type type, 
     OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_Create(&builder, type);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
-    if ((type == AUDIOSUITE_NODE_TYPE_INPUT) || (type == AUDIOSUITE_NODE_TYPE_OUTPUT)) {
+    if ((type == INPUT_NODE_TYPE_DEFAULT) || (type == OUT_NODE_TYPE_DEFAULT)) {
         OH_AudioFormat audioFormat;
         audioFormat.samplingRate = SAMPLE_RATE_48000;
         audioFormat.channelCount = AudioChannel::STEREO;
@@ -56,7 +56,7 @@ static void CreateNode(OH_AudioSuitePipeline *pipeline, OH_AudioNode_Type type, 
         EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
     }
 
-    if (type == AUDIOSUITE_NODE_TYPE_INPUT) {
+    if (type == INPUT_NODE_TYPE_DEFAULT) {
         ret = OH_AudioSuiteNodeBuilder_SetOnWriteDataCallback(builder, WriteDataCallback, nullptr);
         EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
     }
@@ -402,22 +402,22 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_StartPipeline_003, TestSize.L
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNodeOne = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNodeOne);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNodeOne);
 
     OH_AudioNode *inputNodeThree = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNodeThree);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNodeThree);
 
     OH_AudioNode *outputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_OUTPUT, &outputNode);
+    CreateNode(pipeline, OUT_NODE_TYPE_DEFAULT, &outputNode);
 
     OH_AudioNode *mixNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_AUDIO_MIXER, &mixNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_AUDIO_MIXER, &mixNode);
 
     OH_AudioNode *eqNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_EQUALIZER, &eqNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_EQUALIZER, &eqNode);
 
     OH_AudioNode *nrNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_NOISE_REDUCTION, &nrNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_NOISE_REDUCTION, &nrNode);
 
     ret = OH_AudioSuiteEngine_ConnectNodes(inputNodeOne, eqNode,
         AUDIO_NODE_DEFAULT_OUTPORT_TYPE, AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
@@ -465,10 +465,10 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_StartPipeline_004, TestSize.L
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNode);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
 
     OH_AudioNode *outputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_OUTPUT, &outputNode);
+    CreateNode(pipeline, OUT_NODE_TYPE_DEFAULT, &outputNode);
 
     ret = OH_AudioSuiteEngine_ConnectNodes(inputNode, outputNode,
         AUDIO_NODE_DEFAULT_OUTPORT_TYPE, AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
@@ -500,10 +500,10 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_StartPipeline_005, TestSize.L
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNode);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
 
     OH_AudioNode *outputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_OUTPUT, &outputNode);
+    CreateNode(pipeline, OUT_NODE_TYPE_DEFAULT, &outputNode);
 
     ret = OH_AudioSuiteEngine_ConnectNodes(inputNode, outputNode,
         AUDIO_NODE_DEFAULT_OUTPORT_TYPE, AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
@@ -549,10 +549,10 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_StopPipeline_002, TestSize.Le
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNode);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
 
     OH_AudioNode *outputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_OUTPUT, &outputNode);
+    CreateNode(pipeline, OUT_NODE_TYPE_DEFAULT, &outputNode);
 
     ret = OH_AudioSuiteEngine_ConnectNodes(inputNode, outputNode,
         AUDIO_NODE_DEFAULT_OUTPORT_TYPE, AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
@@ -593,10 +593,10 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_StopPipeline_003, TestSize.Le
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNode);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
 
     OH_AudioNode *outputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_OUTPUT, &outputNode);
+    CreateNode(pipeline, OUT_NODE_TYPE_DEFAULT, &outputNode);
 
     ret = OH_AudioSuiteEngine_ConnectNodes(inputNode, outputNode,
         AUDIO_NODE_DEFAULT_OUTPORT_TYPE, AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
@@ -689,10 +689,10 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetPipelineState_003, TestSiz
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNode);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
 
     OH_AudioNode *outputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_OUTPUT, &outputNode);
+    CreateNode(pipeline, OUT_NODE_TYPE_DEFAULT, &outputNode);
 
     ret = OH_AudioSuiteEngine_ConnectNodes(inputNode, outputNode,
         AUDIO_NODE_DEFAULT_OUTPORT_TYPE, AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
@@ -808,10 +808,10 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_RenderFrame_003, TestSize.Lev
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNode);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
 
     OH_AudioNode *outputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_OUTPUT, &outputNode);
+    CreateNode(pipeline, OUT_NODE_TYPE_DEFAULT, &outputNode);
 
     ret = OH_AudioSuiteEngine_ConnectNodes(inputNode, outputNode,
         AUDIO_NODE_DEFAULT_OUTPORT_TYPE, AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
@@ -869,10 +869,10 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_ConnectNodes_001, TestSize.Le
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNode);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
 
     OH_AudioNode *outputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_OUTPUT, &outputNode);
+    CreateNode(pipeline, OUT_NODE_TYPE_DEFAULT, &outputNode);
 
     ret = OH_AudioSuiteEngine_ConnectNodes(inputNode, nullptr,
         AUDIO_NODE_DEFAULT_OUTPORT_TYPE, AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
@@ -911,13 +911,13 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_ConnectNodes_002, TestSize.Le
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNode);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
 
     OH_AudioNode *outputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_OUTPUT, &outputNode);
+    CreateNode(pipeline, OUT_NODE_TYPE_DEFAULT, &outputNode);
 
     OH_AudioNode *mixNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_AUDIO_MIXER, &mixNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_AUDIO_MIXER, &mixNode);
 
     ret = OH_AudioSuiteEngine_ConnectNodes(outputNode, mixNode,
         AUDIO_NODE_DEFAULT_OUTPORT_TYPE, AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
@@ -959,7 +959,7 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_ConnectNodes_003, TestSize.Le
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *mixNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_AUDIO_MIXER, &mixNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_AUDIO_MIXER, &mixNode);
 
     ret = OH_AudioSuiteEngine_ConnectNodes(mixNode, mixNode,
         AUDIO_NODE_DEFAULT_OUTPORT_TYPE, AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
@@ -995,10 +995,10 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_ConnectNodes_004, TestSize.Le
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *srcMixNode = nullptr;
-    CreateNode(pipelineOne, AUDIOSUITE_NODE_TYPE_AUDIO_MIXER, &srcMixNode);
+    CreateNode(pipelineOne, EFFECT_NODE_TYPE_AUDIO_MIXER, &srcMixNode);
 
     OH_AudioNode *destMixNode = nullptr;
-    CreateNode(pipelineTwo, AUDIOSUITE_NODE_TYPE_AUDIO_MIXER, &destMixNode);
+    CreateNode(pipelineTwo, EFFECT_NODE_TYPE_AUDIO_MIXER, &destMixNode);
 
     ret = OH_AudioSuiteEngine_ConnectNodes(srcMixNode, destMixNode,
         AUDIO_NODE_DEFAULT_OUTPORT_TYPE, AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
@@ -1036,22 +1036,22 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_ConnectNodes_005, TestSize.Le
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNodeOne = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNodeOne);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNodeOne);
 
     OH_AudioNode *inputNodeThree = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNodeThree);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNodeThree);
 
     OH_AudioNode *outputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_OUTPUT, &outputNode);
+    CreateNode(pipeline, OUT_NODE_TYPE_DEFAULT, &outputNode);
 
     OH_AudioNode *mixNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_AUDIO_MIXER, &mixNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_AUDIO_MIXER, &mixNode);
 
     OH_AudioNode *eqNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_EQUALIZER, &eqNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_EQUALIZER, &eqNode);
 
     OH_AudioNode *nrNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_NOISE_REDUCTION, &nrNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_NOISE_REDUCTION, &nrNode);
 
     ret = OH_AudioSuiteEngine_ConnectNodes(inputNodeOne, eqNode,
         AUDIO_NODE_DEFAULT_OUTPORT_TYPE, AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
@@ -1099,22 +1099,22 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_ConnectNodes_006, TestSize.Le
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNodeOne = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNodeOne);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNodeOne);
 
     OH_AudioNode *inputNodeThree = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNodeThree);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNodeThree);
 
     OH_AudioNode *outputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_OUTPUT, &outputNode);
+    CreateNode(pipeline, OUT_NODE_TYPE_DEFAULT, &outputNode);
 
     OH_AudioNode *mixNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_AUDIO_MIXER, &mixNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_AUDIO_MIXER, &mixNode);
 
     OH_AudioNode *eqNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_EQUALIZER, &eqNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_EQUALIZER, &eqNode);
 
     OH_AudioNode *nrNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_NOISE_REDUCTION, &nrNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_NOISE_REDUCTION, &nrNode);
 
     ret = OH_AudioSuiteEngine_ConnectNodes(inputNodeOne, eqNode,
         AUDIO_NODE_DEFAULT_OUTPORT_TYPE, AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
@@ -1162,19 +1162,19 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_ConnectNodes_007, TestSize.Le
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNodeOne = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNodeOne);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNodeOne);
 
     OH_AudioNode *inputNodeThree = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNodeThree);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNodeThree);
 
     OH_AudioNode *outputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_OUTPUT, &outputNode);
+    CreateNode(pipeline, OUT_NODE_TYPE_DEFAULT, &outputNode);
 
     OH_AudioNode *mixNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_AUDIO_MIXER, &mixNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_AUDIO_MIXER, &mixNode);
 
     OH_AudioNode *eqNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_EQUALIZER, &eqNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_EQUALIZER, &eqNode);
 
     ret = OH_AudioSuiteEngine_ConnectNodes(inputNodeOne, eqNode,
         AUDIO_NODE_DEFAULT_OUTPORT_TYPE, AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
@@ -1222,25 +1222,25 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_ConnectNodes_008, TestSize.Le
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNodeOne = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNodeOne);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNodeOne);
 
     OH_AudioNode *inputNodeTwo = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNodeTwo);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNodeTwo);
 
     OH_AudioNode *inputNodeThree = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNodeThree);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNodeThree);
 
     OH_AudioNode *outputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_OUTPUT, &outputNode);
+    CreateNode(pipeline, OUT_NODE_TYPE_DEFAULT, &outputNode);
 
     OH_AudioNode *mixNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_AUDIO_MIXER, &mixNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_AUDIO_MIXER, &mixNode);
 
     OH_AudioNode *eqNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_EQUALIZER, &eqNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_EQUALIZER, &eqNode);
 
     OH_AudioNode *nrNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_NOISE_REDUCTION, &nrNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_NOISE_REDUCTION, &nrNode);
 
     ret = OH_AudioSuiteEngine_ConnectNodes(inputNodeOne, eqNode,
         AUDIO_NODE_DEFAULT_OUTPORT_TYPE, AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
@@ -1292,10 +1292,10 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_ConnectNodes_009, TestSize.Le
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNode);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
 
     OH_AudioNode *outputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_OUTPUT, &outputNode);
+    CreateNode(pipeline, OUT_NODE_TYPE_DEFAULT, &outputNode);
 
     ret = OH_AudioSuiteEngine_ConnectNodes(inputNode, outputNode,
         AUDIO_NODE_DEFAULT_OUTPORT_TYPE, AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
@@ -1334,10 +1334,10 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_ConnectNodes_010, TestSize.Le
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNode);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
 
     OH_AudioNode *outputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_OUTPUT, &outputNode);
+    CreateNode(pipeline, OUT_NODE_TYPE_DEFAULT, &outputNode);
 
     ret = OH_AudioSuiteEngine_ConnectNodes(inputNode, outputNode,
         AUDIO_NODE_DEFAULT_OUTPORT_TYPE, AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
@@ -1375,10 +1375,10 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_DisConnectNodes_001, TestSize
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNode);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
 
     OH_AudioNode *outputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_OUTPUT, &outputNode);
+    CreateNode(pipeline, OUT_NODE_TYPE_DEFAULT, &outputNode);
 
     ret = OH_AudioSuiteEngine_DisConnectNodes(inputNode, nullptr);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
@@ -1415,13 +1415,13 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_DisConnectNodes_002, TestSize
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNode);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
 
     OH_AudioNode *outputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_OUTPUT, &outputNode);
+    CreateNode(pipeline, OUT_NODE_TYPE_DEFAULT, &outputNode);
 
     OH_AudioNode *mixNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_AUDIO_MIXER, &mixNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_AUDIO_MIXER, &mixNode);
 
     ret = OH_AudioSuiteEngine_DisConnectNodes(outputNode, mixNode);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_CONNECT);
@@ -1461,7 +1461,7 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_DisConnectNodes_003, TestSize
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *mixNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_AUDIO_MIXER, &mixNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_AUDIO_MIXER, &mixNode);
 
     ret = OH_AudioSuiteEngine_DisConnectNodes(mixNode, mixNode);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_CONNECT);
@@ -1496,10 +1496,10 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_DisConnectNodes_004, TestSize
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *srcMixNode = nullptr;
-    CreateNode(pipelineOne, AUDIOSUITE_NODE_TYPE_AUDIO_MIXER, &srcMixNode);
+    CreateNode(pipelineOne, EFFECT_NODE_TYPE_AUDIO_MIXER, &srcMixNode);
 
     OH_AudioNode *destMixNode = nullptr;
-    CreateNode(pipelineTwo, AUDIOSUITE_NODE_TYPE_AUDIO_MIXER, &destMixNode);
+    CreateNode(pipelineTwo, EFFECT_NODE_TYPE_AUDIO_MIXER, &destMixNode);
 
     ret = OH_AudioSuiteEngine_DisConnectNodes(srcMixNode, destMixNode);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORTED_CONNECT);
@@ -1536,19 +1536,19 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_DisConnectNodes_005, TestSize
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNodeOne = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNodeOne);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNodeOne);
 
     OH_AudioNode *inputNodeThree = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNodeThree);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNodeThree);
 
     OH_AudioNode *outputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_OUTPUT, &outputNode);
+    CreateNode(pipeline, OUT_NODE_TYPE_DEFAULT, &outputNode);
 
     OH_AudioNode *mixNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_AUDIO_MIXER, &mixNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_AUDIO_MIXER, &mixNode);
 
     OH_AudioNode *eqNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_EQUALIZER, &eqNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_EQUALIZER, &eqNode);
 
     ret = OH_AudioSuiteEngine_ConnectNodes(inputNodeOne, eqNode,
         AUDIO_NODE_DEFAULT_OUTPORT_TYPE, AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
@@ -1595,16 +1595,16 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_DisConnectNodes_006, TestSize
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNodeOne = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNodeOne);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNodeOne);
 
     OH_AudioNode *outputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_OUTPUT, &outputNode);
+    CreateNode(pipeline, OUT_NODE_TYPE_DEFAULT, &outputNode);
 
     OH_AudioNode *mixNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_AUDIO_MIXER, &mixNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_AUDIO_MIXER, &mixNode);
 
     OH_AudioNode *eqNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_EQUALIZER, &eqNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_EQUALIZER, &eqNode);
 
     ret = OH_AudioSuiteEngine_ConnectNodes(inputNodeOne, eqNode,
         AUDIO_NODE_DEFAULT_OUTPORT_TYPE, AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
@@ -1647,10 +1647,10 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_DisConnectNodes_007, TestSize
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNode);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
 
     OH_AudioNode *outputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_OUTPUT, &outputNode);
+    CreateNode(pipeline, OUT_NODE_TYPE_DEFAULT, &outputNode);
 
     ret = OH_AudioSuiteEngine_DisConnectNodes(inputNode, outputNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
@@ -1694,10 +1694,10 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_DisConnectNodes_008, TestSize
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNode);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
 
     OH_AudioNode *outputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_OUTPUT, &outputNode);
+    CreateNode(pipeline, OUT_NODE_TYPE_DEFAULT, &outputNode);
 
     ret = OH_AudioSuiteEngine_ConnectNodes(inputNode, outputNode,
         AUDIO_NODE_DEFAULT_OUTPORT_TYPE, AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
@@ -1738,7 +1738,7 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetNodeEnableStatus_001, Test
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *mixNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_AUDIO_MIXER, &mixNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_AUDIO_MIXER, &mixNode);
 
     ret = OH_AudioSuiteEngine_GetNodeEnableStatus(mixNode, nullptr);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
@@ -1773,7 +1773,7 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetNodeEnableStatus_002, Test
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *mixNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_AUDIO_MIXER, &mixNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_AUDIO_MIXER, &mixNode);
 
     ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
@@ -1802,10 +1802,10 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetNodeEnableStatus_003, Test
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNode);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
 
     OH_AudioNode *outputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_OUTPUT, &outputNode);
+    CreateNode(pipeline, OUT_NODE_TYPE_DEFAULT, &outputNode);
 
     OH_AudioNodeEnable audioNodeEnable = AUDIOSUITE_NODE_ENABLE;
     ret = OH_AudioSuiteEngine_GetNodeEnableStatus(inputNode, &audioNodeEnable);
@@ -1843,7 +1843,7 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetNodeEnableStatus_004, Test
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *mixNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_AUDIO_MIXER, &mixNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_AUDIO_MIXER, &mixNode);
 
     OH_AudioNodeEnable audioNodeEnable = AUDIOSUITE_NODE_DISABLE;
     ret = OH_AudioSuiteEngine_GetNodeEnableStatus(mixNode, &audioNodeEnable);
@@ -1887,7 +1887,7 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_EnableNode_002, TestSize.Leve
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *mixNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_AUDIO_MIXER, &mixNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_AUDIO_MIXER, &mixNode);
 
     ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
@@ -1915,10 +1915,10 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_EnableNode_003, TestSize.Leve
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNode);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
 
     OH_AudioNode *outputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_OUTPUT, &outputNode);
+    CreateNode(pipeline, OUT_NODE_TYPE_DEFAULT, &outputNode);
 
     ret = OH_AudioSuiteEngine_EnableNode(inputNode, AUDIOSUITE_NODE_ENABLE);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORT_OPERATION);
@@ -1955,7 +1955,7 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_EnableNode_004, TestSize.Leve
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *mixNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_AUDIO_MIXER, &mixNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_AUDIO_MIXER, &mixNode);
 
     ret = OH_AudioSuiteEngine_EnableNode(mixNode, AUDIOSUITE_NODE_ENABLE);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
@@ -2003,7 +2003,7 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_SetEqualizerFrequencyBandGain
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *eqNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_EQUALIZER, &eqNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_EQUALIZER, &eqNode);
 
     OH_EqualizerFrequencyBandGains gains = {11};
     ret = OH_AudioSuiteEngine_SetEqualizerFrequencyBandGains(eqNode, gains);
@@ -2035,7 +2035,7 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_SetEqualizerFrequencyBandGain
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *eqNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_EQUALIZER, &eqNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_EQUALIZER, &eqNode);
 
     ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
@@ -2064,7 +2064,7 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_SetEqualizerFrequencyBandGain
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNode);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
 
     OH_EqualizerFrequencyBandGains gains = {0};
     ret = OH_AudioSuiteEngine_SetEqualizerFrequencyBandGains(inputNode, gains);
@@ -2096,7 +2096,7 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_SetEqualizerFrequencyBandGain
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *eqNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_EQUALIZER, &eqNode);
+    CreateNode(pipeline, EFFECT_NODE_TYPE_EQUALIZER, &eqNode);
 
     OH_EqualizerFrequencyBandGains gains = {0};
     ret = OH_AudioSuiteEngine_SetEqualizerFrequencyBandGains(eqNode, gains);
@@ -2139,7 +2139,7 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_SetSoundFiledType_002, TestSi
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNode);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
 
     ret = OH_AudioSuiteEngine_SetSoundFiledType(inputNode, SOUND_FIELD_WIDE);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORT_OPERATION);
@@ -2181,7 +2181,7 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_SetEnvironmentType_002, TestS
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNode);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
 
     ret = OH_AudioSuiteEngine_SetEnvironmentType(inputNode, ENVIRONMENT_TYPE_GRAMOPHONE);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORT_OPERATION);
@@ -2223,7 +2223,7 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_SetVoiceBeautifierType_002, T
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioNode *inputNode = nullptr;
-    CreateNode(pipeline, AUDIOSUITE_NODE_TYPE_INPUT, &inputNode);
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
 
     ret = OH_AudioSuiteEngine_SetVoiceBeautifierType(inputNode, VOICE_BEAUTIFIER_TYPE_NORMAL);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORT_OPERATION);

@@ -45,22 +45,22 @@ int32_t AudioInjectorPolicy::Init()
         moduleInfo.bufferSize = "3840"; // 20ms
 
         uint32_t paIndex = 0;
-        AudioIOHandle ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo, paIndex);
+        ioHandle_ = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo, paIndex);
         CHECK_AND_RETURN_RET_LOG(paIndex != HDI_INVALID_ID, ERR_OPERATION_FAILED,
             "OpenAudioPort failed paId[%{public}u]", paIndex);
 
         std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-        pipeInfo->id_ = ioHandle;
+        pipeInfo->id_ = ioHandle_;
         pipeInfo->paIndex_ = paIndex;
         pipeInfo->name_ = VIRTUAL_INJECTOR;
         pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
         pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-        pipeInfo->adapterName_ = moduleInfo.adapterName;
+        pipeInfo->adapterName_ = moduleInfo.name;
         pipeInfo->moduleInfo_ = moduleInfo;
         pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
         pipeInfo->InitAudioStreamInfo();
         AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipeInfo);
-        audioIOHandleMap_.AddIOHandleInfo(VIRTUAL_INJECTOR, ioHandle);
+        audioIOHandleMap_.AddIOHandleInfo(VIRTUAL_INJECTOR, ioHandle_);
         isOpened_ = true;
         this->moduleInfo_ = moduleInfo;
         renderPortIdx_ = paIndex;
@@ -70,10 +70,13 @@ int32_t AudioInjectorPolicy::Init()
 
 int32_t AudioInjectorPolicy::DeInit()
 {
-    std::lock_guard<std::shared_mutex> lock(injectLock_);
     if (isOpened_ && rendererStreamMap_.size() == 0) {
-        int32_t ret = audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleInfo_.name);
+        int32_t ret = audioPolicyManager_.CloseAudioPort(ioHandle_, renderPortIdx_);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "close port failed");
+        std::shared_ptr<AudioPipeInfo> pipeInfo = pipeManager_->GetPipeinfoByNameAndFlag(
+            VIRTUAL_INJECTOR, AUDIO_OUTPUT_FLAG_NORMAL);
+        pipeManager_->RemoveAudioPipeInfo(pipeInfo);
+        audioIOHandleMap_.DelIOHandleInfo(VIRTUAL_INJECTOR);
         isOpened_ = false;
         renderPortIdx_ = HDI_INVALID_ID;
     }
@@ -97,7 +100,7 @@ int32_t AudioInjectorPolicy::RemoveStreamDescriptor(uint32_t renderId)
     std::lock_guard<std::shared_mutex> lock(injectLock_);
     rendererStreamMap_.erase(renderId);
     if (rendererStreamMap_.size() == 0) {
-        RemoveCaptureInjector(false);
+        RemoveCaptureInjectorInner(false);
     }
     return SUCCESS;
 }
@@ -170,20 +173,73 @@ void AudioInjectorPolicy::ReleaseCaptureInjector(uint32_t streamId)
     auto pipeList = pipeManager_->GetPipeList();
     for (auto it = pipeList.rbegin(); it != pipeList.rend(); ++it) {
         CHECK_AND_CONTINUE_LOG((*it) != nullptr, "it is null");
-        if ((*it)->paIndex_ == capturePortIdx_) {
+        if ((*it)->paIndex_ == capturePortIdx_ && (*it)->pipeRole_ == PIPE_ROLE_INPUT) {
             streamVec = (*it)->streamDescriptors_;
             break;
         }
     }
     if (streamVec.size() == 0) {
-        RemoveCaptureInjector(true);
+        RemoveCaptureInjectorInner(true);
         return ;
     }
+}
+
+void AudioInjectorPolicy::RebuildCaptureInjector(uint32_t streamId)
+{
+    std::lock_guard<std::shared_mutex> lock(injectLock_);
+    if (!isOpened_) {
+        return;
+    }
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamVec = {};
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = nullptr;
+    uint32_t paIndex = 0;
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager_ is null");
+    auto pipeList = pipeManager_->GetPipeList();
+    for (const auto &pipe : pipeList) {
+        CHECK_AND_CONTINUE_LOG(pipe != nullptr, "pipeInfo is nullptr");
+        for (const auto &stream : pipe->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(stream != nullptr, "stream is nullptr");
+            if (stream->sessionId_ == streamId) {
+                paIndex = pipe->paIndex_;
+                streamDesc = stream;
+            }
+        }
+        if (pipe->paIndex_ == capturePortIdx_) {
+            streamVec = pipe->streamDescriptors_;
+        }
+    }
+    bool isRunning = false;
+    for (const auto &stream : streamVec) {
+        if (stream->IsRunning()) {
+            isRunning = true;
+            break;
+        }
+    }
+    if (isRunning) {
+        return;
+    }
+    RemoveCaptureInjectorInner(true);
+    if (rendererStreamMap_.size() == 0) {
+        return;
+    }
+    capturePortIdx_ = paIndex;
+    if ((streamDesc->routeFlag_ & AUDIO_INPUT_FLAG_NORMAL) &&
+            streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        voipType_ = NORMAL_VOIP;
+    } else if (streamDesc->routeFlag_ & (AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP)) {
+        voipType_ = FAST_VOIP;
+    }
+    AddCaptureInjectorInner();
 }
 
 int32_t AudioInjectorPolicy::AddCaptureInjector()
 {
     std::lock_guard<std::shared_mutex> lock(injectLock_);
+    return AddCaptureInjectorInner();
+}
+
+int32_t AudioInjectorPolicy::AddCaptureInjectorInner()
+{
     if (!isConnected_) {
         CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "pipeManager_ is null");
         if (voipType_ == NORMAL_VOIP) {
@@ -200,20 +256,80 @@ int32_t AudioInjectorPolicy::AddCaptureInjector()
     
 int32_t AudioInjectorPolicy::RemoveCaptureInjector(bool noCapturer)
 {
-    // std::lock_guard<std::shared_mutex> lock(injectLock_);
+    std::lock_guard<std::shared_mutex> lock(injectLock_);
+    return RemoveCaptureInjectorInner(noCapturer);
+}
+
+int32_t AudioInjectorPolicy::RemoveCaptureInjectorInner(bool noCapturer)
+{
     bool flag = (rendererStreamMap_.size() == 0 || noCapturer);
     if (isConnected_ && flag) {
         CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "pipeManager_ is null");
-        if (pipeManager_->IsCaptureVoipCall() == NORMAL_VOIP) {
+        if (voipType_ == NORMAL_VOIP) {
             audioPolicyManager_.RemoveCaptureInjector(renderPortIdx_, capturePortIdx_,
                 SOURCE_TYPE_VOICE_COMMUNICATION);
-        } else if (pipeManager_->IsCaptureVoipCall() == FAST_VOIP) {
+        } else if (voipType_ == FAST_VOIP) {
             int32_t ret = audioPolicyManager_.RemoveCaptureInjector();
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "RemoveCaptureInjector failed");
         }
         isConnected_ = false;
+        capturePortIdx_ = HDI_INVALID_ID;
+        voipType_ = NO_VOIP;
+        DeInit();
     }
     return SUCCESS;
+}
+
+std::shared_ptr<AudioPipeInfo> AudioInjectorPolicy::FindCaptureVoipPipe(
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, VoipType &type)
+{
+    std::shared_ptr<AudioPipeInfo> voipPipe = nullptr;
+    for (const auto &pipe : pipeInfos) {
+        CHECK_AND_CONTINUE_LOG(pipe != nullptr, "pipeInfo is nullptr");
+        for (const auto &stream : pipe->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(stream != nullptr, "stream is nullptr");
+            bool isRunning = stream->IsRunning();
+            CHECK_AND_CONTINUE_LOG(isRunning == true, "isRunning is false");
+            AudioStreamAction action = stream->streamAction_;
+            bool actionFlag = (action == AUDIO_STREAM_ACTION_DEFAULT || action == AUDIO_STREAM_ACTION_MOVE);
+            CHECK_AND_CONTINUE_LOG(actionFlag, "streamAction is not right");
+            if ((stream->routeFlag_ & AUDIO_INPUT_FLAG_NORMAL) &&
+                    stream->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+                voipPipe = pipe;
+                type = NORMAL_VOIP;
+            } else if (stream->routeFlag_ & (AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP)) {
+                voipPipe = pipe;
+                type = FAST_VOIP;
+                return voipPipe;
+            }
+        }
+    }
+    return voipPipe;
+}
+
+void AudioInjectorPolicy::FetchCapDeviceInjectPreProc(
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, bool &removeFlag)
+{
+    std::lock_guard<std::shared_mutex> lock(injectLock_);
+    VoipType type = VoipType::NO_VOIP;
+    std::shared_ptr<AudioPipeInfo> tempPipe = FindCaptureVoipPipe(pipeInfos, type);
+    if (tempPipe != nullptr && tempPipe->paIndex_ != capturePortIdx_) {
+        RemoveCaptureInjectorInner(true);
+        removeFlag = true;
+    }
+}
+
+void AudioInjectorPolicy::FetchCapDeviceInjectPostProc(
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, bool &removeFlag)
+{
+    std::lock_guard<std::shared_mutex> lock(injectLock_);
+    VoipType type = VoipType::NO_VOIP;
+    std::shared_ptr<AudioPipeInfo> tempPipe = FindCaptureVoipPipe(pipeInfos, type);
+    if (tempPipe != nullptr && removeFlag) {
+        capturePortIdx_ = tempPipe->paIndex_;
+        voipType_ = type;
+        AddCaptureInjectorInner();
+    }
 }
 
 void AudioInjectorPolicy::AddInjectorStreamId(const uint32_t streamId)
@@ -246,13 +362,33 @@ void AudioInjectorPolicy::SendInterruptEventToInjectorStreams(const std::shared_
     }
 }
 
-int32_t AudioInjectorPolicy::SetInjectorStreamsMute(bool newMicrophoneMute)
+void AudioInjectorPolicy::SetAllRendererInjectStreamsMuteInner()
 {
-    int32_t ret = SUCCESS;
     for (const auto& pair : rendererStreamMap_) {
-        ret = AudioServerProxy::GetInstance().SetNonInterruptMuteProxy(pair.first, newMicrophoneMute);
+        AudioServerProxy::GetInstance().SetNonInterruptMuteProxy(pair.first, isNeedMuteRenderer_);
     }
-    return ret;
+}
+
+void AudioInjectorPolicy::SetAllRendererInjectStreamsMute()
+{
+    std::lock_guard<std::shared_mutex> lock(injectLock_);
+    if (isNeedSetMuteRenderer_) {
+        AUDIO_INFO_LOG("SetMuteRenderer_");
+        SetAllRendererInjectStreamsMuteInner();
+        isNeedSetMuteRenderer_ = false;
+    }
+}
+
+void AudioInjectorPolicy::SetInjectorStreamsMute(bool newMicrophoneMute)
+{
+    std::lock_guard<std::shared_mutex> lock(injectLock_);
+    isNeedMuteRenderer_ = newMicrophoneMute;
+    if (rendererStreamMap_.size() == 0) {
+        AUDIO_INFO_LOG("map is empty");
+        isNeedSetMuteRenderer_ = true;
+        return;
+    }
+    SetAllRendererInjectStreamsMuteInner();
 }
 }  //  namespace AudioStandard
 }  //  namespace OHOS

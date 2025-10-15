@@ -72,18 +72,18 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::Init()
         AUDIO_ERR_LOG("Failed to get symbol iMedia_Eq_GetSize");
         return ERROR;
     }
-    int32_t result = algoApi_.getSize(&stSize);
+    int32_t result = algoApi_.getSize(&stSize_);
     if (IMEDIA_SWS_EOK != result) {
         AUDIO_ERR_LOG("iMedia_Eq_GetSize ERROR: %{public}d", result);
         return result;
     }
 
-    runBuf_.resize(stSize.iStrSize);
-    scratchBuf_.resize(stSize.iScracthSize);
+    runBuf_.resize(stSize_.iStrSize);
+    scratchBuf_.resize(stSize_.iScracthSize);
     isEqAlgoInit_ = true;
     AUDIO_INFO_LOG("ALGO Init End, size of runBuf: %{public}d, size of scratchBuf: %{public}d",
-        stSize.iStrSize,
-        stSize.iScracthSize);
+        stSize_.iStrSize,
+        stSize_.iScracthSize);
     return SUCCESS;
 }
 
@@ -126,23 +126,23 @@ std::vector<int> ParseStringToIntArray(const std::string &str, char delimiter)
 int32_t AudioSuiteEqAlgoInterfaceImpl::SetParameter(const std::string &sEQLGain, const std::string &sEQRGain)
 {
     AUDIO_INFO_LOG("Set eq param start");
-    para.sFrameLen = IMEDIA_SWS_FRAME_LEN;
-    para.sEQLRBands = changeFormat(EQUALIZER_BANDS_NUM, EQUALIZER_BANDS_NUM);
+    para_.sFrameLen = IMEDIA_SWS_FRAME_LEN;
+    para_.sEQLRBands = changeFormat(EQUALIZER_BANDS_NUM, EQUALIZER_BANDS_NUM);
 
     std::vector<int> gainsL = ParseStringToIntArray(sEQLGain, ':');
     std::vector<int> gainsR = ParseStringToIntArray(sEQRGain, ':');
 
-    int i = 0;
+    size_t i = 0;
     while (i < gainsL.size() && i < gainsR.size() && i < EQUALIZER_BANDS_NUM) {
         int shiftLGain = gainsL[i] * COEFFICIENT + OFFSET;
         int shiftRGain = gainsR[i] * COEFFICIENT + OFFSET;
-        para.sEQLRGain[i] = changeFormat(shiftLGain, shiftRGain);
-        para.sEQLRType[i] = changeFormat(0, 0);
+        para_.sEQLRGain[i] = changeFormat(shiftLGain, shiftRGain);
+        para_.sEQLRType[i] = changeFormat(0, 0);
         ++i;
     }
     AUDIO_INFO_LOG("Set Eq param Success");
 
-    int32_t result = algoApi_.initAlgo(runBuf_.data(), scratchBuf_.data(), stSize.iScracthSize, &para);
+    int32_t result = algoApi_.initAlgo(runBuf_.data(), scratchBuf_.data(), stSize_.iScracthSize, &para_);
     AUDIO_INFO_LOG("initAlgo end");
     if (IMEDIA_SWS_EOK != result) {
         AUDIO_ERR_LOG("iMedia_Eq_Init ERROR: %{public}d", result);
@@ -153,19 +153,19 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::SetParameter(const std::string &sEQLGain,
         AUDIO_INFO_LOG("iMedia_Eq_Init Success");
     }
 
-    frameLen = IMEDIA_SWS_FRAME_LEN * ALGO_CHANNEL_NUM;
-    frameBytes = frameLen * ALGO_SAMPLE_WIDTH / ONE_BYTE_WIDTH;
-    dataIn.resize(frameLen);
-    dataOut.resize(frameLen);
+    frameLen_ = IMEDIA_SWS_FRAME_LEN * ALGO_CHANNEL_NUM;
+    frameBytes_ = frameLen_ * ALGO_SAMPLE_WIDTH / ONE_BYTE_WIDTH;
+    dataIn_.resize(frameLen_);
+    dataOut_.resize(frameLen_);
 
-    stData.piDataIn = dataIn.data();
-    stData.piDataOut = dataOut.data();
-    stData.iSize = IMEDIA_SWS_FRAME_LEN;
-    stData.iEnable_SWS = 1;
-    stData.iData_Format16 = 1;
-    stData.iData_Channel = ALGO_CHANNEL_NUM;
-    stData.iMasterVolume = MASTERVOLUME;
-    AUDIO_INFO_LOG("iMedia_SWS_DATA stData Init Success");
+    stData_.piDataIn = reinterpret_cast<IMEDIA_INT32 *>(dataIn_.data());
+    stData_.piDataOut = reinterpret_cast<IMEDIA_INT32 *>(dataOut_.data());
+    stData_.iSize = IMEDIA_SWS_FRAME_LEN;
+    stData_.iEnable_SWS = 1;
+    stData_.iData_Format16 = 1;
+    stData_.iData_Channel = ALGO_CHANNEL_NUM;
+    stData_.iMasterVolume = MASTERVOLUME;
+    AUDIO_INFO_LOG("iMedia_SWS_DATA stData_ Init Success");
     return SUCCESS;
 }
 
@@ -185,23 +185,23 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::Apply(std::vector<uint8_t *> &pcmInBuf, s
         AUDIO_INFO_LOG("Apply: libHandle_ == nullptr");
     }
 
-    while (frameBytes >= start + frameLen) {
-        frameLen = frameLen < frameBytes - start ? frameLen : frameBytes - start;
-        for (i = 0; i < frameLen; i++) {
-            dataIn[i] = static_cast<IMEDIA_INT32>(bufIn[start + i]);
-            dataIn[i] <<= TWO_BYTES_WIDTH;
+    while (frameBytes_ >= start + frameLen_) {
+        frameLen_ = frameLen_ < frameBytes_ - start ? frameLen_ : frameBytes_ - start;
+        for (i = 0; i < frameLen_; i++) {
+            dataIn_[i] = static_cast<uint32_t>(bufIn[start + i]);
+            dataIn_[i] <<= TWO_BYTES_WIDTH;
         }
 
-        result = algoApi_.applyAlgo(runBuf_.data(), scratchBuf_.data(), scratchBuf_.size(), &stData);
+        result = algoApi_.applyAlgo(runBuf_.data(), scratchBuf_.data(), scratchBuf_.size(), &stData_);
         if (IMEDIA_SWS_EOK != result) {
             AUDIO_ERR_LOG("iMedia_SWS_Apply ERROR:%{public}d", result);
             return result;
         }
 
-        for (i = 0; i < frameLen; i++) {
-            pcmOut[start + i] = ((unsigned int)dataOut[i] >> TWO_BYTES_WIDTH);
+        for (i = 0; i < frameLen_; i++) {
+            pcmOut[start + i] = ((unsigned int)dataOut_[i] >> TWO_BYTES_WIDTH);
         }
-        start = start + frameLen < frameBytes ? start + frameLen : frameBytes;
+        start = start + frameLen_ < frameBytes_ ? start + frameLen_ : frameBytes_;
     }
     return result;
 }

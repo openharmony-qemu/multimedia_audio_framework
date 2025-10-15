@@ -16,13 +16,8 @@
 #ifndef AUDIO_SUITE_EQ_NODE_H
 #define AUDIO_SUITE_EQ_NODE_H
 
-#include <vector>
-#include <string>
-#include <iostream>
 #include "audio_suite_eq_algo_interface_impl.h"
 #include "audio_suite_process_node.h"
-#include "audio_suite_log.h"
-#include "audio_suite_info.h"
 
 const std::string EQUALIZER_DEFAULT_VALUE = "0:0:0:0:0:0:0:0:0:0";
 const std::string EQUALIZER_POP_VALUE = "5:2:1:-1:-5:-5:-2:1:2:4";
@@ -55,13 +50,13 @@ protected:
     AudioSuitePcmBuffer *SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs) override;
 
 private:
-    EqualizerMode currentEqMode;
     bool isEqNodeInit_ = false;
     std::vector<uint8_t> eqInputDataBuffer_;
     std::vector<uint8_t> eqOutputDataBuffer_;
     std::vector<uint8_t *> tmpin_;
     std::vector<uint8_t *> tmpout_;
     std::string eqValue_;
+    std::string currentEqMode_;
     std::shared_ptr<AudioSuiteEqAlgoInterfaceImpl> eqAlgoInterfaceImpl_;
 };
 

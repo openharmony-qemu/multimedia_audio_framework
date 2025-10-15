@@ -24,17 +24,15 @@ namespace AudioSuite {
 
 constexpr uint16_t DEFAULT_CHANNEL_COUNT = 2;
 constexpr uint16_t DEFAULT_CHANNEL_COUNT_OUT = 4;
-constexpr int RESAMPLE_QUALITY = 5;
 
 AudioSuiteAissNode::AudioSuiteAissNode()
     : AudioSuiteProcessNode(NODE_TYPE_AUDIO_SEPARATION, AudioFormat{{CH_LAYOUT_STEREO,
         DEFAULT_CHANNEL_COUNT}, SAMPLE_F32LE, SAMPLE_RATE_48000}),
     tmpInput_(SAMPLE_RATE_48000, DEFAULT_CHANNEL_COUNT, CH_LAYOUT_STEREO),
-    channelOutput_(SAMPLE_RATE_48000, DEFAULT_CHANNEL_COUNT, CH_LAYOUT_STEREO),
-    rateOutput_(SAMPLE_RATE_48000, DEFAULT_CHANNEL_COUNT, CH_LAYOUT_STEREO),
     tmpOutput_(SAMPLE_RATE_48000, DEFAULT_CHANNEL_COUNT_OUT, CH_LAYOUT_QUAD),
     tmpHumanSoundOutput_(SAMPLE_RATE_48000, DEFAULT_CHANNEL_COUNT, CH_LAYOUT_QUAD),
-    tmpBkgSoundOutput_(SAMPLE_RATE_48000, DEFAULT_CHANNEL_COUNT, CH_LAYOUT_QUAD)
+    tmpBkgSoundOutput_(SAMPLE_RATE_48000, DEFAULT_CHANNEL_COUNT, CH_LAYOUT_QUAD),
+    tmpPcmBuffer_(SAMPLE_RATE_48000, DEFAULT_CHANNEL_COUNT, CH_LAYOUT_STEREO)
 {
     AUDIO_INFO_LOG("AudioSuiteAissNode create success");
 }
@@ -66,9 +64,7 @@ int32_t AudioSuiteAissNode::DoProcess()
     if (!outputStream_) {
         outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
     }
-    if (!bkgOutputStream_) {
-        bkgOutputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
-    }
+
     AudioSuitePcmBuffer* tempOut = nullptr;
     std::vector<AudioSuitePcmBuffer*>& preOutputs = ReadProcessNodePreOutputData();
     if ((GetNodeEnableStatus() == NODE_ENABLE) && !preOutputs.empty()) {
@@ -83,7 +79,7 @@ int32_t AudioSuiteAissNode::DoProcess()
         tmpHumanSoundOutput_.SetIsFinished(GetAudioNodeDataFinishedFlag());
         tmpBkgSoundOutput_.SetIsFinished(GetAudioNodeDataFinishedFlag());
         outputStream_->WriteDataToOutput(&tmpHumanSoundOutput_);
-        bkgOutputStream_->WriteDataToOutput(&tmpBkgSoundOutput_);
+        outputStream_->WriteDataToOutput(&tmpBkgSoundOutput_);
     } else if (!preOutputs.empty()) {
         AUDIO_DEBUG_LOG("AudioSuiteProcessNode::DoProcess: node type = %{public}d signalProcess "
             "is not enabled.", GetNodeType());
@@ -97,7 +93,7 @@ int32_t AudioSuiteAissNode::DoProcess()
         tmpHumanSoundOutput_ = *tempOut;
         tmpBkgSoundOutput_ = *tempOut;
         outputStream_->WriteDataToOutput(tempOut);
-        bkgOutputStream_->WriteDataToOutput(tempOut);
+        outputStream_->WriteDataToOutput(tempOut);
     } else {
         AUDIO_ERR_LOG("AudioSuiteProcessNode::DoProcess: node %{public}d can't get "
             "pcmbuffer from prenodes", GetNodeType());
@@ -107,25 +103,6 @@ int32_t AudioSuiteAissNode::DoProcess()
     return SUCCESS;
 }
 
-std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> AudioSuiteAissNode::GetOutputPort(AudioNodePortType portType)
-{
-    if (!outputStream_) {
-        outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
-    }
-    if (!bkgOutputStream_) {
-        bkgOutputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
-    }
-    if (portType == AudioNodePortType::AUDIO_NODE_HUMAN_SOUND_OUTPORT_TYPE) {
-        AUDIO_DEBUG_LOG("AudioSuiteAissNode GetOutputPort outputStream_");
-        return outputStream_;
-    } else if (portType == AudioNodePortType::AUDIO_NODE_BACKGROUND_SOUND_OUTPORT_TYPE) {
-        AUDIO_DEBUG_LOG("AudioSuiteAissNode GetOutputPort bkgOutputStream_");
-        return bkgOutputStream_;
-    }
-    AUDIO_ERR_LOG("Invalid port type: %{public}d", (uint32_t)portType);
-    return nullptr;
-}
-
 int32_t AudioSuiteAissNode::Flush()
 {
     // inputStream_ need flush
@@ -133,8 +110,6 @@ int32_t AudioSuiteAissNode::Flush()
     // bkgOutputStream_ need flush
     finishedPrenodeSet.clear();
     tmpInput_.Reset();
-    channelOutput_.Reset();
-    rateOutput_.Reset();
     tmpOutput_.Reset();
     tmpHumanSoundOutput_.Reset();
     tmpBkgSoundOutput_.Reset();
@@ -159,9 +134,7 @@ int32_t AudioSuiteAissNode::Init()
     if (!outputStream_) {
         outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
     }
-    if (!bkgOutputStream_) {
-        bkgOutputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
-    }
+
     if (aissAlgo_->Init() != SUCCESS) {
         AUDIO_ERR_LOG("InitAlgorithm failed");
         return ERROR;
@@ -229,7 +202,7 @@ AudioSuitePcmBuffer* AudioSuiteAissNode::SignalProcess(const std::vector<AudioSu
         AUDIO_ERR_LOG("inputs error");
         return nullptr;
     }
-    tmpInput_ = preProcess(*inputs[0]);
+    ConvertProcess(inputs[0], &tmpInput_,  &tmpPcmBuffer_);
     tmpin_.clear();
     tmpout_.clear();
     tmpin_.emplace_back(reinterpret_cast<uint8_t *>(tmpInput_.GetPcmDataBuffer()));
@@ -266,57 +239,6 @@ void AudioSuiteAissNode::HandleTapCallback(AudioSuitePcmBuffer* pcmBuffer)
         AUDIO_DEBUG_LOG("AudioSuiteAissNode handle bkgSoundCallback success");
     }
     AUDIO_DEBUG_LOG("AudioSuiteAissNode HandleTapCallback success");
-}
-
-AudioSuitePcmBuffer AudioSuiteAissNode::preProcess(AudioSuitePcmBuffer& input)
-{
-    tmpInput_ = input;
-    if (input.GetChannelCount() != DEFAULT_CHANNEL_COUNT) {
-        rateOutput_ = rateConvert(tmpInput_, input.GetSampleRate(), DEFAULT_CHANNEL_COUNT);
-        tmpInput_ = rateOutput_;
-    }
-    if (input.GetSampleRate() != SAMPLE_RATE_48000) {
-        channelOutput_ = channelConvert(tmpInput_, SAMPLE_RATE_48000, DEFAULT_CHANNEL_COUNT);
-        tmpInput_ = channelOutput_;
-    }
-    AUDIO_DEBUG_LOG("AudioSuiteAissNode preProcess success");
-    return tmpInput_;
-}
-
-AudioSuitePcmBuffer AudioSuiteAissNode::rateConvert(AudioSuitePcmBuffer input,
-    uint32_t sampleRate, uint32_t channelCount)
-{
-    rateOutput_.ResizePcmBuffer(sampleRate, channelCount);
-    int32_t ret = SetUpResample(input.GetSampleRate(), sampleRate,
-        input.GetChannelCount(), RESAMPLE_QUALITY);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, rateOutput_,
-        "setup resample failed with error code %{public}d", ret);
-    ret = DoResampleProcess(input.GetPcmDataBuffer(),
-        input.GetFrameLen() / input.GetChannelCount(),
-        rateOutput_.GetPcmDataBuffer(), rateOutput_.GetFrameLen() / rateOutput_.GetChannelCount());
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, rateOutput_,
-        "Do resample process failed with error code %{public}d", ret);
-    AUDIO_DEBUG_LOG("AudioSuiteAissNode rateConvert success");
-    return rateOutput_;
-}
-
-AudioSuitePcmBuffer AudioSuiteAissNode::channelConvert(AudioSuitePcmBuffer input,
-    uint32_t sampleRate, uint32_t channelCount)
-{
-    channelOutput_.ResizePcmBuffer(sampleRate, channelCount);
-    AudioChannelInfo inChannelInfo = {input.GetChannelLayout(), input.GetChannelCount()};
-    AudioChannelInfo outChannelInfo = {CH_LAYOUT_STEREO, channelCount};
-    uint32_t inputBuffSize = input.GetFrameLen() * SAMPLE_F32LE;
-    uint32_t outputBuffSize = channelOutput_.GetFrameLen() * SAMPLE_F32LE;
-    int32_t ret = SetChannelConvertProcessParam(inChannelInfo, outChannelInfo, SAMPLE_F32LE, true);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, channelOutput_,
-        "Set Channel convert processParam failed with error code %{public}d", ret);
-    ret = ChannelConvertProcess(input.GetFrameLen() / input.GetChannelCount(),
-        input.GetPcmDataBuffer(), inputBuffSize, channelOutput_.GetPcmDataBuffer(), outputBuffSize);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, channelOutput_,
-        "Channel convert process failed with error code %{public}d", ret);
-    AUDIO_DEBUG_LOG("AudioSuiteAissNode channelConvert success");
-    return channelOutput_;
 }
 
 }  // namespace AudioSuite

@@ -37,7 +37,6 @@ public:
     }
     bool Reset() override;
     int32_t DoProcess() override;
-    std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> GetOutputPort(AudioNodePortType portType) override;
     int32_t Flush() override;
     int32_t Init() override;
     int32_t DeInit() override;
@@ -46,24 +45,16 @@ public:
 protected:
     AudioSuitePcmBuffer* SignalProcess(const std::vector<AudioSuitePcmBuffer*>& inputs) override;
     void HandleTapCallback(AudioSuitePcmBuffer* pcmBuffer) override;
-    std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> bkgOutputStream_{ nullptr };
 private:
-    AudioSuitePcmBuffer preProcess(AudioSuitePcmBuffer& input);
-    AudioSuitePcmBuffer rateConvert(AudioSuitePcmBuffer input,
-        uint32_t sampleRate, uint32_t channelCount);
-    AudioSuitePcmBuffer channelConvert(AudioSuitePcmBuffer input,
-        uint32_t sampleRate, uint32_t channelCount);
-
     std::shared_ptr<AudioSuiteAlgoInterface> aissAlgo_{ nullptr };
     bool isInit_ = false;
     Tap humanTap_;
     Tap bkgTap_;
     AudioSuitePcmBuffer tmpInput_;
-    AudioSuitePcmBuffer channelOutput_;
-    AudioSuitePcmBuffer rateOutput_;
     AudioSuitePcmBuffer tmpOutput_;
     AudioSuitePcmBuffer tmpHumanSoundOutput_;
     AudioSuitePcmBuffer tmpBkgSoundOutput_;
+    AudioSuitePcmBuffer tmpPcmBuffer_;
     std::vector<uint8_t *> tmpin_;
     std::vector<uint8_t *> tmpout_;
 };

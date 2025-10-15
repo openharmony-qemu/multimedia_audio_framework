@@ -301,6 +301,8 @@ public:
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled);
     void RegisterDoNotDisturbStatus();
     void RegisterDoNotDisturbStatusWhiteList();
+    void RegisterMdmMuteSwitchCallback();
+    void MdmMuteSwitchCallback(bool isMute);
     int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object);
     void SetSleVoiceStatusFlag(bool isSleVoiceStatus);
     void SendLoudVolumeModeToDsp(LoudVolumeHoldType funcHoldType, bool state);

@@ -57,14 +57,8 @@ public:
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid);
 
 private:
-    /**
-     * @brief service for NotifyStreamTypeChange and NotifyStreamUsageChange
-     */
-    void NotifyHdiSetParamEvent(const std::string &key, uint32_t renderId, uint32_t typeOrUsage);
-    void NotifyStreamTypeChange(AudioStreamType type, HpaeSplitStreamType splitStreamType);
-    void NotifyStreamUsageChange(StreamUsage usage, HpaeSplitStreamType splitStreamType);
     void HandleRemoteTiming();
-    void HandlePcmDumping(HpaeSplitStreamType streamType, char* data, size_t size);
+    void HandlePcmDumping(SplitStreamType streamType, char* data, size_t size);
     InputPort<HpaePcmBuffer *> inputStream_;
     std::vector<char> renderFrameData_;
     std::vector<float> interleveData_;
@@ -81,7 +75,7 @@ private:
     std::unique_ptr<HpaePcmDumper> outputCommunicationPcmDumper_ = nullptr;
 #endif
     bool needEmptyChunk_ = true;
-    std::unordered_map<HpaeSplitStreamType, StreamUsage> usageMap_;
+    std::unordered_map<SplitStreamType, StreamUsage> usageMap_;
 };
 
 }  // namespace HPAE

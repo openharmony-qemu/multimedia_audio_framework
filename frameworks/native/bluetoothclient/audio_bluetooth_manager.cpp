@@ -742,6 +742,11 @@ void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, in
     }
 }
 
+ScoCategory AudioHfpManager::GetScoCategory()
+{
+    return JudgeScoCategory();
+}
+
 void AudioHfpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state, int cause)
 {
     AUDIO_WARNING_LOG("state: %{public}d device: %{public}s", state, GetEncryptAddr(device.GetDeviceAddr()).c_str());

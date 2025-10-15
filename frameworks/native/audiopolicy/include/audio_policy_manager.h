@@ -110,6 +110,11 @@ public:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors,
         const int32_t audioDeviceSelectMode = 0);
 
+    int32_t SelectPrivateDevice();
+
+    int32_t ForceSelectDevice(DeviceType devType, const std::string &macAddress,
+        sptr<AudioRendererFilter> filter);
+
     int32_t RestoreOutputDevice(sptr<AudioRendererFilter> audioRendererFilter);
 
     std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType);

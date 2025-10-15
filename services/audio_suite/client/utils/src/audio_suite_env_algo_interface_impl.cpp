@@ -59,15 +59,15 @@ int32_t AudioSuiteEnvAlgoInterfaceImpl::Init()
     algoApi_.getPara = reinterpret_cast<FuniMedia_Env_GetParams>(dlsym(libHandle_, "iMedia_Env_GetParams"));
     CHECK_AND_RETURN_RET_LOG(algoApi_.getPara != nullptr, ERROR, "Failed to get symbol iMedia_Env_GetParams");
 
-    int32_t ret = algoApi_.getSize(&stSize);
+    int32_t ret = algoApi_.getSize(&stSize_);
     CHECK_AND_RETURN_RET_LOG(ret == IMEDIA_SWS_EOK, ret, "iMedia_Env_GetSize ERROR: %{public}d", ret);
 
-    runBuf_.resize(stSize.iStrSize);
-    scratchBuf_.resize(stSize.iScracthSize);
+    runBuf_.resize(stSize_.iStrSize);
+    scratchBuf_.resize(stSize_.iScracthSize);
     isEnvAlgoInit_ = true;
     AUDIO_INFO_LOG("ALGO Init End, size of runBuf: %{public}d, size of scratchBuf: %{public}d",
-        stSize.iStrSize,
-        stSize.iScracthSize);
+        stSize_.iStrSize,
+        stSize_.iScracthSize);
     return SUCCESS;
 }
 
@@ -109,8 +109,8 @@ iMedia_Env_PARA StringToEnvMode(const std::string &modStr)
 
 int32_t AudioSuiteEnvAlgoInterfaceImpl::SetParameter(const std::string &envType, const std::string &envType2)
 {
-    para = StringToEnvMode(envType);
-    int32_t ret = algoApi_.initAlgo(runBuf_.data(), scratchBuf_.data(), stSize.iScracthSize, para);
+    para_ = StringToEnvMode(envType);
+    int32_t ret = algoApi_.initAlgo(runBuf_.data(), scratchBuf_.data(), stSize_.iScracthSize, para_);
     if (IMEDIA_SWS_EOK != ret) {
         AUDIO_ERR_LOG("iMedia_Env_Init ERROR: %{public}d", ret);
         runBuf_.clear();
@@ -120,7 +120,7 @@ int32_t AudioSuiteEnvAlgoInterfaceImpl::SetParameter(const std::string &envType,
         AUDIO_INFO_LOG("iMedia_Env_Init Success");
     }
 
-    ret = algoApi_.setPara(runBuf_.data(), scratchBuf_.data(), stSize.iScracthSize, para);
+    ret = algoApi_.setPara(runBuf_.data(), scratchBuf_.data(), stSize_.iScracthSize, para_);
     if (IMEDIA_SWS_EOK != ret) {
         AUDIO_ERR_LOG("iMedia_Env_SetParams ERROR: %{public}d", ret);
         runBuf_.clear();
@@ -128,34 +128,34 @@ int32_t AudioSuiteEnvAlgoInterfaceImpl::SetParameter(const std::string &envType,
         return ERROR;
     }
 
-    frameLen = IMEDIA_SWS_FRAME_LEN * ALGO_CHANNEL_NUM;
-    inputSamples = frameLen * AUDIO_DURATION;
-    dataIn.resize(frameLen);
-    dataOut.resize(frameLen);
+    frameLen_ = IMEDIA_SWS_FRAME_LEN * ALGO_CHANNEL_NUM;
+    inputSamples_ = frameLen_ * AUDIO_DURATION;
+    dataIn_.resize(frameLen_);
+    dataOut_.resize(frameLen_);
 
-    stData.piDataIn = reinterpret_cast<IMEDIA_INT32 *>(dataIn.data());
-    stData.piDataOut = reinterpret_cast<IMEDIA_INT32 *>(dataOut.data());
-    stData.iSize = IMEDIA_SWS_FRAME_LEN;
-    stData.iEnable_SWS = 1;
-    stData.iData_Format16 = 1;
-    stData.iData_Channel = ALGO_CHANNEL_NUM;
-    stData.iMasterVolume = MASTERVOLUME;
+    stData_.piDataIn = reinterpret_cast<IMEDIA_INT32 *>(dataIn_.data());
+    stData_.piDataOut = reinterpret_cast<IMEDIA_INT32 *>(dataOut_.data());
+    stData_.iSize = IMEDIA_SWS_FRAME_LEN;
+    stData_.iEnable_SWS = 1;
+    stData_.iData_Format16 = 1;
+    stData_.iData_Channel = ALGO_CHANNEL_NUM;
+    stData_.iMasterVolume = MASTERVOLUME;
 
     AUDIO_INFO_LOG("Set Env Parameter Success");
     return SUCCESS;
 }
 
-int32_t AudioSuiteEnvAlgoInterfaceImpl::GetParameter(const std::string &oldtype, std::string &type)
+int32_t AudioSuiteEnvAlgoInterfaceImpl::GetParameter(const std::string &paramType, std::string &paramValue)
 {
     iMedia_Env_PARA param;
     algoApi_.getPara(runBuf_.data(), &param);
-    if (param != para) {
+    if (param != para_) {
         AUDIO_ERR_LOG("Set or get wrong param, set = %{public}d, get = %{public}d",
-            static_cast<int32_t>(para),
+            static_cast<int32_t>(para_),
             static_cast<int32_t>(param));
         return ERROR;
     }
-    type = std::to_string(static_cast<int32_t>(param));
+    paramValue = std::to_string(static_cast<int32_t>(param));
     return SUCCESS;
 }
 
@@ -172,20 +172,20 @@ int32_t AudioSuiteEnvAlgoInterfaceImpl::Apply(std::vector<uint8_t *> &pcmInBuf, 
     }
     AUDIO_DEBUG_LOG("iMedia_Env_Apply Start");
 
-    while (inputSamples >= start + frameLen) {
-        frameLen = frameLen < inputSamples - start ? frameLen : inputSamples - start;
-        for (i = 0; i < frameLen; i++) {
-            dataIn[i] = static_cast<IMEDIA_INT32>(bufIn[start + i]);
-            dataIn[i] <<= TWO_BYTES_WIDTH;
+    while (inputSamples_ >= start + frameLen_) {
+        frameLen_ = frameLen_ < inputSamples_ - start ? frameLen_ : inputSamples_ - start;
+        for (i = 0; i < frameLen_; i++) {
+            dataIn_[i] = static_cast<uint32_t>(bufIn[start + i]);
+            dataIn_[i] <<= TWO_BYTES_WIDTH;
         }
 
-        ret = algoApi_.applyAlgo(runBuf_.data(), scratchBuf_.data(), scratchBuf_.size(), &stData);
+        ret = algoApi_.applyAlgo(runBuf_.data(), scratchBuf_.data(), scratchBuf_.size(), &stData_);
         AUDIO_DEBUG_LOG("applyAlgo end");
         CHECK_AND_RETURN_RET_LOG(ret == IMEDIA_SWS_EOK, ret, "iMedia_SWS_Apply ERROR:%{public}d", ret);
-        for (i = 0; i < frameLen; i++) {
-            pcmOut[start + i] = ((unsigned int)dataOut[i] >> TWO_BYTES_WIDTH);
+        for (i = 0; i < frameLen_; i++) {
+            pcmOut[start + i] = ((unsigned int)dataOut_[i] >> TWO_BYTES_WIDTH);
         }
-        start = start + frameLen < inputSamples ? start + frameLen : inputSamples;
+        start = start + frameLen_ < inputSamples_ ? start + frameLen_ : inputSamples_;
     }
     AUDIO_DEBUG_LOG("iMedia_Env_Apply End");
     return ret;

@@ -31,11 +31,11 @@ static constexpr AudioSamplingRate EQ_ALGO_SAMPLE_RATE = SAMPLE_RATE_48000;
 static constexpr AudioSampleFormat EQ_ALGO_SAMPLE_FORMAT = SAMPLE_S16LE;
 static constexpr AudioChannel EQ_ALGO_CHANNEL_COUNT = STEREO;
 static constexpr AudioChannelLayout EQ_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
-} 
+}  // namespace
 
 AudioSuiteEqNode::AudioSuiteEqNode()
-    : AudioSuiteProcessNode(
-          NODE_TYPE_EQUALIZER, AudioFormat{{EQ_ALGO_CHANNEL_LAYOUT, EQ_ALGO_CHANNEL_COUNT}, EQ_ALGO_SAMPLE_FORMAT, EQ_ALGO_SAMPLE_RATE}),
+    : AudioSuiteProcessNode(NODE_TYPE_EQUALIZER,
+          AudioFormat{{EQ_ALGO_CHANNEL_LAYOUT, EQ_ALGO_CHANNEL_COUNT}, EQ_ALGO_SAMPLE_FORMAT, EQ_ALGO_SAMPLE_RATE}),
       outPcmBuffer_(EQ_ALGO_SAMPLE_RATE, EQ_ALGO_CHANNEL_COUNT, EQ_ALGO_CHANNEL_LAYOUT),
       tmpPcmBuffer_(EQ_ALGO_SAMPLE_RATE, EQ_ALGO_CHANNEL_COUNT, EQ_ALGO_CHANNEL_LAYOUT)
 {}
@@ -118,15 +118,16 @@ AudioSuitePcmBuffer *AudioSuiteEqNode::SignalProcess(const std::vector<AudioSuit
     tmpin_[0] = inputPointer;
     tmpout_[0] = outputPointer;
     eqAlgoInterfaceImpl_->Apply(tmpin_, tmpout_);
-    ConvertToFloat(
-        EQ_ALGO_SAMPLE_FORMAT, outPcmBuffer_.GetFrameLen(), eqOutputDataBuffer_.data(), outPcmBuffer_.GetPcmDataBuffer());
+    ConvertToFloat(EQ_ALGO_SAMPLE_FORMAT,
+        outPcmBuffer_.GetFrameLen(),
+        eqOutputDataBuffer_.data(),
+        outPcmBuffer_.GetPcmDataBuffer());
     return &outPcmBuffer_;
 }
 
 bool AudioSuiteEqNode::SetEqMode(EqualizerMode type)
 {
-    currentEqMode = type;
-    switch (currentEqMode) {
+    switch (type) {
         case DEFAULT_MODE:
             eqValue_ = EQUALIZER_DEFAULT_VALUE;
             AUDIO_INFO_LOG("Set EqMode to DEFAULT_MODE");
@@ -197,6 +198,7 @@ int32_t AudioSuiteEqNode::SetOptions(std::string name, std::string value)
         AUDIO_INFO_LOG("SetOptions SUCCESS");
         return SUCCESS;
     } else if (name == "EqualizerMode") {
+        currentEqMode_ = value;
         EqualizerMode eqMode = StringToEqualizerMode(value);
         if (SetEqMode(eqMode) && !eqValue_.empty()) {
             eqAlgoInterfaceImpl_->SetParameter(eqValue_, eqValue_);
@@ -213,11 +215,11 @@ int32_t AudioSuiteEqNode::GetOptions(std::string name, std::string &value)
 {
     AUDIO_INFO_LOG("AudioSuiteEqNode::GetOptions Enter");
     if (name == "AudioEqualizerFrequencyBandGains") {
-        
+        value = eqValue_;
         AUDIO_INFO_LOG("GetOptions SUCCESS");
         return SUCCESS;
     } else if (name == "EqualizerMode") {
-        
+        value = currentEqMode_;
         AUDIO_INFO_LOG("Getoptions SUCCESS");
         return SUCCESS;
     } else {

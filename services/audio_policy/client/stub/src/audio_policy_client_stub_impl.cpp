@@ -1202,6 +1202,7 @@ int32_t AudioPolicyClientStubImpl::OnSpatializationEnabledChange(bool enabled)
 {
     std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
     for (const auto &callback : spatializationEnabledChangeCallbackList_) {
+        CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
         callback->OnSpatializationEnabledChange(enabled);
     }
     return SUCCESS;
@@ -1212,6 +1213,7 @@ int32_t AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForAnyDevice(
 {
     std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
     for (const auto &callback : spatializationEnabledChangeCallbackList_) {
+        CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
         callback->OnSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled);
     }
     return SUCCESS;
@@ -1242,6 +1244,7 @@ int32_t AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForCurrentDevice
 {
     std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeForCurrentDeviceMutex_);
     for (const auto &callback : spatializationEnabledChangeForCurrentDeviceCallbackList_) {
+        CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
         callback->OnSpatializationEnabledChangeForCurrentDevice(enabled);
     }
     return SUCCESS;
@@ -1272,6 +1275,7 @@ int32_t AudioPolicyClientStubImpl::OnHeadTrackingEnabledChange(bool enabled)
 {
     std::lock_guard<std::mutex> lockCbMap(headTrackingEnabledChangeMutex_);
     for (const auto &callback : headTrackingEnabledChangeCallbackList_) {
+        CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
         callback->OnHeadTrackingEnabledChange(enabled);
     }
     return SUCCESS;
@@ -1282,6 +1286,7 @@ int32_t AudioPolicyClientStubImpl::OnHeadTrackingEnabledChangeForAnyDevice(
 {
     std::lock_guard<std::mutex> lockCbMap(headTrackingEnabledChangeMutex_);
     for (const auto &callback : headTrackingEnabledChangeCallbackList_) {
+        CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
         callback->OnHeadTrackingEnabledChangeForAnyDevice(deviceDescriptor, enabled);
     }
     return SUCCESS;

@@ -91,6 +91,12 @@ int32_t AudioInputNode::Connect(const std::shared_ptr<AudioNode>& preNode, Audio
     return ERROR;
 }
 
+int32_t AudioInputNode::Connect(const std::shared_ptr<AudioNode>& preNode)
+{
+    AUDIO_ERR_LOG("AudioInputNode::Connect not support opt");
+    return ERROR;
+}
+
 int32_t AudioInputNode::DisConnect(const std::shared_ptr<AudioNode>& preNode)
 {
     AUDIO_ERR_LOG("AudioInputNode::DisConnect not support opt");
@@ -325,7 +331,6 @@ int32_t AudioInputNode::DoResample(uint8_t* inData, uint32_t inSize, AudioSampli
 
 int32_t AudioInputNode::GeneratePushBuffer()
 {
-    AUDIO_INFO_LOG("AudioInputNode::GeneratePushBuffer");
     CHECK_AND_RETURN_RET_LOG(inputNodeBuffer_ != nullptr, ERR_INVALID_OPERATION,
         "AudioInputNode::SetAudioNodeFormat inputNodeBuffer_ is null");
     uint32_t needMinSize = GetFrameSizeAfterTransfer(GetAudioNodeFormat());
