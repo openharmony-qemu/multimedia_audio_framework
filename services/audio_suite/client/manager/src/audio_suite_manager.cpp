@@ -20,12 +20,15 @@
 #include <string>
 #include <atomic>
 #include <memory>
+#include <sstream>
 #include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_suite_log.h"
 #include "audio_suite_engine.h"
 #include "audio_suite_manager_private.h"
 #include "audio_suite_manager_callback.h"
+#include "media_monitor_manager.h"
+#include "media_monitor_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -33,6 +36,33 @@ namespace AudioSuite {
 
 namespace {
 static const int32_t OPERATION_TIMEOUT_IN_MS = 10000;  // 10s
+enum ErrorScene : uint32_t {
+    PIPELINE_SCENE = 0,
+    NODE_SCENE = 1,
+};
+enum PipelineErrorCase : uint32_t {
+    CREATE_PIPELINE_ERROR = 0,
+    DESTORY_PIPELINE_ERROR = 1,
+    RENDER_PIPELINE_ERROR = 2,
+};
+enum NodeErrorCase : uint32_t {
+    CREATE_NODE_ERROR = 0,
+    DESTROY_NODE_ERROR = 1,
+    CONNECT_NODE_ERROR = 2,
+    DISCONNECT_NODE_ERROR = 3,
+};
+static const std::map<AudioNodeType, std::string> NODETYPE_TOSTRING_MAP = {
+    {NODE_TYPE_EMPTY, "NODE_TYPE_EMPTY"},
+    {NODE_TYPE_INPUT, "NODE_TYPE_INPUT"},
+    {NODE_TYPE_OUTPUT, "NODE_TYPE_OUTPUT"},
+    {NODE_TYPE_EQUALIZER, "NODE_TYPE_EQUALIZER"},
+    {NODE_TYPE_NOISE_REDUCTION, "NODE_TYPE_NOISE_REDUCTION"},
+    {NODE_TYPE_SOUND_FIELD, "NODE_TYPE_SOUND_FIELD"},
+    {NODE_TYPE_AUDIO_SEPARATION, "NODE_TYPE_AUDIO_SEPARATION"},
+    {NODE_TYPE_VOICE_BEAUTIFIER, "NODE_TYPE_VOICE_BEAUTIFIER"},
+    {NODE_TYPE_ENVIRONMENT_EFFECT, "NODE_TYPE_ENVIRONMENT_EFFECT"},
+    {NODE_TYPE_AUDIO_MIXER, "NODE_TYPE_AUDIO_MIXER"}
+};
 }
 
 IAudioSuiteManager& IAudioSuiteManager::GetAudioSuiteManager()
@@ -94,7 +124,11 @@ int32_t AudioSuiteManager::CreatePipeline(uint32_t &pipelineId)
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishCreatePipeline_;
     });
-    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "CreatePipeline timeout");
+    if (!stopWaiting) {
+        WriteSuiteEngineExceptionEvent(PIPELINE_SCENE, CREATE_PIPELINE_ERROR, "CreatePipeline timeout");
+        AUDIO_ERR_LOG("CreatePipeline timeout");
+        return ERROR;
+    }
 
     AUDIO_INFO_LOG("CreatePipeline leave");
     pipelineId = engineCreatePipelineId_;
@@ -117,7 +151,11 @@ int32_t AudioSuiteManager::DestroyPipeline(uint32_t pipelineId)
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishDestroyPipeline_;
     });
-    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "DestroyPipeline timeout");
+    if (!stopWaiting) {
+        WriteSuiteEngineExceptionEvent(PIPELINE_SCENE, DESTORY_PIPELINE_ERROR, "DestroyPipeline timeout");
+        AUDIO_ERR_LOG("DestroyPipeline timeout");
+        return ERROR;
+    }
 
     AUDIO_INFO_LOG("DestroyPipeline leave");
     return destroyPipelineResult_;
@@ -201,7 +239,11 @@ int32_t AudioSuiteManager::CreateNode(uint32_t pipelineId, AudioNodeBuilder &bui
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishCreateNode_;  // will be true when got notified.
     });
-    CHECK_AND_RETURN_RET_LOG(stopWaiting, INVALID_NODE_ID, "CreateNode timeout");
+    if (!stopWaiting) {
+        WriteSuiteEngineExceptionEvent(NODE_SCENE, CREATE_NODE_ERROR, "CreateNode timeout");
+        AUDIO_ERR_LOG("CreateNode timeout");
+        return INVALID_NODE_ID;
+    }
 
     AUDIO_INFO_LOG("CreateNode leave");
     nodeId = engineCreateNodeId_;
@@ -223,7 +265,11 @@ int32_t AudioSuiteManager::DestroyNode(uint32_t nodeId)
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishDestroyNode_;
     });
-    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "DestroyNode timeout");
+    if (!stopWaiting) {
+        WriteSuiteEngineExceptionEvent(NODE_SCENE, DESTROY_NODE_ERROR, "DestroyNode timeout");
+        AUDIO_ERR_LOG("DestroyNode timeout");
+        return ERROR;
+    }
 
     AUDIO_INFO_LOG("DestroyNode leave");
     return destroyNodeResult_;
@@ -327,7 +373,11 @@ int32_t AudioSuiteManager::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId,
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishConnectNodes_;
     });
-    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "ConnectNodes timeout");
+    if (!stopWaiting) {
+        WriteSuiteEngineExceptionEvent(NODE_SCENE, CONNECT_NODE_ERROR, "ConnectNodes timeout");
+        AUDIO_ERR_LOG("ConnectNodes timeout");
+        return ERROR;
+    }
 
     AUDIO_INFO_LOG("ConnectNodes leave");
     return connectNodesResult_;
@@ -347,7 +397,11 @@ int32_t AudioSuiteManager::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId)
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishConnectNodes_;
     });
-    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "ConnectNodes timeout");
+    if (!stopWaiting) {
+        WriteSuiteEngineExceptionEvent(NODE_SCENE, CONNECT_NODE_ERROR, "ConnectNodes timeout");
+        AUDIO_ERR_LOG("ConnectNodes timeout");
+        return ERROR;
+    }
 
     AUDIO_INFO_LOG("ConnectNodes leave");
     return connectNodesResult_;
@@ -367,7 +421,11 @@ int32_t AudioSuiteManager::DisConnectNodes(uint32_t srcNodeId, uint32_t destNode
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishDisConnectNodes_;
     });
-    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "DisConnectNodes timeout");
+    if (!stopWaiting) {
+        WriteSuiteEngineExceptionEvent(NODE_SCENE, DISCONNECT_NODE_ERROR, "DisConnectNodes timeout");
+        AUDIO_ERR_LOG("DisConnectNodes timeout");
+        return ERROR;
+    }
 
     AUDIO_INFO_LOG("DisConnectNodes leave");
     return disConnectNodesResult_;
@@ -586,7 +644,11 @@ int32_t AudioSuiteManager::RenderFrame(uint32_t pipelineId,
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinisRenderFrame_;
     });
-    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "RenderFrame timeout");
+    if (!stopWaiting) {
+        WriteSuiteEngineExceptionEvent(PIPELINE_SCENE, RENDER_PIPELINE_ERROR, "RenderFrame timeout");
+        AUDIO_ERR_LOG("RenderFrame timeout");
+        return ERROR;
+    }
 
     AUDIO_INFO_LOG("RenderFrame leave");
     return renderFrameResult_;
@@ -607,7 +669,11 @@ int32_t AudioSuiteManager::MultiRenderFrame(uint32_t pipelineId,
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinisMultiRenderFrame_;
     });
-    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "MultiRenderFrame timeout");
+    if (!stopWaiting) {
+        WriteSuiteEngineExceptionEvent(PIPELINE_SCENE, RENDER_PIPELINE_ERROR, "MultiRenderFrame timeout");
+        AUDIO_ERR_LOG("MultiRenderFrame timeout");
+        return ERROR;
+    }
 
     AUDIO_INFO_LOG("MultiRenderFrame leave");
     return MultiRenderFrameResult_;
