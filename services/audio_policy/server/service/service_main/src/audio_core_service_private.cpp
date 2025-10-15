@@ -121,7 +121,6 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
     for (std::shared_ptr<AudioStreamDescriptor> streamDesc : streamDescs) {
         //  if streamDesc select bluetooth or headset, active it
         if (!HandleOutputStreamInRunning(streamDesc, reason)) {
-            UpdatePlaybackStreamFlag(streamDesc, false);
             continue;
         }
         // started stream need to mute when switch device
@@ -142,8 +141,6 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
         }
 
         CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
-        
-        UpdatePlaybackStreamFlag(streamDesc, false);
     }
     AudioDeviceDescriptor audioDeviceDescriptor = audioActiveDevice_.GetCurrentOutputDevice();
     std::shared_ptr<AudioDeviceDescriptor> descPtr =
@@ -201,8 +198,10 @@ void AudioCoreService::NotifyRouteUpdate(const std::vector<std::shared_ptr<Audio
 int32_t AudioCoreService::FetchRendererPipesAndExecute(
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs, const AudioStreamDeviceChangeReasonExt reason)
 {
+    for (std::shared_ptr<AudioStreamDescriptor> streamDesc : streamDescs) {
+        UpdatePlaybackStreamFlag(streamDesc, false);
+    }
     AUDIO_INFO_LOG("[PipeFetchStart] all %{public}zu output streams", streamDescs.size());
-    UpdateActiveDeviceAndVolumeBeforeMoveSession(streamDescs, reason);
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = audioPipeSelector_->FetchPipesAndExecute(streamDescs);
 
     // Update a2dp offload flag here because UpdateActiveRoute() need actual flag.
@@ -877,7 +876,9 @@ int32_t AudioCoreService::FetchDeviceAndRoute(std::string caller, const AudioStr
 int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
     uint32_t &sessionId, uint32_t &audioFlag, const AudioStreamDeviceChangeReasonExt reason)
 {
-    AUDIO_INFO_LOG("[PipeFetchStart] for stream %{public}d", sessionId);
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_NULL_POINTER, "stream desc is nullptr");
+    UpdatePlaybackStreamFlag(streamDesc, true);
+    AUDIO_INFO_LOG("[PipeFetchStart] AudioFlag 0x%{public}x for stream %{public}d", streamDesc->audioFlag_, sessionId);
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = audioPipeSelector_->FetchPipeAndExecute(streamDesc);
 
     uint32_t sinkId = HDI_INVALID_ID;
@@ -2885,8 +2886,6 @@ void AudioCoreService::UpdateStreamDevicesForStart(
         streamDesc->oldDeviceDescs_.front()->deviceType_ != devices[0]->deviceType_) {
         WriteScoStateFaultEvent(devices[0]);
     }
-    SelectA2dpType(streamDesc, false);
-
     FetchOutputDupDevice(caller, streamDesc->GetSessionId(), streamDesc);
 }
 
@@ -2907,7 +2906,6 @@ void AudioCoreService::UpdateStreamDevicesForCreate(
     if (streamDesc->IsMediaScene() && devices[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         WriteScoStateFaultEvent(devices[0]);
     }
-    SelectA2dpType(streamDesc, true);
     FetchOutputDupDevice(caller, streamDesc->GetSessionId(), streamDesc);
 }
 
