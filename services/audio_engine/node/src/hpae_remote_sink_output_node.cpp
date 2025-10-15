@@ -130,10 +130,6 @@ void HpaeRemoteSinkOutputNode::DoProcess()
             writeLen, splitStreamType);
         if (ret != SUCCESS || writeLen != renderFrameData_.size()) {
             AUDIO_ERR_LOG("RenderFrame failed, SplitStreamType %{public}d", splitStreamType);
-        } else {
-            HpaeNodeInfo &nodeInfo = GetNodeInfo();
-            nodeInfo.streamType = type;
-            SetNodeInfo(nodeInfo);
         }
     }
     HandleRemoteTiming(); // used to control remote RenderFrame tempo.
