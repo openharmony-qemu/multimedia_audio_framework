@@ -58,9 +58,7 @@ void HpaeSourceOutputNode::DoProcess()
         return;
     }
     HpaePcmBuffer *outputData = outputVec.front();
-    if (!outputData->IsValid() &&
-        GetNodeInfo().sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE &&
-        GetNodeInfo().sourceType != SOURCE_TYPE_REMOTE_CAST) {
+    if (!outputData->IsValid() && GetNodeInfo().sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
         return;
     }
     int32_t ret = ERROR;

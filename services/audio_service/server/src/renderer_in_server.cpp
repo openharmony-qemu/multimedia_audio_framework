@@ -1234,6 +1234,7 @@ int32_t RendererInServer::Flush()
         for (auto &capInfo : captureInfos_) {
             if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
                 capInfo.second.dupStream->Flush();
+                InitDupBufferInner(capInfo.first);
             }
         }
     }
@@ -2452,6 +2453,11 @@ bool RendererInServer::CollectInfosForWorkgroup(float systemVolume)
 void RendererInServer::InitDupBuffer(int32_t innerCapId)
 {
     std::lock_guard<std::mutex> lock(dupMutex_);
+    InitDupBufferInner(innerCapId);
+}
+
+void RendererInServer::InitDupBufferInner(int32_t innerCapId)
+{
     CHECK_AND_RETURN_LOG(innerCapIdToDupStreamCallbackMap_.find(innerCapId) != innerCapIdToDupStreamCallbackMap_.end(),
         "innerCapIdToDupStreamCallbackMap_ is no find innerCapId: %{public}d", innerCapId);
     CHECK_AND_RETURN_LOG(innerCapIdToDupStreamCallbackMap_[innerCapId] != nullptr,
