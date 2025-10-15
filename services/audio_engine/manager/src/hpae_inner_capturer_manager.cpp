@@ -988,7 +988,8 @@ bool HpaeInnerCapturerManager::SetSessionFade(uint32_t sessionId, IOperation ope
     return true;
 }
 
-void HpaeInnerCapturerManager::TriggerStreamState(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode> &inputNode)
+void HpaeInnerCapturerManager::TriggerStreamState(uint32_t sessionId,
+    const std::shared_ptr<HpaeSinkInputNode> &inputNode)
 {
     HpaeSessionState inputState = inputNode->GetState();
     if (inputState == HPAE_SESSION_STOPPING || inputState == HPAE_SESSION_PAUSING) {
