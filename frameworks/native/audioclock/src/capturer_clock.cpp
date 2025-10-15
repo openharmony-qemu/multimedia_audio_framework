@@ -42,9 +42,10 @@ bool CapturerClock::GetTimeStampByPosition(uint64_t capturerPos, uint64_t& times
     AUDIO_DEBUG_LOG("capturerPos:%{public}" PRIu64 " position_:%{public}" PRIu64,
         capturerPos, position_);
 
-    if (capturerPos == position_) {s
+    if (capturerPos == position_) {
         timestamp = timestamp_;
-        if (logTimestamp_ == 0 || (timestamp - logTimestamp_ >= AUDIO_CAPTURER_CLOCK_LOG_TIME_NS)) {
+        if (logTimestamp_ == 0 || (timestamp > logTimestamp_ &&
+            timestamp - logTimestamp_ >= AUDIO_CAPTURER_CLOCK_LOG_TIME_NS)) {
             logTimestamp_ = timestamp;
             AUDIO_INFO_LOG("capPos:%{public}" PRIu64 " capPts:%{public}" PRIu64 " sysPts:%{public}" PRIu64,
             capturerPos, logTimestamp_, ClockTime::GetCurNano());
