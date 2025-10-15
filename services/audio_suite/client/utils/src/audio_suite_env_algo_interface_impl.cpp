@@ -87,16 +87,18 @@ int32_t AudioSuiteEnvAlgoInterfaceImpl::Deinit()
 iMedia_Env_PARA StringToEnvMode(const std::string &modStr)
 {
     if (modStr == "0") {
-        AUDIO_INFO_LOG("Set EnvMode to BROADCAST");
+        AUDIO_INFO_LOG("EnvMode is Close");
         return IMEDIA_SWS_ENV_BROADCAST;
     } else if (modStr == "1") {
-        AUDIO_INFO_LOG("Set EnvMode to TELEPHONE_RECEIVER");
-
-        return IMEDIA_SWS_ENV_TELEPHONE_RECEIVER;
+        AUDIO_INFO_LOG("Set EnvMode to BROADCAST");
+        return IMEDIA_SWS_ENV_BROADCAST;
     } else if (modStr == "2") {
+        AUDIO_INFO_LOG("Set EnvMode to TELEPHONE_RECEIVER");
+        return IMEDIA_SWS_ENV_TELEPHONE_RECEIVER;
+    } else if (modStr == "3") {
         AUDIO_INFO_LOG("Set EnvMode to UNDER_WATER");
         return IMEDIA_SWS_ENV_UNDER_WATER;
-    } else if (modStr == "3") {
+    } else if (modStr == "4") {
         AUDIO_INFO_LOG("Set EnvMode to PHONOGRAPH");
         return IMEDIA_SWS_ENV_PHONOGRAPH;
     } else {
@@ -153,6 +155,7 @@ int32_t AudioSuiteEnvAlgoInterfaceImpl::GetParameter(const std::string &oldtype,
             static_cast<int32_t>(param));
         return ERROR;
     }
+    type = std::to_string(static_cast<int32_t>(param));
     return SUCCESS;
 }
 

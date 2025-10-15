@@ -15,7 +15,6 @@
 
 #ifndef AUDIO_SUITE_EQ_NODE_H
 #define AUDIO_SUITE_EQ_NODE_H
-#define RESAMPLE_QUALITY (5)
 
 #include <vector>
 #include <string>
@@ -48,7 +47,9 @@ public:
     bool IsEqNodeInit();
     bool SetEqMode(EqualizerMode type);
     int32_t SetOptions(std::string name, std::string value) override;
-    std::shared_ptr<AudioSuiteEqAlgoInterfaceImpl> eqAlgoInterfaceImpl_;
+    int32_t GetOptions(std::string name, std::string &value) override;
+    AudioSuitePcmBuffer outPcmBuffer_;
+    AudioSuitePcmBuffer tmpPcmBuffer_;
 
 protected:
     AudioSuitePcmBuffer *SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs) override;
@@ -56,17 +57,12 @@ protected:
 private:
     EqualizerMode currentEqMode;
     bool isEqNodeInit_ = false;
-    AudioFormat audioFormat_;
-    int32_t preProcess(AudioSuitePcmBuffer *inputPcmBuffer);
-    int32_t CopyBuffer(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer);
-    int32_t DoChannelConvert(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer);
-    int32_t DoResample(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer);
     std::vector<uint8_t> eqInputDataBuffer_;
     std::vector<uint8_t> eqOutputDataBuffer_;
-    AudioSuitePcmBuffer outPcmBuffer_;
     std::vector<uint8_t *> tmpin_;
     std::vector<uint8_t *> tmpout_;
     std::string eqValue_;
+    std::shared_ptr<AudioSuiteEqAlgoInterfaceImpl> eqAlgoInterfaceImpl_;
 };
 
 }  // namespace AudioSuite
