@@ -60,9 +60,8 @@ private:
     SoundFieldAlgoApi algoApi_{0};
     std::unique_ptr<uint8_t[]> algoRunBuf_{nullptr};
     std::unique_ptr<uint8_t[]> algoScratchBuf_{nullptr};
-    iMedia_Surround_PARA SurroundType_{IMEDIA_SWS_SOUROUND_BROAD};
     iMedia_SWS_MEM_SIZE stSize_{0};
-    iMedia_SWS_DATA stData_;
+    iMedia_SWS_DATA stData_{0};
     std::array<IMEDIA_INT32, SOUNDFIELD_ALGO_FRAME_LEN> dataIn_;
     std::array<IMEDIA_INT32, SOUNDFIELD_ALGO_FRAME_LEN> dataOut_;
 };
