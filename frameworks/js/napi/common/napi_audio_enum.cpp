@@ -133,7 +133,6 @@ const std::map<std::string, int32_t> NapiAudioEnum::deviceTypeMap = {
     {"WIRED_HEADPHONES", DEVICE_TYPE_WIRED_HEADPHONES},
     {"BLUETOOTH_SCO", DEVICE_TYPE_BLUETOOTH_SCO},
     {"BLUETOOTH_A2DP", DEVICE_TYPE_BLUETOOTH_A2DP},
-    {"BT_SPP", DEVICE_TYPE_BT_SPP},
     {"NEARLINK", DEVICE_TYPE_NEARLINK},
     {"HEARING_AID", DEVICE_TYPE_HEARING_AID},
     {"MIC", DEVICE_TYPE_MIC},
@@ -231,8 +230,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::effectModeMap = {
 
 const std::map<std::string, int32_t> NapiAudioEnum::audioPrivacyTypeMap = {
     {"PRIVACY_TYPE_PUBLIC", PRIVACY_TYPE_PUBLIC},
-    {"PRIVACY_TYPE_PRIVATE", PRIVACY_TYPE_PRIVATE},
-    {"PRIVACY_TYPE_SHARED", PRIVACY_TYPE_SHARED},
+    {"PRIVACY_TYPE_PRIVATE", PRIVACY_TYPE_PRIVATE}
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::deviceChangeTypeMap = {
@@ -261,8 +259,6 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioVolumeTypeMap = {
     {"ACCESSIBILITY", NapiAudioEnum::ACCESSIBILITY},
     {"SYSTEM", NapiAudioEnum::SYSTEM},
     {"ULTRASONIC", NapiAudioEnum::ULTRASONIC},
-    {"NOTIFICATION", NapiAudioEnum::NOTIFICATION},
-    {"NAVIGATION", NapiAudioEnum::NAVIGATION},
     {"ALL", NapiAudioEnum::ALL}
 };
 
@@ -551,16 +547,6 @@ const std::map<std::string, int32_t> NapiAudioEnum::outputDeviceChangeRecommende
     {"DEVICE_CHANGE_RECOMMEND_TO_STOP", static_cast<int32_t>(OutputDeviceChangeRecommendedAction::RECOMMEND_TO_STOP)},
 };
 
-const std::map<std::string, int32_t> NapiAudioEnum::effectFlagMap = {
-    {"RENDER_EFFECT_FLAG", RENDER_EFFECT_FLAG},
-    {"CAPTURE_EFFECT_FLAG", CAPTURE_EFFECT_FLAG},
-};
-
-const std::map<std::string, int32_t> NapiAudioEnum::renderTargetMap = {
-    {"PLAYBACK", NORMAL_PLAYBACK},
-    {"INJECT_TO_VOICE_COMMUNICATION_CAPTURE", INJECT_TO_VOICE_COMMUNICATION_CAPTURE},
-};
-
 NapiAudioEnum::NapiAudioEnum()
     : env_(nullptr) {
 }
@@ -728,8 +714,6 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
             CreateEnumObject(env, audioSessionStateChangeHintMap)),
         DECLARE_NAPI_PROPERTY("OutputDeviceChangeRecommendedAction",
             CreateEnumObject(env, outputDeviceChangeRecommendedActionMap)),
-        DECLARE_NAPI_PROPERTY("EffectFlag", CreateEnumObject(env, effectFlagMap)),
-        DECLARE_NAPI_PROPERTY("RenderTarget", CreateEnumObject(env, renderTargetMap)),
     };
     return napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
 }
@@ -1193,21 +1177,6 @@ bool NapiAudioEnum::IsLegalCapturerType(int32_t type)
     return result;
 }
 
-bool NapiAudioEnum::IsLegalRenderTargetType(int32_t type)
-{
-    bool result = false;
-    switch (type) {
-        case NORMAL_PLAYBACK:
-        case INJECT_TO_VOICE_COMMUNICATION_CAPTURE:
-            result = true;
-            break;
-        default:
-            result = false;
-            break;
-    }
-    return result;
-}
-
 bool NapiAudioEnum::IsLegalInputArgumentVolType(int32_t inputType)
 {
     bool result = false;
@@ -1318,7 +1287,6 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
             break;
         case AudioStreamType::STREAM_RING:
         case AudioStreamType::STREAM_DTMF:
-        case AudioStreamType::STREAM_VOICE_RING:
             result = NapiAudioEnum::RINGTONE;
             break;
         case AudioStreamType::STREAM_MUSIC:
@@ -1515,23 +1483,6 @@ bool NapiAudioEnum::IsValidSourceType(int32_t intValue)
     }
 }
 
-bool NapiAudioEnum::IsLegalBluetoothAndNearlinkPreferredRecordCategory(uint32_t category)
-{
-    bool result = false;
-    switch (category) {
-        case BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE:
-        case BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_DEFAULT:
-        case BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_LOW_LATENCY:
-        case BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_HIGH_QUALITY:
-            result = true;
-            break;
-        default:
-            result = false;
-            break;
-    }
-    return result;
-}
-
 bool NapiAudioEnum::IsLegalDeviceUsage(int32_t usage)
 {
     bool result = false;
@@ -1589,7 +1540,6 @@ bool NapiAudioEnum::IsLegalInputArgumentStreamUsage(int32_t streamUsage)
         case STREAM_USAGE_ULTRASONIC:
         case STREAM_USAGE_VIDEO_COMMUNICATION:
         case STREAM_USAGE_VOICE_CALL_ASSISTANT:
-        case STREAM_USAGE_VOICE_RINGTONE:
             result = true;
             break;
         default:

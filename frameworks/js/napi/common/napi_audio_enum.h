@@ -123,11 +123,6 @@ public:
         LOOPBACK_MODE_HARDWARE = 0
     };
 
-    enum RenderTarget {
-        NORMAL_PLAYBACK = 0,
-        INJECT_TO_VOICE_COMMUNICATION_CAPTURE = 1
-    };
-
     static napi_value Init(napi_env env, napi_value exports);
     static bool IsLegalInputArgumentInterruptMode(int32_t interruptMode);
     static bool IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode);
@@ -164,8 +159,6 @@ public:
     static bool IsLegalInputArgumentAudioLoopbackReverbPreset(int32_t preset);
     static bool IsLegalInputArgumentAudioLoopbackEqualizerPreset(int32_t preset);
     static bool IsLegalInputArgumentSessionScene(int32_t scene);
-    static bool IsLegalRenderTargetType(int32_t type);
-    static bool IsLegalBluetoothAndNearlinkPreferredRecordCategory(uint32_t category);
 
 private:
     static void Destructor(napi_env env, void *nativeObject, void *finalizeHint);
@@ -311,8 +304,6 @@ private:
     static const std::map<std::string, int32_t> audioSessionSceneMap;
     static const std::map<std::string, int32_t> audioSessionStateChangeHintMap;
     static const std::map<std::string, int32_t> outputDeviceChangeRecommendedActionMap;
-    static const std::map<std::string, int32_t> effectFlagMap;
-    static const std::map<std::string, int32_t> renderTargetMap;
     static std::unique_ptr<AudioParameters> sAudioParameters_;
 
     std::unique_ptr<AudioParameters> audioParameters_;
