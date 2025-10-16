@@ -841,6 +841,9 @@ void AudioDeviceManager::AddAvailableDevicesByUsage(const AudioDeviceUsage usage
                 audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(dev));
             }
             break;
+        case D_ALL_DEVICES:
+            audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(dev));
+        break;
         default:
             break;
     }
