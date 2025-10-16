@@ -456,6 +456,17 @@ int32_t AudioGeneralManager::SelectOutputDevice(sptr<AudioRendererFilter> audioR
     return AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
 }
 
+int32_t AudioGeneralManager::SelectPrivateDevice()
+{
+    return AudioPolicyManager::GetInstance().SelectPrivateDevice();
+}
+
+int32_t AudioGeneralManager::ForceSelectDevice(DeviceType devType, const std::string &macAddress,
+    sptr<AudioRendererFilter> filter)
+{
+    return AudioPolicyManager::GetInstance().ForceSelectDevice(devType, macAddress, filter);
+}
+
 int32_t AudioGeneralManager::SetSleAudioOperationCallback(const std::shared_ptr<SleAudioOperationCallback> &callback)
 {
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");

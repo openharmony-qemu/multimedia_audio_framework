@@ -39,6 +39,12 @@ struct IntValueInfo {
     int32_t value;
 };
 
+struct BoolValueInfo {
+    std::string key;
+    bool defaultValue;
+    bool value;
+};
+
 class AudioSettingObserver : public AAFwk::DataAbilityObserverStub {
 public:
     AudioSettingObserver() = default;
@@ -92,10 +98,14 @@ public:
 public:
     void GetIntValues(std::vector<IntValueInfo> &infos, std::string tableType);
     ErrCode PutIntValues(std::vector<IntValueInfo>& infos, std::string tableType);
+    void GetBoolValues(std::vector<BoolValueInfo> &infos, std::string tableType);
 private:
     void GetIntValuesInner(std::vector<IntValueInfo> &infos, std::string tableType);
+    void GetBoolValuesInner(std::vector<BoolValueInfo> &infos, std::string tableType);
     ErrCode GetIntValueInner(std::shared_ptr<DataShare::DataShareHelper> helper,
         std::string key, std::string tableType, int32_t &res);
+    ErrCode GetBoolValueInner(std::shared_ptr<DataShare::DataShareHelper> helper,
+        std::string key, std::string tableType, bool &res);
 
     ErrCode PutIntValuesInner(std::vector<IntValueInfo> &infos, std::string tableType);
     ErrCode PutIntValueInner(std::shared_ptr<DataShare::DataShareHelper> helper,

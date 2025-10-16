@@ -745,21 +745,35 @@ HWTEST(VolumeDataMaintainerUnitTest, LoadDeviceMuteMapFromDb, TestSize.Level4)
 {
     std::shared_ptr<VolumeDataMaintainer> vd = std::make_shared<VolumeDataMaintainer>();
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-
     desc->deviceType_ = DEVICE_TYPE_SPEAKER;
     vd->LoadDeviceMuteMapFromDb(desc);
-    EXPECT_EQ(vd->volumeList_.size(), 0);
-    desc->networkId_ = "111";
+    desc->deviceType_ = DEVICE_TYPE_REMOTE_CAST;
+    vd->LoadDeviceMuteMapFromDb(desc);
+    desc->volumeBehavior_.isReady = true;
+    vd->LoadDeviceMuteMapFromDb(desc);
+    desc->volumeBehavior_.databaseVolumeName = "Test";
+    vd->LoadDeviceMuteMapFromDb(desc);
+    desc->volumeBehavior_.isReady = false;
     vd->LoadDeviceMuteMapFromDb(desc);
     EXPECT_EQ(vd->volumeList_.size(), 0);
+}
 
-    EXPECT_EQ(vd->GetMuteStatusInternal(desc, STREAM_MUSIC), ERROR);
-    EXPECT_EQ(vd->SaveMuteToDb(desc, STREAM_MUSIC, true), SUCCESS);
-    EXPECT_EQ(vd->LoadVolumeFromDb(desc, STREAM_MUSIC), 0);
-    desc->deviceType_ = DEVICE_TYPE_INVALID;
-    EXPECT_EQ(vd->GetMuteStatusInternal(desc, STREAM_MUSIC), ERROR);
+/**
+ * @tc.name  : Test VolumeDataMaintainer.
+ * @tc.number: SaveMuteToDb.
+ * @tc.desc  : Test GetMuteKeyForDatabaseVolumeName API.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, SaveMuteToDb, TestSize.Level4)
+{
+    std::shared_ptr<VolumeDataMaintainer> vd = std::make_shared<VolumeDataMaintainer>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     EXPECT_EQ(vd->SaveMuteToDb(desc, STREAM_MUSIC, true), ERROR);
-    EXPECT_EQ(vd->LoadVolumeFromDb(desc, STREAM_MUSIC), 0);
+    desc->deviceType_ = DEVICE_TYPE_REMOTE_CAST;
+    EXPECT_EQ(vd->SaveMuteToDb(desc, STREAM_MUSIC, true), SUCCESS);
+    desc->volumeBehavior_.isReady = true;
+    EXPECT_EQ(vd->SaveMuteToDb(desc, STREAM_MUSIC, true), SUCCESS);
+    desc->volumeBehavior_.databaseVolumeName = "Test";
+    EXPECT_EQ(vd->SaveMuteToDb(desc, STREAM_MUSIC, true), SUCCESS);
 }
 
 } // AudioStandardnamespace

@@ -204,6 +204,7 @@ private:
     void RemoveStreamInfo();
     void OnWriteDataFinish();
     void PauseInner();
+    void InitDupBufferInner(int32_t innerCapId);
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;

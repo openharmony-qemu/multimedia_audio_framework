@@ -156,10 +156,10 @@ struct HpaeNodeInfo : HpaeDfxNodeInfo {
     HpaeSourceBufferType sourceBufferType = HpaeSourceBufferType::HPAE_SOURCE_BUFFER_TYPE_DEFAULT;
     HpaeSourceInputNodeType sourceInputNodeType = HpaeSourceInputNodeType::HPAE_SOURCE_DEFAULT;
 
-    HpaeSplitStreamType GetSplitStreamType() const
+    SplitStreamType GetSplitStreamType() const
     {
         static const auto splitTypeMap = [] {
-            std::unordered_map<HpaeProcessorType, HpaeSplitStreamType> map;
+            std::unordered_map<HpaeProcessorType, SplitStreamType> map;
             map[HPAE_SCENE_SPLIT_NAVIGATION] = STREAM_TYPE_NAVIGATION;
             map[HPAE_SCENE_SPLIT_COMMUNICATION] = STREAM_TYPE_COMMUNICATION;
             map[HPAE_SCENE_SPLIT_MEDIA] = STREAM_TYPE_MEDIA;

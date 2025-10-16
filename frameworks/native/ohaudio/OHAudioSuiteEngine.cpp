@@ -783,6 +783,11 @@ int32_t OHAudioSuiteEngine::SetAudioFormat(OHAudioNode *node, OH_AudioFormat *au
 
     uint32_t nodeId = node->GetNodeId();
     AudioFormat format;
+    format.audioChannelInfo.channelLayout = static_cast<AudioChannelLayout>(audioFormat->channelLayout);
+    format.audioChannelInfo.numChannels = audioFormat->channelCount;
+    format.encodingType = static_cast<AudioStreamEncodingType>(audioFormat->encodingType);
+    format.format = static_cast<AudioSampleFormat>(audioFormat->sampleFormat);
+    format.rate =  static_cast<AudioSamplingRate>(audioFormat->samplingRate);
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().SetAudioFormat(nodeId, format);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetAudioFormat failed, ret = %{public}d.", ret);
     return ret;

@@ -114,7 +114,9 @@ public:
             const std::string &deviceName, const AudioStreamInfo &streamInfo) override;
         void OnServiceConnected(AudioServiceIndex serviceIndex) override;
         void OnServiceDisconnected(AudioServiceIndex serviceIndex) override;
-        void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress) override;
+        void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
+            sptr<AudioRendererFilter> filter = nullptr) override;
+        void OnPrivacyDeviceSelected() override;
         uint32_t GetPaIndexByPortName(const std::string &portName) override;
 
         // Functions related to assignment operations - device related
@@ -184,6 +186,7 @@ public:
         int32_t StartInjection(uint32_t sessionId) override;
         void RemoveIdForInjector(uint32_t streamId) override;
         void ReleaseCaptureInjector(uint32_t streamId) override;
+        void RebuildCaptureInjector(uint32_t streamId) override;
         int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
             uint32_t &timeStamp) override;
 private:
@@ -244,7 +247,9 @@ private:
         const std::string &deviceName, const AudioStreamInfo &streamInfo);
     int32_t OnServiceConnected(AudioServiceIndex serviceIndex);
     uint32_t GetPaIndexByPortName(const std::string &portName);
-    void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress);
+    void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
+        sptr<AudioRendererFilter> filter = nullptr);
+    void OnPrivacyDeviceSelected();
 
     // Functions related to assignment operations - device related
     int32_t SetAudioScene(AudioScene audioScene, const int32_t uid = INVALID_UID, const int32_t pid = INVALID_PID);
@@ -336,6 +341,7 @@ private:
     int32_t StartInjection(uint32_t sessionId);
     void RemoveIdForInjector(uint32_t sessionId);
     void ReleaseCaptureInjector(uint32_t sessionId);
+    void RebuildCaptureInjector(uint32_t sessionId);
     int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
 private:
     static std::string GetEncryptAddr(const std::string &addr);
@@ -534,6 +540,7 @@ private:
     void NotifyRouteUpdate(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     void ResetNearlinkDeviceState(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, bool isRunning = true);
     int32_t ForceRemoveSleStreamType(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void WriteScoStateFaultEvent(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
 
     // For offload
     void CheckAndUpdateOffloadEnableForStream(

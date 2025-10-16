@@ -90,9 +90,10 @@ public:
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
     int32_t SplitRenderFrame(char &data, uint64_t len, uint64_t &writeLen,
-        HpaeSplitStreamType splitStreamType) override;
+        SplitStreamType splitStreamType) override;
 
-    int32_t GetHdiRenderId(HpaeSplitStreamType splitStreamType) override;
+    void UpdateStreamInfo(const SplitStreamType splitStreamType, const AudioStreamType type,
+        const StreamUsage usage) override;
 
     void DumpInfo(std::string &dumpString) override;
 
@@ -114,6 +115,10 @@ private:
 
     void JoinStartThread();
 
+    void UpdateStreamType(const SplitStreamType splitStreamType, const AudioStreamType type);
+    void UpdateStreamUsage(const SplitStreamType splitStreamType, const StreamUsage usage);
+    int32_t NotifyHdiEvent(SplitStreamType splitStreamType, const std::string &key, const std::string &val);
+
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
     static constexpr uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
@@ -125,7 +130,7 @@ private:
     static constexpr const char *COMMUNICATION_STREAM_TYPE = "2";
     static constexpr const char *NAVIGATION_STREAM_TYPE = "13";
     static constexpr const char *DUMP_REMOTE_RENDER_SINK_FILENAME = "dump_remote_audiosink";
-    static const std::unordered_map<HpaeSplitStreamType, RemoteAudioCategory> SPLIT_STREAM_MAP;
+    static const std::unordered_map<SplitStreamType, RemoteAudioCategory> SPLIT_STREAM_MAP;
 
     const std::string deviceNetworkId_ = "";
     IAudioSinkAttr attr_ = {};
@@ -154,6 +159,9 @@ private:
     // for dfx log
     std::string logUtilsTag_ = "RemoteSink";
     mutable int64_t volumeDataCount_ = 0;
+    // for dmsdp type and usage info
+    std::unordered_map<SplitStreamType, AudioStreamType> streamTypeMap_;
+    std::unordered_map<SplitStreamType, StreamUsage> streamUsageMap_;
 };
 
 } // namespace AudioStandard

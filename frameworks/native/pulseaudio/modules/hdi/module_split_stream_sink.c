@@ -78,7 +78,7 @@
 /**
  * remote device splite stream enum
  */
-enum HpaeSplitStreamType {
+enum SplitStreamType {
     STREAM_TYPE_DEFAULT = 0,
     STREAM_TYPE_MEDIA_NUM = 1,
     STREAM_TYPE_COMMUNICATION_NUM = 2,

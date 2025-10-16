@@ -35,7 +35,6 @@ public:
     int32_t Init() override;
     int32_t DeInit() override;
     bool Reset() override;
-    bool SetEnvMode(EqualizerMode type);
     int32_t SetOptions(std::string name, std::string value) override;
     std::shared_ptr<AudioSuiteEnvAlgoInterfaceImpl> envAlgoInterfaceImpl_;
     AudioSuitePcmBuffer outPcmBuffer_;

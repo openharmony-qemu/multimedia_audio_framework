@@ -37,7 +37,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 namespace {
-    constexpr float SUSPEND_TIME_OUT_S = 3.1; // prevent stop not success
+    constexpr float SUSPEND_TIME_OUT_S = 3.5; // prevent stop not success
     constexpr int64_t AUDIO_NS_PER_US = 1000;
     constexpr int64_t BUFFER_DURATION_US = 10 * 1000; // 10ms
     constexpr int64_t UNDERRUN_BYPASS_DURATION_NS = 60 * 1000 * 1000; // 60ms
@@ -395,6 +395,7 @@ int32_t HpaeRendererManager::ConnectInputSession(uint32_t sessionId)
         ConnectProcessCluster(sessionId, sceneType);
     }
     if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
+        noneStreamTime_ = 0;
         outputCluster_->Start();
     }
     return SUCCESS;
@@ -443,18 +444,19 @@ void HpaeRendererManager::ConnectProcessCluster(uint32_t sessionId, HpaeProcesso
         }
     }
     // update node info for processcluster
+    std::shared_ptr<HpaeSinkInputNode> sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
+    CHECK_AND_RETURN_LOG(sinkInputNode != nullptr, "sinkInputNode is nullptr");
     UpdateStreamProp(sinkInputNodeMap_[sessionId], sceneClusterMap_[sceneType]->GetSharedInstance());
     ConnectOutputCluster(sessionId, sceneType);
     ConnectInputCluster(sessionId, sceneType);
-    std::shared_ptr<HpaeSinkInputNode> sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
-    CHECK_AND_RETURN_LOG(sinkInputNode != nullptr, "sinkInputNode is nullptr");
     sceneClusterMap_[sceneType]->SetLoudnessGain(sessionId, sinkInputNode->GetLoudnessGain());
 }
 
 void HpaeRendererManager::ConnectInputCluster(uint32_t sessionId, HpaeProcessorType sceneType)
 {
     sceneClusterMap_[sceneType]->Connect(sinkInputNodeMap_[sessionId]);
-    sinkInputNodeMap_[sessionId]->connectedProcessorType_ = sceneType;
+    sinkInputNodeMap_[sessionId]->connectedProcessorType_ =
+        (sceneClusterMap_[sceneType] == sceneClusterMap_[HPAE_SCENE_DEFAULT]) ? HPAE_SCENE_DEFAULT : sceneType;
 }
 
 void HpaeRendererManager::ConnectOutputCluster(uint32_t sessionId, HpaeProcessorType sceneType)
@@ -489,6 +491,9 @@ void HpaeRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
         }
     }
     for (const auto &it : sessionIds) {
+        CHECK_AND_CONTINUE_LOG(SafeGetMap(sinkInputNodeMap_, it),
+            "sessionid: %{public}u can not found in sinkInputNodeMap", it);
+        TriggerStreamState(it, sinkInputNodeMap_[it]);
         DeleteInputSession(it);
     }
     HILOG_COMM_INFO("StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
@@ -639,7 +644,7 @@ void HpaeRendererManager::DisConnectInputCluster(uint32_t sessionId, HpaeProcess
         CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, HPAE_SCENE_EFFECT_NONE),
             "could not find processorType HPAE_SCENE_EFFECT_NONE");
         AUDIO_INFO_LOG("none processCluster need send message to effectNode");
-        sceneClusterMap_[HPAE_SCENE_EFFECT_NONE]->AudioRendererRelease(sinkInputNodeMap_[sessionId]->GetNodeInfo(),
+        sceneClusterMap_[HPAE_SCENE_EFFECT_NONE]->AudioRendererStop(sinkInputNodeMap_[sessionId]->GetNodeInfo(),
             sinkInfo_);
         return;
     }
@@ -1244,8 +1249,7 @@ void HpaeRendererManager::OnRequestLatency(uint32_t sessionId, uint64_t &latency
     if (SafeGetMap(sceneClusterMap_, sceneType)) {
         processLatency += sceneClusterMap_[sceneType]->GetLatency(sessionId);
         if (outputCluster_) {
-            processLatency += outputCluster_->GetLatency(
-                sceneClusterMap_[sceneType]->GetSharedInstance()->GetNodeInfo().sceneType);
+            processLatency += outputCluster_->GetLatency(sceneType);
         }
     }
 
@@ -1292,8 +1296,8 @@ bool HpaeRendererManager::SetSessionFade(uint32_t sessionId, IOperation operatio
     if (SafeGetMap(sceneClusterMap_, sceneType)) {
         sessionGainNode = sceneClusterMap_[sceneType]->GetGainNodeById(sessionId);
     }
-    if (sessionGainNode == nullptr) {
-        AUDIO_WARNING_LOG("session %{public}d do not have gain node!", sessionId);
+    if (sessionGainNode == nullptr || !IsRunning()) {
+        AUDIO_WARNING_LOG("session %{public}d do not have gain node or sink is not running!", sessionId);
         if (operation != OPERATION_STARTED) {
             HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPED : HPAE_SESSION_PAUSED;
             SetSessionState(sessionId, state);

@@ -37,7 +37,6 @@ public:
     }
     bool Reset() override;
     int32_t DoProcess() override;
-    std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> GetOutputPort(AudioNodePortType portType) override;
     int32_t Flush() override;
     int32_t Init() override;
     int32_t DeInit() override;
@@ -46,7 +45,6 @@ public:
 protected:
     AudioSuitePcmBuffer* SignalProcess(const std::vector<AudioSuitePcmBuffer*>& inputs) override;
     void HandleTapCallback(AudioSuitePcmBuffer* pcmBuffer) override;
-    std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> bkgOutputStream_{ nullptr };
 private:
     AudioSuitePcmBuffer preProcess(AudioSuitePcmBuffer& input);
     AudioSuitePcmBuffer rateConvert(AudioSuitePcmBuffer input,

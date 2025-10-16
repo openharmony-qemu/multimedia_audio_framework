@@ -115,6 +115,9 @@ public:
     int32_t UpdateDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, DeviceInfoUpdateCommand command);
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
+    int32_t SelectPrivateDevice();
+    int32_t ForceSelectDevice(DeviceType devType, const std::string &macAddress,
+        sptr<AudioRendererFilter> filter);
     int32_t SetSleAudioOperationCallback(const std::shared_ptr<SleAudioOperationCallback> &callback);
 private:
     std::shared_ptr<AudioFocusInfoChangeCallback> audioFocusInfoCallback_ = nullptr;

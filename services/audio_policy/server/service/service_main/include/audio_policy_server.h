@@ -161,6 +161,11 @@ public:
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors,
         const int32_t audioDeviceSelectMode = 0) override;
 
+    int32_t SelectPrivateDevice() override;
+
+    int32_t ForceSelectDevice(int32_t devType, const std::string &macAddress,
+        const sptr<AudioRendererFilter> &filter) override;
+
     int32_t RestoreOutputDevice(const sptr<AudioRendererFilter> &audioRendererFilter) override;
 
     int32_t GetSelectedDeviceInfo(int32_t uid, int32_t pid, int32_t streamType, std::string &info) override;

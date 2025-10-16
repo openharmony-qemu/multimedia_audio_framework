@@ -2400,6 +2400,42 @@ HWTEST_F(AudioInterruptUnitTest, InjectInterruptToAudioZone_010, TestSize.Level1
 }
 
 /**
+* @tc.name  : Test InjectInterruptToAudioZone
+* @tc.number: InjectInterruptToAudioZone_011
+* @tc.desc  : Test InjectInterruptToAudioZone
+*/
+HWTEST_F(AudioInterruptUnitTest, InjectInterruptToAudioZone_011, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = new (std::nothrow) AudioPolicyServer(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    server->interruptService_ = std::make_shared<AudioInterruptService>();
+    server->interruptService_->Init(server);
+    auto interruptServiceTest = server->interruptService_;
+    AudioFocusList interrupts;
+    auto coreService = std::make_shared<AudioCoreService>();
+    server->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
+    server->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
+
+    interruptServiceTest->zonesMap_.clear();
+    interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
+    auto &focusList = interruptServiceTest->zonesMap_[0]->audioFocusInfoList;
+
+    AudioInterrupt interrupt;
+    interrupt.streamUsage = STREAM_USAGE_MUSIC;
+    interrupt.audioFocusType.streamType = STREAM_MUSIC;
+    interrupt.streamId = 100100;
+    interrupt.uid = 100;
+    interrupt.deviceTag = "ABCDEFG";
+    focusList.emplace_back(std::make_pair(interrupt, PLACEHOLDER));
+    interrupts.emplace_back(std::make_pair(interrupt, ACTIVE));
+
+    SetUid1041();
+    EXPECT_NO_THROW(
+        interruptServiceTest->InjectInterruptToAudioZone(0, "ABCDEFG", interrupts);
+    );
+    EXPECT_NE(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), -1);
+}
+
+/**
  * @tc.name  : Test AudioInterruptService.
  * @tc.number: AudioInterruptService_SimulateFocusEntry_001
  * @tc.desc  : Test SimulateFocusEntry.

@@ -663,7 +663,7 @@ int32_t OHAudioBufferBase::GetWritableDataFrames()
     uint64_t write = basicBufferInfo_->curWriteFrame.load();
     uint64_t read = basicBufferInfo_->curReadFrame.load();
     CHECK_AND_RETURN_RET_LOG(write >= read, result, "invalid write and read position.");
-    uint32_t temp = write - read;
+    uint64_t temp = write - read;
     CHECK_AND_RETURN_RET_LOG(temp <= INT32_MAX && temp <= totalSizeInFrame_,
         result, "failed to GetWritableDataFrames.");
     result = static_cast<int32_t>(totalSizeInFrame_ - temp);
@@ -676,7 +676,7 @@ int32_t OHAudioBufferBase::GetReadableDataFrames()
     uint64_t write = basicBufferInfo_->curWriteFrame.load();
     uint64_t read = basicBufferInfo_->curReadFrame.load();
     CHECK_AND_RETURN_RET_LOG(write >= read, result, "invalid write and read position.");
-    uint32_t temp = write - read;
+    uint64_t temp = write - read;
     CHECK_AND_RETURN_RET_LOG(temp <= INT32_MAX && temp <= totalSizeInFrame_,
         result, "failed to GetWritableDataFrames.");
     result = static_cast<int32_t>(temp);

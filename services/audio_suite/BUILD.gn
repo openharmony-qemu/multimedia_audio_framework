@@ -80,6 +80,8 @@ audio_ohos_library("audio_suite") {
     "client/node/src/audio_suite_nr_node.cpp",
     "client/utils/src/audio_suite_algo_interface.cpp",
     "client/utils/src/audio_suite_nr_algo_interface_impl.cpp",
+    "client/utils/src/audio_suite_soundfield_algo_interface_impl.cpp",
+    "client/node/src/audio_suite_soundfield_node.cpp",
     "client/utils/src/audio_suite_common.cpp",
     "client/node/src/audio_suite_mixer_node.cpp",
     "client/node/src/audio_suite_aiss_node.cpp",

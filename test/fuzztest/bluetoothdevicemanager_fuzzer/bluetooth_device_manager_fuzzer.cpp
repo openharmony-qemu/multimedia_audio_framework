@@ -37,25 +37,28 @@ public:
     void OnDeviceStatusUpdated(DeviceType devType, bool isConnected,
         const std::string &macAddress, const std::string &deviceName,
         const AudioStreamInfo &streamInfo, DeviceRole role = DEVICE_ROLE_NONE, bool hasPair = false) override {}
-    
+
     void OnMicrophoneBlockedUpdate(DeviceType devType, DeviceBlockStatus status) override {}
-    
+
     void OnPnpDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected) override {}
-    
+
     void OnDeviceConfigurationChanged(DeviceType deviceType,
         const std::string &macAddress, const std::string &deviceName,
         const AudioStreamInfo &streamInfo) override {}
-    
+
     void OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop = false) override {}
-    
+
     void OnServiceConnected(AudioServiceIndex serviceIndex) override {}
-    
+
     void OnServiceDisconnected(AudioServiceIndex serviceIndex) override {}
-    
-    void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress) override {}
-    
+
+    void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
+        sptr<AudioRendererFilter> filter = nullptr) override {}
+
+    void OnPrivacyDeviceSelected() override {};
+
     void OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected) override {}
-    
+
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand) override {}
 };
 

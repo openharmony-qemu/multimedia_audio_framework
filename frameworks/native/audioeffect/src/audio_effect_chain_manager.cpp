@@ -1963,8 +1963,10 @@ int32_t AudioEffectChainManager::QueryEffectChannelInfoInner(const std::string &
     channels = DEFAULT_NUM_CHANNEL;
     channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
-    CHECK_AND_RETURN_RET_LOG(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) > 0 &&
-        sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr, ERROR, "null audioEffectChain");
+    if (sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) == 0 ||
+        sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] == nullptr) {
+        return ERROR;
+    }
     auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
     audioEffectChain->GetInputChannelInfo(channels, channelLayout);
     return SUCCESS;
@@ -2038,6 +2040,7 @@ bool AudioEffectChainManager::ExistAudioEffectChainArm(const std::string sceneTy
         return false;
     }
     const std::unordered_map<AudioEffectMode, std::string> &audioSupportedSceneModes = GetAudioSupportedSceneModes();
+    CHECK_AND_RETURN_RET_LOG(audioSupportedSceneModes.count(effectMode), false, "invalid effectMode");
     std::string sceneMode = audioSupportedSceneModes.find(effectMode)->second;
     std::string effectChainKey = sceneType + "_&_" + sceneMode + "_&_" + GetDeviceTypeName();
     if (!sceneTypeAndModeToEffectChainNameMap_.count(effectChainKey)) {

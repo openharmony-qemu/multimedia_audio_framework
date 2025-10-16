@@ -17,38 +17,96 @@
 #define LOG_TAG "AudioSuiteOutputNode"
 #endif
 
+#include <vector>
+#include "securec.h"
 #include "audio_errors.h"
 #include "audio_suite_log.h"
-#include "audio_suite_input_node.h"
-#include "audio_suite_output_node.h"
-#include "audio_suite_info.h"
 #include "audio_suite_node.h"
+#include "audio_suite_common.h"
+#include "audio_suite_channel.h"
 #include "audio_suite_pcm_buffer.h"
-#include "audio_errors.h"
+#include "audio_suite_output_node.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-AudioOutputNode::AudioOutputNode(AudioFormat format) : AudioNode(AudioNodeType::NODE_TYPE_OUTPUT, format)
+static constexpr uint32_t DEFAULT_NODE_OUTPUT_NUM = 1;
+static constexpr uint32_t AUDIO_SEPARATION_NODE_OUTPUT_NUM = 2;
+static constexpr uint32_t NODE_OUTPUT_NUM_MAX = AUDIO_SEPARATION_NODE_OUTPUT_NUM;
+static constexpr uint32_t SECONDS_TO_MS = 1000;
+static constexpr uint32_t REASAMPLE_QUAILTY = 5;
+
+AudioOutputNode::AudioOutputNode(AudioFormat format) : AudioNode(AudioNodeType::NODE_TYPE_OUTPUT, format),
+    preNodeOutputNum_(DEFAULT_NODE_OUTPUT_NUM), cacheBuffer_(NODE_OUTPUT_NUM_MAX)
 {
-    AUDIO_INFO_LOG("AudioOutputNode nodeId is %{public}u, nodeType is %{public}d",
-        GetAudioNodeInfo().nodeId, GetAudioNodeInfo().nodeType);
+    SetOutDataFormat(format.audioChannelInfo.numChannels,
+        format.audioChannelInfo.channelLayout, format.format, format.rate);
+    AUDIO_INFO_LOG("AudioOutputNode create nodeId is %{public}u.", GetAudioNodeId());
 }
 
 AudioOutputNode::~AudioOutputNode()
 {
-    AUDIO_INFO_LOG("AudioOutputNode NodeId: %{public}u.", GetAudioNodeId());
+    DeInit();
+    inputStream_.deInit();
+    AUDIO_INFO_LOG("AudioOutputNode destroy nodeId: %{public}u.", GetAudioNodeId());
 }
 
-int32_t AudioOutputNode::Connect(const std::shared_ptr<AudioNode> &preNode,
-    AudioNodePortType type)
+int32_t AudioOutputNode::Init()
+{
+    frameDuration_ = outFormat_.rate == SAMPLE_RATE_11025 ?
+        SINGLE_FRAME_DURATION_SAMPLE_RATE_11025 : SINGLE_FRAME_DURATION;
+    uint32_t frameDataLen = outFormat_.rate * outFormat_.numChannels *
+        AudioSuiteUtil::GetSampleSize(outFormat_.format) * frameDuration_ / SECONDS_TO_MS;
+    for (auto& vec : cacheBuffer_) {
+        vec.resize(frameDataLen, 0.0f);
+    }
+    ClearCacheBuffer();
+
+    uint32_t channelOutputLen = outFormat_.rate * outFormat_.numChannels * frameDuration_ / SECONDS_TO_MS;
+    channelOutput_.resize(channelOutputLen, 0.0f);
+    rateOutput_.resize(channelOutputLen, 0.0f);
+
+    AUDIO_INFO_LOG("frameDataLen = %{public}u, channelOutputLen = %{public}u.", frameDataLen, channelOutputLen);
+    return SUCCESS;
+}
+
+int32_t AudioOutputNode::DeInit()
+{
+    ResetResample();
+    return SUCCESS;
+}
+
+void AudioOutputNode::SetAudioNodeFormat(AudioFormat audioFormat)
+{
+    AUDIO_INFO_LOG("numChannels:%{public}u, sampleFormat:%{public}u, sampleRate:%{public}d, encodingType:%{public}d",
+        audioFormat.audioChannelInfo.numChannels, audioFormat.format, audioFormat.rate, audioFormat.encodingType);
+    AudioNode::SetAudioNodeFormat(audioFormat);
+    SetOutDataFormat(audioFormat.audioChannelInfo.numChannels,
+        audioFormat.audioChannelInfo.channelLayout, audioFormat.format, audioFormat.rate);
+
+    int32_t ret = DeInit();
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "DeInit failed, ret = %{public}d.", ret);
+
+    ret = Init();
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Init failed, ret = %{public}d.", ret);
+}
+
+int32_t AudioOutputNode::Connect(const std::shared_ptr<AudioNode> &preNode, AudioNodePortType type)
 {
     if (preNode == nullptr) {
-        AUDIO_ERR_LOG("AudioNode is nullptr.");
-        return ERROR;
+        AUDIO_ERR_LOG("Connect failed, preNode is nullptr.");
+        return ERR_INVALID_PARAM;
     }
+
     inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort(type).get());
+
+    if (preNode->GetNodeType() == NODE_TYPE_AUDIO_SEPARATION) {
+        preNodeOutputNum_ = AUDIO_SEPARATION_NODE_OUTPUT_NUM;
+        AUDIO_ERR_LOG("current output node connect audio separation node.");
+    } else {
+        preNodeOutputNum_ = DEFAULT_NODE_OUTPUT_NUM;
+    }
     return SUCCESS;
 }
 
@@ -63,217 +121,225 @@ int32_t AudioOutputNode::DisConnect(const std::shared_ptr<AudioNode> &preNode)
     return SUCCESS;
 }
 
-int32_t AudioOutputNode::InstallTap(AudioNodePortType portType, std::shared_ptr<SuiteNodeReadTapDataCallback> callback)
-{
-    AUDIO_INFO_LOG("AudioOutputNode NodeId: %{public}u not support InstallTap opt.", GetAudioNodeId());
-    return ERROR;
-}
-
-int32_t AudioOutputNode::RemoveTap(AudioNodePortType portType)
-{
-    AUDIO_INFO_LOG("AudioOutputNode NodeId: %{public}u not support RemoveTap opt.", GetAudioNodeId());
-    return ERROR;
-}
-
-
-int32_t AudioOutputNode::DeInit()
-{
-    inputStream_.deInit();
-    return SUCCESS;
-}
-
 int32_t AudioOutputNode::Flush()
 {
-    /* Not implemented yet */
-    cacheBuffer_.clear();
+    ClearCacheBuffer();
     SetAudioNodeDataFinishedFlag(false);
     return SUCCESS;
 }
 
 int32_t AudioOutputNode::DoProcess()
 {
-    AUDIO_INFO_LOG("AudioOutputNode Get data from pre");
-    std::vector<AudioSuitePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
-    if (!outputVec.empty() && outputVec[0] != nullptr) {
-        AUDIO_INFO_LOG("AudioOutputNode Get data from pre frameLen:%{public}u,finished:%{public}d",
-            outputVec[0]->GetFrameLen(), outputVec[0]->GetIsFinished());
-        return SUCCESS;
-    };
-    AUDIO_INFO_LOG("AudioOutputNode Get data from pre error empty");
-    return ERROR;
-}
+    std::vector<AudioSuitePcmBuffer *> &outputs = inputStream_.ReadPreOutputData();
+    CHECK_AND_RETURN_RET_LOG(outputs.size() == static_cast<size_t>(preNodeOutputNum_), ERROR,
+        "outputs size = %{public}zu not equals nodeOutputNum = %{public}d", outputs.size(), preNodeOutputNum_);
 
-int32_t AudioOutputNode::SetCacheBuffer(std::vector<uint8_t> cacheBuffer)
-{
-    cacheBuffer_ = cacheBuffer;
-    return 0;
-}
+    bool allNonNull = std::all_of(outputs.begin(), outputs.end(), [](AudioSuitePcmBuffer *output) {
+        return output != nullptr;
+    });
+    CHECK_AND_RETURN_RET_LOG(allNonNull, ERROR, "Get pre node output data is nullptr.");
 
-std::vector<uint8_t> AudioOutputNode::GetCacheBuffer()
-{
-    return cacheBuffer_;
-}
+    SetAudioNodeDataFinishedFlag(false);
+    const std::vector<AudioSuitePcmBuffer *> &inputs = inputStream_.getInputData();
+    CHECK_AND_RETURN_RET_LOG(inputs.size() == static_cast<size_t>(preNodeOutputNum_), ERROR,
+        "inputStream count = %{public}zu not equals nodeOutputNum = %{public}d.", inputs.size(), preNodeOutputNum_);
 
-uint8_t* AudioOutputNode::GetProcessedAudioData(size_t &bytes)
-{
-    const std::vector<AudioSuitePcmBuffer*>& vec = inputStream_.getInputData();
+    int32_t ret = SUCCESS;
+    AudioSuitePcmBuffer *pcmBuffer = nullptr;
+    for (int32_t idx = 0; idx < preNodeOutputNum_; idx++) {
+        pcmBuffer = inputs[idx];
+        CHECK_AND_RETURN_RET_LOG(pcmBuffer != nullptr, ERROR, "Get inputdata fail, pcmBuffer is null.");
 
-    if (vec.empty()) {
-        SetAudioNodeDataFinishedFlag(false);
-        AUDIO_ERR_LOG("inputStream is empty");
-        return nullptr;
+        SetInDataFormat(pcmBuffer->GetChannelCount(), pcmBuffer->GetChannelLayout(), SAMPLE_F32LE,
+            static_cast<AudioSamplingRate>(pcmBuffer->GetSampleRate()));
+
+        float *inData = pcmBuffer->GetPcmDataBuffer();
+        CHECK_AND_RETURN_RET_LOG(inData != nullptr, ERROR, "Get inputdata fail, data is null.");
+        ret = FormatConversion(inData, pcmBuffer->GetFrameLen() * sizeof(float),
+            cacheBuffer_[idx].data(), cacheBuffer_[idx].size());
+        CHECK_AND_RETURN_RET(ret == SUCCESS, ERROR);
+
+        SetAudioNodeDataFinishedFlag(pcmBuffer->GetIsFinished());
     }
 
-    AudioSuitePcmBuffer *buffer = vec[0];
-    if (buffer == nullptr) {
-        AUDIO_ERR_LOG("buffer is nullptr.");
-        return nullptr;
-    }
-
-    float *floatData = buffer->GetPcmDataBuffer();
-    size_t frameLen = buffer->GetFrameLen();
-    bytes = frameLen * sizeof(float);
-    SetAudioNodeDataFinishedFlag(buffer->GetIsFinished());
-    AUDIO_INFO_LOG("PCM data frameLen=%{public}zu, bytes=%{public}zu, FinishedFlag: %{public}d",
-        frameLen, bytes, GetAudioNodeDataFinishedFlag());
-
-    if (floatData == nullptr || frameLen == 0 || bytes == 0) {
-        SetAudioNodeDataFinishedFlag(false);
-        return nullptr;
-    }
-
-    return reinterpret_cast<uint8_t*>(floatData);
+    return SUCCESS;
 }
 
-int32_t AudioOutputNode::CopyDataFromCache(uint8_t *audioData,
-    int32_t frameSize, int32_t &audioDataOffset, bool *finished)
+int32_t AudioOutputNode::FormatConversion(float *inData, size_t inDataLen, uint8_t *outData, size_t outDataSize)
 {
-    if (cacheBuffer_.size() > static_cast<size_t>(frameSize)) {
-        memcpy_s(audioData, frameSize, cacheBuffer_.data(), frameSize);
-        cacheBuffer_.erase(cacheBuffer_.begin(), cacheBuffer_.begin() + frameSize);
-        audioDataOffset = frameSize;
-        *finished = false;
-        AUDIO_INFO_LOG("Copying %{public}d bytes from cache, remaining: %{public}zu", frameSize, cacheBuffer_.size());
-        return SUCCESS;
-    } else if (cacheBuffer_.size() == static_cast<size_t>(frameSize)) {
-        memcpy_s(audioData, frameSize, cacheBuffer_.data(), frameSize);
-        cacheBuffer_.clear();
-        audioDataOffset = frameSize;
-        *finished = GetAudioNodeDataFinishedFlag();
-        AUDIO_INFO_LOG("Copied exact %{public}d bytes from cache,finished is %{public}d, cache cleared",
-            frameSize, *finished);
-        return SUCCESS;
+    int32_t ret = SUCCESS;
+    if (inFormat_.rate != outFormat_.rate) {
+        uint32_t rateDataLen = outFormat_.rate * inFormat_.numChannels * frameDuration_ / SECONDS_TO_MS;
+        rateOutput_.resize(rateDataLen);
+        float *rateData = rateOutput_.data();
+
+        ret = SetUpResample(inFormat_.rate, outFormat_.rate, inFormat_.numChannels, REASAMPLE_QUAILTY);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Set sample convert param failed, ret = %{public}d", ret);
+
+        ret = DoResampleProcess(inData, inDataLen / sizeof(float) / inFormat_.numChannels,
+            rateData, rateDataLen / inFormat_.numChannels);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "process sample convert param failed, ret = %{public}d", ret);
+    
+        inData = rateData;
+        inDataLen = rateDataLen * sizeof(float);
+    }
+
+    if (inFormat_.numChannels != outFormat_.numChannels) {
+        AudioChannelInfo inChannel = {inFormat_.channelLayout, inFormat_.numChannels};
+        AudioChannelInfo outChannel = {outFormat_.channelLayout, outFormat_.numChannels};
+        ret = SetChannelConvertProcessParam(inChannel, outChannel, inFormat_.format, true);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Set channel convert param failed, ret = %{public}d", ret);
+
+        float *channelData = channelOutput_.data();
+        size_t channelDataLen = channelOutput_.size() * sizeof(float);
+        ret = ChannelConvertProcess(inDataLen / sizeof(float) / inFormat_.numChannels,
+            inData, inDataLen, channelData, channelDataLen);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "process channel convert param failed, ret = %{public}d", ret);
+        inData = channelData;
+        inDataLen = channelDataLen;
+    }
+
+    if (inFormat_.format != outFormat_.format) {
+        ConvertFromFloat(outFormat_.format, inDataLen / sizeof(float), inData, static_cast<void *>(outData));
     } else {
-        size_t cachedSize = cacheBuffer_.size();
-        memcpy_s(audioData, frameSize, cacheBuffer_.data(), cachedSize);
-        AUDIO_INFO_LOG("Partially copied %{public}zu bytes from cache.", cacheBuffer_.size());
-        audioDataOffset = static_cast<int32_t>(cachedSize);
-        cacheBuffer_.clear();
-        return SUCCESS;
+        errno_t err = memcpy_s(outData, outDataSize, inData, inDataLen);
+        CHECK_AND_RETURN_RET_LOG(err == EOK, ERROR, "memcpy_s failed, ret = %{public}d.", err);
     }
-    AUDIO_ERR_LOG("cache data error.");
-    return ERROR;
-}
+    bufferUsedOffset_ = 0;
 
-int32_t AudioOutputNode::FillRemainingAudioData(
-    uint8_t *audioData, int32_t remainingBytes, int32_t *writeDataSize, bool *finished, int32_t frameSize)
-{
-    if (GetAudioNodeDataFinishedFlag() == true) {
-        *finished = true;
-        AUDIO_INFO_LOG("All cacheBuffer copy %{public}d bytes to audioData.", *writeDataSize);
-        return SUCCESS;
-    }
-    size_t totalWritten = 0;
-    size_t bytesSize = 0;
-    while (totalWritten < static_cast<size_t>(remainingBytes)) {
-        if (DoProcess() == ERROR) {
-            AUDIO_ERR_LOG("Failed to process audio data");
-            return ERROR;
-        }
-        size_t bytes = 0;
-        uint8_t* byteData = GetProcessedAudioData(bytes);
-        if (bytes == 0 || byteData == nullptr) {
-            AUDIO_ERR_LOG("Null or empty processedData");
-            return ERROR;
-        }
-
-        size_t copySize = std::min(static_cast<size_t>(remainingBytes - totalWritten), bytes);
-        memcpy_s(audioData + totalWritten, remainingBytes - totalWritten, byteData, copySize);
-        *writeDataSize += copySize;
-        totalWritten += copySize;
-        bytesSize += bytes;
-
-        if (totalWritten == static_cast<size_t>(remainingBytes)) {
-            cacheBuffer_.clear();
-            if (bytesSize > static_cast<size_t>(remainingBytes)) {
-                cacheBuffer_.assign(byteData + copySize, byteData + bytes);
-                *finished = false;
-                AUDIO_INFO_LOG("Copying %{public}d bytes to audioData success,"
-                    " remain cacheBuffer size: %{public}zu", frameSize, cacheBuffer_.size());
-                return SUCCESS;
-            }
-            if (bytesSize <= static_cast<size_t>(remainingBytes)) {
-                *finished = GetAudioNodeDataFinishedFlag();
-                AUDIO_INFO_LOG("Copying %{public}d remainingBytes to audioData success, cacheBuffer clear,"
-                    " finished: %{public}d", frameSize, *finished);
-                return SUCCESS;
-            }
-        }
-
-        if (GetAudioNodeDataFinishedFlag()) {
-            break;
-        }
-    }
-    *finished = GetAudioNodeDataFinishedFlag();
-    AUDIO_INFO_LOG("Copydata finished is %{public}d with %{public}d bytes written", *finished, *writeDataSize);
     return SUCCESS;
 }
 
 int32_t AudioOutputNode::DoProcess(uint8_t *audioData, int32_t frameSize, int32_t *writeDataSize, bool *finished)
 {
-    if (finished == nullptr || audioData == nullptr || writeDataSize == nullptr) {
-        AUDIO_ERR_LOG("Parameter is nullptr.");
-        return ERROR;
-    }
-    *writeDataSize = 0;
-    *finished = false;
-    if (GetAudioNodeDataFinishedFlag() && cacheBuffer_.empty()) {
-        AUDIO_INFO_LOG("AudioOutputNode finished completed.");
-        *finished = true;
+    uint8_t *audioDataArray[] = { audioData };
+    return DoProcess(audioDataArray, DEFAULT_NODE_OUTPUT_NUM, frameSize, writeDataSize, finished);
+}
+
+int32_t AudioOutputNode::DoProcess(uint8_t **audioDataArray, int32_t arraySize,
+    int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag)
+{
+    CHECK_AND_RETURN_RET(DoProcessParamCheck(
+        audioDataArray, arraySize, requestFrameSize, responseSize, finishedFlag) == SUCCESS, ERR_INVALID_PARAM);
+
+    if (GetAudioNodeDataFinishedFlag() && CacheBufferEmpty()) {
+        AUDIO_ERR_LOG("multi ouput finished completed.");
         return ERR_NOT_SUPPORTED;
     }
 
-    int32_t audioDataOffset = 0;
-    if (!cacheBuffer_.empty()) {
-        if (CopyDataFromCache(audioData, frameSize, audioDataOffset, finished) != SUCCESS) {
-            return ERROR;
+    int32_t writeDataSize = 0;
+    int32_t remainRequestSize = requestFrameSize;
+    do {
+        if (!CacheBufferEmpty()) {
+            int32_t copySize = std::min(remainRequestSize, GetCacheBufferDataLen());
+            for (int32_t idx = 0; idx < arraySize; idx++) {
+                errno_t err = memcpy_s(audioDataArray[idx] + writeDataSize, remainRequestSize,
+                    GetCacheBufferData(idx), copySize);
+                CHECK_AND_RETURN_RET_LOG(err == EOK, ERROR, "memcpy_s failed, ret = %{public}d.", err);
+            }
+            remainRequestSize -= copySize;
+            writeDataSize += copySize;
+            UpdateUsedOffset(copySize);
         }
-        *writeDataSize = audioDataOffset;
-        if (audioDataOffset == frameSize) {
-            AUDIO_INFO_LOG("Copying finished.");
+
+        if (!CacheBufferEmpty()) {
+            *responseSize = writeDataSize;
+            *finishedFlag = false;
             return SUCCESS;
         }
-    }
 
-    int32_t remainingBytes = frameSize - audioDataOffset;
-    audioData = audioData + audioDataOffset;
-    if (remainingBytes > 0) {
-        AUDIO_INFO_LOG("RemainFrameSize: %{public}d, audioDataOffset: %{public}d", remainingBytes, audioDataOffset);
-        return FillRemainingAudioData(
-            audioData,
-            remainingBytes,
-            writeDataSize,
-            finished,
-            frameSize);
-    }
-    AUDIO_ERR_LOG("write error");
+        if (GetAudioNodeDataFinishedFlag()) {
+            *responseSize = writeDataSize;
+            *finishedFlag = true;
+            return SUCCESS;
+        }
+
+        if (writeDataSize == requestFrameSize) {
+            *responseSize = writeDataSize;
+            *finishedFlag = false;
+            return SUCCESS;
+        }
+
+        CHECK_AND_RETURN_RET_LOG(DoProcess() == SUCCESS, ERROR, "Get data from pre node failed.");
+    } while (writeDataSize < requestFrameSize);
+
+    AUDIO_ERR_LOG("write data failed, writeDataSize = %{public}d.", writeDataSize);
     return ERROR;
 }
 
-int32_t AudioOutputNode::DoProcess(uint8_t **audioDataArray, int arraySize,
+int32_t AudioOutputNode::DoProcessParamCheck(uint8_t **audioDataArray, int32_t arraySize,
     int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag)
 {
-    return ERROR;
+    if ((audioDataArray == nullptr) || (responseSize == nullptr) || (finishedFlag == nullptr)) {
+        AUDIO_ERR_LOG("check output param failed, parame is nullptr.");
+        return ERR_INVALID_PARAM;
+    }
+
+    if (arraySize != preNodeOutputNum_) {
+        AUDIO_ERR_LOG("arraySize = %{public}d not equal outputNum = %{public}d.", arraySize, preNodeOutputNum_);
+        return ERR_INVALID_PARAM;
+    }
+
+    for (int32_t idx = 0; idx < arraySize; idx++) {
+        if (audioDataArray[idx] == nullptr) {
+            AUDIO_ERR_LOG("the %{public}d output is nullptr.", idx);
+            return ERR_INVALID_PARAM;
+        }
+    }
+
+    if (requestFrameSize <= 0) {
+        AUDIO_ERR_LOG("requesetFrameSize = %{public}d invalid.", requestFrameSize);
+        return ERR_INVALID_PARAM;
+    }
+
+    return SUCCESS;
+}
+
+void AudioOutputNode::SetInDataFormat(
+    uint32_t channels, AudioChannelLayout layout, AudioSampleFormat sample, uint32_t rate)
+{
+    inFormat_.numChannels = channels;
+    inFormat_.channelLayout = layout;
+    inFormat_.format = sample;
+    inFormat_.rate = rate;
+}
+
+void AudioOutputNode::SetOutDataFormat(
+    uint32_t channels, AudioChannelLayout layout, AudioSampleFormat sample, uint32_t rate)
+{
+    outFormat_.numChannels = channels;
+    outFormat_.channelLayout = layout;
+    outFormat_.format = sample;
+    outFormat_.rate = rate;
+}
+
+bool AudioOutputNode::CacheBufferEmpty()
+{
+    return cacheBuffer_[0].size() <= bufferUsedOffset_;
+}
+
+void AudioOutputNode::UpdateUsedOffset(size_t bytesConsumed)
+{
+    bufferUsedOffset_ += bytesConsumed;
+}
+
+void AudioOutputNode::ClearCacheBuffer()
+{
+    bufferUsedOffset_ = cacheBuffer_[0].size();
+}
+
+int32_t AudioOutputNode::GetCacheBufferDataLen()
+{
+    if (bufferUsedOffset_ >= cacheBuffer_[0].size()) {
+        return 0;
+    }
+
+    return cacheBuffer_[0].size() - bufferUsedOffset_;
+}
+
+uint8_t *AudioOutputNode::GetCacheBufferData(size_t idx)
+{
+    return cacheBuffer_[idx].data() + bufferUsedOffset_;
 }
 
 }  // namespace AudioSuite

@@ -2053,7 +2053,7 @@ struct FetchDeviceInfo : public Parcelable {
 /**
  * remote device splite stream enum
  */
-enum HpaeSplitStreamType {
+enum SplitStreamType {
     STREAM_TYPE_DEFAULT = 0,
     STREAM_TYPE_MEDIA = 1,
     STREAM_TYPE_COMMUNICATION = 2,

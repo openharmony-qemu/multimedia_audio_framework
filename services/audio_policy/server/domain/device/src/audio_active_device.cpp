@@ -437,8 +437,6 @@ void AudioActiveDevice::UpdateVolumeTypeDeviceMap(std::shared_ptr<AudioStreamDes
     CHECK_AND_RETURN(!IsDeviceInVector(desc->newDeviceDescs_.front(), volumeTypeDeviceMap_[volumeType]));
 
     volumeTypeDeviceMap_[volumeType].push_back(desc->newDeviceDescs_.front());
-    AUDIO_INFO_LOG("volumeDeviceMap: %{public}d add deviceId %{public}d",
-        volumeType, desc->newDeviceDescs_.front()->deviceId_);
 }
 
 void AudioActiveDevice::UpdateStreamUsageDeviceMap(std::shared_ptr<AudioStreamDescriptor> desc)
@@ -449,8 +447,6 @@ void AudioActiveDevice::UpdateStreamUsageDeviceMap(std::shared_ptr<AudioStreamDe
         streamUsageDeviceMap_[desc->rendererInfo_.streamUsage]));
 
     streamUsageDeviceMap_[desc->rendererInfo_.streamUsage].push_back(desc->newDeviceDescs_.front());
-    AUDIO_INFO_LOG("streamUsageDeviceMap: %{public}d add deviceId %{public}d",
-        desc->rendererInfo_.streamUsage, desc->newDeviceDescs_.front()->deviceId_);
 }
 
 void AudioActiveDevice::UpdateStreamDeviceMap(std::string source)
@@ -461,23 +457,22 @@ void AudioActiveDevice::UpdateStreamDeviceMap(std::string source)
     activeOutputDevices_.clear();
     volumeTypeDeviceMap_.clear();
     streamUsageDeviceMap_.clear();
+    std::string logStr = "";
     for (auto &desc : descs) {
         CHECK_AND_CONTINUE(desc != nullptr);
-        AUDIO_INFO_LOG("session: %{public}d, calleruid: %{public}d, appuid: %{public}d " \
-            "usage:%{public}d devices:%{public}s",
-            desc->sessionId_, desc->callerUid_, desc->appInfo_.appUid,
-            desc->rendererInfo_.streamUsage, desc->GetNewDevicesInfo().c_str());
-
-        // front device is main device, second device use copy stream
+        logStr += "session: " + std::to_string(desc->sessionId_) +
+            ", appuid: " + std::to_string(desc->appInfo_.appUid) +
+            ", usage: " + std::to_string(desc->rendererInfo_.streamUsage) +
+            ", devices: " + desc->GetNewDevicesInfo() + "\n";
         UpdateVolumeTypeDeviceMap(desc);
         UpdateStreamUsageDeviceMap(desc);
 
         for (const auto &device : desc->newDeviceDescs_) {
             CHECK_AND_CONTINUE(!IsDeviceInVector(device, activeOutputDevices_));
             activeOutputDevices_.push_back(device);
-            AUDIO_INFO_LOG("[activeOutputDevices_] deviceId: %{public}d", device->deviceId_);
         }
     }
+    AUDIO_INFO_LOG("%{public}s", logStr.c_str());
 
     for (auto& [volumeType, deviceList] : volumeTypeDeviceMap_) {
         SortDevicesByPriority(deviceList);

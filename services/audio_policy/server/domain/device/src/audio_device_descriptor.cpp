@@ -606,7 +606,7 @@ DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType(int32_t apiVer
 DeviceStreamInfo AudioDeviceDescriptor::GetDeviceStreamInfo(void) const
 {
     DeviceStreamInfo streamInfo;
-    CHECK_AND_RETURN_RET_LOG(!audioStreamInfo_.empty(), streamInfo, "streamInfo empty, get default streamInfo");
+    CHECK_AND_RETURN_RET_LOG(!audioStreamInfo_.empty(), streamInfo, "streamInfo empty");
     return *audioStreamInfo_.rbegin();
 }
 } // AudioStandard

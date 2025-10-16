@@ -92,10 +92,6 @@ int32_t AudioSuiteVoiceBeautifierNode::SetOptions(std::string name, std::string 
         AUDIO_ERR_LOG("wrong options name.");
         return ERROR;
     }
-    if (value == std::to_string(static_cast<int32_t>(AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_NORMAL))) {
-        SetNodeEnableStatus(NODE_DISABLE);
-        return SUCCESS;
-    }
     if (algoInterface_ != nullptr && algoInterface_->SetParameter(name, value)) {
         AUDIO_ERR_LOG("SetOptions fail.");
         DeInit();

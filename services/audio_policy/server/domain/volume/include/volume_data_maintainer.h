@@ -152,12 +152,6 @@ public:
     int32_t LoadVolumeFromDb(std::shared_ptr<AudioDeviceDescriptor> device,
         AudioStreamType streamType);
 
-    // wait for rewrite
-    int32_t GetMuteStatusInternal(std::shared_ptr<AudioDeviceDescriptor> device,
-        AudioStreamType streamType);
-    int32_t SaveMuteStatusInternal(std::shared_ptr<AudioDeviceDescriptor> device,
-        AudioStreamType streamType, bool muteStatus);
-
 private:
     static std::string GetVolumeKeyForDataShare(DeviceType deviceType, AudioStreamType streamType,
         std::string networkId = LOCAL_NETWORK_ID);

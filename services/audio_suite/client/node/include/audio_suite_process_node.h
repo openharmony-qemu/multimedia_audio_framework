@@ -20,7 +20,6 @@
 #include <vector>
 #include "audio_errors.h"
 #include "audio_suite_channel.h"
-#include "channel_converter.h"
 #include "hpae_format_convert.h"
 #include "audio_suite_pcm_buffer.h"
 #include "audio_proresampler.h"
@@ -62,17 +61,6 @@ public:
         return outputStream_;
     }
 
-    //Remap
-    int32_t SetChannelConvertProcessParam(AudioChannelInfo inChannelInfo, AudioChannelInfo outChannelInfo,
-        AudioSampleFormat workFormat, bool mixLfe)
-    {
-        return channelConverter_.SetParam(inChannelInfo, outChannelInfo, workFormat, mixLfe);
-    }
-    int32_t ChannelConvertProcess(uint32_t framesize, float* in, uint32_t inLen, float* out, uint32_t outLen)
-    {
-        return channelConverter_.Process(framesize, in, inLen, out, outLen);
-    }
-
     int32_t ConvertProcess(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer,
                            AudioSuitePcmBuffer *tmpPcmBuffer);
 
@@ -89,7 +77,6 @@ private:
     int32_t ChannelConvert(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer);
     int32_t Resample(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer);
     Tap tap_;
-    HPAE::ChannelConverter channelConverter_;
 };
 
 }

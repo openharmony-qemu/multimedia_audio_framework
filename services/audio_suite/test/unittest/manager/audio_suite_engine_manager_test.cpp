@@ -781,6 +781,10 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineCreateNodeForTypeTes
     std::shared_ptr<AudioNode> outputNode = audioSuitePipeline.CreateNodeForType(audioNodeBuilder);
     EXPECT_TRUE(outputNode != nullptr);
 
+    audioNodeBuilder.nodeType = NODE_TYPE_SOUND_FIELD;
+    std::shared_ptr<AudioNode> sfNode = audioSuitePipeline.CreateNodeForType(audioNodeBuilder);
+    EXPECT_TRUE(sfNode != nullptr);
+
     audioNodeBuilder.nodeType = NODE_TYPE_NOISE_REDUCTION;
     std::shared_ptr<AudioNode> effNode = audioSuitePipeline.CreateNodeForType(audioNodeBuilder);
     EXPECT_TRUE(effNode != nullptr);

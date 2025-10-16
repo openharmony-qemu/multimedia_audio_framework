@@ -28,6 +28,7 @@
 #include "audio_suite_pcm_buffer.h"
 #include "audio_proresampler.h"
 #include "hpae_format_convert.h"
+#include "channel_converter.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -75,8 +76,18 @@ public:
     virtual int32_t DoProcess() = 0;
     // for Flush node
     virtual int32_t Flush() = 0;
-    virtual int32_t InstallTap(AudioNodePortType portType, std::shared_ptr<SuiteNodeReadTapDataCallback> callback) = 0;
-    virtual int32_t RemoveTap(AudioNodePortType portType) = 0;
+    virtual int32_t InstallTap(AudioNodePortType portType, std::shared_ptr<SuiteNodeReadTapDataCallback> callback)
+    {
+        AUDIO_ERR_LOG("InstallTap failed, node type = %{public}d not support.", GetNodeType());
+        return ERR_INVALID_OPERATION;
+    }
+
+    virtual int32_t RemoveTap(AudioNodePortType portType)
+    {
+        AUDIO_ERR_LOG("RemoveTap failed, node type = %{public}d not support.", GetNodeType());
+        return ERR_INVALID_OPERATION;
+    }
+
     virtual int32_t Connect(const std::shared_ptr<AudioNode> &preNode,
     AudioNodePortType type) = 0;
     virtual int32_t Connect(const std::shared_ptr<AudioNode> &preNode) = 0;
@@ -214,12 +225,12 @@ public:
     {
         if (proResampler_ == nullptr) {
             proResampler_ = std::make_unique<HPAE::ProResampler>(inRate, outRate, channels, quality);
-                preResample_.preInResample = inRate;
-                preResample_.preOutResample = outRate;
-                preResample_.preChannels = channels;
-                return RESAMPLER_ERR_SUCCESS;
+            preResample_.preInResample = inRate;
+            preResample_.preOutResample = outRate;
+            preResample_.preChannels = channels;
+            return RESAMPLER_ERR_SUCCESS;
         }
- 
+
         bool noNeedUpdate = (inRate == preResample_.preInResample && outRate == preResample_.preOutResample &&
             channels == preResample_.preChannels);
         
@@ -247,6 +258,24 @@ public:
         return proResampler_->Process(inBuffer, inFrameSize, outBuffer, outFrameSize);
     }
 
+    void ResetResample()
+    {
+        preResample_.preInResample = 0;
+        preResample_.preOutResample = 0;
+        preResample_.preChannels = 0;
+    }
+
+    int32_t SetChannelConvertProcessParam(AudioChannelInfo inChannelInfo, AudioChannelInfo outChannelInfo,
+        AudioSampleFormat workFormat, bool mixLfe)
+    {
+        return channelConverter_.SetParam(inChannelInfo, outChannelInfo, workFormat, mixLfe);
+    }
+
+    int32_t ChannelConvertProcess(uint32_t framesize, float* in, uint32_t inLen, float* out, uint32_t outLen)
+    {
+        return channelConverter_.Process(framesize, in, inLen, out, outLen);
+    }
+
 private:
     static uint32_t GenerateAudioNodeId()
     {
@@ -266,6 +295,7 @@ private:
     inline static std::mutex nodeIdCounterMutex_;
     inline static uint32_t nodeIdCounter_ = MIN_START_NODE_ID;
     struct PreResample preResample_ = {0};
+    HPAE::ChannelConverter channelConverter_;
 };
 
 class Tap {

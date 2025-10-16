@@ -128,7 +128,8 @@ int32_t RendererInServer::ConfigServerBuffer()
 
     // 100 * 2 + 20 = 220ms, buffer total size.
     bufferTotalSizeInFrame_ = (MAX_CBBUF_IN_USEC * DEFAULT_SPAN_SIZE + MIN_CBBUF_IN_USEC) *
-        processConfig_.streamInfo.samplingRate / AUDIO_US_PER_S;
+        (processConfig_.streamInfo.customSampleRate == 0 ? processConfig_.streamInfo.samplingRate :
+        processConfig_.streamInfo.customSampleRate) / AUDIO_US_PER_S;
 
     spanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame_;
     CHECK_AND_RETURN_RET_LOG(spanSizeInByte_ != 0, ERR_OPERATION_FAILED, "Config oh audio buffer failed!");
@@ -1234,6 +1235,7 @@ int32_t RendererInServer::Flush()
         for (auto &capInfo : captureInfos_) {
             if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
                 capInfo.second.dupStream->Flush();
+                InitDupBufferInner(capInfo.first);
             }
         }
     }
@@ -2452,6 +2454,11 @@ bool RendererInServer::CollectInfosForWorkgroup(float systemVolume)
 void RendererInServer::InitDupBuffer(int32_t innerCapId)
 {
     std::lock_guard<std::mutex> lock(dupMutex_);
+    InitDupBufferInner(innerCapId);
+}
+
+void RendererInServer::InitDupBufferInner(int32_t innerCapId)
+{
     CHECK_AND_RETURN_LOG(innerCapIdToDupStreamCallbackMap_.find(innerCapId) != innerCapIdToDupStreamCallbackMap_.end(),
         "innerCapIdToDupStreamCallbackMap_ is no find innerCapId: %{public}d", innerCapId);
     CHECK_AND_RETURN_LOG(innerCapIdToDupStreamCallbackMap_[innerCapId] != nullptr,

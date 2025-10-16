@@ -233,6 +233,9 @@ int32_t AudioCoreService::FetchCapturerPipesAndExecute(
     AUDIO_INFO_LOG("[PipeFetchStart] all %{public}zu input streams", streamDescs.size());
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = audioPipeSelector_->FetchPipesAndExecute(streamDescs);
 
+    bool removeFlag = false;
+    audioInjectorPolicy_.FetchCapDeviceInjectPreProc(pipeInfos, removeFlag);
+
     AUDIO_INFO_LOG("[PipeExecStart] for all Pipes");
     uint32_t audioFlag;
     for (auto &pipeInfo : pipeInfos) {
@@ -249,6 +252,8 @@ int32_t AudioCoreService::FetchCapturerPipesAndExecute(
     }
     pipeManager_->UpdateCapturerPipeInfos(pipeInfos);
     RemoveUnusedPipe();
+
+    audioInjectorPolicy_.FetchCapDeviceInjectPostProc(pipeInfos, removeFlag);
     return SUCCESS;
 }
 
@@ -1307,9 +1312,16 @@ int32_t AudioCoreService::OnServiceConnected(AudioServiceIndex serviceIndex)
     return audioDeviceStatus_.OnServiceConnected(serviceIndex);
 }
 
-void AudioCoreService::OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress)
+void AudioCoreService::OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
+    sptr<AudioRendererFilter> filter)
 {
-    audioDeviceStatus_.OnForcedDeviceSelected(devType, macAddress);
+    audioDeviceStatus_.OnForcedDeviceSelected(devType, macAddress, filter);
+}
+
+
+void AudioCoreService::OnPrivacyDeviceSelected()
+{
+    audioDeviceStatus_.OnPrivacyDeviceSelected();
 }
 
 void AudioCoreService::UpdateRemoteOffloadModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName)
@@ -1590,7 +1602,7 @@ bool AudioCoreService::IsDupDeviceChange(std::shared_ptr<AudioStreamDescriptor> 
     }
 
     if (streamDesc->newDupDeviceDescs_.size() == 0) {
-        return true;
+        return false;
     }
 
     if (streamDesc->newDupDeviceDescs_.front() != nullptr &&
@@ -1805,19 +1817,16 @@ int32_t AudioCoreService::MoveToLocalOutputDevice(std::vector<SinkInput> sinkInp
     // start move.
     uint32_t sinkId = -1; // invalid sink id, use sink name instead.
     for (size_t i = 0; i < sinkInputIds.size(); i++) {
-        AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
         std::string sinkName = localDeviceDescriptor->deviceType_ == DEVICE_TYPE_REMOTE_CAST ?
             "RemoteCastInnerCapturer" : pipeInfo->moduleInfo_.name;
-        AUDIO_INFO_LOG("Session %{public}d, sinkName %{public}s", sinkInputIds[i].streamId, sinkName.c_str());
         if (sinkName == BLUETOOTH_SPEAKER) {
             std::string activePort = BLUETOOTH_SPEAKER;
             audioPolicyManager_.SuspendAudioDevice(activePort, false);
         }
-        AUDIO_INFO_LOG("move for sinkInput [%{public}d], portName %{public}s pipeType %{public}d",
-            sinkInputIds[i].streamId, sinkName.c_str(), pipeType);
         int32_t ret = audioPolicyManager_.MoveSinkInputByIndexOrName(sinkInputIds[i].paStreamId, sinkId, sinkName);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR,
             "move [%{public}d] to local failed", sinkInputIds[i].streamId);
+        AUDIO_INFO_LOG("streamId %{public}d, sinkName %{public}s", sinkInputIds[i].streamId, sinkName.c_str());
         audioRouteMap_.AddRouteMapInfo(sinkInputIds[i].uid, LOCAL_NETWORK_ID, sinkInputIds[i].pid);
     }
 
@@ -2869,12 +2878,13 @@ void AudioCoreService::UpdateStreamDevicesForStart(
     AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(devices[0]->deviceType_);
 
     streamDesc->UpdateNewDevice(devices);
-    AUDIO_INFO_LOG("[AudioSession] streamUsage %{public}d renderer streamUsage %{public}d",
-        streamUsage, streamDesc->rendererInfo_.streamUsage);
-    AUDIO_INFO_LOG("Target audioFlag 0x%{public}x for stream %{public}u",
-        streamDesc->audioFlag_, streamDesc->GetSessionId());
     AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d status %{public}u",
         streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->GetSessionId(), streamDesc->GetStatus());
+    if (streamDesc->IsMediaScene() && devices[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
+        !streamDesc->oldDeviceDescs_.empty() && streamDesc->oldDeviceDescs_.front() &&
+        streamDesc->oldDeviceDescs_.front()->deviceType_ != devices[0]->deviceType_) {
+        WriteScoStateFaultEvent(devices[0]);
+    }
     SelectA2dpType(streamDesc, false);
 
     FetchOutputDupDevice(caller, streamDesc->GetSessionId(), streamDesc);
@@ -2894,6 +2904,9 @@ void AudioCoreService::UpdateStreamDevicesForCreate(
     streamDesc->UpdateNewDeviceWithoutCheck(devices);
     HILOG_COMM_INFO("[DeviceFetchInfo] device %{public}s for stream %{public}d",
         streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->GetSessionId());
+    if (streamDesc->IsMediaScene() && devices[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        WriteScoStateFaultEvent(devices[0]);
+    }
     SelectA2dpType(streamDesc, true);
     FetchOutputDupDevice(caller, streamDesc->GetSessionId(), streamDesc);
 }
@@ -3343,10 +3356,30 @@ int32_t AudioCoreService::InjectionToPlayBack(uint32_t sessionId)
         AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "move stream out failed");
     audioInjectorPolicy_.RemoveStreamDescriptor(sessionId);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "RemoveCaptureInjector failed");
-    ret = audioInjectorPolicy_.DeInit();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "DeInit failed");
     return SUCCESS;
+}
+
+void AudioCoreService::WriteScoStateFaultEvent(const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
+{
+#ifdef BLUETOOTH_ENABLE
+    CHECK_AND_RETURN_LOG(devDesc != nullptr, "dev desc is null");
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipe manager is null");
+    std::string eventString = "";
+    eventString += "scene: " + std::to_string(audioSceneManager_.GetAudioScene())
+        + " sco type: " + std::to_string(Bluetooth::AudioHfpManager::GetScoCategory())
+        + " device type: " + std::to_string(devDesc->deviceType_)
+        + " dm device type: " + std::to_string(devDesc->dmDeviceType_);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs = pipeManager_->GetAllOutputStreamDescs();
+    for (auto &desc : outputStreamDescs) {
+        CHECK_AND_RETURN_LOG(desc != nullptr, "stream desc is null");
+        if (desc->streamStatus_ == STREAM_STATUS_STARTED || desc->audioFlag_ == AUDIO_OUTPUT_FLAG_VOIP)
+        eventString += " stream session id: " + std::to_string(desc->sessionId_)
+            + " stream status: " + std::to_string(desc->streamStatus_)
+            + " stream usage: " + std::to_string(desc->rendererInfo_.streamUsage)
+            + " bundle name: " + AudioBundleManager::GetBundleNameFromUid(desc->appInfo_.appUid);
+    }
+    AUDIO_INFO_LOG("Current audio: %{public}s", eventString.c_str());
+#endif
 }
 } // namespace AudioStandard
 } // namespace OHOS
