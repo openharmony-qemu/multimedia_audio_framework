@@ -210,6 +210,11 @@ public:
         return (oldRouteFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER);
     }
 
+    bool IsRenderStreamNeedRecreate() const
+    {
+        return ((routeFlag_ & AUDIO_OUTPUT_FLAG_DIRECT) || (routeFlag_ & AUDIO_OUTPUT_FLAG_FAST));
+    }
+
     bool IsSelectFlagOffload() const
     {
         return (audioFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER);
