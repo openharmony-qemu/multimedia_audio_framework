@@ -1092,6 +1092,8 @@ void AudioPolicyServerHandler::HandleInterruptEventWithClientId(const AppExecFwk
 void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
 {
     std::lock_guard<std::mutex> lock(handleMapMutex_);
+    std::stringstream deviceInfoStream;
+    std::stringstream clientInfoStream;
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         int32_t clientPid = it->first;
         std::vector<AudioRendererFilter> rendererFilterList = GetCallbackRendererInfoList(clientPid);
@@ -1109,13 +1111,14 @@ void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
                 clientCallbacksMap_[clientPid].count(CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE) > 0 &&
                 clientCallbacksMap_[clientPid][CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE]) {
                 CHECK_AND_RETURN_LOG(deviceDescs[0] != nullptr, "device is null.");
-                AUDIO_INFO_LOG("Send PreferredOutputDevice deviceType[%{public}d] deviceId[%{public}d]" \
-                    "change to clientPid[%{public}d]",
-                    deviceDescs[0]->deviceType_, deviceDescs[0]->deviceId_, clientPid);
+                deviceInfoStream << deviceDescs[0]->deviceType_ << ":" << deviceDescs[0]->deviceId_ << ",";
+                clientInfoStream << clientPid << ":" << rendererFilter.rendererInfo.streamUsage << ",";
                 it->second->OnPreferredOutputDeviceUpdated(rendererFilter.rendererInfo, deviceDescs);
             }
         }
     }
+    AUDIO_INFO_LOG("[deviceType:deviceId, ...] [%{public}s]  [clientPid:streamUsage, ...] [%{public}s]",
+        deviceInfoStream.str().c_str(), clientInfoStream.str().c_str());
 }
 
 void AudioPolicyServerHandler::HandlePreferredInputDeviceUpdated()
