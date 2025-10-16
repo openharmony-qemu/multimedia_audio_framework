@@ -34,7 +34,6 @@ constexpr uint32_t DEFAULT_FRAME_LEN = 960;
 constexpr uint32_t DEFAULT_SAMPLE_RATE = 48000;
 constexpr uint8_t DEFAULT_SAMPLE_FORMAT = 4;
 constexpr uint32_t MAX_UINT_VOLUME = 65535;
-constexpr int64_t DEFAULT_WAIT_TIME_MS = 40;
 constexpr int32_t CHANNEL_1 = 1;
 constexpr int32_t CHANNEL_2 = 2;
 constexpr int32_t CHANNEL_3 = 3;
@@ -147,17 +146,10 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::Apply(std::vector<uint8_t*>& v1, std::v
         AUDIO_ERR_LOG("algoHandle_ is nullptr");
         return ERROR;
     }
-    auto startTime = std::chrono::steady_clock::now();
     int32_t ret = (*algoHandle_)->process(algoHandle_, &inAudioBuffer_, &outAudioBuffer_);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Apply failed, return value is %d", ret);
         return ERROR;
-    }
-    auto elapsedTime = std::chrono::steady_clock::now() - startTime;
-    int64_t elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(elapsedTime).count();
-    if (elapsedMs < DEFAULT_WAIT_TIME_MS) {
-        int64_t waitTimeMsPerFrame = DEFAULT_WAIT_TIME_MS - elapsedMs;
-        std::this_thread::sleep_for(std::chrono::milliseconds(waitTimeMsPerFrame));
     }
     float* outAudioBuf = reinterpret_cast<float *>(outAudioBuffer_.raw);
     float* humanAudioBuf = reinterpret_cast<float *>(v2[1]);
