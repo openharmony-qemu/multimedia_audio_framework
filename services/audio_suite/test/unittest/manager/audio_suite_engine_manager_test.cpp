@@ -129,7 +129,7 @@ public:
     {
         return;
     }
-    void OnMultiRenderFrame(int32_t result) override
+    void OnMultiRenderFrame(int32_t result, uint32_t pipelineId) override
     {
         return;
     }
