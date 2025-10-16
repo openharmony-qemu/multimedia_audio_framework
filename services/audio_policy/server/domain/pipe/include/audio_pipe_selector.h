@@ -60,6 +60,7 @@ private:
         std::shared_ptr<AudioStreamDescriptor> streamDescB);
     void DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     void ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
+        std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo,
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     void DecidePipesAndStreamAction(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
         std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo);
@@ -74,6 +75,8 @@ private:
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsMoveToNormal);
     void CheckAndHandleOffloadConcedeScene(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void ProcessRendererAndCapturerConcurrency(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    bool IsNeedTempMoveToNormal(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo)
 
     AudioPolicyConfigManager& configManager_;
 };
