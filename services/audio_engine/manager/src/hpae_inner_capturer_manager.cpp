@@ -968,8 +968,8 @@ bool HpaeInnerCapturerManager::SetSessionFade(uint32_t sessionId, IOperation ope
 
     std::shared_ptr<HpaeGainNode> sessionGainNode = nullptr;
     sessionGainNode = rendererSceneClusterMap_[sceneType]->GetGainNodeById(sessionId);
-    if (sessionGainNode == nullptr) {
-        AUDIO_WARNING_LOG("session %{public}d do not have gain node!", sessionId);
+    if (sessionGainNode == nullptr || !isRunning()) {
+        AUDIO_WARNING_LOG("session %{public}d do not have gain node or sink no running", sessionId);
         if (operation != OPERATION_STARTED) {
             HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPED : HPAE_SESSION_PAUSED;
             SetSessionStateForRenderer(sessionId, state);
