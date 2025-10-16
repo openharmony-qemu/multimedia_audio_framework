@@ -1059,17 +1059,12 @@ int32_t AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId, co
 
     DeactivateAudioInterruptInternal(zoneId, currAudioInterrupt);
 
-    AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
     if (HasAudioSessionFakeInterrupt(zoneId, currAudioInterrupt.pid)) {
+        AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
         // If there is an event of (interrupt + set scene), ActivateAudioInterrupt and DeactivateAudioInterrupt may
         // experience deadlocks, due to mutex_ and deviceStatusUpdateSharedMutex_ waiting for each other
         lock.unlock();
         UpdateAudioSceneFromInterrupt(targetAudioScene, DEACTIVATE_AUDIO_INTERRUPT, zoneId);
-    }
-    if (handler_ != nullptr && targetAudioScene == AUDIO_SCENE_PHONE_CHAT &&
-        currAudioInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
-        AudioInjectorPolicy &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
-        audioInjectorPolicy.SendInterruptEventToInjectorStreams(handler_);
     }
 
     return SUCCESS;
@@ -2708,7 +2703,7 @@ void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSe
             SendInterruptEvent(oldState, newState, iterActive, removeFocusInfo);
         }
 
-        if (removeFocusInfo && !IsGameAvoidCallbackCase(iterActive->first)) {
+        if (iterActive->first.deviceTag.empty() && removeFocusInfo && !IsGameAvoidCallbackCase(iterActive->first)) {
             AudioInterrupt interruptToRemove = iterActive->first;
             iterActive = audioFocusInfoList.erase(iterActive);
             iterNew = newAudioFocuInfoList.erase(iterNew);

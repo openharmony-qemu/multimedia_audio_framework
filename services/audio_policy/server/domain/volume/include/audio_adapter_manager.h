@@ -301,6 +301,8 @@ public:
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled);
     void RegisterDoNotDisturbStatus();
     void RegisterDoNotDisturbStatusWhiteList();
+    void RegisterMdmMuteSwitchCallback();
+    void MdmMuteSwitchCallback(bool isMute);
     int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object);
     void SetSleVoiceStatusFlag(bool isSleVoiceStatus);
     void SendLoudVolumeModeToDsp(LoudVolumeHoldType funcHoldType, bool state);
@@ -428,6 +430,8 @@ private:
         AudioStreamType streamType, int32_t volumeLevel);
     void SaveMuteToDbAsync(std::shared_ptr<AudioDeviceDescriptor> desc,
         AudioStreamType streamType, bool mute);
+    int32_t SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDeviceDescriptor> desc,
+        AudioStreamType streamType);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)

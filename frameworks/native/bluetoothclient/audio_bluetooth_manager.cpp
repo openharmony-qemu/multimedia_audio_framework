@@ -532,12 +532,12 @@ void AudioHfpManager::DisconnectBluetoothHfpSink()
 void AudioHfpManager::ClearCurrentActiveHfpDevice(const BluetoothRemoteDevice &device)
 {
     std::lock_guard<std::mutex> hfpDeviceLock(g_activehfpDeviceLock);
+    AUDIO_INFO_LOG("clear current active hfp device:%{public}s",
+        GetEncryptAddr(device.GetDeviceAddr()).c_str());
+    BluetoothScoManager::GetInstance().ResetScoState(device);
     if (device.GetDeviceAddr() != activeHfpDevice_.GetDeviceAddr()) {
         return;
     }
-    AUDIO_INFO_LOG("clear current active hfp device:%{public}s",
-        GetEncryptAddr(device.GetDeviceAddr()).c_str());
-    BluetoothScoManager::GetInstance().ResetScoState(activeHfpDevice_);
     activeHfpDevice_ = BluetoothRemoteDevice();
 }
 
@@ -740,6 +740,11 @@ void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, in
             HfpBluetoothDeviceManager::OnScoStateChanged(device, isConnected, reason);
         }
     }
+}
+
+ScoCategory AudioHfpManager::GetScoCategory()
+{
+    return JudgeScoCategory();
 }
 
 void AudioHfpListener::OnConnectionStateChanged(const BluetoothRemoteDevice &device, int state, int cause)

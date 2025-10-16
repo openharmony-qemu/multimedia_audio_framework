@@ -307,5 +307,7 @@ interface IAudioPolicy {
     void RestoreOutputDevice([in] sptr<AudioRendererFilter> audioRendererFilter);
     void ReloadLoudVolumeMode([in] int streamInFocus, [in] int setVolMode, [out] boolean ret);
     void IsSupportInnerCaptureOffload([out] boolean ret);
+    void SelectPrivateDevice();
+    void ForceSelectDevice([in] int devType, [in] String macAddress, [in] sptr<AudioRendererFilter> filter);
 }
 

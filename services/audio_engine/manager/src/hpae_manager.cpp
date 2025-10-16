@@ -1343,16 +1343,18 @@ uint64_t HpaeManager::ProcessPendingTransitionsAndGetNextDelay()
 {
     constexpr auto timeout = std::chrono::milliseconds(DEFAULT_PAUSE_STREAM_TIME_IN_MS);
     const auto now = std::chrono::high_resolution_clock::now();
+    uint64_t sleepTime = 0;
     while (!pendingTransitionsTracker_.empty()) {
         auto front = pendingTransitionsTracker_.front();
         auto elapsed = now - front.time;
-        if (elapsed >= timeout) {
+        if (elapsed >= timeout ||
+            (sleepTime = std::chrono::duration_cast<std::chrono::milliseconds>(timeout - elapsed).count()) == 0) {
             AUDIO_INFO_LOG("sessionid:%{public}u status:%{public}d operation:%{public}d",
                 front.sessionId, front.state, front.operation);
             pendingTransitionsTracker_.pop_front();
             HandleUpdateStatus(HPAE_STREAM_CLASS_TYPE_PLAY, front.sessionId, front.state, front.operation);
         } else {
-            return std::chrono::duration_cast<std::chrono::milliseconds>(timeout - elapsed).count();
+            return sleepTime;
         }
     }
     return 0;

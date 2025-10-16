@@ -129,6 +129,10 @@ public:
     {
         return;
     }
+    void OnMultiRenderFrame(int32_t result) override
+    {
+        return;
+    }
 };
 
 class IAudioSuitePipelineTestImpl : public IAudioSuitePipeline {
@@ -186,6 +190,10 @@ public:
     {
         return 0;
     }
+    int32_t ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) override
+    {
+        return 0;
+    }
     int32_t DisConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) override
     {
         return 0;
@@ -203,7 +211,16 @@ public:
     {
         return 0;
     }
+    int32_t MultiRenderFrame(uint8_t **audioDataArray, int arraySize,
+        int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag) override
+    {
+        return 0;
+    }
     int32_t SetOptions(uint32_t nodeId, std::string name, std::string value)  override
+    {
+        return 0;
+    }
+    int32_t GetOptions(uint32_t nodeId, std::string name, std::string &value) override
     {
         return 0;
     }
@@ -255,6 +272,10 @@ public:
     }
     int32_t Connect(const std::shared_ptr<AudioNode> &preNode,
     AudioNodePortType type) override
+    {
+        return 0;
+    }
+    int32_t Connect(const std::shared_ptr<AudioNode> &preNode) override
     {
         return 0;
     }
@@ -760,9 +781,17 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineCreateNodeForTypeTes
     std::shared_ptr<AudioNode> outputNode = audioSuitePipeline.CreateNodeForType(audioNodeBuilder);
     EXPECT_TRUE(outputNode != nullptr);
 
+    audioNodeBuilder.nodeType = NODE_TYPE_SOUND_FIELD;
+    std::shared_ptr<AudioNode> sfNode = audioSuitePipeline.CreateNodeForType(audioNodeBuilder);
+    EXPECT_TRUE(sfNode != nullptr);
+
     audioNodeBuilder.nodeType = NODE_TYPE_NOISE_REDUCTION;
     std::shared_ptr<AudioNode> effNode = audioSuitePipeline.CreateNodeForType(audioNodeBuilder);
     EXPECT_TRUE(effNode != nullptr);
+
+    audioNodeBuilder.nodeType = NODE_TYPE_VOICE_BEAUTIFIER;
+    std::shared_ptr<AudioNode> vbNode = audioSuitePipeline.CreateNodeForType(audioNodeBuilder);
+    EXPECT_TRUE(vbNode != nullptr);
 }
 
 HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineEnableNodeNodeTest, TestSize.Level0)

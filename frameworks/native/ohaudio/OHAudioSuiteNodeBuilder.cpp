@@ -56,6 +56,25 @@ OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_Destroy(OH_AudioNodeBuilder *build
     return AUDIOSUITE_SUCCESS;
 }
 
+OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_Reset(OH_AudioNodeBuilder *builder)
+{
+    OHAudioSuiteNodeBuilder *nodeBuilder = ConvertAudioSuitBuilder(builder);
+    CHECK_AND_RETURN_RET_LOG(nodeBuilder != nullptr,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "Reset AudioNodeBuilder failed, builder is nullptr");
+
+    return nodeBuilder->Reset();
+}
+
+OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_SetNodeType(
+    OH_AudioNodeBuilder* builder, OH_AudioNode_Type type)
+{
+    OHAudioSuiteNodeBuilder *nodeBuilder = ConvertAudioSuitBuilder(builder);
+    CHECK_AND_RETURN_RET_LOG(nodeBuilder != nullptr,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "Destroy AudioNodeBuilder failed, builder is nullptr");
+
+    return nodeBuilder->SetNodeType(type);
+}
+
 OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_SetFormat(OH_AudioNodeBuilder *builder, OH_AudioFormat audioFormat)
 {
     OHAudioSuiteNodeBuilder *nodeBuilder = ConvertAudioSuitBuilder(builder);
@@ -121,6 +140,22 @@ OH_AudioSuite_Result OHAudioSuiteNodeBuilder::SetOnWriteDataCallback(
 
     onWriteDataCallBack_ = callback;
     onWriteDataUserData_ = userData;
+    return AUDIOSUITE_SUCCESS;
+}
+
+OH_AudioSuite_Result OHAudioSuiteNodeBuilder::SetNodeType(OH_AudioNode_Type type)
+{
+    nodeType_ = static_cast<AudioNodeType>(type);
+    return AUDIOSUITE_SUCCESS;
+}
+
+OH_AudioSuite_Result OHAudioSuiteNodeBuilder::Reset()
+{
+    nodeType_ = NODE_TYPE_EMPTY;
+    nodeFormat_ = {};
+    setNodeFormat_ = false;
+    onWriteDataCallBack_ = nullptr;
+    onWriteDataUserData_ = nullptr;
     return AUDIOSUITE_SUCCESS;
 }
 

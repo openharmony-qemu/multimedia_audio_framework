@@ -876,5 +876,32 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_035, TestSize.Level1)
 
     EXPECT_NE(unit->OnStreamData(info), SUCCESS); // onwritedata error
 }
+
+/**
+ * @tc.name  : Test OnQueryUnderrun.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_036
+ * @tc.desc  : Test OnQueryUnderrun.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_036, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    auto mockWriteCallback = std::make_shared<MockWriteCallback>();
+
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0);
+    unit->writeCallback_ = mockWriteCallback;
+    EXPECT_EQ(unit->OnQueryUnderrun(), false); // not callback mode, return false
+
+    unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 1);
+    EXPECT_EQ(unit->OnQueryUnderrun(), false); // writecallback null, return false
+
+    unit->writeCallback_ = mockWriteCallback;
+    size_t framesize = 0;
+    EXPECT_CALL(*mockWriteCallback, GetAvailableSize(framesize))
+        .WillOnce(DoAll(SetArgReferee<0>(0), Return(SUCCESS)))
+        .WillOnce(DoAll(SetArgReferee<0>(1), Return(SUCCESS)));
+    EXPECT_EQ(unit->OnQueryUnderrun(), true); // requestDataLen == 0, return true
+    EXPECT_EQ(unit->OnQueryUnderrun(), false); // requestDataLen != 0, return false
+}
 }
 }

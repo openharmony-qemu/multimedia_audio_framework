@@ -81,6 +81,8 @@ public:
     void BlockStream() noexcept override;
     int32_t OnStreamData(AudioCallBackStreamInfo& callBackStremInfo) override;
     void OnStatusUpdate(IOperation operation, uint32_t streamIndex) override;
+
+    bool OnQueryUnderrun() override;
 private:
     void SyncOffloadMode();
     void InitRingBuffer();

@@ -42,6 +42,8 @@ const float OUT_OF_MAX_FLOAT_VOLUME = 2.0f;
 const float IN_VOLUME_RANGE = 0.5f;
 const float OUT_OF_MIN_FLOAT_VOLUME = -2.0f;
 const bool TEST_ISAPPBACK = true;
+const uint32_t SAMPLE_RATE_383840 = 383840;
+constexpr int32_t DEFAULT_SPAN_SIZE = 2;
 
 static std::shared_ptr<IStreamListener> stateListener;
 static std::shared_ptr<StreamListenerHolder> streamListenerHolder = std::make_shared<StreamListenerHolder>();
@@ -217,6 +219,30 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerConfigServerBuffer_001, TestS
 
     int32_t ret = rendererInServer->Init();
     ret = rendererInServer->ConfigServerBuffer();
+    EXPECT_EQ(rendererInServer->bufferTotalSizeInFrame_, (MAX_CBBUF_IN_USEC * DEFAULT_SPAN_SIZE + MIN_CBBUF_IN_USEC) *
+        testStreamInfo.samplingRate / AUDIO_US_PER_S);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test ConfigServerBuffer API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerConfigServerBuffer_002
+ * @tc.desc  : Test ConfigServerBuffer when using customSampleRate.
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerConfigServerBuffer_002, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_8000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    testStreamInfo.customSampleRate = SAMPLE_RATE_383840;
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ret = rendererInServer->ConfigServerBuffer();
+    EXPECT_EQ(rendererInServer->bufferTotalSizeInFrame_, (MAX_CBBUF_IN_USEC * DEFAULT_SPAN_SIZE + MIN_CBBUF_IN_USEC) *
+        testStreamInfo.customSampleRate / AUDIO_US_PER_S);
     EXPECT_EQ(SUCCESS, ret);
 }
 

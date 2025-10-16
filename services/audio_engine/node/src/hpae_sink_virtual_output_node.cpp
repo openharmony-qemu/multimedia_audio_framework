@@ -112,10 +112,13 @@ int32_t HpaeSinkVirtualOutputNode::PeekAudioData(uint8_t *buffer, const size_t &
     DoProcessInner();
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr, ERROR_INVALID_PARAM, "Invalid nullptr buffer provided");
     memset_s(buffer, bufferSize, 0, bufferSize);
-    if (bufferSize > outputAudioBuffer_.DataSize()) {
-        AUDIO_WARNING_LOG("peek buffersize > sinnVirtualOutputNode buffer size!");
-    } else if (bufferSize < outputAudioBuffer_.DataSize()) {
-        AUDIO_WARNING_LOG("peek buffersize < sinnVirtualOutputNode buffer size!");
+    size_t outputSizeInt = outputAudioBuffer_.DataSize() * GetSizeFromFormat(GetBitWidth()) / sizeof(float);
+    if (bufferSize > outputSizeInt) {
+        AUDIO_WARNING_LOG("peek buffersize[%{public}zu] > sinnVirtualOutputNode bufferSize[%{public}zu]!",
+            bufferSize, outputSizeInt);
+    } else if (bufferSize < outputSizeInt) {
+        AUDIO_WARNING_LOG("peek buffersize[%{public}zu] < sinnVirtualOutputNode bufferSize[%{public}zu]!",
+            bufferSize, outputSizeInt);
     }
     uint64_t length = bufferSize / GetBitWidth();
     ConvertFromFloat(GetBitWidth(), std::min(static_cast<uint64_t>(GetChannelCount() * GetFrameLen()), length),
@@ -210,8 +213,23 @@ int32_t HpaeSinkVirtualOutputNode::RenderSinkStop(void)
     if (ringCache_ != nullptr) {
         ringCache_->ResetBuffer();
     }
+    SilenceData();
     SetSinkState(STREAM_MANAGER_SUSPENDED);
     return SUCCESS;
+}
+
+void HpaeSinkVirtualOutputNode::SilenceData()
+{
+    void *data = outputAudioBuffer_.GetPcmDataBuffer();
+    CHECK_AND_RETURN_LOG(data != nullptr, "outputAudioBuffer_ data is null");
+    if (GetNodeInfo().format == INVALID_WIDTH) {
+        AUDIO_WARNING_LOG("HpaePcmBuffer.SetDataSilence: invalid format");
+    } else if (GetNodeInfo().format == SAMPLE_U8) {
+        // set silence data for all the frames
+        memset_s(data, outputAudioBuffer_.Size(), 0x80, outputAudioBuffer_.Size());
+    } else {
+        memset_s(data, outputAudioBuffer_.Size(), 0, outputAudioBuffer_.Size());
+    }
 }
 
 size_t HpaeSinkVirtualOutputNode::GetPreOutNum()

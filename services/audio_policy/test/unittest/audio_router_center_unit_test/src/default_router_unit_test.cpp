@@ -31,6 +31,58 @@ namespace OHOS {
 namespace AudioStandard {
 
 /**
+ * @tc.name  : Test AppSelectRouter.
+ * @tc.number: APPSELECTROUTER_002
+ * @tc.desc  : Test NeedSkipSelectAudioOutputDeviceRefined interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, GetRecordCaptureDevice_002, TestSize.Level1)
+{
+    AppSelectRouter router;
+    SourceType sourceType = SOURCE_TYPE_INVALID;
+    int32_t clientUID = 0;
+    uint32_t sessionID = 0;
+
+    auto actualDevice = router.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
+    EXPECT_NE(actualDevice, nullptr);
+}
+
+/**
+ * @tc.name  : Test AppSelectRouter.
+ * @tc.number: APPSELECTROUTER_003
+ * @tc.desc  : Test NeedSkipSelectAudioOutputDeviceRefined interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, GetRecordCaptureDevice_003, TestSize.Level4)
+{
+    SourceType sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    int32_t clientUID = 1000;
+    uint32_t sessionID = 123;
+    AppSelectRouter appSelectRouter;
+    shared_ptr<AudioDeviceDescriptor> actualDevice =
+        appSelectRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
+    EXPECT_NE(actualDevice, nullptr);
+
+    sessionID = 0;
+    actualDevice = appSelectRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
+    EXPECT_NE(actualDevice, nullptr);
+}
+
+/**
+ * @tc.name  : Test AppSelectRouter.
+ * @tc.number: APPSELECTROUTER_004
+ * @tc.desc  : Test NeedSkipSelectAudioOutputDeviceRefined interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, ConfigureDeviceForSpecialScenario_002, TestSize.Level1)
+{
+    AppSelectRouter appSelectRouter;
+
+    std::shared_ptr<AudioDeviceDescriptor> device = nullptr;
+
+    appSelectRouter.ConfigureDeviceForSpecialScenario(SOURCE_TYPE_VOICE_RECOGNITION, device);
+
+    EXPECT_NE(device, nullptr);
+}
+
+/**
  * @tc.name  : Test GetMediaRenderDevice.
  * @tc.number: GetMediaRenderDevice_001
  * @tc.desc  : Test GetMediaRenderDevice interface.
@@ -91,12 +143,12 @@ HWTEST(AudioRouterCenterUnitTest, GetCallCaptureDevice_002, TestSize.Level4)
 
 /**
  * @tc.name  : Test GetRecordCaptureDevice.
- * @tc.number: GetRecordCaptureDevice_001
+ * @tc.number: APPSELECTROUTER_001
  * @tc.desc  : Test GetRecordCaptureDevice interface.
  */
 HWTEST(AudioRouterCenterUnitTest, GetRecordCaptureDevice_001, TestSize.Level4)
 {
-    SourceType sourceType = SOURCE_TYPE_MIC;
+    SourceType sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
     int32_t clientUID = 1000;
     uint32_t sessionID = 123;
     AppSelectRouter appSelectRouter;

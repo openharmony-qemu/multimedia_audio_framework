@@ -612,6 +612,7 @@ int32_t CapturerInServer::StartInner()
     int32_t ret = stream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
     resetTime_ = true;
+    CoreServiceHandler::GetInstance().RebuildCaptureInjector(streamIndex_);
 
     if (capturerClock_ != nullptr) {
         capturerClock_->Start();

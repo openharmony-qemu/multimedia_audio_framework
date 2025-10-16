@@ -338,7 +338,7 @@ bool AudioDeviceManager::HasConnectedA2dp()
             desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
             desc->connectState_ != VIRTUAL_CONNECTED;
     };
-
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     auto it = find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
     return it != connectedDevices_.end();
 }
@@ -1463,7 +1463,6 @@ int32_t AudioDeviceManager::UpdateDefaultOutputDeviceWhenStarting(const uint32_t
 {
     std::lock_guard<std::mutex> lock(selectDefaultOutputDeviceMutex_);
     if (!selectedDefaultOutputDeviceInfo_.count(sessionID)) {
-        AUDIO_WARNING_LOG("no need to update default output device since current stream has not set");
         return SUCCESS;
     }
     DeviceType deviceType = selectedDefaultOutputDeviceInfo_[sessionID].first;
@@ -1611,6 +1610,58 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSelectedCaptureDevice(c
         }
     }
     return devDesc;
+}
+
+int32_t AudioDeviceManager::SetPreferredInputDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &devDesc, const uint32_t sessionID, const SourceType sourceType)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_PERMISSION_DENIED, "set preferred input device denied: no system permission");
+    std::lock_guard<std::mutex> lock(preferredInputDeviceMutex_);
+    preferredInputDeviceInfo_[sessionID] = std::make_pair(devDesc, sourceType);
+    AUDIO_INFO_LOG("set preferred input device successful, sessionID = %{public}d, deviceName_ = %{public}s, "
+        "deviceType = %{public}d, sourceType = %{public}d", sessionID, devDesc->deviceName_.c_str(),
+        devDesc->deviceType_, sourceType);
+    return SUCCESS;
+}
+
+shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetOnlinePreferredInputDevice(const uint32_t sessionID)
+{
+    CHECK_AND_RETURN_RET_LOG(preferredInputDeviceInfo_.count(sessionID), nullptr,
+        "sessionID %{public}d: preferredInputDevice is empty", sessionID);
+    shared_ptr<AudioDeviceDescriptor> preferredInputDevice = preferredInputDeviceInfo_[sessionID].first;
+    shared_ptr<AudioDeviceDescriptor> onlinePreferredInputDevice = nullptr;
+
+    DeviceType deviceType = preferredInputDevice->deviceType_;
+    string mac = preferredInputDevice->macAddress_;
+
+    if (mac.empty()) {
+        AUDIO_WARNING_LOG("preferred input device has no mac address");
+        for (const auto &dev : connectedDevices_) {
+            if (dev->deviceType_ == deviceType) {
+                onlinePreferredInputDevice = dev;
+            }
+        }
+    } else {
+        for (const auto &dev : connectedDevices_) {
+            if (dev->deviceType_ == deviceType && dev->macAddress_ == mac) {
+                onlinePreferredInputDevice = dev;
+            }
+        }
+    }
+    CHECK_AND_RETURN_RET_LOG(onlinePreferredInputDevice != nullptr, nullptr, "cannot find online preferredInputDevice");
+    CHECK_AND_RETURN_RET_LOG(onlinePreferredInputDevice->deviceRole_ == INPUT_DEVICE, nullptr, "wrong deviceRole");
+    AUDIO_INFO_LOG("find online preferredInputDevice deviceType: %{public}d, deviceName: %{public}s",
+        onlinePreferredInputDevice->deviceType_, onlinePreferredInputDevice->deviceName_.c_str());
+    return onlinePreferredInputDevice;
+}
+
+int32_t AudioDeviceManager::RemovePreferredInputDevice(const uint32_t sessionID)
+{
+    std::lock_guard<std::mutex> lock(preferredInputDeviceMutex_);
+    preferredInputDeviceInfo_.erase(sessionID);
+    AUDIO_INFO_LOG("remove preferred input device for session %{public}d", sessionID);
+    return SUCCESS;
 }
 
 void AudioDeviceManager::Dump(std::string &dumpString)

@@ -135,6 +135,99 @@ ohos_unittest("audio_suite_eq_node_test") {
   resource_config_file = "./resource/eqnode.xml"
 }
 
+ohos_unittest("audio_suite_eq_algo_interface_test") {
+  module_out_path = module_output_path
+  sources = [
+    "utils/audio_suite_eq_algo_interface_test.cpp",
+  ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+
+  configs = [ ":audio_suite_unit_config" ]
+
+  deps = [
+    "../../:audio_suite_static",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest",
+    "googletest:gmock",
+    "hilog:libhilog",
+  ]
+  resource_config_file = "./resource/eqnode.xml"
+}
+
+ohos_unittest("audio_suite_env_node_test") {
+  module_out_path = module_output_path
+  sources = [
+    "node/audio_suite_env_node_test.cpp",
+  ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+
+  configs = [ ":audio_suite_unit_config" ]
+
+  deps = [
+    "../../:audio_suite_static",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest",
+    "googletest:gmock",
+    "hilog:libhilog",
+  ]
+  resource_config_file = "./resource/envnode.xml"
+}
+
+ohos_unittest("audio_suite_env_algo_interface_test") {
+  module_out_path = module_output_path
+  sources = [
+    "utils/audio_suite_env_algo_interface_test.cpp",
+  ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+
+  configs = [ ":audio_suite_unit_config" ]
+
+  deps = [
+    "../../:audio_suite_static",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest",
+    "googletest:gmock",
+    "hilog:libhilog",
+  ]
+  resource_config_file = "./resource/envnode.xml"
+}
+
 ohos_unittest("audio_suite_mixer_test") {
   module_out_path = module_output_path
   sources = [
@@ -382,6 +475,68 @@ ohos_unittest("audio_suite_process_node_test") {
   resource_config_file = "./resource/process_node.xml"
 }
 
+ohos_unittest("audio_suite_soundfield_algo_interface_impl_test") {
+  module_out_path = module_output_path
+  sources = [
+    "tool/audio_suite_unittest_tools.cpp",
+    "utils/audio_suite_soundfield_algo_interface_impl_test.cpp",
+  ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+
+  configs = [ ":audio_suite_unit_config" ]
+
+  deps = [
+    "../../:audio_suite_static",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest",
+    "hilog:libhilog",
+  ]
+  resource_config_file = "./resource/soundfield_test.xml"
+}
+
+ohos_unittest("audio_suite_soundfield_node_test") {
+  module_out_path = module_output_path
+  sources = [
+    "tool/audio_suite_unittest_tools.cpp",
+    "node/audio_suite_soundfield_node_test.cpp",
+  ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+
+  configs = [ ":audio_suite_unit_config" ]
+
+  deps = [
+    "../../:audio_suite_static",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest",
+    "hilog:libhilog",
+  ]
+  resource_config_file = "./resource/soundfield_test.xml"
+}
+
 ohos_unittest("audio_suite_nr_node_test") {
   module_out_path = module_output_path
   sources = [
@@ -411,4 +566,46 @@ ohos_unittest("audio_suite_nr_node_test") {
     "hilog:libhilog",
   ]
   resource_config_file = "./resource/ohos_test.xml"
+}
+
+ohos_unittest("audio_suite_voice_beautifier_node_test") {
+  module_out_path = module_output_path
+  sources = [
+    "tool/audio_suite_unittest_tools.cpp",
+    "node/audio_suite_voice_beautifier_node_test.cpp",
+  ]
+
+  configs = [ ":audio_suite_unit_config" ]
+
+  deps = [
+    "../../:audio_suite_static",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest",
+    "hilog:libhilog",
+  ]
+  resource_config_file = "./resource/vb_test.xml"
+}
+
+ohos_unittest("audio_suite_voice_beautifier_algo_interface_impl_test") {
+  module_out_path = module_output_path
+  sources = [
+    "tool/audio_suite_unittest_tools.cpp",
+    "utils/audio_suite_voice_beautifier_algo_interface_impl_test.cpp",
+  ]
+
+  configs = [ ":audio_suite_unit_config" ]
+
+  deps = [
+    "../../:audio_suite_static",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest",
+    "hilog:libhilog",
+  ]
+  resource_config_file = "./resource/vb_test.xml"
 }

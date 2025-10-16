@@ -350,7 +350,7 @@ int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, 
     sourceInfo.frameLen = static_cast<size_t>(bufferSize) / (sourceInfo.channels *
                                 static_cast<size_t>(GetSizeFromFormat(sourceInfo.format)));
     sourceInfo.samplingRate = static_cast<AudioSamplingRate>(StringToNum(audioModuleInfo.rate));
-    sourceInfo.channelLayout = 0ULL;
+    sourceInfo.channelLayout = static_cast<uint64_t>(StringToNum(audioModuleInfo.channelLayout));
     sourceInfo.deviceType = static_cast<int32_t>(StringToNum(audioModuleInfo.deviceType));
     sourceInfo.volume = MAX_SINK_VOLUME_LEVEL;  // 1.0f;
 

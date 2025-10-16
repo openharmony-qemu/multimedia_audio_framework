@@ -16,6 +16,15 @@
 #define AUDIO_SUITE_MANAGER_PRIVATE_H
 
 #include <memory>
+#include <vector>
+#include <sstream>
+#include <cctype>
+#include <cstdlib>
+#include <cerrno>
+#include <climits>
+#include <string>
+#include <stdexcept>
+#include <cstdint>
 #include "audio_suite_manager.h"
 #include "audio_suite_manager_callback.h"
 #include "audio_suite_node.h"
@@ -52,18 +61,27 @@ public:
         std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback) override;
     int32_t ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId,
         AudioNodePortType srcPortType, AudioNodePortType destPortType) override;
+    int32_t ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) override;
     int32_t DisConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) override;
     int32_t InstallTap(uint32_t nodeId, AudioNodePortType portType,
         std::shared_ptr<SuiteNodeReadTapDataCallback> callback) override;
     int32_t RemoveTap(uint32_t nodeId, AudioNodePortType portType) override;
     int32_t RenderFrame(uint32_t pipelineId,
         uint8_t *audioData, int32_t frameSize, int32_t *writeLen, bool *finishedFlag) override;
+    int32_t MultiRenderFrame(uint32_t pipelineId,
+        AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag) override;
     int32_t SetEqualizerMode(uint32_t nodeId, EqualizerMode eqMode) override;
     int32_t SetEqualizerFrequencyBandGains(
         uint32_t nodeId, AudioEqualizerFrequencyBandGains frequencyBandGains) override;
     int32_t SetSoundFieldType(uint32_t nodeId, SoundFieldType soundFieldType) override;
     int32_t SetEnvironmentType(uint32_t nodeId, EnvironmentType environmentType) override;
     int32_t SetVoiceBeautifierType(uint32_t nodeId, VoiceBeautifierType voiceBeautifierType) override;
+    int32_t GetEnvironmentType(uint32_t nodeId, EnvironmentType &environmentType) override;
+    int32_t GetSoundFiledType(uint32_t nodeId, SoundFieldType &soundFieldType) override;
+    int32_t GetEqualizerFrequencyBandGains(uint32_t nodeId,
+        AudioEqualizerFrequencyBandGains &frequencyBandGains) override;
+    int32_t GetVoiceBeautifierType(uint32_t nodeId,
+        VoiceBeautifierType &voiceBeautifierType) override;
 
     // callback Member functions
     void OnCreatePipeline(int32_t result, uint32_t pipelineId) override;
@@ -82,6 +100,7 @@ public:
     void OnInstallTap(int32_t result) override;
     void OnRemoveTap(int32_t result) override;
     void OnRenderFrame(int32_t result) override;
+    void OnMultiRenderFrame(int32_t result) override;
 
 private:
     std::mutex lock_;
@@ -121,11 +140,82 @@ private:
     int32_t disConnectNodesResult_ = 0;
     bool isFinisRenderFrame_ = false;
     int32_t renderFrameResult_ = 0;
+    bool isFinisMultiRenderFrame_ = false;
+    int32_t MultiRenderFrameResult_ = 0;
     bool isFinisInstallTap_ = false;
     int32_t installTapResult_ = 0;
     bool isFinisRemoveTap_ = false;
     int32_t removeTapResult_ = 0;
 };
+
+// tool
+template<typename T>
+void ParseValue(const std::string valueStr, T &result)
+{
+    std::istringstream iss(valueStr);
+    float value;
+    iss >> value;
+    result = static_cast<T>(value);
+}
+
+void ParseValue(const std::string &valueStr, int32_t *result)
+{
+    if (result == nullptr) {
+        return;
+    }
+
+    std::istringstream iss(valueStr);
+    std::string token;
+    std::vector<int32_t> temp;
+
+    while (std::getline(iss, token, ':')) {
+        token.erase(0, token.find_first_not_of(' ')); // Remove leading spaces
+        token.erase(token.find_last_not_of(' ') + 1); // Remove trailing spaces
+        if (!token.empty()) {
+            char* end;
+            errno = 0; // Reset error flag
+            long val = std::strtol(token.c_str(), &end, 10);
+            // Check if conversion was fully successful and without overflow
+            if (end != token.c_str() + token.size() || // Not entire string consumed
+                errno == ERANGE || // Numeric overflow
+                val < INT32_MIN || val > INT32_MAX) { // Out of int32_t range
+                return; // Conversion failed, return immediately
+            }
+            temp.push_back(static_cast<int32_t>(val));
+        }
+    }
+
+    for (size_t i = 0; i < temp.size(); ++i) {
+        result[i] = temp[i];
+    }
+}
+
+int32_t StringToInt32(std::string &str)
+{
+    char* end;
+    errno = 0; // Reset error flag
+    long value = std::strtol(str.c_str(), &end, 10); // Decimal conversion
+
+    // Check if entire string was parsed
+    if (end == str.c_str()) {
+        return INT32_MAX;
+    }
+
+    // Check if remaining characters are only whitespace (optional)
+    while (*end != '\0') {
+        if (!std::isspace(static_cast<unsigned char>(*end))) {
+            return INT32_MAX;
+        }
+        ++end;
+    }
+
+    // Check overflow/underflow
+    if (errno == ERANGE || value < INT32_MIN || value > INT32_MAX) {
+        return INT32_MAX;
+    }
+
+    return static_cast<int32_t>(value);
+}
 
 }  // namespace AudioSuite
 }  // namespace AudioStandard

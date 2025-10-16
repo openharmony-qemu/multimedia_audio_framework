@@ -60,6 +60,7 @@ public:
     MOCK_METHOD(int32_t, Flush, (), ());
     MOCK_METHOD(int32_t, RemoveTap, (AudioNodePortType portType), ());
     MOCK_METHOD(int32_t, Connect, (const std::shared_ptr<AudioNode> &preNode, AudioNodePortType type), ());
+    MOCK_METHOD(int32_t, Connect, (const std::shared_ptr<AudioNode> &preNode), ());
     MOCK_METHOD(int32_t, DisConnect, (const std::shared_ptr<AudioNode> &preNode), ());
     MOCK_METHOD(int32_t, InstallTap, (
         AudioNodePortType portType, std::shared_ptr<SuiteNodeReadTapDataCallback> callback), ());
@@ -242,8 +243,8 @@ HWTEST_F(AudioSuiteProcessNodeTest, DoProcessDefaultTest, TestSize.Level0)
     std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> nodeOutputPort =
         node_->GetOutputPort(AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
     node_->InstallTap(AUDIO_NODE_DEFAULT_OUTPORT_TYPE, nullptr);
-    AudioSuitePcmBuffer* result = nodeOutputPort->PullOutputData();
-    EXPECT_EQ(*(result->GetPcmDataBuffer()), 1.0f);
+    std::vector<AudioSuitePcmBuffer *> result = nodeOutputPort->PullOutputData();
+    EXPECT_EQ(result.size(), 1);
     node_->RemoveTap(AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
     node_->DisConnect(mockInputNode_);
     EXPECT_EQ(inputNodeOutputPort->GetInputNum(), 0);
@@ -269,8 +270,8 @@ HWTEST_F(AudioSuiteProcessNodeTest, DoProcessWithEnableProcessFalseTest, TestSiz
     std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> nodeOutputPort =
         node_->GetOutputPort(AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
     node_->InstallTap(AUDIO_NODE_DEFAULT_OUTPORT_TYPE, nullptr);
-    AudioSuitePcmBuffer* result = nodeOutputPort->PullOutputData();
-    EXPECT_EQ(*(result->GetPcmDataBuffer()), 0.0f);
+    std::vector<AudioSuitePcmBuffer *> result = nodeOutputPort->PullOutputData();
+    EXPECT_EQ(result.size(), 1);
     node_->RemoveTap(AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
     node_->DisConnect(mockInputNode_);
     EXPECT_EQ(inputNodeOutputPort->GetInputNum(), 0);
@@ -297,12 +298,13 @@ HWTEST_F(AudioSuiteProcessNodeTest, DoProcessWithFinishedPcmBufferTest, TestSize
     std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> nodeOutputPort =
         node_->GetOutputPort(AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
     node_->InstallTap(AUDIO_NODE_DEFAULT_OUTPORT_TYPE, nullptr);
-    AudioSuitePcmBuffer* result = nodeOutputPort->PullOutputData();
-    EXPECT_EQ(*(result->GetPcmDataBuffer()), 1.0f);
-    EXPECT_EQ(result->GetIsFinished(), true);
+    std::vector<AudioSuitePcmBuffer *> result = nodeOutputPort->PullOutputData();
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_NE(result[0], nullptr);
+    EXPECT_EQ(result[0]->GetIsFinished(), true);
     EXPECT_EQ(node_->GetAudioNodeDataFinishedFlag(), true);
-    AudioSuitePcmBuffer* resultWhenNodeFinished = nodeOutputPort->PullOutputData();
-    EXPECT_EQ(resultWhenNodeFinished, nullptr);
+    std::vector<AudioSuitePcmBuffer *> resultWhenNodeFinished = nodeOutputPort->PullOutputData();
+    EXPECT_EQ(resultWhenNodeFinished.size(), 0);
     node_->RemoveTap(AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
     node_->DisConnect(mockInputNode_);
     EXPECT_EQ(inputNodeOutputPort->GetInputNum(), 0);
@@ -329,9 +331,10 @@ HWTEST_F(AudioSuiteProcessNodeTest, DoProcessInstallTapTest, TestSize.Level0)
     std::shared_ptr<SuiteNodeReadTapDataCallback> testCallback = std::make_shared<TestReadTapCallBack>();
     EXPECT_FALSE(TestReadTapCallBack::testFlag);
     node_->InstallTap(AUDIO_NODE_DEFAULT_OUTPORT_TYPE, testCallback);
-    AudioSuitePcmBuffer* result = nodeOutputPort->PullOutputData();
+    std::vector<AudioSuitePcmBuffer *> result = nodeOutputPort->PullOutputData();
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_NE(result[0], nullptr);
     EXPECT_TRUE(TestReadTapCallBack::testFlag);
-    EXPECT_EQ(*(result->GetPcmDataBuffer()), 1.0f);
     node_->RemoveTap(AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
     node_->DisConnect(mockInputNode_);
     EXPECT_EQ(inputNodeOutputPort->GetInputNum(), 0);

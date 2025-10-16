@@ -44,7 +44,6 @@ void PrivacyPriorityRouter::RemoveArmUsb(vector<shared_ptr<AudioDeviceDescriptor
     auto removeBeginIt = std::remove_if(descs.begin(), descs.end(), isPresent);
     size_t deleteNum = static_cast<uint32_t>(descs.end() - removeBeginIt);
     descs.erase(removeBeginIt, descs.end());
-    AUDIO_INFO_LOG("Remove %{public}zu desc from privacy list", deleteNum);
 }
 
 shared_ptr<AudioDeviceDescriptor> PrivacyPriorityRouter::GetCallRenderDevice(StreamUsage streamUsage,

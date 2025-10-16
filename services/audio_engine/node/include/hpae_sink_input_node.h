@@ -32,6 +32,7 @@ typedef void (*AppCallbackFunc)(void *pHndl);
 class HpaeSinkInputNode : public OutputNode<HpaePcmBuffer *> {
 public:
     HpaeSinkInputNode(HpaeNodeInfo &nodeInfo);
+    HpaeSinkInputNode(HpaeNodeInfo &nodeInfo, HpaeSinkInfo &sinkInfo);
     virtual ~HpaeSinkInputNode();
     virtual void DoProcess() override;
     virtual bool Reset() override;     // no implement, virtual class
@@ -58,7 +59,7 @@ public:
     float GetSpeed();
     uint64_t GetLatency();
 
-    void SetBypassOnUnderrun(bool bypassOnUnderrun);
+    bool QueryUnderrun();
 
     bool isConnected_ = false;
     HpaeProcessorType connectedProcessorType_ = HPAE_SCENE_UNCONNECTED;
@@ -67,6 +68,7 @@ private:
     int32_t OnStreamInfoChange(bool needata = true);
     void CheckAndDestroyHistoryBuffer();
     bool ReadToAudioBuffer(int32_t &ret);
+    void ReportDataEvent(int32_t &ret);
     std::weak_ptr<IStreamCallback> writeCallback_;
     AudioCallBackStreamInfo streamInfo_;
     PcmBufferInfo pcmBufferInfo_;
@@ -87,8 +89,9 @@ private:
     float speed_ = 1.0f;
     std::atomic<uint64_t> hdiFramePosition_ = 0;
     uint32_t standbyCounter_ = 0;
-
-    bool bypassOnUnderrun_ = false;
+    uint32_t inputSize_ = 0;
+    uint32_t currentSize_ = 0;
+    uint32_t renderSize_ = 0;
 };
 
 }  // namespace HPAE

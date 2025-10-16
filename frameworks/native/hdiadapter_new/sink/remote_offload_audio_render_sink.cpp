@@ -334,6 +334,10 @@ int32_t RemoteOffloadAudioRenderSink::RestoreRenderSink(void)
 void RemoteOffloadAudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::string &condition,
     const std::string &value)
 {
+    AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
+    CHECK_AND_RETURN_LOG(audioRender_ != nullptr, "render is nullptr");
+    int32_t ret = audioRender_->SetExtraParams(value.c_str());
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "set parameter fail, error code: %{public}d", ret);
 }
 
 std::string RemoteOffloadAudioRenderSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)
@@ -972,6 +976,10 @@ int32_t RemoteOffloadAudioRenderSink::CreateRender(void)
     void *render = deviceManager->CreateRender(deviceNetworkId_, &param, &deviceDesc, hdiRenderId_);
     audioRender_.ForceSetRefPtr(static_cast<IAudioRender *>(render));
     CHECK_AND_RETURN_RET(audioRender_ != nullptr, ERR_NOT_STARTED);
+    std::stringstream val;
+    val << "offloadParams=" << attr_.sampleRate << "," << std::to_string(attr_.format) << ","
+        << attr_.channel << "," << attr_.channelLayout;
+    SetAudioParameter(AudioParamKey::NONE, "", val.str());
     deviceManager->RegistRenderSinkCallback(deviceNetworkId_, hdiRenderId_, this);
     return SUCCESS;
 }

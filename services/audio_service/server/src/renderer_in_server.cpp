@@ -62,6 +62,7 @@ namespace {
     const float AUDIO_VOLOMUE_EPSILON = 0.0001;
     const int32_t OFFLOAD_INNER_CAP_PREBUF = 3;
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
+    const size_t DEFAULT_CACHE_SIZE = 5;
     constexpr int32_t DEFAULT_SPAN_SIZE = 2;
     constexpr size_t MSEC_PER_SEC = 1000;
     const int32_t DUP_OFFLOAD_LEN = 7000; // 7000 -> 7000ms
@@ -116,7 +117,8 @@ int32_t RendererInServer::ConfigServerBuffer()
     }
     stream_->GetSpanSizePerFrame(spanSizeInFrame_);
     // default to 2, 40ms cache size for write mode
-    engineTotalSizeInFrame_ = spanSizeInFrame_ * DEFAULT_SPAN_SIZE;
+    engineTotalSizeInFrame_ = spanSizeInFrame_ *
+        (processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_DIRECT ? DEFAULT_SPAN_SIZE : DEFAULT_CACHE_SIZE);
 
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
     if (engineTotalSizeInFrame_ == 0 || spanSizeInFrame_ == 0 || engineTotalSizeInFrame_ % spanSizeInFrame_ != 0) {
@@ -126,7 +128,8 @@ int32_t RendererInServer::ConfigServerBuffer()
 
     // 100 * 2 + 20 = 220ms, buffer total size.
     bufferTotalSizeInFrame_ = (MAX_CBBUF_IN_USEC * DEFAULT_SPAN_SIZE + MIN_CBBUF_IN_USEC) *
-        processConfig_.streamInfo.samplingRate / AUDIO_US_PER_S;
+        (processConfig_.streamInfo.customSampleRate == 0 ? processConfig_.streamInfo.samplingRate :
+        processConfig_.streamInfo.customSampleRate) / AUDIO_US_PER_S;
 
     spanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame_;
     CHECK_AND_RETURN_RET_LOG(spanSizeInByte_ != 0, ERR_OPERATION_FAILED, "Config oh audio buffer failed!");
@@ -1232,6 +1235,7 @@ int32_t RendererInServer::Flush()
         for (auto &capInfo : captureInfos_) {
             if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
                 capInfo.second.dupStream->Flush();
+                InitDupBufferInner(capInfo.first);
             }
         }
     }
@@ -2362,7 +2366,9 @@ int32_t RendererInServer::WriteDupBufferInner(const BufferDesc &bufferDesc, int3
     AUDIO_DEBUG_LOG("targetSize: %{public}zu, writableSize: %{public}zu", targetSize, writableSize);
     size_t writeSize = std::min(writableSize, targetSize);
     BufferWrap bufferWrap = {bufferDesc.buffer, writeSize};
-    if (writeSize > 0) {
+    if (lastTarget_ == INJECT_TO_VOICE_COMMUNICATION_CAPTURE) {
+        WriteSilenceDupBuffer(bufferDesc, bufferWrap, innerCapId);
+    } else if (writeSize > 0) {
         result = innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer()->Enqueue(bufferWrap);
         if (result.ret != OPERATION_SUCCESS) {
             AUDIO_ERR_LOG("RingCache Enqueue failed ret:%{public}d size:%{public}zu", result.ret, result.size);
@@ -2370,6 +2376,19 @@ int32_t RendererInServer::WriteDupBufferInner(const BufferDesc &bufferDesc, int3
         DumpFileUtil::WriteDumpFile(dumpDupIn_, static_cast<void *>(bufferDesc.buffer), writeSize);
     }
     return SUCCESS;
+}
+
+void RendererInServer::WriteSilenceDupBuffer(const BufferDesc &bufferDesc, BufferWrap &bufferWrap, int32_t innerCapId)
+{
+    CHECK_AND_RETURN(bufferWrap.dataSize > 0);
+    auto buffer = std::make_unique<uint8_t []>(bufferWrap.dataSize);
+    bufferWrap.dataPtr = buffer.get();
+    memset_s(bufferWrap.dataPtr, bufferWrap.dataSize, 0, bufferWrap.dataSize);
+    OptResult result = innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer()->Enqueue(bufferWrap);
+    if (result.ret != OPERATION_SUCCESS) {
+        AUDIO_ERR_LOG("RingCache Enqueue failed ret:%{public}d size:%{public}zu", result.ret, result.size);
+    }
+    DumpFileUtil::WriteDumpFile(dumpDupIn_, static_cast<void *>(bufferDesc.buffer), bufferWrap.dataSize);
 }
 
 int32_t RendererInServer::SetSpeed(float speed)
@@ -2435,6 +2454,11 @@ bool RendererInServer::CollectInfosForWorkgroup(float systemVolume)
 void RendererInServer::InitDupBuffer(int32_t innerCapId)
 {
     std::lock_guard<std::mutex> lock(dupMutex_);
+    InitDupBufferInner(innerCapId);
+}
+
+void RendererInServer::InitDupBufferInner(int32_t innerCapId)
+{
     CHECK_AND_RETURN_LOG(innerCapIdToDupStreamCallbackMap_.find(innerCapId) != innerCapIdToDupStreamCallbackMap_.end(),
         "innerCapIdToDupStreamCallbackMap_ is no find innerCapId: %{public}d", innerCapId);
     CHECK_AND_RETURN_LOG(innerCapIdToDupStreamCallbackMap_[innerCapId] != nullptr,

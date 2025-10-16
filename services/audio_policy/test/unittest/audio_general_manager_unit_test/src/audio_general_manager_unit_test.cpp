@@ -469,6 +469,33 @@ HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_024, TestSize.Level4)
 }
 
 /**
+* @tc.name  : Test AudioGeneralManager.
+* @tc.number: SelectPrivateDevice_01
+* @tc.desc  : AudioGeneralManager::SelectPrivateDevice()
+*/
+HWTEST(AudioGeneralManagerUnitTest, SelectPrivateDevice_01, TestSize.Level1)
+{
+    auto audioGeneralManager = AudioGeneralManager::GetInstance();
+    EXPECT_NE(audioGeneralManager, nullptr);
+    int32_t ret = audioGeneralManager->SelectPrivateDevice();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioGeneralManager.
+* @tc.number: ForceSelectDevice_01
+* @tc.desc  : AudioGeneralManager::ForceSelectDevice()
+*/
+HWTEST(AudioGeneralManagerUnitTest, ForceSelectDevice_01, TestSize.Level1)
+{
+    auto audioGeneralManager = AudioGeneralManager::GetInstance();
+    EXPECT_NE(audioGeneralManager, nullptr);
+    sptr<AudioRendererFilter> filter = new AudioRendererFilter();
+    int32_t ret = audioGeneralManager->ForceSelectDevice(DEVICE_TYPE_BLUETOOTH_SCO, "00:11", filter);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
  * @tc.name  : Test SaveCallback.
  * @tc.number: SaveCallback_001
  * @tc.desc  : Test SaveCallback API.

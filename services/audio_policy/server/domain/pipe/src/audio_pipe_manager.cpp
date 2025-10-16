@@ -617,27 +617,27 @@ bool AudioPipeManager::IsStreamUsageActive(const StreamUsage &usage)
 int32_t AudioPipeManager::IsCaptureVoipCall()
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamVec = {};
+    VoipType type = VoipType::NO_VOIP;
     AudioInjectorPolicy &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
-    for (auto it = curPipeList_.rbegin(); it != curPipeList_.rend(); ++it) {
-        CHECK_AND_CONTINUE_LOG((*it) != nullptr, "it is null");
-        for (const auto &stream : (*it)->streamDescriptors_) {
+    for (const auto &pipe : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipe != nullptr, "pipe is null");
+        for (const auto &stream : pipe->streamDescriptors_) {
             CHECK_AND_CONTINUE_LOG(stream != nullptr, "stream is null");
             bool isRunning = stream->IsRunning();
             CHECK_AND_CONTINUE_LOG(isRunning == true, "isRunning is false");
             if ((stream->routeFlag_ & AUDIO_INPUT_FLAG_NORMAL) &&
                     stream->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
                 audioInjectorPolicy.SetVoipType(NORMAL_VOIP);
-                audioInjectorPolicy.SetCapturePortIdx((*it)->paIndex_);
-                return NORMAL_VOIP;
-            } else if (stream->routeFlag_ & AUDIO_INPUT_FLAG_VOIP_FAST) {
+                audioInjectorPolicy.SetCapturePortIdx(pipe->paIndex_);
+                type = NORMAL_VOIP;
+            } else if (stream->routeFlag_ & (AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP)) {
                 audioInjectorPolicy.SetVoipType(FAST_VOIP);
-                audioInjectorPolicy.SetCapturePortIdx((*it)->paIndex_);
+                audioInjectorPolicy.SetCapturePortIdx(pipe->paIndex_);
                 return FAST_VOIP;
             }
         }
     }
-    return NO_VOIP;
+    return type;
 }
 
 uint32_t AudioPipeManager::GetPaIndexByName(std::string portName)

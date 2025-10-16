@@ -47,7 +47,6 @@ public:
     virtual uint32_t GetHdiLatency() { return 0; };
     virtual uint64_t GetLatency(HpaeProcessorType sceneType) { return 0; };
     virtual void UpdateStreamInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> preNode) {};
-    virtual bool IsProcessBypassed() { return false; } // only normal outputcluster need bypass
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

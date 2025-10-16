@@ -68,6 +68,11 @@ void HpaeMixerNode::SetNodeInfo(HpaeNodeInfo& nodeInfo)
     silenceData_.SetAudioStreamType(nodeInfo.streamType);
     silenceData_.SetAudioStreamUsage(nodeInfo.effectInfo.streamUsage);
     HpaeNode::SetNodeInfo(nodeInfo);
+    pcmBufferInfo_.ch = GetChannelCount();
+    pcmBufferInfo_.frameLen = GetFrameLen();
+    pcmBufferInfo_.rate = GetSampleRate();
+    mixedOutput_.ReConfig(pcmBufferInfo_);
+    tmpOutput_.ReConfig(pcmBufferInfo_);
 }
 
 void HpaeMixerNode::ConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode,

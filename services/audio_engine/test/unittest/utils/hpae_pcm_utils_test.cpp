@@ -216,6 +216,21 @@ HWTEST_F(HpaePcmUtilsTest, convertFromFloatAllFormats, TestSize.Level0)
     EXPECT_EQ(s32Output[NUM_TWO], -1073741824); // -1073741824: -0.5f * 2^31
     EXPECT_EQ(s32Output[NUM_THREE], 2147481472); // 2147481472: near 1.0f
 }
+
+HWTEST_F(HpaePcmUtilsTest, InputPtrCheck, TestSize.Level1)
+{
+    float data = 0;
+    ConvertToFloat(SAMPLE_S16LE, 1, &data, &data);
+    ConvertToFloat(SAMPLE_S16LE, 1, nullptr, &data);
+    ConvertToFloat(SAMPLE_S16LE, 1, &data, nullptr);
+    ConvertToFloat(SAMPLE_S16LE, 1, nullptr, nullptr);
+
+    ConvertFromFloat(SAMPLE_S16LE, 1, &data, &data);
+    ConvertFromFloat(SAMPLE_S16LE, 1, nullptr, &data);
+    ConvertFromFloat(SAMPLE_S16LE, 1, &data, nullptr);
+    ConvertFromFloat(SAMPLE_S16LE, 1, nullptr, nullptr);
+}
+
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

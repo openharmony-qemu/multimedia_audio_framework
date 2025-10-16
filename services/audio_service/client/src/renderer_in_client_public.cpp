@@ -1309,7 +1309,6 @@ void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize)
     size_t minCbBufferSize =
         static_cast<size_t>(MIN_CBBUF_IN_USEC * curStreamParams_.samplingRate / AUDIO_US_PER_S) * sizePerFrameInByte_;
     size_t preferredCbBufferSize = static_cast<size_t>(frameSize) * sizePerFrameInByte_;
-    SetCacheSize(frameSize);
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
     cbBufferSize_ = (preferredCbBufferSize > maxCbBufferSize || preferredCbBufferSize < minCbBufferSize) ?
         (preferredCbBufferSize > maxCbBufferSize ? maxCbBufferSize : minCbBufferSize) : preferredCbBufferSize;

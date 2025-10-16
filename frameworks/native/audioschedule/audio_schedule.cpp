@@ -262,7 +262,6 @@ std::shared_ptr<SharedAudioScheduleGuard> SharedAudioScheduleGuard::Create(pid_t
         sharedGuard = std::make_shared<SharedAudioScheduleGuard>(pid, tid, bundleName);
         CHECK_AND_RETURN_RET_LOG(sharedGuard, nullptr, "no mem");
         guardMap_.insert({{pid, tid}, sharedGuard});
-        AUDIO_INFO_LOG("ret new obj");
         return sharedGuard;
     }
 

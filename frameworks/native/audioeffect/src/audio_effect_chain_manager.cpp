@@ -990,7 +990,7 @@ void AudioEffectChainManager::SendAudioParamToHDI(
     CHECK_AND_RETURN_LOG(StringConverter(value, effectHdiInput_[1]),
         "convert invalid bufferSize: %{public}s", value.c_str());
     CHECK_AND_RETURN_LOG(audioEffectHdiParam_ != nullptr, "audioEffectHdiParam_ is nullptr");
-    if (audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, device) != SUCCESS) {
+    if (audioEffectHdiParam_->UpdateHdiState(effectHdiInput_) != SUCCESS) {
         AUDIO_WARNING_LOG("set hdi parameter failed for code %{public}d and value %{public}s", code, value.c_str());
     }
 }
@@ -1963,8 +1963,10 @@ int32_t AudioEffectChainManager::QueryEffectChannelInfoInner(const std::string &
     channels = DEFAULT_NUM_CHANNEL;
     channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
-    CHECK_AND_RETURN_RET_LOG(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) > 0 &&
-        sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr, ERROR, "null audioEffectChain");
+    if (sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) == 0 ||
+        sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] == nullptr) {
+        return ERROR;
+    }
     auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
     audioEffectChain->GetInputChannelInfo(channels, channelLayout);
     return SUCCESS;
@@ -2038,6 +2040,7 @@ bool AudioEffectChainManager::ExistAudioEffectChainArm(const std::string sceneTy
         return false;
     }
     const std::unordered_map<AudioEffectMode, std::string> &audioSupportedSceneModes = GetAudioSupportedSceneModes();
+    CHECK_AND_RETURN_RET_LOG(audioSupportedSceneModes.count(effectMode), false, "invalid effectMode");
     std::string sceneMode = audioSupportedSceneModes.find(effectMode)->second;
     std::string effectChainKey = sceneType + "_&_" + sceneMode + "_&_" + GetDeviceTypeName();
     if (!sceneTypeAndModeToEffectChainNameMap_.count(effectChainKey)) {

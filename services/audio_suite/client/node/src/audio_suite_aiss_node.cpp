@@ -66,9 +66,7 @@ int32_t AudioSuiteAissNode::DoProcess()
     if (!outputStream_) {
         outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
     }
-    if (!bkgOutputStream_) {
-        bkgOutputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
-    }
+
     AudioSuitePcmBuffer* tempOut = nullptr;
     std::vector<AudioSuitePcmBuffer*>& preOutputs = ReadProcessNodePreOutputData();
     if ((GetNodeEnableStatus() == NODE_ENABLE) && !preOutputs.empty()) {
@@ -83,7 +81,7 @@ int32_t AudioSuiteAissNode::DoProcess()
         tmpHumanSoundOutput_.SetIsFinished(GetAudioNodeDataFinishedFlag());
         tmpBkgSoundOutput_.SetIsFinished(GetAudioNodeDataFinishedFlag());
         outputStream_->WriteDataToOutput(&tmpHumanSoundOutput_);
-        bkgOutputStream_->WriteDataToOutput(&tmpBkgSoundOutput_);
+        outputStream_->WriteDataToOutput(&tmpBkgSoundOutput_);
     } else if (!preOutputs.empty()) {
         AUDIO_DEBUG_LOG("AudioSuiteProcessNode::DoProcess: node type = %{public}d signalProcess "
             "is not enabled.", GetNodeType());
@@ -97,7 +95,7 @@ int32_t AudioSuiteAissNode::DoProcess()
         tmpHumanSoundOutput_ = *tempOut;
         tmpBkgSoundOutput_ = *tempOut;
         outputStream_->WriteDataToOutput(tempOut);
-        bkgOutputStream_->WriteDataToOutput(tempOut);
+        outputStream_->WriteDataToOutput(tempOut);
     } else {
         AUDIO_ERR_LOG("AudioSuiteProcessNode::DoProcess: node %{public}d can't get "
             "pcmbuffer from prenodes", GetNodeType());
@@ -105,25 +103,6 @@ int32_t AudioSuiteAissNode::DoProcess()
     }
     HandleTapCallback(&tmpOutput_);
     return SUCCESS;
-}
-
-std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> AudioSuiteAissNode::GetOutputPort(AudioNodePortType portType)
-{
-    if (!outputStream_) {
-        outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
-    }
-    if (!bkgOutputStream_) {
-        bkgOutputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
-    }
-    if (portType == AudioNodePortType::AUDIO_NODE_HUMAN_SOUND_OUTPORT_TYPE) {
-        AUDIO_DEBUG_LOG("AudioSuiteAissNode GetOutputPort outputStream_");
-        return outputStream_;
-    } else if (portType == AudioNodePortType::AUDIO_NODE_BACKGROUND_SOUND_OUTPORT_TYPE) {
-        AUDIO_DEBUG_LOG("AudioSuiteAissNode GetOutputPort bkgOutputStream_");
-        return bkgOutputStream_;
-    }
-    AUDIO_ERR_LOG("Invalid port type: %{public}d", (uint32_t)portType);
-    return nullptr;
 }
 
 int32_t AudioSuiteAissNode::Flush()
@@ -159,9 +138,7 @@ int32_t AudioSuiteAissNode::Init()
     if (!outputStream_) {
         outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
     }
-    if (!bkgOutputStream_) {
-        bkgOutputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
-    }
+
     if (aissAlgo_->Init() != SUCCESS) {
         AUDIO_ERR_LOG("InitAlgorithm failed");
         return ERROR;

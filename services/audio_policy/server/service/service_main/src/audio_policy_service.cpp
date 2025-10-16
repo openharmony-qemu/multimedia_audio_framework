@@ -417,9 +417,15 @@ void AudioPolicyService::OnServiceDisconnected(AudioServiceIndex serviceIndex)
     AUDIO_WARNING_LOG("Start for [%{public}d]", serviceIndex);
 }
 
-void AudioPolicyService::OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress)
+void AudioPolicyService::OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
+    sptr<AudioRendererFilter> filter)
 {
-    audioDeviceLock_.OnForcedDeviceSelected(devType, macAddress);
+    audioDeviceLock_.OnForcedDeviceSelected(devType, macAddress, filter);
+}
+
+void AudioPolicyService::OnPrivacyDeviceSelected()
+{
+    audioDeviceLock_.OnPrivacyDeviceSelected();
 }
 
 void AudioPolicyService::LoadEffectLibrary()

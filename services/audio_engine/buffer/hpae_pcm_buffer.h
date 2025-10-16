@@ -37,7 +37,6 @@ enum HpaeSourceBufferType {
 enum PcmBufferState : uint32_t {
     PCM_BUFFER_STATE_INVALID = 1, // bit 0
     PCM_BUFFER_STATE_SILENCE = 2, // bit 1
-    PCM_BUFFER_STATE_BYPASS = 1 << 2, // bit 2
 };
 
 // redefine allocator to ensure memory alignment
@@ -128,11 +127,6 @@ public:
         return (pcmBufferInfo_.state & PCM_BUFFER_STATE_SILENCE) != 0;
     }
 
-    bool IsBypass() const
-    {
-        return (pcmBufferInfo_.state & PCM_BUFFER_STATE_BYPASS) != 0;
-    }
-
     uint32_t GetBufferState() const
     {
         return pcmBufferInfo_.state;
@@ -197,7 +191,6 @@ public:
     bool UpdateWritePos(size_t writePos);
     void SetBufferValid(bool valid);
     void SetBufferSilence(bool silence);
-    void SetBufferBypass(bool bypass);
     void SetBufferState(uint32_t state);
     size_t GetCurFrames() const;
 
@@ -249,12 +242,12 @@ public:
         sourceBufferType_ = type;
     }
 
-    HpaeSplitStreamType GetSplitStreamType() const
+    SplitStreamType GetSplitStreamType() const
     {
         return splitStreamType_;
     }
 
-    void SetSplitStreamType(HpaeSplitStreamType type)
+    void SetSplitStreamType(SplitStreamType type)
     {
         splitStreamType_ = type;
     }
@@ -296,7 +289,7 @@ private:
     std::vector<HpaePcmProcess> pcmProcessVec_;
     PcmBufferInfo pcmBufferInfo_;
     HpaeSourceBufferType sourceBufferType_ = HPAE_SOURCE_BUFFER_TYPE_DEFAULT;
-    HpaeSplitStreamType splitStreamType_ = STREAM_TYPE_DEFAULT;
+    SplitStreamType splitStreamType_ = STREAM_TYPE_DEFAULT;
     AudioStreamType streamType_ = STREAM_DEFAULT;
     StreamUsage streamUsage_ = STREAM_USAGE_INVALID;
 };

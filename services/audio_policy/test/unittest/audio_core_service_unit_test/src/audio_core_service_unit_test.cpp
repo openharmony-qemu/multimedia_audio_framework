@@ -255,35 +255,6 @@ HWTEST_F(AudioCoreServiceUnitTest, SetPreferredInputDeviceIfValid_002, TestSize.
 
 /**
 * @tc.name  : Test AudioCoreService.
-* @tc.number: WriteDesignateAudioCaptureDeviceEvent_001
-* @tc.desc  : Test CreateCapturerClient - Create stream with (S32 48k STEREO) will be successful..
-*/
-HWTEST_F(AudioCoreServiceUnitTest, WriteDesignateAudioCaptureDeviceEvent_001, TestSize.Level1)
-{
-    AudioCoreService service;
-    int32_t clientUID = 1;
-    SourceType sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
-    int32_t deviceType = 0;
-
-    EXPECT_NO_THROW(service.WriteDesignateAudioCaptureDeviceEvent(clientUID, sourceType, deviceType));
-}
-
-/**
-* @tc.name  : Test AudioCoreService.
-* @tc.number: WriteIncorrectSelectBTSPPEvent_001
-* @tc.desc  : Test CreateCapturerClient - Create stream with (S32 48k STEREO) will be successful..
-*/
-HWTEST_F(AudioCoreServiceUnitTest, WriteIncorrectSelectBTSPPEvent_001, TestSize.Level1)
-{
-    AudioCoreService service;
-    int32_t clientUID = 1;
-    SourceType sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
-
-    EXPECT_NO_THROW(service.WriteIncorrectSelectBTSPPEvent(clientUID, sourceType));
-}
-
-/**
-* @tc.name  : Test AudioCoreService.
 * @tc.number: SetDefaultOutputDevice_001
 * @tc.desc  : Test SetDefaultOutputDevice - Set DEVICE_TYPE_SPEAKER as default device to nonexistent session.
 */
@@ -721,10 +692,50 @@ HWTEST_F(AudioCoreServiceUnitTest, HandleNearlinkErrResult_001, TestSize.Level1)
     auto coreSvc = AudioCoreService::GetCoreService();
     int32_t result = 200;
     auto devDesc = make_shared<AudioDeviceDescriptor>();
-    coreSvc->HandleNearlinkErrResult(result, devDesc);
+    coreSvc->HandleNearlinkErrResult(result, devDesc, true);
     result = 404;
-    coreSvc->HandleNearlinkErrResult(result, devDesc);
+    coreSvc->HandleNearlinkErrResult(result, devDesc, true);
     EXPECT_NE(devDesc, nullptr);
+    result = 201;
+    coreSvc->HandleNearlinkErrResult(result, devDesc, true);
+    EXPECT_EQ(devDesc->deviceUsage_, static_cast<DeviceUsage>(static_cast<uint32_t>(devDesc->deviceUsage_) &
+        ~static_cast<uint32_t>(DeviceUsage::VOICE)));
+    coreSvc->HandleNearlinkErrResult(result, devDesc, false);
+    EXPECT_EQ(devDesc->deviceUsage_, static_cast<DeviceUsage>(static_cast<uint32_t>(devDesc->deviceUsage_) &
+        ~static_cast<uint32_t>(DeviceUsage::MEDIA)));
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: IsVoiceStreamType_001
+* @tc.desc  : Test IsVoiceStreamType
+*/
+HWTEST_F(AudioCoreServiceUnitTest, IsVoiceStreamType_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsVoiceStreamType_001 start");
+    auto coreSvc = AudioCoreService::GetCoreService();
+    EXPECT_NE(coreSvc, nullptr);
+    EXPECT_TRUE(coreSvc->IsVoiceStreamType(StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION));
+    EXPECT_TRUE(coreSvc->IsVoiceStreamType(StreamUsage::STREAM_USAGE_NOTIFICATION_RINGTONE));
+    EXPECT_TRUE(coreSvc->IsVoiceStreamType(StreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION));
+    EXPECT_TRUE(coreSvc->IsVoiceStreamType(StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION));
+    EXPECT_TRUE(coreSvc->IsVoiceStreamType(StreamUsage::STREAM_USAGE_VOICE_RINGTONE));
+    EXPECT_FALSE(coreSvc->IsVoiceStreamType(StreamUsage::STREAM_USAGE_MUSIC));
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: IsVoiceSourceType_001
+* @tc.desc  : Test IsVoiceSourceType
+*/
+HWTEST_F(AudioCoreServiceUnitTest, IsVoiceSourceType_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsVoiceSourceType_001 start");
+    auto coreSvc = AudioCoreService::GetCoreService();
+    EXPECT_NE(coreSvc, nullptr);
+    EXPECT_TRUE(coreSvc->IsVoiceSourceType(SourceType::SOURCE_TYPE_VOICE_CALL));
+    EXPECT_TRUE(coreSvc->IsVoiceSourceType(SourceType::SOURCE_TYPE_VOICE_COMMUNICATION));
+    EXPECT_FALSE(coreSvc->IsVoiceSourceType(SourceType::SOURCE_TYPE_MIC));
 }
 
 /**
@@ -1822,6 +1833,37 @@ HWTEST_F(AudioCoreServiceUnitTest, PlayBackToInjection_001, TestSize.Level1)
     ASSERT_NE(audioCoreService, nullptr);
     int32_t ret = audioCoreService->PlayBackToInjection(1111);
     EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test A2dpOffloadGetRenderPosition.
+ * @tc.number: A2dpOffloadGetRenderPosition_001
+ * @tc.desc  : Test A2dpOffloadGetRenderPosition interfaces.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, A2dpOffloadGetRenderPosition_001, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    uint32_t delayValue = 0;
+    uint64_t sendDataSize = 0;
+    uint32_t timeStamp = 0;
+
+    server->coreService_->audioActiveDevice_.currentActiveDevice_.deviceType_ =
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
+    server->coreService_->audioActiveDevice_.currentActiveDevice_.networkId_ = LOCAL_NETWORK_ID;
+    int32_t ret = server->coreService_->A2dpOffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
+    EXPECT_EQ(ret, SUCCESS);
+
+    server->coreService_->audioActiveDevice_.currentActiveDevice_.deviceType_ =
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
+    server->coreService_->audioActiveDevice_.currentActiveDevice_.networkId_ = REMOTE_NETWORK_ID;
+    ret = server->coreService_->A2dpOffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
+    EXPECT_EQ(ret, SUCCESS);
+
+    server->coreService_->audioActiveDevice_.currentActiveDevice_.deviceType_ =
+        DeviceType::DEVICE_TYPE_SPEAKER;
+    server->coreService_->audioActiveDevice_.currentActiveDevice_.networkId_ = REMOTE_NETWORK_ID;
+    ret = server->coreService_->A2dpOffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
+    EXPECT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -29,8 +29,6 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 namespace {
-const std::string STREAM_TYPE_CHANGE = "stream_type_change";
-const std::string STREAM_USAGE_CHANGE = "stream_usage_change";
 }
 HpaeRemoteSinkOutputNode::HpaeRemoteSinkOutputNode(HpaeNodeInfo &nodeInfo, HpaeSinkInfo &sinkInfo)
     : HpaeNode(nodeInfo),
@@ -79,7 +77,7 @@ void HpaeRemoteSinkOutputNode::HandleRemoteTiming()
     AUDIO_DEBUG_LOG("remoteSleepTime_ %{public}lld", remoteSleepTime_.count());
 }
 
-void HpaeRemoteSinkOutputNode::HandlePcmDumping(HpaeSplitStreamType streamType, char* data, size_t size)
+void HpaeRemoteSinkOutputNode::HandlePcmDumping(SplitStreamType streamType, char* data, size_t size)
 {
     auto handleDump = [&](auto& dumper) {
         if (dumper) {
@@ -89,59 +87,16 @@ void HpaeRemoteSinkOutputNode::HandlePcmDumping(HpaeSplitStreamType streamType, 
     };
 
     switch (streamType) {
-        case HpaeSplitStreamType::STREAM_TYPE_MEDIA:
+        case SplitStreamType::STREAM_TYPE_MEDIA:
             handleDump(outputMediaPcmDumper_);
             break;
-        case HpaeSplitStreamType::STREAM_TYPE_NAVIGATION:
+        case SplitStreamType::STREAM_TYPE_NAVIGATION:
             handleDump(outputNavigationPcmDumper_);
             break;
         default:
             handleDump(outputCommunicationPcmDumper_);
             break;
     }
-}
-
-void HpaeRemoteSinkOutputNode::NotifyHdiSetParamEvent(const std::string &key, uint32_t renderId, uint32_t typeOrUsage)
-{
-    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
-    if (deviceManager == nullptr) {
-        AUDIO_ERR_LOG("device manager is nullptr");
-        return;
-    }
-    std::string val = std::to_string(renderId) + '-' + std::to_string(typeOrUsage);
-    deviceManager->SetAudioParameter(this->GetNodeInfo().deviceNetId, AudioParamKey::PARAM_KEY_STATE, key, val);
-}
-
-void HpaeRemoteSinkOutputNode::NotifyStreamTypeChange(AudioStreamType type, HpaeSplitStreamType splitStreamType)
-{
-    if (splitStreamType != STREAM_TYPE_MEDIA) {
-        return;
-    }
-    HpaeNodeInfo nodeInfo = GetNodeInfo();
-    if (type == nodeInfo.streamType) {
-        return;
-    }
-    int32_t renderId = audioRendererSink_->GetHdiRenderId(splitStreamType);
-    if (renderId < 0) {
-        AUDIO_ERR_LOG("the render id is less then zero");
-        return;
-    }
-    this->NotifyHdiSetParamEvent(STREAM_TYPE_CHANGE, static_cast<uint32_t>(renderId), static_cast<uint32_t>(type));
-}
-
-void HpaeRemoteSinkOutputNode::NotifyStreamUsageChange(StreamUsage usage, HpaeSplitStreamType splitStreamType)
-{
-    if (usage == this->usageMap_[splitStreamType]) {
-        return;
-    }
-    int32_t renderId = audioRendererSink_->GetHdiRenderId(splitStreamType);
-    if (renderId < 0) {
-        AUDIO_ERR_LOG("the render id is less then zero");
-        return;
-    }
-    this->NotifyHdiSetParamEvent(STREAM_USAGE_CHANGE, static_cast<uint32_t>(renderId), static_cast<uint32_t>(usage));
-    this->usageMap_[splitStreamType] = usage;
 }
 
 void HpaeRemoteSinkOutputNode::DoProcess()
@@ -160,11 +115,10 @@ void HpaeRemoteSinkOutputNode::DoProcess()
         if (outputData == nullptr || (!outputData->IsValid() && !needEmptyChunk_)) {
             continue;
         }
-        HpaeSplitStreamType splitStreamType = outputData->GetSplitStreamType();
+        SplitStreamType splitStreamType = outputData->GetSplitStreamType();
         AudioStreamType type = outputData->GetAudioStreamType();
-        NotifyStreamTypeChange(type, splitStreamType);
-        NotifyStreamUsageChange(outputData->IsValid() ? outputData->GetAudioStreamUsage() : STREAM_USAGE_UNKNOWN,
-            splitStreamType);
+        StreamUsage usage = outputData->IsValid() ? outputData->GetAudioStreamUsage() : STREAM_USAGE_UNKNOWN;
+        audioRendererSink_->UpdateStreamInfo(splitStreamType, type, usage);
         ConvertFromFloat(
             GetBitWidth(), GetChannelCount() * GetFrameLen(), outputData->GetPcmDataBuffer(), renderFrameData_.data());
         uint64_t writeLen = 0;

@@ -941,25 +941,20 @@ void HfpBluetoothDeviceManager::HandleWearDisable(const BluetoothRemoteDevice &d
 
 void HfpBluetoothDeviceManager::HandleUserSelection(const BluetoothRemoteDevice &device)
 {
-    std::string deviceAddr = device.GetDeviceAddr();
-    DeviceCategory bluetoothCategory = GetDeviceCategory(device);
-    if (bluetoothCategory == BT_WATCH) {
-        std::lock_guard<std::mutex> wearStateMapLock(g_hfpWearStateMapLock);
-        std::lock_guard<std::mutex> hfpDeviceLock(g_hfpDeviceLock);
-        auto isPresent = [] (BluetoothRemoteDevice &bluetoothRemoteDevice) {
-            return wearDetectionStateMap_[bluetoothRemoteDevice.GetDeviceAddr()] == WEAR_ACTION;
-        };
-        auto deviceIter = std::find_if(privacyDevices_.rbegin(), privacyDevices_.rend(), isPresent);
-        if (deviceIter != privacyDevices_.rend()) {
-            deviceAddr = deviceIter->GetDeviceAddr();
-            AUDIO_WARNING_LOG("Change user select device from watch %{public}s to wear headphone %{public}s",
-                GetEncryptAddr(device.GetDeviceAddr()).c_str(), GetEncryptAddr(deviceAddr).c_str());
-        }
+    std::string macAddress = device.GetDeviceAddr();
+    DeviceCategory deviceCategory = GetDeviceCategory(device);
+    AUDIO_INFO_LOG("Hfp handle user selection. addr=%{public}s, deviceCategory=%{public}d",
+        GetEncryptAddr(macAddress).c_str(), deviceCategory);
+    std::lock_guard<std::mutex> lg(g_observerLock);
+    CHECK_AND_RETURN_LOG(g_deviceObserver, "g_deviceObserver is nullptr");
+    if (deviceCategory == BT_WATCH) {
+        g_deviceObserver->OnPrivacyDeviceSelected();
+        return;
     }
-    std::lock_guard<std::mutex> observerLock(g_observerLock);
-    if (g_deviceObserver != nullptr) {
-        g_deviceObserver->OnForcedDeviceSelected(DEVICE_TYPE_BLUETOOTH_SCO, deviceAddr);
-    }
+    sptr<AudioRendererFilter> filter = new AudioRendererFilter();
+    CHECK_AND_RETURN_LOG(filter, "filter is nullptr");
+    filter->rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    g_deviceObserver->OnForcedDeviceSelected(DEVICE_TYPE_BLUETOOTH_SCO, macAddress, filter);
 }
 
 void HfpBluetoothDeviceManager::HandleStopVirtualCall(const BluetoothRemoteDevice &device)

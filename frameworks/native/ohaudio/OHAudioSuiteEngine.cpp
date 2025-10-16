@@ -52,6 +52,11 @@ static OHAudioSuiteNodeBuilder *ConvertAudioSuitBuilder(OH_AudioNodeBuilder *bui
     return (OHAudioSuiteNodeBuilder *)builder;
 }
 
+static OHOS::AudioStandard::AudioSuite::AudioDataArray *ConvertAudioDataArray(OH_AudioDataArray *audioDataArray)
+{
+    return (OHOS::AudioStandard::AudioSuite::AudioDataArray *)audioDataArray;
+}
+
 static OH_AudioSuite_Result ConvertError(int32_t err)
 {
     if (err == OHOS::AudioStandard::SUCCESS) {
@@ -99,10 +104,14 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_Create(OH_AudioSuiteEngine **audioSuite
 
 OH_AudioSuite_Result OH_AudioSuiteEngine_Destroy(OH_AudioSuiteEngine *audioSuiteEngine)
 {
-    OHAudioSuiteEngine *suiteEngine = ConvertAudioSuiteEngine(audioSuiteEngine);
     CHECK_AND_RETURN_RET_LOG(audioSuiteEngine != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "Destroy audioSuiteEngine is nullptr");
-
+    OHAudioSuiteEngine *suiteEngine = ConvertAudioSuiteEngine(audioSuiteEngine);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "Destroy suiteEngine is nullptr");
+    if (suiteEngine != OHAudioSuiteEngine::GetInstance()) {
+        return AUDIOSUITE_ERROR_INVALID_PARAM;
+    }
     int32_t error = suiteEngine->DestroyEngine();
     return ConvertError(error);
 }
@@ -127,7 +136,6 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_DestroyPipeline(OH_AudioSuitePipeline *
     OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
     CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
         AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "DestroyPipeline suiteEngine is nullptr");
-
     int32_t error = suiteEngine->DestroyPipeline(pipeline);
     return ConvertError(error);
 }
@@ -198,6 +206,34 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_RenderFrame(OH_AudioSuitePipeline *audi
     return ConvertError(error);
 }
 
+OH_AudioSuite_Result OH_AudioSuiteEngine_MultiRenderFrame(OH_AudioSuitePipeline *audioSuitePipeline,
+    OH_AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag)
+{
+    OHAudioSuitePipeline *pipeline = ConvertAudioSuitePipeline(audioSuitePipeline);
+    OHOS::AudioStandard::AudioSuite::AudioDataArray *dataFrame = ConvertAudioDataArray(audioDataArray);
+    CHECK_AND_RETURN_RET_LOG(pipeline != nullptr,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "MultiRenderFrame pipeline is nullptr");
+    CHECK_AND_RETURN_RET_LOG(dataFrame != nullptr,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "MultiRenderFrame audioDataArray is nullptr");
+    CHECK_AND_RETURN_RET_LOG(responseSize != nullptr,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "MultiRenderFrame responseSize is nullptr");
+    CHECK_AND_RETURN_RET_LOG(finishedFlag != nullptr,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "MultiRenderFrame finishedFlag is nullptr");
+    CHECK_AND_RETURN_RET_LOG(dataFrame->audioDataArray != nullptr,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "MultiRenderFrame audioDataArray is nullptr");
+    CHECK_AND_RETURN_RET_LOG(dataFrame->requestFrameSize != 0,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "MultiRenderFrame requestFrameSize is zero");
+    CHECK_AND_RETURN_RET_LOG(dataFrame->arraySize != 0,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "MultiRenderFrame arraySize is zero");
+
+    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
+        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "MultiRenderFrame suiteEngine is nullptr");
+    int32_t error = suiteEngine->MultiRenderFrame(pipeline,
+        dataFrame, responseSize, finishedFlag);
+    return ConvertError(error);
+}
+
 OH_AudioSuite_Result OH_AudioSuiteEngine_CreateNode(
     OH_AudioSuitePipeline *audioSuitePipeline, OH_AudioNodeBuilder *builder, OH_AudioNode **audioNode)
 {
@@ -225,7 +261,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_DestroyNode(OH_AudioNode *audioNode)
     OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
     CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
         AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "DestroyNode suiteEngine is nullptr");
-
+        
     int32_t error = suiteEngine->DestroyNode(node);
     return ConvertError(error);
 }
@@ -292,6 +328,24 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_ConnectNodes(OH_AudioNode *sourceAudioN
         AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "ConnectNodes suiteEngine is nullptr");
 
     int32_t error = suiteEngine->ConnectNodes(srcNode, destNode, sourcePortType, destPortType);
+    return ConvertError(error);
+}
+
+OH_AudioSuite_Result OH_AudioSuiteEngine_ConnectNodes_Change(
+    OH_AudioNode* sourceAudioNode, OH_AudioNode* destAudioNode)
+{
+    OHAudioNode *srcNode = ConvertAudioNode(sourceAudioNode);
+    CHECK_AND_RETURN_RET_LOG(srcNode != nullptr,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "ConnectNodes srcNode is nullptr");
+    OHAudioNode *destNode = ConvertAudioNode(destAudioNode);
+    CHECK_AND_RETURN_RET_LOG(destNode != nullptr,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "ConnectNodes destNode is nullptr");
+
+    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
+        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "ConnectNodes suiteEngine is nullptr");
+
+    int32_t error = suiteEngine->ConnectNodes(srcNode, destNode);
     return ConvertError(error);
 }
 
@@ -376,6 +430,74 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_SetVoiceBeautifierType(
     return ConvertError(error);
 }
 
+OH_AudioSuite_Result OH_AudioSuiteEngine_GetEnvironmentType(
+    OH_AudioNode *audioNode, OH_EnvironmentType *environmentType)
+{
+    OHAudioNode *node = ConvertAudioNode(audioNode);
+    CHECK_AND_RETURN_RET_LOG(node != nullptr,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "GetEnvironmentType node is nullptr");
+    CHECK_AND_RETURN_RET_LOG(environmentType != nullptr,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "GetEnvironmentType environmentType is nullptr");
+
+    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
+        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "GetEnvironmentType suiteEngine is nullptr");
+
+    int32_t error = suiteEngine->GetEnvironmentType(node, environmentType);
+    return ConvertError(error);
+}
+
+OH_AudioSuite_Result OH_AudioSuiteEngine_GetSoundFiledType(
+    OH_AudioNode *audioNode, OH_SoundFieldType *soundFieldType)
+{
+    OHAudioNode *node = ConvertAudioNode(audioNode);
+    CHECK_AND_RETURN_RET_LOG(node != nullptr,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "GetSoundFiledType node is nullptr");
+    CHECK_AND_RETURN_RET_LOG(soundFieldType != nullptr,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "GetSoundFiledType soundFieldType is nullptr");
+
+    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
+        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "GetSoundFiledType suiteEngine is nullptr");
+
+    int32_t error = suiteEngine->GetSoundFiledType(node, soundFieldType);
+    return ConvertError(error);
+}
+
+OH_AudioSuite_Result OH_AudioSuiteEngine_GetEqualizerFrequencyBandGains(
+    OH_AudioNode *audioNode, OH_EqualizerFrequencyBandGains *frequencyBandGains)
+{
+    OHAudioNode *node = ConvertAudioNode(audioNode);
+    CHECK_AND_RETURN_RET_LOG(node != nullptr,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "GetEqualizerFrequencyBandGains node is nullptr");
+    CHECK_AND_RETURN_RET_LOG(frequencyBandGains != nullptr,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "GetEqualizerFrequencyBandGains frequencyBandGains is nullptr");
+
+    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
+        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "GetEqualizerFrequencyBandGains suiteEngine is nullptr");
+
+    int32_t error = suiteEngine->GetEqualizerFrequencyBandGains(node, frequencyBandGains);
+    return ConvertError(error);
+}
+
+OH_AudioSuite_Result OH_AudioSuiteEngine_GetVoiceBeautifierType(
+    OH_AudioNode *audioNode, OH_VoiceBeautifierType *voiceBeautifierType)
+{
+    OHAudioNode *node = ConvertAudioNode(audioNode);
+    CHECK_AND_RETURN_RET_LOG(node != nullptr,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "GetVoiceBeautifierType node is nullptr");
+    CHECK_AND_RETURN_RET_LOG(voiceBeautifierType != nullptr,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "GetVoiceBeautifierType voiceBeautifierType is nullptr");
+
+    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
+        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "GetVoiceBeautifierType suiteEngine is nullptr");
+
+    int32_t error = suiteEngine->GetVoiceBeautifierType(node, voiceBeautifierType);
+    return ConvertError(error);
+}
+
 OH_AudioSuite_Result OH_AudioSuiteEngine_InstallTap(OH_AudioNode* audioNode,
     OH_AudioNode_Port_Type portType, OH_AudioNode_OnReadTapDataCallback callback, void* userData)
 {
@@ -424,6 +546,14 @@ int32_t OHSuiteInputNodeWriteDataCallBack::OnWriteDataCallBack(void *audioData, 
     return callback_(audioNode_, userData_, audioData, audioDataSize, finished);
 }
 
+OHAudioSuiteEngine::~OHAudioSuiteEngine()
+{
+    int32_t result = DestroyEngine();
+    if (result != 0) {
+        AUDIO_ERR_LOG("OHAudiosuiteEngine::DestroyEngine failed.");
+    }
+}
+
 OHAudioSuiteEngine *OHAudioSuiteEngine::GetInstance()
 {
     static OHAudioSuiteEngine manager;
@@ -437,8 +567,14 @@ int32_t OHAudioSuiteEngine::CreateEngine()
 
 int32_t OHAudioSuiteEngine::DestroyEngine()
 {
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    std::unordered_set<OHAudioSuitePipeline*> tempPipelines(pipelines_.begin(), pipelines_.end());
+    for (auto pipeline : tempPipelines) {
+        RemovePipeline(pipeline);
+    }
+    pipelines_.clear();
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().DeInit();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DestroyEngine failed, ret = %{public}d.", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DestroyEngine DeInit failed, ret = %{public}d.", ret);
     return ret;
 }
 
@@ -455,6 +591,7 @@ int32_t OHAudioSuiteEngine::CreatePipeline(OH_AudioSuitePipeline **audioSuitePip
     OHAudioSuitePipeline *audioPipeline = new OHAudioSuitePipeline(pipelineId);
     CHECK_AND_RETURN_RET_LOG(audioPipeline != nullptr, ERR_MEMORY_ALLOC_FAILED,
         "CreatePipeline pipeline failed, malloc failed.");
+    AddPipeline(audioPipeline);
     *audioSuitePipeline = (OH_AudioSuitePipeline *)audioPipeline;
     return SUCCESS;
 }
@@ -463,10 +600,12 @@ int32_t OHAudioSuiteEngine::DestroyPipeline(OHAudioSuitePipeline *audioPipeline)
 {
     CHECK_AND_RETURN_RET_LOG(audioPipeline != nullptr, ERR_INVALID_PARAM,
         "DestroyPipeline failed, audioPipeline is nullptr.");
-
+    CHECK_AND_RETURN_RET_LOG(IsPipelineExists(audioPipeline), ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST,
+        "OHAudioSuiteEngine::The pipeline does not exist.");
     uint32_t pipelineId = audioPipeline->GetPipelineId();
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().DestroyPipeline(pipelineId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DestroyPipeline failed, ret = %{public}d.", ret);
+    RemovePipeline(audioPipeline);
     return ret;
 }
 
@@ -522,6 +661,21 @@ int32_t OHAudioSuiteEngine::RenderFrame(OHAudioSuitePipeline *audioPipeline,
     return ret;
 }
 
+int32_t OHAudioSuiteEngine::MultiRenderFrame(OHAudioSuitePipeline *audioPipeline,
+    AudioSuite::AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag)
+{
+    CHECK_AND_RETURN_RET_LOG(audioPipeline != nullptr, ERR_INVALID_PARAM,
+        "MultiRenderFrame failed, audioPipeline is nullptr.");
+
+    uint32_t pipelineId = audioPipeline->GetPipelineId();
+
+    AUDIO_INFO_LOG("OHAudioSuiteEngine::MultiRenderFrame enter start.");
+    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().MultiRenderFrame(
+        pipelineId, audioDataArray, responseSize, finishedFlag);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "MultiRenderFrame failed, ret = %{public}d.", ret);
+    return ret;
+}
+
 int32_t OHAudioSuiteEngine::CreateNode(
     OHAudioSuitePipeline *audioSuitePipeline, OHAudioSuiteNodeBuilder *builder, OH_AudioNode **audioNode)
 {
@@ -562,6 +716,7 @@ int32_t OHAudioSuiteEngine::CreateNode(
 
     *audioNode = (OH_AudioNode *)node;
     if (!builder->IsSetWriteDataCallBack()) {
+        audioSuitePipeline->AddNode(node);
         return AUDIOSUITE_SUCCESS;
     }
 
@@ -570,17 +725,20 @@ int32_t OHAudioSuiteEngine::CreateNode(
             builder->GetOnWriteDataCallBack(), builder->GetOnWriteUserData());
     ret = IAudioSuiteManager::GetAudioSuiteManager().SetOnWriteDataCallback(nodeId, callback);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CreateNode SetOnWriteDataCallback failed, ret = %{public}d.", ret);
+    audioSuitePipeline->AddNode(node);
     return ret;
 }
 
 int32_t OHAudioSuiteEngine::DestroyNode(OHAudioNode *node)
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "DestroyNode failed, node is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+                             "OHAudioSuiteEngine::The node does not exist.");
     uint32_t nodeId = node->GetNodeId();
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().DestroyNode(nodeId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DestroyNode failed, ret = %{public}d.", ret);
 
-    delete node;
+    RemoveNode(node);
     return ret;
 }
 
@@ -625,6 +783,11 @@ int32_t OHAudioSuiteEngine::SetAudioFormat(OHAudioNode *node, OH_AudioFormat *au
 
     uint32_t nodeId = node->GetNodeId();
     AudioFormat format;
+    format.audioChannelInfo.channelLayout = static_cast<AudioChannelLayout>(audioFormat->channelLayout);
+    format.audioChannelInfo.numChannels = audioFormat->channelCount;
+    format.encodingType = static_cast<AudioStreamEncodingType>(audioFormat->encodingType);
+    format.format = static_cast<AudioSampleFormat>(audioFormat->sampleFormat);
+    format.rate =  static_cast<AudioSamplingRate>(audioFormat->samplingRate);
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().SetAudioFormat(nodeId, format);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetAudioFormat failed, ret = %{public}d.", ret);
     return ret;
@@ -639,6 +802,17 @@ int32_t OHAudioSuiteEngine::ConnectNodes(OHAudioNode *srcNode, OHAudioNode *dest
     uint32_t destNodeId = destNode->GetNodeId();
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().ConnectNodes(srcNodeId, destNodeId,
         static_cast<AudioNodePortType>(sourcePortType), static_cast<AudioNodePortType>(destPortType));
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ConnectNodes failed, ret = %{public}d.", ret);
+    return ret;
+}
+
+int32_t OHAudioSuiteEngine::ConnectNodes(OHAudioNode *srcNode, OHAudioNode *destNode)
+{
+    CHECK_AND_RETURN_RET_LOG(srcNode != nullptr, ERR_INVALID_PARAM, "ConnectNodes failed, srcNode is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(destNode != nullptr, ERR_INVALID_PARAM, "ConnectNodes failed, srcNode is nullptr.");
+    uint32_t srcNodeId = srcNode->GetNodeId();
+    uint32_t destNodeId = destNode->GetNodeId();
+    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().ConnectNodes(srcNodeId, destNodeId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ConnectNodes failed, ret = %{public}d.", ret);
     return ret;
 }
@@ -671,6 +845,8 @@ int32_t OHAudioSuiteEngine::SetEqualizerFrequencyBandGains(
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM,
         "SetEqualizerFrequencyBandGains failed, node is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node),
+        ERR_AUDIO_SUITE_NODE_NOT_EXIST, "SetEqualizerFrequencyBandGains node is not exist");
     CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_EQUALIZER, ERR_NOT_SUPPORTED,
         "SetEqualizerFrequencyBandGains failed, node type = %d{public}d must is EQUALIZER type.",
         static_cast<int32_t>(node->GetNodeType()));
@@ -737,6 +913,90 @@ int32_t OHAudioSuiteEngine::SetVoiceBeautifierType(
     return ret;
 }
 
+int32_t OHAudioSuiteEngine::GetEnvironmentType(OHAudioNode *node, OH_EnvironmentType *environmentType)
+{
+    CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "GetEnvironmentType failed, node is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(environmentType != nullptr, ERR_INVALID_PARAM,
+        "GetEnvironmentType failed, environmentType is nullptr.");
+    CHECK_AND_RETURN_RET_LOG((node->GetNodeType() == NODE_TYPE_ENVIRONMENT_EFFECT),
+        ERR_NOT_SUPPORTED, "GetEnvironmentType failed, enable type %{public}d not support option.",
+        static_cast<int32_t>(node->GetNodeType()));
+    uint32_t nodeId = node->GetNodeId();
+
+    EnvironmentType environment = AUDIO_SUITE_ENVIRONMENT_TYPE_CLOSE;
+    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetEnvironmentType(nodeId, environment);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetEnvironmentType failed, ret = %{public}d.", ret);
+
+    *environmentType = static_cast<OH_EnvironmentType>(environment);
+    return ret;
+}
+
+int32_t OHAudioSuiteEngine::GetSoundFiledType(OHAudioNode *node, OH_SoundFieldType *soundFieldType)
+{
+    CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "GetSoundFiledType failed, node is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(soundFieldType != nullptr, ERR_INVALID_PARAM,
+        "GetSoundFiledType failed, soundFieldType is nullptr.");
+    CHECK_AND_RETURN_RET_LOG((node->GetNodeType() == NODE_TYPE_SOUND_FIELD),
+        ERR_NOT_SUPPORTED, "GetSoundFiledType failed, enable type %{public}d not support option.",
+        static_cast<int32_t>(node->GetNodeType()));
+    uint32_t nodeId = node->GetNodeId();
+
+    SoundFieldType soundField = AUDIO_SUITE_SOUND_FIELD_CLOSE;
+    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetSoundFiledType(nodeId, soundField);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSoundFiledType failed, ret = %{public}d.", ret);
+
+    *soundFieldType = static_cast<OH_SoundFieldType>(soundField);
+    return ret;
+}
+
+int32_t OHAudioSuiteEngine::GetEqualizerFrequencyBandGains(OHAudioNode *node,
+    OH_EqualizerFrequencyBandGains *frequencyBandGains)
+{
+    CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM,
+        "GetEqualizerFrequencyBandGains failed, node is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(frequencyBandGains != nullptr, ERR_INVALID_PARAM,
+        "GetEqualizerFrequencyBandGains failed, frequencyBandGains is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_EQUALIZER, ERR_NOT_SUPPORTED,
+        "GetEqualizerFrequencyBandGains failed, node type = %d{public}d must is EQUALIZER type.",
+        static_cast<int32_t>(node->GetNodeType()));
+    uint32_t nodeId = node->GetNodeId();
+
+    AudioEqualizerFrequencyBandGains frequency = {
+        .gains = {0}
+    };
+    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetEqualizerFrequencyBandGains(
+        nodeId, frequency);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
+        ret, "GetEqualizerFrequencyBandGains failed, ret = %{public}d.", ret);
+
+    size_t ohGainsNum = sizeof(frequencyBandGains->gains) / sizeof(frequencyBandGains->gains[0]);
+    size_t gainsNum = sizeof(frequency.gains) / sizeof(frequency.gains[0]);
+    for (uint32_t idx = 0; idx < (ohGainsNum < gainsNum ? ohGainsNum : gainsNum); idx++) {
+        frequencyBandGains->gains[idx] = frequency.gains[idx];
+    }
+
+    return ret;
+}
+
+int32_t OHAudioSuiteEngine::GetVoiceBeautifierType(OHAudioNode *node,
+    OH_VoiceBeautifierType *voiceBeautifierType)
+{
+    CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "GetVoiceBeautifierType failed, node is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(voiceBeautifierType != nullptr, ERR_INVALID_PARAM,
+        "GetVoiceBeautifierType failed, voiceBeautifierType is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_VOICE_BEAUTIFIER, ERR_NOT_SUPPORTED,
+        "GetVoiceBeautifierType failed, node type = %d{public}d must is VOICE_BEAUTIFIER type.",
+        static_cast<int32_t>(node->GetNodeType()));
+    uint32_t nodeId = node->GetNodeId();
+
+    VoiceBeautifierType voiceBeautifier = AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_CLEAR;
+    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetVoiceBeautifierType(nodeId, voiceBeautifier);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetVoiceBeautifierType failed, ret = %{public}d.", ret);
+
+    *voiceBeautifierType = static_cast<OH_VoiceBeautifierType>(voiceBeautifier);
+    return ret;
+}
+
 void OHOnReadTapDataCallback::OnReadTapDataCallback(void *audioData, int32_t audioDataSize)
 {
     CHECK_AND_RETURN_LOG(ohAudioNode_ != nullptr, "ohAudioNode_ is nullptr");
@@ -766,6 +1026,83 @@ int32_t OHAudioSuiteEngine::RemoveTap(OHAudioNode *node, OH_AudioNode_Port_Type 
 
     IAudioSuiteManager::GetAudioSuiteManager().RemoveTap(nodeId, static_cast<AudioNodePortType>(portType));
     return SUCCESS;
+}
+
+void OHAudioSuiteEngine::AddPipeline(OHAudioSuitePipeline *pipeline)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    pipelines_.insert(pipeline);
+}
+
+void OHAudioSuiteEngine::RemovePipeline(OHAudioSuitePipeline *pipeline)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    if (pipeline != nullptr) {
+        pipelines_.erase(pipeline);
+        delete pipeline;
+    }
+}
+
+bool OHAudioSuiteEngine::IsPipelineExists(OHAudioSuitePipeline *pipeline)
+{
+    if (pipeline == nullptr) {
+        return false;
+    }
+
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    return pipelines_.find(pipeline) != pipelines_.end();
+}
+
+void OHAudioSuitePipeline::AddNode(OHAudioNode *node)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    nodes_.insert(node);
+}
+
+bool OHAudioSuitePipeline::IsNodeExists(OHAudioNode *node)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return nodes_.find(node) != nodes_.end();
+}
+
+void OHAudioSuitePipeline::RemoveNode(OHAudioNode *node)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (node != nullptr) {
+        nodes_.erase(node);
+        delete node;
+    }
+}
+OHAudioSuitePipeline::~OHAudioSuitePipeline()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (OHAudioNode* node : nodes_) {
+        if (node != nullptr) {
+            delete node;
+        }
+    }
+    nodes_.clear();
+}
+
+bool OHAudioSuiteEngine::IsNodeExists(OHAudioNode *node)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    for (auto pipeline : pipelines_) {
+        if (pipeline && node && pipeline->IsNodeExists(node)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void OHAudioSuiteEngine::RemoveNode(OHAudioNode *node)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    for (auto pipeline : pipelines_) {
+        if (pipeline && node && pipeline->IsNodeExists(node)) {
+            pipeline->RemoveNode(node);
+        }
+    }
 }
 
 }  // namespace AudioStandard

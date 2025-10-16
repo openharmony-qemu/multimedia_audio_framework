@@ -487,7 +487,8 @@ int32_t AudioDeviceStatus::UpdateNearlinkDeviceVolume(AudioDeviceDescriptor &upd
 void AudioDeviceStatus::UpdateActiveA2dpDeviceWhenDisconnecting(const std::string& macAddress)
 {
     AUDIO_INFO_LOG("In");
-    if (audioA2dpDevice_.DelA2dpDevice(macAddress) == 0) {
+    audioA2dpDevice_.DelA2dpDevice(macAddress);
+    if (!audioDeviceManager_.HasConnectedA2dp()) {
         audioActiveDevice_.SetActiveBtDeviceMac("");
         audioIOHandleMap_.ClosePortAndEraseIOHandle(BLUETOOTH_SPEAKER);
         audioPolicyManager_.SetAbsVolumeScene(false);
@@ -1156,38 +1157,35 @@ void AudioDeviceStatus::OnPreferredDeviceUpdated(const AudioDeviceDescriptor& ac
     audioDeviceCommon_.OnPreferredInputDeviceUpdated(activeInputDevice, LOCAL_NETWORK_ID);
 }
 
-void AudioDeviceStatus::OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress)
+void AudioDeviceStatus::OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
+    sptr<AudioRendererFilter> filter)
 {
-    if (macAddress.empty()) {
-        AUDIO_ERR_LOG("failed as the macAddress is empty!");
-        return;
+    if (!filter) {
+        filter = new AudioRendererFilter();
     }
-    AUDIO_INFO_LOG("[ADeviceEvent] bt select device type[%{public}d] address[%{public}s]",
-        devType, GetEncryptAddr(macAddress).c_str());
-    std::vector<shared_ptr<AudioDeviceDescriptor>> bluetoothDevices =
-        audioDeviceManager_.GetAvailableBluetoothDevice(devType, macAddress);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
-    for (const auto &dec : bluetoothDevices) {
-        if (dec->deviceRole_ == DeviceRole::OUTPUT_DEVICE) {
-            std::shared_ptr<AudioDeviceDescriptor> tempDec = std::make_shared<AudioDeviceDescriptor>(*dec);
-            audioDeviceDescriptors.push_back(move(tempDec));
+    CHECK_AND_RETURN_LOG(filter, "filter is nullptr");
+    filter->uid = SYSTEM_UID;
+    AUDIO_INFO_LOG("Entry. devType=%{public}d, addr=%{public}s, streamUsage=%{public}d",
+        devType, GetEncryptStr(macAddress).c_str(), filter->rendererInfo.streamUsage);
+    auto devDescs = audioDeviceManager_.GetAvailableBluetoothDevice(devType, macAddress);
+    for (auto &devDesc : devDescs) {
+        if (devDesc->deviceRole_ == OUTPUT_DEVICE) {
+            AudioCoreService::GetCoreService()->SelectOutputDevice(filter, {devDesc});
         }
     }
-    int32_t res = audioDeviceCommon_.DeviceParamsCheck(DeviceRole::OUTPUT_DEVICE, audioDeviceDescriptors);
-    CHECK_AND_RETURN_LOG(res == SUCCESS, "DeviceParamsCheck no success");
-    audioDeviceDescriptors[0]->isEnable_ = true;
-    audioDeviceManager_.UpdateDevicesListInfo(audioDeviceDescriptors[0], ENABLE_UPDATE);
-    if (devType == DEVICE_TYPE_BLUETOOTH_SCO) {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER, audioDeviceDescriptors[0], SYSTEM_UID,
-            "OnForcedDeviceSelected");
-        AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(audioDeviceDescriptors[0]->macAddress_);
-    } else {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER, audioDeviceDescriptors[0]);
-    }
-    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnForcedDeviceSelected",
+}
+
+void AudioDeviceStatus::OnPrivacyDeviceSelected()
+{
+    AUDIO_INFO_LOG("Entry");
+    AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
+        make_shared<AudioDeviceDescriptor>(), SYSTEM_UID, "OnPrivacyDeviceSelected");
+    AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
+        make_shared<AudioDeviceDescriptor>(), SYSTEM_UID, "OnPrivacyDeviceSelected");
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnPrivacyDeviceSelected",
         AudioStreamDeviceChangeReason::OVERRODE);
-    audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
-        audioActiveDevice_.GetCurrentOutputDevice(), "OnForcedDeviceSelected");
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnPrivacyDeviceSelected",
+        AudioStreamDeviceChangeReason::OVERRODE);
 }
 
 void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc, DeviceType devType,
