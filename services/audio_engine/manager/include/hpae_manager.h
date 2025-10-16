@@ -24,12 +24,20 @@
 #include "i_hpae_manager.h"
 #include "i_hpae_renderer_manager.h"
 #include "hpae_policy_manager.h"
+#include "high_resolution_timer.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
 class HpaeManager;
+
+struct PendingStateTransition {
+    uint32_t sessionId = 0;
+    HpaeSessionState state = HPAE_SESSION_INVALID;
+    IOperation operation = OPERATION_INVALID;
+    TimePoint time;
+};
 
 class HpaeManagerThread {
 public:
@@ -183,6 +191,7 @@ public:
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
     void AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume) override;
     void DeleteStreamVolumeToEffect(const std::string stringSessionID) override;
+    uint64_t ProcessPendingTransitionsAndGetNextDelay();
 private:
     int32_t CloseOutAudioPort(std::string sinkName);
     int32_t CloseInAudioPort(std::string sourceName);
@@ -235,6 +244,9 @@ private:
     bool ShouldNotSkipProcess(const HpaeStreamClassType &streamType, const uint32_t &sessionId);
     bool CheckMoveSinkInput(uint32_t sinkInputId, const std::string &sinkName);
     bool CheckMoveSourceOutput(uint32_t sourceOutputId, const std::string &sourceName);
+    void DequeuePendingTransition(uint32_t sessionId);
+    void EnqueuePendingTransition(uint32_t sessionId, HpaeSessionState state, IOperation operation);
+    bool IsValidUpdateStatus(IOperation operation, HpaeSessionState currentState);
 
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;
@@ -257,6 +269,7 @@ private:
     std::string defaultSource_ = "Built_in_mic";
     std::atomic<int32_t> sinkSourceIndex_ = 0;
     std::atomic<bool> isInit_ = false;
+    std::list<PendingStateTransition> pendingTransitionsTracker_;
 
     HpaeNoLockQueue hpaeNoLockQueue_;
 
