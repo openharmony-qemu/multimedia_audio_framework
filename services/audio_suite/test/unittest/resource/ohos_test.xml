@@ -71,4 +71,18 @@
             <option name="shell" value="restorecon -R /data/audiosuite/nr/"/>
         </preparer>
     </target>
+    <target name="audio_suite_algo_interface_test">
+        <preparer>
+            <option name="shell" value="mkdir -p /data/"/>
+            <option name="push" value="aiss_48000_2_S32LE.pcm -> /data/" src="res"/>
+            <option name="shell" value="restorecon /data/"/>
+        </preparer>
+    </target>
+    <target name="audio_suite_aiss_node_test">
+        <preparer>
+            <option name="shell" value="mkdir -p /data/"/>
+            <option name="push" value="aiss_48000_2_S32LE.pcm -> /data/" src="res"/>
+            <option name="shell" value="restorecon /data/"/>
+        </preparer>
+    </target>
 </configuration>

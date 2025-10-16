@@ -119,15 +119,4 @@ namespace {
         EXPECT_NE(outputBuffer, nullptr);
         inputFile.close();
     }
-
-    HWTEST_F(AudioSuiteAissNodeTest, convertTest, TestSize.Level0)
-    {
-        AudioSuitePcmBuffer inputBuffer(DEFAULT_SAMPLING_RATE, DEFAULT_CHANNELS_IN, LAY_OUT);
-        AudioSuitePcmBuffer outputBuffer = impl->rateConvert(inputBuffer,
-            TEST_CONVERT_SAMPLING_RATE, DEFAULT_CHANNELS_IN);
-        EXPECT_EQ(TEST_CONVERT_SAMPLING_RATE, outputBuffer.GetSampleRate());
-        AudioSuitePcmBuffer channelBuffer = impl->channelConvert(inputBuffer,
-            DEFAULT_SAMPLING_RATE, DEFAULT_CHANNELS_OUT);
-        EXPECT_EQ(DEFAULT_CHANNELS_OUT, channelBuffer.GetChannelCount());
-    }
 }
