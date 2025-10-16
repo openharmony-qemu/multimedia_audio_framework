@@ -34,6 +34,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+namespace {
 constexpr uint32_t DEFAULT_PAUSE_STREAM_TIME_IN_MS = 60; // 60ms
 constexpr uint32_t DEFAULT_SUSPEND_TIME_IN_MS = 3000;  // 3s to stop hdi
 static inline const std::unordered_set<SourceType> INNER_SOURCE_TYPE_SET = {
