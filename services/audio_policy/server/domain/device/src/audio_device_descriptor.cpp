@@ -484,7 +484,6 @@ void AudioDeviceDescriptor::MapInputDeviceType(std::vector<std::shared_ptr<Audio
 
 void AudioDeviceDescriptor::SetDeviceInfo(std::string deviceName, std::string macAddress)
 {
-
     deviceName_ = deviceName;
     macAddress_ = macAddress;
 }
