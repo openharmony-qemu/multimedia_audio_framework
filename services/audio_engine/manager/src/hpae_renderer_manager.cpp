@@ -1335,7 +1335,6 @@ int32_t HpaeRendererManager::ConnectCoBufferNode(const std::shared_ptr<HpaeCoBuf
             coBufferNode->SetOutputClusterConnected(true);
         }
         if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
-            noneStreamTime_ = 0;
             outputCluster_->Start();
         }
     };
