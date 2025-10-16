@@ -102,7 +102,7 @@ int32_t AudioSuiteVoiceBeautifierNode::SetOptions(std::string name, std::string 
     return SUCCESS;
 }
 
-int32_t GetOptions(std::string name, std::string &value)
+int32_t AudioSuiteVoiceBeautifierNode::GetOptions(std::string name, std::string &value)
 {
     if (name != "VoiceBeautifierType") {
         AUDIO_ERR_LOG("wrong options name.");
