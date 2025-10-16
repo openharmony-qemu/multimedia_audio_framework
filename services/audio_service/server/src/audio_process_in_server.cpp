@@ -364,14 +364,20 @@ int32_t AudioProcessInServer::StartInner()
         audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START, false);
     }
 
-    if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
-        CoreServiceHandler::GetInstance().RebuildCaptureInjector(sessionId_);
-    }
+    RebuildCaptureInjector();
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
     AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId_, processConfig_.appInfo.appTokenId);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_START);
     HILOG_COMM_INFO("Start in server success!");
     return SUCCESS;
+}
+
+void AudioProcessInServer::RebuildCaptureInjector()
+{
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD &&
+        processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        CoreServiceHandler::GetInstance().RebuildCaptureInjector(sessionId_);
+    }
 }
 
 int32_t AudioProcessInServer::Pause(bool isFlush)

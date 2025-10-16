@@ -612,7 +612,7 @@ int32_t CapturerInServer::StartInner()
     int32_t ret = stream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
     resetTime_ = true;
-    CoreServiceHandler::GetInstance().RebuildCaptureInjector(streamIndex_);
+    RebuildCaptureInjector();
 
     if (capturerClock_ != nullptr) {
         capturerClock_->Start();
@@ -621,6 +621,13 @@ int32_t CapturerInServer::StartInner()
     return SUCCESS;
 }
 // LCOV_EXCL_STOP
+
+void CapturerInServer::RebuildCaptureInjector()
+{
+    if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        CoreServiceHandler::GetInstance().RebuildCaptureInjector(streamIndex_);
+    }
+}
 
 // LCOV_EXCL_START
 int32_t CapturerInServer::Pause()

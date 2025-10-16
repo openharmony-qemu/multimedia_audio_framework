@@ -64,6 +64,7 @@ public:
         std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, VoipType &type);
     void FetchCapDeviceInjectPreProc(std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, bool &removeFlag);
     void FetchCapDeviceInjectPostProc(std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, bool &removeFlag);
+    bool HasRunningVoipStream(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamVec);
 
     void AddInjectorStreamId(const uint32_t streamId);
     void DeleteInjectorStreamId(const uint32_t streamId);

@@ -155,6 +155,7 @@ public:
     int32_t InitSoftLink(int32_t innerCapId);
     int32_t DestroySoftLink(int32_t innerCapId);
     int32_t InitSoftLinkVolume(std::shared_ptr<HPAE::IHpaeSoftLink> softLinkPtr);
+    void RemoveIdForInjector();
     int32_t SetTarget(RenderTarget target, int32_t &ret);
 public:
     const AudioProcessConfig processConfig_;
