@@ -55,10 +55,6 @@ public:
     int32_t SetParameter(const std::string &paramType, const std::string &paramValue) override;
     int32_t GetParameter(const std::string &paramType, std::string &paramValue) override;
     int32_t Apply(std::vector<uint8_t *> &v1, std::vector<uint8_t *> &v2) override;
-    iMedia_Env_PARA para;
-    iMedia_SWS_MEM_SIZE stSize;
-    size_t frameLen;
-    size_t inputSamples;
 
 private:
     bool isEnvAlgoInit_ = false;
@@ -67,9 +63,13 @@ private:
 
     void *libHandle_{nullptr};
     EnvAlgoApi algoApi_{0};
-    iMedia_SWS_DATA stData;
-    std::vector<IMEDIA_INT32> dataIn;
-    std::vector<IMEDIA_INT32> dataOut;
+    iMedia_SWS_DATA stData_;
+    std::vector<uint32_t> dataIn_;
+    std::vector<uint32_t> dataOut_;
+    iMedia_Env_PARA para_;
+    iMedia_SWS_MEM_SIZE stSize_;
+    size_t frameLen_;
+    size_t inputSamples_;
 };
 
 }  // namespace AudioSuite
