@@ -220,6 +220,11 @@ public:
         return (audioFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER);
     }
 
+    bool IsSelectFlagHd() const
+    {
+        return (audioFlag_ & AUDIO_OUTPUT_FLAG_HD);
+    }
+
     void SetOriginalFlagForcedNormal()
     {
         rendererInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
