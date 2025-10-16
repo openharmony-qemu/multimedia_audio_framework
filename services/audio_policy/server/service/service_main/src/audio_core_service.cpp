@@ -1646,5 +1646,25 @@ int32_t AudioCoreService::A2dpOffloadGetRenderPosition(uint32_t &delayValue, uin
     return SUCCESS;
 #endif
 }
+
+void AudioCoreService::RestoreDistributedDeviceInfo()
+{
+    AUDIO_INFO_LOG("try to restore distributed device");
+    CHECK_AND_RETURN_LOG(deviceStatusListener_ != nullptr, "deviceStatusListener_ is nullptr");
+
+    std::vector<std::string> deviceInfos;
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().GetDistributedDeviceInfo(deviceInfos);
+    CHECK_AND_RETURN_LOG(!deviceInfos.empty(), "no distributed device info");
+
+    for (const auto &deviceInfo : deviceInfos) {
+        deviceStatusListener_->SendDistributeInfo(deviceInfo);
+    }
+}
+
+bool AudioCoreService::IsDistributeServiceOnline()
+{
+    CHECK_AND_RETURN_RET_LOG(deviceStatusListener_ != nullptr, false, "deviceStatusListener_ is null");
+    return deviceStatusListener_->IsDistributeServiceOnline();
+}
 } // namespace AudioStandard
 } // namespace OHOS

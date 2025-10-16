@@ -119,6 +119,7 @@ public:
     int32_t ForceSelectDevice(DeviceType devType, const std::string &macAddress,
         sptr<AudioRendererFilter> filter);
     int32_t SetSleAudioOperationCallback(const std::shared_ptr<SleAudioOperationCallback> &callback);
+    int32_t RestoreDistributedDeviceInfo();
 private:
     std::shared_ptr<AudioFocusInfoChangeCallback> audioFocusInfoCallback_ = nullptr;
     int32_t volumeChangeClientPid_ = -1;

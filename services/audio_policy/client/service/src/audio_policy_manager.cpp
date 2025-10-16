@@ -3288,6 +3288,15 @@ bool AudioPolicyManager::IsIntelligentNoiseReductionEnabledForCurrentDevice(Sour
     return isSupport;
 }
 
+int32_t AudioPolicyManager::RestoreDistributedDeviceInfo()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    int32_t result = gsp->RestoreDistributedDeviceInfo();
+    return result;
+}
+
+
 int32_t AudioPolicyManager::CheckAudioPolicyClientRegisted()
 {
     CHECK_AND_RETURN_RET(!isAudioPolicyClientRegisted_, SUCCESS);

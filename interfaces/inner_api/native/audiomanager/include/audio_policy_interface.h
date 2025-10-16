@@ -120,6 +120,7 @@ public:
         RouterType routerType, SourceType sourceType, int32_t clientUid, AudioPipeType audioPipeType) = 0;
     virtual int32_t GetSplitInfoRefined(std::string &splitInfo) = 0;
     virtual int32_t OnDistributedOutputChange(bool isRemote) = 0;
+    virtual int32_t OnDistributedServiceOnline() = 0;
 };
 
 class AudioClientInfoMgrCallback {

@@ -28,4 +28,5 @@ interface IStandardAudioRoutingManagerListener {
         [in] int routerType, [in] int sourceType, [in] int clientUid, [in] int audioPipeType); // SourceType sourceType, AudioPipeType audioPipeType
     void GetSplitInfoRefined([out] String splitInfo);
     void OnDistributedOutputChange([in] boolean isRemote);
+    void OnDistributedServiceOnline();
 }
