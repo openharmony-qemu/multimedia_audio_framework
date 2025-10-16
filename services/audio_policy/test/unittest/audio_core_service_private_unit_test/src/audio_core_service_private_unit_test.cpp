@@ -24,7 +24,6 @@ static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
 static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
 static const uint32_t TEST_STREAM_1_SESSION_ID = 100001;
 static const uint32_t TEST_STREAM_2_SESSION_ID = 100002;
-static const uint32_t TEST_STREAM_3_SESSION_ID = 100003;
 
 void AudioCoreServicePrivateTest::SetUp(void)
 {

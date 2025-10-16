@@ -2769,7 +2769,7 @@ int32_t AudioCoreService::ActivateOutputDevice(std::shared_ptr<AudioStreamDescri
     CheckAndWriteDeviceChangeExceptionEvent(bluetoothFetchResult == BLUETOOTH_FETCH_RESULT_DEFAULT, reason,
         deviceDesc->deviceType_, deviceDesc->deviceRole_, bluetoothFetchResult, "bluetooth fetch output device failed");
     CHECK_AND_RETURN_RET(bluetoothFetchResult == BLUETOOTH_FETCH_RESULT_DEFAULT, ERR_OPERATION_FAILED);
-    
+
     int32_t nearlinkFetchResult = ActivateNearlinkDevice(streamDesc);
     CheckAndWriteDeviceChangeExceptionEvent(nearlinkFetchResult == SUCCESS, reason,
         deviceDesc->deviceType_, deviceDesc->deviceRole_, nearlinkFetchResult, "nearlink fetch output device failed");
@@ -2791,7 +2791,7 @@ int32_t AudioCoreService::ActivateInputDevice(std::shared_ptr<AudioStreamDescrip
     if (streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         BluetoothScoFetch(streamDesc);
     }
-    
+
     int32_t nearlinkFetchResult = ActivateNearlinkDevice(streamDesc);
     CHECK_AND_RETURN_RET_LOG(nearlinkFetchResult == SUCCESS, REFETCH_DEVICE, "nearlink fetch input device failed");
 
@@ -3382,6 +3382,17 @@ void AudioCoreService::WriteScoStateFaultEvent(const std::shared_ptr<AudioDevice
     }
     AUDIO_INFO_LOG("Current audio: %{public}s", eventString.c_str());
 #endif
+}
+
+void AudioCoreService::FetchOutputDevicesForDescs(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputDescs)
+{
+    for (auto &desc : outputDescs) {
+    CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
+    desc->newDeviceDescs_ = audioRouterCenter_.FetchOutputDevices(desc->rendererInfo_.streamUsage,
+        GetRealUid(desc), "StartClient", RouterType::ROUTER_TYPE_NONE,
+        streamDesc->rendererInfo_.privacyType);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

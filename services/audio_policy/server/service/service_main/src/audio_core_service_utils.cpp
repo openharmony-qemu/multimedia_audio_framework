@@ -103,7 +103,7 @@ void AudioCoreServiceUtils::SortOutputStreamDescsForUsage(
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
     std::unordered_map<uint32_t, uint32_t> streamDescsPriority;
-    for (auto streamDesc:streamDescs) {
+    for (auto &streamDesc : streamDescs) {
         if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
             streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
             streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_CALL_ASSISTANT) {

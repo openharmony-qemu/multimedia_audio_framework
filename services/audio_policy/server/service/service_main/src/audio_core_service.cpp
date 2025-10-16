@@ -558,14 +558,8 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     if (audioDeviceManager_.IsSessionSetDefaultDevice(sessionId)) {
         audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(sessionId);
         std::vector<std::shared_ptr<AudioStreamDescriptor>> outputDescs = pipeManager_->GetAllOutputStreamDescs();
-        for (auto &desc : outputDescs) {
-            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
-            desc->newDeviceDescs_ = audioRouterCenter_.FetchOutputDevices(desc->rendererInfo_.streamUsage,
-                GetRealUid(desc), "StartClient", RouterType::ROUTER_TYPE_NONE,
-                streamDesc->rendererInfo_.privacyType);
-        }
+        FetchOutputDevicesForDescs(streamDesc, outputDescs);
     }
-
     CHECK_AND_RETURN_RET_LOG(!streamDesc->newDeviceDescs_.empty(), ERR_INVALID_PARAM, "newDeviceDescs_ is empty");
 
     // Update a2dp offload flag for update active route, if a2dp offload flag is not true, audioserver
@@ -575,7 +569,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     CHECK_AND_RETURN_RET_LOG(deviceDesc, ERR_NULL_POINTER, "deviceDesc is nullptr");
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         int32_t outputRet = ActivateOutputDevice(streamDesc);
-        CHECK_AND_RETURN_RET_LOG(outputRet != REFETCH_DEVICE, SUCCESS, "Activate output device failed, refetch other device");
+        CHECK_AND_RETURN_RET_LOG(outputRet != REFETCH_DEVICE, SUCCESS, "Activate output device failed, refetch device");
         CHECK_AND_RETURN_RET_LOG(outputRet == SUCCESS, outputRet, "Activate output device failed");
         CheckAndSetCurrentOutputDevice(deviceDesc, streamDesc->sessionId_);
         audioVolumeManager_.SetVolumeForSwitchDevice(deviceDesc);
@@ -591,7 +585,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::START_CLIENT, info);
         FetchInputDeviceAndRoute("StartClient");
         int32_t inputRet = ActivateInputDevice(streamDesc);
-        CHECK_AND_RETURN_RET_LOG(inputRet != REFETCH_DEVICE, SUCCESS, "Activate input device failed, refetch other device");
+        CHECK_AND_RETURN_RET_LOG(inputRet != REFETCH_DEVICE, SUCCESS, "Activate input device failed, refetch device");
         CHECK_AND_RETURN_RET_LOG(inputRet == SUCCESS, inputRet, "Activate input device failed");
         CheckAndSetCurrentInputDevice(deviceDesc);
         audioActiveDevice_.UpdateActiveDeviceRoute(
