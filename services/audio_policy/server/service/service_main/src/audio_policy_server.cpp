@@ -1991,6 +1991,7 @@ int32_t AudioPolicyServer::GetDevices(int32_t deviceFlagIn,
     }
 
     deviceDescs = eventEntry_->GetDevices(deviceFlag);
+    AudioDeviceDescriptor::MapInputDeviceType(deviceDescs);
 
     int32_t apiVersion = CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
@@ -3848,6 +3849,7 @@ int32_t AudioPolicyServer::GetAvailableDevices(int32_t usageIn,
     }
 
     descs = coreService_->GetAvailableDevices(usage);
+    AudioDeviceDescriptor::MapInputDeviceType(descs);
 
     if (!hasSystemPermission) {
         for (auto &desc : descs) {
