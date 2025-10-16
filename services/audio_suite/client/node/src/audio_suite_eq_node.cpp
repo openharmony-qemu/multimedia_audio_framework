@@ -25,10 +25,19 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
+
+namespace {
+static constexpr AudioSamplingRate EQ_ALGO_SAMPLE_RATE = SAMPLE_RATE_48000;
+static constexpr AudioSampleFormat EQ_ALGO_SAMPLE_FORMAT = SAMPLE_S16LE;
+static constexpr AudioChannel EQ_ALGO_CHANNEL_COUNT = STEREO;
+static constexpr AudioChannelLayout EQ_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
+}  // namespace
+
 AudioSuiteEqNode::AudioSuiteEqNode()
-    : AudioSuiteProcessNode(
-          NODE_TYPE_EQUALIZER, AudioFormat{{CH_LAYOUT_STEREO, ALGO_CHANNEL_NUM}, SAMPLE_S16LE, SAMPLE_RATE_48000}),
-      outPcmBuffer_(SAMPLE_RATE_48000, ALGO_CHANNEL_NUM, CH_LAYOUT_STEREO)
+    : AudioSuiteProcessNode(NODE_TYPE_EQUALIZER,
+          AudioFormat{{EQ_ALGO_CHANNEL_LAYOUT, EQ_ALGO_CHANNEL_COUNT}, EQ_ALGO_SAMPLE_FORMAT, EQ_ALGO_SAMPLE_RATE}),
+      outPcmBuffer_(EQ_ALGO_SAMPLE_RATE, EQ_ALGO_CHANNEL_COUNT, EQ_ALGO_CHANNEL_LAYOUT),
+      tmpPcmBuffer_(EQ_ALGO_SAMPLE_RATE, EQ_ALGO_CHANNEL_COUNT, EQ_ALGO_CHANNEL_LAYOUT)
 {}
 
 AudioSuiteEqNode::~AudioSuiteEqNode()
@@ -81,57 +90,6 @@ bool AudioSuiteEqNode::Reset()
     return true;
 }
 
-int32_t AudioSuiteEqNode::preProcess(AudioSuitePcmBuffer *inputPcmBuffer)
-{
-    uint32_t inChannelCount = inputPcmBuffer->GetChannelCount();
-    uint32_t inSampleRate = inputPcmBuffer->GetSampleRate();
-
-    int32_t ret;
-    if (inChannelCount == ALGO_CHANNEL_NUM && inSampleRate == outPcmBuffer_.GetSampleRate()) {
-        ret = CopyBuffer(inputPcmBuffer, &outPcmBuffer_);
-    } else if (inChannelCount == ALGO_CHANNEL_NUM) {
-        ret = DoResample(inputPcmBuffer, &outPcmBuffer_);
-    } else {
-        AUDIO_ERR_LOG("Don't support channel convert now");
-        return ERROR;
-    }
-    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
-    return SUCCESS;
-}
-
-int32_t AudioSuiteEqNode::CopyBuffer(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer)
-{
-    float *inputData = (*inputPcmBuffer).GetPcmDataBuffer();
-    uint32_t inFrameSize = (*inputPcmBuffer).GetFrameLen() * sizeof(float);
-    float *outputData = (*outputPcmBuffer).GetPcmDataBuffer();
-    uint32_t outFrameSize = (*outputPcmBuffer).GetFrameLen() * sizeof(float);
-    int32_t ret = memcpy_s(outputData, outFrameSize, inputData, inFrameSize);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CopyBuffer failed.");
-    return SUCCESS;
-}
-
-int32_t AudioSuiteEqNode::DoResample(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer)
-{
-    uint32_t inRate = (*inputPcmBuffer).GetSampleRate();
-    uint32_t outRate = SAMPLE_RATE_48000;
-    uint32_t channelCount = (*inputPcmBuffer).GetChannelCount();
-    if (channelCount == 0) {
-        AUDIO_ERR_LOG("InputPcmBuffer ChannelCount is zero!");
-        return ERROR;
-    }
-    int32_t ret = SetUpResample(inRate, outRate, channelCount, RESAMPLE_QUALITY);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetUpResample failed with error code %{public}d", ret);
-
-    float *inputData = (*inputPcmBuffer).GetPcmDataBuffer();
-    uint32_t inFrameSize = (*inputPcmBuffer).GetFrameLen() / channelCount;
-    float *outputData = (*outputPcmBuffer).GetPcmDataBuffer();
-    uint32_t outFrameSize = (*outputPcmBuffer).GetFrameLen() / channelCount;
-    ret = DoResampleProcess(inputData, inFrameSize, outputData, outFrameSize);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DoResampleProcess failed with error code %{public}d", ret);
-    AUDIO_DEBUG_LOG("AudioSuiteEqNode::DoReample finished");
-    return SUCCESS;
-}
-
 AudioSuitePcmBuffer *AudioSuiteEqNode::SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs)
 {
     if (inputs.empty()) {
@@ -141,13 +99,13 @@ AudioSuitePcmBuffer *AudioSuiteEqNode::SignalProcess(const std::vector<AudioSuit
 
     eqInputDataBuffer_.resize(outPcmBuffer_.GetFrameLen() * ALGO_BYTE_NUM);
     eqOutputDataBuffer_.resize(outPcmBuffer_.GetFrameLen() * ALGO_BYTE_NUM);
-    int32_t ret = preProcess(inputs[0]);
+    int32_t ret = ConvertProcess(inputs[0], &outPcmBuffer_, &tmpPcmBuffer_);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("AudioSuiteEqNode SignalProcess preProCess failed");
         return &outPcmBuffer_;
     }
 
-    ConvertFromFloat(SAMPLE_S16LE,
+    ConvertFromFloat(EQ_ALGO_SAMPLE_FORMAT,
         outPcmBuffer_.GetFrameLen(),
         outPcmBuffer_.GetPcmDataBuffer(),
         static_cast<void *>(eqInputDataBuffer_.data()));
@@ -160,15 +118,16 @@ AudioSuitePcmBuffer *AudioSuiteEqNode::SignalProcess(const std::vector<AudioSuit
     tmpin_[0] = inputPointer;
     tmpout_[0] = outputPointer;
     eqAlgoInterfaceImpl_->Apply(tmpin_, tmpout_);
-    ConvertToFloat(
-        SAMPLE_S16LE, outPcmBuffer_.GetFrameLen(), eqOutputDataBuffer_.data(), outPcmBuffer_.GetPcmDataBuffer());
+    ConvertToFloat(EQ_ALGO_SAMPLE_FORMAT,
+        outPcmBuffer_.GetFrameLen(),
+        eqOutputDataBuffer_.data(),
+        outPcmBuffer_.GetPcmDataBuffer());
     return &outPcmBuffer_;
 }
 
 bool AudioSuiteEqNode::SetEqMode(EqualizerMode type)
 {
-    currentEqMode = type;
-    switch (currentEqMode) {
+    switch (type) {
         case DEFAULT_MODE:
             eqValue_ = EQUALIZER_DEFAULT_VALUE;
             AUDIO_INFO_LOG("Set EqMode to DEFAULT_MODE");
@@ -239,6 +198,7 @@ int32_t AudioSuiteEqNode::SetOptions(std::string name, std::string value)
         AUDIO_INFO_LOG("SetOptions SUCCESS");
         return SUCCESS;
     } else if (name == "EqualizerMode") {
+        currentEqMode_ = value;
         EqualizerMode eqMode = StringToEqualizerMode(value);
         if (SetEqMode(eqMode) && !eqValue_.empty()) {
             eqAlgoInterfaceImpl_->SetParameter(eqValue_, eqValue_);
@@ -250,6 +210,24 @@ int32_t AudioSuiteEqNode::SetOptions(std::string name, std::string value)
         return ERROR;
     }
 }
+
+int32_t AudioSuiteEqNode::GetOptions(std::string name, std::string &value)
+{
+    AUDIO_INFO_LOG("AudioSuiteEqNode::GetOptions Enter");
+    if (name == "AudioEqualizerFrequencyBandGains") {
+        value = eqValue_;
+        AUDIO_INFO_LOG("GetOptions SUCCESS");
+        return SUCCESS;
+    } else if (name == "EqualizerMode") {
+        value = currentEqMode_;
+        AUDIO_INFO_LOG("Getoptions SUCCESS");
+        return SUCCESS;
+    } else {
+        AUDIO_ERR_LOG("GetOptions Unknow Type %{public}s", name.c_str());
+        return ERROR;
+    }
+}
+
 }  // namespace AudioSuite
 }  // namespace AudioStandard
 }  // namespace OHOS
