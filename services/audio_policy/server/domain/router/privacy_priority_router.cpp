@@ -51,7 +51,7 @@ bool PrivacyPriorityRouter::isA2dpDisable(shared_ptr<AudioDeviceDescriptor> &hfp
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetDevicesByFilter(
-        DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE, hfpDesc->macAddress_, "", CONNECTED);
+            DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE, hfpDesc->macAddress_, "", CONNECTED);
     auto isPresent = [] (const shared_ptr<AudioDeviceDescriptor> &desc) {
         return desc != nullptr && !desc->isEnable_;
     };
