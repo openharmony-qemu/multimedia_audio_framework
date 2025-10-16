@@ -80,6 +80,82 @@ HWTEST_F(AudioInjectorPolicyUnitTest, DeInit_002, TestSize.Level1)
 }
 
 /**
+ * @tc.name: HasRunningVoipStream_001
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, HasRunningVoipStream_001, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamVec = {};
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    EXPECT_NE(nullptr, desc);
+    desc->streamStatus_ = STREAM_STATUS_STARTED;
+    desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    streamVec.push_back(desc);
+    bool ret = audioInjectorPolicy.HasRunningVoipStream(streamVec);
+    EXPECT_NE(true, ret);
+}
+
+/**
+ * @tc.name: HasRunningVoipStream_002
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, HasRunningVoipStream_002, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamVec = {};
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    EXPECT_NE(nullptr, desc);
+    desc->streamStatus_ = STREAM_STATUS_STARTED;
+    desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_CALL;
+    streamVec.push_back(desc);
+    bool ret = audioInjectorPolicy.HasRunningVoipStream(streamVec);
+    EXPECT_NE(false, ret);
+}
+
+/**
+ * @tc.name: HasRunningVoipStream_003
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, HasRunningVoipStream_003, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamVec = {};
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    EXPECT_NE(nullptr, desc);
+    desc->streamStatus_ = STREAM_STATUS_STOPPED;
+    desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    streamVec.push_back(desc);
+    bool ret = audioInjectorPolicy.HasRunningVoipStream(streamVec);
+    EXPECT_NE(false, ret);
+}
+
+/**
+ * @tc.name: HasRunningVoipStream_004
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, HasRunningVoipStream_004, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamVec = {};
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    EXPECT_NE(nullptr, desc);
+    desc->streamStatus_ = STREAM_STATUS_STOPPED;
+    desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_CALL;
+    streamVec.push_back(desc);
+    bool ret = audioInjectorPolicy.HasRunningVoipStream(streamVec);
+    EXPECT_NE(false, ret);
+}
+
+/**
  * @tc.name: IsContainStream_001
  * @tc.desc: wzwzwz
  * @tc.type: FUNC
