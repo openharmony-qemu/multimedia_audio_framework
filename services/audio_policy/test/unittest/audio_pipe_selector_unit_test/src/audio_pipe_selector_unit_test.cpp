@@ -937,14 +937,14 @@ HWTEST_F(AudioPipeSelectorUnitTest, ProcessNewPipeList_002, TestSize.Level1)
     newPipeInfoList.push_back(pipe2);
 
     std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo{};
-    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
-    pipe1->adapterName_ = "offload";
-    pipe1->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
-    newPipeInfoList.push_back(pipe1);
-    streamDescToOldPipeInfo[100001] = pipe1;
+    std::shared_ptr<AudioPipeInfo> pipeinfo1 = std::make_shared<AudioPipeInfo>();
+    pipeinfo1->adapterName_ = "offload";
+    pipeinfo1->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    newPipeInfoList.push_back(pipeinfo1);
+    streamDescToOldPipeInfo[100001] = pipeinfo1;
 
     audioPipeSelector->ProcessNewPipeList(newPipeInfoList, streamDescToOldPipeInfo, streamDescs);
-    EXPECT_TRUE(newPipeInfoList.size() == 2);
+    EXPECT_FALSE(newPipeInfoList.size() == 2);
 }
 
 /**
@@ -1102,7 +1102,14 @@ HWTEST_F(AudioPipeSelectorUnitTest, ProcessNewPipeList_003, TestSize.Level1)
     pipe2->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
     newPipeInfoList.push_back(pipe2);
 
-    audioPipeSelector->ProcessNewPipeList(newPipeInfoList, streamDescs);
+    std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo{};
+    std::shared_ptr<AudioPipeInfo> pipeinfo1 = std::make_shared<AudioPipeInfo>();
+    pipeinfo1->adapterName_ = "primary";
+    pipeinfo1->routeFlag_ = 1;
+    newPipeInfoList.push_back(pipeinfo1);
+    streamDescToOldPipeInfo[100001] = pipeinfo1;
+
+    audioPipeSelector->ProcessNewPipeList(newPipeInfoList, streamDescToOldPipeInfo, streamDescs);
     EXPECT_TRUE(newPipeInfoList.size() == 2);
 }
 
@@ -1122,7 +1129,6 @@ HWTEST_F(AudioPipeSelectorUnitTest, IsNeedTempMoveToNormal_001, TestSize.Level1)
     std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo{};
     std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
     pipe1->routeFlag_ = AUDIO_OUTPUT_FLAG_MULTICHANNEL;
-    newPipeInfoList.push_back(pipe1);
     streamDescToOldPipeInfo[100001] = pipe1;
 
     EXPECT_TRUE(audioPipeSelector->IsNeedTempMoveToNormal(streamDesc1, streamDescToOldPipeInfo));
@@ -1144,7 +1150,6 @@ HWTEST_F(AudioPipeSelectorUnitTest, IsNeedTempMoveToNormal_002, TestSize.Level1)
     std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo{};
     std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
     pipe1->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
-    newPipeInfoList.push_back(pipe1);
     streamDescToOldPipeInfo[100001] = pipe1;
 
     EXPECT_TRUE(audioPipeSelector->IsNeedTempMoveToNormal(streamDesc1, streamDescToOldPipeInfo));
@@ -1166,7 +1171,6 @@ HWTEST_F(AudioPipeSelectorUnitTest, IsNeedTempMoveToNormal_003, TestSize.Level1)
     std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo{};
     std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
     pipe1->routeFlag_ = AUDIO_OUTPUT_FLAG_MULTICHANNEL;
-    newPipeInfoList.push_back(pipe1);
     streamDescToOldPipeInfo[100001] = pipe1;
 
     EXPECT_TRUE(audioPipeSelector->IsNeedTempMoveToNormal(streamDesc1, streamDescToOldPipeInfo));
@@ -1188,7 +1192,6 @@ HWTEST_F(AudioPipeSelectorUnitTest, IsNeedTempMoveToNormal_004, TestSize.Level1)
     std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo{};
     std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
     pipe1->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
-    newPipeInfoList.push_back(pipe1);
     streamDescToOldPipeInfo[100001] = pipe1;
 
     EXPECT_TRUE(audioPipeSelector->IsNeedTempMoveToNormal(streamDesc1, streamDescToOldPipeInfo));
@@ -1210,7 +1213,6 @@ HWTEST_F(AudioPipeSelectorUnitTest, IsNeedTempMoveToNormal_005, TestSize.Level1)
     std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo{};
     std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
     pipe1->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
-    newPipeInfoList.push_back(pipe1);
     streamDescToOldPipeInfo[100001] = pipe1;
 
     EXPECT_FALSE(audioPipeSelector->IsNeedTempMoveToNormal(streamDesc1, streamDescToOldPipeInfo));

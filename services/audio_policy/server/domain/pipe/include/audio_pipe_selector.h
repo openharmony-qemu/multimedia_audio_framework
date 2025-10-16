@@ -76,7 +76,7 @@ private:
     void CheckAndHandleOffloadConcedeScene(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void ProcessRendererAndCapturerConcurrency(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsNeedTempMoveToNormal(std::shared_ptr<AudioStreamDescriptor> streamDesc,
-        std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo)
+        std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo);
 
     AudioPolicyConfigManager& configManager_;
 };

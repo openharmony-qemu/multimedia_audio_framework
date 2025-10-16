@@ -286,7 +286,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipesAndExec
     }
 
     DecideFinalRouteFlag(streamDescs);
-    ProcessNewPipeList(newPipeInfoList, streamDescs);
+    ProcessNewPipeList(newPipeInfoList, streamDescToPipeInfo, streamDescs);
     DecidePipesAndStreamAction(newPipeInfoList, streamDescToPipeInfo);
 
     // check is pipe update
@@ -688,12 +688,8 @@ void AudioPipeSelector::CheckAndHandleOffloadConcedeScene(std::shared_ptr<AudioS
 bool AudioPipeSelector::IsNeedTempMoveToNormal(std::shared_ptr<AudioStreamDescriptor> streamDesc,
     std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo)
 {
-    if ((streamDescToOldPipeInfo[streamDesc->GetSessionId()]->routeFlag_ & AUDIO_OUTPUT_FLAG_MULTICHANNEL ||
-        streamDescToOldPipeInfo[streamDesc->GetSessionId()]->routeFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER) &&
-        (streamDesc->routeFlag_ & AUDIO_OUTPUT_FLAG_DIRECT || streamDesc->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST)) {
-            return true;
-        }
-    return false;
+    return (streamDescToOldPipeInfo[streamDesc->GetSessionId()]->IsRenderPipeNeedMoveToNormal() &&
+        streamDesc->IsRenderStreamNeedRecreate());
 }
 
 } // namespace AudioStandard
