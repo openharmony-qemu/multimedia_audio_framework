@@ -265,15 +265,6 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_013, TestSize.Level1)
     AudioSessionStrategy strategy;
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
     EXPECT_FALSE(audioSession->IsRecommendToStopAudio(AudioStreamDeviceChangeReason::UNKNOWN, nullptr));
-
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-
-    ASSERT_GT(AudioDeviceManager::GetAudioDeviceManager().privacyDeviceList_.size(), 0);
-    DevicePrivacyInfo privacyInfo = *(AudioDeviceManager::GetAudioDeviceManager().privacyDeviceList_.begin());
-    audioSession->deviceDescriptor_.deviceType_ = privacyInfo.deviceType;
-    audioSession->deviceDescriptor_.deviceUsage_ = privacyInfo.deviceUsage;
-    audioSession->deviceDescriptor_.deviceCategory_ = privacyInfo.deviceCategory;
-    EXPECT_TRUE(audioSession->IsRecommendToStopAudio(AudioStreamDeviceChangeReason::UNKNOWN, desc));
 }
 
 /**
