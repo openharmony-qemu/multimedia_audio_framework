@@ -843,7 +843,7 @@ void AudioDeviceManager::AddAvailableDevicesByUsage(const AudioDeviceUsage usage
             break;
         case D_ALL_DEVICES:
             audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(dev));
-        break;
+            break;
         default:
             break;
     }
