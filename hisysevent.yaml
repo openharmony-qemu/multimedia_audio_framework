@@ -352,3 +352,16 @@ VOLUME_API_INVOKE:
   APP_NAME: {type: STRING, desc: application name}
   FUNC_NAME: {type: STRING, desc: function name}
   PARAM_VALUE: {type: INT32, desc: streamUsage or audioVolumeType enum value}
+
+SUITE_ENGINE_UTILIZATION_STATS:
+  __BASE: {type: STATISTIC, level: CRITICAL, desc: audio suite engine utilization statistic}
+  APP_NAME: {type: STRING, arrsize: 20, desc: application name}
+  AUDIO_NODE_TYPE: {type: STRING, desc: audio node type}
+  AUDIO_NODE_COUNT: {type: UINT32, arrsize: 20, desc: audio node count}
+
+SUITE_ENGINE_EXCEPTION:
+  __BASE: {type: FAULT, level: CRITICAL, desc: audio suite engine exception}
+  APP_NAME: {type: STRING, desc: application name}
+  ERROR_SCENE: {type: UINT32, desc: error scene}
+  ERROR_CASE: {type: UINT32, desc: error case}
+  ERROR_DESCRIPTION: {type: STRING, desc: error description}
