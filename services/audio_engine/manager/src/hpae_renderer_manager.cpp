@@ -275,7 +275,7 @@ void HpaeRendererManager::RefreshProcessClusterByDeviceInner(const std::shared_p
                     sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]);
             }
             DeleteProcessClusterInner(nodeInfo.sessionId, nodeInfo.sceneType);
-            sessionNodeMap_[nodeInfo.sessionId].bypass = true;
+            CreateProcessCluster(nodeInfo);
         } else {
             AUDIO_INFO_LOG("refresh to %{public}d", processClusterDecision);
             TriggerStreamState(nodeInfo.sessionId, node);
