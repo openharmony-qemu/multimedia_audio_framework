@@ -40,7 +40,7 @@ struct AudioNodeInfo {
     uint32_t nodeId;
     float volume = 1.0;
     bool finishedFlag = false;
-    AudioNodeEnable enableProcess_ = NODE_ENABLE;
+    bool bypassStatus = false;
     AudioFormat audioFormat;
 };
 

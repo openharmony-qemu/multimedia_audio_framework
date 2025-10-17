@@ -43,7 +43,7 @@ int32_t AudioSuiteProcessNode::DoProcess()
     }
     AudioSuitePcmBuffer* tempOut = nullptr;
     std::vector<AudioSuitePcmBuffer*>& preOutputs = ReadProcessNodePreOutputData();
-    if ((GetNodeEnableStatus() == NODE_ENABLE) && !preOutputs.empty()) {
+    if ((GetNodeBypassStatus() == true) && !preOutputs.empty()) {
         AUDIO_DEBUG_LOG("node type = %{public}d need do SignalProcess.", GetNodeType());
         tempOut = SignalProcess(preOutputs);
         if (tempOut == nullptr) {
@@ -65,7 +65,6 @@ int32_t AudioSuiteProcessNode::DoProcess()
         "pcmbuffer IsFinished: %{public}d.", GetNodeType(), GetAudioNodeDataFinishedFlag());
     tempOut->SetIsFinished(GetAudioNodeDataFinishedFlag());
     outputStream_->WriteDataToOutput(tempOut);
-    HandleTapCallback(tempOut);
     return SUCCESS;
 }
 
@@ -109,7 +108,7 @@ int32_t AudioSuiteProcessNode::Flush()
     return SUCCESS;
 }
 
-int32_t AudioSuiteProcessNode::Connect(const std::shared_ptr<AudioNode>& preNode, AudioNodePortType type)
+int32_t AudioSuiteProcessNode::Connect(const std::shared_ptr<AudioNode>& preNode)
 {
     if (!inputStream_) {
         AUDIO_ERR_LOG("node type = %{public}d inputstream is null!", GetNodeType());
@@ -119,13 +118,8 @@ int32_t AudioSuiteProcessNode::Connect(const std::shared_ptr<AudioNode>& preNode
         AUDIO_ERR_LOG("node type = %{public}d preNode is null!", GetNodeType());
         return ERR_INVALID_PARAM;
     }
-    inputStream_->Connect(preNode->GetSharedInstance(), preNode->GetOutputPort(type).get());
+    inputStream_->Connect(preNode->GetSharedInstance(), preNode->GetOutputPort().get());
     return SUCCESS;
-}
-
-int32_t AudioSuiteProcessNode::Connect(const std::shared_ptr<AudioNode>& preNode)
-{
-    return ERROR;
 }
 
 int32_t AudioSuiteProcessNode::DisConnect(const std::shared_ptr<AudioNode>& preNode)
@@ -136,42 +130,6 @@ int32_t AudioSuiteProcessNode::DisConnect(const std::shared_ptr<AudioNode>& preN
     }
     inputStream_->DisConnect(preNode);
     return SUCCESS;
-}
-
-int32_t AudioSuiteProcessNode::InstallTap(AudioNodePortType portType,
-    std::shared_ptr<SuiteNodeReadTapDataCallback> callback)
-{
-    tap_.SetAudioNodePortType(portType);
-    tap_.SetOnReadTapDataCallback(callback);
-    AUDIO_INFO_LOG("InstallTap SUCCESS, node type = %{public}d, tap portType = %{public}d",
-        GetNodeType(), portType);
-    return SUCCESS;
-}
-int32_t AudioSuiteProcessNode::RemoveTap(AudioNodePortType portType)
-{
-    tap_.SetOnReadTapDataCallback(nullptr);
-    AUDIO_INFO_LOG("RemoveTap SUCCESS, node type = %{public}d, tap portType = %{public}d",
-        GetNodeType(), portType);
-    return SUCCESS;
-}
-
-void AudioSuiteProcessNode::HandleTapCallback(AudioSuitePcmBuffer* pcmBuffer)
-{
-    if (pcmBuffer == nullptr) {
-        AUDIO_ERR_LOG("node %{public}d use a null pcmbuffer to HandleTapCallback.", GetNodeType());
-        return;
-    }
-    if (!outputStream_) {
-        outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
-    }
-    std::shared_ptr<SuiteNodeReadTapDataCallback> callback = tap_.GetOnReadTapDataCallback();
-    CHECK_AND_RETURN(callback != nullptr);
-    AudioNodePortType portType = outputStream_->GetPortType();
-    AudioNodePortType tapType = tap_.GetAudioNodePortType();
-    CHECK_AND_RETURN(portType == tapType);
-    AUDIO_DEBUG_LOG("node type = %{public}d do OnReadTapDataCallback", GetNodeType());
-    callback->OnReadTapDataCallback(static_cast<void*>(pcmBuffer->GetPcmDataBuffer()),
-        pcmBuffer->GetFrameLen() * sizeof(float));
 }
 
 int32_t AudioSuiteProcessNode::CopyPcmBuffer(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer)
@@ -219,7 +177,7 @@ int32_t AudioSuiteProcessNode::Resample(AudioSuitePcmBuffer *inputPcmBuffer, Aud
     uint32_t inChannelCount = inputPcmBuffer->GetChannelCount();
     uint32_t outChannelCount = outputPcmBuffer->GetChannelCount();
     uint32_t resampleQuality = 5;
-    AUDIO_DEBUG_LOG("DoResample: inSampleRate: %{public}u, outSampleRate: %{public}u ", inRate, outRate);
+    AUDIO_DEBUG_LOG("DoResample: inSampleRate: %{public}u, outSampleRate: %{public}u", inRate, outRate);
 
     CHECK_AND_RETURN_RET_LOG((inChannelCount != 0) && (outChannelCount != 0) && (inChannelCount == outChannelCount),
         ERROR, "Do Resample error: invalid input, inChannelCount: %{public}u outChannelCount: %{public}u",

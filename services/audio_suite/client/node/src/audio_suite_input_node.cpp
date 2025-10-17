@@ -85,12 +85,6 @@ int32_t AudioInputNode::Flush()
     return SUCCESS;
 }
 
-int32_t AudioInputNode::Connect(const std::shared_ptr<AudioNode>& preNode, AudioNodePortType type)
-{
-    AUDIO_ERR_LOG("AudioInputNode::Connect not support opt");
-    return ERROR;
-}
-
 int32_t AudioInputNode::Connect(const std::shared_ptr<AudioNode>& preNode)
 {
     AUDIO_ERR_LOG("AudioInputNode::Connect not support opt");
@@ -103,7 +97,7 @@ int32_t AudioInputNode::DisConnect(const std::shared_ptr<AudioNode>& preNode)
     return ERROR;
 }
 
-std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> AudioInputNode::GetOutputPort(AudioNodePortType type)
+std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> AudioInputNode::GetOutputPort()
 {
     return outputStream_;
 }
@@ -118,14 +112,13 @@ int32_t AudioInputNode::DoProcess()
     CHECK_AND_RETURN_RET(GeneratePushBuffer() == SUCCESS, ERR_WRITE_FAILED,
         "AudioInputNode::DoProcess GeneratePushBuffer fail");
     outputStream_->WriteDataToOutput(inputNodeBuffer_);
-    HandleTapCallback();
     return SUCCESS;
 }
 
-int32_t AudioInputNode::SetOnWriteDataCallback(std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback)
+int32_t AudioInputNode::SetRequestDataCallback(std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback)
 {
     CHECK_AND_RETURN_RET(callback != nullptr, ERR_INVALID_PARAM,
-        "AudioInputNode::SetOnWriteDataCallback callback is null");
+        "AudioInputNode::SetRequestDataCallback callback is null");
     writeCallback_ = callback;
     return SUCCESS;
 }
@@ -148,25 +141,6 @@ void AudioInputNode::SetAudioNodeFormat(AudioFormat audioFormat)
     inputNodeBuffer_->ResizePcmBuffer(bufferRate, audioFormat.audioChannelInfo.numChannels);
     cachedBuffer_.ResizeBuffer(GetCacheBufferCapacity(audioFormat));
     SetFormatTransfer(audioFormat.rate);
-}
-
-int32_t AudioInputNode::InstallTap(AudioNodePortType portType, std::shared_ptr<SuiteNodeReadTapDataCallback> callback)
-{
-    CHECK_AND_RETURN_RET(outputStream_ != nullptr, ERR_INVALID_PARAM,
-        "AudioInputNode::InstallTap outputStream_ is null");
-    if (portType != outputStream_->GetPortType() || callback == nullptr) {
-        AUDIO_ERR_LOG("AudioInputNode::InstallTap param error");
-        return ERR_INVALID_PARAM;
-    }
-    tap_.SetAudioNodePortType(portType);
-    tap_.SetOnReadTapDataCallback(callback);
-    return SUCCESS;
-}
-
-int32_t AudioInputNode::RemoveTap(AudioNodePortType portType)
-{
-    tap_.SetOnReadTapDataCallback(nullptr);
-    return SUCCESS;
 }
 
 int32_t AudioInputNode::GetDataFromUser()
@@ -430,22 +404,6 @@ uint32_t AudioInputNode::GetFrameSize(const AudioFormat& format)
     uint32_t frameTime = format.rate == AudioSamplingRate::SAMPLE_RATE_11025 ?
         SINGLE_FRAME_DURATION_SAMPLE_RATE_11025 : SINGLE_FRAME_DURATION;
     return format.rate * frameTime * format.audioChannelInfo.numChannels * sampleSize / SECONDS_TO_MS;
-}
-
-int32_t AudioInputNode::HandleTapCallback()
-{
-    CHECK_AND_RETURN_RET(outputStream_ != nullptr, ERR_INVALID_PARAM,
-        "AudioInputNode::HandleTapCallback outputStream_ is null");
-    CHECK_AND_RETURN_RET_LOG(inputNodeBuffer_ != nullptr, ERR_INVALID_OPERATION,
-        "AudioInputNode::HandleTapCallback inputNodeBuffer_ is null");
-    std::shared_ptr<SuiteNodeReadTapDataCallback> callback = tap_.GetOnReadTapDataCallback();
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "tap callback is nullptr");
-    AudioNodePortType portType = outputStream_->GetPortType();
-    AudioNodePortType tapType = tap_.GetAudioNodePortType();
-    CHECK_AND_RETURN_RET_LOG(portType == tapType, ERR_INVALID_PARAM, "tap error");
-    callback->OnReadTapDataCallback(static_cast<void*>(inputNodeBuffer_->GetPcmDataBuffer()),
-        inputNodeBuffer_->GetFrameLen() * sizeof(float));
-    return SUCCESS;
 }
 
 int32_t AudioInputNode::SetFormatTransfer(AudioSamplingRate sampleRate)

@@ -76,20 +76,7 @@ public:
     virtual int32_t DoProcess() = 0;
     // for Flush node
     virtual int32_t Flush() = 0;
-    virtual int32_t InstallTap(AudioNodePortType portType, std::shared_ptr<SuiteNodeReadTapDataCallback> callback)
-    {
-        AUDIO_ERR_LOG("InstallTap failed, node type = %{public}d not support.", GetNodeType());
-        return ERR_INVALID_OPERATION;
-    }
 
-    virtual int32_t RemoveTap(AudioNodePortType portType)
-    {
-        AUDIO_ERR_LOG("RemoveTap failed, node type = %{public}d not support.", GetNodeType());
-        return ERR_INVALID_OPERATION;
-    }
-
-    virtual int32_t Connect(const std::shared_ptr<AudioNode> &preNode,
-    AudioNodePortType type) = 0;
     virtual int32_t Connect(const std::shared_ptr<AudioNode> &preNode) = 0;
     virtual int32_t DisConnect(const std::shared_ptr<AudioNode> &preNode) = 0;
 
@@ -98,14 +85,14 @@ public:
         return shared_from_this();
     }
 
-    virtual std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> GetOutputPort(AudioNodePortType type)
+    virtual std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> GetOutputPort()
     {
         return nullptr;
     }
 
-    virtual int32_t SetOnWriteDataCallback(std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback)
+    virtual int32_t SetRequestDataCallback(std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback)
     {
-        AUDIO_ERR_LOG("SetOnWriteDataCallback failed, node type = %{public}d not support.", GetNodeType());
+        AUDIO_ERR_LOG("SetRequestDataCallback failed, node type = %{public}d not support.", GetNodeType());
         return ERR_INVALID_OPERATION;
     }
 
@@ -180,15 +167,15 @@ public:
         return audioNodeInfo_.nodeType;
     }
 
-    virtual int32_t SetNodeEnableStatus(AudioNodeEnable enable)
+    virtual int32_t SetBypassEffectNode(bool bypass)
     {
-        audioNodeInfo_.enableProcess_ = enable;
+        audioNodeInfo_.bypassStatus = bypass;
         return SUCCESS;
     }
 
-    virtual AudioNodeEnable GetNodeEnableStatus()
+    virtual bool GetNodeBypassStatus()
     {
-        return audioNodeInfo_.enableProcess_;
+        return audioNodeInfo_.bypassStatus;
     }
 
     virtual std::string GetEnvironmentType()

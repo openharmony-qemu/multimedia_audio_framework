@@ -20,15 +20,12 @@
 #include <string>
 #include <atomic>
 #include <memory>
-#include <sstream>
 #include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_suite_log.h"
 #include "audio_suite_engine.h"
 #include "audio_suite_manager_private.h"
 #include "audio_suite_manager_callback.h"
-#include "media_monitor_manager.h"
-#include "media_monitor_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -36,33 +33,6 @@ namespace AudioSuite {
 
 namespace {
 static const int32_t OPERATION_TIMEOUT_IN_MS = 10000;  // 10s
-enum ErrorScene : uint32_t {
-    PIPELINE_SCENE = 0,
-    NODE_SCENE = 1,
-};
-enum PipelineErrorCase : uint32_t {
-    CREATE_PIPELINE_ERROR = 0,
-    DESTROY_PIPELINE_ERROR = 1,
-    RENDER_PIPELINE_ERROR = 2,
-};
-enum NodeErrorCase : uint32_t {
-    CREATE_NODE_ERROR = 0,
-    DESTROY_NODE_ERROR = 1,
-    CONNECT_NODE_ERROR = 2,
-    DISCONNECT_NODE_ERROR = 3,
-};
-static const std::map<AudioNodeType, std::string> NODETYPE_TOSTRING_MAP = {
-    {NODE_TYPE_EMPTY, "NODE_TYPE_EMPTY"},
-    {NODE_TYPE_INPUT, "NODE_TYPE_INPUT"},
-    {NODE_TYPE_OUTPUT, "NODE_TYPE_OUTPUT"},
-    {NODE_TYPE_EQUALIZER, "NODE_TYPE_EQUALIZER"},
-    {NODE_TYPE_NOISE_REDUCTION, "NODE_TYPE_NOISE_REDUCTION"},
-    {NODE_TYPE_SOUND_FIELD, "NODE_TYPE_SOUND_FIELD"},
-    {NODE_TYPE_AUDIO_SEPARATION, "NODE_TYPE_AUDIO_SEPARATION"},
-    {NODE_TYPE_VOICE_BEAUTIFIER, "NODE_TYPE_VOICE_BEAUTIFIER"},
-    {NODE_TYPE_ENVIRONMENT_EFFECT, "NODE_TYPE_ENVIRONMENT_EFFECT"},
-    {NODE_TYPE_AUDIO_MIXER, "NODE_TYPE_AUDIO_MIXER"}
-};
 }
 
 IAudioSuiteManager& IAudioSuiteManager::GetAudioSuiteManager()
@@ -108,7 +78,7 @@ int32_t AudioSuiteManager::DeInit()
     return ret;
 }
 
-int32_t AudioSuiteManager::CreatePipeline(uint32_t &pipelineId)
+int32_t AudioSuiteManager::CreatePipeline(uint32_t &pipelineId, PipelineWorkMode workMode)
 {
     AUDIO_INFO_LOG("CreatePipeline enter.");
 
@@ -117,18 +87,14 @@ int32_t AudioSuiteManager::CreatePipeline(uint32_t &pipelineId)
 
     isFinishCreatePipeline_ = false;
     engineCreateResult_ = 0;
-    int32_t ret = suiteEngine_->CreatePipeline();
+    int32_t ret = suiteEngine_->CreatePipeline(workMode);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine CreatePipeline failed, ret = %{public}d", ret);
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishCreatePipeline_;
     });
-    if (!stopWaiting) {
-        WriteSuiteEngineExceptionEvent(PIPELINE_SCENE, CREATE_PIPELINE_ERROR, "CreatePipeline timeout");
-        AUDIO_ERR_LOG("CreatePipeline timeout");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "CreatePipeline timeout");
 
     AUDIO_INFO_LOG("CreatePipeline leave");
     pipelineId = engineCreatePipelineId_;
@@ -151,11 +117,7 @@ int32_t AudioSuiteManager::DestroyPipeline(uint32_t pipelineId)
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishDestroyPipeline_;
     });
-    if (!stopWaiting) {
-        WriteSuiteEngineExceptionEvent(PIPELINE_SCENE, DESTROY_PIPELINE_ERROR, "DestroyPipeline timeout");
-        AUDIO_ERR_LOG("DestroyPipeline timeout");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "DestroyPipeline timeout");
 
     AUDIO_INFO_LOG("DestroyPipeline leave");
     return destroyPipelineResult_;
@@ -239,14 +201,9 @@ int32_t AudioSuiteManager::CreateNode(uint32_t pipelineId, AudioNodeBuilder &bui
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishCreateNode_;  // will be true when got notified.
     });
-    if (!stopWaiting) {
-        WriteSuiteEngineExceptionEvent(NODE_SCENE, CREATE_NODE_ERROR, "CreateNode timeout");
-        AUDIO_ERR_LOG("CreateNode timeout");
-        return INVALID_NODE_ID;
-    }
+    CHECK_AND_RETURN_RET_LOG(stopWaiting, INVALID_NODE_ID, "CreateNode timeout");
 
     AUDIO_INFO_LOG("CreateNode leave");
-    WriteSuiteEngineUtilizationStatsEvent(builder.nodeType);
     nodeId = engineCreateNodeId_;
     engineCreateNodeId_ = INVALID_NODE_ID;
     return engineCreateNodeResult_;
@@ -266,56 +223,52 @@ int32_t AudioSuiteManager::DestroyNode(uint32_t nodeId)
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishDestroyNode_;
     });
-    if (!stopWaiting) {
-        WriteSuiteEngineExceptionEvent(NODE_SCENE, DESTROY_NODE_ERROR, "DestroyNode timeout");
-        AUDIO_ERR_LOG("DestroyNode timeout");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "DestroyNode timeout");
 
     AUDIO_INFO_LOG("DestroyNode leave");
     return destroyNodeResult_;
 }
 
-int32_t AudioSuiteManager::EnableNode(uint32_t nodeId, AudioNodeEnable audioNodeEnable)
+int32_t AudioSuiteManager::BypassEffectNode(uint32_t nodeId, bool bypass)
 {
-    AUDIO_INFO_LOG("EnableNode enter.");
+    AUDIO_INFO_LOG("BypassEffectNode enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
-    isFinishEnableNode_ = false;
-    int32_t ret = suiteEngine_->EnableNode(nodeId, audioNodeEnable);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine EnableNode failed, ret = %{public}d", ret);
+    isFinishBypassEffectNode_ = false;
+    int32_t ret = suiteEngine_->BypassEffectNode(nodeId, bypass);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine BypassEffectNode failed, ret = %{public}d", ret);
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return isFinishEnableNode_;
+        return isFinishBypassEffectNode_;
     });
-    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "EnableNode timeout");
+    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "BypassEffectNode timeout");
 
-    AUDIO_INFO_LOG("EnableNode leave");
-    return enableNodeResult_;
+    AUDIO_INFO_LOG("BypassEffectNode leave");
+    return bypassEffectNodeResult_;
 }
 
-int32_t AudioSuiteManager::GetNodeEnableStatus(uint32_t nodeId, AudioNodeEnable &nodeEnable)
+int32_t AudioSuiteManager::GetNodeBypassStatus(uint32_t nodeId, bool &bypass)
 {
-    AUDIO_INFO_LOG("GetNodeEnableStatus enter.");
+    AUDIO_INFO_LOG("GetNodeBypassStatus enter.");
 
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
-    isFinishGetNodeEnable_ = false;
-    getNodeEnable_ = NODE_DISABLE;
-    int32_t ret = suiteEngine_->GetNodeEnableStatus(nodeId);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine GetNodeEnableStatus failed, ret = %{public}d", ret);
+    isFinishGetNodeBypassStatus_ = false;
+    getNodeBypassResult_ = false;
+    int32_t ret = suiteEngine_->GetNodeBypassStatus(nodeId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine GetNodeBypassStatus failed, ret = %{public}d", ret);
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return isFinishGetNodeEnable_;
+        return isFinishGetNodeBypassStatus_;
     });
-    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "GetNodeEnableStatus timeout");
+    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "GetNodeBypassStatus timeout");
 
-    AUDIO_INFO_LOG("GetNodeEnableStatus leave");
-    nodeEnable = getNodeEnable_;
+    AUDIO_INFO_LOG("GetNodeBypassStatus leave");
+    bypass = getNodeBypassResult_;
     return SUCCESS;
 }
 
@@ -339,49 +292,24 @@ int32_t AudioSuiteManager::SetAudioFormat(uint32_t nodeId, AudioFormat audioForm
     return setFormatResult_;
 }
 
-int32_t AudioSuiteManager::SetOnWriteDataCallback(uint32_t nodeId,
+int32_t AudioSuiteManager::SetRequestDataCallback(uint32_t nodeId,
     std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback)
 {
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
     isFinishSetWriteData_ = false;
-    int32_t ret = suiteEngine_->SetWriteDataCallback(nodeId, callback);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine SetWriteDataCallback failed, ret = %{public}d", ret);
+    int32_t ret = suiteEngine_->SetRequestDataCallback(nodeId, callback);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine SetRequestDataCallback failed, ret = %{public}d", ret);
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishSetWriteData_;
     });
-    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "SetWriteDataCallback timeout");
+    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "SetRequestDataCallback timeout");
 
-    AUDIO_INFO_LOG("SetWriteDataCallback leave");
+    AUDIO_INFO_LOG("SetRequestDataCallback leave");
     return setWriteDataResult_;
-}
-
-int32_t AudioSuiteManager::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId,
-    AudioNodePortType srcPortType, AudioNodePortType destPortType)
-{
-    AUDIO_INFO_LOG("ConnectNodes enter.");
-    std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
-
-    isFinishConnectNodes_ = false;
-    int32_t ret = suiteEngine_->ConnectNodes(srcNodeId, destNodeId, srcPortType, destPortType);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine ConnectNodes failed, ret = %{public}d", ret);
-
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return isFinishConnectNodes_;
-    });
-    if (!stopWaiting) {
-        WriteSuiteEngineExceptionEvent(NODE_SCENE, CONNECT_NODE_ERROR, "ConnectNodes timeout");
-        AUDIO_ERR_LOG("ConnectNodes timeout");
-        return ERROR;
-    }
-
-    AUDIO_INFO_LOG("ConnectNodes leave");
-    return connectNodesResult_;
 }
 
 int32_t AudioSuiteManager::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId)
@@ -398,11 +326,7 @@ int32_t AudioSuiteManager::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId)
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishConnectNodes_;
     });
-    if (!stopWaiting) {
-        WriteSuiteEngineExceptionEvent(NODE_SCENE, CONNECT_NODE_ERROR, "ConnectNodes timeout");
-        AUDIO_ERR_LOG("ConnectNodes timeout");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "ConnectNodes timeout");
 
     AUDIO_INFO_LOG("ConnectNodes leave");
     return connectNodesResult_;
@@ -422,28 +346,10 @@ int32_t AudioSuiteManager::DisConnectNodes(uint32_t srcNodeId, uint32_t destNode
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishDisConnectNodes_;
     });
-    if (!stopWaiting) {
-        WriteSuiteEngineExceptionEvent(NODE_SCENE, DISCONNECT_NODE_ERROR, "DisConnectNodes timeout");
-        AUDIO_ERR_LOG("DisConnectNodes timeout");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "DisConnectNodes timeout");
 
     AUDIO_INFO_LOG("DisConnectNodes leave");
     return disConnectNodesResult_;
-}
-
-int32_t AudioSuiteManager::SetEqualizerMode(uint32_t nodeId, EqualizerMode eqMode)
-{
-    AUDIO_INFO_LOG("SetEqualizerMode enter.");
-    std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
-
-    // check
-    std::string name = "EqualizerMode";
-    std::string value = std::to_string(static_cast<int32_t>(eqMode));
-    int32_t ret = suiteEngine_->SetOptions(nodeId, name, value);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine SetEqualizerMode failed, ret = %{public}d", ret);
-    return ret;
 }
 
 int32_t AudioSuiteManager::SetEqualizerFrequencyBandGains(uint32_t nodeId, AudioEqualizerFrequencyBandGains gains)
@@ -560,7 +466,7 @@ int32_t AudioSuiteManager::GetEqualizerFrequencyBandGains(uint32_t nodeId,
     int32_t ret = suiteEngine_->GetOptions(nodeId, name, value);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
         "engine GetEqualizerFrequencyBandGains failed, ret = %{public}d", ret);
-    int32_t parseValue[EQUALIZER_BAND_NUM];
+    int32_t parseValue[EQUALIZER_BAND_NUM] = {0};
     ParseValue(value, parseValue);
     for (size_t idx = 0; idx < sizeof(parseValue) / sizeof(parseValue[0]); idx++) {
         frequencyBandGains.gains[idx] = parseValue[idx];
@@ -590,47 +496,6 @@ int32_t AudioSuiteManager::GetVoiceBeautifierType(uint32_t nodeId,
     return SUCCESS;
 }
 
-int32_t AudioSuiteManager::InstallTap(uint32_t nodeId, AudioNodePortType portType,
-    std::shared_ptr<SuiteNodeReadTapDataCallback> callback)
-{
-    std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
-        "InstallTap failed suite engine not inited");
-
-    isFinisInstallTap_ = false;
-    int32_t ret = suiteEngine_->InstallTap(nodeId, portType, callback);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine InstallTap failed, ret = %{public}d", ret);
-
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return isFinisInstallTap_;
-    });
-    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "InstallTap timeout");
-
-    AUDIO_INFO_LOG("InstallTap leave");
-    return installTapResult_;
-}
-
-int32_t AudioSuiteManager::RemoveTap(uint32_t nodeId, AudioNodePortType portType)
-{
-    std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST,
-        "InstallTap failed suite engine not inited");
-
-    isFinisRemoveTap_ = false;
-    int32_t ret = suiteEngine_->RemoveTap(nodeId, portType);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine RemoveTap failed, ret = %{public}d", ret);
-
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return isFinisRemoveTap_;
-    });
-    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "RemoveTap timeout");
-
-    AUDIO_INFO_LOG("RemoveTap leave");
-    return removeTapResult_;
-}
-
 int32_t AudioSuiteManager::RenderFrame(uint32_t pipelineId,
     uint8_t *audioData, int32_t frameSize, int32_t *writeLen, bool *finishedFlag)
 {
@@ -645,11 +510,7 @@ int32_t AudioSuiteManager::RenderFrame(uint32_t pipelineId,
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinisRenderFrame_;
     });
-    if (!stopWaiting) {
-        WriteSuiteEngineExceptionEvent(PIPELINE_SCENE, RENDER_PIPELINE_ERROR, "RenderFrame timeout");
-        AUDIO_ERR_LOG("RenderFrame timeout");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "RenderFrame timeout");
 
     AUDIO_INFO_LOG("RenderFrame leave");
     return renderFrameResult_;
@@ -670,11 +531,7 @@ int32_t AudioSuiteManager::MultiRenderFrame(uint32_t pipelineId,
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinisMultiRenderFrame_;
     });
-    if (!stopWaiting) {
-        WriteSuiteEngineExceptionEvent(PIPELINE_SCENE, RENDER_PIPELINE_ERROR, "MultiRenderFrame timeout");
-        AUDIO_ERR_LOG("MultiRenderFrame timeout");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "MultiRenderFrame timeout");
 
     AUDIO_INFO_LOG("MultiRenderFrame leave");
     return MultiRenderFrameResult_;
@@ -682,12 +539,6 @@ int32_t AudioSuiteManager::MultiRenderFrame(uint32_t pipelineId,
 
 void AudioSuiteManager::OnCreatePipeline(int32_t result, uint32_t pipelineId)
 {
-    if (result != SUCCESS &&
-        result != ERR_AUDIO_SUITE_CREATED_EXCEED_SYSTEM_LIMITS) {
-        std::ostringstream errorDescription;
-        errorDescription << "engine CreatePipeline failed, ret = " << result;
-        WriteSuiteEngineExceptionEvent(PIPELINE_SCENE, CREATE_PIPELINE_ERROR, errorDescription.str());
-    }
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_INFO_LOG("OnCreatePipeline enter");
     isFinishCreatePipeline_ = true;
@@ -698,12 +549,6 @@ void AudioSuiteManager::OnCreatePipeline(int32_t result, uint32_t pipelineId)
 
 void AudioSuiteManager::OnDestroyPipeline(int32_t result)
 {
-    if (result != SUCCESS &&
-        result != ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST) {
-        std::ostringstream errorDescription;
-        errorDescription << "engine DestroyPipeline failed, ret = " << result;
-        WriteSuiteEngineExceptionEvent(PIPELINE_SCENE, DESTROY_PIPELINE_ERROR, errorDescription.str());
-    }
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_INFO_LOG("OnDestroyPipeline result: %{public}d", result);
     isFinishDestroyPipeline_ = true;
@@ -740,11 +585,6 @@ void AudioSuiteManager::OnGetPipelineState(AudioSuitePipelineState state)
 
 void AudioSuiteManager::OnCreateNode(int32_t result, uint32_t nodeId)
 {
-    if (result != SUCCESS) {
-        std::ostringstream errorDescription;
-        errorDescription << "engine CreateNode failed, ret = " << result;
-        WriteSuiteEngineExceptionEvent(NODE_SCENE, CREATE_NODE_ERROR, errorDescription.str());
-    }
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_INFO_LOG("OnCreateNode enter");
     isFinishCreateNode_ = true;
@@ -755,11 +595,6 @@ void AudioSuiteManager::OnCreateNode(int32_t result, uint32_t nodeId)
 
 void AudioSuiteManager::OnDestroyNode(int32_t result)
 {
-    if (result != SUCCESS) {
-        std::ostringstream errorDescription;
-        errorDescription << "engine DestroyNode failed, ret = " << result;
-        WriteSuiteEngineExceptionEvent(NODE_SCENE, DESTROY_NODE_ERROR, errorDescription.str());
-    }
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_INFO_LOG("OnDestroyNode enter");
     isFinishDestroyNode_ = true;
@@ -767,21 +602,21 @@ void AudioSuiteManager::OnDestroyNode(int32_t result)
     callbackCV_.notify_all();
 }
 
-void AudioSuiteManager::OnEnableNode(int32_t result)
+void AudioSuiteManager::OnBypassEffectNode(int32_t result)
 {
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_INFO_LOG("OnEnableNode enter");
-    isFinishEnableNode_ = true;
-    enableNodeResult_ = result;
+    isFinishBypassEffectNode_ = true;
+    bypassEffectNodeResult_ = result;
     callbackCV_.notify_all();
 }
 
-void AudioSuiteManager::OnGetNodeEnable(AudioNodeEnable enable)
+void AudioSuiteManager::OnGetNodeBypass(int32_t result, bool bypassStatus)
 {
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    AUDIO_INFO_LOG("OnGetNodeEnable enter");
-    isFinishGetNodeEnable_ = true;
-    getNodeEnable_ = enable;
+    AUDIO_INFO_LOG("OnGetNodeBypass enter");
+    isFinishGetNodeBypassStatus_ = true;
+    getNodeBypassResult_ = bypassStatus;
     callbackCV_.notify_all();
 }
 
@@ -805,12 +640,6 @@ void AudioSuiteManager::OnWriteDataCallback(int32_t result)
 
 void AudioSuiteManager::OnConnectNodes(int32_t result)
 {
-    if (result != SUCCESS &&
-        result != ERR_AUDIO_SUITE_UNSUPPORT_CONNECT) {
-        std::ostringstream errorDescription;
-        errorDescription << "engine ConnectNodes failed, ret = " << result;
-        WriteSuiteEngineExceptionEvent(NODE_SCENE, CONNECT_NODE_ERROR, errorDescription.str());
-    }
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_INFO_LOG("OnConnectNodes enter");
     isFinishConnectNodes_ = true;
@@ -820,12 +649,6 @@ void AudioSuiteManager::OnConnectNodes(int32_t result)
 
 void AudioSuiteManager::OnDisConnectNodes(int32_t result)
 {
-    if (result != SUCCESS &&
-        result != ERR_AUDIO_SUITE_UNSUPPORT_CONNECT) {
-        std::ostringstream errorDescription;
-        errorDescription << "engine DisConnectNodes failed, ret = " << result;
-        WriteSuiteEngineExceptionEvent(NODE_SCENE, DISCONNECT_NODE_ERROR, errorDescription.str());
-    }
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_INFO_LOG("OnDisConnectNodes enter");
     isFinishDisConnectNodes_ = true;
@@ -833,33 +656,8 @@ void AudioSuiteManager::OnDisConnectNodes(int32_t result)
     callbackCV_.notify_all();
 }
 
-void AudioSuiteManager::OnInstallTap(int32_t result)
-{
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    AUDIO_INFO_LOG("OnInstallTap callback");
-    isFinisInstallTap_ = true;
-    installTapResult_ = result;
-    callbackCV_.notify_all();
-}
-
-void AudioSuiteManager::OnRemoveTap(int32_t result)
-{
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    AUDIO_INFO_LOG("RemoveTap callback");
-    isFinisRemoveTap_ = true;
-    removeTapResult_ = result;
-    callbackCV_.notify_all();
-}
-
 void AudioSuiteManager::OnRenderFrame(int32_t result)
 {
-    if (result != SUCCESS &&
-        result != ERR_NOT_SUPPORTED &&
-        result != ERR_ILLEGAL_STATE) {
-        std::ostringstream errorDescription;
-        errorDescription << "engine RenderFrame failed, ret = " << result;
-        WriteSuiteEngineExceptionEvent(PIPELINE_SCENE, RENDER_PIPELINE_ERROR, errorDescription.str());
-    }
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_INFO_LOG("OnRenderFrame callback");
     isFinisRenderFrame_ = true;
@@ -869,45 +667,11 @@ void AudioSuiteManager::OnRenderFrame(int32_t result)
 
 void AudioSuiteManager::OnMultiRenderFrame(int32_t result)
 {
-    if (result != SUCCESS &&
-        result != ERR_NOT_SUPPORTED &&
-        result != ERR_ILLEGAL_STATE) {
-        std::ostringstream errorDescription;
-        errorDescription << "engine MultiRenderFrame failed, ret = " << result;
-        WriteSuiteEngineExceptionEvent(PIPELINE_SCENE, RENDER_PIPELINE_ERROR, errorDescription.str());
-    }
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_INFO_LOG("OnMultiRenderFrame callback");
     isFinisMultiRenderFrame_ = true;
     MultiRenderFrameResult_ = result;
     callbackCV_.notify_all();
-}
-
-void AudioSuiteManager::WriteSuiteEngineUtilizationStatsEvent(AudioNodeType nodeType)
-{
-    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
-        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::SUITE_ENGINE_UTILIZATION_STATS,
-        Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
-    std::string nodeTypeStr = "";
-    auto it = NODETYPE_TOSTRING_MAP.find(nodeType);
-    if (it != NODETYPE_TOSTRING_MAP.end()) {
-        nodeTypeStr = it->second;
-    }
-    bean->Add("CLIENT_UID", static_cast<int32_t>(getuid()));
-    bean->Add("AUDIO_NODE_TYPE", nodeTypeStr);
-    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
-}
- 
-void AudioSuiteManager::WriteSuiteEngineExceptionEvent(uint32_t scene, uint32_t result, std::string description)
-{
-    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
-        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::SUITE_ENGINE_EXCEPTION,
-        Media::MediaMonitor::EventType::FAULT_EVENT);
-    bean->Add("CLIENT_UID", static_cast<int32_t>(getuid()));
-    bean->Add("ERROR_SCENE", static_cast<int32_t>(scene));
-    bean->Add("ERROR_CASE", static_cast<int32_t>(result));
-    bean->Add("ERROR_DESCRIPTION", description);
-    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 }  // namespace AudioSuite
