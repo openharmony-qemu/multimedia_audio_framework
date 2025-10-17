@@ -1,4 +1,3 @@
-dd
 # Copyright (c) 2023 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,6 +28,7 @@ ohos_unittest("audio_toneplayer_unit_test") {
     "./../../../../../frameworks/native/audiostream/include",
     "./../../../../../interfaces/inner_api/native/audiocapturer/include",
     "./../../../../../frameworks/native/audiodefinitions/include",
+    "../../../audioschedule/include",
   ]
 
   cflags = [
@@ -44,6 +44,7 @@ ohos_unittest("audio_toneplayer_unit_test") {
   deps = [
     "../../../toneplayer:audio_toneplayer",
     "./../../../../../frameworks/native/audiorenderer:audio_renderer",
+    "../../../audioschedule:audio_schedule",
   ]
 
   external_deps = [
