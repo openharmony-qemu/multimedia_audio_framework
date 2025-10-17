@@ -23,7 +23,7 @@ config("audio_renderer_config") {
     "../../../interfaces/inner_api/native/audiomanager/include",
     "../../../services/audio_service/client/include",
     "../../../services/audio_service/test/example",
-    "../../../audioschedule/include",
+    "../audioschedule/include",
   ]
   cflags = [
     "-Wall",
