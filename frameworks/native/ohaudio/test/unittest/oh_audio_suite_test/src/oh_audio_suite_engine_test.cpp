@@ -2387,7 +2387,7 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetEnvironmentType_001, TestS
     ret = OH_AudioSuiteEngine_GetEnvironmentType(audioNode, &environmentType);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_UNSUPPORT_OPERATION);
 
-    ret = OH_AudioSuiteEngine_DestroyNode(audioNode); 
+    ret = OH_AudioSuiteEngine_DestroyNode(audioNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
@@ -2434,7 +2434,7 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetEnvironmentType_002, TestS
  * @tc.number: OH_AudioSuiteEngine_GetSoundFiledType_001
  * @tc.desc  : Test nullptr and not support node type.
  */
-HWTEST(OHAudioSuiteEngineTest,OH_AudioSuiteEngine_GetSoundFiledType_001, TestSize.Level0)
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetSoundFiledType_001, TestSize.Level0)
 {
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_GetSoundFiledType(nullptr, nullptr);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
@@ -2574,7 +2574,7 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetEqualizerFrequencyBandGain
  * @tc.number: OH_AudioSuiteEngine_GetVoiceBeautifierType_001
  * @tc.desc  : Test nullptr and not support node type.
  */
-HWTEST(OHAudioSuiteEngineTest,OH_AudioSuiteEngine_GetVoiceBeautifierType_001, TestSize.Level0)
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetVoiceBeautifierType_001, TestSize.Level0)
 {
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_GetVoiceBeautifierType(nullptr, nullptr);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);

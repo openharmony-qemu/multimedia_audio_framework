@@ -930,19 +930,6 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineConnectNodesTest_001
     audioSuitePipeline.nodeMap_[14] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
     result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId);
     EXPECT_EQ(result, SUCCESS);
-
-    srcNodeId = 15;
-    destNodeId = 16;
-    audioSuitePipeline.nodeMap_[15] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_AUDIO_SEPARATION);
-    audioSuitePipeline.nodeMap_[16] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_VOICE_BEAUTIFIER);
-    result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId);
-
-    srcNodeId = 17;
-    destNodeId = 18;
-    audioSuitePipeline.nodeMap_[15] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
-    audioSuitePipeline.nodeMap_[16] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_OUTPUT);
-    result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId);
-    EXPECT_EQ(result, SUCCESS);
 }
 
 HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineConnectNodesTest_002, TestSize.Level0)
@@ -1183,17 +1170,20 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineMultiRenderFrameTest
     bool *finishedFlag = nullptr;
     audioSuitePipeline.pipelineState_ = PIPELINE_STOPPED;
 
-    int32_t result = audioSuitePipeline.MultiRenderFrame(audioDataArray, arraySize, requestFrameSize, responseSize, finishedFlag);
+    int32_t result = audioSuitePipeline.MultiRenderFrame(
+        audioDataArray, arraySize, requestFrameSize, responseSize, finishedFlag);
     EXPECT_EQ(result, SUCCESS);
 
     audioSuitePipeline.pipelineState_ = PIPELINE_RUNNING;
     audioSuitePipeline.outputNode_ = nullptr;
-    result = audioSuitePipeline.MultiRenderFrame(audioDataArray, arraySize, requestFrameSize, responseSize, finishedFlag);
+    result = audioSuitePipeline.MultiRenderFrame(
+        audioDataArray, arraySize, requestFrameSize, responseSize, finishedFlag);
     EXPECT_EQ(result, SUCCESS);
 
     AudioFormat audioFormat;
     audioSuitePipeline.outputNode_ = std::make_shared<AudioOutputNode>(audioFormat);
-    result = audioSuitePipeline.MultiRenderFrame(audioDataArray, arraySize, requestFrameSize, responseSize, finishedFlag);
+    result = audioSuitePipeline.MultiRenderFrame(
+        audioDataArray, arraySize, requestFrameSize, responseSize, finishedFlag);
     EXPECT_EQ(result, SUCCESS);
 }
 

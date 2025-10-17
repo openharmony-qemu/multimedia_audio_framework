@@ -592,22 +592,18 @@ int32_t AudioSuiteEngine::RenderFrame(uint32_t pipelineId,
 {
     CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not RenderFrame.");
     auto request = [this, pipelineId, audioData, requestFrameSize, responseSize, finishedFlag]() {
-
         AUDIO_INFO_LOG("AudioSuiteEngine::RenderFrame enter request");
-
         if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
             AUDIO_ERR_LOG("engine RenderFrame failed, pipeline id is invailed.");
             managerCallback_.OnRenderFrame(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
             return;
         }
-
         std::shared_ptr<IAudioSuitePipeline> pipeline = pipelineMap_[pipelineId];
         if (pipeline == nullptr) {
             AUDIO_ERR_LOG("engine CreateNode failed, pipeline is nullptr.");
             managerCallback_.OnRenderFrame(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
             return;
         }
-
         pipeline->RenderFrame(audioData, requestFrameSize, responseSize, finishedFlag);
     };
 
