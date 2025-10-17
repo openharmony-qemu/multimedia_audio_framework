@@ -56,9 +56,7 @@ namespace {
     const std::string INPUT_PATH = "/data/aiss_48000_2_S32LE.pcm";
     constexpr uint32_t FRAME_LEN_MS = 20;
     constexpr uint32_t DEFAULT_SAMPLING_RATE = 48000;
-    constexpr uint32_t TEST_CONVERT_SAMPLING_RATE = 44100;
     constexpr uint32_t DEFAULT_CHANNELS_IN = 2;
-    constexpr uint32_t DEFAULT_CHANNELS_OUT = 4;
     constexpr uint32_t BYTES_PER_SAMPLE = 4;
     const AudioChannelLayout LAY_OUT = CH_LAYOUT_STEREO;
 
