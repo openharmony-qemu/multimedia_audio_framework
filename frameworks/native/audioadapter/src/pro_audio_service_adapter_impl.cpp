@@ -580,6 +580,13 @@ bool ProAudioServiceAdapterImpl::IsChannelLayoutSupportedForDspEffect(AudioChann
     lock_guard<mutex> lock(lock_);
     return IHpaeManager::GetHpaeManager().IsChannelLayoutSupportedForDspEffect(channelLayout);
 }
+
+void ProAudioServiceAdapterImpl::UpdateAudioPortInfo(const uint32_t &sinkPortIndex,
+    const AudioModuleInfo &audioPortInfo)
+{
+    lock_guard<mutex> lock(lock_);
+    IHpaeManager::GetHpaeManager().UpdateAudioPortInfo(sinkPortIndex, audioPortInfo);
+}
 }  // namespace AudioStandard
 }  // namespace OHOS
 

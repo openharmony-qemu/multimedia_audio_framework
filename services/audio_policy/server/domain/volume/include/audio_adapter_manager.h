@@ -315,6 +315,7 @@ public:
         const SourceType &sourceType);
     void RemoveCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
         const SourceType &sourceType);
+    void UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo);
     int32_t AddCaptureInjector();
     int32_t RemoveCaptureInjector();
     void UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDeviceDescriptor> &device);

@@ -206,6 +206,7 @@ private:
     void OnWriteDataFinish();
     void PauseInner();
     void InitDupBufferInner(int32_t innerCapId);
+    void ClearInnerCapBufferForInject();
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;

@@ -247,7 +247,7 @@ public:
         const SourceType &sourceType) = 0;
     virtual void RemoveCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
         const SourceType &sourceType) = 0;
-
+    virtual void UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo) = 0;
     /**
      * @brief Check is channelLayout support for multichannel render manager
      *

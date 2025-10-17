@@ -12,6 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef LOG_TAG
+#define LOG_TAG "AudioInjectorPolicy"
+#endif
+
 #include "audio_injector_policy.h"
 #include "audio_core_service.h"
 #include "audio_device_info.h"
@@ -83,9 +87,9 @@ int32_t AudioInjectorPolicy::DeInit()
     return SUCCESS;
 }
 
-int32_t AudioInjectorPolicy::UpdateAudioInfo(AudioModuleInfo &info)
+void AudioInjectorPolicy::UpdateAudioInfo(AudioModuleInfo &info)
 {
-    return SUCCESS;
+    audioPolicyManager_.UpdateAudioPortInfo(renderPortIdx_, info);
 }
 
 int32_t AudioInjectorPolicy::AddStreamDescriptor(uint32_t renderId, std::shared_ptr<AudioStreamDescriptor> desc)
@@ -253,6 +257,7 @@ int32_t AudioInjectorPolicy::AddCaptureInjectorInner()
         } else if (voipType_ == FAST_VOIP) {
             int32_t ret = audioPolicyManager_.AddCaptureInjector();
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "AddCaptureInjector failed");
+            UpdateAudioInfo(moduleInfo_);
             isConnected_ = true;
         }
     }
