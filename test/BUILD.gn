@@ -73,7 +73,7 @@ group("audio_unit_test") {
     "../frameworks/native/ohaudio/test/unittest/oh_audio_volume_manager_test:audio_oh_volume_manager_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_session_manager_test:audio_oh_session_manager_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_workgroup_test:audio_oh_audio_workgroup_unit_test",
-    "../frameworks/native/ohaudio/test/unittest/oh_audio_suite_test:audio_oh_audio_suite_unit_test",
+    "../frameworks/native/ohaudiosuite/test/unittest/oh_audio_suite_test:audio_oh_audio_suite_unit_test",
     "../frameworks/native/toneplayer/test/unittest:audio_toneplayer_unit_test",
     "../services/audio_engine/test/unittest:audio_engine_unit_test",
     "../services/audio_engine/test/unittest:hpae_capture_effect_node_test",
