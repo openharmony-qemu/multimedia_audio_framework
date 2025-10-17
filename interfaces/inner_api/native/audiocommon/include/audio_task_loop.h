@@ -1,4 +1,3 @@
-dd
 /*
  * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,6 +24,7 @@ dd
 #include <string>
 #include <string_view>
 #include <queue>
+#include "audio_schedule.h"
 namespace OHOS {
 namespace AudioStandard {
 class AudioTaskLoop {
@@ -114,6 +114,7 @@ public:
         if (loop_ != nullptr) {
             auto strongRef = loop_;
             std::thread loopThread([strongRef] () {
+                ScheduleReportData(getpid(), gettid(), "");
                 strongRef->Loop();
             });
             pthread_setname_np(loopThread.native_handle(), threadName.c_str());
