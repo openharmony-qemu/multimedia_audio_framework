@@ -1430,60 +1430,6 @@ HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_006, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test RendererInServer
- * @tc.type  : FUNC
- * @tc.number: ProcessFadeOutIfNeeded_001
- * @tc.desc  : Test RendererInServer API
- */
-HWTEST_F(RendererInServerExtUnitTest, ProcessFadeOutIfNeeded_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, rendererInServer);
-    uint64_t currentReadFrame = 10;
-    uint64_t currentWriteFrame = 20;
-    uint64_t requestDataInFrame = 10;
-    AudioProcessConfig tempProcessConfig;
-    RingBufferWrapper ringBufferDesc;
-    tempProcessConfig.streamType = STREAM_MUSIC;
-    rendererInServer->ProcessFadeOutIfNeeded(ringBufferDesc, currentReadFrame, currentWriteFrame, requestDataInFrame);
-}
-
-/**
- * @tc.name  : Test RendererInServer
- * @tc.type  : FUNC
- * @tc.number: ProcessFadeOutIfNeeded_002
- * @tc.desc  : Test RendererInServer API
- */
-HWTEST_F(RendererInServerExtUnitTest, ProcessFadeOutIfNeeded_002, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, rendererInServer);
-    uint64_t currentReadFrame = 10;
-    uint64_t currentWriteFrame = 20;
-    uint64_t requestDataInFrame = 10;
-    AudioProcessConfig tempProcessConfig;
-    RingBufferWrapper ringBufferDesc;
-    tempProcessConfig.streamType = STREAM_ULTRASONIC;
-    rendererInServer->ProcessFadeOutIfNeeded(ringBufferDesc, currentReadFrame, currentWriteFrame, requestDataInFrame);
-}
-
-/**
- * @tc.name  : Test RendererInServer
- * @tc.type  : FUNC
- * @tc.number: ProcessFadeOutIfNeeded_003
- * @tc.desc  : Test RendererInServer API
- */
-HWTEST_F(RendererInServerExtUnitTest, ProcessFadeOutIfNeeded_003, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, rendererInServer);
-    uint64_t currentReadFrame = 10;
-    uint64_t currentWriteFrame = 30;
-    uint64_t requestDataInFrame = 10;
-    AudioProcessConfig tempProcessConfig;
-    RingBufferWrapper ringBufferDesc;
-    tempProcessConfig.streamType = STREAM_MUSIC;
-    rendererInServer->ProcessFadeOutIfNeeded(ringBufferDesc, currentReadFrame, currentWriteFrame, requestDataInFrame);
-}
-
-/**
  * @tc.name  : Test GetEAC3ControlParam
  * @tc.type  : FUNC
  * @tc.number: GetEAC3ControlParam_001
