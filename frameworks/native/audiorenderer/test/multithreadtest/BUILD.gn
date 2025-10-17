@@ -1,4 +1,3 @@
-dd
 # Copyright (c) 2023 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,6 +27,7 @@ ohos_unittest("audio_renderer_multi_test") {
     "../../../../../frameworks/native/audiorenderer/include",
     "../../../../../services/audio_policy/client/include",
     "../../../../../frameworks/native/audiostream/include",
+    "../../../audioschedule/include",
   ]
   cflags = [
     "-Wall",
@@ -41,6 +41,7 @@ ohos_unittest("audio_renderer_multi_test") {
     "../../../../../services/audio_service:audio_client",
     "../../../../../services/audio_service:audio_common",
     "../../../audiorenderer:audio_renderer",
+    "../../../audioschedule:audio_schedule",
   ]
 
   external_deps = [
