@@ -87,19 +87,47 @@ int32_t AudioSuiteSoundFieldNode::DeInit()
 int32_t AudioSuiteSoundFieldNode::SetOptions(std::string name, std::string value)
 {
     AUDIO_INFO_LOG("SoundField node SetOptions [%{public}s]: %{public}s", name.c_str(), value.c_str());
-    
+
+    CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "algo interface is null, need Init first");
+
     CHECK_AND_RETURN_RET_LOG(name == "SoundFieldType", ERROR, "SetOptions Unknow Type %{public}s", name.c_str());
 
-    // para value convert
+    // convert from SoundFieldType to iMedia_Surround_PARA
     auto it = soundFieldParaMap.find(static_cast<SoundFieldType>(std::stoi(value)));
     if (it != soundFieldParaMap.end()) {
         int32_t ret = algoInterface_->SetParameter(name, std::to_string(static_cast<int32_t>(it->second)));
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetOptions fail");
         return SUCCESS;
     } else {
-        AUDIO_ERR_LOG("SetOptions Unknow value %{public}s", value.c_str());
+        AUDIO_ERR_LOG("SetOptions Unknown value %{public}s", value.c_str());
         return ERROR;
     }
+}
+
+int32_t AudioSuiteSoundFieldNode::GetOptions(std::string name, std::string &value)
+{
+    AUDIO_INFO_LOG("SoundField node GetOptions [%{public}s]", name.c_str());
+
+    CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "algo interface is null, need Init first");
+
+    CHECK_AND_RETURN_RET_LOG(name == "SoundFieldType", ERROR, "GetOptions Unknown Para name: %{public}s", name.c_str());
+
+    std::string tempValue = "";
+    int32_t ret = algoInterface_->GetParameter(name, tempValue);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "GetOptions fail");
+
+    // convert from iMedia_Surround_PARA to SoundFieldType
+    iMedia_Surround_PARA paraValue = static_cast<iMedia_Surround_PARA>(std::stoi(tempValue));
+    for (const auto& pair : soundFieldParaMap) {
+        if (pair.second == paraValue) {
+            value = std::to_string(static_cast<int32_t>(pair.first));
+            AUDIO_INFO_LOG("SoundField node GetOptions success [%{public}s]: %{public}s", name.c_str(), value.c_str());
+            return SUCCESS;
+        }
+    }
+
+    AUDIO_ERR_LOG("GetOptions Unknown value %{public}s", tempValue.c_str());
+    return ERROR;
 }
 
 AudioSuitePcmBuffer *AudioSuiteSoundFieldNode::SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs)

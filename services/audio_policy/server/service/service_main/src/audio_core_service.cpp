@@ -38,6 +38,7 @@ static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
 static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
 static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
+static const int32_t REFETCH_DEVICE = 4;
 static constexpr int32_t MAX_TRY = 100;
 static constexpr int32_t DELAY_MS = 100;
 }
@@ -557,14 +558,8 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     if (audioDeviceManager_.IsSessionSetDefaultDevice(sessionId)) {
         audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(sessionId);
         std::vector<std::shared_ptr<AudioStreamDescriptor>> outputDescs = pipeManager_->GetAllOutputStreamDescs();
-        for (auto &desc : outputDescs) {
-            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
-            desc->newDeviceDescs_ = audioRouterCenter_.FetchOutputDevices(desc->rendererInfo_.streamUsage,
-                GetRealUid(desc), "StartClient", RouterType::ROUTER_TYPE_NONE,
-                streamDesc->rendererInfo_.privacyType);
-        }
+        FetchOutputDevicesForDescs(streamDesc, outputDescs);
     }
-
     CHECK_AND_RETURN_RET_LOG(!streamDesc->newDeviceDescs_.empty(), ERR_INVALID_PARAM, "newDeviceDescs_ is empty");
 
     // Update a2dp offload flag for update active route, if a2dp offload flag is not true, audioserver
@@ -574,6 +569,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     CHECK_AND_RETURN_RET_LOG(deviceDesc, ERR_NULL_POINTER, "deviceDesc is nullptr");
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         int32_t outputRet = ActivateOutputDevice(streamDesc);
+        CHECK_AND_RETURN_RET_LOG(outputRet != REFETCH_DEVICE, SUCCESS, "Activate output device failed, refetch device");
         CHECK_AND_RETURN_RET_LOG(outputRet == SUCCESS, outputRet, "Activate output device failed");
         CheckAndSetCurrentOutputDevice(deviceDesc, streamDesc->sessionId_);
         audioVolumeManager_.SetVolumeForSwitchDevice(deviceDesc);
@@ -589,6 +585,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::START_CLIENT, info);
         FetchInputDeviceAndRoute("StartClient");
         int32_t inputRet = ActivateInputDevice(streamDesc);
+        CHECK_AND_RETURN_RET_LOG(inputRet != REFETCH_DEVICE, SUCCESS, "Activate input device failed, refetch device");
         CHECK_AND_RETURN_RET_LOG(inputRet == SUCCESS, inputRet, "Activate input device failed");
         CheckAndSetCurrentInputDevice(deviceDesc);
         audioActiveDevice_.UpdateActiveDeviceRoute(
@@ -1414,6 +1411,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> modemDescs;
     CheckModemScene(modemDescs, reason);
 
+    AudioCoreServiceUtils::SortOutputStreamDescsForUsage(outputStreamDescs);
     for (auto &streamDesc : outputStreamDescs) {
         UpdateStreamDevicesForStart(streamDesc, caller + "FetchOutputDeviceAndRoute");
     }
@@ -1647,6 +1645,26 @@ int32_t AudioCoreService::A2dpOffloadGetRenderPosition(uint32_t &delayValue, uin
 #else
     return SUCCESS;
 #endif
+}
+
+void AudioCoreService::RestoreDistributedDeviceInfo()
+{
+    AUDIO_INFO_LOG("try to restore distributed device");
+    CHECK_AND_RETURN_LOG(deviceStatusListener_ != nullptr, "deviceStatusListener_ is nullptr");
+
+    std::vector<std::string> deviceInfos;
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().GetDistributedDeviceInfo(deviceInfos);
+    CHECK_AND_RETURN_LOG(!deviceInfos.empty(), "no distributed device info");
+
+    for (const auto &deviceInfo : deviceInfos) {
+        deviceStatusListener_->SendDistributeInfo(deviceInfo);
+    }
+}
+
+bool AudioCoreService::IsDistributeServiceOnline()
+{
+    CHECK_AND_RETURN_RET_LOG(deviceStatusListener_ != nullptr, false, "deviceStatusListener_ is null");
+    return deviceStatusListener_->IsDistributeServiceOnline();
 }
 } // namespace AudioStandard
 } // namespace OHOS

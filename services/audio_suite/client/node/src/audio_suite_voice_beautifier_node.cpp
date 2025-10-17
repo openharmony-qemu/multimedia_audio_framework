@@ -27,13 +27,12 @@ static constexpr AudioSamplingRate VM_ALGO_SAMPLE_RATE = SAMPLE_RATE_48000;
 static constexpr AudioSampleFormat VM_ALGO_SAMPLE_FORMAT = SAMPLE_S16LE;
 static constexpr AudioChannel VM_ALGO_CHANNEL_COUNT = STEREO;
 static constexpr AudioChannelLayout VM_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
-static constexpr uint32_t RESAMPLE_QUALITY = 5;
 
 AudioSuiteVoiceBeautifierNode::AudioSuiteVoiceBeautifierNode()
     : AudioSuiteProcessNode(AudioNodeType::NODE_TYPE_VOICE_BEAUTIFIER,
           AudioFormat{{VM_ALGO_CHANNEL_LAYOUT, VM_ALGO_CHANNEL_COUNT}, VM_ALGO_SAMPLE_FORMAT, VM_ALGO_SAMPLE_RATE}),
       pcmBufferOutput_(VM_ALGO_SAMPLE_RATE, VM_ALGO_CHANNEL_COUNT, VM_ALGO_CHANNEL_LAYOUT),
-      channelConvertPcmBuffer_(VM_ALGO_SAMPLE_RATE, VM_ALGO_CHANNEL_COUNT, VM_ALGO_CHANNEL_LAYOUT)
+      tmpPcmBuffer_(VM_ALGO_SAMPLE_RATE, VM_ALGO_CHANNEL_COUNT, VM_ALGO_CHANNEL_LAYOUT)
 {}
 
 AudioSuiteVoiceBeautifierNode::~AudioSuiteVoiceBeautifierNode()
@@ -100,107 +99,6 @@ int32_t AudioSuiteVoiceBeautifierNode::SetOptions(std::string name, std::string 
     return SUCCESS;
 }
 
-int32_t AudioSuiteVoiceBeautifierNode::CopyPcmBuffer(
-    AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer)
-{
-    if (inputPcmBuffer == nullptr || outputPcmBuffer == nullptr) {
-        AUDIO_ERR_LOG("copypcmbuffer function get null paras.");
-        return ERROR;
-    }
-    float *inputData = inputPcmBuffer->GetPcmDataBuffer();
-    uint32_t inFrameSize = inputPcmBuffer->GetFrameLen() * sizeof(float);
-    float *outputData = outputPcmBuffer->GetPcmDataBuffer();
-    uint32_t outFrameSize = outputPcmBuffer->GetFrameLen() * sizeof(float);
-
-    int32_t ret = memcpy_s(outputData, outFrameSize, inputData, inFrameSize);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "AudioSuiteVoiceBeautifierNode PcmBuffer copy failed: %{public}d",
-        ret);
-    return SUCCESS;
-}
-
-int32_t AudioSuiteVoiceBeautifierNode::DoChannelConvert(
-    AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer)
-{
-    AudioChannelInfo inChannelInfo = {inputPcmBuffer->GetChannelLayout(), inputPcmBuffer->GetChannelCount()};
-    AudioChannelInfo outChannelInfo = {VM_ALGO_CHANNEL_LAYOUT, VM_ALGO_CHANNEL_COUNT};
-    SetChannelConvertProcessParam(inChannelInfo, outChannelInfo, SAMPLE_F32LE, true);
-
-    uint32_t frameSize = inputPcmBuffer->GetFrameLen() / inputPcmBuffer->GetChannelCount();
-    float *inputData = inputPcmBuffer->GetPcmDataBuffer();
-    uint32_t inLen = inputPcmBuffer->GetFrameLen() * sizeof(float);
-    float *outputData = outputPcmBuffer->GetPcmDataBuffer();
-    uint32_t outLen = outputPcmBuffer->GetFrameLen() * sizeof(float);
-    AUDIO_INFO_LOG(
-        "DoChannelConvert: frameSize: %{public}u, inLen: %{public}u, outLen: %{public}u",
-        frameSize,
-        inLen,
-        outLen);
-
-    int32_t ret = ChannelConvertProcess(frameSize, inputData, inLen, outputData, outLen);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DoChannelConvert failed: %{public}d", ret);
-
-    return SUCCESS;
-}
-
-int32_t AudioSuiteVoiceBeautifierNode::DoResample(
-    AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer)
-{
-    uint32_t inRate = inputPcmBuffer->GetSampleRate();
-    uint32_t outRate = outputPcmBuffer->GetSampleRate();
-    uint32_t channelCount = inputPcmBuffer->GetChannelCount();
-    CHECK_AND_RETURN_RET_LOG(channelCount != 0, ERROR, "Invalid ChannelCount: %{public}d", channelCount);
-
-    AUDIO_INFO_LOG(
-        "DoResample: inSampleRate: %{public}u, outSampleRate: %{public}u, channelCount: %{public}u",
-        inRate,
-        outRate,
-        channelCount);
-    int32_t ret = SetUpResample(inRate, outRate, channelCount, RESAMPLE_QUALITY);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetUpResample failed: %{public}d", ret);
-
-    float *inputData = inputPcmBuffer->GetPcmDataBuffer();
-    uint32_t inFrameSize = inputPcmBuffer->GetFrameLen() / channelCount;
-    float *outputData = outputPcmBuffer->GetPcmDataBuffer();
-    uint32_t outFrameSize = outputPcmBuffer->GetFrameLen() / channelCount;
-    ret = DoResampleProcess(inputData, inFrameSize, outputData, outFrameSize);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DoResampleProcess failed: %{public}d", ret);
-
-    return SUCCESS;
-}
-
-int32_t AudioSuiteVoiceBeautifierNode::ConvertProcess(AudioSuitePcmBuffer *inputPcmBuffer)
-{
-    uint32_t inChannelCount = inputPcmBuffer->GetChannelCount();
-    uint32_t outChannelCount = VM_ALGO_CHANNEL_COUNT;
-    uint32_t inSampleRate = inputPcmBuffer->GetSampleRate();
-    uint32_t outSampleRate = VM_ALGO_SAMPLE_RATE;
-    AUDIO_INFO_LOG("ConvertProcess inChannelCount: %{public}u, outChannelCount: %{public}u,"
-                   "inSampleRate: %{public}u, outSampleRate: %{public}u",
-        inChannelCount,
-        outChannelCount,
-        inSampleRate,
-        outSampleRate);
-
-    int32_t ret;
-    if (inChannelCount == outChannelCount && inSampleRate == outSampleRate) {
-        ret = CopyPcmBuffer(inputPcmBuffer, &pcmBufferOutput_);
-    } else if (inChannelCount == outChannelCount) {
-        ret = DoResample(inputPcmBuffer, &pcmBufferOutput_);
-    } else if (inSampleRate == outSampleRate) {
-        ret = DoChannelConvert(inputPcmBuffer, &pcmBufferOutput_);
-    } else {
-        // 采样率和声道数都不同，先做声道转换。
-        channelConvertPcmBuffer_.ResetPcmBuffer(inputPcmBuffer->GetSampleRate(),
-            VM_ALGO_CHANNEL_COUNT, VM_ALGO_CHANNEL_LAYOUT);
-        ret = DoChannelConvert(inputPcmBuffer, &channelConvertPcmBuffer_);
-        CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
-        ret = DoResample(&channelConvertPcmBuffer_, &pcmBufferOutput_);
-    }
-    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
-
-    return SUCCESS;
-}
-
 AudioSuitePcmBuffer *AudioSuiteVoiceBeautifierNode::SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs)
 {
     if (inputs.empty()) {
@@ -214,7 +112,7 @@ AudioSuitePcmBuffer *AudioSuiteVoiceBeautifierNode::SignalProcess(const std::vec
     }
 
     // 声道转换及采样率转换
-    int32_t ret = ConvertProcess(inputs[0]);
+    int32_t ret = ConvertProcess(inputs[0], &pcmBufferOutput_, &tmpPcmBuffer_);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("AudioSuiteVoiceBeautifierNode ConverProcess fail.");
         return &pcmBufferOutput_;

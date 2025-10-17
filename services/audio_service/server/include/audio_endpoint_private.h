@@ -82,9 +82,6 @@ public:
      *   case5: endpointStatus_ = RUNNING; RUNNING-->RUNNING
     */
     int32_t LinkProcessStream(IAudioProcessStream *processStream, bool startWhenLinking = true) override;
-    void AddEndpointStreamVolume(IAudioProcessStream *processStream);
-    void LinkProcessStreamExt(IAudioProcessStream *processStream,
-    const std::shared_ptr<OHAudioBufferBase>& processBuffer);
 
     int32_t UnlinkProcessStream(IAudioProcessStream *processStream) override;
 
@@ -251,6 +248,9 @@ private:
     int32_t LimitMixData(float *inBuff, float *outBuff, const size_t bufLength,
                          const AudioStreamInfo &streamInfo);
     void InjectToCaptureDataProc(const BufferDesc &readBuf);
+    void AddEndpointStreamVolume(IAudioProcessStream *processStream);
+    void LinkProcessStreamExt(IAudioProcessStream *processStream,
+        const std::shared_ptr<OHAudioBufferBase>& processBuffer);
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
     static constexpr int64_t TWO_MILLISECOND_DURATION = 2000000; // 2ms

@@ -178,6 +178,7 @@ void AudioPipeSelector::DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioSt
 
 // add streamDescs to prefer newPipe based on final routeFlag, create newPipe if needed
 void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
+    std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo,
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
     std::string adapterName{};
@@ -193,6 +194,17 @@ void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipe
                 });
         } else {
             streamDescAdapterName = GetAdapterNameByStreamDesc(streamDesc);
+
+            // When the paused offload/multichannel stream needs to recons, in pipeManager the stream has reconstucted,
+            // but due to delay recons, the actual recons operation do not occur, the stream is still in old pipe,
+            // which may cause two offload/multichannel streams running in concurrency.
+            if (IsNeedTempMoveToNormal(streamDesc, streamDescToOldPipeInfo)) {
+                AUDIO_INFO_LOG("[PipeFetchInfo] Temporarily move recons stream %{public}d to primary."
+                    " routeFlag %{public}d", streamDesc->GetSessionId(), streamDesc->routeFlag_);
+                streamDesc->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+                streamDescAdapterName = "primary";
+            }
+
             // find if curStream's prefer pipe has already exist
             newPipeIter = std::find_if(newPipeInfoList.begin(), newPipeInfoList.end(),
                 [&](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
@@ -274,7 +286,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipesAndExec
     }
 
     DecideFinalRouteFlag(streamDescs);
-    ProcessNewPipeList(newPipeInfoList, streamDescs);
+    ProcessNewPipeList(newPipeInfoList, streamDescToPipeInfo, streamDescs);
     DecidePipesAndStreamAction(newPipeInfoList, streamDescToPipeInfo);
 
     // check is pipe update
@@ -671,6 +683,13 @@ void AudioPipeSelector::CheckAndHandleOffloadConcedeScene(std::shared_ptr<AudioS
         AUDIO_INFO_LOG("Session %{public}u has been conceded to FORCED_NORMAL", streamDesc->sessionId_);
         streamDesc->SetOriginalFlagForcedNormal();
     }
+}
+
+bool AudioPipeSelector::IsNeedTempMoveToNormal(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+    std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo)
+{
+    return (streamDescToOldPipeInfo[streamDesc->GetSessionId()]->IsRenderPipeNeedMoveToNormal() &&
+        streamDesc->IsRenderStreamNeedRecreate());
 }
 
 } // namespace AudioStandard

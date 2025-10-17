@@ -310,6 +310,8 @@ private:
     int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
     bool GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos);
     DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo, const StreamUsage &streamUsage);
+    void RestoreDistributedDeviceInfo();
+    bool IsDistributeServiceOnline();
 
     // Called by Others - without lock
     int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object);
@@ -541,6 +543,8 @@ private:
     void ResetNearlinkDeviceState(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, bool isRunning = true);
     int32_t ForceRemoveSleStreamType(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void WriteScoStateFaultEvent(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
+    void FetchOutputDevicesForDescs(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputDescs);
 
     // For offload
     void CheckAndUpdateOffloadEnableForStream(

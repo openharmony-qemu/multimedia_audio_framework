@@ -147,10 +147,6 @@ public:
     static std::shared_ptr<OHAudioBufferBase> CreateFromRemote(uint32_t totalSizeInFrame,
         uint32_t byteSizePerFrame, AudioBufferHolder holder, int dataFd, int infoFd = INVALID_BUFFER_FD);
 
-    // for ipc.
-    static int32_t WriteToParcel(const std::shared_ptr<OHAudioBufferBase> &buffer, MessageParcel &parcel);
-    static std::shared_ptr<OHAudioBufferBase> ReadFromParcel(MessageParcel &parcel);
-
     // idl
     bool Marshalling(Parcel &parcel) const override;
     static OHAudioBufferBase *Unmarshalling(Parcel &parcel);
@@ -288,10 +284,6 @@ public:
         uint32_t byteSizePerFrame);
     static std::shared_ptr<OHAudioBuffer> CreateFromRemote(uint32_t totalSizeInFrame, uint32_t spanSizeInFrame,
         uint32_t byteSizePerFrame, AudioBufferHolder holder, int dataFd, int infoFd = INVALID_BUFFER_FD);
-
-    // for ipc.
-    static int32_t WriteToParcel(const std::shared_ptr<OHAudioBuffer> &buffer, MessageParcel &parcel);
-    static std::shared_ptr<OHAudioBuffer> ReadFromParcel(MessageParcel &parcel);
 
     // idl
     bool Marshalling(Parcel &parcel) const override;
