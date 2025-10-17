@@ -161,6 +161,7 @@ public:
     MOCK_METHOD(int32_t, OnDistributedOutputChange, (bool isRemote), (override));
     MOCK_METHOD(int32_t, OnDistributedRoutingRoleChange,
         (const std::shared_ptr<AudioDeviceDescriptor> &descriptor, int32_t type), (override));
+    MOCK_METHOD(int32_t, OnDistributedServiceOnline, (), (override));
 };
 
 /**
@@ -261,6 +262,42 @@ HWTEST(AudioRouterCenterUnitTest, SetAudioDeviceRefinerCallback_001, TestSize.Le
     sptr<IRemoteObject> object = nullptr;
     int32_t ret = audioRouterCenter.SetAudioDeviceRefinerCallback(object);
     EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test SetAudioDeviceRefinerCallback.
+ * @tc.number: SetAudioDeviceRefinerCallback_002
+ * @tc.desc  : Test SetAudioDeviceRefinerCallback interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, SetAudioDeviceRefinerCallback_002, TestSize.Level1)
+{
+    AudioRouterCenter audioRouterCenter;
+    sptr<MockStandardAudioRoutingManagerListener> cb = new(std::nothrow) MockStandardAudioRoutingManagerListener();
+    ASSERT_NE(cb, nullptr);
+    sptr<IRemoteObject> object = cb->AsObject();
+    int32_t ret = audioRouterCenter.SetAudioDeviceRefinerCallback(object);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetAudioDeviceRefinerCallback.
+ * @tc.number: SetAudioDeviceRefinerCallback_003
+ * @tc.desc  : Test SetAudioDeviceRefinerCallback interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, SetAudioDeviceRefinerCallback_003, TestSize.Level1)
+{
+    AudioRouterCenter audioRouterCenter;
+    auto coreService = AudioCoreService::GetCoreService();
+    ASSERT_NE(coreService, nullptr);
+    coreService->Init();
+    auto &listener = coreService->deviceStatusListener_;
+    ASSERT_NE(listener, nullptr);
+    listener->OnDistributedServiceStatusChanged(true);
+    sptr<MockStandardAudioRoutingManagerListener> cb = new(std::nothrow) MockStandardAudioRoutingManagerListener();
+    ASSERT_NE(cb, nullptr);
+    sptr<IRemoteObject> object = cb->AsObject();
+    int32_t ret = audioRouterCenter.SetAudioDeviceRefinerCallback(object);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 class MockRouter : public RouterBase {

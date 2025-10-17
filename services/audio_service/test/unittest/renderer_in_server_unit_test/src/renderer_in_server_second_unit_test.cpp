@@ -835,6 +835,38 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerRestoreSession_001, TestSi
 }
 
 /**
+ * @tc.name  : Test RendererInServer API
+ * @tc.type  : FUNC
+ * @tc.number: RemoveIdForInjector_001
+ * @tc.desc  : Test RemoveIdForInjector interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RemoveIdForInjector_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    EXPECT_NE(nullptr, server);
+    server->lastTarget_ = INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
+    server->RemoveIdForInjector();
+}
+
+/**
+ * @tc.name  : Test RendererInServer API
+ * @tc.type  : FUNC
+ * @tc.number: RemoveIdForInjector_002
+ * @tc.desc  : Test RemoveIdForInjector interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RemoveIdForInjector_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    EXPECT_NE(nullptr, server);
+    server->lastTarget_ = NORMAL_PLAYBACK;
+    server->RemoveIdForInjector();
+}
+
+/**
  * @tc.name  : Test WriteMuteDataSysEvent API
  * @tc.type  : FUNC
  * @tc.number: RendererInServerWriteMuteDataSysEvent_001

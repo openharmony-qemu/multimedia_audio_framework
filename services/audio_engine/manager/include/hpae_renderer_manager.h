@@ -164,7 +164,7 @@ private:
     std::shared_ptr<HpaeCoBufferNode> hpaeCoBufferNode_;
     bool isCollaborationEnabled_ = false;
     int64_t noneStreamTime_ = 0; // if no stream, 3s time out to stop rendersink
-    bool isNeedInitEffectBufferFlag_ = false;
+    std::unordered_map<uint32_t, bool> isNeedInitEffectBufferFlagMap_;
 
     int64_t lastOnUnderrunTime_ = 0;
 };

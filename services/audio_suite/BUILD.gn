@@ -101,6 +101,10 @@ audio_ohos_library("audio_suite") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "samgr:samgr_proxy",
   ]
 
   version_script = "libaudio_suite.versionscript"

@@ -644,6 +644,8 @@ public:
 
     int32_t IsCollaborativePlaybackSupported(bool &ret) override;
 
+    int32_t RestoreDistributedDeviceInfo() override;
+
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
         RemoteParameterCallback(sptr<AudioPolicyServer> server);
@@ -924,6 +926,8 @@ private:
     int32_t sessionIdByRemote_ = -1;
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
     bool isAlreadyRegisterCommonEventListener_ = false;
+    std::mutex distributeDeviceMutex_;
+    std::condition_variable distributeDeviceCond_;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {

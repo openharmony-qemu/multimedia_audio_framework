@@ -1402,9 +1402,7 @@ int32_t RendererInServer::Release(bool isSwitchStream)
         status_ = I_STATUS_INVALID;
         return ret;
     }
-    if (lastTarget_ == INJECT_TO_VOICE_COMMUNICATION_CAPTURE) {
-        CoreServiceHandler::GetInstance().RemoveIdForInjector(streamIndex_);
-    }
+    RemoveIdForInjector();
     if (status_ != I_STATUS_STOPPING &&
         status_ != I_STATUS_STOPPED) {
         HandleOperationStopped(RENDERER_STAGE_STOP_BY_RELEASE);
@@ -1421,6 +1419,13 @@ int32_t RendererInServer::Release(bool isSwitchStream)
     RemoveStreamInfo();
 
     return SUCCESS;
+}
+
+void RendererInServer::RemoveIdForInjector()
+{
+    if (lastTarget_ == INJECT_TO_VOICE_COMMUNICATION_CAPTURE) {
+        CoreServiceHandler::GetInstance().RemoveIdForInjector(streamIndex_);
+    }
 }
 
 int32_t RendererInServer::DisableAllInnerCap()

@@ -116,10 +116,13 @@ static void ReceiveRemoteOffloadInfo(std::string &info, DStatusInfo &statusInfo)
 static void ReceviceDistributedInfo(struct ServiceStatus* serviceStatus, std::string & info,
     DeviceStatusListener * devListener)
 {
+    CHECK_AND_RETURN_LOG(serviceStatus != nullptr, "serviceStatus is nullptr");
+    CHECK_AND_RETURN_LOG(devListener != nullptr, "devListener is nullptr");
     DStatusInfo statusInfo;
     PnpEventType pnpEventType = PNP_EVENT_UNKNOWN;
     if (serviceStatus->status == SERVIE_STATUS_START) {
         AUDIO_DEBUG_LOG("distributed service online");
+        devListener->OnDistributedServiceStatusChanged(true);
     } else if (serviceStatus->status == SERVIE_STATUS_CHANGE && !info.empty()) {
         statusInfo.connectType = ConnectType::CONNECT_TYPE_DISTRIBUTED;
         if (sscanf_s(info.c_str(), "EVENT_TYPE=%d;NID=%[^;];PIN=%d;VID=%d;IID=%d", &pnpEventType,
@@ -132,12 +135,15 @@ static void ReceviceDistributedInfo(struct ServiceStatus* serviceStatus, std::st
         statusInfo.isConnected = (pnpEventType == PNP_EVENT_DEVICE_ADD) ? true : false;
         ReceiveRemoteOffloadInfo(info, statusInfo);
         devListener->deviceObserver_.OnDeviceStatusUpdated(statusInfo);
+        devListener->WriteDistributedDeviceChangedEvent(info, statusInfo, serviceStatus->status);
     } else if (serviceStatus->status == SERVIE_STATUS_STOP) {
         AUDIO_DEBUG_LOG("distributed service offline");
         JUDGE_AND_ERR_LOG(sscanf_s(info.c_str(), "EVENT_TYPE=%d;NID=%[^;];PIN=%d;VID=%d;IID=%d", &pnpEventType,
             statusInfo.networkId, sizeof(statusInfo.networkId), &(statusInfo.hdiPin), &(statusInfo.mappingVolumeId),
             &(statusInfo.mappingInterruptId)) < D_EVENT_PARAMS, "[DeviceStatusListener]: Failed to scan info string");
         devListener->deviceObserver_.OnDeviceStatusUpdated(statusInfo, true);
+        devListener->OnDistributedServiceStatusChanged(false);
+        devListener->WriteDistributedDeviceChangedEvent(info, statusInfo, serviceStatus->status);
     }
 }
 
@@ -358,6 +364,41 @@ void DeviceStatusListener::OnMicrophoneBlocked(const std::string &info)
     }
     AUDIO_INFO_LOG("[device type :%{public}d], [status :%{public}d]", micBlockedDeviceType, status);
     deviceObserver_.OnMicrophoneBlockedUpdate(micBlockedDeviceType, status);
+}
+
+void DeviceStatusListener::OnDistributedServiceStatusChanged(bool isOnline)
+{
+    isOnline_ = isOnline;
+}
+
+bool DeviceStatusListener::IsDistributeServiceOnline() const
+{
+    return isOnline_;
+}
+
+void DeviceStatusListener::SendDistributeInfo(const std::string &info)
+{
+    CHECK_AND_RETURN_LOG(!info.empty(), "invalid info");
+    CHECK_AND_RETURN_LOG(isOnline_, "distributed service offline");
+    struct ServiceStatus statusInfo {};
+    statusInfo.status = static_cast<uint16_t>(SERVIE_STATUS_CHANGE);
+    std::string deviceInfo = info;
+    ReceviceDistributedInfo(&statusInfo, deviceInfo, this);
+}
+
+void DeviceStatusListener::WriteDistributedDeviceChangedEvent(const std::string &info, const DStatusInfo &statusInfo,
+    int32_t serviceStatus)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::DISTRIBUTED_DEVICE_INFO,
+        Media::MediaMonitor::BEHAVIOR_EVENT);
+    CHECK_AND_RETURN_LOG(bean != nullptr, "bean is nullptr");
+    bean->Add("IS_ADD", statusInfo.isConnected);
+    bean->Add("NETWORK_ID", statusInfo.networkId);
+    bean->Add("HDI_PIN", statusInfo.hdiPin);
+    bean->Add("SERVICE_STATUS", serviceStatus);
+    bean->Add("ORIGINAL_INFO", info);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 #ifdef AUDIO_WIRED_DETECT

@@ -713,6 +713,7 @@ public:
     bool IsCollaborativePlaybackEnabledForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
     int32_t ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
+    int32_t RestoreDistributedDeviceInfo();
 
 private:
     AudioPolicyManager() {}

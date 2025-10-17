@@ -30,7 +30,7 @@ using namespace testing::ext;
 
 namespace {
 static std::string g_inputfile001 = "/data/audiosuite/soundfield_input_48000_2_F32LE.pcm";
-static std::string g_inputfile002 = "/data/audiosuite/soundfield_input_44100_1_F32LE.pcm";
+static std::string g_inputfile002 = "/data/audiosuite/input_44100_1_F32LE.pcm";
 
 static std::string g_targetfile001 = "/data/audiosuite/soundfield_target_48000_2_to_48000_2_F32LE.pcm";
 static std::string g_targetfile002 = "/data/audiosuite/soundfield_target_44100_1_to_48000_2_F32LE.pcm";
@@ -54,29 +54,26 @@ public:
         const std::string &targetFile);
 
     std::shared_ptr<AudioSuiteSoundFieldNode> node_;
-    std::vector<AudioSuitePcmBuffer *> inputs_;
-    std::unique_ptr<AudioSuitePcmBuffer> pcmBufferOutput_;
+    std::vector<AudioSuitePcmBuffer *> inputs_ = {nullptr};
 };
 
 void AudioSuiteSoundFieldNodeUnitTest::SetUp(void)
 {
     node_ = std::make_shared<AudioSuiteSoundFieldNode>();
-    inputs_.resize(1);
-    pcmBufferOutput_ = std::make_unique<AudioSuitePcmBuffer>(SAMPLE_RATE_48000, STEREO, CH_LAYOUT_STEREO);
 }
 
 void AudioSuiteSoundFieldNodeUnitTest::TearDown(void)
 {
     node_.reset();
-    pcmBufferOutput_.reset();
 }
 
 int32_t AudioSuiteSoundFieldNodeUnitTest::RunSignalProcessTest(std::shared_ptr<AudioSuiteSoundFieldNode> node,
     const std::vector<AudioSuitePcmBuffer *> &inputs, const std::string &inputFile, const std::string &outputFile,
     const std::string &targetFile)
 {
+    AudioSuitePcmBuffer pcmBufferOutput(SAMPLE_RATE_48000, STEREO, CH_LAYOUT_STEREO);
     size_t frameSizeInput = inputs[0]->GetFrameLen() * sizeof(float);
-    size_t frameSizeOutput = pcmBufferOutput_->GetFrameLen() * sizeof(float);
+    size_t frameSizeOutput = pcmBufferOutput.GetFrameLen() * sizeof(float);
     float *inputData = inputs[0]->GetPcmDataBuffer();
 
     // Read input file
@@ -130,30 +127,47 @@ HWTEST_F(AudioSuiteSoundFieldNodeUnitTest, TestInitAndDeinit_001, TestSize.Level
     EXPECT_EQ(node_->DeInit(), SUCCESS);
 }
 
-HWTEST_F(AudioSuiteSoundFieldNodeUnitTest, TestSetOptions_001, TestSize.Level0)
+HWTEST_F(AudioSuiteSoundFieldNodeUnitTest, TestSetAndGetOptions_001, TestSize.Level0)
 {
-    EXPECT_EQ(node_->Init(), SUCCESS);
-
     std::string name = "SoundFieldType";
-    std::string value;
+    std::string value = "";
+    std::string newValue = "";
+
+    // 未初始化 无效
+    value = std::to_string(static_cast<int32_t>(AUDIO_SUITE_SOUND_FIELD_FRONT_FACING));
+    EXPECT_EQ(node_->SetOptions(name, value), ERROR);
+    EXPECT_EQ(node_->GetOptions(name, newValue), ERROR);
+
+    // 初始化
+    EXPECT_EQ(node_->Init(), SUCCESS);
 
     // 前置
     value = std::to_string(static_cast<int32_t>(AUDIO_SUITE_SOUND_FIELD_FRONT_FACING));
     EXPECT_EQ(node_->SetOptions(name, value), SUCCESS);
+    EXPECT_EQ(node_->GetOptions(name, newValue), SUCCESS);
+    EXPECT_EQ(newValue == value, true);
 
     // 宏大
     value = std::to_string(static_cast<int32_t>(AUDIO_SUITE_SOUND_FIELD_GRAND));
     EXPECT_EQ(node_->SetOptions(name, value), SUCCESS);
+    EXPECT_EQ(node_->GetOptions(name, newValue), SUCCESS);
+    EXPECT_EQ(newValue == value, true);
 
     // 聆听
     value = std::to_string(static_cast<int32_t>(AUDIO_SUITE_SOUND_FIELD_NEAR));
     EXPECT_EQ(node_->SetOptions(name, value), SUCCESS);
+    EXPECT_EQ(node_->GetOptions(name, newValue), SUCCESS);
+    EXPECT_EQ(newValue == value, true);
 
     // 宽广
     value = std::to_string(static_cast<int32_t>(AUDIO_SUITE_SOUND_FIELD_WIDE));
     EXPECT_EQ(node_->SetOptions(name, value), SUCCESS);
+    EXPECT_EQ(node_->GetOptions(name, newValue), SUCCESS);
+    EXPECT_EQ(newValue == value, true);
 
     // 无效值
+    EXPECT_EQ(node_->GetOptions("unKnownType", newValue), ERROR);
+    EXPECT_EQ(node_->SetOptions("unKnownType", value), ERROR);
     EXPECT_EQ(node_->SetOptions(name, "9"), ERROR);
 
     EXPECT_EQ(node_->DeInit(), SUCCESS);

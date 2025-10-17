@@ -99,11 +99,16 @@ HWTEST_F(AudioSuiteSoundFieldAlgoInterfaceImplUnitTest, TestSetAndGetParameter_0
     std::vector<int16_t> dataIn(SOUNDFIELD_ALGO_FRAME_LEN, 0);
     std::vector<int16_t> dataOut(SOUNDFIELD_ALGO_FRAME_LEN, 0);
 
-    ASSERT_EQ(soundFieldAlgo.Init(), 0);
-
     std::string paramType = "SoundFieldType";
     std::string paramValue;
     std::string newValue;
+
+    // not init return error
+    paramValue = std::to_string(static_cast<int32_t>(IMEDIA_SWS_SOUROUND_FRONT));
+    EXPECT_EQ(soundFieldAlgo.SetParameter(paramType, paramValue), ERROR);
+    EXPECT_EQ(soundFieldAlgo.GetParameter(paramType, newValue), ERROR);
+
+    ASSERT_EQ(soundFieldAlgo.Init(), 0);
 
     paramValue = std::to_string(static_cast<int32_t>(IMEDIA_SWS_SOUROUND_FRONT));
     EXPECT_EQ(soundFieldAlgo.SetParameter(paramType, paramValue), 0);

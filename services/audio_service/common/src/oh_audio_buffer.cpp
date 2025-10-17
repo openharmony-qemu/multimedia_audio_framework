@@ -129,63 +129,6 @@ std::shared_ptr<OHAudioBuffer> OHAudioBuffer::CreateFromRemote(uint32_t totalSiz
     return buffer;
 }
 
-int32_t OHAudioBuffer::WriteToParcel(const std::shared_ptr<OHAudioBuffer> &buffer, MessageParcel &parcel)
-{
-    AUDIO_DEBUG_LOG("WriteToParcel start.");
-    AudioBufferHolder bufferHolder = buffer->GetBufferHolder();
-    CHECK_AND_RETURN_RET_LOG(bufferHolder == AudioBufferHolder::AUDIO_SERVER_SHARED ||
-        bufferHolder == AudioBufferHolder::AUDIO_SERVER_INDEPENDENT,
-        ERROR_INVALID_PARAM, "buffer holder error:%{public}d", bufferHolder);
-
-    auto initInfo = buffer->ohAudioBufferBase_.GetInitializationInfo();
-
-    parcel.WriteUint32(bufferHolder);
-    parcel.WriteUint32(initInfo.totalSizeInFrame);
-    parcel.WriteUint32(buffer->spanBasicInfo_.spanSizeInFrame_);
-    parcel.WriteUint32(initInfo.byteSizePerFrame);
-
-    parcel.WriteFileDescriptor(initInfo.dataFd);
-    parcel.WriteFileDescriptor(initInfo.infoFd);
-
-    AUDIO_DEBUG_LOG("WriteToParcel done.");
-    return SUCCESS;
-}
-
-std::shared_ptr<OHAudioBuffer> OHAudioBuffer::ReadFromParcel(MessageParcel &parcel)
-{
-    AUDIO_DEBUG_LOG("ReadFromParcel start.");
-    uint32_t holder = parcel.ReadUint32();
-    AudioBufferHolder bufferHolder = static_cast<AudioBufferHolder>(holder);
-    if (bufferHolder != AudioBufferHolder::AUDIO_SERVER_SHARED &&
-        bufferHolder != AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) {
-        AUDIO_ERR_LOG("ReadFromParcel buffer holder error:%{public}d", bufferHolder);
-        return nullptr;
-    }
-    bufferHolder = bufferHolder == AudioBufferHolder::AUDIO_SERVER_SHARED ?
-         AudioBufferHolder::AUDIO_CLIENT : bufferHolder;
-    uint32_t totalSizeInFrame = parcel.ReadUint32();
-    uint32_t spanSizeInFrame = parcel.ReadUint32();
-    uint32_t byteSizePerFrame = parcel.ReadUint32();
-
-    int dataFd = parcel.ReadFileDescriptor();
-    int infoFd = parcel.ReadFileDescriptor();
-
-    std::shared_ptr<OHAudioBuffer> buffer = OHAudioBuffer::CreateFromRemote(totalSizeInFrame, spanSizeInFrame,
-        byteSizePerFrame, bufferHolder, dataFd, infoFd);
-    if (buffer == nullptr) {
-        AUDIO_ERR_LOG("ReadFromParcel failed.");
-    } else if ((totalSizeInFrame != buffer->ohAudioBufferBase_.basicBufferInfo_->totalSizeInFrame) ||
-        (byteSizePerFrame != buffer->ohAudioBufferBase_.basicBufferInfo_->byteSizePerFrame)) {
-        AUDIO_WARNING_LOG("data in shared memory diff.");
-    } else {
-        AUDIO_DEBUG_LOG("Read some data done.");
-    }
-    CloseFd(dataFd);
-    CloseFd(infoFd);
-    AUDIO_DEBUG_LOG("ReadFromParcel done.");
-    return buffer;
-}
-
 bool OHAudioBuffer::Marshalling(Parcel &parcel) const
 {
     AudioBufferHolder bufferHolder = ohAudioBufferBase_.GetBufferHolder();

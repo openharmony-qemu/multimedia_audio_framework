@@ -317,7 +317,7 @@ ohos_unittest("audio_suite_aiss_algo_interface_test") {
     "googletest:gtest",
     "hilog:libhilog",
   ]
-  resource_config_file = "./resource/aiss_test.xml"
+  resource_config_file = "./resource/ohos_test.xml"
 }
 
 ohos_unittest("audio_suite_aiss_node_test") {
@@ -348,6 +348,7 @@ ohos_unittest("audio_suite_aiss_node_test") {
     "googletest:gmock",
     "hilog:libhilog",
   ]
+  resource_config_file = "./resource/ohos_test.xml"
 }
 
 ohos_executable("aiss_algo_demo_wav") {
@@ -472,7 +473,7 @@ ohos_unittest("audio_suite_process_node_test") {
     "googletest:gmock",
     "hilog:libhilog",
   ]
-  resource_config_file = "./resource/process_node.xml"
+  resource_config_file = "./resource/ohos_test.xml"
 }
 
 ohos_unittest("audio_suite_soundfield_algo_interface_impl_test") {
@@ -503,7 +504,7 @@ ohos_unittest("audio_suite_soundfield_algo_interface_impl_test") {
     "googletest:gtest",
     "hilog:libhilog",
   ]
-  resource_config_file = "./resource/soundfield_test.xml"
+  resource_config_file = "./resource/ohos_test.xml"
 }
 
 ohos_unittest("audio_suite_soundfield_node_test") {
@@ -534,7 +535,7 @@ ohos_unittest("audio_suite_soundfield_node_test") {
     "googletest:gtest",
     "hilog:libhilog",
   ]
-  resource_config_file = "./resource/soundfield_test.xml"
+  resource_config_file = "./resource/ohos_test.xml"
 }
 
 ohos_unittest("audio_suite_nr_node_test") {
