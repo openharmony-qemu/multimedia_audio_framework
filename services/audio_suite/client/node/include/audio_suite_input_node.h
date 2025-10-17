@@ -31,26 +31,22 @@ public:
     explicit AudioInputNode(AudioFormat format);
     ~AudioInputNode();
 
-    int32_t Connect(const std::shared_ptr<AudioNode>& preNode, AudioNodePortType type) override;
     int32_t Connect(const std::shared_ptr<AudioNode>& preNode) override;
     int32_t DisConnect(const std::shared_ptr<AudioNode>& preNode) override;
     int32_t Init() override;
     int32_t DeInit() override;
     int32_t Flush() override;
     int32_t DoProcess() override;
-    std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> GetOutputPort(AudioNodePortType type) override;
-    int32_t SetOnWriteDataCallback(std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback) override;
+    std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> GetOutputPort() override;
+    int32_t SetRequestDataCallback(std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback) override;
     bool IsSetReadDataCallback() override;
     void SetAudioNodeFormat(AudioFormat audioFormat) override;
-    int32_t InstallTap(AudioNodePortType portType, std::shared_ptr<SuiteNodeReadTapDataCallback> callback) override;
-    int32_t RemoveTap(AudioNodePortType portType) override;
 
 private:
     int32_t GetDataFromUser();
     uint32_t GetFrameSize();
     uint32_t GetFrameSize(const AudioFormat& format);
     int32_t GeneratePushBuffer();
-    int32_t HandleTapCallback();
     uint32_t GetCacheBufferCapacity(const AudioFormat& format);
     uint32_t GetFrameSizeAfterTransfer(const AudioFormat& format);
     int32_t SetFormatTransfer(AudioSamplingRate sampleRate);

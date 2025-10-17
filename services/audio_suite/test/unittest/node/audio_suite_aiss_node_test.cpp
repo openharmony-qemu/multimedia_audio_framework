@@ -59,7 +59,7 @@ namespace {
     constexpr uint32_t DEFAULT_CHANNELS_IN = 2;
     constexpr uint32_t BYTES_PER_SAMPLE = 4;
     const AudioChannelLayout LAY_OUT = CH_LAYOUT_STEREO;
-
+ 
     HWTEST_F(AudioSuiteAissNodeTest, InitTest, TestSize.Level0)
     {
         EXPECT_EQ(impl->Init(), SUCCESS);
@@ -68,11 +68,11 @@ namespace {
 
     HWTEST_F(AudioSuiteAissNodeTest, GetOutputPortTest, TestSize.Level0)
     {
-        auto humanPort = impl->GetOutputPort(AUDIO_NODE_HUMAN_SOUND_OUTPORT_TYPE);
+        auto humanPort = impl->GetOutputPort();
         ASSERT_NE(humanPort, nullptr);
-        auto bkgPort = impl->GetOutputPort(AUDIO_NODE_BACKGROUND_SOUND_OUTPORT_TYPE);
+        auto bkgPort = impl->GetOutputPort();
         ASSERT_NE(bkgPort, nullptr);
-        auto port = impl->GetOutputPort(static_cast<AudioNodePortType>(100));
+        auto port = impl->GetOutputPort();
         ASSERT_EQ(port, nullptr);
     }
 
@@ -85,22 +85,7 @@ namespace {
     {
         EXPECT_EQ(impl->Reset(), SUCCESS);
     }
-
-    HWTEST_F(AudioSuiteAissNodeTest, TapTest, TestSize.Level0)
-    {
-        auto humanCallback = std::make_shared<MockSuiteNodeReadTapDataCallback>();
-        auto bkgCallback = std::make_shared<MockSuiteNodeReadTapDataCallback>();
-        AudioSuitePcmBuffer buffer(SAMPLE_RATE_48000, 2, CH_LAYOUT_STEREO);
-        impl->HandleTapCallback(&buffer);
-        EXPECT_EQ(impl->InstallTap(AUDIO_NODE_HUMAN_SOUND_OUTPORT_TYPE, humanCallback), SUCCESS);
-        EXPECT_EQ(impl->InstallTap(AUDIO_NODE_BACKGROUND_SOUND_OUTPORT_TYPE, bkgCallback), SUCCESS);
-        EXPECT_EQ(impl->InstallTap(static_cast<AudioNodePortType>(100), humanCallback), ERROR);
-        impl->HandleTapCallback(&buffer);
-        EXPECT_EQ(impl->RemoveTap(AUDIO_NODE_HUMAN_SOUND_OUTPORT_TYPE), SUCCESS);
-        EXPECT_EQ(impl->RemoveTap(AUDIO_NODE_BACKGROUND_SOUND_OUTPORT_TYPE), SUCCESS);
-        EXPECT_EQ(impl->RemoveTap(static_cast<AudioNodePortType>(100)), ERROR);
-    }
-
+     
     HWTEST_F(AudioSuiteAissNodeTest, ProcessTest, TestSize.Level0)
     {
         EXPECT_NE(impl->DoProcess(), SUCCESS);

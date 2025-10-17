@@ -31,19 +31,18 @@ using OHOS::AudioStandard::AudioSuite::AudioNodeType;
 
 class OHAudioSuiteNodeBuilder {
 public:
-    explicit OHAudioSuiteNodeBuilder(const OH_AudioNode_Type type);
     ~OHAudioSuiteNodeBuilder();
 
     OH_AudioSuite_Result SetFormat(OH_AudioFormat audioFormat);
-    OH_AudioSuite_Result SetOnWriteDataCallback(OH_AudioNode_OnWriteDataCallBack callback, void *userData);
+    OH_AudioSuite_Result SetRequestDataCallback(OH_InputNode_RequestDataCallback callback, void *userData);
     OH_AudioSuite_Result SetNodeType(OH_AudioNode_Type type);
     OH_AudioSuite_Result Reset();
 
     AudioNodeType GetNodeType() const;
     bool IsSetFormat() const;
-    bool IsSetWriteDataCallBack() const;
+    bool IsSetRequestDataCallback() const;
     AudioFormat GetNodeFormat() const;
-    OH_AudioNode_OnWriteDataCallBack GetOnWriteDataCallBack() const;
+    OH_InputNode_RequestDataCallback GetRequestDataCallback() const;
     void *GetOnWriteUserData() const;
 
 private:
@@ -54,7 +53,7 @@ private:
     AudioFormat nodeFormat_;
     bool setNodeFormat_ = false;
 
-    OH_AudioNode_OnWriteDataCallBack onWriteDataCallBack_ = nullptr;
+    OH_InputNode_RequestDataCallback onWriteDataCallBack_ = nullptr;
     void *onWriteDataUserData_ = nullptr;
 };
 

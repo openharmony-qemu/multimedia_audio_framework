@@ -56,7 +56,7 @@ public:
     // sync interface
     int32_t Init() override;
     int32_t DeInit() override;
-    int32_t CreatePipeline() override;
+    int32_t CreatePipeline(PipelineWorkMode workMode) override;
     int32_t DestroyPipeline(uint32_t pipelineId) override;
     int32_t StartPipeline(uint32_t pipelineId) override;
     int32_t StopPipeline(uint32_t pipelineId) override;
@@ -64,20 +64,16 @@ public:
 
     int32_t CreateNode(uint32_t pipelineId, AudioNodeBuilder& builder) override;
     int32_t DestroyNode(uint32_t nodeId) override;
-    int32_t EnableNode(uint32_t nodeId, AudioNodeEnable audioNodeEnable) override;
-    int32_t GetNodeEnableStatus(uint32_t nodeId) override;
+    int32_t BypassEffectNode(uint32_t nodeId, bool bypass) override;
+    int32_t GetNodeBypassStatus(uint32_t nodeId) override;
     int32_t SetAudioFormat(uint32_t nodeId, AudioFormat audioFormat) override;
-    int32_t SetWriteDataCallback(uint32_t nodeId,
+    int32_t SetRequestDataCallback(uint32_t nodeId,
         std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback) override;
-    int32_t ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId,
-        AudioNodePortType srcPortType, AudioNodePortType destPortType) override;
     int32_t ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) override;
     int32_t DisConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) override;
-    int32_t InstallTap(uint32_t nodeId, AudioNodePortType portType,
-        std::shared_ptr<SuiteNodeReadTapDataCallback> callback) override;
-    int32_t RemoveTap(uint32_t nodeId, AudioNodePortType portType) override;
     int32_t RenderFrame(uint32_t pipelineId,
-        uint8_t *audioData, int32_t frameSize, int32_t *writeLen, bool *finishedFlag) override;
+        uint8_t *audioData,
+        int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag) override;
     int32_t MultiRenderFrame(uint32_t pipelineId, AudioDataArray *audioDataArray,
         int32_t *responseSize, bool *finishedFlag) override;
 
@@ -101,19 +97,18 @@ private:
     void HandleGetPipelineState(AudioSuitePipelineState state);
     void HandleCreateNode(int32_t result, uint32_t nodeId, uint32_t pipelineId);
     void HandleDestroyNode(int32_t result, uint32_t nodeId);
-    void HandleEnableNode(int32_t result);
-    void HandleGetEnableNode(AudioNodeEnable enable);
+    void HandleBypassEffectNode(int32_t result);
+    void HandleGetNodeBypassStatus(int32_t result, bool bypassStatus);
     void HandleSetAudioFormat(int32_t result);
-    void HandleSetWriteDataCallback(int32_t result);
+    void HandleSetRequestDataCallback(int32_t result);
     void HandleConnectNodes(int32_t result);
     void HandleDisConnectNodes(int32_t result);
-    void HandleInstallTap(int32_t result);
-    void HandleRemoveTap(int32_t result);
     void HandleRenderFrame(int32_t result);
     void HandleMultiRenderFrame(int32_t result);
 
 private:
     std::atomic<bool> isInit_ = false;
+    bool isExistRealtime_ = false;
 
     AudioSuiteManagerCallback& managerCallback_;
     AudioSuiteEngineCfg engineCfg_;

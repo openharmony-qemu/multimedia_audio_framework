@@ -33,12 +33,9 @@ public:
     virtual ~AudioSuiteProcessNode() = default;
     virtual bool Reset() = 0;
     int32_t DoProcess() override;
-    int32_t Connect(const std::shared_ptr<AudioNode>& preNode, AudioNodePortType type) override;
     int32_t Connect(const std::shared_ptr<AudioNode>& preNode) override;
     int32_t DisConnect(const std::shared_ptr<AudioNode>& preNode) override;
     int32_t Flush() override;
-    int32_t InstallTap(AudioNodePortType portType, std::shared_ptr<SuiteNodeReadTapDataCallback> callback) override;
-    int32_t RemoveTap(AudioNodePortType portType) override;
     AudioSuiteProcessNode(const AudioSuiteProcessNode& others) = delete;
     AudioSamplingRate GetSampleRate()
     {
@@ -53,7 +50,7 @@ public:
         return AudioNode::GetAudioNodeInfo().audioFormat.audioChannelInfo.numChannels;
     }
 
-    virtual std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> GetOutputPort(AudioNodePortType type) override
+    virtual std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> GetOutputPort() override
     {
         if (!outputStream_) {
             outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
@@ -68,7 +65,6 @@ protected:
     std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> outputStream_;
     std::shared_ptr<InputPort<AudioSuitePcmBuffer*>> inputStream_;
     virtual AudioSuitePcmBuffer* SignalProcess(const std::vector<AudioSuitePcmBuffer*>& inputs) = 0;
-    virtual void HandleTapCallback(AudioSuitePcmBuffer* pcmBuffer);
     std::vector<AudioSuitePcmBuffer*>& ReadProcessNodePreOutputData();
     std::unordered_set<std::shared_ptr<AudioNode>> finishedPrenodeSet;
 

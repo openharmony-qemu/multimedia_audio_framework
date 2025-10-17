@@ -30,7 +30,7 @@ namespace AudioStandard {
 class OHSuiteInputNodeWriteDataCallBack : public AudioSuite::SuiteInputNodeWriteDataCallBack {
 public:
     explicit OHSuiteInputNodeWriteDataCallBack(
-        OH_AudioNode *audioNode, OH_AudioNode_OnWriteDataCallBack callback, void *data)
+        OH_AudioNode *audioNode, OH_InputNode_RequestDataCallback callback, void *data)
         : audioNode_(audioNode), callback_(callback), userData_(data) {}
     ~OHSuiteInputNodeWriteDataCallBack() = default;
 
@@ -38,24 +38,7 @@ public:
 
 private:
     OH_AudioNode *audioNode_ = nullptr;
-    OH_AudioNode_OnWriteDataCallBack callback_ = nullptr;
-    void *userData_ = nullptr;
-};
-
-class OHOnReadTapDataCallback : public AudioSuite::SuiteNodeReadTapDataCallback {
-public:
-    explicit OHOnReadTapDataCallback(OH_AudioNode_OnReadTapDataCallback callback,
-        OH_AudioNode *ohAudioNode, void *userData)
-        : ohAudioNode_(ohAudioNode), callback_(callback), userData_(userData)
-    {
-    }
-    ~OHOnReadTapDataCallback() = default;
-
-    void OnReadTapDataCallback(void *audioData, int32_t audioDataSize) override;
-
-private:
-    OH_AudioNode *ohAudioNode_ = nullptr;
-    OH_AudioNode_OnReadTapDataCallback callback_ = nullptr;
+    OH_InputNode_RequestDataCallback callback_ = nullptr;
     void *userData_ = nullptr;
 };
 
@@ -109,13 +92,13 @@ public:
     int32_t DestroyEngine();
 
     // pipeline
-    int32_t CreatePipeline(OH_AudioSuitePipeline **audioSuitePipeline);
+    int32_t CreatePipeline(OH_AudioSuitePipeline **audioSuitePipeline, OH_AudioSuite_PipelineWorkMode ohWorkMode);
     int32_t DestroyPipeline(OHAudioSuitePipeline *audioPipeline);
     int32_t StartPipeline(OHAudioSuitePipeline *audioPipeline);
     int32_t StopPipeline(OHAudioSuitePipeline *audioPipeline);
     int32_t GetPipelineState(OHAudioSuitePipeline *audioPipeline, OH_AudioSuite_PipelineState *state);
     int32_t RenderFrame(OHAudioSuitePipeline *audioPipeline,
-        uint8_t *audioData, int32_t frameSize, int32_t *writeSize, bool *finishedFlag);
+        uint8_t *audioData, int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag);
     int32_t MultiRenderFrame(OHAudioSuitePipeline *audioPipeline,
         AudioSuite::AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag);
 
@@ -123,14 +106,11 @@ public:
     int32_t CreateNode(
         OHAudioSuitePipeline *audioSuitePipeline, OHAudioSuiteNodeBuilder *builder, OH_AudioNode **audioNode);
     int32_t DestroyNode(OHAudioNode *node);
-    int32_t GetNodeEnableStatus(OHAudioNode *node, OH_AudioNodeEnable *enable);
-    int32_t EnableNode(OHAudioNode *node, OH_AudioNodeEnable enable);
+    int32_t GetNodeBypassStatus(OHAudioNode *audioNode, bool *bypass);
+    int32_t BypassEffectNode(OHAudioNode *node, bool bypass);
     int32_t SetAudioFormat(OHAudioNode *node, OH_AudioFormat *audioFormat);
-    int32_t ConnectNodes(OHAudioNode *srcNode, OHAudioNode *destNode,
-        OH_AudioNode_Port_Type sourcePortType, OH_AudioNode_Port_Type destPortType);
     int32_t ConnectNodes(OHAudioNode *srcNode, OHAudioNode *destNode);
     int32_t DisConnectNodes(OHAudioNode *srcNode, OHAudioNode *destNode);
-    int32_t SetEqualizerMode(OHAudioNode *node, OH_EqualizerMode eqMode);
     int32_t SetEqualizerFrequencyBandGains(
         OHAudioNode *node, OH_EqualizerFrequencyBandGains frequencyBandGains);
     int32_t SetSoundFieldType(OHAudioNode *node, OH_SoundFieldType soundFieldType);
@@ -143,9 +123,6 @@ public:
         OH_EqualizerFrequencyBandGains *frequencyBandGains);
     int32_t GetVoiceBeautifierType(OHAudioNode *node,
         OH_VoiceBeautifierType *voiceBeautifierType);
-    int32_t InstallTap(OHAudioNode *node,
-        OH_AudioNode_Port_Type portType, OH_AudioNode_OnReadTapDataCallback callback, void *userData);
-    int32_t RemoveTap(OHAudioNode *node, OH_AudioNode_Port_Type portType);
 
 private:
     explicit OHAudioSuiteEngine() {};

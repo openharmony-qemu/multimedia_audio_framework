@@ -188,8 +188,7 @@ HWTEST_F(AudioSuiteOutputNodeTest, Connection_001, TestSize.Level0)
     std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(format);
     EXPECT_NE(inputNode, nullptr);
     inputNode->Init();
-    AudioNodePortType type = AUDIO_NODE_DEFAULT_OUTPORT_TYPE;
-    auto ret = outputNode->Connect(inputNode, type);
+    auto ret = outputNode->Connect(inputNode);
     EXPECT_EQ(ret, SUCCESS);
 
     ret = outputNode->DisConnect(inputNode);
@@ -204,7 +203,7 @@ HWTEST_F(AudioSuiteOutputNodeTest, Connection_002, TestSize.Level0)
 
     std::shared_ptr<AudioSuiteAissNode> node = std::make_shared<AudioSuiteAissNode>();
     EXPECT_NE(node, nullptr);
-    auto ret = outputNode->Connect(node, AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
+    auto ret = outputNode->Connect(node);
     EXPECT_EQ(ret, SUCCESS);
 
     ret = outputNode->DisConnect(node);
@@ -217,7 +216,7 @@ HWTEST_F(AudioSuiteOutputNodeTest, Connection_003, TestSize.Level0)
     std::shared_ptr<AudioOutputNode> outputNode = std::make_shared<AudioOutputNode>(format);
     EXPECT_NE(outputNode, nullptr);
 
-    auto ret = outputNode->Connect(nullptr, AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
+    auto ret = outputNode->Connect(nullptr);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
@@ -288,11 +287,10 @@ HWTEST_F(AudioSuiteOutputNodeTest, DoProcess_002, TestSize.Level0)
     std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(informat);
     EXPECT_NE(inputNode, nullptr);
     inputNode->Init();
-    AudioNodePortType type = AUDIO_NODE_DEFAULT_OUTPORT_TYPE;
     std::unique_ptr<AudioSuitePcmBuffer> data = std::make_unique<AudioSuitePcmBuffer>(
         SAMPLE_RATE_44100, 2, AudioChannelLayout::CH_LAYOUT_STEREO);
-    inputNode->GetOutputPort(type).get()->outputData_.push_back(data.get());
-    outputNode->Connect(inputNode, type);
+    inputNode->GetOutputPort().get()->outputData_.push_back(data.get());
+    outputNode->Connect(inputNode);
     auto ret = outputNode->DoProcess();
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -308,11 +306,10 @@ HWTEST_F(AudioSuiteOutputNodeTest, DoProcess_003, TestSize.Level0)
     std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(informat);
     EXPECT_NE(inputNode, nullptr);
     inputNode->Init();
-    AudioNodePortType type = AUDIO_NODE_DEFAULT_OUTPORT_TYPE;
     std::unique_ptr<AudioSuitePcmBuffer> data = std::make_unique<AudioSuitePcmBuffer>(
         SAMPLE_RATE_44100, 2, AudioChannelLayout::CH_LAYOUT_STEREO);
-    inputNode->GetOutputPort(type).get()->outputData_.push_back(data.get());
-    outputNode->Connect(inputNode, type);
+    inputNode->GetOutputPort().get()->outputData_.push_back(data.get());
+    outputNode->Connect(inputNode);
     auto ret = outputNode->DoProcess();
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -328,11 +325,10 @@ HWTEST_F(AudioSuiteOutputNodeTest, DoProcess_004, TestSize.Level0)
     std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(informat);
     EXPECT_NE(inputNode, nullptr);
     inputNode->Init();
-    AudioNodePortType type = AUDIO_NODE_DEFAULT_OUTPORT_TYPE;
     std::unique_ptr<AudioSuitePcmBuffer> data = std::make_unique<AudioSuitePcmBuffer>(
         SAMPLE_RATE_44100, 2, AudioChannelLayout::CH_LAYOUT_STEREO);
-    inputNode->GetOutputPort(type).get()->outputData_.push_back(data.get());
-    outputNode->Connect(inputNode, type);
+    inputNode->GetOutputPort().get()->outputData_.push_back(data.get());
+    outputNode->Connect(inputNode);
     auto ret = outputNode->DoProcess();
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -366,29 +362,6 @@ HWTEST_F(AudioSuiteOutputNodeTest, DoProcess_006, TestSize.Level0)
     int32_t writeDataSize = 0;
     int32_t ret = outputNode->DoProcess(audioData.data(), AUDIO_DATA_SIZE, &writeDataSize, &finished);
     EXPECT_EQ(ret, SUCCESS);
-}
-
-HWTEST_F(AudioSuiteOutputNodeTest, InstallTap_001, TestSize.Level0)
-{
-    AudioFormat format;
-    std::shared_ptr<AudioOutputNode> outputNode = std::make_shared<AudioOutputNode>(format);
-    EXPECT_NE(outputNode, nullptr);
-
-    AudioNodePortType portType = AUDIO_NODE_DEFAULT_OUTPORT_TYPE;
-    std::shared_ptr<SuiteNodeReadTapDataCallback> callback;
-    auto ret = outputNode->InstallTap(portType, callback);
-    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
-}
-
-HWTEST_F(AudioSuiteOutputNodeTest, RemoveTap_001, TestSize.Level0)
-{
-    AudioFormat format;
-    std::shared_ptr<AudioOutputNode> outputNode = std::make_shared<AudioOutputNode>(format);
-    EXPECT_NE(outputNode, nullptr);
-
-    AudioNodePortType portType = AUDIO_NODE_DEFAULT_OUTPORT_TYPE;
-    auto ret = outputNode->RemoveTap(portType);
-    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
 }
 
 }

@@ -34,7 +34,6 @@ public:
     int32_t DeInit() override;
     int32_t Flush() override;
     void SetAudioNodeFormat(AudioFormat audioFormat) override;
-    int32_t Connect(const std::shared_ptr<AudioNode> &preNode, AudioNodePortType type) override;
     int32_t Connect(const std::shared_ptr<AudioNode> &preNode) override;
     int32_t DisConnect(const std::shared_ptr<AudioNode> &preNode) override;
 

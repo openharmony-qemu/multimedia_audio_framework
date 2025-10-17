@@ -29,14 +29,12 @@ public:
     virtual void OnGetPipelineState(AudioSuitePipelineState state) = 0;
     virtual void OnCreateNode(int32_t result, uint32_t nodeId) = 0;
     virtual void OnDestroyNode(int32_t result) = 0;
-    virtual void OnEnableNode(int32_t result) = 0;
-    virtual void OnGetNodeEnable(AudioNodeEnable enable) = 0;
+    virtual void OnBypassEffectNode(int32_t result) = 0;
+    virtual void OnGetNodeBypass(int32_t result, bool bypassStatus) = 0;
     virtual void OnSetAudioFormat(int32_t result) = 0;
     virtual void OnWriteDataCallback(int32_t result) = 0;
     virtual void OnConnectNodes(int32_t result) = 0;
     virtual void OnDisConnectNodes(int32_t result) = 0;
-    virtual void OnInstallTap(int32_t result) = 0;
-    virtual void OnRemoveTap(int32_t result) = 0;
     virtual void OnRenderFrame(int32_t result) = 0;
     virtual void OnMultiRenderFrame(int32_t result) = 0;
 

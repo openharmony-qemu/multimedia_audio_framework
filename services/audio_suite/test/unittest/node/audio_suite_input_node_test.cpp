@@ -85,7 +85,7 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeConnect_001, TestSize.Level
     std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(audioFormat);
     EXPECT_NE(inputNode, nullptr);
 
-    auto ret = inputNode->Connect(inputNode, AudioNodePortType::AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
+    auto ret = inputNode->Connect(inputNode);
     EXPECT_EQ(ret, ERROR);
 
     ret = inputNode->DisConnect(inputNode);
@@ -135,50 +135,23 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeGetOutputPort_001, TestSize
     inputNode->Init();
 
     std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> outport =
-        inputNode->GetOutputPort(AudioNodePortType::AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
+        inputNode->GetOutputPort();
     EXPECT_NE(outport, nullptr);
 }
 
-HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeSetOnWriteDataCallback_001, TestSize.Level0)
+HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeSetRequestDataCallback_001, TestSize.Level0)
 {
     AudioFormat audioFormat = GetTestAudioFormat();
     std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(audioFormat);
     EXPECT_NE(inputNode, nullptr);
     inputNode->Init();
 
-    auto ret = inputNode->SetOnWriteDataCallback(nullptr);
+    auto ret = inputNode->SetRequestDataCallback(nullptr);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 
     std::shared_ptr<SuiteInputNodeWriteDataCallBackTest> testCallback =
         std::make_shared<SuiteInputNodeWriteDataCallBackTest>();
-    ret = inputNode->SetOnWriteDataCallback(testCallback);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeInstallTap_001, TestSize.Level0)
-{
-    AudioFormat audioFormat = GetTestAudioFormat();
-    std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(audioFormat);
-    EXPECT_NE(inputNode, nullptr);
-    inputNode->Init();
-
-    std::shared_ptr<SuiteNodeReadTapDataCallbackTest> tapCallback = nullptr;
-    auto ret = inputNode->InstallTap(AudioNodePortType::AUDIO_NODE_DEFAULT_OUTPORT_TYPE, tapCallback);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
-
-    tapCallback = std::make_shared<SuiteNodeReadTapDataCallbackTest>();
-    ret = inputNode->InstallTap(AudioNodePortType::AUDIO_NODE_DEFAULT_OUTPORT_TYPE, tapCallback);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeRemoveTap_001, TestSize.Level0)
-{
-    AudioFormat audioFormat = GetTestAudioFormat();
-    std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(audioFormat);
-    EXPECT_NE(inputNode, nullptr);
-    inputNode->Init();
-
-    auto ret = inputNode->RemoveTap(AudioNodePortType::AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
+    ret = inputNode->SetRequestDataCallback(testCallback);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -195,7 +168,7 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeGetDataFromUser_001, TestSi
 
     std::shared_ptr<SuiteInputNodeWriteDataCallBackTest> testCallback =
         std::make_shared<SuiteInputNodeWriteDataCallBackTest>();
-    inputNode->SetOnWriteDataCallback(testCallback);
+    inputNode->SetRequestDataCallback(testCallback);
 
     inputNode->SetAudioNodeDataFinishedFlag(true);
     ret = inputNode->GetDataFromUser();
@@ -215,7 +188,7 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeGetDataFromUser_002, TestSi
     
     std::shared_ptr<SuiteInputNodeWriteDataCallBackTestErr> testCallback =
         std::make_shared<SuiteInputNodeWriteDataCallBackTestErr>();
-    auto ret = inputNode->SetOnWriteDataCallback(testCallback);
+    auto ret = inputNode->SetRequestDataCallback(testCallback);
     EXPECT_EQ(ret, SUCCESS);
 
     ret = inputNode->GetDataFromUser();
@@ -230,7 +203,7 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeGetDataFromUser_003, TestSi
     
     std::shared_ptr<SuiteInputNodeWriteDataCallBackTest> testCallback =
         std::make_shared<SuiteInputNodeWriteDataCallBackTest>();
-    auto ret = inputNode->SetOnWriteDataCallback(testCallback);
+    auto ret = inputNode->SetRequestDataCallback(testCallback);
     EXPECT_EQ(ret, SUCCESS);
 
     ret = inputNode->GetDataFromUser();
@@ -247,7 +220,7 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeGetDataFromUser_004, TestSi
     
     std::shared_ptr<SuiteInputNodeWriteDataCallBackTest> testCallback =
         std::make_shared<SuiteInputNodeWriteDataCallBackTest>();
-    auto ret = inputNode->SetOnWriteDataCallback(testCallback);
+    auto ret = inputNode->SetRequestDataCallback(testCallback);
     EXPECT_EQ(ret, SUCCESS);
 
     ret = inputNode->GetDataFromUser();
@@ -293,23 +266,6 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeGeneratePushBuffer_002, Tes
     EXPECT_EQ(ret, 0);
 }
 
-HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeHandleTapCallback_001, TestSize.Level0)
-{
-    AudioFormat audioFormat = GetTestAudioFormat();
-    std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(audioFormat);
-    EXPECT_NE(inputNode, nullptr);
-    inputNode->Init();
-
-    auto ret = inputNode->HandleTapCallback();
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
-
-    std::shared_ptr<SuiteNodeReadTapDataCallbackTest> tapCallback =
-        std::make_shared<SuiteNodeReadTapDataCallbackTest>();
-    inputNode->InstallTap(AudioNodePortType::AUDIO_NODE_DEFAULT_OUTPORT_TYPE, tapCallback);
-    ret = inputNode->HandleTapCallback();
-    EXPECT_EQ(ret, SUCCESS);
-}
-
 HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeDoProcess_001, TestSize.Level0)
 {
     AudioFormat audioFormat = GetTestAudioFormat();
@@ -322,7 +278,7 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeDoProcess_001, TestSize.Lev
 
     std::shared_ptr<SuiteInputNodeWriteDataCallBackTest> testCallback =
         std::make_shared<SuiteInputNodeWriteDataCallBackTest>();
-    inputNode->SetOnWriteDataCallback(testCallback);
+    inputNode->SetRequestDataCallback(testCallback);
     ret = inputNode->DoProcess();
     EXPECT_EQ(ret, SUCCESS);
 }
