@@ -289,6 +289,7 @@ private:
     bool HandleLowPriorityEvent(const int32_t pid, const uint32_t streamId);
     void SendSessionTimeOutStopEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList);
+    void SetNonInterruptMute(int32_t streamId, bool muteFlag);
     bool ShouldCallbackToClient(uint32_t uid, int32_t streamId, InterruptEventInternal &interruptEvent);
 
     AudioFocuState GetNewIncomingState(InterruptHint hintType, AudioFocuState oldState);
