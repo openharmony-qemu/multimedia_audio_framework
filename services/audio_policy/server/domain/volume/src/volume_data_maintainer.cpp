@@ -864,6 +864,9 @@ void VolumeDataMaintainer::SaveVolumeToMap(std::shared_ptr<AudioDeviceDescriptor
     CHECK_AND_RETURN_LOG(device != nullptr, "SaveVolumeToMap device is null");
     std::lock_guard<ffrt::mutex> lock(volumeForMapMutex_);
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    if (Util::IsDualToneStreamType(streamType)) {
+        device = ringerDevice_;
+    }
     volumeLevelMap_[device->GetName()][volumeType] = volumeLevel;
     AUDIO_INFO_LOG("[device %{public}s, streamType %{public}d]"\
         "Save volume to volumeLevelMap success, volumeLevel %{public}d",
@@ -877,6 +880,9 @@ int32_t VolumeDataMaintainer::LoadVolumeFromMap(std::shared_ptr<AudioDeviceDescr
     std::lock_guard<ffrt::mutex> lock(volumeForMapMutex_);
 
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    if (Util::IsDualToneStreamType(streamType)) {
+        device = ringerDevice_;
+    }
     int32_t defaultVolume = DEFAULT_VOLUME_LEVEL;
     CHECK_AND_RETURN_RET_LOG(device != nullptr, defaultVolume, "LoadVolumeFromMap device is null");
     if (volumeType == STREAM_ALL) {
@@ -980,6 +986,9 @@ void VolumeDataMaintainer::SaveMuteToMap(std::shared_ptr<AudioDeviceDescriptor> 
     std::lock_guard<ffrt::mutex> lock(volumeForMapMutex_);
     CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    if (Util::IsDualToneStreamType(streamType)) {
+        device = ringerDevice_;
+    }
     muteStatusMap_[device->GetName()][volumeType] = muteStatus;
     AUDIO_INFO_LOG("SaveMuteToMap device %{public}s streamType %{public}d muteStatus %{public}d",
         device->GetName().c_str(), streamType, muteStatus);
@@ -990,6 +999,9 @@ bool VolumeDataMaintainer::LoadMuteFromMap(std::shared_ptr<AudioDeviceDescriptor
     std::lock_guard<ffrt::mutex> lock(volumeForMapMutex_);
     CHECK_AND_RETURN_RET_LOG(device != nullptr, false, "device is null");
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    if (Util::IsDualToneStreamType(streamType)) {
+        device = ringerDevice_;
+    }
     CHECK_AND_RETURN_RET_LOG(muteStatusMap_.contains(device->GetName()), false,
         "device %{public}s not in muteStatusMap_", device->GetName().c_str());
     CHECK_AND_RETURN_RET_LOG(muteStatusMap_[device->GetName()].contains(volumeType), false,
