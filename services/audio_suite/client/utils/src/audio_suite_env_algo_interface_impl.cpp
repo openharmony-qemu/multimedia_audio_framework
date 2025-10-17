@@ -68,6 +68,7 @@ int32_t AudioSuiteEnvAlgoInterfaceImpl::Init()
     AUDIO_INFO_LOG("ALGO Init End, size of runBuf: %{public}d, size of scratchBuf: %{public}d",
         stSize_.iStrSize,
         stSize_.iScracthSize);
+    para_ = IMEDIA_SWS_ENV_BROADCAST;
     return SUCCESS;
 }
 
@@ -155,7 +156,7 @@ int32_t AudioSuiteEnvAlgoInterfaceImpl::GetParameter(const std::string &paramTyp
             static_cast<int32_t>(param));
         return ERROR;
     }
-    paramValue = std::to_string(static_cast<int32_t>(param));
+    paramValue = std::to_string(static_cast<int32_t>(param) + static_cast<int32_t>(1));
     return SUCCESS;
 }
 

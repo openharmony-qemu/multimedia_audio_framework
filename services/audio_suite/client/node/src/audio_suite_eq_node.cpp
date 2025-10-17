@@ -16,10 +16,6 @@
 #define LOG_TAG "AudioSuiteEqNode"
 #endif
 
-#include <vector>
-#include <memory>
-#include "audio_errors.h"
-#include "audio_suite_log.h"
 #include "audio_suite_eq_node.h"
 
 namespace OHOS {
@@ -117,6 +113,7 @@ AudioSuitePcmBuffer *AudioSuiteEqNode::SignalProcess(const std::vector<AudioSuit
 
     tmpin_[0] = inputPointer;
     tmpout_[0] = outputPointer;
+    CHECK_AND_RETURN_RET_LOG(eqAlgoInterfaceImpl_ != nullptr, &outPcmBuffer_, "eqAlgoInterfaceImpl_ is nullptr");
     eqAlgoInterfaceImpl_->Apply(tmpin_, tmpout_);
     ConvertToFloat(EQ_ALGO_SAMPLE_FORMAT,
         outPcmBuffer_.GetFrameLen(),
@@ -193,7 +190,9 @@ EqualizerMode StringToEqualizerMode(const std::string &modStr)
 int32_t AudioSuiteEqNode::SetOptions(std::string name, std::string value)
 {
     AUDIO_INFO_LOG("AudioSuiteEqNode::SetOptions Enter");
+    CHECK_AND_RETURN_RET_LOG(eqAlgoInterfaceImpl_ != nullptr, ERROR, "eqAlgoInterfaceImpl_ is nullptr");
     if (name == "AudioEqualizerFrequencyBandGains") {
+        eqValue_ = value;
         eqAlgoInterfaceImpl_->SetParameter(value, value);
         AUDIO_INFO_LOG("SetOptions SUCCESS");
         return SUCCESS;
@@ -217,10 +216,6 @@ int32_t AudioSuiteEqNode::GetOptions(std::string name, std::string &value)
     if (name == "AudioEqualizerFrequencyBandGains") {
         value = eqValue_;
         AUDIO_INFO_LOG("GetOptions SUCCESS");
-        return SUCCESS;
-    } else if (name == "EqualizerMode") {
-        value = currentEqMode_;
-        AUDIO_INFO_LOG("Getoptions SUCCESS");
         return SUCCESS;
     } else {
         AUDIO_ERR_LOG("GetOptions Unknow Type %{public}s", name.c_str());
