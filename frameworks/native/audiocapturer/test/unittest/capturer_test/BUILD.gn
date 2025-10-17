@@ -1,4 +1,3 @@
-dd
 # Copyright (c) 2021-2025 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,6 +24,7 @@ ohos_unittest("audio_capturer_unit_test") {
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../audiostream/include",
     "../../../../../../services/audio_policy/server/include",
+    "../../../../audioschedule/include",
   ]
 
   cflags = [
@@ -56,6 +56,7 @@ ohos_unittest("audio_capturer_unit_test") {
   deps = [
     "../../../../../../services/audio_service:audio_client",
     "../../../../audiocapturer:audio_capturer",
+    "../../../../audioschedule:audio_schedule",
   ]
 }
 
