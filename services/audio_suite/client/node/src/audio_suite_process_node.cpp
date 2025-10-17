@@ -219,7 +219,7 @@ int32_t AudioSuiteProcessNode::Resample(AudioSuitePcmBuffer *inputPcmBuffer, Aud
     uint32_t inChannelCount = inputPcmBuffer->GetChannelCount();
     uint32_t outChannelCount = outputPcmBuffer->GetChannelCount();
     uint32_t resampleQuality = 5;
-    AUDIO_DEBUG_LOG("DoResample: inSampleRate: %{public}u, outSampleRate: %{public}u", inRate, outRate);
+    AUDIO_DEBUG_LOG("DoResample: inSampleRate: %{public}u, outSampleRate: %{public}u ", inRate, outRate);
 
     CHECK_AND_RETURN_RET_LOG((inChannelCount != 0) && (outChannelCount != 0) && (inChannelCount == outChannelCount),
         ERROR, "Do Resample error: invalid input, inChannelCount: %{public}u outChannelCount: %{public}u",
