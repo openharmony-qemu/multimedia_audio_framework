@@ -16,7 +16,7 @@
 #ifndef VA_INPUT_STREAM_STUB_IMPL_H
 #define VA_INPUT_STREAM_STUB_IMPL_H
 
-#include "audio_policy_interface.h"
+#include "virtual_audio_interface.h"
 #include "va_input_stream_stub.h"
 
 namespace OHOS {

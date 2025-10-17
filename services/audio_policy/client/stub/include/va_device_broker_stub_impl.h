@@ -18,7 +18,7 @@
 
 #include <iremote_broker.h>
 
-#include "audio_policy_interface.h"
+#include "virtual_audio_interface.h"
 #include "va_device_broker_stub.h"
 
 #include "audio_errors.h"
