@@ -3116,7 +3116,8 @@ int32_t AudioAdapterManager::AddCaptureInjector()
     AudioModuleInfo &info = audioInjectorPolicy.GetAudioModuleInfo();
     uint32_t rendererPortIdx = audioInjectorPolicy.GetRendererPortIdx();
     CHECK_AND_RETURN_RET_LOG(audioServerProxy_ != nullptr, ERROR, "audioServerProxy_ null");
-    return audioServerProxy_->AddCaptureInjector(rendererPortIdx, info.rate, info.format, info.channels);
+    return audioServerProxy_->AddCaptureInjector(rendererPortIdx, info.rate, info.format,
+        info.channels, info.bufferSize);
 }
 
 int32_t AudioAdapterManager::RemoveCaptureInjector()
@@ -3139,6 +3140,12 @@ void AudioAdapterManager::RemoveCaptureInjector(const uint32_t &sinkPortIndex, c
 {
     CHECK_AND_RETURN_LOG(audioServiceAdapter_ != nullptr, "ServiceAdapter is null");
     audioServiceAdapter_->RemoveCaptureInjector(sinkPortIndex, sourcePortIndex, sourceType);
+}
+
+void AudioAdapterManager::UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo)
+{
+    CHECK_AND_RETURN_LOG(audioServiceAdapter_ != nullptr, "ServiceAdapter is null");
+    audioServiceAdapter_->UpdateAudioPortInfo(sinkPortIndex, audioPortInfo);
 }
 
 void AudioAdapterManager::QueryDeviceVolumeBehavior(std::shared_ptr<AudioDeviceDescriptor> &desc)

@@ -3185,7 +3185,7 @@ int32_t AudioServer::GetPrivacyTypeAudioServer(uint32_t sessionId, int32_t &priv
 }
 
 int32_t AudioServer::AddCaptureInjector(uint32_t sinkPortidx, std::string &rate, std::string &format,
-    std::string &channels)
+    std::string &channels, std::string &bufferSize)
 {
     int32_t ret = ERROR; //if is not low latency, should return error
 #ifdef SUPPORT_LOW_LATENCY
@@ -3197,6 +3197,7 @@ int32_t AudioServer::AddCaptureInjector(uint32_t sinkPortidx, std::string &rate,
     rate = info.rate;
     format = info.format;
     channels = info.channels;
+    bufferSize = info.bufferSize;
 #endif
     return ret;
 }
