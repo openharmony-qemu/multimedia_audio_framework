@@ -42,6 +42,7 @@ AudioSuiteVoiceBeautifierNode::~AudioSuiteVoiceBeautifierNode()
 
 bool AudioSuiteVoiceBeautifierNode::Reset()
 {
+    voiceBeautifierType = "";
     if (DeInit() == SUCCESS && Init() == SUCCESS) {
         AUDIO_INFO_LOG("AudioSuiteVoiceBeautifierNode reset success.");
         return true;
@@ -53,6 +54,7 @@ bool AudioSuiteVoiceBeautifierNode::Reset()
 int32_t AudioSuiteVoiceBeautifierNode::Init()
 {
     AUDIO_INFO_LOG("AudioSuiteVoiceBeautifierNode Init begin");
+    voiceBeautifierType = "";
     algoInterface_ = AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_VOICE_BEAUTIFIER);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create voice beautifier algoInterface");
 
@@ -74,7 +76,7 @@ int32_t AudioSuiteVoiceBeautifierNode::Init()
 int32_t AudioSuiteVoiceBeautifierNode::DeInit()
 {
     AUDIO_INFO_LOG("AudioSuiteVoiceBeautifierNode DeInit begin");
-
+    voiceBeautifierType = "";
     if (algoInterface_ != nullptr) {
         int32_t ret = algoInterface_->Deinit();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to DeInit voice beautifier algorithm");
@@ -96,6 +98,21 @@ int32_t AudioSuiteVoiceBeautifierNode::SetOptions(std::string name, std::string 
         DeInit();
         return ERROR;
     }
+    voiceBeautifierType = value;
+    return SUCCESS;
+}
+
+int32_t AudioSuiteVoiceBeautifierNode::GetOptions(std::string name, std::string &value)
+{
+    if (name != "VoiceBeautifierType") {
+        AUDIO_ERR_LOG("wrong options name.");
+        return ERROR;
+    }
+    if (voiceBeautifierType.empty()) {
+        AUDIO_ERR_LOG("voiceBeautifierType is empty.");
+        return ERROR;
+    }
+    value = voiceBeautifierType;
     return SUCCESS;
 }
 
@@ -109,6 +126,11 @@ AudioSuitePcmBuffer *AudioSuiteVoiceBeautifierNode::SignalProcess(const std::vec
     if (inputs[0] == nullptr) {
         AUDIO_ERR_LOG("SignalProcess input data is nullptr");
         return &pcmBufferOutput_;
+    }
+
+    if (voiceBeautifierType.empty()) {
+        AUDIO_ERR_LOG("voiceBeautifierType is empty, skip signalProccess.");
+        return inputs[0];
     }
 
     // 声道转换及采样率转换
