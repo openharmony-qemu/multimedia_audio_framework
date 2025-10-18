@@ -2597,10 +2597,21 @@ int32_t RendererInServer::SetTarget(RenderTarget target, int32_t &ret)
         ret = CoreServiceHandler::GetInstance().SetRendererTarget(target, lastTarget_, streamIndex_);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "CoreServiceHandler::SetRendererTarget failed");
         lastTarget_ = target;
+        ClearInnerCapBufferForInject();
         return ret;
     }
     ret = ERR_ILLEGAL_STATE;
     return ret;
+}
+
+void RendererInServer::ClearInnerCapBufferForInject()
+{
+    CHECK_AND_RETURN(lastTarget_ == INJECT_TO_VOICE_COMMUNICATION_CAPTURE);
+    for (auto &capInfo : captureInfos_) {
+        CHECK_AND_CONTINUE(innerCapIdToDupStreamCallbackMap_.find(capInfo.first) !=
+            innerCapIdToDupStreamCallbackMap_.end());
+        innerCapIdToDupStreamCallbackMap_[capInfo.first]->GetDupRingBuffer()->ResetBuffer();
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

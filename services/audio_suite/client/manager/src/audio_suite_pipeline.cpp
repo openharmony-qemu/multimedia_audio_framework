@@ -397,58 +397,58 @@ int32_t AudioSuitePipeline::DestroyNodeForRun(uint32_t nodeId, std::shared_ptr<A
     return SUCCESS;
 }
 
-int32_t AudioSuitePipeline::EnableNode(uint32_t nodeId, AudioNodeEnable audioNodeEnable)
+int32_t AudioSuitePipeline::BypassEffectNode(uint32_t nodeId,  bool bypass)
 {
-    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "pipeline not init, can not EnableNode.");
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "pipeline not init, can not BypassEffectNode.");
 
-    auto request = [this, nodeId, audioNodeEnable]() {
+    auto request = [this, nodeId, bypass]() {
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
             AUDIO_ERR_LOG("EnableNode node failed, node id is invailed.");
-            TriggerCallback(SET_ENABLE_NODE, ERR_INVALID_PARAM);
+            TriggerCallback(SET_BYPASS_STATUS, ERR_INVALID_PARAM);
             return;
         }
 
         auto node = nodeMap_[nodeId];
         if (node == nullptr) {
             AUDIO_ERR_LOG("EnableNode failed, node ptr nullptr.");
-            TriggerCallback(SET_ENABLE_NODE, ERR_INVALID_PARAM);
+            TriggerCallback(SET_BYPASS_STATUS, ERR_INVALID_PARAM);
             return;
         }
 
         if ((node->GetNodeType() == NODE_TYPE_INPUT) || (node->GetNodeType() == NODE_TYPE_OUTPUT)) {
             AUDIO_ERR_LOG("input or output node not support set enable, nodeId = %{public}d.", nodeId);
-            TriggerCallback(SET_ENABLE_NODE, ERR_INVALID_OPERATION);
+            TriggerCallback(SET_BYPASS_STATUS, ERR_INVALID_OPERATION);
             return;
         }
 
-        node->SetNodeEnableStatus(audioNodeEnable);
-        TriggerCallback(SET_ENABLE_NODE, SUCCESS);
+        node->SetBypassEffectNode(bypass);
+        TriggerCallback(SET_BYPASS_STATUS, SUCCESS);
     };
 
     SendRequest(request, __func__);
     return SUCCESS;
 }
 
-int32_t AudioSuitePipeline::GetNodeEnableStatus(uint32_t nodeId)
+int32_t AudioSuitePipeline::GetNodeBypassStatus(uint32_t nodeId)
 {
-    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "pipeline not init, can not GetNodeEnableStatus.");
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "pipeline not init, can not GetNodeBypassStatus.");
 
     auto request = [this, nodeId]() {
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
-            AUDIO_ERR_LOG("GetNodeEnableStatus node failed, node id is invailed.");
-            TriggerCallback(GET_ENABLE_NODE, NODE_DISABLE);
+            AUDIO_ERR_LOG("GetNodeBypassStatus node failed, node id is invailed.");
+            TriggerCallback(GET_BYPASS_STATUS, ERR_AUDIO_SUITE_NODE_NOT_EXIST, false);
             return;
         }
 
         auto node = nodeMap_[nodeId];
         if (node == nullptr) {
-            AUDIO_ERR_LOG("GetNodeEnableStatus failed, node ptr nullptr.");
-            TriggerCallback(GET_ENABLE_NODE, NODE_DISABLE);
+            AUDIO_ERR_LOG("GetNodeBypassStatus failed, node ptr nullptr.");
+            TriggerCallback(GET_BYPASS_STATUS, ERR_AUDIO_SUITE_NODE_NOT_EXIST, false);
             return;
         }
 
-        AudioNodeEnable enable = node->GetNodeEnableStatus();
-        TriggerCallback(GET_ENABLE_NODE, enable);
+        bool bypassStatus = node->GetNodeBypassStatus();
+        TriggerCallback(GET_BYPASS_STATUS, SUCCESS, bypassStatus);
     };
 
     SendRequest(request, __func__);
@@ -482,100 +482,38 @@ int32_t AudioSuitePipeline::SetAudioFormat(uint32_t nodeId, AudioFormat audioFor
 }
 
 
-int32_t AudioSuitePipeline::SetWriteDataCallback(uint32_t nodeId,
+int32_t AudioSuitePipeline::SetRequestDataCallback(uint32_t nodeId,
     std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback)
 {
     CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "pipeline not init, can not SetWriteDataCallback.");
 
     auto request = [this, nodeId, callback]() {
         if (pipelineState_ != PIPELINE_STOPPED) {
-            AUDIO_ERR_LOG("SetWriteDataCallback failed, pipelineState status is not stopped.");
+            AUDIO_ERR_LOG("SetRequestDataCallback failed, pipelineState status is not stopped.");
             TriggerCallback(SET_WRITEDATA_CALLBACK, ERR_ILLEGAL_STATE);
             return;
         }
 
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
-            AUDIO_ERR_LOG("SetWriteDataCallback failed, node id is invailed.");
+            AUDIO_ERR_LOG("SetRequestDataCallback failed, node id is invailed.");
             TriggerCallback(SET_WRITEDATA_CALLBACK, ERR_INVALID_PARAM);
             return;
         }
 
         auto node = nodeMap_[nodeId];
         if (node->GetNodeType() != NODE_TYPE_INPUT) {
-            AUDIO_ERR_LOG("SetWriteDataCallback failed, node type must input type.");
+            AUDIO_ERR_LOG("SetRequestDataCallback failed, node type must input type.");
             TriggerCallback(SET_WRITEDATA_CALLBACK, ERR_INVALID_PARAM);
             return;
         }
 
-        int32_t ret = node->SetOnWriteDataCallback(callback);
+        int32_t ret = node->SetRequestDataCallback(callback);
         if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("SetOnWriteDataCallback, ret = %{public}d.", ret);
+            AUDIO_ERR_LOG("SetRequestDataCallback, ret = %{public}d.", ret);
             TriggerCallback(SET_WRITEDATA_CALLBACK, ret);
             return;
         }
         TriggerCallback(SET_WRITEDATA_CALLBACK, SUCCESS);
-    };
-
-    SendRequest(request, __func__);
-    return SUCCESS;
-}
-
-int32_t AudioSuitePipeline::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId,
-    AudioNodePortType srcPortType, AudioNodePortType destPortType)
-{
-    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "pipeline not init, can not ConnectNodes.");
-
-    auto request = [this, srcNodeId, destNodeId, srcPortType]() {
-        if (srcNodeId == destNodeId) {
-            AUDIO_ERR_LOG("ConnectNodes failed, srcNodeId can not same destNodeId.");
-            TriggerCallback(CONNECT_NODES, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
-            return;
-        }
-
-        if ((nodeMap_.find(srcNodeId) == nodeMap_.end()) || (nodeMap_.find(destNodeId) == nodeMap_.end())) {
-            AUDIO_ERR_LOG("ConnectNodes failed, node id is invailed.");
-            TriggerCallback(CONNECT_NODES, ERR_INVALID_PARAM);
-            return;
-        }
-
-        auto srcNode = nodeMap_[srcNodeId];
-        auto destNode = nodeMap_[destNodeId];
-        if ((srcNode == nullptr) || (destNode == nullptr)) {
-            AUDIO_ERR_LOG("ConnectNodes failed, node ptr is nullptr.");
-            TriggerCallback(CONNECT_NODES, ERR_AUDIO_SUITE_NODE_NOT_EXIST);
-            return;
-        }
-
-        if ((srcNode->GetNodeType() == NODE_TYPE_OUTPUT) || (destNode->GetNodeType() == NODE_TYPE_INPUT)) {
-            AUDIO_ERR_LOG("ConnectNodes failed, node type error.");
-            TriggerCallback(CONNECT_NODES, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
-            return;
-        }
-
-        if (IsDirectConnected(srcNodeId, destNodeId)) {
-            AUDIO_INFO_LOG("srcNodeId = %{public}d and destNodeId = %{public}d already connet", srcNodeId, destNodeId);
-            TriggerCallback(CONNECT_NODES, SUCCESS);
-            return;
-        }
-
-        int32_t ret = SUCCESS;
-        if (pipelineState_ == PIPELINE_STOPPED) {
-            ret = ConnectNodesForStop(srcNodeId, destNodeId, srcNode, destNode, srcPortType);
-        } else {
-            ret = ConnectNodesForRun(srcNodeId, destNodeId, srcNode, destNode, srcPortType);
-        }
-        if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("ConnectNodes failed, ret = %{public}d, srcNodeId = %{public}d, "
-                "destNodeId = %{public}d.", ret, srcNodeId, destNodeId);
-            TriggerCallback(CONNECT_NODES, ret);
-            return;
-        }
-
-        AddNodeConnections(srcNodeId, destNodeId);
-
-        AUDIO_INFO_LOG("ConnectNodes success.");
-        TriggerCallback(CONNECT_NODES, SUCCESS);
-        return;
     };
 
     SendRequest(request, __func__);
@@ -605,9 +543,10 @@ int32_t AudioSuitePipeline::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId
             return;
         }
 
-        if (((srcNode->GetNodeType() == NODE_TYPE_OUTPUT) || (destNode->GetNodeType() == NODE_TYPE_INPUT)) &&
+        if ((srcNode->GetNodeType() == NODE_TYPE_OUTPUT) || (destNode->GetNodeType() == NODE_TYPE_INPUT) ||
             ((srcNode->GetNodeType() == NODE_TYPE_AUDIO_SEPARATION) && (destNode->GetNodeType() != NODE_TYPE_OUTPUT))) {
-            AUDIO_ERR_LOG("ConnectNodes failed, node type error.");
+            AUDIO_ERR_LOG("ConnectNodes src: %{public}d,dest: %{public}d error.",
+                srcNode->GetNodeType(), destNode->GetNodeType());
             TriggerCallback(CONNECT_NODES, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
             return;
         }
@@ -632,25 +571,12 @@ int32_t AudioSuitePipeline::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId
         }
 
         AddNodeConnections(srcNodeId, destNodeId);
-
-        AUDIO_INFO_LOG("ConnectNodes success.");
         TriggerCallback(CONNECT_NODES, SUCCESS);
         return;
     };
 
     SendRequest(request, __func__);
     return SUCCESS;
-}
-
-int32_t AudioSuitePipeline::ConnectNodesForStop(uint32_t srcNodeId, uint32_t destNodeId,
-    std::shared_ptr<AudioNode> srcNode, std::shared_ptr<AudioNode> destNode, AudioNodePortType srcPortType)
-{
-    RemovceBackwardConnet(srcNodeId, srcNode);
-    if (destNode->GetNodeType() != NODE_TYPE_AUDIO_MIXER) {
-        RemovceForwardConnet(destNodeId, destNode);
-    }
-
-    return destNode->Connect(srcNode, srcPortType);
 }
 
 int32_t AudioSuitePipeline::ConnectNodesForStop(uint32_t srcNodeId, uint32_t destNodeId,
@@ -662,42 +588,6 @@ int32_t AudioSuitePipeline::ConnectNodesForStop(uint32_t srcNodeId, uint32_t des
     }
 
     return destNode->Connect(srcNode);
-}
-
-int32_t AudioSuitePipeline::ConnectNodesForRun(uint32_t srcNodeId, uint32_t destNodeId,
-    std::shared_ptr<AudioNode> srcNode, std::shared_ptr<AudioNode> destNode, AudioNodePortType srcPortType)
-{
-    if (outputNode_ == nullptr) {
-        AUDIO_ERR_LOG("ConnectNodes failed, pipeline running, can not find output node.");
-        return ERR_ILLEGAL_STATE;
-    }
-
-    // srcNodeId in pipline running nodes
-    if (IsConnected(outputNode_->GetAudioNodeId(), srcNodeId)) {
-        AUDIO_ERR_LOG("ConnectNodes failed, pipeline running srcNode = %{public}d can not is used node.", srcNodeId);
-        return ERR_AUDIO_SUITE_UNSUPPORT_CONNECT;
-    }
-
-    // srcNodeId and destNodeId are not in pipline running nodes
-    if (!IsConnected(outputNode_->GetAudioNodeId(), destNodeId)) {
-        RemovceBackwardConnet(srcNodeId, srcNode);
-        RemovceForwardConnet(destNodeId, destNode);
-        return destNode->Connect(srcNode, srcPortType);
-    }
-
-    // destNodeId in pipline running nodes
-    if (destNode->GetNodeType() != NODE_TYPE_AUDIO_MIXER) {
-        AUDIO_ERR_LOG("Pipeline status is running, destNodeId = %{public}d type must mix node", destNodeId);
-        return ERR_AUDIO_SUITE_UNSUPPORT_CONNECT;
-    }
-    // srcNodeId must connet from inputNode and not rings
-    if (!CheckPipelineNode(srcNodeId)) {
-        AUDIO_ERR_LOG("Pipeline status is running, srcNodeId = %{public}d must connet from inputnode", srcNodeId);
-        return ERR_AUDIO_SUITE_UNSUPPORT_CONNECT;
-    }
-
-    RemovceBackwardConnet(srcNodeId, srcNode);
-    return destNode->Connect(srcNode, srcPortType);
 }
 
 int32_t AudioSuitePipeline::ConnectNodesForRun(uint32_t srcNodeId, uint32_t destNodeId,
@@ -889,82 +779,12 @@ void AudioSuitePipeline::ClearNodeConnections(uint32_t srcNodeId, uint32_t destN
     }
 }
 
-int32_t AudioSuitePipeline::InstallTap(uint32_t nodeId, AudioNodePortType portType,
-    std::shared_ptr<SuiteNodeReadTapDataCallback> callback)
-{
-    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "pipeline not init, can not InstallTap.");
-
-    auto request = [this, nodeId, portType, callback]() {
-        if (nodeMap_.find(nodeId) == nodeMap_.end()) {
-            AUDIO_ERR_LOG("InstallTap failed, node id is invailed.");
-            TriggerCallback(INSTALL_NODE_TAP, ERR_INVALID_PARAM);
-            return;
-        }
-
-        auto node = nodeMap_[nodeId];
-        if (node == nullptr) {
-            AUDIO_ERR_LOG("InstallTap failed, node ptr is nullptr.");
-            TriggerCallback(INSTALL_NODE_TAP, ERR_INVALID_PARAM);
-            return;
-        }
-
-        int32_t ret = node->InstallTap(portType, callback);
-        if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("InstallTap failed, ret = %{public}d, nodeId = %{public}d, portType = %{public}d.",
-                ret, nodeId, static_cast<int32_t>(portType));
-            TriggerCallback(INSTALL_NODE_TAP, ret);
-            return;
-        }
-
-        AUDIO_INFO_LOG("InstallTap success.");
-        TriggerCallback(INSTALL_NODE_TAP, SUCCESS);
-        return;
-    };
-
-    SendRequest(request, __func__);
-    return SUCCESS;
-}
-
-int32_t AudioSuitePipeline::RemoveTap(uint32_t nodeId, AudioNodePortType portType)
-{
-    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "pipeline not init, can not RemoveTap.");
-
-    auto request = [this, nodeId, portType]() {
-        if (nodeMap_.find(nodeId) == nodeMap_.end()) {
-            AUDIO_ERR_LOG("RemoveTap failed, node id is invailed.");
-            TriggerCallback(REMOVE_NODE_TAP, ERR_INVALID_PARAM);
-            return;
-        }
-
-        auto node = nodeMap_[nodeId];
-        if (node == nullptr) {
-            AUDIO_ERR_LOG("RemoveTap failed, node ptr is nullptr.");
-            TriggerCallback(REMOVE_NODE_TAP, ERR_INVALID_PARAM);
-            return;
-        }
-
-        int32_t ret = node->RemoveTap(portType);
-        if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("RemoveTap failed, ret = %{public}d, nodeId = %{public}d, portType = %{public}d.",
-                ret, nodeId, static_cast<int32_t>(portType));
-            TriggerCallback(REMOVE_NODE_TAP, ret);
-            return;
-        }
-
-        AUDIO_INFO_LOG("RemoveTap success.");
-        TriggerCallback(INSTALL_NODE_TAP, SUCCESS);
-        return;
-    };
-
-    SendRequest(request, __func__);
-    return SUCCESS;
-}
-
-int32_t AudioSuitePipeline::RenderFrame(uint8_t *audioData, int32_t frameSize, int32_t *writeLen, bool *finishedFlag)
+int32_t AudioSuitePipeline::RenderFrame(
+    uint8_t *audioData, int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag)
 {
     CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "pipeline not init, can not RenderFrame.");
 
-    auto request = [this, audioData, frameSize, writeLen, finishedFlag]() {
+    auto request = [this, audioData, requestFrameSize, responseSize, finishedFlag]() {
         AUDIO_INFO_LOG("AudioSuitePipeline::RenderFrame enter request");
         if (pipelineState_ != PIPELINE_RUNNING) {
             AUDIO_ERR_LOG("RenderFrame failed, pipelineState state is not running.");
@@ -978,7 +798,7 @@ int32_t AudioSuitePipeline::RenderFrame(uint8_t *audioData, int32_t frameSize, i
             return;
         }
 
-        int32_t ret = outputNode_->DoProcess(audioData, frameSize, writeLen, finishedFlag);
+        int32_t ret = outputNode_->DoProcess(audioData, requestFrameSize, responseSize, finishedFlag);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("RenderFrame, ret = %{public}d.", ret);
             TriggerCallback(RENDER_FRAME, ret, id_);

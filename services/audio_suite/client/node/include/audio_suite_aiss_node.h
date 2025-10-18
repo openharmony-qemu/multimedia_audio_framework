@@ -40,11 +40,9 @@ public:
     int32_t Flush() override;
     int32_t Init() override;
     int32_t DeInit() override;
-    int32_t InstallTap(AudioNodePortType portType, std::shared_ptr<SuiteNodeReadTapDataCallback> callback) override;
-    int32_t RemoveTap(AudioNodePortType portType) override;
+
 protected:
     AudioSuitePcmBuffer* SignalProcess(const std::vector<AudioSuitePcmBuffer*>& inputs) override;
-    void HandleTapCallback(AudioSuitePcmBuffer* pcmBuffer) override;
 private:
     std::shared_ptr<AudioSuiteAlgoInterface> aissAlgo_{ nullptr };
     bool isInit_ = false;

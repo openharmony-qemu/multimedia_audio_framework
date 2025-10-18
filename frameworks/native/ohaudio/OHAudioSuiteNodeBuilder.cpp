@@ -32,12 +32,12 @@ static OHOS::AudioStandard::OHAudioSuiteNodeBuilder *ConvertAudioSuitBuilder(OH_
     return (OHAudioSuiteNodeBuilder *)builder;
 }
 
-OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_Create(OH_AudioNodeBuilder **builder, OH_AudioNode_Type type)
+OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_Create(OH_AudioNodeBuilder **builder)
 {
     CHECK_AND_RETURN_RET_LOG(builder != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "Create audio suite builder failed, builder is nullptr");
 
-    OHAudioSuiteNodeBuilder *nodeBuilder = new OHAudioSuiteNodeBuilder(type);
+    OHAudioSuiteNodeBuilder *nodeBuilder = new OHAudioSuiteNodeBuilder();
     CHECK_AND_RETURN_RET_LOG(nodeBuilder != nullptr,
         AUDIOSUITE_ERROR_SYSTEM, "Create audio suite builder failed, malloc error.");
 
@@ -84,26 +84,20 @@ OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_SetFormat(OH_AudioNodeBuilder *bui
     return nodeBuilder->SetFormat(audioFormat);
 }
 
-OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_SetOnWriteDataCallback(
-    OH_AudioNodeBuilder *builder, OH_AudioNode_OnWriteDataCallBack callback, void *userData)
+OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_SetRequestDataCallback(
+    OH_AudioNodeBuilder *builder, OH_InputNode_RequestDataCallback callback, void *userData)
 {
     OHAudioSuiteNodeBuilder *nodeBuilder = ConvertAudioSuitBuilder(builder);
     CHECK_AND_RETURN_RET_LOG(nodeBuilder != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "Destroy AudioNodeBuilder failed, builder is nullptr");
 
-    return nodeBuilder->SetOnWriteDataCallback(callback, userData);
+    return nodeBuilder->SetRequestDataCallback(callback, userData);
 }
 
 namespace OHOS {
 namespace AudioStandard {
 
 using namespace OHOS::AudioStandard::AudioSuite;
-
-OHAudioSuiteNodeBuilder::OHAudioSuiteNodeBuilder(const OH_AudioNode_Type type)
-{
-    nodeType_ = static_cast<AudioNodeType>(type);
-    AUDIO_INFO_LOG("OHAudioSuiteNodeBuilder created, type is %{public}d", static_cast<int32_t>(nodeType_));
-}
 
 OHAudioSuiteNodeBuilder::~OHAudioSuiteNodeBuilder()
 {
@@ -130,13 +124,13 @@ OH_AudioSuite_Result OHAudioSuiteNodeBuilder::SetFormat(OH_AudioFormat audioForm
     return AUDIOSUITE_SUCCESS;
 }
 
-OH_AudioSuite_Result OHAudioSuiteNodeBuilder::SetOnWriteDataCallback(
-    OH_AudioNode_OnWriteDataCallBack callback, void *userData)
+OH_AudioSuite_Result OHAudioSuiteNodeBuilder::SetRequestDataCallback(
+    OH_InputNode_RequestDataCallback callback, void *userData)
 {
     CHECK_AND_RETURN_RET_LOG(nodeType_ == NODE_TYPE_INPUT, AUDIOSUITE_ERROR_UNSUPPORT_OPERATION,
-        "SetOnWriteDataCallback Error, only input node support set.");
+        "SetRequestDataCallback Error, only input node support set.");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "SetOnWriteDataCallback failed, callback is nullptr");
+        AUDIOSUITE_ERROR_INVALID_PARAM, "SetRequestDataCallback failed, callback is nullptr");
 
     onWriteDataCallBack_ = callback;
     onWriteDataUserData_ = userData;
@@ -206,7 +200,7 @@ bool OHAudioSuiteNodeBuilder::IsSetFormat() const
     return setNodeFormat_;
 }
 
-bool OHAudioSuiteNodeBuilder::IsSetWriteDataCallBack() const
+bool OHAudioSuiteNodeBuilder::IsSetRequestDataCallback() const
 {
     return onWriteDataCallBack_ != nullptr;
 }
@@ -216,7 +210,7 @@ AudioFormat OHAudioSuiteNodeBuilder::GetNodeFormat() const
     return nodeFormat_;
 }
 
-OH_AudioNode_OnWriteDataCallBack OHAudioSuiteNodeBuilder::GetOnWriteDataCallBack() const
+OH_InputNode_RequestDataCallback OHAudioSuiteNodeBuilder::GetRequestDataCallback() const
 {
     return onWriteDataCallBack_;
 }

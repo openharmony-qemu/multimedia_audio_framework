@@ -125,8 +125,6 @@ HWTEST_F(AudioSuiteEqNodeTest, testAudioSuiteEqNodepreProcess, TestSize.Level0)
     AudioSuitePcmBuffer *inputPcmbuffer2 = new AudioSuitePcmBuffer(SAMPLE_RATE_44100, 1, CH_LAYOUT_STEREO);
     std::vector<AudioSuitePcmBuffer *> inputs;
     eq.SignalProcess(inputs);
-    EXPECT_EQ(eq.preProcess(inputPcmbuffer1), 0);
-    EXPECT_NE(eq.preProcess(inputPcmbuffer2), 0);
     delete inputPcmbuffer1;
     delete inputPcmbuffer2;
 }

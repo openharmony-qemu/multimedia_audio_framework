@@ -965,6 +965,11 @@ void PulseAudioServiceAdapterImpl::RemoveCaptureInjector(const uint32_t &sinkPor
     const uint32_t &sourcePortIndex, const SourceType &sourceType)
 {
 }
+
+void PulseAudioServiceAdapterImpl::UpdateAudioPortInfo(const uint32_t &sinkPortIndex,
+    const AudioModuleInfo &audioPortInfo)
+{
+}
 } // namespace AudioStandard
 } // namespace OHOS
 

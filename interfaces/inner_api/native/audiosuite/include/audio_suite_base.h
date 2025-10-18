@@ -40,11 +40,6 @@ typedef enum {
 } AudioNodeType;
 
 typedef enum {
-    NODE_ENABLE = 1,
-    NODE_DISABLE = 2,
-} AudioNodeEnable;
-
-typedef enum {
     ENCODING_TYPE_RAW = 0,
     ENCODING_TYPE_AUDIOVIVID = 1,
     ENCODING_TYPE_E_AC3 = 2,

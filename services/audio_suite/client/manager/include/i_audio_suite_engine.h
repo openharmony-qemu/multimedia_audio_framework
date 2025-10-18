@@ -37,7 +37,7 @@ public:
 
     virtual int32_t Init() = 0;
     virtual int32_t DeInit() = 0;
-    virtual int32_t CreatePipeline() = 0;
+    virtual int32_t CreatePipeline(PipelineWorkMode workMode) = 0;
     virtual int32_t DestroyPipeline(uint32_t pipelineId) = 0;
     virtual int32_t StartPipeline(uint32_t pipelineId) = 0;
     virtual int32_t StopPipeline(uint32_t pipelineId) = 0;
@@ -45,20 +45,16 @@ public:
 
     virtual int32_t CreateNode(uint32_t pipelineId, AudioNodeBuilder &builder) = 0;
     virtual int32_t DestroyNode(uint32_t nodeId) = 0;
-    virtual int32_t EnableNode(uint32_t nodeId, AudioNodeEnable audioNodeEnable) = 0;
-    virtual int32_t GetNodeEnableStatus(uint32_t nodeId) = 0;
+    virtual int32_t BypassEffectNode(uint32_t nodeId, bool bypass) = 0;
+    virtual int32_t GetNodeBypassStatus(uint32_t nodeId) = 0;
     virtual int32_t SetAudioFormat(uint32_t nodeId, AudioFormat audioFormat) = 0;
-    virtual int32_t SetWriteDataCallback(uint32_t nodeId,
+    virtual int32_t SetRequestDataCallback(uint32_t nodeId,
         std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback) = 0;
-    virtual int32_t ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId,
-        AudioNodePortType srcPortType, AudioNodePortType destPortType) = 0;
     virtual int32_t ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) = 0;
     virtual int32_t DisConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) = 0;
-    virtual int32_t InstallTap(uint32_t nodeId, AudioNodePortType portType,
-        std::shared_ptr<SuiteNodeReadTapDataCallback> callback) = 0;
-    virtual int32_t RemoveTap(uint32_t nodeId, AudioNodePortType portType) = 0;
     virtual int32_t RenderFrame(uint32_t pipelineId,
-        uint8_t *audioData, int32_t frameSize, int32_t *writeLen, bool *finishedFlag) = 0;
+        uint8_t *audioData,
+        int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag) = 0;
     virtual int32_t MultiRenderFrame(uint32_t pipelineId,
         AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag) = 0;
     virtual int32_t SetOptions(uint32_t nodeId, std::string name, std::string value) = 0;

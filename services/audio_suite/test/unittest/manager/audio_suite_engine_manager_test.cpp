@@ -49,14 +49,12 @@ public:
     MOCK_METHOD(void, OnGetPipelineState, (AudioSuitePipelineState state), (override));
     MOCK_METHOD(void, OnCreateNode, (int32_t result, uint32_t nodeId), (override));
     MOCK_METHOD(void, OnDestroyNode, (int32_t result), (override));
-    MOCK_METHOD(void, OnEnableNode, (int32_t result), (override));
-    MOCK_METHOD(void, OnGetNodeEnable, (AudioNodeEnable enable), (override));
+    MOCK_METHOD(void, OnBypassEffectNode, (int32_t result), (override));
+    MOCK_METHOD(void, OnGetNodeBypass, (int32_t result, bool bypassStatus), (override));
     MOCK_METHOD(void, OnSetAudioFormat, (int32_t result), (override));
     MOCK_METHOD(void, OnWriteDataCallback, (int32_t result), (override));
     MOCK_METHOD(void, OnConnectNodes, (int32_t result), (override));
     MOCK_METHOD(void, OnDisConnectNodes, (int32_t result), (override));
-    MOCK_METHOD(void, OnInstallTap, (int32_t result), (override));
-    MOCK_METHOD(void, OnRemoveTap, (int32_t result), (override));
     MOCK_METHOD(void, OnRenderFrame, (int32_t result, uint32_t pipelineId), (override));
 };
 
@@ -93,11 +91,11 @@ public:
     {
         return;
     }
-    void OnEnableNode(int32_t result) override
+    void OnBypassEffectNode(int32_t result) override
     {
         return;
     }
-    void OnGetNodeEnable(AudioNodeEnable enable) override
+    void OnGetNodeBypass(int32_t result, bool bypassStatus) override
     {
         return;
     }
@@ -114,14 +112,6 @@ public:
         return;
     }
     void OnDisConnectNodes(int32_t result) override
-    {
-        return;
-    }
-    void OnInstallTap(int32_t result) override
-    {
-        return;
-    }
-    void OnRemoveTap(int32_t result) override
     {
         return;
     }
@@ -168,11 +158,11 @@ public:
     {
         return 0;
     }
-    int32_t EnableNode(uint32_t nodeId, AudioNodeEnable audioNodeEnable) override
+    int32_t BypassEffectNode(uint32_t nodeId, bool bypass) override
     {
         return 0;
     }
-    int32_t GetNodeEnableStatus(uint32_t nodeId) override
+    int32_t GetNodeBypassStatus(uint32_t nodeId) override
     {
         return 0;
     }
@@ -180,13 +170,8 @@ public:
     {
         return 0;
     }
-    int32_t SetWriteDataCallback(uint32_t nodeId,
+    int32_t SetRequestDataCallback(uint32_t nodeId,
         std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback) override
-    {
-        return 0;
-    }
-    int32_t ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId,
-        AudioNodePortType srcPortType, AudioNodePortType destPortType) override
     {
         return 0;
     }
@@ -195,15 +180,6 @@ public:
         return 0;
     }
     int32_t DisConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) override
-    {
-        return 0;
-    }
-    int32_t InstallTap(uint32_t nodeId, AudioNodePortType portType,
-        std::shared_ptr<SuiteNodeReadTapDataCallback> callback) override
-    {
-        return 0;
-    }
-    int32_t RemoveTap(uint32_t nodeId, AudioNodePortType portType) override
     {
         return 0;
     }
@@ -262,19 +238,6 @@ public:
     {
         return 0;
     }
-    int32_t InstallTap(AudioNodePortType portType, std::shared_ptr<SuiteNodeReadTapDataCallback> callback) override
-    {
-        return 0;
-    }
-    int32_t RemoveTap(AudioNodePortType portType) override
-    {
-        return 0;
-    }
-    int32_t Connect(const std::shared_ptr<AudioNode> &preNode,
-    AudioNodePortType type) override
-    {
-        return 0;
-    }
     int32_t Connect(const std::shared_ptr<AudioNode> &preNode) override
     {
         return 0;
@@ -306,17 +269,17 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, createPipelineTest, TestSize.Level0)
     engineManger.Init();
     EXPECT_EQ(engineManger.IsInit(), true);
 
-    int32_t result = engineManger.CreatePipeline();
+    int32_t result = engineManger.CreatePipeline(PIPELINE_EDIT_MODE);
     for (size_t i = 1;i < engineManger.engineCfg_.maxPipelineNum_ + 3; ++i)
     {
         engineManger.pipelineMap_.insert(std::make_pair(i, std::make_shared<IAudioSuitePipelineTestImpl>()));
     }
 
-    result = engineManger.CreatePipeline();
+    result = engineManger.CreatePipeline(PIPELINE_EDIT_MODE);
     EXPECT_EQ(result, SUCCESS);
 
     engineManger.DeInit();
-    result = engineManger.CreatePipeline();
+    result = engineManger.CreatePipeline(PIPELINE_EDIT_MODE);
     EXPECT_EQ(result, ERR_ILLEGAL_STATE);
 }
 
@@ -420,21 +383,20 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, destroyNodeTest, TestSize.Level0)
     EXPECT_EQ(result, SUCCESS);
 }
 
-HWTEST_F(AudioSuiteEngineManagerUnitTest, enableNodeTest, TestSize.Level0)
+HWTEST_F(AudioSuiteEngineManagerUnitTest, bypassEffectNodeTest, TestSize.Level0)
 {
     AudioSuiteManagerCallbackTestImpl callback;
     AudioSuiteEngine engineManger(callback);
     engineManger.Init();
     EXPECT_EQ(engineManger.IsInit(), true);
     
-    AudioNodeEnable audioNodeEnable = static_cast<AudioNodeEnable>(1);
     engineManger.nodeMap_[1] = 3;
-    int32_t result = engineManger.EnableNode(1, audioNodeEnable);
-    result = engineManger.EnableNode(2, audioNodeEnable);
+    int32_t result = engineManger.BypassEffectNode(1, true);
+    result = engineManger.BypassEffectNode(2, true);
 
     engineManger.nodeMap_[5] = 6;
     engineManger.pipelineMap_[6] = std::make_shared<IAudioSuitePipelineTestImpl>();
-    result = engineManger.EnableNode(5, audioNodeEnable);
+    result = engineManger.BypassEffectNode(5, true);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -446,12 +408,12 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, getNodeEnableStatusTest, TestSize.Leve
     EXPECT_EQ(engineManger.IsInit(), true);
     
     engineManger.nodeMap_[1] = 3;
-    int32_t result = engineManger.GetNodeEnableStatus(1);
-    result = engineManger.GetNodeEnableStatus(2);
+    int32_t result = engineManger.GetNodeBypassStatus(1);
+    result = engineManger.GetNodeBypassStatus(2);
 
     engineManger.nodeMap_[5] = 6;
     engineManger.pipelineMap_[6] = std::make_shared<IAudioSuitePipelineTestImpl>();
-    result = engineManger.GetNodeEnableStatus(5);
+    result = engineManger.GetNodeBypassStatus(5);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -483,16 +445,16 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, setWriteDataCallbackTest, TestSize.Lev
     EXPECT_EQ(engineManger.IsInit(), true);
     
     engineManger.nodeMap_[1] = 3;
-    int32_t result = engineManger.SetWriteDataCallback(1, suiteCallback);
-    result = engineManger.SetWriteDataCallback(2, suiteCallback);
+    int32_t result = engineManger.SetRequestDataCallback(1, suiteCallback);
+    result = engineManger.SetRequestDataCallback(2, suiteCallback);
 
     engineManger.nodeMap_[5] = 6;
     engineManger.pipelineMap_[6] = std::make_shared<IAudioSuitePipelineTestImpl>();
-    result = engineManger.SetWriteDataCallback(5, suiteCallback);
+    result = engineManger.SetRequestDataCallback(5, suiteCallback);
     EXPECT_EQ(result, SUCCESS);
 }
 
-HWTEST_F(AudioSuiteEngineManagerUnitTest, connectNodesTest, TestSize.Level0)
+HWTEST_F(AudioSuiteEngineManagerUnitTest, connectNodesTest_001, TestSize.Level0)
 {
     AudioSuiteManagerCallbackTestImpl callback;
     AudioSuiteEngine engineManger(callback);
@@ -501,32 +463,66 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, connectNodesTest, TestSize.Level0)
     
     uint32_t srcNodeId = 4;
     uint32_t destNodeId = 5;
-    AudioNodePortType srcPortType = AUDIO_NODE_HUMAN_SOUND_OUTPORT_TYPE;
-    AudioNodePortType destPortType = AUDIO_NODE_DEFAULT_OUTPORT_TYPE;
-    int32_t result = engineManger.ConnectNodes(srcNodeId, destNodeId, srcPortType, destPortType);
+    int32_t result = engineManger.ConnectNodes(srcNodeId, destNodeId);
 
     srcNodeId = 1;
     destNodeId = 2;
     engineManger.nodeMap_[1] = 3;
-    result = engineManger.ConnectNodes(srcNodeId, destNodeId, srcPortType, destPortType);
+    result = engineManger.ConnectNodes(srcNodeId, destNodeId);
 
     srcNodeId = 6;
     destNodeId = 7;
     engineManger.nodeMap_[7] = 7;
-    result = engineManger.ConnectNodes(srcNodeId, destNodeId, srcPortType, destPortType);
+    result = engineManger.ConnectNodes(srcNodeId, destNodeId);
 
     engineManger.nodeMap_[8] = 8;
     engineManger.nodeMap_[9] = 9;
     srcNodeId = 8;
     destNodeId = 9;
-    result = engineManger.ConnectNodes(srcNodeId, destNodeId, srcPortType, destPortType);
+    result = engineManger.ConnectNodes(srcNodeId, destNodeId);
 
     engineManger.nodeMap_[10] = 12;
     engineManger.nodeMap_[11] = 12;
     srcNodeId = 10;
     destNodeId = 11;
     engineManger.pipelineMap_[12] = std::make_shared<IAudioSuitePipelineTestImpl>();
-    result = engineManger.ConnectNodes(srcNodeId, destNodeId, srcPortType, destPortType);
+    result = engineManger.ConnectNodes(srcNodeId, destNodeId);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+HWTEST_F(AudioSuiteEngineManagerUnitTest, connectNodesTest_002, TestSize.Level0)
+{
+    AudioSuiteManagerCallbackTestImpl callback;
+    AudioSuiteEngine engineManger(callback);
+    engineManger.Init();
+    EXPECT_EQ(engineManger.IsInit(), true);
+    
+    uint32_t srcNodeId = 4;
+    uint32_t destNodeId = 5;
+    int32_t result = engineManger.ConnectNodes(srcNodeId, destNodeId);
+
+    srcNodeId = 1;
+    destNodeId = 2;
+    engineManger.nodeMap_[1] = 3;
+    result = engineManger.ConnectNodes(srcNodeId, destNodeId);
+
+    srcNodeId = 6;
+    destNodeId = 7;
+    engineManger.nodeMap_[7] = 7;
+    result = engineManger.ConnectNodes(srcNodeId, destNodeId);
+
+    engineManger.nodeMap_[8] = 8;
+    engineManger.nodeMap_[9] = 9;
+    srcNodeId = 8;
+    destNodeId = 9;
+    result = engineManger.ConnectNodes(srcNodeId, destNodeId);
+
+    engineManger.nodeMap_[10] = 12;
+    engineManger.nodeMap_[11] = 12;
+    srcNodeId = 10;
+    destNodeId = 11;
+    engineManger.pipelineMap_[12] = std::make_shared<IAudioSuitePipelineTestImpl>();
+    result = engineManger.ConnectNodes(srcNodeId, destNodeId);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -571,44 +567,6 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, disConnectNodesTest, TestSize.Level0)
     EXPECT_EQ(result, SUCCESS);
 }
 
-HWTEST_F(AudioSuiteEngineManagerUnitTest, installTapTest, TestSize.Level0)
-{
-    AudioSuiteManagerCallbackTestImpl callback;
-    AudioSuiteEngine engineManger(callback);
-    std::shared_ptr<SuiteNodeReadTapDataCallback> suiteCallback =
-        std::make_shared<SuiteNodeReadTapDataCallbackTestImpl>();
-    engineManger.Init();
-    EXPECT_EQ(engineManger.IsInit(), true);
-    
-    AudioNodePortType portType  = AUDIO_NODE_HUMAN_SOUND_OUTPORT_TYPE;
-    engineManger.nodeMap_[1] = 3;
-    int32_t result = engineManger.InstallTap(1, portType, suiteCallback);
-    result = engineManger.InstallTap(2, portType, suiteCallback);
-
-    engineManger.nodeMap_[5] = 6;
-    engineManger.pipelineMap_[6] = std::make_shared<IAudioSuitePipelineTestImpl>();
-    result = engineManger.InstallTap(5, portType, suiteCallback);
-    EXPECT_EQ(result, SUCCESS);
-}
-
-HWTEST_F(AudioSuiteEngineManagerUnitTest, removeTapTest, TestSize.Level0)
-{
-    AudioSuiteManagerCallbackTestImpl callback;
-    AudioSuiteEngine engineManger(callback);
-    engineManger.Init();
-    EXPECT_EQ(engineManger.IsInit(), true);
-    
-    AudioNodePortType portType  = AUDIO_NODE_HUMAN_SOUND_OUTPORT_TYPE;
-    engineManger.nodeMap_[1] = 3;
-    int32_t result = engineManger.RemoveTap(1, portType);
-    result = engineManger.RemoveTap(2, portType);
-
-    engineManger.nodeMap_[5] = 6;
-    engineManger.pipelineMap_[6] = std::make_shared<IAudioSuitePipelineTestImpl>();
-    result = engineManger.RemoveTap(5, portType);
-    EXPECT_EQ(result, SUCCESS);
-}
-
 HWTEST_F(AudioSuiteEngineManagerUnitTest, renderFrameTest, TestSize.Level0)
 {
     AudioSuiteManagerCallbackTestImpl callback;
@@ -621,6 +579,23 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, renderFrameTest, TestSize.Level0)
     int32_t result = engineManger.RenderFrame(1, nullptr, 1, nullptr, nullptr);
     result = engineManger.RenderFrame(2, nullptr, 1, nullptr, nullptr);
     result = engineManger.RenderFrame(3, nullptr, 1, nullptr, nullptr);
+
+    EXPECT_EQ(result, SUCCESS);
+}
+
+HWTEST_F(AudioSuiteEngineManagerUnitTest, multiRenderFrameTest, TestSize.Level0)
+{
+    AudioSuiteManagerCallbackTestImpl callback;
+    AudioSuiteEngine engineManger(callback);
+    engineManger.Init();
+    EXPECT_EQ(engineManger.IsInit(), true);
+
+    AudioDataArray audioDataArray;
+    engineManger.pipelineMap_[1] = std::make_shared<IAudioSuitePipelineTestImpl>();
+    engineManger.pipelineMap_[2] = nullptr;
+    int32_t result = engineManger.MultiRenderFrame(1, &audioDataArray, nullptr, nullptr);
+    result = engineManger.MultiRenderFrame(2, &audioDataArray, nullptr, nullptr);
+    result = engineManger.MultiRenderFrame(3, &audioDataArray, nullptr, nullptr);
 
     EXPECT_EQ(result, SUCCESS);
 }
@@ -641,6 +616,25 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, setOptionsTest, TestSize.Level0)
     engineManger.nodeMap_[5] = 6;
     engineManger.pipelineMap_[6] = std::make_shared<IAudioSuitePipelineTestImpl>();
     result = engineManger.SetOptions(5, name, value);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+HWTEST_F(AudioSuiteEngineManagerUnitTest, getOptionsTest, TestSize.Level0)
+{
+    AudioSuiteManagerCallbackTestImpl callback;
+    AudioSuiteEngine engineManger(callback);
+    engineManger.Init();
+    EXPECT_EQ(engineManger.IsInit(), true);
+   
+    std::string name = "abc";
+    std::string value = "def";
+    engineManger.nodeMap_[1] = 3;
+    int32_t result = engineManger.GetOptions(1, name, value);
+    result = engineManger.GetOptions(2, name, value);
+
+    engineManger.nodeMap_[5] = 6;
+    engineManger.pipelineMap_[6] = std::make_shared<IAudioSuitePipelineTestImpl>();
+    result = engineManger.GetOptions(5, name, value);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -800,39 +794,37 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineEnableNodeNodeTest, 
     audioSuitePipeline.Init();
     EXPECT_EQ(audioSuitePipeline.IsInit(), true);
 
-    AudioNodeEnable audioNodeEnable = NODE_ENABLE;
-
-    int32_t result = audioSuitePipeline.EnableNode(2, audioNodeEnable);
+    int32_t result = audioSuitePipeline.BypassEffectNode(2, true);
     EXPECT_EQ(result, SUCCESS);
 
     audioSuitePipeline.nodeMap_[1] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
-    result = audioSuitePipeline.EnableNode(1, audioNodeEnable);
+    result = audioSuitePipeline.BypassEffectNode(1, true);
     EXPECT_EQ(result, SUCCESS);
 
     audioSuitePipeline.nodeMap_[3] = nullptr;
-    result = audioSuitePipeline.EnableNode(3, audioNodeEnable);
+    result = audioSuitePipeline.BypassEffectNode(3, true);
     EXPECT_EQ(result, SUCCESS);
 
     audioSuitePipeline.nodeMap_[4] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_OUTPUT);
-    result = audioSuitePipeline.EnableNode(4, audioNodeEnable);
+    result = audioSuitePipeline.BypassEffectNode(4, true);
     EXPECT_EQ(result, SUCCESS);
 }
 
-HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineGetNodeEnableStatusTest, TestSize.Level0)
+HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineGetNodeBypassStatusTest, TestSize.Level0)
 {
     AudioSuitePipeline audioSuitePipeline(PIPELINE_EDIT_MODE);
     audioSuitePipeline.Init();
     EXPECT_EQ(audioSuitePipeline.IsInit(), true);
 
-    int32_t result = audioSuitePipeline.GetNodeEnableStatus(2);
+    int32_t result = audioSuitePipeline.GetNodeBypassStatus(2);
     EXPECT_EQ(result, SUCCESS);
 
     audioSuitePipeline.nodeMap_[1] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
-    result = audioSuitePipeline.GetNodeEnableStatus(1);
+    result = audioSuitePipeline.GetNodeBypassStatus(1);
     EXPECT_EQ(result, SUCCESS);
 
     audioSuitePipeline.nodeMap_[3] = nullptr;
-    result = audioSuitePipeline.GetNodeEnableStatus(3);
+    result = audioSuitePipeline.GetNodeBypassStatus(3);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -856,7 +848,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineSetAudioFormatTest, 
     EXPECT_EQ(result, SUCCESS);
 }
 
-HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineSetWriteDataCallbackTest, TestSize.Level0)
+HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineSetRequestDataCallbackTest, TestSize.Level0)
 {
     AudioSuitePipeline audioSuitePipeline(PIPELINE_EDIT_MODE);
     audioSuitePipeline.Init();
@@ -865,19 +857,19 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineSetWriteDataCallback
         std::make_shared<SuiteInputNodeWriteDataCallBackTestImpl>();
 
     audioSuitePipeline.pipelineState_ = PIPELINE_RUNNING;
-    int32_t result = audioSuitePipeline.SetWriteDataCallback(2, suitCallback);
+    int32_t result = audioSuitePipeline.SetRequestDataCallback(2, suitCallback);
     EXPECT_EQ(result, SUCCESS);
 
     audioSuitePipeline.pipelineState_ = PIPELINE_STOPPED;
-    result = audioSuitePipeline.SetWriteDataCallback(4, suitCallback);
+    result = audioSuitePipeline.SetRequestDataCallback(4, suitCallback);
     EXPECT_EQ(result, SUCCESS);
 
     audioSuitePipeline.nodeMap_[3] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
-    result = audioSuitePipeline.SetWriteDataCallback(3, suitCallback);
+    result = audioSuitePipeline.SetRequestDataCallback(3, suitCallback);
     EXPECT_EQ(result, SUCCESS);
 
     audioSuitePipeline.nodeMap_[5] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_OUTPUT);
-    result = audioSuitePipeline.SetWriteDataCallback(5, suitCallback);
+    result = audioSuitePipeline.SetRequestDataCallback(5, suitCallback);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -889,49 +881,54 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineConnectNodesTest_001
     
     uint32_t srcNodeId = 0;
     uint32_t destNodeId = 0;
-    AudioNodePortType srcPortType = AUDIO_NODE_HUMAN_SOUND_OUTPORT_TYPE;
-    AudioNodePortType destPortType = AUDIO_NODE_HUMAN_SOUND_OUTPORT_TYPE;
 
     audioSuitePipeline.pipelineState_ = PIPELINE_RUNNING;
-    int32_t result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId, srcPortType, destPortType);
+    int32_t result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId);
     EXPECT_EQ(result, SUCCESS);
 
     srcNodeId = 1;
     destNodeId = 2;
     audioSuitePipeline.pipelineState_ = PIPELINE_STOPPED;
-    result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId, srcPortType, destPortType);
+    result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId);
     EXPECT_EQ(result, SUCCESS);
 
     srcNodeId = 3;
     destNodeId = 4;
     audioSuitePipeline.nodeMap_[3] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
-    result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId, srcPortType, destPortType);
+    result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId);
     EXPECT_EQ(result, SUCCESS);
 
     srcNodeId = 5;
     destNodeId = 6;
     audioSuitePipeline.nodeMap_[6] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
-    result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId, srcPortType, destPortType);
+    result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId);
     EXPECT_EQ(result, SUCCESS);
 
     srcNodeId = 7;
     destNodeId = 8;
     audioSuitePipeline.nodeMap_[7] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_OUTPUT);
     audioSuitePipeline.nodeMap_[8] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
-    result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId, srcPortType, destPortType);
+    result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId);
     EXPECT_EQ(result, SUCCESS);
 
     srcNodeId = 9;
     destNodeId = 10;
     audioSuitePipeline.nodeMap_[9] = nullptr;
     audioSuitePipeline.nodeMap_[10] = nullptr;
-    result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId, srcPortType, destPortType);
+    result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId);
     EXPECT_EQ(result, SUCCESS);
 
     srcNodeId = 11;
     destNodeId = 12;
     audioSuitePipeline.nodeMap_[12] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
-    result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId, srcPortType, destPortType);
+    result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId);
+    EXPECT_EQ(result, SUCCESS);
+
+    srcNodeId = 13;
+    destNodeId = 14;
+    audioSuitePipeline.nodeMap_[13] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_AUDIO_SEPARATION);
+    audioSuitePipeline.nodeMap_[14] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
+    result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -943,37 +940,35 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineConnectNodesTest_002
     sleep(1);
     uint32_t srcNodeId = 0;
     uint32_t destNodeId = 0;
-    AudioNodePortType srcPortType = AUDIO_NODE_HUMAN_SOUND_OUTPORT_TYPE;
-    AudioNodePortType destPortType = AUDIO_NODE_HUMAN_SOUND_OUTPORT_TYPE;
 
     audioSuitePipeline.pipelineState_ = PIPELINE_RUNNING;
-    int32_t result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId, srcPortType, destPortType);
+    int32_t result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId);
     EXPECT_EQ(result, SUCCESS);
 
-    srcNodeId = 13;
-    destNodeId = 14;
+    srcNodeId = 15;
+    destNodeId = 16;
     audioSuitePipeline.connections_[srcNodeId] = destNodeId;
-    audioSuitePipeline.nodeMap_[13] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
-    audioSuitePipeline.nodeMap_[14] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_OUTPUT);
-    result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId, srcPortType, destPortType);
+    audioSuitePipeline.nodeMap_[15] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
+    audioSuitePipeline.nodeMap_[16] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_OUTPUT);
+    result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId);
     EXPECT_EQ(result, SUCCESS);
 
-    srcNodeId = 14;
-    destNodeId = 15;
+    srcNodeId = 17;
+    destNodeId = 18;
     audioSuitePipeline.connections_[srcNodeId] = destNodeId + 1;
     audioSuitePipeline.pipelineState_ = PIPELINE_STOPPED;
-    audioSuitePipeline.nodeMap_[14] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
-    audioSuitePipeline.nodeMap_[15] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_OUTPUT);
-    result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId, srcPortType, destPortType);
+    audioSuitePipeline.nodeMap_[17] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
+    audioSuitePipeline.nodeMap_[18] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_OUTPUT);
+    result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId);
     EXPECT_EQ(result, SUCCESS);
 
-    srcNodeId = 16;
-    destNodeId = 17;
+    srcNodeId = 19;
+    destNodeId = 20;
     audioSuitePipeline.connections_[srcNodeId] = destNodeId + 1;
     audioSuitePipeline.pipelineState_ = PIPELINE_RUNNING;
-    audioSuitePipeline.nodeMap_[16] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
-    audioSuitePipeline.nodeMap_[17] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_OUTPUT);
-    result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId, srcPortType, destPortType);
+    audioSuitePipeline.nodeMap_[19] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
+    audioSuitePipeline.nodeMap_[20] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_OUTPUT);
+    result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -1038,7 +1033,7 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineDisConnectNodesTest,
     EXPECT_EQ(result, SUCCESS);
 }
 
-HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineConnectNodesForRunTest, TestSize.Level0)
+HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineConnectNodesForRunTest_001, TestSize.Level0)
 {
     AudioSuitePipeline audioSuitePipeline(PIPELINE_EDIT_MODE);
     audioSuitePipeline.Init();
@@ -1048,22 +1043,60 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineConnectNodesForRunTe
     uint32_t destNodeId = 2;
     std::shared_ptr<AudioNode> destNode = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
     std::shared_ptr<AudioNode> srcNode = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
-    AudioNodePortType srcPortType = AUDIO_NODE_DEFAULT_OUTPORT_TYPE;
     destNode->audioNodeInfo_.nodeType = NODE_TYPE_ENVIRONMENT_EFFECT;
     AudioFormat audioFormat;
     audioSuitePipeline.outputNode_ = nullptr;
 
-    int32_t result = audioSuitePipeline.ConnectNodesForRun(srcNodeId, destNodeId, srcNode,  destNode, srcPortType);
+    int32_t result = audioSuitePipeline.ConnectNodesForRun(srcNodeId, destNodeId, srcNode,  destNode);
     EXPECT_EQ(result, ERR_ILLEGAL_STATE);
 
     audioSuitePipeline.outputNode_ = std::make_shared<AudioOutputNode>(audioFormat);
     audioSuitePipeline.outputNode_->audioNodeInfo_.nodeId = destNodeId + 1;
-    result = audioSuitePipeline.ConnectNodesForRun(srcNodeId, destNodeId + 1, srcNode, destNode, srcPortType);
+    result = audioSuitePipeline.ConnectNodesForRun(srcNodeId, destNodeId + 1, srcNode, destNode);
     EXPECT_EQ(result, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
 
     audioSuitePipeline.outputNode_ = std::make_shared<AudioOutputNode>(audioFormat);
     audioSuitePipeline.outputNode_->audioNodeInfo_.nodeId = srcNodeId + 1;
-    result = audioSuitePipeline.ConnectNodesForRun(srcNodeId + 1, destNodeId + 4, srcNode, destNode, srcPortType);
+    result = audioSuitePipeline.ConnectNodesForRun(srcNodeId + 1, destNodeId + 4, srcNode, destNode);
+    EXPECT_EQ(result, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
+}
+
+HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineConnectNodesForRunTest_002, TestSize.Level0)
+{
+    AudioSuitePipeline audioSuitePipeline(PIPELINE_EDIT_MODE);
+    audioSuitePipeline.Init();
+    EXPECT_EQ(audioSuitePipeline.IsInit(), true);
+
+    uint32_t srcNodeId = 1;
+    uint32_t destNodeId = 2;
+    std::shared_ptr<AudioNode> destNode = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
+    std::shared_ptr<AudioNode> srcNode = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
+    destNode->audioNodeInfo_.nodeType = NODE_TYPE_ENVIRONMENT_EFFECT;
+    AudioFormat audioFormat;
+    audioSuitePipeline.outputNode_ = nullptr;
+
+    int32_t result = audioSuitePipeline.ConnectNodesForRun(srcNodeId, destNodeId, srcNode,  destNode);
+    EXPECT_EQ(result, ERR_ILLEGAL_STATE);
+
+    audioSuitePipeline.outputNode_ = std::make_shared<AudioOutputNode>(audioFormat);
+    audioSuitePipeline.outputNode_->audioNodeInfo_.nodeId = destNodeId + 1;
+    result = audioSuitePipeline.ConnectNodesForRun(srcNodeId, destNodeId + 1, srcNode, destNode);
+    EXPECT_EQ(result, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
+
+    audioSuitePipeline.outputNode_ = std::make_shared<AudioOutputNode>(audioFormat);
+    audioSuitePipeline.outputNode_->audioNodeInfo_.nodeId = srcNodeId + 1;
+    result = audioSuitePipeline.ConnectNodesForRun(srcNodeId + 1, destNodeId + 4, srcNode, destNode);
+    EXPECT_EQ(result, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
+
+    audioSuitePipeline.outputNode_ = std::make_shared<AudioOutputNode>(audioFormat);
+    audioSuitePipeline.outputNode_->audioNodeInfo_.nodeId = srcNodeId;
+    result = audioSuitePipeline.ConnectNodesForRun(srcNodeId + 1, destNodeId + 1, srcNode, destNode);
+    EXPECT_EQ(result, SUCCESS);
+
+    audioSuitePipeline.outputNode_ = std::make_shared<AudioOutputNode>(audioFormat);
+    audioSuitePipeline.outputNode_->audioNodeInfo_.nodeId = destNodeId + 1;
+    destNode = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_AUDIO_MIXER);
+    result = audioSuitePipeline.ConnectNodesForRun(srcNodeId, destNodeId + 1, srcNode, destNode);
     EXPECT_EQ(result, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
 }
 
@@ -1098,49 +1131,6 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineDisConnectNodesForRu
     EXPECT_EQ(result, ERR_AUDIO_SUITE_UNSUPPORT_CONNECT);
 }
 
-HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineInstallTapTest, TestSize.Level0)
-{
-    AudioSuitePipeline audioSuitePipeline(PIPELINE_EDIT_MODE);
-    audioSuitePipeline.Init();
-    EXPECT_EQ(audioSuitePipeline.IsInit(), true);
-    
-    AudioNodePortType portType = AUDIO_NODE_DEFAULT_OUTPORT_TYPE;
-    uint32_t nodeId = 1;
-    std::shared_ptr<SuiteNodeReadTapDataCallback> callback = std::make_shared<SuiteNodeReadTapDataCallbackTestImpl>();
-
-    int32_t result = audioSuitePipeline.InstallTap(nodeId, portType, callback);
-    EXPECT_EQ(result, SUCCESS);
-
-    audioSuitePipeline.nodeMap_[nodeId] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
-    result = audioSuitePipeline.InstallTap(nodeId, portType, callback);
-    EXPECT_EQ(result, SUCCESS);
-
-    audioSuitePipeline.nodeMap_[nodeId] = nullptr;
-    result = audioSuitePipeline.InstallTap(nodeId, portType, callback);
-    EXPECT_EQ(result, SUCCESS);
-}
-
-HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineRemoveTapTest, TestSize.Level0)
-{
-    AudioSuitePipeline audioSuitePipeline(PIPELINE_EDIT_MODE);
-    audioSuitePipeline.Init();
-    EXPECT_EQ(audioSuitePipeline.IsInit(), true);
-   
-    AudioNodePortType portType = AUDIO_NODE_DEFAULT_OUTPORT_TYPE;
-    uint32_t nodeId = 1;
-
-    int32_t result = audioSuitePipeline.RemoveTap(nodeId, portType);
-    EXPECT_EQ(result, SUCCESS);
-
-    audioSuitePipeline.nodeMap_[nodeId + 1] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
-    result = audioSuitePipeline.RemoveTap(nodeId + 1, portType);
-    EXPECT_EQ(result, SUCCESS);
-
-    audioSuitePipeline.nodeMap_[nodeId + 2] = nullptr;
-    result = audioSuitePipeline.RemoveTap(nodeId + 2, portType);
-    EXPECT_EQ(result, SUCCESS);
-}
-
 HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineRenderFrameTest, TestSize.Level0)
 {
     AudioSuitePipeline audioSuitePipeline(PIPELINE_EDIT_MODE);
@@ -1167,6 +1157,36 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineRenderFrameTest, Tes
     EXPECT_EQ(result, SUCCESS);
 }
 
+HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineMultiRenderFrameTest, TestSize.Level0)
+{
+    AudioSuitePipeline audioSuitePipeline(PIPELINE_EDIT_MODE);
+    audioSuitePipeline.Init();
+    EXPECT_EQ(audioSuitePipeline.IsInit(), true);
+    
+    uint8_t **audioDataArray = nullptr;
+    int arraySize = 0;
+    int32_t requestFrameSize = 0;
+    int32_t *responseSize = nullptr;
+    bool *finishedFlag = nullptr;
+    audioSuitePipeline.pipelineState_ = PIPELINE_STOPPED;
+
+    int32_t result = audioSuitePipeline.MultiRenderFrame(
+        audioDataArray, arraySize, requestFrameSize, responseSize, finishedFlag);
+    EXPECT_EQ(result, SUCCESS);
+
+    audioSuitePipeline.pipelineState_ = PIPELINE_RUNNING;
+    audioSuitePipeline.outputNode_ = nullptr;
+    result = audioSuitePipeline.MultiRenderFrame(
+        audioDataArray, arraySize, requestFrameSize, responseSize, finishedFlag);
+    EXPECT_EQ(result, SUCCESS);
+
+    AudioFormat audioFormat;
+    audioSuitePipeline.outputNode_ = std::make_shared<AudioOutputNode>(audioFormat);
+    result = audioSuitePipeline.MultiRenderFrame(
+        audioDataArray, arraySize, requestFrameSize, responseSize, finishedFlag);
+    EXPECT_EQ(result, SUCCESS);
+}
+
 HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineSetOptionsTest, TestSize.Level0)
 {
     AudioSuitePipeline audioSuitePipeline(PIPELINE_EDIT_MODE);
@@ -1187,6 +1207,29 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineSetOptionsTest, Test
     EXPECT_EQ(result, SUCCESS);
 
     result = audioSuitePipeline.SetOptions(nodeId + 2, name, value);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineGetOptionsTest, TestSize.Level0)
+{
+    AudioSuitePipeline audioSuitePipeline(PIPELINE_EDIT_MODE);
+    audioSuitePipeline.Init();
+    EXPECT_EQ(audioSuitePipeline.IsInit(), true);
+    
+    uint32_t nodeId = 1;
+    std::string name = "abc";
+    std::string value = "def";
+    audioSuitePipeline.pipelineState_ = PIPELINE_STOPPED;
+
+    int32_t result = audioSuitePipeline.GetOptions(nodeId, name, value);
+    EXPECT_EQ(result, SUCCESS);
+
+    audioSuitePipeline.pipelineState_ = PIPELINE_RUNNING;
+    audioSuitePipeline.nodeMap_[nodeId + 1] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
+    result = audioSuitePipeline.GetOptions(nodeId + 1, name, value);
+    EXPECT_EQ(result, SUCCESS);
+
+    result = audioSuitePipeline.GetOptions(nodeId + 2, name, value);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -1224,31 +1267,6 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineRemovceForwardConnet
 
     audioSuitePipeline.RemovceForwardConnet(srcNodeId, nullptr);
     EXPECT_EQ(audioSuitePipeline.reverseConnections_[srcNodeId].size(), 2);
-}
-
-HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineInstallTapTest_001, TestSize.Level0)
-{
-    AudioSuitePipeline audioSuitePipeline(PIPELINE_EDIT_MODE);
-    audioSuitePipeline.Init();
-    EXPECT_EQ(audioSuitePipeline.IsInit(), true);
-
-    uint32_t srcNodeId = 1;
-    uint32_t destNodeId = 2;
-    uint32_t inputNodeId = 3;
-
-    AudioNodeBuilder audioNodeBuilder;
-    audioNodeBuilder.nodeType = NODE_TYPE_INPUT;
-    std::shared_ptr<AudioNode> node = audioSuitePipeline.CreateNodeForType(audioNodeBuilder);
-    EXPECT_TRUE(node != nullptr);
-    audioSuitePipeline.nodeMap_[srcNodeId] = node;
-    audioSuitePipeline.nodeMap_[destNodeId] = nullptr;
-
-    int32_t result = audioSuitePipeline.InstallTap(srcNodeId, AUDIO_NODE_DEFAULT_OUTPORT_TYPE, nullptr);
-    EXPECT_EQ(result, SUCCESS);
-    result = audioSuitePipeline.InstallTap(destNodeId, AUDIO_NODE_DEFAULT_OUTPORT_TYPE, nullptr);
-    EXPECT_EQ(result, SUCCESS);
-    result = audioSuitePipeline.InstallTap(inputNodeId, AUDIO_NODE_DEFAULT_OUTPORT_TYPE, nullptr);
-    EXPECT_EQ(result, SUCCESS);
 }
 
 HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineCheckPipelineNodeTest_001, TestSize.Level0)

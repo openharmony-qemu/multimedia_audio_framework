@@ -215,9 +215,6 @@ int32_t AudioCoreService::CreateRendererClient(
         AudioStreamDeviceChangeReason::UNKNOWN, encryptMacAddr);
     CHECK_AND_RETURN_RET(bluetoothFetchResult == BLUETOOTH_FETCH_RESULT_DEFAULT, ERR_OPERATION_FAILED);
 
-    UpdatePlaybackStreamFlag(streamDesc, true);
-    AUDIO_INFO_LOG("Target audioFlag 0x%{public}x for stream %{public}d", streamDesc->audioFlag_, sessionId);
-
     // Fetch pipe
     audioActiveDevice_.UpdateStreamDeviceMap("CreateRendererClient");
     int32_t ret = FetchRendererPipeAndExecute(streamDesc, sessionId, audioFlag);
@@ -390,7 +387,7 @@ bool AudioCoreService::IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &st
 void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess)
 {
     CHECK_AND_RETURN_LOG(streamDesc, "Input param error");
-
+    SelectA2dpType(streamDesc, isCreateProcess);
     if (isCreateProcess && streamDesc->rendererInfo_.forceToNormal) {
         AUDIO_INFO_LOG("force create normal");
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
@@ -1415,6 +1412,8 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
     for (auto &streamDesc : outputStreamDescs) {
         UpdateStreamDevicesForStart(streamDesc, caller + "FetchOutputDeviceAndRoute");
     }
+
+    UpdateActiveDeviceAndVolumeBeforeMoveSession(outputStreamDescs, reason);
 
     audioActiveDevice_.UpdateStreamDeviceMap("FetchOutputDeviceAndRoute");
     int32_t ret = FetchRendererPipesAndExecute(outputStreamDescs, reason);

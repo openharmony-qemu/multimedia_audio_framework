@@ -324,7 +324,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerDump_001, TestSize.Level
     rendererInServer->managerType_ = PLAYBACK;
     rendererInServer->status_ = I_STATUS_FLUSHING_WHEN_STOPPED;
 
-    EXPECT_FALSE(rendererInServer->Dump(dump));
+    EXPECT_TRUE(rendererInServer->Dump(dump));
 }
 
 /**

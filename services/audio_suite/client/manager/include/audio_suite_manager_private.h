@@ -44,7 +44,7 @@ public:
     int32_t DeInit() override;
 
     // pipeline
-    int32_t CreatePipeline(uint32_t &pipelineId) override;
+    int32_t CreatePipeline(uint32_t &pipelineId, PipelineWorkMode workMode) override;
     int32_t DestroyPipeline(uint32_t pipelineId) override;
     int32_t StartPipeline(uint32_t pipelineId) override;
     int32_t StopPipeline(uint32_t pipelineId) override;
@@ -54,23 +54,18 @@ public:
     int32_t CreateNode(
         uint32_t pipelineId, AudioNodeBuilder& builder, uint32_t &nodeId) override;
     int32_t DestroyNode(uint32_t nodeId) override;
-    int32_t EnableNode(uint32_t nodeId, AudioNodeEnable audioNodeEnable) override;
-    int32_t GetNodeEnableStatus(uint32_t nodeId, AudioNodeEnable &nodeEnable) override;
+    int32_t BypassEffectNode(uint32_t nodeId, bool bypass) override;
+    int32_t GetNodeBypassStatus(uint32_t nodeId, bool &bypassStatus) override;
     int32_t SetAudioFormat(uint32_t nodeId, AudioFormat audioFormat) override;
-    int32_t SetOnWriteDataCallback(uint32_t nodeId,
+    int32_t SetRequestDataCallback(uint32_t nodeId,
         std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback) override;
-    int32_t ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId,
-        AudioNodePortType srcPortType, AudioNodePortType destPortType) override;
     int32_t ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) override;
     int32_t DisConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) override;
-    int32_t InstallTap(uint32_t nodeId, AudioNodePortType portType,
-        std::shared_ptr<SuiteNodeReadTapDataCallback> callback) override;
-    int32_t RemoveTap(uint32_t nodeId, AudioNodePortType portType) override;
     int32_t RenderFrame(uint32_t pipelineId,
-        uint8_t *audioData, int32_t frameSize, int32_t *writeLen, bool *finishedFlag) override;
+        uint8_t *audioData,
+        int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag) override;
     int32_t MultiRenderFrame(uint32_t pipelineId,
         AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag) override;
-    int32_t SetEqualizerMode(uint32_t nodeId, EqualizerMode eqMode) override;
     int32_t SetEqualizerFrequencyBandGains(
         uint32_t nodeId, AudioEqualizerFrequencyBandGains frequencyBandGains) override;
     int32_t SetSoundFieldType(uint32_t nodeId, SoundFieldType soundFieldType) override;
@@ -91,20 +86,14 @@ public:
     void OnGetPipelineState(AudioSuitePipelineState state) override;
     void OnCreateNode(int32_t result, uint32_t nodeId) override;
     void OnDestroyNode(int32_t result) override;
-    void OnEnableNode(int32_t result) override;
-    void OnGetNodeEnable(AudioNodeEnable enable) override;
+    void OnBypassEffectNode(int32_t result) override;
+    void OnGetNodeBypass(int32_t result, bool bypassStatus) override;
     void OnSetAudioFormat(int32_t result) override;
     void OnWriteDataCallback(int32_t result) override;
     void OnConnectNodes(int32_t result) override;
     void OnDisConnectNodes(int32_t result) override;
-    void OnInstallTap(int32_t result) override;
-    void OnRemoveTap(int32_t result) override;
     void OnRenderFrame(int32_t result, uint32_t pipelineId) override;
     void OnMultiRenderFrame(int32_t result, uint32_t pipelineId) override;
-
-private:
-    void WriteSuiteEngineUtilizationStatsEvent(AudioNodeType nodeType);
-    void WriteSuiteEngineExceptionEvent(uint32_t scene, uint32_t result, std::string description);
 
 private:
     std::mutex lock_;
@@ -134,10 +123,10 @@ private:
     uint32_t engineCreateNodeId_ = INVALID_NODE_ID;
     bool isFinishDestroyNode_ = false;
     int32_t destroyNodeResult_ = 0;
-    bool isFinishEnableNode_ = false;
-    int32_t enableNodeResult_ = 0;
-    bool isFinishGetNodeEnable_ = false;
-    AudioNodeEnable getNodeEnable_ = NODE_DISABLE;
+    bool isFinishBypassEffectNode_ = false;
+    int32_t bypassEffectNodeResult_ = 0;
+    bool isFinishGetNodeBypassStatus_ = false;
+    bool getNodeBypassResult_ = false;
     bool isFinishSetFormat_ = false;
     int32_t setFormatResult_ = 0;
     bool isFinishSetWriteData_ = false;
@@ -150,10 +139,6 @@ private:
     std::unordered_map<uint32_t, int32_t> renderFrameResultMap_;
     std::unordered_map<uint32_t, bool> isFinishMultiRenderFrameMap_;
     std::unordered_map<uint32_t, int32_t> multiRenderFrameResultMap_;
-    bool isFinisInstallTap_ = false;
-    int32_t installTapResult_ = 0;
-    bool isFinisRemoveTap_ = false;
-    int32_t removeTapResult_ = 0;
 };
 
 // tool
@@ -171,7 +156,6 @@ void ParseValue(const std::string &valueStr, int32_t *result)
     if (result == nullptr) {
         return;
     }
-
     std::istringstream iss(valueStr);
     std::string token;
     std::vector<int32_t> temp;

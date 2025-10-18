@@ -2691,7 +2691,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDump_001, TestSize.Level1)
     std::string dump="";
     rendererInServer->managerType_ = PLAYBACK;
 
-    EXPECT_FALSE(rendererInServer->Dump(dump));
+    EXPECT_TRUE(rendererInServer->Dump(dump));
 }
 
 /**

@@ -92,14 +92,14 @@ void AudioOutputNode::SetAudioNodeFormat(AudioFormat audioFormat)
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Init failed, ret = %{public}d.", ret);
 }
 
-int32_t AudioOutputNode::Connect(const std::shared_ptr<AudioNode> &preNode, AudioNodePortType type)
+int32_t AudioOutputNode::Connect(const std::shared_ptr<AudioNode> &preNode)
 {
     if (preNode == nullptr) {
         AUDIO_ERR_LOG("Connect failed, preNode is nullptr.");
         return ERR_INVALID_PARAM;
     }
 
-    inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort(type).get());
+    inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort().get());
 
     if (preNode->GetNodeType() == NODE_TYPE_AUDIO_SEPARATION) {
         preNodeOutputNum_ = AUDIO_SEPARATION_NODE_OUTPUT_NUM;
@@ -108,11 +108,6 @@ int32_t AudioOutputNode::Connect(const std::shared_ptr<AudioNode> &preNode, Audi
         preNodeOutputNum_ = DEFAULT_NODE_OUTPUT_NUM;
     }
     return SUCCESS;
-}
-
-int32_t AudioOutputNode::Connect(const std::shared_ptr<AudioNode> &preNode)
-{
-    return ERROR;
 }
 
 int32_t AudioOutputNode::DisConnect(const std::shared_ptr<AudioNode> &preNode)

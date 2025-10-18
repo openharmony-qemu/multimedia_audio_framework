@@ -41,7 +41,7 @@ public:
     }
     int32_t Init();
     int32_t DeInit();
-    int32_t UpdateAudioInfo(AudioModuleInfo &info);
+    void UpdateAudioInfo(AudioModuleInfo &info);
     int32_t AddStreamDescriptor(uint32_t renderId, std::shared_ptr<AudioStreamDescriptor> desc);
     int32_t RemoveStreamDescriptor(uint32_t renderId);
     bool IsContainStream(uint32_t renderId);

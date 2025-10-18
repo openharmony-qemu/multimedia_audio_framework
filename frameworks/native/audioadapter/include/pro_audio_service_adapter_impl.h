@@ -64,6 +64,7 @@ public:
         const SourceType &sourceType) override;
     void RemoveCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
         const SourceType &sourceType) override;
+    void UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo) override;
     // callback Member functions
     virtual void OnOpenAudioPortCb(int32_t portId) override;
     virtual void OnReloadAudioPortCb(int32_t portId) override;

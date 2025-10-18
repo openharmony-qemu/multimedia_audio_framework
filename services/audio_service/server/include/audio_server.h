@@ -272,7 +272,7 @@ public:
     int32_t GetVolumeBySessionId(uint32_t sessionId, float &volume) override;
 
     int32_t AddCaptureInjector(uint32_t sinkPortidx, std::string &rate, std::string &format,
-        std::string &channels) override;
+        std::string &channels, std::string &bufferSize) override;
     int32_t RemoveCaptureInjector(uint32_t sinkPortidx) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
