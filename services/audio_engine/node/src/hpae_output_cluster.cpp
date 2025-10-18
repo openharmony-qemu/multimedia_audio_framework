@@ -26,19 +26,20 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-
-HpaeOutputCluster::HpaeOutputCluster(HpaeNodeInfo &nodeInfo)
-    : HpaeNode(nodeInfo), mixerNode_(std::make_shared<HpaeMixerNode>(nodeInfo)),
-      hpaeSinkOutputNode_(std::make_shared<HpaeSinkOutputNode>(nodeInfo))
+HpaeOutputCluster::HpaeOutputCluster(HpaeNodeInfo nodeInfo)
+    : HpaeNode(nodeInfo), hpaeSinkOutputNode_(std::make_shared<HpaeSinkOutputNode>(nodeInfo))
 {
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("HpaeOutputCluster");
 #endif
+    nodeInfo.frameLen = nodeInfo.samplingRate * FRAME_LEN_20MS / MILLISECOND_PER_SECOND;
+    SetNodeInfo(nodeInfo);
+    mixerNode_ = std::make_shared<HpaeMixerNode>(nodeInfo);
     if (mixerNode_->SetupAudioLimiter() != SUCCESS) {
         AUDIO_INFO_LOG("mixerNode SetupAudioLimiter failed!");
     }
     hpaeSinkOutputNode_->Connect(mixerNode_);
-    frameLenMs_ = nodeInfo.frameLen * MILLISECOND_PER_SECOND / nodeInfo.samplingRate;
+    frameLenMs_ = hpaeSinkOutputNode_->GetFrameLen() * MILLISECOND_PER_SECOND / hpaeSinkOutputNode_->GetSampleRate();
     AUDIO_INFO_LOG("frameLenMs_:%{public}u ms, timeoutThdFrames_:%{public}u", frameLenMs_, timeoutThdFrames_);
 }
 

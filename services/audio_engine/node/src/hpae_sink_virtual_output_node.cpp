@@ -29,7 +29,6 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 static constexpr uint32_t DEFAULT_RING_BUFFER_NUM = 1;
-static constexpr uint32_t DEFAULT_FRAME_LEN_MS = 20;
 static constexpr uint32_t MS_PER_SECOND = 1000;
 
 HpaeSinkVirtualOutputNode::HpaeSinkVirtualOutputNode(HpaeNodeInfo &nodeInfo)
@@ -278,7 +277,7 @@ int32_t HpaeSinkVirtualOutputNode::ReloadNode(HpaeNodeInfo nodeInfo)
 size_t HpaeSinkVirtualOutputNode::GetRingCacheSize()
 {
     size_t frameBytes = static_cast<size_t>(GetSizeFromFormat(SAMPLE_F32LE)) * GetSampleRate() *
-        DEFAULT_FRAME_LEN_MS / MS_PER_SECOND * GetChannelCount();
+        FRAME_LEN_20MS / MS_PER_SECOND * GetChannelCount();
     return DEFAULT_RING_BUFFER_NUM * frameBytes;
 }
 }  // namespace HPAE

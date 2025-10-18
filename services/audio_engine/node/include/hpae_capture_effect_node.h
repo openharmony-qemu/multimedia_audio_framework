@@ -27,7 +27,6 @@ namespace HPAE {
 constexpr uint32_t SCENE_TYPE_OFFSET = 32;
 constexpr uint32_t CAPTURER_ID_OFFSET = 16;
 constexpr uint32_t BITLENGTH = 8;
-constexpr uint32_t FRAME_LEN = 20;
 
 struct CaptureEffectAttr {
     uint32_t micChannels;

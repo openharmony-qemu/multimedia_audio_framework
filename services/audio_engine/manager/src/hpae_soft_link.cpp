@@ -33,7 +33,6 @@ namespace HPAE {
 static constexpr uint32_t FIRST_SESSIONID = 90000;
 static constexpr uint32_t MAX_VALID_SESSIONID = 99999;
 static constexpr uint32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
-static constexpr uint32_t DEFAULT_FRAME_LEN_MS = 20;
 static constexpr uint32_t MS_PER_SECOND = 1000;
 static constexpr uint32_t DEFAULT_RING_BUFFER_NUM = 4;
 static constexpr int32_t MAX_OVERFLOW_UNDERRUN_COUNT = 50; // 1s
@@ -84,7 +83,7 @@ int32_t HpaeSoftLink::Init()
     CHECK_AND_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED);
 
     size_t frameBytes = sinkInfo_.channels * static_cast<size_t>(GetSizeFromFormat(sinkInfo_.format)) *
-        DEFAULT_FRAME_LEN_MS * sinkInfo_.samplingRate / MS_PER_SECOND;
+        FRAME_LEN_20MS * sinkInfo_.samplingRate / MS_PER_SECOND;
     size_t size = DEFAULT_RING_BUFFER_NUM * frameBytes;
     bufferQueue_ = AudioRingCache::Create(size);
     CHECK_AND_RETURN_RET_LOG(bufferQueue_ != nullptr, ERR_OPERATION_FAILED, "bufferQueue create error");
@@ -140,7 +139,7 @@ void HpaeSoftLink::TransSinkInfoToStreamInfo(HpaeStreamInfo &info, const HpaeStr
     info.samplingRate = sinkInfo_.samplingRate;
     info.format = sinkInfo_.format;
     info.channelLayout = sinkInfo_.channelLayout;
-    info.frameLen = DEFAULT_FRAME_LEN_MS * static_cast<uint32_t>(sinkInfo_.samplingRate) / MS_PER_SECOND;
+    info.frameLen = FRAME_LEN_20MS * static_cast<uint32_t>(sinkInfo_.samplingRate) / MS_PER_SECOND;
     info.streamClassType = streamClassType;
     info.isMoveAble = false;
     info.sessionId = GenerateSessionId();

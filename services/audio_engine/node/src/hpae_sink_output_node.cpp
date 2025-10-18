@@ -33,7 +33,6 @@ constexpr uint32_t SLEEP_TIME_IN_US = 20000;
 static constexpr int64_t WAIT_CLOSE_PA_TIME = 4; // 4s
 static constexpr int64_t MONITOR_CLOSE_PA_TIME = 5 * 60; // 5m
 static constexpr int64_t TIME_IN_US = 1000000;
-static constexpr uint64_t MS_PER_FRAME = 20; // 20ms
 }
 
 HpaeSinkOutputNode::HpaeSinkOutputNode(HpaeNodeInfo &nodeInfo)
@@ -41,7 +40,10 @@ HpaeSinkOutputNode::HpaeSinkOutputNode(HpaeNodeInfo &nodeInfo)
       renderFrameData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)),
       interleveData_(nodeInfo.frameLen * nodeInfo.channels)
 {
-    AUDIO_INFO_LOG("name is %{public}s", sinkOutAttr_.adapterName.c_str());
+    renderSize_ = renderFrameData_.size();
+    outputSize_ = renderSize_;
+    AUDIO_INFO_LOG("name is %{public}s renderSize = %{public}zu", sinkOutAttr_.adapterName.c_str(),
+        renderSize_);
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeSinkOutputNode");
     if (auto callback = GetNodeStatusCallback().lock()) {
@@ -80,12 +82,25 @@ void HpaeSinkOutputNode::DoProcess()
         return;
     }
     
-    std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
-    CHECK_AND_RETURN(!outputVec.empty());
-    HpaePcmBuffer *outputData = outputVec.front();
-    HandlePaPower(outputData);
-    ConvertFromFloat(
-        GetBitWidth(), GetChannelCount() * GetFrameLen(), outputData->GetPcmDataBuffer(), renderFrameData_.data());
+    while (currentSize_ < renderSize_) {
+        std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
+        CHECK_AND_RETURN(!outputVec.empty());
+        HpaePcmBuffer *outputData = outputVec.front();
+        HandlePaPower(outputData);
+        uint32_t frameLen = outputData->GetFrameLen();
+        uint32_t channels = outputData->GetChannelCount();
+        uint32_t inDurationMs = frameLen * AUDIO_MS_PER_S / outputData->GetSampleRate();
+        uint32_t outDurationMs = GetFrameLen() * AUDIO_MS_PER_S / GetSampleRate();
+        if (renderFrameData_.size() == renderSize_ && inDurationMs != outDurationMs) {
+            outputSize_ = frameLen * channels * GetSizeFromFormat(GetBitWidth());
+            AUDIO_INFO_LOG("Update outputSize to %{public}zu", outputSize_);
+            renderFrameData_.resize(outputSize_ + renderSize_);
+        }
+        ConvertFromFloat(
+            GetBitWidth(), channels * frameLen, outputData->GetPcmDataBuffer(), renderFrameData_.data() + currentSize_);
+        currentSize_ += outputSize_;
+    }
+
     uint64_t writeLen = 0;
     char *renderFrameData = (char *)renderFrameData_.data();
 
@@ -95,9 +110,9 @@ void HpaeSinkOutputNode::DoProcess()
     intervalTimer_.Stop();
 #endif
     HandleHapticParam(renderFrameTimes_);
-    renderFrameTimes_ += MS_PER_FRAME;
-    auto ret = audioRendererSink_->RenderFrame(*renderFrameData, renderFrameData_.size(), writeLen);
-    if (ret != SUCCESS || writeLen != renderFrameData_.size()) {
+    renderFrameTimes_ += FRAME_LEN_20MS;
+    auto ret = audioRendererSink_->RenderFrame(*renderFrameData, renderSize_, writeLen);
+    if (ret != SUCCESS || writeLen != renderSize_) {
         AUDIO_ERR_LOG("RenderFrame failed");
         if (GetDeviceClass() != "remote") {
             periodTimer_.Stop();
@@ -107,6 +122,9 @@ void HpaeSinkOutputNode::DoProcess()
     }
     periodTimer_.Start();
     HandleRemoteTiming(); // used to control remote RenderFrame tempo.
+    std::move(renderFrameData_.begin() + renderSize_, renderFrameData_.begin() + currentSize_,
+        renderFrameData_.begin());
+    currentSize_ -= renderSize_;
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t elapsed = timer.Elapsed();

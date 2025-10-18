@@ -159,18 +159,18 @@ void HpaeCaptureEffectNode::SetCapturerEffectConfig(AudioBufferConfig micConfig,
     HpaeNodeInfo ecInfo = GetNodeInfo();
     HpaeNodeInfo micrefInfo = GetNodeInfo();
     micInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
-    micInfo.frameLen = FRAME_LEN * (micConfig.samplingRate / MILLISECOND_PER_SECOND);
+    micInfo.frameLen = FRAME_LEN_20MS * (micConfig.samplingRate / MILLISECOND_PER_SECOND);
     micInfo.samplingRate = static_cast<AudioSamplingRate>(micConfig.samplingRate);
     micInfo.channels = static_cast<AudioChannel>(micConfig.channels);
     micInfo.format = static_cast<AudioSampleFormat>(micConfig.format / BITLENGTH - 1);
     GetCaptureEffectMicChannelLayout(micConfig.channels, micInfo.channelLayout);
     ecInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_EC;
-    ecInfo.frameLen = FRAME_LEN * (ecConfig.samplingRate / MILLISECOND_PER_SECOND);
+    ecInfo.frameLen = FRAME_LEN_20MS * (ecConfig.samplingRate / MILLISECOND_PER_SECOND);
     ecInfo.samplingRate = static_cast<AudioSamplingRate>(ecConfig.samplingRate);
     ecInfo.channels = static_cast<AudioChannel>(ecConfig.channels);
     ecInfo.format = static_cast<AudioSampleFormat>(ecConfig.format / BITLENGTH - 1);
     micrefInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MICREF;
-    micrefInfo.frameLen = FRAME_LEN * (micrefConfig.samplingRate / MILLISECOND_PER_SECOND);
+    micrefInfo.frameLen = FRAME_LEN_20MS * (micrefConfig.samplingRate / MILLISECOND_PER_SECOND);
     micrefInfo.samplingRate = static_cast<AudioSamplingRate>(micrefConfig.samplingRate);
     micrefInfo.channels = static_cast<AudioChannel>(micrefConfig.channels);
     micrefInfo.format = static_cast<AudioSampleFormat>(micrefConfig.format / BITLENGTH - 1);
@@ -198,11 +198,11 @@ int32_t HpaeCaptureEffectNode::CaptureEffectCreate(uint64_t sceneKeyCode, Captur
     CHECK_AND_RETURN_RET_LOG(ret == 0 && micConfig.samplingRate != 0, ERROR,
         "get algo config failed, ret:%{public}d", ret);
     SetCapturerEffectConfig(micConfig, ecConfig, micrefConfig);
-    micBufferLength_ = FRAME_LEN * micConfig.channels * (micConfig.samplingRate / MILLISECOND_PER_SECOND) *
+    micBufferLength_ = FRAME_LEN_20MS * micConfig.channels * (micConfig.samplingRate / MILLISECOND_PER_SECOND) *
         (micConfig.format / BITLENGTH);
-    ecBufferLength_ = FRAME_LEN * ecConfig.channels * (ecConfig.samplingRate / MILLISECOND_PER_SECOND) *
+    ecBufferLength_ = FRAME_LEN_20MS * ecConfig.channels * (ecConfig.samplingRate / MILLISECOND_PER_SECOND) *
         (ecConfig.format / BITLENGTH);
-    micrefBufferLength_ = FRAME_LEN * micrefConfig.channels * (micrefConfig.samplingRate / MILLISECOND_PER_SECOND) *
+    micrefBufferLength_ = FRAME_LEN_20MS * micrefConfig.channels * (micrefConfig.samplingRate / MILLISECOND_PER_SECOND) *
         (micrefConfig.format / BITLENGTH);
     uint32_t maxLength = (micBufferLength_ > ecBufferLength_) ?
         (micBufferLength_ > micrefBufferLength_ ? micBufferLength_ : micrefBufferLength_) :
@@ -215,7 +215,7 @@ int32_t HpaeCaptureEffectNode::CaptureEffectCreate(uint64_t sceneKeyCode, Captur
     cacheDataOut_.resize(maxLength);
     AudioChannelLayout channelLayout = CH_LAYOUT_UNKNOWN;
     GetCaptureEffectMicChannelLayout(micConfig.channels, channelLayout);
-    PcmBufferInfo pcmBufferInfo(micConfig.channels, FRAME_LEN * (micConfig.samplingRate / MILLISECOND_PER_SECOND),
+    PcmBufferInfo pcmBufferInfo(micConfig.channels, FRAME_LEN_20MS * (micConfig.samplingRate / MILLISECOND_PER_SECOND),
         micConfig.samplingRate, channelLayout);
     outPcmBuffer_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
     if (outPcmBuffer_ == nullptr) {

@@ -39,7 +39,6 @@ namespace {
     constexpr uint32_t TIME_US_PER_MS = 1000;
     constexpr uint32_t TIME_MS_PER_SEC = 1000;
     constexpr uint32_t ERR_RETRY_COUNT = 20;
-    constexpr uint32_t FRAME_TIME_IN_MS = 20;
     constexpr int32_t OFFLOAD_FULL = -1;
     constexpr int32_t OFFLOAD_WRITE_FAILED = -2;
     constexpr uint32_t OFFLOAD_HDI_CACHE_BACKGROUND_IN_MS = 7000;
@@ -84,7 +83,7 @@ bool HpaeOffloadSinkOutputNode::CheckIfSuspend()
 {
     if (!GetPreOutNum()) {
         suspendCount_++;
-        usleep(TIME_US_PER_MS * FRAME_TIME_IN_MS);
+        usleep(TIME_US_PER_MS * FRAME_LEN_20MS);
         if (suspendCount_ > timeoutThdFrames_) {
             RenderSinkStop();
         }
@@ -620,7 +619,7 @@ void HpaeOffloadSinkOutputNode::OffloadNeedSleep(int32_t retType)
         return;
     }
     if (retType != SUCCESS) {
-        usleep(std::min(retryCount_, FRAME_TIME_IN_MS) * TIME_US_PER_MS);
+        usleep(std::min(retryCount_, FRAME_LEN_20MS) * TIME_US_PER_MS);
         if (retryCount_ < ERR_RETRY_COUNT) {
             retryCount_++;
         }

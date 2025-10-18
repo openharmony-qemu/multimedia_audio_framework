@@ -22,6 +22,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 constexpr uint32_t MILLISECOND_PER_SECOND = 1000;
+constexpr uint32_t FRAME_LEN_20MS = 20; // 20ms
 
 struct HpaeSessionInfo {
     HpaeStreamInfo streamInfo;

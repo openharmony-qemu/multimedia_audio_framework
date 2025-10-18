@@ -26,8 +26,6 @@ namespace AudioStandard {
 namespace HPAE {
 static constexpr uint64_t TIME_US_PER_S = 1000000;
 static constexpr float MAX_SINK_VOLUME_LEVEL = 1.0;
-static constexpr uint32_t DEFAULT_MULTICHANNEL_FRAME_LEN_MS = 20;
-static constexpr uint32_t DEFAULT_FRAME_LEN_MS = 20;
 static constexpr uint32_t MS_PER_SECOND = 1000;
 static constexpr uint32_t BASE_TEN = 10;
 static constexpr uint32_t FRAME_LENGTH_LIMIT = 38400;
@@ -359,14 +357,14 @@ int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, 
     sourceInfo.ecSamplingRate = static_cast<AudioSamplingRate>(StringToNum(audioModuleInfo.ecSamplingRate));
     sourceInfo.ecFormat = TransFormatFromStringToEnum(audioModuleInfo.ecFormat);
     sourceInfo.ecChannels = static_cast<AudioChannel>(StringToNum(audioModuleInfo.ecChannels));
-    sourceInfo.ecFrameLen = DEFAULT_MULTICHANNEL_FRAME_LEN_MS * (sourceInfo.ecSamplingRate / MS_PER_SECOND);
+    sourceInfo.ecFrameLen = FRAME_LEN_20MS * (sourceInfo.ecSamplingRate / MS_PER_SECOND);
 
     sourceInfo.micRef = static_cast<HpaeMicRefSwitch>(StringToNum(audioModuleInfo.openMicRef));
     sourceInfo.micRefSamplingRate = static_cast<AudioSamplingRate>(StringToNum(audioModuleInfo.micRefRate));
     sourceInfo.micRefFormat = TransFormatFromStringToEnum(audioModuleInfo.micRefFormat);
     sourceInfo.micRefChannels = static_cast<AudioChannel>(StringToNum(audioModuleInfo.micRefChannels));
     sourceInfo.openMicSpeaker = static_cast<uint32_t>(StringToNum(audioModuleInfo.OpenMicSpeaker));
-    sourceInfo.micRefFrameLen = DEFAULT_MULTICHANNEL_FRAME_LEN_MS * (sourceInfo.micRefSamplingRate / MS_PER_SECOND);
+    sourceInfo.micRefFrameLen = FRAME_LEN_20MS * (sourceInfo.micRefSamplingRate / MS_PER_SECOND);
     return SUCCESS;
 }
 
@@ -523,7 +521,7 @@ void TransSinkInfoToNodeInfo(const HpaeSinkInfo &sinkInfo, const std::weak_ptr<I
 
 size_t CaculateFrameLenByNodeInfo(HpaeNodeInfo &nodeInfo)
 {
-    return nodeInfo.samplingRate * DEFAULT_FRAME_LEN_MS / MS_PER_SECOND;
+    return nodeInfo.samplingRate * FRAME_LEN_20MS / MS_PER_SECOND;
 }
 
 void ConfigNodeInfo(HpaeNodeInfo &nodeInfo, const HpaeStreamInfo &streamInfo)

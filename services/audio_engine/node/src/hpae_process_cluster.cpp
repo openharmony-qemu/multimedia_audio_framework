@@ -34,8 +34,9 @@ static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 HpaeProcessCluster::HpaeProcessCluster(HpaeNodeInfo nodeInfo, HpaeSinkInfo &sinkInfo)
     : HpaeNode(nodeInfo), sinkInfo_(sinkInfo)
 {
-    nodeInfo.frameLen = (nodeInfo.frameLen * sinkInfo.samplingRate) /
+    uint32_t frameDurationMs = nodeInfo.frameLen * AUDIO_MS_PER_S /
         (nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate : nodeInfo.customSampleRate);
+    nodeInfo.frameLen = sinkInfo.samplingRate * frameDurationMs / AUDIO_MS_PER_S;
     // for 11025, frameSize has expand twice, shrink to 20ms here for correctly setting up
     // frameLen in formatConverterNode in outputCluster, need to be reconstructed
     if ((nodeInfo.customSampleRate == 0 && nodeInfo.samplingRate == SAMPLE_RATE_11025) ||
@@ -158,7 +159,7 @@ void HpaeProcessCluster::CreateConverterNode(uint32_t sessionId, const HpaeNodeI
     uint32_t channels = basicFormat.audioChannelInfo.numChannels;
     AudioChannelLayout channelLayout = basicFormat.audioChannelInfo.channelLayout;
     HpaeNodeInfo outputNodeInfo = preNodeInfo;
-    outputNodeInfo.frameLen = sinkInfo_.frameLen;
+    outputNodeInfo.frameLen = mixerNode_->GetFrameLen();
     outputNodeInfo.samplingRate = sinkInfo_.samplingRate;
     outputNodeInfo.format = sinkInfo_.format;
     outputNodeInfo.channels = channels == 0 ? sinkInfo_.channels : static_cast<AudioChannel>(channels);
