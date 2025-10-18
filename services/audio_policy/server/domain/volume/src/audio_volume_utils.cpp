@@ -236,5 +236,26 @@ bool AudioVolumeUtils::IsDistributedDevice(const std::shared_ptr<AudioDeviceDesc
     }
     return false;
 }
+
+bool AudioVolumeUtils::IsDeviceWithSafeVolume(const std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "desc is null");
+    switch (desc->deviceType_) {
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_WIRED_HEADPHONES:
+        case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+            return true;
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DEVICE_TYPE_NEARLINK:
+            if (desc->deviceCategory_ == BT_CAR || desc->deviceCategory_ == BT_SOUNDBOX) {
+                return false;
+            }
+            return true;
+        default:
+            return false;
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS
