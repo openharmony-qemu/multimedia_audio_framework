@@ -166,7 +166,7 @@ void HpaeSinkInputNode::DoProcess()
         return;
     }
     
-    ConvertToFloat(	
+    ConvertToFloat(
         GetBitWidth(), GetChannelCount() * GetFrameLen(), interleveData_.data(), inputAudioBuffer_.GetPcmDataBuffer());
     AudioPipeType  pipeType = ConvertDeviceClassToPipe(GetDeviceClass());
     if (ret != SUCCESS) {
@@ -177,9 +177,9 @@ void HpaeSinkInputNode::DoProcess()
         Trace underflowTrace("[" + std::to_string(GetSessionId()) + "]HpaeSinkInputNode::DoProcess underflow");
         memset_s(inputAudioBuffer_.GetPcmDataBuffer(), inputAudioBuffer_.Size(), 0, inputAudioBuffer_.Size());
     } else {
-        if (pipeType != PIPE_TYPE_UNKNOWN) {	
-            AudioPerformanceMonitor::GetInstance().RecordSilenceState(GetSessionId(), false, pipeType,	
-                static_cast<uint32_t>(appUid_));	
+        if (pipeType != PIPE_TYPE_UNKNOWN) {
+            AudioPerformanceMonitor::GetInstance().RecordSilenceState(GetSessionId(), false, pipeType,
+                static_cast<uint32_t>(appUid_));
         }
         totalFrames_ += GetFrameLen();
         if (historyBuffer_) {

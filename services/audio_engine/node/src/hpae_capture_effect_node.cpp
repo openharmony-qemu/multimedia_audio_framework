@@ -202,8 +202,8 @@ int32_t HpaeCaptureEffectNode::CaptureEffectCreate(uint64_t sceneKeyCode, Captur
         (micConfig.format / BITLENGTH);
     ecBufferLength_ = FRAME_LEN_20MS * ecConfig.channels * (ecConfig.samplingRate / MILLISECOND_PER_SECOND) *
         (ecConfig.format / BITLENGTH);
-    micrefBufferLength_ = FRAME_LEN_20MS * micrefConfig.channels * (micrefConfig.samplingRate / MILLISECOND_PER_SECOND) *
-        (micrefConfig.format / BITLENGTH);
+    micrefBufferLength_ = FRAME_LEN_20MS * micrefConfig.channels *
+        (micrefConfig.samplingRate / MILLISECOND_PER_SECOND) * (micrefConfig.format / BITLENGTH);
     uint32_t maxLength = (micBufferLength_ > ecBufferLength_) ?
         (micBufferLength_ > micrefBufferLength_ ? micBufferLength_ : micrefBufferLength_) :
         (ecBufferLength_ > micrefBufferLength_ ? ecBufferLength_ : micrefBufferLength_);

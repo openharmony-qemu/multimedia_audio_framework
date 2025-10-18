@@ -81,26 +81,8 @@ void HpaeSinkOutputNode::DoProcess()
         AUDIO_WARNING_LOG("audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
         return;
     }
-    
-    while (currentSize_ < renderSize_) {
-        std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
-        CHECK_AND_RETURN(!outputVec.empty());
-        HpaePcmBuffer *outputData = outputVec.front();
-        HandlePaPower(outputData);
-        uint32_t frameLen = outputData->GetFrameLen();
-        uint32_t channels = outputData->GetChannelCount();
-        uint32_t inDurationMs = frameLen * AUDIO_MS_PER_S / outputData->GetSampleRate();
-        uint32_t outDurationMs = GetFrameLen() * AUDIO_MS_PER_S / GetSampleRate();
-        if (renderFrameData_.size() == renderSize_ && inDurationMs != outDurationMs) {
-            outputSize_ = frameLen * channels * GetSizeFromFormat(GetBitWidth());
-            AUDIO_INFO_LOG("Update outputSize to %{public}zu", outputSize_);
-            renderFrameData_.resize(outputSize_ + renderSize_);
-        }
-        ConvertFromFloat(
-            GetBitWidth(), channels * frameLen, outputData->GetPcmDataBuffer(), renderFrameData_.data() + currentSize_);
-        currentSize_ += outputSize_;
-    }
 
+    CHECK_AND_RETURN(ReadDataAndConvertFormat());
     uint64_t writeLen = 0;
     char *renderFrameData = (char *)renderFrameData_.data();
 
@@ -443,6 +425,30 @@ void HpaeSinkOutputNode::HandleHapticParam(uint64_t syncTime)
             ";haptic_offset=" + std::to_string(syncTime);
         audioRendererSink_->SetAudioParameter(key, condition, param);
     }
+}
+
+bool HpaeSinkOutputNode::ReadDataAndConvertFormat()
+{
+    while (currentSize_ < renderSize_) {
+        std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
+        CHECK_AND_RETURN_RET(!outputVec.empty(), false);
+        HpaePcmBuffer *outputData = outputVec.front();
+        CHECK_AND_RETURN_RET_LOG(outputData, false, "outputData is nullptr");
+        HandlePaPower(outputData);
+        uint32_t frameLen = outputData->GetFrameLen();
+        uint32_t channels = outputData->GetChannelCount();
+        uint32_t inDurationMs = frameLen * AUDIO_MS_PER_S / outputData->GetSampleRate();
+        uint32_t outDurationMs = GetFrameLen() * AUDIO_MS_PER_S / GetSampleRate();
+        if (renderFrameData_.size() == renderSize_ && inDurationMs != outDurationMs) {
+            outputSize_ = frameLen * channels * GetSizeFromFormat(GetBitWidth());
+            AUDIO_INFO_LOG("Update outputSize to %{public}zu", outputSize_);
+            renderFrameData_.resize(outputSize_ + renderSize_);
+        }
+        ConvertFromFloat(
+            GetBitWidth(), channels * frameLen, outputData->GetPcmDataBuffer(), renderFrameData_.data() + currentSize_);
+        currentSize_ += outputSize_;
+    }
+    return true;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

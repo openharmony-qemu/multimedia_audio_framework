@@ -63,6 +63,7 @@ private:
     void HandleRemoteTiming();
     void HandlePaPower(HpaePcmBuffer *pcmBuffer);
     void HandleHapticParam(uint64_t syncTime);
+    bool ReadDataAndConvertFormat();
     InputPort<HpaePcmBuffer *> inputStream_;
     std::vector<char> renderFrameData_;
     std::vector<float> interleveData_;
