@@ -42,7 +42,7 @@ public:
 
     virtual void AllAdapterSetMicMute(bool isMute) = 0;
 
-    virtual void SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
+    virtual int32_t SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
         const std::string &condition, const std::string &value) = 0;
     virtual std::string GetAudioParameter(const std::string &adapterName, const AudioParamKey key,
         const std::string &condition) = 0;
