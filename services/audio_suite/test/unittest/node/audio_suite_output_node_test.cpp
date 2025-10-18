@@ -327,7 +327,7 @@ static bool RunFormatConversionTest(const FormatConversionInfo& info,
     inputNode->Init();
     outputNode->Init();
 
-    auto ret = outputNode->Connect(inputNode, AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
+    auto ret = outputNode->Connect(inputNode);
     EXPECT_EQ(ret, SUCCESS);
 
     inputFile.seekg(HEADER_SIZE, std::ios::beg);
