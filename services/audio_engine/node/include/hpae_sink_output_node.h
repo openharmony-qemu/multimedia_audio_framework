@@ -63,6 +63,7 @@ private:
     void HandleRemoteTiming();
     void HandlePaPower(HpaePcmBuffer *pcmBuffer);
     void HandleHapticParam(uint64_t syncTime);
+    bool ReadDataAndConvertFormat();
     InputPort<HpaePcmBuffer *> inputStream_;
     std::vector<char> renderFrameData_;
     std::vector<float> interleveData_;
@@ -79,6 +80,9 @@ private:
     int32_t syncId_ = -1;
     uint32_t latency_ = 0;
     uint64_t renderFrameTimes_ = 0;
+    size_t outputSize_ = 0;
+    size_t currentSize_ = 0;
+    size_t renderSize_ = 0;
     HighResolutionTimer periodTimer_;
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer intervalTimer_;

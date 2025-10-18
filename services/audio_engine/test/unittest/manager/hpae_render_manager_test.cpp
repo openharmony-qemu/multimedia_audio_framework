@@ -44,6 +44,7 @@ namespace {
 static std::string g_rootPath = "/data/";
 constexpr int32_t FRAME_LENGTH_882 = 882;
 constexpr int32_t FRAME_LENGTH_960 = 960;
+constexpr int32_t FRAME_LENGTH_1024 = 1024;
 constexpr int32_t OVERSIZED_FRAME_LENGTH = 38500;
 constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
 constexpr int32_t TEST_SLEEP_TIME_20 = 20;
@@ -370,6 +371,49 @@ static void TestIRendererManagerFlushDrainStream()
 }
 
 template <class RenderManagerType>
+static void TestIRendererManagerDiffFrameLenStream()
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    sinkInfo.frameLen = FRAME_LENGTH_1024;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<RenderManagerType>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    HpaeStreamInfo streamInfo;
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    HpaeSinkInputInfo sinkInputInfo;
+    std::shared_ptr<WriteFixedDataCb> writeIncDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
+    EXPECT_EQ(hpaeRendererManager->RegisterWriteCallback(streamInfo.sessionId, writeIncDataCb), SUCCESS);
+    EXPECT_EQ(writeIncDataCb.use_count() == 1, true);
+    EXPECT_EQ(hpaeRendererManager->Start(streamInfo.sessionId) == SUCCESS, true);
+    // offload need enable after start
+    hpaeRendererManager->SetOffloadPolicy(streamInfo.sessionId, 0);
+    hpaeRendererManager->SetSpeed(streamInfo.sessionId, 1.0f);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_RUNNING);
+    EXPECT_EQ(hpaeRendererManager->IsRunning(), true);
+    EXPECT_EQ(hpaeRendererManager->Pause(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PAUSED);
+    EXPECT_EQ(hpaeRendererManager->Flush(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsRunning(), false);
+    EXPECT_EQ(hpaeRendererManager->Drain(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PAUSED);
+    EXPECT_EQ(hpaeRendererManager->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(
+        hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == ERR_INVALID_OPERATION, true);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+}
+
+template <class RenderManagerType>
 static void TestIRendererManagerSetLoudnessGain()
 {
     HpaeSinkInfo sinkInfo = GetSinkInfo();
@@ -486,6 +530,11 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerFlushDrainStreamTest, TestS
     TestIRendererManagerFlushDrainStream<HpaeRendererManager>();
     std::cout << "test offload" << std::endl;
     TestIRendererManagerFlushDrainStream<HpaeOffloadRendererManager>();
+}
+
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerDiffFrameLenStreamTest, TestSize.Level1)
+{
+    TestIRendererManagerDiffFrameLenStream<HpaeRendererManager>();
 }
 
 template <class RenderManagerType>
