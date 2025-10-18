@@ -254,7 +254,7 @@ typedef enum {
      *
      * @since 22
      */
-    AUDIOSUITE_ERROR_REQUIRED_PARAMETERS_MISSED = 10,
+    AUDIOSUITE_ERROR_REQUIRED_PARAMETERS_MISSED = 11,
 } OH_AudioSuite_Result;
 
 /**

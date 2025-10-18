@@ -96,6 +96,10 @@ public:
     void OnMultiRenderFrame(int32_t result, uint32_t pipelineId) override;
 
 private:
+    void WriteSuiteEngineUtilizationStatsEvent(AudioNodeType nodeType);
+    void WriteSuiteEngineExceptionEvent(uint32_t scene, uint32_t result, std::string description);
+
+private:
     std::mutex lock_;
     std::shared_ptr<IAudioSuiteEngine> suiteEngine_ = nullptr;
 
