@@ -195,7 +195,8 @@ int32_t AudioCoreService::CreateRendererClient(
     UpdateStreamDevicesForCreate(streamDesc, "CreateRendererClient");
     // Modem stream need special process, because there are no real hdi output or input in fwk.
     // Input also need to be handled because capturer won't be created, only has renderer.
-    if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+    if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
+        !streamDesc->rendererInfo_.toneFlag) {
         AUDIO_INFO_LOG("Modem communication renderer create, sessionId %{public}u", sessionId);
         audioFlag = AUDIO_FLAG_NORMAL;
         AddSessionId(sessionId);

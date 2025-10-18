@@ -628,6 +628,7 @@ struct AudioRendererInfo : public Parcelable {
     uint32_t audioFlag = 0x0;
     bool forceToNormal = false;
     AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
+    bool toneFlag = false;
 
     AudioRendererInfo() {}
     AudioRendererInfo(ContentType contentTypeIn, StreamUsage streamUsageIn, int32_t rendererFlagsIn)
@@ -663,7 +664,8 @@ struct AudioRendererInfo : public Parcelable {
             && parcel.WriteBool(isVirtualKeyboard)
             && parcel.WriteUint32(audioFlag)
             && parcel.WriteBool(forceToNormal)
-            && parcel.WriteInt32(privacyType);
+            && parcel.WriteInt32(privacyType)
+            && parcel.WriteBool(toneFlag);
     }
     void UnmarshallingSelf(Parcel &parcel)
     {
@@ -690,6 +692,7 @@ struct AudioRendererInfo : public Parcelable {
         audioFlag = parcel.ReadUint32();
         forceToNormal = parcel.ReadBool();
         privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
+        toneFlag = parcel.ReadBool();
     }
 
     static AudioRendererInfo *Unmarshalling(Parcel &parcel)
