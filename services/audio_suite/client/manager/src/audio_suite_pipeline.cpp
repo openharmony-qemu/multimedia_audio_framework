@@ -788,24 +788,24 @@ int32_t AudioSuitePipeline::RenderFrame(
         AUDIO_INFO_LOG("AudioSuitePipeline::RenderFrame enter request");
         if (pipelineState_ != PIPELINE_RUNNING) {
             AUDIO_ERR_LOG("RenderFrame failed, pipelineState state is not running.");
-            TriggerCallback(RENDER_FRAME, ERR_ILLEGAL_STATE);
+            TriggerCallback(RENDER_FRAME, ERR_ILLEGAL_STATE, id_);
             return;
         }
 
         if (outputNode_ == nullptr) {
             AUDIO_ERR_LOG("RenderFrame failed, outputNode_ is nullptr.");
-            TriggerCallback(RENDER_FRAME, ERR_ILLEGAL_STATE);
+            TriggerCallback(RENDER_FRAME, ERR_ILLEGAL_STATE, id_);
             return;
         }
 
         int32_t ret = outputNode_->DoProcess(audioData, requestFrameSize, responseSize, finishedFlag);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("RenderFrame, ret = %{public}d.", ret);
-            TriggerCallback(RENDER_FRAME, ret);
+            TriggerCallback(RENDER_FRAME, ret, id_);
             return;
         }
 
-        TriggerCallback(RENDER_FRAME, SUCCESS);
+        TriggerCallback(RENDER_FRAME, SUCCESS, id_);
     };
 
     SendRequest(request, __func__);
@@ -821,24 +821,24 @@ int32_t AudioSuitePipeline::MultiRenderFrame(
         AUDIO_INFO_LOG("AudioSuitePipeline::MultiRenderFrame enter request");
         if (pipelineState_ != PIPELINE_RUNNING) {
             AUDIO_ERR_LOG("MultiRenderFrame failed, pipelineState state is not running.");
-            TriggerCallback(MULTI_RENDER_FRAME, ERR_ILLEGAL_STATE);
+            TriggerCallback(MULTI_RENDER_FRAME, ERR_ILLEGAL_STATE, id_);
             return;
         }
 
         if (outputNode_ == nullptr) {
             AUDIO_ERR_LOG("MultiRenderFrame failed, outputNode_ is nullptr.");
-            TriggerCallback(MULTI_RENDER_FRAME, ERR_ILLEGAL_STATE);
+            TriggerCallback(MULTI_RENDER_FRAME, ERR_ILLEGAL_STATE, id_);
             return;
         }
 
         int32_t ret = outputNode_->DoProcess(audioDataArray, arraySize, requestFrameSize, responseSize, finishedFlag);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("MultiRenderFrame, ret = %{public}d.", ret);
-            TriggerCallback(MULTI_RENDER_FRAME, ret);
+            TriggerCallback(MULTI_RENDER_FRAME, ret, id_);
             return;
         }
 
-        TriggerCallback(MULTI_RENDER_FRAME, SUCCESS);
+        TriggerCallback(MULTI_RENDER_FRAME, SUCCESS, id_);
     };
 
     SendRequest(request, __func__);

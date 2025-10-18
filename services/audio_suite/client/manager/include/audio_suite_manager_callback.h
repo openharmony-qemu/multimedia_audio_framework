@@ -35,8 +35,8 @@ public:
     virtual void OnWriteDataCallback(int32_t result) = 0;
     virtual void OnConnectNodes(int32_t result) = 0;
     virtual void OnDisConnectNodes(int32_t result) = 0;
-    virtual void OnRenderFrame(int32_t result) = 0;
-    virtual void OnMultiRenderFrame(int32_t result) = 0;
+    virtual void OnRenderFrame(int32_t result, uint32_t pipelineId) = 0;
+    virtual void OnMultiRenderFrame(int32_t result, uint32_t pipelineId) = 0;
 
     virtual ~AudioSuiteManagerCallback() = default;
 };
