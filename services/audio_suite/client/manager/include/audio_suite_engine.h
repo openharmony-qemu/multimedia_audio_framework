@@ -103,8 +103,8 @@ private:
     void HandleSetRequestDataCallback(int32_t result);
     void HandleConnectNodes(int32_t result);
     void HandleDisConnectNodes(int32_t result);
-    void HandleRenderFrame(int32_t result);
-    void HandleMultiRenderFrame(int32_t result);
+    void HandleRenderFrame(int32_t result, uint32_t pipelineId);
+    void HandleMultiRenderFrame(int32_t result, uint32_t pipelineId);
 
 private:
     std::atomic<bool> isInit_ = false;
