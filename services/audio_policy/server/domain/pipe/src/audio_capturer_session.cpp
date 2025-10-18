@@ -352,7 +352,8 @@ int32_t AudioCapturerSession::ReloadCaptureSessionSoftLink()
     CHECK_AND_RETURN_RET_LOG(hasSession, SUCCESS, "no need to reload session");
     AUDIO_INFO_LOG("start reload session: %{public}u", targetStream.sessionId_);
 
-    audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[targetStream.sessionId_]);
+    audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[targetStream.sessionId_],
+        targetStream.sessionId_);
     audioEcManager_.SetOpenedNormalSourceSessionId(targetStream.sessionId_);
     return SUCCESS;
 }
@@ -407,7 +408,7 @@ int32_t AudioCapturerSession::ReloadCaptureSession(uint32_t sessionId, SessionOp
 
     CHECK_AND_RETURN_RET_LOG(needReload, ERROR, "no need to reload session");
     AUDIO_INFO_LOG("start reload session: %{public}u", targetSessionId);
-    audioEcManager_.ReloadSourceForSession(targetSession);
+    audioEcManager_.ReloadSourceForSession(targetSession, targetSessionId);
     audioEcManager_.SetOpenedNormalSourceSessionId(targetSessionId);
 
     return SUCCESS;

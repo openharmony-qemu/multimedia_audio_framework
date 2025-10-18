@@ -871,5 +871,21 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_040, TestSize.Level4)
     EXPECT_EQ(ecManager->primaryMicModuleInfo_.rate, "");
     EXPECT_EQ(ecManager->primaryMicModuleInfo_.format, "");
 }
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_041
+* @tc.desc  : Test ReloadNormalSource interface with invalid sessionId.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_041, TestSize.Level4)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    SessionInfo sessionInfo = {};
+    PipeStreamPropInfo targetInfo = PipeStreamPropInfo();
+    SourceType targetSource = SourceType::SOURCE_TYPE_MIC;
+    uint32_t testSessionId = 123;
+    int32_t ret = ecManager.ReloadNormalSource(sessionInfo, targetInfo, targetSource, testSessionId);
+    EXPECT_EQ(ret, ERROR);
+}
 } // namespace AudioStandard
 } // namespace OHOS

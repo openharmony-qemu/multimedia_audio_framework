@@ -245,7 +245,6 @@ void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStr
     SourceType sourceType)
 {
     if (!isEcFeatureEnable_) {
-        moduleInfo = primaryMicModuleInfo_;
         // current layout represents the number of channel. This will need to be modify in the future.
         moduleInfo.channels = std::to_string(targetInfo.channels_);
         moduleInfo.rate = std::to_string(targetInfo.sampleRate_);
@@ -256,11 +255,10 @@ void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStr
     } else {
         shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1);
         if (inputDesc != nullptr && inputDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-            moduleInfo = usbSourceModuleInfo_;
             moduleInfo.sourceType = std::to_string(sourceType);
             moduleInfo.deviceType = std::to_string(static_cast<int32_t>(DEVICE_TYPE_USB_ARM_HEADSET));
+            moduleInfo.macAddress = inputDesc->macAddress_;
         } else {
-            moduleInfo = primaryMicModuleInfo_;
             // current layout represents the number of channel. This will need to be modify in the future.
             moduleInfo.channels = std::to_string(targetInfo.channels_);
             moduleInfo.rate = std::to_string(targetInfo.sampleRate_);
@@ -653,7 +651,7 @@ int32_t AudioEcManager::ReloadSourceSoftLink(std::shared_ptr<AudioPipeInfo> &pip
     return SUCCESS;
 }
 
-void AudioEcManager::ReloadSourceForSession(SessionInfo sessionInfo)
+void AudioEcManager::ReloadSourceForSession(SessionInfo sessionInfo, uint32_t sessionId)
 {
     AUDIO_INFO_LOG("reload session for source: %{public}d", sessionInfo.sourceType);
 
@@ -662,7 +660,7 @@ void AudioEcManager::ReloadSourceForSession(SessionInfo sessionInfo)
     int32_t res = FetchTargetInfoForSessionAdd(sessionInfo, targetInfo, targetSource);
     CHECK_AND_RETURN_LOG(res == SUCCESS, "fetch target source info error");
 
-    ReloadNormalSource(sessionInfo, targetInfo, targetSource);
+    ReloadNormalSource(sessionInfo, targetInfo, targetSource, sessionId);
 
     audioActiveDevice_.UpdateActiveDeviceRoute(audioActiveDevice_.GetCurrentInputDeviceType(),
         DeviceFlag::INPUT_DEVICES_FLAG, audioActiveDevice_.GetCurrentInputDevice().deviceName_,
@@ -805,25 +803,30 @@ uint64_t AudioEcManager::GetOpenedNormalSourceSessionId()
 }
 
 int32_t AudioEcManager::ReloadNormalSource(SessionInfo &sessionInfo,
-    PipeStreamPropInfo &targetInfo, SourceType targetSource)
+    PipeStreamPropInfo &targetInfo, SourceType targetSource, uint32_t sessionId)
 {
+    uint32_t targetSessionId = sessionId;
+    if (targetSessionId == DEFAULT_SESSION_ID) {
+        targetSessionId = GetOpenedNormalSourceSessionId();
+    }
+    const std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = AudioPipeManager::GetPipeManager()->GetPipeList();
     std::shared_ptr<AudioPipeInfo> pipeInfo =
-        AudioPipeManager::GetPipeManager()->GetNormalSourceInfo(isEcFeatureEnable_);
-    CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, ERROR, "Get normal source info failed");
+        AudioPipeManager::GetPipeManager()->FindPipeBySessionId(pipeList, targetSessionId);
+    CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, ERROR, "Get normal source pipe failed for sessionId: %{public}u",
+        targetSessionId);
 
-    AudioModuleInfo moduleInfo;
     UpdateEnhanceEffectState(targetSource);
-    UpdateStreamCommonInfo(moduleInfo, targetInfo, targetSource);
-    UpdateStreamEcInfo(moduleInfo, targetSource);
-    UpdateStreamMicRefInfo(moduleInfo, targetSource);
+    UpdateStreamCommonInfo(pipeInfo->moduleInfo_, targetInfo, targetSource);
+    UpdateStreamEcInfo(pipeInfo->moduleInfo_, targetSource);
+    UpdateStreamMicRefInfo(pipeInfo->moduleInfo_, targetSource);
 
-    AUDIO_INFO_LOG("rate: %{public}s, channels: %{public}s, bufferSize: %{public}s format: %{public}s, "
-        "sourceType: %{public}s",
-        moduleInfo.rate.c_str(), moduleInfo.channels.c_str(), moduleInfo.bufferSize.c_str(),
-        moduleInfo.format.c_str(), moduleInfo.sourceType.c_str());
+    AUDIO_INFO_LOG("sessionId: %{public}u, rate: %{public}s, channels: %{public}s, bufferSize: %{public}s"
+        "format: %{public}s, sourceType: %{public}s", targetSessionId, pipeInfo->moduleInfo_.rate.c_str(),
+        pipeInfo->moduleInfo_.channels.c_str(), pipeInfo->moduleInfo_.bufferSize.c_str(),
+        pipeInfo->moduleInfo_.format.c_str(), pipeInfo->moduleInfo_.sourceType.c_str());
 
-    audioIOHandleMap_.ReloadPortAndUpdateIOHandle(pipeInfo, moduleInfo);
-    audioPolicyManager_.SetDeviceActive(audioActiveDevice_.GetCurrentInputDeviceType(), moduleInfo.name,
+    audioIOHandleMap_.ReloadPortAndUpdateIOHandle(pipeInfo, pipeInfo->moduleInfo_);
+    audioPolicyManager_.SetDeviceActive(audioActiveDevice_.GetCurrentInputDeviceType(), pipeInfo->moduleInfo_.name,
         true, INPUT_DEVICES_FLAG);
 
     normalSourceOpened_ = targetSource;

@@ -959,6 +959,13 @@ void AudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc
     deviceDesc.pins = PIN_IN_MIC;
     if (halName_ == HDI_ID_INFO_USB) {
         deviceDesc.pins = PIN_IN_USB_HEADSET;
+        if (address_.empty()) {
+            AUDIO_INFO_LOG("use attr desc instead");
+            deviceDesc.desc = const_cast<char *>(attr_.macAddress.c_str());
+        } else {
+            deviceDesc.desc = const_cast<char *>(address_.c_str());
+        }
+        return;
     } else if (halName_ == HDI_ID_INFO_ACCESSORY) {
         if (dmDeviceTypeMap_[DEVICE_TYPE_ACCESSORY] == DM_DEVICE_TYPE_PENCIL) {
             deviceDesc.pins = PIN_IN_PENCIL;

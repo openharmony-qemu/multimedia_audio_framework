@@ -715,7 +715,8 @@ int32_t HpaeManager::SetDefaultSink(std::string name)
             AUDIO_INFO_LOG("sink is same as default sink");
             return;
         }
-        if (!SafeGetMap(rendererManagerMap_, name)) {
+        std::shared_ptr<IHpaeRendererManager> newRendererManager = GetRendererManagerByName(name);
+        if (newRendererManager == nullptr || !newRendererManager->IsInit()) {
             AUDIO_WARNING_LOG("sink: %{public}s not exist, do not change default sink", name.c_str());
             return;
         }
@@ -747,7 +748,8 @@ int32_t HpaeManager::SetDefaultSource(std::string name)
             AUDIO_INFO_LOG("source is same as default source");
             return;
         }
-        if (!SafeGetMap(capturerManagerMap_, name)) {
+        std::shared_ptr<IHpaeCapturerManager> newCapturerManager = GetCapturerManagerByName(name);
+        if (newCapturerManager == nullptr || !newCapturerManager->IsInit()) {
             AUDIO_WARNING_LOG("source: %{public}s not exist, do not change default source", name.c_str());
             return;
         }
