@@ -322,7 +322,7 @@ static bool RunFormatConversionTest(const FormatConversionInfo& info,
 
     std::shared_ptr<SuiteInputNodeWriteDataCallBackTest> callback =
         std::make_shared<SuiteInputNodeWriteDataCallBackTest>();
-    inputNode->SetOnWriteDataCallback(callback);
+    inputNode->SetRequestDataCallback(callback);
 
     inputNode->Init();
     outputNode->Init();
