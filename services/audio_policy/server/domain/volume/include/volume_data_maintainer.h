@@ -180,6 +180,8 @@ private:
     std::unordered_map<int32_t, int32_t> appVolumeLevelMap_; // save App volume map
     std::unordered_map<int32_t, std::unordered_map<int32_t, bool>> appMuteStatusMap_; // save App volume Mutestatus map
     std::vector<AudioStreamType> volumeList_;
+    std::shared_ptr<AudioDeviceDescriptor> ringerDevice_ =
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
 
     // Stores the mute status of audio streams used by the app.
     std::unordered_map<int32_t, std::unordered_map<AudioStreamType, bool>> appStreamMuteMap_;
