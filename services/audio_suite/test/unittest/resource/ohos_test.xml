@@ -36,7 +36,59 @@
             <option name="push" value="compare_192000_1_u8.pcm -> /data/audiosuite/outputnode/" src="res"/>
             <option name="push" value="compare_44100_1_u8.pcm -> /data/audiosuite/outputnode/" src="res"/>
             <option name="push" value="compare_96000_1_u8.pcm -> /data/audiosuite/outputnode/" src="res"/>
-            <option name="push" value="compare_88200_1_u8.pcm -> /data/audiosuite/outputnode/" src="res"/>					
+            <option name="push" value="compare_88200_1_u8.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="in_8000_1_u8.wav -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="in_48000_2_s16le.wav -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="in_44100_2_s24le.wav -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="in_16000_1_s16le.wav -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="in_32000_1_u8.wav -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="in_22050_2_s24le.wav -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="in_64000_2_s16le.wav -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="in_88200_2_u8.wav -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="in_176400_2_s24le.wav -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="in_11025_1_f32le.wav -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="in_8000_2_s24le.wav -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="in_44100_2_u8.wav -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="in_16000_2_s24le.wav -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="in_96000_1_s16le.wav -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="in_22050_1_u8.wav -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="in_64000_1_s24le.wav -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="in_12000_2_s16le.wav -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="in_192000_1_u8.wav -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="in_44100_1_u8.wav -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="in_16000_1_u8.wav -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="in_32000_1_s24le.wav -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="in_22050_2_s16le.wav -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="in_88200_1_u8.wav -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="in_12000_2_s24le.wav -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="in_24000_1_s16le.wav -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_44100_2_s16le_3.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_48000_2_s24le.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_192000_2_f32le.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_48000_2_s16le.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_16000_1_s16le.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_11025_1_u8.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_32000_2_f32le.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_176400_2_s16le.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_12000_1_u8.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_88200_1_f32le.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_22050_2_s24le.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_192000_1_u8_2.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_8000_2_f32le.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_48000_1_s24le.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_96000_2_s16le.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_16000_1_f32le.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_11025_1_s24le.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_32000_2_s16le.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_24000_1_u8.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_8000_2_f32le_2.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_48000_2_f32le.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_16000_2_f32le.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_32000_2_s24le.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_22050_1_s16le.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_176400_2_f32le.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_24000_1_s16le.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_12000_2_s24le.pcm -> /data/audiosuite/outputnode/" src="res"/>			
             <option name="shell" value="restorecon -R /data/audiosuite/outputnode/"/>
         </preparer>
     </target>

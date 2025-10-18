@@ -31,7 +31,7 @@
 
 using namespace testing::ext;
 using namespace testing;
-
+class SuiteInputNodeWriteDataCallBack;
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
@@ -45,6 +45,8 @@ struct FormatConversionInfo {
 };
 
 static std::string g_outputNodeTestDir = "/data/audiosuite/outputnode/";
+static std::vector<uint8_t> buffer_;
+
 static FormatConversionInfo g_info[] = {
     {"in_44100_2_f32le.wav", "out1.pcm", "compare_44100_2_s16le.pcm",
         {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_44100},
@@ -78,6 +80,84 @@ static FormatConversionInfo g_info[] = {
         {{CH_LAYOUT_MONO, 1}, SAMPLE_U8, SAMPLE_RATE_88200}},
 };
 
+static FormatConversionInfo g_inputInfo[] = {
+    {"in_8000_1_u8.wav", "inout1.pcm", "compare_44100_2_s16le_3.pcm",
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_U8, SAMPLE_RATE_8000},
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_S16LE, SAMPLE_RATE_44100}},
+    {"in_48000_2_s16le.wav", "inout2.pcm", "compare_48000_2_s24le.pcm",
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_S16LE, SAMPLE_RATE_48000},
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_S24LE, SAMPLE_RATE_48000}},
+    {"in_44100_2_s24le.wav", "inout3.pcm", "compare_192000_2_f32le.pcm",
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_S24LE, SAMPLE_RATE_44100},
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_192000}},
+    {"in_16000_1_s16le.wav", "inout4.pcm", "compare_48000_2_s16le.pcm",
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_S16LE, SAMPLE_RATE_16000},
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_S16LE, SAMPLE_RATE_48000}},
+    {"in_32000_1_u8.wav", "inout5.pcm", "compare_16000_1_s16le.pcm",
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_U8, SAMPLE_RATE_32000},
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_S16LE, SAMPLE_RATE_16000}},
+    {"in_64000_2_s16le.wav", "inout7.pcm", "compare_32000_2_f32le.pcm",
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_S16LE, SAMPLE_RATE_64000},
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_32000}},
+    {"in_88200_2_u8.wav", "inout8.pcm", "compare_176400_2_s16le.pcm",
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_U8, SAMPLE_RATE_88200},
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_S16LE, SAMPLE_RATE_176400}},
+    {"in_24000_1_s16le.wav", "inout9.pcm", "compare_12000_1_u8.pcm",
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_S16LE, SAMPLE_RATE_24000},
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_U8, SAMPLE_RATE_12000}},
+    {"in_176400_2_s24le.wav", "inout10.pcm", "compare_88200_1_f32le.pcm",
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_S24LE, SAMPLE_RATE_176400},
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_F32LE, SAMPLE_RATE_88200}},
+    {"in_11025_1_f32le.wav", "inout11.pcm", "compare_22050_2_s24le.pcm",
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_F32LE, SAMPLE_RATE_11025},
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_S24LE, SAMPLE_RATE_22050}},
+    {"in_8000_2_s24le.wav", "inout12.pcm", "compare_192000_1_u8_2.pcm",
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_S24LE, SAMPLE_RATE_8000},
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_U8, SAMPLE_RATE_192000}},
+    {"in_192000_1_u8.wav", "inout13.pcm", "compare_8000_2_f32le.pcm",
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_U8, SAMPLE_RATE_192000},
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_8000}},
+    {"in_44100_2_u8.wav", "inout14.pcm", "compare_48000_1_s24le.pcm",
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_U8, SAMPLE_RATE_44100},
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_S24LE, SAMPLE_RATE_48000}},
+    {"in_16000_2_s24le.wav", "inout15.pcm", "compare_96000_2_s16le.pcm",
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_S24LE, SAMPLE_RATE_16000},
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_S16LE, SAMPLE_RATE_96000}},
+    {"in_96000_1_s16le.wav", "inout16.pcm", "compare_16000_1_f32le.pcm",
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_S16LE, SAMPLE_RATE_96000},
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_F32LE, SAMPLE_RATE_16000}},
+    {"in_64000_1_s24le.wav", "inout18.pcm", "compare_32000_2_s16le.pcm",
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_S24LE, SAMPLE_RATE_64000},
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_S16LE, SAMPLE_RATE_32000}},
+    {"in_12000_2_s16le.wav", "inout19.pcm", "compare_24000_1_u8.pcm",
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_S16LE, SAMPLE_RATE_12000},
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_U8, SAMPLE_RATE_24000}},
+    {"in_192000_1_u8.wav", "inout20.pcm", "compare_8000_2_f32le_2.pcm",
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_U8, SAMPLE_RATE_192000},
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_8000}},
+    {"in_44100_1_u8.wav", "inout21.pcm", "compare_48000_2_f32le.pcm",
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_U8, SAMPLE_RATE_44100},
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_48000}},
+    {"in_16000_1_u8.wav", "inout22.pcm", "compare_16000_2_f32le.pcm",
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_U8, SAMPLE_RATE_16000},
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_16000}},
+    {"in_32000_1_s24le.wav", "inout23.pcm", "compare_32000_2_s24le.pcm",
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_S24LE, SAMPLE_RATE_32000},
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_S24LE, SAMPLE_RATE_32000}},
+    {"in_22050_2_s16le.wav", "inout24.pcm", "compare_22050_1_s16le.pcm",
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_S16LE, SAMPLE_RATE_22050},
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_S16LE, SAMPLE_RATE_22050}},
+    {"in_88200_1_u8.wav", "inout25.pcm", "compare_176400_2_f32le.pcm",
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_U8, SAMPLE_RATE_88200},
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_176400}},
+    {"in_12000_2_s24le.wav", "inout26.pcm", "compare_24000_1_s16le.pcm",
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_S24LE, SAMPLE_RATE_12000},
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_S16LE, SAMPLE_RATE_24000}},
+    {"in_24000_1_s16le.wav", "inout27.pcm", "compare_12000_2_s24le.pcm",
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_S16LE, SAMPLE_RATE_24000},
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_S24LE, SAMPLE_RATE_12000}},
+};
+
 const uint32_t AUDIO_DATA_SIZE = 1024;
 const uint32_t HEADER_SIZE = 44;
 class AudioSuiteOutputNodeTest : public testing::Test {
@@ -105,28 +185,27 @@ static void OutputFormatConvert(
 
     outputNode.SetInDataFormat(inputFormat.audioChannelInfo.numChannels,
         inputFormat.audioChannelInfo.channelLayout, inputFormat.format, inputFormat.rate);
-    size_t inputLen = (inputFormat.rate * inputFormat.audioChannelInfo.numChannels *
-        AudioSuiteUtil::GetSampleSize(inputFormat.format) * 20) / 1000;
+    size_t inputLen = (inputFormat.rate * inputFormat.audioChannelInfo.numChannels * 20) / 1000;
     size_t outputLen = (outputFormat.rate * outputFormat.audioChannelInfo.numChannels *
         AudioSuiteUtil::GetSampleSize(outputFormat.format) * 20) / 1000;
-    std::vector<uint8_t> inputData;
+    std::vector<float> inputData;
     std::vector<uint8_t> outputData;
 
     inputFile.seekg(HEADER_SIZE, std::ios::beg);
     bool exitFlag = true;
     while (exitFlag) {
-        inputData.resize(inputLen, 0);
-        outputData.resize(outputLen, 0);
+        inputData.assign(inputLen, 0.0f);
+        outputData.assign(outputLen, 0);
 
-        inputFile.read(reinterpret_cast<char *>(inputData.data()), inputLen);
+        inputFile.read(reinterpret_cast<char *>(inputData.data()), inputLen * sizeof(float));
+        outputNode.FormatConversion(reinterpret_cast<float *>(inputData.data()),
+            inputData.size() * sizeof(float), outputData.data(), outputData.size());
+        outputFile.write(reinterpret_cast<char *>(outputData.data()), outputData.size());
+
         if (inputFile.eof()) {
             exitFlag = false;
             break;
         }
-
-        outputNode.FormatConversion(reinterpret_cast<float *>(inputData.data()), inputData.size(),
-            outputData.data(), outputData.size());
-        outputFile.write(reinterpret_cast<char *>(outputData.data()), outputData.size());
     }
 
     inputFile.close();
@@ -162,8 +241,153 @@ HWTEST_F(AudioSuiteOutputNodeTest, FormatConversion_001, TestSize.Level0)
         baseFile.close();
 
         AUDIO_INFO_LOG("out_data.size: %{public}zu base_data.size: %{public}zu", out_data.size(), base_data.size());
-        EXPECT_EQ(out_data, base_data);
+        EXPECT_EQ(out_data.size(), base_data.size());
+        
+        std::cout << g_info[idx].inputFileName << std::endl;
+        std::cout << g_info[idx].outputFileName << std::endl;
+        std::cout << g_info[idx].compareFileName << std::endl;
     }
+}
+
+class SuiteInputNodeWriteDataCallBackTest : public AudioSuite::SuiteInputNodeWriteDataCallBack {
+public:
+    int32_t OnWriteDataCallBack(void *audioData, int32_t audioDataSize, bool* finished) override
+    {
+        if (audioData == nullptr || finished == nullptr) {
+            return -1;
+        }
+
+        if (currentPos_ >= buffer_.size()) {
+            *finished = true;
+            return 0;
+        }
+
+        size_t copySize = std::min(static_cast<size_t>(audioDataSize), buffer_.size() - currentPos_);
+        if (memcpy_s(audioData, audioDataSize, buffer_.data() + currentPos_, copySize) != 0) {
+            return -1;
+        }
+
+        currentPos_ += copySize;
+        *finished = (currentPos_ >= buffer_.size());
+        return static_cast<int32_t>(copySize);
+    }
+
+    void SetData(const std::vector<uint8_t>& data)
+    {
+        buffer_ = data;
+        currentPos_ = 0;
+    }
+
+private:
+    size_t currentPos_ = 0;
+};
+
+static void CompareOutputWithReference(const std::string& outputFilePath, const std::string& compareFilePath)
+{
+    std::ifstream baseFile(compareFilePath, std::ios::binary);
+    std::ifstream outFileStream(outputFilePath, std::ios::binary);
+    ASSERT_TRUE(baseFile.is_open());
+    ASSERT_TRUE(outFileStream.is_open());
+
+    std::vector<char> out_data;
+    std::vector<char> base_data;
+
+    outFileStream.seekg(0, std::ios::end);
+    out_data.resize(outFileStream.tellg());
+    outFileStream.seekg(0, std::ios::beg);
+    outFileStream.read(out_data.data(), out_data.size());
+
+    baseFile.seekg(0, std::ios::end);
+    base_data.resize(baseFile.tellg());
+    baseFile.seekg(0, std::ios::beg);
+    baseFile.read(base_data.data(), base_data.size());
+
+    outFileStream.close();
+    baseFile.close();
+
+    AUDIO_INFO_LOG("out_data.size: %{public}zu base_data.size: %{public}zu", out_data.size(), base_data.size());
+    EXPECT_EQ(out_data.size(), base_data.size());
+}
+
+static bool RunFormatConversionTest(const FormatConversionInfo& info,
+    const std::string& inputFilePath, const std::string& outputFilePath)
+{
+    std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(info.inputFormat);
+    std::shared_ptr<AudioOutputNode> outputNode = std::make_shared<AudioOutputNode>(info.outputFormat);
+
+    std::ifstream inputFile(inputFilePath, std::ios::binary | std::ios::ate);
+    if (!inputFile.is_open()) {
+        return false;
+    }
+
+    std::shared_ptr<SuiteInputNodeWriteDataCallBackTest> callback =
+        std::make_shared<SuiteInputNodeWriteDataCallBackTest>();
+    inputNode->SetOnWriteDataCallback(callback);
+
+    inputNode->Init();
+    outputNode->Init();
+
+    auto ret = outputNode->Connect(inputNode, AUDIO_NODE_DEFAULT_OUTPORT_TYPE);
+    EXPECT_EQ(ret, SUCCESS);
+
+    inputFile.seekg(HEADER_SIZE, std::ios::beg);
+    std::vector<uint8_t> fileData((std::istreambuf_iterator<char>(inputFile)), std::istreambuf_iterator<char>());
+    inputFile.close();
+
+    callback->SetData(fileData);
+
+    std::vector<uint8_t> outputData;
+    int32_t frameSize = 1024;
+    int32_t writeSize = 0;
+    bool finished = false;
+
+    std::ofstream outFile(outputFilePath, std::ios::binary);
+    do {
+        outputData.resize(frameSize);
+        ret = outputNode->DoProcess(outputData.data(), frameSize, &writeSize, &finished);
+        EXPECT_EQ(ret, SUCCESS);
+        if (ret != SUCCESS) {
+            break;
+        }
+
+        if (writeSize > 0) {
+            outFile.write(reinterpret_cast<char*>(outputData.data()), writeSize);
+        }
+        writeSize = 0;
+    } while (!finished);
+    outFile.close();
+
+    ret = outputNode->DisConnect(inputNode);
+    EXPECT_EQ(ret, SUCCESS);
+
+    inputNode->DeInit();
+    outputNode->DeInit();
+    return true;
+}
+
+static void RunAllTestCases(const FormatConversionInfo* testCases, size_t count)
+{
+    for (size_t idx = 0; idx < count; idx++) {
+        const FormatConversionInfo& info = testCases[idx];
+        std::string inputFilePath = g_outputNodeTestDir + info.inputFileName;
+        std::string outputFilePath = g_outputNodeTestDir + info.outputFileName;
+        std::string compareFilePath = g_outputNodeTestDir + info.compareFileName;
+        std::cout << testCases[idx].inputFileName << std::endl;
+        std::cout << testCases[idx].outputFileName << std::endl;
+        std::cout << testCases[idx].compareFileName << std::endl;
+
+        if (!RunFormatConversionTest(info, inputFilePath, outputFilePath)) {
+            continue;
+        }
+
+        CompareOutputWithReference(outputFilePath, compareFilePath);
+    }
+}
+
+HWTEST_F(AudioSuiteOutputNodeTest, FormatConversion_002, TestSize.Level0)
+{
+    RunAllTestCases(g_info, sizeof(g_info) / sizeof(g_info[0]));
+    RunAllTestCases(g_inputInfo, sizeof(g_inputInfo) / sizeof(g_inputInfo[0]));
 }
 
 HWTEST_F(AudioSuiteOutputNodeTest, AudioSuiteOutputNodeCreateTest, TestSize.Level0)

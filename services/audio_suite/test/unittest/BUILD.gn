@@ -102,6 +102,7 @@ ohos_unittest("audio_suite_node_test") {
     "googletest:gtest",
     "hilog:libhilog",
   ]
+  resource_config_file = "./resource/ohos_test.xml"
 }
 
 ohos_unittest("audio_suite_eq_node_test") {
