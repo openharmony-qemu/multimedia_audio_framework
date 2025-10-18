@@ -2567,17 +2567,20 @@ void AudioCoreService::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDe
     std::string oldSinkPortName = AudioPolicyUtils::GetInstance().GetSinkName(oldDesc, streamDesc->sessionId_);
     std::string newSinkPortName = AudioPolicyUtils::GetInstance().GetSinkName(newDesc, streamDesc->sessionId_);
 
-    auto GetVoipSinkPortNameIfVoip = [](uint32_t routeFlag, const std::string &defaultSinkPortName) -> std::string {
+    auto GetSinkPortNameIfVoipOrMmap = [](uint32_t routeFlag, const std::string &defaultSinkPortName) -> std::string {
         if (routeFlag == (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP)) {
             return PRIMARY_MMAP_VOIP;
-        }
-        if (routeFlag == (AUDIO_OUTPUT_FLAG_DIRECT | AUDIO_OUTPUT_FLAG_VOIP)) {
+        } else if (routeFlag == (AUDIO_OUTPUT_FLAG_DIRECT | AUDIO_OUTPUT_FLAG_VOIP)) {
             return PRIMARY_DIRECT_VOIP;
+        } else if (routeFlag == AUDIO_OUTPUT_FLAG_FAST && defaultSinkPortName == PRIMARY_SPEAKER) {
+            return PRIMARY_MMAP;
+        } else if (routeFlag == AUDIO_OUTPUT_FLAG_FAST && defaultSinkPortName == BLUETOOTH_SPEAKER) {
+            return BLUETOOTH_A2DP_FAST;
         }
         return defaultSinkPortName;
     };
-    oldSinkPortName = GetVoipSinkPortNameIfVoip(streamDesc->oldRouteFlag_, oldSinkPortName);
-    newSinkPortName = GetVoipSinkPortNameIfVoip(streamDesc->routeFlag_, newSinkPortName);
+    oldSinkPortName = GetSinkPortNameIfVoipOrMmap(streamDesc->oldRouteFlag_, oldSinkPortName);
+    newSinkPortName = GetSinkPortNameIfVoipOrMmap(streamDesc->routeFlag_, newSinkPortName);
 
     AUDIO_INFO_LOG("mute sink old:[%{public}s] new:[%{public}s]", oldSinkPortName.c_str(), newSinkPortName.c_str());
     MuteSinkPort(oldSinkPortName, newSinkPortName, reason);
