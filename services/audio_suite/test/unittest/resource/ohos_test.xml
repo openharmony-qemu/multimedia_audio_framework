@@ -37,6 +37,9 @@
             <option name="push" value="compare_44100_1_u8.pcm -> /data/audiosuite/outputnode/" src="res"/>
             <option name="push" value="compare_96000_1_u8.pcm -> /data/audiosuite/outputnode/" src="res"/>
             <option name="push" value="compare_88200_1_u8.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_11025_1_s16.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_11025_1_u8.pcm -> /data/audiosuite/outputnode/" src="res"/>
+            <option name="push" value="compare_11025_1_s24.pcm -> /data/audiosuite/outputnode/" src="res"/>
             <option name="push" value="in_8000_1_u8.wav -> /data/audiosuite/outputnode/" src="res"/>
             <option name="push" value="in_48000_2_s16le.wav -> /data/audiosuite/outputnode/" src="res"/>
             <option name="push" value="in_44100_2_s24le.wav -> /data/audiosuite/outputnode/" src="res"/>

@@ -78,6 +78,15 @@ static FormatConversionInfo g_info[] = {
     {"in_176400_2_f32le.wav", "out10.pcm", "compare_88200_1_u8.pcm",
         {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_176400},
         {{CH_LAYOUT_MONO, 1}, SAMPLE_U8, SAMPLE_RATE_88200}},
+    {"in_48000_2_f32le.wav", "out11.pcm", "compare_11025_1_s16.pcm",
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_48000},
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_S16LE, SAMPLE_RATE_11025}},
+    {"in_176400_2_f32le.wav", "out12.pcm", "compare_11025_1_u8.pcm",
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_176400},
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_U8, SAMPLE_RATE_11025}},
+    {"in_96000_2_f32le.wav", "out13.pcm", "compare_11025_1_s24.pcm",
+        {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_96000},
+        {{CH_LAYOUT_MONO, 1}, SAMPLE_S24LE, SAMPLE_RATE_11025}},
 };
 
 static FormatConversionInfo g_inputInfo[] = {
@@ -183,11 +192,17 @@ static void OutputFormatConvert(
         return;
     }
 
+    size_t frameDuration = SINGLE_FRAME_DURATION;
+ 
+    if (outputFormat.rate == SAMPLE_RATE_11025) {
+        frameDuration = SINGLE_FRAME_DURATION_SAMPLE_RATE_11025;
+    }
+
     outputNode.SetInDataFormat(inputFormat.audioChannelInfo.numChannels,
         inputFormat.audioChannelInfo.channelLayout, inputFormat.format, inputFormat.rate);
-    size_t inputLen = (inputFormat.rate * inputFormat.audioChannelInfo.numChannels * 20) / 1000;
+    size_t inputLen = (inputFormat.rate * inputFormat.audioChannelInfo.numChannels * frameDuration) / 1000;
     size_t outputLen = (outputFormat.rate * outputFormat.audioChannelInfo.numChannels *
-        AudioSuiteUtil::GetSampleSize(outputFormat.format) * 20) / 1000;
+        AudioSuiteUtil::GetSampleSize(outputFormat.format) * frameDuration) / 1000;
     std::vector<float> inputData;
     std::vector<uint8_t> outputData;
 
@@ -585,6 +600,29 @@ HWTEST_F(AudioSuiteOutputNodeTest, DoProcess_006, TestSize.Level0)
     bool finished = false;
     int32_t writeDataSize = 0;
     int32_t ret = outputNode->DoProcess(audioData.data(), AUDIO_DATA_SIZE, &writeDataSize, &finished);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST_F(AudioSuiteOutputNodeTest, DoProcess_007, TestSize.Level0)
+{
+    AudioFormat outformat = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_11025};
+    std::shared_ptr<AudioOutputNode> outputNode = std::make_shared<AudioOutputNode>(outformat);
+    EXPECT_NE(outputNode, nullptr);
+    outputNode->Init();
+ 
+    AudioFormat informat = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_44100};
+    std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(informat);
+    EXPECT_NE(inputNode, nullptr);
+    inputNode->Init();
+    std::unique_ptr<AudioSuitePcmBuffer> data = std::make_unique<AudioSuitePcmBuffer>(
+        SAMPLE_RATE_44100, 2, AudioChannelLayout::CH_LAYOUT_STEREO);
+    inputNode->GetOutputPort().get()->outputData_.push_back(data.get());
+    outputNode->Connect(inputNode);
+    outputNode->preNodeOutputNum_ = 1;
+    outputNode->frameCount_ = 1;
+    AudioSuitePcmBuffer pcmBufferTest(SAMPLE_RATE_44100, 2, CH_LAYOUT_STEREO);
+    outputNode->inputsPcmbuffer_.emplace_back(&pcmBufferTest);
+    auto ret = outputNode->DoProcess();
     EXPECT_EQ(ret, SUCCESS);
 }
 
