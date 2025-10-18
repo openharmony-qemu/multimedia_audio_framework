@@ -207,6 +207,8 @@ private:
     void PauseInner();
     void InitDupBufferInner(int32_t innerCapId);
     void ClearInnerCapBufferForInject();
+    // only for a2dp offload
+    void WaitForDataConnection();
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -305,6 +307,10 @@ private:
 
     uint32_t audioCheckFreq_ = 0;
     std::atomic<uint32_t> checkCount_ = 0;
+
+    bool isDataLinkConnected_ = true;
+    std::mutex dataConnectionMutex_;
+    std::condition_variable dataConnectionCV_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

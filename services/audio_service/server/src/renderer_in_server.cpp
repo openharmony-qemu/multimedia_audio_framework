@@ -69,6 +69,8 @@ namespace {
     const int32_t DUP_COMMON_LEN = 440; // 400 -> 440ms
     const int32_t DUP_DEFAULT_LEN = 20; // 20 -> 20ms
     const int32_t DUP_RECOVERY_AUTISHAKE_BUFFER_COUNT = 2; // 2 -> 2 frames -> 40ms
+    // a2dp offload data connection max cost
+    const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 800; // ms
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -1057,6 +1059,7 @@ int32_t RendererInServer::StartInner()
     fadeLock.unlock();
     ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
+    WaitForDataConnection();
     ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
@@ -2128,12 +2131,19 @@ void RendererInServer::OnDataLinkConnectionUpdate(IOperation operation)
     CHECK_AND_RETURN_LOG(stateListener != nullptr, "StreamListener is nullptr");
     switch (operation) {
         case OPERATION_DATA_LINK_CONNECTING:
+            {
+                std::lock_guard<std::mutex> lock(dataConnectionMutex_);
+                isDataLinkConnected_ = false;
+            }
             AUDIO_DEBUG_LOG("OPERATION_DATA_LINK_CONNECTING received");
-            stateListener->OnOperationHandled(DATA_LINK_CONNECTING, 0);
             break;
         case OPERATION_DATA_LINK_CONNECTED:
+            {
+                std::lock_guard<std::mutex> lock(dataConnectionMutex_);
+                isDataLinkConnected_ = true;
+                dataConnectionCV_.notify_all();
+            }
             AUDIO_DEBUG_LOG("OPERATION_DATA_LINK_CONNECTED received");
-            stateListener->OnOperationHandled(DATA_LINK_CONNECTED, 0);
             break;
         default:
             return;
@@ -2611,6 +2621,20 @@ void RendererInServer::ClearInnerCapBufferForInject()
         CHECK_AND_CONTINUE(innerCapIdToDupStreamCallbackMap_.find(capInfo.first) !=
             innerCapIdToDupStreamCallbackMap_.end());
         innerCapIdToDupStreamCallbackMap_[capInfo.first]->GetDupRingBuffer()->ResetBuffer();
+    }
+}
+
+void RendererInServer::WaitForDataConnection()
+{
+    Trace trace("WaitForA2dpDataConnection");
+    std::unique_lock<std::mutex> dataConnectionWaitLock(dataConnectionMutex_);
+    if (!isDataLinkConnected_) {
+        AUDIO_INFO_LOG("data-connection blocking starts.");
+        bool stopWaiting = dataConnectionCV_.wait_for(
+            dataConnectionWaitLock, std::chrono::milliseconds(DATA_CONNECTION_TIMEOUT_IN_MS), [this] {
+                return isDataLinkConnected_;
+            });
+        AUDIO_INFO_LOG("data-connection blocking ends, reason %{public}s.", stopWaiting ? "connected" : "timeout");
     }
 }
 } // namespace AudioStandard

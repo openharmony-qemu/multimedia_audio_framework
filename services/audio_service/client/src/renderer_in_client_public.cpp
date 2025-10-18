@@ -71,7 +71,6 @@ const uint64_t AUDIO_FIRST_FRAME_LATENCY = 120; //ms
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 9; // 9S
 static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
-static const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 1000; // ms
 static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 constexpr uint32_t SONIC_LATENCY_IN_MS = 20; // cache in sonic
@@ -119,12 +118,6 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         offloadEnable_ = static_cast<bool>(result);
         rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OFFLOAD : PIPE_TYPE_NORMAL_OUT;
         return SUCCESS;
-    } else if (operation == DATA_LINK_CONNECTING) {
-        UpdateDataLinkState(false, false);
-        return SUCCESS;
-    } else if (operation == DATA_LINK_CONNECTED) {
-        UpdateDataLinkState(true, true);
-        return SUCCESS;
     }
 
     if (operation == RESTORE_SESSION) {
@@ -148,15 +141,6 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
 
     callServerCV_.notify_all();
     return SUCCESS;
-}
-
-void RendererInClientInner::UpdateDataLinkState(bool isConnected, bool needNotify)
-{
-    std::lock_guard<std::mutex> stateLock(dataConnectionMutex_);
-    isDataLinkConnected_ = isConnected;
-    if (needNotify) {
-        dataConnectionCV_.notify_all();
-    }
 }
 
 void RendererInClientInner::HandleStatusChangeOperation(Operation operation)
@@ -1017,17 +1001,6 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     UpdateTracker("RUNNING");
 
     FlushBeforeStart();
-
-    std::unique_lock<std::mutex> dataConnectionWaitLock(dataConnectionMutex_);
-    if (!isDataLinkConnected_) {
-        AUDIO_INFO_LOG("data-connection blocking starts.");
-        stopWaiting = dataConnectionCV_.wait_for(
-            dataConnectionWaitLock, std::chrono::milliseconds(DATA_CONNECTION_TIMEOUT_IN_MS), [this] {
-                return isDataLinkConnected_;
-            });
-        AUDIO_INFO_LOG("data-connection blocking ends.");
-    }
-    dataConnectionWaitLock.unlock();
 
     offloadStartReadPos_ = 0;
     if (renderMode_ == RENDER_MODE_CALLBACK) {
