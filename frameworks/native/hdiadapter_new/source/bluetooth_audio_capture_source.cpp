@@ -90,7 +90,7 @@ void BluetoothAudioCaptureSource::DeInit(void)
         deviceManager->DestroyCapture(adapterNameCase_, hdiCaptureId_);
     }
     audioCapture_ = nullptr;
-    AUDIO_INFO_LOG("update validState_:fasle");
+    AUDIO_INFO_LOG("update validState_:true");
     validState_ = true;
 }
 
