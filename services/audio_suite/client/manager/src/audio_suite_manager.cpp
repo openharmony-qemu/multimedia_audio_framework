@@ -246,6 +246,7 @@ int32_t AudioSuiteManager::CreateNode(uint32_t pipelineId, AudioNodeBuilder &bui
     }
 
     AUDIO_INFO_LOG("CreateNode leave");
+    WriteSuiteEngineUtilizationStatsEvent(builder.nodeType);
     nodeId = engineCreateNodeId_;
     engineCreateNodeId_ = INVALID_NODE_ID;
     return engineCreateNodeResult_;
