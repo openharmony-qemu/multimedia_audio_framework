@@ -1000,67 +1000,83 @@ HWTEST_F(AudioPipeSelectorUnitTest, DecidePipesAndStreamAction_001, TestSize.Lev
 }
 
 /**
- * @tc.name: CheckAndHandleOffloadConcedeScene_001
- * @tc.desc: Test CheckAndHandleOffloadConcedeScene - StreamDesc select flag is offload, route flag is normal.
+ * @tc.name: SetOriginalFlagForcedNormalIfNeed_001
+ * @tc.desc: Test SetOriginalFlagForcedNormalIfNeed - StreamDesc select flag is offload, route flag is normal.
  * @tc.type: FUNC
  */
-HWTEST_F(AudioPipeSelectorUnitTest, CheckAndHandleOffloadConcedeScene_001, TestSize.Level1)
+HWTEST_F(AudioPipeSelectorUnitTest, SetOriginalFlagForcedNormalIfNeed_001, TestSize.Level1)
 {
     std::shared_ptr<AudioPipeSelector> audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
     streamDesc->SetAudioFlag(AUDIO_OUTPUT_FLAG_LOWPOWER);
     streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
-    audioPipeSelector->CheckAndHandleOffloadConcedeScene(streamDesc);
+    audioPipeSelector->SetOriginalFlagForcedNormalIfNeed(streamDesc);
     EXPECT_EQ(streamDesc->rendererInfo_.originalFlag, AUDIO_FLAG_FORCED_NORMAL);
 }
 
 /**
- * @tc.name: CheckAndHandleOffloadConcedeScene_002
- * @tc.desc: Test CheckAndHandleOffloadConcedeScene - StreamDesc select flag is not offload, route flag is normal.
+ * @tc.name: SetOriginalFlagForcedNormalIfNeed_002
+ * @tc.desc: Test SetOriginalFlagForcedNormalIfNeed - StreamDesc select flag is not offload, route flag is normal.
  * @tc.type: FUNC
  */
-HWTEST_F(AudioPipeSelectorUnitTest, CheckAndHandleOffloadConcedeScene_002, TestSize.Level1)
+HWTEST_F(AudioPipeSelectorUnitTest, SetOriginalFlagForcedNormalIfNeed_002, TestSize.Level1)
 {
     std::shared_ptr<AudioPipeSelector> audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
     streamDesc->SetAudioFlag(AUDIO_OUTPUT_FLAG_NORMAL);
     streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
-    audioPipeSelector->CheckAndHandleOffloadConcedeScene(streamDesc);
+    audioPipeSelector->SetOriginalFlagForcedNormalIfNeed(streamDesc);
     EXPECT_NE(streamDesc->rendererInfo_.originalFlag, AUDIO_FLAG_FORCED_NORMAL);
 }
 
 /**
- * @tc.name: CheckAndHandleOffloadConcedeScene_003
- * @tc.desc: Test CheckAndHandleOffloadConcedeScene - StreamDesc select flag is offload, route flag is not normal.
+ * @tc.name: SetOriginalFlagForcedNormalIfNeed_003
+ * @tc.desc: Test SetOriginalFlagForcedNormalIfNeed - StreamDesc select flag is offload, route flag is not normal.
  * @tc.type: FUNC
  */
-HWTEST_F(AudioPipeSelectorUnitTest, CheckAndHandleOffloadConcedeScene_003, TestSize.Level1)
+HWTEST_F(AudioPipeSelectorUnitTest, SetOriginalFlagForcedNormalIfNeed_003, TestSize.Level1)
 {
     std::shared_ptr<AudioPipeSelector> audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
     streamDesc->SetAudioFlag(AUDIO_OUTPUT_FLAG_LOWPOWER);
     streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
-    audioPipeSelector->CheckAndHandleOffloadConcedeScene(streamDesc);
+    audioPipeSelector->SetOriginalFlagForcedNormalIfNeed(streamDesc);
     EXPECT_NE(streamDesc->rendererInfo_.originalFlag, AUDIO_FLAG_FORCED_NORMAL);
 }
 
 /**
- * @tc.name: CheckAndHandleOffloadConcedeScene_004
- * @tc.desc: Test CheckAndHandleOffloadConcedeScene - StreamDesc select flag is not offload, route flag is not normal.
+ * @tc.name: SetOriginalFlagForcedNormalIfNeed_004
+ * @tc.desc: Test SetOriginalFlagForcedNormalIfNeed - StreamDesc select flag is not offload, route flag is not normal.
  * @tc.type: FUNC
  */
-HWTEST_F(AudioPipeSelectorUnitTest, CheckAndHandleOffloadConcedeScene_004, TestSize.Level1)
+HWTEST_F(AudioPipeSelectorUnitTest, SetOriginalFlagForcedNormalIfNeed_004, TestSize.Level1)
 {
     std::shared_ptr<AudioPipeSelector> audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
     streamDesc->SetAudioFlag(AUDIO_OUTPUT_FLAG_NORMAL);
     streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
-    audioPipeSelector->CheckAndHandleOffloadConcedeScene(streamDesc);
+    audioPipeSelector->SetOriginalFlagForcedNormalIfNeed(streamDesc);
     EXPECT_NE(streamDesc->rendererInfo_.originalFlag, AUDIO_FLAG_FORCED_NORMAL);
+}
+
+/**
+ * @tc.name: SetOriginalFlagForcedNormalIfNeed_005
+ * @tc.desc: Test SetOriginalFlagForcedNormalIfNeed - StreamDesc select flag is direct, route flag is normal.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, SetOriginalFlagForcedNormalIfNeed_005, TestSize.Level1)
+{
+    std::shared_ptr<AudioPipeSelector> audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    streamDesc->SetAudioFlag(AUDIO_OUTPUT_FLAG_HD);
+    streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
+    audioPipeSelector->SetOriginalFlagForcedNormalIfNeed(streamDesc);
+    EXPECT_EQ(streamDesc->rendererInfo_.originalFlag, AUDIO_FLAG_FORCED_NORMAL);
 }
 
 /**
