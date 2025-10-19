@@ -45,6 +45,7 @@ int32_t OfflineStreamInServer::GetOfflineAudioEffectChains(std::vector<std::stri
 
 int32_t OfflineStreamInServer::CreateOfflineEffectChain(const std::string &chainName)
 {
+    std::lock_guard<std::mutex> lock(offlineChainMutex_);
     effectChain_ = std::make_shared<OfflineAudioEffectServerChain>(chainName);
     return effectChain_->Create();
 }
@@ -54,12 +55,14 @@ int32_t OfflineStreamInServer::ConfigureOfflineEffectChain(const AudioStreamInfo
 {
     CHECK_AND_RETURN_RET_LOG(CheckSupportedParams(inInfo) == SUCCESS, ERR_INVALID_PARAM, "inInfo do not support");
     CHECK_AND_RETURN_RET_LOG(CheckSupportedParams(outInfo) == SUCCESS, ERR_INVALID_PARAM, "outInfo do not support");
+    std::lock_guard<std::mutex> lock(offlineChainMutex_);
     CHECK_AND_RETURN_RET_LOG(effectChain_, ERR_ILLEGAL_STATE, "effectChain not init");
     return effectChain_->SetConfig(inInfo, outInfo);
 }
 
 int32_t OfflineStreamInServer::SetParamOfflineEffectChain(const std::vector<uint8_t> &param)
 {
+    std::lock_guard<std::mutex> lock(offlineChainMutex_);
     CHECK_AND_RETURN_RET_LOG(effectChain_, ERR_ILLEGAL_STATE, "effectChain not init");
     return effectChain_->SetParam(param);
 }
@@ -67,6 +70,7 @@ int32_t OfflineStreamInServer::SetParamOfflineEffectChain(const std::vector<uint
 int32_t OfflineStreamInServer::PrepareOfflineEffectChain(std::shared_ptr<AudioSharedMemory> &inBuffer,
     std::shared_ptr<AudioSharedMemory> &outBuffer)
 {
+    std::lock_guard<std::mutex> lock(offlineChainMutex_);
     CHECK_AND_RETURN_RET_LOG(effectChain_, ERR_ILLEGAL_STATE, "effectChain not init");
     if (serverBufferIn_ == nullptr || serverBufferOut_ == nullptr) {
         uint32_t inSize = 0;
@@ -82,12 +86,14 @@ int32_t OfflineStreamInServer::PrepareOfflineEffectChain(std::shared_ptr<AudioSh
 
 int32_t OfflineStreamInServer::ProcessOfflineEffectChain(uint32_t inSize, uint32_t outSize)
 {
+    std::lock_guard<std::mutex> lock(offlineChainMutex_);
     CHECK_AND_RETURN_RET_LOG(effectChain_, ERR_ILLEGAL_STATE, "effectChain not init");
     return effectChain_->Process(inSize, outSize);
 }
 
 int32_t OfflineStreamInServer::ReleaseOfflineEffectChain()
 {
+    std::lock_guard<std::mutex> lock(offlineChainMutex_);
     CHECK_AND_RETURN_RET_LOG(effectChain_, ERR_ILLEGAL_STATE, "effectChain not init");
     effectChain_->Release();
     return SUCCESS;
@@ -99,9 +105,9 @@ int32_t OfflineStreamInServer::AllocSharedMemory(uint32_t inSize, uint32_t outSi
     CHECK_AND_RETURN_RET_LOG(inSize < MAXIMUM_BUFFER_SIZE && outSize < MAXIMUM_BUFFER_SIZE,
         ERR_INVALID_PARAM, "alloc %{public}u inBuf or %{public}u outBuf out of range", inSize, outSize);
     serverBufferIn_ = AudioSharedMemory::CreateFormLocal(inSize, OFFLINE_SERVER_BUFFER_IN);
-    CHECK_AND_RETURN_RET_LOG(serverBufferIn_ != nullptr, ERR_OPERATION_FAILED, "serverBufferIn_ mmap failed!");
+    CHECK_AND_RETURN_RET_LOG(serverBufferIn_ != nullptr, ERR_OPERATION_FAILED, "serverBufferIn_ mmap failed.");
     serverBufferOut_ = AudioSharedMemory::CreateFormLocal(outSize, OFFLINE_SERVER_BUFFER_OUT);
-    CHECK_AND_RETURN_RET_LOG(serverBufferOut_ != nullptr, ERR_OPERATION_FAILED, "serverBufferOut_ mmap failed!");
+    CHECK_AND_RETURN_RET_LOG(serverBufferOut_ != nullptr, ERR_OPERATION_FAILED, "serverBufferOut_ mmap failed.");
     return SUCCESS;
 }
 } // namespace AudioStandard
