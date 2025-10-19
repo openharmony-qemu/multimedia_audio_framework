@@ -36,6 +36,7 @@
 #include "audio_volume.h"
 #include "audio_limiter_manager.h"
 #include "core_service_handler.h"
+#include "volume_tools.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -50,6 +51,7 @@ const uint32_t OFFLOAD_BUFFER = 50;
 const uint64_t AUDIO_CYCLE_TIME_US = 20000;
 const uint64_t BUF_LENGTH_IN_MS = 20;
 const uint64_t CAST_BUF_LENGTH_IN_MS = 10;
+const float AUDIO_VOLUME_EPSILON = 0.0001;
 
 static int32_t CheckReturnIfStreamInvalid(pa_stream *paStream, const int32_t retVal)
 {
@@ -1013,10 +1015,17 @@ size_t PaRendererStreamImpl::GetWritableSize()
     return pa_stream_writable_size(paStream_);
 }
 
-int32_t PaRendererStreamImpl::OffloadSetVolume(float volume)
+int32_t PaRendererStreamImpl::OffloadSetVolume()
 {
     if (!offloadEnable_) {
         return ERR_OPERATION_FAILED;
+    }
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    float volume = AudioVolume::GetInstance()->GetVolume(streamIndex_, processConfig_.streamType, "offload", &volumes);
+    AUDIO_INFO_LOG("sessionID %{public}u volume: %{public}f", streamIndex_, volume);
+    if (!IsVolumeSame(volumes.volumeHistory, volume, AUDIO_VOLUME_EPSILON)) {
+        AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, volume);
+        AudioVolume::GetInstance()->Monitor(streamIndex_, true);
     }
     uint32_t id = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_OFFLOAD);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(id);

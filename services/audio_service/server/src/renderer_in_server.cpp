@@ -1917,14 +1917,7 @@ int32_t RendererInServer::GetOffloadApproximatelyCacheTime(uint64_t &timestamp, 
 
 int32_t RendererInServer::OffloadSetVolumeInner()
 {
-    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    float volume = AudioVolume::GetInstance()->GetVolume(streamIndex_, processConfig_.streamType, "offload", &volumes);
-    AUDIO_INFO_LOG("sessionID %{public}u volume: %{public}f", streamIndex_, volume);
-    if (!IsVolumeSame(volumes.volumeHistory, volume, AUDIO_VOLOMUE_EPSILON)) {
-        AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, volume);
-        AudioVolume::GetInstance()->Monitor(streamIndex_, true);
-    }
-    return stream_->OffloadSetVolume(volume);
+    return stream_->OffloadSetVolume();
 }
 
 int32_t RendererInServer::UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)
