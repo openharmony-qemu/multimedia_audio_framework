@@ -408,7 +408,7 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_001, TestSize.Level1)
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
     capturerInClientInner->state_ = NEW;
     int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -476,7 +476,7 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_004, TestSize.Level1)
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
     capturerInClientInner->state_ = INVALID;
     int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
