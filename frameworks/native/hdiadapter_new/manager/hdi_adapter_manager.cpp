@@ -429,6 +429,7 @@ void HdiAdapterManager::ProcessIdUseCount(uint32_t id, bool isResident, bool try
     if (!isResident) {
         CHECK_AND_RETURN(!tryCreate);
         if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
+            // If isResident and tryCreate are false, no sink or source instance, set infoId useCount to 0.
             IdHandler::GetInstance().DecInfoIdUseCount(id);
         }
         return;
