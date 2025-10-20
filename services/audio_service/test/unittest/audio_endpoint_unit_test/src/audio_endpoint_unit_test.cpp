@@ -866,7 +866,7 @@ HWTEST_F(AudioEndpointUnitTest, CheckRecordSignal_002, TestSize.Level1)
     audioEndpointInner->signalDetectAgent_ = nullptr;
     uint8_t buffer[10] = {0};
     audioEndpointInner->CheckRecordSignal(buffer, 10);
-    EXPECT_EQ(nullptr, audioEndpointInner->signalDetectAgent_);
+    EXPECT_FALSE(audioEndpointInner->signalDetected_);
 }
 
 /*
