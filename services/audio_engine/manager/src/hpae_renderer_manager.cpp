@@ -216,6 +216,7 @@ void HpaeRendererManager::CreateProcessCluster(HpaeNodeInfo &nodeInfo)
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("update audio effect when creating failed, ret = %{public}d", ret);
     }
+    sceneClusterMap_[GetProcessorType(nodeInfo.sessionId)]->CreateNodes(sinkInputNodeMap_[nodeInfo.sessionId]);
 }
 
 int32_t HpaeRendererManager::AddAllNodesToSink(
@@ -339,6 +340,7 @@ int32_t HpaeRendererManager::DeleteProcessClusterInner(uint32_t sessionId, HpaeP
     }
     if (sceneTypeToProcessClusterCountMap_.count(sceneType) && sceneTypeToProcessClusterCountMap_[sceneType] == 0) {
         if (sceneClusterMap_[sceneType] == sceneClusterMap_[HPAE_SCENE_DEFAULT] || IsClusterDisConnected(sceneType)) {
+            sceneClusterMap_[sceneType]->DestroyNodes(sessionId);
             sceneClusterMap_.erase(sceneType);
             sceneTypeToProcessClusterCountMap_.erase(sceneType);
             AUDIO_INFO_LOG("sessionId %{public}u, processCluster %{public}d has been erased", sessionId, sceneType);
@@ -348,6 +350,7 @@ int32_t HpaeRendererManager::DeleteProcessClusterInner(uint32_t sessionId, HpaeP
     if (sceneTypeToProcessClusterCountMap_.count(HPAE_SCENE_DEFAULT) &&
         sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT] == 0) {
         if (IsClusterDisConnected(HPAE_SCENE_DEFAULT)) {
+            sceneClusterMap_[sceneType]->DestroyNodes(sessionId);
             sceneClusterMap_.erase(HPAE_SCENE_DEFAULT);
             sceneTypeToProcessClusterCountMap_.erase(HPAE_SCENE_DEFAULT);
             AUDIO_INFO_LOG("processCluster default has been erased");

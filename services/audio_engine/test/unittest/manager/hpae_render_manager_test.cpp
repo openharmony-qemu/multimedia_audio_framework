@@ -51,6 +51,7 @@ constexpr int32_t TEST_SLEEP_TIME_20 = 20;
 constexpr int32_t TEST_SLEEP_TIME_40 = 40;
 constexpr uint32_t INVALID_ID = 99999;
 constexpr uint32_t LOUDNESS_GAIN = 1.0f;
+const uint32_t DEFAULT_SESSIONID_NUM_FIRST = 12345;
 
 static HpaeSinkInfo GetSinkInfo()
 {
@@ -968,6 +969,66 @@ HWTEST_F(HpaeRendererManagerTest, ReloadRenderManager_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: ReloadRenderManager
+ * @tc.type: FUNC
+ * @tc.number: ReloadRenderManager_002
+ * @tc.desc: Test ReloadRenderManager when STREAM_MANAGER_RUNNING
+ */
+HWTEST_F(HpaeRendererManagerTest, ReloadRenderManager_002, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceClass = "offload";
+    auto hpaeRendererManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    hpaeRendererManager->sinkOutputNode_ = std::make_unique<HpaeOffloadSinkOutputNode>(nodeInfo);
+    hpaeRendererManager->sinkOutputNode_->SetSinkState(STREAM_MANAGER_RUNNING);
+
+    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeRendererManager->AddNodeToMap(sinkInputNode);
+    EXPECT_EQ(hpaeRendererManager->CreateOffloadNodes(), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->ConnectInputSession(), SUCCESS);
+    auto tmpPtr1 = hpaeRendererManager->converterForOutput_.get();
+    auto tmpPtr2 = hpaeRendererManager->loudnessGainNode_.get();
+    auto tmpPtr3 = hpaeRendererManager->converterForLoudness_.get();
+    int32_t ret = hpaeRendererManager->ReloadRenderManager(sinkInfo);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(tmpPtr1, hpaeRendererManager->converterForOutput_.get());
+    EXPECT_NE(tmpPtr2, hpaeRendererManager->loudnessGainNode_.get());
+    EXPECT_NE(tmpPtr3, hpaeRendererManager->converterForLoudness_.get());
+}
+
+/**
+ * @tc.name: ReloadRenderManager
+ * @tc.type: FUNC
+ * @tc.number: ReloadRenderManager_003
+ * @tc.desc: Test ReloadRenderManager when not STREAM_MANAGER_RUNNING
+ */
+HWTEST_F(HpaeRendererManagerTest, ReloadRenderManager_003, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceClass = "offload";
+    auto hpaeRendererManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    hpaeRendererManager->sinkOutputNode_ = std::make_unique<HpaeOffloadSinkOutputNode>(nodeInfo);
+    hpaeRendererManager->sinkOutputNode_->SetSinkState(STREAM_MANAGER_SUSPENDED);
+
+    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeRendererManager->AddNodeToMap(sinkInputNode);
+    EXPECT_EQ(hpaeRendererManager->CreateOffloadNodes(), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->ConnectInputSession(), SUCCESS);
+    auto tmpPtr1 = hpaeRendererManager->converterForOutput_.get();
+    auto tmpPtr2 = hpaeRendererManager->loudnessGainNode_.get();
+    auto tmpPtr3 = hpaeRendererManager->converterForLoudness_.get();
+    int32_t ret = hpaeRendererManager->ReloadRenderManager(sinkInfo);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(tmpPtr1, hpaeRendererManager->converterForOutput_.get());
+    EXPECT_EQ(tmpPtr2, hpaeRendererManager->loudnessGainNode_.get());
+    EXPECT_EQ(tmpPtr3, hpaeRendererManager->converterForLoudness_.get());
+}
+
+/**
  * @tc.name: CreateRendererManager
  * @tc.type: FUNC
  * @tc.number: CreateRendererManager_001
@@ -1318,6 +1379,8 @@ HWTEST_F(HpaeRendererManagerTest, CreateProcessClusterInner_001, TestSize.Level1
     nodeInfo.channels = STEREO;
     nodeInfo.frameLen = FRAME_LENGTH_960;
     nodeInfo.channelLayout = CH_LAYOUT_STEREO;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
     int32_t processClusterDecision = NO_NEED_TO_CREATE_PROCESSCLUSTER;
     hpaeRendererManager->CreateProcessClusterInner(nodeInfo, processClusterDecision);
 }
@@ -1334,6 +1397,8 @@ HWTEST_F(HpaeRendererManagerTest, CreateProcessClusterInner_002, TestSize.Level1
     nodeInfo.channels = STEREO;
     nodeInfo.frameLen = FRAME_LENGTH_960;
     nodeInfo.channelLayout = CH_LAYOUT_STEREO;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
     int32_t processClusterDecision = CREATE_NEW_PROCESSCLUSTER;
     hpaeRendererManager->CreateProcessClusterInner(nodeInfo, processClusterDecision);
 }
@@ -1350,6 +1415,8 @@ HWTEST_F(HpaeRendererManagerTest, CreateProcessClusterInner_003, TestSize.Level1
     nodeInfo.channels = STEREO;
     nodeInfo.frameLen = FRAME_LENGTH_960;
     nodeInfo.channelLayout = CH_LAYOUT_STEREO;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
     int32_t processClusterDecision = USE_DEFAULT_PROCESSCLUSTER;
     hpaeRendererManager->CreateProcessClusterInner(nodeInfo, processClusterDecision);
 }
@@ -1569,6 +1636,7 @@ HWTEST_F(HpaeRendererManagerTest, SetAudioEffectMode_002, TestSize.Level0)
     EXPECT_EQ(ret, SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     effectMode = EFFECT_NONE;
+    hpaeRendererManager->CreateProcessCluster(nodeInfo);
     hpaeRendererManager->ConnectProcessCluster(sessionId, HPAE_SCENE_EFFECT_NONE);
     hpaeRendererManager->sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_PAUSED);
     ret = hpaeRendererManager->SetAudioEffectMode(sessionId, effectMode);

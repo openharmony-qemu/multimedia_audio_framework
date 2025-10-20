@@ -138,7 +138,6 @@ private:
     // buffer mode, write or callback end
 
     std::atomic<size_t> mutePaddingFrames_ = 0;
-    bool noWaitDataFlag_ = true;
 };
 } // namespace AudioStandard
 } // namespace OHOS

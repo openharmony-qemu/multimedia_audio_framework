@@ -185,6 +185,7 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
     if (fadeInState_) {
         if (!input->IsValid() || IsSilentData(input)) {
             AUDIO_DEBUG_LOG("[%{public}d]: silent or invalid data no need to do fade in", GetSessionId());
+            SilenceData(input);
             return;
         }
         AUDIO_INFO_LOG("[%{public}d]: fade in started! buffer avg: %{public}d", GetSessionId(), bufferAvg);

@@ -38,6 +38,7 @@ public:
     void DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override;
     int32_t GetGainNodeCount();
     int32_t GetConverterNodeCount();
+    int32_t GetLoudnessGainNodeCount();
     int32_t GetPreOutNum();
     int32_t AudioRendererCreate(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
     int32_t AudioRendererStart(HpaeNodeInfo &nodeInfo, const HpaeSinkInfo &sinkInfo);
@@ -53,6 +54,8 @@ public:
     void DisConnectMixerNode();
     void InitEffectBuffer(const uint32_t sessionId);
     uint64_t GetLatency(uint32_t sessionId);
+    int32_t CreateNodes(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode);
+    int32_t DestroyNodes(uint32_t sessionId);
 private:
     void ConnectMixerNode();
     void CreateGainNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);

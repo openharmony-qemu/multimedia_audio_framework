@@ -704,6 +704,7 @@ int32_t HpaeInnerCapturerManager::CreateRendererInputSessionInner(const HpaeStre
             AUDIO_ERR_LOG("SetupAudioLimiter failed, sessionId %{public}u", nodeInfo.sessionId);
         }
     }
+    rendererSceneClusterMap_[nodeInfo.sceneType]->CreateNodes(sinkInputNodeMap_[streamInfo.sessionId]);
     sceneTypeToProcessClusterCount_++;
     // todo change nodeInfo
     return SUCCESS;
