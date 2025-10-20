@@ -2138,6 +2138,7 @@ HWTEST_F(AudioServerUnitTest, CheckInnerRecorderPermission_002, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     AudioProcessConfig config;
+    config.appInfo.appTokenId = 1;
     config.capturerInfo.sourceType = SOURCE_TYPE_REMOTE_CAST;
     EXPECT_EQ(audioServer->CheckInnerRecorderPermission(config), PERMISSION_GRANTED);
 
