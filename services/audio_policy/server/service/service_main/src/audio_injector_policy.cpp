@@ -12,6 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef LOG_TAG
+#define LOG_TAG "AudioInjectorPolicy"
+#endif
+
 #include "audio_injector_policy.h"
 #include "audio_core_service.h"
 #include "audio_device_info.h"
@@ -83,9 +87,9 @@ int32_t AudioInjectorPolicy::DeInit()
     return SUCCESS;
 }
 
-int32_t AudioInjectorPolicy::UpdateAudioInfo(AudioModuleInfo &info)
+void AudioInjectorPolicy::UpdateAudioInfo(AudioModuleInfo &info)
 {
-    return SUCCESS;
+    audioPolicyManager_.UpdateAudioPortInfo(renderPortIdx_, info);
 }
 
 int32_t AudioInjectorPolicy::AddStreamDescriptor(uint32_t renderId, std::shared_ptr<AudioStreamDescriptor> desc)
@@ -204,17 +208,11 @@ void AudioInjectorPolicy::RebuildCaptureInjector(uint32_t streamId)
                 streamDesc = stream;
             }
         }
-        if (pipe->paIndex_ == capturePortIdx_) {
+        if (pipe->paIndex_ == capturePortIdx_ && pipe->pipeRole_ == PIPE_ROLE_INPUT) {
             streamVec = pipe->streamDescriptors_;
         }
     }
-    bool isRunning = false;
-    for (const auto &stream : streamVec) {
-        if (stream->IsRunning()) {
-            isRunning = true;
-            break;
-        }
-    }
+    bool isRunning = HasRunningVoipStream(streamVec);
     if (isRunning) {
         return;
     }
@@ -232,6 +230,16 @@ void AudioInjectorPolicy::RebuildCaptureInjector(uint32_t streamId)
     AddCaptureInjectorInner();
 }
 
+bool AudioInjectorPolicy::HasRunningVoipStream(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamVec)
+{
+    for (const auto &stream : streamVec) {
+        if (stream->IsRunning() && stream->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+            return true;
+        }
+    }
+    return false;
+}
+
 int32_t AudioInjectorPolicy::AddCaptureInjector()
 {
     std::lock_guard<std::shared_mutex> lock(injectLock_);
@@ -245,11 +253,13 @@ int32_t AudioInjectorPolicy::AddCaptureInjectorInner()
         if (voipType_ == NORMAL_VOIP) {
             audioPolicyManager_.AddCaptureInjector(renderPortIdx_, capturePortIdx_,
                 SOURCE_TYPE_VOICE_COMMUNICATION);
+            isConnected_ = true;
         } else if (voipType_ == FAST_VOIP) {
             int32_t ret = audioPolicyManager_.AddCaptureInjector();
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "AddCaptureInjector failed");
+            UpdateAudioInfo(moduleInfo_);
+            isConnected_ = true;
         }
-        isConnected_ = true;
     }
     return SUCCESS;
 }
@@ -268,14 +278,18 @@ int32_t AudioInjectorPolicy::RemoveCaptureInjectorInner(bool noCapturer)
         if (voipType_ == NORMAL_VOIP) {
             audioPolicyManager_.RemoveCaptureInjector(renderPortIdx_, capturePortIdx_,
                 SOURCE_TYPE_VOICE_COMMUNICATION);
+            isConnected_ = false;
+            capturePortIdx_ = HDI_INVALID_ID;
+            voipType_ = NO_VOIP;
+            DeInit();
         } else if (voipType_ == FAST_VOIP) {
             int32_t ret = audioPolicyManager_.RemoveCaptureInjector();
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "RemoveCaptureInjector failed");
+            isConnected_ = false;
+            capturePortIdx_ = HDI_INVALID_ID;
+            voipType_ = NO_VOIP;
+            DeInit();
         }
-        isConnected_ = false;
-        capturePortIdx_ = HDI_INVALID_ID;
-        voipType_ = NO_VOIP;
-        DeInit();
     }
     return SUCCESS;
 }
@@ -291,7 +305,7 @@ std::shared_ptr<AudioPipeInfo> AudioInjectorPolicy::FindCaptureVoipPipe(
             bool isRunning = stream->IsRunning();
             CHECK_AND_CONTINUE_LOG(isRunning == true, "isRunning is false");
             AudioStreamAction action = stream->streamAction_;
-            bool actionFlag = (action == AUDIO_STREAM_ACTION_DEFAULT || action == AUDIO_STREAM_ACTION_MOVE);
+            bool actionFlag = (action == AUDIO_STREAM_ACTION_MOVE);
             CHECK_AND_CONTINUE_LOG(actionFlag, "streamAction is not right");
             if ((stream->routeFlag_ & AUDIO_INPUT_FLAG_NORMAL) &&
                     stream->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {

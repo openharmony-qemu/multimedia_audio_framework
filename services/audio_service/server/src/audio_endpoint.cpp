@@ -2463,11 +2463,10 @@ int32_t AudioEndpointInner::AddCaptureInjector(const uint32_t &sinkPortIndex, co
         sinkPortIndex, injectSinkPortIndex);
 
     /* need update basic info for renderer output expect data */
-    AudioModuleInfo moduleInfo = injector_.GetModuleInfo();
+    AudioModuleInfo &moduleInfo = injector_.GetModuleInfo();
     moduleInfo.rate = ConvertToStringForSampleRate(dstStreamInfo_.samplingRate);
     moduleInfo.format = ConvertToStringForFormat(dstStreamInfo_.format);
     moduleInfo.channels = ConvertToStringForChannel(dstStreamInfo_.channels);
-    injector_.UpdateAudioInfo(moduleInfo);
 
     std::lock_guard<std::mutex> lock(injectLock_);
     isNeedInject_ = true;

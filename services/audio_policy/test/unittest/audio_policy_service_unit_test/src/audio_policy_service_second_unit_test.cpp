@@ -1171,6 +1171,44 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, RegisterDataObserverTest, TestSize.Level
 }
 
 /**
+ * @tc.name  : Test AudioPolicyServiceExtUnitTest.
+ * @tc.number: OnForcedDeviceSelected_01
+ * @tc.desc  : Test OnForcedDeviceSelected interfaces.
+ */
+HWTEST_F(AudioPolicyServiceExtUnitTest, OnForcedDeviceSelected_01, TestSize.Level1)
+{
+    shared_ptr<AudioDeviceDescriptor> devDesc;
+    devDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    devDesc->macAddress_ = "11:22";
+    devDesc->deviceRole_ = OUTPUT_DEVICE;
+    devDesc->deviceId_ = 114514;
+    AudioDeviceManager::GetAudioDeviceManager().AddNewDevice(devDesc);
+    auto &service = AudioPolicyService::GetAudioPolicyService();
+    service.OnForcedDeviceSelected(DEVICE_TYPE_BLUETOOTH_A2DP, "11:22");
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(server, nullptr);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServiceExtUnitTest.
+ * @tc.number: OnPrivacyDeviceSelected_01
+ * @tc.desc  : Test OnPrivacyDeviceSelected interfaces.
+ */
+HWTEST_F(AudioPolicyServiceExtUnitTest, OnPrivacyDeviceSelected_01, TestSize.Level1)
+{
+    shared_ptr<AudioDeviceDescriptor> devDesc;
+    devDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    devDesc->macAddress_ = "11:22";
+    devDesc->deviceRole_ = OUTPUT_DEVICE;
+    devDesc->deviceId_ = 114514;
+    AudioDeviceManager::GetAudioDeviceManager().AddNewDevice(devDesc);
+    auto &service = AudioPolicyService::GetAudioPolicyService();
+    service.OnPrivacyDeviceSelected();
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(server, nullptr);
+}
+
+/**
 * @tc.name  : Test GetsinkPortName.
 * @tc.number: GetSinkPortName_004
 * @tc.desc  : Test RegisterDataObserver interfaces.

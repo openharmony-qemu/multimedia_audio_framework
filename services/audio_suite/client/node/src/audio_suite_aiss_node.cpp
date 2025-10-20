@@ -67,7 +67,7 @@ int32_t AudioSuiteAissNode::DoProcess()
 
     AudioSuitePcmBuffer* tempOut = nullptr;
     std::vector<AudioSuitePcmBuffer*>& preOutputs = ReadProcessNodePreOutputData();
-    if ((GetNodeEnableStatus() == NODE_ENABLE) && !preOutputs.empty()) {
+    if ((GetNodeBypassStatus() == false) && !preOutputs.empty()) {
         AUDIO_DEBUG_LOG("AudioSuiteProcessNode::DoProcess: node type = %{public}d need "
             "do SignalProcess.", GetNodeType());
         tempOut = SignalProcess(preOutputs);
@@ -99,7 +99,6 @@ int32_t AudioSuiteAissNode::DoProcess()
             "pcmbuffer from prenodes", GetNodeType());
         return ERROR;
     }
-    HandleTapCallback(&tmpOutput_);
     return SUCCESS;
 }
 
@@ -159,39 +158,6 @@ int32_t AudioSuiteAissNode::DeInit()
     return SUCCESS;
 }
 
-int32_t AudioSuiteAissNode::InstallTap(AudioNodePortType portType,
-    std::shared_ptr<SuiteNodeReadTapDataCallback> callback)
-{
-    if (portType == AudioNodePortType::AUDIO_NODE_HUMAN_SOUND_OUTPORT_TYPE) {
-        humanTap_.SetAudioNodePortType(portType);
-        humanTap_.SetOnReadTapDataCallback(callback);
-        AUDIO_DEBUG_LOG("AudioSuiteAissNode InstallTap humanTap_");
-        return SUCCESS;
-    } else if (portType == AudioNodePortType::AUDIO_NODE_BACKGROUND_SOUND_OUTPORT_TYPE) {
-        bkgTap_.SetAudioNodePortType(portType);
-        bkgTap_.SetOnReadTapDataCallback(callback);
-        AUDIO_DEBUG_LOG("AudioSuiteAissNode InstallTap bkgTap_");
-        return SUCCESS;
-    }
-    AUDIO_ERR_LOG("Invalid port type: %{public}d", (uint32_t)portType);
-    return ERROR;
-}
-
-int32_t AudioSuiteAissNode::RemoveTap(AudioNodePortType portType)
-{
-    if (portType == AudioNodePortType::AUDIO_NODE_HUMAN_SOUND_OUTPORT_TYPE) {
-        humanTap_.SetOnReadTapDataCallback(nullptr);
-        AUDIO_DEBUG_LOG("AudioSuiteAissNode RemoveTap humanTap_");
-        return SUCCESS;
-    } else if (portType == AudioNodePortType::AUDIO_NODE_BACKGROUND_SOUND_OUTPORT_TYPE) {
-        bkgTap_.SetOnReadTapDataCallback(nullptr);
-        AUDIO_DEBUG_LOG("AudioSuiteAissNode RemoveTap bkgTap_");
-        return SUCCESS;
-    }
-    AUDIO_ERR_LOG("Invalid port type: %{public}d", (uint32_t)portType);
-    return ERROR;
-}
-
 AudioSuitePcmBuffer* AudioSuiteAissNode::SignalProcess(const std::vector<AudioSuitePcmBuffer*>& inputs)
 {
     if (aissAlgo_ == nullptr) {
@@ -215,30 +181,6 @@ AudioSuitePcmBuffer* AudioSuiteAissNode::SignalProcess(const std::vector<AudioSu
     }
     AUDIO_DEBUG_LOG("AudioSuiteAissNode SignalProcess success");
     return &tmpOutput_;
-}
-
-void AudioSuiteAissNode::HandleTapCallback(AudioSuitePcmBuffer* pcmBuffer)
-{
-    AUDIO_DEBUG_LOG("Enter AudioSuiteAissNode HandleTapCallback");
-    std::shared_ptr<SuiteNodeReadTapDataCallback> humanSoundCallback = humanTap_.GetOnReadTapDataCallback();
-    if (humanSoundCallback != nullptr) {
-        AudioNodePortType tapType = humanTap_.GetAudioNodePortType();
-        CHECK_AND_RETURN_LOG(tapType == AUDIO_NODE_HUMAN_SOUND_OUTPORT_TYPE,
-            "tap type error, taptype:%{public}d", tapType);
-        humanSoundCallback->OnReadTapDataCallback(static_cast<void*>(tmpHumanSoundOutput_.GetPcmDataBuffer()),
-            tmpHumanSoundOutput_.GetFrameLen() * sizeof(float));
-        AUDIO_DEBUG_LOG("AudioSuiteAissNode handle humanSoundCallback success");
-    }
-    std::shared_ptr<SuiteNodeReadTapDataCallback> bkgSoundCallback = bkgTap_.GetOnReadTapDataCallback();
-    if (bkgSoundCallback != nullptr) {
-        AudioNodePortType tapType = bkgTap_.GetAudioNodePortType();
-        CHECK_AND_RETURN_LOG(tapType == AUDIO_NODE_BACKGROUND_SOUND_OUTPORT_TYPE,
-            "tap type error, taptype:%{public}d", tapType);
-        bkgSoundCallback->OnReadTapDataCallback(static_cast<void*>(tmpBkgSoundOutput_.GetPcmDataBuffer()),
-            tmpBkgSoundOutput_.GetFrameLen() * sizeof(float));
-        AUDIO_DEBUG_LOG("AudioSuiteAissNode handle bkgSoundCallback success");
-    }
-    AUDIO_DEBUG_LOG("AudioSuiteAissNode HandleTapCallback success");
 }
 
 }  // namespace AudioSuite

@@ -33,6 +33,7 @@
 #include "sle_audio_device_manager.h"
 #include "audio_mute_factor_manager.h"
 #include "audio_active_device.h"
+#include "audio_volume_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -239,8 +240,12 @@ int32_t AudioVolumeManager::GetSystemVolumeLevelNoMuteState(AudioStreamType stre
 int32_t AudioVolumeManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor,
     const std::string &newSinkName, bool enableSetVoiceCallVolume)
 {
-    std::thread cancelSafeNotificationThrd(&AudioVolumeManager::CancelSafeVolumeNotificationWhenSwitchDevice, this);
-    cancelSafeNotificationThrd.detach();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(deviceDescriptor);
+    if (!AudioVolumeUtils::GetInstance().IsDeviceWithSafeVolume(desc)) {
+        std::thread cancelSafeNotificationThrd(
+            &AudioVolumeManager::CancelSafeVolumeNotificationWhenSwitchDevice, this);
+        cancelSafeNotificationThrd.detach();
+    }
 
     Trace trace("AudioVolumeManager::SetVolumeForSwitchDevice:" + std::to_string(deviceDescriptor.deviceType_));
     // Load volume from KvStore and set volume for each stream type
@@ -470,6 +475,7 @@ int32_t AudioVolumeManager::HandleNearlinkDeviceAbsVolume(AudioStreamType stream
 int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel,
     int32_t zoneId)
 {
+    CheckReduceOtherActiveVolume(streamType, volumeLevel);
     if (zoneId > 0) {
         return audioPolicyManager_.SetZoneVolumeLevel(zoneId,
             VolumeUtils::GetVolumeTypeFromStreamType(streamType), volumeLevel);
@@ -1464,6 +1470,20 @@ bool AudioVolumeManager::IsNeedForceControlVolumeType()
 {
     std::lock_guard<std::mutex> lock(forceControlVolumeTypeMutex_);
     return needForceControlVolumeType_;
+}
+
+void AudioVolumeManager::CheckReduceOtherActiveVolume(AudioStreamType streamType,
+    int32_t volumeLevel)
+{
+    DeviceType deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    auto volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    AudioScene curScene = audioSceneManager_.GetAudioScene(true);
+    bool streamInCall = curScene == AUDIO_SCENE_PHONE_CALL || curScene == AUDIO_SCENE_PHONE_CHAT;
+    if (streamInCall && volumeType == STREAM_VOICE_CALL) {
+        float volumeDb = audioPolicyManager_.GetSystemVolumeInDb(volumeType, volumeLevel, deviceType);
+        audioPolicyManager_.SetVolumeLimit(volumeDb);
+        audioPolicyManager_.UpdateOtherStreamVolume(streamType);
+    }
 }
 
 AudioVolumeType AudioVolumeManager::GetForceControlVolumeType()

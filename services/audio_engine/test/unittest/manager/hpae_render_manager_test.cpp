@@ -44,6 +44,7 @@ namespace {
 static std::string g_rootPath = "/data/";
 constexpr int32_t FRAME_LENGTH_882 = 882;
 constexpr int32_t FRAME_LENGTH_960 = 960;
+constexpr int32_t FRAME_LENGTH_1024 = 1024;
 constexpr int32_t OVERSIZED_FRAME_LENGTH = 38500;
 constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
 constexpr int32_t TEST_SLEEP_TIME_20 = 20;
@@ -370,6 +371,49 @@ static void TestIRendererManagerFlushDrainStream()
 }
 
 template <class RenderManagerType>
+static void TestIRendererManagerDiffFrameLenStream()
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    sinkInfo.frameLen = FRAME_LENGTH_1024;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<RenderManagerType>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    HpaeStreamInfo streamInfo;
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    HpaeSinkInputInfo sinkInputInfo;
+    std::shared_ptr<WriteFixedDataCb> writeIncDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
+    EXPECT_EQ(hpaeRendererManager->RegisterWriteCallback(streamInfo.sessionId, writeIncDataCb), SUCCESS);
+    EXPECT_EQ(writeIncDataCb.use_count() == 1, true);
+    EXPECT_EQ(hpaeRendererManager->Start(streamInfo.sessionId) == SUCCESS, true);
+    // offload need enable after start
+    hpaeRendererManager->SetOffloadPolicy(streamInfo.sessionId, 0);
+    hpaeRendererManager->SetSpeed(streamInfo.sessionId, 1.0f);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_RUNNING);
+    EXPECT_EQ(hpaeRendererManager->IsRunning(), true);
+    EXPECT_EQ(hpaeRendererManager->Pause(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PAUSED);
+    EXPECT_EQ(hpaeRendererManager->Flush(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsRunning(), false);
+    EXPECT_EQ(hpaeRendererManager->Drain(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PAUSED);
+    EXPECT_EQ(hpaeRendererManager->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(
+        hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == ERR_INVALID_OPERATION, true);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+}
+
+template <class RenderManagerType>
 static void TestIRendererManagerSetLoudnessGain()
 {
     HpaeSinkInfo sinkInfo = GetSinkInfo();
@@ -486,6 +530,11 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerFlushDrainStreamTest, TestS
     TestIRendererManagerFlushDrainStream<HpaeRendererManager>();
     std::cout << "test offload" << std::endl;
     TestIRendererManagerFlushDrainStream<HpaeOffloadRendererManager>();
+}
+
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerDiffFrameLenStreamTest, TestSize.Level1)
+{
+    TestIRendererManagerDiffFrameLenStream<HpaeRendererManager>();
 }
 
 template <class RenderManagerType>
@@ -1151,6 +1200,7 @@ HWTEST_F(HpaeRendererManagerTest, RefreshProcessClusterByDevice_001, TestSize.Le
     nodeInfo.effectInfo.effectMode = EFFECT_NONE;
     nodeInfo.sceneType = HPAE_SCENE_MUSIC;
     hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId]->connectedProcessorType_ = HPAE_SCENE_EFFECT_NONE;
     hpaeRendererManager->sessionNodeMap_[nodeInfo.sessionId].bypass = true;
     AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
     AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = false;
@@ -1235,15 +1285,24 @@ HWTEST_F(HpaeRendererManagerTest, RefreshProcessClusterByDevice_004, TestSize.Le
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->IsInit(), true);
 
-    HpaeNodeInfo nodeInfo;
-    nodeInfo.sessionId = 10004;
-    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
-    nodeInfo.effectInfo.effectMode = EFFECT_NONE;
-    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
-    hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
-    hpaeRendererManager->sessionNodeMap_[nodeInfo.sessionId].bypass = false;
+    HpaeNodeInfo nodeInfo1;
+    nodeInfo1.sessionId = 10004;
+    nodeInfo1.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo1.effectInfo.effectMode = EFFECT_NONE;
+    nodeInfo1.sceneType = HPAE_SCENE_MUSIC;
+    hpaeRendererManager->sinkInputNodeMap_[nodeInfo1.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo1);
+    hpaeRendererManager->sessionNodeMap_[nodeInfo1.sessionId].bypass = false;
     AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = true;
     AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = true;
+
+    HpaeNodeInfo nodeInfo2 = nodeInfo1;
+    nodeInfo2.sessionId = 10005;
+    hpaeRendererManager->sinkInputNodeMap_[nodeInfo2.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo2);
+    hpaeRendererManager->sinkInputNodeMap_[nodeInfo2.sessionId]->connectedProcessorType_ = HPAE_SCENE_EFFECT_NONE;
+    hpaeRendererManager->sessionNodeMap_[nodeInfo2.sessionId].bypass = false;
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] = std::make_shared<HpaeProcessCluster>(nodeInfo2, sinkInfo);
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_DEFAULT] = hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC];
+
     int32_t ret = hpaeRendererManager->RefreshProcessClusterByDevice();
     EXPECT_EQ(ret == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);

@@ -649,6 +649,7 @@ void FastAudioStream::RegisterThreadPriorityOnStart(StateChangeCmdType cmdType)
         return;
     }
 
+    CHECK_AND_RETURN_LOG(processClient_ != nullptr, "process client is null.");
     processClient_->RegisterThreadPriority(tid,
         AudioSystemManager::GetInstance()->GetSelfBundleName(processconfig_.appInfo.appUid), METHOD_START);
 }
@@ -1170,12 +1171,14 @@ int32_t FastAudioStream::SetCallbacksWhenRestore()
 
 void FastAudioStream::GetRestoreInfo(RestoreInfo &restoreInfo)
 {
+    CHECK_AND_RETURN_LOG(processClient_ != nullptr, "process client is null.");
     processClient_->GetRestoreInfo(restoreInfo);
     return;
 }
 
 void FastAudioStream::SetRestoreInfo(RestoreInfo &restoreInfo)
 {
+    CHECK_AND_RETURN_LOG(processClient_ != nullptr, "process client is null.");
     processClient_->SetRestoreInfo(restoreInfo);
     return;
 }
@@ -1188,11 +1191,13 @@ RestoreStatus FastAudioStream::CheckRestoreStatus()
         captureMode_ = CAPTURE_MODE_NORMAL;
         return NEED_RESTORE_TO_NORMAL;
     }
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, RESTORE_ERROR, "process client is null.");
     return processClient_->CheckRestoreStatus();
 }
 
 RestoreStatus FastAudioStream::SetRestoreStatus(RestoreStatus restoreStatus)
 {
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, RESTORE_ERROR, "process client is null.");
     return processClient_->SetRestoreStatus(restoreStatus);
 }
 

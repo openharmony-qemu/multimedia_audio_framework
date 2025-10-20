@@ -118,8 +118,8 @@ int32_t AudioSuiteSoundFieldAlgoInterfaceImpl::SetParameter(const std::string &p
         algoRunBuf_ != nullptr && algoScratchBuf_ != nullptr, ERROR, "Invalid run buffer, need init first");
 
     // set SoundField mode
-    SurroundType_ = static_cast<iMedia_Surround_PARA>(std::stoi(paramValue));
-    int32_t ret = algoApi_.setPara(algoRunBuf_.get(), algoScratchBuf_.get(), stSize_.iScracthSize, SurroundType_);
+    iMedia_Surround_PARA surroundType = static_cast<iMedia_Surround_PARA>(std::stoi(paramValue));
+    int32_t ret = algoApi_.setPara(algoRunBuf_.get(), algoScratchBuf_.get(), stSize_.iScracthSize, surroundType);
     CHECK_AND_RETURN_RET_LOG(ret == IMEDIA_SWS_EOK, ERROR, "set parameter fail, ret: %{public}d", ret);
 
     return SUCCESS;
@@ -127,6 +127,8 @@ int32_t AudioSuiteSoundFieldAlgoInterfaceImpl::SetParameter(const std::string &p
 
 int32_t AudioSuiteSoundFieldAlgoInterfaceImpl::GetParameter(const std::string &paramType, std::string &paramValue)
 {
+    CHECK_AND_RETURN_RET_LOG(algoRunBuf_ != nullptr, ERROR, "Invalid run buffer, need init first");
+
     iMedia_Surround_PARA param;
     int32_t ret = algoApi_.getPara(algoRunBuf_.get(), &param);
     CHECK_AND_RETURN_RET_LOG(ret == IMEDIA_SWS_EOK, ERROR, "get parameter fail, ret: %{public}d", ret);
@@ -155,14 +157,14 @@ int32_t AudioSuiteSoundFieldAlgoInterfaceImpl::Apply(
 
     // sample data convert from int16_t to IMEDIA_INT32
     for (size_t i = 0; i < SOUNDFIELD_ALGO_FRAME_LEN; i++) {
-        dataIn_[i] = static_cast<IMEDIA_INT32>(bufIn[i]) << SAMPLE_SHIFT_AMOUNT;
+        dataIn_[i] = static_cast<IMEDIA_INT32>(static_cast<uint32_t>(bufIn[i]) << SAMPLE_SHIFT_AMOUNT);
     }
 
     // apply SoundField algorithm
     int32_t ret = algoApi_.applyAlgo(algoRunBuf_.get(), algoScratchBuf_.get(), stSize_.iScracthSize, &stData_);
     CHECK_AND_RETURN_RET_LOG(ret == IMEDIA_SWS_EOK, ret, "Apply SoundField algorithm fail, ret: %{public}d", ret);
 
-    // sample data convert from IMEDIA_INT32 to int16_t，convert to uint32_t before right shift operation
+    // sample data convert from IMEDIA_INT32 to int16_t
     for (size_t i = 0; i < SOUNDFIELD_ALGO_FRAME_LEN; i++) {
         bufOut[i] = static_cast<uint32_t>(dataOut_[i]) >> SAMPLE_SHIFT_AMOUNT;
     }

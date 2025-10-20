@@ -23,6 +23,11 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+static const int32_t FIRST_STREAM_PRIORITY = 0;
+static const int32_t SECOND_STREAM_PRIORITY = 1;
+static const int32_t THIRD_STREAM_PRIORITY = 2;
+}
 
 bool AudioCoreServiceUtils::IsDualStreamWhenRingDual(AudioStreamType streamType)
 {
@@ -92,6 +97,29 @@ bool AudioCoreServiceUtils::IsDualOnActive()
     return pipeManager->IsStreamUsageActive(STREAM_USAGE_ALARM) ||
         pipeManager->IsStreamUsageActive(STREAM_USAGE_VOICE_RINGTONE) ||
         pipeManager->IsStreamUsageActive(STREAM_USAGE_RINGTONE);
+}
+
+void AudioCoreServiceUtils::SortOutputStreamDescsForUsage(
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
+{
+    std::unordered_map<uint32_t, uint32_t> streamDescsPriority;
+    for (auto &streamDesc : streamDescs) {
+        if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+            streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
+            streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_CALL_ASSISTANT) {
+            streamDescsPriority[streamDesc->sessionId_] = FIRST_STREAM_PRIORITY;
+        } else if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_NOTIFICATION_RINGTONE ||
+                streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
+            streamDescsPriority[streamDesc->sessionId_] = SECOND_STREAM_PRIORITY;
+        } else {
+            streamDescsPriority[streamDesc->sessionId_] = THIRD_STREAM_PRIORITY;
+        }
+    }
+    std::sort(streamDescs.begin(), streamDescs.end(),
+        [&streamDescsPriority](const std::shared_ptr<AudioStreamDescriptor> &streamDescOne,
+        const std::shared_ptr<AudioStreamDescriptor> &streamDescTwo) {
+            return streamDescsPriority[streamDescOne->sessionId_] < streamDescsPriority[streamDescTwo->sessionId_];
+        });
 }
 } // namespace AudioStandard
 } // namespace OHOS

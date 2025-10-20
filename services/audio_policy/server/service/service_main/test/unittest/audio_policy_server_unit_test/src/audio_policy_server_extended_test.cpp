@@ -383,23 +383,13 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_017, TestSize.Level4)
 */
 HWTEST_F(AudioPolicyServerUnitTest, GetFastStreamInfo_001, TestSize.Level1)
 {
+    audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
+    audioPolicyServer_->coreService_->Init();
+    audioPolicyServer_->eventEntry_ = audioPolicyServer_->coreService_->GetEventEntry();
     AudioStreamInfo info;
     audioPolicyServer_->audioConfigManager_.OnFastFormatParsed(AudioSampleFormat::SAMPLE_S32LE);
     audioPolicyServer_->GetFastStreamInfo(info, 0);
     ASSERT_EQ(AudioSampleFormat::SAMPLE_S32LE, info.format);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: GetFastStreamInfo_002
-* @tc.desc  : Test AudioPolicyServer interfaces.
-*/
-HWTEST_F(AudioPolicyServerUnitTest, GetFastStreamInfo_002, TestSize.Level1)
-{
-    AudioStreamInfo info;
-    audioPolicyServer_->audioConfigManager_.OnFastFormatParsed(AudioSampleFormat::SAMPLE_S32LE);
-    audioPolicyServer_->GetFastStreamInfo(info, 0);
-    ASSERT_NE(AudioSampleFormat::SAMPLE_S16LE, info.format);
 }
 } // AudioStandard
 } // OHOS

@@ -429,6 +429,7 @@ void AudioInterruptService::DeactivateAudioSessionInFakeFocusMode(const int32_t 
     deactiveEvent.deactiveReason = AudioSessionDeactiveReason::LOW_PRIORITY;
     std::pair<int32_t, AudioSessionDeactiveEvent> sessionDeactivePair = {pid, deactiveEvent};
     if (handler_ != nullptr) {
+        CHECK_AND_RETURN(hintType == INTERRUPT_HINT_STOP);
         AUDIO_INFO_LOG("AudioSessionService::handler_ is not null. Send event!");
         handler_->SendAudioSessionDeactiveCallback(sessionDeactivePair);
     }
@@ -2898,6 +2899,27 @@ ClientType AudioInterruptService::GetClientTypeByStreamId(int32_t streamId)
 #endif
 }
 
+void AudioInterruptService::SetNonInterruptMute(int32_t streamId, bool muteFlag)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    if (gsp == nullptr) {
+        AUDIO_ERR_LOG("error for g_adProxy null");
+        IPCSkeleton::SetCallingIdentity(identity);
+        return;
+    }
+    AUDIO_INFO_LOG("mute flag is: %{public}d", muteFlag);
+    if (muteFlag) {
+        mutedGameSessionId_.insert(streamId);
+    } else {
+        if (mutedGameSessionId_.find(streamId) != mutedGameSessionId_.end()) {
+            mutedGameSessionId_.erase(streamId);
+        }
+    }
+    gsp->SetNonInterruptMute(streamId, muteFlag);
+    IPCSkeleton::SetCallingIdentity(identity);
+}
+
 bool AudioInterruptService::ShouldCallbackToClient(uint32_t uid, int32_t streamId,
     InterruptEventInternal &interruptEvent)
 {
@@ -2916,32 +2938,17 @@ bool AudioInterruptService::ShouldCallbackToClient(uint32_t uid, int32_t streamI
     switch (interruptEvent.hintType) {
         case INTERRUPT_HINT_RESUME:
             muteFlag = false;
+            SetNonInterruptMute(streamId, muteFlag);
             policyServer_->UpdateDefaultOutputDeviceWhenStarting(streamId);
             break;
         case INTERRUPT_HINT_PAUSE:
         case INTERRUPT_HINT_STOP:
+            SetNonInterruptMute(streamId, muteFlag);
             policyServer_->UpdateDefaultOutputDeviceWhenStopping(streamId);
             break;
         default:
             return false;
     }
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    if (gsp == nullptr) {
-        AUDIO_ERR_LOG("error for g_adProxy null");
-        IPCSkeleton::SetCallingIdentity(identity);
-        return true;
-    }
-    AUDIO_INFO_LOG("mute flag is: %{public}d", muteFlag);
-    if (muteFlag) {
-        mutedGameSessionId_.insert(streamId);
-    } else {
-        if (mutedGameSessionId_.find(streamId) != mutedGameSessionId_.end()) {
-            mutedGameSessionId_.erase(streamId);
-        }
-    }
-    gsp->SetNonInterruptMute(streamId, muteFlag);
-    IPCSkeleton::SetCallingIdentity(identity);
     return false;
 }
 

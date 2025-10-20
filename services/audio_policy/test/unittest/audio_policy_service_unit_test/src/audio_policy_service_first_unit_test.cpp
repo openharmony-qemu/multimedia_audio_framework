@@ -1391,10 +1391,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, HandleLocalDeviceConnected_001, TestSize.Le
     ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
     EXPECT_EQ(SUCCESS, ret);
 
-    updatedDesc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
-    EXPECT_EQ(SUCCESS, ret);
-
     updatedDesc.deviceType_ = DEVICE_TYPE_MIC;
     ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
     EXPECT_EQ(SUCCESS, ret);

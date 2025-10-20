@@ -35,8 +35,6 @@ public:
     static std::shared_ptr<AudioSharedMemory> CreateFormLocal(size_t size, const std::string &name);
     static std::shared_ptr<AudioSharedMemory> CreateFromRemote(int fd, size_t size, const std::string &name);
 
-    static int32_t WriteToParcel(const std::shared_ptr<AudioSharedMemory> &memory, MessageParcel &parcel);
-    static std::shared_ptr<AudioSharedMemory> ReadFromParcel(MessageParcel &parcel);
     bool Marshalling(Parcel &parcel) const override;
     static AudioSharedMemory *Unmarshalling(Parcel &parcel);
 };

@@ -15,8 +15,8 @@
 
 #ifndef AUDIO_SUITE_ENV_ALGO_INTERFACE_IMPL_H
 #define AUDIO_SUITE_ENV_ALGO_INTERFACE_IMPL_H
-#define ALGO_CHANNEL_NUM (2)    // 算法声道数规格
-#define ALGO_BYTE_NUM (2)       // 算法单帧字节数规格
+#define ALGO_CHANNEL_NUM (2)    // 算法声道数
+#define ALGO_BYTE_NUM (2)       // 算法每个采样点的字节数
 #define MASTERVOLUME (15)       // 算法音量设置
 #define TWO_BYTES_WIDTH (16)
 #define AUDIO_DURATION (2)        // 输入音频的持续时间，以10ms为单位

@@ -27,6 +27,7 @@ static constexpr AudioSamplingRate EQ_ALGO_SAMPLE_RATE = SAMPLE_RATE_48000;
 static constexpr AudioSampleFormat EQ_ALGO_SAMPLE_FORMAT = SAMPLE_S16LE;
 static constexpr AudioChannel EQ_ALGO_CHANNEL_COUNT = STEREO;
 static constexpr AudioChannelLayout EQ_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
+const std::string setBandGains = "AudioEqualizerFrequencyBandGains";
 }  // namespace
 
 AudioSuiteEqNode::AudioSuiteEqNode()
@@ -88,18 +89,14 @@ bool AudioSuiteEqNode::Reset()
 
 AudioSuitePcmBuffer *AudioSuiteEqNode::SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs)
 {
-    if (inputs.empty()) {
-        AUDIO_ERR_LOG("AudioSuiteEqNode SignalProcess inputs is empty");
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET_LOG(!inputs.empty(), nullptr, "AudioSuiteEqNode SignalProcess inputs is empty");
+    CHECK_AND_RETURN_RET_LOG(inputs[0] != nullptr, nullptr, "AudioSuiteEqNode SignalProcess inputs[0] is nullptr");
+    AUDIO_DEBUG_LOG("AudioSuiteEqNode SignalProcess inputs frameLen:%{public}d", inputs[0]->GetFrameLen());
 
     eqInputDataBuffer_.resize(outPcmBuffer_.GetFrameLen() * ALGO_BYTE_NUM);
     eqOutputDataBuffer_.resize(outPcmBuffer_.GetFrameLen() * ALGO_BYTE_NUM);
     int32_t ret = ConvertProcess(inputs[0], &outPcmBuffer_, &tmpPcmBuffer_);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("AudioSuiteEqNode SignalProcess preProCess failed");
-        return &outPcmBuffer_;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "AudioSuiteEqNode SignalProcess ConvertProcess failed");
 
     ConvertFromFloat(EQ_ALGO_SAMPLE_FORMAT,
         outPcmBuffer_.GetFrameLen(),
@@ -113,8 +110,9 @@ AudioSuitePcmBuffer *AudioSuiteEqNode::SignalProcess(const std::vector<AudioSuit
 
     tmpin_[0] = inputPointer;
     tmpout_[0] = outputPointer;
-    CHECK_AND_RETURN_RET_LOG(eqAlgoInterfaceImpl_ != nullptr, &outPcmBuffer_, "eqAlgoInterfaceImpl_ is nullptr");
-    eqAlgoInterfaceImpl_->Apply(tmpin_, tmpout_);
+    CHECK_AND_RETURN_RET_LOG(eqAlgoInterfaceImpl_ != nullptr, nullptr, "eqAlgoInterfaceImpl_ is nullptr");
+    ret = eqAlgoInterfaceImpl_->Apply(tmpin_, tmpout_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "AudioSuiteEqNode SignalProcess Apply failed");
     ConvertToFloat(EQ_ALGO_SAMPLE_FORMAT,
         outPcmBuffer_.GetFrameLen(),
         eqOutputDataBuffer_.data(),
@@ -122,105 +120,29 @@ AudioSuitePcmBuffer *AudioSuiteEqNode::SignalProcess(const std::vector<AudioSuit
     return &outPcmBuffer_;
 }
 
-bool AudioSuiteEqNode::SetEqMode(EqualizerMode type)
-{
-    switch (type) {
-        case DEFAULT_MODE:
-            eqValue_ = EQUALIZER_DEFAULT_VALUE;
-            AUDIO_INFO_LOG("Set EqMode to DEFAULT_MODE");
-            break;
-        case BALLADS_MODE:
-            eqValue_ = EQUALIZER_BALLADS_VALUE;
-            AUDIO_INFO_LOG("Set EqMode to BALLADS_MODE");
-            break;
-        case CHINESE_STYLE_MODE:
-            eqValue_ = EQUALIZER_CHINESE_STYLE_VALUE;
-            AUDIO_INFO_LOG("Set EqMode to CHINESE_STYLE_MODE");
-            break;
-        case CLASSICAL_MODE:
-            eqValue_ = EQUALIZER_CLASSICAL_VALUE;
-            AUDIO_INFO_LOG("Set EqMode to CLASSICAL_MODE");
-            break;
-        case DANCE_MUSIC_MODE:
-            eqValue_ = EQUALIZER_DANCE_MUSIC_VALUE;
-            AUDIO_INFO_LOG("Set EqMode to DANCE_MUSIC");
-            break;
-        case JAZZ_MODE:
-            eqValue_ = EQUALIZER_JAZZ_VALUE;
-            AUDIO_INFO_LOG("Set EqMode to JAZZ");
-            break;
-        case POP_MODE:
-            eqValue_ = EQUALIZER_POP_VALUE;
-            AUDIO_INFO_LOG("Set EqMode to POP");
-            break;
-        case RB_MODE:
-            eqValue_ = EQUALIZER_RB_VALUE;
-            AUDIO_INFO_LOG("Set EqMode to RB");
-            break;
-        case ROCK_MODE:
-            eqValue_ = EQUALIZER_ROCK_VALUE;
-            AUDIO_INFO_LOG("Set EqMode to ROCK");
-            break;
-    }
-    return true;
-}
-
-EqualizerMode StringToEqualizerMode(const std::string &modStr)
-{
-    static const std::unordered_map<std::string, EqualizerMode> modeMap = {
-        {"1", DEFAULT_MODE},
-        {"2", BALLADS_MODE},
-        {"3", CHINESE_STYLE_MODE},
-        {"4", CLASSICAL_MODE},
-        {"5", DANCE_MUSIC_MODE},
-        {"6", JAZZ_MODE},
-        {"7", POP_MODE},
-        {"8", RB_MODE},
-        {"9", ROCK_MODE},
-    };
-
-    auto it = modeMap.find(modStr);
-    if (it != modeMap.end()) {
-        return it->second;
-    } else {
-        return DEFAULT_MODE;
-    }
-}
-
 int32_t AudioSuiteEqNode::SetOptions(std::string name, std::string value)
 {
     AUDIO_INFO_LOG("AudioSuiteEqNode::SetOptions Enter");
+    CHECK_AND_RETURN_RET_LOG(name == setBandGains, ERROR, "SetOptions Unknow Type %{public}s", name.c_str());
     CHECK_AND_RETURN_RET_LOG(eqAlgoInterfaceImpl_ != nullptr, ERROR, "eqAlgoInterfaceImpl_ is nullptr");
-    if (name == "AudioEqualizerFrequencyBandGains") {
-        eqValue_ = value;
-        eqAlgoInterfaceImpl_->SetParameter(value, value);
-        AUDIO_INFO_LOG("SetOptions SUCCESS");
-        return SUCCESS;
-    } else if (name == "EqualizerMode") {
-        currentEqMode_ = value;
-        EqualizerMode eqMode = StringToEqualizerMode(value);
-        if (SetEqMode(eqMode) && !eqValue_.empty()) {
-            eqAlgoInterfaceImpl_->SetParameter(eqValue_, eqValue_);
-        }
-        AUDIO_INFO_LOG("SetOptions SUCCESS");
-        return SUCCESS;
-    } else {
-        AUDIO_ERR_LOG("SetOptions Unknow Type %{public}s", name.c_str());
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(!value.empty(), ERROR, "Value is empty");
+
+    eqValue_ = value;
+    int32_t ret = eqAlgoInterfaceImpl_->SetParameter(value, value);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetParameter failed");
+    AUDIO_INFO_LOG("SetOptions SUCCESS");
+    return SUCCESS;
 }
 
 int32_t AudioSuiteEqNode::GetOptions(std::string name, std::string &value)
 {
     AUDIO_INFO_LOG("AudioSuiteEqNode::GetOptions Enter");
-    if (name == "AudioEqualizerFrequencyBandGains") {
-        value = eqValue_;
-        AUDIO_INFO_LOG("GetOptions SUCCESS");
-        return SUCCESS;
-    } else {
-        AUDIO_ERR_LOG("GetOptions Unknow Type %{public}s", name.c_str());
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(name == setBandGains, ERROR, "GetOptions Unknow Type %{public}s", name.c_str());
+    CHECK_AND_RETURN_RET_LOG(!eqValue_.empty(), ERROR, "Eq BandGains is empty");
+
+    value = eqValue_;
+    AUDIO_INFO_LOG("GetOptions SUCCESS");
+    return SUCCESS;
 }
 
 }  // namespace AudioSuite

@@ -112,7 +112,7 @@ void LocalDeviceManager::AllAdapterSetMicMute(bool isMute)
     }
 }
 
-void LocalDeviceManager::SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
+int32_t LocalDeviceManager::SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
     const std::string &condition, const std::string &value)
 {
     Trace trace("LocalDeviceManager::SetAudioParameter" + std::to_string(key));
@@ -123,12 +123,13 @@ void LocalDeviceManager::SetAudioParameter(const std::string &adapterName, const
     if (wrapper == nullptr || wrapper->adapter_ == nullptr) {
         AUDIO_ERR_LOG("adapter %{public}s is nullptr", adapterName.c_str());
         SaveSetParameter(adapterName, key, condition, value);
-        return;
+        return ERR_NULL_POINTER;
     }
     // LCOV_EXCL_STOP
     AudioExtParamKey hdiKey = AudioExtParamKey(key);
     int32_t ret = wrapper->adapter_->SetExtraParams(wrapper->adapter_, hdiKey, condition.c_str(), value.c_str());
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "set param fail, error code: %{public}d", ret);
+    JUDGE_AND_ERR_LOG(ret != SUCCESS, "set param fail, error code: %{public}d", ret);
+    return ret;
 }
 
 std::string LocalDeviceManager::GetAudioParameter(const std::string &adapterName, const AudioParamKey key,

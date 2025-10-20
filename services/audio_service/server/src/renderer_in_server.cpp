@@ -90,7 +90,6 @@ RendererInServer::~RendererInServer()
         Release();
     }
     DumpFileUtil::CloseDumpFile(&dumpC2S_);
-    AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
 }
 
 void RendererInServer::UpdateStreamInfo()
@@ -1385,6 +1384,7 @@ int32_t RendererInServer::Release(bool isSwitchStream)
         }
     }
 
+    AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
     if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
         AudioService::GetInstance()->SetDecMaxRendererStreamCnt();
         AudioService::GetInstance()->CleanAppUseNumMap(processConfig_.appInfo.appUid);
@@ -1402,9 +1402,7 @@ int32_t RendererInServer::Release(bool isSwitchStream)
         status_ = I_STATUS_INVALID;
         return ret;
     }
-    if (lastTarget_ == INJECT_TO_VOICE_COMMUNICATION_CAPTURE) {
-        CoreServiceHandler::GetInstance().RemoveIdForInjector(streamIndex_);
-    }
+    RemoveIdForInjector();
     if (status_ != I_STATUS_STOPPING &&
         status_ != I_STATUS_STOPPED) {
         HandleOperationStopped(RENDERER_STAGE_STOP_BY_RELEASE);
@@ -1421,6 +1419,13 @@ int32_t RendererInServer::Release(bool isSwitchStream)
     RemoveStreamInfo();
 
     return SUCCESS;
+}
+
+void RendererInServer::RemoveIdForInjector()
+{
+    if (lastTarget_ == INJECT_TO_VOICE_COMMUNICATION_CAPTURE) {
+        CoreServiceHandler::GetInstance().RemoveIdForInjector(streamIndex_);
+    }
 }
 
 int32_t RendererInServer::DisableAllInnerCap()
@@ -2592,10 +2597,21 @@ int32_t RendererInServer::SetTarget(RenderTarget target, int32_t &ret)
         ret = CoreServiceHandler::GetInstance().SetRendererTarget(target, lastTarget_, streamIndex_);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "CoreServiceHandler::SetRendererTarget failed");
         lastTarget_ = target;
+        ClearInnerCapBufferForInject();
         return ret;
     }
     ret = ERR_ILLEGAL_STATE;
     return ret;
+}
+
+void RendererInServer::ClearInnerCapBufferForInject()
+{
+    CHECK_AND_RETURN(lastTarget_ == INJECT_TO_VOICE_COMMUNICATION_CAPTURE);
+    for (auto &capInfo : captureInfos_) {
+        CHECK_AND_CONTINUE(innerCapIdToDupStreamCallbackMap_.find(capInfo.first) !=
+            innerCapIdToDupStreamCallbackMap_.end());
+        innerCapIdToDupStreamCallbackMap_[capInfo.first]->GetDupRingBuffer()->ResetBuffer();
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

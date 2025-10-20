@@ -278,6 +278,31 @@ HWTEST(AudioPolicyUnitTest, SetStreamMute_001, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
+* @tc.number: OnReceiveEvent_001
+* @tc.desc  : Test AudioPolicyServer::OnReceiveEvent
+*/
+HWTEST(AudioPolicyUnitTest, OnReceiveEvent_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(audioPolicyServer, nullptr);
+
+    EventFwk::CommonEventData eventData;
+    OHOS::EventFwk::Want want;
+    want.SetAction("usual.event.dms.cast_plugged_changed");
+    eventData.SetWant(want);
+    eventData.SetData("0");
+    audioPolicyServer->OnReceiveEvent(eventData);
+    EXPECT_EQ(eventData.GetData(), "0");
+
+    eventData.SetData("1");
+    audioPolicyServer->OnReceiveEvent(eventData);
+    EXPECT_EQ(eventData.GetData(), "1");
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_001
 * @tc.desc  : Test CheckAudioSessionStrategy.
 */
@@ -3616,6 +3641,26 @@ HWTEST(AudioPolicyUnitTest, GetStreamUsagesByVolumeType_001, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 }
 
+HWTEST(AudioPolicyUnitTest, SelectPrivateDevice_01, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    int32_t result = server->SelectPrivateDevice();
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: ForceSelectDevice_01
+* @tc.desc  : Test ForceSelectDevice.
+*/
+HWTEST(AudioPolicyUnitTest, ForceSelectDevice_01, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    sptr<AudioRendererFilter> filter{nullptr};
+    int32_t result = server->ForceSelectDevice(31, "11:22", filter);
+    EXPECT_EQ(result, SUCCESS);
+}
+
 /**
  * @tc.name  : Test AudioPolicyServer
  * @tc.number: SetQueryDeviceVolumeBehaviorCallback_001
@@ -3714,17 +3759,17 @@ HWTEST(AudioPolicyUnitTest, CheckAndGetApiVersion_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetBundleNameandGetBundleInfo.
-* @tc.number: GetBundleNameandGetBundleInfo_001
-* @tc.desc  : GetBundleNameandGetBundleInfo.
+* @tc.name  : Test GetBundleNameFromUidandGetBundleInfoFromUid.
+* @tc.number: GetBundleNameFromUidandGetBundleInfoFromUid_001
+* @tc.desc  : GetBundleNameFromUidandGetBundleInfoFromUid.
 */
-HWTEST(AudioPolicyUnitTest, GetBundleNameandGetBundleInfo_001, TestSize.Level1)
+HWTEST(AudioPolicyUnitTest, GetBundleNameFromUidandGetBundleInfoFromUid_001, TestSize.Level1)
 {
-    std::string callerName = AudioBundleManager::GetBundleName();
+    std::string callerName = AudioBundleManager::GetBundleNameFromUid(666);
     EXPECT_EQ(callerName, "");
-    AppExecFwk::BundleInfo bundleInfo = AudioBundleManager::GetBundleInfo();
-    bundleInfo = AudioBundleManager::GetBundleInfo();
-    callerName = AudioBundleManager::GetBundleName();
+    AppExecFwk::BundleInfo bundleInfo = AudioBundleManager::GetBundleInfoFromUid(666);
+    bundleInfo = AudioBundleManager::GetBundleInfoFromUid(666);
+    callerName = AudioBundleManager::GetBundleNameFromUid(666);
     EXPECT_EQ(callerName, "");
 }
 } // AudioStandard

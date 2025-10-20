@@ -14,12 +14,12 @@
  */
 
 /**
- * @addtogroup OHAudio
+ * @addtogroup AudioSuiteEngine
  * @{
  *
  * @brief Provide the definition of the C interface for the audio module.
  *
- * @syscap SystemCapability.Multimedia.Audio.Core
+ * @syscap SystemCapability.Multimedia.Audio.SuiteEngine
  *
  * @since 22
  * @version 1.0
@@ -31,7 +31,7 @@
  * @brief Declare underlying data structure.
  *
  * @library libohaudio.so
- * @syscap SystemCapability.Multimedia.Audio.Core
+ * @syscap SystemCapability.Multimedia.Audio.SuiteEngine
  * @since 22
  * @version 1.0
  */
@@ -53,80 +53,88 @@ extern "C" {
  */
 typedef enum {
     /**
-     * input node type.
+     * default input node type, this input node type support get audio data from application.
      *
      * @since 22
      */
     INPUT_NODE_TYPE_DEFAULT = 1,
     /**
-     * output node type.
+     * default output node type, this output node type support provide audio data to application .
      *
      * @since 22
      */
     OUT_NODE_TYPE_DEFAULT = 101,
     /**
      * Equalization node type.
+     * The audio format output by the equalizer node is as follows:
+     * Sample rate: 48000 Hz.
+     * Sample format: {@link AUDIO_SAMPLE_S16LE}.
+     * Channels: 2.
      *
      * @since 22
      */
     EFFECT_NODE_TYPE_EQUALIZER = 201,
     /**
      * Noise reduction node type.
+     * The audio format output by the noise reduction node is as follows:
+     * Sample rate: 16000 Hz.
+     * Sample format: {@link AUDIO_SAMPLE_S16LE}.
+     * Channels: 1.
      *
      * @since 22
      */
     EFFECT_NODE_TYPE_NOISE_REDUCTION = 202,
     /**
-     * Sound field node type.
+     * Sound field node type. Support sound field type {@link OH_SoundFieldType}.
+     * The audio format output by the sound field node is as follows:
+     * Sample rate: 48000 Hz.
+     * Sample format: {@link AUDIO_SAMPLE_S16LE}.
+     * Channels: 2.
      *
      * @since 22
      */
     EFFECT_NODE_TYPE_SOUND_FIELD = 203,
     /**
-     * Audio Separation node type.
+     * Audio Separation node type, it can only connect to output node.
+     * The audio format output by the scene effect node is as follows:
+     * Sample rate: 48000 Hz.
+     * Sample format: {@link AUDIO_SAMPLE_F32LE}.
+     * Channels: 4(First 2 channels for vocals; last 2 channels for accompaniment).
      *
      * @since 22
      */
     EFFECT_MULTII_OUTPUT_NODE_TYPE_AUDIO_SEPARATION = 204,
     /**
-     * Voice beautifier node type.
+     * Voice beautifier node type. Support beautifier type{@link OH_VoiceBeautifierType}.
+     * The audio format output by the voice beautifier node is as follows:
+     * Sample rate: 48000 Hz.
+     * Sample format: {@link AUDIO_SAMPLE_S16LE}.
+     * Channels: 2.
      *
      * @since 22
      */
     EFFECT_NODE_TYPE_VOICE_BEAUTIFIER = 205,
     /**
      * Scene effect node type.
+     * The audio format output by the scene effect node is as follows:
+     * Sample rate: 48000 Hz.
+     * Sample format: {@link AUDIO_SAMPLE_S16LE}.
+     * Channels: 2.
      *
      * @since 22
      */
     EFFECT_NODE_TYPE_ENVIRONMENT_EFFECT = 206,
     /**
      * Audio mixer node type.
+     * The audio format output by the scene effect node is as follows:
+     * Sample rate: The highest sampling rate in the input sampling rate.
+     * Sample format: {@link AUDIO_SAMPLE_F32LE}.
+     * Channels: 2.
      *
      * @since 22
      */
     EFFECT_NODE_TYPE_AUDIO_MIXER = 207,
 } OH_AudioNode_Type;
-
-/**
- * @brief Define audio node enable status, This property is only supported for effect nodes.
- *
- * @since 22
- */
-typedef enum {
-    /**
-     * input node type.
-     *
-     * @since 22
-     */
-    AUDIOSUITE_NODE_ENABLE = 1,
-    /**
-     * input node type.
-     *
-     * @since 22
-     */
-    AUDIOSUITE_NODE_DISABLE = 2,
-} OH_AudioNodeEnable;
 
 /**
  * @brief Define pipeline work mode
@@ -142,7 +150,7 @@ typedef enum {
     AUDIOSUITE_PIPELINE_EDIT_MODE = 1,
     /**
      * If you need to play audio after effect processing, you should select this mode.
-     * In real-time rendering mode, the pipeline supports EQ effect processing.
+     * In real-time rendering mode, the pipeline only supports EQ effect processing.
      *
      * @since 22
      */
@@ -168,29 +176,6 @@ typedef enum {
      */
     AUDIOSUITE_PIPELINE_RUNNING = 2,
 } OH_AudioSuite_PipelineState;
-
-/**
- * @brief Define pipeline processing state. When the pipeline is in the running state,
- *        the application calls the OH_AudioSuiteEngine_RenderFrame interface to process the raw data.
- *        At this point, the pipeline is in the AUDIOSUITE_PIPELINE_PROCESSING state.
- *        Once all the raw data has been processed, the pipeline transitions to the AUDIOSUITE_PIPELINE_FINISHED state.
- *
- * @since 22
- */
-typedef enum {
-    /**
-     * The pipeline is processing data.
-     *
-     * @since 22
-     */
-    AUDIOSUITE_PIPELINE_PROCESSING = 1,
-    /**
-     * The pipeline has completed data processing. .
-     *
-     * @since 22
-     */
-    AUDIOSUITE_PIPELINE_FINISHED = 2,
-} OH_AudioSuite_PipelineProcessState;
 
 /**
  * @brief Define the result of the function execution.
@@ -271,52 +256,6 @@ typedef enum {
      */
     AUDIOSUITE_ERROR_REQUIRED_PARAMETERS_MISSED = 11,
 } OH_AudioSuite_Result;
-/**
- * @brief Define the result of the callback function.
- *
- * @since 22
- */
-typedef enum {
-    /**
-     * @Result of audio data callabck is invalid.
-     *
-     * @since 22
-     */
-    AUDIOSUITE_DATA_CALLBACK_RESULT_INVALID = -1,
-    /**
-     * @Result of audio data callabck is valid.
-     *
-     * @since 22
-     */
-    AUDIOSUITE_DATA_CALLBACK_RESULT_VALID = 0,
-} OH_AudioSuite_Callback_Result;
-
-/**
- * @brief The port of a node refers to the input or output port that connects this node to other nodes.
- *        Most nodes have only one outport, with the type set to default.
- *
- * @since 22
- */
-typedef enum {
-    /**
-     * @default type.
-     *
-     * @since 22
-     */
-    AUDIO_NODE_DEFAULT_OUTPORT_TYPE = 0,
-    /**
-     * @human sound type.
-     *
-     * @since 22
-     */
-    AUDIO_NODE_HUMAN_SOUND_OUTPORT_TYPE = 1,
-    /**
-     * @background sound type.
-     *
-     * @since 22
-     */
-    AUDIO_NODE_BACKGROUND_SOUND_OUTPORT_TYPE = 2,
-} OH_AudioNode_Port_Type;
 
 /**
  * @brief Define the audio sample format.
@@ -371,6 +310,84 @@ typedef enum {
 } OH_Audio_EncodingType;
 
 /**
+ * @brief Define the audio sample rate.
+ *
+ * @since 22
+ */
+typedef enum {
+    /**
+     * 8kHz sample rate.
+     * @since 22
+     */
+    SAMPLE_RATE_8000 = 8000,
+    /**
+     * 11.025kHz sample rate.
+     * @since 22
+     */
+    SAMPLE_RATE_11025 = 11025,
+    /**
+     * 12kHz sample rate.
+     * @since 22
+     */
+    SAMPLE_RATE_12000 = 12000,
+    /**
+     * 16kHz sample rate.
+     * @since 22
+     */
+    SAMPLE_RATE_16000 = 16000,
+    /**
+     * 22.05kHz sample rate.
+     * @since 22
+     */
+    SAMPLE_RATE_22050 = 22050,
+    /**
+     * 24kHz sample rate.
+     * @since 22
+     */
+    SAMPLE_RATE_24000 = 24000,
+    /**
+     * 32kHz sample rate.
+     * @since 22
+     */
+    SAMPLE_RATE_32000 = 32000,
+    /**
+     * 44.1kHz sample rate.
+     * @since 22
+     */
+    SAMPLE_RATE_44100 = 44100,
+    /**
+     * 48kHz sample rate.
+     * @since 22
+     */
+    SAMPLE_RATE_48000 = 48000,
+    /**
+     * 64kHz sample rate.
+     * @since 22
+     */
+    SAMPLE_RATE_64000 = 64000,
+    /**
+     * 88.2kHz sample rate.
+     * @since 22
+     */
+    SAMPLE_RATE_88200 = 88200,
+    /**
+     * 96kHz sample rate.
+     * @since 22
+     */
+    SAMPLE_RATE_96000 = 96000,
+    /**
+     * 176.4kHz sample rate.
+     * @since 22
+     */
+    SAMPLE_RATE_176400 = 176400,
+    /**
+     * 192kHz sample rate.
+     * @since 22
+     */
+    SAMPLE_RATE_192000 = 192000
+} OH_Audio_SampleRate;
+
+/**
  * @brief Define the audio format info structure, used to describe basic audio format.
  *
  * @since 22
@@ -381,7 +398,7 @@ typedef struct OH_AudioFormat {
      *
      * @since 22
      */
-    int32_t samplingRate;
+    OH_Audio_SampleRate samplingRate;
     /**
      * @brief Audio channel layout.
      *
@@ -408,6 +425,11 @@ typedef struct OH_AudioFormat {
     OH_Audio_SampleFormat sampleFormat;
 } OH_AudioFormat;
 
+/**
+ * @brief Define the audio data array structure,
+ * This structure is used to get the processed audio data after acquisition processing during multi-channel rendering.
+ * @since 22
+ */
 typedef struct OH_AudioDataArray {
     /**
      * @brief Audio audioDataArray mail.
@@ -428,68 +450,6 @@ typedef struct OH_AudioDataArray {
      */
     int32_t requestFrameSize;
 } OH_AudioDataArray;
-
-/**
- * @brief Define the equalizer mode.
- *
- * @since 22
- */
-typedef enum {
-    /**
-     * Default equalization effect
-     *
-     * @since 22
-     */
-    EQUALIZER_DEFAULT_MODE = 1,
-    /**
-     * Ballad equalization effect
-     *
-     * @since 22
-     */
-    EQUALIZER_BALLADS_MODE = 2,
-    /**
-     * Chinese style equalization effect.
-     *
-     * @since 22
-     */
-    EQUALIZER_CHINESE_STYLE_MODE = 3,
-    /**
-     * Classic equalization effect
-     *
-     * @since 22
-     */
-    EQUALIZER_CLASSICAL_MODE = 4,
-    /**
-     * Dance music equalization effect
-     *
-     * @since 22
-     */
-    EQUALIZER_DANCE_MUSIC_MODE = 5,
-    /**
-     * Jazz equalization effect
-     *
-     * @since 22
-     */
-    EQUALIZER_JAZZ_MODE = 6,
-    /**
-     * Pop equalization effect
-     *
-     * @since 22
-     */
-    EQUALIZER_POP_MODE = 7,
-    /**
-     * R&B equalization effect
-     *
-     * @since 22
-     */
-    EQUALIZER_RB_MODE = 8,
-    /**
-     * Rock equalization effect
-     *
-     * @since 22
-     */
-    EQUALIZER_ROCK_MODE = 9,
-} OH_EqualizerMode;
 
 /**
  * @brief Define the sound field type.
@@ -614,12 +574,86 @@ typedef enum {
 
 /**
  * @brief Define equalizer frequency band gains type
- *
+ * The equalizer supports gain adjustment for 10 specific frequencies.
+ * Frequencies: 31 Hz, 62 Hz, 125 Hz, 250 Hz, 500 Hz, 1 kHz, 2 kHz, 4 kHz, 8 kHz, 16 kHz.
+ * Gain range for each frequency is [-10, 10](unit: dB).
  * @since 22
  */
 typedef struct OH_EqualizerFrequencyBandGains {
     int32_t gains[EQUALIZER_BAND_NUM];
 } OH_EqualizerFrequencyBandGains;
+
+/**
+ * Default equalization effect band gains.
+ * Gains is {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}.
+ *
+ * @since 22
+ */
+extern const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_DEFAULT;
+
+/**
+ * Ballad equalization effect band gains.
+ * Gains is {3, 5, 2, -4, 1, 2, -3, 1, 4, 5}.
+ *
+ * @since 22
+ */
+extern const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_BALLADS;
+
+/**
+ * Chinese style equalization effect band gains.
+ * Gains is {0, 0, 2, 0, 0, 4, 4, 2, 2, 5}.
+ *
+ * @since 22
+ */
+extern const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_CHINESE_STYLE;
+
+/**
+ * Classic equalization effect band gains.
+ * Gains is {2, 3, 2, 1, 0, 0, -5, -5, -5, -6}.
+ *
+ * @since 22
+ */
+extern const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_CLASSICAL;
+
+/**
+ * Dance music equalization effect band gains.
+ * Gains is {4, 3, 2, -3, 0, 0, 5, 4, 2, 0}.
+ *
+ * @since 22
+ */
+extern const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_DANCE_MUSIC;
+
+/**
+ * Jazz equalization effect band gains.
+ * Gains is {2, 0, 2, 3, 6, 5, -1, 3, 4, 4}.
+ *
+ * @since 22
+ */
+extern const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_JAZZ;
+
+/**
+ * Pop equalization effect band gains.
+ * Gains is {3, 5, 2, -4, 1, 2, -3, 1, 4, 5}.
+ *
+ * @since 22
+ */
+extern const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_POP;
+
+/**
+ * R&B equalization effect band gains.
+ * Gains is {3, 5, 2, -4, 1, 2, -3, 1, 4, 5}.
+ *
+ * @since 22
+ */
+extern const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_RB;
+
+/**
+ * Rock equalization effect band gains.
+ * Gains is {3, 5, 2, -4, 1, 2, -3, 1, 4, 5}.
+ *
+ * @since 22
+ */
+extern const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_ROCK;
 
 /**
  * @brief Declare the audio engine.

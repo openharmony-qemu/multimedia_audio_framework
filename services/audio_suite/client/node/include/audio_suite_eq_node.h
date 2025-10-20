@@ -19,16 +19,6 @@
 #include "audio_suite_eq_algo_interface_impl.h"
 #include "audio_suite_process_node.h"
 
-const std::string EQUALIZER_DEFAULT_VALUE = "0:0:0:0:0:0:0:0:0:0";
-const std::string EQUALIZER_POP_VALUE = "5:2:1:-1:-5:-5:-2:1:2:4";
-const std::string EQUALIZER_CLASSICAL_VALUE = "2:3:2:1:0:0:-5:-5:-5:-6";
-const std::string EQUALIZER_JAZZ_VALUE = "2:0:2:3:6:5:-1:3:4:4";
-const std::string EQUALIZER_ROCK_VALUE = "6:4:4:2:0:1:3:3:5:4";
-const std::string EQUALIZER_RB_VALUE = "1:4:5:3:-2:-2:2:3:5:5";
-const std::string EQUALIZER_BALLADS_VALUE = "3:5:2:-4:1:2:-3:1:4:5";
-const std::string EQUALIZER_DANCE_MUSIC_VALUE = "4:3:2:-3:0:0:5:4:2:0";
-const std::string EQUALIZER_CHINESE_STYLE_VALUE = "0:0:2:0:0:4:4:2:2:5";
-
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
@@ -56,7 +46,6 @@ private:
     std::vector<uint8_t *> tmpin_;
     std::vector<uint8_t *> tmpout_;
     std::string eqValue_;
-    std::string currentEqMode_;
     std::shared_ptr<AudioSuiteEqAlgoInterfaceImpl> eqAlgoInterfaceImpl_;
 };
 

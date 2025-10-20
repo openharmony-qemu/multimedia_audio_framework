@@ -24,6 +24,7 @@
 #include <string>
 #include <string_view>
 #include <queue>
+#include "audio_schedule.h"
 namespace OHOS {
 namespace AudioStandard {
 class AudioTaskLoop {
@@ -113,6 +114,7 @@ public:
         if (loop_ != nullptr) {
             auto strongRef = loop_;
             std::thread loopThread([strongRef] () {
+                ScheduleReportData(getpid(), gettid(), "");
                 strongRef->Loop();
             });
             pthread_setname_np(loopThread.native_handle(), threadName.c_str());

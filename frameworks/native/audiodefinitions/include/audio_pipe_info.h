@@ -100,6 +100,11 @@ public:
             (routeFlag_ == AUDIO_OUTPUT_FLAG_NORMAL) : (routeFlag_ == AUDIO_INPUT_FLAG_NORMAL);
     }
 
+    bool IsRenderPipeNeedMoveToNormal() const
+    {
+        return ((routeFlag_ & AUDIO_OUTPUT_FLAG_MULTICHANNEL) || (routeFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER));
+    }
+
     bool IsSameAdapter(const std::string &targetAdapterName) const
     {
         return adapterName_ == targetAdapterName;

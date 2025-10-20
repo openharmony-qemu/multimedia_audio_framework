@@ -122,6 +122,7 @@ AudioProcessInServer::~AudioProcessInServer()
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_INVALID);
     }
+
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_RELEASE);
     AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
 }
@@ -364,14 +365,20 @@ int32_t AudioProcessInServer::StartInner()
         audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START, false);
     }
 
-    if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
-        CoreServiceHandler::GetInstance().RebuildCaptureInjector(sessionId_);
-    }
+    RebuildCaptureInjector();
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
     AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId_, processConfig_.appInfo.appTokenId);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_START);
     HILOG_COMM_INFO("Start in server success!");
     return SUCCESS;
+}
+
+void AudioProcessInServer::RebuildCaptureInjector()
+{
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD &&
+        processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        CoreServiceHandler::GetInstance().RebuildCaptureInjector(sessionId_);
+    }
 }
 
 int32_t AudioProcessInServer::Pause(bool isFlush)
@@ -492,6 +499,7 @@ int32_t AudioProcessInServer::Stop(int32_t stage)
 
 int32_t AudioProcessInServer::Release(bool isSwitchStream)
 {
+    AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited or already released");
     {
         std::lock_guard lock(scheduleGuardsMutex_);
@@ -533,6 +541,8 @@ void ProcessDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
     CHECK_AND_RETURN_LOG(processHolder_ != nullptr, "processHolder_ is null.");
     int32_t ret = processHolder_->OnProcessRelease(processInServer_);
     AUDIO_INFO_LOG("OnRemoteDied ret: %{public}d %{public}" PRId64 "", ret, createTime_);
+    CHECK_AND_RETURN_LOG(processInServer_ != nullptr, "processInServer_ is null.");
+    AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processInServer_->GetSessionId());
 }
 
 int32_t AudioProcessInServer::RegisterProcessCb(const sptr<IRemoteObject>& object)

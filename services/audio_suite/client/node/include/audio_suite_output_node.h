@@ -34,7 +34,6 @@ public:
     int32_t DeInit() override;
     int32_t Flush() override;
     void SetAudioNodeFormat(AudioFormat audioFormat) override;
-    int32_t Connect(const std::shared_ptr<AudioNode> &preNode, AudioNodePortType type) override;
     int32_t Connect(const std::shared_ptr<AudioNode> &preNode) override;
     int32_t DisConnect(const std::shared_ptr<AudioNode> &preNode) override;
 
@@ -44,6 +43,7 @@ public:
         int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag);
 
 private:
+    int32_t DoProcessDoubleFrame();
     int32_t DoProcessParamCheck(uint8_t **audioDataArray, int32_t arraySize,
         int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag);
     int32_t FormatConversion(float *inData, size_t inDataLen, uint8_t *outData, size_t outDataSize);
@@ -77,6 +77,11 @@ private:
     DataFormat outFormat_;
     std::vector<float> rateOutput_;
     std::vector<float> channelOutput_;
+
+    std::vector<std::vector<float>> tmpInput_;
+    std::vector<AudioSuitePcmBuffer *> inputsPcmbuffer_;
+    uint32_t inputFrameDataLen_;
+    uint32_t frameCount_;
 };
 
 }  // namespace AudioSuite

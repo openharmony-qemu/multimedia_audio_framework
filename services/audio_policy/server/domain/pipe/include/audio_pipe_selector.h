@@ -41,7 +41,7 @@ private:
     void ScanPipeListForStreamDesc(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfoList,
         std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void UpdateProcessConcurrency(AudioPipeType existingPipe, AudioPipeType commingPipe,
-                                  ConcurrencyAction &action);
+        ConcurrencyAction &action);
     bool ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor> existingStream,
         std::shared_ptr<AudioStreamDescriptor> incomingStream,
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove);
@@ -60,6 +60,7 @@ private:
         std::shared_ptr<AudioStreamDescriptor> streamDescB);
     void DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     void ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
+        std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo,
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     void DecidePipesAndStreamAction(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
         std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo);
@@ -72,8 +73,10 @@ private:
         std::shared_ptr<AudioPipeInfo> &pipe);
     void ProcessModemCommunicationConcurrency(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsMoveToNormal);
-    void CheckAndHandleOffloadConcedeScene(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void SetOriginalFlagForcedNormalIfNeed(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void ProcessRendererAndCapturerConcurrency(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    bool IsNeedTempMoveToNormal(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo);
 
     AudioPolicyConfigManager& configManager_;
 };

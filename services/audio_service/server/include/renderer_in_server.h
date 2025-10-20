@@ -155,6 +155,7 @@ public:
     int32_t InitSoftLink(int32_t innerCapId);
     int32_t DestroySoftLink(int32_t innerCapId);
     int32_t InitSoftLinkVolume(std::shared_ptr<HPAE::IHpaeSoftLink> softLinkPtr);
+    void RemoveIdForInjector();
     int32_t SetTarget(RenderTarget target, int32_t &ret);
 public:
     const AudioProcessConfig processConfig_;
@@ -205,6 +206,7 @@ private:
     void OnWriteDataFinish();
     void PauseInner();
     void InitDupBufferInner(int32_t innerCapId);
+    void ClearInnerCapBufferForInject();
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;

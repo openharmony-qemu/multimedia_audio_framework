@@ -37,7 +37,9 @@ constexpr int BUNDLE_MGR_SERVICE_SYS_ABILITY_ID = 401;
 
 namespace OHOS {
 namespace AudioStandard {
+std::mutex AudioBundleManager::bundleNameMapMutex_;
 std::mutex AudioBundleManager::bundleInfoMapMutex_;
+std::unordered_map<int32_t, std::string> AudioBundleManager::bundleNameMap_;
 std::unordered_map<int32_t, AppExecFwk::BundleInfo> AudioBundleManager::bundleInfoMap_;
 
 int32_t AudioBundleManager::GetUidByBundleName(std::string bundleName, int userId)
@@ -64,18 +66,18 @@ int32_t AudioBundleManager::GetUidByBundleName(std::string bundleName, int userI
 
 std::string AudioBundleManager::GetBundleName()
 {
-    std::lock_guard<std::mutex> lock(bundleInfoMapMutex_);
-    int32_t callingUid = IPCSkeleton::GetCallingUid();
-    auto it = bundleInfoMap_.find(callingUid);
-    if (it != bundleInfoMap_.end()) {
-        return bundleInfoMap_[callingUid].name;
-    }
     std::string bundleName = GetBundleNameFromUid(IPCSkeleton::GetCallingUid());
     return bundleName;
 }
 
 std::string AudioBundleManager::GetBundleNameFromUid(int32_t callingUid)
 {
+    std::lock_guard<std::mutex> lock(bundleNameMapMutex_);
+    auto it = bundleNameMap_.find(callingUid);
+    if (it != bundleNameMap_.end()) {
+        return it->second;
+    }
+
     AudioXCollie audioXCollie("AudioBundleManager::GetBundleNameFromUid",
         GET_BUNDLE_TIME_OUT_SECONDS, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::string bundleName = "";
@@ -93,30 +95,29 @@ std::string AudioBundleManager::GetBundleNameFromUid(int32_t callingUid)
     WatchTimeout reguard("bundleMgrProxy->GetBundleNameForUid:GetBundleNameFromUid");
     bundleMgrProxy->GetBundleNameForUid(callingUid, bundleName);
     reguard.CheckCurrTimeout();
-
+    bundleNameMap_[callingUid] = bundleName;
     return bundleName;
+}
+
+void AudioBundleManager::RemoveBundleNameByUid(int32_t callingUid)
+{
+    std::lock_guard<std::mutex> lock(bundleNameMapMutex_);
+    bundleNameMap_.erase(callingUid);
 }
 
 AppExecFwk::BundleInfo AudioBundleManager::GetBundleInfo()
 {
-    std::lock_guard<std::mutex> lock(bundleInfoMapMutex_);
-
-    int32_t callingUid = IPCSkeleton::GetCallingUid();
-    auto it = bundleInfoMap_.find(callingUid);
-    if (it == bundleInfoMap_.end()) {
-        bundleInfoMap_[callingUid] = GetBundleInfoFromUid(callingUid);
-    }
-    return bundleInfoMap_[callingUid];
-}
-
-void AudioBundleManager::RemoveBundleInfoByUid(int32_t callingUid)
-{
-    std::lock_guard<std::mutex> lock(bundleInfoMapMutex_);
-    bundleInfoMap_.erase(callingUid);
+    return GetBundleInfoFromUid(IPCSkeleton::GetCallingUid());
 }
 
 AppExecFwk::BundleInfo AudioBundleManager::GetBundleInfoFromUid(int32_t callingUid)
 {
+    std::lock_guard<std::mutex> lock(bundleInfoMapMutex_);
+    auto it = bundleInfoMap_.find(callingUid);
+    if (it != bundleInfoMap_.end()) {
+        return it->second;
+    }
+
     AudioXCollie audioXCollie("AudioBundleManager::GetBundleInfoFromUid",
         GET_BUNDLE_TIME_OUT_SECONDS, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::string bundleName = "";
@@ -143,8 +144,14 @@ AppExecFwk::BundleInfo AudioBundleManager::GetBundleInfoFromUid(int32_t callingU
         bundleInfo,
         AppExecFwk::Constants::ALL_USERID);
     reguard.CheckCurrTimeout();
-
+    bundleInfoMap_[callingUid] = bundleInfo;
     return bundleInfo;
+}
+
+void AudioBundleManager::RemoveBundleInfoByUid(int32_t callingUid)
+{
+    std::lock_guard<std::mutex> lock(bundleInfoMapMutex_);
+    bundleInfoMap_.erase(callingUid);
 }
 } // namespace AudioStandard
 } // namespace OHOS

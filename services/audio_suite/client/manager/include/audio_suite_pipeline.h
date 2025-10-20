@@ -65,19 +65,15 @@ public:
     uint32_t GetPipelineId() override;
     int32_t CreateNode(AudioNodeBuilder builder) override;
     int32_t DestroyNode(uint32_t nodeId) override;
-    int32_t EnableNode(uint32_t nodeId, AudioNodeEnable audioNodeEnable) override;
-    int32_t GetNodeEnableStatus(uint32_t nodeId) override;
+    int32_t BypassEffectNode(uint32_t nodeId, bool bypass) override;
+    int32_t GetNodeBypassStatus(uint32_t nodeId) override;
     int32_t SetAudioFormat(uint32_t nodeId, AudioFormat audioFormat) override;
-    int32_t SetWriteDataCallback(uint32_t nodeId,
+    int32_t SetRequestDataCallback(uint32_t nodeId,
         std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback) override;
-    int32_t ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId,
-        AudioNodePortType srcPortType, AudioNodePortType destPortType) override;
     int32_t ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) override;
     int32_t DisConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) override;
-    int32_t InstallTap(uint32_t nodeId, AudioNodePortType portType,
-        std::shared_ptr<SuiteNodeReadTapDataCallback> callback) override;
-    int32_t RemoveTap(uint32_t nodeId, AudioNodePortType portType) override;
-    int32_t RenderFrame(uint8_t *audioData, int32_t frameSize, int32_t *writeLen, bool *finishedFlag) override;
+    int32_t RenderFrame(
+        uint8_t *audioData, int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag) override;
     int32_t MultiRenderFrame(
         uint8_t **audioDataArray, int arraySize,
         int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag) override;
@@ -99,11 +95,7 @@ private:
     int32_t DestroyNodeForRun(uint32_t nodeId, std::shared_ptr<AudioNode> node);
     bool CheckPipelineNode(uint32_t startNodeId);
     int32_t ConnectNodesForStop(uint32_t srcNodeId, uint32_t destNodeId,
-        std::shared_ptr<AudioNode> srcNode, std::shared_ptr<AudioNode> destNode, AudioNodePortType srcPortType);
-    int32_t ConnectNodesForStop(uint32_t srcNodeId, uint32_t destNodeId,
         std::shared_ptr<AudioNode> srcNode, std::shared_ptr<AudioNode> destNode);
-    int32_t ConnectNodesForRun(uint32_t srcNodeId, uint32_t destNodeId,
-        std::shared_ptr<AudioNode> srcNode, std::shared_ptr<AudioNode> destNode, AudioNodePortType srcPortType);
     int32_t ConnectNodesForRun(uint32_t srcNodeId, uint32_t destNodeId,
         std::shared_ptr<AudioNode> srcNode, std::shared_ptr<AudioNode> destNode);
     int32_t DisConnectNodesForRun(uint32_t srcNodeId, uint32_t destNodeId,

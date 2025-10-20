@@ -25,7 +25,7 @@ namespace AudioStandard {
 namespace HPAE {
 class HpaeOutputCluster : public IHpaeOutputCluster {
 public:
-    HpaeOutputCluster(HpaeNodeInfo &nodeInfo);
+    HpaeOutputCluster(HpaeNodeInfo nodeInfo);
     virtual ~HpaeOutputCluster();
     void DoProcess() override;
     bool Reset() override;

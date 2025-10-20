@@ -413,6 +413,10 @@ int32_t AudioRouterCenter::SetAudioDeviceRefinerCallback(const sptr<IRemoteObjec
     sptr<IStandardAudioRoutingManagerListener> listener = iface_cast<IStandardAudioRoutingManagerListener>(object);
     if (listener != nullptr) {
         audioDeviceRefinerCb_ = listener;
+        if (AudioCoreService::GetCoreService()->IsDistributeServiceOnline()) {
+            AUDIO_INFO_LOG("distribute service online");
+            listener->OnDistributedServiceOnline();
+        }
         return SUCCESS;
     } else {
         return ERROR;

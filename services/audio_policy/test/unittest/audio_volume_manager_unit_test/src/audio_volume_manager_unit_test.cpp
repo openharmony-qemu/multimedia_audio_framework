@@ -1355,6 +1355,32 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_068, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_VolumeLimit_001
+* @tc.desc  : Test volume limit interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_VolumeLimit_001, TestSize.Level1)
+{
+    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
+    ASSERT_TRUE(audioVolumeManager != nullptr);
+
+    int32_t zoneId = 0;
+    int32_t volumeLevel = 2;
+    AudioStreamType streamType = STREAM_VOICE_CALL;
+
+    auto &manager = static_cast<AudioAdapterManager &>(audioVolumeManager->audioPolicyManager_);
+    float oldLimit = manager.volumeLimit_.load();
+    audioVolumeManager->audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
+    audioVolumeManager->CheckReduceOtherActiveVolume(STREAM_MUSIC, volumeLevel);
+    audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel, zoneId);
+    audioVolumeManager->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
+    audioVolumeManager->CheckReduceOtherActiveVolume(STREAM_MUSIC, volumeLevel);
+    audioVolumeManager->CheckReduceOtherActiveVolume(streamType, volumeLevel);
+    float newLimit = manager.volumeLimit_.load();
+    EXPECT_NE(newLimit, oldLimit);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
 * @tc.number: AudioVolumeManager_069
 * @tc.desc  : Test CheckRestoreDeviceVolume interface.
 */
@@ -1393,5 +1419,25 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_070, TestSize.Level1)
     audioVolumeManager.SetRestoreVolumeLevel(DEVICE_TYPE_WIRED_HEADSET, curVolume);
     EXPECT_EQ(audioVolumeManager.wiredRestoreVol_, curVolume);
 }
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: SetVolumeForSwitchDevice_008
+* @tc.desc  : Test AudioVolumeManager::SetVolumeForSwitchDevice interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeForSwitchDevice_008, TestSize.Level1)
+{
+    auto avm = std::make_shared<AudioVolumeManager>();
+    AudioDeviceDescriptor desc;
+    avm->SetVolumeForSwitchDevice(desc, PORT_NONE, false);
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    avm->SetVolumeForSwitchDevice(desc, PORT_NONE, false);
+    avm->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    avm->SetVolumeForSwitchDevice(desc, PORT_NONE, false);
+    desc.deviceType_ = DEVICE_TYPE_SPEAKER;
+    int32_t ret = avm->SetVolumeForSwitchDevice(desc, PORT_NONE, false);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

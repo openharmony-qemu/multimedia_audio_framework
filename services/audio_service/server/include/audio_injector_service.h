@@ -26,7 +26,6 @@ public:
         static AudioInjectorService instance;
         return instance;
     }
-    void UpdateAudioInfo(AudioModuleInfo &info);
     int32_t PeekAudioData(const uint32_t sinkPortIndex, uint8_t *buffer, const size_t bufferSize,
         AudioStreamInfo &streamInfo);
     void SetSinkPortIdx(uint32_t sinkPortIdx);

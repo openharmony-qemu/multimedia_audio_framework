@@ -74,6 +74,8 @@ std::map<std::string, std::string> AudioIOHandleMap::sinkPortStrToClassStrMap_ =
     {PRIMARY_DIRECT_VOIP, DIRECT_VOIP_CLASS},
     {PRIMARY_MMAP_VOIP, MMAP_VOIP_CLASS},
     {MCH_PRIMARY_SPEAKER, MCH_CLASS},
+    {PRIMARY_MMAP, MMAP_CLASS},
+    {BLUETOOTH_A2DP_FAST, A2DP_FAST_CLASS}
 };
 
 void AudioIOHandleMap::DeInit()
@@ -320,12 +322,8 @@ int32_t AudioIOHandleMap::ReloadPortAndUpdateIOHandle(std::shared_ptr<AudioPipeI
 
     uint32_t paIndex = 0;
     ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().ReloadAudioPort(moduleInfo, paIndex);
-    CHECK_AND_RETURN_RET_LOG(ioHandle != HDI_INVALID_ID, ERR_INVALID_HANDLE,
-        "ReloadAudioPort failed ioHandle[%{public}u]", ioHandle);
-    CHECK_AND_RETURN_RET_LOG(paIndex != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
-        "ReloadAudioPort failed paId[%{public}u]", paIndex);
-    AUDIO_INFO_LOG("[reload-module] %{public}s, id:%{public}d, paIndex: %{public}u",
-        moduleInfo.name.c_str(), ioHandle, paIndex);
+    AUDIO_INFO_LOG("[reload-module] %{public}s, id:%{public}d, paIndex: %{public}u, pipeName: %{public}s",
+        moduleInfo.name.c_str(), ioHandle, paIndex, pipeInfo->name_.c_str());
 
     pipeInfo->id_ = ioHandle;
     pipeInfo->paIndex_ = paIndex;

@@ -1920,8 +1920,9 @@ ProcessClusterOperation AudioEffectChainManager::CheckProcessClusterInstances(co
         if (sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] == nullptr) {
             AUDIO_WARNING_LOG("scene type %{public}s has null process cluster", sceneTypeAndDeviceKey.c_str());
         } else {
-            AUDIO_INFO_LOG("process cluster already exist, current count: %{public}d, default count: %{public}d",
-                sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey], defaultEffectChainCount_);
+            AUDIO_INFO_LOG("processCluster %{public}s already exist, "
+                "current count is %{public}d, default count is %{public}d",
+                sceneType.c_str(), sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey], defaultEffectChainCount_);
             if (isDefaultEffectChainExisted_ && sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] ==
                 sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey]) {
                 return USE_DEFAULT_PROCESSCLUSTER;

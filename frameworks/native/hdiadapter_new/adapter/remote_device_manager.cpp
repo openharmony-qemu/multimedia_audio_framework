@@ -127,20 +127,22 @@ void RemoteDeviceManager::AllAdapterSetMicMute(bool isMute)
     AUDIO_INFO_LOG("not support");
 }
 
-void RemoteDeviceManager::SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
+int32_t RemoteDeviceManager::SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
     const std::string &condition, const std::string &value)
 {
 #ifdef FEATURE_DISTRIBUTE_AUDIO
     AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
 
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
-    CHECK_AND_RETURN_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
-        adapterName.c_str());
+    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, ERR_NULL_POINTER,
+        "adapter %{public}s is nullptr", adapterName.c_str());
     AudioExtParamKey hdiKey = AudioExtParamKey(key);
     int32_t ret = wrapper->adapter_->SetExtraParams(hdiKey, condition, value);
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "set param fail, error code: %{public}d", ret);
+    JUDGE_AND_ERR_LOG(ret != SUCCESS, "set param fail, error code: %{public}d", ret);
+    return ret;
 #else
     AUDIO_INFO_LOG("not support");
+    return ERR_DEVICE_NOT_SUPPORTED;
 #endif
 }
 

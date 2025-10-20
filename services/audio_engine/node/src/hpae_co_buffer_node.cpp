@@ -25,7 +25,6 @@ namespace AudioStandard {
 namespace HPAE {
 static constexpr int32_t DEFAULT_FRAME_LEN = 960;
 static constexpr int32_t MAX_CACHE_SIZE = 500;
-static constexpr int32_t DEFAULT_FRAME_LEN_MS = 20;
 static constexpr int32_t MS_PER_SECOND = 1000;
 static constexpr int32_t TEST_LATENCY = 280;
 static constexpr int32_t ENQUEUE_DONE_FRAME = 10;
@@ -198,7 +197,7 @@ void HpaeCoBufferNode::FillSilenceFramesInner(uint32_t latencyMs)
         BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(silenceData_.GetPcmDataBuffer()), frameSize};
         result = ringCache_->Enqueue(bufferWrap);
         CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Enqueue silence frame failed");
-        offset += DEFAULT_FRAME_LEN_MS;
+        offset += FRAME_LEN_20MS;
     }
     AUDIO_INFO_LOG("Filled %{public}u ms of silence frames", offset);
 }
@@ -229,7 +228,7 @@ void HpaeCoBufferNode::ProcessOutputFrameInner()
     const size_t requestDataLen = static_cast<size_t>(SAMPLE_RATE_48000) *
                                   static_cast<size_t>(STEREO) *
                                   sizeof(float) *
-                                  static_cast<size_t>(DEFAULT_FRAME_LEN_MS) /
+                                  static_cast<size_t>(FRAME_LEN_20MS) /
                                   static_cast<size_t>(MS_PER_SECOND);
     
     // check readable size

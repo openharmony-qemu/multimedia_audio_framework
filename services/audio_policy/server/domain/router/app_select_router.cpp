@@ -45,11 +45,14 @@ shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetCallRenderDevice(StreamUsa
 shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID,
     const uint32_t sessionID)
 {
+    vector<shared_ptr<AudioDeviceDescriptor>> allDevices =
+        AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(D_ALL_DEVICES);
     shared_ptr<AudioDeviceDescriptor> device =
         AudioDeviceManager::GetAudioDeviceManager().GetSelectedCaptureDevice(sessionID);
-    CHECK_AND_RETURN_RET(device == nullptr || device->deviceType_ == DEVICE_TYPE_NONE, device);
+    CHECK_AND_RETURN_RET(device == nullptr || device->deviceType_ == DEVICE_TYPE_NONE,
+        RouterBase::GetPairDevice(device, allDevices));
     device = AudioAffinityManager::GetAudioAffinityManager().GetCapturerDevice(clientUID);
-    return device;
+    return RouterBase::GetPairDevice(device, allDevices);
 }
 
 vector<std::shared_ptr<AudioDeviceDescriptor>> AppSelectRouter::GetRingRenderDevices(StreamUsage streamUsage,
@@ -62,18 +65,23 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> AppSelectRouter::GetRingRenderDev
 shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID,
     const uint32_t sessionID)
 {
+    vector<shared_ptr<AudioDeviceDescriptor>> allDevices =
+        AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(D_ALL_DEVICES);
     shared_ptr<AudioDeviceDescriptor> device =
         AudioDeviceManager::GetAudioDeviceManager().GetSelectedCaptureDevice(sessionID);
-    CHECK_AND_RETURN_RET(device == nullptr || device->deviceType_ == DEVICE_TYPE_NONE, device);
+    CHECK_AND_RETURN_RET(device == nullptr || device->deviceType_ == DEVICE_TYPE_NONE,
+        RouterBase::GetPairDevice(device, allDevices));
     device = AudioDeviceManager::GetAudioDeviceManager().GetOnlinePreferredInputDevice(sessionID);
     if (IsInSpecialScenario(sourceType)) {
         ConfigureDeviceForSpecialScenario(sourceType, device);
     }
-    CHECK_AND_RETURN_RET(device == nullptr || device->deviceType_ == DEVICE_TYPE_NONE, device);
+    CHECK_AND_RETURN_RET(device == nullptr || device->deviceType_ == DEVICE_TYPE_NONE,
+        RouterBase::GetPairDevice(device, allDevices));
     device = AudioUsrSelectManager::GetAudioUsrSelectManager().GetCapturerDevice(clientUID, sourceType);
-    CHECK_AND_RETURN_RET(device == nullptr || device->deviceType_ == DEVICE_TYPE_NONE, device);
+    CHECK_AND_RETURN_RET(device == nullptr || device->deviceType_ == DEVICE_TYPE_NONE,
+        RouterBase::GetPairDevice(device, allDevices));
     device = AudioAffinityManager::GetAudioAffinityManager().GetCapturerDevice(clientUID);
-    return device;
+    return RouterBase::GetPairDevice(device, allDevices);
 }
 
 shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID)
