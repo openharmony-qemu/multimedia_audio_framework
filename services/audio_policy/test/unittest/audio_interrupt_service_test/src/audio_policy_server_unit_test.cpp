@@ -3616,6 +3616,26 @@ HWTEST(AudioPolicyUnitTest, GetStreamUsagesByVolumeType_001, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 }
 
+HWTEST(AudioPolicyUnitTest, SelectPrivateDevice_01, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    int32_t result = server->SelectPrivateDevice();
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: ForceSelectDevice_01
+* @tc.desc  : Test ForceSelectDevice.
+*/
+HWTEST(AudioPolicyUnitTest, ForceSelectDevice_01, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    sptr<AudioRendererFilter> filter{nullptr};
+    int32_t result = server->ForceSelectDevice(31, "11:22", filter);
+    EXPECT_EQ(result, SUCCESS);
+}
+
 /**
  * @tc.name  : Test AudioPolicyServer
  * @tc.number: SetQueryDeviceVolumeBehaviorCallback_001

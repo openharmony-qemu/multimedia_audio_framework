@@ -1180,8 +1180,6 @@ void AudioDeviceStatus::OnPrivacyDeviceSelected()
     AUDIO_INFO_LOG("Entry");
     AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
         make_shared<AudioDeviceDescriptor>(), SYSTEM_UID, "OnPrivacyDeviceSelected");
-    AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
-        make_shared<AudioDeviceDescriptor>(), SYSTEM_UID, "OnPrivacyDeviceSelected");
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnPrivacyDeviceSelected",
         AudioStreamDeviceChangeReason::OVERRODE);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnPrivacyDeviceSelected",
