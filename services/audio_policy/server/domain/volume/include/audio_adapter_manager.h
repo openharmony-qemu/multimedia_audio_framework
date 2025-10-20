@@ -326,6 +326,7 @@ public:
     bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout);
     void UpdateOtherStreamVolume(AudioStreamType streamType);
     void SetVolumeLimit(float volume);
+    bool SetMaxVolumeForDpBoardcast();
 private:
     friend class PolicyCallbackImpl;
 

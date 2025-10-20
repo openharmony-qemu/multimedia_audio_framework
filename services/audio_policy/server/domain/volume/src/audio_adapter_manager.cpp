@@ -3210,5 +3210,17 @@ int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDev
     return SUCCESS;
 }
 
+bool AudioAdapterManager::SetMaxVolumeForDpBoardcast()
+{
+    auto desc = audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_DP);
+    CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "there is no dp device connected");
+    bool temp = (GetMaxVolumeLevel(STREAM_MUSIC, desc) == MAX_VOLUME_LEVEL) && !VolumeUtils::IsPCVolumeEnable();
+    CHECK_AND_RETURN_RET_LOG(temp, false, "current dp device need not max volume");
+    volumeDataMaintainer_.SaveVolumeToMap(desc, STREAM_MUSIC, GetMaxVolumeLevel(STREAM_MUSIC, desc));
+    volumeDataMaintainer_.SaveVolumeToMap(desc, STREAM_VOICE_CALL, GetMaxVolumeLevel(STREAM_VOICE_CALL, desc));
+    volumeDataMaintainer_.SaveVolumeToMap(desc, STREAM_VOICE_ASSISTANT,
+        GetMaxVolumeLevel(STREAM_VOICE_ASSISTANT, desc));
+    return true;
+}
 } // namespace AudioStandard
 } // namespace OHOS
