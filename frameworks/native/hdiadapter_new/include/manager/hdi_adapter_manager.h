@@ -48,11 +48,11 @@ public:
     void ReleaseDeviceManager(HdiDeviceManagerType type);
 
     uint32_t GetId(HdiIdBase base, HdiIdType type, const std::string &info = HDI_ID_INFO_DEFAULT,
-        bool isResident = false);
+        bool isResident = false, bool tryCreate = true);
     uint32_t GetRenderIdByDeviceClass(const std::string &deviceClass, const std::string &info = HDI_ID_INFO_DEFAULT,
-        bool isResident = false);
+        bool isResident = false, bool tryCreate = true);
     uint32_t GetCaptureIdByDeviceClass(const std::string &deviceClass, const SourceType sourceType,
-        const std::string &info = HDI_ID_INFO_DEFAULT, bool isResident = false);
+        const std::string &info = HDI_ID_INFO_DEFAULT, bool isResident = false, bool tryCreate = true);
     void ReleaseId(uint32_t &id);
 
     std::shared_ptr<IAudioRenderSink> GetRenderSink(uint32_t renderId, bool tryCreate = false);

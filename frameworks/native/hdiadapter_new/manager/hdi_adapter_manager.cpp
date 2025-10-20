@@ -73,7 +73,8 @@ void HdiAdapterManager::ReleaseDeviceManager(HdiDeviceManagerType type)
     deviceManagers_[type].reset();
 }
 
-uint32_t HdiAdapterManager::GetId(HdiIdBase base, HdiIdType type, const std::string &info, bool isResident)
+uint32_t HdiAdapterManager::GetId(HdiIdBase base, HdiIdType type, const std::string &info, bool isResident,
+    bool tryCreate)
 {
     uint32_t id = IdHandler::GetInstance().GetId(base, type, info);
     CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
@@ -81,7 +82,13 @@ uint32_t HdiAdapterManager::GetId(HdiIdBase base, HdiIdType type, const std::str
     if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
         IdHandler::GetInstance().IncInfoIdUseCount(id);
     }
-    CHECK_AND_RETURN_RET(isResident, id);
+    if (!isResident) {
+        CHECK_AND_RETURN_RET(!tryCreate, id);
+        if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
+            IdHandler::GetInstance().DecInfoIdUseCount(id);
+        }
+        return id;
+    }
     AUDIO_INFO_LOG("base: %{public}u, type: %{public}u, info: %{public}s, id: %{public}u", base, type, info.c_str(),
         id);
     IncRefCount(id);
@@ -89,7 +96,7 @@ uint32_t HdiAdapterManager::GetId(HdiIdBase base, HdiIdType type, const std::str
 }
 
 uint32_t HdiAdapterManager::GetRenderIdByDeviceClass(const std::string &deviceClass, const std::string &info,
-    bool isResident)
+    bool isResident, bool tryCreate)
 {
     uint32_t id = IdHandler::GetInstance().GetRenderIdByDeviceClass(deviceClass, info);
     AUDIO_INFO_LOG("Device class: %{public}s, info: %{public}s, id: %{public}u",
@@ -99,13 +106,19 @@ uint32_t HdiAdapterManager::GetRenderIdByDeviceClass(const std::string &deviceCl
     if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
         IdHandler::GetInstance().IncInfoIdUseCount(id);
     }
-    CHECK_AND_RETURN_RET(isResident, id);
+    if (!isResident) {
+        CHECK_AND_RETURN_RET(!tryCreate, id);
+        if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
+            IdHandler::GetInstance().DecInfoIdUseCount(id);
+        }
+        return id;
+    }
     IncRefCount(id);
     return id;
 }
 
 uint32_t HdiAdapterManager::GetCaptureIdByDeviceClass(const std::string &deviceClass, const SourceType sourceType,
-    const std::string &info, bool isResident)
+    const std::string &info, bool isResident, bool tryCreate)
 {
     uint32_t id = IdHandler::GetInstance().GetCaptureIdByDeviceClass(deviceClass, sourceType, info);
     AUDIO_INFO_LOG("Device class: %{public}s, sourceType: %{public}d, info: %{public}s, id: %{public}u",
@@ -115,7 +128,13 @@ uint32_t HdiAdapterManager::GetCaptureIdByDeviceClass(const std::string &deviceC
     if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
         IdHandler::GetInstance().IncInfoIdUseCount(id);
     }
-    CHECK_AND_RETURN_RET(isResident, id);
+    if (!isResident) {
+        CHECK_AND_RETURN_RET(!tryCreate, id);
+        if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
+            IdHandler::GetInstance().DecInfoIdUseCount(id);
+        }
+        return id;
+    }
     IncRefCount(id);
     return id;
 }
