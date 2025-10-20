@@ -119,7 +119,7 @@ private:
     bool paused_ = false;
     float leftVolume_ = DEFAULT_VOLUME_LEVEL;
     float rightVolume_ = DEFAULT_VOLUME_LEVEL;
-    uint32_t hdiRenderId_ = 0;
+    uint32_t hdiRenderId_ = HDI_INVALID_ID;
     struct IAudioRender *audioRender_ = nullptr;
     // for device switch
     std::mutex switchDeviceMutex_;

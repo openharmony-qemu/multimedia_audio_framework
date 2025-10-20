@@ -154,7 +154,7 @@ private:
     float leftVolume_ = DEFAULT_VOLUME_LEVEL;
     float rightVolume_ = DEFAULT_VOLUME_LEVEL;
     uint32_t openSpeaker_ = 0;
-    uint32_t hdiRenderId_ = 0;
+    uint32_t hdiRenderId_ = HDI_INVALID_ID;
     std::string adapterNameCase_ = "";
     struct IAudioRender *audioRender_ = nullptr;
     bool audioMonoState_ = false;

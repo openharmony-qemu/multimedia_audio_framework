@@ -37,7 +37,7 @@ typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioDeviceDescriptor RemoteAu
 class RemoteAudioRenderSink : public IAudioRenderSink, public IDeviceManagerCallback {
 public:
     struct RenderWrapper {
-        uint32_t hdiRenderId_ = 0;
+        uint32_t hdiRenderId_ = HDI_INVALID_ID;
         sptr<RemoteIAudioRender> audioRender_ = nullptr;
         FILE *dumpFile_ = nullptr;
         std::string dumpFileName_ = "";
