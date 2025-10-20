@@ -535,7 +535,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(Aud
     if (type == STREAM_ALL) {
         type = STREAM_MUSIC;
     }
-    if (Util::IsDualToneStreamType(volumeType)) {
+    if (Util::IsDualToneStreamType(volumeType) && !VolumeUtils::IsPCVolumeEnable()) {
         return audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_SPEAKER);
     }
     if (volumeTypeDeviceMap_.contains(type)
