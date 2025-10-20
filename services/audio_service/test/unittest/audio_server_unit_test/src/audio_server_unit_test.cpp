@@ -35,6 +35,9 @@ using namespace testing::ext;
 using OHOS::AudioStandard::SetSysPara;
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+    constexpr uint32_t APP_TOKEN_ID = 1;
+}
 const int32_t SYSTEM_ABILITY_ID = 3001;
 const bool RUN_ON_CREATE = false;
 constexpr int32_t INVALID_VALUE = -1;
@@ -2138,7 +2141,7 @@ HWTEST_F(AudioServerUnitTest, CheckInnerRecorderPermission_002, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     AudioProcessConfig config;
-    config.appInfo.appTokenId = 1;
+    config.appInfo.appTokenId = APP_TOKEN_ID;
     config.capturerInfo.sourceType = SOURCE_TYPE_REMOTE_CAST;
     EXPECT_EQ(audioServer->CheckInnerRecorderPermission(config), PERMISSION_GRANTED);
 
