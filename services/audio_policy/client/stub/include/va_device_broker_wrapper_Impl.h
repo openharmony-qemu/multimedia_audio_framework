@@ -15,7 +15,7 @@
 #ifndef VA_DEVICE_BROKER_WRAPPER_IMPL_H
 #define VA_DEVICE_BROKER_WRAPPER_IMPL_H
 
-#include "audio_policy_interface.h"
+#include "virtual_audio_interface.h"
 
 #include "iaudio_policy.h"
 #include "iservice_registry.h"

@@ -122,6 +122,7 @@ std::string AudioPolicyConfigData::GetVersion()
 std::shared_ptr<AdapterDeviceInfo> AudioPolicyConfigData::GetAdapterDeviceInfo(
     DeviceType type_, DeviceRole role_, const std::string &networkId_, uint32_t flags, int32_t a2dpOffloadFlag)
 {
+    std::lock_guard<std::mutex> lock(statusMutex_);
     // use primary to select device when in remote cast;
     DeviceType tempType = (type_ == DEVICE_TYPE_REMOTE_CAST ? DEVICE_TYPE_SPEAKER : type_);
     std::pair<DeviceType, DeviceRole> deviceMapKey = std::make_pair(tempType, role_);
@@ -168,6 +169,7 @@ std::shared_ptr<AdapterDeviceInfo> AudioPolicyConfigData::GetAdapterDeviceInfo(
 void AudioPolicyConfigData::UpdateDynamicStreamProps(const std::string adapterName, const std::string &pipeName,
     const std::list<std::shared_ptr<PipeStreamPropInfo>> &streamProps)
 {
+    std::lock_guard<std::mutex> lock(statusMutex_);
     CHECK_AND_RETURN_LOG(!streamProps.empty(), "streamProps is empty");
     AudioAdapterType adapterType = PolicyAdapterInfo::GetAdapterType(adapterName);
     CHECK_AND_RETURN_LOG(adapterInfoMap.count(adapterType) != 0, "adapter not exist");
@@ -195,6 +197,7 @@ void AudioPolicyConfigData::UpdateDynamicStreamProps(const std::string adapterNa
 
 void AudioPolicyConfigData::ClearDynamicStreamProps(const std::string adapterName, const std::string &pipeName)
 {
+    std::lock_guard<std::mutex> lock(statusMutex_);
     AudioAdapterType adapterType = PolicyAdapterInfo::GetAdapterType(adapterName);
     CHECK_AND_RETURN_LOG(adapterInfoMap.count(adapterType) != 0, "adapter not exist");
     std::shared_ptr<PolicyAdapterInfo> adapterInfo = adapterInfoMap[adapterType];
@@ -205,8 +208,9 @@ void AudioPolicyConfigData::ClearDynamicStreamProps(const std::string adapterNam
 }
 
 uint32_t AudioPolicyConfigData::GetConfigStreamPropsSize(const std::string adapterName,
-    const std::string &pipeName) const
+    const std::string &pipeName)
 {
+    std::lock_guard<std::mutex> lock(statusMutex_);
     AudioAdapterType adapterType = PolicyAdapterInfo::GetAdapterType(adapterName);
     auto it = adapterInfoMap.find(adapterType);
     CHECK_AND_RETURN_RET_LOG(it != adapterInfoMap.end(), 0, "adapter not exist");
@@ -218,8 +222,9 @@ uint32_t AudioPolicyConfigData::GetConfigStreamPropsSize(const std::string adapt
 }
 
 uint32_t AudioPolicyConfigData::GetDynamicStreamPropsSize(const std::string adapterName,
-    const std::string &pipeName) const
+    const std::string &pipeName)
 {
+    std::lock_guard<std::mutex> lock(statusMutex_);
     AudioAdapterType adapterType = PolicyAdapterInfo::GetAdapterType(adapterName);
     auto it = adapterInfoMap.find(adapterType);
     CHECK_AND_RETURN_RET_LOG(it != adapterInfoMap.end(), 0, "adapter not exist");
@@ -228,6 +233,67 @@ uint32_t AudioPolicyConfigData::GetDynamicStreamPropsSize(const std::string adap
     std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfo->GetPipeInfoByName(pipeName);
     CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, 0, "pipeInfo is nullptr");
     return pipeInfo->dynamicStreamPropInfos_.size();
+}
+
+std::shared_ptr<PolicyAdapterInfo> AudioPolicyConfigData::GetAdapterInfo(AudioAdapterType adapterType)
+{
+    std::lock_guard<std::mutex> lock(statusMutex_);
+    auto it = adapterInfoMap.find(adapterType);
+    if (it != adapterInfoMap.end()) {
+        return it->second;
+    }
+    return nullptr;
+}
+
+void AudioPolicyConfigData::GetAudioAdapterInfos(
+    std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> &adapterInfoMap)
+{
+    std::lock_guard<std::mutex> lock(statusMutex_);
+    adapterInfoMap = this->adapterInfoMap;
+}
+
+void AudioPolicyConfigData::RegisterAdapter(std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr)
+{
+    std::lock_guard<std::mutex> lock(statusMutex_);
+    CHECK_AND_RETURN_LOG(
+        adapterInfoMap.find(adapterInfoPtr->GetTypeEnum()) == adapterInfoMap.end(), "adapter already exists");
+    adapterInfoMap.insert({adapterInfoPtr->GetTypeEnum(), adapterInfoPtr});
+    Reorganize();
+}
+
+void AudioPolicyConfigData::UnregisterAdapter(AudioAdapterType adapterType)
+{
+    std::lock_guard<std::mutex> lock(statusMutex_);
+    if (adapterInfoMap.find(adapterType) != adapterInfoMap.end()) {
+        std::shared_ptr<PolicyAdapterInfo> adapterInfo = adapterInfoMap[adapterType];
+        for (auto &deviceInfo : adapterInfo->deviceInfos) {
+            std::pair<DeviceType, DeviceRole> deviceMapKey = std::make_pair(deviceInfo->type_, deviceInfo->role_);
+            deviceInfoMap.erase(deviceMapKey);
+        }
+        adapterInfoMap.erase(adapterType);
+        Reorganize();
+    }
+}
+
+void AudioPolicyConfigData::RegisterStreamProperty(
+    AudioAdapterType adapterType, std::string pipeName, std::list<std::shared_ptr<PipeStreamPropInfo>> streamProps)
+{
+    std::lock_guard<std::mutex> lock(statusMutex_);
+    auto it = adapterInfoMap.find(adapterType);
+    CHECK_AND_RETURN_LOG(it != adapterInfoMap.end(), "adapter %{public}d not found", adapterType);
+    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = it->second;
+    CHECK_AND_RETURN_LOG(adapterInfoPtr != nullptr, "adapter %{public}d is null pointer", adapterType);
+    for (auto pipeInfoPtr : adapterInfoPtr->pipeInfos) {
+        if (pipeInfoPtr->name_ != pipeName) {
+            continue;
+        }
+        AUDIO_INFO_LOG("find pipe: %{public}s", pipeName.c_str());
+        for (auto streamProp : streamProps) {
+            streamProp->pipeInfo_ = pipeInfoPtr;
+            pipeInfoPtr->streamPropInfos_.push_back(streamProp);
+        }
+    }
+    Reorganize();
 }
 
 PolicyAdapterInfo::PolicyAdapterInfo()
