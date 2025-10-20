@@ -284,6 +284,7 @@ public:
     virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) = 0;
     virtual void UpdateOtherStreamVolume(AudioStreamType streamType) = 0;
     virtual void SetVolumeLimit(float volume) = 0;
+    virtual bool SetMaxVolumeForDpBoardcast() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

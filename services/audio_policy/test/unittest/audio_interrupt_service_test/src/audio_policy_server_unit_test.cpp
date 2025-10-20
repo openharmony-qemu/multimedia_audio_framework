@@ -278,6 +278,31 @@ HWTEST(AudioPolicyUnitTest, SetStreamMute_001, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
+* @tc.number: OnReceiveEvent_001
+* @tc.desc  : Test AudioPolicyServer::OnReceiveEvent
+*/
+HWTEST(AudioPolicyUnitTest, OnReceiveEvent_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(audioPolicyServer, nullptr);
+
+    EventFwk::CommonEventData eventData;
+    OHOS::EventFwk::Want want;
+    want.SetAction("usual.event.dms.cast_plugged_changed");
+    eventData.SetWant(want);
+    eventData.SetData("0");
+    audioPolicyServer->OnReceiveEvent(eventData);
+    EXPECT_EQ(eventData.GetData(), "0");
+
+    eventData.SetData("1");
+    audioPolicyServer->OnReceiveEvent(eventData);
+    EXPECT_EQ(eventData.GetData(), "1");
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_001
 * @tc.desc  : Test CheckAudioSessionStrategy.
 */

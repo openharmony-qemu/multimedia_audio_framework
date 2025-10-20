@@ -919,6 +919,7 @@ void AudioPolicyServer::SubscribeCommonEventExecute()
     SubscribeCommonEvent("usual.event.SCREEN_UNLOCKED");
     SubscribeCommonEvent("usual.event.LOCALE_CHANGED");
     SubscribeCommonEvent("usual.event.USER_STARTED");
+    SubscribeCommonEvent("usual.event.dms.cast_plugged_changed");
 #ifdef USB_ENABLE
     usbManager_.SubscribeEvent();
 #endif
@@ -989,6 +990,9 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
         UnlockEvent();
     } else if (action == "usual.event.LOCALE_CHANGED" || action == "usual.event.USER_STARTED") {
         CallRingtoneLibrary();
+    } else if (action == "usual.event.dms.cast_plugged_changed" && eventData.GetData() == "1") {
+        AUDIO_INFO_LOG("on receive cast plug in event");
+        audioPolicyManager_.SetMaxVolumeForDpBoardcast();
     }
 }
 
