@@ -66,7 +66,7 @@ public:
     int32_t UnsetOffloadMode() override;
     int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) override;
-    int32_t OffloadSetVolume(float volume) override;
+    int32_t OffloadSetVolume() override;
     int32_t SetOffloadDataCallbackState(int32_t state) override;
     size_t GetWritableSize() override;
     int32_t UpdateMaxLength(uint32_t maxLength) override;

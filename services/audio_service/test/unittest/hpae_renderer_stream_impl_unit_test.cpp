@@ -27,6 +27,7 @@
 #include "hpae_adapter_manager.h"
 #include "audio_capturer_private.h"
 #include "audio_system_manager.h"
+#include "audio_volume.h"
 
 using namespace testing::ext;
 using namespace testing;
@@ -39,6 +40,7 @@ static constexpr uint32_t FRAME_LEN_100MS = 100;
 static constexpr uint32_t FRAME_LEN_40MS = 40;
 static constexpr uint32_t FRAME_LEN_20MS = 20;
 static constexpr int32_t MIN_BUFFER_SIZE = 2;
+static constexpr uint32_t TEST_SESSION_ID = 123456;
 
 static inline int32_t GetSizeFromFormat(int32_t format)
 {
@@ -85,8 +87,27 @@ static AudioProcessConfig GetInnerCapConfig()
     config.streamType = AudioStreamType::STREAM_MUSIC;
     config.deviceType = DEVICE_TYPE_USB_HEADSET;
     config.innerCapId = 1;
-    config.originalSessionId = 123456; // 123456: session id
+    config.originalSessionId = TEST_SESSION_ID;
     return config;
+}
+
+static void AddStreamVolume()
+{
+    StreamVolumeParams param;
+    param.sessionId = TEST_SESSION_ID;
+    param.streamType = AudioStreamType::STREAM_MUSIC;
+    param.streamUsage = 0;
+    param.uid = CAPTURER_FLAG;
+    param.pid = CAPTURER_FLAG;
+    param.isSystemApp = false;
+    param.mode = AudioMode::AUDIO_MODE_PLAYBACK;
+    param.isVKB = false;
+    AudioVolume::GetInstance()->AddStreamVolume(param);
+}
+
+static void RemoveStreamVolume()
+{
+    AudioVolume::GetInstance()->RemoveStreamVolume(TEST_SESSION_ID);
 }
 
 std::shared_ptr<HpaeRendererStreamImpl> HpaeRendererStreamUnitTest::CreateHpaeRendererStreamImpl()
@@ -342,8 +363,18 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_006, TestSize.Level1)
     auto unit = CreateHpaeRendererStreamImpl();
     EXPECT_NE(unit, nullptr);
     unit->offloadEnable_ = false;
-    float volume = 0.0f;
-    auto ret = unit->OffloadSetVolume(volume);
+    auto ret = unit->OffloadSetVolume();
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    AddStreamVolume();
+    struct VolumeValues volumes = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+    std::string volumeDeviceClass = unit->deviceClass_ == "remote_offload" ? "remote" : "offload";
+    uint32_t originStreamIndex = unit->streamIndex_;
+    float volume = AudioVolume::GetInstance()->GetVolume(unit->streamIndex_, unit->processConfig_.streamType,
+        volumeDeviceClass, &volumes);
+    AudioVolume::GetInstance()->SetHistoryVolume(unit->streamIndex_, volume);
+    ret = unit->OffloadSetVolume();
+    RemoveStreamVolume();
+    unit->streamIndex_ = originStreamIndex;
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
 

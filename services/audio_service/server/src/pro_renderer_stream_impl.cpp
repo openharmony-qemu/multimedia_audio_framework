@@ -493,7 +493,7 @@ int32_t ProRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timest
     return SUCCESS;
 }
 
-int32_t ProRendererStreamImpl::OffloadSetVolume(float volume)
+int32_t ProRendererStreamImpl::OffloadSetVolume()
 {
     return SUCCESS;
 }

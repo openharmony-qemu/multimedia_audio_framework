@@ -35,6 +35,8 @@
 #include "policy_handler.h"
 #include "audio_engine_log.h"
 #include "core_service_handler.h"
+#include "audio_volume.h"
+#include "volume_tools.h"
 
 using namespace OHOS::AudioStandard::HPAE;
 namespace OHOS {
@@ -49,6 +51,7 @@ static constexpr uint32_t FRAME_LEN_100MS = 100;
 static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
+static constexpr float AUDIO_VOLUME_EPSILON = 0.0001;
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
 static inline FadeType GetFadeType(uint64_t expectedPlaybackDurationMs);
 HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode)
@@ -588,10 +591,20 @@ size_t HpaeRendererStreamImpl::GetWritableSize()
     return 0;
 }
 
-int32_t HpaeRendererStreamImpl::OffloadSetVolume(float volume)
+int32_t HpaeRendererStreamImpl::OffloadSetVolume()
 {
     if (!offloadEnable_) {
         return ERR_OPERATION_FAILED;
+    }
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    std::string volumeDeviceClass = deviceClass_ == DEVICE_CLASS_REMOTE_OFFLOAD ? "remote" : "offload";
+    float volume = AudioVolume::GetInstance()->GetVolume(streamIndex_, processConfig_.streamType, volumeDeviceClass,
+        &volumes);
+    AUDIO_INFO_LOG("sessionID %{public}u, deviceClass %{public}s, volume: %{public}f", streamIndex_,
+        volumeDeviceClass.c_str(), volume);
+    if (!IsVolumeSame(volumes.volumeHistory, volume, AUDIO_VOLUME_EPSILON)) {
+        AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, volume);
+        AudioVolume::GetInstance()->Monitor(streamIndex_, true);
     }
     std::shared_ptr<IAudioRenderSink> audioRendererSinkInstance = GetRenderSinkInstance(deviceClass_, deviceNetId_);
     if (audioRendererSinkInstance == nullptr) {

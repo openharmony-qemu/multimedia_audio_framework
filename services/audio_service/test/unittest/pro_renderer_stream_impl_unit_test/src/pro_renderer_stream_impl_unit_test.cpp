@@ -813,8 +813,7 @@ HWTEST(ProRendererStreamImplUnitTest, OffloadSetVolume_001, TestSize.Level1)
     std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
 
-    float volume = 0;
-    int32_t ret = rendererStreamImpl->OffloadSetVolume(volume);
+    int32_t ret = rendererStreamImpl->OffloadSetVolume();
     EXPECT_EQ(ret, SUCCESS);
 }
 
