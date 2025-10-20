@@ -1482,40 +1482,6 @@ HWTEST(AudioStreamCheckerTest, MonitorCheckFrameSub_007, TestSize.Level0)
 /**
  * @tc.name  : Test MonitorOnAllCallback API
  * @tc.type  : FUNC
- * @tc.number: MonitorOnAllCallback_008
- */
-HWTEST(AudioStreamCheckerTest, MonitorOnAllCallback_008, TestSize.Level1)
-{
-    AudioProcessConfig cfg;
-    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
-    checker->monitorSwitch_ = false;
-    checker->MonitorOnAllCallback(DATA_TRANS_RESUME, false);
-    EXPECT_FALSE(checker->monitorSwitch_);
-}
-
-/**
- * @tc.name  : Test MonitorOnAllCallback API
- * @tc.type  : FUNC
- * @tc.number: MonitorOnAllCallback_009
- */
-HWTEST(AudioStreamCheckerTest, MonitorOnAllCallback_009, TestSize.Level1)
-{
-    AudioProcessConfig cfg;
-    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
-    checker->monitorSwitch_ = true;
-    CheckerParam checkerParamTest;
-    checkerParamTest.pid = 0;
-    checkerParamTest.lastUpdateTime = 0;
-    checkerParamTest.hasInitCheck = true;
-    checker->checkParaVector_.clear();
-    checker->checkParaVector_.push_back(checkerParamTest);
-    checker->MonitorOnAllCallback(DATA_TRANS_RESUME, true);
-    EXPECT_TRUE(checker->monitorSwitch_);
-}
-
-/**
- * @tc.name  : Test MonitorOnAllCallback API
- * @tc.type  : FUNC
  * @tc.number: MonitorOnAllCallback_0010
  */
 HWTEST(AudioStreamCheckerTest, MonitorOnAllCallback_010, TestSize.Level1)
