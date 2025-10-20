@@ -505,21 +505,15 @@ void RemoteAudioRenderSink::UpdateStreamInfo(const SplitStreamType splitStreamTy
 void RemoteAudioRenderSink::UpdateStreamType(const SplitStreamType splitStreamType, const AudioStreamType type)
 {
     int32_t errCode = this->NotifyHdiEvent(splitStreamType, STREAM_TYPE_CHANGE, std::to_string(type));
-    if (errCode == SUCCESS) {
-        this->streamTypeMap_[splitStreamType] = type;
-    } else {
-        AUDIO_WARNING_LOG("UpdateStreamType failed, errCode: %{public}d", errCode);
-    }
+    CHECK_AND_RETURN(errCode == SUCCESS);
+    this->streamTypeMap_[splitStreamType] = type;
 }
 
 void RemoteAudioRenderSink::UpdateStreamUsage(const SplitStreamType splitStreamType, const StreamUsage usage)
 {
     int32_t errCode = this->NotifyHdiEvent(splitStreamType, STREAM_USAGE_CHANGE, std::to_string(usage));
-    if (errCode == SUCCESS) {
-        this->streamUsageMap_[splitStreamType] = usage;
-    } else {
-        AUDIO_WARNING_LOG("UpdateStreamUsage failed, errCode: %{public}d", errCode);
-    }
+    CHECK_AND_RETURN(errCode == SUCCESS);
+    this->streamUsageMap_[splitStreamType] = usage;
 }
 
 void RemoteAudioRenderSink::DumpInfo(std::string &dumpString)
