@@ -657,6 +657,9 @@ HWTEST(VolumeDataMaintainerUnitTest, GetVolumeKey, TestSize.Level4)
 
     desc->volumeBehavior_.databaseVolumeName = "";
     EXPECT_NE(vd->GetVolumeKey(desc, STREAM_MUSIC), "");
+    VolumeUtils::SetPCVolumeEnable(true);
+    EXPECT_NE(vd->GetVolumeKey(desc, STREAM_RING), "");
+    EXPECT_NE(vd->GetVolumeKey(desc, STREAM_MUSIC), "");
 }
 
 /**
@@ -678,6 +681,10 @@ HWTEST(VolumeDataMaintainerUnitTest, GetMuteKey, TestSize.Level4)
     EXPECT_NE(vd->GetMuteKey(desc, STREAM_MUSIC), "");
 
     desc->volumeBehavior_.databaseVolumeName = "";
+    EXPECT_NE(vd->GetMuteKey(desc, STREAM_MUSIC), "");
+
+    VolumeUtils::SetPCVolumeEnable(true);
+    EXPECT_NE(vd->GetMuteKey(desc, STREAM_RING), "");
     EXPECT_NE(vd->GetMuteKey(desc, STREAM_MUSIC), "");
 }
 
