@@ -33,6 +33,7 @@
 #include "sle_audio_device_manager.h"
 #include "audio_mute_factor_manager.h"
 #include "audio_active_device.h"
+#include "audio_volume_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -239,8 +240,12 @@ int32_t AudioVolumeManager::GetSystemVolumeLevelNoMuteState(AudioStreamType stre
 int32_t AudioVolumeManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor,
     const std::string &newSinkName, bool enableSetVoiceCallVolume)
 {
-    std::thread cancelSafeNotificationThrd(&AudioVolumeManager::CancelSafeVolumeNotificationWhenSwitchDevice, this);
-    cancelSafeNotificationThrd.detach();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(deviceDescriptor);
+    if (!AudioVolumeUtils::GetInstance().IsDeviceWithSafeVolume(desc)) {
+        std::thread cancelSafeNotificationThrd(
+            &AudioVolumeManager::CancelSafeVolumeNotificationWhenSwitchDevice, this);
+        cancelSafeNotificationThrd.detach();
+    }
 
     Trace trace("AudioVolumeManager::SetVolumeForSwitchDevice:" + std::to_string(deviceDescriptor.deviceType_));
     // Load volume from KvStore and set volume for each stream type

@@ -96,6 +96,7 @@ public:
         AudioStreamType streamType, int32_t &volumeLevel);
     
     bool IsDistributedDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc);
+    bool IsDeviceWithSafeVolume(const std::shared_ptr<AudioDeviceDescriptor> &desc);
 
 private:
     AudioVolumeUtils() {};

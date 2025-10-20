@@ -1419,5 +1419,25 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_070, TestSize.Level1)
     audioVolumeManager.SetRestoreVolumeLevel(DEVICE_TYPE_WIRED_HEADSET, curVolume);
     EXPECT_EQ(audioVolumeManager.wiredRestoreVol_, curVolume);
 }
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: SetVolumeForSwitchDevice_008
+* @tc.desc  : Test AudioVolumeManager::SetVolumeForSwitchDevice interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeForSwitchDevice_008, TestSize.Level1)
+{
+    auto avm = std::make_shared<AudioVolumeManager>();
+    AudioDeviceDescriptor desc;
+    avm->SetVolumeForSwitchDevice(desc, PORT_NONE, false);
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    avm->SetVolumeForSwitchDevice(desc, PORT_NONE, false);
+    avm->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    avm->SetVolumeForSwitchDevice(desc, PORT_NONE, false);
+    desc.deviceType_ = DEVICE_TYPE_SPEAKER;
+    int32_t ret = avm->SetVolumeForSwitchDevice(desc, PORT_NONE, false);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

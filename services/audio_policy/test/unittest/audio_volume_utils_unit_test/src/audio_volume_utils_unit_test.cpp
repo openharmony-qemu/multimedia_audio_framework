@@ -132,5 +132,36 @@ HWTEST_F(AudioVolumeUtilsUnitTest, IsDistributedDevice, TestSize.Level1)
     EXPECT_EQ(utils.IsDistributedDevice(desc), false);
 }
 
+/**
+ * @tc.name  : Test GetDefaultVolumeLevel.
+ * @tc.number: IsDeviceWithSafeVolume
+ * @tc.desc  : Test IsDeviceWithSafeVolume.
+ */
+HWTEST_F(AudioVolumeUtilsUnitTest, IsDeviceWithSafeVolume, TestSize.Level1)
+{
+    AudioVolumeUtils utils = AudioVolumeUtils::GetInstance();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    EXPECT_EQ(utils.IsDeviceWithSafeVolume(desc), false);
+    desc->deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+    EXPECT_EQ(utils.IsDeviceWithSafeVolume(desc), true);
+    desc->deviceType_ = DEVICE_TYPE_WIRED_HEADPHONES;
+    EXPECT_EQ(utils.IsDeviceWithSafeVolume(desc), true);
+    desc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    EXPECT_EQ(utils.IsDeviceWithSafeVolume(desc), true);
+    desc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    EXPECT_EQ(utils.IsDeviceWithSafeVolume(desc), true);
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    EXPECT_EQ(utils.IsDeviceWithSafeVolume(desc), true);
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    EXPECT_EQ(utils.IsDeviceWithSafeVolume(desc), true);
+    desc->deviceType_ = DEVICE_TYPE_NEARLINK;
+    EXPECT_EQ(utils.IsDeviceWithSafeVolume(desc), true);
+    desc->deviceCategory_ = BT_CAR;
+    EXPECT_EQ(utils.IsDeviceWithSafeVolume(desc), false);
+    desc->deviceCategory_ = BT_SOUNDBOX;
+    EXPECT_EQ(utils.IsDeviceWithSafeVolume(desc), false);
+}
+
+
 } // namespace AudioStandard
 } // namespace OHOS
