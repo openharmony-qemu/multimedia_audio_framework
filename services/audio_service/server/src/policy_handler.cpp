@@ -97,7 +97,7 @@ bool PolicyHandler::GetProcessDeviceInfo(const AudioProcessConfig &config, bool 
     AudioDeviceDescriptor &deviceInfo)
 {
     // send the config to AudioPolicyServer and get the device info.
-    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, false, "GetProcessDeviceInfo failed with null provider!");
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, false, "GetProcessDeviceInfo failed with null provider.");
     int32_t ret = iPolicyProvider_->GetProcessDeviceInfo(config, lockFlag, deviceInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "GetProcessDeviceInfo failed:%{public}d", ret);
     return true;
@@ -105,7 +105,7 @@ bool PolicyHandler::GetProcessDeviceInfo(const AudioProcessConfig &config, bool 
 
 bool PolicyHandler::InitVolumeMap()
 {
-    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, false, "InitVolumeMap failed with null provider!");
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, false, "InitVolumeMap failed with null provider.");
     iPolicyProvider_->InitSharedVolume(policyVolumeMap_);
     CHECK_AND_RETURN_RET_LOG((policyVolumeMap_ != nullptr && policyVolumeMap_->GetBase() != nullptr), false,
         "InitSharedVolume failed.");
@@ -161,13 +161,13 @@ DeviceType PolicyHandler::GetActiveOutPutDevice()
 int32_t PolicyHandler::NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
     uint32_t sessionId)
 {
-    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
     return iPolicyProvider_->NotifyCapturerAdded(capturerInfo, streamInfo, sessionId);
 }
 
 int32_t PolicyHandler::NotifyWakeUpCapturerRemoved()
 {
-    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
     return iPolicyProvider_->NotifyWakeUpCapturerRemoved();
 }
 
@@ -181,13 +181,13 @@ bool PolicyHandler::IsAbsVolumeSupported()
 
 int32_t PolicyHandler::OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp)
 {
-    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
     return iPolicyProvider_->OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
 }
 
 int32_t PolicyHandler::NearlinkGetRenderPosition(uint32_t &delayValue)
 {
-    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
     return iPolicyProvider_->NearlinkGetRenderPosition(delayValue);
 }
 
@@ -203,13 +203,13 @@ void PolicyHandler::SetHighResolutionExist(bool isHighResExist)
 
 int32_t PolicyHandler::GetAndSaveClientType(uint32_t uid, const std::string &bundleName)
 {
-    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
     return iPolicyProvider_->GetAndSaveClientType(uid, bundleName);
 }
 
 int32_t PolicyHandler::GetMaxRendererInstances()
 {
-    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
     int32_t ret = ERROR;
     iPolicyProvider_->GetMaxRendererInstances(ret);
     return ret;
@@ -217,27 +217,27 @@ int32_t PolicyHandler::GetMaxRendererInstances()
 
 int32_t PolicyHandler::NotifyCapturerRemoved(uint64_t sessionId)
 {
-    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
     return iPolicyProvider_->NotifyCapturerRemoved(sessionId);
 }
 
 #ifdef HAS_FEATURE_INNERCAPTURER
 int32_t PolicyHandler::LoadModernInnerCapSink(int32_t innerCapId)
 {
-    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
     return iPolicyProvider_->LoadModernInnerCapSink(innerCapId);
 }
 
 int32_t PolicyHandler::UnloadModernInnerCapSink(int32_t innerCapId)
 {
-    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
     return iPolicyProvider_->UnloadModernInnerCapSink(innerCapId);
 }
 #endif
 
 int32_t PolicyHandler::ClearAudioFocusBySessionID(const int32_t &sessionID)
 {
-    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
     return iPolicyProvider_->ClearAudioFocusBySessionID(sessionID);
 }
 
