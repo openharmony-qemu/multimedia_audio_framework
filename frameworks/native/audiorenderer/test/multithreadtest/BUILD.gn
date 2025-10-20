@@ -27,6 +27,7 @@ ohos_unittest("audio_renderer_multi_test") {
     "../../../../../frameworks/native/audiorenderer/include",
     "../../../../../services/audio_policy/client/include",
     "../../../../../frameworks/native/audiostream/include",
+    "../../../audioschedule/include",
   ]
   cflags = [
     "-Wall",
@@ -40,6 +41,7 @@ ohos_unittest("audio_renderer_multi_test") {
     "../../../../../services/audio_service:audio_client",
     "../../../../../services/audio_service:audio_common",
     "../../../audiorenderer:audio_renderer",
+    "../../../audioschedule:audio_schedule",
   ]
 
   external_deps = [
