@@ -779,7 +779,7 @@ int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     CHECK_AND_RETURN_RET_LOG(spanSizeInFrame_ != 0, ERR_OPERATION_FAILED, "invalid span size");
-    int64_t cacheCount = audioServerBuffer_->GetReadableDataFrames() / spanSizeInFrame_;
+    int64_t cacheCount = audioServerBuffer_->GetReadableDataFrames() / static_cast<int64_t>(spanSizeInFrame_);
     Trace trace1(traceTag_ + " OnWriteData cacheCount:" + std::to_string(cacheCount));
     if (requestDataLen == 0 || currentReadFrame + requestDataInFrame > currentWriteFrame) {
         Trace trace2(traceTag_ + " near underrun"); // RendererInServer::sessionid:100001 near underrun

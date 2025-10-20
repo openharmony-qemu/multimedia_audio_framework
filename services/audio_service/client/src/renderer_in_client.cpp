@@ -412,7 +412,7 @@ bool RendererInClientInner::CheckBufferNeedWrite()
     size_t writableSizeInByte = static_cast<size_t>(writableInFrame) * sizePerFrameInByte_;
 
     int32_t readableFrames = clientBuffer_->GetReadableDataFrames();
-    AUTO_CTRACE("CheckBufferNeedWrite writeable:%d readable:%d cacheSize:%d", writableInFrame, readableFrames,
+    AUTO_CTRACE("CheckBufferNeedWrite writeable:%d readable:%d cacheSize:%u", writableInFrame, readableFrames,
         cacheSizeInFrame_.load());
     if (writableInFrame <= 0) {
         return false;
@@ -427,7 +427,7 @@ bool RendererInClientInner::CheckBufferNeedWrite()
         return false;
     }
 
-    RETURN_RET_IF(readableFrames <= cacheSizeInFrame_, true);
+    RETURN_RET_IF(readableFrames <= static_cast<int32_t>(cacheSizeInFrame_), true);
 
     return false;
 }
