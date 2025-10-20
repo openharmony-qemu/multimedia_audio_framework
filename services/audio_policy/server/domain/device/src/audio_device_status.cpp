@@ -1375,17 +1375,19 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
             DeactivateNearlinkDevice(desc);
         } else {
             reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
-            if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP || desc.deviceType_ == DEVICE_TYPE_NEARLINK) {
+            auto usage = audioDeviceManager_.GetDeviceUsage(desc);
+            auto audioDescriptor = std::make_shared<AudioDeviceDescriptor>(desc);
+            if (audioDescriptor->networkId_ == LOCAL_NETWORK_ID && audioDescriptor->IsSameDeviceDesc(
+                *AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(STREAM_USAGE_MEDIA, -1,
+                "OnPreferredStateUpdated_1", ROUTER_TYPE_USER_SELECT).front()) && (usage & MEDIA) == MEDIA) {
                 AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
                     std::make_shared<AudioDeviceDescriptor>());
-                AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_RECORD_CAPTURE,
-                    std::make_shared<AudioDeviceDescriptor>());
             }
-            if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO || desc.deviceType_ == DEVICE_TYPE_NEARLINK) {
+            if (audioDescriptor->networkId_ == LOCAL_NETWORK_ID && audioDescriptor->IsSameDeviceDesc(
+                *AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1,
+                "OnPreferredStateUpdated_2", ROUTER_TYPE_USER_SELECT).front()) && (usage & VOICE) == VOICE) {
                 AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
                     std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID, "OnPreferredStateUpdated");
-                AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_CAPTURE,
-                    std::make_shared<AudioDeviceDescriptor>());
                 AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(desc.macAddress_);
 #ifdef BLUETOOTH_ENABLE
                 CheckAndActiveHfpDevice(desc);
