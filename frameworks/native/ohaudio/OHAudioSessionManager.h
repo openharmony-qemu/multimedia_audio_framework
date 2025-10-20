@@ -152,10 +152,8 @@ public:
 
     static OHAudioSessionManager* GetInstance()
     {
-        if (!ohAudioSessionManager_) {
-            ohAudioSessionManager_ = new OHAudioSessionManager();
-        }
-        return ohAudioSessionManager_;
+        static OHAudioSessionManager ohAudioSessionManager;
+        return &ohAudioSessionManager;
     }
 
     OH_AudioCommon_Result ActivateAudioSession(const AudioSessionStrategy &strategy);
@@ -196,8 +194,6 @@ public:
 
 private:
     OHAudioSessionManager();
-    
-    static OHAudioSessionManager *ohAudioSessionManager_;
 
     AudioSessionManager *audioSessionManager_ = AudioSessionManager::GetInstance();
     AudioSystemManager *audioMngr_ = AudioSystemManager::GetInstance();
@@ -216,8 +212,6 @@ private:
     std::mutex availableDeviceCbMutex_;
     std::mutex sessionInputDeviceCbMutex_;
 };
-
-OHAudioSessionManager* OHAudioSessionManager::ohAudioSessionManager_ = nullptr;
 
 } // namespace AudioStandard
 } // namespace OHOS
