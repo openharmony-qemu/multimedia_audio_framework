@@ -260,10 +260,28 @@ void HpaeRendererManager::RefreshProcessClusterByDeviceInner(const std::shared_p
     int32_t processClusterDecision = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
     if ((processClusterDecision != USE_NONE_PROCESSCLUSTER && sessionNodeMap_[nodeInfo.sessionId].bypass) ||
         (processClusterDecision == USE_NONE_PROCESSCLUSTER && !sessionNodeMap_[nodeInfo.sessionId].bypass)) {
-        AUDIO_INFO_LOG("refresh to %{public}d", processClusterDecision);
-        TriggerStreamState(nodeInfo.sessionId, node);
-        DeleteProcessCluster(nodeInfo.sessionId);
-        CreateProcessClusterAndConnect(nodeInfo);
+        if (node->connectedProcessorType_ == HPAE_SCENE_EFFECT_NONE &&
+            processClusterDecision == USE_NONE_PROCESSCLUSTER) {
+            AUDIO_INFO_LOG("no need to refresh");
+            CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
+                "could not find processorType %{public}d", nodeInfo.sceneType);
+            sceneClusterMap_[nodeInfo.sceneType]->AudioRendererRelease(nodeInfo, sinkInfo_);
+            sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]--;
+            AUDIO_INFO_LOG("disconnected from sceneType %{public}d, current count is %{public}d",
+                nodeInfo.sceneType, sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]);
+            if (sceneClusterMap_[nodeInfo.sceneType] == sceneClusterMap_[HPAE_SCENE_DEFAULT]) {
+                sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]--;
+                AUDIO_INFO_LOG("sceneType default count is %{public}d",
+                    sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]);
+            }
+            DeleteProcessClusterInner(nodeInfo.sessionId, nodeInfo.sceneType);
+            CreateProcessCluster(nodeInfo);
+        } else {
+            AUDIO_INFO_LOG("refresh to %{public}d", processClusterDecision);
+            TriggerStreamState(nodeInfo.sessionId, node);
+            DeleteProcessCluster(nodeInfo.sessionId);
+            CreateProcessClusterAndConnect(nodeInfo);
+        }
     }
 }
 
