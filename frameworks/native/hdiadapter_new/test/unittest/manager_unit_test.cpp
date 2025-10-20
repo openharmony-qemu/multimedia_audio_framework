@@ -185,6 +185,5 @@ HWTEST_F(ManagerUnitTest, GetId_002, TestSize.Level1)
     EXPECT_NE(idHandler.infoIdMap_[infoId].useIdSet_.size(), 0);
     manager.ReleaseId(id);
 }
-
 } // namespace AudioStandard
 } // namespace OHOS
