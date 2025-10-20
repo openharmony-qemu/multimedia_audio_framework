@@ -428,8 +428,7 @@ void AudioInterruptService::DeactivateAudioSessionInFakeFocusMode(const int32_t 
     AudioSessionDeactiveEvent deactiveEvent;
     deactiveEvent.deactiveReason = AudioSessionDeactiveReason::LOW_PRIORITY;
     std::pair<int32_t, AudioSessionDeactiveEvent> sessionDeactivePair = {pid, deactiveEvent};
-    if (handler_ != nullptr) {
-        CHECK_AND_RETURN(hintType == INTERRUPT_HINT_STOP);
+    if (handler_ != nullptr && hintType == INTERRUPT_HINT_STOP) {
         AUDIO_INFO_LOG("AudioSessionService::handler_ is not null. Send event!");
         handler_->SendAudioSessionDeactiveCallback(sessionDeactivePair);
     }
