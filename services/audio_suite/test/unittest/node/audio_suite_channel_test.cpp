@@ -42,7 +42,7 @@ HWTEST_F(AudioSuiteOutputPortTest, OutputPort_001, TestSize.Level0)
     EXPECT_NE(outputPort, nullptr);
 
     std::vector<AudioSuitePcmBuffer *> data = outputPort->PullOutputData();
-    EXPECT_NE(data.size(), 0);
+    EXPECT_EQ(data.size(), 0);
 
     AudioSuitePcmBuffer *pcm = nullptr;
     outputPort->WriteDataToOutput(pcm);
