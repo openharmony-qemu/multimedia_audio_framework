@@ -90,7 +90,6 @@ RendererInServer::~RendererInServer()
         Release();
     }
     DumpFileUtil::CloseDumpFile(&dumpC2S_);
-    AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
 }
 
 void RendererInServer::UpdateStreamInfo()
@@ -1385,6 +1384,7 @@ int32_t RendererInServer::Release(bool isSwitchStream)
         }
     }
 
+    AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
     if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
         AudioService::GetInstance()->SetDecMaxRendererStreamCnt();
         AudioService::GetInstance()->CleanAppUseNumMap(processConfig_.appInfo.appUid);
