@@ -101,6 +101,8 @@ private:
     void DoRegistSourceCallback(uint32_t id, std::shared_ptr<IAudioCaptureSource> source);
     void DoSetSinkPrestoreInfo(std::shared_ptr<IAudioRenderSink> sink, uint32_t type);
 
+    bool ProcessInfoId(uint32_t id, bool isResident, bool tryCreate);
+
 private:
     std::unordered_map<uint32_t, RenderSinkInfo> renderSinks_;
     std::unordered_map<uint32_t, CaptureSourceInfo> captureSources_;

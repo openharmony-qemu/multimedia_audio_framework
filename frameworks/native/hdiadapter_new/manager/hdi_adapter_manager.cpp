@@ -78,17 +78,8 @@ uint32_t HdiAdapterManager::GetId(HdiIdBase base, HdiIdType type, const std::str
 {
     uint32_t id = IdHandler::GetInstance().GetId(base, type, info);
     CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
-    std::scoped_lock lock(renderSinkMtx_, captureSourceMtx_);
-    if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
-        IdHandler::GetInstance().IncInfoIdUseCount(id);
-    }
-    if (!isResident) {
-        CHECK_AND_RETURN_RET(!tryCreate, id);
-        if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
-            IdHandler::GetInstance().DecInfoIdUseCount(id);
-        }
-        return id;
-    }
+    bool isTemp = ProcessInfoId(id, isResident, tryCreate);
+    CHECK_AND_RETURN_RET(isTemp, id);
     AUDIO_INFO_LOG("base: %{public}u, type: %{public}u, info: %{public}s, id: %{public}u", base, type, info.c_str(),
         id);
     IncRefCount(id);
@@ -102,17 +93,8 @@ uint32_t HdiAdapterManager::GetRenderIdByDeviceClass(const std::string &deviceCl
     AUDIO_INFO_LOG("Device class: %{public}s, info: %{public}s, id: %{public}u",
         deviceClass.c_str(), info.c_str(), id);
     CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
-    std::scoped_lock lock(renderSinkMtx_, captureSourceMtx_);
-    if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
-        IdHandler::GetInstance().IncInfoIdUseCount(id);
-    }
-    if (!isResident) {
-        CHECK_AND_RETURN_RET(!tryCreate, id);
-        if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
-            IdHandler::GetInstance().DecInfoIdUseCount(id);
-        }
-        return id;
-    }
+    bool isTemp = ProcessInfoId(id, isResident, tryCreate);
+    CHECK_AND_RETURN_RET(isTemp, id);
     IncRefCount(id);
     return id;
 }
@@ -124,17 +106,8 @@ uint32_t HdiAdapterManager::GetCaptureIdByDeviceClass(const std::string &deviceC
     AUDIO_INFO_LOG("Device class: %{public}s, sourceType: %{public}d, info: %{public}s, id: %{public}u",
         deviceClass.c_str(), sourceType, info.c_str(), id);
     CHECK_AND_RETURN_RET(id != HDI_INVALID_ID, HDI_INVALID_ID);
-    std::scoped_lock lock(renderSinkMtx_, captureSourceMtx_);
-    if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
-        IdHandler::GetInstance().IncInfoIdUseCount(id);
-    }
-    if (!isResident) {
-        CHECK_AND_RETURN_RET(!tryCreate, id);
-        if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
-            IdHandler::GetInstance().DecInfoIdUseCount(id);
-        }
-        return id;
-    }
+    bool isTemp = ProcessInfoId(id, isResident, tryCreate);
+    CHECK_AND_RETURN_RET(isTemp, id);
     IncRefCount(id);
     return id;
 }
@@ -451,6 +424,22 @@ void HdiAdapterManager::DoSetSinkPrestoreInfo(std::shared_ptr<IAudioRenderSink> 
         sinkPrestoreInfo_.Erase(PRESTORE_INFO_AUDIO_BT_PARAM);
         AUDIO_INFO_LOG("SetBluetoothSinkParam SUCCESS");
     }
+}
+
+bool HdiAdapterManager::ProcessInfoId(uint32_t id, bool isResident, bool tryCreate)
+{
+    std::scoped_lock lock(renderSinkMtx_, captureSourceMtx_);
+    if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
+        IdHandler::GetInstance().IncInfoIdUseCount(id);
+    }
+    if (!isResident) {
+        CHECK_AND_RETURN_RET(!tryCreate, false);
+        if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
+            IdHandler::GetInstance().DecInfoIdUseCount(id);
+        }
+        return false;
+    }
+    return true;
 }
 
 } // namespace AudioStandard
