@@ -80,6 +80,7 @@ public:
         const std::string &macAddress);
     vector<shared_ptr<AudioDeviceDescriptor>> GetConnectedDevicesByTypesAndRole(
         const std::vector<DeviceType> &types, DeviceRole role);
+    vector<shared_ptr<AudioDeviceDescriptor>> GetConnectedDevices();
     bool GetScoState();
     void UpdateEarpieceStatus(const bool hasEarPiece);
     vector<shared_ptr<AudioDeviceDescriptor>> GetDevicesByFilter(DeviceType devType, DeviceRole devRole,

@@ -841,9 +841,6 @@ void AudioDeviceManager::AddAvailableDevicesByUsage(const AudioDeviceUsage usage
                 audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(dev));
             }
             break;
-        case D_ALL_DEVICES:
-            audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(dev));
-            break;
         default:
             break;
     }
@@ -1075,6 +1072,17 @@ std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetConnectedD
             desc->connectState_ != VIRTUAL_CONNECTED) {
             audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(desc));
         }
+    }
+    return audioDeviceDescriptors;
+}
+
+std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetConnectedDevices()
+{
+    std::vector<shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
+    for (const auto &desc : connectedDevices_) {
+        audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(desc));
     }
     return audioDeviceDescriptors;
 }
