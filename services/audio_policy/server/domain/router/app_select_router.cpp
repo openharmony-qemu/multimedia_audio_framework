@@ -46,7 +46,7 @@ shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetCallCaptureDevice(SourceTy
     const uint32_t sessionID)
 {
     vector<shared_ptr<AudioDeviceDescriptor>> allDevices =
-        AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(D_ALL_DEVICES);
+        AudioDeviceManager::GetAudioDeviceManager().GetConnectedDevices();
     shared_ptr<AudioDeviceDescriptor> device =
         AudioDeviceManager::GetAudioDeviceManager().GetSelectedCaptureDevice(sessionID);
     CHECK_AND_RETURN_RET(device == nullptr || device->deviceType_ == DEVICE_TYPE_NONE,
@@ -66,7 +66,7 @@ shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetRecordCaptureDevice(Source
     const uint32_t sessionID)
 {
     vector<shared_ptr<AudioDeviceDescriptor>> allDevices =
-        AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(D_ALL_DEVICES);
+        AudioDeviceManager::GetAudioDeviceManager().GetConnectedDevices();
     shared_ptr<AudioDeviceDescriptor> device =
         AudioDeviceManager::GetAudioDeviceManager().GetSelectedCaptureDevice(sessionID);
     CHECK_AND_RETURN_RET(device == nullptr || device->deviceType_ == DEVICE_TYPE_NONE,
