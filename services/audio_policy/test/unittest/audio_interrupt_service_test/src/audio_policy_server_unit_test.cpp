@@ -3556,6 +3556,36 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_223, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_224
+* @tc.desc  : Test OnReceiveEvent.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_224, TestSize.Level4)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(audioPolicyServer, nullptr);
+    audioPolicyServer->interruptService_ = std::make_shared<AudioInterruptService>();
+    EventFwk::CommonEventData eventData;
+    OHOS::EventFwk::Want want;
+    want.SetAction("usual.event.SCREEN_UNLOCKED");
+    eventData.SetWant(want);
+    audioPolicyServer->isRingtoneEL2Ready_ = false;
+    audioPolicyServer->OnReceiveEvent(eventData);
+    EXPECT_EQ(audioPolicyServer->isRingtoneEL2Ready_, true);
+    audioPolicyServer->OnReceiveEvent(eventData);
+    EXPECT_EQ(audioPolicyServer->isRingtoneEL2Ready_, true);
+    audioPolicyServer->interruptService_->isSwitchUser_ = true;
+    audioPolicyServer->OnReceiveEvent(eventData);
+    EXPECT_EQ(audioPolicyServer->isRingtoneEL2Ready_, true);
+    audioPolicyServer->interruptService_ = nullptr;
+    audioPolicyServer->OnReceiveEvent(eventData);
+    EXPECT_EQ(audioPolicyServer->isRingtoneEL2Ready_, true);
+}
+
+
+/**
  * @tc.name  : Test AudioPolicyServer
  * @tc.number: IsStreamActiveByStreamUsage_001
  * @tc.desc  : AudioPolicyServer::IsStreamActiveByStreamUsage

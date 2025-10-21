@@ -1664,7 +1664,7 @@ void AudioPolicyServerNotifyAccountsChangedFuzzTest()
     const int32_t id = GetData<int32_t>();
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
-    server->NotifyAccountsChanged(id);
+    server->NotifyAccountsChanged(id, 1);
 }
 
 void AudioPolicyServerCheckHibernateStateFuzzTest()
