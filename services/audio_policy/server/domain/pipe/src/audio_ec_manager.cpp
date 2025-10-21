@@ -304,7 +304,7 @@ void AudioEcManager::UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, SourceT
         return;
     }
 
-    UpdateModuleInfoForMicRef(moduleInfo);
+    UpdateModuleInfoForMicRef(moduleInfo, sourceType);
 }
 
 std::string AudioEcManager::GetEcSamplingRate(const std::string &halName,
