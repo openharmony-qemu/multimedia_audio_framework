@@ -736,12 +736,12 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_HighResolutionExist_002, TestSi
 HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsAbsVolumeScene_001, TestSize.Level1)
 {
     bool isEnable = true;
-    AudioAdapterManager::GetInstance().SetAbsVolumeScene(isEnable);
+    AudioAdapterManager::GetInstance().SetAbsVolumeScene(isEnable, 0);
     int32_t ret = AudioAdapterManager::GetInstance().IsAbsVolumeScene();
     EXPECT_EQ(true, ret);
 
     isEnable = false;
-    AudioAdapterManager::GetInstance().SetAbsVolumeScene(isEnable);
+    AudioAdapterManager::GetInstance().SetAbsVolumeScene(isEnable, 0);
     ret = AudioAdapterManager::GetInstance().IsAbsVolumeScene();
     EXPECT_EQ(false, ret);
 }

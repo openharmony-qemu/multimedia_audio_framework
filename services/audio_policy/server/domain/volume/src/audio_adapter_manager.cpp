@@ -2849,14 +2849,21 @@ DeviceType AudioAdapterManager::GetActiveDevice()
     return audioActiveDevice_.GetDeviceForVolume()->deviceType_;
 }
 
-void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene)
+void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volume)
 {
-    AUDIO_PRERELEASE_LOGI("SetAbsVolumeScene: %{public}d", isAbsVolumeScene);
+    AUDIO_PRERELEASE_LOGI("SetAbsVolumeScene: %{public}d, volume: %{public}d", isAbsVolumeScene, volume);
     isAbsVolumeScene_ = isAbsVolumeScene;
     CHECK_AND_RETURN_LOG(audioServiceAdapter_ != nullptr, "SetAbsVolumeScene audio adapter null");
     audioServiceAdapter_->SetAbsVolumeStateToEffect(isAbsVolumeScene);
     AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(isAbsVolumeScene_);
     auto desc = audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_BLUETOOTH_A2DP);
+
+    if(isAbsVolumeScene) {
+        volumeDataMaintainer_.SaveVolumeToMap(desc, STREAM_MUSIC, volume);
+        bool mute = volume == 0;
+        isAbsVolumeMute_ = mute;
+        SetStreamMute(STREAM_MUSIC, mute);
+    }
 
     volumeDataMaintainer_.InitDeviceVolumeMap(desc);
     SetVolumeDbForDeviceInPipe(desc, STREAM_MUSIC);

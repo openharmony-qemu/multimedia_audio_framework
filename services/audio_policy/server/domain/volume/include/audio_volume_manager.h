@@ -96,7 +96,7 @@ public:
     int32_t SetAdjustVolumeForZone(int32_t zoneId);
     int32_t GetVolumeAdjustZoneId();
     int32_t DisableSafeMediaVolume();
-    int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support);
+    int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support, int32_t volume);
     int32_t SetStreamMute(AudioStreamType streamType, bool mute,
         const StreamUsage &streamUsage = STREAM_USAGE_UNKNOWN,
         const DeviceType &deviceType = DEVICE_TYPE_NONE,
@@ -160,7 +160,7 @@ private:
     void RestoreSafeVolume(AudioStreamType streamType, int32_t safeVolume);
     void SetSafeVolumeCallback(AudioStreamType streamType);
     void SetDeviceSafeVolumeStatus();
-    void SetAbsVolumeSceneAsync(const std::string &macAddress, const bool support);
+    void SetAbsVolumeSceneAsync(const std::string &macAddress, const bool support, int32_t volume);
     int32_t SelectDealSafeVolume(AudioStreamType streamType, int32_t volumeLevel,
         DeviceType deviceType = DEVICE_TYPE_NONE);
     void PublishSafeVolumeNotification(int32_t notificationId);

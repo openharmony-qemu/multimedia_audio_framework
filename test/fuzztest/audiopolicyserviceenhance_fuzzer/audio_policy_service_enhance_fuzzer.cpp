@@ -188,7 +188,7 @@ void AudioPolicyServiceEnhanceThreeFuzzTest()
     float audioBalance = GetData<float>();
     GetServerPtr()->audioPolicyService_.OnAudioBalanceChanged(audioBalance);
     std::string macAddress = "";
-    GetServerPtr()->audioPolicyService_.audioVolumeManager_.SetAbsVolumeSceneAsync(macAddress, true);
+    GetServerPtr()->audioPolicyService_.audioVolumeManager_.SetAbsVolumeSceneAsync(macAddress, true, 0);
     std::vector<AudioPin> audioPin = {
         AUDIO_PIN_NONE, AUDIO_PIN_OUT_SPEAKER, AUDIO_PIN_OUT_HEADSET,
         AUDIO_PIN_OUT_LINEOUT, AUDIO_PIN_OUT_HDMI, AUDIO_PIN_OUT_USB,

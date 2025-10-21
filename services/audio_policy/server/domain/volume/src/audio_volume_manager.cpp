@@ -1092,7 +1092,7 @@ int32_t AudioVolumeManager::DisableSafeMediaVolume()
     return SUCCESS;
 }
 
-void AudioVolumeManager::SetAbsVolumeSceneAsync(const std::string &macAddress, const bool support)
+void AudioVolumeManager::SetAbsVolumeSceneAsync(const std::string &macAddress, const bool support, int32_t volume)
 {
     usleep(SET_BT_ABS_SCENE_DELAY_MS);
     std::string btDevice = audioActiveDevice_.GetActiveBtDeviceMac();
@@ -1100,7 +1100,7 @@ void AudioVolumeManager::SetAbsVolumeSceneAsync(const std::string &macAddress, c
         GetEncryptAddr(macAddress).c_str(), support, GetEncryptAddr(btDevice).c_str());
 
     if (btDevice == macAddress) {
-        audioPolicyManager_.SetAbsVolumeScene(support);
+        audioPolicyManager_.SetAbsVolumeScene(support, volume);
         SetSharedAbsVolumeScene(support);
         // GetAllDeviceVolumeInfo used to update a2pd music volume in map.
         audioPolicyManager_.GetAllDeviceVolumeInfo(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_MUSIC);
@@ -1109,7 +1109,7 @@ void AudioVolumeManager::SetAbsVolumeSceneAsync(const std::string &macAddress, c
     }
 }
 
-int32_t AudioVolumeManager::SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support)
+int32_t AudioVolumeManager::SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support, int32_t volume)
 {
     // Maximum number of attempts, preventing situations where a2dp device has not yet finished coming online.
     int maxRetries = 3;
@@ -1127,7 +1127,7 @@ int32_t AudioVolumeManager::SetDeviceAbsVolumeSupported(const std::string &macAd
     }
 
     // The delay setting is due to move a2dp sink after this
-    std::thread setAbsSceneThrd(&AudioVolumeManager::SetAbsVolumeSceneAsync, this, macAddress, support);
+    std::thread setAbsSceneThrd(&AudioVolumeManager::SetAbsVolumeSceneAsync, this, macAddress, support, volume);
     setAbsSceneThrd.detach();
 
     return SUCCESS;

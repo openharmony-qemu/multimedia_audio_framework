@@ -491,7 +491,7 @@ void AudioDeviceStatus::UpdateActiveA2dpDeviceWhenDisconnecting(const std::strin
     if (!audioDeviceManager_.HasConnectedA2dp()) {
         audioActiveDevice_.SetActiveBtDeviceMac("");
         audioIOHandleMap_.ClosePortAndEraseIOHandle(BLUETOOTH_SPEAKER);
-        audioPolicyManager_.SetAbsVolumeScene(false);
+        audioPolicyManager_.SetAbsVolumeScene(false, 0);
         audioVolumeManager_.SetSharedAbsVolumeScene(false);
 #ifdef BLUETOOTH_ENABLE
         Bluetooth::AudioA2dpManager::SetActiveA2dpDevice("");
