@@ -917,6 +917,11 @@ int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string
         valueNew = key + "=" + value;
     } else if (key == "LOUD_VOLUMN_MODE") {
         parmKey = AudioParamKey::NONE;
+    } else if ((key == "pm_kara") || (key == "pm_kara_code")) {
+        parmKey = AudioParamKey::USB_DEVICE;
+        std::string value_new = key + "=" +value;
+        deviceManager->SetAudioParameter("usb", parmKey, "",value_new);
+        return;
     } else {
         return SUCCESS;
     }
@@ -1099,6 +1104,9 @@ const std::string AudioServer::GetAudioParameterInner(const std::string &key)
         }
         if (key == "concurrent_capture_stream_info") {
             return deviceManager->GetAudioParameter("primary", AudioParamKey::NONE, key);
+        }
+        if ((key == "pm_kara") || (key == "pm_kara_code")) {
+            return deviceManager->GetAudioParameter("usb", AudioParamKey::USB_DEVICE, key);
         }
         if (key.size() < BUNDLENAME_LENGTH_LIMIT && key.size() > CHECK_FAST_BLOCK_PREFIX.size() &&
             key.substr(0, CHECK_FAST_BLOCK_PREFIX.size()) == CHECK_FAST_BLOCK_PREFIX) {
