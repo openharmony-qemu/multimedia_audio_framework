@@ -32,6 +32,16 @@ using OHOS::AudioStandard::OHAudioSuitePipeline;
 using OHOS::AudioStandard::OHAudioNode;
 using OHOS::AudioStandard::OHAudioSuiteNodeBuilder;
 
+const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_DEFAULT = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_BALLADS = {3, 5, 2, -4, 1, 2, -3, 1, 4, 5};
+const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_CHINESE_STYLE = {0, 0, 2, 0, 0, 4, 4, 2, 2, 5};
+const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_CLASSICAL = {2, 3, 2, 1, 0, 0, -5, -5, -5, -6};
+const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_DANCE_MUSIC = {4, 3, 2, -3, 0, 0, 5, 4, 2, 0};
+const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_JAZZ = {2, 0, 2, 3, 6, 5, -1, 3, 4, 4};
+const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_POP = {5, 2, 1, -1, -5, -5, -2, 1, 2, 4};
+const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_RB = {1, 4, 5, 3, -2, -2, 2, 3, 5, 5};
+const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_ROCK = {6, 4, 4, 2, 0, 1, 3, 3, 5, 4};
+
 static OHAudioSuiteEngine *ConvertAudioSuiteEngine(OH_AudioSuiteEngine *audioSuiteEngine)
 {
     return (OHAudioSuiteEngine *)audioSuiteEngine;

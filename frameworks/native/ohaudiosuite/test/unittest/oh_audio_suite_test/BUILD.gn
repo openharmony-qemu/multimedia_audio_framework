@@ -19,7 +19,7 @@ audio_framework_root = "//foundation/multimedia/audio_framework"
 
 config("audio_suite_config") {
   include_dirs = [
-    "${audio_framework_root}/frameworks/native/ohaudio",
+    "${audio_framework_root}/frameworks/native/ohaudiosuite",
     "${audio_framework_root}/interfaces/inner_api/native/audiocommon/include",
     "${audio_framework_root}/interfaces/inner_api/native/audiostream/include",
     "${audio_framework_root}/interfaces/inner_api/native/audiosuite/include",
@@ -32,7 +32,7 @@ config("audio_suite_config") {
   ]
 }
 
-config("audio_ohaudio_config") {
+config("audio_ohaudiosuite_config") {
   include_dirs = [
     "${audio_framework_root}/interfaces/kits/c/audio_suite/",
     "${audio_framework_root}/interfaces/kits/c/common/",
@@ -45,7 +45,7 @@ ohos_unittest("audio_oh_audio_suite_unit_test") {
 
   configs = [
     ":audio_suite_config",
-    ":audio_ohaudio_config",
+    ":audio_ohaudiosuite_config",
   ]
 
   sources = [
@@ -54,7 +54,7 @@ ohos_unittest("audio_oh_audio_suite_unit_test") {
   ]
 
   deps = [
-    "${audio_framework_root}/frameworks/native/ohaudio:ohaudio",
+    "${audio_framework_root}/frameworks/native/ohaudiosuite:ohaudiosuite",
     "${audio_framework_root}/frameworks/native/audioutils:audio_utils"
   ]
 
