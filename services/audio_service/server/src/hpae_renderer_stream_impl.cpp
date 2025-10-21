@@ -693,11 +693,10 @@ int32_t HpaeRendererStreamImpl::UpdateMaxLength(uint32_t maxLength)
     size_t bufferSize = maxLength * spanSizeInFrame_ * byteSizePerFrame_;
     AUDIO_INFO_LOG("bufferSize: %{public}zu, spanSizeInFrame: %{public}zu, byteSizePerFrame: %{public}zu,"
         "maxLength:%{public}u", bufferSize, spanSizeInFrame_, byteSizePerFrame_, maxLength);
-    if (ringBuffer_ != nullptr) {
-        ringBuffer_->ReConfig(bufferSize, false);
-    } else {
-        AUDIO_ERR_LOG("ring buffer is nullptr!");
-    }
+    CHECK_AND_RETURN_RET_LOG(ringBuffer_ != nullptr, SUCCESS, "ring buffer is nullptr!");
+    size_t ringBufferSize = ringBuffer_->GetCahceSize();
+    CHECK_AND_RETURN_RET(ringBufferSize != bufferSize, SUCCESS);
+    ringBuffer_->ReConfig(bufferSize, false);
     return SUCCESS;
 }
 
