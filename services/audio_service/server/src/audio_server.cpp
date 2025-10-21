@@ -898,6 +898,7 @@ int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string
 
     AudioParamKey parmKey = AudioParamKey::NONE;
     std::string valueNew = value;
+    std::string halName = "primary";
     if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
         parmKey = AudioParamKey::PARAM_KEY_LOWPOWER;
         HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "SMARTPA_LOWPOWER",
@@ -919,9 +920,9 @@ int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string
         parmKey = AudioParamKey::NONE;
     } else if ((key == "pm_kara") || (key == "pm_kara_code")) {
         parmKey = AudioParamKey::USB_DEVICE;
-        std::string value_new = key + "=" +value;
+        halName = "usb";
+        valueNew = key + "=" +value;
         deviceManager->SetAudioParameter("usb", parmKey, "",value_new);
-        return;
     } else {
         return SUCCESS;
     }
@@ -934,7 +935,7 @@ int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, SUCCESS, "deviceManager is null");
-    deviceManager->SetAudioParameter("primary", parmKey, "", valueNew);
+    deviceManager->SetAudioParameter(halName, parmKey, "", valueNew);
     return SUCCESS;
 }
 
