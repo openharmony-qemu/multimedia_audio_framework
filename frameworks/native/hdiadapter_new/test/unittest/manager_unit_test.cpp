@@ -21,6 +21,7 @@
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 #include "manager/hdi_monitor.h"
+#include "util/id_handler.h"
 
 using namespace testing::ext;
 
@@ -153,5 +154,36 @@ HWTEST_F(ManagerUnitTest, ManagerUnitTest_002, TestSize.Level1)
     EXPECT_EQ(newId, oldId);
 }
 
+/**
+ * @tc.name   : Test Manager API
+ * @tc.number : GetId_001
+ * @tc.desc   : Test GetId action
+ */
+HWTEST_F(ManagerUnitTest, GetId_001, TestSize.Level1)
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    uint32_t id = manager.GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_REMOTE, "test", false, false);
+    std::shared_ptr<IAudioRenderSink> sink = manager.GetRenderSink(id, false);
+    IdHandler &idHandler = IdHandler::GetInstance();
+    uint32_t infoId = id & idHandler.HDI_ID_INFO_MASK;
+    EXPECT_EQ(idHandler.infoIdMap_[infoId].useIdSet_.size(), 0);
+}
+
+/**
+ * @tc.name   : Test Manager API
+ * @tc.number : GetId_002
+ * @tc.desc   : Test GetId action
+ */
+HWTEST_F(ManagerUnitTest, GetId_002, TestSize.Level1)
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    uint32_t id = manager.GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_REMOTE, "test", false);
+    std::shared_ptr<IAudioRenderSink> sink = manager.GetRenderSink(id, true);
+    id = manager.GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_REMOTE, "test", false, false);
+    IdHandler &idHandler = IdHandler::GetInstance();
+    uint32_t infoId = id & idHandler.HDI_ID_INFO_MASK;
+    EXPECT_NE(idHandler.infoIdMap_[infoId].useIdSet_.size(), 0);
+    manager.ReleaseId(id);
+}
 } // namespace AudioStandard
 } // namespace OHOS

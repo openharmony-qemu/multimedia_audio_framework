@@ -819,8 +819,8 @@ static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string devic
 {
     uint32_t renderId = HDI_INVALID_ID;
     renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass,
-        deviceNetId.empty() ? HDI_ID_INFO_DEFAULT : deviceNetId, false);
-    return HdiAdapterManager::GetInstance().GetRenderSink(renderId, true);
+        deviceNetId.empty() ? HDI_ID_INFO_DEFAULT : deviceNetId, false, false);
+    return HdiAdapterManager::GetInstance().GetRenderSink(renderId, false);
 }
 
 static inline FadeType GetFadeType(uint64_t expectedPlaybackDurationMs)
