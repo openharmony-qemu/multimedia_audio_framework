@@ -299,7 +299,7 @@ void AudioEcManager::UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType 
 void AudioEcManager::UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType)
 {
     if (sourceType != SOURCE_TYPE_VOICE_COMMUNICATION && sourceType != SOURCE_TYPE_MIC) {
-        ClearModuleInfoForMicRef(moduleInfo, sourceType);
+        ClearModuleInfoForMicRef(moduleInfo);
         AUDIO_INFO_LOG("sourceType: %{public}d need clear micref data", sourceType);
         return;
     }
@@ -515,7 +515,7 @@ void AudioEcManager::UpdateModuleInfoForMicRef(AudioModuleInfo &moduleInfo, Sour
 
 void AudioEcManager::ClearModuleInfoForMicRef(AudioModuleInfo &moduleInfo)
 {
-    moduleInfo.openMicRef = "";
+    moduleInfo.openMicRef = "0";
     moduleInfo.micRefRate = "";
     moduleInfo.micRefFormat = "";
     moduleInfo.micRefChannels = "";
