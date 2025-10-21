@@ -922,7 +922,6 @@ int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string
         parmKey = AudioParamKey::USB_DEVICE;
         halName = "usb";
         valueNew = key + "=" +value;
-        deviceManager->SetAudioParameter("usb", parmKey, "",value_new);
     } else {
         return SUCCESS;
     }
