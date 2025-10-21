@@ -244,6 +244,7 @@ void AudioEcManager::UpdatePrimaryMicModuleInfo(std::shared_ptr<AudioPipeInfo> &
 void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStreamPropInfo &targetInfo,
     SourceType sourceType)
 {
+
     if (!isEcFeatureEnable_) {
         // current layout represents the number of channel. This will need to be modify in the future.
         moduleInfo.channels = std::to_string(targetInfo.channels_);
@@ -281,6 +282,7 @@ void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStr
 void AudioEcManager::UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType sourceType)
 {
     if (sourceType != SOURCE_TYPE_VOICE_COMMUNICATION && sourceType != SOURCE_TYPE_VOICE_TRANSCRIPTION) {
+        ClearModuleInfoForEc(moduleInfo);
         AUDIO_INFO_LOG("sourceType: %{public}d not need ec data", sourceType);
         return;
     }
@@ -298,11 +300,12 @@ void AudioEcManager::UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType 
 void AudioEcManager::UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType)
 {
     if (sourceType != SOURCE_TYPE_VOICE_COMMUNICATION && sourceType != SOURCE_TYPE_MIC) {
-        AUDIO_INFO_LOG("sourceType: %{public}d not need micref data", sourceType);
+        ClearModuleInfoForMicRef(moduleInfo, sourceType);
+        AUDIO_INFO_LOG("sourceType: %{public}d need clear micref data", sourceType);
         return;
     }
 
-    UpdateModuleInfoForMicRef(moduleInfo, sourceType);
+    UpdateModuleInfoForMicRef(moduleInfo);
 }
 
 std::string AudioEcManager::GetEcSamplingRate(const std::string &halName,
@@ -472,6 +475,16 @@ void AudioEcManager::UpdateModuleInfoForEc(AudioModuleInfo &moduleInfo)
     moduleInfo.ecChannels = audioEcInfo_.channels;
 }
 
+void AudioEcManager::ClearModuleInfoForEc(AudioModuleInfo &moduleInfo)
+{
+    std::lock_guard<std::mutex> lock(audioEcInfoMutex_);
+    moduleInfo.ecType ="";
+    moduleInfo.ecAdapter = "";
+    moduleInfo.ecSamplingRate = "";
+    moduleInfo.ecFormat = "";
+    moduleInfo.ecChannels = "";
+}
+
 std::string AudioEcManager::ShouldOpenMicRef(SourceType source)
 {
     std::string shouldOpen = "0";
@@ -499,6 +512,14 @@ void AudioEcManager::UpdateModuleInfoForMicRef(AudioModuleInfo &moduleInfo, Sour
     moduleInfo.micRefRate = "48000";
     moduleInfo.micRefFormat = "s16le";
     moduleInfo.micRefChannels = "4";
+}
+
+void AudioEcManager::UpdateModuleInfoForMicRef(AudioModuleInfo &moduleInfo)
+{
+    moduleInfo.openMicRef = "";
+    moduleInfo.micRefRate = "";
+    moduleInfo.micRefFormat = "";
+    moduleInfo.micRefChannels = "";
 }
 
 AudioEcInfo AudioEcManager::GetAudioEcInfo()
