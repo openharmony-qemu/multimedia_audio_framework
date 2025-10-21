@@ -33,8 +33,8 @@ shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetMediaRenderDevice(StreamU
         std::string scoMac = Bluetooth::AudioHfpManager::GetAudioScoDeviceMac();
         shared_ptr<AudioDeviceDescriptor> activeScoDevice =
             AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac, DeviceRole::OUTPUT_DEVICE);
-        CHECK_AND_RETURN_RET_LOG(activeScoDevice != nullptr, make_shared<AudioDeviceDescriptor>(),
-            "activeScoDevice is nullptr");
+        CHECK_AND_RETURN_RET_LOG(activeScoDevice != nullptr && activeScoDevice->connectState_ != SUSPEND_CONNECTED &&
+            !activeScoDevice->exceptionFlag_, make_shared<AudioDeviceDescriptor>(), "activeScoDevice is nullptr");
         AUDIO_WARNING_LOG("Has sco device, pair route");
         return activeScoDevice;
     }
@@ -76,8 +76,8 @@ shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetRecordCaptureDevice(Sourc
         std::string scoMac = Bluetooth::AudioHfpManager::GetAudioScoDeviceMac();
         shared_ptr<AudioDeviceDescriptor> activeScoDevice =
             AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac, DeviceRole::INPUT_DEVICE);
-        CHECK_AND_RETURN_RET_LOG(activeScoDevice != nullptr, make_shared<AudioDeviceDescriptor>(),
-            "activeScoDevice is nullptr");
+        CHECK_AND_RETURN_RET_LOG(activeScoDevice != nullptr && activeScoDevice->connectState_ != SUSPEND_CONNECTED &&
+            !activeScoDevice->exceptionFlag_, make_shared<AudioDeviceDescriptor>(), "activeScoDevice is nullptr");
         AUDIO_WARNING_LOG("Has sco device, pair route");
         return activeScoDevice;
     }
