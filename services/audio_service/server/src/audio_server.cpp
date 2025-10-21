@@ -874,7 +874,6 @@ void AudioServer::SetA2dpAudioParameter(const std::string &renderValue)
     }
 }
 // LCOV_EXCL_STOP
-
 int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string &value)
 {
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
@@ -899,6 +898,23 @@ int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string
     AudioParamKey parmKey = AudioParamKey::NONE;
     std::string valueNew = value;
     std::string halName = "primary";
+    CHECK_AND_RETURN_RET(UpdateAudioParameterInfo(key, value, parmKey, valueNew, halName), SUCCESS);
+    
+    std::shared_ptr<IAudioCaptureSource> source = GetSourceByProp(HDI_ID_TYPE_VA, HDI_ID_INFO_VA, true);
+    if (source != nullptr) {
+        source->SetAudioParameter(parmKey, "", valueNew);
+    }
+
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, SUCCESS, "deviceManager is null");
+    deviceManager->SetAudioParameter(halName, parmKey, "", valueNew);
+    return SUCCESS;
+}
+
+bool AudioServer::UpdateAudioParameterInfo(const std::string &key, const std::string &value,
+    AudioParamKey &parmKey, std::string &valueNew, std::string &halName)
+{
     if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
         parmKey = AudioParamKey::PARAM_KEY_LOWPOWER;
         HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "SMARTPA_LOWPOWER",
@@ -923,19 +939,9 @@ int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string
         halName = "usb";
         valueNew = key + "=" +value;
     } else {
-        return SUCCESS;
+        return false;
     }
-
-    std::shared_ptr<IAudioCaptureSource> source = GetSourceByProp(HDI_ID_TYPE_VA, HDI_ID_INFO_VA, true);
-    if (source != nullptr) {
-        source->SetAudioParameter(parmKey, "", valueNew);
-    }
-
-    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, SUCCESS, "deviceManager is null");
-    deviceManager->SetAudioParameter(halName, parmKey, "", valueNew);
-    return SUCCESS;
+    return true;
 }
 
 int32_t AudioServer::SuspendRenderSink(const std::string &sinkName)
