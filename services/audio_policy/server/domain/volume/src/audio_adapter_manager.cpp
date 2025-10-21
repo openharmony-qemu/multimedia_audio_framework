@@ -2904,6 +2904,7 @@ void AudioAdapterManager::NotifyAccountsChanged(const int &id)
     for (auto &desc : descs) {
         UpdateVolumeWhenDeviceConnect(desc);
     }
+    LoadMuteStatusMap();
     UpdateVolumeForStreams();
 }
 
