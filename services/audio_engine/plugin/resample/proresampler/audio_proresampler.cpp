@@ -153,7 +153,7 @@ int32_t ProResampler::Process11025SampleRate(const float *inBuffer, uint32_t inF
     CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret, "Process failed with error %{public}s",
         ErrCodeToString(ret).c_str());
     uint32_t fillSize = 0;
-    if (reserveOutFrameLen >= tmpOutFrameLen) {
+    if (reserveOutFrameLen > tmpOutFrameLen) {
         fillSize = reserveOutFrameLen - tmpOutFrameLen;
     }
     ret = memset_s(buf11025_.data(), fillSize * channels_ * sizeof(float), 0, fillSize * channels_ * sizeof(float));
