@@ -99,8 +99,6 @@ public:
     int32_t SetAudioParameter(const std::string& key, const std::string& value) override;
     int32_t SetAudioParameter(const std::string& networkId, int32_t key, const std::string& condition,
         const std::string& value) override;
-    bool UpdateAudioParameterInfo(const std::string &key, const std::string &value,
-        AudioParamKey &parmKey, std::string &valueNew, std::string &halName) override;
     int32_t GetExtraParameters(const std::string &mainKey, const std::vector<std::string> &subKeys,
         std::vector<StringPair> &result) override;
     int32_t GetAudioParameter(const std::string &key, std::string& value) override;
@@ -361,6 +359,8 @@ private:
     const std::string GetAudioParameterInner(const std::string &key);
     const std::string GetAudioParameterInner(const std::string& networkId, const AudioParamKey key,
         const std::string& condition);
+    bool UpdateAudioParameterInfo(const std::string &key, const std::string &value,
+        AudioParamKey &parmKey, std::string &valueNew, std::string &halName);
     const std::string GetVAParameter(const std::string &key);
     int32_t SetAudioSceneInner(AudioScene audioScene, BluetoothOffloadState a2dpOffloadFlag, bool scoExcludeFlag);
     sptr<IRemoteObject> CreateAudioProcessInner(const AudioProcessConfig &config, int32_t &errorCode,
