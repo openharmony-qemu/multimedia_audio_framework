@@ -514,7 +514,7 @@ void AudioEcManager::UpdateModuleInfoForMicRef(AudioModuleInfo &moduleInfo, Sour
     moduleInfo.micRefChannels = "4";
 }
 
-void AudioEcManager::UpdateModuleInfoForMicRef(AudioModuleInfo &moduleInfo)
+void AudioEcManager::ClearModuleInfoForMicRef(AudioModuleInfo &moduleInfo)
 {
     moduleInfo.openMicRef = "";
     moduleInfo.micRefRate = "";
