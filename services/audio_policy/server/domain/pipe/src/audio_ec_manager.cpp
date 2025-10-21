@@ -244,7 +244,6 @@ void AudioEcManager::UpdatePrimaryMicModuleInfo(std::shared_ptr<AudioPipeInfo> &
 void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStreamPropInfo &targetInfo,
     SourceType sourceType)
 {
-
     if (!isEcFeatureEnable_) {
         // current layout represents the number of channel. This will need to be modify in the future.
         moduleInfo.channels = std::to_string(targetInfo.channels_);
@@ -283,7 +282,7 @@ void AudioEcManager::UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType 
 {
     if (sourceType != SOURCE_TYPE_VOICE_COMMUNICATION && sourceType != SOURCE_TYPE_VOICE_TRANSCRIPTION) {
         ClearModuleInfoForEc(moduleInfo);
-        AUDIO_INFO_LOG("sourceType: %{public}d not need ec data", sourceType);
+        AUDIO_INFO_LOG("sourceType: %{public}d need clear ec data", sourceType);
         return;
     }
 
