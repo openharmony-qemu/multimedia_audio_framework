@@ -32,6 +32,7 @@ public:
     AudioChannelInfo GetOutChannelInfo() const;
     int32_t SetInChannelInfo(AudioChannelInfo inChannelInfo);
     int32_t SetOutChannelInfo(AudioChannelInfo outChannelInfo);
+    void SetDownmixNormalization(bool normalizing);
     void Reset();
 private:
     int32_t MixProcess(bool isDmix, uint32_t frameLen, float* in, float* out);

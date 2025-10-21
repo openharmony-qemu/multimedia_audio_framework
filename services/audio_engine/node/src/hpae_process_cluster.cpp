@@ -167,6 +167,9 @@ void HpaeProcessCluster::CreateConverterNode(uint32_t sessionId, const HpaeNodeI
     idConverterMap_[sessionId] = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, outputNodeInfo);
     // if there is no loudness gain or effect, query information will not change
     idConverterMap_[sessionId]->RegisterCallback(this);
+    // processCluster comes with outputCluster, which has a limiter, so for converter in process cluster,
+    // downmix normalization can be disabled to preserve the loudness of input
+    idConverterMap_[sessionId]->SetDownmixNormalization(false);
 }
 
 void HpaeProcessCluster::CreateLoudnessGainNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo)

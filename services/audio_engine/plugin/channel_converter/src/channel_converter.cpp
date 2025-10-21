@@ -131,6 +131,11 @@ void ChannelConverter::GetMixTable(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNEL
         }
     }
 }
+
+void ChannelConverter::SetDownmixNormalization(bool normalizing)
+{
+    downMixer_.SetNormalization(normalizing);
+}
  
 int32_t ChannelConverter::Process(uint32_t frameLen, float* in, uint32_t inByteSize, float* out, uint32_t outByteSize)
 {

@@ -373,6 +373,11 @@ uint64_t HpaeAudioFormatConverterNode::GetLatency(uint32_t sessionId)
 {
     return 0;
 }
+
+void HpaeAudioFormatConverterNode::SetDownmixNormalization(bool normalizing)
+{
+    channelConverter.SetDownmixNormalization(normalizing);
+}
 } // Hpae
 } // AudioStandard
 } // OHOS
