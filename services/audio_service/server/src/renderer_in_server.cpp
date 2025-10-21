@@ -1060,7 +1060,7 @@ int32_t RendererInServer::StartInner()
     ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
 
-    // Bluetooth connection may take a long time, which may cause the data before and after the connection 
+    // Bluetooth connection may take a long time, which may cause the data before and after the connection
     // are not continuous, resulting in pop sounds. To avoid the problem,
     // WaitForDataConnection() needs to be called after UpdateSessionOperation(), where device is activated,
     // and also before stream_->Start(), where the stream is actually started.
