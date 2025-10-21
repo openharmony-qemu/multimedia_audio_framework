@@ -430,7 +430,7 @@ void HdiAdapterManager::ProcessIdUseCount(uint32_t id, bool isResident, bool try
         CHECK_AND_RETURN(!tryCreate);
         if (renderSinks_.count(id) == 0 && captureSources_.count(id) == 0) {
             // IdHandler::GetInstance().GetId will create infoId and add it in the infoIdMap for the new info.
-            // When getting id temporarily, if id is not in the map, delete the usecount of infoId and infoId in the infoIdMap.
+            // When getting id temporarily, if id is not in the map, delete infoId in the infoIdMap and its usecount.
             IdHandler::GetInstance().DecInfoIdUseCount(id);
         }
         return;
