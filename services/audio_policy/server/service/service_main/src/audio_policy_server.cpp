@@ -2684,6 +2684,8 @@ int32_t AudioPolicyServer::SetQueryBundleNameListCallback(const sptr<IRemoteObje
 
     audioPolicyUtils_.SetQueryBundleNameListCallback(object);
 
+    coreService_->SetQueryBundleNameListCallback(object);
+
     return SUCCESS;
 }
 // LCOV_EXCL_STOP

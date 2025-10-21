@@ -345,6 +345,9 @@ private:
     void ReleaseCaptureInjector(uint32_t sessionId);
     void RebuildCaptureInjector(uint32_t sessionId);
     int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
+    bool InVideoCommunicationBlackList(const std::string& bundleName);
+    int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
+
 private:
     static std::string GetEncryptAddr(const std::string &addr);
     int32_t FetchRendererPipesAndExecute(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
@@ -653,6 +656,8 @@ private:
     bool isCreateProcess_ = false;
 
     AudioInjectorPolicy &audioInjectorPolicy_;
+
+    sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
 };
 }
 }

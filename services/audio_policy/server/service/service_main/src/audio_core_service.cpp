@@ -396,7 +396,15 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
     }
 
     // fast/normal has done in audioRendererPrivate
-    CHECK_AND_RETURN_LOG(IsForcedNormal(streamDesc) == false, "Forced normal");
+    std::string bundleName = AudioBundleManager::GetBundleNameFromUid(streamDesc->appInfo_.appUid);
+    if (streamDesc->rendererInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL ||
+        streamDesc->rendererInfo_.rendererFlags == AUDIO_FLAG_FORCED_NORMAL ||
+        (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION &&
+        InVideoCommunicationBlackList(bundleName))) {
+        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+        AUDIO_INFO_LOG("Forced normal cases");
+        return;
+    }
 
     if (streamDesc->newDeviceDescs_.back()->deviceType_ == DEVICE_TYPE_REMOTE_CAST ||
         streamDesc->newDeviceDescs_.back()->networkId_ != LOCAL_NETWORK_ID) {
@@ -1665,6 +1673,24 @@ bool AudioCoreService::IsDistributeServiceOnline()
 {
     CHECK_AND_RETURN_RET_LOG(deviceStatusListener_ != nullptr, false, "deviceStatusListener_ is null");
     return deviceStatusListener_->IsDistributeServiceOnline();
+}
+
+bool AudioCoreService::InVideoCommunicationBlackList(const std::string& bundleName)
+{
+    bool isBundleNameExist = false;
+    if (queryBundleNameListCallback_ != nullptr) {
+        queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName, "audio_video_communication_blacklist",
+            isBundleNameExist);
+    }
+    return isBundleNameExist;
+}
+int32_t AudioCoreService::SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object)
+{
+    queryBundleNameListCallback_ = iface_cast<IStandardAudioPolicyManagerListener>(object);
+    if (queryBundleNameListCallback_ == nullptr) {
+        return ERR_CALLBACK_NOT_REGISTERED;
+    }
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS
