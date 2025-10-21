@@ -2281,7 +2281,6 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_084, TestSize.Level1
     EXPECT_TRUE(ptrRendererInClientInner->RestoreAudioStream(needStoreState));
 
     needStoreState = true;
-    ptrRendererInClientInner->isDataLinkConnected_ = true;
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
     EXPECT_TRUE(ptrRendererInClientInner->RestoreAudioStream(needStoreState));
 
