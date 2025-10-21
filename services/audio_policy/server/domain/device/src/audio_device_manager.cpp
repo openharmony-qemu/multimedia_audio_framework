@@ -1082,8 +1082,7 @@ std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetConnectedD
 
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     for (const auto &desc : connectedDevices_) {
-            audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(desc));
-        }
+        audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(desc));
     }
     return audioDeviceDescriptors;
 }
