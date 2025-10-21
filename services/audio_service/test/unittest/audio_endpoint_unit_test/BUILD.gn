@@ -16,6 +16,7 @@ import("//build/test.gni")
 import("../../../../../config.gni")
 
 module_output_path = "audio_framework/audio_framework_route/audio_endpoint"
+audio_framework_root = "../../../../.."
 
 ohos_unittest("audio_endpoint_unit_test") {
   testonly = true
@@ -86,6 +87,16 @@ ohos_unittest("audio_endpoint_plus_unit_test") {
   module_out_path = module_output_path
 
   cflags = [ "-fno-access-control" ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
 
   sources = [ "./src/audio_endpoint_plus_unit_test.cpp" ]
 

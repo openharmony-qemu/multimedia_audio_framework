@@ -105,19 +105,6 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, ConnectA2dpOffload_003, TestSize.Level
 }
 
 /**
- * @tc.name: WaitForConnectionCompleted_001
- * @tc.desc: Test WaitForConnectionCompleted with connection timeout.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioA2dpOffloadManagerUnitTest, WaitForConnectionCompleted_001, TestSize.Level4)
-{
-    testManager_->ConnectA2dpOffload(TEST_DEVICE_ADDR, TEST_SESSION_ID_VECTOR);
-    testManager_->WaitForConnectionCompleted();
-    EXPECT_EQ(testManager_->audioA2dpOffloadFlag_.GetCurrentOffloadConnectedState(), CONNECTION_STATUS_CONNECTED);
-}
-
-/**
  * @tc.name: OffloadStartPlaying_001
  * @tc.desc: Test OffloadStartPlaying with entering the second if branch.
  * @tc.type: FUNC

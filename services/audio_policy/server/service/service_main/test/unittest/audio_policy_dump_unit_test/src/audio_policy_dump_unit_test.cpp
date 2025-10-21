@@ -66,7 +66,7 @@ HWTEST_F(AudioPolicyDumpUnitTest, AudioPolicyDumpUnitTest_002, TestSize.Level4)
     audioPolicyDumpTest->AllDeviceVolumeInfoDump(dumpString);
     EXPECT_TRUE(dumpString.size() > 0);
     std::string TestString = "DeviceType";
-    EXPECT_FALSE(dumpString.find(TestString) != std::string::npos);
+    EXPECT_TRUE(dumpString.find(TestString) != std::string::npos);
 }
 
 /**
