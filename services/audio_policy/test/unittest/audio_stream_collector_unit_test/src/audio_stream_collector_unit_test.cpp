@@ -19,6 +19,8 @@
 #include "audio_spatialization_service.h"
 #include "audio_policy_log.h"
 #include "audio_errors.h"
+#include "audio_zone_service.h"
+#include "audio_zone.h"
 #include <thread>
 #include <string>
 #include <memory>
@@ -37,7 +39,11 @@ namespace AudioStandard {
 
 void AudioStreamCollectorUnitTest::SetUpTestCase(void) {}
 void AudioStreamCollectorUnitTest::TearDownTestCase(void) {}
-void AudioStreamCollectorUnitTest::SetUp(void) {}
+void AudioStreamCollectorUnitTest::SetUp(void)
+{
+    AudioZoneService::GetInstance().Init(DelayedSingleton<AudioPolicyServerHandler>::GetInstance(),
+        std::make_shared<AudioInterruptService>());
+}
 void AudioStreamCollectorUnitTest::TearDown(void) {}
 
 #define PRINT_LINE printf("debug __LINE__:%d\n", __LINE__)
@@ -1452,6 +1458,68 @@ HWTEST_F(AudioStreamCollectorUnitTest, UpdateRendererDeviceInfo_001, TestSize.Le
 
     int32_t ret = collector.UpdateRendererDeviceInfo(outputDeviceInfo);
     EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: UpdateRendererDeviceInfo_003
+* @tc.desc  : Test UpdateRenderDeviceInfo.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, UpdateRendererDeviceInfo_003, TestSize.Level1)
+{
+    AudioStreamCollector audioStreamCollector_;
+    AudioDeviceDescriptor outputDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    outputDeviceInfo.deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    outputDeviceInfo.networkId_ = "NOTLOCALDEVICE";
+    auto info1 = std::make_unique<AudioRendererChangeInfo>();
+    info1->outputDeviceInfo.deviceType_ = DeviceType::DEVICE_TYPE_EARPIECE;
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(info1));
+    auto info2 = std::make_unique<AudioRendererChangeInfo>();
+    info2->outputDeviceInfo.deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(info2));
+    int32_t result = audioStreamCollector_.UpdateRendererDeviceInfo(outputDeviceInfo);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(audioStreamCollector_.audioRendererChangeInfos_.size(), 2);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: UpdateRendererDeviceInfo_004
+* @tc.desc  : Test UpdateRenderDeviceInfo.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, UpdateRendererDeviceInfo_004, TestSize.Level1)
+{
+    AudioZoneContext context;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("TestZone", context, 0);
+
+    AudioDeviceDescriptor deviceDesc;
+    deviceDesc.deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    deviceDesc.networkId_ = "NOTLOCALDEVICE";
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescPtr = make_shared<AudioDeviceDescriptor>(deviceDesc);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescList;
+    deviceDescList.emplace_back(deviceDescPtr);
+    std::shared_ptr<AudioZone> audioZone = AudioZoneService::GetInstance().FindZone(zoneId);
+    audioZone->AddDeviceDescriptor(deviceDescList);
+    audioZone->SetDeviceDescriptorState(deviceDescPtr, true);
+
+    AudioStreamCollector audioStreamCollector_;
+    AudioDeviceDescriptor outputDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    outputDeviceInfo.deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    outputDeviceInfo.networkId_ = "NOTLOCALDEVICE";
+    auto info1 = std::make_unique<AudioRendererChangeInfo>();
+    info1->outputDeviceInfo.deviceType_ = DeviceType::DEVICE_TYPE_EARPIECE;
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(info1));
+    auto info2 = std::make_unique<AudioRendererChangeInfo>();
+    info2->outputDeviceInfo.deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(info2));
+    int32_t result = audioStreamCollector_.UpdateRendererDeviceInfo(outputDeviceInfo);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(audioStreamCollector_.audioRendererChangeInfos_.size(), 2);
+
+    audioZone->RemoveDeviceDescriptor(deviceDescList);
+    result = audioStreamCollector_.UpdateRendererDeviceInfo(outputDeviceInfo);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(audioStreamCollector_.audioRendererChangeInfos_.size(), 2);
 }
 
 /**
