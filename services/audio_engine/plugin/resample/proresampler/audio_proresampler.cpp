@@ -307,6 +307,12 @@ void ProResampler::Reset()
     CHECK_AND_RETURN_LOG(state_ != nullptr, "resampler is null");
     SingleStagePolyphaseResamplerResetMem(state_);
     SingleStagePolyphaseResamplerSkipHalfTaps(state_);
+    buf11025Index_ = 0;
+    bufFor100msIndex_ = 0;
+    buf11025_.clear();
+    bufFor100ms_.clear();
+    AUDIO_INFO_LOG("ProResampler reset, inRate: %{public}d, buf40ms: %{public}lu, buf100ms: %{public}lu",
+        inRate_, buf11025_.size(), bufFor100ms_.size());
 }
 
 uint32_t ProResampler::GetInRate() const

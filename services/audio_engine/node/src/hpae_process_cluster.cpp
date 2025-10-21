@@ -251,6 +251,11 @@ int32_t HpaeProcessCluster::CreateNodes(const std::shared_ptr<OutputNode<HpaePcm
  
 int32_t HpaeProcessCluster::DestroyNodes(uint32_t sessionId)
 {
+    if (!idConverterMap_.contains(sessionId) || !idLoudnessGainNodeMap_.contains(sessionId)
+        || !idGainMap_.contains(sessionId)) {
+        AUDIO_ERR_LOG("SessionId %{public}u, Nodes not exist, cannot destroy");
+        return ERROR;
+    }
     idConverterMap_.erase(sessionId);
     idLoudnessGainNodeMap_.erase(sessionId);
     idGainMap_.erase(sessionId);
@@ -402,6 +407,14 @@ uint64_t HpaeProcessCluster::GetLatency(uint32_t sessionId)
 
     return latency;
 }
+
+void HpaeProcessCluster::FlushConverterNode(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_LOG(idConverterMap_[sessionId] != nullptr, "ConverterNode is nullptr");
+    idConverterMap_[sessionId]->Flush();
+    AUDIO_INFO_LOG("SessionId: %{public}u, ConverterNode Flush", sessionId);
+}
+
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

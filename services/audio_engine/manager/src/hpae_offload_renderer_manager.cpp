@@ -308,6 +308,7 @@ int32_t HpaeOffloadRendererManager::Flush(uint32_t sessionId)
             // flush sinkoutput cache
             sinkOutputNode_->FlushStream();
         }
+        converterForLoudness_->Flush();
     };
     SendRequest(request, __func__);
     return SUCCESS;
