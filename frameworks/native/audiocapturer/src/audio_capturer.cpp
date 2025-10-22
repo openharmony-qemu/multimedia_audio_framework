@@ -295,7 +295,7 @@ IAudioStream::StreamClass AudioCapturerPrivate::GetPreferredStreamClass(AudioStr
 int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 {
     Trace trace("AudioCapturer::SetParams");
-    AUDIO_INFO_LOG("StreamClientState for Capturer::SetParams.");
+    AUDIO_INFO_LOG("enter");
     std::shared_lock<std::shared_mutex> lockShared;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lockShared = std::shared_lock<std::shared_mutex>(capturerMutex_);

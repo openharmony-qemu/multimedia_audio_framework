@@ -1458,7 +1458,7 @@ void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume, bool setVo
     bool isMute = audioStream_->GetMute();
     bool noNeedActive = setVolume && (audioStream_->GetVolume() > 0) && (volume > 0);
     if (currentState == NEW || currentState == PREPARED) {
-        AUDIO_INFO_LOG("UpdateAudioInterruptStrategy for set volume before RUNNING,  volume=%{public}f", volume);
+        AUDIO_INFO_LOG("set volume before RUNNING,  volume=%{public}f", volume);
         isStillZeroStreamVolume_ = (volume == 0);
     } else if ((isStillZeroStreamVolume_ || !isMute) && volume > 0) {
         isStillZeroStreamVolume_ = false;
@@ -2563,7 +2563,7 @@ void AudioRendererPrivate::SetAudioInterrupt(const AudioInterrupt &audioInterrup
 // Only called AudioRendererPrivate::Stop(), with AudioRendererPrivate::rendererMutex_ held.
 void AudioRendererPrivate::WriteUnderrunEvent() const
 {
-    AUDIO_INFO_LOG("AudioRendererPrivate WriteUnderrunEvent!");
+    AUDIO_INFO_LOG("enter");
     if (GetUnderflowCountInner() < WRITE_UNDERRUN_NUM) {
         return;
     }

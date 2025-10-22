@@ -331,7 +331,7 @@ int32_t AudioStateManager::CheckVKBInfo(const std::string &bundleName, bool &isV
     if (audioVKBInfoMgrCallback_ != nullptr) {
         audioVKBInfoMgrCallback_->OnCheckVKBInfo(bundleName, isValid);
     }
-    AUDIO_INFO_LOG("VKB isVKB:%{public}s", isValid ? "T" : "F");
+    AUDIO_INFO_LOG("isVKB:%{public}s", isValid ? "T" : "F");
     return 0;
 }
 

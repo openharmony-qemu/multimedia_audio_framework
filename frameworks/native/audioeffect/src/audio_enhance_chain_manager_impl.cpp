@@ -726,8 +726,7 @@ int32_t AudioEnhanceChainManagerImpl::SendInitCommand()
                 "chain: [%{public}" PRIu64 "] set init command fail", chain->GetChainId());
         }
     }
-    AUDIO_INFO_LOG("SendInitCommand success");
-
+    AUDIO_INFO_LOG("success");
     return SUCCESS;
 }
 
