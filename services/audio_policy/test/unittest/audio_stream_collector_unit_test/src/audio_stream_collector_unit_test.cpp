@@ -1420,6 +1420,53 @@ HWTEST_F(AudioStreamCollectorUnitTest, IsMediaPlaying_Test01, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioStreamCollector
+* @tc.number: GetPlayingMediaSessionIdList_001
+* @tc.desc  : Test GetPlayingMediaSessionIdList()
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, GetPlayingMediaSessionIdList_001, TestSize.Level1)
+{
+    // Test1
+    std::unique_ptr<AudioStreamCollector> collector = std::make_unique<AudioStreamCollector>();
+    collector->audioRendererChangeInfos_.push_back(nullptr);
+    vector<int32_t> sessionIdList = collector->GetPlayingMediaSessionIdList();
+    EXPECT_EQ(0, sessionIdList.size());
+
+    // Test2
+    AudioRendererInfo rendererInfo1 = {CONTENT_TYPE_MUSIC, STREAM_USAGE_MEDIA, 0};
+    std::unique_ptr<AudioRendererChangeInfo> info1 = std::make_unique<AudioRendererChangeInfo>();
+    info1->sessionId = 1001;
+    info1->rendererState = RENDERER_PAUSED;
+    info1->rendererInfo = rendererInfo1;
+    info1->channelCount = 2;
+    collector->audioRendererChangeInfos_.push_back(std::move(info1));
+    sessionIdList = collector->GetPlayingMediaSessionIdList();
+    EXPECT_EQ(0, sessionIdList.size());
+
+    // Test3
+    AudioRendererInfo rendererInfo2 = {CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_COMMUNICATION, 0};
+    std::unique_ptr<AudioRendererChangeInfo> info2 = std::make_unique<AudioRendererChangeInfo>();
+    info2->sessionId = 1002;
+    info2->rendererState = RENDERER_RUNNING;
+    info2->rendererInfo = rendererInfo2;
+    info2->channelCount = 1;
+    collector->audioRendererChangeInfos_.push_back(std::move(info2));
+    sessionIdList = collector->GetPlayingMediaSessionIdList();
+    EXPECT_EQ(0, sessionIdList.size());
+
+    // Test4
+    AudioRendererInfo rendererInfo3 = {CONTENT_TYPE_MOVIE, STREAM_USAGE_MEDIA, 0};
+    std::unique_ptr<AudioRendererChangeInfo> info3 = std::make_unique<AudioRendererChangeInfo>();
+    info3->sessionId = 3;
+    info3->rendererState = RENDERER_RUNNING;
+    info3->rendererInfo = rendererInfo3;
+    info3->channelCount = 2;
+    collector->audioRendererChangeInfos_.push_back(std::move(info3));
+    sessionIdList = collector->GetPlayingMediaSessionIdList();
+    EXPECT_EQ(1, sessionIdList.size());
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector
 * @tc.number: IsStreamRunning_001
 * @tc.desc  : Test IsStreamRunning().
 */
