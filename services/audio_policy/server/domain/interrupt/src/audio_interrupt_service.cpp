@@ -939,7 +939,6 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
     HandleAppStreamType(zoneId, currAudioInterrupt);
     AudioStreamType streamType = currAudioInterrupt.audioFocusType.streamType;
     uint32_t incomingStreamId = currAudioInterrupt.streamId;
-    userId_ = GetCurrentUserId();
     AUDIO_INFO_LOG("streamId: %{public}u pid: %{public}d streamType: %{public}d zoneId: %{public}d"\
         "usage: %{public}d source: %{public}d",
         incomingStreamId, currAudioInterrupt.pid, streamType, zoneId,
@@ -1070,10 +1069,11 @@ int32_t AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId, co
     return SUCCESS;
 }
 
-void AudioInterruptService::ClearAudioFocusInfoListOnAccountsChanged(const int32_t &id)
+void AudioInterruptService::ClearAudioFocusInfoListOnAccountsChanged(const int32_t &id, const int32_t &oldId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_INFO_LOG("start DeactivateAudioInterrupt, current id:%{public}d", id);
+    oldUserId_ = oldId;
+    AUDIO_INFO_LOG("start DeactivateAudioInterrupt, current id:%{public}d, old id:%{public}d", id, oldId);
     ClearAudioFocusInfoList();
 }
 
@@ -1116,14 +1116,15 @@ void AudioInterruptService::CacheFocusAndCallback(
 {
     std::lock_guard<std::mutex> lock(cachedFocusMutex_);
     CachedFocusInfo info;
-    info.userId = userId_;
+    info.userId = oldUserId_;
     info.sessionId = sessionId;
     info.interruptEvent = interruptEvent;
     info.interrupt = audioInterrupt;
     AUDIO_INFO_LOG("CacheFocusAndCallback : userID = %{public}d, sessionId = %{public}d,"\
         "interruptEvent = %{public}d streamUsage_ = %{public}d",
-        userId_, sessionId, interruptEvent.hintType, audioInterrupt.streamUsage);
-    cachedFocusMap_[userId_].push_back(info);
+        oldUserId_, sessionId, interruptEvent.hintType, audioInterrupt.streamUsage);
+    cachedFocusMap_[oldUserId_].push_back(info);
+    isSwitchUser_ = true;
 }
 
 void AudioInterruptService::OnUserUnlocked(int32_t userId)
@@ -1140,28 +1141,14 @@ void AudioInterruptService::OnUserUnlocked(int32_t userId)
             SendInterruptEventCallback(resumeEvent, cachedInfo.sessionId, cachedInfo.interrupt);
         }
         cachedFocusMap_.erase(userId);
+        isSwitchUser_ = false;
     }
 }
 
-int32_t AudioInterruptService::GetCurrentUserId()
+bool AudioInterruptService::IsSwitchUser()
 {
-    std::vector<int32_t> ids;
-    int32_t currentuserId = -1;
-    ErrCode result;
-    int32_t retry = RETRY_TIME_S;
-    while (retry--) {
-        result = AccountSA::OsAccountManager::QueryActiveOsAccountIds(ids);
-        if (result == ERR_OK && !ids.empty()) {
-            currentuserId = ids[0];
-            AUDIO_DEBUG_LOG("current userId is :%{public}d", currentuserId);
-            break;
-        }
-        sleep(SLEEP_TIME_S);
-    }
-    if (result != ERR_OK || ids.empty()) {
-        AUDIO_WARNING_LOG("current userId is empty");
-    }
-    return currentuserId;
+    std::lock_guard<std::mutex> lock(cachedFocusMutex_);
+    return isSwitchUser_;
 }
 
 int32_t AudioInterruptService::ActivatePreemptMode()

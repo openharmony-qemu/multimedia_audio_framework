@@ -687,7 +687,7 @@ public:
 
     int32_t SetHighResolutionExist(bool highResExist) override;
 
-    void NotifyAccountsChanged(const int &id);
+    void NotifyAccountsChanged(const int &id, const int &oldId);
     void SendVolumeKeyEventToRssWhenAccountsChanged();
 
     // for hidump
@@ -938,6 +938,7 @@ private:
     bool isAlreadyRegisterCommonEventListener_ = false;
     std::mutex distributeDeviceMutex_;
     std::condition_variable distributeDeviceCond_;
+    int32_t newUserId_;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {
@@ -961,7 +962,7 @@ public:
         CHECK_AND_RETURN_LOG(oldId >= LOCAL_USER_ID, "invalid id");
         AUDIO_INFO_LOG("OnAccountsSwitch received, newid: %{public}d, oldid: %{public}d", newId, oldId);
         if (audioPolicyServer_ != nullptr) {
-            audioPolicyServer_->NotifyAccountsChanged(newId);
+            audioPolicyServer_->NotifyAccountsChanged(newId, oldId);
         }
     }
 private:

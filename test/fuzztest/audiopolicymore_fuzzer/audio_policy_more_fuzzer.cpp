@@ -203,7 +203,7 @@ void ClearAudioFocusInfoListOnAccountsChangedFuzzTest()
     if (interruptService == nullptr) {
         return;
     }
-    interruptService->ClearAudioFocusInfoListOnAccountsChanged(zoneId);
+    interruptService->ClearAudioFocusInfoListOnAccountsChanged(zoneId, 1);
 }
 
 void GetStreamTypePriorityFuzzTest()
