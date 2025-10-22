@@ -1086,14 +1086,13 @@ HWTEST_F(AudioCoreServiceUnitTest, IsForcedNormal_002, TestSize.Level1)
 {
     ASSERT_NE(nullptr, GetServerPtr());
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    AudioOutputFlag originalFlag = streamDesc->audioFlag_;
     
     // Test case 1: streamUsage is VIDEO_COMMUNICATION but not in blacklist
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
     streamDesc->appInfo_.appUid = 777;
     bool result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
     EXPECT_EQ(result, false);
-    EXPECT_EQ(streamDesc->audioFlag_, originalFlag);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
     
     // Test case 2: normal conditions, not forced normal
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
@@ -1102,7 +1101,7 @@ HWTEST_F(AudioCoreServiceUnitTest, IsForcedNormal_002, TestSize.Level1)
     streamDesc->appInfo_.appUid = 888;
     result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
     EXPECT_EQ(result, false);
-    EXPECT_EQ(streamDesc->audioFlag_, originalFlag);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
 }
 
 /**

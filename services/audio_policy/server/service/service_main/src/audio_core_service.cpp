@@ -378,9 +378,9 @@ bool AudioCoreService::IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &st
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
         return true;
     }
-    std::string bundleName = AudioBundleManager::GetBundleNameFromUid(streamDesc->appInfo_.appUid);
+
     if (rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION &&
-        InVideoCommunicationBlackList(bundleName)) {
+        InVideoCommunicationBlackList(streamDesc->bundleName_)) {
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
         return true;
     }
@@ -1681,7 +1681,7 @@ int32_t AudioCoreService::SetQueryBundleNameListCallback(const sptr<IRemoteObjec
 {
     queryBundleNameListCallback_ = iface_cast<IStandardAudioPolicyManagerListener>(object);
     CHECK_AND_RETURN_RET_LOG(queryBundleNameListCallback_ != nullptr, ERR_CALLBACK_NOT_REGISTERED,
-        "Client type callback is null");
+        "Query bundle name list callback is null");
     return SUCCESS;
 }
 } // namespace AudioStandard
