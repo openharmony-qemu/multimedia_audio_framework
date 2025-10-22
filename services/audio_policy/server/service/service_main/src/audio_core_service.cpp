@@ -35,6 +35,7 @@ namespace {
 const size_t SELECT_DEVICE_HISTORY_LIMIT = 10;
 const uint32_t FIRST_SESSIONID = 100000;
 static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
+static const char* CHECK_VIDEO_COMM_SELECTION = "audio_video_communication_blacklist";
 static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
 static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
 static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
@@ -377,8 +378,9 @@ bool AudioCoreService::IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &st
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
         return true;
     }
+    std::string bundleName = AudioBundleManager::GetBundleNameFromUid(streamDesc->appInfo_.appUid);
     if (rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION &&
-        rendererInfo.samplingRate != SAMPLE_RATE_48000) {
+        InVideoCommunicationBlackList(bundleName)) {
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
         return true;
     }
@@ -396,15 +398,7 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
     }
 
     // fast/normal has done in audioRendererPrivate
-    std::string bundleName = AudioBundleManager::GetBundleNameFromUid(streamDesc->appInfo_.appUid);
-    if (streamDesc->rendererInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL ||
-        streamDesc->rendererInfo_.rendererFlags == AUDIO_FLAG_FORCED_NORMAL ||
-        (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION &&
-        InVideoCommunicationBlackList(bundleName))) {
-        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-        AUDIO_INFO_LOG("Forced normal cases");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(IsForcedNormal(streamDesc) == false, "Forced normal");
 
     if (streamDesc->newDeviceDescs_.back()->deviceType_ == DEVICE_TYPE_REMOTE_CAST ||
         streamDesc->newDeviceDescs_.back()->networkId_ != LOCAL_NETWORK_ID) {
@@ -1678,18 +1672,16 @@ bool AudioCoreService::IsDistributeServiceOnline()
 bool AudioCoreService::InVideoCommunicationBlackList(const std::string& bundleName)
 {
     bool isBundleNameExist = false;
-    if (queryBundleNameListCallback_ != nullptr) {
-        queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName, "audio_video_communication_blacklist",
-            isBundleNameExist);
-    }
+    CHECK_AND_RETURN_RET_LOG(queryBundleNameListCallback_ != nullptr, false, "queryBundleNameListCallback_ is null");
+    queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName, CHECK_VIDEO_COMM_SELECTION,
+        isBundleNameExist);
     return isBundleNameExist;
 }
 int32_t AudioCoreService::SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object)
 {
     queryBundleNameListCallback_ = iface_cast<IStandardAudioPolicyManagerListener>(object);
-    if (queryBundleNameListCallback_ == nullptr) {
-        return ERR_CALLBACK_NOT_REGISTERED;
-    }
+    CHECK_AND_RETURN_RET_LOG(queryBundleNameListCallback_ != nullptr, ERR_CALLBACK_NOT_REGISTERED,
+        "Client type callback is null");
     return SUCCESS;
 }
 } // namespace AudioStandard
