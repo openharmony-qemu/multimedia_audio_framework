@@ -480,8 +480,7 @@ int32_t LocalDeviceManager::SetOutputPortPin(DeviceType outputDevice, AudioRoute
 
 int32_t LocalDeviceManager::HandleNearlinkScene(DeviceType deviceType, AudioRouteNode &node)
 {
-    if (currentAudioScene_.load() != AUDIO_SCENE_DEFAULT ||
-        dmDeviceTypeMap_[DEVICE_TYPE_NEARLINK_IN] == DM_DEVICE_TYPE_NEARLINK_SCO) {
+    if (currentAudioScene_.load() != AUDIO_SCENE_DEFAULT) {
         node.ext.device.type = PIN_OUT_NEARLINK_SCO;
         node.ext.device.desc = (char *)"pin_out_nearlink_sco";
         return SUCCESS;
