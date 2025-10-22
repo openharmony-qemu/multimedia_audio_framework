@@ -2658,7 +2658,7 @@ void HpaeManager::DeleteCaptureManager(const std::string &name)
 void HpaeManager::DeleteAudioport(const std::string &name)
 {
     if (sinkNameSinkIdMap_.find(name) != sinkNameSinkIdMap_.end()) {
-        DeleteRendererManager(name)
+        DeleteRendererManager(name);
     } else if (sourceNameSourceIdMap_.find(name) != sourceNameSourceIdMap_.end()) {
         DeleteCaptureManager(name);
     } 
