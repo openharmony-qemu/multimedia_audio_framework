@@ -1109,7 +1109,8 @@ void AudioVolumeManager::SetAbsVolumeSceneAsync(const std::string &macAddress, c
     }
 }
 
-int32_t AudioVolumeManager::SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support, int32_t volume)
+int32_t AudioVolumeManager::SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support,
+    int32_t volume)
 {
     // Maximum number of attempts, preventing situations where a2dp device has not yet finished coming online.
     int maxRetries = 3;
