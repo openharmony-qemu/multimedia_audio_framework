@@ -1054,7 +1054,7 @@ HWTEST_F(AudioCoreServiceUnitTest, IsForcedNormal_001, TestSize.Level1)
 {
     ASSERT_NE(nullptr, GetServerPtr());
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    L
+    
     streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
     bool result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
     EXPECT_EQ(result, true);
