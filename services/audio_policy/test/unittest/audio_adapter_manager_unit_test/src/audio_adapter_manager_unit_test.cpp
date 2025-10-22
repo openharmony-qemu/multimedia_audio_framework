@@ -555,5 +555,105 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetDeviceVolume_001, TestSize.Level1)
     auto volume = audioAdapterManager_->GetDeviceVolume(deviceType, streamType);
     EXPECT_EQ(volume, volumeLevel);
 }
+
+/**
+ * @tc.name: Test SetAppVolumeDb
+ * @tc.number: SetAppVolumeDb_001
+ * @tc.type: FUNC
+ * @tc.desc: when successful execution, return success
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetAppVolumeDb_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    int32_t appUid = 123456;
+    int32_t volumeLevel = 2;
+    audioAdapterManager->volumeDataMaintainer_.SetAppVolume(appUid, volumeLevel);
+    std::shared_ptr<AudioDeviceDescriptor> defaultOutputDevice_ =
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    defaultOutputDevice_->deviceType_ = DEVICE_TYPE_SPEAKER;
+    defaultOutputDevice_->networkId_ = "RemoteDevice";
+    uint32_t sessionId = 100001;
+    OffloadAdapter adapter = OFFLOAD_IN_REMOTE;
+    audioAdapterManager->SetOffloadSessionId(sessionId, adapter);
+    audioAdapterManager->audioActiveDevice_.defaultOutputDevice_ = defaultOutputDevice_;
+    int32_t res = audioAdapterManager->SetAppVolumeDb(appUid);
+    EXPECT_EQ(res, SUCCESS);
+}
+
+/**
+ * @tc.name: Test SetAppVolumeDb
+ * @tc.number: SetAppVolumeDb_002
+ * @tc.type: FUNC
+ * @tc.desc: when successful execution, return success
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetAppVolumeDb_002, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    int32_t appUid = 123456;
+    int32_t volumeLevel = 2;
+    audioAdapterManager->volumeDataMaintainer_.SetAppVolume(appUid, volumeLevel);
+    std::shared_ptr<AudioDeviceDescriptor> defaultOutputDevice_ =
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    defaultOutputDevice_->deviceType_ = DEVICE_TYPE_INVALID;
+    defaultOutputDevice_->networkId_ = "RemoteDevice";
+    uint32_t sessionId = 100001;
+    OffloadAdapter adapter = OFFLOAD_IN_PRIMARY;
+    audioAdapterManager->SetOffloadSessionId(sessionId, adapter);
+    audioAdapterManager->audioActiveDevice_.defaultOutputDevice_ = defaultOutputDevice_;
+    int32_t res = audioAdapterManager->SetAppVolumeDb(appUid);
+    EXPECT_EQ(res, SUCCESS);
+}
+
+/**
+ * @tc.name: Test SetAppVolumeMutedDB
+ * @tc.number: SetAppVolumeMutedDB_001
+ * @tc.type: FUNC
+ * @tc.desc: when successful execution, return success
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetAppVolumeMutedDB_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    int32_t appUid = 123456;
+    int32_t volumeLevel = 2;
+    bool muted = true;
+    audioAdapterManager->volumeDataMaintainer_.SetAppVolume(appUid, volumeLevel);
+    std::shared_ptr<AudioDeviceDescriptor> defaultOutputDevice_ =
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    defaultOutputDevice_->deviceType_ = DEVICE_TYPE_SPEAKER;
+    defaultOutputDevice_->networkId_ = "RemoteDevice";
+    uint32_t sessionId = 100001;
+    OffloadAdapter adapter = OFFLOAD_IN_REMOTE;
+    audioAdapterManager->SetOffloadSessionId(sessionId, adapter);
+    audioAdapterManager->audioActiveDevice_.defaultOutputDevice_ = defaultOutputDevice_;
+    int32_t res = audioAdapterManager->SetAppVolumeMutedDB(appUid, muted);
+    EXPECT_EQ(res, SUCCESS);
+}
+
+/**
+ * @tc.name: Test SetAppVolumeMutedDB
+ * @tc.number: SetAppVolumeMutedDB_002
+ * @tc.type: FUNC
+ * @tc.desc: when successful execution, return success
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetAppVolumeMutedDB_002, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    int32_t appUid = 123456;
+    int32_t volumeLevel = 2;
+    bool muted = true;
+    audioAdapterManager->volumeDataMaintainer_.SetAppVolume(appUid, volumeLevel);
+    std::shared_ptr<AudioDeviceDescriptor> defaultOutputDevice_ =
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    defaultOutputDevice_->deviceType_ = DEVICE_TYPE_INVALID;
+    defaultOutputDevice_->networkId_ = "RemoteDevice";
+    uint32_t sessionId = 100001;
+    OffloadAdapter adapter = OFFLOAD_IN_PRIMARY;
+    audioAdapterManager->SetOffloadSessionId(sessionId, adapter);
+    audioAdapterManager->audioActiveDevice_.defaultOutputDevice_ = defaultOutputDevice_;
+    int32_t res = audioAdapterManager->SetAppVolumeMutedDB(appUid, muted);
+    EXPECT_EQ(res, SUCCESS);
+}
+
+
 } // namespace AudioStandard
 } // namespace OHOS
