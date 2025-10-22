@@ -19,6 +19,8 @@
 #include "audio_pnp_server.h"
 
 #include <poll.h>
+#include <unistd.h>
+#include <sys/socket.h>
 #include "securec.h"
 #include "osal_time.h"
 #include "audio_utils.h"
@@ -51,6 +53,14 @@ static std::string GetAudioEventInfo(const AudioEvent audioEvent)
     }
 
     return event;
+}
+
+static void HandlePollErrorEvent(const pollfd &fd)
+{
+    int error;
+    socklen_t len = sizeof(error);
+    getsockopt(fd.fd, SOL_SOCKET, SO_ERROR, &error, &len);
+    AUDIO_ERR_LOG("audio event poll error. socket error:%{public}d", error);
 }
 
 AudioPnpServer::~AudioPnpServer()
@@ -168,7 +178,7 @@ void AudioPnpServer::OpenAndReadWithSocket()
             continue;
         }
 
-        if (((uint32_t)fd.revents & (POLLIN | POLLERR)) != 0) {
+        if ((static_cast<uint32_t>(fd.revents) & POLLIN) == POLLIN) {
             memset_s(&msg, sizeof(msg), 0, sizeof(msg));
             rcvLen = AudioSocketThread::AudioPnpReadUeventMsg(socketFd, msg, UEVENT_MSG_LEN);
             if (rcvLen <= 0) {
@@ -186,6 +196,8 @@ void AudioPnpServer::OpenAndReadWithSocket()
             } else {
                 OnPnpDeviceStatusChanged(eventInfo_);
             }
+        } else if ((static_cast<uint32_t>(fd.revents) & POLLERR) == POLLERR) {
+            HandlePollErrorEvent(fd);
         }
     }
     CloseFd(socketFd);
