@@ -109,6 +109,7 @@ ohos_unittest("audio_suite_node_test") {
 ohos_unittest("audio_suite_eq_node_test") {
   module_out_path = module_output_path
   sources = [
+    "tool/audio_suite_unittest_tools.cpp",
     "node/audio_suite_eq_node_test.cpp",
   ]
 
@@ -131,11 +132,9 @@ ohos_unittest("audio_suite_eq_node_test") {
   external_deps = [
     "c_utils:utils",
     "googletest:gtest",
-    "googletest:gmock",
     "hilog:libhilog",
   ]
-  
-  resource_config_file = "./resource/eqnode.xml"
+  resource_config_file = "./resource/ohos_test.xml"
 }
 
 ohos_unittest("audio_suite_eq_algo_interface_test") {
@@ -163,15 +162,15 @@ ohos_unittest("audio_suite_eq_algo_interface_test") {
   external_deps = [
     "c_utils:utils",
     "googletest:gtest",
-    "googletest:gmock",
     "hilog:libhilog",
   ]
-  resource_config_file = "./resource/eqnode.xml"
+  resource_config_file = "./resource/ohos_test.xml"
 }
 
 ohos_unittest("audio_suite_env_node_test") {
   module_out_path = module_output_path
   sources = [
+    "tool/audio_suite_unittest_tools.cpp",
     "node/audio_suite_env_node_test.cpp",
   ]
 
@@ -194,10 +193,9 @@ ohos_unittest("audio_suite_env_node_test") {
   external_deps = [
     "c_utils:utils",
     "googletest:gtest",
-    "googletest:gmock",
     "hilog:libhilog",
   ]
-  resource_config_file = "./resource/envnode.xml"
+  resource_config_file = "./resource/ohos_test.xml"
 }
 
 ohos_unittest("audio_suite_env_algo_interface_test") {
@@ -225,10 +223,9 @@ ohos_unittest("audio_suite_env_algo_interface_test") {
   external_deps = [
     "c_utils:utils",
     "googletest:gtest",
-    "googletest:gmock",
     "hilog:libhilog",
   ]
-  resource_config_file = "./resource/envnode.xml"
+  resource_config_file = "./resource/ohos_test.xml"
 }
 
 ohos_unittest("audio_suite_mixer_test") {

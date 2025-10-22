@@ -16,12 +16,11 @@
 #ifndef AUDIO_SUITE_EQ_ALGO_INTERFACE_IMPL_H
 #define AUDIO_SUITE_EQ_ALGO_INTERFACE_IMPL_H
 #define EQUALIZER_BANDS_NUM (10)
-#define ALGO_CHANNEL_NUM (2)    // 算法声道数规格
-#define ALGO_BYTE_NUM (2)       // 算法单帧字节数规格
-#define ALGO_SAMPLE_WIDTH (16)  // 算法单帧位深规格
+#define ALGO_CHANNEL_NUM (2)    // 算法声道数
+#define ALGO_BYTE_NUM (2)       // 算法每个采样点的字节数
 #define MASTERVOLUME (15)       // 算法音量设置
-#define ONE_BYTE_WIDTH (8)
 #define TWO_BYTES_WIDTH (16)
+#define AUDIO_DURATION (2)        // 输入音频的持续时间，以10ms为单位
 
 #include "audio_suite_algo_interface.h"
 #include "imedia_api.h"
@@ -61,7 +60,7 @@ public:
 
 private:
     bool isEqAlgoInit_ = false;
-    short changeFormat(int high, int low);
+    short setEqParam(int left, int right);
     std::vector<char> runBuf_;
     std::vector<char> scratchBuf_;
 
@@ -73,7 +72,7 @@ private:
     iMedia_Eq_PARA para_ = {0};
     iMedia_SWS_MEM_SIZE stSize_;
     size_t frameLen_;
-    size_t frameBytes_;
+    size_t inputSamples_;
 };
 
 }  // namespace AudioSuite
