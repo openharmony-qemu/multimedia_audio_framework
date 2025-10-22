@@ -961,6 +961,11 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(std::shared_ptr<AudioDeviceDe
             streamType, mute);
         return SUCCESS;
     }
+    int32_t isSetStreamMute = IsHandleStreamMute(streamType, mute, streamUsage);
+    if (isSetStreamMute == SUCCESS) {
+        return SUCCESS;
+    }
+
     volumeDataMaintainer_.SaveMuteToMap(device, streamType, mute);
     SaveMuteToDbAsync(device, streamType, mute);
     return SetVolumeDbForDeviceInPipe(device, streamType);
