@@ -371,7 +371,7 @@ void AudioPolicyManagerSixFuzzTest()
     std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> audioHeadTrackingEnabledChangeCallback;
     std::shared_ptr<AudioNnStateChangeCallback> audioNnStateChangeCallback;
 
-    AudioPolicyManager::GetInstance().SetDeviceAbsVolumeSupported(macAddress, support);
+    AudioPolicyManager::GetInstance().SetDeviceAbsVolumeSupported(macAddress, support, volume);
     AudioPolicyManager::GetInstance().IsAbsVolumeScene();
     AudioPolicyManager::GetInstance().SetA2dpDeviceVolume(macAddress, volume, updateUi);
     AudioPolicyManager::GetInstance().SetNearlinkDeviceVolume(macAddress, volumeType, volume, updateUi);

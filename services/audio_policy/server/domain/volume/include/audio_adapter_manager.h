@@ -200,7 +200,7 @@ public:
 
     bool IsUseNonlinearAlgo() { return useNonlinearAlgo_; }
 
-    void SetAbsVolumeScene(bool isAbsVolumeScene);
+    void SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volume);
 
     bool IsAbsVolumeScene() const;
 

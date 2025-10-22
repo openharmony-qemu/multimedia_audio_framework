@@ -1072,7 +1072,7 @@ public:
      * @return Returns success or not
      * @since 11
      */
-    int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support);
+    int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support, int32_t volume = 0);
 
     /**
      * @brief Set the absolute volume value for the specified Bluetooth device

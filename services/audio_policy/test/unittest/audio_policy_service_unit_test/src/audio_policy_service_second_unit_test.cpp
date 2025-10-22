@@ -182,7 +182,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, SetAbsVolumeSceneAsync_001, TestSize.Lev
     auto server = GetServerUtil::GetServerPtr();
     std::string macAddress = "";
     bool support = false;
-    server->audioPolicyService_.audioVolumeManager_.SetAbsVolumeSceneAsync(macAddress, support);
+    server->audioPolicyService_.audioVolumeManager_.SetAbsVolumeSceneAsync(macAddress, support, 0);
     EXPECT_EQ(server->audioPolicyService_.audioActiveDevice_.activeBTDevice_, "");
 }
 
@@ -196,7 +196,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, SetDeviceAbsVolumeSupported_001, TestSiz
     auto server = GetServerUtil::GetServerPtr();
     std::string macAddress = "";
     bool support = false;
-    int32_t ret = server->audioVolumeManager_.SetDeviceAbsVolumeSupported(macAddress, support);
+    int32_t ret = server->audioVolumeManager_.SetDeviceAbsVolumeSupported(macAddress, support, 0);
     EXPECT_EQ(ret, ERROR);
 }
 

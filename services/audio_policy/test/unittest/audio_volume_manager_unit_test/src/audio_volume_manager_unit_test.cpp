@@ -294,7 +294,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_013, TestSize.Level1)
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
     audioVolumeManager.audioActiveDevice_.SetActiveBtDeviceMac(macAddress);
-    audioVolumeManager.SetAbsVolumeSceneAsync(macAddress, support);
+    audioVolumeManager.SetAbsVolumeSceneAsync(macAddress, support, 0);
     EXPECT_EQ(audioVolumeManager.audioActiveDevice_.GetActiveBtDeviceMac(), macAddress);
 }
 
@@ -457,7 +457,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_016, TestSize.Level1)
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
     audioVolumeManager.audioActiveDevice_.SetActiveBtDeviceMac(macAddress);
-    auto ret = audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support);
+    auto ret = audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support, 0);
     EXPECT_NE(ret, 0);
 }
 
@@ -1187,10 +1187,10 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_057, TestSize.Level1)
     bool support = true;
     std::string macAddress = "11:22:33:44:55:66";
     audioVolumeManager->audioActiveDevice_.activeBTDevice_ = "test";
-    audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support);
+    audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support, 0);
 
     audioVolumeManager->audioActiveDevice_.activeBTDevice_ = macAddress;
-    audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support);
+    audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support, 0);
     EXPECT_EQ(audioVolumeManager->audioActiveDevice_.GetActiveBtDeviceMac(), macAddress);
 }
 
@@ -1206,7 +1206,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_058, TestSize.Level1)
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
     audioVolumeManager.audioA2dpDevice_.connectedA2dpDeviceMap_.clear();
-    auto ret = audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support);
+    auto ret = audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support, 0);
     EXPECT_NE(ret, 0);
 }
 
@@ -1224,7 +1224,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_059, TestSize.Level1)
     A2dpDeviceConfigInfo a2dpDeviceConfigInfo;
     a2dpDeviceConfigInfo.absVolumeSupport = true;
     audioVolumeManager.audioA2dpDevice_.connectedA2dpDeviceMap_[macAddress] = a2dpDeviceConfigInfo;
-    auto ret = audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support);
+    auto ret = audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support, 0);
     EXPECT_EQ(ret, 0);
 }
 

@@ -1968,7 +1968,7 @@ HWTEST(AudioManagerUnitTest, SetDeviceAbsVolumeSupported_001, TestSize.Level1)
 
         EXPECT_EQ(true, (audioStreamInfo.format >= SAMPLE_U8) && ((audioStreamInfo.format <= SAMPLE_F32LE)));
         if ((outputDevice->macAddress_).c_str()!= nullptr) {
-            ret = AudioSystemManager::GetInstance()->SetDeviceAbsVolumeSupported(outputDevice->macAddress_, support);
+            ret = AudioSystemManager::GetInstance()->SetDeviceAbsVolumeSupported(outputDevice->macAddress_, support, 0);
             EXPECT_EQ(SUCCESS, ret);
 
             ret = AudioSystemManager::GetInstance()->SetA2dpDeviceVolume(outputDevice->macAddress_, 2, support);
@@ -1977,7 +1977,7 @@ HWTEST(AudioManagerUnitTest, SetDeviceAbsVolumeSupported_001, TestSize.Level1)
     }
     std::string macAddress = "";
     support = false;
-    ret = AudioSystemManager::GetInstance()->SetDeviceAbsVolumeSupported(macAddress, support);
+    ret = AudioSystemManager::GetInstance()->SetDeviceAbsVolumeSupported(macAddress, support, 0);
     EXPECT_EQ(ERROR, ret);
 
     ret = AudioSystemManager::GetInstance()->SetA2dpDeviceVolume(macAddress, 0, support);

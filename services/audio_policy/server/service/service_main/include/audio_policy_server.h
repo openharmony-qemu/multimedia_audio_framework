@@ -409,7 +409,8 @@ public:
 
     int32_t GetAvailableMicrophones(std::vector<sptr<MicrophoneDescriptor>> &retMicList) override;
 
-    int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support) override;
+    int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support,
+        const int32_t volume = 0) override;
 
     int32_t IsAbsVolumeScene(bool &ret) override;
 

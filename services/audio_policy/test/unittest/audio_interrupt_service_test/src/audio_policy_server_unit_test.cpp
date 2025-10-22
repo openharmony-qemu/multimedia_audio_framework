@@ -2031,7 +2031,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_068, TestSize.Level1)
 
     std::string macAddress = "test";
     bool support = true;
-    auto ret = server->SetDeviceAbsVolumeSupported(macAddress, support);
+    auto ret = server->SetDeviceAbsVolumeSupported(macAddress, support, 0);
     EXPECT_EQ(ret, ERROR);
 }
 

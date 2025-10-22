@@ -3745,14 +3745,15 @@ int32_t AudioPolicyServer::GetAvailableMicrophones(std::vector<sptr<MicrophoneDe
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::SetDeviceAbsVolumeSupported(const std::string &macAddress, bool support)
+int32_t AudioPolicyServer::SetDeviceAbsVolumeSupported(const std::string &macAddress, bool support,
+    int32_t volume)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
     if (callerUid != UID_BLUETOOTH_SA) {
         AUDIO_ERR_LOG("SetDeviceAbsVolumeSupported: Error caller uid: %{public}d", callerUid);
         return ERROR;
     }
-    return audioVolumeManager_.SetDeviceAbsVolumeSupported(macAddress, support);
+    return audioVolumeManager_.SetDeviceAbsVolumeSupported(macAddress, support, volume);
 }
 
 int32_t AudioPolicyServer::IsAbsVolumeScene(bool &ret)

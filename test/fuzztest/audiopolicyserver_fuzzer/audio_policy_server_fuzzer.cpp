@@ -895,7 +895,7 @@ void AudioPolicyServerSetDeviceAbsVolumeSupportedFuzzTest()
 
     std::string macAddress = "test_mac";
     bool support = GetData<bool>();
-    audioPolicyServer->SetDeviceAbsVolumeSupported(macAddress, support);
+    audioPolicyServer->SetDeviceAbsVolumeSupported(macAddress, support, 0);
 }
 
 void AudioPolicyServerIsAbsVolumeSceneFuzzTest()
