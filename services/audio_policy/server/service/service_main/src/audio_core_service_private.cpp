@@ -522,7 +522,6 @@ void AudioCoreService::HandleAudioCaptureState(AudioMode &mode, AudioStreamChang
         auto sessionId = streamChangeInfo.audioCapturerChangeInfo.sessionId;
         if (Util::IsScoSupportSource(sourceType)) {
             Bluetooth::AudioHfpManager::HandleScoWithRecongnition(false);
-            AudioServerProxy::GetInstance().SetDmDeviceTypeProxy(0, DEVICE_TYPE_NEARLINK_IN);
         } else {
             AUDIO_INFO_LOG("close capture app, try to disconnect sco");
             bool isRecord = streamCollector_.HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
@@ -3021,14 +3020,12 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
 
     std::variant<StreamUsage, SourceType> audioStreamConfig;
     bool isRunning = streamDesc->streamStatus_ == STREAM_STATUS_STARTED;
-    bool isRecognitionSource = false;
     bool isVoiceType = true;
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         audioStreamConfig = streamDesc->rendererInfo_.streamUsage;
         isVoiceType = IsVoiceStreamType(streamDesc->rendererInfo_.streamUsage);
     } else {
         audioStreamConfig = streamDesc->capturerInfo_.sourceType;
-        isRecognitionSource = Util::IsScoSupportSource(streamDesc->capturerInfo_.sourceType);
         isVoiceType = IsVoiceSourceType(streamDesc->capturerInfo_.sourceType);
     }
     if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK || deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK_IN) {
@@ -3038,9 +3035,6 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
             CHECK_AND_RETURN_RET_LOG(isRunning, ret, "Stream is not runningf, no needs start playing");
             return sleAudioDeviceManager_.StartPlaying(*deviceDesc, config, isGameApp);
         };
-        if (isRecognitionSource) {
-            AudioServerProxy::GetInstance().SetDmDeviceTypeProxy(DM_DEVICE_TYPE_NEARLINK_SCO, DEVICE_TYPE_NEARLINK_IN);
-        }
 
         ResetNearlinkDeviceState(deviceDesc, isRunning);
 
