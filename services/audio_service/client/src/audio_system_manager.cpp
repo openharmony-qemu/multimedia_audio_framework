@@ -1641,7 +1641,8 @@ std::string AudioSystemManager::GetSelfBundleName()
     return bundleName;
 }
 
-int32_t AudioSystemManager::SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support, int32_t volume)
+int32_t AudioSystemManager::SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support,
+    int32_t volume)
 {
     AUDIO_INFO_LOG("AudioSystemManager::SetDeviceAbsVolumeSupported");
     return AudioPolicyManager::GetInstance().SetDeviceAbsVolumeSupported(macAddress, support, volume);
