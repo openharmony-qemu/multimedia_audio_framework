@@ -2607,6 +2607,10 @@ void AudioCoreService::CheckAndSleepBeforeRingDualDeviceSet(std::shared_ptr<Audi
     if (streamDesc->streamStatus_ == STREAM_STATUS_NEW && reason.IsSetAudioScene() &&
         streamDesc->newDeviceDescs_.size() > 1 && streamCollector_.IsMediaPlaying() &&
         IsRingerOrAlarmerDualDevicesRange(deviceType) && isRingOrAlarmStream) {
+        vector<std::int32_t> sessionIdList = streamCollector_.GetPlayingMediaSessionIdList();
+        for (const auto &sessionId : sessionIdList) {
+            AudioVolume::GetInstance()->SetStreamVolumeMute(sessionId, true);
+        }
         usleep(MEDIA_PAUSE_TO_DOUBLE_RING_DELAY_US);
     }
 }
