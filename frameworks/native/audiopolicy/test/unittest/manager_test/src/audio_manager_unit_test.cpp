@@ -2253,5 +2253,74 @@ HWTEST(AudioManagerUnitTest, NotifyProcessBackgroundState_001, TestSize.Level1)
     ret = AudioSystemManager::GetInstance()->NotifyProcessBackgroundState(uid, pid);
     EXPECT_NE(SUCCESS, ret);
 }
+
+/**
+ * @tc.name  : Test SetVolumeDegree API
+ * @tc.number: SetVolumeDegree_001
+ * @tc.desc  : SetVolumeDegree
+ * @tc.require:
+ */
+HWTEST(AudioManagerUnitTest, SetVolumeDegree_001, TestSize.Level0)
+{
+    auto manager = AudioSystemManager::GetInstance();
+
+    int32_t degree = 44;
+    AudioStreamType streamType = STREAM_MUSIC;
+    int32_t ret = manager->SetVolumeDegree(streamType, degree);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioStreamType streamType2 = STREAM_ULTRASONIC;
+    ret = manager->SetVolumeDegree(streamType2, degree);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioStreamType streamType3 = STREAM_APP;
+    ret = manager->SetVolumeDegree(streamType3, degree);
+    EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
+}
+
+/**
+ * @tc.name  : Test GetVolumeDegree API
+ * @tc.number: GetVolumeDegree_001
+ * @tc.desc  : GetVolumeDegree
+ * @tc.require:
+ */
+HWTEST(AudioManagerUnitTest, GetVolumeDegree_001, TestSize.Level0)
+{
+    auto manager = AudioSystemManager::GetInstance();
+    int32_t degree = 44;
+    AudioStreamType streamType = STREAM_ALARM;
+    int32_t ret = manager->SetVolumeDegree(streamType, degree);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = manager->GetVolumeDegree(streamType);
+    EXPECT_EQ(ret, degree);
+
+    AudioStreamType streamType3 = STREAM_APP;
+    ret = manager->GetVolumeDegree(streamType3);
+    EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
+}
+
+/**
+ * @tc.name  : Test GetMinVolumeDegree API
+ * @tc.number: GetMinVolumeDegree_001
+ * @tc.desc  : GetMinVolumeDegree
+ * @tc.require:
+ */
+HWTEST(AudioManagerUnitTest, GetMinVolumeDegree_001, TestSize.Level0)
+{
+    auto manager = AudioSystemManager::GetInstance();
+
+    AudioVolumeType streamType = STREAM_ALL;
+    int32_t ret = manager->GetMinVolumeDegree(streamType);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioVolumeType streamType2 = STREAM_ULTRASONIC;
+    ret = manager->GetMinVolumeDegree(streamType2);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioVolumeType streamType3 = STREAM_MUSIC;
+    ret = manager->GetMinVolumeDegree(streamType3);
+    EXPECT_EQ(SUCCESS, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS

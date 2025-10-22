@@ -189,6 +189,13 @@ public:
      * @since 8
      */
     virtual void OnVolumeKeyEvent(VolumeEvent volumeEvent) = 0;
+    /**
+     * @brief VolumeKeyEventCallback will be executed when volume degree is updated
+     *
+     * @param volumeEvent the volume event info.
+     * @since 11
+     */
+    virtual void OnVolumeDegreeEvent(VolumeEvent volumeEvent) {}
 };
 
 class StreamVolumeChangeCallback {

@@ -26,16 +26,20 @@ namespace OHOS {
 namespace AudioStandard {
 
 const std::string VOLUME_KEY_EVENT_CALLBACK_NAME = "volumeChange";
+const std::string VOLUME_DEGREE_CHANGE_EVENT_CALLBACK_NAME = "volumePercentageChange";
 
 class NapiAudioVolumeKeyEvent : public VolumeKeyEventCallback {
 public:
     explicit NapiAudioVolumeKeyEvent(napi_env env);
     virtual ~NapiAudioVolumeKeyEvent();
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
+    void OnVolumeDegreeEvent(VolumeEvent volumeEvent) override;
     void SaveCallbackReference(const std::string &callbackName, napi_value args);
     bool ContainSameJsCallback(napi_value args);
     void CreateVolumeTsfn(napi_env env);
     bool GetVolumeTsfnFlag();
+    void CreateVolumeDegreeTsfn(napi_env env);
+    bool GetVolumeDegreeTsfnFlag();
     napi_threadsafe_function GetTsfn();
     
 private:
@@ -56,6 +60,7 @@ private:
     napi_ref callback_ = nullptr;
     static napi_ref sConstructor_;
     bool regVolumeTsfn_ = false;
+    bool regVolumeDegreeTsfn_ = false;
     napi_threadsafe_function amVolEntTsfn_ = nullptr;
 };
 } // namespace AudioStandard

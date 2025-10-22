@@ -2965,13 +2965,14 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_136, TestSize.Level1)
     ASSERT_TRUE(server != nullptr);
 
     int32_t volumeLevel = 1;
-    auto ret = server->SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_ASSISTANT, volumeLevel, true, false);
+    VolumeUpdateOption option{true, false};
+    auto ret = server->SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_ASSISTANT, volumeLevel, option);
     EXPECT_EQ(ret, SUCCESS);
 
-    ret = server->SetSingleStreamVolume(AudioStreamType::STREAM_RING, volumeLevel, true, false);
+    ret = server->SetSingleStreamVolume(AudioStreamType::STREAM_RING, volumeLevel, option);
     EXPECT_EQ(ret, SUCCESS);
 
-    ret = server->SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_RING, volumeLevel, true, false);
+    ret = server->SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_RING, volumeLevel, option);
     EXPECT_EQ(ret, SUCCESS);
 }
 

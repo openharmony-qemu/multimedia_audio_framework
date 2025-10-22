@@ -804,6 +804,7 @@ napi_status NapiParamUtils::SetValueVolumeEvent(const napi_env& env, const Volum
     SetValueString(env, "networkId", volumeEvent.networkId, result);
     SetValueInt32(env, "volumeMode",
         NapiAudioEnum::GetJsAudioVolumeMode(static_cast<AudioVolumeMode>(volumeEvent.volumeMode)), result);
+    SetValueInt32(env, "volumeDegree", static_cast<int32_t>(volumeEvent.volumeDegree), result);
     return napi_ok;
 }
 

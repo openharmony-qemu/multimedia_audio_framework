@@ -99,6 +99,49 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_010, TestSize.
 
 /**
 * @tc.name  : Test VolumeDataMaintainer.
+* @tc.number: VolumeDataMaintainerDegreeUnitTest_001.
+* @tc.desc  : Test VolumeDataMaintainer API.
+*/
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerDegreeUnitTest_001, TestSize.Level1)
+{
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(nullptr, volumeDataMaintainer);
+    std::shared_ptr<AudioDeviceDescriptor> device;
+    int32_t volumeDegree = 1;
+    AudioStreamType streamType = STREAM_ALL;
+    volumeDataMaintainer->SaveVolumeDegreeToMap(device, streamType, volumeDegree);
+    EXPECT_EQ(volumeDataMaintainer->volumeDegreeMap_.size(), 0);
+
+    int32_t retVolumeDegree = volumeDataMaintainer->LoadVolumeDegreeFromMap(device, STREAM_ALL);
+    EXPECT_NE(retVolumeDegree, volumeDegree);
+
+    EXPECT_NE(volumeDataMaintainer->LoadVolumeDegreeFromDb(device, STREAM_MUSIC), 0);
+
+    device = std::make_shared<AudioDeviceDescriptor>();
+    ASSERT_NE(nullptr, device);
+    device->deviceType_ = DEVICE_TYPE_SPEAKER;
+
+    volumeDataMaintainer->SaveVolumeDegreeToMap(device, streamType, volumeDegree);
+    EXPECT_GT(volumeDataMaintainer->volumeDegreeMap_.size(), 0);
+
+    retVolumeDegree = volumeDataMaintainer->LoadVolumeDegreeFromMap(device, streamType);
+    EXPECT_EQ(retVolumeDegree, volumeDegree);
+
+    device->networkId_ = "111";
+    EXPECT_EQ(volumeDataMaintainer->SaveVolumeDegreeToDb(device, STREAM_MUSIC, volumeDegree), SUCCESS);
+
+    device->volumeBehavior_.isReady = true;
+    EXPECT_EQ(volumeDataMaintainer->SaveVolumeDegreeToDb(device, STREAM_MUSIC, volumeDegree), SUCCESS);
+
+    device->volumeBehavior_.databaseVolumeName = "Test";
+    EXPECT_EQ(volumeDataMaintainer->SaveVolumeDegreeToDb(device, STREAM_MUSIC, volumeDegree), SUCCESS);
+
+    device->deviceType_ = DEVICE_TYPE_NONE;
+    EXPECT_NE(volumeDataMaintainer->LoadVolumeDegreeFromDb(device, STREAM_MUSIC), 0);
+}
+
+/**
+* @tc.name  : Test VolumeDataMaintainer.
 * @tc.number: VolumeDataMaintainerUnitTest_011.
 * @tc.desc  : Test VolumeDataMaintainer API.
 */

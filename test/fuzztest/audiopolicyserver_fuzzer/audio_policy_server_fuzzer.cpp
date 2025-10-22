@@ -652,9 +652,10 @@ void AudioPolicyServerSetSingleStreamVolumeFuzztest()
     bool isUpdateUi = GetData<bool>();
     bool mute = GetData<bool>();
     int32_t zoneId = GetData<int32_t>();
-    audioPolicyServer->SetSingleStreamVolume(AudioStreamType::STREAM_RING, volumeLevel, isUpdateUi, mute, zoneId);
+    VolumeUpdateOption option{isUpdateUi, mute, zoneId};
+    audioPolicyServer->SetSingleStreamVolume(AudioStreamType::STREAM_RING, volumeLevel, option);
     audioPolicyServer->SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_ASSISTANT, volumeLevel,
-        isUpdateUi, mute, zoneId);
+        option);
 }
 
 void AudioPolicyServerSetSingleStreamVolumeWithDeviceFuzztest()
