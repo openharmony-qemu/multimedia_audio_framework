@@ -1775,7 +1775,8 @@ vector<sptr<MicrophoneDescriptor>> AudioPolicyManager::GetAvailableMicrophones()
     return retMicList;
 }
 
-int32_t AudioPolicyManager::SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support, const int32_t volume)
+int32_t AudioPolicyManager::SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support,
+    const int32_t volume)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
