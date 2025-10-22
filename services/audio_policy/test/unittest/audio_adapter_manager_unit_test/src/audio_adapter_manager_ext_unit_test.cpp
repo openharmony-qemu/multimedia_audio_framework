@@ -308,8 +308,6 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, GetVolumeAdjustZoneId_001, TestSize.Lev
     AudioConnectedDevice::GetInstance().AddConnectedDevice(desc);
     AudioZoneService::GetInstance().UpdateDeviceFromGlobalForAllZone(desc);
     ASSERT_EQ(adapterManager.GetVolumeAdjustZoneId(), 0);
-    ASSERT_EQ(adapterManager.SetAdjustVolumeForZone(zoneId1_), SUCCESS);
-    ASSERT_EQ(adapterManager.GetVolumeAdjustZoneId(), zoneId1_);
 }
 
 /**

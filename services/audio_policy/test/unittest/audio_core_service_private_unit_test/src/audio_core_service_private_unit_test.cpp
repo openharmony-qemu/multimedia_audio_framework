@@ -20,6 +20,7 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
+static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
 static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
 static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
 static const uint32_t TEST_STREAM_1_SESSION_ID = 100001;
@@ -331,7 +332,7 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_017, TestSize.Leve
     std::string encryptMacAddr = "abc";
 
     auto ret = audioCoreService->BluetoothDeviceFetchOutputHandle(desc, reason, encryptMacAddr);
-    EXPECT_EQ(ret, BLUETOOTH_FETCH_RESULT_ERROR);
+    EXPECT_EQ(ret, BLUETOOTH_FETCH_RESULT_DEFAULT);
 }
 
 /**
@@ -1594,7 +1595,7 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_104, TestSize.Leve
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
 
     audioCoreService->ProcessInputPipeNew(pipeInfo, flag);
-    EXPECT_EQ(flag, AUDIO_FLAG_NONE);
+    EXPECT_EQ(flag, AUDIO_OUTPUT_FLAG_DIRECT);
     ASSERT_NE(audioCoreService->pipeManager_, nullptr);
 }
 

@@ -26,6 +26,7 @@ group("audio_server_src_unittest_packages") {
 }
 
 module_output_path = "audio_framework/audio_framework_policy/audio_policy"
+audio_framework_root = "../../../../.."
 
 ohos_unittest("audio_policy_manager_listener_unit_test") {
   module_out_path = module_output_path
@@ -45,6 +46,16 @@ ohos_unittest("audio_policy_manager_listener_unit_test") {
 
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
 
   external_deps = [
     "ability_base:session_info",
@@ -119,6 +130,16 @@ ohos_unittest("audio_spatialization_state_change_listener_unit_test") {
 
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
 
   external_deps = [
     "ability_base:session_info",

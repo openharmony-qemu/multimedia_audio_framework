@@ -46,12 +46,13 @@ void AudioServerUnitTest::SetUpTestCase(void)
     MockNative::GenerateNativeTokenID();
     MockNative::Mock();
     audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    EXPECT_NE(nullptr, audioServer);
+    ASSERT_NE(nullptr, audioServer);
     audioServer->OnDump();
 }
 
 void AudioServerUnitTest::TearDownTestCase(void)
 {
+    ASSERT_NE(nullptr, audioServer);
     audioServer->OnStop();
     MockNative::Resume();
 }
