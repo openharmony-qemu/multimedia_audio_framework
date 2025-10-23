@@ -125,7 +125,7 @@ private:
     std::vector<uint64_t> timestamp_ = {Timestamp::Timestampbase::BASESIZE, 0};
     uint64_t latency_ = 0;
     uint64_t framesWritten_ = 0;
-    std::atomic<uint64_t> lastPrintTimestamp_ = 0;
+    std::atomic<int64_t> lastPrintTimestamp_ = 0;
 
     std::string deviceClass_;
     std::string deviceNetId_;

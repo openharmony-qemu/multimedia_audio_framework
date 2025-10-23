@@ -41,6 +41,8 @@ static constexpr uint32_t FRAME_LEN_40MS = 40;
 static constexpr uint32_t FRAME_LEN_20MS = 20;
 static constexpr int32_t MIN_BUFFER_SIZE = 2;
 static constexpr uint32_t TEST_SESSION_ID = 123456;
+static constexpr int64_t PRINT_TIMESTAMP_INTERVAL_NS = 1000000000;
+static constexpr int64_t INTERVAL_NUM = 2;
 
 static inline int32_t GetSizeFromFormat(int32_t format)
 {
@@ -688,10 +690,12 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_026, TestSize.Level1)
 {
     auto unit = CreateHpaeRendererStreamImpl();
     EXPECT_NE(unit, nullptr);
+    uint->lastPrintTimestamp_.store(-INTERVAL_NUM * PRINT_TIMESTAMP_INTERVAL_NS);
     uint64_t latency = 0;
     int32_t ret = unit->GetLatency(latency);
     EXPECT_EQ(ret, SUCCESS);
     unit->deviceClass_ = "remote_offload";
+    uint->lastPrintTimestamp_.store(PRINT_TIMESTAMP_INTERVAL_NS);
     ret = unit->GetLatency(latency);
     EXPECT_EQ(ret, SUCCESS);
     unit->deviceClass_ = "offload";

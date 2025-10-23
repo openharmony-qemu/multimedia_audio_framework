@@ -459,6 +459,7 @@ private:
             : unprocessedFramesBytes_(unprocessed), totalBytesWrittenAfterFlush_(written), perPeriodFrame_(frame) {}
     };
     std::atomic<AudioWriteState> audioWriteState_;
+    std::atomic<int64_t> lastPrintTimestamp_ = 0;
 
     std::string traceTag_;
     std::string spatializationEnabled_ = "Invalid";
