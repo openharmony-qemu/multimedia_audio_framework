@@ -2870,13 +2870,12 @@ void AudioCoreService::UpdateStreamDevicesForStart(
     streamUsage = audioSessionService_.GetAudioSessionStreamUsage(GetRealPid(streamDesc));
     streamUsage = (streamUsage != StreamUsage::STREAM_USAGE_INVALID) ? streamUsage :
     streamDesc->rendererInfo_.streamUsage;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
-    if (VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_) {
-        devices.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
-    } else {
-        devices = audioRouterCenter_.FetchOutputDevices(streamUsage, GetRealUid(streamDesc),
-            caller, RouterType::ROUTER_TYPE_NONE, streamDesc->GetRenderPrivacyType());
-    }
+    bool isInject = streamDesc->rendererTarget_ == INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
+    auto devices = ((VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_) || isInject) ?
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> {
+        AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice()
+        } : audioRouterCenter_.FetchOutputDevices(streamUsage, GetRealUid(streamDesc),
+        caller, RouterType::ROUTER_TYPE_NONE);
     CHECK_AND_RETURN_LOG(devices.size() > 0 && devices[0] != nullptr, "failed to get devices!");
     AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(devices[0]->deviceType_);
 
