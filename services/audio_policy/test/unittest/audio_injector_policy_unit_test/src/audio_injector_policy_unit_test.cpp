@@ -233,6 +233,36 @@ HWTEST_F(AudioInjectorPolicyUnitTest, RemoveCaptureInjector_002, TestSize.Level1
 }
 
 /**
+ * @tc.name: RemoveCaptureInjector_003
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, RemoveCaptureInjector_003, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    audioInjectorPolicy.isConnected_ = false;
+    audioInjectorPolicy.isOpened_ = false;
+    int32_t ret = audioInjectorPolicy.RemoveCaptureInjector(true);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name: RemoveCaptureInjector_004
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, RemoveCaptureInjector_004, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    audioInjectorPolicy.isConnected_ = false;
+    audioInjectorPolicy.isOpened_ = false;
+    int32_t ret = audioInjectorPolicy.RemoveCaptureInjector(false);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
  * @tc.name: RebuildCaptureInjector_001
  * @tc.desc: wzwzwz
  * @tc.type: FUNC
