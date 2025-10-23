@@ -873,13 +873,6 @@ int32_t AudioAdapterManager::IsHandleStreamMute(AudioStreamType streamType, bool
         AUDIO_ERR_LOG("SetStreamMute: this type can not set mute");
         return SUCCESS;
     }
-    auto desc = audioActiveDevice_.GetDeviceForVolume(streamType);
-    if (Util::IsDualToneStreamType(streamType) && desc->deviceType_ != DEVICE_TYPE_SPEAKER &&
-        GetRingerMode() != RINGER_MODE_NORMAL && mute && Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
-        AUDIO_INFO_LOG("Dual tone stream type %{public}d, current active device:[%{public}d] is no speaker, dont mute",
-            streamType, mute);
-        return SUCCESS;
-    }
     return ERROR;
 }
 
@@ -955,12 +948,6 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(std::shared_ptr<AudioDeviceDe
     AudioStreamType streamType, bool mute, StreamUsage streamUsage)
 {
     CHECK_AND_RETURN_RET_LOG(device != nullptr, ERR_INVALID_PARAM, "device is null");
-    if (Util::IsDualToneStreamType(streamType) && device->deviceType_ != DEVICE_TYPE_SPEAKER &&
-        GetRingerMode() != RINGER_MODE_NORMAL && mute && Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
-        AUDIO_INFO_LOG("Dual tone stream type %{public}d, current active device:[%{public}d] is no speaker, dont mute",
-            streamType, mute);
-        return SUCCESS;
-    }
     int32_t isSetStreamMute = IsHandleStreamMute(streamType, mute, streamUsage);
     if (isSetStreamMute == SUCCESS) {
         return SUCCESS;
