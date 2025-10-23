@@ -14,7 +14,7 @@
 import("//build/ohos.gni")
 import("//build/test.gni")
 import("../../../../config.gni")
-import("../../../../ressche_part.gni")
+import("../../../../ressche_part.gni")xx
 
 module_output_path = "audio_framework/audio_framework_route/audio_balance"
 
