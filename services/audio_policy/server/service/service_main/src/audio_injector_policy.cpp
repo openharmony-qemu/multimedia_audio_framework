@@ -281,15 +281,17 @@ int32_t AudioInjectorPolicy::RemoveCaptureInjectorInner(bool noCapturer)
             isConnected_ = false;
             capturePortIdx_ = HDI_INVALID_ID;
             voipType_ = NO_VOIP;
-            DeInit();
         } else if (voipType_ == FAST_VOIP) {
             int32_t ret = audioPolicyManager_.RemoveCaptureInjector();
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "RemoveCaptureInjector failed");
             isConnected_ = false;
             capturePortIdx_ = HDI_INVALID_ID;
             voipType_ = NO_VOIP;
-            DeInit();
         }
+    }
+    // release capturer stream does not require executing Deinit();
+    if (!noCapturer) {
+        DeInit();
     }
     return SUCCESS;
 }
