@@ -1836,9 +1836,7 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
         frameLatency = (deepLatency + latency) * speed_;
     }
     // between unprocessSamples and framesWritten there is sonic
-    if (speedEnable_) {
-        frameLatency += SONIC_LATENCY_IN_MS * curStreamParams_.samplingRate / AUDIO_MS_PER_SECOND;
-    }
+    frameLatency += SONIC_LATENCY_IN_MS * curStreamParams_.samplingRate / AUDIO_MS_PER_SECOND;
     
     // real frameposition
     uint64_t framePosition = unprocessSamples > frameLatency ? unprocessSamples - frameLatency : 0;

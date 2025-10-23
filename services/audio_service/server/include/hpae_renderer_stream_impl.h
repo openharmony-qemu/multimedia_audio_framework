@@ -119,7 +119,7 @@ private:
 
     // latency position timeStamp
     std::shared_mutex latencyMutex_; // lock for variables related to position, latency, timestamp
-    std::atomic<uint64_t> framePosition_ = 0;
+    uint64_t framePosition_ = 0;
     uint64_t lastFramePosition_ = 0;
     uint64_t lastHdiFramePosition_ = 0;
     std::vector<uint64_t> timestamp_ = {Timestamp::Timestampbase::BASESIZE, 0};
