@@ -206,18 +206,6 @@ void AudioVolumeManagerSelectDeviceFuzzTest()
     audioAdapterManager->SelectDevice(deviceRole, deviceType, "test");
 }
 
-void AudioVolumeManagerAdjustBluetoothVoiceAssistantVolumeFuzzTest()
-{
-    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
-    CHECK_AND_RETURN(audioAdapterManager != nullptr);
-    audioAdapterManager->Init();
-    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
-    bool isA2dpSwitchToSco = g_fuzzUtils.GetData<bool>();
-    std::shared_ptr<AudioDeviceDescriptor> device = std::make_shared<AudioDeviceDescriptor>();
-    CHECK_AND_RETURN(device != nullptr);
-    audioAdapterManager->AdjustBluetoothVoiceAssistantVolume(device, isA2dpSwitchToSco);
-}
-
 void AudioVolumeManagerSaveRingerModeInfoFuzzTest()
 {
     vector<AudioRingerMode> testAudioRingerModers = {
@@ -470,7 +458,6 @@ std::vector<OHOS::AudioStandard::TestPtr> g_testPtrs = {
     OHOS::AudioStandard::AudioVolumeManagerSaveRingtoneVolumeToLocalFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerUpdateSafeVolumeByS4FuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerSelectDeviceFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerAdjustBluetoothVoiceAssistantVolumeFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerSaveRingerModeInfoFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerOpenNotPaAudioPortFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerUpdateVolumeForLowLatencyFuzzTest,
