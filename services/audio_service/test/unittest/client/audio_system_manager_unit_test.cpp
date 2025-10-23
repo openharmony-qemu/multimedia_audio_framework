@@ -1607,7 +1607,12 @@ HWTEST(AudioSystemManagerUnitTest, GetStreamType_003, TestSize.Level4)
     EXPECT_EQ(audioSystemManager.GetStreamType(contentType, streamUsage), STREAM_MUSIC);
 }
 
-HWTEST(AudioSystemManagerUnitTest, GetAudioScene_001, TestSize.Level3)
+/**
+ * @tc.name   : Test GetAudioScene API
+ * @tc.number : GetAudioScene_001
+ * @tc.desc   : Test GetAudioScene interface
+ */
+HWTEST(AudioSystemManagerUnitTest, GetAudioScene_001, TestSize.Level4)
 {
     AudioSystemManager audioSystemManager;
     GetPermission();
