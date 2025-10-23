@@ -476,7 +476,6 @@ void AudioEcManager::UpdateModuleInfoForEc(AudioModuleInfo &moduleInfo)
 
 void AudioEcManager::ClearModuleInfoForEc(AudioModuleInfo &moduleInfo)
 {
-    std::lock_guard<std::mutex> lock(audioEcInfoMutex_);
     moduleInfo.ecType ="";
     moduleInfo.ecAdapter = "";
     moduleInfo.ecSamplingRate = "";
