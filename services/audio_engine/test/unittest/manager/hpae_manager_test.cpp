@@ -122,6 +122,37 @@ AudioModuleInfo GetSourceAudioModeInfo(std::string name = "mic")
     return audioModuleInfo;
 }
 
+static HpaeSinkInfo GetSinkInfo()
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    return sinkInfo;
+}
+
+static void InitSourceInfo(HpaeSourceInfo &sourceInfo)
+{
+    sourceInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sourceInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sourceInfo.sourceType = SOURCE_TYPE_MIC;
+    sourceInfo.filePath = g_rootPath + "source_" + audioModuleInfo.adapterName + "_" + audioModuleInfo.rate + "_" +
+                        audioModuleInfo.channels + "_" + audioModuleInfo.format + ".pcm";;
+
+    sourceInfo.samplingRate = SAMPLE_RATE_48000;
+    sourceInfo.channels = STEREO;
+    sourceInfo.format = SAMPLE_S16LE;
+    sourceInfo.frameLen = FRAME_LENGTH;
+    sourceInfo.ecType = HPAE_EC_TYPE_NONE;
+    sourceInfo.micRef = HPAE_REF_OFF;
+}
+
 HpaeStreamInfo GetRenderStreamInfo()
 {
     HpaeStreamInfo streamInfo;
@@ -1940,5 +1971,31 @@ HWTEST_F(HpaeManagerUnitTest, InjectorUpdataAudioPortInfoAndReloadTest, TestSize
 
     hpaeManager_->CloseAudioPort(injectorPortId);
     WaitForMsgProcessing(hpaeManager_);
+}
+
+HWTEST_F(HpaeManagerUnitTest, DeleteAudioPort_TEST_001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    sleep(1);
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager_ = std::make_shared<HpaeRendererManager>(sinkInfo);
+    hpaeManager_->sinkNameSinkIdMap_["Speaker_File"] = 1;
+    hpaeManager_->rendererManagerMap_["Speaker_File"] = hpaeRendererManager_;
+    hpaeManager_->sinkIdSinkNameMap_[1] = "Speaker_File";
+    hpaeManager_->DeleteAudioport("Speaker_File");
+    EXPECT_EQ(hpaeManager_->sinkNameSinkIdMap_.count(), 0);
+
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    hpaeManager_->sourceNameSourceIdMap_["mic"] = 2;
+    hpaeManager_->capturerManagerMap_["mic"] = capturerManager;
+    hpaeManager_->DeleteAudioport("Speaker_File");
+    EXPECT_EQ(hpaeManager_->sinkNameSinkIdMap_.count(), 0);
+    hpaeManager_->DeleteAudioport("Speaker_File");
+    EXPECT_EQ(hpaeManager_->sinkNameSinkIdMap_.count(), 0);
 }
 }  // namespace
