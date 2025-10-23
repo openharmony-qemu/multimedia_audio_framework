@@ -14,7 +14,7 @@
 import("//build/ohos.gni")
 import("//build/test.gni")
 import("../../../../config.gni")
-import("../../../../ressche_part.gni")xx
+import("../../../../ressche_part.gni")
 
 module_output_path = "audio_framework/audio_framework_route/audio_balance"
 
@@ -380,6 +380,7 @@ ohos_unittest("audio_service_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "eventhandler:libeventhandler",
+    "access_token:libtokensetproc_shared", 
   ]
 
   defines = []
