@@ -1891,6 +1891,12 @@ HWTEST_F(HpaeManagerUnitTest, InjectorToEndPointCapturer, TestSize.Level1)
     std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
     hpaeManager_->RegisterSerivceCallback(callback);
 
+    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    hpaeManager_->SetDefaultSink(audioModuleInfo.name);
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
     AudioModuleInfo moduleInfo = GetSinkAudioModeInfo(VIRTUAL_INJECTOR);
     EXPECT_EQ(hpaeManager_->OpenAudioPort(moduleInfo), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
@@ -1993,9 +1999,9 @@ HWTEST_F(HpaeManagerUnitTest, DeleteAudioPort_TEST_001, TestSize.Level1)
     std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     hpaeManager_->sourceNameSourceIdMap_["mic"] = 2;
     hpaeManager_->capturerManagerMap_["mic"] = capturerManager;
-    hpaeManager_->DeleteAudioport("Speaker_File");
-    EXPECT_EQ(hpaeManager_->sinkNameSinkIdMap_.count(), 0);
-    hpaeManager_->DeleteAudioport("Speaker_File");
-    EXPECT_EQ(hpaeManager_->sinkNameSinkIdMap_.count(), 0);
+    hpaeManager_->DeleteAudioport("mic");
+    EXPECT_EQ(hpaeManager_->sourceNameSourceIdMap_.count(), 0);
+    hpaeManager_->DeleteAudioport("mic");
+    EXPECT_EQ(hpaeManager_->sourceNameSourceIdMap_.count(), 0);
 }
 }  // namespace
