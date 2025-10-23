@@ -679,7 +679,7 @@ ohos_unittest("audio_engine_unit_test") {
   module_out_path = module_output_path
   sources = [
     "common/test_case_common.cpp",
-    "dfx/hpae_dfx_tree_test.cpp",
+    "dfx/hpae_dfx_map_tree_test.cpp",
     "utils/hpae_pcm_utils_test.cpp",
     "utils/hpae_no_lock_queue_test.cpp",
   ]

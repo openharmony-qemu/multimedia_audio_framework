@@ -60,14 +60,10 @@ void HpaeSourceInputCluster::DoProcess()
 bool HpaeSourceInputCluster::Reset()
 {
     for (auto fmtConverterNode : fmtConverterNodeMap_) {
+        fmtConverterNode.second->DisConnectWithInfo(sourceInputNode_, fmtConverterNode.second->GetNodeInfo());
         fmtConverterNode.second->Reset();
     }
     sourceInputNode_->Reset();
-#ifdef ENABLE_HIDUMP_DFX
-    if (auto callback = sourceInputNode_->GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(false, sourceInputNode_->GetNodeId(), sourceInputNode_->GetNodeInfo());
-    }
-#endif
     return true;
 }
 

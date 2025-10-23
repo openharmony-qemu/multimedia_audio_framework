@@ -52,13 +52,16 @@ bool HpaeSourceProcessCluster::Reset()
 {
     if (captureEffectNode_ != nullptr) {
         captureEffectNode_->Reset();
+        mixerNode_->DisConnectWithInfo(captureEffectNode_, GetNodeInfo()); // useless nodeinfo
     }
     mixerNode_->Reset();
     for (auto fmtConverterNode : fmtConverterNodeMap_) {
         fmtConverterNode.second->Reset();
+        fmtConverterNode.second->DisConnect(mixerNode_);
     }
     for (auto fmtConverterNode : injectorFmtConverterNodeMap_) {
         fmtConverterNode.second->Reset();
+        mixerNode_->DisConnect(fmtConverterNode.second);
     }
     return true;
 }
@@ -220,14 +223,14 @@ int32_t HpaeSourceProcessCluster::CaptureEffectCreate(uint64_t sceneKeyCode, Cap
     }
     // create captureEffectNode, updata mixerNode info by effectnode info
     mixerNode_ = std::make_shared<HpaeMixerNode>(nodeInfo);
-    mixerNode_->Connect(captureEffectNode_);
+    mixerNode_->ConnectWithInfo(captureEffectNode_, nodeInfo);
     return 0;
 }
 
 int32_t HpaeSourceProcessCluster::CaptureEffectRelease(uint64_t sceneKeyCode)
 {
     CHECK_AND_RETURN_RET_LOG(captureEffectNode_, ERROR_ILLEGAL_STATE, "captureEffectNode_ is nullptr");
-    mixerNode_->DisConnect(captureEffectNode_);
+    mixerNode_->DisConnectWithInfo(captureEffectNode_, GetNodeInfo());
     return captureEffectNode_->CaptureEffectRelease(sceneKeyCode);
 }
 

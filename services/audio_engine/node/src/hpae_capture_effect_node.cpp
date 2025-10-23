@@ -44,6 +44,9 @@ HpaeCaptureEffectNode::HpaeCaptureEffectNode(HpaeNodeInfo &nodeInfo)
     }
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeCaptureEffectNode");
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
+    }
 #endif
 }
 
@@ -52,6 +55,9 @@ HpaeCaptureEffectNode::~HpaeCaptureEffectNode()
 #ifdef ENABLE_HIDUMP_DFX
     AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
         GetNodeId(), GetNodeName().c_str());
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeAdmin(false, GetNodeInfo());
+    }
 #endif
 }
 
@@ -115,7 +121,7 @@ void HpaeCaptureEffectNode::ConnectWithInfo(const std::shared_ptr<OutputNode<Hpa
     inputStream_.Connect(realPreNode, preNode->GetOutputPort(nodeInfo));
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(true, realPreNode->GetNodeId(), GetNodeInfo());
+        callback->OnNotifyDfxNodeInfo(true, realPreNode->GetNodeId(), GetNodeId());
     }
 #endif
 }
@@ -125,10 +131,11 @@ void HpaeCaptureEffectNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<
 {
     CHECK_AND_RETURN_LOG(!inputStream_.CheckIfDisConnected(preNode->GetOutputPort(nodeInfo)),
         "%{public}u has disconnected with preNode", GetNodeId());
-    inputStream_.DisConnect(preNode->GetOutputPort(nodeInfo, true));
+    const auto port = preNode->GetOutputPort(nodeInfo, true);
+    inputStream_.DisConnect(port);
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(false, GetNodeId(), GetNodeInfo());
+        callback->OnNotifyDfxNodeInfo(false, port->GetNodeId(), GetNodeId());
     }
 #endif
 }

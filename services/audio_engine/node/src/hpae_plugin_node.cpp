@@ -98,15 +98,25 @@ OutputPort<HpaePcmBuffer*>* HpaePluginNode::GetOutputPort()
     return &outputStream_;
 }
 
+std::shared_ptr<HpaeNode> HpaePluginNode::GetSharedInstance(HpaeNodeInfo &nodeInfo)
+{
+    return shared_from_this();
+}
+
+OutputPort<HpaePcmBuffer *> *HpaePluginNode::GetOutputPort(HpaeNodeInfo &nodeInfo, bool isDisConnect)
+{
+    return &outputStream_;
+}
+
 void HpaePluginNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode)
 {
     inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort());
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
         if (isSourceNode_) {
-            callback->OnNotifyDfxNodeInfo(true, preNode->GetSharedInstance()->GetNodeId(), GetNodeInfo());
+            callback->OnNotifyDfxNodeInfo(true, preNode->GetSharedInstance()->GetNodeId(), GetNodeId());
         } else {
-            callback->OnNotifyDfxNodeInfo(true, GetNodeId(), preNode->GetSharedInstance()->GetNodeInfo());
+            callback->OnNotifyDfxNodeInfo(true, GetNodeId(), preNode->GetSharedInstance()->GetNodeId());
         }
     }
 #endif
@@ -118,10 +128,9 @@ void HpaePluginNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
         if (isSourceNode_) {
-            callback->OnNotifyDfxNodeInfo(false, GetNodeId(), GetNodeInfo());
+            callback->OnNotifyDfxNodeInfo(false, preNode->GetOutputPort()->GetNodeId(), GetNodeId());
         } else {
-            auto preNodeReal = preNode->GetSharedInstance();
-            callback->OnNotifyDfxNodeInfo(false, preNodeReal->GetNodeId(), preNodeReal->GetNodeInfo());
+            callback->OnNotifyDfxNodeInfo(false, GetNodeId(), preNode->GetOutputPort()->GetNodeId());
         }
     }
 #endif

@@ -72,7 +72,7 @@ HpaeSourceInputNode::HpaeSourceInputNode(HpaeNodeInfo &nodeInfo)
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeSourceInputNode[" + TransSourceBufferTypeToString(nodeInfo.sourceBufferType) + "]");
     if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(true, 0, GetNodeInfo());
+        callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
     }
 #endif
 }
@@ -103,7 +103,7 @@ HpaeSourceInputNode::HpaeSourceInputNode(std::vector<HpaeNodeInfo> &nodeInfos)
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeSourceInputNode[MIC_EC]");
     if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(true, 0, GetNodeInfo());
+        callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
     }
 #endif
 }
@@ -113,6 +113,9 @@ HpaeSourceInputNode::~HpaeSourceInputNode()
 #ifdef ENABLE_HIDUMP_DFX
     AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
         GetNodeId(), GetNodeName().c_str());
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeAdmin(false, GetNodeInfo());
+    }
 #endif
 }
 

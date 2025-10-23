@@ -240,8 +240,8 @@ void OnNotifyDfxNodeInfoFuzzTest()
     offloadRendererManager->Init();
     bool isConnect = GetData<bool>();
     uint32_t preNodeId = GetData<uint32_t>();
-    HpaeDfxNodeInfo nodeInfo = {};
-    offloadRendererManager->OnNotifyDfxNodeInfo(isConnect, preNodeId, nodeInfo);
+    uint32_t nodeId = GetData<uint32_t>();
+    offloadRendererManager->OnNotifyDfxNodeInfo(isConnect, preNodeId, nodeId);
     WaitForMsgProcessing(offloadRendererManager);
     offloadRendererManager->DeInit();
 }
