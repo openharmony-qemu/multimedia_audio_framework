@@ -1046,6 +1046,60 @@ HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportMultiChannel_002, TestSize.Lev
 }
 
 /**
+ * @tc.name: IsForcedNormal_001
+ * @tc.number: IsForcedNormal_001
+ * @tc.desc: Test IsForcedNormal interface - conditions that should return true and set audioFlag to NORMAL.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, IsForcedNormal_001, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, GetServerPtr());
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    
+    streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
+    bool result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
+    EXPECT_EQ(result, true);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+    
+    streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_FORCED_NORMAL;
+    result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
+    EXPECT_EQ(result, true);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+    
+    streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_NONE;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
+    streamDesc->appInfo_.appUid = 666;
+    result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
+    EXPECT_EQ(result, true);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+}
+
+/**
+ * @tc.name: IsForcedNormal_002
+ * @tc.number: IsForcedNormal_002
+ * @tc.desc: Test IsForcedNormal interface - conditions that should return false.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, IsForcedNormal_002, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, GetServerPtr());
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
+    streamDesc->appInfo_.appUid = 777;
+    bool result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
+    EXPECT_EQ(result, false);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+    
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+    streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_NONE;
+    streamDesc->appInfo_.appUid = 888;
+    result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
+    EXPECT_EQ(result, false);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+}
+
+/**
  * @tc.name   : Test AudioCoreServiceUnit
  * @tc.number : UpdatePlaybackStreamFlag_001
  * @tc.desc   : Test UpdatePlaybackStreamFlag interface - when streamDesc is null, return flag normal.

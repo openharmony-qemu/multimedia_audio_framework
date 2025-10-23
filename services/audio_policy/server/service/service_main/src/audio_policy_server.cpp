@@ -2699,6 +2699,8 @@ int32_t AudioPolicyServer::SetQueryBundleNameListCallback(const sptr<IRemoteObje
 
     audioPolicyUtils_.SetQueryBundleNameListCallback(object);
 
+    coreService_->SetQueryBundleNameListCallback(object);
+
     return SUCCESS;
 }
 // LCOV_EXCL_STOP
@@ -3147,7 +3149,7 @@ int32_t AudioPolicyServer::CreateRendererClient(const std::shared_ptr<AudioStrea
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr && eventEntry_ != nullptr, ERR_NULL_POINTER,
         "Core service not inited");
     bool disableFastStream = coreService_->GetDisableFastStreamParam();
-    if (disableFastStream) {
+    if (disableFastStream || streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
         std::string bundleName = AudioBundleManager::GetBundleName();
         streamDesc->SetBunduleName(bundleName);
     }

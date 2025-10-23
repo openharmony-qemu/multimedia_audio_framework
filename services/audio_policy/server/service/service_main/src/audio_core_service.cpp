@@ -34,7 +34,8 @@ namespace AudioStandard {
 namespace {
 const size_t SELECT_DEVICE_HISTORY_LIMIT = 10;
 const uint32_t FIRST_SESSIONID = 100000;
-static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
+static const char *CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
+static const std::string CHECK_VIDEO_COMM_SELECTION = "audio_video_comm_fast_blocklist";
 static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
 static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
 static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
@@ -377,8 +378,9 @@ bool AudioCoreService::IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &st
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
         return true;
     }
+
     if (rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION &&
-        rendererInfo.samplingRate != SAMPLE_RATE_48000) {
+        InVideoCommFastBlockList(streamDesc->bundleName_)) {
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
         return true;
     }
@@ -1665,6 +1667,22 @@ bool AudioCoreService::IsDistributeServiceOnline()
 {
     CHECK_AND_RETURN_RET_LOG(deviceStatusListener_ != nullptr, false, "deviceStatusListener_ is null");
     return deviceStatusListener_->IsDistributeServiceOnline();
+}
+
+bool AudioCoreService::InVideoCommFastBlockList(const std::string& bundleName)
+{
+    CHECK_AND_RETURN_RET_LOG(queryBundleNameListCallback_ != nullptr, false, "queryBundleNameListCallback_ is null");
+    bool isBundleNameExist = false;
+    queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName, CHECK_VIDEO_COMM_SELECTION,
+        isBundleNameExist);
+    return isBundleNameExist;
+}
+int32_t AudioCoreService::SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object)
+{
+    queryBundleNameListCallback_ = iface_cast<IStandardAudioPolicyManagerListener>(object);
+    CHECK_AND_RETURN_RET_LOG(queryBundleNameListCallback_ != nullptr, ERR_CALLBACK_NOT_REGISTERED,
+        "Query bundle name list callback is null");
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS
