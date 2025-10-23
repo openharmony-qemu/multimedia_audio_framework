@@ -280,6 +280,57 @@ HWTEST_F(AudioCoreServiceUnitTest, SetPreferredInputDeviceIfValid_002, TestSize.
 
 /**
 * @tc.name  : Test AudioCoreService.
+* @tc.number: SetPreferredInputDeviceIfValid_003
+* @tc.desc  : Test CreateCapturerClient - Create stream with (S32 48k STEREO) will be successful..
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetPreferredInputDeviceIfValid_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->preferredInputDevice.deviceType_ = DEVICE_TYPE_INVALID;
+    streamDesc->sessionId_ = 1;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_INVALID;
+
+    AudioCoreService audioCoreService;
+
+    EXPECT_NO_THROW(audioCoreService.SetPreferredInputDeviceIfValid(streamDesc));
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: SetPreferredInputDeviceIfValid_004
+* @tc.desc  : Test CreateCapturerClient - Create stream with (S32 48k STEREO) will be successful..
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetPreferredInputDeviceIfValid_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->preferredInputDevice.deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->sessionId_ = 1;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+
+    AudioCoreService audioCoreService;
+
+    EXPECT_NO_THROW(audioCoreService.SetPreferredInputDeviceIfValid(streamDesc));
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: SetPreferredInputDeviceIfValid_005
+* @tc.desc  : Test CreateCapturerClient - Create stream with (S32 48k STEREO) will be successful..
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetPreferredInputDeviceIfValid_005, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->preferredInputDevice.deviceType_ = DEVICE_TYPE_BT_SPP;
+    streamDesc->sessionId_ = 1;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+
+    AudioCoreService audioCoreService;
+
+    EXPECT_NO_THROW(audioCoreService.SetPreferredInputDeviceIfValid(streamDesc));
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
 * @tc.number: SetDefaultOutputDevice_001
 * @tc.desc  : Test SetDefaultOutputDevice - Set DEVICE_TYPE_SPEAKER as default device to nonexistent session.
 */
