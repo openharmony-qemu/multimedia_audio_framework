@@ -380,7 +380,7 @@ bool AudioCoreService::IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &st
     }
 
     if (rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION &&
-        InVideoCommunicationBlockList(streamDesc->bundleName_)) {
+        InVideoCommFastBlockList(streamDesc->bundleName_)) {
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
         return true;
     }
@@ -1669,7 +1669,7 @@ bool AudioCoreService::IsDistributeServiceOnline()
     return deviceStatusListener_->IsDistributeServiceOnline();
 }
 
-bool AudioCoreService::InVideoCommunicationBlockList(const std::string& bundleName)
+bool AudioCoreService::InVideoCommFastBlockList(const std::string& bundleName)
 {
     CHECK_AND_RETURN_RET_LOG(queryBundleNameListCallback_ != nullptr, false, "queryBundleNameListCallback_ is null");
     bool isBundleNameExist = false;
