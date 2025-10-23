@@ -367,6 +367,8 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
     uint64_t timestampVal = 0;
     uint64_t latency = 0;
     int32_t ret = ipcStream_->GetSpeedPosition(readIdx, timestampVal, latency, base);
+    std::vector<uint64_t> timestampCurrent = {0};
+    ClockTime::GetAllTimeStamp(timestampCurrent);
 
     uint64_t framePosition = readIdx > lastSpeedFlushReadIndex_ ? readIdx - lastSpeedFlushReadIndex_ : 0;
     framePosition = framePosition > latency ? framePosition - latency : 0;
@@ -381,12 +383,12 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
         framePosition = lastFramePosAndTimePair_[base].first;
         timestampVal = lastFramePosAndTimePair_[base].second;
     }
-    if (lastPrintTimestamp_.load() + PRINT_TIMESTAMP_INTERVAL_NS < lastFramePosAndTimePair_[0].second) {
+    if (lastPrintTimestamp_.load() + PRINT_TIMESTAMP_INTERVAL_NS < timestampCurrent[0]) {
         AUDIO_INFO_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64
             ", lastSpeedFlushReadIndex_ %{public}" PRIu64
             ", timestamp %{public}" PRIu64 ", Sinklatency %{public}" PRIu64 ", lastSwitchPosition_ %{public}" PRIu64,
             framePosition, lastSpeedFlushReadIndex_, timestampVal, latency, lastSwitchPosition_[base]);
-            lastPrintTimestamp_.store(lastFramePosAndTimePair_[0].second);
+            lastPrintTimestamp_.store(timestampCurrent[0]);
     } else {
         AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64
             ", lastSpeedFlushReadIndex_ %{public}" PRIu64

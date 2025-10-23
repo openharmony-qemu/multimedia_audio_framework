@@ -389,7 +389,7 @@ void HpaeRendererStreamImpl::GetLatencyInner(uint64_t &timestamp, uint64_t &late
     
     if (lastPrintTimestamp_.load() + PRINT_TIMESTAMP_INTERVAL_NS < timestampCurrent[0]) {
         AUDIO_INFO_LOG("Latency info: framePosition: %{public}" PRIu64 ", latencyUs %{public}" PRIu64
-            ", base %{public}d, timestamp %{public}" PRIu64
+            ", base %{public}d, timestamp %{public}" PRIi64
             ", sink latency: %{public}u ms, a2dp offload latency: %{public}u ms, nearlink latency: %{public}u ms",
             framePosition_, latencyUs, base, timestamp, sinkLatency, a2dpOffloadLatency, nearlinkLatency);
         lastPrintTimestamp_.store(timestampCurrent[0]);
