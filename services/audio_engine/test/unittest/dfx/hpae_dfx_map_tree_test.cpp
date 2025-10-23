@@ -27,6 +27,14 @@ using namespace testing;
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+constexpr int32_t FRAME_LENGTH_960 = 960;
+constexpr int32_t FRAME_LENGTH_882 = 882;
+constexpr uint32_t ID_1001 = 1001;
+constexpr uint32_t ID_1002 = 1002;
+constexpr uint32_t ID_1003 = 1003;
+constexpr uint32_t ID_1004 = 1004;
+constexpr uint32_t NOT_EXIT_ID_9998 = 9998;
+constexpr uint32_t NOT_EXIT_ID_9999 = 9999;
 class HpaeDfxMapTreeTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -34,7 +42,7 @@ public:
     void SetUp();
     void TearDown();
 
-    HpaeDfxNodeInfo CreateNodeInfo(uint32_t nodeId, const string &name, uint32_t sessionId = 1001);
+    HpaeDfxNodeInfo CreateNodeInfo(uint32_t nodeId, const string &name, uint32_t sessionId = ID_1001);
     
     std::unique_ptr<HpaeDfxMapTree> dfxTree_;
     HpaeDfxNodeInfo node1_;
@@ -51,10 +59,10 @@ void HpaeDfxMapTreeTest::SetUp()
 {
     dfxTree_ = std::make_unique<HpaeDfxMapTree>();
     
-    node1_ = CreateNodeInfo(1001, "Node1", 1001);
-    node2_ = CreateNodeInfo(1002, "Node2", 1002);
-    node3_ = CreateNodeInfo(1003, "Node3", 1003);
-    node4_ = CreateNodeInfo(1004, "Node4", 1004);
+    node1_ = CreateNodeInfo(ID_1001, "Node1", ID_1001);
+    node2_ = CreateNodeInfo(ID_1002, "Node2", ID_1002);
+    node3_ = CreateNodeInfo(ID_1003, "Node3", ID_1003);
+    node4_ = CreateNodeInfo(ID_1004, "Node4", ID_1004);
 }
 
 void HpaeDfxMapTreeTest::TearDown()
@@ -68,7 +76,7 @@ HpaeDfxNodeInfo HpaeDfxMapTreeTest::CreateNodeInfo(uint32_t nodeId, const string
     info.nodeId = nodeId;
     info.nodeName = name;
     info.sessionId = sessionId;
-    info.frameLen = 1024;
+    info.frameLen = FRAME_LENGTH_960;
     info.samplingRate = SAMPLE_RATE_48000;
     info.format = SAMPLE_S16LE;
     info.channels = STEREO;
@@ -139,7 +147,7 @@ HWTEST_F(HpaeDfxMapTreeTest, HpaeDfxMapTree_003, TestSize.Level1)
  */
 HWTEST_F(HpaeDfxMapTreeTest, HpaeDfxMapTree_004, TestSize.Level1)
 {
-    bool result = dfxTree_->RemoveNode(9999);
+    bool result = dfxTree_->RemoveNode(NOT_EXIT_ID_9999);
     EXPECT_FALSE(result);
 }
 
@@ -218,8 +226,8 @@ HWTEST_F(HpaeDfxMapTreeTest, HpaeDfxMapTree_008, TestSize.Level1)
 {
     dfxTree_->AddNode(node1_);
     
-    bool result1 = dfxTree_->ConnectNodes(node1_.nodeId, 9999);
-    bool result2 = dfxTree_->ConnectNodes(9999, node1_.nodeId);
+    bool result1 = dfxTree_->ConnectNodes(node1_.nodeId, NOT_EXIT_ID_9999);
+    bool result2 = dfxTree_->ConnectNodes(NOT_EXIT_ID_9999, node1_.nodeId);
     
     EXPECT_FALSE(result1);
     EXPECT_FALSE(result2);
@@ -291,8 +299,8 @@ HWTEST_F(HpaeDfxMapTreeTest, HpaeDfxMapTree_012, TestSize.Level1)
 {
     dfxTree_->AddNode(node1_);
     
-    bool result1 = dfxTree_->DisConnectNodes(node1_.nodeId, 9999);
-    bool result2 = dfxTree_->DisConnectNodes(9999, node1_.nodeId);
+    bool result1 = dfxTree_->DisConnectNodes(node1_.nodeId, NOT_EXIT_ID_9999);
+    bool result2 = dfxTree_->DisConnectNodes(NOT_EXIT_ID_9999, node1_.nodeId);
     
     EXPECT_FALSE(result1);
     EXPECT_FALSE(result2);
@@ -325,24 +333,24 @@ HWTEST_F(HpaeDfxMapTreeTest, HpaeDfxMapTree_014, TestSize.Level1)
     dfxTree_->AddNode(node1_);
     dfxTree_->AddNode(node2_);
     dfxTree_->ConnectNodes(node1_.nodeId, node2_.nodeId);
+    uint32_t testSession = 2002; // 2002 for test sessionId
+    HpaeDfxNodeInfo nodeInfo = CreateNodeInfo(ID_1002, "TestUpdate", testSession);
+    nodeInfo.frameLen = FRAME_LENGTH_882;
+    nodeInfo.samplingRate = SAMPLE_RATE_44100;
+    nodeInfo.format = SAMPLE_S24LE;
+    nodeInfo.channels = MONO;
+    nodeInfo.channelLayout = CH_LAYOUT_MONO;
+    nodeInfo.deviceClass = "BT";
+    nodeInfo.sourceType = SOURCE_TYPE_INVALID;
     
-    HpaeDfxNodeInfo updatedEffect = CreateNodeInfo(1002, "EnhancedEffect", 2002);
-    updatedEffect.frameLen = 2048;
-    updatedEffect.samplingRate = SAMPLE_RATE_96000;
-    updatedEffect.format = SAMPLE_S24LE;
-    updatedEffect.channels = MONO;
-    updatedEffect.channelLayout = CH_LAYOUT_MONO;
-    updatedEffect.deviceClass = "BT";
-    updatedEffect.sourceType = SOURCE_TYPE_INVALID;
-    
-    dfxTree_->UpdateNodeInfo(node2_.nodeId, updatedEffect);
+    dfxTree_->UpdateNodeInfo(node2_.nodeId, nodeInfo);
 
     auto node = dfxTree_->FindDfxNode(node2_.nodeId);
     EXPECT_NE(node, nullptr);
-    EXPECT_EQ(node->GetNodeInfo().nodeName, "EnhancedEffect");
-    EXPECT_EQ(node->GetNodeInfo().sessionId, 2002);
-    EXPECT_EQ(node->GetNodeInfo().frameLen, 2048);
-    EXPECT_EQ(node->GetNodeInfo().samplingRate, SAMPLE_RATE_96000);
+    EXPECT_EQ(node->GetNodeInfo().nodeName, "TestUpdate");
+    EXPECT_EQ(node->GetNodeInfo().sessionId, testSession);
+    EXPECT_EQ(node->GetNodeInfo().frameLen, FRAME_LENGTH_882);
+    EXPECT_EQ(node->GetNodeInfo().samplingRate, SAMPLE_RATE_44100);
     EXPECT_EQ(node->GetNodeInfo().format, SAMPLE_S24LE);
     EXPECT_EQ(node->GetNodeInfo().channels, MONO);
     
@@ -358,11 +366,11 @@ HWTEST_F(HpaeDfxMapTreeTest, HpaeDfxMapTree_014, TestSize.Level1)
  */
 HWTEST_F(HpaeDfxMapTreeTest, HpaeDfxMapTree_015, TestSize.Level1)
 {
-    HpaeDfxNodeInfo nonExistentInfo = CreateNodeInfo(9999, "NonExistent", 9999);
+    HpaeDfxNodeInfo nodeInfo = CreateNodeInfo(NOT_EXIT_ID_9999, "NotExit", NOT_EXIT_ID_9999);
     
-    dfxTree_->UpdateNodeInfo(9999, nonExistentInfo);
+    dfxTree_->UpdateNodeInfo(NOT_EXIT_ID_9999, nodeInfo);
     
-    auto node = dfxTree_->FindDfxNode(9999);
+    auto node = dfxTree_->FindDfxNode(NOT_EXIT_ID_9999);
     EXPECT_EQ(node, nullptr);
 }
 
@@ -398,7 +406,7 @@ HWTEST_F(HpaeDfxMapTreeTest, HpaeDfxMapTree_017, TestSize.Level1)
     dfxTree_->AddNode(node4_);
     
     auto roots = dfxTree_->GetRoots();
-    EXPECT_EQ(roots.size(), 3);
+    EXPECT_EQ(roots.size(), 3); // 3 for size test
 }
 
 /**
@@ -457,16 +465,16 @@ HWTEST_F(HpaeDfxMapTreeTest, HpaeDfxMapTree_020, TestSize.Level1)
     EXPECT_EQ(node.GetParentCount(), 0);
     EXPECT_EQ(node.GetChildrenCount(), 0);
     
-    node.AddParent(9998);
-    node.AddChild(9999);
+    node.AddParent(NOT_EXIT_ID_9998);
+    node.AddChild(NOT_EXIT_ID_9999);
     
     EXPECT_FALSE(node.IsRoot());
     EXPECT_FALSE(node.IsLeaf());
     EXPECT_EQ(node.GetParentCount(), 1);
     EXPECT_EQ(node.GetChildrenCount(), 1);
     
-    bool removeParent = node.RemoveParent(9998);
-    bool removeChild = node.RemoveChild(9999);
+    bool removeParent = node.RemoveParent(NOT_EXIT_ID_9998);
+    bool removeChild = node.RemoveChild(NOT_EXIT_ID_9999);
     
     EXPECT_TRUE(removeParent);
     EXPECT_TRUE(removeChild);
@@ -496,7 +504,7 @@ HWTEST_F(HpaeDfxMapTreeTest, HpaeDfxMapTree_021, TestSize.Level1)
     auto node3 = dfxTree_->FindDfxNode(node3_.nodeId);
     auto node4 = dfxTree_->FindDfxNode(node4_.nodeId);
     
-    EXPECT_EQ(node1->GetChildrenCount(), 2);
+    EXPECT_EQ(node1->GetChildrenCount(), 2); // 2 for test count
     EXPECT_EQ(node2->GetParentCount(), 1);
     EXPECT_EQ(node2->GetChildrenCount(), 1);
     EXPECT_EQ(node3->GetParentCount(), 1);
