@@ -19,6 +19,9 @@
 #include "audio_errors.h"
 #include "audio_system_manager.h"
 #include "audio_workgroup_callback_impl.h"
+#include "accesstoken_kit.h"
+#include "nativetoken_kit.h"
+#include "token_setproc.h"
 
 using namespace testing::ext;
 
@@ -29,6 +32,7 @@ const int32_t TEST_RET_NUM = 0;
 const int32_t TEST_RET_MAX_VOLUME = 15;
 const StreamUsage ILLEGAL_STREAM_USAGE = static_cast<StreamUsage>(static_cast<int32_t>(STREAM_USAGE_MAX)+999);
 const int32_t TEST_RET_ERROR_NOT_SUPPORTED = ERR_NOT_SUPPORTED;
+bool g_hasPermission = false;
 
 class AudioSystemManagerUnitTest : public testing::Test {
 public:
@@ -54,6 +58,41 @@ class SystemVolumeChangeCallbackTest : public SystemVolumeChangeCallback {
 public:
     void OnSystemVolumeChange(VolumeEvent volumeEvent) override {}
 };
+
+static void GetPermission()
+{
+    if (!g_hasPermission) {
+        uint64_t tokenId;
+        constexpr int perNum = 10;
+        const char *perms[perNum] = {
+            "ohos.permission.MICROPHONE",
+            "ohos.permission.MANAGE_INTELLIGENT_VOICE",
+            "ohos.permission.MANAGE_AUDIO_CONFIG",
+            "ohos.permission.MICROPHONE_CONTROL",
+            "ohos.permission.MODIFY_AUDIO_SETTINGS",
+            "ohos.permission.ACCESS_NOTIFICATION_POLICY",
+            "ohos.permission.USE_BLUETOOTH",
+            "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO",
+            "ohos.permission.RECORD_VOICE_CALL",
+            "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS",
+        };
+ 
+        NativeTokenInfoParams infoInstance = {
+            .dcapsNum = 0,
+            .permsNum = 10,
+            .aclsNum = 0,
+            .dcaps = nullptr,
+            .perms = perms,
+            .acls = nullptr,
+            .processName = "audio_service_unit_test",
+            .aplStr = "system_basic",
+        };
+        tokenId = GetAccessTokenId(&infoInstance);
+        SetSelfTokenID(tokenId);
+        OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
+        g_hasPermission = true;
+    }
+}
 
 /**
  * @tc.name  : Test GetMaxVolume API
@@ -95,7 +134,7 @@ HWTEST(AudioSystemManagerUnitTest, GetMinVolume_001, TestSize.Level1)
  * @tc.number: GetDeviceMaxVolume_001
  * @tc.desc  : Test GetDeviceMaxVolume interface.
  */
-HWTEST(AudioSystemManagerUnitTest, GetDeviceMaxVolume_001, TestSize.Level1)xx
+HWTEST(AudioSystemManagerUnitTest, GetDeviceMaxVolume_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMaxVolume_001 start");
     int32_t result = AudioSystemManager::GetInstance()->GetDeviceMaxVolume(STREAM_ALL, DEVICE_TYPE_NONE);
@@ -1568,30 +1607,26 @@ HWTEST(AudioSystemManagerUnitTest, GetStreamType_003, TestSize.Level4)
     EXPECT_EQ(audioSystemManager.GetStreamType(contentType, streamUsage), STREAM_MUSIC);
 }
 
-/**
- * @tc.name   : Test GetAudioScene API
- * @tc.number : GetAudioScene_001
- * @tc.desc   : Test GetAudioScene interface
- */
-HWTEST(AudioSystemManagerUnitTest, GetAudioScene_001, TestSize.Level4)
+HWTEST(AudioSystemManagerUnitTest, GetAudioScene_001, TestSize.Level3)
 {
     AudioSystemManager audioSystemManager;
-    AudioSystemManager::GetInstance()->SetAudioScene(AUDIO_SCENE_DEFAULT);
+    GetPermission();
+    audioSystemManager.SetAudioScene(AUDIO_SCENE_PHONE_CALL);
     int result = audioSystemManager.GetAudioScene();
+    EXPECT_EQ(result, AUDIO_SCENE_PHONE_CALL);
+ 
+ 
+    audioSystemManager.SetAudioScene(AUDIO_SCENE_RINGING);
+    result = audioSystemManager.GetAudioScene();
+    EXPECT_EQ(result, AUDIO_SCENE_RINGING);
+ 
+    audioSystemManager.SetAudioScene(AUDIO_SCENE_PHONE_CHAT);
+    result = audioSystemManager.GetAudioScene();
+    EXPECT_EQ(result, AUDIO_SCENE_PHONE_CHAT);
+ 
+    audioSystemManager.SetAudioScene(AUDIO_SCENE_DEFAULT);
+    result = audioSystemManager.GetAudioScene();
     EXPECT_EQ(result, AUDIO_SCENE_DEFAULT);
-}
-
-/**
- * @tc.name   : Test GetAudioScene API
- * @tc.number : GetAudioScene_002
- * @tc.desc   : Test GetAudioScene interface
- */
-HWTEST(AudioSystemManagerUnitTest, GetAudioScene_002, TestSize.Level4)
-{
-    AudioSystemManager audioSystemManager;
-    AudioSystemManager::GetInstance()->SetAudioScene(AUDIO_SCENE_VOICE_RINGING);
-    int result = audioSystemManager.GetAudioScene();
-    EXPECT_NE(result, AUDIO_SCENE_INVALID);
 }
 
 /**
