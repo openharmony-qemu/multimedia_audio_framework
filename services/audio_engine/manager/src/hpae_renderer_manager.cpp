@@ -210,7 +210,7 @@ void HpaeRendererManager::CreateProcessCluster(HpaeNodeInfo &nodeInfo)
     CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, sceneTypeConnect),
         "could not find processorType %{public}d", sceneTypeConnect);
     if (!sessionNodeMap_[nodeInfo.sessionId].bypass) {
-        sceneTypeToProcessClusterCountMap_[sceneTypeConnect]++;
+        sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]++;
     }
     int32_t ret = sceneClusterMap_[sceneTypeConnect]->AudioRendererCreate(nodeInfo, sinkInfo_);
     if (ret != SUCCESS) {
