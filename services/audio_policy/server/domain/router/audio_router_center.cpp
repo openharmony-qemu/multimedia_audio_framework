@@ -172,27 +172,28 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
 {
     StreamUsage streamUsage = info.streamUsage;
     int32_t clientUID = info.clientUID;
-    std::string caller = info.caller;
-    StreamUsage callStreamUsage = streamUsage;
+    FetchDeviceInfo bak = {
+        streamUsage, streamUsage, clientUID, routerType, PIPE_TYPE_NORMAL_OUT, PRIVACY_TYPE_PUBLIC
+    };
     if (renderConfigMap_[streamUsage] == MEDIA_RENDER_ROUTERS ||
         renderConfigMap_[streamUsage] == TONE_RENDER_ROUTERS) {
         bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
         AudioScene audioScene = AudioSceneManager::GetInstance().GetAudioScene(hasSystemPermission);
         shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
         if (IsMediaFollowCallStrategy(audioScene)) {
-            callStreamUsage = AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningCallStreamUsage();
-            callStreamUsage = (callStreamUsage == STREAM_USAGE_UNKNOWN) ? STREAM_USAGE_VOICE_COMMUNICATION :
-                callStreamUsage;
+            bak.streamUsage = AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningCallStreamUsage();
+            bak.streamUsage = (bak.streamUsage == STREAM_USAGE_UNKNOWN) ? STREAM_USAGE_VOICE_COMMUNICATION :
+                bak.streamUsage;
             AUDIO_INFO_LOG("Media follow call strategy, replace usage %{public}d to %{public}d", streamUsage,
-                callStreamUsage);
-            desc = FetchCallRenderDevice(callStreamUsage, clientUID, routerType, bypassType,
+                bak.streamUsage);
+            desc = FetchCallRenderDevice(bak.streamUsage, clientUID, routerType, bypassType,
                 GetBypassWithSco(audioScene));
         } else {
             desc = FetchMediaRenderDevice(streamUsage, clientUID, routerType, bypassType);
         }
         descs.push_back(move(desc));
     } else if (renderConfigMap_[streamUsage] == RING_RENDER_ROUTERS) {
-        DealRingRenderRouters(descs, streamUsage, clientUID, routerType);
+        DealRingRenderRouters(descs, bak, routerType);
     } else if (renderConfigMap_[streamUsage] == CALL_RENDER_ROUTERS) {
         descs.push_back(FetchCallRenderDevice(streamUsage, clientUID, routerType, bypassType));
     } else {
@@ -201,10 +202,9 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
         return descs;
     }
     if (audioDeviceRefinerCb_ != nullptr &&
-        !NeedSkipSelectAudioOutputDeviceRefined(streamUsage, descs)) {
-        FetchDeviceInfo fetchDeviceInfo = { callStreamUsage, streamUsage,
-            clientUID, routerType, PIPE_TYPE_NORMAL_OUT, PRIVACY_TYPE_PUBLIC };
-        audioDeviceRefinerCb_->OnAudioOutputDeviceRefined(descs, fetchDeviceInfo);
+        !NeedSkipSelectAudioOutputDeviceRefined(bak.streamUsage, descs)) {
+        bak.routerType = routerType;
+        audioDeviceRefinerCb_->OnAudioOutputDeviceRefined(descs, bak);
     }
     if (descs.size() > 0 && descs[0] != nullptr) {
         int32_t audioId_ = descs[0]->deviceId_;
@@ -266,7 +266,7 @@ int32_t AudioRouterCenter::NotifyDistributedOutputChange(bool isRemote)
 }
 
 void AudioRouterCenter::DealRingRenderRouters(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
-    StreamUsage streamUsage, int32_t clientUID, RouterType &routerType)
+    FetchDeviceInfo &info, RouterType &routerType)
 {
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     AudioScene audioScene = AudioSceneManager::GetInstance().GetAudioScene(hasSystemPermission);
@@ -274,22 +274,23 @@ void AudioRouterCenter::DealRingRenderRouters(std::vector<std::shared_ptr<AudioD
                 AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningCallStreamUsage();
     bool isVoipStream = AudioStreamCollector::GetAudioStreamCollector().IsCallStreamUsage(callStreamUsage);
     AUDIO_INFO_LOG("ring render router streamUsage:%{public}d, audioScene:%{public}d, isVoipStream:%{public}d.",
-        streamUsage, audioScene, isVoipStream);
+        info.streamUsage, audioScene, isVoipStream);
     if (audioScene == AUDIO_SCENE_PHONE_CALL || audioScene == AUDIO_SCENE_PHONE_CHAT ||
         (audioScene == AUDIO_SCENE_VOICE_RINGING && isVoipStream)) {
         shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
         if (desc->deviceType_ == DEVICE_TYPE_NONE) {
-            AUDIO_INFO_LOG("Ring follow call strategy, replace usage %{public}d to %{public}d", streamUsage,
-                callStreamUsage);
-            desc = FetchCallRenderDevice(callStreamUsage, clientUID, routerType);
+            info.streamUsage = callStreamUsage;
+            AUDIO_INFO_LOG("Ring follow call strategy, replace usage %{public}d to %{public}d",
+                info.preStreamUsage, info.streamUsage);
+            desc = FetchCallRenderDevice(info.streamUsage, info.clientUID, routerType);
         }
         descs.push_back(move(desc));
     } else if ((audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) &&
-        streamUsage == STREAM_USAGE_ALARM) {
-            AUDIO_INFO_LOG("alarm follow ring strategy, replace usage alarm to ringtone");
-            descs = FetchRingRenderDevices(STREAM_USAGE_RINGTONE, clientUID, routerType);
+        info.streamUsage == STREAM_USAGE_ALARM) {
+        AUDIO_INFO_LOG("alarm follow ring strategy, replace usage alarm to ringtone");
+        descs = FetchRingRenderDevices(STREAM_USAGE_RINGTONE, info.clientUID, routerType);
     } else {
-        descs = FetchRingRenderDevices(streamUsage, clientUID, routerType);
+        descs = FetchRingRenderDevices(info.streamUsage, info.clientUID, routerType);
     }
 }
 
