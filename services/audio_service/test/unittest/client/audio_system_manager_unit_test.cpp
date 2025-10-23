@@ -1619,16 +1619,15 @@ HWTEST(AudioSystemManagerUnitTest, GetAudioScene_001, TestSize.Level4)
     audioSystemManager.SetAudioScene(AUDIO_SCENE_PHONE_CALL);
     int result = audioSystemManager.GetAudioScene();
     EXPECT_EQ(result, AUDIO_SCENE_PHONE_CALL);
- 
- 
+
     audioSystemManager.SetAudioScene(AUDIO_SCENE_RINGING);
     result = audioSystemManager.GetAudioScene();
     EXPECT_EQ(result, AUDIO_SCENE_RINGING);
- 
+
     audioSystemManager.SetAudioScene(AUDIO_SCENE_PHONE_CHAT);
     result = audioSystemManager.GetAudioScene();
     EXPECT_EQ(result, AUDIO_SCENE_PHONE_CHAT);
- 
+
     audioSystemManager.SetAudioScene(AUDIO_SCENE_DEFAULT);
     result = audioSystemManager.GetAudioScene();
     EXPECT_EQ(result, AUDIO_SCENE_DEFAULT);
