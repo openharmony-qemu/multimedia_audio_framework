@@ -17,15 +17,56 @@ import("//foundation/multimedia/audio_framework/config.gni")
 audio_framework_root = "../../.."
 audio_policy_idl_location = "${audio_framework_root}/services/audio_policy/idl"
 
+idl_gen_interface("audio_service_idl_callback") {
+  sources = [
+    "IAudioWorkgroupCallback.idl",
+    "IIpcStreamListener.idl",
+    "IProcessCb.idl",
+    "IStandardAudioServerManagerListener.idl",
+  ]
+
+  configs = [ ":audio_service_sa_idl_config" ]
+
+  log_tag = "AudioServiceIdl"
+  hitrace = "HITRACE_TAG_ZAUDIO"
+
+  log_domainid = "0xD002B8B"
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
+idl_gen_interface("audio_policy_idl_callback") {
+  sources = [
+    "${audio_policy_idl_location}/IAudioPolicyClient.idl",
+    "${audio_policy_idl_location}/IStandardAudioAnahsManagerListener.idl",
+    "${audio_policy_idl_location}/IStandardAudioPolicyManagerListener.idl",
+    "${audio_policy_idl_location}/IStandardAudioRoutingManagerListener.idl",
+    "${audio_policy_idl_location}/IStandardAudioZoneClient.idl",
+    "${audio_policy_idl_location}/IStandardClientTracker.idl",
+    "${audio_policy_idl_location}/IStandardSleAudioOperationCallback.idl",
+    "${audio_policy_idl_location}/IStandardSpatializationStateChangeListener.idl",
+  ]
+
+  sources_cpp = [ "${audio_framework_root}/services/audio_policy/server/domain/device/src/audio_device_descriptor.cpp" ]
+
+  configs = [ ":audio_policy_sa_idl_config" ]
+
+  log_tag = "AudioPolicyIdl"
+  hitrace = "HITRACE_TAG_ZAUDIO"
+
+  log_domainid = "0xD002B87"
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
 idl_gen_interface("audio_service_idl_interface") {
   sources = [
     "IAudioProcess.idl",
     "ICoreServiceProviderIpc.idl",
     "IIpcStream.idl",
-    "IIpcStreamListener.idl",
     "IPolicyProviderIpc.idl",
-    "IProcessCb.idl",
-    "IStandardAudioServerManagerListener.idl",
     "IStandardAudioService.idl",
   ]
   if (audio_framework_feature_offline_effect) {
@@ -47,18 +88,9 @@ idl_gen_interface("audio_service_idl_interface") {
 idl_gen_interface("audio_policy_idl_interface") {
   sources = [
     "${audio_policy_idl_location}/IAudioPolicy.idl",
-    "${audio_policy_idl_location}/IAudioPolicyClient.idl",
-    "${audio_policy_idl_location}/IAudioWorkgroupCallback.idl",
-    "${audio_policy_idl_location}/IStandardAudioAnahsManagerListener.idl",
-    "${audio_policy_idl_location}/IStandardAudioPolicyManagerListener.idl",
-    "${audio_policy_idl_location}/IStandardAudioRoutingManagerListener.idl",
-    "${audio_policy_idl_location}/IStandardAudioZoneClient.idl",
-    "${audio_policy_idl_location}/IStandardClientTracker.idl",
-    "${audio_policy_idl_location}/IStandardSleAudioOperationCallback.idl",
-    "${audio_policy_idl_location}/IStandardSpatializationStateChangeListener.idl",
     "${audio_policy_idl_location}/IVADeviceBroker.idl",
-    "${audio_policy_idl_location}/IVAInputStream.idl",
     "${audio_policy_idl_location}/IVADeviceController.idl",
+    "${audio_policy_idl_location}/IVAInputStream.idl",
     "${audio_policy_idl_location}/IVAStream.idl",
   ]
   sources_callback = []
@@ -88,6 +120,8 @@ config("audio_service_sa_idl_config") {
     "${audio_framework_root}/interfaces/inner_api/native/audiocommon/include/",
     "${audio_framework_root}/services/audio_service/common/include/",
     "${audio_framework_root}/frameworks/native/hdiadapter_new/include/common/",
+    "${audio_framework_root}/interfaces/inner_api/native/audiomanager/include/",
+    "${audio_framework_root}/frameworks/native/audiopolicy/include/",
   ]
 }
 
@@ -98,7 +132,7 @@ config("audio_policy_sa_idl_config") {
     "${audio_framework_root}/interfaces/inner_api/native/audiomanager/include/",
     "${audio_framework_root}/frameworks/native/audiodefinitions/include/",
     "${audio_framework_root}/frameworks/native/audiopolicy/include/",
-    "${audio_framework_root}/interfaces/inner_api/native/audiomanager/include/",
+    "${audio_framework_root}/frameworks/native/audioutils/include/",
   ]
 }
 
@@ -124,6 +158,8 @@ ohos_shared_library("audio_framework_interface") {
 
   output_values = get_target_outputs(":audio_service_idl_interface")
   output_values += get_target_outputs(":audio_policy_idl_interface")
+  output_values += get_target_outputs(":audio_service_idl_callback")
+  output_values += get_target_outputs(":audio_policy_idl_callback")
 
   sources = [
     "${audio_framework_root}/frameworks/native/audiodefinitions/src/audio_stream_descriptor.cpp",
@@ -140,8 +176,131 @@ ohos_shared_library("audio_framework_interface") {
   sources += filter_include(output_values, [ "*_types.cpp" ])
 
   deps = [
+    ":audio_policy_idl_callback",
     ":audio_policy_idl_interface",
+    ":audio_service_idl_callback",
     ":audio_service_idl_interface",
+    "${audio_framework_root}/frameworks/native/audioutils:audio_utils",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "hitrace:hitrace_meter",
+    "ipc:ipc_core",
+    "ipc:ipc_single",
+    "samgr:samgr_proxy",
+  ]
+
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+}
+
+ohos_shared_library("audio_client_idl_interface") {
+  branch_protector_ret = "pac_ret"
+
+  cflags_cc = [
+    "-fomit-frame-pointer",
+    "-fdata-sections",
+    "-ffunction-sections",
+    "-fno-unroll-loops",
+    "-fno-exceptions",
+    "-fno-unwind-tables",
+    "-fno-asynchronous-unwind-tables",
+    "-Os",
+  ]
+
+  server_output_values =
+      filter_include(get_target_outputs(":audio_service_idl_interface"),
+                     [
+                       "*_proxy.cpp",
+                       "*_types.cpp",
+                     ])
+  server_output_values +=
+      filter_include(get_target_outputs(":audio_service_idl_callback"),
+                     [ "*_stub.cpp" ])
+
+  sources = [
+    "${audio_framework_root}/services/audio_policy/server/domain/device/src/audio_device_descriptor.cpp",
+    "${audio_framework_root}/services/audio_service/client/src/audio_filter.cpp",
+    "${audio_framework_root}/services/audio_service/common/src/futex_tool.cpp",
+    "${audio_framework_root}/services/audio_service/common/src/oh_audio_buffer.cpp",
+    "${audio_framework_root}/services/audio_service/common/src/oh_audio_buffer_base.cpp",
+  ]
+
+  sources += server_output_values
+
+  public_configs = [ ":audio_service_sa_idl_config" ]
+
+  deps = [
+    ":audio_service_idl_callback",
+    ":audio_service_idl_interface",
+    "${audio_framework_root}/frameworks/native/audioutils:audio_utils",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "hitrace:hitrace_meter",
+    "ipc:ipc_core",
+    "ipc:ipc_single",
+    "samgr:samgr_proxy",
+  ]
+
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+}
+
+ohos_shared_library("audio_policy_client_idl_interface") {
+  branch_protector_ret = "pac_ret"
+
+  cflags_cc = [
+    "-fomit-frame-pointer",
+    "-fdata-sections",
+    "-ffunction-sections",
+    "-fno-unroll-loops",
+    "-fno-exceptions",
+    "-fno-unwind-tables",
+    "-fno-asynchronous-unwind-tables",
+    "-Os",
+  ]
+
+  policy_output_values =
+      filter_include(get_target_outputs(":audio_policy_idl_interface"),
+                     [
+                       "*proxy.cpp",
+                       "*_types.cpp",
+                     ])
+  policy_output_values +=
+      filter_include(get_target_outputs(":audio_policy_idl_callback"),
+                     [ "*_stub.cpp" ])
+
+  sources = [
+    "${audio_framework_root}/frameworks/native/audiodefinitions/src/audio_stream_descriptor.cpp",
+    "${audio_framework_root}/services/audio_policy/server/domain/device/src/audio_device_descriptor.cpp",
+    "${audio_framework_root}/services/audio_policy/server/domain/volume/src/audio_volume_group_info.cpp",
+    "${audio_framework_root}/services/audio_service/client/src/microphone_descriptor.cpp",
+  ]
+
+  sources += policy_output_values
+
+  public_configs = [ ":audio_policy_sa_idl_config" ]
+
+  deps = [
+    ":audio_policy_idl_callback",
+    ":audio_policy_idl_interface",
     "${audio_framework_root}/frameworks/native/audioutils:audio_utils",
   ]
 
