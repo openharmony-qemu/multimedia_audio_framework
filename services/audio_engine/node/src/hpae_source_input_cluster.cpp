@@ -236,12 +236,6 @@ uint32_t HpaeSourceInputCluster::GetSourceInputNodeUseCount()
     return sourceInputNode_.use_count();
 }
 
-int32_t HpaeSourceInputCluster::WriteCapturerData(char *data, int32_t dataSize)
-{
-    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, ERR_ILLEGAL_STATE, "sourceInputNode_ is nullptr");
-    return sourceInputNode_->WriteCapturerData(data, dataSize);
-}
-
 uint32_t HpaeSourceInputCluster::GetCaptureId()
 {
     return sourceInputNode_->GetCaptureId();
