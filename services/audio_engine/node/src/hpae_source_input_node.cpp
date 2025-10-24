@@ -472,7 +472,6 @@ void HpaeSourceInputNode::ReadDataFromSource(const HpaeSourceBufferType &bufferT
 {
     uint32_t byteSize = nodeInfoMap_.at(bufferType).channels * nodeInfoMap_.at(bufferType).frameLen *
         static_cast<uint32_t>(GetSizeFromFormat(nodeInfoMap_.at(bufferType).format));
-    auto &historyData = historyDataMap_.at(bufferType);
     while (historyRemainSizeMap_[bufferType] < byteSize) {
         audioCapturerSource_->CaptureFrame(capturerFrameDataMap_.at(bufferType).data(),
             (uint64_t)frameByteSizeMap_.at(bufferType), replyBytes);
