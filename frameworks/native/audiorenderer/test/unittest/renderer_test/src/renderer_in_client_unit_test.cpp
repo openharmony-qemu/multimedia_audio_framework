@@ -1340,9 +1340,12 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_048, TestSize.Level1
 
     Timestamp timestamp;
     Timestamp::Timestampbase base = Timestamp::Timestampbase::MONOTONIC;
+    ptrRendererInClientInner->lastPrintTimestamp_.store(0);
     auto ret = ptrRendererInClientInner->GetAudioPosition(timestamp, base);
     EXPECT_TRUE(ret);
-
+    std::vector<uint64_t> timestampCurrent = {0};
+    ClockTime::GetAllTimeStamp(timestampCurrent);
+    ptrRendererInClientInner->lastPrintTimestamp_.store(timestampCurrent[0]);
     ptrRendererInClientInner->converter_ = std::make_unique<AudioSpatialChannelConverter>();
     ret = ptrRendererInClientInner->GetAudioPosition(timestamp, base);
     EXPECT_TRUE(ret);

@@ -688,10 +688,14 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_026, TestSize.Level1)
 {
     auto unit = CreateHpaeRendererStreamImpl();
     EXPECT_NE(unit, nullptr);
+    unit->lastPrintTimestamp_.store(0);
     uint64_t latency = 0;
     int32_t ret = unit->GetLatency(latency);
     EXPECT_EQ(ret, SUCCESS);
     unit->deviceClass_ = "remote_offload";
+    std::vector<uint64_t> timestampCurrent = {0};
+    ClockTime::GetAllTimeStamp(timestampCurrent);
+    unit->lastPrintTimestamp_.store(timestampCurrent[0]);
     ret = unit->GetLatency(latency);
     EXPECT_EQ(ret, SUCCESS);
     unit->deviceClass_ = "offload";

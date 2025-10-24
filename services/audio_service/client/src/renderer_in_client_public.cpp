@@ -71,6 +71,7 @@ const uint64_t AUDIO_FIRST_FRAME_LATENCY = 120; //ms
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 9; // 9S
 static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
+static constexpr uint64_t PRINT_TIMESTAMP_INTERVAL_NS = 1000000000;
 static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 constexpr uint32_t SONIC_LATENCY_IN_MS = 20; // cache in sonic
@@ -366,6 +367,8 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
     uint64_t timestampVal = 0;
     uint64_t latency = 0;
     int32_t ret = ipcStream_->GetSpeedPosition(readIdx, timestampVal, latency, base);
+    std::vector<uint64_t> timestampCurrent = {0};
+    ClockTime::GetAllTimeStamp(timestampCurrent);
 
     uint64_t framePosition = readIdx > lastSpeedFlushReadIndex_ ? readIdx - lastSpeedFlushReadIndex_ : 0;
     framePosition = framePosition > latency ? framePosition - latency : 0;
@@ -380,10 +383,18 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
         framePosition = lastFramePosAndTimePair_[base].first;
         timestampVal = lastFramePosAndTimePair_[base].second;
     }
-    AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64
-        ", lastSpeedFlushReadIndex_ %{public}" PRIu64
-        ", timestamp %{public}" PRIu64 ", Sinklatency %{public}" PRIu64 ", lastSwitchPosition_ %{public}" PRIu64,
-        framePosition, lastSpeedFlushReadIndex_, timestampVal, latency, lastSwitchPosition_[base]);
+    if (lastPrintTimestamp_.load() + PRINT_TIMESTAMP_INTERVAL_NS < timestampCurrent[0]) {
+        AUDIO_INFO_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64
+            ", lastSpeedFlushReadIndex_ %{public}" PRIu64
+            ", timestamp %{public}" PRIu64 ", Sinklatency %{public}" PRIu64 ", lastSwitchPosition_ %{public}" PRIu64,
+            framePosition, lastSpeedFlushReadIndex_, timestampVal, latency, lastSwitchPosition_[base]);
+            lastPrintTimestamp_.store(timestampCurrent[0]);
+    } else {
+        AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64
+            ", lastSpeedFlushReadIndex_ %{public}" PRIu64
+            ", timestamp %{public}" PRIu64 ", Sinklatency %{public}" PRIu64 ", lastSwitchPosition_ %{public}" PRIu64,
+            framePosition, lastSpeedFlushReadIndex_, timestampVal, latency, lastSwitchPosition_[base]);
+    }
 
     timestamp.framePosition = framePosition;
     timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);
@@ -1836,9 +1847,7 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
         frameLatency = (deepLatency + latency) * speed_;
     }
     // between unprocessSamples and framesWritten there is sonic
-    if (speedEnable_) {
-        frameLatency += SONIC_LATENCY_IN_MS * curStreamParams_.samplingRate / AUDIO_MS_PER_SECOND;
-    }
+    frameLatency += SONIC_LATENCY_IN_MS * curStreamParams_.samplingRate / AUDIO_MS_PER_SECOND;
     
     // real frameposition
     uint64_t framePosition = unprocessSamples > frameLatency ? unprocessSamples - frameLatency : 0;
