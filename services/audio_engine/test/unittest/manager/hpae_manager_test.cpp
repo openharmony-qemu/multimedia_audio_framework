@@ -1990,7 +1990,7 @@ HWTEST_F(HpaeManagerUnitTest, DeleteAudioPort_TEST_001, TestSize.Level1)
     hpaeManager_->rendererManagerMap_["Speaker_File"] = hpaeRendererManager_;
     hpaeManager_->sinkIdSinkNameMap_[1] = "Speaker_File";
     hpaeManager_->DeleteAudioport("Speaker_File");
-    EXPECT_EQ(hpaeManager_->sinkNameSinkIdMap_.count(), 0);
+    EXPECT_EQ(hpaeManager_->sinkNameSinkIdMap_.size(), 0);
 
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -1998,8 +1998,8 @@ HWTEST_F(HpaeManagerUnitTest, DeleteAudioPort_TEST_001, TestSize.Level1)
     hpaeManager_->sourceNameSourceIdMap_["mic"] = 2;
     hpaeManager_->capturerManagerMap_["mic"] = capturerManager;
     hpaeManager_->DeleteAudioport("mic");
-    EXPECT_EQ(hpaeManager_->sourceNameSourceIdMap_.count(), 0);
+    EXPECT_EQ(hpaeManager_->sourceNameSourceIdMap_.size(), 0);
     hpaeManager_->DeleteAudioport("mic");
-    EXPECT_EQ(hpaeManager_->sourceNameSourceIdMap_.count(), 0);
+    EXPECT_EQ(hpaeManager_->sourceNameSourceIdMap_.size(), 0);
 }
 }  // namespace
