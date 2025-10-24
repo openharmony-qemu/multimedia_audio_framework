@@ -1685,25 +1685,10 @@ int32_t RendererInServer::InitDupStreamVolume(uint32_t dupStreamIndex)
     return SUCCESS;
 }
 
-int32_t RendererInServer::EnableDualTone(const std::string &dupSinkName)
+int32_t RendererInServer::DisableDualToneInner()
 {
-    if (isDualToneEnabled_) {
-        AUDIO_INFO_LOG("DualTone is already enabled");
-        return SUCCESS;
-    }
-    int32_t ret = InitDualToneStream(dupSinkName);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dual tone stream failed");
-    return SUCCESS;
-}
-
-int32_t RendererInServer::DisableDualTone()
-{
-    std::lock_guard<std::mutex> lock(dualToneMutex_);
-    if (!isDualToneEnabled_) {
-        AUDIO_WARNING_LOG("DualTone is already disabled.");
-        return ERR_INVALID_OPERATION;
-    }
     isDualToneEnabled_ = false;
+    dupSinkName_ = std::nullopt;
     AUDIO_INFO_LOG("Disable dual tone renderer:[%{public}u] with status: %{public}d",
         dualToneStreamIndex_, status_.load());
     IStreamManager::GetDualPlaybackManager().ReleaseRender(dualToneStreamIndex_);
@@ -1713,10 +1698,30 @@ int32_t RendererInServer::DisableDualTone()
     return ERROR;
 }
 
-int32_t RendererInServer::InitDualToneStream(const std::string &dupSinkName)
+int32_t RendererInServer::DisableDualTone()
+{
+    std::lock_guard<std::mutex> lock(dualToneMutex_);
+    if (!isDualToneEnabled_) {
+        AUDIO_WARNING_LOG("DualTone is already disabled.");
+        return ERR_INVALID_OPERATION;
+    }
+
+    return DisableDualToneInner();
+}
+
+int32_t RendererInServer::EnableDualTone(const std::string &dupSinkName)
 {
     {
         std::lock_guard<std::mutex> lock(dualToneMutex_);
+        bool isEnabled = isDualToneEnabled_.load();
+        if (isEnabled && dupSinkName_ == dupSinkName) {
+            AUDIO_INFO_LOG("DualTone is already enabled");
+            return SUCCESS;
+        }
+
+        if (isEnabled) {
+            DisableDualToneInner();
+        }
 
         int32_t ret = IStreamManager::GetDualPlaybackManager().CreateRender(processConfig_, dualToneStream_,
             dupSinkName);
@@ -1731,6 +1736,7 @@ int32_t RendererInServer::InitDualToneStream(const std::string &dupSinkName)
         AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
 
         isDualToneEnabled_ = true;
+        dupSinkName_ = dupSinkName;
     }
 
     if (audioServerBuffer_ != nullptr) {

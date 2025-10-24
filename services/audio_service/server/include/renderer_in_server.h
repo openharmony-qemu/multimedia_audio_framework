@@ -17,6 +17,7 @@
 #define RENDERER_IN_SERVER_H
 
 #include <mutex>
+#include <optional>
 #include "i_renderer_stream.h"
 #include "i_stream_listener.h"
 #include "oh_audio_buffer.h"
@@ -119,9 +120,9 @@ public:
     std::unique_ptr<AudioRingCache>& GetDupRingBuffer();
 
     // for dual tone
+    int32_t DisableDualToneInner();
     int32_t EnableDualTone(const std::string &dupSinkName);
     int32_t DisableDualTone();
-    int32_t InitDualToneStream(const std::string &dupSinkName);
 
     void GetEAC3ControlParam();
     int32_t GetStreamManagerType() const noexcept;
@@ -237,6 +238,7 @@ private:
     // for dual sink tone
     std::mutex dualToneMutex_;
     std::atomic<bool> isDualToneEnabled_ = false;
+    std::optional<std::string> dupSinkName_ = std::nullopt;
     uint32_t dualToneStreamIndex_ = 0;
     std::shared_ptr<IRendererStream> dualToneStream_ = nullptr;
 
