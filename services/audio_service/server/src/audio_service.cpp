@@ -1549,8 +1549,8 @@ int32_t AudioService::UnsetOffloadMode(uint32_t sessionId)
         lock.unlock();
         return ERROR;
     }
-    int32_t ret = renderer->UnsetOffloadMode();
     lock.unlock();
+    int32_t ret = renderer->UnsetOffloadMode();
     return ret;
 }
 
