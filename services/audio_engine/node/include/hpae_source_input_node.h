@@ -80,10 +80,10 @@ private:
     std::unordered_map<HpaeSourceBufferType, OutputPort<HpaePcmBuffer *>> outputStreamMap_; // output port
     std::unordered_map<HpaeSourceBufferType, HpaeNodeInfo> nodeInfoMap_; // nodeInfo, portInfo
     std::unordered_map<HpaeSourceBufferType, PcmBufferInfo> pcmBufferInfoMap_; // bufferInfo
-    std::unordered_map<HpaeSourceBufferType, HpaePcmBuffer> inputAudioBufferMap_; // output buffer
-    std::unordered_map<HpaeSourceBufferType, size_t> frameByteSizeMap_;
-    std::unordered_map<HpaeSourceBufferType, std::vector<char>> historyDataMap_;
-    std::unordered_map<HpaeSourceBufferType, size_t> historyRemainSizeMap_;
+    std::unordered_map<HpaeSourceBufferType, HpaePcmBuffer> inputAudioBufferMap_; // output buffer, fixed framelen of 20ms
+    std::unordered_map<HpaeSourceBufferType, size_t> frameByteSizeMap_;  // request data size of captureframe, maybe unequal to output buffer size
+    std::unordered_map<HpaeSourceBufferType, std::vector<char>> historyDataMap_; // store any size data for process
+    std::unordered_map<HpaeSourceBufferType, size_t> historyRemainSizeMap_;      // size of stored data
     std::unordered_map<HpaeSourceBufferType, std::vector<char>> capturerFrameDataMap_; // input buffer
     std::unordered_map<HpaeSourceBufferType, FrameDesc> fdescMap_; // CaptureframeWithEc argument struct
 };

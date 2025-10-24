@@ -57,8 +57,8 @@ HpaeSourceInputNode::HpaeSourceInputNode(HpaeNodeInfo &nodeInfo)
         sourceBufferType, nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
     nodeInfoMap_[sourceBufferType].frameLen = FRAME_DURATION_DEFAULT * nodeInfo.samplingRate / MILLISECOND_PER_SECOND;
     pcmBufferInfoMap_.emplace(
-            sourceBufferType, PcmBufferInfo(nodeInfoMap_[sourceBufferType].channels,
-            nodeInfoMap_[sourceBufferType].frameLen, nodeInfoMap_[sourceBufferType].samplingRate));
+        sourceBufferType, PcmBufferInfo(nodeInfoMap_[sourceBufferType].channels,
+        nodeInfoMap_[sourceBufferType].frameLen, nodeInfoMap_[sourceBufferType].samplingRate));
     inputAudioBufferMap_.emplace(sourceBufferType, HpaePcmBuffer(pcmBufferInfoMap_.at(sourceBufferType)));
     inputAudioBufferMap_.at(sourceBufferType).SetSourceBufferType(sourceBufferType);
     capturerFrameDataMap_.emplace(sourceBufferType, frameByteSizeMap_.at(sourceBufferType));
@@ -99,9 +99,6 @@ HpaeSourceInputNode::HpaeSourceInputNode(std::vector<HpaeNodeInfo> &nodeInfos)
         outputStreamMap_.emplace(sourceBufferType, this);
         historyDataMap_.emplace(sourceBufferType, 0);
         historyRemainSizeMap_.emplace(sourceBufferType, 0);
-        if (historyDataMap_.find(sourceBufferType) != historyDataMap_.end()) {
-            historyDataMap_.at(sourceBufferType).resize(0);
-        }
     }
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeSourceInputNode[MIC_EC]");
@@ -163,6 +160,8 @@ void HpaeSourceInputNode::DoProcessMicInner(const HpaeSourceBufferType &bufferTy
         nodeInfoMap_.at(bufferType).channels * nodeInfoMap_.at(bufferType).frameLen,
         historyData.data(), inputAudioBufferMap_.at(bufferType).GetPcmDataBuffer());
     historyRemainSizeMap_[bufferType] -= byteSize;
+    // drop data has been written
+    historyData.erase(historyData.begin(), historyData.begin() + byteSize);
     outputStreamMap_.at(bufferType).WriteDataToOutput(&inputAudioBufferMap_.at(bufferType));
 }
 
@@ -475,10 +474,6 @@ void HpaeSourceInputNode::ReadDataFromSource(const HpaeSourceBufferType &bufferT
         static_cast<uint32_t>(GetSizeFromFormat(nodeInfoMap_.at(bufferType).format));
     auto &historyData = historyDataMap_.at(bufferType);
     while (historyRemainSizeMap_[bufferType] < byteSize) {
-        if (historyRemainSizeMap_[bufferType] > 0) {
-            historyData.erase(historyData.begin(), historyData.begin() + historyData.size() -
-                historyRemainSizeMap_[bufferType]);
-        }
         audioCapturerSource_->CaptureFrame(capturerFrameDataMap_.at(bufferType).data(),
             (uint64_t)frameByteSizeMap_.at(bufferType), replyBytes);
         CHECK_AND_RETURN_LOG(replyBytes != 0, "replyBytes is 0");

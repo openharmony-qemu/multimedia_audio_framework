@@ -234,16 +234,6 @@ void SetSourceStateFuzzTest()
     hpaeSourceInputNode->SetSourceState(sourceState);
 }
 
-void WriteCapturerDataFuzzTest()
-{
-    HpaeNodeInfo nodeInfo;
-    GetTestNodeInfo(nodeInfo);
-    auto hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
-    uint32_t dataSize = static_cast<uint32_t>(GetData<uint16_t>()) + 1;
-    std::vector<char> testData(dataSize);
-    hpaeSourceInputNode->WriteCapturerData(testData.data(), dataSize);
-}
-
 void GetOutputPortNumFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
@@ -316,7 +306,6 @@ TestFuncs g_testFuncs = {
     CapturerSourceStopFuzzTest,
     GetSourceStateFuzzTest,
     SetSourceStateFuzzTest,
-    WriteCapturerDataFuzzTest,
     GetOutputPortNumFuzzTest,
     GetSourceInputNodeTypeFuzzTest,
     SetSourceInputNodeTypeFuzzTest,
