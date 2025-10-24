@@ -67,6 +67,9 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
     }
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeSinkInputNode");
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
+    }
 #endif
 }
 
@@ -75,6 +78,9 @@ HpaeSinkInputNode::~HpaeSinkInputNode()
 #ifdef ENABLE_HIDUMP_DFX
     AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
         GetNodeId(), GetNodeName().c_str());
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeAdmin(false, GetNodeInfo());
+    }
 #endif
 }
 

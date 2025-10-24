@@ -61,6 +61,9 @@ HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeI
 
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeAudioFormatConverterNode");
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
+    }
 #endif
 }
 
@@ -69,6 +72,9 @@ HpaeAudioFormatConverterNode::~HpaeAudioFormatConverterNode()
 #ifdef ENABLE_HIDUMP_DFX
     AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
         GetNodeId(), GetNodeName().c_str());
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeAdmin(false, GetNodeInfo());
+    }
 #endif
 }
 
@@ -353,7 +359,7 @@ void HpaeAudioFormatConverterNode::ConnectWithInfo(const std::shared_ptr<OutputN
     converterOutput_.SetSourceBufferType(nodeInfo.sourceBufferType);
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(true, preNode->GetSharedInstance()->GetNodeId(), GetNodeInfo());
+        callback->OnNotifyDfxNodeInfo(true, preNode->GetSharedInstance()->GetNodeId(), GetNodeId());
     }
 #endif
 }
@@ -363,7 +369,7 @@ void HpaeAudioFormatConverterNode::DisConnectWithInfo(const std::shared_ptr<Outp
     inputStream_.DisConnect(preNode->GetOutputPort(nodeInfo, true));
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(false, GetNodeId(), GetNodeInfo());
+        callback->OnNotifyDfxNodeInfo(false, preNode->GetSharedInstance()->GetNodeId(), GetNodeId());
     }
 #endif
 }

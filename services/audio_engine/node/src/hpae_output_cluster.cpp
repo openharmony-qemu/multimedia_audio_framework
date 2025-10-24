@@ -87,12 +87,6 @@ bool HpaeOutputCluster::Reset()
         converterNode.second->Reset();
     }
     hpaeSinkOutputNode_->DisConnect(mixerNode_);
-#ifdef ENABLE_HIDUMP_DFX
-    if (auto callBack = hpaeSinkOutputNode_->GetNodeStatusCallback().lock()) {
-        callBack->OnNotifyDfxNodeInfo(false, mixerNode_->GetNodeId(), mixerNode_->GetNodeInfo());
-        callBack->OnNotifyDfxNodeInfo(false, hpaeSinkOutputNode_->GetNodeId(), hpaeSinkOutputNode_->GetNodeInfo());
-    }
-#endif
     return true;
 }
 

@@ -52,18 +52,28 @@ void IHpaeRendererManager::UploadDumpSinkInfo(std::string& deviceName)
 #endif
 };
 
-void IHpaeRendererManager::OnNotifyDfxNodeInfo(bool isConnect, uint32_t preNodeId, HpaeDfxNodeInfo &nodeInfo)
+void IHpaeRendererManager::OnNotifyDfxNodeAdmin(bool isAdd, const HpaeDfxNodeInfo &nodeInfo)
 {
 #ifdef ENABLE_HIDUMP_DFX
-    AUDIO_INFO_LOG("%{public}s preNodeId %{public}u nodeName:%{public}s, NodeId: %{public}u",
-        isConnect ? "connect" : "disconnect",
-        preNodeId,
-        nodeInfo.nodeName.c_str(),
-        nodeInfo.nodeId);
-    if (isConnect) {
-        dfxTree_.Insert(preNodeId, nodeInfo);
+    AUDIO_INFO_LOG("%{public}s node, nodeName:%{public}s nodeId:%{public}u",
+        isAdd ? "Add" : "Remove", nodeInfo.nodeName.c_str(), nodeInfo.nodeId);
+    if (isAdd) {
+        dfxTree_.AddNode(nodeInfo);
     } else {
-        dfxTree_.Remove(nodeInfo.nodeId);
+        dfxTree_.RemoveNode(nodeInfo.nodeId);
+    }
+#endif
+};
+
+void IHpaeRendererManager::OnNotifyDfxNodeInfo(bool isConnect, uint32_t parentId, uint32_t childId)
+{
+#ifdef ENABLE_HIDUMP_DFX
+    AUDIO_INFO_LOG("%{public}s preNodeId:%{public}u, NodeId:%{public}u",
+        isConnect ? "connect" : "disconnect", parentId, childId);
+    if (isConnect) {
+        dfxTree_.ConnectNodes(parentId, childId);
+    } else {
+        dfxTree_.DisConnectNodes(parentId, childId);
     }
 #endif
 };

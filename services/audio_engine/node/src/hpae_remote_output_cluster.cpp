@@ -86,11 +86,6 @@ bool HpaeRemoteOutputCluster::Reset()
     for (auto converterNode : sceneConverterMap_) {
         converterNode.second->Reset();
     }
-#ifdef ENABLE_HIDUMP_DFX
-    if (auto callBack = hpaeSinkOutputNode_->GetNodeStatusCallback().lock()) {
-        callBack->OnNotifyDfxNodeInfo(false, hpaeSinkOutputNode_->GetNodeId(), hpaeSinkOutputNode_->GetNodeInfo());
-    }
-#endif
     return true;
 }
 

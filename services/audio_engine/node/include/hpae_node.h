@@ -193,6 +193,7 @@ public:
     void AddInput(InputPort<T> *input, const std::shared_ptr<HpaeNode> &node);
     bool RemoveInput(InputPort<T> *input, HpaeBufferType bufferType = HPAE_BUFFER_TYPE_DEFAULT);
     size_t GetInputNum() const;
+    uint32_t GetNodeId();
 private:
     std::set<InputPort<T>*> inputPortSet_;
     std::vector<T> outputData_;
@@ -411,6 +412,11 @@ bool OutputPort<T>::RemoveInput(InputPort<T> *input, HpaeBufferType bufferType)
     return true;
 }
 
+template <class T>
+uint32_t OutputPort<T>::GetNodeId()
+{
+    return hpaeNode_->GetNodeId();
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
