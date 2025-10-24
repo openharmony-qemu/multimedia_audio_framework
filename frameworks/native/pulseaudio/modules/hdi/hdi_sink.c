@@ -1308,7 +1308,7 @@ static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk
 
     if (pa_memblock_is_silence(pchunk->memblock)) {
         AUTO_CTRACE("hdi_sink::ProcessAudioVolume: is_silence");
-        AUDIO_PRERELEASE_LOGI("pa_memblock_is_silence");
+        AUDIO_PRERELEASE_LOGD("pa_memblock_is_silence");
     } else {
         AudioRawFormat rawFormat;
         rawFormat.format = (uint32_t)ConvertPaToHdiAdapterFormat(si->sample_spec.format);
