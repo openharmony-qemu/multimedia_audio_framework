@@ -1,3 +1,7 @@
+/*
+* Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. All rights reserved.
+*/
+
 import {StyleConst} from '../utils/StyleConst';
 import audioNapi from 'libentry.so';
 import {Logger} from '../utils/Logger';
