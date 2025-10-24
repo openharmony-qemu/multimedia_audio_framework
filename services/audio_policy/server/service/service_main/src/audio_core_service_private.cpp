@@ -1619,7 +1619,6 @@ void AudioCoreService::UpdateDupDeviceOutputRoute(std::shared_ptr<AudioStreamDes
     if (streamDesc->newDupDeviceDescs_.size() != 0) {
         std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkName(
             streamDesc->newDupDeviceDescs_.front(), streamDesc->sessionId_);
-        UpdateDualToneState(false, streamDesc->sessionId_);
         UpdateDualToneState(true, streamDesc->sessionId_, sinkName);
         shouldUpdateDeviceDueToDualTone_ = true;
     } else if (streamDesc->oldDupDeviceDescs_.size() != 0) {
