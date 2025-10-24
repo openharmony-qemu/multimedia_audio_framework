@@ -2269,7 +2269,8 @@ void HpaeManager::UpdateParamExtra(const std::string &mainkey, const std::string
 bool HpaeManager::HandleRendererManager(const std::string &sinkName, const HpaeStreamInfo &streamInfo)
 {
     auto rendererManager = SafeGetMap(rendererManagerMap_, sinkName);
-    CHECK_AND_RETURN_RET_LOG(rendererManager, false, "can not find sink[%{public}s] in rendererManagerMap_", sinkName.c_str());
+    CHECK_AND_RETURN_RET_LOG(rendererManager, false,
+        "can not find sink[%{public}s] in rendererManagerMap_", sinkName.c_str());
     CHECK_AND_RETURN_RET_LOG(rendererManager->IsInit(), false, "sink[%{public}s] is not init", sinkName.c_str());
     rendererManager->CreateStream(streamInfo);
     if (streamInfo.streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
@@ -2661,7 +2662,7 @@ void HpaeManager::DeleteAudioport(const std::string &name)
         DeleteRendererManager(name);
     } else if (sourceNameSourceIdMap_.find(name) != sourceNameSourceIdMap_.end()) {
         DeleteCaptureManager(name);
-    } 
+    }
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
