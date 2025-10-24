@@ -52,7 +52,6 @@ public:
     int32_t CapturerSourceStop(void);
     StreamManagerState GetSourceState(void);
     int32_t SetSourceState(StreamManagerState sourceState);
-    int32_t WriteCapturerData(char *data, int32_t dataSize);
     size_t GetOutputPortNum();
     size_t GetOutputPortNum(HpaeNodeInfo &nodeInfo);
     HpaeSourceInputNodeType GetSourceInputNodeType();
@@ -66,6 +65,8 @@ private:
     void SetBufferValid(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes);
     void DoProcessInner(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes);
     void DoProcessMicInner(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes);
+    void ReadDataFromSource(const HpaeSourceBufferType &bufferType, uint64_t &replyBytes);
+    void PushDataToBuffer(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes);
 
 private:
     std::shared_ptr<IAudioCaptureSource> audioCapturerSource_ = nullptr;
