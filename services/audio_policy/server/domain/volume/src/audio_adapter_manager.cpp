@@ -1101,24 +1101,6 @@ int32_t AudioAdapterManager::SetDeviceActive(InternalDeviceType deviceType,
     return SUCCESS;
 }
 
-void AudioAdapterManager::AdjustBluetoothVoiceAssistantVolume(std::shared_ptr<AudioDeviceDescriptor> &device,
-    bool isA2dpSwitchToSco)
-{
-    if (device->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene() && !VolumeUtils::IsPCVolumeEnable()) {
-        SaveVolumeData(device, STREAM_VOICE_ASSISTANT, MAX_VOLUME_LEVEL, false, true);
-        AUDIO_INFO_LOG("a2dp ok");
-    }
-
-    if (device->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && isA2dpSwitchToSco) {
-        if (!volumeDataMaintainer_.LoadVolumeFromDb(device, STREAM_VOICE_ASSISTANT)) {
-            AUDIO_ERR_LOG("sco voice assistant volume does not exist, use default.");
-            SaveVolumeData(device, STREAM_VOICE_ASSISTANT, DEFAULT_VOLUME_LEVEL, false, true);
-        } else {
-            AUDIO_INFO_LOG("sco ok");
-        }
-    }
-}
-
 int32_t AudioAdapterManager::SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object)
 {
     std::lock_guard<std::mutex> lock(g_deviceVolumeBehaviorListenerMutex);
@@ -1158,12 +1140,6 @@ void AudioAdapterManager::UpdateVolumeForStreams()
     } else {
         AUDIO_WARNING_LOG("Os account is not ready, skip visiting datashare.");
     }
-
-    auto descs = audioActiveDevice_.GetActiveOutputDevices();
-    for (auto &desc : descs) {
-        AdjustBluetoothVoiceAssistantVolume(desc, isScoActive && isA2DPPreActive_);
-    }
-    isA2DPPreActive_ = audioActiveDevice_.IsDeviceInActiveOutputDevices(DEVICE_TYPE_BLUETOOTH_A2DP, false);
 
     auto streamDescs = AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescs();
     for (auto &streamDesc : streamDescs) {
