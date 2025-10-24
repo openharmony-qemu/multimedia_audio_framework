@@ -4310,26 +4310,6 @@ int32_t AudioPolicyServer::RegisterPolicyCallbackClient(const sptr<IRemoteObject
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::CreateAudioInterruptZone(const std::set<int32_t> &pids, const int32_t zoneID)
-{
-    return ERR_UNKNOWN;
-}
-
-int32_t AudioPolicyServer::AddAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID)
-{
-    return ERR_UNKNOWN;
-}
-
-int32_t AudioPolicyServer::RemoveAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID)
-{
-    return ERR_UNKNOWN;
-}
-
-int32_t AudioPolicyServer::ReleaseAudioInterruptZone(const int32_t zoneID)
-{
-    return ERR_UNKNOWN;
-}
-
 int32_t AudioPolicyServer::RegisterAudioZoneClient(const sptr<IRemoteObject> &object)
 {
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,

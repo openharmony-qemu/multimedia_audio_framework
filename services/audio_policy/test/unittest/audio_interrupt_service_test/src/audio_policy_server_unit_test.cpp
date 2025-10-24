@@ -988,46 +988,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_038, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_039
-* @tc.desc  : Test AudioPolicyServer::ReleaseAudioInterruptZone
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_039, TestSize.Level1)
-{
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-
-    EXPECT_NE(ptrAudioPolicyServer, nullptr);
-
-    const int32_t zoneID = 0;
-    ptrAudioPolicyServer->interruptService_ = std::make_shared<AudioInterruptService>();
-    auto ret = ptrAudioPolicyServer->ReleaseAudioInterruptZone(zoneID);
-
-    EXPECT_EQ(ret, ERR_UNKNOWN);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_040
-* @tc.desc  : Test AudioPolicyServer::ReleaseAudioInterruptZone
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_040, TestSize.Level1)
-{
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-
-    EXPECT_NE(ptrAudioPolicyServer, nullptr);
-
-    const int32_t zoneID = 0;
-    ptrAudioPolicyServer->interruptService_ = nullptr;
-    auto ret = ptrAudioPolicyServer->ReleaseAudioInterruptZone(zoneID);
-
-    EXPECT_EQ(ret, ERR_UNKNOWN);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
 * @tc.number: SetSystemVolumeLevelInternal_001
 * @tc.desc  : Test AudioPolicyServer::SetSystemVolumeLevelInternal
 */

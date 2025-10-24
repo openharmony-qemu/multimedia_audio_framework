@@ -2168,38 +2168,6 @@ int32_t AudioPolicyManager::UnregisterSpatializationStateEventListener(const uin
     return gsp->UnregisterSpatializationStateEventListener(sessionID);
 }
 
-int32_t AudioPolicyManager::CreateAudioInterruptZone(const std::set<int32_t> &pids, const int32_t zoneID)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-
-    return gsp->CreateAudioInterruptZone(pids, zoneID);
-}
-
-int32_t AudioPolicyManager::AddAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-
-    return gsp->AddAudioInterruptZonePids(pids, zoneID);
-}
-
-int32_t AudioPolicyManager::RemoveAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-
-    return gsp->RemoveAudioInterruptZonePids(pids, zoneID);
-}
-
-int32_t AudioPolicyManager::ReleaseAudioInterruptZone(const int32_t zoneID)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-
-    return gsp->ReleaseAudioInterruptZone(zoneID);
-}
-
 ConverterConfig AudioPolicyManager::GetConverterConfig()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

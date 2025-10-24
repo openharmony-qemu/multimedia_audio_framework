@@ -505,14 +505,6 @@ public:
 
     int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID);
 
-    int32_t CreateAudioInterruptZone(const std::set<int32_t> &pids, const int32_t zoneID);
-
-    int32_t AddAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID);
-
-    int32_t RemoveAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID);
-
-    int32_t ReleaseAudioInterruptZone(const int32_t zoneID);
-
     int32_t RegisterAudioZoneClient(const sptr<IRemoteObject>& object);
 
     int32_t CreateAudioZone(const std::string &name, const AudioZoneContext &context);

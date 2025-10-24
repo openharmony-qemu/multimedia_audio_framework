@@ -424,10 +424,6 @@ void AudioPolicyManagerSevenFuzzTest()
     AudioPolicyManager::GetInstance().RegisterSpatializationStateEventListener(sessionId,
         streamUsage, audioSpatializationStateChangeCallback);
     AudioPolicyManager::GetInstance().UnregisterSpatializationStateEventListener(sessionId);
-    AudioPolicyManager::GetInstance().CreateAudioInterruptZone(pids, zoneId);
-    AudioPolicyManager::GetInstance().AddAudioInterruptZonePids(pids, zoneId);
-    AudioPolicyManager::GetInstance().RemoveAudioInterruptZonePids(pids, zoneId);
-    AudioPolicyManager::GetInstance().ReleaseAudioInterruptZone(zoneId);
     AudioPolicyManager::GetInstance().GetConverterConfig();
     AudioPolicyManager::GetInstance().IsHighResolutionExist();
     AudioPolicyManager::GetInstance().SetHighResolutionExist(highResExist);

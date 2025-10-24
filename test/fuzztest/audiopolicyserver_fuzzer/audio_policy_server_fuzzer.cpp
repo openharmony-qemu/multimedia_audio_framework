@@ -1411,23 +1411,6 @@ void AudioPolicyServerRegisterSpatializationStateEventListenerFuzzTest()
     server->UnregisterSpatializationStateEventListener(sessionID);
 }
 
-void AudioPolicyServerAudioInterruptZoneFuzzTest()
-{
-    std::set<int32_t> pids;
-    int32_t zoneID = GetData<int32_t>();
-    int32_t count = DEVICE_COUNT;
-    for (int32_t i = 0; i < count; ++i) {
-        pids.insert(GetData<int32_t>());
-    }
-
-    auto server = GetServerPtr();
-    CHECK_AND_RETURN(server != nullptr);
-    server->CreateAudioInterruptZone(pids, zoneID);
-    server->AddAudioInterruptZonePids(pids, zoneID);
-    server->RemoveAudioInterruptZonePids(pids, zoneID);
-    server->ReleaseAudioInterruptZone(zoneID);
-}
-
 void AudioPolicyServerRegisterAudioZoneClientFuzzTest()
 {
     auto server = GetServerPtr();
@@ -2204,7 +2187,6 @@ TestFuncs g_testFuncs[] = {
     RegisterAppStateListenerFuzzTest,
     RegisterAndUnRegisterSyncHibernateListenerFuzzTest,
     AudioPolicyServerRegisterSpatializationStateEventListenerFuzzTest,
-    AudioPolicyServerAudioInterruptZoneFuzzTest,
     AudioPolicyServerRegisterAudioZoneClientFuzzTest,
     AudioPolicyServerAudioZoneQueryFuzzTest,
     AudioPolicyServerBindUnbindDeviceToAudioZoneFuzzTest,

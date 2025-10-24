@@ -172,16 +172,6 @@ interface IAudioPolicy {
     void RegisterPolicyCallbackClient(
         [in] IRemoteObject object,
         [in] int zoneID /* default value: 0 -- local device */);
-    void CreateAudioInterruptZone(
-        [in] Set<int> pids,
-        [in] int zoneID /* default value: 0 -- local device */);
-    void AddAudioInterruptZonePids(
-        [in] Set<int> pids,
-        [in] int zoneID /* default value: 0 -- local device */);
-    void RemoveAudioInterruptZonePids(
-        [in] Set<int> pids,
-        [in] int zoneID /* default value: 0 -- local device */);
-    void ReleaseAudioInterruptZone([in] int zoneId /* default value: 0 -- local device */);
     void RegisterAudioZoneClient([in] IRemoteObject object);
     void CreateAudioZone([in] String name, [in] AudioZoneContext context, [out] int zoneId, [in] int clientPid);
     void ReleaseAudioZone([in] int zoneId);
