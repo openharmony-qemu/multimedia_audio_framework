@@ -75,6 +75,29 @@ public:
         CALLBACK_RESULT_VALID = 0,
     };
 
+    enum AudioJsStreamUsage {
+        USAGE_UNKNOW = 0,
+        USAGE_MEDIA = 1,
+        USAGE_VOICE_COMMUNICATION = 2,
+        USAGE_VOICE_ASSISTANT = 3,
+        USAGE_ALARM = 4,
+        USAGE_VOICE_MESSAGE = 5,
+        USAGE_RINGTONE = 6,
+        USAGE_NOTIFICATION = 7,
+        USAGE_ACCESSIBILITY = 8,
+        USAGE_SYSTEM = 9,
+        USAGE_MOVIE = 10,
+        USAGE_GAME = 11,
+        USAGE_AUDIOBOOK = 12,
+        USAGE_NAVIGATION = 13,
+        USAGE_DTMF = 14,
+        USAGE_ENFORCED_TONE = 15,
+        USAGE_ULTRASONIC = 16,
+        USAGE_VIDEO_COMMUNICATION = 17,
+        USAGE_VOICE_CALL_ASSISTANT = 21,
+        USAGE_MAX = 100
+    };
+
     static bool IsLegalInputArgumentInterruptMode(int32_t interruptMode);
     static bool IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode);
     static bool IsLegalInputArgumentChannelBlendMode(int32_t blendMode);
@@ -84,6 +107,8 @@ public:
     static OHOS::AudioStandard::AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType);
     static OHOS::AudioStandard::AudioRingerMode GetNativeAudioRingerMode(int32_t ringMode);
     static OHOS::AudioStandard::InterruptMode GetNativeInterruptMode(int32_t interruptMode);
+    static OHOS::AudioStandard::StreamUsage GetNativeStreamUsage(int32_t streamUsage);
+    static OHOS::AudioStandard::StreamUsage GetNativeStreamUsageFir(int32_t streamUsage);
     static AudioVolumeType GetJsAudioVolumeType(OHOS::AudioStandard::AudioStreamType volumeType);
     static AudioVolumeType GetJsAudioVolumeTypeMore(OHOS::AudioStandard::AudioStreamType volumeType);
     static bool IsLegalInputArgumentDeviceFlag(int32_t deviceFlag);

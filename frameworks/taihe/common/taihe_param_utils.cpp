@@ -590,6 +590,16 @@ VolumeEvent TaiheParamUtils::SetValueVolumeEvent(const OHOS::AudioStandard::Volu
     return taiheVolumeEvent;
 }
 
+StreamVolumeEvent TaiheParamUtils::SetValueStreamVolumeEvent(const OHOS::AudioStandard::StreamVolumeEvent &volumeEvent)
+{
+    StreamVolumeEvent taiheStreamVolumeEvent {
+        .streamUsage = TaiheAudioEnum::ToTaiheStreamUsage(volumeEvent.streamUsage),
+        .volume = volumeEvent.volume,
+        .updateUi = volumeEvent.updateUi,
+    };
+    return taiheStreamVolumeEvent;
+}
+
 AudioCapturerChangeInfo TaiheParamUtils::SetAudioCapturerChangeInfoDescriptors(
     const OHOS::AudioStandard::AudioCapturerChangeInfo &changeInfo)
 {
@@ -608,13 +618,13 @@ AudioDeviceDescriptor TaiheParamUtils::SetDeviceDescriptor(
     const OHOS::AudioStandard::AudioDeviceDescriptor &deviceInfo)
 {
     std::vector<int32_t> sampleRatesVec;
-    sampleRatesVec.reserve(deviceInfo.GetDeviceStreamInfo().samplingRate.size());
+    sampleRatesVec.resize(deviceInfo.GetDeviceStreamInfo().samplingRate.size());
     for (const auto &samplingRate : deviceInfo.GetDeviceStreamInfo().samplingRate) {
         sampleRatesVec.emplace_back(static_cast<int32_t>(samplingRate));
     }
     std::vector<int32_t> channelCountsVec;
     std::set<OHOS::AudioStandard::AudioChannel> channelSet = deviceInfo.GetDeviceStreamInfo().GetChannels();
-    channelCountsVec.reserve(channelSet.size());
+    channelCountsVec.resize(channelSet.size());
     for (const auto &channel : channelSet) {
         channelCountsVec.emplace_back(static_cast<int32_t>(channel));
     }
