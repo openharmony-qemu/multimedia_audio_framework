@@ -2752,9 +2752,7 @@ void AudioInterruptService::SendActiveVolumeTypeChangeEvent(const int32_t zoneId
     AudioStreamType streamInFocus = GetStreamInFocusInternal(DEFAUFT_UID, zoneId);
     streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(streamInFocus);
     if (activeStreamType_ != streamInFocus) {
-        AUDIO_INFO_LOG("activeStreamType_: %{public}d, streamInFocus: %{public}d",
-            activeStreamType_, streamInFocus);
-
+        AUDIO_INFO_LOG("old: %{public}d, new: %{public}d", activeStreamType_, streamInFocus);
         activeStreamType_ = streamInFocus;
         handler_->SendActiveVolumeTypeChangeCallback(activeStreamType_);
     }
