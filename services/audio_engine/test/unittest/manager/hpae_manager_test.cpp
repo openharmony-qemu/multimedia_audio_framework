@@ -142,9 +142,7 @@ static void InitSourceInfo(HpaeSourceInfo &sourceInfo)
     sourceInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
     sourceInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     sourceInfo.sourceType = SOURCE_TYPE_MIC;
-    sourceInfo.filePath = g_rootPath + "source_" + audioModuleInfo.adapterName + "_" + audioModuleInfo.rate + "_" +
-                        audioModuleInfo.channels + "_" + audioModuleInfo.format + ".pcm";;
-
+    sourceInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
     sourceInfo.samplingRate = SAMPLE_RATE_48000;
     sourceInfo.channels = STEREO;
     sourceInfo.format = SAMPLE_S16LE;
