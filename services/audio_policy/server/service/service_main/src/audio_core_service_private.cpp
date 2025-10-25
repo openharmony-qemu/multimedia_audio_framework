@@ -3334,7 +3334,7 @@ int32_t AudioCoreService::PlayBackToInjection(uint32_t sessionId)
         return ERR_PERMISSION_DENIED;
     }
     int32_t ret = audioInjectorPolicy_.Init();
-
+    audioInjectorPolicy_.SetInjectStreamsMuteForInjection(sessionId);
     return ret;
 }
 
@@ -3348,6 +3348,7 @@ int32_t AudioCoreService::InjectionToPlayBack(uint32_t sessionId)
     ret = AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnForcedDeviceSelected",
         AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "move stream out failed");
+    audioInjectorPolicy_.SetInjectStreamsMuteForPlayback(sessionId);
     audioInjectorPolicy_.RemoveStreamDescriptor(sessionId);
     return SUCCESS;
 }
