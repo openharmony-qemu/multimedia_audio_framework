@@ -2377,7 +2377,7 @@ bool AudioServer::HandleCheckRecorderBackgroundCapture(const AudioProcessConfig 
         CAPTURER_PREPARED,
     };
     if (SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_CREATED)) {
-        AUDIO_INFO_LOG("switchStream is recreating, callerUid:%{public}d", config.callerUid);.
+        AUDIO_INFO_LOG("switchStream is recreating, callerUid:%{public}d", config.callerUid);
         SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED);
         return true;
     }
