@@ -216,7 +216,6 @@ bool AudioProcessInServer::CheckBGCapturer()
         return true;
     }
 
-
     CHECK_AND_RETURN_RET_LOG(Util::IsBackgroundSourceType(processConfig_.capturerInfo.sourceType) &&
         AudioService::GetInstance()->InForegroundList(processConfig_.appInfo.appUid), false, "Verify failed");
 
