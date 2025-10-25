@@ -83,6 +83,7 @@ public:
         SESSION_INPUT_DEVICE_CHANGE,
         INTERRUPT_EVENT_FOR_AUDIO_SESSION,
         VOLUME_DEGREE_EVENT,
+        AUDIO_DEVICE_INFO_UPDATE,
     };
     /* event data */
     class EventContextObj {
@@ -155,6 +156,7 @@ public:
         const sptr<IStandardAudioRoutingManagerListener> &callback);
     int32_t RemoveDistributedRoutingRoleChangeCbsMap(int32_t clientId);
     bool SendDeviceChangedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected);
+    bool SendDeviceInfoUpdatedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
     bool SendAvailableDeviceChange(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected);
     bool SendMicrophoneBlockedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc,
         DeviceBlockStatus status);
@@ -220,6 +222,7 @@ protected:
 private:
     /* Handle Event*/
     void HandleDeviceChangedCallback(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleDeviceInfoUpdatedCallback(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAvailableDeviceChange(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleVolumeKeyEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleVolumeDegreeEvent(const AppExecFwk::InnerEvent::Pointer &event);

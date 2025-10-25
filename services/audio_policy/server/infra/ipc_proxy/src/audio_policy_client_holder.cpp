@@ -57,6 +57,15 @@ void AudioPolicyClientHolder::OnDeviceChange(const DeviceChangeAction &deviceCha
     audioPolicyClient_->OnDeviceChange(deviceChangeAction);
 }
 
+void AudioPolicyClientHolder::OnDeviceInfoUpdate(const DeviceChangeAction &deviceChangeAction)
+{
+    CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
+    AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion_ };
+    clientInfo.isSupportedNearlink_ = isSupportedNearlink_;
+    deviceChangeAction.SetClientInfo(clientInfo);
+    audioPolicyClient_->OnDeviceInfoUpdate(deviceChangeAction);
+}
+
 void AudioPolicyClientHolder::OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo)
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
