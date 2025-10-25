@@ -127,28 +127,6 @@ AudioProcessInServer::~AudioProcessInServer()
     AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
 }
 
-static CapturerState HandleStreamStatusToCapturerState(const StreamStatus &status)
-{
-    switch (status) {
-        case STREAM_IDEL:
-        case STREAM_STAND_BY:
-            return CAPTURER_PREPARED;
-        case STREAM_STARTING:
-        case STREAM_RUNNING:
-            return CAPTURER_RUNNING;
-        case STREAM_PAUSING:
-        case STREAM_PAUSED:
-            return CAPTURER_PAUSED;
-        case STREAM_STOPPING:
-        case STREAM_STOPPED:
-            return CAPTURER_STOPPED;
-        case STREAM_RELEASED:
-            return CAPTURER_RELEASED;
-        default:
-            return CAPTURER_INVALID;
-    }
-}
-
 int32_t AudioProcessInServer::GetSessionId(uint32_t &sessionId)
 {
     sessionId = sessionId_;
@@ -235,14 +213,10 @@ bool AudioProcessInServer::CheckBGCapturer()
     uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
 
     if (PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId)) {
-        AudioService::GetInstance()->UpdateBackgroundCaptureMap(sessionId_, true);
         return true;
     }
 
-    if (AudioService::GetInstance()->IsStreamInterruptResume(sessionId_)) {
-        AUDIO_WARNING_LOG("Stream:%{public}u Result:success Reason:resume", sessionId_);
-        return true;
-    }
+
     CHECK_AND_RETURN_RET_LOG(Util::IsBackgroundSourceType(processConfig_.capturerInfo.sourceType) &&
         AudioService::GetInstance()->InForegroundList(processConfig_.appInfo.appUid), false, "Verify failed");
 
@@ -265,19 +239,17 @@ bool AudioProcessInServer::TurnOnMicIndicator(CapturerState capturerState)
         tokenId,
         capturerState,
     };
-    if (SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
-        AudioService::GetInstance()->UpdateSwitchStreamMap(sessionId_, SWITCH_STATE_STARTED);
-    } else {
+    if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
         CHECK_AND_RETURN_RET_LOG(CheckBGCapturer(), false, "Verify failed");
     }
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
 
     if (isMicIndicatorOn_) {
-        AUDIO_WARNING_LOG("MicIndicator：already on, Stream:%{public}u.", sessionId_);
+        AUDIO_WARNING_LOG("MicIndicator:already on, Stream:%{public}u.", sessionId_);
     } else {
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, sessionId_),
             false, "NotifyPrivacyStart failed!");
-        AUDIO_INFO_LOG("MicIndicator:turn on，Stream:%{public}u", sessionId_);
+        AUDIO_INFO_LOG("MicIndicator:turn on,Stream:%{public}u", sessionId_);
         isMicIndicatorOn_ = true;
     }
     return true;
@@ -295,10 +267,6 @@ bool AudioProcessInServer::TurnOffMicIndicator(CapturerState capturerState)
         capturerState,
     };
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
-
-    if (AudioService::GetInstance()->NeedRemoveBackgroundCaptureMap(sessionId_, capturerState)) {
-        AudioService::GetInstance()->RemoveBackgroundCaptureMap(sessionId_);
-    }
     if (isMicIndicatorOn_) {
         PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
         AUDIO_INFO_LOG("MicIndicator:turn off, Stream:%{public}u", sessionId_);
@@ -908,11 +876,10 @@ RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
                 processConfig_.appInfo.appUid,
                 processConfig_.appInfo.appPid,
                 processConfig_.appInfo.appTokenId,
-                HandleStreamStatusToCapturerState(streamStatusInServer_)
+                streamStatusInServer_ == STREAM_RUNNING ? CAPTURER_RUNNING : CAPTURER_PREPARED
             };
             AUDIO_INFO_LOG("Insert switchStream:%{public}u uid:%{public}d tokenId:%{public}u "
                 "Reason:NEED_RESTORE", sessionId_, info.callerUid, info.appTokenId);
-            AudioService::GetInstance()->UpdateSwitchStreamMap(sessionId_, SWITCH_STATE_WAITING);
             SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
         }
 
