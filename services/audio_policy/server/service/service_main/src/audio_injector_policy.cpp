@@ -395,16 +395,6 @@ void AudioInjectorPolicy::SetAllRendererInjectStreamsMute()
     }
 }
 
-void AudioInjectorPolicy::SetInjectorStreamsMute(bool newMicrophoneMute)
-{
-    std::lock_guard<std::shared_mutex> lock(injectLock_);
-    isNeedMuteRenderer_ = newMicrophoneMute;
-    if (rendererStreamMap_.size() == 0) {
-        AUDIO_INFO_LOG("map is empty");
-        isNeedSetMuteRenderer_ = true;
-        return;
-    }
-    SetAllRendererInjectStreamsMuteInner();
-}
+
 }  //  namespace AudioStandard
 }  //  namespace OHOS
