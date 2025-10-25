@@ -21,9 +21,9 @@ struct Node {
     std::vector<std::string> preNodeIds = {};  // 前序节点ID列表
     std::string nextNodeId = "";               // 后续节点ID列表
     OH_AudioNode *physicalNode = nullptr;      // 真实节点
-}；
+};
 
-    class NodeManager {
+class NodeManager {
 private:
     std::unordered_map<std::string, Node> nodes;  // 节点存储，键为节点ID
     OH_AudioSuitePipeline *audioSuitePipeLine;    // 一个NodeManager一个管线
