@@ -605,6 +605,9 @@ std::string VolumeDataMaintainer::GetDeviceTypeName(DeviceType deviceType)
         case DEVICE_TYPE_REMOTE_CAST:
             type = "_remote_cast";
             return type;
+        case DEVICE_TYPE_LINE_DIGITAL:
+            type = "_line_digital";
+            return type;
         default:
             AUDIO_ERR_LOG("device %{public}d is not supported for dataShare", deviceType);
             return "";
