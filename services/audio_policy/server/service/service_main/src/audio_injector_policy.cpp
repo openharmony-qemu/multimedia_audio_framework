@@ -378,23 +378,39 @@ void AudioInjectorPolicy::SendInterruptEventToInjectorStreams(const std::shared_
     }
 }
 
-void AudioInjectorPolicy::SetAllRendererInjectStreamsMuteInner()
-{
-    for (const auto& pair : rendererStreamMap_) {
-        AudioServerProxy::GetInstance().SetNonInterruptMuteProxy(pair.first, isNeedMuteRenderer_);
+void AudioInjectorPolicy::SetInjectStreamsMuteForInjection(uint32_t streamId)
+{   
+    std::lock_guard<std::shared_mutex> lock(injectLock_);
+    auto mute = rendererMuteStreamMap_.find(streamId);
+    if (mute == rendererMuteStreamMap_.end() && isNeedMuteRenderer_) {
+        rendererMuteStreamMap_.insert(std::make_pair(streamId, isNeedMuteRenderer_));
+        AudioServerProxy::GetInstance().SetNonInterruptMuteProxy(streamId, isNeedMuteRenderer_);
     }
 }
 
-void AudioInjectorPolicy::SetAllRendererInjectStreamsMute()
+void AudioInjectorPolicy::SetInjectStreamsMuteForPlayback(uint32_t streamId)
 {
     std::lock_guard<std::shared_mutex> lock(injectLock_);
-    if (isNeedSetMuteRenderer_) {
-        AUDIO_INFO_LOG("SetMuteRenderer_");
-        SetAllRendererInjectStreamsMuteInner();
-        isNeedSetMuteRenderer_ = false;
+    auto mute = rendererMuteStreamMap_.find(streamId);
+    if (mute != rendererMuteStreamMap_.end() && mute->second == true) {
+        AudioServerProxy::GetInstance().SetNonInterruptMuteProxy(streamId, false);
+        rendererMuteStreamMap_[streamId] = false;
     }
 }
 
-
+void AudioInjectorPolicy::SetInjectorStreamsMute(bool newMicrophoneMute)
+{   
+    std::lock_guard<std::shared_mutex> lock(injectLock_);
+    isNeedMuteRenderer_ = newMicrophoneMute;
+    for (const auto& streamId : injectorStreamIds_) {
+        auto mute = rendererMuteStreamMap_.find(streamId);
+        if (mute == rendererMuteStreamMap_.end()) {
+            rendererMuteStreamMap_.insert(std::make_pair(streamId, newMicrophoneMute));
+        } else {
+            rendererMuteStreamMap_[streamId] = newMicrophoneMute;
+        }
+        AudioServerProxy::GetInstance().SetNonInterruptMuteProxy(streamId, newMicrophoneMute);
+    }
+}
 }  //  namespace AudioStandard
 }  //  namespace OHOS
