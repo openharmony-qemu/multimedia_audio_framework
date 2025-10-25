@@ -121,7 +121,6 @@ public:
     void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag);
     void SetBtHdiInvalidState();
     int32_t ForceStopAudioStreamProxy(StopAudioType audioType);
-    void SendInterruptEventToAudioServerProxy(InterruptEventInternal interruptEvent, int32_t sessionId);
     int32_t GetPrivacyType(const uint32_t sessionId, AudioPrivacyType &privacyType);
     int32_t SetNonInterruptMuteProxy(uint32_t sessionId, bool muteFlag);
 private:

@@ -267,8 +267,6 @@ public:
     void OnMuteStateChange(const int32_t &pid, const int32_t &callbackId,
         const int32_t &uid, const uint32_t &sessionId, const bool &isMuted) override;
     int32_t SetBtHdiInvalidState() override;
-    int32_t SendInterruptEventToAudioServer(uint32_t sessionId,
-        const InterruptEventInternal &interruptEvent) override;
     int32_t GetVolumeBySessionId(uint32_t sessionId, float &volume) override;
 
     int32_t AddCaptureInjector(uint32_t sinkPortidx, std::string &rate, std::string &format,
