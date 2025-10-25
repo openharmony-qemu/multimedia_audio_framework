@@ -74,7 +74,7 @@ static OH_AudioSuite_Result ConvertError(int32_t err)
     } else if (err == OHOS::AudioStandard::ERR_INVALID_PARAM) {
         return AUDIOSUITE_ERROR_INVALID_PARAM;
     } else if (err == OHOS::AudioStandard::ERR_ILLEGAL_STATE) {
-        return AUDIOSUITE_ERROR_ILLEGAL_STATE;
+        return AUDIOSUITE_ERROR_INVALID_STATE;
     } else if (err == OHOS::AudioStandard::ERR_AUDIO_SUITE_UNSUPPORTED_FORMAT) {
         return AUDIOSUITE_ERROR_UNSUPPORTED_FORMAT;
     } else if (err == OHOS::AudioStandard::ERR_AUDIO_SUITE_ENGINE_NOT_EXIST) {
@@ -86,11 +86,11 @@ static OH_AudioSuite_Result ConvertError(int32_t err)
     } else if (err == OHOS::AudioStandard::ERR_AUDIO_SUITE_UNSUPPORT_CONNECT) {
         return AUDIOSUITE_ERROR_UNSUPPORTED_CONNECT;
     } else if (err == OHOS::AudioStandard::ERR_NOT_SUPPORTED) {
-        return AUDIOSUITE_ERROR_UNSUPPORT_OPERATION;
+        return AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION;
     } else if (err == OHOS::AudioStandard::ERR_AUDIO_SUITE_CREATED_EXCEED_SYSTEM_LIMITS) {
         return AUDIOSUITE_ERROR_CREATED_EXCEED_SYSTEM_LIMITS;
-    } else if (err == (int32_t)AUDIOSUITE_ERROR_REQUIRED_PARAMETERS_MISSED) {
-        return AUDIOSUITE_ERROR_REQUIRED_PARAMETERS_MISSED;
+    } else if (err == (int32_t)AUDIOSUITE_ERROR_REQUIRED_PARAMETERS_MISSING) {
+        return AUDIOSUITE_ERROR_REQUIRED_PARAMETERS_MISSING;
     }
     return AUDIOSUITE_ERROR_SYSTEM;
 }
@@ -102,7 +102,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_Create(OH_AudioSuiteEngine **audioSuite
 
     OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
     CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ILLEGAL_STATE, "Get suiteEngine suiteEngine is nullptr");
+        AUDIOSUITE_ERROR_INVALID_STATE, "Get suiteEngine suiteEngine is nullptr");
 
     int32_t ret = suiteEngine->CreateEngine();
     CHECK_AND_RETURN_RET_LOG(ret == AUDIOSUITE_SUCCESS,
@@ -342,7 +342,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_ConnectNodes(
     return ConvertError(error);
 }
 
-OH_AudioSuite_Result OH_AudioSuiteEngine_DisConnectNodes(OH_AudioNode *sourceAudioNode, OH_AudioNode *destAudioNode)
+OH_AudioSuite_Result OH_AudioSuiteEngine_DisconnectNodes(OH_AudioNode *sourceAudioNode, OH_AudioNode *destAudioNode)
 {
     OHAudioNode *srcNode = ConvertAudioNode(sourceAudioNode);
     CHECK_AND_RETURN_RET_LOG(srcNode != nullptr,
@@ -373,7 +373,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_SetEqualizerFrequencyBandGains(
     return ConvertError(error);
 }
 
-OH_AudioSuite_Result OH_AudioSuiteEngine_SetSoundFiledType(OH_AudioNode *audioNode, OH_SoundFieldType soundFieldType)
+OH_AudioSuite_Result OH_AudioSuiteEngine_SetSoundFieldType(OH_AudioNode *audioNode, OH_SoundFieldType soundFieldType)
 {
     OHAudioNode *node = ConvertAudioNode(audioNode);
     CHECK_AND_RETURN_RET_LOG(node != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM, "SetSoundFieldType node is nullptr");
@@ -428,7 +428,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_GetEnvironmentType(
     return ConvertError(error);
 }
 
-OH_AudioSuite_Result OH_AudioSuiteEngine_GetSoundFiledType(
+OH_AudioSuite_Result OH_AudioSuiteEngine_GetSoundFieldType(
     OH_AudioNode *audioNode, OH_SoundFieldType *soundFieldType)
 {
     OHAudioNode *node = ConvertAudioNode(audioNode);
@@ -497,10 +497,12 @@ int32_t OHSuiteInputNodeWriteDataCallBack::OnWriteDataCallBack(void *audioData, 
 
 OHAudioSuiteEngine::~OHAudioSuiteEngine()
 {
-    int32_t result = DestroyEngine();
-    if (result != 0) {
-        AUDIO_ERR_LOG("OHAudiosuiteEngine::DestroyEngine failed.");
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    std::unordered_set<OHAudioSuitePipeline*> tempPipelines(pipelines_.begin(), pipelines_.end());
+    for (auto pipeline : tempPipelines) {
+        RemovePipeline(pipeline);
     }
+    pipelines_.clear();
 }
 
 OHAudioSuiteEngine *OHAudioSuiteEngine::GetInstance()
@@ -516,12 +518,6 @@ int32_t OHAudioSuiteEngine::CreateEngine()
 
 int32_t OHAudioSuiteEngine::DestroyEngine()
 {
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
-    std::unordered_set<OHAudioSuitePipeline*> tempPipelines(pipelines_.begin(), pipelines_.end());
-    for (auto pipeline : tempPipelines) {
-        RemovePipeline(pipeline);
-    }
-    pipelines_.clear();
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().DeInit();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DestroyEngine DeInit failed, ret = %{public}d.", ret);
     return ret;
@@ -644,11 +640,11 @@ int32_t OHAudioSuiteEngine::CreateNode(
 
     if (builder->GetNodeType() == NODE_TYPE_INPUT) {
         CHECK_AND_RETURN_RET_LOG(builder->IsSetRequestDataCallback() && builder->IsSetFormat(),
-            static_cast<int32_t>(AUDIOSUITE_ERROR_REQUIRED_PARAMETERS_MISSED),
+            static_cast<int32_t>(AUDIOSUITE_ERROR_REQUIRED_PARAMETERS_MISSING),
             "Create input Node must set WriteDataCallBack and audio format.");
     } else if (builder->GetNodeType() == NODE_TYPE_OUTPUT) {
         CHECK_AND_RETURN_RET_LOG(builder->IsSetFormat(),
-            static_cast<int32_t>(AUDIOSUITE_ERROR_REQUIRED_PARAMETERS_MISSED),
+            static_cast<int32_t>(AUDIOSUITE_ERROR_REQUIRED_PARAMETERS_MISSING),
             "Create output Node, must set aduio format.");
         CHECK_AND_RETURN_RET_LOG(!builder->IsSetRequestDataCallback(), ERR_NOT_SUPPORTED,
             "Create output Node, can not set WriteDataCallBack.");
