@@ -25,6 +25,7 @@
 #include "util/ring_buffer_handler.h"
 #include "util/callback_wrapper.h"
 #include "util/kv_pair.h"
+#include "util/hdi_dfx_utils.h"
 
 using namespace testing::ext;
 
@@ -282,5 +283,23 @@ HWTEST_F(UtilUnitTest, KvPairUnitTest_001, TestSize.Level1)
     EXPECT_NE(ret, SUCCESS);
 }
 
+/**
+ * @tc.name   : Test HdiDfxUtils API
+ * @tc.number : HdiDfxUtilsUnitTest_001
+ * @tc.desc   : Test HdiDfxUtils action
+ */
+HWTEST_F(UtilUnitTest, HdiDfxUtilsUnitTest_001, TestSize.Level1)
+{
+    std::string str1 = "12345";
+    std::string str2 = "1234567890";
+
+    std::string dst1 = HdiDfxUtils::GetEncryptStr(str1);
+    auto ret = dst1.find('*');
+    EXPECT_NE(ret, std::string::npos);
+
+    std::string dst2 = HdiDfxUtils::GetEncryptStr(str2);
+    ret = dst2.find('*');
+    EXPECT_NE(ret, std::string::npos);
+}
 } // namespace AudioStandard
 } // namespace OHOS

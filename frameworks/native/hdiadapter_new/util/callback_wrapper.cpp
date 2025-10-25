@@ -75,6 +75,7 @@ IAudioSinkCallback *SinkCallbackWrapper::GetRawCallback(uint32_t type)
 void SinkCallbackWrapper::OnRenderSinkParamChange(const std::string &networkId, const AudioParamKey key,
     const std::string &condition, const std::string &value)
 {
+    std::scoped_lock lock(cbMtx_, rawCbMtx_);
     for (auto &cb : cbs_) {
         if (cb.second == nullptr) {
             continue;
@@ -91,6 +92,7 @@ void SinkCallbackWrapper::OnRenderSinkParamChange(const std::string &networkId, 
 
 void SinkCallbackWrapper::OnRenderSinkStateChange(uint32_t uniqueId, bool started)
 {
+    std::scoped_lock lock(cbMtx_, rawCbMtx_);
     for (auto &cb : cbs_) {
         if (cb.second == nullptr) {
             continue;
@@ -155,6 +157,7 @@ IAudioSourceCallback *SourceCallbackWrapper::GetRawCallback(uint32_t type)
 void SourceCallbackWrapper::OnCaptureSourceParamChange(const std::string &networkId, const AudioParamKey key,
     const std::string &condition, const std::string &value)
 {
+    std::scoped_lock lock(cbMtx_, rawCbMtx_);
     for (auto &cb : cbs_) {
         if (cb.second == nullptr) {
             continue;
@@ -171,6 +174,7 @@ void SourceCallbackWrapper::OnCaptureSourceParamChange(const std::string &networ
 
 void SourceCallbackWrapper::OnCaptureState(bool isActive)
 {
+    std::scoped_lock lock(cbMtx_, rawCbMtx_);
     for (auto &cb : cbs_) {
         if (cb.second == nullptr) {
             continue;
@@ -187,6 +191,7 @@ void SourceCallbackWrapper::OnCaptureState(bool isActive)
 
 void SourceCallbackWrapper::OnWakeupClose(void)
 {
+    std::scoped_lock lock(cbMtx_, rawCbMtx_);
     for (auto &cb : cbs_) {
         if (cb.second == nullptr) {
             continue;
