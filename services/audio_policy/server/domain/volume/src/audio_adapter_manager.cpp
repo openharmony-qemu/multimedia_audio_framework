@@ -770,7 +770,7 @@ void AudioAdapterManager::SetOffloadVolume(AudioStreamType streamType, float vol
         AUDIO_INFO_LOG("routeDeviceClass:%{public}s, networkId:%{public}s, volume:%{public}f", routeDeviceClass.c_str(),
             networkId.c_str(), volume);
         audioServerProxy_->OffloadSetVolume(volume, routeDeviceClass, networkId);
-        AudioVolume::GetInstance()->Monitor(streamIndex_, true);
+        AudioVolume::GetInstance()->Monitor(offloadSessionID_[adapter].has_value(), true);
     }
     IPCSkeleton::SetCallingIdentity(identity);
 }
