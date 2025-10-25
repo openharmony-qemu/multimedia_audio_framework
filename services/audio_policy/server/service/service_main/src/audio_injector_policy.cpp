@@ -106,6 +106,8 @@ int32_t AudioInjectorPolicy::RemoveStreamDescriptor(uint32_t renderId)
     if (rendererStreamMap_.size() == 0) {
         RemoveCaptureInjectorInner(false);
     }
+    rendererMuteStreamMap_.erase(renderId);
+    injectorStreamIds_.erase(renderId);
     return SUCCESS;
 }
 
