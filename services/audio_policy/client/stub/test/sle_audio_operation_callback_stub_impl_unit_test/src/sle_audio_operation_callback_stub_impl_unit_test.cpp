@@ -141,11 +141,12 @@ HWTEST(SleAudioOperationCallbackStubImplUnitTest, CallbackStubUnitTest_006, Test
     std::string device = "test";
     uint32_t streamType = 0;
     int32_t result = 0;
-    auto ret = audioSleCb->StartPlaying(device, streamType, result);
+    int32_t timeoutMs = 1000;
+    auto ret = audioSleCb->StartPlaying(device, streamType, timeoutMs, result);
     EXPECT_NE(SUCCESS, ret);
     std::shared_ptr<SleAudioOperationCallback> sleAudioOperationCallback;
     audioSleCb->sleAudioOperationCallback_ = sleAudioOperationCallback;
-    ret = audioSleCb->StartPlaying(device, streamType, result);
+    ret = audioSleCb->StartPlaying(device, streamType, timeoutMs, result);
     EXPECT_NE(-1, ret);
     delete audioSleCb;
 }

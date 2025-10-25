@@ -176,7 +176,7 @@ public:
     {
         return 0;
     }
-    int32_t StartPlaying(const std::string &device, uint32_t streamType) override
+    int32_t StartPlaying(const std::string &device, uint32_t streamType, int32_t timeoutMs) override
     {
         return 0;
     }

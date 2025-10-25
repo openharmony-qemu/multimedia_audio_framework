@@ -315,7 +315,7 @@ public:
      * @param streamType Stream type to start.
      * @return Returns the status code for this function called.
      */
-    virtual int32_t StartPlaying(const std::string &device, uint32_t streamType) = 0;
+    virtual int32_t StartPlaying(const std::string &device, uint32_t streamType, int32_t timeoutMs) = 0;
 
     /**
      * @brief Stop audio streaming to a device.

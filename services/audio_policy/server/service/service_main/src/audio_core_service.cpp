@@ -594,8 +594,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         streamCollector_.UpdateCapturerDeviceInfo(deviceDesc);
     }
     streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
-    bool isGameApp = ClientTypeManager::GetInstance()->GetClientTypeByUid(GetRealUid(streamDesc)) != CLIENT_TYPE_GAME;
-    sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc, false, isGameApp);
+    sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc, false);
 
     CheckForRemoteDeviceState(deviceDesc);
     return SUCCESS;
