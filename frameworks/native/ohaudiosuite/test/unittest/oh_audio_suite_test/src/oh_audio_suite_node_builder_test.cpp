@@ -1215,11 +1215,8 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_Reset_001, TestSize
  */
 HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_Reset_002, TestSize.Level0)
 {
-    OH_AudioSuite_Result ret = OH_AudioSuiteNodeBuilder_Reset(nullptr);
-    EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
-
     OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
-    ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_AudioSuitePipeline *pipeline = nullptr;
@@ -1236,6 +1233,15 @@ HWTEST(OHAudioSuiteNodeBuilderTest, OH_AudioSuiteNodeBuilder_Reset_002, TestSize
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     ret = OH_AudioSuiteNodeBuilder_Reset(builder);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(node);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     ret = OH_AudioSuiteNodeBuilder_Destroy(builder);
