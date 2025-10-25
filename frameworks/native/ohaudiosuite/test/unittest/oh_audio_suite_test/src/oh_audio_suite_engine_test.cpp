@@ -2237,7 +2237,7 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_SetVoiceBeautifierType_002, T
  * @tc.number: OHAudioSuiteEngine_RemovePipeline_001
  * @tc.desc  : Test remove pipeline success and nullptr.
  */
-HWTEST(AudioSuiteEngineTest, OHAudioSuiteEngine_RemovePipeline_001, TestSize.Level0)
+HWTEST(OHAudioSuiteEngineTest, OHAudioSuiteEngine_RemovePipeline_001, TestSize.Level0)
 {
     OHAudioSuiteEngine* engine = OHAudioSuiteEngine::GetInstance();
     OHAudioSuitePipeline* pipeline = new OHAudioSuitePipeline(123);
@@ -2255,7 +2255,7 @@ HWTEST(AudioSuiteEngineTest, OHAudioSuiteEngine_RemovePipeline_001, TestSize.Lev
  * @tc.number: OHAudioSuitePipeline_RemoveNode_001
  * @tc.desc  : Test remove node success and nullptr.
  */
-HWTEST(AudioSuiteEngineTest, OHAudioSuitePipeline_RemoveNode_001, TestSize.Level0)
+HWTEST(OHAudioSuiteEngineTest, OHAudioSuitePipeline_RemoveNode_001, TestSize.Level0)
 {
     OHAudioSuitePipeline* pipeline = new OHAudioSuitePipeline(123);
     OHAudioNode* node = new OHAudioNode(456, AudioSuite::AudioNodeType::NODE_TYPE_EQUALIZER);
@@ -2275,7 +2275,7 @@ HWTEST(AudioSuiteEngineTest, OHAudioSuitePipeline_RemoveNode_001, TestSize.Level
  * @tc.number: OHAudioSuiteEngine_IsNodeExists_001
  * @tc.desc  : Test node exists.
  */
-HWTEST(AudioSuiteEngineTest, OHAudioSuiteEngine_IsNodeExists_001, TestSize.Level0)
+HWTEST(OHAudioSuiteEngineTest, OHAudioSuiteEngine_IsNodeExists_001, TestSize.Level0)
 {
     OHAudioSuiteEngine* engine = OHAudioSuiteEngine::GetInstance();
     OHAudioSuitePipeline* pipeline = new OHAudioSuitePipeline(123);
@@ -2320,7 +2320,7 @@ HWTEST(AudioSuiteEngineTest, OHAudioSuiteEngine_IsNodeExists_001, TestSize.Level
  * @tc.number: OHAudioSuiteEngine_RemoveNode_001
  * @tc.desc  : Test remove node.
  */
-HWTEST(AudioSuiteEngineTest, OHAudioSuiteEngine_RemoveNode_001, TestSize.Level0)
+HWTEST(OHAudioSuiteEngineTest, OHAudioSuiteEngine_RemoveNode_001, TestSize.Level0)
 {
     OHAudioSuiteEngine* engine = OHAudioSuiteEngine::GetInstance();
     OHAudioSuitePipeline* pipeline = new OHAudioSuitePipeline(123);
