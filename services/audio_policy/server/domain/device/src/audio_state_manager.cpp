@@ -275,7 +275,6 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioStateManager::GetExcludedDevices(
         }
     } else if (usage == CALL_OUTPUT_DEVICES) {
         shared_lock<shared_mutex> lock(callExcludedDevicesMutex_);
-        vector<shared_ptr<AudioDeviceDescriptor>> devices;
         for (const auto &desc : callExcludedDevices_) {
             devices.push_back(make_shared<AudioDeviceDescriptor>(*desc));
         }
