@@ -27,7 +27,7 @@ namespace AudioSuite {
 
 class AudioSuiteAissAlgoInterfaceImpl : public AudioSuiteAlgoInterface {
 public:
-    AudioSuiteAissAlgoInterfaceImpl() = default;
+    explicit AudioSuiteAissAlgoInterfaceImpl(NodeCapability &nc);
 
     ~AudioSuiteAissAlgoInterfaceImpl()
     {

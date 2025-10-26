@@ -50,7 +50,7 @@ int32_t AudioSuiteEqNode::Init()
         AUDIO_ERR_LOG("AudioSuiteEqNode::Init failed, already inited");
         return ERROR;
     }
-    eqAlgoInterfaceImpl_ = std::make_shared<AudioSuiteEqAlgoInterfaceImpl>();
+    eqAlgoInterfaceImpl_ = std::make_shared<AudioSuiteEqAlgoInterfaceImpl>(nodeCapability);
     eqAlgoInterfaceImpl_->Init();
     isEqNodeInit_ = true;
     AUDIO_INFO_LOG("AudioSuiteEqNode::Init end");

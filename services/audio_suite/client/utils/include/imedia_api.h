@@ -96,6 +96,15 @@ typedef enum tagEnum_IMEDIA_Surround_PARA {
     IMEDIA_SWS_SOUROUND_GRAND = 3           // 宏大
 } iMedia_Surround_PARA;
 
+typedef struct tagSTRU_IMEDIA_Support_SPECS {
+    unsigned int currentDeviceSupport;
+    unsigned int realTimeSupport;
+    unsigned int frameLenSpecs;
+    unsigned int sampleRateSpecs;
+    unsigned int channelCountSpecs;
+    unsigned int sampleFormatSpecs;
+} iMedia_Support_SPECS;
+
 // 声场算法配置
 #define AUDIO_SURROUND_ENABLE_SWS           (1)    // SWS默认开
 #define AUDIO_SURROUND_MASTER_VOLUME        (15)   // 音量增益默认15

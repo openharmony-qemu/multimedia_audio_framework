@@ -2819,5 +2819,47 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_MultiRenderFrame_003, TestSiz
     ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 }
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_IsNodeTypeSupported001.
+ * @tc.number: OH_AudioSuiteEngine_IsNodeTypeSupported001
+ * @tc.desc  : Test success.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_IsNodeTypeSupported001, TestSize.Level0)
+{
+    bool isSupported = false;
+    OH_AudioSuite_Result ret =  OH_AudioSuiteEngine_IsNodeTypeSupported(EFFECT_NODE_TYPE_EQUALIZER, &isSupported);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    EXPECT_EQ(isSupported, true);
+
+    ret =  OH_AudioSuiteEngine_IsNodeTypeSupported(EFFECT_NODE_TYPE_NOISE_REDUCTION, &isSupported);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    EXPECT_EQ(isSupported, true);
+
+    ret =  OH_AudioSuiteEngine_IsNodeTypeSupported(EFFECT_NODE_TYPE_SOUND_FIELD, &isSupported);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    EXPECT_EQ(isSupported, true);
+
+    ret =  OH_AudioSuiteEngine_IsNodeTypeSupported(EFFECT_NODE_TYPE_VOICE_BEAUTIFIER, &isSupported);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    EXPECT_EQ(isSupported, true);
+
+    ret =  OH_AudioSuiteEngine_IsNodeTypeSupported(EFFECT_NODE_TYPE_ENVIRONMENT_EFFECT, &isSupported);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    EXPECT_EQ(isSupported, true);
+
+    ret =  OH_AudioSuiteEngine_IsNodeTypeSupported(EFFECT_NODE_TYPE_AUDIO_MIXER, &isSupported);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    EXPECT_EQ(isSupported, true);
+
+    ret =  OH_AudioSuiteEngine_IsNodeTypeSupported(INPUT_NODE_TYPE_DEFAULT, &isSupported);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    EXPECT_EQ(isSupported, true);
+
+    ret =  OH_AudioSuiteEngine_IsNodeTypeSupported(OUT_NODE_TYPE_DEFAULT, &isSupported);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    EXPECT_EQ(isSupported, true);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

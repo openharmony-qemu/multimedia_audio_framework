@@ -25,33 +25,34 @@ using namespace AudioSuite;
 using namespace testing::ext;
 namespace {
 HWTEST(AudioSuiteAlgoInterface, CreateAlgoInterfaceTest, TestSize.Level0) {
+    NodeCapability nc;
     auto eqAlgo = AudioSuiteAlgoInterface::CreateAlgoInterface(
-        AlgoType::AUDIO_NODE_TYPE_EQUALIZER);
+        AlgoType::AUDIO_NODE_TYPE_EQUALIZER, nc);
     EXPECT_NE(eqAlgo, nullptr);
     eqAlgo.reset();
 
     auto anrAlgo = AudioSuiteAlgoInterface::CreateAlgoInterface(
-        AlgoType::AUDIO_NODE_TYPE_NOISE_REDUCTION);
+        AlgoType::AUDIO_NODE_TYPE_NOISE_REDUCTION, nc);
     EXPECT_NE(anrAlgo, nullptr);
     anrAlgo.reset();
 
     auto sfAlgo = AudioSuiteAlgoInterface::CreateAlgoInterface(
-        AlgoType::AUDIO_NODE_TYPE_SOUND_FIELD);
+        AlgoType::AUDIO_NODE_TYPE_SOUND_FIELD, nc);
     EXPECT_NE(sfAlgo, nullptr);
     sfAlgo.reset();
 
     auto aissAlgo = AudioSuiteAlgoInterface::CreateAlgoInterface(
-        AlgoType::AUDIO_NODE_TYPE_AUDIO_SEPARATION);
+        AlgoType::AUDIO_NODE_TYPE_AUDIO_SEPARATION, nc);
     EXPECT_NE(aissAlgo, nullptr);
     aissAlgo.reset();
 
     auto vbAlgo = AudioSuiteAlgoInterface::CreateAlgoInterface(
-        AlgoType::AUDIO_NODE_TYPE_VOICE_BEAUTIFIER);
+        AlgoType::AUDIO_NODE_TYPE_VOICE_BEAUTIFIER, nc);
     EXPECT_NE(vbAlgo, nullptr);
     vbAlgo.reset();
 
     auto unknownAlgo = AudioSuiteAlgoInterface::CreateAlgoInterface(
-        static_cast<AlgoType>(-1));
+        static_cast<AlgoType>(-1), nc);
     EXPECT_EQ(unknownAlgo, nullptr);
     unknownAlgo.reset();
 }

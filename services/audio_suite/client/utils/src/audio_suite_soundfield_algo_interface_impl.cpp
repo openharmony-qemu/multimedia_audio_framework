@@ -28,12 +28,10 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 namespace {
-const std::string ALGO_PATH_BASE = "/system/lib64/";
-const std::string ALGO_SO_NAME = "libimedia_sws.z.so";
 static constexpr uint32_t SAMPLE_SHIFT_AMOUNT = 16;
 }  // namespace
 
-AudioSuiteSoundFieldAlgoInterfaceImpl::AudioSuiteSoundFieldAlgoInterfaceImpl()
+AudioSuiteSoundFieldAlgoInterfaceImpl::AudioSuiteSoundFieldAlgoInterfaceImpl(NodeCapability &nc)
 {
     AUDIO_INFO_LOG("AudioSuiteSoundFieldAlgoInterfaceImpl::AudioSuiteSoundFieldAlgoInterfaceImpl()");
     stData_.piDataIn = dataIn_.data();
@@ -43,6 +41,7 @@ AudioSuiteSoundFieldAlgoInterfaceImpl::AudioSuiteSoundFieldAlgoInterfaceImpl()
     stData_.iData_Format16 = AUDIO_SURROUND_PCM_16_BIT;
     stData_.iData_Channel = AUDIO_SURROUND_PCM_CHANNEL_NUM;
     stData_.iMasterVolume = AUDIO_SURROUND_MASTER_VOLUME;
+    nodeCapability = nc;
 }
 
 AudioSuiteSoundFieldAlgoInterfaceImpl::~AudioSuiteSoundFieldAlgoInterfaceImpl()
@@ -56,7 +55,7 @@ int32_t AudioSuiteSoundFieldAlgoInterfaceImpl::Init()
     AUDIO_INFO_LOG("start init SoundField algorithm");
 
     // load algorithm so
-    std::string soPath = ALGO_PATH_BASE + ALGO_SO_NAME;
+    std::string soPath = nodeCapability.soPath + nodeCapability.soName;
     libHandle_ = dlopen(soPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
     CHECK_AND_RETURN_RET_LOG(libHandle_ != nullptr, ERROR, "dlopen algo: %{private}s so fail, error: %{public}s",
         soPath.c_str(), dlerror());
