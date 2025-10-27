@@ -50,7 +50,7 @@ public:
 
 private:
     const std::string reason_;
-}
+};
 
 
 static const int64_t WAIT_RINGER_MODE_MUTE_RESET_TIME_MS = 500; // 500ms
