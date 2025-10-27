@@ -120,6 +120,9 @@ int32_t AudioSuiteEnvNode::SetOptions(std::string name, std::string value)
     CHECK_AND_RETURN_RET_LOG(name == setEnvMode, ERROR, "SetOptions Unknow Type %{public}s", name.c_str());
     CHECK_AND_RETURN_RET_LOG(envAlgoInterfaceImpl_ != nullptr, ERROR, "envAlgoInterfaceImpl_ is nullptr");
     
+    paraName_ = name;
+    paraValue_ = value;
+    
     int32_t ret = envAlgoInterfaceImpl_->SetParameter(name, value);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetParameter failed");
     AUDIO_INFO_LOG("SetOptions SUCCESS");

@@ -36,6 +36,8 @@ public:
     int32_t Connect(const std::shared_ptr<AudioNode>& preNode) override;
     int32_t DisConnect(const std::shared_ptr<AudioNode>& preNode) override;
     int32_t Flush() override;
+    std::string paraName_ = "";
+    std::string paraValue_ = "";
     AudioSuiteProcessNode(const AudioSuiteProcessNode& others) = delete;
     AudioSamplingRate GetSampleRate()
     {

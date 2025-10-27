@@ -40,7 +40,6 @@ protected:
     AudioSuitePcmBuffer *SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs) override;
 
 private:
-    std::string voiceBeautifierType = "";
     AudioSuitePcmBuffer pcmBufferOutput_;
     AudioSuitePcmBuffer tmpPcmBuffer_;
     std::shared_ptr<AudioSuiteAlgoInterface> algoInterface_;
