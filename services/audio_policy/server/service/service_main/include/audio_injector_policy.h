@@ -70,8 +70,8 @@ public:
     void DeleteInjectorStreamId(const uint32_t streamId);
     bool IsActivateInterruptStreamId(const uint32_t streamId);
     void SendInterruptEventToInjectorStreams(const std::shared_ptr<AudioPolicyServerHandler> &handler);
-    void SetAllRendererInjectStreamsMuteInner();
-    void SetAllRendererInjectStreamsMute();
+    void SetInjectStreamsMuteForInjection(uint32_t streamId);
+    void SetInjectStreamsMuteForPlayback(uint32_t streamId);
     void SetInjectorStreamsMute(bool newMicrophoneMute);
 
 private:
@@ -87,12 +87,12 @@ private:
     bool isConnected_;
     VoipType voipType_;
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> rendererStreamMap_ = {};
+    std::unordered_map<uint32_t, bool> rendererMuteStreamMap_ = {};
     AudioIOHandleMap &audioIOHandleMap_;
     IAudioPolicyInterface &audioPolicyManager_;
     std::shared_ptr<AudioPipeManager> pipeManager_ = nullptr;
     std::shared_mutex injectLock_;
     std::unordered_set<uint32_t> injectorStreamIds_;
-    bool isNeedSetMuteRenderer_ = false;
     bool isNeedMuteRenderer_ = false;
 };
 } //  namespace AudioStandard
