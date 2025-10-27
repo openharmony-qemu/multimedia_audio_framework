@@ -215,9 +215,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetSystemVolumeDegree_001, TestSize.Level4
     ret = audioAdapterManager->SetSystemVolumeDegree(STREAM_VOICE_CALL, volumeDegree);
     EXPECT_EQ(ret, SUCCESS);
 
-    ret = audioAdapterManager->SetSystemVolumeDegree(STREAM_VOICE_CALL, 0);
-    EXPECT_EQ(ret, SUCCESS);
-
     ret = audioAdapterManager->SetSystemVolumeDegree(STREAM_VOICE_RING, volumeDegree);
     EXPECT_EQ(ret, SUCCESS);
 

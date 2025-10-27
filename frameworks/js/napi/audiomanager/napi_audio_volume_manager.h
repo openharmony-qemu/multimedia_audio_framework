@@ -105,8 +105,6 @@ private:
         size_t argc, const std::string &cbName, NapiAudioVolumeManager *napiAudioVolumeManager);
     static std::shared_ptr<NapiAudioVolumeKeyEvent> GetVolumeEventNapiCallback(napi_value argv,
         NapiAudioVolumeManager *napiVolumeManager);
-    static std::shared_ptr<NapiAudioVolumeKeyEvent> GetVolumeDegreeNapiCallback(napi_value argv,
-        NapiAudioVolumeManager *napiVolumeManager);
     static std::shared_ptr<NapiAudioStreamVolumeChangeCallback> GetStreamVolumeChangeNapiCallback(napi_value argv,
         NapiAudioVolumeManager *napiVolumeManager);
     static std::shared_ptr<NapiAudioSystemVolumeChangeCallback> GetSystemVolumeChangeNapiCallback(napi_value argv,
@@ -146,7 +144,6 @@ private:
     std::shared_ptr<AudioManagerAppVolumeChangeCallback> appVolumeChangeCallbackForUidNapi_ = nullptr;
     std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> activeVolumeTypeChangeCallbackNapi_ = nullptr;
     std::list<std::shared_ptr<NapiAudioVolumeKeyEvent>> volumeKeyEventCallbackNapiList_;
-    std::list<std::shared_ptr<NapiAudioVolumeKeyEvent>> volumeDegreeCallbackNapiList_;
     std::list<std::shared_ptr<NapiAudioStreamVolumeChangeCallback>> streamVolumeChangeCallbackNapiList_;
     std::list<std::shared_ptr<NapiAudioSystemVolumeChangeCallback>> systemVolumeChangeCallbackNapiList_;
 

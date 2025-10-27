@@ -33,13 +33,10 @@ public:
     explicit NapiAudioVolumeKeyEvent(napi_env env);
     virtual ~NapiAudioVolumeKeyEvent();
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
-    void OnVolumeDegreeEvent(VolumeEvent volumeEvent) override;
     void SaveCallbackReference(const std::string &callbackName, napi_value args);
     bool ContainSameJsCallback(napi_value args);
     void CreateVolumeTsfn(napi_env env);
     bool GetVolumeTsfnFlag();
-    void CreateVolumeDegreeTsfn(napi_env env);
-    bool GetVolumeDegreeTsfnFlag();
     napi_threadsafe_function GetTsfn();
     
 private:
@@ -60,9 +57,44 @@ private:
     napi_ref callback_ = nullptr;
     static napi_ref sConstructor_;
     bool regVolumeTsfn_ = false;
+    napi_threadsafe_function amVolEntTsfn_ = nullptr;
+};
+
+class NapiAudioVolumeKeyEventEx : public VolumeKeyEventCallback {
+public:
+    explicit NapiAudioVolumeKeyEventEx(napi_env env);
+    virtual ~NapiAudioVolumeKeyEventEx();
+
+    void SaveCallbackReference(const std::string &callbackName, napi_value args);
+    void RemoveCallbackReference(napi_env env, napi_value callback);
+    void RemoveAllCallbackReference();
+    static bool IsSameCallback(napi_env env, napi_value callback, napi_ref refCallback);
+    int32_t GetVolumeKeyEventCbListSize();
+    void OnVolumeKeyEvent(VolumeEvent volumeEvent) override {}
+    void OnVolumeDegreeEvent(VolumeEvent volumeEvent) override;
+    void CreateVolumeDegreeTsfn(napi_env env);
+    bool GetVolumeDegreeTsfnFlag() const;
+    napi_threadsafe_function GetTsfn();
+    
+private:
+    struct AudioVolumeKeyEventJsCallback {
+        std::shared_ptr<AutoRef> callback = nullptr;
+        std::string callbackName = "unknown";
+        VolumeEvent volumeEvent;
+    };
+
+    void OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolumeKeyEventJsCallback> &jsCb);
+    static void Cleanup(void *data);
+    static void SafeJsCallbackVolumeEventWork(napi_env env, napi_value js_cb, void *context, void *data);
+    static void VolumeEventTsfnFinalize(napi_env env, void *data, void *hint);
+
+    std::list<std::shared_ptr<AutoRef>> audioVolumeKeyEventCbList_;
+    std::mutex mutex_;
+    napi_env env_;
     bool regVolumeDegreeTsfn_ = false;
     napi_threadsafe_function amVolEntTsfn_ = nullptr;
 };
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif /* NAPI_AUDIO_INTERRUPT_MANAGER_H */
