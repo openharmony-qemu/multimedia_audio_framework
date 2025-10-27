@@ -2179,5 +2179,26 @@ HWTEST_F(RendererInServerThirdUnitTest, WaitForDataConnection_001, TestSize.Leve
     rendererInServer->OnDataLinkConnectionUpdate(IOperation::OPERATION_DATA_LINK_CONNECTED);
     EXPECT_EQ(rendererInServer->isDataLinkConnected_, true);
 }
+
+/**
+ * @tc.name  : Test UpdateStreamInfo API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerUpdateStreamInfo_001
+ * @tc.desc  : test UpdateStreamInfo
+ */
+HWTEST_F(RendererInServerThirdUnitTest, RendererInServerUpdateStreamInfo_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+    rendererInServer->UpdateStreamInfo();
+    EXPECT_GT(rendererInServer->checkCount_, 0);
+
+    uint32_t checkCount = rendererInServer->checkCount_;
+    rendererInServer->UpdateStreamInfo();
+
+    EXPECT_EQ(checkCount, rendererInServer->checkCount_ + 1);
+}
 } // namespace AudioStandard
 } // namespace OHOS

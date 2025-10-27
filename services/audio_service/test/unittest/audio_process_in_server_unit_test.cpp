@@ -1173,6 +1173,36 @@ HWTEST(AudioProcessInServerUnitTest, RequestHandleInfoAsync_001, TestSize.Level4
 }
 
 /**
+ * @tc.name  : Test UpdateStreamInfo API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateStreamInfo_001
+ * @tc.desc  : Test UpdateStreamInfo interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, UpdateStreamInfo_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    audioProcessInServerRet.isInited_ = true;
+    audioProcessInServerRet.needCheckBackground_ = true;
+    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
+    uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
+    uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
+    audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame,
+        spanSizeInFrame, g_audioStreamInfo, buffer);
+    audioProcessInServerRet.streamStatus_->store(STREAM_STOPPING);
+    bool isSwitchStream = false;
+
+    audioProcessInServerRet.UpdateStreamInfo();
+    EXPECT_GT(audioProcessInServerRet.checkCount_, 0);
+
+    audioProcessInServerRet.UpdateStreamInfo();
+
+    auto ret = audioProcessInServerRet.Release(isSwitchStream);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
  * @tc.name  : Test GetSpanSizeInFrame API
  * @tc.type  : FUNC
  * @tc.number: GetSpanSizeInFrame_001
