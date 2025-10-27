@@ -125,6 +125,11 @@ public:
     AppInfo GetAppInfo() override final;
     BufferDesc &GetConvertedBuffer() override;
 
+    bool NeedUseTempBuffer(const RingBufferWrapper &ringBuffer, size_t spanSizeInByte);
+    virtual bool PrepareRingBuffer(uint64_t curRead, RingBufferWrapper& ringBuffer) override;
+    virtual void PrepareStreamDataBuffer(size_t spanSizeInByte,
+        RingBufferWrapper &ringBuffer, AudioStreamData &streamData) override;
+
     void WriteDumpFile(void *buffer, size_t bufferSize) override final;
 
     std::time_t GetStartMuteTime() override;
@@ -198,6 +203,7 @@ private:
     uint32_t byteSizePerFrame_ = 0;
     bool isBufferConfiged_ = false;
     std::shared_ptr<OHAudioBufferBase> processBuffer_ = nullptr;
+    std::vector<uint8_t> processTmpBuffer_;
     std::mutex listenerListLock_;
     std::vector<std::shared_ptr<IProcessStatusListener>> listenerList_;
     BufferDesc convertedBuffer_ = {};

@@ -499,5 +499,87 @@ FormatHandlerMap &FormatConverter::GetFormatHandlers()
     return formatHandlers;
 }
 
+bool FormatConverter::AutoConvertToS16S32Stereo(const AudioSampleFormat format,
+    const AudioStreamData &srcData, const AudioStreamData &dstData)
+{
+    if (format == SAMPLE_S16LE) {
+        return ChannelFormatS16Convert(srcData, dstData);
+    } else if (format == SAMPLE_S32LE) {
+        return ChannelFormatS32Convert(srcData, dstData);
+    }
+
+    return false;
+}
+
+bool FormatConverter::AutoConvertToS16Stereo(const AudioStreamData &srcData, const BufferDesc &dstData)
+{
+    if (srcData.streamInfo.format == SAMPLE_S16LE && srcData.streamInfo.channels == MONO) {
+        return FormatConverter::S16MonoToS16Stereo(srcData.bufferDesc, dstData) == 0;
+    } else if (srcData.streamInfo.format == SAMPLE_F32LE && srcData.streamInfo.channels == MONO) {
+        return FormatConverter::F32MonoToS16Stereo(srcData.bufferDesc, dstData) == 0;
+    } else if (srcData.streamInfo.format == SAMPLE_F32LE && srcData.streamInfo.channels == STEREO) {
+        return FormatConverter::F32StereoToS16Stereo(srcData.bufferDesc, dstData) == 0;
+    }
+
+    return false;
+}
+
+// only support convert to SAMPLE_S16LE STEREO
+bool FormatConverter::ChannelFormatS16Convert(const AudioStreamData &srcData, const AudioStreamData &dstData)
+{
+    if (srcData.streamInfo.samplingRate != dstData.streamInfo.samplingRate ||
+        srcData.streamInfo.encoding != dstData.streamInfo.encoding) {
+        return false;
+    }
+    if (srcData.streamInfo.format == SAMPLE_S16LE && srcData.streamInfo.channels == STEREO) {
+        return true; // no need convert, copy is done in NoFormatConvert:CopyData
+    }
+    if (srcData.streamInfo.format == SAMPLE_S16LE && srcData.streamInfo.channels == MONO) {
+        return FormatConverter::S16MonoToS16Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
+    }
+    if (srcData.streamInfo.format == SAMPLE_S32LE && srcData.streamInfo.channels == MONO) {
+        return FormatConverter::S32MonoToS16Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
+    }
+    if (srcData.streamInfo.format == SAMPLE_S32LE && srcData.streamInfo.channels == STEREO) {
+        return FormatConverter::S32StereoToS16Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
+    }
+    if (srcData.streamInfo.format == SAMPLE_F32LE && srcData.streamInfo.channels == MONO) {
+        return FormatConverter::F32MonoToS16Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
+    }
+    if (srcData.streamInfo.format == SAMPLE_F32LE && srcData.streamInfo.channels == STEREO) {
+        return FormatConverter::F32StereoToS16Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
+    }
+
+    return false;
+}
+
+// only support convert to SAMPLE_S32LE STEREO
+bool FormatConverter::ChannelFormatS32Convert(const AudioStreamData &srcData, const AudioStreamData &dstData)
+{
+    if (srcData.streamInfo.samplingRate != dstData.streamInfo.samplingRate ||
+        srcData.streamInfo.encoding != dstData.streamInfo.encoding) {
+        return false;
+    }
+    if (srcData.streamInfo.format == SAMPLE_S16LE && srcData.streamInfo.channels == STEREO) {
+        return FormatConverter::S16StereoToS32Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
+    }
+    if (srcData.streamInfo.format == SAMPLE_S16LE && srcData.streamInfo.channels == MONO) {
+        return FormatConverter::S16MonoToS32Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
+    }
+    if (srcData.streamInfo.format == SAMPLE_S32LE && srcData.streamInfo.channels == MONO) {
+        return FormatConverter::S32MonoToS32Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
+    }
+    if (srcData.streamInfo.format == SAMPLE_S32LE && srcData.streamInfo.channels == STEREO) {
+        return true; // no need convert, copy is done in NoFormatConvert:CopyData
+    }
+    if (srcData.streamInfo.format == SAMPLE_F32LE && srcData.streamInfo.channels == MONO) {
+        return FormatConverter::F32MonoToS32Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
+    }
+    if (srcData.streamInfo.format == SAMPLE_F32LE && srcData.streamInfo.channels == STEREO) {
+        return FormatConverter::F32StereoToS32Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
+    }
+
+    return false;
+}
 } // namespace AudioStandard
 } // namespace OHOS

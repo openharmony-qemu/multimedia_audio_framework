@@ -127,6 +127,59 @@ AudioProcessInServer::~AudioProcessInServer()
     AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
 }
 
+bool AudioProcessInServer::PrepareRingBuffer(uint64_t curRead, RingBufferWrapper& ringBuffer)
+{
+    int32_t ret = processBuffer_->GetAllReadableBufferFromPosFrame(curRead, ringBuffer);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && ringBuffer.dataLength > 0, false,
+        "getBuffer failed ret: %{public}d lenth: %{public}zu",
+        ret, ringBuffer.dataLength);
+
+    auto byteSizePerFrame = GetByteSizePerFrame();
+    CHECK_AND_RETURN_RET_LOG(byteSizePerFrame != 0, false, "byteSizePerFrame is 0");
+
+    size_t spanSizeInByte = GetSpanSizeInFrame() * byteSizePerFrame;
+    if (ringBuffer.dataLength > spanSizeInByte) {
+        ringBuffer.dataLength = spanSizeInByte;
+    }
+
+    UpdateStreamInfo();
+    return true;
+}
+
+bool AudioProcessInServer::NeedUseTempBuffer(const RingBufferWrapper &ringBuffer, size_t spanSizeInByte)
+{
+    if (ringBuffer.dataLength > ringBuffer.basicBufferDescs[0].bufLength) {
+        return true;
+    }
+
+    if (ringBuffer.dataLength < spanSizeInByte) {
+        return true;
+    }
+
+    return false;
+}
+
+void AudioProcessInServer::PrepareStreamDataBuffer(size_t spanSizeInByte,
+    RingBufferWrapper &ringBuffer, AudioStreamData &streamData)
+{
+    if (NeedUseTempBuffer(ringBuffer, spanSizeInByte)) {
+        processTmpBuffer_.resize(0);
+        processTmpBuffer_.resize(spanSizeInByte);
+        RingBufferWrapper ringBufferDescForCotinueData;
+        ringBufferDescForCotinueData.dataLength = ringBuffer.dataLength;
+        ringBufferDescForCotinueData.basicBufferDescs[0].buffer = processTmpBuffer_.data();
+        ringBufferDescForCotinueData.basicBufferDescs[0].bufLength = ringBuffer.dataLength;
+        ringBufferDescForCotinueData.CopyInputBufferValueToCurBuffer(ringBuffer);
+        streamData.bufferDesc.buffer = processTmpBuffer_.data();
+        streamData.bufferDesc.bufLength = spanSizeInByte;
+        streamData.bufferDesc.dataLength = spanSizeInByte;
+    } else {
+        streamData.bufferDesc.buffer = ringBuffer.basicBufferDescs[0].buffer;
+        streamData.bufferDesc.bufLength = ringBuffer.dataLength;
+        streamData.bufferDesc.dataLength = ringBuffer.dataLength;
+    }
+}
+
 int32_t AudioProcessInServer::GetSessionId(uint32_t &sessionId)
 {
     sessionId = sessionId_;

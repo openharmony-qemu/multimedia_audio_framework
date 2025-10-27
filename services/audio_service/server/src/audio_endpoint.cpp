@@ -1040,7 +1040,6 @@ void AudioEndpointInner::AddProcessStreamToList(IAudioProcessStream *processStre
     std::lock_guard<std::mutex> lock(listLock_);
     processList_.push_back(processStream);
     processBufferList_.push_back(processBuffer);
-    processTmpBufferList_.push_back({});
 }
 
 int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream, bool startWhenLinking)
@@ -1139,18 +1138,15 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
     std::lock_guard<std::mutex> lock(listLock_);
     auto processItr = processList_.begin();
     auto bufferItr = processBufferList_.begin();
-    auto tmpBufferItr = processTmpBufferList_.begin();
     while (processItr != processList_.end()) {
         if (*processItr == processStream && *bufferItr == processBuffer) {
             processList_.erase(processItr);
             processBufferList_.erase(bufferItr);
-            processTmpBufferList_.erase(tmpBufferItr);
             isFind = true;
             break;
         } else {
             processItr++;
             bufferItr++;
-            tmpBufferItr++;
         }
     }
     if (processList_.size() == 0) {
@@ -1312,23 +1308,15 @@ void AudioEndpointInner::HandleRendererDataParams(const AudioStreamData &srcData
     if (srcData.streamInfo.format == SAMPLE_S16LE || srcData.streamInfo.format == SAMPLE_F32LE) {
         CHECK_AND_RETURN_LOG(processList_.size() > 0 && processList_[0] != nullptr, "No avaliable process");
         BufferDesc &convertedBuffer = processList_[0]->GetConvertedBuffer();
-        int32_t ret = -1;
-        if (srcData.streamInfo.format == SAMPLE_S16LE && srcData.streamInfo.channels == MONO) {
-            ret = FormatConverter::S16MonoToS16Stereo(srcData.bufferDesc, convertedBuffer);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "Convert channel from s16 mono to s16 stereo failed");
-        } else if (srcData.streamInfo.format == SAMPLE_F32LE && srcData.streamInfo.channels == MONO) {
-            ret = FormatConverter::F32MonoToS16Stereo(srcData.bufferDesc, convertedBuffer);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "Convert channel from f32 mono to s16 stereo failed");
-        } else if (srcData.streamInfo.format == SAMPLE_F32LE && srcData.streamInfo.channels == STEREO) {
-            ret = FormatConverter::F32StereoToS16Stereo(srcData.bufferDesc, convertedBuffer);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "Convert channel from f32 stereo to s16 stereo failed");
-        } else {
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "Unsupport conversion");
-        }
+
+        bool converRet = FormatConverter::AutoConvertToS16Stereo(srcData, convertedBuffer);
+        CHECK_AND_RETURN_LOG(converRet, "Convert failed format: %{public}d channel: %{public}d",
+            srcData.streamInfo.format, srcData.streamInfo.channels);
+
         AudioStreamData dataAfterProcess = srcData;
         dataAfterProcess.bufferDesc = convertedBuffer;
         ProcessSingleData(dataAfterProcess, dstData, applyVol);
-        ret = memset_s(static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength, 0,
+        int32_t ret = memset_s(static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength, 0,
             convertedBuffer.bufLength);
         CHECK_AND_RETURN_LOG(ret == EOK, "memset converted buffer to 0 failed");
     }
@@ -1428,25 +1416,6 @@ AudioEndpointInner::VolumeResult AudioEndpointInner::CalculateVolume(size_t i)
     return result;
 }
 
-bool AudioEndpointInner::PrepareRingBuffer(size_t i, uint64_t curRead, RingBufferWrapper& ringBuffer)
-{
-    int32_t ret = processBufferList_[i]->GetAllReadableBufferFromPosFrame(curRead, ringBuffer);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && ringBuffer.dataLength > 0, false,
-        "getBuffer failed ret: %{public}d lenth: %{public}zu",
-        ret, ringBuffer.dataLength);
-
-    auto byteSizePerFrame = processList_[i]->GetByteSizePerFrame();
-    CHECK_AND_RETURN_RET_LOG(byteSizePerFrame != 0, false, "byteSizePerFrame is 0");
-
-    size_t spanSizeInByte = processList_[i]->GetSpanSizeInFrame() * byteSizePerFrame;
-    if (ringBuffer.dataLength > spanSizeInByte) {
-        ringBuffer.dataLength = spanSizeInByte;
-    }
-
-    processList_[i]->UpdateStreamInfo();
-    return true;
-}
-
 void AudioEndpointInner::SetupMoveCallback(size_t i, uint64_t curRead, const RingBufferWrapper& ringBuffer,
     std::function<void()>& moveClientIndex
 )
@@ -1469,40 +1438,6 @@ bool AudioEndpointInner::IsNearlinkAbsVolSupportStream(DeviceType deviceType, Au
     return isNearlink && (isMusicStream || isVoiceCallStream);
 }
 
-bool AudioEndpointInner::NeedUseTempBuffer(const RingBufferWrapper &ringBuffer, size_t spanSizeInByte)
-{
-    if (ringBuffer.dataLength > ringBuffer.basicBufferDescs[0].bufLength) {
-        return true;
-    }
-
-    if (ringBuffer.dataLength < spanSizeInByte) {
-        return true;
-    }
-
-    return false;
-}
-
-void AudioEndpointInner::PrepareStreamDataBuffer(size_t i, size_t spanSizeInByte,
-    RingBufferWrapper &ringBuffer, AudioStreamData &streamData)
-{
-    if (NeedUseTempBuffer(ringBuffer, spanSizeInByte)) {
-        processTmpBufferList_[i].resize(0);
-        processTmpBufferList_[i].resize(spanSizeInByte);
-        RingBufferWrapper ringBufferDescForCotinueData;
-        ringBufferDescForCotinueData.dataLength = ringBuffer.dataLength;
-        ringBufferDescForCotinueData.basicBufferDescs[0].buffer = processTmpBufferList_[i].data();
-        ringBufferDescForCotinueData.basicBufferDescs[0].bufLength = ringBuffer.dataLength;
-        ringBufferDescForCotinueData.CopyInputBufferValueToCurBuffer(ringBuffer);
-        streamData.bufferDesc.buffer = processTmpBufferList_[i].data();
-        streamData.bufferDesc.bufLength = spanSizeInByte;
-        streamData.bufferDesc.dataLength = spanSizeInByte;
-    } else {
-        streamData.bufferDesc.buffer = ringBuffer.basicBufferDescs[0].buffer;
-        streamData.bufferDesc.bufLength = ringBuffer.dataLength;
-        streamData.bufferDesc.dataLength = ringBuffer.dataLength;
-    }
-}
-
 void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i,
     std::vector<AudioStreamData> &audioDataList, uint64_t curRead, std::function<void()> &moveClientIndex)
 {
@@ -1520,7 +1455,7 @@ void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i,
         (volResult.muteFlag ? " muted" : " unmuted"));
 
     RingBufferWrapper ringBuffer;
-    if (!PrepareRingBuffer(i, curRead, ringBuffer)) {
+    if (!processList_[i]->PrepareRingBuffer(curRead, ringBuffer)) {
         auto tempProcess = processList_[i];
         CHECK_AND_RETURN_LOG(tempProcess, "tempProcess is nullptr!");
         if (tempProcess->GetStreamStatus() == STREAM_RUNNING) {
@@ -1535,7 +1470,7 @@ void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i,
         ringBuffer.SetBuffersValueWithSpecifyDataLen(0);
     }
     size_t spanSizeInByte = processList_[i]->GetSpanSizeInFrame() * processList_[i]->GetByteSizePerFrame();
-    PrepareStreamDataBuffer(i, spanSizeInByte, ringBuffer, streamData);
+    processList_[i]->PrepareStreamDataBuffer(spanSizeInByte, ringBuffer, streamData);
     CheckPlaySignal(streamData.bufferDesc.buffer, streamData.bufferDesc.bufLength);
     audioDataList.push_back(streamData);
     processList_[i]->WriteDumpFile(static_cast<void *>(streamData.bufferDesc.buffer),

@@ -95,6 +95,9 @@ public:
     virtual StreamStatus GetStreamStatus() {return STREAM_IDEL;}
     virtual int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) = 0;
     virtual int32_t GetAudioHapticsSyncId() = 0;
+    virtual bool PrepareRingBuffer(uint64_t curRead, RingBufferWrapper& ringBuffer) = 0;
+    virtual void PrepareStreamDataBuffer(size_t spanSizeInByte,
+        RingBufferWrapper &ringBuffer, AudioStreamData &streamData) = 0;
     virtual void UpdateStreamInfo() {}
 
     virtual int32_t WriteToSpecialProcBuf(AudioCaptureDataProcParams &procParams)
