@@ -8,7 +8,7 @@ import audioNapi from 'libentry.so';
 import { importSingleSong } from '../utils/importSongs/ImportSongs';
 import { SetFormatDialog } from './customDialog/SetFormatDialog';
 import { CheckNodeDialog } from './customDialog/CheckNodeDialog';
-import { JSON, util } from '@kit .ArkTS';
+import { JSON, util } from '@kit.ArkTS';
 import { saveFileBuffer, RealTimeSaveFileBuffer } from '../utils/ExportFile';
 import { taskpool } from '@kit.ArkTS';
 import { fileUri, picker } from '@kit.CoreFileKit';
@@ -90,8 +90,8 @@ export struct MixingConsole {
         })
     }
 
-    aboutToDisAppear(): void {
-        Logger.info(TAG, 'aboutToDisAppear');
+    aboutToDisappear(): void {
+        Logger.info(TAG, 'aboutToDisappear');
         // 销毁播放器
         try {
             let result = audioNapi.audioRendererDestory();
@@ -257,7 +257,7 @@ export struct MixingConsole {
                                                         // 获取通道数，通道数位于22字节
                                                         this.channels = dataView.getUint16(22, true);
                                                         // 获取采样率，采样率位于第24到28字节
-                                                        this.sampleRate = dataView.getUint16(24, true);
+                                                        this.sampleRate = dataView.getUint32(24, true);
                                                         // 获取位深，位深位于第34字节
                                                         this.bitsPerSample = dataView.getUint16(34, true);
                                                         // 格式类别 int 还是 float(3)
@@ -401,7 +401,7 @@ export struct MixingConsole {
                     if(songInfo){
                         let inputInfo: Node = {
                             id: nodeId,
-                            type: Nodetype.INPUT,
+                            type: NodeType.INPUT,
                             color: colorMap.get(NodeType.INPUT)
                         }
                         if(nodesArray.length > 0){
@@ -482,7 +482,7 @@ export struct MixingConsole {
                     .backgroundColor(colorMap.get(type))
                     .fontSize($r('app.float.font_size_10'))
                     .maxLines(1)
-                    .textOverflow({ overflow: textOverflow.Ellipsis })
+                    .textOverflow({ overflow: TextOverflow.Ellipsis })
                     .borderRadius(5)
             }
         } else if (type) {
@@ -509,7 +509,7 @@ export struct MixingConsole {
         }
         try {
             let path: string = new fileUri.FileUri(info.uri).path;
-            Logger.info(TAG, `getPcmFIleBuffer path: ${JSON.stringify(path)}`);
+            Logger.info(TAG, `getPcmFileBuffer path: ${JSON.stringify(path)}`);
             let file  = fs.openSync(path, fs.OpenMode.READ_ONLY | fs.OpenMode.CREATE);
             let fsStat  = fs.statSync(path);
             Logger.info(TAG, `failSize : ${fsStat.size}`);
@@ -543,7 +543,7 @@ export struct MixingConsole {
                 Logger.info(TAG, 'SaveBuffer error');
             }
             // picker选择器，保存PCM文件
-            let documentSaveOptions = new picker.documentSaveOptions();
+            let documentSaveOptions = new picker.DocumentSaveOptions();
             if(this.newAudioFileName ===  ''){
                 this.newAudioFileName = getDateStringWithTimeStamp(new Date().getTime());
             } else {
