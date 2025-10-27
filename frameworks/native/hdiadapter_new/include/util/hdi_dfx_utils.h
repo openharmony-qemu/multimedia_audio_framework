@@ -23,18 +23,11 @@
 
 namespace OHOS {
 namespace AudioStandard {
-
-constexpr size_t FIRST_CHAR = 1;
-constexpr size_t MIN_LEN = 8;
-constexpr size_t HEAD_STR_LEN = 2;
-constexpr size_t TAIL_STR_LEN = 5;
-
 class HdiDfxUtils {
 public:
     static void PrintVolumeInfo(char *data, uint64_t &len, const IAudioSourceAttr &attr, std::string logUtilsTag,
         int64_t &volumeDataCount);
     static void DumpData(char *data, uint64_t &len, FILE *dumpFile, std::string dumpFileName);
-    static std::string GetEncryptStr(const std::string &src);
 };
 } // namespace AudioStandard
 } // namespace OHOS

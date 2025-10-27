@@ -36,26 +36,5 @@ void HdiDfxUtils::DumpData(char *data, uint64_t &len, FILE *dumpFile, std::strin
     DumpFileUtil::WriteDumpFile(dumpFile, static_cast<void *>(data), len);
     AudioCacheMgr::GetInstance().CacheData(dumpFileName, static_cast<void *>(data), len);
 }
-
-std::string HdiDfxUtils::GetEncryptStr(const std::string &src)
-{
-    std::string dst = "";
-    CHECK_AND_RETURN_RET(!src.empty(), dst);
-
-    size_t strLen = src.length();
-    if (strLen < MIN_LEN) {
-        // src: abcdef
-        // dst: *bcdef
-        dst = '*' + src.substr(FIRST_CHAR, strLen - FIRST_CHAR);
-    } else {
-        // src: 00:00:00:00:00:00
-        // dst: 00**********00:00
-        dst = src.substr(0, HEAD_STR_LEN);
-        std::string tempStr(strLen - HEAD_STR_LEN - TAIL_STR_LEN, '*');
-        dst += tempStr;
-        dst += src.substr(strLen - TAIL_STR_LEN, TAIL_STR_LEN);
-    }
-    return dst;
-}
 } // namespace AudioStandard
 } // namespace OHOS

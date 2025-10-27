@@ -23,7 +23,6 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "manager/hdi_adapter_manager.h"
-#include "util/hdi_dfx_utils.h"
 
 using namespace OHOS::HDI::DistributedAudio::Audio::V1_0;
 
@@ -434,7 +433,7 @@ std::shared_ptr<RemoteAdapterWrapper> RemoteDeviceManager::GetAdapter(const std:
 int32_t RemoteDeviceManager::LoadAdapterInner(const std::string &adapterName)
 {
     CHECK_AND_RETURN_RET_LOG(adapters_.count(adapterName) == 0 || adapters_[adapterName] == nullptr, SUCCESS,
-        "adapter %{public}s already loaded", adapterName.c_str());
+        "adapter %{public}s already loaded", GetEncryptStr(adapterName).c_str());
 
     if (audioManager_ == nullptr || adapters_.size() == 0) {
         audioManager_ = nullptr;
