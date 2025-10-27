@@ -52,10 +52,10 @@ T GetData()
     return object;
 }
 
-class SuiteInputNodeWriteDataCallBackTestImpl : public AudioSuite::SuiteInputNodeWriteDataCallBack {
+class InputNodeRequestDataCallBackTestImpl : public AudioSuite::InputNodeRequestDataCallBack {
 public:
-    ~SuiteInputNodeWriteDataCallBackTestImpl() = default;
-    int32_t OnWriteDataCallBack(void *audioData, int32_t audioDataSize, bool *finished) override
+    ~InputNodeRequestDataCallBackTestImpl() = default;
+    int32_t OnRequestDataCallBack(void *audioData, int32_t audioDataSize, bool *finished) override
     {
         return 0;
     }
@@ -73,7 +73,7 @@ void AudioSuiteManagerDeInitFuzzTest()
 
 void AudioSuiteManagerCreatePipelineFuzzTest()
 {
-    AudioSuite::PipelineWorkMode workMode = GetDataAudioSuite::PipelineWorkMode();
+    AudioSuite::PipelineWorkMode workMode = GetData<AudioSuite::PipelineWorkMode>();
     uint32_t pipelineId = GetData<uint32_t>() % MAX_PIPELINE_NUM;
     AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().CreatePipeline(pipelineId, workMode);
 }
@@ -108,12 +108,12 @@ void AudioSuiteManagerCreateNodeFuzzTest()
     uint32_t pipelineId = GetData<uint32_t>() % MAX_PIPELINE_NUM;
     uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
     AudioSuite::AudioNodeBuilder nodeBuilder;
-    nodeBuilder.nodeType = GetDataAudioSuite::AudioNodeType();
-    nodeBuilder.nodeFormat.audioChannelInfo.channelLayout = GetData();
+    nodeBuilder.nodeType = GetData<AudioSuite::AudioNodeType>();
+    nodeBuilder.nodeFormat.audioChannelInfo.channelLayout = GetData<AudioChannelLayout>();
     nodeBuilder.nodeFormat.audioChannelInfo.numChannels = GetData<uint32_t>() % MAX_CHANNEL_NUM;
-    nodeBuilder.nodeFormat.format = GetData();
-    nodeBuilder.nodeFormat.rate = GetData();
-    nodeBuilder.nodeFormat.encodingType = GetDataAudioSuite::AudioStreamEncodingType();
+    nodeBuilder.nodeFormat.format = GetData<AudioSampleFormat>();
+    nodeBuilder.nodeFormat.rate = GetData<AudioSamplingRate>();
+    nodeBuilder.nodeFormat.encodingType = GetData<AudioSuite::AudioStreamEncodingType>();
     AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().CreateNode(pipelineId, nodeBuilder, nodeId);
 }
 
@@ -126,7 +126,7 @@ void AudioSuiteManagerDestroyNodeFuzzTest()
 void AudioSuiteManagerBypassEffectNodeFuzzTest()
 {
     uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    bool nodeEnable = GetData();
+    bool nodeEnable = GetData<bool>();
     AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().BypassEffectNode(nodeId, nodeEnable);
 }
 
@@ -141,19 +141,19 @@ void AudioSuiteManagerSetAudioFormatFuzzTest()
 {
     uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
     AudioSuite::AudioFormat nodeFormat;
-    nodeFormat.audioChannelInfo.channelLayout = GetData();
-    nodeFormat.audioChannelInfo.numChannels = GetData<uint32_t>() % MAX_CHANNEL_NUM;;
-    nodeFormat.format = GetData();
-    nodeFormat.rate = GetData();
-    nodeFormat.encodingType = GetDataAudioSuite::AudioStreamEncodingType();
+    nodeFormat.audioChannelInfo.channelLayout = GetData<AudioChannelLayout>();
+    nodeFormat.audioChannelInfo.numChannels = GetData<uint32_t>() % MAX_CHANNEL_NUM;
+    nodeFormat.format = GetData<AudioSampleFormat>();
+    nodeFormat.rate = GetData<AudioSamplingRate>();
+    nodeFormat.encodingType = GetData<AudioSuite::AudioStreamEncodingType>();
     AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetAudioFormat(nodeId, nodeFormat);
 }
 
 void AudioSuiteManagerSetRequestDataCallbackFuzzTest()
 {
     uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    std::shared_ptrAudioSuite::SuiteInputNodeWriteDataCallBack callback =
-    std::make_shared();
+    std::shared_ptr<AudioSuite::InputNodeRequestDataCallBack> callback =
+        std::make_shared<InputNodeRequestDataCallBackTestImpl>();
     AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetRequestDataCallback(nodeId, callback);
 }
 
@@ -176,7 +176,7 @@ void AudioSuiteManagerSetEqFrequencyBandGainsModeFuzzTest()
     uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
     AudioSuite::AudioEqualizerFrequencyBandGains gains;
     for (int i = 0; i < EQUALIZER_BAND_NUM; i++) {
-       gains.gains[i] = GetData<int32_t>();
+        gains.gains[i] = GetData<int32_t>();
     }
     AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetEqualizerFrequencyBandGains(nodeId, gains);
 }
@@ -184,21 +184,21 @@ void AudioSuiteManagerSetEqFrequencyBandGainsModeFuzzTest()
 void AudioSuiteManagerSetSoundFieldTypeFuzzTest()
 {
     uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    AudioSuite::SoundFieldType soundFieldType = GetDataAudioSuite::SoundFieldType();
+    AudioSuite::SoundFieldType soundFieldType = GetData<AudioSuite::SoundFieldType>();
     AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetSoundFieldType(nodeId, soundFieldType);
 }
 
 void AudioSuiteManagerSetEnvironmentTypeFuzzTest()
 {
     uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    AudioSuite::EnvironmentType environmentType = GetDataAudioSuite::EnvironmentType();
+    AudioSuite::EnvironmentType environmentType = GetData<AudioSuite::EnvironmentType>();
     AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetEnvironmentType(nodeId, environmentType);
 }
 
 void AudioSuiteManagerSetVoiceBeautifierTypeFuzzTest()
 {
     uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
-    AudioSuite::VoiceBeautifierType voiceBeautifierType = GetDataAudioSuite::VoiceBeautifierType();
+    AudioSuite::VoiceBeautifierType voiceBeautifierType = GetData<AudioSuite::VoiceBeautifierType>();
     AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetVoiceBeautifierType(nodeId, voiceBeautifierType);
 }
 
@@ -239,9 +239,9 @@ void AudioSuiteRenderFrameFuzzTest()
         audioData[i] = GetData<uint8_t>();
     }
     int32_t writeLen = GetData<int32_t>();
-    bool finishedFlag = GetData();
+    bool finishedFlag = GetData<bool>();
     AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().RenderFrame(pipelineId, audioData,
-    frameSize, &writeLen, &finishedFlag);
+        frameSize, &writeLen, &finishedFlag);
 }
 
 void AudioSuiteMultiRenderFrameFuzzTest()
@@ -249,15 +249,16 @@ void AudioSuiteMultiRenderFrameFuzzTest()
     uint32_t pipelineId = GetData<uint32_t>() % MAX_PIPELINE_NUM;
     AudioSuite::AudioDataArray audioDataArray;
     uint8_t audioData[MAX_FRAME_SIZE] = {0};
-    audioDataArray.arraySize = GetData() % MAX_FRAME_SIZE;
+    audioDataArray.arraySize = GetData<int32_t>() % MAX_FRAME_SIZE;
     for (int i = 0; i < audioDataArray.arraySize; i++) {
         audioData[i] = GetData<uint8_t>();
     }
     audioDataArray.audioDataArray = (void**)&audioData;
     audioDataArray.requestFrameSize = GetData<int32_t>();
     int32_t responseSize = GetData<int32_t>();
-    bool finishedFlag = GetData();
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().MultiRenderFrame(pipelineId, &audioDataArray, &responseSize, &finishedFlag);
+    bool finishedFlag = GetData<bool>();
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().MultiRenderFrame(pipelineId, &audioDataArray,
+        &responseSize, &finishedFlag);
 }
 
 vector g_testFuncs = {

@@ -23,6 +23,9 @@ include_dirs = [
 "../../../services/audio_suite/client/manager/include",
 "../../../interfaces/inner_api/native/audiosuite/include",
 "../../../interfaces/inner_api/native/audiocommon/include",
+"../../../interfaces/kits/c/audio_suite",
+"../../../interfaces/kits/c/common",
+"../../../frameworks/native/ohaudiosuite",
 ]
 
 cflags = [
