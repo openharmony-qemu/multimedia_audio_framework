@@ -1519,14 +1519,14 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_072, TestSize.Level1)
 
     audioVolumeManager.safeVolumeExit_ = false;
     reason = "Offload";
-    audioVolumeManager.startSafeTimeBT_ = 0;
-    audioVolumeManager.safeStatusBT_ = SAFE_INACTIVE;
+    audioVolumeManager.startSafeTimeBt_ = 0;
+    audioVolumeManager.safeStatusBt_ = SAFE_INACTIVE;
     audioVolumeManager.CheckActiveMusicTime(reason);
-    EXPECT_EQ(audioVolumeManager.startSafeTimeBT_, 0);
-    audioVolumeManager.startSafeTimeBT_ = 0;
-    audioVolumeManager.safeStatusBT_ = SAFE_ACTIVE;
+    EXPECT_EQ(audioVolumeManager.startSafeTimeBt_, 0);
+    audioVolumeManager.startSafeTimeBt_ = 0;
+    audioVolumeManager.safeStatusBt_ = SAFE_ACTIVE;
     audioVolumeManager.CheckActiveMusicTime(reason);
-    EXPECT_EQ(audioVolumeManager.startSafeTimeBT_, 0);
+    EXPECT_EQ(audioVolumeManager.startSafeTimeBt_, 0);
     audioVolumeManager.startSafeTime_ = 0;
     audioVolumeManager.safeStatus_ = SAFE_INACTIVE;
     audioVolumeManager.CheckActiveMusicTime(reason);
