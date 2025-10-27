@@ -228,7 +228,7 @@ void AudioInterruptService::ReportRecordGetFocusFail(const AudioInterrupt &incom
     const AudioInterrupt &activeInterrupt, int32_t reason)
 {
     CHECK_AND_RETURN_LOG(incomingInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
-        incomingInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID, "not recording");
+        activeInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID, "not recording");
     AUDIO_INFO_LOG("recording failed to start, incoming: sourceType %{public}d pid %{public}d uid %{public}d"\
         "active: sourceType %{public}d pid %{public}d uid %{public}d",
         incomingInterrupt.audioFocusType.sourceType, incomingInterrupt.pid, incomingInterrupt.uid,

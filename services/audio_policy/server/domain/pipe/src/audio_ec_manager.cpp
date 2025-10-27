@@ -281,7 +281,8 @@ void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStr
 void AudioEcManager::UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType sourceType)
 {
     if (sourceType != SOURCE_TYPE_VOICE_COMMUNICATION && sourceType != SOURCE_TYPE_VOICE_TRANSCRIPTION) {
-        AUDIO_INFO_LOG("sourceType: %{public}d not need ec data", sourceType);
+        ClearModuleInfoForEc(moduleInfo);
+        AUDIO_INFO_LOG("sourceType: %{public}d need clear ec data", sourceType);
         return;
     }
 
@@ -298,7 +299,8 @@ void AudioEcManager::UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType 
 void AudioEcManager::UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType)
 {
     if (sourceType != SOURCE_TYPE_VOICE_COMMUNICATION && sourceType != SOURCE_TYPE_MIC) {
-        AUDIO_INFO_LOG("sourceType: %{public}d not need micref data", sourceType);
+        ClearModuleInfoForMicRef(moduleInfo);
+        AUDIO_INFO_LOG("sourceType: %{public}d need clear micref data", sourceType);
         return;
     }
 
@@ -472,6 +474,15 @@ void AudioEcManager::UpdateModuleInfoForEc(AudioModuleInfo &moduleInfo)
     moduleInfo.ecChannels = audioEcInfo_.channels;
 }
 
+void AudioEcManager::ClearModuleInfoForEc(AudioModuleInfo &moduleInfo)
+{
+    moduleInfo.ecType ="";
+    moduleInfo.ecAdapter = "";
+    moduleInfo.ecSamplingRate = "";
+    moduleInfo.ecFormat = "";
+    moduleInfo.ecChannels = "";
+}
+
 std::string AudioEcManager::ShouldOpenMicRef(SourceType source)
 {
     std::string shouldOpen = "0";
@@ -499,6 +510,14 @@ void AudioEcManager::UpdateModuleInfoForMicRef(AudioModuleInfo &moduleInfo, Sour
     moduleInfo.micRefRate = "48000";
     moduleInfo.micRefFormat = "s16le";
     moduleInfo.micRefChannels = "4";
+}
+
+void AudioEcManager::ClearModuleInfoForMicRef(AudioModuleInfo &moduleInfo)
+{
+    moduleInfo.openMicRef = "0";
+    moduleInfo.micRefRate = "";
+    moduleInfo.micRefFormat = "";
+    moduleInfo.micRefChannels = "";
 }
 
 AudioEcInfo AudioEcManager::GetAudioEcInfo()

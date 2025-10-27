@@ -37,6 +37,9 @@ HpaeSourceOutputNode::HpaeSourceOutputNode(HpaeNodeInfo &nodeInfo)
 {
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeSourceOutputNode");
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
+    }
 #endif
 }
 
@@ -45,6 +48,9 @@ HpaeSourceOutputNode::~HpaeSourceOutputNode()
 #ifdef ENABLE_HIDUMP_DFX
     AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
         GetNodeId(), GetNodeName().c_str());
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeAdmin(false, GetNodeInfo());
+    }
 #endif
 }
 
@@ -139,7 +145,7 @@ void HpaeSourceOutputNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffe
     inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort());
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(true, preNode->GetSharedInstance()->GetNodeId(), GetNodeInfo());
+        callback->OnNotifyDfxNodeInfo(true, preNode->GetSharedInstance()->GetNodeId(), GetNodeId());
     }
 #endif
 }
@@ -151,7 +157,7 @@ void HpaeSourceOutputNode::ConnectWithInfo(const std::shared_ptr<OutputNode<Hpae
     inputStream_.Connect(realPreNode, preNode->GetOutputPort(nodeInfo));
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(true, realPreNode->GetNodeId(), GetNodeInfo());
+        callback->OnNotifyDfxNodeInfo(true, realPreNode->GetNodeId(), GetNodeId());
     }
 #endif
 }
@@ -162,7 +168,7 @@ void HpaeSourceOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBu
     inputStream_.DisConnect(preNode->GetOutputPort());
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(false, GetNodeId(), GetNodeInfo());
+        callback->OnNotifyDfxNodeInfo(false, preNode->GetOutputPort()->GetNodeId(), GetNodeId());
     }
 #endif
 }
@@ -172,10 +178,11 @@ void HpaeSourceOutputNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<H
 {
     CHECK_AND_RETURN_LOG(!inputStream_.CheckIfDisConnected(preNode->GetOutputPort(nodeInfo)),
         "%{public}u has disconnected with preNode", GetSessionId());
-    inputStream_.DisConnect(preNode->GetOutputPort(nodeInfo, true));
+    const auto port = preNode->GetOutputPort(nodeInfo, true);
+    inputStream_.DisConnect(port);
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(false, GetNodeId(), GetNodeInfo());
+        callback->OnNotifyDfxNodeInfo(false, port->GetNodeId(), GetNodeId());
     }
 #endif
 }

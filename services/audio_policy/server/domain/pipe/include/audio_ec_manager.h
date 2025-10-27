@@ -90,6 +90,8 @@ private:
     void UpdateAudioEcInfo(const AudioDeviceDescriptor &inputDevice, const AudioDeviceDescriptor &outputDevice);
     void UpdateModuleInfoForEc(AudioModuleInfo &moduleInfo);
     void UpdateModuleInfoForMicRef(AudioModuleInfo &moduleInfo, SourceType sourceType);
+    void ClearModuleInfoForEc(AudioModuleInfo &moduleInfo);
+    void ClearModuleInfoForMicRef(AudioModuleInfo &moduleInfo);
     std::string ShouldOpenMicRef(SourceType source);
 
     EcType GetEcType(const DeviceType inputDevice, const DeviceType outputDevice);

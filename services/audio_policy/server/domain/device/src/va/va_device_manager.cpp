@@ -89,34 +89,35 @@ void VADeviceManager::OnDevicesConnected(
     const std::shared_ptr<VADevice> &vaDevice,
     const sptr<IVADeviceController> &controller)
 {
+    std::lock_guard<std::mutex> lock(statusMutex_);
     CHECK_AND_RETURN_LOG(vaDevice != nullptr && controller != nullptr, "invalid parameter: null pointer detected");
     AUDIO_INFO_LOG("va device manager connecting to device: {\"name\":\"%{public}s\", \"type\":\"%{public}d\"}",
                    vaDevice->configuration_.name_.c_str(), vaDevice->configuration_.type_);
     std::shared_ptr<AudioDeviceDescriptor> descriptor = ConvertVADeviceToDescriptor(vaDevice);
     connectedVADeviceMap_[vaDevice->configuration_.address_] = controller;
 
-    if (!IsVAAdapterRegistered()) {
+    if (!config_.GetAdapterInfo(AudioAdapterType::TYPE_VA)) {
         RegisterVAAdapterToMap();
     }
     AddVAStreamPropToMap(vaDevice->configuration_.properties_);
-    ReorganizePolicyConfig();
     AudioCoreService::GetCoreService()->GetEventEntry()->OnDeviceStatusUpdated(*descriptor, true);
 }
 
 void VADeviceManager::OnDevicesDisconnected(const std::shared_ptr<VADevice> &vaDevice)
 {
+    std::lock_guard<std::mutex> lock(statusMutex_);
     CHECK_AND_RETURN_LOG(vaDevice != nullptr, "invalid parameter: null pointer detected");
     std::shared_ptr<AudioDeviceDescriptor> descriptor = ConvertVADeviceToDescriptor(vaDevice);
     AudioCoreService::GetCoreService()->GetEventEntry()->OnDeviceStatusUpdated(*descriptor, false);
     connectedVADeviceMap_.erase(vaDevice->configuration_.address_);
     if (connectedVADeviceMap_.size() <= 0) {
-        UnregisterVAAdapterFromMap();
-        ReorganizePolicyConfig();
+        config_.UnregisterAdapter(AudioAdapterType::TYPE_VA);
     }
 }
 
 void VADeviceManager::GetDeviceController(const std::string macAddr, sptr<IRemoteObject> &controller)
 {
+    std::lock_guard<std::mutex> lock(statusMutex_);
     auto it = connectedVADeviceMap_.find(macAddr);
     if (it == connectedVADeviceMap_.end()) {
         controller = nullptr;
@@ -132,11 +133,9 @@ void VADeviceManager::GetDeviceController(const std::string macAddr, sptr<IRemot
 
 void VADeviceManager::RegisterVAAdapterToMap()
 {
-    AudioPolicyConfigData &config = AudioPolicyConfigData::GetInstance();
     PolicyAdapterInfo adapterInfo{};
     std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = std::make_shared<PolicyAdapterInfo>(adapterInfo);
     adapterInfoPtr->adapterName = ADAPTER_TYPE_VA;
-    config.adapterInfoMap.insert({adapterInfoPtr->GetTypeEnum(), adapterInfoPtr});
 
     std::shared_ptr<AdapterPipeInfo> pipeInfo = std::make_shared<AdapterPipeInfo>();
     pipeInfo->adapterInfo_ = adapterInfoPtr;
@@ -162,51 +161,22 @@ void VADeviceManager::RegisterVAAdapterToMap()
     pipeInfo->paProp_ = std::move(paProp);
 
     adapterInfoPtr->pipeInfos.push_back(pipeInfo);
-}
 
-void VADeviceManager::UnregisterVAAdapterFromMap()
-{
-    AudioPolicyConfigData &config = AudioPolicyConfigData::GetInstance();
-    config.adapterInfoMap.erase(AudioAdapterType::TYPE_VA);
-    std::pair<DeviceType, DeviceRole> deviceMapKey = std::make_pair(DEVICE_TYPE_BT_SPP, INPUT_DEVICE);
-    config.deviceInfoMap.erase(deviceMapKey);
+    config_.RegisterAdapter(adapterInfoPtr);
 }
 
 void VADeviceManager::AddVAStreamPropToMap(std::list<VAAudioStreamProperty> properties)
 {
-    AudioPolicyConfigData &config = AudioPolicyConfigData::GetInstance();
-    auto it = config.adapterInfoMap.find(AudioAdapterType::TYPE_VA);
-    CHECK_AND_RETURN_LOG(it != config.adapterInfoMap.end(), "va adapter not found");
-    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = it->second;
-    CHECK_AND_RETURN_LOG(adapterInfoPtr != nullptr, "va adapter is null pointer");
-    CHECK_AND_RETURN_LOG(adapterInfoPtr->pipeInfos.size() > 0, "va pipe info not found");
-    std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = adapterInfoPtr->pipeInfos.front();
-
+    std::list<std::shared_ptr<PipeStreamPropInfo>> streamProps;
     for (auto vaStreamProp : properties) {
         std::shared_ptr<PipeStreamPropInfo> pipeStreamPropInfo =
             ConvertVADeviceStreamPropertyToPipeStreamPropInfo(vaStreamProp);
         CHECK_AND_RETURN_LOG(pipeStreamPropInfo != nullptr, "pipeStreamPropInfo is null");
-        pipeStreamPropInfo->pipeInfo_ = pipeInfoPtr;
         pipeStreamPropInfo->supportDevices_.push_back(VA_DEVICE_INFO_NAME);
-        pipeInfoPtr->streamPropInfos_.push_back(pipeStreamPropInfo);
+        streamProps.push_back(pipeStreamPropInfo);
     }
-}
-
-void VADeviceManager::ReorganizePolicyConfig()
-{
-    AudioPolicyConfigData::GetInstance().Reorganize();
-}
-
-bool VADeviceManager::IsVAAdapterRegistered()
-{
-    AudioPolicyConfigData &config = AudioPolicyConfigData::GetInstance();
-    return config.adapterInfoMap.find(AudioAdapterType::TYPE_VA) != config.adapterInfoMap.end();
-}
-
-bool VADeviceManager::IsDeviceInfoMapContainsVA(std::pair<DeviceType, DeviceRole> deviceMapKey)
-{
-    AudioPolicyConfigData &config = AudioPolicyConfigData::GetInstance();
-    return config.deviceInfoMap.find(deviceMapKey) != config.deviceInfoMap.end();
+    CHECK_AND_RETURN_LOG(streamProps.size() != 0, "streamProps is empty");
+    config_.RegisterStreamProperty(AudioAdapterType::TYPE_VA, VA_INPUT_PIPE_INFO_NAME, streamProps);
 }
 
 std::shared_ptr<PipeStreamPropInfo> VADeviceManager::ConvertVADeviceStreamPropertyToPipeStreamPropInfo(

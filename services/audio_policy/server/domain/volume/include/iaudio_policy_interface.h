@@ -156,7 +156,7 @@ public:
 
     virtual void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos) = 0;
 
-    virtual void SetAbsVolumeScene(bool isAbsVolumeScene) = 0;
+    virtual void SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volume) = 0;
 
     virtual bool IsAbsVolumeScene() const = 0;
 
@@ -285,6 +285,12 @@ public:
     virtual void UpdateOtherStreamVolume(AudioStreamType streamType) = 0;
     virtual void SetVolumeLimit(float volume) = 0;
     virtual bool SetMaxVolumeForDpBoardcast() = 0;
+    virtual int32_t SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree) = 0;
+    virtual int32_t GetSystemVolumeDegree(AudioStreamType streamType, bool checkMuteState = true) = 0;
+    virtual int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType) = 0;
+    virtual float GetSystemVolumeInDbByDegree(AudioVolumeType volumeType, DeviceType deviceType, bool mute) = 0;
+    virtual int32_t SetZoneVolumeDegreeToMap(int32_t zoneId, AudioStreamType streamType, int32_t volumeDegree) = 0;
+    virtual int32_t GetZoneVolumeDegree(int32_t zoneId, AudioStreamType streamType) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -419,7 +419,7 @@ public:
 
     std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones();
 
-    int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support);
+    int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support, const int32_t volume);
 
     bool IsAbsVolumeScene();
 
@@ -504,14 +504,6 @@ public:
     int32_t UnsetDistributedRoutingRoleCallback();
 
     int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID);
-
-    int32_t CreateAudioInterruptZone(const std::set<int32_t> &pids, const int32_t zoneID);
-
-    int32_t AddAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID);
-
-    int32_t RemoveAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID);
-
-    int32_t ReleaseAudioInterruptZone(const int32_t zoneID);
 
     int32_t RegisterAudioZoneClient(const sptr<IRemoteObject>& object);
 
@@ -714,6 +706,14 @@ public:
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
     int32_t ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
     int32_t RestoreDistributedDeviceInfo();
+
+    int32_t SetVolumeDegreeCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v = API_9);
+    int32_t UnsetVolumeDegreeCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback);
+    int32_t SetSystemVolumeDegree(AudioVolumeType volumeType, int32_t volumeDegree,
+        int32_t volumeFlag, int32_t uid);
+    int32_t GetSystemVolumeDegree(AudioVolumeType volumeType, int32_t uid);
+    int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
 
 private:
     AudioPolicyManager() {}

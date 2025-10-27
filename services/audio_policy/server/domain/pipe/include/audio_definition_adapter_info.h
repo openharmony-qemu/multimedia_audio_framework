@@ -226,8 +226,15 @@ public:
     void UpdateDynamicStreamProps(const std::string adapterName, const std::string &pipeName,
         const std::list<std::shared_ptr<PipeStreamPropInfo>> &streamProps);
     void ClearDynamicStreamProps(const std::string adapterName, const std::string &pipeName);
-    uint32_t GetConfigStreamPropsSize(const std::string adapterName, const std::string &pipeName) const;
-    uint32_t GetDynamicStreamPropsSize(const std::string adapterName, const std::string &pipeName) const;
+    uint32_t GetConfigStreamPropsSize(const std::string adapterName, const std::string &pipeName);
+    uint32_t GetDynamicStreamPropsSize(const std::string adapterName, const std::string &pipeName);
+
+    std::shared_ptr<PolicyAdapterInfo> GetAdapterInfo(AudioAdapterType adapterType);
+    void GetAudioAdapterInfos(std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> &adapterInfoMap);
+    void RegisterAdapter(std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr);
+    void UnregisterAdapter(AudioAdapterType type);
+    void RegisterStreamProperty(
+        AudioAdapterType adapterType, std::string pipeName, std::list<std::shared_ptr<PipeStreamPropInfo>> streamProps);
 
     std::weak_ptr<AdapterPipeInfo> pipeInfo_;
     std::list<std::string> supportDevices_ {};
@@ -246,6 +253,7 @@ private:
         std::unordered_map<std::string, std::shared_ptr<AdapterDeviceInfo>> &tmpDeviceInfoMap_);
 
     std::string version_ = STR_INITED;
+    std::mutex statusMutex_;
 };
 
 struct AudioSourceStrategyType {

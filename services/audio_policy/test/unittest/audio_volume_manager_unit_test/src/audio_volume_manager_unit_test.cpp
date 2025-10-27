@@ -294,7 +294,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_013, TestSize.Level1)
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
     audioVolumeManager.audioActiveDevice_.SetActiveBtDeviceMac(macAddress);
-    audioVolumeManager.SetAbsVolumeSceneAsync(macAddress, support);
+    audioVolumeManager.SetAbsVolumeSceneAsync(macAddress, support, 0);
     EXPECT_EQ(audioVolumeManager.audioActiveDevice_.GetActiveBtDeviceMac(), macAddress);
 }
 
@@ -457,7 +457,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_016, TestSize.Level1)
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
     audioVolumeManager.audioActiveDevice_.SetActiveBtDeviceMac(macAddress);
-    auto ret = audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support);
+    auto ret = audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support, 0);
     EXPECT_NE(ret, 0);
 }
 
@@ -1187,10 +1187,10 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_057, TestSize.Level1)
     bool support = true;
     std::string macAddress = "11:22:33:44:55:66";
     audioVolumeManager->audioActiveDevice_.activeBTDevice_ = "test";
-    audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support);
+    audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support, 0);
 
     audioVolumeManager->audioActiveDevice_.activeBTDevice_ = macAddress;
-    audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support);
+    audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support, 0);
     EXPECT_EQ(audioVolumeManager->audioActiveDevice_.GetActiveBtDeviceMac(), macAddress);
 }
 
@@ -1206,7 +1206,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_058, TestSize.Level1)
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
     audioVolumeManager.audioA2dpDevice_.connectedA2dpDeviceMap_.clear();
-    auto ret = audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support);
+    auto ret = audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support, 0);
     EXPECT_NE(ret, 0);
 }
 
@@ -1224,7 +1224,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_059, TestSize.Level1)
     A2dpDeviceConfigInfo a2dpDeviceConfigInfo;
     a2dpDeviceConfigInfo.absVolumeSupport = true;
     audioVolumeManager.audioA2dpDevice_.connectedA2dpDeviceMap_[macAddress] = a2dpDeviceConfigInfo;
-    auto ret = audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support);
+    auto ret = audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support, 0);
     EXPECT_EQ(ret, 0);
 }
 
@@ -1270,6 +1270,47 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_062, TestSize.Level1)
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     auto ret = audioVolumeManager.ResetRingerModeMute();
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManagerDegree_001
+* @tc.desc  : Test SetSystemVolumeDegree interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManagerDegree_001, TestSize.Level1)
+{
+    AudioVolumeManager &audioVolumeManager(AudioVolumeManager::GetInstance());
+    AudioStreamType streamType = STREAM_MUSIC;
+    int32_t volumeDegree = 44;
+    int32_t ret = audioVolumeManager.SetSystemVolumeDegreeToDb(streamType, volumeDegree, 0);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = audioVolumeManager.GetSystemVolumeDegree(STREAM_ALL);
+    EXPECT_EQ(ret, volumeDegree);
+
+    ret = audioVolumeManager.GetMinVolumeDegree(streamType, DEVICE_TYPE_NONE);
+    EXPECT_EQ(ret, 0);
+
+    ret = audioVolumeManager.GetMinVolumeDegree(STREAM_ALL, DEVICE_TYPE_NONE);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManagerDegree_002
+* @tc.desc  : Test SetSystemVolumeDegreeToDbInner interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManagerDegree_002, TestSize.Level1)
+{
+    AudioVolumeManager &audioVolumeManager(AudioVolumeManager::GetInstance());
+    int32_t invalidZone = 1;
+    AudioStreamType streamType = STREAM_MUSIC;
+    int32_t volumeDegree = 44;
+    int32_t ret = audioVolumeManager.SetSystemVolumeDegreeToDbInner(streamType, volumeDegree, invalidZone);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+
+    ret = audioVolumeManager.GetSystemVolumeDegree(streamType, invalidZone);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
 
 /**

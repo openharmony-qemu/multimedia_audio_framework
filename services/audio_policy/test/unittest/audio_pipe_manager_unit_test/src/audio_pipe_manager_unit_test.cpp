@@ -1226,7 +1226,12 @@ HWTEST_F(AudioPipeManagerUnitTest, AudioStreamDescriptor_GetNewDupDevicesTypeStr
     desc->newDupDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
 
     std::string out = desc->GetNewDupDevicesTypeString();
-    EXPECT_EQ(out, "SPEAKER");
+    EXPECT_EQ(out, "SPEAKER:");
+
+    desc->newDupDeviceDescs_.clear();
+
+    out = desc->GetNewDupDevicesTypeString();
+    EXPECT_EQ(out, "");
 }
 
 /**
@@ -1333,7 +1338,7 @@ HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_001, TestSize.Level1)
     audioPipeManager->AddAudioPipeInfo(pipe1);
 
     int ret = audioPipeManager->IsCaptureVoipCall();
-    
+
     EXPECT_EQ(ret, 0);
 }
 
@@ -1365,7 +1370,7 @@ HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_002, TestSize.Level1)
     audioPipeManager->AddAudioPipeInfo(pipe1);
 
     int ret = audioPipeManager->IsCaptureVoipCall();
-    
+
     EXPECT_EQ(ret, 1);
 }
 
@@ -1428,7 +1433,7 @@ HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_003, TestSize.Level1)
     audioPipeManager->AddAudioPipeInfo(pipe1);
 
     int ret = audioPipeManager->IsCaptureVoipCall();
-    
+
     EXPECT_EQ(ret, 2);
 }
 

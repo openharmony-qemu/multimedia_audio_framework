@@ -54,6 +54,22 @@ bool NapiAudioVolumeKeyEvent::GetVolumeTsfnFlag()
     return regVolumeTsfn_;
 }
 
+void NapiAudioVolumeKeyEvent::CreateVolumeDegreeTsfn(napi_env env)
+{
+    regVolumeDegreeTsfn_ = true;
+    napi_value cbName;
+    std::string callbackName = "volumePercentageChange";
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_add_env_cleanup_hook(env, Cleanup, this);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, this,
+        nullptr, nullptr, SafeJsCallbackVolumeEventWork, &amVolEntTsfn_);
+}
+
+bool NapiAudioVolumeKeyEvent::GetVolumeDegreeTsfnFlag()
+{
+    return regVolumeDegreeTsfn_;
+}
+
 napi_threadsafe_function NapiAudioVolumeKeyEvent::GetTsfn()
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -63,8 +79,8 @@ napi_threadsafe_function NapiAudioVolumeKeyEvent::GetTsfn()
 void NapiAudioVolumeKeyEvent::OnVolumeKeyEvent(VolumeEvent volumeEvent)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_PRERELEASE_LOGI("OnVolumeKeyEvent is called volumeType=%{public}d, volumeLevel=%{public}d,"
-        "isUpdateUi=%{public}d", volumeEvent.volumeType, volumeEvent.volume, volumeEvent.updateUi);
+    AUDIO_PRERELEASE_LOGI("vt=%{public}d, vl=%{public}d, updateUi=%{public}d", volumeEvent.volumeType,
+        volumeEvent.volume, volumeEvent.updateUi);
     CHECK_AND_RETURN_LOG(audioVolumeKeyEventJsCallback_ != nullptr,
         "NapiAudioVolumeKeyEvent:No JS callback registered return");
     std::unique_ptr<AudioVolumeKeyEventJsCallback> cb = std::make_unique<AudioVolumeKeyEventJsCallback>();
@@ -73,6 +89,27 @@ void NapiAudioVolumeKeyEvent::OnVolumeKeyEvent(VolumeEvent volumeEvent)
     cb->callbackName = VOLUME_KEY_EVENT_CALLBACK_NAME;
     cb->volumeEvent.volumeType = volumeEvent.volumeType;
     cb->volumeEvent.volume = volumeEvent.volume;
+    cb->volumeEvent.updateUi = volumeEvent.updateUi;
+    cb->volumeEvent.volumeGroupId = volumeEvent.volumeGroupId;
+    cb->volumeEvent.networkId = volumeEvent.networkId;
+
+    return OnJsCallbackVolumeEvent(cb);
+}
+
+void NapiAudioVolumeKeyEvent::OnVolumeDegreeEvent(VolumeEvent volumeEvent)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    AUDIO_PRERELEASE_LOGI("OnVolumeDegreeEvent is called volumeType=%{public}d, volumeDegree=%{public}d,"
+        "isUpdateUi=%{public}d", volumeEvent.volumeType, volumeEvent.volumeDegree, volumeEvent.updateUi);
+    CHECK_AND_RETURN_LOG(audioVolumeKeyEventJsCallback_ != nullptr,
+        "NapiAudioVolumeDegreeEvent:No JS callback registered return");
+    std::unique_ptr<AudioVolumeKeyEventJsCallback> cb = std::make_unique<AudioVolumeKeyEventJsCallback>();
+    CHECK_AND_RETURN_LOG(cb != nullptr, "No memory");
+    cb->callback = audioVolumeKeyEventJsCallback_;
+    cb->callbackName = VOLUME_DEGREE_CHANGE_EVENT_CALLBACK_NAME;
+    cb->volumeEvent.volumeType = volumeEvent.volumeType;
+    cb->volumeEvent.volume = volumeEvent.volume;
+    cb->volumeEvent.volumeDegree = volumeEvent.volumeDegree;
     cb->volumeEvent.updateUi = volumeEvent.updateUi;
     cb->volumeEvent.volumeGroupId = volumeEvent.volumeGroupId;
     cb->volumeEvent.networkId = volumeEvent.networkId;
@@ -90,7 +127,8 @@ void NapiAudioVolumeKeyEvent::SaveCallbackReference(const std::string &callbackN
         "NapiAudioVolumeKeyEvent: creating reference for callback fail");
     callback_ = callback;
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
-    if (callbackName == VOLUME_KEY_EVENT_CALLBACK_NAME) {
+    if (callbackName == VOLUME_KEY_EVENT_CALLBACK_NAME ||
+        callbackName == VOLUME_DEGREE_CHANGE_EVENT_CALLBACK_NAME) {
         audioVolumeKeyEventJsCallback_ = cb;
     } else {
         AUDIO_ERR_LOG("NapiAudioVolumeKeyEvent: Unknown callback type: %{public}s", callbackName.c_str());

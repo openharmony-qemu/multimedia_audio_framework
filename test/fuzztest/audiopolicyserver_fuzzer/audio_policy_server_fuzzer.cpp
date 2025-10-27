@@ -652,9 +652,10 @@ void AudioPolicyServerSetSingleStreamVolumeFuzztest()
     bool isUpdateUi = GetData<bool>();
     bool mute = GetData<bool>();
     int32_t zoneId = GetData<int32_t>();
-    audioPolicyServer->SetSingleStreamVolume(AudioStreamType::STREAM_RING, volumeLevel, isUpdateUi, mute, zoneId);
+    VolumeUpdateOption option{isUpdateUi, mute, zoneId};
+    audioPolicyServer->SetSingleStreamVolume(AudioStreamType::STREAM_RING, volumeLevel, option);
     audioPolicyServer->SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_ASSISTANT, volumeLevel,
-        isUpdateUi, mute, zoneId);
+        option);
 }
 
 void AudioPolicyServerSetSingleStreamVolumeWithDeviceFuzztest()
@@ -894,7 +895,7 @@ void AudioPolicyServerSetDeviceAbsVolumeSupportedFuzzTest()
 
     std::string macAddress = "test_mac";
     bool support = GetData<bool>();
-    audioPolicyServer->SetDeviceAbsVolumeSupported(macAddress, support);
+    audioPolicyServer->SetDeviceAbsVolumeSupported(macAddress, support, 0);
 }
 
 void AudioPolicyServerIsAbsVolumeSceneFuzzTest()
@@ -1410,23 +1411,6 @@ void AudioPolicyServerRegisterSpatializationStateEventListenerFuzzTest()
     server->UnregisterSpatializationStateEventListener(sessionID);
 }
 
-void AudioPolicyServerAudioInterruptZoneFuzzTest()
-{
-    std::set<int32_t> pids;
-    int32_t zoneID = GetData<int32_t>();
-    int32_t count = DEVICE_COUNT;
-    for (int32_t i = 0; i < count; ++i) {
-        pids.insert(GetData<int32_t>());
-    }
-
-    auto server = GetServerPtr();
-    CHECK_AND_RETURN(server != nullptr);
-    server->CreateAudioInterruptZone(pids, zoneID);
-    server->AddAudioInterruptZonePids(pids, zoneID);
-    server->RemoveAudioInterruptZonePids(pids, zoneID);
-    server->ReleaseAudioInterruptZone(zoneID);
-}
-
 void AudioPolicyServerRegisterAudioZoneClientFuzzTest()
 {
     auto server = GetServerPtr();
@@ -1664,7 +1648,7 @@ void AudioPolicyServerNotifyAccountsChangedFuzzTest()
     const int32_t id = GetData<int32_t>();
     auto server = GetServerPtr();
     CHECK_AND_RETURN(server != nullptr);
-    server->NotifyAccountsChanged(id);
+    server->NotifyAccountsChanged(id, 1);
 }
 
 void AudioPolicyServerCheckHibernateStateFuzzTest()
@@ -2203,7 +2187,6 @@ TestFuncs g_testFuncs[] = {
     RegisterAppStateListenerFuzzTest,
     RegisterAndUnRegisterSyncHibernateListenerFuzzTest,
     AudioPolicyServerRegisterSpatializationStateEventListenerFuzzTest,
-    AudioPolicyServerAudioInterruptZoneFuzzTest,
     AudioPolicyServerRegisterAudioZoneClientFuzzTest,
     AudioPolicyServerAudioZoneQueryFuzzTest,
     AudioPolicyServerBindUnbindDeviceToAudioZoneFuzzTest,

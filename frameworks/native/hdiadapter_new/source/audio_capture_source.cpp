@@ -1035,7 +1035,7 @@ int32_t AudioCaptureSource::CreateCapture(void)
     InitAudioSampleAttr(param);
     InitDeviceDesc(deviceDesc);
 
-    HILOG_COMM_INFO("create capture, halName: %{public}s, hdiSourceType: %{public}d, rate: %{public}u, "
+    HILOG_COMM_INFO("halName: %{public}s, hdiSourceType: %{public}d, rate: %{public}u, "
         "channel: %{public}u, format: %{public}u, devicePin: %{public}u, desc: %{public}s", halName_.c_str(),
         param.sourceType, param.sampleRate, param.channelCount, param.format, deviceDesc.pins, deviceDesc.desc);
     if (attr_.hasEcConfig || attr_.sourceType == SOURCE_TYPE_EC) {

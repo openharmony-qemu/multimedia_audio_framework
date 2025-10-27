@@ -43,7 +43,7 @@ int32_t AudioSuiteProcessNode::DoProcess()
     }
     AudioSuitePcmBuffer* tempOut = nullptr;
     std::vector<AudioSuitePcmBuffer*>& preOutputs = ReadProcessNodePreOutputData();
-    if ((GetNodeBypassStatus() == true) && !preOutputs.empty()) {
+    if ((GetNodeBypassStatus() == false) && !preOutputs.empty()) {
         AUDIO_DEBUG_LOG("node type = %{public}d need do SignalProcess.", GetNodeType());
         tempOut = SignalProcess(preOutputs);
         if (tempOut == nullptr) {

@@ -66,6 +66,13 @@ class AudioPolicyServerHandler;
 class AudioSessionService;
 class BluetoothEventSubscriber;
 
+struct VolumeUpdateOption {
+    bool isUpdateUi = false;
+    bool mute = false;
+    int32_t zoneId = 0;
+    bool syncDegree = true;
+};
+
 class AudioPolicyServer : public SystemAbility,
                           public AudioPolicyStub,
                           public AudioStreamRemovedCallback {
@@ -402,7 +409,8 @@ public:
 
     int32_t GetAvailableMicrophones(std::vector<sptr<MicrophoneDescriptor>> &retMicList) override;
 
-    int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support) override;
+    int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support,
+        const int32_t volume = 0) override;
 
     int32_t IsAbsVolumeScene(bool &ret) override;
 
@@ -464,14 +472,6 @@ public:
     int32_t UnregisterSpatializationStateEventListener(uint32_t sessionID) override;
 
     int32_t RegisterPolicyCallbackClient(const sptr<IRemoteObject> &object, int32_t zoneId) override;
-
-    int32_t CreateAudioInterruptZone(const std::set<int32_t> &pids, int32_t zoneId) override;
-
-    int32_t AddAudioInterruptZonePids(const std::set<int32_t> &pids, int32_t zoneId) override;
-
-    int32_t RemoveAudioInterruptZonePids(const std::set<int32_t> &pids, int32_t zoneId) override;
-
-    int32_t ReleaseAudioInterruptZone(int32_t zoneId) override;
 
     int32_t RegisterAudioZoneClient(const sptr<IRemoteObject> &object) override;
 
@@ -680,7 +680,7 @@ public:
 
     int32_t SetHighResolutionExist(bool highResExist) override;
 
-    void NotifyAccountsChanged(const int &id);
+    void NotifyAccountsChanged(const int &id, const int &oldId);
     void SendVolumeKeyEventToRssWhenAccountsChanged();
 
     // for hidump
@@ -711,6 +711,9 @@ public:
     int32_t CallRingtoneLibrary();
     int32_t ReloadLoudVolumeMode(const int32_t streamInFocus, const int32_t setVolMode, bool &ret) override;
     bool CheckLoudVolumeMode(bool mute, int32_t volumeLevel, AudioStreamType streamType);
+    int32_t SetSystemVolumeDegree(int32_t streamType, int32_t volumeDegree, int32_t volumeFlag, int32_t uid) override;
+    int32_t GetSystemVolumeDegree(int32_t streamType, int32_t uid, int32_t &volumeDegree) override;
+    int32_t GetMinVolumeDegree(int32_t volumeType, int32_t deviceType, int32_t &volumeDegree) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
     void RegisterParamCallback();
@@ -758,14 +761,13 @@ private:
     // for audio volume and mute status
     int32_t SetRingerModeInternal(AudioRingerMode inputRingerMode, bool hasUpdatedVolume = false);
     int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel,
-        bool isUpdateUi, int32_t zoneId = 0);
+        bool isUpdateUi, int32_t zoneId = 0, bool syncDegree = true);
     int32_t SetAppVolumeLevelInternal(int32_t appUid, int32_t volumeLevel, bool isUpdateUi);
     int32_t SetAppVolumeMutedInternal(int32_t appUid, bool muted, bool isUpdateUi);
     int32_t SetAppRingMutedInternal(int32_t appUid, bool muted);
     int32_t SetSystemVolumeLevelWithDeviceInternal(AudioStreamType streamType, int32_t volumeLevel,
         bool isUpdateUi, DeviceType deviceType);
-    int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi,
-        bool mute, int32_t zoneId = 0);
+    int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, const VolumeUpdateOption &option);
     int32_t SetAppSingleStreamVolume(int32_t streamType, int32_t volumeLevel, bool isUpdateUi);
     int32_t SetSingleStreamVolumeWithDevice(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi,
         DeviceType deviceType);
@@ -847,6 +849,7 @@ private:
     void UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID);
     void ChangeVolumeOnVoiceAssistant(AudioStreamType &streamInFocus);
     AudioStreamType GetCurrentStreamInFocus(int32_t zoneId = 0);
+    int32_t GetSystemVolumeDegreeInternal(AudioStreamType streamType, int32_t zoneId = 0);
 
     AudioEffectService &audioEffectService_;
     AudioAffinityManager &audioAffinityManager_;
@@ -928,6 +931,7 @@ private:
     bool isAlreadyRegisterCommonEventListener_ = false;
     std::mutex distributeDeviceMutex_;
     std::condition_variable distributeDeviceCond_;
+    int32_t newUserId_;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {
@@ -951,7 +955,7 @@ public:
         CHECK_AND_RETURN_LOG(oldId >= LOCAL_USER_ID, "invalid id");
         AUDIO_INFO_LOG("OnAccountsSwitch received, newid: %{public}d, oldid: %{public}d", newId, oldId);
         if (audioPolicyServer_ != nullptr) {
-            audioPolicyServer_->NotifyAccountsChanged(newId);
+            audioPolicyServer_->NotifyAccountsChanged(newId, oldId);
         }
     }
 private:

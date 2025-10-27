@@ -66,7 +66,7 @@ public:
     int32_t UnsetOffloadMode() override;
     int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) override;
-    int32_t OffloadSetVolume(float volume) override;
+    int32_t OffloadSetVolume() override;
     int32_t SetOffloadDataCallbackState(int32_t state) override;
     size_t GetWritableSize() override;
     int32_t UpdateMaxLength(uint32_t maxLength) override;
@@ -119,12 +119,13 @@ private:
 
     // latency position timeStamp
     std::shared_mutex latencyMutex_; // lock for variables related to position, latency, timestamp
-    std::atomic<uint64_t> framePosition_ = 0;
+    uint64_t framePosition_ = 0;
     uint64_t lastFramePosition_ = 0;
     uint64_t lastHdiFramePosition_ = 0;
     std::vector<uint64_t> timestamp_ = {Timestamp::Timestampbase::BASESIZE, 0};
     uint64_t latency_ = 0;
     uint64_t framesWritten_ = 0;
+    std::atomic<uint64_t> lastPrintTimestamp_ = 0;
 
     std::string deviceClass_;
     std::string deviceNetId_;

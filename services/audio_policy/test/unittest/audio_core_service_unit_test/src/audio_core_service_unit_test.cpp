@@ -141,6 +141,31 @@ HWTEST_F(AudioCoreServiceUnitTest, CreateRenderClient_002, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioCoreService.
+* @tc.number: CreateRenderClient_003
+* @tc.desc  : Test CreateRenderClient - Create stream with (S32 96k STEREO) will be successful.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, CreateRenderClient_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.toneFlag = false;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
+    uint32_t originalSessionId = 0;
+    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    std::string networkId = LOCAL_NETWORK_ID;
+    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+
+    streamDesc->rendererInfo_.toneFlag = false;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_CALL_ASSISTANT;
+    result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+
+    streamDesc->rendererInfo_.toneFlag = true;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
+    result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
 * @tc.number: CreateCapturerClient_001
 * @tc.desc  : Test CreateCapturerClient - Create stream with (S32 48k STEREO) will be successful..
 */
@@ -247,6 +272,57 @@ HWTEST_F(AudioCoreServiceUnitTest, SetPreferredInputDeviceIfValid_002, TestSize.
     streamDesc->preferredInputDevice.deviceType_ = DEVICE_TYPE_BT_SPP;
     streamDesc->sessionId_ = 1;
     streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_INVALID;
+
+    AudioCoreService audioCoreService;
+
+    EXPECT_NO_THROW(audioCoreService.SetPreferredInputDeviceIfValid(streamDesc));
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: SetPreferredInputDeviceIfValid_003
+* @tc.desc  : Test CreateCapturerClient - Create stream with (S32 48k STEREO) will be successful..
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetPreferredInputDeviceIfValid_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->preferredInputDevice.deviceType_ = DEVICE_TYPE_INVALID;
+    streamDesc->sessionId_ = 1;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_INVALID;
+
+    AudioCoreService audioCoreService;
+
+    EXPECT_NO_THROW(audioCoreService.SetPreferredInputDeviceIfValid(streamDesc));
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: SetPreferredInputDeviceIfValid_004
+* @tc.desc  : Test CreateCapturerClient - Create stream with (S32 48k STEREO) will be successful..
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetPreferredInputDeviceIfValid_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->preferredInputDevice.deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->sessionId_ = 1;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+
+    AudioCoreService audioCoreService;
+
+    EXPECT_NO_THROW(audioCoreService.SetPreferredInputDeviceIfValid(streamDesc));
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: SetPreferredInputDeviceIfValid_005
+* @tc.desc  : Test CreateCapturerClient - Create stream with (S32 48k STEREO) will be successful..
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetPreferredInputDeviceIfValid_005, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->preferredInputDevice.deviceType_ = DEVICE_TYPE_BT_SPP;
+    streamDesc->sessionId_ = 1;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
 
     AudioCoreService audioCoreService;
 
@@ -1018,6 +1094,60 @@ HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportMultiChannel_002, TestSize.Lev
     streamDesc->newDeviceDescs_.push_back(deviceDesc);
     streamDesc->streamInfo_.channels = STEREO;
     EXPECT_EQ(GetServerPtr()->coreService_->IsStreamSupportMultiChannel(streamDesc), false);
+}
+
+/**
+ * @tc.name: IsForcedNormal_001
+ * @tc.number: IsForcedNormal_001
+ * @tc.desc: Test IsForcedNormal interface - conditions that should return true and set audioFlag to NORMAL.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, IsForcedNormal_001, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, GetServerPtr());
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    
+    streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
+    bool result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
+    EXPECT_EQ(result, true);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+    
+    streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_FORCED_NORMAL;
+    result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
+    EXPECT_EQ(result, true);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+    
+    streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_NONE;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
+    streamDesc->appInfo_.appUid = 666;
+    result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
+    EXPECT_EQ(result, true);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+}
+
+/**
+ * @tc.name: IsForcedNormal_002
+ * @tc.number: IsForcedNormal_002
+ * @tc.desc: Test IsForcedNormal interface - conditions that should return false.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, IsForcedNormal_002, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, GetServerPtr());
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
+    streamDesc->appInfo_.appUid = 777;
+    bool result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
+    EXPECT_EQ(result, false);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+    
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+    streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_NONE;
+    streamDesc->appInfo_.appUid = 888;
+    result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
+    EXPECT_EQ(result, false);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
 }
 
 /**

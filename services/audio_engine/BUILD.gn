@@ -26,7 +26,7 @@ ohos_shared_library("audio_engine_utils") {
   sources = [
     "buffer/hpae_pcm_buffer.cpp",
     "buffer/hpae_pcm_process.cpp",
-    "dfx/hpae_dfx_tree.cpp",
+    "dfx/hpae_dfx_map_tree.cpp",
     "simd/simd_utils.cpp",
     "utils/hpae_format_convert.cpp",
     "utils/hpae_no_lock_queue.cpp",

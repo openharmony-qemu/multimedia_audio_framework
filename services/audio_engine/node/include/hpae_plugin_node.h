@@ -31,6 +31,8 @@ public:
     
     std::shared_ptr<HpaeNode> GetSharedInstance() override;
     OutputPort<HpaePcmBuffer*>* GetOutputPort() override;
+    std::shared_ptr<HpaeNode> GetSharedInstance(HpaeNodeInfo &nodeInfo) override;
+    OutputPort<HpaePcmBuffer *> *GetOutputPort(HpaeNodeInfo &nodeInfo, bool isDisConnect = false) override;
     void Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode) override;
     void DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode) override;
     virtual size_t GetPreOutNum();

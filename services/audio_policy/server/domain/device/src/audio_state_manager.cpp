@@ -275,7 +275,6 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioStateManager::GetExcludedDevices(
         }
     } else if (usage == CALL_OUTPUT_DEVICES) {
         shared_lock<shared_mutex> lock(callExcludedDevicesMutex_);
-        vector<shared_ptr<AudioDeviceDescriptor>> devices;
         for (const auto &desc : callExcludedDevices_) {
             devices.push_back(make_shared<AudioDeviceDescriptor>(*desc));
         }
@@ -331,7 +330,7 @@ int32_t AudioStateManager::CheckVKBInfo(const std::string &bundleName, bool &isV
     if (audioVKBInfoMgrCallback_ != nullptr) {
         audioVKBInfoMgrCallback_->OnCheckVKBInfo(bundleName, isValid);
     }
-    AUDIO_INFO_LOG("VKB isVKB:%{public}s", isValid ? "T" : "F");
+    AUDIO_INFO_LOG("isVKB:%{public}s", isValid ? "T" : "F");
     return 0;
 }
 

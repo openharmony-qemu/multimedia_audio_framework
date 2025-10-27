@@ -646,8 +646,7 @@ void ProRendererOffloadSetVolumeFuzzTest()
 {
     AudioProcessConfig config = InitProcessConfig();
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
-    float volume = g_fuzzUtils.GetData<float>();
-    rendererStream->OffloadSetVolume(volume);
+    rendererStream->OffloadSetVolume();
 }
 
 void ProRendererSetOffloadDataCallbackStateFuzzTest()

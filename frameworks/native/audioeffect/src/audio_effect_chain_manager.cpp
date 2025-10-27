@@ -350,7 +350,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(std::string &sceneTy
             "null AudioEffectLibEntry");
         int32_t ret = effectToLibraryEntryMap_[effect]->audioEffectLibHandle->createEffect(descriptor, &handle);
         CHECK_AND_CONTINUE_LOG(ret == 0, "EffectToLibraryEntryMap[%{public}s] createEffect fail", effect.c_str());
-
+        CHECK_AND_CONTINUE_LOG(handle != nullptr, "handle is null");
         AUDIO_INFO_LOG("createEffect, EffectToLibraryEntryMap [%{public}s], effectChainKey [%{public}s]",
             effect.c_str(), effectChainKey.c_str());
         AudioEffectScene currSceneType;
@@ -1753,7 +1753,7 @@ bool AudioEffectChainManager::ExistAudioEffectChainInner(const std::string &scen
     }
     initializedLogFlag_ = true;
     CHECK_AND_RETURN_RET(sceneType != "", false);
-    CHECK_AND_RETURN_RET_LOG(GetDeviceTypeName() != "", false, "null deviceType");
+    CHECK_AND_RETURN_RET(GetDeviceTypeName() != "", false);
 
     if ((deviceType_ == DEVICE_TYPE_SPEAKER) && (spkOffloadEnabled_)) {
         return false;

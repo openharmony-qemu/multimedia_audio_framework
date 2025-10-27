@@ -733,6 +733,26 @@ public:
         const std::shared_ptr<VolumeKeyEventCallback> &callback = nullptr);
 
     /**
+     * @brief registers the volume degree callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 8
+     */
+    int32_t RegisterVolumeDegreeCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v = API_11);
+
+    /**
+     * @brief Unregisters the volumeKeyEvent callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 8
+     */
+    int32_t UnregisterVolumeDegreeCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeKeyEventCallback> &callback = nullptr);
+
+    /**
      * @brief registers the systemVolumeChange callback listener
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
@@ -1052,7 +1072,7 @@ public:
      * @return Returns success or not
      * @since 11
      */
-    int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support);
+    int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support, int32_t volume = 0);
 
     /**
      * @brief Set the absolute volume value for the specified Bluetooth device
@@ -1497,6 +1517,34 @@ public:
     * @test
     */
     void CleanUpResource();
+
+    /**
+     * @brief set stream volume degree.
+     *
+     * @param volumeType Audio stream type.
+     * @param degree volume degree. It must be an integer with the range [0, 100].
+     * @return Returns {@link SUCCESS} if the operation is successfully.
+     * @since 21
+     */
+    int32_t SetVolumeDegree(AudioVolumeType volumeType, int32_t degree, int32_t uid = 0);
+
+    /**
+     * @brief get stream volume degree.
+     *
+     * @param volumeType Audio stream type.
+     * @return Returns the volume degree for the specified Audio stream type.
+     * @since 21
+     */
+    int32_t GetVolumeDegree(AudioVolumeType volumeType, int32_t uid = 0);
+
+    /**
+     * @brief get stream min volume degree.
+     *
+     * @param volumeType Audio stream type.
+     * @return Returns the minimum volume degree for the specified Audio stream type.
+     * @since 21
+     */
+    int32_t GetMinVolumeDegree(AudioVolumeType volumeType);
 
     class WorkgroupPrioRecorder {
     public:

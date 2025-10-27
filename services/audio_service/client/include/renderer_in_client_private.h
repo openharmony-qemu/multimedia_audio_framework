@@ -257,7 +257,6 @@ private:
     bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize);
     void DfxWriteInterval();
     void HandleStatusChangeOperation(Operation operation);
-    void UpdateDataLinkState(bool isConnected, bool needNotify);
 
     int32_t RegisterSpatializationStateEventListener();
 
@@ -370,8 +369,6 @@ private:
     // for status operation wait and notify
     std::mutex callServerMutex_;
     std::condition_variable callServerCV_;
-    std::mutex dataConnectionMutex_;
-    std::condition_variable dataConnectionCV_;
 
     Operation notifiedOperation_ = MAX_OPERATION_CODE;
     int64_t notifiedResult_ = 0;
@@ -462,6 +459,7 @@ private:
             : unprocessedFramesBytes_(unprocessed), totalBytesWrittenAfterFlush_(written), perPeriodFrame_(frame) {}
     };
     std::atomic<AudioWriteState> audioWriteState_;
+    std::atomic<uint64_t> lastPrintTimestamp_ = 0;
 
     std::string traceTag_;
     std::string spatializationEnabled_ = "Invalid";
@@ -477,7 +475,6 @@ private:
 
     uint64_t lastFlushReadIndex_ = 0;
     uint64_t lastSpeedFlushReadIndex_ = 0;
-    bool isDataLinkConnected_ = false;
 
     enum {
         STATE_CHANGE_EVENT = 0,

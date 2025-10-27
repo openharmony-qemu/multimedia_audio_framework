@@ -522,7 +522,6 @@ void AudioCoreService::HandleAudioCaptureState(AudioMode &mode, AudioStreamChang
         auto sessionId = streamChangeInfo.audioCapturerChangeInfo.sessionId;
         if (Util::IsScoSupportSource(sourceType)) {
             Bluetooth::AudioHfpManager::HandleScoWithRecongnition(false);
-            AudioServerProxy::GetInstance().SetDmDeviceTypeProxy(0, DEVICE_TYPE_NEARLINK_IN);
         } else {
             AUDIO_INFO_LOG("close capture app, try to disconnect sco");
             bool isRecord = streamCollector_.HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
@@ -1620,7 +1619,6 @@ void AudioCoreService::UpdateDupDeviceOutputRoute(std::shared_ptr<AudioStreamDes
     if (streamDesc->newDupDeviceDescs_.size() != 0) {
         std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkName(
             streamDesc->newDupDeviceDescs_.front(), streamDesc->sessionId_);
-        UpdateDualToneState(false, streamDesc->sessionId_);
         UpdateDualToneState(true, streamDesc->sessionId_, sinkName);
         shouldUpdateDeviceDueToDualTone_ = true;
     } else if (streamDesc->oldDupDeviceDescs_.size() != 0) {
@@ -2241,12 +2239,12 @@ int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream(const AudioStream
     audioActiveDevice_.SetCurrentOutputDevice(*descs.front());
     AUDIO_DEBUG_LOG("currentActiveDevice %{public}d", audioActiveDevice_.GetCurrentOutputDeviceType());
     audioVolumeManager_.SetVolumeForSwitchDevice(*descs.front());
-    if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        SwitchActiveA2dpDevice(std::make_shared<AudioDeviceDescriptor>(*descs.front()));
-    }
-    if (descs.front()->deviceType_ == DEVICE_TYPE_HEARING_AID) {
-        SwitchActiveHearingAidDevice(std::make_shared<AudioDeviceDescriptor>(*descs.front()));
-    }
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->newDeviceDescs_ = descs;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+    ActivateOutputDevice(streamDesc, reason);
+
     if (audioSceneManager_.GetAudioScene(true) != AUDIO_SCENE_DEFAULT) {
         audioActiveDevice_.UpdateActiveDeviceRoute(descs.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG,
             descs.front()->deviceName_, descs.front()->networkId_);
@@ -2608,6 +2606,10 @@ void AudioCoreService::CheckAndSleepBeforeRingDualDeviceSet(std::shared_ptr<Audi
     if (streamDesc->streamStatus_ == STREAM_STATUS_NEW && reason.IsSetAudioScene() &&
         streamDesc->newDeviceDescs_.size() > 1 && streamCollector_.IsMediaPlaying() &&
         IsRingerOrAlarmerDualDevicesRange(deviceType) && isRingOrAlarmStream) {
+        vector<std::int32_t> sessionIdList = streamCollector_.GetPlayingMediaSessionIdList();
+        for (const auto &sessionId : sessionIdList) {
+            AudioVolume::GetInstance()->SetStreamVolumeMute(sessionId, true);
+        }
         usleep(MEDIA_PAUSE_TO_DOUBLE_RING_DELAY_US);
     }
 }
@@ -2867,13 +2869,12 @@ void AudioCoreService::UpdateStreamDevicesForStart(
     streamUsage = audioSessionService_.GetAudioSessionStreamUsage(GetRealPid(streamDesc));
     streamUsage = (streamUsage != StreamUsage::STREAM_USAGE_INVALID) ? streamUsage :
     streamDesc->rendererInfo_.streamUsage;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
-    if (VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_) {
-        devices.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
-    } else {
-        devices = audioRouterCenter_.FetchOutputDevices(streamUsage, GetRealUid(streamDesc),
-            caller, RouterType::ROUTER_TYPE_NONE, streamDesc->GetRenderPrivacyType());
-    }
+    bool isInject = streamDesc->rendererTarget_ == INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
+    auto devices = ((VolumeUtils::IsPCVolumeEnable() && !isFirstScreenOn_) || isInject) ?
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> {
+        AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice()
+        } : audioRouterCenter_.FetchOutputDevices(streamUsage, GetRealUid(streamDesc),
+        caller, RouterType::ROUTER_TYPE_NONE);
     CHECK_AND_RETURN_LOG(devices.size() > 0 && devices[0] != nullptr, "failed to get devices!");
     AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(devices[0]->deviceType_);
 
@@ -3021,14 +3022,12 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
 
     std::variant<StreamUsage, SourceType> audioStreamConfig;
     bool isRunning = streamDesc->streamStatus_ == STREAM_STATUS_STARTED;
-    bool isRecognitionSource = false;
     bool isVoiceType = true;
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         audioStreamConfig = streamDesc->rendererInfo_.streamUsage;
         isVoiceType = IsVoiceStreamType(streamDesc->rendererInfo_.streamUsage);
     } else {
         audioStreamConfig = streamDesc->capturerInfo_.sourceType;
-        isRecognitionSource = Util::IsScoSupportSource(streamDesc->capturerInfo_.sourceType);
         isVoiceType = IsVoiceSourceType(streamDesc->capturerInfo_.sourceType);
     }
     if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK || deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK_IN) {
@@ -3038,9 +3037,6 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
             CHECK_AND_RETURN_RET_LOG(isRunning, ret, "Stream is not runningf, no needs start playing");
             return sleAudioDeviceManager_.StartPlaying(*deviceDesc, config, isGameApp);
         };
-        if (isRecognitionSource) {
-            AudioServerProxy::GetInstance().SetDmDeviceTypeProxy(DM_DEVICE_TYPE_NEARLINK_SCO, DEVICE_TYPE_NEARLINK_IN);
-        }
 
         ResetNearlinkDeviceState(deviceDesc, isRunning);
 

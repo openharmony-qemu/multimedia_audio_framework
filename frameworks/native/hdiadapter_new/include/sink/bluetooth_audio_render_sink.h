@@ -149,7 +149,7 @@ private:
     bool validState_ = true;
     float leftVolume_ = DEFAULT_VOLUME_LEVEL;
     float rightVolume_ = DEFAULT_VOLUME_LEVEL;
-    uint32_t hdiRenderId_ = 0;
+    uint32_t hdiRenderId_ = HDI_INVALID_ID;
     BtAudioRender *audioRender_ = nullptr;
     bool audioMonoState_ = false;
     bool audioBalanceState_ = false;

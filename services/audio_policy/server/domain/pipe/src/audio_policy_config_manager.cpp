@@ -177,7 +177,9 @@ void AudioPolicyConfigManager::OnUpdateEac3Support(bool isSupported)
 
 void AudioPolicyConfigManager::OnHasEarpiece()
 {
-    for (const auto &adapterInfo : audioPolicyConfig_.adapterInfoMap) {
+    std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> adapterInfoMap;
+    audioPolicyConfig_.GetAudioAdapterInfos(adapterInfoMap);
+    for (const auto &adapterInfo : adapterInfoMap) {
         hasEarpiece_ = std::any_of(adapterInfo.second->deviceInfos.begin(), adapterInfo.second->deviceInfos.end(),
             [](const auto& deviceInfo) {
                 return deviceInfo->type_ == DEVICE_TYPE_EARPIECE;
@@ -376,7 +378,7 @@ uint32_t AudioPolicyConfigManager::GetSinkLatencyFromXml() const
 void AudioPolicyConfigManager::GetAudioAdapterInfos(
     std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> &adapterInfoMap)
 {
-    adapterInfoMap = audioPolicyConfig_.adapterInfoMap;
+    audioPolicyConfig_.GetAudioAdapterInfos(adapterInfoMap);
 }
 
 void AudioPolicyConfigManager::GetVolumeGroupData(std::unordered_map<std::string, std::string>& volumeGroupData)
@@ -411,8 +413,10 @@ bool AudioPolicyConfigManager::GetAdapterInfoFlag()
 
 bool AudioPolicyConfigManager::GetAdapterInfoByType(AudioAdapterType type, std::shared_ptr<PolicyAdapterInfo> &info)
 {
-    auto it = audioPolicyConfig_.adapterInfoMap.find(type);
-    if (it == audioPolicyConfig_.adapterInfoMap.end()) {
+    std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> adapterInfoMap;
+    audioPolicyConfig_.GetAudioAdapterInfos(adapterInfoMap);
+    auto it = adapterInfoMap.find(type);
+    if (it == adapterInfoMap.end()) {
         AUDIO_ERR_LOG("can not find adapter info");
         return false;
     }

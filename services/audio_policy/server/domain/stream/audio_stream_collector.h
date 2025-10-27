@@ -89,6 +89,7 @@ public:
     StreamUsage GetLastestRunningCallStreamUsage();
     std::vector<uint32_t> GetAllRendererSessionIDForUID(int32_t uid);
     std::vector<uint32_t> GetAllCapturerSessionIDForUID(int32_t uid);
+    std::vector<int32_t> GetPlayingMediaSessionIdList();
     int32_t ResumeStreamState();
     bool HasVoipRendererStream(bool isFirstCreate = true);
     bool ChangeVoipCapturerStreamToNormal();

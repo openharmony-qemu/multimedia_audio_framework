@@ -54,7 +54,6 @@ static const int32_t MEDIA_SERVICE_UID = 1013;
 static const int32_t RENDERER_STREAM_CNT_PER_UID_LIMIT = 40;
 static const int32_t INVALID_APP_UID = -1;
 static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = 0;
-static const uint32_t BACKGROUND_CAPTURE_INTERRUPT_TIMEOUT_SEC = 2; //2s
 namespace {
 static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
     SOURCE_TYPE_PLAYBACK_CAPTURE,
@@ -351,188 +350,6 @@ bool AudioService::InForegroundList(uint32_t uid)
     return false;
 }
 
-void AudioService::SendInterruptEventToAudioService(uint32_t sessionId,
-    InterruptEventInternal interruptEvent)
-{
-    interruptEvent.eventTimestamp = ClockTime::GetCurNano();
-    AUDIO_INFO_LOG("Recive InterruptEvent:[%{public}d] from InterruptService", interruptEvent.hintType);
-    if (interruptEvent.hintType == INTERRUPT_HINT_RESUME) {
-        UpdateResumeInterruptEventMap(sessionId, interruptEvent);
-    }
-    if (interruptEvent.hintType == INTERRUPT_HINT_PAUSE) {
-        UpdatePauseInterruptEventMap(sessionId, interruptEvent);
-    }
-}
-
-bool AudioService::UpdateResumeInterruptEventMap(const uint32_t sessionId,
-    InterruptEventInternal interruptEvent)
-{
-    std::lock_guard<std::mutex> lock(resumeInterruptEventMutex_);
-    auto iter = resumeInterruptEventMap_.find(sessionId);
-    if (iter == resumeInterruptEventMap_.end()) {
-        resumeInterruptEventMap_[sessionId] = interruptEvent;
-    } else {
-        iter->second = interruptEvent;
-    }
-    return true;
-}
-
-bool AudioService::RemoveResumeInterruptEventMap(const uint32_t sessionId)
-{
-    std::lock_guard<std::mutex> lock(resumeInterruptEventMutex_);
-    auto iter = resumeInterruptEventMap_.find(sessionId);
-    if (iter == resumeInterruptEventMap_.end()) {
-        return false;
-    }
-    resumeInterruptEventMap_.erase(sessionId);
-    return true;
-}
-
-bool AudioService::IsStreamInterruptResume(const uint32_t sessionId)
-{
-    InterruptEventInternal interruptEvent;
-    std::lock_guard<std::mutex> lock(resumeInterruptEventMutex_);
-    auto iter = resumeInterruptEventMap_.find(sessionId);
-    if (iter == resumeInterruptEventMap_.end()) {
-        return false;
-    }
-    int64_t stamp = iter->second.eventTimestamp;
-    stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_NS_PER_SECOND;
-    if (stamp <= BACKGROUND_CAPTURE_INTERRUPT_TIMEOUT_SEC) {
-        AUDIO_WARNING_LOG("sessionId:%{public}u Resume Interrupt!!!", sessionId);
-        return true;
-    }
-    resumeInterruptEventMap_.erase(sessionId);
-    return false;
-}
-
-bool AudioService::UpdatePauseInterruptEventMap(const uint32_t sessionId,
-    InterruptEventInternal interruptEvent)
-{
-    std::lock_guard<std::mutex> lock(pauseInterruptEventMutex_);
-    auto iter = pauseInterruptEventMap_.find(sessionId);
-    if (iter == pauseInterruptEventMap_.end()) {
-        pauseInterruptEventMap_[sessionId] = interruptEvent;
-    } else {
-        iter->second = interruptEvent;
-    }
-    return true;
-}
-
-bool AudioService::RemovePauseInterruptEventMap(const uint32_t sessionId)
-{
-    std::lock_guard<std::mutex> lock(pauseInterruptEventMutex_);
-    auto iter = pauseInterruptEventMap_.find(sessionId);
-    if (iter == pauseInterruptEventMap_.end()) {
-        return false;
-    }
-    pauseInterruptEventMap_.erase(sessionId);
-    return true;
-}
-
-bool AudioService::IsStreamInterruptPause(const uint32_t sessionId)
-{
-    std::lock_guard<std::mutex> lock(pauseInterruptEventMutex_);
-    auto iter = pauseInterruptEventMap_.find(sessionId);
-    if (iter == pauseInterruptEventMap_.end()) {
-        return false;
-    }
-    int64_t stamp = iter->second.eventTimestamp;
-    stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_NS_PER_SECOND;
-    if (stamp <= BACKGROUND_CAPTURE_INTERRUPT_TIMEOUT_SEC) {
-        AUDIO_WARNING_LOG("sessionId:%{public}u Pause Interrupt!!!", sessionId);
-        return true;
-    }
-    AUDIO_INFO_LOG("sessionId:%{public}u Pause Timeout!!!", sessionId);
-    return false;
-}
-
-bool AudioService::IsInSwitchStreamMap(uint32_t sessionId, SwitchState &switchState)
-{
-    std::lock_guard<std::mutex> lock(audioSwitchStreamMutex_);
-    switchState = SWITCH_STATE_FINISHED;
-    auto iter = audioSwitchStreamMap_.find(sessionId);
-    CHECK_AND_RETURN_RET_LOG(iter != audioSwitchStreamMap_.end(), false,
-        "can not find switchStream:%{public}u", sessionId);
-    switchState = iter->second;
-    return true;
-}
-
-bool AudioService::UpdateSwitchStreamMap(uint32_t sessionId, SwitchState switchState)
-{
-    std::lock_guard<std::mutex> lock(audioSwitchStreamMutex_);
-    auto iter = audioSwitchStreamMap_.find(sessionId);
-    if (iter == audioSwitchStreamMap_.end()) {
-        audioSwitchStreamMap_[sessionId] = switchState;
-        return true;
-    }
-    iter->second = switchState;
-    return true;
-}
-
-void AudioService::RemoveSwitchStreamMap(uint32_t sessionId)
-{
-    std::lock_guard<std::mutex> lock(audioSwitchStreamMutex_);
-    auto iter = audioSwitchStreamMap_.find(sessionId);
-    if (iter != audioSwitchStreamMap_.end()) {
-        audioSwitchStreamMap_.erase(sessionId);
-    }
-}
-
-bool AudioService::IsBackgroundCaptureAllowed(uint32_t sessionId)
-{
-    std::lock_guard<std::mutex> lock(backgroundCaptureMutex_);
-    auto iter = backgroundCaptureMap_.find(sessionId);
-    if (iter == backgroundCaptureMap_.end()) {
-        return false;
-    }
-    if (iter->second) {
-        AUDIO_WARNING_LOG("sessionId:%{public}u lastBackCap: success", sessionId);
-        return true;
-    }
-    return false;
-}
-
-bool AudioService::UpdateBackgroundCaptureMap(uint32_t sessionId, bool res)
-{
-    std::lock_guard<std::mutex> lock(backgroundCaptureMutex_);
-    auto iter = backgroundCaptureMap_.find(sessionId);
-    if (iter == backgroundCaptureMap_.end()) {
-        backgroundCaptureMap_[sessionId] = res;
-        return true;
-    }
-    iter->second = res;
-    return true;
-}
-
-void AudioService::RemoveBackgroundCaptureMap(uint32_t sessionId)
-{
-    std::lock_guard<std::mutex> lock(backgroundCaptureMutex_);
-    auto iter = backgroundCaptureMap_.find(sessionId);
-    if (iter != backgroundCaptureMap_.end()) {
-        backgroundCaptureMap_.erase(sessionId);
-    }
-}
-
-bool AudioService::NeedRemoveBackgroundCaptureMap(uint32_t sessionId, CapturerState capturerState)
-{
-    SwitchState switchState;
-    if (IsInSwitchStreamMap(sessionId, switchState)) {
-        AUDIO_INFO_LOG("sessionId:%{public}u switchState:%{public}d", sessionId, switchState);
-        if (switchState == SWITCH_STATE_WAITING) {
-            return false;
-        }
-        RemoveSwitchStreamMap(sessionId);
-    }
-    if (IsStreamInterruptPause(sessionId)) {
-        AUDIO_WARNING_LOG ("Pause Interrupt!sessionId:%{public}u state:%{public}d", sessionId, capturerState);
-        if (capturerState == CAPTURER_PAUSED) {
-            RemovePauseInterruptEventMap(sessionId);
-        }
-        return false;
-    }
-    return true;
-}
 
 void AudioService::SaveRenderWhitelist(std::vector<std::string> list)
 {
@@ -1549,8 +1366,8 @@ int32_t AudioService::UnsetOffloadMode(uint32_t sessionId)
         lock.unlock();
         return ERROR;
     }
-    int32_t ret = renderer->UnsetOffloadMode();
     lock.unlock();
+    int32_t ret = renderer->UnsetOffloadMode();
     return ret;
 }
 

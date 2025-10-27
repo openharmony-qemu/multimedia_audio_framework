@@ -212,6 +212,20 @@ bool AudioPolicyServerHandler::SendVolumeKeyEventCallback(const VolumeEvent &vol
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendVolumeDegreeEventCallback(const VolumeEvent &volumeEvent)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    if (volumeEvent.volumeType == AudioStreamType::STREAM_VOICE_CALL_ASSISTANT) {
+        return false;
+    }
+    eventContextObj->volumeEvent = volumeEvent;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::VOLUME_DEGREE_EVENT, eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "send event failed");
+    return ret;
+}
+
 bool AudioPolicyServerHandler::SendAudioSessionDeactiveCallback(
     const std::pair<int32_t, AudioSessionDeactiveEvent> &sessionDeactivePair)
 {
@@ -809,6 +823,34 @@ void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent
             volumeChangeCb->OnSystemVolumeChange(eventContextObj->volumeEvent);
         }
         HandleVolumeChangeCallback(it->first, volumeChangeCb, eventContextObj->volumeEvent);
+    }
+}
+
+void AudioPolicyServerHandler::HandleVolumeDegreeEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(handleMapMutex_);
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        std::shared_ptr<AudioPolicyClientHolder> volumeChangeCb = it->second;
+        if (volumeChangeCb == nullptr) {
+            AUDIO_ERR_LOG("nullptr for client : %{public}d", it->first);
+            continue;
+        }
+        if (VolumeUtils::GetVolumeTypeFromStreamType(eventContextObj->volumeEvent.volumeType) == STREAM_SYSTEM &&
+            !volumeChangeCb->hasSystemPermission_) {
+            AUDIO_DEBUG_LOG("Non system applications do not send system callbacks");
+            continue;
+        }
+        AUDIO_PRERELEASE_LOGI("clientPid : %{public}d, volumeType : %{public}d," \
+            " volumeDegree : %{public}d, updateUi : %{public}d ", it->first,
+            static_cast<int32_t>(eventContextObj->volumeEvent.volumeType), eventContextObj->volumeEvent.volumeDegree,
+            static_cast<int32_t>(eventContextObj->volumeEvent.updateUi));
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_SET_VOLUME_DEGREE_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_SET_VOLUME_DEGREE_CHANGE]) {
+            volumeChangeCb->OnVolumeDegreeEvent(eventContextObj->volumeEvent);
+        }
     }
 }
 
@@ -1642,6 +1684,9 @@ void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
             break;
         case EventAudioServerCmd::SESSION_INPUT_DEVICE_CHANGE:
             HandleAudioSessionInputDeviceChangeEvent(event);
+            break;
+        case EventAudioServerCmd::VOLUME_DEGREE_EVENT:
+            HandleVolumeDegreeEvent(event);
             break;
         default:
             break;

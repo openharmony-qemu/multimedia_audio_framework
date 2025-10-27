@@ -69,6 +69,9 @@ private:
         int32_t SetSystemVolume(const int32_t zoneId, const int32_t volumeType,
             const int32_t volumeLevel, const int32_t volumeFlag) override;
         int32_t GetSystemVolume(int32_t zoneId, int32_t volumeType, float &outVolume) override;
+        int32_t SetSystemVolumeDegree(int32_t zoneId, int32_t volumeType,
+            int32_t volumeLevel, int32_t volumeFlag) override;
+        int32_t GetSystemVolumeDegree(int32_t zoneId, int32_t volumeType, int32_t &outVolume) override;
 };
 } // namespace AudioStandard
 } // namespace OHOS

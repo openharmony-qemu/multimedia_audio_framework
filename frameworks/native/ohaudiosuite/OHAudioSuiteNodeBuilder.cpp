@@ -107,7 +107,7 @@ OHAudioSuiteNodeBuilder::~OHAudioSuiteNodeBuilder()
 OH_AudioSuite_Result OHAudioSuiteNodeBuilder::SetFormat(OH_AudioFormat audioFormat)
 {
     CHECK_AND_RETURN_RET_LOG(((nodeType_ == NODE_TYPE_INPUT) || (nodeType_ == NODE_TYPE_OUTPUT)),
-        AUDIOSUITE_ERROR_UNSUPPORT_OPERATION, "Set suite node format Error, only input and output node "
+        AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION, "Set suite node format Error, only input and output node "
         "support set, nodeType = %{public}d.", static_cast<int32_t>(nodeType_));
 
     CHECK_AND_RETURN_RET_LOG(CheckSamplingRateVaild(audioFormat.samplingRate), AUDIOSUITE_ERROR_UNSUPPORTED_FORMAT,
@@ -127,7 +127,7 @@ OH_AudioSuite_Result OHAudioSuiteNodeBuilder::SetFormat(OH_AudioFormat audioForm
 OH_AudioSuite_Result OHAudioSuiteNodeBuilder::SetRequestDataCallback(
     OH_InputNode_RequestDataCallback callback, void *userData)
 {
-    CHECK_AND_RETURN_RET_LOG(nodeType_ == NODE_TYPE_INPUT, AUDIOSUITE_ERROR_UNSUPPORT_OPERATION,
+    CHECK_AND_RETURN_RET_LOG(nodeType_ == NODE_TYPE_INPUT, AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION,
         "SetRequestDataCallback Error, only input node support set.");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "SetRequestDataCallback failed, callback is nullptr");

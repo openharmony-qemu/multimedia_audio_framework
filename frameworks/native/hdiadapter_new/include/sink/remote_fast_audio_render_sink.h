@@ -119,7 +119,7 @@ private:
     std::atomic<bool> paused_ = false;
     float leftVolume_ = 0;
     float rightVolume_ = 0;
-    uint32_t hdiRenderId_ = 0;
+    uint32_t hdiRenderId_ = HDI_INVALID_ID;
     sptr<RemoteIAudioRender> audioRender_ = nullptr;
 
     // low latency

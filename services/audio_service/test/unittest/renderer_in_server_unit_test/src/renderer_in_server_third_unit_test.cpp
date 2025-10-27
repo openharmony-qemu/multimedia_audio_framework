@@ -2160,5 +2160,24 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerWriteDupBufferInner_003,
     server->innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer()->Dequeue(bufferWrap);
     EXPECT_EQ(uint8_t(buffer[0]), 0);
 }
+
+/**
+ * @tc.name  : Test WaitForDataConnection API
+ * @tc.type  : FUNC
+ * @tc.number: WaitForDataConnection
+ * @tc.desc  : Test WaitForDataConnection
+ */
+HWTEST_F(RendererInServerThirdUnitTest, WaitForDataConnection_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, rendererInServer);
+
+    rendererInServer->WaitForDataConnection();
+    rendererInServer->OnDataLinkConnectionUpdate(IOperation::OPERATION_DATA_LINK_CONNECTING);
+    EXPECT_EQ(rendererInServer->isDataLinkConnected_, false);
+
+    rendererInServer->WaitForDataConnection();
+    rendererInServer->OnDataLinkConnectionUpdate(IOperation::OPERATION_DATA_LINK_CONNECTED);
+    EXPECT_EQ(rendererInServer->isDataLinkConnected_, true);
+}
 } // namespace AudioStandard
 } // namespace OHOS
