@@ -376,7 +376,7 @@ uint64_t HpaeAudioFormatConverterNode::GetLatency(uint32_t sessionId)
 
 void HpaeAudioFormatConverterNode::SetDownmixNormalization(bool normalizing)
 {
-    channelConverter.SetDownmixNormalization(normalizing);
+    channelConverter_.SetDownmixNormalization(normalizing);
 }
 } // Hpae
 } // AudioStandard

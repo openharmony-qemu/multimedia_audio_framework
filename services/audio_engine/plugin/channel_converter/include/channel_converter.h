@@ -45,6 +45,7 @@ private:
     uint32_t workSize_ = 0; // work format, for now only supports float
     bool mixLfe_ = true;
     bool isInitialized_ = false;
+    bool downmixNormalizing_ = true; // by default, downmixer should do normalization to prevent overflow
 };
 } // HPAE
 } // AudioStandard

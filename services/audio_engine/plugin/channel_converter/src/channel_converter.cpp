@@ -68,6 +68,7 @@ int32_t ChannelConverter::SetParam(AudioChannelInfo inChannelInfo, AudioChannelI
     int32_t ret = MIX_ERR_SUCCESS;
     if (inChannelInfo_.numChannels > outChannelInfo_.numChannels) {
         ret = downMixer_.SetParam(inChannelInfo, outChannelInfo, workSize_, mixLfe);
+        downMixer_.SetNormalization(downmixNormalizing_);
         downMixer_.GetDownMixTable(mixTable_);
     } else {
         ret = SetUpGeneralMixingTable(mixTable_, inChannelInfo_, outChannelInfo_, mixLfe_);
@@ -85,6 +86,7 @@ int32_t ChannelConverter::SetInChannelInfo(AudioChannelInfo inChannelInfo)
     int32_t ret = MIX_ERR_SUCCESS;
     if (inChannelInfo_.numChannels > outChannelInfo_.numChannels) {
         ret = downMixer_.SetParam(inChannelInfo_, outChannelInfo_, workSize_, mixLfe_);
+        downMixer_.SetNormalization(downmixNormalizing_);
         downMixer_.GetDownMixTable(mixTable_);
     } else {
         ret = SetUpGeneralMixingTable(mixTable_, inChannelInfo_, outChannelInfo_, mixLfe_);
@@ -103,6 +105,7 @@ int32_t ChannelConverter::SetOutChannelInfo(AudioChannelInfo outChannelInfo)
     int32_t ret = MIX_ERR_SUCCESS;
     if (inChannelInfo_.numChannels > outChannelInfo_.numChannels) {
         ret = downMixer_.SetParam(inChannelInfo_, outChannelInfo_, workSize_, mixLfe_);
+        downMixer_.SetNormalization(downmixNormalizing_);
         downMixer_.GetDownMixTable(mixTable_);
     } else {
         ret = SetUpGeneralMixingTable(mixTable_, inChannelInfo_, outChannelInfo_, mixLfe_);
@@ -134,7 +137,10 @@ void ChannelConverter::GetMixTable(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNEL
 
 void ChannelConverter::SetDownmixNormalization(bool normalizing)
 {
-    downMixer_.SetNormalization(normalizing);
+    downmixNormalizing_ = normalizing;
+    CHECK_AND_RETURN_LOG(inChannelInfo_.numChannels > outChannelInfo_.numChannels,
+        "channelConverter is at upmix state, no need to set normalization for upmix");
+    downMixer_.SetNormalization(downmixNormalizing_);
 }
  
 int32_t ChannelConverter::Process(uint32_t frameLen, float* in, uint32_t inByteSize, float* out, uint32_t outByteSize)
