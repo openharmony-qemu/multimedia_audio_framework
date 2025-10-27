@@ -910,7 +910,8 @@ void AudioVolumeManager::SetRestoreVolumeLevel(DeviceType deviceType, int32_t cu
     }
 }
 
-void AudioVolumeManager::OnCheckActiveMusicTime(const std::string &reason){
+void AudioVolumeManager::OnCheckActiveMusicTime(const std::string &reason)
+{
     AUDIO_INFO_LOG("reason:%{public}s", reason.c_str());
     CheckActiveMusicTime("Offload");
     if (std::string("Started") != reason) {
