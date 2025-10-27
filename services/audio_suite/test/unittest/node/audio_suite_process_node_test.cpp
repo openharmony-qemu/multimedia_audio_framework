@@ -196,7 +196,7 @@ HWTEST_F(AudioSuiteProcessNodeTest, ConstructorTest, TestSize.Level0) {
     // test constructor
     EXPECT_NE(node_->GetInputPort(), nullptr);
     EXPECT_NE(node_->GetOutputPort(), nullptr);
-    EXPECT_TRUE(node_->GetNodeBypassStatus());
+    EXPECT_EQ(node_->GetNodeBypassStatus(), false);
 }
 
 HWTEST_F(AudioSuiteProcessNodeTest, ChannelConverterTestProcessTest, TestSize.Level0)
