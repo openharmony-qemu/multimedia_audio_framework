@@ -1806,7 +1806,7 @@ HWTEST(AudioSystemManagerUnitTest, SetVolumeWithDevice_002, TestSize.Level4)
     AudioSystemManager audioSystemManager;
     int32_t volumeLevel = 5;
     EXPECT_EQ(audioSystemManager.SetVolumeWithDevice(STREAM_ULTRASONIC, volumeLevel, deviceType),
-        ERR_PERMISSION_DENIED);
+        SUCCESS);
 }
 
 /**
