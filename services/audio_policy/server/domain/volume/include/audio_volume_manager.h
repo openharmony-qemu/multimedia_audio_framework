@@ -143,6 +143,8 @@ public:
     int32_t SetSystemVolumeDegreeToDb(AudioStreamType streamType, int32_t volumeDegree, int32_t zoneId);
     int32_t GetSystemVolumeDegree(AudioStreamType streamType, int32_t zoneId = 0);
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType) const;
+    void OnCheckActiveMusicTime(const std::string &reason);
+    int32_t CheckActiveMusicTime(const std::string &reason = "Default");
 
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -159,7 +161,6 @@ private:
     void CreateCheckMusicActiveThread();
     bool IsBlueTooth(const DeviceType &deviceType);
     bool IsNearLink(const DeviceType &deviceType);
-    int32_t CheckActiveMusicTime();
     void CheckBlueToothActiveMusicTime(int32_t safeVolume);
     void CheckNearlinkActiveMusicTime(int32_t safeVolume);
     void CheckWiredActiveMusicTime(int32_t safeVolume);

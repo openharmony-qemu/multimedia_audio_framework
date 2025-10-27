@@ -254,6 +254,13 @@ void RendererInServer::CheckAndWriterRenderStreamStandbySysEvent(bool standbyEna
     AudioService::GetInstance()->RenderersCheckForAudioWorkgroup(processConfig_.appInfo.appPid);
 }
 
+void RendererInServer::OnCheckActiveMusicTime(const std::string &reason)
+{
+    if (offloadEnable_ == true) {
+        CoreServiceHandler::GetInstance().OnCheckActiveMusicTime(reason);
+    }
+}
+
 void RendererInServer::OnStatusUpdate(IOperation operation)
 {
     if (operation != OPERATION_UNDERFLOW) {
@@ -270,6 +277,7 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
         case OPERATION_STARTED:
             HandleOperationStarted();
             stateListener->OnOperationHandled(START_STREAM, 0);
+            OnCheckActiveMusicTime("Started");
             break;
         case OPERATION_PAUSED:
             if (standByEnable_) {
@@ -281,11 +289,13 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             status_ = I_STATUS_PAUSED;
             stateListener->OnOperationHandled(PAUSE_STREAM, 0);
             playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_PAUSE_OK);
+            OnCheckActiveMusicTime("Paused");
             break;
         case OPERATION_STOPPED:
             status_ = I_STATUS_STOPPED;
             stateListener->OnOperationHandled(STOP_STREAM, 0);
             HandleOperationStopped(RENDERER_STAGE_STOP_OK);
+            OnCheckActiveMusicTime("Stopped");
             break;
         case OPERATION_FLUSHED:
             HandleOperationFlushed();

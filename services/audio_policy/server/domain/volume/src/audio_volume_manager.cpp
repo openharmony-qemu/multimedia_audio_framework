@@ -34,9 +34,24 @@
 #include "audio_mute_factor_manager.h"
 #include "audio_active_device.h"
 #include "audio_volume_utils.h"
+#include "audio_policy_async_action_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
+class CheckActiveMusicTimeAction : public PolicyAsyncAction {
+public:
+    explicit CheckActiveMusicTimeAction(const std::string &reason) : reason_(reason)
+    {}
+
+    void Exec() override
+    {
+        AudioVolumeManager::GetInstance().CheckActiveMusicTime(reason_);
+    }
+
+private:
+    const std::string reason_;
+}
+
 
 static const int64_t WAIT_RINGER_MODE_MUTE_RESET_TIME_MS = 500; // 500ms
 const int32_t DUAL_TONE_RING_VOLUME = 0;
@@ -57,8 +72,8 @@ static std::string GetEncryptAddr(const std::string &addr)
 }
 
 const int32_t ONE_MINUTE = 60;
-const int32_t HALF_MINUTE = 30;
 const uint32_t ABS_VOLUME_SUPPORT_RETRY_INTERVAL_IN_MICROSECONDS = 10000;
+const int32_t MUSIC_ACTIVE_PERIOD_MS = 60000;
 constexpr int32_t CANCEL_FORCE_CONTROL_VOLUME_TYPE = -1;
 
 static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
@@ -823,7 +838,6 @@ int32_t AudioVolumeManager::DealWithSafeVolume(const int32_t volumeLevel, bool i
 
 void AudioVolumeManager::CreateCheckMusicActiveThread()
 {
-    std::lock_guard<std::mutex> lock(checkMusicActiveThreadMutex_);
     if (calculateLoopSafeTime_ == nullptr) {
         calculateLoopSafeTime_ = std::make_unique<std::thread>([this] { this->CheckActiveMusicTime(); });
         pthread_setname_np(calculateLoopSafeTime_->native_handle(), "OS_AudioPolicySafe");
@@ -896,23 +910,42 @@ void AudioVolumeManager::SetRestoreVolumeLevel(DeviceType deviceType, int32_t cu
     }
 }
 
-int32_t AudioVolumeManager::CheckActiveMusicTime()
+void AudioVolumeManager::OnCheckActiveMusicTime(const std::string &reason){
+    AUDIO_INFO_LOG("reason:%{public}s", reason.c_str());
+    CheckActiveMusicTime("Offload");
+    if (std::string("Started") != reason) {
+        startSafeTime_ = 0;
+        startSafeTimeBt_ = 0;
+    }
+}
+
+int32_t AudioVolumeManager::CheckActiveMusicTime(const std::string &reason)
 {
+    std::lock_guard<std::mutex> lock(checkMusicActiveThreadMutex_);
     AUDIO_INFO_LOG("enter");
     int32_t safeVolume = audioPolicyManager_.GetSafeVolumeLevel();
-    while (!safeVolumeExit_) {
+    if (!safeVolumeExit_) {
+        if (std::string("Offload") != reason) {
+            std::shared_ptr<CheckActiveMusicTimeAction> action =
+                std::make_shared<CheckActiveMusicTimeAction>(reason);
+            CHECK_AND_RETURN_RET_LOG(action != nullptr, -1, "action is nullptr");
+            AsyncActionDesc desc;
+            desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
+            desc.delayTimeMs = MUSIC_ACTIVE_PERIOD_MS;
+            DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
+        }
         bool activeMusic = audioSceneManager_.IsStreamActive(STREAM_MUSIC);
         int32_t curDeviceVolume = GetSystemVolumeLevel(STREAM_MUSIC);
         bool isUpSafeVolume = curDeviceVolume > safeVolume ? true : false;
         DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-        AUDIO_INFO_LOG("activeMusic:%{public}d, deviceType_:%{public}d, isUpSafeVolume:%{public}d",
-            activeMusic, curOutputDeviceType, isUpSafeVolume);
-        if (activeMusic && (safeStatusBt_ == SAFE_INACTIVE) && isUpSafeVolume &&
-            IsBlueTooth(curOutputDeviceType)) {
+        AUDIO_INFO_LOG("activeMusic:%{public}d, deviceType_:%{public}d, isUpSafeVolume:%{public}d " \
+            "reason:%{public}s", activeMusic, curOutputDeviceType, isUpSafeVolume, reason.c_str());
+        if ((activeMusic || std::string("Offload") == reason) && (safeStatusBt_ == SAFE_INACTIVE) &&
+            isUpSafeVolume && IsBlueTooth(curOutputDeviceType)) {
             SetRestoreVolumeLevel(DEVICE_TYPE_BLUETOOTH_A2DP, curDeviceVolume);
             CheckBlueToothActiveMusicTime(safeVolume);
-        } else if (activeMusic && (safeStatus_ == SAFE_INACTIVE) && isUpSafeVolume &&
-            IsWiredHeadSet(curOutputDeviceType)) {
+        } else if ((activeMusic || std::string("Offload") == reason) && (safeStatus_ == SAFE_INACTIVE) &&
+            isUpSafeVolume && IsWiredHeadSet(curOutputDeviceType)) {
             SetRestoreVolumeLevel(DEVICE_TYPE_WIRED_HEADSET, curDeviceVolume);
             CheckWiredActiveMusicTime(safeVolume);
         } else if (activeMusic && (safeStatusSle_ == SAFE_INACTIVE) && isUpSafeVolume &&
@@ -924,7 +957,6 @@ int32_t AudioVolumeManager::CheckActiveMusicTime()
             startSafeTimeBt_ = 0;
             startSafeTimeSle_ = 0;
         }
-        sleep(HALF_MINUTE);
     }
     return 0;
 }
@@ -969,12 +1001,12 @@ void AudioVolumeManager::CheckBlueToothActiveMusicTime(int32_t safeVolume)
     } else if (CheckMixActiveMusicTime(safeVolume)) {
         PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
         restoreNIsShowing_ = true;
-    } else if (currentTime - startSafeTimeBt_ >= ONE_MINUTE) {
+    } else {
         activeSafeTimeBt_ = audioPolicyManager_.GetCurentDeviceSafeTime(DEVICE_TYPE_BLUETOOTH_A2DP);
         activeSafeTimeBt_ += currentTime - startSafeTimeBt_;
         audioPolicyManager_.SetDeviceSafeTime(DEVICE_TYPE_BLUETOOTH_A2DP, activeSafeTimeBt_);
         startSafeTimeBt_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-        AUDIO_INFO_LOG("bluetooth safe volume 1 min timeout, cumulative time: %{public}" PRId64, activeSafeTimeBt_);
+        AUDIO_INFO_LOG("bluetooth safe volume timeout, cumulative time: %{public}" PRId64, activeSafeTimeBt_);
     }
     startSafeTime_ = 0;
     startSafeTimeSle_ = 0;
@@ -998,12 +1030,12 @@ void AudioVolumeManager::CheckNearlinkActiveMusicTime(int32_t safeVolume)
     } else if (CheckMixActiveMusicTime(safeVolume)) {
         PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
         restoreNIsShowing_ = true;
-    } else if (currentTime - startSafeTimeSle_ >= ONE_MINUTE) {
+    } else {
         activeSafeTimeSle_ = audioPolicyManager_.GetCurentDeviceSafeTime(DEVICE_TYPE_NEARLINK);
         activeSafeTimeSle_ += currentTime - startSafeTimeSle_;
         audioPolicyManager_.SetDeviceSafeTime(DEVICE_TYPE_NEARLINK, activeSafeTimeSle_);
         startSafeTimeSle_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-        AUDIO_INFO_LOG("nearlink safe volume 1 min timeout, cumulative time: %{public}" PRId64, activeSafeTimeSle_);
+        AUDIO_INFO_LOG("nearlink safe volume timeout, cumulative time: %{public}" PRId64, activeSafeTimeSle_);
     }
     startSafeTimeBt_ = 0;
     startSafeTime_ = 0;

@@ -1480,5 +1480,61 @@ HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeForSwitchDevice_008, TestSize.Leve
     EXPECT_EQ(ret, SUCCESS);
 }
 
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_071
+* @tc.desc  : Test OnCheckActiveMusicTime interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_071, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    std::string reason = "Started";
+    audioVolumeManager.startSafeTime_ = 0;
+    audioVolumeManager.OnCheckActiveMusicTime(reason);
+    EXPECT_EQ(audioVolumeManager.startSafeTime_, 0);
+    reason = "Paused";
+    audioVolumeManager.OnCheckActiveMusicTime(reason);
+    EXPECT_EQ(audioVolumeManager.startSafeTime_, 0);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_072
+* @tc.desc  : Test CheckActiveMusicTime interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_072, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    std::string reason = "Default";
+    audioVolumeManager.safeVolumeExit_ = true;
+    int32_t ret = audioVolumeManager.CheckActiveMusicTime(reason);
+    EXPECT_EQ(ret, 0);
+    audioVolumeManager.safeVolumeExit_ = false;
+    audioVolumeManager.startSafeTime_ = 0;
+    audioVolumeManager.CheckActiveMusicTime(reason);
+    audioVolumeManager.safeVolumeExit_ = true;
+    EXPECT_EQ(audioVolumeManager.startSafeTime_, 0);
+
+    audioVolumeManager.safeVolumeExit_ = false;
+    reason = "Offload";
+    audioVolumeManager.startSafeTimeBT_ = 0;
+    audioVolumeManager.safeStatusBT_ = SAFE_INACTIVE;
+    audioVolumeManager.CheckActiveMusicTime(reason);
+    EXPECT_EQ(audioVolumeManager.startSafeTimeBT_, 0);
+    audioVolumeManager.startSafeTimeBT_ = 0;
+    audioVolumeManager.safeStatusBT_ = SAFE_ACTIVE;
+    audioVolumeManager.CheckActiveMusicTime(reason);
+    EXPECT_EQ(audioVolumeManager.startSafeTimeBT_, 0);
+    audioVolumeManager.startSafeTime_ = 0;
+    audioVolumeManager.safeStatus_ = SAFE_INACTIVE;
+    audioVolumeManager.CheckActiveMusicTime(reason);
+    EXPECT_EQ(audioVolumeManager.startSafeTime_, 0);
+    audioVolumeManager.startSafeTime_ = 0;
+    audioVolumeManager.safeStatus_ = SAFE_ACTIVE;
+    audioVolumeManager.CheckActiveMusicTime(reason);
+    EXPECT_EQ(audioVolumeManager.startSafeTime_, 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS
