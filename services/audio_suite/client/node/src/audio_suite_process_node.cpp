@@ -104,7 +104,13 @@ std::vector<AudioSuitePcmBuffer*>& AudioSuiteProcessNode::ReadProcessNodePreOutp
 
 int32_t AudioSuiteProcessNode::Flush()
 {
+    CHECK_AND_RETURN_RET_LOG(DeInit() == SUCCESS, ERROR, "DeInit failed");
+    CHECK_AND_RETURN_RET_LOG(Init() == SUCCESS, ERROR, "Init failed");
+    if (!paraName_.empty() && !paraValue_.empty()) {
+        SetOptions(paraName_, paraValue_);
+    }
     finishedPrenodeSet.clear();
+    AUDIO_INFO_LOG("Flush SUCCESS");
     return SUCCESS;
 }
 

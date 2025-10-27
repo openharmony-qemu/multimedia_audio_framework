@@ -41,8 +41,8 @@ HWTEST_F(AudioSuiteEqNodeTest, testAudioSuiteEqNodeSignalProcess_001, TestSize.L
 {
     AudioSuiteEqNode eq;
     eq.Init();
-    std::string eqValue = "7";
-    std::string name = "EqualizerMode";
+    std::string eqValue = "5:2:1:-1:-5:-5:-2:1:2:4";
+    std::string name = "AudioEqualizerFrequencyBandGains";
     eq.SetOptions(name, eqValue);
     std::vector<AudioSuitePcmBuffer *> inputs;
     std::ifstream file("/data/audiosuite/eqnode/audiosuite/eqnode/eq_48000_2_16.pcm", std::ios::binary | std::ios::ate);
@@ -91,8 +91,8 @@ HWTEST_F(AudioSuiteEqNodeTest, testAudioSuiteEqNodeSignalProcess_002, TestSize.L
 {
     AudioSuiteEqNode eq;
     eq.Init();
-    std::string eqValue = "6";
-    std::string name = "EqualizerMode";
+    std::string eqValue = "2:0:2:3:6:5:-1:3:4:4";
+    std::string name = "AudioEqualizerFrequencyBandGains";
     eq.SetOptions(name, eqValue);
     std::vector<AudioSuitePcmBuffer *> inputs;
     std::ifstream file("/data/audiosuite/eqnode/eq_44100_2_32f.pcm", std::ios::binary | std::ios::ate);
@@ -141,8 +141,8 @@ HWTEST_F(AudioSuiteEqNodeTest, testAudioSuiteEqNodeSignalProcess_003, TestSize.L
 {
     AudioSuiteEqNode eq;
     eq.Init();
-    std::string eqValue = "5";
-    std::string name = "EqualizerMode";
+    std::string eqValue = "4:3:2:-3:0:0:5:4:2:0";
+    std::string name = "AudioEqualizerFrequencyBandGains";
     eq.SetOptions(name, eqValue);
     std::vector<AudioSuitePcmBuffer *> inputs;
     std::ifstream file("/data/audiosuite/eqnode/eq_44100_1_32f.pcm", std::ios::binary | std::ios::ate);
@@ -197,45 +197,9 @@ HWTEST_F(AudioSuiteEqNodeTest, testAudioSuiteEqNodeSetOptions, TestSize.Level0)
     EXPECT_EQ(eq.GetOptions("AudioEqualizerFrequencyBandGains", value), 0);
     EXPECT_EQ(value, "8:8:8:8:8:8:8:0:10:-10");
 
-    EXPECT_EQ(eq.SetOptions("EqualizerMode", "1"), 0);
-    EXPECT_EQ(eq.GetOptions("AudioEqualizerFrequencyBandGains", value), 0);
-    EXPECT_EQ(value, "0:0:0:0:0:0:0:0:0:0");
-
-    EXPECT_EQ(eq.SetOptions("EqualizerMode", "2"), 0);
-    EXPECT_EQ(eq.GetOptions("AudioEqualizerFrequencyBandGains", value), 0);
-    EXPECT_EQ(value, "3:5:2:-4:1:2:-3:1:4:5");
-
-    EXPECT_EQ(eq.SetOptions("EqualizerMode", "3"), 0);
-    EXPECT_EQ(eq.GetOptions("AudioEqualizerFrequencyBandGains", value), 0);
-    EXPECT_EQ(value, "0:0:2:0:0:4:4:2:2:5");
-
-    EXPECT_EQ(eq.SetOptions("EqualizerMode", "4"), 0);
-    EXPECT_EQ(eq.GetOptions("AudioEqualizerFrequencyBandGains", value), 0);
-    EXPECT_EQ(value, "2:3:2:1:0:0:-5:-5:-5:-6");
-
-    EXPECT_EQ(eq.SetOptions("EqualizerMode", "5"), 0);
-    EXPECT_EQ(eq.GetOptions("AudioEqualizerFrequencyBandGains", value), 0);
-    EXPECT_EQ(value, "4:3:2:-3:0:0:5:4:2:0");
-
-    EXPECT_EQ(eq.SetOptions("EqualizerMode", "6"), 0);
-    EXPECT_EQ(eq.GetOptions("AudioEqualizerFrequencyBandGains", value), 0);
-    EXPECT_EQ(value, "2:0:2:3:6:5:-1:3:4:4");
-
-    EXPECT_EQ(eq.SetOptions("EqualizerMode", "7"), 0);
-    EXPECT_EQ(eq.GetOptions("AudioEqualizerFrequencyBandGains", value), 0);
-    EXPECT_EQ(value, "5:2:1:-1:-5:-5:-2:1:2:4");
-
-    EXPECT_EQ(eq.SetOptions("EqualizerMode", "8"), 0);
-    EXPECT_EQ(eq.GetOptions("AudioEqualizerFrequencyBandGains", value), 0);
-    EXPECT_EQ(value, "1:4:5:3:-2:-2:2:3:5:5");
-
-    EXPECT_EQ(eq.SetOptions("EqualizerMode", "9"), 0);
-    EXPECT_EQ(eq.GetOptions("AudioEqualizerFrequencyBandGains", value), 0);
-    EXPECT_EQ(value, "6:4:4:2:0:1:3:3:5:4");
-
-    EXPECT_NE(eq.SetOptions("-------------", "9"), 0);
+    EXPECT_NE(eq.SetOptions("-------------", "0:0:0:0:0:0:0:0:0:0"), 0);
     EXPECT_NE(eq.GetOptions("-------------", value), 0);
-    EXPECT_EQ(value, "6:4:4:2:0:1:3:3:5:4");
+    EXPECT_EQ(value, "8:8:8:8:8:8:8:0:10:-10");
 }
 
 HWTEST_F(AudioSuiteEqNodeTest, testAudioSuiteEqNodeDeInit, TestSize.Level0)

@@ -45,7 +45,6 @@ private:
     std::vector<uint8_t> eqOutputDataBuffer_;
     std::vector<uint8_t *> tmpin_;
     std::vector<uint8_t *> tmpout_;
-    std::string eqValue_;
     std::shared_ptr<AudioSuiteEqAlgoInterfaceImpl> eqAlgoInterfaceImpl_;
 };
 
