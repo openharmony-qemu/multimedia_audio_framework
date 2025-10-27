@@ -80,10 +80,17 @@ static bool CheckNeedExclude(const AudioDeviceDescriptor &desc, bool isConnected
 #endif
     AUDIO_INFO_LOG("isConnected=%{public}d, exclude=%{public}d", isConnected, exclude);
     CHECK_AND_RETURN_RET(isConnected && exclude, false);
+    bool result{false};
     vector<shared_ptr<AudioDeviceDescriptor>> descs{make_shared<AudioDeviceDescriptor>(desc)};
-    AudioCoreService::GetCoreService()->ExcludeOutputDevices(MEDIA_OUTPUT_DEVICES, descs);
-    AudioCoreService::GetCoreService()->ExcludeOutputDevices(CALL_OUTPUT_DEVICES, descs);
-    return true;
+    if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP || desc.deviceType_ == DEVICE_TYPE_NEARLINK) {
+        AudioCoreService::GetCoreService()->ExcludeOutputDevices(MEDIA_OUTPUT_DEVICES, descs);
+        result = true;
+    }
+    if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO || desc.deviceType_ == DEVICE_TYPE_NEARLINK) {
+        AudioCoreService::GetCoreService()->ExcludeOutputDevices(CALL_OUTPUT_DEVICES, descs);
+        result = true;
+    }
+    return result;
 }
 
 static void GetDPModuleInfo(AudioModuleInfo &moduleInfo, string deviceInfo)
