@@ -307,8 +307,7 @@ static void MixTopCenter(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS], std::p
             coeffTable[channelPosMap[outBit]][inPos] = coeff;
             bitMsk ^= outBit;
         }
-    }
-    else if (existMiddleOuts) {
+    } else if (existMiddleOuts) {
         uint64_t numChannels = BitCounts(existMiddleOuts);
         float coeff = 1.0f / sqrt(static_cast<float>(numChannels));
         uint64_t bitMsk = existMiddleOuts;
