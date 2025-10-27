@@ -192,9 +192,9 @@ void HpaeSourceProcessCluster::DisConnectInjector(const std::shared_ptr<OutputNo
     if (CheckHpaeNodeInfoIsSame(sinkNodeInfo, mixerNodeInfo)) {
         AUDIO_INFO_LOG("Specification of sinkOutputNode is same with mixerNode");
         mixerNode_->DisConnect(preNode);
-    } else {
-        injectorFmtConverterNodeMap_[preNode]->DisConnect(preNode);
-        mixerNode_->DisConnect(injectorFmtConverterNodeMap_[preNode]);
+    } else if (auto injectorConvert = SafeGetMap(injectorFmtConverterNodeMap_, preNode)) {
+        injectorConvert->DisConnect(preNode);
+        mixerNode_->DisConnect(injectorConvert);
         injectorFmtConverterNodeMap_.erase(preNode);
     }
 }
