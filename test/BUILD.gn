@@ -361,6 +361,8 @@ group("audio_fuzz_test") {
     "fuzztest/standalonemodemanager_fuzzer:fuzztest",
     "fuzztest/volumedatamaintainer_fuzzer:fuzztest",
     "fuzztest/rendererinserver_fuzzer:fuzztest",
+    "fuzztest/audiosuiteengine_fuzzer:fuzztest",
+    "fuzztest/audiosuitemanager_fuzzer:fuzztest",
   ]
 }
 

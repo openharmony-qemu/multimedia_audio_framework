@@ -11,49 +11,58 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build/config/features.gni")
+import("//build/ohos.gni")
 import("//build/test.gni")
-import("../../../config.gni")
+import("//build/config/features.gni")
 
-ohos_fuzztest("AudioServiceFuzzTest") {
-  module_out_path = "audio_framework/audio_framework_route"
-  fuzz_config_file = "../audioservice_fuzzer"
+ohos_fuzztest("AudioSuiteEngineFuzzTest") {
+module_out_path = "audio_framework/audio_framework_route"
+fuzz_config_file = "../audiosuiteengine_fuzzer"
 
-  include_dirs = [ "../../../services/audio_service/server/include" ]
+include_dirs = [
+"../../../services/audio_suite/client/manager/include",
+"../../../services/audio_suite/client/node/include",
+"../../../services/audio_suite/client/utils/include",
+"../../../services/audio_engine/utils",
+"../../../services/audio_engine/simd",
+"../../../services/audio_engine/buffer",
+"../../../services/audio_engine/plugin/resample/include",
+"../../../interfaces/kits/c/audio_suite",
+"../../../interfaces/kits/c/common",
+"../../../frameworks/native/ohaudio",
+]
 
-  cflags = [
-    "-g",
-    "-O0",
-    "-Wno-unused-variable",
-    "-fno-omit-frame-pointer",
-    "-fno-access-control",
-  ]
+cflags = [
+"-g",
+"-O0",
+"-Wno-unused-variable",
+"-fno-omit-frame-pointer",
+"-fno-access-control",
+]
 
-  sources = [ "audio_service_fuzzer.cpp" ]
+sources = [
+"audio_suite_engine_fuzzer.cpp",
+]
 
-  configs = [ "../../../services/audio_service:audio_service_config" ]
-  cflags_cc = [ "-std=c++20" ]
+configs = [ "../../../services/audio_suite:audio_suite_public_config" ]
+cflags_cc = [ "-std=c++20" ]
 
-  deps = [
-    "../../../services/audio_service/idl:audio_framework_interface",
-    "../../../services/audio_service:audio_process_service_static",
-  ]
-  external_deps = [
-    "c_utils:utils",
-    "hilog:libhilog",
-    "ipc:ipc_single",
-  ]
+deps = [
+"../../../services/audio_suite:audio_suite_static",
+"../../../frameworks/native/ohaudio:ohaudio",
+]
+external_deps = [
+"c_utils:utils",
+"hilog:libhilog",
+]
 
-  defines = []
-  if (audio_framework_feature_inner_capturer) {
-    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
-  }
-  if (audio_framework_feature_low_latency) {
-    defines += [ "SUPPORT_LOW_LATENCY" ]
-  }
+defines = []
+if (use_libfuzzer || use_clang_coverage) {
+defines += [ "TEST_COVERAGE" ]
+}
 }
 
 group("fuzztest") {
-  testonly = true
-  deps = [ ":AudioServiceFuzzTest" ]
+testonly = true
+deps = [ ":AudioSuiteEngineFuzzTest" ]
 }
