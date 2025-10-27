@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. All rights reserved.
+ */
 import { StyleConst } from "../utils/StyleConst";
 import { Node, NodeType, colorMap, SongInfo } from "../utils/importSongs/InterfaceInfo";
 import { Logger } from '../utils/Logger';
