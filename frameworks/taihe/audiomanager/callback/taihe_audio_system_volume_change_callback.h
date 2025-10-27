@@ -36,7 +36,7 @@ public:
     explicit TaiheAudioSystemVolumeChangeCallback();
     virtual ~TaiheAudioSystemVolumeChangeCallback();
     void OnSystemVolumeChange(OHOS::AudioStandard::VolumeEvent volumeEvent) override;
-    void SaveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> &callback);
+    void SaveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> callback);
     bool ContainSameJsCallback(std::shared_ptr<uintptr_t> callback);
 
 private:

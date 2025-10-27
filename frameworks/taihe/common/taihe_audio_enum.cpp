@@ -638,7 +638,7 @@ OHOS::AudioStandard::StreamUsage TaiheAudioEnum::GetNativeStreamUsageFir(int32_t
             break;
         default:
             result = OHOS::AudioStandard::STREAM_USAGE_INVALID;
-            AUDIO_DEBUG_LOG("Unknown streamUsage type: %{public}d", streamUsage);
+            AUDIO_ERR_LOG("Unknown streamUsage type: %{public}d", streamUsage);
             break;
     }
 

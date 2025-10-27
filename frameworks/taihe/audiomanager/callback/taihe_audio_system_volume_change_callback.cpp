@@ -89,7 +89,7 @@ void TaiheAudioSystemVolumeChangeCallback::SafeJsCallbackSystemVolumeChangeWork(
 }
 
 void TaiheAudioSystemVolumeChangeCallback::SaveCallbackReference(
-    const std::string &callbackName, std::shared_ptr<uintptr_t> &callback)
+    const std::string &callbackName, std::shared_ptr<uintptr_t> callback)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     CHECK_AND_RETURN_LOG(callback != nullptr,
