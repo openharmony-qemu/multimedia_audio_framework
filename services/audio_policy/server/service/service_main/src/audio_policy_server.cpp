@@ -106,7 +106,7 @@ constexpr int32_t MAX_STREAM_USAGE_COUNT = StreamUsage::STREAM_USAGE_MAX + 1;
 constexpr int32_t MAX_SIZE = 1024;
 constexpr int32_t DEFAULT_UID = 0;
 constexpr int32_t DEFAULT_ZONEID = 0;
-constexpr int32_t RESTORE_INFO_LOCK_TIMEOUT_MS = 500; // 500ms
+constexpr int32_t RESTORE_INFO_LOCK_TIMEOUT_MS = 1000; // 1000ms
 
 constexpr int32_t UID_MEDIA = 1013;
 constexpr int32_t UID_MCU = 7500;
