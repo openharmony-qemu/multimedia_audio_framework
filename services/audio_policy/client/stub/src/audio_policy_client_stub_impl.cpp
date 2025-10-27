@@ -672,6 +672,7 @@ int32_t AudioPolicyClientStubImpl::OnAudioSessionDeactive(int32_t deactiveEvent)
     AudioSessionDeactiveEvent newDeactiveEvent;
     newDeactiveEvent.deactiveReason = static_cast<AudioSessionDeactiveReason>(deactiveEvent);
     for (auto it = audioSessionCallbackList_.begin(); it != audioSessionCallbackList_.end(); ++it) {
+        CHECK_AND_CONTINUE((*it) != nullptr);
         (*it)->OnAudioSessionDeactive(newDeactiveEvent);
     }
     return SUCCESS;

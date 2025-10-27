@@ -1822,6 +1822,7 @@ RestoreStatus AudioProcessInClientInner::SetRestoreStatus(RestoreStatus restoreS
 void AudioProcessInClientInner::SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
     uint32_t code)
 {
+    CHECK_AND_RETURN_LOG(processProxy_ != nullptr, "processProxy_ is null.");
     processProxy_->SaveAdjustStreamVolumeInfo(volume, sessionId, adjustTime, code);
 }
 
