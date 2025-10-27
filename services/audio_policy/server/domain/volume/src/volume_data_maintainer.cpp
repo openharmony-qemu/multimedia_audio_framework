@@ -26,10 +26,13 @@ namespace OHOS {
 namespace AudioStandard {
 const std::string AUDIO_SAFE_VOLUME_STATE = "audio_safe_volume_state";
 const std::string AUDIO_SAFE_VOLUME_STATE_BT = "audio_safe_volume_state_bt";
+const std::string AUDIO_SAFE_VOLUME_STATE_SLE = "audio_safe_volume_state_sle";
 const std::string UNSAFE_VOLUME_MUSIC_ACTIVE_MS = "unsafe_volume_music_active_ms";
 const std::string UNSAFE_VOLUME_MUSIC_ACTIVE_MS_BT = "unsafe_volume_music_active_ms_bt";
+const std::string UNSAFE_VOLUME_MUSIC_ACTIVE_MS_SLE = "unsafe_volume_music_active_ms_sle";
 const std::string UNSAFE_VOLUME_LEVEL = "unsafe_volume_level";
 const std::string UNSAFE_VOLUME_LEVEL_BT = "unsafe_volume_level_bt";
+const std::string UNSAFE_VOLUME_LEVEL_SLE = "unsafe_volume_level_sle";
 const std::string SETTINGS_CLONED = "settingsCloneStatus";
 const int32_t INVALIAD_SETTINGS_CLONE_STATUS = -1;
 const int32_t SETTINGS_CLONING_STATUS = 1;
@@ -53,6 +56,7 @@ static const std::vector<DeviceType> DEVICE_TYPE_LIST = {
     DEVICE_TYPE_SPEAKER,
     DEVICE_TYPE_EARPIECE,
     DEVICE_TYPE_BLUETOOTH_A2DP,
+    DEVICE_TYPE_NEARLINK,
     DEVICE_TYPE_WIRED_HEADSET,
     DEVICE_TYPE_REMOTE_CAST
 };
@@ -319,6 +323,9 @@ bool VolumeDataMaintainer::SaveSafeStatus(DeviceType deviceType, SafeStatus safe
         case DEVICE_TYPE_USB_ARM_HEADSET:
             ret = settingProvider.PutIntValue(AUDIO_SAFE_VOLUME_STATE, static_cast<int32_t>(safeStatus));
             break;
+        case DEVICE_TYPE_NEARLINK:
+            ret = settingProvider.PutIntValue(AUDIO_SAFE_VOLUME_STATE_SLE, static_cast<int32_t>(safeStatus));
+            break;
         default:
             AUDIO_WARNING_LOG("the device type not support safe volume");
             return false;
@@ -346,6 +353,9 @@ bool VolumeDataMaintainer::GetSafeStatus(DeviceType deviceType, SafeStatus &safe
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
             ret = settingProvider.GetIntValue(AUDIO_SAFE_VOLUME_STATE, value);
+            break;
+        case DEVICE_TYPE_NEARLINK:
+            ret = settingProvider.GetIntValue(AUDIO_SAFE_VOLUME_STATE_SLE, value);
             break;
         default:
             WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::GET_SAFE_STATUS_A),
@@ -381,6 +391,9 @@ bool VolumeDataMaintainer::SaveSafeVolumeTime(DeviceType deviceType, int64_t tim
         case DEVICE_TYPE_USB_ARM_HEADSET:
             ret = settingProvider.PutLongValue(UNSAFE_VOLUME_MUSIC_ACTIVE_MS, time, "secure");
             break;
+        case DEVICE_TYPE_NEARLINK:
+            ret = settingProvider.PutLongValue(UNSAFE_VOLUME_MUSIC_ACTIVE_MS_SLE, time, "secure");
+            break;
         default:
             WriteVolumeDbAccessExceptionEvent(
                 static_cast<int32_t>(VolumeDbAccessExceptionFuncId::SAVE_SAFE_VOLUME_TIME_A),
@@ -412,6 +425,9 @@ bool VolumeDataMaintainer::GetSafeVolumeTime(DeviceType deviceType, int64_t &tim
         case DEVICE_TYPE_USB_ARM_HEADSET:
             ret = settingProvider.GetLongValue(UNSAFE_VOLUME_MUSIC_ACTIVE_MS, time, "secure");
             break;
+        case DEVICE_TYPE_NEARLINK:
+            ret = settingProvider.GetLongValue(UNSAFE_VOLUME_MUSIC_ACTIVE_MS_SLE, time, "secure");
+            break;
         default:
             WriteVolumeDbAccessExceptionEvent(
                 static_cast<int32_t>(VolumeDbAccessExceptionFuncId::GET_SAFE_VOLUME_TIME_A),
@@ -442,6 +458,9 @@ bool VolumeDataMaintainer::SetRestoreVolumeLevel(DeviceType deviceType, int32_t 
         case DEVICE_TYPE_USB_ARM_HEADSET:
         case DEVICE_TYPE_DP:
             ret = settingProvider.PutIntValue(UNSAFE_VOLUME_LEVEL, volume);
+            break;
+        case DEVICE_TYPE_NEARLINK:
+            ret = settingProvider.PutIntValue(UNSAFE_VOLUME_LEVEL_SLE, volume);
             break;
         default:
             WriteVolumeDbAccessExceptionEvent(
@@ -476,6 +495,9 @@ bool VolumeDataMaintainer::GetRestoreVolumeLevel(DeviceType deviceType, int32_t 
         case DEVICE_TYPE_USB_ARM_HEADSET:
         case DEVICE_TYPE_DP:
             ret = settingProvider.GetIntValue(UNSAFE_VOLUME_LEVEL, value);
+            break;
+        case DEVICE_TYPE_NEARLINK:
+            ret = settingProvider.GetIntValue(UNSAFE_VOLUME_LEVEL_SLE, value);
             break;
         default:
             WriteVolumeDbAccessExceptionEvent(

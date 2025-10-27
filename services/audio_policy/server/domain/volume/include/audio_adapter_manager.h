@@ -484,13 +484,17 @@ private:
     int32_t safeVolume_ = 0;
     SafeStatus safeStatus_ = SAFE_ACTIVE;
     SafeStatus safeStatusBt_ = SAFE_ACTIVE;
+    SafeStatus safeStatusSle_ = SAFE_ACTIVE;
     int64_t safeActiveTime_ = 0;
     int64_t safeActiveBtTime_ = 0;
+    int64_t safeActiveSleTime_ = 0;
     int32_t safeVolumeTimeout_ = DEFAULT_SAFE_VOLUME_TIMEOUT;
     int32_t safeActiveVolume_ = 0;
     int32_t safeActiveBtVolume_ = 0;
+    int32_t safeActiveSleVolume_ = 0;
     bool isWiredBoot_ = true;
     bool isBtBoot_ = true;
+    bool isSleBoot_ = true;
     int32_t curActiveCount_ = 0;
     int32_t volumeAdjustZoneId_ = 0;
     bool isSafeBoot_ = true;
