@@ -61,6 +61,7 @@ namespace {
     const int32_t MEDIA_UID = 1013;
     const float AUDIO_VOLOMUE_EPSILON = 0.0001;
     const int32_t OFFLOAD_INNER_CAP_PREBUF = 3;
+    const size_t OFFLOAD_DUAL_RENDER_PREBUF = 3;
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
     const size_t DEFAULT_CACHE_SIZE = 5;
     constexpr int32_t DEFAULT_SPAN_SIZE = 2;
@@ -1734,6 +1735,14 @@ int32_t RendererInServer::EnableDualTone(const std::string &dupSinkName)
             processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
             isSystemApp, processConfig_.rendererInfo.volumeMode, processConfig_.rendererInfo.isVirtualKeyboard };
         AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
+
+        if (offloadEnable_) {
+            size_t emptyBufferSize = OFFLOAD_DUAL_RENDER_PREBUF * spanSizeInByte_;
+            auto buffer = std::make_unique<uint8_t []>(emptyBufferSize);
+            BufferDesc emptyBufferDesc = {buffer.get(), emptyBufferSize, emptyBufferSize};
+            memset_s(emptyBufferDesc.buffer, emptyBufferSize, 0, emptyBufferSize);
+            dualToneStream_->EnqueueBuffer(emptyBufferDesc);
+        }
 
         isDualToneEnabled_ = true;
         dupSinkName_ = dupSinkName;
