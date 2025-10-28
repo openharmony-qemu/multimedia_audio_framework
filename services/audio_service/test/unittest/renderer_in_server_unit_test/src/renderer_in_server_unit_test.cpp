@@ -2307,6 +2307,30 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerEnableDualTone_004, TestSize.
     int32_t ret = rendererInServer->EnableDualTone("Speaker");
 
     EXPECT_EQ(SUCCESS, ret);
+
+    ret = rendererInServer->EnableDualTone("Test");
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test EnableDualTone API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerEnableDualTone_005
+ * @tc.desc  : Test EnableDualTone interface.
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerEnableDualTone_005, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, rendererInServer);
+
+    rendererInServer->status_ = I_STATUS_STARTED;
+    rendererInServer->Init();
+    rendererInServer->offloadEnable_ = true;
+    int32_t ret = rendererInServer->EnableDualTone("Speaker");
+
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = rendererInServer->EnableDualTone("Test");
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
