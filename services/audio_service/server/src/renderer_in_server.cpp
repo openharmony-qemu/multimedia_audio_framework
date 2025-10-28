@@ -1710,6 +1710,17 @@ int32_t RendererInServer::DisableDualTone()
     return DisableDualToneInner();
 }
 
+void RendererInServer::PreDualToneBufferSilenceForOffload()
+{
+    if (offloadEnable_) {
+        size_t emptyBufferSize = OFFLOAD_DUAL_RENDER_PREBUF * spanSizeInByte_;
+        auto buffer = std::make_unique<uint8_t []>(emptyBufferSize);
+        BufferDesc emptyBufferDesc = {buffer.get(), emptyBufferSize, emptyBufferSize};
+        memset_s(emptyBufferDesc.buffer, emptyBufferSize, 0, emptyBufferSize);
+        dualToneStream_->EnqueueBuffer(emptyBufferDesc);
+    }
+}
+
 int32_t RendererInServer::EnableDualTone(const std::string &dupSinkName)
 {
     {
@@ -1736,13 +1747,7 @@ int32_t RendererInServer::EnableDualTone(const std::string &dupSinkName)
             isSystemApp, processConfig_.rendererInfo.volumeMode, processConfig_.rendererInfo.isVirtualKeyboard };
         AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
 
-        if (offloadEnable_) {
-            size_t emptyBufferSize = OFFLOAD_DUAL_RENDER_PREBUF * spanSizeInByte_;
-            auto buffer = std::make_unique<uint8_t []>(emptyBufferSize);
-            BufferDesc emptyBufferDesc = {buffer.get(), emptyBufferSize, emptyBufferSize};
-            memset_s(emptyBufferDesc.buffer, emptyBufferSize, 0, emptyBufferSize);
-            dualToneStream_->EnqueueBuffer(emptyBufferDesc);
-        }
+        PreDualToneBufferSilenceForOffload();
 
         isDualToneEnabled_ = true;
         dupSinkName_ = dupSinkName;

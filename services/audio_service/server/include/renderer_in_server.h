@@ -120,7 +120,6 @@ public:
     std::unique_ptr<AudioRingCache>& GetDupRingBuffer();
 
     // for dual tone
-    int32_t DisableDualToneInner();
     int32_t EnableDualTone(const std::string &dupSinkName);
     int32_t DisableDualTone();
 
@@ -210,6 +209,9 @@ private:
     void ClearInnerCapBufferForInject();
     // only for a2dp offload
     void WaitForDataConnection();
+
+    int32_t DisableDualToneInner();
+    void PreDualToneBufferSilenceForOffload();
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
