@@ -168,6 +168,19 @@ bool AudioPolicyServerHandler::SendDeviceChangedCallback(
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendDeviceInfoUpdatedCallback(
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->deviceChangeAction.deviceDescriptors = desc;
+
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::AUDIO_DEVICE_INFO_UPDATE, eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "SendDeviceInfoUpdatedCallback event failed");
+    return ret;
+}
+
 bool AudioPolicyServerHandler::SendMicrophoneBlockedCallback(
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, DeviceBlockStatus status)
 {
@@ -695,6 +708,29 @@ void AudioPolicyServerHandler::HandleDeviceChangedCallback(const AppExecFwk::Inn
                 AUDIO_INFO_LOG("Send DeviceChange deviceType[%{public}d] change to clientPid[%{public}d]",
                     deviceChangeAction.deviceDescriptors[0]->deviceType_, it->first);
                 it->second->OnDeviceChange(deviceChangeAction);
+            }
+        }
+    }
+}
+
+void AudioPolicyServerHandler::HandleDeviceInfoUpdatedCallback(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(handleMapMutex_);
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        if (it->second && eventContextObj->deviceChangeAction.deviceDescriptors.size() > 0) {
+            DeviceChangeAction deviceChangeAction = eventContextObj->deviceChangeAction;
+            if (!(it->second->hasBTPermission_)) {
+                AudioPolicyService::GetAudioPolicyService().
+                    UpdateDescWhenNoBTPermission(deviceChangeAction.deviceDescriptors);
+            }
+            if (clientCallbacksMap_.count(it->first) > 0 &&
+                clientCallbacksMap_[it->first].count(CALLBACK_SET_DEVICE_INFO_UPDATE) > 0 &&
+                clientCallbacksMap_[it->first][CALLBACK_SET_DEVICE_INFO_UPDATE]) {
+                AUDIO_INFO_LOG("Send DeviceInfoUpdate deviceType[%{public}d] change to clientPid[%{public}d]",
+                    deviceChangeAction.deviceDescriptors[0]->deviceType_, it->first);
+                it->second->OnDeviceInfoUpdate(deviceChangeAction);
             }
         }
     }
@@ -1603,6 +1639,9 @@ void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
     switch (eventId) {
         case EventAudioServerCmd::AUDIO_DEVICE_CHANGE:
             HandleDeviceChangedCallback(event);
+            break;
+        case EventAudioServerCmd::AUDIO_DEVICE_INFO_UPDATE:
+            HandleDeviceInfoUpdatedCallback(event);
             break;
         case EventAudioServerCmd::PREFERRED_OUTPUT_DEVICE_UPDATED:
             HandlePreferredOutputDeviceUpdated();

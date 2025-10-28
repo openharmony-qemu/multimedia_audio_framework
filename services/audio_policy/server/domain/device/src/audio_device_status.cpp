@@ -315,6 +315,14 @@ void AudioDeviceStatus::TriggerDeviceChangedCallback(const vector<std::shared_pt
     }
 }
 
+void AudioDeviceStatus::TriggerDeviceInfoUpdatedCallback(
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+{
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendDeviceInfoUpdatedCallback(desc);
+    }
+}
+
 void AudioDeviceStatus::UpdateLocalGroupInfo(bool isConnected, const std::string& macAddress,
     const std::string& deviceName, const DeviceStreamInfo& streamInfo, AudioDeviceDescriptor& deviceDesc)
 {
