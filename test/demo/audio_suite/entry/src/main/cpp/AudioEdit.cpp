@@ -8,6 +8,7 @@
 #include <climits>
 #include <string>
 #include <map>
+#include <algorithm>
 #include <sys/stat.h>
 #include "napi/native_api.h"
 #include <unistd.h>
@@ -1237,11 +1238,11 @@ static napi_value SaveFileBuffer(napi_env env, napi_callback_info info)
         napi_create_arraybuffer(env, 0, &arrayBufferData, &napiValue);
         return napiValue;
     } else {
-        auto ret = memcpy_s(arrayBufferData, g_totalSize, g_totalBuff, g_totalSize);
-        if (ret != 0) {
-            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
-                "audioEditTest memcpy_s arrayBufferData failed, ret is %{public}zd", ret);
-        }
+        std::copy(
+            reinterpret_cast<const char*>(g_totalBuff),
+            reinterpret_cast<const char*>(g_totalBuff) + g_totalSize,
+            reinterpret_cast<char*>(arrayBufferData)
+        );
         if (g_totalBuff != nullptr) {
             free(g_totalBuff);
             g_totalBuff = nullptr;
@@ -1615,12 +1616,11 @@ void OnReadTapDataCallback(OH_AudioNode *audioNode, void *userData, void *audioD
         return;
     }
 
-    auto ret = memcpy_s(static_cast<char *>(g_aissTapAudioData) + g_tapDataTotalSize,
-        audioDataSize, audioData, audioDataSize);
-    if (ret != 0) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
-            "audioEditTest memcpy_s g_aissTapAudioData failed, ret is %{public}zd", ret);
-    }
+    std::copy(
+        reinterpret_cast<const char*>(audioData),
+        reinterpret_cast<const char*>(audioData) + audioDataSize,
+        reinterpret_cast<char*>(g_aissTapAudioData) + g_tapDataTotalSize
+    );
     g_tapDataTotalSize += audioDataSize;
 }
 
@@ -1953,12 +1953,12 @@ static napi_value getAudioOfTap(napi_env env, napi_callback_info info)
     napi_value napiValue = nullptr;
     void *data;
     napi_create_arraybuffer(env, g_tapDataTotalSize, &data, &napiValue);
-    auto result = memcpy_s(data, g_tapDataTotalSize, g_aissTapAudioData, g_tapDataTotalSize);
-    if (result != 0) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
-            "audioEditTest---getAudioOfTap memcpy data ERROR---%{public}zd", result);
-    }
-    result = memset_s(g_aissTapAudioData, g_tapDataTotalSize, 0, g_tapDataTotalSize);
+    std::copy(
+        reinterpret_cast<const char*>(g_aissTapAudioData),
+        reinterpret_cast<const char*>(g_aissTapAudioData) + g_tapDataTotalSize,
+        reinterpret_cast<char*>(data)
+    );
+    auto result = memset_s(g_aissTapAudioData, g_tapDataTotalSize, 0, g_tapDataTotalSize);
     if (result != 0) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
             "audioEditTest---getAudioOfTap memset g_aissTapAudioData ERROR---%{public}zd", result);
@@ -2095,11 +2095,11 @@ static OH_AudioSuite_Result OneRenDerFrame(int32_t audioDataSize)
     }
     // 每次保存一次获取的buffer值
     g_audioData = (char *)malloc(writeSize);
-    auto ret = memcpy_s(static_cast<char *>(g_audioData), writeSize, audioData, writeSize);
-    if (ret != 0) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
-            "audioEditTest memcpy g_audioData failed, ret is %{public}zd", ret);
-    }
+    std::copy(
+        reinterpret_cast<const char*>(audioData),
+        reinterpret_cast<const char*>(audioData) + writeSize,
+        reinterpret_cast<char*>(g_audioData)
+    );
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
         "audioEditTest OH_AudioSuiteEngine_RenderFrame writeSize : %{public}d, g_oneFinishedFlag: %{public}s",
         writeSize, (g_oneFinishedFlag ? "true" : "false"));
@@ -2129,11 +2129,11 @@ static napi_value RealTimeSaveFileBuffer(napi_env env, napi_callback_info info)
         napi_create_arraybuffer(env, 0, &arrayBufferData, &napiValue);
         return napiValue;
     } else {
-        auto ret = memcpy_s(arrayBufferData, g_mixResultTotalSize, g_mixTotalAudioData, g_mixResultTotalSize);
-        if (ret != 0) {
-            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
-                "audioEditTest memcpy_s arrayBufferData failed, ret is %{public}zd", ret);
-        }
+        std::copy(
+            reinterpret_cast<const char*>(g_mixTotalAudioData),
+            reinterpret_cast<const char*>(g_mixTotalAudioData) + g_mixResultTotalSize,
+            reinterpret_cast<char*>(arrayBufferData)
+        );
         if (g_mixTotalAudioData != nullptr) {
             free(g_mixTotalAudioData);
             g_mixTotalAudioData = nullptr;
@@ -2162,22 +2162,21 @@ static OH_AudioData_Callback_Result NewAudioRendererOnWriteData(OH_AudioRenderer
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "g_isRecord: %{public}s", g_isRecord ? "true" : "false");
         // 每次保存一次获取的buffer值
         if (audioDataSize != 0 && g_isRecord == true) {
-            auto ret = memcpy_s(static_cast<char *>(g_mixTotalAudioData) + g_mixResultTotalSize,
-                audioDataSize, g_audioData, audioDataSize);
-            if (ret != 0) {
-                OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
-                    "audioEditTest memcpy_s g_mixTotalAudioData failed, ret is %{public}zd", ret);
-            }
+            std::copy(
+                reinterpret_cast<const char*>(g_audioData),
+                reinterpret_cast<const char*>(g_audioData) + audioDataSize,
+                reinterpret_cast<char*>(g_mixTotalAudioData) + g_mixResultTotalSize
+            );
             g_mixResultTotalSize += audioDataSize;
         }
     }
     // 播放音频数据
     if (g_audioData != nullptr) {
-        auto ret = memcpy_s(static_cast<char *>(audioData), audioDataSize, g_audioData, audioDataSize);
-        if (ret != 0) {
-            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
-                "audioEditTest memcpy_s audioData failed, ret is %{public}zd", ret);
-        }
+        std::copy(
+            reinterpret_cast<const char*>(g_audioData),
+            reinterpret_cast<const char*>(g_audioData) + audioDataSize,
+            reinterpret_cast<char*>(audioData)
+        );
     }
     if (g_oneFinishedFlag) {
         OH_AudioRenderer_Stop(audioRenderer);
