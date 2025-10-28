@@ -1419,9 +1419,9 @@ int32_t RendererInServer::Release(bool isSwitchStream)
     }
     status_ = I_STATUS_RELEASED;
     DisableAllInnerCap();
-    if (isDualToneEnabled_) {
-        DisableDualTone();
-    }
+
+    DisableDualTone();
+
     XperfAdapter::GetInstance().ReportStateChangeEventIfNeed(XPERF_EVENT_RELEASE,
         processConfig_.rendererInfo.streamUsage, streamIndex_, processConfig_.appInfo.appPid,
         processConfig_.appInfo.appUid);
