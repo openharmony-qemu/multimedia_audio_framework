@@ -43,9 +43,11 @@ constexpr uint32_t CAPTURER_ID_OFFSET = 16;
 constexpr uint64_t SCENE_TYPE_MASK = 0xFF00000000;
 constexpr uint64_t CAPTURER_ID_MASK = 0x0000FFFF0000;
 constexpr uint32_t VOLUME_FACTOR = 100;
+constexpr uint32_t BATTERY_CAPACITY = 100;
 const std::vector<AudioEnhanceScene> AUDIO_WITH_DEVICE_ENHANCES = { SCENE_VOIP_UP };
 const std::string MAINKEY_DEVICE_STATUS = "device_status";
 const std::string SUBKEY_FOLD_STATE = "fold_state";
+const std::string SUBKEY_POWER_STATE = "power_state";
 
 const std::map<AudioEnhanceScene, uint32_t> SCENE_THREAD_ID_MAP = {
     { SCENE_VOIP_UP, 1 },
@@ -351,7 +353,7 @@ std::shared_ptr<AudioEnhanceChain> AudioEnhanceChainManagerImpl::CreateEnhanceCh
     CHECK_AND_RETURN_RET_LOG(parseSceneKeyCodeRet == SUCCESS, nullptr, "ParseSceneKeyCode fail");
 
     AudioEnhanceParamAdapter enhancePara = { enhancePara_.muteInfo, enhancePara_.volumeInfo, enhancePara_.foldState,
-        capturerDevice, rendererDeivce, sceneType, "" };
+        enhancePara_.powerState, capturerDevice, rendererDeivce, sceneType, "" };
     if (priorSceneSet_.find(sceneType) != priorSceneSet_.end()) {
         AUDIO_INFO_LOG("scene: %{public}s create prior enhance chain", sceneType.c_str());
         return std::make_shared<AudioEnhanceChain>(sceneKeyCode, sceneType, PRIOR_SCENE, enhancePara, deviceAttr);
@@ -686,33 +688,55 @@ void AudioEnhanceChainManagerImpl::UpdateExtraSceneType(const std::string &maink
     const std::string &extraSceneType)
 {
     uint32_t tempState = 0;
-    if (mainkey == MAINKEY_DEVICE_STATUS && subkey == SUBKEY_FOLD_STATE) {
+    if (extraSceneType.empty()) {
+        AUDIO_WARNING_LOG("extraSceneTypen is empty string!");
+        return;
+    }
+    auto result = std::from_chars(extraSceneType.data(), extraSceneType.data() + extraSceneType.size(), tempState);
+    if (result.ec != std::errc() || result.ptr != (extraSceneType.data() + extraSceneType.size())) {
+        AUDIO_ERR_LOG("extraSceneType: %{public}s is invalid", extraSceneType.c_str());
+        return;
+    }
+
+    if (mainkey == MAINKEY_DEVICE_STATUS && subkey == SUBKEY_FOLD_STATE &&
+        tempState >= FOLD_STATE_EXPAND && tempState <= FOLD_STATE_MIDDLE) {
         AUDIO_INFO_LOG("Set fold state: %{public}s to arm", extraSceneType.c_str());
-        auto result = std::from_chars(extraSceneType.data(), extraSceneType.data() + extraSceneType.size(), tempState);
-        if (result.ec != std::errc() || result.ptr != (extraSceneType.data() + extraSceneType.size())) {
-            AUDIO_ERR_LOG("extraSceneType: %{public}s is invalid", extraSceneType.c_str());
-            return;
+        {
+            std::lock_guard<std::mutex> lockFold(chainManagerMutex_);
+            enhancePara_.foldState = tempState;
         }
+        SendFoldStateToChain(tempState);
+    } else if (mainkey == MAINKEY_DEVICE_STATUS && subkey == SUBKEY_POWER_STATE &&
+        tempState >= 0 && tempState <= BATTERY_CAPACITY) {
+        {
+            std::lock_guard<std::mutex> lockPower(chainManagerMutex_);
+            enhancePara_.powerState = tempState;
+        }
+        SendPowerStateToChain(tempState);
     } else {
         AUDIO_INFO_LOG("UpdateExtraSceneType failed, mainkey is %{public}s, subkey is %{public}s, "
             "extraSceneType is %{public}s", mainkey.c_str(), subkey.c_str(), extraSceneType.c_str());
         return;
     }
+}
 
-    {
-        std::lock_guard<std::mutex> lock(chainManagerMutex_);
-        enhancePara_.foldState = tempState;
-    }
-
+void AudioEnhanceChainManagerImpl::SendFoldStateToChain(uint32_t foldState)
+{
     auto chainArray = ChainPool::GetInstance().GetAllChain();
     for (const auto &chain : chainArray) {
-        if (chain == nullptr) {
-            continue;
-        }
-        if (chain->SetFoldState(tempState) != SUCCESS) {
-            AUDIO_WARNING_LOG("Set fold state to enhance chain failed");
-            continue;
-        }
+        CHECK_AND_CONTINUE(chain != nullptr);
+        JUDGE_AND_WARNING_LOG(chain->SetFoldState(foldState) != SUCCESS,
+            "Set fold state to enhance chain failed");
+    }
+}
+
+void AudioEnhanceChainManagerImpl::SendPowerStateToChain(uint32_t powerState)
+{
+    auto chainArray = ChainPool::GetInstance().GetAllChain();
+    for (const auto &chain : chainArray) {
+        CHECK_AND_CONTINUE(chain != nullptr);
+        JUDGE_AND_WARNING_LOG(chain->SetPowerState(powerState) != SUCCESS,
+            "Set power state to enhance chain failed");
     }
 }
 

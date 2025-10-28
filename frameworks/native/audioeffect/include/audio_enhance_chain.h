@@ -61,6 +61,7 @@ struct AudioEnhanceParamAdapter {
     uint32_t muteInfo { 0 };
     uint32_t volumeInfo { 0 };
     uint32_t foldState { FOLD_STATE_MIDDLE };
+    uint32_t powerState { 0 };
     std::string preDevice;
     std::string postDevice;
     std::string sceneType;
@@ -83,6 +84,7 @@ public:
     int32_t SetEnhanceParam(bool mute, uint32_t systemVol);
     int32_t SetInputDevice(const std::string &inputDevice, const std::string &deviceName);
     int32_t SetFoldState(uint32_t foldState);
+    int32_t SetPowerState(uint32_t powerState);
     int32_t SetThreadHandler(const std::shared_ptr<ThreadHandler> &threadHandler);
     int32_t GetOutputDataFromChain(void *buf, size_t bufSize);
     int32_t ApplyEnhanceChain(const EnhanceTransBuffer &transBuf);
@@ -96,7 +98,9 @@ private:
     int32_t PrepareChainInputData(void);
     int32_t ProcessInitCommand(void);
     int32_t ProcessSetFoldState(uint32_t foldState);
-    int32_t ProcessSetEnhanceParam(bool mute, uint32_t systemVol);
+    int32_t ProcessSetPowerState(uint32_t powerState);
+    int32_t ProcessSetVolumeParam(bool mute, uint32_t systemVol);
+    int32_t ProcessSetEnhanceParam();
     int32_t ProcessCreateAllEnhanceModule(const std::vector<EnhanceModulePara> &moduleParas);
     int32_t ProcessSetInputDevice(const std::string &inputDevice, const std::string &deviceName);
     int32_t ProcessSetEnhanceProperty(const std::string &enhance, const std::string &property);
