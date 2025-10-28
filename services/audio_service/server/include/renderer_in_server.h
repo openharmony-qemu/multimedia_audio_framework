@@ -98,6 +98,7 @@ public:
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa);
     int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled);
     void CheckAndWriterRenderStreamStandbySysEvent(bool standbyEnable);
+    void OnCheckActiveMusicTime(const std::string &reason);
 
     int32_t GetStandbyStatus(bool &isStandby, int64_t &enterStandbyTime);
 

@@ -1684,5 +1684,10 @@ int32_t AudioCoreService::SetQueryBundleNameListCallback(const sptr<IRemoteObjec
         "Query bundle name list callback is null");
     return SUCCESS;
 }
+
+void AudioCoreService::OnCheckActiveMusicTime(const std::string &reason)
+{
+    AudioVolumeManager::GetInstance().OnCheckActiveMusicTime(reason);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -175,6 +175,27 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerOnStatusUpdate_005, Test
 }
 
 /**
+ * @tc.name  : Test OnStatusUpdate API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerOnStatusUpdate_006
+ * @tc.desc  : Test RendererInServerOnStatusUpdate.
+ */
+HWTEST_F(RendererInServerThirdUnitTest, RendererInServerOnStatusUpdate_006, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+    rendererInServer->OnCheckActiveMusicTime("Started");
+    rendererInServer->latestForWorkgroup_.status = I_STATUS_IDLE;
+    rendererInServer->status_ = I_STATUS_IDLE;
+    rendererInServer->OnStatusUpdate(OPERATION_SET_OFFLOAD_ENABLE);
+    EXPECT_TRUE(rendererInServer->offloadEnable_);
+    rendererInServer->OnCheckActiveMusicTime("Started");
+    EXPECT_TRUE(rendererInServer->offloadEnable_);
+}
+
+/**
  * @tc.name  : Test WriteMuteDataSysEvent API
  * @tc.type  : FUNC
  * @tc.number: RendererInServerWriteMuteDataSysEvent_001

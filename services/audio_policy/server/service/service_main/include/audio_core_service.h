@@ -100,6 +100,7 @@ public:
             AudioStreamInfo &streamInfo, bool isReloadProcess = false) override;
         uint32_t GenerateSessionId() override;
         int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
+        void OnCheckActiveMusicTime(const std::string &reason) override;
 
         // IDeviceStatusObserver
         void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command) override;
@@ -233,6 +234,7 @@ private:
         AudioStreamInfo &streamInfo);
     uint32_t GenerateSessionId();
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
+    void OnCheckActiveMusicTime(const std::string &reason);
 
     // IDeviceStatusObserver from EventEntry
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
