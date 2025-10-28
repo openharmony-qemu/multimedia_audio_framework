@@ -27,6 +27,7 @@ public:
     void GetDownMixTable(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS]) const;
     int32_t SetParam(AudioChannelInfo inChannelInfo, AudioChannelInfo outChannelInfo,
         uint32_t formatSize, bool mixLfe);
+    void SetNormalization(bool normalizing);
     void Reset();
 private:
     void SetupStereoDmixTable();
@@ -64,6 +65,7 @@ private:
     float downMixTable_[MAX_CHANNELS][MAX_CHANNELS] = {{0}};
     bool mixLfe_ = true;
     bool isInitialized_ = false;
+    bool normalizing_ = true; // prevent downmix overflow, if there is a limiter this can be set to false
 
     uint32_t gSl_ = 6;
     uint32_t gSr_ = 7;
