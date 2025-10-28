@@ -357,13 +357,14 @@ void SleAudioDeviceManager::UpdateSleStreamTypeCount(const std::shared_ptr<Audio
     std::string oldDeviceAddr = "";
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
-        streamType = GetSleStreamTypeByStreamUsage(streamUsage, isGameApp);
 
         if (IsNearlinkMoveToOtherDevice(streamDesc)) {
+            streamType = GetSleStreamTypeByStreamUsage(streamUsage, isGameApp);
             oldDeviceAddr = streamDesc->oldDeviceDescs_[0]->macAddress_;
             UpdateStreamTypeMap(oldDeviceAddr, streamType, sessionId, false);
         }
         if (IsMoveToNearlinkDevice(streamDesc)) {
+            streamType = GetSleStreamTypeByStreamUsage(streamUsage, isGameApp);
             newDeviceAddr = streamDesc->newDeviceDescs_[0]->macAddress_;
             if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
                 UpdateStreamTypeMap(newDeviceAddr, streamType, sessionId, true);
