@@ -102,6 +102,7 @@ static void GetPermission()
  */
 HWTEST(AudioSystemManagerUnitTest, GetMaxVolume_001, TestSize.Level1)
 {
+    GetPermission();
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMaxVolume_001 start");
     int32_t result = AudioSystemManager::GetInstance()->GetMaxVolume(STREAM_ALL);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMaxVolume_001 result1:%{public}d", result);
@@ -1615,7 +1616,6 @@ HWTEST(AudioSystemManagerUnitTest, GetStreamType_003, TestSize.Level4)
 HWTEST(AudioSystemManagerUnitTest, GetAudioScene_001, TestSize.Level4)
 {
     AudioSystemManager audioSystemManager;
-    GetPermission();
     audioSystemManager.SetAudioScene(AUDIO_SCENE_PHONE_CALL);
     int result = audioSystemManager.GetAudioScene();
     EXPECT_EQ(result, AUDIO_SCENE_PHONE_CALL);
