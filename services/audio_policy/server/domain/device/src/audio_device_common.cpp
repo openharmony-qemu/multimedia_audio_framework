@@ -1666,6 +1666,7 @@ void AudioDeviceCommon::ClientDiedDisconnectScoRecognition()
     if (hasRunningRecognitionCapturerStream) {
         return;
     }
+    audioStateManager_.SetPreferredRecognitionCaptureDevice(make_shared<AudioDeviceDescriptor>());
     Bluetooth::AudioHfpManager::HandleScoWithRecongnition(false);
 }
 

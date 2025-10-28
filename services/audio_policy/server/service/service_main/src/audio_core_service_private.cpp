@@ -546,6 +546,7 @@ void AudioCoreService::HandleAudioCaptureState(AudioMode &mode, AudioStreamChang
         auto sourceType = streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType;
         auto sessionId = streamChangeInfo.audioCapturerChangeInfo.sessionId;
         if (Util::IsScoSupportSource(sourceType)) {
+            audioStateManager_.SetPreferredRecognitionCaptureDevice(make_shared<AudioDeviceDescriptor>());
             Bluetooth::AudioHfpManager::HandleScoWithRecongnition(false);
         } else {
             AUDIO_INFO_LOG("close capture app, try to disconnect sco");
