@@ -105,10 +105,6 @@ private:
         size_t argc, const std::string &cbName, NapiAudioVolumeManager *napiAudioVolumeManager);
     static std::shared_ptr<NapiAudioVolumeKeyEvent> GetVolumeEventNapiCallback(napi_value argv,
         NapiAudioVolumeManager *napiVolumeManager);
-    static std::shared_ptr<NapiAudioStreamVolumeChangeCallback> GetStreamVolumeChangeNapiCallback(napi_value argv,
-        NapiAudioVolumeManager *napiVolumeManager);
-    static std::shared_ptr<NapiAudioSystemVolumeChangeCallback> GetSystemVolumeChangeNapiCallback(napi_value argv,
-        NapiAudioVolumeManager *napiVolumeManager);
     static napi_value RegisterActiveVolumeTypeChangeCallback(napi_env env, napi_value *args,
         const std::string &cbName, NapiAudioVolumeManager *napiAudioVolumeManager);
     static void UnregisterActiveVolumeTypeChangeCallback(napi_env env, napi_value callback, napi_value *args,
@@ -138,14 +134,14 @@ private:
     int32_t cachedClientId_ = -1;
     std::shared_ptr<VolumeKeyEventCallback> volumeKeyEventCallbackNapi_ = nullptr;
     std::shared_ptr<VolumeKeyEventCallback> volumeDegreeCallbackNapi_ = nullptr;
-    std::shared_ptr<StreamVolumeChangeCallback> streamVolumeChangeCallbackNapi_ = nullptr;
+    std::map<int32_t, std::shared_ptr<StreamVolumeChangeCallback>> streamVolumeChangeCallbackNapiMap_;
     std::shared_ptr<SystemVolumeChangeCallback> systemVolumeChangeCallbackNapi_ = nullptr;
     std::shared_ptr<AudioManagerAppVolumeChangeCallback> selfAppVolumeChangeCallbackNapi_ = nullptr;
     std::shared_ptr<AudioManagerAppVolumeChangeCallback> appVolumeChangeCallbackForUidNapi_ = nullptr;
     std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> activeVolumeTypeChangeCallbackNapi_ = nullptr;
     std::list<std::shared_ptr<NapiAudioVolumeKeyEvent>> volumeKeyEventCallbackNapiList_;
-    std::list<std::shared_ptr<NapiAudioStreamVolumeChangeCallback>> streamVolumeChangeCallbackNapiList_;
-    std::list<std::shared_ptr<NapiAudioSystemVolumeChangeCallback>> systemVolumeChangeCallbackNapiList_;
+
+    std::mutex streamMapMutex_;
 
     napi_env env_;
 };
