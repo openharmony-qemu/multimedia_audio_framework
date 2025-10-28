@@ -1219,6 +1219,69 @@ HWTEST(AudioProcessInServerUnitTest, GetSpanSizeInFrame_001, TestSize.Level4)
     EXPECT_EQ(ret, audioProcessInServerRet.spanSizeInframe_);
 }
 
+/*
+ * @tc.name  : Test NeedUseTempBuffer API
+ * @tc.type  : FUNC
+ * @tc.number: NeedUseTempBuffer_01
+ * @tc.desc  : Test AudioEndpointInner::NeedUseTempBuffer()
+ */
+HWTEST_F(AudioProcessInServerUnitTest, NeedUseTempBuffer_01, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+
+    std::vector<uint8_t> buffer1(1, 0);
+    std::vector<uint8_t> buffer2(1, 0);
+    RingBufferWrapper ringBuffer = {
+        {{
+            {.buffer = buffer1.data(), .bufLength = 1},
+            {.buffer = buffer2.data(), .bufLength = 1},
+        }},
+        // 1 + 1 = 2
+        .dataLength = 2
+    };
+    auto ret = audioProcessInServerRet.NeedUseTempBuffer(ringBuffer, 1);
+    EXPECT_EQ(ret, true);
+
+    ringBuffer.dataLength = 1;
+    ret = audioProcessInServerRet.NeedUseTempBuffer(ringBuffer, 1);
+    EXPECT_EQ(ret, false);
+
+    // 2 > 1
+    ret = audioProcessInServerRet.NeedUseTempBuffer(ringBuffer, 2);
+    EXPECT_EQ(ret, true);
+}
+
+/*
+ * @tc.name  : Test PrepareStreamDataBuffer API
+ * @tc.type  : FUNC
+ * @tc.number: PrepareStreamDataBuffer_01
+ * @tc.desc  : Test AudioEndpointInner::PrepareStreamDataBuffer()
+ */
+HWTEST_F(AudioProcessInServerUnitTest, PrepareStreamDataBuffer_01, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+
+    std::vector<uint8_t> buffer1(1, 0);
+    RingBufferWrapper ringBuffer = {
+        {{
+            {.buffer = buffer1.data(), .bufLength = 1},
+            {.buffer = nullptr, .bufLength = 0},
+        }},
+        .dataLength = 1
+    };
+    AudioStreamData streamData;
+    audioProcessInServerRet.PrepareStreamDataBuffer(1, ringBuffer, streamData);
+    // spansizeinframe == 2; spansizeinframe > datalenth
+    audioProcessInServerRet.PrepareStreamDataBuffer(2, ringBuffer, streamData);
+
+    // processTmpBufferList[i] == spansizeinframe
+    EXPECT_EQ(audioProcessInServerRet.processTmpBuffer_.size(), 2);
+}
+
 #ifdef ENABLE_INJECT
 class MockProResampler : public HPAE::ProResampler {
 public:

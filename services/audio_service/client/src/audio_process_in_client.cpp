@@ -159,8 +159,6 @@ public:
     static void AudioServerDied(pid_t pid, pid_t uid);
 
 private:
-    static bool ChannelFormatS16Convert(const AudioStreamData &srcData, const AudioStreamData &dstData);
-    static bool ChannelFormatS32Convert(const AudioStreamData &srcData, const AudioStreamData &dstData);
 
     bool InitAudioBuffer();
 
@@ -868,36 +866,6 @@ int32_t AudioProcessInClientInner::GetBufferDesc(BufferDesc &bufDesc) const
     return SUCCESS;
 }
 
-// only support convert to SAMPLE_S32LE STEREO
-bool AudioProcessInClientInner::ChannelFormatS32Convert(const AudioStreamData &srcData, const AudioStreamData &dstData)
-{
-    Trace traceConvert("APIC::ChannelFormatS32Convert");
-    if (srcData.streamInfo.samplingRate != dstData.streamInfo.samplingRate ||
-        srcData.streamInfo.encoding != dstData.streamInfo.encoding) {
-        return false;
-    }
-    if (srcData.streamInfo.format == SAMPLE_S16LE && srcData.streamInfo.channels == STEREO) {
-        return FormatConverter::S16StereoToS32Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
-    }
-    if (srcData.streamInfo.format == SAMPLE_S16LE && srcData.streamInfo.channels == MONO) {
-        return FormatConverter::S16MonoToS32Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
-    }
-    if (srcData.streamInfo.format == SAMPLE_S32LE && srcData.streamInfo.channels == MONO) {
-        return FormatConverter::S32MonoToS32Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
-    }
-    if (srcData.streamInfo.format == SAMPLE_S32LE && srcData.streamInfo.channels == STEREO) {
-        return true; // no need convert, copy is done in NoFormatConvert:CopyData
-    }
-    if (srcData.streamInfo.format == SAMPLE_F32LE && srcData.streamInfo.channels == MONO) {
-        return FormatConverter::F32MonoToS32Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
-    }
-    if (srcData.streamInfo.format == SAMPLE_F32LE && srcData.streamInfo.channels == STEREO) {
-        return FormatConverter::F32StereoToS32Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
-    }
-
-    return false;
-}
-
 bool AudioProcessInClient::CheckIfSupport(const AudioProcessConfig &config)
 {
     if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
@@ -923,35 +891,6 @@ bool AudioProcessInClient::CheckIfSupport(const AudioProcessConfig &config)
         return false;
     }
     return true;
-}
-
-// only support convert to SAMPLE_S16LE STEREO
-bool AudioProcessInClientInner::ChannelFormatS16Convert(const AudioStreamData &srcData, const AudioStreamData &dstData)
-{
-    if (srcData.streamInfo.samplingRate != dstData.streamInfo.samplingRate ||
-        srcData.streamInfo.encoding != dstData.streamInfo.encoding) {
-        return false;
-    }
-    if (srcData.streamInfo.format == SAMPLE_S16LE && srcData.streamInfo.channels == STEREO) {
-        return true; // no need convert, copy is done in NoFormatConvert:CopyData
-    }
-    if (srcData.streamInfo.format == SAMPLE_S16LE && srcData.streamInfo.channels == MONO) {
-        return FormatConverter::S16MonoToS16Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
-    }
-    if (srcData.streamInfo.format == SAMPLE_S32LE && srcData.streamInfo.channels == MONO) {
-        return FormatConverter::S32MonoToS16Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
-    }
-    if (srcData.streamInfo.format == SAMPLE_S32LE && srcData.streamInfo.channels == STEREO) {
-        return FormatConverter::S32StereoToS16Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
-    }
-    if (srcData.streamInfo.format == SAMPLE_F32LE && srcData.streamInfo.channels == MONO) {
-        return FormatConverter::F32MonoToS16Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
-    }
-    if (srcData.streamInfo.format == SAMPLE_F32LE && srcData.streamInfo.channels == STEREO) {
-        return FormatConverter::F32StereoToS16Stereo(srcData.bufferDesc, dstData.bufferDesc) == 0;
-    }
-
-    return false;
 }
 
 void AudioProcessInClientInner::CopyWithVolume(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const
@@ -1003,12 +942,7 @@ int32_t AudioProcessInClientInner::ProcessData(const BufferDesc &srcDesc, const 
     Trace traceConvert("APIC::FormatConvert");
     AudioStreamData srcData = {processConfig_.streamInfo, srcDesc, 0, 0};
     AudioStreamData dstData = {targetStreamInfo_, dstDesc, 0, 0};
-    bool succ = false;
-    if (targetStreamInfo_.format == SAMPLE_S16LE) {
-        succ = ChannelFormatS16Convert(srcData, dstData);
-    } else if (targetStreamInfo_.format == SAMPLE_S32LE) {
-        succ = ChannelFormatS32Convert(srcData, dstData);
-    }
+    bool succ = FormatConverter::AutoConvertToS16S32Stereo(targetStreamInfo_.format, srcData, dstData);
     CHECK_AND_RETURN_RET_LOG(succ, ERR_OPERATION_FAILED, "Convert data failed!");
     AudioBufferHolder bufferHolder = audioBuffer_->GetBufferHolder();
     if (bufferHolder == AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) {
