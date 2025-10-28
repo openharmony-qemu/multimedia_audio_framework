@@ -1958,11 +1958,11 @@ static napi_value getAudioOfTap(napi_env env, napi_callback_info info)
         reinterpret_cast<const char*>(g_aissTapAudioData) + g_tapDataTotalSize,
         reinterpret_cast<char*>(data)
     );
-    auto result = memset_s(g_aissTapAudioData, g_tapDataTotalSize, 0, g_tapDataTotalSize);
-    if (result != 0) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
-            "audioEditTest---getAudioOfTap memset g_aissTapAudioData ERROR---%{public}zd", result);
-    }
+    std::fill(
+        reinterpret_cast<char*>(g_aissTapAudioData),
+        reinterpret_cast<char*>(g_aissTapAudioData) + g_tapDataTotalSize,
+        0
+    );
     g_tapDataTotalSize = 0;
     return napiValue;
 }
