@@ -476,7 +476,6 @@ void BluetoothScoManager::SetAudioScoState(AudioScoState state)
 
 void BluetoothScoManager::OnScoStateTimeOut()
 {
-    std::lock_guard<std::mutex> stateLock(scoLock_);
     AUDIO_ERR_LOG("scoCategory: %{public}d state: %{public}d time out",
         currentScoCategory_, currentScoState_);
 }
