@@ -187,6 +187,13 @@ void SetAndGetPreferredToneRenderDeviceFuzzTest()
     AudioStateManager::GetAudioStateManager().GetPreferredToneRenderDevice();
 }
 
+void SetAndGetPreferredRecognitionCaptureDeviceFuzzTest()
+{
+    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    AudioStateManager::GetAudioStateManager().SetPreferredRecognitionCaptureDevice(desc);
+    AudioStateManager::GetAudioStateManager().GetPreferredRecognitionCaptureDevice();
+}
+
 void SetAudioClientInfoMgrCallbackFuzzTest()
 {
     sptr<IStandardAudioPolicyManagerListener> desc = sptr<IStandardAudioPolicyManagerListener>();
@@ -226,6 +233,7 @@ TestFuncs g_testFuncs[] = {
     UpdatePreferredRecordCaptureDeviceConnectStateFuzzTest,
     SetAndGetPreferredRingRenderDeviceFuzzTest,
     SetAndGetPreferredToneRenderDeviceFuzzTest,
+    SetAndGetPreferredRecognitionCaptureDeviceFuzzTest,
     SetAudioClientInfoMgrCallbackFuzzTest,
     SetPreferredCallRenderDeviceAudioClinetInfoMgrCallbackHasValueFuzzTest,
     SetAndGetPreferredCallRenderDeviceTypeNotEqTypeNoneFuzzTest,

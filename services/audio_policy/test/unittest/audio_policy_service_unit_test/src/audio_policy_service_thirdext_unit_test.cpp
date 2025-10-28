@@ -765,6 +765,10 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SetPreferredDevice_001, TestSize.Leve
     EXPECT_EQ(ERR_INVALID_PARAM, result);
 
     result = AudioPolicyUtils::GetInstance().SetPreferredDevice(
+        AUDIO_RECOGNITION_CAPTURE, audioDeviceDescriptorSptr2, INVALID_PID);
+    EXPECT_EQ(SUCCESS, result);
+
+    result = AudioPolicyUtils::GetInstance().SetPreferredDevice(
         AUDIO_TONE_RENDER, audioDeviceDescriptorSptr2);
     EXPECT_EQ(ERR_INVALID_PARAM, result);
 

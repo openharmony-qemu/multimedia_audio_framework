@@ -77,6 +77,9 @@ public:
     // Get tone render device selected by the user
     shared_ptr<AudioDeviceDescriptor> GetPreferredToneRenderDevice();
 
+    void SetPreferredRecognitionCaptureDevice(const shared_ptr<AudioDeviceDescriptor> &desc);
+    shared_ptr<AudioDeviceDescriptor> GetPreferredRecognitionCaptureDevice();
+
     void UpdatePreferredMediaRenderDeviceConnectState(ConnectState state);
     void UpdatePreferredCallRenderDeviceConnectState(ConnectState state);
     void UpdatePreferredCallCaptureDeviceConnectState(ConnectState state);
@@ -102,6 +105,7 @@ private:
     std::shared_ptr<AudioDeviceDescriptor> preferredRingRenderDevice_ = std::make_shared<AudioDeviceDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> preferredRecordCaptureDevice_ = std::make_shared<AudioDeviceDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> preferredToneRenderDevice_ = std::make_shared<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> preferredRecognitionCaptureDevice_{make_shared<AudioDeviceDescriptor>()};
 
     unordered_set<shared_ptr<AudioDeviceDescriptor>, AudioDeviceDescriptor::AudioDeviceDescriptorHash,
         AudioDeviceDescriptor::AudioDeviceDescriptorEqual> mediaExcludedDevices_;

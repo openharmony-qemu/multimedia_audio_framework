@@ -671,6 +671,31 @@ HWTEST_F(AudioCoreServiceUnitTest, SelectInputDevice_001, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioCoreService.
+* @tc.number: SelectInputDevice_002
+* @tc.desc  : Test SelectInputDevice - will return success.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SelectInputDevice_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest SelectInputDevice_002 start");
+    sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
+    vector<std::shared_ptr<AudioDeviceDescriptor>> devs;
+    auto inputDevs = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
+    auto inputDevice =  inputDevs[0];
+    inputDevice->deviceRole_ = DeviceRole::INPUT_DEVICE;
+    inputDevice->networkId_ = LOCAL_NETWORK_ID;
+    devs.push_back(inputDevice);
+
+    constexpr int32_t BLUETOOTH_UID = 1002;
+    audioCapturerFilter->uid = BLUETOOTH_UID;
+    audioCapturerFilter->capturerInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION;
+    audioCapturerFilter->capturerInfo.capturerFlags == 0;
+    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_DEFAULT);
+    auto ret = AudioRecoveryDevice::GetInstance().SelectInputDevice(audioCapturerFilter, devs);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
 * @tc.number: NotifyRemoteRenderState_001
 * @tc.desc  : Test NotifyRemoteRenderState - will return success.
 */
