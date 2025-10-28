@@ -142,8 +142,8 @@ void TaiheAudioManagerActiveVolumeTypeChangeCallback::RemoveSelfActiveVolumeType
     AUDIO_INFO_LOG("remove callback finish");
 }
 
-bool TaiheAudioManagerActiveVolumeTypeChangeCallback::IsSameCallback(std::shared_ptr<uintptr_t> &callback,
-    std::shared_ptr<uintptr_t> &listCallback)
+bool TaiheAudioManagerActiveVolumeTypeChangeCallback::IsSameCallback(const std::shared_ptr<uintptr_t> &callback,
+    const std::shared_ptr<uintptr_t> &listCallback)
 {
     return TaiheParamUtils::IsSameRef(callback, listCallback);
 }

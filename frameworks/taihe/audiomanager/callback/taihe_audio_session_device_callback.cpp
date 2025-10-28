@@ -48,7 +48,7 @@ void TaiheAudioSessionDeviceCallback::OnAudioSessionCurrentDeviceChanged(
     return OnJsCallbackAudioSessionDevice(cb);
 }
 
-void TaiheAudioSessionDeviceCallback::SaveCallbackReference(std::shared_ptr<uintptr_t> &callback)
+void TaiheAudioSessionDeviceCallback::SaveCallbackReference(const std::shared_ptr<uintptr_t> &callback)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     callback_ = callback;

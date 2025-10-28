@@ -35,7 +35,7 @@ public:
     virtual ~TaiheAudioSessionDeviceCallback();
     
     void OnAudioSessionCurrentDeviceChanged(const OHOS::AudioStandard::CurrentOutputDeviceChangedEvent &deviceEvent);
-    void SaveCallbackReference(std::shared_ptr<uintptr_t> &callback);
+    void SaveCallbackReference(const std::shared_ptr<uintptr_t> &callback);
     bool ContainSameJsCallback(std::shared_ptr<uintptr_t> callback);
     
 private:

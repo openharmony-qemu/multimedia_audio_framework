@@ -138,6 +138,5 @@ void AudioCollaborativeManagerImpl::SetCollaborativePlaybackEnabledForDeviceSync
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
         return;
     }
-    return;
 }
 } // namespace ANI::Audio

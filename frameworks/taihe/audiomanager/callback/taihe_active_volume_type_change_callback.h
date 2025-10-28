@@ -37,7 +37,7 @@ public:
     void OnActiveVolumeTypeChanged(const OHOS::AudioStandard::AudioVolumeType &event) override;
     void SaveActiveVolumeTypeChangeCallbackReference(const std::string &callbackName,
         std::shared_ptr<uintptr_t> &callback);
-    bool IsSameCallback(std::shared_ptr<uintptr_t> &callback, std::shared_ptr<uintptr_t> &listCallback);
+    bool IsSameCallback(const std::shared_ptr<uintptr_t> &callback, const std::shared_ptr<uintptr_t> &listCallback);
     void RemoveSelfActiveVolumeTypeChangeCbRef(std::shared_ptr<uintptr_t> callback);
     void RemoveAllActiveVolumeTypeChangeCbRef();
     void RemoveCallbackReference(std::shared_ptr<uintptr_t> callback);
