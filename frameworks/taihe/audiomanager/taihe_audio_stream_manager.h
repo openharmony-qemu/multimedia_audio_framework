@@ -39,6 +39,10 @@ public:
     array<AudioCapturerChangeInfo> GetCurrentAudioCapturerInfoArraySync();
     array<AudioEffectMode> GetAudioEffectInfoArraySync(StreamUsage usage);
     bool IsActiveSync(AudioVolumeType volumeType);
+    bool IsStreamActive(StreamUsage streamUsage);
+    bool IsAcousticEchoCancelerSupported(SourceType sourceType);
+    bool IsRecordingAvailable(AudioCapturerInfo capturerInfo);
+    bool IsAudioLoopbackSupported(AudioLoopbackMode mode);
     void OnAudioRendererChange(callback_view<void(array_view<AudioRendererChangeInfo>)> callback);
     void OnAudioCapturerChange(callback_view<void(array_view<AudioCapturerChangeInfo>)> callback);
     void OffAudioRendererChange(optional_view<callback<void(array_view<AudioRendererChangeInfo>)>> callback);

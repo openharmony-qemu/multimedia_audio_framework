@@ -52,6 +52,17 @@ enum AudioState: i32 {
   STATE_PAUSED = 5
 }
 
+enum AudioLoopbackMode: i32 {
+  HARDWARE = 0,
+}
+
+enum AudioLoopbackStatus: i32 {
+  UNAVAILABLE_DEVICE = -2,
+  UNAVAILABLE_SCENE = -1,
+  AVAILABLE_IDLE = 0,
+  AVAILABLE_RUNNING = 1,
+}
+
 enum AudioVolumeType: i32 {
   VOICE_CALL = 0,
   RINGTONE = 2,
@@ -61,6 +72,8 @@ enum AudioVolumeType: i32 {
   SYSTEM = 6,
   VOICE_ASSISTANT = 9,
   ULTRASONIC = 10,
+  NOTIFICATION = 11,
+  NAVIGATION = 12,
   ALL = 100,
 }
 
@@ -96,6 +109,7 @@ enum DeviceType: i32 {
   HDMI = 27,
   LINE_DIGITAL = 28,
   REMOTE_DAUDIO = 29,
+  HEARING_AID = 30,
   NEARLINK = 31,
   DEFAULT = 1000,
 }
@@ -314,6 +328,7 @@ interface AudioManager {
   GetSessionManager(): AudioSessionManager;
   GetSpatializationManager(): AudioSpatializationManager;
   GetEffectManager(): AudioEffectManager;
+  GetCollaborativeManager(): AudioCollaborativeManager;
 
   @gen_promise("disableSafeMediaVolume")
   DisableSafeMediaVolumeSync(): void;
@@ -321,6 +336,9 @@ interface AudioManager {
   @gen_async("getAudioScene")
   @gen_promise("getAudioScene")
   GetAudioSceneSync(): AudioScene;
+
+  OnAudioSceneChange(callback: (data: AudioScene) => void): void;
+  OffAudioSceneChange(callback: Optional<(data: AudioScene) => void>): void;
 }
 
 enum InterruptRequestResultType: i32 {
@@ -429,6 +447,14 @@ interface AudioStreamManager {
   @gen_promise("isActive")
   IsActiveSync(volumeType: AudioVolumeType): bool;
 
+  IsStreamActive(streamUsage: StreamUsage): bool;
+
+  IsAcousticEchoCancelerSupported(sourceType: SourceType): bool;
+
+  IsRecordingAvailable(capturerInfo: AudioCapturerInfo): bool;
+
+  IsAudioLoopbackSupported(mode: AudioLoopbackMode): bool;
+
   OnAudioRendererChange(callback: (data: Array<AudioRendererChangeInfo>) => void): void;
   OnAudioCapturerChange(callback: (data: Array<AudioCapturerChangeInfo>) => void): void;
 
@@ -463,13 +489,46 @@ interface AudioVolumeManager {
   @gen_promise("setAppVolumePercentage")
   SetAppVolumePercentageSync(volume: i32): void;
 
+  GetSystemVolume(volumeType: AudioVolumeType): i32;
+
+  GetMinSystemVolume(volumeType: AudioVolumeType): i32;
+
+  GetMaxSystemVolume(volumeType: AudioVolumeType): i32;
+
+  GetVolumeByStream(streamUsage: StreamUsage): i32;
+
+  GetMinVolumeByStream(streamUsage: StreamUsage): i32;
+
+  GetMaxVolumeByStream(streamUsage: StreamUsage): i32;
+
+  GetVolumeInUnitOfDb(volumeType: AudioVolumeType, volumeLevel: i32, device: DeviceType): f64;
+
+  GetVolumeInUnitOfDbByStream(streamUsage: StreamUsage, volumeLevel: i32, device: DeviceType): f64;
+
+  GetSupportedAudioVolumeTypes(): Array<AudioVolumeType>;
+
+  GetAudioVolumeTypeByStreamUsage(streamUsage: StreamUsage): AudioVolumeType;
+
+  GetStreamUsagesByVolumeType(volumeType: AudioVolumeType): Array<StreamUsage>;
+
+  IsSystemMuted(volumeType: AudioVolumeType): bool;
+
+  IsSystemMutedForStream(streamUsage: StreamUsage): bool;
+
+  GetSystemVolumeByUid(volumeType: AudioVolumeType, callingUid: i32): i32;
+
+  @gen_promise("setSystemVolumeByUid")
+  SetSystemVolumeByUidSync(volumeType: AudioVolumeType, volume: i32, callingUid: i32): void;
+
+  ForceVolumeKeyControlType(volumeType: AudioVolumeType, duration: i32): void;
+
   OnVolumeChange(callback: (data: VolumeEvent) => void): void;
   OnAppVolumeChange(callback: (data: VolumeEvent) => void): void;
   OnActiveVolumeTypeChange(callback: (data: AudioVolumeType) => void): void;
   OnSystemVolumeChange(callback: (data: VolumeEvent) => void): void;
   OnAppVolumeChangeForUid(uid: i32, callback: (data: VolumeEvent) => void): void;
-
   OnStreamVolumeChange(streamUsage: StreamUsage, callback: (data: StreamVolumeEvent) => void): void;
+
   OffVolumeChange(callback: Optional<(data: VolumeEvent)=> void>): void;
   OffAppVolumeChange(callback: Optional<(data: VolumeEvent)=> void>): void;
   OffAppVolumeChangeForUid(callback: Optional<(data: VolumeEvent)=> void>): void;
@@ -639,6 +698,8 @@ enum AudioStreamDeviceChangeReason: i32 {
   REASON_NEW_DEVICE_AVAILABLE = 1,
   REASON_OLD_DEVICE_UNAVAILABLE = 2,
   REASON_OVERRODE = 3,
+  REASON_SESSION_ACTIVATED = 4,
+  REASON_STREAM_PRIORITY_CHANGED = 5,
 }
 
 struct AudioStreamDeviceChangeInfo {
@@ -707,12 +768,42 @@ enum AudioSessionDeactivatedReason: i32 {
   DEACTIVATED_TIMEOUT = 1,
 }
 
+enum AudioSessionScene: i32 {
+  AUDIO_SESSION_SCENE_MEDIA = 0,
+  AUDIO_SESSION_SCENE_GAME = 1,
+  AUDIO_SESSION_SCENE_VOICE_COMMUNICATION = 2,
+}
+
+enum AudioSessionStateChangeHint: i32 {
+  AUDIO_SESSION_STATE_CHANGE_HINT_RESUME = 0,
+  AUDIO_SESSION_STATE_CHANGE_HINT_PAUSE = 1,
+  AUDIO_SESSION_STATE_CHANGE_HINT_STOP = 2,
+  AUDIO_SESSION_STATE_CHANGE_HINT_TIME_OUT_STOP = 3,
+  AUDIO_SESSION_STATE_CHANGE_HINT_DUCK = 4,
+  AUDIO_SESSION_STATE_CHANGE_HINT_UNDUCK = 5,
+}
+
+enum OutputDeviceChangeRecommendedAction: i32 {
+  DEVICE_CHANGE_RECOMMEND_TO_CONTINUE = 0,
+  DEVICE_CHANGE_RECOMMEND_TO_STOP = 1,
+}
+
 struct AudioSessionStrategy {
   concurrencyMode: AudioConcurrencyMode;
 }
 
 struct AudioSessionDeactivatedEvent {
   reason: AudioSessionDeactivatedReason;
+}
+
+struct AudioSessionStateChangedEvent {
+  stateChangeHint: AudioSessionStateChangeHint;
+}
+
+struct CurrentOutputDeviceChangedEvent {
+  devices: Array<AudioDeviceDescriptor>;
+  changeReason: AudioStreamDeviceChangeReason;
+  recommendedAction: OutputDeviceChangeRecommendedAction;
 }
 
 interface AudioSessionManager {
@@ -724,8 +815,20 @@ interface AudioSessionManager {
 
   IsAudioSessionActivated(): bool;
 
+  GetDefaultOutputDevice(): DeviceType;
+
+  SetAudioSessionScene(scene: AudioSessionScene): void;
+
+  @gen_promise("setDefaultOutputDevice")
+  SetDefaultOutputDeviceSync(deviceType: DeviceType): void;
+
   OnAudioSessionDeactivated(callback: (data: AudioSessionDeactivatedEvent) => void): void;
+  OnAudioSessionStateChanged(callback: (data: AudioSessionStateChangedEvent) => void): void;
+  OnCurrentOutputDeviceChanged(callback: (data: CurrentOutputDeviceChangedEvent) => void): void;
+
   OffAudioSessionDeactivated(callback: Optional<(data: AudioSessionDeactivatedEvent) => void>): void;
+  OffAudioSessionStateChanged(callback: Optional<(data: AudioSessionStateChangedEvent) => void>): void;
+  OffCurrentOutputDeviceChanged(callback: Optional<(data: CurrentOutputDeviceChangedEvent) => void>): void;
 }
 
 enum EffectFlag: i32 {
@@ -812,9 +915,14 @@ interface AudioCapturer {
   @gen_promise("getOverflowCount")
   GetOverflowCountSync(): i64;
 
+  @gen_promise("setWillMuteWhenInterrupted")
+  SetWillMuteWhenInterruptedSync(muteWhenInterrupted: bool): void;
+
   GetCurrentInputDevices(): Array<AudioDeviceDescriptor>;
 
   GetCurrentAudioCapturerChangeInfo(): AudioCapturerChangeInfo;
+
+  SetInputDeviceToAccessory(): void;
 
   OnAudioInterrupt(callback: (data: InterruptEvent) => void): void;
   OnStateChange(callback: (data: AudioState) => void): void;
@@ -940,6 +1048,11 @@ interface AudioRenderer {
 
   @gen_promise("setDefaultOutputDevice")
   SetDefaultOutputDeviceSync(deviceType: DeviceType): void;
+
+  @gen_promise("setLoudnessGain")
+  SetLoudnessGainSync(loudnessGain: f64): void;
+
+  GetLoudnessGain(): f64;
 
   OnAudioInterrupt(callback: (data: InterruptEvent) => void): void;
   OnStateChange(callback: (data: AudioState) => void): void;
@@ -1134,3 +1247,34 @@ interface AsrProcessingController {
 }
 
 function CreateAsrProcessingController(audioCapturer: AudioCapturer): AsrProcessingController;
+
+interface AudioLoopback {
+  @gen_promise("getStatus")
+  GetStatusSync(): AudioLoopbackStatus;
+
+  @gen_promise("setVolume")
+  SetVolumeSync(volume: f64): void;
+
+  @gen_promise("enable")
+  EnableSync(enable: bool): bool;
+
+  OnStatusChange(callback: (data: AudioLoopbackStatus) => void): void;
+  OffStatusChange(callback: Optional<(data: AudioLoopbackStatus) => void>): void;
+}
+
+union AudioLpback {
+  type_audioLpback: AudioLoopback;
+  @null type_null;
+}
+
+@gen_promise("createAudioLoopback")
+function CreateAudioLoopbackSync(mode: AudioLoopbackMode): AudioLpback;
+
+interface AudioCollaborativeManager {
+  IsCollaborativePlaybackSupported(): bool;
+
+  IsCollaborativePlaybackEnabledForDevice(deviceDescriptor: AudioDeviceDescriptor): bool;
+
+  @gen_promise("setCollaborativePlaybackEnabledForDevice")
+  SetCollaborativePlaybackEnabledForDeviceSync(deviceDescriptor: AudioDeviceDescriptor, enabled: bool): void;
+}

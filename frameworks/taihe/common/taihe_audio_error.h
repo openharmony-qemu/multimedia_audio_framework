@@ -35,6 +35,7 @@ constexpr int32_t TAIHE_ERR_UNSUPPORTED = 6800104;
 constexpr int32_t TAIHE_ERR_TIMEOUT = 6800105;
 constexpr int32_t TAIHE_ERR_STREAM_LIMIT = 6800201;
 constexpr int32_t TAIHE_ERR_SYSTEM = 6800301;
+constexpr int32_t TAIHE_ERR_UNAVAILABLE_ON_DEVICE = 801;
 
 class TaiheAudioError {
 public:

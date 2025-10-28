@@ -88,7 +88,9 @@ void TaiheCapturerPeriodPositionCallback::SafeJsCallbackCapturerPeriodPositionWo
     std::shared_ptr<CapturerPeriodPositionJsCallback> safeContext(
         static_cast<CapturerPeriodPositionJsCallback*>(event),
         [](CapturerPeriodPositionJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
     std::string request = event->callbackName;
 
@@ -103,7 +105,7 @@ void TaiheCapturerPeriodPositionCallback::SafeJsCallbackCapturerPeriodPositionWo
 void TaiheCapturerPeriodPositionCallback::OnJsCapturerPeriodPositionCallback(
     std::unique_ptr<CapturerPeriodPositionJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("OnJsCapturerPeriodPositionCallback: jsCb.get() is null");
         return;
     }

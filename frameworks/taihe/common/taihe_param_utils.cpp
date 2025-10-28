@@ -50,6 +50,9 @@ const std::vector<OHOS::AudioStandard::DeviceType> DEVICE_TYPE_SET = {
     OHOS::AudioStandard::DEVICE_TYPE_FILE_SOURCE,
     OHOS::AudioStandard::DEVICE_TYPE_EXTERN_CABLE,
     OHOS::AudioStandard::DEVICE_TYPE_HDMI,
+    OHOS::AudioStandard::DEVICE_TYPE_ACCESSORY,
+    OHOS::AudioStandard::DEVICE_TYPE_NEARLINK,
+    OHOS::AudioStandard::DEVICE_TYPE_HEARING_AID,
     OHOS::AudioStandard::DEVICE_TYPE_DEFAULT
 };
 
@@ -600,6 +603,26 @@ StreamVolumeEvent TaiheParamUtils::SetValueStreamVolumeEvent(const OHOS::AudioSt
     return taiheStreamVolumeEvent;
 }
 
+taihe::array<StreamUsage> TaiheParamUtils::SetValueStreamUsageArray(
+    const std::vector<OHOS::AudioStandard::StreamUsage> &streamUsageArray)
+{
+    std::vector<StreamUsage> result;
+    for (const auto &streamUsage : streamUsageArray) {
+        result.emplace_back(TaiheAudioEnum::GetJsStreamUsage(streamUsage));
+    }
+    return taihe::array<StreamUsage>(result);
+}
+
+taihe::array<AudioVolumeType> TaiheParamUtils::SetValueAudioVolumeTypeArray(
+    const std::vector<OHOS::AudioStandard::AudioVolumeType> &volumeTypeArray)
+{
+    std::vector<AudioVolumeType> result;
+    for (const auto &volumeType : volumeTypeArray) {
+        result.emplace_back(TaiheAudioEnum::GetJsAudioVolumeType(volumeType));
+    }
+    return taihe::array<AudioVolumeType>(result);
+}
+
 AudioCapturerChangeInfo TaiheParamUtils::SetAudioCapturerChangeInfoDescriptors(
     const OHOS::AudioStandard::AudioCapturerChangeInfo &changeInfo)
 {
@@ -661,6 +684,26 @@ DeviceChangeAction TaiheParamUtils::SetValueDeviceChangeAction(const OHOS::Audio
         .deviceDescriptors = TaiheParamUtils::SetDeviceDescriptors(action.deviceDescriptors),
     };
     return deviceChangeAction;
+}
+
+AudioSessionStateChangedEvent TaiheParamUtils::SetValueAudioSessionStateChangedEvent(
+    const OHOS::AudioStandard::AudioSessionStateChangedEvent &event)
+{
+    AudioSessionStateChangedEvent sessionStateChangedEvent {
+        .stateChangeHint = TaiheAudioEnum::ToTaiheAudioSessionStateChangeHint(event.stateChangeHint),
+    };
+    return sessionStateChangedEvent;
+}
+
+CurrentOutputDeviceChangedEvent TaiheParamUtils::SetValueCurrentOutputDeviceChangedEvent(
+    const OHOS::AudioStandard::CurrentOutputDeviceChangedEvent &event)
+{
+    CurrentOutputDeviceChangedEvent currentOutputDeviceChangedEvent {
+        .devices = TaiheParamUtils::SetDeviceDescriptors(event.devices),
+        .changeReason = TaiheAudioEnum::ToTaiheAudioStreamDeviceChangeReason(event.changeReason),
+        .recommendedAction = TaiheAudioEnum::ToTaiheOutputDeviceChangeRecommendedAction(event.recommendedAction),
+    };
+    return currentOutputDeviceChangedEvent;
 }
 
 taihe::array<AudioDeviceDescriptor> TaiheParamUtils::SetDeviceDescriptors(

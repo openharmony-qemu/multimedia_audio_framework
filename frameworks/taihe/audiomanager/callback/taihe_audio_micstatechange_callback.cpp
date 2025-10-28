@@ -47,7 +47,7 @@ void TaiheAudioManagerMicStateChangeCallback::OnMicStateUpdated(const OHOS::Audi
 void TaiheAudioManagerMicStateChangeCallback::OnJsCallbackMicStateChange(
     std::unique_ptr<AudioManagerMicStateChangeJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("OnJsCallbackMicStateChange: jsCb.get() is null");
         return;
     }
@@ -71,7 +71,9 @@ void TaiheAudioManagerMicStateChangeCallback::SafeJsCallbackMicStateChangeWork(
     std::shared_ptr<AudioManagerMicStateChangeJsCallback> safeContext(
         static_cast<AudioManagerMicStateChangeJsCallback*>(event),
         [](AudioManagerMicStateChangeJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
     std::string request = event->callbackName;
 

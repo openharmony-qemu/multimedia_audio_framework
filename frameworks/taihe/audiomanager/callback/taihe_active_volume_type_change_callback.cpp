@@ -42,7 +42,9 @@ void TaiheAudioManagerActiveVolumeTypeChangeCallback::SafeJsCallbackActiveVolume
     std::shared_ptr<AudioManagerActiveVolumeTypeChangeJsCallback> safeContext(
         static_cast<AudioManagerActiveVolumeTypeChangeJsCallback*>(event),
         [](AudioManagerActiveVolumeTypeChangeJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
     std::string request = event->callbackName;
 
@@ -73,7 +75,7 @@ void TaiheAudioManagerActiveVolumeTypeChangeCallback::OnActiveVolumeTypeChanged(
 void TaiheAudioManagerActiveVolumeTypeChangeCallback::OnJsCallbackActiveVolumeTypeChange(
     std::unique_ptr<AudioManagerActiveVolumeTypeChangeJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("OnJsCallbackAppVolumeChange: jsCb.get() is null");
         return;
     }

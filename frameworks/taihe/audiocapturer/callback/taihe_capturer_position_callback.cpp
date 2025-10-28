@@ -87,7 +87,9 @@ void TaiheCapturerPositionCallback::SafeJsCallbackCapturerPositionWork(CapturerP
     std::shared_ptr<CapturerPositionJsCallback> safeContext(
         static_cast<CapturerPositionJsCallback*>(event),
         [](CapturerPositionJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
     std::string request = event->callbackName;
 
@@ -102,7 +104,7 @@ void TaiheCapturerPositionCallback::SafeJsCallbackCapturerPositionWork(CapturerP
 void TaiheCapturerPositionCallback::OnJsCapturerPositionCallback(
     std::unique_ptr<CapturerPositionJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("OnJsCapturerPositionCallback: jsCb.get() is null");
         return;
     }

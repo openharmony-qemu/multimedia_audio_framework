@@ -186,7 +186,9 @@ void TaiheAudioSpatializationEnabledChangeCallback::SafeJsCallbackSpatialization
     std::shared_ptr<AudioSpatializationEnabledJsCallback> safeContext(
         static_cast<AudioSpatializationEnabledJsCallback*>(event),
         [](AudioSpatializationEnabledJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
     AUDIO_INFO_LOG("SafeJsCallbackSpatializationEnabledWork: safe js callback working.");
 
@@ -210,7 +212,7 @@ void TaiheAudioSpatializationEnabledChangeCallback::SafeJsCallbackSpatialization
 void TaiheAudioSpatializationEnabledChangeCallback::OnJsCallbackSpatializationEnabled(
     std::unique_ptr<AudioSpatializationEnabledJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("OnJsCallbackSpatializationEnabled: jsCb.get() is null");
         return;
     }
@@ -323,7 +325,9 @@ void TaiheAudioCurrentSpatializationEnabledChangeCallback::SafeJsCallbackSpatial
     std::shared_ptr<AudioSpatializationEnabledForCurrentDeviceJsCallback> safeContext(
         static_cast<AudioSpatializationEnabledForCurrentDeviceJsCallback*>(event),
         [](AudioSpatializationEnabledForCurrentDeviceJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
     AUDIO_INFO_LOG("SafeJsCallbackSpatializationEnabledForCurrentDeviceWork: safe js callback working.");
 
@@ -338,7 +342,7 @@ void TaiheAudioCurrentSpatializationEnabledChangeCallback::SafeJsCallbackSpatial
 void TaiheAudioCurrentSpatializationEnabledChangeCallback::OnJsCallbackSpatializationEnabledForCurrentDevice(
     std::unique_ptr<AudioSpatializationEnabledForCurrentDeviceJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("OnJsCallbackSpatializationEnabledForCurrentDevice: jsCb.get() is null");
         return;
     }
@@ -514,7 +518,9 @@ void TaiheAudioHeadTrackingEnabledChangeCallback::SafeJsCallbackHeadTrackingEnab
     std::shared_ptr<AudioHeadTrackingEnabledJsCallback> safeContext(
         static_cast<AudioHeadTrackingEnabledJsCallback*>(event),
         [](AudioHeadTrackingEnabledJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
     AUDIO_INFO_LOG("SafeJsCallbackHeadTrackingEnabledWork: safe js callback working.");
 
@@ -539,7 +545,7 @@ void TaiheAudioHeadTrackingEnabledChangeCallback::SafeJsCallbackHeadTrackingEnab
 void TaiheAudioHeadTrackingEnabledChangeCallback::OnJsCallbackHeadTrackingEnabled(
     std::unique_ptr<AudioHeadTrackingEnabledJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("OnJsCallbackHeadTrackingEnabled: jsCb.get() is null");
         return;
     }

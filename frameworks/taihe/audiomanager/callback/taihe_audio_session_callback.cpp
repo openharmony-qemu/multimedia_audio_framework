@@ -72,7 +72,9 @@ void TaiheAudioSessionCallback::SafeJsCallbackAudioSessionWork(AudioSessionJsCal
     std::shared_ptr<AudioSessionJsCallback> safeContext(
         static_cast<AudioSessionJsCallback*>(event),
         [](AudioSessionJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
 
     AUDIO_INFO_LOG("SafeJsCallbackAudioSessionWork: safe js callback working.");
@@ -89,7 +91,7 @@ void TaiheAudioSessionCallback::SafeJsCallbackAudioSessionWork(AudioSessionJsCal
 
 void TaiheAudioSessionCallback::OnJsCallbackAudioSession(std::unique_ptr<AudioSessionJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("TaiheAudioSessionCallback: OnJsCallbackAudioSession: jsCb.get() is null");
         return;
     }

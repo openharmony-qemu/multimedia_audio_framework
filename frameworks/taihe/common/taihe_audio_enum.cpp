@@ -46,6 +46,7 @@ static const std::map<OHOS::AudioStandard::DeviceType, DeviceType> DEVICE_TYPE_T
     {OHOS::AudioStandard::DeviceType::DEVICE_TYPE_HDMI, DeviceType::key_t::HDMI},
     {OHOS::AudioStandard::DeviceType::DEVICE_TYPE_LINE_DIGITAL, DeviceType::key_t::LINE_DIGITAL},
     {OHOS::AudioStandard::DeviceType::DEVICE_TYPE_REMOTE_DAUDIO, DeviceType::key_t::REMOTE_DAUDIO},
+    {OHOS::AudioStandard::DeviceType::DEVICE_TYPE_HEARING_AID, DeviceType::key_t::HEARING_AID},
     {OHOS::AudioStandard::DeviceType::DEVICE_TYPE_NEARLINK, DeviceType::key_t::NEARLINK},
     {OHOS::AudioStandard::DeviceType::DEVICE_TYPE_DEFAULT, DeviceType::key_t::DEFAULT},
 };
@@ -243,6 +244,10 @@ static const std::map<OHOS::AudioStandard::AudioStreamDeviceChangeReason, AudioS
         AudioStreamDeviceChangeReason::key_t::REASON_OLD_DEVICE_UNAVAILABLE},
     {OHOS::AudioStandard::AudioStreamDeviceChangeReason::OVERRODE,
         AudioStreamDeviceChangeReason::key_t::REASON_OVERRODE},
+    {OHOS::AudioStandard::AudioStreamDeviceChangeReason::AUDIO_SESSION_ACTIVATE,
+        AudioStreamDeviceChangeReason::key_t::REASON_SESSION_ACTIVATED},
+    {OHOS::AudioStandard::AudioStreamDeviceChangeReason::STREAM_PRIORITY_CHANGED,
+        AudioStreamDeviceChangeReason::key_t::REASON_STREAM_PRIORITY_CHANGED},
 };
 
 static const std::map<OHOS::AudioStandard::AudioChannelLayout, AudioChannelLayout> AUDIO_CHANNEL_LAYOUT_TAIHE_MAP = {
@@ -354,6 +359,41 @@ const std::map<std::string, int32_t> TaiheAudioEnum::deviceTypeMap = {
 static const std::map<OHOS::AudioStandard::DeviceBlockStatus, DeviceBlockStatus> DEVICE_BLOCK_STATUS_TAIHE_MAP = {
     {OHOS::AudioStandard::DeviceBlockStatus::DEVICE_UNBLOCKED, DeviceBlockStatus::key_t::UNBLOCKED},
     {OHOS::AudioStandard::DeviceBlockStatus::DEVICE_BLOCKED, DeviceBlockStatus::key_t::BLOCKED},
+};
+
+static const std::map<OHOS::AudioStandard::AudioLoopbackStatus, AudioLoopbackStatus> AUDIO_LOOPBACK_STATUS_TAIHE_MAP = {
+    {OHOS::AudioStandard::AudioLoopbackStatus::LOOPBACK_UNAVAILABLE_DEVICE,
+        AudioLoopbackStatus::key_t::UNAVAILABLE_DEVICE},
+    {OHOS::AudioStandard::AudioLoopbackStatus::LOOPBACK_UNAVAILABLE_SCENE,
+        AudioLoopbackStatus::key_t::UNAVAILABLE_SCENE},
+    {OHOS::AudioStandard::AudioLoopbackStatus::LOOPBACK_AVAILABLE_IDLE,
+        AudioLoopbackStatus::key_t::AVAILABLE_IDLE},
+    {OHOS::AudioStandard::AudioLoopbackStatus::LOOPBACK_AVAILABLE_RUNNING,
+        AudioLoopbackStatus::key_t::AVAILABLE_RUNNING},
+};
+
+static const std::map<OHOS::AudioStandard::AudioSessionStateChangeHint,
+    AudioSessionStateChangeHint> AUDIO_SESSION_STATE_CHANGE_HINT_TAIHE_MAP = {
+    {OHOS::AudioStandard::AudioSessionStateChangeHint::RESUME,
+        AudioSessionStateChangeHint::key_t::AUDIO_SESSION_STATE_CHANGE_HINT_RESUME},
+    {OHOS::AudioStandard::AudioSessionStateChangeHint::PAUSE,
+        AudioSessionStateChangeHint::key_t::AUDIO_SESSION_STATE_CHANGE_HINT_PAUSE},
+    {OHOS::AudioStandard::AudioSessionStateChangeHint::STOP,
+        AudioSessionStateChangeHint::key_t::AUDIO_SESSION_STATE_CHANGE_HINT_STOP},
+    {OHOS::AudioStandard::AudioSessionStateChangeHint::TIME_OUT_STOP,
+        AudioSessionStateChangeHint::key_t::AUDIO_SESSION_STATE_CHANGE_HINT_TIME_OUT_STOP},
+    {OHOS::AudioStandard::AudioSessionStateChangeHint::DUCK,
+        AudioSessionStateChangeHint::key_t::AUDIO_SESSION_STATE_CHANGE_HINT_DUCK},
+    {OHOS::AudioStandard::AudioSessionStateChangeHint::UNDUCK,
+        AudioSessionStateChangeHint::key_t::AUDIO_SESSION_STATE_CHANGE_HINT_UNDUCK},
+};
+
+static const std::map<OHOS::AudioStandard::OutputDeviceChangeRecommendedAction,
+    OutputDeviceChangeRecommendedAction> OUTPUT_DEVICE_CHANGE_RECOMMENDED_ACTION_TAIHE_MAP = {
+    {OHOS::AudioStandard::OutputDeviceChangeRecommendedAction::RECOMMEND_TO_CONTINUE,
+        OutputDeviceChangeRecommendedAction::key_t::DEVICE_CHANGE_RECOMMEND_TO_CONTINUE},
+    {OHOS::AudioStandard::OutputDeviceChangeRecommendedAction::RECOMMEND_TO_STOP,
+        OutputDeviceChangeRecommendedAction::key_t::DEVICE_CHANGE_RECOMMEND_TO_STOP},
 };
 
 bool TaiheAudioEnum::IsLegalInputArgumentInterruptMode(int32_t interruptMode)
@@ -499,10 +539,10 @@ OHOS::AudioStandard::AudioVolumeType TaiheAudioEnum::GetNativeAudioVolumeType(in
             result = OHOS::AudioStandard::STREAM_SYSTEM;
             break;
         case AudioJsVolumeType::NOTIFICATION:
-            result = OHOS::AudioStandard::STREAM_NOTIFICATION;
+            result = OHOS::AudioStandard::STREAM_RING;
             break;
         case AudioJsVolumeType::NAVIGATION:
-            result = OHOS::AudioStandard::STREAM_NAVIGATION;
+            result = OHOS::AudioStandard::STREAM_MUSIC;
             break;
         case AudioJsVolumeType::ALL:
             result = OHOS::AudioStandard::STREAM_ALL;
@@ -709,6 +749,89 @@ AudioVolumeType TaiheAudioEnum::GetJsAudioVolumeTypeMore(OHOS::AudioStandard::Au
     return result;
 }
 
+StreamUsage TaiheAudioEnum::GetJsStreamUsage(OHOS::AudioStandard::StreamUsage streamUsage)
+{
+    StreamUsage result = TaiheAudioEnum::ToTaiheStreamUsage(OHOS::AudioStandard::StreamUsage::STREAM_USAGE_UNKNOWN);
+    switch (streamUsage) {
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_UNKNOWN:
+            result = TaiheAudioEnum::ToTaiheStreamUsage(streamUsage);
+            break;
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_MUSIC:
+            result = TaiheAudioEnum::ToTaiheStreamUsage(streamUsage);
+            break;
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION:
+            result = TaiheAudioEnum::ToTaiheStreamUsage(streamUsage);
+            break;
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_VOICE_ASSISTANT:
+            result = TaiheAudioEnum::ToTaiheStreamUsage(streamUsage);
+            break;
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_ALARM:
+            result = TaiheAudioEnum::ToTaiheStreamUsage(streamUsage);
+            break;
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_VOICE_MESSAGE:
+            result = TaiheAudioEnum::ToTaiheStreamUsage(streamUsage);
+            break;
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_RINGTONE:
+            result = TaiheAudioEnum::ToTaiheStreamUsage(streamUsage);
+            break;
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_NOTIFICATION:
+            result = TaiheAudioEnum::ToTaiheStreamUsage(streamUsage);
+            break;
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_ACCESSIBILITY:
+            result = TaiheAudioEnum::ToTaiheStreamUsage(streamUsage);
+            break;
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_SYSTEM:
+            result = TaiheAudioEnum::ToTaiheStreamUsage(streamUsage);
+            break;
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_MOVIE:
+            result = TaiheAudioEnum::ToTaiheStreamUsage(streamUsage);
+            break;
+        default:
+            result = GetJsStreamUsageFir(streamUsage);
+            break;
+    }
+    return result;
+}
+
+StreamUsage TaiheAudioEnum::GetJsStreamUsageFir(OHOS::AudioStandard::StreamUsage streamUsage)
+{
+    StreamUsage result = TaiheAudioEnum::ToTaiheStreamUsage(OHOS::AudioStandard::StreamUsage::STREAM_USAGE_UNKNOWN);
+    switch (streamUsage) {
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_GAME:
+            result = TaiheAudioEnum::ToTaiheStreamUsage(streamUsage);
+            break;
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_AUDIOBOOK:
+            result = TaiheAudioEnum::ToTaiheStreamUsage(streamUsage);
+            break;
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_NAVIGATION:
+            result = TaiheAudioEnum::ToTaiheStreamUsage(streamUsage);
+            break;
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_DTMF:
+            result = TaiheAudioEnum::ToTaiheStreamUsage(streamUsage);
+            break;
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_ENFORCED_TONE:
+            result = TaiheAudioEnum::ToTaiheStreamUsage(streamUsage);
+            break;
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_ULTRASONIC:
+            result = TaiheAudioEnum::ToTaiheStreamUsage(streamUsage);
+            break;
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION:
+            result = TaiheAudioEnum::ToTaiheStreamUsage(streamUsage);
+            break;
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_RANGING:
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_VOICE_RINGTONE:
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_VOICE_CALL_ASSISTANT:
+            result = TaiheAudioEnum::ToTaiheStreamUsage(
+                OHOS::AudioStandard::StreamUsage::STREAM_USAGE_VOICE_CALL_ASSISTANT);
+            break;
+        default:
+            result = TaiheAudioEnum::ToTaiheStreamUsage(OHOS::AudioStandard::StreamUsage::STREAM_USAGE_UNKNOWN);
+            break;
+    }
+    return result;
+}
+
 bool TaiheAudioEnum::IsLegalInputArgumentCommunicationDeviceType(int32_t communicationDeviceType)
 {
     bool result = false;
@@ -905,6 +1028,57 @@ bool TaiheAudioEnum::IsLegalInputArgumentSpatializationSceneType(int32_t spatial
             break;
     }
     return result;
+}
+
+bool TaiheAudioEnum::IsLegalInputArgumentSessionScene(int32_t scene)
+{
+    bool result = false;
+    switch (scene) {
+        case static_cast<int32_t>(OHOS::AudioStandard::AudioSessionScene::MEDIA):
+        case static_cast<int32_t>(OHOS::AudioStandard::AudioSessionScene::GAME):
+        case static_cast<int32_t>(OHOS::AudioStandard::AudioSessionScene::VOICE_COMMUNICATION):
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool TaiheAudioEnum::IsLegalInputArgumentAudioLoopbackMode(int32_t inputMode)
+{
+    bool result = false;
+    switch (inputMode) {
+        case AudioLoopbackModeTaihe::LOOPBACK_MODE_HARDWARE:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+OHOS::AudioStandard::AudioScene TaiheAudioEnum::GetJsAudioScene(OHOS::AudioStandard::AudioScene audioScene)
+{
+    OHOS::AudioStandard::AudioScene newAudioScene = OHOS::AudioStandard::AudioScene::AUDIO_SCENE_DEFAULT;
+    switch (audioScene) {
+        case OHOS::AudioStandard::AudioScene::AUDIO_SCENE_DEFAULT:
+        case OHOS::AudioStandard::AudioScene::AUDIO_SCENE_RINGING:
+        case OHOS::AudioStandard::AudioScene::AUDIO_SCENE_PHONE_CALL:
+        case OHOS::AudioStandard::AudioScene::AUDIO_SCENE_PHONE_CHAT:
+            newAudioScene = audioScene;
+            break;
+        case OHOS::AudioStandard::AudioScene::AUDIO_SCENE_VOICE_RINGING:
+            newAudioScene = OHOS::AudioStandard::AudioScene::AUDIO_SCENE_RINGING;
+            break;
+        default:
+            newAudioScene = OHOS::AudioStandard::AudioScene::AUDIO_SCENE_DEFAULT;
+            AUDIO_ERR_LOG("Unknown audio scene, Set it to default AUDIO_SCENE_DEFAULT!");
+            break;
+    }
+    return newAudioScene;
 }
 
 ConnectType TaiheAudioEnum::ToTaiheConnectType(OHOS::AudioStandard::ConnectType type)
@@ -1195,6 +1369,42 @@ DeviceBlockStatus TaiheAudioEnum::ToTaiheDeviceBlockStatus(OHOS::AudioStandard::
         AUDIO_WARNING_LOG("ToTaiheDeviceBlockStatus invalid mode: %{public}d", static_cast<int32_t>(status));
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "ToTaiheDeviceBlockStatus fail");
         return DeviceBlockStatus::key_t::UNBLOCKED;
+    }
+    return iter->second;
+}
+
+AudioSessionStateChangeHint TaiheAudioEnum::ToTaiheAudioSessionStateChangeHint(
+    OHOS::AudioStandard::AudioSessionStateChangeHint hint)
+{
+    auto iter = AUDIO_SESSION_STATE_CHANGE_HINT_TAIHE_MAP.find(hint);
+    if (iter == AUDIO_SESSION_STATE_CHANGE_HINT_TAIHE_MAP.end()) {
+        AUDIO_WARNING_LOG("ToTaiheAudioSessionStateChangeHint invalid mode: %{public}d", static_cast<int32_t>(hint));
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "ToTaiheAudioSessionStateChangeHint fail");
+        return AudioSessionStateChangeHint::key_t::AUDIO_SESSION_STATE_CHANGE_HINT_RESUME;
+    }
+    return iter->second;
+}
+
+OutputDeviceChangeRecommendedAction TaiheAudioEnum::ToTaiheOutputDeviceChangeRecommendedAction(
+    OHOS::AudioStandard::OutputDeviceChangeRecommendedAction action)
+{
+    auto iter = OUTPUT_DEVICE_CHANGE_RECOMMENDED_ACTION_TAIHE_MAP.find(action);
+    if (iter == OUTPUT_DEVICE_CHANGE_RECOMMENDED_ACTION_TAIHE_MAP.end()) {
+        AUDIO_WARNING_LOG("ToTaiheOutputDeviceChangeRecommendedAction invalid mode: %{public}d",
+            static_cast<int32_t>(action));
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "ToTaiheOutputDeviceChangeRecommendedAction fail");
+        return OutputDeviceChangeRecommendedAction::key_t::DEVICE_CHANGE_RECOMMEND_TO_CONTINUE;
+    }
+    return iter->second;
+}
+
+AudioLoopbackStatus TaiheAudioEnum::ToTaiheAudioLoopbackStatus(OHOS::AudioStandard::AudioLoopbackStatus status)
+{
+    auto iter = AUDIO_LOOPBACK_STATUS_TAIHE_MAP.find(status);
+    if (iter == AUDIO_LOOPBACK_STATUS_TAIHE_MAP.end()) {
+        AUDIO_WARNING_LOG("ToTaiheAudioLoopbackStatus invalid mode: %{public}d", static_cast<int32_t>(status));
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "ToTaiheAudioLoopbackStatus fail");
+        return AudioLoopbackStatus::key_t::UNAVAILABLE_DEVICE;
     }
     return iter->second;
 }

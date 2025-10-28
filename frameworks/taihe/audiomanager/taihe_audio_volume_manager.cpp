@@ -18,6 +18,7 @@
 
 #include "taihe_audio_volume_manager.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 #include "taihe_audio_enum.h"
 #include "taihe_audio_error.h"
 #include "taihe_param_utils.h"
@@ -25,6 +26,8 @@
 #include "taihe_active_volume_type_change_callback.h"
 
 namespace ANI::Audio {
+constexpr double VOLUME_DEFAULT_DOUBLE = 0.0;
+
 AudioVolumeManagerImpl::AudioVolumeManagerImpl() : audioSystemMngr_(nullptr) {}
 
 AudioVolumeManagerImpl::AudioVolumeManagerImpl(std::shared_ptr<AudioVolumeManagerImpl> obj)
@@ -177,6 +180,383 @@ void AudioVolumeManagerImpl::SetAppVolumePercentageSync(int32_t volume)
         return;
     } else {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "System error. Set app volume fail.");
+        return;
+    }
+}
+
+int32_t AudioVolumeManagerImpl::GetSystemVolume(AudioVolumeType volumeType)
+{
+    int32_t systemVolume = 0;
+    int32_t volType = volumeType.get_value();
+    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+        return systemVolume;
+    }
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
+        return systemVolume;
+    }
+    if (!TaiheAudioEnum::IsLegalInputArgumentVolType(volType)) {
+        AUDIO_ERR_LOG("get volType failed: %{public}d", volType);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM,
+            "parameter verification failed: The param of volType must be enum AudioVolumeType");
+        return systemVolume;
+    }
+    systemVolume = audioSystemMngr_->GetVolume(TaiheAudioEnum::GetNativeAudioVolumeType(volType));
+    return systemVolume;
+}
+
+int32_t AudioVolumeManagerImpl::GetMinSystemVolume(AudioVolumeType volumeType)
+{
+    int32_t minSystemVolume = 0;
+    int32_t volType = volumeType.get_value();
+    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+        return minSystemVolume;
+    }
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
+        return minSystemVolume;
+    }
+    if (!TaiheAudioEnum::IsLegalInputArgumentVolType(volType)) {
+        AUDIO_ERR_LOG("get volType failed: %{public}d", volType);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM,
+            "parameter verification failed: The param of volType must be enum AudioVolumeType");
+        return minSystemVolume;
+    }
+    minSystemVolume = audioSystemMngr_->GetMinVolume(TaiheAudioEnum::GetNativeAudioVolumeType(volType));
+    return minSystemVolume;
+}
+
+int32_t AudioVolumeManagerImpl::GetMaxSystemVolume(AudioVolumeType volumeType)
+{
+    int32_t maxSystemVolume = 0;
+    int32_t volType = volumeType.get_value();
+    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+        return maxSystemVolume;
+    }
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
+        return maxSystemVolume;
+    }
+    if (!TaiheAudioEnum::IsLegalInputArgumentVolType(volType)) {
+        AUDIO_ERR_LOG("get volType failed: %{public}d", volType);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM,
+            "parameter verification failed: The param of volType must be enum AudioVolumeType");
+        return maxSystemVolume;
+    }
+    maxSystemVolume = audioSystemMngr_->GetMaxVolume(TaiheAudioEnum::GetNativeAudioVolumeType(volType));
+    return maxSystemVolume;
+}
+
+int32_t AudioVolumeManagerImpl::GetVolumeByStream(StreamUsage streamUsage)
+{
+    int32_t volume = 0;
+    int32_t streamUsageInt = streamUsage.get_value();
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
+        return volume;
+    }
+    if (!TaiheAudioEnum::IsLegalInputArgumentStreamUsage(streamUsageInt)) {
+        AUDIO_ERR_LOG("get streamUsage failed: %{public}d", streamUsageInt);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM,
+            "parameter verification failed: The param of streamUsage must be enum StreamUsage");
+        return volume;
+    }
+    volume = audioSystemMngr_->GetVolumeByUsage(TaiheAudioEnum::GetNativeStreamUsage(streamUsageInt));
+    return volume;
+}
+
+int32_t AudioVolumeManagerImpl::GetMinVolumeByStream(StreamUsage streamUsage)
+{
+    int32_t minVolume = 0;
+    int32_t streamUsageInt = streamUsage.get_value();
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
+        return minVolume;
+    }
+    if (!TaiheAudioEnum::IsLegalInputArgumentStreamUsage(streamUsageInt)) {
+        AUDIO_ERR_LOG("get streamUsage failed: %{public}d", streamUsageInt);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM,
+            "parameter verification failed: The param of streamUsage must be enum StreamUsage");
+        return minVolume;
+    }
+    minVolume = audioSystemMngr_->GetMinVolumeByUsage(TaiheAudioEnum::GetNativeStreamUsage(streamUsageInt));
+    return minVolume;
+}
+
+int32_t AudioVolumeManagerImpl::GetMaxVolumeByStream(StreamUsage streamUsage)
+{
+    int32_t maxVolume = 0;
+    int32_t streamUsageInt = streamUsage.get_value();
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
+        return maxVolume;
+    }
+    if (!TaiheAudioEnum::IsLegalInputArgumentStreamUsage(streamUsageInt)) {
+        AUDIO_ERR_LOG("get streamUsage failed: %{public}d", streamUsageInt);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM,
+            "parameter verification failed: The param of streamUsage must be enum StreamUsage");
+        return maxVolume;
+    }
+    maxVolume = audioSystemMngr_->GetMaxVolumeByUsage(TaiheAudioEnum::GetNativeStreamUsage(streamUsageInt));
+    return maxVolume;
+}
+
+double AudioVolumeManagerImpl::GetVolumeInUnitOfDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType device)
+{
+    double volumeInDb = VOLUME_DEFAULT_DOUBLE;
+    int32_t volType = volumeType.get_value();
+    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+        return volumeInDb;
+    }
+    if (!TaiheAudioEnum::IsLegalInputArgumentVolType(volType)) {
+        AUDIO_ERR_LOG("get volumeType failed: %{public}d", volType);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of volumeType must be enum AudioVolumeType");
+        return volumeInDb;
+    }
+    int32_t volLevel = volumeLevel;
+    int32_t deviceType = device.get_value();
+    if (!TaiheAudioEnum::IsLegalInputArgumentDeviceType(deviceType)) {
+        AUDIO_ERR_LOG("get deviceType failed: %{public}d", deviceType);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of deviceType must be enum DeviceType");
+        return volumeInDb;
+    }
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioGroupMngr_ is nullptr");
+        return volumeInDb;
+    }
+    volumeInDb = audioSystemMngr_->GetVolumeInUnitOfDb(TaiheAudioEnum::GetNativeAudioVolumeType(volType), volLevel,
+        static_cast<OHOS::AudioStandard::DeviceType>(deviceType));
+    if (OHOS::AudioStandard::FLOAT_COMPARE_EQ(static_cast<float>(volumeInDb),
+        static_cast<float>(OHOS::AudioStandard::ERR_INVALID_PARAM))) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "volumeInDb invalid");
+        return volumeInDb;
+    }
+    return volumeInDb;
+}
+
+double AudioVolumeManagerImpl::GetVolumeInUnitOfDbByStream(StreamUsage streamUsage, int32_t volumeLevel,
+    DeviceType device)
+{
+    double volumeInDb = VOLUME_DEFAULT_DOUBLE;
+    int32_t streamUsageInt = streamUsage.get_value();
+    if (!TaiheAudioEnum::IsLegalInputArgumentStreamUsage(streamUsageInt)) {
+        AUDIO_ERR_LOG("get streamUsage failed: %{public}d", streamUsageInt);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of streamUsage must be enum StreamUsage");
+        return volumeInDb;
+    }
+    int32_t volLevel = volumeLevel;
+    int32_t deviceType = device.get_value();
+    if (!TaiheAudioEnum::IsLegalInputArgumentDeviceType(deviceType)) {
+        AUDIO_ERR_LOG("get deviceType failed: %{public}d", deviceType);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of deviceType must be enum DeviceType");
+        return volumeInDb;
+    }
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioGroupMngr_ is nullptr");
+        return volumeInDb;
+    }
+    volumeInDb = audioSystemMngr_->GetVolumeInDbByStream(TaiheAudioEnum::GetNativeStreamUsage(streamUsageInt), volLevel,
+        static_cast<OHOS::AudioStandard::DeviceType>(deviceType));
+    if (OHOS::AudioStandard::FLOAT_COMPARE_EQ(static_cast<float>(volumeInDb),
+        static_cast<float>(OHOS::AudioStandard::ERR_PERMISSION_DENIED))) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+        return volumeInDb;
+    }
+    if (OHOS::AudioStandard::FLOAT_COMPARE_EQ(static_cast<float>(volumeInDb),
+        static_cast<float>(OHOS::AudioStandard::ERR_NOT_SUPPORTED))) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "streamUsage not supported");
+        return volumeInDb;
+    }
+    return volumeInDb;
+}
+
+array<AudioVolumeType> AudioVolumeManagerImpl::GetSupportedAudioVolumeTypes()
+{
+    std::vector<AudioVolumeType> volumeTypes;
+    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+        return array<AudioVolumeType>(volumeTypes);
+    }
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
+        return array<AudioVolumeType>(volumeTypes);
+    }
+    std::vector<OHOS::AudioStandard::AudioVolumeType> volTypes = audioSystemMngr_->GetSupportedAudioVolumeTypes();
+    return TaiheParamUtils::SetValueAudioVolumeTypeArray(volTypes);
+}
+
+AudioVolumeType AudioVolumeManagerImpl::GetAudioVolumeTypeByStreamUsage(StreamUsage streamUsage)
+{
+    OHOS::AudioStandard::AudioStreamType volType = OHOS::AudioStandard::AudioStreamType::STREAM_DEFAULT;
+    int32_t streamUsageInt = streamUsage.get_value();
+    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+        return TaiheAudioEnum::GetJsAudioVolumeType(volType);
+    }
+    if (!TaiheAudioEnum::IsLegalInputArgumentStreamUsage(streamUsageInt)) {
+        AUDIO_ERR_LOG("get streamUsage failed: %{public}d", streamUsageInt);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of streamUsage must be enum StreamUsage");
+        return TaiheAudioEnum::GetJsAudioVolumeType(volType);
+    }
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
+        return TaiheAudioEnum::GetJsAudioVolumeType(volType);
+    }
+    volType = audioSystemMngr_->GetAudioVolumeTypeByStreamUsage(TaiheAudioEnum::GetNativeStreamUsage(streamUsageInt));
+    if (volType == OHOS::AudioStandard::AudioStreamType::STREAM_DEFAULT) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "streamUsage not supported");
+        return TaiheAudioEnum::GetJsAudioVolumeType(volType);
+    }
+    return TaiheAudioEnum::GetJsAudioVolumeType(volType);
+}
+
+array<StreamUsage> AudioVolumeManagerImpl::GetStreamUsagesByVolumeType(AudioVolumeType volumeType)
+{
+    std::vector<StreamUsage> streamUsages;
+    int32_t volType = volumeType.get_value();
+    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+        return array<StreamUsage>(streamUsages);
+    }
+    if (!TaiheAudioEnum::IsLegalInputArgumentVolType(volType)) {
+        AUDIO_ERR_LOG("get volumeType failed: %{public}d", volType);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of volumeType must be enum AudioVolumeType");
+        return array<StreamUsage>(streamUsages);
+    }
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
+        return array<StreamUsage>(streamUsages);
+    }
+    std::vector<OHOS::AudioStandard::StreamUsage> stUsages = audioSystemMngr_->GetStreamUsagesByVolumeType(
+        TaiheAudioEnum::GetNativeAudioVolumeType(volType));
+    return TaiheParamUtils::SetValueStreamUsageArray(stUsages);
+}
+
+bool AudioVolumeManagerImpl::IsSystemMuted(AudioVolumeType volumeType)
+{
+    bool isMuted = false;
+    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+        return isMuted;
+    }
+    int32_t volType = volumeType.get_value();
+    if (!TaiheAudioEnum::IsLegalInputArgumentVolType(volType)) {
+        AUDIO_ERR_LOG("get volumeType failed: %{public}d", volType);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of volumeType must be enum AudioVolumeType");
+        return isMuted;
+    }
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
+        return isMuted;
+    }
+    isMuted = audioSystemMngr_->IsStreamMute(TaiheAudioEnum::GetNativeAudioVolumeType(volType));
+    return isMuted;
+}
+
+bool AudioVolumeManagerImpl::IsSystemMutedForStream(StreamUsage streamUsage)
+{
+    bool isMuted = false;
+    int32_t streamUsageInt = streamUsage.get_value();
+    if (!TaiheAudioEnum::IsLegalInputArgumentStreamUsage(streamUsageInt)) {
+        AUDIO_ERR_LOG("get streamUsage failed: %{public}d", streamUsageInt);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of streamUsage must be enum StreamUsage");
+        return isMuted;
+    }
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
+        return isMuted;
+    }
+    int32_t status = audioSystemMngr_->IsStreamMuteByUsage(
+        TaiheAudioEnum::GetNativeStreamUsage(streamUsageInt), isMuted);
+    if (status == OHOS::AudioStandard::ERR_PERMISSION_DENIED) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+        return isMuted;
+    }
+    if (status == OHOS::AudioStandard::ERR_NOT_SUPPORTED) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM, "No system permission");
+        return isMuted;
+    }
+    return isMuted;
+}
+
+int32_t AudioVolumeManagerImpl::GetSystemVolumeByUid(AudioVolumeType volumeType, int32_t callingUid)
+{
+    int32_t volLevel = 0;
+    int32_t volType = volumeType.get_value();
+    if (!TaiheAudioEnum::IsLegalInputArgumentVolType(volType)) {
+        AUDIO_ERR_LOG("get volType failed: %{public}d", volType);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM,
+            "parameter verification failed: The param of volumeType must be enum AudioVolumeType");
+        return volLevel;
+    }
+    if (callingUid < 0) {
+        AUDIO_ERR_LOG("get uid failed: %{public}d", callingUid);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM,
+            "parameter verification failed: The param of volumeType must be greater than zero");
+        return volLevel;
+    }
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
+        return volLevel;
+    }
+    volLevel = audioSystemMngr_->GetVolume(TaiheAudioEnum::GetNativeAudioVolumeType(volType), callingUid);
+    return volLevel;
+}
+
+void AudioVolumeManagerImpl::SetSystemVolumeByUidSync(AudioVolumeType volumeType, int32_t volume, int32_t callingUid)
+{
+    int32_t volType = volumeType.get_value();
+    if (!TaiheAudioEnum::IsLegalInputArgumentVolType(volType)) {
+        AUDIO_ERR_LOG("get volumeType failed: %{public}d", volType);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM,
+            "parameter verification failed: The param of volumeType must be enum AudioVolumeType");
+        return;
+    }
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
+        return;
+    }
+    int32_t ret = audioSystemMngr_->SetVolume(TaiheAudioEnum::GetNativeAudioVolumeType(volType), volume, callingUid);
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        AUDIO_ERR_LOG("SetSystemVolumeByUid failed: %{public}d", ret);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+        return;
+    }
+}
+
+void AudioVolumeManagerImpl::ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration)
+{
+    int32_t volType = volumeType.get_value();
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
+        return;
+    }
+    int32_t ret = audioSystemMngr_->ForceVolumeKeyControlType(
+        TaiheAudioEnum::GetNativeAudioVolumeType(volType), duration);
+    CHECK_AND_RETURN(ret != OHOS::AudioStandard::SUCCESS);
+    if (ret == OHOS::AudioStandard::ERR_PERMISSION_DENIED) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_PERMISSION);
+        return;
+    } else if (ret == OHOS::AudioStandard::ERR_SYSTEM_PERMISSION_DENIED) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED);
+        return;
+    } else if (ret == OHOS::AudioStandard::ERR_INVALID_PARAM) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM);
+        return;
+    } else {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
         return;
     }
 }
@@ -435,7 +815,7 @@ void AudioVolumeManagerImpl::OnVolumeChange(callback_view<void(VolumeEvent const
 
 void AudioVolumeManagerImpl::OffVolumeChange(optional_view<callback<void(VolumeEvent const&)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
@@ -450,7 +830,7 @@ void AudioVolumeManagerImpl::OnAppVolumeChange(callback_view<void(VolumeEvent co
 
 void AudioVolumeManagerImpl::OffAppVolumeChange(optional_view<callback<void(VolumeEvent const&)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
@@ -465,7 +845,7 @@ void AudioVolumeManagerImpl::OnAppVolumeChangeForUid(int32_t uid, callback_view<
 
 void AudioVolumeManagerImpl::OffAppVolumeChangeForUid(optional_view<callback<void(VolumeEvent const&)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
@@ -480,7 +860,7 @@ void AudioVolumeManagerImpl::OnActiveVolumeTypeChange(callback_view<void(AudioVo
 
 void AudioVolumeManagerImpl::OffActiveVolumeTypeChange(optional_view<callback<void(AudioVolumeType)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
@@ -501,6 +881,10 @@ void AudioVolumeManagerImpl::RegisterSystemVolumeChangeCallback(std::shared_ptr<
     std::lock_guard<std::mutex> lock(audioVolMngrImpl->mutex_);
     CHECK_AND_RETURN_RET_LOG(audioVolMngrImpl->audioSystemMngr_ != nullptr,
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "audioSystemMngr_ is nullptr");
+    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+        return;
+    }
     if (audioVolMngrImpl->systemVolumeChangeCallbackTaihe_ == nullptr) {
         audioVolMngrImpl->systemVolumeChangeCallbackTaihe_ = std::make_shared<
             TaiheAudioSystemVolumeChangeCallback>();
@@ -522,7 +906,7 @@ void AudioVolumeManagerImpl::RegisterSystemVolumeChangeCallback(std::shared_ptr<
 
 void AudioVolumeManagerImpl::OffSystemVolumeChange(optional_view<callback<void(VolumeEvent const&)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
@@ -539,7 +923,10 @@ void AudioVolumeManagerImpl::UnregisterSystemVolumeChangeCallback(std::shared_pt
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "audioSystemMngr_ is nullptr");
     CHECK_AND_RETURN_RET_LOG(audioVolMngrImpl->systemVolumeChangeCallbackTaihe_ != nullptr,
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM), "UnregisterSystemVolumeChangeCallback failed");
-
+    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+        return;
+    }
     if (callback != nullptr) {
         std::shared_ptr<TaiheAudioSystemVolumeChangeCallback> cb = GetSystemVolumeChangeTaiheCallback(
             callback, audioVolMngrImpl);
@@ -626,7 +1013,7 @@ void AudioVolumeManagerImpl::RegisterStreamVolumeChangeCallback(StreamUsage stre
 
 void AudioVolumeManagerImpl::OffStreamVolumeChange(optional_view<callback<void(StreamVolumeEvent const&)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }

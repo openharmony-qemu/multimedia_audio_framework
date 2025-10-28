@@ -87,7 +87,7 @@ void TaiheAudioCapturerInfoChangeCallback::OnStateChange(
 void TaiheAudioCapturerInfoChangeCallback::OnJsCallbackCapturerChangeInfo(
     std::unique_ptr<AudioCapturerChangeInfoJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("OnJsCallbackVolumeEvent: jsCb.get() is null");
         return;
     }
@@ -112,7 +112,9 @@ void TaiheAudioCapturerInfoChangeCallback::SafeJsCallbackCapturerChangeInfoWork(
     std::shared_ptr<AudioCapturerChangeInfoJsCallback> safeContext(
         static_cast<AudioCapturerChangeInfoJsCallback*>(event),
         [](AudioCapturerChangeInfoJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
     std::string request = event->callbackName;
     do {

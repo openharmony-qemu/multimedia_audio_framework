@@ -52,7 +52,7 @@ void TaiheAudioSystemVolumeChangeCallback::OnSystemVolumeChange(OHOS::AudioStand
 void TaiheAudioSystemVolumeChangeCallback::OnJsCallbackSystemVolumeChange(
     std::unique_ptr<AudioSystemVolumeChangeJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("OnJsCallbackSystemVolumeChange: jsCb.get() is null");
         return;
     }
@@ -76,7 +76,9 @@ void TaiheAudioSystemVolumeChangeCallback::SafeJsCallbackSystemVolumeChangeWork(
     std::shared_ptr<AudioSystemVolumeChangeJsCallback> safeContext(
         static_cast<AudioSystemVolumeChangeJsCallback*>(event),
         [](AudioSystemVolumeChangeJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
     std::string request = event->callbackName;
 

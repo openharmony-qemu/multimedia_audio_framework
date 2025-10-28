@@ -484,7 +484,7 @@ void AudioRoutingManagerImpl::AddPreferredInputDeviceChangeCallback(AudioRouting
 void AudioRoutingManagerImpl::OffPreferredInputDeviceChangeForCapturerInfo(
     optional_view<callback<void(array_view<AudioDeviceDescriptor>)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
@@ -494,7 +494,7 @@ void AudioRoutingManagerImpl::OffPreferredInputDeviceChangeForCapturerInfo(
 void AudioRoutingManagerImpl::OffPreferOutputDeviceChangeForRendererInfo(
     optional_view<callback<void(array_view<AudioDeviceDescriptor>)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
@@ -638,7 +638,7 @@ void AudioRoutingManagerImpl::RegisterMicrophoneBlockedCallback(std::shared_ptr<
 void AudioRoutingManagerImpl::OffMicBlockStatusChanged(
     optional_view<callback<void(DeviceBlockStatusInfo const&)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
@@ -676,7 +676,7 @@ void AudioRoutingManagerImpl::UnregisterMicrophoneBlockedCallback(std::shared_pt
 
 void AudioRoutingManagerImpl::OffDeviceChange(optional_view<callback<void(DeviceChangeAction const&)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
@@ -716,7 +716,7 @@ void AudioRoutingManagerImpl::UnregisterDeviceChangeCallback(std::shared_ptr<uin
 void AudioRoutingManagerImpl::OffAvailableDeviceChange(
     optional_view<callback<void(DeviceChangeAction const&)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }

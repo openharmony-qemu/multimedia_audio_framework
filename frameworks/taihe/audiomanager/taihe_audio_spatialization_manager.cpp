@@ -354,7 +354,7 @@ void AudioSpatializationManagerImpl::OnHeadTrackingEnabledChangeForAnyDevice(
 void AudioSpatializationManagerImpl::OffSpatializationEnabledChangeForCurrentDevice(
     optional_view<callback<void(bool)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
@@ -364,7 +364,7 @@ void AudioSpatializationManagerImpl::OffSpatializationEnabledChangeForCurrentDev
 void AudioSpatializationManagerImpl::OffSpatializationEnabledChangeForAnyDevice(
     optional_view<callback<void(AudioSpatialEnabledStateForDevice const&)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
@@ -376,7 +376,7 @@ void AudioSpatializationManagerImpl::OffSpatializationEnabledChangeForAnyDevice(
 void AudioSpatializationManagerImpl::OffHeadTrackingEnabledChangeForAnyDevice(
     optional_view<callback<void(AudioSpatialEnabledStateForDevice const&)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }

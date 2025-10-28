@@ -103,7 +103,9 @@ void TaiheAudioRendererStateCallback::SafeJsCallbackRendererStateWork(AudioRende
     std::shared_ptr<AudioRendererStateJsCallback> safeContext(
         static_cast<AudioRendererStateJsCallback*>(event),
         [](AudioRendererStateJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
 
     do {
@@ -118,7 +120,7 @@ void TaiheAudioRendererStateCallback::SafeJsCallbackRendererStateWork(AudioRende
 
 void TaiheAudioRendererStateCallback::OnJsCallbackRendererState(std::unique_ptr<AudioRendererStateJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("OnJsCallbackRendererState: jsCb.get() is null");
         return;
     }

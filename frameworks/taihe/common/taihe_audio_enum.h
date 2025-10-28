@@ -21,6 +21,7 @@
 #include "taihe/runtime.hpp"
 #include "audio_log.h"
 #include "audio_effect.h"
+#include "audio_session_device_info.h"
 
 namespace ANI::Audio {
 using namespace taihe;
@@ -98,6 +99,10 @@ public:
         USAGE_MAX = 100
     };
 
+    enum AudioLoopbackModeTaihe {
+        LOOPBACK_MODE_HARDWARE = 0
+    };
+
     static bool IsLegalInputArgumentInterruptMode(int32_t interruptMode);
     static bool IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode);
     static bool IsLegalInputArgumentChannelBlendMode(int32_t blendMode);
@@ -109,8 +114,11 @@ public:
     static OHOS::AudioStandard::InterruptMode GetNativeInterruptMode(int32_t interruptMode);
     static OHOS::AudioStandard::StreamUsage GetNativeStreamUsage(int32_t streamUsage);
     static OHOS::AudioStandard::StreamUsage GetNativeStreamUsageFir(int32_t streamUsage);
+    static OHOS::AudioStandard::AudioScene GetJsAudioScene(OHOS::AudioStandard::AudioScene audioScene);
     static AudioVolumeType GetJsAudioVolumeType(OHOS::AudioStandard::AudioStreamType volumeType);
     static AudioVolumeType GetJsAudioVolumeTypeMore(OHOS::AudioStandard::AudioStreamType volumeType);
+    static StreamUsage GetJsStreamUsage(OHOS::AudioStandard::StreamUsage streamUsage);
+    static StreamUsage GetJsStreamUsageFir(OHOS::AudioStandard::StreamUsage streamUsage);
     static bool IsLegalInputArgumentDeviceFlag(int32_t deviceFlag);
     static bool IsLegalInputArgumentActiveDeviceType(int32_t activeDeviceFlag);
     static bool IsLegalInputArgumentCommunicationDeviceType(int32_t communicationDeviceType);
@@ -122,6 +130,8 @@ public:
     static bool IsValidSourceType(int32_t intValue);
     static bool IsLegalDeviceUsage(int32_t usage);
     static bool IsLegalInputArgumentSpatializationSceneType(int32_t spatializationSceneType);
+    static bool IsLegalInputArgumentSessionScene(int32_t scene);
+    static bool IsLegalInputArgumentAudioLoopbackMode(int32_t inputMode);
 
     static ConnectType ToTaiheConnectType(OHOS::AudioStandard::ConnectType type);
     static DeviceRole ToTaiheDeviceRole(OHOS::AudioStandard::DeviceRole type);
@@ -154,6 +164,11 @@ public:
         OHOS::AudioStandard::AudioStreamDeviceChangeReason reason);
     static AudioChannelLayout ToTaiheAudioChannelLayout(OHOS::AudioStandard::AudioChannelLayout layout);
     static DeviceBlockStatus ToTaiheDeviceBlockStatus(OHOS::AudioStandard::DeviceBlockStatus status);
+    static AudioSessionStateChangeHint ToTaiheAudioSessionStateChangeHint(
+        OHOS::AudioStandard::AudioSessionStateChangeHint hint);
+    static OutputDeviceChangeRecommendedAction ToTaiheOutputDeviceChangeRecommendedAction(
+        OHOS::AudioStandard::OutputDeviceChangeRecommendedAction action);
+    static AudioLoopbackStatus ToTaiheAudioLoopbackStatus(OHOS::AudioStandard::AudioLoopbackStatus status);
 
     static const std::map<std::string, int32_t> deviceTypeMap;
 };
