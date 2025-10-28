@@ -82,15 +82,15 @@ OH_AudioFormat audioFormatInput;
 OH_AudioFormat audioFormatOutput;
 
 enum {
-    arg_1 = 0,
-    arg_2 = 1,
-    arg_3 = 2,
-    arg_4 = 3,
-    arg_5 = 4,
-    arg_6 = 5,
-    arg_7 = 6,
-    arg_8 = 7,
-    arg_9 = 8
+    ARG_1 = 0,
+    ARG_2 = 1,
+    ARG_3 = 2,
+    ARG_4 = 3,
+    ARG_5 = 4,
+    ARG_6 = 5,
+    ARG_7 = 6,
+    ARG_8 = 7,
+    ARG_9 = 8
 };
 
 enum class SampleFormat {
@@ -453,7 +453,7 @@ static napi_value SetFormat(napi_env env, napi_callback_info info)
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetFormat sampleRate is %{public}d", sampleRate);
     // 获取位深
     unsigned int bitsPerSample;
-    napi_get_value_uint32(env, argv[arg_3], &bitsPerSample);
+    napi_get_value_uint32(env, argv[ARG_3], &bitsPerSample);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetFormat bitsPerSample is %{public}d",
         bitsPerSample);
 
@@ -615,15 +615,15 @@ static void ParseArguments(napi_env env, napi_value *argv, std::string &inputId,
                            unsigned int &bitsPerSample, unsigned int &formatCategory, unsigned int &pcmLength,
                            void *&buffer, size_t &bufferLength)
 {
-    napi_status status = parseNapiString(env, argv[arg_1], inputId);
-    status = parseNapiString(env, argv[arg_2], outputId);
-    status = parseNapiString(env, argv[arg_3], mixerId);
-    napi_get_value_uint32(env, argv[arg_4], &channels);
-    napi_get_value_uint32(env, argv[arg_5], &sampleRate);
-    napi_get_value_uint32(env, argv[arg_6], &bitsPerSample);
-    napi_get_value_uint32(env, argv[arg_7], &formatCategory);
-    napi_get_value_uint32(env, argv[arg_8], &pcmLength);
-    napi_get_arraybuffer_info(env, argv[arg_9], &buffer, &bufferLength);
+    napi_status status = parseNapiString(env, argv[ARG_1], inputId);
+    status = parseNapiString(env, argv[ARG_2], outputId);
+    status = parseNapiString(env, argv[ARG_3], mixerId);
+    napi_get_value_uint32(env, argv[ARG_4], &channels);
+    napi_get_value_uint32(env, argv[ARG_5], &sampleRate);
+    napi_get_value_uint32(env, argv[ARG_6], &bitsPerSample);
+    napi_get_value_uint32(env, argv[ARG_7], &formatCategory);
+    napi_get_value_uint32(env, argv[ARG_8], &pcmLength);
+    napi_get_arraybuffer_info(env, argv[ARG_9], &buffer, &bufferLength);
 }
 
 static void CreateInputNode(napi_env env, const std::string &inputId, unsigned int channels, unsigned int sampleRate,
@@ -979,8 +979,8 @@ static napi_value DragEffectNode(napi_env env, napi_callback_info info)
     std::string targetId;
 
     napi_status status = parseNapiString(env, argv[0], inputId);
-    status = parseNapiString(env, argv[arg_2], sourceId);
-    status = parseNapiString(env, argv[arg_3], targetId);
+    status = parseNapiString(env, argv[ARG_2], sourceId);
+    status = parseNapiString(env, argv[ARG_3], targetId);
     
     if (targetId.empty()) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest DeleteSong targetId is empty");
@@ -1052,18 +1052,18 @@ static napi_value SetEquailizerMode(napi_env env, napi_callback_info info)
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     // 获取效果节点的效果参数
     unsigned int equailizerMode = -1;
-    napi_get_value_uint32(env, argv[arg_1], &equailizerMode);
+    napi_get_value_uint32(env, argv[ARG_1], &equailizerMode);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetEquailizerMode equailizerMode is %{public}d",
         equailizerMode);
     // 获取效果节点的id
     std::string equalizerId;
-    napi_status status = parseNapiString(env, argv[arg_2], equalizerId);
+    napi_status status = parseNapiString(env, argv[ARG_2], equalizerId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetEquailizerMode equalizerId is %{public}s",
         equalizerId.c_str());
     
     // 获取input节点的id
     std::string inputId;
-    status = parseNapiString(env, argv[arg_3], inputId);
+    status = parseNapiString(env, argv[ARG_3], inputId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetEquailizerMode inputId is %{public}s",
         inputId.c_str());
 
@@ -1121,13 +1121,13 @@ static napi_value SetEqualizerFrequencyBandGains(napi_env env, napi_callback_inf
         return napiValue;
     }
     uint32_t length;
-    napi_get_array_length(env, argv[arg_1], &length);
+    napi_get_array_length(env, argv[ARG_1], &length);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
         "audioEditTest SetEqualizerFrequencyBandGains param length is %{public}d", length);
 
     // 获取效果节点的id
     std::string equalizerId;
-    napi_status status = parseNapiString(env, argv[arg_2], equalizerId);
+    napi_status status = parseNapiString(env, argv[ARG_2], equalizerId);
     if (status == napi_ok) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
             "audioEditTest SetEqualizerFrequencyBandGains equalizerId is %{public}s", equalizerId.c_str());
@@ -1137,20 +1137,20 @@ static napi_value SetEqualizerFrequencyBandGains(napi_env env, napi_callback_inf
     
     // 获取input节点的id
     std::string inputId;
-    status = parseNapiString(env, argv[arg_3], inputId);
+    status = parseNapiString(env, argv[ARG_3], inputId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-                "audioEditTest SetEqualizerFrequencyBandGains inputId is %{public}s", inputId.c_str());
+        "audioEditTest SetEqualizerFrequencyBandGains inputId is %{public}s", inputId.c_str());
     if (status == napi_ok) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-                    "audioEditTest SetEqualizerFrequencyBandGains inputId is %{public}s", inputId.c_str());
+            "audioEditTest SetEqualizerFrequencyBandGains inputId is %{public}s", inputId.c_str());
     } else {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "Failed to get inputId");
     }
     // 获取 selectNodeId
     std::string selectedNodeId;
-    status = parseNapiString(env, argv[arg_4], selectedNodeId);
+    status = parseNapiString(env, argv[ARG_4], selectedNodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-                "audioEditTest SetEqualizerFrequencyBandGains selectedNodeId is %{public}s", selectedNodeId.c_str());
+        "audioEditTest SetEqualizerFrequencyBandGains selectedNodeId is %{public}s", selectedNodeId.c_str());
 
     // 创建均衡器频带节点
     Node eqNode;
@@ -1158,11 +1158,11 @@ static napi_value SetEqualizerFrequencyBandGains(napi_env env, napi_callback_inf
     eqNode = nodeManager->getNodeById(equalizerId);
     if (eqNode.physicalNode) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-                    "audioEditTest SetEqualizerFrequencyBandGains equalizer is exist");
+            "audioEditTest SetEqualizerFrequencyBandGains equalizer is exist");
     } else {
         // 创建均衡器节点
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-                    "audioEditTest SetEqualizerFrequencyBandGains create EQUALIZER node");
+            "audioEditTest SetEqualizerFrequencyBandGains create EQUALIZER node");
         eqNode.id = equalizerId;
         eqNode.type = OH_AudioNode_Type::EFFECT_NODE_TYPE_EQUALIZER;
         nodeManager->createNode(equalizerId, OH_AudioNode_Type::EFFECT_NODE_TYPE_EQUALIZER);
@@ -1171,8 +1171,8 @@ static napi_value SetEqualizerFrequencyBandGains(napi_env env, napi_callback_inf
         if (selectedNodeId.empty()) {
             int resultInt = AddEffectNodeToNodeManager(inputId, equalizerId);
             OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-                        "audioEditTest AddEffectNodeToNodeManager AddEffectNodeToNodeManager result: %{public}d",
-                        resultInt);
+                "audioEditTest AddEffectNodeToNodeManager AddEffectNodeToNodeManager result: %{public}d",
+                resultInt);
             if (resultInt != 0) {
                 napi_create_int64(env, resultInt, &napiValue);
                 return napiValue;
@@ -1180,7 +1180,7 @@ static napi_value SetEqualizerFrequencyBandGains(napi_env env, napi_callback_inf
         } else {
             int resultInt = nodeManager->insertNode(equalizerId, selectedNodeId, Direction::LATER);
             OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-                        "audioEditTest AddEffectNodeToNodeManager insertNode result: %{public}d", resultInt);
+                "audioEditTest AddEffectNodeToNodeManager insertNode result: %{public}d", resultInt);
             if (resultInt != 0) {
                 napi_create_int64(env, resultInt, &napiValue);
                 return napiValue;
@@ -1267,17 +1267,17 @@ static napi_value addNoiseReduction(napi_env env, napi_callback_info info)
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     // 获取uuid
     std::string uuidStr;
-    napi_status status = parseNapiString(env, argv[arg_1], uuidStr);
+    napi_status status = parseNapiString(env, argv[ARG_1], uuidStr);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---uuid==%{public}s", uuidStr.c_str());
 
     // 获取二参inputId
     std::string inputIdStr;
-    status = parseNapiString(env, argv[arg_2], inputIdStr);
+    status = parseNapiString(env, argv[ARG_2], inputIdStr);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---inputId==%{public}s", inputIdStr.c_str());
 
     // 获取当前选中的节点id
     std::string selectNodeId;
-    status = parseNapiString(env, argv[arg_3], selectNodeId);
+    status = parseNapiString(env, argv[ARG_3], selectNodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---addNoiseReduction---selectNodeId==%{public}s",
         selectNodeId.c_str());
 
@@ -1352,43 +1352,43 @@ static napi_value startVBEffect(napi_env env, napi_callback_info info)
 
     // inputId
     std::string inputId;
-    napi_status status = parseNapiString(env, argv[arg_1], inputId);
+    napi_status status = parseNapiString(env, argv[ARG_1], inputId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---startVBEffect---inputId==%{public}s",
         inputId.c_str());
 
     // 获取二参、美化类型
     unsigned int mode = -1;
-    napi_get_value_uint32(env, argv[arg_2], &mode);
+    napi_get_value_uint32(env, argv[ARG_2], &mode);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---startVBEffect--mode==%{public}zd", mode);
 
     // 获取三参、效果节点id
     std::string voiceBeautifierId;
-    status = parseNapiString(env, argv[arg_3], voiceBeautifierId);
+    status = parseNapiString(env, argv[ARG_3], voiceBeautifierId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---uuid==%{public}s", voiceBeautifierId.c_str());
 
     // 获取当前选中的节点id
     std::string selectNodeId;
-    status = parseNapiString(env, argv[arg_4], selectNodeId);
+    status = parseNapiString(env, argv[ARG_4], selectNodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---startVBEffect---selectNodeId==%{public}s",
         selectNodeId.c_str());
 
     OH_VoiceBeautifierType type;
     switch (mode) {
-    case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR:
-        type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR;
-        break;
-    case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_THEATRE:
-        type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_THEATRE;
-        break;
-    case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CD:
-        type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CD;
-        break;
-    case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_RECORDING_STUDIO:
-        type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_RECORDING_STUDIO;
-        break;
-    default:
-        type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR;
-        break;
+        case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR:
+            type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR;
+            break;
+        case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_THEATRE:
+            type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_THEATRE;
+            break;
+        case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CD:
+            type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CD;
+            break;
+        case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_RECORDING_STUDIO:
+            type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_RECORDING_STUDIO;
+            break;
+        default:
+            type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR;
+            break;
     }
     napi_value ret;
     Node node = createNodeByType(voiceBeautifierId, OH_AudioNode_Type::EFFECT_NODE_TYPE_VOICE_BEAUTIFIER);
@@ -1425,43 +1425,42 @@ static napi_value resetVBEffect(napi_env env, napi_callback_info info)
 
     // 获取inputId
     std::string inputId;
-    napi_status status = parseNapiString(env, argv[arg_1], inputId);
+    napi_status status = parseNapiString(env, argv[ARG_1], inputId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---resetVBEffect---inputId==%{public}s",
         inputId.c_str());
 
     // 获取二参
     unsigned int mode = -1;
-    napi_get_value_uint32(env, argv[arg_2], &mode);
+    napi_get_value_uint32(env, argv[ARG_2], &mode);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---resetVBEffect--mode==%{public}zd", mode);
 
     // 获取三参
     std::string voiceBeautifierId;
-    status = parseNapiString(env, argv[arg_3], voiceBeautifierId);
+    status = parseNapiString(env, argv[ARG_3], voiceBeautifierId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---uuid==%{public}s", voiceBeautifierId.c_str());
 
     OH_VoiceBeautifierType type;
     switch (mode) {
-    case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR:
-        type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR;
-        break;
-    case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_THEATRE:
-        type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_THEATRE;
-        break;
-    case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CD:
-        type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CD;
-        break;
-    case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_RECORDING_STUDIO:
-        type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_RECORDING_STUDIO;
-        break;
-    default:
-        type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR;
-        break;
+        case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR:
+            type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR;
+            break;
+        case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_THEATRE:
+            type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_THEATRE;
+            break;
+        case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CD:
+            type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CD;
+            break;
+        case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_RECORDING_STUDIO:
+            type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_RECORDING_STUDIO;
+            break;
+        default:
+            type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR;
+            break;
     }
 
     napi_value ret;
     Node node = nodeManager->getNodeById(voiceBeautifierId);
-    OH_AudioSuite_Result result;
-    result = OH_AudioSuiteEngine_SetVoiceBeautifierType(node.physicalNode, type);
+    OH_AudioSuite_Result result = OH_AudioSuiteEngine_SetVoiceBeautifierType(node.physicalNode, type);
     if (result != AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
             "audioEditTest---OH_AudioSuiteEngine_SetVoiceBeautifierType ERROR---%{public}zd", result);
@@ -1477,21 +1476,21 @@ OH_SoundFieldType getSoundFieldTypeByNum(int mode)
 {
     OH_SoundFieldType type;
     switch (mode) {
-    case OH_SoundFieldType::SOUND_FIELD_FRONT_FACING:
-        type = OH_SoundFieldType::SOUND_FIELD_FRONT_FACING;
-        break;
-    case OH_SoundFieldType::SOUND_FIELD_GRAND:
-        type = OH_SoundFieldType::SOUND_FIELD_GRAND;
-        break;
-    case OH_SoundFieldType::SOUND_FIELD_NEAR:
-        type = OH_SoundFieldType::SOUND_FIELD_NEAR;
-        break;
-    case OH_SoundFieldType::SOUND_FIELD_WIDE:
-        type = OH_SoundFieldType::SOUND_FIELD_WIDE;
-        break;
-    default:
-        type = OH_SoundFieldType::SOUND_FIELD_FRONT_FACING;
-        break;
+        case OH_SoundFieldType::SOUND_FIELD_FRONT_FACING:
+            type = OH_SoundFieldType::SOUND_FIELD_FRONT_FACING;
+            break;
+        case OH_SoundFieldType::SOUND_FIELD_GRAND:
+            type = OH_SoundFieldType::SOUND_FIELD_GRAND;
+            break;
+        case OH_SoundFieldType::SOUND_FIELD_NEAR:
+            type = OH_SoundFieldType::SOUND_FIELD_NEAR;
+            break;
+        case OH_SoundFieldType::SOUND_FIELD_WIDE:
+            type = OH_SoundFieldType::SOUND_FIELD_WIDE;
+            break;
+        default:
+            type = OH_SoundFieldType::SOUND_FIELD_FRONT_FACING;
+            break;
     }
     return type;
 }
@@ -1503,40 +1502,36 @@ static napi_value startFieldEffect(napi_env env, napi_callback_info info)
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
 
     std::string inputId;
-    napi_status status = parseNapiString(env, argv[arg_1], inputId);
+    napi_status status = parseNapiString(env, argv[ARG_1], inputId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest startFieldEffect inputId is %{public}s",
         inputId.c_str());
     
     // 获取二参
     unsigned int mode = -1;
-    napi_get_value_uint32(env, argv[arg_2], &mode);
+    napi_get_value_uint32(env, argv[ARG_2], &mode);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest startFieldEffect mode is %{public}zd", mode);
 
     // 获取三参
     std::string fieldEffectId;
-    status = parseNapiString(env, argv[arg_3], fieldEffectId);
+    status = parseNapiString(env, argv[ARG_3], fieldEffectId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest startFieldEffect fieldEffectId is %{public}s",
         fieldEffectId.c_str());
 
     // 获取四参
     std::string selectedNodeId;
-    status = parseNapiString(env, argv[arg_4], selectedNodeId);
+    status = parseNapiString(env, argv[ARG_4], selectedNodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest startFieldEffect selectedNodeId is %{public}s",
         selectedNodeId.c_str());
-
     OH_SoundFieldType type = getSoundFieldTypeByNum(mode);
-
     napi_value ret;
     Node node = createNodeByType(fieldEffectId, OH_AudioNode_Type::EFFECT_NODE_TYPE_SOUND_FIELD);
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_SetSoundFiledType(node.physicalNode, type);
-
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
             "audioEditTest startFieldEffect OH_AudioEditEngine_SetSoundFiledType ERROR!");
         napi_create_int64(env, result, &ret);
         return ret;
     }
-
     if (selectedNodeId.empty()) {
         int res = AddEffectNodeToNodeManager(inputId, fieldEffectId);
         if (res != 0) {
@@ -1567,18 +1562,18 @@ static napi_value resetFieldEffect(napi_env env, napi_callback_info info)
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
 
     std::string inputId;
-    napi_status status = parseNapiString(env, argv[arg_1], inputId);
+    napi_status status = parseNapiString(env, argv[ARG_1], inputId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest resetFieldEffect inputId is %{public}s",
         inputId.c_str());
 
     // 获取二参
     unsigned int mode = -1;
-    napi_get_value_uint32(env, argv[arg_2], &mode);
+    napi_get_value_uint32(env, argv[ARG_2], &mode);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest resetFieldEffect mode is %{public}zd", mode);
 
     // 获取三参
     std::string fieldEffectId;
-    status = parseNapiString(env, argv[arg_3], fieldEffectId);
+    status = parseNapiString(env, argv[ARG_3], fieldEffectId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest fieldEffectId is %{public}s",
         fieldEffectId.c_str());
 
@@ -1637,25 +1632,25 @@ static napi_value addAudioSeparation(napi_env env, napi_callback_info info)
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     // 获取一参
     unsigned int arg1 = 0;
-    napi_get_value_uint32(env, argv[arg_1], &arg1);
+    napi_get_value_uint32(env, argv[ARG_1], &arg1);
     // 获取二参uuid
     std::string uuidStr;
-    napi_status status = parseNapiString(env, argv[arg_2], uuidStr);
+    napi_status status = parseNapiString(env, argv[ARG_2], uuidStr);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---uuid==%{public}s", uuidStr.c_str());
 
     // 获取三参inputId
     std::string inputIdStr;
-    status = parseNapiString(env, argv[arg_3], inputIdStr);
+    status = parseNapiString(env, argv[ARG_3], inputIdStr);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---inputId==%{public}s", inputIdStr.c_str());
 
     // 获取四参
     std::string selectedNodeId;
-    status = parseNapiString(env, argv[arg_4], selectedNodeId);
+    status = parseNapiString(env, argv[ARG_4], selectedNodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest addAudioSeparation selectedNodeId is %{public}s",
         selectedNodeId.c_str());
 
     napi_value ret;
-    napi_create_int64(env, arg_4, &ret);
+    napi_create_int64(env, ARG_4, &ret);
     Node node = createNodeByType(uuidStr, OH_AudioNode_Type::EFFECT_MULTII_OUTPUT_NODE_TYPE_AUDIO_SEPARATION);
     if (node.physicalNode == nullptr) {
         return ret;
@@ -1682,21 +1677,21 @@ static napi_value addAudioSeparation(napi_env env, napi_callback_info info)
 void getEnvEnumByNumber(int num, OH_EnvironmentType &type)
 {
     switch (num) {
-    case ENVIRONMENT_TYPE_BROADCAST:
-        type = ENVIRONMENT_TYPE_BROADCAST;
-        break;
-    case ENVIRONMENT_TYPE_EARPIECE:
-        type = ENVIRONMENT_TYPE_EARPIECE;
-        break;
-    case ENVIRONMENT_TYPE_UNDERWATER:
-        type = ENVIRONMENT_TYPE_UNDERWATER;
-        break;
-    case ENVIRONMENT_TYPE_GRAMOPHONE:
-        type = ENVIRONMENT_TYPE_GRAMOPHONE;
-        break;
-    default:
-        type = ENVIRONMENT_TYPE_BROADCAST;
-        break;
+        case ENVIRONMENT_TYPE_BROADCAST:
+            type = ENVIRONMENT_TYPE_BROADCAST;
+            break;
+        case ENVIRONMENT_TYPE_EARPIECE:
+            type = ENVIRONMENT_TYPE_EARPIECE;
+            break;
+        case ENVIRONMENT_TYPE_UNDERWATER:
+            type = ENVIRONMENT_TYPE_UNDERWATER;
+            break;
+        case ENVIRONMENT_TYPE_GRAMOPHONE:
+            type = ENVIRONMENT_TYPE_GRAMOPHONE;
+            break;
+        default:
+            type = ENVIRONMENT_TYPE_BROADCAST;
+            break;
     }
 }
 static napi_value startEnvEffect(napi_env env, napi_callback_info info)
@@ -1708,21 +1703,21 @@ static napi_value startEnvEffect(napi_env env, napi_callback_info info)
     napi_status status;
     // 获取一参
     std::string inputIdStr;
-    status = parseNapiString(env, argv[arg_1], inputIdStr);
+    status = parseNapiString(env, argv[ARG_1], inputIdStr);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---inputId==%{public}s", inputIdStr.c_str());
 
     // 获取二参uuid
     std::string uuidStr;
-    status = parseNapiString(env, argv[arg_2], uuidStr);
+    status = parseNapiString(env, argv[ARG_2], uuidStr);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---uuid==%{public}s", uuidStr.c_str());
 
     // 获取三参
     unsigned int mode = 0;
-    napi_get_value_uint32(env, argv[arg_3], &mode);
+    napi_get_value_uint32(env, argv[ARG_3], &mode);
 
     // 获取四参混音台selectedNodeId
     std::string selectedNodeId;
-    status = parseNapiString(env, argv[arg_4], selectedNodeId);
+    status = parseNapiString(env, argv[ARG_4], selectedNodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest selectedNodeId is %{public}s",
         selectedNodeId.c_str());
 
@@ -1731,7 +1726,7 @@ static napi_value startEnvEffect(napi_env env, napi_callback_info info)
     napi_value ret;
     Node node = createNodeByType(uuidStr, OH_AudioNode_Type::EFFECT_NODE_TYPE_ENVIRONMENT_EFFECT);
     if (node.physicalNode == nullptr) {
-        napi_create_int64(env, arg_4, &ret);
+        napi_create_int64(env, ARG_4, &ret);
         return ret;
     }
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_SetEnvironmentType(node.physicalNode, type);
@@ -1771,17 +1766,17 @@ static napi_value resetEnvEffect(napi_env env, napi_callback_info info)
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     // 获取一参
     std::string inputIdStr;
-    parseNapiString(env, argv[arg_1], inputIdStr);
+    parseNapiString(env, argv[ARG_1], inputIdStr);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---inputId==%{public}s", inputIdStr.c_str());
 
     // 获取二参uuid
     std::string effectNodeId;
-    parseNapiString(env, argv[arg_2], effectNodeId);
+    parseNapiString(env, argv[ARG_2], effectNodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---uuid==%{public}s", effectNodeId.c_str());
 
     // 获取三参
     unsigned int mode = 0;
-    napi_get_value_uint32(env, argv[arg_3], &mode);
+    napi_get_value_uint32(env, argv[ARG_3], &mode);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---mode==%{public}d", mode);
 
     OH_EnvironmentType type;
@@ -1951,7 +1946,8 @@ static napi_value deleteAudioSeparation(napi_env env, napi_callback_info info)
     napi_create_int64(env, result, &napiValue);
     return napiValue;
 }
-static napi_value getAudioOfTap(napi_env env, napi_callback_info info) {
+static napi_value getAudioOfTap(napi_env env, napi_callback_info info)
+{
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---getAudioOfTap---IN");
 
     napi_value napiValue = nullptr;
@@ -2021,7 +2017,8 @@ static napi_value RegisterFinishedCallback(napi_env env, napi_callback_info info
 }
 
 // 调用回调函数的方法
-void CallBooleanCallback(int result) {
+void CallBooleanCallback(int result)
+{
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest CallBooleanCallback result: %{public}d", result);
     if (tsfnBoolean == nullptr) {
         return;
@@ -2075,7 +2072,8 @@ static OH_AudioSuite_Result OneRenDerFrame(int32_t audioDataSize)
     ProcessPipeline();
     if (audioDataSize <= 0) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
-            "audioEditTest OH_AudioSuiteEngine_RenderFrame audioDataSize is %{public}d", static_cast<int>(audioDataSize));
+            "audioEditTest OH_AudioSuiteEngine_RenderFrame audioDataSize is %{public}d",
+            static_cast<int>(audioDataSize));
         return OH_AudioSuite_Result::AUDIOSUITE_ERROR_SYSTEM;
     }
     char *audioData = (char *)malloc(audioDataSize);
@@ -2097,7 +2095,7 @@ static OH_AudioSuite_Result OneRenDerFrame(int32_t audioDataSize)
     }
     // 每次保存一次获取的buffer值
     g_audioData = (char *)malloc(writeSize);
-    auto ret = memcpy(static_cast<char *>(g_audioData), writeSize, audioData, writeSize);
+    auto ret = memcpy_s(static_cast<char *>(g_audioData), writeSize, audioData, writeSize);
     if (ret != 0) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
             "audioEditTest memcpy g_audioData failed, ret is %{public}zd", ret);
@@ -2244,7 +2242,8 @@ static napi_value AudioRendererInit(napi_env env, napi_callback_info info)
     // 设置输出音频流的工作场景。
     OH_AudioStreamBuilder_SetRendererInfo(rendererBuilder, AUDIOSTREAM_USAGE_MUSIC);
     // 设置 audioDataSize 长度 （待播放的数据大小）
-    g_mixDataSize = SAMPLINGRATE_MULTI * audioFormatOutput.samplingRate * audioFormatOutput.channelCount / CHANNELCOUNT_MULTI * bitsPerSample / BITSPERSAMPLE_MULTI;
+    g_mixDataSize = SAMPLINGRATE_MULTI * audioFormatOutput.samplingRate *
+        audioFormatOutput.channelCount / CHANNELCOUNT_MULTI * bitsPerSample / BITSPERSAMPLE_MULTI;
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
         "audioEditTest AudioRendererInit g_mixDataSize: %{public}d, samplingRate: %{public}d, "
         "channelCount: %{public}d, bitsPerSample: %{public}d",
@@ -2276,7 +2275,8 @@ static napi_value AudioRendererDestory(napi_env env, napi_callback_info info)
 }
 
 // 开始播放
-static napi_value AudioRendererStart(napi_env env, napi_callback_info info) {
+static napi_value AudioRendererStart(napi_env env, napi_callback_info info)
+{
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "writeDataBufferMap_ size %{public}d",
         writeDataBufferMap_.size());
     ProcessPipeline();
@@ -2323,7 +2323,8 @@ static napi_value ResetTotalWriteAudioDataSize(napi_env env, napi_callback_info 
     return nullptr;
 }
 
-EXTERN_C_START static napi_value Init(napi_env env, napi_value exports) {
+EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
+{
     napi_property_descriptor desc[] = {
         {"record", nullptr, Record, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"audioRendererInit", nullptr, AudioRendererInit, nullptr, nullptr, nullptr, napi_default, nullptr},
