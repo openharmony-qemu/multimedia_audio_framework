@@ -217,6 +217,7 @@ public:
     void ResetFirstFrameState() override;
     void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
     bool IsRestoreNeeded() override;
+    int32_t SetRebuildFlag() override;
 
 private:
     void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);

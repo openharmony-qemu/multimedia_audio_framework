@@ -375,10 +375,12 @@ int32_t AudioProcessInServer::StartInner()
 
 void AudioProcessInServer::RebuildCaptureInjector()
 {
+    CHECK_AND_RETURN_LOG(rebuildFlag_, "no need to rebuild");
     if (processConfig_.audioMode == AUDIO_MODE_RECORD &&
         processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         CoreServiceHandler::GetInstance().RebuildCaptureInjector(sessionId_);
     }
+    rebuildFlag_ = false;
 }
 
 int32_t AudioProcessInServer::Pause(bool isFlush)
@@ -1080,6 +1082,12 @@ int32_t AudioProcessInServer::HandleCapturerDataParams(RingBufferWrapper &writeB
     DumpFileUtil::WriteDumpFile(dumpFAC_, static_cast<void *>(writeBuf.basicBufferDescs[0].buffer),
         writeBuf.dataLength);
 
+    return SUCCESS;
+}
+
+int32_t AudioProcessInServer::SetRebuildFlag()
+{
+    rebuildFlag_ = true;
     return SUCCESS;
 }
 

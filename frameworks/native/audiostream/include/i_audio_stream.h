@@ -183,6 +183,7 @@ public:
     virtual int32_t SetSpeed(float speed) = 0;
     virtual int32_t SetPitch(float pitch) = 0;
     virtual float GetSpeed() = 0;
+    virtual int32_t SetRebuildFlag() { return 0; }
     virtual int32_t SetRenderTarget(RenderTarget target) { return 0; }
     virtual RenderTarget GetRenderTarget() { return NORMAL_PLAYBACK; }
 

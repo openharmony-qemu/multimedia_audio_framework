@@ -142,6 +142,8 @@ public:
 
     virtual void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) = 0;
 
+    virtual void SetRebuildFlag() = 0;
+
     virtual bool IsRestoreNeeded() = 0;
 };
 } // namespace AudioStandard

@@ -66,4 +66,5 @@ interface IIpcStream {
         [out] unsigned int spanSizeInFrame, [out] unsigned long engineTotalSizeInFrame);
     void SetAudioHapticsSyncId([in] int audioHapticsSyncId);
     void SetTarget([in] int target, [out] int ret); //SetRenderTarget
+    void SetRebuildFlag();
 }

@@ -91,6 +91,8 @@ public:
 
     int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName,
         uint32_t method) override;
+
+    int32_t SetRebuildFlag() override;
     
     int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override;
     int32_t GetAudioHapticsSyncId() override;
@@ -227,6 +229,8 @@ private:
     StreamStatus streamStatusInServer_ = STREAM_INVALID;
 
     std::unique_ptr<HPAE::ProResampler> resampler_ = nullptr;
+
+    std::atomic<bool> rebuildFlag_ = false;
 
     std::string dumpResampleName_;
     std::string dumpFACName_;
