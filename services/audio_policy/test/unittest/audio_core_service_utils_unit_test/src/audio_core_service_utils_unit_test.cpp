@@ -78,28 +78,26 @@ HWTEST(AudioCoreServiceUtilsTest, AudioCoreServiceUtils_003, TestSize.Level1)
     desc3->deviceType_ = DEVICE_TYPE_DP;
     desc3->networkId_ = LOCAL_NETWORK_ID;
 
-    AudioStreamCollector& streamCollector = AudioStreamCollector::GetAudioStreamCollector();
-
-    EXPECT_FALSE(AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(descs, 0, streamCollector));
+    EXPECT_FALSE(AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(descs, 0));
 
     descs.push_back(desc3);
     descs.push_back(desc1);
-    EXPECT_FALSE(AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(descs, 0, streamCollector));
+    EXPECT_FALSE(AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(descs, 0));
 
     descs.clear();
     descs.push_back(desc1);
     descs.push_back(desc3);
-    EXPECT_FALSE(AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(descs, 0, streamCollector));
+    EXPECT_FALSE(AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(descs, 0));
 
     descs.clear();
     descs.push_back(desc1);
     descs.push_back(desc2);
-    EXPECT_FALSE(AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(descs, 0, streamCollector));
+    EXPECT_FALSE(AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(descs, 0));
 
     descs.clear();
     descs.push_back(desc2);
     descs.push_back(desc1);
-    EXPECT_TRUE(AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(descs, 0, streamCollector));
+    EXPECT_TRUE(AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(descs, 0));
 }
 
 /**

@@ -54,7 +54,7 @@ bool AudioCoreServiceUtils::IsOverRunPlayback(AudioMode &mode, RendererState ren
 }
 
 bool AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
-    const int32_t sessionId, AudioStreamCollector& streamCollector_)
+    const int32_t sessionId)
 {
     if (descs.size() !=  AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT) {
         return false;
@@ -70,10 +70,6 @@ bool AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(const std::vector<std
         return false;
     }
     AUDIO_INFO_LOG("ring dual tone on primary speaker and mute music.");
-    AudioStreamType streamType = streamCollector_.GetStreamType(sessionId);
-    if (streamType == STREAM_MUSIC) {
-        AudioVolume::GetInstance()->SetStreamVolumeMute(sessionId, true);
-    }
     return true;
 }
 

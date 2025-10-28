@@ -3126,6 +3126,46 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndSleepBeforeRingDualDeviceSet_003, 
 
 /**
  * @tc.name  : Test AudioCoreService.
+ * @tc.number: CheckAndSleepBeforeRingDualDeviceSet_004
+ * @tc.desc  : Test AudioCoreService::CheckAndSleepBeforeRingDualDeviceSet()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckAndSleepBeforeRingDualDeviceSet_004, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    // Test7
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ == STREAM_STATUS_NEW;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_ALARM;
+
+    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
+
+    std::shared_ptr<AudioDeviceDescriptor> newDesc1 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    std::shared_ptr<AudioDeviceDescriptor> newDesc2 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    streamDesc->newDeviceDescs_.push_back(newDesc1);
+    streamDesc->newDeviceDescs_.push_back(newDesc2);
+
+    auto info = std::make_shared<AudioRendererChangeInfo>();
+    info->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    info->rendererState = RENDERER_RUNNING;
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.push_back(info);
+
+    auto start = std::chrono::steady_clock::now();
+    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
+    auto end = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    uint32_t targetTime = 120000; //120ms
+    EXPECT_GE(duration, targetTime);
+    streamDesc->newDeviceDescs_.clear();
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
  * @tc.number: SleepForSwitchDevice_001
  * @tc.desc  : Test AudioCoreService::SleepForSwitchDevice()
  */
