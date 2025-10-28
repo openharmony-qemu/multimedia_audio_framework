@@ -151,7 +151,6 @@ std::string LocalDeviceManager::GetAudioParameter(const std::string &adapterName
 int32_t LocalDeviceManager::SetVoiceVolume(const std::string &adapterName, float volume)
 {
     static const int32_t SET_VOICE_VOLUME_TIMEOUT = 10; // 10s is better
-    std::lock_guard<std::mutex> lock(adapterMtx_);
     AUDIO_INFO_LOG("set modem call, volume: %{public}f", volume);
 
     Trace trace("LocalDeviceManager::SetVoiceVolume");
