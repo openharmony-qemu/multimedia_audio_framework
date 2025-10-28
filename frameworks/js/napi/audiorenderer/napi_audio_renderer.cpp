@@ -1042,7 +1042,7 @@ napi_value NapiAudioRenderer::GetBufferSizeSync(napi_env env, napi_callback_info
 
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
-    size_t bufferSize;
+    size_t bufferSize = 0;
     int32_t ret = napiAudioRenderer->audioRenderer_->GetBufferSize(bufferSize);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, result, "GetBufferSize failure!");
 
