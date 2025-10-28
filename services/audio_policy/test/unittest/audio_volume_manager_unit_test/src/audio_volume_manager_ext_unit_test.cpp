@@ -524,7 +524,7 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, CheckActiveMusicTime_001, TestSize.Level
     audioVolumeManager.safeStatusSle_ = SAFE_INACTIVE;
     audioVolumeManager.safeVolumeExit_ = false;
 
-    std::thread t(&AudioVolumeManager::CheckActiveMusicTime, &audioVolumeManager);
+    std::thread t([&AudioVolumeManager]() { AudioVolumeManager.CheckActiveMusicTime(); });
     std::this_thread::sleep_for(std::chrono::seconds(1));
     audioVolumeManager.safeVolumeExit_ = true;
     t.join();
@@ -542,7 +542,7 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, CheckActiveMusicTime_002, TestSize.Level
     audioVolumeManager.safeStatusSle_ = SAFE_ACTIVE;
     audioVolumeManager.safeVolumeExit_ = false;
 
-    std::thread t(&AudioVolumeManager::CheckActiveMusicTime, &audioVolumeManager);
+    std::thread t([&AudioVolumeManager]() { AudioVolumeManager.CheckActiveMusicTime(); });
     std::this_thread::sleep_for(std::chrono::seconds(1));
     audioVolumeManager.safeVolumeExit_ = true;
     t.join();
@@ -568,7 +568,7 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, CheckActiveMusicTime_003, TestSize.Level
 
     audioVolumeManager.safeStatusSle_ = SAFE_INACTIVE;
     audioVolumeManager.safeVolumeExit_ = false;
-    std::thread t(&AudioVolumeManager::CheckActiveMusicTime, &audioVolumeManager);
+    std::thread t([&AudioVolumeManager]() { AudioVolumeManager.CheckActiveMusicTime(); });
     std::this_thread::sleep_for(std::chrono::seconds(1));
     audioVolumeManager.safeVolumeExit_ = true;
     t.join();
@@ -594,7 +594,7 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, CheckActiveMusicTime_004, TestSize.Level
 
     audioVolumeManager.safeStatusSle_ = SAFE_ACTIVE;
     audioVolumeManager.safeVolumeExit_ = false;
-    std::thread t(&AudioVolumeManager::CheckActiveMusicTime, &audioVolumeManager);
+    std::thread t([&AudioVolumeManager]() { AudioVolumeManager.CheckActiveMusicTime(); });
     std::this_thread::sleep_for(std::chrono::seconds(1));
     audioVolumeManager.safeVolumeExit_ = true;
     t.join();
