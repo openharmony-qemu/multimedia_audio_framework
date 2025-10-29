@@ -360,7 +360,7 @@ void AudioCoreService::CheckRingAndVoipScene(const AudioStreamDeviceChangeReason
     pipeManager_->UpdateRingAndVoipStreamStatus(audioScene);
     pipeManager_->UpdateRingAndVoipStreamDevice(ringDescs, voipDescs);
 
-    ActivateNearlinkDevice(pipeManager_->GetStreamDescForAudioScene(audioScene));
+    ActivateNearlinkDevice(pipeManager_->GetStreamDescForAudioScene(audioScene), reason);
 
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> ringAndVoipDescMap =
         pipeManager_->GetRingAndVoipDescMap();
