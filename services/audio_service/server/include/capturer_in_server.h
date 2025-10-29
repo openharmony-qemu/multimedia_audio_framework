@@ -64,6 +64,7 @@ public:
     void SetNonInterruptMute(const bool muteFlag);
     RestoreStatus RestoreSession(RestoreInfo restoreInfo);
     int32_t StopSession();
+    void SetRebuildFlag();
 
     bool TurnOnMicIndicator(CapturerState capturerState);
     bool TurnOffMicIndicator(CapturerState capturerState);
@@ -116,6 +117,7 @@ private:
     std::string traceTag_ = "";
     mutable int64_t volumeDataCount_ = 0;
     int32_t innerCapId_ = 0;
+    std::atomic<bool> rebuildFlag_ = false;
 
     int64_t lastStartTime_{};
     int64_t lastStopTime_{};

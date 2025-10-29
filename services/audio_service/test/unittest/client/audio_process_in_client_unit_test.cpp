@@ -62,6 +62,7 @@ public:
     MOCK_METHOD(int32_t, SetAudioHapticsSyncId, (int32_t audioHapticsSyncId), (override));
 
     MOCK_METHOD(sptr<IRemoteObject>, AsObject, (), (override));
+    MOCK_METHOD(int32_t, SetRebuildFlag, (), (override));
 };
 
 class AudioProcessInClientUnitTest : public testing::Test {

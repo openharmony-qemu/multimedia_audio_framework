@@ -1215,6 +1215,13 @@ void FastAudioStream::SetCallStartByUserTid(pid_t tid)
     lastCallStartByUserTid_ = tid;
 }
 
+int32_t FastAudioStream::SetRebuildFlag()
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERROR, "processClient_ is null");
+    processClient_->SetRebuildFlag();
+    return SUCCESS;
+}
+
 void FastAudioStream::SetCallbackLoopTid(int32_t tid)
 {
     std::unique_lock<std::mutex> waitLock(callbackLoopTidMutex_);
