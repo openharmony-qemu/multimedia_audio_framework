@@ -423,9 +423,9 @@ void AudioPolicyService::OnForcedDeviceSelected(DeviceType devType, const std::s
     audioDeviceLock_.OnForcedDeviceSelected(devType, macAddress, filter);
 }
 
-void AudioPolicyService::OnPrivacyDeviceSelected()
+void AudioPolicyService::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress)
 {
-    audioDeviceLock_.OnPrivacyDeviceSelected();
+    audioDeviceLock_.OnPrivacyDeviceSelected(devType, macAddress);
 }
 
 void AudioPolicyService::LoadEffectLibrary()
