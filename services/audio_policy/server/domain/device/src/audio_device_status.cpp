@@ -1179,7 +1179,6 @@ void AudioDeviceStatus::OnForcedDeviceSelected(DeviceType devType, const std::st
         filter = new AudioRendererFilter();
         CHECK_AND_RETURN_LOG(filter, "filter is nullptr");
     }
-    CHECK_AND_RETURN_LOG(filter, "filter is nullptr");
     filter->uid = SYSTEM_UID;
     AUDIO_INFO_LOG("Entry. devType=%{public}d, addr=%{public}s, streamUsage=%{public}d",
         devType, GetEncryptStr(macAddress).c_str(), filter->rendererInfo.streamUsage);
