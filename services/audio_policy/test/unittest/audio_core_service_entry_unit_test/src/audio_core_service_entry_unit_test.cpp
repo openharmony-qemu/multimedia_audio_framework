@@ -967,20 +967,70 @@ HWTEST(AudioCoreServiceEntryTest, UpdateSessionOperation_043, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreService_044
- * @tc.desc  : Test AudioCoreService::UpdateStreamDevicesForStart
+ * @tc.name  : Test UpdateStreamDevicesForStart.
+ * @tc.number: UpdateStreamDevicesForStart_001
+ * @tc.desc  : Test isPCVolumeEnable_ && !isFirstScreenOn_
  */
-HWTEST(AudioCoreServiceEntryTest, AudioCoreService_044, TestSize.Level1)
+HWTEST(AudioCoreServiceEntryTest, UpdateStreamDevicesForStart_001, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
 
+    VolumeUtils::SetPCVolumeEnable(true);
+    audioCoreService->isFirstScreenOn_ = false;
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
     audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test");
     EXPECT_NE(audioStreamDescriptor->newDeviceDescs_.size(), 0);
+}
 
+/**
+ * @tc.name  : Test UpdateStreamDevicesForStart.
+ * @tc.number: UpdateStreamDevicesForStart_002
+ * @tc.desc  : Test isPCVolumeEnable_ && isFirstScreenOn_ and is inject mode
+ */
+HWTEST(AudioCoreServiceEntryTest, UpdateStreamDevicesForStart_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    VolumeUtils::SetPCVolumeEnable(true);
     audioCoreService->isFirstScreenOn_ = true;
+    std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
+    audioStreamDescriptor->rendererTarget_ = INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
+    audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test");
+    EXPECT_NE(audioStreamDescriptor->newDeviceDescs_.size(), 0);
+}
+
+/**
+ * @tc.name  : Test UpdateStreamDevicesForStart.
+ * @tc.number: UpdateStreamDevicesForStart_003
+ * @tc.desc  : Test !isPCVolumeEnable_ && isFirstScreenOn_
+ */
+HWTEST(AudioCoreServiceEntryTest, UpdateStreamDevicesForStart_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    VolumeUtils::SetPCVolumeEnable(false);
+    audioCoreService->isFirstScreenOn_ = true;
+    std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
+    audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test");
+    EXPECT_NE(audioStreamDescriptor->newDeviceDescs_.size(), 0);
+}
+
+/**
+ * @tc.name  : Test UpdateStreamDevicesForStart.
+ * @tc.number: UpdateStreamDevicesForStart_004
+ * @tc.desc  : Test !isPCVolumeEnable_ && !isFirstScreenOn_
+ */
+HWTEST(AudioCoreServiceEntryTest, UpdateStreamDevicesForStart_004, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    VolumeUtils::SetPCVolumeEnable(false);
+    audioCoreService->isFirstScreenOn_ = false;
+    std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
     audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test");
     EXPECT_NE(audioStreamDescriptor->newDeviceDescs_.size(), 0);
 }

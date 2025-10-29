@@ -42,7 +42,7 @@ int32_t AudioInjectorPolicy::Init()
         moduleInfo.lib = "libmodule-hdi-sink.z.so";
         std::string name = VIRTUAL_INJECTOR;
         moduleInfo.name = name;
-        moduleInfo.deviceType = "SYSTEM_PRIVATE";
+        moduleInfo.deviceType = std::to_string(static_cast<int32_t>(DEVICE_TYPE_SYSTEM_PRIVATE));
         moduleInfo.format = "s16le";
         moduleInfo.channels = "2"; // 2 channel
         moduleInfo.rate = "48000";
