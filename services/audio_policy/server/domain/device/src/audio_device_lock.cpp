@@ -133,10 +133,10 @@ void AudioDeviceLock::OnForcedDeviceSelected(DeviceType devType, const std::stri
     audioDeviceStatus_.OnForcedDeviceSelected(devType, macAddress, filter);
 }
 
-void AudioDeviceLock::OnPrivacyDeviceSelected()
+void AudioDeviceLock::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
-    audioDeviceStatus_.OnPrivacyDeviceSelected();
+    audioDeviceStatus_.OnPrivacyDeviceSelected(devType, macAddress);
 }
 
 int32_t AudioDeviceLock::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
