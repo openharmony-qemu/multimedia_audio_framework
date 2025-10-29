@@ -31,6 +31,7 @@
 #include "audio_mute_factor_manager.h"
 #include "audio_server_proxy.h"
 #include "audio_scene_manager.h"
+#include "audio_spatialization_service.h"
 
 using namespace std;
 
@@ -196,6 +197,7 @@ void AudioAdapterManager::InitKVStoreInternal()
     if (handler_ != nullptr) {
         handler_->SendKvDataUpdate(isFirstBoot);
     }
+    AudioSpatializationService::GetAudioSpatializationService().InitSpatializationState();
 }
 
 void AudioAdapterManager::HandleKvData(bool isFirstBoot)
