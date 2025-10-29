@@ -767,6 +767,7 @@ bool AudioServer::SetEffectLiveParameter(const std::vector<std::pair<std::string
 int32_t AudioServer::SetExtraParameters(const std::string &key,
     const std::vector<StringPair> &kvpairs)
 {
+    Trace trace("AudioServer::SetExtraParameters" + key);
     CHECK_AND_RETURN_RET_LOG(kvpairs.size() >= 0 && kvpairs.size() <= AUDIO_EXTRA_PARAMETERS_COUNT_UPPER_LIMIT,
         AUDIO_ERR, "Set extra audio parameters failed");
     bool ret = PermissionUtil::VerifySystemPermission();
