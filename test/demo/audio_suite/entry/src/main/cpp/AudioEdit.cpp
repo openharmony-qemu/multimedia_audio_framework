@@ -208,8 +208,8 @@ static OH_AudioSuite_Result RenDerFrame()
                 static_cast<int>(result));
             if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
                 OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-                            "audioEditTest OH_audioSuiteEngine_RenderFrame result is %{public}d",
-                            static_cast<int>(result));
+                    "audioEditTest OH_audioSuiteEngine_RenderFrame result is %{public}d",
+                    static_cast<int>(result));
                 break;
             }
 
@@ -225,9 +225,9 @@ static OH_AudioSuite_Result RenDerFrame()
             resultTotalSize += writeSize;
             tapResultTotalSize += writeSize;
             OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-                        "audioEditTest OH_AudioSuiteEngine_RenderFrame resultTotalSize: %{public}d, writeSize : "
-                        "%{public}d, finished: %{public}s",
-                        resultTotalSize, writeSize, (finishedFlag ? "true" : "false"));
+                "audioEditTest OH_AudioSuiteEngine_RenderFrame resultTotalSize: %{public}d, writeSize : "
+                "%{public}d, finished: %{public}s",
+                resultTotalSize, writeSize, (finishedFlag ? "true" : "false"));
         } else {
             result =
                 OH_AudioSuiteEngine_RenderFrame(audioSuitePipeline, audioData, frameSize, &writeSize, &finishedFlag);
@@ -271,7 +271,7 @@ static OH_AudioSuite_Result RenDerFrame()
         reinterpret_cast<char*>(g_totalBuff));
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
         "audioEditTest RenDerFrame memcpy sizeof(g_totalBuff): %{public}d, g_totalSize:%{public}d",
-        sizeof(g_totalBuff), g_totalSize);
+        TOTAL_BUFF, g_totalSize);
     if (g_multiRenderFrameFlag) {
         g_totalSize = tapResultTotalSize;
         g_tapTotalBuff = (char *)malloc(g_totalSize);
@@ -571,7 +571,8 @@ int32_t WriteDataCallBack(OH_AudioNode *audioNode, void *userData, void *audioDa
 
 OH_AudioSuite_Result SetParamsAndWriteData(OH_AudioNodeBuilder *builder, std::string inputId, int channels,
                                            int sampleRate, int bitsPerSample, int formatCategory,
-                                           OH_AudioNode_Type type) {
+                                           OH_AudioNode_Type type)
+                                           {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
         "audioEditTest SetParamsAndWriteData channels : %{public}d --- sampleRate: %{public}d --- "
         "PerSample: %{public}d --- formatCategory: %{public}d",
@@ -1906,7 +1907,7 @@ static napi_value compareTwoFilesBinary(napi_env env, napi_callback_info info)
 static napi_value resetAudioSeparation(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---resetAudioSeparation---IN");
-    size_t argc = 2; 
+    size_t argc = 2;
     napi_value argv[2] = {nullptr, nullptr};
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     // 获取一参分离mode
