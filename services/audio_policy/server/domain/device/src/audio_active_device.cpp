@@ -37,6 +37,7 @@
 #include "audio_server_proxy.h"
 #include "sle_audio_device_manager.h"
 #include "audio_pipe_manager.h"
+#include "audio_zone_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -528,6 +529,11 @@ bool AudioActiveDevice::IsAvailableFrontDeviceInVector(
     return true;
 }
 
+void AudioActiveDevice::SetAdjustVolumeForZone(int32_t zoneId)
+{
+    volumeAdjustZoneId_ = zoneId;
+}
+
 std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(AudioVolumeType volumeType)
 {
     std::lock_guard<std::mutex> lock(deviceForVolumeMutex_);
@@ -535,6 +541,16 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(Aud
     AudioVolumeType type = VolumeUtils::GetVolumeTypeFromStreamType(volumeType);
     if (type == STREAM_ALL) {
         type = STREAM_MUSIC;
+    }
+    if (AudioZoneService::GetInstance().CheckExistUidInAudioZone() && volumeAdjustZoneId_ == 0) {
+        std::vector<StreamUsage> usages = VolumeUtils::GetStreamUsageByVolumeTypeForFetchDevice(type);
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+        for (auto usage : usages) {
+            devices.push_back(AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(
+                usage, -1, "GetDeviceForVolumeByStreamType").front());
+        }
+        SortDevicesByPriority(devices);
+        return devices.front();
     }
     if (Util::IsDualToneStreamType(volumeType) && !VolumeUtils::IsPCVolumeEnable()) {
         return audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_SPEAKER);

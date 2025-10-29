@@ -85,6 +85,7 @@ public:
     void UpdateStreamDeviceMap(std::string source);
     bool IsDeviceInActiveOutputDevices(DeviceType type, bool isRemote);
     bool IsDeviceInActiveOutputDevices(std::shared_ptr<AudioDeviceDescriptor> desc);
+    void SetAdjustVolumeForZone(int32_t zoneId);
 
     std::shared_ptr<AudioDeviceDescriptor> GetDeviceForVolume(StreamUsage streamUsage);
     std::shared_ptr<AudioDeviceDescriptor> GetDeviceForVolume(AudioStreamType streamType);
@@ -116,7 +117,7 @@ private:
     AudioDeviceDescriptor currentActiveDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
     std::mutex curInputDevice_; // lock this mutex to operate currentActiveInputDevice_
     AudioDeviceDescriptor currentActiveInputDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
-    
+    int32_t volumeAdjustZoneId_ = 0;
     std::mutex deviceForVolumeMutex_;
 
     std::string activeBTDevice_;
