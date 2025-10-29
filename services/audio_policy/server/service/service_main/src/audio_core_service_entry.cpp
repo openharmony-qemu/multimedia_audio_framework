@@ -647,6 +647,7 @@ void AudioCoreService::EventEntry::RebuildCaptureInjector(uint32_t streamId)
 int32_t AudioCoreService::EventEntry::A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
                                                                    uint32_t &timeStamp)
 {
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
     return coreService_->A2dpOffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
 }
