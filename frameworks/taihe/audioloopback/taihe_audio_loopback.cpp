@@ -39,6 +39,7 @@ AudioLoopbackImpl::AudioLoopbackImpl(std::shared_ptr<AudioLoopbackImpl> obj)
 {
     if (obj != nullptr) {
         loopback_ = obj->loopback_;
+        callbackTaihe_ = obj->callbackTaihe_;
     }
 }
 
