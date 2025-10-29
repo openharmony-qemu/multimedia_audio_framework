@@ -1177,6 +1177,7 @@ void AudioDeviceStatus::OnForcedDeviceSelected(DeviceType devType, const std::st
 {
     if (!filter) {
         filter = new AudioRendererFilter();
+        CHECK_AND_RETURN_LOG(filter, "filter is nullptr");
     }
     CHECK_AND_RETURN_LOG(filter, "filter is nullptr");
     filter->uid = SYSTEM_UID;
@@ -1190,11 +1191,31 @@ void AudioDeviceStatus::OnForcedDeviceSelected(DeviceType devType, const std::st
     }
 }
 
-void AudioDeviceStatus::OnPrivacyDeviceSelected()
+void AudioDeviceStatus::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress)
 {
     AUDIO_INFO_LOG("Entry");
     AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
         make_shared<AudioDeviceDescriptor>(), SYSTEM_UID, "OnPrivacyDeviceSelected");
+    bool hasUsablePrivateCallDevice{false};
+    auto devs = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION,
+        -1, "OnPrivacyDeviceSelected", ROUTER_TYPE_USER_SELECT);
+    auto pDevs = audioDeviceManager_.GetCommRenderPrivacyDevices();
+    for (auto &dev : devs) {
+        auto it = find_if(pDevs.cbegin(), pDevs.cend(), [&dev](auto &item) {
+            return dev && item && dev->IsSameDeviceDescPtr(item);
+        });
+        if (it != pDevs.cend()) {
+            hasUsablePrivateCallDevice = true;
+            break;
+        }
+    }
+    if (!hasUsablePrivateCallDevice) {
+        sptr<AudioRendererFilter> filter = new AudioRendererFilter();
+        CHECK_AND_RETURN_LOG(filter, "filter is nullptr");
+        filter->rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+        OnForcedDeviceSelected(devType, macAddress, filter);
+        return;
+    }
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnPrivacyDeviceSelected",
         AudioStreamDeviceChangeReason::OVERRODE);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnPrivacyDeviceSelected",
