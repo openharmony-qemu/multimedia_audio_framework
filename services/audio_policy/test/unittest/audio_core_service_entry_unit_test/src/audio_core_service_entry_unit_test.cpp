@@ -498,7 +498,8 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_021, TestSize.Level1)
     devDesc2->macAddress_ = macAddress;
     devDesc2->deviceRole_ = INPUT_DEVICE;
     devMan.AddNewDevice(devDesc2);
-    AudioDeviceStatus::GetInstance().OnPrivacyDeviceSelected(devType, macAddre
+    AudioDeviceStatus::GetInstance().OnPrivacyDeviceSelected(devType, macAddress);
+    EXPECT_NE(devMan.FindConnectedDeviceById(devDesc->deviceId_), nullptr);
 }
 
 /**
