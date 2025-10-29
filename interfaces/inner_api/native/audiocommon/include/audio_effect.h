@@ -801,6 +801,18 @@ struct AudioEffectInterface {
         AudioEffectTransInfo *cmdInfo, AudioEffectTransInfo *replyInfo);
 };
 
+struct AlgoSupportConfig {
+    bool isSupport;
+    bool isRealTime;
+    uint32_t frameLen;
+    uint32_t inSampleRate;
+    uint32_t inChannels;
+    uint32_t inFormat;
+    uint32_t outSampleRate;
+    uint32_t outChannels;
+    uint32_t outFormat;
+};
+
 struct AudioEffectLibrary {
     uint32_t version;
     const char *name;
@@ -808,6 +820,7 @@ struct AudioEffectLibrary {
     bool (*checkEffect) (const AudioEffectDescriptor descriptor);
     int32_t (*createEffect) (const AudioEffectDescriptor descriptor, AudioEffectHandle *handle);
     int32_t (*releaseEffect) (AudioEffectHandle handle);
+    void (*supportEffect) (AlgoSupportConfig *config);
 };
 
 struct AudioEffectLibEntry {
