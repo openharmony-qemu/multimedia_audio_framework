@@ -358,55 +358,38 @@ static napi_value AudioEditDestory(napi_env env, napi_callback_info info)
 // 设置采样率
 static OH_Audio_SampleRate SetSamplingRate(int32_t sampleRate)
 {
-    OH_Audio_SampleRate audioSampleRate;
     switch (sampleRate) {
         case OH_Audio_SampleRate::SAMPLE_RATE_8000:
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_8000;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_8000;
         case OH_Audio_SampleRate::SAMPLE_RATE_11025:
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_11025;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_11025;
         case OH_Audio_SampleRate::SAMPLE_RATE_12000:
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_12000;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_12000;
         case OH_Audio_SampleRate::SAMPLE_RATE_16000:
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_16000;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_16000;
         case OH_Audio_SampleRate::SAMPLE_RATE_22050:
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_22050;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_22050;
         case OH_Audio_SampleRate::SAMPLE_RATE_24000:
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_24000;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_24000;
         case OH_Audio_SampleRate::SAMPLE_RATE_32000:
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_32000;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_32000;
         case OH_Audio_SampleRate::SAMPLE_RATE_44100:
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_44100;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_44100;
         case OH_Audio_SampleRate::SAMPLE_RATE_48000:
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_48000;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_48000;
         case OH_Audio_SampleRate::SAMPLE_RATE_64000:
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_64000;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_64000;
         case OH_Audio_SampleRate::SAMPLE_RATE_88200:
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_88200;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_88200;
         case OH_Audio_SampleRate::SAMPLE_RATE_96000:
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_96000;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_96000;
         case OH_Audio_SampleRate::SAMPLE_RATE_176400:
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_176400;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_176400;
         case OH_Audio_SampleRate::SAMPLE_RATE_192000:
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_192000;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_192000;
         default:
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_48000;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_48000;
     }
-    return audioSampleRate;
 }
 
 // 设置声道
