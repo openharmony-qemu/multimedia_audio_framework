@@ -214,10 +214,14 @@ static OH_AudioSuite_Result RenDerFrame()
             }
 
             // 每次保存一次获取的buffer值 ...
-            memcpy(static_cast<char *>(totalAudioData) + resultTotalSize, ohAudioDataArray->audioDataArray[0],
-                   writeSize);
-            memcpy(static_cast<char *>(tapTotalAudioData) + tapResultTotalSize, ohAudioDataArray->audioDataArray[1],
-                   writeSize);
+            std::copy(
+                reinterpret_cast<const char*>(ohAudioDataArray->audioDataArray[0]),
+                reinterpret_cast<const char*>(ohAudioDataArray->audioDataArray[0]) + writeSize,
+                reinterpret_cast<char*>(totalAudioData) + resultTotalSize);
+            std::copy(
+                reinterpret_cast<const char*>(ohAudioDataArray->audioDataArray[1]),
+                reinterpret_cast<const char*>(ohAudioDataArray->audioDataArray[1]) + writeSize,
+                reinterpret_cast<char*>(tapTotalAudioData) + tapResultTotalSize);
             resultTotalSize += writeSize;
             tapResultTotalSize += writeSize;
             OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
@@ -238,7 +242,10 @@ static OH_AudioSuite_Result RenDerFrame()
                 break;
             }
             // 每次保存一次获取的buffer值 ...
-            memcpy(static_cast<char *>(totalAudioData) + resultTotalSize, audioData, writeSize);
+            std::copy(
+                reinterpret_cast<const char*>(audioData),
+                reinterpret_cast<const char*>(audioData) + writeSize,
+                reinterpret_cast<char*>(totalAudioData) + resultTotalSize);
             resultTotalSize += writeSize;
             OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
                 "audioEditTest OH_AudioSuiteEngine_RenderFrame resultTotalSize: %{public}d, writeSize : "
@@ -258,7 +265,10 @@ static OH_AudioSuite_Result RenDerFrame()
     }
     g_totalSize = resultTotalSize;
     g_totalBuff = (char *)malloc(g_totalSize);
-    memcpy(g_totalBuff, totalAudioData, g_totalSize);
+    std::copy(
+        reinterpret_cast<const char*>(totalAudioData),
+        reinterpret_cast<const char*>(totalAudioData) + g_totalSize,
+        reinterpret_cast<char*>(g_totalBuff));
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
         "audioEditTest RenDerFrame memcpy sizeof(g_totalBuff): %{public}d, g_totalSize:%{public}d",
         sizeof(g_totalBuff), g_totalSize);
@@ -266,7 +276,10 @@ static OH_AudioSuite_Result RenDerFrame()
         g_totalSize = tapResultTotalSize;
         g_tapTotalBuff = (char *)malloc(g_totalSize);
         g_tapDataTotalSize = g_totalSize;
-        memcpy(g_tapTotalBuff, tapTotalAudioData, g_totalSize);
+        std::copy(
+            reinterpret_cast<const char*>(tapTotalAudioData),
+            reinterpret_cast<const char*>(tapTotalAudioData) + g_totalSize,
+            reinterpret_cast<char*>(g_tapTotalBuff));
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
             "audioEditTest RenDerFrame memcpy sizeof(g_totalBuff): %{public}d, g_totalSize:%{public}d",
             TOTAL_BUFF, g_totalSize);
@@ -521,7 +534,10 @@ int32_t WriteDataCallBack(OH_AudioNode *audioNode, void *userData, void *audioDa
     int32_t actualDataSize = std::min(audioDataSize, remainingDataSize);
     g_dataInputProcessing += (static_cast<double>(actualDataSize) / static_cast<double>(totalSize) * TOTALSIZE_MULTI);
     // 将数据从totalBuff_复制到audioData
-    memcpy(static_cast<char *>(audioData), it->second.data() + totalWriteAudioDataSize, actualDataSize);
+    std::copy(
+        reinterpret_cast<const char*>(it->second.data() + totalWriteAudioDataSize),
+        reinterpret_cast<const char*>(it->second.data() + totalWriteAudioDataSize) + actualDataSize,
+        reinterpret_cast<char*>(audioData));
     g_writeIndex++;
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest WriteDataCallBack g_writeIndex=%{public}d",
         g_writeIndex);
@@ -745,7 +761,10 @@ static napi_value AudioInAndOutInit(napi_env env, napi_callback_info info)
     }
     g_totalSize = pcmLength;
     g_totalBuff = (char *)malloc(bufferLength);
-    memcpy(g_totalBuff, buffer, bufferLength);
+    std::copy(
+        reinterpret_cast<const char*>(buffer),
+        reinterpret_cast<const char*>(buffer) + bufferLength,
+        reinterpret_cast<char*>(g_totalBuff));
     Node inputNode = nodeManager->getNodeById(inputId);
     if (inputNode.id.empty()) {
         CreateInputNode(env, inputId, channels, sampleRate, bitsPerSample, formatCategory, buffer, bufferLength,
@@ -1241,8 +1260,7 @@ static napi_value SaveFileBuffer(napi_env env, napi_callback_info info)
         std::copy(
             reinterpret_cast<const char*>(g_totalBuff),
             reinterpret_cast<const char*>(g_totalBuff) + g_totalSize,
-            reinterpret_cast<char*>(arrayBufferData)
-        );
+            reinterpret_cast<char*>(arrayBufferData));
         if (g_totalBuff != nullptr) {
             free(g_totalBuff);
             g_totalBuff = nullptr;
@@ -1619,8 +1637,7 @@ void OnReadTapDataCallback(OH_AudioNode *audioNode, void *userData, void *audioD
     std::copy(
         reinterpret_cast<const char*>(audioData),
         reinterpret_cast<const char*>(audioData) + audioDataSize,
-        reinterpret_cast<char*>(g_aissTapAudioData) + g_tapDataTotalSize
-    );
+        reinterpret_cast<char*>(g_aissTapAudioData) + g_tapDataTotalSize);
     g_tapDataTotalSize += audioDataSize;
 }
 
@@ -1956,13 +1973,11 @@ static napi_value getAudioOfTap(napi_env env, napi_callback_info info)
     std::copy(
         reinterpret_cast<const char*>(g_aissTapAudioData),
         reinterpret_cast<const char*>(g_aissTapAudioData) + g_tapDataTotalSize,
-        reinterpret_cast<char*>(data)
-    );
+        reinterpret_cast<char*>(data));
     std::fill(
         reinterpret_cast<char*>(g_aissTapAudioData),
         reinterpret_cast<char*>(g_aissTapAudioData) + g_tapDataTotalSize,
-        0
-    );
+        0);
     g_tapDataTotalSize = 0;
     return napiValue;
 }
@@ -2098,8 +2113,7 @@ static OH_AudioSuite_Result OneRenDerFrame(int32_t audioDataSize)
     std::copy(
         reinterpret_cast<const char*>(audioData),
         reinterpret_cast<const char*>(audioData) + writeSize,
-        reinterpret_cast<char*>(g_audioData)
-    );
+        reinterpret_cast<char*>(g_audioData));
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
         "audioEditTest OH_AudioSuiteEngine_RenderFrame writeSize : %{public}d, g_oneFinishedFlag: %{public}s",
         writeSize, (g_oneFinishedFlag ? "true" : "false"));
@@ -2132,8 +2146,7 @@ static napi_value RealTimeSaveFileBuffer(napi_env env, napi_callback_info info)
         std::copy(
             reinterpret_cast<const char*>(g_mixTotalAudioData),
             reinterpret_cast<const char*>(g_mixTotalAudioData) + g_mixResultTotalSize,
-            reinterpret_cast<char*>(arrayBufferData)
-        );
+            reinterpret_cast<char*>(arrayBufferData));
         if (g_mixTotalAudioData != nullptr) {
             free(g_mixTotalAudioData);
             g_mixTotalAudioData = nullptr;
@@ -2165,8 +2178,7 @@ static OH_AudioData_Callback_Result NewAudioRendererOnWriteData(OH_AudioRenderer
             std::copy(
                 reinterpret_cast<const char*>(g_audioData),
                 reinterpret_cast<const char*>(g_audioData) + audioDataSize,
-                reinterpret_cast<char*>(g_mixTotalAudioData) + g_mixResultTotalSize
-            );
+                reinterpret_cast<char*>(g_mixTotalAudioData) + g_mixResultTotalSize);
             g_mixResultTotalSize += audioDataSize;
         }
     }
@@ -2175,8 +2187,7 @@ static OH_AudioData_Callback_Result NewAudioRendererOnWriteData(OH_AudioRenderer
         std::copy(
             reinterpret_cast<const char*>(g_audioData),
             reinterpret_cast<const char*>(g_audioData) + audioDataSize,
-            reinterpret_cast<char*>(audioData)
-        );
+            reinterpret_cast<char*>(audioData));
     }
     if (g_oneFinishedFlag) {
         OH_AudioRenderer_Stop(audioRenderer);
