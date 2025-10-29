@@ -57,41 +57,8 @@ int32_t RemoteAdapterHdiCallback::ParamCallback(AudioExtParamKey key, const std:
 
 int32_t RemoteDeviceManager::LoadAdapter(const std::string &adapterName)
 {
-    CHECK_AND_RETURN_RET_LOG(adapters_.count(adapterName) == 0 || adapters_[adapterName] == nullptr, SUCCESS,
-        "adapter %{public}s already loaded", adapterName.c_str());
-
     std::lock_guard<std::mutex> mgrLock(managerMtx_);
-    if (audioManager_ == nullptr || adapters_.size() == 0) {
-        audioManager_ = nullptr;
-        InitAudioManager();
-    }
-    CHECK_AND_RETURN_RET(audioManager_ != nullptr, ERR_INVALID_HANDLE);
-
-    std::vector<AudioAdapterDescriptor> descs;
-    int32_t ret = audioManager_->GetAllAdapters(descs);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && descs.data() != nullptr, ERR_NOT_STARTED, "get adapters fail");
-    int32_t index = SwitchAdapterDesc(descs, adapterName);
-    CHECK_AND_RETURN_RET(index >= 0, ERR_NOT_STARTED);
-
-    sptr<IAudioAdapter> adapter = nullptr;
-    AudioAdapterDescriptor desc = {
-        .adapterName = descs[index].adapterName,
-    };
-    ret = audioManager_->LoadAdapter(desc, adapter);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && adapter != nullptr, ERR_NOT_STARTED, "load adapter fail");
-    ret = adapter->InitAllPorts();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "init all ports fail");
-    std::lock_guard<std::mutex> lock(adapterMtx_);
-    adapters_[adapterName] = std::make_shared<RemoteAdapterWrapper>(adapterName);
-    adapters_[adapterName]->adapterDesc_ = descs[index];
-    adapters_[adapterName]->adapter_ = adapter;
-    AUDIO_INFO_LOG("load adapter %{public}s success", adapterName.c_str());
-#ifdef FEATURE_DISTRIBUTE_AUDIO
-    adapters_[adapterName]->hdiCallback_ = new RemoteAdapterHdiCallback(adapterName);
-    ret = adapter->RegExtraParamObserver(adapters_[adapterName]->hdiCallback_, 0);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "regist extra param observer fail, ret: %{public}d", ret);
-#endif
-    return SUCCESS;
+    return LoadAdapterInner(adapterName);
 }
 
 void RemoteDeviceManager::UnloadAdapter(const std::string &adapterName, bool force)
@@ -310,6 +277,7 @@ void RemoteDeviceManager::UnRegistCaptureSourceCallback(const std::string &adapt
 void *RemoteDeviceManager::CreateRender(const std::string &adapterName, void *param, void *deviceDesc,
     uint32_t &hdiRenderId)
 {
+    std::lock_guard<std::mutex> mgrLock(managerMtx_);
     CHECK_AND_RETURN_RET_LOG(param != nullptr && deviceDesc != nullptr, nullptr, "param or deviceDesc is nullptr");
     AudioSampleAttributes &remoteParam = *(static_cast<struct AudioSampleAttributes *>(param));
     AudioDeviceDescriptor &remoteDeviceDesc = *(static_cast<struct AudioDeviceDescriptor *>(deviceDesc));
@@ -362,6 +330,7 @@ void RemoteDeviceManager::DestroyRender(const std::string &adapterName, uint32_t
 void *RemoteDeviceManager::CreateCapture(const std::string &adapterName, void *param, void *deviceDesc,
     uint32_t &hdiCaptureId)
 {
+    std::lock_guard<std::mutex> mgrLock(managerMtx_);
     CHECK_AND_RETURN_RET_LOG(param != nullptr && deviceDesc != nullptr, nullptr, "param or deviceDesc is nullptr");
     AudioSampleAttributes &remoteParam = *(static_cast<struct AudioSampleAttributes *>(param));
     AudioDeviceDescriptor &remoteDeviceDesc = *(static_cast<struct AudioDeviceDescriptor *>(deviceDesc));
@@ -448,9 +417,48 @@ std::shared_ptr<RemoteAdapterWrapper> RemoteDeviceManager::GetAdapter(const std:
     if (!tryCreate) {
         return nullptr;
     }
-    LoadAdapter(adapterName);
+    LoadAdapterInner(adapterName);
     std::lock_guard<std::mutex> lock(adapterMtx_);
     return adapters_.count(adapterName) == 0 ? nullptr : adapters_[adapterName];
+}
+
+// must be called with managerMtx_ held
+int32_t RemoteDeviceManager::LoadAdapterInner(const std::string &adapterName)
+{
+    CHECK_AND_RETURN_RET_LOG(adapters_.count(adapterName) == 0 || adapters_[adapterName] == nullptr, SUCCESS,
+        "adapter %{public}s already loaded", adapterName.c_str());
+
+    if (audioManager_ == nullptr || adapters_.size() == 0) {
+        audioManager_ = nullptr;
+        InitAudioManager();
+    }
+    CHECK_AND_RETURN_RET(audioManager_ != nullptr, ERR_INVALID_HANDLE);
+
+    std::vector<AudioAdapterDescriptor> descs;
+    int32_t ret = audioManager_->GetAllAdapters(descs);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && descs.data() != nullptr, ERR_NOT_STARTED, "get adapters fail");
+    int32_t index = SwitchAdapterDesc(descs, adapterName);
+    CHECK_AND_RETURN_RET(index >= 0, ERR_NOT_STARTED);
+
+    sptr<IAudioAdapter> adapter = nullptr;
+    AudioAdapterDescriptor desc = {
+        .adapterName = descs[index].adapterName,
+    };
+    ret = audioManager_->LoadAdapter(desc, adapter);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && adapter != nullptr, ERR_NOT_STARTED, "load adapter fail");
+    ret = adapter->InitAllPorts();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "init all ports fail");
+    std::lock_guard<std::mutex> lock(adapterMtx_);
+    adapters_[adapterName] = std::make_shared<RemoteAdapterWrapper>(adapterName);
+    adapters_[adapterName]->adapterDesc_ = descs[index];
+    adapters_[adapterName]->adapter_ = adapter;
+    AUDIO_INFO_LOG("load adapter %{public}s success", adapterName.c_str());
+#ifdef FEATURE_DISTRIBUTE_AUDIO
+    adapters_[adapterName]->hdiCallback_ = new RemoteAdapterHdiCallback(adapterName);
+    ret = adapter->RegExtraParamObserver(adapters_[adapterName]->hdiCallback_, 0);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "regist extra param observer fail, ret: %{public}d", ret);
+#endif
+    return SUCCESS;
 }
 
 int32_t RemoteDeviceManager::SwitchAdapterDesc(const std::vector<AudioAdapterDescriptor> &descs,
