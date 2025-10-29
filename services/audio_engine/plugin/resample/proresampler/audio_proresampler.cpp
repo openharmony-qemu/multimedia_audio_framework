@@ -119,7 +119,7 @@ int32_t ProResampler::Process11025SampleRate(const float *inBuffer, uint32_t inF
     int32_t ret = RESAMPLER_ERR_SUCCESS;
     if (inFrameLen == 0) {
         if (buf11025Index_ > 0) { // output second half of 11025 buffer
-            CHECK_AND_RETURN_RET_LOG(buf11025Index_ + expectedOutFrameLen_ * channels_ <= buf11025_.capacity(),
+            CHECK_AND_RETURN_RET_LOG(buf11025Index_ <= buf11025_.capacity() - expectedOutFrameLen_ * channels_,
                 RESAMPLER_ERR_OVERFLOW, "buf11025 overflow detected, required %{public}u, available %{public}zu",
                 buf11025Index_ + expectedOutFrameLen_ * channels_, buf11025_.capacity());
             ret = memcpy_s(outBuffer, outFrameLen * channels_ * sizeof(float),
@@ -170,7 +170,7 @@ int32_t ProResampler::Process10HzSampleRate(const float *inBuffer, uint32_t inFr
     int32_t ret = RESAMPLER_ERR_SUCCESS;
     if (inFrameLen == 0) {
         if (bufFor100msIndex_ > 0) { // output 2nd, 3rd, 4th, 5th part of 100ms buffer
-            CHECK_AND_RETURN_RET_LOG(bufFor100msIndex_ + expectedOutFrameLen_ * channels_ <= bufFor100ms_.capacity(),
+            CHECK_AND_RETURN_RET_LOG(bufFor100msIndex_ <= bufFor100ms_.capacity() - expectedOutFrameLen_ * channels_,
                 RESAMPLER_ERR_OVERFLOW, "bufFor100ms overflow detected, required %{public}u, available %{public}zu",
                 bufFor100msIndex_ + expectedOutFrameLen_ * channels_, bufFor100ms_.capacity());
             ret = memcpy_s(outBuffer, outFrameLen * channels_ * sizeof(float),
@@ -351,12 +351,12 @@ std::string ProResampler::ErrCodeToString(int32_t errCode)
 void ProResampler::ConfigBufferSizeAndExpectedInFrameLen()
 {
     if (inRate_ == SAMPLE_RATE_11025) { // for 11025, process input 40ms per time and output 20ms per time
-        buf11025_.reserve(expectedOutFrameLen_ * channels_ * BUFFER_EXPAND_SIZE_2 + ADD_SIZE);
+        buf11025_.reserve(static_cast<size_t>(expectedOutFrameLen_) * channels_ * BUFFER_EXPAND_SIZE_2 + ADD_SIZE);
         AUDIO_INFO_LOG("input 11025hz, output resample rate %{public}u, buf11025_ size %{public}u",
             outRate_, expectedOutFrameLen_ * channels_ * BUFFER_EXPAND_SIZE_2 + ADD_SIZE);
         expectedInFrameLen_ = inRate_ * FRAME_LEN_20MS * BUFFER_EXPAND_SIZE_2 / MS_PER_SECOND;
     } else if (inRate_ % CUSTOM_SAMPLE_RATE_MULTIPLES != 0) {   // not multiples of 50
-        bufFor100ms_.reserve(expectedOutFrameLen_ * channels_ * BUFFER_EXPAND_SIZE_5 + ADD_SIZE);
+        bufFor100ms_.reserve(static_cast<size_t>(expectedOutFrameLen_) * channels_ * BUFFER_EXPAND_SIZE_5 + ADD_SIZE);
         AUDIO_INFO_LOG("input %{public}u, output resample rate %{public}u, bufFor100ms_ size %{public}u",
             inRate_, outRate_, expectedOutFrameLen_ * channels_ * BUFFER_EXPAND_SIZE_5 + ADD_SIZE);
         expectedInFrameLen_ = inRate_ * FRAME_LEN_20MS * BUFFER_EXPAND_SIZE_5 / MS_PER_SECOND;
