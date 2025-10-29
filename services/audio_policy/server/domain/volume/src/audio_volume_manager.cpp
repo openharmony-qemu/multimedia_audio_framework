@@ -1728,8 +1728,6 @@ int32_t AudioVolumeManager::SetSystemVolumeDegreeToDb(AudioStreamType streamType
     }
 
     int32_t ret = SetSystemVolumeDegreeToDbInner(streamType, volumeDegree, zoneId);
-    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
-    ret = SetSystemVolumeLevelInner(streamType, volumeLevel, zoneId);
     return ret;
 }
 
