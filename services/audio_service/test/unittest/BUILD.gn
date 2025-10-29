@@ -380,6 +380,7 @@ ohos_unittest("audio_service_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "eventhandler:libeventhandler",
+    "access_token:libtokensetproc_shared", 
   ]
 
   defines = []
