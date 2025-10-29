@@ -93,7 +93,9 @@ public:
     uint32_t GetRouteFlag(std::shared_ptr<AudioStreamDescriptor> &desc);
     void GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<PipeStreamPropInfo> &info);
     std::shared_ptr<PipeStreamPropInfo> GetStreamPropInfoFromPipe(std::shared_ptr<AdapterPipeInfo> &info,
-        AudioSampleFormat format, uint32_t sampleRate, AudioChannel channels);
+        const AudioStreamInfo &streamInfo);
+    bool MatchStreamPropInfo(std::shared_ptr<PipeStreamPropInfo> &info,
+        std::shared_ptr<AdapterPipeInfo> &adapterPipeInfo, const AudioStreamInfo &streamInfo);
     bool SupportImplicitConversion(uint32_t routeFlag);
     void GetTargetSourceTypeAndMatchingFlag(SourceType source, bool &useMatchingPropInfo);
     DirectPlaybackMode GetDirectPlaybackSupport(std::shared_ptr<AudioDeviceDescriptor> desc,
@@ -118,12 +120,12 @@ private:
         AudioStreamInfo &streamInfo);
     void GetStreamPropInfoForRecord(std::shared_ptr<AudioStreamDescriptor> desc,
         std::shared_ptr<AdapterPipeInfo> adapterPipeInfo, std::shared_ptr<PipeStreamPropInfo> &info,
-        const AudioStreamInfo &tempStreamInfo);
+        const AudioStreamInfo &streamInfo);
     std::shared_ptr<AdapterPipeInfo> GetNormalRecordAdapterInfo(std::shared_ptr<AudioStreamDescriptor> desc);
     std::shared_ptr<PipeStreamPropInfo> GetSuitableStreamPropInfo(
         std::list<std::shared_ptr<PipeStreamPropInfo>> &dynamicStreamPropInfos, uint32_t sampleRate);
     std::shared_ptr<PipeStreamPropInfo> GetDynamicStreamPropInfoFromPipe(std::shared_ptr<AdapterPipeInfo> &info,
-        AudioSampleFormat format, uint32_t sampleRate, AudioChannel channels);
+        const AudioStreamInfo &streamInfo);
     AudioSampleFormat ParseFormat(const std::string format);
     void CheckDynamicCapturerConfig(std::shared_ptr<AudioStreamDescriptor> desc,
         std::shared_ptr<PipeStreamPropInfo> &info);
