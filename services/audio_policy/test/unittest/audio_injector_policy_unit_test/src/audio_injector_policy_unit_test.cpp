@@ -95,7 +95,7 @@ HWTEST_F(AudioInjectorPolicyUnitTest, HasRunningVoipStream_001, TestSize.Level1)
     desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
     streamVec.push_back(desc);
     bool ret = audioInjectorPolicy.HasRunningVoipStream(streamVec);
-    EXPECT_NE(true, ret);
+    EXPECT_EQ(true, ret);
 }
 
 /**
@@ -114,7 +114,7 @@ HWTEST_F(AudioInjectorPolicyUnitTest, HasRunningVoipStream_002, TestSize.Level1)
     desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_CALL;
     streamVec.push_back(desc);
     bool ret = audioInjectorPolicy.HasRunningVoipStream(streamVec);
-    EXPECT_NE(false, ret);
+    EXPECT_EQ(false, ret);
 }
 
 /**
@@ -133,7 +133,7 @@ HWTEST_F(AudioInjectorPolicyUnitTest, HasRunningVoipStream_003, TestSize.Level1)
     desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
     streamVec.push_back(desc);
     bool ret = audioInjectorPolicy.HasRunningVoipStream(streamVec);
-    EXPECT_NE(false, ret);
+    EXPECT_EQ(false, ret);
 }
 
 /**
@@ -152,7 +152,7 @@ HWTEST_F(AudioInjectorPolicyUnitTest, HasRunningVoipStream_004, TestSize.Level1)
     desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_CALL;
     streamVec.push_back(desc);
     bool ret = audioInjectorPolicy.HasRunningVoipStream(streamVec);
-    EXPECT_NE(false, ret);
+    EXPECT_EQ(false, ret);
 }
 
 /**
