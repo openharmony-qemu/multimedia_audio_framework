@@ -1805,7 +1805,7 @@ bool AudioCoreService::SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDes
         } else {
             bool pre = isRingDualToneOnPrimarySpeaker_;
             isRingDualToneOnPrimarySpeaker_ = AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(
-                streamDesc->newDeviceDescs_, sessionId, streamCollector_);
+                streamDesc->newDeviceDescs_, sessionId);
             if (((isRingDualToneOnPrimarySpeaker_ == false && streamDesc->newDupDeviceDescs_.size() == 0) ||
                 isRingDualToneOnPrimarySpeaker_ == true) &&
                 enableDualHalToneState_ && enableDualHalToneSessionId_ == sessionId) {
@@ -2632,9 +2632,14 @@ void AudioCoreService::CheckAndSleepBeforeRingDualDeviceSet(std::shared_ptr<Audi
     if (streamDesc->streamStatus_ == STREAM_STATUS_NEW && reason.IsSetAudioScene() &&
         streamDesc->newDeviceDescs_.size() > 1 && streamCollector_.IsMediaPlaying() &&
         IsRingerOrAlarmerDualDevicesRange(deviceType) && isRingOrAlarmStream) {
-        vector<std::int32_t> sessionIdList = streamCollector_.GetPlayingMediaSessionIdList();
-        for (const auto &sessionId : sessionIdList) {
-            AudioVolume::GetInstance()->SetStreamVolumeMute(sessionId, true);
+        if (AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(
+            streamDesc->newDeviceDescs_, streamDesc->sessionId_)) {
+            vector<std::int32_t> sessionIdList = streamCollector_.GetPlayingMediaSessionIdList();
+            for (const auto &sessionId : sessionIdList) {
+                AudioStreamType streamType = streamCollector_.GetStreamType(sessionId);
+                streamsWhenRingDualOnPrimarySpeaker_.push_back(make_pair(sessionId, streamType));
+                AudioVolume::GetInstance()->SetStreamVolumeMute(sessionId, true);
+            }
         }
         usleep(MEDIA_PAUSE_TO_DOUBLE_RING_DELAY_US);
     }
