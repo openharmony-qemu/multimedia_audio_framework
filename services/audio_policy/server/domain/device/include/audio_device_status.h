@@ -76,7 +76,7 @@ public:
     int32_t OnServiceConnected(AudioServiceIndex serviceIndex);
     void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
         sptr<AudioRendererFilter> filter = nullptr);
-    void OnPrivacyDeviceSelected();
+    void OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress);
     void OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc, DeviceType devType,
         std::string macAddress, std::string deviceName, bool isActualConnection, AudioStreamInfo streamInfo,
         bool isConnected);

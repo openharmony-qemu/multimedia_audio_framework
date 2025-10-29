@@ -5424,9 +5424,9 @@ int32_t AudioPolicyServer::GetVADeviceController(const std::string& macAddress, 
 }
 
 
-int32_t AudioPolicyServer::SelectPrivateDevice()
+int32_t AudioPolicyServer::SelectPrivateDevice(int32_t devType, const std::string &macAddress)
 {
-    eventEntry_->OnPrivacyDeviceSelected();
+    eventEntry_->OnPrivacyDeviceSelected(static_cast<DeviceType>(devType), macAddress);
     return SUCCESS;
 }
 

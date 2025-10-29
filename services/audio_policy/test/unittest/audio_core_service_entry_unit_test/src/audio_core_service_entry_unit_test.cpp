@@ -481,8 +481,25 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_021, TestSize.Level1)
 
     DeviceType devType = DEVICE_TYPE_SPEAKER;
     std::string macAddress = "macAddress";
-    eventEntry->OnPrivacyDeviceSelected();
+    eventEntry->OnPrivacyDeviceSelected(devType, macAddress);
     eventEntry->OnForcedDeviceSelected(devType, macAddress);
+    
+    auto &devMan = AudioDeviceManager::GetAudioDeviceManager();
+    AudioDeviceStatus::GetInstance().OnPrivacyDeviceSelected(devType, macAddress);
+    auto devDesc = make_shared<AudioDeviceDescriptor>();
+    devDesc->deviceId_ = 114914;
+    devDesc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    devDesc->macAddress_ = macAddress;
+    devDesc->deviceRole_ = OUTPUT_DEVICE;
+    devMan.AddNewDevice(devDesc);
+    auto devDesc2 = make_shared<AudioDeviceDescriptor>();
+    devDesc2->deviceId_ = 114915;
+    devDesc2->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    devDesc2->macAddress_ = macAddress;
+    devDesc2->deviceRole_ = INPUT_DEVICE;
+    devMan.AddNewDevice(devDesc2);
+    AudioDeviceStatus::GetInstance().OnPrivacyDeviceSelected(devType, macAddress);
+    EXPECT_NE(devMan.FindConnectedDeviceById(devDesc->deviceId_), nullptr);
 }
 
 /**
