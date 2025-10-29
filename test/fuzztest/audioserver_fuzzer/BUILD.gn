@@ -54,7 +54,10 @@ ohos_fuzztest("AudioServerFuzzTest") {
     "safwk:system_ability_fwk",
   ]
 
-  defines = []
+  if (audio_framework_feature_inner_capturer) {
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
+  }
+
   if (use_libfuzzer || use_clang_coverage) {
     defines += [ "TEST_COVERAGE" ]
   }
