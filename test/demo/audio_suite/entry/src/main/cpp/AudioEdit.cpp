@@ -549,7 +549,10 @@ int32_t WriteDataCallBack(OH_AudioNode *audioNode, void *userData, void *audioDa
     if (padSize > 0) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest WriteDataCallBack padSize: %{public}d",
             padSize);
-        memset(static_cast<char *>(audioData) + actualDataSize, 0, padSize);
+        std::fill(
+            reinterpret_cast<char*>(audioData) + actualDataSize,
+            reinterpret_cast<char*>(audioData) + actualDataSize + padSize,
+            0);
     }
 
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
