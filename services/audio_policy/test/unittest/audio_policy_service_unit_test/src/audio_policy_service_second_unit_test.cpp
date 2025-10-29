@@ -1203,7 +1203,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, OnPrivacyDeviceSelected_01, TestSize.Lev
     devDesc->deviceId_ = 114514;
     AudioDeviceManager::GetAudioDeviceManager().AddNewDevice(devDesc);
     auto &service = AudioPolicyService::GetAudioPolicyService();
-    service.OnPrivacyDeviceSelected();
+    service.OnPrivacyDeviceSelected(devDesc->deviceType_, devDesc->macAddress_);
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(server, nullptr);
 }
