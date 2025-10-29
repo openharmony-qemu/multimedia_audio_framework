@@ -1345,9 +1345,9 @@ void AudioCoreService::OnForcedDeviceSelected(DeviceType devType, const std::str
 }
 
 
-void AudioCoreService::OnPrivacyDeviceSelected()
+void AudioCoreService::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress)
 {
-    audioDeviceStatus_.OnPrivacyDeviceSelected();
+    audioDeviceStatus_.OnPrivacyDeviceSelected(devType, macAddress);
 }
 
 void AudioCoreService::UpdateRemoteOffloadModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName)

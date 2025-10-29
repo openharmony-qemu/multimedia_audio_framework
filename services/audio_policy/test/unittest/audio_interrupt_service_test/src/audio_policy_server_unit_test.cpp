@@ -3635,7 +3635,9 @@ HWTEST(AudioPolicyUnitTest, GetStreamUsagesByVolumeType_001, TestSize.Level1)
 HWTEST(AudioPolicyUnitTest, SelectPrivateDevice_01, TestSize.Level1)
 {
     sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    int32_t result = server->SelectPrivateDevice();
+    int32_t devType = 8;
+    std::string macAddress{"11:22:33:44"};
+    int32_t result = server->SelectPrivateDevice(devType, macAddress);
     EXPECT_EQ(result, SUCCESS);
 }
 
