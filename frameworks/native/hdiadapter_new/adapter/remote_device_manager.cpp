@@ -45,7 +45,8 @@ int32_t RemoteAdapterHdiCallback::ParamCallback(AudioExtParamKey key, const std:
     const std::string &value, int8_t &reserved, int8_t cookie)
 {
     (void)cookie;
-    AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
+    AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s, adapterName: %{public}s", key,
+        condition.c_str(), value.c_str(), GetEncryptStr(adapterName_).c_str());
     AudioParamKey audioKey = AudioParamKey(key);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
@@ -67,12 +68,14 @@ void RemoteDeviceManager::UnloadAdapter(const std::string &adapterName, bool for
     CHECK_AND_RETURN_LOG(audioManager_ != nullptr, "audio manager is nullptr");
 
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
-    CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
+    CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr", GetEncryptStr(adapterName).c_str());
     std::unique_lock<std::mutex> innerLock(wrapper->adapterMtx_);
-    CHECK_AND_RETURN_LOG(wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
+    CHECK_AND_RETURN_LOG(wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
+        GetEncryptStr(adapterName).c_str());
     CHECK_AND_RETURN_LOG(force || (wrapper->hdiRenderIds_.size() == 0 && wrapper->hdiCaptureIds_.size() == 0),
-        "adapter %{public}s has some ports busy, renderNum: %{public}zu, captureNum: %{public}zu", adapterName.c_str(),
-        wrapper->hdiRenderIds_.size(), wrapper->hdiCaptureIds_.size());
+        "adapter %{public}s has some ports busy, renderNum: %{public}zu, captureNum: %{public}zu",
+        GetEncryptStr(adapterName).c_str(), wrapper->hdiRenderIds_.size(),
+        wrapper->hdiCaptureIds_.size());
 
     if (wrapper->routeHandle_ != -1) {
         wrapper->adapter_->ReleaseAudioRoute(wrapper->routeHandle_);
@@ -86,7 +89,7 @@ void RemoteDeviceManager::UnloadAdapter(const std::string &adapterName, bool for
     if (adapters_.size() == 0) {
         audioManager_ = nullptr;
     }
-    AUDIO_INFO_LOG("unload adapter %{public}s success", adapterName.c_str());
+    AUDIO_INFO_LOG("unload adapter %{public}s success", GetEncryptStr(adapterName).c_str());
 }
 
 void RemoteDeviceManager::AllAdapterSetMicMute(bool isMute)
@@ -102,7 +105,7 @@ int32_t RemoteDeviceManager::SetAudioParameter(const std::string &adapterName, c
 
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, ERR_NULL_POINTER,
-        "adapter %{public}s is nullptr", adapterName.c_str());
+        "adapter %{public}s is nullptr", GetEncryptStr(adapterName).c_str());
     AudioExtParamKey hdiKey = AudioExtParamKey(key);
     int32_t ret = wrapper->adapter_->SetExtraParams(hdiKey, condition, value);
     JUDGE_AND_ERR_LOG(ret != SUCCESS, "set param fail, error code: %{public}d", ret);
@@ -121,7 +124,7 @@ std::string RemoteDeviceManager::GetAudioParameter(const std::string &adapterNam
 
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, "", "adapter %{public}s is nullptr",
-        adapterName.c_str());
+        GetEncryptStr(adapterName).c_str());
     AudioExtParamKey hdiKey = AudioExtParamKey(key);
     std::string value;
     int32_t ret = wrapper->adapter_->GetExtraParams(hdiKey, condition.c_str(), value);
@@ -166,7 +169,7 @@ int32_t RemoteDeviceManager::SetOutputRoute(const std::string &adapterName, cons
 
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, ERR_INVALID_HANDLE,
-        "adapter %{public}s is nullptr", adapterName.c_str());
+        "adapter %{public}s is nullptr", GetEncryptStr(adapterName).c_str());
     ret = wrapper->adapter_->UpdateAudioRoute(route, wrapper->routeHandle_);
 
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "update route fail");
@@ -199,7 +202,7 @@ int32_t RemoteDeviceManager::SetInputRoute(const std::string &adapterName, Devic
 
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, ERR_INVALID_HANDLE,
-        "adapter %{public}s is nullptr", adapterName.c_str());
+        "adapter %{public}s is nullptr", GetEncryptStr(adapterName).c_str());
     ret = wrapper->adapter_->UpdateAudioRoute(route, wrapper->routeHandle_);
 
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "update route fail");
@@ -236,7 +239,8 @@ void RemoteDeviceManager::RegistRenderSinkCallback(const std::string &adapterNam
     IDeviceManagerCallback *callback)
 {
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName, true);
-    CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
+    CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr",
+        GetEncryptStr(adapterName).c_str());
     std::lock_guard<std::mutex> lock(wrapper->renderCallbackMtx_);
     CHECK_AND_RETURN_LOG(wrapper->renderCallbacks_.count(hdiRenderId) == 0,
         "callback already existed, hdiRenderId: %{public}u", hdiRenderId);
@@ -247,7 +251,8 @@ void RemoteDeviceManager::RegistCaptureSourceCallback(const std::string &adapter
     IDeviceManagerCallback *callback)
 {
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName, true);
-    CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
+    CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr",
+        GetEncryptStr(adapterName).c_str());
     std::lock_guard<std::mutex> lock(wrapper->captureCallbackMtx_);
     CHECK_AND_RETURN_LOG(wrapper->captureCallbacks_.count(hdiCaptureId) == 0,
         "callback already existed, hdiCaptureId: %{public}u", hdiCaptureId);
@@ -257,7 +262,8 @@ void RemoteDeviceManager::RegistCaptureSourceCallback(const std::string &adapter
 void RemoteDeviceManager::UnRegistRenderSinkCallback(const std::string &adapterName, uint32_t hdiRenderId)
 {
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
-    CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
+    CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr",
+        GetEncryptStr(adapterName).c_str());
     std::lock_guard<std::mutex> lock(wrapper->renderCallbackMtx_);
     CHECK_AND_RETURN_LOG(wrapper->renderCallbacks_.count(hdiRenderId) != 0,
         "callback not exist, hdiRenderId: %{public}u", hdiRenderId);
@@ -267,7 +273,8 @@ void RemoteDeviceManager::UnRegistRenderSinkCallback(const std::string &adapterN
 void RemoteDeviceManager::UnRegistCaptureSourceCallback(const std::string &adapterName, uint32_t hdiCaptureId)
 {
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
-    CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
+    CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr",
+        GetEncryptStr(adapterName).c_str());
     std::lock_guard<std::mutex> lock(wrapper->captureCallbackMtx_);
     CHECK_AND_RETURN_LOG(wrapper->captureCallbacks_.count(hdiCaptureId) != 0,
         "callback not exist, hdiCaptureId: %{public}u", hdiCaptureId);
@@ -284,7 +291,7 @@ void *RemoteDeviceManager::CreateRender(const std::string &adapterName, void *pa
 
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName, true);
     CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, nullptr,
-        "adapter %{public}s is nullptr", adapterName.c_str());
+        "adapter %{public}s is nullptr", GetEncryptStr(adapterName).c_str());
     remoteDeviceDesc.portId = GetPortId(PORT_OUT);
 
     sptr<IAudioRender> render = nullptr;
@@ -292,7 +299,7 @@ void *RemoteDeviceManager::CreateRender(const std::string &adapterName, void *pa
     if (ret != SUCCESS || render == nullptr) {
         AUDIO_ERR_LOG("create render fail");
         wrapper->isValid_ = false;
-        HdiMonitor::ReportHdiException(HdiType::REMOTE, ErrorCase::CALL_HDI_FAILED, ret, (adapterName +
+        HdiMonitor::ReportHdiException(HdiType::REMOTE, ErrorCase::CALL_HDI_FAILED, ret, (GetEncryptStr(adapterName) +
             " create render fail, id:" + std::to_string(hdiRenderId)));
         return nullptr;
     }
@@ -312,7 +319,7 @@ void RemoteDeviceManager::DestroyRender(const std::string &adapterName, uint32_t
 
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
-        adapterName.c_str());
+        GetEncryptStr(adapterName).c_str());
     if (wrapper->hdiRenderIds_.count(hdiRenderId) == 0) {
         AUDIO_ERR_LOG("render not exist");
         if (!wrapper->isValid_) {
@@ -337,7 +344,7 @@ void *RemoteDeviceManager::CreateCapture(const std::string &adapterName, void *p
 
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName, true);
     CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, nullptr,
-        "adapter %{public}s is nullptr", adapterName.c_str());
+        "adapter %{public}s is nullptr", GetEncryptStr(adapterName).c_str());
     remoteDeviceDesc.portId = GetPortId(PORT_IN);
 
     sptr<IAudioCapture> capture = nullptr;
@@ -345,7 +352,7 @@ void *RemoteDeviceManager::CreateCapture(const std::string &adapterName, void *p
     if (ret != SUCCESS || capture == nullptr) {
         AUDIO_ERR_LOG("create capture fail");
         wrapper->isValid_ = false;
-        HdiMonitor::ReportHdiException(HdiType::REMOTE, ErrorCase::CALL_HDI_FAILED, ret, (adapterName +
+        HdiMonitor::ReportHdiException(HdiType::REMOTE, ErrorCase::CALL_HDI_FAILED, ret, (GetEncryptStr(adapterName) +
             " create capture fail, id:" + std::to_string(hdiCaptureId)));
         return nullptr;
     }
@@ -365,7 +372,7 @@ void RemoteDeviceManager::DestroyCapture(const std::string &adapterName, uint32_
 
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
-        adapterName.c_str());
+        GetEncryptStr(adapterName).c_str());
     if (wrapper->hdiCaptureIds_.count(hdiCaptureId) == 0) {
         AUDIO_ERR_LOG("capture not exist");
         if (!wrapper->isValid_) {
@@ -426,7 +433,7 @@ std::shared_ptr<RemoteAdapterWrapper> RemoteDeviceManager::GetAdapter(const std:
 int32_t RemoteDeviceManager::LoadAdapterInner(const std::string &adapterName)
 {
     CHECK_AND_RETURN_RET_LOG(adapters_.count(adapterName) == 0 || adapters_[adapterName] == nullptr, SUCCESS,
-        "adapter %{public}s already loaded", adapterName.c_str());
+        "adapter %{public}s already loaded", GetEncryptStr(adapterName).c_str());
 
     if (audioManager_ == nullptr || adapters_.size() == 0) {
         audioManager_ = nullptr;
@@ -452,7 +459,7 @@ int32_t RemoteDeviceManager::LoadAdapterInner(const std::string &adapterName)
     adapters_[adapterName] = std::make_shared<RemoteAdapterWrapper>(adapterName);
     adapters_[adapterName]->adapterDesc_ = descs[index];
     adapters_[adapterName]->adapter_ = adapter;
-    AUDIO_INFO_LOG("load adapter %{public}s success", adapterName.c_str());
+    AUDIO_INFO_LOG("load adapter %{public}s success", GetEncryptStr(adapterName).c_str());
 #ifdef FEATURE_DISTRIBUTE_AUDIO
     adapters_[adapterName]->hdiCallback_ = new RemoteAdapterHdiCallback(adapterName);
     ret = adapter->RegExtraParamObserver(adapters_[adapterName]->hdiCallback_, 0);
@@ -469,13 +476,14 @@ int32_t RemoteDeviceManager::SwitchAdapterDesc(const std::vector<AudioAdapterDes
         if (desc.adapterName.c_str() == nullptr) {
             continue;
         }
-        AUDIO_DEBUG_LOG("index: %{public}u, adapterName: %{public}s", index, desc.adapterName.c_str());
+        AUDIO_DEBUG_LOG("index: %{public}u, adapterName: %{public}s", index,
+            GetEncryptStr(desc.adapterName).c_str());
         if (!adapterName.compare(desc.adapterName)) {
-            AUDIO_INFO_LOG("match adapter %{public}s", desc.adapterName.c_str());
+            AUDIO_INFO_LOG("match adapter %{public}s", GetEncryptStr(desc.adapterName).c_str());
             return index;
         }
     }
-    AUDIO_ERR_LOG("switch adapter fail, adapterName: %{public}s", adapterName.c_str());
+    AUDIO_ERR_LOG("switch adapter fail, adapterName: %{public}s", GetEncryptStr(adapterName).c_str());
     return ERR_INVALID_INDEX;
 }
 
@@ -530,7 +538,7 @@ int32_t RemoteDeviceManager::HandleRenderParamEvent(const std::string &adapterNa
 {
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_RET_LOG(wrapper != nullptr, ERR_INVALID_HANDLE, "adapter %{public}s is nullptr",
-        adapterName.c_str());
+        GetEncryptStr(adapterName).c_str());
     IDeviceManagerCallback *renderCallback = nullptr;
     {
         std::lock_guard<std::mutex> lock(wrapper->renderCallbackMtx_);
@@ -554,7 +562,7 @@ int32_t RemoteDeviceManager::HandleCaptureParamEvent(const std::string &adapterN
 {
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_RET_LOG(wrapper != nullptr, ERR_INVALID_HANDLE, "adapter %{public}s is nullptr",
-        adapterName.c_str());
+        GetEncryptStr(adapterName).c_str());
     IDeviceManagerCallback *captureCallback = nullptr;
     {
         std::lock_guard<std::mutex> lock(wrapper->captureCallbackMtx_);
