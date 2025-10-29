@@ -219,8 +219,6 @@ int32_t ProResampler::UpdateRates(uint32_t inRate, uint32_t outRate)
         inRate_, inRate, outRate_, outRate);
     inRate_ = inRate;
     outRate_ = outRate;
-    expectedOutFrameLen_ = outRate_ * FRAME_LEN_20MS / MS_PER_SECOND;
-    ConfigBufferSizeAndExpectedInFrameLen();
     // resampler change from valid state to invalid state
     if ((inRate < MIN_SAMPLE_RATE) || (inRate > MAX_SAMPLE_RATE) || (outRate < MIN_SAMPLE_RATE) ||
         (outRate > MAX_SAMPLE_RATE) || (inRate_ == outRate_)) {
@@ -240,6 +238,8 @@ int32_t ProResampler::UpdateRates(uint32_t inRate, uint32_t outRate)
     }
     int32_t ret = SingleStagePolyphaseResamplerSetRate(state_, inRate_, outRate_);
     CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret, "error code %{public}s", ErrCodeToString(ret).c_str());
+    expectedOutFrameLen_ = outRate_ * FRAME_LEN_20MS / MS_PER_SECOND;
+    ConfigBufferSizeAndExpectedInFrameLen();
     return ret;
 }
 
@@ -248,7 +248,6 @@ int32_t ProResampler::UpdateChannels(uint32_t channels)
     // if update channel, the only way to update SingleStagePolyphaseResampler is to create a new one
     AUDIO_INFO_LOG("update work channel %{public}d -> %{public}d", channels_, channels);
     channels_ = channels;
-    ConfigBufferSizeAndExpectedInFrameLen();
     if ((channels_ <= 0) || (channels_ > MAX_CHANNELS)) {
         AUDIO_ERR_LOG("resampler set to invalid state, channel number should within [1, 16]");
         CHECK_AND_RETURN_RET(state_ != nullptr, RESAMPLER_ERR_INVALID_ARG);
@@ -263,7 +262,7 @@ int32_t ProResampler::UpdateChannels(uint32_t channels)
     state_ = SingleStagePolyphaseResamplerInit(channels_, inRate_, outRate_, quality_, &errRet);
     CHECK_AND_RETURN_RET_LOG(state_ && (errRet == RESAMPLER_ERR_SUCCESS), errRet,
         "error code %{public}s", ErrCodeToString(errRet).c_str());
-
+    ConfigBufferSizeAndExpectedInFrameLen();
     return SingleStagePolyphaseResamplerSkipHalfTaps(state_);
 }
 
