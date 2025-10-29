@@ -1946,7 +1946,7 @@ void AudioServerAddAndRemoveCaptureInjectorFuzzTest()
     auto channels = provider.ConsumeRandomLengthString(MAX_RANDOM_STRING_LENGTH);
     auto bufferSize = provider.ConsumeRandomLengthString(MAX_RANDOM_STRING_LENGTH);
 
-    (void)audioServerPtr->addcaptureinjector(sinkPortidx, rate, format, channels, bufferSize);
+    (void)audioServerPtr->AddCaptureInjector(sinkPortidx, rate, format, channels, bufferSize);
     (void)audioServerPtr->RemoveCaptureInjector(sinkPortidx);
 }
 
@@ -1958,7 +1958,7 @@ void DataTransferStateChangeCallbackInnerImplOnDataTransferStateChangeFuzzTest()
     auto callbackId = provider.ConsumeIntegral<int32_t>();
     auto info = ConsumeAudioRendererDataTransferStateChangeInfo(provider);
 
-    dataTransferStateChangeCallbackInnerImpl.OnDataTransferStateChange(callbackid, info);
+    dataTransferStateChangeCallbackInnerImpl.OnDataTransferStateChange(callbackId, info);
 }
 
 void DataTransferStateChangeCallbackInnerImplReportEventFuzzTest()
@@ -1973,7 +1973,7 @@ void DataTransferStateChangeCallbackInnerImplReportEventFuzzTest()
 
 void PipeInfoGuardSetReleaseFlagFuzzTest()
 {
-    PipeinfoGuard pipeinfoGuard(0);
+    PipeInfoGuard pipeinfoGuard(0);
     FuzzedDataProvider provider(RAW_DATA, g_dataSize);
 
     pipeinfoGuard.SetReleaseFlag(provider.ConsumeIntegral<int32_t>() % NUM_2);

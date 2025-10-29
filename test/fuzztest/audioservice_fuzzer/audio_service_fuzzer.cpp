@@ -33,7 +33,6 @@ const size_t THRESHOLD = 10;
 typedef void (*TestPtr)();
 constexpr size_t MAX_RANDOM_STRING_LENGTH = 128;
 constexpr size_t MAX_STOP_AUDIO_TYPE = 3;
-constexpr size_t NUM_2 = 2;
 
 const vector<AudioStreamType> g_testAudioStreamTypes = {
     STREAM_DEFAULT,
@@ -809,16 +808,15 @@ void AudioServiceGetEndPointByTypeFuzzTest()
     shared_ptr<AudioService> audioService = make_shared<AudioService>();
     CHECK_AND_RETURN(audioService != nullptr);
 
-    auto type = static_cast<AudioEndpoint::EndpointType>(GetData<uint32_t>() % ENDPOINTTYPESIZE)
+    auto type = static_cast<AudioEndpoint::EndpointType>(GetData<uint32_t>() % ENDPOINTTYPESIZE);
 
-    (void)audioService->GetEndpointByType(type);
+    audioService->GetEndPointByType(type);
 }
 
 void AudioServiceHandleProcessInserverDualStreamEnableInnerFuzzTest()
 {
     shared_ptr<AudioService> audioService = make_shared<AudioService>();
     CHECK_AND_RETURN(audioService != nullptr);
-
     AudioProcessConfig config = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
@@ -832,7 +830,8 @@ void AudioServiceHandleProcessInserverDualStreamEnableInnerFuzzTest()
     for (size_t i = 0; i < GetData<int32_t>() % MAX_RANDOM_STRING_LENGTH; ++i) {
         dupSinkName += GetData<char>();
     }
-    audioService->HandleProcessInserverDualStreamEnableInner(*audioEndpointPtr, dupSinkName)
+
+    audioService->HandleProcessInserverDualStreamEnableInner(*audioEndpointPtr, dupSinkName);
 }
 
 void AudioServiceInitAllDupBufferFuzzTest()
@@ -850,7 +849,7 @@ void AudioServiceForceStopAudioStreamFuzzTest()
     shared_ptr<AudioService> audioService = make_shared<AudioService>();
     CHECK_AND_RETURN(audioService != nullptr);
 
-    auto audioType = static_cast<audioType>(GetData<int32_t>() % MAX_STOP_AUDIO_TYPE);
+    auto audioType = static_cast<StopAudioType>(GetData<int32_t>() % MAX_STOP_AUDIO_TYPE);
 
     (void)audioService->ForceStopAudioStream(audioType);
 }
