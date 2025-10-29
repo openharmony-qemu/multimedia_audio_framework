@@ -245,10 +245,10 @@ void AudioCoreService::EventEntry::OnForcedDeviceSelected(DeviceType devType, co
     coreService_->OnForcedDeviceSelected(devType, macAddress, filter);
 }
 
-void AudioCoreService::EventEntry::OnPrivacyDeviceSelected()
+void AudioCoreService::EventEntry::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    coreService_->OnPrivacyDeviceSelected();
+    coreService_->OnPrivacyDeviceSelected(devType, macAddress);
 }
 
 int32_t AudioCoreService::EventEntry::SetAudioScene(AudioScene audioScene, const int32_t uid, const int32_t pid)
