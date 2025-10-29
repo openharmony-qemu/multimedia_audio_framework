@@ -127,7 +127,9 @@ int32_t AudioSuiteEqNode::SetOptions(std::string name, std::string value)
     CHECK_AND_RETURN_RET_LOG(eqAlgoInterfaceImpl_ != nullptr, ERROR, "eqAlgoInterfaceImpl_ is nullptr");
     CHECK_AND_RETURN_RET_LOG(!value.empty(), ERROR, "Value is empty");
 
-    eqValue_ = value;
+    paraName_ = name;
+    paraValue_ = value;
+
     int32_t ret = eqAlgoInterfaceImpl_->SetParameter(value, value);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetParameter failed");
     AUDIO_INFO_LOG("SetOptions SUCCESS");
@@ -138,9 +140,9 @@ int32_t AudioSuiteEqNode::GetOptions(std::string name, std::string &value)
 {
     AUDIO_INFO_LOG("AudioSuiteEqNode::GetOptions Enter");
     CHECK_AND_RETURN_RET_LOG(name == setBandGains, ERROR, "GetOptions Unknow Type %{public}s", name.c_str());
-    CHECK_AND_RETURN_RET_LOG(!eqValue_.empty(), ERROR, "Eq BandGains is empty");
+    CHECK_AND_RETURN_RET_LOG(!paraValue_.empty(), ERROR, "Eq BandGains is empty");
 
-    value = eqValue_;
+    value = paraValue_;
     AUDIO_INFO_LOG("GetOptions SUCCESS");
     return SUCCESS;
 }

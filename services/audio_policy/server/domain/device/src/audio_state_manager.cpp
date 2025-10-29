@@ -241,6 +241,18 @@ shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredToneRenderDevic
     return devDesc;
 }
 
+void AudioStateManager::SetPreferredRecognitionCaptureDevice(const shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    preferredRecognitionCaptureDevice_ = desc;
+}
+
+shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredRecognitionCaptureDevice()
+{
+    lock_guard<std::mutex> lock(mutex_);
+    return preferredRecognitionCaptureDevice_;
+}
+
 void AudioStateManager::UpdatePreferredMediaRenderDeviceConnectState(ConnectState state)
 {
     CHECK_AND_RETURN_LOG(preferredMediaRenderDevice_ != nullptr, "preferredMediaRenderDevice_ is nullptr");
@@ -275,7 +287,6 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioStateManager::GetExcludedDevices(
         }
     } else if (usage == CALL_OUTPUT_DEVICES) {
         shared_lock<shared_mutex> lock(callExcludedDevicesMutex_);
-        vector<shared_ptr<AudioDeviceDescriptor>> devices;
         for (const auto &desc : callExcludedDevices_) {
             devices.push_back(make_shared<AudioDeviceDescriptor>(*desc));
         }

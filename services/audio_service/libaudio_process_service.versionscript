@@ -83,10 +83,6 @@
     *SaveRenderWhitelist*;
     *InRenderWhitelist*;
     *HpaeCapturerStreamImpl*;
-    *UpdateSwitchStreamMap*;
-    *UpdateBackgroundCaptureMap*;
-    *SendInterruptEventToAudioServer*;
-    *SendInterruptEventToAudioService*;
     *GetPrivacyType*;
     *GetEndPointByType*;
   local:

@@ -125,9 +125,19 @@ int32_t DownMixer::SetupDownMixTable()
     }
 
     int32_t ret = SetupDownMixTableInner();
-    NormalizeDMixTable();
     isInitialized_ = (ret == MIX_ERR_SUCCESS);
+    // no need for normalization, can return directly
+    CHECK_AND_RETURN_RET_LOG(normalizing_, ret, "downmix normalization is disabled");
+    // normalizing_ is true do normalization then return
+    NormalizeDMixTable();
     return ret;
+}
+
+void DownMixer::SetNormalization(bool normalizing)
+{
+    CHECK_AND_RETURN_LOG(normalizing != normalizing_, "no need to update downmix normalizing state");
+    normalizing_ = normalizing;
+    SetupDownMixTable();
 }
 
 void DownMixer::NormalizeDMixTable()

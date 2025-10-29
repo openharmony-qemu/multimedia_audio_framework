@@ -321,6 +321,54 @@ int32_t AudioPolicyManager::UnsetDeviceChangeCallback(const int32_t clientId, De
     return SUCCESS;
 }
 
+int32_t AudioPolicyManager::SetDeviceInfoUpdateCallback(const int32_t clientId,
+    const std::shared_ptr<AudioManagerDeviceInfoUpdateCallback> &callback)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManager::SetDeviceInfoUpdateCallback");
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("SetDeviceInfoUpdateCallback: No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
+
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+        "SetDeviceInfoUpdateCallback: callback is nullptr");
+
+    if (!isAudioPolicyClientRegisted_) {
+        const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
+        if (ret != SUCCESS) {
+            return ret;
+        }
+    }
+
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SET_DEVICE_INFO_UPDATE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->AddDeviceInfoUpdateCallback(callback);
+        size_t callbackSize = audioPolicyClientStubCB_->GetDeviceInfoUpdateCallbackSize();
+        if (callbackSize == 1) {
+            callbackChangeInfos_[CALLBACK_SET_DEVICE_INFO_UPDATE].isEnable = true;
+            SetClientCallbacksEnable(CALLBACK_SET_DEVICE_INFO_UPDATE, true);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnsetDeviceInfoUpdateCallback(const int32_t clientId,
+    std::shared_ptr<AudioManagerDeviceInfoUpdateCallback> &cb)
+{
+    AUDIO_DEBUG_LOG("AudioPolicyManager::UnsetDeviceInfoUpdateCallback");
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SET_DEVICE_INFO_UPDATE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->RemoveDeviceInfoUpdateCallback(cb);
+        if (audioPolicyClientStubCB_->GetDeviceInfoUpdateCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_SET_DEVICE_INFO_UPDATE].isEnable = false;
+            SetClientCallbacksEnable(CALLBACK_SET_DEVICE_INFO_UPDATE, false);
+        }
+    }
+    return SUCCESS;
+}
+
 int32_t AudioPolicyManager::SetPreferredOutputDeviceChangeCallback(const AudioRendererInfo &rendererInfo,
     const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback, const int32_t uid)
 {

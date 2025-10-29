@@ -1955,7 +1955,7 @@ int32_t AudioPolicyServer::UnexcludeOutputDevices(int32_t audioDevUsageIn,
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
         "No system permission");
 
-    return audioDeviceLock_.UnexcludeOutputDevices(audioDevUsage, newAudioDeviceDescriptors);
+    return eventEntry_->UnexcludeOutputDevices(audioDevUsage, newAudioDeviceDescriptors);
 }
 
 int32_t AudioPolicyServer::CheckAndGetApiVersion(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs,
@@ -1975,7 +1975,7 @@ int32_t AudioPolicyServer::GetExcludedDevices(int32_t audioDevUsageIn,
     CHECK_AND_RETURN_RET_LOG(hasSystemPermission, ERR_PERMISSION_DENIED,
         "No system permission");
 
-    device = audioDeviceLock_.GetExcludedDevices(audioDevUsage);
+    device = eventEntry_->GetExcludedDevices(audioDevUsage);
 
     int32_t apiVersion = CheckAndGetApiVersion(device, hasSystemPermission);
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };

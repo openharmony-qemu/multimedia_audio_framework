@@ -125,11 +125,6 @@ public:
     std::set<int32_t> GetStreamIdsForAudioSessionByDeviceType(const int32_t zoneId, DeviceType deviceType);
     std::vector<int32_t> GetAudioSessionUidList(int32_t zoneId);
     StreamUsage GetAudioSessionStreamUsage(int32_t callerPid);
-    
-    bool ShouldAudioServerProcessInruptEvent(const InterruptEventInternal &interruptEvent,
-        const AudioInterrupt &audioInterrupt);
-    void SendInterruptEventToAudioServer(const InterruptEventInternal &interruptEvent,
-        const AudioInterrupt &audioInterrupt);
 
     void ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent);
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);

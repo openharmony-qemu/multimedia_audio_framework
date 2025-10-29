@@ -584,8 +584,20 @@ bool ProAudioServiceAdapterImpl::IsChannelLayoutSupportedForDspEffect(AudioChann
 void ProAudioServiceAdapterImpl::UpdateAudioPortInfo(const uint32_t &sinkPortIndex,
     const AudioModuleInfo &audioPortInfo)
 {
+    AUDIO_PRERELEASE_LOGI("Injector::Enter UpdateAudioPortInfo.");
+    AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::UpdateAudioPortInfo", HPAE_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("[xcollie] Timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
+    isFinishOpenAudioPort_ = false;
     IHpaeManager::GetHpaeManager().UpdateAudioPortInfo(sinkPortIndex, audioPortInfo);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return isFinishOpenAudioPort_;  // will be true when got notified.
+    });
+    CHECK_AND_RETURN_LOG(stopWaiting, "TimeOut");
+    AUDIO_INFO_LOG("Injector::UpdateAudioPortInfo finish.");
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

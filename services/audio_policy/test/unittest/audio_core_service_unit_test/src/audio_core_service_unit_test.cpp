@@ -280,6 +280,57 @@ HWTEST_F(AudioCoreServiceUnitTest, SetPreferredInputDeviceIfValid_002, TestSize.
 
 /**
 * @tc.name  : Test AudioCoreService.
+* @tc.number: SetPreferredInputDeviceIfValid_003
+* @tc.desc  : Test CreateCapturerClient - Create stream with (S32 48k STEREO) will be successful..
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetPreferredInputDeviceIfValid_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->preferredInputDevice.deviceType_ = DEVICE_TYPE_INVALID;
+    streamDesc->sessionId_ = 1;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_INVALID;
+
+    AudioCoreService audioCoreService;
+
+    EXPECT_NO_THROW(audioCoreService.SetPreferredInputDeviceIfValid(streamDesc));
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: SetPreferredInputDeviceIfValid_004
+* @tc.desc  : Test CreateCapturerClient - Create stream with (S32 48k STEREO) will be successful..
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetPreferredInputDeviceIfValid_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->preferredInputDevice.deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->sessionId_ = 1;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+
+    AudioCoreService audioCoreService;
+
+    EXPECT_NO_THROW(audioCoreService.SetPreferredInputDeviceIfValid(streamDesc));
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: SetPreferredInputDeviceIfValid_005
+* @tc.desc  : Test CreateCapturerClient - Create stream with (S32 48k STEREO) will be successful..
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetPreferredInputDeviceIfValid_005, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->preferredInputDevice.deviceType_ = DEVICE_TYPE_BT_SPP;
+    streamDesc->sessionId_ = 1;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+
+    AudioCoreService audioCoreService;
+
+    EXPECT_NO_THROW(audioCoreService.SetPreferredInputDeviceIfValid(streamDesc));
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
 * @tc.number: SetDefaultOutputDevice_001
 * @tc.desc  : Test SetDefaultOutputDevice - Set DEVICE_TYPE_SPEAKER as default device to nonexistent session.
 */
@@ -615,6 +666,31 @@ HWTEST_F(AudioCoreServiceUnitTest, SelectInputDevice_001, TestSize.Level1)
     inputDevice->networkId_ = LOCAL_NETWORK_ID;
     deviceDescriptorVector.push_back(inputDevice);
     auto ret = GetServerPtr()->eventEntry_->SelectInputDevice(audioCapturerFilter, deviceDescriptorVector);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: SelectInputDevice_002
+* @tc.desc  : Test SelectInputDevice - will return success.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SelectInputDevice_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest SelectInputDevice_002 start");
+    sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
+    vector<std::shared_ptr<AudioDeviceDescriptor>> devs;
+    auto inputDevs = AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::INPUT_DEVICES_FLAG);
+    auto inputDevice =  inputDevs[0];
+    inputDevice->deviceRole_ = DeviceRole::INPUT_DEVICE;
+    inputDevice->networkId_ = LOCAL_NETWORK_ID;
+    devs.push_back(inputDevice);
+
+    constexpr int32_t BLUETOOTH_UID = 1002;
+    audioCapturerFilter->uid = BLUETOOTH_UID;
+    audioCapturerFilter->capturerInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION;
+    audioCapturerFilter->capturerInfo.capturerFlags == 0;
+    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_DEFAULT);
+    auto ret = AudioRecoveryDevice::GetInstance().SelectInputDevice(audioCapturerFilter, devs);
     EXPECT_EQ(ret, SUCCESS);
 }
 

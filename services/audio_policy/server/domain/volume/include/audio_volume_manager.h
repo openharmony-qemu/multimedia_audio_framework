@@ -143,6 +143,8 @@ public:
     int32_t SetSystemVolumeDegreeToDb(AudioStreamType streamType, int32_t volumeDegree, int32_t zoneId);
     int32_t GetSystemVolumeDegree(AudioStreamType streamType, int32_t zoneId = 0);
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType) const;
+    void OnCheckActiveMusicTime(const std::string &reason);
+    int32_t CheckActiveMusicTime(const std::string &reason = "Default");
 
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -158,8 +160,9 @@ private:
     int32_t DealWithSafeVolume(const int32_t volumeLevel, bool isBtDevice);
     void CreateCheckMusicActiveThread();
     bool IsBlueTooth(const DeviceType &deviceType);
-    int32_t CheckActiveMusicTime();
+    bool IsNearLink(const DeviceType &deviceType);
     void CheckBlueToothActiveMusicTime(int32_t safeVolume);
+    void CheckNearlinkActiveMusicTime(int32_t safeVolume);
     void CheckWiredActiveMusicTime(int32_t safeVolume);
     void RestoreSafeVolume(AudioStreamType streamType, int32_t safeVolume);
     void SetSafeVolumeCallback(AudioStreamType streamType);
@@ -176,6 +179,8 @@ private:
     void SetRestoreVolumeLevel(DeviceType deviceType, int32_t curDeviceVolume);
     void CheckLowerDeviceVolume(DeviceType deviceType);
     int32_t CheckRestoreDeviceVolume(DeviceType deviceType);
+    int32_t CheckRestoreDeviceVolumeNearlink(int32_t btRestoreVolume, int32_t wiredRestoreVolume,
+        int32_t sleRestoreVolume, int32_t safeVolume);
     int32_t DealWithEventVolume(const int32_t notificationId);
     void ChangeDeviceSafeStatus(SafeStatus safeStatus);
     bool CheckMixActiveMusicTime(int32_t safeVolume);
@@ -195,8 +200,10 @@ private:
 
     int64_t activeSafeTimeBt_ = 0;
     int64_t activeSafeTime_ = 0;
+    int64_t activeSafeTimeSle_ = 0;
     std::time_t startSafeTimeBt_ = 0;
     std::time_t startSafeTime_ = 0;
+    std::time_t startSafeTimeSle_ = 0;
 
     std::mutex dialogMutex_;
     std::atomic<bool> isDialogSelectDestroy_ = false;
@@ -213,8 +220,10 @@ private:
     bool safeVolumeExit_ = false;
     SafeStatus safeStatusBt_ = SAFE_UNKNOWN;
     SafeStatus safeStatus_ = SAFE_UNKNOWN;
+    SafeStatus safeStatusSle_ = SAFE_UNKNOWN;
 
     bool isBtFirstBoot_ = true;
+    bool isSleFirstBoot_ = true;
 
     std::vector<sptr<VolumeGroupInfo>> volumeGroups_;
     std::vector<sptr<InterruptGroupInfo>> interruptGroups_;
@@ -228,6 +237,7 @@ private:
     std::mutex notifyMutex_;
     int32_t btRestoreVol_ = 0;
     int32_t wiredRestoreVol_ = 0;
+    int32_t sleRestoreVol_ = 0;
     std::atomic<bool> restoreNIsShowing_ = false;
     std::atomic<bool> increaseNIsShowing_ = false;
 

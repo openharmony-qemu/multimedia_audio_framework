@@ -650,5 +650,10 @@ int32_t AudioCoreService::EventEntry::A2dpOffloadGetRenderPosition(uint32_t &del
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
     return coreService_->A2dpOffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
 }
+
+void AudioCoreService::EventEntry::OnCheckActiveMusicTime(const std::string &reason)
+{
+    coreService_->OnCheckActiveMusicTime(reason);
+}
 }
 }

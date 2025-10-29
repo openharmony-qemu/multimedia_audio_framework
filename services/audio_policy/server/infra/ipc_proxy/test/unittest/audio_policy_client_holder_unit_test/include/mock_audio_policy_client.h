@@ -38,6 +38,8 @@ public:
                 (const AudioInterrupt& abandonFocus), (override));
     MOCK_METHOD(ErrCode, OnDeviceChange,
                 (const DeviceChangeAction& deviceChangeAction), (override));
+    MOCK_METHOD(ErrCode, OnDeviceInfoUpdate,
+                (const DeviceChangeAction& deviceChangeAction), (override));
     MOCK_METHOD(ErrCode, OnAppVolumeChanged,
                 (int32_t appUid, const VolumeEvent& volumeEvent), (override));
     MOCK_METHOD(ErrCode, OnActiveVolumeTypeChanged,

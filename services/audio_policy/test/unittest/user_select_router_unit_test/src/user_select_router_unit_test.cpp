@@ -224,5 +224,22 @@ HWTEST(UserSelectRouterUnitTest, GetRecordCaptureDevice_002, TestSize.Level3)
     auto result = userSelectRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
     EXPECT_NE(result, nullptr);
 }
+
+/**
+ * @tc.name  : Test GetRecordCaptureDevice.
+ * @tc.number: GetRecordCaptureDevice_003
+ * @tc.desc  : GetRecordCaptureDevice.
+ */
+HWTEST(UserSelectRouterUnitTest, GetRecordCaptureDevice_003, TestSize.Level3)
+{
+    UserSelectRouter userSelectRouter;
+    SourceType sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    int32_t clientUID = 1;
+    uint32_t sessionID = 678;
+    auto desc = make_shared<AudioDeviceDescriptor>();
+    AudioStateManager::GetAudioStateManager().SetPreferredRecognitionCaptureDevice(desc);
+    auto result = userSelectRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
+    EXPECT_NE(result, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS

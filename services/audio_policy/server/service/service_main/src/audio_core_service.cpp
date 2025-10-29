@@ -1409,6 +1409,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
     }
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> modemDescs;
     CheckModemScene(modemDescs, reason);
+    CheckRingAndVoipScene(reason);
 
     AudioCoreServiceUtils::SortOutputStreamDescsForUsage(outputStreamDescs);
     for (auto &streamDesc : outputStreamDescs) {
@@ -1605,7 +1606,6 @@ int32_t AudioCoreService::StartInjection(uint32_t streamId)
         AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "move stream in failed");
     audioInjectorPolicy_.AddStreamDescriptor(streamId, streamDesc);
-    audioInjectorPolicy_.SetAllRendererInjectStreamsMute();
     return SUCCESS;
 }
 
@@ -1682,6 +1682,11 @@ int32_t AudioCoreService::SetQueryBundleNameListCallback(const sptr<IRemoteObjec
     CHECK_AND_RETURN_RET_LOG(queryBundleNameListCallback_ != nullptr, ERR_CALLBACK_NOT_REGISTERED,
         "Query bundle name list callback is null");
     return SUCCESS;
+}
+
+void AudioCoreService::OnCheckActiveMusicTime(const std::string &reason)
+{
+    AudioVolumeManager::GetInstance().OnCheckActiveMusicTime(reason);
 }
 } // namespace AudioStandard
 } // namespace OHOS

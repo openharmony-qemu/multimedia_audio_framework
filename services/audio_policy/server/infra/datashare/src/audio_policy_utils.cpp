@@ -153,6 +153,9 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
             AUDIO_WARNING_LOG("preferredType:%{public}d, not supported", preferredType);
             ret = ERR_INVALID_PARAM;
             break;
+        case AUDIO_RECOGNITION_CAPTURE:
+            audioStateManager_.SetPreferredRecognitionCaptureDevice(desc);
+            break;
         default:
             AUDIO_ERR_LOG("invalid preferredType: %{public}d", preferredType);
             ret = ERR_INVALID_PARAM;

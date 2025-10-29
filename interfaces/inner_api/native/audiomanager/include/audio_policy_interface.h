@@ -167,6 +167,12 @@ public:
     virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) = 0;
 };
 
+class AudioManagerDeviceInfoUpdateCallback {
+public:
+    virtual ~AudioManagerDeviceInfoUpdateCallback() = default;
+    virtual void OnDeviceInfoUpdate(const DeviceChangeAction &deviceChangeAction) = 0;
+};
+
 class AudioQueryClientTypeCallback {
 public:
     virtual ~AudioQueryClientTypeCallback() = default;

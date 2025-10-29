@@ -315,6 +315,47 @@ int32_t AudioPolicyClientStubImpl::OnDeviceChange(const DeviceChangeAction &dca)
     return SUCCESS;
 }
 
+int32_t AudioPolicyClientStubImpl::AddDeviceInfoUpdateCallback(
+    const std::shared_ptr<AudioManagerDeviceInfoUpdateCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(deviceInfoUpdateMutex_);
+    deviceInfoUpdateCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveDeviceInfoUpdateCallback(
+    std::shared_ptr<AudioManagerDeviceInfoUpdateCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(deviceInfoUpdateMutex_);
+    auto iter = deviceInfoUpdateCallbackList_.begin();
+    while (iter != deviceInfoUpdateCallbackList_.end()) {
+        if (*iter == cb || cb == nullptr) {
+            AUDIO_INFO_LOG("remove device info update cb");
+            iter = deviceInfoUpdateCallbackList_.erase(iter);
+        } else {
+            iter++;
+        }
+    }
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetDeviceInfoUpdateCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(deviceInfoUpdateMutex_);
+    return deviceInfoUpdateCallbackList_.size();
+}
+
+int32_t AudioPolicyClientStubImpl::OnDeviceInfoUpdate(const DeviceChangeAction &dca)
+{
+    std::lock_guard<std::mutex> lockCbMap(deviceInfoUpdateMutex_);
+    for (auto it = deviceInfoUpdateCallbackList_.begin(); it != deviceInfoUpdateCallbackList_.end(); ++it) {
+        if (*it && dca.deviceDescriptors.size() > 0) {
+            (*it)->OnDeviceInfoUpdate(dca);
+        }
+    }
+    return SUCCESS;
+}
+
 int32_t AudioPolicyClientStubImpl::OnMicrophoneBlocked(const MicrophoneBlockedInfo &blockedInfo)
 {
     int32_t size = static_cast<int32_t>(blockedInfo.devices.size());
@@ -672,6 +713,7 @@ int32_t AudioPolicyClientStubImpl::OnAudioSessionDeactive(int32_t deactiveEvent)
     AudioSessionDeactiveEvent newDeactiveEvent;
     newDeactiveEvent.deactiveReason = static_cast<AudioSessionDeactiveReason>(deactiveEvent);
     for (auto it = audioSessionCallbackList_.begin(); it != audioSessionCallbackList_.end(); ++it) {
+        CHECK_AND_CONTINUE((*it) != nullptr);
         (*it)->OnAudioSessionDeactive(newDeactiveEvent);
     }
     return SUCCESS;

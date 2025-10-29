@@ -237,6 +237,18 @@ HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_010, TestSize.Leve
 /**
 * @tc.name  : Test AudioStateManager.
 * @tc.number: AudioStateManagerUnitTest_011
+* @tc.desc  : Test SetPreferredRecognitionCaptureDevice interface.
+*/
+HWTEST_F(AudioStateManagerUnitTest, SetPreferredRecognitionCaptureDevice_1, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    AudioStateManager::GetAudioStateManager().SetPreferredRecognitionCaptureDevice(desc);
+    EXPECT_NE(AudioStateManager::GetAudioStateManager().GetPreferredRecognitionCaptureDevice(), nullptr);
+}
+
+/**
+* @tc.name  : Test AudioStateManager.
+* @tc.number: AudioStateManagerUnitTest_011
 * @tc.desc  : Test ExcludeOutputDevices interface.
 */
 HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_011, TestSize.Level1)

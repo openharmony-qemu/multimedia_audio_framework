@@ -213,6 +213,35 @@ HWTEST_F(ChannelConverterTest, ChannelConverterProcessTest_002, TestSize.Level0)
     EXPECT_EQ(channelConverter.Process(TEST_BUFFER_LEN, in.data(), in.size() * sizeof(float), out.data(),
         out.size() * sizeof(float)), MIX_ERR_ALLOC_FAILED);
 }
+
+HWTEST_F(ChannelConverterTest, ChannelConverterNormalizationTest_001, TestSize.Level0)
+{
+    AudioChannelInfo inChannelInfo;
+    AudioChannelInfo outChannelInfo;
+    inChannelInfo.numChannels = CHANNEL_6;
+    inChannelInfo.channelLayout = CH_LAYOUT_5POINT1;
+    outChannelInfo.numChannels = CHANNEL_8;
+    outChannelInfo.channelLayout = CH_LAYOUT_5POINT1POINT2;
+    ChannelConverter channelConverter;
+    EXPECT_EQ(channelConverter.SetParam(inChannelInfo, outChannelInfo, SAMPLE_F32LE, MIX_FLE), MIX_ERR_SUCCESS);
+    EXPECT_EQ(channelConverter.downMixer_.normalizing_, true);
+
+    channelConverter.SetDownmixNormalization(false);
+    // setting is stored in channelConverter
+    EXPECT_EQ(channelConverter.downmixNormalizing_, false);
+    // for upmix, do not change downmix normalizaiton state
+    EXPECT_EQ(channelConverter.downMixer_.normalizing_, true);
+    // for downmix default normalization state is true and can be set to false
+    outChannelInfo.numChannels = STEREO;
+    outChannelInfo.channelLayout = CH_LAYOUT_STEREO;
+    EXPECT_EQ(channelConverter.SetParam(inChannelInfo, outChannelInfo, SAMPLE_F32LE, MIX_FLE), MIX_ERR_SUCCESS);
+    // set to downmix state, normalization setting passed to downmixer
+    EXPECT_EQ(channelConverter.downmixNormalizing_, false);
+    EXPECT_EQ(channelConverter.downMixer_.normalizing_, false);
+    channelConverter.SetDownmixNormalization(true);
+    EXPECT_EQ(channelConverter.downmixNormalizing_, true);
+    EXPECT_EQ(channelConverter.downMixer_.normalizing_, true);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
