@@ -1821,7 +1821,7 @@ int32_t AudioInterruptService::SetQueryBundleNameListCallback(const sptr<IRemote
     AUDIO_INFO_LOG("Set query bundle name list callback");
     queryBundleNameListCallback_ = iface_cast<IStandardAudioPolicyManagerListener>(object);
     if (queryBundleNameListCallback_ == nullptr) {
-        AUDIO_ERR_LOG("Client type callback is null");
+        AUDIO_ERR_LOG("query bundle name list callback is null");
         return ERR_CALLBACK_NOT_REGISTERED;
     }
     return SUCCESS;
