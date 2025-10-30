@@ -624,7 +624,7 @@ void RendererInClientInner::OnFirstFrameWriting()
         CHECK_AND_RETURN(firstFrameWritingCb_!= nullptr);
         cb = firstFrameWritingCb_;
     }
-    AUDIO_DEBUG_LOG("OnFirstFrameWriting: latency %{public}" PRIu64 "", latency);
+    AUDIO_INFO_LOG("OnFirstFrameWriting: latency %{public}" PRIu64 "", latency);
     cb->OnFirstFrameWriting(latency);
 }
 
