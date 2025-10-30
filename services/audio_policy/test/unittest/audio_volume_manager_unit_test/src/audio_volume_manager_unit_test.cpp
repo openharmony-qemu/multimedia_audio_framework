@@ -1516,9 +1516,19 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_072, TestSize.Level1)
     audioVolumeManager.CheckActiveMusicTime(reason);
     audioVolumeManager.safeVolumeExit_ = true;
     EXPECT_EQ(audioVolumeManager.startSafeTime_, 0);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_073
+* @tc.desc  : Test CheckActiveMusicTime interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_073, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
     audioVolumeManager.safeVolumeExit_ = false;
-    reason = "Offload";
+    std::string reason = "Offload";
     audioVolumeManager.startSafeTimeBt_ = 0;
     audioVolumeManager.safeStatusBt_ = SAFE_INACTIVE;
     audioVolumeManager.CheckActiveMusicTime(reason);
@@ -1527,6 +1537,19 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_072, TestSize.Level1)
     audioVolumeManager.safeStatusBt_ = SAFE_ACTIVE;
     audioVolumeManager.CheckActiveMusicTime(reason);
     EXPECT_EQ(audioVolumeManager.startSafeTimeBt_, 0);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_074
+* @tc.desc  : Test CheckActiveMusicTime interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_074, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    audioVolumeManager.safeVolumeExit_ = false;
+    std::string reason = "Offload";
     audioVolumeManager.startSafeTime_ = 0;
     audioVolumeManager.safeStatus_ = SAFE_INACTIVE;
     audioVolumeManager.CheckActiveMusicTime(reason);
@@ -1535,6 +1558,27 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_072, TestSize.Level1)
     audioVolumeManager.safeStatus_ = SAFE_ACTIVE;
     audioVolumeManager.CheckActiveMusicTime(reason);
     EXPECT_EQ(audioVolumeManager.startSafeTime_, 0);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_075
+* @tc.desc  : Test CheckActiveMusicTime interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_075, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    audioVolumeManager.safeVolumeExit_ = false;
+    std::string reason = "Offload";
+    audioVolumeManager.startSafeTimeSle_ = 0;
+    audioVolumeManager.safeStatusSle_ = SAFE_INACTIVE;
+    audioVolumeManager.CheckActiveMusicTime(reason);
+    EXPECT_EQ(audioVolumeManager.startSafeTimeSle_, 0);
+    audioVolumeManager.startSafeTimeSle_ = 0;
+    audioVolumeManager.safeStatusSle_ = SAFE_ACTIVE;
+    audioVolumeManager.CheckActiveMusicTime(reason);
+    EXPECT_EQ(audioVolumeManager.startSafeTimeSle_, 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS
