@@ -93,7 +93,7 @@ int32_t CoreServiceProviderWrapper::GetPaIndexByPortName(const std::string &port
 int32_t CoreServiceProviderWrapper::SetRendererTarget(uint32_t target, uint32_t lastTarget,
     uint32_t sessionId, int32_t &ret)
 {
-    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "Injector::coreServiceWorker_ is null");
     ret = coreServiceWorker_->SetRendererTarget(static_cast<RenderTarget>(target),
         static_cast<RenderTarget>(lastTarget), sessionId);
     return SUCCESS;
@@ -101,28 +101,28 @@ int32_t CoreServiceProviderWrapper::SetRendererTarget(uint32_t target, uint32_t 
 
 int32_t CoreServiceProviderWrapper::StartInjection(uint32_t streamId, int32_t &ret)
 {
-    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "Injector::coreServiceWorker_ is null");
     ret = coreServiceWorker_->StartInjection(streamId);
     return SUCCESS;
 }
 
 int32_t CoreServiceProviderWrapper::RemoveIdForInjector(uint32_t streamId)
 {
-    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "Injector::coreServiceWorker_ is null");
     coreServiceWorker_->RemoveIdForInjector(streamId);
     return SUCCESS;
 }
 
 int32_t CoreServiceProviderWrapper::ReleaseCaptureInjector(uint32_t streamId)
 {
-    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "Injector::coreServiceWorker_ is null");
     coreServiceWorker_->ReleaseCaptureInjector(streamId);
     return SUCCESS;
 }
 
 int32_t CoreServiceProviderWrapper::RebuildCaptureInjector(uint32_t streamId)
 {
-    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "Injector::coreServiceWorker_ is null");
     coreServiceWorker_->RebuildCaptureInjector(streamId);
     return SUCCESS;
 }

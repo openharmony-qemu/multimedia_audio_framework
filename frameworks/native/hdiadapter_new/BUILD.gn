@@ -60,6 +60,7 @@ ohos_shared_library("hdiadapter_new") {
     "sink/file_audio_render_sink.cpp",
     "sink/multichannel_audio_render_sink.cpp",
     "sink/offload_audio_render_sink.cpp",
+    "sink/virtual_injector_audio_render_sink.cpp",
     "source/audio_capture_source.cpp",
     "source/bluetooth_audio_capture_source.cpp",
     "source/fast_audio_capture_source.cpp",
