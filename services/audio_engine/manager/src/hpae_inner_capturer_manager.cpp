@@ -70,8 +70,9 @@ void HpaeInnerCapturerManager::AddSingleNodeToSinkInner(const std::shared_ptr<Hp
     if (!SafeGetMap(rendererSceneClusterMap_, nodeInfo.sceneType)) {
         rendererSceneClusterMap_[nodeInfo.sceneType] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
     }
-    rendererSceneClusterMap_[nodeInfo.sceneType]->CreateNodes(sinkInputNodeMap_[sessionId]);
 
+    rendererSceneClusterMap_[nodeInfo.sceneType]->CreateNodes(sinkInputNodeMap_[sessionId]);
+    
     if (!isConnect) {
         AUDIO_INFO_LOG("[FinishMove] not need connect session:%{public}d", sessionId);
         return;

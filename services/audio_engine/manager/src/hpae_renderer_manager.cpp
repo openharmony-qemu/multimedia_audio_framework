@@ -778,7 +778,6 @@ int32_t HpaeRendererManager::Flush(uint32_t sessionId)
         if (isNeedInitEffectBufferFlagMap_[sessionId] == true) {
             sceneClusterMap_[sceneType]->InitEffectBuffer(sessionId);
         }
-        sceneClusterMap_[sceneType]->FlushConverterNode();
     };
     SendRequest(request, __func__);
     return SUCCESS;

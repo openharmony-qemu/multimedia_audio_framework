@@ -414,14 +414,6 @@ uint64_t HpaeProcessCluster::GetLatency(uint32_t sessionId)
 
     return latency;
 }
-
-void HpaeProcessCluster::FlushConverterNode(uint32_t sessionId)
-{
-    CHECK_AND_RETURN_LOG(idConverterMap_[sessionId] != nullptr, "ConverterNode is nullptr");
-    idConverterMap_[sessionId]->Flush();
-    AUDIO_INFO_LOG("SessionId: %{public}u, ConverterNode Flush", sessionId);
-}
-
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

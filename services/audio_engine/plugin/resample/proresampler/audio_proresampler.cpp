@@ -274,15 +274,7 @@ int32_t ProResampler::UpdateChannels(uint32_t channels)
     state_ = SingleStagePolyphaseResamplerInit(channels_, inRate_, outRate_, quality_, &errRet);
     CHECK_AND_RETURN_RET_LOG(state_ && (errRet == RESAMPLER_ERR_SUCCESS), errRet,
         "error code %{public}s", ErrCodeToString(errRet).c_str());
-    if (inRate_ == SAMPLE_RATE_11025) { // for 11025, process input 40ms per time and output 20ms per time
-        buf11025_.reserve(expectedOutFrameLen_ * channels_ * BUFFER_EXPAND_SIZE_2 + ADD_SIZE);
-        AUDIO_INFO_LOG("input 11025hz, output resample rate %{public}d, buf11025_ size update to %{public}d",
-            outRate_, expectedOutFrameLen_ * channels_ * BUFFER_EXPAND_SIZE_2 + ADD_SIZE);
-    } else if (inRate_ % CUSTOM_SAMPLE_RATE_MULTIPLES != 0) {   // not multiples of 50
-        bufFor100ms_.reserve(expectedOutFrameLen_ * channels_ * BUFFER_EXPAND_SIZE_5 + ADD_SIZE);
-        AUDIO_INFO_LOG("input %{public}u, output resample rate %{public}d, bufFor100ms_ size update to %{public}d",
-            inRate_, outRate_, expectedOutFrameLen_ * channels_ * BUFFER_EXPAND_SIZE_5 + ADD_SIZE);
-    }
+
     return SingleStagePolyphaseResamplerSkipHalfTaps(state_);
 }
 
@@ -315,12 +307,6 @@ void ProResampler::Reset()
     CHECK_AND_RETURN_LOG(state_ != nullptr, "resampler is null");
     SingleStagePolyphaseResamplerResetMem(state_);
     SingleStagePolyphaseResamplerSkipHalfTaps(state_);
-    buf11025Index_ = 0;
-    bufFor100msIndex_ = 0;
-    buf11025_.clear();
-    bufFor100ms_.clear();
-    AUDIO_INFO_LOG("ProResampler reset, inRate: %{public}d, buf40ms: %{public}lu, buf100ms: %{public}lu",
-        inRate_, buf11025_.size(), bufFor100ms_.size());
 }
 
 uint32_t ProResampler::GetInRate() const
