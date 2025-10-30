@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. ALL rights reserved.
+ */
+
 import { MainTitleTextModifier, saveFileBuffer } from '../../utils/ExportFile'
 import { SymbolGlyphModifier } from '@kit.ArkUI';
 import { SongInfo } from '../../utils/importSongs/InterfaceInfo';
