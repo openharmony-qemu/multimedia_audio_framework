@@ -1422,9 +1422,11 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
         UpdateStreamDevicesForStart(streamDesc, caller + "FetchOutputDeviceAndRoute");
     }
 
+    // this will update volume device map
+    audioActiveDevice_.UpdateStreamDeviceMap("FetchOutputDeviceAndRoute");
+    // here will update volume， must after UpdateStreamDeviceMap
     UpdateActiveDeviceAndVolumeBeforeMoveSession(outputStreamDescs, reason);
 
-    audioActiveDevice_.UpdateStreamDeviceMap("FetchOutputDeviceAndRoute");
     int32_t ret = FetchRendererPipesAndExecute(outputStreamDescs, reason);
     UpdateModemRoute(modemDescs);
     if (IsNoRunningStream(outputStreamDescs)) {
