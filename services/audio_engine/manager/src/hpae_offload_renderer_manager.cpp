@@ -91,6 +91,7 @@ void HpaeOffloadRendererManager::RemoveNodeFromMap(uint32_t sessionId)
     }
     sinkInputNodeMap_.erase(sessionId);
     if (curNode_ && curNode_->GetSessionId() == sessionId) {
+        DestroyOffloadNodes();
         curNode_ = nullptr;
     }
 }
@@ -126,7 +127,6 @@ void HpaeOffloadRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeS
     uint32_t sessionId = nodeInfo.sessionId;
     HILOG_COMM_INFO("[FinishMove] session:%{public}u to sink:offload", sessionId);
     AddNodeToMap(node);
-    CreateOffloadNodes();
     if (!isConnect || node->GetState() != HPAE_SESSION_RUNNING) {
         AUDIO_INFO_LOG("[FinishMove] session:%{public}u not need connect session", sessionId);
         return;
@@ -164,7 +164,6 @@ int32_t HpaeOffloadRendererManager::CreateStream(const HpaeStreamInfo &streamInf
     }
     auto request = [this, streamInfo]() {
         auto node = CreateInputSession(streamInfo);
-        CreateOffloadNodes();
         node->SetState(HPAE_SESSION_PREPARED);
     };
     SendRequest(request, __func__);
@@ -174,7 +173,6 @@ int32_t HpaeOffloadRendererManager::CreateStream(const HpaeStreamInfo &streamInf
 void HpaeOffloadRendererManager::DeleteInputSession()
 {
     DisConnectInputSession();
-    DestroyOffloadNodes();
     if (curNode_->GetState() == HPAE_SESSION_RUNNING) {
         sinkOutputNode_->StopStream();
     }
