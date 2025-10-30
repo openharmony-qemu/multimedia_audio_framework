@@ -88,7 +88,7 @@ void TaiheRendererPeriodPositionCallback::OnPeriodReached(const int64_t &frameNu
 void TaiheRendererPeriodPositionCallback::OnJsRendererPeriodPositionCallback(
     std::unique_ptr<RendererPeriodPositionJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("OnJsRendererPeriodPositionCallback: jsCb.get() is null");
         return;
     }
@@ -111,7 +111,9 @@ void TaiheRendererPeriodPositionCallback::SafeJsCallbackPeriodPositionWork(Rende
     std::shared_ptr<RendererPeriodPositionJsCallback> safeContext(
         static_cast<RendererPeriodPositionJsCallback*>(event),
         [](RendererPeriodPositionJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
     std::string request = event->callbackName;
     do {

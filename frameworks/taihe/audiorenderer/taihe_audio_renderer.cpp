@@ -41,6 +41,8 @@ constexpr double MIN_VOLUME_IN_DOUBLE = 0.0;
 constexpr double MAX_VOLUME_IN_DOUBLE = 1.0;
 constexpr uint32_t DEFAULT_ARRAY_SIZE = 0;
 constexpr uint64_t SEC_TO_NANOSECOND = 1000000000;
+static constexpr double MIN_LOUDNESS_GAIN_IN_DOUBLE = -90.0;
+static constexpr double MAX_LOUDNESS_GAIN_IN_DOUBLE = 24.0;
 
 template <typename T>
 static void UnregisterAudioRendererSingletonCallbackTemplate(std::shared_ptr<uintptr_t> &callback,
@@ -578,6 +580,53 @@ void AudioRendererImpl::SetDefaultOutputDeviceSync(DeviceType deviceType)
     }
 }
 
+void AudioRendererImpl::SetLoudnessGainSync(double loudnessGain)
+{
+    if (audioRenderer_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRenderer_ is nullptr");
+        return;
+    }
+
+    OHOS::AudioStandard::AudioRendererInfo rendererInfo = {};
+    audioRenderer_->GetRendererInfo(rendererInfo);
+    OHOS::AudioStandard::StreamUsage streamUsage = rendererInfo.streamUsage;
+    if (streamUsage != OHOS::AudioStandard::STREAM_USAGE_MUSIC &&
+        streamUsage != OHOS::AudioStandard::STREAM_USAGE_MOVIE &&
+        streamUsage != OHOS::AudioStandard::STREAM_USAGE_AUDIOBOOK) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_UNSUPPORTED);
+        return;
+    }
+    if (loudnessGain < MIN_LOUDNESS_GAIN_IN_DOUBLE ||
+        loudnessGain > MAX_LOUDNESS_GAIN_IN_DOUBLE) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM);
+        return;
+    }
+    int32_t ret = audioRenderer_->SetLoudnessGain(static_cast<float>(loudnessGain));
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SetLoudnessGainSync failure!");
+        return;
+    }
+}
+
+double AudioRendererImpl::GetLoudnessGain()
+{
+    if (audioRenderer_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRenderer_ is nullptr");
+        return 0;
+    }
+    OHOS::AudioStandard::AudioRendererInfo rendererInfo = {};
+    audioRenderer_->GetRendererInfo(rendererInfo);
+    OHOS::AudioStandard::StreamUsage streamUsage = rendererInfo.streamUsage;
+    if (!(streamUsage == OHOS::AudioStandard::STREAM_USAGE_MUSIC ||
+        streamUsage == OHOS::AudioStandard::STREAM_USAGE_MOVIE ||
+        streamUsage == OHOS::AudioStandard::STREAM_USAGE_AUDIOBOOK)) {
+        double result = static_cast<double>(0.0f);
+        return result;
+    }
+    double loudnessGain = audioRenderer_->GetLoudnessGain();
+    return loudnessGain;
+}
+
 void AudioRendererImpl::RegisterRendererCallback(std::shared_ptr<uintptr_t> &callback,
     const std::string &cbName, AudioRendererImpl *taiheRenderer)
 {
@@ -944,7 +993,7 @@ void AudioRendererImpl::OnWriteData(callback_view<AudioDataCallbackResult(array_
 
 void AudioRendererImpl::OffAudioInterrupt(optional_view<callback<void(InterruptEvent const&)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
@@ -953,7 +1002,7 @@ void AudioRendererImpl::OffAudioInterrupt(optional_view<callback<void(InterruptE
 
 void AudioRendererImpl::OffStateChange(optional_view<callback<void(AudioState)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
@@ -962,7 +1011,7 @@ void AudioRendererImpl::OffStateChange(optional_view<callback<void(AudioState)>>
 
 void AudioRendererImpl::OffOutputDeviceChange(optional_view<callback<void(array_view<AudioDeviceDescriptor>)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
@@ -972,7 +1021,7 @@ void AudioRendererImpl::OffOutputDeviceChange(optional_view<callback<void(array_
 void AudioRendererImpl::OffOutputDeviceChangeWithInfo(
     optional_view<callback<void(AudioStreamDeviceChangeInfo const&)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
@@ -981,7 +1030,7 @@ void AudioRendererImpl::OffOutputDeviceChangeWithInfo(
 
 void AudioRendererImpl::OffPeriodReach(optional_view<callback<void(int64_t)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
@@ -990,7 +1039,7 @@ void AudioRendererImpl::OffPeriodReach(optional_view<callback<void(int64_t)>> ca
 
 void AudioRendererImpl::OffMarkReach(optional_view<callback<void(int64_t)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
@@ -999,7 +1048,7 @@ void AudioRendererImpl::OffMarkReach(optional_view<callback<void(int64_t)>> call
 
 void AudioRendererImpl::OffWriteData(optional_view<callback<AudioDataCallbackResult(array_view<uint8_t>)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }

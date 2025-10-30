@@ -47,6 +47,6 @@ private:
     std::mutex mutex_;
     std::shared_ptr<AutoRef> audioSessionJsCallback_ = nullptr;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
-}; // namespace ANI::Audio
-}
+};
+} // namespace ANI::Audio
 #endif // TAIHE_AUDIO_INTERRUPT_MANAGER_H
