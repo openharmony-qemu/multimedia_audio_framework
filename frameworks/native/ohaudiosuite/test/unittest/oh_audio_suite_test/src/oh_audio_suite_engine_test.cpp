@@ -32,7 +32,7 @@ void OHAudioSuiteEngineTest::TearDown(void) { }
 
 static const uint32_t MAX_PIPELINE_NUM = 10;
 
-static int32_t WriteDataCallback(OH_AudioNode *audioNode, void *userData,
+static int32_t RequestDataCallback(OH_AudioNode *audioNode, void *userData,
     void *audioData, int32_t audioDataSize, bool *finished)
 {
     if (finished != nullptr) {
@@ -54,13 +54,14 @@ static void CreateNode(OH_AudioSuitePipeline *pipeline, OH_AudioNode_Type type, 
         OH_AudioFormat audioFormat;
         audioFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_48000;
         audioFormat.channelCount = AudioChannel::STEREO;
+        audioFormat.channelLayout = OH_AudioChannelLayout::CH_LAYOUT_STEREO;
         audioFormat.sampleFormat = AUDIO_SAMPLE_U8;
         ret = OH_AudioSuiteNodeBuilder_SetFormat(builder, audioFormat);
         EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
     }
 
     if (type == INPUT_NODE_TYPE_DEFAULT) {
-        ret = OH_AudioSuiteNodeBuilder_SetRequestDataCallback(builder, WriteDataCallback, nullptr);
+        ret = OH_AudioSuiteNodeBuilder_SetRequestDataCallback(builder, RequestDataCallback, nullptr);
         EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
     }
 
@@ -76,7 +77,7 @@ static void CreateNode(OH_AudioSuitePipeline *pipeline, OH_AudioNode_Type type, 
  * @tc.number: OH_AudioSuiteEngine_Create_001
  * @tc.desc  : Test nullptr.
  */
-HWTEST(OHAudioSuiteUnitTest, OH_AudioSuiteEngine_Create_001, TestSize.Level0)
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_Create_001, TestSize.Level0)
 {
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(nullptr);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
@@ -598,6 +599,12 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_StopPipeline_002, TestSize.Le
     ret = OH_AudioSuiteEngine_StartPipeline(pipeline);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
+    uint32_t audioDdata[2048] = {0};
+    int32_t writeSize = 0;
+    bool finish = false;
+    ret = OH_AudioSuiteEngine_RenderFrame(pipeline, (void *)audioDdata, sizeof(audioDdata), &writeSize, &finish);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
     ret = OH_AudioSuiteEngine_StopPipeline(pipeline);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
@@ -636,6 +643,12 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_StopPipeline_003, TestSize.Le
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     ret = OH_AudioSuiteEngine_StartPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    uint32_t audioDdata[2048] = {0};
+    int32_t writeSize = 0;
+    bool finish = false;
+    ret = OH_AudioSuiteEngine_RenderFrame(pipeline, (void *)audioDdata, sizeof(audioDdata), &writeSize, &finish);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     ret = OH_AudioSuiteEngine_StopPipeline(pipeline);
@@ -737,6 +750,12 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetPipelineState_003, TestSiz
     ret = OH_AudioSuiteEngine_GetPipelineState(pipeline, &pipelineState);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
     EXPECT_EQ(pipelineState, AUDIOSUITE_PIPELINE_RUNNING);
+
+    uint32_t audioDdata[2048] = {0};
+    int32_t writeSize = 0;
+    bool finish = false;
+    ret = OH_AudioSuiteEngine_RenderFrame(pipeline, (void *)audioDdata, sizeof(audioDdata), &writeSize, &finish);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     ret = OH_AudioSuiteEngine_StopPipeline(pipeline);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);

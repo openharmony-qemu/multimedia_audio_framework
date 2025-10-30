@@ -26,7 +26,7 @@ using namespace AudioSuite;
 using namespace testing::ext;
 using namespace testing;
 
-class SuiteInputNodeWriteDataCallBack;
+class InputNodeRequestDataCallBack;
 namespace {
 
 static constexpr uint32_t TEST_CACHE_SIZE1 = 882;
@@ -45,12 +45,12 @@ public:
     }
 };
 
-class SuiteInputNodeWriteDataCallBackTest : public AudioSuite::SuiteInputNodeWriteDataCallBack {
-    int32_t OnWriteDataCallBack(void *audioData, int32_t audioDataSize, bool* finished) override
+class SuiteInputNodeRequestDataCallBackTest : public AudioSuite::InputNodeRequestDataCallBack {
+    int32_t OnRequestDataCallBack(void *audioData, int32_t audioDataSize, bool* finished) override
     {
         std::vector<uint8_t> data;
         data.assign(TEST_CACHE_SIZE1, 0);
-        if (memcpy_s(audioData, TEST_CACHE_SIZE1, data.data(), TEST_CACHE_SIZE1) != 0) {
+        if (memcpy_s(audioData, audioDataSize, data.data(), TEST_CACHE_SIZE1) != 0) {
             return -1;
         }
         *finished = true;
@@ -58,8 +58,8 @@ class SuiteInputNodeWriteDataCallBackTest : public AudioSuite::SuiteInputNodeWri
     }
 };
 
-class SuiteInputNodeWriteDataCallBackTestErr : public AudioSuite::SuiteInputNodeWriteDataCallBack {
-    int32_t OnWriteDataCallBack(void *audioData, int32_t audioDataSize, bool* finished) override
+class SuiteInputNodeRequestDataCallBackTestErr : public AudioSuite::InputNodeRequestDataCallBack {
+    int32_t OnRequestDataCallBack(void *audioData, int32_t audioDataSize, bool* finished) override
     {
         return 0;
     }
@@ -149,8 +149,8 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeSetRequestDataCallback_001,
     auto ret = inputNode->SetRequestDataCallback(nullptr);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 
-    std::shared_ptr<SuiteInputNodeWriteDataCallBackTest> testCallback =
-        std::make_shared<SuiteInputNodeWriteDataCallBackTest>();
+    std::shared_ptr<SuiteInputNodeRequestDataCallBackTest> testCallback =
+        std::make_shared<SuiteInputNodeRequestDataCallBackTest>();
     ret = inputNode->SetRequestDataCallback(testCallback);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -166,8 +166,8 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeGetDataFromUser_001, TestSi
     ret = inputNode->GetDataFromUser();
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 
-    std::shared_ptr<SuiteInputNodeWriteDataCallBackTest> testCallback =
-        std::make_shared<SuiteInputNodeWriteDataCallBackTest>();
+    std::shared_ptr<SuiteInputNodeRequestDataCallBackTest> testCallback =
+        std::make_shared<SuiteInputNodeRequestDataCallBackTest>();
     inputNode->SetRequestDataCallback(testCallback);
 
     inputNode->SetAudioNodeDataFinishedFlag(true);
@@ -186,8 +186,8 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeGetDataFromUser_002, TestSi
     std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(audioFormat);
     EXPECT_NE(inputNode, nullptr);
     
-    std::shared_ptr<SuiteInputNodeWriteDataCallBackTestErr> testCallback =
-        std::make_shared<SuiteInputNodeWriteDataCallBackTestErr>();
+    std::shared_ptr<SuiteInputNodeRequestDataCallBackTestErr> testCallback =
+        std::make_shared<SuiteInputNodeRequestDataCallBackTestErr>();
     auto ret = inputNode->SetRequestDataCallback(testCallback);
     EXPECT_EQ(ret, SUCCESS);
 
@@ -201,8 +201,8 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeGetDataFromUser_003, TestSi
     std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(audioFormat);
     EXPECT_NE(inputNode, nullptr);
     
-    std::shared_ptr<SuiteInputNodeWriteDataCallBackTest> testCallback =
-        std::make_shared<SuiteInputNodeWriteDataCallBackTest>();
+    std::shared_ptr<SuiteInputNodeRequestDataCallBackTest> testCallback =
+        std::make_shared<SuiteInputNodeRequestDataCallBackTest>();
     auto ret = inputNode->SetRequestDataCallback(testCallback);
     EXPECT_EQ(ret, SUCCESS);
 
@@ -218,8 +218,8 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeGetDataFromUser_004, TestSi
     EXPECT_NE(inputNode, nullptr);
     inputNode->Init();
     
-    std::shared_ptr<SuiteInputNodeWriteDataCallBackTest> testCallback =
-        std::make_shared<SuiteInputNodeWriteDataCallBackTest>();
+    std::shared_ptr<SuiteInputNodeRequestDataCallBackTest> testCallback =
+        std::make_shared<SuiteInputNodeRequestDataCallBackTest>();
     auto ret = inputNode->SetRequestDataCallback(testCallback);
     EXPECT_EQ(ret, SUCCESS);
 
@@ -276,8 +276,8 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeDoProcess_001, TestSize.Lev
     auto ret = inputNode->DoProcess();
     EXPECT_EQ(ret, ERR_WRITE_FAILED);
 
-    std::shared_ptr<SuiteInputNodeWriteDataCallBackTest> testCallback =
-        std::make_shared<SuiteInputNodeWriteDataCallBackTest>();
+    std::shared_ptr<SuiteInputNodeRequestDataCallBackTest> testCallback =
+        std::make_shared<SuiteInputNodeRequestDataCallBackTest>();
     inputNode->SetRequestDataCallback(testCallback);
     ret = inputNode->DoProcess();
     EXPECT_EQ(ret, SUCCESS);

@@ -180,6 +180,18 @@ int32_t AudioSuitePipeline::Stop()
             return;
         }
 
+        if (outputNode_ == nullptr) {
+            AUDIO_INFO_LOG("Current pipeline not output node, id is %{public}d", id_);
+            TriggerCallback(STOP_PIPELINE, ERR_ILLEGAL_STATE);
+            return;
+        }
+
+        if (!outputNode_->GetAudioNodeDataFinishedFlag()) {
+            AUDIO_INFO_LOG("Current pipeline being rendered, id is %{public}d", id_);
+            TriggerCallback(STOP_PIPELINE, ERR_ILLEGAL_STATE);
+            return;
+        }
+
         for (const auto& [nodeId, node] : nodeMap_) {
             if (node != nullptr) {
                 node->Flush();
@@ -473,6 +485,12 @@ int32_t AudioSuitePipeline::SetAudioFormat(uint32_t nodeId, AudioFormat audioFor
             return;
         }
 
+        if (pipelineState_ != PIPELINE_STOPPED) {
+            AUDIO_ERR_LOG("SetAudioFormat failed, pipeline is not stop.");
+            TriggerCallback(SET_AUDIO_FORMAT, ERR_ILLEGAL_STATE);
+            return;
+        }
+
         node->SetAudioNodeFormat(audioFormat);
         TriggerCallback(SET_AUDIO_FORMAT, SUCCESS);
     };
@@ -483,9 +501,9 @@ int32_t AudioSuitePipeline::SetAudioFormat(uint32_t nodeId, AudioFormat audioFor
 
 
 int32_t AudioSuitePipeline::SetRequestDataCallback(uint32_t nodeId,
-    std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback)
+    std::shared_ptr<InputNodeRequestDataCallBack> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "pipeline not init, can not SetWriteDataCallback.");
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "pipeline not init, can not SetRequestDataCallback.");
 
     auto request = [this, nodeId, callback]() {
         if (pipelineState_ != PIPELINE_STOPPED) {
@@ -607,7 +625,9 @@ int32_t AudioSuitePipeline::ConnectNodesForRun(uint32_t srcNodeId, uint32_t dest
     // srcNodeId and destNodeId are not in pipline running nodes
     if (!IsConnected(outputNode_->GetAudioNodeId(), destNodeId)) {
         RemovceBackwardConnet(srcNodeId, srcNode);
-        RemovceForwardConnet(destNodeId, destNode);
+        if (destNode->GetNodeType() != NODE_TYPE_AUDIO_MIXER) {
+            RemovceForwardConnet(destNodeId, destNode);
+        }
         return destNode->Connect(srcNode);
     }
 
@@ -744,7 +764,7 @@ void AudioSuitePipeline::RemovceBackwardConnet(uint32_t nodeId, std::shared_ptr<
     }
 
     auto destNodeId = connections_[nodeId];
-    if (nodeMap_.find(destNodeId) ==  nodeMap_.end()) {
+    if (nodeMap_.find(destNodeId) == nodeMap_.end()) {
         return;
     }
 
@@ -856,6 +876,7 @@ int32_t AudioSuitePipeline::SetOptions(uint32_t nodeId, std::string name, std::s
         }
 
         auto node = nodeMap_[nodeId];
+        CHECK_AND_RETURN_LOG(node != nullptr, "SetOptions failed, node is nullptr.");
         int32_t ret = node->SetOptions(name, value);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("SetOptions, ret = %{public}d.", ret);

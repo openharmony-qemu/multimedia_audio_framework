@@ -461,9 +461,9 @@ int32_t AudioSuiteEngine::SetAudioFormat(uint32_t nodeId, AudioFormat audioForma
 }
 
 int32_t AudioSuiteEngine::SetRequestDataCallback(uint32_t nodeId,
-    std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback)
+    std::shared_ptr<InputNodeRequestDataCallBack> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not SetWriteDataCallback.");
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not SetRequestDataCallback.");
 
     auto request = [this, nodeId, callback]() {
         AUDIO_INFO_LOG("SetRequestDataCallback enter");
