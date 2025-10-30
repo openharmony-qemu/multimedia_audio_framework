@@ -73,7 +73,7 @@ namespace {
         auto bkgPort = impl->GetOutputPort();
         ASSERT_NE(bkgPort, nullptr);
         auto port = impl->GetOutputPort();
-        ASSERT_EQ(port, nullptr);
+        ASSERT_NE(port, nullptr);
     }
 
     HWTEST_F(AudioSuiteAissNodeTest, FlushTest, TestSize.Level0)
