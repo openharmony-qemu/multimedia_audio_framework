@@ -238,6 +238,7 @@ int32_t RemoteDeviceManager::HandleEvent(const std::string &adapterName, const A
 void RemoteDeviceManager::RegistRenderSinkCallback(const std::string &adapterName, uint32_t hdiRenderId,
     IDeviceManagerCallback *callback)
 {
+    std::lock_guard<std::mutex> mgrLock(managerMtx_);
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName, true);
     CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr",
         GetEncryptStr(adapterName).c_str());
@@ -250,6 +251,7 @@ void RemoteDeviceManager::RegistRenderSinkCallback(const std::string &adapterNam
 void RemoteDeviceManager::RegistCaptureSourceCallback(const std::string &adapterName, uint32_t hdiCaptureId,
     IDeviceManagerCallback *callback)
 {
+    std::lock_guard<std::mutex> mgrLock(managerMtx_);
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName, true);
     CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr",
         GetEncryptStr(adapterName).c_str());
@@ -329,8 +331,9 @@ void RemoteDeviceManager::DestroyRender(const std::string &adapterName, uint32_t
     }
     wrapper->adapter_->DestroyRender(hdiRenderId);
 
-    std::lock_guard<std::mutex> lock(wrapper->renderMtx_);
+    std::unique_lock<std::mutex> lock(wrapper->renderMtx_);
     wrapper->hdiRenderIds_.erase(hdiRenderId);
+    lock.unlock();
     UnloadAdapter(adapterName);
 }
 
@@ -382,8 +385,9 @@ void RemoteDeviceManager::DestroyCapture(const std::string &adapterName, uint32_
     }
     wrapper->adapter_->DestroyCapture(hdiCaptureId);
 
-    std::lock_guard<std::mutex> lock(wrapper->captureMtx_);
+    std::unique_lock<std::mutex> lock(wrapper->captureMtx_);
     wrapper->hdiCaptureIds_.erase(hdiCaptureId);
+    lock.unlock();
     UnloadAdapter(adapterName);
 }
 
