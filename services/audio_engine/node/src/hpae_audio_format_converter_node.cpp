@@ -372,16 +372,6 @@ uint64_t HpaeAudioFormatConverterNode::GetLatency(uint32_t sessionId)
 {
     return 0;
 }
-
-void HpaeAudioFormatConverterNode::Flush()
-{
-    AUDIO_INFO_LOG("node id %{public}d, sessionid %{public}d, ConverterNode Flush", GetNodeId(), GetSessionId());
-    uint32_t inRate = resampler_->GetInRate();
-    // for 40ms and 100ms situations flush data in resampler
-    if(inRate == SAMPLE_RATE_11025 || inRate % CUSTOM_SAMPLE_RATE_MULTIPLES != 0) {
-        resampler_->Reset();
-    }
-}
 } // Hpae
 } // AudioStandard
 } // OHOS

@@ -56,7 +56,6 @@ public:
     uint64_t GetLatency(uint32_t sessionId);
     int32_t CreateNodes(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode);
     int32_t DestroyNodes(uint32_t sessionId);
-    void FlushConverterNode(uint32_t sessionId);
     int32_t CheckNodes(uint32_t sessionId);
 private:
     void ConnectMixerNode();

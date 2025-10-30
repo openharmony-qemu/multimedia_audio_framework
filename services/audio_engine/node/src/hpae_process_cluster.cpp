@@ -240,12 +240,15 @@ int32_t HpaeProcessCluster::CreateNodes(const std::shared_ptr<OutputNode<HpaePcm
     HpaeNodeInfo &preNodeInfo = preNode->GetNodeInfo();
     uint32_t sessionId = preNodeInfo.sessionId;
     CreateConverterNode(sessionId, preNodeInfo);
-    CreateLoudnessGainNode(sessionId, preNodeInfo);
-    CreateGainNode(sessionId, preNodeInfo);
     CHECK_AND_RETURN_RET_LOG(idConverterMap_[sessionId] != nullptr, ERROR, "Fail create converter node");
+    CreateLoudnessGainNode(sessionId, preNodeInfo);
     CHECK_AND_RETURN_RET_LOG(idLoudnessGainNodeMap_[sessionId] != nullptr, ERROR, "Fail create loudnessGain node");
+    CreateGainNode(sessionId, preNodeInfo);
     CHECK_AND_RETURN_RET_LOG(idGainMap_ [sessionId] != nullptr, ERROR, "Fail create gain node");
-    AUDIO_INFO_LOG("SessionId %{public}u, Success create all nodes", sessionId);
+    AUDIO_INFO_LOG("SessionId %{public}u, Success create all nodes:"
+        "gainNode %{public}u loudnessGainNode %{public}u converterNode %{public}u",
+        sessionId, idGainMap_[sessionId]->GetNodeId(), idLoudnessGainNodeMap_[sessionId]->GetNodeId(),
+        idConverterMap_[sessionId]->GetNodeId());
     return SUCCESS;
 }
  
@@ -255,23 +258,17 @@ int32_t HpaeProcessCluster::CheckNodes(uint32_t sessionId)
         SafeGetMap(idGainMap_, sessionId)) {
         return SUCCESS;
     }
-    AUDIO_INFO_LOG("SessionId %{public}u, Nodes created in wrong processcluster", sessionId);
+    AUDIO_INFO_LOG("SessionId %{public}u, No nodes in this processcluster, cant connect or destroy", sessionId);
     return ERROR;
 }
-
+ 
 int32_t HpaeProcessCluster::DestroyNodes(uint32_t sessionId)
 {
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(idConverterMap_, sessionId) && SafeGetMap(idLoudnessGainNodeMap_, sessionId) &&
-        SafeGetMap(idGainMap_, sessionId), ERROR, "SessionId %{public}u, No nodes can be destroyed", sessionId)
+        SafeGetMap(idGainMap_, sessionId), ERROR, "SessionId %{public}u, No nodes can be destroyed", sessionId);
     idConverterMap_.erase(sessionId);
     idLoudnessGainNodeMap_.erase(sessionId);
     idGainMap_.erase(sessionId);
-    CHECK_AND_RETURN_RET_LOG(idConverterMap_.find(sessionId) == idConverterMap_.end(), ERROR,
-        "Fail destroy converter node");
-    CHECK_AND_RETURN_RET_LOG(idLoudnessGainNodeMap_.find(sessionId) == idLoudnessGainNodeMap_.end(), ERROR,
-        "Fail destroy loudnessGain node");
-    CHECK_AND_RETURN_RET_LOG(idGainMap_.find(sessionId) == idGainMap_.end(), ERROR,
-        "Fail destroy gain node");
     AUDIO_INFO_LOG("SessionId %{public}u, Success destroy all nodes", sessionId);
     return SUCCESS;
 }
