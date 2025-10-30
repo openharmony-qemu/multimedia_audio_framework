@@ -809,10 +809,7 @@ int32_t RendererInServer::WriteData(int8_t *inputData, size_t requestDataLen)
 
     RingBufferWrapper ringBufferDesc; // will be changed in GetReadbuffer
     int32_t ret = audioServerBuffer_->GetAllReadableBufferFromPosFrame(currentReadFrame, ringBufferDesc);
-    if (ret != SUCCESS) {
-        Trace trace3("RendererInServer::WriteData GetReadbuffer failed");
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "WriteData GetReadbuffer failed");
     CHECK_AND_RETURN_RET_LOG(ringBufferDesc.dataLength >= requestDataLen, ERR_INVALID_PARAM, "data not enouth");
 
     ringBufferDesc.dataLength = requestDataLen;
