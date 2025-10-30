@@ -916,6 +916,7 @@ void AudioVolumeManager::OnCheckActiveMusicTime(const std::string &reason)
     if (std::string("Started") != reason) {
         startSafeTime_ = 0;
         startSafeTimeBt_ = 0;
+        startSafeTimeSle_ = 0;
     }
 }
 
@@ -948,8 +949,8 @@ int32_t AudioVolumeManager::CheckActiveMusicTime(const std::string &reason)
             isUpSafeVolume && IsWiredHeadSet(curOutputDeviceType)) {
             SetRestoreVolumeLevel(DEVICE_TYPE_WIRED_HEADSET, curDeviceVolume);
             CheckWiredActiveMusicTime(safeVolume);
-        } else if (activeMusic && (safeStatusSle_ == SAFE_INACTIVE) && isUpSafeVolume &&
-            IsNearLink(curOutputDeviceType)) {
+        } else if ((activeMusic || std::string("Offload") == reason) && (safeStatusSle_ == SAFE_INACTIVE) &&
+            isUpSafeVolume && IsNearLink(curOutputDeviceType)) {
             SetRestoreVolumeLevel(DEVICE_TYPE_NEARLINK, curDeviceVolume);
             CheckNearlinkActiveMusicTime(safeVolume);
         } else {
@@ -1059,12 +1060,12 @@ void AudioVolumeManager::CheckWiredActiveMusicTime(int32_t safeVolume)
     } else if (CheckMixActiveMusicTime(safeVolume)) {
         PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
         restoreNIsShowing_ = true;
-    } else if (currentTime - startSafeTime_ >= ONE_MINUTE) {
+    } else {
         activeSafeTime_ = audioPolicyManager_.GetCurentDeviceSafeTime(DEVICE_TYPE_WIRED_HEADSET);
         activeSafeTime_ += currentTime - startSafeTime_;
         audioPolicyManager_.SetDeviceSafeTime(DEVICE_TYPE_WIRED_HEADSET, activeSafeTime_);
         startSafeTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-        AUDIO_INFO_LOG("wired safe volume 1 min timeout, cumulative time: %{public}" PRId64, activeSafeTime_);
+        AUDIO_INFO_LOG("wired safe volume timeout, cumulative time: %{public}" PRId64, activeSafeTime_);
     }
     startSafeTimeBt_ = 0;
     startSafeTimeSle_ = 0;
