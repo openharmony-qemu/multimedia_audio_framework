@@ -903,5 +903,50 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_036, TestSize.Level1)
     EXPECT_EQ(unit->OnQueryUnderrun(), true); // requestDataLen == 0, return true
     EXPECT_EQ(unit->OnQueryUnderrun(), false); // requestDataLen != 0, return false
 }
+
+/**
+ * @tc.name  : Test OnStreamData with noWaitDataFlag.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_037
+ * @tc.desc  : Test OnStreamData with noWaitDataFlag.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_037, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 1); // callback mode
+ 
+    std::vector<int8_t> buffer(2048);
+    AudioCallBackStreamInfo info = {
+        .needData = true,
+        .requestDataLen = 1024,
+        .inputData = buffer.data(),
+    };
+    auto mockWriteCallback = std::make_shared<MockWriteCallback>();
+    unit->writeCallback_ = mockWriteCallback;
+    unit->noWaitDataFlag_ = false; // when start
+    EXPECT_CALL(*mockWriteCallback, GetAvailableSize(::testing::_))
+        .WillOnce(DoAll(
+            SetArgReferee<0>(1023), // not enough dataLen, noWaitDataFlag_ false, do not write
+            Return(0)
+        ))
+        .WillOnce(DoAll(
+            SetArgReferee<0>(1024), // enough dataLen, noWaitDataFlag_ false, write
+            Return(0)
+        ))
+        .WillOnce(DoAll(
+            SetArgReferee<0>(1023), // not enough dataLen, noWaitDataFlag_ true, write
+            Return(0)
+    ));
+    EXPECT_CALL(*mockWriteCallback, OnWriteData(::testing::_, ::testing::_))
+        .WillOnce(Return(-1))
+        .WillOnce(Return(0))
+        .WillOnce(Return(0));
+    EXPECT_NE(unit->OnStreamData(info), SUCCESS); // onwritedata error
+    EXPECT_FALSE(unit->noWaitDataFlag_);
+    EXPECT_EQ(unit->OnStreamData(info), SUCCESS); // onwritedata success
+    EXPECT_TRUE(unit->noWaitDataFlag_);
+    EXPECT_EQ(unit->OnStreamData(info), SUCCESS); // onwritedata success even if not enough data
+    EXPECT_TRUE(unit->noWaitDataFlag_);
+}
 }
 }

@@ -79,6 +79,7 @@ void HpaeOffloadRendererManager::AddNodeToMap(std::shared_ptr<HpaeSinkInputNode>
     renderNoneEffectNode_->AudioOffloadRendererCreate(node->GetNodeInfo(), sinkInfo_);
     if (curNode_ == nullptr) {
         curNode_ = node;
+        CreateOffloadNodes();
     }
 }
 
@@ -308,7 +309,6 @@ int32_t HpaeOffloadRendererManager::Flush(uint32_t sessionId)
             // flush sinkoutput cache
             sinkOutputNode_->FlushStream();
         }
-        converterForLoudness_->Flush();
     };
     SendRequest(request, __func__);
     return SUCCESS;

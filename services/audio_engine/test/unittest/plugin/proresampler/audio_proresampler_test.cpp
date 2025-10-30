@@ -47,6 +47,9 @@ constexpr uint32_t SAMPLE_RATE_48010 = 48010;
 constexpr uint32_t INVALID_SAMPLE_RATE = 2;
 constexpr uint32_t INVALID_CHANNELS = 100;
 constexpr uint32_t INVALID_CHANNELS2 = 0;
+constexpr uint32_t BUFFER_EXPAND_SIZE_2 = 2;
+constexpr uint32_t BUFFER_EXPAND_SIZE_5 = 5;
+constexpr uint32_t ADD_SIZE = 100;
 
 class AudioProResamplerTest : public testing::Test {
 public:
@@ -197,6 +200,40 @@ HWTEST_F(AudioProResamplerTest, UpdateChannelTest_003, TestSize.Level0)
     EXPECT_EQ(resampler1.channels_, INVALID_CHANNELS2);
     EXPECT_EQ(resampler1.state_, nullptr);
 }
+
+/*
+ * @tc.name  : Test UpdateChannels API.
+ * @tc.type  : FUNC
+ * @tc.number: UpdateChannelsTest_004.
+ * @tc.desc  : Test UpdateChannels, when customSampleRate is valid buffsize will update.
+ */
+HWTEST_F(AudioProResamplerTest, UpdateChannelTest_004, TestSize.Level0)
+{
+    ProResampler resampler(SAMPLE_RATE_48010, SAMPLE_RATE_96000, STEREO, QUALITY_ONE);
+    EXPECT_EQ(resampler.channels_, STEREO);
+    EXPECT_NE(resampler.state_, nullptr);
+    EXPECT_EQ(resampler.bufFor100ms_.capacity(),
+        resampler.expectedOutFrameLen_ * STEREO * BUFFER_EXPAND_SIZE_5 + ADD_SIZE);
+
+    resampler.UpdateChannels(CHANNEL_6);
+    EXPECT_EQ(resampler.channels_, CHANNEL_6);
+    EXPECT_NE(resampler.state_, nullptr);
+    EXPECT_EQ(resampler.bufFor100ms_.capacity(),
+        resampler.expectedOutFrameLen_ * CHANNEL_6 * BUFFER_EXPAND_SIZE_5 + ADD_SIZE);
+
+    ProResampler resampler1(SAMPLE_RATE_11025, SAMPLE_RATE_96000, STEREO, QUALITY_ONE);
+    EXPECT_EQ(resampler1.channels_, STEREO);
+    EXPECT_NE(resampler1.state_, nullptr);
+    EXPECT_EQ(resampler1.buf11025_.capacity(),
+        resampler1.expectedOutFrameLen_ * STEREO * BUFFER_EXPAND_SIZE_2 + ADD_SIZE);
+
+    resampler1.UpdateChannels(CHANNEL_6);
+    EXPECT_EQ(resampler1.channels_, CHANNEL_6);
+    EXPECT_NE(resampler1.state_, nullptr);
+    EXPECT_EQ(resampler1.buf11025_.capacity(),
+        resampler1.expectedOutFrameLen_ * CHANNEL_6 * BUFFER_EXPAND_SIZE_2 + ADD_SIZE);
+}
+
 /*
  * @tc.name  : Test UpdateRates API.
  * @tc.type  : FUNC
@@ -353,6 +390,52 @@ HWTEST_F(AudioProResamplerTest, ErrCodeToString_05, TestSize.Level0)
 
     std::string ret = resampler.ErrCodeToString(RESAMPLER_ERR_INVALID_ARG);
     ASSERT_STREQ(ret.c_str(), "RESAMPLER_ERR_INVALID_ARG");
+}
+
+/*
+ * @tc.name  : Test Reset API.
+ * @tc.type  : FUNC
+ * @tc.number: Reset_001.
+ * @tc.desc  : Test Reset when using Process10HzSampleRate
+ */
+HWTEST_F(AudioProResamplerTest, Reset_001, TestSize.Level0)
+{
+    ProResampler resampler(SAMPLE_RATE_48010, SAMPLE_RATE_48000, STEREO, QUALITY_ONE);
+    uint32_t inFrameLen = SAMPLE_RATE_48010 * FRAME_LEN_100MS / MS_PER_SECOND;
+    uint32_t outFrameLen = SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND;
+    std::vector<float> in(inFrameLen * STEREO);
+    std::vector<float> out(outFrameLen * STEREO);
+    // Process first 100ms frame, send first 1/5 of data to output
+    EXPECT_EQ(resampler.bufFor100msIndex_, 0);
+    EXPECT_EQ(resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen), EOK);
+    EXPECT_NE(resampler.bufFor100msIndex_, 0);
+    EXPECT_NE(resampler.bufFor100ms_.size(), 0);
+    resampler.Reset();
+    EXPECT_EQ(resampler.bufFor100msIndex_, 0);
+    EXPECT_EQ(resampler.bufFor100ms_.size(), 0);
+}
+
+/*
+ * @tc.name  : Test Reset API.
+ * @tc.type  : FUNC
+ * @tc.number: Reset_002.
+ * @tc.desc  : Test Reset when using Process11025SampleRate
+ */
+HWTEST_F(AudioProResamplerTest, Reset_002, TestSize.Level0)
+{
+    ProResampler resampler(SAMPLE_RATE_11025, SAMPLE_RATE_48000, STEREO, QUALITY_ONE);
+    uint32_t inFrameLen = SAMPLE_RATE_11025 * FRAME_LEN_40MS / MS_PER_SECOND;
+    uint32_t outFrameLen = SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND;
+    std::vector<float> in(inFrameLen * STEREO);
+    std::vector<float> out(outFrameLen * STEREO);
+    // Process first 100ms frame, send first 1/5 of data to output
+    EXPECT_EQ(resampler.buf11025Index_, 0);
+    EXPECT_EQ(resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen), EOK);
+    EXPECT_NE(resampler.buf11025Index_, 0);
+    EXPECT_NE(resampler.buf11025_.size(), 0);
+    resampler.Reset();
+    EXPECT_EQ(resampler.buf11025Index_, 0);
+    EXPECT_EQ(resampler.buf11025_.size(), 0);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
