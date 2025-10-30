@@ -21,6 +21,7 @@
 #include "audio_renderer_log.h"
 #include "audio_utils.h"
 #include "media_monitor_manager.h"
+#include "audio_stream_checker_thread.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -69,6 +70,7 @@ int32_t AudioStreamMonitor::RegisterAudioRendererDataTransferStateListener(
             AUDIO_INFO_LOG("Find and init checker, sessionId = %{public}u, uid = %{public}d",
                 item.first, param.clientUID);
             item.second->InitChecker(param, pid, callbackId);
+            AudioStreamCheckerThread::GetInstance()->AddThreadTask(item.second);
         }
     }
     return SUCCESS;
@@ -136,6 +138,7 @@ void AudioStreamMonitor::AddCheckForMonitor(uint32_t sessionId, std::shared_ptr<
         if (item.second.clientUID == checker->GetAppUid() || item.second.clientUID == CHECK_ALL_RENDER_UID) {
             AUDIO_INFO_LOG("Find register, need init checker, uid = %{public}d", item.second.clientUID);
             checker->InitChecker(item.second, item.first.first, item.first.second);
+            AudioStreamCheckerThread::GetInstance()->AddThreadTask(checker);
         }
     }
 }
@@ -163,7 +166,7 @@ void AudioStreamMonitor::DeleteCheckForMonitor(uint32_t sessionId)
     for (auto iter = audioStreamCheckers_.begin(); iter != audioStreamCheckers_.end();) {
         if (iter->first == sessionId) {
             AUDIO_INFO_LOG("Find checker and delete, sessionId = %{public}u", sessionId);
-            iter->second->StopCheckStreamThread();
+            AudioStreamCheckerThread::GetInstance()->DeleteThreadTask(iter->second);
             iter = audioStreamCheckers_.erase(iter);
         } else {
             iter++;
