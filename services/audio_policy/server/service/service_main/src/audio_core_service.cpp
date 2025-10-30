@@ -955,7 +955,8 @@ int32_t AudioCoreService::GetCurrentRendererChangeInfos(vector<shared_ptr<AudioR
         [&activeDeviceType, &activeDeviceRole, &activeDeviceMac](const std::shared_ptr<AudioDeviceDescriptor> &desc) {
         if ((desc->deviceType_ == activeDeviceType) && (desc->deviceRole_ == activeDeviceRole)) {
             // This A2DP device is not the active A2DP device. Skip it.
-            return activeDeviceType != DEVICE_TYPE_BLUETOOTH_A2DP || desc->macAddress_ == activeDeviceMac;
+            return (activeDeviceType != DEVICE_TYPE_BLUETOOTH_A2DP && activeDeviceType != DEVICE_TYPE_BLUETOOTH_SCO) ||
+                desc->macAddress_ == activeDeviceMac;
         }
         return false;
     });
