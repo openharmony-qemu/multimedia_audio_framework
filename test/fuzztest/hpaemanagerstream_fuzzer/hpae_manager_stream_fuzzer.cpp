@@ -506,25 +506,25 @@ void DumpFuzzTest()
 void StreamManagerFuzzTest()
 {
     HpaeManagerFuzzTest t;
-    t.DumpFuzzTest();
+    t.StreamManagerFuzzTest();
 }
 
 void MoveStreamManagerFuzzTest()
 {
     HpaeManagerFuzzTest t;
-    t.DumpFuzzTest();
+    t.MoveStreamManagerFuzzTest();
 }
 
 void HpaeManagerEffectTest()
 {
     HpaeManagerFuzzTest t;
-    t.DumpFuzzTest();
+    t.HpaeManagerEffectTest();
 }
 
 void HpaeManagerEffectTest2()
 {
     HpaeManagerFuzzTest t;
-    t.DumpFuzzTest();
+    t.HpaeManagerEffectTest2();
 }
 
 TestFuncs g_testFuncs[] = {

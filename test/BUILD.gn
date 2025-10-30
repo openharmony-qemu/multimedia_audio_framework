@@ -350,6 +350,7 @@ group("audio_fuzz_test") {
     "fuzztest/microphonedescriptor_fuzzer:fuzztest",
     "fuzztest/offlineaudioeffectserverchain_fuzzer:fuzztest",
     "fuzztest/powerstatelistener_fuzzer:fuzztest",
+    "fuzztest/proaudiostreammanager_fuzzer:fuzztest",
     "fuzztest/resourcemanageradapter_fuzzer:fuzztest",
     "fuzztest/simdutils_fuzzer:fuzztest",
     "fuzztest/sleaudiodevicemanager_fuzzer:fuzztest",
