@@ -969,7 +969,7 @@ HWTEST_F(HpaeRendererManagerTest, ReloadRenderManager_001, TestSize.Level1)
 }
 
 /**
- * @tc.name: ReloadRenderManager
+ * @tc.name: ReloadRenderManager Offload
  * @tc.type: FUNC
  * @tc.number: ReloadRenderManager_002
  * @tc.desc: Test ReloadRenderManager when STREAM_MANAGER_RUNNING
@@ -985,11 +985,15 @@ HWTEST_F(HpaeRendererManagerTest, ReloadRenderManager_002, TestSize.Level1)
 
     auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
     hpaeRendererManager->AddNodeToMap(sinkInputNode);
-    EXPECT_EQ(hpaeRendererManager->CreateOffloadNodes(), SUCCESS);
-    EXPECT_EQ(hpaeRendererManager->ConnectInputSession(), SUCCESS);
+    EXPECT_EQ(sinkInputNode, hpaeRendererManager->curNode_);
     auto tmpPtr1 = hpaeRendererManager->converterForOutput_.get();
     auto tmpPtr2 = hpaeRendererManager->loudnessGainNode_.get();
     auto tmpPtr3 = hpaeRendererManager->converterForLoudness_.get();
+    EXPECT_NE(tmpPtr1, nullptr);
+    EXPECT_NE(tmpPtr2, nullptr);
+    EXPECT_NE(tmpPtr3, nullptr);
+    EXPECT_EQ(hpaeRendererManager->ConnectInputSession(), SUCCESS);
+
     int32_t ret = hpaeRendererManager->ReloadRenderManager(sinkInfo);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(ret, SUCCESS);
@@ -999,7 +1003,7 @@ HWTEST_F(HpaeRendererManagerTest, ReloadRenderManager_002, TestSize.Level1)
 }
 
 /**
- * @tc.name: ReloadRenderManager
+ * @tc.name: ReloadRenderManager Offload
  * @tc.type: FUNC
  * @tc.number: ReloadRenderManager_003
  * @tc.desc: Test ReloadRenderManager when not STREAM_MANAGER_RUNNING
@@ -1015,11 +1019,15 @@ HWTEST_F(HpaeRendererManagerTest, ReloadRenderManager_003, TestSize.Level1)
 
     auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
     hpaeRendererManager->AddNodeToMap(sinkInputNode);
-    EXPECT_EQ(hpaeRendererManager->CreateOffloadNodes(), SUCCESS);
-    EXPECT_EQ(hpaeRendererManager->ConnectInputSession(), SUCCESS);
+    EXPECT_EQ(sinkInputNode, hpaeRendererManager->curNode_);
     auto tmpPtr1 = hpaeRendererManager->converterForOutput_.get();
     auto tmpPtr2 = hpaeRendererManager->loudnessGainNode_.get();
     auto tmpPtr3 = hpaeRendererManager->converterForLoudness_.get();
+    EXPECT_NE(tmpPtr1, nullptr);
+    EXPECT_NE(tmpPtr2, nullptr);
+    EXPECT_NE(tmpPtr3, nullptr);
+    EXPECT_EQ(hpaeRendererManager->ConnectInputSession(), SUCCESS);
+
     int32_t ret = hpaeRendererManager->ReloadRenderManager(sinkInfo);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(ret, SUCCESS);
@@ -1878,6 +1886,53 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStream_002, TestSize.
 }
 
 /**
+ * @tc.name: Test ConnectInputCluster and DeleteProcessCluster
+ * @tc.type: FUNC
+ * @tc.number: ConnectInputCluster_001
+ * @tc.desc: Test Connect and Delete when create nodes in defaultProcessCluster but connect noneProcessCluster
+ */
+HWTEST_F(HpaeRendererManagerTest, ConnectInputCluster_001, TestSize.Level0)
+{
+    uint32_t sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    HpaeSinkInfo sinkInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = sessionId;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.effectMode = EFFECT_DEFAULT;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+
+    // create defaultProcessCluster, sceneType is HPAE_SCENE_MUSIC, effectMode = EFFECT_DEFAULT
+    HpaeProcessorType createSceneType = hpaeRendererManager->GetProcessorType(sessionId);
+    EXPECT_EQ(createSceneType, HPAE_SCENE_MUSIC);
+    hpaeRendererManager->sceneClusterMap_[createSceneType] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    hpaeRendererManager->sinkInputNodeMap_[sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeRendererManager->sceneClusterMap_[createSceneType]->
+        CreateNodes(hpaeRendererManager->sinkInputNodeMap_[sessionId]);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[createSceneType]->CheckNodes(sessionId), SUCCESS);
+
+    // connect noneProcessCluster, sceneType is HPAE_SCENE_EFFECT_NONE
+    nodeInfo.effectInfo.effectMode = EFFECT_NONE;
+    HpaeProcessorType connectSceneType = hpaeRendererManager->GetProcessorType(sessionId);
+    EXPECT_EQ(connectSceneType, HPAE_SCENE_EFFECT_NONE);
+    hpaeRendererManager->ConnectInputCluster(sessionId, connectSceneType);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[connectSceneType]->CheckNodes(sessionId), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[createSceneType]->CheckNodes(sessionId), ERROR);
+    // delete nodes in noneProcessCluster
+    hpaeRendererManager->DeleteProcessCluster(sessionId);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[connectSceneType]->CheckNodes(sessionId), ERROR);
+
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
  * @tc.name: DisConnectInputCluster
  * @tc.type: FUNC
  * @tc.number: DisConnectInputCluster_001
@@ -1903,6 +1958,7 @@ HWTEST_F(HpaeRendererManagerTest, DisConnectInputCluster_001, TestSize.Level0)
     hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
     hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->
         CreateNodes(hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId]);
+    hpaeRendererManager->ConnectInputCluster(sessionId, HPAE_SCENE_MUSIC);
     hpaeRendererManager->DisConnectInputCluster(sessionId, HPAE_SCENE_MUSIC);
     hpaeRendererManager->sessionNodeMap_[sessionId].bypass = false;
     hpaeRendererManager->DisConnectInputCluster(sessionId, HPAE_SCENE_MUSIC);
@@ -1948,8 +2004,28 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_001, 
 
     EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
     WaitForMsgProcessing(offloadManager);
-    offloadManager->SetCurrentNode();
+    // nodes create for curNode
     EXPECT_NE(offloadManager->curNode_, nullptr);
+    auto tmpPtr1 = offloadManager->converterForOutput_.get();
+    auto tmpPtr2 = offloadManager->loudnessGainNode_.get();
+    auto tmpPtr3 = offloadManager->converterForLoudness_.get();
+    EXPECT_NE(tmpPtr1, nullptr);
+    EXPECT_NE(tmpPtr2, nullptr);
+    EXPECT_NE(tmpPtr3, nullptr);
+
+    offloadManager->SetCurrentNode();
+    // curNode exit, nodes remain unchanged
+    EXPECT_NE(offloadManager->curNode_, nullptr);
+    EXPECT_EQ(offloadManager->converterForOutput_.get(), tmpPtr1);
+    EXPECT_EQ(offloadManager->loudnessGainNode_.get(), tmpPtr2);
+    EXPECT_EQ(offloadManager->converterForLoudness_.get(), tmpPtr3);
+
+    offloadManager->RemoveNodeFromMap(TEST_STREAM_SESSION_ID);
+    // curNode remove, destroy nodes
+    EXPECT_EQ(offloadManager->curNode_, nullptr);
+    EXPECT_EQ(offloadManager->converterForOutput_.get(), nullptr);
+    EXPECT_EQ(offloadManager->loudnessGainNode_.get(), nullptr);
+    EXPECT_EQ(offloadManager->converterForLoudness_.get(), nullptr);
 }
 
 /**
@@ -1986,6 +2062,13 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_002, 
 
     EXPECT_EQ(offloadManager->CreateStream(streamInfo1), SUCCESS);
     WaitForMsgProcessing(offloadManager);
+    // create nodes for stream1
+    auto tmpPtr1 = offloadManager->converterForOutput_.get();
+    auto tmpPtr2 = offloadManager->loudnessGainNode_.get();
+    auto tmpPtr3 = offloadManager->converterForLoudness_.get();
+    EXPECT_NE(tmpPtr1, nullptr);
+    EXPECT_NE(tmpPtr2, nullptr);
+    EXPECT_NE(tmpPtr3, nullptr);
 
     HpaeStreamInfo streamInfo2;
     streamInfo2.channels = STEREO;
@@ -2000,10 +2083,26 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_002, 
     WaitForMsgProcessing(offloadManager);
     EXPECT_EQ(offloadManager->Start(streamInfo2.sessionId), SUCCESS);
     WaitForMsgProcessing(offloadManager);
+    // curNode does not change, nodes for stream1 remain unchanged
+    EXPECT_EQ(offloadManager->converterForOutput_.get(), tmpPtr1);
+    EXPECT_EQ(offloadManager->loudnessGainNode_.get(), tmpPtr2);
+    EXPECT_EQ(offloadManager->converterForLoudness_.get(), tmpPtr3);
+
     offloadManager->RemoveNodeFromMap(TEST_STREAM_SESSION_ID);
     EXPECT_EQ(offloadManager->curNode_, nullptr);
+    // curNode remove, nodes for stream1 destroy
+    EXPECT_EQ(offloadManager->converterForOutput_.get(), nullptr);
+    EXPECT_EQ(offloadManager->loudnessGainNode_.get(), nullptr);
+    EXPECT_EQ(offloadManager->converterForLoudness_.get(), nullptr);
     offloadManager->SetCurrentNode();
     EXPECT_NE(offloadManager->curNode_, nullptr);
+    // new curNode, create new nodes for stream2
+    EXPECT_NE(offloadManager->converterForOutput_.get(), nullptr);
+    EXPECT_NE(offloadManager->loudnessGainNode_.get(), nullptr);
+    EXPECT_NE(offloadManager->converterForLoudness_.get(), nullptr);
+    EXPECT_NE(offloadManager->converterForOutput_.get(), tmpPtr1);
+    EXPECT_NE(offloadManager->loudnessGainNode_.get(), tmpPtr2);
+    EXPECT_NE(offloadManager->converterForLoudness_.get(), tmpPtr3);
 }
 
 /**

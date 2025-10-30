@@ -948,5 +948,31 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_037, TestSize.Level1)
     EXPECT_EQ(unit->OnStreamData(info), SUCCESS); // onwritedata success even if not enough data
     EXPECT_TRUE(unit->noWaitDataFlag_);
 }
+
+/**
+ * @tc.name  : Test Start.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_038
+ * @tc.desc  : Test Start with noWaitDataFlag_.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_038, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.customSampleRate = SAMPLE_RATE_16010;
+    std::string deviceName = "";
+    std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(processConfig, deviceName);
+    std::shared_ptr<HpaeRendererStreamImpl> rendererStreamImpl =
+        std::static_pointer_cast<HpaeRendererStreamImpl>(rendererStream);
+    EXPECT_NE(rendererStreamImpl, nullptr);
+    int32_t ret = rendererStreamImpl->Start();
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(rendererStreamImpl->noWaitDataFlag_, false);
+
+    rendererStreamImpl->noWaitDataFlag_ = true;
+    int32_t syncId = 123;
+    ret = rendererStreamImpl->StartWithSyncId(syncId);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(rendererStreamImpl->noWaitDataFlag_, false);
+}
 }
 }
