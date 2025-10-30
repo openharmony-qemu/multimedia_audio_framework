@@ -2249,7 +2249,6 @@ void AudioInterruptService::HandleIncomingState(const int32_t &zoneId, const Aud
 AudioScene AudioInterruptService::GetHighestPriorityAudioScene(const int32_t zoneId) const
 {
     AudioScene audioScene = AUDIO_SCENE_DEFAULT;
-    int32_t audioScenePriority = GetAudioScenePriority(audioScene);
 
     auto itZone = zonesMap_.find(zoneId);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
@@ -2263,6 +2262,7 @@ AudioScene AudioInterruptService::GetHighestPriorityAudioScene(const int32_t zon
         }
         AudioScene itAudioScene = GetAudioSceneFromAudioInterrupt(interrupt);
         int32_t itAudioScenePriority = GetAudioScenePriority(itAudioScene);
+        int32_t audioScenePriority = GetAudioScenePriority(audioScene);
         if (itAudioScenePriority >= audioScenePriority) {
             audioScene = itAudioScene;
             audioScenePriority = itAudioScenePriority;
