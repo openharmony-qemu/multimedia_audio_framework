@@ -292,6 +292,8 @@ public:
         return false;
     }
 
+    int32_t GetRealUid() const;
+
 private:
     bool WriteDeviceDescVectorToParcel(
         Parcel &parcel, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs) const;

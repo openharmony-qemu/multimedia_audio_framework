@@ -59,5 +59,23 @@ HWTEST(ClientTypeManagerUnitTest, ClientTypeManagerUnitTest_001, TestSize.Level4
     manager->GetAndSaveClientType(TEST_CLIENT_UID_2, TEST_BUNDLE_NAME);
     manager->GetAndSaveClientType(TEST_CLIENT_UID_3, "");
 }
+
+/**
+ * @tc.name  : Test ClientTypeManager.
+ * @tc.number: GetClientTypeByUidSync_001.
+ * @tc.desc  : Test GetClientTypeByUidSync API.
+ */
+HWTEST(ClientTypeManagerUnitTest, GetClientTypeByUidSync_001, TestSize.Level4)
+{
+    auto manager = ClientTypeManager::GetInstance();
+    EXPECT_NE(nullptr, manager);
+    manager->clientTypeMap_.clear();
+    manager->OnClientTypeQueryCompleted(TEST_CLIENT_UID, TEST_CLIENT_TYPE);
+    const int32_t checkSize = 1;
+    EXPECT_EQ(checkSize, manager->clientTypeMap_.size());
+
+    ClientType type = manager->GetClientTypeByUidSync(TEST_CLIENT_UID);
+    EXPECT_EQ(TEST_CLIENT_TYPE, type);
+}
 } // AudioStandardnamespace
 } // OHOSnamespace

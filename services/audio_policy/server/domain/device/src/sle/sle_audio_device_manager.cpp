@@ -103,7 +103,7 @@ int32_t SleAudioDeviceManager::SetActiveSinkDevice(const std::string &device, ui
     return ret;
 }
 
-int32_t SleAudioDeviceManager::StartPlaying(const std::string &device, uint32_t streamType)
+int32_t SleAudioDeviceManager::StartPlaying(const std::string &device, uint32_t streamType, int32_t timeoutMs)
 {
     CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
@@ -115,7 +115,7 @@ int32_t SleAudioDeviceManager::StartPlaying(const std::string &device, uint32_t 
         AUDIO_INFO_LOG("sle stream type %{public}u is already started", streamType);
         return SUCCESS;
     }
-    callback_->StartPlaying(device, streamType, ret);
+    callback_->StartPlaying(device, streamType, timeoutMs, ret);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "startplaying failed");
     startedSleStreamType_[device][streamType].isStarted = true;
 
@@ -169,8 +169,22 @@ bool IsSupportedByGameFastPath(bool isGameApp, StreamUsage usage)
         GAME_FAST_SUPPORTED_USAGES.end());
 }
 
-uint32_t SleAudioDeviceManager::GetSleStreamTypeByStreamUsage(StreamUsage streamUsage, bool isGameApp) const
+bool SleAudioDeviceManager::IsGameApp(int32_t uid)
 {
+    std::unique_lock<std::mutex> lock(clientTypeMapMutex_);
+    auto it = clientTypeMap_.find(uid);
+    if (it == clientTypeMap_.end()) {
+        auto clientType = ClientTypeManager::GetInstance()->GetClientTypeByUidSync(uid);
+        clientTypeMap_.insert_or_assign(uid, clientType == CLIENT_TYPE_GAME);
+        AUDIO_INFO_LOG("uid [%{public}d] clientType is [%{public}d]", uid, clientType);
+        return clientType == CLIENT_TYPE_GAME;
+    }
+    return it->second;
+}
+
+uint32_t SleAudioDeviceManager::GetSleStreamTypeByStreamUsage(StreamUsage streamUsage, int32_t uid)
+{
+    bool isGameApp = IsGameApp(uid);
     for (const auto &pair : STREAM_USAGE_TO_SLE_STREAM_TYPE) {
         if (IsSupportedByGameFastPath(isGameApp, streamUsage)) {
             return SLE_AUDIO_STREAM_GAME;
@@ -211,42 +225,52 @@ std::set<SourceType> SleAudioDeviceManager::GetSourceTypesBySleStreamType(uint32
 }
 
 int32_t SleAudioDeviceManager::SetActiveDevice(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage,
-    bool isGameApp)
+    int32_t uid)
 {
     CHECK_AND_RETURN_RET_LOG(IsNearlinkDevice(deviceDesc.deviceType_), ERROR, "device type is not nearlink");
-    return SetActiveSinkDevice(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage, isGameApp));
+    return SetActiveSinkDevice(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage, uid));
 }
 
 int32_t SleAudioDeviceManager::SetActiveDevice(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType,
-    bool isGameApp)
+    int32_t uid)
 {
     CHECK_AND_RETURN_RET_LOG(IsNearlinkDevice(deviceDesc.deviceType_), ERROR, "device type is not nearlink");
     return SetActiveSinkDevice(deviceDesc.macAddress_, GetSleStreamTypeBySourceType(sourceType));
 }
 
 int32_t SleAudioDeviceManager::StartPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage,
-    bool isGameApp)
+    int32_t uid)
 {
     CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK, ERROR, "device type is not nearlink");
-    return StartPlaying(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage, isGameApp));
+    static const unordered_set<StreamUsage> EXTENDED_WAITING_USAGES = {
+        STREAM_USAGE_VOICE_MESSAGE, STREAM_USAGE_VOICE_ASSISTANT, STREAM_USAGE_NAVIGATION
+    };
+    return StartPlaying(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage, uid),
+        EXTENDED_WAITING_USAGES.contains(streamUsage) ?
+            SLE_EXTENDED_TIMEOUT_MS : SLE_STANDARD_TIMEOUT_MS);
 }
 
 int32_t SleAudioDeviceManager::StartPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType,
-    bool isGameApp)
+    int32_t uid)
 {
     CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK_IN, ERROR, "device type is not nearlink");
-    return StartPlaying(deviceDesc.macAddress_, GetSleStreamTypeBySourceType(sourceType));
+    static const unordered_set<SourceType> EXTENDED_WAITING_TYPES = {
+        SOURCE_TYPE_VOICE_RECOGNITION
+    };
+    return StartPlaying(deviceDesc.macAddress_, GetSleStreamTypeBySourceType(sourceType),
+        EXTENDED_WAITING_TYPES.contains(sourceType) ?
+            SLE_EXTENDED_TIMEOUT_MS : SLE_STANDARD_TIMEOUT_MS);
 }
 
 int32_t SleAudioDeviceManager::StopPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage,
-    bool isGameApp)
+    int32_t uid)
 {
     CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK, ERROR, "device type is not nearlink");
-    return StopPlaying(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage, isGameApp));
+    return StopPlaying(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage, uid));
 }
 
 int32_t SleAudioDeviceManager::StopPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType,
-    bool isGameApp)
+    int32_t uid)
 {
     CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK_IN, ERROR, "device type is not nearlink");
     return StopPlaying(deviceDesc.macAddress_, GetSleStreamTypeBySourceType(sourceType));
@@ -347,7 +371,7 @@ void SleAudioDeviceManager::UpdateStreamTypeMap(const std::string &deviceAddr, u
 }
 
 void SleAudioDeviceManager::UpdateSleStreamTypeCount(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-    bool isRemoved, bool isGameApp)
+    bool isRemoved)
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
 
@@ -359,12 +383,12 @@ void SleAudioDeviceManager::UpdateSleStreamTypeCount(const std::shared_ptr<Audio
         StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
 
         if (IsNearlinkMoveToOtherDevice(streamDesc)) {
-            streamType = GetSleStreamTypeByStreamUsage(streamUsage, isGameApp);
+            streamType = GetSleStreamTypeByStreamUsage(streamUsage, streamDesc->GetRealUid());
             oldDeviceAddr = streamDesc->oldDeviceDescs_[0]->macAddress_;
             UpdateStreamTypeMap(oldDeviceAddr, streamType, sessionId, false);
         }
         if (IsMoveToNearlinkDevice(streamDesc)) {
-            streamType = GetSleStreamTypeByStreamUsage(streamUsage, isGameApp);
+            streamType = GetSleStreamTypeByStreamUsage(streamUsage, streamDesc->GetRealUid());
             newDeviceAddr = streamDesc->newDeviceDescs_[0]->macAddress_;
             if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
                 UpdateStreamTypeMap(newDeviceAddr, streamType, sessionId, true);
