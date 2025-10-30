@@ -93,6 +93,8 @@ private:
     AudioEnhanceChainManagerImpl() = default;
     ~AudioEnhanceChainManagerImpl() override = default;
 
+    void SendFoldStateToChain(uint32_t foldState);
+    void SendPowerStateToChain(uint32_t powerState);
     int32_t AddAudioEnhanceChainHandles(std::shared_ptr<AudioEnhanceChain> &audioEnhanceChain,
         const std::vector<std::string> &enhanceNames);
     int32_t ParseSceneKeyCode(uint64_t sceneKeyCode, std::string &sceneType, std::string &capturerDeviceStr,
