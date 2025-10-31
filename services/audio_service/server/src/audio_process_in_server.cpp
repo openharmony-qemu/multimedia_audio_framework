@@ -943,7 +943,7 @@ RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
         std::lock_guard<std::mutex> lock(listenerListLock_);
         std::vector<std::shared_ptr<IProcessStatusListener>>::iterator it = listenerList_.begin();
         while (it != listenerList_.end()) {
-            (*it)->StopByResotre(restoreInfo);
+            (*it)->StopByRestore(restoreInfo);
             it++;
         }
     }
