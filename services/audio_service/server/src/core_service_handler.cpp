@@ -137,10 +137,10 @@ void CoreServiceHandler::RemoveIdForInjector(uint32_t sessionId)
     iCoreServiceProvider_->RemoveIdForInjector(sessionId);
 }
 
-void CoreServiceHandler::ReleaseCaptureInjector(uint32_t sessionId)
+void CoreServiceHandler::ReleaseCaptureInjector()
 {
     CHECK_AND_RETURN_LOG(iCoreServiceProvider_ != nullptr, "iCoreServiceProvider_ is nullptr!");
-    iCoreServiceProvider_->ReleaseCaptureInjector(sessionId);
+    iCoreServiceProvider_->ReleaseCaptureInjector();
 }
 
 void CoreServiceHandler::RebuildCaptureInjector(uint32_t sessionId)

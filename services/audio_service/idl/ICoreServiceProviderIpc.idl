@@ -56,7 +56,7 @@ interface ICoreServiceProviderIpc {
         [in] unsigned int target,
         [out] int ret);
     void RemoveIdForInjector([in] unsigned int sessionId);
-    void ReleaseCaptureInjector([in] unsigned int sessionId);
+    void ReleaseCaptureInjector();
     void RebuildCaptureInjector([in] unsigned int sessionId);
     void A2dpOffloadGetRenderPosition([out] unsigned int delayValue, [out] unsigned long sendDataSize, [out] unsigned int timeStamp, [out] int ret);
     void OnCheckActiveMusicTime([in] String reason);
