@@ -1029,6 +1029,7 @@ void AudioCoreService::ProcessInputPipeNew(std::shared_ptr<AudioPipeInfo> pipeIn
     uint32_t sourceId = OpenNewAudioPortAndRoute(pipeInfo, paIndex);
     pipeInfo->id_ = sourceId;
     pipeInfo->paIndex_ = paIndex;
+    std::vector<SourceOutput> sourceOutputs = GetSourceOutputs();
 
     for (auto &desc : pipeInfo->streamDescriptors_) {
         HILOG_COMM_INFO("[StreamExecInfo] Stream: %{public}u, action: %{public}d, belong to %{public}s",
@@ -1040,9 +1041,9 @@ void AudioCoreService::ProcessInputPipeNew(std::shared_ptr<AudioPipeInfo> pipeIn
             case AUDIO_STREAM_ACTION_DEFAULT:
             case AUDIO_STREAM_ACTION_MOVE:
                 if (desc->streamStatus_ != STREAM_STATUS_STARTED) {
-                    MoveStreamSource(desc);
+                    MoveStreamSource(desc, sourceOutputs);
                 } else {
-                    MoveToNewInputDevice(desc);
+                    MoveToNewInputDevice(desc, sourceOutputs);
                 }
                 break;
             case AUDIO_STREAM_ACTION_RECREATE:
@@ -1057,6 +1058,7 @@ void AudioCoreService::ProcessInputPipeNew(std::shared_ptr<AudioPipeInfo> pipeIn
 
 void AudioCoreService::ProcessInputPipeUpdate(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag)
 {
+    std::vector<SourceOutput> sourceOutputs = GetSourceOutputs();
     for (auto desc : pipeInfo->streamDescriptors_) {
         HILOG_COMM_INFO("[StreamExecInfo] Stream: %{public}u, action: %{public}d, belong to %{public}s",
             desc->sessionId_, desc->streamAction_, pipeInfo->name_.c_str());
@@ -1067,9 +1069,9 @@ void AudioCoreService::ProcessInputPipeUpdate(std::shared_ptr<AudioPipeInfo> pip
             case AUDIO_STREAM_ACTION_DEFAULT:
             case AUDIO_STREAM_ACTION_MOVE:
                 if (desc->streamStatus_ != STREAM_STATUS_STARTED) {
-                    MoveStreamSource(desc);
+                    MoveStreamSource(desc, sourceOutputs);
                 } else {
-                    MoveToNewInputDevice(desc);
+                    MoveToNewInputDevice(desc, sourceOutputs);
                 }
                 break;
             case AUDIO_STREAM_ACTION_RECREATE:
@@ -1402,10 +1404,11 @@ int32_t AudioCoreService::MoveToRemoteOutputDevice(std::vector<SinkInput> sinkIn
     return SUCCESS;
 }
 
-void AudioCoreService::MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+void AudioCoreService::MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+    const std::vector<SourceOutput>& sourceOutputs)
 {
     Trace trace("AudioCoreService::MoveStreamSource");
-    std::vector<SourceOutput> targetSourceOutputs = FilterSourceOutputs(streamDesc->sessionId_);
+    std::vector<SourceOutput> targetSourceOutputs = FilterSourceOutputs(streamDesc->sessionId_, sourceOutputs);
 
     AUDIO_INFO_LOG("[StreamExecInfo] Move stream %{public}u to [%{public}d][%{public}s]",
         streamDesc->sessionId_, streamDesc->newDeviceDescs_.front()->deviceType_,
@@ -1421,10 +1424,11 @@ void AudioCoreService::MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> s
     streamCollector_.UpdateCapturerDeviceInfo(streamDesc->newDeviceDescs_.front());
 }
 
-void AudioCoreService::MoveToNewInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+void AudioCoreService::MoveToNewInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+    const std::vector<SourceOutput>& sourceOutputs)
 {
     Trace trace("AudioCoreService::MoveToNewInputDevice");
-    std::vector<SourceOutput> targetSourceOutputs = FilterSourceOutputs(streamDesc->sessionId_);
+    std::vector<SourceOutput> targetSourceOutputs = FilterSourceOutputs(streamDesc->sessionId_, sourceOutputs);
 
     if (streamDesc->oldDeviceDescs_.size() == 0) {
         AUDIO_INFO_LOG("[StreamExecInfo] Move stream %{public}u to [%{public}d][%{public}s]",
@@ -1554,10 +1558,10 @@ inline std::string PrintSourceOutput(SourceOutput sourceOutput)
     return value.str();
 }
 
-std::vector<SourceOutput> AudioCoreService::FilterSourceOutputs(int32_t sessionId)
+std::vector<SourceOutput> AudioCoreService::FilterSourceOutputs(int32_t sessionId,
+    const std::vector<SourceOutput>& sourceOutputs)
 {
     std::vector<SourceOutput> targetSourceOutputs = {};
-    std::vector<SourceOutput> sourceOutputs = GetSourceOutputs();
 
     for (size_t i = 0; i < sourceOutputs.size(); i++) {
         AUDIO_DEBUG_LOG("sourceOutput[%{public}zu]:%{public}s", i, PrintSourceOutput(sourceOutputs[i]).c_str());
