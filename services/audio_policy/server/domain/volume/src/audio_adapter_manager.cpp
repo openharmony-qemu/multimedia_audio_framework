@@ -2996,7 +2996,6 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volum
         volumeDataMaintainer_.SaveVolumeToMap(desc, STREAM_MUSIC, volume);
         bool mute = volume == 0;
         isAbsVolumeMute_ = mute;
-        SetStreamMute(STREAM_MUSIC, mute);
     }
 
     volumeDataMaintainer_.InitDeviceVolumeMap(desc);
