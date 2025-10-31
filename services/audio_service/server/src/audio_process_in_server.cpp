@@ -560,8 +560,6 @@ ProcessDeathRecipient::ProcessDeathRecipient(AudioProcessInServer *processInServ
 
 void ProcessDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
 {
-    CHECK_AND_RETURN_LOG(processInServer_ != nullptr, "processInServer_ is null.");
-    AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processInServer_->GetSessionId());
     CHECK_AND_RETURN_LOG(processHolder_ != nullptr, "processHolder_ is null.");
     int32_t ret = processHolder_->OnProcessRelease(processInServer_);
     AUDIO_INFO_LOG("OnRemoteDied ret: %{public}d %{public}" PRId64 "", ret, createTime_);
