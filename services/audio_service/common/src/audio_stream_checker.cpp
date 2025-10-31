@@ -210,7 +210,7 @@ void AudioStreamChecker::MonitorCheckFrameAction(CheckerParam &para, int64_t abn
             AUDIO_DEBUG_LOG("sessionId = %{public}u, status still in DATA_TRANS_STOP",
                 streamConfig_.originalSessionId);
             MonitorOnCallback(DATA_TRANS_STOP, false, para);
-        } else if (para.lastStatus == AUDIO_STREAM_PAUSE|| para.lastStatus == AUDIO_STREAM_STOP) {
+        } else if (para.lastStatus == AUDIO_STREAM_PAUSE || para.lastStatus == AUDIO_STREAM_STOP) {
             AUDIO_DEBUG_LOG("Last status is %{public}d, no need callback", para.lastStatus);
             CleanRecordData(para);
         } else {
