@@ -3082,35 +3082,41 @@ int32_t AudioServer::SetDeviceConnectedFlag(bool flag)
     return SUCCESS;
 }
 
-int32_t AudioServer::CreateAudioWorkgroup(int32_t pid, const sptr<IRemoteObject> &object, int32_t &workgroupId)
+int32_t AudioServer::CreateAudioWorkgroup(const sptr<IRemoteObject> &object, int32_t &workgroupId)
 {
+    int32_t pid = IPCSkeleton::GetCallingPid();
     CHECK_AND_RETURN_RET_LOG(AudioResourceService::GetInstance() != nullptr, ERROR, "AudioResourceService is nullptr");
     workgroupId = AudioResourceService::GetInstance()->CreateAudioWorkgroup(pid, object);
     return SUCCESS;
 }
 
-int32_t AudioServer::ReleaseAudioWorkgroup(int32_t pid, int32_t workgroupId)
+int32_t AudioServer::ReleaseAudioWorkgroup(int32_t workgroupId)
 {
+    int32_t pid = IPCSkeleton::GetCallingPid();
     return AudioResourceService::GetInstance()->ReleaseAudioWorkgroup(pid, workgroupId);
 }
 
-int32_t AudioServer::AddThreadToGroup(int32_t pid, int32_t workgroupId, int32_t tokenId)
+int32_t AudioServer::AddThreadToGroup(int32_t workgroupId, int32_t tokenId)
 {
+    int32_t pid = IPCSkeleton::GetCallingPid();
     return AudioResourceService::GetInstance()->AddThreadToGroup(pid, workgroupId, tokenId);
 }
 
-int32_t AudioServer::RemoveThreadFromGroup(int32_t pid, int32_t workgroupId, int32_t tokenId)
+int32_t AudioServer::RemoveThreadFromGroup(int32_t workgroupId, int32_t tokenId)
 {
+    int32_t pid = IPCSkeleton::GetCallingPid();
     return AudioResourceService::GetInstance()->RemoveThreadFromGroup(pid, workgroupId, tokenId);
 }
 
-int32_t AudioServer::StartGroup(int32_t pid, int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime)
+int32_t AudioServer::StartGroup(int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime)
 {
+    int32_t pid = IPCSkeleton::GetCallingPid();
     return AudioResourceService::GetInstance()->StartGroup(pid, workgroupId, startTime, deadlineTime);
 }
 
-int32_t AudioServer::StopGroup(int32_t pid, int32_t workgroupId)
+int32_t AudioServer::StopGroup(int32_t workgroupId)
 {
+    int32_t pid = IPCSkeleton::GetCallingPid();
     return AudioResourceService::GetInstance()->StopGroup(pid, workgroupId);
 }
 
@@ -3169,13 +3175,15 @@ int32_t AudioServer::ForceStopAudioStream(int32_t audioType)
     return AudioService::GetInstance()->ForceStopAudioStream(static_cast<StopAudioType>(audioType));
 }
 
-int32_t AudioServer::ImproveAudioWorkgroupPrio(int32_t pid, const std::unordered_map<int32_t, bool> &threads)
+int32_t AudioServer::ImproveAudioWorkgroupPrio(const std::unordered_map<int32_t, bool> &threads)
 {
+    int32_t pid = IPCSkeleton::GetCallingPid();
     return AudioResourceService::GetInstance()->ImproveAudioWorkgroupPrio(pid, threads);
 }
 
-int32_t AudioServer::RestoreAudioWorkgroupPrio(int32_t pid, const std::unordered_map<int32_t, int32_t> &threads)
+int32_t AudioServer::RestoreAudioWorkgroupPrio(const std::unordered_map<int32_t, int32_t> &threads)
 {
+    int32_t pid = IPCSkeleton::GetCallingPid();
     return AudioResourceService::GetInstance()->RestoreAudioWorkgroupPrio(pid, threads);
 }
 
