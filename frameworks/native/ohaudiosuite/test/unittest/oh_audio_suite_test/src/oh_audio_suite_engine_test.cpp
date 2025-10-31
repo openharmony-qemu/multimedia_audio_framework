@@ -2415,9 +2415,13 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetEnvironmentType_002, TestS
     OH_AudioNode *audioNode = nullptr;
     CreateNode(pipeline, EFFECT_NODE_TYPE_ENVIRONMENT_EFFECT, &audioNode);
 
+    ret = OH_AudioSuiteEngine_SetEnvironmentType(audioNode, ENVIRONMENT_TYPE_EARPIECE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
     OH_EnvironmentType environmentType;
     ret = OH_AudioSuiteEngine_GetEnvironmentType(audioNode, &environmentType);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    EXPECT_EQ(environmentType, ENVIRONMENT_TYPE_EARPIECE);
 
     ret = OH_AudioSuiteEngine_DestroyNode(audioNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
@@ -2485,9 +2489,13 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetSoundFieldType_002, TestSi
     OH_AudioNode *audioNode = nullptr;
     CreateNode(pipeline, EFFECT_NODE_TYPE_SOUND_FIELD, &audioNode);
 
+    ret = OH_AudioSuiteEngine_SetSoundFieldType(audioNode, SOUND_FIELD_NEAR);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
     OH_SoundFieldType soundFieldType;
     ret = OH_AudioSuiteEngine_GetSoundFieldType(audioNode, &soundFieldType);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    EXPECT_EQ(soundFieldType, SOUND_FIELD_NEAR);
 
     ret = OH_AudioSuiteEngine_DestroyNode(audioNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
@@ -2554,6 +2562,9 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetEqualizerFrequencyBandGain
 
     OH_AudioNode *audioNode = nullptr;
     CreateNode(pipeline, EFFECT_NODE_TYPE_EQUALIZER, &audioNode);
+
+    ret = OH_AudioSuiteEngine_SetEqualizerFrequencyBandGains(audioNode, OH_EQUALIZER_PARAM_BALLADS);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_EqualizerFrequencyBandGains frequencyBandGains;
     ret = OH_AudioSuiteEngine_GetEqualizerFrequencyBandGains(audioNode, &frequencyBandGains);
@@ -2625,9 +2636,13 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetVoiceBeautifierType_002, T
     OH_AudioNode *audioNode = nullptr;
     CreateNode(pipeline, EFFECT_NODE_TYPE_VOICE_BEAUTIFIER, &audioNode);
 
+    ret = OH_AudioSuiteEngine_SetVoiceBeautifierType(audioNode, VOICE_BEAUTIFIER_TYPE_CD);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
     OH_VoiceBeautifierType voiceBeautifierType;
     ret = OH_AudioSuiteEngine_GetVoiceBeautifierType(audioNode, &voiceBeautifierType);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    EXPECT_EQ(voiceBeautifierType, VOICE_BEAUTIFIER_TYPE_CD);
 
     ret = OH_AudioSuiteEngine_DestroyNode(audioNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
