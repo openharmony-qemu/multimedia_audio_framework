@@ -149,7 +149,7 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
         std::make_shared<AudioDeviceDescriptor>(audioDeviceDescriptor);
     if (isUpdateActiveDevice && audioDeviceManager_.IsDeviceConnected(descPtr)) {
         AUDIO_INFO_LOG("active device updated, update volume for %{public}d", sessionId);
-        audioVolumeManager_.SetVolumeForSwitchDevice(audioDeviceDescriptor, "", false);
+        audioVolumeManager_.SetVolumeForSwitchDevice(audioDeviceDescriptor, false);
         OnPreferredOutputDeviceUpdated(audioDeviceDescriptor, reason);
     }
 }
@@ -338,7 +338,8 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
         needUnmuteVoiceCall_ = true;
         SetUpdateModemRouteFinished(false);
         uint32_t muteDuration = GetVoiceCallMuteDuration(curDesc, *descs.front());
-        std::thread switchThread(&AudioCoreService::UnmuteVoiceCallAfterMuteDuration, this, muteDuration);
+        std::thread switchThread(
+            &AudioCoreService::UnmuteVoiceCallAfterMuteDuration, this, muteDuration, descs.front());
         switchThread.detach();
     }
     CheckAndUpdateHearingAidCall(descs.front()->deviceType_);
@@ -406,7 +407,8 @@ uint32_t AudioCoreService::GetVoiceCallMuteDuration(AudioDeviceDescriptor &curDe
 }
 
 // muteDuration: duration to keep the voice call muted after modem route update
-void AudioCoreService::UnmuteVoiceCallAfterMuteDuration(uint32_t muteDuration)
+void AudioCoreService::UnmuteVoiceCallAfterMuteDuration(uint32_t muteDuration,
+    std::shared_ptr<AudioDeviceDescriptor> desc)
 {
     AUDIO_INFO_LOG("mute voice call %{public}d us after update modem route", muteDuration);
     {
@@ -415,7 +417,7 @@ void AudioCoreService::UnmuteVoiceCallAfterMuteDuration(uint32_t muteDuration)
             [this] { return updateModemRouteFinished_; });
     }
     usleep(muteDuration);
-    audioVolumeManager_.SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
+    audioVolumeManager_.SetVolumeForSwitchDevice(*desc, true);
 }
 
 void AudioCoreService::NotifyUnmuteVoiceCall()
