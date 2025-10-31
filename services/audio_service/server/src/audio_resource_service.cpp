@@ -1,4 +1,3 @@
-dd
 /*
  * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -398,6 +397,10 @@ std::vector<int32_t> AudioResourceService::GetProcessesOfAudioWorkgroup()
 int32_t AudioResourceService::ImproveAudioWorkgroupPrio(int32_t pid,
     const std::unordered_map<int32_t, bool> &threads)
 {
+    if (threads.empty()) {
+        AUDIO_ERR_LOG("[WorkgroupInServer] No thread to improve prio");
+        return ERR_INVALID_PARAM;
+    }
     for (const auto &tid : threads) {
         AUDIO_INFO_LOG("[WorkgroupInServer]set pid:%{public}d tid:%{public}d to qos_level7", pid, tid.first);
         ScheduleReportData(pid, tid.first, "audio_server");
@@ -408,6 +411,10 @@ int32_t AudioResourceService::ImproveAudioWorkgroupPrio(int32_t pid,
 int32_t AudioResourceService::RestoreAudioWorkgroupPrio(int32_t pid,
     const std::unordered_map<int32_t, int32_t> &threads)
 {
+    if (threads.empty()) {
+        AUDIO_ERR_LOG("[WorkgroupInServer] No thread to restore prio");
+        return ERR_INVALID_PARAM;
+    }
     for (const auto &tid : threads) {
         AUDIO_INFO_LOG("[WorkgroupInServer]set pid:%{public}d tid:%{public}d to qos%{public}d",
             pid, tid.first, tid.second);
