@@ -56,6 +56,7 @@ public:
     MOCK_METHOD(void, OnConnectNodes, (int32_t result), (override));
     MOCK_METHOD(void, OnDisConnectNodes, (int32_t result), (override));
     MOCK_METHOD(void, OnRenderFrame, (int32_t result, uint32_t pipelineId), (override));
+    MOCK_METHOD(void, OnGetOptions, (int32_t result), (override));
 };
 
 class AudioSuiteManagerCallbackTestImpl : public AudioSuiteManagerCallback {
@@ -120,6 +121,10 @@ public:
         return;
     }
     void OnMultiRenderFrame(int32_t result, uint32_t pipelineId) override
+    {
+        return;
+    }
+    void OnGetOptions(int32_t result) override
     {
         return;
     }
