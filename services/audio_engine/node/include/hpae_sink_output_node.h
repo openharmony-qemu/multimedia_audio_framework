@@ -76,6 +76,7 @@ private:
     int64_t silenceDataUs_ = 0;
     bool isOpenPaPower_ = true;
     bool isDisplayPaPowerState_ = false;
+    uint32_t streamRunningNum_ = 0;
     bool isSyncIdSet_ = false;
     int32_t syncId_ = -1;
     uint32_t latency_ = 0;

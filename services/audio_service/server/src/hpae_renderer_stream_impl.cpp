@@ -47,13 +47,11 @@ static constexpr uint64_t FRAME_LEN_10MS = 10;
 static constexpr uint64_t FRAME_LEN_20MS = 20;
 static constexpr uint64_t FRAME_LEN_40MS = 40;
 static constexpr uint32_t FRAME_LEN_100MS = 100;
-static constexpr uint64_t FIXED_LATENCY_IN_MS = 40;
 static constexpr uint64_t PRINT_TIMESTAMP_INTERVAL_NS = 1000000000;
 // to judge whether customSampleRate is multiples of 50
 static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
-static const std::string BT_SPEAKER = "Bt_Speaker";
 static constexpr float AUDIO_VOLUME_EPSILON = 0.0001;
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
 static inline FadeType GetFadeType(uint64_t expectedPlaybackDurationMs);
@@ -282,6 +280,24 @@ uint32_t HpaeRendererStreamImpl::GetNearlinkLatency()
     return nearlinkLatency;
 }
 
+uint32_t HpaeRendererStreamImpl::GetSinkLatency()
+{
+    Trace trace("HpaeRendererStreamImpl::GetSinkLatency");
+    uint32_t sinkLatency = 0;
+    std::string deviceClass;
+    std::string deviceNetId;
+    {
+        std::shared_lock<std::shared_mutex> lock(latencyMutex_);
+        deviceClass = deviceClass_;
+        deviceNetId = deviceNetId_;
+    }
+    std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(deviceClass, deviceNetId);
+    if (audioRendererSink) {
+        audioRendererSink->GetLatency(sinkLatency);
+    }
+    return sinkLatency;
+}
+
 int32_t HpaeRendererStreamImpl::GetRemoteOffloadSpeedPosition(uint64_t &framePosition, uint64_t &timestamp,
     uint64_t &latency)
 {
@@ -369,16 +385,9 @@ void HpaeRendererStreamImpl::GetLatencyInner(uint64_t &timestamp, uint64_t &late
 {
     int32_t baseUsed = base >= 0 && base < Timestamp::Timestampbase::BASESIZE ?
         base : Timestamp::Timestampbase::MONOTONIC;
-    uint32_t sinkLatency = 0;
+    uint32_t sinkLatency = GetSinkLatency();
     uint32_t a2dpOffloadLatency = GetA2dpOffloadLatency();
     uint32_t nearlinkLatency = GetNearlinkLatency();
-    std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(deviceClass_, deviceNetId_);
-    if (audioRendererSink) {
-        audioRendererSink->GetLatency(sinkLatency);
-        if (deviceClass_ == BT_SPEAKER) {
-            sinkLatency -= FIXED_LATENCY_IN_MS;
-        }
-    }
 
     latencyUs = sinkLatency * AUDIO_US_PER_MS;
     latencyUs += a2dpOffloadLatency * AUDIO_US_PER_MS;
@@ -606,7 +615,14 @@ int32_t HpaeRendererStreamImpl::OffloadSetVolume()
         return ERR_OPERATION_FAILED;
     }
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    std::string volumeDeviceClass = deviceClass_ == DEVICE_CLASS_REMOTE_OFFLOAD ? "remote" : "offload";
+    std::string deviceClass;
+    std::string deviceNetId;
+    {
+        std::shared_lock<std::shared_mutex> lock(latencyMutex_);
+        deviceClass = deviceClass_;
+        deviceNetId = deviceNetId_;
+    }
+    std::string volumeDeviceClass = deviceClass == DEVICE_CLASS_REMOTE_OFFLOAD ? "remote" : "offload";
     float volume = AudioVolume::GetInstance()->GetVolume(streamIndex_, processConfig_.streamType, volumeDeviceClass,
         &volumes);
     AUDIO_INFO_LOG("sessionID %{public}u, deviceClass %{public}s, volume: %{public}f", streamIndex_,
@@ -615,7 +631,7 @@ int32_t HpaeRendererStreamImpl::OffloadSetVolume()
         AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, volume);
         AudioVolume::GetInstance()->Monitor(streamIndex_, true);
     }
-    std::shared_ptr<IAudioRenderSink> audioRendererSinkInstance = GetRenderSinkInstance(deviceClass_, deviceNetId_);
+    std::shared_ptr<IAudioRenderSink> audioRendererSinkInstance = GetRenderSinkInstance(deviceClass, deviceNetId);
     if (audioRendererSinkInstance == nullptr) {
         AUDIO_ERR_LOG("Renderer is null.");
         return ERROR;
