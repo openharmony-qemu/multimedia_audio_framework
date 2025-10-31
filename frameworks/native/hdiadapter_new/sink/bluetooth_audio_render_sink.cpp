@@ -121,6 +121,7 @@ void BluetoothAudioRenderSink::DeInit(void)
         deviceManager->DestroyRender(adapterNameCase, hdiRenderId_);
     }
     audioRender_ = nullptr;
+    AUDIO_INFO_LOG("%{public}s update validState:false", logTypeTag_.c_str());
     validState_ = true;
 }
 
