@@ -4045,7 +4045,7 @@ HWTEST(AudioEffectChainManagerUnitTest, EffectDspVolumeUpdate_002, TestSize.Leve
     audioEffectVolume->SetSystemVolume(DEFAULT_STREAM_OR_VOLUME_TYPE, DEFAULT_SYSTEM_VOLUME);
     audioEffectVolume->SetStreamVolume(sessionID, DEFAULT_STREAM_VOLUME);
     EXPECT_EQ(audioEffectVolume->GetSystemVolume(DEFAULT_STREAM_OR_VOLUME_TYPE), DEFAULT_SYSTEM_VOLUME);
-    EXPECT_EQ(audioEffectVolume->GetSystemVolume(sessionID), DEFAULT_STREAM_VOLUME);
+    EXPECT_EQ(audioEffectVolume->GetStreamVolume(sessionID), DEFAULT_STREAM_VOLUME);
 
     AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_.clear();
     AudioEffectChainManager::GetInstance()->EffectDspVolumeUpdate(audioEffectVolume);
