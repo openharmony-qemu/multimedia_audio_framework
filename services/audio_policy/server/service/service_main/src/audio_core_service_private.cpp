@@ -1030,7 +1030,7 @@ void AudioCoreService::ProcessInputPipeNew(std::shared_ptr<AudioPipeInfo> pipeIn
     pipeInfo->id_ = sourceId;
     pipeInfo->paIndex_ = paIndex;
     std::vector<SourceOutput> sourceOutputs = GetSourceOutputs();
-    
+
     for (auto &desc : pipeInfo->streamDescriptors_) {
         HILOG_COMM_INFO("[StreamExecInfo] Stream: %{public}u, action: %{public}d, belong to %{public}s",
             desc->sessionId_, desc->streamAction_, pipeInfo->name_.c_str());
