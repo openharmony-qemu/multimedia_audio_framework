@@ -2461,7 +2461,6 @@ void AudioEndpointInner::StopByRestore(const RestoreInfo &restoreInfo)
         CHECK_AND_RETURN_LOG(sink != nullptr, "sink is null");
         sink->Stop();
     }
-    return;
 }
 } // namespace AudioStandard
 } // namespace OHOS
