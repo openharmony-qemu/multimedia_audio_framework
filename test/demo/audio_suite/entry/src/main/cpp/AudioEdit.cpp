@@ -234,8 +234,7 @@ static void InitRenderContext(RenderContext& context)
     context.ohAudioDataArray = new OH_AudioDataArray();
     context.ohAudioDataArray->audioDataArray = (void**)malloc(AUDIODATAARRAY_SIZE);
     for (int i = 0; i < ACCESSAUDIODATA_ARRAY_NUM; i++) {
-        void* newData = malloc(AUDIODATA_ARRAYSIZE);
-        context.ohAudioDataArray->audioDataArray[i] = static_cast<void*>(newData);
+        context.ohAudioDataArray->audioDataArray[i] = static_cast<void*>(malloc(AUDIODATA_ARRAYSIZE));
     }
     context.ohAudioDataArray->arraySize = ACCESSAUDIODATA_ARRAY_NUM;
     context.ohAudioDataArray->requestFrameSize = context.frameSize;
