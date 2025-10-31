@@ -162,10 +162,10 @@ int32_t HpaeCapturerManager::DeleteOutputSession(uint32_t sessionId)
     AUDIO_INFO_LOG("delete output node:%{public}d, source name:%{public}s", sessionId, sourceInfo_.deviceClass.c_str());
     auto sourceOutputNode = SafeGetMap(sourceOutputNodeMap_, sessionId);
     if (!sourceOutputNode) {
-         sourceOutputNodeMap_.erase(sessionId);
-         sessionNodeMap_.erase(sessionId);
-         return SUCCESS;
-     }
+        sourceOutputNodeMap_.erase(sessionId);
+        sessionNodeMap_.erase(sessionId);
+        return SUCCESS;
+    }
 #ifdef ENABLE_HIDUMP_DFX
     OnNotifyDfxNodeAdmin(false, sourceOutputNode->GetNodeInfo());
 #endif

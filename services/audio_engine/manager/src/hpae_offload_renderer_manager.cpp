@@ -89,7 +89,7 @@ void HpaeOffloadRendererManager::RemoveNodeFromMap(uint32_t sessionId)
         renderNoneEffectNode_->AudioOffloadRendererRelease(node->GetNodeInfo(), sinkInfo_);
 #ifdef ENABLE_HIDUMP_DFX
         OnNotifyDfxNodeAdmin(false, node->GetNodeInfo());
-#endif  
+#endif
     }
     sinkInputNodeMap_.erase(sessionId);
     if (curNode_ && curNode_->GetSessionId() == sessionId) {
