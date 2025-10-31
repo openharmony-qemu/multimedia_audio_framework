@@ -2452,5 +2452,16 @@ void AudioEndpointInner::UpdateEndpointStatus(AudioEndpoint::EndpointStatus newS
         checker->UpdateStatus(fastRenderId_, GetEndpointName(), endpointStatus_.load());
     }
 }
+
+void AudioEndpointInner::StopByRestore(const RestoreInfo &restoreInfo)
+{
+    if (deviceInfo.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && restoreInfo.deviceChangeReason ==
+        static_cast<int32_t>(AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE)) {
+        std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
+        CHECK_AND_RETURN_LOG(sink != nullptr, "sink is null");
+        sink->Stop();
+    }
+    return;
+}
 } // namespace AudioStandard
 } // namespace OHOS
