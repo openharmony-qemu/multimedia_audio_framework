@@ -15,15 +15,15 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 import("../../../config.gni")
 
-ohos_fuzztest("RendererInServerFuzzTest") {
+ohos_fuzztest("ProAudioStreamManagerFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
-  fuzz_config_file = "../rendererinserver_fuzzer"
+  fuzz_config_file = "../proaudiostreammanager_fuzzer"
 
   include_dirs = [
-    "../../../services/audio_service/common/include",
-    "../../../services/audio_service/server/include",
-    "../../../services/audio_service/client/include",
-    "../../../services/audio_policy/client/include",
+    "../../../frameworks/native/audiocapturer/include",
+    "../../../services/server/include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../services/audio_engine/manager/include",
   ]
 
   cflags = [
@@ -35,15 +35,14 @@ ohos_fuzztest("RendererInServerFuzzTest") {
   ]
 
   sources = [
-    "renderer_in_server_fuzzer.cpp",
+    "pro_audio_stream_manager_fuzzer.cpp",
     ]
 
-  configs = [ "../../../services/audio_service:audio_service_config" ]
-
   deps = [
+    "../../../frameworks/native/audiocapturer:audio_capturer",
     "../../../frameworks/native/audioutils:audio_utils",
+    "../../../services/audio_service:audio_client",
     "../../../services/audio_service:audio_common",
-    "../../../services/audio_service:audio_service",
     "../../../services/audio_service:audio_process_service_static",
   ]
 
@@ -71,9 +70,4 @@ ohos_fuzztest("RendererInServerFuzzTest") {
   if (use_libfuzzer || use_clang_coverage) {
     defines += [ "TEST_COVERAGE" ]
   }
-}
-
-group("fuzztest") {
-  testonly = true
-  deps = [ ":RendererInServerFuzzTest" ]
 }
