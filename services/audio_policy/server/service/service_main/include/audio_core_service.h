@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #ifndef AUDIO_CORE_SERVICE_H
-#define AUDIO_CORE_SERVICE_Hx
+#define AUDIO_CORE_SERVICE_H
 #include <mutex>
 
 #include "audio_policy_server_handler.h"
@@ -423,8 +423,10 @@ private:
     int32_t MoveToRemoteOutputDevice(
         std::vector<SinkInput> sinkInputIds, std::shared_ptr<AudioPipeInfo> pipeInfo,
         std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
-    void MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> streamDesc);
-    void MoveToNewInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    void MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        const std::vector<SourceOutput>& sourceOutputs);
+    void MoveToNewInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        const std::vector<SourceOutput>& sourceOutputs);
     int32_t MoveToLocalInputDevice(std::vector<SourceOutput> sourceOutputs,
         std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor, uint32_t routeFlag = AUDIO_FLAG_NONE);
     int32_t MoveToRemoteInputDevice(
@@ -459,7 +461,8 @@ private:
     AudioFlag SetFlagForMmapStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     AudioFlag SetFlagForSpecialStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
     void UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
-    std::vector<SourceOutput> FilterSourceOutputs(int32_t sessionId);
+    std::vector<SourceOutput> FilterSourceOutputs(int32_t sessionId,
+        const std::vector<SourceOutput>& sourceOutputs);
     std::vector<SourceOutput> GetSourceOutputs();
     void UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void UpdateRingerOrAlarmerDualDeviceOutputRouter(std::shared_ptr<AudioStreamDescriptor> streamDesc);
