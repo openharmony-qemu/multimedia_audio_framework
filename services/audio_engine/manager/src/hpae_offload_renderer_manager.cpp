@@ -87,6 +87,9 @@ void HpaeOffloadRendererManager::RemoveNodeFromMap(uint32_t sessionId)
     auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
     if (node != nullptr) {
         renderNoneEffectNode_->AudioOffloadRendererRelease(node->GetNodeInfo(), sinkInfo_);
+#ifdef ENABLE_HIDUMP_DFX
+        OnNotifyDfxNodeAdmin(false, node->GetNodeInfo());
+#endif
     }
     sinkInputNodeMap_.erase(sessionId);
     if (curNode_ && curNode_->GetSessionId() == sessionId) {
@@ -124,7 +127,9 @@ void HpaeOffloadRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeS
     uint32_t sessionId = nodeInfo.sessionId;
     HILOG_COMM_INFO("[FinishMove] session:%{public}u to sink:offload", sessionId);
     AddNodeToMap(node);
-
+#ifdef ENABLE_HIDUMP_DFX
+    OnNotifyDfxNodeAdmin(true, nodeInfo);
+#endif
     if (!isConnect || node->GetState() != HPAE_SESSION_RUNNING) {
         AUDIO_INFO_LOG("[FinishMove] session:%{public}u not need connect session", sessionId);
         return;
