@@ -130,6 +130,9 @@ const int DATAINPUT_PROCESSING = 100;
 const int AUDIODATAARRAY_SIZE = 2 * sizeof(void*);
 const double DATAINPUTPROCESSING_SIZE = 100;
 const int ACCESSAUDIODATA_ARRAY_NUM = 2;
+const int TOTAL_AUDIODATA_SIZE = 1024 * 1024 * 100;
+const int AUDIODATA_SIZE = 1024 * 4;
+const int FRAME_SIZE = 1024 * 4;
 
 struct RenderContext {
     char *totalAudioData = nullptr;
@@ -220,18 +223,19 @@ static OH_AudioSuite_Result StartPipelineAndCheckState()
 
 static void InitRenderContext(RenderContext& context)
 {
-    context.totalAudioData = (char *)malloc(1024 * 1024 * 100);
-    context.tapTotalAudioData = (char *)malloc(1024 * 1024 * 100);
-    context.audioData = (char *)malloc(1024 * 4);
+    context.totalAudioData = (char *)malloc(TOTAL_AUDIODATA_SIZE);
+    context.tapTotalAudioData = (char *)malloc(TOTAL_AUDIODATA_SIZE);
+    context.audioData = (char *)malloc(AUDIODATA_SIZE);
     context.writeSize = 0;
-    context.frameSize = 1024 * 4;
+    context.frameSize = FRAME_SIZE;
     context.finishedFlag = false;
     context.resultTotalSize = 0;
     context.tapResultTotalSize = 0;
     context.ohAudioDataArray = new OH_AudioDataArray();
     context.ohAudioDataArray->audioDataArray = (void**)malloc(AUDIODATAARRAY_SIZE);
     for (int i = 0; i < ACCESSAUDIODATA_ARRAY_NUM; i++) {
-        context.ohAudioDataArray->audioDataArray[i] = (void*)malloc(AUDIODATA_ARRAYSIZE);
+        void* newData = malloc(AUDIODATA_ARRAYSIZE);
+        context.ohAudioDataArray->audioDataArray[i] = static_cast<void*>(newData);
     }
     context.ohAudioDataArray->arraySize = ACCESSAUDIODATA_ARRAY_NUM;
     context.ohAudioDataArray->requestFrameSize = context.frameSize;
@@ -772,7 +776,7 @@ static void UpdateInputNode(napi_env env, const AudioInputConfig& config, napi_v
 }
 
 void AudioInitHasOutput(OH_AudioSuite_Result &result, std::string &inputId, std::string &mixerId,
-                        const std::vector<Node> &outPutNodes) 
+                        const std::vector<Node> &outPutNodes)
 {
     const std::vector<Node> mixerNodes = nodeManager->getNodesByType(OH_AudioNode_Type::EFFECT_NODE_TYPE_AUDIO_MIXER);
     // 判断有混音节点，则直接将input节点连接到混音节点之前；无混音节点则需要创建混音节点，再将混音节点插入到output节点之前
@@ -923,7 +927,8 @@ int AddEffectNodeToNodeManager(std::string &inputNodeId, std::string &effectNode
     return result;
 }
 
-OH_AudioSuite_Result DeleteNodeOfSong(Node &node, int size) {
+OH_AudioSuite_Result DeleteNodeOfSong(Node &node, int size)
+{
     OH_AudioSuite_Result result;
     Node nextNode;
     if (size > INPUTNODES_SIZE2) {
@@ -1237,9 +1242,8 @@ static napi_value SetEqualizerFrequencyBandGains(napi_env env, napi_callback_inf
         unsigned int value;
         napi_get_value_uint32(env, element, &value);
         frequencyBandGains.gains[i] = value;
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-            "audioEditTest SeqEqualizerFrequencyBandGains element at index %{public}d is %{public}d",
-            i, frequencyBandGains.gains[i]);
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SeqEqualizerFrequencyBandGains"
+            " element at index %{public}d is %{public}d", i, frequencyBandGains.gains[i]);
     }
 
     OH_AudioSuite_Result result =
