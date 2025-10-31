@@ -296,9 +296,6 @@ uint32_t HpaeRendererStreamImpl::GetSinkLatency()
     std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(deviceClass, deviceNetId);
     if (audioRendererSink) {
         audioRendererSink->GetLatency(sinkLatency);
-        if (deviceClass == BT_SPEAKER) {
-            sinkLatency -= FIXED_LATENCY_IN_MS;
-        }
     }
     return sinkLatency;
 }
