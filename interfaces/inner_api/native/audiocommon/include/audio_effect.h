@@ -491,7 +491,7 @@ struct SupportedEffectConfig : public Parcelable {
 * Enumerates the audio scene effect type.
 */
 enum AudioEffectScene {
-    SCENE_INITIAL = -1;
+    SCENE_INITIAL = -1,
     SCENE_OTHERS = 0,
     SCENE_MUSIC = 1,
     SCENE_MOVIE = 2,

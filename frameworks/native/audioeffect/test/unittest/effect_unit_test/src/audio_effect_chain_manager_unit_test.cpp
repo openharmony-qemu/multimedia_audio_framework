@@ -4056,7 +4056,7 @@ HWTEST(AudioEffectChainManagerUnitTest, EffectDspVolumeUpdate_002, TestSize.Leve
         int32_t retTemp = AudioEffectChainManager::GetInstance()->EffectDspVolumeUpdate(audioEffectVolume);
         EXPECT_EQ(audioEffectVolume->GetDspVolume(), DEFAULT_SYSTEM_VOLUME * DEFAULT_STREAM_VOLUME);
         EXPECT_EQ(retTemp, SUCCESS);
-    } else if (ret == ERROR){
+    } else if (ret == ERROR) {
         EXPECT_EQ(audioEffectVolume->GetDspVolume(), INITIAL_DSP_VOLUME);
     }
 
