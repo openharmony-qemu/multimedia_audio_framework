@@ -32,8 +32,8 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 constexpr int32_t RELEASE_WAIT_TIME_MS = 3000; // 3000ms
-constexpr float INITIAL_DSP_VOLUME = 3000; // 3000ms
-constexpr int32_t INITIAL_DSP_STREAMUSAGE = 3000; // 3000ms
+constexpr float INITIAL_DSP_VOLUME = -1.0f;
+constexpr int32_t INITIAL_DSP_STREAMUSAGE = -2;
 
 const std::unordered_map<std::string, std::string> AUDIO_PERSISTENCE_EFFECT_KEY {
     {"voip_down", "settings.sound_ai_voip_down_selection"},
@@ -1126,7 +1126,7 @@ void AudioEffectChainManager::ResetInfo()
     currDspStreamUsage_ = INITIAL_DSP_STREAMUSAGE;
     currDspSceneType_ = SCENE_INITIAL;
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
+    CHECK_AND_RETURN_LOG(audioEffectVolume != nullptr, "null audioEffectVolume");
     audioEffectVolume->SetDspVolume(INITIAL_DSP_VOLUME);
 }
 
