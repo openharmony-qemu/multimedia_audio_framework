@@ -34,11 +34,11 @@ protected:
     void TearDown() override {}
 
     // 验证两个数组是否相等
-    void verifyArraysEqual(const std::vector<float>& expected, const std::vector<float>& actual, float epsilon = 1e-6f)
+    void verifyArraysEqual(const std::vector<float>& expected, const std::vector<float>& actual, float eps = 1e-6f)
     {
         ASSERT_EQ(expected.size(), actual.size());
         for (size_t i = 0; i < expected.size(); i++) {
-            EXPECT_NEAR(expected[i], actual[i], epsilon) << "at index " << i;
+            EXPECT_NEAR(expected[i], actual[i], eps) << "at index " << i;
         }
     }
 };
