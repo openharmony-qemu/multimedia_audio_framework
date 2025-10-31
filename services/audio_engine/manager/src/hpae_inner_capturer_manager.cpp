@@ -260,6 +260,7 @@ int32_t HpaeInnerCapturerManager::ReloadRenderManager(const HpaeSinkInfo &sinkIn
             HpaeNodeInfo nodeInfo = it.second->GetNodeInfo();
             if (!SafeGetMap(rendererSceneClusterMap_, processorType)) {
                 rendererSceneClusterMap_[processorType] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
+                rendererSceneClusterMap_[processorType]->CreateNodes(it.second);
             }
             if (it.second->GetState() == HPAE_SESSION_RUNNING) {
                 ConnectRendererInputSessionInner(it.first);
@@ -739,9 +740,15 @@ void HpaeInnerCapturerManager::DeleteRendererInputNodeSession(const std::shared_
 {
     HpaeProcessorType sceneType = sinkInputNode->GetSceneType();
     if (SafeGetMap(rendererSceneClusterMap_, sceneType)) {
-        rendererSceneClusterMap_[sceneType]->DisConnect(sinkInputNode);
-        sceneTypeToProcessClusterCount_--;
         uint32_t sessionId = sinkInputNode->GetSessionId();
+        rendererSceneClusterMap_[sceneType]->DisConnect(sinkInputNode);
+        if (rendererSceneClusterMap_[sceneType]->CheckNodes(sessionId) == SUCCESS) {
+            rendererSceneClusterMap_[sceneType]->DestroyNodes(sessionId);
+        } else {
+            AUDIO_WARNING_LOG("SessionId %{public}u, Nodes not found in innerCapture sceneCluster, cant destroy nodes",
+                sessionId);
+        }
+        sceneTypeToProcessClusterCount_--;
         if (sceneTypeToProcessClusterCount_ == 0) {
             HILOG_COMM_INFO("need to erase rendererSceneCluster, last stream: %{public}u", sessionId);
         } else {
