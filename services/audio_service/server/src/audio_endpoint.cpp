@@ -2455,7 +2455,7 @@ void AudioEndpointInner::UpdateEndpointStatus(AudioEndpoint::EndpointStatus newS
 
 void AudioEndpointInner::StopByRestore(const RestoreInfo &restoreInfo)
 {
-    if (deviceInfo.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && restoreInfo.deviceChangeReason ==
+    if (deviceInfo_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && restoreInfo.deviceChangeReason ==
         static_cast<int32_t>(AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE)) {
         AUDIO_INFO_LOG("Bluetooth device has been taken offline, let the sink stop");
         std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
