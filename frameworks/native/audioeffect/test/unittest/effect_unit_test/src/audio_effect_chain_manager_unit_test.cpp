@@ -4011,11 +4011,11 @@ HWTEST(AudioEffectChainManagerUnitTest, EffectDspVolumeUpdate_001, TestSize.Leve
     EXPECT_EQ(audioEffectVolume->GetDspVolume(), INITIAL_DSP_VOLUME);
 
     const std::string sessionID = "123456";
-    int32_t ret = AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
     audioEffectVolume->SetSystemVolume(DEFAULT_STREAM_OR_VOLUME_TYPE, DEFAULT_SYSTEM_VOLUME);
     audioEffectVolume->SetStreamVolume(sessionID, DEFAULT_STREAM_VOLUME);
     EXPECT_EQ(audioEffectVolume->GetSystemVolume(DEFAULT_STREAM_OR_VOLUME_TYPE), DEFAULT_SYSTEM_VOLUME);
-    EXPECT_EQ(audioEffectVolume->GetSystemVolume(sessionID), DEFAULT_STREAM_VOLUME);
+    EXPECT_EQ(audioEffectVolume->GetStreamVolume(sessionID), DEFAULT_STREAM_VOLUME);
 
     int32_t ret = AudioEffectChainManager::GetInstance()->EffectDspVolumeUpdate(audioEffectVolume);
     if (ret == SUCCESS) {
@@ -4073,7 +4073,7 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateCurrSceneTypeAndStreamUsageForDsp_
     AudioEffectChainManager::GetInstance()->maxSessionID_ = static_cast<uint32_t>(std::stoul("123456"));
     AudioEffectChainManager::GetInstance()->maxSessionIDToSceneType_ = "SCENE_MUSIC";
     AudioEffectChainManager::GetInstance()->currDspStreamUsage_ = INITIAL_DSP_STREAMUSAGE;
-    AudioEffectChainManager::GetInstance()->sessionTDToEffectInfoMap_["123456"] = DEFAULT_INFO;
+    AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_["123456"] = DEFAULT_INFO;
     int32_t result = AudioEffectChainManager::GetInstance()->UpdateCurrSceneTypeAndStreamUsageForDsp();
     
     if (result == SUCCESS) {
