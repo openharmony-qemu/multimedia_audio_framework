@@ -362,7 +362,7 @@ int32_t AudioSuiteManager::SetAudioFormat(uint32_t nodeId, AudioFormat audioForm
 }
 
 int32_t AudioSuiteManager::SetRequestDataCallback(uint32_t nodeId,
-    std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback)
+    std::shared_ptr<InputNodeRequestDataCallBack> callback)
 {
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");

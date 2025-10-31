@@ -171,7 +171,7 @@ public:
         return 0;
     }
     int32_t SetRequestDataCallback(uint32_t nodeId,
-        std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback) override
+        std::shared_ptr<InputNodeRequestDataCallBack> callback) override
     {
         return 0;
     }
@@ -206,10 +206,10 @@ public:
     }
 };
 
-class SuiteInputNodeWriteDataCallBackTestImpl : public SuiteInputNodeWriteDataCallBack {
+class SuiteInputNodeRequestDataCallBackTestImpl : public InputNodeRequestDataCallBack {
 public:
-    ~SuiteInputNodeWriteDataCallBackTestImpl() = default;
-    int32_t OnWriteDataCallBack(void *audioData, int32_t audioDataSize, bool *finished) override
+    ~SuiteInputNodeRequestDataCallBackTestImpl() = default;
+    int32_t OnRequestDataCallBack(void *audioData, int32_t audioDataSize, bool *finished) override
     {
         return 0;
     }
@@ -435,12 +435,12 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, setAudioFormatTest, TestSize.Level0)
     EXPECT_EQ(result, SUCCESS);
 }
 
-HWTEST_F(AudioSuiteEngineManagerUnitTest, setWriteDataCallbackTest, TestSize.Level0)
+HWTEST_F(AudioSuiteEngineManagerUnitTest, SetRequestDataCallbackTest, TestSize.Level0)
 {
     AudioSuiteManagerCallbackTestImpl callback;
     AudioSuiteEngine engineManger(callback);
-    std::shared_ptr<SuiteInputNodeWriteDataCallBack> suiteCallback =
-        std::make_shared<SuiteInputNodeWriteDataCallBackTestImpl>();
+    std::shared_ptr<InputNodeRequestDataCallBack> suiteCallback =
+        std::make_shared<SuiteInputNodeRequestDataCallBackTestImpl>();
     engineManger.Init();
     EXPECT_EQ(engineManger.IsInit(), true);
     
@@ -853,8 +853,8 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineSetRequestDataCallba
     AudioSuitePipeline audioSuitePipeline(PIPELINE_EDIT_MODE);
     audioSuitePipeline.Init();
     EXPECT_EQ(audioSuitePipeline.IsInit(), true);
-    std::shared_ptr<SuiteInputNodeWriteDataCallBack> suitCallback =
-        std::make_shared<SuiteInputNodeWriteDataCallBackTestImpl>();
+    std::shared_ptr<InputNodeRequestDataCallBack> suitCallback =
+        std::make_shared<SuiteInputNodeRequestDataCallBackTestImpl>();
 
     audioSuitePipeline.pipelineState_ = PIPELINE_RUNNING;
     int32_t result = audioSuitePipeline.SetRequestDataCallback(2, suitCallback);

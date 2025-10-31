@@ -49,7 +49,7 @@ public:
     virtual int32_t GetNodeBypassStatus(uint32_t nodeId) = 0;
     virtual int32_t SetAudioFormat(uint32_t nodeId, AudioFormat audioFormat) = 0;
     virtual int32_t SetRequestDataCallback(uint32_t nodeId,
-        std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback) = 0;
+        std::shared_ptr<InputNodeRequestDataCallBack> callback) = 0;
     virtual int32_t ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) = 0;
     virtual int32_t DisConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) = 0;
     virtual int32_t RenderFrame(uint32_t pipelineId,
