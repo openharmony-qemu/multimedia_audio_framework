@@ -872,24 +872,29 @@ int32_t AudioSuitePipeline::GetOptions(uint32_t nodeId, std::string name, std::s
     auto request = [this, nodeId, name, &value]() {
         if (pipelineState_ != PIPELINE_STOPPED) {
             AUDIO_ERR_LOG("GetOptions failed, pipelineState status is not stopped.");
+            TriggerCallback(GET_OPTIONS, ERR_ILLEGAL_STATE);
             return;
         }
 
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
             AUDIO_ERR_LOG("GetOptions failed, node id is invailed.");
+            TriggerCallback(GET_OPTIONS, ERR_INVALID_PARAM);
             return;
         }
 
         auto node = nodeMap_[nodeId];
         if (node == nullptr) {
             AUDIO_ERR_LOG("GetOptions failed, node ptr nullptr.");
+            TriggerCallback(GET_OPTIONS, ERR_INVALID_PARAM);
             return;
         }
         int32_t ret = node->GetOptions(name, value);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("GetOptions, ret = %{public}d.", ret);
+            TriggerCallback(GET_OPTIONS, ret);
             return;
         }
+        TriggerCallback(GET_OPTIONS, SUCCESS);
     };
 
     SendRequest(request, __func__);
