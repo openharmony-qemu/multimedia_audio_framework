@@ -1580,5 +1580,25 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_075, TestSize.Level1)
     audioVolumeManager.CheckActiveMusicTime(reason);
     EXPECT_EQ(audioVolumeManager.startSafeTimeSle_, 0);
 }
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_076
+* @tc.desc  : Test SetAbsVolumeSceneAsync interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_076, TestSize.Level1)
+{
+    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
+    ASSERT_TRUE(audioVolumeManager != nullptr);
+
+    bool support = false;
+    std::string macAddress = "11:22:33:44:55:66";
+    audioVolumeManager->audioActiveDevice_.activeBTDevice_ = "test";
+    audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support, 0);
+
+    audioVolumeManager->audioActiveDevice_.activeBTDevice_ = macAddress;
+    audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support, 0);
+    EXPECT_EQ(audioVolumeManager->audioActiveDevice_.GetActiveBtDeviceMac(), macAddress);
+}
 } // namespace AudioStandard
 } // namespace OHOS

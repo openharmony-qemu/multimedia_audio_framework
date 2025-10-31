@@ -1239,11 +1239,20 @@ void AudioVolumeManager::SetAbsVolumeSceneAsync(const std::string &macAddress, c
     if (btDevice == macAddress) {
         audioPolicyManager_.SetAbsVolumeScene(support, volume);
         SetSharedAbsVolumeScene(support);
-        // GetAllDeviceVolumeInfo used to update a2pd music volume in map.
-        audioPolicyManager_.GetAllDeviceVolumeInfo(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_MUSIC);
-        int32_t volumeLevel = audioPolicyManager_.GetSystemVolumeLevelNoMuteState(STREAM_MUSIC);
-        SetSystemVolumeDegreeByLevel(STREAM_MUSIC, volumeLevel);
-        audioPolicyManager_.SetSystemVolumeLevel(STREAM_MUSIC, volumeLevel);
+        DeviceType currentOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+        // for absVolumescene support or not support endpoint volume
+        if (currentOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP && !support) {
+            // GetAllDeviceVolumeInfo used to update a2pd music volume in map.
+            audioPolicyManager_.GetAllDeviceVolumeInfo(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_MUSIC);
+            int32_t volumeLevel = audioPolicyManager_.GetSystemVolumeLevelNoMuteState(STREAM_MUSIC);
+            SetSystemVolumeDegreeByLevel(STREAM_MUSIC, volumeLevel);
+            audioPolicyManager_.SetSystemVolumeLevel(STREAM_MUSIC, volumeLevel);
+        } else if (currentOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP && support) {
+            Volume vol = {false, 1.0f, 0};
+            vol.isMute = volume == 0 ? true : false;
+            vol.volumeInt = static_cast<uint32_t>(volume);
+            SetSharedVolume(STREAM_MUSIC, currentOutputDeviceType, vol);
+        }
     }
 }
 
