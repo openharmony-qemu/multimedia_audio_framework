@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #ifndef AUDIO_CORE_SERVICE_H
-#define AUDIO_CORE_SERVICE_H
+#define AUDIO_CORE_SERVICE_Hx
 #include <mutex>
 
 #include "audio_policy_server_handler.h"
