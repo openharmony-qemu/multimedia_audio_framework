@@ -742,9 +742,7 @@ void HpaeInnerCapturerManager::DeleteRendererInputNodeSession(const std::shared_
     if (SafeGetMap(rendererSceneClusterMap_, sceneType)) {
         uint32_t sessionId = sinkInputNode->GetSessionId();
         rendererSceneClusterMap_[sceneType]->DisConnect(sinkInputNode);
-        if (rendererSceneClusterMap_[sceneType]->CheckNodes(sessionId) == SUCCESS) {
-            rendererSceneClusterMap_[sceneType]->DestroyNodes(sessionId);
-        } else {
+        if (rendererSceneClusterMap_[sceneType]->DestroyNodes(sessionId) != SUCCESS) {
             AUDIO_WARNING_LOG("SessionId %{public}u, Nodes not found in innerCapture sceneCluster, cant destroy nodes",
                 sessionId);
         }
@@ -794,6 +792,8 @@ int32_t HpaeInnerCapturerManager::ConnectRendererInputSessionInner(uint32_t sess
         "miss corresponding process cluster for scene type %{public}d", sceneType);
     // todo check if connect process cluster
     hpaeInnerCapSinkNode_->Connect(rendererSceneClusterMap_[sceneType]);
+    CHECK_AND_RETURN_RET_LOG(rendererSceneClusterMap_[sceneType]->CheckNodes(sessionId) == SUCCESS, ERROR,
+        "SessionId %{public}u, Nodes not found in innerCapture sceneCluster, cant connect nodes", sessionId);
     rendererSceneClusterMap_[sceneType]->Connect(sinkInputNodeMap_[sessionId]);
     rendererSceneClusterMap_[sceneType]->SetLoudnessGain(sessionId, sinkInputNodeMap_[sessionId]->GetLoudnessGain());
     return SUCCESS;

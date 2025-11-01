@@ -2001,7 +2001,7 @@ HWTEST_F(HpaeRendererManagerTest, DisConnectInputCluster_001, TestSize.Level0)
         CreateNodes(hpaeRendererManager->sinkInputNodeMap_[sessionId]);
     EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->CheckNodes(sessionId), SUCCESS);
 
-    // try delete nodes in noneProcessCluster sceneType is HPAE_SCENE_EFFECT_NONE
+    // try delete nodes in noneProcessCluster, sceneType is HPAE_SCENE_EFFECT_NONE
     // actually nodes found in defaultProcessCluster
     nodeInfo.effectInfo.effectMode = EFFECT_NONE;
     EXPECT_EQ(hpaeRendererManager->GetProcessorType(sessionId), HPAE_SCENE_EFFECT_NONE);

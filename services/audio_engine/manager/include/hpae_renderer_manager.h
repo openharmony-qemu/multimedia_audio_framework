@@ -145,6 +145,7 @@ private:
     void UpdateStreamProp(const std::shared_ptr<const HpaeNode> &sourceNode, const std::shared_ptr<HpaeNode> &dstNode);
     bool IsClusterDisConnected(HpaeProcessorType sceneType);
     bool QueryOneStreamUnderrun();
+    void DeleteNodesByTraversal(uint32_t sessionId);
 
 private:
 
