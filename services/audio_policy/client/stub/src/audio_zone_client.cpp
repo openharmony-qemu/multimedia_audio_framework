@@ -267,6 +267,34 @@ int32_t AudioZoneClient::GetSystemVolume(int32_t zoneId, int32_t volumeType, flo
     outVolume = audioZoneVolumeProxyMap_[zoneId]->GetSystemVolume(static_cast<AudioVolumeType>(volumeType));
     return SUCCESS;
 }
+
+int32_t AudioZoneClient::SetSystemVolumeDegree(int32_t zoneId, int32_t volumeType,
+    int32_t volumeDegree, int32_t volumeFlag)
+{
+    std::lock_guard<std::mutex> lk(audioZoneVolumeProxyMutex_);
+    CHECK_AND_RETURN_RET_LOG(audioZoneVolumeProxyMap_.find(zoneId) != audioZoneVolumeProxyMap_.end(),
+        ERR_OPERATION_FAILED, "audioZoneVolumeProxyMap_ not find zoneId %{public}d.", zoneId);
+    CHECK_AND_RETURN_RET_LOG(audioZoneVolumeProxyMap_[zoneId] != nullptr,
+        ERR_OPERATION_FAILED, "audioZoneVolumeProxy is nullptr, zoneId %{public}d.", zoneId);
+
+    audioZoneVolumeProxyMap_[zoneId]->SetSystemVolumeDegree(static_cast<AudioVolumeType>(volumeType),
+        volumeDegree);
+    return SUCCESS;
+}
+
+int32_t AudioZoneClient::GetSystemVolumeDegree(int32_t zoneId, int32_t volumeType, int32_t &outVolume)
+{
+    std::lock_guard<std::mutex> lk(audioZoneVolumeProxyMutex_);
+    auto iter = audioZoneVolumeProxyMap_.find(zoneId);
+    CHECK_AND_RETURN_RET_LOG(iter != audioZoneVolumeProxyMap_.end(),
+        ERR_OPERATION_FAILED, "audioZoneVolumeProxyMap_ not find zoneId %{public}d.", zoneId);
+    auto proxy = iter->second;
+    CHECK_AND_RETURN_RET_LOG(proxy != nullptr,
+        ERR_OPERATION_FAILED, "audioZoneVolumeProxy is nullptr, zoneId %{public}d.", zoneId);
+
+    outVolume = proxy->GetSystemVolumeDegree(static_cast<AudioVolumeType>(volumeType));
+    return SUCCESS;
+}
 }  // namespace AudioStandard
 }  // namespace OHOS
 

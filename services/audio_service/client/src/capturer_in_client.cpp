@@ -1869,6 +1869,12 @@ bool CapturerInClientInner::GetStopFlag() const
     return clientBuffer_->GetStopFlag();
 }
 
+int32_t CapturerInClientInner::SetRebuildFlag()
+{
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is not inited!");
+    return ipcStream_->SetRebuildFlag();
+}
+
 bool CapturerInClientInner::IsRestoreNeeded()
 {
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "buffer null");

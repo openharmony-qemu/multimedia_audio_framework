@@ -121,6 +121,7 @@ void BluetoothAudioRenderSink::DeInit(void)
         deviceManager->DestroyRender(adapterNameCase, hdiRenderId_);
     }
     audioRender_ = nullptr;
+    AUDIO_INFO_LOG("%{public}s update validState:true", logTypeTag_.c_str());
     validState_ = true;
 }
 
@@ -284,7 +285,7 @@ int32_t BluetoothAudioRenderSink::Reset(void)
 int32_t BluetoothAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
-    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
+    CHECK_AND_RETURN_RET(validState_, ERR_INVALID_HANDLE);
     if (audioMonoState_) {
         AdjustStereoToMono(&data, len);
     }
@@ -563,7 +564,7 @@ int32_t BluetoothAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &apps
 
 void BluetoothAudioRenderSink::SetInvalidState(void)
 {
-    AUDIO_INFO_LOG("%{public}s in", logTypeTag_.c_str());
+    AUDIO_INFO_LOG("%{public}s update validState:false", logTypeTag_.c_str());
     std::lock_guard<std::mutex> lock(sinkMutex_);
     validState_ = false;
     sinkInited_ = false;

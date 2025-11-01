@@ -267,8 +267,6 @@ public:
     void OnMuteStateChange(const int32_t &pid, const int32_t &callbackId,
         const int32_t &uid, const uint32_t &sessionId, const bool &isMuted) override;
     int32_t SetBtHdiInvalidState() override;
-    int32_t SendInterruptEventToAudioServer(uint32_t sessionId,
-        const InterruptEventInternal &interruptEvent) override;
     int32_t GetVolumeBySessionId(uint32_t sessionId, float &volume) override;
 
     int32_t AddCaptureInjector(uint32_t sinkPortidx, std::string &rate, std::string &format,
@@ -359,6 +357,8 @@ private:
     const std::string GetAudioParameterInner(const std::string &key);
     const std::string GetAudioParameterInner(const std::string& networkId, const AudioParamKey key,
         const std::string& condition);
+    bool UpdateAudioParameterInfo(const std::string &key, const std::string &value,
+        AudioParamKey &parmKey, std::string &valueNew, std::string &halName);
     const std::string GetVAParameter(const std::string &key);
     int32_t SetAudioSceneInner(AudioScene audioScene, BluetoothOffloadState a2dpOffloadFlag, bool scoExcludeFlag);
     sptr<IRemoteObject> CreateAudioProcessInner(const AudioProcessConfig &config, int32_t &errorCode,
@@ -417,6 +417,8 @@ private:
 
     std::mutex audioDataTransferMutex_;
     std::map<int32_t, std::shared_ptr<DataTransferStateChangeCallbackInner>> audioDataTransferCbMap_;
+
+    std::mutex setA2dpParamMutex_;
 };
 
 class DataTransferStateChangeCallbackInnerImpl : public DataTransferStateChangeCallbackInner {

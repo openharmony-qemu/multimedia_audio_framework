@@ -60,6 +60,13 @@ class FormatConverter {
 public:
     static bool DataAccumulationFromVolume(const std::vector<AudioStreamData> &srcDataList,
         const AudioStreamData &dstData);
+
+    static bool AutoConvertToS16Stereo(const AudioStreamData &srcData, const BufferDesc &dstData);
+    static bool AutoConvertToS16S32Stereo(const AudioSampleFormat format,
+        const AudioStreamData &srcData, const AudioStreamData &dstData);
+        
+    static void InitFormatHandlers();
+    static FormatHandlerMap &GetFormatHandlers();
     static int32_t S16MonoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t S32MonoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t S32StereoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
@@ -71,19 +78,18 @@ public:
     static int32_t F32StereoToS32Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t F32StereoToF32Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t F32StereoToS16Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
-
     static int32_t S16StereoToF32Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t S16StereoToF32Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t F32MonoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t F32StereoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t S32MonoToS16Mono(std::vector<char> &audioBuffer, std::vector<char> &audioBufferConverted);
     static int32_t S32StereoToS16Stereo(std::vector<char> &audioBuffer, std::vector<char> &audioBufferConverted);
-
-    static void InitFormatHandlers();
-    static FormatHandlerMap &GetFormatHandlers();
 private:
     static void InitS16ToFormatHandlers(FormatHandlerMap& handlers);
     static void InitF32ToFormatHandlers(FormatHandlerMap& handlers);
+
+    static bool ChannelFormatS16Convert(const AudioStreamData &srcData, const AudioStreamData &dstData);
+    static bool ChannelFormatS32Convert(const AudioStreamData &srcData, const AudioStreamData &dstData);
 private:
     static FormatHandlerMap formatHandlers;
 };

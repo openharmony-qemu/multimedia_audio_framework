@@ -165,6 +165,7 @@ ohos_unittest("audio_zone_service_unit_test") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
+    "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
@@ -177,7 +178,6 @@ ohos_unittest("audio_zone_service_unit_test") {
   public_external_deps = [ "ffrt:libffrt" ]
 
   public_external_deps += [
-    "libxml2:libxml2",
     "openssl:libcrypto_shared",
   ]
 
@@ -289,6 +289,16 @@ ohos_unittest("audio_zone_unit_test") {
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
+
   external_deps = [
     "ability_base:session_info",
     "ability_base:want",
@@ -321,6 +331,7 @@ ohos_unittest("audio_zone_unit_test") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
+    "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
@@ -334,7 +345,6 @@ ohos_unittest("audio_zone_unit_test") {
   public_external_deps = [ "ffrt:libffrt" ]
 
   public_external_deps += [
-    "libxml2:libxml2",
     "openssl:libcrypto_shared",
   ]
 
@@ -482,6 +492,7 @@ ohos_unittest("audio_interrupt_service_unit_test") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
+    "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
@@ -494,7 +505,6 @@ ohos_unittest("audio_interrupt_service_unit_test") {
   public_external_deps = [ "ffrt:libffrt" ]
 
   public_external_deps += [
-    "libxml2:libxml2",
     "openssl:libcrypto_shared",
   ]
 
@@ -769,6 +779,7 @@ ohos_unittest("audio_interrupt_service_second_unit_test") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
+    "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
@@ -781,7 +792,6 @@ ohos_unittest("audio_interrupt_service_second_unit_test") {
   public_external_deps = [ "ffrt:libffrt" ]
 
   public_external_deps += [
-    "libxml2:libxml2",
     "openssl:libcrypto_shared",
   ]
 
@@ -913,6 +923,7 @@ ohos_unittest("audio_policy_service_first_unit_test") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
+    "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
@@ -925,7 +936,6 @@ ohos_unittest("audio_policy_service_first_unit_test") {
   public_external_deps = [ "ffrt:libffrt" ]
 
   public_external_deps += [
-    "libxml2:libxml2",
     "openssl:libcrypto_shared",
   ]
 
@@ -1096,6 +1106,7 @@ ohos_unittest("audio_policy_service_second_unit_test") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
+    "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
@@ -1108,7 +1119,6 @@ ohos_unittest("audio_policy_service_second_unit_test") {
   public_external_deps = [ "ffrt:libffrt" ]
 
   public_external_deps += [
-    "libxml2:libxml2",
     "openssl:libcrypto_shared",
   ]
 
@@ -1286,6 +1296,7 @@ ohos_unittest("audio_policy_service_third_unit_test") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
+    "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
@@ -1298,7 +1309,6 @@ ohos_unittest("audio_policy_service_third_unit_test") {
   public_external_deps = [ "ffrt:libffrt" ]
 
   public_external_deps += [
-    "libxml2:libxml2",
     "openssl:libcrypto_shared",
   ]
 
@@ -1468,6 +1478,7 @@ ohos_unittest("audio_microphone_descriptor_unit_test") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
+    "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
@@ -1480,7 +1491,6 @@ ohos_unittest("audio_microphone_descriptor_unit_test") {
   public_external_deps = [ "ffrt:libffrt" ]
 
   public_external_deps += [
-    "libxml2:libxml2",
     "openssl:libcrypto_shared",
   ]
 
@@ -1652,6 +1662,7 @@ ohos_unittest("audio_policy_service_thirdext_unit_test") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
+    "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
@@ -1664,7 +1675,6 @@ ohos_unittest("audio_policy_service_thirdext_unit_test") {
   public_external_deps = [ "ffrt:libffrt" ]
 
   public_external_deps += [
-    "libxml2:libxml2",
     "openssl:libcrypto_shared",
   ]
 
@@ -1833,6 +1843,7 @@ ohos_unittest("audio_policy_service_extended_unit_test") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
+    "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
@@ -1845,7 +1856,6 @@ ohos_unittest("audio_policy_service_extended_unit_test") {
   public_external_deps = [ "ffrt:libffrt" ]
 
   public_external_deps += [
-    "libxml2:libxml2",
     "openssl:libcrypto_shared",
   ]
 
@@ -2675,6 +2685,16 @@ ohos_unittest("audio_router_center_unit_test") {
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
+
   external_deps = [
     "ability_base:session_info",
     "ability_base:want",
@@ -3171,11 +3191,12 @@ ohos_unittest("audio_stream_collector_pro_unit_test") {
 
   sanitize = {
     cfi = true
-    cfi_cross_dso = true
+    cfi_cross_dso = false
     boundary_sanitize = true
     debug = false
     integer_overflow = true
-    ubsan = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
   }
 
   external_deps = [
@@ -3527,6 +3548,7 @@ ohos_unittest("audio_interrupt_service_pro_unit_test") {
     "hisysevent:libhisysevent",
     "init:libbegetutil",
     "ipc:ipc_single",
+    "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
@@ -3539,7 +3561,6 @@ ohos_unittest("audio_interrupt_service_pro_unit_test") {
   public_external_deps = [ "ffrt:libffrt" ]
 
   public_external_deps += [
-    "libxml2:libxml2",
     "openssl:libcrypto_shared",
   ]
 
@@ -3924,6 +3945,7 @@ ohos_unittest("audio_effect_config_parser_unit_test") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
+    "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
@@ -5372,6 +5394,7 @@ ohos_unittest("audio_background_manager_unit_test") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
+    "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
@@ -5384,7 +5407,6 @@ ohos_unittest("audio_background_manager_unit_test") {
   public_external_deps = [ "ffrt:libffrt" ]
 
   public_external_deps += [
-    "libxml2:libxml2",
     "openssl:libcrypto_shared",
   ]
 
@@ -5698,6 +5720,16 @@ ohos_unittest("audio_client_tracker_callback_service_unit_test") {
     "-fno-access-control",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
+
   external_deps = [
     "ability_base:session_info",
     "ability_base:want",
@@ -5816,6 +5848,16 @@ ohos_unittest("audio_core_service_private_unit_test") {
     "-fno-access-control",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
+
   external_deps = [
     "bluetooth:btframework",
     "c_utils:utils",
@@ -5920,6 +5962,7 @@ ohos_unittest("audio_core_service_unit_test") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
+    "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
@@ -5932,7 +5975,6 @@ ohos_unittest("audio_core_service_unit_test") {
   public_external_deps = [ "ffrt:libffrt" ]
 
   public_external_deps += [
-    "libxml2:libxml2",
     "openssl:libcrypto_shared",
   ]
 
@@ -6091,6 +6133,7 @@ ohos_unittest("audio_core_service_utils_unit_test") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
+    "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
@@ -6103,7 +6146,6 @@ ohos_unittest("audio_core_service_utils_unit_test") {
   public_external_deps = [ "ffrt:libffrt" ]
 
   public_external_deps += [
-    "libxml2:libxml2",
     "openssl:libcrypto_shared",
   ]
 

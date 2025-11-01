@@ -66,7 +66,7 @@ HpaeOffloadSinkOutputNode::HpaeOffloadSinkOutputNode(HpaeNodeInfo &nodeInfo)
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeOffloadSinkOutputNode");
     if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(true, 0, GetNodeInfo());
+        callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
     }
 #endif
 }
@@ -76,6 +76,9 @@ HpaeOffloadSinkOutputNode::~HpaeOffloadSinkOutputNode()
 #ifdef ENABLE_HIDUMP_DFX
     AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
         GetNodeId(), GetNodeName().c_str());
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeAdmin(false, GetNodeInfo());
+    }
 #endif
 }
 
@@ -147,7 +150,7 @@ void HpaeOffloadSinkOutputNode::Connect(const std::shared_ptr<OutputNode<HpaePcm
     inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort());
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(true, GetNodeId(), preNode->GetSharedInstance()->GetNodeInfo());
+        callback->OnNotifyDfxNodeInfo(true, GetNodeId(), preNode->GetSharedInstance()->GetNodeId());
     }
 #endif
 }
@@ -158,7 +161,7 @@ void HpaeOffloadSinkOutputNode::DisConnect(const std::shared_ptr<OutputNode<Hpae
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
         auto preNodeReal = preNode->GetSharedInstance();
-        callback->OnNotifyDfxNodeInfo(false, preNodeReal->GetNodeId(), preNodeReal->GetNodeInfo());
+        callback->OnNotifyDfxNodeInfo(false, GetNodeId(), preNodeReal->GetNodeId());
     }
 #endif
 }
@@ -361,7 +364,7 @@ void HpaeOffloadSinkOutputNode::StopStream()
 void HpaeOffloadSinkOutputNode::SetPolicyState(int32_t state)
 {
     if (setPolicyStateTask_.flag) {
-        if (state == hdiPolicyState_) {
+        if (state != OFFLOAD_INACTIVE_BACKGROUND) {
             AUDIO_INFO_LOG("unset policy state task");
             setPolicyStateTask_.flag = false;
         }
@@ -371,7 +374,7 @@ void HpaeOffloadSinkOutputNode::SetPolicyState(int32_t state)
         AUDIO_INFO_LOG("set policy state task");
         setPolicyStateTask_.flag = true;
         setPolicyStateTask_.time = std::chrono::high_resolution_clock::now();
-        setPolicyStateTask_.state = OFFLOAD_INACTIVE_BACKGROUND;
+        hdiPolicyState_ = static_cast<AudioOffloadType>(state);
         return;
     }
     hdiPolicyState_ = static_cast<AudioOffloadType>(state);
@@ -425,7 +428,6 @@ void HpaeOffloadSinkOutputNode::SetBufferSizeWhileRenderFrame()
             POLICY_STATE_DELAY_IN_SEC) {
             AUDIO_INFO_LOG("excute set policy state task");
             setPolicyStateTask_.flag = false;
-            hdiPolicyState_ = setPolicyStateTask_.state;
             SetBufferSize();
             return; // no need to set buffer size twice at one process
         }

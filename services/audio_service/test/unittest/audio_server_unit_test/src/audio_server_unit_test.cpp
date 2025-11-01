@@ -46,12 +46,13 @@ void AudioServerUnitTest::SetUpTestCase(void)
     MockNative::GenerateNativeTokenID();
     MockNative::Mock();
     audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    EXPECT_NE(nullptr, audioServer);
+    ASSERT_NE(nullptr, audioServer);
     audioServer->OnDump();
 }
 
 void AudioServerUnitTest::TearDownTestCase(void)
 {
+    ASSERT_NE(nullptr, audioServer);
     audioServer->OnStop();
     MockNative::Resume();
 }
@@ -2138,6 +2139,7 @@ HWTEST_F(AudioServerUnitTest, CheckInnerRecorderPermission_002, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     AudioProcessConfig config;
+    config.appInfo.appTokenId = SYSTEM_ABILITY_ID;
     config.capturerInfo.sourceType = SOURCE_TYPE_REMOTE_CAST;
     EXPECT_EQ(audioServer->CheckInnerRecorderPermission(config), PERMISSION_GRANTED);
 
@@ -2537,20 +2539,34 @@ HWTEST_F(AudioServerUnitTest, OnMuteStateChange_002, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test ArgDataDump API
+ * @tc.name  : Test SetAudioParameter API
  * @tc.type  : FUNC
- * @tc.number: ArgDataDump_001
- * @tc.desc  : Test ArgDataDump interface.
+ * @tc.number: AudioServerSetAudioParameter_004
+ * @tc.desc  : Test SetAudioParameter interface.
  */
-HWTEST_F(AudioServerUnitTest, ArgDataDump_001, TestSize.Level1)
+HWTEST_F(AudioServerUnitTest, AudioServerSetAudioParameter_004, TestSize.Level1)
 {
-    AudioServerHpaeDump audioServerHpaeDump;
-    std::string dumpString;
-    std::queue<std::u16string> argQue;
+    int PARAMETER_SET_LIMIT = 1024;
+    for (int i = 0; i < PARAMETER_SET_LIMIT + 1; ++i) {
+        audioServer->SetAudioParameter("key" + std::to_string(i), "value" + std::to_string(i));
+    }
+    EXPECT_NE(audioServer->SetAudioParameter("key", "value"), SUCCESS);
+}
 
-    audioServerHpaeDump.ArgDataDump(dumpString, argQue);
-
-    EXPECT_NE(dumpString, "Hpae AudioServer Data Dump:\n\n");
+/**
+ * @tc.name  : Test SetAudioSceneInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerSetAudioSceneInner_005
+ * @tc.desc  : Test SetAudioSceneInner interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerSetAudioSceneInner_005, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioScene audioScene = AUDIO_SCENE_RINGING;
+    BluetoothOffloadState a2dpOffloadFlag = NO_A2DP_DEVICE;
+    bool scoExcludeFlag = true;
+    int32_t ret = audioServer->SetAudioSceneInner(audioScene, a2dpOffloadFlag, scoExcludeFlag);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**

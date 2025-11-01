@@ -87,12 +87,6 @@ bool HpaeOutputCluster::Reset()
         converterNode.second->Reset();
     }
     hpaeSinkOutputNode_->DisConnect(mixerNode_);
-#ifdef ENABLE_HIDUMP_DFX
-    if (auto callBack = hpaeSinkOutputNode_->GetNodeStatusCallback().lock()) {
-        callBack->OnNotifyDfxNodeInfo(false, mixerNode_->GetNodeId(), mixerNode_->GetNodeInfo());
-        callBack->OnNotifyDfxNodeInfo(false, hpaeSinkOutputNode_->GetNodeId(), hpaeSinkOutputNode_->GetNodeInfo());
-    }
-#endif
     return true;
 }
 
@@ -116,9 +110,12 @@ void HpaeOutputCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *
 
     if (!SafeGetMap(sceneConverterMap_, sceneType)) {
         sceneConverterMap_[sceneType] = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, curNodeInfo);
+        // disable downmix normalization in output cluster because mixer node here enables limiter
+        sceneConverterMap_[sceneType]->SetDownmixNormalization(false);
     } else {
         sceneConverterMap_.erase(sceneType);
         sceneConverterMap_[sceneType] = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, curNodeInfo);
+        sceneConverterMap_[sceneType]->SetDownmixNormalization(false);
     }
     mixerNode_->Connect(sceneConverterMap_[sceneType]);
     sceneConverterMap_[sceneType]->Connect(preNode);

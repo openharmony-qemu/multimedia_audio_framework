@@ -186,8 +186,7 @@ bool LoudVolumeManager::CheckLoudVolumeMode(const int32_t volLevel,
             bool ret = ReloadLoudVolumeMode(streamInFocus, LOUD_VOLUME_SWITCH_ON);
             CHECK_AND_RETURN_RET_LOG(ret != false, false, "set LoudVolume on error");
             return true;
-        } else if (triggerTime == ENABLE_TRIGGER_TIMES && (mSec - upTriggerTimeMSec < MAX_LOUD_VOLUME_MSEC) &&
-            (mSec - upTriggerTimeMSec > MIN_LOUD_VOLUME_MSEC)) {
+        } else if (triggerTime == ENABLE_TRIGGER_TIMES && (mSec - upTriggerTimeMSec > MIN_LOUD_VOLUME_MSEC)) {
             triggerTime++;
         } else {
             triggerTime = ENABLE_TRIGGER_TIMES;

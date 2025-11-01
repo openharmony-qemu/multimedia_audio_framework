@@ -561,6 +561,13 @@ const std::map<std::string, int32_t> NapiAudioEnum::renderTargetMap = {
     {"INJECT_TO_VOICE_COMMUNICATION_CAPTURE", INJECT_TO_VOICE_COMMUNICATION_CAPTURE},
 };
 
+const std::map<std::string, int32_t> NapiAudioEnum::BluetoothAndNearlinkPreferredRecordCategoryMap = {
+    {"PREFERRED_NONE", PREFERRED_NONE},
+    {"PREFERRED_DEFAULT", PREFERRED_DEFAULT},
+    {"PREFERRED_LOW_LATENCY", PREFERRED_LOW_LATENCY},
+    {"PREFERRED_HIGH_QUALITY", PREFERRED_HIGH_QUALITY},
+};
+
 NapiAudioEnum::NapiAudioEnum()
     : env_(nullptr) {
 }
@@ -730,6 +737,8 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
             CreateEnumObject(env, outputDeviceChangeRecommendedActionMap)),
         DECLARE_NAPI_PROPERTY("EffectFlag", CreateEnumObject(env, effectFlagMap)),
         DECLARE_NAPI_PROPERTY("RenderTarget", CreateEnumObject(env, renderTargetMap)),
+        DECLARE_NAPI_PROPERTY("BluetoothAndNearlinkPreferredRecordCategory",
+            CreateEnumObject(env, BluetoothAndNearlinkPreferredRecordCategoryMap)),
     };
     return napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
 }

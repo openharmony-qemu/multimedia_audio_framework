@@ -173,7 +173,7 @@ private:
     bool isNeedRestart_ = false;
     float leftVolume_ = DEFAULT_VOLUME_LEVEL;
     float rightVolume_ = DEFAULT_VOLUME_LEVEL;
-    uint32_t hdiRenderId_ = 0;
+    uint32_t hdiRenderId_ = HDI_INVALID_ID;
     sptr<RemoteIAudioRender> audioRender_ = nullptr;
     // for signal detect
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;

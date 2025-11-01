@@ -106,6 +106,7 @@ void AudioSendCallbackFuzzTest()
 
     VolumeEvent volumeEvent;
     audioPolicyServerHandler->SendVolumeKeyEventCallback(volumeEvent);
+    audioPolicyServerHandler->SendVolumeDegreeEventCallback(volumeEvent);
  
     std::pair<int32_t, AudioSessionDeactiveEvent> sessionDeactivePair;
     audioPolicyServerHandler->SendAudioSessionDeactiveCallback(sessionDeactivePair);

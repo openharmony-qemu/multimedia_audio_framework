@@ -21,6 +21,7 @@ config("audio_capturer_config") {
     "../../../interfaces/inner_api/native/audiocapturer/include",
     "../../../frameworks/native/audiostream/include",
     "../../../services/audio_service/client/include",
+    "../audioschedule/include",
   ]
 
   cflags = [
@@ -73,6 +74,7 @@ ohos_shared_library("audio_capturer") {
     "../../../services/audio_service:audio_client",
     "../audiodefinitions:audio_definitions",
     "../audioutils:audio_utils",
+    "../audioschedule:audio_schedule",
   ]
 
   if (audio_framework_feature_low_latency) {

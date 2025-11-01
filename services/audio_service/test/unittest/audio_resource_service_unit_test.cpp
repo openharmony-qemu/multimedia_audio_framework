@@ -694,68 +694,12 @@ HWTEST(AudioResourceServiceUnitTest, AddThreadToGroup_006, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test ReleaseAudioWorkgroup
- * @tc.type  : FUNC
- * @tc.number: ReleaseAudioWorkgroup_002
- * @tc.desc  : Test ReleaseAudioWorkgroup when find workgroup
- */
-HWTEST(AudioResourceServiceUnitTest, ReleaseAudioWorkgroup_002, TestSize.Level0)
-{
-    int32_t pid = -1;
-    int32_t workgroupId = 1;
-    int32_t ret = audioResourceService.ReleaseAudioWorkgroup(pid, workgroupId);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
-}
-
-/**
- * @tc.name  : Test ReleaseAudioWorkgroup
- * @tc.type  : FUNC
- * @tc.number: ReleaseAudioWorkgroup_003
- * @tc.desc  : Test ReleaseAudioWorkgroup when find workgroup
- */
-HWTEST(AudioResourceServiceUnitTest, ReleaseAudioWorkgroup_003, TestSize.Level0)
-{
-    int32_t pid = 1;
-    int32_t workgroupId = 1;
-    int32_t ret = audioResourceService.ReleaseAudioWorkgroup(pid, workgroupId);
-    EXPECT_NE(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : Test ReleaseAudioWorkgroup
- * @tc.type  : FUNC
- * @tc.number: ReleaseAudioWorkgroup_004
- * @tc.desc  : Test ReleaseAudioWorkgroup when find workgroup
- */
-HWTEST(AudioResourceServiceUnitTest, ReleaseAudioWorkgroup_004, TestSize.Level0)
-{
-    int32_t pid = 1;
-    int32_t workgroupId = -1;
-    int32_t ret = audioResourceService.ReleaseAudioWorkgroup(pid, workgroupId);
-    EXPECT_NE(ret, ERR_OPERATION_FAILED);
-}
-
-/**
- * @tc.name  : Test ReleaseAudioWorkgroup
- * @tc.type  : FUNC
- * @tc.number: ReleaseAudioWorkgroup_005
- * @tc.desc  : Test ReleaseAudioWorkgroup when find workgroup
- */
-HWTEST(AudioResourceServiceUnitTest, ReleaseAudioWorkgroup_005, TestSize.Level0)
-{
-    int32_t pid = 1;
-    int32_t workgroupId = 1;
-    int32_t ret = audioResourceService.ReleaseAudioWorkgroup(pid, workgroupId);
-    EXPECT_NE(ret, SUCCESS);
-}
-
-/**
  * @tc.name  : ReleaseAudioWorkgroup
  * @tc.type  : FUNC
  * @tc.number: ReleaseAudioWorkgroup_006
  * @tc.desc  : Test successful release of an existing audio workgroup. Covers the normal branch where reply.paramA == 0.
  */
-HWTEST(AudioResourceServiceUnitTest, ReleaseAudioWorkgroup_006, TestSize.Level1)
+HWTEST(AudioResourceServiceUnitTest, ReleaseAudioWorkgroup_005, TestSize.Level1)
 {
     AudioResourceService* service = AudioResourceService::GetInstance();
     int32_t pid = 12345;

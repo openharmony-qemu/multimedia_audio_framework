@@ -76,7 +76,7 @@ public:
     int32_t OnServiceConnected(AudioServiceIndex serviceIndex);
     void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
         sptr<AudioRendererFilter> filter = nullptr);
-    void OnPrivacyDeviceSelected();
+    void OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress);
     void OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc, DeviceType devType,
         std::string macAddress, std::string deviceName, bool isActualConnection, AudioStreamInfo streamInfo,
         bool isConnected);
@@ -85,6 +85,7 @@ public:
     void RemoveDeviceFromGlobalOnly(std::shared_ptr<AudioDeviceDescriptor> desc);
     void AddDeviceBackToGlobalOnly(std::shared_ptr<AudioDeviceDescriptor> desc);
     uint32_t GetPaIndexByPortName(const std::string &portName);
+    void TriggerDeviceInfoUpdatedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devChangeDesc);
 private:
     AudioDeviceStatus() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),

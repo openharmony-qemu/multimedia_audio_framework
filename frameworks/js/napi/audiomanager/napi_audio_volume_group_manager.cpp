@@ -195,7 +195,6 @@ napi_value NapiAudioVolumeGroupManager::Construct(napi_env env, napi_callback_in
     napi_value args[PARAM1] = { nullptr};
     status = napi_get_cb_info(env, info, &argCount, args, &jsThis, nullptr);
     NapiParamUtils::GetValueInt32(env, groupId, args[PARAM0]);
-    AUDIO_PRERELEASE_LOGI("Construct() %{public}d", groupId);
 
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, undefinedResult, "Failed in NapiAudioVolumeGroupManager::Construct()!");
     auto groupManager = AudioSystemManager::GetInstance()->GetGroupManager(groupId);

@@ -112,6 +112,8 @@ public:
 
     bool IsRemote() const;
 
+    bool IsRemoteDevice() const;
+
     DeviceType MapInternalToExternalDeviceType(int32_t apiVersion, bool isSupportedNearlink = true) const;
 
     DeviceStreamInfo GetDeviceStreamInfo(void) const;

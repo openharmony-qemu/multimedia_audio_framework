@@ -47,6 +47,7 @@ AudioSuiteEngine::AudioSuiteEngine(AudioSuiteManagerCallback& callback)
     RegisterHandler(DISCONNECT_NODES, &AudioSuiteEngine::HandleDisConnectNodes);
     RegisterHandler(RENDER_FRAME, &AudioSuiteEngine::HandleRenderFrame);
     RegisterHandler(MULTI_RENDER_FRAME, &AudioSuiteEngine::HandleMultiRenderFrame);
+    RegisterHandler(GET_OPTIONS, &AudioSuiteEngine::HandleGetOptions);
 
     AUDIO_INFO_LOG("AudioEditEngine Create");
 }
@@ -461,9 +462,9 @@ int32_t AudioSuiteEngine::SetAudioFormat(uint32_t nodeId, AudioFormat audioForma
 }
 
 int32_t AudioSuiteEngine::SetRequestDataCallback(uint32_t nodeId,
-    std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback)
+    std::shared_ptr<InputNodeRequestDataCallBack> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not SetWriteDataCallback.");
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "engine not init, can not SetRequestDataCallback.");
 
     auto request = [this, nodeId, callback]() {
         AUDIO_INFO_LOG("SetRequestDataCallback enter");
@@ -679,24 +680,28 @@ int32_t AudioSuiteEngine::GetOptions(uint32_t nodeId, std::string name, std::str
         AUDIO_INFO_LOG("GetOptions enter");
         if (nodeMap_.find(nodeId) == nodeMap_.end()) {
             AUDIO_ERR_LOG("engine GetOptions node failed, node id=%{public}d is invailed.", nodeId);
+            managerCallback_.OnGetOptions(ERR_AUDIO_SUITE_NODE_NOT_EXIST);
             return;
         }
 
         auto pipelineId = nodeMap_[nodeId];
         if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
             AUDIO_ERR_LOG("engine GetOptions node failed, node id=%{public}d is invailed.", nodeId);
+            managerCallback_.OnGetOptions(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
             return;
         }
 
         auto pipeline = pipelineMap_[pipelineId];
         if (pipeline == nullptr) {
             AUDIO_ERR_LOG("pipeline GetOptions node failed, pipeline is nullptr.");
+            managerCallback_.OnGetOptions(ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
             return;
         }
 
         int32_t ret = pipeline->GetOptions(nodeId, name, value);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("pipeline GetOptions node failed, ret = %{public}d.", ret);
+            managerCallback_.OnGetOptions(ret);
             return;
         }
     };
@@ -800,6 +805,11 @@ void AudioSuiteEngine::HandleRenderFrame(int32_t result, uint32_t pipelineId)
 void AudioSuiteEngine::HandleMultiRenderFrame(int32_t result, uint32_t pipelineId)
 {
     managerCallback_.OnMultiRenderFrame(result, pipelineId);
+}
+
+void AudioSuiteEngine::HandleGetOptions(int32_t result)
+{
+    managerCallback_.OnGetOptions(result);
 }
 
 }  // namespace AudioSuite

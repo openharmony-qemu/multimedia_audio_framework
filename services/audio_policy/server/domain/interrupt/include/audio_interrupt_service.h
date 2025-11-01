@@ -114,7 +114,7 @@ public:
     AudioStreamType GetStreamInFocus(const int32_t zoneId);
     AudioStreamType GetStreamInFocusByUid(const int32_t uid, const int32_t zoneId);
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId);
-    void ClearAudioFocusInfoListOnAccountsChanged(const int32_t &id);
+    void ClearAudioFocusInfoListOnAccountsChanged(const int32_t &id, const int32_t &oldId);
     int32_t ClearAudioFocusInfoList();
     void AudioInterruptZoneDump(std::string &dumpString);
     AudioScene GetHighestPriorityAudioScene(const int32_t zoneId) const;
@@ -125,11 +125,6 @@ public:
     std::set<int32_t> GetStreamIdsForAudioSessionByDeviceType(const int32_t zoneId, DeviceType deviceType);
     std::vector<int32_t> GetAudioSessionUidList(int32_t zoneId);
     StreamUsage GetAudioSessionStreamUsage(int32_t callerPid);
-    
-    bool ShouldAudioServerProcessInruptEvent(const InterruptEventInternal &interruptEvent,
-        const AudioInterrupt &audioInterrupt);
-    void SendInterruptEventToAudioServer(const InterruptEventInternal &interruptEvent,
-        const AudioInterrupt &audioInterrupt);
 
     void ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent);
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
@@ -139,8 +134,8 @@ public:
         const int32_t appUid, std::unordered_set<int32_t> &uidActivedSessions);
     void ResumeFocusByStreamId(
         const int32_t streamId, const InterruptEventInternal interruptEventResume);
-    int32_t GetCurrentUserId();
     void OnUserUnlocked(int32_t userId);
+    bool IsSwitchUser();
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -152,7 +147,8 @@ private:
     using InterruptIterator = std::list<std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator>;
     std::unordered_map<int32_t, std::vector<CachedFocusInfo>> cachedFocusMap_;
     std::mutex cachedFocusMutex_;
-    int32_t userId_;
+    int32_t oldUserId_;
+    bool isSwitchUser_ = false;
 
     void CacheFocusAndCallback(const uint32_t &sessionId, const InterruptEventInternal &interruptEvent,
         const AudioInterrupt &audioInterrupt);

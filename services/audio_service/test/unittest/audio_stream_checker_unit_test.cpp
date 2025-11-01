@@ -14,6 +14,7 @@
  */
 #include <gtest/gtest.h>
 #include "audio_stream_checker.h"
+#include "audio_stream_checker_thread.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
 
@@ -750,7 +751,6 @@ HWTEST(AudioStreamCheckerTest, InitCheckerTest_003, TestSize.Level1)
     checkerParamTest.hasInitCheck = false;
     checker->checkParaVector_.clear();
     checker->checkParaVector_.push_back(checkerParamTest);
-    checker->isNeedCreateThread_.store(false);
 
     checker->InitChecker(para, pid, callbackId);
     int32_t size = checker->checkParaVector_.size();
@@ -776,10 +776,8 @@ HWTEST(AudioStreamCheckerTest, InitCheckerTest_004, TestSize.Level1)
     checkerParamTest.hasInitCheck = false;
     checker->checkParaVector_.clear();
     checker->checkParaVector_.push_back(checkerParamTest);
-    checker->isNeedCreateThread_.store(true);
 
     checker->InitChecker(para, pid, callbackId);
-    EXPECT_EQ(checker->isNeedCreateThread_.load(), false);
     int32_t size = checker->checkParaVector_.size();
     EXPECT_EQ(size, 2);
 }
@@ -802,10 +800,8 @@ HWTEST(AudioStreamCheckerTest, InitCheckerTest_005, TestSize.Level1)
     checkerParamTest.hasInitCheck = false;
     checker->checkParaVector_.clear();
     checker->checkParaVector_.push_back(checkerParamTest);
-    checker->isNeedCreateThread_.store(true);
 
     checker->InitChecker(para, pid, callbackId);
-    EXPECT_EQ(checker->isNeedCreateThread_.load(), false);
     int32_t size = checker->checkParaVector_.size();
     EXPECT_EQ(size, 2);
 }
@@ -827,14 +823,12 @@ HWTEST(AudioStreamCheckerTest, DeleteCheckerParaTest_002, TestSize.Level1)
     checkerParamTest.hasInitCheck = false;
     checker->checkParaVector_.clear();
     checker->checkParaVector_.push_back(checkerParamTest);
-    checker->isNeedCreateThread_.store(false);
 
     checker->InitChecker(para, 100000, 100000);
     checker->DeleteCheckerPara(100000, 100000);
 
     int32_t size = checker->checkParaVector_.size();
     EXPECT_EQ(size, 1);
-    EXPECT_EQ(checker->isNeedCreateThread_.load(), false);
 }
 
 /**
@@ -854,14 +848,12 @@ HWTEST(AudioStreamCheckerTest, DeleteCheckerParaTest_003, TestSize.Level1)
     checkerParamTest.hasInitCheck = false;
     checker->checkParaVector_.clear();
     checker->checkParaVector_.push_back(checkerParamTest);
-    checker->isNeedCreateThread_.store(false);
 
     checker->InitChecker(para, 100000, 100000);
     checker->DeleteCheckerPara(100000, 0);
 
     int32_t size = checker->checkParaVector_.size();
     EXPECT_EQ(size, 2);
-    EXPECT_EQ(checker->isNeedCreateThread_.load(), false);
 }
 
 /**
@@ -881,14 +873,12 @@ HWTEST(AudioStreamCheckerTest, DeleteCheckerParaTest_004, TestSize.Level1)
     checkerParamTest.hasInitCheck = false;
     checker->checkParaVector_.clear();
     checker->checkParaVector_.push_back(checkerParamTest);
-    checker->isNeedCreateThread_.store(false);
 
     checker->InitChecker(para, 100000, 100000);
     checker->DeleteCheckerPara(0, 100000);
 
     int32_t size = checker->checkParaVector_.size();
     EXPECT_EQ(size, 2);
-    EXPECT_EQ(checker->isNeedCreateThread_.load(), false);
 }
 
 /**
@@ -1013,8 +1003,8 @@ HWTEST(AudioStreamCheckerTest, OnRemoteAppDied_005, TestSize.Level1)
     checker->InitChecker(para, 100000, 100000);
     checker->OnRemoteAppDied(100000);
 
-    EXPECT_EQ(checker->isNeedCreateThread_.load(), true);
-    EXPECT_EQ(checker->isKeepCheck_.load(), false);
+    int size = checker->checkParaVector_.size();
+    EXPECT_EQ(size, 0);
 }
 
 /**
@@ -1341,8 +1331,6 @@ HWTEST(AudioStreamCheckerTest, OnRemoteAppDied_006, TestSize.Level1)
     checker->checkParaVector_.push_back({pid, 0});
     checker->OnRemoteAppDied(pid);
     EXPECT_EQ(checker->checkParaVector_.size(), 0);
-    EXPECT_EQ(checker->isNeedCreateThread_.load(), true);
-    EXPECT_EQ(checker->isKeepCheck_.load(), false);
 }
 
 /**
@@ -1358,8 +1346,6 @@ HWTEST(AudioStreamCheckerTest, OnRemoteAppDied_007, TestSize.Level1)
     checker->checkParaVector_.push_back({5678, 0});
     checker->OnRemoteAppDied(pid);
     EXPECT_EQ(checker->checkParaVector_.size(), 1);
-    EXPECT_EQ(checker->isNeedCreateThread_.load(), true);
-    EXPECT_NE(checker->isKeepCheck_.load(), true);
 }
 
 /**
@@ -1374,8 +1360,6 @@ HWTEST(AudioStreamCheckerTest, OnRemoteAppDied_008, TestSize.Level1)
     int32_t pid = 1234;
     checker->OnRemoteAppDied(pid);
     EXPECT_EQ(checker->checkParaVector_.size(), 0);
-    EXPECT_EQ(checker->isNeedCreateThread_.load(), true);
-    EXPECT_EQ(checker->isKeepCheck_.load(), false);
 }
 
 /**
@@ -1477,40 +1461,6 @@ HWTEST(AudioStreamCheckerTest, MonitorCheckFrameSub_007, TestSize.Level0)
     para.muteFrameNum = 10;
     checker->MonitorCheckFrameSub(para);
     EXPECT_NE(para.lastStatus, -1); // Assuming lastStatus is updated in the function
-}
-
-/**
- * @tc.name  : Test MonitorOnAllCallback API
- * @tc.type  : FUNC
- * @tc.number: MonitorOnAllCallback_008
- */
-HWTEST(AudioStreamCheckerTest, MonitorOnAllCallback_008, TestSize.Level1)
-{
-    AudioProcessConfig cfg;
-    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
-    checker->monitorSwitch_ = false;
-    checker->MonitorOnAllCallback(DATA_TRANS_RESUME, false);
-    EXPECT_FALSE(checker->monitorSwitch_);
-}
-
-/**
- * @tc.name  : Test MonitorOnAllCallback API
- * @tc.type  : FUNC
- * @tc.number: MonitorOnAllCallback_009
- */
-HWTEST(AudioStreamCheckerTest, MonitorOnAllCallback_009, TestSize.Level1)
-{
-    AudioProcessConfig cfg;
-    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
-    checker->monitorSwitch_ = true;
-    CheckerParam checkerParamTest;
-    checkerParamTest.pid = 0;
-    checkerParamTest.lastUpdateTime = 0;
-    checkerParamTest.hasInitCheck = true;
-    checker->checkParaVector_.clear();
-    checker->checkParaVector_.push_back(checkerParamTest);
-    checker->MonitorOnAllCallback(DATA_TRANS_RESUME, true);
-    EXPECT_TRUE(checker->monitorSwitch_);
 }
 
 /**
@@ -1730,19 +1680,6 @@ HWTEST(AudioStreamCheckerTest, IsMonitorNoDataFrame_002, TestSize.Level1)
     bool ret = checker->IsMonitorNoDataFrame(checkerParamTest);
     EXPECT_EQ(false, ret);
 }
-
-/**
- * @tc.name  : Test CheckStreamThread API
- * @tc.type  : FUNC
- * @tc.number: CheckStreamThread_001
- */
-HWTEST(AudioStreamCheckerTest, CheckStreamThread_001, TestSize.Level1)
-{
-    AudioProcessConfig cfg;
-    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
-    checker->CheckStreamThread();
-    EXPECT_EQ(false, checker->isKeepCheck_);
-}
  
 /**
  * @tc.name  : Test IsMonitorMuteFrame API
@@ -1758,6 +1695,37 @@ HWTEST(AudioStreamCheckerTest, IsMonitorMuteFrame_002, TestSize.Level1)
  
     bool ret = checker->IsMonitorMuteFrame(checkerParamTest);
     EXPECT_EQ(false, ret);
+}
+
+/**
+ * @tc.name  : Test DeleteThreadTask API
+ * @tc.type  : FUNC
+ * @tc.number: DeleteThreadTask_001
+ */
+HWTEST(AudioStreamCheckerTest, DeleteThreadTask_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamCheckerThread> streamCheckerThread =
+        std::make_shared<AudioStreamCheckerThread>();
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker1 = std::make_shared<AudioStreamChecker>(cfg);
+    std::shared_ptr<AudioStreamChecker> checker2 = std::make_shared<AudioStreamChecker>(cfg);
+    streamCheckerThread->taskLoop_ = std::make_shared<AudioLoopThread>("test");
+    streamCheckerThread->checkerVec_.push_back(checker1);
+    streamCheckerThread->currentTaskCount_.fetch_add(1);
+    streamCheckerThread->checkerVec_.push_back(checker2);
+    streamCheckerThread->currentTaskCount_.fetch_add(1);
+    EXPECT_EQ(streamCheckerThread->currentTaskCount_, 2);
+
+    streamCheckerThread->DeleteThreadTask(checker1);
+    EXPECT_EQ(streamCheckerThread->currentTaskCount_, 1);
+    EXPECT_NE(streamCheckerThread->taskLoop_, nullptr);
+
+    streamCheckerThread->DeleteThreadTask(checker2);
+    EXPECT_EQ(streamCheckerThread->currentTaskCount_, 0);
+    EXPECT_EQ(streamCheckerThread->taskLoop_, nullptr);
+
+    streamCheckerThread->DeleteThreadTask(checker1);
+    EXPECT_EQ(streamCheckerThread->currentTaskCount_, 0);
 }
 }
 }

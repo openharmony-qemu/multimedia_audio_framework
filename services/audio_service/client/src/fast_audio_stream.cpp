@@ -172,7 +172,7 @@ void FastAudioStream::InitCallbackHandler()
 void FastAudioStream::SafeSendCallbackEvent(uint32_t eventCode, int64_t data)
 {
     std::lock_guard<std::mutex> lock(runnerMutex_);
-    AUDIO_INFO_LOG("Send callback event, code: %{public}u, data: %{public}" PRId64, eventCode, data);
+    AUDIO_INFO_LOG("code: %{public}u, data: %{public}" PRId64, eventCode, data);
     CHECK_AND_RETURN_LOG(callbackHandler_ != nullptr && runnerReleased_ == false, "Runner is Released");
     callbackHandler_->SendCallbackEvent(eventCode, data);
 }
@@ -611,7 +611,7 @@ int32_t FastAudioStream::SetSpeed(float speed)
 
 int32_t FastAudioStream::SetPitch(float pitch)
 {
-    AUDIO_ERR_LOG("SetPitch is not supported");
+    AUDIO_ERR_LOG("not supported");
     return ERR_OPERATION_FAILED;
 }
 
@@ -657,7 +657,7 @@ void FastAudioStream::RegisterThreadPriorityOnStart(StateChangeCmdType cmdType)
 bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
     AudioStreamDeviceChangeReasonExt reason)
 {
-    AUDIO_PRERELEASE_LOGI("StartAudioStream enter.");
+    AUDIO_PRERELEASE_LOGI("enter");
     CHECK_AND_RETURN_RET_LOG((state_ == PREPARED) || (state_ == STOPPED) || (state_ == PAUSED),
         false, "Illegal state:%{public}u", state_);
 
@@ -694,7 +694,7 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
 
 bool FastAudioStream::PauseAudioStream(StateChangeCmdType cmdType)
 {
-    AUDIO_PRERELEASE_LOGI("PauseAudioStream enter.");
+    AUDIO_PRERELEASE_LOGI("enter");
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, false,
         "state is not RUNNING. Illegal state:%{public}u", state_);
     State oldState = state_;
@@ -745,7 +745,7 @@ bool FastAudioStream::StopAudioStream()
 
 bool FastAudioStream::FlushAudioStream()
 {
-    AUDIO_PRERELEASE_LOGI("FlushAudioStream enter.");
+    AUDIO_PRERELEASE_LOGI("enter");
     return true;
 }
 
@@ -1126,7 +1126,7 @@ int32_t FastAudioStream::SetDefaultOutputDevice(const DeviceType defaultOutputDe
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "set failed: null process");
     int32_t ret = processClient_->SetDefaultOutputDevice(defaultOutputDevice, skipForce);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDefaultOutputDevice error.");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "error.");
     defaultOutputDevice_ = defaultOutputDevice;
     return SUCCESS;
 }
@@ -1213,6 +1213,13 @@ void FastAudioStream::SetCallStartByUserTid(pid_t tid)
 {
     std::lock_guard lock(lastCallStartByUserTidMutex_);
     lastCallStartByUserTid_ = tid;
+}
+
+int32_t FastAudioStream::SetRebuildFlag()
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERROR, "processClient_ is null");
+    processClient_->SetRebuildFlag();
+    return SUCCESS;
 }
 
 void FastAudioStream::SetCallbackLoopTid(int32_t tid)

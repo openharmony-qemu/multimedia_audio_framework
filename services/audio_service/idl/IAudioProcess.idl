@@ -36,5 +36,6 @@ interface IAudioProcess {
     void SetUnderrunCount([in] unsigned int underrunCnt);
     void SaveAdjustStreamVolumeInfo([in] float volume, [in] unsigned int sessionId, [in] String adjustTime,
         [in] unsigned int code);
+    void SetRebuildFlag();
     void SetAudioHapticsSyncId([in] int audioHapticsSyncId);
 }

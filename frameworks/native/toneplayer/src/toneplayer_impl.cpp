@@ -493,6 +493,9 @@ bool TonePlayerImpl::InitToneWaveInfo()
 bool TonePlayerImpl::InitAudioRenderer()
 {
     processSize_ = (rendererOptions_.streamInfo.samplingRate * C20MS) / C1000MS;
+    if (rendererOptions_.rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+        rendererOptions_.rendererInfo.toneFlag = true;
+    }
     audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions_);
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, false,
         "Renderer create failed");

@@ -308,8 +308,6 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, GetVolumeAdjustZoneId_001, TestSize.Lev
     AudioConnectedDevice::GetInstance().AddConnectedDevice(desc);
     AudioZoneService::GetInstance().UpdateDeviceFromGlobalForAllZone(desc);
     ASSERT_EQ(adapterManager.GetVolumeAdjustZoneId(), 0);
-    ASSERT_EQ(adapterManager.SetAdjustVolumeForZone(zoneId1_), SUCCESS);
-    ASSERT_EQ(adapterManager.GetVolumeAdjustZoneId(), zoneId1_);
 }
 
 /**
@@ -336,6 +334,282 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, SetAdjustVolumeForZone_002, TestSize.Le
     AudioZoneService::GetInstance().UpdateDeviceFromGlobalForAllZone(desc);
     ASSERT_EQ(adapterManager.SetAdjustVolumeForZone(zoneId1_), SUCCESS);
     ASSERT_EQ(adapterManager.GetVolumeAdjustZoneId(), zoneId1_);
+}
+
+/**
+ * @tc.name: UpdateSafeVolumeInner_001
+ * @tc.desc: Test UpdateSafeVolumeInner
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, UpdateSafeVolumeInner_001, TestSize.Level4)
+{
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_NEARLINK;
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    audioAdapterManager->safeVolume_ = 10000;
+    audioAdapterManager->isSleBoot_ = false;
+    audioAdapterManager->safeStatusSle_ = SAFE_INACTIVE;
+
+    audioAdapterManager->UpdateSafeVolumeInner(device);
+    EXPECT_EQ(audioAdapterManager->isSleBoot_, false);
+}
+
+/**
+ * @tc.name: UpdateSafeVolumeInner_002
+ * @tc.desc: Test UpdateSafeVolumeInner
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, UpdateSafeVolumeInner_002, TestSize.Level4)
+{
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_NEARLINK;
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    audioAdapterManager->safeVolume_ = -1;
+    audioAdapterManager->isSleBoot_ = true;
+    audioAdapterManager->safeStatusSle_ = SAFE_INACTIVE;
+
+    audioAdapterManager->UpdateSafeVolumeInner(device);
+    EXPECT_EQ(audioAdapterManager->isSleBoot_, false);
+}
+
+/**
+ * @tc.name: UpdateSafeVolumeInner_003
+ * @tc.desc: Test UpdateSafeVolumeInner
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, UpdateSafeVolumeInner_003, TestSize.Level4)
+{
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_NEARLINK;
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    audioAdapterManager->safeVolume_ = -1;
+    audioAdapterManager->isSleBoot_ = false;
+    audioAdapterManager->safeStatusSle_ = SAFE_INACTIVE;
+
+    audioAdapterManager->UpdateSafeVolumeInner(device);
+    EXPECT_EQ(audioAdapterManager->isSleBoot_, false);
+}
+
+/**
+ * @tc.name: InitSafeStatus_001
+ * @tc.desc: Test InitSafeStatus
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, InitSafeStatus_001, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    bool isFirstBoot = true;
+
+    audioAdapterManager->InitSafeStatus(isFirstBoot);
+    EXPECT_EQ(isFirstBoot, true);
+}
+
+/**
+ * @tc.name: InitSafeStatus_002
+ * @tc.desc: Test InitSafeStatus
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, InitSafeStatus_002, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    bool isFirstBoot = false;
+
+    audioAdapterManager->InitSafeStatus(isFirstBoot);
+    EXPECT_EQ(isFirstBoot, false);
+}
+
+/**
+ * @tc.name: InitSafeTime_001
+ * @tc.desc: Test InitSafeTime
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, InitSafeTime_001, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    bool isFirstBoot = true;
+
+    audioAdapterManager->InitSafeTime(isFirstBoot);
+    EXPECT_EQ(isFirstBoot, true);
+}
+
+/**
+ * @tc.name: InitSafeTime_002
+ * @tc.desc: Test InitSafeTime
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, InitSafeTime_002, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    bool isFirstBoot = false;
+
+    audioAdapterManager->InitSafeTime(isFirstBoot);
+    EXPECT_EQ(isFirstBoot, false);
+}
+
+/**
+ * @tc.name: ConvertSafeTime_001
+ * @tc.desc: Test ConvertSafeTime
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, ConvertSafeTime_001, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    audioAdapterManager->safeActiveSleTime_ = 1000;
+
+    audioAdapterManager->ConvertSafeTime();
+    EXPECT_EQ(audioAdapterManager->safeActiveSleTime_, 1);
+}
+
+/**
+ * @tc.name: ConvertSafeTime_002
+ * @tc.desc: Test ConvertSafeTime
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, ConvertSafeTime_002, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    audioAdapterManager->safeActiveSleTime_ = 0;
+
+    audioAdapterManager->ConvertSafeTime();
+    EXPECT_EQ(audioAdapterManager->safeActiveSleTime_, 0);
+}
+
+/**
+ * @tc.name: GetCurrentDeviceSafeStatus_001
+ * @tc.desc: Test GetCurrentDeviceSafeStatus
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, GetCurrentDeviceSafeStatus_001, TestSize.Level4)
+{
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_NEARLINK;
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    audioAdapterManager->safeStatusSle_ = SAFE_INACTIVE;
+
+    auto ret = audioAdapterManager->GetCurrentDeviceSafeStatus(device->deviceType_);
+    EXPECT_EQ(ret, SAFE_INACTIVE);
+}
+
+/**
+ * @tc.name: GetCurentDeviceSafeTime_001
+ * @tc.desc: Test GetCurentDeviceSafeTime
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, GetCurentDeviceSafeTime_001, TestSize.Level4)
+{
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_NEARLINK;
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+
+    auto ret = audioAdapterManager->GetCurentDeviceSafeTime(device->deviceType_);
+    EXPECT_LT(0, ret);
+}
+
+/**
+ * @tc.name: GetRestoreVolumeLevel_001
+ * @tc.desc: Test GetRestoreVolumeLevel
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, GetRestoreVolumeLevel_001, TestSize.Level4)
+{
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_NEARLINK;
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+
+    auto ret = audioAdapterManager->GetRestoreVolumeLevel(device->deviceType_);
+    EXPECT_LT(0, ret);
+}
+
+/**
+ * @tc.name: SetDeviceSafeStatus_001
+ * @tc.desc: Test SetDeviceSafeStatus
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, SetDeviceSafeStatus_001, TestSize.Level4)
+{
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_NEARLINK;
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+
+    audioAdapterManager->SetDeviceSafeStatus(device->deviceType_, SAFE_INACTIVE);
+    EXPECT_EQ(audioAdapterManager->safeStatusSle_, SAFE_INACTIVE);
+}
+
+/**
+ * @tc.name: SetDeviceSafeTime_001
+ * @tc.desc: Test SetDeviceSafeTime
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, SetDeviceSafeTime_001, TestSize.Level4)
+{
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_NEARLINK;
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+
+    audioAdapterManager->SetDeviceSafeTime(device->deviceType_, 120);
+    EXPECT_EQ(audioAdapterManager->safeActiveSleTime_, 120);
+}
+
+/**
+ * @tc.name: SetRestoreVolumeLevel_001
+ * @tc.desc: Test SetRestoreVolumeLevel
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, SetRestoreVolumeLevel_001, TestSize.Level4)
+{
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->deviceType_ = DEVICE_TYPE_NEARLINK;
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+
+    audioAdapterManager->SetRestoreVolumeLevel(device->deviceType_, 5);
+    EXPECT_EQ(audioAdapterManager->safeActiveSleVolume_, 5);
+}
+
+/**
+ * @tc.name: SafeVolumeDump_001
+ * @tc.desc: Test SafeVolumeDump
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, SafeVolumeDump_001, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    audioAdapterManager->isSafeBoot_ = true;
+
+    std::string dumpString;
+    audioAdapterManager->SafeVolumeDump(dumpString);
+    EXPECT_EQ(audioAdapterManager->isSafeBoot_, true);
+}
+
+/**
+ * @tc.name: SafeVolumeDump_002
+ * @tc.desc: Test SafeVolumeDump
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, SafeVolumeDump_002, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    audioAdapterManager->isSafeBoot_ = false;
+
+    std::string dumpString;
+    audioAdapterManager->SafeVolumeDump(dumpString);
+    EXPECT_EQ(audioAdapterManager->isSafeBoot_, false);
 }
 } // namespace AudioStandard
 } // namespace OHOS

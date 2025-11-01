@@ -175,6 +175,27 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerOnStatusUpdate_005, Test
 }
 
 /**
+ * @tc.name  : Test OnStatusUpdate API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerOnStatusUpdate_006
+ * @tc.desc  : Test RendererInServerOnStatusUpdate.
+ */
+HWTEST_F(RendererInServerThirdUnitTest, RendererInServerOnStatusUpdate_006, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+    rendererInServer->OnCheckActiveMusicTime("Started");
+    rendererInServer->latestForWorkgroup_.status = I_STATUS_IDLE;
+    rendererInServer->status_ = I_STATUS_IDLE;
+    rendererInServer->OnStatusUpdate(OPERATION_SET_OFFLOAD_ENABLE);
+    EXPECT_TRUE(rendererInServer->offloadEnable_);
+    rendererInServer->OnCheckActiveMusicTime("Started");
+    EXPECT_TRUE(rendererInServer->offloadEnable_);
+}
+
+/**
  * @tc.name  : Test WriteMuteDataSysEvent API
  * @tc.type  : FUNC
  * @tc.number: RendererInServerWriteMuteDataSysEvent_001
@@ -274,37 +295,37 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetLowPowerVolume_001, T
 }
 
 /**
- * @tc.name  : Test InitDualToneStream API
+ * @tc.name  : Test EnableDualTone API
  * @tc.type  : FUNC
- * @tc.number: RendererInServerInitDualToneStream_001
- * @tc.desc  : Test InitDualToneStream interface, Set status_ is I_STATUS_STARTED.
+ * @tc.number: RendererInServerEnableDualTone_001
+ * @tc.desc  : Test EnableDualTone interface, Set status_ is I_STATUS_STARTED.
  */
-HWTEST_F(RendererInServerThirdUnitTest, RendererInServerInitDualToneStream_001, TestSize.Level1)
+HWTEST_F(RendererInServerThirdUnitTest, RendererInServerEnableDualTone_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, rendererInServer);
 
     rendererInServer->status_ = I_STATUS_STARTED;
     
     rendererInServer->Init();
-    int32_t ret = rendererInServer->InitDualToneStream("Speaker");
+    int32_t ret = rendererInServer->EnableDualTone("Speaker");
 
     EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
- * @tc.name  : Test InitDualToneStream API
+ * @tc.name  : Test EnableDualTone API
  * @tc.type  : FUNC
- * @tc.number: RendererInServerInitDualToneStream_002
- * @tc.desc  : Test InitDualToneStream interface, Set dualToneStream_ is nullptr.
+ * @tc.number: RendererInServerEnableDualTone_002
+ * @tc.desc  : Test EnableDualTone interface, Set dualToneStream_ is nullptr.
  */
-HWTEST_F(RendererInServerThirdUnitTest, RendererInServerInitDualToneStream_002, TestSize.Level1)
+HWTEST_F(RendererInServerThirdUnitTest, RendererInServerEnableDualTone_002, TestSize.Level1)
 {
     EXPECT_NE(nullptr, rendererInServer);
 
     rendererInServer->status_ = I_STATUS_STARTED;
     rendererInServer->dualToneStream_ = nullptr;
     rendererInServer->Init();
-    int32_t ret = rendererInServer->InitDualToneStream("Speaker");
+    int32_t ret = rendererInServer->EnableDualTone("Speaker");
 
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -1567,7 +1588,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerStop_001, TestSize.Level
     int32_t ret = rendererInServer->Init();
     rendererInServer->standByEnable_ = true;
     rendererInServer->InitDupStream(1);
-    rendererInServer->InitDualToneStream("Speaker");
+    rendererInServer->EnableDualTone("Speaker");
     rendererInServer->playerDfx_ = 0;
 
     ret = rendererInServer->Stop();
@@ -1588,7 +1609,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerStop_002, TestSize.Level
     int32_t ret = rendererInServer->Init();
     rendererInServer->standByEnable_ = true;
     rendererInServer->InitDupStream(1);
-    rendererInServer->InitDualToneStream("Speaker");
+    rendererInServer->EnableDualTone("Speaker");
     rendererInServer->managerType_ = DIRECT_PLAYBACK;
 
     ret = rendererInServer->Stop();
@@ -1609,7 +1630,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerStop_003, TestSize.Level
     int32_t ret = rendererInServer->Init();
     rendererInServer->standByEnable_ = true;
     rendererInServer->InitDupStream(1);
-    rendererInServer->InitDualToneStream("Speaker");
+    rendererInServer->EnableDualTone("Speaker");
     rendererInServer->managerType_ = EAC3_PLAYBACK;
 
     ret = rendererInServer->Stop();
@@ -1630,7 +1651,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerStop_004, TestSize.Level
     int32_t ret = rendererInServer->Init();
     rendererInServer->standByEnable_ = true;
     rendererInServer->InitDupStream(1);
-    rendererInServer->InitDualToneStream("Speaker");
+    rendererInServer->EnableDualTone("Speaker");
     rendererInServer->managerType_ = RECORDER;
 
     ret = rendererInServer->Stop();
@@ -2159,6 +2180,46 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerWriteDupBufferInner_003,
     BufferWrap bufferWrap = {buffer.get(), length};
     server->innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer()->Dequeue(bufferWrap);
     EXPECT_EQ(uint8_t(buffer[0]), 0);
+}
+
+/**
+ * @tc.name  : Test WaitForDataConnection API
+ * @tc.type  : FUNC
+ * @tc.number: WaitForDataConnection
+ * @tc.desc  : Test WaitForDataConnection
+ */
+HWTEST_F(RendererInServerThirdUnitTest, WaitForDataConnection_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, rendererInServer);
+
+    rendererInServer->WaitForDataConnection();
+    rendererInServer->OnDataLinkConnectionUpdate(IOperation::OPERATION_DATA_LINK_CONNECTING);
+    EXPECT_EQ(rendererInServer->isDataLinkConnected_, false);
+
+    rendererInServer->WaitForDataConnection();
+    rendererInServer->OnDataLinkConnectionUpdate(IOperation::OPERATION_DATA_LINK_CONNECTED);
+    EXPECT_EQ(rendererInServer->isDataLinkConnected_, true);
+}
+
+/**
+ * @tc.name  : Test UpdateStreamInfo API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerUpdateStreamInfo_001
+ * @tc.desc  : test UpdateStreamInfo
+ */
+HWTEST_F(RendererInServerThirdUnitTest, RendererInServerUpdateStreamInfo_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+    rendererInServer->UpdateStreamInfo();
+    EXPECT_GT(rendererInServer->checkCount_, 0);
+
+    uint32_t checkCount = rendererInServer->checkCount_;
+    rendererInServer->UpdateStreamInfo();
+
+    EXPECT_EQ(checkCount, rendererInServer->checkCount_ + 1);
 }
 } // namespace AudioStandard
 } // namespace OHOS

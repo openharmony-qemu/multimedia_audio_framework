@@ -95,7 +95,7 @@ HWTEST_F(AudioInjectorPolicyUnitTest, HasRunningVoipStream_001, TestSize.Level1)
     desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
     streamVec.push_back(desc);
     bool ret = audioInjectorPolicy.HasRunningVoipStream(streamVec);
-    EXPECT_NE(true, ret);
+    EXPECT_EQ(true, ret);
 }
 
 /**
@@ -114,7 +114,7 @@ HWTEST_F(AudioInjectorPolicyUnitTest, HasRunningVoipStream_002, TestSize.Level1)
     desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_CALL;
     streamVec.push_back(desc);
     bool ret = audioInjectorPolicy.HasRunningVoipStream(streamVec);
-    EXPECT_NE(false, ret);
+    EXPECT_EQ(false, ret);
 }
 
 /**
@@ -133,7 +133,7 @@ HWTEST_F(AudioInjectorPolicyUnitTest, HasRunningVoipStream_003, TestSize.Level1)
     desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
     streamVec.push_back(desc);
     bool ret = audioInjectorPolicy.HasRunningVoipStream(streamVec);
-    EXPECT_NE(false, ret);
+    EXPECT_EQ(false, ret);
 }
 
 /**
@@ -152,7 +152,7 @@ HWTEST_F(AudioInjectorPolicyUnitTest, HasRunningVoipStream_004, TestSize.Level1)
     desc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_CALL;
     streamVec.push_back(desc);
     bool ret = audioInjectorPolicy.HasRunningVoipStream(streamVec);
-    EXPECT_NE(false, ret);
+    EXPECT_EQ(false, ret);
 }
 
 /**
@@ -228,6 +228,36 @@ HWTEST_F(AudioInjectorPolicyUnitTest, RemoveCaptureInjector_002, TestSize.Level1
     std::shared_ptr<AudioStreamDescriptor> streamDesc1 = std::make_shared<AudioStreamDescriptor>();
     audioInjectorPolicy.rendererStreamMap_.clear();
     audioInjectorPolicy.rendererStreamMap_[1111] = streamDesc1;
+    int32_t ret = audioInjectorPolicy.RemoveCaptureInjector(false);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name: RemoveCaptureInjector_003
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, RemoveCaptureInjector_003, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    audioInjectorPolicy.isConnected_ = false;
+    audioInjectorPolicy.isOpened_ = false;
+    int32_t ret = audioInjectorPolicy.RemoveCaptureInjector(true);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name: RemoveCaptureInjector_004
+ * @tc.desc: wzwzwz
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, RemoveCaptureInjector_004, TestSize.Level1)
+{
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    audioInjectorPolicy.isConnected_ = false;
+    audioInjectorPolicy.isOpened_ = false;
     int32_t ret = audioInjectorPolicy.RemoveCaptureInjector(false);
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -690,33 +720,181 @@ HWTEST_F(AudioInjectorPolicyUnitTest, SetInjectorStreamsMute_002, TestSize.Level
 }
 
 /**
- * @tc.name: SetAllRendererInjectStreamsMute_001
- * @tc.desc: Test SetAllRendererInjectStreamsMute
+ * @tc.name: SetInjectorStreamsMute_003
+ * @tc.desc: Test SetInjectorStreamsMute
  * @tc.type: FUNC
  * @tc.require: #I5Y4MZ
  */
-HWTEST_F(AudioInjectorPolicyUnitTest, SetAllRendererInjectStreamsMute_001, TestSize.Level1)
+HWTEST_F(AudioInjectorPolicyUnitTest, SetInjectorStreamsMute_003, TestSize.Level1)
 {
+    uint32_t streamId = 100024;
+    bool newMicrophoneMute = false;
     auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
-    std::shared_ptr<AudioStreamDescriptor> streamDesc1 = std::make_shared<AudioStreamDescriptor>();
-    audioInjectorPolicy.rendererStreamMap_[1111] = streamDesc1;
-    audioInjectorPolicy.SetAllRendererInjectStreamsMute();
-    EXPECT_EQ(audioInjectorPolicy.rendererStreamMap_.size(), 1);
+    audioInjectorPolicy.injectorStreamIds_.insert(streamId);
+    audioInjectorPolicy.rendererMuteStreamMap_.insert(std::make_pair(streamId, newMicrophoneMute));
+    audioInjectorPolicy.SetInjectorStreamsMute(newMicrophoneMute);
+    EXPECT_EQ(audioInjectorPolicy.rendererMuteStreamMap_.size(), 1);
+}
+ 
+/**
+ * @tc.name: SetInjectorStreamsMute_004
+ * @tc.desc: Test SetInjectorStreamsMute
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, SetInjectorStreamsMute_004, TestSize.Level1)
+{
+    uint32_t streamId = 100024;
+    bool newMicrophoneMute = false;
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    audioInjectorPolicy.injectorStreamIds_.insert(streamId);
+    audioInjectorPolicy.rendererMuteStreamMap_.clear();
+    audioInjectorPolicy.SetInjectorStreamsMute(newMicrophoneMute);
+    EXPECT_EQ(audioInjectorPolicy.rendererMuteStreamMap_.size(), 1);
 }
 
 /**
- * @tc.name: SetAllRendererInjectStreamsMute_002
- * @tc.desc: Test SetAllRendererInjectStreamsMute
+ * @tc.name: SetInjectStreamsMuteForInjection_001
+ * @tc.desc: Test SetInjectStreamsMuteForInjection
  * @tc.type: FUNC
  * @tc.require: #I5Y4MZ
  */
-HWTEST_F(AudioInjectorPolicyUnitTest, SetAllRendererInjectStreamsMute_002, TestSize.Level1)
+HWTEST_F(AudioInjectorPolicyUnitTest, SetInjectStreamsMuteForInjection_001, TestSize.Level1)
 {
+    uint32_t streamId = 100024;
+    bool newMicrophoneMute = true;
     auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
-    audioInjectorPolicy.rendererStreamMap_.clear();
-    audioInjectorPolicy.isNeedSetMuteRenderer_ = true;
-    audioInjectorPolicy.SetAllRendererInjectStreamsMute();
-    EXPECT_EQ(audioInjectorPolicy.rendererStreamMap_.size(), 0);
+    audioInjectorPolicy.isNeedMuteRenderer_ = newMicrophoneMute;
+    audioInjectorPolicy.rendererMuteStreamMap_.clear();
+    audioInjectorPolicy.SetInjectStreamsMuteForInjection(streamId);
+    EXPECT_EQ(audioInjectorPolicy.rendererMuteStreamMap_.size(), 0);
+}
+ 
+/**
+ * @tc.name: SetInjectStreamsMuteForInjection_002
+ * @tc.desc: Test SetInjectStreamsMuteForInjection
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, SetInjectStreamsMuteForInjection_002, TestSize.Level1)
+{
+    uint32_t streamId = 100024;
+    bool newMicrophoneMute = false;
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    audioInjectorPolicy.isNeedMuteRenderer_ = newMicrophoneMute;
+    audioInjectorPolicy.rendererMuteStreamMap_.clear();
+    audioInjectorPolicy.SetInjectStreamsMuteForInjection(streamId);
+    EXPECT_EQ(audioInjectorPolicy.rendererMuteStreamMap_.size(), 0);
+}
+
+/**
+ * @tc.name: SetInjectStreamsMuteForInjection_003
+ * @tc.desc: Test SetInjectStreamsMuteForInjection
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, SetInjectStreamsMuteForInjection_003, TestSize.Level1)
+{
+    uint32_t streamId = 100024;
+    bool newMicrophoneMute = true;
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    audioInjectorPolicy.isNeedMuteRenderer_ = newMicrophoneMute;
+    audioInjectorPolicy.rendererMuteStreamMap_.clear();
+    audioInjectorPolicy.rendererMuteStreamMap_.insert(std::make_pair(streamId, newMicrophoneMute));
+    audioInjectorPolicy.SetInjectStreamsMuteForInjection(streamId);
+    EXPECT_EQ(audioInjectorPolicy.rendererMuteStreamMap_.size(), 1);
+}
+ 
+/**
+ * @tc.name: SetInjectStreamsMuteForInjection_004
+ * @tc.desc: Test SetInjectStreamsMuteForInjection
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, SetInjectStreamsMuteForInjection_004, TestSize.Level1)
+{
+    uint32_t streamId = 100024;
+    bool newMicrophoneMute = false;
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    audioInjectorPolicy.isNeedMuteRenderer_ = newMicrophoneMute;
+    audioInjectorPolicy.rendererMuteStreamMap_.clear();
+    audioInjectorPolicy.rendererMuteStreamMap_.insert(std::make_pair(streamId, newMicrophoneMute));
+    audioInjectorPolicy.SetInjectStreamsMuteForInjection(streamId);
+    EXPECT_EQ(audioInjectorPolicy.rendererMuteStreamMap_.size(), 1);
+}
+ 
+/**
+ * @tc.name: SetInjectStreamsMuteForPlayback_001
+ * @tc.desc: Test SetInjectStreamsMuteForPlayback
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, SetInjectStreamsMuteForPlayback_001, TestSize.Level1)
+{
+    uint32_t streamId = 100024;
+    bool newMicrophoneMute = true;
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    audioInjectorPolicy.rendererMuteStreamMap_.clear();
+    audioInjectorPolicy.rendererMuteStreamMap_.insert(std::make_pair(streamId, newMicrophoneMute));
+    audioInjectorPolicy.isNeedMuteRenderer_ = newMicrophoneMute;
+    audioInjectorPolicy.SetInjectStreamsMuteForPlayback(streamId);
+    EXPECT_EQ(audioInjectorPolicy.rendererMuteStreamMap_.size(), 1);
+}
+ 
+/**
+ * @tc.name: SetInjectStreamsMuteForPlayback_002
+ * @tc.desc: Test SetInjectStreamsMuteForPlayback
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, SetInjectStreamsMuteForPlayback_002, TestSize.Level1)
+{
+    uint32_t streamId = 100024;
+    bool newMicrophoneMute = false;
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    audioInjectorPolicy.rendererMuteStreamMap_.clear();
+    audioInjectorPolicy.rendererMuteStreamMap_.insert(std::make_pair(streamId, newMicrophoneMute));
+    audioInjectorPolicy.isNeedMuteRenderer_ = newMicrophoneMute;
+    audioInjectorPolicy.SetInjectStreamsMuteForPlayback(streamId);
+    EXPECT_EQ(audioInjectorPolicy.rendererMuteStreamMap_.size(), 1);
+}
+ 
+/**
+ * @tc.name: SetInjectStreamsMuteForPlayback_003
+ * @tc.desc: Test SetInjectStreamsMuteForPlayback
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, SetInjectStreamsMuteForPlayback_003, TestSize.Level1)
+{
+    uint32_t streamId = 100024;
+    uint32_t streamId1 = 100025;
+    bool newMicrophoneMute = true;
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    audioInjectorPolicy.rendererMuteStreamMap_.clear();
+    audioInjectorPolicy.rendererMuteStreamMap_.insert(std::make_pair(streamId1, newMicrophoneMute));
+    audioInjectorPolicy.isNeedMuteRenderer_ = newMicrophoneMute;
+    audioInjectorPolicy.SetInjectStreamsMuteForPlayback(streamId);
+    EXPECT_EQ(audioInjectorPolicy.rendererMuteStreamMap_.size(), 2);
+}
+ 
+/**
+ * @tc.name: SetInjectStreamsMuteForPlayback_00
+ * @tc.desc: Test SetInjectStreamsMuteForPlayback
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ  false false
+ */
+HWTEST_F(AudioInjectorPolicyUnitTest, SetInjectStreamsMuteForPlayback_004, TestSize.Level1)
+{
+    uint32_t streamId = 100024;
+    uint32_t streamId1 = 100025;
+    bool newMicrophoneMute = false;
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    audioInjectorPolicy.rendererMuteStreamMap_.clear();
+    audioInjectorPolicy.rendererMuteStreamMap_.insert(std::make_pair(streamId1, newMicrophoneMute));
+    audioInjectorPolicy.isNeedMuteRenderer_ = newMicrophoneMute;
+    audioInjectorPolicy.SetInjectStreamsMuteForPlayback(streamId);
+    EXPECT_EQ(audioInjectorPolicy.rendererMuteStreamMap_.size(), 2);
 }
 } // namespace AudioStandard
 } // namespace OHOS

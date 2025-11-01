@@ -26,10 +26,13 @@ namespace OHOS {
 namespace AudioStandard {
 const std::string AUDIO_SAFE_VOLUME_STATE = "audio_safe_volume_state";
 const std::string AUDIO_SAFE_VOLUME_STATE_BT = "audio_safe_volume_state_bt";
+const std::string AUDIO_SAFE_VOLUME_STATE_SLE = "audio_safe_volume_state_sle";
 const std::string UNSAFE_VOLUME_MUSIC_ACTIVE_MS = "unsafe_volume_music_active_ms";
 const std::string UNSAFE_VOLUME_MUSIC_ACTIVE_MS_BT = "unsafe_volume_music_active_ms_bt";
+const std::string UNSAFE_VOLUME_MUSIC_ACTIVE_MS_SLE = "unsafe_volume_music_active_ms_sle";
 const std::string UNSAFE_VOLUME_LEVEL = "unsafe_volume_level";
 const std::string UNSAFE_VOLUME_LEVEL_BT = "unsafe_volume_level_bt";
+const std::string UNSAFE_VOLUME_LEVEL_SLE = "unsafe_volume_level_sle";
 const std::string SETTINGS_CLONED = "settingsCloneStatus";
 const int32_t INVALIAD_SETTINGS_CLONE_STATUS = -1;
 const int32_t SETTINGS_CLONING_STATUS = 1;
@@ -37,6 +40,7 @@ const int32_t SETTINGS_CLONED_STATUS = 0;
 constexpr int32_t MAX_SAFE_STATUS = 2;
 constexpr int32_t DEFAULT_SYSTEM_VOLUME_FOR_EFFECT = 5;
 static constexpr int32_t DEFAULT_VOLUME_LEVEL = 7;
+static constexpr int32_t DEFAULT_VOLUME_DEGREE = 50;
 
 static const std::vector<VolumeDataMaintainer::VolumeDataMaintainerStreamType> VOLUME_MUTE_STREAM_TYPE = {
     // all volume types except STREAM_ALL
@@ -52,6 +56,7 @@ static const std::vector<DeviceType> DEVICE_TYPE_LIST = {
     DEVICE_TYPE_SPEAKER,
     DEVICE_TYPE_EARPIECE,
     DEVICE_TYPE_BLUETOOTH_A2DP,
+    DEVICE_TYPE_NEARLINK,
     DEVICE_TYPE_WIRED_HEADSET,
     DEVICE_TYPE_REMOTE_CAST
 };
@@ -318,6 +323,9 @@ bool VolumeDataMaintainer::SaveSafeStatus(DeviceType deviceType, SafeStatus safe
         case DEVICE_TYPE_USB_ARM_HEADSET:
             ret = settingProvider.PutIntValue(AUDIO_SAFE_VOLUME_STATE, static_cast<int32_t>(safeStatus));
             break;
+        case DEVICE_TYPE_NEARLINK:
+            ret = settingProvider.PutIntValue(AUDIO_SAFE_VOLUME_STATE_SLE, static_cast<int32_t>(safeStatus));
+            break;
         default:
             AUDIO_WARNING_LOG("the device type not support safe volume");
             return false;
@@ -345,6 +353,9 @@ bool VolumeDataMaintainer::GetSafeStatus(DeviceType deviceType, SafeStatus &safe
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
             ret = settingProvider.GetIntValue(AUDIO_SAFE_VOLUME_STATE, value);
+            break;
+        case DEVICE_TYPE_NEARLINK:
+            ret = settingProvider.GetIntValue(AUDIO_SAFE_VOLUME_STATE_SLE, value);
             break;
         default:
             WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::GET_SAFE_STATUS_A),
@@ -380,6 +391,9 @@ bool VolumeDataMaintainer::SaveSafeVolumeTime(DeviceType deviceType, int64_t tim
         case DEVICE_TYPE_USB_ARM_HEADSET:
             ret = settingProvider.PutLongValue(UNSAFE_VOLUME_MUSIC_ACTIVE_MS, time, "secure");
             break;
+        case DEVICE_TYPE_NEARLINK:
+            ret = settingProvider.PutLongValue(UNSAFE_VOLUME_MUSIC_ACTIVE_MS_SLE, time, "secure");
+            break;
         default:
             WriteVolumeDbAccessExceptionEvent(
                 static_cast<int32_t>(VolumeDbAccessExceptionFuncId::SAVE_SAFE_VOLUME_TIME_A),
@@ -411,6 +425,9 @@ bool VolumeDataMaintainer::GetSafeVolumeTime(DeviceType deviceType, int64_t &tim
         case DEVICE_TYPE_USB_ARM_HEADSET:
             ret = settingProvider.GetLongValue(UNSAFE_VOLUME_MUSIC_ACTIVE_MS, time, "secure");
             break;
+        case DEVICE_TYPE_NEARLINK:
+            ret = settingProvider.GetLongValue(UNSAFE_VOLUME_MUSIC_ACTIVE_MS_SLE, time, "secure");
+            break;
         default:
             WriteVolumeDbAccessExceptionEvent(
                 static_cast<int32_t>(VolumeDbAccessExceptionFuncId::GET_SAFE_VOLUME_TIME_A),
@@ -441,6 +458,9 @@ bool VolumeDataMaintainer::SetRestoreVolumeLevel(DeviceType deviceType, int32_t 
         case DEVICE_TYPE_USB_ARM_HEADSET:
         case DEVICE_TYPE_DP:
             ret = settingProvider.PutIntValue(UNSAFE_VOLUME_LEVEL, volume);
+            break;
+        case DEVICE_TYPE_NEARLINK:
+            ret = settingProvider.PutIntValue(UNSAFE_VOLUME_LEVEL_SLE, volume);
             break;
         default:
             WriteVolumeDbAccessExceptionEvent(
@@ -475,6 +495,9 @@ bool VolumeDataMaintainer::GetRestoreVolumeLevel(DeviceType deviceType, int32_t 
         case DEVICE_TYPE_USB_ARM_HEADSET:
         case DEVICE_TYPE_DP:
             ret = settingProvider.GetIntValue(UNSAFE_VOLUME_LEVEL, value);
+            break;
+        case DEVICE_TYPE_NEARLINK:
+            ret = settingProvider.GetIntValue(UNSAFE_VOLUME_LEVEL_SLE, value);
             break;
         default:
             WriteVolumeDbAccessExceptionEvent(
@@ -603,6 +626,9 @@ std::string VolumeDataMaintainer::GetDeviceTypeName(DeviceType deviceType)
             return type;
         case DEVICE_TYPE_REMOTE_CAST:
             type = "_remote_cast";
+            return type;
+        case DEVICE_TYPE_LINE_DIGITAL:
+            type = "_line_digital";
             return type;
         default:
             AUDIO_ERR_LOG("device %{public}d is not supported for dataShare", deviceType);
@@ -740,7 +766,7 @@ std::string VolumeDataMaintainer::GetVolumeKey(std::shared_ptr<AudioDeviceDescri
     AudioStreamType streamType)
 {
     CHECK_AND_RETURN_RET_LOG(device != nullptr, "", "GetVolumeKey device is null");
-    if (Util::IsDualToneStreamType(streamType)) {
+    if (Util::IsDualToneStreamType(streamType) && !VolumeUtils::IsPCVolumeEnable()) {
         return GetVolumeKeyForDataShare(DEVICE_TYPE_SPEAKER, streamType, LOCAL_NETWORK_ID);
     }
     if (device->volumeBehavior_.isReady && device->volumeBehavior_.databaseVolumeName != "") {
@@ -752,7 +778,7 @@ std::string VolumeDataMaintainer::GetVolumeKey(std::shared_ptr<AudioDeviceDescri
 std::string VolumeDataMaintainer::GetMuteKey(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType)
 {
     CHECK_AND_RETURN_RET_LOG(device != nullptr, "", "GetMuteKey device is null");
-    if (Util::IsDualToneStreamType(streamType)) {
+    if (Util::IsDualToneStreamType(streamType) && !VolumeUtils::IsPCVolumeEnable()) {
         return GetMuteKeyForDataShare(DEVICE_TYPE_SPEAKER, streamType, LOCAL_NETWORK_ID);
     }
     if (device->volumeBehavior_.isReady && device->volumeBehavior_.databaseVolumeName != "") {
@@ -792,10 +818,12 @@ void VolumeDataMaintainer::LoadDeviceVolumeMapFromDb(std::shared_ptr<AudioDevice
     }
     for (auto stream : volumeList) {
         int32_t dftVolume = AudioVolumeUtils::GetInstance().GetDefaultVolumeLevel(device, stream);
+        int32_t maxVolume = AudioVolumeUtils::GetInstance().GetMaxVolumeLevel(device, stream);
         IntValueInfo info {
             .key = GetVolumeKey(device, stream),
             .defaultValue = dftVolume,
-            .value = dftVolume
+            .value = dftVolume,
+            .maxValue = maxVolume,
         };
         infos.push_back(info);
         AUDIO_INFO_LOG("Load %{public}s dftValue %{public}d", info.key.c_str(), dftVolume);
@@ -816,6 +844,8 @@ void VolumeDataMaintainer::LoadDeviceVolumeMapFromDb(std::shared_ptr<AudioDevice
     }
     for (size_t i = 0; i < volumeList.size(); i++) {
         SaveVolumeToMap(device, volumeList[i], infos[i].value);
+        int32_t volumeDegree = VolumeUtils::VolumeLevelToDegree(infos[i].value, infos[i].maxValue);
+        SaveVolumeDegreeToMap(device, volumeList[i], volumeDegree);
     }
 }
 
@@ -864,7 +894,7 @@ void VolumeDataMaintainer::SaveVolumeToMap(std::shared_ptr<AudioDeviceDescriptor
     CHECK_AND_RETURN_LOG(device != nullptr, "SaveVolumeToMap device is null");
     std::lock_guard<ffrt::mutex> lock(volumeForMapMutex_);
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    if (Util::IsDualToneStreamType(streamType)) {
+    if (Util::IsDualToneStreamType(streamType) && !VolumeUtils::IsPCVolumeEnable()) {
         device = ringerDevice_;
     }
     volumeLevelMap_[device->GetName()][volumeType] = volumeLevel;
@@ -880,7 +910,7 @@ int32_t VolumeDataMaintainer::LoadVolumeFromMap(std::shared_ptr<AudioDeviceDescr
     std::lock_guard<ffrt::mutex> lock(volumeForMapMutex_);
 
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    if (Util::IsDualToneStreamType(streamType)) {
+    if (Util::IsDualToneStreamType(streamType) && !VolumeUtils::IsPCVolumeEnable()) {
         device = ringerDevice_;
     }
     int32_t defaultVolume = DEFAULT_VOLUME_LEVEL;
@@ -986,7 +1016,7 @@ void VolumeDataMaintainer::SaveMuteToMap(std::shared_ptr<AudioDeviceDescriptor> 
     std::lock_guard<ffrt::mutex> lock(volumeForMapMutex_);
     CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    if (Util::IsDualToneStreamType(streamType)) {
+    if (Util::IsDualToneStreamType(streamType) && !VolumeUtils::IsPCVolumeEnable()) {
         device = ringerDevice_;
     }
     muteStatusMap_[device->GetName()][volumeType] = muteStatus;
@@ -999,7 +1029,7 @@ bool VolumeDataMaintainer::LoadMuteFromMap(std::shared_ptr<AudioDeviceDescriptor
     std::lock_guard<ffrt::mutex> lock(volumeForMapMutex_);
     CHECK_AND_RETURN_RET_LOG(device != nullptr, false, "device is null");
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    if (Util::IsDualToneStreamType(streamType)) {
+    if (Util::IsDualToneStreamType(streamType) && !VolumeUtils::IsPCVolumeEnable()) {
         device = ringerDevice_;
     }
     CHECK_AND_RETURN_RET_LOG(muteStatusMap_.contains(device->GetName()), false,
@@ -1041,5 +1071,100 @@ int32_t VolumeDataMaintainer::LoadVolumeFromDb(std::shared_ptr<AudioDeviceDescri
     }
     return volumeLevel;
 }
+
+void VolumeDataMaintainer::SaveVolumeDegreeToMap(std::shared_ptr<AudioDeviceDescriptor> device,
+    AudioStreamType streamType, int32_t volumeDegree)
+{
+    CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
+    std::lock_guard<ffrt::mutex> lock(volumeForMapMutex_);
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    volumeDegreeMap_[device->GetName()][volumeType] = volumeDegree;
+    AUDIO_INFO_LOG("[device %{public}s, streamType %{public}d]"\
+        "Save volume success, volumeDegree %{public}d",
+        device->GetName().c_str(), volumeType, volumeDegree);
+}
+
+int32_t VolumeDataMaintainer::LoadVolumeDegreeFromMap(std::shared_ptr<AudioDeviceDescriptor> device,
+    AudioStreamType streamType)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeForMapMutex_);
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    int32_t defaultVolumeDegree = DEFAULT_VOLUME_DEGREE;
+    CHECK_AND_RETURN_RET_LOG(device != nullptr, defaultVolumeDegree, "device is null");
+    if (volumeType == STREAM_ALL) {
+        AUDIO_INFO_LOG("replace stream all to music");
+        volumeType = STREAM_MUSIC;
+    }
+    CHECK_AND_RETURN_RET_LOG(volumeDegreeMap_.contains(device->GetName()), defaultVolumeDegree,
+        "device %{public}s not in map", device->GetName().c_str());
+    CHECK_AND_RETURN_RET_LOG(volumeDegreeMap_[device->GetName()].contains(volumeType), defaultVolumeDegree,
+        "device %{public}s stream %{public}d not in map", device->GetName().c_str(), volumeType);
+    AUDIO_INFO_LOG("[device %{public}s, streamType %{public}d] volumeDegree %{public}d",
+        device->GetName().c_str(), volumeType, volumeDegreeMap_[device->GetName()][volumeType]);
+    return volumeDegreeMap_[device->GetName()][volumeType];
+}
+
+int32_t VolumeDataMaintainer::SaveVolumeDegreeToDb(std::shared_ptr<AudioDeviceDescriptor> device,
+    AudioStreamType streamType, int32_t volumeDegree)
+{
+    CHECK_AND_RETURN_RET_LOG(device != nullptr, ERROR, "device is null");
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    if (AudioVolumeUtils::GetInstance().IsDistributedDevice(device)) {
+        if (!device->volumeBehavior_.isReady) {
+            return SUCCESS;
+        }
+        if (device->volumeBehavior_.databaseVolumeName == "") {
+            return SUCCESS;
+        }
+    }
+    std::string volumeKey = GetVolumeKey(device, streamType);
+    if (!volumeKey.compare("")) {
+        AUDIO_ERR_LOG("[device %{public}s, streamType %{public}d] is not supported",
+            device->GetName().c_str(), streamType);
+        return ERROR;
+    }
+    volumeKey += "_degree";
+
+    {
+        std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
+        AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+        ErrCode ret = audioSettingProvider.PutIntValue(volumeKey, volumeDegree, "system");
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("[device %{public}s, streamType %{public}d] save volume failed, ret %{public}d",
+                device->GetName().c_str(), streamType, ret);
+            return ERROR;
+        }
+        AUDIO_INFO_LOG("[device %{public}s, streamType %{public}d]"\
+            "Save volume success, volumeDegree %{public}d",
+            device->GetName().c_str(), streamType, volumeDegree);
+    }
+    return SUCCESS;
+}
+
+int32_t VolumeDataMaintainer::LoadVolumeDegreeFromDb(std::shared_ptr<AudioDeviceDescriptor> device,
+    AudioStreamType streamType)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
+    CHECK_AND_RETURN_RET_LOG(device != nullptr, ERROR, "device is null");
+    int32_t volumeDegree = 0;
+    std::string volumeKey = GetVolumeKey(device, streamType);
+    if (!volumeKey.compare("")) {
+        AUDIO_ERR_LOG("[device %{public}s, streamType %{public}d] is not supported",
+            device->GetName().c_str(), streamType);
+        return volumeDegree;
+    }
+    volumeKey += "_degree";
+
+    AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    ErrCode ret = audioSettingProvider.GetIntValue(volumeKey, volumeDegree, "system");
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Get volumeDegree From DataBase failed");
+        return 0;
+    } else {
+        AUDIO_DEBUG_LOG("Get volumeDegree From DataBase, volumeDegree:%{public}d", volumeDegree);
+    }
+    return volumeDegree;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

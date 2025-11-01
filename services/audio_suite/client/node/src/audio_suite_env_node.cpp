@@ -16,10 +16,6 @@
 #define LOG_TAG "AudioSuiteEnvNode"
 #endif
 
-#include <vector>
-#include <memory>
-#include "audio_errors.h"
-#include "audio_suite_log.h"
 #include "audio_suite_env_node.h"
 
 namespace OHOS {
@@ -31,6 +27,7 @@ static constexpr AudioSamplingRate ENV_ALGO_SAMPLE_RATE = SAMPLE_RATE_48000;
 static constexpr AudioSampleFormat ENV_ALGO_SAMPLE_FORMAT = SAMPLE_S16LE;
 static constexpr AudioChannel ENV_ALGO_CHANNEL_COUNT = STEREO;
 static constexpr AudioChannelLayout ENV_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
+const std::string setEnvMode = "EnvironmentType";
 }  // namespace
 
 AudioSuiteEnvNode::AudioSuiteEnvNode()
@@ -85,17 +82,14 @@ bool AudioSuiteEnvNode::Reset()
 
 AudioSuitePcmBuffer *AudioSuiteEnvNode::SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs)
 {
-    if (inputs.empty()) {
-        AUDIO_ERR_LOG("AudioSuiteEnvNode SignalProcess inputs is empty");
-        return nullptr;
-    } else {
-        AUDIO_DEBUG_LOG("AudioSuiteEnvNode SignalProcess inputs frameLen:%{public}d", inputs[0]->GetFrameLen());
-    }
+    CHECK_AND_RETURN_RET_LOG(!inputs.empty(), nullptr, "AudioSuiteEnvNode SignalProcess inputs is empty");
+    CHECK_AND_RETURN_RET_LOG(inputs[0] != nullptr, nullptr, "AudioSuiteEnvNode SignalProcess inputs[0] is nullptr");
+    AUDIO_DEBUG_LOG("AudioSuiteEnvNode SignalProcess inputs frameLen:%{public}d", inputs[0]->GetFrameLen());
 
     inputDataBuffer_.resize(outPcmBuffer_.GetFrameLen() * ALGO_BYTE_NUM);
     outputDataBuffer_.resize(outPcmBuffer_.GetFrameLen() * ALGO_BYTE_NUM);
     int32_t ret = ConvertProcess(inputs[0], &outPcmBuffer_, &tmpPcmBuffer_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, &outPcmBuffer_, "AudioSuiteEnvNode SignalProcess ConvertProcess failed");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "AudioSuiteEnvNode SignalProcess ConvertProcess failed");
 
     ConvertFromFloat(ENV_ALGO_SAMPLE_FORMAT,
         outPcmBuffer_.GetFrameLen(),
@@ -109,8 +103,9 @@ AudioSuitePcmBuffer *AudioSuiteEnvNode::SignalProcess(const std::vector<AudioSui
 
     tmpin_[0] = inputPointer;
     tmpout_[0] = outputPointer;
+    CHECK_AND_RETURN_RET_LOG(envAlgoInterfaceImpl_ != nullptr, nullptr, "envAlgoInterfaceImpl_ is nullptr");
     ret = envAlgoInterfaceImpl_->Apply(tmpin_, tmpout_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, &outPcmBuffer_, "AudioSuiteEnvNode SignalProcess Apply failed");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "AudioSuiteEnvNode SignalProcess Apply failed");
 
     ConvertToFloat(ENV_ALGO_SAMPLE_FORMAT,
         outPcmBuffer_.GetFrameLen(),
@@ -122,29 +117,28 @@ AudioSuitePcmBuffer *AudioSuiteEnvNode::SignalProcess(const std::vector<AudioSui
 int32_t AudioSuiteEnvNode::SetOptions(std::string name, std::string value)
 {
     AUDIO_INFO_LOG("AudioSuiteEnvNode::SetOptions Enter");
-    if (name == "EnvironmentType") {
-        CHECK_AND_RETURN_RET_LOG(envAlgoInterfaceImpl_ != nullptr, ERROR, "envAlgoInterfaceImpl_ is nullptr");
-        envAlgoInterfaceImpl_->SetParameter(value, value);
-        AUDIO_INFO_LOG("SetOptions SUCCESS");
-        return SUCCESS;
-    } else {
-        AUDIO_ERR_LOG("SetOptions Unknow Type %{public}s", name.c_str());
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(name == setEnvMode, ERROR, "SetOptions Unknow Type %{public}s", name.c_str());
+    CHECK_AND_RETURN_RET_LOG(envAlgoInterfaceImpl_ != nullptr, ERROR, "envAlgoInterfaceImpl_ is nullptr");
+    
+    paraName_ = name;
+    paraValue_ = value;
+    
+    int32_t ret = envAlgoInterfaceImpl_->SetParameter(name, value);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetParameter failed");
+    AUDIO_INFO_LOG("SetOptions SUCCESS");
+    return SUCCESS;
 }
 
 int32_t AudioSuiteEnvNode::GetOptions(std::string name, std::string &value)
 {
     AUDIO_INFO_LOG("AudioSuiteEnvNode::GetOptions Enter");
-    if (name == "EnvironmentType") {
-        CHECK_AND_RETURN_RET_LOG(envAlgoInterfaceImpl_ != nullptr, ERROR, "envAlgoInterfaceImpl_ is nullptr");
-        envAlgoInterfaceImpl_->GetParameter(value, value);
-        AUDIO_INFO_LOG("SetOptions SUCCESS");
-        return SUCCESS;
-    } else {
-        AUDIO_ERR_LOG("SetOptions Unknow Type %{public}s", name.c_str());
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(name == setEnvMode, ERROR, "GetOptions Unknow Type %{public}s", name.c_str());
+    CHECK_AND_RETURN_RET_LOG(envAlgoInterfaceImpl_ != nullptr, ERROR, "envAlgoInterfaceImpl_ is nullptr");
+    
+    int32_t ret = envAlgoInterfaceImpl_->GetParameter(name, value);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "GetParameter failed");
+    AUDIO_INFO_LOG("GetOptions SUCCESS");
+    return SUCCESS;
 }
 
 }  // namespace AudioSuite

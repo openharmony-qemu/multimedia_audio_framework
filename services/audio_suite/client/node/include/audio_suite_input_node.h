@@ -19,7 +19,7 @@
 #include "audio_suite_channel.h"
 #include "audio_suite_common.h"
 
-class SuiteInputNodeWriteDataCallBack;
+class InputNodeRequestDataCallBack;
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
@@ -38,7 +38,7 @@ public:
     int32_t Flush() override;
     int32_t DoProcess() override;
     std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> GetOutputPort() override;
-    int32_t SetRequestDataCallback(std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback) override;
+    int32_t SetRequestDataCallback(std::shared_ptr<InputNodeRequestDataCallBack> callback) override;
     bool IsSetReadDataCallback() override;
     void SetAudioNodeFormat(AudioFormat audioFormat) override;
 
@@ -60,7 +60,7 @@ private:
     uint32_t GetNeedMinCacheSize();
 
     std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> outputStream_ = nullptr;
-    std::shared_ptr<SuiteInputNodeWriteDataCallBack> writeCallback_ = nullptr;
+    std::shared_ptr<InputNodeRequestDataCallBack> writeCallback_ = nullptr;
     AudioSuiteRingBuffer cachedBuffer_; // 数据缓存区
     AudioSuitePcmBuffer* inputNodeBuffer_ = nullptr; // 待返回的数据
     Tap tap_;

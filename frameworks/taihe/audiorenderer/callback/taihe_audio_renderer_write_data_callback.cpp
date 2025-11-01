@@ -117,7 +117,7 @@ void TaiheRendererWriteDataCallback::OnWriteData(size_t length)
 
 void TaiheRendererWriteDataCallback::OnJsRendererWriteDataCallback(std::unique_ptr<RendererWriteDataJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("OnJsRendererWriteDataCallback: jsCb.get() is null");
         return;
     }
@@ -166,7 +166,9 @@ void TaiheRendererWriteDataCallback::SafeJsCallbackWriteDataWork(RendererWriteDa
     std::shared_ptr<RendererWriteDataJsCallback> safeContext(
         static_cast<RendererWriteDataJsCallback*>(event),
         [](RendererWriteDataJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
     std::string request = event->callbackName;
     do {

@@ -143,24 +143,6 @@ public:
     int32_t UnloadModernOffloadCapSource();
 #endif
     void RenderersCheckForAudioWorkgroup(int32_t pid);
-    void SendInterruptEventToAudioService(uint32_t sessionId, InterruptEventInternal interruptEvent);
-
-    bool UpdateResumeInterruptEventMap(uint32_t sessionId, InterruptEventInternal interruptEvent);
-    bool RemoveResumeInterruptEventMap(uint32_t sessionId);
-    bool IsStreamInterruptResume(uint32_t sessionId);
-
-    bool UpdatePauseInterruptEventMap(uint32_t sessionId, InterruptEventInternal interruptEvent);
-    bool RemovePauseInterruptEventMap(uint32_t sessionId);
-    bool IsStreamInterruptPause(uint32_t sessionId);
-
-    bool IsInSwitchStreamMap(uint32_t sessionId, SwitchState &switchState);
-    bool UpdateSwitchStreamMap(uint32_t sessionId, SwitchState switchState);
-    void RemoveSwitchStreamMap(uint32_t sessionId);
-
-    bool IsBackgroundCaptureAllowed(uint32_t sessionId);
-    bool UpdateBackgroundCaptureMap(uint32_t sessionId, bool res);
-    void RemoveBackgroundCaptureMap(uint32_t sessionId);
-    bool NeedRemoveBackgroundCaptureMap(uint32_t sessionId, CapturerState capturerState);
     int32_t GetPrivacyType(const uint32_t sessionId, AudioPrivacyType &privacyType);
 private:
     AudioService();
@@ -223,14 +205,6 @@ private:
     std::mutex foregroundSetMutex_;
     std::set<std::string> foregroundSet_;
     std::set<uint32_t> foregroundUidSet_;
-    std::mutex audioSwitchStreamMutex_;
-    std::map<uint32_t, SwitchState> audioSwitchStreamMap_;
-    std::mutex backgroundCaptureMutex_;
-    std::map<uint32_t, bool> backgroundCaptureMap_;
-    std::mutex resumeInterruptEventMutex_;
-    std::map<uint32_t, InterruptEventInternal> resumeInterruptEventMap_;
-    std::mutex pauseInterruptEventMutex_;
-    std::map<uint32_t, InterruptEventInternal> pauseInterruptEventMap_;
     std::mutex processListMutex_;
     std::mutex releaseEndpointMutex_;
     std::condition_variable releaseEndpointCV_;

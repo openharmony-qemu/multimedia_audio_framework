@@ -49,6 +49,8 @@ public:
 
     virtual void SetSystemVolume(const AudioVolumeType volumeType, const int32_t volumeLevel) = 0;
     virtual int32_t GetSystemVolume(AudioVolumeType volumeType) = 0;
+    virtual void SetSystemVolumeDegree(AudioVolumeType volumeType, int32_t volumeDegree) {}
+    virtual int32_t GetSystemVolumeDegree(AudioVolumeType volumeType) { return -1;}
 };
 
 class AudioZoneInterruptCallback {

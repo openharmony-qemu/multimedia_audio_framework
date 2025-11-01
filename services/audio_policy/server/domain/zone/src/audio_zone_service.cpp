@@ -495,6 +495,27 @@ int32_t AudioZoneService::GetSystemVolumeLevel(int32_t zoneId, AudioVolumeType v
     return zone->GetSystemVolumeLevel(volumeType);
 }
 
+int32_t AudioZoneService::SetSystemVolumeDegree(int32_t zoneId, AudioVolumeType volumeType,
+    int32_t volumeDegree, int32_t volumeFlag)
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    auto zone = FindZone(zoneId);
+    CHECK_AND_RETURN_RET_LOG(zone != nullptr, ERROR, "zone id %{public}d is not found", zoneId);
+    CHECK_AND_RETURN_RET_LOG(zone->IsVolumeProxyEnable(), ERROR,
+        "zone id %{public}d IsVolumeProxyEnable is false", zoneId);
+    return zone->SetSystemVolumeDegree(volumeType, volumeDegree, volumeFlag);
+}
+
+int32_t AudioZoneService::GetSystemVolumeDegree(int32_t zoneId, AudioVolumeType volumeType)
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    auto zone = FindZone(zoneId);
+    CHECK_AND_RETURN_RET_LOG(zone != nullptr, ERROR, "zone id %{public}d is not found", zoneId);
+    CHECK_AND_RETURN_RET_LOG(zone->IsVolumeProxyEnable(), ERROR,
+        "zone id %{public}d IsVolumeProxyEnable is false", zoneId);
+    return zone->GetSystemVolumeDegree(volumeType);
+}
+
 AudioZoneFocusList AudioZoneService::GetAudioInterruptForZone(int32_t zoneId)
 {
     std::shared_ptr<AudioInterruptService> tmp = nullptr;

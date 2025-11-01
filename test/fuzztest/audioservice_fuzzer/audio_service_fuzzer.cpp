@@ -31,6 +31,8 @@ static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
 typedef void (*TestPtr)();
+constexpr size_t MAX_RANDOM_STRING_LENGTH = 128;
+constexpr size_t MAX_STOP_AUDIO_TYPE = 3;
 
 const vector<AudioStreamType> g_testAudioStreamTypes = {
     STREAM_DEFAULT,
@@ -166,6 +168,17 @@ T GetData()
     }
     g_pos += objectSize;
     return object;
+}
+
+template<>
+std::string GetData<std::string>()
+{
+    const size_t len = GetData<size_t>() / MAX_RANDOM_STRING_LENGTH;
+    std::string ret(len, ' ');
+    for (auto &c : ret) {
+        c = GetData<char>();
+    }
+    return ret;
 }
 
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -790,6 +803,68 @@ void AudioServiceGetCreatedAudioStreamMostUidFuzzTest()
     audioService->GetCreatedAudioStreamMostUid(mostAppUid, mostAppNum);
 }
 
+void AudioServiceGetEndPointByTypeFuzzTest()
+{
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
+    CHECK_AND_RETURN(audioService != nullptr);
+
+    auto type = static_cast<AudioEndpoint::EndpointType>(GetData<uint32_t>() % ENDPOINTTYPESIZE);
+
+    audioService->GetEndPointByType(type);
+}
+
+void AudioServiceHandleProcessInserverDualStreamEnableInnerFuzzTest()
+{
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
+    CHECK_AND_RETURN(audioService != nullptr);
+    AudioProcessConfig config = {};
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
+        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo);
+    CHECK_AND_RETURN(audioEndpointPtr != nullptr);
+
+    std::string dupSinkName;
+    for (size_t i = 0; i < GetData<int32_t>() % MAX_RANDOM_STRING_LENGTH; ++i) {
+        dupSinkName += GetData<char>();
+    }
+
+    audioService->HandleProcessInserverDualStreamEnableInner(*audioEndpointPtr, dupSinkName);
+}
+
+void AudioServiceInitAllDupBufferFuzzTest()
+{
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
+    CHECK_AND_RETURN(audioService != nullptr);
+
+    auto innerCapId = GetData<int32_t>();
+
+    audioService->InitAllDupBuffer(innerCapId);
+}
+
+void AudioServiceForceStopAudioStreamFuzzTest()
+{
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
+    CHECK_AND_RETURN(audioService != nullptr);
+
+    auto audioType = static_cast<StopAudioType>(GetData<int32_t>() % MAX_STOP_AUDIO_TYPE);
+
+    (void)audioService->ForceStopAudioStream(audioType);
+}
+
+void AudioServiceSetLatestMuteStateFuzzTest()
+{
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
+    CHECK_AND_RETURN(audioService != nullptr);
+
+    auto sessionId = GetData<uint32_t>();
+    bool muteFlag = GetData<int32_t>() % NUM_2;
+
+    audioService->SetLatestMuteState(sessionId, muteFlag);
+}
+
 TestPtr g_testPtrs[] = {
 #ifdef HAS_FEATURE_INNERCAPTURER
     AudioServiceOnProcessReleaseFuzzTest,
@@ -828,6 +903,13 @@ TestPtr g_testPtrs[] = {
     AudioServiceNotifyStreamVolumeChangedFuzzTest,
     AudioServiceDumpFuzzTest,
     AudioServiceGetCreatedAudioStreamMostUidFuzzTest,
+    AudioServiceHandleProcessInserverDualStreamEnableInnerFuzzTest,
+    AudioServiceInitAllDupBufferFuzzTest,
+    AudioServiceForceStopAudioStreamFuzzTest,
+    AudioServiceSetLatestMuteStateFuzzTest,
+#ifdef SUPPORT_LOW_LATENCY
+    AudioServiceGetEndPointByTypeFuzzTest,
+#endif
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

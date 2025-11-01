@@ -91,6 +91,8 @@ public:
 
     int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName,
         uint32_t method) override;
+
+    int32_t SetRebuildFlag() override;
     
     int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override;
     int32_t GetAudioHapticsSyncId() override;
@@ -124,6 +126,11 @@ public:
 
     AppInfo GetAppInfo() override final;
     BufferDesc &GetConvertedBuffer() override;
+
+    bool NeedUseTempBuffer(const RingBufferWrapper &ringBuffer, size_t spanSizeInByte);
+    virtual bool PrepareRingBuffer(uint64_t curRead, RingBufferWrapper& ringBuffer) override;
+    virtual void PrepareStreamDataBuffer(size_t spanSizeInByte,
+        RingBufferWrapper &ringBuffer, AudioStreamData &streamData) override;
 
     void WriteDumpFile(void *buffer, size_t bufferSize) override final;
 
@@ -198,6 +205,7 @@ private:
     uint32_t byteSizePerFrame_ = 0;
     bool isBufferConfiged_ = false;
     std::shared_ptr<OHAudioBufferBase> processBuffer_ = nullptr;
+    std::vector<uint8_t> processTmpBuffer_;
     std::mutex listenerListLock_;
     std::vector<std::shared_ptr<IProcessStatusListener>> listenerList_;
     BufferDesc convertedBuffer_ = {};
@@ -227,6 +235,8 @@ private:
     StreamStatus streamStatusInServer_ = STREAM_INVALID;
 
     std::unique_ptr<HPAE::ProResampler> resampler_ = nullptr;
+
+    std::atomic<bool> rebuildFlag_ = false;
 
     std::string dumpResampleName_;
     std::string dumpFACName_;

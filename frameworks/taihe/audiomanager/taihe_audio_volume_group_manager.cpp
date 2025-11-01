@@ -353,7 +353,7 @@ void AudioVolumeGroupManagerImpl::RegisterRingModeCallback(std::shared_ptr<uintp
 
 void AudioVolumeGroupManagerImpl::OffRingerModeChange(optional_view<callback<void(AudioRingMode)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
@@ -423,7 +423,7 @@ void AudioVolumeGroupManagerImpl::OffMicStateChange(optional_view<callback<void(
 {
     CHECK_AND_RETURN_RET_LOG(audioGroupMngr_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
         TAIHE_ERR_NO_MEMORY), "audioGroupMngr_ is nullptr");
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }

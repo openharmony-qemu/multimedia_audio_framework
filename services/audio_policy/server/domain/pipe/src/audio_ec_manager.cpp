@@ -23,6 +23,7 @@
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
 #include "audio_pipe_manager.h"
+#include "audio_injector_policy.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -281,7 +282,8 @@ void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStr
 void AudioEcManager::UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType sourceType)
 {
     if (sourceType != SOURCE_TYPE_VOICE_COMMUNICATION && sourceType != SOURCE_TYPE_VOICE_TRANSCRIPTION) {
-        AUDIO_INFO_LOG("sourceType: %{public}d not need ec data", sourceType);
+        ClearModuleInfoForEc(moduleInfo);
+        AUDIO_INFO_LOG("sourceType: %{public}d need clear ec data", sourceType);
         return;
     }
 
@@ -298,7 +300,8 @@ void AudioEcManager::UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType 
 void AudioEcManager::UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType)
 {
     if (sourceType != SOURCE_TYPE_VOICE_COMMUNICATION && sourceType != SOURCE_TYPE_MIC) {
-        AUDIO_INFO_LOG("sourceType: %{public}d not need micref data", sourceType);
+        ClearModuleInfoForMicRef(moduleInfo);
+        AUDIO_INFO_LOG("sourceType: %{public}d need clear micref data", sourceType);
         return;
     }
 
@@ -472,6 +475,15 @@ void AudioEcManager::UpdateModuleInfoForEc(AudioModuleInfo &moduleInfo)
     moduleInfo.ecChannels = audioEcInfo_.channels;
 }
 
+void AudioEcManager::ClearModuleInfoForEc(AudioModuleInfo &moduleInfo)
+{
+    moduleInfo.ecType ="";
+    moduleInfo.ecAdapter = "";
+    moduleInfo.ecSamplingRate = "";
+    moduleInfo.ecFormat = "";
+    moduleInfo.ecChannels = "";
+}
+
 std::string AudioEcManager::ShouldOpenMicRef(SourceType source)
 {
     std::string shouldOpen = "0";
@@ -499,6 +511,14 @@ void AudioEcManager::UpdateModuleInfoForMicRef(AudioModuleInfo &moduleInfo, Sour
     moduleInfo.micRefRate = "48000";
     moduleInfo.micRefFormat = "s16le";
     moduleInfo.micRefChannels = "4";
+}
+
+void AudioEcManager::ClearModuleInfoForMicRef(AudioModuleInfo &moduleInfo)
+{
+    moduleInfo.openMicRef = "0";
+    moduleInfo.micRefRate = "";
+    moduleInfo.micRefFormat = "";
+    moduleInfo.micRefChannels = "";
 }
 
 AudioEcInfo AudioEcManager::GetAudioEcInfo()
@@ -824,10 +844,26 @@ int32_t AudioEcManager::ReloadNormalSource(SessionInfo &sessionInfo,
         "format: %{public}s, sourceType: %{public}s", targetSessionId, pipeInfo->moduleInfo_.rate.c_str(),
         pipeInfo->moduleInfo_.channels.c_str(), pipeInfo->moduleInfo_.bufferSize.c_str(),
         pipeInfo->moduleInfo_.format.c_str(), pipeInfo->moduleInfo_.sourceType.c_str());
+    
+    auto &audioInjectorPolicy = AudioInjectorPolicy::GetInstance();
+    uint32_t capturePortIdx = audioInjectorPolicy.GetCapturePortIdx();
+    bool removeFlag = false;
+    bool pipeFlag = (pipeInfo->pipeRole_ == PIPE_ROLE_INPUT && targetSource == SOURCE_TYPE_VOICE_COMMUNICATION);
+    bool portIdxFlag = (pipeInfo->paIndex_ != UINT32_INVALID_VALUE && pipeInfo->paIndex_ == capturePortIdx);
+    if (pipeFlag && portIdxFlag) {
+        audioInjectorPolicy.RemoveCaptureInjector(true);
+        removeFlag = true;
+    }
 
     audioIOHandleMap_.ReloadPortAndUpdateIOHandle(pipeInfo, pipeInfo->moduleInfo_);
     audioPolicyManager_.SetDeviceActive(audioActiveDevice_.GetCurrentInputDeviceType(), pipeInfo->moduleInfo_.name,
         true, INPUT_DEVICES_FLAG);
+
+    if (pipeInfo->paIndex_ != UINT32_INVALID_VALUE && removeFlag) {
+        audioInjectorPolicy.SetCapturePortIdx(pipeInfo->paIndex_);
+        audioInjectorPolicy.SetVoipType(VoipType::NORMAL_VOIP);
+        audioInjectorPolicy.AddCaptureInjector();
+    }
 
     normalSourceOpened_ = targetSource;
     return SUCCESS;

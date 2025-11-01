@@ -61,6 +61,7 @@ namespace {
     const int32_t MEDIA_UID = 1013;
     const float AUDIO_VOLOMUE_EPSILON = 0.0001;
     const int32_t OFFLOAD_INNER_CAP_PREBUF = 3;
+    const size_t OFFLOAD_DUAL_RENDER_PREBUF = 3;
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
     const size_t DEFAULT_CACHE_SIZE = 5;
     constexpr int32_t DEFAULT_SPAN_SIZE = 2;
@@ -69,6 +70,8 @@ namespace {
     const int32_t DUP_COMMON_LEN = 440; // 400 -> 440ms
     const int32_t DUP_DEFAULT_LEN = 20; // 20 -> 20ms
     const int32_t DUP_RECOVERY_AUTISHAKE_BUFFER_COUNT = 2; // 2 -> 2 frames -> 40ms
+    // a2dp offload data connection max cost
+    const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 800; // ms
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -90,7 +93,6 @@ RendererInServer::~RendererInServer()
         Release();
     }
     DumpFileUtil::CloseDumpFile(&dumpC2S_);
-    AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
 }
 
 void RendererInServer::UpdateStreamInfo()
@@ -253,6 +255,13 @@ void RendererInServer::CheckAndWriterRenderStreamStandbySysEvent(bool standbyEna
     AudioService::GetInstance()->RenderersCheckForAudioWorkgroup(processConfig_.appInfo.appPid);
 }
 
+void RendererInServer::OnCheckActiveMusicTime(const std::string &reason)
+{
+    if (offloadEnable_ == true) {
+        CoreServiceHandler::GetInstance().OnCheckActiveMusicTime(reason);
+    }
+}
+
 void RendererInServer::OnStatusUpdate(IOperation operation)
 {
     if (operation != OPERATION_UNDERFLOW) {
@@ -269,6 +278,7 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
         case OPERATION_STARTED:
             HandleOperationStarted();
             stateListener->OnOperationHandled(START_STREAM, 0);
+            OnCheckActiveMusicTime("Started");
             break;
         case OPERATION_PAUSED:
             if (standByEnable_) {
@@ -280,11 +290,13 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
             status_ = I_STATUS_PAUSED;
             stateListener->OnOperationHandled(PAUSE_STREAM, 0);
             playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_PAUSE_OK);
+            OnCheckActiveMusicTime("Paused");
             break;
         case OPERATION_STOPPED:
             status_ = I_STATUS_STOPPED;
             stateListener->OnOperationHandled(STOP_STREAM, 0);
             HandleOperationStopped(RENDERER_STAGE_STOP_OK);
+            OnCheckActiveMusicTime("Stopped");
             break;
         case OPERATION_FLUSHED:
             HandleOperationFlushed();
@@ -519,7 +531,7 @@ void RendererInServer::DoFadingOut(RingBufferWrapper& bufferDesc)
 {
     std::lock_guard<std::mutex> lock(fadeoutLock_);
     if (fadeoutFlag_ == DO_FADINGOUT) {
-        AUDIO_INFO_LOG("enter. format:%{public}u", processConfig_.streamInfo.format);
+        AUDIO_INFO_LOG("format:%{public}u", processConfig_.streamInfo.format);
         AudioChannel channel = processConfig_.streamInfo.channels;
         ChannelVolumes mapVols = VolumeTools::GetChannelVolumes(channel, FADINGOUT_BEGIN, FADINGOUT_END);
         int32_t ret = VolumeTools::Process(bufferDesc, processConfig_.streamInfo.format, mapVols);
@@ -779,7 +791,7 @@ int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     CHECK_AND_RETURN_RET_LOG(spanSizeInFrame_ != 0, ERR_OPERATION_FAILED, "invalid span size");
-    int64_t cacheCount = audioServerBuffer_->GetReadableDataFrames() / spanSizeInFrame_;
+    int64_t cacheCount = audioServerBuffer_->GetReadableDataFrames() / static_cast<int64_t>(spanSizeInFrame_);
     Trace trace1(traceTag_ + " OnWriteData cacheCount:" + std::to_string(cacheCount));
     if (requestDataLen == 0 || currentReadFrame + requestDataInFrame > currentWriteFrame) {
         Trace trace2(traceTag_ + " near underrun"); // RendererInServer::sessionid:100001 near underrun
@@ -1057,6 +1069,13 @@ int32_t RendererInServer::StartInner()
     fadeLock.unlock();
     ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
+
+    // Bluetooth connection may take a long time, which may cause the data before and after the connection
+    // are not continuous, resulting in pop sounds. To avoid the problem,
+    // WaitForDataConnection() needs to be called after UpdateSessionOperation(), where device is activated,
+    // and also before stream_->Start(), where the stream is actually started.
+    WaitForDataConnection();
+
     ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
@@ -1266,7 +1285,7 @@ int32_t RendererInServer::Drain(bool stopFlag)
         }
         status_ = I_STATUS_DRAINING;
     }
-    AUDIO_INFO_LOG("Start drain. stopFlag:%{public}d", stopFlag);
+    AUDIO_INFO_LOG("stopFlag:%{public}d", stopFlag);
     if (stopFlag) {
         std::lock_guard<std::mutex> lock(fadeoutLock_);
         AUDIO_INFO_LOG("fadeoutFlag_ = DO_FADINGOUT");
@@ -1385,6 +1404,7 @@ int32_t RendererInServer::Release(bool isSwitchStream)
         }
     }
 
+    AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
     if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
         AudioService::GetInstance()->SetDecMaxRendererStreamCnt();
         AudioService::GetInstance()->CleanAppUseNumMap(processConfig_.appInfo.appUid);
@@ -1409,9 +1429,9 @@ int32_t RendererInServer::Release(bool isSwitchStream)
     }
     status_ = I_STATUS_RELEASED;
     DisableAllInnerCap();
-    if (isDualToneEnabled_) {
-        DisableDualTone();
-    }
+
+    DisableDualTone();
+
     XperfAdapter::GetInstance().ReportStateChangeEventIfNeed(XPERF_EVENT_RELEASE,
         processConfig_.rendererInfo.streamUsage, streamIndex_, processConfig_.appInfo.appPid,
         processConfig_.appInfo.appUid);
@@ -1676,25 +1696,10 @@ int32_t RendererInServer::InitDupStreamVolume(uint32_t dupStreamIndex)
     return SUCCESS;
 }
 
-int32_t RendererInServer::EnableDualTone(const std::string &dupSinkName)
+int32_t RendererInServer::DisableDualToneInner()
 {
-    if (isDualToneEnabled_) {
-        AUDIO_INFO_LOG("DualTone is already enabled");
-        return SUCCESS;
-    }
-    int32_t ret = InitDualToneStream(dupSinkName);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dual tone stream failed");
-    return SUCCESS;
-}
-
-int32_t RendererInServer::DisableDualTone()
-{
-    std::lock_guard<std::mutex> lock(dualToneMutex_);
-    if (!isDualToneEnabled_) {
-        AUDIO_WARNING_LOG("DualTone is already disabled.");
-        return ERR_INVALID_OPERATION;
-    }
     isDualToneEnabled_ = false;
+    dupSinkName_ = std::nullopt;
     AUDIO_INFO_LOG("Disable dual tone renderer:[%{public}u] with status: %{public}d",
         dualToneStreamIndex_, status_.load());
     IStreamManager::GetDualPlaybackManager().ReleaseRender(dualToneStreamIndex_);
@@ -1704,10 +1709,41 @@ int32_t RendererInServer::DisableDualTone()
     return ERROR;
 }
 
-int32_t RendererInServer::InitDualToneStream(const std::string &dupSinkName)
+int32_t RendererInServer::DisableDualTone()
+{
+    std::lock_guard<std::mutex> lock(dualToneMutex_);
+    if (!isDualToneEnabled_) {
+        AUDIO_WARNING_LOG("DualTone is already disabled.");
+        return ERR_INVALID_OPERATION;
+    }
+
+    return DisableDualToneInner();
+}
+
+void RendererInServer::PreDualToneBufferSilenceForOffload()
+{
+    if (offloadEnable_) {
+        size_t emptyBufferSize = OFFLOAD_DUAL_RENDER_PREBUF * spanSizeInByte_;
+        auto buffer = std::make_unique<uint8_t []>(emptyBufferSize);
+        BufferDesc emptyBufferDesc = {buffer.get(), emptyBufferSize, emptyBufferSize};
+        memset_s(emptyBufferDesc.buffer, emptyBufferSize, 0, emptyBufferSize);
+        dualToneStream_->EnqueueBuffer(emptyBufferDesc);
+    }
+}
+
+int32_t RendererInServer::EnableDualTone(const std::string &dupSinkName)
 {
     {
         std::lock_guard<std::mutex> lock(dualToneMutex_);
+        bool isEnabled = isDualToneEnabled_.load();
+        if (isEnabled && dupSinkName_ == dupSinkName) {
+            AUDIO_INFO_LOG("DualTone is already enabled");
+            return SUCCESS;
+        }
+
+        if (isEnabled) {
+            DisableDualToneInner();
+        }
 
         int32_t ret = IStreamManager::GetDualPlaybackManager().CreateRender(processConfig_, dualToneStream_,
             dupSinkName);
@@ -1721,7 +1757,10 @@ int32_t RendererInServer::InitDualToneStream(const std::string &dupSinkName)
             isSystemApp, processConfig_.rendererInfo.volumeMode, processConfig_.rendererInfo.isVirtualKeyboard };
         AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
 
+        PreDualToneBufferSilenceForOffload();
+
         isDualToneEnabled_ = true;
+        dupSinkName_ = dupSinkName;
     }
 
     if (audioServerBuffer_ != nullptr) {
@@ -1917,14 +1956,7 @@ int32_t RendererInServer::GetOffloadApproximatelyCacheTime(uint64_t &timestamp, 
 
 int32_t RendererInServer::OffloadSetVolumeInner()
 {
-    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    float volume = AudioVolume::GetInstance()->GetVolume(streamIndex_, processConfig_.streamType, "offload", &volumes);
-    AUDIO_INFO_LOG("sessionID %{public}u volume: %{public}f", streamIndex_, volume);
-    if (!IsVolumeSame(volumes.volumeHistory, volume, AUDIO_VOLOMUE_EPSILON)) {
-        AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, volume);
-        AudioVolume::GetInstance()->Monitor(streamIndex_, true);
-    }
-    return stream_->OffloadSetVolume(volume);
+    return stream_->OffloadSetVolume();
 }
 
 int32_t RendererInServer::UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)
@@ -2128,12 +2160,19 @@ void RendererInServer::OnDataLinkConnectionUpdate(IOperation operation)
     CHECK_AND_RETURN_LOG(stateListener != nullptr, "StreamListener is nullptr");
     switch (operation) {
         case OPERATION_DATA_LINK_CONNECTING:
+            {
+                std::lock_guard<std::mutex> lock(dataConnectionMutex_);
+                isDataLinkConnected_ = false;
+            }
             AUDIO_DEBUG_LOG("OPERATION_DATA_LINK_CONNECTING received");
-            stateListener->OnOperationHandled(DATA_LINK_CONNECTING, 0);
             break;
         case OPERATION_DATA_LINK_CONNECTED:
+            {
+                std::lock_guard<std::mutex> lock(dataConnectionMutex_);
+                isDataLinkConnected_ = true;
+                dataConnectionCV_.notify_all();
+            }
             AUDIO_DEBUG_LOG("OPERATION_DATA_LINK_CONNECTED received");
-            stateListener->OnOperationHandled(DATA_LINK_CONNECTED, 0);
             break;
         default:
             return;
@@ -2611,6 +2650,20 @@ void RendererInServer::ClearInnerCapBufferForInject()
         CHECK_AND_CONTINUE(innerCapIdToDupStreamCallbackMap_.find(capInfo.first) !=
             innerCapIdToDupStreamCallbackMap_.end());
         innerCapIdToDupStreamCallbackMap_[capInfo.first]->GetDupRingBuffer()->ResetBuffer();
+    }
+}
+
+void RendererInServer::WaitForDataConnection()
+{
+    Trace trace("WaitForA2dpDataConnection");
+    std::unique_lock<std::mutex> dataConnectionWaitLock(dataConnectionMutex_);
+    if (!isDataLinkConnected_) {
+        AUDIO_INFO_LOG("data-connection blocking starts.");
+        bool stopWaiting = dataConnectionCV_.wait_for(
+            dataConnectionWaitLock, std::chrono::milliseconds(DATA_CONNECTION_TIMEOUT_IN_MS), [this] {
+                return isDataLinkConnected_;
+            });
+        AUDIO_INFO_LOG("data-connection blocking ends, reason %{public}s.", stopWaiting ? "connected" : "timeout");
     }
 }
 } // namespace AudioStandard

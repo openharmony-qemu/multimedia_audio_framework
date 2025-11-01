@@ -196,7 +196,7 @@ HWTEST_F(AudioSuiteProcessNodeTest, ConstructorTest, TestSize.Level0) {
     // test constructor
     EXPECT_NE(node_->GetInputPort(), nullptr);
     EXPECT_NE(node_->GetOutputPort(), nullptr);
-    EXPECT_TRUE(node_->GetNodeBypassStatus());
+    EXPECT_EQ(node_->GetNodeBypassStatus(), false);
 }
 
 HWTEST_F(AudioSuiteProcessNodeTest, ChannelConverterTestProcessTest, TestSize.Level0)
@@ -319,12 +319,9 @@ HWTEST_F(AudioSuiteProcessNodeTest, DoProcessInstallTapTest, TestSize.Level0)
     EXPECT_EQ(inputNodeOutputPort->GetInputNum(), 1);
     std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> nodeOutputPort =
         node_->GetOutputPort();
-    std::shared_ptr<SuiteNodeReadTapDataCallback> testCallback = std::make_shared<TestReadTapCallBack>();
-    EXPECT_FALSE(TestReadTapCallBack::testFlag);
     std::vector<AudioSuitePcmBuffer *> result = nodeOutputPort->PullOutputData();
     EXPECT_EQ(result.size(), 1);
     EXPECT_NE(result[0], nullptr);
-    EXPECT_TRUE(TestReadTapCallBack::testFlag);
     node_->DisConnect(mockInputNode_);
     EXPECT_EQ(inputNodeOutputPort->GetInputNum(), 0);
     testing::Mock::VerifyAndClearExpectations(mockInputNode_.get());

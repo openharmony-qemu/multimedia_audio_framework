@@ -1887,6 +1887,30 @@ bool AudioStreamCollector::IsMediaPlaying()
     return false;
 }
 
+std::vector<int32_t> AudioStreamCollector::GetPlayingMediaSessionIdList()
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    static const std::unordered_set<int32_t> mediaStreamTypes = {
+        STREAM_MUSIC,
+        STREAM_MEDIA,
+        STREAM_MOVIE,
+        STREAM_GAME,
+        STREAM_SPEECH,
+        STREAM_NAVIGATION,
+        STREAM_CAMCORDER,
+        STREAM_VOICE_MESSAGE
+    };
+    std::vector<int32_t> sessionIdList{};
+    for (auto &changeInfo: audioRendererChangeInfos_) {
+        if (changeInfo != nullptr && changeInfo->rendererState == RENDERER_RUNNING &&
+            mediaStreamTypes.count(GetStreamType((changeInfo->rendererInfo).contentType,
+            (changeInfo->rendererInfo).streamUsage)) > 0) {
+            sessionIdList.push_back(changeInfo->sessionId);
+        }
+    }
+    return sessionIdList;
+}
+
 bool AudioStreamCollector::IsVoipStreamActive()
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);

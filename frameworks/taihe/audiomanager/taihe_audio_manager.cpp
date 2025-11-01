@@ -26,6 +26,8 @@
 #include "taihe_audio_stream_manager.h"
 #include "taihe_audio_volume_manager.h"
 #include "taihe_audio_spatialization_manager.h"
+#include "taihe_audio_collaborative_manager.h"
+#include "taihe_audio_scene_callbacks.h"
 #include "taihe_param_utils.h"
 
 namespace ANI::Audio {
@@ -180,6 +182,11 @@ AudioSpatializationManager AudioManagerImpl::GetSpatializationManager()
     return AudioSpatializationManagerImpl::CreateSpatializationManagerWrapper();
 }
 
+AudioCollaborativeManager AudioManagerImpl::GetCollaborativeManager()
+{
+    return AudioCollaborativeManagerImpl::CreateCollaborativeManagerWrapper();
+}
+
 AudioScene AudioManagerImpl::GetAudioSceneSync()
 {
     if (audioMngr_ == nullptr) {
@@ -191,6 +198,72 @@ AudioScene AudioManagerImpl::GetAudioSceneSync()
         audioScene = OHOS::AudioStandard::AudioScene::AUDIO_SCENE_RINGING;
     }
     return TaiheAudioEnum::ToTaiheAudioScene(audioScene);
+}
+
+void AudioManagerImpl::OnAudioSceneChange(callback_view<void(AudioScene data)> callback)
+{
+    auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
+    RegisterAudioSceneChangeCallback(cacheCallback, this);
+}
+
+void AudioManagerImpl::RegisterAudioSceneChangeCallback(
+    std::shared_ptr<uintptr_t> &callback, AudioManagerImpl *audioMngrImpl)
+{
+    CHECK_AND_RETURN_RET_LOG(audioMngrImpl != nullptr,
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "audioMngrImpl is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioMngrImpl->audioMngr_ != nullptr,
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "audioMngr_ is nullptr");
+
+    if (audioMngrImpl->audioSceneChangedCallbackTaihe_ == nullptr) {
+        auto audioSceneChangedCallbackTaihe = std::make_shared<TaiheAudioSceneChangedCallback>();
+        CHECK_AND_RETURN_LOG(audioSceneChangedCallbackTaihe != nullptr, "no memory");
+
+        int32_t ret = audioMngrImpl->audioMngr_->SetAudioSceneChangeCallback(audioSceneChangedCallbackTaihe);
+        CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS, "SetAudioSceneChangeCallback Failed %{public}d", ret);
+        audioMngrImpl->audioSceneChangedCallbackTaihe_ = audioSceneChangedCallbackTaihe;
+    }
+
+    std::shared_ptr<TaiheAudioSceneChangedCallback> cb =
+        std::static_pointer_cast<TaiheAudioSceneChangedCallback>(audioMngrImpl->audioSceneChangedCallbackTaihe_);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "static_pointer_cast failed");
+
+    cb->SaveCallbackReference(AUDIO_SCENE_CHANGE_CALLBACK_NAME, callback);
+}
+
+void AudioManagerImpl::OffAudioSceneChange(optional_view<callback<void(AudioScene data)>> callback)
+{
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
+    if (callback.has_value()) {
+        cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
+    }
+    UnregisterAudioSceneChangeCallback(cacheCallback, this);
+}
+
+void AudioManagerImpl::UnregisterAudioSceneChangeCallback(std::shared_ptr<uintptr_t> &callback,
+    AudioManagerImpl *audioMngrImpl)
+{
+    CHECK_AND_RETURN_RET_LOG(audioMngrImpl != nullptr,
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "audioMngrImpl is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioMngrImpl->audioMngr_ != nullptr,
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "audioMngr_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioMngrImpl->audioSceneChangedCallbackTaihe_ != nullptr,
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM), "audioSceneChangedCallbackTaihe_ is nullptr");
+
+    std::shared_ptr<TaiheAudioSceneChangedCallback> cb =
+        std::static_pointer_cast<TaiheAudioSceneChangedCallback>(audioMngrImpl->audioSceneChangedCallbackTaihe_);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "static_pointer_cast failed");
+
+    if (callback != nullptr) {
+        cb->RemoveCallbackReference(callback);
+    }
+    if (callback == nullptr || cb->GetAudioSceneCbListSize() == 0) {
+        int32_t ret = audioMngrImpl->audioMngr_->UnsetAudioSceneChangeCallback(
+            audioMngrImpl->audioSceneChangedCallbackTaihe_);
+        CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS, "UnsetAudioSceneChangeCallback Failed");
+        audioMngrImpl->audioSceneChangedCallbackTaihe_.reset();
+        audioMngrImpl->audioSceneChangedCallbackTaihe_ = nullptr;
+        cb->RemoveAllCallbackReference();
+    }
 }
 
 AudioManager GetAudioManager()

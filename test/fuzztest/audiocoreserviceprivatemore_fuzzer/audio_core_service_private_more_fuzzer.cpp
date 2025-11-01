@@ -287,7 +287,8 @@ void MoveToNewInputDeviceFuzzTest()
     streamDesc->oldDeviceDescs_.push_back(audioDeviceDescriptor);
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor2 = std::make_shared<AudioDeviceDescriptor>();
     streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor2);
-    audioCoreService->MoveToNewInputDevice(streamDesc);
+    std::vector<SourceOutput> sourceOutputs = audioCoreService->GetSourceOutputs();
+    audioCoreService->MoveToNewInputDevice(streamDesc, sourceOutputs);
 }
 
 void IsNewDevicePlaybackSupportedFuzzTest()

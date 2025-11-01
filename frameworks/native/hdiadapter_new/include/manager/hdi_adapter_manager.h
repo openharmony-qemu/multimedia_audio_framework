@@ -48,11 +48,11 @@ public:
     void ReleaseDeviceManager(HdiDeviceManagerType type);
 
     uint32_t GetId(HdiIdBase base, HdiIdType type, const std::string &info = HDI_ID_INFO_DEFAULT,
-        bool isResident = false);
+        bool isResident = false, bool tryCreate = true);
     uint32_t GetRenderIdByDeviceClass(const std::string &deviceClass, const std::string &info = HDI_ID_INFO_DEFAULT,
-        bool isResident = false);
+        bool isResident = false, bool tryCreate = true);
     uint32_t GetCaptureIdByDeviceClass(const std::string &deviceClass, const SourceType sourceType,
-        const std::string &info = HDI_ID_INFO_DEFAULT, bool isResident = false);
+        const std::string &info = HDI_ID_INFO_DEFAULT, bool isResident = false, bool tryCreate = true);
     void ReleaseId(uint32_t &id);
 
     std::shared_ptr<IAudioRenderSink> GetRenderSink(uint32_t renderId, bool tryCreate = false);
@@ -100,6 +100,8 @@ private:
     void DoRegistSinkCallback(uint32_t id, std::shared_ptr<IAudioRenderSink> sink);
     void DoRegistSourceCallback(uint32_t id, std::shared_ptr<IAudioCaptureSource> source);
     void DoSetSinkPrestoreInfo(std::shared_ptr<IAudioRenderSink> sink, uint32_t type);
+
+    void ProcessIdUseCount(uint32_t id, bool isResident, bool tryCreate);
 
 private:
     std::unordered_map<uint32_t, RenderSinkInfo> renderSinks_;

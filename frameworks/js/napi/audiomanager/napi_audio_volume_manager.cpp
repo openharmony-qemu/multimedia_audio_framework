@@ -178,6 +178,9 @@ napi_value NapiAudioVolumeManager::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
         DECLARE_NAPI_FUNCTION("forceVolumeKeyControlType", ForceVolumeKeyControlType),
+        DECLARE_NAPI_FUNCTION("getSystemVolumePercentage", GetSystemVolumePercentage),
+        DECLARE_NAPI_FUNCTION("setSystemVolumePercentage", SetSystemVolumePercentage),
+        DECLARE_NAPI_FUNCTION("getMinSystemVolumePercentage", GetMinSystemVolumePercentage),
     };
 
     status = napi_define_class(env, AUDIO_VOLUME_MANAGER_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -1220,20 +1223,17 @@ napi_value NapiAudioVolumeManager::RegisterCallback(napi_env env, napi_value jsT
             cb->CreateVolumeTsfn(env);
         }
     } else if (!cbName.compare(APP_VOLUME_CHANGE_CALLBACK_NAME)) {
-        undefinedResult = RegisterSelfAppVolumeChangeCallback(env, args, cbName,
-            napiVolumeManager);
+        undefinedResult = RegisterSelfAppVolumeChangeCallback(env, args, cbName, napiVolumeManager);
     } else if (!cbName.compare(APP_VOLUME_CHANGE_CALLBACK_NAME_FOR_UID)) {
-        undefinedResult = RegisterAppVolumeChangeForUidCallback(env, args, cbName,
-            napiVolumeManager);
+        undefinedResult = RegisterAppVolumeChangeForUidCallback(env, args, cbName, napiVolumeManager);
     } else if (!cbName.compare(ACTIVE_VOLUME_TYPE_CHANGE_CALLBACK_NAME)) {
-        undefinedResult = RegisterActiveVolumeTypeChangeCallback(env, args, cbName,
-            napiVolumeManager);
+        undefinedResult = RegisterActiveVolumeTypeChangeCallback(env, args, cbName, napiVolumeManager);
     } else if (!cbName.compare(AUDIO_STREAM_VOLUME_CHANGE_CALLBACK_NAME)) {
-        undefinedResult = RegisterStreamVolumeChangeCallback(env, args, cbName,
-            napiVolumeManager);
+        undefinedResult = RegisterStreamVolumeChangeCallback(env, args, cbName, napiVolumeManager);
     } else if (!cbName.compare(AUDIO_SYSTEM_VOLUME_CHANGE_CALLBACK_NAME)) {
-        undefinedResult = RegisterSystemVolumeChangeCallback(env, args, cbName,
-            napiVolumeManager);
+        undefinedResult = RegisterSystemVolumeChangeCallback(env, args, cbName, napiVolumeManager);
+    } else if (!cbName.compare(VOLUME_DEGREE_CHANGE_EVENT_CALLBACK_NAME)) {
+        undefinedResult = RegisterVolumeDegreeChangeCallback(env, args, cbName, napiVolumeManager);
     } else {
         AUDIO_ERR_LOG("No such callback supported");
         NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
@@ -1420,6 +1420,33 @@ napi_value NapiAudioVolumeManager::RegisterSystemVolumeChangeCallback(napi_env e
     return result;
 }
 
+napi_value NapiAudioVolumeManager::RegisterVolumeDegreeChangeCallback(napi_env env, napi_value *args,
+    const std::string &cbName, NapiAudioVolumeManager *napiAudioVolumeManager)
+{
+    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeManager && napiAudioVolumeManager->audioSystemMngr_,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "audio volume manager is nullptr.");
+    napi_value result = nullptr;
+    napi_get_undefined(env, &result);
+    if (napiAudioVolumeManager->volumeDegreeCallbackNapi_ == nullptr) {
+        napiAudioVolumeManager->volumeDegreeCallbackNapi_ = std::make_shared<
+            NapiAudioVolumeKeyEventEx>(env);
+        int32_t ret = napiAudioVolumeManager->audioSystemMngr_->RegisterVolumeDegreeCallback(
+            napiAudioVolumeManager->cachedClientId_, napiAudioVolumeManager->volumeDegreeCallbackNapi_);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
+            NapiAudioError::ThrowErrorAndReturn(env, ret), "Register Failed %{public}d", ret);
+    }
+
+    std::shared_ptr<NapiAudioVolumeKeyEventEx> cb =
+        std::static_pointer_cast<NapiAudioVolumeKeyEventEx>(napiAudioVolumeManager->volumeDegreeCallbackNapi_);
+    CHECK_AND_RETURN_RET_LOG(cb && args,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "callback is nullptr");
+    cb->SaveCallbackReference(cbName, args[PARAM1]);
+    if (!cb->GetVolumeDegreeTsfnFlag()) {
+        cb->CreateVolumeDegreeTsfn(env);
+    }
+    return result;
+}
+
 napi_value NapiAudioVolumeManager::On(napi_env env, napi_callback_info info)
 {
     napi_value undefinedResult = nullptr;
@@ -1539,6 +1566,8 @@ void NapiAudioVolumeManager::UnregisterCallbackFir(napi_env env, napi_value *arg
         UnregisterStreamVolumeChangeCallback(env, args, argc, napiVolumeManager);
     } else if (!cbName.compare(AUDIO_SYSTEM_VOLUME_CHANGE_CALLBACK_NAME)) {
         UnregisterSystemVolumeChangeCallback(env, args, argc, napiVolumeManager);
+    } else if (!cbName.compare(VOLUME_DEGREE_CHANGE_EVENT_CALLBACK_NAME)) {
+        UnregisterVolumeDegreeChangeCallback(env, args, argc, napiVolumeManager);
     } else {
         AUDIO_ERR_LOG("No such callback supported");
         NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
@@ -1692,6 +1721,34 @@ void NapiAudioVolumeManager::UnregisterSystemVolumeChangeCallback(napi_env env, 
     }
 }
 
+void NapiAudioVolumeManager::UnregisterVolumeDegreeChangeCallback(napi_env env, napi_value *args,
+    size_t argc, NapiAudioVolumeManager *napiAudioVolumeManager)
+{
+    napi_value callback = nullptr;
+    CHECK_AND_RETURN_LOG(args != nullptr, "args is nullptr");
+    CHECK_AND_RETURN_LOG(napiAudioVolumeManager != nullptr, "napiAudioVolumeManager is nullptr");
+    CHECK_AND_RETURN_LOG(napiAudioVolumeManager->audioSystemMngr_ != nullptr, "audioSystemMngr_ is nullptr");
+    if (argc == ARGS_TWO) {
+        callback = args[PARAM1];
+    }
+
+    std::shared_ptr<NapiAudioVolumeKeyEventEx> cb =
+        std::static_pointer_cast<NapiAudioVolumeKeyEventEx>(napiAudioVolumeManager->volumeDegreeCallbackNapi_);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "static_pointer_cast failed");
+
+    if (callback != nullptr) {
+        cb->RemoveCallbackReference(env, callback);
+    }
+    if (callback == nullptr || cb->GetVolumeKeyEventCbListSize() == 0) {
+        int32_t ret = napiAudioVolumeManager->audioSystemMngr_->UnregisterVolumeDegreeCallback(
+            napiAudioVolumeManager->cachedClientId_, napiAudioVolumeManager->volumeDegreeCallbackNapi_);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnsetAudioSceneChangeCallback Failed");
+        napiAudioVolumeManager->volumeDegreeCallbackNapi_.reset();
+        napiAudioVolumeManager->volumeDegreeCallbackNapi_ = nullptr;
+        cb->RemoveAllCallbackReference();
+    }
+}
+
 std::shared_ptr<NapiAudioVolumeKeyEvent> NapiAudioVolumeManager::GetVolumeEventNapiCallback(napi_value argv,
     NapiAudioVolumeManager *napiVolumeManager)
 {
@@ -1775,6 +1832,126 @@ napi_value NapiAudioVolumeManager::ForceVolumeKeyControlType(napi_env env, napi_
         output = NapiParamUtils::GetUndefinedValue(env);
     };
     return NapiAsyncWork::Enqueue(env, context, "ForceVolumeKeyControlType", executor, complete);
+}
+
+napi_value NapiAudioVolumeManager::GetSystemVolumePercentage(napi_env env, napi_callback_info info)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"),
+        "No system permission");
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value args[ARGS_ONE] = {};
+    auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
+
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, args[PARAM0], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of audioVolumeType must be number"),
+        "invalid valueType");
+
+    int32_t volType;
+    NapiParamUtils::GetValueInt32(env, volType, args[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "parameter verification failed: The param of volType must be enum AudioVolumeType"),
+        "get volType failed");
+
+    NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+        "GetSystemVolumePercentage", volType);
+
+    if (napiAudioVolumeManager == nullptr || napiAudioVolumeManager->audioSystemMngr_ == nullptr) {
+        AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr  is nullptr!");
+        return NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY,
+            "napiAudioVolumeManager nullptr");
+    }
+    int32_t systemVolume = napiAudioVolumeManager->audioSystemMngr_->GetVolumeDegree(
+        NapiAudioEnum::GetNativeAudioVolumeType(volType));
+    NapiParamUtils::SetValueInt32(env, systemVolume, result);
+    return result;
+}
+
+napi_value NapiAudioVolumeManager::SetSystemVolumePercentage(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioVolumeManagerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("failed : no memory");
+        NapiAudioError::ThrowError(env, "failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
+        context->status = NapiParamUtils::GetValueInt32(env, context->volumeType, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volumeType failed",
+            NAPI_ERR_INVALID_PARAM);
+        if (!NapiAudioEnum::IsLegalInputArgumentVolType(context->volumeType)) {
+            context->SignError(context->errCode == NAPI_ERR_INVALID_PARAM?
+                NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED);
+        }
+        context->status = NapiParamUtils::GetValueInt32(env, context->volDegree, argv[PARAM1]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volDegree failed",
+            NAPI_ERR_INVALID_PARAM);
+    };
+    context->GetCbInfo(env, info, inputParser);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioVolumeManager*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioVolumeManager = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioVolumeManagerStatus(napiAudioVolumeManager, context),
+            "audio volume manager state is error.");
+        context->intValue = napiAudioVolumeManager->audioSystemMngr_->SetVolumeDegree(
+            NapiAudioEnum::GetNativeAudioVolumeType(context->volumeType), context->volDegree);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "failed", NAPI_ERR_SYSTEM);
+    };
+
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "SetSystemVolumePercentage", executor, complete);
+}
+
+napi_value NapiAudioVolumeManager::GetMinSystemVolumePercentage(napi_env env, napi_callback_info info)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"),
+        "No system permission");
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value args[ARGS_ONE] = {};
+    auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
+
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, args[PARAM0], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of audioVolumeType must be number"),
+        "invalid valueType");
+
+    int32_t volType;
+    NapiParamUtils::GetValueInt32(env, volType, args[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of volType must be enum AudioVolumeType"),
+        "get volType failed");
+
+    NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+        "getMinSystemVolumePercentage", volType);
+
+    if (napiAudioVolumeManager == nullptr || napiAudioVolumeManager->audioSystemMngr_ == nullptr) {
+        AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr  is nullptr!");
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+    int32_t minSystemVolume = napiAudioVolumeManager->audioSystemMngr_->GetMinVolumeDegree(
+        NapiAudioEnum::GetNativeAudioVolumeType(volType));
+    NapiParamUtils::SetValueInt32(env, minSystemVolume, result);
+    return result;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

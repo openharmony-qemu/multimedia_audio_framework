@@ -44,7 +44,7 @@ std::shared_ptr<AudioEnhanceChain> CreateNewChain()
 {
     const uint64_t chainId = 0x1234;
     std::string scene = "SCENE_TEST";
-    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, "DEVICE_MIC", "SPEAKER", "SCENE_VOIP_UP", "DEVICE_NAME" };
+    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, "DEVICE_MIC", "SPEAKER", "SCENE_VOIP_UP", "DEVICE_NAME" };
     const AudioEnhanceDeviceAttr deviceAttr = { 48000, 2, 2, false, 48000, 2, 2, false, 48000, 4, 2 };
 
     auto chain = std::make_shared<AudioEnhanceChain>(chainId, scene, PRIOR_SCENE, algoParam, deviceAttr);
@@ -346,7 +346,7 @@ HWTEST(AudioEnhanceChainUnitTest, ApplyEmptyEnhanceChain, TestSize.Level1)
 {
     const uint64_t chainId = 0x3456;
     std::string scene = "SCENE_VOIP_UP";
-    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, "DEVICE_MIC", "SPEAKER", "SCENE_VOIP_UP", "DEVICE_NAME" };
+    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, "DEVICE_MIC", "SPEAKER", "SCENE_VOIP_UP", "DEVICE_NAME" };
     const AudioEnhanceDeviceAttr deviceAttr = { 48000, 2, 2, true, 48000, 2, 2, true, 48000, 4, 2 };
     auto chain = std::make_shared<AudioEnhanceChain>(chainId, scene, PRIOR_SCENE, algoParam, deviceAttr);
     EXPECT_NE(chain, nullptr);

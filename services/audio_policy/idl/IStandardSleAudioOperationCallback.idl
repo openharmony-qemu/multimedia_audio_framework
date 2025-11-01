@@ -23,7 +23,7 @@ interface IStandardSleAudioOperationCallback {
     void IsInBandRingOpen([in] String device, [out] boolean ret);
     void GetSupportStreamType([in] String device, [out] unsigned int retType);
     void SetActiveSinkDevice([in] String device, [in] unsigned int streamType, [out] int ret);
-    void StartPlaying([in] String device, [in] unsigned int streamType, [out] int ret);
+    void StartPlaying([in] String device, [in] unsigned int streamType, [in] int timeoutMs, [out] int ret);
     void StopPlaying([in] String device, [in] unsigned int streamType, [out] int ret);
     void ConnectAllowedProfiles([in] String remoteAddr, [out] int ret);
     void SetDeviceAbsVolume([in] String remoteAddr, [in] unsigned int volume, [in] unsigned int streamType, [out] int ret);

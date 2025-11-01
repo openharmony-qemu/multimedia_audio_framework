@@ -58,17 +58,17 @@ public:
     void RecordNodataFrame();
     void RecordNormalFrame();
     void DeleteCheckerPara(const int32_t pid, const int32_t callbackId);
-    void StopCheckStreamThread();
     void OnRemoteAppDied(const int32_t pid);
     void RecordStandbyTime(bool isStart);
     void UpdateAppState(bool isBackground);
     void SetVolume(float volume);
     float GetVolume();
+
+    std::atomic<bool> isNeedCreateThread_ = true;
 private:
     bool IsMonitorMuteFrame(const CheckerParam &para);
     bool IsMonitorNoDataFrame(const CheckerParam &para);
     void InitCallbackInfo(DataTransferStateChangeType type, AudioRendererDataTransferStateChangeInfo &callbackInfo);
-    void CheckStreamThread();
     void MonitorCheckFrameAction(CheckerParam &para, int64_t abnormalFrameNum, float badFrameRatio);
     void CalculateFrameAfterStandby(CheckerParam &para, int64_t &abnormalFrameNum);
     void CheckVolume();
@@ -78,14 +78,10 @@ private:
     std::recursive_mutex checkLock_;
     std::recursive_mutex backgroundStateLock_;
     AudioProcessConfig streamConfig_;
-    std::thread checkThread_;
-    std::atomic<bool> isKeepCheck_ = false;
-    std::atomic<bool> isNeedCreateThread_ = true;
     std::mutex volumeLock_;
     float curVolume_ = 1.0f;
     float preVolume_ = 1.0f;
 };
-
 }
 }
 #endif

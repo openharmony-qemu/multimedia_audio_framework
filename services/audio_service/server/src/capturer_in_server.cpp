@@ -262,32 +262,6 @@ bool CapturerInServer::IsReadDataOverFlow(size_t length, uint64_t currentWriteFr
 }
 // LCOV_EXCL_STOP
 
-
-static CapturerState HandleStreamStatusToCapturerState(const IStatus &status)
-{
-    switch (status) {
-        case I_STATUS_IDLE:
-            return CAPTURER_PREPARED;
-        case I_STATUS_STARTING:
-        case I_STATUS_STARTED:
-        case I_STATUS_FLUSHING_WHEN_STARTED:
-            return CAPTURER_RUNNING;
-        case I_STATUS_PAUSING:
-        case I_STATUS_PAUSED:
-        case I_STATUS_FLUSHING_WHEN_PAUSED:
-            return CAPTURER_PAUSED;
-        case I_STATUS_STOPPING:
-        case I_STATUS_STOPPED:
-        case I_STATUS_FLUSHING_WHEN_STOPPED:
-            return CAPTURER_STOPPED;
-        case I_STATUS_RELEASING:
-        case I_STATUS_RELEASED:
-            return CAPTURER_RELEASED;
-        default:
-            return CAPTURER_INVALID;
-    }
-}
-
 // LCOV_EXCL_START
 static uint32_t GetByteSizeByFormat(enum AudioSampleFormat format)
 {
@@ -485,12 +459,6 @@ bool CapturerInServer::CheckBGCapture()
     uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
 
     if (PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId)) {
-        AudioService::GetInstance()->UpdateBackgroundCaptureMap(streamIndex_, true);
-        return true;
-    }
-
-    if (AudioService::GetInstance()->IsStreamInterruptResume(streamIndex_)) {
-        AUDIO_WARNING_LOG("Stream:%{public}u Result:success Reason:resume", streamIndex_);
         return true;
     }
 
@@ -516,19 +484,17 @@ bool CapturerInServer::TurnOnMicIndicator(CapturerState capturerState)
         tokenId,
         capturerState,
     };
-    if (SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
-        AudioService::GetInstance()->UpdateSwitchStreamMap(streamIndex_, SWITCH_STATE_STARTED);
-    } else {
+    if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
         CHECK_AND_RETURN_RET_LOG(CheckBGCapture(), false, "Verify failed");
     }
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
 
     if (isMicIndicatorOn_) {
-        AUDIO_WARNING_LOG("MicIndicator：already on, Stream:%{public}u.", streamIndex_);
+        AUDIO_WARNING_LOG("MicIndicator:already on, Stream:%{public}u.", streamIndex_);
     } else {
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, streamIndex_),
             false, "NotifyPrivacyStart failed!");
-        AUDIO_INFO_LOG("MicIndicator:turn on，Stream:%{public}u", streamIndex_);
+        AUDIO_INFO_LOG("MicIndicator:turn on,Stream:%{public}u", streamIndex_);
         isMicIndicatorOn_ = true;
     }
     return true;
@@ -546,10 +512,6 @@ bool CapturerInServer::TurnOffMicIndicator(CapturerState capturerState)
         capturerState,
     };
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
-
-    if (AudioService::GetInstance()->NeedRemoveBackgroundCaptureMap(streamIndex_, capturerState)) {
-        AudioService::GetInstance()->RemoveBackgroundCaptureMap(streamIndex_);
-    }
     if (isMicIndicatorOn_) {
         PermissionUtil::NotifyPrivacyStop(tokenId, streamIndex_);
         AUDIO_INFO_LOG("MicIndicator:turn off, Stream:%{public}u", streamIndex_);
@@ -624,9 +586,11 @@ int32_t CapturerInServer::StartInner()
 
 void CapturerInServer::RebuildCaptureInjector()
 {
+    CHECK_AND_RETURN_LOG(rebuildFlag_, "no nedd to rebuild");
     if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         CoreServiceHandler::GetInstance().RebuildCaptureInjector(streamIndex_);
     }
+    rebuildFlag_ = false;
 }
 
 // LCOV_EXCL_START
@@ -917,17 +881,21 @@ RestoreStatus CapturerInServer::RestoreSession(RestoreInfo restoreInfo)
             processConfig_.appInfo.appUid,
             processConfig_.appInfo.appPid,
             processConfig_.appInfo.appTokenId,
-            HandleStreamStatusToCapturerState(status_)
+            status_.load() == I_STATUS_STARTED ? CAPTURER_RUNNING : CAPTURER_PREPARED
         };
         AUDIO_INFO_LOG("Insert switchStream:%{public}u uid:%{public}d tokenId:%{public}u "
             "Reason:NEED_RESTORE", streamIndex_, info.callerUid, info.appTokenId);
-        AudioService::GetInstance()->UpdateSwitchStreamMap(streamIndex_, SWITCH_STATE_WAITING);
         SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
 
         audioServerBuffer_->SetRestoreInfo(restoreInfo);
         audioServerBuffer_->WakeFutex(IS_PRE_EXIT);
     }
     return restoreStatus;
+}
+
+void  CapturerInServer::SetRebuildFlag()
+{
+    rebuildFlag_ = true;
 }
 
 int64_t CapturerInServer::GetLastAudioDuration()

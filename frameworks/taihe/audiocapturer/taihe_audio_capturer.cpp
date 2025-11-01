@@ -24,6 +24,7 @@
 #endif
 #include "audio_errors.h"
 #include "audio_log.h"
+#include "audio_utils.h"
 #include "taihe_audio_enum.h"
 #include "taihe_audio_error.h"
 #include "taihe_audio_capturer_callbacks.h"
@@ -512,6 +513,20 @@ int64_t AudioCapturerImpl::GetOverflowCountSync()
     return static_cast<int64_t>(overflowCount);
 }
 
+void AudioCapturerImpl::SetWillMuteWhenInterruptedSync(bool muteWhenInterrupted)
+{
+    if (audioCapturer_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
+        return;
+    }
+    int32_t ret = audioCapturer_->SetInterruptStrategy(muteWhenInterrupted ?
+        OHOS::AudioStandard::InterruptStrategy::MUTE : OHOS::AudioStandard::InterruptStrategy::DEFAULT);
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SetWillMuteWhenInterrupted failed");
+        return;
+    }
+}
+
 taihe::array<AudioDeviceDescriptor> AudioCapturerImpl::GetCurrentInputDevices()
 {
     if (audioCapturer_ == nullptr) {
@@ -556,6 +571,23 @@ AudioCapturerChangeInfo AudioCapturerImpl::GetCurrentAudioCapturerChangeInfo()
         std::make_shared<OHOS::AudioStandard::AudioCapturerChangeInfo>(capturerChangeInfo);
     AudioCapturerChangeInfo result = TaiheParamUtils::ToTaiheAudioCapturerChangeInfo(capturerChangeInfoPtr);
     return result;
+}
+
+void AudioCapturerImpl::SetInputDeviceToAccessory()
+{
+    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+        return;
+    }
+    if (audioCapturer_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
+        return;
+    }
+    int32_t ret = audioCapturer_->SetInputDevice(OHOS::AudioStandard::DeviceType::DEVICE_TYPE_ACCESSORY);
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "Illegal state");
+        return;
+    }
 }
 
 void AudioCapturerImpl::RegisterCapturerCallback(std::shared_ptr<uintptr_t> &callback,
@@ -756,7 +788,7 @@ void AudioCapturerImpl::OnMarkReach(int64_t frame, callback_view<void(int64_t)> 
 
 void AudioCapturerImpl::OffStateChange(optional_view<callback<void(AudioState)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
@@ -765,7 +797,7 @@ void AudioCapturerImpl::OffStateChange(optional_view<callback<void(AudioState)>>
 
 void AudioCapturerImpl::OffAudioInterrupt(optional_view<callback<void(InterruptEvent const&)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
@@ -774,7 +806,7 @@ void AudioCapturerImpl::OffAudioInterrupt(optional_view<callback<void(InterruptE
 
 void AudioCapturerImpl::OffInputDeviceChange(optional_view<callback<void(array_view<AudioDeviceDescriptor>)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
@@ -783,7 +815,7 @@ void AudioCapturerImpl::OffInputDeviceChange(optional_view<callback<void(array_v
 
 void AudioCapturerImpl::OffAudioCapturerChange(optional_view<callback<void(AudioCapturerChangeInfo const&)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
@@ -792,7 +824,7 @@ void AudioCapturerImpl::OffAudioCapturerChange(optional_view<callback<void(Audio
 
 void AudioCapturerImpl::OffReadData(optional_view<callback<void(array_view<uint8_t>)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
@@ -801,7 +833,7 @@ void AudioCapturerImpl::OffReadData(optional_view<callback<void(array_view<uint8
 
 void AudioCapturerImpl::OffPeriodReach(optional_view<callback<void(int64_t)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
@@ -810,7 +842,7 @@ void AudioCapturerImpl::OffPeriodReach(optional_view<callback<void(int64_t)>> ca
 
 void AudioCapturerImpl::OffMarkReach(optional_view<callback<void(int64_t)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }

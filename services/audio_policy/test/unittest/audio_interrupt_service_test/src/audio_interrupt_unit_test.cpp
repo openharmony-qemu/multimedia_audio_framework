@@ -460,15 +460,15 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_021, TestSize.Level1)
     auto interruptServiceTest = GetTnterruptServiceTest();
     sptr<AudioPolicyServer> server = nullptr;
     interruptServiceTest->zonesMap_.clear();
-    interruptServiceTest->ClearAudioFocusInfoListOnAccountsChanged(0);
+    interruptServiceTest->ClearAudioFocusInfoListOnAccountsChanged(0, 1);
     interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
     interruptServiceTest->handler_ = nullptr;
 
     EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.empty(), true);
-    interruptServiceTest->ClearAudioFocusInfoListOnAccountsChanged(0);
+    interruptServiceTest->ClearAudioFocusInfoListOnAccountsChanged(0, 1);
     interruptServiceTest->SetCallbackHandler(GetServerHandlerTest());
     EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.empty(), true);
-    interruptServiceTest->ClearAudioFocusInfoListOnAccountsChanged(0);
+    interruptServiceTest->ClearAudioFocusInfoListOnAccountsChanged(0, 1);
     AudioInterrupt a1, a2, a3, a4, a5, a6;
     a1.streamUsage = StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
     a2.streamUsage = StreamUsage::STREAM_USAGE_VOICE_RINGTONE;
@@ -483,7 +483,7 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_021, TestSize.Level1)
     interruptServiceTest->zonesMap_[0]->audioFocusInfoList.push_back({a5, AudioFocuState::ACTIVE});
     interruptServiceTest->zonesMap_[0]->audioFocusInfoList.push_back({a6, AudioFocuState::ACTIVE});
     EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 6);
-    interruptServiceTest->ClearAudioFocusInfoListOnAccountsChanged(0);
+    interruptServiceTest->ClearAudioFocusInfoListOnAccountsChanged(0, 1);
     EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 2);
 }
 
@@ -853,47 +853,6 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_040, TestSize.Level1)
     EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 1);
     interruptServiceTest->ClearAudioFocusBySessionID(1);
     EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 0);
-}
-
-/**
-* @tc.name  : Test OnUserUnlocked_.
-* @tc.number: OnUserUnlocked_001
-* @tc.desc  : Test OnUserUnlocked_
-*/
-HWTEST_F(AudioInterruptUnitTest, OnUserUnlocked_001, TestSize.Level1)
-{
-    auto interruptServiceTest = GetTnterruptServiceTest();
-    sptr<AudioPolicyServer> server = nullptr;
-    CachedFocusInfo c1, c2, c3;
-    int32_t userId = 1001;
-    c1.sessionId = 2001;
-    c2.sessionId = 2002;
-    c3.sessionId = 2003;
-    c1.interruptEvent = {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
-    c2.interruptEvent = {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_PAUSE, 1.0f};
-    c3.interruptEvent = {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_PAUSE, 1.0f};
-    std::lock_guard<std::mutex> lock(interruptServiceTest->cachedFocusMutex_);
-    interruptServiceTest->cachedFocusMap_[userId].push_back(c1);
-    interruptServiceTest->cachedFocusMap_[userId].push_back(c2);
-    interruptServiceTest->cachedFocusMap_[userId].push_back(c3);
-
-    interruptServiceTest->OnUserUnlocked(userId);
-    EXPECT_EQ(interruptServiceTest->cachedFocusMap_.count(userId), 0);
-}
-
-/**
-* @tc.name  : Test OnUserUnlocked_.
-* @tc.number: OnUserUnlocked_002
-* @tc.desc  : Test OnUserUnlocked_
-*/
-HWTEST_F(AudioInterruptUnitTest, OnUserUnlocked_002, TestSize.Level1)
-{
-    auto interruptServiceTest = GetTnterruptServiceTest();
-    int32_t userId = 1001;
-    std::lock_guard<std::mutex> lock(interruptServiceTest->cachedFocusMutex_);
-    interruptServiceTest->cachedFocusMap_.clear();
-    interruptServiceTest->OnUserUnlocked(userId);
-    EXPECT_EQ(interruptServiceTest->cachedFocusMap_.count(userId), 0);
 }
 
 /**

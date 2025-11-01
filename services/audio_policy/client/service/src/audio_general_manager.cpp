@@ -153,6 +153,16 @@ int32_t AudioGeneralManager::SetDeviceChangeCallback(const DeviceFlag flag,
     return AudioPolicyManager::GetInstance().SetDeviceChangeCallback(clientId, flag, callback);
 }
 
+int32_t AudioGeneralManager::SetDeviceInfoUpdateCallback(
+    const std::shared_ptr<AudioManagerDeviceInfoUpdateCallback>& callback)
+{
+    AUDIO_INFO_LOG("Entered %{public}s", __func__);
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    int32_t clientId = GetCallingPid();
+    return AudioPolicyManager::GetInstance().SetDeviceInfoUpdateCallback(clientId, callback);
+}
+
 int32_t AudioGeneralManager::SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback>& callback)
 {
     AUDIO_INFO_LOG("Entered");
@@ -456,9 +466,9 @@ int32_t AudioGeneralManager::SelectOutputDevice(sptr<AudioRendererFilter> audioR
     return AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
 }
 
-int32_t AudioGeneralManager::SelectPrivateDevice()
+int32_t AudioGeneralManager::SelectPrivateDevice(int32_t devType, const std::string &macAddress)
 {
-    return AudioPolicyManager::GetInstance().SelectPrivateDevice();
+    return AudioPolicyManager::GetInstance().SelectPrivateDevice(devType, macAddress);
 }
 
 int32_t AudioGeneralManager::ForceSelectDevice(DeviceType devType, const std::string &macAddress,

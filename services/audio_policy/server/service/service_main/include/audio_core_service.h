@@ -100,6 +100,7 @@ public:
             AudioStreamInfo &streamInfo, bool isReloadProcess = false) override;
         uint32_t GenerateSessionId() override;
         int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
+        void OnCheckActiveMusicTime(const std::string &reason) override;
 
         // IDeviceStatusObserver
         void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command) override;
@@ -116,7 +117,7 @@ public:
         void OnServiceDisconnected(AudioServiceIndex serviceIndex) override;
         void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
             sptr<AudioRendererFilter> filter = nullptr) override;
-        void OnPrivacyDeviceSelected() override;
+        void OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress) override;
         uint32_t GetPaIndexByPortName(const std::string &portName) override;
 
         // Functions related to assignment operations - device related
@@ -233,6 +234,7 @@ private:
         AudioStreamInfo &streamInfo);
     uint32_t GenerateSessionId();
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
+    void OnCheckActiveMusicTime(const std::string &reason);
 
     // IDeviceStatusObserver from EventEntry
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
@@ -249,7 +251,7 @@ private:
     uint32_t GetPaIndexByPortName(const std::string &portName);
     void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
         sptr<AudioRendererFilter> filter = nullptr);
-    void OnPrivacyDeviceSelected();
+    void OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress);
 
     // Functions related to assignment operations - device related
     int32_t SetAudioScene(AudioScene audioScene, const int32_t uid = INVALID_UID, const int32_t pid = INVALID_PID);
@@ -345,6 +347,9 @@ private:
     void ReleaseCaptureInjector(uint32_t sessionId);
     void RebuildCaptureInjector(uint32_t sessionId);
     int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
+    bool InVideoCommFastBlockList(const std::string &bundleName);
+    int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
+
 private:
     static std::string GetEncryptAddr(const std::string &addr);
     int32_t FetchRendererPipesAndExecute(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
@@ -355,6 +360,7 @@ private:
     void BluetoothScoFetch(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
          const AudioStreamDeviceChangeReasonExt reason);
+    void CheckRingAndVoipScene(const AudioStreamDeviceChangeReasonExt reason);
     int32_t UpdateModemRoute(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
     uint32_t GetVoiceCallMuteDuration(AudioDeviceDescriptor &curDesc, AudioDeviceDescriptor &newDesc);
     void UnmuteVoiceCallAfterMuteDuration(uint32_t muteDuration);
@@ -379,6 +385,7 @@ private:
     int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, DeviceType deviceType,
         const AudioStreamInfo& audioStreamInfo, std::string networkId, std::string sinkName,
         SourceType sourceType);
+    void ProcessOutputPipeReload(std::shared_ptr<AudioPipeInfo> pipeInfo);
     AudioIOHandle ReloadOrOpenAudioPort(int32_t engineFlag, AudioModuleInfo &moduleInfo,
         uint32_t &paIndex);
     void GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo,
@@ -417,8 +424,10 @@ private:
     int32_t MoveToRemoteOutputDevice(
         std::vector<SinkInput> sinkInputIds, std::shared_ptr<AudioPipeInfo> pipeInfo,
         std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
-    void MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> streamDesc);
-    void MoveToNewInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    void MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        const std::vector<SourceOutput>& sourceOutputs);
+    void MoveToNewInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        const std::vector<SourceOutput>& sourceOutputs);
     int32_t MoveToLocalInputDevice(std::vector<SourceOutput> sourceOutputs,
         std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor, uint32_t routeFlag = AUDIO_FLAG_NONE);
     int32_t MoveToRemoteInputDevice(
@@ -453,7 +462,8 @@ private:
     AudioFlag SetFlagForMmapStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     AudioFlag SetFlagForSpecialStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
     void UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
-    std::vector<SourceOutput> FilterSourceOutputs(int32_t sessionId);
+    std::vector<SourceOutput> FilterSourceOutputs(int32_t sessionId,
+        const std::vector<SourceOutput>& sourceOutputs);
     std::vector<SourceOutput> GetSourceOutputs();
     void UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void UpdateRingerOrAlarmerDualDeviceOutputRouter(std::shared_ptr<AudioStreamDescriptor> streamDesc);
@@ -653,6 +663,8 @@ private:
     bool isCreateProcess_ = false;
 
     AudioInjectorPolicy &audioInjectorPolicy_;
+
+    sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
 };
 }
 }

@@ -15,7 +15,7 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 
 ohos_fuzztest("AudioCapturerSessionFuzzTest") {
-  module_out_path = "audio_framework/audio_framework_route"
+  module_out_path = "audio_framework/audio_framework_policy"
   fuzz_config_file = "../audiocapturersession_fuzzer"
 
   include_dirs = [

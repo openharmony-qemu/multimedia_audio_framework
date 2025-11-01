@@ -28,6 +28,7 @@ ohos_unittest("audio_toneplayer_unit_test") {
     "./../../../../../frameworks/native/audiostream/include",
     "./../../../../../interfaces/inner_api/native/audiocapturer/include",
     "./../../../../../frameworks/native/audiodefinitions/include",
+    "../../../audioschedule/include",
   ]
 
   cflags = [
@@ -43,6 +44,7 @@ ohos_unittest("audio_toneplayer_unit_test") {
   deps = [
     "../../../toneplayer:audio_toneplayer",
     "./../../../../../frameworks/native/audiorenderer:audio_renderer",
+    "../../../audioschedule:audio_schedule",
   ]
 
   external_deps = [

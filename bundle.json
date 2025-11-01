@@ -22,7 +22,8 @@
           "SystemCapability.Multimedia.Audio.Tone",
           "SystemCapability.Multimedia.Audio.Interrupt",
           "SystemCapability.Multimedia.Audio.PlaybackCapture",
-          "SystemCapability.Multimedia.Audio.Spatialization"
+          "SystemCapability.Multimedia.Audio.Spatialization",
+          "SystemCapability.Multimedia.Audio.SuiteEngine"
         ],
         "features": [
           "audio_framework_feature_wired_audio",
@@ -80,6 +81,7 @@
             "input",
             "ipc",
             "kv_store",
+            "libxml2",
             "napi",
             "os_account",
             "power_manager",
@@ -104,7 +106,6 @@
             "window_manager"
           ],
           "third_party": [
-            "libxml2",
             "openssl"
           ]
         },
@@ -116,6 +117,7 @@
               "//foundation/multimedia/audio_framework/frameworks/js/napi:audio",
               "//foundation/multimedia/audio_framework/frameworks/cj:cj_multimedia_audio_ffi",
               "//foundation/multimedia/audio_framework/frameworks/native/ohaudio:ohaudio",
+              "//foundation/multimedia/audio_framework/frameworks/native/ohaudiosuite:ohaudiosuite",
               "//foundation/multimedia/audio_framework/frameworks/native/opensles:opensles",
               "//foundation/multimedia/audio_framework/frameworks/taihe:audio_framework_taihe",
               "//foundation/multimedia/audio_framework/services/audio_service:audio_sasdk"

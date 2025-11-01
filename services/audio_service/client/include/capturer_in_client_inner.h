@@ -217,6 +217,7 @@ public:
     int32_t GetCallbackLoopTid() override;
     bool GetStopFlag() const override;
     bool IsRestoreNeeded() override;
+    int32_t SetRebuildFlag() override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);

@@ -60,14 +60,10 @@ void HpaeSourceInputCluster::DoProcess()
 bool HpaeSourceInputCluster::Reset()
 {
     for (auto fmtConverterNode : fmtConverterNodeMap_) {
+        fmtConverterNode.second->DisConnectWithInfo(sourceInputNode_, fmtConverterNode.second->GetNodeInfo());
         fmtConverterNode.second->Reset();
     }
     sourceInputNode_->Reset();
-#ifdef ENABLE_HIDUMP_DFX
-    if (auto callback = sourceInputNode_->GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(false, sourceInputNode_->GetNodeId(), sourceInputNode_->GetNodeInfo());
-    }
-#endif
     return true;
 }
 
@@ -238,12 +234,6 @@ uint32_t HpaeSourceInputCluster::GetConverterNodeCount()
 uint32_t HpaeSourceInputCluster::GetSourceInputNodeUseCount()
 {
     return sourceInputNode_.use_count();
-}
-
-int32_t HpaeSourceInputCluster::WriteCapturerData(char *data, int32_t dataSize)
-{
-    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, ERR_ILLEGAL_STATE, "sourceInputNode_ is nullptr");
-    return sourceInputNode_->WriteCapturerData(data, dataSize);
 }
 
 uint32_t HpaeSourceInputCluster::GetCaptureId()

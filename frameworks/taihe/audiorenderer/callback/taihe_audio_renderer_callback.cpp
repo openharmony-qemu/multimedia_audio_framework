@@ -128,7 +128,7 @@ void TaiheAudioRendererCallback::OnStateChange(const OHOS::AudioStandard::Render
 
 void TaiheAudioRendererCallback::OnJsCallbackInterrupt(std::unique_ptr<AudioRendererJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("OnJsCallbackInterrupt: jsCb.get() is null");
         return;
     }
@@ -151,7 +151,9 @@ void TaiheAudioRendererCallback::SafeJsCallbackInterruptWork(AudioRendererJsCall
     std::shared_ptr<AudioRendererJsCallback> safeContext(
         static_cast<AudioRendererJsCallback*>(event),
         [](AudioRendererJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
     std::string request = event->callbackName;
     InterruptEvent interruptEvent = {
@@ -169,7 +171,7 @@ void TaiheAudioRendererCallback::SafeJsCallbackInterruptWork(AudioRendererJsCall
 
 void TaiheAudioRendererCallback::OnJsCallbackStateChange(std::unique_ptr<AudioRendererJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("OnJsCallbackStateChange: jsCb.get() is null");
         return;
     }
@@ -192,7 +194,9 @@ void TaiheAudioRendererCallback::SafeJsCallbackStateChangeWork(AudioRendererJsCa
     std::shared_ptr<AudioRendererJsCallback> safeContext(
         static_cast<AudioRendererJsCallback*>(event),
         [](AudioRendererJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
     std::string request = event->callbackName;
 

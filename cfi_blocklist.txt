@@ -1,4 +1,6 @@
 src:*third_party/googletest/*:*
 src:*foundation/multimedia/audio_framework/services/audio_policy/test/unittest/*:*
 src:*foundation/multimedia/audio_framework/services/audio_policy/server/infra/config/parser/test/unittest/*:*
-src:*foundation/multimedia/audio_framework/services/audio_policy/test/unittest/*:*
+src:*foundation/multimedia/audio_framework/services/audio_policy/server/src/test/*:*
+src:*foundation/multimedia/audio_framework/services/audio_service/test/unittest/*:*
+src:*foundation/multimedia/audio_framework/services/audio_policy/server/infra/state_monitor/test/unittest/*:*

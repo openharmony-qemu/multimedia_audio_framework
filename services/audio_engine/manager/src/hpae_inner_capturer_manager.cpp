@@ -66,7 +66,9 @@ void HpaeInnerCapturerManager::AddSingleNodeToSinkInner(const std::shared_ptr<Hp
     SetSessionStateForRenderer(sessionId, node->GetState());
     rendererSessionNodeMap_[sessionId].sceneType = nodeInfo.sceneType;
     sceneTypeToProcessClusterCount_++;
-
+#ifdef ENABLE_HIDUMP_DFX
+    OnNotifyDfxNodeAdmin(true, nodeInfo);
+#endif
     if (!SafeGetMap(rendererSceneClusterMap_, nodeInfo.sceneType)) {
         rendererSceneClusterMap_[nodeInfo.sceneType] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
     }
@@ -758,9 +760,13 @@ void HpaeInnerCapturerManager::DeleteRendererInputNodeSession(const std::shared_
 int32_t HpaeInnerCapturerManager::DeleteRendererInputSessionInner(uint32_t sessionId)
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::DeleteRendererInputSessionInner");
-    CHECK_AND_RETURN_RET_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), SUCCESS,
+    auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
+    CHECK_AND_RETURN_RET_LOG(sinkInputNode != nullptr, SUCCESS,
         "sessionId %{public}u can not find in sinkInputNodeMap_.", sessionId);
-    DeleteRendererInputNodeSession(sinkInputNodeMap_[sessionId]);
+    DeleteRendererInputNodeSession(sinkInputNode);
+#ifdef ENABLE_HIDUMP_DFX
+    OnNotifyDfxNodeAdmin(false, sinkInputNode->GetNodeInfo());
+#endif
     sinkInputNodeMap_.erase(sessionId);
     return SUCCESS;
 }
@@ -979,8 +985,8 @@ bool HpaeInnerCapturerManager::SetSessionFade(uint32_t sessionId, IOperation ope
 
     std::shared_ptr<HpaeGainNode> sessionGainNode = nullptr;
     sessionGainNode = rendererSceneClusterMap_[sceneType]->GetGainNodeById(sessionId);
-    if (sessionGainNode == nullptr) {
-        AUDIO_WARNING_LOG("session %{public}d do not have gain node!", sessionId);
+    if (sessionGainNode == nullptr || !IsRunning()) {
+        AUDIO_WARNING_LOG("session %{public}d do not have gain node or sink no running", sessionId);
         if (operation != OPERATION_STARTED) {
             HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPED : HPAE_SESSION_PAUSED;
             SetSessionStateForRenderer(sessionId, state);

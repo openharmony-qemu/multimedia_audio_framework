@@ -38,6 +38,7 @@ enum PipelineMsgCode {
     REMOVE_NODE_TAP,
     RENDER_FRAME,
     MULTI_RENDER_FRAME,
+    GET_OPTIONS,
 };
 
 class ISendMsgCallback {

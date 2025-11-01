@@ -235,20 +235,20 @@ HWTEST_F(AudioFastRendererUnitTest, Audio_Fast_Renderer_005, TestSize.Level1)
 
     shared_ptr<AudioRendererWriteCallback> cb = make_shared<AudioRenderModeCallbackTest>();
     ret = GetRenderPtr()->SetRendererWriteCallback(cb);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INCORRECT_MODE, ret);
 
     BufferQueueState bQueueSate {};
     bQueueSate.currentIndex = 1;
     bQueueSate.numBuffers = 1;
 
     ret = GetRenderPtr()->GetBufQueueState(bQueueSate);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INCORRECT_MODE, ret);
 
     ret = GetRenderPtr()->SetRenderRate(RENDER_RATE_DOUBLE);
     EXPECT_EQ(SUCCESS, ret);
 
     ret = GetRenderPtr()->SetRenderRate(RENDER_RATE_NORMAL);
-    EXPECT_EQ(ERR_INVALID_OPERATION, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     AudioRendererRate renderRate = GetRenderPtr()->GetRenderRate();
     EXPECT_EQ(RENDER_RATE_NORMAL, renderRate);

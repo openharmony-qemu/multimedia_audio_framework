@@ -388,21 +388,6 @@ void HpaeSourceInputClusterGetSourceInputNodeUseCountFuzzTest()
     hpaeSourceInputCluster->GetSourceInputNodeUseCount();
 }
 
-void HpaeSourceInputClusterWriteCapturerDataFuzzTest()
-{
-    HpaeNodeInfo nodeInfo;
-    GetTestNodeInfo(nodeInfo);
-    std::shared_ptr<HpaeSourceInputCluster> hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
-    if (hpaeSourceInputCluster == nullptr) {
-        return;
-    }
-
-    char data[] = "test_data";
-    int32_t length = strlen(data);
-    hpaeSourceInputCluster->GetCaptureId();
-    hpaeSourceInputCluster->WriteCapturerData(data, length);
-}
-
 void HpaeSourceInputNodeByVectorFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
@@ -618,7 +603,6 @@ vector<TestPtr> g_testPtrs = {
     HpaeSourceInputClusterSetSourceInputNodeTypeFuzzTest,
     HpaeSourceInputClusterUpdateAppsUidAndSessionIdFuzzTest,
     HpaeSourceInputClusterGetSourceInputNodeUseCountFuzzTest,
-    HpaeSourceInputClusterWriteCapturerDataFuzzTest,
     HpaeSourceInputNodeByVectorFuzzTest,
     HpaeSourceInputNodeSetBufferValidFuzzTest,
     HpaeSourceInputNodeDoProcessFuzzTest,

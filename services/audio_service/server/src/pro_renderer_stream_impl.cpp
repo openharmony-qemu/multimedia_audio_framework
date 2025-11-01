@@ -493,7 +493,7 @@ int32_t ProRendererStreamImpl::GetOffloadApproximatelyCacheTime(uint64_t &timest
     return SUCCESS;
 }
 
-int32_t ProRendererStreamImpl::OffloadSetVolume(float volume)
+int32_t ProRendererStreamImpl::OffloadSetVolume()
 {
     return SUCCESS;
 }
@@ -553,7 +553,7 @@ int32_t ProRendererStreamImpl::Peek(std::vector<char> *audioBuffer, int32_t &ind
                 if (statusCallback != nullptr && isFirstNoUnderrunFrame_) {
                     statusCallback->OnStatusUpdate(OPERATION_UNDERFLOW);
                 }
-                [[fallthrough]];
+                break;
             }
             case SUCCESS: {
                 PopSinkBuffer(audioBuffer, index);
@@ -627,6 +627,7 @@ void ProRendererStreamImpl::PopSinkBuffer(std::vector<char> *audioBuffer, int32_
     if (!readQueue_.empty()) {
         index = readQueue_.front();
         readQueue_.pop();
+        isFirstFrame_ = false;
         *audioBuffer = sinkBuffer_[index];
     }
     if (readQueue_.empty() && isDrain_) {

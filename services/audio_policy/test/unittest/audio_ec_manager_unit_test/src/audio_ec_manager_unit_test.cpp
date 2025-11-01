@@ -887,5 +887,106 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_041, TestSize.Level4)
     int32_t ret = ecManager.ReloadNormalSource(sessionInfo, targetInfo, targetSource, testSessionId);
     EXPECT_EQ(ret, ERROR);
 }
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_042
+* @tc.desc  : Test ReloadNormalSource interface with invalid sessionId.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_042, TestSize.Level4)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    SessionInfo sessionInfo = {};
+    PipeStreamPropInfo targetInfo = PipeStreamPropInfo();
+    SourceType targetSource = SourceType::SOURCE_TYPE_VOICE_COMMUNICATION;
+    uint32_t testSessionId = 1234;
+
+    AudioInjectorPolicy::GetInstance().SetCapturePortIdx(4321);
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->paIndex_ = 4321;
+    pipe1->pipeRole_ = PIPE_ROLE_INPUT;
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->sessionId_ = 1234;
+    pipe1->streamDescriptors_.push_back(desc);
+    AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipe1);
+    int32_t ret = ecManager.ReloadNormalSource(sessionInfo, targetInfo, targetSource, testSessionId);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_043
+* @tc.desc  : Test ReloadNormalSource interface with invalid sessionId.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_043, TestSize.Level4)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    SessionInfo sessionInfo = {};
+    PipeStreamPropInfo targetInfo = PipeStreamPropInfo();
+    SourceType targetSource = SourceType::SOURCE_TYPE_VOICE_CALL;
+    uint32_t testSessionId = 1234;
+
+    AudioInjectorPolicy::GetInstance().SetCapturePortIdx(4321);
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->paIndex_ = 4321;
+    pipe1->pipeRole_ = PIPE_ROLE_INPUT;
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->sessionId_ = 1234;
+    pipe1->streamDescriptors_.push_back(desc);
+    AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipe1);
+    int32_t ret = ecManager.ReloadNormalSource(sessionInfo, targetInfo, targetSource, testSessionId);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_044
+* @tc.desc  : Test ReloadNormalSource interface with invalid sessionId.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_044, TestSize.Level4)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    SessionInfo sessionInfo = {};
+    PipeStreamPropInfo targetInfo = PipeStreamPropInfo();
+    SourceType targetSource = SourceType::SOURCE_TYPE_VOICE_COMMUNICATION;
+    uint32_t testSessionId = 1234;
+
+    AudioInjectorPolicy::GetInstance().SetCapturePortIdx(4321);
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->paIndex_ = UINT32_INVALID_VALUE;
+    pipe1->pipeRole_ = PIPE_ROLE_INPUT;
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->sessionId_ = 1234;
+    pipe1->streamDescriptors_.push_back(desc);
+    AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipe1);
+    int32_t ret = ecManager.ReloadNormalSource(sessionInfo, targetInfo, targetSource, testSessionId);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_045
+* @tc.desc  : Test ReloadNormalSource interface with invalid sessionId.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_045, TestSize.Level4)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    SessionInfo sessionInfo = {};
+    PipeStreamPropInfo targetInfo = PipeStreamPropInfo();
+    SourceType targetSource = SourceType::SOURCE_TYPE_VOICE_COMMUNICATION;
+    uint32_t testSessionId = 1234;
+
+    AudioInjectorPolicy::GetInstance().SetCapturePortIdx(6789);
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->paIndex_ = 4321;
+    pipe1->pipeRole_ = PIPE_ROLE_OUTPUT;
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->sessionId_ = 1234;
+    pipe1->streamDescriptors_.push_back(desc);
+    AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipe1);
+    int32_t ret = ecManager.ReloadNormalSource(sessionInfo, targetInfo, targetSource, testSessionId);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

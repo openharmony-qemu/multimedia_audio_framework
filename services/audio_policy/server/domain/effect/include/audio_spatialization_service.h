@@ -123,7 +123,6 @@ private:
     bool spatializationEnabledReal_ = false;
     bool headTrackingEnabledReal_ = false;
     bool isHeadTrackingDataRequested_ = false;
-    bool isLoadedfromDb_ = false;
     AudioSpatializationState spatializationStateFlag_ = {};
     std::unordered_map<std::string, AudioSpatializationState> addressToSpatialEnabledMap_;
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_MUSIC;

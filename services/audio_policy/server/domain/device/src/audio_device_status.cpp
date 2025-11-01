@@ -80,10 +80,17 @@ static bool CheckNeedExclude(const AudioDeviceDescriptor &desc, bool isConnected
 #endif
     AUDIO_INFO_LOG("isConnected=%{public}d, exclude=%{public}d", isConnected, exclude);
     CHECK_AND_RETURN_RET(isConnected && exclude, false);
+    bool result{false};
     vector<shared_ptr<AudioDeviceDescriptor>> descs{make_shared<AudioDeviceDescriptor>(desc)};
-    AudioCoreService::GetCoreService()->ExcludeOutputDevices(MEDIA_OUTPUT_DEVICES, descs);
-    AudioCoreService::GetCoreService()->ExcludeOutputDevices(CALL_OUTPUT_DEVICES, descs);
-    return true;
+    if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP || desc.deviceType_ == DEVICE_TYPE_NEARLINK) {
+        AudioCoreService::GetCoreService()->ExcludeOutputDevices(MEDIA_OUTPUT_DEVICES, descs);
+        result = true;
+    }
+    if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO || desc.deviceType_ == DEVICE_TYPE_NEARLINK) {
+        AudioCoreService::GetCoreService()->ExcludeOutputDevices(CALL_OUTPUT_DEVICES, descs);
+        result = true;
+    }
+    return result;
 }
 
 static void GetDPModuleInfo(AudioModuleInfo &moduleInfo, string deviceInfo)
@@ -308,6 +315,14 @@ void AudioDeviceStatus::TriggerDeviceChangedCallback(const vector<std::shared_pt
     }
 }
 
+void AudioDeviceStatus::TriggerDeviceInfoUpdatedCallback(
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+{
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendDeviceInfoUpdatedCallback(desc);
+    }
+}
+
 void AudioDeviceStatus::UpdateLocalGroupInfo(bool isConnected, const std::string& macAddress,
     const std::string& deviceName, const DeviceStreamInfo& streamInfo, AudioDeviceDescriptor& deviceDesc)
 {
@@ -491,7 +506,7 @@ void AudioDeviceStatus::UpdateActiveA2dpDeviceWhenDisconnecting(const std::strin
     if (!audioDeviceManager_.HasConnectedA2dp()) {
         audioActiveDevice_.SetActiveBtDeviceMac("");
         audioIOHandleMap_.ClosePortAndEraseIOHandle(BLUETOOTH_SPEAKER);
-        audioPolicyManager_.SetAbsVolumeScene(false);
+        audioPolicyManager_.SetAbsVolumeScene(false, 0);
         audioVolumeManager_.SetSharedAbsVolumeScene(false);
 #ifdef BLUETOOTH_ENABLE
         Bluetooth::AudioA2dpManager::SetActiveA2dpDevice("");
@@ -1162,8 +1177,8 @@ void AudioDeviceStatus::OnForcedDeviceSelected(DeviceType devType, const std::st
 {
     if (!filter) {
         filter = new AudioRendererFilter();
+        CHECK_AND_RETURN_LOG(filter, "filter is nullptr");
     }
-    CHECK_AND_RETURN_LOG(filter, "filter is nullptr");
     filter->uid = SYSTEM_UID;
     AUDIO_INFO_LOG("Entry. devType=%{public}d, addr=%{public}s, streamUsage=%{public}d",
         devType, GetEncryptStr(macAddress).c_str(), filter->rendererInfo.streamUsage);
@@ -1175,13 +1190,31 @@ void AudioDeviceStatus::OnForcedDeviceSelected(DeviceType devType, const std::st
     }
 }
 
-void AudioDeviceStatus::OnPrivacyDeviceSelected()
+void AudioDeviceStatus::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress)
 {
     AUDIO_INFO_LOG("Entry");
     AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
         make_shared<AudioDeviceDescriptor>(), SYSTEM_UID, "OnPrivacyDeviceSelected");
-    AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
-        make_shared<AudioDeviceDescriptor>(), SYSTEM_UID, "OnPrivacyDeviceSelected");
+    bool hasUsablePrivateCallDevice{false};
+    auto devs = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION,
+        -1, "OnPrivacyDeviceSelected", ROUTER_TYPE_USER_SELECT);
+    auto pDevs = audioDeviceManager_.GetCommRenderPrivacyDevices();
+    for (auto &dev : devs) {
+        auto it = find_if(pDevs.cbegin(), pDevs.cend(), [&dev](auto &item) {
+            return dev && item && dev->IsSameDeviceDescPtr(item);
+        });
+        if (it != pDevs.cend()) {
+            hasUsablePrivateCallDevice = true;
+            break;
+        }
+    }
+    if (!hasUsablePrivateCallDevice) {
+        sptr<AudioRendererFilter> filter = new AudioRendererFilter();
+        CHECK_AND_RETURN_LOG(filter, "filter is nullptr");
+        filter->rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+        OnForcedDeviceSelected(devType, macAddress, filter);
+        return;
+    }
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnPrivacyDeviceSelected",
         AudioStreamDeviceChangeReason::OVERRODE);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnPrivacyDeviceSelected",
@@ -1512,7 +1545,7 @@ int32_t AudioDeviceStatus::RestoreNewA2dpPort(std::vector<std::shared_ptr<AudioS
     AudioIOHandle ioHandle;
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        ioHandle = audioPolicyManager_.ReloadAudioPort(moduleInfo, paIndex);
+        ioHandle = audioPolicyManager_.ReloadA2dpAudioPort(moduleInfo, paIndex);
     } else {
         ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo, paIndex);
     }

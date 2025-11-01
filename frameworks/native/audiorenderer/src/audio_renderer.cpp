@@ -383,14 +383,16 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     }
 
     HILOG_COMM_INFO("StreamClientState for Renderer::Create. content: %{public}d, usage: %{public}d, "\
-        "isOffloadAllowed: %{public}s, flags: %{public}d, uid: %{public}d",
+        "isOffloadAllowed: %{public}s, flags: %{public}d, uid: %{public}d, toneFlag: %{public}s",
         rendererOptions.rendererInfo.contentType, rendererOptions.rendererInfo.streamUsage,
-        rendererOptions.rendererInfo.isOffloadAllowed ? "T" : "F", rendererFlags, appInfo.appUid);
+        rendererOptions.rendererInfo.isOffloadAllowed ? "T" : "F", rendererFlags, appInfo.appUid,
+        rendererOptions.rendererInfo.toneFlag ? "T" : "F");
     AUDIO_INFO_LOG("isVKB: %{public}s", isVirtualKeyboard ? "T" : "F");
 
     audioRenderer->rendererInfo_.isVirtualKeyboard = isVirtualKeyboard;
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
+    audioRenderer->rendererInfo_.toneFlag = rendererOptions.rendererInfo.toneFlag;
     audioRenderer->HandleSetRendererInfoByOptions(rendererOptions, appInfo);
     AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
     if (audioRenderer->SetParams(params) != SUCCESS) {
@@ -1456,7 +1458,7 @@ void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume, bool setVo
     bool isMute = audioStream_->GetMute();
     bool noNeedActive = setVolume && (audioStream_->GetVolume() > 0) && (volume > 0);
     if (currentState == NEW || currentState == PREPARED) {
-        AUDIO_INFO_LOG("UpdateAudioInterruptStrategy for set volume before RUNNING,  volume=%{public}f", volume);
+        AUDIO_INFO_LOG("set volume before RUNNING,  volume=%{public}f", volume);
         isStillZeroStreamVolume_ = (volume == 0);
     } else if ((isStillZeroStreamVolume_ || !isMute) && volume > 0) {
         isStillZeroStreamVolume_ = false;
@@ -2561,7 +2563,7 @@ void AudioRendererPrivate::SetAudioInterrupt(const AudioInterrupt &audioInterrup
 // Only called AudioRendererPrivate::Stop(), with AudioRendererPrivate::rendererMutex_ held.
 void AudioRendererPrivate::WriteUnderrunEvent() const
 {
-    AUDIO_INFO_LOG("AudioRendererPrivate WriteUnderrunEvent!");
+    AUDIO_INFO_LOG("enter");
     if (GetUnderflowCountInner() < WRITE_UNDERRUN_NUM) {
         return;
     }
@@ -3016,10 +3018,13 @@ int32_t AudioRendererPrivate::HandleCreateFastStreamError(AudioStreamParams &aud
     return ret;
 }
 
-int32_t AudioRendererPrivate::SetTarget(RenderTarget target) const
+int32_t AudioRendererPrivate::SetTarget(RenderTarget target)
 {
+    RendererState state = GetStatusInner();
+    CHECK_AND_RETURN_RET_LOG(state == RENDERER_PREPARED || state == RENDERER_STOPPED || state == RENDERER_PAUSED,
+        ERR_ILLEGAL_STATE, "Set target failed. Illegal state: %{public}u", state);
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
-    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR, "audioStream_ is nullptr");
     return currentStream->SetRenderTarget(target);
 }
 

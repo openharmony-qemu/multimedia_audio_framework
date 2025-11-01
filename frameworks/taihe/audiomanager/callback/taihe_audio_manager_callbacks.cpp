@@ -108,7 +108,7 @@ void TaiheAudioManagerCallback::OnMicrophoneBlocked(const OHOS::AudioStandard::M
 
 void TaiheAudioManagerCallback::OnJsCallbackMicrophoneBlocked(std::unique_ptr<AudioManagerJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("jsCb.get() is null");
         return;
     }
@@ -131,7 +131,9 @@ void TaiheAudioManagerCallback::SafeJsCallbackMicrophoneBlockedWork(AudioManager
     std::shared_ptr<AudioManagerJsCallback> safeContext(
         static_cast<AudioManagerJsCallback*>(event),
         [](AudioManagerJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
     std::string request = event->callbackName;
 
@@ -233,7 +235,7 @@ void TaiheAudioManagerCallback::OnDeviceChange(const OHOS::AudioStandard::Device
 
 void TaiheAudioManagerCallback::OnJsCallbackDeviceChange(std::unique_ptr<AudioManagerJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("TaiheAudioManagerCallback: OnJsCallbackDeviceChange: jsCb.get() is null");
         return;
     }
@@ -256,7 +258,9 @@ void TaiheAudioManagerCallback::SafeJsCallbackDeviceChangeWork(AudioManagerJsCal
     std::shared_ptr<AudioManagerJsCallback> safeContext(
         static_cast<AudioManagerJsCallback*>(event),
         [](AudioManagerJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
     std::string request = event->callbackName;
 

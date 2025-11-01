@@ -48,6 +48,7 @@ private:
         bool isMute;
         bool isTrue;
         int32_t volLevel;
+        int32_t volDegree;
         int32_t appUid;
         bool isOwned;
         std::string networkId;
@@ -120,14 +121,23 @@ private:
         const std::string &cbName, NapiAudioVolumeManager *napiAudioVolumeManager);
     static void UnregisterSystemVolumeChangeCallback(napi_env env, napi_value *args,
         size_t argc, NapiAudioVolumeManager *napiAudioVolumeManager);
+    static napi_value RegisterVolumeDegreeChangeCallback(napi_env env, napi_value *args,
+        const std::string &cbName, NapiAudioVolumeManager *napiAudioVolumeManager);
+    static void UnregisterVolumeDegreeChangeCallback(napi_env env, napi_value *args,
+        size_t argc, NapiAudioVolumeManager *napiAudioVolumeManager);
 
     static napi_value Construct(napi_env env, napi_callback_info info);
     static void Destructor(napi_env env, void *nativeObject, void *finalizeHint);
     static napi_value ForceVolumeKeyControlType(napi_env env, napi_callback_info info);
+    static napi_value GetSystemVolumePercentage(napi_env env, napi_callback_info info);
+    static napi_value SetSystemVolumePercentage(napi_env env, napi_callback_info info);
+    static napi_value GetMinSystemVolumePercentage(napi_env env, napi_callback_info info);
+
     AudioSystemManager *audioSystemMngr_;
 
     int32_t cachedClientId_ = -1;
     std::shared_ptr<VolumeKeyEventCallback> volumeKeyEventCallbackNapi_ = nullptr;
+    std::shared_ptr<VolumeKeyEventCallback> volumeDegreeCallbackNapi_ = nullptr;
     std::shared_ptr<StreamVolumeChangeCallback> streamVolumeChangeCallbackNapi_ = nullptr;
     std::shared_ptr<SystemVolumeChangeCallback> systemVolumeChangeCallbackNapi_ = nullptr;
     std::shared_ptr<AudioManagerAppVolumeChangeCallback> selfAppVolumeChangeCallbackNapi_ = nullptr;

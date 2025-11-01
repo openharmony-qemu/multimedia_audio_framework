@@ -850,6 +850,7 @@ HWTEST_F(AudioEndpointUnitTest, CheckRecordSignal_001, TestSize.Level1)
     audioEndpointInner->latencyMeasEnabled_ = false;
     uint8_t buffer[10] = {0};
     audioEndpointInner->CheckRecordSignal(buffer, 10);
+    EXPECT_FALSE(audioEndpointInner->signalDetected_);
 }
 
 /*
@@ -865,22 +866,7 @@ HWTEST_F(AudioEndpointUnitTest, CheckRecordSignal_002, TestSize.Level1)
     audioEndpointInner->signalDetectAgent_ = nullptr;
     uint8_t buffer[10] = {0};
     audioEndpointInner->CheckRecordSignal(buffer, 10);
-}
-
-/*
- * @tc.name  : Test CheckRecordSignal API
- * @tc.type  : FUNC
- * @tc.number: CheckRecordSignal_003
- * @tc.desc  : Test CheckRecordSignal interface
- */
-HWTEST_F(AudioEndpointUnitTest, CheckRecordSignal_003, TestSize.Level1)
-{
-    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
-    audioEndpointInner->latencyMeasEnabled_ = true;
-    audioEndpointInner->signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
-    audioEndpointInner->fastCaptureId_ = 1;
-    uint8_t buffer[10] = {0};
-    audioEndpointInner->CheckRecordSignal(buffer, 10);
+    EXPECT_FALSE(audioEndpointInner->signalDetected_);
 }
 
 /*

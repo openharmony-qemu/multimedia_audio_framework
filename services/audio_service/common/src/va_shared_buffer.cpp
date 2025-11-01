@@ -176,7 +176,7 @@ int32_t VASharedBuffer::Init(const VASharedMemInfo& memInfo)
         AUDIO_INFO_LOG("dataMem_ CreateFromLocal");
         dataMem_ = VAAudioSharedMemory::CreateFromLocal(memInfo.dataMemCapacity_, DATA_BUFFER);
     }
-    AUDIO_INFO_LOG("dataMem_ Create process end");
+
     if (memInfo.statusFd_ > MINFD && memInfo.statusMemCapacity_ > 0) {
         AUDIO_INFO_LOG("statusInfoMem_ CreateFromRemote");
         statusInfoMem_ = VAAudioSharedMemory::CreateFromRemote(memInfo.statusFd_,
@@ -185,7 +185,6 @@ int32_t VASharedBuffer::Init(const VASharedMemInfo& memInfo)
         AUDIO_INFO_LOG("statusInfoMem_ CreateFromLocal");
         statusInfoMem_ = VAAudioSharedMemory::CreateFromLocal(sizeof(VASharedStatusInfo), STATUS_INFO_BUFFER);
     }
-    AUDIO_INFO_LOG("statusInfoMem_ Create process end");
 
     CHECK_AND_RETURN_RET_LOG(statusInfoMem_ != nullptr, ERR_OPERATION_FAILED, "statusInfoMem_ mmap failed.");
 

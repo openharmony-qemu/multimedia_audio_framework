@@ -69,7 +69,7 @@ public:
     int32_t GetNodeBypassStatus(uint32_t nodeId) override;
     int32_t SetAudioFormat(uint32_t nodeId, AudioFormat audioFormat) override;
     int32_t SetRequestDataCallback(uint32_t nodeId,
-        std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback) override;
+        std::shared_ptr<InputNodeRequestDataCallBack> callback) override;
     int32_t ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) override;
     int32_t DisConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) override;
     int32_t RenderFrame(

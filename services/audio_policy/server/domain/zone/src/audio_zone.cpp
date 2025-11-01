@@ -481,6 +481,34 @@ int32_t AudioZone::GetSystemVolumeLevel(AudioVolumeType volumeType)
     return mgr->GetSystemVolumeLevel(volumeProxyClientPid_, zoneId_, volumeType);
 }
 
+int32_t AudioZone::SetSystemVolumeDegree(AudioVolumeType volumeType,
+    int32_t volumeDegree, int32_t volumeFlag)
+{
+    std::shared_ptr<AudioZoneClientManager> mgr;
+    {
+        std::lock_guard<std::mutex> lock(zoneMutex_);
+        CHECK_AND_RETURN_RET_LOG(clientManager_ != nullptr, ERROR, "clientManager is nullptr");
+        CHECK_AND_RETURN_RET_LOG(isVolumeProxyEnabled_, ERROR, "volume proxy is not enable");
+
+        mgr = clientManager_;
+    }
+    return mgr->SetSystemVolumeDegree(volumeProxyClientPid_, zoneId_,
+        volumeType, volumeDegree, volumeFlag);
+}
+
+int32_t AudioZone::GetSystemVolumeDegree(AudioVolumeType volumeType)
+{
+    std::shared_ptr<AudioZoneClientManager> mgr;
+    {
+        std::lock_guard<std::mutex> lock(zoneMutex_);
+        CHECK_AND_RETURN_RET_LOG(clientManager_ != nullptr, ERROR, "clientManager is nullptr");
+        CHECK_AND_RETURN_RET_LOG(isVolumeProxyEnabled_, ERROR, "volume proxy is not enable");
+
+        mgr = clientManager_;
+    }
+    return mgr->GetSystemVolumeDegree(volumeProxyClientPid_, zoneId_, volumeType);
+}
+
 pid_t AudioZone::GetClientPid()
 {
     return zoneClientPid_;

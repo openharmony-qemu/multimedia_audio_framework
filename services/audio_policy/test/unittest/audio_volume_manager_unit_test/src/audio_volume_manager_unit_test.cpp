@@ -294,7 +294,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_013, TestSize.Level1)
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
     audioVolumeManager.audioActiveDevice_.SetActiveBtDeviceMac(macAddress);
-    audioVolumeManager.SetAbsVolumeSceneAsync(macAddress, support);
+    audioVolumeManager.SetAbsVolumeSceneAsync(macAddress, support, 0);
     EXPECT_EQ(audioVolumeManager.audioActiveDevice_.GetActiveBtDeviceMac(), macAddress);
 }
 
@@ -457,7 +457,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_016, TestSize.Level1)
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
     audioVolumeManager.audioActiveDevice_.SetActiveBtDeviceMac(macAddress);
-    auto ret = audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support);
+    auto ret = audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support, 0);
     EXPECT_NE(ret, 0);
 }
 
@@ -1187,10 +1187,10 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_057, TestSize.Level1)
     bool support = true;
     std::string macAddress = "11:22:33:44:55:66";
     audioVolumeManager->audioActiveDevice_.activeBTDevice_ = "test";
-    audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support);
+    audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support, 0);
 
     audioVolumeManager->audioActiveDevice_.activeBTDevice_ = macAddress;
-    audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support);
+    audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support, 0);
     EXPECT_EQ(audioVolumeManager->audioActiveDevice_.GetActiveBtDeviceMac(), macAddress);
 }
 
@@ -1206,7 +1206,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_058, TestSize.Level1)
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
     audioVolumeManager.audioA2dpDevice_.connectedA2dpDeviceMap_.clear();
-    auto ret = audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support);
+    auto ret = audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support, 0);
     EXPECT_NE(ret, 0);
 }
 
@@ -1224,7 +1224,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_059, TestSize.Level1)
     A2dpDeviceConfigInfo a2dpDeviceConfigInfo;
     a2dpDeviceConfigInfo.absVolumeSupport = true;
     audioVolumeManager.audioA2dpDevice_.connectedA2dpDeviceMap_[macAddress] = a2dpDeviceConfigInfo;
-    auto ret = audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support);
+    auto ret = audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support, 0);
     EXPECT_EQ(ret, 0);
 }
 
@@ -1270,6 +1270,47 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_062, TestSize.Level1)
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     auto ret = audioVolumeManager.ResetRingerModeMute();
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManagerDegree_001
+* @tc.desc  : Test SetSystemVolumeDegree interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManagerDegree_001, TestSize.Level1)
+{
+    AudioVolumeManager &audioVolumeManager(AudioVolumeManager::GetInstance());
+    AudioStreamType streamType = STREAM_MUSIC;
+    int32_t volumeDegree = 44;
+    int32_t ret = audioVolumeManager.SetSystemVolumeDegreeToDb(streamType, volumeDegree, 0);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = audioVolumeManager.GetSystemVolumeDegree(STREAM_ALL);
+    EXPECT_EQ(ret, volumeDegree);
+
+    ret = audioVolumeManager.GetMinVolumeDegree(streamType, DEVICE_TYPE_NONE);
+    EXPECT_EQ(ret, 0);
+
+    ret = audioVolumeManager.GetMinVolumeDegree(STREAM_ALL, DEVICE_TYPE_NONE);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManagerDegree_002
+* @tc.desc  : Test SetSystemVolumeDegreeToDbInner interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManagerDegree_002, TestSize.Level1)
+{
+    AudioVolumeManager &audioVolumeManager(AudioVolumeManager::GetInstance());
+    int32_t invalidZone = 1;
+    AudioStreamType streamType = STREAM_MUSIC;
+    int32_t volumeDegree = 44;
+    int32_t ret = audioVolumeManager.SetSystemVolumeDegreeToDbInner(streamType, volumeDegree, invalidZone);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+
+    ret = audioVolumeManager.GetSystemVolumeDegree(streamType, invalidZone);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
 
 /**
@@ -1439,5 +1480,125 @@ HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeForSwitchDevice_008, TestSize.Leve
     EXPECT_EQ(ret, SUCCESS);
 }
 
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_071
+* @tc.desc  : Test OnCheckActiveMusicTime interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_071, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    std::string reason = "Started";
+    audioVolumeManager.startSafeTime_ = 0;
+    audioVolumeManager.OnCheckActiveMusicTime(reason);
+    EXPECT_EQ(audioVolumeManager.startSafeTime_, 0);
+    reason = "Paused";
+    audioVolumeManager.OnCheckActiveMusicTime(reason);
+    EXPECT_EQ(audioVolumeManager.startSafeTime_, 0);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_072
+* @tc.desc  : Test CheckActiveMusicTime interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_072, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    std::string reason = "Default";
+    audioVolumeManager.safeVolumeExit_ = true;
+    int32_t ret = audioVolumeManager.CheckActiveMusicTime(reason);
+    EXPECT_EQ(ret, 0);
+    audioVolumeManager.safeVolumeExit_ = false;
+    audioVolumeManager.startSafeTime_ = 0;
+    audioVolumeManager.CheckActiveMusicTime(reason);
+    audioVolumeManager.safeVolumeExit_ = true;
+    EXPECT_EQ(audioVolumeManager.startSafeTime_, 0);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_073
+* @tc.desc  : Test CheckActiveMusicTime interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_073, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    audioVolumeManager.safeVolumeExit_ = false;
+    std::string reason = "Offload";
+    audioVolumeManager.startSafeTimeBt_ = 0;
+    audioVolumeManager.safeStatusBt_ = SAFE_INACTIVE;
+    audioVolumeManager.CheckActiveMusicTime(reason);
+    EXPECT_EQ(audioVolumeManager.startSafeTimeBt_, 0);
+    audioVolumeManager.startSafeTimeBt_ = 0;
+    audioVolumeManager.safeStatusBt_ = SAFE_ACTIVE;
+    audioVolumeManager.CheckActiveMusicTime(reason);
+    EXPECT_EQ(audioVolumeManager.startSafeTimeBt_, 0);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_074
+* @tc.desc  : Test CheckActiveMusicTime interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_074, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    audioVolumeManager.safeVolumeExit_ = false;
+    std::string reason = "Offload";
+    audioVolumeManager.startSafeTime_ = 0;
+    audioVolumeManager.safeStatus_ = SAFE_INACTIVE;
+    audioVolumeManager.CheckActiveMusicTime(reason);
+    EXPECT_EQ(audioVolumeManager.startSafeTime_, 0);
+    audioVolumeManager.startSafeTime_ = 0;
+    audioVolumeManager.safeStatus_ = SAFE_ACTIVE;
+    audioVolumeManager.CheckActiveMusicTime(reason);
+    EXPECT_EQ(audioVolumeManager.startSafeTime_, 0);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_075
+* @tc.desc  : Test CheckActiveMusicTime interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_075, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    audioVolumeManager.safeVolumeExit_ = false;
+    std::string reason = "Offload";
+    audioVolumeManager.startSafeTimeSle_ = 0;
+    audioVolumeManager.safeStatusSle_ = SAFE_INACTIVE;
+    audioVolumeManager.CheckActiveMusicTime(reason);
+    EXPECT_EQ(audioVolumeManager.startSafeTimeSle_, 0);
+    audioVolumeManager.startSafeTimeSle_ = 0;
+    audioVolumeManager.safeStatusSle_ = SAFE_ACTIVE;
+    audioVolumeManager.CheckActiveMusicTime(reason);
+    EXPECT_EQ(audioVolumeManager.startSafeTimeSle_, 0);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_076
+* @tc.desc  : Test SetAbsVolumeSceneAsync interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_076, TestSize.Level1)
+{
+    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
+    ASSERT_TRUE(audioVolumeManager != nullptr);
+
+    bool support = false;
+    std::string macAddress = "11:22:33:44:55:66";
+    audioVolumeManager->audioActiveDevice_.activeBTDevice_ = "test";
+    audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support, 0);
+
+    audioVolumeManager->audioActiveDevice_.activeBTDevice_ = macAddress;
+    audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support, 0);
+    EXPECT_EQ(audioVolumeManager->audioActiveDevice_.GetActiveBtDeviceMac(), macAddress);
+}
 } // namespace AudioStandard
 } // namespace OHOS

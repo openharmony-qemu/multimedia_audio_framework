@@ -245,7 +245,8 @@ std::string TransNodeInfoToStringKey(HpaeNodeInfo& nodeInfo)
     std::string nodeKey = std::to_string(nodeInfo.sourceBufferType) + "_" +
                           std::to_string(nodeInfo.samplingRate) + "_" +
                           std::to_string(nodeInfo.channels) + "_" +
-                          std::to_string(nodeInfo.format);
+                          std::to_string(nodeInfo.format) + "_" +
+                          std::to_string(nodeInfo.channelLayout);
     return nodeKey;
 }
 

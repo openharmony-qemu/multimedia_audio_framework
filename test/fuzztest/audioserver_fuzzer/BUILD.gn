@@ -55,6 +55,9 @@ ohos_fuzztest("AudioServerFuzzTest") {
   ]
 
   defines = []
+  if (audio_framework_feature_inner_capturer) {
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
+  }
   if (use_libfuzzer || use_clang_coverage) {
     defines += [ "TEST_COVERAGE" ]
   }

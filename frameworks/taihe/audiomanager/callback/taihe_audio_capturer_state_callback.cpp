@@ -100,7 +100,9 @@ void TaiheAudioCapturerStateCallback::SafeJsCallbackCapturerStateWork(AudioCaptu
     std::shared_ptr<AudioCapturerStateJsCallback> safeContext(
         static_cast<AudioCapturerStateJsCallback*>(event),
         [](AudioCapturerStateJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
 
     do {
@@ -115,7 +117,7 @@ void TaiheAudioCapturerStateCallback::SafeJsCallbackCapturerStateWork(AudioCaptu
 
 void TaiheAudioCapturerStateCallback::OnJsCallbackCapturerState(std::unique_ptr<AudioCapturerStateJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("OnJsCallbackRendererState: jsCb.get() is null");
         return;
     }

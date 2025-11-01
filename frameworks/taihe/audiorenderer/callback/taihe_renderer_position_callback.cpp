@@ -88,7 +88,7 @@ void TaiheRendererPositionCallback::OnMarkReached(const int64_t &framePosition)
 void TaiheRendererPositionCallback::OnJsRendererPositionCallback(
     std::unique_ptr<RendererPositionJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("OnJsRendererPositionCallback: jsCb.get() is null");
         return;
     }
@@ -111,7 +111,9 @@ void TaiheRendererPositionCallback::SafeJsCallbackPositionWork(RendererPositionJ
     std::shared_ptr<RendererPositionJsCallback> safeContext(
         static_cast<RendererPositionJsCallback*>(event),
         [](RendererPositionJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
     std::string request = event->callbackName;
     do {

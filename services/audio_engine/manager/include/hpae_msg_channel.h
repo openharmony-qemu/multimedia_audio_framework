@@ -146,7 +146,8 @@ public:
     virtual void OnRewindAndFlush(uint64_t rewindTime, uint64_t hdiFramePosition = 0){};
     virtual void OnNotifyQueue(){};
     virtual void OnDisConnectProcessCluster(HpaeProcessorType sceneType){};
-    virtual void OnNotifyDfxNodeInfo(bool isConnect, uint32_t preNodeId, HpaeDfxNodeInfo &nodeInfo){};
+    virtual void OnNotifyDfxNodeAdmin(bool isAdd, const HpaeDfxNodeInfo &nodeInfo){};
+    virtual void OnNotifyDfxNodeInfo(bool isConnect, uint32_t parentId, uint32_t childId){};
     virtual void OnNotifyDfxNodeInfoChanged(uint32_t NodeId, const HpaeDfxNodeInfo &nodeInfo){};
 };
 

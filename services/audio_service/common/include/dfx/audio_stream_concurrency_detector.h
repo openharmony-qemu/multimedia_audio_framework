@@ -21,7 +21,7 @@
 #include "audio_info.h"
 
 constexpr uint32_t threshold = 3; // if this stream runs over 3 seconds, check other stream in this map
-constexpr uint32_t maxStreamNums = 10; // record max 10 streams
+constexpr uint32_t maxStreamNums = 9; // record max 10 streams，leave 1 for origin stream
 
 namespace OHOS {
 namespace AudioStandard {

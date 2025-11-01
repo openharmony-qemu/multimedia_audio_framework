@@ -372,6 +372,7 @@ enum PreferredType {
     AUDIO_RING_RENDER = 3,
     AUDIO_RECORD_CAPTURE = 4,
     AUDIO_TONE_RENDER = 5,
+    AUDIO_RECOGNITION_CAPTURE = 6,
 };
 
 enum BluetoothOffloadState {

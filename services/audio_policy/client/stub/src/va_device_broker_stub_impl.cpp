@@ -46,6 +46,8 @@ VADeviceBrokerStubImpl::~VADeviceBrokerStubImpl()
 
 int32_t VADeviceBrokerStubImpl::OnDevicesConnected(const VADevice &device, const sptr<IRemoteObject>& controller)
 {
+    CHECK_AND_RETURN_RET_LOG(
+        PermissionUtil::VerifySystemPermission(), ERROR, "connect virtual audio denied: no system permission");
     sptr<IVADeviceController> vaDeviceController = iface_cast<IVADeviceController>(controller);
     CHECK_AND_RETURN_RET_LOG(vaDeviceController != nullptr, ERR_INVALID_PARAM, "controller is null");
     auto sharedDevice = std::make_shared<VADevice>(device);

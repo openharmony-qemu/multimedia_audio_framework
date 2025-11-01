@@ -620,12 +620,7 @@ int32_t HpaeManager::CloseOutAudioPort(std::string sinkName)
     AddPreferSinkForDefaultChange(isChangeDefaultSink, sinkName);
     rendererManagerMap_[sinkName]->DeInit(sinkName != defaultSink_);
     if (sinkName != defaultSink_) {
-        if (sinkName == VIRTUAL_INJECTOR) {
-            sinkVirtualOutputNodeMap_.erase(sinkNameSinkIdMap_[sinkName]);
-        }
-        rendererManagerMap_.erase(sinkName);
-        sinkIdSinkNameMap_.erase(sinkNameSinkIdMap_[sinkName]);
-        sinkNameSinkIdMap_.erase(sinkName);
+        DeleteRendererManager(sinkName);
     }
     return SUCCESS;
 }
@@ -646,9 +641,7 @@ int32_t HpaeManager::CloseInAudioPort(std::string sourceName)
     }
     capturerManagerMap_[sourceName]->DeInit(sourceName != defaultSource_);
     if (sourceName != defaultSource_) {
-        capturerManagerMap_.erase(sourceName);
-        sourceIdSourceNameMap_.erase(sourceNameSourceIdMap_[sourceName]);
-        sourceNameSourceIdMap_.erase(sourceName);
+        DeleteCaptureManager(sourceName);
     }
     return SUCCESS;
 }
@@ -731,9 +724,7 @@ int32_t HpaeManager::SetDefaultSink(std::string name)
         std::string oldDefaultSink = defaultSink_;
         defaultSink_ = name;
         if (!rendererManager->IsInit()) {
-            rendererManagerMap_.erase(oldDefaultSink);
-            sinkIdSinkNameMap_.erase(sinkNameSinkIdMap_[oldDefaultSink]);
-            sinkNameSinkIdMap_.erase(oldDefaultSink);
+            DeleteRendererManager(oldDefaultSink);
         }
     };
     SendRequest(request, __func__);
@@ -764,9 +755,7 @@ int32_t HpaeManager::SetDefaultSource(std::string name)
         std::string oldDefaultSource_ = defaultSource_;
         defaultSource_ = name;
         if (!capturerManager->IsInit()) {
-            capturerManagerMap_.erase(oldDefaultSource_);
-            sourceIdSourceNameMap_.erase(sourceNameSourceIdMap_[oldDefaultSource_]);
-            sourceNameSourceIdMap_.erase(oldDefaultSource_);
+            DeleteCaptureManager(oldDefaultSource_);
         }
     };
     SendRequest(request, __func__);
@@ -1307,6 +1296,7 @@ void HpaeManager::HandleInitDeviceResult(std::string deviceName, int32_t result)
         } else {
             AUDIO_ERR_LOG("device:%{public}s is not exist.", deviceName.c_str());
             serviceCallback->OnOpenAudioPortCb(SINK_INVALID_ID);
+            DeleteAudioport(deviceName);
         }
     } else if (serviceCallback) {
         serviceCallback->OnOpenAudioPortCb(SINK_INVALID_ID);
@@ -1397,8 +1387,9 @@ int32_t HpaeManager::CreateStream(const HpaeStreamInfo &streamInfo)
             CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, deviceName),
                 "can not find sink[%{public}s] in rendererManagerMap_",
                 deviceName.c_str());
+            int32_t ret = rendererManagerMap_[deviceName]->CreateStream(streamInfo);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "Create stream:%{public}i failed.", streamInfo.sessionId);
             rendererIdSinkNameMap_[streamInfo.sessionId] = deviceName;
-            rendererManagerMap_[deviceName]->CreateStream(streamInfo);
             rendererIdStreamInfoMap_[streamInfo.sessionId].streamInfo = streamInfo;
             rendererIdStreamInfoMap_[streamInfo.sessionId].state = HPAE_SESSION_NEW;
             AddStreamToCollection(streamInfo, deviceName);
@@ -1408,8 +1399,9 @@ int32_t HpaeManager::CreateStream(const HpaeStreamInfo &streamInfo)
             CHECK_AND_RETURN_LOG(SafeGetMap(capturerManagerMap_, deviceName),
                 "can not find source[%{public}s] in capturerManagerMap_",
                 deviceName.c_str());
+            int32_t ret = capturerManagerMap_[deviceName]->CreateStream(streamInfo);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "Create stream:%{public}i failed.", streamInfo.sessionId);
             capturerIdSourceNameMap_[streamInfo.sessionId] = deviceName;
-            capturerManagerMap_[deviceName]->CreateStream(streamInfo);
             capturerIdStreamInfoMap_[streamInfo.sessionId].streamInfo = streamInfo;
             capturerIdStreamInfoMap_[streamInfo.sessionId].state = HPAE_SESSION_NEW;
             AddStreamToCollection(streamInfo, deviceName);
@@ -2274,10 +2266,12 @@ void HpaeManager::UpdateParamExtra(const std::string &mainkey, const std::string
     SendRequest(request, __func__);
 }
 
-void HpaeManager::HandleRendererManager(const std::string &sinkName, const HpaeStreamInfo &streamInfo)
+bool HpaeManager::HandleRendererManager(const std::string &sinkName, const HpaeStreamInfo &streamInfo)
 {
     auto rendererManager = SafeGetMap(rendererManagerMap_, sinkName);
-    CHECK_AND_RETURN_LOG(rendererManager, "can not find sink[%{public}s] in rendererManagerMap_", sinkName.c_str());
+    CHECK_AND_RETURN_RET_LOG(rendererManager, false,
+        "can not find sink[%{public}s] in rendererManagerMap_", sinkName.c_str());
+    CHECK_AND_RETURN_RET_LOG(rendererManager->IsInit(), false, "sink[%{public}s] is not init", sinkName.c_str());
     rendererManager->CreateStream(streamInfo);
     if (streamInfo.streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
         rendererIdSinkNameMap_[streamInfo.sessionId] = sinkName;
@@ -2286,6 +2280,7 @@ void HpaeManager::HandleRendererManager(const std::string &sinkName, const HpaeS
         capturerIdSourceNameMap_[streamInfo.sessionId] = sinkName;
         capturerIdStreamInfoMap_[streamInfo.sessionId] = {streamInfo, HPAE_SESSION_NEW};
     }
+    return true;
 }
 
 void HpaeManager::CreateStreamForCapInner(const HpaeStreamInfo &streamInfo)
@@ -2295,7 +2290,8 @@ void HpaeManager::CreateStreamForCapInner(const HpaeStreamInfo &streamInfo)
         return;
     }
     std::string deviceName = streamInfo.deviceName;
-    HandleRendererManager(deviceName, streamInfo);
+    bool isCreate = HandleRendererManager(deviceName, streamInfo);
+    CHECK_AND_RETURN(isCreate);
     AddStreamToCollection(streamInfo, deviceName);
     return;
 }
@@ -2641,6 +2637,32 @@ int32_t HpaeManager::PeekAudioData(
 bool HpaeManager::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout)
 {
     return HpaePolicyManager::GetInstance().IsChannelLayoutSupportedForDspEffect(channelLayout);
+}
+
+void HpaeManager::DeleteRendererManager(const std::string &name)
+{
+    if (name == VIRTUAL_INJECTOR) {
+        sinkVirtualOutputNodeMap_.erase(sinkNameSinkIdMap_[name]);
+    }
+    rendererManagerMap_.erase(name);
+    sinkIdSinkNameMap_.erase(sinkNameSinkIdMap_[name]);
+    sinkNameSinkIdMap_.erase(name);
+}
+
+void HpaeManager::DeleteCaptureManager(const std::string &name)
+{
+    capturerManagerMap_.erase(name);
+    sourceIdSourceNameMap_.erase(sourceNameSourceIdMap_[name]);
+    sourceNameSourceIdMap_.erase(name);
+}
+
+void HpaeManager::DeleteAudioport(const std::string &name)
+{
+    if (sinkNameSinkIdMap_.find(name) != sinkNameSinkIdMap_.end()) {
+        DeleteRendererManager(name);
+    } else if (sourceNameSourceIdMap_.find(name) != sourceNameSourceIdMap_.end()) {
+        DeleteCaptureManager(name);
+    }
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

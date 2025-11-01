@@ -17,6 +17,7 @@
 #define RENDERER_IN_SERVER_H
 
 #include <mutex>
+#include <optional>
 #include "i_renderer_stream.h"
 #include "i_stream_listener.h"
 #include "oh_audio_buffer.h"
@@ -98,6 +99,7 @@ public:
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa);
     int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled);
     void CheckAndWriterRenderStreamStandbySysEvent(bool standbyEnable);
+    void OnCheckActiveMusicTime(const std::string &reason);
 
     int32_t GetStandbyStatus(bool &isStandby, int64_t &enterStandbyTime);
 
@@ -121,7 +123,6 @@ public:
     // for dual tone
     int32_t EnableDualTone(const std::string &dupSinkName);
     int32_t DisableDualTone();
-    int32_t InitDualToneStream(const std::string &dupSinkName);
 
     void GetEAC3ControlParam();
     int32_t GetStreamManagerType() const noexcept;
@@ -207,6 +208,11 @@ private:
     void PauseInner();
     void InitDupBufferInner(int32_t innerCapId);
     void ClearInnerCapBufferForInject();
+    // only for a2dp offload
+    void WaitForDataConnection();
+
+    int32_t DisableDualToneInner();
+    void PreDualToneBufferSilenceForOffload();
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -235,6 +241,7 @@ private:
     // for dual sink tone
     std::mutex dualToneMutex_;
     std::atomic<bool> isDualToneEnabled_ = false;
+    std::optional<std::string> dupSinkName_ = std::nullopt;
     uint32_t dualToneStreamIndex_ = 0;
     std::shared_ptr<IRendererStream> dualToneStream_ = nullptr;
 
@@ -305,6 +312,10 @@ private:
 
     uint32_t audioCheckFreq_ = 0;
     std::atomic<uint32_t> checkCount_ = 0;
+
+    bool isDataLinkConnected_ = true;
+    std::mutex dataConnectionMutex_;
+    std::condition_variable dataConnectionCV_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

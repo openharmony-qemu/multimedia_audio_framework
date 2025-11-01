@@ -84,6 +84,9 @@ public:
     // Audio-Haptics sync
     MOCK_METHOD(int32_t, SetAudioHapticsSyncId, (int32_t audioHapticsSyncId), (override));
     MOCK_METHOD(int32_t, GetAudioHapticsSyncId, (), (override));
+    MOCK_METHOD(bool, PrepareRingBuffer, (uint64_t curRead, RingBufferWrapper& ringBuffer), (override));
+    MOCK_METHOD(void, PrepareStreamDataBuffer,
+        (ize_t spanSizeInByte, RingBufferWrapper &ringBuffer, AudioStreamData &streamData), (override));
 };
 
 void AudioEndpointPlusUnitTest::SetUpTestCase(void)
@@ -1530,77 +1533,6 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_059, TestSize.Level1)
 
     ret = audioEndpointInner->IsBufferDataInsufficient(ERROR, std::numeric_limits<int32_t>::max());
     EXPECT_EQ(ret, false);
-}
-
-/*
- * @tc.name  : Test AudioEndpointInner API
- * @tc.type  : FUNC
- * @tc.number: AudioEndpointInner_060
- * @tc.desc  : Test AudioEndpointInner::NeedUseTempBuffer()
- */
-HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_060, TestSize.Level1)
-{
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
-    uint64_t id = 123;
-    AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
-
-    ASSERT_NE(audioEndpointInner, nullptr);
-
-    std::vector<uint8_t> buffer1(1, 0);
-    std::vector<uint8_t> buffer2(1, 0);
-    RingBufferWrapper ringBuffer = {
-        {{
-            {.buffer = buffer1.data(), .bufLength = 1},
-            {.buffer = buffer2.data(), .bufLength = 1},
-        }},
-        // 1 + 1 = 2
-        .dataLength = 2
-    };
-    auto ret = audioEndpointInner->NeedUseTempBuffer(ringBuffer, 1);
-    EXPECT_EQ(ret, true);
-
-    ringBuffer.dataLength = 1;
-    ret = audioEndpointInner->NeedUseTempBuffer(ringBuffer, 1);
-    EXPECT_EQ(ret, false);
-
-    // 2 > 1
-    ret = audioEndpointInner->NeedUseTempBuffer(ringBuffer, 2);
-    EXPECT_EQ(ret, true);
-}
-
-/*
- * @tc.name  : Test AudioEndpointInner API
- * @tc.type  : FUNC
- * @tc.number: AudioEndpointInner_061
- * @tc.desc  : Test AudioEndpointInner::PrepareStreamDataBuffer()
- */
-HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_061, TestSize.Level1)
-{
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
-    uint64_t id = 123;
-    AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
-
-    ASSERT_NE(audioEndpointInner, nullptr);
-
-    audioEndpointInner->processTmpBufferList_.resize(1);
-
-    std::vector<uint8_t> buffer1(1, 0);
-    RingBufferWrapper ringBuffer = {
-        {{
-            {.buffer = buffer1.data(), .bufLength = 1},
-            {.buffer = nullptr, .bufLength = 0},
-        }},
-        .dataLength = 1
-    };
-    AudioStreamData streamData;
-    audioEndpointInner->PrepareStreamDataBuffer(0, 1, ringBuffer, streamData);
-    // spansizeinframe == 2; spansizeinframe > datalenth
-    audioEndpointInner->PrepareStreamDataBuffer(0, 2, ringBuffer, streamData);
-
-    // processTmpBufferList[i] == spansizeinframe
-    EXPECT_EQ(audioEndpointInner->processTmpBufferList_[0].size(), 2);
 }
 
 /*

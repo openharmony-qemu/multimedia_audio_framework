@@ -212,5 +212,35 @@ int32_t AudioZoneClientManager::GetSystemVolumeLevel(const pid_t clientPid, cons
     client->GetSystemVolume(zoneId, volumeType, outVolume);
     return static_cast<int32_t>(outVolume);
 }
+
+int32_t AudioZoneClientManager::SetSystemVolumeDegree(pid_t clientPid, int32_t zoneId,
+    AudioVolumeType volumeType, int32_t volumeDegree, int32_t volumeFlag)
+{
+    sptr<IStandardAudioZoneClient> client = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(clientMutex_);
+        CHECK_AND_RETURN_RET(clients_.find(clientPid) != clients_.end(), ERROR);
+        client = clients_[clientPid];
+    }
+    AUDIO_DEBUG_LOG("set audio zone %{public}d volume %{public}d to client %{public}d",
+        zoneId, volumeDegree, clientPid);
+    return client->SetSystemVolumeDegree(zoneId, volumeType, volumeDegree, volumeFlag);
+}
+
+int32_t AudioZoneClientManager::GetSystemVolumeDegree(pid_t clientPid, int32_t zoneId,
+    AudioVolumeType volumeType)
+{
+    sptr<IStandardAudioZoneClient> client = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(clientMutex_);
+        CHECK_AND_RETURN_RET(clients_.find(clientPid) != clients_.end(), ERROR);
+        client = clients_[clientPid];
+    }
+    AUDIO_DEBUG_LOG("get audio zone %{public}d volume from client %{public}d",
+        zoneId, clientPid);
+    int32_t outVolume = 0;
+    client->GetSystemVolumeDegree(zoneId, volumeType, outVolume);
+    return outVolume;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -81,7 +81,9 @@ void TaiheAudioVolumeKeyEvent::SafeJsCallbackVolumeEventWork(AudioVolumeKeyEvent
     std::shared_ptr<AudioVolumeKeyEventJsCallback> safeContext(
         static_cast<AudioVolumeKeyEventJsCallback*>(event),
         [](AudioVolumeKeyEventJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
     std::string request = event->callbackName;
 
@@ -95,7 +97,7 @@ void TaiheAudioVolumeKeyEvent::SafeJsCallbackVolumeEventWork(AudioVolumeKeyEvent
 
 void TaiheAudioVolumeKeyEvent::OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolumeKeyEventJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("OnJsCallbackVolumeEvent: jsCb.get() is null");
         return;
     }
