@@ -213,6 +213,8 @@ void HpaeRendererManager::CreateProcessCluster(HpaeNodeInfo &nodeInfo)
         sceneTypeToProcessClusterCountMap_[sceneTypeConnect]++;
     }
     sceneClusterMap_[sceneTypeConnect]->CreateNodes(sinkInputNodeMap_[nodeInfo.sessionId]);
+    AUDIO_INFO_LOG("SessionId %{public}d, Create nodes in sceneCluster processorType %{public}d",
+        nodeInfo.sessionId, sceneTypeConnect);
     int32_t ret = sceneClusterMap_[sceneTypeConnect]->AudioRendererCreate(nodeInfo, sinkInfo_);
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("update audio effect when creating failed, ret = %{public}d", ret);
@@ -372,19 +374,19 @@ int32_t HpaeRendererManager::DeleteProcessCluster(uint32_t sessionId)
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(sceneClusterMap_, sceneTypeToDestroyNodes), ERROR,
         "SessionId %{public}u, sceneCluster processorType %{public}d not exist, cant destroy nodes",
         sessionId, sceneTypeToDestroyNodes);
-    if (sceneClusterMap_[sceneTypeToDestroyNodes]->CheckNodes(sessionId) != SUCCESS) {
-    auto it = sceneClusterMap_.begin();
-    for (; it != sceneClusterMap_.end(); ++it) {
-        if (it->second->CheckNodes(sessionId) == SUCCESS) {
-            it->second->DestroyNodes(sessionId);
-            AUDIO_INFO_LOG("SessionId %{public}d, Nodes found by traverse sceneClusterMap and destroyed", sessionId);
-            break;
+    if (sceneClusterMap_[sceneTypeToDestroyNodes]->DestroyNodes(sessionId) != SUCCESS) {
+        AUDIO_INFO_LOG("SessionId %{public}d, Nodes not found in sceneCluster processorType %{public}d,"
+            "try to destroy nodes by traverse sceneCluster", sessionId, sceneTypeToDestroyNodes);
+        auto it = sceneClusterMap_.begin();
+        for (; it != sceneClusterMap_.end(); ++it) {
+            if (it->second->DestroyNodes(sessionId) == SUCCESS) {
+                AUDIO_INFO_LOG("SessionId %{public}d, Nodes found in processorType %{public}d and destroyed",
+                    it->first, sessionId);
+                break;
+            }
         }
-    }
-    CHECK_AND_RETURN_RET_LOG(it != sceneClusterMap_.end(), ERROR,
-        "SessionId %{public}u, Nodes not found in any sceneCluster, cant destroy nodes", sessionId);
-    } else {
-        sceneClusterMap_[GetProcessorType(sessionId)]->DestroyNodes(sessionId);
+        CHECK_AND_RETURN_RET_LOG(it != sceneClusterMap_.end(), ERROR,
+            "SessionId %{public}u, Nodes not found in any sceneCluster, cant destroy nodes", sessionId);
     }
     DeleteProcessClusterInner(sessionId, nodeInfo.sceneType);
     return SUCCESS;
@@ -478,20 +480,21 @@ void HpaeRendererManager::ConnectInputCluster(uint32_t sessionId, HpaeProcessorT
         "SessionId %{public}u, sceneCluster processorType %{public}d not exist, cant connect nodes",
         sessionId, sceneType);
     if (sceneClusterMap_[sceneType]->CheckNodes(sessionId) != SUCCESS) {
-        AUDIO_INFO_LOG("SessionId %{public}d, Nodes created in wrong sceneCluster,"
-            "try to recreate nodes in processorType %{public}d", sessionId, sceneType);
+        AUDIO_INFO_LOG("SessionId %{public}d, Nodes created in wrong sceneCluster", sessionId);
         auto it = sceneClusterMap_.begin();
         for (; it != sceneClusterMap_.end(); ++it) {
-            if (it->second->CheckNodes(sessionId) == SUCCESS) {
-                it->second->DestroyNodes(sessionId);
-                AUDIO_INFO_LOG("SessionId %{public}d, Nodes in wrong sceneCluster found by traverse and destroyed",
-                    sessionId);
+            if (it->second->DestroyNodes(sessionId) == SUCCESS) {
+                AUDIO_INFO_LOG("SessionId %{public}d, Nodes found in processorType %{public}d and destroyed",
+                    it->first, sessionId);
                 break;
             }
         }
-        CHECK_AND_RETURN_RET_LOG(it != sceneClusterMap_.end(), ERROR,
-            "SessionId %{public}u, Nodes not found in any sceneCluster, cant destroy nodes", sessionId);
+        if (it == sceneClusterMap_.end()) {
+            AUDIO_WARNING_LOG("SessionId %{public}u, Nodes not found in any sceneCluster", sessionId);
+        }
         sceneClusterMap_[sceneType]->CreateNodes(sinkInputNodeMap_[sessionId]);
+        AUDIO_INFO_LOG("SessionId %{public}d, recreate nodes in sceneCluster processorType %{public}d",
+            sessionId, sceneType);
     }
     sceneClusterMap_[sceneType]->Connect(sinkInputNodeMap_[sessionId]);
     sinkInputNodeMap_[sessionId]->connectedProcessorType_ =

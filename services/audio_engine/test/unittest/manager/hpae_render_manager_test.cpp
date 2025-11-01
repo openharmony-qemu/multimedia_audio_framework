@@ -1972,6 +1972,50 @@ HWTEST_F(HpaeRendererManagerTest, DisConnectInputCluster_001, TestSize.Level0)
 }
 
 /**
+ * @tc.name: Test DeleteProcessCluster
+ * @tc.type: FUNC
+ * @tc.number: DeleteProcessCluster_001
+ * @tc.desc: Test Delete when create nodes in defaultProcessCluster but delete noneProcessCluster
+ */
+ HWTEST_F(HpaeRendererManagerTest, DeleteProcessCluster_001, TestSize.Level0)
+{
+    uint32_t sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    HpaeSinkInfo sinkInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = sessionId;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.effectMode = EFFECT_DEFAULT;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    hpaeRendererManager->sinkInputNodeMap_[sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+
+    // create defaultProcessCluster, sceneType is HPAE_SCENE_MUSIC, effectMode = EFFECT_DEFAULT
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+    hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->
+        CreateNodes(hpaeRendererManager->sinkInputNodeMap_[sessionId]);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_MUSIC]->CheckNodes(sessionId), SUCCESS);
+
+    // try delete nodes in noneProcessCluster sceneType is HPAE_SCENE_EFFECT_NONE
+    // actually nodes found in defaultProcessCluster
+    nodeInfo.effectInfo.effectMode = EFFECT_NONE;
+    EXPECT_EQ(hpaeRendererManager->GetProcessorType(sessionId), HPAE_SCENE_EFFECT_NONE);
+
+    hpaeRendererManager->DeleteProcessCluster(sessionId);
+    EXPECT_EQ(hpaeRendererManager->sceneClusterMap_[HPAE_SCENE_EFFECT_NONE]->CheckNodes(sessionId), ERROR);
+    EXPECT_EQ(SafeGetMap(hpaeRendererManager->sceneClusterMap_, HPAE_SCENE_MUSIC), nullptr);
+
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
  * @tc.name  : Test HpaeOffloadRendererManagerSetCurrentNode_001
  * @tc.type  : FUNC
  * @tc.number: HpaeOffloadRendererManagerSetCurrentNode_001

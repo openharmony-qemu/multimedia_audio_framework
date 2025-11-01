@@ -201,7 +201,7 @@ int32_t HpaeOffloadRendererManager::DestroyStream(uint32_t sessionId)
 
 int32_t HpaeOffloadRendererManager::CreateOffloadNodes()
 {
-    CHECK_AND_RETURN_RET_LOG(curNode_ != nullptr, ERROR, "Fail create offload nodes");
+    CHECK_AND_RETURN_RET_LOG(curNode_ != nullptr, ERROR, "curNode_ not exist, fail to create offload nodes");
     HpaeNodeInfo outputNodeInfo = sinkOutputNode_->GetNodeInfo();
     outputNodeInfo.sessionId = curNode_->GetSessionId();
     outputNodeInfo.streamType = curNode_->GetStreamType();
@@ -214,16 +214,27 @@ int32_t HpaeOffloadRendererManager::CreateOffloadNodes()
     CHECK_AND_RETURN_RET_LOG(converterForOutput_ != nullptr, ERROR, "Fail create converterForOutput node");
     CHECK_AND_RETURN_RET_LOG(loudnessGainNode_ != nullptr, ERROR, "Fail create loudnessGain node");
     CHECK_AND_RETURN_RET_LOG(converterForLoudness_ != nullptr, ERROR, "Fail create converterForLoundeness node");
-    AUDIO_INFO_LOG("SessionId %{public}u, Success create offload nodes", outputNodeInfo.sessionId);
+    AUDIO_INFO_LOG("SessionId %{public}u, Success create offload nodes: "
+        "converterForLoudnessId %{public}u, loudnessGainNodeId %{public}u, converterForOutputNodeId %{public}u",
+        outputNodeInfo.sessionId,
+        converterForLoudness_->GetNodeId(), loudnessGainNode_->GetNodeId(), converterForOutput_->GetNodeId());
     return SUCCESS;
 }
  
 int32_t HpaeOffloadRendererManager::DestroyOffloadNodes()
 {
+    CHECK_AND_RETURN_RET_LOG(converterForLoudness_ != nullptr && loudnessGainNode_ != nullptr &&
+        converterForOutput_ != nullptr, ERROR, "offload nodes not exist, fail to destroy offload nodes");
+    uint32_t converterForLoudnessId = converterForLoudness_->GetNodeId();
+    uint32_t loudnessGainNodeId = loudnessGainNode_->GetNodeId();
+    uint32_t converterForOutputNodeId = converterForOutput_->GetNodeId();
     converterForLoudness_ = nullptr;
     loudnessGainNode_ = nullptr;
     converterForOutput_ = nullptr;
-    AUDIO_INFO_LOG("SessionId %{public}u, Success destroy offload nodes", curNode_->GetSessionId());
+    AUDIO_INFO_LOG("SessionId %{public}u, Success destroy offload nodes: "
+        "converterForLoudnessId %{public}u, loudnessGainNodeId %{public}u, converterForOutputNodeId %{public}u",
+        curNode_->GetSessionId(),
+        converterForLoudnessId, loudnessGainNodeId, converterForOutputNodeId);
     return SUCCESS;
 }
 

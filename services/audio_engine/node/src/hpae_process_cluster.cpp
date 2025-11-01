@@ -245,10 +245,10 @@ int32_t HpaeProcessCluster::CreateNodes(const std::shared_ptr<OutputNode<HpaePcm
     CHECK_AND_RETURN_RET_LOG(idConverterMap_[sessionId] != nullptr, ERROR, "Fail create converter node");
     CHECK_AND_RETURN_RET_LOG(idLoudnessGainNodeMap_[sessionId] != nullptr, ERROR, "Fail create loudnessGain node");
     CHECK_AND_RETURN_RET_LOG(idGainMap_ [sessionId] != nullptr, ERROR, "Fail create gain node");
-    AUDIO_INFO_LOG("SessionId %{public}u, Success create all nodes:"
-        "gainNode %{public}u loudnessGainNode %{public}u converterNode %{public}u",
-        sessionId, idGainMap_[sessionId]->GetNodeId(), idLoudnessGainNodeMap_[sessionId]->GetNodeId(),
-        idConverterMap_[sessionId]->GetNodeId());
+    AUDIO_INFO_LOG("SessionId %{public}u, Success create all nodes: "
+        "converterNodeId %{public}u, loudnessGainNodeId %{public}u, gainNodeId %{public}u",
+        sessionId, idConverterMap_[sessionId]->GetNodeId(), idLoudnessGainNodeMap_[sessionId]->GetNodeId(),
+        idGainMap_[sessionId]->GetNodeId());
     return SUCCESS;
 }
  
@@ -256,6 +256,10 @@ int32_t HpaeProcessCluster::CheckNodes(uint32_t sessionId)
 {
     if (SafeGetMap(idConverterMap_, sessionId) && SafeGetMap(idLoudnessGainNodeMap_, sessionId) &&
         SafeGetMap(idGainMap_, sessionId)) {
+        AUDIO_INFO_LOG("SessionId %{public}u, Success check nodes in this processcluster: "
+            "converterNodeId %{public}u, loudnessGainNodeId %{public}u, gainNodeId %{public}u",
+            sessionId, idConverterMap_[sessionId]->GetNodeId(), idLoudnessGainNodeMap_[sessionId]->GetNodeId(),
+            idGainMap_[sessionId]->GetNodeId());
         return SUCCESS;
     }
     AUDIO_INFO_LOG("SessionId %{public}u, No nodes in this processcluster, cant connect or destroy", sessionId);
@@ -264,8 +268,7 @@ int32_t HpaeProcessCluster::CheckNodes(uint32_t sessionId)
  
 int32_t HpaeProcessCluster::DestroyNodes(uint32_t sessionId)
 {
-    CHECK_AND_RETURN_RET_LOG(SafeGetMap(idConverterMap_, sessionId) && SafeGetMap(idLoudnessGainNodeMap_, sessionId) &&
-        SafeGetMap(idGainMap_, sessionId), ERROR, "SessionId %{public}u, No nodes can be destroyed", sessionId);
+    CHECK_AND_RETURN_RET(CheckNodes(sessionId) == SUCCESS, ERROR);
     idConverterMap_.erase(sessionId);
     idLoudnessGainNodeMap_.erase(sessionId);
     idGainMap_.erase(sessionId);
