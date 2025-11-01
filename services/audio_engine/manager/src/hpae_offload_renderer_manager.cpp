@@ -222,15 +222,14 @@ int32_t HpaeOffloadRendererManager::DestroyOffloadNodes()
 {
     CHECK_AND_RETURN_RET_LOG(curNode_ != nullptr && converterForLoudness_ != nullptr && loudnessGainNode_ != nullptr &&
         converterForOutput_ != nullptr, ERROR, "offload nodes not exist, fail to destroy offload nodes");
-    uint32_t converterForLoudnessId = converterForLoudness_->GetNodeId();
-    uint32_t loudnessGainNodeId = loudnessGainNode_->GetNodeId();
-    uint32_t converterForOutputNodeId = converterForOutput_->GetNodeId();
+    AUDIO_INFO_LOG("SessionId %{public}u, Success destroy offload nodes: "
+        "converterForLoudnessId %{public}u, loudnessGainNodeId %{public}u, converterForOutputNodeId %{public}u",
+        curNode_->GetSessionId(), converterForLoudness_->GetNodeId(), loudnessGainNode_->GetNodeId(),
+        converterForOutput_->GetNodeId());
     converterForLoudness_ = nullptr;
     loudnessGainNode_ = nullptr;
     converterForOutput_ = nullptr;
-    AUDIO_INFO_LOG("SessionId %{public}u, Success destroy offload nodes: "
-        "converterForLoudnessId %{public}u, loudnessGainNodeId %{public}u, converterForOutputNodeId %{public}u",
-        curNode_->GetSessionId(), converterForLoudnessId, loudnessGainNodeId, converterForOutputNodeId);
+
     return SUCCESS;
 }
 
