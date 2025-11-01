@@ -149,11 +149,12 @@ int32_t SleAudioDeviceManager::SetDeviceAbsVolume(const std::string &remoteAddr,
     return ret;
 }
 
-int32_t SleAudioDeviceManager::SendUserSelection(const std::string &device, uint32_t streamType)
+int32_t SleAudioDeviceManager::SendUserSelection(const std::string &device,
+    uint32_t streamType, int32_t eventType)
 {
     CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
     int32_t ret = ERROR;
-    callback_->SendUserSelection(device, streamType, ret);
+    callback_->SendUserSelection(device, streamType, eventType, ret);
     return ret;
 }
 
@@ -294,16 +295,22 @@ int32_t SleAudioDeviceManager::SetDeviceAbsVolume(const std::string &device, Aud
     return ret;
 }
 
-int32_t SleAudioDeviceManager::SendUserSelection(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage)
+int32_t SleAudioDeviceManager::SendUserSelection(const AudioDeviceDescriptor &deviceDesc,
+    StreamUsage streamUsage, SleSelectState eventType)
 {
     CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK, ERROR, "device type is not nearlink");
-    return SendUserSelection(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage));
+    SleAudioStreamType sleStreamType = AudioPolicyUtils::GetInstance().IsVoiceStreamType(streamUsage) ?
+        SLE_AUDIO_STREAM_VOICE_CALL : SLE_AUDIO_STREAM_MUSIC;
+    return SendUserSelection(deviceDesc.macAddress_, sleStreamType, static_cast<int32_t>(eventType));
 }
 
-int32_t SleAudioDeviceManager::SendUserSelection(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType)
+int32_t SleAudioDeviceManager::SendUserSelection(const AudioDeviceDescriptor &deviceDesc,
+    SourceType sourceType, SleSelectState eventType)
 {
     CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK_IN, ERROR, "device type is not nearlink");
-    return SendUserSelection(deviceDesc.macAddress_, GetSleStreamTypeBySourceType(sourceType));
+    SleAudioStreamType sleStreamType = AudioPolicyUtils::GetInstance().IsVoiceSourceType(sourceType) ?
+        SLE_AUDIO_STREAM_VOICE_CALL : SLE_AUDIO_STREAM_MUSIC;
+    return SendUserSelection(deviceDesc.macAddress_, sleStreamType, static_cast<int32_t>(eventType));
 }
 
 int32_t SleAudioDeviceManager::AddNearlinkDevice(const AudioDeviceDescriptor &deviceDesc)

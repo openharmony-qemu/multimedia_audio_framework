@@ -331,7 +331,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, Send_Get_001, TestSize.Level1)
     uint32_t streamType = 1;
     uint32_t delayValue = 0;
     
-    int32_t ret = sleAudioDeviceManager_->SendUserSelection(device, streamType);
+    int32_t ret = sleAudioDeviceManager_->SendUserSelection(device, streamType, USER_SELECT_SLE);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 
     int32_t result = sleAudioDeviceManager_->GetRenderPosition(device, delayValue);
@@ -355,7 +355,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, Send_Get_002, TestSize.Level1)
     uint32_t streamType = 1;
     uint32_t delayValue = 0;
     
-    int32_t ret = sleAudioDeviceManager_->SendUserSelection(device, streamType);
+    int32_t ret = sleAudioDeviceManager_->SendUserSelection(device, streamType, USER_SELECT_SLE);
     EXPECT_EQ(ret, SUCCESS);
 
     int32_t result = sleAudioDeviceManager_->GetRenderPosition(device, delayValue);
@@ -656,7 +656,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, SendUserSelection_001, TestSize.Level1)
     deviceDesc.deviceType_ = DEVICE_TYPE_FILE_SOURCE;
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
 
-    int32_t result = sleAudioDeviceManager_->SendUserSelection(deviceDesc, streamUsage);
+    int32_t result = sleAudioDeviceManager_->SendUserSelection(deviceDesc, streamUsage, USER_SELECT_SLE);
     EXPECT_EQ(result, ERROR);
 }
 
@@ -677,7 +677,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, SendUserSelection_002, TestSize.Level1)
     deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
 
-    int32_t result = sleAudioDeviceManager_->SendUserSelection(deviceDesc, streamUsage);
+    int32_t result = sleAudioDeviceManager_->SendUserSelection(deviceDesc, streamUsage, USER_SELECT_SLE);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -697,7 +697,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, SendUserSelection_003, TestSize.Level1)
     deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
     SourceType sourceType = SOURCE_TYPE_VIRTUAL_CAPTURE;
 
-    int32_t result = sleAudioDeviceManager_->SendUserSelection(deviceDesc, sourceType);
+    int32_t result = sleAudioDeviceManager_->SendUserSelection(deviceDesc, sourceType, USER_SELECT_SLE);
     EXPECT_EQ(result, ERROR);
 }
 
@@ -718,7 +718,7 @@ HWTEST(SleAudioDeviceManagerUnitTest, SendUserSelection_004, TestSize.Level1)
     deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK_IN;
     SourceType sourceType = SOURCE_TYPE_VIRTUAL_CAPTURE;
 
-    int32_t result = sleAudioDeviceManager_->SendUserSelection(deviceDesc, sourceType);
+    int32_t result = sleAudioDeviceManager_->SendUserSelection(deviceDesc, sourceType, USER_SELECT_SLE);
     EXPECT_EQ(result, SUCCESS);
 }
 

@@ -3013,39 +3013,6 @@ void AudioCoreService::ResetNearlinkDeviceState(const std::shared_ptr<AudioDevic
     }
 }
 
-bool AudioCoreService::IsVoiceStreamType(StreamUsage streamUsage)
-{
-    bool result = false;
-    switch (streamUsage) {
-        case StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION:
-        case StreamUsage::STREAM_USAGE_NOTIFICATION_RINGTONE:
-        case StreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION:
-        case StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
-        case StreamUsage::STREAM_USAGE_VOICE_RINGTONE:
-            result = true;
-            break;
-        default:
-            result = false;
-            break;
-    }
-    return result;
-}
-
-bool AudioCoreService::IsVoiceSourceType(SourceType sourceType)
-{
-    bool result = false;
-    switch (sourceType) {
-        case SourceType::SOURCE_TYPE_VOICE_CALL:
-        case SourceType::SOURCE_TYPE_VOICE_COMMUNICATION:
-             result = true;
-            break;
-        default:
-            result = false;
-            break;
-    }
-    return result;
-}
-
 int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     const AudioStreamDeviceChangeReasonExt reason)
 {
@@ -3060,10 +3027,10 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
     bool isVoiceType = true;
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         audioStreamConfig = streamDesc->rendererInfo_.streamUsage;
-        isVoiceType = IsVoiceStreamType(streamDesc->rendererInfo_.streamUsage);
+        isVoiceType = AudioPolicyUtils::GetInstance().IsVoiceStreamType(streamDesc->rendererInfo_.streamUsage);
     } else {
         audioStreamConfig = streamDesc->capturerInfo_.sourceType;
-        isVoiceType = IsVoiceSourceType(streamDesc->capturerInfo_.sourceType);
+        isVoiceType = AudioPolicyUtils::GetInstance().IsVoiceSourceType(streamDesc->capturerInfo_.sourceType);
     }
     if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK || deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK_IN) {
         auto runDeviceActivationFlow = [this, &deviceDesc, &isRunning, &realUid](auto &&config) -> int32_t {
