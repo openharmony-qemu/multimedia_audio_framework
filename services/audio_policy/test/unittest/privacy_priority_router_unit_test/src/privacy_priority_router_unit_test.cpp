@@ -591,6 +591,57 @@ HWTEST(PrivacyPriorityRouterUnitTest, RemoveArmUsb_001, TestSize.Level4)
     router.RemoveArmUsb(descs);
     EXPECT_EQ(descs.size(), 0);
 }
+
+/**
+ * @tc.name  : Test IsA2dpDisable.
+ * @tc.number: IsA2dpDisable_001
+ * @tc.desc  : Test RemoveArmUsb interface.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, IsA2dpDisable_001, TestSize.Level4)
+{
+    PrivacyPriorityRouter router;
+    auto &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    audioDeviceManager.connectedDevices_.clear();
+ 
+    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    desc->deviceRole_ = OUTPUT_DEVICE;
+    desc->networkId_ = "";
+    desc->macAddress_ = "00:11:22:33:44:55";
+    desc->connectState_ = CONNECTED;
+    desc->isEnable_ = false;
+    audioDeviceManager.connectedDevices_.push_back(desc);
+    bool isA2dpDisable = router.IsA2dpDisable(desc);
+    EXPECT_EQ(isA2dpDisable, true);
+}
+ 
+/**
+ * @tc.name  : Test PrivacyPriorityRouter.
+ * @tc.number: GetRecordCaptureDevice_019
+ * @tc.desc  : Test GetRecordCaptureDevice interface.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, GetRecordCaptureDevice_019, TestSize.Level1)
+{
+    PrivacyPriorityRouter privacyPriorityRouter;
+    auto &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    audioDeviceManager.reconCapturePrivacyDevices_.clear();
+    SourceType sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    int32_t clientUID = TEST_CLIENT_UID;
+    uint32_t sessionID = TEST_SESSION_ID;
+ 
+    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO; 
+    desc->deviceRole_ = OUTPUT_DEVICE;
+    desc->networkId_ = "";
+    desc->macAddress_ = "00:11:22:33:44:55";
+    desc->connectState_ = SUSPEND_CONNECTED;
+    desc->isEnable_ = false;
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    audioDeviceManager.reconCapturePrivacyDevices_.push_back(desc);
+ 
+    auto result = privacyPriorityRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
+    EXPECT_NE(result->deviceType_, desc->deviceType_);
+}
 } // namespace AudioStandard
 } // namespace OHOS
  
