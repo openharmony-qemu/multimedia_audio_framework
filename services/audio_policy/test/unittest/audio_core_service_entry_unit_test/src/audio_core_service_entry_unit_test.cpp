@@ -575,7 +575,8 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_041, TestSize.Level1)
     devDesc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
     devDesc->macAddress_ = macAddress;
     devDesc->deviceRole_ = OUTPUT_DEVICE;
-    audioRouter.callRenderRouters_.emplace_back(std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, devDesc, nullptr, nullptr));
+    audioRouter.callRenderRouters_.emplace_back(std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT,
+        nullptr, devDesc, nullptr, nullptr));
     audioDeviceStatus.audioDeviceManager_.commRenderPrivacyDevices_.push_back(devDesc);
     audioDeviceStatus.OnPrivacyDeviceSelected(devType, macAddress);
 }
