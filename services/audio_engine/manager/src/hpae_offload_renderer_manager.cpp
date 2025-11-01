@@ -211,9 +211,6 @@ int32_t HpaeOffloadRendererManager::CreateOffloadNodes()
     converterForOutput_ = std::make_shared<HpaeAudioFormatConverterNode>(nodeInfo, outputNodeInfo);
     loudnessGainNode_ = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
     converterForLoudness_ = std::make_shared<HpaeAudioFormatConverterNode>(curNode_->GetNodeInfo(), nodeInfo);
-    CHECK_AND_RETURN_RET_LOG(converterForOutput_ != nullptr, ERROR, "Fail create converterForOutput node");
-    CHECK_AND_RETURN_RET_LOG(loudnessGainNode_ != nullptr, ERROR, "Fail create loudnessGain node");
-    CHECK_AND_RETURN_RET_LOG(converterForLoudness_ != nullptr, ERROR, "Fail create converterForLoundeness node");
     AUDIO_INFO_LOG("SessionId %{public}u, Success create offload nodes: "
         "converterForLoudnessId %{public}u, loudnessGainNodeId %{public}u, converterForOutputNodeId %{public}u",
         outputNodeInfo.sessionId,
@@ -223,7 +220,7 @@ int32_t HpaeOffloadRendererManager::CreateOffloadNodes()
  
 int32_t HpaeOffloadRendererManager::DestroyOffloadNodes()
 {
-    CHECK_AND_RETURN_RET_LOG(converterForLoudness_ != nullptr && loudnessGainNode_ != nullptr &&
+    CHECK_AND_RETURN_RET_LOG(curNode_ != nullptr && converterForLoudness_ != nullptr && loudnessGainNode_ != nullptr &&
         converterForOutput_ != nullptr, ERROR, "offload nodes not exist, fail to destroy offload nodes");
     uint32_t converterForLoudnessId = converterForLoudness_->GetNodeId();
     uint32_t loudnessGainNodeId = loudnessGainNode_->GetNodeId();

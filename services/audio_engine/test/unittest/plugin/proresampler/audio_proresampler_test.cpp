@@ -197,7 +197,6 @@ HWTEST_F(AudioProResamplerTest, UpdateChannelTest_003, TestSize.Level0)
     EXPECT_EQ(resampler1.channels_, INVALID_CHANNELS2);
     EXPECT_EQ(resampler1.state_, nullptr);
 }
-
 /*
  * @tc.name  : Test UpdateRates API.
  * @tc.type  : FUNC

@@ -242,9 +242,6 @@ int32_t HpaeProcessCluster::CreateNodes(const std::shared_ptr<OutputNode<HpaePcm
     CreateConverterNode(sessionId, preNodeInfo);
     CreateLoudnessGainNode(sessionId, preNodeInfo);
     CreateGainNode(sessionId, preNodeInfo);
-    CHECK_AND_RETURN_RET_LOG(SafeGetMap(idConverterMap_, sessionId), ERROR, "Fail create converter node");
-    CHECK_AND_RETURN_RET_LOG(SafeGetMap(idLoudnessGainNodeMap_, sessionId), ERROR, "Fail create loudnessGain node");
-    CHECK_AND_RETURN_RET_LOG(SafeGetMap(idGainMap_, sessionId), ERROR, "Fail create gain node");
     AUDIO_INFO_LOG("SessionId %{public}u, Success create all nodes: "
         "converterNodeId %{public}u, loudnessGainNodeId %{public}u, gainNodeId %{public}u",
         sessionId, idConverterMap_[sessionId]->GetNodeId(), idLoudnessGainNodeMap_[sessionId]->GetNodeId(),
