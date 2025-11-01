@@ -602,7 +602,6 @@ HWTEST(PrivacyPriorityRouterUnitTest, IsA2dpDisable_001, TestSize.Level4)
     PrivacyPriorityRouter router;
     auto &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
     audioDeviceManager.connectedDevices_.clear();
- 
     shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     desc->deviceRole_ = OUTPUT_DEVICE;
@@ -628,9 +627,8 @@ HWTEST(PrivacyPriorityRouterUnitTest, GetRecordCaptureDevice_019, TestSize.Level
     SourceType sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
     int32_t clientUID = TEST_CLIENT_UID;
     uint32_t sessionID = TEST_SESSION_ID;
- 
     shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO; 
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     desc->deviceRole_ = OUTPUT_DEVICE;
     desc->networkId_ = "";
     desc->macAddress_ = "00:11:22:33:44:55";
@@ -638,7 +636,6 @@ HWTEST(PrivacyPriorityRouterUnitTest, GetRecordCaptureDevice_019, TestSize.Level
     desc->isEnable_ = false;
     desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     audioDeviceManager.reconCapturePrivacyDevices_.push_back(desc);
- 
     auto result = privacyPriorityRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
     EXPECT_NE(result->deviceType_, desc->deviceType_);
 }
