@@ -230,8 +230,7 @@ int32_t HpaeOffloadRendererManager::DestroyOffloadNodes()
     converterForOutput_ = nullptr;
     AUDIO_INFO_LOG("SessionId %{public}u, Success destroy offload nodes: "
         "converterForLoudnessId %{public}u, loudnessGainNodeId %{public}u, converterForOutputNodeId %{public}u",
-        curNode_->GetSessionId(),
-        converterForLoudnessId, loudnessGainNodeId, converterForOutputNodeId);
+        curNode_->GetSessionId(), converterForLoudnessId, loudnessGainNodeId, converterForOutputNodeId);
     return SUCCESS;
 }
 
