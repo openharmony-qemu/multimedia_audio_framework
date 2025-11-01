@@ -8,7 +8,6 @@
 #include <fstream>
 
 class CompareFile {
-
 };
 
 bool ValidateFileLength(std::ifstream& file1, std::ifstream& file2);

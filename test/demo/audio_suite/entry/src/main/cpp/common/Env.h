@@ -10,7 +10,6 @@
 #include "ohaudio/native_audio_suite_engine.h"
 
 class Env {
-
 };
 
 void getEnvEnumByNumber(int num, OH_EnvironmentType &type);

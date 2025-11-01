@@ -9,7 +9,7 @@
 #include "ohaudio/native_audio_suite_base.h"
 #include "ohaudio/native_audio_suite_engine.h"
 
-enum class EqualizerFrequencyBandGains {
+enum Class EqualizerFrequencyBandGains {
     EQUALIZER_PARAM_DEFAULT = 1,
     EQUALIZER_PARAM_BALLADS = 2,
     EQUALIZER_PARAM_CHINESE_STYLE = 3,
@@ -22,7 +22,6 @@ enum class EqualizerFrequencyBandGains {
 };
 
 class Equalizer {
-
 };
 
 OH_EqualizerFrequencyBandGains SetEqualizerMode(int32_t equailizerMode);

@@ -10,7 +10,6 @@
 #include "ohaudio/native_audio_suite_engine.h"
 
 class SoundField {
-
 };
 
 OH_SoundFieldType getSoundFieldTypeByNum(int mode);

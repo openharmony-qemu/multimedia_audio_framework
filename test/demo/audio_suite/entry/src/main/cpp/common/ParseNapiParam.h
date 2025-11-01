@@ -9,7 +9,6 @@
 #include "napi/native_api.h"
 
 class ParseNapiParam {
-
 };
 
 napi_status parseNapiString(napi_env env, napi_value value, std::string &result);
