@@ -1362,6 +1362,16 @@ std::string GetTime()
     return curTime;
 }
 
+std::string GetField(const std::string &src, const char* field, const char sep)
+{
+    auto str = std::string(field) + '=';
+    auto pos = src.find(str);
+    CHECK_AND_RETURN_RET(pos != std::string::npos, "");
+    pos += str.length();
+    auto end = src.find(sep, pos);
+    return end == std::string::npos ? src.substr(pos) : src.substr(pos, end - pos);
+}
+
 int32_t GetFormatByteSize(int32_t format)
 {
     int32_t formatByteSize;

@@ -35,6 +35,7 @@
 #include "manager/hdi_monitor.h"
 #include "capturer_clock_manager.h"
 #include "audio_setting_provider.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1333,5 +1334,20 @@ void AudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType devic
     }
 }
 
+int32_t AudioCaptureSource::GetArmUsbDeviceStatus()
+{
+    Trace trace("AudioCaptureSource::AudioGetALSADeviceInfo");
+    std::string address = address_.empty() ? attr_.macAddress.c_str() : address_;
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "deviceManager is nullptr");
+    std::string infoCond = std::string("get_usb_status#C") + GetField(address, "card", ';') +
+        "D" + GetField(address, "device", ';');
+    std::string deviceInfo = deviceManager->GetAudioParameter(adapterNameCase_, USB_DEVICE, infoCond);
+    std::string status = GetField(deviceInfo, "status", ',');
+    int32_t ret = 0;
+    StringConverter(status, ret);
+    return ret;
+}
 } // namespace AudioStandard
 } // namespace OHOS
