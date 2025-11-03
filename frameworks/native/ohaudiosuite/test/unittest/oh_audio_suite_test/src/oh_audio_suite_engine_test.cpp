@@ -2258,15 +2258,35 @@ HWTEST(OHAudioSuiteEngineTest, OHAudioSuiteEngine_RemovePipeline_001, TestSize.L
 HWTEST(OHAudioSuiteEngineTest, OHAudioSuitePipeline_RemoveNode_001, TestSize.Level0)
 {
     OHAudioSuitePipeline* pipeline = new OHAudioSuitePipeline(123);
-    OHAudioNode* node = new OHAudioNode(456, AudioSuite::AudioNodeType::NODE_TYPE_EQUALIZER);
-    pipeline->AddNode(node);
-    EXPECT_TRUE(pipeline->IsNodeExists(node));
+    OHAudioNode* eqNode = new OHAudioNode(456, AudioSuite::AudioNodeType::NODE_TYPE_EQUALIZER);
+    OHAudioNode* noiseNode = new OHAudioNode(111, AudioSuite::AudioNodeType::NODE_TYPE_NOISE_REDUCTION);
+    OHAudioNode* soundNode = new OHAudioNode(222, AudioSuite::AudioNodeType::NODE_TYPE_SOUND_FIELD);
+    OHAudioNode* aissNode = new OHAudioNode(333, AudioSuite::AudioNodeType::NODE_TYPE_AUDIO_SEPARATION);
+    OHAudioNode* beautifierNode = new OHAudioNode(444, AudioSuite::AudioNodeType::NODE_TYPE_VOICE_BEAUTIFIER);
+    pipeline->AddNode(eqNode);
+    pipeline->AddNode(noiseNode);
+    pipeline->AddNode(soundNode);
+    pipeline->AddNode(aissNode);
+    pipeline->AddNode(beautifierNode);
+    EXPECT_TRUE(pipeline->IsNodeExists(eqNode));
+    EXPECT_TRUE(pipeline->IsNodeExists(noiseNode));
+    EXPECT_TRUE(pipeline->IsNodeExists(soundNode));
+    EXPECT_TRUE(pipeline->IsNodeExists(aissNode));
+    EXPECT_TRUE(pipeline->IsNodeExists(beautifierNode));
 
-    pipeline->RemoveNode(node);
-    EXPECT_FALSE(pipeline->IsNodeExists(node));
+    pipeline->RemoveNode(eqNode);
+    pipeline->RemoveNode(noiseNode);
+    pipeline->RemoveNode(soundNode);
+    pipeline->RemoveNode(aissNode);
+    pipeline->RemoveNode(beautifierNode);
+    EXPECT_FALSE(pipeline->IsNodeExists(eqNode));
+    EXPECT_FALSE(pipeline->IsNodeExists(noiseNode));
+    EXPECT_FALSE(pipeline->IsNodeExists(soundNode));
+    EXPECT_FALSE(pipeline->IsNodeExists(aissNode));
+    EXPECT_FALSE(pipeline->IsNodeExists(beautifierNode));
 
     pipeline->RemoveNode(nullptr);
-    EXPECT_FALSE(pipeline->IsNodeExists(node));
+    EXPECT_FALSE(pipeline->IsNodeExists(eqnode));
     delete pipeline;
 }
 

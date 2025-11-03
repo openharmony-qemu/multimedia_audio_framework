@@ -130,9 +130,11 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_CreatePipeline(
     OH_AudioSuiteEngine *audioSuiteEngine,
     OH_AudioSuitePipeline **audioSuitePipeline, OH_AudioSuite_PipelineWorkMode workMode)
 {
-    OHAudioSuiteEngine *suiteEngine = ConvertAudioSuiteEngine(audioSuiteEngine);
     CHECK_AND_RETURN_RET_LOG(audioSuiteEngine != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "CreatePipeline audioSuiteEngine is nullptr");
+    OHAudioSuiteEngine *suiteEngine = ConvertAudioSuiteEngine(audioSuiteEngine);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "CreatePipeline suiteEngine is nullptr");
 
     int32_t error = suiteEngine->CreatePipeline(audioSuitePipeline, workMode);
     return ConvertError(error);
