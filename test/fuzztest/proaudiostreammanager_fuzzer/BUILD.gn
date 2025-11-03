@@ -21,7 +21,7 @@ ohos_fuzztest("ProAudioStreamManagerFuzzTest") {
 
   include_dirs = [
     "../../../frameworks/native/audiocapturer/include",
-    "../../../services/server/include",
+    "../../../services/audio_service/server/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../../../services/audio_engine/manager/include",
   ]
@@ -70,4 +70,9 @@ ohos_fuzztest("ProAudioStreamManagerFuzzTest") {
   if (use_libfuzzer || use_clang_coverage) {
     defines += [ "TEST_COVERAGE" ]
   }
+}
+
+group("fuzztest") {
+  testonly = true
+  deps = [ ":ProAudioStreamManagerFuzzTest" ]
 }

@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef HPAE_MANAGER_STREAM_FUZZER_H
-#define HPAE_MANAGER_STREAM_FUZZER_H
+#ifndef PRO_AUDIO_STREAM_MANAGER_FUZZ_H
+#define PRO_AUDIO_STREAM_MANAGER_FUZZ_H
 
 #include "pro_audio_stream_manager.h"
 #include "audio_info.h"
@@ -23,8 +23,8 @@ class ProAudioStreamManagerFuzzTest {
 public:
     void ProAudioStreamManagerFuzz();
     std::vector<std::function<void()>> Funcs_;
-    shared_ptr<ProAudioStreamManager> audioStreamManager_;
+    std::shared_ptr<ProAudioStreamManager> audioStreamManager_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // HPAE_MANAGER_STREAM_FUZZER_H
+#endif // PRO_AUDIO_STREAM_MANAGER_FUZZ_H

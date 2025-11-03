@@ -1,30 +1,32 @@
-
+/*
  * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http:www.apache.orglicensesLICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
+ */
+
 #include <chrono>
 #include <thread>
 #include "pro_audio_stream_manager_fuzzer.h"
 #include "audio_errors.h"
 #include "policy_handler.h"
-#include "..fuzz_utils.h"
+#include "../fuzz_utils.h"
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
+const int32_t CAPTURER_FLAG = 10;
 FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
 const size_t FUZZ_INPUT_SIZE_THRESHOLD = 10;
 typedef void (*TestFuncs)();
-std::vector<std::function<void()>> 
+
 static AudioProcessConfig GetConfig()
 {
     AudioProcessConfig config;
@@ -48,12 +50,12 @@ void ProAudioStreamManagerFuzzTest::ProAudioStreamManagerFuzz()
     shared_ptr<IRendererStream> rendererStream = audioStreamManager_->CreateRendererStream(config);
     audioStreamManager_->CreateRender(config, rendererStream);
     Funcs_.clear();
-    Funcs_.push_back([=, this]() {audioStreamManager_->StartRender(config.originalSessionId);});
-    Funcs_.push_back([=, this]() {audioStreamManager_->StopRender(config.originalSessionId);});
-    Funcs_.push_back([=, this]() {audioStreamManager_->PauseRender(config.originalSessionId);});
-    Funcs_.push_back([=, this]() {audioStreamManager_->TriggerStartIfNecessary()});
-    Funcs_.push_back([=, this]() {audioStreamManager_->GetStreamCount();});
-    Funcs_.push_back([=, this]() {audioStreamManager_->GetLatency();});
+    Funcs_.push_back([=, this]() { audioStreamManager_->StartRender(config.originalSessionId); });
+    Funcs_.push_back([=, this]() { audioStreamManager_->StopRender(config.originalSessionId); });
+    Funcs_.push_back([=, this]() { audioStreamManager_->PauseRender(config.originalSessionId); });
+    Funcs_.push_back([=, this]() { audioStreamManager_->TriggerStartIfNecessary(); });
+    Funcs_.push_back([=, this]() { audioStreamManager_->GetStreamCount(); });
+    Funcs_.push_back([=, this]() { audioStreamManager_->GetLatency(); });
     Funcs_.push_back([=, this]() {
         std::vector<SinkInput> sinkInputs;
         audioStreamManager_->GetAllSinkInputs(sinkInputs);
