@@ -56,8 +56,7 @@ ProResampler::ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels,
     
     CHECK_AND_RETURN_LOG(quality <= MAX_QUALITY, "invalid quality level: %{public}d", quality);
 
-    int32_t errRet;
-    errRet = ConfigBufferSizeAndExpectedInFrameLen();
+    int32_t errRet = ConfigBufferSizeAndExpectedInFrameLen();
     CHECK_AND_RETURN_LOG(errRet == RESAMPLER_ERR_SUCCESS,
         "ProResampler construct reserve buff error code %{public}s", ErrCodeToString(errRet).c_str());
 
