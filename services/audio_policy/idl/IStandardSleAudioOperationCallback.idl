@@ -27,6 +27,6 @@ interface IStandardSleAudioOperationCallback {
     void StopPlaying([in] String device, [in] unsigned int streamType, [out] int ret);
     void ConnectAllowedProfiles([in] String remoteAddr, [out] int ret);
     void SetDeviceAbsVolume([in] String remoteAddr, [in] unsigned int volume, [in] unsigned int streamType, [out] int ret);
-    void SendUserSelection([in] String device, [in] unsigned int streamType, [out] int ret);
+    void SendUserSelection([in] String device, [in] unsigned int sleStreamType, [in] int eventType, [out] int ret);
     void GetRenderPosition([in] String device, [out] unsigned int delayValue);
 }

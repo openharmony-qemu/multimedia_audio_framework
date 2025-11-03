@@ -937,6 +937,13 @@ RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
 
         processBuffer_->SetRestoreInfo(restoreInfo);
         processBuffer_->WakeFutex();
+
+        std::lock_guard<std::mutex> lock(listenerListLock_);
+        std::vector<std::shared_ptr<IProcessStatusListener>>::iterator it = listenerList_.begin();
+        while (it != listenerList_.end()) {
+            (*it)->StopByRestore(restoreInfo);
+            it++;
+        }
     }
     return restoreStatus;
 }

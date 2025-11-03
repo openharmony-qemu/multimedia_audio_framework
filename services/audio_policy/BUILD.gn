@@ -223,10 +223,8 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/device/src/audio_usr_select_manager.cpp",
     "server/domain/pipe/src/audio_concurrency_service.cpp",
     "server/service/service_main/src/device_init_callback.cpp",
-    "server/src/audio_client_tracker_callback_service.cpp",
     "server/src/audio_client_tracker_callback_listener.cpp",
     "server/src/audio_spatialization_state_change_callback.cpp",
-    "server/src/audio_spatialization_state_change_listener.cpp",
     "server/src/audio_policy_manager_listener.cpp",
     "server/domain/effect/src/audio_effect_service.cpp",
     "server/domain/interrupt/src/audio_interrupt_dfx_collector.cpp",
@@ -599,7 +597,7 @@ audio_ohos_library("audio_policy_client") {
   deps = [
     "../../frameworks/native/audiodefinitions:audio_definitions",
     "../../frameworks/native/audioutils:audio_utils",
-    "../../services/audio_service/idl:audio_framework_interface",
+    "../../services/audio_service/idl:audio_policy_client_idl_interface",
   ]
 
   public_configs = [ ":audio_policy_client_config" ]

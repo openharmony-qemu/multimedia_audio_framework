@@ -127,6 +127,8 @@ public:
     int32_t RemoveCaptureInjector(const uint32_t &sinkPortIndex, const SourceType &sourceType) override;
 
     void UpdateEndpointStatus(AudioEndpoint::EndpointStatus newStatus);
+
+    void StopByRestore(const RestoreInfo &restoreInfo) override;
 private:
     AudioProcessConfig GetInnerCapConfig();
     void StartThread(const IAudioSinkAttr &attr);

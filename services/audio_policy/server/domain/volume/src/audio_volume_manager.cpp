@@ -254,7 +254,7 @@ int32_t AudioVolumeManager::GetSystemVolumeLevelNoMuteState(AudioStreamType stre
 }
 
 int32_t AudioVolumeManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor,
-    const std::string &newSinkName, bool enableSetVoiceCallVolume)
+    bool enableSetVoiceCallVolume)
 {
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(deviceDescriptor);
     if (!AudioVolumeUtils::GetInstance().IsDeviceWithSafeVolume(desc)) {

@@ -35,6 +35,13 @@
             <option name="shell" value="restorecon /data/"/>
         </preparer>
     </target>
+    <target name="hpae_manager_audio_paramters_test">
+        <preparer>
+            <option name="shell" value="mkdir -p /data/"/>
+            <option name="push" value="source_file_io_48000_2_s16le.pcm -> /data/" src="res"/>
+            <option name="shell" value="restorecon /data/"/>
+        </preparer>
+    </target>
     <target name="hpae_manager_test">
         <preparer>
             <option name="shell" value="mkdir -p /data/"/>

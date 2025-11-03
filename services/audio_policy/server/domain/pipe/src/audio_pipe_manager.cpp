@@ -517,11 +517,12 @@ void AudioPipeManager::UpdateRingAndVoipStreamStatus(const AudioScene audioScene
     if (audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) {
         ringAndVoipDescMap_[RING_SESSIONID]->streamStatus_ = STREAM_STATUS_STARTED;
         ringAndVoipDescMap_[VOIP_SESSIONID]->streamStatus_ = STREAM_STATUS_STOPPED;
-    }
-
-    if (audioScene == AUDIO_SCENE_PHONE_CHAT) {
+    } else if (audioScene == AUDIO_SCENE_PHONE_CHAT) {
         ringAndVoipDescMap_[VOIP_SESSIONID]->streamStatus_ = STREAM_STATUS_STARTED;
         ringAndVoipDescMap_[RING_SESSIONID]->streamStatus_ = STREAM_STATUS_STOPPED;
+    } else {
+        ringAndVoipDescMap_[RING_SESSIONID]->streamStatus_ = STREAM_STATUS_STOPPED;
+        ringAndVoipDescMap_[VOIP_SESSIONID]->streamStatus_ = STREAM_STATUS_STOPPED;
     }
 }
 

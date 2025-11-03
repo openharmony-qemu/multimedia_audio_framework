@@ -229,6 +229,41 @@ uint32_t AudioPolicyUtils::PcmFormatToBytes(AudioSampleFormat format)
     }
 }
 
+bool AudioPolicyUtils::IsVoiceStreamType(StreamUsage streamUsage)
+{
+    bool result = false;
+
+    switch (streamUsage) {
+        case StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION:
+        case StreamUsage::STREAM_USAGE_NOTIFICATION_RINGTONE:
+        case StreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION:
+        case StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
+        case StreamUsage::STREAM_USAGE_VOICE_RINGTONE:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool AudioPolicyUtils::IsVoiceSourceType(SourceType sourceType)
+{
+    bool result = false;
+
+    switch (sourceType) {
+        case SourceType::SOURCE_TYPE_VOICE_CALL:
+        case SourceType::SOURCE_TYPE_VOICE_COMMUNICATION:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
 std::string AudioPolicyUtils::GetNewSinkPortName(DeviceType deviceType)
 {
     std::string portName = PORT_NONE;

@@ -149,7 +149,7 @@ private:
     std::mutex cachedFocusMutex_;
     int32_t oldUserId_;
     bool isSwitchUser_ = false;
-    bool isGetFocus_ = false;
+    bool isGetFocusForLog_ = false;
 
     void CacheFocusAndCallback(const uint32_t &sessionId, const InterruptEventInternal &interruptEvent,
         const AudioInterrupt &audioInterrupt);

@@ -40,7 +40,7 @@ public:
     int32_t ConnectAllowedProfiles(const std::string &remoteAddr) const override { return 0; };
     int32_t SetDeviceAbsVolume(const std::string &remoteAddr, uint32_t volume,
         uint32_t streamType) override { return 0; };
-    int32_t SendUserSelection(const std::string &device, uint32_t streamType) override { return 0; };
+    int32_t SendUserSelection(const std::string &device, uint32_t streamType, int32_t eventType) override { return 0; };
     int32_t GetRenderPosition(const std::string &device, uint32_t &delayValue) override { return 0; };
 };
 
@@ -182,7 +182,7 @@ void SendUserSelectionFuzzTest()
     std::string device = "test_device";
     uint32_t streamType = g_fuzzUtils.GetData<uint32_t>();
     int32_t ret = g_fuzzUtils.GetData<int32_t>();
-    operationCallbackStub->SendUserSelection(device, streamType, ret);
+    operationCallbackStub->SendUserSelection(device, streamType, USER_SELECT_SLE, ret);
 }
 
 void GetRenderPositionFuzzTest()

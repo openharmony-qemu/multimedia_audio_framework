@@ -224,7 +224,6 @@ ohos_shared_library("audio_client") {
     "client/src/ipc_stream_listener_impl.cpp",
     "client/src/microphone_descriptor.cpp",
     "client/src/offline_stream_in_client.cpp",
-    "client/src/policy_provider_stub.cpp",
     "client/src/renderer_in_client.cpp",
     "client/src/renderer_in_client_public.cpp",
   ]
@@ -241,7 +240,7 @@ ohos_shared_library("audio_client") {
 
   deps = [
     ":audio_common",
-    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "${audio_framework_root}/services/audio_service/idl:audio_client_idl_interface",
     "../../frameworks/native/audioqosmanager:audio_qosmanager",
     "../../frameworks/native/audioutils:audio_utils",
     "../audio_policy:audio_foundation",

@@ -114,7 +114,7 @@ public:
         bool connected, int32_t mappingId);
     void GetVolumeGroupInfo(std::vector<sptr<VolumeGroupInfo>>& volumeGroupInfos);
     int32_t SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor,
-        const std::string &newSinkName = PORT_NONE, bool enableSetVoiceCallVolume = true);
+        bool enableSetVoiceCallVolume = true);
 
     bool IsRingerModeMute();
     void SetRingerModeMute(bool flag);

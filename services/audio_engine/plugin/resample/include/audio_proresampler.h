@@ -50,7 +50,7 @@ private:
     int32_t Process10HzSampleRate(const float *inBuffer, uint32_t inFrameSize, float *outBuffer,
         uint32_t outFrameSize);
     std::string ErrCodeToString(int32_t errCode);
-    void ConfigBufferSizeAndExpectedInFrameLen();
+    int32_t ConfigBufferSizeAndExpectedInFrameLen();
     std::vector<float> buf11025_;
     std::vector<float> bufFor100ms_;
     uint32_t buf11025Index_ = 0;

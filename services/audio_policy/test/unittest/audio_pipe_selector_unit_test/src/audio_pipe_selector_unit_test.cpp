@@ -40,6 +40,41 @@ static std::shared_ptr<AudioPipeInfo> MakeTestPipe(AudioPipeRole role, std::stri
     return newPipe;
 }
 
+static void MakeDeviceInfoMap(AudioPolicyConfigData &configData, std::shared_ptr<AdapterPipeInfo> &adapterPipeInfo,
+    std::shared_ptr<PolicyAdapterInfo> &policyAdapterInfo)
+{
+    uint32_t routerFlag = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(manager.Init(true), true);
+    configData.Reorganize();
+
+    policyAdapterInfo->adapterName = "remote";
+    adapterPipeInfo->adapterInfo_ = policyAdapterInfo;
+    std::shared_ptr<PipeStreamPropInfo> propInfo = std::make_shared<PipeStreamPropInfo>();
+    propInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    propInfo->sampleRate_ = AudioSamplingRate::SAMPLE_RATE_48000;
+    propInfo->channels_ = AudioChannel::STEREO;
+    propInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_STEREO;
+    propInfo->pipeInfo_ = adapterPipeInfo;
+
+    std::shared_ptr<PipeStreamPropInfo> propInfo_2 = std::make_shared<PipeStreamPropInfo>();
+    propInfo_2->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    propInfo_2->sampleRate_ = AudioSamplingRate::SAMPLE_RATE_48000;
+    propInfo_2->channels_ = AudioChannel::CHANNEL_6;
+    propInfo_2->channelLayout_ = AudioChannelLayout::CH_LAYOUT_5POINT1;
+    propInfo_2->pipeInfo_ = adapterPipeInfo;
+
+    std::shared_ptr<AdapterPipeInfo> info = std::make_shared<AdapterPipeInfo>();
+    info->dynamicStreamPropInfos_ = {propInfo, propInfo_2};
+    info->role_ = PIPE_ROLE_OUTPUT;
+
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = std::make_shared<AdapterDeviceInfo>();
+    deviceInfo->supportPipeMap_.insert({routerFlag, info});
+    std::set<std::shared_ptr<AdapterDeviceInfo>> deviceInfoSet = {deviceInfo};
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    configData.deviceInfoMap[deviceKey] = deviceInfoSet;
+}
+
 /**
  * @tc.name: GetPipeType_001
  * @tc.desc: Test GetPipeType when audioMode is AUDIO_MODE_PLAYBACK and flag contains
@@ -489,6 +524,118 @@ HWTEST_F(AudioPipeSelectorUnitTest, FetchPipeAndExecute_002, TestSize.Level4)
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     std::vector<std::shared_ptr<AudioPipeInfo>> result = audioPipeSelector->FetchPipeAndExecute(streamDesc);
     EXPECT_TRUE(result.empty());
+}
+
+/**
+ * @tc.name: FetchPipeAndExecute_003
+ * @tc.desc: Test FetchPipeAndExecute selectedPipeInfoList->pipeAction_ == PIPE_ACTION_UPDATE.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, FetchPipeAndExecute_003, TestSize.Level1)
+{
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    std::shared_ptr<AdapterPipeInfo> adapterPipeInfo = std::make_shared<AdapterPipeInfo>();
+    std::shared_ptr<PolicyAdapterInfo> policyAdapterInfo = std::make_shared<PolicyAdapterInfo>();
+    MakeDeviceInfoMap(configData, adapterPipeInfo, policyAdapterInfo);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.front()->deviceRole_ = OUTPUT_DEVICE;
+    streamDesc->newDeviceDescs_.front()->networkId_ = "remote";
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamDesc->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList;
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+    pipeInfo->adapterName_ = "remote";
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    pipeInfo->name_ = "offload_distributed_output";
+    pipeInfo->moduleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[AudioSampleFormat::SAMPLE_S16LE];
+    pipeInfo->moduleInfo_.rate = std::to_string(AudioSamplingRate::SAMPLE_RATE_48000);
+    pipeInfo->moduleInfo_.channels = std::to_string(AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(
+        AudioChannelLayout::CH_LAYOUT_STEREO));
+    pipeInfo->moduleInfo_.channelLayout = std::to_string(AudioChannelLayout::CH_LAYOUT_STEREO);
+    pipeInfoList.push_back(pipeInfo);
+    AudioPipeManager::GetPipeManager()->curPipeList_ = pipeInfoList;
+
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::vector<std::shared_ptr<AudioPipeInfo>> selectedPipeInfoList
+        = audioPipeSelector->FetchPipeAndExecute(streamDesc);
+    EXPECT_EQ(selectedPipeInfoList[0]->pipeAction_, PIPE_ACTION_UPDATE);
+
+    streamDesc->streamInfo_.channels = AudioChannel::CHANNEL_6;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_5POINT1;
+    selectedPipeInfoList = audioPipeSelector->FetchPipeAndExecute(streamDesc);
+    EXPECT_EQ(selectedPipeInfoList[0]->pipeAction_, PIPE_ACTION_RELOAD);
+
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    configData.deviceInfoMap.erase(deviceKey);
+}
+
+/**
+ * @tc.name: FetchPipeAndExecute_004
+ * @tc.desc: Test FetchPipeAndExecute selectedPipeInfoList->pipeAction_ == PIPE_ACTION_UPDATE.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, FetchPipeAndExecute_004, TestSize.Level1)
+{
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    std::shared_ptr<AdapterPipeInfo> adapterPipeInfo = std::make_shared<AdapterPipeInfo>();
+    std::shared_ptr<PolicyAdapterInfo> policyAdapterInfo = std::make_shared<PolicyAdapterInfo>();
+    MakeDeviceInfoMap(configData, adapterPipeInfo, policyAdapterInfo);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.front()->deviceRole_ = OUTPUT_DEVICE;
+    streamDesc->newDeviceDescs_.front()->networkId_ = "remote";
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamDesc->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList;
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+    pipeInfo->adapterName_ = "remote";
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    pipeInfo->name_ = "remote";
+    pipeInfo->moduleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[AudioSampleFormat::SAMPLE_S16LE];
+    pipeInfo->moduleInfo_.rate = std::to_string(AudioSamplingRate::SAMPLE_RATE_48000);
+    pipeInfo->moduleInfo_.channels = std::to_string(AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(
+        AudioChannelLayout::CH_LAYOUT_STEREO));
+    pipeInfo->moduleInfo_.channelLayout = std::to_string(AudioChannelLayout::CH_LAYOUT_STEREO);
+    pipeInfoList.push_back(pipeInfo);
+    AudioPipeManager::GetPipeManager()->curPipeList_ = pipeInfoList;
+
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::vector<std::shared_ptr<AudioPipeInfo>> selectedPipeInfoList
+        = audioPipeSelector->FetchPipeAndExecute(streamDesc);
+    EXPECT_EQ(selectedPipeInfoList[0]->pipeAction_, PIPE_ACTION_UPDATE);
+
+    streamDesc->streamInfo_.channels = AudioChannel::CHANNEL_6;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_5POINT1;
+    selectedPipeInfoList = audioPipeSelector->FetchPipeAndExecute(streamDesc);
+    EXPECT_EQ(selectedPipeInfoList[0]->pipeAction_, PIPE_ACTION_UPDATE);
+
+    pipeInfo->adapterName_ = "primary";
+    selectedPipeInfoList = audioPipeSelector->FetchPipeAndExecute(streamDesc);
+    EXPECT_TRUE(selectedPipeInfoList.size() == 2);
+
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    configData.deviceInfoMap.erase(deviceKey);
 }
 
 /**

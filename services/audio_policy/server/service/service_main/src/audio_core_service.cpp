@@ -521,7 +521,6 @@ void AudioCoreService::CheckAndSetCurrentOutputDevice(std::shared_ptr<AudioDevic
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
     CHECK_AND_RETURN_LOG(!IsSameDevice(desc, audioActiveDevice_.GetCurrentOutputDevice()), "same device");
     audioActiveDevice_.SetCurrentOutputDevice(*(desc));
-    std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkName(desc, sessionId);
     OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice(),
         AudioStreamDeviceChangeReason::STREAM_PRIORITY_CHANGED);
 }
@@ -968,9 +967,8 @@ int32_t AudioCoreService::GetCurrentRendererChangeInfos(vector<shared_ptr<AudioR
                 audioRendererChangeInfos[i]->outputDeviceInfo), "skip callback when device in zone");
             std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(
                 audioRendererChangeInfos[i]->sessionId);
-            CHECK_AND_CONTINUE_LOG(streamDesc != nullptr, "GetStreamDescById return nullptr");
-            CHECK_AND_CONTINUE_LOG(streamDesc->rendererTarget_ != INJECT_TO_VOICE_COMMUNICATION_CAPTURE,
-                "skip callback when stream is inject mode");
+            CHECK_AND_CONTINUE(streamDesc != nullptr);
+            CHECK_AND_CONTINUE(streamDesc->rendererTarget_ != INJECT_TO_VOICE_COMMUNICATION_CAPTURE);
             audioDeviceCommon_.UpdateDeviceInfo(audioRendererChangeInfos[i]->outputDeviceInfo, *itr,
                 hasBTPermission, hasSystemPermission);
         }
