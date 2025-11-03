@@ -957,6 +957,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_037, TestSize.Level1)
  */
 HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_038, TestSize.Level1)
 {
+    adapterManager = std::make_shared<HpaeAdapterManager>(DUP_PLAYBACK);
     AudioProcessConfig processConfig;
     processConfig.streamInfo.customSampleRate = SAMPLE_RATE_16010;
     std::string deviceName = "";

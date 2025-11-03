@@ -408,7 +408,7 @@ int32_t HpaeInnerCapturerManager::Flush(uint32_t sessionId)
             AUDIO_INFO_LOG("FlushCapRendererStream sessionId %{public}u", sessionId);
             CHECK_AND_RETURN_LOG(rendererSessionNodeMap_.find(sessionId) != rendererSessionNodeMap_.end(),
                 "Flush not find sessionId %{public}u", sessionId);
-            sinkInputNodeMap_(sessionId)->Flush();
+            sinkInputNodeMap_[sessionId]->Flush();
         } else if (SafeGetMap(sourceOutputNodeMap_, sessionId)) {
             Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::FlushCapturerStream");
             AUDIO_INFO_LOG("FlushCapCapturerStream sessionId %{public}u", sessionId);

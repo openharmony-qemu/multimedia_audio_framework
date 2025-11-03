@@ -147,10 +147,10 @@ int32_t HpaeRendererStreamImpl::Start()
 {
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     ClockTime::GetAllTimeStamp(timestamp_);
+    int32_t ret = IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (processConfig_.streamInfo.customSampleRate != 0) {
         noWaitDataFlag_ = false;
     }
-    int32_t ret = IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     std::string tempStringSessionId = std::to_string(streamIndex_);
     IHpaeManager::GetHpaeManager().AddStreamVolumeToEffect(tempStringSessionId, clientVolume_);
     if (ret != 0) {
@@ -164,11 +164,11 @@ int32_t HpaeRendererStreamImpl::StartWithSyncId(const int32_t &syncId)
 {
     AUDIO_INFO_LOG("[%{public}u] Enter syncId: %{public}d", streamIndex_, syncId);
     ClockTime::GetAllTimeStamp(timestamp_);
+    int32_t ret = IHpaeManager::GetHpaeManager().StartWithSyncId(HPAE_STREAM_CLASS_TYPE_PLAY,
+        processConfig_.originalSessionId, syncId);
     if (processConfig_.streamInfo.customSampleRate != 0) {
         noWaitDataFlag_ = false;
     }
-    int32_t ret = IHpaeManager::GetHpaeManager().StartWithSyncId(HPAE_STREAM_CLASS_TYPE_PLAY,
-        processConfig_.originalSessionId, syncId);
     if (ret != 0) {
         AUDIO_ERR_LOG("ErrorCode: %{public}d", ret);
         return ERR_INVALID_PARAM;
@@ -501,11 +501,6 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
                 requestDataLen);
             CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
             noWaitDataFlag_ = true;
-            // The framePosition callback from the engine lacks the length of the data written this time.
-            // The length needs to be accounted for in framePosition.
-            if (byteSizePerFrame_) {
-                framePosition_.fetch_add(callBackStreamInfo.requestDataLen / byteSizePerFrame_);
-            }
             size_t mutePaddingFrames = (byteSizePerFrame_ == 0) ? 0 : (mutePaddingSize / byteSizePerFrame_);
             CHECK_AND_RETURN_RET(mutePaddingFrames != 0, SUCCESS);
             mutePaddingFrames_.fetch_add(mutePaddingFrames);
