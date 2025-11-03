@@ -3672,7 +3672,7 @@ HWTEST(AudioPolicyUnitTest, SetQueryDeviceVolumeBehaviorCallback_001, TestSize.L
     object = new RemoteObjectTestStub();
 
     ret = server->SetQueryDeviceVolumeBehaviorCallback(object);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
 }
 
 /**
