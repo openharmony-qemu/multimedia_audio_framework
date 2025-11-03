@@ -3328,7 +3328,9 @@ void AudioAdapterManager::UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDev
     CHECK_AND_RETURN_LOG(desc != nullptr, "UptdateVolumeWhenDeviceConnect desc is null");
     volumeDataMaintainer_.InitDeviceVolumeMap(desc);
     volumeDataMaintainer_.InitDeviceMuteMap(desc);
-    AUDIO_INFO_LOG("update ok");
+    CHECK_AND_RETURN_LOG(isCastingConnect_ && (desc->deviceType_ == DEVICE_TYPE_DP), "update ok");
+    SetMaxVolumeForDpBoardcast();
+    AUDIO_INFO_LOG("update ok for dp casting");
 }
 
 int32_t AudioAdapterManager::SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree)
@@ -3442,17 +3444,31 @@ int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDev
     return SUCCESS;
 }
 
-bool AudioAdapterManager::SetMaxVolumeForDpBoardcast()
+void AudioAdapterManager::HandleCastingConnection()
 {
+    isCastingConnect_ = true;
+}
+
+void AudioAdapterManager::HandleCastingDisconnection()
+{
+    isCastingConnect_ = false;
+}
+
+void AudioAdapterManager::SetMaxVolumeForDpBoardcast()
+{
+    std::lock_guard<std::mutex> lock(setMaxVolumeMutex_);
+    CHECK_AND_RETURN_LOG(isCastingConnect_, "casting disconnected");
     auto desc = audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_DP);
-    CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "there is no dp device connected");
+    CHECK_AND_RETURN_LOG(desc != nullptr, "there is no dp device connected");
     bool temp = (GetMaxVolumeLevel(STREAM_MUSIC, desc) == MAX_VOLUME_LEVEL) && !VolumeUtils::IsPCVolumeEnable();
-    CHECK_AND_RETURN_RET_LOG(temp, false, "current dp device need not max volume");
+    CHECK_AND_RETURN_LOG(temp, "current dp device need not max volume");
     volumeDataMaintainer_.SaveVolumeToMap(desc, STREAM_MUSIC, GetMaxVolumeLevel(STREAM_MUSIC, desc));
     volumeDataMaintainer_.SaveVolumeToMap(desc, STREAM_VOICE_CALL, GetMaxVolumeLevel(STREAM_VOICE_CALL, desc));
     volumeDataMaintainer_.SaveVolumeToMap(desc, STREAM_VOICE_ASSISTANT,
         GetMaxVolumeLevel(STREAM_VOICE_ASSISTANT, desc));
-    return true;
+    volumeDataMaintainer_.SaveMuteToMap(desc, STREAM_MUSIC, false);
+    volumeDataMaintainer_.SaveMuteToMap(desc, STREAM_VOICE_CALL, false);
+    volumeDataMaintainer_.SaveMuteToMap(desc, STREAM_VOICE_ASSISTANT, false);
 }
 } // namespace AudioStandard
 } // namespace OHOS

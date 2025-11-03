@@ -714,6 +714,7 @@ public:
     int32_t SetSystemVolumeDegree(int32_t streamType, int32_t volumeDegree, int32_t volumeFlag, int32_t uid) override;
     int32_t GetSystemVolumeDegree(int32_t streamType, int32_t uid, int32_t &volumeDegree) override;
     int32_t GetMinVolumeDegree(int32_t volumeType, int32_t deviceType, int32_t &volumeDegree) override;
+    void HandleDataShareReadyEvent();
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
     void RegisterParamCallback();

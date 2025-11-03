@@ -947,29 +947,34 @@ void AudioPolicyServer::SubscribeCommonEvent(const std::string event)
     EventFwk::CommonEventManager::SubscribeCommonEvent(commonSubscribePtr);
 }
 
+void AudioPolicyServer::HandleDataShareReadyEvent()
+{
+    if (isInitRingtoneReady_ == false) {
+        std::thread([&]() { CallRingtoneLibrary(); }).detach();
+        isInitRingtoneReady_ = true;
+    }
+    audioPolicyManager_.SetDataShareReady(true);
+    RegisterDataObserver();
+    if (isInitMuteState_ == false) {
+        AUDIO_INFO_LOG("receive DATA_SHARE_READY action and need init mic mute state");
+        InitMicrophoneMute();
+    }
+    if (isInitSettingsData_ == false) {
+        AUDIO_INFO_LOG("First receive DATA_SHARE_READY action and need init SettingsData");
+        InitKVStore();
+        NotifySettingsDataReady();
+        isInitSettingsData_ = true;
+    }
+    RegisterDefaultVolumeTypeListener();
+    SubscribeAccessibilityConfigObserver();
+}
+
 void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventData)
 {
     const AAFwk::Want& want = eventData.GetWant();
     std::string action = want.GetAction();
     if (action == "usual.event.DATA_SHARE_READY") {
-        if (isInitRingtoneReady_ == false) {
-            std::thread([&]() { CallRingtoneLibrary(); }).detach();
-            isInitRingtoneReady_ = true;
-        }
-        audioPolicyManager_.SetDataShareReady(true);
-        RegisterDataObserver();
-        if (isInitMuteState_ == false) {
-            AUDIO_INFO_LOG("receive DATA_SHARE_READY action and need init mic mute state");
-            InitMicrophoneMute();
-        }
-        if (isInitSettingsData_ == false) {
-            AUDIO_INFO_LOG("First receive DATA_SHARE_READY action and need init SettingsData");
-            InitKVStore();
-            NotifySettingsDataReady();
-            isInitSettingsData_ = true;
-        }
-        RegisterDefaultVolumeTypeListener();
-        SubscribeAccessibilityConfigObserver();
+        HandleDataShareReadyEvent();
     } else if (action == "usual.event.dms.rotation_changed") {
         uint32_t rotate = static_cast<uint32_t>(want.GetIntParam("rotation", 0));
         AUDIO_INFO_LOG("Set rotation to audioeffectchainmanager is %{public}d", rotate);
@@ -992,9 +997,16 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
         UnlockEvent();
     } else if (action == "usual.event.LOCALE_CHANGED" || action == "usual.event.USER_STARTED") {
         CallRingtoneLibrary();
-    } else if (action == "usual.event.dms.cast_plugged_changed" && eventData.GetData() == "1") {
-        AUDIO_INFO_LOG("on receive cast plug in event");
-        audioPolicyManager_.SetMaxVolumeForDpBoardcast();
+    } else if (action == "usual.event.dms.cast_plugged_changed") {
+        AUDIO_INFO_LOG("on receive cast plug event, eventType :%{public}s", eventData.GetData().c_str());
+        if (eventData.GetData() == "1") {
+            // cast plug in
+            audioPolicyManager_.HandleCastingConnection();
+            audioPolicyManager_.SetMaxVolumeForDpBoardcast();
+        } else if (eventData.GetData() == "0") {
+            // cast plug out
+            audioPolicyManager_.HandleCastingDisconnection();
+        }
     }
 }
 
