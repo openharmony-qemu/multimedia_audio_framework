@@ -25,6 +25,7 @@ using namespace std;
 const int32_t CAPTURER_FLAG = 10;
 FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
 const size_t FUZZ_INPUT_SIZE_THRESHOLD = 10;
+static int32_t NUM_5 = 5;
 typedef void (*TestFuncs)();
 
 static AudioProcessConfig GetConfig()
@@ -60,7 +61,7 @@ void ProAudioStreamManagerFuzzTest::ProAudioStreamManagerFuzz()
         std::vector<SinkInput> sinkInputs;
         audioStreamManager_->GetAllSinkInputs(sinkInputs);
     });
-    for (size_t i = 0; i < 5; i ++) {
+    for (size_t i = 0; i < NUM_5; i++) {
         size_t idx = g_fuzzUtils.GetData<size_t>() % Funcs_.size();
         Funcs_[idx]();
     }

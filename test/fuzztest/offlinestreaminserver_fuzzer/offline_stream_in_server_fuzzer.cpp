@@ -33,6 +33,8 @@ public:
 
 FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
 const size_t FUZZ_INPUT_SIZE_THRESHOLD = 10;
+static int32_t NUM_4 = 4;
+static int32_t NUM_3 = 3;
 
 typedef void (*TestFuncs)();
 
@@ -57,7 +59,8 @@ void OfflineStreamInServerFuzzTest::OfflineStreamInServerFuzz()
     outInfo.encoding = AudioEncodingType::ENCODING_PCM;
     outInfo.format = AudioSampleFormat::SAMPLE_S16LE;
     outInfo.channels = AudioChannel::MONO;
-    std::vector<uint8_t> param = {g_fuzzUtils.GetData<uint8_t>(), g_fuzzUtils.GetData<uint8_t>(), g_fuzzUtils.GetData<uint8_t>()};
+    std::vector<uint8_t> param = { g_fuzzUtils.GetData<uint8_t>(),
+        g_fuzzUtils.GetData<uint8_t>(), g_fuzzUtils.GetData<uint8_t>()};
     uint32_t inSize = g_fuzzUtils.GetData<uint32_t>();
     uint32_t outSize = g_fuzzUtils.GetData<uint32_t>();
     Funcs_.clear();
@@ -72,13 +75,11 @@ void OfflineStreamInServerFuzzTest::OfflineStreamInServerFuzz()
     Funcs_.push_back([=]() { offlineStreamInServer_->ProcessOfflineEffectChain(inSize, outSize); });
     Funcs_.push_back([=]() { offlineStreamInServer_->ReleaseOfflineEffectChain(); });
     std::vector<std::thread> threads;
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < NUM_4; ++i) {
         threads.emplace_back([this]() {
-            for (int j = 0; j < 3; ++j) {
+            for (int j = 0; j < NUM_3; ++j) {
                 size_t index = g_fuzzUtils.GetData<size_t>() % Funcs_.size();
-                if (index < Funcs_.size()) {
-                    Funcs_[index]();
-                }
+                Funcs_[index]();
             }
         });
     }
