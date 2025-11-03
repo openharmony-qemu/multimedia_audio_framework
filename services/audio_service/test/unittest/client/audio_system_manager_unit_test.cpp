@@ -1361,7 +1361,7 @@ HWTEST(AudioSystemManagerUnitTest, RestoreGroupPrio_002, TestSize.Level1)
 HWTEST(AudioSystemManagerUnitTest, RestoreGroupPrio_003, TestSize.Level1)
 {
     AudioSystemManager::WorkgroupPrioRecorder recorder(1);
-    recorder.threads_.emplace(1,1);
+    recorder.threads_.emplace(1, 1);
     int32_t result = recorder.RestoreGroupPrio(true);
     EXPECT_EQ(result, AUDIO_OK);
     EXPECT_TRUE(recorder.restoreByPermission_);
