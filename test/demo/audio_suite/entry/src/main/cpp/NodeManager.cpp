@@ -217,7 +217,7 @@ OH_AudioSuite_Result NodeManager::disconnect(const std::string &fromId, const st
         return result;
     }
 
-    result = OH_AudioSuiteEngine_DisConnectNodes(preNode.physicalNode, nextNode.physicalNode);
+    result = OH_AudioSuiteEngine_DisconnectNodes(preNode.physicalNode, nextNode.physicalNode);
     OH_LOG_Print(
         LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "NodeManagerTest disconnect: %{public}d", static_cast<int>(result));
     if (result == OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
