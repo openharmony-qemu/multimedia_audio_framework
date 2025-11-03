@@ -1417,7 +1417,21 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
     }
 }
 
-AudioIOHandle AudioAdapterManager::ReloadAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t &paIndex)
+void AudioAdapterManager::ReloadAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t &paIndex)
+{
+    std::string moduleArgs = GetModuleArgs(audioModuleInfo);
+    AUDIO_INFO_LOG("[PipeExecInfo] PA moduleArgs %{public}s", moduleArgs.c_str());
+
+    CHECK_AND_RETURN_LOG(audioServiceAdapter_ != nullptr, "ServiceAdapter is null");
+    CHECK_AND_RETURN_LOG(audioServerProxy_ != nullptr, "audioServerProxy_ null");
+
+    int32_t ret = audioServiceAdapter_->ReloadAudioPort(audioModuleInfo.lib, audioModuleInfo);
+    paIndex = ret < 0 ? HDI_INVALID_ID : static_cast<uint32_t>(ret);
+
+    AUDIO_INFO_LOG("[PipeExecInfo] Reload audio port, paIndex: %{public}u end", paIndex);
+}
+
+AudioIOHandle AudioAdapterManager::ReloadA2dpAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t &paIndex)
 {
     std::string moduleArgs = GetModuleArgs(audioModuleInfo);
     AUDIO_INFO_LOG("[PipeExecInfo] PA moduleArgs %{public}s", moduleArgs.c_str());
@@ -2996,7 +3010,6 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volum
         volumeDataMaintainer_.SaveVolumeToMap(desc, STREAM_MUSIC, volume);
         bool mute = volume == 0;
         isAbsVolumeMute_ = mute;
-        SetStreamMute(STREAM_MUSIC, mute);
     }
 
     volumeDataMaintainer_.InitDeviceVolumeMap(desc);

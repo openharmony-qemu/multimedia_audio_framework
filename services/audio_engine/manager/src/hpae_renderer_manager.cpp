@@ -110,6 +110,9 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     sinkInputNodeMap_[sessionId] = node;
     SetSessionState(sessionId, node->GetState());
     sessionNodeMap_[sessionId].sceneType = nodeInfo.sceneType;
+#ifdef ENABLE_HIDUMP_DFX
+    OnNotifyDfxNodeAdmin(true, nodeInfo);
+#endif
 
     HILOG_COMM_INFO("[FinishMove] session :%{public}u to sink:%{public}s, sceneType is %{public}d",
         sessionId, sinkInfo_.deviceClass.c_str(), nodeInfo.sceneType);
@@ -344,6 +347,11 @@ int32_t HpaeRendererManager::DeleteInputSession(uint32_t sessionId)
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::DeleteInputSession");
     DeleteProcessCluster(sessionId);
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId)) {
+        OnNotifyDfxNodeAdmin(false, sinkInputNode->GetNodeInfo());
+    }
+#endif
     sinkInputNodeMap_.erase(sessionId);
     sessionNodeMap_.erase(sessionId);
     return SUCCESS;

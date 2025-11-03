@@ -14,6 +14,7 @@
  */
 
 #include <gtest/gtest.h>
+#include "audio_errors.h"
 #include "audio_suite_common.h"
 
 using namespace OHOS;
@@ -37,23 +38,22 @@ HWTEST_F(AudioSuiteCommonTest, AudioSuiteCommonTestPushGetData_001, TestSize.Lev
     std::vector<uint8_t> recvData(5);
 
     auto ret = cacheBuffer->PushData(recvData.data(), 0);
-    EXPECT_NE(ret, 0);
+    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
     ret = cacheBuffer->PushData(nullptr, 5);
-    EXPECT_NE(ret, 0);
-    ret = cacheBuffer->PushData(data.data(), 2);
-    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
     ret = cacheBuffer->PushData(data.data(), 5);
     EXPECT_EQ(ret, 0);
+    ret = cacheBuffer->PushData(data.data(), 2);
+    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
 
-    
     ret = cacheBuffer->GetData(recvData.data(), 0);
-    EXPECT_NE(ret, 0);
+    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
     ret = cacheBuffer->GetData(nullptr, 5);
-    EXPECT_NE(ret, 0);
+    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
     ret = cacheBuffer->GetData(recvData.data(), 2);
     EXPECT_EQ(ret, 0);
     ret = cacheBuffer->GetData(recvData.data(), 5);
-    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
 }
 
 HWTEST_F(AudioSuiteCommonTest, AudioSuiteCommonTestResizeBuffer_001, TestSize.Level0)

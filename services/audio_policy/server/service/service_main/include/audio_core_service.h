@@ -363,7 +363,7 @@ private:
     void CheckRingAndVoipScene(const AudioStreamDeviceChangeReasonExt reason);
     int32_t UpdateModemRoute(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
     uint32_t GetVoiceCallMuteDuration(AudioDeviceDescriptor &curDesc, AudioDeviceDescriptor &newDesc);
-    void UnmuteVoiceCallAfterMuteDuration(uint32_t muteDuration);
+    void UnmuteVoiceCallAfterMuteDuration(uint32_t muteDuration, std::shared_ptr<AudioDeviceDescriptor> desc);
     void NotifyUnmuteVoiceCall();
     void SetUpdateModemRouteFinished(bool flag);
     void HandleAudioCaptureState(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
@@ -385,6 +385,7 @@ private:
     int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, DeviceType deviceType,
         const AudioStreamInfo& audioStreamInfo, std::string networkId, std::string sinkName,
         SourceType sourceType);
+    void ProcessOutputPipeReload(std::shared_ptr<AudioPipeInfo> pipeInfo);
     AudioIOHandle ReloadOrOpenAudioPort(int32_t engineFlag, AudioModuleInfo &moduleInfo,
         uint32_t &paIndex);
     void GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo,
@@ -423,8 +424,10 @@ private:
     int32_t MoveToRemoteOutputDevice(
         std::vector<SinkInput> sinkInputIds, std::shared_ptr<AudioPipeInfo> pipeInfo,
         std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
-    void MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> streamDesc);
-    void MoveToNewInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    void MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        const std::vector<SourceOutput>& sourceOutputs);
+    void MoveToNewInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        const std::vector<SourceOutput>& sourceOutputs);
     int32_t MoveToLocalInputDevice(std::vector<SourceOutput> sourceOutputs,
         std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor, uint32_t routeFlag = AUDIO_FLAG_NONE);
     int32_t MoveToRemoteInputDevice(
@@ -459,7 +462,8 @@ private:
     AudioFlag SetFlagForMmapStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     AudioFlag SetFlagForSpecialStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
     void UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
-    std::vector<SourceOutput> FilterSourceOutputs(int32_t sessionId);
+    std::vector<SourceOutput> FilterSourceOutputs(int32_t sessionId,
+        const std::vector<SourceOutput>& sourceOutputs);
     std::vector<SourceOutput> GetSourceOutputs();
     void UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void UpdateRingerOrAlarmerDualDeviceOutputRouter(std::shared_ptr<AudioStreamDescriptor> streamDesc);

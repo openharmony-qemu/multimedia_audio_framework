@@ -856,9 +856,10 @@ bool AudioServer::CacheExtraParameters(const std::string &key,
 
 void AudioServer::SetA2dpAudioParameter(const std::string &renderValue)
 {
+    std::lock_guard<std::mutex> lock(setA2dpParamMutex_);
     auto parmKey = AudioParamKey::A2DP_SUSPEND_STATE;
     std::shared_ptr<IAudioRenderSink> btSink = GetSinkByProp(HDI_ID_TYPE_BLUETOOTH);
-    if (btSink == nullptr) {
+    if (btSink == nullptr || !btSink->IsInited()) {
         AUDIO_WARNING_LOG("has no valid sink, need preStore a2dpParam.");
         HdiAdapterManager::GetInstance().
             UpdateSinkPrestoreInfo<std::pair<AudioParamKey, std::pair<std::string, std::string>>>(
@@ -2966,6 +2967,8 @@ int32_t AudioServer::CreateHdiSinkPort(const std::string &deviceClass, const std
         return SUCCESS;
     }
     if (!sink->IsInited()) {
+        // preSet a2dpParam needs to guarantee that init() and SetA2dpAudioParameter() not called in concurrency.
+        std::lock_guard<std::mutex> lock(setA2dpParamMutex_);
         sink->Init(attr);
     }
     return SUCCESS;

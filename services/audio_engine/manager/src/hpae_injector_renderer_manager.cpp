@@ -424,6 +424,9 @@ void HpaeInjectorRendererManager::AddSingleNodeToSink(const std::shared_ptr<Hpae
     
     sinkInputNodeMap_[sessionId] = node;
     SetSessionState(sessionId, node->GetState());
+#ifdef ENABLE_HIDUMP_DFX
+    OnNotifyDfxNodeAdmin(true, nodeInfo);
+#endif
     if (node->GetState() == HPAE_SESSION_RUNNING) {
         ConnectInputSession(sessionId);
     }
@@ -588,6 +591,11 @@ void HpaeInjectorRendererManager::DeleteInputSession(const uint32_t &sessionId)
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeInjectorRendererManager::DeleteInputSession");
     DisConnectInputSession(sessionId);
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId)) {
+        OnNotifyDfxNodeAdmin(false, sinkInputNode->GetNodeInfo());
+    }
+#endif
     sinkInputNodeMap_.erase(sessionId);
     sessionNodeMap_.erase(sessionId);
 }

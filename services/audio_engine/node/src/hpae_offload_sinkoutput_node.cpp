@@ -364,7 +364,7 @@ void HpaeOffloadSinkOutputNode::StopStream()
 void HpaeOffloadSinkOutputNode::SetPolicyState(int32_t state)
 {
     if (setPolicyStateTask_.flag) {
-        if (state == hdiPolicyState_) {
+        if (state != OFFLOAD_INACTIVE_BACKGROUND) {
             AUDIO_INFO_LOG("unset policy state task");
             setPolicyStateTask_.flag = false;
         }
@@ -374,7 +374,7 @@ void HpaeOffloadSinkOutputNode::SetPolicyState(int32_t state)
         AUDIO_INFO_LOG("set policy state task");
         setPolicyStateTask_.flag = true;
         setPolicyStateTask_.time = std::chrono::high_resolution_clock::now();
-        setPolicyStateTask_.state = OFFLOAD_INACTIVE_BACKGROUND;
+        hdiPolicyState_ = static_cast<AudioOffloadType>(state);
         return;
     }
     hdiPolicyState_ = static_cast<AudioOffloadType>(state);
@@ -428,7 +428,6 @@ void HpaeOffloadSinkOutputNode::SetBufferSizeWhileRenderFrame()
             POLICY_STATE_DELAY_IN_SEC) {
             AUDIO_INFO_LOG("excute set policy state task");
             setPolicyStateTask_.flag = false;
-            hdiPolicyState_ = setPolicyStateTask_.state;
             SetBufferSize();
             return; // no need to set buffer size twice at one process
         }

@@ -149,7 +149,7 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
         std::make_shared<AudioDeviceDescriptor>(audioDeviceDescriptor);
     if (isUpdateActiveDevice && audioDeviceManager_.IsDeviceConnected(descPtr)) {
         AUDIO_INFO_LOG("active device updated, update volume for %{public}d", sessionId);
-        audioVolumeManager_.SetVolumeForSwitchDevice(audioDeviceDescriptor, "", false);
+        audioVolumeManager_.SetVolumeForSwitchDevice(audioDeviceDescriptor, false);
         OnPreferredOutputDeviceUpdated(audioDeviceDescriptor, reason);
     }
 }
@@ -217,6 +217,8 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
             ProcessOutputPipeUpdate(pipeInfo, audioFlag, reason);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) {
             ProcessOutputPipeNew(pipeInfo, audioFlag, reason);
+        } else if (pipeInfo->pipeAction_ == PIPE_ACTION_RELOAD) {
+            ProcessOutputPipeReload(pipeInfo);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_DEFAULT) {
             // Do nothing
         }
@@ -338,7 +340,8 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
         needUnmuteVoiceCall_ = true;
         SetUpdateModemRouteFinished(false);
         uint32_t muteDuration = GetVoiceCallMuteDuration(curDesc, *descs.front());
-        std::thread switchThread(&AudioCoreService::UnmuteVoiceCallAfterMuteDuration, this, muteDuration);
+        std::thread switchThread(
+            &AudioCoreService::UnmuteVoiceCallAfterMuteDuration, this, muteDuration, descs.front());
         switchThread.detach();
     }
     CheckAndUpdateHearingAidCall(descs.front()->deviceType_);
@@ -406,7 +409,8 @@ uint32_t AudioCoreService::GetVoiceCallMuteDuration(AudioDeviceDescriptor &curDe
 }
 
 // muteDuration: duration to keep the voice call muted after modem route update
-void AudioCoreService::UnmuteVoiceCallAfterMuteDuration(uint32_t muteDuration)
+void AudioCoreService::UnmuteVoiceCallAfterMuteDuration(uint32_t muteDuration,
+    std::shared_ptr<AudioDeviceDescriptor> desc)
 {
     AUDIO_INFO_LOG("mute voice call %{public}d us after update modem route", muteDuration);
     {
@@ -415,7 +419,7 @@ void AudioCoreService::UnmuteVoiceCallAfterMuteDuration(uint32_t muteDuration)
             [this] { return updateModemRouteFinished_; });
     }
     usleep(muteDuration);
-    audioVolumeManager_.SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
+    audioVolumeManager_.SetVolumeForSwitchDevice(*desc, true);
 }
 
 void AudioCoreService::NotifyUnmuteVoiceCall()
@@ -797,7 +801,7 @@ AudioIOHandle AudioCoreService::ReloadOrOpenAudioPort(int32_t engineFlag, AudioM
 {
     AudioIOHandle ioHandle;
     if (engineFlag == 1) {
-        ioHandle = audioPolicyManager_.ReloadAudioPort(moduleInfo, paIndex);
+        ioHandle = audioPolicyManager_.ReloadA2dpAudioPort(moduleInfo, paIndex);
         CHECK_AND_RETURN_RET_LOG(ioHandle != HDI_INVALID_ID, ERR_INVALID_HANDLE,
             "ReloadAudioPort failed ioHandle[%{public}u]", ioHandle);
         CHECK_AND_RETURN_RET_LOG(paIndex != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
@@ -810,6 +814,19 @@ AudioIOHandle AudioCoreService::ReloadOrOpenAudioPort(int32_t engineFlag, AudioM
             "OpenAudioPort failed paId[%{public}u]", paIndex);
     }
     return ioHandle;
+}
+
+void AudioCoreService::ProcessOutputPipeReload(std::shared_ptr<AudioPipeInfo> pipeInfo)
+{
+    pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+    int32_t engineFlag = GetEngineFlag();
+    uint32_t paIndex = HDI_INVALID_ID;
+    CHECK_AND_RETURN_LOG(engineFlag == 1, "not find proaudio port");
+
+    audioPolicyManager_.ReloadAudioPort(pipeInfo->moduleInfo_, paIndex);
+    CHECK_AND_RETURN_LOG(paIndex != HDI_INVALID_ID, "ReloadAudioPort failed paId[%{public}u]", paIndex);
+
+    pipeInfo->paIndex_ = paIndex;
 }
 
 void AudioCoreService::GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo,
@@ -918,6 +935,8 @@ int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStrea
             ProcessOutputPipeUpdate(pipeInfo, audioFlag, reason);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) { // new
             ProcessOutputPipeNew(pipeInfo, audioFlag, reason);
+        } else if (pipeInfo->pipeAction_ == PIPE_ACTION_RELOAD) {
+            ProcessOutputPipeReload(pipeInfo);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_DEFAULT) { // DEFAULT
             // Do nothing
         }
@@ -1029,6 +1048,7 @@ void AudioCoreService::ProcessInputPipeNew(std::shared_ptr<AudioPipeInfo> pipeIn
     uint32_t sourceId = OpenNewAudioPortAndRoute(pipeInfo, paIndex);
     pipeInfo->id_ = sourceId;
     pipeInfo->paIndex_ = paIndex;
+    std::vector<SourceOutput> sourceOutputs = GetSourceOutputs();
 
     for (auto &desc : pipeInfo->streamDescriptors_) {
         HILOG_COMM_INFO("[StreamExecInfo] Stream: %{public}u, action: %{public}d, belong to %{public}s",
@@ -1040,9 +1060,9 @@ void AudioCoreService::ProcessInputPipeNew(std::shared_ptr<AudioPipeInfo> pipeIn
             case AUDIO_STREAM_ACTION_DEFAULT:
             case AUDIO_STREAM_ACTION_MOVE:
                 if (desc->streamStatus_ != STREAM_STATUS_STARTED) {
-                    MoveStreamSource(desc);
+                    MoveStreamSource(desc, sourceOutputs);
                 } else {
-                    MoveToNewInputDevice(desc);
+                    MoveToNewInputDevice(desc, sourceOutputs);
                 }
                 break;
             case AUDIO_STREAM_ACTION_RECREATE:
@@ -1057,6 +1077,7 @@ void AudioCoreService::ProcessInputPipeNew(std::shared_ptr<AudioPipeInfo> pipeIn
 
 void AudioCoreService::ProcessInputPipeUpdate(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag)
 {
+    std::vector<SourceOutput> sourceOutputs = GetSourceOutputs();
     for (auto desc : pipeInfo->streamDescriptors_) {
         HILOG_COMM_INFO("[StreamExecInfo] Stream: %{public}u, action: %{public}d, belong to %{public}s",
             desc->sessionId_, desc->streamAction_, pipeInfo->name_.c_str());
@@ -1067,9 +1088,9 @@ void AudioCoreService::ProcessInputPipeUpdate(std::shared_ptr<AudioPipeInfo> pip
             case AUDIO_STREAM_ACTION_DEFAULT:
             case AUDIO_STREAM_ACTION_MOVE:
                 if (desc->streamStatus_ != STREAM_STATUS_STARTED) {
-                    MoveStreamSource(desc);
+                    MoveStreamSource(desc, sourceOutputs);
                 } else {
-                    MoveToNewInputDevice(desc);
+                    MoveToNewInputDevice(desc, sourceOutputs);
                 }
                 break;
             case AUDIO_STREAM_ACTION_RECREATE:
@@ -1402,10 +1423,11 @@ int32_t AudioCoreService::MoveToRemoteOutputDevice(std::vector<SinkInput> sinkIn
     return SUCCESS;
 }
 
-void AudioCoreService::MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+void AudioCoreService::MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+    const std::vector<SourceOutput>& sourceOutputs)
 {
     Trace trace("AudioCoreService::MoveStreamSource");
-    std::vector<SourceOutput> targetSourceOutputs = FilterSourceOutputs(streamDesc->sessionId_);
+    std::vector<SourceOutput> targetSourceOutputs = FilterSourceOutputs(streamDesc->sessionId_, sourceOutputs);
 
     AUDIO_INFO_LOG("[StreamExecInfo] Move stream %{public}u to [%{public}d][%{public}s]",
         streamDesc->sessionId_, streamDesc->newDeviceDescs_.front()->deviceType_,
@@ -1421,10 +1443,11 @@ void AudioCoreService::MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> s
     streamCollector_.UpdateCapturerDeviceInfo(streamDesc->newDeviceDescs_.front());
 }
 
-void AudioCoreService::MoveToNewInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+void AudioCoreService::MoveToNewInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+    const std::vector<SourceOutput>& sourceOutputs)
 {
     Trace trace("AudioCoreService::MoveToNewInputDevice");
-    std::vector<SourceOutput> targetSourceOutputs = FilterSourceOutputs(streamDesc->sessionId_);
+    std::vector<SourceOutput> targetSourceOutputs = FilterSourceOutputs(streamDesc->sessionId_, sourceOutputs);
 
     if (streamDesc->oldDeviceDescs_.size() == 0) {
         AUDIO_INFO_LOG("[StreamExecInfo] Move stream %{public}u to [%{public}d][%{public}s]",
@@ -1554,10 +1577,10 @@ inline std::string PrintSourceOutput(SourceOutput sourceOutput)
     return value.str();
 }
 
-std::vector<SourceOutput> AudioCoreService::FilterSourceOutputs(int32_t sessionId)
+std::vector<SourceOutput> AudioCoreService::FilterSourceOutputs(int32_t sessionId,
+    const std::vector<SourceOutput>& sourceOutputs)
 {
     std::vector<SourceOutput> targetSourceOutputs = {};
-    std::vector<SourceOutput> sourceOutputs = GetSourceOutputs();
 
     for (size_t i = 0; i < sourceOutputs.size(); i++) {
         AUDIO_DEBUG_LOG("sourceOutput[%{public}zu]:%{public}s", i, PrintSourceOutput(sourceOutputs[i]).c_str());

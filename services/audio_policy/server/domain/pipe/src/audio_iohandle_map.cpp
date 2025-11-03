@@ -321,7 +321,7 @@ int32_t AudioIOHandleMap::ReloadPortAndUpdateIOHandle(std::shared_ptr<AudioPipeI
     DelIOHandleInfo(oldModuleName);
 
     uint32_t paIndex = 0;
-    ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().ReloadAudioPort(moduleInfo, paIndex);
+    ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().ReloadA2dpAudioPort(moduleInfo, paIndex);
     AUDIO_INFO_LOG("[reload-module] %{public}s, id:%{public}d, paIndex: %{public}u, pipeName: %{public}s",
         moduleInfo.name.c_str(), ioHandle, paIndex, pipeInfo->name_.c_str());
 

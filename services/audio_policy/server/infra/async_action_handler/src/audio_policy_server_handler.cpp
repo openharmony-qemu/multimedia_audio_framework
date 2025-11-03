@@ -762,7 +762,8 @@ void AudioPolicyServerHandler::HandleAvailableDeviceChange(const AppExecFwk::Inn
     for (auto it = availableDeviceChangeCbsMap_.begin(); it != availableDeviceChangeCbsMap_.end(); ++it) {
         AudioDeviceUsage usage = it->first.second;
         DeviceChangeAction deviceChangeAction = eventContextObj->deviceChangeAction;
-        deviceChangeAction.deviceDescriptors = AudioPolicyUtils::GetInstance().GetAvailableDevicesInner(usage);
+        deviceChangeAction.deviceDescriptors = AudioPolicyService::GetAudioPolicyService().
+            DeviceFilterByUsageInner(it->first.second, deviceChangeAction.deviceDescriptors);
         if (it->second && deviceChangeAction.deviceDescriptors.size() > 0) {
             if (!(it->second->hasBTPermission_)) {
                 AudioPolicyService::GetAudioPolicyService().

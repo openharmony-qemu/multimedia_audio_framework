@@ -1545,7 +1545,7 @@ int32_t AudioDeviceStatus::RestoreNewA2dpPort(std::vector<std::shared_ptr<AudioS
     AudioIOHandle ioHandle;
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        ioHandle = audioPolicyManager_.ReloadAudioPort(moduleInfo, paIndex);
+        ioHandle = audioPolicyManager_.ReloadA2dpAudioPort(moduleInfo, paIndex);
     } else {
         ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo, paIndex);
     }

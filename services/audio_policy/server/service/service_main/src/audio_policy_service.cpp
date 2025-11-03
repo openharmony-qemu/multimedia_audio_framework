@@ -814,6 +814,11 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::DeviceFi
     unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> devicePrivacyMaps =
         audioDeviceManager_.GetDevicePrivacyMaps();
     for (const auto &dev : descs) {
+        CHECK_AND_CONTINUE_LOG(dev != nullptr, "dev is nullptr");
+        if (dev->IsRemoteDevice()) {
+            audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(dev));
+            continue;
+        }
         for (const auto &devicePrivacy : devicePrivacyMaps) {
             list<DevicePrivacyInfo> deviceInfos = devicePrivacy.second;
             audioDeviceManager_.GetAvailableDevicesWithUsage(usage, deviceInfos, dev, audioDeviceDescriptors);

@@ -30,51 +30,31 @@ static constexpr uint32_t SAMPLE_SIZE_4_BYTE = 4;
 
 class AudioSuiteRingBuffer {
 public:
-    AudioSuiteRingBuffer(uint32_t capacity) : capacity_(capacity), head_(0), tail_(0), size_(0)
+    AudioSuiteRingBuffer(uint32_t size)
     {
-        CHECK_AND_RETURN_LOG(capacity_ != 0, "AudioSuiteRingBuffer malloc failed, capacity is zero.");
-        buffer_ = new(std::nothrow) uint8_t[capacity_];
-        CHECK_AND_RETURN_LOG(buffer_ != nullptr, "AudioSuiteRingBuffer malloc failed.");
+        ResizeBuffer(size);
     }
 
     ~AudioSuiteRingBuffer()
     {
-        if (buffer_ != nullptr) {
-            delete[] buffer_;
-            buffer_ = nullptr;
-        }
     }
 
-    // 禁止拷贝和赋值
     AudioSuiteRingBuffer(const AudioSuiteRingBuffer&) = delete;
     AudioSuiteRingBuffer& operator=(const AudioSuiteRingBuffer&) = delete;
 
-    // 存入数据
     int32_t PushData(uint8_t* byteData, uint32_t size);
     int32_t GetData(uint8_t* byteData, uint32_t size);
     int32_t ResizeBuffer(uint32_t size);
     int32_t ClearBuffer();
-    bool CheckDataEnough(uint32_t size)
-    {
-        return size_ >= size;
-    }
-
-    uint32_t GetRestSpace()
-    {
-        return (capacity_ - size_);
-    }
-
-    uint32_t GetSize() const
-    {
-        return size_;
-    }
+    uint32_t GetRestSpace() const;
+    uint32_t GetSize() const;
     
 private:
-    uint8_t* buffer_ = nullptr;
-    uint32_t capacity_;
-    uint32_t head_;
-    uint32_t tail_;
-    uint32_t size_;
+    std::vector<uint8_t> buffer_;
+    uint32_t capacity_ = 0;
+    uint32_t head_ = 0;
+    uint32_t tail_ = 0;
+    uint32_t size_ = 0;
 };
 
 class AudioSuiteUtil {

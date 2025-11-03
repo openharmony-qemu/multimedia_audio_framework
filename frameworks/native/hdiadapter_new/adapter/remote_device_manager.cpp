@@ -28,6 +28,7 @@ using namespace OHOS::HDI::DistributedAudio::Audio::V1_0;
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr uint32_t MAX_AUDIO_STREAM_NUM = 10;
 RemoteAdapterHdiCallback::RemoteAdapterHdiCallback(const std::string &adapterName)
     : adapterName_(adapterName)
 {
@@ -469,7 +470,33 @@ int32_t RemoteDeviceManager::LoadAdapterInner(const std::string &adapterName)
     ret = adapter->RegExtraParamObserver(adapters_[adapterName]->hdiCallback_, 0);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "regist extra param observer fail, ret: %{public}d", ret);
 #endif
+    DestroyAllChannels(adapterName);
     return SUCCESS;
+}
+
+void RemoteDeviceManager::DestroyAllChannels(const std::string &adapterName)
+{
+    // Inner function, no need to be locked
+    AUDIO_INFO_LOG("entry %{public}s", GetEncryptStr(adapterName).c_str());
+    CHECK_AND_RETURN_LOG(adaptersLoaded_.count(adapterName) == 0, "adapter %{public}s not first loaded",
+        GetEncryptStr(adapterName).c_str());
+    CHECK_AND_RETURN_LOG(adapters_.count(adapterName) != 0 && adapters_[adapterName] != nullptr,
+        "adapter %{public}s is nullptr", GetEncryptStr(adapterName).c_str());
+    std::shared_ptr<RemoteAdapterWrapper> wrapper = adapters_[adapterName];
+    CHECK_AND_RETURN_LOG(wrapper->adapter_ != nullptr, "remote object %{public}s is nullptr",
+        GetEncryptStr(adapterName).c_str());
+    // Channels created before restart are not destroyed, which prevents successful channel creation after restart.
+    // Since LoadAdapter gets the same adapter object and the maximum number of channels is 10.
+    // We temporarily agreed with daudio to manually destroy all channels when audio server loads for the first time,
+    // ensuring successful channel creation after restart.
+    // This will be modified later to have daudio monitor audioserver's death event and automatically destroy all
+    // channels.
+    for (uint32_t i = 0; i < MAX_AUDIO_STREAM_NUM; i++) {
+        wrapper->adapter_->DestroyRender(i);
+        wrapper->adapter_->DestroyCapture(i);
+    }
+    adaptersLoaded_.insert(adapterName);
+    AUDIO_INFO_LOG("end %{public}s", GetEncryptStr(adapterName).c_str());
 }
 
 int32_t RemoteDeviceManager::SwitchAdapterDesc(const std::vector<AudioAdapterDescriptor> &descs,

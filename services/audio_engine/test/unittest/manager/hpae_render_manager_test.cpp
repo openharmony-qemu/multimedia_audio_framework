@@ -2000,4 +2000,22 @@ HWTEST_F(HpaeRendererManagerTest, QueryOneStreamUnderrun_002, TestSize.Level1)
     EXPECT_FALSE(hpaeRendererManager_->QueryOneStreamUnderrun());
     EXPECT_EQ(hpaeRendererManager_->lastOnUnderrunTime_, 1);
 }
+
+/**
+ * @tc.name  : Test DeleteInputSessionIdNotExit
+ * @tc.type  : FUNC
+ * @tc.number: DeleteInputSessionIdNotExit
+ * @tc.desc  : Test delete input session which is not exit.
+ */
+HWTEST_F(HpaeRendererManagerTest, DeleteInputSessionIdNotExit, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto rendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_NE(rendererManager, nullptr);
+    EXPECT_EQ(hpaeRendererManager_->DeleteInputSession(INVALID_ID), SUCCESS);
+
+    auto injectorManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
+    EXPECT_NE(injectorManager, nullptr);
+    EXPECT_EQ(hpaeRendererManager_->DeleteInputSession(INVALID_ID), SUCCESS);
+}
 }  // namespace
