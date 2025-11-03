@@ -136,6 +136,26 @@ void AudioInterruptZoneManager::ForceStopAudioFocusInZone(int32_t zoneId, const 
     service_->sessionService_.RemoveStreamInfo(interrupt.pid, interrupt.streamId);
 }
 
+void AudioInterruptZoneManager::SendInterruptEventForMigration(
+    const std::pair<AudioInterrupt, AudioFocuState> &audioInterrupt, const int32_t toZoneId)
+{
+    CHECK_AND_RETURN_LOG(service_ != nullptr, "interrupt service is nullptr");
+    auto &tempMap = service_->zonesMap_;
+    CHECK_AND_RETURN_LOG(tempMap.find(toZoneId) != tempMap.end() && tempMap[toZoneId] != nullptr,
+        "zone %{public}d not exist", toZoneId);
+
+    auto &toZoneFocusInfoList = tempMap[toZoneId]->audioFocusInfoList;
+    auto isPresent = [audioInterrupt](const std::pair<AudioInterrupt, AudioFocuState> &item) {
+        return item.first.streamId == audioInterrupt.first.streamId &&
+            item.first.deviceTag == audioInterrupt.first.deviceTag;
+    };
+    auto itNewFocus = std::find_if(toZoneFocusInfoList.begin(), toZoneFocusInfoList.end(), isPresent);
+    if (itNewFocus != toZoneFocusInfoList.end() && audioInterrupt.second != itNewFocus->second) {
+        bool removeFocusInfo = false;
+        service_->SendInterruptEvent(audioInterrupt.second, itNewFocus->second, itNewFocus, removeFocusInfo);
+    }
+}
+
 int32_t AudioInterruptZoneManager::MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func)
 {
     CHECK_AND_RETURN_RET_LOG(service_ != nullptr, ERR_INVALID_PARAM, "interrupt service is nullptr");
@@ -156,6 +176,7 @@ int32_t AudioInterruptZoneManager::MigrateAudioInterruptZone(const int32_t zoneI
         }
         if (itFocus->second == ACTIVE || itFocus->second == DUCK) {
             service_->ActivateAudioInterruptInternal(toZoneId, itFocus->first, false, updateScene);
+            SendInterruptEventForMigration(*itFocus, toZoneId);
         } else {
             ForceStopAudioFocusInZone(zoneId, itFocus->first);
         }
