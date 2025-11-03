@@ -123,7 +123,8 @@ AudioModuleInfo GetSinkAudioModeInfo(std::string name = "Speaker_File")
     return audioModuleInfo;
 }
 
-void HpaeManagerAudioParametersUnitTest::TestAudioParameters(const std::string& rate, const std::string& format, const std::string& channels)
+void HpaeManagerAudioParametersUnitTest::TestAudioParameters(const std::string& rate,
+    const std::string& format, const std::string& channels)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -144,7 +145,7 @@ void HpaeManagerAudioParametersUnitTest::TestAudioParameters(const std::string& 
     size_t bufferSize = samplingRateTest * channelsTest * DEFAULT_FRAME_LEN_MS *
         static_cast<size_t>(GetSizeFromFormat(formatTest)) / MS_PER_SECOND;
     audioModuleInfo.bufferSize = std::to_string(bufferSize);
-    audioModuleInfo.fileName = g_rootPath + audioModuleInfo.adapterName + "_" + 
+    audioModuleInfo.fileName = g_rootPath + audioModuleInfo.adapterName + "_" +
                              rate + "_" + channels + "_" + format + ".pcm";
 
     EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
