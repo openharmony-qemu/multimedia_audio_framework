@@ -136,7 +136,7 @@ AudioStreamConcurrencyDetector& AudioStreamConcurrencyDetector::GetInstance()
 AudioStreamConcurrencyDetector::AudioStreamConcurrencyDetector()
 {
     // this flag is used to judge that is current platform allow concurrent play
-    isEnabled_ = !(OHOS::system::GetBoolParameter("const.audio.volume_apply_to_all", false));
+    isEnabled_ = false;
 }
 }
 }
