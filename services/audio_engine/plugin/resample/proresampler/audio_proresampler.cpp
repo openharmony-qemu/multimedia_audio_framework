@@ -56,8 +56,11 @@ ProResampler::ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels,
     
     CHECK_AND_RETURN_LOG(quality <= MAX_QUALITY, "invalid quality level: %{public}d", quality);
 
-    ConfigBufferSizeAndExpectedInFrameLen();
     int32_t errRet;
+    errRet = ConfigBufferSizeAndExpectedInFrameLen();
+    CHECK_AND_RETURN_LOG(errRet == RESAMPLER_ERR_SUCCESS,
+        "ProResampler construct reserve buff error code %{public}s", ErrCodeToString(errRet).c_str());
+
     state_ = SingleStagePolyphaseResamplerInit(channels_, inRate_, outRate_, quality_, &errRet);
     CHECK_AND_RETURN_LOG(state_, "Init failed! failed with error %{public}s.",
         ErrCodeToString(errRet).c_str());
@@ -239,7 +242,9 @@ int32_t ProResampler::UpdateRates(uint32_t inRate, uint32_t outRate)
     int32_t ret = SingleStagePolyphaseResamplerSetRate(state_, inRate_, outRate_);
     CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret, "error code %{public}s", ErrCodeToString(ret).c_str());
     expectedOutFrameLen_ = outRate_ * FRAME_LEN_20MS / MS_PER_SECOND;
-    ConfigBufferSizeAndExpectedInFrameLen();
+    ret = ConfigBufferSizeAndExpectedInFrameLen();
+    CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret,
+        "ProResampler updateRates reserve buff error code %{public}s", ErrCodeToString(ret).c_str());
     return ret;
 }
 
@@ -262,7 +267,9 @@ int32_t ProResampler::UpdateChannels(uint32_t channels)
     state_ = SingleStagePolyphaseResamplerInit(channels_, inRate_, outRate_, quality_, &errRet);
     CHECK_AND_RETURN_RET_LOG(state_ && (errRet == RESAMPLER_ERR_SUCCESS), errRet,
         "error code %{public}s", ErrCodeToString(errRet).c_str());
-    ConfigBufferSizeAndExpectedInFrameLen();
+    errRet = ConfigBufferSizeAndExpectedInFrameLen();
+    CHECK_AND_RETURN_RET_LOG(errRet == RESAMPLER_ERR_SUCCESS, errRet,
+        "ProResampler updateChannels reserve buff error code %{public}s", ErrCodeToString(errRet).c_str());
     return SingleStagePolyphaseResamplerSkipHalfTaps(state_);
 }
 
@@ -348,21 +355,30 @@ std::string ProResampler::ErrCodeToString(int32_t errCode)
     }
 }
 
-void ProResampler::ConfigBufferSizeAndExpectedInFrameLen()
+int32_t ProResampler::ConfigBufferSizeAndExpectedInFrameLen()
 {
     if (inRate_ == SAMPLE_RATE_11025) { // for 11025, process input 40ms per time and output 20ms per time
-        buf11025_.reserve(static_cast<size_t>(expectedOutFrameLen_) * channels_ * BUFFER_EXPAND_SIZE_2 + ADD_SIZE);
-        AUDIO_INFO_LOG("input 11025hz, output resample rate %{public}u, buf11025_ size %{public}u",
-            outRate_, expectedOutFrameLen_ * channels_ * BUFFER_EXPAND_SIZE_2 + ADD_SIZE);
+        size_t capacityNeed = static_cast<size_t>(expectedOutFrameLen_) * channels_ * BUFFER_EXPAND_SIZE_2 + ADD_SIZE;
+        buf11025_.reserve(capacityNeed);
+        AUDIO_INFO_LOG("input 11025hz, output resample rate %{public}u, buf11025_ size %{public}zu",
+            outRate_, buf11025_.capacity());
+        CHECK_AND_RETURN_RET_LOG(buf11025_.capacity() >= capacityNeed, RESAMPLER_ERR_ALLOC_FAILED,
+            "buf11025_ size error, should be above %{public}zu, actually %{public}zu",
+            capacityNeed, buf11025_.capacity());
         expectedInFrameLen_ = inRate_ * FRAME_LEN_20MS * BUFFER_EXPAND_SIZE_2 / MS_PER_SECOND;
     } else if (inRate_ % CUSTOM_SAMPLE_RATE_MULTIPLES != 0) {   // not multiples of 50
-        bufFor100ms_.reserve(static_cast<size_t>(expectedOutFrameLen_) * channels_ * BUFFER_EXPAND_SIZE_5 + ADD_SIZE);
-        AUDIO_INFO_LOG("input %{public}u, output resample rate %{public}u, bufFor100ms_ size %{public}u",
-            inRate_, outRate_, expectedOutFrameLen_ * channels_ * BUFFER_EXPAND_SIZE_5 + ADD_SIZE);
+        size_t capacityNeed = static_cast<size_t>(expectedOutFrameLen_) * channels_ * BUFFER_EXPAND_SIZE_5 + ADD_SIZE;
+        bufFor100ms_.reserve(capacityNeed);
+        AUDIO_INFO_LOG("input %{public}u, output resample rate %{public}u, bufFor100ms_ size %{public}zu",
+            inRate_, outRate_, bufFor100ms_.capacity());
+        CHECK_AND_RETURN_RET_LOG(bufFor100ms_.capacity() >= capacityNeed, RESAMPLER_ERR_ALLOC_FAILED,
+            "bufFor100ms_ size error, should be above %{public}zu, actually %{public}zu",
+            capacityNeed, bufFor100ms_.capacity());
         expectedInFrameLen_ = inRate_ * FRAME_LEN_20MS * BUFFER_EXPAND_SIZE_5 / MS_PER_SECOND;
     } else {
         expectedInFrameLen_ = inRate_ * FRAME_LEN_20MS / MS_PER_SECOND;
     }
+    return RESAMPLER_ERR_SUCCESS;
 }
 
 } // HPAE

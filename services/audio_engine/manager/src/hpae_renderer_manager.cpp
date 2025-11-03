@@ -123,10 +123,6 @@ void HpaeRendererManager::CreateProcessClusterAndConnect(HpaeNodeInfo &nodeInfo,
 {
     uint32_t sessionId = nodeInfo.sessionId;
     HpaeNodeInfo processNodeInfo = nodeInfo;
-    processNodeInfo.samplingRate = (AudioSamplingRate)DEFAULT_EFFECT_RATE;
-    processNodeInfo.frameLen = (uint32_t)DEFAULT_EFFECT_FRAME_LEN;
-    processNodeInfo.channels = STEREO;
-    processNodeInfo.channelLayout = CH_LAYOUT_STEREO;
     CreateProcessCluster(processNodeInfo);
 
     CHECK_AND_RETURN_LOG(isConnect == true, "not need connect session:%{public}d", sessionId);
