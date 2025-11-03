@@ -76,7 +76,7 @@ private:
 
 private:
     std::unordered_map<uint32_t, std::shared_ptr<DfxMapTreeNode>> nodeMap_;
-    std::mutex mutex_;
+    mutable std::mutex mutex_;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard
