@@ -226,11 +226,12 @@ HWTEST(SleAudioOperationCallbackStubImplUnitTest, CallbackStubUnitTest_010, Test
     std::string device = "test";
     uint32_t streamType = 0;
     int32_t result = 0;
-    auto ret = audioSleCb->SendUserSelection(device, streamType, result);
+    int32_t eventType = 2;
+    auto ret = audioSleCb->SendUserSelection(device, streamType, eventType, result);
     EXPECT_NE(SUCCESS, ret);
     std::shared_ptr<SleAudioOperationCallback> sleAudioOperationCallback;
     audioSleCb->sleAudioOperationCallback_ = sleAudioOperationCallback;
-    ret = audioSleCb->SendUserSelection(device, streamType, result);
+    ret = audioSleCb->SendUserSelection(device, streamType, eventType, result);
     EXPECT_NE(-1, ret);
     delete audioSleCb;
 }

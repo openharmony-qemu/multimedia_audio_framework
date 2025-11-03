@@ -95,7 +95,7 @@ public:
         return SUCCESS;
     }
 
-    int32_t SendUserSelection(const std::string &device, uint32_t streamType, int32_t &ret) override
+    int32_t SendUserSelection(const std::string &device, uint32_t streamType, int32_t eventType, int32_t &ret) override
     {
         ret = SUCCESS;
         return SUCCESS;

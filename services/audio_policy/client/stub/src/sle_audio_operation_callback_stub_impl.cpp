@@ -150,15 +150,15 @@ int32_t SleAudioOperationCallbackStubImpl::SetDeviceAbsVolume(
     return SUCCESS;
 }
 
-int32_t SleAudioOperationCallbackStubImpl::SendUserSelection(const std::string &device, uint32_t streamType,
-    int32_t &ret)
+int32_t SleAudioOperationCallbackStubImpl::SendUserSelection(const std::string &device, uint32_t sleStreamType,
+    int32_t eventType, int32_t &ret)
 {
     std::unique_lock lock(sleAudioOperationCallbackMutex_);
     std::shared_ptr<SleAudioOperationCallback> sleAudioOperationCallback = sleAudioOperationCallback_.lock();
     CHECK_AND_RETURN_RET_LOG(sleAudioOperationCallback != nullptr, ERROR, "sleAudioOperationCallback_ is nullptr");
     lock.unlock();
 
-    ret = sleAudioOperationCallback->SendUserSelection(device, streamType);
+    ret = sleAudioOperationCallback->SendUserSelection(device, sleStreamType, eventType);
     return SUCCESS;
 }
 

@@ -73,7 +73,7 @@ public:
     int32_t StopPlaying(const std::string &device, uint32_t streamType) override;
     int32_t ConnectAllowedProfiles(const std::string &remoteAddr) const override;
     int32_t SetDeviceAbsVolume(const std::string &remoteAddr, uint32_t volume, uint32_t streamType) override;
-    int32_t SendUserSelection(const std::string &device, uint32_t streamType) override;
+    int32_t SendUserSelection(const std::string &device, uint32_t streamType, int32_t eventType) override;
     int32_t GetRenderPosition(const std::string &device, uint32_t &delayValue) override;
 
     // Parameter Conversion Interface
@@ -89,8 +89,10 @@ public:
         int32_t uid = INVALID_UID);
     int32_t StopPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType,
         int32_t uid = INVALID_UID);
-    int32_t SendUserSelection(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage);
-    int32_t SendUserSelection(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType);
+    int32_t SendUserSelection(const AudioDeviceDescriptor &deviceDesc,
+        StreamUsage streamUsage, SleSelectState eventType = USER_SELECT_SLE);
+    int32_t SendUserSelection(const AudioDeviceDescriptor &deviceDesc,
+        SourceType sourceType, SleSelectState eventType = USER_SELECT_SLE);
     int32_t SetDeviceAbsVolume(const std::string &device, AudioStreamType streamType, int32_t volume);
 
     // Core Device Management Methods
