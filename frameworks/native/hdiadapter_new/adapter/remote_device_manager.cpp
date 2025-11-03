@@ -564,6 +564,21 @@ int32_t RemoteDeviceManager::HandleStateChangeEvent(const std::string &adapterNa
     return SUCCESS;
 }
 
+uint32_t RemoteDeviceManager::ParseRenderId(const char *condition)
+{
+    CHECK_AND_RETURN_RET_LOG(condition != nullptr, HDI_INVALID_ID, "invalid condition param");
+    uint32_t renderId = HDI_INVALID_ID;
+    const char *target = "renderId=";
+    const char *start = strstr(condition, target);
+    CHECK_AND_RETURN_RET_LOG(start != nullptr, HDI_INVALID_ID, "not find renderId info in condition");
+
+    int32_t ret = sscanf_s(start, "renderId=%d", &renderId);
+    // ret value is 1 when read success.
+    CHECK_AND_RETURN_RET_LOG(ret == 1, HDI_INVALID_ID, "not find renderId value");
+
+    return renderId;
+}
+
 int32_t RemoteDeviceManager::HandleRenderParamEvent(const std::string &adapterName, const AudioParamKey key,
     const char *condition, const char *value)
 {
@@ -576,12 +591,9 @@ int32_t RemoteDeviceManager::HandleRenderParamEvent(const std::string &adapterNa
         if (wrapper->renderCallbacks_.size() != 1) {
             AUDIO_WARNING_LOG("exist %{public}zu renders port in adapter", wrapper->renderCallbacks_.size());
         }
-        for (auto &cb : wrapper->renderCallbacks_) {
-            if (cb.second != nullptr) {
-                renderCallback = cb.second;
-                break;
-            }
-        }
+        uint32_t renderId = ParseRenderId(condition);
+        renderCallback = renderId != HDI_INVALID_ID && wrapper->renderCallbacks_.count(renderId) != 0 ?
+            wrapper->renderCallbacks_[renderId] : renderCallback;
     }
     CHECK_AND_RETURN_RET_LOG(renderCallback != nullptr, ERR_INVALID_HANDLE, "not find render port in adapter");
     renderCallback->OnAudioParamChange(adapterName, key, std::string(condition), std::string(value));
