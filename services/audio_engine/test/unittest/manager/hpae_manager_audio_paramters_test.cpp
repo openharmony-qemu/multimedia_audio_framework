@@ -37,6 +37,19 @@ static std::string g_rootPath = "/data/";
 const std::string ROOT_PATH = "/data/source_file_io_48000_2_s16le.pcm";
 constexpr int32_t TEST_SLEEP_TIME_20 = 20;
 constexpr int32_t TEST_SLEEP_TIME_40 = 40;
+constexpr uint32_t DEFAULT_FRAME_LEN_MS = 20;
+static constexpr uint32_t BASE_TEN = 10;
+constexpr uint32_t MS_PER_SECOND = 1000;
+static std::map<std::string, uint32_t> g_formatFromParserStrToEnum = {
+    {"s16", SAMPLE_S16LE},
+    {"s16le", SAMPLE_S16LE},
+    {"s24", SAMPLE_S24LE},
+    {"s24le", SAMPLE_S24LE},
+    {"s32", SAMPLE_S32LE},
+    {"s32le", SAMPLE_S32LE},
+    {"f32", SAMPLE_F32LE},
+    {"f32le", SAMPLE_F32LE},
+};
 
 class HpaeManagerAudioParametersUnitTest : public testing::Test {
 public:
@@ -45,6 +58,20 @@ public:
     void TestAudioParameters(const std::string& rate, const std::string& format, const std::string& channels);
     std::shared_ptr<HpaeManager> hpaeManager_ = nullptr;
 };
+
+static long StringToNum(const std::string &str)
+{
+    char *endptr;
+    long num = strtol(str.c_str(), &endptr, BASE_TEN);
+    CHECK_AND_RETURN_RET_LOG(endptr != nullptr && *endptr == '\0', 0,
+        "trans str \"%{public}s\" to num failed", str.c_str());
+    return num;
+}
+
+AudioSampleFormat TransFormatFromStringToEnum(std::string format)
+{
+    return static_cast<AudioSampleFormat>(g_formatFromParserStrToEnum[format]);
+}
 
 void HpaeManagerAudioParametersUnitTest::SetUp()
 {
@@ -111,6 +138,12 @@ void HpaeManagerAudioParametersUnitTest::TestAudioParameters(const std::string& 
     audioModuleInfo.rate = rate;
     audioModuleInfo.format = format;
     audioModuleInfo.channels = channels;
+    AudioSamplingRate samplingRateTest = static_cast<AudioSamplingRate>(StringToNum(rate));
+    AudioSampleFormat formatTest = static_cast<AudioSampleFormat>(TransFormatFromStringToEnum(audioModuleInfo.format));
+    AudioChannel channelsTest = static_cast<AudioChannel>(StringToNum(audioModuleInfo.channels));
+    size_t bufferSize = samplingRateTest * channelsTest * DEFAULT_FRAME_LEN_MS *
+        static_cast<size_t>(GetSizeFromFormat(formatTest)) / MS_PER_SECOND;
+    audioModuleInfo.bufferSize = std::to_string(bufferSize);
     audioModuleInfo.fileName = g_rootPath + audioModuleInfo.adapterName + "_" + 
                              rate + "_" + channels + "_" + format + ".pcm";
 
