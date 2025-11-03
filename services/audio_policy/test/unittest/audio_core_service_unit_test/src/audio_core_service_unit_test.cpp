@@ -1958,6 +1958,37 @@ HWTEST_F(AudioCoreServiceUnitTest, PlayBackToInjection_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: HandleMuteBeforeDeviceSwitch_001
+ * @tc.desc  : Test AudioCoreService::HandleMuteBeforeDeviceSwitch()
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandleMuteBeforeDeviceSwitch_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::vector<AudioStreamStatus> streamStatusVec = {
+        STREAM_STATUS_NEW,
+        STREAM_STATUS_STARTED,
+        STREAM_STATUS_PAUSED,
+        STREAM_STATUS_STOPPED,
+        STREAM_STATUS_RELEASED
+    };
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    for (auto status : streamStatusVec) {
+        std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+        streamDesc->streamStatus_ = status;
+        streamDescs.push_back(streamDesc);
+    }
+
+    AudioStreamDeviceChangeReasonExt::ExtEnum extReason = AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE;
+    AudioStreamDeviceChangeReasonExt reason(extReason);
+
+    auto result = audioCoreService->HandleMuteBeforeDeviceSwitch(streamDescs, reason);
+    EXPECT_TRUE(result);
+}
+
+/**
  * @tc.name  : Test A2dpOffloadGetRenderPosition.
  * @tc.number: A2dpOffloadGetRenderPosition_001
  * @tc.desc  : Test A2dpOffloadGetRenderPosition interfaces.

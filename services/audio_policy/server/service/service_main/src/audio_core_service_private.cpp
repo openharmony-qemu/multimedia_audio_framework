@@ -117,20 +117,16 @@ std::string AudioCoreService::GetEncryptAddr(const std::string &addr)
 void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs, const AudioStreamDeviceChangeReasonExt reason)
 {
+    HandleMuteBeforeDeviceSwitch(streamDescs, reason);
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
     uint32_t sessionId = 0;
-    for (std::shared_ptr<AudioStreamDescriptor> streamDesc : streamDescs) {
-        //  if streamDesc select bluetooth or headset, active it
+    for (std::shared_ptr<AudioStreamDescriptor> &streamDesc : streamDescs) {
+        // if streamDesc select bluetooth or headset, active it.
         if (!HandleOutputStreamInRunning(streamDesc, reason)) {
             continue;
         }
-        // started stream need to mute when switch device
-        if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
-#ifndef MUTE_SINK_DISABLE
-            MuteSinkPortForSwitchDevice(streamDesc, reason);
-#endif
-        }
+
         int32_t outputRet = ActivateOutputDevice(streamDesc, reason);
         CHECK_AND_CONTINUE_LOG(outputRet == SUCCESS, "Activate output device failed");
 
@@ -141,8 +137,6 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
             needUpdateActiveDevice = !isUpdateActiveDevice;
             sessionId = streamDesc->sessionId_;
         }
-
-        CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
     }
     AudioDeviceDescriptor audioDeviceDescriptor = audioActiveDevice_.GetCurrentOutputDevice();
     std::shared_ptr<AudioDeviceDescriptor> descPtr =
@@ -2586,6 +2580,24 @@ void AudioCoreService::PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &
         streamDesc->sessionId_, streamDesc->oldDeviceDescs_.front()->deviceType_,
         GetEncryptAddr(streamDesc->oldDeviceDescs_.front()->macAddress_).c_str(), newDeviceDesc->deviceType_,
         GetEncryptAddr(newDeviceDesc->macAddress_).c_str(), static_cast<int32_t>(reason));
+}
+
+bool AudioCoreService::HandleMuteBeforeDeviceSwitch(
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs, const AudioStreamDeviceChangeReasonExt reason)
+{
+    for (std::shared_ptr<AudioStreamDescriptor> &streamDesc : streamDescs) {
+        CHECK_AND_CONTINUE(streamDesc != nullptr);
+        // running stream need to mute when switch device
+        if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
+#ifndef MUTE_SINK_DISABLE
+            MuteSinkPortForSwitchDevice(streamDesc, reason);
+#endif
+        }
+
+        CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
+    }
+
+    return true;
 }
 
 void AudioCoreService::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,

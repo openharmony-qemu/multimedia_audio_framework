@@ -116,7 +116,7 @@ void AudioActiveDevice::SetCurrentOutputDevice(const AudioDeviceDescriptor &desc
 {
     std::lock_guard<std::mutex> lock(curOutputDevice_);
     AUDIO_INFO_LOG("Set as type: %{public}d id: %{public}d", desc.deviceType_, desc.deviceId_);
-    CHECK_AND_RETURN_LOG(desc.deviceType_ != DEVICE_TYPE_SYSTEM_PRIVATE, "type is SYSTEM_PRIVATE");
+    CHECK_AND_RETURN(desc.deviceType_ != DEVICE_TYPE_SYSTEM_PRIVATE);
     currentActiveDevice_ = AudioDeviceDescriptor(desc);
 }
 
