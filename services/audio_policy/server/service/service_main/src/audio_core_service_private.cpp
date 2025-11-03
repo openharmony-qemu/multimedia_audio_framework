@@ -3027,6 +3027,7 @@ void AudioCoreService::ResetNearlinkDeviceState(const std::shared_ptr<AudioDevic
     CHECK_AND_RETURN(isRunning);
 
     CHECK_AND_RETURN_LOG(deviceDesc != nullptr, "deviceDesc is nullptr");
+    CHECK_AND_RETURN_LOG(deviceDesc->networkId_ == LOCAL_NETWORK_ID, "device network ID is RemoteDevice");
 
     auto currentOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
     auto currentInputDevice = audioActiveDevice_.GetCurrentInputDevice();
