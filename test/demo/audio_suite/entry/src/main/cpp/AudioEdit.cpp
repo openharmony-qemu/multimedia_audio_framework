@@ -1331,7 +1331,7 @@ static napi_value startFieldEffect(napi_env env, napi_callback_info info)
     OH_SoundFieldType type = getSoundFieldTypeByNum(mode);
     napi_value ret;
     Node node = createNodeByType(fieldEffectId, OH_AudioNode_Type::EFFECT_NODE_TYPE_SOUND_FIELD);
-    OH_AudioSuite_Result result = OH_AudioSuiteEngine_SetSoundFiledType(node.physicalNode, type);
+    OH_AudioSuite_Result result = OH_AudioSuiteEngine_SetSoundFieldType(node.physicalNode, type);
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
             "audioEditTest startFieldEffect OH_AudioEditEngine_SetSoundFiledType ERROR!");
@@ -1388,10 +1388,10 @@ static napi_value resetFieldEffect(napi_env env, napi_callback_info info)
     napi_value ret;
     Node node = nodeManager->getNodeById(fieldEffectId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest get node is %{public}s", node.id.c_str());
-    OH_AudioSuite_Result result = OH_AudioSuiteEngine_SetSoundFiledType(node.physicalNode, type);
+    OH_AudioSuite_Result result = OH_AudioSuiteEngine_SetSoundFieldType(node.physicalNode, type);
     if (result != AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
-            "audioEditTest OH_AudioSuiteEngine_SetSoundFiledType ERROR %{public}zd", result);
+            "audioEditTest OH_AudioSuiteEngine_SetSoundFieldType ERROR %{public}zd", result);
         napi_create_int64(env, result, &ret);
         return ret;
     }
