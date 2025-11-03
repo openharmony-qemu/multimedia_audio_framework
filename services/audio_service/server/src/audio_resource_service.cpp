@@ -48,11 +48,6 @@ AudioResourceService::~AudioResourceService()
 {
 }
 
-static bool IsValidPid(int32_t pid)
-{
-    return pid > 0;
-}
-
 int32_t AudioResourceService::AudioWorkgroupCheck(int32_t pid)
 {
     bool inGroup = (audioWorkgroupMap_.find(pid) != audioWorkgroupMap_.end());
