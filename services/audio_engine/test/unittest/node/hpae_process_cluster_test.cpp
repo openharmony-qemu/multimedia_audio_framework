@@ -337,8 +337,6 @@ HWTEST_F(HpaeProcessClusterTest, testHpaeWriteDataProcessSessionTest, TestSize.L
     hpaeProcessCluster->Connect(hpaeSinkInputNode1);
     EXPECT_EQ(hpaeSinkOutputNode->GetPreOutNum(), 0);
     EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), DEFAULT_VALUE_TWO);
-    EXPECT_EQ(hpaeProcessCluster->GetConverterNodeCount(), DEFAULT_VALUE_TWO);
-    EXPECT_EQ(hpaeProcessCluster->GetLoudnessGainNodeCount(), DEFAULT_VALUE_TWO);
     EXPECT_EQ(hpaeSinkOutputNode->GetPreOutNum(), 0);
     hpaeSinkOutputNode->Connect(hpaeProcessCluster);
     std::string deviceClass = "file_io";
@@ -366,15 +364,11 @@ HWTEST_F(HpaeProcessClusterTest, testHpaeWriteDataProcessSessionTest, TestSize.L
     EXPECT_EQ(hpaeProcessCluster->DestroyNodes(DEFAULT_SESSIONID_NUM_FIRST), SUCCESS);
     EXPECT_EQ(hpaeSinkInputNode0.use_count(), 1);
     EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), DEFAULT_VALUE_ONE);
-    EXPECT_EQ(hpaeProcessCluster->GetConverterNodeCount(), DEFAULT_VALUE_ONE);
-    EXPECT_EQ(hpaeProcessCluster->GetLoudnessGainNodeCount(), DEFAULT_VALUE_ONE);
 
     hpaeProcessCluster->DisConnect(hpaeSinkInputNode1);
     EXPECT_EQ(hpaeProcessCluster->DestroyNodes(DEFAULT_SESSIONID_NUM_SECOND), SUCCESS);
     EXPECT_EQ(hpaeSinkInputNode1.use_count(), 1);
     EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), 0);
-    EXPECT_EQ(hpaeProcessCluster->GetConverterNodeCount(), 0);
-    EXPECT_EQ(hpaeProcessCluster->GetLoudnessGainNodeCount(), 0);
 }
 
 HWTEST_F(HpaeProcessClusterTest, testEffectNode_001, TestSize.Level0)

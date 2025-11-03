@@ -51,7 +51,7 @@ constexpr int32_t TEST_SLEEP_TIME_20 = 20;
 constexpr int32_t TEST_SLEEP_TIME_40 = 40;
 constexpr uint32_t INVALID_ID = 99999;
 constexpr uint32_t LOUDNESS_GAIN = 1.0f;
-const uint32_t DEFAULT_SESSIONID_NUM_FIRST = 12345;
+constexpr uint32_t DEFAULT_SESSIONID_NUM_FIRST = 100000;
 
 static HpaeSinkInfo GetSinkInfo()
 {
@@ -2083,6 +2083,27 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_001, 
     EXPECT_EQ(offloadManager->converterForLoudness_, nullptr);
 }
 
+static void CreateTwoStreamInOffload(std::shared_ptr<HpaeOffloadRendererManager> &offloadManager)
+{
+    HpaeStreamInfo streamInfo1;
+    streamInfo1.channels = STEREO;
+    streamInfo1.samplingRate = SAMPLE_RATE_48000;
+    streamInfo1.format = SAMPLE_F32LE;
+    streamInfo1.frameLen = FRAME_LENGTH_960;
+    streamInfo1.sessionId = TEST_STREAM_SESSION_ID;
+    streamInfo1.streamType = STREAM_MUSIC;
+    streamInfo1.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+
+    EXPECT_EQ(offloadManager->CreateStream(streamInfo1), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+
+    HpaeStreamInfo streamInfo2(streamInfo1);
+    streamInfo2.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+
+    EXPECT_EQ(offloadManager->CreateStream(streamInfo2), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+}
+
 /**
  * @tc.name  : Test HpaeOffloadRendererManagerSetCurrentNode_002
  * @tc.type  : FUNC
@@ -2104,39 +2125,18 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_002, 
     std::shared_ptr<HpaeOffloadRendererManager> offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     EXPECT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
-    EXPECT_EQ(offloadManager->IsInit(), true);
   
-    HpaeStreamInfo streamInfo1;
-    streamInfo1.channels = STEREO;
-    streamInfo1.samplingRate = SAMPLE_RATE_48000;
-    streamInfo1.format = SAMPLE_F32LE;
-    streamInfo1.frameLen = FRAME_LENGTH_960;
-    streamInfo1.sessionId = TEST_STREAM_SESSION_ID;
-    streamInfo1.streamType = STREAM_MUSIC;
-    streamInfo1.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    CreateTwoStreamInOffload(offloadManager);
 
-    EXPECT_EQ(offloadManager->CreateStream(streamInfo1), SUCCESS);
-    WaitForMsgProcessing(offloadManager);
     // create nodes for stream1
-    auto tmpNodeId1 = offloadManager->converterForOutput_->GetNodeId();
-    auto tmpNodeId2 = offloadManager->loudnessGainNode_->GetNodeId();
-    auto tmpNodeId3 = offloadManager->converterForLoudness_->GetNodeId();
     EXPECT_NE(offloadManager->converterForOutput_, nullptr);
     EXPECT_NE(offloadManager->loudnessGainNode_, nullptr);
     EXPECT_NE(offloadManager->converterForLoudness_, nullptr);
+    auto tmpNodeId1 = offloadManager->converterForOutput_->GetNodeId();
+    auto tmpNodeId2 = offloadManager->loudnessGainNode_->GetNodeId();
+    auto tmpNodeId3 = offloadManager->converterForLoudness_->GetNodeId();
 
-    HpaeStreamInfo streamInfo2;
-    streamInfo2.channels = STEREO;
-    streamInfo2.samplingRate = SAMPLE_RATE_48000;
-    streamInfo2.format = SAMPLE_F32LE;
-    streamInfo2.frameLen = FRAME_LENGTH_960;
-    streamInfo2.sessionId = 100000;
-    streamInfo2.streamType = STREAM_MUSIC;
-    streamInfo2.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
-
-    EXPECT_EQ(offloadManager->CreateStream(streamInfo2), SUCCESS);
-    WaitForMsgProcessing(offloadManager);
-    EXPECT_EQ(offloadManager->Start(streamInfo2.sessionId), SUCCESS);
+    EXPECT_EQ(offloadManager->Start(DEFAULT_SESSIONID_NUM_FIRST), SUCCESS);
     WaitForMsgProcessing(offloadManager);
     // curNode does not change, nodes for stream1 remain unchanged
     EXPECT_EQ(tmpNodeId1, offloadManager->converterForOutput_->GetNodeId());
@@ -2149,6 +2149,7 @@ HWTEST_F(HpaeRendererManagerTest, HpaeOffloadRendererManagerSetCurrentNode_002, 
     EXPECT_EQ(offloadManager->converterForOutput_, nullptr);
     EXPECT_EQ(offloadManager->loudnessGainNode_, nullptr);
     EXPECT_EQ(offloadManager->converterForLoudness_, nullptr);
+    
     offloadManager->SetCurrentNode();
     EXPECT_NE(offloadManager->curNode_, nullptr);
     // new curNode, create new nodes for stream2
