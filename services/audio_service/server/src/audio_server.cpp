@@ -205,9 +205,9 @@ static std::string GetField(const std::string &src, const char* field, const cha
 }
 
 static inline std::shared_ptr<IAudioRenderSink> GetSinkByProp(HdiIdType type, const std::string &info =
-    HDI_ID_INFO_DEFAULT, bool tryCreate = false)
+    HDI_ID_INFO_DEFAULT, bool tryCreate = false, bool tryCreateId = true)
 {
-    uint32_t id = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, type, info);
+    uint32_t id = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, type, info, false, tryCreateId);
     return HdiAdapterManager::GetInstance().GetRenderSink(id, tryCreate);
 }
 
@@ -1576,6 +1576,10 @@ int32_t AudioServer::NotifyDeviceInfo(const std::string &networkId, bool connect
     if (sink != nullptr && connected) {
         sink->RegistCallback(HDI_CB_RENDER_PARAM, this);
     }
+    std::shared_ptr<IAudioRenderSink> sinkOffload = GetSinkByProp(HDI_ID_TYPE_REMOTE_OFFLOAD, networkId.c_str(),
+        false, false);
+    CHECK_AND_RETURN_RET(sinkOffload != nullptr && connected, SUCCESS);
+    sinkOffload->RegistCallback(HDI_CB_RENDER_PARAM, this);
     return SUCCESS;
 }
 // LCOV_EXCL_STOP

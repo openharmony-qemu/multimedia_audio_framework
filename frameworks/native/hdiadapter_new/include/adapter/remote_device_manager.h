@@ -119,6 +119,7 @@ private:
     uint32_t GetPortId(RemoteAudioPortDirection portFlag);
     int32_t HandleStateChangeEvent(const std::string &adapterName, const AudioParamKey key, const char *condition,
         const char *value);
+    uint32_t ParseRenderId(const char *condition);
     int32_t HandleRenderParamEvent(const std::string &adapterName, const AudioParamKey key, const char *condition,
         const char *value);
     int32_t HandleCaptureParamEvent(const std::string &adapterName, const AudioParamKey key, const char *condition,
