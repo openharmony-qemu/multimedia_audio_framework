@@ -2375,6 +2375,7 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
         zonesMap_[zoneId] = itZone->second;
         SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::ABANDON_CALLBACK_CATEGORY, audioInterrupt);
         SendActiveVolumeTypeChangeEvent(zoneId);
+        isGetFocus_ = true;
     } else {
         // If it was not in the audioFocusInfoList, no need to take any action on other sessions, just return.
         AUDIO_DEBUG_LOG("stream (streamId %{public}u) is not active now", audioInterrupt.streamId);
@@ -2384,10 +2385,12 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
     if (itZone->second->context.focusStrategy_ == AudioZoneFocusStrategy::DISTRIBUTED_FOCUS_STRATEGY) {
         AUDIO_INFO_LOG("zone: %{public}d distributed focus strategy not resume when deactivate interrupt",
             itZone->first);
+        isGetFocus_ = false;
         return;
     }
     // resume if other session was forced paused or ducked
     ResumeAudioFocusList(zoneId, isSessionTimeout);
+    isGetFocus_ = false;
 
     return;
 }

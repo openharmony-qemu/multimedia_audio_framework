@@ -193,7 +193,6 @@ bool StandaloneModeManager::CheckAndRecordStandaloneApp(const int32_t appUid,
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
     if (ownerPid_ == INVALID_ID && !isSetSilentDisplay_) {
-        AUDIO_ERR_LOG("Standalone Mode Not Activation");
         return false;
     }
     if (activeZoneSessionsMap_.find(appUid) != activeZoneSessionsMap_.end()) {

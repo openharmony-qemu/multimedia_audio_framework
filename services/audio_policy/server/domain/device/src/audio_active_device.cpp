@@ -396,7 +396,6 @@ void AudioActiveDevice::UpdateActiveDeviceRoute(DeviceType deviceType, DeviceFla
 {
     Trace trace("KeyAction AudioActiveDevice::UpdateActiveDeviceRoute DeviceType:" + std::to_string(deviceType));
     CHECK_AND_RETURN_LOG(networkId == LOCAL_NETWORK_ID, "distributed device, do not update route");
-    AUDIO_INFO_LOG("[PipeExecInfo] Active route with type[%{public}d]", deviceType);
     std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
     activeDevices.push_back(make_pair(deviceType, deviceFlag));
     UpdateActiveDevicesRoute(activeDevices, deviceName);
@@ -411,7 +410,7 @@ void AudioActiveDevice::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceTyp
     for (size_t i = 0; i < activeDevices.size(); i++) {
         deviceTypesInfo = deviceTypesInfo + " " + std::to_string(activeDevices[i].first);
     }
-    AUDIO_INFO_LOG("[PipeExecInfo] Active route with types[%{public}s]", deviceTypesInfo.c_str());
+    AUDIO_INFO_LOG("[PipeExecInfo] types[%{public}s]", deviceTypesInfo.c_str());
 
     Trace trace("AudioActiveDevice::UpdateActiveDevicesRoute DeviceTypes:" + deviceTypesInfo);
     auto ret = AudioServerProxy::GetInstance().UpdateActiveDevicesRouteProxy(activeDevices,

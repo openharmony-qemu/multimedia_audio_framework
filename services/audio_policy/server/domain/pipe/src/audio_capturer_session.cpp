@@ -638,10 +638,7 @@ void AudioCapturerSession::ReloadSourceForDeviceChange(const AudioDeviceDescript
     const AudioDeviceDescriptor &outputDevice, const std::string &caller)
 {
     std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
-    AUDIO_INFO_LOG("form caller: %{public}s, inDevice: %{public}d, outDevice: %{public}d", caller.c_str(),
-        inputDevice.deviceType_, outputDevice.deviceType_);
     if (!audioEcManager_.GetEcFeatureEnable()) {
-        AUDIO_INFO_LOG("reload ignore for feature not enable");
         return;
     }
     SourceType normalSourceOpened = audioEcManager_.GetSourceOpened();

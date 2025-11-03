@@ -660,6 +660,7 @@ private:
     };
     bool isFirstScreenOn_ = false;
     bool isCreateProcess_ = false;
+    bool isActivateA2dpDevice_ = false;
 
     AudioInjectorPolicy &audioInjectorPolicy_;
 

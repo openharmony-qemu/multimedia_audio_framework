@@ -120,8 +120,10 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
     uint32_t sessionId = 0;
-    for (std::shared_ptr<AudioStreamDescriptor> streamDesc : streamDescs) {
-        //  if streamDesc select bluetooth or headset, active it
+    isActivateA2dpDevice_ = false;
+
+    for (std::shared_ptr<AudioStreamDescriptor> &streamDesc : streamDescs) {
+        // if streamDesc select bluetooth or headset, active it.
         if (!HandleOutputStreamInRunning(streamDesc, reason)) {
             continue;
         }
@@ -132,6 +134,7 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
 #endif
         }
         int32_t outputRet = ActivateOutputDevice(streamDesc, reason);
+        isActivateA2dpDevice_ = true;
         CHECK_AND_CONTINUE_LOG(outputRet == SUCCESS, "Activate output device failed");
 
         // update current output device
@@ -144,6 +147,7 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
 
         CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
     }
+    isActivateA2dpDevice_ = false;
     AudioDeviceDescriptor audioDeviceDescriptor = audioActiveDevice_.GetCurrentOutputDevice();
     std::shared_ptr<AudioDeviceDescriptor> descPtr =
         std::make_shared<AudioDeviceDescriptor>(audioDeviceDescriptor);
@@ -632,7 +636,7 @@ int32_t AudioCoreService::ActivateA2dpDevice(std::shared_ptr<AudioDeviceDescript
 {
     Trace trace("AudioCoreService::ActiveA2dpDevice");
     int32_t ret = SwitchActiveA2dpDevice(desc);
-    AUDIO_INFO_LOG("ret : %{public}d", ret);
+    JUDGE_AND_INFO_LOG(isActivateA2dpDevice_ == false, "ret : %{public}d", ret);
     // In plan: re-try when failed
     return ret;
 }
@@ -1658,8 +1662,6 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
         streamDesc->newDeviceDescs_.front() != nullptr, "streamDesc is nullptr");
     StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
     InternalDeviceType deviceType = streamDesc->newDeviceDescs_.front()->deviceType_;
-    AUDIO_INFO_LOG("[PipeExecInfo] Update route streamUsage:%{public}d, devicetype:[%{public}s]",
-        streamUsage, streamDesc->GetNewDevicesTypeString().c_str());
     // for collaboration, the route should be updated
     UpdateRouteForCollaboration(deviceType);
     shouldUpdateDeviceDueToDualTone_ = false;
@@ -2092,7 +2094,6 @@ void AudioCoreService::SendA2dpConnectedWhileRunning(const RendererState &render
 {
     if ((rendererState == RENDERER_RUNNING) && (audioA2dpOffloadManager_ != nullptr) &&
         !audioA2dpOffloadManager_->IsA2dpOffloadConnecting(sessionId)) {
-        AUDIO_INFO_LOG("Notify client not to block.");
         std::thread sendConnectedToClient(&AudioCoreService::UpdateSessionConnectionState, this, sessionId,
             DATA_LINK_CONNECTED);
         sendConnectedToClient.detach();
