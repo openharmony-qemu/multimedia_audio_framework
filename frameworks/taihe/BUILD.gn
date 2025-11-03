@@ -57,6 +57,8 @@ taihe_shared_library("audio_taihe") {
     "audiocapturer/callback",
     "audiomanager",
     "audiomanager/callback",
+    "audioloopback",
+    "audioloopback/callback",
   ]
 
   sources = get_target_outputs(":run_taihe")
@@ -70,6 +72,10 @@ taihe_shared_library("audio_taihe") {
     "audiocapturer/callback/taihe_capturer_period_position_callback.cpp",
     "audiocapturer/callback/taihe_capturer_position_callback.cpp",
     "audiocapturer/taihe_audio_capturer.cpp",
+    "audioloopback/callback/taihe_audio_loopback_callback.cpp",
+    "audioloopback/callback/taihe_audio_loopback_callback_inner.cpp",
+    "audioloopback/taihe_audio_loopback.cpp",
+    "audiomanager/callback/taihe_active_volume_type_change_callback.cpp",
     "audiomanager/callback/taihe_appvolume_change_callback.cpp",
     "audiomanager/callback/taihe_audio_capturer_state_callback.cpp",
     "audiomanager/callback/taihe_audio_manager_callbacks.cpp",
@@ -78,9 +84,15 @@ taihe_shared_library("audio_taihe") {
     "audiomanager/callback/taihe_audio_ringermode_callback.cpp",
     "audiomanager/callback/taihe_audio_rounting_available_devicechange_callback.cpp",
     "audiomanager/callback/taihe_audio_routing_manager_callbacks.cpp",
+    "audiomanager/callback/taihe_audio_scene_callbacks.cpp",
     "audiomanager/callback/taihe_audio_session_callback.cpp",
+    "audiomanager/callback/taihe_audio_session_device_callback.cpp",
+    "audiomanager/callback/taihe_audio_session_state_callback.cpp",
     "audiomanager/callback/taihe_audio_spatialization_manager_callback.cpp",
+    "audiomanager/callback/taihe_audio_stream_volume_change_callback.cpp",
+    "audiomanager/callback/taihe_audio_system_volume_change_callback.cpp",
     "audiomanager/callback/taihe_audio_volume_key_event.cpp",
+    "audiomanager/taihe_audio_collaborative_manager.cpp",
     "audiomanager/taihe_audio_effect_manager.cpp",
     "audiomanager/taihe_audio_manager.cpp",
     "audiomanager/taihe_audio_routing_manager.cpp",
@@ -109,6 +121,7 @@ taihe_shared_library("audio_taihe") {
     "../../services/audio_policy:audio_policy_client",
     "../../services/audio_service:audio_client",
     "../native/audiocapturer:audio_capturer",
+    "../native/audioloopback:audio_loopback",
     "../native/audiorenderer:audio_renderer",
     "../native/audioutils:audio_utils",
   ]

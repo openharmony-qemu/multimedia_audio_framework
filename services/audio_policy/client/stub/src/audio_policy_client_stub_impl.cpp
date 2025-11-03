@@ -74,6 +74,51 @@ int32_t AudioPolicyClientStubImpl::OnVolumeKeyEvent(const VolumeEvent &volumeEve
     return SUCCESS;
 }
 
+int32_t AudioPolicyClientStubImpl::AddVolumeDegreeCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(volumeDegreeEventMutex_);
+    volumeDegreeCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveVolumeDegreeCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(volumeDegreeEventMutex_);
+    if (cb == nullptr) {
+        volumeDegreeCallbackList_.clear();
+        return SUCCESS;
+    }
+    auto it = find_if(volumeDegreeCallbackList_.begin(), volumeDegreeCallbackList_.end(),
+        [&cb](const std::weak_ptr<VolumeKeyEventCallback>& elem) {
+            return elem.lock() == cb;
+        });
+    if (it != volumeDegreeCallbackList_.end()) {
+        volumeDegreeCallbackList_.erase(it);
+    }
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetVolumeDegreeCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(volumeDegreeEventMutex_);
+    return volumeDegreeCallbackList_.size();
+}
+
+int32_t AudioPolicyClientStubImpl::OnVolumeDegreeEvent(const VolumeEvent &volumeEvent)
+{
+    std::lock_guard<std::mutex> lockCbMap(volumeDegreeEventMutex_);
+    for (auto it = volumeDegreeCallbackList_.begin(); it != volumeDegreeCallbackList_.end();) {
+        std::shared_ptr<VolumeKeyEventCallback> volumeKeyEventCallback = (*it).lock();
+        if (volumeKeyEventCallback != nullptr) {
+            volumeKeyEventCallback->OnVolumeDegreeEvent(volumeEvent);
+            ++it;
+        } else {
+            it = volumeDegreeCallbackList_.erase(it);
+        }
+    }
+    return SUCCESS;
+}
+
 int32_t AudioPolicyClientStubImpl::AddSystemVolumeChangeCallback(const std::shared_ptr<SystemVolumeChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(systemVolumeChangeMutex_);
@@ -265,6 +310,47 @@ int32_t AudioPolicyClientStubImpl::OnDeviceChange(const DeviceChangeAction &dca)
         deviceChangeAction.deviceDescriptors = DeviceFilterByFlag(it->first, dca.deviceDescriptors);
         if (it->second && deviceChangeAction.deviceDescriptors.size() > 0) {
             it->second->OnDeviceChange(deviceChangeAction);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::AddDeviceInfoUpdateCallback(
+    const std::shared_ptr<AudioManagerDeviceInfoUpdateCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(deviceInfoUpdateMutex_);
+    deviceInfoUpdateCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveDeviceInfoUpdateCallback(
+    std::shared_ptr<AudioManagerDeviceInfoUpdateCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(deviceInfoUpdateMutex_);
+    auto iter = deviceInfoUpdateCallbackList_.begin();
+    while (iter != deviceInfoUpdateCallbackList_.end()) {
+        if (*iter == cb || cb == nullptr) {
+            AUDIO_INFO_LOG("remove device info update cb");
+            iter = deviceInfoUpdateCallbackList_.erase(iter);
+        } else {
+            iter++;
+        }
+    }
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetDeviceInfoUpdateCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(deviceInfoUpdateMutex_);
+    return deviceInfoUpdateCallbackList_.size();
+}
+
+int32_t AudioPolicyClientStubImpl::OnDeviceInfoUpdate(const DeviceChangeAction &dca)
+{
+    std::lock_guard<std::mutex> lockCbMap(deviceInfoUpdateMutex_);
+    for (auto it = deviceInfoUpdateCallbackList_.begin(); it != deviceInfoUpdateCallbackList_.end(); ++it) {
+        if (*it && dca.deviceDescriptors.size() > 0) {
+            (*it)->OnDeviceInfoUpdate(dca);
         }
     }
     return SUCCESS;
@@ -627,6 +713,7 @@ int32_t AudioPolicyClientStubImpl::OnAudioSessionDeactive(int32_t deactiveEvent)
     AudioSessionDeactiveEvent newDeactiveEvent;
     newDeactiveEvent.deactiveReason = static_cast<AudioSessionDeactiveReason>(deactiveEvent);
     for (auto it = audioSessionCallbackList_.begin(); it != audioSessionCallbackList_.end(); ++it) {
+        CHECK_AND_CONTINUE((*it) != nullptr);
         (*it)->OnAudioSessionDeactive(newDeactiveEvent);
     }
     return SUCCESS;

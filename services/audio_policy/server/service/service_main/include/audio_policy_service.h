@@ -140,7 +140,7 @@ public:
     void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
         sptr<AudioRendererFilter> filter = nullptr);
 
-    void OnPrivacyDeviceSelected();
+    void OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress);
 
     void LoadEffectLibrary();
 

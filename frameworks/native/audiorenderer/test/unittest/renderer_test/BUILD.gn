@@ -30,6 +30,7 @@ ohos_unittest("audio_renderer_unit_test") {
     "../../../../../../interfaces/inner_api/native/audiocapturer/include",
     "../../../../../../services/audio_policy/client/include",
     "../../../../../audio_utils/include",
+    "../../../../audioschedule/include",
   ]
   cflags = [
     "-Wall",
@@ -50,6 +51,7 @@ ohos_unittest("audio_renderer_unit_test") {
     "../../../../audiodefinitions:audio_definitions",
     "../../../../audiorenderer:audio_renderer",
     "../../../../audioutils:audio_utils",
+    "../../../../audioschedule:audio_schedule",
   ]
 
   external_deps = [
@@ -77,6 +79,7 @@ ohos_unittest("audio_fast_renderer_unit_test") {
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../../../interfaces/inner_api/native/audiocapturer/include",
     "../../../../../../services/audio_policy/client/include",
+    "../../../../audioschedule/include",
   ]
   cflags = [
     "-Wall",
@@ -90,6 +93,7 @@ ohos_unittest("audio_fast_renderer_unit_test") {
     "../../../../../../services/audio_service:audio_client",
     "../../../../../../services/audio_service/idl:audio_framework_interface",
     "../../../../audiorenderer:audio_renderer",
+    "../../../../audioschedule:audio_schedule",
   ]
 
   external_deps = [
@@ -123,6 +127,7 @@ ohos_unittest("renderer_capture_interrupt_unit_test") {
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../../../interfaces/inner_api/native/audiocapturer/include",
     "../../../../../../services/audio_policy/client/include",
+    "../../../../audioschedule/include",
   ]
 
   cflags = [
@@ -137,6 +142,7 @@ ohos_unittest("renderer_capture_interrupt_unit_test") {
     "../../../../../../services/audio_service:audio_client",
     "../../../../audiocapturer:audio_capturer",
     "../../../../audiorenderer:audio_renderer",
+    "../../../../audioschedule:audio_schedule",
   ]
 
   external_deps = [
@@ -167,6 +173,7 @@ ohos_unittest("capture_renderer_interrupt_unit_test") {
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../../../interfaces/inner_api/native/audiocapturer/include",
     "../../../../../../services/audio_policy/client/include",
+    "../../../../audioschedule/include",
   ]
 
   cflags = [
@@ -181,6 +188,7 @@ ohos_unittest("capture_renderer_interrupt_unit_test") {
     "../../../../../../services/audio_service:audio_client",
     "../../../../audiocapturer:audio_capturer",
     "../../../../audiorenderer:audio_renderer",
+    "../../../../audioschedule:audio_schedule",
   ]
 
   external_deps = [
@@ -203,6 +211,7 @@ ohos_unittest("audio_renderer_proxy_obj_unit_test") {
     "../../../../audiopolicy/include",
     "../../../../audioutils/include",
     "../../../../audiostream/include",
+    "../../../../audioschedule/include",
   ]
   cflags = [
     "-Wall",
@@ -216,6 +225,7 @@ ohos_unittest("audio_renderer_proxy_obj_unit_test") {
     "../../../../../../services/audio_policy:audio_policy_client",
     "../../../../../../services/audio_service:audio_client",
     "../../../../audiorenderer:audio_renderer",
+    "../../../../audioschedule:audio_schedule",
   ]
 
   external_deps = [

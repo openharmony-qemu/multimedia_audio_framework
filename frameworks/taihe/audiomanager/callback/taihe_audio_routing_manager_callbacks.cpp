@@ -69,7 +69,7 @@ void TaiheAudioPreferredInputDeviceChangeCallback::OnPreferredInputDeviceUpdated
 void TaiheAudioPreferredInputDeviceChangeCallback::OnJsCallbackActiveInputDeviceChange(
     std::unique_ptr<AudioActiveInputDeviceChangeJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("OnJsCallbackActiveInputDeviceChange: jsCb.get() is null");
         return;
     }
@@ -94,7 +94,9 @@ void TaiheAudioPreferredInputDeviceChangeCallback::SafeJsCallbackActiveInputDevi
     std::shared_ptr<AudioActiveInputDeviceChangeJsCallback> safeContext(
         static_cast<AudioActiveInputDeviceChangeJsCallback*>(event),
         [](AudioActiveInputDeviceChangeJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
     std::string request = event->callbackName;
 
@@ -157,7 +159,7 @@ void TaiheAudioPreferredOutputDeviceChangeCallback::OnPreferredOutputDeviceUpdat
 void TaiheAudioPreferredOutputDeviceChangeCallback::OnJsCallbackActiveOutputDeviceChange(
     std::unique_ptr<AudioActiveOutputDeviceChangeJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("OnJsCallbackActiveOutputDeviceChange: jsCb.get() is null");
         return;
     }
@@ -182,7 +184,9 @@ void TaiheAudioPreferredOutputDeviceChangeCallback::SafeJsCallbackActiveOutputDe
     std::shared_ptr<AudioActiveOutputDeviceChangeJsCallback> safeContext(
         static_cast<AudioActiveOutputDeviceChangeJsCallback*>(event),
         [](AudioActiveOutputDeviceChangeJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
     std::string request = event->callbackName;
 

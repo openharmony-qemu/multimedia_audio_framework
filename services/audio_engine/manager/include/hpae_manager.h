@@ -231,7 +231,7 @@ private:
     int32_t OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex);
     int32_t OpenInputAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex);
     int32_t OpenVirtualAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex);
-    void HandleRendererManager(const std::string& sinkName, const HpaeStreamInfo &streamInfo);
+    bool HandleRendererManager(const std::string& sinkName, const HpaeStreamInfo &streamInfo);
     void CreateStreamForCapInner(const HpaeStreamInfo &streamInfo);
     int32_t CreateRendererManager(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex,
         bool isReload = false);
@@ -262,6 +262,9 @@ private:
     void DequeuePendingTransition(uint32_t sessionId);
     void EnqueuePendingTransition(uint32_t sessionId, HpaeSessionState state, IOperation operation);
     bool IsValidUpdateStatus(IOperation operation, HpaeSessionState currentState);
+    void DeleteRendererManager(const std::string &name);
+    void DeleteCaptureManager(const std::string &name);
+    void DeleteAudioport(const std::string &name);
 
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;

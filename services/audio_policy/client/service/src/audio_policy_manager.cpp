@@ -1775,11 +1775,12 @@ vector<sptr<MicrophoneDescriptor>> AudioPolicyManager::GetAvailableMicrophones()
     return retMicList;
 }
 
-int32_t AudioPolicyManager::SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support)
+int32_t AudioPolicyManager::SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support,
+    const int32_t volume)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-    return gsp->SetDeviceAbsVolumeSupported(macAddress, support);
+    return gsp->SetDeviceAbsVolumeSupported(macAddress, support, volume);
 }
 
 bool AudioPolicyManager::IsAbsVolumeScene()
@@ -2165,38 +2166,6 @@ int32_t AudioPolicyManager::UnregisterSpatializationStateEventListener(const uin
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
 
     return gsp->UnregisterSpatializationStateEventListener(sessionID);
-}
-
-int32_t AudioPolicyManager::CreateAudioInterruptZone(const std::set<int32_t> &pids, const int32_t zoneID)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-
-    return gsp->CreateAudioInterruptZone(pids, zoneID);
-}
-
-int32_t AudioPolicyManager::AddAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-
-    return gsp->AddAudioInterruptZonePids(pids, zoneID);
-}
-
-int32_t AudioPolicyManager::RemoveAudioInterruptZonePids(const std::set<int32_t> &pids, const int32_t zoneID)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-
-    return gsp->RemoveAudioInterruptZonePids(pids, zoneID);
-}
-
-int32_t AudioPolicyManager::ReleaseAudioInterruptZone(const int32_t zoneID)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-
-    return gsp->ReleaseAudioInterruptZone(zoneID);
 }
 
 ConverterConfig AudioPolicyManager::GetConverterConfig()
@@ -3305,6 +3274,80 @@ int32_t AudioPolicyManager::CheckAudioPolicyClientRegisted()
     int32_t result = RegisterPolicyCallbackClientFunc(gsp);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to register policy callback clent");
     return result;
+}
+
+int32_t AudioPolicyManager::SetVolumeDegreeCallback(const int32_t clientPid,
+    const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v)
+{
+    AUDIO_INFO_LOG("client: %{public}d", clientPid);
+    if (api_v == API_11 && !PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "volume back is nullptr");
+
+    if (!isAudioPolicyClientRegisted_) {
+        const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
+        if (ret != SUCCESS) {
+            return ret;
+        }
+    }
+
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SET_VOLUME_DEGREE_CHANGE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->AddVolumeDegreeCallback(callback);
+        size_t callbackSize = audioPolicyClientStubCB_->GetVolumeDegreeCallbackSize();
+        if (callbackSize == 1) {
+            callbackChangeInfos_[CALLBACK_SET_VOLUME_DEGREE_CHANGE].isEnable = true;
+            SetClientCallbacksEnable(CALLBACK_SET_VOLUME_DEGREE_CHANGE, true);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnsetVolumeDegreeCallback(
+    const std::shared_ptr<VolumeKeyEventCallback> &callback)
+{
+    AUDIO_DEBUG_LOG("Start to unregister");
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SET_VOLUME_DEGREE_CHANGE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->RemoveVolumeDegreeCallback(callback);
+        if (audioPolicyClientStubCB_->GetVolumeDegreeCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_SET_VOLUME_DEGREE_CHANGE].isEnable = false;
+            SetClientCallbacksEnable(CALLBACK_SET_VOLUME_DEGREE_CHANGE, false, false);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::SetSystemVolumeDegree(AudioVolumeType volumeType, int32_t volumeDegree,
+    int32_t volumeFlag, int32_t uid)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetSystemVolumeDegree(volumeType, volumeDegree, volumeFlag, uid);
+}
+
+int32_t AudioPolicyManager::GetSystemVolumeDegree(AudioVolumeType volumeType, int32_t uid)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+
+    int32_t volumeDegree = -1;
+    gsp->GetSystemVolumeDegree(volumeType, uid, volumeDegree);
+    return volumeDegree;
+}
+
+int32_t AudioPolicyManager::GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+
+    int32_t volumeDegree = -1;
+    gsp->GetMinVolumeDegree(volumeType, deviceType, volumeDegree);
+    return volumeDegree;
 }
 
 AudioPolicyManager& AudioPolicyManager::GetInstance()

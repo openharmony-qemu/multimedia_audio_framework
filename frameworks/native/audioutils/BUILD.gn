@@ -113,9 +113,10 @@ ohos_shared_library("audio_xml_utils") {
 
   sources = [ "./src/audio_xml_parser.cpp" ]
 
-  public_external_deps = [ "libxml2:libxml2" ]
-
-  external_deps = [ "hilog:libhilog" ]
+  external_deps = [ 
+    "hilog:libhilog",
+    "libxml2:libxml2",
+  ]
 
   defines = []
   if (use_libfuzzer || use_clang_coverage) {

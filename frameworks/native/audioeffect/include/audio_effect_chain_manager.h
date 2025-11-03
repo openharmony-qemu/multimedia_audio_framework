@@ -180,7 +180,7 @@ private:
     int32_t CheckAndReleaseCommonEffectChain(const std::string &sceneType);
     void FindMaxSessionID(uint32_t &maxSessionID, std::string &sceneType,
         const std::string &scenePairType, std::set<std::string> &sessions);
-    void UpdateCurrSceneTypeAndStreamUsageForDsp();
+    int32_t UpdateCurrSceneTypeAndStreamUsageForDsp();
     void SendAudioParamToHDI(HdiSetParamCommandCode code, const std::string &value, DeviceType device);
     void SendAudioParamToARM(HdiSetParamCommandCode code, const std::string &value);
     std::string GetDeviceTypeName();
@@ -257,6 +257,8 @@ private:
     std::condition_variable cv_;
     bool defaultEffectChainCreated_ = false;
     bool absVolumeState_ = true;
+    int32_t currDspStreamUsage_ = -2;
+    AudioEffectScene currDspSceneType_ = SCENE_INITIAL;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

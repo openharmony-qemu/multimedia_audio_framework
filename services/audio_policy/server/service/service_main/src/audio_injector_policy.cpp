@@ -42,7 +42,7 @@ int32_t AudioInjectorPolicy::Init()
         moduleInfo.lib = "libmodule-hdi-sink.z.so";
         std::string name = VIRTUAL_INJECTOR;
         moduleInfo.name = name;
-        moduleInfo.deviceType = "SYSTEM_PRIVATE";
+        moduleInfo.deviceType = std::to_string(static_cast<int32_t>(DEVICE_TYPE_SYSTEM_PRIVATE));
         moduleInfo.format = "s16le";
         moduleInfo.channels = "2"; // 2 channel
         moduleInfo.rate = "48000";
@@ -102,10 +102,13 @@ int32_t AudioInjectorPolicy::AddStreamDescriptor(uint32_t renderId, std::shared_
 int32_t AudioInjectorPolicy::RemoveStreamDescriptor(uint32_t renderId)
 {
     std::lock_guard<std::shared_mutex> lock(injectLock_);
+    AUDIO_INFO_LOG("Injector:: renderId: %{public}u", renderId);
     rendererStreamMap_.erase(renderId);
     if (rendererStreamMap_.size() == 0) {
         RemoveCaptureInjectorInner(false);
     }
+    rendererMuteStreamMap_.erase(renderId);
+    injectorStreamIds_.erase(renderId);
     return SUCCESS;
 }
 
@@ -281,15 +284,17 @@ int32_t AudioInjectorPolicy::RemoveCaptureInjectorInner(bool noCapturer)
             isConnected_ = false;
             capturePortIdx_ = HDI_INVALID_ID;
             voipType_ = NO_VOIP;
-            DeInit();
         } else if (voipType_ == FAST_VOIP) {
             int32_t ret = audioPolicyManager_.RemoveCaptureInjector();
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "RemoveCaptureInjector failed");
             isConnected_ = false;
             capturePortIdx_ = HDI_INVALID_ID;
             voipType_ = NO_VOIP;
-            DeInit();
         }
+    }
+    // release capturer stream does not require executing Deinit();
+    if (!noCapturer) {
+        DeInit();
     }
     return SUCCESS;
 }
@@ -376,20 +381,28 @@ void AudioInjectorPolicy::SendInterruptEventToInjectorStreams(const std::shared_
     }
 }
 
-void AudioInjectorPolicy::SetAllRendererInjectStreamsMuteInner()
+void AudioInjectorPolicy::SetInjectStreamsMuteForInjection(uint32_t streamId)
 {
-    for (const auto& pair : rendererStreamMap_) {
-        AudioServerProxy::GetInstance().SetNonInterruptMuteProxy(pair.first, isNeedMuteRenderer_);
+    std::lock_guard<std::shared_mutex> lock(injectLock_);
+    auto mute = rendererMuteStreamMap_.find(streamId);
+    AUDIO_INFO_LOG("Injector:: streamId: %{public}u, mapIsExist: %{public}d, mute: %{public}d",
+        streamId, mute == rendererMuteStreamMap_.end(), isNeedMuteRenderer_);
+    if (mute == rendererMuteStreamMap_.end() && isNeedMuteRenderer_) {
+        rendererMuteStreamMap_.insert(std::make_pair(streamId, isNeedMuteRenderer_));
+        AudioServerProxy::GetInstance().SetNonInterruptMuteProxy(streamId, isNeedMuteRenderer_);
     }
 }
 
-void AudioInjectorPolicy::SetAllRendererInjectStreamsMute()
+void AudioInjectorPolicy::SetInjectStreamsMuteForPlayback(uint32_t streamId)
 {
     std::lock_guard<std::shared_mutex> lock(injectLock_);
-    if (isNeedSetMuteRenderer_) {
-        AUDIO_INFO_LOG("SetMuteRenderer_");
-        SetAllRendererInjectStreamsMuteInner();
-        isNeedSetMuteRenderer_ = false;
+    auto mute = rendererMuteStreamMap_.find(streamId);
+    AUDIO_INFO_LOG("Injector:: streamId: %{public}u, mapIsExist: %{public}d", streamId,
+        mute != rendererMuteStreamMap_.end());
+    if (mute != rendererMuteStreamMap_.end() && mute->second == true) {
+        AUDIO_INFO_LOG("Injector:: setMuteFalse: %{public}u", streamId);
+        AudioServerProxy::GetInstance().SetNonInterruptMuteProxy(streamId, false);
+        rendererMuteStreamMap_[streamId] = false;
     }
 }
 
@@ -397,12 +410,18 @@ void AudioInjectorPolicy::SetInjectorStreamsMute(bool newMicrophoneMute)
 {
     std::lock_guard<std::shared_mutex> lock(injectLock_);
     isNeedMuteRenderer_ = newMicrophoneMute;
-    if (rendererStreamMap_.size() == 0) {
-        AUDIO_INFO_LOG("map is empty");
-        isNeedSetMuteRenderer_ = true;
-        return;
+    AUDIO_INFO_LOG("Injector:: %{public}d", newMicrophoneMute);
+    for (const auto& streamId : injectorStreamIds_) {
+        auto mute = rendererMuteStreamMap_.find(streamId);
+        AUDIO_INFO_LOG("Injector:: streamId: %{public}u, mapIsExist: %{public}d", streamId,
+            mute == rendererMuteStreamMap_.end());
+        if (mute == rendererMuteStreamMap_.end()) {
+            rendererMuteStreamMap_.insert(std::make_pair(streamId, newMicrophoneMute));
+        } else {
+            rendererMuteStreamMap_[streamId] = newMicrophoneMute;
+        }
+        AudioServerProxy::GetInstance().SetNonInterruptMuteProxy(streamId, newMicrophoneMute);
     }
-    SetAllRendererInjectStreamsMuteInner();
 }
 }  //  namespace AudioStandard
 }  //  namespace OHOS

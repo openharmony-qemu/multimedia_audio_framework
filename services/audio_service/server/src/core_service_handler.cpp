@@ -157,5 +157,11 @@ int32_t CoreServiceHandler::A2dpOffloadGetRenderPosition(uint32_t &delayValue, u
     iCoreServiceProvider_->A2dpOffloadGetRenderPosition(delayValue, sendDataSize, timeStamp, ret);
     return ret;
 }
+
+void CoreServiceHandler::OnCheckActiveMusicTime(const std::string &reason)
+{
+    CHECK_AND_RETURN_LOG(iCoreServiceProvider_ != nullptr, "iCoreServiceProvider_ is nullptr!");
+    iCoreServiceProvider_->OnCheckActiveMusicTime(reason);
+}
 } // namespace AudioStandard
 } // namespace OHOS

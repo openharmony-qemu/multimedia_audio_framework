@@ -452,6 +452,45 @@ HWTEST(AudioUtilsUnitTest, ConvertToStringForChannel_002, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test VolumeLevelToDegree API with custom values
+ * @tc.type  : FUNC
+ * @tc.number: VolumeToDegreeTest_001
+ * @tc.desc  : Test convert between Volume and Degree
+ */
+HWTEST(AudioUtilsUnitTest, VolumeToDegreeTest_001, TestSize.Level1)
+{
+    int32_t level = -1;
+    int32_t maxLevel = 1;
+    int32_t overflowDegreeLimit = 200;
+    int32_t testValue = 0;
+    int32_t invalid = -1;
+    testValue = VolumeUtils::VolumeLevelToDegree(level, maxLevel);
+    EXPECT_EQ(testValue, invalid);
+
+    testValue = VolumeUtils::VolumeLevelToDegree(overflowDegreeLimit, maxLevel);
+    EXPECT_EQ(testValue, invalid);
+
+    level = 1;
+    testValue = VolumeUtils::VolumeLevelToDegree(level, maxLevel);
+    EXPECT_EQ(testValue, invalid);
+
+    testValue = VolumeUtils::GetVolumeLevelMaxDegree(level, maxLevel);
+    EXPECT_EQ(testValue, invalid);
+
+    testValue = VolumeUtils::GetVolumeLevelMaxDegree(-1, maxLevel);
+    EXPECT_EQ(testValue, invalid);
+
+    testValue = VolumeUtils::VolumeDegreeToLevel(0, -1);
+    EXPECT_EQ(testValue, invalid);
+
+    testValue = VolumeUtils::VolumeDegreeToLevel(-1, maxLevel);
+    EXPECT_EQ(testValue, invalid);
+
+    testValue = VolumeUtils::VolumeDegreeToLevel(overflowDegreeLimit, maxLevel);
+    EXPECT_EQ(testValue, invalid);
+}
+
+/**
  * @tc.name  : Test ReallocVectorBufferAndClear API with zero length
  * @tc.type  : FUNC
  * @tc.number: ReallocVectorBufferAndClear_001

@@ -23,10 +23,10 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-class SuiteInputNodeWriteDataCallBack {
+class InputNodeRequestDataCallBack {
 public:
-    virtual ~SuiteInputNodeWriteDataCallBack() = default;
-    virtual int32_t OnWriteDataCallBack(void *audioData, int32_t audioDataSize, bool *finished) = 0;
+    virtual ~InputNodeRequestDataCallBack() = default;
+    virtual int32_t OnRequestDataCallBack(void *audioData, int32_t audioDataSize, bool *finished) = 0;
 };
 
 class SuiteNodeReadTapDataCallback {
@@ -54,7 +54,7 @@ public:
     virtual int32_t GetNodeBypassStatus(uint32_t nodeId, bool &bypass) = 0;
     virtual int32_t SetAudioFormat(uint32_t nodeId, AudioFormat audioFormat) = 0;
     virtual int32_t SetRequestDataCallback(uint32_t nodeId,
-        std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback) = 0;
+        std::shared_ptr<InputNodeRequestDataCallBack> callback) = 0;
     virtual int32_t GetSoundFiledType(uint32_t nodeId, SoundFieldType &soundFieldType) = 0;
     virtual int32_t GetEqualizerFrequencyBandGains(uint32_t nodeId,
         AudioEqualizerFrequencyBandGains &frequencyBandGains) = 0;

@@ -700,17 +700,6 @@ int32_t AudioServerProxy::ForceStopAudioStreamProxy(StopAudioType audioType)
     return res;
 }
 
-void AudioServerProxy::SendInterruptEventToAudioServerProxy(InterruptEventInternal interruptEvent,
-    int32_t sessionId)
-{
-    AUDIO_INFO_LOG("hintType:%{public}d for stream:%{public}u", interruptEvent.hintType, sessionId);
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "error for audio server proxy null");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->SendInterruptEventToAudioServer(sessionId, interruptEvent);
-    IPCSkeleton::SetCallingIdentity(identity);
-}
-
 int32_t AudioServerProxy::GetPrivacyType(const uint32_t sessionId, AudioPrivacyType &privacyType)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();

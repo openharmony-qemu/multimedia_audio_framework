@@ -648,7 +648,6 @@ void AudioSpatializationService::InitSpatializationState()
     std::map<std::string, uint32_t> tmpAddressToDeviceIDMap;
     {
         std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
-        CHECK_AND_RETURN_LOG(!isLoadedfromDb_, "the spatialization values have already been loaded");
         int32_t pack = 0;
         std::string deviceSpatialInfo;
 
@@ -685,7 +684,6 @@ void AudioSpatializationService::InitSpatializationState()
             preSettingSpatialAddress_ = "NO_PREVIOUS_SET_DEVICE";
         }
         UpdateSpatializationStateReal(false);
-        isLoadedfromDb_ = true;
     }
     for (auto it = tmpAddressToDeviceIDMap.begin(); it != tmpAddressToDeviceIDMap.end(); ++it) {
         UpdateSpatializationSupported(it->first);

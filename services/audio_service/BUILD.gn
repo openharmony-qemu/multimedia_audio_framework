@@ -88,6 +88,7 @@ ohos_shared_library("audio_common") {
     "common/src/va_shared_buffer.cpp",
     "common/src/va_shared_buffer_operator.cpp",
     "common/src/audio_mute_factor_manager.cpp",
+    "common/src/audio_stream_checker_thread.cpp",
   ]
 
   cflags = [
@@ -263,6 +264,7 @@ ohos_shared_library("audio_client") {
     "i18n:intl_util",
     "init:libbegetutil",
     "ipc:ipc_single",
+    "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "resource_management:global_resmgr",
@@ -273,7 +275,6 @@ ohos_shared_library("audio_client") {
 
   public_external_deps = [
     "c_utils:utils",
-    "libxml2:libxml2",
     "pulseaudio:sonic",
   ]
 
@@ -574,6 +575,7 @@ audio_ohos_library("audio_service") {
     "hisysevent:libhisysevent",
     "init:libbegetutil",
     "ipc:ipc_single",
+    "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "qos_manager:concurrent_task_client",
@@ -589,7 +591,6 @@ audio_ohos_library("audio_service") {
     ]
     defines += [ "SUPPORT_OLD_ENGINE" ]
   }
-  public_external_deps = [ "libxml2:libxml2" ]
 
   if (audio_framework_feature_offline_effect) {
     public_deps = [

@@ -153,6 +153,9 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
             AUDIO_WARNING_LOG("preferredType:%{public}d, not supported", preferredType);
             ret = ERR_INVALID_PARAM;
             break;
+        case AUDIO_RECOGNITION_CAPTURE:
+            audioStateManager_.SetPreferredRecognitionCaptureDevice(desc);
+            break;
         default:
             AUDIO_ERR_LOG("invalid preferredType: %{public}d", preferredType);
             ret = ERR_INVALID_PARAM;
@@ -680,7 +683,7 @@ DeviceType AudioPolicyUtils::GetDeviceType(const std::string &deviceName)
 std::string AudioPolicyUtils::GetDevicesStr(const vector<shared_ptr<AudioDeviceDescriptor>> &descs)
 {
     std::string devices;
-    devices.append("device type:id:(category:constate:enable:exceptionflag) ");
+    devices.append("device type:id:(category:constate:enable:exceptionflag:deviceusage) ");
     for (auto iter : descs) {
         CHECK_AND_CONTINUE_LOG(iter != nullptr, "iter is nullptr");
         devices.append(std::to_string(static_cast<uint32_t>(iter->getType())));
@@ -693,6 +696,7 @@ std::string AudioPolicyUtils::GetDevicesStr(const vector<shared_ptr<AudioDeviceD
             devices.append(":" + std::to_string(static_cast<uint32_t>(iter->connectState_)));
             devices.append(":" + std::to_string(static_cast<uint32_t>(iter->isEnable_)));
             devices.append(":" + std::to_string(static_cast<uint32_t>(iter->exceptionFlag_)));
+            devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceUsage_)));
         } else if (IsUsb(iter->getType())) {
             devices.append(":" + GetEncryptAddr(iter->macAddress_));
         }

@@ -24,6 +24,7 @@ ohos_unittest("audio_capturer_unit_test") {
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../audiostream/include",
     "../../../../../../services/audio_policy/server/include",
+    "../../../../audioschedule/include",
   ]
 
   cflags = [
@@ -55,6 +56,7 @@ ohos_unittest("audio_capturer_unit_test") {
   deps = [
     "../../../../../../services/audio_service:audio_client",
     "../../../../audiocapturer:audio_capturer",
+    "../../../../audioschedule:audio_schedule",
   ]
 }
 

@@ -45,7 +45,7 @@ typedef unsigned int IMEDIA_BOOL;  // 32位数据类型重定义，与uniDSP头�
 #define IMEDIA_VOID void
 #endif
 
-// 算法处理帧长
+// 算法处理帧长 480采样点
 #define IMEDIA_SWS_FRAME_LEN (480)
 
 // 错误码定义

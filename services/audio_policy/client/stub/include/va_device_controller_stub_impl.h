@@ -18,7 +18,7 @@
 
 #include <iremote_broker.h>
 
-#include "audio_policy_interface.h"
+#include "virtual_audio_interface.h"
 #include "va_device_controller_stub.h"
 
 namespace OHOS {

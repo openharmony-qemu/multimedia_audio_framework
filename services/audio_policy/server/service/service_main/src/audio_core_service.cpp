@@ -34,7 +34,8 @@ namespace AudioStandard {
 namespace {
 const size_t SELECT_DEVICE_HISTORY_LIMIT = 10;
 const uint32_t FIRST_SESSIONID = 100000;
-static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
+static const char *CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
+static const std::string CHECK_VIDEO_COMM_SELECTION = "audio_video_comm_fast_blocklist";
 static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
 static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
 static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
@@ -195,7 +196,8 @@ int32_t AudioCoreService::CreateRendererClient(
     UpdateStreamDevicesForCreate(streamDesc, "CreateRendererClient");
     // Modem stream need special process, because there are no real hdi output or input in fwk.
     // Input also need to be handled because capturer won't be created, only has renderer.
-    if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+    if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
+        !streamDesc->rendererInfo_.toneFlag) {
         AUDIO_INFO_LOG("Modem communication renderer create, sessionId %{public}u", sessionId);
         audioFlag = AUDIO_FLAG_NORMAL;
         AddSessionId(sessionId);
@@ -376,8 +378,9 @@ bool AudioCoreService::IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &st
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
         return true;
     }
+
     if (rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION &&
-        rendererInfo.samplingRate != SAMPLE_RATE_48000) {
+        InVideoCommFastBlockList(streamDesc->bundleName_)) {
         streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
         return true;
     }
@@ -591,8 +594,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         streamCollector_.UpdateCapturerDeviceInfo(deviceDesc);
     }
     streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
-    bool isGameApp = ClientTypeManager::GetInstance()->GetClientTypeByUid(GetRealUid(streamDesc)) != CLIENT_TYPE_GAME;
-    sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc, false, isGameApp);
+    sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc, false);
 
     CheckForRemoteDeviceState(deviceDesc);
     return SUCCESS;
@@ -952,7 +954,8 @@ int32_t AudioCoreService::GetCurrentRendererChangeInfos(vector<shared_ptr<AudioR
         [&activeDeviceType, &activeDeviceRole, &activeDeviceMac](const std::shared_ptr<AudioDeviceDescriptor> &desc) {
         if ((desc->deviceType_ == activeDeviceType) && (desc->deviceRole_ == activeDeviceRole)) {
             // This A2DP device is not the active A2DP device. Skip it.
-            return activeDeviceType != DEVICE_TYPE_BLUETOOTH_A2DP || desc->macAddress_ == activeDeviceMac;
+            return (activeDeviceType != DEVICE_TYPE_BLUETOOTH_A2DP && activeDeviceType != DEVICE_TYPE_BLUETOOTH_SCO) ||
+                desc->macAddress_ == activeDeviceMac;
         }
         return false;
     });
@@ -963,6 +966,11 @@ int32_t AudioCoreService::GetCurrentRendererChangeInfos(vector<shared_ptr<AudioR
             UpdateRendererInfoWhenNoPermission(audioRendererChangeInfos[i], hasSystemPermission);
             CHECK_AND_CONTINUE_LOG(!AudioZoneService::GetInstance().CheckDeviceInAudioZone(
                 audioRendererChangeInfos[i]->outputDeviceInfo), "skip callback when device in zone");
+            std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(
+                audioRendererChangeInfos[i]->sessionId);
+            CHECK_AND_CONTINUE_LOG(streamDesc != nullptr, "GetStreamDescById return nullptr");
+            CHECK_AND_CONTINUE_LOG(streamDesc->rendererTarget_ != INJECT_TO_VOICE_COMMUNICATION_CAPTURE,
+                "skip callback when stream is inject mode");
             audioDeviceCommon_.UpdateDeviceInfo(audioRendererChangeInfos[i]->outputDeviceInfo, *itr,
                 hasBTPermission, hasSystemPermission);
         }
@@ -1407,15 +1415,18 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
     }
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> modemDescs;
     CheckModemScene(modemDescs, reason);
+    CheckRingAndVoipScene(reason);
 
     AudioCoreServiceUtils::SortOutputStreamDescsForUsage(outputStreamDescs);
     for (auto &streamDesc : outputStreamDescs) {
         UpdateStreamDevicesForStart(streamDesc, caller + "FetchOutputDeviceAndRoute");
     }
 
+    // this will update volume device map
+    audioActiveDevice_.UpdateStreamDeviceMap("FetchOutputDeviceAndRoute");
+    // here will update volume， must after UpdateStreamDeviceMap
     UpdateActiveDeviceAndVolumeBeforeMoveSession(outputStreamDescs, reason);
 
-    audioActiveDevice_.UpdateStreamDeviceMap("FetchOutputDeviceAndRoute");
     int32_t ret = FetchRendererPipesAndExecute(outputStreamDescs, reason);
     UpdateModemRoute(modemDescs);
     if (IsNoRunningStream(outputStreamDescs)) {
@@ -1603,7 +1614,6 @@ int32_t AudioCoreService::StartInjection(uint32_t streamId)
         AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "move stream in failed");
     audioInjectorPolicy_.AddStreamDescriptor(streamId, streamDesc);
-    audioInjectorPolicy_.SetAllRendererInjectStreamsMute();
     return SUCCESS;
 }
 
@@ -1664,6 +1674,27 @@ bool AudioCoreService::IsDistributeServiceOnline()
 {
     CHECK_AND_RETURN_RET_LOG(deviceStatusListener_ != nullptr, false, "deviceStatusListener_ is null");
     return deviceStatusListener_->IsDistributeServiceOnline();
+}
+
+bool AudioCoreService::InVideoCommFastBlockList(const std::string& bundleName)
+{
+    CHECK_AND_RETURN_RET_LOG(queryBundleNameListCallback_ != nullptr, false, "queryBundleNameListCallback_ is null");
+    bool isBundleNameExist = false;
+    queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName, CHECK_VIDEO_COMM_SELECTION,
+        isBundleNameExist);
+    return isBundleNameExist;
+}
+int32_t AudioCoreService::SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object)
+{
+    queryBundleNameListCallback_ = iface_cast<IStandardAudioPolicyManagerListener>(object);
+    CHECK_AND_RETURN_RET_LOG(queryBundleNameListCallback_ != nullptr, ERR_CALLBACK_NOT_REGISTERED,
+        "Query bundle name list callback is null");
+    return SUCCESS;
+}
+
+void AudioCoreService::OnCheckActiveMusicTime(const std::string &reason)
+{
+    AudioVolumeManager::GetInstance().OnCheckActiveMusicTime(reason);
 }
 } // namespace AudioStandard
 } // namespace OHOS

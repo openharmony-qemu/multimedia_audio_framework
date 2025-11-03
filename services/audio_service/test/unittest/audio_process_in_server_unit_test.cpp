@@ -1173,6 +1173,36 @@ HWTEST(AudioProcessInServerUnitTest, RequestHandleInfoAsync_001, TestSize.Level4
 }
 
 /**
+ * @tc.name  : Test UpdateStreamInfo API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateStreamInfo_001
+ * @tc.desc  : Test UpdateStreamInfo interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, UpdateStreamInfo_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    audioProcessInServerRet.isInited_ = true;
+    audioProcessInServerRet.needCheckBackground_ = true;
+    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
+    uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
+    uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
+    audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame,
+        spanSizeInFrame, g_audioStreamInfo, buffer);
+    audioProcessInServerRet.streamStatus_->store(STREAM_STOPPING);
+    bool isSwitchStream = false;
+
+    audioProcessInServerRet.UpdateStreamInfo();
+    EXPECT_GT(audioProcessInServerRet.checkCount_, 0);
+
+    audioProcessInServerRet.UpdateStreamInfo();
+
+    auto ret = audioProcessInServerRet.Release(isSwitchStream);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
  * @tc.name  : Test GetSpanSizeInFrame API
  * @tc.type  : FUNC
  * @tc.number: GetSpanSizeInFrame_001
@@ -1187,6 +1217,69 @@ HWTEST(AudioProcessInServerUnitTest, GetSpanSizeInFrame_001, TestSize.Level4)
 
     uint32_t ret = audioProcessInServerRet.GetSpanSizeInFrame();
     EXPECT_EQ(ret, audioProcessInServerRet.spanSizeInframe_);
+}
+
+/*
+ * @tc.name  : Test NeedUseTempBuffer API
+ * @tc.type  : FUNC
+ * @tc.number: NeedUseTempBuffer_01
+ * @tc.desc  : Test AudioEndpointInner::NeedUseTempBuffer()
+ */
+HWTEST_F(AudioProcessInServerUnitTest, NeedUseTempBuffer_01, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+
+    std::vector<uint8_t> buffer1(1, 0);
+    std::vector<uint8_t> buffer2(1, 0);
+    RingBufferWrapper ringBuffer = {
+        {{
+            {.buffer = buffer1.data(), .bufLength = 1},
+            {.buffer = buffer2.data(), .bufLength = 1},
+        }},
+        // 1 + 1 = 2
+        .dataLength = 2
+    };
+    auto ret = audioProcessInServerRet.NeedUseTempBuffer(ringBuffer, 1);
+    EXPECT_EQ(ret, true);
+
+    ringBuffer.dataLength = 1;
+    ret = audioProcessInServerRet.NeedUseTempBuffer(ringBuffer, 1);
+    EXPECT_EQ(ret, false);
+
+    // 2 > 1
+    ret = audioProcessInServerRet.NeedUseTempBuffer(ringBuffer, 2);
+    EXPECT_EQ(ret, true);
+}
+
+/*
+ * @tc.name  : Test PrepareStreamDataBuffer API
+ * @tc.type  : FUNC
+ * @tc.number: PrepareStreamDataBuffer_01
+ * @tc.desc  : Test AudioEndpointInner::PrepareStreamDataBuffer()
+ */
+HWTEST_F(AudioProcessInServerUnitTest, PrepareStreamDataBuffer_01, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+
+    std::vector<uint8_t> buffer1(1, 0);
+    RingBufferWrapper ringBuffer = {
+        {{
+            {.buffer = buffer1.data(), .bufLength = 1},
+            {.buffer = nullptr, .bufLength = 0},
+        }},
+        .dataLength = 1
+    };
+    AudioStreamData streamData;
+    audioProcessInServerRet.PrepareStreamDataBuffer(1, ringBuffer, streamData);
+    // spansizeinframe == 2; spansizeinframe > datalenth
+    audioProcessInServerRet.PrepareStreamDataBuffer(2, ringBuffer, streamData);
+
+    // processTmpBufferList[i] == spansizeinframe
+    EXPECT_EQ(audioProcessInServerRet.processTmpBuffer_.size(), 2);
 }
 
 #ifdef ENABLE_INJECT

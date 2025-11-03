@@ -37,6 +37,7 @@ struct IntValueInfo {
     std::string key;
     int32_t defaultValue;
     int32_t value;
+    int32_t maxValue;
 };
 
 struct BoolValueInfo {

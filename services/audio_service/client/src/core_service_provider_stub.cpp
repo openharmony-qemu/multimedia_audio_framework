@@ -134,5 +134,12 @@ int32_t CoreServiceProviderWrapper::A2dpOffloadGetRenderPosition(uint32_t &delay
     ret = coreServiceWorker_->A2dpOffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
     return SUCCESS;
 }
+
+int32_t CoreServiceProviderWrapper::OnCheckActiveMusicTime(const std::string &reason)
+{
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    coreServiceWorker_->OnCheckActiveMusicTime(reason);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

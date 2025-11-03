@@ -87,25 +87,8 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
     }
 
     // Find whether any existing pipe matches
-    for (auto &pipeInfo : selectedPipeInfoList) {
-        std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = pipeInfoPtr->adapterInfo_.lock();
-        if (adapterInfoPtr == nullptr) {
-            AUDIO_ERR_LOG("Adapter info is null");
-            continue;
-        }
-        AUDIO_INFO_LOG("action %{public}d adapter[%{public}s] pipeRoute[0x%{public}x] streamRoute[0x%{public}x]",
-            pipeInfo->GetAction(), pipeInfo->GetAdapterName().c_str(), pipeInfo->GetRoute(), streamDesc->GetRoute());
-
-        if (pipeInfo->adapterName_ == adapterInfoPtr->adapterName &&
-            pipeInfo->routeFlag_ == streamDesc->routeFlag_) {
-            pipeInfo->streamDescriptors_.push_back(streamDesc);
-            pipeInfo->streamDescMap_[streamDesc->sessionId_] = streamDesc;
-            pipeInfo->pipeAction_ = PIPE_ACTION_UPDATE;
-            AUDIO_INFO_LOG("[PipeFetchInfo] use existing Pipe %{public}s for stream %{public}u",
-                pipeInfo->ToString().c_str(), streamDesc->sessionId_);
-            return selectedPipeInfoList;
-        }
-    }
+    bool findPipe = FindExistingPipe(selectedPipeInfoList, pipeInfoPtr, streamDesc, streamPropInfo);
+    CHECK_AND_RETURN_RET(!findPipe, selectedPipeInfoList);
 
     // Need to open a new pipe for incoming stream
     AudioPipeInfo info = {};
@@ -212,7 +195,11 @@ void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipe
                         newPipeInfo->adapterName_ == streamDescAdapterName;
                 });
         }
+        std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+        configManager_.GetStreamPropInfo(streamDesc, streamPropInfo);
         if (newPipeIter != newPipeInfoList.end()) {
+            MatchRemoteOffloadPipe(streamPropInfo, *newPipeIter, streamDesc);
+
             (*newPipeIter)->streamDescriptors_.push_back(streamDesc);
             (*newPipeIter)->streamDescMap_[streamDesc->sessionId_] = streamDesc;
             continue;
@@ -228,9 +215,8 @@ void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<A
 {
     // get each streamDesc in each newPipe to judge action
     for (auto &newPipeInfo : newPipeInfoList) {
-        if (newPipeInfo->pipeAction_ != PIPE_ACTION_NEW) {
-            newPipeInfo->pipeAction_ = PIPE_ACTION_UPDATE;
-        }
+        newPipeInfo->pipeAction_ = (newPipeInfo->pipeAction_ != PIPE_ACTION_NEW &&
+            newPipeInfo->pipeAction_ != PIPE_ACTION_RELOAD) ? PIPE_ACTION_UPDATE : newPipeInfo->pipeAction_;
         AUDIO_INFO_LOG("[PipeFetchInfo] Name %{public}s, PipeAction: %{public}d",
             newPipeInfo->name_.c_str(), newPipeInfo->pipeAction_);
 
@@ -688,9 +674,74 @@ void AudioPipeSelector::SetOriginalFlagForcedNormalIfNeed(std::shared_ptr<AudioS
 bool AudioPipeSelector::IsNeedTempMoveToNormal(std::shared_ptr<AudioStreamDescriptor> streamDesc,
     std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo)
 {
+    CHECK_AND_RETURN_RET_LOG(streamDescToOldPipeInfo.size() != 0, false, "streamDescToOldPipeInfo is empty!");
     return (streamDescToOldPipeInfo[streamDesc->GetSessionId()]->IsRenderPipeNeedMoveToNormal() &&
         streamDesc->IsRenderStreamNeedRecreate());
 }
 
+bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeInfo>> &selectedPipeInfoList,
+    const std::shared_ptr<AdapterPipeInfo> &pipeInfoPtr, const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo)
+{
+    for (auto &pipeInfo : selectedPipeInfoList) {
+        std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = pipeInfoPtr->adapterInfo_.lock();
+        CHECK_AND_CONTINUE_LOG(adapterInfoPtr != nullptr, "Adapter info is null");
+
+        AUDIO_INFO_LOG("action %{public}d adapter[%{public}s] pipeRoute[0x%{public}x] streamRoute[0x%{public}x]",
+            pipeInfo->GetAction(), pipeInfo->GetAdapterName().c_str(), pipeInfo->GetRoute(), streamDesc->GetRoute());
+
+        CHECK_AND_CONTINUE(pipeInfo->adapterName_ == adapterInfoPtr->adapterName &&
+            pipeInfo->routeFlag_ == streamDesc->routeFlag_);
+
+        MatchRemoteOffloadPipe(streamPropInfo, pipeInfo, streamDesc);
+
+        pipeInfo->streamDescriptors_.push_back(streamDesc);
+        pipeInfo->streamDescMap_[streamDesc->sessionId_] = streamDesc;
+        pipeInfo->pipeAction_ = pipeInfo->pipeAction_ == PIPE_ACTION_RELOAD ? PIPE_ACTION_RELOAD : PIPE_ACTION_UPDATE;
+        AUDIO_INFO_LOG("[PipeFetchInfo] use existing Pipe %{public}s for stream %{public}u, pipeAction: %{public}d",
+            pipeInfo->ToString().c_str(), streamDesc->sessionId_, pipeInfo->pipeAction_);
+        return true;
+    }
+    return false;
+}
+
+void AudioPipeSelector::MatchRemoteOffloadPipe(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
+    std::shared_ptr<AudioPipeInfo> pipeInfo, const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    std::string channels = std::to_string(AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(
+        streamPropInfo->channelLayout_));
+    std::string channelLayout = std::to_string(streamPropInfo->channelLayout_);
+    auto format = AudioDefinitionPolicyUtils::enumToFormatStr[streamPropInfo->format_];
+    std::string sampleRate = std::to_string(streamPropInfo->sampleRate_);
+    bool matchState = (channels == pipeInfo->moduleInfo_.channels &&
+        channelLayout == pipeInfo->moduleInfo_.channelLayout && format == pipeInfo->moduleInfo_.format &&
+        sampleRate == pipeInfo->moduleInfo_.rate) ? true : false;
+
+    if (pipeInfo->name_ == "offload_distributed_output" && !matchState) {
+        AUDIO_INFO_LOG("existing mismatching remote offload pipe need to recreate to match music format");
+        UpdatePipeInfoFromStreamProp(streamDesc, streamPropInfo, *pipeInfo);
+        pipeInfo->pipeAction_ = PIPE_ACTION_RELOAD;
+    }
+}
+
+void AudioPipeSelector::UpdatePipeInfoFromStreamProp(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo, AudioPipeInfo &info)
+{
+    CHECK_AND_RETURN_LOG(streamPropInfo != nullptr, "streamPropInfo is nullptr");
+    std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = streamPropInfo->pipeInfo_.lock();
+    CHECK_AND_RETURN_LOG(pipeInfoPtr != nullptr, "Adapter info is null");
+
+    info.moduleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[streamPropInfo->format_];
+    info.moduleInfo_.rate = std::to_string(streamPropInfo->sampleRate_);
+    info.moduleInfo_.channels = std::to_string(AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(
+        streamPropInfo->channelLayout_));
+    info.moduleInfo_.channelLayout = std::to_string(streamPropInfo->channelLayout_);
+    info.moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
+
+    AUDIO_INFO_LOG("Pipe name: %{public}s, channels: %{public}s, channelLayout: %{public}s",
+        pipeInfoPtr->name_.c_str(), info.moduleInfo_.channels.c_str(), info.moduleInfo_.channelLayout.c_str());
+
+    info.InitAudioStreamInfo();
+}
 } // namespace AudioStandard
 } // namespace OHOS

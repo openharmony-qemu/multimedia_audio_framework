@@ -24,6 +24,7 @@
 #include "audio_policy_utils.h"
 #include "audio_bluetooth_manager.h"
 #include "audio_adapter_manager.h"
+#include "audio_device_status.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -841,9 +842,6 @@ void AudioDeviceManager::AddAvailableDevicesByUsage(const AudioDeviceUsage usage
                 audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(dev));
             }
             break;
-        case D_ALL_DEVICES:
-            audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(dev));
-            break;
         default:
             break;
     }
@@ -1079,6 +1077,17 @@ std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetConnectedD
     return audioDeviceDescriptors;
 }
 
+std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetConnectedDevices()
+{
+    std::vector<shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
+    for (const auto &desc : connectedDevices_) {
+        audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(desc));
+    }
+    return audioDeviceDescriptors;
+}
+
 bool AudioDeviceManager::GetScoState()
 {
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
@@ -1131,13 +1140,15 @@ AudioStreamDeviceChangeReasonExt AudioDeviceManager::UpdateDevicesListInfo(
 bool AudioDeviceManager::UpdateDeviceCategory(const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
     bool updateFlag = false;
-
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
     for (auto &desc : connectedDevices_) {
         if (desc->deviceType_ == devDesc->deviceType_ &&
             desc->networkId_ == devDesc->networkId_ &&
             desc->macAddress_ == devDesc->macAddress_ &&
             desc->deviceCategory_ != devDesc->deviceCategory_) {
+            descForCb.push_back(std::make_shared<AudioDeviceDescriptor>(*desc));
             desc->deviceCategory_ = devDesc->deviceCategory_;
+            descForCb.push_back(std::make_shared<AudioDeviceDescriptor>(*desc));
             if (devDesc->deviceCategory_ == BT_UNWEAR_HEADPHONE) {
                 RemoveBtFromOtherList(devDesc);
             } else {
@@ -1145,6 +1156,7 @@ bool AudioDeviceManager::UpdateDeviceCategory(const std::shared_ptr<AudioDeviceD
                 desc->connectTimeStamp_ = GetCurrentTimeMS();
                 AddBtToOtherList(desc);
             }
+            AudioDeviceStatus::GetInstance().TriggerDeviceInfoUpdatedCallback(descForCb);
         }
         updateFlag = true;
     }
@@ -1191,13 +1203,17 @@ bool AudioDeviceManager::UpdateConnectState(const shared_ptr<AudioDeviceDescript
 bool AudioDeviceManager::UpdateEnableState(const shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
     bool updateFlag = false;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
     for (const auto &desc : connectedDevices_) {
         if (desc->deviceType_ == devDesc->deviceType_ &&
             desc->macAddress_ == devDesc->macAddress_ &&
             desc->networkId_ == devDesc->networkId_ &&
             desc->isEnable_ != devDesc->isEnable_) {
+            descForCb.push_back(std::make_shared<AudioDeviceDescriptor>(*desc));
             desc->isEnable_ = devDesc->isEnable_;
+            descForCb.push_back(std::make_shared<AudioDeviceDescriptor>(*desc));
             updateFlag = true;
+            AudioDeviceStatus::GetInstance().TriggerDeviceInfoUpdatedCallback(descForCb);
         }
     }
     return updateFlag;

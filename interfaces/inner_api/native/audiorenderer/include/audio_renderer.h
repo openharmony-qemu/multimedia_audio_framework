@@ -1127,7 +1127,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 22
      */
-    virtual int32_t SetTarget(RenderTarget target) const { return 0; };
+    virtual int32_t SetTarget(RenderTarget target) { return 0; };
 
     /**
      * @brief Obtains the current render target

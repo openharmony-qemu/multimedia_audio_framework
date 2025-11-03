@@ -32,6 +32,9 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 constexpr int32_t RELEASE_WAIT_TIME_MS = 3000; // 3000ms
+constexpr float INITIAL_DSP_VOLUME = -1.0f;
+constexpr int32_t INITIAL_DSP_STREAMUSAGE = -2;
+
 const std::unordered_map<std::string, std::string> AUDIO_PERSISTENCE_EFFECT_KEY {
     {"voip_down", "settings.sound_ai_voip_down_selection"},
 };
@@ -350,7 +353,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(std::string &sceneTy
             "null AudioEffectLibEntry");
         int32_t ret = effectToLibraryEntryMap_[effect]->audioEffectLibHandle->createEffect(descriptor, &handle);
         CHECK_AND_CONTINUE_LOG(ret == 0, "EffectToLibraryEntryMap[%{public}s] createEffect fail", effect.c_str());
-
+        CHECK_AND_CONTINUE_LOG(handle != nullptr, "handle is null");
         AUDIO_INFO_LOG("createEffect, EffectToLibraryEntryMap [%{public}s], effectChainKey [%{public}s]",
             effect.c_str(), effectChainKey.c_str());
         AudioEffectScene currSceneType;
@@ -469,6 +472,7 @@ int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffe
 {
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
     float volumeMax = 0.0f;
+    bool needSendDspVolumeFlag = false;
     for (auto it = sceneTypeToSessionIDMap_.begin(); it != sceneTypeToSessionIDMap_.end(); ++it) {
         std::set<std::string> sessions = sceneTypeToSessionIDMap_[it->first];
         for (auto s = sessions.begin(); s != sessions.end(); s++) {
@@ -482,23 +486,23 @@ int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffe
             float systemVolumeTemp = audioEffectVolume->GetSystemVolume(
                 sessionIDToEffectInfoMap_[*s].systemVolumeType);
             volumeMax = fmax((streamVolumeTemp * systemVolumeTemp), volumeMax);
+            needSendDspVolumeFlag = true;
         }
     }
     if (static_cast<int32_t>(audioEffectVolume->GetDspVolume() * MAX_UINT_VOLUME_NUM) !=
-        static_cast<int32_t>(volumeMax * MAX_UINT_VOLUME_NUM)) {
-        audioEffectVolume->SetDspVolume(volumeMax);
+        static_cast<int32_t>(volumeMax * MAX_UINT_VOLUME_NUM) && needSendDspVolumeFlag == true) {
         effectHdiInput_[0] = HDI_VOLUME;
-        AUDIO_INFO_LOG("finalVolume change to %{public}f", volumeMax);
         int32_t dspVolumeMax = static_cast<int32_t>(volumeMax * MAX_UINT_DSP_VOLUME);
         int32_t ret = memcpy_s(&effectHdiInput_[1], SEND_HDI_COMMAND_LEN - sizeof(int8_t),
             &dspVolumeMax, sizeof(int32_t));
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "memcpy volume failed");
-        AUDIO_INFO_LOG("set hdi volume: %{public}u", *(reinterpret_cast<uint32_t *>(&effectHdiInput_[1])));
+        AUDIO_INFO_LOG("set hdi finalVolume: %{public}u", *(reinterpret_cast<uint32_t *>(&effectHdiInput_[1])));
         CHECK_AND_RETURN_RET_LOG(audioEffectHdiParam_ != nullptr, ERROR, "audioEffectHdiParam_ is nullptr");
         if (audioEffectHdiParam_->UpdateHdiState(effectHdiInput_) != SUCCESS) {
             AUDIO_WARNING_LOG("set hdi volume failed");
             return ERROR;
         }
+        audioEffectVolume->SetDspVolume(volumeMax);
     }
     return SUCCESS;
 }
@@ -572,6 +576,7 @@ int32_t AudioEffectChainManager::EffectVolumeUpdate()
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
     return EffectVolumeUpdateInner(audioEffectVolume);
 }
 
@@ -832,13 +837,16 @@ int32_t AudioEffectChainManager::SetHdiParam(const AudioEffectScene &sceneType)
     }
     memset_s(static_cast<void *>(effectHdiInput_), sizeof(effectHdiInput_), 0, sizeof(effectHdiInput_));
 
-    effectHdiInput_[0] = HDI_ROOM_MODE;
-    effectHdiInput_[1] = sceneType;
-    AUDIO_PRERELEASE_LOGI("set hdi room mode sceneType: %{public}d", effectHdiInput_[1]);
-    CHECK_AND_RETURN_RET_LOG(audioEffectHdiParam_ != nullptr, ERROR, "audioEffectHdiParam_ is nullptr");
-    if (audioEffectHdiParam_->UpdateHdiState(effectHdiInput_) != SUCCESS) {
-        AUDIO_WARNING_LOG("set hdi room mode failed");
-        return ERROR;
+    if (currDspSceneType_ != sceneType) {
+        effectHdiInput_[0] = HDI_ROOM_MODE;
+        effectHdiInput_[1] = sceneType;
+        AUDIO_PRERELEASE_LOGI("set hdi room mode sceneType: %{public}d", effectHdiInput_[1]);
+        CHECK_AND_RETURN_RET_LOG(audioEffectHdiParam_ != nullptr, ERROR, "audioEffectHdiParam_ is nullptr");
+        if (audioEffectHdiParam_->UpdateHdiState(effectHdiInput_) != SUCCESS) {
+            AUDIO_WARNING_LOG("set hdi room mode failed");
+            return ERROR;
+        }
+        currDspSceneType_ = sceneType;
     }
     return SUCCESS;
 }
@@ -1115,6 +1123,11 @@ void AudioEffectChainManager::ResetInfo()
     initializedLogFlag_ = true;
     spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_MUSIC;
     isDefaultEffectChainExisted_ = false;
+    currDspStreamUsage_ = INITIAL_DSP_STREAMUSAGE;
+    currDspSceneType_ = SCENE_INITIAL;
+    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectVolume != nullptr, "null audioEffectVolume");
+    audioEffectVolume->SetDspVolume(INITIAL_DSP_VOLUME);
 }
 
 void AudioEffectChainManager::UpdateDefaultAudioEffect()
@@ -1582,23 +1595,27 @@ void AudioEffectChainManager::FindMaxSessionID(uint32_t &maxSessionID, std::stri
     }
 }
 
-void AudioEffectChainManager::UpdateCurrSceneTypeAndStreamUsageForDsp()
+int32_t AudioEffectChainManager::UpdateCurrSceneTypeAndStreamUsageForDsp()
 {
     AudioEffectScene currSceneType;
     std::string maxSession = std::to_string(maxSessionID_);
     UpdateCurrSceneType(currSceneType, maxSessionIDToSceneType_);
     SetHdiParam(currSceneType);
-    if (sessionIDToEffectInfoMap_.count(maxSession)) {
+    if (sessionIDToEffectInfoMap_.count(maxSession) &&
+        sessionIDToEffectInfoMap_[maxSession].streamUsage != currDspStreamUsage_) {
         SessionEffectInfo info = sessionIDToEffectInfoMap_[maxSession];
         effectHdiInput_[0] = HDI_STREAM_USAGE;
         effectHdiInput_[1] = info.streamUsage;
-        CHECK_AND_RETURN_LOG(audioEffectHdiParam_ != nullptr, "audioEffectHdiParam_ is nullptr");
+        CHECK_AND_RETURN_RET_LOG(audioEffectHdiParam_ != nullptr, ERROR, "audioEffectHdiParam_ is nullptr");
         int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_);
         AUDIO_INFO_LOG("set hdi streamUsage: %{public}d", info.streamUsage);
         if (ret != SUCCESS) {
             AUDIO_WARNING_LOG("set hdi streamUsage failed");
+            return ERROR;
         }
+        currDspStreamUsage_ = info.streamUsage;
     }
+    return SUCCESS;
 }
 
 int32_t AudioEffectChainManager::NotifyAndCreateAudioEffectChain(const std::string &sceneType)
@@ -1753,7 +1770,7 @@ bool AudioEffectChainManager::ExistAudioEffectChainInner(const std::string &scen
     }
     initializedLogFlag_ = true;
     CHECK_AND_RETURN_RET(sceneType != "", false);
-    CHECK_AND_RETURN_RET_LOG(GetDeviceTypeName() != "", false, "null deviceType");
+    CHECK_AND_RETURN_RET(GetDeviceTypeName() != "", false);
 
     if ((deviceType_ == DEVICE_TYPE_SPEAKER) && (spkOffloadEnabled_)) {
         return false;
@@ -1920,8 +1937,9 @@ ProcessClusterOperation AudioEffectChainManager::CheckProcessClusterInstances(co
         if (sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] == nullptr) {
             AUDIO_WARNING_LOG("scene type %{public}s has null process cluster", sceneTypeAndDeviceKey.c_str());
         } else {
-            AUDIO_INFO_LOG("process cluster already exist, current count: %{public}d, default count: %{public}d",
-                sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey], defaultEffectChainCount_);
+            AUDIO_INFO_LOG("processCluster %{public}s already exist, "
+                "current count is %{public}d, default count is %{public}d",
+                sceneType.c_str(), sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey], defaultEffectChainCount_);
             if (isDefaultEffectChainExisted_ && sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] ==
                 sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey]) {
                 return USE_DEFAULT_PROCESSCLUSTER;

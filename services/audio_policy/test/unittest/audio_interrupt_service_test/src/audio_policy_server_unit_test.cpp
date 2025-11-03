@@ -278,6 +278,31 @@ HWTEST(AudioPolicyUnitTest, SetStreamMute_001, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
+* @tc.number: OnReceiveEvent_001
+* @tc.desc  : Test AudioPolicyServer::OnReceiveEvent
+*/
+HWTEST(AudioPolicyUnitTest, OnReceiveEvent_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(audioPolicyServer, nullptr);
+
+    EventFwk::CommonEventData eventData;
+    OHOS::EventFwk::Want want;
+    want.SetAction("usual.event.dms.cast_plugged_changed");
+    eventData.SetWant(want);
+    eventData.SetData("0");
+    audioPolicyServer->OnReceiveEvent(eventData);
+    EXPECT_EQ(eventData.GetData(), "0");
+
+    eventData.SetData("1");
+    audioPolicyServer->OnReceiveEvent(eventData);
+    EXPECT_EQ(eventData.GetData(), "1");
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_001
 * @tc.desc  : Test CheckAudioSessionStrategy.
 */
@@ -960,46 +985,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_038, TestSize.Level1)
     EXPECT_NE(ret, ERR_SYSTEM_PERMISSION_DENIED);
 }
 #endif
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_039
-* @tc.desc  : Test AudioPolicyServer::ReleaseAudioInterruptZone
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_039, TestSize.Level1)
-{
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-
-    EXPECT_NE(ptrAudioPolicyServer, nullptr);
-
-    const int32_t zoneID = 0;
-    ptrAudioPolicyServer->interruptService_ = std::make_shared<AudioInterruptService>();
-    auto ret = ptrAudioPolicyServer->ReleaseAudioInterruptZone(zoneID);
-
-    EXPECT_EQ(ret, ERR_UNKNOWN);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_040
-* @tc.desc  : Test AudioPolicyServer::ReleaseAudioInterruptZone
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_040, TestSize.Level1)
-{
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-
-    EXPECT_NE(ptrAudioPolicyServer, nullptr);
-
-    const int32_t zoneID = 0;
-    ptrAudioPolicyServer->interruptService_ = nullptr;
-    auto ret = ptrAudioPolicyServer->ReleaseAudioInterruptZone(zoneID);
-
-    EXPECT_EQ(ret, ERR_UNKNOWN);
-}
 
 /**
 * @tc.name  : Test AudioPolicyServer.
@@ -2006,7 +1991,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_068, TestSize.Level1)
 
     std::string macAddress = "test";
     bool support = true;
-    auto ret = server->SetDeviceAbsVolumeSupported(macAddress, support);
+    auto ret = server->SetDeviceAbsVolumeSupported(macAddress, support, 0);
     EXPECT_EQ(ret, ERROR);
 }
 
@@ -2940,13 +2925,14 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_136, TestSize.Level1)
     ASSERT_TRUE(server != nullptr);
 
     int32_t volumeLevel = 1;
-    auto ret = server->SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_ASSISTANT, volumeLevel, true, false);
+    VolumeUpdateOption option{true, false};
+    auto ret = server->SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_ASSISTANT, volumeLevel, option);
     EXPECT_EQ(ret, SUCCESS);
 
-    ret = server->SetSingleStreamVolume(AudioStreamType::STREAM_RING, volumeLevel, true, false);
+    ret = server->SetSingleStreamVolume(AudioStreamType::STREAM_RING, volumeLevel, option);
     EXPECT_EQ(ret, SUCCESS);
 
-    ret = server->SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_RING, volumeLevel, true, false);
+    ret = server->SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_RING, volumeLevel, option);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -3531,6 +3517,36 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_223, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_224
+* @tc.desc  : Test OnReceiveEvent.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_224, TestSize.Level4)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(audioPolicyServer, nullptr);
+    audioPolicyServer->interruptService_ = std::make_shared<AudioInterruptService>();
+    EventFwk::CommonEventData eventData;
+    OHOS::EventFwk::Want want;
+    want.SetAction("usual.event.SCREEN_UNLOCKED");
+    eventData.SetWant(want);
+    audioPolicyServer->isRingtoneEL2Ready_ = false;
+    audioPolicyServer->OnReceiveEvent(eventData);
+    EXPECT_EQ(audioPolicyServer->isRingtoneEL2Ready_, true);
+    audioPolicyServer->OnReceiveEvent(eventData);
+    EXPECT_EQ(audioPolicyServer->isRingtoneEL2Ready_, true);
+    audioPolicyServer->interruptService_->isSwitchUser_ = true;
+    audioPolicyServer->OnReceiveEvent(eventData);
+    EXPECT_EQ(audioPolicyServer->isRingtoneEL2Ready_, true);
+    audioPolicyServer->interruptService_ = nullptr;
+    audioPolicyServer->OnReceiveEvent(eventData);
+    EXPECT_EQ(audioPolicyServer->isRingtoneEL2Ready_, true);
+}
+
+
+/**
  * @tc.name  : Test AudioPolicyServer
  * @tc.number: IsStreamActiveByStreamUsage_001
  * @tc.desc  : AudioPolicyServer::IsStreamActiveByStreamUsage
@@ -3614,6 +3630,28 @@ HWTEST(AudioPolicyUnitTest, GetStreamUsagesByVolumeType_001, TestSize.Level1)
 
     int32_t ret = server->GetStreamUsagesByVolumeType(volType, streamUsages);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST(AudioPolicyUnitTest, SelectPrivateDevice_01, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    int32_t devType = 8;
+    std::string macAddress{"11:22:33:44"};
+    int32_t result = server->SelectPrivateDevice(devType, macAddress);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: ForceSelectDevice_01
+* @tc.desc  : Test ForceSelectDevice.
+*/
+HWTEST(AudioPolicyUnitTest, ForceSelectDevice_01, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    sptr<AudioRendererFilter> filter{nullptr};
+    int32_t result = server->ForceSelectDevice(31, "11:22", filter);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**

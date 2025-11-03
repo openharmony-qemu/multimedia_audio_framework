@@ -23,6 +23,7 @@ config("audio_renderer_config") {
     "../../../interfaces/inner_api/native/audiomanager/include",
     "../../../services/audio_service/client/include",
     "../../../services/audio_service/test/example",
+    "../audioschedule/include",
   ]
   cflags = [
     "-Wall",
@@ -56,6 +57,7 @@ ohos_shared_library("audio_renderer") {
     "../../../services/audio_service:audio_common",
     "../audiodefinitions:audio_definitions",
     "../audioutils:audio_utils",
+    "../audioschedule:audio_schedule",
   ]
   external_deps = [
     "c_utils:utils",

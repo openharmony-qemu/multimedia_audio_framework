@@ -220,16 +220,12 @@ private:
     void HandleMuteWriteData(BufferDesc &bufferDesc, int32_t index);
     int32_t CreateDupBufferInner(int32_t innerCapId);
     int32_t WriteDupBufferInner(const BufferDesc &bufferDesc, int32_t innerCapId);
-    bool PrepareRingBuffer(size_t i, uint64_t curRead, RingBufferWrapper& ringBuffer);
     void SetupMoveCallback(size_t i, uint64_t curRead, const RingBufferWrapper& ringBuffer,
         std::function<void()>& moveClientIndex);
     void AddProcessStreamToList(IAudioProcessStream *processStream,
         const std::shared_ptr<OHAudioBufferBase> &processBuffer);
     void CheckAudioHapticsSync(uint64_t curWritePos);
     bool IsBufferDataInsufficient(int32_t readableDataFrame, uint32_t spanSizeInFrame);
-    bool NeedUseTempBuffer(const RingBufferWrapper &ringBuffer, size_t spanSizeInByte);
-    void PrepareStreamDataBuffer(size_t i, size_t spanSizeInByte,
-        RingBufferWrapper &ringBuffer, AudioStreamData &streamData);
 
     int32_t WriteDupBufferInnerForWriteModeInner(const BufferDesc &bufferDesc, int32_t innerCapId);
     int32_t WriteDupBufferInnerForCallbackModeInner(const BufferDesc &bufferDesc, int32_t innerCapId);
@@ -295,7 +291,6 @@ private:
     std::mutex listLock_;
     std::vector<IAudioProcessStream *> processList_;
     std::vector<std::shared_ptr<OHAudioBufferBase>> processBufferList_;
-    std::vector<std::vector<uint8_t>> processTmpBufferList_;
 
     std::atomic<bool> isInited_ = false;
 

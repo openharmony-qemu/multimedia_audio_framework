@@ -146,6 +146,10 @@ public:
     float lowPowerFactor_ = 1.0f;
     bool isMuted_ = false;
 
+    // Indicates whether the stream is muted by SetAppRingMuted API.
+    // This flag is only applicable to ring stream.
+    bool isAppRingMuted_ = false;
+
     float appVolume_ = 1.0f;
     float totalVolume_ = 1.0f; // volume_ * duckFactor_ * lowPowerFactor_ * appVolume_
 

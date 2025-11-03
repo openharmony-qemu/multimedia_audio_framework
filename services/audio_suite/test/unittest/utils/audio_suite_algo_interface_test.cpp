@@ -51,7 +51,7 @@ HWTEST(AudioSuiteAlgoInterface, CreateAlgoInterfaceTest, TestSize.Level0) {
     vbAlgo.reset();
 
     auto unknownAlgo = AudioSuiteAlgoInterface::CreateAlgoInterface(
-        static_cast<AlgoType>(3));
+        static_cast<AlgoType>(-1));
     EXPECT_EQ(unknownAlgo, nullptr);
     unknownAlgo.reset();
 }

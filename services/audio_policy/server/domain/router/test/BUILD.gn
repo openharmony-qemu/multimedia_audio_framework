@@ -246,6 +246,7 @@ ohos_unittest("stream_filter_router_ext_unit_test") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "kv_store:distributeddata_inner",
+    "libxml2:libxml2",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
@@ -261,7 +262,6 @@ ohos_unittest("stream_filter_router_ext_unit_test") {
   public_external_deps = [ "ffrt:libffrt" ]
 
   public_external_deps += [
-    "libxml2:libxml2",
     "openssl:libcrypto_shared",
   ]
 

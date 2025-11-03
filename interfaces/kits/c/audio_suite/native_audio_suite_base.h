@@ -12,40 +12,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /**
- * @addtogroup AudioSuiteEngine
+ * @addtogroup OHAudioSuite
  * @{
  *
  * @brief Provide the definition of the C interface for the audio module.
  *
- * @syscap SystemCapability.Multimedia.Audio.SuiteEngine
- *
  * @since 22
  * @version 1.0
  */
-
 /**
  * @file native_audio_suite_base.h
  *
  * @brief Declare underlying data structure.
  *
- * @library libohaudio.so
+ * @library libohaudiosuite.so
  * @syscap SystemCapability.Multimedia.Audio.SuiteEngine
+ * @kit AudioKit
  * @since 22
  * @version 1.0
  */
-
 #ifndef NATIVE_AUDIO_SUITE_BASE_H
 #define NATIVE_AUDIO_SUITE_BASE_H
-
 #include <stdint.h>
 #include "multimedia/native_audio_channel_layout.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 /**
  * @brief Define audio node type.
  *
@@ -135,7 +128,6 @@ typedef enum {
      */
     EFFECT_NODE_TYPE_AUDIO_MIXER = 207,
 } OH_AudioNode_Type;
-
 /**
  * @brief Define pipeline work mode
  *
@@ -156,7 +148,6 @@ typedef enum {
      */
     AUDIOSUITE_PIPELINE_REALTIME_MODE = 2,
 } OH_AudioSuite_PipelineWorkMode;
-
 /**
  * @brief Define pipeline state
  *
@@ -176,7 +167,6 @@ typedef enum {
      */
     AUDIOSUITE_PIPELINE_RUNNING = 2,
 } OH_AudioSuite_PipelineState;
-
 /**
  * @brief Define the result of the function execution.
  *
@@ -200,7 +190,7 @@ typedef enum {
      *
      * @since 22
      */
-    AUDIOSUITE_ERROR_ILLEGAL_STATE = 2,
+    AUDIOSUITE_ERROR_INVALID_STATE = 2,
     /**
      * @error An system error has occurred.
      *
@@ -242,7 +232,7 @@ typedef enum {
      *
      * @since 22
      */
-    AUDIOSUITE_ERROR_UNSUPPORT_OPERATION = 9,
+    AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION = 9,
     /**
      * @error The application attempted to create an object that exceeds the system's maximum limit.
      *
@@ -254,7 +244,7 @@ typedef enum {
      *
      * @since 22
      */
-    AUDIOSUITE_ERROR_REQUIRED_PARAMETERS_MISSED = 11,
+    AUDIOSUITE_ERROR_REQUIRED_PARAMETERS_MISSING = 11,
 } OH_AudioSuite_Result;
 
 /**
@@ -458,12 +448,6 @@ typedef struct OH_AudioDataArray {
  */
 typedef enum {
     /**
-     * Close sound field type.
-     *
-     * @since 22
-     */
-    SOUND_FIELD_CLOSE = 0,
-    /**
      * Front facing sound field type.
      *
      * @since 22
@@ -496,12 +480,6 @@ typedef enum {
  */
 typedef enum {
     /**
-     * Close environment effect type.
-     *
-     * @since 22
-     */
-    ENVIRONMENT_TYPE_CLOSE = 0,
-    /**
      * Broadcast environment effect type.
      *
      * @since 22
@@ -514,7 +492,7 @@ typedef enum {
      */
     ENVIRONMENT_TYPE_EARPIECE = 2,
     /**
-     * Earpiece environment effect type.
+     * UnderWater environment effect type.
      *
      * @since 22
      */
@@ -533,12 +511,6 @@ typedef enum {
  * @since 22
  */
 typedef enum {
-    /**
-     * Normal voice beautifier type.
-     *
-     * @since 22
-     */
-    VOICE_BEAUTIFIER_TYPE_NORMAL = 0,
     /**
      * Clear voice beautifier type.
      *
@@ -573,13 +545,17 @@ typedef enum {
 #define EQUALIZER_BAND_NUM (10)
 
 /**
- * @brief Define equalizer frequency band gains type
- * The equalizer supports gain adjustment for 10 specific frequencies.
- * Frequencies: 31 Hz, 62 Hz, 125 Hz, 250 Hz, 500 Hz, 1 kHz, 2 kHz, 4 kHz, 8 kHz, 16 kHz.
- * Gain range for each frequency is [-10, 10](unit: dB).
+ * @brief Specify equalizer frequency band gains.
+ *
  * @since 22
  */
 typedef struct OH_EqualizerFrequencyBandGains {
+    /**
+     * The equalizer supports gain adjustment for 10 specific frequencies.
+     * Frequencies: 31 Hz, 62 Hz, 125 Hz, 250 Hz, 500 Hz, 1 kHz, 2 kHz, 4 kHz, 8 kHz, 16 kHz.
+     *
+     * @since 22
+    */
     int32_t gains[EQUALIZER_BAND_NUM];
 } OH_EqualizerFrequencyBandGains;
 
@@ -633,7 +609,7 @@ extern const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_JAZZ;
 
 /**
  * Pop equalization effect band gains.
- * Gains is {3, 5, 2, -4, 1, 2, -3, 1, 4, 5}.
+ * Gains is {5, 2, 1, -1, -5, -5, -2, 1, 2, 4}.
  *
  * @since 22
  */
@@ -641,7 +617,7 @@ extern const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_POP;
 
 /**
  * R&B equalization effect band gains.
- * Gains is {3, 5, 2, -4, 1, 2, -3, 1, 4, 5}.
+ * Gains is {1, 4, 5, 3, -2, -2, 2, 3, 5, 5}.
  *
  * @since 22
  */
@@ -649,7 +625,7 @@ extern const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_RB;
 
 /**
  * Rock equalization effect band gains.
- * Gains is {3, 5, 2, -4, 1, 2, -3, 1, 4, 5}.
+ * Gains is {6, 4, 4, 2, 0, 1, 3, 3, 5, 4}.
  *
  * @since 22
  */
@@ -661,7 +637,7 @@ extern const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_ROCK;
  *
  * @since 22
  */
-typedef struct OH_AudioEditEngineStruct OH_AudioSuiteEngine;
+typedef struct OH_AudioSuiteEngineStruct OH_AudioSuiteEngine;
 
 /**
  * @brief Declare the audio pipe line.
@@ -669,7 +645,7 @@ typedef struct OH_AudioEditEngineStruct OH_AudioSuiteEngine;
  *
  * @since 22
  */
-typedef struct OH_AudioEditPipelineStruct OH_AudioSuitePipeline;
+typedef struct OH_AudioSuitePipelineStruct OH_AudioSuitePipeline;
 
 /**
  * @brief Declare the audio node.

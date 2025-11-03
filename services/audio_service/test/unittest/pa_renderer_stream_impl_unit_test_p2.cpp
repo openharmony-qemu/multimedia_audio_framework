@@ -205,8 +205,7 @@ HWTEST_F(PaRendererStreamUnitTestP2, PaRenderer_008, TestSize.Level1)
     pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
     unit->paStream_ = stream;
     unit->offloadEnable_ = true;
-    float volume = 0.0f;
-    EXPECT_NE(unit->OffloadSetVolume(volume), SUCCESS);
+    EXPECT_NE(unit->OffloadSetVolume(), SUCCESS);
 }
 
 /**

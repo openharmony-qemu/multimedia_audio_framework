@@ -27,6 +27,9 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
+namespace {
+const std::string ALGO_SO_PATH = "/system/lib64/libimedia_sws.z.so";
+}
 
 AudioSuiteEnvAlgoInterfaceImpl::AudioSuiteEnvAlgoInterfaceImpl()
 {}
@@ -44,7 +47,7 @@ int32_t AudioSuiteEnvAlgoInterfaceImpl::Init()
         AUDIO_ERR_LOG("AudioSuiteEnvAlgoInterfaceImpl already inited");
         return ERROR;
     }
-    std::string soPath = "/system/lib64/libimedia_sws.z.so";
+    std::string soPath = ALGO_SO_PATH;
     libHandle_ = dlopen(soPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
     CHECK_AND_RETURN_RET_LOG(libHandle_ != nullptr, ERROR, "dlopen algo: %{private}s so fail", soPath.c_str());
 
@@ -68,6 +71,7 @@ int32_t AudioSuiteEnvAlgoInterfaceImpl::Init()
     AUDIO_INFO_LOG("ALGO Init End, size of runBuf: %{public}d, size of scratchBuf: %{public}d",
         stSize_.iStrSize,
         stSize_.iScracthSize);
+    para_ = IMEDIA_SWS_ENV_BROADCAST;
     return SUCCESS;
 }
 
@@ -84,33 +88,35 @@ int32_t AudioSuiteEnvAlgoInterfaceImpl::Deinit()
     return SUCCESS;
 }
 
-iMedia_Env_PARA StringToEnvMode(const std::string &modStr)
+int32_t StringToEnvMode(const std::string &modStr, iMedia_Env_PARA &para)
 {
     if (modStr == "0") {
         AUDIO_INFO_LOG("EnvMode is Close");
-        return IMEDIA_SWS_ENV_BROADCAST;
+        para = IMEDIA_SWS_ENV_BROADCAST;
     } else if (modStr == "1") {
         AUDIO_INFO_LOG("Set EnvMode to BROADCAST");
-        return IMEDIA_SWS_ENV_BROADCAST;
+        para = IMEDIA_SWS_ENV_BROADCAST;
     } else if (modStr == "2") {
         AUDIO_INFO_LOG("Set EnvMode to TELEPHONE_RECEIVER");
-        return IMEDIA_SWS_ENV_TELEPHONE_RECEIVER;
+        para = IMEDIA_SWS_ENV_TELEPHONE_RECEIVER;
     } else if (modStr == "3") {
         AUDIO_INFO_LOG("Set EnvMode to UNDER_WATER");
-        return IMEDIA_SWS_ENV_UNDER_WATER;
+        para = IMEDIA_SWS_ENV_UNDER_WATER;
     } else if (modStr == "4") {
         AUDIO_INFO_LOG("Set EnvMode to PHONOGRAPH");
-        return IMEDIA_SWS_ENV_PHONOGRAPH;
+        para = IMEDIA_SWS_ENV_PHONOGRAPH;
     } else {
         AUDIO_ERR_LOG("Unknow EnvMode %{public}s, Set EnvMode to BROADCAST", modStr.c_str());
-        return IMEDIA_SWS_ENV_BROADCAST;
+        return ERROR;
     }
+    return SUCCESS;
 }
 
-int32_t AudioSuiteEnvAlgoInterfaceImpl::SetParameter(const std::string &envType, const std::string &envType2)
+int32_t AudioSuiteEnvAlgoInterfaceImpl::SetParameter(const std::string &paramType, const std::string &paramValue)
 {
-    para_ = StringToEnvMode(envType);
-    int32_t ret = algoApi_.initAlgo(runBuf_.data(), scratchBuf_.data(), stSize_.iScracthSize, para_);
+    int32_t ret = StringToEnvMode(paramValue, para_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Set EnvMOde Failed");
+    ret = algoApi_.initAlgo(runBuf_.data(), scratchBuf_.data(), stSize_.iScracthSize, para_);
     if (IMEDIA_SWS_EOK != ret) {
         AUDIO_ERR_LOG("iMedia_Env_Init ERROR: %{public}d", ret);
         runBuf_.clear();
@@ -147,7 +153,7 @@ int32_t AudioSuiteEnvAlgoInterfaceImpl::SetParameter(const std::string &envType,
 
 int32_t AudioSuiteEnvAlgoInterfaceImpl::GetParameter(const std::string &paramType, std::string &paramValue)
 {
-    iMedia_Env_PARA param;
+    iMedia_Env_PARA param = {};
     algoApi_.getPara(runBuf_.data(), &param);
     if (param != para_) {
         AUDIO_ERR_LOG("Set or get wrong param, set = %{public}d, get = %{public}d",
@@ -155,12 +161,17 @@ int32_t AudioSuiteEnvAlgoInterfaceImpl::GetParameter(const std::string &paramTyp
             static_cast<int32_t>(param));
         return ERROR;
     }
-    paramValue = std::to_string(static_cast<int32_t>(param));
+    paramValue = std::to_string(static_cast<int32_t>(param) + static_cast<int32_t>(1));
     return SUCCESS;
 }
 
 int32_t AudioSuiteEnvAlgoInterfaceImpl::Apply(std::vector<uint8_t *> &pcmInBuf, std::vector<uint8_t *> &pcmOutBuf)
 {
+    CHECK_AND_RETURN_RET_LOG(!pcmInBuf.empty(), ERROR, "pcmInBuf is empty");
+    CHECK_AND_RETURN_RET_LOG(pcmInBuf[0] != nullptr, ERROR, "pcmInBuf[0] is empty");
+    CHECK_AND_RETURN_RET_LOG(!pcmOutBuf.empty(), ERROR, "pcmOutBuf is empty");
+    CHECK_AND_RETURN_RET_LOG(pcmOutBuf[0] != nullptr, ERROR, "pcmOutBuf[0] is empty");
+
     int32_t ret = -1;
     size_t start = 0;
     size_t i = 0;

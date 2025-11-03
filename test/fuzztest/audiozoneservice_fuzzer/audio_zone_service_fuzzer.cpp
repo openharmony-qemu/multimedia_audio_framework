@@ -95,6 +95,19 @@ public:
         return volumeLevel_;
     }
 
+    ErrCode SetSystemVolumeDegree(int32_t zoneId, int32_t volumeType, int32_t volumeDegree, int32_t volumeFlag) override
+    {
+        volumeDegree_ = volumeDegree;
+        Notify();
+        return 0;
+    }
+
+    ErrCode GetSystemVolumeDegree(int32_t zoneId, int32_t volumeType, int32_t &outVolume) override
+    {
+        Notify();
+        return volumeDegree_;
+    }
+
     void Notify()
     {
         std::unique_lock<std::mutex> lock(waitLock_);
@@ -118,6 +131,7 @@ public:
     std::mutex waitLock_;
     int32_t waitStatus_ = 0;
     int32_t volumeLevel_ = 0;
+    int32_t volumeDegree_ = 0;
 };
 
 using AudioZoneFocusList = std::list<std::pair<AudioInterrupt, AudioFocuState>>;

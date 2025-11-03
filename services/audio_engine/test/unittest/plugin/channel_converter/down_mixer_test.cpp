@@ -164,6 +164,14 @@ HWTEST_F(DownMixerTest, SetParamTest, TestSize.Level0)
             EXPECT_EQ(ret, MIX_ERR_SUCCESS);
         }
     }
+
+    // test HOA output
+    inChannelInfo.channelLayout = CH_LAYOUT_HOA_ORDER3_ACN_N3D;
+    inChannelInfo.numChannels = BitCounts(CH_LAYOUT_HOA_ORDER3_ACN_N3D);
+    outChannelInfo.channelLayout = CH_LAYOUT_STEREO;
+    outChannelInfo.numChannels = STEREO;
+    ret = downMixer.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT_SIZE, MIX_FLE);
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
 }
 
 /**

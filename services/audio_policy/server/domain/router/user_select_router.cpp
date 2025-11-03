@@ -136,6 +136,11 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetRecordCaptureDevice(Sourc
     shared_ptr<AudioDeviceDescriptor> perDev_ =
         AudioStateManager::GetAudioStateManager().GetPreferredRecordCaptureDevice();
     CHECK_AND_RETURN_RET_LOG(perDev_ != nullptr, make_shared<AudioDeviceDescriptor>(), "perDev is null");
+    shared_ptr<AudioDeviceDescriptor> perRecognitionDev_ =
+        AudioStateManager::GetAudioStateManager().GetPreferredRecognitionCaptureDevice();
+    if (sourceType == SOURCE_TYPE_VOICE_RECOGNITION && perRecognitionDev_ && perRecognitionDev_->deviceId_ != 0) {
+        perDev_ = perRecognitionDev_;
+    }
     vector<shared_ptr<AudioDeviceDescriptor>> recordDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(MEDIA_INPUT_DEVICES);
     if (perDev_->deviceId_ == 0 || !RouterBase::IsDeviceUsageSupported(MEDIA_INPUT_DEVICES, perDev_)) {

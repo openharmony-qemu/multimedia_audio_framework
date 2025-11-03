@@ -205,6 +205,7 @@ void AudioUsbManager::Deinit()
 
 void AudioUsbManager::RefreshUsbAudioDevices()
 {
+    CHECK_AND_RETURN_LOG(observer_, "observer_ is nullptr");
     vector<UsbAudioDevice> devices;
     auto ret = GetUsbAudioDevices(devices);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "GetUsbAudioDevices Failed. ret=%{public}d", ret);

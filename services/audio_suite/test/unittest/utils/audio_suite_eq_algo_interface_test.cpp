@@ -38,7 +38,7 @@ HWTEST_F(AudioSuiteEqAlgoInterfaceImplTest, AudioSuiteEqAlgoInterfaceImplTest, T
 {
     AudioSuiteEqAlgoInterfaceImpl eqAlgo;
     EXPECT_EQ(eqAlgo.Init(), 0);
-    EXPECT_NQ(eqAlgo.Init(), 0);
+    EXPECT_NE(eqAlgo.Init(), 0);
     std::string a = "";
     std::string b = "";
     EXPECT_EQ(eqAlgo.GetParameter(a, b), 0);

@@ -298,7 +298,7 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_013, TestSize.Level4)
 {
     audioPolicyServer_->interruptService_ = std::make_shared<AudioInterruptService>();
     int32_t audioSessionScene = static_cast<int32_t>(AudioSessionScene::MEDIA);
-    EXPECT_EQ(audioPolicyServer_->SetAudioSessionScene(audioSessionScene), ERR_UNKNOWN);
+    EXPECT_EQ(audioPolicyServer_->SetAudioSessionScene(audioSessionScene), SUCCESS);
 
     audioPolicyServer_->interruptService_.reset();
     EXPECT_EQ(audioPolicyServer_->SetAudioSessionScene(audioSessionScene), ERR_UNKNOWN);

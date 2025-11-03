@@ -477,7 +477,9 @@ HWTEST(AudioGeneralManagerUnitTest, SelectPrivateDevice_01, TestSize.Level1)
 {
     auto audioGeneralManager = AudioGeneralManager::GetInstance();
     EXPECT_NE(audioGeneralManager, nullptr);
-    int32_t ret = audioGeneralManager->SelectPrivateDevice();
+    int32_t devType = 8;
+    std::string macAddress{"11:22:33:44"};
+    int32_t ret = audioGeneralManager->SelectPrivateDevice(devType, macAddress);
     EXPECT_EQ(ret, SUCCESS);
 }
 

@@ -53,7 +53,7 @@ int32_t AudioSessionManager::DeactivateAudioSession()
 {
     AUDIO_INFO_LOG("in");
     int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioSession();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DeactivateAudioSession failed, ret:%{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed, ret:%{public}d", ret);
 
     restoreParame_.OnAudioSessionDeactive();
     return ret;

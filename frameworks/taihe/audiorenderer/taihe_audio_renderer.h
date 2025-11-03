@@ -77,6 +77,8 @@ public:
     void SetSilentModeAndMixWithOthers(bool on);
     bool GetSilentModeAndMixWithOthers();
     void SetDefaultOutputDeviceSync(DeviceType deviceType);
+    void SetLoudnessGainSync(double loudnessGain);
+    double GetLoudnessGain();
 
     void OnStateChange(callback_view<void(AudioState)> callback);
     void OnAudioInterrupt(callback_view<void(InterruptEvent const&)> callback);

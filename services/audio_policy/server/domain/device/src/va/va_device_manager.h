@@ -58,19 +58,15 @@ private:
     VADeviceManager() = default;
     virtual ~VADeviceManager() = default;
 
+    AudioPolicyConfigData &config_ = AudioPolicyConfigData::GetInstance();
+
     std::unordered_map<std::string, sptr<IVADeviceController>> connectedVADeviceMap_;
 
+    std::mutex statusMutex_;
+
     void RegisterVAAdapterToMap();
-    void UnregisterVAAdapterFromMap();
 
     void AddVAStreamPropToMap(std::list<VAAudioStreamProperty> properties);
-
-    void ReorganizePolicyConfig();
-
-    bool IsVAAdapterRegistered();
-
-    bool IsDeviceInfoMapContainsVA(std::pair<DeviceType, DeviceRole> deviceMapKey =
-        std::make_pair(DEVICE_TYPE_BT_SPP, INPUT_DEVICE));
 
     std::shared_ptr<AudioDeviceDescriptor> ConvertVADeviceToDescriptor(const std::shared_ptr<VADevice> &vaDevice);
 
@@ -79,7 +75,7 @@ private:
     std::shared_ptr<PipeStreamPropInfo> ConvertVADeviceStreamPropertyToPipeStreamPropInfo(
         const VAAudioStreamProperty &vaStreamProperty);
 
-    int32_t CalculateBufferSize(const VAAudioStreamProperty &vaStreamProperty);
+    uint32_t CalculateBufferSize(const VAAudioStreamProperty &vaStreamProperty);
 };
 } //namespace AudioStandard
 } //namespace OHOS

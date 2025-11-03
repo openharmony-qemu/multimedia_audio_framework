@@ -90,6 +90,20 @@ public:
         return volumeLevel_;
     }
 
+    ErrCode SetSystemVolumeDegree(int32_t zoneId, int32_t volumeType, int32_t volumeDegree, int32_t volumeFlag) override
+    {
+        volumeDegree_ = volumeDegree;
+        Notify();
+        return 0;
+    }
+
+    ErrCode GetSystemVolumeDegree(int32_t zoneId, int32_t volumeType, int32_t &outVolume) override
+    {
+        outVolume = volumeDegree_;
+        Notify();
+        return 0;
+    }
+
     void Notify()
     {
         std::unique_lock<std::mutex> lock(waitLock_);
@@ -113,6 +127,7 @@ public:
     std::mutex waitLock_;
     int32_t waitStatus_ = 0;
     int32_t volumeLevel_ = 0;
+    int32_t volumeDegree_ = -1;
 };
 
 void AudioZoneClientManagerUnitTest::SetUpTestCase(void) {}
@@ -428,6 +443,29 @@ HWTEST_F(AudioZoneClientManagerUnitTest, AudioZoneClientManager_012, TestSize.Le
 
     EXPECT_EQ(testClient->recvEvent_.type, AudioZoneEventType::AUDIO_ZONE_REMOVE_EVENT);
     EXPECT_EQ(testClient->waitStatus_, 0);
+}
+
+/**
+ * @tc.name  : Test AudioZoneClientManagerUnitTest.
+ * @tc.number: AudioZoneClientManager_DegreeTest_001
+ * @tc.desc  : Test SetSystemVolumeDegree interface.
+ */
+HWTEST_F(AudioZoneClientManagerUnitTest, AudioZoneClientManager_DegreeTest_001, TestSize.Level4)
+{
+    auto& manager = AudioZoneClientManager::GetInstance();
+
+    AudioVolumeType volumeType = STREAM_MUSIC;
+    int32_t volumeDegree = 10;
+    pid_t pid = 106;
+    EXPECT_NE(manager.GetSystemVolumeDegree(pid, 0, volumeType), 0);
+    EXPECT_NE(manager.SetSystemVolumeDegree(pid, 0, volumeType, volumeDegree, 0), 0);
+
+    sptr<IStandardAudioZoneClient> client = new IStandardAudioZoneClientUnitTest();
+    ASSERT_NE(client, nullptr);
+
+    manager.clients_[pid] = client;
+    EXPECT_EQ(manager.SetSystemVolumeDegree(pid, 0, volumeType, volumeDegree, 0), 0);
+    EXPECT_EQ(manager.GetSystemVolumeDegree(pid, 0, volumeType), volumeDegree);
 }
 } // namespace AudioStandard
 } // namespace OHOS

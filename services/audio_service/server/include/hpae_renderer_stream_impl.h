@@ -66,7 +66,7 @@ public:
     int32_t UnsetOffloadMode() override;
     int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) override;
-    int32_t OffloadSetVolume(float volume) override;
+    int32_t OffloadSetVolume() override;
     int32_t SetOffloadDataCallbackState(int32_t state) override;
     size_t GetWritableSize() override;
     int32_t UpdateMaxLength(uint32_t maxLength) override;
@@ -89,6 +89,7 @@ private:
     int32_t WriteDataFromRingBuffer(bool forceData, int8_t *inputData, size_t &requestDataLen);
     uint32_t GetA2dpOffloadLatency(); // unit ms
     uint32_t GetNearlinkLatency(); // unit ms
+    uint32_t GetSinkLatency(); // unit ms
     void GetLatencyInner(uint64_t &timestamp, uint64_t &latencyUs, int32_t base);
     void OnDeviceClassChange(const AudioCallBackStreamInfo &callBackStreamInfo);
     int32_t GetRemoteOffloadSpeedPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency);
@@ -119,12 +120,13 @@ private:
 
     // latency position timeStamp
     std::shared_mutex latencyMutex_; // lock for variables related to position, latency, timestamp
-    std::atomic<uint64_t> framePosition_ = 0;
+    uint64_t framePosition_ = 0;
     uint64_t lastFramePosition_ = 0;
     uint64_t lastHdiFramePosition_ = 0;
     std::vector<uint64_t> timestamp_ = {Timestamp::Timestampbase::BASESIZE, 0};
     uint64_t latency_ = 0;
     uint64_t framesWritten_ = 0;
+    std::atomic<uint64_t> lastPrintTimestamp_ = 0;
 
     std::string deviceClass_;
     std::string deviceNetId_;

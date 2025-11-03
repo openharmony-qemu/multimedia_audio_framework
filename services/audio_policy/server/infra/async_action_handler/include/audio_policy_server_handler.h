@@ -82,6 +82,8 @@ public:
         SESSION_DEVICE_CHANGE,
         SESSION_INPUT_DEVICE_CHANGE,
         INTERRUPT_EVENT_FOR_AUDIO_SESSION,
+        VOLUME_DEGREE_EVENT,
+        AUDIO_DEVICE_INFO_UPDATE,
     };
     /* event data */
     class EventContextObj {
@@ -154,11 +156,13 @@ public:
         const sptr<IStandardAudioRoutingManagerListener> &callback);
     int32_t RemoveDistributedRoutingRoleChangeCbsMap(int32_t clientId);
     bool SendDeviceChangedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected);
+    bool SendDeviceInfoUpdatedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
     bool SendAvailableDeviceChange(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected);
     bool SendMicrophoneBlockedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc,
         DeviceBlockStatus status);
     void HandleMicrophoneBlockedCallback(const AppExecFwk::InnerEvent::Pointer &event);
     bool SendVolumeKeyEventCallback(const VolumeEvent &volumeEvent);
+    bool SendVolumeDegreeEventCallback(const VolumeEvent &volumeEvent);
     bool SendAudioFocusInfoChangeCallback(int32_t callbackCategory, const AudioInterrupt &audioInterrupt,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
     bool SendRingerModeUpdatedCallback(const AudioRingerMode &ringMode);
@@ -218,8 +222,10 @@ protected:
 private:
     /* Handle Event*/
     void HandleDeviceChangedCallback(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleDeviceInfoUpdatedCallback(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAvailableDeviceChange(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleVolumeKeyEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleVolumeDegreeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleRequestCateGoryEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAbandonCateGoryEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleFocusInfoChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);

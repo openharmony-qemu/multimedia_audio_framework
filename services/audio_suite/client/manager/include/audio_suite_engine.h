@@ -68,7 +68,7 @@ public:
     int32_t GetNodeBypassStatus(uint32_t nodeId) override;
     int32_t SetAudioFormat(uint32_t nodeId, AudioFormat audioFormat) override;
     int32_t SetRequestDataCallback(uint32_t nodeId,
-        std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback) override;
+        std::shared_ptr<InputNodeRequestDataCallBack> callback) override;
     int32_t ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) override;
     int32_t DisConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) override;
     int32_t RenderFrame(uint32_t pipelineId,
@@ -105,6 +105,7 @@ private:
     void HandleDisConnectNodes(int32_t result);
     void HandleRenderFrame(int32_t result, uint32_t pipelineId);
     void HandleMultiRenderFrame(int32_t result, uint32_t pipelineId);
+    void HandleGetOptions(int32_t result);
 
 private:
     std::atomic<bool> isInit_ = false;

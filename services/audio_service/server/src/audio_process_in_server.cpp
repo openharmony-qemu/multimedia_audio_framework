@@ -122,29 +122,61 @@ AudioProcessInServer::~AudioProcessInServer()
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_INVALID);
     }
+
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_RELEASE);
     AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
 }
 
-static CapturerState HandleStreamStatusToCapturerState(const StreamStatus &status)
+bool AudioProcessInServer::PrepareRingBuffer(uint64_t curRead, RingBufferWrapper& ringBuffer)
 {
-    switch (status) {
-        case STREAM_IDEL:
-        case STREAM_STAND_BY:
-            return CAPTURER_PREPARED;
-        case STREAM_STARTING:
-        case STREAM_RUNNING:
-            return CAPTURER_RUNNING;
-        case STREAM_PAUSING:
-        case STREAM_PAUSED:
-            return CAPTURER_PAUSED;
-        case STREAM_STOPPING:
-        case STREAM_STOPPED:
-            return CAPTURER_STOPPED;
-        case STREAM_RELEASED:
-            return CAPTURER_RELEASED;
-        default:
-            return CAPTURER_INVALID;
+    int32_t ret = processBuffer_->GetAllReadableBufferFromPosFrame(curRead, ringBuffer);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && ringBuffer.dataLength > 0, false,
+        "getBuffer failed ret: %{public}d lenth: %{public}zu",
+        ret, ringBuffer.dataLength);
+
+    auto byteSizePerFrame = GetByteSizePerFrame();
+    CHECK_AND_RETURN_RET_LOG(byteSizePerFrame != 0, false, "byteSizePerFrame is 0");
+
+    size_t spanSizeInByte = GetSpanSizeInFrame() * byteSizePerFrame;
+    if (ringBuffer.dataLength > spanSizeInByte) {
+        ringBuffer.dataLength = spanSizeInByte;
+    }
+
+    UpdateStreamInfo();
+    return true;
+}
+
+bool AudioProcessInServer::NeedUseTempBuffer(const RingBufferWrapper &ringBuffer, size_t spanSizeInByte)
+{
+    if (ringBuffer.dataLength > ringBuffer.basicBufferDescs[0].bufLength) {
+        return true;
+    }
+
+    if (ringBuffer.dataLength < spanSizeInByte) {
+        return true;
+    }
+
+    return false;
+}
+
+void AudioProcessInServer::PrepareStreamDataBuffer(size_t spanSizeInByte,
+    RingBufferWrapper &ringBuffer, AudioStreamData &streamData)
+{
+    if (NeedUseTempBuffer(ringBuffer, spanSizeInByte)) {
+        processTmpBuffer_.resize(0);
+        processTmpBuffer_.resize(spanSizeInByte);
+        RingBufferWrapper ringBufferDescForCotinueData;
+        ringBufferDescForCotinueData.dataLength = ringBuffer.dataLength;
+        ringBufferDescForCotinueData.basicBufferDescs[0].buffer = processTmpBuffer_.data();
+        ringBufferDescForCotinueData.basicBufferDescs[0].bufLength = ringBuffer.dataLength;
+        ringBufferDescForCotinueData.CopyInputBufferValueToCurBuffer(ringBuffer);
+        streamData.bufferDesc.buffer = processTmpBuffer_.data();
+        streamData.bufferDesc.bufLength = spanSizeInByte;
+        streamData.bufferDesc.dataLength = spanSizeInByte;
+    } else {
+        streamData.bufferDesc.buffer = ringBuffer.basicBufferDescs[0].buffer;
+        streamData.bufferDesc.bufLength = ringBuffer.dataLength;
+        streamData.bufferDesc.dataLength = ringBuffer.dataLength;
     }
 }
 
@@ -234,14 +266,9 @@ bool AudioProcessInServer::CheckBGCapturer()
     uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
 
     if (PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId)) {
-        AudioService::GetInstance()->UpdateBackgroundCaptureMap(sessionId_, true);
         return true;
     }
 
-    if (AudioService::GetInstance()->IsStreamInterruptResume(sessionId_)) {
-        AUDIO_WARNING_LOG("Stream:%{public}u Result:success Reason:resume", sessionId_);
-        return true;
-    }
     CHECK_AND_RETURN_RET_LOG(Util::IsBackgroundSourceType(processConfig_.capturerInfo.sourceType) &&
         AudioService::GetInstance()->InForegroundList(processConfig_.appInfo.appUid), false, "Verify failed");
 
@@ -264,19 +291,17 @@ bool AudioProcessInServer::TurnOnMicIndicator(CapturerState capturerState)
         tokenId,
         capturerState,
     };
-    if (SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
-        AudioService::GetInstance()->UpdateSwitchStreamMap(sessionId_, SWITCH_STATE_STARTED);
-    } else {
+    if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
         CHECK_AND_RETURN_RET_LOG(CheckBGCapturer(), false, "Verify failed");
     }
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
 
     if (isMicIndicatorOn_) {
-        AUDIO_WARNING_LOG("MicIndicator：already on, Stream:%{public}u.", sessionId_);
+        AUDIO_WARNING_LOG("MicIndicator:already on, Stream:%{public}u.", sessionId_);
     } else {
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, sessionId_),
             false, "NotifyPrivacyStart failed!");
-        AUDIO_INFO_LOG("MicIndicator:turn on，Stream:%{public}u", sessionId_);
+        AUDIO_INFO_LOG("MicIndicator:turn on,Stream:%{public}u", sessionId_);
         isMicIndicatorOn_ = true;
     }
     return true;
@@ -294,10 +319,6 @@ bool AudioProcessInServer::TurnOffMicIndicator(CapturerState capturerState)
         capturerState,
     };
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
-
-    if (AudioService::GetInstance()->NeedRemoveBackgroundCaptureMap(sessionId_, capturerState)) {
-        AudioService::GetInstance()->RemoveBackgroundCaptureMap(sessionId_);
-    }
     if (isMicIndicatorOn_) {
         PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
         AUDIO_INFO_LOG("MicIndicator:turn off, Stream:%{public}u", sessionId_);
@@ -374,10 +395,12 @@ int32_t AudioProcessInServer::StartInner()
 
 void AudioProcessInServer::RebuildCaptureInjector()
 {
+    CHECK_AND_RETURN_LOG(rebuildFlag_, "no need to rebuild");
     if (processConfig_.audioMode == AUDIO_MODE_RECORD &&
         processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         CoreServiceHandler::GetInstance().RebuildCaptureInjector(sessionId_);
     }
+    rebuildFlag_ = false;
 }
 
 int32_t AudioProcessInServer::Pause(bool isFlush)
@@ -498,6 +521,7 @@ int32_t AudioProcessInServer::Stop(int32_t stage)
 
 int32_t AudioProcessInServer::Release(bool isSwitchStream)
 {
+    AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited or already released");
     {
         std::lock_guard lock(scheduleGuardsMutex_);
@@ -904,11 +928,10 @@ RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
                 processConfig_.appInfo.appUid,
                 processConfig_.appInfo.appPid,
                 processConfig_.appInfo.appTokenId,
-                HandleStreamStatusToCapturerState(streamStatusInServer_)
+                streamStatusInServer_ == STREAM_RUNNING ? CAPTURER_RUNNING : CAPTURER_PREPARED
             };
             AUDIO_INFO_LOG("Insert switchStream:%{public}u uid:%{public}d tokenId:%{public}u "
                 "Reason:NEED_RESTORE", sessionId_, info.callerUid, info.appTokenId);
-            AudioService::GetInstance()->UpdateSwitchStreamMap(sessionId_, SWITCH_STATE_WAITING);
             SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
         }
 
@@ -1076,6 +1099,12 @@ int32_t AudioProcessInServer::HandleCapturerDataParams(RingBufferWrapper &writeB
     DumpFileUtil::WriteDumpFile(dumpFAC_, static_cast<void *>(writeBuf.basicBufferDescs[0].buffer),
         writeBuf.dataLength);
 
+    return SUCCESS;
+}
+
+int32_t AudioProcessInServer::SetRebuildFlag()
+{
+    rebuildFlag_ = true;
     return SUCCESS;
 }
 

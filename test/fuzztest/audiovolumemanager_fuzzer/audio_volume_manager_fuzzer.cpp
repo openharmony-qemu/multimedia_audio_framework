@@ -133,7 +133,7 @@ void AudioVolumeManagerSetAbsVolumeSceneAsyncFuzzTest()
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
     audioVolumeManager.audioActiveDevice_.SetActiveBtDeviceMac(macAddress);
-    audioVolumeManager.SetAbsVolumeSceneAsync(macAddress, support);
+    audioVolumeManager.SetAbsVolumeSceneAsync(macAddress, support, 0);
 }
 
 void AudioVolumeManagerDealWithEventVolumeFuzzTest()
@@ -159,7 +159,7 @@ void AudioVolumeManagerSetDeviceAbsVolumeSupportedFuzzTest()
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
     audioVolumeManager.audioActiveDevice_.SetActiveBtDeviceMac(macAddress);
-    audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support);
+    audioVolumeManager.SetDeviceAbsVolumeSupported(macAddress, support, 0);
 }
 
 void AudioVolumeManagerSetStreamMuteFuzzTest()

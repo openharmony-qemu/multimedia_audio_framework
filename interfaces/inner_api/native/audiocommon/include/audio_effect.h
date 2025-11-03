@@ -491,6 +491,7 @@ struct SupportedEffectConfig : public Parcelable {
 * Enumerates the audio scene effect type.
 */
 enum AudioEffectScene {
+    SCENE_INITIAL = -1,
     SCENE_OTHERS = 0,
     SCENE_MUSIC = 1,
     SCENE_MOVIE = 2,
@@ -801,6 +802,18 @@ struct AudioEffectInterface {
         AudioEffectTransInfo *cmdInfo, AudioEffectTransInfo *replyInfo);
 };
 
+struct AlgoSupportConfig {
+    bool isSupport;
+    bool isRealTime;
+    uint32_t frameLen;
+    uint32_t inSampleRate;
+    uint32_t inChannels;
+    uint32_t inFormat;
+    uint32_t outSampleRate;
+    uint32_t outChannels;
+    uint32_t outFormat;
+};
+
 struct AudioEffectLibrary {
     uint32_t version;
     const char *name;
@@ -808,6 +821,7 @@ struct AudioEffectLibrary {
     bool (*checkEffect) (const AudioEffectDescriptor descriptor);
     int32_t (*createEffect) (const AudioEffectDescriptor descriptor, AudioEffectHandle *handle);
     int32_t (*releaseEffect) (AudioEffectHandle handle);
+    void (*supportEffect) (AlgoSupportConfig *config);
 };
 
 struct AudioEffectLibEntry {
@@ -888,6 +902,7 @@ struct AudioEnhanceParam {
     uint32_t muteInfo;
     uint32_t volumeInfo;
     uint32_t foldState;
+    uint32_t powerState;
     const char *preDevice;
     const char *postDevice;
     const char *sceneType;

@@ -455,7 +455,7 @@ AudioDeviceDescriptor *AudioDeviceDescriptor::Unmarshalling(Parcel &parcel)
 
 void AudioDeviceDescriptor::MapInputDeviceType(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
 {
-    for (size_t index = descs.size() - 1; index >= 0; index--) {
+    for (int index = static_cast<int>(descs.size()) - 1; index >= 0; index--) {
         if ((descs[index]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP &&
             descs[index]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP_IN) ||
             descs[index]->deviceRole_ != INPUT_DEVICE) {
@@ -551,6 +551,11 @@ bool AudioDeviceDescriptor::IsSpeakerOrEarpiece() const
 bool AudioDeviceDescriptor::IsRemote() const
 {
     return networkId_ != LOCAL_NETWORK_ID;
+}
+
+bool AudioDeviceDescriptor::IsRemoteDevice() const
+{
+    return networkId_ != LOCAL_NETWORK_ID || deviceType_ == DEVICE_TYPE_REMOTE_CAST;
 }
 
 void AudioDeviceDescriptor::Dump(std::string &dumpString)

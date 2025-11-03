@@ -90,7 +90,7 @@ public:
         return nullptr;
     }
 
-    virtual int32_t SetRequestDataCallback(std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback)
+    virtual int32_t SetRequestDataCallback(std::shared_ptr<InputNodeRequestDataCallBack> callback)
     {
         AUDIO_ERR_LOG("SetRequestDataCallback failed, node type = %{public}d not support.", GetNodeType());
         return ERR_INVALID_OPERATION;

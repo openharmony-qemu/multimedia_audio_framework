@@ -119,7 +119,7 @@ void TaiheAudioCapturerCallback::OnInterrupt(const OHOS::AudioStandard::Interrup
 
 void TaiheAudioCapturerCallback::OnJsCallbackInterrupt(std::unique_ptr<AudioCapturerJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("OnJsCallbackInterrupt: jsCb.get() is null");
         return;
     }
@@ -142,7 +142,9 @@ void TaiheAudioCapturerCallback::SafeJsCallbackInterruptWork(AudioCapturerJsCall
     std::shared_ptr<AudioCapturerJsCallback> safeContext(
         static_cast<AudioCapturerJsCallback*>(event),
         [](AudioCapturerJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
     std::string request = event->callbackName;
     InterruptEvent interruptEvent = {
@@ -174,7 +176,7 @@ void TaiheAudioCapturerCallback::OnStateChange(const OHOS::AudioStandard::Captur
 
 void TaiheAudioCapturerCallback::OnJsCallbackStateChange(std::unique_ptr<AudioCapturerJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("OnJsCallbackStateChange: OnJsCallbackRingerMode: jsCb.get() is null");
         return;
     }
@@ -198,7 +200,9 @@ void TaiheAudioCapturerCallback::SafeJsCallbackStateChangeWork(AudioCapturerJsCa
     std::shared_ptr<AudioCapturerJsCallback> safeContext(
         static_cast<AudioCapturerJsCallback*>(event),
         [](AudioCapturerJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
     std::string request = event->callbackName;
 

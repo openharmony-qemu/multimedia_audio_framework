@@ -245,10 +245,10 @@ void AudioCoreService::EventEntry::OnForcedDeviceSelected(DeviceType devType, co
     coreService_->OnForcedDeviceSelected(devType, macAddress, filter);
 }
 
-void AudioCoreService::EventEntry::OnPrivacyDeviceSelected()
+void AudioCoreService::EventEntry::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    coreService_->OnPrivacyDeviceSelected();
+    coreService_->OnPrivacyDeviceSelected(devType, macAddress);
 }
 
 int32_t AudioCoreService::EventEntry::SetAudioScene(AudioScene audioScene, const int32_t uid, const int32_t pid)
@@ -647,8 +647,14 @@ void AudioCoreService::EventEntry::RebuildCaptureInjector(uint32_t streamId)
 int32_t AudioCoreService::EventEntry::A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
                                                                    uint32_t &timeStamp)
 {
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
     return coreService_->A2dpOffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
+}
+
+void AudioCoreService::EventEntry::OnCheckActiveMusicTime(const std::string &reason)
+{
+    coreService_->OnCheckActiveMusicTime(reason);
 }
 }
 }

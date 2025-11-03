@@ -50,6 +50,7 @@ struct AppConfigVolume {
 };
 
 const int32_t MAX_CACHE_AMOUNT = 10;
+static constexpr int32_t MAX_VOLUME_DEGREE = 100;
 class AudioAdapterManager : public IAudioPolicyInterface {
 public:
     static constexpr std::string_view SPLIT_STREAM_SINK = "libmodule-split-stream-sink.z.so";
@@ -144,7 +145,9 @@ public:
 
     AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex);
 
-    AudioIOHandle ReloadAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex);
+    AudioIOHandle ReloadA2dpAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex);
+
+    void ReloadAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex);
 
     int32_t CloseAudioPort(AudioIOHandle ioHandle, uint32_t paIndex = HDI_INVALID_ID);
 
@@ -199,7 +202,7 @@ public:
 
     bool IsUseNonlinearAlgo() { return useNonlinearAlgo_; }
 
-    void SetAbsVolumeScene(bool isAbsVolumeScene);
+    void SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volume);
 
     bool IsAbsVolumeScene() const;
 
@@ -326,6 +329,13 @@ public:
     bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout);
     void UpdateOtherStreamVolume(AudioStreamType streamType);
     void SetVolumeLimit(float volume);
+    bool SetMaxVolumeForDpBoardcast();
+    int32_t SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree);
+    int32_t GetSystemVolumeDegree(AudioStreamType streamType, bool checkMuteState = true);
+    int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
+    float GetSystemVolumeInDbByDegree(AudioVolumeType volumeType, DeviceType deviceType, bool mute);
+    int32_t SetZoneVolumeDegreeToMap(int32_t zoneId, AudioStreamType streamType, int32_t volumeDegree);
+    int32_t GetZoneVolumeDegree(int32_t zoneId, AudioStreamType streamType);
 private:
     friend class PolicyCallbackImpl;
 
@@ -341,6 +351,7 @@ private:
     static constexpr int32_t CONVERT_FROM_MS_TO_SECONDS = 1000;
     static constexpr float MIN_STREAM_VOLUME = 0.0f;
     static constexpr float MAX_STREAM_VOLUME = 1.0f;
+    static constexpr int32_t MIN_VALID_VOLUME_DEGREE = 1;
 
     struct UserData {
         AudioAdapterManager *thiz;
@@ -415,7 +426,6 @@ private:
     void CheckAndDealMuteStatus(const DeviceType &deviceType, const AudioStreamType &streamType);
     void SetVolumeCallbackAfterClone();
     void SetFirstBoot(bool isFirst);
-    void AdjustBluetoothVoiceAssistantVolume(std::shared_ptr<AudioDeviceDescriptor> &device, bool isA2dpSwitchToSco);
     bool IsPaRoute(uint32_t routeFlag);
     void DepressVolume(float &volume, int32_t volumeLevel, AudioStreamType streamType, DeviceType deviceType);
     AudioIOHandle OpenPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex, std::string moduleArgs);
@@ -435,6 +445,17 @@ private:
         AudioStreamType streamType, bool mute);
     int32_t SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDeviceDescriptor> desc,
         AudioStreamType streamType);
+    float CalculateVolumeDbByDegree(DeviceType deviceType, AudioStreamType streamType, int32_t volumeDegree);
+    float CalculateVolumeDbExt(int32_t volumeInt, int32_t limit = MAX_VOLUME_DEGREE);
+    float CalculateVolumeDbNonlinearExt(AudioStreamType streamType, DeviceType deviceType, int32_t volumeDegree);
+    void SaveVolumeData(std::shared_ptr<AudioDeviceDescriptor> device,
+        AudioStreamType streamType, int32_t volumeLevel, bool updateDb = false, bool updateMem = false);
+    void SaveVolumeDegreeToDbAsync(std::shared_ptr<AudioDeviceDescriptor> desc,
+        AudioStreamType streamType, int32_t volumeDegree);
+    int32_t GetStreamVolumeDegreeInternal(std::shared_ptr<AudioDeviceDescriptor> &device,
+        AudioStreamType streamType);
+    int32_t GetMinVolumeDegree(AudioVolumeType volumeType,
+        std::shared_ptr<AudioDeviceDescriptor> desc);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
@@ -465,13 +486,17 @@ private:
     int32_t safeVolume_ = 0;
     SafeStatus safeStatus_ = SAFE_ACTIVE;
     SafeStatus safeStatusBt_ = SAFE_ACTIVE;
+    SafeStatus safeStatusSle_ = SAFE_ACTIVE;
     int64_t safeActiveTime_ = 0;
     int64_t safeActiveBtTime_ = 0;
+    int64_t safeActiveSleTime_ = 0;
     int32_t safeVolumeTimeout_ = DEFAULT_SAFE_VOLUME_TIMEOUT;
     int32_t safeActiveVolume_ = 0;
     int32_t safeActiveBtVolume_ = 0;
+    int32_t safeActiveSleVolume_ = 0;
     bool isWiredBoot_ = true;
     bool isBtBoot_ = true;
+    bool isSleBoot_ = true;
     int32_t curActiveCount_ = 0;
     int32_t volumeAdjustZoneId_ = 0;
     bool isSafeBoot_ = true;

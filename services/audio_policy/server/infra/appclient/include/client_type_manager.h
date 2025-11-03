@@ -19,6 +19,7 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <condition_variable>
 #include "ffrt.h"
 
 #include "client_type_manager_handler.h"
@@ -32,6 +33,7 @@ public:
     static ClientTypeManager *GetInstance();
     void GetAndSaveClientType(uint32_t uid, const std::string &bundleName);
     ClientType GetClientTypeByUid(uint32_t uid);
+    ClientType GetClientTypeByUidSync(int32_t uid);
 
     void OnClientTypeQueryCompleted(uint32_t uid, ClientType clientType) override;
 
@@ -42,6 +44,7 @@ private:
     std::unordered_map<uint32_t, ClientType> clientTypeMap_;
 
     std::mutex handlerMutex_;
+    ffrt::condition_variable cv;
     std::shared_ptr<ClientTypeManagerHandler> clientTypeManagerHandler_ = nullptr;
 };
 } // namespace AudioStandard

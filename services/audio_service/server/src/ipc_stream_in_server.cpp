@@ -347,6 +347,15 @@ int32_t IpcStreamInServer::GetRate(int32_t &rate)
     return ERR_OPERATION_FAILED;
 }
 
+int32_t IpcStreamInServer::SetRebuildFlag()
+{
+    if (mode_ == AUDIO_MODE_RECORD && capturerInServer_!= nullptr) {
+        capturerInServer_->SetRebuildFlag();
+        return SUCCESS;
+    }
+    return ERR_OPERATION_FAILED;
+}
+
 int32_t IpcStreamInServer::SetLowPowerVolume(float volume)
 {
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {

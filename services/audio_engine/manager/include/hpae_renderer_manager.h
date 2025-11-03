@@ -142,7 +142,12 @@ private:
     int32_t DeleteProcessClusterInner(uint32_t sessionId, HpaeProcessorType sceneType);
     void RefreshProcessClusterByDeviceInner(const std::shared_ptr<HpaeSinkInputNode> &node);
     void TriggerStreamState(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode> &node);
-    void UpdateStreamProp(const std::shared_ptr<const HpaeNode> &sourceNode, const std::shared_ptr<HpaeNode> &dstNode);
+    /**
+     * @brief Refresh the usage and type of the cluster corresponding to the given session id.
+     * @param sessionId session id of the target cluster.
+     * @return errCode
+     */
+    int32_t UpdateClusterBySessionId(uint32_t sessionId);
     bool IsClusterDisConnected(HpaeProcessorType sceneType);
     bool QueryOneStreamUnderrun();
     void DeleteNodesByTraversal(uint32_t sessionId);

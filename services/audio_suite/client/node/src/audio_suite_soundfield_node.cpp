@@ -92,6 +92,9 @@ int32_t AudioSuiteSoundFieldNode::SetOptions(std::string name, std::string value
 
     CHECK_AND_RETURN_RET_LOG(name == "SoundFieldType", ERROR, "SetOptions Unknow Type %{public}s", name.c_str());
 
+    paraName_ = name;
+    paraValue_ = value;
+
     // convert from SoundFieldType to iMedia_Surround_PARA
     auto it = soundFieldParaMap.find(static_cast<SoundFieldType>(std::stoi(value)));
     if (it != soundFieldParaMap.end()) {

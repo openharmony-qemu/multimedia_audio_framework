@@ -31,8 +31,8 @@ void HpaeSignalProcessThread::ActivateThread(const std::weak_ptr<HpaeStreamManag
     running_.store(true);
     auto threadFunc = std::bind(&HpaeSignalProcessThread::Run, this);
     thread_ = std::thread(threadFunc);
-    if (streamManager_.lock() != nullptr) {
-        pthread_setname_np(thread_.native_handle(), streamManager_.lock()->GetThreadName().c_str());
+    if (auto manager = streamManager_.lock()) {
+        pthread_setname_np(thread_.native_handle(), manager->GetThreadName().c_str());
     }
 }
 
