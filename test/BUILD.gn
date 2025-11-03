@@ -349,6 +349,7 @@ group("audio_fuzz_test") {
     "fuzztest/istandardspatializationstatechangelistener_fuzzer:fuzztest",
     "fuzztest/microphonedescriptor_fuzzer:fuzztest",
     "fuzztest/offlineaudioeffectserverchain_fuzzer:fuzztest",
+    "fuzztest/offlinestreaminserver_fuzzer:fuzztest",
     "fuzztest/powerstatelistener_fuzzer:fuzztest",
     "fuzztest/proaudiostreammanager_fuzzer:fuzztest",
     "fuzztest/resourcemanageradapter_fuzzer:fuzztest",
