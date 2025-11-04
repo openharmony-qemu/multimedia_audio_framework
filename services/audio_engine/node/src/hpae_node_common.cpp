@@ -540,6 +540,18 @@ void ConfigNodeInfo(HpaeNodeInfo &nodeInfo, const HpaeStreamInfo &streamInfo)
     nodeInfo.fadeType = streamInfo.fadeType;
     nodeInfo.sourceType = streamInfo.sourceType;
 }
+
+uint32_t CalculateInputFrameLen(uint32_t sampleRate) {
+    uint32_t frameLen = 0;
+    if (sampleRate == SAMPLE_RATE_11025) {
+        frameLen = FRAME_LEN_40MS * sampleRate / AUDIO_MS_PER_S;
+    } else if (sampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES == 0) {
+        frameLen = FRAME_LEN_20MS * sampleRate / AUDIO_MS_PER_S;
+    } else {
+        frameLen = FRAME_LEN_100MS * sampleRate / AUDIO_MS_PER_S;
+    }
+    return frameLen;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
