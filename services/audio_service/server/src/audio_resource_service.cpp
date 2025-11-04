@@ -114,9 +114,6 @@ int32_t AudioResourceService::CreateAudioWorkgroup(int32_t pid, const sptr<IRemo
 int32_t AudioResourceService::ReleaseAudioWorkgroup(int32_t pid, int32_t workgroupId)
 {
     std::lock_guard<std::mutex> lock(workgroupLock_);
-    CHECK_AND_RETURN_RET_LOG(audioWorkgroupMap_.find(pid) != audioWorkgroupMap_.end(),
-        ERR_INVALID_PARAM, "[WorkgroupInServer]ReleaseAudioWorkgroup failed, err pid:%{public}d", pid);
-
     auto group = GetAudioWorkgroup(pid, workgroupId);
     CHECK_AND_RETURN_RET_LOG(group != nullptr, ERR_INVALID_PARAM, "AudioWorkgroup operated is not exist");
 
@@ -162,8 +159,6 @@ int32_t AudioResourceService::ReleaseAudioWorkgroup(int32_t pid, int32_t workgro
 int32_t AudioResourceService::AddThreadToGroup(int32_t pid, int32_t workgroupId, int32_t tokenId)
 {
     std::lock_guard<std::mutex> lock(workgroupLock_);
-    CHECK_AND_RETURN_RET_LOG(audioWorkgroupMap_.find(pid) != audioWorkgroupMap_.end(),
-        ERR_INVALID_PARAM, "[WorkgroupInServer]AddThreadToGroup failed, err pid:%{public}d", pid);
     if (pid == tokenId) {
         AUDIO_ERR_LOG("[WorkgroupInServer] main thread pid=%{public}d is not allowed to be added", pid);
         return ERR_OPERATION_FAILED;
@@ -183,8 +178,6 @@ int32_t AudioResourceService::AddThreadToGroup(int32_t pid, int32_t workgroupId,
 int32_t AudioResourceService::RemoveThreadFromGroup(int32_t pid, int32_t workgroupId, int32_t tokenId)
 {
     std::lock_guard<std::mutex> lock(workgroupLock_);
-    CHECK_AND_RETURN_RET_LOG(audioWorkgroupMap_.find(pid) != audioWorkgroupMap_.end(),
-        ERR_INVALID_PARAM, "[WorkgroupInServer]RemoveThreadFromGroup failed, err pid:%{public}d", pid);
     auto group = GetAudioWorkgroup(pid, workgroupId);
     CHECK_AND_RETURN_RET_LOG(group != nullptr, ERR_INVALID_PARAM, "AudioWorkgroup operated is not exist");
     int32_t ret = group->RemoveThread(tokenId);
@@ -194,8 +187,6 @@ int32_t AudioResourceService::RemoveThreadFromGroup(int32_t pid, int32_t workgro
 int32_t AudioResourceService::StartGroup(int32_t pid, int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime)
 {
     std::lock_guard<std::mutex> lock(workgroupLock_);
-    CHECK_AND_RETURN_RET_LOG(audioWorkgroupMap_.find(pid) != audioWorkgroupMap_.end(),
-        ERR_INVALID_PARAM, "[WorkgroupInServer]StartGroup failed, err pid:%{public}d", pid);
     auto group = GetAudioWorkgroup(pid, workgroupId);
     CHECK_AND_RETURN_RET_LOG(group != nullptr, ERR_INVALID_PARAM, "AudioWorkgroup operated is not exist");
     int32_t ret = group->Start(startTime, deadlineTime);
@@ -205,8 +196,6 @@ int32_t AudioResourceService::StartGroup(int32_t pid, int32_t workgroupId, uint6
 int32_t AudioResourceService::StopGroup(int32_t pid, int32_t workgroupId)
 {
     std::lock_guard<std::mutex> lock(workgroupLock_);
-    CHECK_AND_RETURN_RET_LOG(audioWorkgroupMap_.find(pid) != audioWorkgroupMap_.end(),
-        ERR_INVALID_PARAM, "[WorkgroupInServer]StopGroup failed, err pid:%{public}d", pid);
     auto group = GetAudioWorkgroup(pid, workgroupId);
     CHECK_AND_RETURN_RET_LOG(group != nullptr, ERR_INVALID_PARAM, "AudioWorkgroup operated is not exist");
     int32_t ret = group->Stop();
@@ -399,8 +388,6 @@ int32_t AudioResourceService::ImproveAudioWorkgroupPrio(int32_t pid,
     const std::unordered_map<int32_t, bool> &threads)
 {
     std::lock_guard<std::mutex> lock(workgroupLock_);
-    CHECK_AND_RETURN_RET_LOG(audioWorkgroupMap_.find(pid) != audioWorkgroupMap_.end(),
-        ERR_INVALID_PARAM, "[WorkgroupInServer]ImproveAudioWorkgroupPrio failed, err pid:%{public}d", pid);
     CHECK_AND_RETURN_RET_LOG(!threads.empty(), ERR_INVALID_PARAM, "[WorkgroupInServer] No thread to improve prio");
     for (const auto &tid : threads) {
         AUDIO_INFO_LOG("[WorkgroupInServer]set pid:%{public}d tid:%{public}d to qos_level7", pid, tid.first);
@@ -413,8 +400,6 @@ int32_t AudioResourceService::RestoreAudioWorkgroupPrio(int32_t pid,
     const std::unordered_map<int32_t, int32_t> &threads)
 {
     std::lock_guard<std::mutex> lock(workgroupLock_);
-    CHECK_AND_RETURN_RET_LOG(audioWorkgroupMap_.find(pid) != audioWorkgroupMap_.end(),
-        ERR_INVALID_PARAM, "[WorkgroupInServer]RestoreAudioWorkgroupPrio failed, err pid:%{public}d", pid);
     CHECK_AND_RETURN_RET_LOG(!threads.empty(), ERR_INVALID_PARAM, "[WorkgroupInServer] No thread to restore prio");
     for (const auto &tid : threads) {
         AUDIO_INFO_LOG("[WorkgroupInServer]set pid:%{public}d tid:%{public}d to qos%{public}d",
