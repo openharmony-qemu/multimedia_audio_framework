@@ -261,6 +261,7 @@ int32_t BluetoothAudioRenderSink::Pause(void)
 int32_t BluetoothAudioRenderSink::Flush(void)
 {
     AUDIO_INFO_LOG("%{public}s in", logTypeTag_.c_str());
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
@@ -273,6 +274,7 @@ int32_t BluetoothAudioRenderSink::Flush(void)
 int32_t BluetoothAudioRenderSink::Reset(void)
 {
     AUDIO_INFO_LOG("%{public}s in", logTypeTag_.c_str());
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
@@ -372,6 +374,7 @@ void BluetoothAudioRenderSink::SetAudioParameter(const AudioParamKey key, const 
 // need to hold sinkMutex when call this func.
 void BluetoothAudioRenderSink::SetAudioParameterInner(const std::string &value)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     CHECK_AND_RETURN_LOG(audioRender_ != nullptr && IsValidState(), "render is nullptr");
     int32_t ret = audioRender_->attr.SetExtraParams(reinterpret_cast<AudioHandle>(audioRender_), value.c_str());
     if (ret != SUCCESS) {
@@ -387,6 +390,7 @@ std::string BluetoothAudioRenderSink::GetAudioParameter(const AudioParamKey key,
 
 int32_t BluetoothAudioRenderSink::SetVolume(float left, float right)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
 
@@ -419,6 +423,7 @@ int32_t BluetoothAudioRenderSink::GetVolume(float &left, float &right)
 int32_t BluetoothAudioRenderSink::GetLatency(uint32_t &latency)
 {
     Trace trace("BluetoothAudioRenderSink::GetLatency");
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
 
@@ -431,6 +436,7 @@ int32_t BluetoothAudioRenderSink::GetLatency(uint32_t &latency)
 
 int32_t BluetoothAudioRenderSink::GetTransactionId(uint64_t &transactionId)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     transactionId = reinterpret_cast<uint64_t>(audioRender_);
@@ -596,6 +602,7 @@ int32_t BluetoothAudioRenderSink::GetMmapBufferInfo(int &fd, uint32_t &totalSize
 
 int32_t BluetoothAudioRenderSink::GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
 
