@@ -280,7 +280,7 @@ int32_t OHAudioBufferBase::Init(int dataFd, int infoFd, size_t statusInfoExtSize
     CHECK_AND_RETURN_RET_LOG(dataMem_ != nullptr, ERR_OPERATION_FAILED, "dataMem_ mmap failed.");
     if (bufferHolder_ == AUDIO_SERVER_ONLY_WITH_SYNC) {
         syncReadFrame_ = reinterpret_cast<uint32_t *>(dataMem_->GetBase() + totalSizeInByte_);
-        syncWriteFrame_ = syncReadFrame_ + sizeof(uint32_t);
+        syncWriteFrame_ = reinterpret_cast<uint32_t *>(dataMem_->GetBase() + totalSizeInByte_ + sizeof(uint32_t));
     }
 
     dataBase_ = dataMem_->GetBase();
