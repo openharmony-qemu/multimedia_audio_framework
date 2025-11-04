@@ -17,6 +17,7 @@ import("../../../../config.gni")
 import("../../../../ressche_part.gni")
 
 module_output_path = "audio_framework/audio_framework_route/audio_balance"
+audio_framework_root = "../../../.."
 
 config("module_private_config") {
   visibility = [ ":*" ]

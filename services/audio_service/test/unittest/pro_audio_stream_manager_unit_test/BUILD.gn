@@ -18,6 +18,7 @@ import("../../../../../config.gni")
 module_output_path =
     "audio_framework/audio_framework_route/part1/pro_audio_stream_manager"
 audio_framework_root = "../../../../.."
+
 config("module_private_config") {
   visibility = [ ":*" ]
 
