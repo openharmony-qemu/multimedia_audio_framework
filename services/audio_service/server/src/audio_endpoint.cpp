@@ -1758,9 +1758,9 @@ void AudioEndpointInner::UpdateVirtualDeviceHandleInfo()
 {
     uint64_t currentNanoTime = ClockTime::GetCurNano();
     // Calculate the frame position increment based on the current and previous time, and update the frame position
-    posInFrame_ = posInFrame_ + ((currentNanoTime - timeInNano_) / dtsStreamInfo_.samplingRate);
+    posInFrame_ = posInFrame_ + ((currentNanoTime - timeInNano_) / dstStreamInfo_.samplingRate);
     // Calculate the new time in nanoseconds based on the updated frame position
-    timeInNano_ = (posInFrame_ / static_cast(dtsStreamInfo_.samplingRate) * AUDIO_NS_PER_SECOND);
+    timeInNano_ = (posInFrame_ / static_cast(dstStreamInfo_.samplingRate) * AUDIO_NS_PER_SECOND);
 }
 
 void AudioEndpointInner::AsyncGetPosTime()
