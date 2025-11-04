@@ -29,7 +29,7 @@ std::mutex HeadTracker::headTrackerMutex_;
 const uint32_t ORDER_ONE = 1;
 const uint32_t HP_DATA_PRINT_COUNT_DEBUG = 20; // Print 3 times per second
 const uint32_t HP_DATA_PRINT_COUNT_INFO = 180; // Print once per 3 seconds
-const float limitFabsVal = 1.01f; // -1.01f <= w, x, y, z <= 1.01f
+const float LIMIT_FABS_VAL = 1.01f; // -1.01f <= w, x, y, z <= 1.01f
 
 void HeadTracker::HeadPostureDataProcCb(SensorEvent *event)
 {
@@ -143,10 +143,10 @@ int32_t HeadTracker::CheckPostureDataIsValid(HeadPostureData *headPostureDataTmp
 {
     float epsilonVal = std::numeric_limits<float>::epsilon();
     if (headPostureDataTmp == nullptr ||
-        fabs(headPostureDataTmp->w) > limitFabsVal + epsilonVal ||
-        fabs(headPostureDataTmp->x) > limitFabsVal + epsilonVal ||
-        fabs(headPostureDataTmp->y) > limitFabsVal + epsilonVal ||
-        fabs(headPostureDataTmp->z) > limitFabsVal + epsilonVal) {
+        fabs(headPostureDataTmp->w) > LIMIT_FABS_VAL + epsilonVal ||
+        fabs(headPostureDataTmp->x) > LIMIT_FABS_VAL + epsilonVal ||
+        fabs(headPostureDataTmp->y) > LIMIT_FABS_VAL + epsilonVal ||
+        fabs(headPostureDataTmp->z) > LIMIT_FABS_VAL + epsilonVal) {
         AUDIO_WARNING_LOG("HeadTracker PostureData Invalid!");
         return ERROR;
     }
