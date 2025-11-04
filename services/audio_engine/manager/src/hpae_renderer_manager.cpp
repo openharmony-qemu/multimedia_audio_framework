@@ -594,10 +594,10 @@ int32_t HpaeRendererManager::Start(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::Start");
+        CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
+            "Start not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Start sessionId %{public}u, deviceName %{public}s", sessionId, sinkInfo_.deviceName.c_str());
-        if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
-            sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RUNNING);
-        }
+        sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RUNNING);
         HandlePriPaPower(sessionId);
         ConnectInputSession(sessionId);
         SetSessionState(sessionId, HPAE_SESSION_RUNNING);
@@ -613,11 +613,11 @@ int32_t HpaeRendererManager::StartWithSyncId(uint32_t sessionId, int32_t syncId)
 {
     auto request = [this, sessionId, syncId]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::StartWithSyncId");
+        CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
+            "StartWithSyncId not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("StartWithSyncId sessionId %{public}u, deviceName %{public}s",
             sessionId, sinkInfo_.deviceName.c_str());
-        if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
-            sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RUNNING);
-        }
+        sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RUNNING);
         HandlePriPaPower(sessionId);
         ConnectInputSession(sessionId);
         SetSessionState(sessionId, HPAE_SESSION_RUNNING);
