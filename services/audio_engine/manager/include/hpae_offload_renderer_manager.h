@@ -98,6 +98,8 @@ private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
     int32_t StartRenderSink();
     std::shared_ptr<HpaeSinkInputNode> CreateInputSession(const HpaeStreamInfo &streamInfo);
+    int32_t CreateOffloadNodes();
+    int32_t DestroyOffloadNodes();
     int32_t ConnectInputSession();
     int32_t DisConnectInputSession();
     void DeleteInputSession();

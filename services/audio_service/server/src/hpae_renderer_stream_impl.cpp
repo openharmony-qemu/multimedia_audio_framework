@@ -170,6 +170,9 @@ int32_t HpaeRendererStreamImpl::StartWithSyncId(const int32_t &syncId)
     ClockTime::GetAllTimeStamp(timestamp_);
     int32_t ret = IHpaeManager::GetHpaeManager().StartWithSyncId(HPAE_STREAM_CLASS_TYPE_PLAY,
         processConfig_.originalSessionId, syncId);
+    if (processConfig_.streamInfo.customSampleRate != 0) {
+        noWaitDataFlag_ = false;
+    }
     if (ret != 0) {
         AUDIO_ERR_LOG("ErrorCode: %{public}d", ret);
         return ERR_INVALID_PARAM;
@@ -523,10 +526,10 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
             int32_t ret = writeCallback->OnWriteData(callBackStreamInfo.inputData,
                 requestDataLen);
             CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+            noWaitDataFlag_ = true;
             size_t mutePaddingFrames = (byteSizePerFrame_ == 0) ? 0 : (mutePaddingSize / byteSizePerFrame_);
             CHECK_AND_RETURN_RET(mutePaddingFrames != 0, SUCCESS);
             mutePaddingFrames_.fetch_add(mutePaddingFrames);
-            noWaitDataFlag_ = true;
             Trace trace("HpaeRendererStreamImpl::underrun mute frames " + std::to_string(mutePaddingFrames));
             AUDIO_INFO_LOG("Padding mute frames %{public}zu, sessionId %{public}u", mutePaddingFrames, streamIndex_);
         }
