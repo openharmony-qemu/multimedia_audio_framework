@@ -463,6 +463,17 @@ ohos_unittest("hpae_renderer_stream_impl_unit_test") {
     "../../../audio_service:audio_process_service_static",
     "../../../../frameworks/native/audioschedule:audio_schedule",
   ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
+
   external_deps = [
     "c_utils:utils",
     "googletest:gmock",
@@ -729,6 +740,16 @@ ohos_unittest("hpae_capturer_stream_impl_unit_test") {
     "../../../audio_service:audio_common",
     "../../../audio_service:audio_process_service_static",
   ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = [
     "c_utils:utils",
     "googletest:gtest",
