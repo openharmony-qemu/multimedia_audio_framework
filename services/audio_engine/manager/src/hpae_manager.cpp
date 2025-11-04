@@ -1368,6 +1368,16 @@ void HpaeManager::DequeuePendingTransition(uint32_t sessionId)
 
 void HpaeManager::EnqueuePendingTransition(uint32_t sessionId, HpaeSessionState state, IOperation operation)
 {
+    auto it = pendingTransitionsTracker_.begin();
+    while (it != pendingTransitionsTracker_.end()) {
+        if (it->sessionId == sessionId) {
+            AUDIO_INFO_LOG("repeats sessionid:%{public}u", sessionId);
+            HandleUpdateStatus(HPAE_STREAM_CLASS_TYPE_PLAY, it->sessionId, it->state, it->operation);
+            break;
+        } else {
+            ++it;
+        }
+    }
     pendingTransitionsTracker_.push_back({sessionId, state, operation, std::chrono::high_resolution_clock::now()});
 }
 
@@ -1651,8 +1661,8 @@ int32_t HpaeManager::Pause(HpaeStreamClassType streamClassType, uint32_t session
             CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
                 "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Pause(sessionId);
-            rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_PAUSING;
             EnqueuePendingTransition(sessionId, HPAE_SESSION_PAUSED, OPERATION_PAUSED);
+            rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_PAUSING;
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
                    capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
             AUDIO_INFO_LOG("capturer Pause sessionId: %{public}u deviceName:%{public}s",
@@ -1778,8 +1788,8 @@ int32_t HpaeManager::Stop(HpaeStreamClassType streamClassType, uint32_t sessionI
             CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
                 "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Stop(sessionId);
-            rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_STOPPING;
             EnqueuePendingTransition(sessionId, HPAE_SESSION_STOPPED, OPERATION_STOPPED);
+            rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_STOPPING;
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
                    capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
             AUDIO_INFO_LOG("capturer Stop sessionId: %{public}u deviceName:%{public}s",

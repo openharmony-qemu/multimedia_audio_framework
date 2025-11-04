@@ -633,17 +633,17 @@ HpaeSinkInfo HpaeInnerCapturerManager::GetSinkInfo()
     return sinkInfo_;
 }
 
-void HpaeInnerCapturerManager::OnFadeDone(uint32_t sessionId, IOperation operation)
+void HpaeInnerCapturerManager::OnFadeDone(uint32_t sessionId)
 {
     auto request = [this, sessionId, operation]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::OnFadeDone: " +
             std::to_string(operation));
+        CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), "Fade done, not find sessionId %{public}u", sessionId);
         DisConnectRendererInputSessionInner(sessionId);
-        HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPED : HPAE_SESSION_PAUSED;
+        IOperation operation = sinkInputNodeMap_[sessionId]->GetState() == HPAE_SESSION_STOPPING ? OPERATION_STOPPED : OPERATION_PAUSED;
+        HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPED : HPAE_SESSION_PAUSED;   
         SetSessionStateForRenderer(sessionId, state);
-        if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
-            sinkInputNodeMap_[sessionId]->SetState(state);
-        }
+        sinkInputNodeMap_[sessionId]->SetState(state);
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, state, operation);
     };
     SendRequestInner(request, __func__);
@@ -985,12 +985,18 @@ bool HpaeInnerCapturerManager::SetSessionFade(uint32_t sessionId, IOperation ope
         return false;
     }
     AUDIO_INFO_LOG("get gain node of session %{public}d operation %{public}d.", sessionId, operation);
+
+    if (sinkInputNodeMap_[sessionId]->GetState() != HPAE_SESSION_STOPPING &&
+        sinkInputNodeMap_[sessionId]->GetState() != HPAE_SESSION_PAUSING)
+    {
+        sessionGainNode->SetFadeState(operation);
+    }
+
     if (operation != OPERATION_STARTED) {
         HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPING : HPAE_SESSION_PAUSING;
         SetSessionStateForRenderer(sessionId, state);
         sinkInputNodeMap_[sessionId]->SetState(state);
     }
-    sessionGainNode->SetFadeState(operation);
     return true;
 }
 

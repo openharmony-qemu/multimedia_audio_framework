@@ -452,15 +452,16 @@ void HpaeInjectorRendererManager::OnNodeStatusUpdate(uint32_t sessionId, IOperat
         sessionNodeMap_[sessionId].state, operation);
 }
 
-void HpaeInjectorRendererManager::OnFadeDone(uint32_t sessionId, IOperation operation)
+void HpaeInjectorRendererManager::OnFadeDone(uint32_t sessionId)
 {
     auto request = [this, sessionId, operation]() {
-        AUDIO_INFO_LOG("Fade done, call back at RendererManager, callback at injectorRendererManager");
+        CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), "Fade done, not find sessionId %{public}u", sessionId);
+        AUDIO_INFO_LOG("Fade done, callback at injectorRendererManager");
         DisConnectInputSession(sessionId);
-        HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPED : HPAE_SESSION_PAUSED;
-        if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
-            SetSessionState(sessionId, state);
-        }
+        IOperation operation = sinkInputNodeMap_[sessionId]->GetState() == HPAE_SESSION_STOPPING ? OPERATION_STOPPED : OPERATION_PAUSED;
+        HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPED : HPAE_SESSION_PAUSED;   
+        SetSessionState(sessionId, state);
+        sinkInputNodeMap_[sessionId]->SetState(state);
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, state, operation);
     };
     SendRequest(request, __func__);
@@ -703,11 +704,16 @@ bool HpaeInjectorRendererManager::SetSessionFade(uint32_t sessionId, IOperation 
         return false;
     }
     AUDIO_INFO_LOG("get gain node of session %{public}d operation %{public}d.", sessionId, operation);
+    if (sinkInputNodeMap_[sessionId]->GetState() != HPAE_SESSION_STOPPING &&
+        sinkInputNodeMap_[sessionId]->GetState() != HPAE_SESSION_PAUSING)
+    {
+        sessionGainNode->SetFadeState(operation);
+    }
+
     if (operation != OPERATION_STARTED) {
         HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPING : HPAE_SESSION_PAUSING;
         SetSessionState(sessionId, state);
     }
-    sessionGainNode->SetFadeState(operation);
     return true;
 }
 
