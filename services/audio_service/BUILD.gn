@@ -299,6 +299,10 @@ ohos_shared_library("audio_client") {
     defines += [ "SUPPORT_LOW_LATENCY" ]
   }
 
+  if (factory == true) {
+    defines += [ "CONFIG_FACTORY_VERSION" ]
+  }
+
   version_script = "../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]
   cflags = [ "-Os" ]
