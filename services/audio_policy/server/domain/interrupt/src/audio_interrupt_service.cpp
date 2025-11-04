@@ -1277,6 +1277,7 @@ AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t ui
     }
 
     int32_t focusPriority = STREAM_DEFAULT_PRIORITY;
+    uint32_t focusSession = 0;
     for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
         if ((iter->second != ACTIVE && iter->second != DUCK) ||
             (iter->first).audioFocusType.sourceType != SOURCE_TYPE_INVALID) {
@@ -1297,6 +1298,7 @@ AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t ui
                 if (curPriority < focusPriority) {
                     focusPriority = curPriority;
                     streamInFocus = stream.audioFocusType.streamType;
+                    focusSession = (iter->first).streamId;
                 }
             }
         } else {
@@ -1304,9 +1306,11 @@ AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t ui
             if (curPriority < focusPriority) {
                 focusPriority = curPriority;
                 streamInFocus = (iter->first).audioFocusType.streamType;
+                focusSession = (iter->first).streamId;
             }
         }
     }
+    JUDGE_AND_INFO_LOG(isGetFocusForLog_ == false, "focus session is %{public}d", focusSession);
     return streamInFocus == STREAM_DEFAULT ? defaultVolumeType_ : streamInFocus;
 }
 
@@ -2375,6 +2379,7 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
         zonesMap_[zoneId] = itZone->second;
         SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::ABANDON_CALLBACK_CATEGORY, audioInterrupt);
         SendActiveVolumeTypeChangeEvent(zoneId);
+        isGetFocusForLog_ = true;
     } else {
         // If it was not in the audioFocusInfoList, no need to take any action on other sessions, just return.
         AUDIO_DEBUG_LOG("stream (streamId %{public}u) is not active now", audioInterrupt.streamId);
@@ -2384,10 +2389,12 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
     if (itZone->second->context.focusStrategy_ == AudioZoneFocusStrategy::DISTRIBUTED_FOCUS_STRATEGY) {
         AUDIO_INFO_LOG("zone: %{public}d distributed focus strategy not resume when deactivate interrupt",
             itZone->first);
+        isGetFocusForLog_ = false;
         return;
     }
     // resume if other session was forced paused or ducked
     ResumeAudioFocusList(zoneId, isSessionTimeout);
+    isGetFocusForLog_ = false;
 
     return;
 }

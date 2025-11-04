@@ -227,8 +227,8 @@ void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<A
             }
             streamDesc->SetAction(JudgeStreamAction(newPipeInfo, streamDescToOldPipeInfo[streamDesc->GetSessionId()]));
             streamDesc->SetOldRoute(streamDescToOldPipeInfo[streamDesc->GetSessionId()]->GetRoute());
-            AUDIO_INFO_LOG("    |--[PipeFetchInfo] SessionId %{public}d, PipeRouteFlag %{public}d --> %{public}d, "
-                "streamAction %{public}d", streamDesc->GetSessionId(),
+            AUDIO_INFO_LOG("    |--[PipeFetchInfo] Id %{public}d, RouteFlag %{public}d --> %{public}d, "
+                "sAction %{public}d", streamDesc->GetSessionId(),
                 streamDescToOldPipeInfo[streamDesc->GetSessionId()]->GetRoute(),
                 newPipeInfo->GetRoute(), streamDesc->GetAction());
         }

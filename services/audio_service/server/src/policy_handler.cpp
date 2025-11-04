@@ -138,7 +138,7 @@ bool PolicyHandler::GetSharedVolume(AudioVolumeType streamType, DeviceType devic
 
 void PolicyHandler::SetActiveOutputDevice(DeviceType deviceType)
 {
-    AUDIO_INFO_LOG("SetActiveOutputDevice to device[%{public}d].", deviceType);
+    AUDIO_INFO_LOG("device[%{public}d].", deviceType);
     deviceType_ = deviceType;
 }
 

@@ -76,7 +76,7 @@ napi_status NapiParamUtils::GetParam(const napi_env &env, napi_callback_info inf
 napi_status NapiParamUtils::GetValueInt32(const napi_env &env, int32_t &value, napi_value in)
 {
     napi_status status = napi_get_value_int32(env, in, &value);
-    CHECK_AND_RETURN_RET_PRELOG(status == napi_ok, status, "GetValueInt32 napi_get_value_int32 failed");
+    CHECK_AND_RETURN_RET(status == napi_ok, status);
     return status;
 }
 
@@ -92,7 +92,7 @@ napi_status NapiParamUtils::GetValueInt32(const napi_env &env, const std::string
 {
     napi_value jsValue = nullptr;
     napi_status status = napi_get_named_property(env, in, fieldStr.c_str(), &jsValue);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetValueInt32 napi_get_named_property failed");
+    CHECK_AND_RETURN_RET(status == napi_ok, status);
     status = GetValueInt32(env, value, jsValue);
     return status;
 }
