@@ -1754,6 +1754,15 @@ bool AudioEndpointInner::GetDeviceHandleInfo(uint64_t &frames, int64_t &nanoTime
     return true;
 }
 
+void AudioEndpointInner::UpdateVirtualDeviceHandleInfo()
+{
+    uint64_t currentNanoTime = ClockTime::GetCurNano();
+    // Calculate the frame position increment based on the current and previous time, and update the frame position
+    posInFrame_ = posInFrame_ + ((currentNanoTime - timeInNano_) / dstStreamInfo_.samplingRate);
+    // Calculate the new time in nanoseconds based on the updated frame position
+    timeInNano_ = (posInFrame_ / static_cast<double>(dstStreamInfo_.samplingRate)) * AUDIO_NS_PER_SECOND;
+}
+
 void AudioEndpointInner::AsyncGetPosTime()
 {
     AUDIO_INFO_LOG("AsyncGetPosTime thread start.");
@@ -1769,6 +1778,7 @@ void AudioEndpointInner::AsyncGetPosTime()
             continue;
         }
         if (!isStarted_) {
+            UpdateVirtualDeviceHandleInfo();
             continue;
         }
         // get signaled, call get pos-time

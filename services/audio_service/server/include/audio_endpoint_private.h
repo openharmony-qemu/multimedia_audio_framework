@@ -129,6 +129,9 @@ public:
     void UpdateEndpointStatus(AudioEndpoint::EndpointStatus newStatus);
 
     void StopByRestore(const RestoreInfo &restoreInfo) override;
+    
+    // This func is a virtual sync func, we can continully calculate frame rate and time even sink stoped
+    void UpdateVirtualDeviceHandleInfo();
 private:
     AudioProcessConfig GetInnerCapConfig();
     void StartThread(const IAudioSinkAttr &attr);
