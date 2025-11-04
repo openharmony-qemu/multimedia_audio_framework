@@ -29,6 +29,7 @@ std::mutex HeadTracker::headTrackerMutex_;
 const uint32_t ORDER_ONE = 1;
 const uint32_t HP_DATA_PRINT_COUNT_DEBUG = 20; // Print 3 times per second
 const uint32_t HP_DATA_PRINT_COUNT_INFO = 180; // Print once per 3 seconds
+const float limitFabsVal = 1.01f; // -1.01f <= w, x, y, z <= 1.01f
 
 void HeadTracker::HeadPostureDataProcCb(SensorEvent *event)
 {
@@ -49,11 +50,14 @@ void HeadTracker::HeadPostureDataProcCb(SensorEvent *event)
         return;
     }
     HeadPostureData *headPostureDataTmp = reinterpret_cast<HeadPostureData *>(event[0].data);
-    headPostureData_.order = headPostureDataTmp->order;
-    headPostureData_.w = headPostureDataTmp->w;
-    headPostureData_.x = headPostureDataTmp->x;
-    headPostureData_.y = headPostureDataTmp->y;
-    headPostureData_.z = headPostureDataTmp->z;
+    if (CheckPostureDataIsValid(headPostureDataTmp) == SUCCESS) {
+        headPostureData_.order = headPostureDataTmp->order;
+        headPostureData_.w = headPostureDataTmp->w;
+        headPostureData_.x = headPostureDataTmp->x;
+        headPostureData_.y = headPostureDataTmp->y;
+        headPostureData_.z = headPostureDataTmp->z;
+    }
+
     if (headPostureData_.order % HP_DATA_PRINT_COUNT_DEBUG == ORDER_ONE) {
         AUDIO_DEBUG_LOG("[DEBUG] Head posture data of order %{public}d received, w: %{public}f, x: %{public}f, "
             "y: %{public}f, z: %{public}f", headPostureData_.order, headPostureDataTmp->w, headPostureDataTmp->x,
@@ -134,6 +138,20 @@ void HeadTracker::SetHeadPostureData(HeadPostureData headPostureData)
     std::lock_guard<std::mutex> lock(headTrackerMutex_);
     headPostureData_ = headPostureData;
 }
+
+int32_t HeadTracker::CheckPostureDataIsValid(HeadPostureData *headPostureDataTmp)
+{
+    float epsilonVal = std::numeric_limits<float>::epsilon();
+    if (fabs(headPostureDataTmp->w) > limitFabsVal + epsilonVal ||
+        fabs(headPostureDataTmp->x) > limitFabsVal + epsilonVal ||
+        fabs(headPostureDataTmp->y) > limitFabsVal + epsilonVal ||
+        fabs(headPostureDataTmp->z) > limitFabsVal + epsilonVal) {
+        AUDIO_WARNING_LOG("HeadTracker PostureData Invalid!");
+        return ERROR;
+    }
+    return SUCCESS;
+}
+
 #endif
 }  // namespace AudioStandard
 }  // namespace OHOS
