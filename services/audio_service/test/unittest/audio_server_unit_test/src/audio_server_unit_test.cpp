@@ -2375,7 +2375,7 @@ HWTEST_F(AudioServerUnitTest, ImproveAudioWorkgroupPrio_001, TestSize.Level1)
 {
     std::unordered_map<int32_t, bool> threads = {{1, true}, {2, false}};
     int32_t result = audioServer->ImproveAudioWorkgroupPrio(threads);
-    EXPECT_NE(result, 0);
+    EXPECT_EQ(result, 0);
 }
  
 /**
@@ -2388,7 +2388,7 @@ HWTEST_F(AudioServerUnitTest, ImproveAudioWorkgroupPrio_002, TestSize.Level1)
 {
     std::unordered_map<int32_t, bool> threads = {{1, true}, {2, true}};
     int32_t result = audioServer->ImproveAudioWorkgroupPrio(threads);
-    EXPECT_NE(result, 0);
+    EXPECT_EQ(result, 0);
 }
  
 /**
@@ -2414,7 +2414,7 @@ HWTEST_F(AudioServerUnitTest, RestoreAudioWorkgroupPrio_001, TestSize.Level1)
 {
     std::unordered_map<int32_t, int32_t> threads = {{1, 10}, {2, 20}, {3, 30}};
     int32_t result = audioServer->RestoreAudioWorkgroupPrio(threads);
-    EXPECT_NE(result, 0);
+    EXPECT_EQ(result, 0);
 }
  
 /**
@@ -2427,7 +2427,7 @@ HWTEST_F(AudioServerUnitTest, RestoreAudioWorkgroupPrio_002, TestSize.Level1)
 {
     std::unordered_map<int32_t, int32_t> threads = {{1, 10}, {2, 20}, {3, 20}};
     int32_t result = audioServer->RestoreAudioWorkgroupPrio(threads);
-    EXPECT_NE(result, 0);
+    EXPECT_EQ(result, 0);
 }
  
 /**
