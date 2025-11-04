@@ -1174,6 +1174,7 @@ void AudioService::Dump(std::string &dumpString)
         }
     }
 #ifdef SUPPORT_LOW_LATENCY
+    std::unique_lock<std::mutex> processListLock(processListMutex_);
     // dump process
     for (auto paired : linkedPairedList_) {
         paired.first->Dump(dumpString);
@@ -1183,6 +1184,7 @@ void AudioService::Dump(std::string &dumpString)
         AppendFormat(dumpString, "  - Endpoint device id: %s\n", item.first.c_str());
         item.second->Dump(dumpString);
     }
+    processListLock.unlock();
 #endif
     // dump normal, voip and direct
     {
