@@ -1252,11 +1252,13 @@ void HpaeRendererManager::OnFadeDone(uint32_t sessionId)
 {
     auto request = [this, sessionId, operation]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::OnFadeDone");
-        CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), "Fade done, not find sessionId %{public}u", sessionId);
+        CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
+            "Fade done, not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Fade done, call back at RendererManager");
         DisConnectInputSession(sessionId);
-        IOperation operation = sinkInputNodeMap_[sessionId]->GetState() == HPAE_SESSION_STOPPING ? OPERATION_STOPPED : OPERATION_PAUSED;
-        HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPED : HPAE_SESSION_PAUSED;   
+        IOperation operation = sinkInputNodeMap_[sessionId]->GetState() == HPAE_SESSION_STOPPING ?
+            OPERATION_STOPPED : OPERATION_PAUSED;
+        HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPED : HPAE_SESSION_PAUSED;
         SetSessionState(sessionId, state);
         sinkInputNodeMap_[sessionId]->SetState(state);
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, state, operation);
@@ -1340,8 +1342,7 @@ bool HpaeRendererManager::SetSessionFade(uint32_t sessionId, IOperation operatio
     }
     AUDIO_INFO_LOG("get gain node of session %{public}d operation %{public}d.", sessionId, operation);
     if (sinkInputNodeMap_[sessionId]->GetState() != HPAE_SESSION_STOPPING &&
-        sinkInputNodeMap_[sessionId]->GetState() != HPAE_SESSION_PAUSING)
-    {
+        sinkInputNodeMap_[sessionId]->GetState() != HPAE_SESSION_PAUSING) {
         sessionGainNode->SetFadeState(operation);
     }
     if (operation != OPERATION_STARTED) {
