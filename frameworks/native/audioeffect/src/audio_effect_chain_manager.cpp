@@ -1583,8 +1583,11 @@ uint32_t AudioEffectChainManager::GetSceneTypeToChainCount(const std::string &sc
 void AudioEffectChainManager::FindMaxSessionID(uint32_t &maxSessionID, std::string &sceneType,
     const std::string &scenePairType, std::set<std::string> &sessions)
 {
+    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectVolume != nullptr, "null audioEffectVolume");
     for (auto &sessionID : sessions) {
-        if (sessionIDToEffectInfoMap_[sessionID].sceneMode == "EFFECT_NONE") {
+        if (sessionIDToEffectInfoMap_[sessionID].sceneMode == "EFFECT_NONE" ||
+            audioEffectVolume->GetStreamVolume(sessionID) == 0) {
             continue;
         }
         uint32_t sessionIDInt = static_cast<uint32_t>(std::stoul(sessionID));
