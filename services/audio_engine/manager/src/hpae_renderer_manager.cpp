@@ -1250,7 +1250,7 @@ void HpaeRendererManager::OnNodeStatusUpdate(uint32_t sessionId, IOperation oper
 
 void HpaeRendererManager::OnFadeDone(uint32_t sessionId)
 {
-    auto request = [this, sessionId, operation]() {
+    auto request = [this, sessionId]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::OnFadeDone");
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Fade done, not find sessionId %{public}u", sessionId);

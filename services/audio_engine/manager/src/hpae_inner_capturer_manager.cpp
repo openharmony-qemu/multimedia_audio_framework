@@ -635,7 +635,7 @@ HpaeSinkInfo HpaeInnerCapturerManager::GetSinkInfo()
 
 void HpaeInnerCapturerManager::OnFadeDone(uint32_t sessionId)
 {
-    auto request = [this, sessionId, operation]() {
+    auto request = [this, sessionId]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::OnFadeDone");
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Fade done, not find sessionId %{public}u", sessionId);

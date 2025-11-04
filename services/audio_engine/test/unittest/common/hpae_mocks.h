@@ -122,7 +122,7 @@ public:
     MockNodeCallback() = default;
     virtual ~MockNodeCallback() = default;
     MOCK_METHOD(void, OnNodeStatusUpdate, (uint32_t, IOperation), (override));
-    MOCK_METHOD(void, OnFadeDone, (uint32_t, IOperation), (override));
+    MOCK_METHOD(void, OnFadeDone, (uint32_t), (override));
     MOCK_METHOD(void, OnRequestLatency, (uint32_t, uint64_t &), (override));
     MOCK_METHOD(void, OnRewindAndFlush, (uint64_t, uint64_t), (override));
     MOCK_METHOD(void, OnNotifyQueue, (), (override));

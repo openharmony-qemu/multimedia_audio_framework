@@ -454,7 +454,7 @@ void HpaeInjectorRendererManager::OnNodeStatusUpdate(uint32_t sessionId, IOperat
 
 void HpaeInjectorRendererManager::OnFadeDone(uint32_t sessionId)
 {
-    auto request = [this, sessionId, operation]() {
+    auto request = [this, sessionId]() {
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Fade done, not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Fade done, callback at injectorRendererManager");
@@ -714,6 +714,7 @@ bool HpaeInjectorRendererManager::SetSessionFade(uint32_t sessionId, IOperation 
     if (operation != OPERATION_STARTED) {
         HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPING : HPAE_SESSION_PAUSING;
         SetSessionState(sessionId, state);
+        sinkInputNodeMap_[sessionId]->SetState(state);
     }
     return true;
 }
