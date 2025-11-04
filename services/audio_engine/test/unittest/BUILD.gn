@@ -16,6 +16,7 @@ import("//build/test.gni")
 import("../../../../config.gni")
 
 module_output_path = "audio_framework/audio_framework_engine"
+audio_framework_root = "../../../.."
 
 config("audio_engine_private_config") {
   visibility = [ ":*" ]

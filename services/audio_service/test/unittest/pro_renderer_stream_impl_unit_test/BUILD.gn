@@ -17,7 +17,7 @@ import("../../../../../config.gni")
 
 module_output_path =
     "audio_framework/audio_framework_route/pro_renderer_stream_impl"
-
+audio_framework_root = "../../../../.."
 ohos_unittest("pro_renderer_stream_impl_unit_test") {
   testonly = true
   module_out_path = module_output_path
