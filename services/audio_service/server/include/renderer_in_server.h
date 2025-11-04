@@ -213,6 +213,8 @@ private:
 
     int32_t DisableDualToneInner();
     void PreDualToneBufferSilenceForOffload();
+
+    int32_t WriteData(int8_t *inputData, size_t requestDataLen);
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
