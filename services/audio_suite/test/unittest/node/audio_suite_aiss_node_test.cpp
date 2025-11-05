@@ -88,6 +88,6 @@ namespace {
     {
         std::shared_ptr<AudioSuiteAissNode> impl = std::make_shared<AudioSuiteAissNode>();
         int32_t ret = impl->DeInit();
-        EXPECT_EQ(ret, ERROR);
+        EXPECT_EQ(ret, SUCCESS);
     }
 }

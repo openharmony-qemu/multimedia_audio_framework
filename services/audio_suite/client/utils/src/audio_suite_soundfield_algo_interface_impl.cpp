@@ -18,10 +18,8 @@
 #endif
 
 #include <dlfcn.h>
-#include <sstream>
 #include <cstring>
 #include "securec.h"
-#include <iostream>
 #include "audio_errors.h"
 #include "audio_suite_log.h"
 #include "audio_suite_soundfield_algo_interface_impl.h"

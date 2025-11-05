@@ -56,20 +56,6 @@ private:
     // for cache buffer
     std::vector<AudioSuitePcmBuffer *> outputs_;
     size_t bufferUsedOffset_ = 0;
-<<<<<<< HEAD
-
-    // for format conversion
-    uint32_t frameDuration_ = SINGLE_FRAME_DURATION;
-    DataFormat inFormat_;
-    DataFormat outFormat_;
-    std::vector<float> rateOutput_;
-    std::vector<float> channelOutput_;
-    std::vector<std::vector<float>> tmpInput_;
-    std::vector<AudioSuitePcmBuffer *> inputsPcmbuffer_;
-    uint32_t inputFrameDataLen_;
-    uint32_t frameCount_;
-=======
->>>>>>> 032dcabd3 (Format Conversion Wrapper)
 };
 
 }  // namespace AudioSuite

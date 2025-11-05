@@ -54,7 +54,6 @@ void AudioSuitePcmBuffer::InitPcmProcess()
         pcmBufferFormat_.channelLayout,
         pcmBufferFormat_.sampleFormat,
         duration_);
-    
 }
 
 PcmBufferFormat &AudioSuitePcmBuffer::GetPcmBufferFormat()

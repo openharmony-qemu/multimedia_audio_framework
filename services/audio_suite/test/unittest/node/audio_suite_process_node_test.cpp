@@ -80,9 +80,7 @@ public:
     {
         // init nodeinfo
         AudioChannelInfo audioChannelInfo;
-        AudioFormat audioFormat = {
-            .audioChannelInfo = audioChannelInfo
-        };
+        AudioFormat audioFormat = {{CH_LAYOUT_STEREO, STEREO}, SAMPLE_S16LE, SAMPLE_RATE_48000}};
         node_ = std::make_shared<TestAudioSuiteProcessNode>(NODE_TYPE_EQUALIZER, audioFormat);
         TestReadTapCallBack::testFlag = false;
     }
