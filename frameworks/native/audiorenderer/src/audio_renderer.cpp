@@ -748,6 +748,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::ConvertToStreamDesc
     streamDesc->callerUid_ = static_cast<int32_t>(getuid());
     streamDesc->callerPid_ = static_cast<int32_t>(getpid());
     streamDesc->sessionId_ = audioStreamParams.originalSessionId;
+    streamDesc->oldOriginalFlag_ = rendererInfo_.originalFlag;
     return streamDesc;
 }
 
