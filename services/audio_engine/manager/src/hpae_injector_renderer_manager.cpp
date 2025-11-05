@@ -463,7 +463,6 @@ void HpaeInjectorRendererManager::OnFadeDone(uint32_t sessionId)
             OPERATION_STOPPED : OPERATION_PAUSED;
         HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPED : HPAE_SESSION_PAUSED;
         SetSessionState(sessionId, state);
-        sinkInputNodeMap_[sessionId]->SetState(state);
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, state, operation);
     };
     SendRequest(request, __func__);
@@ -714,7 +713,6 @@ bool HpaeInjectorRendererManager::SetSessionFade(uint32_t sessionId, IOperation 
     if (operation != OPERATION_STARTED) {
         HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPING : HPAE_SESSION_PAUSING;
         SetSessionState(sessionId, state);
-        sinkInputNodeMap_[sessionId]->SetState(state);
     }
     return true;
 }
