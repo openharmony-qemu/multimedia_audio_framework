@@ -601,7 +601,6 @@ int32_t BluetoothAudioRenderSink::GetMmapBufferInfo(int &fd, uint32_t &totalSize
 
 int32_t BluetoothAudioRenderSink::GetMmapHandlePosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
 {
-    std::lock_guard<std::mutex> lock(sinkMutex_);
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
 
