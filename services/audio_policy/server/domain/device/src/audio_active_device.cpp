@@ -537,19 +537,6 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(Aud
     if (type == STREAM_ALL) {
         type = STREAM_MUSIC;
     }
-    if (AudioZoneService::GetInstance().CheckExistUidInAudioZone() && volumeAdjustZoneId_ == 0) {
-        std::vector<StreamUsage> usages = VolumeUtils::GetStreamUsageByVolumeTypeForFetchDevice(type);
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
-        for (auto usage : usages) {
-            devices.push_back(AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(
-                usage, -1, "GetDeviceForVolumeByStreamType").front());
-        }
-        SortDevicesByPriority(devices);
-        return devices.front();
-    }
-    if (Util::IsDualToneStreamType(volumeType) && !VolumeUtils::IsPCVolumeEnable()) {
-        return audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_SPEAKER);
-    }
     if (volumeTypeDeviceMap_.contains(type)
         && IsAvailableFrontDeviceInVector(volumeTypeDeviceMap_[type])) {
         AUDIO_INFO_LOG("Get Device %{public}s for stream %{public}d from map",

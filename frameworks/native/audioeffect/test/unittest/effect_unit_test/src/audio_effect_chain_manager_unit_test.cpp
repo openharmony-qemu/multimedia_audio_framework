@@ -2323,6 +2323,7 @@ HWTEST(AudioEffectChainManagerUnitTest, FindMaxSessionID_001, TestSize.Level1)
     AudioEffectChainManager::GetInstance()->sessionIDToEffectInfoMap_[sessionID] = sessionEffectInfo;
     const std::string scenePairType = "SCENE_MUSIC_&_DEVICE_TYPE_SPEAKER";
     AudioEffectChainManager::GetInstance()->FindMaxSessionID(maxSessionID, sceneType, scenePairType, sessions);
+    AudioEffectVolume::GetInstance()->SetStreamVolume("12345", 0.0);
     maxSessionID = 99999;
     AudioEffectChainManager::GetInstance()->FindMaxSessionID(maxSessionID, sceneType, scenePairType, sessions);
 }
