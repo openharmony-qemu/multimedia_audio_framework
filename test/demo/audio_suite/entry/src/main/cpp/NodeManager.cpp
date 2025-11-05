@@ -252,7 +252,7 @@ const Node &NodeManager::GetNodeById(const std::string &nodeId) const
     }
 }
 
-std::string NodeManager::getOptionsByType(const Node &node) {
+std::string NodeManager::GetOptionsByType(const Node &node) {
     // 判断是否是均衡器
     if (node.type == OH_AudioNode_Type::EFFECT_NODE_TYPE_EQUALIZER) {
         OH_EqualizerFrequencyBandGains type;
@@ -268,7 +268,7 @@ std::string NodeManager::getOptionsByType(const Node &node) {
         oss << "]";
         return oss.str();
     }
-    // 判断是否是美化节点 
+    // 判断是否是美化节点
     if (node.type == OH_AudioNode_Type::EFFECT_NODE_TYPE_VOICE_BEAUTIFIER) {
         OH_VoiceBeautifierType type;
         OH_AudioSuite_Result ret = OH_AudioSuiteEngine_GetVoiceBeautifierType(node.physicalNode, &type);
@@ -276,16 +276,16 @@ std::string NodeManager::getOptionsByType(const Node &node) {
             return "0";
         }
         switch (type) {
-        case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR:
-            return "1";
-        case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_THEATRE:
-            return "2";
-        case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CD:
-            return "3";
-        case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_RECORDING_STUDIO:
-            return "4";
-        default:
-            return "0";
+            case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR:
+                return "1";
+            case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_THEATRE:
+                return "2";
+            case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CD:
+                return "3";
+            case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_RECORDING_STUDIO:
+                return "4";
+            default:
+                return "0";
         }
     }
     // 判断是否是声场节点
@@ -296,16 +296,16 @@ std::string NodeManager::getOptionsByType(const Node &node) {
             return "0";
         }
         switch (type) {
-        case OH_SoundFieldType::SOUND_FIELD_FRONT_FACING:
-            return "1";
-        case OH_SoundFieldType::SOUND_FIELD_GRAND:
-            return "2";
-        case OH_SoundFieldType::SOUND_FIELD_NEAR:
-            return "3";
-        case OH_SoundFieldType::SOUND_FIELD_WIDE:
-            return "4";
-        default:
-            return "0";
+            case OH_SoundFieldType::SOUND_FIELD_FRONT_FACING:
+                return "1";
+            case OH_SoundFieldType::SOUND_FIELD_GRAND:
+                return "2";
+            case OH_SoundFieldType::SOUND_FIELD_NEAR:
+                return "3";
+            case OH_SoundFieldType::SOUND_FIELD_WIDE:
+                return "4";
+            default:
+                return "0";
         }
     }
     // 判断是否是环境节点
@@ -316,16 +316,16 @@ std::string NodeManager::getOptionsByType(const Node &node) {
             return "0";
         }
         switch (type) {
-        case OH_EnvironmentType::ENVIRONMENT_TYPE_BROADCAST:
-            return "1";
-        case OH_EnvironmentType::ENVIRONMENT_TYPE_EARPIECE:
-            return "2";
-        case OH_EnvironmentType::ENVIRONMENT_TYPE_UNDERWATER:
-            return "3";
-        case OH_EnvironmentType::ENVIRONMENT_TYPE_GRAMOPHONE:
-            return "4";
-        default:
-            return "0";
+            case OH_EnvironmentType::ENVIRONMENT_TYPE_BROADCAST:
+                return "1";
+            case OH_EnvironmentType::ENVIRONMENT_TYPE_EARPIECE:
+                return "2";
+            case OH_EnvironmentType::ENVIRONMENT_TYPE_UNDERWATER:
+                return "3";
+            case OH_EnvironmentType::ENVIRONMENT_TYPE_GRAMOPHONE:
+                return "4";
+            default:
+                return "0";
         }
     }
     return "";
