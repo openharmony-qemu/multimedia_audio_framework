@@ -932,7 +932,6 @@ private:
     bool isAlreadyRegisterCommonEventListener_ = false;
     std::mutex distributeDeviceMutex_;
     std::condition_variable distributeDeviceCond_;
-    int32_t newUserId_;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {

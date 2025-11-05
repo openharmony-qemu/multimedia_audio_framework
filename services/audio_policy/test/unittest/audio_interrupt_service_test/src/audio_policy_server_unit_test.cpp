@@ -3537,9 +3537,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_224, TestSize.Level4)
     EXPECT_EQ(audioPolicyServer->isRingtoneEL2Ready_, true);
     audioPolicyServer->OnReceiveEvent(eventData);
     EXPECT_EQ(audioPolicyServer->isRingtoneEL2Ready_, true);
-    audioPolicyServer->interruptService_->isSwitchUser_ = true;
-    audioPolicyServer->OnReceiveEvent(eventData);
-    EXPECT_EQ(audioPolicyServer->isRingtoneEL2Ready_, true);
     audioPolicyServer->interruptService_ = nullptr;
     audioPolicyServer->OnReceiveEvent(eventData);
     EXPECT_EQ(audioPolicyServer->isRingtoneEL2Ready_, true);
