@@ -212,7 +212,7 @@ void HpaeSourceInputNode::DoProcess()
         } else {
             CHECK_AND_RETURN_LOG(CheckEcAndMicRefReplyValid(frameByteSizeMap_.at(sourceBufferType), replyBytes),
                 "request != reply");
-            DoProcessInner(sourceBufferType, replyBytes);
+            DoProcessMicInner(sourceBufferType, replyBytes);
         }
     }
 }
