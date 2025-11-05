@@ -304,7 +304,7 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SendInitCommandSucc, TestSize.Level1)
     EXPECT_EQ(manager_->ReleaseAudioEnhanceChainDynamic(sceneKeyCode), SUCCESS);
 }
 
-HWTEST_F(AudioEnhanceChainManagerUnitTest, UpdateExtraSceneTypeSucc, TestSize.Level1)
+HWTEST_F(AudioEnhanceChainManagerUnitTest, UpdateExtraSceneTypeFoldState, TestSize.Level1)
 {
     auto sceneKeyCode = GetValidSceneKeyCode(SCENE_RECORD, TEST_CAPTURER_ID);
     manager_->InitAudioEnhanceChainManager(enhanceChains_, managerParam_, enhanceLibraryList_);
@@ -318,8 +318,33 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, UpdateExtraSceneTypeSucc, TestSize.Le
     std::string validExtraSceneType = "3";
     std::string invalidExtraSceneType = "@#^#%^@#()";
     manager_->UpdateExtraSceneType(invalidMainKey, invalidSubKey, invalidExtraSceneType);
+    manager_->UpdateExtraSceneType(invalidMainKey, validSubKey, validExtraSceneType);
     manager_->UpdateExtraSceneType(validMainKey, invalidSubKey, invalidExtraSceneType);
     manager_->UpdateExtraSceneType(validMainKey, validSubKey, invalidExtraSceneType);
+    manager_->UpdateExtraSceneType(validMainKey, validSubKey, validExtraSceneType);
+    manager_->UpdateExtraSceneType(validMainKey, validSubKey, validExtraSceneType);
+
+    EXPECT_EQ(manager_->ReleaseAudioEnhanceChainDynamic(sceneKeyCode), SUCCESS);
+}
+
+HWTEST_F(AudioEnhanceChainManagerUnitTest, UpdateExtraSceneTypePowerState, TestSize.Level1)
+{
+    auto sceneKeyCode = GetValidSceneKeyCode(SCENE_RECORD, TEST_CAPTURER_ID);
+    manager_->InitAudioEnhanceChainManager(enhanceChains_, managerParam_, enhanceLibraryList_);
+    EXPECT_EQ(manager_->SetInputDevice(TEST_CAPTURER_ID, DEVICE_TYPE_MIC), SUCCESS);
+    EXPECT_EQ(manager_->CreateAudioEnhanceChainDynamic(sceneKeyCode, TEST_DEVICE_ATTR), SUCCESS);
+
+    std::string validMainKey = "device_status";
+    std::string invalidMainKey = "device_status_test";
+    std::string validSubKey = "power_state";
+    std::string invalidSubKey = "power_state_test";
+    std::string validExtraSceneType = "20";
+    std::string invalidExtraSceneType = "@#^#%^@#()";
+    manager_->UpdateExtraSceneType(invalidMainKey, invalidSubKey, invalidExtraSceneType);
+    manager_->UpdateExtraSceneType(invalidMainKey, validSubKey, validExtraSceneType);
+    manager_->UpdateExtraSceneType(validMainKey, invalidSubKey, invalidExtraSceneType);
+    manager_->UpdateExtraSceneType(validMainKey, validSubKey, invalidExtraSceneType);
+    manager_->UpdateExtraSceneType(validMainKey, validSubKey, validExtraSceneType);
     manager_->UpdateExtraSceneType(validMainKey, validSubKey, validExtraSceneType);
 
     EXPECT_EQ(manager_->ReleaseAudioEnhanceChainDynamic(sceneKeyCode), SUCCESS);

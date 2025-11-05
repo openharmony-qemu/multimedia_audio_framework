@@ -5696,7 +5696,10 @@ ohos_unittest("audio_client_tracker_callback_listener_unit_test") {
     "eventhandler:libeventhandler",
   ]
 
-  sources = [ "./unittest/audio_client_tracker_callback_listener_unit_test/src/audio_client_tracker_callback_listener_unit_test.cpp" ]
+  sources = [
+    "./unittest/audio_client_tracker_callback_listener_unit_test/src/audio_client_tracker_callback_listener_unit_test.cpp",
+    "../../audio_policy/server/src/audio_client_tracker_callback_service.cpp",
+  ]
 
   deps = [
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
@@ -5771,7 +5774,10 @@ ohos_unittest("audio_client_tracker_callback_service_unit_test") {
     "samgr:samgr_proxy",
   ]
 
-  sources = [ "./unittest/audio_client_tracker_callback_service_unit_test/src/audio_client_tracker_callback_service_unit_test.cpp" ]
+  sources = [
+    "./unittest/audio_client_tracker_callback_service_unit_test/src/audio_client_tracker_callback_service_unit_test.cpp",
+    "../../audio_policy/server/src/audio_client_tracker_callback_service.cpp",
+  ]
 
   deps = [
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",

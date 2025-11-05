@@ -280,7 +280,7 @@ int32_t OHAudioBufferBase::Init(int dataFd, int infoFd, size_t statusInfoExtSize
     CHECK_AND_RETURN_RET_LOG(dataMem_ != nullptr, ERR_OPERATION_FAILED, "dataMem_ mmap failed.");
     if (bufferHolder_ == AUDIO_SERVER_ONLY_WITH_SYNC) {
         syncReadFrame_ = reinterpret_cast<uint32_t *>(dataMem_->GetBase() + totalSizeInByte_);
-        syncWriteFrame_ = syncReadFrame_ + sizeof(uint32_t);
+        syncWriteFrame_ = reinterpret_cast<uint32_t *>(dataMem_->GetBase() + totalSizeInByte_ + sizeof(uint32_t));
     }
 
     dataBase_ = dataMem_->GetBase();
@@ -632,6 +632,9 @@ int32_t OHAudioBufferBase::SetCurWriteFrame(uint64_t writeFrame, bool wakeFutex)
     if (writeFrame == oldWritePos) {
         return SUCCESS;
     }
+
+    CHECK_AND_RETURN_RET_LOG(oldWritePos >= basePos, ERR_INVALID_PARAM,
+        "oldWritePos:%{public}" PRIu64 " basePos:%{public}" PRIu64 "", oldWritePos, basePos);
     CHECK_AND_RETURN_RET_LOG(writeFrame > oldWritePos, ERR_INVALID_PARAM, "Too small writeFrame:%{public}" PRIu64".",
         writeFrame);
 
@@ -664,6 +667,9 @@ int32_t OHAudioBufferBase::SetCurReadFrame(uint64_t readFrame, bool wakeFutex)
     if (readFrame == oldReadPos) {
         return SUCCESS;
     }
+
+    CHECK_AND_RETURN_RET_LOG(oldReadPos >= oldBasePos, ERR_INVALID_PARAM,
+        "oldReadPos:%{public}" PRIu64 " basePos:%{public}" PRIu64 "", oldReadPos, oldBasePos);
 
     // new read position should not be bigger than write position or less than old read position
     CHECK_AND_RETURN_RET_LOG(readFrame >= oldReadPos && readFrame <= basicBufferInfo_->curWriteFrame.load(),

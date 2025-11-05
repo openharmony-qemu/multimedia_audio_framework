@@ -75,7 +75,7 @@ private:
     std::shared_ptr<PipeStreamPropInfo> ConvertVADeviceStreamPropertyToPipeStreamPropInfo(
         const VAAudioStreamProperty &vaStreamProperty);
 
-    int32_t CalculateBufferSize(const VAAudioStreamProperty &vaStreamProperty);
+    uint32_t CalculateBufferSize(const VAAudioStreamProperty &vaStreamProperty);
 };
 } //namespace AudioStandard
 } //namespace OHOS

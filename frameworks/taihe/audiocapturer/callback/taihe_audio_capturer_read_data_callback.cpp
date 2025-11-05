@@ -119,7 +119,7 @@ void TaiheCapturerReadDataCallback::OnReadData(size_t length)
 
 void TaiheCapturerReadDataCallback::OnJsCapturerReadDataCallback(std::unique_ptr<CapturerReadDataJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("OnJsCapturerReadDataCallback: jsCb.get() is null");
         return;
     }
@@ -158,7 +158,9 @@ void TaiheCapturerReadDataCallback::SafeJsCallbackCapturerReadDataWork(CapturerR
     std::shared_ptr<CapturerReadDataJsCallback> safeContext(
         static_cast<CapturerReadDataJsCallback*>(event),
         [](CapturerReadDataJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
     CHECK_AND_RETURN_LOG(event->readDataCallbackPtr != nullptr, "CapturerReadDataCallback is already released");
     CHECK_AND_RETURN_LOG(event->readDataCallbackPtr->isCallbackInited_, "the callback has been dereferenced");

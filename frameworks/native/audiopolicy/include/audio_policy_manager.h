@@ -110,7 +110,7 @@ public:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors,
         const int32_t audioDeviceSelectMode = 0);
 
-    int32_t SelectPrivateDevice();
+    int32_t SelectPrivateDevice(int32_t devType, const std::string &macAddress);
 
     int32_t ForceSelectDevice(DeviceType devType, const std::string &macAddress,
         sptr<AudioRendererFilter> filter);

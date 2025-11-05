@@ -22,6 +22,7 @@
 #include "audio_renderer.h"
 #include "audio_stream_manager.h"
 #include "audio_device_info.h"
+#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -183,7 +184,8 @@ public:
     virtual int32_t SetSpeed(float speed) = 0;
     virtual int32_t SetPitch(float pitch) = 0;
     virtual float GetSpeed() = 0;
-    virtual int32_t SetRenderTarget(RenderTarget target) { return 0; }
+    virtual int32_t SetRebuildFlag() { return 0; }
+    virtual int32_t SetRenderTarget(RenderTarget target) { return ERR_NOT_SUPPORTED; }
     virtual RenderTarget GetRenderTarget() { return NORMAL_PLAYBACK; }
 
     virtual void SetUnderflowCount(uint32_t underflowCount) = 0;

@@ -30,6 +30,7 @@ enum AudioPipeAction {
     PIPE_ACTION_DEFAULT = 0,
     PIPE_ACTION_NEW,
     PIPE_ACTION_UPDATE,
+    PIPE_ACTION_RELOAD,
 };
 
 class AudioPipeInfo {

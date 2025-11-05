@@ -45,11 +45,20 @@ public:
     AudioEffectManager GetEffectManager();
     AudioScene GetAudioSceneSync();
     AudioSpatializationManager GetSpatializationManager();
+    AudioCollaborativeManager GetCollaborativeManager();
+    void OnAudioSceneChange(callback_view<void(AudioScene data)> callback);
+    void OffAudioSceneChange(optional_view<callback<void(AudioScene data)>> callback);
 
     friend AudioManager GetAudioManager();
 
 private:
+    static void RegisterAudioSceneChangeCallback(std::shared_ptr<uintptr_t> &callback, AudioManagerImpl *audioMngrImpl);
+    static void UnregisterAudioSceneChangeCallback(std::shared_ptr<uintptr_t> &callback,
+        AudioManagerImpl *audioMngrImpl);
+
     OHOS::AudioStandard::AudioSystemManager *audioMngr_;
+    std::shared_ptr<OHOS::AudioStandard::AudioManagerAudioSceneChangedCallback>
+        audioSceneChangedCallbackTaihe_ = nullptr;
     int32_t cachedClientId_ = -1;
 };
 } // namespace ANI::Audio

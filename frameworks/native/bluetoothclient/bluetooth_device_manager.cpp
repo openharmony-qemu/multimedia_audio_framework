@@ -948,7 +948,7 @@ void HfpBluetoothDeviceManager::HandleUserSelection(const BluetoothRemoteDevice 
     std::lock_guard<std::mutex> lg(g_observerLock);
     CHECK_AND_RETURN_LOG(g_deviceObserver, "g_deviceObserver is nullptr");
     if (deviceCategory == BT_WATCH) {
-        g_deviceObserver->OnPrivacyDeviceSelected();
+        g_deviceObserver->OnPrivacyDeviceSelected(DEVICE_TYPE_BLUETOOTH_SCO, macAddress);
         return;
     }
     sptr<AudioRendererFilter> filter = new AudioRendererFilter();

@@ -115,6 +115,8 @@ public:
 
     virtual int32_t GetStreamManagerType() override { return 0; }
 
+    virtual int32_t SetRebuildFlag() override { return 0; }
+
     virtual int32_t SetSilentModeAndMixWithOthers(bool on) override { return 0; }
 
     virtual int32_t SetClientVolume() override { return 0; }

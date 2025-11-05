@@ -106,7 +106,7 @@ constexpr int32_t MAX_STREAM_USAGE_COUNT = StreamUsage::STREAM_USAGE_MAX + 1;
 constexpr int32_t MAX_SIZE = 1024;
 constexpr int32_t DEFAULT_UID = 0;
 constexpr int32_t DEFAULT_ZONEID = 0;
-constexpr int32_t RESTORE_INFO_LOCK_TIMEOUT_MS = 500; // 500ms
+constexpr int32_t RESTORE_INFO_LOCK_TIMEOUT_MS = 1000; // 1000ms
 
 constexpr int32_t UID_MEDIA = 1013;
 constexpr int32_t UID_MCU = 7500;
@@ -947,29 +947,34 @@ void AudioPolicyServer::SubscribeCommonEvent(const std::string event)
     EventFwk::CommonEventManager::SubscribeCommonEvent(commonSubscribePtr);
 }
 
+void AudioPolicyServer::HandleDataShareReadyEvent()
+{
+    if (isInitRingtoneReady_ == false) {
+        std::thread([&]() { CallRingtoneLibrary(); }).detach();
+        isInitRingtoneReady_ = true;
+    }
+    audioPolicyManager_.SetDataShareReady(true);
+    RegisterDataObserver();
+    if (isInitMuteState_ == false) {
+        AUDIO_INFO_LOG("receive DATA_SHARE_READY action and need init mic mute state");
+        InitMicrophoneMute();
+    }
+    if (isInitSettingsData_ == false) {
+        AUDIO_INFO_LOG("First receive DATA_SHARE_READY action and need init SettingsData");
+        InitKVStore();
+        NotifySettingsDataReady();
+        isInitSettingsData_ = true;
+    }
+    RegisterDefaultVolumeTypeListener();
+    SubscribeAccessibilityConfigObserver();
+}
+
 void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventData)
 {
     const AAFwk::Want& want = eventData.GetWant();
     std::string action = want.GetAction();
     if (action == "usual.event.DATA_SHARE_READY") {
-        if (isInitRingtoneReady_ == false) {
-            std::thread([&]() { CallRingtoneLibrary(); }).detach();
-            isInitRingtoneReady_ = true;
-        }
-        audioPolicyManager_.SetDataShareReady(true);
-        RegisterDataObserver();
-        if (isInitMuteState_ == false) {
-            AUDIO_INFO_LOG("receive DATA_SHARE_READY action and need init mic mute state");
-            InitMicrophoneMute();
-        }
-        if (isInitSettingsData_ == false) {
-            AUDIO_INFO_LOG("First receive DATA_SHARE_READY action and need init SettingsData");
-            InitKVStore();
-            NotifySettingsDataReady();
-            isInitSettingsData_ = true;
-        }
-        RegisterDefaultVolumeTypeListener();
-        SubscribeAccessibilityConfigObserver();
+        HandleDataShareReadyEvent();
     } else if (action == "usual.event.dms.rotation_changed") {
         uint32_t rotate = static_cast<uint32_t>(want.GetIntParam("rotation", 0));
         AUDIO_INFO_LOG("Set rotation to audioeffectchainmanager is %{public}d", rotate);
@@ -992,9 +997,16 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
         UnlockEvent();
     } else if (action == "usual.event.LOCALE_CHANGED" || action == "usual.event.USER_STARTED") {
         CallRingtoneLibrary();
-    } else if (action == "usual.event.dms.cast_plugged_changed" && eventData.GetData() == "1") {
-        AUDIO_INFO_LOG("on receive cast plug in event");
-        audioPolicyManager_.SetMaxVolumeForDpBoardcast();
+    } else if (action == "usual.event.dms.cast_plugged_changed") {
+        AUDIO_INFO_LOG("on receive cast plug event, eventType :%{public}s", eventData.GetData().c_str());
+        if (eventData.GetData() == "1") {
+            // cast plug in
+            audioPolicyManager_.HandleCastingConnection();
+            audioPolicyManager_.SetMaxVolumeForDpBoardcast();
+        } else if (eventData.GetData() == "0") {
+            // cast plug out
+            audioPolicyManager_.HandleCastingDisconnection();
+        }
     }
 }
 
@@ -5424,9 +5436,9 @@ int32_t AudioPolicyServer::GetVADeviceController(const std::string& macAddress, 
 }
 
 
-int32_t AudioPolicyServer::SelectPrivateDevice()
+int32_t AudioPolicyServer::SelectPrivateDevice(int32_t devType, const std::string &macAddress)
 {
-    eventEntry_->OnPrivacyDeviceSelected();
+    eventEntry_->OnPrivacyDeviceSelected(static_cast<DeviceType>(devType), macAddress);
     return SUCCESS;
 }
 

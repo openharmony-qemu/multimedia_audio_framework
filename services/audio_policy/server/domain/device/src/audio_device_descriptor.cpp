@@ -553,6 +553,11 @@ bool AudioDeviceDescriptor::IsRemote() const
     return networkId_ != LOCAL_NETWORK_ID;
 }
 
+bool AudioDeviceDescriptor::IsRemoteDevice() const
+{
+    return networkId_ != LOCAL_NETWORK_ID || deviceType_ == DEVICE_TYPE_REMOTE_CAST;
+}
+
 void AudioDeviceDescriptor::Dump(std::string &dumpString)
 {
     AppendFormat(dumpString, "      - device %d: role %s type %d (%s) name: %s\n",

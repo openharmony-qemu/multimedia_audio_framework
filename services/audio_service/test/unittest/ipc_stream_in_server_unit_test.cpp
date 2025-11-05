@@ -2387,6 +2387,32 @@ HWTEST(IpcStreamInServerUnitTest, RegisterThreadPriority_001, TestSize.Level4)
 /**
  * @tc.name  : Test IpcStreamInServer API
  * @tc.type  : FUNC
+ * @tc.number: SetRebuildFlag_001
+ * @tc.desc  : Test SetRebuildFlag interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, SetRebuildFlag_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+    
+    auto result = ipcStreamInServerRet.SetRebuildFlag();
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
+    result = ipcStreamInServerRet.SetRebuildFlag();
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.capturerInServer_ = std::make_shared<CapturerInServer>(ipcStreamInServerRet.config_,
+        ipcStreamInServerRet.streamListenerHolder_);
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
+    result = ipcStreamInServerRet.SetRebuildFlag();
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test IpcStreamInServer API
+ * @tc.type  : FUNC
  * @tc.number: SetTarget_001
  * @tc.desc  : Test SetTarget interface.
  */

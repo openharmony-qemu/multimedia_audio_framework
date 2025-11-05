@@ -103,6 +103,7 @@ private:
     std::unordered_map<DeviceType, uint16_t> dmDeviceTypeMap_;
 
     std::atomic<AudioScene> currentAudioScene_ = AUDIO_SCENE_DEFAULT;
+    std::mutex voiceVolumeMtx_;
 };
 
 } // namespace AudioStandard

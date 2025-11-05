@@ -295,37 +295,37 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetLowPowerVolume_001, T
 }
 
 /**
- * @tc.name  : Test InitDualToneStream API
+ * @tc.name  : Test EnableDualTone API
  * @tc.type  : FUNC
- * @tc.number: RendererInServerInitDualToneStream_001
- * @tc.desc  : Test InitDualToneStream interface, Set status_ is I_STATUS_STARTED.
+ * @tc.number: RendererInServerEnableDualTone_001
+ * @tc.desc  : Test EnableDualTone interface, Set status_ is I_STATUS_STARTED.
  */
-HWTEST_F(RendererInServerThirdUnitTest, RendererInServerInitDualToneStream_001, TestSize.Level1)
+HWTEST_F(RendererInServerThirdUnitTest, RendererInServerEnableDualTone_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, rendererInServer);
 
     rendererInServer->status_ = I_STATUS_STARTED;
     
     rendererInServer->Init();
-    int32_t ret = rendererInServer->InitDualToneStream("Speaker");
+    int32_t ret = rendererInServer->EnableDualTone("Speaker");
 
     EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
- * @tc.name  : Test InitDualToneStream API
+ * @tc.name  : Test EnableDualTone API
  * @tc.type  : FUNC
- * @tc.number: RendererInServerInitDualToneStream_002
- * @tc.desc  : Test InitDualToneStream interface, Set dualToneStream_ is nullptr.
+ * @tc.number: RendererInServerEnableDualTone_002
+ * @tc.desc  : Test EnableDualTone interface, Set dualToneStream_ is nullptr.
  */
-HWTEST_F(RendererInServerThirdUnitTest, RendererInServerInitDualToneStream_002, TestSize.Level1)
+HWTEST_F(RendererInServerThirdUnitTest, RendererInServerEnableDualTone_002, TestSize.Level1)
 {
     EXPECT_NE(nullptr, rendererInServer);
 
     rendererInServer->status_ = I_STATUS_STARTED;
     rendererInServer->dualToneStream_ = nullptr;
     rendererInServer->Init();
-    int32_t ret = rendererInServer->InitDualToneStream("Speaker");
+    int32_t ret = rendererInServer->EnableDualTone("Speaker");
 
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -1588,7 +1588,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerStop_001, TestSize.Level
     int32_t ret = rendererInServer->Init();
     rendererInServer->standByEnable_ = true;
     rendererInServer->InitDupStream(1);
-    rendererInServer->InitDualToneStream("Speaker");
+    rendererInServer->EnableDualTone("Speaker");
     rendererInServer->playerDfx_ = 0;
 
     ret = rendererInServer->Stop();
@@ -1609,7 +1609,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerStop_002, TestSize.Level
     int32_t ret = rendererInServer->Init();
     rendererInServer->standByEnable_ = true;
     rendererInServer->InitDupStream(1);
-    rendererInServer->InitDualToneStream("Speaker");
+    rendererInServer->EnableDualTone("Speaker");
     rendererInServer->managerType_ = DIRECT_PLAYBACK;
 
     ret = rendererInServer->Stop();
@@ -1630,7 +1630,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerStop_003, TestSize.Level
     int32_t ret = rendererInServer->Init();
     rendererInServer->standByEnable_ = true;
     rendererInServer->InitDupStream(1);
-    rendererInServer->InitDualToneStream("Speaker");
+    rendererInServer->EnableDualTone("Speaker");
     rendererInServer->managerType_ = EAC3_PLAYBACK;
 
     ret = rendererInServer->Stop();
@@ -1651,7 +1651,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerStop_004, TestSize.Level
     int32_t ret = rendererInServer->Init();
     rendererInServer->standByEnable_ = true;
     rendererInServer->InitDupStream(1);
-    rendererInServer->InitDualToneStream("Speaker");
+    rendererInServer->EnableDualTone("Speaker");
     rendererInServer->managerType_ = RECORDER;
 
     ret = rendererInServer->Stop();

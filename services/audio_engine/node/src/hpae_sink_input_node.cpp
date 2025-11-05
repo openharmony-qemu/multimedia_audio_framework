@@ -59,12 +59,7 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
     } else {
         historyBuffer_ = nullptr;
     }
-    if ((nodeInfo.customSampleRate == 0 && nodeInfo.samplingRate == SAMPLE_RATE_11025) ||
-        nodeInfo.customSampleRate == SAMPLE_RATE_11025) {
-        pullDataFlag_ = true;
-    } else if (nodeInfo.customSampleRate != 0 && nodeInfo.customSampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES != 0) {
-        pullDataCount_ = 0;
-    }
+    UpdateDataFlag(nodeInfo);
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeSinkInputNode");
     if (auto callback = GetNodeStatusCallback().lock()) {
@@ -235,6 +230,7 @@ void HpaeSinkInputNode::Flush()
         pcmInfo.isMultiFrames = true;
         historyBuffer_ = std::make_unique<HpaePcmBuffer>(pcmInfo);
     }
+    UpdateDataFlag(GetNodeInfo());
 }
 
 bool HpaeSinkInputNode::Drain()
@@ -348,6 +344,17 @@ bool HpaeSinkInputNode::QueryUnderrun()
     CHECK_AND_RETURN_RET_LOG(writeCallback, false, "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
     return writeCallback->OnQueryUnderrun();
 }
+
+void HpaeSinkInputNode::UpdateDataFlag(HpaeNodeInfo &nodeInfo)
+{
+    if ((nodeInfo.customSampleRate == 0 && nodeInfo.samplingRate == SAMPLE_RATE_11025) ||
+        nodeInfo.customSampleRate == SAMPLE_RATE_11025) {
+        pullDataFlag_ = true;
+    } else if (nodeInfo.customSampleRate != 0 && nodeInfo.customSampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES != 0) {
+        pullDataCount_ = 0;
+    }
+}
+
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

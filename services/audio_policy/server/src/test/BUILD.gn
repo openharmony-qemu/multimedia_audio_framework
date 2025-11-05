@@ -186,7 +186,10 @@ ohos_unittest("audio_spatialization_state_change_listener_unit_test") {
     "samgr:samgr_proxy",
   ]
 
-  sources = [ "./src/audio_spatialization_state_change_listener_unit_test.cpp" ]
+  sources = [
+    "./src/audio_spatialization_state_change_listener_unit_test.cpp",
+    "../../../../../services/audio_policy/server/src/audio_spatialization_state_change_listener.cpp",
+  ]
 
   deps = [
     "../../../../audio_policy:audio_policy_client",

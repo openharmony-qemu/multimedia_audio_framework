@@ -170,6 +170,29 @@ ohos_unittest("hpae_manager_test") {
   resource_config_file = "./resource/ohos_test.xml"
 }
 
+ohos_unittest("hpae_manager_audio_paramters_test") {
+  module_out_path = module_output_path
+  sources = [
+    "common/test_case_common.cpp",
+    "manager/hpae_audio_service_callback_unit_test.cpp",
+    "manager/hpae_manager_audio_paramters_test.cpp",
+  ]
+
+  configs = [ ":audio_engine_private_config" ]
+
+  deps = [
+    "../../:audio_engine_manager",
+    "../../:audio_engine_node",
+    "../../:audio_engine_utils",
+    "../../../audio_service:audio_common",
+    "../../../../frameworks/native/audioeffect:audio_effect",
+  ]
+
+  external_deps = engine_test_external_deps
+
+  resource_config_file = "./resource/ohos_test.xml"
+}
+
 ohos_unittest("hpae_soft_link_unit_test") {
   module_out_path = module_output_path
   sources = [
@@ -680,6 +703,7 @@ ohos_unittest("audio_engine_unit_test") {
   sources = [
     "common/test_case_common.cpp",
     "dfx/hpae_dfx_map_tree_test.cpp",
+    "dfx/hpae_simd_test.cpp",
     "utils/hpae_pcm_utils_test.cpp",
     "utils/hpae_no_lock_queue_test.cpp",
   ]

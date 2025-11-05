@@ -115,7 +115,7 @@ int32_t AudioInputNode::DoProcess()
     return SUCCESS;
 }
 
-int32_t AudioInputNode::SetRequestDataCallback(std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback)
+int32_t AudioInputNode::SetRequestDataCallback(std::shared_ptr<InputNodeRequestDataCallBack> callback)
 {
     CHECK_AND_RETURN_RET(callback != nullptr, ERR_INVALID_PARAM,
         "AudioInputNode::SetRequestDataCallback callback is null");
@@ -220,8 +220,8 @@ int32_t AudioInputNode::DoRequestData(uint8_t* rawData, uint32_t needSize, uint3
     while (!isFinished && (getSize < singleFrameSize ||
         ((getSize < needSize) && (curTryCounts < REQUEST_DATA_TRY_COUNTS)))) {
         ++curTryCounts;
-        int32_t singleGetSize = writeCallback_->OnWriteDataCallBack(rawData + getSize, needSize, &isFinished);
-        CHECK_AND_RETURN_RET_LOG(singleGetSize > 0, ERROR, "AudioInputNode::DoRequestData OnWriteDataCallBack error");
+        int32_t singleGetSize = writeCallback_->OnRequestDataCallBack(rawData + getSize, needSize, &isFinished);
+        CHECK_AND_RETURN_RET_LOG(singleGetSize > 0, ERROR, "AudioInputNode::DoRequestData OnRequestDataCallBack error");
         getSize += static_cast<uint32_t>(singleGetSize);
         needSize -= static_cast<uint32_t>(singleGetSize);
         AUDIO_INFO_LOG("AudioInputNode Get data from user, getSize=%{public}d, singleGetSize=%{public}d,"

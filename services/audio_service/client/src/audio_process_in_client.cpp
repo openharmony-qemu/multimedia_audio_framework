@@ -153,6 +153,8 @@ public:
 
     void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
 
+    void SetRebuildFlag() override;
+
     bool IsRestoreNeeded() override;
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
@@ -1771,6 +1773,12 @@ bool AudioProcessInClientInner::GetStopFlag() const
 {
     CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
     return audioBuffer_->GetStopFlag();
+}
+
+void AudioProcessInClientInner::SetRebuildFlag()
+{
+    CHECK_AND_RETURN_LOG(processProxy_ != nullptr, "SetRebuildFlag processProxy_ is nullptr");
+    processProxy_->SetRebuildFlag();
 }
 
 void AudioProcessInClientInner::SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId)

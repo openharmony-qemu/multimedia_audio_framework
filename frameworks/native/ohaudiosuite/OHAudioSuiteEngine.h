@@ -27,14 +27,14 @@
 namespace OHOS {
 namespace AudioStandard {
 
-class OHSuiteInputNodeWriteDataCallBack : public AudioSuite::SuiteInputNodeWriteDataCallBack {
+class OHSuiteInputNodeRequestDataCallBack : public AudioSuite::InputNodeRequestDataCallBack {
 public:
-    explicit OHSuiteInputNodeWriteDataCallBack(
+    explicit OHSuiteInputNodeRequestDataCallBack(
         OH_AudioNode *audioNode, OH_InputNode_RequestDataCallback callback, void *data)
         : audioNode_(audioNode), callback_(callback), userData_(data) {}
-    ~OHSuiteInputNodeWriteDataCallBack() = default;
+    ~OHSuiteInputNodeRequestDataCallBack() = default;
 
-    int32_t OnWriteDataCallBack(void *audioData, int32_t audioDataSize, bool *finished) override;
+    int32_t OnRequestDataCallBack(void *audioData, int32_t audioDataSize, bool *finished) override;
 
 private:
     OH_AudioNode *audioNode_ = nullptr;

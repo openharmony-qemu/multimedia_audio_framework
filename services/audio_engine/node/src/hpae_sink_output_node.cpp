@@ -351,15 +351,16 @@ int32_t HpaeSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
     CHECK_AND_RETURN_RET_LOG(audioRendererSink_ != nullptr, ERROR, "audioRendererSink_ is nullptr");
     CHECK_AND_RETURN_RET_LOG(audioRendererSink_->IsInited(), ERR_ILLEGAL_STATE, "audioRendererSink_ not init");
+    streamRunningNum_ = appsUid.size();
     return audioRendererSink_->UpdateAppsUid(appsUid);
 }
 
 void HpaeSinkOutputNode::HandlePaPower(HpaePcmBuffer *pcmBuffer)
 {
-    if (GetDeviceClass() != "primary" || !pcmBuffer->IsValid()) {
+    if (GetDeviceClass() != "primary") {
         return;
     }
-    if (pcmBuffer->IsSilence()) {
+    if (pcmBuffer->IsSilence() && streamRunningNum_ > 0) {
         if (!isDisplayPaPowerState_) {
             AUDIO_INFO_LOG("Timing begins, will close speaker after [%{public}" PRId64 "]s", WAIT_CLOSE_PA_TIME);
             isDisplayPaPowerState_ = true;
@@ -387,7 +388,8 @@ void HpaeSinkOutputNode::HandlePaPower(HpaePcmBuffer *pcmBuffer)
         if (!isOpenPaPower_) {
             int32_t ret = audioRendererSink_->SetPaPower(true);
             isOpenPaPower_ = true;
-            AUDIO_INFO_LOG("Volume change to non zero, open closed pa:[%{public}s] -- [%{public}s], ret:%{public}d",
+            AUDIO_INFO_LOG("Volume change to non zero or no stream running, \
+                open closed pa:[%{public}s] -- [%{public}s], ret:%{public}d",
                 GetDeviceClass().c_str(), (ret == 0 ? "success" : "failed"), ret);
         }
     }

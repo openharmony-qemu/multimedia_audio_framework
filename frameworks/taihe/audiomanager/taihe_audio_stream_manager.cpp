@@ -111,10 +111,75 @@ bool AudioStreamManagerImpl::IsActiveSync(AudioVolumeType volumeType)
         return false;
     }
     if (audioStreamMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "AudioStreamManager not initialized");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioStreamMngr_ is nullptr");
         return false;
     }
     return audioStreamMngr_->IsStreamActive(TaiheAudioEnum::GetNativeAudioVolumeType(volType));
+}
+
+bool AudioStreamManagerImpl::IsStreamActive(StreamUsage streamUsage)
+{
+    int32_t usage = streamUsage.get_value();
+    if (!TaiheAudioEnum::IsLegalInputArgumentStreamUsage(usage)) {
+        AUDIO_ERR_LOG("get streamUsage failed: %{public}d", usage);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM,
+            "parameter verification failed: The param of streamUsage must be enum StreamUsage");
+        return false;
+    }
+    if (audioStreamMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioStreamMngr_ is nullptr");
+        return false;
+    }
+    return audioStreamMngr_->IsStreamActiveByStreamUsage(TaiheAudioEnum::GetNativeStreamUsage(usage));
+}
+
+bool AudioStreamManagerImpl::IsAcousticEchoCancelerSupported(SourceType sourceType)
+{
+    int32_t type = sourceType.get_value();
+    if (!TaiheAudioEnum::IsValidSourceType(type)) {
+        AUDIO_ERR_LOG("get sourceType failed: %{public}d", type);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM,
+            "parameter verification failed: The param of sourceType must be enum SourceType");
+        return false;
+    }
+    if (audioStreamMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioStreamMngr_ is nullptr");
+        return false;
+    }
+    return audioStreamMngr_->IsAcousticEchoCancelerSupported(static_cast<OHOS::AudioStandard::SourceType>(type));
+}
+
+bool AudioStreamManagerImpl::IsRecordingAvailable(AudioCapturerInfo capturerInfo)
+{
+    OHOS::AudioStandard::AudioCapturerInfo innerCapturerInfo;
+    int32_t ret = TaiheParamUtils::GetAudioCapturerInfo(innerCapturerInfo, capturerInfo);
+    if (ret != AUDIO_OK || innerCapturerInfo.sourceType == OHOS::AudioStandard::SourceType::SOURCE_TYPE_INVALID) {
+        AUDIO_ERR_LOG("get audioCapturerChangeInfo failed");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "parameter verification failed");
+        return false;
+    }
+    if (audioStreamMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioStreamMngr_ is nullptr");
+        return false;
+    }
+    return audioStreamMngr_->IsCapturerFocusAvailable(innerCapturerInfo);
+}
+
+bool AudioStreamManagerImpl::IsAudioLoopbackSupported(AudioLoopbackMode mode)
+{
+    int32_t loopbackMode = mode.get_value();
+    if (!TaiheAudioEnum::IsLegalInputArgumentAudioLoopbackMode(loopbackMode)) {
+        AUDIO_ERR_LOG("get loopbackMode failed: %{public}d", loopbackMode);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM,
+            "parameter verification failed: The param of loopbackMode must be enum AudioLoopbackMode");
+        return false;
+    }
+    if (audioStreamMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioStreamMngr_ is nullptr");
+        return false;
+    }
+    return audioStreamMngr_->IsAudioLoopbackSupported(
+        static_cast<OHOS::AudioStandard::AudioLoopbackMode>(loopbackMode));
 }
 
 void AudioStreamManagerImpl::OnAudioRendererChange(callback_view<void(array_view<AudioRendererChangeInfo>)> callback)
@@ -132,7 +197,7 @@ void AudioStreamManagerImpl::OnAudioCapturerChange(callback_view<void(array_view
 void AudioStreamManagerImpl::OffAudioRendererChange(
     optional_view<callback<void(array_view<AudioRendererChangeInfo>)>> callback)
 {
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
@@ -144,7 +209,7 @@ void AudioStreamManagerImpl::OffAudioCapturerChange(optional_view<callback<void(
 {
     CHECK_AND_RETURN_RET_LOG(audioStreamMngr_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
         TAIHE_ERROR_INVALID_PARAM), "audioStreamMngr_ is nullptr");
-    std::shared_ptr<uintptr_t> cacheCallback;
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }

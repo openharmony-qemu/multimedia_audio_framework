@@ -28,7 +28,6 @@ namespace AudioStandard {
 using OHOS::AudioStandard::AudioSuite::AudioFormat;
 using OHOS::AudioStandard::AudioSuite::AudioNodeType;
 
-
 class OHAudioSuiteNodeBuilder {
 public:
     ~OHAudioSuiteNodeBuilder();
@@ -43,19 +42,18 @@ public:
     bool IsSetRequestDataCallback() const;
     AudioFormat GetNodeFormat() const;
     OH_InputNode_RequestDataCallback GetRequestDataCallback() const;
-    void *GetOnWriteUserData() const;
+    void *GetCallBackUserData() const;
 
 private:
-    bool CheckSamplingRateVaild(int32_t samplingRate) const;
-    bool CheckChannelCountVaild(int32_t channelCount) const;
-
     AudioNodeType nodeType_;
     AudioFormat nodeFormat_;
     bool setNodeFormat_ = false;
 
-    OH_InputNode_RequestDataCallback onWriteDataCallBack_ = nullptr;
-    void *onWriteDataUserData_ = nullptr;
+    OH_InputNode_RequestDataCallback requestDataCallBack_ = nullptr;
+    void *callBackUserData_ = nullptr;
 };
+
+bool CheckAudioFormat(OH_AudioFormat audioFormat);
 
 } // namespace AudioStandard
 } // namespace OHOS

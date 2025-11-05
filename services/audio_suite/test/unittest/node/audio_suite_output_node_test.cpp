@@ -31,7 +31,7 @@
 
 using namespace testing::ext;
 using namespace testing;
-class SuiteInputNodeWriteDataCallBack;
+class InputNodeRequestDataCallBack;
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
@@ -45,7 +45,6 @@ struct FormatConversionInfo {
 };
 
 static std::string g_outputNodeTestDir = "/data/audiosuite/outputnode/";
-static std::vector<uint8_t> buffer_;
 
 static FormatConversionInfo g_info[] = {
     {"in_44100_2_f32le.wav", "out1.pcm", "compare_44100_2_s16le.pcm",
@@ -264,9 +263,9 @@ HWTEST_F(AudioSuiteOutputNodeTest, FormatConversion_001, TestSize.Level0)
     }
 }
 
-class SuiteInputNodeWriteDataCallBackTest : public AudioSuite::SuiteInputNodeWriteDataCallBack {
+class SuiteInputNodeRequestDataCallBackTest : public AudioSuite::InputNodeRequestDataCallBack {
 public:
-    int32_t OnWriteDataCallBack(void *audioData, int32_t audioDataSize, bool* finished) override
+    int32_t OnRequestDataCallBack(void *audioData, int32_t audioDataSize, bool* finished) override
     {
         if (audioData == nullptr || finished == nullptr) {
             return -1;
@@ -295,6 +294,7 @@ public:
 
 private:
     size_t currentPos_ = 0;
+    std::vector<uint8_t> buffer_;
 };
 
 static void CompareOutputWithReference(const std::string& outputFilePath, const std::string& compareFilePath)
@@ -335,8 +335,8 @@ static bool RunFormatConversionTest(const FormatConversionInfo& info,
         return false;
     }
 
-    std::shared_ptr<SuiteInputNodeWriteDataCallBackTest> callback =
-        std::make_shared<SuiteInputNodeWriteDataCallBackTest>();
+    std::shared_ptr<SuiteInputNodeRequestDataCallBackTest> callback =
+        std::make_shared<SuiteInputNodeRequestDataCallBackTest>();
     inputNode->SetRequestDataCallback(callback);
 
     inputNode->Init();

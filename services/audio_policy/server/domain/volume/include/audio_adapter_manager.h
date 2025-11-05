@@ -145,7 +145,9 @@ public:
 
     AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex);
 
-    AudioIOHandle ReloadAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex);
+    AudioIOHandle ReloadA2dpAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex);
+
+    void ReloadAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex);
 
     int32_t CloseAudioPort(AudioIOHandle ioHandle, uint32_t paIndex = HDI_INVALID_ID);
 
@@ -327,7 +329,9 @@ public:
     bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout);
     void UpdateOtherStreamVolume(AudioStreamType streamType);
     void SetVolumeLimit(float volume);
-    bool SetMaxVolumeForDpBoardcast();
+    void SetMaxVolumeForDpBoardcast();
+    void HandleCastingConnection();
+    void HandleCastingDisconnection();
     int32_t SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree);
     int32_t GetSystemVolumeDegree(AudioStreamType streamType, bool checkMuteState = true);
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
@@ -528,6 +532,7 @@ private:
     std::optional<uint32_t> offloadSessionID_[OFFLOAD_IN_ADAPTER_SIZE] = {};
     std::mutex audioVolumeMutex_;
     std::mutex activeDeviceMutex_;
+    std::mutex setMaxVolumeMutex_;
     AppConfigVolume appConfigVolume_;
     std::shared_ptr<FixedSizeList<RingerModeAdjustInfo>> saveRingerModeInfo_ =
         std::make_shared<FixedSizeList<RingerModeAdjustInfo>>(MAX_CACHE_AMOUNT);
@@ -535,6 +540,7 @@ private:
     sptr<IStandardAudioPolicyManagerListener> deviceVolumeBehaviorListener_;
     bool isA2DPPreActive_ = false;
     std::atomic<float> volumeLimit_ = MAX_STREAM_VOLUME;
+    std::atomic<bool> isCastingConnect_ = false;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {

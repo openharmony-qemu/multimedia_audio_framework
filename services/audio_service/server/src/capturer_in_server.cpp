@@ -586,9 +586,11 @@ int32_t CapturerInServer::StartInner()
 
 void CapturerInServer::RebuildCaptureInjector()
 {
+    CHECK_AND_RETURN_LOG(rebuildFlag_, "no nedd to rebuild");
     if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         CoreServiceHandler::GetInstance().RebuildCaptureInjector(streamIndex_);
     }
+    rebuildFlag_ = false;
 }
 
 // LCOV_EXCL_START
@@ -889,6 +891,11 @@ RestoreStatus CapturerInServer::RestoreSession(RestoreInfo restoreInfo)
         audioServerBuffer_->WakeFutex(IS_PRE_EXIT);
     }
     return restoreStatus;
+}
+
+void  CapturerInServer::SetRebuildFlag()
+{
+    rebuildFlag_ = true;
 }
 
 int64_t CapturerInServer::GetLastAudioDuration()

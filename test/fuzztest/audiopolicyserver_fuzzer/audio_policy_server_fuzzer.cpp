@@ -34,6 +34,7 @@
 #include "i_hpae_manager.h"
 #include "manager/hdi_adapter_manager.h"
 #include "util/id_handler.h"
+#include "bluetooth_host.h"
 
 using namespace std;
 
@@ -2269,6 +2270,11 @@ bool FuzzTest(const uint8_t* rawData, size_t size)
     return true;
 }
 } // namespace AudioStandard
+
+void OnStop()
+{
+    Bluetooth::BluetoothHost::GetDefaultHost().Close();
+}
 } // namesapce OHOS
 
 /* Fuzzer entry point */
@@ -2279,5 +2285,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     }
 
     OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::OnStop();
     return 0;
 }

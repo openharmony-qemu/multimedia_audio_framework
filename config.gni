@@ -35,7 +35,7 @@ declare_args() {
   audio_framework_feature_file_io = true
   audio_framework_feature_inner_capturer = true
   audio_framework_feature_low_latency = true
-  audio_framework_feature_new_engine_flag = false
+  audio_framework_feature_new_engine_flag = true
   audio_framework_feature_usb_audio = false
   audio_framework_feature_mutesink_enable = true
 

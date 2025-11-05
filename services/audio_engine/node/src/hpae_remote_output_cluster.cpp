@@ -121,25 +121,29 @@ void HpaeRemoteOutputCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBu
 
 void HpaeRemoteOutputCluster::UpdateStreamInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> preNode)
 {
+    CHECK_AND_RETURN_LOG(preNode != nullptr, "the param proNode is nullptr");
     const HpaeNodeInfo &preNodeInfo = preNode->GetSharedInstance()->GetNodeInfo();
     const HpaeProcessorType sceneType = preNodeInfo.sceneType;
     
     // update mixed node streamType and streamUsage
-    HpaeNodeInfo mixerNodeInfo = sceneMixerMap_[sceneType]->GetNodeInfo();
+    auto mixerNode = SafeGetMap(sceneMixerMap_, sceneType);
+    CHECK_AND_RETURN_LOG(mixerNode != nullptr, "the sceneType<%{public}d> is disconnect<Mixer>", sceneType);
+    HpaeNodeInfo mixerNodeInfo = mixerNode->GetNodeInfo();
     mixerNodeInfo.streamType = preNodeInfo.streamType;
     mixerNodeInfo.effectInfo.streamUsage = preNodeInfo.effectInfo.streamUsage;
-    sceneMixerMap_[sceneType]->SetNodeInfo(mixerNodeInfo);
+    mixerNode->SetNodeInfo(mixerNodeInfo);
 
     // update convert node streamType and streamUsage
-    HpaeNodeInfo converterNodeInfo = sceneConverterMap_[sceneType]->GetNodeInfo();
+    auto convertNode = SafeGetMap(sceneConverterMap_, sceneType);
+    CHECK_AND_RETURN_LOG(convertNode != nullptr, "the sceneType<%{public}d> is disconnect<Converter>", sceneType);
+    HpaeNodeInfo converterNodeInfo = convertNode->GetNodeInfo();
     converterNodeInfo.streamType = preNodeInfo.streamType;
     converterNodeInfo.effectInfo.streamUsage = preNodeInfo.effectInfo.streamUsage;
-    sceneConverterMap_[sceneType]->SetNodeInfo(converterNodeInfo);
+    convertNode->SetNodeInfo(converterNodeInfo);
 
-    AUDIO_INFO_LOG("update stream info %{public}d type %{public}d usage %{public}d",
-        sceneMixerMap_[sceneType]->GetNodeInfo().nodeId,
-        sceneMixerMap_[sceneType]->GetNodeInfo().streamType,
-        sceneMixerMap_[sceneType]->GetNodeInfo().effectInfo.streamUsage);
+    const HpaeNodeInfo &printNode = sceneMixerMap_[sceneType]->GetNodeInfo();
+    AUDIO_INFO_LOG("update stream info %{public}d type %{public}d usage %{public}d", printNode.nodeId,
+        printNode.streamType, printNode.effectInfo.streamUsage);
 }
 
 void HpaeRemoteOutputCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)

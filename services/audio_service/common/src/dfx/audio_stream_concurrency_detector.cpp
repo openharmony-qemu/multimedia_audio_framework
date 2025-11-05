@@ -57,18 +57,18 @@ void AudioStreamConcurrencyDetector::CheckIsOtherStreamRunning(const AudioProces
         .usage = config.rendererInfo.streamUsage,
     };
 
-    info.appName = GetBundleNameByToken(config.appInfo.appTokenId);
-    info.streamIds.push_back(streamId);
-
     for (auto p : streamConcurrInfoMap_[config.appInfo.appUid][config.rendererInfo.streamUsage]) {
         if ((p.second.updateTime - p.second.startTime >= threshold) && (p.first != streamId)) {
             info.streamIds.push_back(p.first);
         }
 
-        CHECK_AND_BREAK_LOG(info.streamIds.size() <= maxStreamNums, "over max stream nums, break");
+        CHECK_AND_BREAK_LOG(info.streamIds.size() < maxStreamNums, "over max stream nums, break");
     }
 
-    CHECK_AND_RETURN_LOG(info.streamIds.size() > 1, "no other running stream");
+    CHECK_AND_RETURN_LOG(info.streamIds.size() >= 1, "no other running stream");
+
+    info.appName = GetBundleNameByToken(config.appInfo.appTokenId);
+    info.streamIds.push_back(streamId);
 
     ReportHisysEvent(info);
 }
@@ -136,7 +136,7 @@ AudioStreamConcurrencyDetector& AudioStreamConcurrencyDetector::GetInstance()
 AudioStreamConcurrencyDetector::AudioStreamConcurrencyDetector()
 {
     // this flag is used to judge that is current platform allow concurrent play
-    isEnabled_ = !(OHOS::system::GetBoolParameter("const.audio.volume_apply_to_all", false));
+    isEnabled_ = false;
 }
 }
 }

@@ -1029,8 +1029,8 @@ napi_value NapiAudioSessionMgr::GetPreferBluetoothAndNearlinkRecord(napi_env env
     CHECK_AND_RETURN_RET_LOG(napiSessionMgr->audioSessionMngr_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_INVALID_PARAM, "can not get session"), "audioSessionMngr_ is nullptr");
 
-    bool isPreferred = napiSessionMgr->audioSessionMngr_->GetPreferBluetoothAndNearlinkRecord();
-    NapiParamUtils::SetValueBoolean(env, isPreferred, result);
+    auto ret = napiSessionMgr->audioSessionMngr_->GetPreferBluetoothAndNearlinkRecord();
+    NapiParamUtils::SetValueInt32(env, ret, result);
     return result;
 }
 

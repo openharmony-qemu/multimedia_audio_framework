@@ -61,6 +61,7 @@ namespace {
     const int32_t MEDIA_UID = 1013;
     const float AUDIO_VOLOMUE_EPSILON = 0.0001;
     const int32_t OFFLOAD_INNER_CAP_PREBUF = 3;
+    const size_t OFFLOAD_DUAL_RENDER_PREBUF = 3;
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
     const size_t DEFAULT_CACHE_SIZE = 5;
     constexpr int32_t DEFAULT_SPAN_SIZE = 2;
@@ -784,9 +785,11 @@ void RendererInServer::OnWriteDataFinish()
     UpdateStreamInfo();
 }
 
-int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
+int32_t RendererInServer::WriteData(int8_t *inputData, size_t requestDataLen)
 {
     size_t requestDataInFrame = requestDataLen / byteSizePerFrame_;
+
+    std::lock_guard lock(writeLock_);
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     CHECK_AND_RETURN_RET_LOG(spanSizeInFrame_ != 0, ERR_OPERATION_FAILED, "invalid span size");
@@ -805,39 +808,16 @@ int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
     }
 
     RingBufferWrapper ringBufferDesc; // will be changed in GetReadbuffer
-    if (audioServerBuffer_->GetAllReadableBufferFromPosFrame(currentReadFrame, ringBufferDesc) == SUCCESS) {
-        if (ringBufferDesc.dataLength < requestDataLen) {
-            AUDIO_ERR_LOG("data not enouth");
-            return ERR_INVALID_PARAM;
-        }
-        ringBufferDesc.dataLength = requestDataLen;
-        ProcessFadeOutIfNeeded(ringBufferDesc, currentReadFrame, currentWriteFrame, requestDataInFrame);
+    int32_t ret = audioServerBuffer_->GetAllReadableBufferFromPosFrame(currentReadFrame, ringBufferDesc);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "WriteData GetReadbuffer failed");
+    CHECK_AND_RETURN_RET_LOG(ringBufferDesc.dataLength >= requestDataLen, ERR_INVALID_PARAM, "data not enouth");
 
-        CopyDataToInputBuffer(inputData, requestDataLen, ringBufferDesc);
-
-        BufferDesc bufferDesc = {
-            .buffer = reinterpret_cast<uint8_t*>(inputData),
-            .bufLength = requestDataLen,
-            .dataLength = requestDataLen
-        };
-
-        if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
-            DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
-            AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
-                static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
-        }
-
-        OtherStreamEnqueue(bufferDesc);
-        audioStreamChecker_->RecordNormalFrame();
-        WriteMuteDataSysEvent(bufferDesc);
-        ringBufferDesc.SetBuffersValueWithSpecifyDataLen(0); // clear is needed for reuse.
-        uint64_t nextReadFrame = currentReadFrame + requestDataInFrame;
-        audioServerBuffer_->SetCurReadFrame(nextReadFrame);
-    } else {
-        Trace trace3("RendererInServer::WriteData GetReadbuffer failed");
-    }
-
-    OnWriteDataFinish();
+    ringBufferDesc.dataLength = requestDataLen;
+    ProcessFadeOutIfNeeded(ringBufferDesc, currentReadFrame, currentWriteFrame, requestDataInFrame);
+    CopyDataToInputBuffer(inputData, requestDataLen, ringBufferDesc);
+    ringBufferDesc.SetBuffersValueWithSpecifyDataLen(0); // clear is needed for reuse.
+    uint64_t nextReadFrame = currentReadFrame + requestDataInFrame;
+    audioServerBuffer_->SetCurReadFrame(nextReadFrame);
 
     return SUCCESS;
 }
@@ -1428,9 +1408,9 @@ int32_t RendererInServer::Release(bool isSwitchStream)
     }
     status_ = I_STATUS_RELEASED;
     DisableAllInnerCap();
-    if (isDualToneEnabled_) {
-        DisableDualTone();
-    }
+
+    DisableDualTone();
+
     XperfAdapter::GetInstance().ReportStateChangeEventIfNeed(XPERF_EVENT_RELEASE,
         processConfig_.rendererInfo.streamUsage, streamIndex_, processConfig_.appInfo.appPid,
         processConfig_.appInfo.appUid);
@@ -1695,25 +1675,10 @@ int32_t RendererInServer::InitDupStreamVolume(uint32_t dupStreamIndex)
     return SUCCESS;
 }
 
-int32_t RendererInServer::EnableDualTone(const std::string &dupSinkName)
+int32_t RendererInServer::DisableDualToneInner()
 {
-    if (isDualToneEnabled_) {
-        AUDIO_INFO_LOG("DualTone is already enabled");
-        return SUCCESS;
-    }
-    int32_t ret = InitDualToneStream(dupSinkName);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dual tone stream failed");
-    return SUCCESS;
-}
-
-int32_t RendererInServer::DisableDualTone()
-{
-    std::lock_guard<std::mutex> lock(dualToneMutex_);
-    if (!isDualToneEnabled_) {
-        AUDIO_WARNING_LOG("DualTone is already disabled.");
-        return ERR_INVALID_OPERATION;
-    }
     isDualToneEnabled_ = false;
+    dupSinkName_ = std::nullopt;
     AUDIO_INFO_LOG("Disable dual tone renderer:[%{public}u] with status: %{public}d",
         dualToneStreamIndex_, status_.load());
     IStreamManager::GetDualPlaybackManager().ReleaseRender(dualToneStreamIndex_);
@@ -1723,10 +1688,41 @@ int32_t RendererInServer::DisableDualTone()
     return ERROR;
 }
 
-int32_t RendererInServer::InitDualToneStream(const std::string &dupSinkName)
+int32_t RendererInServer::DisableDualTone()
+{
+    std::lock_guard<std::mutex> lock(dualToneMutex_);
+    if (!isDualToneEnabled_) {
+        AUDIO_WARNING_LOG("DualTone is already disabled.");
+        return ERR_INVALID_OPERATION;
+    }
+
+    return DisableDualToneInner();
+}
+
+void RendererInServer::PreDualToneBufferSilenceForOffload()
+{
+    if (offloadEnable_) {
+        size_t emptyBufferSize = OFFLOAD_DUAL_RENDER_PREBUF * spanSizeInByte_;
+        auto buffer = std::make_unique<uint8_t []>(emptyBufferSize);
+        BufferDesc emptyBufferDesc = {buffer.get(), emptyBufferSize, emptyBufferSize};
+        memset_s(emptyBufferDesc.buffer, emptyBufferSize, 0, emptyBufferSize);
+        dualToneStream_->EnqueueBuffer(emptyBufferDesc);
+    }
+}
+
+int32_t RendererInServer::EnableDualTone(const std::string &dupSinkName)
 {
     {
         std::lock_guard<std::mutex> lock(dualToneMutex_);
+        bool isEnabled = isDualToneEnabled_.load();
+        if (isEnabled && dupSinkName_ == dupSinkName) {
+            AUDIO_INFO_LOG("DualTone is already enabled");
+            return SUCCESS;
+        }
+
+        if (isEnabled) {
+            DisableDualToneInner();
+        }
 
         int32_t ret = IStreamManager::GetDualPlaybackManager().CreateRender(processConfig_, dualToneStream_,
             dupSinkName);
@@ -1740,7 +1736,10 @@ int32_t RendererInServer::InitDualToneStream(const std::string &dupSinkName)
             isSystemApp, processConfig_.rendererInfo.volumeMode, processConfig_.rendererInfo.isVirtualKeyboard };
         AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
 
+        PreDualToneBufferSilenceForOffload();
+
         isDualToneEnabled_ = true;
+        dupSinkName_ = dupSinkName;
     }
 
     if (audioServerBuffer_ != nullptr) {
@@ -2645,6 +2644,29 @@ void RendererInServer::WaitForDataConnection()
             });
         AUDIO_INFO_LOG("data-connection blocking ends, reason %{public}s.", stopWaiting ? "connected" : "timeout");
     }
+}
+
+int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
+{
+    int32_t ret = WriteData(inputData, requestDataLen);
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+
+    BufferDesc bufferDesc = {
+        .buffer = reinterpret_cast<uint8_t*>(inputData),
+        .bufLength = requestDataLen,
+        .dataLength = requestDataLen
+    };
+    if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
+        DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
+        AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
+            static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
+    }
+    OtherStreamEnqueue(bufferDesc);
+    audioStreamChecker_->RecordNormalFrame();
+    WriteMuteDataSysEvent(bufferDesc);
+
+    OnWriteDataFinish();
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

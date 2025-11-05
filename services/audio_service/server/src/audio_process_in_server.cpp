@@ -395,10 +395,12 @@ int32_t AudioProcessInServer::StartInner()
 
 void AudioProcessInServer::RebuildCaptureInjector()
 {
+    CHECK_AND_RETURN_LOG(rebuildFlag_, "no need to rebuild");
     if (processConfig_.audioMode == AUDIO_MODE_RECORD &&
         processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         CoreServiceHandler::GetInstance().RebuildCaptureInjector(sessionId_);
     }
+    rebuildFlag_ = false;
 }
 
 int32_t AudioProcessInServer::Pause(bool isFlush)
@@ -561,8 +563,6 @@ void ProcessDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
     CHECK_AND_RETURN_LOG(processHolder_ != nullptr, "processHolder_ is null.");
     int32_t ret = processHolder_->OnProcessRelease(processInServer_);
     AUDIO_INFO_LOG("OnRemoteDied ret: %{public}d %{public}" PRId64 "", ret, createTime_);
-    CHECK_AND_RETURN_LOG(processInServer_ != nullptr, "processInServer_ is null.");
-    AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processInServer_->GetSessionId());
 }
 
 int32_t AudioProcessInServer::RegisterProcessCb(const sptr<IRemoteObject>& object)
@@ -937,6 +937,13 @@ RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
 
         processBuffer_->SetRestoreInfo(restoreInfo);
         processBuffer_->WakeFutex();
+
+        std::lock_guard<std::mutex> lock(listenerListLock_);
+        std::vector<std::shared_ptr<IProcessStatusListener>>::iterator it = listenerList_.begin();
+        while (it != listenerList_.end()) {
+            (*it)->StopByRestore(restoreInfo);
+            it++;
+        }
     }
     return restoreStatus;
 }
@@ -1099,6 +1106,12 @@ int32_t AudioProcessInServer::HandleCapturerDataParams(RingBufferWrapper &writeB
     DumpFileUtil::WriteDumpFile(dumpFAC_, static_cast<void *>(writeBuf.basicBufferDescs[0].buffer),
         writeBuf.dataLength);
 
+    return SUCCESS;
+}
+
+int32_t AudioProcessInServer::SetRebuildFlag()
+{
+    rebuildFlag_ = true;
     return SUCCESS;
 }
 

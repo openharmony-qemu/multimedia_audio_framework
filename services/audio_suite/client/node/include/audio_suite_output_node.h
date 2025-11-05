@@ -63,7 +63,6 @@ private:
     void ClearCacheBuffer();
     int32_t GetCacheBufferDataLen();
     uint8_t *GetCacheBufferData(size_t idx);
-
     InputPort<AudioSuitePcmBuffer *> inputStream_;
     int32_t preNodeOutputNum_ = 0;
 
@@ -77,7 +76,6 @@ private:
     DataFormat outFormat_;
     std::vector<float> rateOutput_;
     std::vector<float> channelOutput_;
-
     std::vector<std::vector<float>> tmpInput_;
     std::vector<AudioSuitePcmBuffer *> inputsPcmbuffer_;
     uint32_t inputFrameDataLen_;

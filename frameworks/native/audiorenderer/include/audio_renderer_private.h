@@ -106,7 +106,7 @@ public:
     float GetMaxStreamVolume() const override;
     int32_t GetCurrentOutputDevices(AudioDeviceDescriptor &deviceInfo) const override;
     uint32_t GetUnderflowCount() const override;
-    int32_t SetTarget(RenderTarget target) const override;
+    int32_t SetTarget(RenderTarget target) override;
     RenderTarget GetTarget() const override;
 
     int32_t RegisterOutputDeviceChangeWithInfoCallback(

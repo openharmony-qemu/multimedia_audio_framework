@@ -38,6 +38,7 @@ const int32_t AUDIO_POLICY_SERVICE_ID = 3009;
 const uint32_t LIMIT_MAX = static_cast<uint32_t>(AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX);
 const int32_t MAX_BYTES = 1024;
 const size_t MAX_BUNDLE_NAME_LENGTH = 64;
+constexpr size_t MAX_RANDOM_STRING_LENGTH = 128;
 const size_t THRESHOLD = 10;
 constexpr float SCALE = 128.0f;
 constexpr float BIAS  = 1.0f;
@@ -322,6 +323,31 @@ const std::vector<StreamUsage> g_streamUsages = {
     STREAM_USAGE_VOICE_RINGTONE,
     STREAM_USAGE_VOICE_CALL_ASSISTANT
 };
+
+static const std::vector<DataTransferStateChangeType> g_dataTransferStateChangeTypes = {
+    AUDIO_STREAM_START,
+    AUDIO_STREAM_STOP,
+    AUDIO_STREAM_PAUSE,
+    DATA_TRANS_STOP,
+    DATA_TRANS_RESUME,
+};
+
+AudioRendererDataTransferStateChangeInfo ConsumeAudioRendererDataTransferStateChangeInfo(FuzzedDataProvider &provider);
+
+AudioRendererDataTransferStateChangeInfo ConsumeAudioRendererDataTransferStateChangeInfo(FuzzedDataProvider &provider)
+{
+    AudioRendererDataTransferStateChangeInfo ret;
+    ret.clientPid = provider.ConsumeIntegral<int32_t>();
+    ret.clientUID = provider.ConsumeIntegral<int32_t>();
+    ret.sessionId = provider.ConsumeIntegral<int32_t>();
+    ret.streamUsage = g_streamUsages[provider.ConsumeIntegral<uint32_t>() % g_streamUsages.size()];
+    ret.stateChangeType = g_dataTransferStateChangeTypes[provider.ConsumeIntegral<uint32_t>() % g_streamUsages.size()];
+    ret.isBackground = provider.ConsumeIntegral<int32_t>() % NUM_2;
+    for (int i = 0; i < MAX_DATATRANS_TYPE; i++) {
+        ret.badDataRatio[i] = provider.ConsumeIntegral<int32_t>();
+    }
+    return ret;
+}
 
 class DataTransferStateChangeCallbackInnerFuzzTest : public DataTransferStateChangeCallbackInner {
 public:
@@ -1897,6 +1923,62 @@ void AudioServerSetRenderWhitelistFuzzTest()
     audioServerPtr->SetRenderWhitelist(list);
 }
 
+void AudioServerCheckVoiceCallRecorderPermissionFuzzTest()
+{
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+
+    auto tokenID = static_cast<Security::AccessToken::AccessTokenID>(provider.ConsumeIntegral<uint64_t>());
+
+    (void)audioServerPtr->CheckVoiceCallRecorderPermission(tokenID);
+}
+
+void AudioServerAddAndRemoveCaptureInjectorFuzzTest()
+{
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+
+    auto sinkPortidx = provider.ConsumeIntegral<uint32_t>();
+    auto rate = provider.ConsumeRandomLengthString(MAX_RANDOM_STRING_LENGTH);
+    auto format = provider.ConsumeRandomLengthString(MAX_RANDOM_STRING_LENGTH);
+    auto channels = provider.ConsumeRandomLengthString(MAX_RANDOM_STRING_LENGTH);
+    auto bufferSize = provider.ConsumeRandomLengthString(MAX_RANDOM_STRING_LENGTH);
+
+    (void)audioServerPtr->AddCaptureInjector(sinkPortidx, rate, format, channels, bufferSize);
+    (void)audioServerPtr->RemoveCaptureInjector(sinkPortidx);
+}
+
+void DataTransferStateChangeCallbackInnerImplOnDataTransferStateChangeFuzzTest()
+{
+    DataTransferStateChangeCallbackInnerImpl dataTransferStateChangeCallbackInnerImpl;
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    
+    auto callbackId = provider.ConsumeIntegral<int32_t>();
+    auto info = ConsumeAudioRendererDataTransferStateChangeInfo(provider);
+
+    dataTransferStateChangeCallbackInnerImpl.OnDataTransferStateChange(callbackId, info);
+}
+
+void DataTransferStateChangeCallbackInnerImplReportEventFuzzTest()
+{
+    DataTransferStateChangeCallbackInnerImpl dataTransferStateChangeCallbackInnerImpl;
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+
+    auto info = ConsumeAudioRendererDataTransferStateChangeInfo(provider);
+
+    dataTransferStateChangeCallbackInnerImpl.ReportEvent(info);
+}
+
+void PipeInfoGuardSetReleaseFlagFuzzTest()
+{
+    PipeInfoGuard pipeinfoGuard(0);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+
+    pipeinfoGuard.SetReleaseFlag(provider.ConsumeIntegral<int32_t>() % NUM_2);
+}
+
 TestFuncs g_testFuncs[] = {
     AudioServerDumpTest,
     AudioServerGetUsbParameterTest,
@@ -2007,6 +2089,11 @@ TestFuncs g_testFuncs[] = {
     AudioServerCheckRemoteDeviceStateSwitchCaseFuzzTest,
     AudioServerCheckInnerRecorderPermissionSourceTypeFuzzTest,
     AudioServerSetRenderWhitelistFuzzTest,
+    AudioServerCheckVoiceCallRecorderPermissionFuzzTest,
+    AudioServerAddAndRemoveCaptureInjectorFuzzTest,
+    DataTransferStateChangeCallbackInnerImplOnDataTransferStateChangeFuzzTest,
+    DataTransferStateChangeCallbackInnerImplReportEventFuzzTest,
+    PipeInfoGuardSetReleaseFlagFuzzTest,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)

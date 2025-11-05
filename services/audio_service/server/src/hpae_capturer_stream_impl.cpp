@@ -176,8 +176,8 @@ int32_t HpaeCapturerStreamImpl::OnStreamData(AudioCallBackCapturerStreamInfo &ca
         latency_ = callBackStreamInfo.latency;
         framesRead_ = callBackStreamInfo.framesRead;
     }
-    if (readCallback_.lock()) {
-        return readCallback_.lock()->OnReadData(callBackStreamInfo.outputData, callBackStreamInfo.requestDataLen);
+    if (auto callback = readCallback_.lock()) {
+        return callback->OnReadData(callBackStreamInfo.outputData, callBackStreamInfo.requestDataLen);
     }
     return SUCCESS;
 }

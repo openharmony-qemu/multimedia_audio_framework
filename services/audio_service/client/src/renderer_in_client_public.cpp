@@ -571,8 +571,9 @@ int32_t RendererInClientInner::SetRenderTarget(RenderTarget renderTarget)
 {
     CHECK_AND_RETURN_RET_LOG(renderTarget_ != renderTarget, SUCCESS, "Set same renderTarget");
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream is not inited!");
-    int32_t ret = 0;
-    ipcStream_->SetTarget(renderTarget, ret);
+    int32_t ret = ERROR;
+    int32_t ipcRet = ipcStream_->SetTarget(renderTarget, ret);
+    CHECK_AND_RETURN_RET_LOG(ipcRet == SUCCESS, ret, "ipcStream error: %{public}d", ipcRet);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Set render target error: %{public}d", ret);
     renderTarget_ = renderTarget;
     return ret;
@@ -623,7 +624,7 @@ void RendererInClientInner::OnFirstFrameWriting()
         CHECK_AND_RETURN(firstFrameWritingCb_!= nullptr);
         cb = firstFrameWritingCb_;
     }
-    AUDIO_DEBUG_LOG("OnFirstFrameWriting: latency %{public}" PRIu64 "", latency);
+    AUDIO_INFO_LOG("OnFirstFrameWriting: latency %{public}" PRIu64 "", latency);
     cb->OnFirstFrameWriting(latency);
 }
 

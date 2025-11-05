@@ -1612,6 +1612,7 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
 
     if (previousState == CAPTURER_RUNNING) {
         // restart audio stream
+        newAudioStream->SetRebuildFlag();
         switchResult = newAudioStream->StartAudioStream();
         CHECK_AND_RETURN_RET_LOG(switchResult, false, "start new stream failed.");
     }

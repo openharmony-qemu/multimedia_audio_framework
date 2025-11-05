@@ -32,6 +32,8 @@ namespace AudioStandard {
 static const int32_t MAX_STREAM_DESCRIPTORS_SIZE = 1003;
 static const uint32_t TEST_SET_ROUTE = AUDIO_OUTPUT_FLAG_NORMAL;
 static std::string testBundleName = "testBundleName";
+static int32_t MEDIA_SERVICE_UID = 1013;
+static int32_t TEST_SERVICE_UID = 10;
 
 class AudioStreamDescriptorUnitTest : public ::testing::Test {
 public:
@@ -294,6 +296,25 @@ HWTEST_F(AudioStreamDescriptorUnitTest, IsSamePidUid_001, TestSize.Level1)
 
     ret = audioStreamDescriptor.IsSamePidUid(1, 1);
     EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name   : Test GetRealUid
+ * @tc.number : GetRealUid_001
+ * @tc.desc   : Test GetRealUid
+ */
+HWTEST_F(AudioStreamDescriptorUnitTest, GetRealUid_001, TestSize.Level4)
+{
+    AudioStreamDescriptor audioStreamDescriptor;
+    audioStreamDescriptor.callerUid_ = MEDIA_SERVICE_UID;
+    audioStreamDescriptor.appInfo_.appUid = TEST_SERVICE_UID;
+
+    auto ret = audioStreamDescriptor.GetRealUid();
+    EXPECT_EQ(ret, TEST_SERVICE_UID);
+
+    audioStreamDescriptor.callerUid_ = TEST_SERVICE_UID;
+    ret = audioStreamDescriptor.GetRealUid();
+    EXPECT_EQ(ret, TEST_SERVICE_UID);
 }
 
 /**

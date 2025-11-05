@@ -3018,10 +3018,13 @@ int32_t AudioRendererPrivate::HandleCreateFastStreamError(AudioStreamParams &aud
     return ret;
 }
 
-int32_t AudioRendererPrivate::SetTarget(RenderTarget target) const
+int32_t AudioRendererPrivate::SetTarget(RenderTarget target)
 {
+    RendererState state = GetStatusInner();
+    CHECK_AND_RETURN_RET_LOG(state == RENDERER_PREPARED || state == RENDERER_STOPPED || state == RENDERER_PAUSED,
+        ERR_ILLEGAL_STATE, "Set target failed. Illegal state: %{public}u", state);
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
-    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR, "audioStream_ is nullptr");
     return currentStream->SetRenderTarget(target);
 }
 

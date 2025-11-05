@@ -281,6 +281,7 @@ void AudioRecoveryDevice::HandleFetchDeviceChange(const AudioStreamDeviceChangeR
     audioCapturerSession_.ReloadSourceForDeviceChange(
         currentInputDevice,
         currentOutputDevice, caller);
+    CHECK_AND_RETURN_LOG(audioA2dpOffloadManager_ != nullptr, "audioA2dpOffloadManager_ is nullptr");
     if ((currentOutputDevice.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) ||
         (currentOutputDevice.networkId_ != LOCAL_NETWORK_ID)) {
         audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForA2dpDeviceOut();

@@ -24,6 +24,7 @@
 #include <string>
 #include <string_view>
 #include <queue>
+#include <unistd.h>
 #include "audio_schedule.h"
 namespace OHOS {
 namespace AudioStandard {
