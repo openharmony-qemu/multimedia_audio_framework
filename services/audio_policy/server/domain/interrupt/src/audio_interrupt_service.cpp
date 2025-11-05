@@ -1072,7 +1072,6 @@ int32_t AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId, co
 void AudioInterruptService::ClearAudioFocusInfoListOnAccountsChanged(const int32_t &id, const int32_t &oldId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    oldUserId_ = oldId;
     AUDIO_INFO_LOG("start DeactivateAudioInterrupt, current id:%{public}d, old id:%{public}d", id, oldId);
     ClearAudioFocusInfoList();
 }
@@ -1124,13 +1123,12 @@ void AudioInterruptService::CacheFocusAndCallback(
         "interruptEvent = %{public}d streamUsage_ = %{public}d",
         oldUserId_, sessionId, interruptEvent.hintType, audioInterrupt.streamUsage);
     cachedFocusMap_[oldUserId_].push_back(info);
-    isSwitchUser_ = true;
 }
 
-void AudioInterruptService::OnUserUnlocked(int32_t userId)
+void AudioInterruptService::OnUserUnlocked()
 {
     std::lock_guard<std::mutex> lock(cachedFocusMutex_);
-    auto it = cachedFocusMap_.find(userId);
+    auto it = cachedFocusMap_.find(newUserId_);
     if (it != cachedFocusMap_.end()) {
         for (const auto &cachedInfo : it->second) {
             // resume
@@ -1140,15 +1138,16 @@ void AudioInterruptService::OnUserUnlocked(int32_t userId)
             AUDIO_INFO_LOG("OnUserUnlocked sessionId = %{public}d", cachedInfo.sessionId);
             SendInterruptEventCallback(resumeEvent, cachedInfo.sessionId, cachedInfo.interrupt);
         }
-        cachedFocusMap_.erase(userId);
-        isSwitchUser_ = false;
+        cachedFocusMap_.erase(newUserId_);
     }
 }
 
-bool AudioInterruptService::IsSwitchUser()
+void AudioInterruptService::SetUserId(const int32_t newId, const int32_t oldId)
 {
     std::lock_guard<std::mutex> lock(cachedFocusMutex_);
-    return isSwitchUser_;
+    oldUserId_ = oldId;
+    newUserId_ = newId;
+    AUDIO_INFO_LOG("set user id current id:%{public}d, old id:%{public}d", newUserId_, oldUserId_);
 }
 
 int32_t AudioInterruptService::ActivatePreemptMode()
