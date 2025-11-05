@@ -17,6 +17,8 @@
 #include "hpae_soft_link.h"
 #include "hpae_manager_impl.h"
 #include "hpae_audio_service_callback_unit_test.h"
+using namespace testing::ext;
+using namespace testing;
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -295,6 +297,368 @@ TEST_F(HpaeSoftLinkTest, testTransSinkInfoToStreamInfo)
     softLink_->TransSinkInfoToStreamInfo(streamInfo, HPAE_STREAM_CLASS_TYPE_RECORD);
 
     EXPECT_EQ(streamInfo.sourceType, SOURCE_TYPE_OFFLOAD_CAPTURE);
+}
+
+/*
+ * @tc.name  : Test SetLoudnessGain
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSoftLinkSetLoudnessGainTest
+ * @tc.desc  : Test SetLoudnessGainTest API
+ */
+HWTEST_F(HpaeSoftLinkTest, HpaeSoftLinkSetLoudnessGainTest, TestSize.Level1)
+{
+    std::shared_ptr<HpaeSoftLinkForTest> softLink =
+        std::make_shared<HpaeSoftLinkForTest>(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
+    EXPECT_NE(softLink, nullptr);
+    EXPECT_EQ(softLink->state_, HpaeSoftLinkState::NEW);
+    EXPECT_EQ(softLink->Init(), SUCCESS);
+    EXPECT_EQ(softLink->state_, HpaeSoftLinkState::PREPARED);
+    EXPECT_EQ(softLink->SetLoudnessGain(1.f), SUCCESS);
+}
+
+/*
+ * @tc.name  : Test SetVolumeDuckFactor
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSoftLinkSetVolumeDuckFactor
+ * @tc.desc  : Test SetVolumeDuckFactor API
+ */
+HWTEST_F(HpaeSoftLinkTest, HpaeSoftLinkSetVolumeDuckFactor, TestSize.Level1)
+{
+    std::shared_ptr<HpaeSoftLinkForTest> softLink =
+        std::make_shared<HpaeSoftLinkForTest>(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
+    EXPECT_NE(softLink, nullptr);
+    EXPECT_EQ(softLink->state_, HpaeSoftLinkState::NEW);
+    EXPECT_EQ(softLink->Init(), SUCCESS);
+    EXPECT_EQ(softLink->state_, HpaeSoftLinkState::PREPARED);
+    EXPECT_EQ(softLink->SetVolumeDuckFactor(1.f), SUCCESS);
+}
+
+/*
+ * @tc.name  : Test SetVolumeMute
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSoftLinkSetVolumeMute
+ * @tc.desc  : Test SetVolumeMute API
+ */
+HWTEST_F(HpaeSoftLinkTest, HpaeSoftLinkSetVolumeMute, TestSize.Level1)
+{
+    std::shared_ptr<HpaeSoftLinkForTest> softLink =
+        std::make_shared<HpaeSoftLinkForTest>(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
+    EXPECT_NE(softLink, nullptr);
+    EXPECT_EQ(softLink->state_, HpaeSoftLinkState::NEW);
+    EXPECT_EQ(softLink->Init(), SUCCESS);
+    EXPECT_EQ(softLink->state_, HpaeSoftLinkState::PREPARED);
+    EXPECT_EQ(softLink->SetVolumeMute(true), SUCCESS);
+}
+
+/*
+ * @tc.name  : Test SetVolumeLowPowerFactor
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSoftLinkSetVolumeLowPowerFactor
+ * @tc.desc  : Test SetVolumeLowPowerFactor API
+ */
+HWTEST_F(HpaeSoftLinkTest, HpaeSoftLinkSetVolumeLowPowerFactor, TestSize.Level1)
+{
+    std::shared_ptr<HpaeSoftLinkForTest> softLink =
+        std::make_shared<HpaeSoftLinkForTest>(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
+    EXPECT_NE(softLink, nullptr);
+    EXPECT_EQ(softLink->state_, HpaeSoftLinkState::NEW);
+    EXPECT_EQ(softLink->Init(), SUCCESS);
+    EXPECT_EQ(softLink->state_, HpaeSoftLinkState::PREPARED);
+    EXPECT_EQ(softLink->SetVolumeLowPowerFactor(1.f), SUCCESS);
+}
+
+/*
+ * @tc.name  : Test CopyRightToLeft with valid S16LE stereo data
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSoftLinkTestCopyR2LTest_001
+ * @tc.desc  : Test CopyRightToLeft function with 16-bit stereo audio data
+ */
+HWTEST_F(HpaeSoftLinkTest, HpaeSoftLinkTestCopyR2LTest_001, TestSize.Level1)
+{
+    // Prepare stereo S16LE data: L1, R1, L2, R2, L3, R3
+    int16_t stereoData[] = {100, 200, 300, 400, 500, 600};
+    size_t dataSize = sizeof(stereoData);
+
+    std::shared_ptr<HpaeSoftLink> softLink =
+        std::make_shared<HpaeSoftLink>(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
+    EXPECT_NE(softLink, nullptr);
+    EXPECT_EQ(softLink->Init(), SUCCESS);
+    softLink->bufferQueue_->ResetBuffer();
+    softLink->sinkInfo_.format = SAMPLE_S16LE;
+
+    AudioCallBackCapturerStreamInfo callbackStreamInfo;
+    callbackStreamInfo.outputData = (int8_t *)stereoData;
+    callbackStreamInfo.requestDataLen = dataSize;
+
+    softLink->OnStreamData(callbackStreamInfo);
+    int16_t* result = reinterpret_cast<int16_t*>(stereoData);
+    EXPECT_EQ(result[0], 200); // L1 should become R1 (200)
+    EXPECT_EQ(result[1], 200); // R1 remains R1 (200)
+    EXPECT_EQ(result[2], 400); // L2 should become R2 (400)
+    EXPECT_EQ(result[3], 400); // R2 remains R2 (400)
+    EXPECT_EQ(result[4], 600); // L3 should become R3 (600)
+    EXPECT_EQ(result[5], 600); // R3 remains R3 (600)
+}
+
+/*
+ * @tc.name  : Test CopyRightToLeft with valid S32LE stereo data
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSoftLinkTestCopyR2LTest_002
+ * @tc.desc  : Test CopyRightToLeft function with 32-bit stereo audio data
+ */
+HWTEST_F(HpaeSoftLinkTest, HpaeSoftLinkTestCopyR2LTest_002, TestSize.Level1)
+{
+    // Prepare stereo S32LE data: L1, R1, L2, R2
+    int32_t stereoData[] = {1000, 2000, 3000, 4000};
+    size_t dataSize = sizeof(stereoData);
+
+    std::shared_ptr<HpaeSoftLink> softLink =
+        std::make_shared<HpaeSoftLink>(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
+    EXPECT_NE(softLink, nullptr);
+    EXPECT_EQ(softLink->Init(), SUCCESS);
+    softLink->bufferQueue_->ResetBuffer();
+    softLink->sinkInfo_.format = SAMPLE_S32LE;
+
+    AudioCallBackCapturerStreamInfo callbackStreamInfo;
+    callbackStreamInfo.outputData = (int8_t *)stereoData;
+    callbackStreamInfo.requestDataLen = dataSize;
+
+    softLink->OnStreamData(callbackStreamInfo);
+    int32_t* result = reinterpret_cast<int32_t*>(stereoData);
+    EXPECT_EQ(result[0], 2000); // L1 should become R1 (2000)
+    EXPECT_EQ(result[1], 2000); // R1 remains R1 (2000)
+    EXPECT_EQ(result[2], 4000); // L2 should become R2 (4000)
+    EXPECT_EQ(result[3], 4000); // R2 remains R2 (4000)
+}
+
+/*
+ * @tc.name  : Test CopyRightToLeft with null data pointer
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSoftLinkTestCopyR2LTest_003
+ * @tc.desc  : Test CopyRightToLeft function with null data pointer
+ */
+HWTEST_F(HpaeSoftLinkTest, HpaeSoftLinkTestCopyR2LTest_003, TestSize.Level2)
+{
+    std::shared_ptr<HpaeSoftLink> softLink =
+        std::make_shared<HpaeSoftLink>(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
+    EXPECT_NE(softLink, nullptr);
+    EXPECT_EQ(softLink->Init(), SUCCESS);
+    softLink->bufferQueue_->ResetBuffer();
+
+    AudioCallBackCapturerStreamInfo callbackStreamInfo;
+    callbackStreamInfo.outputData = nullptr;
+    callbackStreamInfo.requestDataLen = 1;
+    softLink->OnStreamData(callbackStreamInfo);
+}
+
+/*
+ * @tc.name  : Test CopyRightToLeft with zero size
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSoftLinkTestCopyR2LTest_004
+ * @tc.desc  : Test CopyRightToLeft function with zero data size
+ */
+HWTEST_F(HpaeSoftLinkTest, HpaeSoftLinkTestCopyR2LTest_004, TestSize.Level2)
+{
+    int8_t data[100] = {0};
+    std::shared_ptr<HpaeSoftLink> softLink =
+        std::make_shared<HpaeSoftLink>(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
+    EXPECT_NE(softLink, nullptr);
+    EXPECT_EQ(softLink->Init(), SUCCESS);
+    softLink->bufferQueue_->ResetBuffer();
+
+    AudioCallBackCapturerStreamInfo callbackStreamInfo;
+    callbackStreamInfo.outputData = data;
+    callbackStreamInfo.requestDataLen = 0;
+    softLink->OnStreamData(callbackStreamInfo);
+}
+
+/*
+ * @tc.name  : Test CopyRightToLeft with F32LE format
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSoftLinkTestCopyR2LTest_005
+ * @tc.desc  : Test CopyRightToLeft function with 32-bit float stereo data
+ */
+HWTEST_F(HpaeSoftLinkTest, HpaeSoftLinkTestCopyR2LTest_005, TestSize.Level1)
+{
+    // Prepare stereo F32LE data: L1, R1, L2, R2
+    float stereoData[] = {1.0f, 2.0f, 3.0f, 4.0f};
+    size_t dataSize = sizeof(stereoData);
+
+    std::shared_ptr<HpaeSoftLink> softLink =
+        std::make_shared<HpaeSoftLink>(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
+    EXPECT_NE(softLink, nullptr);
+    EXPECT_EQ(softLink->Init(), SUCCESS);
+    softLink->bufferQueue_->ResetBuffer();
+    softLink->sinkInfo_.format = SAMPLE_F32LE;
+
+    AudioCallBackCapturerStreamInfo callbackStreamInfo;
+    callbackStreamInfo.outputData = (int8_t *)stereoData;
+    callbackStreamInfo.requestDataLen = dataSize;
+
+    softLink->OnStreamData(callbackStreamInfo);
+    float* result = reinterpret_cast<float*>(stereoData);
+    EXPECT_FLOAT_EQ(result[0], 2.0f); // L1 should become R1 (2.0f)
+    EXPECT_FLOAT_EQ(result[1], 2.0f); // R1 remains R1 (2.0f)
+    EXPECT_FLOAT_EQ(result[2], 4.0f); // L2 should become R2 (4.0f)
+    EXPECT_FLOAT_EQ(result[3], 4.0f); // R2 remains R2 (4.0f)
+}
+
+/*
+ * @tc.name  : Test CopyRightToLeft with S24LE format
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSoftLinkTestCopyR2LTest_006
+ * @tc.desc  : Test CopyRightToLeft function with 24-bit stereo data
+ */
+HWTEST_F(HpaeSoftLinkTest, HpaeSoftLinkTestCopyR2LTest_006, TestSize.Level1)
+{
+    // Prepare stereo S24LE data (3 bytes per sample)
+    // L1: 0x010203, R1: 0x040506, L2: 0x070809, R2: 0x0A0B0C
+    uint8_t stereoData[] = {
+        0x01, 0x02, 0x03, // L1
+        0x04, 0x05, 0x06, // R1
+        0x07, 0x08, 0x09, // L2
+        0x0A, 0x0B, 0x0C  // R2
+    };
+    size_t dataSize = sizeof(stereoData);
+    
+    std::shared_ptr<HpaeSoftLink> softLink =
+        std::make_shared<HpaeSoftLink>(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
+    EXPECT_NE(softLink, nullptr);
+    EXPECT_EQ(softLink->Init(), SUCCESS);
+    softLink->bufferQueue_->ResetBuffer();
+    softLink->sinkInfo_.format = SAMPLE_S24LE;
+
+    AudioCallBackCapturerStreamInfo callbackStreamInfo;
+    callbackStreamInfo.outputData = (int8_t *)stereoData;
+    callbackStreamInfo.requestDataLen = dataSize;
+
+    softLink->OnStreamData(callbackStreamInfo);
+    EXPECT_EQ(stereoData[0], 0x04); // L1 byte0 should become R1 byte0
+    EXPECT_EQ(stereoData[1], 0x05); // L1 byte1 should become R1 byte1
+    EXPECT_EQ(stereoData[2], 0x06); // L1 byte2 should become R1 byte2
+    EXPECT_EQ(stereoData[3], 0x04); // R1 byte0 remains
+    EXPECT_EQ(stereoData[4], 0x05); // R1 byte1 remains
+    EXPECT_EQ(stereoData[5], 0x06); // R1 byte2 remains
+    EXPECT_EQ(stereoData[6], 0x0A); // L2 byte0 should become R2 byte0
+    EXPECT_EQ(stereoData[7], 0x0B); // L2 byte1 should become R2 byte1
+    EXPECT_EQ(stereoData[8], 0x0C); // L2 byte2 should become R2 byte2
+    EXPECT_EQ(stereoData[9], 0x0A); // R2 byte0 remains
+    EXPECT_EQ(stereoData[10], 0x0B); // R2 byte1 remains
+    EXPECT_EQ(stereoData[11], 0x0C); // R2 byte2 remains
+}
+
+/*
+ * @tc.name  : Test FlushRingCache API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSoftLinkFlushRingCacheTest_001
+ * @tc.desc  : Test FlushRingCache while ringCache is null
+ */
+HWTEST_F(HpaeSoftLinkTest, HpaeSoftLinkFlushRingCacheTest_001, TestSize.Level1)
+{
+    std::shared_ptr<HpaeSoftLink> softLink =
+        std::make_shared<HpaeSoftLink>(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
+    EXPECT_NE(softLink, nullptr);
+    softLink->FlushRingCache();
+    SUCCEED();
+}
+
+/*
+ * @tc.name  : Test FlushRingCache API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSoftLinkFlushRingCacheTest_002
+ * @tc.desc  : Test FlushRingCache while ringCache is not null
+ */
+HWTEST_F(HpaeSoftLinkTest, HpaeSoftLinkFlushRingCacheTest_002, TestSize.Level1)
+{
+    std::shared_ptr<HpaeSoftLink> softLink =
+        std::make_shared<HpaeSoftLink>(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
+    EXPECT_NE(softLink, nullptr);
+    EXPECT_EQ(softLink->Init(), SUCCESS);
+
+    size_t size = 10; // 10 for buffer size
+    std::vector<char> vec(size);
+    softLink->bufferQueue_->Enqueue({reinterpret_cast<uint8_t *>(vec.data()), vec.size()});
+    OptResult result = softLink->bufferQueue_->GetReadableSize();
+    EXPECT_EQ(result.ret == OPERATION_SUCCESS, true);
+    EXPECT_EQ(result.size, size);
+    softLink->FlushRingCache();
+    result = softLink->bufferQueue_->GetReadableSize();
+    EXPECT_EQ(result.ret == OPERATION_SUCCESS, true);
+    EXPECT_EQ(result.size, 0);
+}
+
+/*
+ * @tc.name  : Test HpaeSoftLink TransSinkInfoToStreamInfo with play stream class
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSoftLinkTransStreamInfoTest_001
+ * @tc.desc  : Test TransSinkInfoToStreamInfo for HPAE_STREAM_CLASS_TYPE_PLAY
+ */
+HWTEST_F(HpaeSoftLinkTest, HpaeSoftLinkTransStreamInfoTest_001, TestSize.Level1)
+{
+    std::shared_ptr<HpaeSoftLink> softLink =
+        std::make_shared<HpaeSoftLink>(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
+    EXPECT_NE(softLink, nullptr);
+    EXPECT_EQ(softLink->Init(), SUCCESS);
+    HpaeSinkInfo &sinkInfo = softLink->sinkInfo_;
+
+    HpaeStreamInfo streamInfo;
+    softLink->TransSinkInfoToStreamInfo(streamInfo, HPAE_STREAM_CLASS_TYPE_PLAY);
+    EXPECT_EQ(streamInfo.channels, sinkInfo.channels);
+    EXPECT_EQ(streamInfo.format, sinkInfo.format);
+    EXPECT_EQ(streamInfo.deviceName, sinkInfo.deviceName);
+    EXPECT_EQ(streamInfo.sourceType, SOURCE_TYPE_INVALID);
+    EXPECT_EQ(streamInfo.streamType, STREAM_VOICE_CALL);
+    EXPECT_EQ(streamInfo.fadeType, DEFAULT_FADE);
+}
+
+/*
+ * @tc.name  : Test HpaeSoftLink TransSinkInfoToStreamInfo with play stream class
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSoftLinkTransStreamInfoTest_002
+ * @tc.desc  : Test TransSinkInfoToStreamInfo for HPAE_STREAM_CLASS_TYPE_RECORD
+ */
+HWTEST_F(HpaeSoftLinkTest, HpaeSoftLinkTransStreamInfoTest_002, TestSize.Level1)
+{
+    std::shared_ptr<HpaeSoftLink> softLink =
+        std::make_shared<HpaeSoftLink>(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
+    EXPECT_NE(softLink, nullptr);
+    EXPECT_EQ(softLink->Init(), SUCCESS);
+    HpaeSinkInfo &sinkInfo = softLink->sinkInfo_;
+    HpaeSourceInfo &sourceInfo = softLink->sourceInfo_;
+
+    HpaeStreamInfo streamInfo;
+    softLink->TransSinkInfoToStreamInfo(streamInfo, HPAE_STREAM_CLASS_TYPE_RECORD);
+    EXPECT_EQ(streamInfo.channels, sinkInfo.channels);
+    EXPECT_EQ(streamInfo.format, sinkInfo.format);
+    EXPECT_EQ(streamInfo.deviceName, sourceInfo.deviceName);
+    EXPECT_EQ(streamInfo.sourceType, SOURCE_TYPE_MIC);
+    EXPECT_EQ(streamInfo.streamType, STREAM_SOURCE_VOICE_CALL);
+    EXPECT_EQ(streamInfo.fadeType, NONE_FADE);
+}
+
+/*
+ * @tc.name  : Test HpaeSoftLink TransSinkInfoToStreamInfo with play stream class
+ * @tc.type  : FUNC
+ * @tc.number: HpaeSoftLinkTransStreamInfoTest_003
+ * @tc.desc  : Test TransSinkInfoToStreamInfo for offload inner cap
+ */
+HWTEST_F(HpaeSoftLinkTest, HpaeSoftLinkTransStreamInfoTest_003, TestSize.Level1)
+{
+    std::shared_ptr<HpaeSoftLink> softLink =
+        std::make_shared<HpaeSoftLink>(sinkId_, sourceId_, SoftLinkMode::OFFLOADINNERCAP_AID);
+    EXPECT_NE(softLink, nullptr);
+    EXPECT_EQ(softLink->Init(), SUCCESS);
+    HpaeSinkInfo &sinkInfo = softLink->sinkInfo_;
+    HpaeSourceInfo &sourceInfo = softLink->sourceInfo_;
+
+    HpaeStreamInfo streamInfo;
+    softLink->TransSinkInfoToStreamInfo(streamInfo, HPAE_STREAM_CLASS_TYPE_RECORD);
+    EXPECT_EQ(streamInfo.channels, sinkInfo.channels);
+    EXPECT_EQ(streamInfo.format, sinkInfo.format);
+    EXPECT_EQ(streamInfo.deviceName, sourceInfo.deviceName);
+    EXPECT_EQ(streamInfo.sourceType, SOURCE_TYPE_OFFLOAD_CAPTURE);
+    EXPECT_EQ(streamInfo.streamType, STREAM_SOURCE_VOICE_CALL);
+    EXPECT_EQ(streamInfo.fadeType, NONE_FADE);
 }
 } // namespace HPAE
 } // namespace AudioStandard
