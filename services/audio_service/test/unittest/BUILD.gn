@@ -647,6 +647,7 @@ ohos_unittest("audio_process_in_server_unit_test") {
     "c_utils:utils",
     "drivers_interface_audio:libeffect_proxy_1.0",
     "googletest:gtest",
+    "googletest:gmock",
     "hdf_core:libhdf_utils",
     "hicollie:libhicollie",
     "hilog:libhilog",
