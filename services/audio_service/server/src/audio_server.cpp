@@ -3189,6 +3189,7 @@ int32_t AudioServer::GetPrivacyTypeAudioServer(uint32_t sessionId, int32_t &priv
 int32_t AudioServer::AddCaptureInjector(uint32_t sinkPortidx, std::string &rate, std::string &format,
     std::string &channels, std::string &bufferSize)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_SYSTEM_PERMISSION_DENIED, "not audio calling!");
     int32_t ret = ERROR; //if is not low latency, should return error
 #ifdef SUPPORT_LOW_LATENCY
     auto ptr = AudioService::GetInstance()->GetEndPointByType(AudioEndpoint::EndpointType::TYPE_VOIP_MMAP);
@@ -3206,6 +3207,7 @@ int32_t AudioServer::AddCaptureInjector(uint32_t sinkPortidx, std::string &rate,
 
 int32_t AudioServer::RemoveCaptureInjector(uint32_t sinkPortidx)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_SYSTEM_PERMISSION_DENIED, "not audio calling!");
     int32_t ret = ERROR; //if is not low latency, should return error
 #ifdef SUPPORT_LOW_LATENCY
     auto ptr = AudioService::GetInstance()->GetEndPointByType(AudioEndpoint::EndpointType::TYPE_VOIP_MMAP);

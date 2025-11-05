@@ -1919,6 +1919,74 @@ HWTEST(AudioProcessInServerUnitTest, RebuildCaptureInjector_002, TestSize.Level1
 }
 
 /**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: ReleaseCaptureInjector_001
+ * @tc.desc  : Test AudioProcessInServer interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, ReleaseCaptureInjector_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.audioMode = AUDIO_MODE_RECORD;
+    configRet.capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    sptr<AudioProcessInServer> audioProcessInServer = AudioProcessInServer::Create(configRet, releaseCallbackRet);
+    EXPECT_NE(audioProcessInServer, nullptr);
+    audioProcessInServer->ReleaseCaptureInjector();
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: ReleaseCaptureInjector_002
+ * @tc.desc  : Test AudioProcessInServer interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, ReleaseCaptureInjector_002, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.audioMode = AUDIO_MODE_PLAYBACK;
+    configRet.capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    sptr<AudioProcessInServer> audioProcessInServer = AudioProcessInServer::Create(configRet, releaseCallbackRet);
+    EXPECT_NE(audioProcessInServer, nullptr);
+    audioProcessInServer->ReleaseCaptureInjector();
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: ReleaseCaptureInjector_003
+ * @tc.desc  : Test AudioProcessInServer interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, ReleaseCaptureInjector_003, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.audioMode = AUDIO_MODE_RECORD;
+    configRet.capturerInfo.sourceType = SOURCE_TYPE_VOICE_CALL;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    sptr<AudioProcessInServer> audioProcessInServer = AudioProcessInServer::Create(configRet, releaseCallbackRet);
+    EXPECT_NE(audioProcessInServer, nullptr);
+    audioProcessInServer->ReleaseCaptureInjector();
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: ReleaseCaptureInjector_004
+ * @tc.desc  : Test AudioProcessInServer interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, ReleaseCaptureInjector_004, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.audioMode = AUDIO_MODE_PLAYBACK;
+    configRet.capturerInfo.sourceType = SOURCE_TYPE_VOICE_CALL;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    sptr<AudioProcessInServer> audioProcessInServer = AudioProcessInServer::Create(configRet, releaseCallbackRet);
+    EXPECT_NE(audioProcessInServer, nullptr);
+    audioProcessInServer->ReleaseCaptureInjector();
+}
+
+/**
  * @tc.name  : Test HandleCapturerDataParams API
  * @tc.type  : FUNC
  * @tc.number: HandleCapturerDataParams_001

@@ -113,10 +113,10 @@ int32_t CoreServiceProviderWrapper::RemoveIdForInjector(uint32_t streamId)
     return SUCCESS;
 }
 
-int32_t CoreServiceProviderWrapper::ReleaseCaptureInjector(uint32_t streamId)
+int32_t CoreServiceProviderWrapper::ReleaseCaptureInjector()
 {
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
-    coreServiceWorker_->ReleaseCaptureInjector(streamId);
+    coreServiceWorker_->ReleaseCaptureInjector();
     return SUCCESS;
 }
 

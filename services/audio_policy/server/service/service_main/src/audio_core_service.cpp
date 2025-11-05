@@ -1620,9 +1620,9 @@ void AudioCoreService::RemoveIdForInjector(uint32_t streamId)
     audioInjectorPolicy_.RemoveStreamDescriptor(streamId);
 }
 
-void AudioCoreService::ReleaseCaptureInjector(uint32_t streamId)
+void AudioCoreService::ReleaseCaptureInjector()
 {
-    audioInjectorPolicy_.ReleaseCaptureInjector(streamId);
+    audioInjectorPolicy_.ReleaseCaptureInjector();
 }
 
 void AudioCoreService::RebuildCaptureInjector(uint32_t streamId)

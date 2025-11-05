@@ -186,7 +186,7 @@ public:
         int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId) override;
         int32_t StartInjection(uint32_t sessionId) override;
         void RemoveIdForInjector(uint32_t streamId) override;
-        void ReleaseCaptureInjector(uint32_t streamId) override;
+        void ReleaseCaptureInjector() override;
         void RebuildCaptureInjector(uint32_t streamId) override;
         int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
             uint32_t &timeStamp) override;
@@ -344,7 +344,7 @@ private:
     int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId);
     int32_t StartInjection(uint32_t sessionId);
     void RemoveIdForInjector(uint32_t sessionId);
-    void ReleaseCaptureInjector(uint32_t sessionId);
+    void ReleaseCaptureInjector();
     void RebuildCaptureInjector(uint32_t sessionId);
     int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
     bool InVideoCommFastBlockList(const std::string &bundleName);

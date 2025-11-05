@@ -58,7 +58,7 @@ public:
     int32_t AddCaptureInjectorInner();
     int32_t RemoveCaptureInjector(bool noCapturer);
     int32_t RemoveCaptureInjectorInner(bool noCapturer);
-    void ReleaseCaptureInjector(uint32_t streamId);
+    void ReleaseCaptureInjector();
     void RebuildCaptureInjector(uint32_t streamId);
     std::shared_ptr<AudioPipeInfo> FindCaptureVoipPipe(
         std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, VoipType &type);

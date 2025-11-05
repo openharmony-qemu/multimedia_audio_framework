@@ -177,6 +177,7 @@ private:
                                          const AudioStreamInfo &srcInfo, const AudioStreamInfo &dstInfo);
     int32_t WriteToRingBuffer(RingBufferWrapper &writeBuf, const BufferDesc &buffer);
     void RemoveStreamInfo();
+    void ReleaseCaptureInjector();
     void RebuildCaptureInjector();
     bool IsNeedRecordResampleConv(AudioSamplingRate srcSamplingRate);
 private:

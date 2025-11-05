@@ -541,12 +541,18 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
     ret = releaseCallback_->OnProcessRelease(this, isSwitchStream);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_RELEASE);
     HILOG_COMM_INFO("notify service release result: %{public}d", ret);
-    if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
-        CoreServiceHandler::GetInstance().RemoveIdForInjector(sessionId_);
-    }
+    ReleaseCaptureInjector();
     streamStatusInServer_ = STREAM_RELEASED;
     RemoveStreamInfo();
     return SUCCESS;
+}
+
+void AudioProcessInServer::ReleaseCaptureInjector()
+{
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD &&
+        processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        CoreServiceHandler::GetInstance().ReleaseCaptureInjector();
+    }
 }
 
 ProcessDeathRecipient::ProcessDeathRecipient(AudioProcessInServer *processInServer,
