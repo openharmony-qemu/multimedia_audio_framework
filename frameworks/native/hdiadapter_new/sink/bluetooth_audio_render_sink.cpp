@@ -374,7 +374,6 @@ void BluetoothAudioRenderSink::SetAudioParameter(const AudioParamKey key, const 
 // need to hold sinkMutex when call this func.
 void BluetoothAudioRenderSink::SetAudioParameterInner(const std::string &value)
 {
-    std::lock_guard<std::mutex> lock(sinkMutex_);
     CHECK_AND_RETURN_LOG(audioRender_ != nullptr && IsValidState(), "render is nullptr");
     int32_t ret = audioRender_->attr.SetExtraParams(reinterpret_cast<AudioHandle>(audioRender_), value.c_str());
     if (ret != SUCCESS) {
