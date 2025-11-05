@@ -29,6 +29,9 @@ static constexpr float MAX_SINK_VOLUME_LEVEL = 1.0;
 static constexpr uint32_t MS_PER_SECOND = 1000;
 static constexpr uint32_t BASE_TEN = 10;
 static constexpr uint32_t FRAME_LENGTH_LIMIT = 38400;
+static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
+static constexpr uint32_t FRAME_LEN_100MS = 100;
+static constexpr uint32_t FRAME_LEN_40MS = 40;
 
 static std::map<AudioStreamType, HpaeProcessorType> g_streamTypeToSceneTypeMap = {
     {STREAM_MUSIC, HPAE_SCENE_MUSIC},
@@ -521,9 +524,22 @@ void TransSinkInfoToNodeInfo(const HpaeSinkInfo &sinkInfo, const std::weak_ptr<I
     nodeInfo.statusCallback = statusCallback;
 }
 
-size_t CaculateFrameLenByNodeInfo(HpaeNodeInfo &nodeInfo)
+size_t CaculateFrameLenBySampleRate(const uint32_t sampleRate)
 {
-    return nodeInfo.samplingRate * FRAME_LEN_20MS / MS_PER_SECOND;
+    size_t frameLen = 0;
+    if (sampleRate == SAMPLE_RATE_11025) {
+        frameLen = FRAME_LEN_40MS * sampleRate / MS_PER_SECOND;
+    } else if (sampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES == 0) {
+        frameLen = FRAME_LEN_20MS * sampleRate / MS_PER_SECOND;
+    } else {
+        frameLen = FRAME_LEN_100MS * sampleRate / MS_PER_SECOND;
+    }
+    return frameLen;
+}
+
+size_t CaculateFrameLenBySampleRate(const AudioSamplingRate sampleRate)
+{
+    return CaculateFrameLenBySampleRate(static_cast<uint32_t>(sampleRate));
 }
 
 void ConfigNodeInfo(HpaeNodeInfo &nodeInfo, const HpaeStreamInfo &streamInfo)
@@ -539,18 +555,6 @@ void ConfigNodeInfo(HpaeNodeInfo &nodeInfo, const HpaeStreamInfo &streamInfo)
     nodeInfo.effectInfo = streamInfo.effectInfo;
     nodeInfo.fadeType = streamInfo.fadeType;
     nodeInfo.sourceType = streamInfo.sourceType;
-}
-
-uint32_t CalculateInputFrameLen(uint32_t sampleRate) {
-    uint32_t frameLen = 0;
-    if (sampleRate == SAMPLE_RATE_11025) {
-        frameLen = FRAME_LEN_40MS * sampleRate / AUDIO_MS_PER_S;
-    } else if (sampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES == 0) {
-        frameLen = FRAME_LEN_20MS * sampleRate / AUDIO_MS_PER_S;
-    } else {
-        frameLen = FRAME_LEN_100MS * sampleRate / AUDIO_MS_PER_S;
-    }
-    return frameLen;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
