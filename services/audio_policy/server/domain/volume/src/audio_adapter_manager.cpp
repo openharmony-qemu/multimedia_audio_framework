@@ -3454,6 +3454,11 @@ void AudioAdapterManager::HandleCastingDisconnection()
     isCastingConnect_ = false;
 }
 
+bool AudioAdapterManager::IsDPCastingConnect()
+{
+    return isCastingConnect_;
+}
+
 void AudioAdapterManager::SetMaxVolumeForDpBoardcast()
 {
     std::lock_guard<std::mutex> lock(setMaxVolumeMutex_);
