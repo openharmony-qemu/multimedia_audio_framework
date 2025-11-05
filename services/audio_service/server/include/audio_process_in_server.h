@@ -195,7 +195,7 @@ private:
     bool isMicIndicatorOn_ = false;
 
     uint32_t sessionId_ = 0;
-    bool isInited_ = false;
+    std::atomic<bool> isInited_ = false;
     std::atomic<StreamStatus> *streamStatus_ = nullptr;
     std::mutex statusLock_;
 
