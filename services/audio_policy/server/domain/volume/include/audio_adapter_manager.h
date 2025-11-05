@@ -332,6 +332,7 @@ public:
     void SetMaxVolumeForDpBoardcast();
     void HandleCastingConnection();
     void HandleCastingDisconnection();
+    bool IsDPCastingConnect();
     int32_t SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree);
     int32_t GetSystemVolumeDegree(AudioStreamType streamType, bool checkMuteState = true);
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);

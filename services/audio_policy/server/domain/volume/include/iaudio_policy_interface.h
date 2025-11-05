@@ -289,6 +289,7 @@ public:
     virtual void SetMaxVolumeForDpBoardcast() = 0;
     virtual void HandleCastingConnection() = 0;
     virtual void HandleCastingDisconnection() = 0;
+    virtual bool IsDPCastingConnect() = 0;
     virtual int32_t SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree) = 0;
     virtual int32_t GetSystemVolumeDegree(AudioStreamType streamType, bool checkMuteState = true) = 0;
     virtual int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType) = 0;
