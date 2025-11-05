@@ -79,7 +79,6 @@ public:
     void SetUp() override
     {
         // init nodeinfo
-        AudioChannelInfo audioChannelInfo;
         AudioFormat audioFormat = {
             {CH_LAYOUT_STEREO, STEREO},
             SAMPLE_S16LE,
