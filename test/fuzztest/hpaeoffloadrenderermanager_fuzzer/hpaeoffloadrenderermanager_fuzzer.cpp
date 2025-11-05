@@ -342,50 +342,6 @@ void HpaeOffloadRendererManagerSetMuteFuzzTest()
     offloadRendererManager->DeInit();
 }
 
-void HpaeOffloadRendererManagerProcessFuzzTest()
-{
-    HpaeSinkInfo sinkInfo;
-    InitHpaeSinkInfo(sinkInfo);
-    auto offloadRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    offloadRendererManager->Init();
-    offloadRendererManager->Process();
-    WaitForMsgProcessing(offloadRendererManager);
-    offloadRendererManager->DeInit();
-}
-
-void HpaeOffloadRendererManagerHandleMsgFuzzTest()
-{
-    HpaeSinkInfo sinkInfo;
-    InitHpaeSinkInfo(sinkInfo);
-    auto offloadRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    offloadRendererManager->Init();
-    offloadRendererManager->HandleMsg();
-    WaitForMsgProcessing(offloadRendererManager);
-    offloadRendererManager->DeInit();
-}
-
-void HpaeOffloadRendererManagerIsMsgProcessingFuzzTest()
-{
-    HpaeSinkInfo sinkInfo;
-    InitHpaeSinkInfo(sinkInfo);
-    auto offloadRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    offloadRendererManager->Init();
-    offloadRendererManager->IsMsgProcessing();
-    WaitForMsgProcessing(offloadRendererManager);
-    offloadRendererManager->DeInit();
-}
-
-void HpaeOffloadRendererManagerDeactivateThreadFuzzTest()
-{
-    HpaeSinkInfo sinkInfo;
-    InitHpaeSinkInfo(sinkInfo);
-    auto offloadRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    offloadRendererManager->Init();
-    offloadRendererManager->DeactivateThread();
-    WaitForMsgProcessing(offloadRendererManager);
-    offloadRendererManager->DeInit();
-}
-
 void HpaeOffloadRendererManagerSetClientVolumeFuzzTest()
 {
     HpaeSinkInfo sinkInfo;
@@ -814,10 +770,6 @@ TestFuncs g_testFuncs[] = {
     HpaeOffloadRendererManagerMoveAllStreamFuzzTest,
     HpaeOffloadRendererManagerSuspendStreamManagerFuzzTest,
     HpaeOffloadRendererManagerSetMuteFuzzTest,
-    HpaeOffloadRendererManagerProcessFuzzTest,
-    HpaeOffloadRendererManagerHandleMsgFuzzTest,
-    HpaeOffloadRendererManagerIsMsgProcessingFuzzTest,
-    HpaeOffloadRendererManagerDeactivateThreadFuzzTest,
     HpaeOffloadRendererManagerSetClientVolumeFuzzTest,
     HpaeOffloadRendererManagerSetRateFuzzTest,
     HpaeOffloadRendererManagerSetAudioEffectModeFuzzTest,

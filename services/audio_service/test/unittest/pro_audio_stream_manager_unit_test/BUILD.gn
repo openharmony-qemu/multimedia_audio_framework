@@ -17,6 +17,7 @@ import("../../../../../config.gni")
 
 module_output_path =
     "audio_framework/audio_framework_route/part1/pro_audio_stream_manager"
+audio_framework_root = "../../../../.."
 
 config("module_private_config") {
   visibility = [ ":*" ]
@@ -59,6 +60,15 @@ ohos_unittest("pro_audio_stream_manager_unit_test") {
     "../../../../audio_service:audio_process_service_static",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = [
     "c_utils:utils",
     "drivers_interface_audio:libeffect_proxy_1.0",
