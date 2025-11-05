@@ -26,7 +26,8 @@ namespace HPAE {
 
 class AudioMixingTableTest : public testing::Test {
 protected:
-    void SetUp() override {
+    void SetUp() override
+    {
         errno_t err = memset_s(coeffTable, sizeof(coeffTable), 0, sizeof(coeffTable));
         ASSERT_EQ(err, 0); // ensure memset_s succ
     }
@@ -76,12 +77,14 @@ HWTEST_F(AudioMixingTableTest, OutputChannelsExceedMax_ReturnsError, TestSize.Le
  */
 HWTEST_F(AudioMixingTableTest, InvalidInputChannelInfo_LayoutMismatch_ReturnsError, TestSize.Level1)
 {
+    // when input channelLayout does not match channel count, set channelLayout to default according to channel count,
+    // SetUpGeneralMixingTable can still work properly
     AudioChannelInfo inInfo = {CH_LAYOUT_STEREO, 1}; // 立体声布局但只有1个通道
     AudioChannelInfo outInfo = {CH_LAYOUT_STEREO, 2};
     
     int32_t result = SetUpGeneralMixingTable(coeffTable, inInfo, outInfo, false);
     
-    EXPECT_EQ(result, MIX_ERR_INVALID_ARG);
+    EXPECT_EQ(result, MIX_ERR_SUCCESS);
 }
 
 /**
@@ -95,9 +98,11 @@ HWTEST_F(AudioMixingTableTest, InvalidOutputChannelInfo_LayoutMismatch_ReturnsEr
     AudioChannelInfo inInfo = {CH_LAYOUT_STEREO, 2};
     AudioChannelInfo outInfo = {CH_LAYOUT_STEREO, 1}; // 立体声布局但只有1个通道
     
+    // when output channelLayout does not match channel count, set channelLayout to default according to channel count,
+    // SetUpGeneralMixingTable can still work properly
     int32_t result = SetUpGeneralMixingTable(coeffTable, inInfo, outInfo, false);
     
-    EXPECT_EQ(result, MIX_ERR_INVALID_ARG);
+    EXPECT_EQ(result, MIX_ERR_SUCCESS);
 }
 
 /**
@@ -194,7 +199,7 @@ HWTEST_F(AudioMixingTableTest, MonoInput_CopyToAllOutputs, TestSize.Level1)
     EXPECT_EQ(result, MIX_ERR_SUCCESS);
     // 验证Mono输入复制到所有输出通道
     for (uint32_t i = 0; i < outInfo.numChannels; i++) {
-        EXPECT_FLOAT_EQ(coeffTable[i][0], COEF_0DB_F);
+        EXPECT_FLOAT_EQ(coeffTable[0][i], COEF_0DB_F);
     }
 }
 
@@ -206,13 +211,13 @@ HWTEST_F(AudioMixingTableTest, MonoInput_CopyToAllOutputs, TestSize.Level1)
  */
 HWTEST_F(AudioMixingTableTest, MissingStereoChannels_ReturnsError, TestSize.Level1)
 {
-    // 使用只有单声道的输入输出
+    // 输入输出声道布局都是mono，复制输入即可
     AudioChannelInfo inInfo = {CH_LAYOUT_MONO, 1};
     AudioChannelInfo outInfo = {CH_LAYOUT_MONO, 1};
     
     int32_t result = SetUpGeneralMixingTable(coeffTable, inInfo, outInfo, false);
     
-    EXPECT_EQ(result, MIX_ERR_INVALID_ARG);
+    EXPECT_EQ(result, MIX_ERR_SUCCESS);
 }
 
 /**
