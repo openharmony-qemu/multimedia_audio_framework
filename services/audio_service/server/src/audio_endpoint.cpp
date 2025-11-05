@@ -1543,13 +1543,14 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos, std::
 
 void AudioEndpointInner::CheckJank(uint64_t curWritePos)
 {
+    if (!isStarted_) {
+        return;
+    }
     if (syncInfoSize_ != 0) {
         CheckSyncInfo(curWritePos);
         lastWriteTime_ = ClockTime::GetCurNano();
     }
-    if (isStarted_) {
-        AudioPerformanceMonitor::GetInstance().RecordTimeStamp(adapterType_, ClockTime::GetCurNano());
-    }
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(adapterType_, ClockTime::GetCurNano());
 }
 
 void AudioEndpointInner::CheckSyncInfo(uint64_t curWritePos)
