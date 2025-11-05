@@ -1130,6 +1130,5 @@ HWTEST(AudioCoreServiceEntryTest, UpdateStreamDevicesForStart_004, TestSize.Leve
     audioCoreService->UpdateStreamDevicesForStart(audioStreamDescriptor, "test");
     EXPECT_NE(audioStreamDescriptor->newDeviceDescs_.size(), 0);
 }
-
 } // namespace AudioStandard
 } // namespace OHOS
