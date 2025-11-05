@@ -2034,7 +2034,7 @@ HWTEST_F(AudioEndpointUnitTest, CheckJank_001, TestSize.Level1)
     audioEndpointInner->dstSpanSizeInframe_ = 0;
     audioEndpointInner->syncInfoSize_ = 1;
     audioEndpointInner->lastWriteTime_ = 0;
-    audioEndpointInner->CheckJank();
+    audioEndpointInner->CheckJank(0);
     EXPECT_GT(currentTime, audioEndpointInner->lastWriteTime_);
 }
 
@@ -2052,7 +2052,7 @@ HWTEST_F(AudioEndpointUnitTest, CheckJank_002, TestSize.Level1)
     audioEndpointInner->dstSpanSizeInframe_ = 0;
     audioEndpointInner->syncInfoSize_ = 0;
     audioEndpointInner->lastWriteTime_ = 0;
-    audioEndpointInner->CheckJank();
+    audioEndpointInner->CheckJank(0);
     EXPECT_GT(currentTime, audioEndpointInner->lastWriteTime_);
 }
 
@@ -2070,7 +2070,7 @@ HWTEST_F(AudioEndpointUnitTest, CheckJank_003, TestSize.Level1)
     audioEndpointInner->dstSpanSizeInframe_ = 0;
     audioEndpointInner->syncInfoSize_ = 1;
     audioEndpointInner->lastWriteTime_ = 0;
-    audioEndpointInner->CheckJank();
+    audioEndpointInner->CheckJank(0);
     EXPECT_GT(audioEndpointInner->lastWriteTime_, currentTime);
 }
 } // namespace AudioStandard
