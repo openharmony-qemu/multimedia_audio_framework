@@ -28,6 +28,7 @@
 #include "audio_stream_monitor.h"
 #include "audio_stream_checker.h"
 #include "audio_proresampler.h"
+#include "format_converter.h"
 
 namespace OHOS {
 namespace AudioStandard {

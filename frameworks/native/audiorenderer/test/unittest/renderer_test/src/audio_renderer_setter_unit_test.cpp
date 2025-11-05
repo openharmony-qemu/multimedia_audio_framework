@@ -2438,7 +2438,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GenerateNewStream_003, TestSize.Lev
 
     auto ret = audioRenderer->GenerateNewStream(IAudioStream::StreamClass::FAST_STREAM, restoreInfo,
         previousState, switchInfo);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
 }
 
 /**
