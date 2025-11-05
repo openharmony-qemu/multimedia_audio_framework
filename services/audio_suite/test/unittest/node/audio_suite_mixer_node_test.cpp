@@ -37,10 +37,10 @@ using namespace AudioSuite;
 using namespace testing::ext;
 using namespace testing;
 
-std::string g_fileNameOne = "/data/44100_2_32f.pcm";
-std::string g_fileNameTwo = "/data/96000_1_32f.pcm";
+std::string g_fileNameOne = "/data/mix1_48000_2_32f.pcm";
+std::string g_fileNameTwo = "/data/mix2_48000_2_32f.pcm";
 std::string g_outFilename = "/data/out.pcm";
-std::string g_baseFilename = "/data/base_96000_2_32f.pcm";
+std::string g_baseFilename = "/data/base_mix_48000_32_2.pcm";
 
 AudioFormat audioFormat = {
     {
@@ -48,18 +48,13 @@ AudioFormat audioFormat = {
         2,
     },
     SAMPLE_F32LE,
-    SAMPLE_RATE_96000
+    SAMPLE_RATE_48000
 };
-const uint32_t SAMPLE_RATE = 44100;
 const uint32_t CHANNEL_COUNT = 2;
 const AudioChannelLayout LAY_OUT = CH_LAYOUT_STEREO;
 
-const uint32_t SAMPLE_RATE_TWO = 96000;
-const uint32_t CHANNEL_COUNT_TWO = 1;
-const AudioChannelLayout LAY_OUT_TWO = CH_LAYOUT_MONO;
-
-size_t g_frameCount20Ms = (SAMPLE_RATE_44100 * STEREO * 20) / 1000; // 20ms of data
-size_t g_frameCount20MsTwo = (SAMPLE_RATE_96000 * 20) / 1000; // 20ms of data
+size_t g_frameCount20Ms = (SAMPLE_RATE_48000 * STEREO * 20) / 1000; // 20ms of data
+size_t g_frameCount20MsTwo = (SAMPLE_RATE_48000 * STEREO * 20) / 1000; // 20ms of data
 
 class AudioSuiteMixerTest : public testing::Test {
 public:
@@ -93,35 +88,25 @@ HWTEST_F(AudioSuiteMixerTest, constructHpaeMixerNodeReadFile, TestSize.Level0)
     file1.seekg(0, std::ios::beg);
     file2.seekg(0, std::ios::beg);
 
-    std::vector<AudioSuitePcmBuffer *> inputs;
+    
     std::ofstream outProcessedFile(g_outFilename, std::ios::binary);
+    mixer.Init();
+    AudioSuitePcmBuffer buffer1(PcmBufferFormat(SAMPLE_RATE_48000, CHANNEL_COUNT, LAY_OUT, SAMPLE_F32LE));
+    AudioSuitePcmBuffer buffer2(PcmBufferFormat(SAMPLE_RATE_48000, CHANNEL_COUNT, LAY_OUT, SAMPLE_F32LE));
+    uint32_t dataSize = buffer1.GetDataSize();
 
     while (true) {
-        AudioSuitePcmBuffer *buffer1 = new AudioSuitePcmBuffer(SAMPLE_RATE, CHANNEL_COUNT, LAY_OUT);
-        buffer1->ResizePcmBuffer(SAMPLE_RATE, CHANNEL_COUNT);
-        buffer1->pcmDataBuffer_.resize(g_frameCount20Ms);
 
-        AudioSuitePcmBuffer *buffer2 = new AudioSuitePcmBuffer(SAMPLE_RATE_TWO, CHANNEL_COUNT_TWO, LAY_OUT_TWO);
-        buffer2->ResizePcmBuffer(SAMPLE_RATE_TWO, CHANNEL_COUNT_TWO);
-        buffer2->pcmDataBuffer_.resize(g_frameCount20MsTwo);
-
-        file1.read(reinterpret_cast<char *>(buffer1->GetPcmDataBuffer()), g_frameCount20Ms * sizeof(float));
-        file2.read(reinterpret_cast<char *>(buffer2->GetPcmDataBuffer()), g_frameCount20MsTwo * sizeof(float));
+        file1.read(reinterpret_cast<char *>(buffer1.GetPcmData()), dataSize);
+        file2.read(reinterpret_cast<char *>(buffer2.GetPcmData()), dataSize);
 
         if (file1.eof() || file2.eof()) {
-            delete buffer1;
-            delete buffer2;
             break;
         }
-        inputs.push_back(buffer1);
-        inputs.push_back(buffer2);
+        std::vector<AudioSuitePcmBuffer *> inputs = {&buffer1, &buffer2};
 
-        outProcessedFile.write(reinterpret_cast<const char *>((mixer.SignalProcess(inputs))->GetPcmDataBuffer()),
-            g_frameCount20MsTwo * 2 * sizeof(float));
-
-        for (auto &input : inputs) {
-            delete input;
-        }
+        outProcessedFile.write(reinterpret_cast<const char *>((mixer.SignalProcess(inputs))->GetPcmData()),
+            dataSize);
         inputs.clear();
     }
     file1.close();

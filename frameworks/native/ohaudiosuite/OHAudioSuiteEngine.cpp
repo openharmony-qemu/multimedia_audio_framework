@@ -25,7 +25,6 @@
 #include "OHAudioSuiteEngine.h"
 #include "audio_suite_manager.h"
 #include "OHAudioSuiteNodeBuilder.h"
-#include "audio_suite_info.h"
 
 using OHOS::AudioStandard::OHAudioSuiteEngine;
 using OHOS::AudioStandard::OHAudioSuitePipeline;

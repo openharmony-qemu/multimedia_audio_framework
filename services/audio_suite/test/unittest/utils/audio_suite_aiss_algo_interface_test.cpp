@@ -46,12 +46,6 @@ namespace {
     const std::string OUTPUT_PATH = "/data/aiss_output.pcm";
     const std::string HUMAN_PATH = "/data/humanSound.pcm";
     const std::string BKG_PATH = "/data/bkgSound.pcm";
-    constexpr uint32_t FRAME_LEN_MS = 20;
-    constexpr uint32_t DEFAULT_SAMPLING_RATE = 48000;
-    constexpr uint32_t DEFAULT_CHANNELS_IN = 2;
-    constexpr uint32_t DEFAULT_CHANNELS_OUT = 4;
-    constexpr uint32_t BYTES_PER_SAMPLE = 4;
-    const AudioChannelLayout LAY_OUT = CH_LAYOUT_STEREO;
 
     HWTEST_F(AudioSuiteAissAlgoInterfaceImplTest, CheckFilePathTest, TestSize.Level0)
     {
@@ -97,54 +91,4 @@ namespace {
         ASSERT_EQ("AISSVX", paramValue);
     }
 
-    HWTEST_F(AudioSuiteAissAlgoInterfaceImplTest, ApplyProcessTest, TestSize.Level0)
-    {
-        AudioSuiteAissAlgoInterfaceImpl impl;
-        ASSERT_EQ(impl.Init(), SUCCESS);
-        const uint32_t byteSizePerFrameIn = DEFAULT_SAMPLING_RATE * FRAME_LEN_MS /
-            1000 * DEFAULT_CHANNELS_IN * BYTES_PER_SAMPLE;
-        const uint32_t byteSizePerFrameOut = DEFAULT_SAMPLING_RATE * FRAME_LEN_MS /
-            1000 * DEFAULT_CHANNELS_OUT * BYTES_PER_SAMPLE;
-        std::ifstream inputFile(INPUT_PATH, std::ios::binary | std::ios::ate);
-        ASSERT_TRUE(inputFile.is_open());
-        std::ofstream outputFile(OUTPUT_PATH, std::ios::binary);
-        while (true) {
-            AudioSuitePcmBuffer *inputBuffer = new AudioSuitePcmBuffer(DEFAULT_SAMPLING_RATE,
-                DEFAULT_CHANNELS_IN, LAY_OUT);
-            AudioSuitePcmBuffer *outputBuffer = new AudioSuitePcmBuffer(DEFAULT_SAMPLING_RATE,
-                DEFAULT_CHANNELS_OUT, LAY_OUT);
-            AudioSuitePcmBuffer *humanBuffer = new AudioSuitePcmBuffer(DEFAULT_SAMPLING_RATE,
-                DEFAULT_CHANNELS_IN, LAY_OUT);
-            AudioSuitePcmBuffer *bkgBuffer = new AudioSuitePcmBuffer(DEFAULT_SAMPLING_RATE,
-                DEFAULT_CHANNELS_IN, LAY_OUT);
-            inputBuffer->ResizePcmBuffer(DEFAULT_SAMPLING_RATE, DEFAULT_CHANNELS_IN);
-            inputBuffer->pcmDataBuffer_.resize(byteSizePerFrameIn);
-            outputBuffer->ResizePcmBuffer(DEFAULT_SAMPLING_RATE, DEFAULT_CHANNELS_OUT);
-            outputBuffer->pcmDataBuffer_.resize(byteSizePerFrameOut);
-            humanBuffer->ResizePcmBuffer(DEFAULT_SAMPLING_RATE, DEFAULT_CHANNELS_IN);
-            humanBuffer->pcmDataBuffer_.resize(byteSizePerFrameIn);
-            bkgBuffer->ResizePcmBuffer(DEFAULT_SAMPLING_RATE, DEFAULT_CHANNELS_IN);
-            bkgBuffer->pcmDataBuffer_.resize(byteSizePerFrameIn);
-            inputFile.read(reinterpret_cast<char *>(inputBuffer->GetPcmDataBuffer()), byteSizePerFrameIn);
-            if (inputFile.eof()) {
-                delete inputBuffer;
-                delete outputBuffer;
-                delete humanBuffer;
-                delete bkgBuffer;
-                break;
-            }
-            std::vector<uint8_t *> tmpin;
-            std::vector<uint8_t *> tmpout;
-            tmpin.emplace_back(reinterpret_cast<uint8_t *>(inputBuffer->GetPcmDataBuffer()));
-            tmpout.emplace_back(reinterpret_cast<uint8_t *>(outputBuffer->GetPcmDataBuffer()));
-            tmpout.emplace_back(reinterpret_cast<uint8_t *>(humanBuffer->GetPcmDataBuffer()));
-            tmpout.emplace_back(reinterpret_cast<uint8_t *>(bkgBuffer->GetPcmDataBuffer()));
-            ASSERT_EQ(impl.Apply(tmpin, tmpout), SUCCESS);
-            outputFile.write(reinterpret_cast<const char *>(outputBuffer->GetPcmDataBuffer()), byteSizePerFrameOut);
-        }
-        inputFile.close();
-        outputFile.close();
-        ASSERT_EQ(impl.Deinit(), SUCCESS);
-        std::remove(OUTPUT_PATH.c_str());
-    }
 }

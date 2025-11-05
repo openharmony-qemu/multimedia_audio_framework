@@ -20,7 +20,10 @@
 #include <dlfcn.h>
 #include <vector>
 #include <sstream>
+#include <cstring>
+#include "securec.h"
 #include <iostream>
+#include "audio_errors.h"
 #include "audio_suite_log.h"
 #include "audio_suite_env_algo_interface_impl.h"
 

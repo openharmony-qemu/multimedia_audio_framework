@@ -16,11 +16,12 @@
 #define LOG_TAG "AudioSuiteAissAlgoInterfaceImpl"
 #endif
 
-#include "audio_suite_aiss_algo_interface_impl.h"
 
 #include <chrono>
 #include <thread>
 #include <dlfcn.h>
+#include "audio_errors.h"
+#include "audio_suite_aiss_algo_interface_impl.h"
 
 namespace OHOS {
 namespace AudioStandard {

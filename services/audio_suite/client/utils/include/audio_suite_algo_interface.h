@@ -14,10 +14,9 @@
  */
 #ifndef AUDIO_SUITE_ALGO_INTERFACE_H
 #define AUDIO_SUITE_ALGO_INTERFACE_H
+
 #include <memory>
 #include <string>
-#include "audio_errors.h"
-#include "audio_suite_info.h"
 
 
 namespace OHOS {

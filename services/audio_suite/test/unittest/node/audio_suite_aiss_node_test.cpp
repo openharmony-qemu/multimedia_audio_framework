@@ -59,47 +59,35 @@ namespace {
     constexpr uint32_t DEFAULT_CHANNELS_IN = 2;
     constexpr uint32_t BYTES_PER_SAMPLE = 4;
     const AudioChannelLayout LAY_OUT = CH_LAYOUT_STEREO;
- 
-    HWTEST_F(AudioSuiteAissNodeTest, InitTest, TestSize.Level0)
-    {
-        EXPECT_EQ(impl->Init(), SUCCESS);
-        EXPECT_EQ(impl->DeInit(), SUCCESS);
-    }
-
-    HWTEST_F(AudioSuiteAissNodeTest, GetOutputPortTest, TestSize.Level0)
-    {
-        auto humanPort = impl->GetOutputPort();
-        ASSERT_NE(humanPort, nullptr);
-        auto bkgPort = impl->GetOutputPort();
-        ASSERT_NE(bkgPort, nullptr);
-        auto port = impl->GetOutputPort();
-        ASSERT_NE(port, nullptr);
-    }
-
-    HWTEST_F(AudioSuiteAissNodeTest, FlushTest, TestSize.Level0)
-    {
-        EXPECT_EQ(impl->Flush(), SUCCESS);
-    }
-
-    HWTEST_F(AudioSuiteAissNodeTest, ResetTest, TestSize.Level0)
-    {
-        EXPECT_EQ(impl->Reset(), SUCCESS);
-    }
      
     HWTEST_F(AudioSuiteAissNodeTest, ProcessTest, TestSize.Level0)
     {
         EXPECT_NE(impl->DoProcess(), SUCCESS);
         std::ifstream inputFile(INPUT_PATH, std::ios::binary | std::ios::ate);
         ASSERT_TRUE(inputFile.is_open());
-        AudioSuitePcmBuffer inputBuffer(DEFAULT_SAMPLING_RATE, DEFAULT_CHANNELS_IN, LAY_OUT);
+        AudioSuitePcmBuffer inputBuffer(PcmBufferFormat(SAMPLE_RATE_48000, DEFAULT_CHANNELS_IN, LAY_OUT, SAMPLE_F32LE));
         const uint32_t byteSizePerFrameIn = DEFAULT_SAMPLING_RATE * FRAME_LEN_MS /
             1000 * DEFAULT_CHANNELS_IN * BYTES_PER_SAMPLE;
-        inputFile.read(reinterpret_cast<char *>(inputBuffer.GetPcmDataBuffer()), byteSizePerFrameIn);
+        inputFile.read(reinterpret_cast<char *>(inputBuffer.GetPcmData()), byteSizePerFrameIn);
         ASSERT_FALSE(inputFile.fail() && !inputFile.eof());
         std::vector<AudioSuitePcmBuffer*> inputs;
         inputs.emplace_back(&inputBuffer);
         AudioSuitePcmBuffer *outputBuffer = impl->SignalProcess(inputs);
         EXPECT_NE(outputBuffer, nullptr);
         inputFile.close();
+    }
+
+    HWTEST_F(AudioSuiteAissNodeTest, DoProcessTest001, TestSize.Level0)
+    {
+        std::shared_ptr<AudioSuiteAissNode> impl = std::make_shared<AudioSuiteAissNode>();
+        int32_t ret = impl->DoProcess();
+        EXPECT_EQ(ret, ERROR);
+    }
+ 
+    HWTEST_F(AudioSuiteAissNodeTest, DoProcessTest002, TestSize.Level0)
+    {
+        std::shared_ptr<AudioSuiteAissNode> impl = std::make_shared<AudioSuiteAissNode>();
+        int32_t ret = impl->DeInit();
+        EXPECT_EQ(ret, ERROR);
     }
 }

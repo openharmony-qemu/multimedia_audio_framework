@@ -30,9 +30,10 @@ static constexpr uint32_t SAMPLE_SIZE_4_BYTE = 4;
 
 class AudioSuiteRingBuffer {
 public:
-    AudioSuiteRingBuffer(uint32_t size)
+    AudioSuiteRingBuffer() = default;
+    AudioSuiteRingBuffer(uint32_t capacity) : capacity_(capacity), head_(0), tail_(0), size_(0)
     {
-        ResizeBuffer(size);
+        ResizeBuffer(capacity);
     }
 
     ~AudioSuiteRingBuffer()

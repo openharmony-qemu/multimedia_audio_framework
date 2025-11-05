@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "audio_suite_algo_interface.h"
 #include "audio_suite_eq_algo_interface_impl.h"
 #include "audio_suite_nr_algo_interface_impl.h"
 #include "audio_suite_soundfield_algo_interface_impl.h"

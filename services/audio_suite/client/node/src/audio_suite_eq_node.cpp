@@ -33,20 +33,20 @@ const std::string setBandGains = "AudioEqualizerFrequencyBandGains";
 AudioSuiteEqNode::AudioSuiteEqNode()
     : AudioSuiteProcessNode(NODE_TYPE_EQUALIZER,
           AudioFormat{{EQ_ALGO_CHANNEL_LAYOUT, EQ_ALGO_CHANNEL_COUNT}, EQ_ALGO_SAMPLE_FORMAT, EQ_ALGO_SAMPLE_RATE}),
-      outPcmBuffer_(EQ_ALGO_SAMPLE_RATE, EQ_ALGO_CHANNEL_COUNT, EQ_ALGO_CHANNEL_LAYOUT),
-      tmpPcmBuffer_(EQ_ALGO_SAMPLE_RATE, EQ_ALGO_CHANNEL_COUNT, EQ_ALGO_CHANNEL_LAYOUT)
+      outPcmBuffer_(
+          PcmBufferFormat{EQ_ALGO_SAMPLE_RATE, EQ_ALGO_CHANNEL_COUNT, EQ_ALGO_CHANNEL_LAYOUT, EQ_ALGO_SAMPLE_FORMAT})
 {}
 
 AudioSuiteEqNode::~AudioSuiteEqNode()
 {
-    if (IsEqNodeInit()) {
+    if (isEqNodeInit_) {
         DeInit();
     }
 }
 
 int32_t AudioSuiteEqNode::Init()
 {
-    if (IsEqNodeInit()) {
+    if (isEqNodeInit_) {
         AUDIO_ERR_LOG("AudioSuiteEqNode::Init failed, already inited");
         return ERROR;
     }
@@ -59,14 +59,12 @@ int32_t AudioSuiteEqNode::Init()
 
 int32_t AudioSuiteEqNode::DeInit()
 {
-    tmpin_.resize(0);
-    tmpout_.resize(0);
     if (eqAlgoInterfaceImpl_ != nullptr) {
         eqAlgoInterfaceImpl_->Deinit();
         eqAlgoInterfaceImpl_ = nullptr;
     }
 
-    if (IsEqNodeInit()) {
+    if (isEqNodeInit_) {
         isEqNodeInit_ = false;
         AUDIO_INFO_LOG("AudioSuiteEqNode::DeInit end");
         return SUCCESS;
@@ -74,49 +72,17 @@ int32_t AudioSuiteEqNode::DeInit()
     return ERROR;
 }
 
-bool AudioSuiteEqNode::IsEqNodeInit()
-{
-    if (isEqNodeInit_) {
-        return true;
-    }
-    return false;
-}
-
-bool AudioSuiteEqNode::Reset()
-{
-    return true;
-}
-
 AudioSuitePcmBuffer *AudioSuiteEqNode::SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs)
 {
     CHECK_AND_RETURN_RET_LOG(!inputs.empty(), nullptr, "AudioSuiteEqNode SignalProcess inputs is empty");
     CHECK_AND_RETURN_RET_LOG(inputs[0] != nullptr, nullptr, "AudioSuiteEqNode SignalProcess inputs[0] is nullptr");
-    AUDIO_DEBUG_LOG("AudioSuiteEqNode SignalProcess inputs frameLen:%{public}d", inputs[0]->GetFrameLen());
+    CHECK_AND_RETURN_RET_LOG(inputs[0]->IsSameFormat(GetAudioNodeInPcmFormat()), nullptr, "Invalid inputs format");
 
-    eqInputDataBuffer_.resize(outPcmBuffer_.GetFrameLen() * ALGO_BYTE_NUM);
-    eqOutputDataBuffer_.resize(outPcmBuffer_.GetFrameLen() * ALGO_BYTE_NUM);
-    int32_t ret = ConvertProcess(inputs[0], &outPcmBuffer_, &tmpPcmBuffer_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "AudioSuiteEqNode SignalProcess ConvertProcess failed");
-
-    ConvertFromFloat(EQ_ALGO_SAMPLE_FORMAT,
-        outPcmBuffer_.GetFrameLen(),
-        outPcmBuffer_.GetPcmDataBuffer(),
-        static_cast<void *>(eqInputDataBuffer_.data()));
-
-    tmpin_.resize(1);
-    tmpout_.resize(1);
-    uint8_t *inputPointer = eqInputDataBuffer_.data();
-    uint8_t *outputPointer = eqOutputDataBuffer_.data();
-
-    tmpin_[0] = inputPointer;
-    tmpout_[0] = outputPointer;
+    tmpin_[0] = inputs[0]->GetPcmData();
+    tmpout_[0] = outPcmBuffer_.GetPcmData();
     CHECK_AND_RETURN_RET_LOG(eqAlgoInterfaceImpl_ != nullptr, nullptr, "eqAlgoInterfaceImpl_ is nullptr");
-    ret = eqAlgoInterfaceImpl_->Apply(tmpin_, tmpout_);
+    int32_t ret = eqAlgoInterfaceImpl_->Apply(tmpin_, tmpout_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "AudioSuiteEqNode SignalProcess Apply failed");
-    ConvertToFloat(EQ_ALGO_SAMPLE_FORMAT,
-        outPcmBuffer_.GetFrameLen(),
-        eqOutputDataBuffer_.data(),
-        outPcmBuffer_.GetPcmDataBuffer());
     return &outPcmBuffer_;
 }
 

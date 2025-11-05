@@ -30,8 +30,6 @@ public:
     explicit AudioOutputNode(AudioFormat format);
     virtual ~AudioOutputNode();
 
-    int32_t Init() override;
-    int32_t DeInit() override;
     int32_t Flush() override;
     void SetAudioNodeFormat(AudioFormat audioFormat) override;
     int32_t Connect(const std::shared_ptr<AudioNode> &preNode) override;
@@ -43,19 +41,8 @@ public:
         int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag);
 
 private:
-    int32_t DoProcessDoubleFrame();
     int32_t DoProcessParamCheck(uint8_t **audioDataArray, int32_t arraySize,
         int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag);
-    int32_t FormatConversion(float *inData, size_t inDataLen, uint8_t *outData, size_t outDataSize);
-    void SetInDataFormat(uint32_t channels, AudioChannelLayout layout, AudioSampleFormat sample, uint32_t rate);
-    void SetOutDataFormat(uint32_t channels, AudioChannelLayout layout, AudioSampleFormat sample, uint32_t rate);
-
-    struct DataFormat {
-        AudioChannelLayout channelLayout = CH_LAYOUT_UNKNOWN;
-        uint32_t numChannels = 1;
-        AudioSampleFormat format = INVALID_WIDTH;
-        uint32_t rate = SAMPLE_RATE_48000;
-    };
 
     // cache buffer opt
     bool CacheBufferEmpty();
@@ -67,8 +54,9 @@ private:
     int32_t preNodeOutputNum_ = 0;
 
     // for cache buffer
-    std::vector<std::vector<uint8_t>> cacheBuffer_;
+    std::vector<AudioSuitePcmBuffer *> outputs_;
     size_t bufferUsedOffset_ = 0;
+<<<<<<< HEAD
 
     // for format conversion
     uint32_t frameDuration_ = SINGLE_FRAME_DURATION;
@@ -80,6 +68,8 @@ private:
     std::vector<AudioSuitePcmBuffer *> inputsPcmbuffer_;
     uint32_t inputFrameDataLen_;
     uint32_t frameCount_;
+=======
+>>>>>>> 032dcabd3 (Format Conversion Wrapper)
 };
 
 }  // namespace AudioSuite
