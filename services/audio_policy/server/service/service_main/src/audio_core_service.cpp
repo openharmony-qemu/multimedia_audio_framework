@@ -1462,7 +1462,7 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute(std::string caller, const Aud
         }
 
         // handle nearlink
-        int32_t inputRet = ActivateInputDevice(streamDesc);
+        int32_t inputRet = ActivateInputDevice(streamDesc, reason);
         CHECK_AND_RETURN_RET_LOG(inputRet == SUCCESS, inputRet, "Activate input device failed");
 
         if (needUpdateActiveDevice) {

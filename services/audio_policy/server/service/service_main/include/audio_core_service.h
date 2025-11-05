@@ -530,7 +530,8 @@ private:
         AudioStreamDeviceChangeReasonExt reason);
     int32_t ActivateOutputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
-    int32_t ActivateInputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    int32_t ActivateInputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
     void OnAudioSceneChange(const AudioScene& audioScene);
     bool HandleOutputStreamInRunning(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         AudioStreamDeviceChangeReasonExt reason);

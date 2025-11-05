@@ -329,7 +329,7 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
     if (descs.front()->deviceType_ == DEVICE_TYPE_HEARING_AID) {
         SwitchActiveHearingAidDevice(std::make_shared<AudioDeviceDescriptor>(descs.front()));
     }
-    auto ret = ActivateNearlinkDevice(pipeManager_->GetModemCommunicationMap().begin()->second);
+    auto ret = ActivateNearlinkDevice(pipeManager_->GetModemCommunicationMap().begin()->second, reason);
     // If the modem call is in progress, and the device is currently switching,
     // and the current output device is different from the target device, then mute to avoid pop issue.
     if (isModemCallRunning && IsDeviceSwitching(reason) && !curDesc.IsSameDeviceDesc(*descs.front())) {
@@ -2839,7 +2839,7 @@ int32_t AudioCoreService::ActivateOutputDevice(std::shared_ptr<AudioStreamDescri
         deviceDesc->deviceType_, deviceDesc->deviceRole_, bluetoothFetchResult, "bluetooth fetch output device failed");
     CHECK_AND_RETURN_RET(bluetoothFetchResult == BLUETOOTH_FETCH_RESULT_DEFAULT, ERR_OPERATION_FAILED);
 
-    int32_t nearlinkFetchResult = ActivateNearlinkDevice(streamDesc);
+    int32_t nearlinkFetchResult = ActivateNearlinkDevice(streamDesc, reason);
     CheckAndWriteDeviceChangeExceptionEvent(nearlinkFetchResult == SUCCESS, reason,
         deviceDesc->deviceType_, deviceDesc->deviceRole_, nearlinkFetchResult, "nearlink fetch output device failed");
     CHECK_AND_RETURN_RET_LOG(nearlinkFetchResult == SUCCESS, REFETCH_DEVICE, "nearlink fetch output device failed");
@@ -2853,7 +2853,8 @@ int32_t AudioCoreService::ActivateOutputDevice(std::shared_ptr<AudioStreamDescri
     return SUCCESS;
 }
 
-int32_t AudioCoreService::ActivateInputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+int32_t AudioCoreService::ActivateInputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    const AudioStreamDeviceChangeReasonExt reason)
 {
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0 &&
         streamDesc->newDeviceDescs_[0] != nullptr, ERR_INVALID_PARAM, "Invalid stream desc");
@@ -2861,7 +2862,7 @@ int32_t AudioCoreService::ActivateInputDevice(std::shared_ptr<AudioStreamDescrip
         BluetoothScoFetch(streamDesc);
     }
 
-    int32_t nearlinkFetchResult = ActivateNearlinkDevice(streamDesc);
+    int32_t nearlinkFetchResult = ActivateNearlinkDevice(streamDesc, reason);
     CHECK_AND_RETURN_RET_LOG(nearlinkFetchResult == SUCCESS, REFETCH_DEVICE, "nearlink fetch input device failed");
 
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0 &&
