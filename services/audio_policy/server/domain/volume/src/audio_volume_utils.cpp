@@ -112,7 +112,7 @@ void AudioVolumeUtils::GetDefaultVolumeLevelForDPsDevice(const std::shared_ptr<A
         return;
     }
     int32_t maxVolumeLevel = GetMaxVolumeLevel(desc, volumeType);
-    volumeLevel = maxVolumeLevel > MAX_VOLUME_LEVEL ? DP_DEFAULT_VOLUME_LEVEL : maxVolumeLevel;
+    volumeLevel = maxVolumeLevel >= DP_DEFAULT_VOLUME_LEVEL ? DP_DEFAULT_VOLUME_LEVEL : maxVolumeLevel;
 }
 
 void AudioVolumeUtils::GetDefaultVolumeLevelForDistributedDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc,

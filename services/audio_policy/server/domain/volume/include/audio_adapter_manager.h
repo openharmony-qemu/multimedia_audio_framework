@@ -329,7 +329,9 @@ public:
     bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout);
     void UpdateOtherStreamVolume(AudioStreamType streamType);
     void SetVolumeLimit(float volume);
-    bool SetMaxVolumeForDpBoardcast();
+    void SetMaxVolumeForDpBoardcast();
+    void HandleCastingConnection();
+    void HandleCastingDisconnection();
     int32_t SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree);
     int32_t GetSystemVolumeDegree(AudioStreamType streamType, bool checkMuteState = true);
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
@@ -531,6 +533,7 @@ private:
     std::mutex audioVolumeMutex_;
     std::mutex activeDeviceMutex_;
     std::mutex volumeDataMapMutex_;
+    std::mutex setMaxVolumeMutex_;
     AppConfigVolume appConfigVolume_;
     std::shared_ptr<FixedSizeList<RingerModeAdjustInfo>> saveRingerModeInfo_ =
         std::make_shared<FixedSizeList<RingerModeAdjustInfo>>(MAX_CACHE_AMOUNT);
@@ -538,6 +541,7 @@ private:
     sptr<IStandardAudioPolicyManagerListener> deviceVolumeBehaviorListener_;
     bool isA2DPPreActive_ = false;
     std::atomic<float> volumeLimit_ = MAX_STREAM_VOLUME;
+    std::atomic<bool> isCastingConnect_ = false;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {
