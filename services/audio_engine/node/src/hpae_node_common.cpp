@@ -29,6 +29,7 @@ static constexpr float MAX_SINK_VOLUME_LEVEL = 1.0;
 static constexpr uint32_t MS_PER_SECOND = 1000;
 static constexpr uint32_t BASE_TEN = 10;
 static constexpr uint32_t FRAME_LENGTH_LIMIT = 38400;
+// to judge whether SampleRate is multiples of 50, if true use 20ms, false use 100ms
 static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 static constexpr uint32_t FRAME_LEN_100MS = 100;
 static constexpr uint32_t FRAME_LEN_40MS = 40;

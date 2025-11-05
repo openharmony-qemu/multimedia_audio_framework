@@ -435,6 +435,8 @@ audio_ohos_library("audio_process_service") {
       "../../services/audio_engine/plugin/channel_converter/include",
       "../audio_engine/plugin/resample/include",
       "../audio_engine/simd",
+      "../audio_engine/node/include",
+      "../audio_engine/buffer",
   ]
 
   deps = [
@@ -450,6 +452,7 @@ audio_ohos_library("audio_process_service") {
     "../audio_engine:audio_engine_plugins",
     "../audio_engine:audio_engine_utils",
     "../audio_policy:audio_foundation",
+    "../audio_engine:audio_engine_node",
   ]
 
   external_deps = [

@@ -20,10 +20,10 @@
 #include "audio_utils.h"
 #include <cinttypes>
 #include "audio_effect_log.h"
+#include "hpae_node_common.h"
 
 static constexpr uint32_t MS_IN_SECOND = 1000;
 static constexpr uint32_t REASAMPLE_QUAILTY = 1;
-static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -33,11 +33,12 @@ HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeI
     converterOutput_(pcmBufferInfo_), preNodeInfo_(preNodeInfo), tmpOutBuf_(pcmBufferInfo_)
 {
     converterOutput_.SetSplitStreamType(preNodeInfo.GetSplitStreamType());
-    UpdateTmpOutPcmBufferInfo(pcmBufferInfo_);
     // use ProResamppler as default
     resampler_ = std::make_unique<ProResampler>(preNodeInfo.customSampleRate == 0 ? preNodeInfo.samplingRate :
         preNodeInfo.customSampleRate, nodeInfo.samplingRate,
         std::min(preNodeInfo.channels, nodeInfo.channels), REASAMPLE_QUAILTY);
+
+    UpdateTmpOutPcmBufferInfo(pcmBufferInfo_);
     
     AudioChannelInfo inChannelInfo = {
         .channelLayout = preNodeInfo.channelLayout,
@@ -151,7 +152,7 @@ int32_t HpaeAudioFormatConverterNode::ConverterProcess(float *srcData, float *ds
     uint32_t inRate = resampler_->GetInRate();
     uint32_t outRate = resampler_->GetOutRate();
  
-    uint32_t inputFrameLen = input.GetFrameLen();
+    uint32_t inputFrameLen = input->GetFrameLen();
     uint32_t outputFrameLen = converterOutput_.GetFrameLen();
     uint32_t inputFrameBytes = inputFrameLen * inChannelInfo.numChannels * sizeof(float);
     uint32_t outputFrameBytes = outputFrameLen * outChannelInfo.numChannels * sizeof(float);
@@ -269,7 +270,6 @@ bool HpaeAudioFormatConverterNode::CheckUpdateInInfo(HpaePcmBuffer *input)
         HILOG_COMM_INFO("NodeId %{public}d: Update resampler input sample rate: %{public}d -> %{public}d",
             GetNodeId(), resampler_->GetInRate(), sampleRate);
         preNodeInfo_.samplingRate = (AudioSamplingRate)sampleRate;
-        // preNodeInfo_.frameLen = input->GetFrameLen();
         preNodeInfo_.frameLen = CaculateFrameLenBySampleRate(sampleRate);
         resampler_->UpdateRates(sampleRate, resampler_->GetOutRate());
         isInfoUpdated = true;
@@ -286,7 +286,6 @@ void HpaeAudioFormatConverterNode::UpdateTmpOutPcmBufferInfo(const PcmBufferInfo
     PcmBufferInfo tmpOutPcmBufferInfo = outPcmBufferInfo;
     if (outPcmBufferInfo.ch < preNodeInfo_.channels) { // downmix, then resample
         tmpOutPcmBufferInfo.rate = resampler_->GetInRate();
-        // tmpOutPcmBufferInfo.frameLen = preNodeInfo_.frameLen;
         tmpOutPcmBufferInfo.frameLen = CaculateFrameLenBySampleRate(tmpOutPcmBufferInfo.rate);
     } else { // resample, then upmix
         tmpOutPcmBufferInfo.ch = preNodeInfo_.channels;

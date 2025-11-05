@@ -37,6 +37,7 @@
 #include "core_service_handler.h"
 #include "audio_volume.h"
 #include "volume_tools.h"
+#include "hpae_node_common.h"
 
 using namespace OHOS::AudioStandard::HPAE;
 namespace OHOS {
@@ -44,12 +45,8 @@ namespace AudioStandard {
 
 static constexpr int32_t MIN_BUFFER_SIZE = 2;
 static constexpr uint64_t FRAME_LEN_10MS = 10;
-static constexpr uint64_t FRAME_LEN_20MS = 20;
 static constexpr uint64_t FRAME_LEN_40MS = 40;
-static constexpr uint32_t FRAME_LEN_100MS = 100;
 static constexpr uint64_t PRINT_TIMESTAMP_INTERVAL_NS = 1000000000;
-// to judge whether customSampleRate is multiples of 50
-static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
 static constexpr float AUDIO_VOLUME_EPSILON = 0.0001;
