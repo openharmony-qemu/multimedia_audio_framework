@@ -2924,6 +2924,15 @@ void AudioCoreService::HandleDualStartClient(std::vector<std::pair<DeviceType, D
             make_pair(streamDesc->newDeviceDescs_[1]->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG));
     }
 }
+
+void AudioCoreService::ResetOriginalFlagForRemote(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN(streamDesc != nullptr && streamDesc->IsDeviceRemote());
+    AUDIO_INFO_LOG("originalFlag: %{public}d, oldOriginalFlag: %{public}d", streamDesc->rendererInfo_.originalFlag,
+        streamDesc->oldOriginalFlag_);
+    streamDesc->ResetOriginalFlag();
+}
+
 void AudioCoreService::UpdateStreamDevicesForStart(
     std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller)
 {
@@ -2962,6 +2971,8 @@ void AudioCoreService::UpdateStreamDevicesForStart(
         WriteScoStateFaultEvent(devices[0]);
     }
     FetchOutputDupDevice(caller, streamDesc->GetSessionId(), streamDesc);
+
+    ResetOriginalFlagForRemote(streamDesc);
 }
 
 void AudioCoreService::UpdateStreamDevicesForCreate(

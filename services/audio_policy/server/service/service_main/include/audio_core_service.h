@@ -576,6 +576,9 @@ private:
     int32_t PlayBackToInjection(uint32_t sessionId);
     int32_t InjectionToPlayBack(uint32_t sessionId);
 
+    // for remote
+    void ResetOriginalFlagForRemote(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;

@@ -103,7 +103,8 @@ bool AudioStreamDescriptor::Marshalling(Parcel &parcel) const
         parcel.WriteUint32(streamAction_) &&
         preferredInputDevice.Marshalling(parcel) &&
         WriteDeviceDescVectorToParcel(parcel, oldDeviceDescs_) &&
-        WriteDeviceDescVectorToParcel(parcel, newDeviceDescs_);
+        WriteDeviceDescVectorToParcel(parcel, newDeviceDescs_) &&
+        parcel.WriteInt32(oldOriginalFlag_);
 }
 
 AudioStreamDescriptor *AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
@@ -133,6 +134,7 @@ AudioStreamDescriptor *AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
     info->preferredInputDevice = std::shared_ptr<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(parcel));
     info->UnmarshallingDeviceDescVector(parcel, info->oldDeviceDescs_);
     info->UnmarshallingDeviceDescVector(parcel, info->newDeviceDescs_);
+    info->oldOriginalFlag_ = parcel.ReadInt32();
 
     return info;
 }
