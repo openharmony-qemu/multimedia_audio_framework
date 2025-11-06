@@ -89,6 +89,7 @@ private:
     int32_t WriteDataFromRingBuffer(bool forceData, int8_t *inputData, size_t &requestDataLen);
     uint32_t GetA2dpOffloadLatency(); // unit ms
     uint32_t GetNearlinkLatency(); // unit ms
+    uint32_t GetSinkLatency(); // unit ms
     void GetLatencyInner(uint64_t &timestamp, uint64_t &latencyUs, int32_t base);
     void OnDeviceClassChange(const AudioCallBackStreamInfo &callBackStreamInfo);
     int32_t GetRemoteOffloadSpeedPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency);

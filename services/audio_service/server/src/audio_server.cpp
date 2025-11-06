@@ -194,20 +194,10 @@ static bool IsVoiceModemCommunication(StreamUsage streamUsage, int32_t callingUi
     return streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION && callingUid == UID_FOUNDATION_SA;
 }
 
-static std::string GetField(const std::string &src, const char* field, const char sep)
-{
-    auto str = std::string(field) + '=';
-    auto pos = src.find(str);
-    CHECK_AND_RETURN_RET(pos != std::string::npos, "");
-    pos += str.length();
-    auto end = src.find(sep, pos);
-    return end == std::string::npos ? src.substr(pos) : src.substr(pos, end - pos);
-}
-
 static inline std::shared_ptr<IAudioRenderSink> GetSinkByProp(HdiIdType type, const std::string &info =
-    HDI_ID_INFO_DEFAULT, bool tryCreate = false)
+    HDI_ID_INFO_DEFAULT, bool tryCreate = false, bool tryCreateId = true)
 {
-    uint32_t id = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, type, info);
+    uint32_t id = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, type, info, false, tryCreateId);
     return HdiAdapterManager::GetInstance().GetRenderSink(id, tryCreate);
 }
 
@@ -767,6 +757,7 @@ bool AudioServer::SetEffectLiveParameter(const std::vector<std::pair<std::string
 int32_t AudioServer::SetExtraParameters(const std::string &key,
     const std::vector<StringPair> &kvpairs)
 {
+    Trace trace("AudioServer::SetExtraParameters" + key);
     CHECK_AND_RETURN_RET_LOG(kvpairs.size() >= 0 && kvpairs.size() <= AUDIO_EXTRA_PARAMETERS_COUNT_UPPER_LIMIT,
         AUDIO_ERR, "Set extra audio parameters failed");
     bool ret = PermissionUtil::VerifySystemPermission();
@@ -855,9 +846,10 @@ bool AudioServer::CacheExtraParameters(const std::string &key,
 
 void AudioServer::SetA2dpAudioParameter(const std::string &renderValue)
 {
+    std::lock_guard<std::mutex> lock(setA2dpParamMutex_);
     auto parmKey = AudioParamKey::A2DP_SUSPEND_STATE;
     std::shared_ptr<IAudioRenderSink> btSink = GetSinkByProp(HDI_ID_TYPE_BLUETOOTH);
-    if (btSink == nullptr) {
+    if (btSink == nullptr || !btSink->IsInited()) {
         AUDIO_WARNING_LOG("has no valid sink, need preStore a2dpParam.");
         HdiAdapterManager::GetInstance().
             UpdateSinkPrestoreInfo<std::pair<AudioParamKey, std::pair<std::string, std::string>>>(
@@ -1574,6 +1566,10 @@ int32_t AudioServer::NotifyDeviceInfo(const std::string &networkId, bool connect
     if (sink != nullptr && connected) {
         sink->RegistCallback(HDI_CB_RENDER_PARAM, this);
     }
+    std::shared_ptr<IAudioRenderSink> sinkOffload = GetSinkByProp(HDI_ID_TYPE_REMOTE_OFFLOAD, networkId.c_str(),
+        false, false);
+    CHECK_AND_RETURN_RET(sinkOffload != nullptr && connected, SUCCESS);
+    sinkOffload->RegistCallback(HDI_CB_RENDER_PARAM, this);
     return SUCCESS;
 }
 // LCOV_EXCL_STOP
@@ -2958,6 +2954,7 @@ int32_t AudioServer::CreateHdiSinkPort(const std::string &deviceClass, const std
 
     renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, idInfo, true);
     CHECK_AND_RETURN_RET(renderId != HDI_INVALID_ID, SUCCESS);
+    CHECK_AND_RETURN_RET(deviceClass != "Virtual_Injector", SUCCESS);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId, true);
     if (sink == nullptr) {
         HdiAdapterManager::GetInstance().ReleaseId(renderId);
@@ -2965,6 +2962,8 @@ int32_t AudioServer::CreateHdiSinkPort(const std::string &deviceClass, const std
         return SUCCESS;
     }
     if (!sink->IsInited()) {
+        // preSet a2dpParam needs to guarantee that init() and SetA2dpAudioParameter() not called in concurrency.
+        std::lock_guard<std::mutex> lock(setA2dpParamMutex_);
         sink->Init(attr);
     }
     return SUCCESS;
@@ -3191,6 +3190,7 @@ int32_t AudioServer::GetPrivacyTypeAudioServer(uint32_t sessionId, int32_t &priv
 int32_t AudioServer::AddCaptureInjector(uint32_t sinkPortidx, std::string &rate, std::string &format,
     std::string &channels, std::string &bufferSize)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_SYSTEM_PERMISSION_DENIED, "not audio calling!");
     int32_t ret = ERROR; //if is not low latency, should return error
 #ifdef SUPPORT_LOW_LATENCY
     auto ptr = AudioService::GetInstance()->GetEndPointByType(AudioEndpoint::EndpointType::TYPE_VOIP_MMAP);
@@ -3208,6 +3208,7 @@ int32_t AudioServer::AddCaptureInjector(uint32_t sinkPortidx, std::string &rate,
 
 int32_t AudioServer::RemoveCaptureInjector(uint32_t sinkPortidx)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_SYSTEM_PERMISSION_DENIED, "not audio calling!");
     int32_t ret = ERROR; //if is not low latency, should return error
 #ifdef SUPPORT_LOW_LATENCY
     auto ptr = AudioService::GetInstance()->GetEndPointByType(AudioEndpoint::EndpointType::TYPE_VOIP_MMAP);

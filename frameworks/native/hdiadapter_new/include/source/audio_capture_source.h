@@ -77,6 +77,7 @@ public:
     void DumpInfo(std::string &dumpString) override;
 
     void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
+    int32_t GetArmUsbDeviceStatus() override;
 
 private:
     static AudioFormat ConvertToHdiFormat(AudioSampleFormat format);

@@ -160,15 +160,15 @@ void HpaeCapturerManager::DisConnectSceneClusterFromSourceInputCluster(HpaeProce
 int32_t HpaeCapturerManager::DeleteOutputSession(uint32_t sessionId)
 {
     AUDIO_INFO_LOG("delete output node:%{public}d, source name:%{public}s", sessionId, sourceInfo_.deviceClass.c_str());
-    if (!SafeGetMap(sourceOutputNodeMap_, sessionId)) {
-        return SUCCESS;
-    }
-
-    if (!sourceOutputNodeMap_[sessionId]) {
+    auto sourceOutputNode = SafeGetMap(sourceOutputNodeMap_, sessionId);
+    if (!sourceOutputNode) {
         sourceOutputNodeMap_.erase(sessionId);
         sessionNodeMap_.erase(sessionId);
         return SUCCESS;
     }
+#ifdef ENABLE_HIDUMP_DFX
+    OnNotifyDfxNodeAdmin(false, sourceOutputNode->GetNodeInfo());
+#endif
 
     HpaeProcessorType sceneType = sessionNodeMap_[sessionId].sceneType;
     if (sceneType != HPAE_SCENE_EFFECT_NONE && SafeGetMap(sceneClusterMap_, sceneType)) {
@@ -882,6 +882,9 @@ void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveI
     HpaeNodeInfo nodeInfo = moveInfo.sourceOutputNode->GetNodeInfo();
     sourceOutputNodeMap_[sessionId] = moveInfo.sourceOutputNode;
     sessionNodeMap_[sessionId] = moveInfo.sessionInfo;
+#ifdef ENABLE_HIDUMP_DFX
+    OnNotifyDfxNodeAdmin(true, nodeInfo);
+#endif
     HpaeProcessorType sceneType = sessionNodeMap_[sessionId].sceneType;
     AudioEnhanceScene enhanceScene = TransProcessType2EnhanceScene(sceneType);
     if (sceneType != HPAE_SCENE_EFFECT_NONE) {

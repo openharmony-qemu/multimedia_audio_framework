@@ -502,6 +502,85 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_021, TestSize.Level1)
     EXPECT_NE(devMan.FindConnectedDeviceById(devDesc->deviceId_), nullptr);
 }
 
+class MockRouter : public RouterBase {
+public:
+    RouterType routerType_ = ROUTER_TYPE_NONE;
+    std::shared_ptr<AudioDeviceDescriptor> mediaRenderRet_;
+    std::shared_ptr<AudioDeviceDescriptor> callRenderRet_;
+    std::shared_ptr<AudioDeviceDescriptor> callCaptureRet_;
+    std::shared_ptr<AudioDeviceDescriptor> recordCaptureRet_;
+    MockRouter() = default;
+    MockRouter(RouterType type = ROUTER_TYPE_DEFAULT,
+        std::shared_ptr<AudioDeviceDescriptor> mediaRenderRet = nullptr,
+        std::shared_ptr<AudioDeviceDescriptor> callRenderRet = nullptr,
+        std::shared_ptr<AudioDeviceDescriptor> callCaptureRet = nullptr,
+        std::shared_ptr<AudioDeviceDescriptor> recordCaptureRet = nullptr)
+        : routerType_(type),
+          mediaRenderRet_(std::move(mediaRenderRet)),
+          callRenderRet_(std::move(callRenderRet)),
+          callCaptureRet_(std::move(callCaptureRet)),
+          recordCaptureRet_(std::move(recordCaptureRet)) {}
+ 
+    std::shared_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage, int32_t) override
+    {
+        return mediaRenderRet_;
+    }
+ 
+    std::shared_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage, int32_t) override
+    {
+        return callRenderRet_;
+    }
+ 
+    std::shared_ptr<AudioDeviceDescriptor> GetCallCaptureDevice(SourceType, int32_t, const uint32_t) override
+    {
+        return callCaptureRet_;
+    }
+ 
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetRingRenderDevices(StreamUsage, int32_t) override
+    {
+        static const std::vector<std::shared_ptr<AudioDeviceDescriptor>> emptyVector;
+        return emptyVector;
+    }
+ 
+    std::shared_ptr<AudioDeviceDescriptor> GetRecordCaptureDevice(SourceType, int32_t, const uint32_t) override
+    {
+        return recordCaptureRet_;
+    }
+ 
+    std::shared_ptr<AudioDeviceDescriptor> GetToneRenderDevice(StreamUsage, int32_t) override
+    {
+        return std::shared_ptr<AudioDeviceDescriptor>();
+    }
+ 
+    RouterType GetRouterType() override
+    {
+        return routerType_;
+    }
+};
+ 
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: AudioCoreService_041
+ * @tc.desc  : Test AudioCoreService::EventEntry::OnForcedDeviceSelected()
+ */
+HWTEST(AudioCoreServiceEntryTest, AudioCoreService_041, TestSize.Level1)
+{
+    DeviceType devType = DEVICE_TYPE_USB_HEADSET;
+    std::string macAddress = "macAddress";
+    auto &audioRouter = AudioRouterCenter::GetAudioRouterCenter();
+    audioRouter.renderConfigMap_[STREAM_USAGE_VOICE_COMMUNICATION] == "CallRenderRouters";
+    AudioDeviceStatus audioDeviceStatus =  AudioDeviceStatus::GetInstance();
+    auto devDesc = make_shared<AudioDeviceDescriptor>();
+    devDesc->deviceId_ = 114914;
+    devDesc->deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    devDesc->macAddress_ = macAddress;
+    devDesc->deviceRole_ = OUTPUT_DEVICE;
+    audioRouter.callRenderRouters_.emplace_back(std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT,
+        nullptr, devDesc, nullptr, nullptr));
+    audioDeviceStatus.audioDeviceManager_.commRenderPrivacyDevices_.push_back(devDesc);
+    audioDeviceStatus.OnPrivacyDeviceSelected(devType, macAddress);
+}
+
 /**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreService_022

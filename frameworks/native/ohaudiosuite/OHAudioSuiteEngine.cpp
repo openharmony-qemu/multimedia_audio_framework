@@ -130,9 +130,11 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_CreatePipeline(
     OH_AudioSuiteEngine *audioSuiteEngine,
     OH_AudioSuitePipeline **audioSuitePipeline, OH_AudioSuite_PipelineWorkMode workMode)
 {
-    OHAudioSuiteEngine *suiteEngine = ConvertAudioSuiteEngine(audioSuiteEngine);
     CHECK_AND_RETURN_RET_LOG(audioSuiteEngine != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "CreatePipeline audioSuiteEngine is nullptr");
+    OHAudioSuiteEngine *suiteEngine = ConvertAudioSuiteEngine(audioSuiteEngine);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
+        AUDIOSUITE_ERROR_INVALID_PARAM, "CreatePipeline suiteEngine is nullptr");
 
     int32_t error = suiteEngine->CreatePipeline(audioSuitePipeline, workMode);
     return ConvertError(error);
@@ -487,10 +489,11 @@ using namespace OHOS::AudioStandard::AudioSuite;
 static constexpr int32_t EQ_FREQUENCY_BAND_GAINS_MIN = -10;
 static constexpr int32_t EQ_FREQUENCY_BAND_GAINS_MAX = 10;
 
-int32_t OHSuiteInputNodeWriteDataCallBack::OnWriteDataCallBack(void *audioData, int32_t audioDataSize, bool *finished)
+int32_t OHSuiteInputNodeRequestDataCallBack::OnRequestDataCallBack(
+    void *audioData, int32_t audioDataSize, bool *finished)
 {
-    CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, 0, "OnWriteDataCallBack callback is nullptr");
-    CHECK_AND_RETURN_RET_LOG(audioNode_ != nullptr, 0, "OnWriteDataCallBack OH_audioNode is nullptr");
+    CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, 0, "OnRequestDataCallBack callback is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioNode_ != nullptr, 0, "OnRequestDataCallBack OH_audioNode is nullptr");
 
     return callback_(audioNode_, userData_, audioData, audioDataSize, finished);
 }
@@ -641,16 +644,16 @@ int32_t OHAudioSuiteEngine::CreateNode(
     if (builder->GetNodeType() == NODE_TYPE_INPUT) {
         CHECK_AND_RETURN_RET_LOG(builder->IsSetRequestDataCallback() && builder->IsSetFormat(),
             static_cast<int32_t>(AUDIOSUITE_ERROR_REQUIRED_PARAMETERS_MISSING),
-            "Create input Node must set WriteDataCallBack and audio format.");
+            "Create input Node must set RequestDataCallback and audio format.");
     } else if (builder->GetNodeType() == NODE_TYPE_OUTPUT) {
         CHECK_AND_RETURN_RET_LOG(builder->IsSetFormat(),
             static_cast<int32_t>(AUDIOSUITE_ERROR_REQUIRED_PARAMETERS_MISSING),
             "Create output Node, must set aduio format.");
         CHECK_AND_RETURN_RET_LOG(!builder->IsSetRequestDataCallback(), ERR_NOT_SUPPORTED,
-            "Create output Node, can not set WriteDataCallBack.");
+            "Create output Node, can not set RequestDataCallback.");
     } else {
         CHECK_AND_RETURN_RET_LOG(!builder->IsSetRequestDataCallback() && !builder->IsSetFormat(), ERR_NOT_SUPPORTED,
-            "Create effect Node, can not set WriteDataCallBack and format.");
+            "Create effect Node, can not set RequestDataCallback and format.");
     }
 
     uint32_t nodeId = INVALID_NODE_ID;
@@ -658,22 +661,28 @@ int32_t OHAudioSuiteEngine::CreateNode(
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CreateNode failed, ret = %{public}d.", ret);
     CHECK_AND_RETURN_RET_LOG(nodeId != INVALID_PIPELINE_ID, ERR_OPERATION_FAILED, "CreateNode failed, nodeId invail");
 
-    OHAudioNode *node = new OHAudioNode(nodeId, nodeCfg.nodeType);
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, ERROR, "CreateNode failed, malloc failed.");
-
-    *audioNode = (OH_AudioNode *)node;
-    if (!builder->IsSetRequestDataCallback()) {
-        audioSuitePipeline->AddNode(node);
-        return AUDIOSUITE_SUCCESS;
+    if (builder->IsSetRequestDataCallback()) {
+        std::shared_ptr<OHSuiteInputNodeRequestDataCallBack> callback =
+            std::make_shared<OHSuiteInputNodeRequestDataCallBack>(reinterpret_cast<OH_AudioNode *>(audioNode),
+                builder->GetRequestDataCallback(), builder->GetCallBackUserData());
+        ret = IAudioSuiteManager::GetAudioSuiteManager().SetRequestDataCallback(nodeId, callback);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("CreateNode SetRequestDataCallback failed, ret = %{public}d.", ret);
+            IAudioSuiteManager::GetAudioSuiteManager().DestroyNode(nodeId);
+            return ret;
+        }
     }
 
-    std::shared_ptr<OHSuiteInputNodeWriteDataCallBack> callback =
-        std::make_shared<OHSuiteInputNodeWriteDataCallBack>(reinterpret_cast<OH_AudioNode *>(audioNode),
-            builder->GetRequestDataCallback(), builder->GetOnWriteUserData());
-    ret = IAudioSuiteManager::GetAudioSuiteManager().SetRequestDataCallback(nodeId, callback);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "CreateNode SetRequestDataCallback failed, ret = %{public}d.", ret);
+    OHAudioNode *node = new OHAudioNode(nodeId, nodeCfg.nodeType);
+    if (node == nullptr) {
+        AUDIO_ERR_LOG("CreateNode failed, malloc failed.");
+        IAudioSuiteManager::GetAudioSuiteManager().DestroyNode(nodeId);
+        return ERR_MEMORY_ALLOC_FAILED;
+    }
+
+    *audioNode = (OH_AudioNode *)node;
     audioSuitePipeline->AddNode(node);
-    return ret;
+    return SUCCESS;
 }
 
 int32_t OHAudioSuiteEngine::DestroyNode(OHAudioNode *node)
@@ -726,8 +735,9 @@ int32_t OHAudioSuiteEngine::SetAudioFormat(OHAudioNode *node, OH_AudioFormat *au
     CHECK_AND_RETURN_RET_LOG(audioFormat != nullptr, ERR_INVALID_PARAM,
         "SetAudioFormat failed, audioFormat is nullptr.");
     CHECK_AND_RETURN_RET_LOG((node->GetNodeType() == NODE_TYPE_INPUT) || (node->GetNodeType() == NODE_TYPE_OUTPUT),
-        ERR_NOT_SUPPORTED, "GetNodeBypassStatus failed, enable type %{public}d not support option.",
+        ERR_NOT_SUPPORTED, "SetAudioFormat failed, enable type %{public}d not support.",
         static_cast<int32_t>(node->GetNodeType()));
+    CHECK_AND_RETURN_RET(CheckAudioFormat(*audioFormat), AUDIOSUITE_ERROR_UNSUPPORTED_FORMAT);
 
     uint32_t nodeId = node->GetNodeId();
     AudioFormat format;

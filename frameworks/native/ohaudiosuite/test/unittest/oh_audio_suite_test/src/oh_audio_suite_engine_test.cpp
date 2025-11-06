@@ -32,7 +32,7 @@ void OHAudioSuiteEngineTest::TearDown(void) { }
 
 static const uint32_t MAX_PIPELINE_NUM = 10;
 
-static int32_t WriteDataCallback(OH_AudioNode *audioNode, void *userData,
+static int32_t RequestDataCallback(OH_AudioNode *audioNode, void *userData,
     void *audioData, int32_t audioDataSize, bool *finished)
 {
     if (finished != nullptr) {
@@ -54,13 +54,14 @@ static void CreateNode(OH_AudioSuitePipeline *pipeline, OH_AudioNode_Type type, 
         OH_AudioFormat audioFormat;
         audioFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_48000;
         audioFormat.channelCount = AudioChannel::STEREO;
+        audioFormat.channelLayout = OH_AudioChannelLayout::CH_LAYOUT_STEREO;
         audioFormat.sampleFormat = AUDIO_SAMPLE_U8;
         ret = OH_AudioSuiteNodeBuilder_SetFormat(builder, audioFormat);
         EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
     }
 
     if (type == INPUT_NODE_TYPE_DEFAULT) {
-        ret = OH_AudioSuiteNodeBuilder_SetRequestDataCallback(builder, WriteDataCallback, nullptr);
+        ret = OH_AudioSuiteNodeBuilder_SetRequestDataCallback(builder, RequestDataCallback, nullptr);
         EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
     }
 
@@ -76,7 +77,7 @@ static void CreateNode(OH_AudioSuitePipeline *pipeline, OH_AudioNode_Type type, 
  * @tc.number: OH_AudioSuiteEngine_Create_001
  * @tc.desc  : Test nullptr.
  */
-HWTEST(OHAudioSuiteUnitTest, OH_AudioSuiteEngine_Create_001, TestSize.Level0)
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_Create_001, TestSize.Level0)
 {
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(nullptr);
     EXPECT_EQ(ret, AUDIOSUITE_ERROR_INVALID_PARAM);
@@ -598,6 +599,12 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_StopPipeline_002, TestSize.Le
     ret = OH_AudioSuiteEngine_StartPipeline(pipeline);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
+    uint32_t audioDdata[2048] = {0};
+    int32_t writeSize = 0;
+    bool finish = false;
+    ret = OH_AudioSuiteEngine_RenderFrame(pipeline, (void *)audioDdata, sizeof(audioDdata), &writeSize, &finish);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
     ret = OH_AudioSuiteEngine_StopPipeline(pipeline);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
@@ -636,6 +643,12 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_StopPipeline_003, TestSize.Le
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     ret = OH_AudioSuiteEngine_StartPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    uint32_t audioDdata[2048] = {0};
+    int32_t writeSize = 0;
+    bool finish = false;
+    ret = OH_AudioSuiteEngine_RenderFrame(pipeline, (void *)audioDdata, sizeof(audioDdata), &writeSize, &finish);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     ret = OH_AudioSuiteEngine_StopPipeline(pipeline);
@@ -737,6 +750,12 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetPipelineState_003, TestSiz
     ret = OH_AudioSuiteEngine_GetPipelineState(pipeline, &pipelineState);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
     EXPECT_EQ(pipelineState, AUDIOSUITE_PIPELINE_RUNNING);
+
+    uint32_t audioDdata[2048] = {0};
+    int32_t writeSize = 0;
+    bool finish = false;
+    ret = OH_AudioSuiteEngine_RenderFrame(pipeline, (void *)audioDdata, sizeof(audioDdata), &writeSize, &finish);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     ret = OH_AudioSuiteEngine_StopPipeline(pipeline);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
@@ -2258,15 +2277,35 @@ HWTEST(OHAudioSuiteEngineTest, OHAudioSuiteEngine_RemovePipeline_001, TestSize.L
 HWTEST(OHAudioSuiteEngineTest, OHAudioSuitePipeline_RemoveNode_001, TestSize.Level0)
 {
     OHAudioSuitePipeline* pipeline = new OHAudioSuitePipeline(123);
-    OHAudioNode* node = new OHAudioNode(456, AudioSuite::AudioNodeType::NODE_TYPE_EQUALIZER);
-    pipeline->AddNode(node);
-    EXPECT_TRUE(pipeline->IsNodeExists(node));
+    OHAudioNode* eqNode = new OHAudioNode(456, AudioSuite::AudioNodeType::NODE_TYPE_EQUALIZER);
+    OHAudioNode* noiseNode = new OHAudioNode(111, AudioSuite::AudioNodeType::NODE_TYPE_NOISE_REDUCTION);
+    OHAudioNode* soundNode = new OHAudioNode(222, AudioSuite::AudioNodeType::NODE_TYPE_SOUND_FIELD);
+    OHAudioNode* aissNode = new OHAudioNode(333, AudioSuite::AudioNodeType::NODE_TYPE_AUDIO_SEPARATION);
+    OHAudioNode* beautifierNode = new OHAudioNode(444, AudioSuite::AudioNodeType::NODE_TYPE_VOICE_BEAUTIFIER);
+    pipeline->AddNode(eqNode);
+    pipeline->AddNode(noiseNode);
+    pipeline->AddNode(soundNode);
+    pipeline->AddNode(aissNode);
+    pipeline->AddNode(beautifierNode);
+    EXPECT_TRUE(pipeline->IsNodeExists(eqNode));
+    EXPECT_TRUE(pipeline->IsNodeExists(noiseNode));
+    EXPECT_TRUE(pipeline->IsNodeExists(soundNode));
+    EXPECT_TRUE(pipeline->IsNodeExists(aissNode));
+    EXPECT_TRUE(pipeline->IsNodeExists(beautifierNode));
 
-    pipeline->RemoveNode(node);
-    EXPECT_FALSE(pipeline->IsNodeExists(node));
+    pipeline->RemoveNode(eqNode);
+    pipeline->RemoveNode(noiseNode);
+    pipeline->RemoveNode(soundNode);
+    pipeline->RemoveNode(aissNode);
+    pipeline->RemoveNode(beautifierNode);
+    EXPECT_FALSE(pipeline->IsNodeExists(eqNode));
+    EXPECT_FALSE(pipeline->IsNodeExists(noiseNode));
+    EXPECT_FALSE(pipeline->IsNodeExists(soundNode));
+    EXPECT_FALSE(pipeline->IsNodeExists(aissNode));
+    EXPECT_FALSE(pipeline->IsNodeExists(beautifierNode));
 
     pipeline->RemoveNode(nullptr);
-    EXPECT_FALSE(pipeline->IsNodeExists(node));
+    EXPECT_FALSE(pipeline->IsNodeExists(eqNode));
     delete pipeline;
 }
 
@@ -2415,9 +2454,13 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetEnvironmentType_002, TestS
     OH_AudioNode *audioNode = nullptr;
     CreateNode(pipeline, EFFECT_NODE_TYPE_ENVIRONMENT_EFFECT, &audioNode);
 
+    ret = OH_AudioSuiteEngine_SetEnvironmentType(audioNode, ENVIRONMENT_TYPE_EARPIECE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
     OH_EnvironmentType environmentType;
     ret = OH_AudioSuiteEngine_GetEnvironmentType(audioNode, &environmentType);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    EXPECT_EQ(environmentType, ENVIRONMENT_TYPE_EARPIECE);
 
     ret = OH_AudioSuiteEngine_DestroyNode(audioNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
@@ -2485,9 +2528,13 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetSoundFieldType_002, TestSi
     OH_AudioNode *audioNode = nullptr;
     CreateNode(pipeline, EFFECT_NODE_TYPE_SOUND_FIELD, &audioNode);
 
+    ret = OH_AudioSuiteEngine_SetSoundFieldType(audioNode, SOUND_FIELD_NEAR);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
     OH_SoundFieldType soundFieldType;
     ret = OH_AudioSuiteEngine_GetSoundFieldType(audioNode, &soundFieldType);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    EXPECT_EQ(soundFieldType, SOUND_FIELD_NEAR);
 
     ret = OH_AudioSuiteEngine_DestroyNode(audioNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
@@ -2554,6 +2601,9 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetEqualizerFrequencyBandGain
 
     OH_AudioNode *audioNode = nullptr;
     CreateNode(pipeline, EFFECT_NODE_TYPE_EQUALIZER, &audioNode);
+
+    ret = OH_AudioSuiteEngine_SetEqualizerFrequencyBandGains(audioNode, OH_EQUALIZER_PARAM_BALLADS);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
 
     OH_EqualizerFrequencyBandGains frequencyBandGains;
     ret = OH_AudioSuiteEngine_GetEqualizerFrequencyBandGains(audioNode, &frequencyBandGains);
@@ -2625,9 +2675,13 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetVoiceBeautifierType_002, T
     OH_AudioNode *audioNode = nullptr;
     CreateNode(pipeline, EFFECT_NODE_TYPE_VOICE_BEAUTIFIER, &audioNode);
 
+    ret = OH_AudioSuiteEngine_SetVoiceBeautifierType(audioNode, VOICE_BEAUTIFIER_TYPE_CD);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
     OH_VoiceBeautifierType voiceBeautifierType;
     ret = OH_AudioSuiteEngine_GetVoiceBeautifierType(audioNode, &voiceBeautifierType);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+    EXPECT_EQ(voiceBeautifierType, VOICE_BEAUTIFIER_TYPE_CD);
 
     ret = OH_AudioSuiteEngine_DestroyNode(audioNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);

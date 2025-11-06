@@ -808,39 +808,6 @@ HWTEST_F(AudioCoreServiceUnitTest, HandleNearlinkErrResult_001, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioCoreService.
-* @tc.number: IsVoiceStreamType_001
-* @tc.desc  : Test IsVoiceStreamType
-*/
-HWTEST_F(AudioCoreServiceUnitTest, IsVoiceStreamType_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsVoiceStreamType_001 start");
-    auto coreSvc = AudioCoreService::GetCoreService();
-    EXPECT_NE(coreSvc, nullptr);
-    EXPECT_TRUE(coreSvc->IsVoiceStreamType(StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION));
-    EXPECT_TRUE(coreSvc->IsVoiceStreamType(StreamUsage::STREAM_USAGE_NOTIFICATION_RINGTONE));
-    EXPECT_TRUE(coreSvc->IsVoiceStreamType(StreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION));
-    EXPECT_TRUE(coreSvc->IsVoiceStreamType(StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION));
-    EXPECT_TRUE(coreSvc->IsVoiceStreamType(StreamUsage::STREAM_USAGE_VOICE_RINGTONE));
-    EXPECT_FALSE(coreSvc->IsVoiceStreamType(StreamUsage::STREAM_USAGE_MUSIC));
-}
-
-/**
-* @tc.name  : Test AudioCoreService.
-* @tc.number: IsVoiceSourceType_001
-* @tc.desc  : Test IsVoiceSourceType
-*/
-HWTEST_F(AudioCoreServiceUnitTest, IsVoiceSourceType_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioCoreServiceUnitTest IsVoiceSourceType_001 start");
-    auto coreSvc = AudioCoreService::GetCoreService();
-    EXPECT_NE(coreSvc, nullptr);
-    EXPECT_TRUE(coreSvc->IsVoiceSourceType(SourceType::SOURCE_TYPE_VOICE_CALL));
-    EXPECT_TRUE(coreSvc->IsVoiceSourceType(SourceType::SOURCE_TYPE_VOICE_COMMUNICATION));
-    EXPECT_FALSE(coreSvc->IsVoiceSourceType(SourceType::SOURCE_TYPE_MIC));
-}
-
-/**
-* @tc.name  : Test AudioCoreService.
 * @tc.number: TriggerFetchDevice_001
 * @tc.desc  : Test TriggerFetchDevice - will return error because not init coreService.
 */
@@ -1988,6 +1955,37 @@ HWTEST_F(AudioCoreServiceUnitTest, PlayBackToInjection_001, TestSize.Level1)
     ASSERT_NE(audioCoreService, nullptr);
     int32_t ret = audioCoreService->PlayBackToInjection(1111);
     EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: HandleMuteBeforeDeviceSwitch_001
+ * @tc.desc  : Test AudioCoreService::HandleMuteBeforeDeviceSwitch()
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandleMuteBeforeDeviceSwitch_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::vector<AudioStreamStatus> streamStatusVec = {
+        STREAM_STATUS_NEW,
+        STREAM_STATUS_STARTED,
+        STREAM_STATUS_PAUSED,
+        STREAM_STATUS_STOPPED,
+        STREAM_STATUS_RELEASED
+    };
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    for (auto status : streamStatusVec) {
+        std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+        streamDesc->streamStatus_ = status;
+        streamDescs.push_back(streamDesc);
+    }
+
+    AudioStreamDeviceChangeReasonExt::ExtEnum extReason = AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE;
+    AudioStreamDeviceChangeReasonExt reason(extReason);
+
+    auto result = audioCoreService->HandleMuteBeforeDeviceSwitch(streamDescs, reason);
+    EXPECT_TRUE(result);
 }
 
 /**

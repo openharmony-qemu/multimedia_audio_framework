@@ -321,7 +321,7 @@ public:
      * @param streamType Stream type to start.
      * @return Returns the status code for this function called.
      */
-    virtual int32_t StartPlaying(const std::string &device, uint32_t streamType) = 0;
+    virtual int32_t StartPlaying(const std::string &device, uint32_t streamType, int32_t timeoutMs) = 0;
 
     /**
      * @brief Stop audio streaming to a device.
@@ -353,7 +353,7 @@ public:
      * @param streamType Stream type associated with the selection.
      * @return int32_t
      */
-    virtual int32_t SendUserSelection(const std::string &device, uint32_t streamType) = 0;
+    virtual int32_t SendUserSelection(const std::string &device, uint32_t streamType, int32_t eventType) = 0;
 
     /**
      * @brief Get the delay from a device.

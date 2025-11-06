@@ -16,6 +16,7 @@
 #include "audio_endpoint.h"
 #include "audio_endpoint_private.h"
 #include "audio_service.h"
+#include "audio_thread_task.h"
 
 using namespace std;
 
@@ -26,6 +27,7 @@ const int32_t NUM_2 = 2;
 const int32_t AUDIOCHANNELSIZE = 17;
 const int32_t ENDPOINTTYPESIZE = 4;
 const int32_t SAVE_FOREGROUND_LIST_NUM = 11;
+static const std::string THREAD_NAME = "FuzzTestThreadName";
 static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
@@ -527,21 +529,13 @@ void AudioServiceUpdateForegroundStateFuzzTest()
     if (audioService == nullptr) {
         return;
     }
-    uint32_t appTokenId = GetData<uint32_t>();
-    bool isActive = GetData<bool>();
-
-    audioService->UpdateForegroundState(appTokenId, isActive);
-}
-
-void AudioServiceDumpForegroundListFuzzTest()
-{
-    shared_ptr<AudioService> audioService = make_shared<AudioService>();
-    if (audioService == nullptr) {
-        return;
-    }
     std::string dumpString = "test_dump_string";
     audioService->foregroundSet_.insert("_success");
     audioService->DumpForegroundList(dumpString);
+
+    uint32_t appTokenId = GetData<uint32_t>();
+    bool isActive = GetData<bool>();
+    audioService->UpdateForegroundState(appTokenId, isActive);
 }
 
 void AudioServiceRemoveRendererFuzzTest()
@@ -865,9 +859,28 @@ void AudioServiceSetLatestMuteStateFuzzTest()
     audioService->SetLatestMuteState(sessionId, muteFlag);
 }
 
+void AudioThreadTaskFuzzTest()
+{
+    std::unique_ptr<AudioThreadTask> audioThreadTask;
+    audioThreadTask = std::make_unique<AudioThreadTask>(THREAD_NAME);
+    CHECK_AND_RETURN(audioThreadTask != nullptr);
+    auto myJob = []() {
+        AUDIO_INFO_LOG("Hello Fuzz Test!");
+    };
+    audioThreadTask->RegisterJob(std::move(myJob));
+    audioThreadTask->Start();
+    audioThreadTask->CheckThreadIsRunning();
+    audioThreadTask->Pause();
+    audioThreadTask->Start();
+    audioThreadTask->PauseAsync();
+    audioThreadTask->Start();
+    audioThreadTask->StopAsync();
+    audioThreadTask->Start();
+    audioThreadTask->Stop();
+}
+
 TestPtr g_testPtrs[] = {
 #ifdef HAS_FEATURE_INNERCAPTURER
-    AudioServiceOnProcessReleaseFuzzTest,
     AudioServiceCheckInnerCapForRendererFuzzTest,
     AudioServiceResetAudioEndpointFuzzTest,
     AudioServiceReLinkProcessToEndpointFuzzTest,
@@ -889,7 +902,6 @@ TestPtr g_testPtrs[] = {
     AudioServiceSaveForegroundListFuzzTest,
     AudioServiceMatchForegroundListFuzzTest,
     AudioServiceUpdateForegroundStateFuzzTest,
-    AudioServiceDumpForegroundListFuzzTest,
     AudioServiceRemoveRendererFuzzTest,
     AudioServiceInsertCapturerFuzzTest,
     AudioServiceAddFilteredRenderFuzzTest,
@@ -934,6 +946,15 @@ bool FuzzTest(const uint8_t* rawData, size_t size)
 
 } // namespace AudioStandard
 } // namesapce OHOS
+
+extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
+{
+#ifdef HAS_FEATURE_INNERCAPTURER
+    OHOS::AudioStandard::AudioServiceOnProcessReleaseFuzzTest();
+#endif
+    OHOS::AudioStandard::AudioThreadTaskFuzzTest();
+    return 0;
+}
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)

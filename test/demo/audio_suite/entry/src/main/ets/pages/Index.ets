@@ -54,7 +54,7 @@ struct Index {
     Navigation(this.papageInfos) {
       Column() {
         Column() {
-          Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.Center, alignItems: ItemAlign.Center }) {
+          Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.Start, alignItems: ItemAlign.Center }) {
             Column() {
               Image($r('app.media.icon_home_clip'))
                 .width(StyleConst.SIXTY_PERCENT_WIDTH)
@@ -91,7 +91,7 @@ struct Index {
         .margin({bottom:'5%'})
 
         Column() {
-          Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.Center, alignItems: ItemAlign.Center }) {
+          Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.Start, alignItems: ItemAlign.Center }) {
             Column() {
               Image($r('app.media.icon_home_clip'))
                 .width(StyleConst.SIXTY_PERCENT_WIDTH)
@@ -128,7 +128,7 @@ struct Index {
         .backgroundColor($r('app.color.index_audio_clip_card'))
 
         Column() {
-          Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.Center, alignItems: ItemAlign.Center }) {
+          Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.Start, alignItems: ItemAlign.Center }) {
             Column() {
               Image($r('app.media.icon_home_clip'))
                 .width(StyleConst.SIXTY_PERCENT_WIDTH)
@@ -165,7 +165,7 @@ struct Index {
         .backgroundColor($r('app.color.index_audio_clip_card'))
 
         Column() {
-          Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.Center, alignItems: ItemAlign.Center }) {
+          Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.Start, alignItems: ItemAlign.Center }) {
             Column() {
               Image($r('app.media.hand_tap'))
                 .width(StyleConst.SIXTY_PERCENT_WIDTH)

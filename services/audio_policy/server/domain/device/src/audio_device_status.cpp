@@ -62,16 +62,6 @@ static std::string GetEncryptAddr(const std::string &addr)
     return out;
 }
 
-static std::string GetField(const std::string &src, const char* field, const char sep)
-{
-    auto str = std::string(field) + '=';
-    auto pos = src.find(str);
-    CHECK_AND_RETURN_RET(pos != std::string::npos, "");
-    pos += str.length();
-    auto end = src.find(sep, pos);
-    return end == std::string::npos ? src.substr(pos) : src.substr(pos, end - pos);
-}
-
 static bool CheckNeedExclude(const AudioDeviceDescriptor &desc, bool isConnected)
 {
     bool exclude{false};
@@ -1545,7 +1535,7 @@ int32_t AudioDeviceStatus::RestoreNewA2dpPort(std::vector<std::shared_ptr<AudioS
     AudioIOHandle ioHandle;
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        ioHandle = audioPolicyManager_.ReloadAudioPort(moduleInfo, paIndex);
+        ioHandle = audioPolicyManager_.ReloadA2dpAudioPort(moduleInfo, paIndex);
     } else {
         ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo, paIndex);
     }

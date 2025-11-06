@@ -785,9 +785,11 @@ void RendererInServer::OnWriteDataFinish()
     UpdateStreamInfo();
 }
 
-int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
+int32_t RendererInServer::WriteData(int8_t *inputData, size_t requestDataLen)
 {
     size_t requestDataInFrame = requestDataLen / byteSizePerFrame_;
+
+    std::lock_guard lock(writeLock_);
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     CHECK_AND_RETURN_RET_LOG(spanSizeInFrame_ != 0, ERR_OPERATION_FAILED, "invalid span size");
@@ -806,39 +808,16 @@ int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
     }
 
     RingBufferWrapper ringBufferDesc; // will be changed in GetReadbuffer
-    if (audioServerBuffer_->GetAllReadableBufferFromPosFrame(currentReadFrame, ringBufferDesc) == SUCCESS) {
-        if (ringBufferDesc.dataLength < requestDataLen) {
-            AUDIO_ERR_LOG("data not enouth");
-            return ERR_INVALID_PARAM;
-        }
-        ringBufferDesc.dataLength = requestDataLen;
-        ProcessFadeOutIfNeeded(ringBufferDesc, currentReadFrame, currentWriteFrame, requestDataInFrame);
+    int32_t ret = audioServerBuffer_->GetAllReadableBufferFromPosFrame(currentReadFrame, ringBufferDesc);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "WriteData GetReadbuffer failed");
+    CHECK_AND_RETURN_RET_LOG(ringBufferDesc.dataLength >= requestDataLen, ERR_INVALID_PARAM, "data not enouth");
 
-        CopyDataToInputBuffer(inputData, requestDataLen, ringBufferDesc);
-
-        BufferDesc bufferDesc = {
-            .buffer = reinterpret_cast<uint8_t*>(inputData),
-            .bufLength = requestDataLen,
-            .dataLength = requestDataLen
-        };
-
-        if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
-            DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
-            AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
-                static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
-        }
-
-        OtherStreamEnqueue(bufferDesc);
-        audioStreamChecker_->RecordNormalFrame();
-        WriteMuteDataSysEvent(bufferDesc);
-        ringBufferDesc.SetBuffersValueWithSpecifyDataLen(0); // clear is needed for reuse.
-        uint64_t nextReadFrame = currentReadFrame + requestDataInFrame;
-        audioServerBuffer_->SetCurReadFrame(nextReadFrame);
-    } else {
-        Trace trace3("RendererInServer::WriteData GetReadbuffer failed");
-    }
-
-    OnWriteDataFinish();
+    ringBufferDesc.dataLength = requestDataLen;
+    ProcessFadeOutIfNeeded(ringBufferDesc, currentReadFrame, currentWriteFrame, requestDataInFrame);
+    CopyDataToInputBuffer(inputData, requestDataLen, ringBufferDesc);
+    ringBufferDesc.SetBuffersValueWithSpecifyDataLen(0); // clear is needed for reuse.
+    uint64_t nextReadFrame = currentReadFrame + requestDataInFrame;
+    audioServerBuffer_->SetCurReadFrame(nextReadFrame);
 
     return SUCCESS;
 }
@@ -2628,9 +2607,16 @@ bool RendererInServer::IsMovieStream()
 
 int32_t RendererInServer::SetTarget(RenderTarget target, int32_t &ret)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "verify system permission failed");
     if (target == lastTarget_) {
         ret = SUCCESS;
         return ret;
+    }
+    if (target == INJECT_TO_VOICE_COMMUNICATION_CAPTURE) {
+        auto tokenId = IPCSkeleton::GetCallingTokenID();
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyPermission(INJECT_PLAYBACK_TO_AUDIO_CAPTURE_PERMISSION, tokenId),
+            ERR_PERMISSION_DENIED, "verify permission failed");
     }
     if (status_ == I_STATUS_IDLE || status_ == I_STATUS_PAUSED || status_ == I_STATUS_STOPPED) {
         ret = CoreServiceHandler::GetInstance().SetRendererTarget(target, lastTarget_, streamIndex_);
@@ -2665,6 +2651,29 @@ void RendererInServer::WaitForDataConnection()
             });
         AUDIO_INFO_LOG("data-connection blocking ends, reason %{public}s.", stopWaiting ? "connected" : "timeout");
     }
+}
+
+int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
+{
+    int32_t ret = WriteData(inputData, requestDataLen);
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+
+    BufferDesc bufferDesc = {
+        .buffer = reinterpret_cast<uint8_t*>(inputData),
+        .bufLength = requestDataLen,
+        .dataLength = requestDataLen
+    };
+    if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
+        DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
+        AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
+            static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
+    }
+    OtherStreamEnqueue(bufferDesc);
+    audioStreamChecker_->RecordNormalFrame();
+    WriteMuteDataSysEvent(bufferDesc);
+
+    OnWriteDataFinish();
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

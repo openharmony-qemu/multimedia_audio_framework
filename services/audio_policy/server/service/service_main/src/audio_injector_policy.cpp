@@ -173,7 +173,7 @@ void AudioInjectorPolicy::SetVoipType(VoipType type)
     voipType_ = type;
 }
 
-void AudioInjectorPolicy::ReleaseCaptureInjector(uint32_t streamId)
+void AudioInjectorPolicy::ReleaseCaptureInjector()
 {
     std::lock_guard<std::shared_mutex> lock(injectLock_);
     CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "Injector::pipeManager_ is null");

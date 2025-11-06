@@ -17,6 +17,7 @@
 #define LOG_TAG "OHAudioSuiteBuilder"
 #endif
 
+#include <cinttypes>
 #include <string>
 #include <thread>
 #include "audio_utils.h"
@@ -99,6 +100,35 @@ namespace AudioStandard {
 
 using namespace OHOS::AudioStandard::AudioSuite;
 
+static bool CheckChannelInfoValid(int32_t channelCount, OH_AudioChannelLayout channelLayout)
+{
+    AUDIO_DEBUG_LOG("Check channelCount:%{public}d, channelLayout:%{public}" PRIu64, channelCount, channelLayout);
+    switch (channelCount) {
+        case AudioChannel::MONO:
+        case AudioChannel::STEREO:
+            break;
+        default:
+            return false;
+    }
+
+    switch (channelLayout) {
+        case OH_AudioChannelLayout::CH_LAYOUT_MONO:
+            return channelCount == AudioChannel::MONO;
+        case OH_AudioChannelLayout::CH_LAYOUT_STEREO:
+        case OH_AudioChannelLayout::CH_LAYOUT_STEREO_DOWNMIX:
+            return channelCount == AudioChannel::STEREO;
+        default:
+            return false;
+    }
+
+    return false;
+}
+
+bool CheckAudioFormat(OH_AudioFormat audioFormat)
+{
+    return CheckChannelInfoValid(audioFormat.channelCount, audioFormat.channelLayout);
+}
+
 OHAudioSuiteNodeBuilder::~OHAudioSuiteNodeBuilder()
 {
     AUDIO_INFO_LOG("OHAudioSuiteNodeBuilder destroyed, type is %{public}d", static_cast<int32_t>(nodeType_));
@@ -106,14 +136,8 @@ OHAudioSuiteNodeBuilder::~OHAudioSuiteNodeBuilder()
 
 OH_AudioSuite_Result OHAudioSuiteNodeBuilder::SetFormat(OH_AudioFormat audioFormat)
 {
-    CHECK_AND_RETURN_RET_LOG(((nodeType_ == NODE_TYPE_INPUT) || (nodeType_ == NODE_TYPE_OUTPUT)),
-        AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION, "Set suite node format Error, only input and output node "
-        "support set, nodeType = %{public}d.", static_cast<int32_t>(nodeType_));
-
-    CHECK_AND_RETURN_RET_LOG(CheckSamplingRateVaild(audioFormat.samplingRate), AUDIOSUITE_ERROR_UNSUPPORTED_FORMAT,
-        "SetFormat failed SamplingRate invailed, nodeType = %{public}d.", static_cast<int32_t>(nodeType_));
-    CHECK_AND_RETURN_RET_LOG(CheckChannelCountVaild(audioFormat.channelCount), AUDIOSUITE_ERROR_UNSUPPORTED_FORMAT,
-        "SetFormat failed ChannelCount invailed, nodeType = %{public}d.", static_cast<int32_t>(nodeType_));
+    CHECK_AND_RETURN_RET_LOG(CheckAudioFormat(audioFormat), AUDIOSUITE_ERROR_UNSUPPORTED_FORMAT,
+        "SetFormat failed AudioFormat invailed, nodeType = %{public}d.", static_cast<int32_t>(nodeType_));
 
     nodeFormat_.audioChannelInfo.channelLayout = static_cast<AudioChannelLayout>(audioFormat.channelLayout);
     nodeFormat_.audioChannelInfo.numChannels = audioFormat.channelCount;
@@ -127,13 +151,11 @@ OH_AudioSuite_Result OHAudioSuiteNodeBuilder::SetFormat(OH_AudioFormat audioForm
 OH_AudioSuite_Result OHAudioSuiteNodeBuilder::SetRequestDataCallback(
     OH_InputNode_RequestDataCallback callback, void *userData)
 {
-    CHECK_AND_RETURN_RET_LOG(nodeType_ == NODE_TYPE_INPUT, AUDIOSUITE_ERROR_UNSUPPORTED_OPERATION,
-        "SetRequestDataCallback Error, only input node support set.");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr,
         AUDIOSUITE_ERROR_INVALID_PARAM, "SetRequestDataCallback failed, callback is nullptr");
 
-    onWriteDataCallBack_ = callback;
-    onWriteDataUserData_ = userData;
+    requestDataCallBack_ = callback;
+    callBackUserData_ = userData;
     return AUDIOSUITE_SUCCESS;
 }
 
@@ -148,46 +170,9 @@ OH_AudioSuite_Result OHAudioSuiteNodeBuilder::Reset()
     nodeType_ = NODE_TYPE_EMPTY;
     nodeFormat_ = {};
     setNodeFormat_ = false;
-    onWriteDataCallBack_ = nullptr;
-    onWriteDataUserData_ = nullptr;
+    requestDataCallBack_ = nullptr;
+    callBackUserData_ = nullptr;
     return AUDIOSUITE_SUCCESS;
-}
-
-bool OHAudioSuiteNodeBuilder::CheckSamplingRateVaild(int32_t samplingRate) const
-{
-    switch (samplingRate) {
-        case AudioSamplingRate::SAMPLE_RATE_8000:
-        case AudioSamplingRate::SAMPLE_RATE_11025:
-        case AudioSamplingRate::SAMPLE_RATE_12000:
-        case AudioSamplingRate::SAMPLE_RATE_16000:
-        case AudioSamplingRate::SAMPLE_RATE_22050:
-        case AudioSamplingRate::SAMPLE_RATE_24000:
-        case AudioSamplingRate::SAMPLE_RATE_32000:
-        case AudioSamplingRate::SAMPLE_RATE_44100:
-        case AudioSamplingRate::SAMPLE_RATE_48000:
-        case AudioSamplingRate::SAMPLE_RATE_64000:
-        case AudioSamplingRate::SAMPLE_RATE_88200:
-        case AudioSamplingRate::SAMPLE_RATE_96000:
-        case AudioSamplingRate::SAMPLE_RATE_176400:
-        case AudioSamplingRate::SAMPLE_RATE_192000:
-        case AudioSamplingRate::SAMPLE_RATE_384000:
-            return true;
-        default:
-            AUDIO_ERR_LOG("sampleFormat input value is invalid, %{public}d", samplingRate);
-    }
-    return false;
-}
-
-bool OHAudioSuiteNodeBuilder::CheckChannelCountVaild(int32_t channelCount) const
-{
-    switch (channelCount) {
-        case AudioChannel::MONO:
-        case AudioChannel::STEREO:
-            return true;
-        default:
-            AUDIO_ERR_LOG("channelCount input value is invalid, %{public}d", channelCount);
-    }
-    return false;
 }
 
 AudioNodeType OHAudioSuiteNodeBuilder::GetNodeType() const
@@ -202,7 +187,7 @@ bool OHAudioSuiteNodeBuilder::IsSetFormat() const
 
 bool OHAudioSuiteNodeBuilder::IsSetRequestDataCallback() const
 {
-    return onWriteDataCallBack_ != nullptr;
+    return requestDataCallBack_ != nullptr;
 }
 
 AudioFormat OHAudioSuiteNodeBuilder::GetNodeFormat() const
@@ -212,12 +197,12 @@ AudioFormat OHAudioSuiteNodeBuilder::GetNodeFormat() const
 
 OH_InputNode_RequestDataCallback OHAudioSuiteNodeBuilder::GetRequestDataCallback() const
 {
-    return onWriteDataCallBack_;
+    return requestDataCallBack_;
 }
 
-void *OHAudioSuiteNodeBuilder::GetOnWriteUserData() const
+void *OHAudioSuiteNodeBuilder::GetCallBackUserData() const
 {
-    return onWriteDataUserData_;
+    return callBackUserData_;
 }
 
 }  // namespace AudioStandard

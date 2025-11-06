@@ -1722,8 +1722,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_002, TestSize.
     SetInjectEnable(true);
     manager.UpdateStreamSampleInfo(desc, streamInfo);
     
-    // Should not modify since it's already 16000
-    EXPECT_EQ(streamInfo.samplingRate, SAMPLE_RATE_16000);
+    // Should modify streamInfo since desc's rate is not 16000.
+    EXPECT_EQ(streamInfo.samplingRate, SAMPLE_RATE_48000);
 }
 
 /**

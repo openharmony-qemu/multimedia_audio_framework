@@ -521,7 +521,6 @@ void AudioCoreService::CheckAndSetCurrentOutputDevice(std::shared_ptr<AudioDevic
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
     CHECK_AND_RETURN_LOG(!IsSameDevice(desc, audioActiveDevice_.GetCurrentOutputDevice()), "same device");
     audioActiveDevice_.SetCurrentOutputDevice(*(desc));
-    std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkName(desc, sessionId);
     OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice(),
         AudioStreamDeviceChangeReason::STREAM_PRIORITY_CHANGED);
 }
@@ -594,8 +593,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         streamCollector_.UpdateCapturerDeviceInfo(deviceDesc);
     }
     streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
-    bool isGameApp = ClientTypeManager::GetInstance()->GetClientTypeByUid(GetRealUid(streamDesc)) != CLIENT_TYPE_GAME;
-    sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc, false, isGameApp);
+    sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc, false);
 
     CheckForRemoteDeviceState(deviceDesc);
     return SUCCESS;
@@ -969,9 +967,8 @@ int32_t AudioCoreService::GetCurrentRendererChangeInfos(vector<shared_ptr<AudioR
                 audioRendererChangeInfos[i]->outputDeviceInfo), "skip callback when device in zone");
             std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(
                 audioRendererChangeInfos[i]->sessionId);
-            CHECK_AND_CONTINUE_LOG(streamDesc != nullptr, "GetStreamDescById return nullptr");
-            CHECK_AND_CONTINUE_LOG(streamDesc->rendererTarget_ != INJECT_TO_VOICE_COMMUNICATION_CAPTURE,
-                "skip callback when stream is inject mode");
+            CHECK_AND_CONTINUE(streamDesc != nullptr);
+            CHECK_AND_CONTINUE(streamDesc->rendererTarget_ != INJECT_TO_VOICE_COMMUNICATION_CAPTURE);
             audioDeviceCommon_.UpdateDeviceInfo(audioRendererChangeInfos[i]->outputDeviceInfo, *itr,
                 hasBTPermission, hasSystemPermission);
         }
@@ -1423,9 +1420,11 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
         UpdateStreamDevicesForStart(streamDesc, caller + "FetchOutputDeviceAndRoute");
     }
 
+    // this will update volume device map
+    audioActiveDevice_.UpdateStreamDeviceMap("FetchOutputDeviceAndRoute");
+    // here will update volume， must after UpdateStreamDeviceMap
     UpdateActiveDeviceAndVolumeBeforeMoveSession(outputStreamDescs, reason);
 
-    audioActiveDevice_.UpdateStreamDeviceMap("FetchOutputDeviceAndRoute");
     int32_t ret = FetchRendererPipesAndExecute(outputStreamDescs, reason);
     UpdateModemRoute(modemDescs);
     if (IsNoRunningStream(outputStreamDescs)) {
@@ -1463,7 +1462,7 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute(std::string caller, const Aud
         }
 
         // handle nearlink
-        int32_t inputRet = ActivateInputDevice(streamDesc);
+        int32_t inputRet = ActivateInputDevice(streamDesc, reason);
         CHECK_AND_RETURN_RET_LOG(inputRet == SUCCESS, inputRet, "Activate input device failed");
 
         if (needUpdateActiveDevice) {
@@ -1599,19 +1598,19 @@ int32_t AudioCoreService::SetRendererTarget(RenderTarget target, RenderTarget la
 int32_t AudioCoreService::StartInjection(uint32_t streamId)
 {
     bool isConnected = audioInjectorPolicy_.GetIsConnected();
-    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERR_NULL_POINTER, "pipeManager_ is null");
+    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERR_NULL_POINTER, "Injector::pipeManager_ is null");
     if (!isConnected && pipeManager_->IsCaptureVoipCall() == NO_VOIP) {
         return ERR_ILLEGAL_STATE;
     }
     int32_t ret = ERROR;
     ret = audioInjectorPolicy_.AddCaptureInjector();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "AddCaptureInjector failed");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Injector::AddCaptureInjector failed");
     std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(streamId);
-    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERROR, "get streamDesc failed");
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERROR, "Injector::get streamDesc failed");
     streamDesc->rendererTarget_ = INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
     ret = AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnForcedDeviceSelected",
         AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "move stream in failed");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Injector::move stream in failed");
     audioInjectorPolicy_.AddStreamDescriptor(streamId, streamDesc);
     return SUCCESS;
 }
@@ -1621,9 +1620,9 @@ void AudioCoreService::RemoveIdForInjector(uint32_t streamId)
     audioInjectorPolicy_.RemoveStreamDescriptor(streamId);
 }
 
-void AudioCoreService::ReleaseCaptureInjector(uint32_t streamId)
+void AudioCoreService::ReleaseCaptureInjector()
 {
-    audioInjectorPolicy_.ReleaseCaptureInjector(streamId);
+    audioInjectorPolicy_.ReleaseCaptureInjector();
 }
 
 void AudioCoreService::RebuildCaptureInjector(uint32_t streamId)

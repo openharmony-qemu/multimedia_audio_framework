@@ -1417,7 +1417,21 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
     }
 }
 
-AudioIOHandle AudioAdapterManager::ReloadAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t &paIndex)
+void AudioAdapterManager::ReloadAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t &paIndex)
+{
+    std::string moduleArgs = GetModuleArgs(audioModuleInfo);
+    AUDIO_INFO_LOG("[PipeExecInfo] PA moduleArgs %{public}s", moduleArgs.c_str());
+
+    CHECK_AND_RETURN_LOG(audioServiceAdapter_ != nullptr, "ServiceAdapter is null");
+    CHECK_AND_RETURN_LOG(audioServerProxy_ != nullptr, "audioServerProxy_ null");
+
+    int32_t ret = audioServiceAdapter_->ReloadAudioPort(audioModuleInfo.lib, audioModuleInfo);
+    paIndex = ret < 0 ? HDI_INVALID_ID : static_cast<uint32_t>(ret);
+
+    AUDIO_INFO_LOG("[PipeExecInfo] Reload audio port, paIndex: %{public}u end", paIndex);
+}
+
+AudioIOHandle AudioAdapterManager::ReloadA2dpAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t &paIndex)
 {
     std::string moduleArgs = GetModuleArgs(audioModuleInfo);
     AUDIO_INFO_LOG("[PipeExecInfo] PA moduleArgs %{public}s", moduleArgs.c_str());
@@ -2295,7 +2309,7 @@ void AudioAdapterManager::InitMuteStatusMap(bool isFirstBoot)
 void  AudioAdapterManager::CheckAndDealMuteStatus(const DeviceType &deviceType, const AudioStreamType &streamType)
 {
     auto desc = audioConnectedDevice_.GetDeviceByDeviceType(deviceType);
-    if (streamType == STREAM_RING) {
+    if (streamType == STREAM_RING && !VolumeUtils::IsPCVolumeEnable()) {
         bool muteStateForStreamRing = (ringerMode_ == RINGER_MODE_NORMAL) ? false : true;
         AUDIO_INFO_LOG("fist boot ringer mode:%{public}d, stream ring mute state:%{public}d", ringerMode_,
             muteStateForStreamRing);
@@ -2996,7 +3010,6 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volum
         volumeDataMaintainer_.SaveVolumeToMap(desc, STREAM_MUSIC, volume);
         bool mute = volume == 0;
         isAbsVolumeMute_ = mute;
-        SetStreamMute(STREAM_MUSIC, mute);
     }
 
     volumeDataMaintainer_.InitDeviceVolumeMap(desc);
@@ -3315,7 +3328,9 @@ void AudioAdapterManager::UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDev
     CHECK_AND_RETURN_LOG(desc != nullptr, "UptdateVolumeWhenDeviceConnect desc is null");
     volumeDataMaintainer_.InitDeviceVolumeMap(desc);
     volumeDataMaintainer_.InitDeviceMuteMap(desc);
-    AUDIO_INFO_LOG("update ok");
+    CHECK_AND_RETURN_LOG(isCastingConnect_ && (desc->deviceType_ == DEVICE_TYPE_DP), "update ok");
+    SetMaxVolumeForDpBoardcast();
+    AUDIO_INFO_LOG("update ok for dp casting");
 }
 
 int32_t AudioAdapterManager::SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree)
@@ -3429,17 +3444,36 @@ int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDev
     return SUCCESS;
 }
 
-bool AudioAdapterManager::SetMaxVolumeForDpBoardcast()
+void AudioAdapterManager::HandleCastingConnection()
 {
+    isCastingConnect_ = true;
+}
+
+void AudioAdapterManager::HandleCastingDisconnection()
+{
+    isCastingConnect_ = false;
+}
+
+bool AudioAdapterManager::IsDPCastingConnect()
+{
+    return isCastingConnect_;
+}
+
+void AudioAdapterManager::SetMaxVolumeForDpBoardcast()
+{
+    std::lock_guard<std::mutex> lock(setMaxVolumeMutex_);
+    CHECK_AND_RETURN_LOG(isCastingConnect_, "casting disconnected");
     auto desc = audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_DP);
-    CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "there is no dp device connected");
+    CHECK_AND_RETURN_LOG(desc != nullptr, "there is no dp device connected");
     bool temp = (GetMaxVolumeLevel(STREAM_MUSIC, desc) == MAX_VOLUME_LEVEL) && !VolumeUtils::IsPCVolumeEnable();
-    CHECK_AND_RETURN_RET_LOG(temp, false, "current dp device need not max volume");
+    CHECK_AND_RETURN_LOG(temp, "current dp device need not max volume");
     volumeDataMaintainer_.SaveVolumeToMap(desc, STREAM_MUSIC, GetMaxVolumeLevel(STREAM_MUSIC, desc));
     volumeDataMaintainer_.SaveVolumeToMap(desc, STREAM_VOICE_CALL, GetMaxVolumeLevel(STREAM_VOICE_CALL, desc));
     volumeDataMaintainer_.SaveVolumeToMap(desc, STREAM_VOICE_ASSISTANT,
         GetMaxVolumeLevel(STREAM_VOICE_ASSISTANT, desc));
-    return true;
+    volumeDataMaintainer_.SaveMuteToMap(desc, STREAM_MUSIC, false);
+    volumeDataMaintainer_.SaveMuteToMap(desc, STREAM_VOICE_CALL, false);
+    volumeDataMaintainer_.SaveMuteToMap(desc, STREAM_VOICE_ASSISTANT, false);
 }
 } // namespace AudioStandard
 } // namespace OHOS

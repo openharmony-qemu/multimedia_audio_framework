@@ -58,7 +58,7 @@ public:
     int32_t GetNodeBypassStatus(uint32_t nodeId, bool &bypassStatus) override;
     int32_t SetAudioFormat(uint32_t nodeId, AudioFormat audioFormat) override;
     int32_t SetRequestDataCallback(uint32_t nodeId,
-        std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback) override;
+        std::shared_ptr<InputNodeRequestDataCallBack> callback) override;
     int32_t ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) override;
     int32_t DisConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) override;
     int32_t RenderFrame(uint32_t pipelineId,
@@ -94,6 +94,7 @@ public:
     void OnDisConnectNodes(int32_t result) override;
     void OnRenderFrame(int32_t result, uint32_t pipelineId) override;
     void OnMultiRenderFrame(int32_t result, uint32_t pipelineId) override;
+    void OnGetOptions(int32_t result) override;
 
 private:
     void WriteSuiteEngineUtilizationStatsEvent(AudioNodeType nodeType);
@@ -139,6 +140,8 @@ private:
     int32_t connectNodesResult_ = 0;
     bool isFinishDisConnectNodes_ = false;
     int32_t disConnectNodesResult_ = 0;
+    bool isFinishGetOptions_ = false;
+    int32_t getOptionsResult_ = 0;
     std::unordered_map<uint32_t, bool> isFinishRenderFrameMap_;
     std::unordered_map<uint32_t, int32_t> renderFrameResultMap_;
     std::unordered_map<uint32_t, bool> isFinishMultiRenderFrameMap_;

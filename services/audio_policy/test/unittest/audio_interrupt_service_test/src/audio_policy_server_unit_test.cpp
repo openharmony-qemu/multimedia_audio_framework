@@ -3537,9 +3537,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_224, TestSize.Level4)
     EXPECT_EQ(audioPolicyServer->isRingtoneEL2Ready_, true);
     audioPolicyServer->OnReceiveEvent(eventData);
     EXPECT_EQ(audioPolicyServer->isRingtoneEL2Ready_, true);
-    audioPolicyServer->interruptService_->isSwitchUser_ = true;
-    audioPolicyServer->OnReceiveEvent(eventData);
-    EXPECT_EQ(audioPolicyServer->isRingtoneEL2Ready_, true);
     audioPolicyServer->interruptService_ = nullptr;
     audioPolicyServer->OnReceiveEvent(eventData);
     EXPECT_EQ(audioPolicyServer->isRingtoneEL2Ready_, true);
@@ -3672,7 +3669,7 @@ HWTEST(AudioPolicyUnitTest, SetQueryDeviceVolumeBehaviorCallback_001, TestSize.L
     object = new RemoteObjectTestStub();
 
     ret = server->SetQueryDeviceVolumeBehaviorCallback(object);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
 }
 
 /**

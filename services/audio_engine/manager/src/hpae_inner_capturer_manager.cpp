@@ -66,11 +66,15 @@ void HpaeInnerCapturerManager::AddSingleNodeToSinkInner(const std::shared_ptr<Hp
     SetSessionStateForRenderer(sessionId, node->GetState());
     rendererSessionNodeMap_[sessionId].sceneType = nodeInfo.sceneType;
     sceneTypeToProcessClusterCount_++;
-
+#ifdef ENABLE_HIDUMP_DFX
+    OnNotifyDfxNodeAdmin(true, nodeInfo);
+#endif
     if (!SafeGetMap(rendererSceneClusterMap_, nodeInfo.sceneType)) {
         rendererSceneClusterMap_[nodeInfo.sceneType] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
     }
 
+    rendererSceneClusterMap_[nodeInfo.sceneType]->CreateNodes(sinkInputNodeMap_[sessionId]);
+    
     if (!isConnect) {
         AUDIO_INFO_LOG("[FinishMove] not need connect session:%{public}d", sessionId);
         return;
@@ -258,6 +262,7 @@ int32_t HpaeInnerCapturerManager::ReloadRenderManager(const HpaeSinkInfo &sinkIn
             HpaeNodeInfo nodeInfo = it.second->GetNodeInfo();
             if (!SafeGetMap(rendererSceneClusterMap_, processorType)) {
                 rendererSceneClusterMap_[processorType] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
+                rendererSceneClusterMap_[processorType]->CreateNodes(it.second);
             }
             if (it.second->GetState() == HPAE_SESSION_RUNNING) {
                 ConnectRendererInputSessionInner(it.first);
@@ -405,6 +410,7 @@ int32_t HpaeInnerCapturerManager::Flush(uint32_t sessionId)
             AUDIO_INFO_LOG("FlushCapRendererStream sessionId %{public}u", sessionId);
             CHECK_AND_RETURN_LOG(rendererSessionNodeMap_.find(sessionId) != rendererSessionNodeMap_.end(),
                 "Flush not find sessionId %{public}u", sessionId);
+            sinkInputNodeMap_[sessionId]->Flush();
         } else if (SafeGetMap(sourceOutputNodeMap_, sessionId)) {
             Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::FlushCapturerStream");
             AUDIO_INFO_LOG("FlushCapCapturerStream sessionId %{public}u", sessionId);
@@ -704,6 +710,7 @@ int32_t HpaeInnerCapturerManager::CreateRendererInputSessionInner(const HpaeStre
             AUDIO_ERR_LOG("SetupAudioLimiter failed, sessionId %{public}u", nodeInfo.sessionId);
         }
     }
+    rendererSceneClusterMap_[nodeInfo.sceneType]->CreateNodes(sinkInputNodeMap_[streamInfo.sessionId]);
     sceneTypeToProcessClusterCount_++;
     // todo change nodeInfo
     return SUCCESS;
@@ -735,9 +742,13 @@ void HpaeInnerCapturerManager::DeleteRendererInputNodeSession(const std::shared_
 {
     HpaeProcessorType sceneType = sinkInputNode->GetSceneType();
     if (SafeGetMap(rendererSceneClusterMap_, sceneType)) {
-        rendererSceneClusterMap_[sceneType]->DisConnect(sinkInputNode);
-        sceneTypeToProcessClusterCount_--;
         uint32_t sessionId = sinkInputNode->GetSessionId();
+        rendererSceneClusterMap_[sceneType]->DisConnect(sinkInputNode);
+        if (rendererSceneClusterMap_[sceneType]->DestroyNodes(sessionId) != SUCCESS) {
+            AUDIO_WARNING_LOG("SessionId %{public}u, Nodes not found in innerCapture sceneCluster, cant destroy nodes",
+                sessionId);
+        }
+        sceneTypeToProcessClusterCount_--;
         if (sceneTypeToProcessClusterCount_ == 0) {
             HILOG_COMM_INFO("need to erase rendererSceneCluster, last stream: %{public}u", sessionId);
         } else {
@@ -749,9 +760,13 @@ void HpaeInnerCapturerManager::DeleteRendererInputNodeSession(const std::shared_
 int32_t HpaeInnerCapturerManager::DeleteRendererInputSessionInner(uint32_t sessionId)
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::DeleteRendererInputSessionInner");
-    CHECK_AND_RETURN_RET_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), SUCCESS,
+    auto sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
+    CHECK_AND_RETURN_RET_LOG(sinkInputNode != nullptr, SUCCESS,
         "sessionId %{public}u can not find in sinkInputNodeMap_.", sessionId);
-    DeleteRendererInputNodeSession(sinkInputNodeMap_[sessionId]);
+    DeleteRendererInputNodeSession(sinkInputNode);
+#ifdef ENABLE_HIDUMP_DFX
+    OnNotifyDfxNodeAdmin(false, sinkInputNode->GetNodeInfo());
+#endif
     sinkInputNodeMap_.erase(sessionId);
     return SUCCESS;
 }
@@ -783,6 +798,8 @@ int32_t HpaeInnerCapturerManager::ConnectRendererInputSessionInner(uint32_t sess
         "miss corresponding process cluster for scene type %{public}d", sceneType);
     // todo check if connect process cluster
     hpaeInnerCapSinkNode_->Connect(rendererSceneClusterMap_[sceneType]);
+    CHECK_AND_RETURN_RET_LOG(rendererSceneClusterMap_[sceneType]->CheckNodes(sessionId) == SUCCESS, ERROR,
+        "SessionId %{public}u, Nodes not found in innerCapture sceneCluster, cant connect nodes", sessionId);
     rendererSceneClusterMap_[sceneType]->Connect(sinkInputNodeMap_[sessionId]);
     rendererSceneClusterMap_[sceneType]->SetLoudnessGain(sessionId, sinkInputNodeMap_[sessionId]->GetLoudnessGain());
     return SUCCESS;

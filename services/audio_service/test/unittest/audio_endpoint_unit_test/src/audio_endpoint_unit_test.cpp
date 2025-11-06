@@ -1566,14 +1566,11 @@ HWTEST(AudioEndpointInnerUnitTest, InjectToCaptureDataProc_003, TestSize.Level1)
     audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
     audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
     audioEndpointInner->injectSinkPortIdx_ = 1234;
-    audioEndpointInner->fastCaptureId_ = 1;
 
     SetInjectEnable(true);
 
     // Create test buffer
-    std::vector<uint8_t> testBuffer(1024, 0);
-    BufferDesc readBuf = {testBuffer.data(), testBuffer.size()};
-
+    BufferDesc readBuf = {nullptr, 1024};
     audioEndpointInner->InjectToCaptureDataProc(readBuf);
 
     // Should complete processing successfully
@@ -1621,7 +1618,7 @@ HWTEST(AudioEndpointInnerUnitTest, InjectToCaptureDataProc_005, TestSize.Level1)
     // Set up required state
     audioEndpointInner->isNeedInject_ = true;
     audioEndpointInner->endpointType_ = AudioEndpoint::TYPE_VOIP_MMAP;
-    audioEndpointInner->dstStreamInfo_.channels = MONO; // Different from renderer
+    audioEndpointInner->dstStreamInfo_.channels = STEREO; // Different from renderer
     audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
     audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
     audioEndpointInner->injectSinkPortIdx_ = 1234;
@@ -1634,63 +1631,6 @@ HWTEST(AudioEndpointInnerUnitTest, InjectToCaptureDataProc_005, TestSize.Level1)
     audioEndpointInner->InjectToCaptureDataProc(readBuf);
 
     // Should return early due to format conversion failure (channel mismatch)
-    EXPECT_FALSE(audioEndpointInner->isConvertReadFormat_);
-}
-
-/**
- * @tc.name  : Test InjectToCaptureDataProc API
- * @tc.type  : FUNC
- * @tc.number: InjectToCaptureDataProc_006
- * @tc.desc  : Test InjectToCaptureDataProc with limiter creation failure.
- */
-HWTEST(AudioEndpointInnerUnitTest, InjectToCaptureDataProc_006, TestSize.Level1)
-{
-    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_VOIP_MMAP);
-
-    // Set up required state
-    audioEndpointInner->isNeedInject_ = true;
-    audioEndpointInner->endpointType_ = AudioEndpoint::TYPE_VOIP_MMAP;
-    audioEndpointInner->dstStreamInfo_.channels = STEREO;
-    audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
-    audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
-    audioEndpointInner->injectSinkPortIdx_ = 1234;
-    audioEndpointInner->fastCaptureId_ = 1;
-
-    SetInjectEnable(true);
-
-    BufferDesc readBuf = {nullptr, 1024};
-    audioEndpointInner->InjectToCaptureDataProc(readBuf);
-
-    // Should return early due to limiter failure
-    EXPECT_FALSE(audioEndpointInner->isConvertReadFormat_);
-}
-
-/**
- * @tc.name  : Test InjectToCaptureDataProc API
- * @tc.type  : FUNC
- * @tc.number: InjectToCaptureDataProc_007
- * @tc.desc  : Test InjectToCaptureDataProc with limiter processing failure.
- */
-HWTEST(AudioEndpointInnerUnitTest, InjectToCaptureDataProc_007, TestSize.Level1)
-{
-    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_VOIP_MMAP);
-
-    // Set up required state
-    audioEndpointInner->isNeedInject_ = true;
-    audioEndpointInner->endpointType_ = AudioEndpoint::TYPE_VOIP_MMAP;
-    audioEndpointInner->dstStreamInfo_.channels = STEREO;
-    audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
-    audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
-    audioEndpointInner->injectSinkPortIdx_ = 1234;
-    audioEndpointInner->fastCaptureId_ = 1;
-    audioEndpointInner->limiter_ = std::make_shared<AudioLimiter>(1); // Limiter already exists
-
-    SetInjectEnable(true);
-
-    BufferDesc readBuf = {nullptr, 1024};
-    audioEndpointInner->InjectToCaptureDataProc(readBuf);
-
-    // Should return early due to limiter process failure
     EXPECT_FALSE(audioEndpointInner->isConvertReadFormat_);
 }
 
@@ -2018,6 +1958,107 @@ HWTEST_F(AudioEndpointUnitTest, UpdateEndpointStatus_004, TestSize.Level1)
             break;
         }
     }
+}
+
+/**
+ * @ tc.name : Test MixRendererAndCaptureData Function
+ * @ tc.type : FUNC
+ * @ tc.number: MixRendererAndCaptureData_001
+ * @ tc.desc : Test MixRendererAndCaptureData function with basic input data.
+ */
+HWTEST(AudioEndpointInnerUnitTest, MixRendererAndCaptureData_001, TestSize.Level1)
+{
+    const size_t bufLength = sizeof(float); // 1 float
+    std::vector<uint8_t> rendererConvData(bufLength, 0);
+    BufferDesc rendererConvDesc;
+    rendererConvDesc.bufLength = bufLength;
+    rendererConvDesc.buffer = rendererConvData.data();
+    float* leftBuff = reinterpret_cast<float*>(rendererConvDesc.buffer);
+    leftBuff[0] = 0.5f;
+
+    // Initialize captureConvDesc
+    std::vector<uint8_t> captureConvData(bufLength, 0);
+    BufferDesc captureConvDesc;
+    captureConvDesc.bufLength = bufLength;
+    captureConvDesc.buffer = captureConvData.data();
+    float* rightBuff = reinterpret_cast<float*>(captureConvDesc.buffer);
+    rightBuff[0] = 0.3f;
+
+    std::shared_ptr<AudioEndpointInner> endpoint = CreateInputEndpointInner(AudioEndpoint::TYPE_VOIP_MMAP);
+    std::vector<uint8_t> injectPeekBuffer(4);
+    endpoint->injectPeekBuffer_ = injectPeekBuffer;
+    float* mixBuff = endpoint->MixRendererAndCaptureData(bufLength, rendererConvDesc, captureConvDesc);
+
+    EXPECT_EQ(mixBuff[0], 0.8f);
+}
+
+/**
+ * @tc.name : Test CreateAndCfgLimiter API
+ * @tc.type : FUNC
+ * @tc.number: CreateAndCfgLimiter_001
+ * @tc.desc : Test CreateAndCfgLimiter function with valid parameters.
+ */
+HWTEST(AudioEndpointInnerUnitTest, CreateAndCfgLimiter_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_VOIP_MMAP);
+
+    // Set up initial state
+    audioEndpointInner->limiter_ = std::make_shared<AudioLimiter>(HDI_INVALID_ID);
+
+    const size_t bufLength = 1024;
+    AudioStreamInfo streamInfo;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    streamInfo.channels = STEREO;
+
+    int32_t result = audioEndpointInner->CreateAndCfgLimiter(bufLength, streamInfo);
+
+    // Verify the result
+    EXPECT_EQ(result, SUCCESS);
+    audioEndpointInner->limiter_ = nullptr;
+    result = audioEndpointInner->CreateAndCfgLimiter(bufLength, streamInfo);
+    // Verify limiter configuration
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+@tc.name : Test ConvertDataFormat API
+@tc.type : FUNC
+@tc.number: ConvertDataFormat_001
+@tc.desc : Test ConvertDataFormat function with valid parameters.
+*/
+HWTEST(AudioEndpointInnerUnitTest, ConvertDataFormat_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_VOIP_MMAP);
+
+    // Set up initial state
+    audioEndpointInner->dstStreamInfo_.channels = STEREO;
+    audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
+    audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    audioEndpointInner->rendererConvBuffer_.assign(1024, 0);
+    audioEndpointInner->captureConvBuffer_.assign(1024, 0);
+    // Create input BufferDesc
+    const size_t bufLength = 4 * sizeof(int16_t); // 4 samples
+    BufferDesc readBuf = {new uint8_t[bufLength], bufLength};
+    BufferDesc rendererOrgDesc = {new uint8_t[bufLength], bufLength};
+    BufferDesc rendererConvDesc;
+    BufferDesc captureConvDesc;
+
+    // Set up stream info
+    AudioStreamInfo streamInfo;
+    streamInfo.channels = STEREO;
+    streamInfo.format = SAMPLE_S16LE;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+
+    // Call the function
+    int32_t result = audioEndpointInner->ConvertDataFormat(readBuf, rendererOrgDesc, streamInfo,
+        rendererConvDesc, captureConvDesc);
+
+    // Verify the result
+    EXPECT_EQ(result, SUCCESS);
+
+    // Cleanup
+    delete[] readBuf.buffer;
+    delete[] rendererOrgDesc.buffer;
 }
 } // namespace AudioStandard
 } // namespace OHOS

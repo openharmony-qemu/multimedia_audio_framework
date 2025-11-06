@@ -150,6 +150,7 @@ private:
     int32_t UpdateClusterBySessionId(uint32_t sessionId);
     bool IsClusterDisConnected(HpaeProcessorType sceneType);
     bool QueryOneStreamUnderrun();
+    void DeleteNodesByTraversal(uint32_t sessionId);
 
 private:
 

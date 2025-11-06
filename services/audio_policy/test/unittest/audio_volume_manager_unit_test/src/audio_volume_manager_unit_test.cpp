@@ -354,7 +354,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeForSwitchDevice_001, TestSize.Leve
 
     audioSceneManager.audioScene_ = AUDIO_SCENE_PHONE_CALL;
     int32_t ret = audioVolumeManager.SetVolumeForSwitchDevice(
-        audioDeviceDescriptor, PORT_NONE, true);
+        audioDeviceDescriptor, true);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -371,7 +371,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeForSwitchDevice_002, TestSize.Leve
 
     audioSceneManager.audioScene_ = AUDIO_SCENE_PHONE_CALL;
     int32_t ret = audioVolumeManager.SetVolumeForSwitchDevice(
-        audioDeviceDescriptor, PORT_NONE, false);
+        audioDeviceDescriptor, false);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -388,7 +388,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeForSwitchDevice_003, TestSize.Leve
 
     audioSceneManager.audioScene_ = AUDIO_SCENE_DEFAULT;
     int32_t ret = audioVolumeManager.SetVolumeForSwitchDevice(
-        audioDeviceDescriptor, PORT_NONE, true);
+        audioDeviceDescriptor, true);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -405,7 +405,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeForSwitchDevice_004, TestSize.Leve
 
     audioSceneManager.audioScene_ = AUDIO_SCENE_DEFAULT;
     int32_t ret = audioVolumeManager.SetVolumeForSwitchDevice(
-        audioDeviceDescriptor, PORT_NONE, false);
+        audioDeviceDescriptor, false);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -423,7 +423,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeForSwitchDevice_005, TestSize.Leve
     audioSceneManager.audioScene_ = AUDIO_SCENE_DEFAULT;
     audioVolumeManager.increaseNIsShowing_ = true;
     int32_t ret = audioVolumeManager.SetVolumeForSwitchDevice(
-        audioDeviceDescriptor, PORT_NONE, false);
+        audioDeviceDescriptor, false);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -441,7 +441,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeForSwitchDevice_006, TestSize.Leve
     audioSceneManager.audioScene_ = AUDIO_SCENE_DEFAULT;
     audioVolumeManager.restoreNIsShowing_ = true;
     int32_t ret = audioVolumeManager.SetVolumeForSwitchDevice(
-        audioDeviceDescriptor, PORT_NONE, false);
+        audioDeviceDescriptor, false);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1470,13 +1470,13 @@ HWTEST_F(AudioVolumeManagerUnitTest, SetVolumeForSwitchDevice_008, TestSize.Leve
 {
     auto avm = std::make_shared<AudioVolumeManager>();
     AudioDeviceDescriptor desc;
-    avm->SetVolumeForSwitchDevice(desc, PORT_NONE, false);
+    avm->SetVolumeForSwitchDevice(desc, false);
     desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    avm->SetVolumeForSwitchDevice(desc, PORT_NONE, false);
+    avm->SetVolumeForSwitchDevice(desc, false);
     avm->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    avm->SetVolumeForSwitchDevice(desc, PORT_NONE, false);
+    avm->SetVolumeForSwitchDevice(desc, false);
     desc.deviceType_ = DEVICE_TYPE_SPEAKER;
-    int32_t ret = avm->SetVolumeForSwitchDevice(desc, PORT_NONE, false);
+    int32_t ret = avm->SetVolumeForSwitchDevice(desc, false);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1579,6 +1579,26 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_075, TestSize.Level1)
     audioVolumeManager.safeStatusSle_ = SAFE_ACTIVE;
     audioVolumeManager.CheckActiveMusicTime(reason);
     EXPECT_EQ(audioVolumeManager.startSafeTimeSle_, 0);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_076
+* @tc.desc  : Test SetAbsVolumeSceneAsync interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_076, TestSize.Level1)
+{
+    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
+    ASSERT_TRUE(audioVolumeManager != nullptr);
+
+    bool support = false;
+    std::string macAddress = "11:22:33:44:55:66";
+    audioVolumeManager->audioActiveDevice_.activeBTDevice_ = "test";
+    audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support, 0);
+
+    audioVolumeManager->audioActiveDevice_.activeBTDevice_ = macAddress;
+    audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support, 0);
+    EXPECT_EQ(audioVolumeManager->audioActiveDevice_.GetActiveBtDeviceMac(), macAddress);
 }
 } // namespace AudioStandard
 } // namespace OHOS
