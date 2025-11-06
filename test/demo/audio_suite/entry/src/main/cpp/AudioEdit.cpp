@@ -2075,6 +2075,26 @@ static napi_value ResetTotalWriteAudioDataSize(napi_env env, napi_callback_info 
     return nullptr;
 }
 
+//获取效果节点options
+static napi_value getOptions(napi_env env, napi_callback_info info)
+{
+    size_t argc = 1;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    napi_value napiValue;
+    
+    //获取nodeId
+    std::string nodeId;
+    parseNapiString(env, argv[0], nodeId);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "getOptions nodeId is %{public}s", nodeId.c_str());
+    Node node = nodeManager->getNodeById(nodeId);
+    //根据不同效果类型获取效果参数
+    std::string type = nodeManager->getOptionsByType(node);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "getOptions type is %{public}s", type.c_str());
+    napi_create_string_utf8(env, type.c_str(), NAPI_AUTO_LENGTH, &napiValue);
+    return napiValue;
+}
+
 EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
 {
     napi_property_descriptor desc[] = {
@@ -2113,7 +2133,8 @@ EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
         {"startEnvEffect", nullptr, startEnvEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"resetEnvEffect", nullptr, resetEnvEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"compareTwoFilesBinary", nullptr, compareTwoFilesBinary, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"deleteNode", nullptr, DeleteNode, nullptr, nullptr, nullptr, napi_default, nullptr}};
+        {"deleteNode", nullptr, DeleteNode, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"getOptions", nullptr, getOptions, nullptr, nullptr, nullptr, napi_default, nullptr}};
     napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc);
     return exports;
 }

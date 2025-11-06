@@ -35,3 +35,4 @@ export const startVBEffect: (inputId: string, mode: number, voiceBeautifierId: s
 export const resetVBEffect: (inputId: string, mode: number, voiceBeautifierId: string) => number;
 export const compareTwoFilesBinary: (inputFilePath1: string, inputFilePath2: string) => number;
 export const deleteNode: (nodeId: string) => number;
+export const getOptions: (nodeId: string) => string;
