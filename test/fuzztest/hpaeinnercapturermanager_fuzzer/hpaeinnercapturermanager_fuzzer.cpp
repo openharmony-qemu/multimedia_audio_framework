@@ -668,8 +668,7 @@ void OnFadeDoneFuzzTest()
     auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
     hpaeInnerCapturerManager->Init();
     uint32_t sessionId = GetData<uint32_t>();
-    IOperation operation = IOperation::OPERATION_INVALID;
-    hpaeInnerCapturerManager->OnFadeDone(sessionId, operation);
+    hpaeInnerCapturerManager->OnFadeDone(sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->DeInit();
 }
