@@ -1025,6 +1025,7 @@ bool HpaeManager::MovingSinkStateChange(uint32_t sessionId, const std::shared_pt
         if (movingIds_[sessionId] == HPAE_SESSION_RELEASED) {
             rendererIdSinkNameMap_.erase(sessionId);
             rendererIdStreamInfoMap_.erase(sessionId);
+            DequeuePendingTransition(sessionId);
             if (auto serviceCallback = serviceCallback_.lock()) {
                 serviceCallback->OnMoveSinkInputByIndexOrNameCb(SUCCESS);
             }
