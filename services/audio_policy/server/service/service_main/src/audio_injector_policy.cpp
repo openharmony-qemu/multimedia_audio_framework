@@ -373,7 +373,7 @@ void AudioInjectorPolicy::SendInterruptEventToInjectorStreams(const std::shared_
 {
     std::lock_guard<std::shared_mutex> lock(injectLock_);
     InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE,
-        INTERRUPT_HINT_PAUSE, 1.0f};
+        INTERRUPT_HINT_STOP, 1.0f};
     for (const auto& pair : rendererStreamMap_) {
         if (handler != nullptr) {
             handler->SendInterruptEventWithStreamIdCallback(interruptEvent, pair.first);
