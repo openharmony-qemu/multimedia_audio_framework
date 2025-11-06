@@ -322,17 +322,17 @@ void RendererInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
     // Calculate buffer size based on duration.
 
     size_t metaSize = 0;
+    uint32_t sampleRate = curStreamParams_.customSampleRate == 0 ? curStreamParams_.samplingRate :
+            curStreamParams_.customSampleRate;
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
         CHECK_AND_RETURN_LOG(converter_ != nullptr, "converter is not inited");
         metaSize = converter_->GetMetaSize();
         converter_->GetInputBufferSize(cbBufferSize_);
     } else {
-        cbBufferSize_ = static_cast<size_t>(bufferDurationInUs * curStreamParams_.samplingRate / AUDIO_US_PER_S) *
+        cbBufferSize_ = static_cast<size_t>(bufferDurationInUs * sampleRate / AUDIO_US_PER_S) *
             sizePerFrameInByte_;
     }
-    uint64_t durationInFrame = bufferDurationInUs *
-        (curStreamParams_.customSampleRate == 0 ? curStreamParams_.samplingRate : curStreamParams_.customSampleRate)
-        / AUDIO_US_PER_S;
+    uint64_t durationInFrame = bufferDurationInUs * sampleRate / AUDIO_US_PER_S;
     SetCacheSize(durationInFrame);
     AUDIO_INFO_LOG("duration %{public}" PRIu64 ", ecodingType: %{public}d, size: %{public}zu, metaSize: %{public}zu",
         bufferDurationInUs, curStreamParams_.encoding, cbBufferSize_, metaSize);
