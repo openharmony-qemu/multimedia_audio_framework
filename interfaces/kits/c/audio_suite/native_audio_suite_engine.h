@@ -547,7 +547,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_GetVoiceBeautifierType(
     OH_AudioNode* audioNode, OH_VoiceBeautifierType* voiceBeautifierType);
 
 /**
-*@brief Request to determine whether the current system supports a specific effect node type.
+*@brief Request to determine whether the current system supports a specific node type.
 *
 *@param nodeType Audio node type. {@link OH_AudioNode_Type}
 *@param isSupported True means this node type is supported

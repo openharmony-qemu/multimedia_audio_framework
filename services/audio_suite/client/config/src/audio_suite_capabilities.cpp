@@ -157,6 +157,7 @@ int32_t AudioSuiteCapabilities::IsNodeTypeSupported(AudioNodeType nodeType, bool
 // This function is only provided for effect node without mixerNode.
 int32_t AudioSuiteCapabilities::GetNodeCapability(AudioNodeType nodeType, NodeCapability &nodeCapability)
 {
+    CHECK_AND_RETURN_RET(nodeType != NODE_TYPE_AUDIO_MIXER, SUCCESS);
     auto it = audioSuiteCapabilities_.find(nodeType);
     CHECK_AND_RETURN_RET_LOG(
         it != audioSuiteCapabilities_.end(), ERROR, "no such nodeType: %{public}d configured.", nodeType);
