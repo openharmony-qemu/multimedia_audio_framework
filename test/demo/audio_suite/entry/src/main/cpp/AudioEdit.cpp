@@ -2076,7 +2076,8 @@ static napi_value ResetTotalWriteAudioDataSize(napi_env env, napi_callback_info 
 }
 
 //获取效果节点options
-static napi_value getOptions(napi_env env, napi_callback_info info) {
+static napi_value getOptions(napi_env env, napi_callback_info info)
+{
     size_t argc = 1;
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
