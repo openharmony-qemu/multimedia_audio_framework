@@ -1757,8 +1757,8 @@ bool AudioEndpointInner::GetDeviceHandleInfo(uint64_t &frames, int64_t &nanoTime
 void AudioEndpointInner::UpdateVirtualDeviceHandleInfo()
 {
     uint64_t currentNanoTime = ClockTime::GetCurNano();
-    JUDGE_AND_INFO_LOG(currentNanoTime > timeInNano_, false,"currentNanoTime %{public}" PRIu64"  "
-        ", timeInNano_  %{public}" PRIu64" ", currentNanoTime.load(), timeInNano_.load);
+    JUDGE_AND_INFO_LOG(currentNanoTime < timeInNano_,"currentNanoTime: %{public}" PRIu64"  "
+        ", timeInNano_: %{public}" PRIu64" ", currentNanoTime, timeInNano_.load());
     // Calculate the frame position increment based on the current and previous time, and update the frame position
     posInFrame_ = posInFrame_ + ((currentNanoTime - timeInNano_) / dstStreamInfo_.samplingRate);
     // Calculate the new time in nanoseconds based on the updated frame position
