@@ -656,5 +656,12 @@ void AudioCoreService::EventEntry::OnCheckActiveMusicTime(const std::string &rea
 {
     coreService_->OnCheckActiveMusicTime(reason);
 }
+
+int32_t AudioCoreService::EventEntry::CaptureConcurrentCheck(uint32_t sessionId)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
+    return coreService_->CaptureConcurrentCheck(sessionId);
+}
 }
 }
