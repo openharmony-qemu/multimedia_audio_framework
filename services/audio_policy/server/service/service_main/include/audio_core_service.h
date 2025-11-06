@@ -190,6 +190,7 @@ public:
         void RebuildCaptureInjector(uint32_t streamId) override;
         int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
             uint32_t &timeStamp) override;
+        int32_t CaptureConcurrentCheck(uint32_t sessionId) override;
 private:
         std::shared_ptr<AudioCoreService> coreService_;
         std::shared_mutex eventMutex_;

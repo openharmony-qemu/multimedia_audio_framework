@@ -60,4 +60,5 @@ interface ICoreServiceProviderIpc {
     void RebuildCaptureInjector([in] unsigned int sessionId);
     void A2dpOffloadGetRenderPosition([out] unsigned int delayValue, [out] unsigned long sendDataSize, [out] unsigned int timeStamp, [out] int ret);
     void OnCheckActiveMusicTime([in] String reason);
+    [oneway] void CaptureConcurrentCheck([in] unsigned int sessionID);
 }

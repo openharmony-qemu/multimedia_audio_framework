@@ -38,5 +38,4 @@ interface IPolicyProviderIpc {
     void LoadModernOffloadCapSource();
     void UnloadModernOffloadCapSource();
     void ClearAudioFocusBySessionID([in] int sessionID);
-    [oneway] void CaptureConcurrentCheck([in] unsigned int sessionID);
 }
