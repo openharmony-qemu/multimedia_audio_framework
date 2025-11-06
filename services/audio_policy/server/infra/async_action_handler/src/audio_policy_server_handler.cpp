@@ -1385,6 +1385,7 @@ void AudioPolicyServerHandler::HandleRendererDeviceChangeEvent(const AppExecFwk:
     std::shared_ptr<RendererDeviceChangeEvent> eventContextObj = event->GetSharedObject<RendererDeviceChangeEvent>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     const auto &[pid, sessionId, outputDeviceInfo, reason] = *eventContextObj;
+    bool cbFlag = false;
     Trace trace("AudioPolicyServerHandler::HandleRendererDeviceChangeEvent pid:" + std::to_string(pid));
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     if (audioPolicyClientProxyAPSCbsMap_.count(pid) == 0) {
@@ -1399,8 +1400,10 @@ void AudioPolicyServerHandler::HandleRendererDeviceChangeEvent(const AppExecFwk:
     if (clientCallbacksMap_.count(pid) > 0 &&
         clientCallbacksMap_[pid].count(CALLBACK_DEVICE_CHANGE_WITH_INFO) > 0 &&
         clientCallbacksMap_[pid][CALLBACK_DEVICE_CHANGE_WITH_INFO]) {
+        cbFlag = true;
         capturerStateChangeCb->OnRendererDeviceChange(sessionId, outputDeviceInfo, reason);
     }
+    AUDIO_INFO_LOG("deviceType:%{public}d pid:%{public}d cbFlag:%{public}d", outputDeviceInfo.deviceType_, pid, cbFlag);
 }
 
 void AudioPolicyServerHandler::HandleCapturerCreateEvent(const AppExecFwk::InnerEvent::Pointer &event)
