@@ -117,7 +117,7 @@ uint32_t CoreServiceHandler::GetPaIndexByPortName(const std::string &portName)
 
 int32_t CoreServiceHandler::SetRendererTarget(uint32_t target, uint32_t lastTarget, uint32_t sessionId)
 {
-    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "Injector::iCoreServiceProvider_ is nullptr!");
     int32_t ret = ERROR;
     iCoreServiceProvider_->SetRendererTarget(target, lastTarget, sessionId, ret);
     return ret;
@@ -125,7 +125,7 @@ int32_t CoreServiceHandler::SetRendererTarget(uint32_t target, uint32_t lastTarg
 
 int32_t CoreServiceHandler::StartInjection(uint32_t sessionId)
 {
-    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "Injector::iCoreServiceProvider_ is nullptr!");
     int32_t ret = ERROR;
     iCoreServiceProvider_->StartInjection(sessionId, ret);
     return ret;
@@ -133,7 +133,7 @@ int32_t CoreServiceHandler::StartInjection(uint32_t sessionId)
 
 void CoreServiceHandler::RemoveIdForInjector(uint32_t sessionId)
 {
-    CHECK_AND_RETURN_LOG(iCoreServiceProvider_ != nullptr, "iCoreServiceProvider_ is nullptr!");
+    CHECK_AND_RETURN_LOG(iCoreServiceProvider_ != nullptr, "Injector::iCoreServiceProvider_ is nullptr!");
     iCoreServiceProvider_->RemoveIdForInjector(sessionId);
 }
 
@@ -145,7 +145,7 @@ void CoreServiceHandler::ReleaseCaptureInjector()
 
 void CoreServiceHandler::RebuildCaptureInjector(uint32_t sessionId)
 {
-    CHECK_AND_RETURN_LOG(iCoreServiceProvider_ != nullptr, "iCoreServiceProvider_ is nullptr!");
+    CHECK_AND_RETURN_LOG(iCoreServiceProvider_ != nullptr, "Injector::iCoreServiceProvider_ is nullptr!");
     iCoreServiceProvider_->RebuildCaptureInjector(sessionId);
 }
 

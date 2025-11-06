@@ -37,12 +37,13 @@ int32_t AudioInjectorPolicy::Init()
 {
     std::lock_guard<std::shared_mutex> lock(injectLock_);
     if (!isOpened_) {
-        AUDIO_INFO_LOG("first time to open port!!!");
         AudioModuleInfo moduleInfo = {};
         moduleInfo.lib = "libmodule-hdi-sink.z.so";
         std::string name = VIRTUAL_INJECTOR;
         moduleInfo.name = name;
         moduleInfo.deviceType = std::to_string(static_cast<int32_t>(DEVICE_TYPE_SYSTEM_PRIVATE));
+        moduleInfo.className = VIRTUAL_INJECTOR;
+        moduleInfo.role = AudioAdapterManager::HDI_AUDIO_PORT_SINK_ROLE;
         moduleInfo.format = "s16le";
         moduleInfo.channels = "2"; // 2 channel
         moduleInfo.rate = "48000";
@@ -51,7 +52,7 @@ int32_t AudioInjectorPolicy::Init()
         uint32_t paIndex = 0;
         ioHandle_ = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo, paIndex);
         CHECK_AND_RETURN_RET_LOG(paIndex != HDI_INVALID_ID, ERR_OPERATION_FAILED,
-            "OpenAudioPort failed paId[%{public}u]", paIndex);
+            "Injector::OpenAudioPort failed paId[%{public}u]", paIndex);
 
         std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
         pipeInfo->id_ = ioHandle_;
@@ -76,7 +77,7 @@ int32_t AudioInjectorPolicy::DeInit()
 {
     if (isOpened_ && rendererStreamMap_.size() == 0) {
         int32_t ret = audioPolicyManager_.CloseAudioPort(ioHandle_, renderPortIdx_);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "close port failed");
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Injector::close port failed");
         std::shared_ptr<AudioPipeInfo> pipeInfo = pipeManager_->GetPipeinfoByNameAndFlag(
             VIRTUAL_INJECTOR, AUDIO_OUTPUT_FLAG_NORMAL);
         pipeManager_->RemoveAudioPipeInfo(pipeInfo);
@@ -175,11 +176,11 @@ void AudioInjectorPolicy::SetVoipType(VoipType type)
 void AudioInjectorPolicy::ReleaseCaptureInjector()
 {
     std::lock_guard<std::shared_mutex> lock(injectLock_);
-    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager_ is null");
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "Injector::pipeManager_ is null");
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamVec = {};
     auto pipeList = pipeManager_->GetPipeList();
     for (auto it = pipeList.rbegin(); it != pipeList.rend(); ++it) {
-        CHECK_AND_CONTINUE_LOG((*it) != nullptr, "it is null");
+        CHECK_AND_CONTINUE_LOG((*it) != nullptr, "Injector::it is null");
         if ((*it)->paIndex_ == capturePortIdx_ && (*it)->pipeRole_ == PIPE_ROLE_INPUT) {
             streamVec = (*it)->streamDescriptors_;
             break;
@@ -200,12 +201,12 @@ void AudioInjectorPolicy::RebuildCaptureInjector(uint32_t streamId)
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamVec = {};
     std::shared_ptr<AudioStreamDescriptor> streamDesc = nullptr;
     uint32_t paIndex = 0;
-    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager_ is null");
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "Injector::pipeManager_ is null");
     auto pipeList = pipeManager_->GetPipeList();
     for (const auto &pipe : pipeList) {
-        CHECK_AND_CONTINUE_LOG(pipe != nullptr, "pipeInfo is nullptr");
+        CHECK_AND_CONTINUE_LOG(pipe != nullptr, "Injector::pipeInfo is nullptr");
         for (const auto &stream : pipe->streamDescriptors_) {
-            CHECK_AND_CONTINUE_LOG(stream != nullptr, "stream is nullptr");
+            CHECK_AND_CONTINUE_LOG(stream != nullptr, "Injector::stream is nullptr");
             if (stream->sessionId_ == streamId) {
                 paIndex = pipe->paIndex_;
                 streamDesc = stream;
@@ -252,14 +253,14 @@ int32_t AudioInjectorPolicy::AddCaptureInjector()
 int32_t AudioInjectorPolicy::AddCaptureInjectorInner()
 {
     if (!isConnected_) {
-        CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "pipeManager_ is null");
+        CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "Injector::pipeManager_ is null");
         if (voipType_ == NORMAL_VOIP) {
             audioPolicyManager_.AddCaptureInjector(renderPortIdx_, capturePortIdx_,
                 SOURCE_TYPE_VOICE_COMMUNICATION);
             isConnected_ = true;
         } else if (voipType_ == FAST_VOIP) {
             int32_t ret = audioPolicyManager_.AddCaptureInjector();
-            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "AddCaptureInjector failed");
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Injector::FAST_VOIP AddCaptureInjector failed");
             UpdateAudioInfo(moduleInfo_);
             isConnected_ = true;
         }
@@ -277,7 +278,7 @@ int32_t AudioInjectorPolicy::RemoveCaptureInjectorInner(bool noCapturer)
 {
     bool flag = (rendererStreamMap_.size() == 0 || noCapturer);
     if (isConnected_ && flag) {
-        CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "pipeManager_ is null");
+        CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERROR, "Injector::pipeManager_ is null");
         if (voipType_ == NORMAL_VOIP) {
             audioPolicyManager_.RemoveCaptureInjector(renderPortIdx_, capturePortIdx_,
                 SOURCE_TYPE_VOICE_COMMUNICATION);
@@ -286,7 +287,7 @@ int32_t AudioInjectorPolicy::RemoveCaptureInjectorInner(bool noCapturer)
             voipType_ = NO_VOIP;
         } else if (voipType_ == FAST_VOIP) {
             int32_t ret = audioPolicyManager_.RemoveCaptureInjector();
-            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "RemoveCaptureInjector failed");
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Injector::FAST_VOIP RemoveCaptureInjector failed");
             isConnected_ = false;
             capturePortIdx_ = HDI_INVALID_ID;
             voipType_ = NO_VOIP;
@@ -300,26 +301,46 @@ int32_t AudioInjectorPolicy::RemoveCaptureInjectorInner(bool noCapturer)
 }
 
 std::shared_ptr<AudioPipeInfo> AudioInjectorPolicy::FindCaptureVoipPipe(
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, VoipType &type)
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, uint32_t &streamId)
 {
     std::shared_ptr<AudioPipeInfo> voipPipe = nullptr;
     for (const auto &pipe : pipeInfos) {
-        CHECK_AND_CONTINUE_LOG(pipe != nullptr, "pipeInfo is nullptr");
+        CHECK_AND_CONTINUE_LOG(pipe != nullptr, "Injector::pipeInfo is nullptr");
         for (const auto &stream : pipe->streamDescriptors_) {
-            CHECK_AND_CONTINUE_LOG(stream != nullptr, "stream is nullptr");
+            CHECK_AND_CONTINUE_LOG(stream != nullptr, "Injector::stream is nullptr");
             bool isRunning = stream->IsRunning();
-            CHECK_AND_CONTINUE_LOG(isRunning == true, "isRunning is false");
+            CHECK_AND_CONTINUE_LOG(isRunning == true, "Injector::isRunning is false");
             AudioStreamAction action = stream->streamAction_;
             bool actionFlag = (action == AUDIO_STREAM_ACTION_MOVE);
-            CHECK_AND_CONTINUE_LOG(actionFlag, "streamAction is not right");
+            CHECK_AND_CONTINUE_LOG(actionFlag, "Injector::streamAction is not right");
             if ((stream->routeFlag_ & AUDIO_INPUT_FLAG_NORMAL) &&
                     stream->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
                 voipPipe = pipe;
-                type = NORMAL_VOIP;
+                streamId = stream->sessionId_;
+                break;
             } else if (stream->routeFlag_ & (AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP)) {
                 voipPipe = pipe;
-                type = FAST_VOIP;
-                return voipPipe;
+            }
+        }
+    }
+    return voipPipe;
+}
+
+std::shared_ptr<AudioPipeInfo> AudioInjectorPolicy::FindPipeByStreamId(
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, VoipType &type, uint32_t &streamId)
+{
+    std::shared_ptr<AudioPipeInfo> voipPipe = nullptr;
+    CHECK_AND_RETURN_RET_LOG(streamId != UINT32_INVALID_VALUE, voipPipe, "Injector:: streamId is wrong!");
+    for (const auto &pipe : pipeInfos) {
+        CHECK_AND_CONTINUE_LOG(pipe != nullptr, "Injector::pipeInfo is nullptr");
+        for (const auto &stream : pipe->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(stream != nullptr, "Injector::stream is nullptr");
+            bool isRunning = stream->IsRunning();
+            CHECK_AND_CONTINUE_LOG(isRunning == true, "Injector::isRunning is false");
+            if (streamId == stream->sessionId_) {
+                voipPipe = pipe;
+                type = NORMAL_VOIP;
+                break;
             }
         }
     }
@@ -327,11 +348,14 @@ std::shared_ptr<AudioPipeInfo> AudioInjectorPolicy::FindCaptureVoipPipe(
 }
 
 void AudioInjectorPolicy::FetchCapDeviceInjectPreProc(
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, bool &removeFlag)
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, bool &removeFlag, uint32_t &streamId)
 {
     std::lock_guard<std::shared_mutex> lock(injectLock_);
+    if (!isOpened_) {
+        return;
+    }
     VoipType type = VoipType::NO_VOIP;
-    std::shared_ptr<AudioPipeInfo> tempPipe = FindCaptureVoipPipe(pipeInfos, type);
+    std::shared_ptr<AudioPipeInfo> tempPipe = FindCaptureVoipPipe(pipeInfos, streamId);
     if (tempPipe != nullptr && tempPipe->paIndex_ != capturePortIdx_) {
         RemoveCaptureInjectorInner(true);
         removeFlag = true;
@@ -339,11 +363,14 @@ void AudioInjectorPolicy::FetchCapDeviceInjectPreProc(
 }
 
 void AudioInjectorPolicy::FetchCapDeviceInjectPostProc(
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, bool &removeFlag)
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, bool &removeFlag, uint32_t &streamId)
 {
     std::lock_guard<std::shared_mutex> lock(injectLock_);
+    if (!isOpened_) {
+        return;
+    }
     VoipType type = VoipType::NO_VOIP;
-    std::shared_ptr<AudioPipeInfo> tempPipe = FindCaptureVoipPipe(pipeInfos, type);
+    std::shared_ptr<AudioPipeInfo> tempPipe = FindPipeByStreamId(pipeInfos, type, streamId);
     if (tempPipe != nullptr && removeFlag) {
         capturePortIdx_ = tempPipe->paIndex_;
         voipType_ = type;

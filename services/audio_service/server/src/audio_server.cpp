@@ -2954,6 +2954,7 @@ int32_t AudioServer::CreateHdiSinkPort(const std::string &deviceClass, const std
 
     renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, idInfo, true);
     CHECK_AND_RETURN_RET(renderId != HDI_INVALID_ID, SUCCESS);
+    CHECK_AND_RETURN_RET(deviceClass != "Virtual_Injector", SUCCESS);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId, true);
     if (sink == nullptr) {
         HdiAdapterManager::GetInstance().ReleaseId(renderId);

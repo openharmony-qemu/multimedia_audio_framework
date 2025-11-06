@@ -2618,7 +2618,7 @@ int32_t RendererInServer::SetTarget(RenderTarget target, int32_t &ret)
     }
     if (status_ == I_STATUS_IDLE || status_ == I_STATUS_PAUSED || status_ == I_STATUS_STOPPED) {
         ret = CoreServiceHandler::GetInstance().SetRendererTarget(target, lastTarget_, streamIndex_);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "CoreServiceHandler::SetRendererTarget failed");
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Injector::SetRendererTarget failed");
         lastTarget_ = target;
         ClearInnerCapBufferForInject();
         return ret;

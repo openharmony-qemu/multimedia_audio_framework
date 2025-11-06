@@ -612,35 +612,35 @@ int32_t AudioCoreService::EventEntry::SetRendererTarget(RenderTarget target, Ren
     uint32_t sessionId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "Injector::coreService_ is nullptr");
     return coreService_->SetRendererTarget(target, lastTarget, sessionId);
 }
 
 int32_t AudioCoreService::EventEntry::StartInjection(uint32_t sessionId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "Injector::coreService_ is nullptr");
     return coreService_->StartInjection(sessionId);
 }
 
 void AudioCoreService::EventEntry::RemoveIdForInjector(uint32_t streamId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "Injector::coreService_ is nullptr");
     coreService_->RemoveIdForInjector(streamId);
 }
 
 void AudioCoreService::EventEntry::ReleaseCaptureInjector()
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "Injector::coreService_ is nullptr");
     coreService_->ReleaseCaptureInjector();
 }
 
 void AudioCoreService::EventEntry::RebuildCaptureInjector(uint32_t streamId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "Injector::coreService_ is nullptr");
     coreService_->RebuildCaptureInjector(streamId);
 }
 

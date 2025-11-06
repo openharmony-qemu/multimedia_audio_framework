@@ -61,9 +61,13 @@ public:
     void ReleaseCaptureInjector();
     void RebuildCaptureInjector(uint32_t streamId);
     std::shared_ptr<AudioPipeInfo> FindCaptureVoipPipe(
-        std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, VoipType &type);
-    void FetchCapDeviceInjectPreProc(std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, bool &removeFlag);
-    void FetchCapDeviceInjectPostProc(std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, bool &removeFlag);
+        std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, uint32_t &streamId);
+    std::shared_ptr<AudioPipeInfo> FindPipeByStreamId(
+        std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos, VoipType &type, uint32_t &streamId);
+    void FetchCapDeviceInjectPreProc(std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos,
+        bool &removeFlag, uint32_t &streamId);
+    void FetchCapDeviceInjectPostProc(std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos,
+        bool &removeFlag, uint32_t &streamId);
     bool HasRunningVoipStream(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamVec);
 
     void AddInjectorStreamId(const uint32_t streamId);

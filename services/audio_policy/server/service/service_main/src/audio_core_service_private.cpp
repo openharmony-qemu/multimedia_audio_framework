@@ -234,7 +234,8 @@ int32_t AudioCoreService::FetchCapturerPipesAndExecute(
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = audioPipeSelector_->FetchPipesAndExecute(streamDescs);
 
     bool removeFlag = false;
-    audioInjectorPolicy_.FetchCapDeviceInjectPreProc(pipeInfos, removeFlag);
+    uint32_t fetchStreamId = UINT32_INVALID_VALUE;
+    audioInjectorPolicy_.FetchCapDeviceInjectPreProc(pipeInfos, removeFlag, fetchStreamId);
 
     AUDIO_INFO_LOG("[PipeExecStart] for all Pipes");
     uint32_t audioFlag;
@@ -253,7 +254,7 @@ int32_t AudioCoreService::FetchCapturerPipesAndExecute(
     pipeManager_->UpdateCapturerPipeInfos(pipeInfos);
     RemoveUnusedPipe();
 
-    audioInjectorPolicy_.FetchCapDeviceInjectPostProc(pipeInfos, removeFlag);
+    audioInjectorPolicy_.FetchCapDeviceInjectPostProc(pipeInfos, removeFlag, fetchStreamId);
     return SUCCESS;
 }
 
