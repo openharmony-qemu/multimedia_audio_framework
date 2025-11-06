@@ -92,7 +92,6 @@ audio_ohos_library("audio_suite") {
     "client/utils/src/audio_suite_soundfield_algo_interface_impl.cpp",
     "client/utils/src/audio_suite_aiss_algo_interface_impl.cpp",
     "client/utils/src/audio_suite_voice_beautifier_algo_interface_impl.cpp",
-    "client/node/src/audio_suite_voice_beautifier_node.cpp",
     "client/config/src/audio_suite_capabilities_parser.cpp",
     "client/config/src/audio_suite_capabilities.cpp",
   ]
