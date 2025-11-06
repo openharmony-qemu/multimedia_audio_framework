@@ -101,8 +101,7 @@ bool AppSelectRouter::IsCurrentOutPutDevicePublic()
     std::shared_ptr<AudioDeviceDescriptor> activeOutPutDevice =
         AudioPolicyService::GetAudioPolicyService().GetActiveOutputDeviceDescriptor();
     CHECK_AND_RETURN_RET_LOG(activeOutPutDevice != nullptr, false, "activeOutPutDevice is nullptr");
-    AUDIO_INFO_LOG("activeOutPutDevice deviceType_: %{public}d, deviceName_: %{public}s",
-        activeOutPutDevice->deviceType_, activeOutPutDevice->deviceName_.c_str());
+    AUDIO_INFO_LOG("activeOutPutDevice deviceType_: %{public}d", activeOutPutDevice->deviceType_);
 
     auto devicePrivacyType = AudioDeviceManager::GetAudioDeviceManager().GetDevicePrivacyType(activeOutPutDevice);
     AUDIO_INFO_LOG("current output device devicePrivacyType: %{public}d", devicePrivacyType);
@@ -123,12 +122,10 @@ void AppSelectRouter::ConfigureDeviceForSpecialScenario(
         activeOutPutDevice->macAddress_, DeviceRole::INPUT_DEVICE);
 
     if (pairDevice != nullptr) {
-        AUDIO_INFO_LOG("find pairDevice deviceType_: %{public}d, deviceName_: %{public}s",
-            pairDevice->deviceType_, pairDevice->deviceName_.c_str());
+        AUDIO_INFO_LOG("find pairDevice deviceType_: %{public}d", pairDevice->deviceType_);
         device = pairDevice;
     } else if (scoDevice != nullptr) {
-        AUDIO_INFO_LOG("find scoDevice deviceType_: %{public}d, deviceName_: %{public}s",
-            scoDevice->deviceType_, scoDevice->deviceName_.c_str());
+        AUDIO_INFO_LOG("find scoDevice deviceType_: %{public}d", scoDevice->deviceType_);
         device = scoDevice;
     }
 
