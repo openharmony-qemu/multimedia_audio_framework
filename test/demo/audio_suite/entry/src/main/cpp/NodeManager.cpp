@@ -253,7 +253,8 @@ const Node &NodeManager::GetNodeById(const std::string &nodeId) const
 }
 
 //获取均衡器类型
-std::string GetEqualizerOptions(const Node &node) {
+std::string GetEqualizerOptions(const Node &node)
+{
     OH_EqualizerFrequencyBandGains type;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_GetEqualizerFrequencyBandGains(node.physicalNode, &type);
     if (ret != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
@@ -271,7 +272,8 @@ std::string GetEqualizerOptions(const Node &node) {
 }
 
 //获取声音美化类型
-std::string GetVoiceBeautifierOptions(const Node &node) {
+std::string GetVoiceBeautifierOptions(const Node &node)
+{
     OH_VoiceBeautifierType type;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_GetVoiceBeautifierType(node.physicalNode, &type);
     if (ret != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
@@ -292,7 +294,8 @@ std::string GetVoiceBeautifierOptions(const Node &node) {
 }
 
 //获取声场类型
-std::string GetSoundFieldOptions(const Node &node) {
+std::string GetSoundFieldOptions(const Node &node)
+{
     OH_SoundFieldType type;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_GetSoundFieldType(node.physicalNode, &type);
     if (ret != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
@@ -313,7 +316,8 @@ std::string GetSoundFieldOptions(const Node &node) {
 }
 
 //获取环境类型
-std::string GetEnvironmentEffectOptions(const Node &node) {
+std::string GetEnvironmentEffectOptions(const Node &node)
+{
     OH_EnvironmentType type;
     OH_AudioSuite_Result ret = OH_AudioSuiteEngine_GetEnvironmentType(node.physicalNode, &type);
     if (ret != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
