@@ -330,7 +330,9 @@ void RendererInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
         cbBufferSize_ = static_cast<size_t>(bufferDurationInUs * curStreamParams_.samplingRate / AUDIO_US_PER_S) *
             sizePerFrameInByte_;
     }
-    uint64_t durationInFrame = bufferDurationInUs * curStreamParams_.samplingRate / AUDIO_US_PER_S;
+    uint64_t durationInFrame = bufferDurationInUs *
+        (curStreamParams_.customSampleRate == 0 ? curStreamParams_.samplingRate : curStreamParams_.customSampleRate)
+        / AUDIO_US_PER_S;
     SetCacheSize(durationInFrame);
     AUDIO_INFO_LOG("duration %{public}" PRIu64 ", ecodingType: %{public}d, size: %{public}zu, metaSize: %{public}zu",
         bufferDurationInUs, curStreamParams_.encoding, cbBufferSize_, metaSize);
