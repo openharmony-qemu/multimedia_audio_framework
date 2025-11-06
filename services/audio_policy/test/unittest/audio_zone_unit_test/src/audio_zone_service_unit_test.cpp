@@ -94,6 +94,7 @@ HWTEST_F(AudioZoneServiceUnitTest, CheckDeviceInAudioZone_001, TestSize.Level1)
 
     audioZone->RemoveDeviceDescriptor(deviceDescList);
     EXPECT_EQ(AudioZoneService::GetInstance().CheckDeviceInAudioZone(deviceDesc), false);
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
 }
 
 /**
@@ -120,6 +121,23 @@ HWTEST_F(AudioZoneServiceUnitTest, AudioZoneService_DegreeTest_001, TestSize.Lev
     EXPECT_NE(AudioZoneService::GetInstance().GetSystemVolumeDegree(zoneId1, volumeType), volumeDegree);
 
     AudioZoneService::GetInstance().ReleaseAudioZone(zoneId1);
+}
+
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: CheckExistUidInAudioZone_001
+ * @tc.desc  : Test CheckExistUidInAudioZone interface.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, CheckExistUidInAudioZone_001, TestSize.Level1)
+{
+    AudioZoneContext context;
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("TestZone2", context, 0);
+    std::shared_ptr<AudioZone> audioZone = AudioZoneService::GetInstance().FindZone(zoneId);
+    audioZone->BindByKey(AudioZoneBindKey(0, "", "", STREAM_USAGE_UNKNOWN));
+    EXPECT_EQ(AudioZoneService::GetInstance().CheckExistUidInAudioZone(), false);
+    audioZone->BindByKey(AudioZoneBindKey(1, "", "", STREAM_USAGE_UNKNOWN));
+    EXPECT_EQ(AudioZoneService::GetInstance().CheckExistUidInAudioZone(), true);
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
 }
 } // namespace AudioStandard
 } // namespace OHOS
