@@ -1749,5 +1749,50 @@ HWTEST_F(AudioDeviceStatusUnitTest, UpdateNearlinkDeviceVolume_001, TestSize.Lev
     result = audioDeviceStatus.UpdateNearlinkDeviceVolume(desc);
     EXPECT_EQ(result, SUCCESS);
 }
+
+/**
+* @tc.name  : Test ClearActiveHfpDevice.
+* @tc.number: ClearActiveHfpDevice_001
+* @tc.desc  : Test ClearActiveHfpDevice interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, ClearActiveHfpDevice_001, TestSize.Level1)
+{
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    desc.macAddress_ = "LOCALDEVICE";
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    AudioStreamDeviceChangeReasonExt::ExtEnum oldDevice =
+        AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE;
+    AudioStreamDeviceChangeReasonExt reason(oldDevice);
+    audioDeviceStatus.ClearActiveHfpDevice(desc, CATEGORY_UPDATE, reason);
+    EXPECT_EQ(desc.macAddress_, "LOCALDEVICE");
+
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    desc.deviceCategory_ = BT_HEADPHONE;
+    desc.isEnable_ = true;
+    desc.connectState_ = DEACTIVE_CONNECTED;
+    desc.exceptionFlag_ = false;
+    audioDeviceStatus.ClearActiveHfpDevice(desc, CATEGORY_UPDATE, reason);
+    EXPECT_EQ(desc.macAddress_, "LOCALDEVICE");
+    desc.deviceCategory_ = BT_UNWEAR_HEADPHONE;
+    audioDeviceStatus.ClearActiveHfpDevice(desc, CATEGORY_UPDATE, reason);
+    EXPECT_EQ(desc.macAddress_, "LOCALDEVICE");
+    audioDeviceStatus.ClearActiveHfpDevice(desc, ENABLE_UPDATE, reason);
+    EXPECT_EQ(desc.macAddress_, "LOCALDEVICE");
+    desc.isEnable_ = false;
+    audioDeviceStatus.ClearActiveHfpDevice(desc, ENABLE_UPDATE, reason);
+    EXPECT_EQ(desc.macAddress_, "LOCALDEVICE");
+    audioDeviceStatus.ClearActiveHfpDevice(desc, CONNECTSTATE_UPDATE, reason);
+    EXPECT_EQ(desc.macAddress_, "LOCALDEVICE");
+    desc.connectState_ = SUSPEND_CONNECTED;
+    audioDeviceStatus.ClearActiveHfpDevice(desc, CONNECTSTATE_UPDATE, reason);
+    EXPECT_EQ(desc.macAddress_, "LOCALDEVICE");
+    audioDeviceStatus.ClearActiveHfpDevice(desc, EXCEPTION_FLAG_UPDATE, reason);
+    EXPECT_EQ(desc.macAddress_, "LOCALDEVICE");
+    desc.exceptionFlag_ = true;
+    audioDeviceStatus.ClearActiveHfpDevice(desc, EXCEPTION_FLAG_UPDATE, reason);
+    EXPECT_EQ(desc.macAddress_, "LOCALDEVICE");
+
+}
 } // namespace AudioStandard
 } // namespace OHOS

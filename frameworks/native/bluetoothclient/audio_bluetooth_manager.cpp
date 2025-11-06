@@ -484,6 +484,27 @@ int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
     return SUCCESS;
 }
 
+int32_t AudioHfpManager::ClearActiveHfpDevice(const std::string &macAddress)
+{
+    BluetoothRemoteDevice device;
+    if (macAddress != "" && HfpBluetoothDeviceManager::GetConnectedHfpBluetoothDevice(macAddress, device) != SUCCESS) {
+        AUDIO_ERR_LOG("ClearActiveHfpDevice failed for the HFP device, %{public}s does not exist.",
+            GetEncryptAddr(macAddress).c_str());
+        return ERROR;
+    }
+    std::lock_guard<std::mutex> hfpDeviceLock(g_activehfpDeviceLock);
+    AUDIO_DEBUG_LOG("clearing device:%{public}s, current device:%{public}s",
+        GetEncryptAddr(macAddress).c_str(), GetEncryptAddr(activeHfpDevice_.GetDeviceAddr()).c_str());
+    if (macAddress != activeHfpDevice_.GetDeviceAddr()) {
+        return ERROR;
+    }
+    AUDIO_WARNING_LOG("Current hfp device is cleared, need to DisconnectSco for current activeHfpDevice.");
+    int32_t ret = DisconnectScoWrapper();
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "DisconnectSco failed, result: %{public}d", ret);
+    activeHfpDevice_ = BluetoothRemoteDevice();
+    return SUCCESS;
+}
+
 int32_t AudioHfpManager::UpdateActiveHfpDevice(const BluetoothRemoteDevice &device)
 {
     AUDIO_INFO_LOG("update active device:%{public}s, current device:%{public}s",
@@ -566,7 +587,8 @@ int32_t AudioHfpManager::Connect(const std::string &macAddress)
 int32_t AudioHfpManager::UpdateAudioScene(AudioScene scene, bool isRecordScene)
 {
     if (scene_.load() != scene) {
-        AUDIO_INFO_LOG("update audio scene from %{public}d to %{public}d", scene_.load(), scene);
+        AUDIO_INFO_LOG("update audio scene from %{public}d to %{public}d with recordscene",
+            scene_.load(), scene);
     }
     if (isRecordScene_.load() != isRecordScene) {
         AUDIO_INFO_LOG("%{public}s record scene", isRecordScene ? "is" : "not");
