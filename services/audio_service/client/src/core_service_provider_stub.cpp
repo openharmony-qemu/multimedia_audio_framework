@@ -142,7 +142,7 @@ int32_t CoreServiceProviderWrapper::OnCheckActiveMusicTime(const std::string &re
     return SUCCESS;
 }
 
-int32_t CoreServiceProviderWrapper::CaptureConcurrentCheck(const uint32_t sessionId) 
+int32_t CoreServiceProviderWrapper::CaptureConcurrentCheck(const uint32_t sessionId)
 {
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
     return coreServiceWorker_->CaptureConcurrentCheck(sessionId);
