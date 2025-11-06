@@ -496,7 +496,7 @@ int32_t AudioHfpManager::ClearActiveHfpDevice(const std::string &macAddress)
     AUDIO_DEBUG_LOG("clearing device:%{public}s, current device:%{public}s",
         GetEncryptAddr(macAddress).c_str(), GetEncryptAddr(activeHfpDevice_.GetDeviceAddr()).c_str());
     if (macAddress != activeHfpDevice_.GetDeviceAddr()) {
-        return ERROR;
+        return SUCCESS;
     }
     AUDIO_WARNING_LOG("Current hfp device is cleared, need to DisconnectSco for current activeHfpDevice.");
     int32_t ret = DisconnectScoWrapper();
