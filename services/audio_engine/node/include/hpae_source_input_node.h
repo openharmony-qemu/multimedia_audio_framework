@@ -59,6 +59,7 @@ public:
     HpaeNodeInfo& GetNodeInfoWithInfo(HpaeSourceBufferType &type);
     void UpdateAppsUidAndSessionId(std::vector<int32_t> &appsUid, std::vector<int32_t> &sessionsId);
     uint32_t GetCaptureId() const;
+    void SetInjectState(bool isInjecting);
 private:
     int32_t GetCapturerSourceAdapter(
         const std::string &deviceClass, const SourceType &sourceType, const std::string &info);
@@ -88,6 +89,8 @@ private:
     std::unordered_map<HpaeSourceBufferType, size_t> historyRemainSizeMap_;      // size of stored data
     std::unordered_map<HpaeSourceBufferType, std::vector<char>> capturerFrameDataMap_; // input buffer
     std::unordered_map<HpaeSourceBufferType, FrameDesc> fdescMap_; // CaptureframeWithEc argument struct
+
+    bool isInjecting_ = false; // mark injecting state
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

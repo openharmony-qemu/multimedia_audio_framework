@@ -18,6 +18,7 @@
 #endif
 
 #include <cinttypes>
+#include <thread>
 #include "hpae_source_input_node.h"
 #include "hpae_format_convert.h"
 #include "hpae_node_common.h"
@@ -150,6 +151,11 @@ void HpaeSourceInputNode::DoProcessInner(const HpaeSourceBufferType &bufferType,
 void HpaeSourceInputNode::DoProcessMicInner(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes)
 {
     AUDIO_DEBUG_LOG("DoProcessMicInner, replyBytes: %{public}" PRIu64, replyBytes);
+    if (isInjecting_ && replyBytes == 0 && audioCapturerSource_->GetArmUsbDeviceStatus() != 1) {
+        AUDIO_WARNING_LOG("HpaeSourceInputNode::DoProcessMicInner injecting need sleep");
+        std::this_thread::sleep_for(std::chrono::milliseconds(FRAME_DURATION_DEFAULT));
+        return;
+    }
     auto &historyData = historyDataMap_.at(bufferType);
     uint32_t byteSize = nodeInfoMap_.at(bufferType).channels * nodeInfoMap_.at(bufferType).frameLen *
         static_cast<uint32_t>(GetSizeFromFormat(nodeInfoMap_.at(bufferType).format));
@@ -489,6 +495,11 @@ void HpaeSourceInputNode::PushDataToBuffer(const HpaeSourceBufferType &bufferTyp
     auto newData = capturerFrameDataMap_.at(bufferType).data();
     historyData.insert(historyData.end(), newData, newData + replyBytes);
     historyRemainSizeMap_[bufferType] += replyBytes;
+}
+
+void HpaeSourceInputNode::SetInjectState(bool isInjecting)
+{
+    isInjecting_ = isInjecting;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
