@@ -127,7 +127,9 @@ public:
     int32_t SetStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
         const DeviceType &deviceType = DEVICE_TYPE_NONE, std::string networkId = LOCAL_NETWORK_ID);
 
-    int32_t SetInnerStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN);
+    void SetDeviceNoMuteForRinger(std::shared_ptr<AudioDeviceDescriptor> device);
+
+    void ClearDeviceNoMuteForRinger();
 
     int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute);
 
@@ -543,6 +545,8 @@ private:
     bool isA2DPPreActive_ = false;
     std::atomic<float> volumeLimit_ = MAX_STREAM_VOLUME;
     std::atomic<bool> isCastingConnect_ = false;
+    std::mutex ringerNoMuteDeviceMutex_;
+    std::shared_ptr<AudioDeviceDescriptor> ringerNoMuteDevice_ = nullptr;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {

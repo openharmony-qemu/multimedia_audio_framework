@@ -208,6 +208,9 @@ bool Util::IsScoSupportSource(const SourceType sourceType)
 
 bool Util::IsDualToneStreamType(const AudioStreamType streamType)
 {
+    if (VolumeUtils::IsPCVolumeEnable()) {
+        return false;
+    }
     return streamType == STREAM_RING || streamType == STREAM_VOICE_RING || streamType == STREAM_ALARM;
 }
 

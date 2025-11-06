@@ -1622,7 +1622,7 @@ void AudioCoreService::UpdateRingerOrAlarmerDualDeviceOutputRouter(
     if (ringerMode != RINGER_MODE_NORMAL &&
         IsRingerOrAlarmerDualDevicesRange(streamDesc->newDeviceDescs_.front()->getType()) &&
         streamDesc->newDeviceDescs_.front()->getType() != DEVICE_TYPE_SPEAKER) {
-        audioPolicyManager_.SetInnerStreamMute(STREAM_RING, false, streamUsage);
+        audioPolicyManager_.SetDeviceNoMuteForRinger(streamDesc->newDeviceDescs_.front());
         audioVolumeManager_.SetRingerModeMute(false);
         if (audioPolicyManager_.GetSystemVolumeLevel(STREAM_RING) <
             audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE) {
