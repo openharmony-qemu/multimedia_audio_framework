@@ -77,6 +77,7 @@ std::vector<AudioSuitePcmBuffer*>& AudioSuiteProcessNode::ReadProcessNodePreOutp
     auto& preOutputs = inputStream_->getInputDataRef();
     preOutputs.clear();
     auto& preOutputMap = inputStream_->GetPreOutputMap();
+
     for (auto& o : preOutputMap) {
         if (o.first == nullptr || !o.second) {
             AUDIO_ERR_LOG("node %{public}d has a invalid connection with prenode, "
@@ -88,7 +89,8 @@ std::vector<AudioSuitePcmBuffer*>& AudioSuiteProcessNode::ReadProcessNodePreOutp
                 "finished, skip this outputport.", GetNodeType(), o.second->GetNodeType());
             continue;
         }
-        std::vector<AudioSuitePcmBuffer *> outputData = o.first->PullOutputData();
+        std::vector<AudioSuitePcmBuffer *> outputData = o.first->PullOutputData(
+            GetAudioNodeInPcmFormat(), !GetNodeBypassStatus());
         if (!outputData.empty() && (outputData[0] != nullptr)) {
             if (outputData[0]->GetIsFinished()) {
                 finishedPrenodeSet.insert(o.second);
@@ -110,6 +112,7 @@ int32_t AudioSuiteProcessNode::Flush()
         SetOptions(paraName_, paraValue_);
     }
     finishedPrenodeSet.clear();
+    outputStream_->resetResampleCfg();
     AUDIO_INFO_LOG("Flush SUCCESS");
     return SUCCESS;
 }
@@ -135,117 +138,6 @@ int32_t AudioSuiteProcessNode::DisConnect(const std::shared_ptr<AudioNode>& preN
         return ERR_INVALID_PARAM;
     }
     inputStream_->DisConnect(preNode);
-    return SUCCESS;
-}
-
-int32_t AudioSuiteProcessNode::CopyPcmBuffer(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer)
-{
-    float *inputData = inputPcmBuffer->GetPcmDataBuffer();
-    uint32_t inFrameSize = inputPcmBuffer->GetFrameLen() * sizeof(float);
-    float *outputData = outputPcmBuffer->GetPcmDataBuffer();
-    uint32_t outFrameSize = outputPcmBuffer->GetFrameLen() * sizeof(float);
-    return memcpy_s(outputData, outFrameSize, inputData, inFrameSize);
-}
-
-int32_t AudioSuiteProcessNode::ChannelConvert(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer)
-{
-    uint32_t inChannelCount = inputPcmBuffer->GetChannelCount();
-    uint32_t outChannelCount = outputPcmBuffer->GetChannelCount();
-    AUDIO_DEBUG_LOG(
-        "Do ChannelConvert: inChannelCount: %{public}u, outChannelCount: %{public}u", inChannelCount, outChannelCount);
-
-    CHECK_AND_RETURN_RET_LOG((inChannelCount != 0) && (outChannelCount != 0) && (inChannelCount != outChannelCount),
-        ERROR, "Do ChannelConvert error: invalid input, inChannelCount: %{public}u outChannelCount: %{public}u",
-        inChannelCount, outChannelCount);
-
-    AudioChannelInfo inChannelInfo = {inputPcmBuffer->GetChannelLayout(), inChannelCount};
-    AudioChannelInfo outChannelInfo = {outputPcmBuffer->GetChannelLayout(), outChannelCount};
-    bool mixLfe = true;
-    int32_t ret = SetChannelConvertProcessParam(inChannelInfo, outChannelInfo, SAMPLE_F32LE, mixLfe);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Do ChannelConvert: SetParam fail with error code: %{public}d", ret);
-
-    uint32_t frameSize = inputPcmBuffer->GetFrameLen() / inChannelCount;
-    float *inputData = inputPcmBuffer->GetPcmDataBuffer();
-    uint32_t inLen = inputPcmBuffer->GetFrameLen() * sizeof(float);
-    float *outputData = outputPcmBuffer->GetPcmDataBuffer();
-    uint32_t outLen = outputPcmBuffer->GetFrameLen() * sizeof(float);
-
-    ret = ChannelConvertProcess(frameSize, inputData, inLen, outputData, outLen);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Do ChannelConvert: Process fail with error code: %{public}d", ret);
-
-    return SUCCESS;
-}
-
-int32_t AudioSuiteProcessNode::Resample(AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer)
-{
-    uint32_t inRate = inputPcmBuffer->GetSampleRate();
-    uint32_t outRate = outputPcmBuffer->GetSampleRate();
-    uint32_t inChannelCount = inputPcmBuffer->GetChannelCount();
-    uint32_t outChannelCount = outputPcmBuffer->GetChannelCount();
-    uint32_t resampleQuality = 5;
-    AUDIO_DEBUG_LOG("DoResample: inSampleRate: %{public}u, outSampleRate: %{public}u", inRate, outRate);
-
-    CHECK_AND_RETURN_RET_LOG((inChannelCount != 0) && (outChannelCount != 0) && (inChannelCount == outChannelCount),
-        ERROR, "Do Resample error: invalid input, inChannelCount: %{public}u outChannelCount: %{public}u",
-        inChannelCount, outChannelCount);
-
-    int32_t ret = SetUpResample(inRate, outRate, inChannelCount, resampleQuality);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetUpResample fail with error code: %{public}d", ret);
-
-    float *inputData = inputPcmBuffer->GetPcmDataBuffer();
-    uint32_t inFrameSize = inputPcmBuffer->GetFrameLen() / inChannelCount;
-    float *outputData = outputPcmBuffer->GetPcmDataBuffer();
-    uint32_t outFrameSize = outputPcmBuffer->GetFrameLen() / outChannelCount;
-    ret = DoResampleProcess(inputData, inFrameSize, outputData, outFrameSize);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DoResampleProcess fail with error code: %{public}d", ret);
-
-    return SUCCESS;
-}
-
-int32_t AudioSuiteProcessNode::ConvertProcess(
-    AudioSuitePcmBuffer *inputPcmBuffer, AudioSuitePcmBuffer *outputPcmBuffer, AudioSuitePcmBuffer *tmpPcmBuffer)
-{
-    CHECK_AND_RETURN_RET_LOG((inputPcmBuffer != nullptr) && (outputPcmBuffer != nullptr) && (tmpPcmBuffer != nullptr),
-        ERROR, "ConvertProcess input error: inputPcmBuffer or outputPcmBuffer is null");
-
-    uint32_t inChannelCount = inputPcmBuffer->GetChannelCount();
-    uint32_t outChannelCount = outputPcmBuffer->GetChannelCount();
-    AudioChannelLayout inChannelLayout = inputPcmBuffer->GetChannelLayout();
-    AudioChannelLayout outChannelLayout = outputPcmBuffer->GetChannelLayout();
-    uint32_t inSampleRate = inputPcmBuffer->GetSampleRate();
-    uint32_t outSampleRate = outputPcmBuffer->GetSampleRate();
-
-    AUDIO_DEBUG_LOG("Do ConvertProcess: inChannelCount: %{public}u, outChannelCount: %{public}u,"
-                   "inSampleRate: %{public}u, outSampleRate: %{public}u",
-        inChannelCount, outChannelCount, inSampleRate, outSampleRate);
-    
-    int32_t ret = SUCCESS;
-    if (inChannelCount == outChannelCount && inSampleRate == outSampleRate) {
-        return CopyPcmBuffer(inputPcmBuffer, outputPcmBuffer);
-    }
-
-    if (inChannelCount == outChannelCount) {
-        return Resample(inputPcmBuffer, outputPcmBuffer);
-    }
-
-    if (inSampleRate == outSampleRate) {
-        return ChannelConvert(inputPcmBuffer, outputPcmBuffer);
-    }
-
-    if (inChannelCount > outChannelCount) {
-        // downMix: output channels less than input channels, convert, then resample
-        tmpPcmBuffer->ResetPcmBuffer(inSampleRate, outChannelCount, outChannelLayout);
-        ret = ChannelConvert(inputPcmBuffer, tmpPcmBuffer);
-        CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
-        return Resample(tmpPcmBuffer, outputPcmBuffer);
-    } else {
-        // upMix:output channels larger than input channels, resample, then convert
-        tmpPcmBuffer->ResetPcmBuffer(outSampleRate, inChannelCount, inChannelLayout);
-        ret = Resample(inputPcmBuffer, tmpPcmBuffer);
-        CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
-        return ChannelConvert(tmpPcmBuffer, outputPcmBuffer);
-    }
-
     return SUCCESS;
 }
 

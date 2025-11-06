@@ -41,7 +41,8 @@ HWTEST_F(AudioSuiteOutputPortTest, OutputPort_001, TestSize.Level0)
         std::make_shared<OutputPort<AudioSuitePcmBuffer *>>(inputNode);
     EXPECT_NE(outputPort, nullptr);
 
-    std::vector<AudioSuitePcmBuffer *> data = outputPort->PullOutputData();
+    std::vector<AudioSuitePcmBuffer *> data = outputPort->PullOutputData(
+        PcmBufferFormat(SAMPLE_RATE_48000, STEREO, CH_LAYOUT_STEREO, SAMPLE_S32LE), true);
     EXPECT_EQ(data.size(), 0);
 
     AudioSuitePcmBuffer *pcm = nullptr;

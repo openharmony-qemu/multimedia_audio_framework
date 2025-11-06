@@ -79,7 +79,6 @@ ohos_unittest("audio_suite_node_test") {
     "node/audio_suite_input_node_test.cpp",
     "node/audio_suite_output_node_test.cpp",
     "node/audio_suite_channel_test.cpp",
-    "node/audio_suite_pcm_buffer_test.cpp",
     "node/audio_suite_eq_node_test.cpp",
     "node/audio_suite_env_node_test.cpp",
     "node/audio_suite_mixer_node_test.cpp",
@@ -119,6 +118,7 @@ ohos_unittest("audio_suite_utils_test") {
   module_out_path = module_output_path
   sources = [
     "tool/audio_suite_unittest_tools.cpp",
+    "utils/audio_suite_pcm_buffer_test.cpp",
     "utils/audio_suite_manager_thread_test.cpp",
     "utils/audio_suite_common_test.cpp",
     "utils/audio_suite_env_algo_interface_test.cpp",

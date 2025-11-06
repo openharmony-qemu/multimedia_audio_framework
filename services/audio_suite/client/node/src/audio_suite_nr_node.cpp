@@ -34,8 +34,8 @@ static constexpr uint32_t NR_ALGO_FRAME_SIZE = NR_ALGO_FRAME_LENGTH * sizeof(int
 AudioSuiteNrNode::AudioSuiteNrNode()
     : AudioSuiteProcessNode(AudioNodeType::NODE_TYPE_NOISE_REDUCTION,
           AudioFormat{{NR_ALGO_CHANNEL_LAYOUT, NR_ALGO_CHANNEL_COUNT}, NR_ALGO_SAMPLE_FORMAT, NR_ALGO_SAMPLE_RATE}),
-      pcmBufferOutput_(NR_ALGO_SAMPLE_RATE, NR_ALGO_CHANNEL_COUNT, NR_ALGO_CHANNEL_LAYOUT),
-      pcmBufferTmp_(NR_ALGO_SAMPLE_RATE, NR_ALGO_CHANNEL_COUNT, NR_ALGO_CHANNEL_LAYOUT)
+      outPcmBuffer_(
+          PcmBufferFormat{NR_ALGO_SAMPLE_RATE, NR_ALGO_CHANNEL_COUNT, NR_ALGO_CHANNEL_LAYOUT, NR_ALGO_SAMPLE_FORMAT})
 {}
 
 AudioSuiteNrNode::~AudioSuiteNrNode()
@@ -53,11 +53,6 @@ int32_t AudioSuiteNrNode::Init()
     int32_t ret = algoInterface_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to Init nr algorithm");
 
-    bufSize_ = pcmBufferOutput_.GetFrameLen() * sizeof(int16_t);
-    CHECK_AND_RETURN_RET_LOG(bufSize_ % NR_ALGO_FRAME_SIZE == 0, ERROR, "Invalid PcmBuffer length");
-    inputBuffer_ = std::make_unique<uint8_t[]>(bufSize_);
-    outputBuffer_ = std::make_unique<uint8_t[]>(bufSize_);
-
     AUDIO_INFO_LOG("AudioSuiteNrNode::Init end");
     return SUCCESS;
 }
@@ -71,63 +66,37 @@ int32_t AudioSuiteNrNode::DeInit()
         algoInterface_.reset();
     }
 
-    inputBuffer_.reset();
-    outputBuffer_.reset();
-
     AUDIO_INFO_LOG("AudioSuiteNrNode::DeInit end");
     return SUCCESS;
 }
 
 AudioSuitePcmBuffer *AudioSuiteNrNode::SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs)
 {
-    CHECK_AND_RETURN_RET_LOG(!inputs.empty(), &pcmBufferOutput_, "SignalProcess inputs list is empty");
+    CHECK_AND_RETURN_RET_LOG(!inputs.empty(), nullptr, "Inputs list is empty");
+    CHECK_AND_RETURN_RET_LOG(inputs[0] != nullptr, nullptr, "Input data is nullptr");
+    CHECK_AND_RETURN_RET_LOG(inputs[0]->IsSameFormat(GetAudioNodeInPcmFormat()), nullptr, "Invalid inputs format");
+    CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, nullptr, "algoInterface is nullptr, need Init first");
 
-    CHECK_AND_RETURN_RET_LOG(inputs[0] != nullptr, &pcmBufferOutput_, "SignalProcess input data is nullptr");
+    uint32_t inputDataSize = inputs[0]->GetDataSize();
+    uint32_t frameSize = NR_ALGO_FRAME_SIZE;
+    uint32_t frameCount = inputDataSize / frameSize;
+    CHECK_AND_RETURN_RET_LOG(inputDataSize % frameSize == 0, nullptr, "Invalid inputPcmBuffer size");
 
-    CHECK_AND_RETURN_RET_LOG(
-        algoInterface_ != nullptr, &pcmBufferOutput_, "SignalProcess algoInterface_ is null, need Init first");
-
-    CHECK_AND_RETURN_RET_LOG(inputBuffer_ != nullptr && outputBuffer_ != nullptr,
-        &pcmBufferOutput_, "SignalProcess error, need Init first");
-
-    // clear buffer
-    pcmBufferOutput_.Reset();
-    memset_s(inputBuffer_.get(), bufSize_, 0, bufSize_);
-    memset_s(outputBuffer_.get(), bufSize_, 0, bufSize_);
-
-    // channel and sampleRate convert
-    int32_t ret = ConvertProcess(inputs[0], &pcmBufferOutput_, &pcmBufferTmp_);
-    CHECK_AND_RETURN_RET(ret == SUCCESS, &pcmBufferOutput_);
-
-    // bitmap convert from float to SAMPLE_S16LE
-    ConvertFromFloat(NR_ALGO_SAMPLE_FORMAT,
-        pcmBufferOutput_.GetFrameLen(),
-        pcmBufferOutput_.GetPcmDataBuffer(),
-        static_cast<void *>(inputBuffer_.get()));
-
-    std::vector<uint8_t *> nrAlgoInputs(1);
-    std::vector<uint8_t *> nrAlgoOutputs(1);
-    uint8_t *frameInputPtr = inputBuffer_.get();
-    uint8_t *frameOutputPtr = outputBuffer_.get();
+    uint8_t *inDataPtr = inputs[0]->GetPcmData();
+    uint8_t *outDataPtr = outPcmBuffer_.GetPcmData();
     // apply algo for every frame
-    for (uint32_t i = 0; i + NR_ALGO_FRAME_SIZE <= bufSize_; i += NR_ALGO_FRAME_SIZE) {
-        nrAlgoInputs[0] = frameInputPtr;
-        nrAlgoOutputs[0] = frameOutputPtr;
+    for (uint32_t i = 0; i < frameCount; i++) {
+        algoInputs_[0] = inDataPtr;
+        algoOutputs_[0] = outDataPtr;
 
-        ret = algoInterface_->Apply(nrAlgoInputs, nrAlgoOutputs);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, &pcmBufferOutput_, "NR node SignalProcess run Apply fail");
+        int32_t ret = algoInterface_->Apply(algoInputs_, algoOutputs_);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "NR node Apply algo fail");
 
-        frameInputPtr += NR_ALGO_FRAME_SIZE;
-        frameOutputPtr += NR_ALGO_FRAME_SIZE;
+        inDataPtr += frameSize;
+        outDataPtr += frameSize;
     }
 
-    // bitmap convert from SAMPLE_S16LE to float
-    ConvertToFloat(NR_ALGO_SAMPLE_FORMAT,
-        pcmBufferOutput_.GetFrameLen(),
-        static_cast<void *>(outputBuffer_.get()),
-        pcmBufferOutput_.GetPcmDataBuffer());
-
-    return &pcmBufferOutput_;
+    return &outPcmBuffer_;
 }
 
 }  // namespace AudioSuite
