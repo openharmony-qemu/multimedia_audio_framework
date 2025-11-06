@@ -2448,6 +2448,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::GenerateStreamDesc(
     streamInfo.channelLayout = static_cast<AudioChannelLayout>(switchInfo.params.channelLayout);
     streamDesc->rendererInfo_ = switchInfo.rendererInfo;
     streamDesc->sessionId_ = switchInfo.sessionId;
+    streamDesc->oldOriginalFlag_ = switchInfo.rendererInfo.originalFlag;
 
     // update with restoreInfo
     streamDesc->routeFlag_ = restoreInfo.routeFlag;
