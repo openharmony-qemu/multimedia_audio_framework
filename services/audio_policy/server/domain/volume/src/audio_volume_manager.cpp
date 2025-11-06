@@ -1535,9 +1535,8 @@ int32_t AudioVolumeManager::DealWithEventVolume(const int32_t notificationId)
 
 int32_t AudioVolumeManager::ResetRingerModeMute()
 {
-    if (audioPolicyManager_.SetStreamMute(STREAM_RING, true) == SUCCESS) {
-        SetRingerModeMute(true);
-    }
+    audioPolicyManager_.ClearDeviceNoMuteForRinger();
+    SetRingerModeMute(true);
     return SUCCESS;
 }
 
