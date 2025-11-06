@@ -230,7 +230,6 @@ int32_t RendererInClientInner::InitSharedBuffer()
 
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && clientBuffer_ != nullptr, ret, "ResolveBuffer failed:%{public}d", ret);
     cacheSizeInFrame_ = engineSize;
-    AUDIO_INFO_LOG("using cache size:%{public}d", cacheSizeInFrame_.load());
 
     uint32_t totalSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
@@ -331,6 +330,8 @@ void RendererInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
         cbBufferSize_ = static_cast<size_t>(bufferDurationInUs * curStreamParams_.samplingRate / AUDIO_US_PER_S) *
             sizePerFrameInByte_;
     }
+    uint64_t durationInFrame = bufferDurationInUs * curStreamParams_.samplingRate / AUDIO_US_PER_S;
+    SetCacheSize(durationInFrame);
     AUDIO_INFO_LOG("duration %{public}" PRIu64 ", ecodingType: %{public}d, size: %{public}zu, metaSize: %{public}zu",
         bufferDurationInUs, curStreamParams_.encoding, cbBufferSize_, metaSize);
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
