@@ -109,7 +109,9 @@ private:
     int32_t SetVolumeInner(float left, float right);
     void UpdateSinkState(bool started);
     int32_t FlushInner(void);
+#ifdef SUPPORT_OLD_ENGINE
     void CheckFlushThread();
+#endif
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -132,7 +134,9 @@ private:
     bool sinkInited_ = false;
     bool started_ = false;
     bool isFlushing_ = false;
+#ifdef SUPPORT_OLD_ENGINE
     bool isNeedRestart_ = false;
+#endif
     float leftVolume_ = DEFAULT_VOLUME_LEVEL;
     float rightVolume_ = DEFAULT_VOLUME_LEVEL;
     uint32_t hdiRenderId_ = HDI_INVALID_ID;
@@ -166,6 +170,9 @@ private:
     std::string dumpFileName_ = "";
     std::atomic<uint64_t> renderPos_ = 0;
     std::mutex sinkMutex_;
+#ifdef SUPPORT_OLD_ENGINE
+    std::shared_ptr<std::thread> flushThread_;
+#endif
 };
 
 } // namespace AudioStandard

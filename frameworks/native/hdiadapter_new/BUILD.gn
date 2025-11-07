@@ -126,6 +126,9 @@ ohos_shared_library("hdiadapter_new") {
     external_deps += [ "power_manager:powermgr_client" ]
     defines += [ "FEATURE_POWER_MANAGER" ]
   }
+  if(!audio_framework_feature_new_engine_flag) {
+    defines += [ "SUPPORT_OLD_ENGINE" ]
+  }
 
   part_name = "audio_framework"
   subsystem_name = "multimedia"
