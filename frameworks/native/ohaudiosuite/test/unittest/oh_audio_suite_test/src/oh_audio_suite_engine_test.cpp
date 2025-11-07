@@ -2856,7 +2856,7 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_IsNodeTypeSupported001, TestS
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
     EXPECT_EQ(isSupported, true);
 
-    ret =  OH_AudioSuiteEngine_IsNodeTypeSupported(OUT_NODE_TYPE_DEFAULT, &isSupported);
+    ret =  OH_AudioSuiteEngine_IsNodeTypeSupported(OUTPUT_NODE_TYPE_DEFAULT, &isSupported);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
     EXPECT_EQ(isSupported, true);
 }
