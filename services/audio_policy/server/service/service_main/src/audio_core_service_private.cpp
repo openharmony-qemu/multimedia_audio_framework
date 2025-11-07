@@ -2597,8 +2597,6 @@ bool AudioCoreService::HandleMuteBeforeDeviceSwitch(
             MuteSinkPortForSwitchDevice(streamDesc, reason);
 #endif
         }
-
-        CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
     }
 
     return true;
@@ -2658,13 +2656,12 @@ void AudioCoreService::CheckAndSleepBeforeVoiceCallDeviceSet(const AudioStreamDe
 // a delay is required before switching to dual output (e.g., speaker + headset).
 // This ensures that the remaining audio buffer is drained,
 // preventing any residual media sound from leaking through the speaker.
-void AudioCoreService::CheckAndSleepBeforeRingDualDeviceSet(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-    const AudioStreamDeviceChangeReasonExt reason)
+void AudioCoreService::CheckAndSleepBeforeRingDualDeviceSet(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr && !streamDesc->newDeviceDescs_.empty(), "Invalid streamDesc");
     bool isRingOrAlarmStream = Util::IsRingerOrAlarmerStreamUsage(streamDesc->rendererInfo_.streamUsage);
     DeviceType deviceType = streamDesc->newDeviceDescs_.front()->deviceType_;
-    if (streamDesc->streamStatus_ == STREAM_STATUS_NEW && reason.IsSetAudioScene() &&
+    if (streamDesc->streamStatus_ == STREAM_STATUS_NEW &&
         streamDesc->newDeviceDescs_.size() > 1 && streamCollector_.IsMediaPlaying() &&
         IsRingerOrAlarmerDualDevicesRange(deviceType) && isRingOrAlarmStream) {
         if (AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(
