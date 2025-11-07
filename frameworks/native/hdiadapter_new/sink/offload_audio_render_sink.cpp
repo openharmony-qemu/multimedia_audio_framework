@@ -221,9 +221,8 @@ int32_t OffloadAudioRenderSink::Reset(void)
 
 #ifdef SUPPORT_OLD_ENGINE
     isNeedRestart_ = true;
-#else
-    std::lock_guard<std::mutex> lock(sinkMutex_);
 #endif
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     int32_t ret = FlushInner();
     if (ret != SUCCESS) {
 #ifdef SUPPORT_OLD_ENGINE
