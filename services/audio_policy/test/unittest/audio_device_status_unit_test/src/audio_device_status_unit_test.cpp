@@ -848,29 +848,6 @@ HWTEST_F(AudioDeviceStatusUnitTest, HandleLocalDeviceConnected_005, TestSize.Lev
 }
 
 /**
-* @tc.name  : Test DeactivateNearlinkDevice.
-* @tc.number: DeactivateNearlinkDevice_001
-* @tc.desc  : Test DeactivateNearlinkDevice.
-*/
-HWTEST_F(AudioDeviceStatusUnitTest, DeactivateNearlinkDevice_001, TestSize.Level1)
-{
-    AudioDeviceDescriptor desc;
-    desc.deviceType_ = DEVICE_TYPE_NEARLINK;
-    desc.macAddress_ = "";
-
-    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
-    audioDeviceStatus.audioActiveDevice_.currentActiveDevice_.macAddress_ = "LOCALDEVICE";
-    std::string ret = "LOCALDEVICE";
-
-    audioDeviceStatus.DeactivateNearlinkDevice(desc);
-    EXPECT_NE(desc.macAddress_, ret);
-
-    desc.deviceType_ = DEVICE_TYPE_NEARLINK_IN;
-    audioDeviceStatus.DeactivateNearlinkDevice(desc);
-    EXPECT_NE(desc.macAddress_, ret);
-}
-
-/**
 * @tc.name : Test AudioDeviceStatus.
 * @tc.number: AudioDeviceStatus_030
 * @tc.desc : Test HandleLocalDeviceConnected interface.
