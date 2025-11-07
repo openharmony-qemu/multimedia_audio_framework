@@ -1636,11 +1636,11 @@ int32_t AudioDeviceManager::SetPreferredInputDevice(
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
         ERR_PERMISSION_DENIED, "set preferred input device denied: no system permission");
+    CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, ERR_INVALID_PARAM, "invalid parameter");
     std::lock_guard<std::mutex> lock(preferredInputDeviceMutex_);
     preferredInputDeviceInfo_[sessionID] = std::make_pair(devDesc, sourceType);
-    AUDIO_INFO_LOG("set preferred input device successful, sessionID = %{public}d, deviceName_ = %{public}s, "
-        "deviceType = %{public}d, sourceType = %{public}d", sessionID, devDesc->deviceName_.c_str(),
-        devDesc->deviceType_, sourceType);
+    AUDIO_INFO_LOG("set preferred input device successful, sessionID = %{public}d, "
+        "deviceType = %{public}d, sourceType = %{public}d", sessionID, devDesc->deviceType_, sourceType);
     return SUCCESS;
 }
 
@@ -1670,8 +1670,7 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetOnlinePreferredInputDev
     }
     CHECK_AND_RETURN_RET_LOG(onlinePreferredInputDevice != nullptr, nullptr, "cannot find online preferredInputDevice");
     CHECK_AND_RETURN_RET_LOG(onlinePreferredInputDevice->deviceRole_ == INPUT_DEVICE, nullptr, "wrong deviceRole");
-    AUDIO_INFO_LOG("find online preferredInputDevice deviceType: %{public}d, deviceName: %{public}s",
-        onlinePreferredInputDevice->deviceType_, onlinePreferredInputDevice->deviceName_.c_str());
+    AUDIO_INFO_LOG("find online preferredInputDevice deviceType: %{public}d", onlinePreferredInputDevice->deviceType_);
     return onlinePreferredInputDevice;
 }
 
