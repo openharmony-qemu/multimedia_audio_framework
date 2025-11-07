@@ -45,6 +45,7 @@ constexpr float BIAS  = 1.0f;
 static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
+static size_t g_count = 0;
 typedef void (*TestPtr)(const uint8_t *, size_t);
 
 const vector<std::string> g_testKeys = {
@@ -615,6 +616,7 @@ void AudioServerGetAudioParameterTest()
     std::string key = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
     data.WriteString(key);
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(AudioServerPtr != nullptr);
     MessageParcel reply;
     MessageOption option;
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::GET_AUDIO_PARAMETER),
@@ -645,6 +647,7 @@ void AudioServerSetMicrophoneMuteTest()
     bool isMute = provider.ConsumeBool();
     data.WriteBool(isMute);
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(AudioServerPtr != nullptr);
     MessageParcel reply;
     MessageOption option;
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_MICROPHONE_MUTE),
@@ -753,6 +756,7 @@ void AudioServerNotifyMuteStateChangeTest()
     data.WriteBool(true);
 
     sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(AudioServerPtr != nullptr);
     MessageParcel reply;
     MessageOption option;
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_MUTE_STATE_CHANGE),
@@ -1059,7 +1063,9 @@ void AudioServerCreateHdiSourcePortTest()
 void AudioServerRegisterDataTransferCallbackTest()
 {
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
     sptr<AudioPolicyManagerListenerStubImpl> focusListenerStub = new(std::nothrow) AudioPolicyManagerListenerStubImpl();
+    CHECK_AND_RETURN(focusListenerStub != nullptr);
     sptr<IRemoteObject> object = focusListenerStub->AsObject();
 
     audioServerPtr->RegisterDataTransferCallback(object);
@@ -1483,6 +1489,7 @@ void AudioServerCheckPlaybackPermissionFuzzTest()
 {
     AudioProcessConfig config;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
     audioServerPtr->CheckPlaybackPermission(config);
 }
 
@@ -1548,6 +1555,7 @@ void AudioServerGetMaxAmplitudeFuzzTest()
     float maxAmplitude = provider.ConsumeFloatingPoint<float>();
     int32_t sourceType = provider.ConsumeIntegral<int32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
     audioServerPtr->GetMaxAmplitude(isOutputDevice, deviceClass, sourceType, maxAmplitude);
 }
 
@@ -2108,13 +2116,14 @@ void FuzzTest(const uint8_t* rawData, size_t size)
     g_pos = 0;
 
     FuzzedDataProvider provider(RAW_DATA, g_dataSize);
-    uint32_t code = provider.ConsumeIntegral<uint32_t>();
-    uint32_t len = GetArrLength(g_testFuncs);
+    uint32_t len = sizeof(g_testFuncs) / sizeof(g_testFuncs[0]);
     if (len > 0) {
-        g_testFuncs[code % len]();
+        g_testFuncs[g_count % len]();
+        g_count++;
     } else {
         AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
     }
+    g_count = g_count == len ? 0 : g_count;
 
     return;
 }

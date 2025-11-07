@@ -164,6 +164,7 @@ vector<AudioStreamStatus> AudioStreamStatusVec = {
 void GetFastControlParamFuzzTest()
 {
     auto audioCoreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN(audioCoreService != nullptr);
     audioCoreService->isFastControlled_ = GetData<int32_t>() % NUM_2;
     int32_t value = GetData<int32_t>() % NUM_2;
     SetSysPara("persist.multimedia.audioflag.fastcontrolled", value);
@@ -173,7 +174,9 @@ void GetFastControlParamFuzzTest()
 void NeedRehandleA2DPDeviceFuzzTest()
 {
     auto desc = std::make_shared<AudioDeviceDescriptor>();
+    CHECK_AND_RETURN(desc != nullptr);
     auto audioCoreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN(audioCoreService != nullptr);
     uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
     desc->deviceType_ = DeviceTypeVec[deviceTypeCount];
     std::string moduleName = BLUETOOTH_MIC;
@@ -192,6 +195,7 @@ void TriggerRecreateRendererStreamCallbackFuzzTest()
     AudioStreamDeviceChangeReasonExt reason(extEnum);
     auto audioCoreService = AudioCoreService::GetCoreService();
     std::shared_ptr<AudioPolicyServerHandler> handler = std::make_shared<AudioPolicyServerHandler>();
+    CHECK_AND_RETURN(handler != nullptr);
     audioCoreService->SetCallbackHandler(handler);
     audioCoreService->TriggerRecreateRendererStreamCallback(streamDesc, reason);
 }
@@ -207,6 +211,7 @@ void TriggerRecreateCapturerStreamCallbackFuzzTest()
     streamDesc->streamStatus_ = GetData<AudioStreamStatus>();
     streamDesc->routeFlag_ = GetData<bool>();
     auto audioCoreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN(audioCoreService != nullptr);
     std::shared_ptr<AudioPolicyServerHandler> handler = std::make_shared<AudioPolicyServerHandler>();
     audioCoreService->SetCallbackHandler(handler);
     audioCoreService->TriggerRecreateCapturerStreamCallback(streamDesc);
@@ -354,6 +359,7 @@ void AudioCoreServicePrivateSetVoiceCallMuteForSwitchDeviceFuzzTest()
 void AudioCoreServicePrivateMuteSinkPortFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
+    CHECK_AND_RETURN(audioCoreService != nullptr);
     const std::string oldSinkName = OFFLOAD_PRIMARY_SPEAKER;
     const std::string newSinkName = OFFLOAD_PRIMARY_SPEAKER;
     AudioStreamDeviceChangeReasonExt reason;
@@ -377,6 +383,7 @@ void AudioCoreServicePrivateMuteSinkPortLogicFuzzTest()
 void AudioCoreServicePrivateActivateOutputDeviceFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
+    CHECK_AND_RETURN(audioCoreService != nullptr);
     audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
     int32_t streamActionCount = static_cast<int32_t>(AudioStreamAction::AUDIO_STREAM_ACTION_RECREATE) + 1;
@@ -540,7 +547,7 @@ void AudioCoreServicePrivateUpdateOffloadStateFuzzTest()
     audioStreamDescriptor->streamAction_ = static_cast<AudioStreamAction>(GetData<uint8_t>() % streamActionCount);
     pipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
     pipeInfo->moduleInfo_.name = OFFLOAD_PRIMARY_SPEAKER;
-    pipeInfo->moduleInfo_.className == "remote_offload";
+    pipeInfo->moduleInfo_.className = "remote_offload";
     audioCoreService->UpdateOffloadState(pipeInfo);
 }
 
@@ -613,7 +620,7 @@ void AudioCoreServicePrivateUpdateRemoteOffloadModuleNameFuzzTest()
     if (audioCoreService == nullptr || pipeInfo == nullptr) {
         return;
     }
-    pipeInfo->moduleInfo_.className == "remote_offload";
+    pipeInfo->moduleInfo_.className = "remote_offload";
     pipeInfo->moduleInfo_.name = OFFLOAD_PRIMARY_SPEAKER;
     std::string moduleName;
     audioCoreService->UpdateRemoteOffloadModuleName(pipeInfo, moduleName);
@@ -893,7 +900,7 @@ bool FuzzTest(const uint8_t* rawData, size_t size)
     g_dataSize = size;
     g_pos = 0;
 
-    uint32_t len = GetArrLength(g_testFuncs);
+    uint32_t len = sizeof(g_testFuncs) / sizeof(g_testFuncs[0]);
     if (len > 0) {
         g_testFuncs[g_count % len]();
         g_count++;

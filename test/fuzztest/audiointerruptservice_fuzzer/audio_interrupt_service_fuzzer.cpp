@@ -317,7 +317,7 @@ void UnsetAudioInterruptCallbackFuzzTest(const uint8_t *rawData, size_t size)
     }
     
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-
+    CHECK_AND_RETURN(interruptService != nullptr);
     int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
     uint32_t sessionId = *reinterpret_cast<const uint32_t *>(rawData);
 
