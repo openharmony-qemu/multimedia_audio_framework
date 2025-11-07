@@ -182,7 +182,7 @@ HpaeStreamInfo GetCaptureStreamInfo()
 static std::shared_ptr<HpaeSinkInputNode> CreateTestNode(OHOS::AudioStandard::HPAE::HpaeSessionState state)
 {
     HpaeNodeInfo nodeinfo;
-    nodeInfo.sessionId = TEST_STREAM_SESSION_ID;
+    nodeinfo.sessionId = TEST_STREAM_SESSION_ID;
     nodeinfo.streamType = STREAM_MUSIC;
     std::shared_ptr<HpaeSinkInputNode> node = std::make_shared<HpaeSinkInputNode>(nodeinfo);
     node->SetState(state);
@@ -2022,12 +2022,12 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerGetPreferSInk001, TestSize.Level1)
     std::shared_ptr<HpaeSinkInputNode> sinkInputNode = CreateTestNode(HPAE_SESSION_RUNNING);
     hpaeManager_->movingIds_.emplace(TEST_STREAM_SESSION_ID, HPAE_SESSION_RUNNING);
     std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs;
-    sinkInputs.emplace_back(sinkInputNode_);
+    sinkInputs.emplace_back(sinkInputNode);
     sinkInputs.emplace_back(nullptr);
-    std::vector<std::shared_ptr<HpaeSinkInputNode>> results = hpaeManager_->GetPerferSinkInputs();
+    std::vector<std::shared_ptr<HpaeSinkInputNode>> results = hpaeManager_->GetPerferSinkInputs(sinkInputs);
     EXPECT_EQ(results.size(), 1);
     hpaeManager_->movingIds_.emplace(TEST_STREAM_SESSION_ID, HPAE_SESSION_RELEASED);
-    results = hpaeManager_->GetPerferSinkInputs();
+    results = hpaeManager_->GetPerferSinkInputs(sinkInputs);
     EXPECT_EQ(results.size(), 0);
 }
 }  // namespace
