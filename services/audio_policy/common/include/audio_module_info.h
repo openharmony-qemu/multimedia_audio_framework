@@ -43,6 +43,7 @@ static const char* INVALID_CLASS = "invalid";
 static const char* DIRECT_VOIP_CLASS = "primary_direct_voip";
 static const char* MMAP_VOIP_CLASS = "primary_mmap_voip";
 static const char* MMAP_CLASS = "primary_mmap";
+static const char* DIRECT_CLASS = "primary_direct";
 static const char* A2DP_FAST_CLASS = "a2dp_fast";
 static const char* BLUETOOTH_SPEAKER = "Bt_Speaker";
 static const char* BLUETOOTH_A2DP_FAST = "bt_a2dp_fast";
@@ -68,6 +69,7 @@ static const char* PORT_NONE = "none";
 static const char* PRIMARY_DIRECT_VOIP = "direct_voip";
 static const char* PRIMARY_MMAP_VOIP = "mmap_voip";
 static const char* PRIMARY_MMAP = "mmap";
+static const char* PRIMARY_DIRECT = "direct";
 static const char* ACCESSORY_SOURCE = "accessory_mic";
 static const char* VIRTUAL_AUDIO = "virtual_audio";
 }

@@ -75,7 +75,8 @@ std::map<std::string, std::string> AudioIOHandleMap::sinkPortStrToClassStrMap_ =
     {PRIMARY_MMAP_VOIP, MMAP_VOIP_CLASS},
     {MCH_PRIMARY_SPEAKER, MCH_CLASS},
     {PRIMARY_MMAP, MMAP_CLASS},
-    {BLUETOOTH_A2DP_FAST, A2DP_FAST_CLASS}
+    {BLUETOOTH_A2DP_FAST, A2DP_FAST_CLASS},
+    {PRIMARY_DIRECT, DIRECT_CLASS}
 };
 
 void AudioIOHandleMap::DeInit()
