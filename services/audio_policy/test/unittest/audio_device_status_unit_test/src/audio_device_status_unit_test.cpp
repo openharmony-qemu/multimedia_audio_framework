@@ -1792,7 +1792,6 @@ HWTEST_F(AudioDeviceStatusUnitTest, ClearActiveHfpDevice_001, TestSize.Level1)
     desc.exceptionFlag_ = true;
     audioDeviceStatus.ClearActiveHfpDevice(desc, EXCEPTION_FLAG_UPDATE, reason);
     EXPECT_EQ(desc.macAddress_, "LOCALDEVICE");
-
 }
 } // namespace AudioStandard
 } // namespace OHOS
