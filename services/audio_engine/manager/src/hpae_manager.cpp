@@ -1112,20 +1112,29 @@ void HpaeManager::HandleMoveSourceOutput(HpaeCaptureMoveInfo moveInfo, std::stri
     }
 }
 
+std::vector<std::shared_ptr<HpaeSinkInputNode>> HpaeManager::GetPerferSinkInputs(
+    const std::vector<std::shared_ptr<HpaeSinkInputNode>> &sinkInputs)
+{
+    std::vector<std::shared_ptr<HpaeSinkInputNode>> results;
+    for (const auto &it : sinkInputs) {
+        if (it == nullptr) {
+            continue;
+        }
+        uint32_t sessionId = it->GetNodeInfo().sessionId;
+        if (MovingSinkStateChange(sessionId, it)) {
+            continue;
+        }
+        results.emplace_back(it);
+    }
+    return results;
+}
+
 void HpaeManager::HandleMoveAllSinkInputs(
     std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkName, MoveSessionType moveType)
 {
     AUDIO_INFO_LOG("handle move session count:%{public}zu to name:%{public}s", sinkInputs.size(), sinkName.c_str());
     if (moveType == MOVE_PREFER) {
-        for (auto it = sinkInputs.begin(); it != sinkInputs.end();) {
-            CHECK_AND_CONTINUE_LOG(*it, "sinkInput is nullptr");
-            uint32_t sessionId = (*it)->GetNodeInfo().sessionId;
-            if (MovingSinkStateChange(sessionId, *it)) {
-                sinkInputs.erase(it);
-                continue;
-            }
-            it++;
-        }
+        sinkInputs = GetPerferSinkInputs(sinkInputs);
     }
     if (sinkName.empty()) {
         AUDIO_INFO_LOG("sink name is empty, move to default sink:%{public}s", defaultSink_.c_str());
