@@ -198,7 +198,6 @@ int32_t OffloadAudioRenderSink::FlushInner(void)
     isFlushing_ = true;
     renderPos_ = 0;
     int32_t ret = audioRender_->Flush(audioRender_);
-
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("flush fail, ret: %{public}d", ret);
     }
