@@ -166,7 +166,6 @@ private:
     std::string dumpFileName_ = "";
     std::atomic<uint64_t> renderPos_ = 0;
     std::mutex sinkMutex_;
-    std::shared_ptr<std::thread> flushThread_;
 };
 
 } // namespace AudioStandard

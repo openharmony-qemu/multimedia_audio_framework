@@ -35,7 +35,6 @@ OffloadAudioRenderSink::~OffloadAudioRenderSink()
     if (sinkInited_) {
         DeInit();
     }
-    CheckFlushThread();
     AUDIO_INFO_LOG("volumeDataCount: %{public}" PRId64, volumeDataCount_);
 }
 
@@ -145,30 +144,20 @@ int32_t OffloadAudioRenderSink::FlushInner(void)
     Trace trace("OffloadAudioRenderSink::FlushInner");
     CHECK_AND_RETURN_RET_LOG(!isFlushing_, ERR_OPERATION_FAILED, "duplicate flush");
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
 
-    CheckFlushThread();
     isFlushing_ = true;
-    flushThread_ = std::make_shared<std::thread>([&] {
-        auto future = async(std::launch::async, [&] {
-            std::lock_guard<std::mutex> lock(sinkMutex_);
-            CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
-            return audioRender_->Flush(audioRender_);
-        });
-        if (future.wait_for(std::chrono::milliseconds(250)) == std::future_status::timeout) { // 250: max wait 250ms
-            AUDIO_ERR_LOG("flush fail, timeout of 250ms");
-        } else {
-            int32_t ret = future.get();
-            if (ret != SUCCESS) {
-                AUDIO_ERR_LOG("flush fail, ret: %{public}d", ret);
-            }
-        }
-        isFlushing_ = false;
-        if (isNeedRestart_) {
-            isNeedRestart_ = false;
-            Start();
-        }
-    });
     renderPos_ = 0;
+    int32_t ret = audioRender_->Flush(audioRender_);
+
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("flush fail, ret: %{public}d", ret);
+    }
+    isFlushing_ = false;
+    if (isNeedRestart_) {
+        isNeedRestart_ = false;
+        Start();
+    }
     return SUCCESS;
 }
 
@@ -177,14 +166,6 @@ int32_t OffloadAudioRenderSink::Flush(void)
     std::lock_guard<std::mutex> lock(sinkMutex_);
     Trace trace("OffloadAudioRenderSink::Flush");
     return FlushInner();
-}
-
-void OffloadAudioRenderSink::CheckFlushThread()
-{
-    if (flushThread_ != nullptr && flushThread_->joinable()) {
-        flushThread_->join();
-    }
-    flushThread_.reset();
 }
 
 int32_t OffloadAudioRenderSink::Reset(void)
