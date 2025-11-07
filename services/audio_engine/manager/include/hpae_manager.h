@@ -266,7 +266,7 @@ private:
     void DeleteCaptureManager(const std::string &name);
     void DeleteAudioport(const std::string &name);
     std::vector<std::shared_ptr<HpaeSinkInputNode>> GetPerferSinkInputs(
-    const std::vector<std::shared_ptr<HpaeSinkInputNode>> &sinkInputs);
+        const std::vector<std::shared_ptr<HpaeSinkInputNode>> &sinkInputs);
 
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;

@@ -1116,11 +1116,11 @@ std::vector<std::shared_ptr<HpaeSinkInputNode>> HpaeManager::GetPerferSinkInputs
 {
     std::vector<std::shared_ptr<HpaeSinkInputNode>> results;
     for (const auto &it : sinkInputs) {
-        if (*it == nullptr) {
+        if (it == nullptr) {
             continue;
         }
-        uint32_t sessionId = (*it)->GetNodeInfo().sessionId;
-        if (MovingSinkStateChange(sessionId, *it)) {
+        uint32_t sessionId = it->GetNodeInfo().sessionId;
+        if (MovingSinkStateChange(sessionId, it)) {
             continue;
         }
         results.emplace_back(it);
