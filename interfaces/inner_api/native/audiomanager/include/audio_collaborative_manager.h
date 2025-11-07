@@ -22,6 +22,19 @@
 namespace OHOS {
 namespace AudioStandard {
 
+class AudioCollaborationEnabledChangeForCurrentDeviceCallback {
+public:
+    virtual ~AudioCollaborationEnabledChangeForCurrentDeviceCallback() = default;
+    /**
+     * @brief AudioCollaborationEnabledChangeForCurrentDeviceCallback will be executed
+     *  when collboration enabled state changes
+     *
+     * @param enabled the collboration enabled state for current device.
+     * @since 20
+     */
+    virtual void OnCollaborationEnabledChangeForCurrentDevice(const bool &enabled) = 0;
+};
+
 class AudioCollaborativeManager {
 public:
     static AudioCollaborativeManager *GetInstance();
@@ -35,7 +48,7 @@ public:
     bool IsCollaborativePlaybackSupported();
 
     /**
-     * @brief Set the spatialization enabled or disabled by the specified device.
+     * @brief Set the collboration enabled or disabled by the specified device.
      *
      * @return Returns success or not
      * @since 20
@@ -46,10 +59,29 @@ public:
     /**
      * @brief Check whether the collaborative is supported for some device
      *
-     * @return Returns <b>true</b> if the spatialization is supported; returns <b>false</b> otherwise.
+     * @return Returns <b>true</b> if the collboration is supported; returns <b>false</b> otherwise.
      * @since 20
      */
     bool IsCollaborativePlaybackEnabledForDevice(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
+
+    /**
+     * @brief Register the collboration enabled change for current device callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    int32_t RegisterCollaborationEnabledForCurrentDeviceEventListener(
+        const std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback> &callback);
+
+    /**
+     * @brief Unregister the collboration enabled change for current device callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    int32_t UnregisterCollaborationEnabledForCurrentDeviceEventListener();
 private:
     AudioCollaborativeManager();
     virtual ~AudioCollaborativeManager();

@@ -3350,6 +3350,49 @@ int32_t AudioPolicyManager::GetMinVolumeDegree(AudioVolumeType volumeType, Devic
     return volumeDegree;
 }
 
+int32_t AudioPolicyManager::RegisterCollaborationEnabledForCurrentDeviceEventListener(
+    const std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback> &callback)
+{
+    AUDIO_INFO_LOG("Start to register");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    if (!isAudioPolicyClientRegisted_) {
+        const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
+        if (ret != SUCCESS) {
+            return ret;
+        }
+    }
+
+    std::lock_guard<std::mutex>
+        lockCbMap(callbackChangeInfos_[CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->AddCollaborationEnabledChangeForCurrentDeviceCallback(callback);
+        size_t callbackSize = audioPolicyClientStubCB_->GetCollaborationEnabledChangeForCurrentDeviceCallbackSize();
+        if (callbackSize == 1) {
+            callbackChangeInfos_[CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE].isEnable = true;
+            SetClientCallbacksEnable(CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE, true);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnregisterCollaborationEnabledForCurrentDeviceEventListener()
+{
+    AUDIO_INFO_LOG("Start to unregister");
+    std::lock_guard<std::mutex>
+        lockCbMap(callbackChangeInfos_[CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->RemoveCollaborationEnabledChangeForCurrentDeviceCallback();
+        if (audioPolicyClientStubCB_->GetCollaborationEnabledChangeForCurrentDeviceCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE].isEnable = false;
+            SetClientCallbacksEnable(CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE, false);
+        }
+    }
+    return SUCCESS;
+}
+
 AudioPolicyManager& AudioPolicyManager::GetInstance()
 {
     static AudioPolicyManager policyManager;

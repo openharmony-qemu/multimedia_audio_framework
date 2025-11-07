@@ -27,6 +27,7 @@
 #include "audio_combine_denoising_manager.h"
 #include "audio_policy_interface.h"
 #include "audio_stream_manager.h"
+#include "audio_collaborative_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -150,6 +151,10 @@ public:
     int32_t AddAudioFormatUnsupportedErrorCallback(const std::shared_ptr<AudioFormatUnsupportedErrorCallback> &cb);
     int32_t RemoveAudioFormatUnsupportedErrorCallback();
     size_t GetAudioFormatUnsupportedErrorCallbackSize() const;
+    int32_t AddCollaborationEnabledChangeForCurrentDeviceCallback(
+        const std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback> &cb);
+    int32_t RemoveCollaborationEnabledChangeForCurrentDeviceCallback();
+    size_t GetCollaborationEnabledChangeForCurrentDeviceCallbackSize() const;
 
     int32_t OnRecreateRendererStreamEvent(uint32_t sessionId, int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt &reason) override;
@@ -194,6 +199,7 @@ public:
     int32_t OnFormatUnsupportedError(int32_t errorCode) override;
     int32_t OnStreamVolumeChange(const StreamVolumeEvent &streamVolumeEvent) override;
     int32_t OnSystemVolumeChange(const VolumeEvent &volumeEvent) override;
+    int32_t OnCollaborationEnabledChangeForCurrentDevice(bool enabled) override;
 private:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> DeviceFilterByFlag(DeviceFlag flag,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& desc);
@@ -240,7 +246,8 @@ private:
 
     std::unordered_map<std::string,
         std::shared_ptr<HeadTrackingDataRequestedChangeCallback>> headTrackingDataRequestedChangeCallbackMap_;
-
+    std::vector<std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback>>
+        collaborationEnabledChangeForCurrentDeviceCallbackList_;
     mutable std::mutex focusInfoChangeMutex_;
     mutable std::mutex rendererStateChangeMutex_;
     mutable std::mutex capturerStateChangeMutex_;
@@ -270,6 +277,7 @@ private:
     mutable std::mutex formatUnsupportedErrorMutex_;
     mutable std::mutex streamVolumeChangeMutex_;
     mutable std::mutex systemVolumeChangeMutex_;
+    mutable std::mutex collaborationEnabledChangeForCurrentDeviceMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
