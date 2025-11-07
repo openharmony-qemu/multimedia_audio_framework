@@ -2057,7 +2057,8 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
             continue;
         }
         curTime = ClockTime::GetCurNano();
-        Trace loopTrace("Record_loop_trace");
+        Trace loopTrace("Record_loop_trace wakeT:" + std::to_string(wakeUpTime) +
+            " curT:" + std::to_string(curTime));
         if (curTime - wakeUpTime > THREE_MILLISECOND_DURATION) {
             AUDIO_WARNING_LOG("Wake up cost %{public}" PRId64" ms!", (curTime - wakeUpTime) / AUDIO_US_PER_SECOND);
         } else if (curTime - wakeUpTime > ONE_MILLISECOND_DURATION) {
@@ -2141,7 +2142,8 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
         }
         threadStatus_ = INRUNNING;
         curTime = ClockTime::GetCurNano();
-        Trace loopTrace("AudioEndpoint::loop_trace " + std::to_string(wakeUpTime));
+        Trace loopTrace("AudioEndpoint::loop_trace wakeT:" + std::to_string(wakeUpTime) +
+            " curT:" + std::to_string(curTime));
         if (needReSyncPosition_) {
             ReSyncPosition();
             wakeUpTime = curTime;
