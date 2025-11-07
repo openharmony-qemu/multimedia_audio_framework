@@ -1231,6 +1231,7 @@ int32_t RendererInServer::Flush()
         for (auto &capInfo : captureInfos_) {
             if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
                 capInfo.second.dupStream->Flush();
+                renderEmptyCountForInnerCap_ = OFFLOAD_INNER_CAP_PREBUF;
                 InitDupBufferInner(capInfo.first);
             }
         }
