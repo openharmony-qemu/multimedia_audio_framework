@@ -45,15 +45,32 @@ AudioSuiteMixerNode::~AudioSuiteMixerNode()
     DeInit();
 }
 
+void AudioSuiteMixerNode::SetAudioNodeFormat(AudioFormat audioFormat)
+{
+    AudioFormat currentFormat = GetAudioNodeFormat();
+    currentFormat.rate = audioFormat.rate;
+    AudioNode::SetAudioNodeFormat(currentFormat);
+    AUDIO_INFO_LOG("numChannels:%{public}u, sampleFormat:%{public}u, sampleRate:%{public}d",
+        currentFormat.audioChannelInfo.numChannels, currentFormat.format, currentFormat.rate);
+
+    PcmBufferFormat newPcmFormat = GetAudioNodeInPcmFormat();
+    tmpOutput_.ResizePcmBuffer(newPcmFormat);
+    mixerOutput_.ResizePcmBuffer(newPcmFormat);
+
+    int32_t ret = InitAudioLimiter();
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to Init Mixer node");
+}
+
 int32_t AudioSuiteMixerNode::InitAudioLimiter()
 {
     AUDIO_INFO_LOG("AudioSuiteMixerNode::InitAudioLimiter");
     if (limiter_ == nullptr) {
         limiter_ = std::make_unique<AudioLimiter>(GetAudioNodeId());
-        int32_t ret = limiter_->SetConfig(
-            tmpOutput_.GetDataSize(), sizeof(float), tmpOutput_.GetSampleRate(), tmpOutput_.GetChannelCount());
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitAudioLimiter fail, ret: %{public}d", ret);
     }
+    int32_t ret = limiter_->SetConfig(
+        tmpOutput_.GetDataSize(), sizeof(float), tmpOutput_.GetSampleRate(), tmpOutput_.GetChannelCount());
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitAudioLimiter fail, ret: %{public}d", ret);
+
     return SUCCESS;
 }
 
