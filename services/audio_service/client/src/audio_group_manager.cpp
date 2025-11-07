@@ -42,6 +42,7 @@ AudioGroupManager::~AudioGroupManager()
 
 int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t volumeFlag, int32_t uid)
 {
+    std::lock_guard<std::mutex> lock(volumeMutex_);
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
             + std::to_string(volumeType) + ";";
@@ -185,6 +186,7 @@ int32_t AudioGroupManager::GetMinVolume(AudioVolumeType volumeType)
 
 int32_t AudioGroupManager::SetMute(AudioVolumeType volumeType, bool mute, const DeviceType &deviceType)
 {
+    std::lock_guard<std::mutex> lock(volumeMutex_);
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string conditon = "EVENT_TYPE=4;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
             + std::to_string(volumeType) + ";";
