@@ -330,7 +330,7 @@ HWTEST_F(HpaeSinkOutputNodeTest, HandlePaPower_FirstSilence_ShouldStartTimer, Te
     EXPECT_CALL(*mockSink, GetAudioScene()).Times(0);
     EXPECT_CALL(*mockSink, SetPaPower(::testing::_)).Times(0);
     EXPECT_CALL(*mockSink, UpdateAppsUid(appsUid)).WillOnce(Return(0));
-    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Retunr(true));
+    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(true));
 
     hpaeSinkOutputNode->UpdateAppsUid(appsUid);
     hpaeSinkOutputNode->HandlePaPower(pcmBuffer.get());
@@ -366,7 +366,7 @@ HWTEST_F(HpaeSinkOutputNodeTest, HandlePaPower_SilenceTimeout_ShouldClosePa, Tes
     EXPECT_CALL(*mockSink, GetAudioScene()).WillOnce(Return(0));
     EXPECT_CALL(*mockSink, SetPaPower(false)).WillOnce(Return(0));
     EXPECT_CALL(*mockSink, UpdateAppsUid(appsUid)).WillOnce(Return(0));
-    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Retunr(true));
+    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(true));
     hpaeSinkOutputNode->UpdateAppsUid(appsUid);
     hpaeSinkOutputNode->HandlePaPower(pcmBuffer.get());
     // Verify PA is closed and timer reset
@@ -395,7 +395,7 @@ HWTEST_F(HpaeSinkOutputNodeTest, HandlePaPower_PaClosedSilence_ShouldMonitorTime
 
     EXPECT_CALL(*mockSink, SetPaPower(::testing::_)).Times(0); // Should not close again
     EXPECT_CALL(*mockSink, UpdateAppsUid(appsUid)).WillOnce(Return(0));
-    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Retunr(true));
+    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(true));
     hpaeSinkOutputNode->UpdateAppsUid(appsUid);
     hpaeSinkOutputNode->HandlePaPower(pcmBuffer.get());
     // Verify timer reset and log triggered
@@ -470,7 +470,7 @@ HWTEST_F(HpaeSinkOutputNodeTest, HandlePaPower_SilenceTimeoutWrongScene_ShouldNo
     EXPECT_CALL(*mockSink, GetAudioScene()).WillOnce(Return(1)); // Scene not 0
     EXPECT_CALL(*mockSink, SetPaPower(::testing::_)).Times(0); // Should not call close
     EXPECT_CALL(*mockSink, UpdateAppsUid(appsUid)).WillOnce(Return(0));
-    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Retunr(true));
+    EXPECT_CALL(*mockSink, IsInited()).WillOnce(Return(true));
     hpaeSinkOutputNode->UpdateAppsUid(appsUid);
     hpaeSinkOutputNode->HandlePaPower(pcmBuffer.get());
     // Verify PA still on and timer not reset
