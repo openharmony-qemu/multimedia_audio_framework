@@ -86,6 +86,8 @@ uint32_t IdHandler::GetRenderIdByDeviceClass(const std::string &deviceClass, con
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST, HDI_ID_INFO_VOIP);
     } else if (deviceClass == "primary_mmap") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT);
+    } else if (deviceClass == "Virtual_Injector") {
+        return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_VIRTUAL_INJECTOR, HDI_ID_INFO_DEFAULT);
     }
     AUDIO_ERR_LOG("invalid param, deviceClass: %{public}s, info: %{public}s", deviceClass.c_str(), info.c_str());
     return HDI_INVALID_ID;
@@ -149,10 +151,11 @@ void IdHandler::DecInfoIdUseCount(uint32_t id)
     uint32_t infoId = id & HDI_ID_INFO_MASK;
     std::lock_guard<std::mutex> lock(infoIdMtx_);
     CHECK_AND_RETURN_LOG(infoIdMap_.count(infoId) != 0, "invalid id %{public}u", id);
-    std::lock_guard<std::mutex> useIdLock(infoIdMap_[infoId].useIdMtx_);
+    std::unique_lock<std::mutex> useIdLock(infoIdMap_[infoId].useIdMtx_);
     infoIdMap_[infoId].useIdSet_.erase(id);
     AUDIO_INFO_LOG("infoId: %{public}u, useCount: %{public}zu", infoId, infoIdMap_[infoId].useIdSet_.size());
     CHECK_AND_RETURN(infoIdMap_[infoId].useIdSet_.size() == 0);
+    useIdLock.unlock();
     infoIdMap_.erase(infoId);
     std::lock_guard<std::mutex> freeLock(freeInfoIdMtx_);
     freeInfoIdSet_.emplace(infoId);

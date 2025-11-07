@@ -240,9 +240,7 @@ private:
 
     std::atomic<bool> rebuildFlag_ = false;
 
-    std::string dumpResampleName_;
     std::string dumpFACName_;
-    FILE *dumpResample_ = nullptr;
     FILE *dumpFAC_ = nullptr;
 };
 } // namespace AudioStandard

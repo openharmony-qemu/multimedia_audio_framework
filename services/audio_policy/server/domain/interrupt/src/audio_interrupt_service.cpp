@@ -1256,7 +1256,22 @@ int32_t AudioInterruptService::GetStreamTypePriority(AudioStreamType streamType)
 AudioStreamType AudioInterruptService::GetStreamInFocus(const int32_t zoneId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    return GetStreamInFocusInternal(0, zoneId);
+    if (zoneId != 0) {
+        return GetStreamInFocusInternal(0, zoneId);
+    }
+    AudioStreamType streamInFocus = STREAM_DEFAULT;
+    int32_t focusPriority = STREAM_DEFAULT_PRIORITY;
+    for (const auto &item : zonesMap_) {
+        CHECK_AND_CONTINUE_LOG(item.second != nullptr, "AudioInterruptZone is null");
+        AudioStreamType curStreamInFocus = GetStreamInFocusInternal(0, item.second->zoneId);
+        int32_t curPriority = GetStreamTypePriority(curStreamInFocus);
+        if (curPriority < focusPriority) {
+            focusPriority = curPriority;
+            streamInFocus = curStreamInFocus;
+        }
+    }
+    AUDIO_INFO_LOG("streamInFocus is %{public}d", streamInFocus);
+    return streamInFocus == STREAM_DEFAULT ? defaultVolumeType_ : streamInFocus;
 }
 
 AudioStreamType AudioInterruptService::GetStreamInFocusByUid(const int32_t uid, const int32_t zoneId)
@@ -2292,6 +2307,7 @@ AudioScene AudioInterruptService::GetHighestPriorityAudioSceneFromAudioSession(
         if (innerAudioScenePriority >= audioScenePriority) {
             finalAudioScene = innerAudioScene;
             audioScenePriority = innerAudioScenePriority;
+            formerUid_.store(ownerUid_);
             ownerPid_ = audioInterrupt.pid;
             ownerUid_ = audioInterrupt.uid;
         }
@@ -2406,7 +2422,7 @@ void AudioInterruptService::UpdateAudioSceneFromInterrupt(const AudioScene audio
     int32_t scene = AUDIO_SCENE_INVALID;
     policyServer_->GetAudioScene(scene);
     AudioScene currentAudioScene = static_cast<AudioScene>(scene);
-    if (currentAudioScene != audioScene) {
+    if (currentAudioScene != audioScene || formerUid_.load() != ownerUid_) {
         HILOG_COMM_INFO("currentScene: %{public}d, targetScene: %{public}d, changeType: %{public}d",
             currentAudioScene, audioScene, changeType);
         if (handler_ != nullptr && currentAudioScene == AUDIO_SCENE_PHONE_CHAT) {

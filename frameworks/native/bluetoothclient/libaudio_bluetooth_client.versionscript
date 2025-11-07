@@ -30,6 +30,7 @@
     *IsRecognitionStatus*;
     *SendUserSelectionEvent*;
     *SetActiveHfpDevice*;
+    *ClearActiveHfpDevice*;
     *RegisterA2dpPlayingStateChangedListener*;
     *Connect*;
     *DisconnectBluetoothHfpSink*;

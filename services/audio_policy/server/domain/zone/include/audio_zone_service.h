@@ -99,6 +99,7 @@ public:
 
     void ReleaseAudioZoneByClientPid(pid_t clientPid);
     bool CheckDeviceInAudioZone(AudioDeviceDescriptor device);
+    bool CheckExistUidInAudioZone();
 
 private:
     AudioZoneService() = default;

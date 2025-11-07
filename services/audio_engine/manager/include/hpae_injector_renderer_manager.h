@@ -79,7 +79,7 @@ public:
         const std::vector<std::shared_ptr<HpaeSinkInputNode>> &sinkInputs, bool isConnect) override;
 
     void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation) override;
-    void OnFadeDone(uint32_t sessionId, IOperation operation) override;
+    void OnFadeDone(uint32_t sessionId) override;
     void OnNotifyQueue() override;
     std::string GetThreadName() override;
     int32_t DumpSinkInfo() override;

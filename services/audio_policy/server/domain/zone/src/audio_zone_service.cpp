@@ -748,5 +748,16 @@ bool AudioZoneService::CheckDeviceInAudioZone(AudioDeviceDescriptor device)
     }
     return false;
 }
+
+bool AudioZoneService::CheckExistUidInAudioZone()
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    for (auto &it : zoneMaps_) {
+        if (it.second->CheckExistUidInZone()) {
+            return true;
+        }
+    }
+    return false;
+}
 } // namespace AudioStandard
 } // namespace OHOS

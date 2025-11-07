@@ -28,6 +28,7 @@ public:
     AudioSuiteMixerNode();
     virtual ~AudioSuiteMixerNode();
 
+    void SetAudioNodeFormat(AudioFormat audioFormat) override;
     int32_t Init() override;
     int32_t DeInit() override;
 

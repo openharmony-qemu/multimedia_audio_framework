@@ -414,6 +414,8 @@ bool AudioAdapterManager::IsAppRingMuted(int32_t appUid)
 
 int32_t AudioAdapterManager::SetAdjustVolumeForZone(int32_t zoneId)
 {
+    AUDIO_INFO_LOG("set adjust volume for zone %{public}d", zoneId);
+    volumeAdjustZoneId_ = zoneId;
     return SUCCESS;
 }
 
@@ -425,7 +427,6 @@ int32_t AudioAdapterManager::GetVolumeAdjustZoneId()
 int32_t AudioAdapterManager::SetZoneMute(int32_t zoneId, AudioStreamType streamType, bool mute,
     StreamUsage streamUsage, const DeviceType &deviceType)
 {
-    std::lock_guard<std::mutex> lock(volumeDataMapMutex_);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices =
         AudioZoneService::GetInstance().FetchOutputDevices(zoneId, streamUsage, 0, ROUTER_TYPE_DEFAULT);
     CHECK_AND_RETURN_RET_LOG(devices.size() >= 1 && devices[0] != nullptr, ERR_OPERATION_FAILED,
@@ -435,7 +436,6 @@ int32_t AudioAdapterManager::SetZoneMute(int32_t zoneId, AudioStreamType streamT
 
 bool AudioAdapterManager::GetZoneMute(int32_t zoneId, AudioStreamType streamType)
 {
-    std::lock_guard<std::mutex> lock(volumeDataMapMutex_);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices =
         AudioZoneService::GetInstance().FetchOutputDevices(zoneId, STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
     CHECK_AND_RETURN_RET_LOG(devices.size() >= 1 && devices[0] != nullptr, false,
@@ -445,7 +445,6 @@ bool AudioAdapterManager::GetZoneMute(int32_t zoneId, AudioStreamType streamType
 
 int32_t AudioAdapterManager::GetZoneVolumeLevel(int32_t zoneId, AudioStreamType streamType)
 {
-    std::lock_guard<std::mutex> lock(volumeDataMapMutex_);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices =
         AudioZoneService::GetInstance().FetchOutputDevices(zoneId, STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
     CHECK_AND_RETURN_RET_LOG(devices.size() >= 1 && devices[0] != nullptr, ERR_OPERATION_FAILED,
@@ -458,7 +457,6 @@ int32_t AudioAdapterManager::GetZoneVolumeLevel(int32_t zoneId, AudioStreamType 
 
 int32_t AudioAdapterManager::GetZoneVolumeDegree(int32_t zoneId, AudioStreamType streamType)
 {
-    std::lock_guard<std::mutex> lock(volumeDataMapMutex_);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices =
         AudioZoneService::GetInstance().FetchOutputDevices(zoneId, STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
     CHECK_AND_RETURN_RET_LOG(devices.size() >= 1 && devices[0] != nullptr, ERR_OPERATION_FAILED,
@@ -483,7 +481,6 @@ int32_t AudioAdapterManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &i
 
 int32_t AudioAdapterManager::SetZoneVolumeLevel(int32_t zoneId, AudioStreamType streamType, int32_t volumeLevel)
 {
-    std::lock_guard<std::mutex> lock(volumeDataMapMutex_);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices =
         AudioZoneService::GetInstance().FetchOutputDevices(zoneId, STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
     CHECK_AND_RETURN_RET_LOG(devices.size() >= 1, ERR_OPERATION_FAILED, "zone device error");
@@ -499,7 +496,6 @@ int32_t AudioAdapterManager::SetZoneVolumeLevel(int32_t zoneId, AudioStreamType 
 int32_t AudioAdapterManager::SetZoneVolumeDegreeToMap(int32_t zoneId,
     AudioStreamType streamType, int32_t volumeDegree)
 {
-    std::lock_guard<std::mutex> lock(volumeDataMapMutex_);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices =
         AudioZoneService::GetInstance().FetchOutputDevices(zoneId, STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
     CHECK_AND_RETURN_RET_LOG(devices.size() >= 1, ERR_OPERATION_FAILED, "zone device error");
@@ -838,30 +834,23 @@ float AudioAdapterManager::GetSystemVolumeDb(AudioStreamType streamType)
     return CalculateVolumeDb(volumeLevel);
 }
 
-int32_t AudioAdapterManager::SetInnerStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage)
+void AudioAdapterManager::SetDeviceNoMuteForRinger(std::shared_ptr<AudioDeviceDescriptor> device)
 {
-    AUDIO_INFO_LOG("stream type %{public}d, mute:%{public}d, streamUsage:%{public}d", streamType, mute, streamUsage);
-    int32_t isSetStreamMute = IsHandleStreamMute(streamType, mute, streamUsage);
-    if (isSetStreamMute == SUCCESS) {
-        return SUCCESS;
-    }
-    // if current mute status is same for set, not set mute
-    bool currentMuteStatus = GetStreamMute(streamType);
-    auto desc = audioActiveDevice_.GetDeviceForVolume(streamType);
-    if (currentMuteStatus != mute) {
-        // set stream mute status to mem.
-        volumeDataMaintainer_.SaveMuteToMap(desc, streamType, mute);
-        SetAbsVolumeMuteNearlink(mute);
+    std::lock_guard<std::mutex> lock(ringerNoMuteDeviceMutex_);
+    CHECK_AND_RETURN_LOG(device != nullptr, "device null");
+    AUDIO_INFO_LOG("Set %{public}s no mute for ringer", device->GetName().c_str());
+    ringerNoMuteDevice_ = device;
+    SetVolumeDbForDeviceInPipe(device, STREAM_RING);
+}
 
-        int32_t volume = GetSystemVolumeLevel(streamType);
-        VolumeEvent volumeEvent = VolumeEvent(streamType, volume, false);
-        volumeEvent.volumeDegree = GetSystemVolumeDegree(streamType);
-        if (audioPolicyServerHandler_ != nullptr) {
-            audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
-            audioPolicyServerHandler_->SendVolumeDegreeEventCallback(volumeEvent);
-        }
-    }
-    return SetVolumeDbForDeviceInPipe(desc, streamType);
+void AudioAdapterManager::ClearDeviceNoMuteForRinger()
+{
+    std::lock_guard<std::mutex> lock(ringerNoMuteDeviceMutex_);
+    AUDIO_INFO_LOG("clear no mute device for ringer");
+    auto tmp = ringerNoMuteDevice_;
+    ringerNoMuteDevice_ = nullptr;
+    CHECK_AND_RETURN(tmp != nullptr);
+    SetVolumeDbForDeviceInPipe(tmp, STREAM_RING);
 }
 
 int32_t AudioAdapterManager::IsHandleStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage)
@@ -935,6 +924,11 @@ bool AudioAdapterManager::GetStreamMute(AudioStreamType streamType)
 bool AudioAdapterManager::GetStreamMuteInternal(std::shared_ptr<AudioDeviceDescriptor> &device,
     AudioStreamType streamType)
 {
+    CHECK_AND_RETURN_RET_LOG(device != nullptr, false, "device is null");
+    if (device->IsSameDeviceDescPtr(ringerNoMuteDevice_) && Util::IsDualToneStreamType(streamType)) {
+        AUDIO_INFO_LOG("get no mute when ringermode no normal on %{public}s", device->GetName().c_str());
+        return false;
+    }
     return volumeDataMaintainer_.LoadMuteFromMap(device, streamType);
 }
 
@@ -2789,7 +2783,7 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
     AUDIO_DEBUG_LOG("CalculateVolumeDbNonlinear for stream: %{public}d devicetype:%{public}d volumeLevel:%{public}d",
         streamType, deviceType, volumeLevel);
     AudioStreamType streamAlias = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    if (Util::IsDualToneStreamType(streamType) && !VolumeUtils::IsPCVolumeEnable()) {
+    if (Util::IsDualToneStreamType(streamType)) {
         deviceType = DEVICE_TYPE_SPEAKER;
     }
     int32_t minVolIndex = GetMinVolumeLevel(streamAlias, deviceType);
@@ -2845,7 +2839,7 @@ float AudioAdapterManager::CalculateVolumeDbByDegree(DeviceType deviceTypeIn,
     AudioStreamType streamType, int32_t volumeDegree)
 {
     bool useSpeaker = Util::IsDualToneStreamType(streamType) &&
-        deviceTypeIn != DEVICE_TYPE_REMOTE_CAST && !VolumeUtils::IsPCVolumeEnable();
+        deviceTypeIn != DEVICE_TYPE_REMOTE_CAST;
     DeviceType deviceType = useSpeaker ? DEVICE_TYPE_SPEAKER : deviceTypeIn;
     float volumeDb = 1.0f;
     if (useNonlinearAlgo_) {

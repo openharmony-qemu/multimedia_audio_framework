@@ -675,6 +675,7 @@ struct NodeDetailDialog {
   private soundFiledType = '-';
   private environmentType = '-';
   private voiceBeautifierType = '-';
+  private audioSeparation = '-';
   //input节点参数
   private songName = '';
   private singerName = '';
@@ -701,16 +702,34 @@ struct NodeDetailDialog {
         let leftEffectNode: Node | undefined =
           this.nodeList.get(this.currentInputId)?.nodes?.find(node => node.id === this.selectedNode)
         if (leftEffectNode) {
-          this.balanceBandGains = leftEffectNode?.balanceBandGains ?? [];
-          this.soundFiledType = SoundFiledMap.get(leftEffectNode?.soundFiledType) ?? '-';
+          let type = audioNapi.getOptions(leftEffectNode.id)
+          if (leftEffectNode?.type === NodeType.EQ) {
+            this.balanceBandGains = (JSON.parse(type) as number[]) ?? [];
+          } else if (leftEffectNode?.type === NodeType.FIELD) {
+            this.soundFiledType = SoundFiledMap.get(parseInt(type) as SoundFiledType) ?? '-';
+          } else if (leftEffectNode?.type === NodeType.ENV) {
+            this.environmentType = EnvironmentMap.get(parseInt(type) as EnvironmentType) ?? '-';
+          } else if (leftEffectNode?.type === NodeType.VB) {
+            this.voiceBeautifierType = VoiceBeautifierMap.get(parseInt(type) as VoiceBeautifierType) ?? '-';
+          } else if (leftEffectNode?.type === NodeType.SEPARATION) {
+            this.audioSeparation = AudioSeparationMap.get(leftEffectNode.audioSeparationType) ?? '-';
+          }
         }
       }
     } else {
       //右侧初始化赋值
-      this.balanceBandGains = mixerNode?.balanceBandGains ?? [];
-      this.soundFiledType = SoundFiledMap.get(mixerNode?.soundFiledType) ?? '-';
-      this.environmentType = EnvironmentMap.get(mixerNode?.environmentType) ?? '-';
-      this.voiceBeautifierType = VoiceBeautifierMap.get(mixerNode?.voiceBeautifierType) ?? '-';
+      let type = audioNapi.getOptions(mixerNode?.id)
+      if (mixerNode?.type === NodeType.EQ) {
+        this.balanceBandGains = (JSON.parse(type) as number[]) ?? [];
+      } else if (mixerNode?.type === NodeType.FIELD) {
+        this.soundFiledType = SoundFiledMap.get(parseInt(type) as SoundFiledType) ?? '-';
+      } else if (mixerNode?.type === NodeType.ENV) {
+        this.environmentType = EnvironmentMap.get(parseInt(type) as EnvironmentType) ?? '-';
+      } else if (mixerNode?.type === NodeType.VB) {
+        this.voiceBeautifierType = VoiceBeautifierMap.get(parseInt(type) as VoiceBeautifierType) ?? '-';
+      } else if (mixerNode?.type === NodeType.SEPARATION) {
+        this.audioSeparation = AudioSeparationMap.get(mixerNode.audioSeparationType) ?? '-';
+      }
     }
   }
 
@@ -780,6 +799,17 @@ struct NodeDetailDialog {
 
           Column() {
             Text(`${this.voiceBeautifierType}`)
+          }
+        }
+      }
+      if (this.nodeType === NodeType.SEPARATION) {
+        Row() {
+          Column() {
+            Text(`音源分离类型：`)
+              .fontWeight(FontWeight.Bold)
+          }
+          Column() {
+            Text(`${this.audioSeparation}`)
           }
         }
       }

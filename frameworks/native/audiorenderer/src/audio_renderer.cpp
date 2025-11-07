@@ -2419,6 +2419,8 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
     // Activate audio interrupt again when restoring for audio server died.
     if (restoreInfo.restoreReason == SERVER_DIED) {
         HandleAudioInterruptWhenServerDied();
+        int32_t ret = InitOutputDeviceChangeCallback();
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "InitOutputDeviceChangeCallback Failed ret:%{public}d", ret);
     }
     InitAudioRouteCallback();
     isSwitching_ = false;

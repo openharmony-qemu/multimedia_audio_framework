@@ -59,6 +59,7 @@ constexpr int32_t MAX_RETRY_COUNT = 8;
 static constexpr int64_t FAST_WRITE_CACHE_TIMEOUT_IN_MS = 40; // 40ms
 static const uint32_t FAST_WAIT_FOR_NEXT_CB_US = 2500; // 2.5ms
 static const uint32_t VOIP_WAIT_FOR_NEXT_CB_US = 10000; // 10ms
+static constexpr int32_t LOG_COUNT_LIMIT = 200;
 }
 
 class ProcessCbImpl;
@@ -285,6 +286,8 @@ private:
     };
 
     std::atomic<HandleInfo> lastHandleInfo_;
+
+    int32_t sleepCount_ = LOG_COUNT_LIMIT;
 };
 
 // ProcessCbImpl --> sptr | AudioProcessInClientInner --> shared_ptr
@@ -1044,10 +1047,15 @@ bool AudioProcessInClientInner::WaitIfBufferEmpty(const BufferDesc &bufDesc)
 {
     if (bufDesc.dataLength == 0) {
         const uint32_t sleepTimeUs = isVoipMmap_ ? VOIP_WAIT_FOR_NEXT_CB_US : FAST_WAIT_FOR_NEXT_CB_US;
-        AUDIO_WARNING_LOG("%{public}u", sleepTimeUs);
+        if (sleepCount_++ == LOG_COUNT_LIMIT) {
+            sleepCount_ = 0;
+            AUDIO_WARNING_LOG("1st or 200 times INVALID buffer");
+        }
         usleep(sleepTimeUs);
         return false;
     }
+
+    sleepCount_ = LOG_COUNT_LIMIT;
     return true;
 }
 
@@ -1068,7 +1076,7 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc)
         return SUCCESS;
     };
 
-    CHECK_AND_RETURN_RET(WaitIfBufferEmpty(bufDesc), ERR_INVALID_PARAM);
+    CHECK_AND_RETURN_RET(WaitIfBufferEmpty(bufDesc), SUCCESS);
 
     ExitStandByIfNeed();
 

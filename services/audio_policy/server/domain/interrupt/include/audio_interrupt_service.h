@@ -21,7 +21,7 @@
 #include <set>
 #include <functional>
 #include <unordered_map>
-
+#include <atomic>
 #include "iremote_object.h"
 
 #include "i_audio_interrupt_event_dispatcher.h"
@@ -370,6 +370,7 @@ private:
     bool isPreemptMode_ = false;
 
     std::mutex mutex_;
+    mutable std::atomic<int32_t> formerUid_ = 0;
     mutable int32_t ownerPid_ = 0;
     mutable int32_t ownerUid_ = 0;
     std::unique_ptr<AudioInterruptDfxCollector> dfxCollector_;

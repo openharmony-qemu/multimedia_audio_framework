@@ -40,6 +40,7 @@ enum HdiIdType : uint32_t {
     HDI_ID_TYPE_ACCESSORY,
     HDI_ID_TYPE_AI,
     HDI_ID_TYPE_VA,
+    HDI_ID_TYPE_VIRTUAL_INJECTOR,
     HDI_ID_TYPE_NUM,
 };
 

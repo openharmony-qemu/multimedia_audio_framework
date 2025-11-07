@@ -1757,6 +1757,8 @@ bool AudioEndpointInner::GetDeviceHandleInfo(uint64_t &frames, int64_t &nanoTime
 void AudioEndpointInner::UpdateVirtualDeviceHandleInfo()
 {
     uint64_t currentNanoTime = ClockTime::GetCurNano();
+    JUDGE_AND_INFO_LOG(currentNanoTime < timeInNano_,"currentNanoTime: %{public}" PRIu64"  "
+        ", timeInNano_: %{public}" PRIu64" ", currentNanoTime, timeInNano_.load());
     // Calculate the frame position increment based on the current and previous time, and update the frame position
     posInFrame_ = posInFrame_ + ((currentNanoTime - timeInNano_) / dstStreamInfo_.samplingRate);
     // Calculate the new time in nanoseconds based on the updated frame position
@@ -1983,10 +1985,6 @@ void AudioEndpointInner::InjectToCaptureDataProc(const BufferDesc &readBuf)
     BufferDesc captureConvDesc = {};
     ret = ConvertDataFormat(readBuf, rendererOrgDesc, streamInfo, rendererConvDesc, captureConvDesc);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "convert format data fail.");
-    DumpFileUtil::WriteDumpFile(dumpCovRendDup_, static_cast<void *>(rendererConvDesc.buffer),
-        rendererConvDesc.bufLength);
-    DumpFileUtil::WriteDumpFile(dumpCovCapDup_, static_cast<void *>(captureConvDesc.buffer),
-        captureConvDesc.bufLength);
     /* mix */
     size_t floatBufLength = readBuf.bufLength * 2; // unit of byte, 2 is int16_t to float
     float *mixBuff = MixRendererAndCaptureData(floatBufLength, rendererConvDesc, captureConvDesc);
@@ -2421,14 +2419,6 @@ int32_t AudioEndpointInner::AddCaptureInjector(const uint32_t &sinkPortIndex, co
         std::to_string(dstStreamInfo_.channels) + "_" + std::to_string(dstStreamInfo_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dupPeekName_, &dumpPeekDup_);
 
-    dupCovRendName_ = GetEndpointName() + "injector_convRender_dup_" + std::to_string(dstStreamInfo_.samplingRate) +
-        "_" + std::to_string(dstStreamInfo_.channels) + "_" + std::to_string(SAMPLE_F32LE) + ".pcm";
-    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dupCovRendName_, &dumpCovRendDup_);
-
-    dupCovCapName_ = GetEndpointName() + "injector_convCapture_dup_" + std::to_string(dstStreamInfo_.samplingRate) +
-        "_" + std::to_string(dstStreamInfo_.channels) + "_" + std::to_string(SAMPLE_F32LE) + ".pcm";
-    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dupCovCapName_, &dumpCovCapDup_);
-
     dupMixName_ = GetEndpointName() + "injector_mix_dup_" + std::to_string(dstStreamInfo_.samplingRate) + "_" +
         std::to_string(dstStreamInfo_.channels) + "_" + std::to_string(SAMPLE_F32LE) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dupMixName_, &dumpMixDup_);
@@ -2449,8 +2439,6 @@ int32_t AudioEndpointInner::RemoveCaptureInjector(const uint32_t &sinkPortIndex,
     isNeedInject_ = false;
 
     DumpFileUtil::CloseDumpFile(&dumpPeekDup_);
-    DumpFileUtil::CloseDumpFile(&dumpCovRendDup_);
-    DumpFileUtil::CloseDumpFile(&dumpCovCapDup_);
     DumpFileUtil::CloseDumpFile(&dumpMixDup_);
     return SUCCESS;
 }

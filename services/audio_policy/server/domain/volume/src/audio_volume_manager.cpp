@@ -426,6 +426,7 @@ int32_t AudioVolumeManager::GetVolumeAdjustZoneId()
 
 int32_t AudioVolumeManager::SetAdjustVolumeForZone(int32_t zoneId)
 {
+    audioActiveDevice_.SetAdjustVolumeForZone(zoneId);
     if (zoneId == 0) {
         AudioDeviceDescriptor currentActiveDevice = audioActiveDevice_.GetCurrentOutputDevice();
         audioPolicyManager_.UpdateVolumeForStreams();
@@ -1288,7 +1289,8 @@ int32_t AudioVolumeManager::SetStreamMute(AudioStreamType streamType, bool mute,
         return audioPolicyManager_.SetZoneMute(zoneId, streamType, mute, streamUsage, deviceType);
     }
     int32_t result = SUCCESS;
-    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    auto desc = audioActiveDevice_.GetDeviceForVolume(streamType);
+    DeviceType curOutputDeviceType = desc->deviceType_;
     if (deviceType != DEVICE_TYPE_NONE) {
         AUDIO_INFO_LOG("set stream mute for specified device [%{public}d]", deviceType);
         curOutputDeviceType = deviceType;
@@ -1313,7 +1315,7 @@ int32_t AudioVolumeManager::SetStreamMute(AudioStreamType streamType, bool mute,
         }
     }
     result = audioPolicyManager_.SetStreamMute(streamType, mute, streamUsage, curOutputDeviceType,
-        audioActiveDevice_.GetCurrentOutputDevice().networkId_);
+        desc->networkId_);
 
     Volume vol = {false, 1.0f, 0};
     vol.isMute = mute;
@@ -1329,7 +1331,7 @@ bool AudioVolumeManager::GetStreamMute(AudioStreamType streamType, int32_t zoneI
     if (zoneId > 0) {
         return audioPolicyManager_.GetZoneMute(zoneId, streamType);
     }
-    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    DeviceType curOutputDeviceType = (audioActiveDevice_.GetDeviceForVolume(streamType))->deviceType_;
     if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC &&
         curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
         std::string btDevice = audioActiveDevice_.GetActiveBtDeviceMac();
@@ -1533,9 +1535,8 @@ int32_t AudioVolumeManager::DealWithEventVolume(const int32_t notificationId)
 
 int32_t AudioVolumeManager::ResetRingerModeMute()
 {
-    if (audioPolicyManager_.SetStreamMute(STREAM_RING, true) == SUCCESS) {
-        SetRingerModeMute(true);
-    }
+    audioPolicyManager_.ClearDeviceNoMuteForRinger();
+    SetRingerModeMute(true);
     return SUCCESS;
 }
 

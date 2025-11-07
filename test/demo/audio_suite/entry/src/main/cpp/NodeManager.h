@@ -84,6 +84,9 @@ public:
 
     OH_AudioSuite_Result insertAfter(
         const std::string &sourceNodeId, const std::string &targetNodeId, const Node &targetNode);
+    
+    //根据不同效果类型获取节点效果参数
+    std::string GetOptionsByType(const Node& node);
 };
 
 #endif

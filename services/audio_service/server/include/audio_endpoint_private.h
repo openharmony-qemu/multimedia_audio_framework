@@ -387,12 +387,8 @@ private:
 
     //for inject dump pcm
     FILE *dumpPeekDup_ = nullptr; // client to inject peek dump file
-    FILE *dumpCovRendDup_ = nullptr; // client to inject convertRender dump file
-    FILE *dumpCovCapDup_ = nullptr; // client to inject convertCapture dump file
     FILE *dumpMixDup_ = nullptr; // client to inject mix dump file
     std::string dupPeekName_ = "";
-    std::string dupCovRendName_ = "";
-    std::string dupCovCapName_ = "";
     std::string dupMixName_ = "";
 };
 } // namespace AudioStandard

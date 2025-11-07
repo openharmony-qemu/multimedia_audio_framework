@@ -593,6 +593,10 @@ int32_t AudioSuitePipeline::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId
             return;
         }
 
+        if (srcNode->GetNodeType() == NODE_TYPE_AUDIO_MIXER) {
+            srcNode->SetAudioNodeFormat(destNode->GetAudioNodeFormat());
+        }
+
         AddNodeConnections(srcNodeId, destNodeId);
         TriggerCallback(CONNECT_NODES, SUCCESS);
         return;
