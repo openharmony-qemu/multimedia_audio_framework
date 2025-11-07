@@ -17,7 +17,7 @@
 
 #include <memory>
 #include <string>
-
+#include "audio_suite_capabilities.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -50,7 +50,10 @@ public:
     virtual int32_t GetParameter(const std::string& paramType, std::string& paramValue) = 0;
     virtual int32_t Apply(std::vector<uint8_t*>& v1, std::vector<uint8_t*>& v2) = 0;
 
-    static std::shared_ptr<AudioSuiteAlgoInterface> CreateAlgoInterface(AlgoType algoType);
+    static std::shared_ptr<AudioSuiteAlgoInterface> CreateAlgoInterface(AlgoType algoType, NodeCapability &nc);
+
+protected:
+    NodeCapability nodeCapability;
 };
 
 }

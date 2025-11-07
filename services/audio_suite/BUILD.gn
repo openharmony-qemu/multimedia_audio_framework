@@ -17,14 +17,17 @@ import("../../audio_framework_test_sources.gni")
 group("audio_suite_packages") {
   deps = [
     ":audio_suite",
+    ":audio_suite_capabilities",
   ]
 }
 
 config("audio_suite_public_config") {
   include_dirs = [
     "client/manager/include",
+    "client/config/include",
     "client/node/include",
     "client/utils/include",
+    "../../frameworks/native/audioutils/include",
     "../audio_engine/utils/",
     "../audio_engine/plugin/channel_converter/include/",
     "../../interfaces/inner_api/native/audiocommon/include",
@@ -89,6 +92,8 @@ audio_ohos_library("audio_suite") {
     "client/utils/src/audio_suite_soundfield_algo_interface_impl.cpp",
     "client/utils/src/audio_suite_aiss_algo_interface_impl.cpp",
     "client/utils/src/audio_suite_voice_beautifier_algo_interface_impl.cpp",
+    "client/config/src/audio_suite_capabilities_parser.cpp",
+    "client/config/src/audio_suite_capabilities.cpp",
   ]
 
   deps = [
@@ -97,6 +102,7 @@ audio_ohos_library("audio_suite") {
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/audioschedule:audio_schedule",
     "../audio_service:audio_common",
+    "../../frameworks/native/audioutils:audio_xml_utils",
   ]
 
   external_deps = [
@@ -111,5 +117,13 @@ audio_ohos_library("audio_suite") {
   version_script = "libaudio_suite.versionscript"
 
   subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
+ohos_prebuilt_etc("audio_suite_capabilities") {
+  source = "client/config/file/audio_suite_capabilities.xml"
+
+  subsystem_name = "multimedia"
+  relative_install_dir = "audio"
   part_name = "audio_framework"
 }

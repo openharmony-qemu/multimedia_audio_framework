@@ -95,7 +95,8 @@ int32_t AudioSuiteAissNode::Init()
         return SUCCESS;
     }
     if (!aissAlgo_) {
-        aissAlgo_ = AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_AUDIO_SEPARATION);
+        aissAlgo_ =
+            AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_AUDIO_SEPARATION, nodeCapability);
     }
     
     if (!outputStream_) {

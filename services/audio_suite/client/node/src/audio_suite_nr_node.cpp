@@ -47,7 +47,8 @@ int32_t AudioSuiteNrNode::Init()
 {
     AUDIO_INFO_LOG("AudioSuiteNrNode::Init begin");
 
-    algoInterface_ = AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_NOISE_REDUCTION);
+    algoInterface_ =
+        AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_NOISE_REDUCTION, nodeCapability);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create nr algoInterface");
 
     int32_t ret = algoInterface_->Init();

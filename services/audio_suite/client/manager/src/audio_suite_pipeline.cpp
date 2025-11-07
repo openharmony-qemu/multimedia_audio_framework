@@ -275,6 +275,11 @@ int32_t AudioSuitePipeline::CreateNodeCheckParme(AudioNodeBuilder builder)
         return ERR_AUDIO_SUITE_CREATED_EXCEED_SYSTEM_LIMITS;
     }
 
+    bool isSupported;
+    AudioSuiteCapabilities &audioSuiteCapabilities = AudioSuiteCapabilities::getInstance();
+    int32_t error = audioSuiteCapabilities.IsNodeTypeSupported(builder.nodeType, &isSupported);
+    CHECK_AND_RETURN_RET_LOG((error == SUCCESS && isSupported), ERR_NOT_SUPPORTED,
+        "node type: %{public}d is not supported.", builder.nodeType);
     return SUCCESS;
 }
 

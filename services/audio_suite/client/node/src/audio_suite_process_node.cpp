@@ -26,7 +26,11 @@ namespace AudioStandard {
 namespace AudioSuite {
 AudioSuiteProcessNode::AudioSuiteProcessNode(AudioNodeType nodeType, AudioFormat audioFormat)
     : AudioNode(nodeType, audioFormat), inputStream_(std::make_shared<InputPort<AudioSuitePcmBuffer*>>())
-{}
+{
+    AudioSuiteCapabilities &audioSuiteCapabilities = AudioSuiteCapabilities::getInstance();
+    CHECK_AND_RETURN_LOG((audioSuiteCapabilities.GetNodeCapability(nodeType, nodeCapability) == SUCCESS),
+        "node: %{public}d GetNodeCapability failed.", nodeType);
+}
 
 int32_t AudioSuiteProcessNode::DoProcess()
 {

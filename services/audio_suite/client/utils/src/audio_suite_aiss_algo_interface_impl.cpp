@@ -40,7 +40,6 @@ constexpr int32_t CHANNEL_2 = 2;
 constexpr int32_t CHANNEL_3 = 3;
 constexpr int32_t CHANNEL_4 = 4;
 constexpr size_t NUM_THREE = 3;
-const std::string AUDIO_AISS_SO_PATH = "/system/lib64/libaudio_aiss_intergration.z.so";
 const std::string AISS_NAME = "aiss";
 const std::string AISS_PROPERTY = "AISSVX";
 const std::string AISS_LIB = "AISSLIB";
@@ -57,10 +56,15 @@ static float UnifyFloatValue(float value)
     return value;
 }
 
+AudioSuiteAissAlgoInterfaceImpl::AudioSuiteAissAlgoInterfaceImpl(NodeCapability &nc)
+{
+    nodeCapability = nc;
+}
+
 int32_t AudioSuiteAissAlgoInterfaceImpl::Init()
 {
     Deinit();
-    std::string soPath = AUDIO_AISS_SO_PATH;
+    std::string soPath = nodeCapability.soPath + nodeCapability.soName;
     if (CheckFilePath(soPath) != SUCCESS) {
         AUDIO_ERR_LOG("Check file path failed");
         return ERROR;

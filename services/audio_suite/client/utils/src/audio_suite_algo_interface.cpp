@@ -24,19 +24,20 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-std::shared_ptr<AudioSuiteAlgoInterface> AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType algoType)
+std::shared_ptr<AudioSuiteAlgoInterface> AudioSuiteAlgoInterface::CreateAlgoInterface(
+    AlgoType algoType, NodeCapability &nc)
 {
     switch (algoType) {
         case AlgoType::AUDIO_NODE_TYPE_EQUALIZER:
-            return std::make_shared<AudioSuiteEqAlgoInterfaceImpl>();
+            return std::make_shared<AudioSuiteEqAlgoInterfaceImpl>(nc);
         case AlgoType::AUDIO_NODE_TYPE_NOISE_REDUCTION:
-            return std::make_shared<AudioSuiteNrAlgoInterfaceImpl>();
+            return std::make_shared<AudioSuiteNrAlgoInterfaceImpl>(nc);
         case AlgoType::AUDIO_NODE_TYPE_SOUND_FIELD:
-            return std::make_shared<AudioSuiteSoundFieldAlgoInterfaceImpl>();
+            return std::make_shared<AudioSuiteSoundFieldAlgoInterfaceImpl>(nc);
         case AlgoType::AUDIO_NODE_TYPE_AUDIO_SEPARATION:
-            return std::make_shared<AudioSuiteAissAlgoInterfaceImpl>();
+            return std::make_shared<AudioSuiteAissAlgoInterfaceImpl>(nc);
         case AlgoType::AUDIO_NODE_TYPE_VOICE_BEAUTIFIER:
-            return std::make_shared<AudioSuiteVoiceBeautifierAlgoInterfaceImpl>();
+            return std::make_shared<AudioSuiteVoiceBeautifierAlgoInterfaceImpl>(nc);
         default:
             return nullptr;
     }

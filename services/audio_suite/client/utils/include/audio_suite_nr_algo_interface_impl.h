@@ -38,7 +38,7 @@ struct AinrAlgoApi {
 
 class AudioSuiteNrAlgoInterfaceImpl : public AudioSuiteAlgoInterface {
 public:
-    AudioSuiteNrAlgoInterfaceImpl();
+    explicit AudioSuiteNrAlgoInterfaceImpl(NodeCapability &nc);
     ~AudioSuiteNrAlgoInterfaceImpl();
 
     int32_t Init() override;

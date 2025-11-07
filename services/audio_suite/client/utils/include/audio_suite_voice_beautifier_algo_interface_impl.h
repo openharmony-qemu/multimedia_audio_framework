@@ -52,7 +52,7 @@ static const std::map<std::string, AudioVoiceMorphingType> OPTIONS_MAP = {
 
 class AudioSuiteVoiceBeautifierAlgoInterfaceImpl : public AudioSuiteAlgoInterface {
 public:
-    AudioSuiteVoiceBeautifierAlgoInterfaceImpl();
+    explicit AudioSuiteVoiceBeautifierAlgoInterfaceImpl(NodeCapability &nc);
     ~AudioSuiteVoiceBeautifierAlgoInterfaceImpl();
 
     int32_t Init() override;

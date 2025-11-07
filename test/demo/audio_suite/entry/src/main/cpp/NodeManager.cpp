@@ -457,7 +457,7 @@ char *NodeManager::getNodeTypeName(OH_AudioNode_Type type)
 
 void NodeManager::GetPipeLineDetail()
 {
-    std::vector<Node> outputNodes = getNodesByType(OH_AudioNode_Type::OUT_NODE_TYPE_DEFAULT);
+    std::vector<Node> outputNodes = getNodesByType(OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT);
     if (outputNodes.size() != 1) {
         OH_LOG_Print(LOG_APP,
             LOG_INFO,

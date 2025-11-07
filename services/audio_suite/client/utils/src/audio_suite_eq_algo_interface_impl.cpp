@@ -30,12 +30,11 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
-namespace {
-const std::string ALGO_SO_PATH = "/system/lib64/libimedia_sws.z.so";
-}
 
-AudioSuiteEqAlgoInterfaceImpl::AudioSuiteEqAlgoInterfaceImpl()
-{}
+AudioSuiteEqAlgoInterfaceImpl::AudioSuiteEqAlgoInterfaceImpl(NodeCapability &nc)
+{
+    nodeCapability = nc;
+}
 
 AudioSuiteEqAlgoInterfaceImpl::~AudioSuiteEqAlgoInterfaceImpl()
 {
@@ -63,7 +62,7 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::Init()
         AUDIO_ERR_LOG("AudioSuiteEqAlgoInterfaceImpl already inited");
         return ERROR;
     }
-    std::string soPath = ALGO_SO_PATH;
+    std::string soPath = nodeCapability.soPath + nodeCapability.soName;
     libHandle_ = dlopen(soPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
     if (libHandle_ == nullptr) {
         AUDIO_ERR_LOG("dlopen algo: %{private}s so fail", soPath.c_str());

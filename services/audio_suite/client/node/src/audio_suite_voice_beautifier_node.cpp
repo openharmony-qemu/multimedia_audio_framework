@@ -43,7 +43,8 @@ AudioSuiteVoiceBeautifierNode::~AudioSuiteVoiceBeautifierNode()
 int32_t AudioSuiteVoiceBeautifierNode::Init()
 {
     AUDIO_INFO_LOG("AudioSuiteVoiceBeautifierNode Init begin");
-    algoInterface_ = AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_VOICE_BEAUTIFIER);
+    algoInterface_ =
+        AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_VOICE_BEAUTIFIER, nodeCapability);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create voice beautifier algoInterface");
 
     int32_t ret = algoInterface_->Init();

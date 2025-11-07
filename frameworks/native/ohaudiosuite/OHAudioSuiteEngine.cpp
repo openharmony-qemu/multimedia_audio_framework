@@ -25,6 +25,7 @@
 #include "OHAudioSuiteEngine.h"
 #include "audio_suite_manager.h"
 #include "OHAudioSuiteNodeBuilder.h"
+#include "audio_suite_capabilities.h"
 
 using OHOS::AudioStandard::OHAudioSuiteEngine;
 using OHOS::AudioStandard::OHAudioSuitePipeline;
@@ -477,6 +478,18 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_GetVoiceBeautifierType(
         AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "GetVoiceBeautifierType suiteEngine is nullptr");
 
     int32_t error = suiteEngine->GetVoiceBeautifierType(node, voiceBeautifierType);
+    return ConvertError(error);
+}
+
+OH_AudioSuite_Result OH_AudioSuiteEngine_IsNodeTypeSupported(OH_AudioNode_Type nodeType, bool *isSupported)
+{
+    AUDIO_INFO_LOG("IsNodeTypeSupported enter.");
+    using namespace OHOS::AudioStandard::AudioSuite;
+    CHECK_AND_RETURN_RET_LOG(
+        isSupported != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM, "isSupported is nullptr.");
+    AudioSuiteCapabilities &audioSuiteCapabilities = AudioSuiteCapabilities::getInstance();
+    int32_t error = audioSuiteCapabilities.IsNodeTypeSupported(static_cast<AudioNodeType>(nodeType), isSupported);
+    AUDIO_INFO_LOG("IsNodeTypeSupported leave with code: %{public}d.", error);
     return ConvertError(error);
 }
 

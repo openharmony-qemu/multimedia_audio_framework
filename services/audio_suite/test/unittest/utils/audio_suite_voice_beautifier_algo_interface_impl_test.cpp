@@ -35,11 +35,16 @@ public:
     static void TearDownTestCase(void){};
     void SetUp(void);
     void TearDown(void);
+
+private:
+    NodeCapability nc;
 };
 
 void AudioSuiteVbAlgoInterfaceImplUnitTest::SetUp(void)
 {
     std::filesystem::remove("/data/audiosuite/vb/vb_output_48000_2_S16LE_out.pcm");
+    nc.soName = "libaudio_voice_morph_bgm.z.so";
+    nc.soPath = "/system/lib64/";
 }
 
 void AudioSuiteVbAlgoInterfaceImplUnitTest::TearDown(void)
@@ -47,7 +52,7 @@ void AudioSuiteVbAlgoInterfaceImplUnitTest::TearDown(void)
 
 HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestVbAlgoInitAndDeinit_001, TestSize.Level0)
 {
-    AudioSuiteVoiceBeautifierAlgoInterfaceImpl vbAlgo;
+    AudioSuiteVoiceBeautifierAlgoInterfaceImpl vbAlgo(nc);
     EXPECT_EQ(vbAlgo.Init(), 0);
     std::string value = std::to_string(static_cast<int32_t>(AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_CD));
     std::string name = "VoiceBeautifierType";
@@ -57,7 +62,7 @@ HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestVbAlgoInitAndDeinit_001, Tes
 
 HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestVbAlgoApply_001, TestSize.Level0)
 {
-    AudioSuiteVoiceBeautifierAlgoInterfaceImpl vbAlgo;
+    AudioSuiteVoiceBeautifierAlgoInterfaceImpl vbAlgo(nc);
     std::vector<uint8_t *> audioInputs(1);
     std::vector<uint8_t *> audioOutputs(1);
     std::vector<int16_t> dataIn(960 * 2, 0);
@@ -76,7 +81,7 @@ HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestVbAlgoApply_001, TestSize.Le
 
 HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestVbAlgoApply_002, TestSize.Level0)
 {
-    AudioSuiteVoiceBeautifierAlgoInterfaceImpl vbAlgo;
+    AudioSuiteVoiceBeautifierAlgoInterfaceImpl vbAlgo(nc);
     std::vector<uint8_t *> audioInputs(1);
     std::vector<uint8_t *> audioOutputs(1);
     size_t frameSize = 960 * 2 * 2;
@@ -124,7 +129,7 @@ HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestVbAlgoApply_002, TestSize.Le
 
 HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestVbAlgoApply_003, TestSize.Level0)
 {
-    AudioSuiteVoiceBeautifierAlgoInterfaceImpl vbAlgo;
+    AudioSuiteVoiceBeautifierAlgoInterfaceImpl vbAlgo(nc);
     std::vector<uint8_t *> audioInputs(1);
     std::vector<uint8_t *> audioOutputs(1);
     std::vector<int16_t> dataIn(960 * 2, 0);
@@ -143,7 +148,7 @@ HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestVbAlgoApply_003, TestSize.Le
 
 HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestVbAlgoApply_004, TestSize.Level0)
 {
-    AudioSuiteVoiceBeautifierAlgoInterfaceImpl vbAlgo;
+    AudioSuiteVoiceBeautifierAlgoInterfaceImpl vbAlgo(nc);
     std::vector<uint8_t *> audioInputs;
     std::vector<uint8_t *> audioOutputs;
     std::vector<int16_t> dataIn(960 * 2, 0);
@@ -160,7 +165,7 @@ HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestVbAlgoApply_004, TestSize.Le
 
 HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestVbAlgoApply_005, TestSize.Level0)
 {
-    AudioSuiteVoiceBeautifierAlgoInterfaceImpl vbAlgo;
+    AudioSuiteVoiceBeautifierAlgoInterfaceImpl vbAlgo(nc);
     std::vector<uint8_t *> audioInputs(1);
     std::vector<uint8_t *> audioOutputs(1);
     std::vector<int16_t> dataIn(960 * 2, 0);
@@ -180,7 +185,7 @@ HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestVbAlgoApply_005, TestSize.Le
 
 HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestVbAlgoApply_006, TestSize.Level0)
 {
-    AudioSuiteVoiceBeautifierAlgoInterfaceImpl vbAlgo;
+    AudioSuiteVoiceBeautifierAlgoInterfaceImpl vbAlgo(nc);
     std::vector<uint8_t *> audioInputs(1);
     std::vector<uint8_t *> audioOutputs(1);
     std::vector<int16_t> dataIn(960 * 2, 0);
@@ -200,7 +205,7 @@ HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestVbAlgoApply_006, TestSize.Le
 
 HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestVbAlgoApply_007, TestSize.Level0)
 {
-    AudioSuiteVoiceBeautifierAlgoInterfaceImpl vbAlgo;
+    AudioSuiteVoiceBeautifierAlgoInterfaceImpl vbAlgo(nc);
 
     EXPECT_EQ(vbAlgo.Init(), 0);
     std::string value = std::to_string(10);

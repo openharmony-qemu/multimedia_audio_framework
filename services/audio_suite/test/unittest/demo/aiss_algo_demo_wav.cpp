@@ -278,8 +278,11 @@ private:
 
 int main()
 {
+    NodeCapability nc;
+    nc.soName = "libaudio_aiss_intergration.z.so";
+    nc.soPath = "/system/lib64/";
     std::shared_ptr<AudioSuiteAlgoInterface> aissAlgoImpl =
-        AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_AUDIO_SEPARATION);
+        AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_AUDIO_SEPARATION, nc);
     int32_t retValue = aissAlgoImpl->Init();
     if (retValue != SUCCESS) {
         printf("InitAlgorithm failed, retValue: %d", retValue);

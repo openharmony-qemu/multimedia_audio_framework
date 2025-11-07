@@ -56,7 +56,8 @@ int32_t AudioSuiteSoundFieldNode::Init()
 {
     AUDIO_INFO_LOG("AudioSuiteSoundFieldNode::Init begin");
 
-    algoInterface_ = AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_SOUND_FIELD);
+    algoInterface_ =
+        AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_SOUND_FIELD, nodeCapability);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create soundField algoInterface");
 
     int32_t ret = algoInterface_->Init();

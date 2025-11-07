@@ -21,6 +21,7 @@
 #include "audio_errors.h"
 #include "audio_suite_channel.h"
 #include "audio_suite_pcm_buffer.h"
+#include "audio_suite_capabilities.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -63,6 +64,7 @@ protected:
     virtual AudioSuitePcmBuffer* SignalProcess(const std::vector<AudioSuitePcmBuffer*>& inputs) = 0;
     std::vector<AudioSuitePcmBuffer*>& ReadProcessNodePreOutputData();
     std::unordered_set<std::shared_ptr<AudioNode>> finishedPrenodeSet;
+    NodeCapability nodeCapability;
 };
 
 }
