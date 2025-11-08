@@ -381,6 +381,12 @@ enum BluetoothOffloadState {
     A2DP_OFFLOAD = 2,
 };
 
+enum SleSelectState {
+    USER_SELECT_INVALID = 0,
+    USER_NOT_SELECT_SLE = 1,
+    USER_SELECT_SLE = 2,
+};
+
 struct VolumeBehavior : public Parcelable {
     bool isReady = false;
     bool isVolumeControlDisabled = false;

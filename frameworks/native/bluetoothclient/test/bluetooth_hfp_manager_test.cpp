@@ -48,7 +48,7 @@ public:
     void OnServiceDisconnected(AudioServiceIndex serviceIndex) override {};
     void OnForcedDeviceSelected(AudioStandard::DeviceType devType, const std::string &macAddress,
         sptr<AudioRendererFilter> filter = nullptr) override {};
-    void OnPrivacyDeviceSelected() override {};
+    void OnPrivacyDeviceSelected(AudioStandard::DeviceType devType, const std::string &macAddress) override {};
     void OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected) override {};
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand) override {};
 };
@@ -249,6 +249,17 @@ HWTEST_F(BluetoothHfpManagerTest, HandleUserSelection_001, TestSize.Level1)
     BluetoothRemoteDevice device2(HFP_DEVICE_MAC2);
     HfpBluetoothDeviceManager::HandleUserSelection(device2);
     EXPECT_NE(device1.GetDeviceAddr(), device2.GetDeviceAddr());
+}
+
+/**
+ * @tc.name  : Test BluetoothHfpManagerTest.
+ * @tc.number: BluetoothHfpManagerTest_007
+ * @tc.desc  : Test hfp device manager.
+ */
+HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_007, TestSize.Level1)
+{
+    EXPECT_NE(AudioHfpManager::ClearActiveHfpDevice("33:33:33"), SUCCESS);
+    EXPECT_EQ(AudioHfpManager::ClearActiveHfpDevice(""), SUCCESS);
 }
 } // namespace Bluetooth
 } // namespace OHOS

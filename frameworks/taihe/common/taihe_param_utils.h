@@ -26,6 +26,7 @@
 #endif
 #include "audio_stream_manager.h"
 #include "audio_capturer_options.h"
+#include "audio_session_device_info.h"
 #include "timestamp.h"
 
 namespace ANI::Audio {
@@ -73,10 +74,15 @@ public:
     static MicStateChangeEvent SetValueMicStateChange(
         const OHOS::AudioStandard::MicStateChangeEvent &micStateChangeEvent);
     static VolumeEvent SetValueVolumeEvent(const OHOS::AudioStandard::VolumeEvent &volumeEvent);
+    static StreamVolumeEvent SetValueStreamVolumeEvent(const OHOS::AudioStandard::StreamVolumeEvent &volumeEvent);
     static AudioCapturerChangeInfo SetAudioCapturerChangeInfoDescriptors(
         const OHOS::AudioStandard::AudioCapturerChangeInfo &changeInfo);
     static AudioDeviceDescriptor SetDeviceDescriptor(const OHOS::AudioStandard::AudioDeviceDescriptor &deviceInfo);
     static DeviceChangeAction SetValueDeviceChangeAction(const OHOS::AudioStandard::DeviceChangeAction &action);
+    static AudioSessionStateChangedEvent SetValueAudioSessionStateChangedEvent(
+        const OHOS::AudioStandard::AudioSessionStateChangedEvent &event);
+    static CurrentOutputDeviceChangedEvent SetValueCurrentOutputDeviceChangedEvent(
+        const OHOS::AudioStandard::CurrentOutputDeviceChangedEvent &event);
     static taihe::array<AudioDeviceDescriptor> SetDeviceDescriptors(
         const std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> &deviceDescriptors);
     static taihe::array<AudioDeviceDescriptor> SetValueDeviceInfo(
@@ -91,7 +97,10 @@ public:
         const OHOS::AudioStandard::MicrophoneBlockedInfo &microphoneBlockedInfo);
     static taihe::array<VolumeGroupInfo> SetVolumeGroupInfos(
         const std::vector<OHOS::sptr<OHOS::AudioStandard::VolumeGroupInfo>> &volumeGroupInfos);
-
+    static taihe::array<StreamUsage> SetValueStreamUsageArray(
+        const std::vector<OHOS::AudioStandard::StreamUsage> &streamUsageArray);
+    static taihe::array<AudioVolumeType> SetValueAudioVolumeTypeArray(
+        const std::vector<OHOS::AudioStandard::AudioVolumeType> &volumeTypeArray);
     static string ToTaiheString(const std::string &src);
     static AudioRendererInfo ToTaiheRendererInfo(const OHOS::AudioStandard::AudioRendererInfo &rendererInfo);
     static AudioCapturerInfo ToTaiheCapturerInfo(const OHOS::AudioStandard::AudioCapturerInfo &capturerInfo);

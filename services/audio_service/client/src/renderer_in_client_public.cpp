@@ -571,8 +571,9 @@ int32_t RendererInClientInner::SetRenderTarget(RenderTarget renderTarget)
 {
     CHECK_AND_RETURN_RET_LOG(renderTarget_ != renderTarget, SUCCESS, "Set same renderTarget");
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream is not inited!");
-    int32_t ret = 0;
-    ipcStream_->SetTarget(renderTarget, ret);
+    int32_t ret = ERROR;
+    int32_t ipcRet = ipcStream_->SetTarget(renderTarget, ret);
+    CHECK_AND_RETURN_RET_LOG(ipcRet == SUCCESS, ret, "ipcStream error: %{public}d", ipcRet);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Set render target error: %{public}d", ret);
     renderTarget_ = renderTarget;
     return ret;
@@ -623,7 +624,7 @@ void RendererInClientInner::OnFirstFrameWriting()
         CHECK_AND_RETURN(firstFrameWritingCb_!= nullptr);
         cb = firstFrameWritingCb_;
     }
-    AUDIO_DEBUG_LOG("OnFirstFrameWriting: latency %{public}" PRIu64 "", latency);
+    AUDIO_INFO_LOG("OnFirstFrameWriting: latency %{public}" PRIu64 "", latency);
     cb->OnFirstFrameWriting(latency);
 }
 
@@ -1293,6 +1294,7 @@ void RendererInClientInner::SetPreferredFrameSize(int32_t frameSize)
     size_t minCbBufferSize =
         static_cast<size_t>(MIN_CBBUF_IN_USEC * curStreamParams_.samplingRate / AUDIO_US_PER_S) * sizePerFrameInByte_;
     size_t preferredCbBufferSize = static_cast<size_t>(frameSize) * sizePerFrameInByte_;
+    SetCacheSize(frameSize);
     std::lock_guard<std::mutex> lock(cbBufferMutex_);
     cbBufferSize_ = (preferredCbBufferSize > maxCbBufferSize || preferredCbBufferSize < minCbBufferSize) ?
         (preferredCbBufferSize > maxCbBufferSize ? maxCbBufferSize : minCbBufferSize) : preferredCbBufferSize;

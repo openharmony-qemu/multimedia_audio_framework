@@ -102,6 +102,8 @@ public:
 
     bool CheckDeviceInZone(AudioDeviceDescriptor device);
 
+    bool CheckExistUidInZone();
+
 private:
     int32_t zoneId_ = -1;
     std::string name_ = "";

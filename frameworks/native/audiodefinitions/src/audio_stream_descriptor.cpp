@@ -22,6 +22,7 @@
 namespace OHOS {
 namespace AudioStandard {
 static const int32_t MAX_STREAM_DESCRIPTORS_SIZE = 1000;
+static constexpr int32_t MEDIA_SERVICE_UID = 1013;
 
 static const char *StreamStatusToString(AudioStreamStatus status)
 {
@@ -102,7 +103,8 @@ bool AudioStreamDescriptor::Marshalling(Parcel &parcel) const
         parcel.WriteUint32(streamAction_) &&
         preferredInputDevice.Marshalling(parcel) &&
         WriteDeviceDescVectorToParcel(parcel, oldDeviceDescs_) &&
-        WriteDeviceDescVectorToParcel(parcel, newDeviceDescs_);
+        WriteDeviceDescVectorToParcel(parcel, newDeviceDescs_) &&
+        parcel.WriteInt32(oldOriginalFlag_);
 }
 
 AudioStreamDescriptor *AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
@@ -132,6 +134,7 @@ AudioStreamDescriptor *AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
     info->preferredInputDevice = std::shared_ptr<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(parcel));
     info->UnmarshallingDeviceDescVector(parcel, info->oldDeviceDescs_);
     info->UnmarshallingDeviceDescVector(parcel, info->newDeviceDescs_);
+    info->oldOriginalFlag_ = parcel.ReadInt32();
 
     return info;
 }
@@ -289,5 +292,12 @@ void AudioStreamDescriptor::ResetToNormalRoute(bool updateRoute)
     routeFlag_ = (IsPlayback() ? AUDIO_OUTPUT_FLAG_NORMAL : AUDIO_INPUT_FLAG_NORMAL);
 }
 
+int32_t AudioStreamDescriptor::GetRealUid() const
+{
+    if (callerUid_ == MEDIA_SERVICE_UID) {
+        return appInfo_.appUid;
+    }
+    return callerUid_;
+}
 } // AudioStandard
 } // namespace OHOS

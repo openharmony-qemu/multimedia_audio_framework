@@ -37,15 +37,10 @@
 #include "audio_server_proxy.h"
 #include "sle_audio_device_manager.h"
 #include "audio_pipe_manager.h"
+#include "audio_zone_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
-
-#ifdef BLUETOOTH_ENABLE
-const uint32_t USER_NOT_SELECT_BT = 1;
-const uint32_t USER_SELECT_BT = 2;
-#endif
-
 
 static const int32_t MEDIA_SERVICE_UID = 1013;
 
@@ -122,7 +117,7 @@ void AudioActiveDevice::SetCurrentOutputDevice(const AudioDeviceDescriptor &desc
 {
     std::lock_guard<std::mutex> lock(curOutputDevice_);
     AUDIO_INFO_LOG("Set as type: %{public}d id: %{public}d", desc.deviceType_, desc.deviceId_);
-    CHECK_AND_RETURN_LOG(desc.deviceType_ != DEVICE_TYPE_SYSTEM_PRIVATE, "type is SYSTEM_PRIVATE");
+    CHECK_AND_RETURN(desc.deviceType_ != DEVICE_TYPE_SYSTEM_PRIVATE);
     currentActiveDevice_ = AudioDeviceDescriptor(desc);
 }
 
@@ -187,35 +182,35 @@ void AudioActiveDevice::NotifyUserSelectionEventToBt(std::shared_ptr<AudioDevice
     CHECK_AND_RETURN_LOG(currentOutputDevice != nullptr, "currentOutputDevice is nullptr");
 
     bool isSameDevice = audioDeviceDescriptor->IsSameDeviceDesc(*currentOutputDevice);
-    NotifyUserDisSelectionEventToBt(currentOutputDevice, isSameDevice);
+    NotifyUserDisSelectionEventToBt(currentOutputDevice, isSameDevice, streamUsage);
 
     if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO ||
         audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         Bluetooth::SendUserSelectionEvent(audioDeviceDescriptor->deviceType_,
-            audioDeviceDescriptor->macAddress_, USER_SELECT_BT);
+            audioDeviceDescriptor->macAddress_, USER_SELECT_SLE);
     }
     if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_NEARLINK) {
         SleAudioDeviceManager::GetInstance().SendUserSelection(*audioDeviceDescriptor,
-            streamUsage);
+            streamUsage, USER_SELECT_SLE);
     }
 #endif
 }
 
 void AudioActiveDevice::NotifyUserDisSelectionEventToBt(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor,
-    bool isSameDevice)
+    bool isSameDevice, StreamUsage streamUsage)
 {
     CHECK_AND_RETURN_LOG(!isSameDevice, "isSameDevice is true, do not notify");
     AUDIO_INFO_LOG("UserDisSelection start");
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "deviceDesc is nullptr");
 #ifdef BLUETOOTH_ENABLE
     Bluetooth::SendUserSelectionEvent(
-        audioDeviceDescriptor->deviceType_, audioDeviceDescriptor->macAddress_, USER_NOT_SELECT_BT);
+        audioDeviceDescriptor->deviceType_, audioDeviceDescriptor->macAddress_, USER_NOT_SELECT_SLE);
     if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
         audioDeviceDescriptor->IsSameDeviceDesc(GetCurrentOutputDevice())) {
         Bluetooth::AudioHfpManager::DisconnectSco();
     }
 #endif
-    SleAudioDeviceManager::GetInstance().SendUserSelection(*audioDeviceDescriptor, STREAM_USAGE_INVALID);
+    SleAudioDeviceManager::GetInstance().SendUserSelection(*audioDeviceDescriptor, streamUsage, USER_NOT_SELECT_SLE);
 }
 
 void AudioActiveDevice::NotifyUserSelectionEventForInput(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor,
@@ -232,11 +227,11 @@ void AudioActiveDevice::NotifyUserSelectionEventForInput(std::shared_ptr<AudioDe
     if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO ||
         audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
         Bluetooth::SendUserSelectionEvent(audioDeviceDescriptor->deviceType_,
-            audioDeviceDescriptor->macAddress_, USER_SELECT_BT);
+            audioDeviceDescriptor->macAddress_, USER_SELECT_SLE);
     }
     if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_NEARLINK_IN) {
         SleAudioDeviceManager::GetInstance().SendUserSelection(*audioDeviceDescriptor,
-            sourceType);
+            sourceType, USER_SELECT_SLE);
     }
 #endif
 }
@@ -278,21 +273,22 @@ void AudioActiveDevice::HandleActiveBt(DeviceType deviceType, std::string macAdd
     if (GetCurrentOutputDeviceType() == DEVICE_TYPE_BLUETOOTH_SCO &&
         deviceType != DEVICE_TYPE_BLUETOOTH_SCO) {
         Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
-            GetCurrentOutputDeviceMacAddr(), USER_NOT_SELECT_BT);
+            GetCurrentOutputDeviceMacAddr(), USER_NOT_SELECT_SLE);
         Bluetooth::AudioHfpManager::DisconnectSco();
     }
     if (GetCurrentOutputDeviceType() != DEVICE_TYPE_BLUETOOTH_SCO &&
         deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
         Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
-            macAddress, USER_SELECT_BT);
+            macAddress, USER_SELECT_SLE);
     }
     if (GetCurrentOutputDeviceType() == DEVICE_TYPE_NEARLINK &&
         deviceType != DEVICE_TYPE_NEARLINK) {
-        SleAudioDeviceManager::GetInstance().SendUserSelection(GetCurrentOutputDevice(), STREAM_USAGE_INVALID);
+        SleAudioDeviceManager::GetInstance().SendUserSelection(GetCurrentOutputDevice(),
+            STREAM_USAGE_VOICE_COMMUNICATION, USER_NOT_SELECT_SLE);
     }
     if (deviceType == DEVICE_TYPE_NEARLINK) {
         SleAudioDeviceManager::GetInstance().SendUserSelection(GetCurrentOutputDevice(),
-            STREAM_USAGE_VOICE_COMMUNICATION);
+            STREAM_USAGE_VOICE_COMMUNICATION, USER_SELECT_SLE);
     }
 }
 
@@ -301,12 +297,13 @@ void AudioActiveDevice::HandleNegtiveBt(DeviceType deviceType)
     if (GetCurrentOutputDeviceType() == DEVICE_TYPE_BLUETOOTH_SCO &&
         deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
         Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
-            GetCurrentOutputDeviceMacAddr(), USER_NOT_SELECT_BT);
+            GetCurrentOutputDeviceMacAddr(), USER_NOT_SELECT_SLE);
         Bluetooth::AudioHfpManager::DisconnectSco();
     }
     if (GetCurrentOutputDeviceType() == DEVICE_TYPE_NEARLINK &&
         deviceType == DEVICE_TYPE_NEARLINK) {
-        SleAudioDeviceManager::GetInstance().SendUserSelection(GetCurrentOutputDevice(), STREAM_USAGE_INVALID);
+        SleAudioDeviceManager::GetInstance().SendUserSelection(GetCurrentOutputDevice(),
+            STREAM_USAGE_VOICE_COMMUNICATION, USER_NOT_SELECT_SLE);
     }
 }
 
@@ -393,7 +390,6 @@ void AudioActiveDevice::UpdateActiveDeviceRoute(DeviceType deviceType, DeviceFla
 {
     Trace trace("KeyAction AudioActiveDevice::UpdateActiveDeviceRoute DeviceType:" + std::to_string(deviceType));
     CHECK_AND_RETURN_LOG(networkId == LOCAL_NETWORK_ID, "distributed device, do not update route");
-    AUDIO_INFO_LOG("[PipeExecInfo] Active route with type[%{public}d]", deviceType);
     std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
     activeDevices.push_back(make_pair(deviceType, deviceFlag));
     UpdateActiveDevicesRoute(activeDevices, deviceName);
@@ -408,7 +404,7 @@ void AudioActiveDevice::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceTyp
     for (size_t i = 0; i < activeDevices.size(); i++) {
         deviceTypesInfo = deviceTypesInfo + " " + std::to_string(activeDevices[i].first);
     }
-    AUDIO_INFO_LOG("[PipeExecInfo] Active route with types[%{public}s]", deviceTypesInfo.c_str());
+    AUDIO_INFO_LOG("[PipeExecInfo] types[%{public}s]", deviceTypesInfo.c_str());
 
     Trace trace("AudioActiveDevice::UpdateActiveDevicesRoute DeviceTypes:" + deviceTypesInfo);
     auto ret = AudioServerProxy::GetInstance().UpdateActiveDevicesRouteProxy(activeDevices,
@@ -525,16 +521,28 @@ bool AudioActiveDevice::IsAvailableFrontDeviceInVector(
     return true;
 }
 
+void AudioActiveDevice::SetAdjustVolumeForZone(int32_t zoneId)
+{
+    volumeAdjustZoneId_ = zoneId;
+}
+
 std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(AudioVolumeType volumeType)
 {
     std::lock_guard<std::mutex> lock(deviceForVolumeMutex_);
     CHECK_AND_RETURN_RET_LOG(!audioConnectedDevice_.IsEmpty(), defaultOutputDevice_, "no device connected");
     AudioVolumeType type = VolumeUtils::GetVolumeTypeFromStreamType(volumeType);
+    if (AudioZoneService::GetInstance().CheckExistUidInAudioZone() && volumeAdjustZoneId_ == 0) {
+        std::vector<StreamUsage> usages = VolumeUtils::GetStreamUsageByVolumeTypeForFetchDevice(type);
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+        for (auto usage : usages) {
+            devices.push_back(AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(
+                usage, -1, "GetDeviceForVolumeByStreamType").front());
+        }
+        SortDevicesByPriority(devices);
+        return devices.front();
+    }
     if (type == STREAM_ALL) {
         type = STREAM_MUSIC;
-    }
-    if (Util::IsDualToneStreamType(volumeType) && !VolumeUtils::IsPCVolumeEnable()) {
-        return audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_SPEAKER);
     }
     if (volumeTypeDeviceMap_.contains(type)
         && IsAvailableFrontDeviceInVector(volumeTypeDeviceMap_[type])) {

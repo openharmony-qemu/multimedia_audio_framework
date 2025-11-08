@@ -28,10 +28,7 @@ class AudioSuiteSoundFieldNode : public AudioSuiteProcessNode {
 public:
     explicit AudioSuiteSoundFieldNode();
     ~AudioSuiteSoundFieldNode();
-    bool Reset() override
-    {
-        return true;
-    }
+    
     int32_t Init() override;
     int32_t DeInit() override;
     int32_t SetOptions(std::string name, std::string value) override;
@@ -41,12 +38,10 @@ protected:
     AudioSuitePcmBuffer *SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs) override;
 
 private:
-    AudioSuitePcmBuffer pcmBufferOutput_;
-    AudioSuitePcmBuffer pcmBufferTmp_;
+    AudioSuitePcmBuffer outPcmBuffer_;
     std::shared_ptr<AudioSuiteAlgoInterface> algoInterface_;
-    std::unique_ptr<uint8_t[]> inputBuffer_{nullptr};
-    std::unique_ptr<uint8_t[]> outputBuffer_{nullptr};
-    size_t bufSize_{0};
+    std::vector<uint8_t *> algoInputs_{nullptr};
+    std::vector<uint8_t *> algoOutputs_{nullptr};
 };
 
 }  // namespace AudioSuite

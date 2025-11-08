@@ -23,22 +23,22 @@
 #include <sstream>
 #include "audio_errors.h"
 #include "audio_suite_log.h"
-#include "audio_suite_info.h"
 #include "audio_suite_manager.h"
 #include "audio_suite_pcm_buffer.h"
-#include "audio_proresampler.h"
-#include "hpae_format_convert.h"
-#include "channel_converter.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 static constexpr uint32_t MIN_START_NODE_ID = 100;
 
-struct PreResample {
-    uint32_t preInResample;
-    uint32_t preOutResample;
-    uint32_t preChannels;
+struct AudioNodeInfo {
+    AudioNodeType nodeType;
+    uint32_t nodeId;
+    float volume = 1.0;
+    bool finishedFlag = false;
+    bool bypassStatus = false;
+    AudioFormat audioFormat;
+    PcmBufferFormat inPcmFormat;
 };
 
 class AudioNode;
@@ -59,6 +59,8 @@ public:
         audioNodeInfo_.nodeId = GenerateAudioNodeId();
         audioNodeInfo_.nodeType = nodeType;
         audioNodeInfo_.audioFormat = audioFormat;
+        audioNodeInfo_.inPcmFormat = PcmBufferFormat(audioFormat.rate, audioFormat.audioChannelInfo.numChannels,
+            audioFormat.audioChannelInfo.channelLayout, audioFormat.format);
     }
 
     virtual ~AudioNode() {};
@@ -90,7 +92,7 @@ public:
         return nullptr;
     }
 
-    virtual int32_t SetRequestDataCallback(std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback)
+    virtual int32_t SetRequestDataCallback(std::shared_ptr<InputNodeRequestDataCallBack> callback)
     {
         AUDIO_ERR_LOG("SetRequestDataCallback failed, node type = %{public}d not support.", GetNodeType());
         return ERR_INVALID_OPERATION;
@@ -130,6 +132,8 @@ public:
     virtual void SetAudioNodeFormat(AudioFormat audioFormat)
     {
         audioNodeInfo_.audioFormat = audioFormat;
+        audioNodeInfo_.inPcmFormat = PcmBufferFormat(audioFormat.rate, audioFormat.audioChannelInfo.numChannels,
+            audioFormat.audioChannelInfo.channelLayout, audioFormat.format);
     }
 
     virtual void SetAudioNodeVolume(float volume)
@@ -150,6 +154,11 @@ public:
     virtual AudioFormat GetAudioNodeFormat()
     {
         return audioNodeInfo_.audioFormat;
+    }
+
+    virtual PcmBufferFormat &GetAudioNodeInPcmFormat()
+    {
+        return audioNodeInfo_.inPcmFormat;
     }
 
     virtual uint32_t GetAudioNodeId()
@@ -197,71 +206,6 @@ public:
     {
         return "";
     }
-    
-    void ConvertToFloat(AudioSampleFormat format, unsigned n, void *src, float *dst)
-    {
-        HPAE::ConvertToFloat(format, n, src, dst);
-    }
-
-    void ConvertFromFloat(AudioSampleFormat format, unsigned n, float *src, void *dst)
-    {
-        HPAE::ConvertFromFloat(format, n, src, dst);
-    }
-
-    int32_t SetUpResample(uint32_t inRate, uint32_t outRate, uint32_t channels, uint32_t quality)
-    {
-        if (proResampler_ == nullptr) {
-            proResampler_ = std::make_unique<HPAE::ProResampler>(inRate, outRate, channels, quality);
-            preResample_.preInResample = inRate;
-            preResample_.preOutResample = outRate;
-            preResample_.preChannels = channels;
-            return RESAMPLER_ERR_SUCCESS;
-        }
-
-        bool noNeedUpdate = (inRate == preResample_.preInResample && outRate == preResample_.preOutResample &&
-            channels == preResample_.preChannels);
-        
-        CHECK_AND_RETURN_RET(!noNeedUpdate, RESAMPLER_ERR_SUCCESS);
-
-        preResample_.preInResample = inRate;
-        preResample_.preOutResample = outRate;
-        preResample_.preChannels = channels;
-        proResampler_->Reset();
-        int32_t ret = proResampler_->UpdateRates(inRate, outRate);
-        CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret,
-            "ProResampler update rate failed with error code %{public}d", ret);
- 
-        ret = proResampler_->UpdateChannels(channels);
-        CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret,
-            "ProResampler update Channels failed with error code %{public}d", ret);
- 
-        return ret;
-    }
- 
-    int32_t DoResampleProcess(const float *inBuffer, uint32_t inFrameSize,
-        float *outBuffer, uint32_t outFrameSize)
-    {
-        CHECK_AND_RETURN_RET_LOG(proResampler_ != nullptr, ERROR, "ProResampler_ is nullptr");
-        return proResampler_->Process(inBuffer, inFrameSize, outBuffer, outFrameSize);
-    }
-
-    void ResetResample()
-    {
-        preResample_.preInResample = 0;
-        preResample_.preOutResample = 0;
-        preResample_.preChannels = 0;
-    }
-
-    int32_t SetChannelConvertProcessParam(AudioChannelInfo inChannelInfo, AudioChannelInfo outChannelInfo,
-        AudioSampleFormat workFormat, bool mixLfe)
-    {
-        return channelConverter_.SetParam(inChannelInfo, outChannelInfo, workFormat, mixLfe);
-    }
-
-    int32_t ChannelConvertProcess(uint32_t framesize, float* in, uint32_t inLen, float* out, uint32_t outLen)
-    {
-        return channelConverter_.Process(framesize, in, inLen, out, outLen);
-    }
 
 private:
     static uint32_t GenerateAudioNodeId()
@@ -277,12 +221,9 @@ private:
     }
 
 private:
-    std::unique_ptr<HPAE::ProResampler> proResampler_ = nullptr;
     AudioNodeInfo audioNodeInfo_;
     inline static std::mutex nodeIdCounterMutex_;
     inline static uint32_t nodeIdCounter_ = MIN_START_NODE_ID;
-    struct PreResample preResample_ = {0};
-    HPAE::ChannelConverter channelConverter_;
 };
 
 class Tap {

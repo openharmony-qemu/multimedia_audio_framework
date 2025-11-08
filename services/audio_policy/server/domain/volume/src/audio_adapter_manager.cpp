@@ -414,6 +414,8 @@ bool AudioAdapterManager::IsAppRingMuted(int32_t appUid)
 
 int32_t AudioAdapterManager::SetAdjustVolumeForZone(int32_t zoneId)
 {
+    AUDIO_INFO_LOG("set adjust volume for zone %{public}d", zoneId);
+    volumeAdjustZoneId_ = zoneId;
     return SUCCESS;
 }
 
@@ -425,7 +427,6 @@ int32_t AudioAdapterManager::GetVolumeAdjustZoneId()
 int32_t AudioAdapterManager::SetZoneMute(int32_t zoneId, AudioStreamType streamType, bool mute,
     StreamUsage streamUsage, const DeviceType &deviceType)
 {
-    std::lock_guard<std::mutex> lock(volumeDataMapMutex_);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices =
         AudioZoneService::GetInstance().FetchOutputDevices(zoneId, streamUsage, 0, ROUTER_TYPE_DEFAULT);
     CHECK_AND_RETURN_RET_LOG(devices.size() >= 1 && devices[0] != nullptr, ERR_OPERATION_FAILED,
@@ -435,7 +436,6 @@ int32_t AudioAdapterManager::SetZoneMute(int32_t zoneId, AudioStreamType streamT
 
 bool AudioAdapterManager::GetZoneMute(int32_t zoneId, AudioStreamType streamType)
 {
-    std::lock_guard<std::mutex> lock(volumeDataMapMutex_);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices =
         AudioZoneService::GetInstance().FetchOutputDevices(zoneId, STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
     CHECK_AND_RETURN_RET_LOG(devices.size() >= 1 && devices[0] != nullptr, false,
@@ -445,7 +445,6 @@ bool AudioAdapterManager::GetZoneMute(int32_t zoneId, AudioStreamType streamType
 
 int32_t AudioAdapterManager::GetZoneVolumeLevel(int32_t zoneId, AudioStreamType streamType)
 {
-    std::lock_guard<std::mutex> lock(volumeDataMapMutex_);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices =
         AudioZoneService::GetInstance().FetchOutputDevices(zoneId, STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
     CHECK_AND_RETURN_RET_LOG(devices.size() >= 1 && devices[0] != nullptr, ERR_OPERATION_FAILED,
@@ -458,7 +457,6 @@ int32_t AudioAdapterManager::GetZoneVolumeLevel(int32_t zoneId, AudioStreamType 
 
 int32_t AudioAdapterManager::GetZoneVolumeDegree(int32_t zoneId, AudioStreamType streamType)
 {
-    std::lock_guard<std::mutex> lock(volumeDataMapMutex_);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices =
         AudioZoneService::GetInstance().FetchOutputDevices(zoneId, STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
     CHECK_AND_RETURN_RET_LOG(devices.size() >= 1 && devices[0] != nullptr, ERR_OPERATION_FAILED,
@@ -483,7 +481,6 @@ int32_t AudioAdapterManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &i
 
 int32_t AudioAdapterManager::SetZoneVolumeLevel(int32_t zoneId, AudioStreamType streamType, int32_t volumeLevel)
 {
-    std::lock_guard<std::mutex> lock(volumeDataMapMutex_);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices =
         AudioZoneService::GetInstance().FetchOutputDevices(zoneId, STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
     CHECK_AND_RETURN_RET_LOG(devices.size() >= 1, ERR_OPERATION_FAILED, "zone device error");
@@ -499,7 +496,6 @@ int32_t AudioAdapterManager::SetZoneVolumeLevel(int32_t zoneId, AudioStreamType 
 int32_t AudioAdapterManager::SetZoneVolumeDegreeToMap(int32_t zoneId,
     AudioStreamType streamType, int32_t volumeDegree)
 {
-    std::lock_guard<std::mutex> lock(volumeDataMapMutex_);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices =
         AudioZoneService::GetInstance().FetchOutputDevices(zoneId, STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
     CHECK_AND_RETURN_RET_LOG(devices.size() >= 1, ERR_OPERATION_FAILED, "zone device error");
@@ -517,8 +513,8 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
     Trace trace("KeyAction AudioAdapterManager::SetSystemVolumeLevel streamType:"
         + std::to_string(streamType) + ", volumeLevel:" + std::to_string(volumeLevel));
     auto desc = audioActiveDevice_.GetDeviceForVolume(streamType);
-    AUDIO_INFO_LOG("streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
-        streamType, desc->deviceType_, volumeLevel);
+    AUDIO_INFO_LOG("streamType: %{public}d, device: %{public}s, volumeLevel:%{public}d",
+        streamType, desc->GetName().c_str(), volumeLevel);
     if (desc->volumeBehavior_.isVolumeControlDisabled) {
         AUDIO_WARNING_LOG("desc->volumeBehavior_.isVolumeControlDisabled is true!");
         return ERR_SET_VOL_FAILED_BY_VOLUME_CONTROL_DISABLED;
@@ -529,8 +525,6 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
         AUDIO_INFO_LOG("The volume is the same as before.");
         return SUCCESS;
     }
-    AUDIO_INFO_LOG("streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
-        streamType, desc->deviceType_, volumeLevel);
     if (volumeLevel == 0 && !VolumeUtils::IsPCVolumeEnable() &&
         (streamType == STREAM_VOICE_CALL ||
         streamType == STREAM_ALARM || streamType == STREAM_ACCESSIBILITY ||
@@ -614,8 +608,8 @@ int32_t AudioAdapterManager::SetAppVolumeDb(int32_t appUid)
     float totalVolume = 0.0f;
     auto audioVolume = AudioVolume::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioVolume != nullptr, ERR_INVALID_PARAM, "audioVolume handle null");
-    AUDIO_INFO_LOG("volumeDb:%{public}f volume:%{public}d devicetype:%{public}d totalVolume:%{public}f isDs:%{public}d",
-        volumeDb, volumeLevel, desc->deviceType_, totalVolume,
+    AUDIO_INFO_LOG("volumeDb:%{public}f volume:%{public}d device:%{public}s totalVolume:%{public}f isDs:%{public}d",
+        volumeDb, volumeLevel, desc->GetName().c_str(), totalVolume,
         desc->IsDistributedSpeaker());
     if (desc->IsDistributedSpeaker()) {
         CHECK_AND_RETURN_RET_LOG(offloadSessionID_[OFFLOAD_IN_REMOTE].has_value(), SUCCESS,
@@ -642,8 +636,8 @@ int32_t AudioAdapterManager::SetAppVolumeMutedDB(int32_t appUid, bool muted)
     auto desc = audioActiveDevice_.GetDeviceForVolume(appUid);
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     float volumeDb = 0.0f;
-    AUDIO_INFO_LOG("appUid:%{public}d muted:%{public}d devicetype:%{public}d volumeDb:%{public}f isDs:%{public}d",
-        appUid, muted, desc->deviceType_, volumeDb, desc->IsDistributedSpeaker());
+    AUDIO_INFO_LOG("appUid:%{public}d muted:%{public}d device:%{public}s volumeDb:%{public}f isDs:%{public}d",
+        appUid, muted, desc->GetName().c_str(), volumeDb, desc->IsDistributedSpeaker());
     if (desc->IsDistributedSpeaker()) {
         CHECK_AND_RETURN_RET_LOG(offloadSessionID_[OFFLOAD_IN_REMOTE].has_value(), SUCCESS,
             "remote offload session id is null");
@@ -672,8 +666,8 @@ int32_t AudioAdapterManager::SetVolumeDb(std::shared_ptr<AudioDeviceDescriptor> 
     float volumeDb = CalculateVolumeDbByDegree(device->deviceType_, streamType, volumeDegree);
     DepressVolume(volumeDb, volumeLevel, streamType, device->deviceType_);
     AUDIO_INFO_LOG("streamType:%{public}d volumeDb:%{public}f volumeLevel:%{public}d \
-        volumeDegree:%{public}d devicetype:%{public}d",
-        streamType, volumeDb, volumeLevel, volumeDegree, device->deviceType_);
+        volumeDegree:%{public}d device:%{public}s",
+        streamType, volumeDb, volumeLevel, volumeDegree, device->GetName().c_str());
     SetSystemVolumeToEffect(streamType);
     SetAudioVolume(device, streamType, volumeDb);
     return SUCCESS;
@@ -693,8 +687,8 @@ int32_t AudioAdapterManager::SetSystemVolumeToEffect(AudioStreamType streamType)
     auto desc = audioActiveDevice_.GetDeviceForVolume(streamType);
     int32_t volumeLevelTemp = GetSystemVolumeForEffect(desc->deviceType_, streamType);
     float volumeDbTemp = CalculateVolumeDbNonlinear(streamType, desc->deviceType_, volumeLevelTemp);
-    AUDIO_INFO_LOG("SetSystemVolumeToEffect streamType: %{public}d, volumeDb: %{public}f, deviceType: %{public}d",
-        streamType, volumeDbTemp, desc->deviceType_);
+    AUDIO_INFO_LOG("SetSystemVolumeToEffect streamType: %{public}d, volumeDb: %{public}f, device:%{public}s",
+        streamType, volumeDbTemp, desc->GetName().c_str());
     return audioServiceAdapter_->SetSystemVolumeToEffect(streamType, volumeDbTemp);
 }
 
@@ -840,30 +834,23 @@ float AudioAdapterManager::GetSystemVolumeDb(AudioStreamType streamType)
     return CalculateVolumeDb(volumeLevel);
 }
 
-int32_t AudioAdapterManager::SetInnerStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage)
+void AudioAdapterManager::SetDeviceNoMuteForRinger(std::shared_ptr<AudioDeviceDescriptor> device)
 {
-    AUDIO_INFO_LOG("stream type %{public}d, mute:%{public}d, streamUsage:%{public}d", streamType, mute, streamUsage);
-    int32_t isSetStreamMute = IsHandleStreamMute(streamType, mute, streamUsage);
-    if (isSetStreamMute == SUCCESS) {
-        return SUCCESS;
-    }
-    // if current mute status is same for set, not set mute
-    bool currentMuteStatus = GetStreamMute(streamType);
-    auto desc = audioActiveDevice_.GetDeviceForVolume(streamType);
-    if (currentMuteStatus != mute) {
-        // set stream mute status to mem.
-        volumeDataMaintainer_.SaveMuteToMap(desc, streamType, mute);
-        SetAbsVolumeMuteNearlink(mute);
+    std::lock_guard<std::mutex> lock(ringerNoMuteDeviceMutex_);
+    CHECK_AND_RETURN_LOG(device != nullptr, "device null");
+    AUDIO_INFO_LOG("Set %{public}s no mute for ringer", device->GetName().c_str());
+    ringerNoMuteDevice_ = device;
+    SetVolumeDbForDeviceInPipe(device, STREAM_RING);
+}
 
-        int32_t volume = GetSystemVolumeLevel(streamType);
-        VolumeEvent volumeEvent = VolumeEvent(streamType, volume, false);
-        volumeEvent.volumeDegree = GetSystemVolumeDegree(streamType);
-        if (audioPolicyServerHandler_ != nullptr) {
-            audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
-            audioPolicyServerHandler_->SendVolumeDegreeEventCallback(volumeEvent);
-        }
-    }
-    return SetVolumeDbForDeviceInPipe(desc, streamType);
+void AudioAdapterManager::ClearDeviceNoMuteForRinger()
+{
+    std::lock_guard<std::mutex> lock(ringerNoMuteDeviceMutex_);
+    AUDIO_INFO_LOG("clear no mute device for ringer");
+    auto tmp = ringerNoMuteDevice_;
+    ringerNoMuteDevice_ = nullptr;
+    CHECK_AND_RETURN(tmp != nullptr);
+    SetVolumeDbForDeviceInPipe(tmp, STREAM_RING);
 }
 
 int32_t AudioAdapterManager::IsHandleStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage)
@@ -937,6 +924,11 @@ bool AudioAdapterManager::GetStreamMute(AudioStreamType streamType)
 bool AudioAdapterManager::GetStreamMuteInternal(std::shared_ptr<AudioDeviceDescriptor> &device,
     AudioStreamType streamType)
 {
+    CHECK_AND_RETURN_RET_LOG(device != nullptr, false, "device is null");
+    if (device->IsSameDeviceDescPtr(ringerNoMuteDevice_) && Util::IsDualToneStreamType(streamType)) {
+        AUDIO_INFO_LOG("get no mute when ringermode no normal on %{public}s", device->GetName().c_str());
+        return false;
+    }
     return volumeDataMaintainer_.LoadMuteFromMap(device, streamType);
 }
 
@@ -1419,7 +1411,21 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
     }
 }
 
-AudioIOHandle AudioAdapterManager::ReloadAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t &paIndex)
+void AudioAdapterManager::ReloadAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t &paIndex)
+{
+    std::string moduleArgs = GetModuleArgs(audioModuleInfo);
+    AUDIO_INFO_LOG("[PipeExecInfo] PA moduleArgs %{public}s", moduleArgs.c_str());
+
+    CHECK_AND_RETURN_LOG(audioServiceAdapter_ != nullptr, "ServiceAdapter is null");
+    CHECK_AND_RETURN_LOG(audioServerProxy_ != nullptr, "audioServerProxy_ null");
+
+    int32_t ret = audioServiceAdapter_->ReloadAudioPort(audioModuleInfo.lib, audioModuleInfo);
+    paIndex = ret < 0 ? HDI_INVALID_ID : static_cast<uint32_t>(ret);
+
+    AUDIO_INFO_LOG("[PipeExecInfo] Reload audio port, paIndex: %{public}u end", paIndex);
+}
+
+AudioIOHandle AudioAdapterManager::ReloadA2dpAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t &paIndex)
 {
     std::string moduleArgs = GetModuleArgs(audioModuleInfo);
     AUDIO_INFO_LOG("[PipeExecInfo] PA moduleArgs %{public}s", moduleArgs.c_str());
@@ -1552,6 +1558,7 @@ int32_t AudioAdapterManager::UpdateCollaborativeState(bool isCollaborationEnable
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     AUDIO_INFO_LOG("AudioCollaborativeService UpdateCollaborativeState entered!");
+    audioPolicyServerHandler_->SendCollaborationEnabledChangeForCurrentDeviceEvent(isCollaborationEnabled);
     return audioServiceAdapter_->UpdateCollaborativeState(isCollaborationEnabled);
 }
 
@@ -2297,7 +2304,7 @@ void AudioAdapterManager::InitMuteStatusMap(bool isFirstBoot)
 void  AudioAdapterManager::CheckAndDealMuteStatus(const DeviceType &deviceType, const AudioStreamType &streamType)
 {
     auto desc = audioConnectedDevice_.GetDeviceByDeviceType(deviceType);
-    if (streamType == STREAM_RING) {
+    if (streamType == STREAM_RING && !VolumeUtils::IsPCVolumeEnable()) {
         bool muteStateForStreamRing = (ringerMode_ == RINGER_MODE_NORMAL) ? false : true;
         AUDIO_INFO_LOG("fist boot ringer mode:%{public}d, stream ring mute state:%{public}d", ringerMode_,
             muteStateForStreamRing);
@@ -2777,7 +2784,7 @@ float AudioAdapterManager::CalculateVolumeDbNonlinear(AudioStreamType streamType
     AUDIO_DEBUG_LOG("CalculateVolumeDbNonlinear for stream: %{public}d devicetype:%{public}d volumeLevel:%{public}d",
         streamType, deviceType, volumeLevel);
     AudioStreamType streamAlias = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    if (Util::IsDualToneStreamType(streamType) && !VolumeUtils::IsPCVolumeEnable()) {
+    if (Util::IsDualToneStreamType(streamType)) {
         deviceType = DEVICE_TYPE_SPEAKER;
     }
     int32_t minVolIndex = GetMinVolumeLevel(streamAlias, deviceType);
@@ -2833,7 +2840,7 @@ float AudioAdapterManager::CalculateVolumeDbByDegree(DeviceType deviceTypeIn,
     AudioStreamType streamType, int32_t volumeDegree)
 {
     bool useSpeaker = Util::IsDualToneStreamType(streamType) &&
-        deviceTypeIn != DEVICE_TYPE_REMOTE_CAST && !VolumeUtils::IsPCVolumeEnable();
+        deviceTypeIn != DEVICE_TYPE_REMOTE_CAST;
     DeviceType deviceType = useSpeaker ? DEVICE_TYPE_SPEAKER : deviceTypeIn;
     float volumeDb = 1.0f;
     if (useNonlinearAlgo_) {
@@ -2998,7 +3005,6 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volum
         volumeDataMaintainer_.SaveVolumeToMap(desc, STREAM_MUSIC, volume);
         bool mute = volume == 0;
         isAbsVolumeMute_ = mute;
-        SetStreamMute(STREAM_MUSIC, mute);
     }
 
     volumeDataMaintainer_.InitDeviceVolumeMap(desc);
@@ -3317,15 +3323,17 @@ void AudioAdapterManager::UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDev
     CHECK_AND_RETURN_LOG(desc != nullptr, "UptdateVolumeWhenDeviceConnect desc is null");
     volumeDataMaintainer_.InitDeviceVolumeMap(desc);
     volumeDataMaintainer_.InitDeviceMuteMap(desc);
-    AUDIO_INFO_LOG("update ok");
+    CHECK_AND_RETURN_LOG(isCastingConnect_ && (desc->deviceType_ == DEVICE_TYPE_DP), "update ok");
+    SetMaxVolumeForDpBoardcast();
+    AUDIO_INFO_LOG("update ok for dp casting");
 }
 
 int32_t AudioAdapterManager::SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree)
 {
     auto desc = audioActiveDevice_.GetDeviceForVolume(streamType);
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_OPERATION_FAILED, "device is null");
-    AUDIO_INFO_LOG("streamType: %{public}d, deviceType: %{public}d, volumeDegree:%{public}d",
-        streamType, desc->deviceType_, volumeDegree);
+    AUDIO_INFO_LOG("streamType: %{public}d, device:%{public}s, volumeDegree:%{public}d",
+        streamType, desc->GetName().c_str(), volumeDegree);
     int32_t minRet = GetMinVolumeDegree(streamType);
     CHECK_AND_RETURN_RET_LOG(volumeDegree >= minRet && volumeDegree <= MAX_VOLUME_DEGREE, ERR_INVALID_PARAM,
         "volume:%{public}d not in range:[%{public}d, %{public}d]", volumeDegree, minRet, MAX_VOLUME_DEGREE);
@@ -3431,17 +3439,36 @@ int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDev
     return SUCCESS;
 }
 
-bool AudioAdapterManager::SetMaxVolumeForDpBoardcast()
+void AudioAdapterManager::HandleCastingConnection()
 {
+    isCastingConnect_ = true;
+}
+
+void AudioAdapterManager::HandleCastingDisconnection()
+{
+    isCastingConnect_ = false;
+}
+
+bool AudioAdapterManager::IsDPCastingConnect()
+{
+    return isCastingConnect_;
+}
+
+void AudioAdapterManager::SetMaxVolumeForDpBoardcast()
+{
+    std::lock_guard<std::mutex> lock(setMaxVolumeMutex_);
+    CHECK_AND_RETURN_LOG(isCastingConnect_, "casting disconnected");
     auto desc = audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_DP);
-    CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "there is no dp device connected");
+    CHECK_AND_RETURN_LOG(desc != nullptr, "there is no dp device connected");
     bool temp = (GetMaxVolumeLevel(STREAM_MUSIC, desc) == MAX_VOLUME_LEVEL) && !VolumeUtils::IsPCVolumeEnable();
-    CHECK_AND_RETURN_RET_LOG(temp, false, "current dp device need not max volume");
+    CHECK_AND_RETURN_LOG(temp, "current dp device need not max volume");
     volumeDataMaintainer_.SaveVolumeToMap(desc, STREAM_MUSIC, GetMaxVolumeLevel(STREAM_MUSIC, desc));
     volumeDataMaintainer_.SaveVolumeToMap(desc, STREAM_VOICE_CALL, GetMaxVolumeLevel(STREAM_VOICE_CALL, desc));
     volumeDataMaintainer_.SaveVolumeToMap(desc, STREAM_VOICE_ASSISTANT,
         GetMaxVolumeLevel(STREAM_VOICE_ASSISTANT, desc));
-    return true;
+    volumeDataMaintainer_.SaveMuteToMap(desc, STREAM_MUSIC, false);
+    volumeDataMaintainer_.SaveMuteToMap(desc, STREAM_VOICE_CALL, false);
+    volumeDataMaintainer_.SaveMuteToMap(desc, STREAM_VOICE_ASSISTANT, false);
 }
 } // namespace AudioStandard
 } // namespace OHOS

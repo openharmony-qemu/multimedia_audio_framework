@@ -57,6 +57,7 @@ public:
     mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> oldDupDeviceDescs_ = {};
     mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDupDeviceDescs_ = {};
     std::string bundleName_ = "";
+    int32_t oldOriginalFlag_ = AUDIO_FLAG_NORMAL;
 
     AudioStreamDescriptor() = default;
     AudioStreamDescriptor(AudioStreamInfo streamInfo, AudioRendererInfo rendererInfo, AppInfo appInfo);
@@ -230,6 +231,12 @@ public:
         rendererInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
     }
 
+    void ResetOriginalFlag()
+    {
+        rendererInfo_.originalFlag = rendererInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL ? oldOriginalFlag_:
+            rendererInfo_.originalFlag;
+    }
+
     // Device funcs above
     DeviceType GetMainNewDeviceType()
     {
@@ -291,6 +298,8 @@ public:
         }
         return false;
     }
+
+    int32_t GetRealUid() const;
 
 private:
     bool WriteDeviceDescVectorToParcel(

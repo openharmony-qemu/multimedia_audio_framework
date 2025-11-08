@@ -38,6 +38,7 @@
 #include "audio_stream_descriptor.h"
 #include "sle_audio_operation_callback_stub_impl.h"
 #include "audio_capturer_options.h"
+#include "audio_collaborative_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -110,7 +111,7 @@ public:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors,
         const int32_t audioDeviceSelectMode = 0);
 
-    int32_t SelectPrivateDevice();
+    int32_t SelectPrivateDevice(int32_t devType, const std::string &macAddress);
 
     int32_t ForceSelectDevice(DeviceType devType, const std::string &macAddress,
         sptr<AudioRendererFilter> filter);
@@ -720,6 +721,9 @@ public:
         int32_t volumeFlag, int32_t uid);
     int32_t GetSystemVolumeDegree(AudioVolumeType volumeType, int32_t uid);
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
+    int32_t RegisterCollaborationEnabledForCurrentDeviceEventListener(
+        const std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback> &callback);
+    int32_t UnregisterCollaborationEnabledForCurrentDeviceEventListener();
 
 private:
     AudioPolicyManager() {}

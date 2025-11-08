@@ -1754,6 +1754,17 @@ bool AudioEndpointInner::GetDeviceHandleInfo(uint64_t &frames, int64_t &nanoTime
     return true;
 }
 
+void AudioEndpointInner::UpdateVirtualDeviceHandleInfo()
+{
+    uint64_t currentNanoTime = ClockTime::GetCurNano();
+    JUDGE_AND_INFO_LOG(currentNanoTime < timeInNano_,"currentNanoTime: %{public}" PRIu64"  "
+        ", timeInNano_: %{public}" PRIu64" ", currentNanoTime, timeInNano_.load());
+    // Calculate the frame position increment based on the current and previous time, and update the frame position
+    posInFrame_ = posInFrame_ + ((currentNanoTime - timeInNano_) / dstStreamInfo_.samplingRate);
+    // Calculate the new time in nanoseconds based on the updated frame position
+    timeInNano_ = (posInFrame_ / static_cast<double>(dstStreamInfo_.samplingRate)) * AUDIO_NS_PER_SECOND;
+}
+
 void AudioEndpointInner::AsyncGetPosTime()
 {
     AUDIO_INFO_LOG("AsyncGetPosTime thread start.");
@@ -1769,6 +1780,7 @@ void AudioEndpointInner::AsyncGetPosTime()
             continue;
         }
         if (!isStarted_) {
+            UpdateVirtualDeviceHandleInfo();
             continue;
         }
         // get signaled, call get pos-time
@@ -1973,10 +1985,6 @@ void AudioEndpointInner::InjectToCaptureDataProc(const BufferDesc &readBuf)
     BufferDesc captureConvDesc = {};
     ret = ConvertDataFormat(readBuf, rendererOrgDesc, streamInfo, rendererConvDesc, captureConvDesc);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "convert format data fail.");
-    DumpFileUtil::WriteDumpFile(dumpCovRendDup_, static_cast<void *>(rendererConvDesc.buffer),
-        rendererConvDesc.bufLength);
-    DumpFileUtil::WriteDumpFile(dumpCovCapDup_, static_cast<void *>(captureConvDesc.buffer),
-        captureConvDesc.bufLength);
     /* mix */
     size_t floatBufLength = readBuf.bufLength * 2; // unit of byte, 2 is int16_t to float
     float *mixBuff = MixRendererAndCaptureData(floatBufLength, rendererConvDesc, captureConvDesc);
@@ -2411,14 +2419,6 @@ int32_t AudioEndpointInner::AddCaptureInjector(const uint32_t &sinkPortIndex, co
         std::to_string(dstStreamInfo_.channels) + "_" + std::to_string(dstStreamInfo_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dupPeekName_, &dumpPeekDup_);
 
-    dupCovRendName_ = GetEndpointName() + "injector_convRender_dup_" + std::to_string(dstStreamInfo_.samplingRate) +
-        "_" + std::to_string(dstStreamInfo_.channels) + "_" + std::to_string(SAMPLE_F32LE) + ".pcm";
-    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dupCovRendName_, &dumpCovRendDup_);
-
-    dupCovCapName_ = GetEndpointName() + "injector_convCapture_dup_" + std::to_string(dstStreamInfo_.samplingRate) +
-        "_" + std::to_string(dstStreamInfo_.channels) + "_" + std::to_string(SAMPLE_F32LE) + ".pcm";
-    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dupCovCapName_, &dumpCovCapDup_);
-
     dupMixName_ = GetEndpointName() + "injector_mix_dup_" + std::to_string(dstStreamInfo_.samplingRate) + "_" +
         std::to_string(dstStreamInfo_.channels) + "_" + std::to_string(SAMPLE_F32LE) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dupMixName_, &dumpMixDup_);
@@ -2439,8 +2439,6 @@ int32_t AudioEndpointInner::RemoveCaptureInjector(const uint32_t &sinkPortIndex,
     isNeedInject_ = false;
 
     DumpFileUtil::CloseDumpFile(&dumpPeekDup_);
-    DumpFileUtil::CloseDumpFile(&dumpCovRendDup_);
-    DumpFileUtil::CloseDumpFile(&dumpCovCapDup_);
     DumpFileUtil::CloseDumpFile(&dumpMixDup_);
     return SUCCESS;
 }
@@ -2450,6 +2448,17 @@ void AudioEndpointInner::UpdateEndpointStatus(AudioEndpoint::EndpointStatus newS
     // update the status corresponding to getEndpointName in the map
     if (checker != nullptr) {
         checker->UpdateStatus(fastRenderId_, GetEndpointName(), endpointStatus_.load());
+    }
+}
+
+void AudioEndpointInner::StopByRestore(const RestoreInfo &restoreInfo)
+{
+    if (deviceInfo_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && restoreInfo.deviceChangeReason ==
+        static_cast<int32_t>(AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE)) {
+        AUDIO_INFO_LOG("Bluetooth device has been taken offline, let the sink stop");
+        std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
+        CHECK_AND_RETURN_LOG(sink != nullptr, "sink is null");
+        sink->Stop();
     }
 }
 } // namespace AudioStandard

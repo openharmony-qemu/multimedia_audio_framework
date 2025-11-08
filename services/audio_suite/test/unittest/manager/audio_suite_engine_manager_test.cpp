@@ -56,6 +56,7 @@ public:
     MOCK_METHOD(void, OnConnectNodes, (int32_t result), (override));
     MOCK_METHOD(void, OnDisConnectNodes, (int32_t result), (override));
     MOCK_METHOD(void, OnRenderFrame, (int32_t result, uint32_t pipelineId), (override));
+    MOCK_METHOD(void, OnGetOptions, (int32_t result), (override));
 };
 
 class AudioSuiteManagerCallbackTestImpl : public AudioSuiteManagerCallback {
@@ -123,6 +124,10 @@ public:
     {
         return;
     }
+    void OnGetOptions(int32_t result) override
+    {
+        return;
+    }
 };
 
 class IAudioSuitePipelineTestImpl : public IAudioSuitePipeline {
@@ -171,7 +176,7 @@ public:
         return 0;
     }
     int32_t SetRequestDataCallback(uint32_t nodeId,
-        std::shared_ptr<SuiteInputNodeWriteDataCallBack> callback) override
+        std::shared_ptr<InputNodeRequestDataCallBack> callback) override
     {
         return 0;
     }
@@ -206,10 +211,10 @@ public:
     }
 };
 
-class SuiteInputNodeWriteDataCallBackTestImpl : public SuiteInputNodeWriteDataCallBack {
+class SuiteInputNodeRequestDataCallBackTestImpl : public InputNodeRequestDataCallBack {
 public:
-    ~SuiteInputNodeWriteDataCallBackTestImpl() = default;
-    int32_t OnWriteDataCallBack(void *audioData, int32_t audioDataSize, bool *finished) override
+    ~SuiteInputNodeRequestDataCallBackTestImpl() = default;
+    int32_t OnRequestDataCallBack(void *audioData, int32_t audioDataSize, bool *finished) override
     {
         return 0;
     }
@@ -435,12 +440,12 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, setAudioFormatTest, TestSize.Level0)
     EXPECT_EQ(result, SUCCESS);
 }
 
-HWTEST_F(AudioSuiteEngineManagerUnitTest, setWriteDataCallbackTest, TestSize.Level0)
+HWTEST_F(AudioSuiteEngineManagerUnitTest, SetRequestDataCallbackTest, TestSize.Level0)
 {
     AudioSuiteManagerCallbackTestImpl callback;
     AudioSuiteEngine engineManger(callback);
-    std::shared_ptr<SuiteInputNodeWriteDataCallBack> suiteCallback =
-        std::make_shared<SuiteInputNodeWriteDataCallBackTestImpl>();
+    std::shared_ptr<InputNodeRequestDataCallBack> suiteCallback =
+        std::make_shared<SuiteInputNodeRequestDataCallBackTestImpl>();
     engineManger.Init();
     EXPECT_EQ(engineManger.IsInit(), true);
     
@@ -853,8 +858,8 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineSetRequestDataCallba
     AudioSuitePipeline audioSuitePipeline(PIPELINE_EDIT_MODE);
     audioSuitePipeline.Init();
     EXPECT_EQ(audioSuitePipeline.IsInit(), true);
-    std::shared_ptr<SuiteInputNodeWriteDataCallBack> suitCallback =
-        std::make_shared<SuiteInputNodeWriteDataCallBackTestImpl>();
+    std::shared_ptr<InputNodeRequestDataCallBack> suitCallback =
+        std::make_shared<SuiteInputNodeRequestDataCallBackTestImpl>();
 
     audioSuitePipeline.pipelineState_ = PIPELINE_RUNNING;
     int32_t result = audioSuitePipeline.SetRequestDataCallback(2, suitCallback);
@@ -970,6 +975,28 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineConnectNodesTest_002
     audioSuitePipeline.nodeMap_[20] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_OUTPUT);
     result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId);
     EXPECT_EQ(result, SUCCESS);
+}
+
+HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineConnectNodesTest_003, TestSize.Level0)
+{
+    AudioSuitePipeline audioSuitePipeline(PIPELINE_EDIT_MODE);
+    audioSuitePipeline.Init();
+    EXPECT_EQ(audioSuitePipeline.IsInit(), true);
+    sleep(1);
+    uint32_t srcNodeId = 21;
+    uint32_t destNodeId = 22;
+
+    audioSuitePipeline.nodeMap_[21] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_AUDIO_MIXER);
+    audioSuitePipeline.nodeMap_[22] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_OUTPUT);
+
+    audioSuitePipeline.pipelineState_ = PIPELINE_STOPPED;
+    int32_t result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId);
+    EXPECT_EQ(result, SUCCESS);
+
+    auto srcNode = audioSuitePipeline.nodeMap_[srcNodeId];
+    auto destNode = audioSuitePipeline.nodeMap_[destNodeId];
+
+    EXPECT_EQ(destNode->GetAudioNodeFormat().rate, srcNode->GetAudioNodeFormat().rate);
 }
 
 HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineDisConnectNodesTest, TestSize.Level0)

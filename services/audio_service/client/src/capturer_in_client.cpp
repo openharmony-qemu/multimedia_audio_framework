@@ -58,6 +58,11 @@ namespace {
 static const size_t MAX_CLIENT_READ_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 9; // 9S
 static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
+#ifdef CONFIG_FACTORY_VERSION
+static const int32_t OPERATION_TIMEOUT_FOR_STOP_IN_MS = 2000; // 2000ms
+#else
+static const int32_t OPERATION_TIMEOUT_FOR_STOP_IN_MS = 1000; // 1000ms
+#endif
 static const int32_t LOGLITMITTIMES = 20;
 const uint64_t DEFAULT_BUF_DURATION_IN_USEC = 20000; // 20ms
 const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
@@ -926,9 +931,9 @@ bool CapturerInClientInner::ReadCallbackFunc()
         return false;
     }
 
-    std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
     // call read here.
     int32_t result = Read(*temp.buffer, temp.bufLength, true); // blocking read
+    std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
     if (result < 0 || result != static_cast<int32_t>(cbBufferSize_)) {
         AUDIO_WARNING_LOG("Call read error, ret:%{public}d, cbBufferSize_:%{public}zu", result, cbBufferSize_);
     }
@@ -1218,9 +1223,10 @@ bool CapturerInClientInner::StopAudioStream()
     }
 
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
-    bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return notifiedOperation_ == STOP_STREAM; // will be false when got notified.
-    });
+    bool stopWaiting = callServerCV_.wait_for(waitLock,
+        std::chrono::milliseconds(OPERATION_TIMEOUT_FOR_STOP_IN_MS), [this] {
+            return notifiedOperation_ == STOP_STREAM; // will be false when got notified.
+        });
 
     if (notifiedOperation_ != STOP_STREAM || notifiedResult_ != SUCCESS) {
         AUDIO_ERR_LOG("Stop failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",

@@ -127,6 +127,11 @@ public:
     int32_t RemoveCaptureInjector(const uint32_t &sinkPortIndex, const SourceType &sourceType) override;
 
     void UpdateEndpointStatus(AudioEndpoint::EndpointStatus newStatus);
+
+    void StopByRestore(const RestoreInfo &restoreInfo) override;
+    
+    // This func is a virtual sync func, we can continully calculate frame rate and time even sink stoped
+    void UpdateVirtualDeviceHandleInfo();
 private:
     AudioProcessConfig GetInnerCapConfig();
     void StartThread(const IAudioSinkAttr &attr);
@@ -382,12 +387,8 @@ private:
 
     //for inject dump pcm
     FILE *dumpPeekDup_ = nullptr; // client to inject peek dump file
-    FILE *dumpCovRendDup_ = nullptr; // client to inject convertRender dump file
-    FILE *dumpCovCapDup_ = nullptr; // client to inject convertCapture dump file
     FILE *dumpMixDup_ = nullptr; // client to inject mix dump file
     std::string dupPeekName_ = "";
-    std::string dupCovRendName_ = "";
-    std::string dupCovCapName_ = "";
     std::string dupMixName_ = "";
 };
 } // namespace AudioStandard

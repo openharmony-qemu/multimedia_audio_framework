@@ -240,6 +240,11 @@ uint32_t HpaeSourceInputCluster::GetCaptureId()
 {
     return sourceInputNode_->GetCaptureId();
 }
+
+void HpaeSourceInputCluster::SetInjectState(bool isInjecting)
+{
+    sourceInputNode_->SetInjectState(isInjecting);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

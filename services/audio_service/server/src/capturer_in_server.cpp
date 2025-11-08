@@ -586,7 +586,7 @@ int32_t CapturerInServer::StartInner()
 
 void CapturerInServer::RebuildCaptureInjector()
 {
-    CHECK_AND_RETURN_LOG(rebuildFlag_, "no nedd to rebuild");
+    CHECK_AND_RETURN_LOG(rebuildFlag_, "no need to rebuild");
     if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         CoreServiceHandler::GetInstance().RebuildCaptureInjector(streamIndex_);
     }
@@ -724,7 +724,8 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
         status_ = I_STATUS_INVALID;
         return ret;
     }
-    CoreServiceHandler::GetInstance().ReleaseCaptureInjector(streamIndex_);
+
+    ReleaseCaptureInjector();
     if (status_ != I_STATUS_STOPPING &&
         status_ != I_STATUS_STOPPED) {
         HandleOperationStopped(CAPTURER_STAGE_STOP_BY_RELEASE);
@@ -757,6 +758,13 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
         TurnOffMicIndicator(CAPTURER_RELEASED);
     }
     return SUCCESS;
+}
+
+void CapturerInServer::ReleaseCaptureInjector()
+{
+    if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        CoreServiceHandler::GetInstance().ReleaseCaptureInjector();
+    }
 }
 
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -924,7 +932,7 @@ inline void CapturerInServer::CaptureConcurrentCheck(uint32_t streamIndex)
         return;
     }
     std::atomic_store(&lastStatus_, status_);
-    int32_t ret = PolicyHandler::GetInstance().CaptureConcurrentCheck(streamIndex);
+    int32_t ret = CoreServiceHandler::GetInstance().CaptureConcurrentCheck(streamIndex);
     AUDIO_INFO_LOG("ret:%{public}d streamIndex_:%{public}d status_:%{public}u", ret, streamIndex, status_.load());
 }
 // LCOV_EXCL_STOP

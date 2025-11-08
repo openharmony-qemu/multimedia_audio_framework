@@ -35,7 +35,9 @@ OffloadAudioRenderSink::~OffloadAudioRenderSink()
     if (sinkInited_) {
         DeInit();
     }
+#ifdef SUPPORT_OLD_ENGINE
     CheckFlushThread();
+#endif
     AUDIO_INFO_LOG("volumeDataCount: %{public}" PRId64, volumeDataCount_);
 }
 
@@ -84,8 +86,12 @@ int32_t OffloadAudioRenderSink::Start(void)
 
     if (started_) {
         if (isFlushing_) {
+#ifdef SUPPORT_OLD_ENGINE
             isNeedRestart_ = true;
             AUDIO_ERR_LOG("start fail, will restart after flush");
+#else
+            AUDIO_ERR_LOG("start fail, during flush");
+#endif
             return ERR_OPERATION_FAILED;
         }
         return SUCCESS;
@@ -140,6 +146,7 @@ int32_t OffloadAudioRenderSink::Pause(void)
     return ERR_NOT_SUPPORTED;
 }
 
+#ifdef SUPPORT_OLD_ENGINE
 int32_t OffloadAudioRenderSink::FlushInner(void)
 {
     Trace trace("OffloadAudioRenderSink::FlushInner");
@@ -172,13 +179,6 @@ int32_t OffloadAudioRenderSink::FlushInner(void)
     return SUCCESS;
 }
 
-int32_t OffloadAudioRenderSink::Flush(void)
-{
-    std::lock_guard<std::mutex> lock(sinkMutex_);
-    Trace trace("OffloadAudioRenderSink::Flush");
-    return FlushInner();
-}
-
 void OffloadAudioRenderSink::CheckFlushThread()
 {
     if (flushThread_ != nullptr && flushThread_->joinable()) {
@@ -187,15 +187,46 @@ void OffloadAudioRenderSink::CheckFlushThread()
     flushThread_.reset();
 }
 
+#else
+int32_t OffloadAudioRenderSink::FlushInner(void)
+{
+    Trace trace("OffloadAudioRenderSink::FlushInner");
+    CHECK_AND_RETURN_RET_LOG(!isFlushing_, ERR_OPERATION_FAILED, "duplicate flush");
+    CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
+
+    isFlushing_ = true;
+    renderPos_ = 0;
+    int32_t ret = audioRender_->Flush(audioRender_);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("flush fail, ret: %{public}d", ret);
+    }
+    isFlushing_ = false;
+    return SUCCESS;
+}
+#endif
+
+int32_t OffloadAudioRenderSink::Flush(void)
+{
+    std::lock_guard<std::mutex> lock(sinkMutex_);
+    Trace trace("OffloadAudioRenderSink::Flush");
+    return FlushInner();
+}
+
 int32_t OffloadAudioRenderSink::Reset(void)
 {
     Trace trace("OffloadAudioRenderSink::Reset");
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
 
+#ifdef SUPPORT_OLD_ENGINE
     isNeedRestart_ = true;
+#endif
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     int32_t ret = FlushInner();
     if (ret != SUCCESS) {
+#ifdef SUPPORT_OLD_ENGINE
         isNeedRestart_ = false;
+#endif
         AUDIO_ERR_LOG("reset fail");
         return ERR_OPERATION_FAILED;
     }

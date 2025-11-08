@@ -138,7 +138,7 @@ bool PolicyHandler::GetSharedVolume(AudioVolumeType streamType, DeviceType devic
 
 void PolicyHandler::SetActiveOutputDevice(DeviceType deviceType)
 {
-    AUDIO_INFO_LOG("SetActiveOutputDevice to device[%{public}d].", deviceType);
+    AUDIO_INFO_LOG("device[%{public}d].", deviceType);
     deviceType_ = deviceType;
 }
 
@@ -261,12 +261,6 @@ int32_t PolicyHandler::ClearAudioFocusBySessionID(const int32_t &sessionID)
 {
     CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr!");
     return iPolicyProvider_->ClearAudioFocusBySessionID(sessionID);
-}
-
-int32_t PolicyHandler::CaptureConcurrentCheck(const uint32_t &sessionID)
-{
-    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
-    return iPolicyProvider_->CaptureConcurrentCheck(sessionID);
 }
 } // namespace AudioStandard
 } // namespace OHOS

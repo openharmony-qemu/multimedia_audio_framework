@@ -61,8 +61,10 @@ public:
     int64_t GetAudioTimeSync();
     AudioTimestampInfo GetAudioTimestampInfoSync();
     int64_t GetOverflowCountSync();
+    void SetWillMuteWhenInterruptedSync(bool muteWhenInterrupted);
     taihe::array<AudioDeviceDescriptor> GetCurrentInputDevices();
     AudioCapturerChangeInfo GetCurrentAudioCapturerChangeInfo();
+    void SetInputDeviceToAccessory();
 
     void OnAudioInterrupt(callback_view<void(InterruptEvent const&)> callback);
     void OnStateChange(callback_view<void(AudioState)> callback);

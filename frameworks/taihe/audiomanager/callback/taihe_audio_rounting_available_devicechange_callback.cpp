@@ -119,7 +119,7 @@ void TaiheAudioRountingAvailableDeviceChangeCallback::OnAvailableDeviceChange(
 void TaiheAudioRountingAvailableDeviceChangeCallback::OnJsCallbackAvailbleDeviceChange(
     std::unique_ptr<AudioRountingJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("OnJsCallbackAvailbleDeviceChange: OnJsCallbackDeviceChange: jsCb.get() is null");
         return;
     }

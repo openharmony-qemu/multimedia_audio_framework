@@ -29,6 +29,8 @@ public:
     virtual int32_t OnPause(IAudioProcessStream *processStream) = 0;
 
     virtual ~IProcessStatusListener() = default;
+
+    virtual void StopByRestore(const RestoreInfo &restoreInfo) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -176,7 +176,7 @@ public:
     {
         return 0;
     }
-    int32_t StartPlaying(const std::string &device, uint32_t streamType) override
+    int32_t StartPlaying(const std::string &device, uint32_t streamType, int32_t timeoutMs) override
     {
         return 0;
     }
@@ -192,7 +192,7 @@ public:
     {
         return 0;
     }
-    int32_t SendUserSelection(const std::string &device, uint32_t streamType) override
+    int32_t SendUserSelection(const std::string &device, uint32_t streamType, int32_t eventType, int32_t &ret) override
     {
         return 0;
     }
@@ -370,10 +370,10 @@ void SleAudioDeviceManagerSendUserSelectionFuzzTest()
         return;
     }
     StreamUsage streamUsage = g_testAudioStreamUsages[GetData<uint32_t>() % g_testAudioStreamUsages.size()];
-    manager.SendUserSelection(deviceDesc, streamUsage);
+    manager.SendUserSelection(deviceDesc, streamUsage, USER_SELECT_SLE);
     AudioDeviceDescriptor deviceDescBySource;
     SourceType sourceType = g_testSourceTypes[GetData<uint32_t>() % g_testSourceTypes.size()];
-    manager.SendUserSelection(deviceDescBySource, sourceType);
+    manager.SendUserSelection(deviceDescBySource, sourceType, USER_SELECT_SLE);
 }
 
 void SleAudioDeviceManagerGetStreamUsagesBySleStreamTypeFuzzTest()

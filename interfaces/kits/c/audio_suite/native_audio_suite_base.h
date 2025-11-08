@@ -56,7 +56,7 @@ typedef enum {
      *
      * @since 22
      */
-    OUT_NODE_TYPE_DEFAULT = 101,
+    OUTPUT_NODE_TYPE_DEFAULT = 101,
     /**
      * Equalization node type.
      * The audio format output by the equalizer node is as follows:
@@ -120,7 +120,7 @@ typedef enum {
     /**
      * Audio mixer node type.
      * The audio format output by the scene effect node is as follows:
-     * Sample rate: The highest sampling rate in the input sampling rate.
+     * Sample rate: {@link AudioSamplingRate}.
      * Sample format: {@link AUDIO_SAMPLE_F32LE}.
      * Channels: 2.
      *

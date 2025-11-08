@@ -35,6 +35,7 @@ void AudioServer::RecognizeAudioEffectType(const std::string &mainkey, const std
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
         HPAE::IHpaeManager::GetHpaeManager().UpdateParamExtra(mainkey, subkey, extraSceneType);
+        HPAE::IHpaeManager::GetHpaeManager().UpdateExtraSceneType(mainkey, subkey, extraSceneType);
     } else {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager == nullptr) {

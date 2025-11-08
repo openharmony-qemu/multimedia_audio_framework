@@ -331,6 +331,55 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleVolumeDegreeEvent_Test_001, TestS
 }
 
 /**
+ * @tc.name  : HandleCollaborationEnabledChangeForCurrentDeviceEvent_Test_001
+ * @tc.number: HandleCollaborationEnabledChangeForCurrentDeviceEvent_Test_001
+ * @tc.desc  : Test HandleCollaborationEnabledChangeForCurrentDeviceEvent function
+ */
+HWTEST(AudioPolicyServerHandlerUnitTest, HandleCollaborationEnabledChangeForCurrentDeviceEvent_Test_001,
+    TestSize.Level2)
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    ASSERT_NE(audioPolicyServerHandler_, nullptr);
+
+    auto eventContextObj = std::make_shared<AudioPolicyServerHandler::EventContextObj>();
+    ASSERT_NE(eventContextObj, nullptr);
+    eventContextObj->collaborationEnabled = true;
+    AppExecFwk::InnerEvent::Pointer event = AppExecFwk::InnerEvent::Get(
+        AudioPolicyServerHandler::EventAudioServerCmd::COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
+        eventContextObj);
+
+    bool testEnabled = true;
+    audioPolicyServerHandler_->SendCollaborationEnabledChangeForCurrentDeviceEvent(testEnabled);
+    audioPolicyServerHandler_->HandleOtherServiceSecondEvent(AudioPolicyServerHandler::EventAudioServerCmd::
+        COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE, event);
+    audioPolicyServerHandler_->HandleCollaborationEnabledChangeForCurrentDeviceEvent(event);
+    std::shared_ptr<AudioPolicyClientHolder> testHolder = nullptr;
+    audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_[1] = testHolder;
+    EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size() > 0, true);
+
+    std::unordered_map<CallbackChange, bool> testCallBackChangeMap;
+    testCallBackChangeMap[CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE] = true;
+    audioPolicyServerHandler_->clientCallbacksMap_[1] = testCallBackChangeMap;
+    audioPolicyServerHandler_->HandleCollaborationEnabledChangeForCurrentDeviceEvent(event);
+
+    audioPolicyServerHandler_->clientCallbacksMap_.clear();
+    audioPolicyServerHandler_->HandleCollaborationEnabledChangeForCurrentDeviceEvent(event);
+    testCallBackChangeMap.clear();
+    audioPolicyServerHandler_->clientCallbacksMap_[1] = testCallBackChangeMap;
+    audioPolicyServerHandler_->HandleCollaborationEnabledChangeForCurrentDeviceEvent(event);
+    audioPolicyServerHandler_->clientCallbacksMap_.clear();
+    testCallBackChangeMap[CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE] = false;
+    audioPolicyServerHandler_->clientCallbacksMap_[1] = testCallBackChangeMap;
+    audioPolicyServerHandler_->HandleCollaborationEnabledChangeForCurrentDeviceEvent(event);
+    audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_[1] = nullptr;
+    audioPolicyServerHandler_->HandleCollaborationEnabledChangeForCurrentDeviceEvent(event);
+
+    audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.clear();
+    audioPolicyServerHandler_->clientCallbacksMap_.clear();
+    EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size() > 0, false);
+}
+
+/**
  * @tc.name  : HandleMicrophoneBlockedCallback_Test_001
  * @tc.number: Audio_HandleMicrophoneBlockedCallback_001
  * @tc.desc  : Test HandleMicrophoneBlockedCallback function when eventContextObj is nullptr.

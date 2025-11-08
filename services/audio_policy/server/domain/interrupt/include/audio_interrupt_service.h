@@ -21,7 +21,7 @@
 #include <set>
 #include <functional>
 #include <unordered_map>
-
+#include <atomic>
 #include "iremote_object.h"
 
 #include "i_audio_interrupt_event_dispatcher.h"
@@ -134,8 +134,8 @@ public:
         const int32_t appUid, std::unordered_set<int32_t> &uidActivedSessions);
     void ResumeFocusByStreamId(
         const int32_t streamId, const InterruptEventInternal interruptEventResume);
-    void OnUserUnlocked(int32_t userId);
-    bool IsSwitchUser();
+    void OnUserUnlocked();
+    void SetUserId(const int32_t newId, const int32_t oldId);
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -147,8 +147,9 @@ private:
     using InterruptIterator = std::list<std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator>;
     std::unordered_map<int32_t, std::vector<CachedFocusInfo>> cachedFocusMap_;
     std::mutex cachedFocusMutex_;
-    int32_t oldUserId_;
-    bool isSwitchUser_ = false;
+    int32_t oldUserId_ = 0;
+    int32_t newUserId_ = 0;
+    bool isGetFocusForLog_ = false;
 
     void CacheFocusAndCallback(const uint32_t &sessionId, const InterruptEventInternal &interruptEvent,
         const AudioInterrupt &audioInterrupt);
@@ -369,6 +370,7 @@ private:
     bool isPreemptMode_ = false;
 
     std::mutex mutex_;
+    mutable std::atomic<int32_t> formerUid_ = 0;
     mutable int32_t ownerPid_ = 0;
     mutable int32_t ownerUid_ = 0;
     std::unique_ptr<AudioInterruptDfxCollector> dfxCollector_;

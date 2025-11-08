@@ -1234,6 +1234,8 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerOnWriteData_007, TestSize.
     InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_FLAG_VOIP_DIRECT);
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
     EXPECT_NE(nullptr, rendererInServer);
+    const std::string version = AudioDump::GetInstance().GetVersionType();
+    AudioDump::GetInstance().SetVersionType(DumpFileUtil::BETA_VERSION);
 
     int32_t ret = rendererInServer->Init();
     EXPECT_EQ(SUCCESS, ret);
@@ -1247,7 +1249,11 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerOnWriteData_007, TestSize.
     uint64_t currentReadFrame = rendererInServer->audioServerBuffer_->GetCurReadFrame();
     rendererInServer->audioServerBuffer_->SetCurWriteFrame(currentReadFrame + requestDataInFrame + 1);
 
-    ret = rendererInServer->OnWriteData(inputData, requestDataLen);
+    ret = rendererInServer->OnWriteData(inputData, 2);
+    EXPECT_EQ(SUCCESS, ret);
+    AudioDump::GetInstance().SetVersionType(version);
+
+    ret = rendererInServer->OnWriteData(inputData, 3);
     EXPECT_EQ(SUCCESS, ret);
     delete[] inputData;
 }

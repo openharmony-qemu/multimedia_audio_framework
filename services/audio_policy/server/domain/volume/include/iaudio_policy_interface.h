@@ -99,8 +99,9 @@ public:
         StreamUsage streamUsage = STREAM_USAGE_UNKNOWN, const DeviceType &deviceType = DEVICE_TYPE_NONE,
         std::string networkId = LOCAL_NETWORK_ID) = 0;
 
-    virtual int32_t SetInnerStreamMute(AudioStreamType streamType, bool mute,
-        StreamUsage streamUsage = STREAM_USAGE_UNKNOWN) = 0;
+    virtual void SetDeviceNoMuteForRinger(std::shared_ptr<AudioDeviceDescriptor> device) = 0;
+
+    virtual void ClearDeviceNoMuteForRinger() = 0;
 
     virtual int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute) = 0;
 
@@ -116,7 +117,9 @@ public:
 
     virtual AudioIOHandle OpenAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex) = 0;
     
-    virtual AudioIOHandle ReloadAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex) = 0;
+    virtual AudioIOHandle ReloadA2dpAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex) = 0;
+
+    virtual void ReloadAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex) = 0;
 
     virtual int32_t CloseAudioPort(AudioIOHandle ioHandle, uint32_t paIndex = HDI_INVALID_ID) = 0;
 
@@ -284,7 +287,10 @@ public:
     virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) = 0;
     virtual void UpdateOtherStreamVolume(AudioStreamType streamType) = 0;
     virtual void SetVolumeLimit(float volume) = 0;
-    virtual bool SetMaxVolumeForDpBoardcast() = 0;
+    virtual void SetMaxVolumeForDpBoardcast() = 0;
+    virtual void HandleCastingConnection() = 0;
+    virtual void HandleCastingDisconnection() = 0;
+    virtual bool IsDPCastingConnect() = 0;
     virtual int32_t SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree) = 0;
     virtual int32_t GetSystemVolumeDegree(AudioStreamType streamType, bool checkMuteState = true) = 0;
     virtual int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType) = 0;

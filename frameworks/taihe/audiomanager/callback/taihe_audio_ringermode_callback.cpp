@@ -45,7 +45,7 @@ void TaiheAudioRingerModeCallback::OnRingerModeUpdated(const OHOS::AudioStandard
 
 void TaiheAudioRingerModeCallback::OnJsCallbackRingerMode(std::unique_ptr<AudioRingerModeJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("TaiheAudioRingerModeCallback: OnJsCallbackRingerMode: jsCb.get() is null");
         return;
     }
@@ -68,7 +68,9 @@ void TaiheAudioRingerModeCallback::SafeJsCallbackRingModeWork(AudioRingerModeJsC
     std::shared_ptr<AudioRingerModeJsCallback> safeContext(
         static_cast<AudioRingerModeJsCallback*>(event),
         [](AudioRingerModeJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
     std::string request = event->callbackName;
 

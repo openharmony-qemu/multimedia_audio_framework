@@ -545,6 +545,18 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_SetVoiceBeautifierType(
  */
 OH_AudioSuite_Result OH_AudioSuiteEngine_GetVoiceBeautifierType(
     OH_AudioNode* audioNode, OH_VoiceBeautifierType* voiceBeautifierType);
+
+/**
+*@brief Request to determine whether the current system supports a specific node type.
+*
+*@param nodeType Audio node type. {@link OH_AudioNode_Type}
+*@param isSupported True means this node type is supported
+*@return {@link #AUDIOSUITE_SUCCESS} if execution succeeds,
+*or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if param nullptr or not valid value.
+*@since 22
+*/
+OH_AudioSuite_Result OH_AudioSuiteEngine_IsNodeTypeSupported(OH_AudioNode_Type nodeType, bool* isSupported);
+
 #ifdef __cplusplus
 }
 #endif

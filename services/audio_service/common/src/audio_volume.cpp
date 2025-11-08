@@ -102,7 +102,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
             volumeType = STREAM_MUSIC;
         }
     } else {
-        AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u", sessionId);
+        AUDIO_DEBUG_LOG("stream volume not exist, sessionId:%{public}u", sessionId);
     }
     volumes->volumeSystem = 1.0f;
     std::string key = std::to_string(volumeType) + deviceClass;
@@ -210,7 +210,7 @@ float AudioVolume::GetHistoryVolume(uint32_t sessionId)
 
 void AudioVolume::SetHistoryVolume(uint32_t sessionId, float volume)
 {
-    AUDIO_INFO_LOG("history volume, sessionId:%{public}u, volume:%{public}f", sessionId, volume);
+    AUDIO_DEBUG_LOG("history volume, sessionId:%{public}u, volume:%{public}f", sessionId, volume);
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it != streamVolume_.end()) {
@@ -596,7 +596,7 @@ void AudioVolume::Monitor(uint32_t sessionId, bool isOutput)
         bean->Add("POWERVOLUMEFACTOR", streamVolume->second.lowPowerFactor_);
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
     } else {
-        AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u", sessionId);
+        AUDIO_DEBUG_LOG("stream volume not exist, sessionId:%{public}u", sessionId);
     }
 }
 

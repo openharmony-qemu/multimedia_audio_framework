@@ -18,6 +18,8 @@
 #endif
 
 #include <dlfcn.h>
+#include <cstring>
+#include "securec.h"
 #include "audio_errors.h"
 #include "audio_suite_log.h"
 #include "audio_suite_voice_beautifier_algo_interface_impl.h"
@@ -27,14 +29,14 @@ namespace AudioStandard {
 namespace AudioSuite {
 
 namespace {
-const std::string ALGO_PATH_BASE = "/system/lib64/";
-const std::string VM_ALGO_SO_NAME = "libaudio_voice_morph_bgm.z.so";
 constexpr int32_t DEFAULT_FRAME_LEN = 960; // single channel sample point number.
 constexpr int32_t DEFAULT_CHANNEL_COUNT = 2;
 }  // namespace
 
-AudioSuiteVoiceBeautifierAlgoInterfaceImpl::AudioSuiteVoiceBeautifierAlgoInterfaceImpl()
-{}
+AudioSuiteVoiceBeautifierAlgoInterfaceImpl::AudioSuiteVoiceBeautifierAlgoInterfaceImpl(NodeCapability &nc)
+{
+    nodeCapability = nc;
+}
 
 AudioSuiteVoiceBeautifierAlgoInterfaceImpl::~AudioSuiteVoiceBeautifierAlgoInterfaceImpl()
 {
@@ -59,7 +61,7 @@ int32_t AudioSuiteVoiceBeautifierAlgoInterfaceImpl::ApplyAndWaitReady(void)
 {
     AUDIO_INFO_LOG("start load vm algo so");
 
-    std::string soPath = ALGO_PATH_BASE + VM_ALGO_SO_NAME;
+    std::string soPath = nodeCapability.soPath + nodeCapability.soName;
     libHandle_ = dlopen(soPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
     if (libHandle_ == nullptr) {
         AUDIO_ERR_LOG("dlopen algo: %{private}s so fail, error: %{public}s", soPath.c_str(), dlerror());

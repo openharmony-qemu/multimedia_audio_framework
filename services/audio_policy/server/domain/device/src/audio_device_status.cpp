@@ -62,16 +62,6 @@ static std::string GetEncryptAddr(const std::string &addr)
     return out;
 }
 
-static std::string GetField(const std::string &src, const char* field, const char sep)
-{
-    auto str = std::string(field) + '=';
-    auto pos = src.find(str);
-    CHECK_AND_RETURN_RET(pos != std::string::npos, "");
-    pos += str.length();
-    auto end = src.find(sep, pos);
-    return end == std::string::npos ? src.substr(pos) : src.substr(pos, end - pos);
-}
-
 static bool CheckNeedExclude(const AudioDeviceDescriptor &desc, bool isConnected)
 {
     bool exclude{false};
@@ -1177,8 +1167,8 @@ void AudioDeviceStatus::OnForcedDeviceSelected(DeviceType devType, const std::st
 {
     if (!filter) {
         filter = new AudioRendererFilter();
+        CHECK_AND_RETURN_LOG(filter, "filter is nullptr");
     }
-    CHECK_AND_RETURN_LOG(filter, "filter is nullptr");
     filter->uid = SYSTEM_UID;
     AUDIO_INFO_LOG("Entry. devType=%{public}d, addr=%{public}s, streamUsage=%{public}d",
         devType, GetEncryptStr(macAddress).c_str(), filter->rendererInfo.streamUsage);
@@ -1190,11 +1180,31 @@ void AudioDeviceStatus::OnForcedDeviceSelected(DeviceType devType, const std::st
     }
 }
 
-void AudioDeviceStatus::OnPrivacyDeviceSelected()
+void AudioDeviceStatus::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress)
 {
     AUDIO_INFO_LOG("Entry");
     AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
         make_shared<AudioDeviceDescriptor>(), SYSTEM_UID, "OnPrivacyDeviceSelected");
+    bool hasUsablePrivateCallDevice{false};
+    auto devs = AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION,
+        -1, "OnPrivacyDeviceSelected", ROUTER_TYPE_USER_SELECT);
+    auto pDevs = audioDeviceManager_.GetCommRenderPrivacyDevices();
+    for (auto &dev : devs) {
+        auto it = find_if(pDevs.cbegin(), pDevs.cend(), [&dev](auto &item) {
+            return dev && item && dev->IsSameDeviceDescPtr(item);
+        });
+        if (it != pDevs.cend()) {
+            hasUsablePrivateCallDevice = true;
+            break;
+        }
+    }
+    if (!hasUsablePrivateCallDevice) {
+        sptr<AudioRendererFilter> filter = new AudioRendererFilter();
+        CHECK_AND_RETURN_LOG(filter, "filter is nullptr");
+        filter->rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+        OnForcedDeviceSelected(devType, macAddress, filter);
+        return;
+    }
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnPrivacyDeviceSelected",
         AudioStreamDeviceChangeReason::OVERRODE);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnPrivacyDeviceSelected",
@@ -1361,6 +1371,22 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceStatus::UserSelec
     return userSelectDeviceMap;
 }
 
+#ifdef BLUETOOTH_ENABLE
+void AudioDeviceStatus::ClearActiveHfpDevice(AudioDeviceDescriptor &desc,
+    const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason)
+{
+    if (desc.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
+        return;
+    }
+    if ((updateCommand == CATEGORY_UPDATE && desc.deviceCategory_ == BT_UNWEAR_HEADPHONE) ||
+        (updateCommand == ENABLE_UPDATE && desc.isEnable_ == false) ||
+        (updateCommand == CONNECTSTATE_UPDATE && desc.connectState_ == SUSPEND_CONNECTED) ||
+        (updateCommand == EXCEPTION_FLAG_UPDATE && desc.exceptionFlag_ == true)) {
+        Bluetooth::AudioHfpManager::ClearActiveHfpDevice(desc.macAddress_);
+    }
+}
+#endif
+
 void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
     const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason)
 {
@@ -1403,6 +1429,9 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
     } else if (updateCommand == USAGE_UPDATE) {
         UpdateAllUserSelectDevice(userSelectDeviceMap, desc, std::make_shared<AudioDeviceDescriptor>(desc));
     }
+#ifdef BLUETOOTH_ENABLE
+    ClearActiveHfpDevice(desc, updateCommand, reason);
+#endif
 }
 
 void AudioDeviceStatus::UpdateAllUserSelectDevice(
@@ -1514,7 +1543,7 @@ int32_t AudioDeviceStatus::RestoreNewA2dpPort(std::vector<std::shared_ptr<AudioS
     AudioIOHandle ioHandle;
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        ioHandle = audioPolicyManager_.ReloadAudioPort(moduleInfo, paIndex);
+        ioHandle = audioPolicyManager_.ReloadA2dpAudioPort(moduleInfo, paIndex);
     } else {
         ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo, paIndex);
     }

@@ -88,6 +88,7 @@ ohos_shared_library("audio_common") {
     "common/src/va_shared_buffer.cpp",
     "common/src/va_shared_buffer_operator.cpp",
     "common/src/audio_mute_factor_manager.cpp",
+    "common/src/audio_stream_checker_thread.cpp",
   ]
 
   cflags = [
@@ -223,7 +224,6 @@ ohos_shared_library("audio_client") {
     "client/src/ipc_stream_listener_impl.cpp",
     "client/src/microphone_descriptor.cpp",
     "client/src/offline_stream_in_client.cpp",
-    "client/src/policy_provider_stub.cpp",
     "client/src/renderer_in_client.cpp",
     "client/src/renderer_in_client_public.cpp",
   ]
@@ -240,7 +240,7 @@ ohos_shared_library("audio_client") {
 
   deps = [
     ":audio_common",
-    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "${audio_framework_root}/services/audio_service/idl:audio_client_idl_interface",
     "../../frameworks/native/audioqosmanager:audio_qosmanager",
     "../../frameworks/native/audioutils:audio_utils",
     "../audio_policy:audio_foundation",
@@ -297,6 +297,10 @@ ohos_shared_library("audio_client") {
 
   if (audio_framework_feature_low_latency) {
     defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
+
+  if (factory == true) {
+    defines += [ "CONFIG_FACTORY_VERSION" ]
   }
 
   version_script = "../../audio_framework.versionscript"

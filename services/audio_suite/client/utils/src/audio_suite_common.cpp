@@ -26,23 +26,23 @@ static constexpr uint32_t MAX_CACHE = std::numeric_limits<uint32_t>::max() - 1; 
 
 int32_t AudioSuiteRingBuffer::PushData(uint8_t* byteData, uint32_t size)
 {
-    if (size == 0) {
+    if ((size == 0) || (size > GetRestSpace()) || (buffer_.data() == nullptr) || (byteData == nullptr)) {
         return ERR_INVALID_OPERATION;
     }
-    // 分两段复制：从tail到缓冲区末尾，然后从缓冲区头继续
+
     size_t firstChunk = std::min(size, capacity_ - tail_);
-    errno_t err = memcpy_s(buffer_ + tail_, capacity_ - tail_, byteData, firstChunk);
+    errno_t err = memcpy_s(buffer_.data() + tail_, capacity_ - tail_, byteData, firstChunk);
     if (err != 0) {
-        AUDIO_INFO_LOG("AudioSuiteRingBuffer::PushData error capacity_:%{public}u,"
-            "tail_:%{public}u, size:%{public}u", capacity_, tail_, size);
+        AUDIO_ERR_LOG("AudioSuiteRingBuffer::PushData err:%{public}d, capacity_:%{public}u,"
+            "tail_:%{public}u, size:%{public}u", err, capacity_, tail_, size);
         return ERR_INVALID_OPERATION;
     }
 
     if (size > firstChunk) {
-        err = memcpy_s(buffer_, capacity_, byteData + firstChunk, size - firstChunk);
+        err = memcpy_s(buffer_.data(), head_, byteData + firstChunk, size - firstChunk);
         if (err != 0) {
-            AUDIO_INFO_LOG("AudioSuiteRingBuffer::PushData error capacity_:%{public}u,"
-                "tail_:%{public}u, size:%{public}u, firstChunk:%{public}zu", capacity_, tail_, size, firstChunk);
+            AUDIO_ERR_LOG("AudioSuiteRingBuffer::PushData err:%{public}d, head_:%{public}u,"
+                "size:%{public}u, firstChunk:%{public}zu", err, head_, size, firstChunk);
             return ERR_INVALID_OPERATION;
         }
     }
@@ -51,24 +51,25 @@ int32_t AudioSuiteRingBuffer::PushData(uint8_t* byteData, uint32_t size)
     size_ += size;
     return SUCCESS;
 }
+
 int32_t AudioSuiteRingBuffer::GetData(uint8_t* byteData, uint32_t size)
 {
-    if (size == 0) {
+    if ((size == 0) || (size > size_) || (buffer_.data() == nullptr) || (byteData == nullptr)) {
         return ERR_INVALID_OPERATION;
     }
     size_t firstChunk = std::min(size, capacity_ - head_);
-    errno_t err = memcpy_s(byteData, size, buffer_ + head_, firstChunk);
+    errno_t err = memcpy_s(byteData, size, buffer_.data() + head_, firstChunk);
     if (err != 0) {
-        AUDIO_INFO_LOG("AudioSuiteRingBuffer::PushData error capacity_:%{public}u,"
-            "head_:%{public}u, size:%{public}u", capacity_, head_, size);
+        AUDIO_ERR_LOG("AudioSuiteRingBuffer::GetData err:%{public}d, capacity_:%{public}u,"
+            "head_:%{public}u, size:%{public}u", err, capacity_, head_, size);
         return ERR_INVALID_OPERATION;
     }
 
     if (size > firstChunk) {
-        err = memcpy_s(byteData + firstChunk, size - firstChunk, buffer_, size - firstChunk);
+        err = memcpy_s(byteData + firstChunk, size - firstChunk, buffer_.data(), size - firstChunk);
         if (err != 0) {
-            AUDIO_INFO_LOG("AudioSuiteRingBuffer::PushData error capacity_:%{public}u,"
-                "head_:%{public}u, size:%{public}u, firstChunk:%{public}zu", capacity_, head_, size, firstChunk);
+            AUDIO_ERR_LOG("AudioSuiteRingBuffer::GetData err:%{public}d, capacity_:%{public}u, head_:%{public}u, "
+                "size:%{public}u, firstChunk:%{public}zu", err, capacity_, head_, size, firstChunk);
             return ERR_INVALID_OPERATION;
         }
     }
@@ -80,15 +81,13 @@ int32_t AudioSuiteRingBuffer::GetData(uint8_t* byteData, uint32_t size)
 
 int32_t AudioSuiteRingBuffer::ResizeBuffer(uint32_t size)
 {
-    delete[] buffer_;
     if (size <= 0 || size > MAX_CACHE) {
         return ERROR;
     }
-    buffer_ = new uint8_t[size];
+
+    buffer_.resize(size);
     capacity_ = size;
-    head_ = 0;
-    tail_ = 0;
-    size_ = 0;
+    ClearBuffer();
     return 0;
 }
 
@@ -99,6 +98,17 @@ int32_t AudioSuiteRingBuffer::ClearBuffer()
     size_ = 0;
     return 0;
 }
+
+uint32_t AudioSuiteRingBuffer::GetRestSpace() const
+{
+    return capacity_ > size_ ? capacity_ - size_ : 0;
+}
+
+uint32_t AudioSuiteRingBuffer::GetSize() const
+{
+    return size_;
+}
+
 }
 }
 }

@@ -117,6 +117,8 @@ void VADeviceManager::OnDevicesDisconnected(const std::shared_ptr<VADevice> &vaD
 
 void VADeviceManager::GetDeviceController(const std::string macAddr, sptr<IRemoteObject> &controller)
 {
+    CHECK_AND_RETURN_LOG(
+        PermissionUtil::VerifySystemPermission(), "get device controller denied: no system permission");
     std::lock_guard<std::mutex> lock(statusMutex_);
     auto it = connectedVADeviceMap_.find(macAddr);
     if (it == connectedVADeviceMap_.end()) {
@@ -191,19 +193,19 @@ std::shared_ptr<PipeStreamPropInfo> VADeviceManager::ConvertVADeviceStreamProper
     return pipeStreamInfo;
 }
 
-int32_t VADeviceManager::CalculateBufferSize(const VAAudioStreamProperty &vaStreamProperty)
+uint32_t VADeviceManager::CalculateBufferSize(const VAAudioStreamProperty &vaStreamProperty)
 {
-    const int32_t cyclesPerSecond = 50;
+    const uint32_t cyclesPerSecond = 50;
     if (vaStreamProperty.samplesPerCycle_ >
-            static_cast<int32_t>(AudioSamplingRate::SAMPLE_RATE_192000) / cyclesPerSecond ||
-            vaStreamProperty.samplesPerCycle_ < 0) {
+            static_cast<uint32_t>(AudioSamplingRate::SAMPLE_RATE_192000) / cyclesPerSecond) {
         AUDIO_ERR_LOG("invalid samplesPerCycle");
         return 0;
     }
-    int32_t channels = AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(vaStreamProperty.channelLayout_);
-    int32_t samplesPerCycle_ = vaStreamProperty.samplesPerCycle_;
-    int32_t bitWidth = 2;
-    int32_t bufferSize = channels * samplesPerCycle_ * bitWidth;
+    uint8_t channels = AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(vaStreamProperty.channelLayout_);
+    uint32_t samplesPerCycle_ = vaStreamProperty.samplesPerCycle_;
+    uint32_t bitWidth = 2;
+    uint32_t bufferSize = channels * samplesPerCycle_ * bitWidth;
+    AUDIO_INFO_LOG("calculate buffer size: %{public}d", bufferSize);
     return bufferSize;
 }
 }  // namespace VirtualAudioDevice

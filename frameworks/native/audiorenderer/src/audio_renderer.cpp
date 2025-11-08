@@ -748,6 +748,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::ConvertToStreamDesc
     streamDesc->callerUid_ = static_cast<int32_t>(getuid());
     streamDesc->callerPid_ = static_cast<int32_t>(getpid());
     streamDesc->sessionId_ = audioStreamParams.originalSessionId;
+    streamDesc->oldOriginalFlag_ = rendererInfo_.originalFlag;
     return streamDesc;
 }
 
@@ -2418,6 +2419,8 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
     // Activate audio interrupt again when restoring for audio server died.
     if (restoreInfo.restoreReason == SERVER_DIED) {
         HandleAudioInterruptWhenServerDied();
+        int32_t ret = InitOutputDeviceChangeCallback();
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "InitOutputDeviceChangeCallback Failed ret:%{public}d", ret);
     }
     InitAudioRouteCallback();
     isSwitching_ = false;
@@ -2447,6 +2450,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::GenerateStreamDesc(
     streamInfo.channelLayout = static_cast<AudioChannelLayout>(switchInfo.params.channelLayout);
     streamDesc->rendererInfo_ = switchInfo.rendererInfo;
     streamDesc->sessionId_ = switchInfo.sessionId;
+    streamDesc->oldOriginalFlag_ = switchInfo.rendererInfo.originalFlag;
 
     // update with restoreInfo
     streamDesc->routeFlag_ = restoreInfo.routeFlag;
@@ -3018,10 +3022,13 @@ int32_t AudioRendererPrivate::HandleCreateFastStreamError(AudioStreamParams &aud
     return ret;
 }
 
-int32_t AudioRendererPrivate::SetTarget(RenderTarget target) const
+int32_t AudioRendererPrivate::SetTarget(RenderTarget target)
 {
+    RendererState state = GetStatusInner();
+    CHECK_AND_RETURN_RET_LOG(state == RENDERER_PREPARED || state == RENDERER_STOPPED || state == RENDERER_PAUSED,
+        ERR_ILLEGAL_STATE, "Set target failed. Illegal state: %{public}u", state);
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
-    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR, "audioStream_ is nullptr");
     return currentStream->SetRenderTarget(target);
 }
 

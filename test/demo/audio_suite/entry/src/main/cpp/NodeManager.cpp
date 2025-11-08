@@ -217,7 +217,7 @@ OH_AudioSuite_Result NodeManager::disconnect(const std::string &fromId, const st
         return result;
     }
 
-    result = OH_AudioSuiteEngine_DisConnectNodes(preNode.physicalNode, nextNode.physicalNode);
+    result = OH_AudioSuiteEngine_DisconnectNodes(preNode.physicalNode, nextNode.physicalNode);
     OH_LOG_Print(
         LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "NodeManagerTest disconnect: %{public}d", static_cast<int>(result));
     if (result == OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
@@ -249,6 +249,107 @@ const Node &NodeManager::GetNodeById(const std::string &nodeId) const
         return it->second;
     } else {
         return g_defaultNode;
+    }
+}
+
+//获取均衡器类型
+std::string GetEqualizerOptions(const Node &node)
+{
+    OH_EqualizerFrequencyBandGains type;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_GetEqualizerFrequencyBandGains(node.physicalNode, &type);
+    if (ret != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+        return "0";
+    }
+    std::ostringstream oss;
+    oss << "[";
+    for (int i = 0; i < 10; ++i) { // 均衡器有10个频段
+        if (i > 0)
+            oss << ",";
+        oss << type.gains[i];
+    }
+    oss << "]";
+    return oss.str();
+}
+
+//获取声音美化类型
+std::string GetVoiceBeautifierOptions(const Node &node)
+{
+    OH_VoiceBeautifierType type;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_GetVoiceBeautifierType(node.physicalNode, &type);
+    if (ret != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+        return "0";
+    }
+    switch (type) {
+        case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR:
+            return "1";
+        case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_THEATRE:
+            return "2";
+        case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CD:
+            return "3";
+        case OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_RECORDING_STUDIO:
+            return "4";
+        default:
+            return "0";
+    }
+}
+
+//获取声场类型
+std::string GetSoundFieldOptions(const Node &node)
+{
+    OH_SoundFieldType type;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_GetSoundFieldType(node.physicalNode, &type);
+    if (ret != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+        return "0";
+    }
+    switch (type) {
+        case OH_SoundFieldType::SOUND_FIELD_FRONT_FACING:
+            return "1";
+        case OH_SoundFieldType::SOUND_FIELD_GRAND:
+            return "2";
+        case OH_SoundFieldType::SOUND_FIELD_NEAR:
+            return "3";
+        case OH_SoundFieldType::SOUND_FIELD_WIDE:
+            return "4";
+        default:
+            return "0";
+    }
+}
+
+//获取环境类型
+std::string GetEnvironmentEffectOptions(const Node &node)
+{
+    OH_EnvironmentType type;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_GetEnvironmentType(node.physicalNode, &type);
+    if (ret != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+        return "0";
+    }
+    switch (type) {
+        case OH_EnvironmentType::ENVIRONMENT_TYPE_BROADCAST:
+            return "1";
+        case OH_EnvironmentType::ENVIRONMENT_TYPE_EARPIECE:
+            return "2";
+        case OH_EnvironmentType::ENVIRONMENT_TYPE_UNDERWATER:
+            return "3";
+        case OH_EnvironmentType::ENVIRONMENT_TYPE_GRAMOPHONE:
+            return "4";
+        default:
+            return "0";
+    }
+}
+
+std::string NodeManager::GetOptionsByType(const Node &node)
+{
+    switch (node.type) {
+        case OH_AudioNode_Type::EFFECT_NODE_TYPE_EQUALIZER:
+            return GetEqualizerOptions(node);
+        case OH_AudioNode_Type::EFFECT_NODE_TYPE_VOICE_BEAUTIFIER:
+            return GetVoiceBeautifierOptions(node);
+        case OH_AudioNode_Type::EFFECT_NODE_TYPE_SOUND_FIELD:
+            return GetSoundFieldOptions(node);
+        case OH_AudioNode_Type::EFFECT_NODE_TYPE_ENVIRONMENT_EFFECT:
+            return GetEnvironmentEffectOptions(node);
+        default:
+            return "";
     }
 }
 
@@ -356,7 +457,7 @@ char *NodeManager::getNodeTypeName(OH_AudioNode_Type type)
 
 void NodeManager::GetPipeLineDetail()
 {
-    std::vector<Node> outputNodes = getNodesByType(OH_AudioNode_Type::OUT_NODE_TYPE_DEFAULT);
+    std::vector<Node> outputNodes = getNodesByType(OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT);
     if (outputNodes.size() != 1) {
         OH_LOG_Print(LOG_APP,
             LOG_INFO,

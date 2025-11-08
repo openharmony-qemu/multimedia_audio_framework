@@ -48,7 +48,7 @@ struct EqAlgoApi {
 
 class AudioSuiteEqAlgoInterfaceImpl : public AudioSuiteAlgoInterface {
 public:
-    AudioSuiteEqAlgoInterfaceImpl();
+    explicit AudioSuiteEqAlgoInterfaceImpl(NodeCapability &nc);
     ~AudioSuiteEqAlgoInterfaceImpl();
 
     int32_t Init() override;

@@ -168,7 +168,7 @@ public:
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors,
         const int32_t audioDeviceSelectMode = 0) override;
 
-    int32_t SelectPrivateDevice() override;
+    int32_t SelectPrivateDevice(int32_t devType, const std::string &macAddress) override;
 
     int32_t ForceSelectDevice(int32_t devType, const std::string &macAddress,
         const sptr<AudioRendererFilter> &filter) override;
@@ -714,6 +714,7 @@ public:
     int32_t SetSystemVolumeDegree(int32_t streamType, int32_t volumeDegree, int32_t volumeFlag, int32_t uid) override;
     int32_t GetSystemVolumeDegree(int32_t streamType, int32_t uid, int32_t &volumeDegree) override;
     int32_t GetMinVolumeDegree(int32_t volumeType, int32_t deviceType, int32_t &volumeDegree) override;
+    void HandleDataShareReadyEvent();
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
     void RegisterParamCallback();
@@ -931,7 +932,6 @@ private:
     bool isAlreadyRegisterCommonEventListener_ = false;
     std::mutex distributeDeviceMutex_;
     std::condition_variable distributeDeviceCond_;
-    int32_t newUserId_;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {

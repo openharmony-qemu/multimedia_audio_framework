@@ -276,7 +276,6 @@ SharedAudioScheduleGuard::~SharedAudioScheduleGuard()
     AudioScheduleGuard tempGuard(std::move(guard_));
     guardMap_.erase({pid_, tid_});
     cv_.notify_all();
-    AUDIO_INFO_LOG("out");
 }
 } // namespace AudioStandard
 } // namespace OHOS

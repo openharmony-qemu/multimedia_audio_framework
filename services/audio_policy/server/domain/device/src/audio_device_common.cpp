@@ -837,9 +837,7 @@ void AudioDeviceCommon::MoveToNewOutputDevice(std::shared_ptr<AudioRendererChang
         UpdateRoute(oldRendererChangeInfo, outputDevices);
     }
 
-    std::string newSinkName = AudioPolicyUtils::GetInstance().GetSinkName(*outputDevices.front(),
-        rendererChangeInfo->sessionId);
-    audioVolumeManager_.SetVolumeForSwitchDevice(*outputDevices.front(), newSinkName);
+    audioVolumeManager_.SetVolumeForSwitchDevice(*outputDevices.front());
 
     streamCollector_.UpdateRendererDeviceInfo(rendererChangeInfo->clientUID, rendererChangeInfo->sessionId,
         rendererChangeInfo->outputDeviceInfo);
@@ -997,7 +995,6 @@ bool AudioDeviceCommon::IsRingDualToneOnPrimarySpeaker(const vector<std::shared_
         return false;
     }
     AUDIO_INFO_LOG("ring dual tone on primary speaker and mute music.");
-    audioPolicyManager_.SetInnerStreamMute(STREAM_MUSIC, true, STREAM_USAGE_MUSIC);
     return true;
 }
 

@@ -631,9 +631,10 @@ int32_t AudioSystemManager::SetActiveVolumeTypeCallback(
     return AudioPolicyManager::GetInstance().SetActiveVolumeTypeCallback(callback);
 }
 
-int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volumeLevel, int32_t uid) const
+int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volumeLevel, int32_t uid)
 {
     AUDIO_INFO_LOG("SetSystemVolume: volumeType[%{public}d], volumeLevel[%{public}d]", volumeType, volumeLevel);
+    std::lock_guard<std::mutex> lock(volumeMutex_);
 
     /* Validate volumeType and return INVALID_PARAMS error */
     switch (volumeType) {
@@ -663,10 +664,11 @@ int32_t AudioSystemManager::SetVolume(AudioVolumeType volumeType, int32_t volume
 }
 
 int32_t AudioSystemManager::SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
-    DeviceType deviceType) const
+    DeviceType deviceType)
 {
     AUDIO_INFO_LOG("%{public}s: volumeType[%{public}d], volumeLevel[%{public}d], deviceType[%{public}d]",
         __func__, volumeType, volumeLevel, deviceType);
+    std::lock_guard<std::mutex> lock(volumeMutex_);
 
     /* Validate volumeType and return INVALID_PARAMS error */
     switch (volumeType) {
@@ -802,9 +804,10 @@ int32_t AudioSystemManager::GetDeviceMinVolume(AudioVolumeType volumeType, Devic
     return AudioPolicyManager::GetInstance().GetMinVolumeLevel(volumeType, deviceType);
 }
 
-int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute, const DeviceType &deviceType) const
+int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute, const DeviceType &deviceType)
 {
     AUDIO_INFO_LOG("SetStreamMute for volumeType [%{public}d], mute [%{public}d]", volumeType, mute);
+    std::lock_guard<std::mutex> lock(volumeMutex_);
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
@@ -1008,6 +1011,7 @@ int32_t AudioSystemManager::SelectOutputDevice(
         return ERR_INVALID_PARAM;
     }
     sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+    CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr, ERR_OPERATION_FAILED, "create renderer filter failed");
     audioRendererFilter->uid = -1;
     int32_t ret = AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
     return ret;
@@ -1021,6 +1025,7 @@ int32_t AudioSystemManager::SelectInputDevice(
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors[0]->deviceRole_ == DeviceRole::INPUT_DEVICE,
         ERR_INVALID_OPERATION, "not an output device.");
     sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
+    CHECK_AND_RETURN_RET_LOG(audioCapturerFilter != nullptr, ERR_OPERATION_FAILED, "create capturer filter failed");
     audioCapturerFilter->uid = -1;
     int32_t ret = AudioPolicyManager::GetInstance().SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
     return ret;

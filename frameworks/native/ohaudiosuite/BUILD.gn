@@ -48,10 +48,13 @@ ohos_shared_library("ohaudiosuite") {
   sources = [
     "./OHAudioSuiteEngine.cpp",
     "./OHAudioSuiteNodeBuilder.cpp",
+    "../../../services\audio_suite\client\config\src\audio_suite_capabilities_parser.cpp",
+    "../../../services\audio_suite\client\config\src\audio_suite_capabilities.cpp",
   ]
 
   deps = [
     "../../../services/audio_suite:audio_suite",
+    "../../../frameworks/native/audioutils:audio_xml_utils",
   ]
   cflags = [ "-Werror" ]
 

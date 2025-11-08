@@ -611,5 +611,23 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, SafeVolumeDump_002, TestSize.Level4)
     audioAdapterManager->SafeVolumeDump(dumpString);
     EXPECT_EQ(audioAdapterManager->isSafeBoot_, false);
 }
+
+/**
+ * @tc.name: GetStreamMuteInternal
+ * @tc.desc: Test SafeVolumeDump
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerExtUnitTest, GetStreamMuteInternal, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+
+    EXPECT_EQ(audioAdapterManager->GetStreamMuteInternal(desc, STREAM_RING), false);
+    EXPECT_EQ(audioAdapterManager->GetStreamMuteInternal(desc, STREAM_MUSIC), false);
+    audioAdapterManager->ringerNoMuteDevice_ = desc;
+    EXPECT_EQ(audioAdapterManager->GetStreamMuteInternal(desc, STREAM_RING), false);
+    EXPECT_EQ(audioAdapterManager->GetStreamMuteInternal(desc, STREAM_MUSIC), false);
+}
 } // namespace AudioStandard
 } // namespace OHOS

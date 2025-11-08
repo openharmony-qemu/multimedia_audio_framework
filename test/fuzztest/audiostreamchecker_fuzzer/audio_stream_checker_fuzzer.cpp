@@ -46,7 +46,6 @@ void AudioStreamCheckerInitCheckerFuzzTest()
     int32_t callbackId = g_fuzzUtils.GetData<int32_t>();
     checker->InitChecker(para, pid, callbackId);
     checker->InitChecker(para, pid, callbackId);
-    checker->StopCheckStreamThread();
 }
 
 void AudioStreamCheckerRecordFrameFuzzTest()
@@ -58,7 +57,6 @@ void AudioStreamCheckerRecordFrameFuzzTest()
     checker->InitChecker(para, g_fuzzUtils.GetData<int32_t>(), g_fuzzUtils.GetData<int32_t>());
     checker->RecordMuteFrame();
     checker->RecordNodataFrame();
-    checker->StopCheckStreamThread();
 }
 
 void AudioStreamCheckerGetAppUidFuzzTest()
@@ -68,7 +66,6 @@ void AudioStreamCheckerGetAppUidFuzzTest()
     std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
     CHECK_AND_RETURN(checker != nullptr);
     int32_t uid = checker->GetAppUid();
-    checker->StopCheckStreamThread();
 }
 
 void AudioStreamCheckerDeleteCheckerParaFuzzTest()
@@ -85,7 +82,6 @@ void AudioStreamCheckerDeleteCheckerParaFuzzTest()
     checker->InitChecker(para, pid2, callbackId2);
     checker->DeleteCheckerPara(pid1, callbackId1);
     checker->DeleteCheckerPara(pid1, callbackId2);
-    checker->StopCheckStreamThread();
 }
 
 void AudioStreamCheckerMonitorCheckFrameFuzzTest()
@@ -108,7 +104,6 @@ void AudioStreamCheckerMonitorCheckFrameFuzzTest()
         }
     }
     checker->MonitorCheckFrame();
-    checker->StopCheckStreamThread();
 }
 
 void AudioStreamCheckerMonitorOnAllCallbackFuzzTest()
@@ -122,7 +117,6 @@ void AudioStreamCheckerMonitorOnAllCallbackFuzzTest()
     CHECK_AND_RETURN(checker != nullptr);
     checker->InitChecker(para, g_fuzzUtils.GetData<int32_t>(), g_fuzzUtils.GetData<int32_t>());
     checker->MonitorOnAllCallback(g_fuzzUtils.GetData<DataTransferStateChangeType>(), g_fuzzUtils.GetData<bool>());
-    checker->StopCheckStreamThread();
 }
 
 void AudioStreamCheckerOnRemoteAppDiedFuzzTest()
@@ -137,7 +131,6 @@ void AudioStreamCheckerOnRemoteAppDiedFuzzTest()
     int32_t pid = g_fuzzUtils.GetData<int32_t>();
     checker->InitChecker(para, pid, g_fuzzUtils.GetData<int32_t>());
     checker->OnRemoteAppDied(pid);
-    checker->StopCheckStreamThread();
 }
 
 void AudioStreamCheckerMonitorCheckFrameSubFuzzTest()
@@ -159,7 +152,6 @@ void AudioStreamCheckerMonitorCheckFrameSubFuzzTest()
     }
     checkerPara.lastUpdateTime = ClockTime::GetCurNano();
     checker->MonitorCheckFrameSub(checkerPara);
-    checker->StopCheckStreamThread();
 }
 
 void AudioStreamCheckerMonitorCheckFrameActionFuzzTest()
@@ -178,7 +170,6 @@ void AudioStreamCheckerMonitorCheckFrameActionFuzzTest()
     int64_t abnormalFrameNum = DEFAULT_ABNORMAL_FRAME_NUM;
     float badFrameRatio = DEFAULT_FLOAT_BAD_FRAME_RATIO;
     checker->MonitorCheckFrameAction(checkerPara, abnormalFrameNum, badFrameRatio);
-    checker->StopCheckStreamThread();
 }
 
 void AudioStreamCheckerMonitorOnCallbackFuzzTest()
@@ -196,7 +187,6 @@ void AudioStreamCheckerMonitorOnCallbackFuzzTest()
     checkerPara.hasInitCheck = g_fuzzUtils.GetData<bool>();
     checker->MonitorOnCallback(g_fuzzUtils.GetData<DataTransferStateChangeType>(),
         g_fuzzUtils.GetData<bool>(), checkerPara);
-    checker->StopCheckStreamThread();
 }
 
 void AudioStreamCheckerRecordStandbyTimeFuzzTest()
@@ -210,7 +200,6 @@ void AudioStreamCheckerRecordStandbyTimeFuzzTest()
     CHECK_AND_RETURN(checker != nullptr);
     checker->InitChecker(para, g_fuzzUtils.GetData<int32_t>(), g_fuzzUtils.GetData<int32_t>());
     checker->RecordStandbyTime(g_fuzzUtils.GetData<bool>());
-    checker->StopCheckStreamThread();
 }
 
 void AudioStreamCheckerUpdateAppStateFuzzTest()
@@ -224,19 +213,6 @@ void AudioStreamCheckerUpdateAppStateFuzzTest()
     CHECK_AND_RETURN(checker != nullptr);
     checker->InitChecker(para, g_fuzzUtils.GetData<int32_t>(), g_fuzzUtils.GetData<int32_t>());
     checker->UpdateAppState(g_fuzzUtils.GetData<bool>());
-    checker->StopCheckStreamThread();
-}
-
-void AudioStreamCheckerStopCheckStreamThreadFuzzTest()
-{
-    AudioProcessConfig cfg;
-    DataTransferMonitorParam para;
-    para.badDataTransferTypeBitMap = DEFAULT_BAD_DATA_TRANSFER_BIT_MAP;
-    para.timeInterval = DEFAULT_TIME_INTERVAL;
-    para.badFramesRatio = DEFAULT_BAD_FRAME_RATIO;
-    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
-    CHECK_AND_RETURN(checker != nullptr);
-    checker->StopCheckStreamThread();
 }
 
 void AudioStreamCheckerCleanRecordDataFuzzTest()
@@ -251,7 +227,6 @@ void AudioStreamCheckerCleanRecordDataFuzzTest()
     CheckerParam tmpPara;
     CheckerParam &checkerPara = tmpPara;
     checker->CleanRecordData(checkerPara);
-    checker->StopCheckStreamThread();
 }
 
 void AudioStreamCheckerCalculateFrameAfterStandbyFuzzTest()
@@ -268,14 +243,6 @@ void AudioStreamCheckerCalculateFrameAfterStandbyFuzzTest()
     para.isMonitorNoDataFrame = g_fuzzUtils.GetData<bool>();
     checker->streamConfig_.rendererInfo.rendererFlags = 0;
     checker->CalculateFrameAfterStandby(para, abnormalFrameNum);
-}
-
-void AudioStreamCheckerCheckStreamThreadFuzzTest()
-{
-    AudioProcessConfig cfg;
-    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
-    CHECK_AND_RETURN(checker != nullptr);
-    checker->CheckStreamThread();
 }
 
 void AudioStreamCheckerCheckVolumeFuzzTest()
@@ -320,7 +287,6 @@ vector<TestFuncs> g_testFuncs = {
     AudioStreamCheckerUpdateAppStateFuzzTest,
     AudioStreamCheckerCleanRecordDataFuzzTest,
     AudioStreamCheckerCalculateFrameAfterStandbyFuzzTest,
-    AudioStreamCheckerCheckStreamThreadFuzzTest,
     AudioStreamCheckerCheckVolumeFuzzTest,
     AudioStreamCheckerSetVolumeFuzzTest,
     AudioStreamCheckerGetVolumeFuzzTest,

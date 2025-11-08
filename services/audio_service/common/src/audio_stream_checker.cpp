@@ -18,6 +18,7 @@
 #include "audio_utils.h"
 #include "audio_stream_monitor.h"
 #include "volume_tools.h"
+#include "audio_stream_checker_thread.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -25,7 +26,6 @@ namespace {
 const float TRANS_PERCENTAGE = 100.0;
 const int32_t TRANS_INTEGER = 100;
 const int32_t AUDIOSTREAM_LATENCY_MODE_NORMAL = 0;
-const int64_t STREAM_CHECK_INTERVAL_TIME = 500000000;  // 500ms
 const int64_t DEFAULT_TIME = 0;
 const int64_t NORMAL_FRAME_PER_TIME = 20000000;  // 20ms
 const int64_t FAST_FRAME_PER_TIME = 5000000;  // 5ms
@@ -41,7 +41,6 @@ AudioStreamChecker::~AudioStreamChecker()
     AUDIO_INFO_LOG("~AudioStreamChecker(), sessionId = %{public}u, uid = %{public}d",
         streamConfig_.originalSessionId, streamConfig_.appInfo.appUid);
     monitorSwitch_ = false;
-    isKeepCheck_.store(false);
 }
 
 void AudioStreamChecker::InitChecker(DataTransferMonitorParam para, const int32_t pid, const int32_t callbackId)
@@ -62,19 +61,6 @@ void AudioStreamChecker::InitChecker(DataTransferMonitorParam para, const int32_
     checkPara.isMonitorNoDataFrame = IsMonitorNoDataFrame(checkPara);
     checkPara.lastUpdateTime = ClockTime::GetCurNano();
     checkParaVector_.push_back(checkPara);
-    if (isNeedCreateThread_.load()) {
-        isKeepCheck_.store(true);
-        std::weak_ptr<AudioStreamChecker> self = shared_from_this();
-        checkThread_ = std::thread([self] {
-            if (auto thisPtr = self.lock()) {
-                thisPtr->CheckStreamThread();
-            }
-        });
-        pthread_setname_np(checkThread_.native_handle(), "OS_CheckStreamLoop");
-        checkThread_.detach();
-        isNeedCreateThread_.store(false);
-        AUDIO_INFO_LOG("Start check thread success");
-    }
     AUDIO_INFO_LOG("Init checker end, pid = %{public}d, callbackId = %{public}d, uid = %{public}d",
         pid, callbackId, para.clientUID);
 }
@@ -90,11 +76,6 @@ void AudioStreamChecker::DeleteCheckerPara(const int32_t pid, const int32_t call
         } else {
             iter++;
         }
-    }
-    if (checkParaVector_.size() == 0) {
-        isNeedCreateThread_.store(true);
-        isKeepCheck_.store(false);
-        AUDIO_INFO_LOG("Stream has no callback, stop check thread");
     }
     AUDIO_INFO_LOG("Delete check para end, pid = %{public}d, callbackId = %{public}d", pid, callbackId);
 }
@@ -139,29 +120,7 @@ void AudioStreamChecker::OnRemoteAppDied(const int32_t pid)
             iter++;
         }
     }
-    if (checkParaVector_.size() == 0) {
-        isNeedCreateThread_.store(true);
-        isKeepCheck_.store(false);
-        AUDIO_INFO_LOG("Stream has no callback when remote app died, stop check thread");
-    }
     AUDIO_INFO_LOG("Delete check para end when remote app died, pid = %{public}d", pid);
-}
-
-void AudioStreamChecker::StopCheckStreamThread()
-{
-    AUDIO_INFO_LOG("In");
-    isKeepCheck_.store(false);
-}
-
-void AudioStreamChecker::CheckStreamThread()
-{
-    AUDIO_INFO_LOG("In");
-    while (isKeepCheck_.load()) {
-        MonitorCheckFrame();
-        CheckVolume();
-        ClockTime::RelativeSleep(STREAM_CHECK_INTERVAL_TIME);
-    }
-    AUDIO_INFO_LOG("Out");
 }
 
 void AudioStreamChecker::CheckVolume()
@@ -210,7 +169,7 @@ void AudioStreamChecker::MonitorCheckFrameAction(CheckerParam &para, int64_t abn
             AUDIO_DEBUG_LOG("sessionId = %{public}u, status still in DATA_TRANS_STOP",
                 streamConfig_.originalSessionId);
             MonitorOnCallback(DATA_TRANS_STOP, false, para);
-        } else if (para.lastStatus == AUDIO_STREAM_PAUSE|| para.lastStatus == AUDIO_STREAM_STOP) {
+        } else if (para.lastStatus == AUDIO_STREAM_PAUSE || para.lastStatus == AUDIO_STREAM_STOP) {
             AUDIO_DEBUG_LOG("Last status is %{public}d, no need callback", para.lastStatus);
             CleanRecordData(para);
         } else {

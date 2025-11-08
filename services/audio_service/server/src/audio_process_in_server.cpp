@@ -96,10 +96,6 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
     AudioStreamMonitor::GetInstance().AddCheckForMonitor(processConfig.originalSessionId, audioStreamChecker_);
     streamStatusInServer_ = STREAM_IDEL;
 
-    dumpResampleName_ = std::to_string(sessionId_) + '_' + "_dump_resample_audio_" +
-        std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) + ".pcm";
-    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpResampleName_, &dumpResample_);
-
     dumpFACName_ = std::to_string(sessionId_) + '_' + "_dump_fac_audio_" +
         std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFACName_, &dumpFAC_);
@@ -117,7 +113,6 @@ AudioProcessInServer::~AudioProcessInServer()
         delete [] convertedBuffer_.buffer;
     }
     DumpFileUtil::CloseDumpFile(&dumpFile_);
-    DumpFileUtil::CloseDumpFile(&dumpResample_);
     DumpFileUtil::CloseDumpFile(&dumpFAC_);
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_INVALID);
@@ -541,12 +536,18 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
     ret = releaseCallback_->OnProcessRelease(this, isSwitchStream);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_RELEASE);
     HILOG_COMM_INFO("notify service release result: %{public}d", ret);
-    if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
-        CoreServiceHandler::GetInstance().RemoveIdForInjector(sessionId_);
-    }
+    ReleaseCaptureInjector();
     streamStatusInServer_ = STREAM_RELEASED;
     RemoveStreamInfo();
     return SUCCESS;
+}
+
+void AudioProcessInServer::ReleaseCaptureInjector()
+{
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD &&
+        processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        CoreServiceHandler::GetInstance().ReleaseCaptureInjector();
+    }
 }
 
 ProcessDeathRecipient::ProcessDeathRecipient(AudioProcessInServer *processInServer,
@@ -563,8 +564,6 @@ void ProcessDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
     CHECK_AND_RETURN_LOG(processHolder_ != nullptr, "processHolder_ is null.");
     int32_t ret = processHolder_->OnProcessRelease(processInServer_);
     AUDIO_INFO_LOG("OnRemoteDied ret: %{public}d %{public}" PRId64 "", ret, createTime_);
-    CHECK_AND_RETURN_LOG(processInServer_ != nullptr, "processInServer_ is null.");
-    AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processInServer_->GetSessionId());
 }
 
 int32_t AudioProcessInServer::RegisterProcessCb(const sptr<IRemoteObject>& object)
@@ -939,6 +938,13 @@ RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
 
         processBuffer_->SetRestoreInfo(restoreInfo);
         processBuffer_->WakeFutex();
+
+        std::lock_guard<std::mutex> lock(listenerListLock_);
+        std::vector<std::shared_ptr<IProcessStatusListener>>::iterator it = listenerList_.begin();
+        while (it != listenerList_.end()) {
+            (*it)->StopByRestore(restoreInfo);
+            it++;
+        }
     }
     return restoreStatus;
 }
@@ -1093,8 +1099,6 @@ int32_t AudioProcessInServer::HandleCapturerDataParams(RingBufferWrapper &writeB
     BufferDesc resampleOutBuf = procParams.readBuf_;
     int32_t ret = CaptureDataResampleProcess(bufLen, resampleOutBuf, srcInfo, procParams);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "capture data resample failed");
-    DumpFileUtil::WriteDumpFile(dumpResample_, static_cast<void *>(resampleOutBuf.buffer),
-        resampleOutBuf.bufLength);
 
     ret = CapturerDataFormatAndChnConv(writeBuf, resampleOutBuf, srcInfo, processConfig_.streamInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "capture data convert failed");
