@@ -1747,6 +1747,7 @@ const std::string AudioInfoDumpUtils::GetDeviceVolumeTypeName(DeviceVolumeType d
 }
 
 bool VolumeUtils::isPCVolumeEnable_ = false;
+bool VolumeUtils::isVolumeFixEnable_ = false;
 
 std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeMap_ = {
     {STREAM_VOICE_CALL, STREAM_VOICE_CALL},
@@ -1921,6 +1922,16 @@ void VolumeUtils::SetPCVolumeEnable(const bool& isPCVolumeEnable)
 bool VolumeUtils::IsPCVolumeEnable()
 {
     return isPCVolumeEnable_;
+}
+
+void VolumeUtils::SetVolumeFixEnable(const bool& isVolumeFixEnable)
+{
+    isVolumeFixEnable_ = isVolumeFixEnable;
+}
+
+bool VolumeUtils::IsVolumeFixEnable()
+{
+    return isVolumeFixEnable_;
 }
 
 AudioVolumeType VolumeUtils::GetVolumeTypeFromStreamType(AudioStreamType streamType)

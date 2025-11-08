@@ -76,7 +76,7 @@ int32_t AudioVolumeParser::ParseVolumeConfig(const char *path, StreamVolumeInfoM
     }
 
     while (curNode->IsNodeValid()) {
-        if (curNode->CompareName("volume_type")) {
+        if (curNode->CompareName("volume_type") || curNode->CompareName("volume_fix")) {
             ParseStreamInfos(curNode->GetCopyNode(), streamVolumeInfoMap);
             break;
         } else {
@@ -183,6 +183,11 @@ void AudioVolumeParser::ParseStreamInfos(std::shared_ptr<AudioXmlNode> curNode,
                 streamVolumeInfoMap[streamVolInfo->streamType] = streamVolInfo;
             }
         }
+        if (curNode->CompareName("volume_fix")) {
+            if (ParseVolumeFixFixInfo(curNode->GetCopyNode()) == AUDIO_OK) {
+                AUDIO_DEBUG_LOG("Parse VolumeFix:%{public}d ", VolumeUtils::isVolumeFixEnable());
+            }
+        }
         curNode->MoveToNext();
     }
 }
@@ -221,6 +226,24 @@ int32_t AudioVolumeParser::ParseStreamVolumeInfoAttr(std::shared_ptr<AudioXmlNod
         "convert streamVolInfo->defaultLevel fail!");
     AUDIO_DEBUG_LOG("defaultidx: %{public}d", streamVolInfo->defaultLevel);
 
+    return AUDIO_OK;
+}
+
+int32_t AudioVolumeParser::ParseVolumeFixFixInfo(std::shared_ptr<AudioXmlNode> curNode)
+{
+    AUDIO_DEBUG_LOG("AudioVolumeParse::ParseVolumeFixInfo");
+    std::string pValueStr;
+    CHECK_AND_RETURN_RET_LOG(curNode->GetProp("type", pValueStr) == success,
+        ERR_INVALID_PARAM, "invalid type parameter");
+    std::string volumeFix;
+    CHECK_AND_RETURN_RET_LOG(curNode->GetProp("enable", volumeFix) == success,
+        ERR_INVALID_PARAM, "invalid enable parameter");
+    if (pValueStr == "VOLUME_FIX_ENABLE" && volumeFix == "1") {
+        VolumeUtils::SetVolumeFixEnable(true);
+        AUDIO_INFO_LOG("VolumeFix is enable");
+        // volumeFixEnable for volume 0 return 1, not mute
+        return ERR_NOT_SUPPORTED;
+    }
     return AUDIO_OK;
 }
 
