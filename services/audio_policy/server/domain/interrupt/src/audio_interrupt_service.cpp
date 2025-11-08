@@ -506,8 +506,8 @@ bool AudioInterruptService::IsAudioSessionActivated(const int32_t callerPid)
 bool AudioInterruptService::IsCanMixInterrupt(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt)
 {
-    if (sessionService_.IsSystemAppWithMixStrategy(incomingInterrupt.pid) ||
-        sessionService_.IsSystemAppWithMixStrategy(activeInterrupt.pid)) {
+    if (sessionService_.IsSystemAppWithMixStrategy(incomingInterrupt) ||
+        sessionService_.IsSystemAppWithMixStrategy(activeInterrupt)) {
         AUDIO_INFO_LOG("System app can mix with others anyway, incomingPid: %{public}d, activePid: %{public}d",
             incomingInterrupt.pid, activeInterrupt.pid);
         return true;
@@ -536,8 +536,8 @@ bool AudioInterruptService::IsCanMixInterrupt(const AudioInterrupt &incomingInte
 bool AudioInterruptService::CanMixForSession(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt, const AudioFocusEntry &focusEntry)
 {
-    if (sessionService_.IsSystemAppWithMixStrategy(incomingInterrupt.pid) ||
-        sessionService_.IsSystemAppWithMixStrategy(activeInterrupt.pid)) {
+    if (sessionService_.IsSystemAppWithMixStrategy(incomingInterrupt) ||
+        sessionService_.IsSystemAppWithMixStrategy(activeInterrupt)) {
         AUDIO_INFO_LOG("System app can mix with others anyway, incomingPid: %{public}d, activePid: %{public}d",
             incomingInterrupt.pid, activeInterrupt.pid);
         return true;
