@@ -966,11 +966,11 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleServiceEvent_001, TestSize.Level2
 }
 
 /**
- * @tc.name  : HandleOtherServiceSecondEvent_001
- * @tc.number: HandleOtherServiceSecondEvent_001
+ * @tc.name  : HandleOtherServiceEvent_001
+ * @tc.number: HandleOtherServiceEvent_001
  * @tc.desc  : Test HandleInterruptEventWithSessionId function when eventContextObj is nullptr.
  */
-HWTEST(AudioPolicyServerHandlerUnitTest, HandleOtherServiceSecondEvent_001, TestSize.Level2)
+HWTEST(AudioPolicyServerHandlerUnitTest, HandleOtherServiceEvent_001, TestSize.Level2)
 {
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
@@ -984,9 +984,9 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleOtherServiceSecondEvent_001, Test
     audioPolicyServerHandler_->SetClientCallbacksEnable(
         CallbackChange::CALLBACK_HEAD_TRACKING_ENABLED_CHANGE, true);
     uint32_t eventId = AudioPolicyServerHandler::EventAudioServerCmd::PREFERRED_OUTPUT_DEVICE_UPDATED;
-    audioPolicyServerHandler_->HandleOtherServiceSecondEvent(eventId, event);
+    audioPolicyServerHandler_->HandleOtherServiceEvent(eventId, event);
     eventId = AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE;
-    audioPolicyServerHandler_->HandleOtherServiceSecondEvent(eventId, event);
+    audioPolicyServerHandler_->HandleOtherServiceEvent(eventId, event);
     EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 1);
 }
 

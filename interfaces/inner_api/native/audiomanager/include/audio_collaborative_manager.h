@@ -32,7 +32,7 @@ public:
      * @param enabled the collboration enabled state for current device.
      * @since 20
      */
-    virtual void OnCollaborationEnabledChangeForCurrentDevice(const bool &enabled){}
+    virtual void OnCollaborationEnabledChangeForCurrentDevice(const bool &enabled) {}
 };
 
 class AudioCollaborativeManager {
