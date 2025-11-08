@@ -170,7 +170,8 @@ void AudioCoreService::FetchOutputDupDevice(std::string caller, uint32_t session
     streamDesc->oldDupDeviceDescs_ = streamDesc->newDupDeviceDescs_;
     streamDesc->newDupDeviceDescs_ =
         audioRouterCenter_.FetchDupDevices(info);
-    AUDIO_INFO_LOG("[DeviceFetchInfo] dup device %{public}s for stream %{public}d",
+    AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s, status %{public}u, dupDevice %{public}s, stream %{public}d",
+        streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->GetStatus(),
         streamDesc->GetNewDupDevicesTypeString().c_str(), sessionId);
 
     UpdateDupDeviceOutputRoute(streamDesc);

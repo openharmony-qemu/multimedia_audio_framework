@@ -78,7 +78,6 @@ void DfxMsgManager::SafeSendCallBackEvent(uint32_t eventCode, int64_t data, int6
 void DfxMsgManager::CheckReportDfxMsg()
 {
     Trace trace("DfxMsgManager::CheckReportDfxMsg");
-    AUDIO_INFO_LOG("entering CheckReportDfxMsg, reported msg size=%{public}d", reportedCnt_.load());
     SafeSendCallBackEvent(DFX_CHECK_REPORT_MSG, 0, DFX_CHECK_REPORT_MSG_TIME_MS);
 
     std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
