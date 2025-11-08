@@ -105,7 +105,7 @@ public:
     MOCK_METHOD(ErrCode, OnVolumeDegreeEvent,
             (const VolumeEvent& volumeEvent), (override));
     MOCK_METHOD(ErrCode, OnCollaborationEnabledChangeForCurrentDevice,
-            (bool& enabled), (override));
+            (const bool enabled), (override));
 };
 
 } // namespace AudioStandard
