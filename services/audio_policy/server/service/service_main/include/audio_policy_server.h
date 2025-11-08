@@ -569,7 +569,8 @@ public:
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId) override;
 
-    int32_t IsAllowedPlayback(int32_t uid, int32_t pid, bool &isAllowed) override;
+    int32_t IsAllowedPlayback(int32_t uid, int32_t pid, int32_t streamUsage, bool &isAllowed,
+        bool &silentControl) override;
 
     int32_t SetVoiceRingtoneMute(bool isMute) override;
 
