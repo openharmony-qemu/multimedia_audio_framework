@@ -12,8 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "audio_errors.h"
-#include "audio_suite_log.h"
+
 #include "audio_suite_unittest_tools.h"
 
 namespace OHOS {
@@ -22,6 +21,10 @@ namespace AudioSuite {
 
 bool CreateOutputPcmFile(const std::string &filename)
 {
+    if (std::filesystem::exists(filename)) {
+        std::filesystem::remove(filename);
+    }
+
     std::ofstream ofs;
     ofs.open(filename, std::ios::out | std::ios::trunc);
     CHECK_AND_RETURN_RET_LOG(ofs.is_open(), false, "Failed to open output file: %{public}s", filename.c_str());

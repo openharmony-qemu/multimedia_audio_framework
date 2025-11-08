@@ -255,17 +255,6 @@ static const std::vector<AudioRingerMode>audioRingerModes = {
     RINGER_MODE_VIBRATE,
     RINGER_MODE_NORMAL
 };
-/**
-* @tc.name  : Test AudioPolicyService.
-* @tc.number: CaptureConcurrentCheck
-* @tc.desc  : Test CaptureConcurrentCheck.
-*/
-HWTEST_F(AudioPolicyServiceExtendedUnitTest, CaptureConcurrentCheck, TestSize.Level1)
-{
-    uint32_t sessionId = 0;
-    int32_t ret = AudioPolicyService::GetAudioPolicyService().CaptureConcurrentCheck(sessionId);
-    EXPECT_EQ(ret, ERR_NULL_POINTER);
-}
 
 /**
 * @tc.name  : Test AudioPolicyService.

@@ -32,10 +32,14 @@ public:
     explicit NapiAudioSystemVolumeChangeCallback(napi_env env);
     virtual ~NapiAudioSystemVolumeChangeCallback();
     void OnSystemVolumeChange(VolumeEvent volumeEvent) override;
+    void RemoveCallbackReference(napi_env env, napi_value args);
+    void RemoveAllCallbackReference();
     void SaveCallbackReference(const std::string &callbackName, napi_value args);
     bool ContainSameJsCallback(napi_value args);
+    bool IsSameCallback(napi_env env, napi_value callback, napi_ref refCallback);
     void CreateSystemVolumeChangeTsfn(napi_env env);
     bool GetVolumeTsfnFlag();
+    int32_t GetSystemVolumeCbListSize();
     napi_threadsafe_function GetTsfn();
 
 private:
@@ -50,10 +54,9 @@ private:
     static void SafeJsCallbackSystemVolumeChangeWork(napi_env env, napi_value js_cb, void *context, void *data);
     static void SystemVolumeChangeTsfnFinalize(napi_env env, void *data, void *hint);
 
-    std::shared_ptr<AutoRef> audioSystemVolumeChangeCallback_ = nullptr;
+    std::list<std::shared_ptr<AutoRef>> audioSystemVolumeChangeCbList_;
     std::mutex mutex_;
     napi_env env_;
-    napi_ref callback_ = nullptr;
     static napi_ref sConstructor_;
     bool regVolumeTsfn_ = false;
     napi_threadsafe_function amVolEntTsfn_ = nullptr;

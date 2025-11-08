@@ -28,6 +28,7 @@
 #include "audio_stream_monitor.h"
 #include "audio_stream_checker.h"
 #include "audio_proresampler.h"
+#include "format_converter.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -177,6 +178,7 @@ private:
                                          const AudioStreamInfo &srcInfo, const AudioStreamInfo &dstInfo);
     int32_t WriteToRingBuffer(RingBufferWrapper &writeBuf, const BufferDesc &buffer);
     void RemoveStreamInfo();
+    void ReleaseCaptureInjector();
     void RebuildCaptureInjector();
     bool IsNeedRecordResampleConv(AudioSamplingRate srcSamplingRate);
 private:
@@ -193,7 +195,7 @@ private:
     bool isMicIndicatorOn_ = false;
 
     uint32_t sessionId_ = 0;
-    bool isInited_ = false;
+    std::atomic<bool> isInited_ = false;
     std::atomic<StreamStatus> *streamStatus_ = nullptr;
     std::mutex statusLock_;
 
@@ -238,9 +240,7 @@ private:
 
     std::atomic<bool> rebuildFlag_ = false;
 
-    std::string dumpResampleName_;
     std::string dumpFACName_;
-    FILE *dumpResample_ = nullptr;
     FILE *dumpFAC_ = nullptr;
 };
 } // namespace AudioStandard

@@ -37,6 +37,15 @@ typedef struct {
     int outCh;
 } AudioVoiceMorphingData;
 
+typedef struct {
+    bool currentDeviceSupport;
+    bool realTimeSupport;
+    int frameLen;
+    int sampleRate;
+    int channel;
+    int dataFormat;
+} AudioVoiceMorhpingSpec;
+
 typedef enum {
     AUDIO_VOICE_MORPH_CLEAR = 0,
     AUDIO_VOICE_MORPH_THEATRE,

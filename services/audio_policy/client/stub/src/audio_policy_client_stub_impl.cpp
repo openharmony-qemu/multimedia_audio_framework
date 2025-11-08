@@ -1493,5 +1493,37 @@ int32_t AudioPolicyClientStubImpl::OnStreamVolumeChange(const StreamVolumeEvent 
     }
     return SUCCESS;
 }
+
+int32_t AudioPolicyClientStubImpl::AddCollaborationEnabledChangeForCurrentDeviceCallback(
+    const std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(collaborationEnabledChangeForCurrentDeviceMutex_);
+    collaborationEnabledChangeForCurrentDeviceCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveCollaborationEnabledChangeForCurrentDeviceCallback()
+{
+    std::lock_guard<std::mutex> lockCbMap(collaborationEnabledChangeForCurrentDeviceMutex_);
+    collaborationEnabledChangeForCurrentDeviceCallbackList_.clear();
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetCollaborationEnabledChangeForCurrentDeviceCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(collaborationEnabledChangeForCurrentDeviceMutex_);
+    return collaborationEnabledChangeForCurrentDeviceCallbackList_.size();
+}
+
+int32_t AudioPolicyClientStubImpl::OnCollaborationEnabledChangeForCurrentDevice(bool enabled)
+{
+    std::lock_guard<std::mutex> lockCbMap(collaborationEnabledChangeForCurrentDeviceMutex_);
+    for (const auto &callback : collaborationEnabledChangeForCurrentDeviceCallbackList_) {
+        CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
+        AUDIO_INFO_LOG("OnCollaborationEnabledChangeForCurrentDevice enabled: %{public}d", enabled);
+        callback->OnCollaborationEnabledChangeForCurrentDevice(enabled);
+    }
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

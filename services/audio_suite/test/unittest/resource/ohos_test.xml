@@ -94,66 +94,32 @@
             <option name="push" value="compare_12000_2_s24le.pcm -> /data/audiosuite/outputnode/" src="res"/>	
             <option name="shell" value="restorecon -R /data/audiosuite/outputnode/"/>
             <option name="shell" value="mkdir -p /data/audiosuite/eqnode"/>
-            <option name="push" value="eq_44100_1_32f.pcm -> /data/audiosuite/eqnode" src="res"/>
-            <option name="push" value="eq_44100_2_32f.pcm -> /data/audiosuite/eqnode" src="res"/>
-            <option name="push" value="eq_48000_2_16.pcm -> /data/audiosuite/eqnode" src="res"/>
-            <option name="push" value="eq_44100_1_32f_target.pcm -> /data/audiosuite/eqnode" src="res"/>
-            <option name="push" value="eq_44100_2_32f_target.pcm -> /data/audiosuite/eqnode" src="res"/>
+            <option name="push" value="48000_2_16.pcm -> /data/audiosuite/eqnode" src="res"/>
             <option name="push" value="eq_48000_2_16_target.pcm -> /data/audiosuite/eqnode" src="res"/>
             <option name="shell" value="restorecon -R /data/audiosuite/eqnode"/>
             <option name="shell" value="mkdir -p /data/audiosuite/envnode"/>
-            <option name="push" value="env_44100_1_32f.pcm -> /data/audiosuite/envnode" src="res"/>
-            <option name="push" value="env_44100_2_32f.pcm -> /data/audiosuite/envnode" src="res"/>
-            <option name="push" value="env_48000_2_16.pcm -> /data/audiosuite/envnode" src="res"/>
-            <option name="push" value="env_44100_1_32f_target.pcm -> /data/audiosuite/envnode" src="res"/>
-            <option name="push" value="env_44100_2_32f_target.pcm -> /data/audiosuite/envnode" src="res"/>
+            <option name="push" value="48000_2_16.pcm -> /data/audiosuite/envnode" src="res"/>
             <option name="push" value="env_48000_2_16_target.pcm -> /data/audiosuite/envnode" src="res"/>
             <option name="shell" value="restorecon -R /data/audiosuite/envnode"/>
             <option name="shell" value="mkdir -p /data/"/>
-            <option name="push" value="44100_2_32f.pcm -> /data/" src="res"/>
-            <option name="push" value="96000_1_32f.pcm -> /data/" src="res"/>
-            <option name="push" value="base_96000_2_32f.pcm -> /data/" src="res"/>
+            <option name="push" value="mix1_48000_2_32f.pcm -> /data/" src="res"/>
+            <option name="push" value="mix2_48000_2_32f.pcm -> /data/" src="res"/>
+            <option name="push" value="base_mix_48000_32_2.pcm -> /data/" src="res"/>
             <option name="shell" value="restorecon /data/"/>
             <option name="shell" value="mkdir -p /data/"/>
             <option name="push" value="aiss_48000_2_S32LE.pcm -> /data/" src="res"/>
             <option name="shell" value="restorecon /data/"/>
-            <option name="shell" value="mkdir -p /data/audiosuite/processnode/"/>
-            <option name="push" value="input_48000_2_F32LE.pcm -> /data/audiosuite/processnode/" src="res"/>
-            <option name="push" value="input_44100_2_F32LE.pcm -> /data/audiosuite/processnode/" src="res"/>
-            <option name="push" value="input_44100_1_F32LE.pcm -> /data/audiosuite/processnode/" src="res"/>
-            <option name="push" value="target_48000_2_to_48000_2_F32LE.pcm -> /data/audiosuite/processnode/" src="res"/>
-            <option name="push" value="target_44100_2_to_48000_2_F32LE.pcm -> /data/audiosuite/processnode/" src="res"/>
-            <option name="push" value="target_44100_2_to_44100_1_F32LE.pcm -> /data/audiosuite/processnode/" src="res"/>
-            <option name="push" value="target_44100_1_to_44100_2_F32LE.pcm -> /data/audiosuite/processnode/" src="res"/>
-            <option name="push" value="target_48000_2_to_16000_1_F32LE.pcm -> /data/audiosuite/processnode/" src="res"/>
-            <option name="push" value="target_44100_1_to_48000_2_F32LE.pcm -> /data/audiosuite/processnode/" src="res"/>
-            <option name="shell" value="restorecon -R /data/audiosuite/processnode/"/>
             <option name="shell" value="mkdir -p /data/audiosuite/"/>
-            <option name="push" value="soundfield_input_48000_2_F32LE.pcm -> /data/audiosuite/" src="res"/>
-            <option name="push" value="input_44100_1_F32LE.pcm -> /data/audiosuite/" src="res"/>
-            <option name="push" value="soundfield_target_48000_2_to_48000_2_F32LE.pcm -> /data/audiosuite/" src="res"/>
-            <option name="push" value="soundfield_target_44100_1_to_48000_2_F32LE.pcm -> /data/audiosuite/" src="res"/>
+            <option name="push" value="soundfield_input_48000_2_S16LE.pcm -> /data/audiosuite/" src="res"/>
+            <option name="push" value="soundfield_target_48000_2_S16LE.pcm -> /data/audiosuite/" src="res"/>
             <option name="shell" value="restorecon -R /data/audiosuite/"/>
             <option name="shell" value="mkdir -p /data/audiosuite/nr/"/>
-            <option name="push" value="ainr_input_48000_2_F32LE.pcm -> /data/audiosuite/nr/" src="res"/>
-            <option name="push" value="ainr_input_48000_1_F32LE.pcm -> /data/audiosuite/nr/" src="res"/>
-            <option name="push" value="ainr_input_16000_2_F32LE.pcm -> /data/audiosuite/nr/" src="res"/>
-            <option name="push" value="ainr_input_16000_1_F32LE.pcm -> /data/audiosuite/nr/" src="res"/>
-            <option name="push" value="ainr_target_48000_2_to_16000_1_F32LE.pcm -> /data/audiosuite/nr/" src="res"/>
-            <option name="push" value="ainr_target_48000_1_to_16000_1_F32LE.pcm -> /data/audiosuite/nr/" src="res"/>
-            <option name="push" value="ainr_target_16000_2_to_16000_1_F32LE.pcm -> /data/audiosuite/nr/" src="res"/>
-            <option name="push" value="ainr_target_16000_1_to_16000_1_F32LE.pcm -> /data/audiosuite/nr/" src="res"/>
+            <option name="push" value="ainr_input_16000_1_S16LE.pcm -> /data/audiosuite/nr/" src="res"/>
+            <option name="push" value="ainr_target_16000_1_S16LE.pcm -> /data/audiosuite/nr/" src="res"/>
             <option name="shell" value="restorecon -R /data/audiosuite/nr/"/>
             <option name="shell" value="mkdir -p /data/audiosuite/vb/"/>
-            <option name="push" value="vb_input_48000_2_S16LE.pcm -> /data/audiosuite/vb/" src="res"/>
-            <option name="push" value="vb_output_48000_2_S16LE_target01.pcm -> /data/audiosuite/vb/" src="res"/>
-            <option name="push" value="vb_input_96000_1_F32LE.pcm -> /data/audiosuite/vb/" src="res"/>
-            <option name="push" value="vb_output_48000_2_F32LE_target02.pcm -> /data/audiosuite/vb/" src="res"/>
-            <option name="push" value="voice_morph_input.pcm -> /data/audiosuite/vb/" src="res"/>
-            <option name="push" value="voice_morph_pc_output_cd.pcm -> /data/audiosuite/vb/" src="res"/>
-            <option name="push" value="voice_morph_pc_output_clear.pcm -> /data/audiosuite/vb/" src="res"/>
-            <option name="push" value="voice_morph_pc_output_recording_studio.pcm -> /data/audiosuite/vb/" src="res"/>
-            <option name="push" value="voice_morph_pc_output_theatre.pcm -> /data/audiosuite/vb/" src="res"/>
+            <option name="push" value="48000_2_16.pcm -> /data/audiosuite/vb" src="res"/>
+            <option name="push" value="vb_48000_2_S16LE_target.pcm -> /data/audiosuite/vb" src="res"/>
             <option name="shell" value="restorecon -R /data/audiosuite/vb/"/>
         </preparer>
     </target>
@@ -175,15 +141,8 @@
             <option name="push" value="soundfield_target_48000_2_S16LE.pcm -> /data/audiosuite/" src="res"/>
             <option name="shell" value="restorecon -R /data/audiosuite/"/>
             <option name="shell" value="mkdir -p /data/audiosuite/vb/"/>
-            <option name="push" value="vb_input_48000_2_S16LE.pcm -> /data/audiosuite/vb/" src="res"/>
-            <option name="push" value="vb_output_48000_2_S16LE_target01.pcm -> /data/audiosuite/vb/" src="res"/>
-            <option name="push" value="vb_input_96000_1_F32LE.pcm -> /data/audiosuite/vb/" src="res"/>
-            <option name="push" value="vb_output_48000_2_F32LE_target02.pcm -> /data/audiosuite/vb/" src="res"/>
             <option name="push" value="voice_morph_input.pcm -> /data/audiosuite/vb/" src="res"/>
             <option name="push" value="voice_morph_pc_output_cd.pcm -> /data/audiosuite/vb/" src="res"/>
-            <option name="push" value="voice_morph_pc_output_clear.pcm -> /data/audiosuite/vb/" src="res"/>
-            <option name="push" value="voice_morph_pc_output_recording_studio.pcm -> /data/audiosuite/vb/" src="res"/>
-            <option name="push" value="voice_morph_pc_output_theatre.pcm -> /data/audiosuite/vb/" src="res"/>
             <option name="shell" value="restorecon -R /data/audiosuite/vb/"/>
         </preparer>
     </target>

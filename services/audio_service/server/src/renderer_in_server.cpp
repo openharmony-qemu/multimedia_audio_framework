@@ -63,7 +63,6 @@ namespace {
     const int32_t OFFLOAD_INNER_CAP_PREBUF = 3;
     const size_t OFFLOAD_DUAL_RENDER_PREBUF = 3;
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
-    const size_t DEFAULT_CACHE_SIZE = 5;
     constexpr int32_t DEFAULT_SPAN_SIZE = 2;
     constexpr size_t MSEC_PER_SEC = 1000;
     const int32_t DUP_OFFLOAD_LEN = 7000; // 7000 -> 7000ms
@@ -119,8 +118,7 @@ int32_t RendererInServer::ConfigServerBuffer()
     }
     stream_->GetSpanSizePerFrame(spanSizeInFrame_);
     // default to 2, 40ms cache size for write mode
-    engineTotalSizeInFrame_ = spanSizeInFrame_ *
-        (processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_DIRECT ? DEFAULT_SPAN_SIZE : DEFAULT_CACHE_SIZE);
+    engineTotalSizeInFrame_ = spanSizeInFrame_ * DEFAULT_SPAN_SIZE;
 
     stream_->GetByteSizePerFrame(byteSizePerFrame_);
     if (engineTotalSizeInFrame_ == 0 || spanSizeInFrame_ == 0 || engineTotalSizeInFrame_ % spanSizeInFrame_ != 0) {
@@ -1233,6 +1231,7 @@ int32_t RendererInServer::Flush()
         for (auto &capInfo : captureInfos_) {
             if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
                 capInfo.second.dupStream->Flush();
+                renderEmptyCountForInnerCap_ = OFFLOAD_INNER_CAP_PREBUF;
                 InitDupBufferInner(capInfo.first);
             }
         }
@@ -2607,13 +2606,20 @@ bool RendererInServer::IsMovieStream()
 
 int32_t RendererInServer::SetTarget(RenderTarget target, int32_t &ret)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "verify system permission failed");
     if (target == lastTarget_) {
         ret = SUCCESS;
         return ret;
     }
+    if (target == INJECT_TO_VOICE_COMMUNICATION_CAPTURE) {
+        auto tokenId = IPCSkeleton::GetCallingTokenID();
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyPermission(INJECT_PLAYBACK_TO_AUDIO_CAPTURE_PERMISSION, tokenId),
+            ERR_PERMISSION_DENIED, "verify permission failed");
+    }
     if (status_ == I_STATUS_IDLE || status_ == I_STATUS_PAUSED || status_ == I_STATUS_STOPPED) {
         ret = CoreServiceHandler::GetInstance().SetRendererTarget(target, lastTarget_, streamIndex_);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "CoreServiceHandler::SetRendererTarget failed");
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Injector::SetRendererTarget failed");
         lastTarget_ = target;
         ClearInnerCapBufferForInject();
         return ret;

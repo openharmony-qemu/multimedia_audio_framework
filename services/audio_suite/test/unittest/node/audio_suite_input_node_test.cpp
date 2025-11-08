@@ -91,6 +91,9 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeConnect_001, TestSize.Level
     ret = inputNode->DisConnect(inputNode);
     EXPECT_EQ(ret, ERROR);
 
+    ret = inputNode->Init();
+    EXPECT_EQ(ret, SUCCESS);
+
     ret = inputNode->DeInit();
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -185,14 +188,17 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeGetDataFromUser_002, TestSi
     AudioFormat audioFormat = GetTestAudioFormat();
     std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(audioFormat);
     EXPECT_NE(inputNode, nullptr);
+    auto ret = inputNode->Init();
+    ASSERT_EQ(ret, SUCCESS);
     
     std::shared_ptr<SuiteInputNodeRequestDataCallBackTestErr> testCallback =
         std::make_shared<SuiteInputNodeRequestDataCallBackTestErr>();
-    auto ret = inputNode->SetRequestDataCallback(testCallback);
+    ret = inputNode->SetRequestDataCallback(testCallback);
     EXPECT_EQ(ret, SUCCESS);
 
+    inputNode->singleRequestSize_ = inputNode->cachedBuffer_.GetRestSpace() + 1;
     ret = inputNode->GetDataFromUser();
-    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeGetDataFromUser_003, TestSize.Level0)
@@ -200,10 +206,12 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeGetDataFromUser_003, TestSi
     AudioFormat audioFormat = GetTestAudioFormat();
     std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(audioFormat);
     EXPECT_NE(inputNode, nullptr);
+    auto ret = inputNode->Init();
+    ASSERT_EQ(ret, SUCCESS);
     
     std::shared_ptr<SuiteInputNodeRequestDataCallBackTest> testCallback =
         std::make_shared<SuiteInputNodeRequestDataCallBackTest>();
-    auto ret = inputNode->SetRequestDataCallback(testCallback);
+    ret = inputNode->SetRequestDataCallback(testCallback);
     EXPECT_EQ(ret, SUCCESS);
 
     ret = inputNode->GetDataFromUser();
@@ -227,18 +235,6 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeGetDataFromUser_004, TestSi
     EXPECT_EQ(ret, SUCCESS);
 }
 
-HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeGetFrameSize_001, TestSize.Level0)
-{
-    AudioFormat audioFormat = GetTestAudioFormat();
-    audioFormat.audioChannelInfo.numChannels = 2;
-    audioFormat.format = AudioSampleFormat::SAMPLE_S16LE;
-    std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(audioFormat);
-    EXPECT_NE(inputNode, nullptr);
-    uint32_t size = audioFormat.rate *20 * audioFormat.audioChannelInfo.numChannels * 2 / 1000;
-    uint32_t ret = inputNode->GetFrameSize();
-    EXPECT_EQ(ret, size);
-}
-
 HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeGeneratePushBuffer_001, TestSize.Level0)
 {
     AudioFormat audioFormat = GetTestAudioFormat();
@@ -249,21 +245,7 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeGeneratePushBuffer_001, Tes
     std::vector<uint8_t> data(10);
     inputNode->cachedBuffer_.PushData(data.data(), 10);
     auto ret = inputNode->GeneratePushBuffer();
-    EXPECT_EQ(ret, 0);
-}
-
-HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeGeneratePushBuffer_002, TestSize.Level0)
-{
-    AudioFormat audioFormat = GetTestAudioFormat();
-    audioFormat.rate = AudioSamplingRate::SAMPLE_RATE_11025;
-    std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(audioFormat);
-    EXPECT_NE(inputNode, nullptr);
-    inputNode->Init();
-    inputNode->cachedBuffer_.ResizeBuffer(10);
-    std::vector<uint8_t> data(10);
-    inputNode->cachedBuffer_.PushData(data.data(), 10);
-    auto ret = inputNode->GeneratePushBuffer();
-    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(ret, ERROR);
 }
 
 HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeDoProcess_001, TestSize.Level0)
@@ -283,21 +265,4 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeDoProcess_001, TestSize.Lev
     EXPECT_EQ(ret, SUCCESS);
 }
 
-HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeGetCacheSizeByUserDataSize_001, TestSize.Level0)
-{
-    AudioFormat audioFormat = GetTestAudioFormat();
-    std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(audioFormat);
-    EXPECT_NE(inputNode, nullptr);
-
-    uint32_t cacheSize = 1;
-
-    auto ret = inputNode->GetCacheSizeByUserDataSize(cacheSize);
-    EXPECT_EQ(ret, cacheSize);
-
-    audioFormat.rate = AudioSamplingRate::SAMPLE_RATE_11025;
-    uint32_t expect = cacheSize * 16000 * 4 / 11025 / 2;
-    inputNode->SetAudioNodeFormat(audioFormat);
-    ret = inputNode->GetCacheSizeByUserDataSize(cacheSize);
-    EXPECT_EQ(ret, expect);
-}
 }

@@ -977,6 +977,28 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineConnectNodesTest_002
     EXPECT_EQ(result, SUCCESS);
 }
 
+HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineConnectNodesTest_003, TestSize.Level0)
+{
+    AudioSuitePipeline audioSuitePipeline(PIPELINE_EDIT_MODE);
+    audioSuitePipeline.Init();
+    EXPECT_EQ(audioSuitePipeline.IsInit(), true);
+    sleep(1);
+    uint32_t srcNodeId = 21;
+    uint32_t destNodeId = 22;
+
+    audioSuitePipeline.nodeMap_[21] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_AUDIO_MIXER);
+    audioSuitePipeline.nodeMap_[22] = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_OUTPUT);
+
+    audioSuitePipeline.pipelineState_ = PIPELINE_STOPPED;
+    int32_t result = audioSuitePipeline.ConnectNodes(srcNodeId, destNodeId);
+    EXPECT_EQ(result, SUCCESS);
+
+    auto srcNode = audioSuitePipeline.nodeMap_[srcNodeId];
+    auto destNode = audioSuitePipeline.nodeMap_[destNodeId];
+
+    EXPECT_EQ(destNode->GetAudioNodeFormat().rate, srcNode->GetAudioNodeFormat().rate);
+}
+
 HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineDisConnectNodesTest, TestSize.Level0)
 {
     AudioSuitePipeline audioSuitePipeline(PIPELINE_EDIT_MODE);

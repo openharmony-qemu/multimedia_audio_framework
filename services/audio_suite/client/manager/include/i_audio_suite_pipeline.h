@@ -19,6 +19,7 @@
 #include <memory>
 #include <cstdint>
 #include "audio_suite_node.h"
+#include "audio_suite_capabilities.h"
 
 namespace OHOS {
 namespace AudioStandard {

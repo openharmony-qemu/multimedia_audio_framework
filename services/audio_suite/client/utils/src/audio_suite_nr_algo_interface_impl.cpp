@@ -18,6 +18,8 @@
 #endif
 
 #include <dlfcn.h>
+#include <cstring>
+#include "securec.h"
 #include "audio_errors.h"
 #include "audio_suite_log.h"
 #include "audio_suite_nr_algo_interface_impl.h"
@@ -25,17 +27,14 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
-namespace {
-const std::string ALGO_PATH_BASE = "/system/lib64/";
-const std::string ALGO_SO_NAME = "libimedia_vqe_ainr.z.so";
-}  // namespace
 
-AudioSuiteNrAlgoInterfaceImpl::AudioSuiteNrAlgoInterfaceImpl()
+AudioSuiteNrAlgoInterfaceImpl::AudioSuiteNrAlgoInterfaceImpl(NodeCapability &nc)
     : algoDefaultConfig_{AUDIO_AINR_PCM_SAMPLERATE_16K,
           AUDIO_AINR_PCM_CHANNEL_NUM,
           AUDIO_AINR_PCM_16K_FRAME_LEN,
           AUDIO_AINR_PCM_16_BIT}
 {
+    nodeCapability = nc;
     AUDIO_INFO_LOG("AudioSuiteNrAlgoInterfaceImpl::AudioSuiteNrAlgoInterfaceImpl()");
 }
 
@@ -50,7 +49,7 @@ int32_t AudioSuiteNrAlgoInterfaceImpl::Init()
     AUDIO_INFO_LOG("start init ainr algorithm");
 
     // load algorithm so
-    std::string soPath = ALGO_PATH_BASE + ALGO_SO_NAME;
+    std::string soPath = nodeCapability.soPath + nodeCapability.soName;
     libHandle_ = dlopen(soPath.c_str(), RTLD_LAZY | RTLD_GLOBAL);
     CHECK_AND_RETURN_RET_LOG(libHandle_ != nullptr, ERROR, "dlopen algo: %{private}s so fail, error: %{public}s",
         soPath.c_str(), dlerror());

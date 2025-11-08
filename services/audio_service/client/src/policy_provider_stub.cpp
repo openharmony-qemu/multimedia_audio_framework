@@ -151,11 +151,5 @@ int32_t PolicyProviderWrapper::ClearAudioFocusBySessionID(int32_t sessionID)
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
     return policyWorker_->ClearAudioFocusBySessionID(sessionID);
 }
-
-int32_t PolicyProviderWrapper::CaptureConcurrentCheck(const uint32_t sessionID)
-{
-    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
-    return policyWorker_->CaptureConcurrentCheck(sessionID);
-}
 } // namespace AudioStandard
 } // namespace OHOS

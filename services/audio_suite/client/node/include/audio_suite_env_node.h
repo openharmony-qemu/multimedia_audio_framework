@@ -28,22 +28,19 @@ public:
     ~AudioSuiteEnvNode();
     int32_t Init() override;
     int32_t DeInit() override;
-    bool Reset() override;
+    
     int32_t SetOptions(std::string name, std::string value) override;
     int32_t GetOptions(std::string name, std::string &value) override;
-    AudioSuitePcmBuffer outPcmBuffer_;
-    AudioSuitePcmBuffer tmpPcmBuffer_;
 
 protected:
     AudioSuitePcmBuffer *SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs) override;
 
 private:
+    AudioSuitePcmBuffer outPcmBuffer_;
     std::shared_ptr<AudioSuiteEnvAlgoInterfaceImpl> envAlgoInterfaceImpl_;
+    std::vector<uint8_t *> tmpin_{nullptr};
+    std::vector<uint8_t *> tmpout_{nullptr};
     bool isInit_ = false;
-    std::vector<uint8_t> inputDataBuffer_;
-    std::vector<uint8_t> outputDataBuffer_;
-    std::vector<uint8_t *> tmpin_;
-    std::vector<uint8_t *> tmpout_;
 };
 
 }  // namespace AudioSuite

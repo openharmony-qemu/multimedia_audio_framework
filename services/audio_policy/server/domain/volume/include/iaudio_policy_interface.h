@@ -99,8 +99,9 @@ public:
         StreamUsage streamUsage = STREAM_USAGE_UNKNOWN, const DeviceType &deviceType = DEVICE_TYPE_NONE,
         std::string networkId = LOCAL_NETWORK_ID) = 0;
 
-    virtual int32_t SetInnerStreamMute(AudioStreamType streamType, bool mute,
-        StreamUsage streamUsage = STREAM_USAGE_UNKNOWN) = 0;
+    virtual void SetDeviceNoMuteForRinger(std::shared_ptr<AudioDeviceDescriptor> device) = 0;
+
+    virtual void ClearDeviceNoMuteForRinger() = 0;
 
     virtual int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute) = 0;
 
@@ -289,6 +290,7 @@ public:
     virtual void SetMaxVolumeForDpBoardcast() = 0;
     virtual void HandleCastingConnection() = 0;
     virtual void HandleCastingDisconnection() = 0;
+    virtual bool IsDPCastingConnect() = 0;
     virtual int32_t SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree) = 0;
     virtual int32_t GetSystemVolumeDegree(AudioStreamType streamType, bool checkMuteState = true) = 0;
     virtual int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType) = 0;

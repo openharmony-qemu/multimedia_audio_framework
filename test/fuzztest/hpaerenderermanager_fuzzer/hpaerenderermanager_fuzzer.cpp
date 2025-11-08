@@ -314,28 +314,6 @@ void HpaeRendererManagerSetMuteFuzzTest()
     rendererManager->DeInit();
 }
 
-void HpaeRendererManagerProcessFuzzTest()
-{
-    HpaeSinkInfo sinkInfo;
-    InitHpaeSinkInfo(sinkInfo);
-    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    rendererManager->Init();
-    rendererManager->Process();
-    WaitForMsgProcessing(rendererManager);
-
-    HpaeStreamInfo streamInfo;
-    InitRenderStreamInfo(streamInfo);
-    rendererManager->CreateStream(streamInfo);
-    WaitForMsgProcessing(rendererManager);
-    rendererManager->HandleMsg();
-    WaitForMsgProcessing(rendererManager);
-    rendererManager->IsMsgProcessing();
-    WaitForMsgProcessing(rendererManager);
-    rendererManager->DeactivateThread();
-    WaitForMsgProcessing(rendererManager);
-    rendererManager->DeInit();
-}
-
 void HpaeRendererManagerSetClientVolumeFuzzTest()
 {
     HpaeSinkInfo sinkInfo;
@@ -401,7 +379,7 @@ void IRendererManagerReloadFuzzTest()
     rendererManager->CreateStream(streamInfo);
     WaitForMsgProcessing(rendererManager);
     HpaeSinkInputInfo sinkInputInfo;
-    uint32_t sessionId = GetData<uint32_t>();
+    uint32_t sessionId = GetData<bool>() ? streamInfo.sessionId: GetData<uint32_t>();
     rendererManager->GetSinkInputInfo(sessionId, sinkInputInfo);
 
     rendererManager->ReloadRenderManager(sinkInfo, true);
@@ -434,7 +412,7 @@ void IRendererManagerCreateDestoryStreamFuzzTest()
     HpaeStreamInfo streamInfo;
     InitRenderStreamInfo(streamInfo);
 
-    uint32_t sessionId = GetData<uint32_t>();
+    uint32_t sessionId = GetData<bool>() ? streamInfo.sessionId: GetData<uint32_t>();
     hpaeRendererManager->DestroyStream(sessionId);
     WaitForMsgProcessing(hpaeRendererManager);
     HpaeSinkInputInfo sinkInputInfo;
@@ -461,9 +439,10 @@ void IRendererManagerStartPuaseStreamFuzzTest()
     hpaeRendererManager->IsInit();
     HpaeStreamInfo streamInfo;
     HpaeSinkInputInfo sinkInputInfo;
+    InitRenderStreamInfo(streamInfo);
+    hpaeRendererManager->CreateStream(streamInfo);
     std::shared_ptr<WriteFixedDataCb> writeIncDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
-
-    uint32_t sessionId = GetData<uint32_t>();
+    uint32_t sessionId = GetData<bool>() ? streamInfo.sessionId: GetData<uint32_t>();
     hpaeRendererManager->RegisterWriteCallback(sessionId, writeIncDataCb);
     hpaeRendererManager->Start(sessionId);
 
@@ -497,8 +476,9 @@ void UpdateCollaborativeStateFuzzTest()
 
     HpaeStreamInfo streamInfo;
     InitRenderStreamInfo(streamInfo);
+    hpaeRendererManager->CreateStream(streamInfo);
     std::shared_ptr<WriteFixedDataCb> writeIncDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
-    uint32_t sessionId = GetData<uint32_t>();
+    uint32_t sessionId = GetData<bool>() ? streamInfo.sessionId: GetData<uint32_t>();
     hpaeRendererManager->RegisterWriteCallback(sessionId, writeIncDataCb);
 
     hpaeRendererManager->Start(sessionId);
@@ -671,7 +651,6 @@ TestFuncs g_testFuncs[] = {
     HpaeRendererManagerMoveAllStreamFuzzTest,
     HpaeRendererManagerSuspendStreamManagerFuzzTest,
     HpaeRendererManagerSetMuteFuzzTest,
-    HpaeRendererManagerProcessFuzzTest,
     HpaeRendererManagerSetClientVolumeFuzzTest,
     HpaeRendererManagerSetRateFuzzTest,
     HpaeRendererManagerSetAudioEffectModeFuzzTest,

@@ -1043,6 +1043,9 @@ int32_t HpaeCapturerManager::AddCaptureInjector(const std::shared_ptr<OutputNode
         auto sceneCluster = SafeGetMap(sceneClusterMap_, sceneType);
         CHECK_AND_RETURN_LOG(sceneCluster != nullptr, "sourceType[%{public}d] cluster not exit", sourceType);
         sceneCluster->ConnectInjector(sinkOutputNode);
+        auto inputCluster = SafeGetMap(sourceInputClusterMap_, mainMicType_);
+        CHECK_AND_RETURN_LOG(inputCluster != nullptr, "mainMic is nullptr, set inject state failed");
+        inputCluster->SetInjectState(true);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -1058,6 +1061,9 @@ int32_t HpaeCapturerManager::RemoveCaptureInjector(const std::shared_ptr<OutputN
         auto sceneCluster = SafeGetMap(sceneClusterMap_, sceneType);
         CHECK_AND_RETURN_LOG(sceneCluster != nullptr, "sourceType[%{public}d] cluster not exit", sourceType);
         sceneCluster->DisConnectInjector(sinkOutputNode);
+        auto inputCluster = SafeGetMap(sourceInputClusterMap_, mainMicType_);
+        CHECK_AND_RETURN_LOG(inputCluster != nullptr, "mainMic is nullptr, remove inject state failed");
+        inputCluster->SetInjectState(false);
     };
     SendRequest(request, __func__);
     return SUCCESS;

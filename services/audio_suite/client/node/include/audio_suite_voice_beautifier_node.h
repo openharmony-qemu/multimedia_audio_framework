@@ -30,7 +30,7 @@ class AudioSuiteVoiceBeautifierNode : public AudioSuiteProcessNode {
 public:
     explicit AudioSuiteVoiceBeautifierNode();
     ~AudioSuiteVoiceBeautifierNode();
-    bool Reset() override;
+
     int32_t Init() override;
     int32_t DeInit() override;
     int32_t SetOptions(std::string name, std::string value) override;
@@ -40,11 +40,10 @@ protected:
     AudioSuitePcmBuffer *SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs) override;
 
 private:
-    AudioSuitePcmBuffer pcmBufferOutput_;
-    AudioSuitePcmBuffer tmpPcmBuffer_;
+    AudioSuitePcmBuffer outPcmBuffer_;
     std::shared_ptr<AudioSuiteAlgoInterface> algoInterface_;
-    std::vector<uint8_t> algoInputBuffer_;
-    std::vector<uint8_t> algoOutputBuffer_;
+    std::vector<uint8_t *> vmAlgoInputs_{nullptr};
+    std::vector<uint8_t *> vmAlgoOutputs_{nullptr};
 };
 
 }  // namespace AudioSuite

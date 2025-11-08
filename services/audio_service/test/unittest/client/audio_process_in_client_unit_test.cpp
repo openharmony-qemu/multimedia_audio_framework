@@ -2977,6 +2977,9 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_WaitIfBufferEmpty
 
     auto ret = ptrAudioProcessInClientInner->WaitIfBufferEmpty(bufDesc);
     EXPECT_EQ(ret, false);
+
+    ret = ptrAudioProcessInClientInner->WaitIfBufferEmpty(bufDesc);
+    EXPECT_EQ(ret, false);
 }
 
 /**

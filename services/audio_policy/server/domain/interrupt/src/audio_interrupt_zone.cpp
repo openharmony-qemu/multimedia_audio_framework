@@ -136,6 +136,26 @@ void AudioInterruptZoneManager::ForceStopAudioFocusInZone(int32_t zoneId, const 
     service_->sessionService_.RemoveStreamInfo(interrupt.pid, interrupt.streamId);
 }
 
+void AudioInterruptZoneManager::SendInterruptEventForMigration(
+    const std::pair<AudioInterrupt, AudioFocuState> &audioInterrupt, const int32_t toZoneId)
+{
+    CHECK_AND_RETURN_LOG(service_ != nullptr, "interrupt service is nullptr");
+    auto &tempMap = service_->zonesMap_;
+    CHECK_AND_RETURN_LOG(tempMap.find(toZoneId) != tempMap.end() && tempMap[toZoneId] != nullptr,
+        "zone %{public}d not exist", toZoneId);
+
+    auto &toZoneFocusInfoList = tempMap[toZoneId]->audioFocusInfoList;
+    auto isPresent = [audioInterrupt](const std::pair<AudioInterrupt, AudioFocuState> &item) {
+        return item.first.streamId == audioInterrupt.first.streamId &&
+            item.first.deviceTag == audioInterrupt.first.deviceTag;
+    };
+    auto itNewFocus = std::find_if(toZoneFocusInfoList.begin(), toZoneFocusInfoList.end(), isPresent);
+    if (itNewFocus != toZoneFocusInfoList.end() && audioInterrupt.second != itNewFocus->second) {
+        bool removeFocusInfo = false;
+        service_->SendInterruptEvent(audioInterrupt.second, itNewFocus->second, itNewFocus, removeFocusInfo);
+    }
+}
+
 int32_t AudioInterruptZoneManager::MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func)
 {
     CHECK_AND_RETURN_RET_LOG(service_ != nullptr, ERR_INVALID_PARAM, "interrupt service is nullptr");
@@ -156,6 +176,7 @@ int32_t AudioInterruptZoneManager::MigrateAudioInterruptZone(const int32_t zoneI
         }
         if (itFocus->second == ACTIVE || itFocus->second == DUCK) {
             service_->ActivateAudioInterruptInternal(toZoneId, itFocus->first, false, updateScene);
+            SendInterruptEventForMigration(*itFocus, toZoneId);
         } else {
             ForceStopAudioFocusInZone(zoneId, itFocus->first);
         }
@@ -281,6 +302,8 @@ AudioFocusIterator AudioInterruptZoneManager::QueryAudioFocusFromZone(int32_t zo
 {
     AudioFocusIterator deviceList;
     CHECK_AND_RETURN_RET_LOG(service_ != nullptr, deviceList, "service is nullptr");
+    CHECK_AND_RETURN_RET_LOG(service_->zonesMap_.find(zoneId) != service_->zonesMap_.end() &&
+        service_->zonesMap_[zoneId] != nullptr, deviceList, "zone %{public}d not exist", zoneId);
     auto &focusInfoList = service_->zonesMap_[zoneId]->audioFocusInfoList;
     for (auto it = focusInfoList.begin(); it != focusInfoList.end(); it++) {
         CHECK_AND_CONTINUE(it->first.deviceTag == deviceTag);
@@ -296,6 +319,8 @@ void AudioInterruptZoneManager::RemoveAudioZoneInterrupts(int32_t zoneId, const 
         service_->sessionService_.RemoveStreamInfo(it->first.pid, it->first.streamId);
         AUDIO_DEBUG_LOG("remove interrupt %{public}d from zone %{public}d",
             it->first.streamId, zoneId);
+        CHECK_AND_CONTINUE(service_->zonesMap_.find(zoneId) != service_->zonesMap_.end() &&
+            service_->zonesMap_[zoneId] != nullptr);
         service_->zonesMap_[zoneId]->audioFocusInfoList.erase(it);
     }
 }
@@ -303,6 +328,8 @@ void AudioInterruptZoneManager::RemoveAudioZoneInterrupts(int32_t zoneId, const 
 void AudioInterruptZoneManager::TryActiveAudioFocusForZone(int32_t zoneId, AudioFocusList &activeFocusList)
 {
     CHECK_AND_RETURN_LOG(service_ != nullptr, "service is nullptr");
+    CHECK_AND_RETURN_LOG(service_->zonesMap_.find(zoneId) != service_->zonesMap_.end() &&
+        service_->zonesMap_[zoneId] != nullptr, "zone %{public}d not exist", zoneId);
     AUDIO_DEBUG_LOG("focus list size is %{public}zu for zone %{public}d before active",
         service_->zonesMap_[zoneId]->audioFocusInfoList.size(), zoneId);
     if (activeFocusList.size() > 0) {
@@ -321,6 +348,8 @@ void AudioInterruptZoneManager::TryActiveAudioFocusForZone(int32_t zoneId, Audio
 void AudioInterruptZoneManager::TryResumeAudioFocusForZone(int32_t zoneId)
 {
     CHECK_AND_RETURN_LOG(service_ != nullptr, "service is nullptr");
+    CHECK_AND_RETURN_LOG(service_->zonesMap_.find(zoneId) != service_->zonesMap_.end() &&
+        service_->zonesMap_[zoneId] != nullptr, "zone %{public}d not exist", zoneId);
     AUDIO_DEBUG_LOG("try resume audio focus list for zone %{public}d", zoneId);
     auto &focusList = service_->zonesMap_[zoneId]->audioFocusInfoList;
     CHECK_AND_RETURN_LOG(focusList.size() > 0, "focus list is empty");

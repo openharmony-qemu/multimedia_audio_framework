@@ -66,7 +66,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    int32_t SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t uid = 0) const;
+    int32_t SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t uid = 0);
 
     /**
      * @brief Set the stream volume.
@@ -78,7 +78,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      * @since 16
      */
-    int32_t SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volume, DeviceType deviceType) const;
+    int32_t SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volume, DeviceType deviceType);
 
    /**
      * @brief Set the app volume.
@@ -290,7 +290,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    int32_t SetMute(AudioVolumeType volumeType, bool mute, const DeviceType &deviceType = DEVICE_TYPE_NONE) const;
+    int32_t SetMute(AudioVolumeType volumeType, bool mute, const DeviceType &deviceType = DEVICE_TYPE_NONE);
 
     /**
      * @brief is stream mute.
@@ -1639,6 +1639,7 @@ private:
     bool hasSystemPermission_ = false;
     std::unordered_map<int32_t, std::shared_ptr<WorkgroupPrioRecorder>> workgroupPrioRecorderMap_;
     std::mutex workgroupPrioRecorderMutex_;
+    std::mutex volumeMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

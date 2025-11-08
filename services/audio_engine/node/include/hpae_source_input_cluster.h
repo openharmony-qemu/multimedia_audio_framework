@@ -50,6 +50,7 @@ public:
     void SetSourceInputNodeType(HpaeSourceInputNodeType type);
     void UpdateAppsUidAndSessionId(std::vector<int32_t> &appsUid, std::vector<int32_t> &sessionsId);
     uint32_t GetCaptureId();
+    void SetInjectState(bool isInjecting);
 
     // for test
     uint32_t GetConverterNodeCount();

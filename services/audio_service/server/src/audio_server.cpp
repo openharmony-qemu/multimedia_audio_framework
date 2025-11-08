@@ -157,6 +157,7 @@ static constexpr unsigned int WAIT_AUDIO_POLICY_READY_TIMEOUT_SECONDS = 5;
 static constexpr int32_t MAX_WAIT_IN_SERVER_COUNT = 5;
 static constexpr int32_t RESTORE_SESSION_TRY_COUNT = 10;
 static constexpr uint32_t  RESTORE_SESSION_RETRY_WAIT_TIME_IN_MS = 50000;
+static constexpr unsigned int CREATE_TIMEOUT_IN_SECOND = 9;
 
 static const std::vector<SourceType> AUDIO_SUPPORTED_SOURCE_TYPES = {
     SOURCE_TYPE_INVALID,
@@ -192,16 +193,6 @@ static const std::vector<SourceType> AUDIO_FAST_STREAM_SUPPORTED_SOURCE_TYPES = 
 static bool IsVoiceModemCommunication(StreamUsage streamUsage, int32_t callingUid)
 {
     return streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION && callingUid == UID_FOUNDATION_SA;
-}
-
-static std::string GetField(const std::string &src, const char* field, const char sep)
-{
-    auto str = std::string(field) + '=';
-    auto pos = src.find(str);
-    CHECK_AND_RETURN_RET(pos != std::string::npos, "");
-    pos += str.length();
-    auto end = src.find(sep, pos);
-    return end == std::string::npos ? src.substr(pos) : src.substr(pos, end - pos);
 }
 
 static inline std::shared_ptr<IAudioRenderSink> GetSinkByProp(HdiIdType type, const std::string &info =
@@ -1844,6 +1835,9 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
     std::shared_ptr<PipeInfoGuard> &pipeInfoGuard)
 {
     CHECK_AND_RETURN_RET_LOG(pipeInfoGuard != nullptr, nullptr, "PipeInfoGuard is nullptr");
+    AudioXCollie audioXCollie(
+        "AudioServer::CreateAudioStream", CREATE_TIMEOUT_IN_SECOND, nullptr, nullptr,
+        AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     int32_t appUid = config.appInfo.appUid;
     if (callingUid != MEDIA_SERVICE_UID) {
         appUid = callingUid;
@@ -2964,6 +2958,7 @@ int32_t AudioServer::CreateHdiSinkPort(const std::string &deviceClass, const std
 
     renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, idInfo, true);
     CHECK_AND_RETURN_RET(renderId != HDI_INVALID_ID, SUCCESS);
+    CHECK_AND_RETURN_RET(deviceClass != "Virtual_Injector", SUCCESS);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId, true);
     if (sink == nullptr) {
         HdiAdapterManager::GetInstance().ReleaseId(renderId);
@@ -3199,6 +3194,7 @@ int32_t AudioServer::GetPrivacyTypeAudioServer(uint32_t sessionId, int32_t &priv
 int32_t AudioServer::AddCaptureInjector(uint32_t sinkPortidx, std::string &rate, std::string &format,
     std::string &channels, std::string &bufferSize)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_SYSTEM_PERMISSION_DENIED, "not audio calling!");
     int32_t ret = ERROR; //if is not low latency, should return error
 #ifdef SUPPORT_LOW_LATENCY
     auto ptr = AudioService::GetInstance()->GetEndPointByType(AudioEndpoint::EndpointType::TYPE_VOIP_MMAP);
@@ -3216,6 +3212,7 @@ int32_t AudioServer::AddCaptureInjector(uint32_t sinkPortidx, std::string &rate,
 
 int32_t AudioServer::RemoveCaptureInjector(uint32_t sinkPortidx)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_SYSTEM_PERMISSION_DENIED, "not audio calling!");
     int32_t ret = ERROR; //if is not low latency, should return error
 #ifdef SUPPORT_LOW_LATENCY
     auto ptr = AudioService::GetInstance()->GetEndPointByType(AudioEndpoint::EndpointType::TYPE_VOIP_MMAP);

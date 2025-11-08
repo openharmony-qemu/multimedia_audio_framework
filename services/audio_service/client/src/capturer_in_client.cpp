@@ -931,9 +931,9 @@ bool CapturerInClientInner::ReadCallbackFunc()
         return false;
     }
 
-    std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
     // call read here.
     int32_t result = Read(*temp.buffer, temp.bufLength, true); // blocking read
+    std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
     if (result < 0 || result != static_cast<int32_t>(cbBufferSize_)) {
         AUDIO_WARNING_LOG("Call read error, ret:%{public}d, cbBufferSize_:%{public}zu", result, cbBufferSize_);
     }

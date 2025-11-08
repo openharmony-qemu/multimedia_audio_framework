@@ -1385,6 +1385,7 @@ void AudioPolicyServerHandler::HandleRendererDeviceChangeEvent(const AppExecFwk:
     std::shared_ptr<RendererDeviceChangeEvent> eventContextObj = event->GetSharedObject<RendererDeviceChangeEvent>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     const auto &[pid, sessionId, outputDeviceInfo, reason] = *eventContextObj;
+    bool cbFlag = false;
     Trace trace("AudioPolicyServerHandler::HandleRendererDeviceChangeEvent pid:" + std::to_string(pid));
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     if (audioPolicyClientProxyAPSCbsMap_.count(pid) == 0) {
@@ -1399,8 +1400,10 @@ void AudioPolicyServerHandler::HandleRendererDeviceChangeEvent(const AppExecFwk:
     if (clientCallbacksMap_.count(pid) > 0 &&
         clientCallbacksMap_[pid].count(CALLBACK_DEVICE_CHANGE_WITH_INFO) > 0 &&
         clientCallbacksMap_[pid][CALLBACK_DEVICE_CHANGE_WITH_INFO]) {
+        cbFlag = true;
         capturerStateChangeCb->OnRendererDeviceChange(sessionId, outputDeviceInfo, reason);
     }
+    AUDIO_INFO_LOG("deviceType:%{public}d pid:%{public}d cbFlag:%{public}d", outputDeviceInfo.deviceType_, pid, cbFlag);
 }
 
 void AudioPolicyServerHandler::HandleCapturerCreateEvent(const AppExecFwk::InnerEvent::Pointer &event)
@@ -1637,6 +1640,7 @@ void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
     const AppExecFwk::InnerEvent::Pointer &event)
 {
     HandleOtherServiceEvent(eventId, event);
+    HandleOtherServiceSecondEvent(eventId, event);
     switch (eventId) {
         case EventAudioServerCmd::AUDIO_DEVICE_CHANGE:
             HandleDeviceChangedCallback(event);
@@ -1727,6 +1731,18 @@ void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
             break;
         case EventAudioServerCmd::VOLUME_DEGREE_EVENT:
             HandleVolumeDegreeEvent(event);
+            break;
+        default:
+            break;
+    }
+}
+
+void AudioPolicyServerHandler::HandleOtherServiceSecondEvent(const uint32_t &eventId,
+    const AppExecFwk::InnerEvent::Pointer &event)
+{
+    switch (eventId) {
+        case EventAudioServerCmd::COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE:
+            HandleCollaborationEnabledChangeForCurrentDeviceEvent(event);
             break;
         default:
             break;
@@ -1904,6 +1920,38 @@ int32_t AudioPolicyServerHandler::SetCallbackStreamUsageInfo(const std::set<Stre
         clientCbStreamUsageMap_[clientId] = streamUsages;
     }
     return AUDIO_OK;
+}
+
+void AudioPolicyServerHandler::SendCollaborationEnabledChangeForCurrentDeviceEvent(const bool &enabled)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    eventContextObj->collaborationEnabled = enabled;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(
+        EventAudioServerCmd::COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE, eventContextObj));
+    CHECK_AND_RETURN_LOG(ret, "Send COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE event failed");
+}
+
+void AudioPolicyServerHandler::HandleCollaborationEnabledChangeForCurrentDeviceEvent(
+    const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(handleMapMutex_);
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        std::shared_ptr<AudioPolicyClientHolder> collaborationEnabledChangeForCurrentDeviceCb = it->second;
+        if (collaborationEnabledChangeForCurrentDeviceCb == nullptr) {
+            AUDIO_ERR_LOG("collaborationEnabledChangeForCurrentDeviceCb : nullptr for client : %{public}d", it->first);
+            continue;
+        }
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE]) {
+            collaborationEnabledChangeForCurrentDeviceCb->OnCollaborationEnabledChangeForCurrentDevice(
+                eventContextObj->collaborationEnabled);
+        }
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

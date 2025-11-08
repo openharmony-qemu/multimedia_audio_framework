@@ -604,21 +604,37 @@ export struct AudioEdit {
                         }
                         //新增节点
                         this.voiceBeautifierIdMap.set(this.pitchSong, VBId);
-                        let resultPcmBuffer = audioNapi.startVBEffect(this.pitchSong, this.voiceBeautifierNumMap.get(this.pitchSong), VBId);
-                        this.playList.set('resultPcmBuffer', {
+                        let ret = audioNapi.startVBEffect(this.pitchSong, this.voiceBeautifierNumMap.get(this.pitchSong), VBId);
+                        if (ret !== 0) {
+                          Logger.error(TAG, `addVoiceBeautify error number is ${ret}`);
+                          this.getUIContext().showAlertDialog({
+                            message: '添加美化节点失败\n请单击弹窗外任意处关闭弹窗',
+                            autoCancel: true
+                          })
+                        } else {
+                          this.playList.set('resultPcmBuffer', {
                             uri: 'resultPcmBuffer',
                             nodeId: VBId
-                        });
+                          });
+                        }
                         this.insertEffectLabel(VBId, NodeType.VB);
                         this.voiceBeautifierShow = false;
                         this.forceRenderByEffectBtn();
                     } else {
                         //修改节点
                         let resultPcmBuffer = audioNapi.resetVBEffect(this.pitchSong, this.voiceBeautifierNumMap.get(this.pitchSong), voiceBeautifierId);
-                        this.playList.set('resultPcmBuffer', {
+                        if (ret !== 0) {
+                          Logger.error(TAG, `resetVoiceBeautify error number is ${ret}`);
+                          this.getUIContext().showAlertDialog({
+                            message: '修改美化节点失败\n请单击弹窗外任意处关闭弹窗',
+                            autoCancel: true
+                          })
+                        } else {
+                          this.playList.set('resultPcmBuffer', {
                             uri: 'resultPcmBuffer',
                             nodeId: voiceBeautifierId
-                        });
+                          });
+                        }
                         this.voiceBeautifierShow = false;
                         if (this.voiceBeautifierNumMap.get(this.pitchSong) == 0) {
                             this.deleteEffectLabel(NodeType.VB);

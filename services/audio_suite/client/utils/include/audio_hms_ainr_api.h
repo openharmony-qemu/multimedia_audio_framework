@@ -95,6 +95,15 @@ typedef struct {
     signed short sReserved[4];                     // 保留位; 范围:{0}; 默认值:0; 错误码:0;
 } AudioAinrStruSysConfig, *AudioAinrPstSysConfig;
 
+typedef struct {
+    bool supportCurrdevice;
+    bool supportRealtimeProc;
+    signed short sampleRate;
+    signed short bitdepth;
+    signed short channelNum;
+    signed short frameLenth;
+} AudioAinrSpecStruct, *AudioAinrSpecPointer;
+
 /* pcm数据采样率 */
 #define AUDIO_AINR_PCM_SAMPLERATE_16K   (1)  // 算法支持采样率16000
 

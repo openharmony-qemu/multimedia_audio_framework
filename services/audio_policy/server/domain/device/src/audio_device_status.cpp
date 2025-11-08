@@ -62,16 +62,6 @@ static std::string GetEncryptAddr(const std::string &addr)
     return out;
 }
 
-static std::string GetField(const std::string &src, const char* field, const char sep)
-{
-    auto str = std::string(field) + '=';
-    auto pos = src.find(str);
-    CHECK_AND_RETURN_RET(pos != std::string::npos, "");
-    pos += str.length();
-    auto end = src.find(sep, pos);
-    return end == std::string::npos ? src.substr(pos) : src.substr(pos, end - pos);
-}
-
 static bool CheckNeedExclude(const AudioDeviceDescriptor &desc, bool isConnected)
 {
     bool exclude{false};
@@ -1390,6 +1380,22 @@ void AudioDeviceStatus::DeactivateNearlinkDevice(AudioDeviceDescriptor &desc)
     }
 }
 
+#ifdef BLUETOOTH_ENABLE
+void AudioDeviceStatus::ClearActiveHfpDevice(AudioDeviceDescriptor &desc,
+    const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason)
+{
+    if (desc.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
+        return;
+    }
+    if ((updateCommand == CATEGORY_UPDATE && desc.deviceCategory_ == BT_UNWEAR_HEADPHONE) ||
+        (updateCommand == ENABLE_UPDATE && desc.isEnable_ == false) ||
+        (updateCommand == CONNECTSTATE_UPDATE && desc.connectState_ == SUSPEND_CONNECTED) ||
+        (updateCommand == EXCEPTION_FLAG_UPDATE && desc.exceptionFlag_ == true)) {
+        Bluetooth::AudioHfpManager::ClearActiveHfpDevice(desc.macAddress_);
+    }
+}
+#endif
+
 void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
     const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason)
 {
@@ -1434,6 +1440,9 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
     } else if (updateCommand == USAGE_UPDATE) {
         UpdateAllUserSelectDevice(userSelectDeviceMap, desc, std::make_shared<AudioDeviceDescriptor>(desc));
     }
+#ifdef BLUETOOTH_ENABLE
+    ClearActiveHfpDevice(desc, updateCommand, reason);
+#endif
 }
 
 void AudioDeviceStatus::UpdateAllUserSelectDevice(

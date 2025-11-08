@@ -525,5 +525,16 @@ bool AudioZone::CheckDeviceInZone(AudioDeviceDescriptor device)
     }
     return false;
 }
+
+bool AudioZone::CheckExistUidInZone()
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    for (const auto &it : keys_) {
+        if (it.GetUid() > 0) {
+            return true;
+        }
+    }
+    return false;
+}
 } // namespace AudioStandard
 } // namespace OHOS

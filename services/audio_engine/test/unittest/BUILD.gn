@@ -16,6 +16,7 @@ import("//build/test.gni")
 import("../../../../config.gni")
 
 module_output_path = "audio_framework/audio_framework_engine"
+audio_framework_root = "../../../.."
 
 config("audio_engine_private_config") {
   visibility = [ ":*" ]
@@ -80,6 +81,15 @@ ohos_unittest("hpae_render_manager_test") {
     "../../../../frameworks/native/audioutils:audio_utils",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 }
 
@@ -101,6 +111,15 @@ ohos_unittest("hpae_injector_renderer_manager_test") {
     "../../../../frameworks/native/audioutils:audio_utils",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 }
 
@@ -121,6 +140,15 @@ ohos_unittest("hpae_capturer_manager_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -142,6 +170,15 @@ ohos_unittest("hpae_virtual_capturer_manager_test") {
     "../../../audio_service:audio_common",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -165,6 +202,15 @@ ohos_unittest("hpae_manager_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -188,6 +234,15 @@ ohos_unittest("hpae_manager_audio_paramters_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -211,6 +266,15 @@ ohos_unittest("hpae_soft_link_unit_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -233,6 +297,15 @@ ohos_unittest("hpae_inner_capturer_unit_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 }
 
@@ -253,6 +326,15 @@ ohos_unittest("hpae_render_effect_node_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 }
 
@@ -273,6 +355,15 @@ ohos_unittest("hpae_sink_output_node_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -294,6 +385,15 @@ ohos_unittest("hpae_sink_virtual_output_node_test") {
     "../../../audio_service:audio_common",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -315,6 +415,15 @@ ohos_unittest("hpae_virtual_process_cluster_test") {
     "../../../audio_service:audio_common",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -337,6 +446,15 @@ ohos_unittest("hpae_source_process_cluster_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 }
 
@@ -358,6 +476,15 @@ ohos_unittest("hpae_policy_manager_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -380,6 +507,15 @@ ohos_unittest("hpae_signal_process_thread_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -402,6 +538,15 @@ ohos_unittest("hpae_gain_node_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -425,6 +570,15 @@ ohos_unittest("hpae_loudness_gain_node_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -448,6 +602,15 @@ ohos_unittest("hpae_mixer_node_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -471,6 +634,15 @@ ohos_unittest("hpae_node_common_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -493,6 +665,15 @@ ohos_unittest("hpae_remote_output_cluster_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -516,6 +697,15 @@ ohos_unittest("hpae_remote_sink_output_node_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -538,6 +728,15 @@ ohos_unittest("hpae_offload_sinkoutput_node_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -561,6 +760,15 @@ ohos_unittest("hpae_output_cluster_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -583,6 +791,15 @@ ohos_unittest("hpae_pcm_buffer_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -605,6 +822,15 @@ ohos_unittest("hpae_pcm_process_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -627,6 +853,15 @@ ohos_unittest("hpae_process_cluster_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -649,6 +884,15 @@ ohos_unittest("hpae_sink_input_node_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -671,6 +915,15 @@ ohos_unittest("hpae_source_input_node_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -693,6 +946,15 @@ ohos_unittest("hpae_source_output_node_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -719,6 +981,15 @@ ohos_unittest("audio_engine_unit_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -741,6 +1012,15 @@ ohos_unittest("hpae_capture_effect_node_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -763,6 +1043,15 @@ ohos_unittest("hpae_source_input_cluster_test") {
     "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -773,6 +1062,7 @@ ohos_unittest("hpae_plugins_unit_test") {
   sources = [
     "plugin/channel_converter/down_mixer_test.cpp",
     "plugin/channel_converter/channel_converter_test.cpp",
+    "plugin/channel_converter/mixer_utils_test.cpp",
     "plugin/proresampler/audio_proresampler_test.cpp",
     "plugin/proresampler/audio_proresampler_process_test.cpp",
   ]
@@ -783,6 +1073,15 @@ ohos_unittest("hpae_plugins_unit_test") {
     "../../:audio_engine_plugins",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"
@@ -804,6 +1103,15 @@ ohos_unittest("hpae_co_buffer_node_test") {
     "../../../audio_service:audio_common",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
   external_deps = engine_test_external_deps
 
   resource_config_file = "./resource/ohos_test.xml"

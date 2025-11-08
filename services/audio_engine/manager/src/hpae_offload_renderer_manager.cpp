@@ -292,6 +292,7 @@ int32_t HpaeOffloadRendererManager::Pause(uint32_t sessionId)
         auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(node, "Pause not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Pause sessionId %{public}u", sessionId);
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(), OPERATION_PAUSED);
         if (sessionId == curNode_->GetSessionId()) {
             DisConnectInputSession();
             auto state = curNode_->GetState();
@@ -301,7 +302,6 @@ int32_t HpaeOffloadRendererManager::Pause(uint32_t sessionId)
             }
         }
         node->SetState(HPAE_SESSION_PAUSED);
-        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(), OPERATION_PAUSED);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -346,6 +346,7 @@ int32_t HpaeOffloadRendererManager::Stop(uint32_t sessionId)
         auto node = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(node, "Stop not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Stop sessionId %{public}u", sessionId);
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(), OPERATION_STOPPED);
         if (sessionId == curNode_->GetSessionId()) {
             DisConnectInputSession();
             if (curNode_->GetState() == HPAE_SESSION_RUNNING) {
@@ -353,7 +354,6 @@ int32_t HpaeOffloadRendererManager::Stop(uint32_t sessionId)
             }
         }
         node->SetState(HPAE_SESSION_STOPPED);
-        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(), OPERATION_STOPPED);
     };
     SendRequest(request, __func__);
     return SUCCESS;

@@ -34,6 +34,7 @@ namespace {
 constexpr int32_t RELEASE_WAIT_TIME_MS = 3000; // 3000ms
 constexpr float INITIAL_DSP_VOLUME = -1.0f;
 constexpr int32_t INITIAL_DSP_STREAMUSAGE = -2;
+constexpr float EPSILON = 1e-6f;
 
 const std::unordered_map<std::string, std::string> AUDIO_PERSISTENCE_EFFECT_KEY {
     {"voip_down", "settings.sound_ai_voip_down_selection"},
@@ -1583,8 +1584,11 @@ uint32_t AudioEffectChainManager::GetSceneTypeToChainCount(const std::string &sc
 void AudioEffectChainManager::FindMaxSessionID(uint32_t &maxSessionID, std::string &sceneType,
     const std::string &scenePairType, std::set<std::string> &sessions)
 {
+    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectVolume != nullptr, "null audioEffectVolume");
     for (auto &sessionID : sessions) {
-        if (sessionIDToEffectInfoMap_[sessionID].sceneMode == "EFFECT_NONE") {
+        if (sessionIDToEffectInfoMap_[sessionID].sceneMode == "EFFECT_NONE" ||
+            fabs(audioEffectVolume->GetStreamVolume(sessionID)) < EPSILON) {
             continue;
         }
         uint32_t sessionIDInt = static_cast<uint32_t>(std::stoul(sessionID));

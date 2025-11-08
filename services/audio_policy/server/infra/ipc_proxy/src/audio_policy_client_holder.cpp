@@ -300,5 +300,10 @@ void AudioPolicyClientHolder::OnVolumeDegreeEvent(const VolumeEvent &volumeEvent
     audioPolicyClient_->OnVolumeDegreeEvent(volumeEvent);
 }
 
+void AudioPolicyClientHolder::OnCollaborationEnabledChangeForCurrentDevice(const bool &enabled)
+{
+    CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
+    audioPolicyClient_->OnCollaborationEnabledChangeForCurrentDevice(enabled);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1013,13 +1013,12 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
 void AudioPolicyServer::UnlockEvent()
 {
     if (isRingtoneEL2Ready_ == false) {
-            isRingtoneEL2Ready_ =  CallRingtoneLibrary() == SUCCESS;
-        }
-    int32_t userId = newUserId_;
+        isRingtoneEL2Ready_ =  CallRingtoneLibrary() == SUCCESS;
+    }
     AUDIO_INFO_LOG("receive SCREEN_UNLOCKED action, can change volume");
     isScreenOffOrLock_ = false;
-    if (interruptService_ != nullptr && interruptService_->IsSwitchUser()) {
-        interruptService_->OnUserUnlocked(userId);
+    if (interruptService_ != nullptr) {
+        interruptService_->OnUserUnlocked();
     }
 }
 
@@ -4763,7 +4762,7 @@ void AudioPolicyServer::NotifyAccountsChanged(const int &id, const int &oldId)
 {
     CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService_ is nullptr");
     audioPolicyService_.MuteMediaWhenAccountsChanged();
-    newUserId_ = id;
+    interruptService_->SetUserId(id, oldId);
     interruptService_->ClearAudioFocusInfoListOnAccountsChanged(id, oldId);
     // Asynchronous clear audio focus infos
     usleep(WAIT_CLEAR_AUDIO_FOCUSINFOS_TIME_US);

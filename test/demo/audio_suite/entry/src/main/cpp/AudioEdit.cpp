@@ -402,7 +402,7 @@ static napi_value SetFormat(napi_env env, napi_callback_info info)
     audioFormatOutput.sampleFormat = SetSampleFormat(bitsPerSample);
     // 设置编码格式
     audioFormatOutput.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
-    const std::vector<Node> outPutNodes = nodeManager->getNodesByType(OH_AudioNode_Type::OUT_NODE_TYPE_DEFAULT);
+    const std::vector<Node> outPutNodes = nodeManager->getNodesByType(OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT);
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_SetAudioFormat(outPutNodes[0].physicalNode, &audioFormatOutput);
     napi_value napiValue;
     napi_create_int64(env, static_cast<int>(result), &napiValue);
@@ -635,7 +635,7 @@ static void UpdateInputNode(napi_env env, const AudioInputConfig& config, napi_v
 
     const std::vector<Node> inPutNodes = nodeManager->getNodesByType(OH_AudioNode_Type::INPUT_NODE_TYPE_DEFAULT);
     result = OH_AudioSuiteEngine_SetAudioFormat(inPutNodes[0].physicalNode, &audioFormatInput);
-    const std::vector<Node> outPutNodes = nodeManager->getNodesByType(OH_AudioNode_Type::OUT_NODE_TYPE_DEFAULT);
+    const std::vector<Node> outPutNodes = nodeManager->getNodesByType(OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT);
     result = OH_AudioSuiteEngine_SetAudioFormat(outPutNodes[0].physicalNode, &audioFormatOutput);
     // 添加音频，将音频的buffer出存储到map中，，上一行中的memcpy可以考虑删除了
     if (writeDataBufferMap_.find(inputId) != writeDataBufferMap_.end()) {
@@ -693,7 +693,7 @@ void AudioInitHasNotOutput(OH_AudioSuite_Result &result, std::string &outputId,
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         return;
     }
-    result = OH_AudioSuiteNodeBuilder_SetNodeType(builderOut, OH_AudioNode_Type::OUT_NODE_TYPE_DEFAULT);
+    result = OH_AudioSuiteNodeBuilder_SetNodeType(builderOut, OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
         "NodeManagerTest createNode OH_AudioSuiteNodeBuilder_SetNodeType result: %{public}d",
         static_cast<int>(result));
@@ -708,7 +708,7 @@ void AudioInitHasNotOutput(OH_AudioSuite_Result &result, std::string &outputId,
         return;
     }
 
-    result = nodeManager->createNode(outputId, OH_AudioNode_Type::OUT_NODE_TYPE_DEFAULT, builderOut);
+    result = nodeManager->createNode(outputId, OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT, builderOut);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
         "audioEditTest nodeManagerCreateOutputNode result: %{public}d", static_cast<int>(result));
     result = nodeManager->connect(writeDataParaConfig.inputId, outputId);
@@ -759,13 +759,13 @@ static napi_value AudioInAndOutInit(napi_env env, napi_callback_info info)
         UpdateInputNode(env, inputConfig, napiValue, result);
     }
 
-    const std::vector<Node> outPutNodes = nodeManager->getNodesByType(OH_AudioNode_Type::OUT_NODE_TYPE_DEFAULT);
+    const std::vector<Node> outPutNodes = nodeManager->getNodesByType(OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT);
     // 判断当前有无output节点，没有output节点则创建output节点并连接input节点和output节点
     if (outPutNodes.size() > 0) {
         AudioInitHasOutput(result, inputId, mixerId, outPutNodes);
     } else {
         AudioWriteDataParams writeDataParaConfig { inputId, channels, sampleRate, bitsPerSample, formatCategory,
-                                       OH_AudioNode_Type::OUT_NODE_TYPE_DEFAULT };
+                                       OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT };
         AudioInitHasNotOutput(result, outputId, writeDataParaConfig);
     }
 
@@ -802,7 +802,7 @@ int AddEffectNodeToNodeManager(std::string &inputNodeId, std::string &effectNode
         }
         result = nodeManager->insertNode(effectNodeId, currentNode.id, Direction::LATER);
     } else {
-        const std::vector<Node> outPutNodes = nodeManager->getNodesByType(OH_AudioNode_Type::OUT_NODE_TYPE_DEFAULT);
+        const std::vector<Node> outPutNodes = nodeManager->getNodesByType(OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT);
         result = nodeManager->insertNode(effectNodeId, outPutNodes[0].id, Direction::BEFORE);
     }
 
@@ -824,7 +824,7 @@ OH_AudioSuite_Result DeleteNodeOfSong(Node &node, int size)
             node = nextNode;
         }
     } else if (size == INPUTNODES_SIZE2) {
-        while (node.type != OH_AudioNode_Type::OUT_NODE_TYPE_DEFAULT) {
+        while (node.type != OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT) {
             nextNode = nodeManager->getNodeById(node.nextNodeId);
             result = nodeManager->removeNode(node.id);
             return result;
@@ -2075,6 +2075,26 @@ static napi_value ResetTotalWriteAudioDataSize(napi_env env, napi_callback_info 
     return nullptr;
 }
 
+//获取效果节点options
+static napi_value getOptions(napi_env env, napi_callback_info info)
+{
+    size_t argc = 1;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    napi_value napiValue;
+    
+    //获取nodeId
+    std::string nodeId;
+    parseNapiString(env, argv[0], nodeId);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "getOptions nodeId is %{public}s", nodeId.c_str());
+    Node node = nodeManager->getNodeById(nodeId);
+    //根据不同效果类型获取效果参数
+    std::string type = nodeManager->getOptionsByType(node);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "getOptions type is %{public}s", type.c_str());
+    napi_create_string_utf8(env, type.c_str(), NAPI_AUTO_LENGTH, &napiValue);
+    return napiValue;
+}
+
 EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
 {
     napi_property_descriptor desc[] = {
@@ -2113,7 +2133,8 @@ EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
         {"startEnvEffect", nullptr, startEnvEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"resetEnvEffect", nullptr, resetEnvEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"compareTwoFilesBinary", nullptr, compareTwoFilesBinary, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"deleteNode", nullptr, DeleteNode, nullptr, nullptr, nullptr, napi_default, nullptr}};
+        {"deleteNode", nullptr, DeleteNode, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"getOptions", nullptr, getOptions, nullptr, nullptr, nullptr, napi_default, nullptr}};
     napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc);
     return exports;
 }

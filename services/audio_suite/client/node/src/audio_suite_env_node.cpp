@@ -33,8 +33,8 @@ const std::string setEnvMode = "EnvironmentType";
 AudioSuiteEnvNode::AudioSuiteEnvNode()
     : AudioSuiteProcessNode(NODE_TYPE_ENVIRONMENT_EFFECT,
           AudioFormat{{ENV_ALGO_CHANNEL_LAYOUT, ENV_ALGO_CHANNEL_COUNT}, ENV_ALGO_SAMPLE_FORMAT, ENV_ALGO_SAMPLE_RATE}),
-      outPcmBuffer_(ENV_ALGO_SAMPLE_RATE, ENV_ALGO_CHANNEL_COUNT, ENV_ALGO_CHANNEL_LAYOUT),
-      tmpPcmBuffer_(ENV_ALGO_SAMPLE_RATE, ENV_ALGO_CHANNEL_COUNT, ENV_ALGO_CHANNEL_LAYOUT)
+      outPcmBuffer_(PcmBufferFormat{
+          ENV_ALGO_SAMPLE_RATE, ENV_ALGO_CHANNEL_COUNT, ENV_ALGO_CHANNEL_LAYOUT, ENV_ALGO_SAMPLE_FORMAT})
 {}
 
 AudioSuiteEnvNode::~AudioSuiteEnvNode()
@@ -50,7 +50,7 @@ int32_t AudioSuiteEnvNode::Init()
         AUDIO_ERR_LOG("AudioSuiteEnvNode::Init failed, already inited");
         return ERROR;
     }
-    envAlgoInterfaceImpl_ = std::make_shared<AudioSuiteEnvAlgoInterfaceImpl>();
+    envAlgoInterfaceImpl_ = std::make_shared<AudioSuiteEnvAlgoInterfaceImpl>(nodeCapability);
     int32_t ret = envAlgoInterfaceImpl_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "envAlgoInterfaceImpl Init failed");
     isInit_ = true;
@@ -60,8 +60,6 @@ int32_t AudioSuiteEnvNode::Init()
 
 int32_t AudioSuiteEnvNode::DeInit()
 {
-    tmpin_.resize(0);
-    tmpout_.resize(0);
     if (envAlgoInterfaceImpl_ != nullptr) {
         envAlgoInterfaceImpl_->Deinit();
         envAlgoInterfaceImpl_ = nullptr;
@@ -75,42 +73,18 @@ int32_t AudioSuiteEnvNode::DeInit()
     return ERROR;
 }
 
-bool AudioSuiteEnvNode::Reset()
-{
-    return true;
-}
-
 AudioSuitePcmBuffer *AudioSuiteEnvNode::SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs)
 {
     CHECK_AND_RETURN_RET_LOG(!inputs.empty(), nullptr, "AudioSuiteEnvNode SignalProcess inputs is empty");
     CHECK_AND_RETURN_RET_LOG(inputs[0] != nullptr, nullptr, "AudioSuiteEnvNode SignalProcess inputs[0] is nullptr");
-    AUDIO_DEBUG_LOG("AudioSuiteEnvNode SignalProcess inputs frameLen:%{public}d", inputs[0]->GetFrameLen());
+    CHECK_AND_RETURN_RET_LOG(inputs[0]->IsSameFormat(GetAudioNodeInPcmFormat()), nullptr, "Invalid inputs format");
 
-    inputDataBuffer_.resize(outPcmBuffer_.GetFrameLen() * ALGO_BYTE_NUM);
-    outputDataBuffer_.resize(outPcmBuffer_.GetFrameLen() * ALGO_BYTE_NUM);
-    int32_t ret = ConvertProcess(inputs[0], &outPcmBuffer_, &tmpPcmBuffer_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "AudioSuiteEnvNode SignalProcess ConvertProcess failed");
-
-    ConvertFromFloat(ENV_ALGO_SAMPLE_FORMAT,
-        outPcmBuffer_.GetFrameLen(),
-        outPcmBuffer_.GetPcmDataBuffer(),
-        static_cast<void *>(inputDataBuffer_.data()));
-
-    tmpin_.resize(1);
-    tmpout_.resize(1);
-    uint8_t *inputPointer = inputDataBuffer_.data();
-    uint8_t *outputPointer = outputDataBuffer_.data();
-
-    tmpin_[0] = inputPointer;
-    tmpout_[0] = outputPointer;
+    tmpin_[0] = inputs[0]->GetPcmData();
+    tmpout_[0] = outPcmBuffer_.GetPcmData();
     CHECK_AND_RETURN_RET_LOG(envAlgoInterfaceImpl_ != nullptr, nullptr, "envAlgoInterfaceImpl_ is nullptr");
-    ret = envAlgoInterfaceImpl_->Apply(tmpin_, tmpout_);
+    int32_t ret = envAlgoInterfaceImpl_->Apply(tmpin_, tmpout_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "AudioSuiteEnvNode SignalProcess Apply failed");
 
-    ConvertToFloat(ENV_ALGO_SAMPLE_FORMAT,
-        outPcmBuffer_.GetFrameLen(),
-        outputDataBuffer_.data(),
-        outPcmBuffer_.GetPcmDataBuffer());
     return &outPcmBuffer_;
 }
 
