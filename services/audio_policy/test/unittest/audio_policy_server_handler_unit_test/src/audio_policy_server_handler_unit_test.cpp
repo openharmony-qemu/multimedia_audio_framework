@@ -331,11 +331,12 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleVolumeDegreeEvent_Test_001, TestS
 }
 
 /**
- * @tc.name  : HandleVolumeDegreeEvent_Test_001
- * @tc.number: HandleVolumeDegreeEvent_Test_001
- * @tc.desc  : Test HandleVolumeKeyEvent function
+ * @tc.name  : HandleCollaborationEnabledChangeForCurrentDeviceEvent_Test_001
+ * @tc.number: HandleCollaborationEnabledChangeForCurrentDeviceEvent_Test_001
+ * @tc.desc  : Test HandleCollaborationEnabledChangeForCurrentDeviceEvent function
  */
-HWTEST(AudioPolicyServerHandlerUnitTest, HandleVolumeDegreeEvent_Test_001, TestSize.Level2)
+HWTEST(AudioPolicyServerHandlerUnitTest, HandleCollaborationEnabledChangeForCurrentDeviceEvent_Test_001,
+    TestSize.Level2)
 {
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     ASSERT_NE(audioPolicyServerHandler_, nullptr);
@@ -344,11 +345,12 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleVolumeDegreeEvent_Test_001, TestS
     ASSERT_NE(eventContextObj, nullptr);
     eventContextObj->collaborationEnabled = true;
     AppExecFwk::InnerEvent::Pointer event = AppExecFwk::InnerEvent::Get(
-        AudioPolicyServerHandler::EventAudioServerCmd::COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE, eventContextObj);
+        AudioPolicyServerHandler::EventAudioServerCmd::COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
+        eventContextObj);
 
     bool testEnabled = true;
-    SendCollaborationEnabledChangeForCurrentDeviceEvent(testEnabled);
-    HandleOtherServiceEvent(COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE, event);
+    audioPolicyServerHandler_->SendCollaborationEnabledChangeForCurrentDeviceEvent(testEnabled);
+    audioPolicyServerHandler_->HandleOtherServiceEvent(COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE, event);
     audioPolicyServerHandler_->HandleCollaborationEnabledChangeForCurrentDeviceEvent(event);
     auto testHolder = std::shared_ptr<AudioPolicyClientHolder>();
     audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_[1] = testHolder;
@@ -373,6 +375,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleVolumeDegreeEvent_Test_001, TestS
 
     audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.clear();
     audioPolicyServerHandler_->clientCallbacksMap_.clear();
+    EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size() > 0, false);
 }
 
 /**
