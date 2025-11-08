@@ -233,10 +233,10 @@ int32_t AudioVolumeParser::ParseVolumeFixInfo(std::shared_ptr<AudioXmlNode> curN
 {
     AUDIO_DEBUG_LOG("AudioVolumeParse::ParseVolumeFixInfo");
     std::string pValueStr;
-    CHECK_AND_RETURN_RET_LOG(curNode->GetProp("type", pValueStr) == success,
+    CHECK_AND_RETURN_RET_LOG(curNode->GetProp("type", pValueStr) == SUCCESS,
         ERR_INVALID_PARAM, "invalid type parameter");
     std::string volumeFix;
-    CHECK_AND_RETURN_RET_LOG(curNode->GetProp("enable", volumeFix) == success,
+    CHECK_AND_RETURN_RET_LOG(curNode->GetProp("enable", volumeFix) == SUCCESS,
         ERR_INVALID_PARAM, "invalid enable parameter");
     if (pValueStr == "VOLUME_FIX_ENABLE" && volumeFix == "1") {
         VolumeUtils::SetVolumeFixEnable(true);
