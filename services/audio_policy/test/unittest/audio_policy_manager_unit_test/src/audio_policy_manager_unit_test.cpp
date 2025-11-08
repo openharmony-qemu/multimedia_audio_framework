@@ -854,12 +854,14 @@ HWTEST(AudioPolicyManager, RegisterCollaborationEnabledForCurrentDeviceEventList
     auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
     ASSERT_TRUE(audioPolicyManager_ != nullptr);
 
-    auto testCallback = std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback>();
+    auto testCallback = std::make_shared<AudioCollaborationEnabledChangeForCurrentDeviceCallback>();
     audioPolicyManager_->isAudioPolicyClientRegisted_ = false;
     audioPolicyManager_->RegisterCollaborationEnabledForCurrentDeviceEventListener(testCallback);
 
     audioPolicyManager_->isAudioPolicyClientRegisted_ = true;
     int32_t ret = audioPolicyManager_->RegisterCollaborationEnabledForCurrentDeviceEventListener(testCallback);
+    EXPECT_EQ(audioPolicyManager_->audioPolicyClientStubCB_->
+        GetCollaborationEnabledChangeForCurrentDeviceCallbackSize(), SUCCESS);
     EXPECT_EQ(ret, SUCCESS);
 }
 
