@@ -879,12 +879,14 @@ int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED, "modify permission denied");
     }
 
-    CHECK_AND_RETURN_RET_LOG(audioParameters.size() < PARAMETER_SET_LIMIT, ERR_INVALID_PARAM, "too large!");
-    AudioServer::audioParameters[key] = value;
+    if (key == "VOICE_PHONE_STATUS") {
+        AudioServer::audioParameters[key] = value;
+        return SUCCESS;
+    }
 
     if (key == "A2dpSuspended") {
-        std::string renderValue = key + "=" + value + ";";
-        SetA2dpAudioParameter(renderValue);
+        AudioServer::audioParameters[key] = value;
+        SetA2dpAudioParameter(key + "=" + value + ";");
         return SUCCESS;
     }
 
@@ -892,7 +894,10 @@ int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string
     std::string valueNew = value;
     std::string halName = "primary";
     CHECK_AND_RETURN_RET(UpdateAudioParameterInfo(key, value, parmKey, valueNew, halName), SUCCESS);
-    
+
+    CHECK_AND_RETURN_RET_LOG(audioParameters.size() < PARAMETER_SET_LIMIT, ERR_INVALID_PARAM, "too large!");
+    AudioServer::audioParameters[key] = value;
+
     std::shared_ptr<IAudioCaptureSource> source = GetSourceByProp(HDI_ID_TYPE_VA, HDI_ID_INFO_VA, true);
     if (source != nullptr) {
         source->SetAudioParameter(parmKey, "", valueNew);
@@ -902,6 +907,7 @@ int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, SUCCESS, "deviceManager is null");
     deviceManager->SetAudioParameter(halName, parmKey, "", valueNew);
+
     return SUCCESS;
 }
 
