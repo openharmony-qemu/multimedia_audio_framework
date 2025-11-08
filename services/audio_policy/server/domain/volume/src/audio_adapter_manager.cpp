@@ -1558,6 +1558,7 @@ int32_t AudioAdapterManager::UpdateCollaborativeState(bool isCollaborationEnable
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     AUDIO_INFO_LOG("AudioCollaborativeService UpdateCollaborativeState entered!");
+    audioPolicyServerHandler_->SendCollaborationEnabledChangeForCurrentDeviceEvent(isCollaborationEnabled);
     return audioServiceAdapter_->UpdateCollaborativeState(isCollaborationEnabled);
 }
 
