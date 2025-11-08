@@ -184,7 +184,7 @@ void AudioVolumeParser::ParseStreamInfos(std::shared_ptr<AudioXmlNode> curNode,
             }
         }
         if (curNode->CompareName("volume_fix")) {
-            if (ParseVolumeFixFixInfo(curNode->GetCopyNode()) == AUDIO_OK) {
+            if (ParseVolumeFixInfo(curNode->GetCopyNode()) == AUDIO_OK) {
                 AUDIO_DEBUG_LOG("Parse VolumeFix:%{public}d ", VolumeUtils::isVolumeFixEnable());
             }
         }
@@ -229,7 +229,7 @@ int32_t AudioVolumeParser::ParseStreamVolumeInfoAttr(std::shared_ptr<AudioXmlNod
     return AUDIO_OK;
 }
 
-int32_t AudioVolumeParser::ParseVolumeFixFixInfo(std::shared_ptr<AudioXmlNode> curNode)
+int32_t AudioVolumeParser::ParseVolumeFixInfo(std::shared_ptr<AudioXmlNode> curNode)
 {
     AUDIO_DEBUG_LOG("AudioVolumeParse::ParseVolumeFixInfo");
     std::string pValueStr;
