@@ -1909,9 +1909,6 @@ void AudioCoreService::TriggerRecreateRendererStreamCallback(shared_ptr<AudioStr
     int32_t callerPid = streamDesc->callerPid_;
     int32_t sessionId = streamDesc->sessionId_;
     uint32_t routeFlag = streamDesc->routeFlag_;
-    AUDIO_INFO_LOG("Trigger recreate renderer stream %{public}d, pid: %{public}d, routeflag: 0x%{public}x",
-        sessionId, callerPid, routeFlag);
-    audioPolicyServerHandler_->SendRecreateRendererStreamEvent(callerPid, sessionId, routeFlag, reason);
 
     CHECK_AND_RETURN_LOG(streamDesc->oldDeviceDescs_.size() > 0 && streamDesc->oldDeviceDescs_.front() != nullptr,
         "oldDeviceDesc is invalid");
@@ -1924,6 +1921,12 @@ void AudioCoreService::TriggerRecreateRendererStreamCallback(shared_ptr<AudioStr
         callbackDesc->descriptorType_ = AudioDeviceDescriptor::DEVICE_INFO;
         audioPolicyServerHandler_->SendRendererDeviceChangeEvent(callerPid, sessionId, callbackDesc, reason);
     }
+
+    SleepForSwitchDevice(streamDesc, reason);
+
+    AUDIO_INFO_LOG("Trigger recreate renderer stream %{public}d, pid: %{public}d, routeflag: 0x%{public}x",
+        sessionId, callerPid, routeFlag);
+    audioPolicyServerHandler_->SendRecreateRendererStreamEvent(callerPid, sessionId, routeFlag, reason);
 }
 
 void AudioCoreService::TriggerRecreateRendererStreamCallbackEntry(shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -2620,7 +2623,7 @@ void AudioCoreService::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDe
     std::string oldSinkPortName = AudioPolicyUtils::GetInstance().GetSinkName(oldDesc, streamDesc->sessionId_);
     std::string newSinkPortName = AudioPolicyUtils::GetInstance().GetSinkName(newDesc, streamDesc->sessionId_);
 
-    auto GetSinkPortNameIfVoipOrMmap = [](uint32_t routeFlag, const std::string &defaultSinkPortName) -> std::string {
+    auto GetFinalSinkPortName = [](uint32_t routeFlag, const std::string &defaultSinkPortName) -> std::string {
         if (routeFlag == (AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP)) {
             return PRIMARY_MMAP_VOIP;
         } else if (routeFlag == (AUDIO_OUTPUT_FLAG_DIRECT | AUDIO_OUTPUT_FLAG_VOIP)) {
@@ -2629,11 +2632,13 @@ void AudioCoreService::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDe
             return PRIMARY_MMAP;
         } else if (routeFlag == AUDIO_OUTPUT_FLAG_FAST && defaultSinkPortName == BLUETOOTH_SPEAKER) {
             return BLUETOOTH_A2DP_FAST;
+        } else if (routeFlag == (AUDIO_OUTPUT_FLAG_DIRECT | AUDIO_OUTPUT_FLAG_HD)) {
+            return PRIMARY_DIRECT;
         }
         return defaultSinkPortName;
     };
-    oldSinkPortName = GetSinkPortNameIfVoipOrMmap(streamDesc->oldRouteFlag_, oldSinkPortName);
-    newSinkPortName = GetSinkPortNameIfVoipOrMmap(streamDesc->routeFlag_, newSinkPortName);
+    oldSinkPortName = GetFinalSinkPortName(streamDesc->oldRouteFlag_, oldSinkPortName);
+    newSinkPortName = GetFinalSinkPortName(streamDesc->routeFlag_, newSinkPortName);
 
     AUDIO_INFO_LOG("mute sink old:[%{public}s] new:[%{public}s]", oldSinkPortName.c_str(), newSinkPortName.c_str());
     MuteSinkPort(oldSinkPortName, newSinkPortName, reason);
@@ -2692,7 +2697,7 @@ void AudioCoreService::SleepForSwitchDevice(std::shared_ptr<AudioStreamDescripto
         !streamDesc->newDeviceDescs_.empty(), "Invalid streamDesc");
     std::shared_ptr<AudioDeviceDescriptor> oldDesc = streamDesc->oldDeviceDescs_.front();
     std::shared_ptr<AudioDeviceDescriptor> newDesc = streamDesc->newDeviceDescs_.front();
-    CHECK_AND_RETURN(oldDesc != nullptr && newDesc != nullptr);
+    CHECK_AND_RETURN(oldDesc != nullptr && newDesc != nullptr && streamDesc->streamStatus_ == STREAM_STATUS_STARTED);
     if (oldDesc->IsSameDeviceDesc(*newDesc)) { return; }
 
     std::string oldSinkName = AudioPolicyUtils::GetInstance().GetSinkName(oldDesc, streamDesc->sessionId_);

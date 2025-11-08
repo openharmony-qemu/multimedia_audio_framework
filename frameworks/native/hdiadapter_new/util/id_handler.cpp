@@ -88,6 +88,8 @@ uint32_t IdHandler::GetRenderIdByDeviceClass(const std::string &deviceClass, con
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT);
     } else if (deviceClass == "Virtual_Injector") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_VIRTUAL_INJECTOR, HDI_ID_INFO_DEFAULT);
+    } else if (deviceClass == "primary_direct") {
+        return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DIRECT);
     }
     AUDIO_ERR_LOG("invalid param, deviceClass: %{public}s, info: %{public}s", deviceClass.c_str(), info.c_str());
     return HDI_INVALID_ID;
