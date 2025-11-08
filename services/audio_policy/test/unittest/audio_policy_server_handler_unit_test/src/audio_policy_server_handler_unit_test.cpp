@@ -350,7 +350,8 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleCollaborationEnabledChangeForCurr
 
     bool testEnabled = true;
     audioPolicyServerHandler_->SendCollaborationEnabledChangeForCurrentDeviceEvent(testEnabled);
-    audioPolicyServerHandler_->HandleOtherServiceSecondEvent(COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE, event);
+    audioPolicyServerHandler_->HandleOtherServiceSecondEvent(AudioPolicyServerHandler::EventAudioServerCmd::
+        COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE, event);
     audioPolicyServerHandler_->HandleCollaborationEnabledChangeForCurrentDeviceEvent(event);
     std::shared_ptr<AudioPolicyClientHolder> testHolder = nullptr;
     audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_[1] = testHolder;
