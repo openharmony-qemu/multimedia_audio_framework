@@ -873,7 +873,7 @@ HWTEST(AudioPolicyManager, UnregisterCollaborationEnabledForCurrentDeviceEventLi
     auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
     ASSERT_TRUE(audioPolicyManager_ != nullptr);
 
-    int32_t ret = audioPolicyManager_->UnregisterCollaborationEnabledForCurrentDeviceEventListener(testCallback);
+    int32_t ret = audioPolicyManager_->UnregisterCollaborationEnabledForCurrentDeviceEventListener();
     EXPECT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard
