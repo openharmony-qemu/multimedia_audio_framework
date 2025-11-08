@@ -1640,6 +1640,7 @@ void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
     const AppExecFwk::InnerEvent::Pointer &event)
 {
     HandleOtherServiceEvent(eventId, event);
+    HandleOtherServiceSecondEvent(eventId, event);
     switch (eventId) {
         case EventAudioServerCmd::AUDIO_DEVICE_CHANGE:
             HandleDeviceChangedCallback(event);
@@ -1731,6 +1732,15 @@ void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
         case EventAudioServerCmd::VOLUME_DEGREE_EVENT:
             HandleVolumeDegreeEvent(event);
             break;
+        default:
+            break;
+    }
+}
+
+void AudioPolicyServerHandler::HandleOtherServiceSecondEvent(const uint32_t &eventId,
+    const AppExecFwk::InnerEvent::Pointer &event)
+{
+    switch (eventId) {
         case EventAudioServerCmd::COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE:
             HandleCollaborationEnabledChangeForCurrentDeviceEvent(event);
             break;

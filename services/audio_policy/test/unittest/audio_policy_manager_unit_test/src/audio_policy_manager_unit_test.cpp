@@ -843,5 +843,38 @@ HWTEST(AudioPolicyManager, SelectOutputDevice_001, TestSize.Level1)
     ret = audioPolicyManager_->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors02);
     EXPECT_EQ(ret, -1);
 }
+
+/**
+* @tc.name  : Test AudioPolicyManager.
+* @tc.number: RegisterCollaborationEnabledForCurrentDeviceEventListener_001.
+* @tc.desc  : Test RegisterCollaborationEnabledForCurrentDeviceEventListener.
+*/
+HWTEST(AudioPolicyManager, RegisterCollaborationEnabledForCurrentDeviceEventListener_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager_ != nullptr);
+
+    auto testCallback = std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback>();
+    audioPolicyManager_->isAudioPolicyClientRegisted_ = false;
+    audioPolicyManager_->RegisterCollaborationEnabledForCurrentDeviceEventListener(testCallback);
+
+    audioPolicyManager_->isAudioPolicyClientRegisted_ = true;
+    int32_t ret = audioPolicyManager_->RegisterCollaborationEnabledForCurrentDeviceEventListener(testCallback);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManager.
+* @tc.number: UnregisterCollaborationEnabledForCurrentDeviceEventListener_001.
+* @tc.desc  : Test UnregisterCollaborationEnabledForCurrentDeviceEventListener.
+*/
+HWTEST(AudioPolicyManager, UnregisterCollaborationEnabledForCurrentDeviceEventListener_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager_ != nullptr);
+
+    int32_t ret = audioPolicyManager_->UnregisterCollaborationEnabledForCurrentDeviceEventListener(testCallback);
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

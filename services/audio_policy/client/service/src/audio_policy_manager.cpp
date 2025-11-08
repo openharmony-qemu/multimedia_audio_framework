@@ -3360,9 +3360,7 @@ int32_t AudioPolicyManager::RegisterCollaborationEnabledForCurrentDeviceEventLis
         const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
         CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
         int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
-        if (ret != SUCCESS) {
-            return ret;
-        }
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RegisterPolicyCallbackClientFunc failed");
     }
 
     std::lock_guard<std::mutex>

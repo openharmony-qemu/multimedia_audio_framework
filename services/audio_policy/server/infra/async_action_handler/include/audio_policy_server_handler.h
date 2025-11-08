@@ -269,6 +269,7 @@ private:
     void HandleServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleOtherServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleOtherServiceSecondEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
     void HandleVolumeChangeCallback(int32_t clientId, std::shared_ptr<AudioPolicyClientHolder> audioPolicyClient,
         const VolumeEvent &volumeEvent);
