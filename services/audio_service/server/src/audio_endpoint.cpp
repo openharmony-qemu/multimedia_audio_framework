@@ -1757,12 +1757,17 @@ bool AudioEndpointInner::GetDeviceHandleInfo(uint64_t &frames, int64_t &nanoTime
 void AudioEndpointInner::UpdateVirtualDeviceHandleInfo()
 {
     uint64_t currentNanoTime = ClockTime::GetCurNano();
-    JUDGE_AND_INFO_LOG(currentNanoTime < timeInNano_,"currentNanoTime: %{public}" PRIu64"  "
+    CHECK_AND_RETURN_LOG(currentNanoTime > timeInNano_, "currentNanoTime: %{public}" PRIu64"  "
         ", timeInNano_: %{public}" PRIu64" ", currentNanoTime, timeInNano_.load());
+    uint64_t increasedTime = currentNanoTime - timeInNano_;
     // Calculate the frame position increment based on the current and previous time, and update the frame position
-    posInFrame_ = posInFrame_ + ((currentNanoTime - timeInNano_) / dstStreamInfo_.samplingRate);
+    uint64_t increasedFrame = increasedTime * dstStreamInfo_.samplingRate / AUDIO_NS_PER_SECOND;
+    posInFrame_ += increasedFrame;
     // Calculate the new time in nanoseconds based on the updated frame position
-    timeInNano_ = (posInFrame_ / static_cast<double>(dstStreamInfo_.samplingRate)) * AUDIO_NS_PER_SECOND;
+    timeInNano_ += increasedFrame * AUDIO_NS_PER_SECOND / dstStreamInfo_.samplingRate;
+
+    Trace infoTrace("AudioEndpoint::UpdateVirtualDeviceHandleInfo posInFrame: " + std::to_string(posInFrame_) +
+        " incFrame: " + std::to_string(increasedFrame) + " timeInNano:  " + std::to_string(timeInNano_));
 }
 
 void AudioEndpointInner::AsyncGetPosTime()
@@ -2053,7 +2058,8 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
             continue;
         }
         curTime = ClockTime::GetCurNano();
-        Trace loopTrace("Record_loop_trace");
+        Trace loopTrace("Record_loop_trace wakeT:" + std::to_string(wakeUpTime) +
+            " curT:" + std::to_string(curTime));
         if (curTime - wakeUpTime > THREE_MILLISECOND_DURATION) {
             AUDIO_WARNING_LOG("Wake up cost %{public}" PRId64" ms!", (curTime - wakeUpTime) / AUDIO_US_PER_SECOND);
         } else if (curTime - wakeUpTime > ONE_MILLISECOND_DURATION) {
@@ -2137,7 +2143,8 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
         }
         threadStatus_ = INRUNNING;
         curTime = ClockTime::GetCurNano();
-        Trace loopTrace("AudioEndpoint::loop_trace " + std::to_string(wakeUpTime));
+        Trace loopTrace("AudioEndpoint::loop_trace wakeT:" + std::to_string(wakeUpTime) +
+            " curT:" + std::to_string(curTime));
         if (needReSyncPosition_) {
             ReSyncPosition();
             wakeUpTime = curTime;
