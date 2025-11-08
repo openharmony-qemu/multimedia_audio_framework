@@ -946,6 +946,11 @@ enum AudioDataCallbackResult: i32 {
   VALID = 0,
 }
 
+enum RenderTarget: i32 {
+  NORMAL_PLAYBACK = 0,
+  INJECT_TO_VOICE_COMMUNICATION_CAPTURE = 1
+}
+
 struct AudioTimestampInfo {
   @readonly framePos: i64;
   @readonly timestamp: i64;
@@ -1019,6 +1024,11 @@ interface AudioRenderer {
   @gen_async("setVolume")
   @gen_promise("setVolume")
   SetVolumeSync(volume: f64): void;
+
+  @gen_promise("setTarget")
+  SetTargetSync(target: RenderTarget): void;
+
+  GetTarget(): RenderTarget;
 
   GetVolume(): f64;
 
