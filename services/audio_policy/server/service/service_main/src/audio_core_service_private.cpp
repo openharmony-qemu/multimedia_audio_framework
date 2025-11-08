@@ -2924,7 +2924,6 @@ void AudioCoreService::UpdateStreamDevicesForStart(
     std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller)
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "Invalid stream desc");
-    AUDIO_INFO_LOG("[DeviceFetchStart] for stream %{public}d", streamDesc->sessionId_);
     streamDesc->UpdateOldDevice(streamDesc->newDeviceDescs_);
 
     StreamUsage streamUsage = StreamUsage::STREAM_USAGE_INVALID;
@@ -2950,8 +2949,6 @@ void AudioCoreService::UpdateStreamDevicesForStart(
     AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(devices[0]->deviceType_);
 
     streamDesc->UpdateNewDevice(devices);
-    AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d status %{public}u",
-        streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->GetSessionId(), streamDesc->GetStatus());
     if (streamDesc->IsMediaScene() && devices[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
         !streamDesc->oldDeviceDescs_.empty() && streamDesc->oldDeviceDescs_.front() &&
         streamDesc->oldDeviceDescs_.front()->deviceType_ != devices[0]->deviceType_) {

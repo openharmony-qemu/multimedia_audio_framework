@@ -2085,7 +2085,6 @@ int32_t AudioSystemManager::NotifySessionStateChange(const int32_t uid, const in
 
 int32_t AudioSystemManager::NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze)
 {
-    AUDIO_INFO_LOG("In");
     return AudioPolicyManager::GetInstance().NotifyFreezeStateChange(pidList, isFreeze);
 }
 
