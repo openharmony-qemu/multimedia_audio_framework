@@ -442,6 +442,529 @@ HWTEST_F(HpaeSourceInputNodeTest, DoProcessInjectSleepTest_003, TestSize.Level1)
     EXPECT_NE(historyRemain->second, 0);
     EXPECT_NE(historyData->second.size(), 0);
 }
+
+/**
+ * @tc.name  : Test CapturerSourceStop
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourceStopTest_001
+ * @tc.desc  : Test CapturerSourceStop while audioCapturerSource is null
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceStopTest_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    EXPECT_EQ(hpaeSourceInputNode->audioCapturerSource_, nullptr);
+    EXPECT_NE(hpaeSourceInputNode->CapturerSourceStop(), SUCCESS);
+    EXPECT_NE(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_SUSPENDED);
+}
+
+/**
+ * @tc.name  : Test CapturerSourceStop
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourceStopTest_002
+ * @tc.desc  : Test CapturerSourceStop while captureId is invalid
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceStopTest_002, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+    EXPECT_NE(hpaeSourceInputNode->audioCapturerSource_, nullptr);
+    EXPECT_EQ(hpaeSourceInputNode->captureId_, HDI_INVALID_ID);
+    EXPECT_NE(hpaeSourceInputNode->CapturerSourceStop(), SUCCESS);
+    EXPECT_NE(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_SUSPENDED);
+}
+
+/**
+ * @tc.name  : Test CapturerSourceStop
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourceStopTest_003
+ * @tc.desc  : Test CapturerSourceStop while audioCapturerSource is not inited
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceStopTest_003, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+    hpaeSourceInputNode->captureId_ = 1;
+    EXPECT_CALL(*mockCaptureSource, IsInited())
+        .WillOnce(Return(false)); // hdi not init
+    EXPECT_NE(hpaeSourceInputNode->CapturerSourceStop(), SUCCESS);
+    EXPECT_NE(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_SUSPENDED);
+}
+
+/**
+ * @tc.name  : Test CapturerSourceStop
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourceStopTest_004
+ * @tc.desc  : Test CapturerSourceStop while audioCapturerSource stop fail
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceStopTest_004, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+    hpaeSourceInputNode->captureId_ = 1;
+    EXPECT_CALL(*mockCaptureSource, IsInited())
+        .WillOnce(Return(true));
+    EXPECT_CALL(*mockCaptureSource, Stop())
+        .WillOnce(Return(ERROR));
+    // iAudioCapturerSource stop fail does not block sourceInputNode, so interface return is SUCCESS
+    EXPECT_EQ(hpaeSourceInputNode->CapturerSourceStop(), SUCCESS);
+    EXPECT_EQ(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_SUSPENDED);
+}
+
+/**
+ * @tc.name  : Test CapturerSourceStart
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourceStartTest_001
+ * @tc.desc  : Test CapturerSourceStart while audioCapturerSource is null
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceStartTest_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    EXPECT_EQ(hpaeSourceInputNode->audioCapturerSource_, nullptr);
+    EXPECT_NE(hpaeSourceInputNode->CapturerSourceStart(), SUCCESS);
+    EXPECT_NE(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_RUNNING);
+}
+
+/**
+ * @tc.name  : Test CapturerSourceStart
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourceStartTest_002
+ * @tc.desc  : Test CapturerSourceStart while captureId is invalid
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceStartTest_002, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+    EXPECT_NE(hpaeSourceInputNode->audioCapturerSource_, nullptr);
+    EXPECT_EQ(hpaeSourceInputNode->captureId_, HDI_INVALID_ID);
+    EXPECT_NE(hpaeSourceInputNode->CapturerSourceStart(), SUCCESS);
+    EXPECT_NE(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_RUNNING);
+}
+
+/**
+ * @tc.name  : Test CapturerSourceStart
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourceStartTest_003
+ * @tc.desc  : Test CapturerSourceStart while audioCapturerSource is not inited
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceStartTest_003, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+    hpaeSourceInputNode->captureId_ = 1;
+    EXPECT_CALL(*mockCaptureSource, IsInited())
+        .WillOnce(Return(false)); // hdi not init
+    EXPECT_NE(hpaeSourceInputNode->CapturerSourceStart(), SUCCESS);
+    EXPECT_NE(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_RUNNING);
+}
+
+/**
+ * @tc.name  : Test CapturerSourceStart
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourceStartTest_004
+ * @tc.desc  : Test CapturerSourceStart while audioCapturerSource start fail
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceStartTest_004, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+    hpaeSourceInputNode->captureId_ = 1;
+    EXPECT_CALL(*mockCaptureSource, IsInited())
+        .WillOnce(Return(true));
+    EXPECT_CALL(*mockCaptureSource, Start())
+        .WillOnce(Return(ERROR));
+    EXPECT_NE(hpaeSourceInputNode->CapturerSourceStart(), SUCCESS);
+    EXPECT_NE(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_RUNNING);
+}
+
+/**
+ * @tc.name  : Test CapturerSourceFlush
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourceFlushTest_001
+ * @tc.desc  : Test CapturerSourceFlush while audioCapturerSource is null
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceFlushTest_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    EXPECT_EQ(hpaeSourceInputNode->audioCapturerSource_, nullptr);
+    EXPECT_NE(hpaeSourceInputNode->CapturerSourceFlush(), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test CapturerSourceFlush
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourceFlushTest_002
+ * @tc.desc  : Test CapturerSourceFlush while captureId is invalid
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceFlushTest_002, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+    
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+    hpaeSourceInputNode->captureId_ = HDI_INVALID_ID;
+    
+    EXPECT_NE(hpaeSourceInputNode->audioCapturerSource_, nullptr);
+    EXPECT_EQ(hpaeSourceInputNode->captureId_, HDI_INVALID_ID);
+    EXPECT_NE(hpaeSourceInputNode->CapturerSourceFlush(), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test CapturerSourceFlush
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourceFlushTest_003
+ * @tc.desc  : Test CapturerSourceFlush while audioCapturerSource is not inited
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceFlushTest_003, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+    hpaeSourceInputNode->captureId_ = 1;
+    
+    EXPECT_CALL(*mockCaptureSource, IsInited())
+        .WillOnce(Return(false)); // hdi not init
+        
+    EXPECT_NE(hpaeSourceInputNode->CapturerSourceFlush(), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test CapturerSourceFlush
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourceFlushTest_004
+ * @tc.desc  : Test CapturerSourceFlush while audioCapturerSource flush fail
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceFlushTest_004, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+    hpaeSourceInputNode->captureId_ = 1;
+    
+    EXPECT_CALL(*mockCaptureSource, IsInited())
+        .WillOnce(Return(true));
+    EXPECT_CALL(*mockCaptureSource, Flush())
+        .WillOnce(Return(ERROR)); // flush fail
+        
+    EXPECT_NE(hpaeSourceInputNode->CapturerSourceFlush(), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test CapturerSourcePause
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourcePauseTest_001
+ * @tc.desc  : Test CapturerSourcePause while audioCapturerSource is null
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourcePauseTest_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    EXPECT_EQ(hpaeSourceInputNode->audioCapturerSource_, nullptr);
+    EXPECT_NE(hpaeSourceInputNode->CapturerSourcePause(), SUCCESS);
+    EXPECT_NE(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_SUSPENDED);
+}
+
+/**
+ * @tc.name  : Test CapturerSourcePause
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourcePauseTest_002
+ * @tc.desc  : Test CapturerSourcePause while captureId is invalid
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourcePauseTest_002, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+    
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+    hpaeSourceInputNode->captureId_ = HDI_INVALID_ID;
+    
+    EXPECT_NE(hpaeSourceInputNode->audioCapturerSource_, nullptr);
+    EXPECT_EQ(hpaeSourceInputNode->captureId_, HDI_INVALID_ID);
+    EXPECT_NE(hpaeSourceInputNode->CapturerSourcePause(), SUCCESS);
+    EXPECT_NE(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_SUSPENDED);
+}
+
+/**
+ * @tc.name  : Test CapturerSourcePause
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourcePauseTest_003
+ * @tc.desc  : Test CapturerSourcePause while audioCapturerSource is not inited
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourcePauseTest_003, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+    hpaeSourceInputNode->captureId_ = 1;
+    
+    EXPECT_CALL(*mockCaptureSource, IsInited())
+        .WillOnce(Return(false)); // hdi not init
+        
+    EXPECT_NE(hpaeSourceInputNode->CapturerSourcePause(), SUCCESS);
+    EXPECT_NE(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_SUSPENDED);
+}
+
+/**
+ * @tc.name  : Test CapturerSourcePause
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourcePauseTest_004
+ * @tc.desc  : Test CapturerSourcePause while audioCapturerSource pause fail
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourcePauseTest_004, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+    hpaeSourceInputNode->captureId_ = 1;
+    
+    EXPECT_CALL(*mockCaptureSource, IsInited())
+        .WillOnce(Return(true));
+    EXPECT_CALL(*mockCaptureSource, Pause())
+        .WillOnce(Return(ERROR)); // pause fail
+        
+    EXPECT_NE(hpaeSourceInputNode->CapturerSourcePause(), SUCCESS);
+    EXPECT_NE(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_SUSPENDED);
+}
+
+/**
+ * @tc.name  : Test CapturerSourceReset
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourceResetTest_001
+ * @tc.desc  : Test CapturerSourceReset while audioCapturerSource is null
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceResetTest_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    EXPECT_EQ(hpaeSourceInputNode->audioCapturerSource_, nullptr);
+    EXPECT_NE(hpaeSourceInputNode->CapturerSourceReset(), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test CapturerSourceReset
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourceResetTest_002
+ * @tc.desc  : Test CapturerSourceReset while captureId is invalid
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceResetTest_002, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+    
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+    hpaeSourceInputNode->captureId_ = HDI_INVALID_ID;
+    
+    EXPECT_NE(hpaeSourceInputNode->audioCapturerSource_, nullptr);
+    EXPECT_EQ(hpaeSourceInputNode->captureId_, HDI_INVALID_ID);
+    EXPECT_NE(hpaeSourceInputNode->CapturerSourceReset(), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test CapturerSourceReset
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourceResetTest_003
+ * @tc.desc  : Test CapturerSourceReset while audioCapturerSource reset fail
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceResetTest_003, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+    hpaeSourceInputNode->captureId_ = 1;
+    
+    EXPECT_CALL(*mockCaptureSource, Reset())
+        .WillOnce(Return(ERROR)); // reset fail
+        
+    EXPECT_NE(hpaeSourceInputNode->CapturerSourceReset(), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test CapturerSourceResume
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourceResumeTest_001
+ * @tc.desc  : Test CapturerSourceResume while audioCapturerSource is null
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceResumeTest_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    EXPECT_EQ(hpaeSourceInputNode->audioCapturerSource_, nullptr);
+    EXPECT_NE(hpaeSourceInputNode->CapturerSourceResume(), SUCCESS);
+    EXPECT_NE(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_RUNNING);
+}
+
+/**
+ * @tc.name  : Test CapturerSourceResume
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourceResumeTest_002
+ * @tc.desc  : Test CapturerSourceResume while captureId is invalid
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceResumeTest_002, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+    
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+    hpaeSourceInputNode->captureId_ = HDI_INVALID_ID;
+    
+    EXPECT_NE(hpaeSourceInputNode->audioCapturerSource_, nullptr);
+    EXPECT_EQ(hpaeSourceInputNode->captureId_, HDI_INVALID_ID);
+    EXPECT_NE(hpaeSourceInputNode->CapturerSourceResume(), SUCCESS);
+    EXPECT_NE(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_RUNNING);
+}
+
+/**
+ * @tc.name  : Test CapturerSourceResume
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourceResumeTest_003
+ * @tc.desc  : Test CapturerSourceResume while audioCapturerSource resume fail
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceResumeTest_003, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+    hpaeSourceInputNode->captureId_ = 1;
+    
+    EXPECT_CALL(*mockCaptureSource, Resume())
+        .WillOnce(Return(ERROR)); // resume fail
+        
+    EXPECT_NE(hpaeSourceInputNode->CapturerSourceResume(), SUCCESS);
+    EXPECT_NE(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_RUNNING);
+}
+
+/**
+ * @tc.name  : Test CapturerSourceInit
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourceInitTest_001
+ * @tc.desc  : Test CapturerSourceInit while audioCapturerSource is null
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceInitTest_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+    EXPECT_EQ(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_NEW);
+    IAudioSourceAttr attr;
+
+    EXPECT_EQ(hpaeSourceInputNode->audioCapturerSource_, nullptr);
+    EXPECT_NE(hpaeSourceInputNode->CapturerSourceInit(attr), SUCCESS);
+    EXPECT_NE(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_IDLE);
+    EXPECT_EQ(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_NEW);
+}
+
+/**
+ * @tc.name  : Test CapturerSourceInit
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourceInitTest_002
+ * @tc.desc  : Test CapturerSourceInit while captureId is invalid
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceInitTest_002, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+    IAudioSourceAttr attr;
+    
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    EXPECT_EQ(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_NEW);
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+    hpaeSourceInputNode->captureId_ = HDI_INVALID_ID;
+    
+    EXPECT_NE(hpaeSourceInputNode->audioCapturerSource_, nullptr);
+    EXPECT_EQ(hpaeSourceInputNode->captureId_, HDI_INVALID_ID);
+    EXPECT_NE(hpaeSourceInputNode->CapturerSourceInit(attr), SUCCESS);
+    EXPECT_NE(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_IDLE);
+    EXPECT_EQ(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_NEW);
+}
+
+/**
+ * @tc.name  : Test CapturerSourceInit
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourceInitTest_003
+ * @tc.desc  : Test CapturerSourceInit while audioCapturerSource is already inited
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceInitTest_003, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+    IAudioSourceAttr attr;
+
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    EXPECT_EQ(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_NEW);
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+    hpaeSourceInputNode->captureId_ = 1;
+    
+    EXPECT_CALL(*mockCaptureSource, IsInited())
+        .WillOnce(Return(true)); // already inited
+        
+    EXPECT_EQ(hpaeSourceInputNode->CapturerSourceInit(attr), SUCCESS);
+    EXPECT_EQ(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_IDLE);
+}
+
+/**
+ * @tc.name  : Test CapturerSourceInit
+ * @tc.type  : FUNC
+ * @tc.number: CapturerSourceInitTest_004
+ * @tc.desc  : Test CapturerSourceInit while audioCapturerSource init fail
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceInitTest_004, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+    IAudioSourceAttr attr;
+
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+    hpaeSourceInputNode->captureId_ = 1;
+    
+    EXPECT_CALL(*mockCaptureSource, IsInited())
+        .WillOnce(Return(false)); // not inited
+    EXPECT_CALL(*mockCaptureSource, Init(_))
+        .WillOnce(Return(ERROR)); // init fail
+        
+    EXPECT_NE(hpaeSourceInputNode->CapturerSourceInit(attr), SUCCESS);
+    EXPECT_NE(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_IDLE);
+    EXPECT_EQ(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_NEW);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
