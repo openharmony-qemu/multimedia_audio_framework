@@ -1721,7 +1721,7 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_083, TestSize.Le
 
     EXPECT_EQ(audioPolicyClient->RemoveCollaborationEnabledChangeForCurrentDeviceCallback(), SUCCESS);
     EXPECT_EQ(audioPolicyClient->GetCollaborationEnabledChangeForCurrentDeviceCallbackSize(), 0);
-    auto testCallback = std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback>();
+    auto testCallback = std::make_shared<AudioCollaborationEnabledChangeForCurrentDeviceCallback>();
     EXPECT_EQ(audioPolicyClient->AddCollaborationEnabledChangeForCurrentDeviceCallback(testCallback), SUCCESS);
     EXPECT_EQ(audioPolicyClient->GetCollaborationEnabledChangeForCurrentDeviceCallbackSize(), 1);
     EXPECT_EQ(audioPolicyClient->RemoveCollaborationEnabledChangeForCurrentDeviceCallback(), SUCCESS);
@@ -1739,8 +1739,8 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_084, TestSize.Le
 
     EXPECT_EQ(audioPolicyClient->RemoveCollaborationEnabledChangeForCurrentDeviceCallback(), SUCCESS);
     EXPECT_EQ(audioPolicyClient->GetCollaborationEnabledChangeForCurrentDeviceCallbackSize(), 0);
-    auto testCallbackFirst = std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback>();
-    auto testCallbackSecond = std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback>();
+    auto testCallbackFirst = std::make_shared<AudioCollaborationEnabledChangeForCurrentDeviceCallback>();
+    auto testCallbackSecond = std::make_shared<AudioCollaborationEnabledChangeForCurrentDeviceCallback>();
     EXPECT_EQ(audioPolicyClient->AddCollaborationEnabledChangeForCurrentDeviceCallback(testCallbackFirst), SUCCESS);
     EXPECT_EQ(audioPolicyClient->AddCollaborationEnabledChangeForCurrentDeviceCallback(testCallbackSecond), SUCCESS);
     EXPECT_EQ(audioPolicyClient->GetCollaborationEnabledChangeForCurrentDeviceCallbackSize(), 1 + 1);
