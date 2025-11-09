@@ -710,6 +710,7 @@ void AudioAdapterManager::SetAudioVolume(std::shared_ptr<AudioDeviceDescriptor> 
     std::lock_guard<std::mutex> lock(audioVolumeMutex_);
     AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     bool isMuted = GetStreamMuteInternal(device, volumeType);
+    isMuted = VolumeUtils::IsVolumeFixEnable() ? false : isMuted;
     int32_t volumeLevel = GetStreamVolumeInternal(device, volumeType) * (isMuted ? 0 : 1);
     if (device->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene() && volumeType == STREAM_MUSIC) {
         isMuted = IsAbsVolumeMute();
