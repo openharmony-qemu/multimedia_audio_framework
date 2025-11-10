@@ -31,7 +31,6 @@ public:
     bool RemoveThread(int32_t tokenId);
     bool Start(uint64_t startTime, uint64_t deadlineTime);
     bool Stop();
-    int32_t workgroupId;
     int32_t GetWorkgroupId() const;
     bool GetNeedUpdatePrioFlag() const;
     void SetNeedUpdatePrioFlag(bool flag);
