@@ -421,9 +421,6 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
 {
     AudioPipeType existingPipe = GetPipeType(existingStream->routeFlag_, existingStream->audioMode_);
     AudioPipeType commingPipe = GetPipeType(incomingStream->routeFlag_, incomingStream->audioMode_);
-    if (existingStream->rendererInfo->streamUsage_ == STREAM_USAGE_VOICE_COMMUNICATION) {
-        existingPipe = PIPE_TYPE_CALL_OUT;
-    }
     ConcurrencyAction action = AudioStreamCollector::GetAudioStreamCollector().GetConcurrencyAction(
         existingPipe, commingPipe);
     action = IsSameAdapter(existingStream, incomingStream) ? action : PLAY_BOTH;
