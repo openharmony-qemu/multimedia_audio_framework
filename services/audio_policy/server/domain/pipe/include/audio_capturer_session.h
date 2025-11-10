@@ -112,6 +112,7 @@ private:
         uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession);
     bool HandleNormalInputPipes(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
         uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession);
+    bool IsValidSessionIdForReload(uint32_t sessionId);
     bool IsIndependentPipe(const std::shared_ptr<AudioPipeInfo> &pipe);
     bool IsVirtualAudioRecognitionSession(uint32_t sessionId);
     bool IsStreamValid(const std::shared_ptr<AudioStreamDescriptor> &stream);
