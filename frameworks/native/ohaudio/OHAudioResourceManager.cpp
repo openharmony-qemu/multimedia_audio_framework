@@ -1,4 +1,3 @@
-dd
 /*
  * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -131,7 +130,7 @@ OHAudioWorkgroup *OHAudioResourceManager::CreateWorkgroup()
 bool OHAudioResourceManager::ReleaseWorkgroup(OHAudioWorkgroup *group)
 {
     CHECK_AND_RETURN_RET_LOG(group != nullptr, false, "group is nullptr");
-    AudioSystemManager::GetInstance()->ReleaseAudioWorkgroup(group->workgroupId);
+    AudioSystemManager::GetInstance()->ReleaseAudioWorkgroup(group->GetWorkgroupId());
     delete group;
     group = nullptr;
     return true;
