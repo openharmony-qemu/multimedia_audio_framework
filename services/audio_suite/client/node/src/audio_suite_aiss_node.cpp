@@ -57,7 +57,7 @@ int32_t AudioSuiteAissNode::DoProcess()
     if ((GetNodeBypassStatus() == false) && !preOutputs.empty()) {
         AUDIO_DEBUG_LOG("AudioSuiteProcessNode::DoProcess: node type = %{public}d need "
             "do SignalProcess.", GetNodeType());
-        Trace trace("AudioSuiteAissNode::SignalProcess Start");    
+        Trace trace("AudioSuiteAissNode::SignalProcess Start");
         tempOut = SignalProcess(preOutputs);
         trace.End();
         if (tempOut == nullptr) {
