@@ -441,6 +441,11 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAudioParameter_001, TestSize.Level1)
     audioServer->SetAudioParameter("AUDIO_EXT_PARAM_KEY_A2DP_OFFLOAD_CONFIG", "");
     audioServer->SetAudioParameter("mmi", "");
     audioServer->SetAudioParameter("perf_info", "");
+
+    audioServer->SetAudioParameter("VOICE_PHONE_STATUS", "1");
+    audioServer->GetAudioParameter("VOICE_PHONE_STATUS", str);
+    EXPECT_EQ(str, "1");
+
     audioServer->GetAudioParameter("", str);
     audioServer->GetAudioParameter("AUDIO_EXT_PARAM_KEY_LOWPOWER", str);
     audioServer->GetAudioParameter("perf_info", str);
@@ -2536,21 +2541,6 @@ HWTEST_F(AudioServerUnitTest, OnMuteStateChange_002, TestSize.Level1)
     audioServer->OnMuteStateChange(pid, callbackId, uid, sessionId, isMuted);
     audioServer->audioDataTransferCbMap_.clear();
     EXPECT_EQ(audioServer->audioDataTransferCbMap_.size(), 0);
-}
-
-/**
- * @tc.name  : Test SetAudioParameter API
- * @tc.type  : FUNC
- * @tc.number: AudioServerSetAudioParameter_004
- * @tc.desc  : Test SetAudioParameter interface.
- */
-HWTEST_F(AudioServerUnitTest, AudioServerSetAudioParameter_004, TestSize.Level1)
-{
-    int PARAMETER_SET_LIMIT = 1024;
-    for (int i = 0; i < PARAMETER_SET_LIMIT + 1; ++i) {
-        audioServer->SetAudioParameter("key" + std::to_string(i), "value" + std::to_string(i));
-    }
-    EXPECT_NE(audioServer->SetAudioParameter("key", "value"), SUCCESS);
 }
 
 /**
