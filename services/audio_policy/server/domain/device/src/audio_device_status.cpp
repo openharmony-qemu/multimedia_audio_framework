@@ -1049,6 +1049,7 @@ void AudioDeviceStatus::AddEarpiece()
     AudioPolicyUtils::GetInstance().UpdateDisplayName(audioDescriptor);
     audioDeviceManager_.AddNewDevice(audioDescriptor);
     audioConnectedDevice_.AddConnectedDevice(audioDescriptor);
+    AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(audioDescriptor);
     AUDIO_INFO_LOG("Add earpiece to device list");
 }
 
@@ -1109,6 +1110,7 @@ void AudioDeviceStatus::AddAudioDevice(AudioModuleInfo& moduleInfo, DeviceType d
     audioDeviceManager_.AddNewDevice(audioDescriptor);
     audioConnectedDevice_.AddConnectedDevice(audioDescriptor);
     audioMicrophoneDescriptor_.AddMicrophoneDescriptor(audioDescriptor);
+    AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(audioDescriptor);
 }
 
 int32_t AudioDeviceStatus::OnServiceConnected(AudioServiceIndex serviceIndex)
