@@ -306,8 +306,7 @@ void HpaeRendererManagerOnFadeDoneFuzzTest()
     auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
     rendererManager->Init();
     uint32_t sessionId = GetData<uint32_t>();
-    IOperation operation = OPERATION_INVALID;
-    rendererManager->OnFadeDone(sessionId, operation);
+    rendererManager->OnFadeDone(sessionId);
     WaitForMsgProcessing(rendererManager);
     rendererManager->DeInit();
 }

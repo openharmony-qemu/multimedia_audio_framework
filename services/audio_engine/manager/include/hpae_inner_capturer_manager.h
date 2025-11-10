@@ -80,7 +80,7 @@ public:
     HpaeSinkInfo GetSinkInfo() override;
 
     void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation) override;
-    void OnFadeDone(uint32_t sessionId, IOperation operation) override;
+    void OnFadeDone(uint32_t sessionId) override;
 
     int32_t AddNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node) override;
     int32_t AddAllNodesToSink(
