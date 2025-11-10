@@ -55,6 +55,7 @@ ohos_shared_library("ohaudiosuite") {
   deps = [
     "../../../services/audio_suite:audio_suite",
     "../../../frameworks/native/audioutils:audio_xml_utils",
+    "../audioutils:audio_utils",
   ]
   cflags = [ "-Werror" ]
 

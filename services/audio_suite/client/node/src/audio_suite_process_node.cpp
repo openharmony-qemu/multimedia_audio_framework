@@ -20,6 +20,7 @@
 #include <vector>
 #include <memory>
 #include "audio_suite_process_node.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -49,7 +50,9 @@ int32_t AudioSuiteProcessNode::DoProcess()
     std::vector<AudioSuitePcmBuffer*>& preOutputs = ReadProcessNodePreOutputData();
     if ((GetNodeBypassStatus() == false) && !preOutputs.empty()) {
         AUDIO_DEBUG_LOG("node type = %{public}d need do SignalProcess.", GetNodeType());
+        Trace trace("AudioSuiteProcessNode::SignalProcess Start");
         tempOut = SignalProcess(preOutputs);
+        trace.End();
         if (tempOut == nullptr) {
             AUDIO_ERR_LOG("node %{public}d do SignalProcess failed, return a nullptr", GetNodeType());
             return ERR_OPERATION_FAILED;
