@@ -811,6 +811,8 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "../../../../services/audio_service/client/include",
     "../../../../services/audio_service/common/include",
     "../../../../services/audio_service/common/include/dfx",
+    "../../../../services/audio_engine/node/include",
+    "../../../../services/audio_engine/buffer",
   ]
 
   sources = [
@@ -855,6 +857,7 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "../../../../services/audio_service:audio_process_service",
     "../../../../services/audio_service:audio_service",
     "../../../audio_policy:audio_foundation",
+    "../../../../services/audio_engine:audio_engine_node",
   ]
 
   external_deps = [
@@ -933,6 +936,8 @@ ohos_unittest("audio_process_in_client_second_unit_test") {
     "../../../../services/audio_service/client/include",
     "../../../../services/audio_service/common/include",
     "../../../../services/audio_service/common/include/dfx",
+    "../../../../services/audio_engine/node/include",
+    "../../../../services/audio_engine/buffer",
   ]
 
   sources = [
@@ -993,6 +998,7 @@ ohos_unittest("audio_process_in_client_second_unit_test") {
     "../../../audio_service:audio_client",
     "../../../audio_service:audio_common",
     "../../../../services/audio_service/idl:audio_framework_interface",
+    "../../../../services/audio_engine:audio_engine_node",
   ]
 
   external_deps = [

@@ -270,7 +270,7 @@ bool HpaeAudioFormatConverterNode::CheckUpdateInInfo(HpaePcmBuffer *input)
         HILOG_COMM_INFO("NodeId %{public}d: Update resampler input sample rate: %{public}d -> %{public}d",
             GetNodeId(), resampler_->GetInRate(), sampleRate);
         preNodeInfo_.samplingRate = (AudioSamplingRate)sampleRate;
-        preNodeInfo_.frameLen = CaculateFrameLenBySampleRate(sampleRate);
+        preNodeInfo_.frameLen = CalculateFrameLenBySampleRate(sampleRate);
         resampler_->UpdateRates(sampleRate, resampler_->GetOutRate());
         isInfoUpdated = true;
     }
@@ -286,7 +286,7 @@ void HpaeAudioFormatConverterNode::UpdateTmpOutPcmBufferInfo(const PcmBufferInfo
     PcmBufferInfo tmpOutPcmBufferInfo = outPcmBufferInfo;
     if (outPcmBufferInfo.ch < preNodeInfo_.channels) { // downmix, then resample
         tmpOutPcmBufferInfo.rate = resampler_->GetInRate();
-        tmpOutPcmBufferInfo.frameLen = CaculateFrameLenBySampleRate(tmpOutPcmBufferInfo.rate);
+        tmpOutPcmBufferInfo.frameLen = CalculateFrameLenBySampleRate(tmpOutPcmBufferInfo.rate);
     } else { // resample, then upmix
         tmpOutPcmBufferInfo.ch = preNodeInfo_.channels;
     }

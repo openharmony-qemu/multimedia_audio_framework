@@ -525,7 +525,7 @@ void TransSinkInfoToNodeInfo(const HpaeSinkInfo &sinkInfo, const std::weak_ptr<I
     nodeInfo.statusCallback = statusCallback;
 }
 
-size_t CaculateFrameLenBySampleRate(const uint32_t sampleRate)
+size_t CalculateFrameLenBySampleRate(const uint32_t sampleRate)
 {
     size_t frameLen = 0;
     if (sampleRate == SAMPLE_RATE_11025) {
@@ -538,9 +538,9 @@ size_t CaculateFrameLenBySampleRate(const uint32_t sampleRate)
     return frameLen;
 }
 
-size_t CaculateFrameLenBySampleRate(const AudioSamplingRate sampleRate)
+size_t CalculateFrameLenBySampleRate(const AudioSamplingRate sampleRate)
 {
-    return CaculateFrameLenBySampleRate(static_cast<uint32_t>(sampleRate));
+    return CalculateFrameLenBySampleRate(static_cast<uint32_t>(sampleRate));
 }
 
 void ConfigNodeInfo(HpaeNodeInfo &nodeInfo, const HpaeStreamInfo &streamInfo)

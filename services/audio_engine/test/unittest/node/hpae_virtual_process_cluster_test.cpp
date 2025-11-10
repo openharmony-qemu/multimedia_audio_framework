@@ -66,7 +66,7 @@ HWTEST_F(HpaeVirtualProcessClusterTest, DestructorCleansUpResources, TestSize.Le
     std::shared_ptr<HpaeVirtualProcessCluster> cluster = std::make_shared<HpaeVirtualProcessCluster>(nodeInfo);
     HpaeNodeInfo nodeInfo1 = nodeInfo;
     nodeInfo1.samplingRate = SAMPLE_RATE_44100;
-    nodeInfo1.frameLen = CaculateFrameLenBySampleRate(nodeInfo1.samplingRate);
+    nodeInfo1.frameLen = CalculateFrameLenBySampleRate(nodeInfo1.samplingRate);
     std::shared_ptr<HpaeSinkInputNode> preNode = std::make_shared<HpaeSinkInputNode>(nodeInfo1);
     cluster->Connect(preNode);
     EXPECT_EQ(cluster->GetConnectSinkInputNum(), 1);

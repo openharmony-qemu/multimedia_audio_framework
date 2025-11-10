@@ -55,7 +55,7 @@ static inline FadeType GetFadeType(uint64_t expectedPlaybackDurationMs);
 HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode)
 {
     processConfig_ = processConfig;
-    spanSizeInFrame_ = CaculateFrameLenBySampleRate(processConfig.streamInfo.customSampleRate == 0 ?
+    spanSizeInFrame_ = CalculateFrameLenBySampleRate(processConfig.streamInfo.customSampleRate == 0 ?
         processConfig.streamInfo.samplingRate : processConfig.streamInfo.customSampleRate);
     byteSizePerFrame_ = (processConfig.streamInfo.channels *
         static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));

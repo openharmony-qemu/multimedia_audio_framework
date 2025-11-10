@@ -149,7 +149,7 @@ int32_t ProResampler::Process11025SampleRate(const float *inBuffer, uint32_t inF
     ret = memset_s(buf11025_.data(), fillSize * channels_ * sizeof(float), 0, fillSize * channels_ * sizeof(float));
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "memset_s failed with error %{public}d", ret);
 
-    CHECK_AND_RETURN_RET_LOG(tmpOutFrameLen * channels_ <= buf11025_.capacity(),
+    CHECK_AND_RETURN_RET_LOG(static_cast<uint64_t>(tmpOutFrameLen) * channels_ <= buf11025_.capacity(),
         RESAMPLER_ERR_OVERFLOW, "buf11025 overflow detected, required %{public}u, available %{public}zu",
         tmpOutFrameLen * channels_, buf11025_.capacity());
     ret = memcpy_s(buf11025_.data() + fillSize * channels_,
@@ -206,7 +206,7 @@ int32_t ProResampler::Process10HzSampleRate(const float *inBuffer, uint32_t inFr
     ret = memset_s(bufFor100ms_.data(), fillSize * channels_ * sizeof(float), 0, fillSize * channels_ * sizeof(float));
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ret, "memset_s failed with error %{public}d", ret);
 
-    CHECK_AND_RETURN_RET_LOG(tmpOutFrameLen * channels_ <= bufFor100ms_.capacity(),
+    CHECK_AND_RETURN_RET_LOG(static_cast<uint64_t>(tmpOutFrameLen) * channels_ <= bufFor100ms_.capacity(),
         RESAMPLER_ERR_OVERFLOW, "bufFor100ms overflow detected, required %{public}u, available %{public}zu",
         tmpOutFrameLen * channels_, bufFor100ms_.capacity());
     ret = memcpy_s(bufFor100ms_.data() + fillSize * channels_,
