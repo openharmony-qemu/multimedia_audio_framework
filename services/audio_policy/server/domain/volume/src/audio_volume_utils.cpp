@@ -67,8 +67,6 @@ int32_t AudioVolumeUtils::GetDefaultVolumeLevel(const std::shared_ptr<AudioDevic
             GetDefaultVolumeLevelFromConfig(desc, streamType, defaultVolumeLevel);
             break;
     }
-    AUDIO_INFO_LOG("Get default volumeLevel %{public}d for device %{public}s stream %{public}d",
-        defaultVolumeLevel, desc->GetName().c_str(), streamType);
     return defaultVolumeLevel;
 }
 void AudioVolumeUtils::GetDefaultVolumeLevelFromConfig(const std::shared_ptr<AudioDeviceDescriptor> &desc,
@@ -147,8 +145,6 @@ int32_t AudioVolumeUtils::GetMaxVolumeLevel(const std::shared_ptr<AudioDeviceDes
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     int32_t maxVolumeLevel = MAX_VOLUME_LEVEL;
     GetMaxVolumeLevelFromConfig(desc, volumeType, maxVolumeLevel);
-    AUDIO_INFO_LOG("Get max volumeLevel %{public}d for device %{public}s stream %{public}d",
-        maxVolumeLevel, desc->GetName().c_str(), streamType);
     return maxVolumeLevel;
 }
 void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(const std::shared_ptr<AudioDeviceDescriptor> &desc,
@@ -189,8 +185,6 @@ int32_t AudioVolumeUtils::GetMinVolumeLevel(const std::shared_ptr<AudioDeviceDes
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     int32_t minVolumeLevel = MIN_VOLUME_LEVEL;
     GetMinVolumeLevelFromConfig(desc, volumeType, minVolumeLevel);
-    AUDIO_INFO_LOG("Get min volumeLevel %{public}d for device %{public}s stream %{public}d",
-        minVolumeLevel, desc->GetName().c_str(), streamType);
     return minVolumeLevel;
 }
 
