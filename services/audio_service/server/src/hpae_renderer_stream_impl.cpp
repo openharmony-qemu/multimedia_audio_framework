@@ -37,7 +37,6 @@
 #include "core_service_handler.h"
 #include "audio_volume.h"
 #include "volume_tools.h"
-#include "hpae_node_common.h"
 
 using namespace OHOS::AudioStandard::HPAE;
 namespace OHOS {
@@ -45,8 +44,12 @@ namespace AudioStandard {
 
 static constexpr int32_t MIN_BUFFER_SIZE = 2;
 static constexpr uint64_t FRAME_LEN_10MS = 10;
+static constexpr uint64_t FRAME_LEN_20MS = 20;
 static constexpr uint64_t FRAME_LEN_40MS = 40;
+static constexpr uint32_t FRAME_LEN_100MS = 100;
 static constexpr uint64_t PRINT_TIMESTAMP_INTERVAL_NS = 1000000000;
+// to judge whether customSampleRate is multiples of 50
+static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
 static constexpr float AUDIO_VOLUME_EPSILON = 0.0001;
@@ -55,8 +58,18 @@ static inline FadeType GetFadeType(uint64_t expectedPlaybackDurationMs);
 HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode)
 {
     processConfig_ = processConfig;
-    spanSizeInFrame_ = CalculateFrameLenBySampleRate(processConfig.streamInfo.customSampleRate == 0 ?
-        processConfig.streamInfo.samplingRate : processConfig.streamInfo.customSampleRate);
+    if (processConfig.streamInfo.customSampleRate == 0) {	
+        spanSizeInFrame_ = processConfig.streamInfo.samplingRate == SAMPLE_RATE_11025 ?	
+            FRAME_LEN_40MS * static_cast<uint32_t>(processConfig.streamInfo.samplingRate) / AUDIO_MS_PER_S :
+            FRAME_LEN_20MS * static_cast<uint32_t>(processConfig.streamInfo.samplingRate) / AUDIO_MS_PER_S;
+    } else if (processConfig.streamInfo.customSampleRate == SAMPLE_RATE_11025) {
+        spanSizeInFrame_ =
+            FRAME_LEN_40MS * static_cast<uint32_t>(processConfig.streamInfo.customSampleRate) / AUDIO_MS_PER_S;
+    } else {
+        spanSizeInFrame_ = processConfig.streamInfo.customSampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES == 0 ?
+            FRAME_LEN_20MS * static_cast<uint32_t>(processConfig.streamInfo.customSampleRate) / AUDIO_MS_PER_S :
+            FRAME_LEN_100MS * static_cast<uint32_t>(processConfig.streamInfo.customSampleRate) / AUDIO_MS_PER_S;
+    }
     byteSizePerFrame_ = (processConfig.streamInfo.channels *
         static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
     minBufferSize_ = MIN_BUFFER_SIZE * byteSizePerFrame_ * spanSizeInFrame_;
