@@ -932,7 +932,7 @@ inline void CapturerInServer::CaptureConcurrentCheck(uint32_t streamIndex)
         return;
     }
     std::atomic_store(&lastStatus_, status_);
-    int32_t ret = CoreServiceHandler::GetInstance().CaptureConcurrentCheck(streamIndex);
+    int32_t ret = PolicyHandler::GetInstance().CaptureConcurrentCheck(streamIndex);
     AUDIO_INFO_LOG("ret:%{public}d streamIndex_:%{public}d status_:%{public}u", ret, streamIndex, status_.load());
 }
 // LCOV_EXCL_STOP

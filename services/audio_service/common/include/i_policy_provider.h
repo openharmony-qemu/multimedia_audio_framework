@@ -111,6 +111,8 @@ public:
 #endif
 
     virtual int32_t ClearAudioFocusBySessionID(const int32_t &sessionID) = 0;
+
+    virtual int32_t CaptureConcurrentCheck(const uint32_t &sessionID) = 0;
     
     virtual ~IPolicyProvider() = default;
 
