@@ -382,7 +382,7 @@ OH_AudioCommon_Result OH_AudioSessionManager_RegisterCurrentInputDeviceChangeCal
 
 OH_AudioCommon_Result OH_AudioSessionManager_UnregisterCurrentInputDeviceChangeCallback(
     OH_AudioSessionManager *audioSessionManager,
-    OH_AudioSession_AvailableDeviceChangedCallback callback)
+    OH_AudioSession_CurrentInputDeviceChangedCallback callback)
 {
     CHECK_AND_RETURN_RET_LOG(audioSessionManager != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioSessionManager is nullptr");
