@@ -684,20 +684,22 @@ HWTEST_F(AudioSessionServiceUnitTest, NotifyAppStateChangeTest, TestSize.Level1)
 */
 HWTEST_F(AudioSessionServiceUnitTest, IsSystemAppTest, TestSize.Level1)
 {
-    int32_t callerPid = 1;
-    audioSessionService_.MarkSystemApp(callerPid);
-    EXPECT_FALSE(audioSessionService_.IsSystemApp(callerPid));
+    AudioInterrupt audioInterrupt = {};
+    audioInterrupt.pid = 1;
+    audioSessionService_.MarkSystemApp(audioInterrupt.pid);
+    EXPECT_FALSE(audioSessionService_.IsSystemApp(audioInterrupt.pid));
 
     AudioSessionStrategy strategy;
     strategy.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
-    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
+    auto audioSession = std::make_shared<AudioSession>(audioInterrupt.pid, strategy, audioSessionStateMonitor_);
     ASSERT_NE(nullptr, audioSession);
     audioSession->state_ = AudioSessionState::SESSION_ACTIVE;
-    audioSessionService_.sessionMap_[callerPid] = audioSession;
-    EXPECT_FALSE(audioSessionService_.IsSystemApp(callerPid));
-    audioSessionService_.MarkSystemApp(callerPid);
-    EXPECT_TRUE(audioSessionService_.IsSystemApp(callerPid));
-    EXPECT_TRUE(audioSessionService_.IsSystemAppWithMixStrategy(callerPid));
+    audioSessionService_.sessionMap_[audioInterrupt.pid] = audioSession;
+    EXPECT_FALSE(audioSessionService_.IsSystemApp(audioInterrupt.pid));
+    audioSessionService_.MarkSystemApp(audioInterrupt.pid);
+    audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    EXPECT_TRUE(audioSessionService_.IsSystemApp(audioInterrupt.pid));
+    EXPECT_TRUE(audioSessionService_.IsSystemAppWithMixStrategy(audioInterrupt));
 }
 
 /**
