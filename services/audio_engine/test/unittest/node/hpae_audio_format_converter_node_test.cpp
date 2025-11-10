@@ -46,7 +46,6 @@ const size_t DEFAULT_FRAMELEN_11025 = 441;
 const size_t DEFAULT_FRAMELEN_48010 = 4801;
 constexpr uint32_t SAMPLE_RATE_48010 = 48010;
 
-
 /*
  * @tc.name  : Test CheckUpdateInInfo API.
  * @tc.type  : FUNC
@@ -121,7 +120,7 @@ constexpr uint32_t SAMPLE_RATE_48010 = 48010;
     // test 10hz 100ms customSampleRate, 0 frameLen data
     PcmBufferInfo pcmBufferInfo1(STEREO, 0, DEFAULT_FRAMELEN_48010);
     HpaePcmBuffer input1(pcmBufferInfo1);
-    int32_t ret = converterNode->CheckUpdateInInfo(&input);
+    ret = converterNode->CheckUpdateInInfo(&input);
     EXPECT_EQ(ret, true);
     EXPECT_EQ(converterNode->preNodeInfo_.samplingRate, SAMPLE_RATE_48010);
     EXPECT_EQ(converterNode->preNodeInfo_.frameLen, DEFAULT_FRAMELEN_48010);
@@ -240,7 +239,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, UpdateTmpOutPcmBufferInfoTest_003, Te
     // tmpOutBuf_ used for resample output, changed
     EXPECT_EQ(converterNode->tmpOutBuf_.GetSampleRate(), outputNodeInfo.samplingRate); // resample, sampleRate change
     EXPECT_EQ(converterNode->tmpOutBuf_.GetFrameLen(), outputNodeInfo.frameLen); // resample, frameLen change
-    EXPECT_EQ(converterNode->tmpOutBuf_.GetChannelCount(), input1.GetChannelCount); // resample, channel unchange
+    EXPECT_EQ(converterNode->tmpOutBuf_.GetChannelCount(), input1.GetChannelCount()); // resample, channel unchange
 }
 
 /*
@@ -281,7 +280,6 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, UpdateTmpOutPcmBufferInfoTest_004, Te
     // tmpOutBuf_ used for resample output, changed
     EXPECT_EQ(converterNode->tmpOutBuf_.GetSampleRate(), outputNodeInfo.samplingRate); // resample, sampleRate change
     EXPECT_EQ(converterNode->tmpOutBuf_.GetFrameLen(), outputNodeInfo.frameLen); // resample, frameLen change
-    EXPECT_EQ(converterNode->tmpOutBuf_.GetChannelCount(), input1.GetChannelCount); // resample, channel unchange
+    EXPECT_EQ(converterNode->tmpOutBuf_.GetChannelCount(), input1.GetChannelCount()); // resample, channel unchange
 }
 }
-

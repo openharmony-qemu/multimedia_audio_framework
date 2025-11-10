@@ -231,6 +231,10 @@ int32_t ProResampler::UpdateRates(uint32_t inRate, uint32_t outRate)
         state_ = nullptr;
         return RESAMPLER_ERR_INVALID_ARG;
     }
+    expectedOutFrameLen_ = outRate_ * FRAME_LEN_20MS / MS_PER_SECOND;
+    int32_t ret = ConfigBufferSizeAndExpectedInFrameLen();
+    CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret,
+        "ProResampler updateRates reserve buff error code %{public}s", ErrCodeToString(ret).c_str());
     if (state_ == nullptr) { // resampler can be updated from an invalid state to valid state
         int32_t errRet = RESAMPLER_ERR_SUCCESS;
         state_ = SingleStagePolyphaseResamplerInit(channels_, inRate_, outRate_, quality_, &errRet);
@@ -238,12 +242,8 @@ int32_t ProResampler::UpdateRates(uint32_t inRate, uint32_t outRate)
             "error code %{public}s", ErrCodeToString(errRet).c_str());
         return SingleStagePolyphaseResamplerSkipHalfTaps(state_);
     }
-    int32_t ret = SingleStagePolyphaseResamplerSetRate(state_, inRate_, outRate_);
+    ret = SingleStagePolyphaseResamplerSetRate(state_, inRate_, outRate_);
     CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret, "error code %{public}s", ErrCodeToString(ret).c_str());
-    expectedOutFrameLen_ = outRate_ * FRAME_LEN_20MS / MS_PER_SECOND;
-    ret = ConfigBufferSizeAndExpectedInFrameLen();
-    CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, ret,
-        "ProResampler updateRates reserve buff error code %{public}s", ErrCodeToString(ret).c_str());
     return ret;
 }
 
