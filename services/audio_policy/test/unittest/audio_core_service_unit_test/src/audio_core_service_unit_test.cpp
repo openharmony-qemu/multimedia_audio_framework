@@ -1108,13 +1108,6 @@ HWTEST_F(AudioCoreServiceUnitTest, IsForcedNormal_001, TestSize.Level1)
     result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
     EXPECT_EQ(result, true);
     EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
-    
-    streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_NONE;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
-    streamDesc->appInfo_.appUid = 666;
-    result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
-    EXPECT_EQ(result, true);
-    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
 }
 
 /**
@@ -1127,19 +1120,23 @@ HWTEST_F(AudioCoreServiceUnitTest, IsForcedNormal_002, TestSize.Level1)
     ASSERT_NE(nullptr, GetServerPtr());
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
-    streamDesc->appInfo_.appUid = 777;
+    streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NONE;
+    streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_NONE;
     bool result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
     EXPECT_EQ(result, false);
-    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_FLAG_NONE);
+
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
+    result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
+    EXPECT_EQ(result, false);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_FLAG_NONE);
     
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
     streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
     streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_NONE;
-    streamDesc->appInfo_.appUid = 888;
     result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
     EXPECT_EQ(result, false);
-    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_FLAG_NONE);
 }
 
 /**
