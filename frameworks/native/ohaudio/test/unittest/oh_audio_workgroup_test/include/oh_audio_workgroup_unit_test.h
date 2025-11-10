@@ -1,4 +1,3 @@
-dd
 /*
  * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +21,7 @@ dd
 #include "audio_info.h"
 #include "audio_common_log.h"
 #include "native_audio_resource_manager.h"
+#include "../../../../OHAudioResourceManager.h"
 
 namespace OHOS {
 namespace AudioStandard {
