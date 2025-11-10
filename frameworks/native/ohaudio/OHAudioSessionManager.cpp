@@ -380,6 +380,19 @@ OH_AudioCommon_Result OH_AudioSessionManager_RegisterCurrentInputDeviceChangeCal
     return ohAudioSessionManager->SetAudioSessionCurrentInputDeviceChangeCallback(callback);
 }
 
+OH_AudioCommon_Result OH_AudioSessionManager_UnregisterCurrentInputDeviceChangeCallback(
+    OH_AudioSessionManager *audioSessionManager,
+    OH_AudioSession_AvailableDeviceChangedCallback callback)
+{
+    CHECK_AND_RETURN_RET_LOG(audioSessionManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioSessionManager is nullptr");
+    OHAudioSessionManager* ohAudioSessionManager = convertManager(audioSessionManager);
+    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "callback is nullptr");
+    return ohAudioSessionManager->UnsetAudioSessionCurrentInputDeviceChangeCallback(callback);
+}
+
 namespace OHOS {
 namespace AudioStandard {
 
