@@ -939,15 +939,17 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
     HandleAppStreamType(zoneId, currAudioInterrupt);
     AudioStreamType streamType = currAudioInterrupt.audioFocusType.streamType;
     uint32_t incomingStreamId = currAudioInterrupt.streamId;
+    SourceType incomingSourceType = (currAudioInterrupt.audioFocusType).sourceType;
     AUDIO_INFO_LOG("streamId: %{public}u pid: %{public}d streamType: %{public}d zoneId: %{public}d"\
         "usage: %{public}d source: %{public}d",
         incomingStreamId, currAudioInterrupt.pid, streamType, zoneId,
-        currAudioInterrupt.streamUsage, (currAudioInterrupt.audioFocusType).sourceType);
+        currAudioInterrupt.streamUsage, incomingSourceType);
 
     if (AudioInterruptIsActiveInFocusList(zoneId, incomingStreamId) && !isUpdatedAudioStrategy) {
         AUDIO_INFO_LOG("Stream is active in focus list, no need to active audio interrupt.");
         return SUCCESS;
     }
+    GameRecogSetParam(GetClientTypeByStreamId(incomingStreamId), incomingSourceType, true);
     ResetNonInterruptControl(currAudioInterrupt);
     bool shouldReturnSuccess = false;
     ProcessAudioScene(currAudioInterrupt, incomingStreamId, zoneId, shouldReturnSuccess);
@@ -1051,10 +1053,12 @@ int32_t AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId, co
 
     AudioInterrupt currAudioInterrupt = audioInterrupt;
     HandleAppStreamType(zoneId, currAudioInterrupt);
+    uint32_t incomingStreamId = currAudioInterrupt.streamId;
+    SourceType incomingSourceType = (currAudioInterrupt.audioFocusType).sourceType;
     AUDIO_INFO_LOG("streamId: %{public}u pid: %{public}d streamType: %{public}d "\
         "usage: %{public}d source: %{public}d",
-        currAudioInterrupt.streamId, currAudioInterrupt.pid, (currAudioInterrupt.audioFocusType).streamType,
-        currAudioInterrupt.streamUsage, (currAudioInterrupt.audioFocusType).sourceType);
+        incomingStreamId, currAudioInterrupt.pid, (currAudioInterrupt.audioFocusType).streamType,
+        currAudioInterrupt.streamUsage, incomingSourceType);
 
     DeactivateAudioInterruptInternal(zoneId, currAudioInterrupt);
 
@@ -1065,6 +1069,7 @@ int32_t AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId, co
         lock.unlock();
         UpdateAudioSceneFromInterrupt(targetAudioScene, DEACTIVATE_AUDIO_INTERRUPT, zoneId);
     }
+    GameRecogSetParam(GetClientTypeByStreamId(incomingStreamId), incomingSourceType, false);
 
     return SUCCESS;
 }
@@ -1148,6 +1153,18 @@ void AudioInterruptService::SetUserId(const int32_t newId, const int32_t oldId)
     oldUserId_ = oldId;
     newUserId_ = newId;
     AUDIO_INFO_LOG("set user id current id:%{public}d, old id:%{public}d", newUserId_, oldUserId_);
+}
+
+void AudioInterruptService::GameRecogSetParam(ClientType clientType, SourceType sourceType, bool switchOn)
+{
+    if (clientType != CLIENT_TYPE_GAME || sourceType != SOURCE_TYPE_VOICE_RECOGNITION) {
+        return;
+    }
+    std::string key = "game_record_recognition";
+    std::string value = switchOn ? "true" : "false";
+
+    AudioServerProxy::GetInstance().SetAudioParameterProxy(key, value);
+    return;
 }
 
 int32_t AudioInterruptService::ActivatePreemptMode()

@@ -922,7 +922,7 @@ bool AudioServer::UpdateAudioParameterInfo(const std::string &key, const std::st
         parmKey = AudioParamKey::MMI;
     } else if (key == "perf_info") {
         parmKey = AudioParamKey::PERF_INFO;
-    } else if (key == "mute_call") {
+    } else if (key == "mute_call" || key == "game_record_recognition") {
         valueNew = key + "=" + value;
     } else if (key == "LOUD_VOLUMN_MODE") {
         parmKey = AudioParamKey::NONE;

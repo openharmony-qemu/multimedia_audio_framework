@@ -153,6 +153,7 @@ private:
 
     void CacheFocusAndCallback(const uint32_t &sessionId, const InterruptEventInternal &interruptEvent,
         const AudioInterrupt &audioInterrupt);
+    void GameRecogSetParam(ClientType clientType, SourceType sourceType, bool switchOn);
 
     // Inner class for death handler
     class AudioInterruptDeathRecipient : public IRemoteObject::DeathRecipient {
