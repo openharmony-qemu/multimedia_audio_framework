@@ -288,7 +288,12 @@ int32_t AudioAdapterManager::GetMaxVolumeLevel(AudioVolumeType volumeType, Devic
     if (volumeType == STREAM_APP) {
         return appConfigVolume_.maxVolume;
     }
-    auto desc = audioConnectedDevice_.GetDeviceByDeviceType(deviceType);
+    std::shared_ptr<AudioDeviceDescriptor> desc;
+    if (deviceType == DeviceType::DEVICE_TYPE_NONE) {
+        desc = audioActiveDevice_.GetDeviceForVolume(volumeType);
+    } else {
+        desc = audioConnectedDevice_.GetDeviceByDeviceType(deviceType);
+    }
     return AudioVolumeUtils::GetInstance().GetMaxVolumeLevel(desc, volumeType);
 }
 
@@ -309,7 +314,12 @@ int32_t AudioAdapterManager::GetMinVolumeLevel(AudioVolumeType volumeType, Devic
     if (volumeType == STREAM_APP) {
         return appConfigVolume_.minVolume;
     }
-    auto desc = audioConnectedDevice_.GetDeviceByDeviceType(deviceType);
+    std::shared_ptr<AudioDeviceDescriptor> desc;
+    if (deviceType == DeviceType::DEVICE_TYPE_NONE) {
+        desc = audioActiveDevice_.GetDeviceForVolume(volumeType);
+    } else {
+        desc = audioConnectedDevice_.GetDeviceByDeviceType(deviceType);
+    }
     return AudioVolumeUtils::GetInstance().GetMinVolumeLevel(desc, volumeType);
 }
 
@@ -576,7 +586,12 @@ void AudioAdapterManager::HandleSaveVolume(DeviceType deviceType, AudioStreamTyp
 void AudioAdapterManager::HandleStreamMuteStatus(AudioStreamType streamType, bool mute,
     const DeviceType &deviceType, std::string networkId)
 {
-    auto desc = audioConnectedDevice_.GetDeviceByDeviceType(deviceType, networkId);
+        std::shared_ptr<AudioDeviceDescriptor> desc;
+    if (deviceType == DeviceType::DEVICE_TYPE_NONE) {
+        desc = audioActiveDevice_.GetDeviceForVolume(streamType);
+    } else {
+        desc = audioConnectedDevice_.GetDeviceByDeviceType(deviceType, networkId);
+    }
     SaveMuteToDbAsync(desc, streamType, mute);
 }
 

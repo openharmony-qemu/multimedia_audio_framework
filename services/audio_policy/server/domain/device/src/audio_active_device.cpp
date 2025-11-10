@@ -549,8 +549,6 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(Aud
     }
     if (volumeTypeDeviceMap_.contains(type)
         && IsAvailableFrontDeviceInVector(volumeTypeDeviceMap_[type])) {
-        AUDIO_INFO_LOG("Get Device %{public}s for stream %{public}d from map",
-            volumeTypeDeviceMap_[type].front()->GetName().c_str(), type);
         return volumeTypeDeviceMap_[type].front();
     }
     std::vector<StreamUsage> usages = VolumeUtils::GetStreamUsageByVolumeTypeForFetchDevice(type);
