@@ -261,10 +261,8 @@ int32_t AudioSuitePipeline::CreateNode(AudioNodeBuilder builder)
 int32_t AudioSuitePipeline::CreateNodeCheckParme(AudioNodeBuilder builder)
 {
     if (pipelineWorkMode_ == PIPELINE_REALTIME_MODE) {
-        if ((builder.nodeType != NODE_TYPE_INPUT) &&
-            (builder.nodeType != NODE_TYPE_OUTPUT) &&
-            (builder.nodeType != NODE_TYPE_EQUALIZER)) {
-            AUDIO_ERR_LOG("pipline in REALTIME mode, only can craet input, output and equalizer node.");
+        if (builder.nodeType == NODE_TYPE_AUDIO_SEPARATION) {
+            AUDIO_ERR_LOG("pipline in REALTIME mode, not support SEPARATION.");
             return ERR_NOT_SUPPORTED;
         }
     }

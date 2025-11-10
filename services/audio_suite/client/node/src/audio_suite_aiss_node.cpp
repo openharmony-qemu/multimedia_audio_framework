@@ -17,6 +17,7 @@
 #endif
 
 #include "audio_suite_aiss_node.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -56,7 +57,9 @@ int32_t AudioSuiteAissNode::DoProcess()
     if ((GetNodeBypassStatus() == false) && !preOutputs.empty()) {
         AUDIO_DEBUG_LOG("AudioSuiteProcessNode::DoProcess: node type = %{public}d need "
             "do SignalProcess.", GetNodeType());
+        Trace trace("AudioSuiteAissNode::SignalProcess Start");    
         tempOut = SignalProcess(preOutputs);
+        trace.End();
         if (tempOut == nullptr) {
             AUDIO_ERR_LOG("AudioSuiteProcessNode::DoProcess: node %{public}d do SignalProcess failed, "
                 "return a nullptr", GetNodeType());
