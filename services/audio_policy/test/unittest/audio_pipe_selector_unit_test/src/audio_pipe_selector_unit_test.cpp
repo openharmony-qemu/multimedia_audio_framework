@@ -628,7 +628,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, FetchPipeAndExecute_004, TestSize.Level1)
     streamDesc->streamInfo_.channels = AudioChannel::CHANNEL_6;
     streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_5POINT1;
     selectedPipeInfoList = audioPipeSelector->FetchPipeAndExecute(streamDesc);
-    EXPECT_EQ(selectedPipeInfoList[0]->pipeAction_, PIPE_ACTION_UPDATE);
+    EXPECT_EQ(selectedPipeInfoList[0]->pipeAction_, PIPE_ACTION_RELOAD);
 
     pipeInfo->adapterName_ = "primary";
     selectedPipeInfoList = audioPipeSelector->FetchPipeAndExecute(streamDesc);
