@@ -743,5 +743,10 @@ void AudioPipeSelector::UpdatePipeInfoFromStreamProp(std::shared_ptr<AudioStream
 
     info.InitAudioStreamInfo();
 }
+
+void AudioPipeSelector::UpdateRendererPipeInfo(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+{
+    
+}
 } // namespace AudioStandard
 } // namespace OHOS
