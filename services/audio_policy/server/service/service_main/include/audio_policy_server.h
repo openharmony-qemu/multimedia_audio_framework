@@ -792,6 +792,7 @@ private:
     // Permission and privacy
     bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);
     bool VerifyBluetoothPermission();
+    bool VerifyBluetoothPermission(const uid_t callingUid);
     int32_t SetAudioSceneInternal(AudioScene audioScene, const int32_t uid = INVALID_UID,
         const int32_t pid = INVALID_PID);
     bool VerifySessionId(uint32_t sessionId, uint32_t clientUid);
