@@ -3280,7 +3280,7 @@ int32_t AudioPolicyManager::SetVolumeDegreeCallback(const int32_t clientPid,
     const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v)
 {
     AUDIO_INFO_LOG("client: %{public}d", clientPid);
-    if (api_v == API_11 && !PermissionUtil::VerifySystemPermission()) {
+    if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("No system permission");
         return ERR_PERMISSION_DENIED;
     }
@@ -3311,6 +3311,11 @@ int32_t AudioPolicyManager::UnsetVolumeDegreeCallback(
     const std::shared_ptr<VolumeKeyEventCallback> &callback)
 {
     AUDIO_DEBUG_LOG("Start to unregister");
+
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
     std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SET_VOLUME_DEGREE_CHANGE].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->RemoveVolumeDegreeCallback(callback);

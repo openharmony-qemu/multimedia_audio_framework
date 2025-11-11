@@ -73,6 +73,7 @@ AudioSystemManager::~AudioSystemManager()
         (void)UnregisterVolumeKeyEventCallback(volumeChangeClientPid_);
         (void)UnregisterStreamVolumeChangeCallback(volumeChangeClientPid_);
         (void)UnregisterSystemVolumeChangeCallback(volumeChangeClientPid_);
+        (void)UnregisterVolumeDegreeCallback(volumeChangeClientPid_);
     }
 }
 

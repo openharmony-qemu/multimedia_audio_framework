@@ -5474,10 +5474,10 @@ int32_t AudioPolicyServer::SetSystemVolumeDegree(int32_t streamTypeIn, int32_t v
     int32_t uid)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(streamTypeIn);
-    if (!PermissionUtil::VerifySystemPermission()) {
-        AUDIO_ERR_LOG("No system permission");
-        return ERR_PERMISSION_DENIED;
-    }
+    CHECK_AND_RETURN_RET_LOG(VerifyPermission(MANAGE_AUDIO_CONFIG), ERR_PERMISSION_DENIED,
+        "MANAGE_AUDIO_CONFIG_PERMISSION permission check failed");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "no system permission");
 
     if (!IsVolumeTypeValid(streamType)) {
         return ERR_NOT_SUPPORTED;
