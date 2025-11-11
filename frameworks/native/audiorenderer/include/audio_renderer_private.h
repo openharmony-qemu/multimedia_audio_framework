@@ -287,7 +287,7 @@ private:
     std::mutex policyServiceDiedCallbackMutex_;
 
     std::vector<uint32_t> usedSessionId_ = {};
-    std::mutex silentModeAndMixWithOthersMutex_;
+    mutable std::mutex silentModeAndMixWithOthersMutex_;
     std::mutex setStreamCallbackMutex_;
     std::mutex setParamsMutex_;
     std::mutex rendererPolicyServiceDiedCbMutex_;
