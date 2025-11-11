@@ -562,12 +562,11 @@ napi_value NapiAudioRenderer::GetRendererSamplingRate(napi_env env, napi_callbac
 napi_value NapiAudioRenderer::SetTarget(napi_env env, napi_callback_info info)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "Caller is not a system application.");
     auto context = std::make_shared<AudioRendererAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("SetTarget failed : no memory");
-        NapiAudioError::ThrowError(env, "SetTarget failed : no memory",
-            NAPI_ERR_NO_MEMORY);
+        NapiAudioError::ThrowError(env, "SetTarget failed : no memory", NAPI_ERR_SYSTEM);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -588,7 +587,7 @@ napi_value NapiAudioRenderer::SetTarget(napi_env env, napi_callback_info info)
         auto *napiAudioRenderer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
-        if (!NapiAudioEnum::IsLegalRenderTargetType(context->target)) {
+        if (!NapiAudioEnum::IsLegalRenderTarget(context->target)) {
             context->SignError(NAPI_ERR_INVALID_PARAM, "Parameter verification failed.");
             return;
         }
@@ -596,15 +595,15 @@ napi_value NapiAudioRenderer::SetTarget(napi_env env, napi_callback_info info)
         context->intValue = napiAudioRenderer->audioRenderer_->SetTarget(target);
         CHECK_AND_RETURN(context->intValue != SUCCESS);
         if (context->intValue == ERR_PERMISSION_DENIED) {
-            context->SignError(NAPI_ERR_NO_PERMISSION);
+            context->SignError(NAPI_ERR_NO_PERMISSION, "Permission denied.");
         } else if (context->intValue == ERR_SYSTEM_PERMISSION_DENIED) {
-            context->SignError(NAPI_ERR_PERMISSION_DENIED);
+            context->SignError(NAPI_ERR_PERMISSION_DENIED, "Caller is not a system application.");
         } else if (context->intValue == ERR_ILLEGAL_STATE) {
             context->SignError(NAPI_ERR_ILLEGAL_STATE, "Operation not permit at running and release state.");
         } else if (context->intValue == ERR_NOT_SUPPORTED) {
             context->SignError(NAPI_ERR_UNSUPPORTED, "Current renderer is not supported to set target.");
         } else {
-            context->SignError(NAPI_ERR_SYSTEM);
+            context->SignError(NAPI_ERR_SYSTEM, "Audio client call audio service error, System error.");
         }
     };
 
