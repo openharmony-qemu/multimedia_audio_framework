@@ -440,7 +440,8 @@ int32_t MultiWriteDataCallBack(OH_AudioNode *audioNode, void *userData, void *au
     if (padSize > 0) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                      "audioEditTest WriteDataCallBack padSize: %{public}d", padSize);
-        memset(static_cast<char *>(audioData) + actualDataSize, 0, padSize);
+        std::fill(static_cast<char*>(audioData) + actualDataSize,
+            static_cast<char*>(audioData) + actualDataSize + padSize, 0);
     }
 
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
@@ -1176,7 +1177,6 @@ napi_value multiSaveFileBuffer(napi_env env, napi_callback_info info)
             return napiValue;
         }
 
-        memcpy(arrayBufferData, threadBuffer, threadBufferSize);
         std::copy(static_cast<const char*>(threadBuffer),
             static_cast<const char*>(threadBuffer) + threadBufferSize,
             static_cast<char*>(arrayBufferData));
@@ -1554,7 +1554,7 @@ napi_value multiGetSecondOutputAudio(napi_env env, napi_callback_info info)
                  secData, threadSecDataSize, threadPipelineManager->audioSuitePipeline, thisId);
     std::copy(static_cast<const char*>(secData),
         static_cast<const char*>(secData) + threadSecDataSize, static_cast<char*>(data));
-    memset(secData, 0, threadSecDataSize);
+    std::fill(static_cast<char*>(secData), static_cast<char*>(secData) + threadSecDataSize, 0);
     threadSecDataSize = 0;
     return napiValue;
 }
