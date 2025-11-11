@@ -1,6 +1,8 @@
 /*
  * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. ALL rights reserved.
  */
+#ifndef PIPELINEMANAGER_H
+#define PIPELINEMANAGER_H
 #include "NodeManager.h"
 #include <map>
 
@@ -29,9 +31,9 @@ public:
     std::shared_ptr<NodeManager> nodeManager;
     OH_AudioFormat audioFormatInput;
     OH_AudioFormat audioFormatOutput;
-    char *firstAudioBuffer = NULL;
-    char *secondAudioBuffer = NULL;
-    char *inputBuffer = NULL;
+    char *firstAudioBuffer = nullptr;
+    char *secondAudioBuffer = nullptr;
+    char *inputBuffer = nullptr;
     bool multiRenderFrameFlag = false;
     size_t firstBufferSize = 0;
     size_t secondBufferSize = 0;
@@ -41,6 +43,9 @@ public:
     std::map<std::string, std::vector<uint8_t>> writeDataBufferMap;
     std::map<std::string, std::shared_ptr<MultiUserData>> userDataMap;
 public:
-    PipelineManager(std::string pipelineId, OH_AudioSuitePipeline *audioSuitePipeLine, std::shared_ptr<NodeManager> nodeManager);
+    PipelineManager(std::string pipelineId, OH_AudioSuitePipeline *audioSuitePipeLine,
+        std::shared_ptr<NodeManager> nodeManager);
     ~PipelineManager();
 };
+
+#endif

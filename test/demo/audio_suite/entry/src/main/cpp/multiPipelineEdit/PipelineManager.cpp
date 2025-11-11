@@ -7,14 +7,15 @@
 static const int GLOBAL_RESMGR = 0xFF00;
 static const char *TAG = "[AudioEditTestApp_pipelineManager_cpp]";
 
-PipelineManager::PipelineManager(std::string pipelineId, OH_AudioSuitePipeline *audioSuitePipeLine, std::shared_ptr<NodeManager> nodeManager):
-pipelineId(pipelineId),audioSuitePipeline(audioSuitePipeLine),nodeManager(nodeManager)
-{
+PipelineManager::PipelineManager(std::string pipelineId,
+    OH_AudioSuitePipeline *audioSuitePipeLine, std::shared_ptr<NodeManager> nodeManager)
+    : pipelineId(pipelineId), audioSuitePipeline(audioSuitePipeLine), nodeManager(nodeManager)
+    {
     // 初始化PipelineManager
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, 
-                 "PipelineManager inited pipelineId: %{public}s, "
-                 "audioSuitePipeLine: %{public}p, audioSuitePipeLine: %{public}p"
-                 ,pipelineId.c_str(), audioSuitePipeLine, nodeManager.get());
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+        "PipelineManager inited pipelineId: %{public}s, "
+        "audioSuitePipeLine: %{public}p, audioSuitePipeLine: %{public}p",
+        pipelineId.c_str(), audioSuitePipeLine, nodeManager.get());
 }
 
 PipelineManager::~PipelineManager()
