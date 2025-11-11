@@ -90,7 +90,7 @@ bool GetAudioProperties(OH_AVFormat *trackFormat, int32_t &sampleRate, int32_t &
     return true;
 }
 
-void ReadTrackSamples(OH_AVDemuxer *demuxer, uint32_t trackIndex, int buffer_size,
+void ReadTrackSamples(OH_AVDemuxer *demuxer, uint32_t trackIndex, int bufferSize,
     std::atomic<bool>& isEnd, std::atomic<bool>& threadFinished)
 {
     g_totalSize = 0;
@@ -100,11 +100,11 @@ void ReadTrackSamples(OH_AVDemuxer *demuxer, uint32_t trackIndex, int buffer_siz
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, INPUT_TAG, "select audio track failed: %{public}d", trackIndex);
     }
     // 创建缓冲区
-    if (buffer_size <= 0) {
+    if (bufferSize <= 0) {
         return;
     }
-    OH_AVBuffer *pcmBuffer = OH_AVBuffer_Create(buffer_size);
-    char *totalBuffer = (char *)malloc(buffer_size);
+    OH_AVBuffer *pcmBuffer = OH_AVBuffer_Create(bufferSize);
+    char *totalBuffer = (char *)malloc(bufferSize);
     if (pcmBuffer == nullptr) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, INPUT_TAG, "create pcmBuffer failed");
     }
