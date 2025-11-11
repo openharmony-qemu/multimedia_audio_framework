@@ -2060,5 +2060,59 @@ HWTEST(AudioEndpointInnerUnitTest, ConvertDataFormat_001, TestSize.Level1)
     delete[] readBuf.buffer;
     delete[] rendererOrgDesc.buffer;
 }
+
+/*
+ * @tc.name  : Test CheckJank API
+ * @tc.type  : FUNC
+ * @tc.number: CheckJank_001
+ * @tc.desc  : When isStarted_ is false, function should return directly
+ */
+HWTEST_F(AudioEndpointUnitTest, CheckJank_001, TestSize.Level1)
+{
+    int64_t currentTime = ClockTime::GetCurNano();
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->isStarted_ = false;
+    audioEndpointInner->dstSpanSizeInframe_ = 0;
+    audioEndpointInner->syncInfoSize_ = 1;
+    audioEndpointInner->lastWriteTime_ = 0;
+    audioEndpointInner->CheckJank(0);
+    EXPECT_GT(currentTime, audioEndpointInner->lastWriteTime_);
+}
+
+/*
+ * @tc.name  : Test CheckJank API
+ * @tc.type  : FUNC
+ * @tc.number: CheckJank_002
+ * @tc.desc  : When isStarted_ is true but syncInfoSize_ is zero
+ */
+HWTEST_F(AudioEndpointUnitTest, CheckJank_002, TestSize.Level1)
+{
+    int64_t currentTime = ClockTime::GetCurNano();
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->isStarted_ = true;
+    audioEndpointInner->dstSpanSizeInframe_ = 0;
+    audioEndpointInner->syncInfoSize_ = 0;
+    audioEndpointInner->lastWriteTime_ = 0;
+    audioEndpointInner->CheckJank(0);
+    EXPECT_GT(currentTime, audioEndpointInner->lastWriteTime_);
+}
+
+/*
+ * @tc.name  : Test CheckJank API
+ * @tc.type  : FUNC
+ * @tc.number: CheckJank_003
+ * @tc.desc  : When isStarted_ is true and syncInfoSize_ is non-zero
+ */
+HWTEST_F(AudioEndpointUnitTest, CheckJank_003, TestSize.Level1)
+{
+    int64_t currentTime = ClockTime::GetCurNano();
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->isStarted_ = true;
+    audioEndpointInner->dstSpanSizeInframe_ = 0;
+    audioEndpointInner->syncInfoSize_ = 1;
+    audioEndpointInner->lastWriteTime_ = 0;
+    audioEndpointInner->CheckJank(0);
+    EXPECT_GT(audioEndpointInner->lastWriteTime_, currentTime);
+}
 } // namespace AudioStandard
 } // namespace OHOS

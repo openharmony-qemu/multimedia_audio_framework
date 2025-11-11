@@ -53,11 +53,12 @@ ohos_shared_library("ohaudiosuite") {
       "../../../services\audio_suite\client\config\src\audio_suite_capabilities.cpp",
     ]
 
-    deps = [
-      "../../../services/audio_suite:audio_suite",
-      "../../../frameworks/native/audioutils:audio_xml_utils",
-    ]
-    cflags = [ "-Werror" ]
+  deps = [
+    "../../../services/audio_suite:audio_suite",
+    "../../../frameworks/native/audioutils:audio_xml_utils",
+    "../audioutils:audio_utils",
+  ]
+  cflags = [ "-Werror" ]
 
     external_deps = [
       "c_utils:utils",
