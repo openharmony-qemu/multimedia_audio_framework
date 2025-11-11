@@ -148,7 +148,7 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
         fadeOutState_ = FadeOutState::DONE_FADEOUT;
         auto statusCallback = GetNodeStatusCallback().lock();
         CHECK_AND_RETURN_LOG(statusCallback != nullptr, "statusCallback is null, cannot callback");
-        statusCallback->OnFadeDone(GetSessionId(), operation_);
+        statusCallback->OnFadeDone(GetSessionId());
         return;
     }
     AudioRawFormat rawFormat;
@@ -166,7 +166,7 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
         AUDIO_INFO_LOG("fade out done, session %{public}d callback to update status", GetSessionId());
         auto statusCallback = GetNodeStatusCallback().lock();
         CHECK_AND_RETURN_LOG(statusCallback != nullptr, "statusCallback is null, cannot callback");
-        statusCallback->OnFadeDone(GetSessionId(), operation_); // if operation is stop or pause, callback
+        statusCallback->OnFadeDone(GetSessionId()); // if operation is stop or pause, callback
         return;
     }
     // do fade in

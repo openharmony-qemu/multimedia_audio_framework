@@ -530,8 +530,7 @@ void HpaeOffloadRendererManagerOnFadeDoneFuzzTest()
     auto offloadRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
     offloadRendererManager->Init();
     uint32_t sessionId = GetData<uint32_t>();
-    IOperation operation = OPERATION_INVALID;
-    offloadRendererManager->OnFadeDone(sessionId, operation);
+    offloadRendererManager->OnFadeDone(sessionId);
     WaitForMsgProcessing(offloadRendererManager);
     offloadRendererManager->DeInit();
 }
