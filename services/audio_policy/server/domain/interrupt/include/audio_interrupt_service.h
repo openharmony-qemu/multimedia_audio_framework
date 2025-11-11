@@ -138,6 +138,8 @@ public:
     void SetUserId(const int32_t newId, const int32_t oldId);
     void UpdateAudioSceneFromInterrupt(const AudioScene audioScene, AudioInterruptChangeType changeType,
         int32_t zoneId = ZONEID_DEFAULT);
+    void PostUpdateAudioSceneFromInterruptAction(const AudioScene audioScene,
+        AudioInterruptChangeType changeType, int32_t zoneId = ZONEID_DEFAULT);
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
