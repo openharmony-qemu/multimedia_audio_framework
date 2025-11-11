@@ -23,12 +23,24 @@
 #include <iomanip>
 #include <fstream>
 #include <filemanagement/file_uri/oh_file_uri.h>
-#include "common/ParseNapiParam.h"
-#include "common/AudioConfigParam.h"
-#include "common/Equalizer.h"
-#include "common/CompareFile.h"
-#include "common/SoundField.h"
-#include "common/Env.h"
+#include "callback/RegisterCallback.h"
+#include "audioSuiteError/AudioSuiteError.h"
+#include "audioEffectNode/Input.h"
+#include "audioEffectNode/Output.h"
+#include "audioEffectNode/EffectNode.h"
+#include "audioEffectNode/ParseNapiParam.h"
+#include "audioEffectNode/AudioConfigParam.h"
+#include "audioEffectNode/Equalizer.h"
+#include "audioEffectNode/CompareFile.h"
+#include "audioEffectNode/SoundField.h"
+#include "audioEffectNode/Env.h"
+
+#include <multimedia/player_framework/native_avdemuxer.h>
+#include <multimedia/player_framework/native_avsource.h>
+#include <multimedia/player_framework/native_avcodec_base.h>
+#include <multimedia/player_framework/native_avformat.h>
+#include <multimedia/player_framework/native_avbuffer.h>
+#include <fcntl.h>
 
 const int GLOBAL_RESMGR = 0xFF00;
 const char *TAG = "[AudioEditTestApp_AudioEdit_cpp]";
@@ -127,44 +139,15 @@ struct RenderContext {
     OH_AudioDataArray* ohAudioDataArray = nullptr;
 };
 
-struct AudioInputConfig {
-    std::string inputId;
-    unsigned int channels;
-    unsigned int sampleRate;
-    unsigned int bitsPerSample;
-    unsigned int formatCategory;
-};
-
-struct AudioArgsConfig {
-    std::string inputId;
-    std::string outputId;
-    std::string mixerId;
-    unsigned int channels;
-    unsigned int sampleRate;
-    unsigned int bitsPerSample;
-    unsigned int formatCategory;
-    unsigned int pcmLength = 0;
-    void* buffer = nullptr;
-    size_t bufferLength = 0;
-};
-
-struct AudioWriteDataParams {
-    std::string inputId;
-    unsigned int channels;
-    unsigned int sampleRate;
-    unsigned int bitsPerSample;
-    unsigned int formatCategory;
-    OH_AudioNode_Type type;
-};
-
-static void StoreTotalBuffToMap(const char *totalBuff, size_t size, const std::string &key)
-{
-    if (size > 0 && totalBuff != nullptr) {
-        std::vector<uint8_t> buffer(totalBuff, totalBuff + size);
-        writeDataBufferMap_[key] = buffer;
-        return;
+napi_value ReturnResult(napi_env env, OH_AudioSuite_Result result) {
+    std::string resultMessage = getErrorMessage(result);
+    napi_value sum;
+    if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "result: %{public}d, resultMessage: %{public}s", result, resultMessage.c_str());
+    } else {
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "result: %{public}d, resultMessage: %{public}s", result, resultMessage.c_str());
     }
-    OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "audioEditTest StoreTotalBuffToMap failed");
+    napi_create_int64(env, static_cast<int>(result), &sum);
 }
 
 static OH_AudioSuite_Result StartPipelineAndCheckState()
@@ -183,126 +166,6 @@ static OH_AudioSuite_Result StartPipelineAndCheckState()
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
         "audioEditTest OH_audioSuiteEngine_GetPipelineState result: %{public}d --- pipeLineState: %{public}d",
         static_cast<int>(result), static_cast<int>(pipeLineState));
-    return result;
-}
-
-static void InitRenderContext(RenderContext& context)
-{
-    context.totalAudioData = (char *)malloc(TOTAL_AUDIODATA_SIZE);
-    context.tapTotalAudioData = (char *)malloc(TOTAL_AUDIODATA_SIZE);
-    context.audioData = (char *)malloc(AUDIODATA_SIZE);
-    context.writeSize = 0;
-    context.frameSize = FRAME_SIZE;
-    context.finishedFlag = false;
-    context.resultTotalSize = 0;
-    context.tapResultTotalSize = 0;
-    context.ohAudioDataArray = new OH_AudioDataArray();
-    context.ohAudioDataArray->audioDataArray = (void**)malloc(AUDIODATAARRAY_SIZE);
-    for (int i = 0; i < ACCESSAUDIODATA_ARRAY_NUM; i++) {
-        context.ohAudioDataArray->audioDataArray[i] = static_cast<void*>(malloc(AUDIODATA_ARRAYSIZE));
-    }
-    context.ohAudioDataArray->arraySize = ACCESSAUDIODATA_ARRAY_NUM;
-    context.ohAudioDataArray->requestFrameSize = context.frameSize;
-}
-
-static OH_AudioSuite_Result RenderLoop(RenderContext& context)
-{
-    OH_AudioSuite_Result result = OH_AudioSuite_Result::AUDIOSUITE_SUCCESS;
-    do {
-        if (g_multiRenderFrameFlag) {
-            result = OH_AudioSuiteEngine_MultiRenderFrame(audioSuitePipeline,
-                context.ohAudioDataArray, &context.writeSize, &context.finishedFlag);
-            if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
-                OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-                    "audioEditTest OH_audioSuiteEngine_RenderFrame result is %{public}d",
-                    static_cast<int>(result));
-                break;
-            }
-            std::copy(
-                reinterpret_cast<const char*>(context.ohAudioDataArray->audioDataArray[0]),
-                reinterpret_cast<const char*>(context.ohAudioDataArray->audioDataArray[0]) + context.writeSize,
-                context.totalAudioData + context.resultTotalSize);
-            std::copy(
-                reinterpret_cast<const char*>(context.ohAudioDataArray->audioDataArray[1]),
-                reinterpret_cast<const char*>(context.ohAudioDataArray->audioDataArray[1]) + context.writeSize,
-                context.tapTotalAudioData + context.tapResultTotalSize);
-            context.resultTotalSize += context.writeSize;
-            context.tapResultTotalSize += context.writeSize;
-        } else {
-            result = OH_AudioSuiteEngine_RenderFrame(audioSuitePipeline,
-                context.audioData, context.frameSize, &context.writeSize, &context.finishedFlag);
-            if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
-                OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-                    "audioEditTest OH_audioSuiteEngine_RenderFrame result is %{public}d",
-                    static_cast<int>(result));
-                break;
-            }
-            std::copy(
-                reinterpret_cast<const char*>(context.audioData),
-                reinterpret_cast<const char*>(context.audioData) + context.writeSize,
-                context.totalAudioData + context.resultTotalSize);
-            context.resultTotalSize += context.writeSize;
-        }
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-            "audioEditTest OH_AudioSuiteEngine_RenderFrame resultTotalSize: %{public}d, writeSize : "
-            "%{public}d, finished: %{public}s",
-            context.resultTotalSize, context.writeSize, (context.finishedFlag ? "true" : "false"));
-        if (context.finishedFlag) {
-            g_globalFinishFlag = true;
-            break;
-        }
-    } while (!context.finishedFlag);
-    return result;
-}
-
-static OH_AudioSuite_Result RenDerFrame()
-{
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest RenDerFrame start");
-    // 启动管线
-    OH_AudioSuite_Result result = StartPipelineAndCheckState();
-    if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
-        return result;
-    }
-    RenderContext context;
-    InitRenderContext(context);
-    result = RenderLoop(context);
-    // 重新将数据写入到 totalBuff_
-    if (g_totalBuff != nullptr) {
-        free(g_totalBuff);
-        g_totalBuff = nullptr;
-    }
-    g_totalSize = context.resultTotalSize;
-    g_totalBuff = (char *)malloc(g_totalSize);
-    std::copy(
-        reinterpret_cast<const char*>(context.totalAudioData),
-        reinterpret_cast<const char*>(context.totalAudioData) + g_totalSize,
-        reinterpret_cast<char*>(g_totalBuff));
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-        "audioEditTest RenDerFrame memcpy sizeof(g_totalBuff): %{public}d, g_totalSize:%{public}d",
-        TOTAL_BUFF, g_totalSize);
-    if (g_multiRenderFrameFlag) {
-        g_totalSize = context.tapResultTotalSize;
-        g_tapTotalBuff = (char *)malloc(g_totalSize);
-        g_tapDataTotalSize = g_totalSize;
-        std::copy(
-            reinterpret_cast<const char*>(context.tapTotalAudioData),
-            reinterpret_cast<const char*>(context.tapTotalAudioData) + g_totalSize,
-            reinterpret_cast<char*>(g_tapTotalBuff));
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-            "audioEditTest RenDerFrame memcpy sizeof(g_totalBuff): %{public}d, g_totalSize:%{public}d",
-            TOTAL_BUFF, g_totalSize);
-        g_multiRenderFrameFlag = false;
-    }
-    free(context.totalAudioData);
-    free(context.tapTotalAudioData);
-    free(context.audioData);
-    if (context.ohAudioDataArray) {
-        for (int i = 0; i < context.ohAudioDataArray->arraySize; i++) {
-            free(context.ohAudioDataArray->audioDataArray[i]);
-        }
-        free(context.ohAudioDataArray->audioDataArray);
-        delete context.ohAudioDataArray;
-    }
     return result;
 }
 
@@ -409,407 +272,56 @@ static napi_value SetFormat(napi_env env, napi_callback_info info)
     return napiValue;
 }
 
-bool IsInputParamsValid(OH_AudioNode *audioNode, void *audioData, bool *finished)
-{
-    // 检查audioNode参数，底层接口问题
-    if (audioNode == nullptr) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "audioEditTest WriteDataCallBack audioNode is nullptr");
-        *finished = true;
-        return false;
-    }
-    // audioData，底层接口问题
-    if (audioData == nullptr) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "audioEditTest WriteDataCallBack audioData is nullptr");
-        *finished = true;
-        return false;
-    }
-    // 检查finished参数，底层接口问题
-    if (finished == nullptr) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "audioEditTest WriteDataCallBack finished is nullptr");
-        return false;
-    }
-    return true;
-}
-
-int32_t WriteDataCallBack(OH_AudioNode *audioNode, void *userData, void *audioData, int32_t audioDataSize,
-                          bool *finished)
-{
-    if (!IsInputParamsValid(audioNode, audioData, finished)) {
-        return 0;
-    }
-    // 处理音频数据 此处如果是nullptr，是demo获取音频数据的问题，非底层接口问题
-    std::string inputId = static_cast<UserData *>(userData)->id;
-    auto usetDataIt = userDataMap_.find(inputId);
-    if (usetDataIt->second->isResetTotalWriteAudioDataSize) {
-        usetDataIt->second->isResetTotalWriteAudioDataSize = false;
-        static_cast<UserData *>(userData)->totalWriteAudioDataSize = 0;
-    }
-    int32_t totalSize = usetDataIt->second->bufferSize;
-    ssize_t totalWriteAudioDataSize = usetDataIt->second->totalWriteAudioDataSize;
-    auto it = writeDataBufferMap_.find(inputId);
-    if (it == writeDataBufferMap_.end()) {
-        // map没有找到对应的音频buffer
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
-            "audioEditTest WriteDataCallBack writeDataBufferMap_ is end");
-        *finished = true;
-        g_dataInputProcessing = DATAINPUTPROCESSING_SIZE;
-        return 0;
-    }
-    // 计算剩余数据量
-    int32_t remainingDataSize = totalSize - totalWriteAudioDataSize;
-    // 确定本次写入的实际数据量
-    int32_t actualDataSize = std::min(audioDataSize, remainingDataSize);
-    g_dataInputProcessing += (static_cast<double>(actualDataSize) / static_cast<double>(totalSize) * TOTALSIZE_MULTI);
-    // 将数据从totalBuff_复制到audioData
-    std::copy(reinterpret_cast<const char*>(it->second.data() + totalWriteAudioDataSize),
-        reinterpret_cast<const char*>(it->second.data() + totalWriteAudioDataSize) + actualDataSize,
-        reinterpret_cast<char*>(audioData));
-    g_writeIndex++;
-    // 跟新已写入的数据量
-    totalWriteAudioDataSize += actualDataSize;
-    usetDataIt->second->totalWriteAudioDataSize = totalWriteAudioDataSize;
-    // 如果不够，则补0
-    int32_t padSize = audioDataSize - remainingDataSize;
-    if (padSize > 0) {
-        std::fill(reinterpret_cast<char*>(audioData) + actualDataSize,
-            reinterpret_cast<char*>(audioData) + actualDataSize + padSize, 0);
-    }
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-        "audioEditTest WriteDataCallBack totalSize: %{public}d, totalWriteAudioDataSize: %{public}d, "
-        "audioDataSize: %{public}d, actualDataSize:%{public}d, padSize: %{public}d",
-        totalSize, totalWriteAudioDataSize, audioDataSize, actualDataSize, padSize);
-    // 如果所有数据都写入完毕
-    if (totalWriteAudioDataSize >= totalSize) {
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest WriteDataCallBack is finished");
-        g_totalSize = 0;
-        totalWriteAudioDataSize = 0;
-        g_writeIndex = 0;
-        *finished = true;
-        g_dataInputProcessing = DATAINPUT_PROCESSING;
-    }
-    // 返回写入的数据数据量
-    return actualDataSize;
-}
-
-OH_AudioSuite_Result SetParamsAndWriteData(OH_AudioNodeBuilder *builder, const AudioWriteDataParams& config)
-                                           {
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-        "audioEditTest SetParamsAndWriteData channels : %{public}d --- sampleRate: %{public}d --- "
-        "PerSample: %{public}d --- formatCategory: %{public}d",
-        config.channels, config.sampleRate, config.bitsPerSample, config.formatCategory);
-    // 设置采样率
-    audioFormatInput.samplingRate = SetSamplingRate(config.sampleRate);
-    // 设置声道
-    audioFormatInput.channelCount = config.channels;
-    audioFormatInput.channelLayout = SetChannelLayout(config.channels);
-    // 设置位深
-    audioFormatInput.sampleFormat = SetSampleFormat(config.bitsPerSample);
-    // 设置编码格式
-    audioFormatInput.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
-
-    // audioFormatOutput 初始化和 audioFormatInput 相同
-    audioFormatOutput.sampleFormat = audioFormatInput.sampleFormat;
-    audioFormatOutput.samplingRate = audioFormatInput.samplingRate;
-    audioFormatOutput.channelLayout = audioFormatInput.channelLayout;
-    audioFormatOutput.encodingType = audioFormatInput.encodingType;
-    audioFormatOutput.channelCount = audioFormatInput.channelCount;
-
-    OH_AudioSuite_Result result = OH_AudioSuiteNodeBuilder_SetFormat(builder, audioFormatInput);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-        "audioEditTest OH_AudioNodeBuilder_SetFormat result is %{public}d", static_cast<int>(result));
-    if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
-        return result;
-    }
-    if (config.type != OH_AudioNode_Type::INPUT_NODE_TYPE_DEFAULT) {
-        return result;
-    }
-    UserData *data = new UserData();
-    data->id = config.inputId;
-    // 后面可以考虑去掉g_totalSize, 用入参形式传入
-    data->bufferSize = g_totalSize;
-    data->totalWriteAudioDataSize = 0;
-    data->isResetTotalWriteAudioDataSize = false;
-    void *userData = data;
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-        "audioEditTest OH_AudioSuiteNodeBuilder_SetRequestDataCallback data address is %{public}p", &data);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-        "audioEditTest OH_AudioNodeBuilder_SetFormat userData inputId is %{public}s",
-        static_cast<UserData *>(userData)->id.c_str());
-    // 设置OH_AudioSuiteNodeBuilder_SetRequestDataCallback回调，创建节点之前
-    result = OH_AudioSuiteNodeBuilder_SetRequestDataCallback(builder, WriteDataCallBack, userData);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-        "audioEditTest OH_AudioSuiteNodeBuilder_SetRequestDataCallback result is %{public}d",
-        static_cast<int>(result));
-    if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
-        return result;
-    }
-    // 将UserData实例存入映射表中
-    userDataMap_[config.inputId] = data;
-    return result;
-}
-
-static void ParseArguments(napi_env env, napi_value *argv, AudioArgsConfig& config)
-{
-    napi_status status = parseNapiString(env, argv[ARG_1], config.inputId);
-    status = parseNapiString(env, argv[ARG_2], config.outputId);
-    status = parseNapiString(env, argv[ARG_3], config.mixerId);
-    napi_get_value_uint32(env, argv[ARG_4], &config.channels);
-    napi_get_value_uint32(env, argv[ARG_5], &config.sampleRate);
-    napi_get_value_uint32(env, argv[ARG_6], &config.bitsPerSample);
-    napi_get_value_uint32(env, argv[ARG_7], &config.formatCategory);
-    napi_get_value_uint32(env, argv[ARG_8], &config.pcmLength);
-    napi_get_arraybuffer_info(env, argv[ARG_9], &config.buffer, &config.bufferLength);
-}
-
-static void CreateInputNode(napi_env env, const AudioInputConfig& config, napi_value &napiValue,
-                            OH_AudioSuite_Result &result)
-{
-    const std::string& inputId = config.inputId;
-    unsigned int channels = config.channels;
-    unsigned int sampleRate = config.sampleRate;
-    unsigned int bitsPerSample = config.bitsPerSample;
-    unsigned int formatCategory = config.formatCategory;
-
-    // 添加音频，将音频的buffer出存储到map中，，上一行中的memcpy可以考虑删除了
-    StoreTotalBuffToMap(g_totalBuff, g_totalSize, inputId);
-    auto it = writeDataBufferMap_.find(inputId);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-        "audioEditTest AudioInAndOutInit writeDataBufferMap_[inputId] length: %{public}d", it->second.size());
-    // 创造 builder 构造器
-    OH_AudioNodeBuilder *builderIn;
-    result = OH_AudioSuiteNodeBuilder_Create(&builderIn);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-        "audioEditTest OH_AudioSuiteNodeBuilder_Create result: %{public}d", static_cast<int>(result));
-    if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
-        napi_create_int64(env, static_cast<int>(result), &napiValue);
-        return;
-    }
-    // 透传节点类型
-    result = OH_AudioSuiteNodeBuilder_SetNodeType(builderIn, OH_AudioNode_Type::INPUT_NODE_TYPE_DEFAULT);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-        "NodeManagerTest createNode OH_AudioSuiteNodeBuilder_SetNodeType result: %{public}d",
-        static_cast<int>(result));
-    if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
-        napi_create_int64(env, static_cast<int>(result), &napiValue);
-        return;
-    }
-
-    // 封装方法，设置 音频文件的 参数 以及 写入音频文件到缓冲区
-    AudioWriteDataParams writeDataParaConfig { inputId, channels, sampleRate, bitsPerSample, formatCategory,
-                                       OH_AudioNode_Type::INPUT_NODE_TYPE_DEFAULT };
-    result = SetParamsAndWriteData(builderIn, writeDataParaConfig);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetParamsAndWriteData result: %{public}d",
-        static_cast<int>(result));
-    if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
-        napi_create_int64(env, static_cast<int>(result), &napiValue);
-        return;
-    }
-
-    // 创建input节点
-    nodeManager->createNode(inputId, OH_AudioNode_Type::INPUT_NODE_TYPE_DEFAULT, builderIn);
-}
-
-static void UpdateInputNode(napi_env env, const AudioInputConfig& config, napi_value &napiValue,
-                            OH_AudioSuite_Result &result)
-{
-    const std::string& inputId = config.inputId;
-    unsigned int channels = config.channels;
-    unsigned int sampleRate = config.sampleRate;
-    unsigned int bitsPerSample = config.bitsPerSample;
-
-    // 设置采样率
-    audioFormatInput.samplingRate = SetSamplingRate(sampleRate);
-    // 设置声道
-    audioFormatInput.channelCount = channels;
-    audioFormatInput.channelLayout = SetChannelLayout(channels);
-    // 设置位深
-    audioFormatInput.sampleFormat = SetSampleFormat(bitsPerSample);
-    // 设置编码格式
-    audioFormatInput.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
-
-    audioFormatOutput.sampleFormat = audioFormatInput.sampleFormat;
-    audioFormatOutput.samplingRate = audioFormatInput.samplingRate;
-    audioFormatOutput.channelLayout = audioFormatInput.channelLayout;
-    audioFormatOutput.encodingType = audioFormatInput.encodingType;
-    audioFormatOutput.channelCount = audioFormatInput.channelCount;
-
-    const std::vector<Node> inPutNodes = nodeManager->getNodesByType(OH_AudioNode_Type::INPUT_NODE_TYPE_DEFAULT);
-    result = OH_AudioSuiteEngine_SetAudioFormat(inPutNodes[0].physicalNode, &audioFormatInput);
-    const std::vector<Node> outPutNodes = nodeManager->getNodesByType(OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT);
-    result = OH_AudioSuiteEngine_SetAudioFormat(outPutNodes[0].physicalNode, &audioFormatOutput);
-    // 添加音频，将音频的buffer出存储到map中，，上一行中的memcpy可以考虑删除了
-    if (writeDataBufferMap_.find(inputId) != writeDataBufferMap_.end()) {
-        // 键存在，执行删除操作
-        writeDataBufferMap_.erase(inputId);
-    }
-    StoreTotalBuffToMap(g_totalBuff, g_totalSize, inputId);
-    auto it = writeDataBufferMap_.find(inputId);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-        "audioEditTest AudioInAndOutInit writeDataBufferMap_[inputId] length: %{public}d", it->second.size());
-    UserData *data = new UserData();
-    data->id = inputId;
-    // 后面可以考虑去掉g_totalSize，用入参形式传入
-    data->bufferSize = g_totalSize;
-    data->totalWriteAudioDataSize = 0;
-    data->isResetTotalWriteAudioDataSize = false;
-    // 将UserData实例存入映射表中
-    if (userDataMap_.find(inputId) != userDataMap_.end()) {
-        // 键存在，执行删除操作
-        userDataMap_.erase(inputId);
-    }
-    userDataMap_[inputId] = data;
-}
-
-void AudioInitHasOutput(OH_AudioSuite_Result &result, std::string &inputId, std::string &mixerId,
-                        const std::vector<Node> &outPutNodes)
-{
-    const std::vector<Node> mixerNodes = nodeManager->getNodesByType(OH_AudioNode_Type::EFFECT_NODE_TYPE_AUDIO_MIXER);
-    // 判断有混音节点，则直接将input节点连接到混音节点之前；无混音节点则需要创建混音节点，再将混音节点插入到output节点之前
-    if (mixerNodes.size() > 0) {
-        result = nodeManager->connect(inputId, mixerNodes[0].id);
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest connect input and mixer result: %{public}d",
-            static_cast<int>(result));
-    } else {
-        result = nodeManager->createNode(mixerId, OH_AudioNode_Type::EFFECT_NODE_TYPE_AUDIO_MIXER);
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-            "audioEditTest nodeManagerCreateMixerNode result: %{public}d", static_cast<int>(result));
-        // 解开outPut节点与它之前得节点连接，将混音节点插入其中，再将input节点连接到混音节点上
-        result = nodeManager->insertNode(mixerId, outPutNodes[0].id, Direction::BEFORE);
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest insertMixerNode result: %{public}d",
-            static_cast<int>(result));
-        result = nodeManager->connect(inputId, mixerId);
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-            "audioEditTest connect inputId and mixerId result: %{public}d", static_cast<int>(result));
-    }
-}
-
-void AudioInitHasNotOutput(OH_AudioSuite_Result &result, std::string &outputId,
-                           AudioWriteDataParams &writeDataParaConfig)
-{
-    result = OH_AudioSuiteNodeBuilder_Create(&builderOut);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-        "audioEditTest OH_AudioSuiteNodeBuilder_Create output builder result: %{public}d",
-        static_cast<int>(result));
-    if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
-        return;
-    }
-    result = OH_AudioSuiteNodeBuilder_SetNodeType(builderOut, OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-        "NodeManagerTest createNode OH_AudioSuiteNodeBuilder_SetNodeType result: %{public}d",
-        static_cast<int>(result));
-    if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
-        return;
-    }
-    // 封装方法，设置 音频文件的 参数 以及 写入音频文件到缓冲区
-    result = SetParamsAndWriteData(builderOut, writeDataParaConfig);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetParamsAndWriteData result: %{public}d",
-        static_cast<int>(result));
-    if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
-        return;
-    }
-
-    result = nodeManager->createNode(outputId, OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT, builderOut);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-        "audioEditTest nodeManagerCreateOutputNode result: %{public}d", static_cast<int>(result));
-    result = nodeManager->connect(writeDataParaConfig.inputId, outputId);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-        "audioEditTest nodeManagerConnectInputAndOutput result: %{public}d", static_cast<int>(result));
-}
-
 // 导入音频调用
 static napi_value AudioInAndOutInit(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest AudioInAndOutInit start");
-    napi_value napiValue;
-    OH_AudioSuite_Result result;
-
-    size_t argc = 9;
+    size_t argc = 5;
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-
-    std::string inputId;
-    std::string outputId;
-    std::string mixerId;
-    unsigned int channels;
-    unsigned int sampleRate;
-    unsigned int bitsPerSample;
-    unsigned int formatCategory;
-    unsigned int pcmLength;
-    void *buffer = nullptr;
-    size_t bufferLength = 0;
-
-    AudioArgsConfig config { inputId, outputId, mixerId, channels, sampleRate, bitsPerSample, formatCategory,
-                   pcmLength, buffer, bufferLength };
-    ParseArguments(env, argv, config);
-    if (g_totalBuff != nullptr) {
-        free(g_totalBuff);
-        g_totalBuff = nullptr;
+    AudioParams params;
+    napi_status status = parseArguments(env, argv, params);
+    if (status != napi_ok) {
+        return ReturnResult(env, static_cast<AudioSuiteResult>(status));
     }
-    g_totalSize = pcmLength;
-    g_totalBuff = (char *)malloc(bufferLength);
-    std::copy(
-        reinterpret_cast<const char*>(buffer),
-        reinterpret_cast<const char*>(buffer) + bufferLength,
-        reinterpret_cast<char*>(g_totalBuff));
-    Node inputNode = nodeManager->getNodeById(inputId);
-    AudioInputConfig inputConfig { inputId, channels, sampleRate, bitsPerSample, formatCategory};
-    if (inputNode.id.empty()) {
-        CreateInputNode(env, inputConfig, napiValue, result);
-    } else {
-        UpdateInputNode(env, inputConfig, napiValue, result);
+    OH_AVSource *source = OH_AVSource_CreateWithFD(params.fd, 0, params.fileLength);
+    if (source == nullptr) {
+        return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
     }
-
-    const std::vector<Node> outPutNodes = nodeManager->getNodesByType(OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT);
-    // 判断当前有无output节点，没有output节点则创建output节点并连接input节点和output节点
-    if (outPutNodes.size() > 0) {
-        AudioInitHasOutput(result, inputId, mixerId, outPutNodes);
-    } else {
-        AudioWriteDataParams writeDataParaConfig { inputId, channels, sampleRate, bitsPerSample, formatCategory,
-                                       OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT };
-        AudioInitHasNotOutput(result, outputId, writeDataParaConfig);
+    OH_AVFormat *trackFormat = OH_AVSource_GetTrackFormat(source, 0);
+    if (trackFormat == nullptr) {
+        return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
     }
-
-    napi_create_int64(env, static_cast<int>(result), &napiValue);
-    return napiValue;
-}
-
-// 创建效果节点后调用该方法将效果节点加入到nodeManager中
-int AddEffectNodeToNodeManager(std::string &inputNodeId, std::string &effectNodeId)
-{
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-        "audioEditTest AddEffectNodeToNodeManager start and inputNodeId is : %{public}s, effectNodeId is %{public}s",
-        inputNodeId.c_str(), effectNodeId.c_str());
-    // 添加效果节点，检查是否有混音节点，没有混音节点就将效果节点添加到output节点之前；有混音节点，获取到对应input节点id，按序插入到混音节点之前
-    const std::vector<Node> mixerNodes = nodeManager->getNodesByType(OH_AudioNode_Type::EFFECT_NODE_TYPE_AUDIO_MIXER);
+    // 采样率，声道，位深
+    int32_t sampleRate, channels, bitsPerSample;
+    if (!getAudioProperties(trackFormat, sampleRate, channels, bitsPerSample)) {
+        return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
+    }
+    OH_LOG_Print(LOG_APP, LOG_WARN, GLOBAL_RESMGR, TAG, "sampleRate: %{public}d, channels: %{public}d, bitsPerSample: %{public}d", sampleRate, channels, bitsPerSample);
+    // 为资源实例创建对应的解封器
+    OH_AVDemuxer *demuxer = OH_AVDemuxer_CreateWithSource(source);
+    if (demuxer == nullptr) {
+        return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
+    }
+    runAudioThread(demuxer, params.fileLength);
+    napi_value napiValue;
     OH_AudioSuite_Result result;
-    Node node = nodeManager->getNodeById(effectNodeId);
-    if (node.id.empty()) {
-        return ERROR_RESULT;
-    }
-
-    if (mixerNodes.size() > 0) {
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest AddEffectNodeToNodeManager has mixerNodes");
-        Node currentNode = nodeManager->getNodeById(inputNodeId);
-        if (currentNode.nextNodeId.empty()) {
-            return ERROR_RESULT;
-        }
-        while (nodeManager->getNodeById(currentNode.nextNodeId).type !=
-               OH_AudioNode_Type::EFFECT_NODE_TYPE_AUDIO_MIXER) {
-            currentNode = nodeManager->getNodeById(currentNode.nextNodeId);
-            OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-                "audioEditTest AddEffectNodeToNodeManager has mixerNodes and nextNode : %{public}s",
-                currentNode.id.c_str());
-        }
-        result = nodeManager->insertNode(effectNodeId, currentNode.id, Direction::LATER);
+    Node inputNode = nodeManager->getNodeById(params.inputId);
+    if (inputNode.id.empty()) {
+        createInputNode(env, params.inputId, napiValue, result);
     } else {
-        const std::vector<Node> outPutNodes = nodeManager->getNodesByType(OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT);
-        result = nodeManager->insertNode(effectNodeId, outPutNodes[0].id, Direction::BEFORE);
+        UpdateInputNodeParams updateInputNodeParams;
+        updateInputNodeParams.inputId = params.inputId;
+        updateInputNodeParams.channels = channels;
+        updateInputNodeParams.sampleRate = sampleRate;
+        updateInputNodeParams.bitsPerSample = bitsPerSample;
+        updateInputNode(napiValue, result, updateInputNodeParams);
+        return ReturnResult(env, static_cast<AudioSuiteResult>(result));
     }
-
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-        "audioEditTest AddEffectNodeToNodeManager end and result is: %{public}d", static_cast<int>(result));
-
-    return result;
+    manageOutputNodes(env, params.inputId, params.outputId, params.mixerId, result);
+    std::vector<std::string> audioFormat = {std::to_string(sampleRate), std::to_string(channels), std::to_string(bitsPerSample)};
+    callStringArrayCallback(audioFormat);
+    return ReturnResult(env, static_cast<AudioSuiteResult>(result));
 }
 
 OH_AudioSuite_Result DeleteNodeOfSong(Node &node, int size)
@@ -906,173 +418,56 @@ static napi_value DeleteNode(napi_env env, napi_callback_info info)
 static napi_value SetEquailizerMode(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetEquailizerMode start");
-    napi_value napiValue;
     size_t argc = 3;
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-    // 获取效果节点的效果参数
     unsigned int equailizerMode = -1;
-    napi_get_value_uint32(env, argv[ARG_1], &equailizerMode);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetEquailizerMode equailizerMode is %{public}d",
-        equailizerMode);
-    // 获取效果节点的id
-    std::string equalizerId;
-    napi_status status = parseNapiString(env, argv[ARG_2], equalizerId);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetEquailizerMode equalizerId is %{public}s",
-        equalizerId.c_str());
-    
-    // 获取input节点的id
-    std::string inputId;
-    status = parseNapiString(env, argv[ARG_3], inputId);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetEquailizerMode inputId is %{public}s",
-        inputId.c_str());
+    std::string equailizerId, inputId;
+    napi_status status = getEqModeParameters(env, argv, equailizerMode, equailizerId, inputId);
+    if (status != napi_ok) {
+        return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_PARAMETER_ANALYSIS_ERROR));
+    }
 
     // 创建均衡器效果节点
-    Node eqNode;
-    // 获取效果节点
-    eqNode = nodeManager->getNodeById(equalizerId);
-    if (eqNode.physicalNode) {
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetEquailizerMode equalizer is exist");
-    } else {
-        // 创建均衡器节点
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetEquailizerMode create EQUALIZER node");
-        eqNode.id = equalizerId;
-        eqNode.type = OH_AudioNode_Type::EFFECT_NODE_TYPE_EQUALIZER;
-        nodeManager->createNode(equalizerId, OH_AudioNode_Type::EFFECT_NODE_TYPE_EQUALIZER);
-        // 获取效果节点
-        eqNode = nodeManager->getNodeById(equalizerId);
-        int resultInt = AddEffectNodeToNodeManager(inputId, equalizerId);
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-            "audioEditTest AddEffectNodeToNodeManager result: %{public}d", resultInt);
-        if (resultInt != 0) {
-            napi_create_int64(env, resultInt, &napiValue);
-            return napiValue;
-        }
+    Node eqNode = getOrCreateEqualizerNodeByMode(equailizerId, inputId);
+    if (!eqNode.physicalNode) {
+        return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_CREATE_NODE_ERROR));
     }
 
     OH_AudioSuite_Result result =
         OH_AudioSuiteEngine_SetEqualizerFrequencyBandGains(eqNode.physicalNode, SetEqualizerMode(equailizerMode));
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-        "audioEditTest OH_AudioSuiteEngine_SetEqualizerMode result: %{public}d", static_cast<int>(result));
-    if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
-        napi_create_int64(env, static_cast<int>(result), &napiValue);
-        return napiValue;
-    }
-
-    napi_create_int64(env, static_cast<int>(result), &napiValue);
-    return napiValue;
-}
-
-int AddEqualizerNode(std::string& equalizerId, Node& eqNode, std::string& selectedNodeId, std::string& inputId)
-{
-    int resultInt = 0;
-    // 获取效果节点
-    eqNode = nodeManager->getNodeById(equalizerId);
-    if (eqNode.physicalNode) {
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-            "audioEditTest SetEqualizerFrequencyBandGains equalizer is exist");
-    } else {
-        // 创建均衡器节点
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-            "audioEditTest SetEqualizerFrequencyBandGains create EQUALIZER node");
-        eqNode.id = equalizerId;
-        eqNode.type = OH_AudioNode_Type::EFFECT_NODE_TYPE_EQUALIZER;
-        nodeManager->createNode(equalizerId, OH_AudioNode_Type::EFFECT_NODE_TYPE_EQUALIZER);
-        // 获取效果节点
-        eqNode = nodeManager->getNodeById(equalizerId);
-        if (selectedNodeId.empty()) {
-            resultInt = AddEffectNodeToNodeManager(inputId, equalizerId);
-            OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-                "audioEditTest AddEffectNodeToNodeManager AddEffectNodeToNodeManager result: %{public}d",
-                resultInt);
-        } else {
-            resultInt = nodeManager->insertNode(equalizerId, selectedNodeId, Direction::LATER);
-            OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-                "audioEditTest AddEffectNodeToNodeManager insertNode result: %{public}d", resultInt);
-        }
-    }
-    return resultInt;
+    return ReturnResult(env, static_cast<AudioSuiteResult>(result));
 }
 
 // 设置均衡器频带增益
 static napi_value SetEqualizerFrequencyBandGains(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetEqualizerFrequencyBandGains start");
-    napi_value napiValue;
     size_t argc = 4;
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-    // 判断是否是数组
-    bool isArray;
-    napi_is_array(env, argv[0], &isArray);
-    if (!isArray) {
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-            "audioEditTest SetEqualizerFrequencyBandGains param not array");
-        napi_create_int64(env, -1, &napiValue);
-        return napiValue;
-    }
-    uint32_t length;
-    napi_get_array_length(env, argv[ARG_1], &length);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-        "audioEditTest SetEqualizerFrequencyBandGains param length is %{public}d", length);
-
-    // 获取效果节点的id
-    std::string equalizerId;
-    napi_status status = parseNapiString(env, argv[ARG_2], equalizerId);
-    
-    // 获取input节点的id
-    std::string inputId;
-    status = parseNapiString(env, argv[ARG_3], inputId);
-
-    // 获取 selectNodeId
-    std::string selectedNodeId;
-    status = parseNapiString(env, argv[ARG_4], selectedNodeId);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-        "audioEditTest SetEqualizerFrequencyBandGains selectedNodeId is %{public}s inputId is",
-        selectedNodeId.c_str(), inputId.c_str());
-
-    // 创建均衡器频带节点
-    Node eqNode;
-
-    int resultInt = AddEqualizerNode(equalizerId, eqNode, selectedNodeId, inputId);
-    if (resultInt != 0) {
-        napi_create_int64(env, resultInt, &napiValue);
-        return napiValue;
-    }
-    
     OH_EqualizerFrequencyBandGains frequencyBandGains;
-    // 遍历数组并打印每个元素
-    for (uint32_t i = 0; i < length; ++i) {
-        napi_value element;
-        napi_get_element(env, argv[0], i, &element);
-        unsigned int value;
-        napi_get_value_uint32(env, element, &value);
-        frequencyBandGains.gains[i] = value;
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SeqEqualizerFrequencyBandGains"
-            " element at index %{public}d is %{public}d", i, frequencyBandGains.gains[i]);
+    EqBandGainsParams params;
+    napi_status status = getEqBandGainsParameters(env, argv, frequencyBandGains, params);
+    if (status != napi_ok) {
+        return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_PARAMETER_ANALYSIS_ERROR));
+    }
+    // 创建均衡器效果节点
+    Node eqNode = getOrCreateEqualizerNodeByGains(params.equailizerId, params.inputId, params.selectedNodeId);
+    if (!eqNode.physicalNode) {
+        return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_CREATE_NODE_ERROR));
     }
 
     OH_AudioSuite_Result result =
         OH_AudioSuiteEngine_SetEqualizerFrequencyBandGains(eqNode.physicalNode, frequencyBandGains);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-        "audioEditTest OH_AudioSuiteEngine_SetEquailizerMode result: %{public}d", static_cast<int>(result));
-
-    napi_create_int64(env, static_cast<int>(result), &napiValue);
-    return napiValue;
-}
-
-void ResetAllIsResetTotalWriteAudioDataSize()
-{
-    for (auto &pair : userDataMap_) {
-        pair.second->isResetTotalWriteAudioDataSize = true;
-    }
+    return ReturnResult(env, static_cast<AudioSuiteResult>(result));
 }
 
 static napi_value SaveFileBuffer(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SaveFileBuffer start");
-    ResetAllIsResetTotalWriteAudioDataSize();
-    RenDerFrame();
+    resetAllIsResetTotalWriteAudioDataSize();
+    renDerFrame();
     Clear();
 
     napi_value napiValue = nullptr;
@@ -1089,10 +484,7 @@ static napi_value SaveFileBuffer(napi_env env, napi_callback_info info)
         napi_create_arraybuffer(env, 0, &arrayBufferData, &napiValue);
         return napiValue;
     } else {
-        std::copy(
-            reinterpret_cast<const char*>(g_totalBuff),
-            reinterpret_cast<const char*>(g_totalBuff) + g_totalSize,
-            reinterpret_cast<char*>(arrayBufferData));
+        memcpy(arrayBufferData, g_totalBuff, g_totalSize);
         if (g_totalBuff != nullptr) {
             free(g_totalBuff);
             g_totalBuff = nullptr;
@@ -1141,13 +533,13 @@ static napi_value addNoiseReduction(napi_env env, napi_callback_info info)
 
     int insertRes = -1;
     if (selectNodeId.empty()) {
-        insertRes = AddEffectNodeToNodeManager(inputIdStr, uuidStr);
+        insertRes = addEffectNodeToNodeManager(inputIdStr, uuidStr);
     } else {
         insertRes = nodeManager->insertNode(uuidStr, selectNodeId, Direction::LATER);
     }
 
     if (insertRes != 0) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "audioEditTest---AddEffectNodeToNodeManager ERROR!");
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "audioEditTest---addEffectNodeToNodeManager ERROR!");
         return ret;
     }
     napi_create_int32(env, 0, &ret);
@@ -1230,11 +622,11 @@ static napi_value startVBEffect(napi_env env, napi_callback_info info)
         napi_create_int64(env, result, &ret);
         return ret;
     }
-    int res = (selectNodeId.empty()) ? AddEffectNodeToNodeManager(inputId, voiceBeautifierId) :
+    int res = (selectNodeId.empty()) ? addEffectNodeToNodeManager(inputId, voiceBeautifierId) :
         nodeManager->insertNode(voiceBeautifierId, selectNodeId, Direction::LATER);
     if (res != 0) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
-            "audioEditTest---startVBEffect AddEffectNodeToNodeManager ERROR!");
+            "audioEditTest---startVBEffect addEffectNodeToNodeManager ERROR!");
         napi_create_int64(env, res, &ret);
         return ret;
     }
@@ -1339,10 +731,10 @@ static napi_value startFieldEffect(napi_env env, napi_callback_info info)
         return ret;
     }
     if (selectedNodeId.empty()) {
-        int res = AddEffectNodeToNodeManager(inputId, fieldEffectId);
+        int res = addEffectNodeToNodeManager(inputId, fieldEffectId);
         if (res != 0) {
             OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
-                "audioEditTest startFieldEffect AddEffectNodeToNodeManager ERROR!");
+                "audioEditTest startFieldEffect addEffectNodeToNodeManager ERROR!");
             napi_create_int64(env, res, &ret);
             return ret;
         }
@@ -1460,9 +852,9 @@ static napi_value addAudioSeparation(napi_env env, napi_callback_info info)
         return ret;
     }
     if (selectedNodeId.empty()) {
-        int insertRes = AddEffectNodeToNodeManager(inputIdStr, uuidStr);
+        int insertRes = addEffectNodeToNodeManager(inputIdStr, uuidStr);
         if (insertRes == -1) {
-            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "audioEditTest---AddEffectNodeToNodeManager ERROR!");
+            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "audioEditTest---addEffectNodeToNodeManager ERROR!");
             return ret;
         }
     } else {
@@ -1520,9 +912,9 @@ static napi_value startEnvEffect(napi_env env, napi_callback_info info)
     }
 
     if (selectedNodeId.empty()) {
-        int insertRes = AddEffectNodeToNodeManager(inputIdStr, uuidStr);
+        int insertRes = addEffectNodeToNodeManager(inputIdStr, uuidStr);
         if (insertRes == -1) {
-            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "audioEditTest---AddEffectNodeToNodeManager ERROR!");
+            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "audioEditTest---addEffectNodeToNodeManager ERROR!");
             napi_create_int64(env, insertRes, &ret);
             return ret;
         }
@@ -1865,7 +1257,7 @@ static OH_AudioSuite_Result OneRenDerFrame(int32_t audioDataSize)
 static napi_value RealTimeSaveFileBuffer(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest RealTimeSaveFileBuffer start");
-    ResetAllIsResetTotalWriteAudioDataSize();
+    resetAllIsResetTotalWriteAudioDataSize();
     Clear();
     g_isRecord = false;
     napi_value napiValue = nullptr;
@@ -1933,7 +1325,7 @@ static OH_AudioData_Callback_Result NewAudioRendererOnWriteData(OH_AudioRenderer
     }
     if (g_oneFinishedFlag) {
         OH_AudioRenderer_Stop(audioRenderer);
-        ResetAllIsResetTotalWriteAudioDataSize();
+        resetAllIsResetTotalWriteAudioDataSize();
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
             "audioEditTest NewAudioRendererOnWriteData g_mixResultTotalSize is %{public}d",
             g_mixResultTotalSize);
@@ -2069,7 +1461,7 @@ static napi_value GetRendererState(napi_env env, napi_callback_info info)
 static napi_value ResetTotalWriteAudioDataSize(napi_env env, napi_callback_info info)
 {
     // 写入音频的buffer，重头开始
-    ResetAllIsResetTotalWriteAudioDataSize();
+    resetAllIsResetTotalWriteAudioDataSize();
     // 报错音频的也重头开始保存
     g_mixResultTotalSize = 0;
     return nullptr;
