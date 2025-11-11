@@ -669,6 +669,10 @@ int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid
             OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice(),
                 AudioStreamDeviceChangeReason::UNKNOWN);
         }
+        if (audioScene == AUDIO_SCENE_DEFAULT && audioActiveDevice_.GetCurrentOutputDevice().IsRemoteDevice()) {
+            OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice(),
+                AudioStreamDeviceChangeReason::OVERRODE);
+        }
     }
 
     if (audioScene == AUDIO_SCENE_PHONE_CALL) {

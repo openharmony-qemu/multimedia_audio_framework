@@ -451,6 +451,42 @@ HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_002, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioCoreService.
+* @tc.number: IsSameScene_001
+* @tc.desc  : Test IsSameScene.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, IsSameScene_001, TestSize.Level1)
+{
+    GetServerPtr()->coreService_->audioActiveDevice_.currentActiveDevice_.deviceType_ =
+        DeviceType::DEVICE_TYPE_REMOTE_CAST;
+    GetServerPtr()->eventEntry_->SetAudioScene(AUDIO_SCENE_RINGING);
+    int32_t result = GetServerPtr()->eventEntry_->SetAudioScene(AUDIO_SCENE_DEFAULT);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: IsSameScene_002
+* @tc.desc  : Test IsSameScene.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, IsSameScene_002, TestSize.Level1)
+{
+    GetServerPtr()->coreService_->audioActiveDevice_.currentActiveDevice_.deviceType_ =
+        DeviceType::DEVICE_TYPE_SPEAKER;
+    GetServerPtr()->coreService_->audioActiveDevice_.currentActiveDevice_.networkId_ =
+        REMOTE_NETWORK_ID;
+    GetServerPtr()->eventEntry_->SetAudioScene(AUDIO_SCENE_RINGING);
+    int32_t result = GetServerPtr()->eventEntry_->SetAudioScene(AUDIO_SCENE_DEFAULT);
+    EXPECT_EQ(result, SUCCESS);
+
+    GetServerPtr()->coreService_->audioActiveDevice_.currentActiveDevice_.networkId_ =
+        LOCAL_NETWORK_ID;
+    GetServerPtr()->eventEntry_->SetAudioScene(AUDIO_SCENE_RINGING);
+    result = GetServerPtr()->eventEntry_->SetAudioScene(AUDIO_SCENE_DEFAULT);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
 * @tc.number: EventEntry_GetDevices_001
 * @tc.desc  : Test GetDevices - Get output devices.
 */
