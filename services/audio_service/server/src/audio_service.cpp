@@ -1158,7 +1158,7 @@ int32_t AudioService::NotifyStreamVolumeChanged(AudioStreamType streamType, floa
         }
     }
 #endif
-    UpdateSystemVolume(streamType, volume);
+    UpdateSystemVolumeForWorkgroup(streamType, volume);
     return ret;
 }
 
@@ -1704,7 +1704,7 @@ int32_t AudioService::ForceStopAudioStream(StopAudioType audioType)
     return SUCCESS;
 }
 
-float AudioService::GetSystemVolume()
+float AudioService::GetSystemVolumeForWorkgroup()
 {
     std::unique_lock<std::mutex> lock(audioWorkGroupSystemVolumeMutex_);
     return audioWorkGroupSystemVolume_;
@@ -1716,7 +1716,7 @@ bool AudioService::IsStreamTypeFitWorkgroup(AudioStreamType streamType)
         workgroupSupportStreamTypeSet_.end());
 }
 
-void AudioService::UpdateSystemVolume(AudioStreamType streamType, float volume)
+void AudioService::UpdateSystemVolumeForWorkgroup(AudioStreamType streamType, float volume)
 {
     AUDIO_INFO_LOG("[WorkgroupInServer] streamType:%{public}d, systemvolume:%{public}f", streamType, volume);
     if (!IsStreamTypeFitWorkgroup(streamType)) {
@@ -1756,7 +1756,7 @@ void AudioService::RenderersCheckForAudioWorkgroup(int32_t pid)
                 continue;
             }
             allRenderPerProcessMap[pid][renderer->processConfig_.originalSessionId]
-                = renderer->CollectInfosForWorkgroup(GetSystemVolume());
+                = renderer->CollectInfosForWorkgroup(GetSystemVolumeForWorkgroup());
         }
     }
     // all processes in workgroup

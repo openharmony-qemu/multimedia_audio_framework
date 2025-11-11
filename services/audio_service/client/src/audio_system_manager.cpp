@@ -2445,7 +2445,7 @@ int32_t AudioSystemManager::StartGroup(int32_t workgroupId, uint64_t startTime, 
     Trace trace("[WorkgroupInClient] StartGroup workgroupId:" + std::to_string(workgroupId) +
         " startTime:" + std::to_string(startTime) + " deadlineTime:" + std::to_string(deadlineTime));
     CHECK_AND_RETURN_RET_LOG(deadlineTime > startTime, ERR_INVALID_PARAM, "Invalid Audio Deadline params");
-    int32_t audioDeadlineRate = MS_PER_SECOND / (deadlineTime - startTime);
+    int32_t audioDeadlineRate = int32_t(MS_PER_SECOND / (deadlineTime - startTime));
     CHECK_AND_RETURN_RET_LOG(audioDeadlineRate >= AUDIO_DEADLINE_PARAM_MIN &&
         audioDeadlineRate <= AUDIO_DEADLINE_PARAM_MAX, ERR_INVALID_PARAM, "Invalid Audio Deadline Rate");
     RME::SetFrameRateAndPrioType(workgroupId, audioDeadlineRate, 0);
