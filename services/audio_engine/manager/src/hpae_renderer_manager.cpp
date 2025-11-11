@@ -246,6 +246,8 @@ HpaeProcessorType HpaeRendererManager::TransToProperSceneType(StreamUsage stream
 
 HpaeProcessorType HpaeRendererManager::GetProcessorType(uint32_t sessionId)
 {
+    CHECK_AND_RETURN_RET_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), HPAE_SCENE_EFFECT_NONE,
+        "can not get input node of session %{public}u", sessionId);
     HpaeNodeInfo nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
     std::string sceneType = TransProcessorTypeToSceneType(nodeInfo.sceneType);
     if ((!isSplitProcessorType(nodeInfo.sceneType)) && (sessionNodeMap_[sessionId].bypass ||
@@ -422,7 +424,7 @@ int32_t HpaeRendererManager::ConnectInputSession(uint32_t sessionId)
     Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::ConnectInputSession");
     AUDIO_INFO_LOG("connect input session:%{public}d", sessionId);
     if (!SafeGetMap(sinkInputNodeMap_, sessionId)) {
-        AUDIO_INFO_LOG("could not input node by sessionid:%{public}d", sessionId);
+        AUDIO_ERR_LOG("could not input node by sessionid:%{public}d", sessionId);
         return ERR_INVALID_PARAM;
     }
     if (sinkInputNodeMap_[sessionId]->GetState() != HPAE_SESSION_RUNNING) {
@@ -552,7 +554,7 @@ void HpaeRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
         TriggerStreamState(it, sinkInputNodeMap_[it]);
         DeleteInputSession(it);
     }
-    HILOG_COMM_INFO("StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
+    HILOG_COMM_INFO("[StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
         idStr.c_str(), name.c_str(), moveType);
     if (moveType == MOVE_ALL) {
         TriggerSyncCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);

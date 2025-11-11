@@ -33,6 +33,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
+typedef void (*TestFuncs)();
 
 vector<EffectChain> DEFAULT_EFFECT_CHAINS = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
 EffectChainManagerParam DEFAULT_MAP{
@@ -224,17 +225,6 @@ void ReturnEffectChannelInfoFuzzTest()
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-void ReturnMultiChannelInfoFuzzTest()
-{
-    uint32_t channels = GetData<uint32_t>();
-    uint64_t channelLayout = GetData<uint64_t>();
-    const std::string sessionID = "123456";
-
-    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
-    AudioEffectChainManager::GetInstance()->ReturnMultiChannelInfo(&channels, &channelLayout);
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
 void EffectRotationUpdateFuzzTest()
 {
     uint32_t rotationState = GetData<uint32_t>();
@@ -330,9 +320,7 @@ void UpdateSpatialDeviceTypeFuzzTest()
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-typedef void (*TestFuncs[22])();
-
-TestFuncs g_testFuncs = {
+TestFuncs g_testFuncs[] = {
     InitAudioEffectChainManagerFuzzTest,
     CheckAndAddSessionIDFuzzTest,
     CheckAndRemoveSessionIDFuzzTest,
@@ -346,7 +334,6 @@ TestFuncs g_testFuncs = {
     SessionInfoMapAddFuzzTest,
     SessionInfoMapDeleteFuzzTest,
     ReturnEffectChannelInfoFuzzTest,
-    ReturnMultiChannelInfoFuzzTest,
     EffectRotationUpdateFuzzTest,
     GetLatencyFuzzTest,
     SetSpatializationSceneTypeFuzzTest,

@@ -185,6 +185,7 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
     std::vector<uint8_t> paramBuffer(sizeof(AudioEffectParam) + MAX_PARAM_INDEX * sizeof(int32_t));
     // Set param
     AudioEffectParam *effectParam = reinterpret_cast<AudioEffectParam*>(paramBuffer.data());
+    CHECK_AND_RETURN_RET_LOG(effectParam != nullptr, ERROR, "effectParam is null");
     effectParam->status = 0;
     effectParam->paramSize = sizeof(int32_t);
     effectParam->valueSize = 0;

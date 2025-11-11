@@ -30,7 +30,6 @@
     *EnhanceChainManagerInitEnhanceBuffer*;
     *EffectChainManagerCheckEffectOffload*;
     *EffectChainManagerReturnEffectChannelInfo*;
-    *EffectChainManagerReturnMultiChannelInfo*;
     *ConvertChLayoutToPaChMap*;
     *EffectChainManagerGetSpatializationEnabled*;
     *EffectChainManagerGetSceneCount*;

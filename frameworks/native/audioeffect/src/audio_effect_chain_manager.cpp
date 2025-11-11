@@ -79,12 +79,6 @@ static int32_t FindEffectLib(const std::string &effect,
     return ERROR;
 }
 
-static bool IsChannelLayoutSupported(const uint64_t channelLayout)
-{
-    return find(AUDIO_EFFECT_SUPPORTED_CHANNELLAYOUTS.begin(),
-        AUDIO_EFFECT_SUPPORTED_CHANNELLAYOUTS.end(), channelLayout) != AUDIO_EFFECT_SUPPORTED_CHANNELLAYOUTS.end();
-}
-
 AudioEffectChainManager::AudioEffectChainManager()
 {
     effectToLibraryEntryMap_.clear();
@@ -763,35 +757,6 @@ int32_t AudioEffectChainManager::ReturnEffectChannelInfo(const std::string &scen
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     return ReturnEffectChannelInfoInner(sceneType, channels, channelLayout);
 }
-
-// LCOV_EXCL_START
-int32_t AudioEffectChainManager::ReturnMultiChannelInfo(uint32_t *channels, uint64_t *channelLayout)
-{
-    std::lock_guard<std::mutex> lock(dynamicMutex_);
-    uint32_t tmpChannelCount = DEFAULT_NUM_CHANNEL;
-    uint64_t tmpChannelLayout = DEFAULT_NUM_CHANNELLAYOUT;
-    bool channelUpdateFlag = false;
-    for (auto it = sceneTypeToSessionIDMap_.begin(); it != sceneTypeToSessionIDMap_.end(); it++) {
-        std::set<std::string> sessions = sceneTypeToSessionIDMap_[it->first];
-        for (auto s = sessions.begin(); s != sessions.end(); ++s) {
-            SessionEffectInfo info = sessionIDToEffectInfoMap_[*s];
-            if (info.channels > tmpChannelCount &&
-                info.channels <= DSP_MAX_NUM_CHANNEL &&
-                !ExistAudioEffectChainInner(it->first, info.sceneMode) &&
-                IsChannelLayoutSupported(info.channelLayout)) {
-                tmpChannelCount = info.channels;
-                tmpChannelLayout = info.channelLayout;
-                channelUpdateFlag = true;
-            }
-        }
-    }
-    if (channelUpdateFlag) {
-        *channels = tmpChannelCount;
-        *channelLayout = tmpChannelLayout;
-    }
-    return SUCCESS;
-}
-// LCOV_EXCL_STOP
 
 int32_t AudioEffectChainManager::SessionInfoMapAdd(const std::string &sessionID, const SessionEffectInfo &info)
 {
