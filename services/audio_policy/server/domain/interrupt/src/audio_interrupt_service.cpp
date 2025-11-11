@@ -74,8 +74,6 @@ const std::string DEFAULT_VOLUME_KEY = "default_volume_key_control";
 constexpr int32_t RETRY_TIME_S = 5;
 constexpr int64_t SLEEP_TIME_S = 1;
 
-
-
 static const map<InterruptHint, AudioFocuState> HINT_STATE_MAP = {
     {INTERRUPT_HINT_PAUSE, PAUSE},
     {INTERRUPT_HINT_DUCK, DUCK},
