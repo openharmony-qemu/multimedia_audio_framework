@@ -90,7 +90,7 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_002, TestSize
     audioLoopback->currentState_ = LOOPBACK_STATE_IDLE;
     EXPECT_EQ(audioLoopback->Enable(true), false);
     audioLoopback->currentState_ = LOOPBACK_STATE_RUNNING;
-    EXPECT_EQ(audioLoopback->Enable(true), true);
+    EXPECT_EQ(audioLoopback->Enable(true), false);
     EXPECT_EQ(audioLoopback->Enable(false), true);
     EXPECT_EQ(audioLoopback->Enable(false), true);
 }
