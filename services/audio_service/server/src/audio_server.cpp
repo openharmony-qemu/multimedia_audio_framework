@@ -2631,19 +2631,6 @@ int32_t AudioServer::GetVolumeDataCount(const std::string &sinkName, int64_t &vo
     return SUCCESS;
 }
 
-int32_t AudioServer::ResetAudioEndpoint()
-{
-#ifdef SUPPORT_LOW_LATENCY
-    int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
-        "Refused for %{public}d", callingUid);
-    AudioService::GetInstance()->ResetAudioEndpoint();
-    return SUCCESS;
-#endif
-    return ERR_NOT_SUPPORTED;
-}
-// LCOV_EXCL_STOP
-
 int32_t AudioServer::UpdateLatencyTimestamp(const std::string &timestamp, bool isRenderer)
 {
     std::string stringTimestamp = timestamp;

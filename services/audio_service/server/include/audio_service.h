@@ -96,7 +96,6 @@ public:
 
     int32_t LinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
     int32_t UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
-    void ResetAudioEndpoint();
     std::shared_ptr<AudioEndpoint> GetEndPointByType(AudioEndpoint::EndpointType type);
 #endif
 
@@ -179,7 +178,6 @@ private:
     void RemoveIdFromMuteControlSet(uint32_t sessionId);
     void CheckRenderSessionMuteState(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
     void CheckCaptureSessionMuteState(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);
-    void ReLinkProcessToEndpoint();
     void AddFilteredRender(int32_t innerCapId, std::shared_ptr<RendererInServer> renderer);
     bool IsMuteSwitchStream(uint32_t sessionId);
     float GetSystemVolume();
