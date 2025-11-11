@@ -11,6 +11,6 @@
 
 extern std::shared_ptr<NodeManager> nodeManager;
 
-int32_t addEffectNodeToNodeManager(std::string &inputNodeId, std::string &effectNodeId);
+int32_t AddEffectNodeToNodeManager(std::string &inputNodeId, std::string &effectNodeId);
 
 #endif //AUDIOEDITTESTAPP_EFFECTNODE_H

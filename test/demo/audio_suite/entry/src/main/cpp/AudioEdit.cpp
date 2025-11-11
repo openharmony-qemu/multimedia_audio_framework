@@ -139,13 +139,16 @@ struct RenderContext {
     OH_AudioDataArray* ohAudioDataArray = nullptr;
 };
 
-napi_value ReturnResult(napi_env env, OH_AudioSuite_Result result) {
-    std::string resultMessage = getErrorMessage(result);
+napi_value ReturnResult(napi_env env, OH_AudioSuite_Result result)
+{
+    std::string resultMessage = GetErrorMessage(result);
     napi_value sum;
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "result: %{public}d, resultMessage: %{public}s", result, resultMessage.c_str());
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+            "result: %{public}d, resultMessage: %{public}s", result, resultMessage.c_str());
     } else {
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "result: %{public}d, resultMessage: %{public}s", result, resultMessage.c_str());
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+            "result: %{public}d, resultMessage: %{public}s", result, resultMessage.c_str());
     }
     napi_create_int64(env, static_cast<int>(result), &sum);
 }
@@ -280,7 +283,7 @@ static napi_value AudioInAndOutInit(napi_env env, napi_callback_info info)
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     AudioParams params;
-    napi_status status = parseArguments(env, argv, params);
+    napi_status status = ParseArguments(env, argv, params);
     if (status != napi_ok) {
         return ReturnResult(env, static_cast<AudioSuiteResult>(status));
     }
@@ -293,34 +296,38 @@ static napi_value AudioInAndOutInit(napi_env env, napi_callback_info info)
         return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
     }
     // 采样率，声道，位深
-    int32_t sampleRate, channels, bitsPerSample;
-    if (!getAudioProperties(trackFormat, sampleRate, channels, bitsPerSample)) {
+    int32_t sampleRate;
+    int32_t channels;
+    int32_t bitsPerSample;
+    if (!GetAudioProperties(trackFormat, sampleRate, channels, bitsPerSample)) {
         return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
     }
-    OH_LOG_Print(LOG_APP, LOG_WARN, GLOBAL_RESMGR, TAG, "sampleRate: %{public}d, channels: %{public}d, bitsPerSample: %{public}d", sampleRate, channels, bitsPerSample);
+    OH_LOG_Print(LOG_APP, LOG_WARN, GLOBAL_RESMGR, TAG,
+        "sampleRate: %{public}d, channels: %{public}d, bitsPerSample: %{public}d", sampleRate, channels, bitsPerSample);
     // 为资源实例创建对应的解封器
     OH_AVDemuxer *demuxer = OH_AVDemuxer_CreateWithSource(source);
     if (demuxer == nullptr) {
         return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
     }
-    runAudioThread(demuxer, params.fileLength);
+    RunAudioThread(demuxer, params.fileLength);
     napi_value napiValue;
     OH_AudioSuite_Result result;
     Node inputNode = nodeManager->getNodeById(params.inputId);
     if (inputNode.id.empty()) {
-        createInputNode(env, params.inputId, napiValue, result);
+        CreateInputNode(env, params.inputId, napiValue, result);
     } else {
         UpdateInputNodeParams updateInputNodeParams;
         updateInputNodeParams.inputId = params.inputId;
         updateInputNodeParams.channels = channels;
         updateInputNodeParams.sampleRate = sampleRate;
         updateInputNodeParams.bitsPerSample = bitsPerSample;
-        updateInputNode(napiValue, result, updateInputNodeParams);
+        UpdateInputNode(napiValue, result, updateInputNodeParams);
         return ReturnResult(env, static_cast<AudioSuiteResult>(result));
     }
-    manageOutputNodes(env, params.inputId, params.outputId, params.mixerId, result);
-    std::vector<std::string> audioFormat = {std::to_string(sampleRate), std::to_string(channels), std::to_string(bitsPerSample)};
-    callStringArrayCallback(audioFormat);
+    ManageOutputNodes(env, params.inputId, params.outputId, params.mixerId, result);
+    std::vector<std::string> audioFormat =
+        {std::to_string(sampleRate), std::to_string(channels), std::to_string(bitsPerSample)};
+    CallStringArrayCallback(audioFormat);
     return ReturnResult(env, static_cast<AudioSuiteResult>(result));
 }
 
@@ -422,14 +429,15 @@ static napi_value SetEquailizerMode(napi_env env, napi_callback_info info)
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     unsigned int equailizerMode = -1;
-    std::string equailizerId, inputId;
-    napi_status status = getEqModeParameters(env, argv, equailizerMode, equailizerId, inputId);
+    std::string equailizerId;
+    std::string inputId;
+    napi_status status = GetEqModeParameters(env, argv, equailizerMode, equailizerId, inputId);
     if (status != napi_ok) {
         return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_PARAMETER_ANALYSIS_ERROR));
     }
 
     // 创建均衡器效果节点
-    Node eqNode = getOrCreateEqualizerNodeByMode(equailizerId, inputId);
+    Node eqNode = GetOrCreateEqualizerNodeByMode(equailizerId, inputId);
     if (!eqNode.physicalNode) {
         return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_CREATE_NODE_ERROR));
     }
@@ -448,12 +456,12 @@ static napi_value SetEqualizerFrequencyBandGains(napi_env env, napi_callback_inf
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     OH_EqualizerFrequencyBandGains frequencyBandGains;
     EqBandGainsParams params;
-    napi_status status = getEqBandGainsParameters(env, argv, frequencyBandGains, params);
+    napi_status status = GetEqBandGainsParameters(env, argv, frequencyBandGains, params);
     if (status != napi_ok) {
         return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_PARAMETER_ANALYSIS_ERROR));
     }
     // 创建均衡器效果节点
-    Node eqNode = getOrCreateEqualizerNodeByGains(params.equailizerId, params.inputId, params.selectedNodeId);
+    Node eqNode = GetOrCreateEqualizerNodeByGains(params.equailizerId, params.inputId, params.selectedNodeId);
     if (!eqNode.physicalNode) {
         return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_CREATE_NODE_ERROR));
     }
@@ -466,8 +474,8 @@ static napi_value SetEqualizerFrequencyBandGains(napi_env env, napi_callback_inf
 static napi_value SaveFileBuffer(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SaveFileBuffer start");
-    resetAllIsResetTotalWriteAudioDataSize();
-    renDerFrame();
+    ResetAllIsResetTotalWriteAudioDataSize();
+    RenDerFrame();
     Clear();
 
     napi_value napiValue = nullptr;
@@ -484,7 +492,7 @@ static napi_value SaveFileBuffer(napi_env env, napi_callback_info info)
         napi_create_arraybuffer(env, 0, &arrayBufferData, &napiValue);
         return napiValue;
     } else {
-        memcpy(arrayBufferData, g_totalBuff, g_totalSize);
+        std::copy(g_totalBuff, g_totalBuff + g_totalSize, arrayBufferData);
         if (g_totalBuff != nullptr) {
             free(g_totalBuff);
             g_totalBuff = nullptr;
@@ -533,13 +541,13 @@ static napi_value addNoiseReduction(napi_env env, napi_callback_info info)
 
     int insertRes = -1;
     if (selectNodeId.empty()) {
-        insertRes = addEffectNodeToNodeManager(inputIdStr, uuidStr);
+        insertRes = AddEffectNodeToNodeManager(inputIdStr, uuidStr);
     } else {
         insertRes = nodeManager->insertNode(uuidStr, selectNodeId, Direction::LATER);
     }
 
     if (insertRes != 0) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "audioEditTest---addEffectNodeToNodeManager ERROR!");
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "audioEditTest---AddEffectNodeToNodeManager ERROR!");
         return ret;
     }
     napi_create_int32(env, 0, &ret);
@@ -622,11 +630,11 @@ static napi_value startVBEffect(napi_env env, napi_callback_info info)
         napi_create_int64(env, result, &ret);
         return ret;
     }
-    int res = (selectNodeId.empty()) ? addEffectNodeToNodeManager(inputId, voiceBeautifierId) :
+    int res = (selectNodeId.empty()) ? AddEffectNodeToNodeManager(inputId, voiceBeautifierId) :
         nodeManager->insertNode(voiceBeautifierId, selectNodeId, Direction::LATER);
     if (res != 0) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
-            "audioEditTest---startVBEffect addEffectNodeToNodeManager ERROR!");
+            "audioEditTest---startVBEffect AddEffectNodeToNodeManager ERROR!");
         napi_create_int64(env, res, &ret);
         return ret;
     }
@@ -731,10 +739,10 @@ static napi_value startFieldEffect(napi_env env, napi_callback_info info)
         return ret;
     }
     if (selectedNodeId.empty()) {
-        int res = addEffectNodeToNodeManager(inputId, fieldEffectId);
+        int res = AddEffectNodeToNodeManager(inputId, fieldEffectId);
         if (res != 0) {
             OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
-                "audioEditTest startFieldEffect addEffectNodeToNodeManager ERROR!");
+                "audioEditTest startFieldEffect AddEffectNodeToNodeManager ERROR!");
             napi_create_int64(env, res, &ret);
             return ret;
         }
@@ -852,9 +860,9 @@ static napi_value addAudioSeparation(napi_env env, napi_callback_info info)
         return ret;
     }
     if (selectedNodeId.empty()) {
-        int insertRes = addEffectNodeToNodeManager(inputIdStr, uuidStr);
+        int insertRes = AddEffectNodeToNodeManager(inputIdStr, uuidStr);
         if (insertRes == -1) {
-            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "audioEditTest---addEffectNodeToNodeManager ERROR!");
+            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "audioEditTest---AddEffectNodeToNodeManager ERROR!");
             return ret;
         }
     } else {
@@ -912,9 +920,9 @@ static napi_value startEnvEffect(napi_env env, napi_callback_info info)
     }
 
     if (selectedNodeId.empty()) {
-        int insertRes = addEffectNodeToNodeManager(inputIdStr, uuidStr);
+        int insertRes = AddEffectNodeToNodeManager(inputIdStr, uuidStr);
         if (insertRes == -1) {
-            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "audioEditTest---addEffectNodeToNodeManager ERROR!");
+            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "audioEditTest---AddEffectNodeToNodeManager ERROR!");
             napi_create_int64(env, insertRes, &ret);
             return ret;
         }
@@ -1257,7 +1265,7 @@ static OH_AudioSuite_Result OneRenDerFrame(int32_t audioDataSize)
 static napi_value RealTimeSaveFileBuffer(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest RealTimeSaveFileBuffer start");
-    resetAllIsResetTotalWriteAudioDataSize();
+    ResetAllIsResetTotalWriteAudioDataSize();
     Clear();
     g_isRecord = false;
     napi_value napiValue = nullptr;
@@ -1325,7 +1333,7 @@ static OH_AudioData_Callback_Result NewAudioRendererOnWriteData(OH_AudioRenderer
     }
     if (g_oneFinishedFlag) {
         OH_AudioRenderer_Stop(audioRenderer);
-        resetAllIsResetTotalWriteAudioDataSize();
+        ResetAllIsResetTotalWriteAudioDataSize();
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
             "audioEditTest NewAudioRendererOnWriteData g_mixResultTotalSize is %{public}d",
             g_mixResultTotalSize);
@@ -1461,7 +1469,7 @@ static napi_value GetRendererState(napi_env env, napi_callback_info info)
 static napi_value ResetTotalWriteAudioDataSize(napi_env env, napi_callback_info info)
 {
     // 写入音频的buffer，重头开始
-    resetAllIsResetTotalWriteAudioDataSize();
+    ResetAllIsResetTotalWriteAudioDataSize();
     // 报错音频的也重头开始保存
     g_mixResultTotalSize = 0;
     return nullptr;

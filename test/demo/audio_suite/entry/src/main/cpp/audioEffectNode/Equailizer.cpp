@@ -2,7 +2,7 @@
  * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. ALL rights reserved.
  */
 
-#include "hilog/log.h" 
+#include "hilog/log.h"
 #include "Equailizer.h"
 #include "./utils/Utils.h"
 #include "./EffectNode.h"
@@ -15,31 +15,31 @@ OH_EqualizerFrequencyBandGains SetEqualizerMode(int32_t equailizerMode)
 {
     OH_EqualizerFrequencyBandGains eqMode;
     switch (equailizerMode) {
-        case 1:
+        case EQ_DEFAULT:
             eqMode = OH_EQUALIZER_PARAM_DEFAULT;
             break;
-        case 2:
+        case EQ_BALLADS:
             eqMode = OH_EQUALIZER_PARAM_BALLADS;
             break;
-        case 3:
+        case EQ_CHINESE_STYLE:
             eqMode = OH_EQUALIZER_PARAM_CHINESE_STYLE;
             break;
-        case 4:
+        case EQ_CLASSICAL:
             eqMode = OH_EQUALIZER_PARAM_CLASSICAL;
             break;
-        case 5:
+        case EQ_DANCE_MUSIC:
             eqMode = OH_EQUALIZER_PARAM_DANCE_MUSIC;
             break;
-        case 6:
+        case EQ_JAZZ:
             eqMode = OH_EQUALIZER_PARAM_JAZZ;
             break;
-        case 7:
+        case EQ_POP:
             eqMode = OH_EQUALIZER_PARAM_POP;
             break;
-        case 8:
+        case EQ_RB:
             eqMode = OH_EQUALIZER_PARAM_RB;
             break;
-        case 9:
+        case EQ_ROCK:
             eqMode = OH_EQUALIZER_PARAM_ROCK;
             break;
         default:
@@ -49,41 +49,46 @@ OH_EqualizerFrequencyBandGains SetEqualizerMode(int32_t equailizerMode)
     return eqMode;
 }
 
-napi_status getEqModeParameters(napi_env env, napi_value *argv, unsigned int &equailizerMode, std::string &equailizerId, std::string &inputId)
+napi_status GetEqModeParameters(
+    napi_env env, napi_value *argv, unsigned int &equailizerMode, std::string &equailizerId, std::string &inputId)
 {
-    napi_status status = napi_get_value_uint32(env, argv[0], &equailizerMode);
-    status = parseNapiString(env, argv[1], equailizerId);
-    status = parseNapistring(env, argv[2], inputId);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, EQUAILIZER_TAG, "audioEditTest getEqModeParameters equailizerMode is %{public}d, equailizerId: %{public}s, inputId: %{public}s",
+    napi_status status = napi_get_value_uint32(env, argv[ARG_0], &equailizerMode);
+    status = parseNapiString(env, argv[ARG_1], equailizerId);
+    status = parseNapistring(env, argv[ARG_2], inputId);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, EQUAILIZER_TAG,
+        "audioEditTest GetEqModeParameters equailizerMode: %{public}d, equailizerId: %{public}s, inputId: %{public}s",
         equailizerMode, equailizerId.c_str(), inputId.c_str());
     return status;
 }
 
-napi_status getEqBandGainsParameters(napi_env, env, napi_value *argv, OH_EqualizerFrequencyBandGains &frequencyBandGains, EqBandGainsParams &params)
+napi_status GetEqBandGainsParameters(napi_env, env, napi_value *argv,
+    OH_EqualizerFrequencyBandGains &frequencyBandGains, EqBandGainsParams &params)
 {
     // 遍历数组并打印每个元素
     for (uint32_t i = 0; i < length; ++i) {
         napi_value element;
-        napi_get_element(env, argv[0], i, &element);
+        napi_get_element(env, argv[ARG_0], i, &element);
         unsigned int value;
         napi_get_value_uint32(env, element, &value);
         frequencyBandGains.gains[i] = value;
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, EQUAILIZER_TAG, "audioEditTest getEqBandGainsParamters"
             " element at index %{public}d is %{public}d", i, frequencyBandGains.gains[i]);
-        napi_status status = parseNapiString(env, argv[1], params.equailizerId);
-        status = parseNapiString(env, argv[2], params.inputId);
-        status = parseNapiString(env, argv[3], params.selectedNodeId);
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, EQUAILIZER_TAG, "audioEditTest getEqBandGainsParamters equailizerId: %{public}s, inputId: %{public}s, selectedNodeId: %{public}s",
+        napi_status status = parseNapiString(env, argv[ARG_1], params.equailizerId);
+        status = parseNapiString(env, argv[ARG_2], params.inputId);
+        status = parseNapiString(env, argv[ARG_3], params.selectedNodeId);
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, EQUAILIZER_TAG,
+            "audioEditTest getEqBandGainsParamters equailizerId: %{public}s, inputId: %{public}s, selectedNodeId: %{public}s",
             params.equailizerId.c_str(), params.inputId.c_str(), params.selectedNodeId.c_str());
         return status;
     }
 }
 
-Node getOrCreateEqualizerNodeByMode(std::string& equailizerId, std::string& inputId)
+Node GetOrCreateEqualizerNodeByMode(std::string& equailizerId, std::string& inputId)
 {
     Node eqNode = nodeManager->getNodeById(equailizerId);
     if (!eqNode.physicalNode) {
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, EQUAILIZER_TAG, "audioEditTest getOrCreateEqualizerNodeByMode create");
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, EQUAILIZER_TAG,
+            "audioEditTest GetOrCreateEqualizerNodeByMode create");
         eqNode.id = equailizerId;
         eqNode.type = OH_AudioNode_Type::EFFECT_NODE_TYPE_EQUALIZER;
         nodeManager->createNode(equailizerId, OH_AudioNode_Type::EFFECT_NODE_TYPE_EQUALIZER);
@@ -98,22 +103,22 @@ Node getOrCreateEqualizerNodeByMode(std::string& equailizerId, std::string& inpu
     return eqNode;
 }
 
-Node getOrCreateEqualizerNodeByGains(std::string& equailizerId, std::string& inputId, std::string& selectedNodeId)
+Node GetOrCreateEqualizerNodeByGains(std::string& equailizerId, std::string& inputId, std::string& selectedNodeId)
 {
     Node eqNode = nodeManager->getNodeById(equailizerId);
     if (!eqNode.physicalNode) {
         // 创建均衡器节点
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, EQUAILIZER_TAG,
-            "audioEditTest getOrCreateEqualizerNodeByGains create");
+            "audioEditTest GetOrCreateEqualizerNodeByGains create");
         eqNode.id = equailizerId;
         eqNode.type = OH_AudioNode_Type::EFFECT_NODE_TYPE_EQUALIZER;
         nodeManager->createNode(equailizerId, OH_AudioNode_Type::EFFECT_NODE_TYPE_EQUALIZER);
         // 获取效果节点
         eqNode = nodeManager->getNodeById(equailizerId);
         if (selectedNodeId.empty()) {
-            int result = addEffectNodeToNodeManager(inputId, equailizerId);
+            int result = AddEffectNodeToNodeManager(inputId, equailizerId);
             OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, EQUAILIZER_TAG,
-                "audioEditTest addEffectNodeToNodeManager addEffectNodeToNodeManager result: %{public}d",
+                "audioEditTest AddEffectNodeToNodeManager AddEffectNodeToNodeManager result: %{public}d",
                 result);
             if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
                 eqNode.physicalNode = nullptr; // 标记为失败
@@ -121,7 +126,7 @@ Node getOrCreateEqualizerNodeByGains(std::string& equailizerId, std::string& inp
         } else {
             int result = nodeManager->insertNode(equailizerId, selectedNodeId, Direction::LATER);
             OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, EQUAILIZER_TAG,
-                "audioEditTest addEffectNodeToNodeManager insertNode result: %{public}d", result);
+                "audioEditTest AddEffectNodeToNodeManager insertNode result: %{public}d", result);
             if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
                 eqNode.physicalNode = nullptr; // 标记为失败
             }

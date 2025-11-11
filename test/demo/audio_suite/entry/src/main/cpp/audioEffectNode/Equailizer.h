@@ -11,6 +11,18 @@
 #include "../NodeManager.h"
 #include "./EffectNode.h"
 
+enum {
+    EQ_DEFAULT = 1,
+    EQ_BALLADS = 2,
+    EQ_CHINESE_STYLE = 3,
+    EQ_CLASSICAL = 4,
+    EQ_DANCE_MUSIC = 5,
+    EQ_JAZZ = 6,
+    EQ_POP = 7,
+    EQ_RB = 8,
+    EQ_ROCK = 9,
+};
+
 struct EqBandGainsParams {
     std::string equailizerId;
     std::string inputId;
@@ -19,12 +31,14 @@ struct EqBandGainsParams {
 
 OH_EqualizerFrequencyBandGains SetEqualizerMode(int32_t equailizerMode);
 
-napi_status getEqModeParameters(napi_env env, napi_value *argv, unsigned int &equailizerMode, std::string &equailizerId, std::string &inputId);
+napi_status GetEqModeParameters(napi_env env, napi_value *argv, unsigned int &equailizerMode,
+    std::string &equailizerId, std::string &inputId);
 
-napi_status getEqBandGainsParameters(napi_env env, napi_value *argv, OH_EqualizerFrequencyBandGains &frequencyBandGains, EqBandGainsParams &params);
+napi_status GetEqBandGainsParameters(napi_env env, napi_value *argv,
+    OH_EqualizerFrequencyBandGains &frequencyBandGains, EqBandGainsParams &params);
 
-Node getOrCreateEqualizerNodeByMode(std::string& equailizerId, std::string& inputId);
+Node GetOrCreateEqualizerNodeByMode(std::string& equailizerId, std::string& inputId);
 
-Node getOrCreateEqualizerNodeByGains(std::string& equailizerId, std::string& inputId, std::string& selectedNodeId);
+Node GetOrCreateEqualizerNodeByGains(std::string& equailizerId, std::string& inputId, std::string& selectedNodeId);
 
 #endif //AUDIOEDITTESTAPP_EQUAILIZER_H

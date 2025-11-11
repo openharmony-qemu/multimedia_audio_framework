@@ -57,30 +57,33 @@ struct UpdateInputNodeParams {
     unsigned int bitsPerSample;
 };
 
-napi_status parseArguments(napi_env env, napi_value *argv, AudioParams &params);
+napi_status ParseArguments(napi_env env, napi_value *argv, AudioParams &params);
 
-void resetAllIsResetTotalWriteAudioDataSize();
+void ResetAllIsResetTotalWriteAudioDataSize();
 
-bool getAudioProperties(OH_AVFormat *trackFormat, int32_t &sampleRate, int32_t &channels, int32_t &bitsPerSample);
+bool GetAudioProperties(OH_AVFormat *trackFormat, int32_t &sampleRate, int32_t &channels, int32_t &bitsPerSample);
 
-void runAudioThread(OH_AVDemuxer *demuxer, int32_t fileLength);
+void RunAudioThread(OH_AVDemuxer *demuxer, int32_t fileLength);
 
-void storeTotalBuffToMap(const char *totalBuff, int32_t size, const std::string &key);
+void StoreTotalBuffToMap(const char *totalBuff, int32_t size, const std::string &key);
 
-void createInputNode(napi_env env, const std::string &inputId, napi_value &napiValue, OH_AudioSuite_Result &result);
+void CreateInputNode(napi_env env, const std::string &inputId, napi_value &napiValue, OH_AudioSuite_Result &result);
 
-OH_AudioSuite_Result setParamsAndWriteData(OH_AudioNodeBuilder *builder, std::string inputId, OH_AudioNode_Type type);
+OH_AudioSuite_Result SetParamsAndWriteData(OH_AudioNodeBuilder *builder, std::string inputId, OH_AudioNode_Type type);
 
-bool checkParameters(OH_AudioNode *audioNode, void *audioData, bool *finished);
+bool CheckParameters(OH_AudioNode *audioNode, void *audioData, bool *finished);
 
-int32_t writeDataCallBack(OH_AudioNode *audioNode, void *userData, void *audioData, int32_t audioDataSize, bool *finished);
+int32_t WriteDataCallBack(OH_AudioNode *audioNode, void *userData, void *audioData,
+    int32_t audioDataSize, bool *finished);
 
-void updateInputNode(napi_value &napiValue, OH_AudioSuite_Result &result, const UpdateInputNodeParams &params);
+void UpdateInputNode(napi_value &napiValue, OH_AudioSuite_Result &result, const UpdateInputNodeParams &params);
 
-void manageOutputNodes(napi_env env, const std::string &inputId, const std::string &outputId, const std::string &mixerId, OH_AudioSuite_Result &result);
+void ManageOutputNodes(napi_env env, const std::string &inputId, const std::string &outputId,
+    const std::string &mixerId, OH_AudioSuite_Result &result);
 
-void manageExistingOutputNodes(const std::string &inputId, const std::string &mixerId, OH_AudioSuite_Result &result, std::vector<Node> outPutNodes);
+void ManageExistingOutputNodes(const std::string &inputId, const std::string &mixerId,
+    OH_AudioSuite_Result &result, std::vector<Node> outPutNodes);
 
-void createAndConnectOutputNodes(const std::string &inputId, const std::string &outputId, OH_AudioSuite_Result &result);
+void CreateAndConnectOutputNodes(const std::string &inputId, const std::string &outputId, OH_AudioSuite_Result &result);
 
 #endif //AUDIOEDITTESTAPP_INPUT_H

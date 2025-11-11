@@ -13,7 +13,8 @@ const char *OUTPUT_TAG = "[AudioEditTestApp_Output_cpp]";
 const int MILLI_SECONDS_20 = 20;
 const int MILLISECONDS_PER_SECOND = 1000;
 const int BITS_PER_BYTE = 8;
-const int AUDIO_DATA_BUFFER_SIZE = 1024 *1024 *1024;
+const int AUDIO_DATA_BUFFER_SIZE = 1024 * 1024 * 1024;
+const int ACCESSAUDIODATA_ARRAY_NUM = 2;
 
 OH_AudioFormat g_audioFormatOutput = {
     .encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW
@@ -27,11 +28,11 @@ char *g_tapTotalBuff = (char *)malloc(8 * 1024 * 1024);
 
 int32_t g_tapDataTotalSize = 0;
 
-OH_AudioSuite_Result renDerFrame()
+OH_AudioSuite_Result RenDerFrame()
 {
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, OUTPUT_TAG, "audioEditTest renDerFrame start");
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, OUTPUT_TAG, "audioEditTest RenDerFrame start");
 
-    OH_AudioSuite_Result result = startPipelineAndCheckState();
+    OH_AudioSuite_Result result = StartPipelineAndCheckState();
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         return result;
     }
@@ -40,15 +41,18 @@ OH_AudioSuite_Result renDerFrame()
     char *tapTotalAudioData = (char *)malloc(AUDIO_DATA_BUFFER_SIZE);
     // 获取位深
     int32_t bitsPerSample = getBitsPerSample(g_audioFormatOutput.sampleFormat);
-    int32_t frameSize = MILLI_SECONDS_20 * g_audioFormatOutput.samplingRate * g_audioFormatOutput.channelCount / MILLISECONDS_PER_SECOND * bitsPerSample / BITS_PER_BYTE;
+    int32_t frameSize = MILLI_SECONDS_20 * g_audioFormatOutput.samplingRate *
+        g_audioFormatOutput.channelCount / MILLISECONDS_PER_SECOND * bitsPerSample / BITS_PER_BYTE;
     bool finishedFlag = false;
-    result = audioRenderFrame(totalAudioData, tapTotalAudioData, frameSize, finishedFlag);
-    OH_LOG_Print(LOG_APP, LOG_WARN, GLOBAL_RESMGR, OUTPUT_TAG, "audioEditTest renDerFrame result: %{public}d", static_cast<int>(result));
+    result = AudioRenderFrame(totalAudioData, tapTotalAudioData, frameSize, finishedFlag);
+    OH_LOG_Print(LOG_APP, LOG_WARN, GLOBAL_RESMGR, OUTPUT_TAG,
+        "audioEditTest RenDerFrame result: %{public}d", static_cast<int>(result));
     return result;
 }
 
-OH_AudioSuite_Result startPipelineAndCheckState() {
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, OUTPUT_TAG, "audioEditTest startPipelineAndCheckState start");
+OH_AudioSuite_Result StartPipelineAndCheckState()
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, OUTPUT_TAG, "audioEditTest StartPipelineAndCheckState start");
 
     // 启动管线
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_StartPipeline(g_audioSuitePipeline);
@@ -67,14 +71,15 @@ OH_AudioSuite_Result startPipelineAndCheckState() {
     return result;
 }
 
-OH_AudioSuite_Result audioRenderFrame(char *totalAudioData, char *tapTotalAudioData, int32_t frameSize, bool &finishedFlag)
+OH_AudioSuite_Result AudioRenderFrame(
+    char *totalAudioData, char *tapTotalAudioData, int32_t frameSize, bool &finishedFlag)
 {
     OH_AudioDataArray* ohAudioDataArray = new OH_AudioDataArray();
-    ohAudioDataArray->audioDataArray = (void**)malloc(2 * sizeof(void*));
-    for (int i = 0; i < 2; i++) {
+    ohAudioDataArray->audioDataArray = (void**)malloc(ACCESSAUDIODATA_ARRAY_NUM * sizeof(void*));
+    for (int i = 0; i < ACCESSAUDIODATA_ARRAY_NUM; i++) {
         ohAudioDataArray->audioDataArray[i] = (void*)malloc(frameSize);
     }
-    ohAudioDataArray->arraySize = 2;
+    ohAudioDataArray->arraySize = ACCESSAUDIODATA_ARRAY_NUM;
     ohAudioDataArray->requestFrameSize = frameSize;
 
     int32_t writeSize = 0;
@@ -83,22 +88,25 @@ OH_AudioSuite_Result audioRenderFrame(char *totalAudioData, char *tapTotalAudioD
     OH_AudioSuite_Result result = OH_AudioSuite_Result::AUDIOSUITE_SUCCESS;
     do {
         if (g_multiRenderFrameFlag) {
-            result = OH_AudioSuiteEngine_MultiRenderFrame(g_audioSuitePipeline, ohAudioDataArray, &writeSize, &finishedFlag);
-            logRenderResult(result, ohAudioDataArray->requestFrameSize, writeSize, finishedFlag, "OH_AudioSuiteEngine_MultiRenderFrame");
+            result = OH_AudioSuiteEngine_MultiRenderFrame(g_audioSuitePipeline,
+                    ohAudioDataArray, &writeSize, &finishedFlag);
+            LogRenderResult(result, ohAudioDataArray->requestFrameSize, writeSize, finishedFlag,
+                "OH_AudioSuiteEngine_MultiRenderFrame");
             if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
                 break;
             }
-            saveBuffer(totalAudioData, resultTotalSize, ohAudioDataArray->audioDataArray[0], writeSize);
-            saveBuffer(tapTotalAudioData, tapResultTotalSize, ohAudioDataArray->audioDataArray[1], writeSize);
-        } else {
+            SaveBuffer(totalAudioData, resultTotalSize, ohAudioDataArray->audioDataArray[0], writeSize);
+            SaveBuffer(tapTotalAudioData, tapResultTotalSize, ohAudioDataArray->audioDataArray[1], writeSize);
+        } else if (frameSize > 0) {
             char *audioData = (char *)malloc(frameSize);
-            result = OH_AudioSuiteEngine_RenderFrame(g_audioSuitePipeline, audioData, frameSize, &writeSize, &finishedFlag);
-            logRenderResult(result, frameSize, writeSize, finishedFlag, "OH_AudioSuiteEngine_RenderFrame");
+            result = OH_AudioSuiteEngine_RenderFrame(g_audioSuitePipeline,
+                    audioData, frameSize, &writeSize, &finishedFlag);
+            LogRenderResult(result, frameSize, writeSize, finishedFlag, "OH_AudioSuiteEngine_RenderFrame");
             if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
                 free(audioData);
                 break;
             }
-            saveBuffer(totalAudioData, resultTotalSize, audioData, writeSize);
+            SaveBuffer(totalAudioData, resultTotalSize, audioData, writeSize);
             free(audioData);
         }
         if (finishedFlag) {
@@ -107,18 +115,20 @@ OH_AudioSuite_Result audioRenderFrame(char *totalAudioData, char *tapTotalAudioD
         }
     } while (!finishedFlag);
     delete ohAudioDataArray;
-    AudioRenderContext context = {totalAudioData, tapTotalAudioData, frameSize, finishedFlag, resultTotalSize, tapResultTotalSize};
-    updateGlobalBuffers(context);
+    AudioRenderContext context = 
+        {totalAudioData, tapTotalAudioData, frameSize, finishedFlag, resultTotalSize, tapResultTotalSize};
+    UpdateGlobalBuffers(context);
     return result;
 }
 
-void saveBuffer(char *totalData, int32_t &totalSize, void *buffer, int32_t bufferSize)
+void SaveBuffer(char *totalData, int32_t &totalSize, void *buffer, int32_t bufferSize)
 {
-    memcpy(static_cast<char *>(totalData) + totalSize, buffer, bufferSize);
+    std::copy(buffer, buffer + bufferSize, static_cast<char *>(totalData));
     totalSize += bufferSize;
 }
 
-void logRenderResult(OH_AudioSuite_Result result, int32_t requestFrameSize, int32_t writeSize, bool finishedFlag, std::string logType)
+void LogRenderResult(OH_AudioSuite_Result result, int32_t requestFrameSize,
+    int32_t writeSize, bool finishedFlag, std::string logType)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, OUTPUT_TAG,
         "audioEditTest %{public}s frameSize: %{public}d, writeSize: %{public}d"
@@ -126,7 +136,7 @@ void logRenderResult(OH_AudioSuite_Result result, int32_t requestFrameSize, int3
         logType.c_str(), requestFrameSize, writeSize, (finishedFlag ? "true" : "false"), static_cast<int>(result));
 }
 
-void updateGlobalBuffers(AudioRenderContext &context)
+void UpdateGlobalBuffers(AudioRenderContext &context)
 {
     if (g_totalBuff != nullptr) {
         free(g_totalBuff);
@@ -134,15 +144,16 @@ void updateGlobalBuffers(AudioRenderContext &context)
     }
     g_totalSize = context.resultTotalSize;
     g_totalBuff = (char *)malloc(g_totalSize);
-    memcpy(g_totalBuff, context.totalAudioData, g_totalSize);
+    std::copy(context.totalAudioData, context.totalAudioData + g_totalSize, g_totalBuff);
 
     if (g_multiRenderFrameFlag) {
         g_totalSize = context.tapResultTotalSize;
         g_tapTotalBuff = (char *)malloc(g_totalSize);
         g_tapDataTotalSize = g_totalSize;
-        memcpy(g_tapTotalBuff, context.tapTotalAudioData, g_totalSize);
+        std::copy(context.tapTotalAudioData, context.tapTotalAudioData + g_totalSize, g_tapTotalBuff);
         g_multiRenderFrameFlag = false;
     }
 
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, OUTPUT_TAG, "audioEditTest updateGlobalBuffers g_totalSize: %{public}d", g_totalSize);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, OUTPUT_TAG,
+        "audioEditTest UpdateGlobalBuffers g_totalSize: %{public}d", g_totalSize);
 }

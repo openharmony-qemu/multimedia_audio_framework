@@ -11,7 +11,7 @@ const char *REGISTERCALLBACK_TAG = "[AudioEditTestApp_RegisterCallback_cpp]";
 napi_threadsafe_function tsfnStringArray = nullptr;
 napi_threadsafe_function tsfnBoolean = nullptr;
 
-void callStringArrayThread(napi_env env, napi_value js_callback, void *context, void *data)
+void CallStringArrayThread(napi_env env, napi_value js_callback, void *context, void *data)
 {
     std::vector<std::string> *strings = static_cast<std::vector<std::string> *>(data);
     size_t count = strings->size();
@@ -28,9 +28,10 @@ void callStringArrayThread(napi_env env, napi_value js_callback, void *context, 
     napi_call_function(env, NULL, js_callback, 1, &resultArray, NULL);
 }
 
-void callStringArrayCallback(const std::vector<std::string>& strings)
+void CallStringArrayCallback(const std::vector<std::string>& strings)
 {
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REGISTERCALLBACK_TAG, "audioEditTest callStringArrayCallback called");
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REGISTERCALLBACK_TAG,
+        "audioEditTest CallStringArrayCallback called");
     if (tsfnStringArray == nullptr) {
         return;
     }
@@ -39,24 +40,29 @@ void callStringArrayCallback(const std::vector<std::string>& strings)
     napi_call_threadsafe_function(tsfnStringArray, stringsCopy, napi_tsfn_blocking);
 }
 
-void callBoolThread(napi_env env, napi_value js_callback, void *context, void *data)
+void CallBoolThread(napi_env env, napi_value js_callback, void *context, void *data)
 {
     int result = *(bool *)data;
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REGISTERCALLBACK_TAG, "audioEditTest callBoolThread result: %{public}d", result);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REGISTERCALLBACK_TAG,
+        "audioEditTest CallBoolThread result: %{public}d", result);
     napi_value resultValue;
     napi_get_boolean(env, result, &resultValue);
     napi_call_function(env, NULL, js_callback, 1, &resultValue, NULL);
     free(data);
 }
 
-void callBooleanCallback(int result)
+void CallBooleanCallback(int result)
 {
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REGISTERCALLBACK_TAG, "audioEditTest callBooleanCallback result: %{public}d", result);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REGISTERCALLBACK_TAG,
+        "audioEditTest CallBooleanCallback result: %{public}d", result);
     if (tsfnBoolean == nullptr) {
         return;
     }
 
     int *data = (int *)malloc(sizeof(int));
+    if (data == nullptr) {
+        return;
+    }
     *data = result;
 
     napi_call_threadsafe_function(tsfnBoolean, data, napi_tsfn_blocking);

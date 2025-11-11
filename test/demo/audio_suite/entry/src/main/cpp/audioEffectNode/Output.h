@@ -27,16 +27,18 @@ extern char *g_tapTotalBuff;
 
 extern int32_t g_tapDataTotalSize;
 
-OH_AudioSuite_Result renDerFrame();
+OH_AudioSuite_Result RenDerFrame();
 
-OH_AudioSuite_Result startPipelineAndCheckState();
+OH_AudioSuite_Result StartPipelineAndCheckState();
 
-OH_AudioSuite_Result audioRenderFrame(char *totalAudioData, char *tapTotalAudioData, int32_t frameSize, bool &finishedFlag);
+OH_AudioSuite_Result AudioRenderFrame(char *totalAudioData, char *tapTotalAudioData,
+    int32_t frameSize, bool &finishedFlag);
 
-void saveBuffer(char *totalData, int32_t &totalSize, void *buffer, int32_t bufferSize);
+void SaveBuffer(char *totalData, int32_t &totalSize, void *buffer, int32_t bufferSize);
 
-void logRenderResult(OH_AudioSuite_Result result, int32_t requestFrameSize, int32_t writeSize, bool finishedFlag, std::string logType);
+void LogRenderResult(OH_AudioSuite_Result result, int32_t requestFrameSize, int32_t writeSize,
+    bool finishedFlag, std::string logType);
 
-void updateGlobalBuffers(AudioRenderContext &context);
+void UpdateGlobalBuffers(AudioRenderContext &context);
 
 #endif //AUDIOEDITTESTAPP_OUTPUT_H

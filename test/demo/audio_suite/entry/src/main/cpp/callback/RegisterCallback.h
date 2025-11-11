@@ -12,10 +12,10 @@
 extern napi_threadsafe_function tsfnStringArray;
 extern napi_threadsafe_function tsfnBoolean;
 
-void callStringArrayThread(napi_env env, napi_value js_callback, void *context, void *data);
-void callStringArrayCallback(const std::vector<std::string>& strings);
+void CallStringArrayThread(napi_env env, napi_value js_callback, void *context, void *data);
+void CallStringArrayCallback(const std::vector<std::string>& strings);
 
-void callBoolThread(napi_env env, napi_value js_callback, void *context, void *data);
-void callBooleanCallback(int result);
+void CallBoolThread(napi_env env, napi_value js_callback, void *context, void *data);
+void CallBooleanCallback(int result);
 
 #endif //REGISTERCALLBACK_H
