@@ -746,7 +746,10 @@ void AudioPipeSelector::UpdatePipeInfoFromStreamProp(std::shared_ptr<AudioStream
 
 void AudioPipeSelector::UpdateRendererPipeInfo(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
-    
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is null");
+ 
+    AudioPipeType type = GetPipeType(streamDesc->routeFlag_, streamDesc->audioMode_);
+    AudioStreamCollector::GetAudioStreamCollector().UpdateRendererPipeInfo(streamDesc->sessionId_, type);
 }
 } // namespace AudioStandard
 } // namespace OHOS
