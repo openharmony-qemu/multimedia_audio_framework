@@ -126,8 +126,6 @@ constexpr uint32_t SAMPLE_RATE_48010 = 48010;
     EXPECT_EQ(converterNode->preNodeInfo_.frameLen, DEFAULT_FRAMELEN_48010);
 }
 
-
-
 /*
  * @tc.name  : Test UpdateTmpOutPcmBufferInfo API.
  * @tc.type  : FUNC
