@@ -181,6 +181,11 @@ void AudioInjectorPolicy::ReleaseCaptureInjector()
     auto pipeList = pipeManager_->GetPipeList();
     for (auto it = pipeList.rbegin(); it != pipeList.rend(); ++it) {
         CHECK_AND_CONTINUE_LOG((*it) != nullptr, "Injector::it is null");
+        // because the paindex of all low_latency pipe is 0, distinguishing between types of low-latency paths
+        // requires checking Voip-specific scenarios to trigger the following processing
+        bool isPortIdxUsed = (voipType_ != FAST_VOIP ||
+            ((*it)->routeFlag_ & (AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP)));
+        CHECK_AND_CONTINUE(isPortIdxUsed);
         if ((*it)->paIndex_ == capturePortIdx_ && (*it)->pipeRole_ == PIPE_ROLE_INPUT) {
             streamVec = (*it)->streamDescriptors_;
             break;
@@ -212,6 +217,11 @@ void AudioInjectorPolicy::RebuildCaptureInjector(uint32_t streamId)
                 streamDesc = stream;
             }
         }
+        // because the paindex of all low_latency pipe is 0, distinguishing between types of low-latency paths
+        // requires checking Voip-specific scenarios to trigger the following processing
+        bool isPortIdxUsed = (voipType_ != FAST_VOIP ||
+            (pipe->routeFlag_ & (AUDIO_INPUT_FLAG_FAST | AUDIO_INPUT_FLAG_VOIP)));
+        CHECK_AND_CONTINUE(isPortIdxUsed);
         if (pipe->paIndex_ == capturePortIdx_ && pipe->pipeRole_ == PIPE_ROLE_INPUT) {
             streamVec = pipe->streamDescriptors_;
         }
