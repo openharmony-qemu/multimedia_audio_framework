@@ -40,7 +40,7 @@ void HpaeAudioFormatConverterNodeTest::TearDown()
 {}
 
 namespace {
-const size_t DEFAULT_FRAMELEN_FIRST = 820;
+const size_t DEFAULT_FRAMELEN_FIRST = 882;
 const size_t DEFAULT_FRAMELEN_SECOND = 960;
 const size_t DEFAULT_FRAMELEN_11025 = 441;
 const size_t DEFAULT_FRAMELEN_48010 = 4801;
@@ -52,11 +52,12 @@ constexpr uint32_t SAMPLE_RATE_48010 = 48010;
  * @tc.number: CheckUpdateInInfoTest_001.
  * @tc.desc  : Test CheckUpdateInInfoInfo, when sampleRate = resampler_->GetInRate()
  */
- HWTEST_F(HpaeAudioFormatConverterNodeTest, CheckUpdateInInfoTest_001, TestSize.Level0)
+HWTEST_F(HpaeAudioFormatConverterNodeTest, CheckUpdateInInfoTest_001, TestSize.Level0)
 {
     HpaeNodeInfo preNodeInfo;
     preNodeInfo.samplingRate = SAMPLE_RATE_48000;
     preNodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    preNodeInfo.channels = STEREO;
     HpaeNodeInfo outputNodeInfo;
     auto converterNode = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, outputNodeInfo);
     EXPECT_EQ(converterNode->preNodeInfo_.samplingRate, SAMPLE_RATE_48000);
@@ -75,11 +76,12 @@ constexpr uint32_t SAMPLE_RATE_48010 = 48010;
  * @tc.number: CheckUpdateInInfoTest_002.
  * @tc.desc  : Test CheckUpdateInInfoInfo, when sampleRate != resampler_->GetInRate()
  */
- HWTEST_F(HpaeAudioFormatConverterNodeTest, CheckUpdateInInfoTest_002, TestSize.Level0)
+HWTEST_F(HpaeAudioFormatConverterNodeTest, CheckUpdateInInfoTest_002, TestSize.Level0)
 {
     HpaeNodeInfo preNodeInfo;
     preNodeInfo.samplingRate = SAMPLE_RATE_48000;
-    preNodeInfo_.frameLen = DEFAULT_FRAMELEN_SECOND;
+    preNodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    preNodeInfo.channels = STEREO;
     HpaeNodeInfo outputNodeInfo;
     auto converterNode = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, outputNodeInfo);
     EXPECT_EQ(converterNode->preNodeInfo_.samplingRate, SAMPLE_RATE_48000);
@@ -100,11 +102,12 @@ constexpr uint32_t SAMPLE_RATE_48010 = 48010;
  * @tc.number: CheckUpdateInInfoTest_003.
  * @tc.desc  : Test CheckUpdateInInfoInfo, when sampleRate != resampler_->GetInRate() and input frameLen is 0
  */
- HWTEST_F(HpaeAudioFormatConverterNodeTest, CheckUpdateInInfoTest_003, TestSize.Level0)
+HWTEST_F(HpaeAudioFormatConverterNodeTest, CheckUpdateInInfoTest_003, TestSize.Level0)
 {
     HpaeNodeInfo preNodeInfo;
     preNodeInfo.samplingRate = SAMPLE_RATE_48000;
-    preNodeInfo_.frameLen = DEFAULT_FRAMELEN_SECOND;
+    preNodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    preNodeInfo.channels = STEREO;
     HpaeNodeInfo outputNodeInfo;
     auto converterNode = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, outputNodeInfo);
     EXPECT_EQ(converterNode->preNodeInfo_.samplingRate, SAMPLE_RATE_48000);
@@ -118,9 +121,9 @@ constexpr uint32_t SAMPLE_RATE_48010 = 48010;
     EXPECT_EQ(converterNode->preNodeInfo_.samplingRate, SAMPLE_RATE_11025);
     EXPECT_EQ(converterNode->preNodeInfo_.frameLen, DEFAULT_FRAMELEN_11025);
     // test 10hz 100ms customSampleRate, 0 frameLen data
-    PcmBufferInfo pcmBufferInfo1(STEREO, 0, DEFAULT_FRAMELEN_48010);
+    PcmBufferInfo pcmBufferInfo1(STEREO, 0, SAMPLE_RATE_48010);
     HpaePcmBuffer input1(pcmBufferInfo1);
-    ret = converterNode->CheckUpdateInInfo(&input);
+    ret = converterNode->CheckUpdateInInfo(&input1);
     EXPECT_EQ(ret, true);
     EXPECT_EQ(converterNode->preNodeInfo_.samplingRate, SAMPLE_RATE_48010);
     EXPECT_EQ(converterNode->preNodeInfo_.frameLen, DEFAULT_FRAMELEN_48010);
@@ -136,8 +139,8 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, UpdateTmpOutPcmBufferInfoTest_001, Te
 {
     HpaeNodeInfo preNodeInfo;
     preNodeInfo.samplingRate = SAMPLE_RATE_44100;
-    preNodeInfo_.frameLen = DEFAULT_FRAMELEN_FIRST;
-    preNodeInfo_.channels = STEREO;
+    preNodeInfo.frameLen = DEFAULT_FRAMELEN_FIRST;
+    preNodeInfo.channels = STEREO;
     HpaeNodeInfo outputNodeInfo;
     outputNodeInfo.samplingRate = SAMPLE_RATE_48000;
     outputNodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
@@ -170,8 +173,8 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, UpdateTmpOutPcmBufferInfoTest_002, Te
 {
     HpaeNodeInfo preNodeInfo;
     preNodeInfo.samplingRate = SAMPLE_RATE_44100;
-    preNodeInfo_.frameLen = DEFAULT_FRAMELEN_FIRST;
-    preNodeInfo_.channels = STEREO;
+    preNodeInfo.frameLen = DEFAULT_FRAMELEN_FIRST;
+    preNodeInfo.channels = STEREO;
     HpaeNodeInfo outputNodeInfo;
     outputNodeInfo.samplingRate = SAMPLE_RATE_48000;
     outputNodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
@@ -182,7 +185,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, UpdateTmpOutPcmBufferInfoTest_002, Te
     EXPECT_EQ(converterNode->tmpOutBuf_.GetFrameLen(), outputNodeInfo.frameLen);
     EXPECT_EQ(converterNode->tmpOutBuf_.GetChannelCount(), outputNodeInfo.channels);
 
-    PcmBufferInfo pcmBufferInfo(CHANNEL_6, DEFAULT_FRAMELEN_FIRST, SAMPLE_RATE_44100);
+    PcmBufferInfo pcmBufferInfo(CHANNEL_6, DEFAULT_FRAMELEN_FIRST, SAMPLE_RATE_48000);
     HpaePcmBuffer input(pcmBufferInfo);
     converterNode->CheckAndUpdateInfo(&input);
     // only downmix, tmpOutBuf_ unchanged and unused
@@ -190,7 +193,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, UpdateTmpOutPcmBufferInfoTest_002, Te
     EXPECT_EQ(converterNode->tmpOutBuf_.GetFrameLen(), outputNodeInfo.frameLen);
     EXPECT_EQ(converterNode->tmpOutBuf_.GetChannelCount(), outputNodeInfo.channels);
     
-    PcmBufferInfo pcmBufferInfo1(MONO, DEFAULT_FRAMELEN_FIRST, SAMPLE_RATE_44100);
+    PcmBufferInfo pcmBufferInfo1(MONO, DEFAULT_FRAMELEN_FIRST, SAMPLE_RATE_48000);
     HpaePcmBuffer input1(pcmBufferInfo1);
     converterNode->CheckAndUpdateInfo(&input1);
     // only upmix, tmpOutBuf_ unchanged and unused
@@ -209,8 +212,8 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, UpdateTmpOutPcmBufferInfoTest_003, Te
 {
     HpaeNodeInfo preNodeInfo;
     preNodeInfo.samplingRate = SAMPLE_RATE_44100;
-    preNodeInfo_.frameLen = DEFAULT_FRAMELEN_FIRST;
-    preNodeInfo_.channels = STEREO;
+    preNodeInfo.frameLen = DEFAULT_FRAMELEN_FIRST;
+    preNodeInfo.channels = STEREO;
     HpaeNodeInfo outputNodeInfo;
     outputNodeInfo.samplingRate = SAMPLE_RATE_48000;
     outputNodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
@@ -250,8 +253,8 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, UpdateTmpOutPcmBufferInfoTest_004, Te
 {
     HpaeNodeInfo preNodeInfo;
     preNodeInfo.samplingRate = SAMPLE_RATE_44100;
-    preNodeInfo_.frameLen = DEFAULT_FRAMELEN_FIRST;
-    preNodeInfo_.channels = STEREO;
+    preNodeInfo.frameLen = DEFAULT_FRAMELEN_FIRST;
+    preNodeInfo.channels = STEREO;
     HpaeNodeInfo outputNodeInfo;
     outputNodeInfo.samplingRate = SAMPLE_RATE_48000;
     outputNodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
