@@ -315,13 +315,7 @@ int32_t AudioInterruptService::ActivateAudioSession(const int32_t zoneId, const 
         AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
         // If there is an event of (interrupt + set scene), ActivateAudioInterrupt and DeactivateAudioInterrupt may
         // experience deadlocks, due to mutex_ and deviceStatusUpdateSharedMutex_ waiting for each other
-        std::shared_ptr<UpdateAudioSceneFromInterruptAction> action =
-            std::make_shared<UpdateAudioSceneFromInterruptAction>(shared_from_this(),
-            targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
-        CHECK_AND_RETURN_RET_LOG(action != nullptr, -1, "action is nullptr");
-        AsyncActionDesc desc;
-        desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
-        DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
+        PostUpdateAudioSceneFromInterruptAction(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     }
 
     return SUCCESS;
@@ -939,13 +933,7 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
     // If there is an event of (interrupt + set scene), ActivateAudioInterrupt and DeactivateAudioInterrupt may
     // experience deadlocks, due to mutex_ and deviceStatusUpdateSharedMutex_ waiting for each other
-    std::shared_ptr<UpdateAudioSceneFromInterruptAction> action =
-        std::make_shared<UpdateAudioSceneFromInterruptAction>(shared_from_this(),
-        targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
-    CHECK_AND_RETURN_RET_LOG(action != nullptr, -1, "action is nullptr");
-    AsyncActionDesc desc;
-    desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
-    DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
+    PostUpdateAudioSceneFromInterruptAction(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
 
@@ -1102,13 +1090,7 @@ int32_t AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId, co
         AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
         // If there is an event of (interrupt + set scene), ActivateAudioInterrupt and DeactivateAudioInterrupt may
         // experience deadlocks, due to mutex_ and deviceStatusUpdateSharedMutex_ waiting for each other
-        std::shared_ptr<UpdateAudioSceneFromInterruptAction> action =
-            std::make_shared<UpdateAudioSceneFromInterruptAction>(shared_from_this(),
-            targetAudioScene, DEACTIVATE_AUDIO_INTERRUPT, zoneId);
-        CHECK_AND_RETURN_RET_LOG(action != nullptr, -1, "action is nullptr");
-        AsyncActionDesc desc;
-        desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
-        DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
+        PostUpdateAudioSceneFromInterruptAction(targetAudioScene, DEACTIVATE_AUDIO_INTERRUPT, zoneId);
     }
     GameRecogSetParam(GetClientTypeByStreamId(incomingStreamId), incomingSourceType, false);
 
@@ -1244,13 +1226,7 @@ int32_t AudioInterruptService::ReleaseAudioInterruptZone(const int32_t zoneId, G
         return ret;
     }
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
-    std::shared_ptr<UpdateAudioSceneFromInterruptAction> action =
-        std::make_shared<UpdateAudioSceneFromInterruptAction>(shared_from_this(),
-        targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
-    CHECK_AND_RETURN_RET_LOG(action != nullptr, -1, "action is nullptr");
-    AsyncActionDesc desc;
-    desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
-    DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
+    PostUpdateAudioSceneFromInterruptAction(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
 
@@ -1262,13 +1238,7 @@ int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, G
         return ret;
     }
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
-    std::shared_ptr<UpdateAudioSceneFromInterruptAction> action =
-        std::make_shared<UpdateAudioSceneFromInterruptAction>(shared_from_this(),
-        targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
-    CHECK_AND_RETURN_RET_LOG(action != nullptr, -1, "action is nullptr");
-    AsyncActionDesc desc;
-    desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
-    DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
+    PostUpdateAudioSceneFromInterruptAction(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
 
@@ -1281,13 +1251,7 @@ int32_t AudioInterruptService::InjectInterruptToAudioZone(const int32_t zoneId,
     CHECK_AND_RETURN_RET_LOG(zoneId != ZONEID_DEFAULT, SUCCESS, "zone id is default");
 
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
-    std::shared_ptr<UpdateAudioSceneFromInterruptAction> action =
-        std::make_shared<UpdateAudioSceneFromInterruptAction>(shared_from_this(),
-        targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
-    CHECK_AND_RETURN_RET_LOG(action != nullptr, -1, "action is nullptr");
-    AsyncActionDesc desc;
-    desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
-    DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
+    PostUpdateAudioSceneFromInterruptAction(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
 
@@ -1300,13 +1264,7 @@ int32_t AudioInterruptService::InjectInterruptToAudioZone(const int32_t zoneId,
     CHECK_AND_RETURN_RET_LOG(zoneId != ZONEID_DEFAULT, SUCCESS, "zone id is default");
 
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
-    std::shared_ptr<UpdateAudioSceneFromInterruptAction> action =
-        std::make_shared<UpdateAudioSceneFromInterruptAction>(shared_from_this(),
-        targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
-    CHECK_AND_RETURN_RET_LOG(action != nullptr, -1, "action is nullptr");
-    AsyncActionDesc desc;
-    desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
-    DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
+    PostUpdateAudioSceneFromInterruptAction(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
 
@@ -1875,13 +1833,7 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
         SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::REQUEST_CALLBACK_CATEGORY, audioInterrupt);
         SendActiveVolumeTypeChangeEvent(zoneId);
         AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
-        std::shared_ptr<UpdateAudioSceneFromInterruptAction> action =
-        std::make_shared<UpdateAudioSceneFromInterruptAction>(shared_from_this(),
-            targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
-        CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
-        AsyncActionDesc desc;
-        desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
-        DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
+        PostUpdateAudioSceneFromInterruptAction(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
         shouldReturnSuccess = true;
         return;
     }
@@ -2777,13 +2729,7 @@ void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSe
         itZone->second->audioFocusInfoList = audioFocusInfoList;
         SendActiveVolumeTypeChangeEvent(zoneId);
     }
-    std::shared_ptr<UpdateAudioSceneFromInterruptAction> action =
-        std::make_shared<UpdateAudioSceneFromInterruptAction>(shared_from_this(),
-        highestPriorityAudioScene, DEACTIVATE_AUDIO_INTERRUPT, zoneId);
-    CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
-    AsyncActionDesc desc;
-    desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
-    DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
+    PostUpdateAudioSceneFromInterruptAction(highestPriorityAudioScene, DEACTIVATE_AUDIO_INTERRUPT, zoneId);
 }
 
 AudioScene AudioInterruptService::RefreshAudioSceneFromAudioInterrupt(const AudioInterrupt &audioInterrupt,
@@ -3163,6 +3109,16 @@ void AudioInterruptService::RegisterDefaultVolumeTypeListener()
     AUDIO_INFO_LOG("DefaultVolumeTypeListener mono successfully, defaultVolumeType:%{public}d", defaultVolumeType_);
 }
 
+void AudioInterruptService::PostUpdateAudioSceneFromInterruptAction(const AudioScene audioScene,
+    AudioInterruptChangeType changeType, int32_t zoneId)
+{
+    std::shared_ptr<UpdateAudioSceneFromInterruptAction> action =
+        std::make_shared<UpdateAudioSceneFromInterruptAction>(shared_from_this(), audioScene, changeType, zoneId);
+    CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
+    AsyncActionDesc desc;
+    desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
+    DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
+}
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS
