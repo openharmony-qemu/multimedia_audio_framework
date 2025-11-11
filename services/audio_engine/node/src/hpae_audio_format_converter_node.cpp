@@ -20,10 +20,10 @@
 #include "audio_utils.h"
 #include <cinttypes>
 #include "audio_effect_log.h"
+#include "hpae_node_common.h"
 
 static constexpr uint32_t MS_IN_SECOND = 1000;
 static constexpr uint32_t REASAMPLE_QUAILTY = 1;
-static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -33,11 +33,12 @@ HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeI
     converterOutput_(pcmBufferInfo_), preNodeInfo_(preNodeInfo), tmpOutBuf_(pcmBufferInfo_)
 {
     converterOutput_.SetSplitStreamType(preNodeInfo.GetSplitStreamType());
-    UpdateTmpOutPcmBufferInfo(pcmBufferInfo_);
     // use ProResamppler as default
     resampler_ = std::make_unique<ProResampler>(preNodeInfo.customSampleRate == 0 ? preNodeInfo.samplingRate :
         preNodeInfo.customSampleRate, nodeInfo.samplingRate,
         std::min(preNodeInfo.channels, nodeInfo.channels), REASAMPLE_QUAILTY);
+
+    UpdateTmpOutPcmBufferInfo(pcmBufferInfo_);
     
     AudioChannelInfo inChannelInfo = {
         .channelLayout = preNodeInfo.channelLayout,
@@ -151,7 +152,7 @@ int32_t HpaeAudioFormatConverterNode::ConverterProcess(float *srcData, float *ds
     uint32_t inRate = resampler_->GetInRate();
     uint32_t outRate = resampler_->GetOutRate();
  
-    uint32_t inputFrameLen = preNodeInfo_.frameLen;
+    uint32_t inputFrameLen = input->GetFrameLen();
     uint32_t outputFrameLen = converterOutput_.GetFrameLen();
     uint32_t inputFrameBytes = inputFrameLen * inChannelInfo.numChannels * sizeof(float);
     uint32_t outputFrameBytes = outputFrameLen * outChannelInfo.numChannels * sizeof(float);
@@ -268,32 +269,24 @@ bool HpaeAudioFormatConverterNode::CheckUpdateInInfo(HpaePcmBuffer *input)
     if (sampleRate != resampler_->GetInRate()) {
         HILOG_COMM_INFO("NodeId %{public}d: Update resampler input sample rate: %{public}d -> %{public}d",
             GetNodeId(), resampler_->GetInRate(), sampleRate);
-        preNodeInfo_.frameLen = input->GetFrameLen();
         preNodeInfo_.samplingRate = (AudioSamplingRate)sampleRate;
+        preNodeInfo_.frameLen = CalculateFrameLenBySampleRate(sampleRate);
         resampler_->UpdateRates(sampleRate, resampler_->GetOutRate());
         isInfoUpdated = true;
-    }
-    // special case for 11025, frameLen is 441, 0, 441, 0... alternating
-    // do not influence isInfoUpdated flag, which is used for update tmp data length
-    // for 8010, frameLen is 801, 0, 0, 0, 0, 801, 0...
-    if ((preNodeInfo_.customSampleRate == 0 && preNodeInfo_.samplingRate == SAMPLE_RATE_11025) ||
-        preNodeInfo_.customSampleRate == SAMPLE_RATE_11025 ||
-        (preNodeInfo_.customSampleRate != 0 && preNodeInfo_.customSampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES != 0)) {
-        preNodeInfo_.frameLen = input->GetFrameLen();
     }
     return isInfoUpdated;
 }
 
 void HpaeAudioFormatConverterNode::UpdateTmpOutPcmBufferInfo(const PcmBufferInfo &outPcmBufferInfo)
 {
-    if (outPcmBufferInfo.ch == preNodeInfo_.channels || outPcmBufferInfo.rate == preNodeInfo_.samplingRate) {
+    if (outPcmBufferInfo.ch == preNodeInfo_.channels || outPcmBufferInfo.rate == resampler_->GetInRate()) {
         // do not need tmpOutput Buffer
         return;
     }
     PcmBufferInfo tmpOutPcmBufferInfo = outPcmBufferInfo;
     if (outPcmBufferInfo.ch < preNodeInfo_.channels) { // downmix, then resample
-        tmpOutPcmBufferInfo.rate = preNodeInfo_.samplingRate;
-        tmpOutPcmBufferInfo.frameLen = preNodeInfo_.frameLen;
+        tmpOutPcmBufferInfo.rate = resampler_->GetInRate();
+        tmpOutPcmBufferInfo.frameLen = CalculateFrameLenBySampleRate(tmpOutPcmBufferInfo.rate);
     } else { // resample, then upmix
         tmpOutPcmBufferInfo.ch = preNodeInfo_.channels;
     }
@@ -315,15 +308,8 @@ void HpaeAudioFormatConverterNode::CheckAndUpdateInfo(HpaePcmBuffer *input)
     PcmBufferInfo outPcmBufferInfo = pcmBufferInfo_; // isMultiFrames_ and frame_ are inheritated from sinkInputNode
     outPcmBufferInfo.ch = outChannelInfo.numChannels;
     outPcmBufferInfo.rate = resampler_->GetOutRate();
-    outPcmBufferInfo.frameLen = preNodeInfo_.frameLen * resampler_->GetOutRate() / resampler_->GetInRate();
+    outPcmBufferInfo.frameLen = resampler_->GetOutRate() * FRAME_LEN_20MS / MS_IN_SECOND;
     outPcmBufferInfo.channelLayout = outChannelInfo.channelLayout;
-
-    if ((preNodeInfo_.customSampleRate == 0 && preNodeInfo_.samplingRate == SAMPLE_RATE_11025) ||
-        preNodeInfo_.customSampleRate == SAMPLE_RATE_11025 ||
-        (preNodeInfo_.customSampleRate != 0 && preNodeInfo_.customSampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES != 0)) {
-        // for 11025, fix out frameLen based on output sample rate and fixed frameLen 20ms
-        outPcmBufferInfo.frameLen = resampler_->GetOutRate() * FRAME_LEN_20MS / MS_IN_SECOND;
-    }
 
     AUDIO_INFO_LOG("NodeId %{public}d: output or input format info is changed, update tmp PCM buffer info!",
         GetNodeId());

@@ -192,15 +192,6 @@ HWTEST_F(AudioProResamplerTest, ProcessTest_003, TestSize.Level0)
         resampler.expectedOutFrameLen_ * resampler.channels_ * BUFFER_EXPAND_SIZE_5 - ADD_SIZE);
     // Process first 100ms frame, send first 1/5 of data to output
     int32_t ret = resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen);
-    EXPECT_EQ(ret, EOK);
-    inFrameLen = 0;
-    // no new data in, send stored 20ms
-    for (uint8_t i = 0; i < 3; i++) {
-        ret = resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen);
-        EXPECT_EQ(ret, EOK);
-    }
-    // 5th process bufFor100ms_.capacity() too small and return ERROR
-    ret = resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen);
     EXPECT_EQ(ret, RESAMPLER_ERR_OVERFLOW);
 }
 
@@ -225,10 +216,6 @@ HWTEST_F(AudioProResamplerTest, ProcessTest_003, TestSize.Level0)
         resampler1.expectedOutFrameLen_ * resampler1.channels_ * BUFFER_EXPAND_SIZE_2 - ADD_SIZE);
     // Process first 40ms frame, send first half of data to output
     int32_t ret = resampler1.Process(in.data(), inFrameLen, out.data(), outFrameLen);
-    EXPECT_EQ(ret, EOK);
-    inFrameLen = 0;
-    // 2nd process buf11025_.capacity() too small and return ERROR
-    ret = resampler1.Process(in.data(), inFrameLen, out.data(), outFrameLen);
     EXPECT_EQ(ret, RESAMPLER_ERR_OVERFLOW);
 }
 

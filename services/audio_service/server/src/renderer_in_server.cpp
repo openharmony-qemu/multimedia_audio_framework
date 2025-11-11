@@ -146,7 +146,9 @@ int32_t RendererInServer::ConfigServerBuffer()
         audioServerBuffer_->GetDataSize());
     int32_t ret = InitBufferStatus();
     AUDIO_DEBUG_LOG("Clear data buffer, ret:%{public}d", ret);
-    uint32_t spanTime = spanSizeInFrame_ * AUDIO_MS_PER_SECOND / processConfig_.streamInfo.samplingRate;
+    uint32_t spanTime = spanSizeInFrame_ * AUDIO_MS_PER_SECOND /
+        (processConfig_.streamInfo.customSampleRate == 0 ? processConfig_.streamInfo.samplingRate :
+        processConfig_.streamInfo.customSampleRate);
     audioCheckFreq_ = threshold * AUDIO_MS_PER_SECOND / spanTime;
 
     isBufferConfiged_ = true;
