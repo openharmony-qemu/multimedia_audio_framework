@@ -8,6 +8,7 @@
 #include <string>
 #include <map>
 #include <thread>
+#include <algorithm>
 #include <unistd.h>
 #include "hilog/log.h"
 #include <iomanip>
@@ -18,6 +19,27 @@
 #include "./audioEffectNode/Output.h"
 
 const int GLOBAL_RESMGR = 0xFF00;
+const int FIRST_ARGV_PARAM = 0;
+const int SECOND_ARGV_PARAM = 1;
+const int THIRD_ARGV_PARAM = 2;
+const int FORTH_ARGV_PARAM = 3;
+const unsigned int BITS_PER_SAMPLE_0 = 0;
+const unsigned int BITS_PER_SAMPLE_1 = 1;
+const unsigned int BITS_PER_SAMPLE_2 = 2;
+const unsigned int BITS_PER_SAMPLE_4 = 4;
+const unsigned int BITS_PER_SAMPLE_8 = 8;
+const unsigned int BITS_PER_SAMPLE_16 = 16;
+const unsigned int BITS_PER_SAMPLE_24 = 24;
+const unsigned int BITS_PER_SAMPLE_32 = 32;
+const unsigned int VB_MODE_CLEAR = 1;
+const unsigned int VB_MODE_THEATRE = 2;
+const unsigned int VB_MODE_CD = 3;
+const unsigned int VB_MODE_RECORDING_STUDIO = 4;
+const size_t INPUT_NODE_SIZE_2 = 2;
+const int ARRAY_SIZE_2 = 2;
+const int AUDIOSUITE_ERROR_SYSTEM_CODE = 3;
+const int ERROR_CODE_3 = 3;
+const double HUNDRED_NUM = 100;
 const char *MULTI_PIPELINE_TAG = "[AudioEditTestApp_multiPipelineEdit_cpp]";
 
 // 多线程共享锁
@@ -59,11 +81,11 @@ OH_AudioSuite_Result getMultiRenderFrameOutput(char *&firData, char *&secData, s
     int32_t frameSize =
         20 * threadAudioFormatOutput.samplingRate * threadAudioFormatOutput.channelCount / 1000 * bitsPerSample / 8;
     OH_AudioDataArray *ohAudioDataArray = new OH_AudioDataArray();
-    ohAudioDataArray->audioDataArray = (void **)malloc(2 * sizeof(void *));
-    for (int i = 0; i < 2; i++) {
+    ohAudioDataArray->audioDataArray = (void **)malloc(sizeof(void *) + sizeof(void *));
+    for (int i = 0; i < ARRAY_SIZE_2; i++) {
         ohAudioDataArray->audioDataArray[i] = (void *)malloc(frameSize);
     }
-    ohAudioDataArray->arraySize = 2;
+    ohAudioDataArray->arraySize = ARRAY_SIZE_2;
     ohAudioDataArray->requestFrameSize = frameSize;
     OH_AudioSuite_Result result;
 
@@ -82,8 +104,12 @@ OH_AudioSuite_Result getMultiRenderFrameOutput(char *&firData, char *&secData, s
         }
 
         // 每次保存一次获取的buffer值 ...
-        memcpy(static_cast<char *>(firData) + firDataSize, ohAudioDataArray->audioDataArray[0], writeSize);
-        memcpy(static_cast<char *>(secData) + secDataSize, ohAudioDataArray->audioDataArray[1], writeSize);
+        std::copy(static_cast<const char*>(ohAudioDataArray->audioDataArray[0]),
+            static_cast<const char*>(ohAudioDataArray->audioDataArray[0]) + writeSize,
+            static_cast<char*>(firData) + firDataSize);
+        std::copy(static_cast<const char*>(ohAudioDataArray->audioDataArray[1]),
+            static_cast<const char*>(ohAudioDataArray->audioDataArray[1]) + writeSize,
+            static_cast<char*>(secData) + secDataSize);
         firDataSize += writeSize;
         secDataSize += writeSize;
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
@@ -121,7 +147,9 @@ OH_AudioSuite_Result getRenderFrameOutput(char *&firData, size_t frameSize, size
             break;
         }
         // 每次保存一次获取的buffer值 ...
-        memcpy(static_cast<char *>(firData) + firDataSize, audioData, writeSize);
+        std::copy(static_cast<const char*>(audioData),
+            static_cast<const char*>(audioData) + writeSize,
+            static_cast<char*>(firData) + firDataSize);
         firDataSize += writeSize;
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                      "audioEditTest OH_AudioSuiteEngine_RenderFrame resultTotalSize: %{public}zu, writeSize : "
@@ -165,15 +193,20 @@ OH_AudioSuite_Result MultiPipelineRenderFrame()
     if (result == OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         freeBuffer(firstAudioBuffer);
         firstAudioBuffer = (char *)malloc(firstBufferSize);
-        memcpy(firstAudioBuffer, firAudioData, firstBufferSize);
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest renDerFrame memcpy "
+        std::copy(static_cast<const char*>(firAudioData),
+            static_cast<const char*>(firAudioData) + firstBufferSize,
+            static_cast<char*>(firstAudioBuffer));
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest renDerFrame std::copy "
                      "firBuff: %{public}p, firstBufferSize:%{public}zu", firstAudioBuffer, firstBufferSize);
         if (multiRenderFrameFlag) {
             freeBuffer(secondAudioBuffer);
             secondAudioBuffer = (char *)malloc(secondBufferSize);
-            memcpy(secondAudioBuffer, secAudioData, secondBufferSize);
+            std::copy(static_cast<const char*>(secAudioData),
+                static_cast<const char*>(secAudioData) + secondBufferSize,
+                static_cast<char*>(secondAudioBuffer));
             OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest renDerFrame "
-                         "memcpy secBuff: %{public}p, g_totalSize:%{public}zu", secondAudioBuffer, secondBufferSize);
+                         "std::copy secBuff: %{public}p, g_totalSize:%{public}zu",
+                         secondAudioBuffer, secondBufferSize);
             multiRenderFrameFlag = false;
         }
     }
@@ -191,7 +224,7 @@ napi_value multiPipelineEnvPrepare(napi_env env, napi_callback_info info)
     napi_value *argv = new napi_value[argc];
     std::string pipelineId;
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-    parseNapiString(env, argv[0], pipelineId);
+    parseNapiString(env, argv[FIRST_ARGV_PARAM], pipelineId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest multiPipelinePrepare pipelineId=%{public}s", pipelineId.c_str());
 
@@ -228,7 +261,7 @@ napi_value AudioEditNodeInitMultiPipeline(napi_env env, napi_callback_info info)
     napi_value *argv = new napi_value[argc];
     std::string pipelineId;
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-    parseNapiString(env, argv[0], pipelineId);
+    parseNapiString(env, argv[FIRST_ARGV_PARAM], pipelineId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest AudioEditNodeInitMultiPipeline pipelineId:%{public}s", pipelineId.c_str());
 
@@ -304,24 +337,24 @@ napi_value multiSetFormat(napi_env env, napi_callback_info info)
     unsigned int channels;
     unsigned int sampleRate;
     unsigned int bitsPerSample;
-    napi_get_value_uint32(env, argv[0], &channels);
-    napi_get_value_uint32(env, argv[1], &sampleRate);
-    napi_get_value_uint32(env, argv[2], &bitsPerSample);
+    napi_get_value_uint32(env, argv[FIRST_ARGV_PARAM], &channels);
+    napi_get_value_uint32(env, argv[SECOND_ARGV_PARAM], &sampleRate);
+    napi_get_value_uint32(env, argv[THIRD_ARGV_PARAM], &bitsPerSample);
     switch (bitsPerSample) {
-        case 8:
-            bitsPerSample = 0;
+        case BITS_PER_SAMPLE_8:
+            bitsPerSample = BITS_PER_SAMPLE_0;
             break;
-        case 16:
-            bitsPerSample = 1;
+        case BITS_PER_SAMPLE_16:
+            bitsPerSample = BITS_PER_SAMPLE_1;
             break;
-        case 24:
-            bitsPerSample = 2;
+        case BITS_PER_SAMPLE_24:
+            bitsPerSample = BITS_PER_SAMPLE_2;
             break;
-        case 32:
-            bitsPerSample = 4;
+        case BITS_PER_SAMPLE_32:
+            bitsPerSample = BITS_PER_SAMPLE_4;
             break;
         default:
-            bitsPerSample = 0;
+            bitsPerSample = BITS_PER_SAMPLE_0;
             break;
     }
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
@@ -387,9 +420,11 @@ int32_t MultiWriteDataCallBack(OH_AudioNode *audioNode, void *userData, void *au
     int32_t remainingDataSize = totalSize - totalWriteAudioDataSize;
     // 确定本次写入的实际数据量
     int32_t actualDataSize = std::min(audioDataSize, remainingDataSize);
-    inputDataProgress += (static_cast<double>(actualDataSize) / static_cast<double>(totalSize) * 100);
+    inputDataProgress += (static_cast<double>(actualDataSize) / static_cast<double>(totalSize) * HUNDRED_NUM);
     // 将数据从inputBuffer复制到audioData
-    memcpy(static_cast<char *>(audioData), it->second.data() + totalWriteAudioDataSize, actualDataSize);
+    std::copy(static_cast<const char*>(it->second.data() + totalWriteAudioDataSize),
+        static_cast<const char*>(it->second.data() + totalWriteAudioDataSize) + actualDataSize,
+        static_cast<char*>(audioData));
     pthread_t thisId = gettid();
     if (threadIdToWriteIndexMap.find(thisId) == threadIdToWriteIndexMap.end()) {
         threadIdToWriteIndexMap[thisId] = 0;
@@ -588,8 +623,9 @@ void MultiReadTrackSamples(OH_AVDemuxer *demuxer, uint32_t trackIndex, int buffe
         if (ret == AV_ERR_OK) {
             OH_AVBuffer_GetBufferAttr(buffer, &info);
             // 将当前样本的数据复制到 totalBuff 中
-            memcpy(totalBuffer + threadtotalInputDataSize, reinterpret_cast<char *>(OH_AVBuffer_GetAddr(buffer)),
-                   info.size);
+            std::copy(static_cast<const char*>(OH_AVBuffer_GetAddr(buffer)),
+                static_cast<const char*>(OH_AVBuffer_GetAddr(buffer)) + info.size,
+                static_cast<char*>(totalBuffer) + threadtotalInputDataSize);
             threadtotalInputDataSize += info.size;
             if (info.flags == OH_AVCodecBufferFlags::AVCODEC_BUFFER_FLAGS_EOS) {
                 isEnd.store(true);
@@ -600,7 +636,9 @@ void MultiReadTrackSamples(OH_AVDemuxer *demuxer, uint32_t trackIndex, int buffe
         }
     }
     threadinputBuffer = (char *)malloc(threadtotalInputDataSize);
-    memcpy(threadinputBuffer, totalBuffer, threadtotalInputDataSize);
+    std::copy(static_cast<const char*>(totalBuffer),
+        static_cast<const char*>(totalBuffer) + threadtotalInputDataSize,
+        static_cast<char*>(threadinputBuffer));
     // 销毁缓冲区
     free(totalBuffer);
     OH_AVBuffer_Destroy(buffer);
@@ -811,7 +849,7 @@ int MultiAddEffectNodeToNodeManager(std::string &inputNodeId, std::string &effec
                      "audioEditTest addEffectNodeToNodeManager has mixerNodes");
         Node node = threadNodeManager->getNodeById(inputNodeId);
         if (node.nextNodeId.empty()) {
-            return -3;
+            return -ERROR_CODE_3;
         }
         while (threadNodeManager->getNodeById(node.nextNodeId).type !=
                OH_AudioNode_Type::EFFECT_NODE_TYPE_AUDIO_MIXER) {
@@ -843,13 +881,13 @@ napi_value multiDeleteSong(napi_env env, napi_callback_info info)
 
     // 获取inputId参数
     std::string inputId;
-    napi_status status = parseNapiString(env, argv[0], inputId);
+    napi_status status = parseNapiString(env, argv[FIRST_ARGV_PARAM], inputId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest DeleteSong inputId is %{public}s",
                  inputId.c_str());
     if (threadPipelineManager == nullptr) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                      "audioEditTest DeleteSong, threadNodeManager is null");
-        napi_create_int64(env, static_cast<int>(3), &napiValue);
+        napi_create_int64(env, AUDIOSUITE_ERROR_SYSTEM_CODE, &napiValue);
         return napiValue;
     }
     std::shared_ptr<NodeManager> &threadNodeManager = threadPipelineManager->nodeManager;
@@ -859,7 +897,7 @@ napi_value multiDeleteSong(napi_env env, napi_callback_info info)
     const std::vector<Node> inputNodes = threadNodeManager->getNodesByType(OH_AudioNode_Type::INPUT_NODE_TYPE_DEFAULT);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest DeleteSong inputNodes length is %{public}d", static_cast<int>(inputNodes.size()));
-    if (inputNodes.size() > 2) {
+    if (inputNodes.size() > INPUT_NODE_SIZE_2) {
         Node node = threadNodeManager->getNodeById(inputId);
         Node nextNode;
         if (node.id.empty()) {
@@ -880,7 +918,7 @@ napi_value multiDeleteSong(napi_env env, napi_callback_info info)
             "audioEditTest deleteSong preNodes of mixerNode and inputNodes number greater than 2 : %{public}d",
             static_cast<int>(threadNodeManager->getNodesByType(OH_AudioNode_Type::EFFECT_NODE_TYPE_AUDIO_MIXER)[0]
                                  .preNodeIds.size()));
-    } else if (inputNodes.size() == 2) {
+    } else if (inputNodes.size() == INPUT_NODE_SIZE_2) {
         Node node = threadNodeManager->getNodeById(inputId);
         Node nextNode;
         if (node.id.empty()) {
@@ -943,18 +981,18 @@ napi_value multiSetEqualizerMode(napi_env env, napi_callback_info info)
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     // 获取效果节点的效果参数
     unsigned int equailizerMode = -1;
-    napi_get_value_uint32(env, argv[0], &equailizerMode);
+    napi_get_value_uint32(env, argv[FIRST_ARGV_PARAM], &equailizerMode);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest SetEquailizerMode equailizerMode is %{public}d", equailizerMode);
     // 获取效果节点的id
     std::string equalizerId;
-    napi_status status = parseNapiString(env, argv[1], equalizerId);
+    napi_status status = parseNapiString(env, argv[SECOND_ARGV_PARAM], equalizerId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest SetEquailizerMode equalizerId is %{public}s", equalizerId.c_str());
 
     // 获取input节点的id
     std::string inputId;
-    status = parseNapiString(env, argv[2], inputId);
+    status = parseNapiString(env, argv[THIRD_ARGV_PARAM], inputId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest SetEquailizerMode inputId is %{public}s", inputId.c_str());
 
@@ -1009,7 +1047,7 @@ napi_value multiSetEqualizerFrequencyBandGains(napi_env env, napi_callback_info 
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     // 判断是否是数组
     bool isArray;
-    napi_is_array(env, argv[0], &isArray);
+    napi_is_array(env, argv[FIRST_ARGV_PARAM], &isArray);
     if (!isArray) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                      "audioEditTest SetEqualizerFrequencyBandGains param not array");
@@ -1017,13 +1055,13 @@ napi_value multiSetEqualizerFrequencyBandGains(napi_env env, napi_callback_info 
         return napiValue;
     }
     uint32_t length;
-    napi_get_array_length(env, argv[0], &length);
+    napi_get_array_length(env, argv[FIRST_ARGV_PARAM], &length);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest SetEqualizerFrequencyBandGains param length is %{public}d", length);
 
     // 获取效果节点的id
     std::string equalizerId;
-    napi_status status = parseNapiString(env, argv[1], equalizerId);
+    napi_status status = parseNapiString(env, argv[SECOND_ARGV_PARAM], equalizerId);
     if (status == napi_ok) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                      "audioEditTest SetEqualizerFrequencyBandGains equalizerId is %{public}s", equalizerId.c_str());
@@ -1033,7 +1071,7 @@ napi_value multiSetEqualizerFrequencyBandGains(napi_env env, napi_callback_info 
 
     // 获取input节点的id
     std::string inputId;
-    status = parseNapiString(env, argv[2], inputId);
+    status = parseNapiString(env, argv[THIRD_ARGV_PARAM], inputId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest SetEqualizerFrequencyBandGains inputId is %{public}s", inputId.c_str());
     if (status == napi_ok) {
@@ -1044,7 +1082,7 @@ napi_value multiSetEqualizerFrequencyBandGains(napi_env env, napi_callback_info 
     }
     // 获取 selectNodeId
     std::string selectedNodeId;
-    status = parseNapiString(env, argv[3], selectedNodeId);
+    status = parseNapiString(env, argv[FORTH_ARGV_PARAM], selectedNodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest SetEqualizerFrequencyBandGains selectedNodeId is %{public}s", selectedNodeId.c_str());
 
@@ -1087,7 +1125,7 @@ napi_value multiSetEqualizerFrequencyBandGains(napi_env env, napi_callback_info 
     // 遍历数组并打印每个元素
     for (uint32_t i = 0; i < length; ++i) {
         napi_value element;
-        napi_get_element(env, argv[0], i, &element);
+        napi_get_element(env, argv[FIRST_ARGV_PARAM], i, &element);
         unsigned int value;
         napi_get_value_uint32(env, element, &value);
         frequencyBandGains.gains[i] = value;
@@ -1139,6 +1177,9 @@ napi_value multiSaveFileBuffer(napi_env env, napi_callback_info info)
         }
 
         memcpy(arrayBufferData, threadBuffer, threadBufferSize);
+        std::copy(static_cast<const char*>(threadBuffer),
+            static_cast<const char*>(threadBuffer) + threadBufferSize,
+            static_cast<char*>(arrayBufferData));
         if (threadBuffer != nullptr) {
             free(threadBuffer);
             threadBuffer = nullptr;
@@ -1171,19 +1212,19 @@ napi_value multiAddNoiseReduction(napi_env env, napi_callback_info info)
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     // 获取uuid
     std::string uuidStr;
-    napi_status status = parseNapiString(env, argv[0], uuidStr);
+    napi_status status = parseNapiString(env, argv[FIRST_ARGV_PARAM], uuidStr);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest---uuid==%{public}s",
                  uuidStr.c_str());
 
     // 获取二参inputId
     std::string inputIdStr;
-    status = parseNapiString(env, argv[1], inputIdStr);
+    status = parseNapiString(env, argv[SECOND_ARGV_PARAM], inputIdStr);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest---inputId==%{public}s",
                  inputIdStr.c_str());
 
     // 获取当前选中的节点id
     std::string selectNodeId;
-    status = parseNapiString(env, argv[2], selectNodeId);
+    status = parseNapiString(env, argv[THIRD_ARGV_PARAM], selectNodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest---addNoiseReduction---selectNodeId==%{public}s", selectNodeId.c_str());
 
@@ -1223,40 +1264,40 @@ napi_value multiStartVBEffect(napi_env env, napi_callback_info info)
 
     // inputId
     std::string inputId;
-    napi_status status = parseNapiString(env, argv[0], inputId);
+    napi_status status = parseNapiString(env, argv[FIRST_ARGV_PARAM], inputId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest---startVBEffect---inputId==%{public}s", inputId.c_str());
 
     // 获取二参、美化类型
     unsigned int mode = -1;
-    napi_get_value_uint32(env, argv[1], &mode);
+    napi_get_value_uint32(env, argv[SECOND_ARGV_PARAM], &mode);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest---startVBEffect--mode==%{public}u", mode);
 
     // 获取三参、效果节点id
     std::string voiceBeautifierId;
-    status = parseNapiString(env, argv[2], voiceBeautifierId);
+    status = parseNapiString(env, argv[THIRD_ARGV_PARAM], voiceBeautifierId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest---uuid==%{public}s",
                  voiceBeautifierId.c_str());
 
     // 获取当前选中的节点id
     std::string selectNodeId;
-    status = parseNapiString(env, argv[3], selectNodeId);
+    status = parseNapiString(env, argv[FORTH_ARGV_PARAM], selectNodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest---startVBEffect---selectNodeId==%{public}s", selectNodeId.c_str());
 
     OH_VoiceBeautifierType type;
     switch (mode) {
-        case 1:
+        case VB_MODE_CLEAR:
             type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR;
             break;
-        case 2:
+        case VB_MODE_THEATRE:
             type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_THEATRE;
             break;
-        case 3:
+        case VB_MODE_CD:
             type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CD;
             break;
-        case 4:
+        case VB_MODE_RECORDING_STUDIO:
             type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_RECORDING_STUDIO;
             break;
         default:
@@ -1308,25 +1349,25 @@ napi_value multiStartFieldEffect(napi_env env, napi_callback_info info)
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
 
     std::string inputId;
-    napi_status status = parseNapiString(env, argv[0], inputId);
+    napi_status status = parseNapiString(env, argv[FIRST_ARGV_PARAM], inputId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTes startFieldEffect inputId is %{public}s", inputId.c_str());
 
     // 获取二参
     unsigned int mode = -1;
-    napi_get_value_uint32(env, argv[1], &mode);
+    napi_get_value_uint32(env, argv[SECOND_ARGV_PARAM], &mode);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest startFieldEffect mode is %{public}u", mode);
 
     // 获取三参
     std::string fieldEffectId;
-    status = parseNapiString(env, argv[2], fieldEffectId);
+    status = parseNapiString(env, argv[THIRD_ARGV_PARAM], fieldEffectId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest startFieldEffect fieldEffectId is %{public}s", fieldEffectId.c_str());
 
     // 获取四参
     std::string selectedNodeId;
-    status = parseNapiString(env, argv[3], selectedNodeId);
+    status = parseNapiString(env, argv[FORTH_ARGV_PARAM], selectedNodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest startFieldEffect selectedNodeId is %{public}s", selectedNodeId.c_str());
 
@@ -1373,27 +1414,27 @@ napi_value multiAddAudioSeparation(napi_env env, napi_callback_info info)
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     // 获取一参
     unsigned int arg1 = 0;
-    napi_get_value_uint32(env, argv[0], &arg1);
+    napi_get_value_uint32(env, argv[FIRST_ARGV_PARAM], &arg1);
     // 获取二参uuid
     std::string uuidStr;
-    napi_status status = parseNapiString(env, argv[1], uuidStr);
+    napi_status status = parseNapiString(env, argv[SECOND_ARGV_PARAM], uuidStr);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest---uuid==%{public}s",
                  uuidStr.c_str());
 
     // 获取三参inputId
     std::string inputIdStr;
-    status = parseNapiString(env, argv[2], inputIdStr);
+    status = parseNapiString(env, argv[THIRD_ARGV_PARAM], inputIdStr);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest---inputId==%{public}s",
                  inputIdStr.c_str());
 
     // 获取四参
     std::string selectedNodeId;
-    status = parseNapiString(env, argv[3], selectedNodeId);
+    status = parseNapiString(env, argv[FORTH_ARGV_PARAM], selectedNodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest addAudioSeparation selectedNodeId is %{public}s", selectedNodeId.c_str());
 
     napi_value ret;
-    napi_create_int64(env, 3, &ret);
+    napi_create_int64(env, AUDIOSUITE_ERROR_SYSTEM_CODE, &ret);
     Node node = MultiCreateNodeByType(uuidStr, OH_AudioNode_Type::EFFECT_MULTII_OUTPUT_NODE_TYPE_AUDIO_SEPARATION);
     if (node.physicalNode == nullptr) {
         return ret;
@@ -1434,23 +1475,23 @@ napi_value multiStartEnvEffect(napi_env env, napi_callback_info info)
     napi_status status;
     // 获取一参
     std::string inputIdStr;
-    status = parseNapiString(env, argv[0], inputIdStr);
+    status = parseNapiString(env, argv[FIRST_ARGV_PARAM], inputIdStr);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest---inputId==%{public}s",
                  inputIdStr.c_str());
 
     // 获取二参uuid
     std::string uuidStr;
-    status = parseNapiString(env, argv[1], uuidStr);
+    status = parseNapiString(env, argv[SECOND_ARGV_PARAM], uuidStr);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest---uuid==%{public}s",
                  uuidStr.c_str());
 
     // 获取三参
     unsigned int mode = 0;
-    napi_get_value_uint32(env, argv[2], &mode);
+    napi_get_value_uint32(env, argv[THIRD_ARGV_PARAM], &mode);
 
     // 获取四参混音台selectedNodeId
     std::string selectedNodeId;
-    status = parseNapiString(env, argv[3], selectedNodeId);
+    status = parseNapiString(env, argv[FORTH_ARGV_PARAM], selectedNodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest selectedNodeId is %{public}s",
                  selectedNodeId.c_str());
 
@@ -1459,7 +1500,7 @@ napi_value multiStartEnvEffect(napi_env env, napi_callback_info info)
     napi_value ret;
     Node node = MultiCreateNodeByType(uuidStr, OH_AudioNode_Type::EFFECT_NODE_TYPE_ENVIRONMENT_EFFECT);
     if (node.physicalNode == nullptr) {
-        napi_create_int64(env, 3, &ret);
+        napi_create_int64(env, AUDIOSUITE_ERROR_SYSTEM_CODE, &ret);
         return ret;
     }
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_SetEnvironmentType(node.physicalNode, type);
@@ -1511,7 +1552,8 @@ napi_value multiGetSecondOutputAudio(napi_env env, napi_callback_info info)
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "secData:%{public}p, threadSecDataSize:%{public}zu, pipeline:%{public}p, thread_id:%{public}lu",
                  secData, threadSecDataSize, threadPipelineManager->audioSuitePipeline, thisId);
-    memcpy(data, secData, threadSecDataSize);
+    std::copy(static_cast<const char*>(secData),
+        static_cast<const char*>(secData) + threadSecDataSize, static_cast<char*>(data));
     memset(secData, 0, threadSecDataSize);
     threadSecDataSize = 0;
     return napiValue;
