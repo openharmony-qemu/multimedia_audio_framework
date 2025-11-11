@@ -1348,7 +1348,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_064, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
     zoneId = 1;
     ret = audioVolumeManager.SetAdjustVolumeForZone(zoneId);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
