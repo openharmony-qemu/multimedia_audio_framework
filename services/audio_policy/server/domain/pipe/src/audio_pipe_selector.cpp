@@ -708,20 +708,26 @@ bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeIn
 void AudioPipeSelector::MatchRemoteOffloadPipe(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
     std::shared_ptr<AudioPipeInfo> pipeInfo, const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
+    bool matchState = IsPipeFormatMatch(streamPropInfo, pipeInfo);
+    CHECK_AND_RETURN(!matchState && (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER) &&
+        pipeInfo->adapterName_ == "remote");
+
+    AUDIO_INFO_LOG("existing mismatching remote offload pipe need to recreate to match music format");
+    UpdatePipeInfoFromStreamProp(streamDesc, streamPropInfo, *pipeInfo);
+    pipeInfo->pipeAction_ = PIPE_ACTION_RELOAD;
+}
+
+bool AudioPipeSelector::IsPipeFormatMatch(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
+    std::shared_ptr<AudioPipeInfo> pipeInfo)
+{
     std::string channels = std::to_string(AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(
         streamPropInfo->channelLayout_));
     std::string channelLayout = std::to_string(streamPropInfo->channelLayout_);
     auto format = AudioDefinitionPolicyUtils::enumToFormatStr[streamPropInfo->format_];
     std::string sampleRate = std::to_string(streamPropInfo->sampleRate_);
-    bool matchState = (channels == pipeInfo->moduleInfo_.channels &&
-        channelLayout == pipeInfo->moduleInfo_.channelLayout && format == pipeInfo->moduleInfo_.format &&
-        sampleRate == pipeInfo->moduleInfo_.rate) ? true : false;
 
-    if (pipeInfo->name_ == "offload_distributed_output" && !matchState) {
-        AUDIO_INFO_LOG("existing mismatching remote offload pipe need to recreate to match music format");
-        UpdatePipeInfoFromStreamProp(streamDesc, streamPropInfo, *pipeInfo);
-        pipeInfo->pipeAction_ = PIPE_ACTION_RELOAD;
-    }
+    return channels == pipeInfo->moduleInfo_.channels && channelLayout == pipeInfo->moduleInfo_.channelLayout &&
+        format == pipeInfo->moduleInfo_.format && sampleRate == pipeInfo->moduleInfo_.rate;
 }
 
 void AudioPipeSelector::UpdatePipeInfoFromStreamProp(std::shared_ptr<AudioStreamDescriptor> streamDesc,

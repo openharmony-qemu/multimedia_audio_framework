@@ -826,37 +826,7 @@ void AudioCoreService::ProcessOutputPipeReload(std::shared_ptr<AudioPipeInfo> pi
     CHECK_AND_RETURN_LOG(paIndex != HDI_INVALID_ID, "ReloadAudioPort failed paId[%{public}u]", paIndex);
 
     pipeInfo->paIndex_ = paIndex;
-    for (auto &desc : pipeInfo->streamDescriptors_) {
-        CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
-        HILOG_COMM_INFO("[StreamExecInfo] Stream: %{public}u, action: %{public}d, belong to %{public}s",
-            desc->sessionId_, desc->streamAction_, pipeInfo->name_.c_str());
-        switch (desc->streamAction_) {
-            case AUDIO_STREAM_ACTION_NEW:
-                CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, desc);
-                flag = desc->routeFlag_;
-                break;
-            case AUDIO_STREAM_ACTION_DEFAULT:
-            case AUDIO_STREAM_ACTION_MOVE:
-                AUDIO_INFO_LOG("Pipe module name: %{public}s, state: %{public}u",
-                    pipeInfo->moduleInfo_.name.c_str(), desc->streamStatus_);
-                CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, desc);
-                if (desc->streamStatus_ != STREAM_STATUS_STARTED) {
-                    MoveStreamSink(desc, pipeInfo, reason);
-                } else {
-                    MoveToNewOutputDevice(desc, pipeInfo, reason);
-                }
-                CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, desc);
-                break;
-            case AUDIO_STREAM_ACTION_RECREATE:
-                TriggerRecreateRendererStreamCallbackEntry(desc, reason);
-                break;
-            default:
-                break;
-        }
-        // The streamAction is used only for ProcessPipe and should be reset after being used.
-        desc->streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
-    }
-    pipeManager_->UpdateAudioPipeInfo(pipeInfo);
+    ProcessOutputPipeUpdate(pipeInfo, flag, reason);
 }
 
 void AudioCoreService::GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo,

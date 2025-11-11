@@ -572,7 +572,7 @@ uint32_t RemoteDeviceManager::ParseRenderId(const char *condition)
     const char *start = strstr(condition, target);
     CHECK_AND_RETURN_RET_LOG(start != nullptr, HDI_INVALID_ID, "not find renderId info in condition");
 
-    int32_t ret = sscanf_s(start, "renderId=%d", &renderId);
+    int32_t ret = sscanf_s(start, "renderId=%u", &renderId);
     // ret value is 1 when read success.
     CHECK_AND_RETURN_RET_LOG(ret == 1, HDI_INVALID_ID, "not find renderId value");
 
