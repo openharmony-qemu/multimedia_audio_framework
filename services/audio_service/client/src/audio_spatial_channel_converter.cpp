@@ -206,6 +206,7 @@ bool LibLoader::LoadLibrary(const std::string &relativePath) noexcept
     AUDIO_INFO_LOG("<log info> dlopen lib %{public}s successful", relativePath.c_str());
     dlerror(); // clear error, only need to check libHandle_ is not nullptr
 
+    CHECK_AND_RETURN_RET_LOG(libEntry_, false, "<log error> libEntry is null");
     AudioEffectLibrary *audioEffectLibHandle = static_cast<AudioEffectLibrary *>(dlsym(libHandle_,
         AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR));
     if (!audioEffectLibHandle) {
@@ -216,7 +217,6 @@ bool LibLoader::LoadLibrary(const std::string &relativePath) noexcept
         return false;
     }
     AUDIO_INFO_LOG("<log info> dlsym lib %{public}s successful", relativePath.c_str());
-    CHECK_AND_RETURN_RET_LOG(libEntry_, false, "<log error> libEntry is null");
     libEntry_->audioEffectLibHandle = audioEffectLibHandle;
 
     return true;
