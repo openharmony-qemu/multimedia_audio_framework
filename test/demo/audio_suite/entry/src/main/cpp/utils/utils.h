@@ -16,3 +16,5 @@ enum {
     ARG_7 = 7,
     ARG_8 = 8,
 };
+
+#endif //#define AUDIOEDITTESTAPP_UTILS_H

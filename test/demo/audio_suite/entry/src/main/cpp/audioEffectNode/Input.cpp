@@ -37,11 +37,14 @@ napi_status ParseArguments(napi_env env, napi_value *argv, AudioParams &params)
     napi_status status = parseNapistring(env, argv[ARG_0], params.inputId);
     status = parseNapistring(env, argv[ARG_1], params.outputId);
     status = parseNapistring(env, argv[ARG_2], params.mixerId);
+    OH_LOG_Print(LOG_APP, LOG_WARN, GLOBAL_RESMGR, INPUT_TAG,
+        "inputId: %{public}s, outputId: %{public}s, mixerId: %{public}s",
+        params.inputId.c_str(), params.outputId.c_str(), params.mixerId.c_str());
     status = napi_get_value_uint32(env, argv[ARG_3], &params.fd);
     status = napi_get_value_uint32(env, argv[ARG_4], &params.fileLength);
     OH_LOG_Print(LOG_APP, LOG_WARN, GLOBAL_RESMGR, INPUT_TAG,
-        "inputId: %{public}s, outputId: %{public}s, mixerId: %{public}s, fd: %{public}d, fileLength: %{public}d, status: %{public}d",
-        params.inputId.c_str(), params.outputId.c_str(), params.mixerId.c_str(), params.fd, params.fileLength, status);
+        "fd: %{public}d, fileLength: %{public}d, status: %{public}d",
+        params.fd, params.fileLength, status);
     return status;
 }
 
@@ -66,6 +69,8 @@ bool GetAudioProperties(OH_AVFormat *trackFormat, int32_t &sampleRate, int32_t &
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, INPUT_TAG, "get bits per sample failed");
         return false;
     }
+    OH_LOG_Print(LOG_APP, LOG_WARN, GLOBAL_RESMGR, INPUT_TAG,
+        "sampleRate: %{public}d, channels: %{public}d, bitsPerSample: %{public}d", sampleRate, channels, bitsPerSample);
     // 设置采样率
     g_audioFormatInput.samplingRate = setSamplingRate(sampleRate);
     // 设置声道
@@ -85,7 +90,7 @@ bool GetAudioProperties(OH_AVFormat *trackFormat, int32_t &sampleRate, int32_t &
     return true;
 }
 
-void readTrackSamples(OH_AVDemuxer *demuxer, uint32_t trackIndex, int buffer_size,
+void ReadTrackSamples(OH_AVDemuxer *demuxer, uint32_t trackIndex, int buffer_size,
     std::atomic<bool>& isEnd, std::atomic<bool>& threadFinished)
 {
     g_totalSize = 0;
@@ -135,7 +140,7 @@ void RunAudioThread(OH_AVDemuxer *demuxer, int32_t fileLength)
     std::atomic<bool> audioIsEnd{false};
     std::atomic<bool> audioThreadFinished{false};
 
-    std::thread audioThread(readTrackSamples, demuxer, 0, fileLength,
+    std::thread audioThread(ReadTrackSamples, demuxer, 0, fileLength,
         std::ref(audioIsEnd), std::ref(audioThreadFinished));
     audioThread.join();
 }
@@ -187,7 +192,7 @@ void CreateInputNode(napi_env env, const std::string &inputId, napi_value &napiV
     }
 
     // 创建input节点
-    nodeManager->createNode(inputId, OH_AudioNode_Type::INPUT_NODE_TYPE_DEFAULT, builderIn);
+    g_nodeManager->createNode(inputId, OH_AudioNode_Type::INPUT_NODE_TYPE_DEFAULT, builderIn);
 }
 
 OH_AudioSuite_Result SetParamsAndWriteData(OH_AudioNodeBuilder *builder, std::string inputId, OH_AudioNode_Type type)
@@ -323,9 +328,9 @@ void UpdateInputNode(napi_value &napiValue, OH_AudioSuite_Result &result, const 
     g_audioFormatOutput.sampleFormat = g_audioFormatInput.sampleFormat;
     g_audioFormatOutput.encodingType = g_audioFormatInput.encodingType;
     
-    const std::vector<Node> inPutNodes = nodeManager->getNodesByType(OH_AudioNode_Type::INPUT_NODE_TYPE_DEFAULT);
+    const std::vector<Node> inPutNodes = g_nodeManager->getNodesByType(OH_AudioNode_Type::INPUT_NODE_TYPE_DEFAULT);
     result = OH_AudioSuiteEngine_SetAudioFormat(inPutNodes[0].physicalNode, &g_audioFormatInput);
-    const std::vector<Node> outPutNodes = nodeManager->getNodesByType(OH_AudioNode_Type::OUT_NODE_TYPE_DEFAULT);
+    const std::vector<Node> outPutNodes = g_nodeManager->getNodesByType(OH_AudioNode_Type::OUT_NODE_TYPE_DEFAULT);
     result = OH_AudioSuiteEngine_SetAudioFormat(outPutNodes[0].physicalNode, &g_audioFormatOutput);
     // 添加音频，将音频的buffer出存储到map中，，上一行中的memcpy可以考虑删除了
     if (g_writeDataBufferMap.find(params.inputId) != g_writeDataBufferMap.end()) {
@@ -353,7 +358,7 @@ void UpdateInputNode(napi_value &napiValue, OH_AudioSuite_Result &result, const 
 void ManageOutputNodes(napi_env env, const std::string &inputId,
     const std::string &outputId, const std::string &mixerId, OH_AudioSuite_Result &result)
 {
-    const std::vector<Node> outPutNodes = nodeManager->getNodesByType(OH_AudioNode_Type::OUT_NODE_TYPE_DEFAULT);
+    const std::vector<Node> outPutNodes = g_nodeManager->getNodesByType(OH_AudioNode_Type::OUT_NODE_TYPE_DEFAULT);
     if (outPutNodes.size() > 0) {
         ManageExistingOutputNodes(inputId, mixerId, result, outPutNodes);
     } else {
@@ -364,21 +369,21 @@ void ManageOutputNodes(napi_env env, const std::string &inputId,
 void ManageExistingOutputNodes(const std::string &inputId, const std::string &mixerId,
     OH_AudioSuite_Result &result, std::vector<Node> outPutNodes)
 {
-    const std::vector<Node> mixerNodes = nodeManager->getNodesByType(OH_AudioNode_Type::EFFECT_NODE_TYPE_AUDIO_MIXER);
+    const std::vector<Node> mixerNodes = g_nodeManager->getNodesByType(OH_AudioNode_Type::EFFECT_NODE_TYPE_AUDIO_MIXER);
     if (mixerNodes.size() > 0) {
-        result = nodeManager->connect(inputId, mixerNodes[0].id);
+        result = g_nodeManager->connect(inputId, mixerNodes[0].id);
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, INPUT_TAG,
             "audioEditTest connect input and mixer result: %{public}d", static_cast<int>(result));
     } else {
-        result = nodeManager->createNode(mixerId, OH_AudioNode_Type::EFFECT_NODE_TYPE_AUDIO_MIXER);
+        result = g_nodeManager->createNode(mixerId, OH_AudioNode_Type::EFFECT_NODE_TYPE_AUDIO_MIXER);
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, INPUT_TAG,
             "audioEditTest nodeManagerCreateMixerNode result: %{public}d", static_cast<int>(result));
 
-        result = nodeManager->insertNode(mixerId, outPutNodes[0].id, Direction::BEFORE);
+        result = g_nodeManager->insertNode(mixerId, outPutNodes[0].id, Direction::BEFORE);
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, INPUT_TAG,
             "audioEditTest insertMixerNode result: %{public}d", static_cast<int>(result));
 
-        result = nodeManager->connect(inputId, mixerId);
+        result = g_nodeManager->connect(inputId, mixerId);
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, INPUT_TAG,
             "audioEditTest connect inputId and mixerId result: %{public}d", static_cast<int>(result));
     }
@@ -409,11 +414,11 @@ void CreateAndConnectOutputNodes(const std::string &inputId, const std::string &
         return;
     }
 
-    result = nodeManager->createNode(outputId, OH_AudioNode_Type::OUT_NODE_TYPE_DEFAULT, builderOut);
+    result = g_nodeManager->createNode(outputId, OH_AudioNode_Type::OUT_NODE_TYPE_DEFAULT, builderOut);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, INPUT_TAG,
         "audioEditTest nodeManagerCreateOutputNode result: %{public}d", static_cast<int>(result));
 
-    result = nodeManager->connect(inputId, outputId);
+    result = g_nodeManager->connect(inputId, outputId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, INPUT_TAG,
         "audioEditTest nodeManagerConnectInputAndOutput result: %{public}d", static_cast<int>(result));
 }

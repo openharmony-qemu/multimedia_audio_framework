@@ -77,7 +77,9 @@ OH_AudioSuite_Result AudioRenderFrame(
     OH_AudioDataArray* ohAudioDataArray = new OH_AudioDataArray();
     ohAudioDataArray->audioDataArray = (void**)malloc(ACCESSAUDIODATA_ARRAY_NUM * sizeof(void*));
     for (int i = 0; i < ACCESSAUDIODATA_ARRAY_NUM; i++) {
-        ohAudioDataArray->audioDataArray[i] = (void*)malloc(frameSize);
+        if (frameSize > 0) {
+            ohAudioDataArray->audioDataArray[i] = (void*)malloc(frameSize);
+        }
     }
     ohAudioDataArray->arraySize = ACCESSAUDIODATA_ARRAY_NUM;
     ohAudioDataArray->requestFrameSize = frameSize;
@@ -89,7 +91,7 @@ OH_AudioSuite_Result AudioRenderFrame(
     do {
         if (g_multiRenderFrameFlag) {
             result = OH_AudioSuiteEngine_MultiRenderFrame(g_audioSuitePipeline,
-                    ohAudioDataArray, &writeSize, &finishedFlag);
+                                                          ohAudioDataArray, &writeSize, &finishedFlag);
             LogRenderResult(result, ohAudioDataArray->requestFrameSize, writeSize, finishedFlag,
                 "OH_AudioSuiteEngine_MultiRenderFrame");
             if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
@@ -99,8 +101,8 @@ OH_AudioSuite_Result AudioRenderFrame(
             SaveBuffer(tapTotalAudioData, tapResultTotalSize, ohAudioDataArray->audioDataArray[1], writeSize);
         } else if (frameSize > 0) {
             char *audioData = (char *)malloc(frameSize);
-            result = OH_AudioSuiteEngine_RenderFrame(g_audioSuitePipeline,
-                    audioData, frameSize, &writeSize, &finishedFlag);
+            result = OH_AudioSuiteEngine_RenderFrame(g_audioSuitePipeline, audioData,
+                                                     frameSize, &writeSize, &finishedFlag);
             LogRenderResult(result, frameSize, writeSize, finishedFlag, "OH_AudioSuiteEngine_RenderFrame");
             if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
                 free(audioData);
@@ -115,8 +117,9 @@ OH_AudioSuite_Result AudioRenderFrame(
         }
     } while (!finishedFlag);
     delete ohAudioDataArray;
-    AudioRenderContext context = 
-        {totalAudioData, tapTotalAudioData, frameSize, finishedFlag, resultTotalSize, tapResultTotalSize};
+    AudioRenderContext context = {
+        totalAudioData, tapTotalAudioData, frameSize, finishedFlag, resultTotalSize, tapResultTotalSize
+    };
     UpdateGlobalBuffers(context);
     return result;
 }

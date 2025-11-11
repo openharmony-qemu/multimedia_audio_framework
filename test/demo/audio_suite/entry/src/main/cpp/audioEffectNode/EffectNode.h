@@ -9,7 +9,7 @@
 #include <memory>
 #include "../NodeManager.h"
 
-extern std::shared_ptr<NodeManager> nodeManager;
+extern std::shared_ptr<NodeManager> g_nodeManager;
 
 int32_t AddEffectNodeToNodeManager(std::string &inputNodeId, std::string &effectNodeId);
 
