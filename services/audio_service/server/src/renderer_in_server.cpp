@@ -1453,6 +1453,7 @@ int32_t RendererInServer::DisableAllInnerCap()
 
 int32_t RendererInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
 {
+    CHECK_AND_RETURN_RET_LOG(lastTarget_ == NORMAL_PLAYBACK, ERR_ILLEGAL_STATE, "Now in injection mode.​​");
     if (status_ == I_STATUS_STOPPED) {
         AUDIO_WARNING_LOG("Current status is stopped");
         return ERR_ILLEGAL_STATE;
@@ -1468,6 +1469,7 @@ int32_t RendererInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
 
 int32_t RendererInServer::GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base)
 {
+    CHECK_AND_RETURN_RET_LOG(lastTarget_ == NORMAL_PLAYBACK, ERR_ILLEGAL_STATE, "Now in injection mode.​​");
     if (status_ == I_STATUS_STOPPED) {
         AUDIO_PRERELEASE_LOGW("Current status is stopped");
         return ERR_ILLEGAL_STATE;
@@ -2319,6 +2321,7 @@ RestoreStatus RendererInServer::RestoreSession(RestoreInfo restoreInfo)
 
 int32_t RendererInServer::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce)
 {
+    CHECK_AND_RETURN_RET_LOG(lastTarget_ == NORMAL_PLAYBACK, ERR_ILLEGAL_STATE, "Now in injection mode.​​");
     return CoreServiceHandler::GetInstance().SetDefaultOutputDevice(defaultOutputDevice, streamIndex_,
         processConfig_.rendererInfo.streamUsage, status_ == I_STATUS_STARTED, skipForce);
 }

@@ -2440,8 +2440,7 @@ int32_t AudioEndpointInner::RemoveCaptureInjector(const uint32_t &sinkPortIndex,
         "sourceType not voip, sourceType:%{public}u", sourceType);
 
     std::lock_guard<std::mutex> lock(injectLock_);
-    CHECK_AND_RETURN_RET_LOG(sinkPortIndex == injectSinkPortIdx_, ERROR,
-        "sinkPortIndex not match, inputIdx:%{public}u, objIdx:%{public}u",
+    AUDIO_INFO_LOG("Injector::sinkPortIndex, inputIdx:%{public}u, objIdx:%{public}u",
         sinkPortIndex, injectSinkPortIdx_);
     injectSinkPortIdx_ = UINT32_INVALID_VALUE;
     isNeedInject_ = false;
