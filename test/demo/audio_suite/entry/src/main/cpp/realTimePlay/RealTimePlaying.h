@@ -32,7 +32,8 @@ OH_AudioSuite_Result ProcessPipeline();
 
 OH_AudioSuite_Result OneRenDerFrame(int32_t audioDataSize, int32_t *writeSize);
 
-OH_AudioData_Callback_Result PlayAudioRendererOnWriteData(OH_AudioRenderer *renderer, void *userData, void *audioData, int32_t audioDataSize);
+OH_AudioData_Callback_Result PlayAudioRendererOnWriteData(OH_AudioRenderer *renderer,
+    void *userData, void *audioData, int32_t audioDataSize);
 
 void ReleaseExistingResources();
 

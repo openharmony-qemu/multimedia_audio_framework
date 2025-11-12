@@ -85,7 +85,8 @@ static napi_value RegisterAudioFormatCallback(napi_env env, napi_callback_info i
     napi_get_reference_value(env, callbackStringArrayRef, &callback);
     napi_value name;
     napi_status status = napi_create_string_utf8(env, "CallStringArrayCallback", NAPI_AUTO_LENGTH, &name);
-    napi_create_threadsafe_function(env, callback, NULL, name, 1, 1, NULL, NULL, NULL, CallStringArrayThread, &tsfnStringArray);
+    napi_create_threadsafe_function(env, callback, NULL, name, 1, 1, NULL, NULL, NULL, CallStringArrayThread,
+        &tsfnStringArray);
 
     napi_value result;
     napi_get_undefined(env, &result);
@@ -1063,7 +1064,7 @@ static napi_value getAudioOfTap(napi_env env, napi_callback_info info)
 }
 
 // 音频播放 -------------------------------------
-static napi_ref callbackAudioRendererRef = nullptr;                                               
+static napi_ref callbackAudioRendererRef = nullptr;                           
 
 // 注册回调，获取音频播放的finished的值
 static napi_value RegisterFinishedCallback(napi_env env, napi_callback_info info)
@@ -1117,7 +1118,8 @@ static napi_value RealTimeSaveFileBuffer(napi_env env, napi_callback_info info)
         napi_create_arraybuffer(env, 0, &arrayBufferData, &napiValue);
         return napiValue;
     } else {
-        std::copy(g_play_totalAudioData, g_play_totalAudioData + g_play_resultTotalSize, static_cast<char *>(arrayBufferData));
+        std::copy(g_play_totalAudioData, g_play_totalAudioData + g_play_resultTotalSize,
+            static_cast<char *>(arrayBufferData));
         if (g_play_totalAudioData != nullptr) {
             free(g_play_totalAudioData);
             g_play_totalAudioData = nullptr;
@@ -1290,7 +1292,8 @@ EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
         {"resetEnvEffect", nullptr, resetEnvEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"compareTwoFilesBinary", nullptr, compareTwoFilesBinary, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"deleteNode", nullptr, DeleteNode, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"registerAudioFormatCallback", nullptr, RegisterAudioFormatCallback, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"registerAudioFormatCallback", nullptr, RegisterAudioFormatCallback, nullptr, nullptr, nullptr,
+            napi_default, nullptr},
         {"getOptions", nullptr, getOptions, nullptr, nullptr, nullptr, napi_default, nullptr}};
     napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc);
     return exports;

@@ -23,7 +23,8 @@ napi_status ParseNapiString(napi_env env, napi_value value, std::string &result)
     return status;
 }
 
-void GetBitsPerSampleAndStreamFormat(const OH_AudioFormat& g_audioFormatOutput, int32_t* bitsPerSample, OH_AudioStream_SampleFormat* streamSampleFormat)
+void GetBitsPerSampleAndStreamFormat(const OH_AudioFormat& g_audioFormatOutput,
+    int32_t* bitsPerSample, OH_AudioStream_SampleFormat* streamSampleFormat)
 {
     if (g_audioFormatOutput.sampleFormat == OH_Audio_SampleFormat::AUDIO_SAMPLE_U8) {
         *bitsPerSample = DemoBitsPerSample::DEMO_BITSPERSAMPLE_8;
@@ -43,55 +44,38 @@ void GetBitsPerSampleAndStreamFormat(const OH_AudioFormat& g_audioFormatOutput, 
 // 设置采样率
 OH_Audio_SampleRate SetSamplingRate(int32_t sampleRate)
 {
-    OH_Audio_SampleRate audioSampleRate;
     switch (sampleRate) {
         case static_cast<int32_t>(OH_Audio_SampleRate::SAMPLE_RATE_8000):
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_8000;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_8000;
         case static_cast<int32_t>(OH_Audio_SampleRate::SAMPLE_RATE_11025):
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_11025;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_11025;
         case static_cast<int32_t>(OH_Audio_SampleRate::SAMPLE_RATE_12000):
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_12000;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_12000;
         case static_cast<int32_t>(OH_Audio_SampleRate::SAMPLE_RATE_16000):
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_16000;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_16000;
         case static_cast<int32_t>(OH_Audio_SampleRate::SAMPLE_RATE_22050):
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_22050;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_22050;
         case static_cast<int32_t>(OH_Audio_SampleRate::SAMPLE_RATE_24000):
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_24000;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_24000;
         case static_cast<int32_t>(OH_Audio_SampleRate::SAMPLE_RATE_32000):
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_32000;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_32000;
         case static_cast<int32_t>(OH_Audio_SampleRate::SAMPLE_RATE_44100):
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_44100;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_44100;
         case static_cast<int32_t>(OH_Audio_SampleRate::SAMPLE_RATE_48000):
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_48000;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_48000;
         case static_cast<int32_t>(OH_Audio_SampleRate::SAMPLE_RATE_64000):
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_64000;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_64000;
         case static_cast<int32_t>(OH_Audio_SampleRate::SAMPLE_RATE_88200):
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_88200;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_88200;
         case static_cast<int32_t>(OH_Audio_SampleRate::SAMPLE_RATE_96000):
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_96000;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_96000;
         case static_cast<int32_t>(OH_Audio_SampleRate::SAMPLE_RATE_176400):
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_176400;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_176400;
         case static_cast<int32_t>(OH_Audio_SampleRate::SAMPLE_RATE_192000):
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_192000;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_192000;
         default:
-            audioSampleRate = OH_Audio_SampleRate::SAMPLE_RATE_48000;
-            break;
+            return OH_Audio_SampleRate::SAMPLE_RATE_48000;
     }
-    return audioSampleRate;
 }
 
 // 设置声道

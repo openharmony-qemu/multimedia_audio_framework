@@ -42,7 +42,8 @@ enum DemoChannels {
 
 napi_status ParseNapiString(napi_env env, napi_value value, std::string &result);
 
-void GetBitsPerSampleAndStreamFormat(const OH_AudioFormat& g_audioFormatOutput, int32_t* bitsPerSample, OH_AudioStream_SampleFormat* streamSampleFormat);
+void GetBitsPerSampleAndStreamFormat(const OH_AudioFormat& g_audioFormatOutput,
+    int32_t* bitsPerSample, OH_AudioStream_SampleFormat* streamSampleFormat);
 
 // 设置采样率
 OH_Audio_SampleRate SetSamplingRate(int32_t sampleRate);
