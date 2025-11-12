@@ -12,14 +12,12 @@ export interface SongInfo {
     singerName?: string | Resource;
     albumCover?: pixelMap;
     albumName?: string | Resource;
-    pcmBuffer?: ArrayBuffer;
     wavBuffer?: ArrayBuffer;
-    wavHeaderBuffer?: ArrayBuffer;
     channels?: number;
     sampleRate?: number;
-    bitsPerSample?: number；
-    formatCategory?: number;
+    bitsPerSample?: number;
     isPlay?: boolean;
+    fd?: number;
 }
 
 export interface Node {

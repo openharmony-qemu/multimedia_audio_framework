@@ -13,7 +13,7 @@ export const registerFinishedCallback: (callBackFull: Function) => boolean;
 export const resetTotalWriteAudioDataSize: () => void;
 export const realTimeSaveFileBuffer: () => ArrayBuffer;
 export const audioEditNodeInit: (workMode: number) => number;
-export const audioInAndOutInit: (inputId: string, outputId: string, mixerId: string, channels: number, sampleRate: number, bitsPerSample: number, formatCategory: number, pcmLength: number, pcmBuffer: ArrayBuffer) => number;
+export const audioInAndOutInit: (inputId: string, outputId: string, mixerId: string, fd: number, bufferLength: number) => number;
 export const audioEditDestory: () => number;
 export const setFormat: (channels: number, sampleRate: number, bitsPerSample: number) => number;
 export const setEquailzerMode: (equailizerMode: number, nodeId: string, inputId:string) => number;
@@ -35,4 +35,5 @@ export const startVBEffect: (inputId: string, mode: number, voiceBeautifierId: s
 export const resetVBEffect: (inputId: string, mode: number, voiceBeautifierId: string) => number;
 export const compareTwoFilesBinary: (inputFilePath1: string, inputFilePath2: string) => number;
 export const deleteNode: (nodeId: string) => number;
+export const registerAudioFormatCallback: (callBackFull: Function) => string[];
 export const getOptions: (nodeId: string) => string;

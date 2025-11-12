@@ -869,9 +869,6 @@ export struct AutoTest {
     const sampleRate: number = dataView.getUint32(24, true);
     // 获取位深，位深位于 34字节
     const bitsPerSample: number = dataView.getUint16(34, true);
-    // 格式类别  int 还是 float（3） ...
-    const formatCategory = dataView.getUint16(20, true);
-    // 获取音频的长度
     // 获取音频的长度
     const fmtSize = dataView.getUint32(16, true); // fmt chunk size
     let offset = 20 + fmtSize;
@@ -894,8 +891,7 @@ export struct AutoTest {
       'audioEffectNodeTestSuccess01 sampleRate: ${sampleRate}, bitsPerSample: ${bitsPerSample}, channels: ${channels}');
     const pcmBuffer = wavView.slice(44).buffer;
     let result =
-      audioNapi.audioInAndOutInit(inputId, outputId, mixerId, channels, sampleRate, bitsPerSample, formatCategory,
-        pcmLength, pcmBuffer);
+      audioNapi.audioInAndOutInit(inputId, outputId, mixerId, file.fd, buffer.byteLength);
     if (result !== SUCCESS) {
       Logger.error(TAG, 'Input audio FAILED : ${audioFile}')
       this.getUIContext().showAlertDialog({

@@ -34,9 +34,9 @@ OH_AudioNodeBuilder *builderOut = nullptr;
 
 napi_status ParseArguments(napi_env env, napi_value *argv, AudioParams &params)
 {
-    napi_status status = parseNapistring(env, argv[ARG_0], params.inputId);
-    status = parseNapistring(env, argv[ARG_1], params.outputId);
-    status = parseNapistring(env, argv[ARG_2], params.mixerId);
+    napi_status status = ParseNapiString(env, argv[ARG_0], params.inputId);
+    status = ParseNapiString(env, argv[ARG_1], params.outputId);
+    status = ParseNapiString(env, argv[ARG_2], params.mixerId);
     OH_LOG_Print(LOG_APP, LOG_WARN, GLOBAL_RESMGR, INPUT_TAG,
         "inputId: %{public}s, outputId: %{public}s, mixerId: %{public}s",
         params.inputId.c_str(), params.outputId.c_str(), params.mixerId.c_str());
