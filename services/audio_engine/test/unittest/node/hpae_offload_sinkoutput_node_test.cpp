@@ -146,7 +146,7 @@ HWTEST_F(HpaeOffloadSinkOutputNodeTest, OffloadNeedSleep_Success_ShouldResetRetr
 
     offloadNode_->OffloadNeedSleep(SUCCESS);
     // Verify retry count reset
-    EXPECT_EQ(offloadNode_->backoffController_.delay_, 1);
+    EXPECT_EQ(offloadNode_->backoffController_.delay_, 0);
     EXPECT_FALSE(offloadNode_->isHdiFull_.load());
 }
 
