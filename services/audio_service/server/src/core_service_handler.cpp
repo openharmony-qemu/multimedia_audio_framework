@@ -163,5 +163,11 @@ void CoreServiceHandler::OnCheckActiveMusicTime(const std::string &reason)
     CHECK_AND_RETURN_LOG(iCoreServiceProvider_ != nullptr, "iCoreServiceProvider_ is nullptr!");
     iCoreServiceProvider_->OnCheckActiveMusicTime(reason);
 }
+
+int32_t CoreServiceHandler::CaptureConcurrentCheck(const uint32_t sessionID)
+{
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
+    return iCoreServiceProvider_->CaptureConcurrentCheck(sessionID);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -157,6 +157,7 @@ static constexpr unsigned int WAIT_AUDIO_POLICY_READY_TIMEOUT_SECONDS = 5;
 static constexpr int32_t MAX_WAIT_IN_SERVER_COUNT = 5;
 static constexpr int32_t RESTORE_SESSION_TRY_COUNT = 10;
 static constexpr uint32_t  RESTORE_SESSION_RETRY_WAIT_TIME_IN_MS = 50000;
+static constexpr unsigned int CREATE_TIMEOUT_IN_SECOND = 9;
 
 static const std::vector<SourceType> AUDIO_SUPPORTED_SOURCE_TYPES = {
     SOURCE_TYPE_INVALID,
@@ -1840,6 +1841,9 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
     std::shared_ptr<PipeInfoGuard> &pipeInfoGuard)
 {
     CHECK_AND_RETURN_RET_LOG(pipeInfoGuard != nullptr, nullptr, "PipeInfoGuard is nullptr");
+    AudioXCollie audioXCollie(
+        "AudioServer::CreateAudioStream", CREATE_TIMEOUT_IN_SECOND, nullptr, nullptr,
+        AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     int32_t appUid = config.appInfo.appUid;
     if (callingUid != MEDIA_SERVICE_UID) {
         appUid = callingUid;

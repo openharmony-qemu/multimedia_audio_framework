@@ -45,6 +45,7 @@ public:
     int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue,
         uint64_t &sendDataSize, uint32_t &timeStamp, int32_t &ret) override;
     int32_t OnCheckActiveMusicTime(const std::string &reason) override;
+    int32_t CaptureConcurrentCheck(const uint32_t sessionId) override;
 private:
     ICoreServiceProvider *coreServiceWorker_;
 };
