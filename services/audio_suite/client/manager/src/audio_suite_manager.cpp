@@ -448,6 +448,229 @@ int32_t AudioSuiteManager::SetEqualizerFrequencyBandGains(uint32_t nodeId, Audio
     return ret;
 }
 
+int32_t AudioSuiteManager::SetSpaceRenderPositionParams(uint32_t nodeId, AudioSpaceRenderPositionParams position)
+{
+    AUDIO_INFO_LOG("SetSpaceRenderPositionParams enter.");
+    std::lock_guard<std::mutex> lock(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
+
+    std::string name = "AudioSpaceRenderPositionParams";
+    std::string value =
+        std::to_string(position.x) + "," + std::to_string(position.y) + "," + std::to_string(position.z);
+    int32_t ret = suiteEngine_->SetOptions(nodeId, name, value);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine SetSpaceRenderPositionParams failed, ret = %{public}d", ret);
+    return ret;
+}
+
+int32_t AudioSuiteManager::GetSpaceRenderPositionParams(uint32_t nodeId, AudioSpaceRenderPositionParams &position)
+{
+    AUDIO_INFO_LOG("GetSpaceRenderPositionParams enter.");
+    std::lock_guard<std::mutex> lock(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+
+    // check
+    isFinishGetOptions_ = false;
+    std::string name = "AudioSpaceRenderPositionParams";
+    std::string value = "";
+    int32_t ret = suiteEngine_->GetOptions(nodeId, name, value);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine GetSpaceRenderPositionParams failed, ret = %{public}d", ret);
+
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    bool stopWaiting = callbackCV_.wait_for(
+        waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishGetOptions_; });
+    CHECK_AND_RETURN_RET_LOG(stopWaiting && getOptionsResult_ == SUCCESS, ERROR,
+        "GetSpaceRenderPositionParams timeout or Error!, getOptionsResult_ = %{public}d", getOptionsResult_);
+
+    ParseValue(value, position);
+    return SUCCESS;
+}
+
+int32_t AudioSuiteManager::SetSpaceRenderRotationParams(uint32_t nodeId, AudioSpaceRenderRotationParams rotation)
+{
+    AUDIO_INFO_LOG("SetSpaceRenderRotationParams enter.");
+    std::lock_guard<std::mutex> lock(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
+
+    std::string name = "AudioSpaceRenderRotationParams";
+    std::string value = std::to_string(rotation.x) + "," + std::to_string(rotation.y) + "," +
+                        std::to_string(rotation.z) + "," + std::to_string(rotation.surroundTime) + "," +
+                        std::to_string(static_cast<int32_t>(rotation.surroundDirection));
+    int32_t ret = suiteEngine_->SetOptions(nodeId, name, value);
+    CHECK_AND_RETURN_RET_LOG(
+        ret == SUCCESS, ret, "engine AudioSpaceRenderRotationParams failed, ret = %{public}d", ret);
+    return ret;
+}
+
+int32_t AudioSuiteManager::GetSpaceRenderRotationParams(uint32_t nodeId, AudioSpaceRenderRotationParams &rotation)
+{
+    AUDIO_INFO_LOG("GetSpaceRenderRotationParams enter.");
+    std::lock_guard<std::mutex> lock(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+
+    // check
+    isFinishGetOptions_ = false;
+    std::string name = "AudioSpaceRenderRotationParams";
+    std::string value = "";
+    int32_t ret = suiteEngine_->GetOptions(nodeId, name, value);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine GetSpaceRenderRotationParams failed, ret = %{public}d", ret);
+
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    bool stopWaiting = callbackCV_.wait_for(
+        waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishGetOptions_; });
+    CHECK_AND_RETURN_RET_LOG(stopWaiting && getOptionsResult_ == SUCCESS, ERROR,
+        "GetSpaceRenderRotationParams timeout or Error!, getOptionsResult_ = %{public}d", getOptionsResult_);
+
+    ParseValue(value, rotation);
+    return SUCCESS;
+}
+
+int32_t AudioSuiteManager::SetSpaceRenderExtensionParams(uint32_t nodeId, AudioSpaceRenderExtensionParams extension)
+{
+    AUDIO_INFO_LOG("SetSpaceRenderExtensionParams enter.");
+    std::lock_guard<std::mutex> lock(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
+
+    std::string name = "AudioSpaceRenderExtensionParams";
+    std::string value = std::to_string(extension.extRadius) + "," + std::to_string(extension.extAngle);
+    int32_t ret = suiteEngine_->SetOptions(nodeId, name, value);
+    CHECK_AND_RETURN_RET_LOG(
+        ret == SUCCESS, ret, "engine AudioSpaceRenderExtensionParams failed, ret = %{public}d", ret);
+    return ret;
+}
+
+int32_t AudioSuiteManager::GetSpaceRenderExtensionParams(uint32_t nodeId, AudioSpaceRenderExtensionParams &extension)
+{
+    AUDIO_INFO_LOG("GetSpaceRenderExtensionParams enter.");
+    std::lock_guard<std::mutex> lock(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+
+    // check
+    isFinishGetOptions_ = false;
+    std::string name = "AudioSpaceRenderExtensionParams";
+    std::string value = "";
+    int32_t ret = suiteEngine_->GetOptions(nodeId, name, value);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine GetSpaceRenderExtensionParams failed, ret = %{public}d", ret);
+
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    bool stopWaiting = callbackCV_.wait_for(
+        waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishGetOptions_; });
+    CHECK_AND_RETURN_RET_LOG(stopWaiting && getOptionsResult_ == SUCCESS, ERROR,
+        "GetSpaceRenderExtensionParams timeout or Error!, getOptionsResult_ = %{public}d", getOptionsResult_);
+
+    ParseValue(value, extension);
+    return SUCCESS;
+}
+
+int32_t AudioSuiteManager::SetTempoAndPitch(uint32_t nodeId, float speed, float pitch)
+{
+    AUDIO_INFO_LOG("SetTempoAndPitch enter.");
+    std::lock_guard<std::mutex> lock(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
+
+    std::string name = "speedAndPitch";
+    std::string value = std::to_string(speed) + "," + std::to_string(pitch);
+    int32_t ret = suiteEngine_->SetOptions(nodeId, name, value);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetTempoAndPitch failed, ret = %{public}d", ret);
+    return ret;
+}
+
+int32_t AudioSuiteManager::GetTempoAndPitch(uint32_t nodeId, float &speed, float &pitch)
+{
+    AUDIO_INFO_LOG("GetTempoAndPitch enter.");
+    std::lock_guard<std::mutex> lock(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+
+    // check
+    isFinishGetOptions_ = false;
+    std::string name = "speedAndPitch";
+    std::string value = "";
+    int32_t ret = suiteEngine_->GetOptions(nodeId, name, value);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine GetTempoAndPitch failed, ret = %{public}d", ret);
+
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    bool stopWaiting = callbackCV_.wait_for(
+        waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishGetOptions_; });
+    CHECK_AND_RETURN_RET_LOG(stopWaiting && getOptionsResult_ == SUCCESS, ERROR,
+        "GetTempoAndPitch timeout or Error!, getOptionsResult_ = %{public}d", getOptionsResult_);
+
+    ParseValue(value, speed, pitch);
+    return SUCCESS;
+}
+
+int32_t AudioSuiteManager::SetPureVoiceChangeOption(uint32_t nodeId, AudioPureVoiceChangeOption option)
+{
+    AUDIO_INFO_LOG("SetPureVoiceChangeOption enter.");
+    std::lock_guard<std::mutex> lock(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
+
+    std::string name = "AudioPureVoiceChangeOption";
+    std::string value = std::to_string(static_cast<int32_t>(option.optionGender)) + "," +
+                        std::to_string(static_cast<int32_t>(option.optionType));
+    int32_t ret = suiteEngine_->SetOptions(nodeId, name, value);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetPureVoiceChangeOption failed, ret = %{public}d", ret);
+    return ret;
+}
+
+int32_t AudioSuiteManager::GetPureVoiceChangeOption(uint32_t nodeId, AudioPureVoiceChangeOption &option)
+{
+    AUDIO_INFO_LOG("GetPureVoiceChangeOption enter.");
+    std::lock_guard<std::mutex> lock(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+
+    // check
+    isFinishGetOptions_ = false;
+    std::string name = "AudioPureVoiceChangeOption";
+    std::string value = "";
+    int32_t ret = suiteEngine_->GetOptions(nodeId, name, value);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine AudioPureVoiceChangeOption failed, ret = %{public}d", ret);
+
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    bool stopWaiting = callbackCV_.wait_for(
+        waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishGetOptions_; });
+    CHECK_AND_RETURN_RET_LOG(stopWaiting && getOptionsResult_ == SUCCESS, ERROR,
+        "GetPureVoiceChangeOption timeout or Error!, getOptionsResult_ = %{public}d", getOptionsResult_);
+
+    ParseValue(value, option);
+    return SUCCESS;
+}
+
+int32_t AudioSuiteManager::SetGeneralVoiceChangeType(uint32_t nodeId, AudioGeneralVoiceChangeType type)
+{
+    AUDIO_INFO_LOG("SetGeneralVoiceChangeType enter.");
+    std::lock_guard<std::mutex> lock(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
+
+    std::string name = "AudioGeneralVoiceChangeType";
+    std::string value = std::to_string(static_cast<int32_t>(type));
+    int32_t ret = suiteEngine_->SetOptions(nodeId, name, value);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetGeneralVoiceChangeType failed, ret = %{public}d", ret);
+    return ret;
+}
+
+int32_t AudioSuiteManager::GetGeneralVoiceChangeType(uint32_t nodeId, AudioGeneralVoiceChangeType &type)
+{
+    AUDIO_INFO_LOG("GetGeneralVoiceChangeType enter.");
+    std::lock_guard<std::mutex> lock(lock_);
+    CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
+
+    // check
+    isFinishGetOptions_ = false;
+    std::string name = "AudioGeneralVoiceChangeType";
+    std::string value = "";
+    int32_t ret = suiteEngine_->GetOptions(nodeId, name, value);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine AudioGeneralVoiceChangeType failed, ret = %{public}d", ret);
+
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    bool stopWaiting = callbackCV_.wait_for(
+        waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishGetOptions_; });
+    CHECK_AND_RETURN_RET_LOG(stopWaiting && getOptionsResult_ == SUCCESS, ERROR,
+        "GetGeneralVoiceChangeType timeout or Error!, getOptionsResult_ = %{public}d", getOptionsResult_);
+
+    int32_t parseValue = StringToInt32(value);
+    type = static_cast<AudioGeneralVoiceChangeType>(parseValue);
+    return SUCCESS;
+}
+
 int32_t AudioSuiteManager::SetSoundFieldType(uint32_t nodeId, SoundFieldType soundFieldType)
 {
     AUDIO_INFO_LOG("SetSoundFieldType enter.");

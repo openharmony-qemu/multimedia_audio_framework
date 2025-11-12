@@ -88,8 +88,8 @@ typedef enum {
      */
     EFFECT_NODE_TYPE_SOUND_FIELD = 203,
     /**
-     * Audio Separation node type, it can only connect to output node.
-     * The audio format output by the scene effect node is as follows:
+     * Audio separation node type, it can only connect to output node.
+     * The audio format output by the audio separation node is as follows:
      * Sample rate: 48000 Hz.
      * Sample format: {@link AUDIO_SAMPLE_F32LE}.
      * Channels: 4(First 2 channels for vocals; last 2 channels for accompaniment).
@@ -109,7 +109,7 @@ typedef enum {
     EFFECT_NODE_TYPE_VOICE_BEAUTIFIER = 205,
     /**
      * Scene effect node type.
-     * The audio format output by the scene effect node is as follows:
+     * The audio format output by the environment node is as follows:
      * Sample rate: 48000 Hz.
      * Sample format: {@link AUDIO_SAMPLE_S16LE}.
      * Channels: 2.
@@ -119,7 +119,7 @@ typedef enum {
     EFFECT_NODE_TYPE_ENVIRONMENT_EFFECT = 206,
     /**
      * Audio mixer node type.
-     * The audio format output by the scene effect node is as follows:
+     * The audio format output by the mixer node is as follows:
      * Sample rate: {@link AudioSamplingRate}.
      * Sample format: {@link AUDIO_SAMPLE_F32LE}.
      * Channels: 2.
@@ -127,6 +127,46 @@ typedef enum {
      * @since 22
      */
     EFFECT_NODE_TYPE_AUDIO_MIXER = 207,
+    /**
+     * Space render node type.
+     * The audio format output by the space render node is as follows:
+     * Sample rate: 48000 Hz.
+     * Sample format: {@link AUDIO_SAMPLE_S16LE}.
+     * Channels: 1.
+     *
+     * @since 23
+     */
+    EFFECT_NODE_TYPE_SPACE_RENDER = 208,
+    /**
+     * Pure voice change node type.
+     * The audio format output by the pure voice change node is as follows:
+     * Sample rate: 48000 Hz.
+     * Sample format: {@link AUDIO_SAMPLE_S16LE}.
+     * Channels: 1.
+     *
+     * @since 23
+     */
+    EFFECT_NODE_TYPE_PURE_VOICE_CHANGE = 209,
+    /**
+     * General voice change node type.
+     * The audio format output by the general voice change node is as follows:
+     * Sample rate: 48000 Hz.
+     * Sample format: {@link AUDIO_SAMPLE_S16LE}.
+     * Channels: 1.
+     *
+     * @since 23
+     */
+    EFFECT_NODE_TYPE_GENERAL_VOICE_CHANGE = 210,
+    /**
+     * Tempo and pitch node type.
+     * The audio format output by the tempo and pitch node is as follows:
+     * Sample rate: 48000 Hz.
+     * Sample format: {@link AUDIO_SAMPLE_S16LE}.
+     * Channels: 1.
+     *
+     * @since 23
+     */
+    EFFECT_NODE_TYPE_TEMPO_PITCH = 211,
 } OH_AudioNode_Type;
 /**
  * @brief Define pipeline work mode
@@ -246,7 +286,6 @@ typedef enum {
      */
     AUDIOSUITE_ERROR_REQUIRED_PARAMETERS_MISSING = 11,
 } OH_AudioSuite_Result;
-
 /**
  * @brief Define the audio sample format.
  *
@@ -284,7 +323,6 @@ typedef enum {
      */
     AUDIO_SAMPLE_F32LE = 4,
 } OH_Audio_SampleFormat;
-
 /**
  * @brief Define the audio encoding type.
  *
@@ -432,7 +470,7 @@ typedef struct OH_AudioDataArray {
      *
      * @since 22
      */
-    int arraySize;
+    int32_t arraySize;
     /**
      * @brief Audio requestFrameSize count.
      *
@@ -472,7 +510,6 @@ typedef enum {
      */
     SOUND_FIELD_WIDE = 4,
 } OH_SoundFieldType;
-
 /**
  * @brief Define the environment type.
  *
@@ -504,7 +541,6 @@ typedef enum {
      */
     ENVIRONMENT_TYPE_GRAMOPHONE = 4
 } OH_EnvironmentType;
-
 /**
  * @brief Define voice beautifier type.
  *
@@ -536,7 +572,6 @@ typedef enum {
      */
     VOICE_BEAUTIFIER_TYPE_RECORDING_STUDIO = 4
 } OH_VoiceBeautifierType;
-
 /**
  * @brief Define the number of equalizer frequency bands
  *
@@ -555,7 +590,7 @@ typedef struct OH_EqualizerFrequencyBandGains {
      * Frequencies: 31 Hz, 62 Hz, 125 Hz, 250 Hz, 500 Hz, 1 kHz, 2 kHz, 4 kHz, 8 kHz, 16 kHz.
      *
      * @since 22
-    */
+     */
     int32_t gains[EQUALIZER_BAND_NUM];
 } OH_EqualizerFrequencyBandGains;
 
@@ -566,7 +601,6 @@ typedef struct OH_EqualizerFrequencyBandGains {
  * @since 22
  */
 extern const OH_EqualizerFrequencyBandGains OH_EQUALIZER_PARAM_DEFAULT;
-
 /**
  * Ballad equalization effect band gains.
  * Gains is {3, 5, 2, -4, 1, 2, -3, 1, 4, 5}.
@@ -662,6 +696,271 @@ typedef struct OH_AudioNodeStruct OH_AudioNode;
  * @since 22
  */
 typedef struct OH_AudioNodeBuilderStruct OH_AudioNodeBuilder;
+
+/**
+ * @brief Definition of the parameter structure for fixed position mode in 3D spatial rendering.
+ * Left-hand coordinate system: Extend your left hand, forming an "L" shapewith your thumb and index finger.
+ * Point the thumb to the right, the index finger upward, and the remaining fingers forward.
+ * This establishes a left-hand coordinate system. In this system, the thumb, index finger,
+ * and other fingers represent the positive directions of the x, y, and z axes, respectively.
+ * @since 23
+ */
+typedef struct OH_AudioSuite_SpaceRenderPositionParams {
+    /**
+     * X coordinate in space, value range: [-5.0, 5.0], unit: meters.
+     *
+     * @since 23
+     */
+    float x;
+    /**
+     * Y coordinate in space, value range: [-5.0, 5.0], unit: meters.
+     *
+     * @since 23
+     */
+    float y;
+    /**
+     * Z coordinate in space, value range: [-5.0, 5.0], unit: meters.
+     *
+     * @since 23
+     */
+    float z;
+} OH_AudioSuite_SpaceRenderPositionParams;
+
+/**
+ * @brief Space rendering surround Direction
+ *
+ * @since 23
+ */
+typedef enum {
+    /**
+     * Rotate counterclockwise
+     *
+     * @since 23
+     */
+    SPACE_RENDER_CCW = 0,
+     /**
+      * Rotate clockwise
+      *
+      * @since 23
+      */
+    SPACE_RENDER_CW = 1,
+} OH_AudioSuite_SurroundDirection;
+
+/**
+ * @brief Space rendering dynamic mode parameters.
+ *
+ * @since 23
+ */
+typedef struct OH_AudioSuite_SpaceRenderRotationParams {
+    /**
+     * X coordinate in space, value range: [-5.0, 5.0], unit: meters.
+     *
+     * @since 23
+     */
+    float x;
+    /**
+     * Y coordinate in space, value range: [-5.0, 5.0], unit: meters.
+     *
+     * @since 23
+     */
+    float y;
+    /**
+     * Z coordinate in space, value range: [-5.0, 5.0], unit: meters.
+     *
+     * @since 23
+     */
+    float z;
+    /**
+     * Single-week circumnavigation time, value range: [2, 40], unit: seconds.
+     *
+     * @since 23
+     */
+    int32_t surroundTime;
+    /**
+     * Single-week circumnavigation direction, value range: [0, 1].
+     *
+     * @since 23
+     */
+    OH_AudioSuite_SurroundDirection surroundDirection;
+} OH_AudioSuite_SpaceRenderRotationParams;
+
+ /**
+  * @brief Space rendering extension mode parameters.
+  *
+  * @since 23
+  */
+typedef struct OH_AudioSuite_SpaceRenderExtensionParams {
+    /**
+     * Expansion radius, value range: [1.0, 5.0], unit: meters.
+     *
+     * @since 23
+     */
+    float extRadius;
+    /**
+     * Expansion angle, value range: [0, 360], unit: degrees.
+     *
+     * @since 23
+     */
+    int32_t extAngle;
+} OH_AudioSuite_SpaceRenderExtensionParams;
+
+/**
+ * @brief Define speaker gender in change voice option
+ *
+ * @since 23
+ */
+typedef enum {
+    /**
+     * set female voice.
+     *
+     * @since 23
+     */
+    PURE_VOICE_CHANGE_FEMALE = 1,
+    /**
+     * set male voice.
+     *
+     * @since 23
+     */
+    PURE_VOICE_CHANGE_MALE = 2,
+} OH_AudioSuite_PureVoiceChangeGenderOption;
+
+/**
+ * @brief Define voice type in change voice option
+ *
+ * @since 23
+ */
+typedef enum {
+    /**
+     * Cartoon voice type.
+     *
+     * @since 23
+     */
+    PURE_VOICE_CHANGE_TYPE_CARTOON = 1,
+    /**
+     * Cute voice type.
+     *
+     * @since 23
+     */
+    PURE_VOICE_CHANGE_TYPE_CUTE = 2,
+    /**
+     * Female voice type.
+     *
+     * @since 23
+     */
+    PURE_VOICE_CHANGE_TYPE_FEMALE = 3,
+    /**
+     * Male voice type.
+     *
+     * @since 23
+     */
+    PURE_VOICE_CHANGE_TYPE_MALE = 4,
+    /**
+     * Monster voice type.
+     *
+     * @since 23
+     */
+    PURE_VOICE_CHANGE_TYPE_MONSTER = 5,
+    /**
+     * Robots voice type.
+     *
+     * @since 23
+     */
+    PURE_VOICE_CHANGE_TYPE_ROBOTS = 6,
+    /**
+     * Seasoned voice type.
+     *
+     * @since 23
+     */
+    PURE_VOICE_CHANGE_TYPE_SEASONED = 7,
+} OH_AudioSuite_PureVoiceChangeType;
+
+/**
+ * @brief Define change voice option.
+ *
+ * @since 23
+ */
+typedef struct OH_AudioSuite_PureVoiceChangeOption {
+    /**
+     * Define speaker gender.
+     *
+     * @since 23
+     */
+    OH_AudioSuite_PureVoiceChangeGenderOption optionGender;
+    /**
+     * Define voice type.
+     *
+     * @since 23
+     */
+    OH_AudioSuite_PureVoiceChangeType optionType;
+} OH_AudioSuite_PureVoiceChangeOption;
+
+/**
+ * @brief Define voice type in change general voice.
+ *
+ * @since 23
+ */
+typedef enum {
+    /**
+     * Cute voice type.
+     *
+     * @since 23
+     */
+    GENERAL_VOICE_CHANGE_TYPE_CUTE = 1,
+    /**
+     * Cyberpunk voice type.
+     *
+     * @since 23
+     */
+    GENERAL_VOICE_CHANGE_TYPE_CYBERPUNK = 2,
+    /**
+     * Female voice type.
+     *
+     * @since 23
+     */
+    GENERAL_VOICE_CHANGE_TYPE_FEMALE = 3,
+    /**
+     * Male voice type.
+     *
+     * @since 23
+     */
+    GENERAL_VOICE_CHANGE_TYPE_MALE = 4,
+    /**
+     * Mix voice type.
+     *
+     * @since 23
+     */
+    GENERAL_VOICE_CHANGE_TYPE_MIX = 5,
+    /**
+     * Monster voice type.
+     *
+     * @since 23
+     */
+    GENERAL_VOICE_CHANGE_TYPE_MONSTER = 6,
+    /**
+     * Seasoned voice type.
+     *
+     * @since 23
+     */
+    GENERAL_VOICE_CHANGE_TYPE_SEASONED = 7,
+    /**
+     * Synth voice type.
+     *
+     * @since 23
+     */
+    GENERAL_VOICE_CHANGE_TYPE_SYNTH = 8,
+    /**
+     * Trill voice type.
+     *
+     * @since 23
+     */
+    GENERAL_VOICE_CHANGE_TYPE_TRILL = 9,
+    /**
+     * War voice type.
+     *
+     * @since 23
+     */
+    GENERAL_VOICE_CHANGE_TYPE_WAR = 10,
+} OH_AudioSuite_GeneralVoiceChangeType;
 
 #ifdef __cplusplus
 }

@@ -37,6 +37,10 @@ typedef enum {
     NODE_TYPE_VOICE_BEAUTIFIER = 205,
     NODE_TYPE_ENVIRONMENT_EFFECT = 206,
     NODE_TYPE_AUDIO_MIXER = 207,
+    NODE_TYPE_SPACE_RENDER = 208,
+    NODE_TYPE_PURE_VOICE_CHANGE = 209,
+    NODE_TYPE_GENERAL_VOICE_CHANGE = 210,
+    NODE_TYPE_TEMPO_PITCH = 211,
 } AudioNodeType;
 
 typedef enum {
@@ -103,6 +107,67 @@ typedef enum {
     AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_CD = 3,
     AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_STUDIO = 4
 } VoiceBeautifierType;
+
+typedef struct AudioSpaceRenderPositionParams {
+    float x;
+    float y;
+    float z;
+} AudioSpaceRenderPositionParams;
+
+enum AudioSurroundDirection {
+    SPACE_RENDER_CCW = 0,
+    SPACE_RENDER_CW = 1,
+};
+
+typedef struct AudioSpaceRenderRotationParams {
+    float x;
+    float y;
+    float z;
+    int32_t surroundTime;
+    AudioSurroundDirection surroundDirection;
+} AudioSpaceRenderRotationParams;
+
+typedef struct AudioSpaceRenderExtensionParams {
+    float extRadius;
+    int32_t extAngle;
+} AudioSpaceRenderExtensionParams;
+
+enum AudioPureVoiceChangeGenderOption {
+    PURE_VOICE_CHANGE_FEMALE = 1,
+    PURE_VOICE_CHANGE_MALE = 2,
+};
+
+enum AudioPureVoiceChangeVocalPartOption {
+    PURE_VOICE_CHANGE_VOCAL_PART_MIDDLE = 1,
+};
+
+enum AudioPureVoiceChangeType {
+    PURE_VOICE_CHANGE_TYPE_CARTOON = 1,
+    PURE_VOICE_CHANGE_TYPE_CUTE = 2,
+    PURE_VOICE_CHANGE_TYPE_FEMALE = 3,
+    PURE_VOICE_CHANGE_TYPE_MALE = 4,
+    PURE_VOICE_CHANGE_TYPE_MONSTER = 5,
+    PURE_VOICE_CHANGE_TYPE_ROBOTS = 6,
+    PURE_VOICE_CHANGE_TYPE_SEASONED = 7,
+};
+
+typedef struct AudioPureVoiceChangeOption {
+    AudioPureVoiceChangeGenderOption optionGender;
+    AudioPureVoiceChangeType optionType;
+} AudioPureVoiceChangeOption;
+
+enum AudioGeneralVoiceChangeType {
+    GENERAL_VOICE_CHANGE_TYPE_CUTE = 1,
+    GENERAL_VOICE_CHANGE_TYPE_CYBERPUNK = 2,
+    GENERAL_VOICE_CHANGE_TYPE_FEMALE = 3,
+    GENERAL_VOICE_CHANGE_TYPE_MALE = 4,
+    GENERAL_VOICE_CHANGE_TYPE_MIX = 5,
+    GENERAL_VOICE_CHANGE_TYPE_MONSTER = 6,
+    GENERAL_VOICE_CHANGE_TYPE_SEASONED = 7,
+    GENERAL_VOICE_CHANGE_TYPE_SYNTH = 8,
+    GENERAL_VOICE_CHANGE_TYPE_TRILL = 9,
+    GENERAL_VOICE_CHANGE_TYPE_WAR = 10,
+};
 
 enum AudioSuitePipelineState {
     PIPELINE_STOPPED = 1,

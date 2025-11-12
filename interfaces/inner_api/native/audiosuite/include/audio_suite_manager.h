@@ -63,10 +63,22 @@ public:
     virtual int32_t GetEnvironmentType(uint32_t nodeId, EnvironmentType &environmentType) = 0;
     virtual int32_t ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId) = 0;
     virtual int32_t DisConnectNodes(uint32_t srcNode, uint32_t destNode) = 0;
-    virtual int32_t SetEqualizerFrequencyBandGains(uint32_t nodeId, AudioEqualizerFrequencyBandGains gains);
-    virtual int32_t SetSoundFieldType(uint32_t nodeId, SoundFieldType soundFieldType);
-    virtual int32_t SetEnvironmentType(uint32_t nodeId, EnvironmentType environmentType);
-    virtual int32_t SetVoiceBeautifierType(uint32_t nodeId, VoiceBeautifierType voiceBeautifierType);
+    virtual int32_t SetEqualizerFrequencyBandGains(uint32_t nodeId, AudioEqualizerFrequencyBandGains gains) = 0;
+    virtual int32_t SetSoundFieldType(uint32_t nodeId, SoundFieldType soundFieldType) = 0;
+    virtual int32_t SetEnvironmentType(uint32_t nodeId, EnvironmentType environmentType) = 0;
+    virtual int32_t SetVoiceBeautifierType(uint32_t nodeId, VoiceBeautifierType voiceBeautifierType) = 0;
+    virtual int32_t SetSpaceRenderPositionParams(uint32_t nodeId, AudioSpaceRenderPositionParams position) = 0;
+    virtual int32_t GetSpaceRenderPositionParams(uint32_t nodeId, AudioSpaceRenderPositionParams &position) = 0;
+    virtual int32_t SetSpaceRenderRotationParams(uint32_t nodeId, AudioSpaceRenderRotationParams rotation) = 0;
+    virtual int32_t GetSpaceRenderRotationParams(uint32_t nodeId, AudioSpaceRenderRotationParams &rotation) = 0;
+    virtual int32_t SetSpaceRenderExtensionParams(uint32_t nodeId, AudioSpaceRenderExtensionParams extension) = 0;
+    virtual int32_t GetSpaceRenderExtensionParams(uint32_t nodeId, AudioSpaceRenderExtensionParams &extension) = 0;
+    virtual int32_t SetTempoAndPitch(uint32_t nodeId, float speed, float pitch) = 0;
+    virtual int32_t GetTempoAndPitch(uint32_t nodeId, float &speed, float &pitch) = 0;
+    virtual int32_t SetPureVoiceChangeOption(uint32_t nodeId, AudioPureVoiceChangeOption option) = 0;
+    virtual int32_t GetPureVoiceChangeOption(uint32_t nodeId, AudioPureVoiceChangeOption &option) = 0;
+    virtual int32_t SetGeneralVoiceChangeType(uint32_t nodeId, AudioGeneralVoiceChangeType type) = 0;
+    virtual int32_t GetGeneralVoiceChangeType(uint32_t nodeId, AudioGeneralVoiceChangeType &type) = 0;
     virtual int32_t RenderFrame(
         uint32_t pipelineId, uint8_t *audioData,
         int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag) = 0;
