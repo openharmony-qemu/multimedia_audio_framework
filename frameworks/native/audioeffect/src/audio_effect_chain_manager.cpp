@@ -325,7 +325,8 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(std::string &sceneTy
 {
     Trace trace("AudioEffectChainManager::SetAudioEffectChainDynamic: " + sceneType);
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
-    CHECK_AND_RETURN_RET_LOG(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey), ERROR,
+    CHECK_AND_RETURN_RET_LOG(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) &&
+        sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr, ERROR,
         "SceneType [%{public}s] does not exist, failed to set", sceneType.c_str());
 
     std::shared_ptr<AudioEffectChain> audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
