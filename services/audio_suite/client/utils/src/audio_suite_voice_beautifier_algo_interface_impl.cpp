@@ -98,42 +98,17 @@ int32_t AudioSuiteVoiceBeautifierAlgoInterfaceImpl::Init()
     int32_t ret = ApplyAndWaitReady();
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
 
-    AudioVoiceMorphingMemSize* memSize = new AudioVoiceMorphingMemSize();
-    ret = vmAlgoApi_.getSize(memSize);
+    AudioVoiceMorphingMemSize memSize;
+    ret = vmAlgoApi_.getSize(&memSize);
     if (ret != AUDIO_VMP_EOK) {
         AUDIO_ERR_LOG("AudioVoiceMorphingGetsize fail");
-        delete memSize;
-        memSize = nullptr;
         return ERROR;
     }
-    handle_ = new char[memSize->stateSize];
-    if (!handle_) {
-        AUDIO_ERR_LOG("Init handle_ fail");
-        delete memSize;
-        memSize = nullptr;
-        return ERROR;
-    }
-    scratchBuf_ = new char[memSize->scratchSize];
-    if (!scratchBuf_) {
-        AUDIO_ERR_LOG("Init scratchBuf_ fail");
-        delete memSize;
-        memSize = nullptr;
-        return ERROR;
-    }
-    delete memSize;
-    memSize = nullptr;
-
-    inBuf_ = new uint32_t[sizeof(uint32_t) * DEFAULT_FRAME_LEN * 2];
-    if (!inBuf_) {
-        AUDIO_ERR_LOG("Init inBuf_ fail");
-        return ERROR;
-    }
-    outBuf_ = new uint32_t[sizeof(uint32_t) * DEFAULT_FRAME_LEN * 2];
-    if (!outBuf_) {
-        AUDIO_ERR_LOG("Init outBuf_ fail");
-        return ERROR;
-    }
-    ret = vmAlgoApi_.init(handle_, scratchBuf_);
+    handle_.resize(memSize.stateSize);
+    scratchBuf_.resize(memSize.scratchSize);
+    inBuf_.resize(DEFAULT_FRAME_LEN * DEFAULT_CHANNEL_COUNT);
+    outBuf_.resize(DEFAULT_FRAME_LEN * DEFAULT_CHANNEL_COUNT);
+    ret = vmAlgoApi_.init(handle_.data(), scratchBuf_.data());
     if (ret != AUDIO_VMP_EOK) {
         AUDIO_ERR_LOG("Init vmalgo fail");
         return ERROR;
@@ -146,30 +121,9 @@ int32_t AudioSuiteVoiceBeautifierAlgoInterfaceImpl::Init()
 int32_t AudioSuiteVoiceBeautifierAlgoInterfaceImpl::Deinit()
 {
     AUDIO_INFO_LOG("start deinit vm algorithm");
-    Release();
     UnApply();
     AUDIO_INFO_LOG("end deinit vm algorithm");
     return SUCCESS;
-}
-
-void AudioSuiteVoiceBeautifierAlgoInterfaceImpl::Release()
-{
-    if (inBuf_) {
-        delete[] inBuf_;
-        inBuf_ = nullptr;
-    }
-    if (outBuf_) {
-        delete[] outBuf_;
-        outBuf_ = nullptr;
-    }
-    if (handle_) {
-        delete[] handle_;
-        handle_ = nullptr;
-    }
-    if (scratchBuf_) {
-        delete[] scratchBuf_;
-        scratchBuf_ = nullptr;
-    }
 }
 
 int32_t AudioSuiteVoiceBeautifierAlgoInterfaceImpl::SetParameter(
@@ -177,7 +131,7 @@ int32_t AudioSuiteVoiceBeautifierAlgoInterfaceImpl::SetParameter(
 {
     auto type = OPTIONS_MAP.find(paramValue);
     if (type != OPTIONS_MAP.end()) {
-        return vmAlgoApi_.setParam(handle_, type->second);
+        return vmAlgoApi_.setParam(handle_.data(), type->second);
     } else {
         AUDIO_ERR_LOG("SetOptions UNKNOWN TYPE");
         return ERROR;
@@ -199,19 +153,9 @@ int32_t AudioSuiteVoiceBeautifierAlgoInterfaceImpl::Apply(
         return ERROR;
     }
 
-    if (!inBuf_) {
-        AUDIO_ERR_LOG("Init inBuf_ fail");
-        return ERROR;
-    }
-
-    if (!outBuf_) {
-        AUDIO_ERR_LOG("Init outBuf_ fail");
-        return ERROR;
-    }
-
     AudioVoiceMorphingData data = {
-        .dataIn = reinterpret_cast<int *>(inBuf_),
-        .dataOut = reinterpret_cast<int *>(outBuf_),
+        .dataIn = reinterpret_cast<int *>(inBuf_.data()),
+        .dataOut = reinterpret_cast<int *>(outBuf_.data()),
         .dataSize = DEFAULT_FRAME_LEN,
         .enableFlag = 1,
         .dataFormat = 1,
@@ -226,9 +170,9 @@ int32_t AudioSuiteVoiceBeautifierAlgoInterfaceImpl::Apply(
         inBuf_[i] = inPcm[i];
         inBuf_[i] <<= offset;
     }
-    int32_t ret = vmAlgoApi_.apply(&data, handle_, scratchBuf_);
+    int32_t ret = vmAlgoApi_.apply(&data, handle_.data(), scratchBuf_.data());
     if (ret != AUDIO_VMP_EOK) {
-        AUDIO_ERR_LOG("apply vmalgo fail.");
+        AUDIO_ERR_LOG("apply vmalgo fail, error code: %{public}d.", ret);
         return ERROR;
     }
 
