@@ -137,8 +137,8 @@ HWTEST_F(HpaeOutputClusterTest, testHpaeWriteDataOutSessionTest, TestSize.Level0
     nodeInfo.sceneType = HPAE_SCENE_RING;
     std::shared_ptr<HpaeProcessCluster> ringProcessCluster =
         std::make_shared<HpaeProcessCluster>(nodeInfo, dummySinkInfo);
-    muiscProcessCluster->CreateNodes(musicSinkInputNode);
-    ringProcessCluster->CreateNodes(ringSinkInputNode);
+    EXPECT_EQ(muiscProcessCluster->CreateNodes(musicSinkInputNode), SUCCESS);
+    EXPECT_EQ(ringProcessCluster->CreateNodes(ringSinkInputNode), SUCCESS);
     muiscProcessCluster->Connect(musicSinkInputNode);
     ringProcessCluster->Connect(ringSinkInputNode);
     hpaeOutputCluster->Connect(muiscProcessCluster);
