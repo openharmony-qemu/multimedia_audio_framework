@@ -27,7 +27,7 @@ static constexpr AudioSamplingRate VM_ALGO_SAMPLE_RATE = SAMPLE_RATE_48000;
 static constexpr AudioSampleFormat VM_ALGO_SAMPLE_FORMAT = SAMPLE_S16LE;
 static constexpr AudioChannel VM_ALGO_CHANNEL_COUNT = STEREO;
 static constexpr AudioChannelLayout VM_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
-static constexpr std::string VOICE_BEAUTIFIER_TYPE = "VoiceBeautifierType";
+static std::string VOICE_BEAUTIFIER_TYPE = "VoiceBeautifierType";
 
 AudioSuiteVoiceBeautifierNode::AudioSuiteVoiceBeautifierNode()
     : AudioSuiteProcessNode(AudioNodeType::NODE_TYPE_VOICE_BEAUTIFIER,
