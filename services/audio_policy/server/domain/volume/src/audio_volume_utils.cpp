@@ -79,13 +79,14 @@ void AudioVolumeUtils::GetDefaultVolumeLevelFromConfig(const std::shared_ptr<Aud
 
     AudioVolumeType internalVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     if (!DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.contains(desc->deviceType_)) {
-        if (streamVolumeInfos_.contains(internalVolumeType)) {
-            volumeLevel = streamVolumeInfos_[internalVolumeType]->defaultLevel;
-        }
+        CHECK_AND_RETURN(streamVolumeInfos_.contains(internalVolumeType) &&
+            streamVolumeInfos_[internalVolumeType] != nullptr);
+        volumeLevel = streamVolumeInfos_[internalVolumeType]->defaultLevel;
         return;
     }
 
-    CHECK_AND_RETURN_LOG(streamVolumeInfos_.contains(internalVolumeType), "streamVolumeInfos_ not contain volume type");
+    CHECK_AND_RETURN_LOG(streamVolumeInfos_.contains(internalVolumeType) &&
+        streamVolumeInfos_[internalVolumeType] != nullptr, "streamVolumeInfos_ not contain volume type");
     
     volumeLevel = streamVolumeInfos_[internalVolumeType]->defaultLevel;
 
@@ -157,13 +158,14 @@ void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(const std::shared_ptr<AudioDe
 
     AudioVolumeType internalVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     if (!DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.contains(desc->deviceType_)) {
-        if (streamVolumeInfos_.contains(internalVolumeType)) {
-            volumeLevel = streamVolumeInfos_[internalVolumeType]->maxLevel;
-        }
+        CHECK_AND_RETURN(streamVolumeInfos_.contains(internalVolumeType) &&
+            streamVolumeInfos_[internalVolumeType] != nullptr);
+        volumeLevel = streamVolumeInfos_[internalVolumeType]->maxLevel;
         return;
     }
 
-    CHECK_AND_RETURN_LOG(streamVolumeInfos_.contains(internalVolumeType), "streamVolumeInfos_ not contain volume type");
+    CHECK_AND_RETURN_LOG(streamVolumeInfos_.contains(internalVolumeType) &&
+        streamVolumeInfos_[internalVolumeType] != nullptr, "streamVolumeInfos_ not contain volume type");
     
     volumeLevel = streamVolumeInfos_[internalVolumeType]->maxLevel;
 
@@ -198,13 +200,14 @@ void AudioVolumeUtils::GetMinVolumeLevelFromConfig(const std::shared_ptr<AudioDe
 
     AudioVolumeType internalVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     if (!DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.contains(desc->deviceType_)) {
-        if (streamVolumeInfos_.contains(internalVolumeType)) {
-            volumeLevel = streamVolumeInfos_[internalVolumeType]->minLevel;
-        }
+        CHECK_AND_RETURN(streamVolumeInfos_.contains(internalVolumeType) &&
+            streamVolumeInfos_[internalVolumeType] != nullptr);
+        volumeLevel = streamVolumeInfos_[internalVolumeType]->minLevel;
         return;
     }
 
-    CHECK_AND_RETURN_LOG(streamVolumeInfos_.contains(internalVolumeType), "streamVolumeInfos_ not contain volume type");
+    CHECK_AND_RETURN_LOG(streamVolumeInfos_.contains(internalVolumeType) &&
+        streamVolumeInfos_[internalVolumeType] != nullptr, "streamVolumeInfos_ not contain volume type");
     
     volumeLevel = streamVolumeInfos_[internalVolumeType]->minLevel;
 
