@@ -40,7 +40,7 @@ const std::vector<StreamUsage> BACKGROUND_MUTE_STREAM_USAGE {
 constexpr uint32_t THP_EXTRA_SA_UID = 5000;
 constexpr uint32_t MEDIA_UID = 1013;
 constexpr const char* RECLAIM_MEMORY = "AudioReclaimMemory";
-constexpr uint32_t TIME_OF_RECLAIM_MEMORY = 240000; //4min
+constexpr uint32_t TIME_OF_RECLAIM_MEMORY = 210000; //3.5min
 constexpr const char* RECLAIM_FILE_STRING = "1";
 
 const map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::streamTypeMap_ =
