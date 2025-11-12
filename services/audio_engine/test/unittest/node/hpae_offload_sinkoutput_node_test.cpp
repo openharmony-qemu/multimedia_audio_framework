@@ -109,13 +109,13 @@ HWTEST_F(HpaeOffloadSinkOutputNodeTest, OffloadNeedSleep_FullNoCondition_ShouldN
 HWTEST_F(HpaeOffloadSinkOutputNodeTest, OffloadNeedSleep_ErrorBelowMaxRetry_ShouldIncreaseRetry, TestSize.Level0)
 {
     // Set initial retry count
-    offloadNode_->retryCount_ = 1;
+    offloadNode_->backoffController_.delay_ = 1;
 
     // Unlock method should not be called
     EXPECT_CALL(*mockSink_, UnLockOffloadRunningLock()).Times(0);
     offloadNode_->OffloadNeedSleep(OFFLOAD_WRITE_FAILED);
     // Verify retry count increased
-    EXPECT_EQ(offloadNode_->retryCount_, 2);
+    EXPECT_EQ(offloadNode_->backoffController_.delay_, 2);
     EXPECT_FALSE(offloadNode_->isHdiFull_.load());
 }
 
@@ -123,7 +123,7 @@ HWTEST_F(HpaeOffloadSinkOutputNodeTest, OffloadNeedSleep_ErrorBelowMaxRetry_Shou
 HWTEST_F(HpaeOffloadSinkOutputNodeTest, OffloadNeedSleep_ErrorAtMaxRetry_ShouldNotIncrease, TestSize.Level0)
 {
     // Set retry count to max value
-    offloadNode_->retryCount_ = 20; // 20ms limit
+    offloadNode_->backoffController_.delay_ = 20; // 20ms limit
 
     // Unlock method should not be called
     EXPECT_CALL(*mockSink_, UnLockOffloadRunningLock()).Times(0);
@@ -131,7 +131,7 @@ HWTEST_F(HpaeOffloadSinkOutputNodeTest, OffloadNeedSleep_ErrorAtMaxRetry_ShouldN
     offloadNode_->OffloadNeedSleep(OFFLOAD_WRITE_FAILED);
 
     // Verify retry count unchanged
-    EXPECT_EQ(offloadNode_->retryCount_, 20); // 20ms limit
+    EXPECT_EQ(offloadNode_->backoffController_.delay_, 20); // 20ms limit
     EXPECT_FALSE(offloadNode_->isHdiFull_.load());
 }
 
@@ -139,14 +139,14 @@ HWTEST_F(HpaeOffloadSinkOutputNodeTest, OffloadNeedSleep_ErrorAtMaxRetry_ShouldN
 HWTEST_F(HpaeOffloadSinkOutputNodeTest, OffloadNeedSleep_Success_ShouldResetRetry, TestSize.Level0)
 {
     // Set initial retry count
-    offloadNode_->retryCount_ = 5;
+    offloadNode_->backoffController_.delay_ = 5;
 
     // Unlock method should not be called
     EXPECT_CALL(*mockSink_, UnLockOffloadRunningLock()).Times(0);
 
     offloadNode_->OffloadNeedSleep(SUCCESS);
     // Verify retry count reset
-    EXPECT_EQ(offloadNode_->retryCount_, 1);
+    EXPECT_EQ(offloadNode_->backoffController_.delay_, 1);
     EXPECT_FALSE(offloadNode_->isHdiFull_.load());
 }
 
