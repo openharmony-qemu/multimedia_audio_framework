@@ -346,31 +346,6 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
     CheckAndSleepBeforeVoiceCallDeviceSet(reason);
 }
 
-void AudioCoreService::CheckRingAndVoipScene(const AudioStreamDeviceChangeReasonExt reason)
-{
-    AudioScene audioScene = audioSceneManager_.GetAudioScene();
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> ringDescs =
-        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_NOTIFICATION_RINGTONE, -1, "CheckRingAndVoipScene");
-    CHECK_AND_RETURN_LOG(ringDescs.size() != 0, "Fetch output device for ring failed");
-    
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> voipDescs =
-        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1, "CheckRingAndVoipScene");
-    CHECK_AND_RETURN_LOG(voipDescs.size() != 0, "Fetch output device for voip failed");
-
-    pipeManager_->UpdateRingAndVoipStreamStatus(audioScene);
-    pipeManager_->UpdateRingAndVoipStreamDevice(ringDescs, voipDescs);
-
-    ActivateNearlinkDevice(pipeManager_->GetStreamDescForAudioScene(audioScene), reason);
-
-    std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> ringAndVoipDescMap =
-        pipeManager_->GetRingAndVoipDescMap();
-    for (auto &entry : ringAndVoipDescMap) {
-        CHECK_AND_CONTINUE_LOG(entry.second != nullptr, "StreamDesc is nullptr");
-        sleAudioDeviceManager_.UpdateSleStreamTypeCount(entry.second);
-    }
-}
-
 int32_t AudioCoreService::UpdateModemRoute(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
 {
     if (!pipeManager_->IsModemCommunicationIdExist()) {
