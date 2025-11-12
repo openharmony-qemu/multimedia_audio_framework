@@ -66,8 +66,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, CheckUpdateInInfoTest_001, TestSize.L
     PcmBufferInfo pcmBufferInfo(STEREO, DEFAULT_FRAMELEN_SECOND, SAMPLE_RATE_48000);
     HpaePcmBuffer input(pcmBufferInfo);
 
-    int32_t ret = converterNode->CheckUpdateInInfo(&input);
-    EXPECT_EQ(ret, false);
+    EXPECT_FALSE(converterNode->CheckUpdateInInfo(&input));
 }
 
 /*
@@ -90,8 +89,7 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, CheckUpdateInInfoTest_002, TestSize.L
     PcmBufferInfo pcmBufferInfo(STEREO, DEFAULT_FRAMELEN_FIRST, SAMPLE_RATE_44100);
     HpaePcmBuffer input(pcmBufferInfo);
 
-    int32_t ret = converterNode->CheckUpdateInInfo(&input);
-    EXPECT_EQ(ret, true);
+    EXPECT_TRUE(converterNode->CheckUpdateInInfo(&input));
     EXPECT_EQ(converterNode->preNodeInfo_.samplingRate, SAMPLE_RATE_44100);
     EXPECT_EQ(converterNode->preNodeInfo_.frameLen, DEFAULT_FRAMELEN_FIRST);
 }
@@ -116,15 +114,13 @@ HWTEST_F(HpaeAudioFormatConverterNodeTest, CheckUpdateInInfoTest_003, TestSize.L
     // test 11025, 0 frameLen data
     PcmBufferInfo pcmBufferInfo(STEREO, 0, SAMPLE_RATE_11025);
     HpaePcmBuffer input(pcmBufferInfo);
-    int32_t ret = converterNode->CheckUpdateInInfo(&input);
-    EXPECT_EQ(ret, true);
+    EXPECT_TRUE(converterNode->CheckUpdateInInfo(&input));
     EXPECT_EQ(converterNode->preNodeInfo_.samplingRate, SAMPLE_RATE_11025);
     EXPECT_EQ(converterNode->preNodeInfo_.frameLen, DEFAULT_FRAMELEN_11025);
     // test 10hz 100ms customSampleRate, 0 frameLen data
     PcmBufferInfo pcmBufferInfo1(STEREO, 0, SAMPLE_RATE_48010);
     HpaePcmBuffer input1(pcmBufferInfo1);
-    ret = converterNode->CheckUpdateInInfo(&input1);
-    EXPECT_EQ(ret, true);
+    EXPECT_TRUE(converterNode->CheckUpdateInInfo(&input1));
     EXPECT_EQ(converterNode->preNodeInfo_.samplingRate, SAMPLE_RATE_48010);
     EXPECT_EQ(converterNode->preNodeInfo_.frameLen, DEFAULT_FRAMELEN_48010);
 }
