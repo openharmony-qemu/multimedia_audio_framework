@@ -845,7 +845,7 @@ void RendererInServer::InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, C
     int32_t innerCapId)
 {
     int32_t engineFlag = GetEngineFlag();
-    if (renderEmptyCountForInnerCapToInnerCapIdMap_.find(innerCapId) != 
+    if (renderEmptyCountForInnerCapToInnerCapIdMap_.find(innerCapId) !=
         renderEmptyCountForInnerCapToInnerCapIdMap_.end() &&
         renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId] > 0) {
         size_t emptyBufferSize = static_cast<size_t>
