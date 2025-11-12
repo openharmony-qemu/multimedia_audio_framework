@@ -208,8 +208,6 @@ void CapturerInServer::OnStatusUpdate(IOperation operation)
             AUDIO_INFO_LOG("Invalid operation %{public}u", operation);
             status_ = I_STATUS_INVALID;
     }
-
-    CaptureConcurrentCheck(streamIndex_);
 }
 // LCOV_EXCL_STOP
 
@@ -534,6 +532,7 @@ int32_t CapturerInServer::Start()
     }
     if (ret == SUCCESS) {
         StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, true);
+        CaptureConcurrentCheck(streamIndex_);
     }
     return ret;
 }
@@ -617,6 +616,7 @@ int32_t CapturerInServer::Pause()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_PAUSE);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
+    CaptureConcurrentCheck(streamIndex_);
     if (capturerClock_ != nullptr) {
         capturerClock_->Stop();
     }
@@ -695,6 +695,7 @@ int32_t CapturerInServer::Stop()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
+    CaptureConcurrentCheck(streamIndex_);
     return SUCCESS;
 }
 // LCOV_EXCL_STOP
@@ -718,6 +719,7 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Policy remove client failed, reason: %{public}d", result);
     }
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
+    CaptureConcurrentCheck(streamIndex_);
     int32_t ret = IStreamManager::GetRecorderManager().ReleaseCapturer(streamIndex_);
     if (ret < 0) {
         AUDIO_ERR_LOG("Release stream failed, reason: %{public}d", ret);
