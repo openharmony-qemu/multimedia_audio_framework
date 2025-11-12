@@ -284,7 +284,7 @@ private:
     bool isInSilentState_ = false;
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
     int32_t effectModeWhenDual_ = EFFECT_DEFAULT;
-    int32_t renderEmptyCountForInnerCap_ = 0;
+    std::map<int32_t, int32_t> renderEmptyCountForInnerCapToInnerCapIdMap_ = 0;
 
     // only read & write in CheckAndWriterRenderStreamStandbySysEvent
     bool lastWriteStandbyEnableStatus_ = false;
