@@ -497,20 +497,6 @@ void AudioServerGetMaxAmplitudeTest()
         data, reply, option);
 }
 
-void AudioServerResetAudioEndpointTest()
-{
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    MessageParcel reply;
-    MessageOption option;
-    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
-    int32_t deviceType = provider.ConsumeIntegral<int32_t>();
-    data.WriteInt32(deviceType);
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::RESET_AUDIO_ENDPOINT),
-        data, reply, option);
-}
-
 void AudioServerCreatePlaybackCapturerManagerTest()
 {
     MessageParcel data;
@@ -1983,7 +1969,6 @@ TestFuncs g_testFuncs[] = {
     AudioServerResetRouteForDisconnectFuzzTest,
     AudioServerGetEffectLatencyTest,
     AudioServerGetMaxAmplitudeTest,
-    AudioServerResetAudioEndpointTest,
     AudioServerCreatePlaybackCapturerManagerTest,
     AudioServerSetOutputDeviceSinkTest,
     AudioServerSetAudioMonoStateTest,

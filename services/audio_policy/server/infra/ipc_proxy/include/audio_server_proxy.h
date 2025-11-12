@@ -59,7 +59,6 @@ public:
     void UpdateSessionConnectionStateProxy(const int32_t &sessionID, const int32_t &state);
     int32_t CheckRemoteDeviceStateProxy(std::string networkId, DeviceRole deviceRole, bool isStartDevice);
     void SetAudioParameterProxy(const std::string &key, const std::string &value);
-    void ResetAudioEndpointProxy();
     bool NotifyStreamVolumeChangedProxy(AudioStreamType streamType, float volume);
     void OffloadSetVolumeProxy(float volume, const std::string &deviceClass, const std::string &networkId);
     void SetVoiceVolumeProxy(float volume);

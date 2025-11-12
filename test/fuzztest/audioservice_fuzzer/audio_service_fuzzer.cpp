@@ -226,37 +226,6 @@ void AudioServiceCheckInnerCapForRendererFuzzTest()
     audioService->CheckInnerCapForRenderer(sessionId, renderer);
 }
 
-void AudioServiceResetAudioEndpointFuzzTest()
-{
-    shared_ptr<AudioService> audioService = make_shared<AudioService>();
-    if (audioService == nullptr) {
-        return;
-    }
-    audioService->ResetAudioEndpoint();
-}
-
-void AudioServiceReLinkProcessToEndpointFuzzTest()
-{
-    AudioProcessConfig config = {};
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
-    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
-        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo, audioStreamInfo);
-    AudioProcessConfig configProcess = {};
-    sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
-        AudioService::GetInstance());
-    shared_ptr<AudioService> audioService = make_shared<AudioService>();
-    if (audioProcess == nullptr || audioEndpointPtr == nullptr || audioService == nullptr) {
-        return;
-    }
-
-    audioService->linkedPairedList_.clear();
-    audioService->linkedPairedList_.push_back(make_pair(audioProcess, audioEndpointPtr));
-    audioService->ReLinkProcessToEndpoint();
-}
-
 void AudioServiceCheckInnerCapForProcessFuzzTest()
 {
     AudioProcessConfig config = {};
@@ -882,8 +851,6 @@ void AudioThreadTaskFuzzTest()
 TestPtr g_testPtrs[] = {
 #ifdef HAS_FEATURE_INNERCAPTURER
     AudioServiceCheckInnerCapForRendererFuzzTest,
-    AudioServiceResetAudioEndpointFuzzTest,
-    AudioServiceReLinkProcessToEndpointFuzzTest,
     AudioServiceCheckInnerCapForProcessFuzzTest,
     AudioServiceLinkProcessToEndpointFuzzTest,
     AudioServiceUnlinkProcessToEndpointFuzzTest,

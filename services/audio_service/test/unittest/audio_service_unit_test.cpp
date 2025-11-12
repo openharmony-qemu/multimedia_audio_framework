@@ -560,7 +560,6 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
 
     AudioService::GetInstance()->OnInitInnerCapList(1);
     AudioService::GetInstance()->InitAllDupBuffer(1);
-    AudioService::GetInstance()->ResetAudioEndpoint();
     AudioService::GetInstance()->RenderersCheckForAudioWorkgroup(1);
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
     EXPECT_EQ(0, floatRet);
@@ -600,7 +599,6 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
     EXPECT_NE(SUCCESS, ret);
     ret = AudioService::GetInstance()->DisableDualStream(MAX_STREAMID - 1);
     EXPECT_NE(SUCCESS, ret);
-    AudioService::GetInstance()->ResetAudioEndpoint();
     ret = AudioService::GetInstance()->OnProcessRelease(audioProcess, false);
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -668,7 +666,6 @@ HWTEST(AudioServiceUnitTest, AudioServiceFilterAllFastProcess_001, TestSize.Leve
     int32_t floatRet = 0;
     AudioService::GetInstance()->FilterAllFastProcess();
     AudioService::GetInstance()->OnInitInnerCapList(1);
-    AudioService::GetInstance()->ResetAudioEndpoint();
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
     EXPECT_EQ(0, floatRet);
 
@@ -718,7 +715,6 @@ HWTEST(AudioServiceUnitTest, AudioServiceDump_001, TestSize.Level1)
     AudioService::GetInstance()->OnInitInnerCapList(1);
     AudioService::GetInstance()->InitAllDupBuffer(1);
     AudioService::GetInstance()->RenderersCheckForAudioWorkgroup(1);
-    AudioService::GetInstance()->ResetAudioEndpoint();
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
     EXPECT_EQ(0, floatRet);
 
@@ -753,7 +749,6 @@ HWTEST(AudioServiceUnitTest, AudioServiceSetNonInterruptMute_001, TestSize.Level
 
     AudioService::GetInstance()->FilterAllFastProcess();
     AudioService::GetInstance()->OnInitInnerCapList(1);
-    AudioService::GetInstance()->ResetAudioEndpoint();
     AudioService::GetInstance()->SetNonInterruptMute(sessionId, muteFlag);
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
     EXPECT_EQ(0, floatRet);
@@ -787,7 +782,6 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnProcessRelease_001, TestSize.Level1)
 
     AudioService::GetInstance()->FilterAllFastProcess();
     AudioService::GetInstance()->OnInitInnerCapList(1);
-    AudioService::GetInstance()->ResetAudioEndpoint();
     AudioService::GetInstance()->SetNonInterruptMute(sessionId, muteFlag);
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
     EXPECT_EQ(0, floatRet);
@@ -827,7 +821,6 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnProcessRelease_002, TestSize.Level1)
 
     AudioService::GetInstance()->FilterAllFastProcess();
     AudioService::GetInstance()->OnInitInnerCapList(1);
-    AudioService::GetInstance()->ResetAudioEndpoint();
     AudioService::GetInstance()->SetNonInterruptMute(sessionId, muteFlag);
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
     EXPECT_EQ(0, floatRet);
@@ -869,7 +862,6 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnProcessRelease_003, TestSize.Level1)
 
     AudioService::GetInstance()->FilterAllFastProcess();
     AudioService::GetInstance()->OnInitInnerCapList(1);
-    AudioService::GetInstance()->ResetAudioEndpoint();
     AudioService::GetInstance()->SetNonInterruptMute(sessionId, muteFlag);
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
     EXPECT_EQ(0, floatRet);

@@ -179,8 +179,6 @@ public:
 
     int32_t GetVolumeDataCount(const std::string &sinkName, int64_t &volumeDataCount) override;
 
-    int32_t ResetAudioEndpoint() override;
-
     int32_t UpdateLatencyTimestamp(const std::string &timestamp, bool isRenderer) override;
 
     int32_t GetEffectOffloadEnabled(bool& isEffectOffloadEnabled) override;

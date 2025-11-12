@@ -68,7 +68,6 @@ interface IStandardAudioService {
     void NotifyStreamVolumeChanged([in] int streamType, [in] float volume);
     void SetSpatializationSceneType([in] int spatializationSceneType);
     void GetMaxAmplitude([in] boolean isOutputDevice, [in] String deviceClass, [in] int sourceType, [out] float maxAmplitude);
-    void ResetAudioEndpoint();
     void ResetRouteForDisconnect([in] int type);
     void GetEffectLatency([in] String sessionId, [out] unsigned int latency);
     void UpdateLatencyTimestamp([in] String timestamp, [in] boolean isRenderer);
