@@ -1696,6 +1696,12 @@ int32_t AudioSystemManager::SetNearlinkDeviceVolume(const std::string &macAddres
     return AudioPolicyManager::GetInstance().SetNearlinkDeviceVolume(macAddress, volumeType, volume, updateUi);
 }
 
+int32_t AudioSystemManager::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
+{
+    AUDIO_INFO_LOG("isSleVoiceStatus: %{public}d", isSleVoiceStatus);
+    return AudioPolicyManager::GetInstance().SetSleVoiceStatusFlag(isSleVoiceStatus);
+}
+
 AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRole deviceRole) const
 {
     AudioPin pin = AUDIO_PIN_NONE;
