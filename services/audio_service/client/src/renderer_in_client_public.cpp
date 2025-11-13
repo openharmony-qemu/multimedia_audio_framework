@@ -117,7 +117,7 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
             offloadStartReadPos_ = 0;
         }
         offloadEnable_ = static_cast<bool>(result);
-        rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OFFLOAD : PIPE_TYPE_OUT_NORMAL;
+        rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OUT_OFFLOAD : PIPE_TYPE_OUT_NORMAL;
         return SUCCESS;
     }
 
