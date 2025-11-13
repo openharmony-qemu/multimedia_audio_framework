@@ -1264,6 +1264,39 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptServiceAddActiveInterruptToSessio
 
 /**
 * @tc.name  : Test AudioInterruptService.
+* @tc.number: AudioInterruptServiceAddActiveInterruptToSession_006
+* @tc.desc  : Test AddActiveInterruptToSession. About itZone.
+*/
+HWTEST_F(AudioInterruptUnitTest, AudioInterruptServiceAddActiveInterruptToSession_006, TestSize.Level1)
+{
+    auto interruptService = GetTnterruptServiceTest();
+    auto server = GetPolicyServerTest();
+    interruptService->Init(server);
+    AudioInterrupt incomingInterrupt = {};
+    incomingInterrupt.pid = 1;
+
+    AudioInterrupt activeInterrupt = {};
+    activeInterrupt.pid = 2;
+    AudioFocusEntry focusEntry;
+    focusEntry.isReject = false;
+    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    int32_t ret = interruptService->ActivateAudioSession(0, incomingInterrupt.pid, strategyTest);
+    EXPECT_EQ(SUCCESS, ret);
+
+    focusEntry.actionOn = CURRENT;
+    activeInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    strategyTest.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
+    ret = interruptService->ActivateAudioSession(0, activeInterrupt.pid, strategyTest);
+    EXPECT_EQ(SUCCESS, ret);
+    interruptService->sessionService_.MarkSystemApp(activeInterrupt.pid);
+    EXPECT_TRUE(interruptService->sessionService_.IsSystemApp(activeInterrupt.pid));
+
+    ret = interruptService->CanMixForSession(incomingInterrupt, activeInterrupt, focusEntry);
+    EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService.
 * @tc.number: AudioInterruptServiceAddActiveInterruptToSession_004
 * @tc.desc  : Test AddActiveInterruptToSession. About itZone.
 */
@@ -3532,6 +3565,33 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_107, TestSize.Level1)
 
     auto ret = audioInterruptService->IsCanMixInterrupt(incomingInterrupt, activeInterrupt);
     EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_135
+* @tc.desc  : Test AudioInterruptService
+*/
+HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_135, TestSize.Level1)
+{
+    auto interruptService = GetTnterruptServiceTest();
+    auto server = GetPolicyServerTest();
+    interruptService->Init(server);
+
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+
+    AudioInterrupt activeInterrupt;
+    activeInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    activeInterrupt.pid = 2;
+    strategyTest.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
+    int32_t ret = interruptService->ActivateAudioSession(0, activeInterrupt.pid, strategyTest);
+    EXPECT_EQ(SUCCESS, ret);
+    interruptService->sessionService_.MarkSystemApp(activeInterrupt.pid);
+    EXPECT_TRUE(interruptService->sessionService_.IsSystemApp(activeInterrupt.pid));
+
+    ret = interruptService->IsCanMixInterrupt(incomingInterrupt, activeInterrupt);
+    EXPECT_TRUE(ret);
 }
 
 /**
