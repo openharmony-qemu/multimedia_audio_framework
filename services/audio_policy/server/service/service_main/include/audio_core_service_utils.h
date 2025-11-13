@@ -34,7 +34,7 @@ namespace AudioStandard {
 class AudioCoreServiceUtils {
 public:
     static bool IsDualStreamWhenRingDual(AudioStreamType streamType);
-    static bool IsOverRunPlayback(AudioMode &mode, RendererState rendererState);
+    static bool IsOverRunPlayback(AudioMode &mode, RendererState rendererState, const StreamUsage &usage);
     static bool IsRingDualToneOnPrimarySpeaker(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
         const int32_t sessionId);
     static bool NeedDualHalToneInStatus(AudioRingerMode mode, StreamUsage usage,

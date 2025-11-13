@@ -46,16 +46,17 @@ HWTEST(AudioCoreServiceUtilsTest, AudioCoreServiceUtils_002, TestSize.Level1)
 {
     AudioMode mode = AUDIO_MODE_RECORD;
 
-    EXPECT_FALSE(AudioCoreServiceUtils::IsOverRunPlayback(mode, RENDERER_STOPPED));
+    EXPECT_FALSE(AudioCoreServiceUtils::IsOverRunPlayback(mode, RENDERER_STOPPED, STREAM_USAGE_MUSIC));
     mode = AUDIO_MODE_PLAYBACK;
-    EXPECT_TRUE(AudioCoreServiceUtils::IsOverRunPlayback(mode, RENDERER_STOPPED));
-    EXPECT_TRUE(AudioCoreServiceUtils::IsOverRunPlayback(mode, RENDERER_RELEASED));
-    EXPECT_TRUE(AudioCoreServiceUtils::IsOverRunPlayback(mode, RENDERER_PAUSED));
-    EXPECT_FALSE(AudioCoreServiceUtils::IsOverRunPlayback(mode, RENDERER_PREPARED));
+    EXPECT_TRUE(AudioCoreServiceUtils::IsOverRunPlayback(mode, RENDERER_STOPPED, STREAM_USAGE_MUSIC));
+    EXPECT_TRUE(AudioCoreServiceUtils::IsOverRunPlayback(mode, RENDERER_RELEASED, STREAM_USAGE_MUSIC));
+    EXPECT_TRUE(AudioCoreServiceUtils::IsOverRunPlayback(mode, RENDERER_PAUSED, STREAM_USAGE_MUSIC));
+    EXPECT_FALSE(AudioCoreServiceUtils::IsOverRunPlayback(mode, RENDERER_PREPARED, STREAM_USAGE_MUSIC));
 
     AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_RINGING, 0, 0);
-    EXPECT_FALSE(AudioCoreServiceUtils::IsOverRunPlayback(mode, RENDERER_PAUSED));
-    EXPECT_FALSE(AudioCoreServiceUtils::IsOverRunPlayback(mode, RENDERER_PREPARED));
+    EXPECT_FALSE(AudioCoreServiceUtils::IsOverRunPlayback(mode, RENDERER_PAUSED, STREAM_USAGE_MUSIC));
+    EXPECT_FALSE(AudioCoreServiceUtils::IsOverRunPlayback(mode, RENDERER_PREPARED, STREAM_USAGE_MUSIC));
+    EXPECT_FALSE(AudioCoreServiceUtils::IsOverRunPlayback(mode, RENDERER_PAUSED, STREAM_USAGE_ALARM));
 }
 
 /**
