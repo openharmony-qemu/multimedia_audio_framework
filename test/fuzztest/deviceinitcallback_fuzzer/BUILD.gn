@@ -41,6 +41,7 @@ ohos_fuzztest("DeviceInitCallbackFuzzTest") {
   ]
 
   external_deps = [
+    "ability_base:configuration",
     "ability_runtime:wantagent_innerkits",
     "background_task_mgr:bgtaskmgr_innerkits",
     "c_utils:utils",
