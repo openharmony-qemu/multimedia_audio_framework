@@ -16,7 +16,7 @@
 #include "hpae_backoff_controller.h"
 #include <algorithm>
 #include <chrono>
-#include <inttypes.h>
+#include <cinttypes>
 #include <iostream>
 #include <thread>
 #include "audio_engine_log.h"
