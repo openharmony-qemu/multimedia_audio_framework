@@ -66,9 +66,9 @@ void HpaeRenderEffectNodeTest::SetUp()
 void HpaeRenderEffectNodeTest::TearDown()
 {}
 
-void RunHpaeRenderEffectNodeTest(OHOS::AudioStandard::AudioSamplingRate format_val,
-                                 OHOS::AudioStandard::AudioChannel sample_rate_val,
-                                 OHOS::AudioStandard::AudioSampleFormat channels_val)
+void RunHpaeRenderEffectNodeTest(OHOS::AudioStandard::AudioSampleFormat format_val,
+                                 OHOS::AudioStandard::AudioSamplingRate sample_rate_val,
+                                 OHOS::AudioStandard::AudioChannel channels_val)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = TEST_ID;
@@ -92,7 +92,7 @@ HWTEST_F(HpaeRenderEffectNodeTest, test_name, TestSize.Level2) \
 }
 
 DECLARE_HPARE_RENDER_EFFECT_NODE_TEST(SAMPLE_S16LE, SAMPLE_RATE_48000, STEREO, testCreate_001)
-DECLARE_HPARE_RENDER_EFFECT_NODE_TEST(SAMPLE_S16LE, SAMPLE_RATE_44100, STEREO, testCreate_002)
+DECLARE_HPARE_RENDER_EFFECT_NODE_TEST(SAMPLE_S16LE, SAMPLE_RATE_44100, STEREO, testCreate_02)
 DECLARE_HPARE_RENDER_EFFECT_NODE_TEST(SAMPLE_F32LE, SAMPLE_RATE_48000, STEREO, testCreate_003)
 DECLARE_HPARE_RENDER_EFFECT_NODE_TEST(SAMPLE_S32LE, SAMPLE_RATE_48000, STEREO, testCreate_004)
 DECLARE_HPARE_RENDER_EFFECT_NODE_TEST(SAMPLE_S24LE, SAMPLE_RATE_48000, STEREO, testCreate_005)
