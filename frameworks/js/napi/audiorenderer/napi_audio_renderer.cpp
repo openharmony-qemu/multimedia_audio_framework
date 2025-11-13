@@ -569,7 +569,6 @@ napi_value NapiAudioRenderer::SetTarget(napi_env env, napi_callback_info info)
         NapiAudioError::ThrowError(env, "SetTarget failed : no memory", NAPI_ERR_SYSTEM);
         return NapiParamUtils::GetUndefinedValue(env);
     }
-
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
             NAPI_ERR_INVALID_PARAM);
@@ -577,9 +576,7 @@ napi_value NapiAudioRenderer::SetTarget(napi_env env, napi_callback_info info)
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get Target failed",
             NAPI_ERR_INVALID_PARAM);
     };
-
     context->GetCbInfo(env, info, inputParser);
-
     auto executor = [context]() {
         CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
         auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
@@ -606,7 +603,6 @@ napi_value NapiAudioRenderer::SetTarget(napi_env env, napi_callback_info info)
             context->SignError(NAPI_ERR_SYSTEM, "Audio client call audio service error, System error.");
         }
     };
-
     auto complete = [env](napi_value &output) {
         output = NapiParamUtils::GetUndefinedValue(env);
     };
