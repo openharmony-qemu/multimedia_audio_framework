@@ -1852,7 +1852,7 @@ napi_value NapiAudioRenderer::SetSilentModeAndMixWithOthers(napi_env env, napi_c
         NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of on must be bool"),
         "valueType param0 invalid");
 
-    bool on;
+    bool on = false;
     NapiParamUtils::GetValueBoolean(env, on, argv[PARAM0]);
 
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
