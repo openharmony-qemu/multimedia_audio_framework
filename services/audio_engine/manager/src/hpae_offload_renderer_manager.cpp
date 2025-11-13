@@ -373,8 +373,8 @@ int32_t HpaeOffloadRendererManager::Release(uint32_t sessionId)
 void HpaeOffloadRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
     const std::vector<uint32_t>& moveIds, MoveSessionType moveType)
 {
-    Trace trace("[" + std::to_string(sessionId) + "]HpaeOffloadRendererManager::MoveAllStreamToNewSink[" +
-        std::to_string(moveType) + "] to [" + sinkName + "]");
+    Trace trace("HpaeOffloadRendererManager::MoveAllStreamToNewSink[" +
+        sinkName + "]_moveType[" + std::to_string(moveType) + "]");
     std::string name = sinkName;
     std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs;
 
@@ -458,8 +458,7 @@ int32_t HpaeOffloadRendererManager::MoveStream(uint32_t sessionId, const std::st
 int32_t HpaeOffloadRendererManager::SuspendStreamManager(bool isSuspend)
 {
     auto request = [this, isSuspend]() {
-        Trace trace("[" + std::to_string(sessionId) + "]HpaeOffloadRendererManager::SuspendStreamManager[" +
-            std::to_string(isSuspend) + "]");
+        Trace trace("HpaeOffloadRendererManager::SuspendStreamManager[" + std::to_string(isSuspend) + "]");
         if (isSuspend_ == isSuspend) {
             return;
         }
@@ -497,8 +496,7 @@ int32_t HpaeOffloadRendererManager::ReloadRenderManager(const HpaeSinkInfo &sink
     }
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     auto request = [this, sinkInfo, isReload]() {
-        Trace trace("[" + std::to_string(sessionId) + "]HpaeOffloadRendererManager::ReloadRenderManager[" +
-            std::to_string(isReload) + "]");
+        Trace trace("HpaeOffloadRendererManager::ReloadRenderManager[" + std::to_string(isReload) + "]");
         if (sinkOutputNode_ != nullptr && sinkOutputNode_->GetSinkState() == STREAM_MANAGER_RUNNING) {
             DisConnectInputSession();
             DestroyOffloadNodes();
@@ -520,8 +518,7 @@ int32_t HpaeOffloadRendererManager::Init(bool isReload)
 {
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     auto request = [this, isReload] {
-        Trace trace("[" + std::to_string(sessionId) + "]HpaeOffloadRendererManager::Init[" +
-            std::to_string(isReload) + "]");
+        Trace trace("HpaeOffloadRendererManager::Init[" + std::to_string(isReload) + "]");
         InitSinkInner(isReload);
     };
     SendRequest(request, __func__, true);
@@ -583,8 +580,7 @@ bool HpaeOffloadRendererManager::DeactivateThread()
 
 int32_t HpaeOffloadRendererManager::DeInit(bool isMoveDefault)
 {
-    Trace trace("[" + std::to_string(sessionId) + "]HpaeOffloadRendererManager::DeInit[" +
-        std::to_string(isMoveDefault) + "]");
+    Trace trace("HpaeOffloadRendererManager::DeInit[" + std::to_string(isMoveDefault) + "]");
     if (hpaeSignalProcessThread_ != nullptr) {
         hpaeSignalProcessThread_->DeactivateThread();
         hpaeSignalProcessThread_ = nullptr;
