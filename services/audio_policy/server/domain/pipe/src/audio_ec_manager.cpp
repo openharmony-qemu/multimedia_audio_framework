@@ -690,7 +690,7 @@ int32_t AudioEcManager::ReloadSourceForInputPipe(std::shared_ptr<AudioPipeInfo> 
         "pipe is null or can not find stream");
     auto streamDesc = pipeInfo->streamDescMap_[targetSessionId];
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
-    audioConfigManager_。GetStreamPropInfo(streamDesc, streamPropInfo);
+    audioConfigManager_.etStreamPropInfo(streamDesc, streamPropInfo);
     PipeStreamPropInfo targetInfo = *streamPropInfo;
     
     AudioModuleInfo moduleInfo = pipeInfo->moduleInfo_;
@@ -699,9 +699,9 @@ int32_t AudioEcManager::ReloadSourceForInputPipe(std::shared_ptr<AudioPipeInfo> 
     moduleInfo.bufferSize = std::to_string(targetInfo.bufferSize_);
     moduleInfo.format = AudioDefinitionPolicyUtils::enumToFormatStr[targetInfo.format_];
     moduleInfo.channelLayout = std::to_string(targetInfo.channelLayout_);
-    moduleInfo.sourceType = std::to_string(streamDesc->capturerInfo.sourceType);
-    AUDIO_INFO_LOG("sessionId:%{public}u rate:%{public}s channels:%{public}s bufferSize:%{public}s
-        format:%{public}s channelLayout:%{public}s sourceType: %{public}s", targetSessionId,
+    moduleInfo.sourceType = std::to_string(streamDesc->capturerInfo_.sourceType);
+    AUDIO_INFO_LOG("sessionId:%{public}u rate:%{public}s channels:%{public}s bufferSize:%{public}s"
+        "format:%{public}s channelLayout:%{public}s sourceType: %{public}s", targetSessionId,
         moduleInfo.rate.c_str(), moduleInfo.channels.c_str(), moduleInfo.bufferSize.c_str(),
         moduleInfo.format.c_str(), moduleInfo.channelLayout.c_str(), moduleInfo.sourceType.c_str());
 

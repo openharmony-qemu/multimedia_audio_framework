@@ -428,12 +428,12 @@ int32_t AudioCapturerSession::ReloadCapturerSessionForInputPipe(uint32_t session
         pipeInfo = AudioPipeManager::GetPipeManager()->FindPipeBySessionId(pipeList, sessionId);
     } else {
         auto routeFlag = AUDIO_INPUT_FLAG_AI;
-        pipeInfo = AudioPipeManager::GetPipeManager()->FindPipeinfoByNameAndFlag("primary", routeFlag);
+        pipeInfo = AudioPipeManager::GetPipeManager()->GetPipeinfoByNameAndFlag("primary", routeFlag);
     }
     CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, ERROR, "pipe is null");
 
     AUDIO_INFO_LOG("reload input pipe:%{public}s flag:%{public}u Id:%{public}u with opt:%{public}d",
-        pipeInfo->name.c_str(), pipeInfo->routeFlag_, sessionId, operation);
+        pipeInfo->name_.c_str(), pipeInfo->routeFlag_, sessionId, operation);
 
     uint32_t targetSessionId = sessionId;
     bool needReload = GetTargetSessionIdForInputPipe(pipeInfo, sessionId, targetSessionId, operation);
@@ -453,7 +453,7 @@ int32_t AudioCapturerSession::GetTargetSessionIdForInputPipe(std::shared_ptr<Aud
     uint32_t maxRunningPriority = GetMaxPriorityForInputPipe(pipeInfo, originSessionId, maxRunningDesc, true);
     uint32_t maxRemainingPriority = GetMaxPriorityForInputPipe(pipeInfo, originSessionId, maxRemainingDesc, false);
     auto maxRunningSource = maxRunningDesc.capturerInfo_.sourceType;
-    auto maxRemainingSource = maxRemainingDesc.capturerInfo.sourceType;
+    auto maxRemainingSource = maxRemainingDesc.capturerInfo_.sourceType;
     auto openSource = pipeInfo->moduleInfo_.sourceType;
     bool hasRunningExpectOrigin = (maxRunningSource != SOURCE_TYPE_INVALID) ? true : false;
     AUDIO_INFO_LOG("openSource:%{public}s, maxRunningDesc:<%{public}u,%{public}d>,"
@@ -471,13 +471,13 @@ int32_t AudioCapturerSession::GetTargetSessionIdForInputPipe(std::shared_ptr<Aud
     std::shared_ptr<AudioStreamDescriptor> originDescPtr = pipeInfo->streamDescMap_[originSessionId];
     auto originSource = originDescPtr->capturerInfo_.sourceType;
     auto originStreategy= sourceStrategyMap->find(originSource);
-    CHECK_AND_RETURN_RET_LOG(originStreategy != sourceStrategyMap->end(), false, can not find originStreategy);
+    CHECK_AND_RETURN_RET_LOG(originStreategy != sourceStrategyMap->end(), false, "can not find originStreategy");
     bool originHigher = originStreategy->second.priority >= maxRunningPriority;
     AUDIO_INFO_LOG("originStreamDesc:<%{public}u, %{public}d> priority:%{public}u",
         originSessionId, originSource, originStreategy->second.priority);
 
-    if ((operation == SESSION_OPERATION_START) && (((hasRunningExpectOrigin) && originHigher) 
-        || ((!hasRunningExpectOrigin) && (openSource != std::to_string(originSource)))) {
+    if ((operation == SESSION_OPERATION_START) && (((hasRunningExpectOrigin) && originHigher)
+        || ((!hasRunningExpectOrigin) && (openSource != std::to_string(originSource))))) {
         targetSessionId = originSessionId;
         return true;
     }
@@ -514,6 +514,7 @@ uint32_t AudioCapturerSession::GetMaxPriorityForInputPipe(const std::shared_ptr<
                 stream->CopyToStruct(maxPriorityDesc);
             }
         }
+    }
     return maxPriority;
 }
 
