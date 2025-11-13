@@ -51,7 +51,7 @@ int32_t VADeviceBrokerWrapperImpl::OnDevicesConnected(
     controllerStubImpl->SetVADeviceControllerCallback (controllerCallback);
     sptr<IRemoteObject> controllerStubImplObject = controllerStubImpl->AsObject();
     if (controllerStubImplObject == nullptr) {
-        delete controllerStubImpl;
+        AUDIO_ERR_LOG("Weird, controllerStubImplObject is nullptr");
         return ERROR;
     }
     ivaBroker->OnDevicesConnected(device, controllerStubImplObject);
