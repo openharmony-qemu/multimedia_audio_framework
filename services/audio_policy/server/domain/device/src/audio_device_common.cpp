@@ -190,7 +190,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPrefer
         }
 
         FetchDeviceInfo info = { rendererInfo.streamUsage, rendererInfo.streamUsage, -1,
-            bypassType, PIPE_TYPE_NORMAL_OUT, PRIVACY_TYPE_PUBLIC };
+            bypassType, PIPE_TYPE_OUT_NORMAL, PRIVACY_TYPE_PUBLIC };
         info.caller = "GetPreferredOutputDeviceDescInner";
         descs = audioRouterCenter_.FetchDupDevices(info);
         for (size_t i = 0; i < descs.size(); i++) {

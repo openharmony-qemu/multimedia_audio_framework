@@ -30,6 +30,7 @@ enum ConcurrencyAction {
     PLAY_BOTH,
     CONCEDE_INCOMING,
     CONCEDE_EXISTING,
+    CONCEDE_BOTH,
 };
 
 class AudioConcurrencyParser {
@@ -54,15 +55,18 @@ private:
         std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction> &concurrencyMap);
     std::shared_ptr<AudioXmlNode> curNode_ = nullptr;
     std::map<std::string, AudioPipeType> audioPipeTypeMap_ = {
-        {"primary out", PIPE_TYPE_NORMAL_OUT},
-        {"primary in", PIPE_TYPE_NORMAL_IN},
-        {"lowlatency out", PIPE_TYPE_LOWLATENCY_OUT},
-        {"lowlatency in", PIPE_TYPE_LOWLATENCY_IN},
-        {"offload", PIPE_TYPE_OFFLOAD},
-        {"multichannel", PIPE_TYPE_MULTICHANNEL},
-        {"direct", PIPE_TYPE_DIRECT_MUSIC},
-        {"call out", PIPE_TYPE_CALL_OUT},
-        {"call in", PIPE_TYPE_CALL_IN}
+        {"primary out", PIPE_TYPE_OUT_NORMAL},
+        {"primary in", PIPE_TYPE_IN_NORMAL},
+        {"fast out normal", PIPE_TYPE_OUT_LOWLATENCY},
+        {"fast in normal", PIPE_TYPE_IN_LOWLATENCY},
+        {"offload out", PIPE_TYPE_OUT_OFFLOAD},
+        {"multichannel out", PIPE_TYPE_OUT_MULTICHANNEL},
+        {"direct out normal", PIPE_TYPE_OUT_DIRECT_NORMAL},
+        {"voip out", PIPE_TYPE_OUT_VOIP},
+        {"voip in", PIPE_TYPE_IN_VOIP},
+        {"cellular call out", PIPE_TYPE_OUT_CELLULAR_CALL},
+        {"cellular call in", PIPE_TYPE_IN_CELLULAR_CALL},
+        {"primary in AI", PIPE_TYPE_IN_NORMAL_AI}
     };
 };
 } // namespace AudioStandard

@@ -1550,11 +1550,11 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_057, TestSize.Level1
     ptrRendererInClientInner->proxyObj_ = std::make_shared<AudioClientTrackerTest>();
 
     bool needStoreState = true;
-    ptrRendererInClientInner->rendererInfo_.pipeType = PIPE_TYPE_OFFLOAD;
+    ptrRendererInClientInner->rendererInfo_.pipeType = PIPE_TYPE_OUT_OFFLOAD;
     auto ret = ptrRendererInClientInner->RestoreAudioStream(needStoreState);
     EXPECT_EQ(ret, false);
 
-    ptrRendererInClientInner->rendererInfo_.pipeType = PIPE_TYPE_MULTICHANNEL;
+    ptrRendererInClientInner->rendererInfo_.pipeType = PIPE_TYPE_OUT_MULTICHANNEL;
     ret = ptrRendererInClientInner->RestoreAudioStream(needStoreState);
     EXPECT_EQ(ret, false);
 }
@@ -2263,7 +2263,7 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_083, TestSize.Level1
     bool needStoreState = false;
     EXPECT_FALSE(ptrRendererInClientInner->RestoreAudioStream(needStoreState));
 
-    ptrRendererInClientInner->rendererInfo_.pipeType = PIPE_TYPE_OFFLOAD;
+    ptrRendererInClientInner->rendererInfo_.pipeType = PIPE_TYPE_OUT_OFFLOAD;
     EXPECT_FALSE(ptrRendererInClientInner->RestoreAudioStream(needStoreState));
 }
 

@@ -140,7 +140,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, UpdateCapturerStreamInternal_001, TestSiz
     capturerChangeInfo->clientUID = 1001;
     capturerChangeInfo->createrUID = 1001;
     capturerChangeInfo->sessionId = 2001;
-    capturerChangeInfo->capturerInfo.pipeType = PIPE_TYPE_MULTICHANNEL;
+    capturerChangeInfo->capturerInfo.pipeType = PIPE_TYPE_OUT_MULTICHANNEL;
     collector.audioCapturerChangeInfos_.push_back(move(capturerChangeInfo));
 
     ret = collector.UpdateCapturerStreamInternal(streamChangeInfo);
@@ -648,9 +648,9 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_013, TestSize.Level1
     rendererChangeInfo->createrUID = streamChangeInfo.audioRendererChangeInfo.createrUID;
     rendererChangeInfo->clientUID = streamChangeInfo.audioRendererChangeInfo.clientUID;
     collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
-    collector.audioRendererChangeInfos_[0]->rendererInfo.pipeType = PIPE_TYPE_MULTICHANNEL;
+    collector.audioRendererChangeInfos_[0]->rendererInfo.pipeType = PIPE_TYPE_OUT_MULTICHANNEL;
 
-    pipeType = PIPE_TYPE_MULTICHANNEL;
+    pipeType = PIPE_TYPE_OUT_MULTICHANNEL;
     result = collector.ExistStreamForPipe(pipeType);
     EXPECT_TRUE(result);
 }
@@ -766,7 +766,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_018, TestSize.Level1
     rendererChangeInfo->clientUID = 1001;
     rendererChangeInfo->createrUID = 1001;
     rendererChangeInfo->sessionId = 2001;
-    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_MULTICHANNEL;
+    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_OUT_MULTICHANNEL;
     collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
 
     result = collector.CheckRendererInfoChanged(streamChangeInfo);
@@ -812,7 +812,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_020, TestSize.Level1
     rendererChangeInfo->clientUID = 1001;
     rendererChangeInfo->createrUID = 1001;
     rendererChangeInfo->sessionId = 2001;
-    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_MULTICHANNEL;
+    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_OUT_MULTICHANNEL;
     collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
 
     ret = collector.UpdateRendererStreamInternal(streamChangeInfo);
@@ -838,7 +838,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_021, TestSize.Level1
     rendererChangeInfo->clientUID = 1001;
     rendererChangeInfo->createrUID = 1001;
     rendererChangeInfo->sessionId = 2001;
-    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_MULTICHANNEL;
+    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_OUT_MULTICHANNEL;
     collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
 
     ret = collector.GetPipeType(sessionId, pipeType);
@@ -864,7 +864,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_022, TestSize.Level1
     rendererChangeInfo->clientUID = 1001;
     rendererChangeInfo->createrUID = 1001;
     rendererChangeInfo->sessionId = 2001;
-    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_MULTICHANNEL;
+    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_OUT_MULTICHANNEL;
     collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
 
     ret = collector.GetRendererDeviceInfo(sessionId, deviceInfo);
@@ -880,13 +880,13 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_023, TestSize.Level1
 {
     AudioStreamCollector collector;
     int32_t sessionId = 2001;
-    AudioPipeType normalPipe = PIPE_TYPE_NORMAL_OUT;
+    AudioPipeType normalPipe = PIPE_TYPE_OUT_NORMAL;
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
 
     rendererChangeInfo->clientUID = 1001;
     rendererChangeInfo->createrUID = 1001;
     rendererChangeInfo->sessionId = 2001;
-    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_MULTICHANNEL;
+    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_OUT_MULTICHANNEL;
     collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
 
     int32_t ret = collector.UpdateRendererPipeInfo(sessionId, normalPipe);
@@ -988,7 +988,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_029, TestSize.Level1
     rendererChangeInfo->clientUID = 1001;
     rendererChangeInfo->createrUID = 1001;
     rendererChangeInfo->sessionId = 2001;
-    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_MULTICHANNEL;
+    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_OUT_MULTICHANNEL;
     collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
 
     EXPECT_NO_THROW(

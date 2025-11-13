@@ -194,7 +194,7 @@ void InitAudioRendererInfo(AudioRendererInfo &info)
     info.sceneType = TEST_STRING_VALUE_1;
     info.spatializationEnabled = true;
     info.headTrackingEnabled = false;
-    info.pipeType = PIPE_TYPE_DIRECT_OUT;
+    info.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
     info.samplingRate = SAMPLE_RATE_44100;
     info.encodingType = TEST_VALUE_1;
     info.channelLayout = TEST_VALUE_3;
@@ -215,7 +215,7 @@ void InitAudioCapturerInfo(AudioCapturerInfo &info)
     info.sceneType = SOURCE_TYPE_WAKEUP;
     info.capturerFlags = TEST_VALUE_1;
     info.originalFlag = TEST_VALUE_2;
-    info.pipeType = PIPE_TYPE_DIRECT_OUT;
+    info.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
     info.samplingRate = SAMPLE_RATE_44100;
     info.encodingType = TEST_VALUE_1;
     info.channelLayout = TEST_VALUE_2;

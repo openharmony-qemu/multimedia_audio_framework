@@ -115,7 +115,7 @@ void AudioOffloadStream::UnsetOffloadStatusInternal(uint32_t sessionId, OffloadA
 
     AudioServerProxy::GetInstance().UnsetOffloadModeProxy(sessionId);
     audioPolicyManager_.ResetOffloadSessionId(offloadAdapter);
-    streamCollector_.UpdateRendererPipeInfo(sessionId, PIPE_TYPE_NORMAL_OUT);
+    streamCollector_.UpdateRendererPipeInfo(sessionId, PIPE_TYPE_OUT_NORMAL);
 }
 
 void AudioOffloadStream::Dump(std::string &dumpString)

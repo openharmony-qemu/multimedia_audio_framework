@@ -74,7 +74,7 @@ void RendererInServerUnitTest::SetUp(void)
     processConfig.deviceType = DEVICE_TYPE_WIRED_HEADSET;
     processConfig.streamInfo = testStreamInfo;
     processConfig.streamType = STREAM_MUSIC;
-    processConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    processConfig.rendererInfo.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
     processConfig.rendererInfo.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
     streamListener = streamListenerHolder;
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
@@ -2177,7 +2177,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerInitDupStream_001, TestSize.L
     AudioProcessConfig tempProcessConfig;
     tempProcessConfig.streamInfo = testStreamInfo;
     tempProcessConfig.streamType = STREAM_MUSIC;
-    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
     tempProcessConfig.deviceType = DEVICE_TYPE_INVALID;
     tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
     std::shared_ptr<RendererInServer> tempRendererInServer;
@@ -2279,7 +2279,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerEnableDualTone_003, TestSize.
     AudioProcessConfig tempProcessConfig;
     tempProcessConfig.streamInfo = testStreamInfo;
     tempProcessConfig.streamType = STREAM_MUSIC;
-    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
     tempProcessConfig.deviceType = DEVICE_TYPE_INVALID;
     tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
     std::shared_ptr<RendererInServer> tempRendererInServer;
@@ -2363,7 +2363,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerSetOffloadMode_001, TestSize.
 
     tempProcessConfig.streamInfo = testStreamInfo;
     tempProcessConfig.streamType = STREAM_MUSIC;
-    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
     tempProcessConfig.deviceType = DEVICE_TYPE_INVALID;
     tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
     tempRendererInServer = std::make_shared<RendererInServer>(tempProcessConfig, streamListener);
@@ -2389,7 +2389,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerSetOffloadMode_002, TestSize.
 
     tempProcessConfig.streamInfo = testStreamInfo;
     tempProcessConfig.streamType = STREAM_MUSIC;
-    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
     tempProcessConfig.deviceType = DEVICE_TYPE_INVALID;
     tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
     tempRendererInServer = std::make_shared<RendererInServer>(tempProcessConfig, streamListener);
@@ -2417,7 +2417,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerSetOffloadMode_003, TestSize.
 
     tempProcessConfig.streamInfo = testStreamInfo;
     tempProcessConfig.streamType = STREAM_MUSIC;
-    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
     tempProcessConfig.deviceType = DEVICE_TYPE_INVALID;
     tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
     tempRendererInServer = std::make_shared<RendererInServer>(tempProcessConfig, streamListener);
@@ -2450,7 +2450,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerUnsetOffloadMode_001, TestSiz
 
     tempProcessConfig.streamInfo = testStreamInfo;
     tempProcessConfig.streamType = STREAM_MUSIC;
-    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
     tempProcessConfig.deviceType = DEVICE_TYPE_INVALID;
     tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
     tempRendererInServer = std::make_shared<RendererInServer>(tempProcessConfig, streamListener);
@@ -2476,7 +2476,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerUnsetOffloadMode_002, TestSiz
 
     tempProcessConfig.streamInfo = testStreamInfo;
     tempProcessConfig.streamType = STREAM_MUSIC;
-    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
     tempProcessConfig.deviceType = DEVICE_TYPE_INVALID;
     tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
     tempRendererInServer = std::make_shared<RendererInServer>(tempProcessConfig, streamListener);
@@ -2504,7 +2504,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerUnsetOffloadMode_003, TestSiz
 
     tempProcessConfig.streamInfo = testStreamInfo;
     tempProcessConfig.streamType = STREAM_MUSIC;
-    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
     tempProcessConfig.deviceType = DEVICE_TYPE_INVALID;
     tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
     tempRendererInServer = std::make_shared<RendererInServer>(tempProcessConfig, streamListener);
@@ -2537,7 +2537,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerUpdateSpatializationState_001
 
     tempProcessConfig.streamInfo = testStreamInfo;
     tempProcessConfig.streamType = STREAM_MUSIC;
-    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
     tempProcessConfig.deviceType = DEVICE_TYPE_INVALID;
     tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
     tempRendererInServer = std::make_shared<RendererInServer>(tempProcessConfig, streamListener);

@@ -389,16 +389,16 @@ IAudioStream::StreamClass AudioCapturerPrivate::DecideStreamClassAndUpdateCaptur
         if (flag & AUDIO_INPUT_FLAG_VOIP) {
             capturerInfo_.originalFlag = AUDIO_FLAG_VOIP_FAST;
             capturerInfo_.capturerFlags = AUDIO_FLAG_VOIP_FAST;
-            capturerInfo_.pipeType = PIPE_TYPE_CALL_IN;
+            capturerInfo_.pipeType = PIPE_TYPE_IN_VOIP;
             ret = IAudioStream::StreamClass::VOIP_STREAM;
         } else {
             capturerInfo_.capturerFlags = AUDIO_FLAG_MMAP;
-            capturerInfo_.pipeType = PIPE_TYPE_LOWLATENCY_IN;
+            capturerInfo_.pipeType = PIPE_TYPE_IN_LOWLATENCY;
             ret = IAudioStream::StreamClass::FAST_STREAM;
         }
     } else {
         capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
-        capturerInfo_.pipeType = PIPE_TYPE_NORMAL_IN;
+        capturerInfo_.pipeType = PIPE_TYPE_IN_NORMAL;
     }
     AUDIO_INFO_LOG("Route flag: %{public}u, streamClass: %{public}d, capturerFlags: %{public}d, pipeType: %{public}d",
         flag, ret, capturerInfo_.capturerFlags, capturerInfo_.pipeType);
@@ -1377,10 +1377,10 @@ void AudioCapturerPrivate::WriteOverflowEvent() const
     if (GetOverflowCountInner() < WRITE_OVERFLOW_NUM) {
         return;
     }
-    AudioPipeType pipeType = PIPE_TYPE_NORMAL_IN;
+    AudioPipeType pipeType = PIPE_TYPE_IN_NORMAL;
     IAudioStream::StreamClass streamClass = audioStream_->GetStreamClass();
     if (streamClass == IAudioStream::FAST_STREAM) {
-        pipeType = PIPE_TYPE_LOWLATENCY_IN;
+        pipeType = PIPE_TYPE_IN_LOWLATENCY;
     }
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::PERFORMANCE_UNDER_OVERRUN_STATS,

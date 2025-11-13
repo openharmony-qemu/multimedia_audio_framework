@@ -1208,11 +1208,11 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
             uint32_t spanSizeInFrame = processList_[i]->GetSpanSizeInFrame();
             if (IsBufferDataInsufficient(readableDataFrame, spanSizeInFrame)) {
                 isAllReady = false;
-                AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_LOWLATENCY_OUT,
+                AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_OUT_LOWLATENCY,
                     processList_[i]->GetAppInfo().appUid);
                 continue;
             } else {
-                AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_LOWLATENCY_OUT,
+                AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_OUT_LOWLATENCY,
                     processList_[i]->GetAppInfo().appUid);
             }
             // process Status is RUNNING && buffer status is WRITE_DONE

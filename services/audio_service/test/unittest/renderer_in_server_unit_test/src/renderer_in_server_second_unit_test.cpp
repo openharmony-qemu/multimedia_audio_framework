@@ -97,7 +97,7 @@ void RendererInServerExtUnitTest::SetUp(void)
     processConfig.deviceType = DEVICE_TYPE_WIRED_HEADSET;
     processConfig.streamInfo = testStreamInfo;
     processConfig.streamType = STREAM_MUSIC;
-    processConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    processConfig.rendererInfo.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
     processConfig.rendererInfo.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
     streamListener = streamListenerHolder;
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
@@ -1320,7 +1320,7 @@ HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_001, TestSize.Level1)
     AudioProcessConfig tempProcessConfig;
     tempProcessConfig.streamInfo = testStreamInfo;
     tempProcessConfig.streamType = STREAM_MUSIC;
-    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
     tempProcessConfig.deviceType = DEVICE_TYPE_SPEAKER;
     tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
     std::shared_ptr<RendererInServer> tmpRendererInServer;
@@ -1340,7 +1340,7 @@ HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_002, TestSize.Level1)
     AudioProcessConfig tempProcessConfig;
     tempProcessConfig.streamInfo = testStreamInfo;
     tempProcessConfig.streamType = STREAM_ALARM;
-    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
     tempProcessConfig.deviceType = DEVICE_TYPE_WIRED_HEADSET;
     tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
     std::shared_ptr<RendererInServer> tmpRendererInServer;
@@ -1360,7 +1360,7 @@ HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_003, TestSize.Level1)
     AudioProcessConfig tempProcessConfig;
     tempProcessConfig.streamInfo = testStreamInfo;
     tempProcessConfig.streamType = STREAM_MUSIC;
-    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
     tempProcessConfig.deviceType = DEVICE_TYPE_WIRED_HEADSET;
     tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
     tempProcessConfig.streamInfo.samplingRate = SAMPLE_RATE_44100;
@@ -1381,7 +1381,7 @@ HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_004, TestSize.Level1)
     AudioProcessConfig tempProcessConfig;
     tempProcessConfig.streamInfo = testStreamInfo;
     tempProcessConfig.streamType = STREAM_MUSIC;
-    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
     tempProcessConfig.deviceType = DEVICE_TYPE_WIRED_HEADSET;
     tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
     tempProcessConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
@@ -1403,7 +1403,7 @@ HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_005, TestSize.Level1)
     AudioProcessConfig tempProcessConfig;
     tempProcessConfig.streamInfo = testStreamInfo;
     tempProcessConfig.streamType = STREAM_MUSIC;
-    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
     tempProcessConfig.deviceType = DEVICE_TYPE_WIRED_HEADSET;
     tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
     tempProcessConfig.streamInfo.samplingRate = SAMPLE_RATE_192000;
@@ -1424,7 +1424,7 @@ HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_006, TestSize.Level1)
     AudioProcessConfig tempProcessConfig;
     tempProcessConfig.streamInfo = testStreamInfo;
     tempProcessConfig.streamType = STREAM_MUSIC;
-    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_OUT_DIRECT_NORMAL;
     tempProcessConfig.deviceType = DEVICE_TYPE_WIRED_HEADSET;
     tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
     tempProcessConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
