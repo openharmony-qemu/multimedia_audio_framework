@@ -2519,7 +2519,7 @@ void AudioCoreService::HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> &
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is null");
     SourceType sourceType = streamDesc->capturerInfo_.sourceType;
     if (specialSourceTypeSet_.count(sourceType) == 0) {
-        CHECK_AND_RETURN_RET_LOG(pipeInfo->routeFlag_ != AUDIO_INPUT_FLAGAI, "AI Pipe need not PrepareNormalSource");
+        CHECK_AND_RETURN_LOG(pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_AI, "AI Pipe need not PrepareNormalSource");
         audioEcManager_.PrepareNormalSource(pipeInfo, streamDesc);
     }
 }
