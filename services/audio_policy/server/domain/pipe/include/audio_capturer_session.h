@@ -69,6 +69,11 @@ public:
         const AudioEnhancePropertyArray &newPropertyArray);
     CapturerState GetCapturerState();
     int32_t ReloadCaptureSession(uint32_t sessionId, SessionOperation operation);
+    int32_t ReloadCapturerSessionForInputPipe(uint32_t sessionId, SessionOperation operation);
+    int32_t GetTargetSessionIdForInputPipe(std::shared_ptr<AudioPipeInfo> pipeInfo,
+        uint32_t originSessionId, uint32_t &targetSessionId, SessionOperation operation);
+    uint32_t GetMaxPriorityForInputPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
+        uint32_t sessionId, AudioStreamDescriptor &maxPriorityDesc, bool onlyRunning);
     int32_t ReloadCaptureSessionSoftLink();
     int32_t SetHearingAidReloadFlag(const bool hearingAidReloadFlag);
     int32_t ReloadCaptureSoftLink(std::shared_ptr<AudioPipeInfo> &pipeInfo, const AudioModuleInfo &moduleInfo);
@@ -118,6 +123,8 @@ private:
     bool IsStreamValid(const std::shared_ptr<AudioStreamDescriptor> &stream);
     bool CompareIndependentxmlPriority(const std::shared_ptr<AudioPipeInfo> &pipe,
         uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession);
+    bool GetMaxPriorityStreamForInputPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
+        uint32_t sessionId, AudioStreamDescriptor &maxPriorityDesc, bool onlyRunning);
     bool IsRemainingSourceIndependent();
     bool hearingAidReloadFlag_ = false;
 private:
