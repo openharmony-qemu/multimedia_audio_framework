@@ -586,16 +586,27 @@ static napi_value startVBEffect(napi_env env, napi_callback_info info)
     size_t argc = 4;
     napi_value argv[4] = {nullptr, nullptr, nullptr, nullptr};
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-    std::string inputId, voiceBeautifierId, selectNodeId;
-
-    //解析参数
-    napi_status status = getStartVBParameters(env, argv, inputId, mode, voiceBeautifierId, selectNodeId);
-    if (status != napi_ok) {
-        return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_PARAMETER_ANALYSIS_ERROR));
-    }
+    // inputId
+    std::string inputId;
+    napi_status status = parseNapiString(env, argv[0], inputId);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---startVBEffect---inputId==%{public}s",
+                 inputId.c_str());
+    // 获取二参、美化类型
+    int mode = -1;
+    napi_get_value_int32(env, argv[1], &mode);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---startVBEffect--mode==%{public}zd", mode);
+    // 获取三参、效果节点id
+    std::string voiceBeautifierId;
+    status = parseNapiString(env, argv[2], voiceBeautifierId);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---uuid==%{public}s", voiceBeautifierId.c_str());
+    // 获取当前选中的节点id
+    std::string selectNodeId;
+    status = parseNapiString(env, argv[3], selectNodeId);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---startVBEffect---selectNodeId==%{public}s",
+                 selectNodeId.c_str());
      //调用添加美化效果节点接口
     napi_value ret;
-    int result = AddVBEffectNode(inputId,mode,voiceBeautifierId,selectNodeId);
+    int result = AddVBEffectNode(params.inputId, params.mode, params.voiceBeautifierId, params.selectNodeId);
 
     napi_create_int64(env, result, &ret);
     return ret;
@@ -611,7 +622,7 @@ static napi_value resetVBEffect(napi_env env, napi_callback_info info)
     std::string inputId;
     std::string voiceBeautifierId;
     //解析参数
-    napi_status status = getResetVBParameters(env, argv, inputId, mode, voiceBeautifierId);    
+    napi_status status = getResetVBParameters(env, argv, inputId, mode, voiceBeautifierId);
     if (status != napi_ok) {
         return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_PARAMETER_ANALYSIS_ERROR));
     }

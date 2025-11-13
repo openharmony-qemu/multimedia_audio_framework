@@ -34,26 +34,13 @@ enum {
  
 int AddVBEffectNode(std::string inputId, int mode, std::string voiceBeautifierId, std::string selectNodeId)
 {
-    OH_VoiceBeautifierType type;
-    switch (mode) {
-        case 1:
-            type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR;
-            break;
-        case 2:
-            type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_THEATRE;
-            break;
-        case 3:
-            type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CD;
-            break;
-        case 4:
-            type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_RECORDING_STUDIO;
-            break;
-        default:
-            type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR;
-            break;
-    }
- 
- 
+    static constexpr OH_VoiceBeautifierType TYPE_MAP[] = {
+        OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR,
+        OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_THEATRE,
+        OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CD,
+        OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_RECORDING_STUDIO
+    };
+    OH_VoiceBeautifierType type = (mode < sizeof(TYPE_MAP) / sizeof(TYPE_MAP[0])) ? TYPE_MAP[mode] : TYPE_MAP[0];
     Node node = createNodeByType(voiceBeautifierId, OH_AudioNode_Type::EFFECT_NODE_TYPE_VOICE_BEAUTIFIER);
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_SetVoiceBeautifierType(node.physicalNode, type);
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
@@ -79,24 +66,13 @@ int AddVBEffectNode(std::string inputId, int mode, std::string voiceBeautifierId
  
 int ModifyVBEffectNode(std::string inputId, int mode, std::string voiceBeautifierId)
 {
-    OH_VoiceBeautifierType type;
-    switch (mode) {
-        case 1:
-            type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR;
-            break;
-        case 2:
-            type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_THEATRE;
-            break;
-        case 3:
-            type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CD;
-            break;
-        case 4:
-            type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_RECORDING_STUDIO;
-            break;
-        default:
-            type = OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR;
-            break;
-    }
+    static constexpr OH_VoiceBeautifierType TYPE_MAP[] = {
+        OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CLEAR,
+        OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_THEATRE,
+        OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_CD,
+        OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_RECORDING_STUDIO
+    };
+    OH_VoiceBeautifierType type = (mode < sizeof(TYPE_MAP) / sizeof(TYPE_MAP[0])) ? TYPE_MAP[mode] : TYPE_MAP[0];
  
     Node node = nodeManager->GetNodeById(voiceBeautifierId);
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_SetVoiceBeautifierType(node.physicalNode, type);
@@ -108,22 +84,6 @@ int ModifyVBEffectNode(std::string inputId, int mode, std::string voiceBeautifie
  
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, VB_NODE_TAG, "audioEditTest---resetVBEffect: operation success");
     return result;
-}
- 
-napi_status getStartVBParameters(napi_env env, napi_value *argv, std::string &inputId, int &mode,
-                                 std::string &voiceBeautifierId, std::string &selectNodeId)
-{
-    napi_status status = parseNapiString(env, argv[ARG_0], inputId);
-    status = napi_get_value_int32(env, argv[ARG_1], &mode);
-    status = parseNapiString(env, argv[ARG_2], voiceBeautifierId);
-    if (!selectNodeId.empty()) {
-        status = parseNapiString(env, argv[ARG_3], selectNodeId);
-    }
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, VB_NODE_TAG,
-                 "audioEditTest startVBEffect inputId: %{public}s, mode: %{public}d, voiceBeautifierId: %{public}s, "
-                 "selectNodeId:%{public}s",
-                 inputId.c_str(), mode, voiceBeautifierId.c_str(), selectNodeId.c_str());
-    return status;
 }
  
 napi_status getResetVBParameters(napi_env env, napi_value *argv, std::string &inputId, int &mode,

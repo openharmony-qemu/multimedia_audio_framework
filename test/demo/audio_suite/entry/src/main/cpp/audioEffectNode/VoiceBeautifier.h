@@ -9,13 +9,17 @@
 #include "napi/native_api.h"
  
 class VoiceBeautifier {};
+
+struct StartVBParameters {
+    std::string inputId;
+    int mode = -1;
+    std::string voiceBeautifierId;
+    std::string selectNodeId; // 可选参数，为空表示不指定节点
+};
  
 int AddVBEffectNode(std::string inputId, int mode, std::string voiceBeautifierId, std::string selectNodeId);
  
 int ModifyVBEffectNode(std::string inputId, int mode, std::string voiceBeautifierId);
- 
-napi_status getStartVBParameters(napi_env env, napi_value *argv, std::string &inputId, int &mode,
-                                 std::string &voiceBeautifierId, std::string &selectNodeId);
  
 napi_status getResetVBParameters(napi_env env, napi_value *argv, std::string &inputId, int &mode,
                                  std::string &voiceBeautifierId);

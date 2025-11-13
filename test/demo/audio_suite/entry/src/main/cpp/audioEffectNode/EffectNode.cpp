@@ -49,7 +49,8 @@ int32_t AddEffectNodeToNodeManager(std::string &inputNodeId, std::string &effect
     return result;
 }
 
-Node CreateNodeByType(std::string uuid, OH_AudioNode_Type nodeType) {
+Node CreateNodeByType(std::string uuid, OH_AudioNode_Type nodeType)
+{
     OH_AudioSuite_Result result = nodeManager->createNode(uuid, nodeType);
     if (result != AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, EFFECT_NODE_TAG, "audioEditTest---create Node Failed");
