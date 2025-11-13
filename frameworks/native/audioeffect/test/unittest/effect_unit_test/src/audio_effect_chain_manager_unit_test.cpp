@@ -1262,70 +1262,6 @@ HWTEST(AudioEffectChainManagerUnitTest, ReturnEffectChannelInfo_004, TestSize.Le
 }
 
 /**
-* @tc.name   : Test ReturnMultiChannelInfo API
-* @tc.number : ReturnMultiChannelInfo_001
-* @tc.desc   : Test ReturnMultiChannelInfo interface.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, ReturnMultiChannelInfo_001, TestSize.Level1)
-{
-    string sceneType = "SCENE_MOVIE";
-    uint32_t channels = 2;
-    uint64_t channelLayout = 0x3;
-    string sessionID = "123456";
-
-    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
-    int32_t result = AudioEffectChainManager::GetInstance()->ReturnMultiChannelInfo(&channels, &channelLayout);
-    EXPECT_EQ(SUCCESS, result);
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
-* @tc.name   : Test ReturnMultiChannelInfo API
-* @tc.number : ReturnMultiChannelInfo_002
-* @tc.desc   : Test ReturnMultiChannelInfo interface.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, ReturnMultiChannelInfo_002, TestSize.Level1)
-{
-    string sceneType = "SCENE_MOVIE";
-    uint32_t channels = 3;
-    uint64_t channelLayout = 0x3;
-    string sessionID = "123456";
-
-    const char *sceneType2 = "SCENE_MUSIC";
-    std::string sceneTypeAndDeviceKey = "SCENE_MUSIC_&_DEVICE_TYPE_SPEAKER";
-    std::shared_ptr<AudioEffectChain> audioEffectChain =
-        AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneType2, true);
-
-    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
-    int32_t result = AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamic(sceneType2);
-    EXPECT_EQ(ERROR, result);
-    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
-    result = AudioEffectChainManager::GetInstance()->ReturnMultiChannelInfo(&channels, &channelLayout);
-    EXPECT_EQ(SUCCESS, result);
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
-* @tc.name   : Test ReturnMultiChannelInfo API
-* @tc.number : ReturnMultiChannelInfo_003
-* @tc.desc   : Test ReturnMultiChannelInfo interface.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, ReturnMultiChannelInfo_003, TestSize.Level1)
-{
-    string sceneType = "SCENE_MOVIE";
-    uint32_t channels = 3;
-    uint64_t channelLayout = 0x3;
-    string sessionID = "123456";
-
-    AudioEffectChainManager::GetInstance()->isInitialized_ = false;
-    AudioEffectChainManager::GetInstance()->initializedLogFlag_ = false;
-    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, DEFAULT_INFO);
-    int32_t result = AudioEffectChainManager::GetInstance()->ReturnMultiChannelInfo(&channels, &channelLayout);
-    EXPECT_EQ(SUCCESS, result);
-    AudioEffectChainManager::GetInstance()->ResetInfo();
-}
-
-/**
 * @tc.name   : Test UpdateParamExtra API
 * @tc.number : UpdateParamExtra_001
 * @tc.desc   : Test UpdateParamExtra interface.
@@ -2916,6 +2852,38 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_004, TestSi
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
+/**
+* @tc.name   : Test CheckProcessClusterInstances API
+* @tc.number : CheckProcessClusterInstances_005
+* @tc.desc   : Test CheckProcessClusterInstances interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_005, TestSize.Level1)
+{
+    std::string sceneType = "test";
+    std::string  scene = "SCENE_DEFAULT";
+    std::string effect = sceneType + "_&_" + AudioEffectChainManager::GetInstance()->GetDeviceTypeName();
+    std::string defaultScene = scene + "_&_" + AudioEffectChainManager::GetInstance()->GetDeviceTypeName();
+
+    auto headTracker = std::make_shared<HeadTracker>();
+    std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>("123", headTracker);
+    ASSERT_TRUE(audioEffectChain != nullptr);
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({effect, audioEffectChain});
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[effect] = 1;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({defaultScene, audioEffectChain});
+
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
+    auto ret = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
+    EXPECT_EQ(ret, USE_DEFAULT_PROCESSCLUSTER);
+
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[defaultScene] = nullptr;
+    ret = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
+    EXPECT_EQ(ret, NO_NEED_TO_CREATE_PROCESSCLUSTER);
+
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = false;
+    ret = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
+    EXPECT_EQ(ret, NO_NEED_TO_CREATE_PROCESSCLUSTER);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
 /*
 * @tc.name   : Test InitEffectBufferInner
 * @tc.number : InitEffectBufferInner_001

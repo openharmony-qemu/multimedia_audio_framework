@@ -53,6 +53,7 @@ static size_t g_pos;
 const size_t THRESHOLD = 10;
 const int32_t NUM_2 = 2;
 const int32_t TEST_HANDLE_SIZE = 10;
+typedef void (*TestFuncs)();
 
 vector<EffectChain> DEFAULT_EFFECT_CHAINS = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
 vector<shared_ptr<AudioEffectLibEntry>> DEFAULT_EFFECT_LIBRARY_LIST = {};
@@ -215,17 +216,6 @@ void EffectChainManagerReturnEffectChannelInfoFuzzTest()
     uint32_t processChannels = GetData<uint32_t>();
     uint64_t processChannelLayout = GetData<uint64_t>();
     EffectChainManagerReturnEffectChannelInfo(SCENETYPEMUSIC, &processChannels, &processChannelLayout);
-#endif
-}
-
-void EffectChainManagerReturnMultiChannelInfoFuzzTest()
-{
-#ifdef SUPPORT_OLD_ENGINE
-    EffectChainManagerInitCb(SCENETYPEMUSIC);
-
-    uint32_t processChannels = GetData<uint32_t>();
-    uint64_t processChannelLayout = GetData<uint64_t>();
-    EffectChainManagerReturnMultiChannelInfo(&processChannels, &processChannelLayout);
 #endif
 }
 
@@ -1177,16 +1167,13 @@ void EnhanceChainManagerUpdatePropertyAndSendToAlgoFuzzTest()
     audioEnhanceChainManagerImpl.UpdatePropertyAndSendToAlgo(deviceType);
 }
 
-typedef void (*TestFuncs[58])();
-
-TestFuncs g_testFuncs = {
+TestFuncs g_testFuncs[] = {
     EffectChainManagerInitCbFuzzTest,
     EffectChainManagerCreateCbFuzzTest,
     EffectChainManagerCheckEffectOffloadFuzzTest,
     EffectChainManagerAddSessionInfoFuzzTest,
     EffectChainManagerDeleteSessionInfoFuzzTest,
     EffectChainManagerReturnEffectChannelInfoFuzzTest,
-    EffectChainManagerReturnMultiChannelInfoFuzzTest,
     EffectChainManagerSceneCheckFuzzTest,
     EffectChainManagerProcessFuzzTest,
     EffectChainManagerMultichannelUpdateFuzzTest,

@@ -79,12 +79,6 @@ static int32_t FindEffectLib(const std::string &effect,
     return ERROR;
 }
 
-static bool IsChannelLayoutSupported(const uint64_t channelLayout)
-{
-    return find(AUDIO_EFFECT_SUPPORTED_CHANNELLAYOUTS.begin(),
-        AUDIO_EFFECT_SUPPORTED_CHANNELLAYOUTS.end(), channelLayout) != AUDIO_EFFECT_SUPPORTED_CHANNELLAYOUTS.end();
-}
-
 AudioEffectChainManager::AudioEffectChainManager()
 {
     effectToLibraryEntryMap_.clear();
@@ -331,7 +325,8 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(std::string &sceneTy
 {
     Trace trace("AudioEffectChainManager::SetAudioEffectChainDynamic: " + sceneType);
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
-    CHECK_AND_RETURN_RET_LOG(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey), ERROR,
+    CHECK_AND_RETURN_RET_LOG(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) &&
+        sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr, ERROR,
         "SceneType [%{public}s] does not exist, failed to set", sceneType.c_str());
 
     std::shared_ptr<AudioEffectChain> audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
@@ -763,35 +758,6 @@ int32_t AudioEffectChainManager::ReturnEffectChannelInfo(const std::string &scen
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     return ReturnEffectChannelInfoInner(sceneType, channels, channelLayout);
 }
-
-// LCOV_EXCL_START
-int32_t AudioEffectChainManager::ReturnMultiChannelInfo(uint32_t *channels, uint64_t *channelLayout)
-{
-    std::lock_guard<std::mutex> lock(dynamicMutex_);
-    uint32_t tmpChannelCount = DEFAULT_NUM_CHANNEL;
-    uint64_t tmpChannelLayout = DEFAULT_NUM_CHANNELLAYOUT;
-    bool channelUpdateFlag = false;
-    for (auto it = sceneTypeToSessionIDMap_.begin(); it != sceneTypeToSessionIDMap_.end(); it++) {
-        std::set<std::string> sessions = sceneTypeToSessionIDMap_[it->first];
-        for (auto s = sessions.begin(); s != sessions.end(); ++s) {
-            SessionEffectInfo info = sessionIDToEffectInfoMap_[*s];
-            if (info.channels > tmpChannelCount &&
-                info.channels <= DSP_MAX_NUM_CHANNEL &&
-                !ExistAudioEffectChainInner(it->first, info.sceneMode) &&
-                IsChannelLayoutSupported(info.channelLayout)) {
-                tmpChannelCount = info.channels;
-                tmpChannelLayout = info.channelLayout;
-                channelUpdateFlag = true;
-            }
-        }
-    }
-    if (channelUpdateFlag) {
-        *channels = tmpChannelCount;
-        *channelLayout = tmpChannelLayout;
-    }
-    return SUCCESS;
-}
-// LCOV_EXCL_STOP
 
 int32_t AudioEffectChainManager::SessionInfoMapAdd(const std::string &sessionID, const SessionEffectInfo &info)
 {
@@ -1930,8 +1896,8 @@ ProcessClusterOperation AudioEffectChainManager::CheckProcessClusterInstances(co
 {
     Trace trace("AudioEffectChainManager::CheckProcessClusterInstances: " + sceneType);
     std::lock_guard<std::mutex> lock(dynamicMutex_);
-    CHECK_AND_RETURN_RET_LOG(sceneType != "SCENE_EXTRA", CREATE_EXTRA_PROCESSCLUSTER, "scene type is extra");
-    CHECK_AND_RETURN_RET_LOG(!GetOffloadEnabled(), USE_NONE_PROCESSCLUSTER, "offload, use none processCluster");
+    CHECK_AND_RETURN_RET(sceneType != "SCENE_EXTRA", CREATE_EXTRA_PROCESSCLUSTER);
+    CHECK_AND_RETURN_RET(!GetOffloadEnabled(), USE_NONE_PROCESSCLUSTER);
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     std::string defaultSceneTypeAndDeviceKey = DEFAULT_SCENE_TYPE + "_&_" + GetDeviceTypeName();
 
@@ -1940,33 +1906,23 @@ ProcessClusterOperation AudioEffectChainManager::CheckProcessClusterInstances(co
         sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] > 0) {
         if (sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] == nullptr) {
             AUDIO_WARNING_LOG("scene type %{public}s has null process cluster", sceneTypeAndDeviceKey.c_str());
+        } else if (isDefaultEffectChainExisted_ && sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] ==
+            sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey]) {
+            return USE_DEFAULT_PROCESSCLUSTER;
         } else {
-            AUDIO_INFO_LOG("processCluster %{public}s already exist, "
-                "current count is %{public}d, default count is %{public}d",
-                sceneType.c_str(), sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey], defaultEffectChainCount_);
-            if (isDefaultEffectChainExisted_ && sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] ==
-                sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey]) {
-                return USE_DEFAULT_PROCESSCLUSTER;
-            }
             return NO_NEED_TO_CREATE_PROCESSCLUSTER;
         }
     }
 
     bool isPriorScene = std::find(priorSceneList_.begin(), priorSceneList_.end(), sceneType) != priorSceneList_.end();
     if (isPriorScene) {
-        AUDIO_INFO_LOG("create prior process cluster: %{public}s", sceneType.c_str());
         return CREATE_NEW_PROCESSCLUSTER;
     }
     if ((maxEffectChainCount_ - static_cast<int32_t>(sceneTypeToSpecialEffectSet_.size())) > 1) {
-        AUDIO_INFO_LOG("max audio process cluster count not reached, create special process cluster: %{public}s",
-            sceneType.c_str());
         return CREATE_NEW_PROCESSCLUSTER;
     } else if (!isDefaultEffectChainExisted_) {
-        AUDIO_INFO_LOG("max audio process cluster count reached, create current and default process cluster");
         return CREATE_DEFAULT_PROCESSCLUSTER;
     } else {
-        AUDIO_INFO_LOG("max audio process cluster count reached and default already exist: %{public}d",
-            defaultEffectChainCount_);
         return USE_DEFAULT_PROCESSCLUSTER;
     }
 }
