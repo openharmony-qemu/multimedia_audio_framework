@@ -16,6 +16,7 @@
 #ifndef HPAE_OFFLOAD_SINK_OUTPUT_NODE_H
 #define HPAE_OFFLOAD_SINK_OUTPUT_NODE_H
 #include <memory>
+#include "hpae_backoff_controller.h"
 #include "hpae_node.h"
 #include "hpae_pcm_buffer.h"
 #include "audio_info.h"
@@ -122,8 +123,8 @@ private:
     uint32_t suspendCount_ = 0;
     float speed_ = 1.0f;
     uint64_t hdiRealPos_ = 0;
-    // renderframe failed count
-    uint32_t retryCount_ = 0;
+
+    HpaeBackoffController backoffController_;
 };
 
 }  // namespace HPAE

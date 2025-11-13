@@ -16,6 +16,7 @@
 #ifndef HPAE_SOURCE_INTPUT_NODE_H
 #define HPAE_SOURCE_INTPUT_NODE_H
 #include <memory>
+#include "hpae_backoff_controller.h"
 #include "hpae_node.h"
 #include "hpae_pcm_buffer.h"
 #include "source/i_audio_capture_source.h"
@@ -91,6 +92,7 @@ private:
     std::unordered_map<HpaeSourceBufferType, FrameDesc> fdescMap_; // CaptureframeWithEc argument struct
 
     bool isInjecting_ = false; // mark injecting state
+    HpaeBackoffController backoffController_;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -386,10 +386,10 @@ int32_t HpaeSourceInputNode::CapturerSourceResume(void)
 
 int32_t HpaeSourceInputNode::CapturerSourceStart(void)
 {
+    Trace trace("HpaeSourceInputNode::CapturerSourceStart");
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
         ERROR, "invalid audioCapturerSource");
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->IsInited(), ERROR, "invalid source state");
-    Trace trace("HpaeSourceInputNode::CapturerSourceStart");
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Start() == SUCCESS, ERROR, "Source start fail");
     SetSourceState(STREAM_MANAGER_RUNNING);
     return SUCCESS;
@@ -397,11 +397,11 @@ int32_t HpaeSourceInputNode::CapturerSourceStart(void)
 
 int32_t HpaeSourceInputNode::CapturerSourceStop(void)
 {
+    Trace trace("HpaeSourceInputNode::CapturerSourceStop");
+    SetSourceState(STREAM_MANAGER_SUSPENDED);
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
         ERROR, "invalid audioCapturerSource");
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->IsInited(), ERROR, "invalid source state");
-    Trace trace("HpaeSourceInputNode::CapturerSourceStop");
-    SetSourceState(STREAM_MANAGER_SUSPENDED);
     if (audioCapturerSource_->Stop() != SUCCESS) {
         AUDIO_ERR_LOG("stop error, sourceInputNode[%{public}u]", sourceInputNodeType_);
     }
@@ -482,8 +482,11 @@ void HpaeSourceInputNode::ReadDataFromSource(const HpaeSourceBufferType &bufferT
     uint32_t byteSize = nodeInfoMap_.at(bufferType).channels * nodeInfoMap_.at(bufferType).frameLen *
         static_cast<uint32_t>(GetSizeFromFormat(nodeInfoMap_.at(bufferType).format));
     while (historyRemainSizeMap_[bufferType] < byteSize) {
-        audioCapturerSource_->CaptureFrame(capturerFrameDataMap_.at(bufferType).data(),
+        int32_t ret = audioCapturerSource_->CaptureFrame(capturerFrameDataMap_.at(bufferType).data(),
             (uint64_t)frameByteSizeMap_.at(bufferType), replyBytes);
+        if (sourceInputNodeType_ == HPAE_SOURCE_MIC) { // micref not sleep
+            backoffController_.HandleResult(ret == SUCCESS);
+        }
         CHECK_AND_RETURN_LOG(replyBytes != 0, "replyBytes is 0");
         PushDataToBuffer(bufferType, replyBytes);
     }
