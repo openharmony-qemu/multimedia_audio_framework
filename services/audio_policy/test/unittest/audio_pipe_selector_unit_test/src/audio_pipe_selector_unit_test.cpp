@@ -707,7 +707,8 @@ HWTEST_F(AudioPipeSelectorUnitTest, ProcessConcurrency_001, TestSize.Level4)
         {{PIPE_TYPE_OUT_LOWLATENCY, PIPE_TYPE_IN_NORMAL}, CONCEDE_INCOMING},
         {{PIPE_TYPE_IN_NORMAL, PIPE_TYPE_IN_NORMAL}, CONCEDE_EXISTING}
     };
-    AudioStreamCollector::GetAudioStreamCollector().audioConcurrencyService_->concurrencyConfigMap_ = ruleMap;
+    AudioConcurrencyService &audioConcurrencyService = AudioConcurrencyService::GetInstance();
+    audioConcurrencyService.concurrencyConfigMap_ = ruleMap;
     AudioPipeManager::GetPipeManager()->curPipeList_.clear();
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
     pipeInfo->adapterName_ = "test_adapterName";
