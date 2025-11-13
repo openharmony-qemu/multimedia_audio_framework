@@ -688,8 +688,6 @@ int32_t AudioEcManager::ReloadSourceForInputPipe(std::shared_ptr<AudioPipeInfo> 
 {
     CHECK_AND_RETURN_RET_LOG((pipeInfo != nullptr && pipeInfo->streamDescMap_.count(targetSessionId) > 0), ERROR,
         "pipe is null or can not find stream");
-    AUDIO_INFO_LOG("reload inputPipe:%{public}s routeFlag:%{public}u  sessionId:%{public}u",
-        pipeInfo->name_.c_str(), pipeInfo->routeFlag_, targetSessionId);
     auto streamDesc = pipeInfo->streamDescMap_[targetSessionId];
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
     audioConfigManager_。GetStreamPropInfo(streamDesc, streamPropInfo);
