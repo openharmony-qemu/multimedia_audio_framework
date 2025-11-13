@@ -484,7 +484,9 @@ void HpaeSourceInputNode::ReadDataFromSource(const HpaeSourceBufferType &bufferT
     while (historyRemainSizeMap_[bufferType] < byteSize) {
         int32_t ret = audioCapturerSource_->CaptureFrame(capturerFrameDataMap_.at(bufferType).data(),
             (uint64_t)frameByteSizeMap_.at(bufferType), replyBytes);
-        backoffController_.HandleResult(ret == SUCCESS);
+        if (sourceInputNodeType_ == HPAE_SOURCE_MIC) { // micref not sleep
+            backoffController_.HandleResult(ret == SUCCESS);
+        }
         CHECK_AND_RETURN_LOG(replyBytes != 0, "replyBytes is 0");
         PushDataToBuffer(bufferType, replyBytes);
     }
