@@ -76,6 +76,7 @@ enum MoveSessionType {
     MOVE_SINGLE,
     MOVE_ALL,
     MOVE_PREFER,
+    MOVE_DEFAULT,
 };
 
 struct HpaeStreamInfo {

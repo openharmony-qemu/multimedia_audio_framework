@@ -720,7 +720,14 @@ int32_t HpaeManager::SetDefaultSink(std::string name)
             return;
         }
         std::vector<uint32_t> sessionIds;
-        rendererManager->MoveAllStream(name, sessionIds, MOVE_ALL);
+        for (const auto &renderIdMap : rendererIdSinkNameMap_) {
+            if (renderIdMap.second == defaultSink_ &&
+                rendererIdStreamInfoMap_.find(renderIdMap.first) != rendererIdStreamInfoMap_.end()) {
+                    sessionIds.emplace_back(renderIdMap.first);
+                    movingIds_.emplace(renderIdMap.first, rendererIdStreamInfoMap_[renderIdMap.first].state);
+            }
+        }
+        rendererManager->MoveAllStream(name, sessionIds, MOVE_DEFAULT);
         std::string oldDefaultSink = defaultSink_;
         defaultSink_ = name;
         if (!rendererManager->IsInit()) {
@@ -751,7 +758,14 @@ int32_t HpaeManager::SetDefaultSource(std::string name)
             return;
         }
         std::vector<uint32_t> sessionIds;
-        capturerManager->MoveAllStream(name, sessionIds, MOVE_ALL);
+        for (const auto &captureIdMap : capturerIdSourceNameMap_) {
+            if (captureIdMap.second == defaultSource_ &&
+                capturerIdStreamInfoMap_.find(captureIdMap.first) != capturerIdStreamInfoMap_.end()) {
+                    sessionIds.emplace_back(captureIdMap.first);
+                    movingIds_.emplace(captureIdMap.first, capturerIdStreamInfoMap_[captureIdMap.first].state);
+            }
+        }
+        capturerManager->MoveAllStream(name, sessionIds, MOVE_DEFAULT);
         std::string oldDefaultSource_ = defaultSource_;
         defaultSource_ = name;
         if (!capturerManager->IsInit()) {
@@ -1133,7 +1147,7 @@ void HpaeManager::HandleMoveAllSinkInputs(
     std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkName, MoveSessionType moveType)
 {
     AUDIO_INFO_LOG("handle move session count:%{public}zu to name:%{public}s", sinkInputs.size(), sinkName.c_str());
-    if (moveType == MOVE_PREFER) {
+    if (moveType != MOVE_ALL) {
         sinkInputs = GetPerferSinkInputs(sinkInputs);
     }
     if (sinkName.empty()) {
@@ -1167,9 +1181,10 @@ void HpaeManager::HandleMoveAllSinkInputs(
     }
 }
 
-void HpaeManager::HandleMoveAllSourceOutputs(const std::vector<HpaeCaptureMoveInfo> moveInfos, std::string sourceName)
+void HpaeManager::HandleMoveAllSourceOutputs(std::vector<HpaeCaptureMoveInfo> moveInfos, std::string sourceName)
 {
     AUDIO_INFO_LOG("handle move session count:%{public}zu to name:%{public}s", moveInfos.size(), sourceName.c_str());
+    moveInfos = GetUsedMoveInfos(moveInfos);
     if (sourceName.empty()) {
         AUDIO_INFO_LOG("source is empty, move to default source:%{public}s", defaultSource_.c_str());
         sourceName = defaultSource_;
@@ -2684,6 +2699,28 @@ void HpaeManager::DeleteAudioport(const std::string &name)
     } else if (sourceNameSourceIdMap_.find(name) != sourceNameSourceIdMap_.end()) {
         DeleteCaptureManager(name);
     }
+}
+
+std::vector<HpaeCaptureMoveInfo> HpaeManager::GetUsedMoveInfos(std::vector<HpaeCaptureMoveInfo> &moveInfos)
+{
+    std::vector<HpaeCaptureMoveInfo> results;
+    for (HpaeCaptureMoveInfo &moveInfo : moveInfos) {
+        uint32_t sessionId = moveInfo.sessionId;
+        if (movingIds_.find(sessionId) != movingIds_.end()) {
+            if (movingIds_[sessionId] == HPAE_SESSION_RELEASED) {
+                capturerIdSourceNameMap_.erase(sessionId);
+                capturerIdStreamInfoMap_.erase(sessionId);
+                movingIds_.erase(sessionId);
+                continue;
+            }
+            if (movingIds_[sessionId] != capturerIdStreamInfoMap_[sessionId].state) {
+                moveInfo.sessionInfo.state = movingIds_[sessionId];
+            }
+            movingIds_.erase(sessionId);
+            results.emplace_back(moveInfo);
+        }
+    }
+    return results;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
