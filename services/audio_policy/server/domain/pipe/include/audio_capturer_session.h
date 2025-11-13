@@ -123,8 +123,6 @@ private:
     bool IsStreamValid(const std::shared_ptr<AudioStreamDescriptor> &stream);
     bool CompareIndependentxmlPriority(const std::shared_ptr<AudioPipeInfo> &pipe,
         uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession);
-    bool GetMaxPriorityStreamForInputPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
-        uint32_t sessionId, AudioStreamDescriptor &maxPriorityDesc, bool onlyRunning);
     bool IsRemainingSourceIndependent();
     bool hearingAidReloadFlag_ = false;
 private:
