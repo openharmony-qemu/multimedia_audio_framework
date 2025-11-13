@@ -246,8 +246,6 @@ HpaeProcessorType HpaeRendererManager::TransToProperSceneType(StreamUsage stream
 
 HpaeProcessorType HpaeRendererManager::GetProcessorType(uint32_t sessionId)
 {
-    CHECK_AND_RETURN_RET_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), HPAE_SCENE_EFFECT_NONE,
-        "can not get input node of session %{public}u", sessionId);
     HpaeNodeInfo nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
     std::string sceneType = TransProcessorTypeToSceneType(nodeInfo.sceneType);
     if ((!isSplitProcessorType(nodeInfo.sceneType)) && (sessionNodeMap_[sessionId].bypass ||

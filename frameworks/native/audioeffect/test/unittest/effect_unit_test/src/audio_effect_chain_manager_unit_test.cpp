@@ -2852,6 +2852,38 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_004, TestSi
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
+/**
+* @tc.name   : Test CheckProcessClusterInstances API
+* @tc.number : CheckProcessClusterInstances_005
+* @tc.desc   : Test CheckProcessClusterInstances interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, CheckProcessClusterInstances_005, TestSize.Level1)
+{
+    std::string sceneType = "test";
+    std::string  scene = "SCENE_DEFAULT";
+    std::string effect = sceneType + "_&_" + AudioEffectChainManager::GetInstance()->GetDeviceTypeName();
+    std::string defaultScene = scene + "_&_" + AudioEffectChainManager::GetInstance()->GetDeviceTypeName();
+
+    auto headTracker = std::make_shared<HeadTracker>();
+    std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>("123", headTracker);
+    ASSERT_TRUE(audioEffectChain != nullptr);
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({effect, audioEffectChain});
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[effect] = 1;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({defaultScene, audioEffectChain});
+
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
+    auto ret = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
+    EXPECT_EQ(ret, USE_DEFAULT_PROCESSCLUSTER);
+
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[defaultScene] = nullptr;
+    ret = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
+    EXPECT_EQ(ret, NO_NEED_TO_CREATE_PROCESSCLUSTER);
+
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = false;
+    ret = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
+    EXPECT_EQ(ret, NO_NEED_TO_CREATE_PROCESSCLUSTER);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
 /*
 * @tc.name   : Test InitEffectBufferInner
 * @tc.number : InitEffectBufferInner_001
