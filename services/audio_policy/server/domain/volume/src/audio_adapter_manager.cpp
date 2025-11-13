@@ -672,7 +672,7 @@ int32_t AudioAdapterManager::SetAppVolumeMutedDB(int32_t appUid, bool muted)
 int32_t AudioAdapterManager::SetVolumeDb(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType)
 {
     CHECK_AND_RETURN_RET_LOG(device != nullptr, ERR_INVALID_PARAM, "device is null");
-    int32_t muteFactor = GetStreamMute(streamType) ? 0 : 1;
+    int32_t muteFactor = GetStreamMuteInternal(device, streamType) ? 0 : 1;
     int32_t volumeLevel = GetStreamVolumeInternal(device, streamType) * muteFactor;
     // Save volume in local prop for bootanimation
     SaveRingtoneVolumeToLocal(streamType, volumeLevel);
