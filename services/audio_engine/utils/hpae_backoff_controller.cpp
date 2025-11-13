@@ -16,6 +16,7 @@
 #include "hpae_backoff_controller.h"
 #include <algorithm>
 #include <chrono>
+#include <inttypes.h>
 #include <iostream>
 #include <thread>
 #include "audio_engine_log.h"
@@ -40,8 +41,9 @@ void HpaeBackoffController::HandleResult(bool result)
     std::this_thread::sleep_for(std::chrono::milliseconds(delay_));
 #ifdef ENABLE_HOOK_PCM
     auto end = std::chrono::system_clock::now();
-    auto sleepTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    AUDIO_INFO_LOG("func call fail, sleep %{public}zu ms", sleepTime);
+    uint64_t sleepTime =
+        static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
+    AUDIO_INFO_LOG("func call fail, sleep %{public}" PRIu64 "ms", sleepTime);
 #endif
 }
 

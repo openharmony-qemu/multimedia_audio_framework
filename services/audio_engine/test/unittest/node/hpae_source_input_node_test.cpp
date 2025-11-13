@@ -994,9 +994,43 @@ HWTEST_F(HpaeSourceInputNodeTest, CaptureFrameFailTest_001, TestSize.Level0)
             return ERROR;
         });
     uint64_t reply = 0;
-    for (int32_t i = 0; i < 21; i++) {
+    for (int32_t i = 0; i < 21; i++) { // 21 for test times
         hpaeSourceInputNode->ReadDataFromSource(nodeInfo.sourceBufferType, reply);
         EXPECT_EQ(hpaeSourceInputNode->backoffController_.delay_, std::min(i+1, 20));
+    }
+}
+
+/**
+ * @tc.name  : Test CaptureFrame fail
+ * @tc.type  : FUNC
+ * @tc.number: CaptureFrameFailTest_002
+ * @tc.desc  : Test HpaeSourceInputNode micref CaptureFrame fail and sleep
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CaptureFrameFailTest_002, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    nodeInfo.sourceInputNodeType = HPAE_SOURCE_MICREF;
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MICREF;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+    EXPECT_NE(hpaeSourceInputNode->audioCapturerSource_, nullptr);
+
+    EXPECT_CALL(*mockCaptureSource, CaptureFrame(_, _, _))
+        .WillRepeatedly([](char *frame, uint64_t requestBytes, uint64_t &replyBytes) {
+            replyBytes = 0;
+            return ERROR;
+        });
+    uint64_t reply = 0;
+    for (int32_t i = 0; i < 5; i++) { // 5 for test times
+        hpaeSourceInputNode->ReadDataFromSource(nodeInfo.sourceBufferType, reply);
+        EXPECT_EQ(hpaeSourceInputNode->backoffController_.delay_, 0); // micref not sleep
     }
 }
 } // namespace HPAE
