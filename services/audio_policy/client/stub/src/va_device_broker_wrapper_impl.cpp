@@ -17,7 +17,7 @@
 #define LOG_TAG "VADeviceBrokerWrapperImpl"
 #endif
 
-#include "va_device_broker_wrapper_Impl.h"
+#include "va_device_broker_wrapper_impl.h"
 #include "va_device_controller_stub_impl.h"
 #include "iv_a_device_broker.h"
 

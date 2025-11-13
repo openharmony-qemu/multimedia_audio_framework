@@ -179,8 +179,6 @@ public:
 
     int32_t GetVolumeDataCount(const std::string &sinkName, int64_t &volumeDataCount) override;
 
-    int32_t ResetAudioEndpoint() override;
-
     int32_t UpdateLatencyTimestamp(const std::string &timestamp, bool isRenderer) override;
 
     int32_t GetEffectOffloadEnabled(bool& isEffectOffloadEnabled) override;
@@ -347,12 +345,12 @@ private:
     bool SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params);
     bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result);
-    int32_t CreateAudioWorkgroup(int32_t pid, const sptr<IRemoteObject> &object, int32_t &workgroupId) override;
-    int32_t ReleaseAudioWorkgroup(int32_t pid, int32_t workgroupId) override;
-    int32_t AddThreadToGroup(int32_t pid, int32_t workgroupId, int32_t tokenId) override;
-    int32_t RemoveThreadFromGroup(int32_t pid, int32_t workgroupId, int32_t tokenId) override;
-    int32_t StartGroup(int32_t pid, int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime) override;
-    int32_t StopGroup(int32_t pid, int32_t workgroupId) override;
+    int32_t CreateAudioWorkgroup(const sptr<IRemoteObject> &object, int32_t &workgroupId) override;
+    int32_t ReleaseAudioWorkgroup(int32_t workgroupId) override;
+    int32_t AddThreadToGroup(int32_t workgroupId, int32_t tokenId) override;
+    int32_t RemoveThreadFromGroup(int32_t workgroupId, int32_t tokenId) override;
+    int32_t StartGroup(int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime) override;
+    int32_t StopGroup(int32_t workgroupId) override;
 
     const std::string GetAudioParameterInner(const std::string &key);
     const std::string GetAudioParameterInner(const std::string& networkId, const AudioParamKey key,
@@ -365,8 +363,8 @@ private:
         const AudioPlaybackCaptureConfig &filterConfig);
     int32_t GetExtraParametersInner(const std::string &mainKey,
         const std::vector<std::string> &subKeys, std::vector<std::pair<std::string, std::string>> &result);
-    int32_t ImproveAudioWorkgroupPrio(int32_t pid, const std::unordered_map<int32_t, bool> &threads) override;
-    int32_t RestoreAudioWorkgroupPrio(int32_t pid, const std::unordered_map<int32_t, int32_t> &threads) override;
+    int32_t ImproveAudioWorkgroupPrio(const std::unordered_map<int32_t, bool> &threads) override;
+    int32_t RestoreAudioWorkgroupPrio(const std::unordered_map<int32_t, int32_t> &threads) override;
     int32_t GetPrivacyTypeAudioServer(uint32_t sessionId, int32_t &privacyType, int32_t &ret) override;
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;

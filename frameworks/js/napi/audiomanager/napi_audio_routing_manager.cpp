@@ -48,7 +48,6 @@ void NapiAudioRoutingManager::Destructor(napi_env env, void *nativeObject, void 
     }
     auto obj = static_cast<NapiAudioRoutingManager *>(nativeObject);
     ObjectRefMap<NapiAudioRoutingManager>::DecreaseRef(obj);
-    AUDIO_INFO_LOG("Decrease obj count");
 }
 
 napi_value NapiAudioRoutingManager::Construct(napi_env env, napi_callback_info info)

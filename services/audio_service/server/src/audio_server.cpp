@@ -157,7 +157,6 @@ static constexpr unsigned int WAIT_AUDIO_POLICY_READY_TIMEOUT_SECONDS = 5;
 static constexpr int32_t MAX_WAIT_IN_SERVER_COUNT = 5;
 static constexpr int32_t RESTORE_SESSION_TRY_COUNT = 10;
 static constexpr uint32_t  RESTORE_SESSION_RETRY_WAIT_TIME_IN_MS = 50000;
-static constexpr unsigned int CREATE_TIMEOUT_IN_SECOND = 9;
 
 static const std::vector<SourceType> AUDIO_SUPPORTED_SOURCE_TYPES = {
     SOURCE_TYPE_INVALID,
@@ -879,12 +878,14 @@ int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED, "modify permission denied");
     }
 
-    CHECK_AND_RETURN_RET_LOG(audioParameters.size() < PARAMETER_SET_LIMIT, ERR_INVALID_PARAM, "too large!");
-    AudioServer::audioParameters[key] = value;
+    if (key == "VOICE_PHONE_STATUS") {
+        AudioServer::audioParameters[key] = value;
+        return SUCCESS;
+    }
 
     if (key == "A2dpSuspended") {
-        std::string renderValue = key + "=" + value + ";";
-        SetA2dpAudioParameter(renderValue);
+        AudioServer::audioParameters[key] = value;
+        SetA2dpAudioParameter(key + "=" + value + ";");
         return SUCCESS;
     }
 
@@ -892,7 +893,10 @@ int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string
     std::string valueNew = value;
     std::string halName = "primary";
     CHECK_AND_RETURN_RET(UpdateAudioParameterInfo(key, value, parmKey, valueNew, halName), SUCCESS);
-    
+
+    CHECK_AND_RETURN_RET_LOG(audioParameters.size() < PARAMETER_SET_LIMIT, ERR_INVALID_PARAM, "too large!");
+    AudioServer::audioParameters[key] = value;
+
     std::shared_ptr<IAudioCaptureSource> source = GetSourceByProp(HDI_ID_TYPE_VA, HDI_ID_INFO_VA, true);
     if (source != nullptr) {
         source->SetAudioParameter(parmKey, "", valueNew);
@@ -902,6 +906,7 @@ int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, SUCCESS, "deviceManager is null");
     deviceManager->SetAudioParameter(halName, parmKey, "", valueNew);
+
     return SUCCESS;
 }
 
@@ -923,7 +928,7 @@ bool AudioServer::UpdateAudioParameterInfo(const std::string &key, const std::st
         parmKey = AudioParamKey::MMI;
     } else if (key == "perf_info") {
         parmKey = AudioParamKey::PERF_INFO;
-    } else if (key == "mute_call") {
+    } else if (key == "mute_call" || key == "game_record_recognition") {
         valueNew = key + "=" + value;
     } else if (key == "LOUD_VOLUMN_MODE") {
         parmKey = AudioParamKey::NONE;
@@ -1835,9 +1840,6 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
     std::shared_ptr<PipeInfoGuard> &pipeInfoGuard)
 {
     CHECK_AND_RETURN_RET_LOG(pipeInfoGuard != nullptr, nullptr, "PipeInfoGuard is nullptr");
-    AudioXCollie audioXCollie(
-        "AudioServer::CreateAudioStream", CREATE_TIMEOUT_IN_SECOND, nullptr, nullptr,
-        AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     int32_t appUid = config.appInfo.appUid;
     if (callingUid != MEDIA_SERVICE_UID) {
         appUid = callingUid;
@@ -2629,19 +2631,6 @@ int32_t AudioServer::GetVolumeDataCount(const std::string &sinkName, int64_t &vo
     return SUCCESS;
 }
 
-int32_t AudioServer::ResetAudioEndpoint()
-{
-#ifdef SUPPORT_LOW_LATENCY
-    int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
-        "Refused for %{public}d", callingUid);
-    AudioService::GetInstance()->ResetAudioEndpoint();
-    return SUCCESS;
-#endif
-    return ERR_NOT_SUPPORTED;
-}
-// LCOV_EXCL_STOP
-
 int32_t AudioServer::UpdateLatencyTimestamp(const std::string &timestamp, bool isRenderer)
 {
     std::string stringTimestamp = timestamp;
@@ -3084,35 +3073,41 @@ int32_t AudioServer::SetDeviceConnectedFlag(bool flag)
     return SUCCESS;
 }
 
-int32_t AudioServer::CreateAudioWorkgroup(int32_t pid, const sptr<IRemoteObject> &object, int32_t &workgroupId)
+int32_t AudioServer::CreateAudioWorkgroup(const sptr<IRemoteObject> &object, int32_t &workgroupId)
 {
+    int32_t pid = IPCSkeleton::GetCallingPid();
     CHECK_AND_RETURN_RET_LOG(AudioResourceService::GetInstance() != nullptr, ERROR, "AudioResourceService is nullptr");
     workgroupId = AudioResourceService::GetInstance()->CreateAudioWorkgroup(pid, object);
     return SUCCESS;
 }
 
-int32_t AudioServer::ReleaseAudioWorkgroup(int32_t pid, int32_t workgroupId)
+int32_t AudioServer::ReleaseAudioWorkgroup(int32_t workgroupId)
 {
+    int32_t pid = IPCSkeleton::GetCallingPid();
     return AudioResourceService::GetInstance()->ReleaseAudioWorkgroup(pid, workgroupId);
 }
 
-int32_t AudioServer::AddThreadToGroup(int32_t pid, int32_t workgroupId, int32_t tokenId)
+int32_t AudioServer::AddThreadToGroup(int32_t workgroupId, int32_t tokenId)
 {
+    int32_t pid = IPCSkeleton::GetCallingPid();
     return AudioResourceService::GetInstance()->AddThreadToGroup(pid, workgroupId, tokenId);
 }
 
-int32_t AudioServer::RemoveThreadFromGroup(int32_t pid, int32_t workgroupId, int32_t tokenId)
+int32_t AudioServer::RemoveThreadFromGroup(int32_t workgroupId, int32_t tokenId)
 {
+    int32_t pid = IPCSkeleton::GetCallingPid();
     return AudioResourceService::GetInstance()->RemoveThreadFromGroup(pid, workgroupId, tokenId);
 }
 
-int32_t AudioServer::StartGroup(int32_t pid, int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime)
+int32_t AudioServer::StartGroup(int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime)
 {
+    int32_t pid = IPCSkeleton::GetCallingPid();
     return AudioResourceService::GetInstance()->StartGroup(pid, workgroupId, startTime, deadlineTime);
 }
 
-int32_t AudioServer::StopGroup(int32_t pid, int32_t workgroupId)
+int32_t AudioServer::StopGroup(int32_t workgroupId)
 {
+    int32_t pid = IPCSkeleton::GetCallingPid();
     return AudioResourceService::GetInstance()->StopGroup(pid, workgroupId);
 }
 
@@ -3171,13 +3166,15 @@ int32_t AudioServer::ForceStopAudioStream(int32_t audioType)
     return AudioService::GetInstance()->ForceStopAudioStream(static_cast<StopAudioType>(audioType));
 }
 
-int32_t AudioServer::ImproveAudioWorkgroupPrio(int32_t pid, const std::unordered_map<int32_t, bool> &threads)
+int32_t AudioServer::ImproveAudioWorkgroupPrio(const std::unordered_map<int32_t, bool> &threads)
 {
+    int32_t pid = IPCSkeleton::GetCallingPid();
     return AudioResourceService::GetInstance()->ImproveAudioWorkgroupPrio(pid, threads);
 }
 
-int32_t AudioServer::RestoreAudioWorkgroupPrio(int32_t pid, const std::unordered_map<int32_t, int32_t> &threads)
+int32_t AudioServer::RestoreAudioWorkgroupPrio(const std::unordered_map<int32_t, int32_t> &threads)
 {
+    int32_t pid = IPCSkeleton::GetCallingPid();
     return AudioResourceService::GetInstance()->RestoreAudioWorkgroupPrio(pid, threads);
 }
 

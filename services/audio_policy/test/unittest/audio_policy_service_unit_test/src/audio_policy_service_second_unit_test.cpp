@@ -1177,14 +1177,14 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, RegisterDataObserverTest, TestSize.Level
  */
 HWTEST_F(AudioPolicyServiceExtUnitTest, OnForcedDeviceSelected_01, TestSize.Level1)
 {
-    shared_ptr<AudioDeviceDescriptor> devDesc;
-    devDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    devDesc->macAddress_ = "11:22";
-    devDesc->deviceRole_ = OUTPUT_DEVICE;
-    devDesc->deviceId_ = 114514;
-    AudioDeviceManager::GetAudioDeviceManager().AddNewDevice(devDesc);
+    AudioDeviceDescriptor devDesc;
+    devDesc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    devDesc.macAddress_ = "11:22";
+    devDesc.deviceRole_ = OUTPUT_DEVICE;
+    devDesc.deviceId_ = 1234;
+    AudioDeviceManager::GetAudioDeviceManager().AddNewDevice(make_shared<AudioDeviceDescriptor>(devDesc));
     auto &service = AudioPolicyService::GetAudioPolicyService();
-    service.OnForcedDeviceSelected(DEVICE_TYPE_BLUETOOTH_A2DP, "11:22");
+    service.OnForcedDeviceSelected(devDesc.deviceType_, devDesc.macAddress_);
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(server, nullptr);
 }
@@ -1196,14 +1196,14 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, OnForcedDeviceSelected_01, TestSize.Leve
  */
 HWTEST_F(AudioPolicyServiceExtUnitTest, OnPrivacyDeviceSelected_01, TestSize.Level1)
 {
-    shared_ptr<AudioDeviceDescriptor> devDesc;
-    devDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    devDesc->macAddress_ = "11:22";
-    devDesc->deviceRole_ = OUTPUT_DEVICE;
-    devDesc->deviceId_ = 114514;
-    AudioDeviceManager::GetAudioDeviceManager().AddNewDevice(devDesc);
+    AudioDeviceDescriptor devDesc;
+    devDesc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    devDesc.macAddress_ = "11:22";
+    devDesc.deviceRole_ = OUTPUT_DEVICE;
+    devDesc.deviceId_ = 5678;
+    AudioDeviceManager::GetAudioDeviceManager().AddNewDevice(make_shared<AudioDeviceDescriptor>(devDesc));
     auto &service = AudioPolicyService::GetAudioPolicyService();
-    service.OnPrivacyDeviceSelected(devDesc->deviceType_, devDesc->macAddress_);
+    service.OnPrivacyDeviceSelected(devDesc.deviceType_, devDesc.macAddress_);
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(server, nullptr);
 }

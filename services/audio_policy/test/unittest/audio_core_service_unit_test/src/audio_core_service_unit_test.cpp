@@ -451,6 +451,42 @@ HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_002, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioCoreService.
+* @tc.number: IsSameScene_001
+* @tc.desc  : Test IsSameScene.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, IsSameScene_001, TestSize.Level1)
+{
+    GetServerPtr()->coreService_->audioActiveDevice_.currentActiveDevice_.deviceType_ =
+        DeviceType::DEVICE_TYPE_REMOTE_CAST;
+    GetServerPtr()->eventEntry_->SetAudioScene(AUDIO_SCENE_RINGING);
+    int32_t result = GetServerPtr()->eventEntry_->SetAudioScene(AUDIO_SCENE_DEFAULT);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: IsSameScene_002
+* @tc.desc  : Test IsSameScene.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, IsSameScene_002, TestSize.Level1)
+{
+    GetServerPtr()->coreService_->audioActiveDevice_.currentActiveDevice_.deviceType_ =
+        DeviceType::DEVICE_TYPE_SPEAKER;
+    GetServerPtr()->coreService_->audioActiveDevice_.currentActiveDevice_.networkId_ =
+        REMOTE_NETWORK_ID;
+    GetServerPtr()->eventEntry_->SetAudioScene(AUDIO_SCENE_RINGING);
+    int32_t result = GetServerPtr()->eventEntry_->SetAudioScene(AUDIO_SCENE_DEFAULT);
+    EXPECT_EQ(result, SUCCESS);
+
+    GetServerPtr()->coreService_->audioActiveDevice_.currentActiveDevice_.networkId_ =
+        LOCAL_NETWORK_ID;
+    GetServerPtr()->eventEntry_->SetAudioScene(AUDIO_SCENE_RINGING);
+    result = GetServerPtr()->eventEntry_->SetAudioScene(AUDIO_SCENE_DEFAULT);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
 * @tc.number: EventEntry_GetDevices_001
 * @tc.desc  : Test GetDevices - Get output devices.
 */
@@ -1108,13 +1144,6 @@ HWTEST_F(AudioCoreServiceUnitTest, IsForcedNormal_001, TestSize.Level1)
     result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
     EXPECT_EQ(result, true);
     EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
-    
-    streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_NONE;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
-    streamDesc->appInfo_.appUid = 666;
-    result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
-    EXPECT_EQ(result, true);
-    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
 }
 
 /**
@@ -1127,19 +1156,23 @@ HWTEST_F(AudioCoreServiceUnitTest, IsForcedNormal_002, TestSize.Level1)
     ASSERT_NE(nullptr, GetServerPtr());
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
-    streamDesc->appInfo_.appUid = 777;
+    streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NONE;
+    streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_NONE;
     bool result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
     EXPECT_EQ(result, false);
-    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_FLAG_NONE);
+
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
+    result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
+    EXPECT_EQ(result, false);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_FLAG_NONE);
     
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
     streamDesc->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
     streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_NONE;
-    streamDesc->appInfo_.appUid = 888;
     result = GetServerPtr()->coreService_->IsForcedNormal(streamDesc);
     EXPECT_EQ(result, false);
-    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_FLAG_NONE);
 }
 
 /**

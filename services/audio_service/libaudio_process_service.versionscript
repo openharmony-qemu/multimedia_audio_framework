@@ -22,7 +22,6 @@
     *ConfigPolicyProvider*;
     *NotifyStreamVolumeChanged*;
     *GetMaxAmplitude*;
-    *ResetAudioEndpoint*;
     *GetRendererBySessionID*;
     *RestoreSession*;
     *OnDataLinkConnectionUpdate*;

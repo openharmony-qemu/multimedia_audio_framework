@@ -1336,8 +1336,8 @@ HWTEST(AudioSystemManagerUnitTest, RestoreGroupPrio_001, TestSize.Level1)
 {
     AudioSystemManager::WorkgroupPrioRecorder recorder(1);
     int32_t result = recorder.RestoreGroupPrio(true);
-    EXPECT_EQ(result, AUDIO_OK);
-    EXPECT_TRUE(recorder.restoreByPermission_);
+    EXPECT_NE(result, AUDIO_OK);
+    EXPECT_FALSE(recorder.restoreByPermission_);
 }
  
 /**
@@ -1349,10 +1349,24 @@ HWTEST(AudioSystemManagerUnitTest, RestoreGroupPrio_002, TestSize.Level1)
 {
     AudioSystemManager::WorkgroupPrioRecorder recorder(1);
     int32_t result = recorder.RestoreGroupPrio(false);
-    EXPECT_EQ(result, AUDIO_OK);
+    EXPECT_NE(result, AUDIO_OK);
     EXPECT_TRUE(recorder.threads_.empty());
 }
- 
+
+/**
+ * @tc.name   : Test RestoreGroupPrio
+ * @tc.number : RestoreGroupPrio_003
+ * @tc.desc   : Test RestoreGroupPrio with threads
+ */
+HWTEST(AudioSystemManagerUnitTest, RestoreGroupPrio_003, TestSize.Level1)
+{
+    AudioSystemManager::WorkgroupPrioRecorder recorder(1);
+    recorder.threads_.emplace(1, 1);
+    int32_t result = recorder.RestoreGroupPrio(true);
+    EXPECT_EQ(result, AUDIO_OK);
+    EXPECT_TRUE(recorder.restoreByPermission_);
+}
+
 /**
  * @tc.name   : Test RestoreThreadPrio
  * @tc.number : RestoreThreadPrio_001

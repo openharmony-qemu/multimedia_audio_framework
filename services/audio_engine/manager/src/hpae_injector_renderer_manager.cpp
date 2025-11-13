@@ -29,6 +29,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+const std::string INJECTOR_THREADNAME = "Injector";
 HpaeInjectorRendererManager::HpaeInjectorRendererManager(HpaeSinkInfo &sinkInfo)
     : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT), sinkInfo_(sinkInfo)
 {}
@@ -477,7 +478,7 @@ void HpaeInjectorRendererManager::OnNotifyQueue()
 
 std::string HpaeInjectorRendererManager::GetThreadName()
 {
-    return sinkInfo_.deviceName;
+    return INJECTOR_THREADNAME;
 }
 
 int32_t HpaeInjectorRendererManager::DumpSinkInfo()

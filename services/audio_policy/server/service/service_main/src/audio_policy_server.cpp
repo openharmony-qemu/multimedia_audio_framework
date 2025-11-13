@@ -108,6 +108,7 @@ constexpr int32_t DEFAULT_UID = 0;
 constexpr int32_t DEFAULT_ZONEID = 0;
 constexpr int32_t RESTORE_INFO_LOCK_TIMEOUT_MS = 1000; // 1000ms
 
+constexpr int32_t UID_BOOTUP_MUSIC = 1003;
 constexpr int32_t UID_MEDIA = 1013;
 constexpr int32_t UID_MCU = 7500;
 constexpr int32_t UID_CAAS = 5527;
@@ -2960,9 +2961,17 @@ bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint
 
 bool AudioPolicyServer::VerifyBluetoothPermission()
 {
+    return VerifyBluetoothPermission(static_cast<uid_t>(IPCSkeleton::GetCallingUid()));
+}
+
+bool AudioPolicyServer::VerifyBluetoothPermission(const uid_t callingUid)
+{
+    if (callingUid == UID_MEDIA || callingUid == UID_BOOTUP_MUSIC) {
+        // bootup use media kit
+        return false;
+    }
 #ifdef AUDIO_BUILD_VARIANT_ROOT
     // root user case for auto test
-    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
     if (callingUid == ROOT_UID) {
         return true;
     }
@@ -5474,10 +5483,10 @@ int32_t AudioPolicyServer::SetSystemVolumeDegree(int32_t streamTypeIn, int32_t v
     int32_t uid)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(streamTypeIn);
-    if (!PermissionUtil::VerifySystemPermission()) {
-        AUDIO_ERR_LOG("No system permission");
-        return ERR_PERMISSION_DENIED;
-    }
+    CHECK_AND_RETURN_RET_LOG(VerifyPermission(MANAGE_AUDIO_CONFIG), ERR_PERMISSION_DENIED,
+        "MANAGE_AUDIO_CONFIG_PERMISSION permission check failed");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "no system permission");
 
     if (!IsVolumeTypeValid(streamType)) {
         return ERR_NOT_SUPPORTED;

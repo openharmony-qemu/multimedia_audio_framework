@@ -34,6 +34,7 @@ public:
     std::vector<std::shared_ptr<AudioPipeInfo>> FetchPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     std::vector<std::shared_ptr<AudioPipeInfo>> FetchPipesAndExecute(
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
+    void UpdateRendererPipeInfo(std::shared_ptr<AudioStreamDescriptor> streamDesc);
 
 private:
     void UpdateDeviceStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -84,6 +85,8 @@ private:
         std::shared_ptr<AudioPipeInfo> pipeInfo, const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void UpdatePipeInfoFromStreamProp(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo, AudioPipeInfo &info);
+    bool IsPipeFormatMatch(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
+        std::shared_ptr<AudioPipeInfo> pipeInfo);
 
     AudioPolicyConfigManager& configManager_;
 };

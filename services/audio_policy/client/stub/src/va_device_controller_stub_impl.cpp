@@ -58,7 +58,6 @@ int32_t VADeviceControllerStubImpl::OpenInputStream(const VAAudioStreamProperty 
     vaInputStreamStubImpl->SetVAInputStreamCallback(inputStreamCallback);
     inputStream = vaInputStreamStubImpl->AsObject();
     if (inputStream == nullptr) {
-        delete vaInputStreamStubImpl;
         return ERROR;
     }
     return SUCCESS;

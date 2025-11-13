@@ -73,6 +73,7 @@ AudioSystemManager::~AudioSystemManager()
         (void)UnregisterVolumeKeyEventCallback(volumeChangeClientPid_);
         (void)UnregisterStreamVolumeChangeCallback(volumeChangeClientPid_);
         (void)UnregisterSystemVolumeChangeCallback(volumeChangeClientPid_);
+        (void)UnregisterVolumeDegreeCallback(volumeChangeClientPid_);
     }
 }
 
@@ -2344,7 +2345,7 @@ int32_t AudioSystemManager::CreateAudioWorkgroup()
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
     int32_t workgroupId = 0;
-    int32_t res = gasp->CreateAudioWorkgroup(getpid(), object, workgroupId);
+    int32_t res = gasp->CreateAudioWorkgroup(object, workgroupId);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS && workgroupId >= 0, AUDIO_ERR,
         "CreateAudioWorkgroup failed, res:%{public}d workgroupId:%{public}d", res, workgroupId);
 
@@ -2357,7 +2358,7 @@ int32_t AudioSystemManager::ReleaseAudioWorkgroup(int32_t workgroupId)
 {
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
-    int32_t ret = gasp->ReleaseAudioWorkgroup(getpid(), workgroupId);
+    int32_t ret = gasp->ReleaseAudioWorkgroup(workgroupId);
 
     std::shared_ptr<WorkgroupPrioRecorder> recorder = GetRecorderByGrpId(workgroupId);
     if (recorder != nullptr) {
@@ -2388,7 +2389,7 @@ int32_t AudioSystemManager::AddThreadToGroup(int32_t workgroupId, int32_t tokenI
         recorder->RecordThreadPrio(tokenId);
     }
 
-    return gasp->AddThreadToGroup(getpid(), workgroupId, tokenId);
+    return gasp->AddThreadToGroup(workgroupId, tokenId);
 }
 
 int32_t AudioSystemManager::RemoveThreadFromGroup(int32_t workgroupId, int32_t tokenId)
@@ -2403,7 +2404,7 @@ int32_t AudioSystemManager::RemoveThreadFromGroup(int32_t workgroupId, int32_t t
         }
     }
 
-    return gasp->RemoveThreadFromGroup(getpid(), workgroupId, tokenId);
+    return gasp->RemoveThreadFromGroup(workgroupId, tokenId);
 }
 
 int32_t AudioSystemManager::ExecuteAudioWorkgroupPrioImprove(int32_t workgroupId,
@@ -2420,7 +2421,7 @@ int32_t AudioSystemManager::ExecuteAudioWorkgroupPrioImprove(int32_t workgroupId
     if (needUpdatePrio || restoreByPermission) {
         const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
         CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
-        int32_t ipcRet = gasp->ImproveAudioWorkgroupPrio(getpid(), threads);
+        int32_t ipcRet = gasp->ImproveAudioWorkgroupPrio(threads);
         if (ipcRet != SUCCESS) {
             AUDIO_ERR_LOG("[WorkgroupInClient] change prio for grp:%{public}d failed, ret:%{public}d",
                 workgroupId, ipcRet);
@@ -2577,7 +2578,7 @@ int32_t AudioSystemManager::WorkgroupPrioRecorder::RestoreGroupPrio(bool isByPer
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
 
     std::lock_guard<std::mutex> lock(workgroupThreadsMutex_);
-    if (gasp->RestoreAudioWorkgroupPrio(getpid(), threads_) != AUDIO_OK) {
+    if (gasp->RestoreAudioWorkgroupPrio(threads_) != AUDIO_OK) {
         AUDIO_ERR_LOG("[WorkgroupInClient] restore prio for workgroupId:%{public}d failed", GetGrpId());
         return AUDIO_ERR;
     }
@@ -2599,7 +2600,7 @@ int32_t AudioSystemManager::WorkgroupPrioRecorder::RestoreThreadPrio(int32_t tok
     int ipcRet;
     if (it != threads_.end()) {
         std::unordered_map<int32_t, int32_t> thread = {{it->first, it->second}};
-        ipcRet = gasp->RestoreAudioWorkgroupPrio(getpid(), thread);
+        ipcRet = gasp->RestoreAudioWorkgroupPrio(thread);
         if (ipcRet != SUCCESS) {
             AUDIO_ERR_LOG("[WorkgroupInClient] change prio for tokenId:%{public}d failed, ret:%{public}d",
                 tokenId, ipcRet);

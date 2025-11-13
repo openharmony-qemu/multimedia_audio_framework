@@ -923,8 +923,6 @@ int32_t VolumeDataMaintainer::LoadVolumeFromMap(std::shared_ptr<AudioDeviceDescr
         "device %{public}s not in map", device->GetName().c_str());
     CHECK_AND_RETURN_RET_LOG(volumeLevelMap_[device->GetName()].contains(volumeType), defaultVolume,
         "device %{public}s stream %{public}d not in map", device->GetName().c_str(), volumeType);
-    AUDIO_INFO_LOG("[device %{public}s, streamType %{public}d] volumeLevel %{public}d",
-        device->GetName().c_str(), volumeType, volumeLevelMap_[device->GetName()][volumeType]);
     return volumeLevelMap_[device->GetName()][volumeType];
 }
 
@@ -1036,8 +1034,6 @@ bool VolumeDataMaintainer::LoadMuteFromMap(std::shared_ptr<AudioDeviceDescriptor
         "device %{public}s not in muteStatusMap_", device->GetName().c_str());
     CHECK_AND_RETURN_RET_LOG(muteStatusMap_[device->GetName()].contains(volumeType), false,
         "device %{public}s volumeType %{public}d not in muteStatusMap_", device->GetName().c_str(), volumeType);
-    AUDIO_INFO_LOG("LoadMuteFromMap device %{public}s streamType %{public}d muteStatus %{public}d",
-        device->GetName().c_str(), streamType, muteStatusMap_[device->GetName()][volumeType]);
     return muteStatusMap_[device->GetName()][volumeType];
 }
 

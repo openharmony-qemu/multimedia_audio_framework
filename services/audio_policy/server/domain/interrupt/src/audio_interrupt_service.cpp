@@ -36,9 +36,35 @@
 #include "standalone_mode_manager.h"
 #include "audio_injector_policy.h"
 #include "window_utils.h"
+#include "audio_policy_async_action_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
+class UpdateAudioSceneFromInterruptAction : public PolicyAsyncAction {
+public:
+    UpdateAudioSceneFromInterruptAction(std::shared_ptr<AudioInterruptService> interruptService,
+        const AudioScene audioScene, AudioInterruptChangeType changeType, int32_t zoneId)
+        : interruptService_(interruptService), audioScene_(audioScene), changeType_(changeType),
+          zoneId_(zoneId)
+    {}
+
+    UpdateAudioSceneFromInterruptAction(std::shared_ptr<AudioInterruptService> interruptService,
+        const AudioScene audioScene, AudioInterruptChangeType changeType)
+        : UpdateAudioSceneFromInterruptAction(interruptService, audioScene, changeType, 0)
+    {}
+
+    void Exec() override
+    {
+        interruptService_->UpdateAudioSceneFromInterrupt(audioScene_, changeType_, zoneId_);
+    }
+
+private:
+    std::shared_ptr<AudioInterruptService> interruptService_;
+    const AudioScene audioScene_;
+    AudioInterruptChangeType changeType_;
+    int32_t zoneId_;
+};
+
 constexpr uint32_t BOOTUP_MUSIC_UID = 1003;
 constexpr uint32_t MEDIA_SA_UID = 1013;
 constexpr uint32_t THP_EXTRA_SA_UID = 5000;
@@ -289,8 +315,7 @@ int32_t AudioInterruptService::ActivateAudioSession(const int32_t zoneId, const 
         AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
         // If there is an event of (interrupt + set scene), ActivateAudioInterrupt and DeactivateAudioInterrupt may
         // experience deadlocks, due to mutex_ and deviceStatusUpdateSharedMutex_ waiting for each other
-        lock.unlock();
-        UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+        PostUpdateAudioSceneFromInterruptAction(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     }
 
     return SUCCESS;
@@ -506,8 +531,8 @@ bool AudioInterruptService::IsAudioSessionActivated(const int32_t callerPid)
 bool AudioInterruptService::IsCanMixInterrupt(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt)
 {
-    if (sessionService_.IsSystemAppWithMixStrategy(incomingInterrupt.pid) ||
-        sessionService_.IsSystemAppWithMixStrategy(activeInterrupt.pid)) {
+    if (sessionService_.IsSystemAppWithMixStrategy(incomingInterrupt) ||
+        sessionService_.IsSystemAppWithMixStrategy(activeInterrupt)) {
         AUDIO_INFO_LOG("System app can mix with others anyway, incomingPid: %{public}d, activePid: %{public}d",
             incomingInterrupt.pid, activeInterrupt.pid);
         return true;
@@ -536,8 +561,8 @@ bool AudioInterruptService::IsCanMixInterrupt(const AudioInterrupt &incomingInte
 bool AudioInterruptService::CanMixForSession(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt, const AudioFocusEntry &focusEntry)
 {
-    if (sessionService_.IsSystemAppWithMixStrategy(incomingInterrupt.pid) ||
-        sessionService_.IsSystemAppWithMixStrategy(activeInterrupt.pid)) {
+    if (sessionService_.IsSystemAppWithMixStrategy(incomingInterrupt) ||
+        sessionService_.IsSystemAppWithMixStrategy(activeInterrupt)) {
         AUDIO_INFO_LOG("System app can mix with others anyway, incomingPid: %{public}d, activePid: %{public}d",
             incomingInterrupt.pid, activeInterrupt.pid);
         return true;
@@ -908,8 +933,7 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
     // If there is an event of (interrupt + set scene), ActivateAudioInterrupt and DeactivateAudioInterrupt may
     // experience deadlocks, due to mutex_ and deviceStatusUpdateSharedMutex_ waiting for each other
-    lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+    PostUpdateAudioSceneFromInterruptAction(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
 
@@ -939,15 +963,17 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
     HandleAppStreamType(zoneId, currAudioInterrupt);
     AudioStreamType streamType = currAudioInterrupt.audioFocusType.streamType;
     uint32_t incomingStreamId = currAudioInterrupt.streamId;
+    SourceType incomingSourceType = (currAudioInterrupt.audioFocusType).sourceType;
     AUDIO_INFO_LOG("streamId: %{public}u pid: %{public}d streamType: %{public}d zoneId: %{public}d"\
         "usage: %{public}d source: %{public}d",
         incomingStreamId, currAudioInterrupt.pid, streamType, zoneId,
-        currAudioInterrupt.streamUsage, (currAudioInterrupt.audioFocusType).sourceType);
+        currAudioInterrupt.streamUsage, incomingSourceType);
 
     if (AudioInterruptIsActiveInFocusList(zoneId, incomingStreamId) && !isUpdatedAudioStrategy) {
         AUDIO_INFO_LOG("Stream is active in focus list, no need to active audio interrupt.");
         return SUCCESS;
     }
+    GameRecogSetParam(GetClientTypeByStreamId(incomingStreamId), incomingSourceType, true);
     ResetNonInterruptControl(currAudioInterrupt);
     bool shouldReturnSuccess = false;
     ProcessAudioScene(currAudioInterrupt, incomingStreamId, zoneId, shouldReturnSuccess);
@@ -1051,10 +1077,12 @@ int32_t AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId, co
 
     AudioInterrupt currAudioInterrupt = audioInterrupt;
     HandleAppStreamType(zoneId, currAudioInterrupt);
+    uint32_t incomingStreamId = currAudioInterrupt.streamId;
+    SourceType incomingSourceType = (currAudioInterrupt.audioFocusType).sourceType;
     AUDIO_INFO_LOG("streamId: %{public}u pid: %{public}d streamType: %{public}d "\
         "usage: %{public}d source: %{public}d",
-        currAudioInterrupt.streamId, currAudioInterrupt.pid, (currAudioInterrupt.audioFocusType).streamType,
-        currAudioInterrupt.streamUsage, (currAudioInterrupt.audioFocusType).sourceType);
+        incomingStreamId, currAudioInterrupt.pid, (currAudioInterrupt.audioFocusType).streamType,
+        currAudioInterrupt.streamUsage, incomingSourceType);
 
     DeactivateAudioInterruptInternal(zoneId, currAudioInterrupt);
 
@@ -1062,9 +1090,9 @@ int32_t AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId, co
         AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
         // If there is an event of (interrupt + set scene), ActivateAudioInterrupt and DeactivateAudioInterrupt may
         // experience deadlocks, due to mutex_ and deviceStatusUpdateSharedMutex_ waiting for each other
-        lock.unlock();
-        UpdateAudioSceneFromInterrupt(targetAudioScene, DEACTIVATE_AUDIO_INTERRUPT, zoneId);
+        PostUpdateAudioSceneFromInterruptAction(targetAudioScene, DEACTIVATE_AUDIO_INTERRUPT, zoneId);
     }
+    GameRecogSetParam(GetClientTypeByStreamId(incomingStreamId), incomingSourceType, false);
 
     return SUCCESS;
 }
@@ -1150,6 +1178,18 @@ void AudioInterruptService::SetUserId(const int32_t newId, const int32_t oldId)
     AUDIO_INFO_LOG("set user id current id:%{public}d, old id:%{public}d", newUserId_, oldUserId_);
 }
 
+void AudioInterruptService::GameRecogSetParam(ClientType clientType, SourceType sourceType, bool switchOn)
+{
+    if (clientType != CLIENT_TYPE_GAME || sourceType != SOURCE_TYPE_VOICE_RECOGNITION) {
+        return;
+    }
+    std::string key = "game_record_recognition";
+    std::string value = switchOn ? "true" : "false";
+
+    AudioServerProxy::GetInstance().SetAudioParameterProxy(key, value);
+    return;
+}
+
 int32_t AudioInterruptService::ActivatePreemptMode()
 {
     AUDIO_INFO_LOG("start activate preempt mode");
@@ -1186,8 +1226,7 @@ int32_t AudioInterruptService::ReleaseAudioInterruptZone(const int32_t zoneId, G
         return ret;
     }
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
-    lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+    PostUpdateAudioSceneFromInterruptAction(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
 
@@ -1199,8 +1238,7 @@ int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, G
         return ret;
     }
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
-    lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+    PostUpdateAudioSceneFromInterruptAction(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
 
@@ -1213,8 +1251,7 @@ int32_t AudioInterruptService::InjectInterruptToAudioZone(const int32_t zoneId,
     CHECK_AND_RETURN_RET_LOG(zoneId != ZONEID_DEFAULT, SUCCESS, "zone id is default");
 
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
-    lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+    PostUpdateAudioSceneFromInterruptAction(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
 
@@ -1227,8 +1264,7 @@ int32_t AudioInterruptService::InjectInterruptToAudioZone(const int32_t zoneId,
     CHECK_AND_RETURN_RET_LOG(zoneId != ZONEID_DEFAULT, SUCCESS, "zone id is default");
 
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
-    lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+    PostUpdateAudioSceneFromInterruptAction(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
     return SUCCESS;
 }
 
@@ -1797,7 +1833,7 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
         SendFocusChangeEvent(zoneId, AudioPolicyServerHandler::REQUEST_CALLBACK_CATEGORY, audioInterrupt);
         SendActiveVolumeTypeChangeEvent(zoneId);
         AudioScene targetAudioScene = GetHighestPriorityAudioScene(ZONEID_DEFAULT);
-        UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+        PostUpdateAudioSceneFromInterruptAction(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
         shouldReturnSuccess = true;
         return;
     }
@@ -2693,7 +2729,7 @@ void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSe
         itZone->second->audioFocusInfoList = audioFocusInfoList;
         SendActiveVolumeTypeChangeEvent(zoneId);
     }
-    UpdateAudioSceneFromInterrupt(highestPriorityAudioScene, DEACTIVATE_AUDIO_INTERRUPT, zoneId);
+    PostUpdateAudioSceneFromInterruptAction(highestPriorityAudioScene, DEACTIVATE_AUDIO_INTERRUPT, zoneId);
 }
 
 AudioScene AudioInterruptService::RefreshAudioSceneFromAudioInterrupt(const AudioInterrupt &audioInterrupt,
@@ -3073,6 +3109,16 @@ void AudioInterruptService::RegisterDefaultVolumeTypeListener()
     AUDIO_INFO_LOG("DefaultVolumeTypeListener mono successfully, defaultVolumeType:%{public}d", defaultVolumeType_);
 }
 
+void AudioInterruptService::PostUpdateAudioSceneFromInterruptAction(const AudioScene audioScene,
+    AudioInterruptChangeType changeType, int32_t zoneId)
+{
+    std::shared_ptr<UpdateAudioSceneFromInterruptAction> action =
+        std::make_shared<UpdateAudioSceneFromInterruptAction>(shared_from_this(), audioScene, changeType, zoneId);
+    CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
+    AsyncActionDesc desc;
+    desc.action = std::static_pointer_cast<PolicyAsyncAction>(action);
+    DelayedSingleton<AudioPolicyAsyncActionHandler>::GetInstance()->PostAsyncAction(desc);
+}
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

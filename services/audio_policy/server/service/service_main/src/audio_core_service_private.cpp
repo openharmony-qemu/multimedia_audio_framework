@@ -346,31 +346,6 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
     CheckAndSleepBeforeVoiceCallDeviceSet(reason);
 }
 
-void AudioCoreService::CheckRingAndVoipScene(const AudioStreamDeviceChangeReasonExt reason)
-{
-    AudioScene audioScene = audioSceneManager_.GetAudioScene();
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> ringDescs =
-        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_NOTIFICATION_RINGTONE, -1, "CheckRingAndVoipScene");
-    CHECK_AND_RETURN_LOG(ringDescs.size() != 0, "Fetch output device for ring failed");
-    
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> voipDescs =
-        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1, "CheckRingAndVoipScene");
-    CHECK_AND_RETURN_LOG(voipDescs.size() != 0, "Fetch output device for voip failed");
-
-    pipeManager_->UpdateRingAndVoipStreamStatus(audioScene);
-    pipeManager_->UpdateRingAndVoipStreamDevice(ringDescs, voipDescs);
-
-    ActivateNearlinkDevice(pipeManager_->GetStreamDescForAudioScene(audioScene), reason);
-
-    std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> ringAndVoipDescMap =
-        pipeManager_->GetRingAndVoipDescMap();
-    for (auto &entry : ringAndVoipDescMap) {
-        CHECK_AND_CONTINUE_LOG(entry.second != nullptr, "StreamDesc is nullptr");
-        sleAudioDeviceManager_.UpdateSleStreamTypeCount(entry.second);
-    }
-}
-
 int32_t AudioCoreService::UpdateModemRoute(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
 {
     if (!pipeManager_->IsModemCommunicationIdExist()) {
@@ -826,37 +801,7 @@ void AudioCoreService::ProcessOutputPipeReload(std::shared_ptr<AudioPipeInfo> pi
     CHECK_AND_RETURN_LOG(paIndex != HDI_INVALID_ID, "ReloadAudioPort failed paId[%{public}u]", paIndex);
 
     pipeInfo->paIndex_ = paIndex;
-    for (auto &desc : pipeInfo->streamDescriptors_) {
-        CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
-        HILOG_COMM_INFO("[StreamExecInfo] Stream: %{public}u, action: %{public}d, belong to %{public}s",
-            desc->sessionId_, desc->streamAction_, pipeInfo->name_.c_str());
-        switch (desc->streamAction_) {
-            case AUDIO_STREAM_ACTION_NEW:
-                CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, desc);
-                flag = desc->routeFlag_;
-                break;
-            case AUDIO_STREAM_ACTION_DEFAULT:
-            case AUDIO_STREAM_ACTION_MOVE:
-                AUDIO_INFO_LOG("Pipe module name: %{public}s, state: %{public}u",
-                    pipeInfo->moduleInfo_.name.c_str(), desc->streamStatus_);
-                CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, desc);
-                if (desc->streamStatus_ != STREAM_STATUS_STARTED) {
-                    MoveStreamSink(desc, pipeInfo, reason);
-                } else {
-                    MoveToNewOutputDevice(desc, pipeInfo, reason);
-                }
-                CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, desc);
-                break;
-            case AUDIO_STREAM_ACTION_RECREATE:
-                TriggerRecreateRendererStreamCallbackEntry(desc, reason);
-                break;
-            default:
-                break;
-        }
-        // The streamAction is used only for ProcessPipe and should be reset after being used.
-        desc->streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
-    }
-    pipeManager_->UpdateAudioPipeInfo(pipeInfo);
+    ProcessOutputPipeUpdate(pipeInfo, flag, reason);
 }
 
 void AudioCoreService::GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo,
@@ -1041,6 +986,7 @@ void AudioCoreService::ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pi
             default:
                 break;
         }
+        audioPipeSelector_->UpdateRendererPipeInfo(desc);
     }
     pipeManager_->UpdateAudioPipeInfo(pipeInfo);
 }

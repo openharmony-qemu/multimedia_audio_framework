@@ -591,13 +591,16 @@ bool AudioSessionService::IsSystemApp(int32_t pid)
     return false;
 }
 
-bool AudioSessionService::IsSystemAppWithMixStrategy(int32_t pid)
+bool AudioSessionService::IsSystemAppWithMixStrategy(const AudioInterrupt &audioInterrupt)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
-    auto session = sessionMap_.find(pid);
+    auto session = sessionMap_.find(audioInterrupt.pid);
     if (session != sessionMap_.end()) {
         return session->second->IsActivated() && session->second->IsSystemApp() &&
-               session->second->GetSessionStrategy().concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS;
+               session->second->GetSessionStrategy().concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS &&
+               audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
+               audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_VOICE_CALL &&
+               audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION;
     }
 
     return false;

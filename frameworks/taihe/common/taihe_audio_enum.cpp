@@ -396,6 +396,12 @@ static const std::map<OHOS::AudioStandard::OutputDeviceChangeRecommendedAction,
         OutputDeviceChangeRecommendedAction::key_t::DEVICE_CHANGE_RECOMMEND_TO_STOP},
 };
 
+static const std::map<OHOS::AudioStandard::RenderTarget, RenderTarget> RENDER_TARGET_TAIHE_MAP = {
+    {OHOS::AudioStandard::RenderTarget::NORMAL_PLAYBACK, RenderTarget::key_t::NORMAL_PLAYBACK},
+    {OHOS::AudioStandard::RenderTarget::INJECT_TO_VOICE_COMMUNICATION_CAPTURE,
+        RenderTarget::key_t::INJECT_TO_VOICE_COMMUNICATION_CAPTURE},
+};
+
 bool TaiheAudioEnum::IsLegalInputArgumentInterruptMode(int32_t interruptMode)
 {
     bool result = false;
@@ -500,6 +506,21 @@ bool TaiheAudioEnum::IsLegalInputArgumentRingMode(int32_t ringMode)
         case TaiheAudioEnum::AudioRingMode::RINGER_MODE_SILENT:
         case TaiheAudioEnum::AudioRingMode::RINGER_MODE_VIBRATE:
         case TaiheAudioEnum::AudioRingMode::RINGER_MODE_NORMAL:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool TaiheAudioEnum::IsLegalRenderTarget(int32_t target)
+{
+    bool result = false;
+    switch (target) {
+        case TaiheAudioEnum::RenderTarget::NORMAL_PLAYBACK:
+        case TaiheAudioEnum::RenderTarget::INJECT_TO_VOICE_COMMUNICATION_CAPTURE:
             result = true;
             break;
         default:
@@ -1405,6 +1426,17 @@ AudioLoopbackStatus TaiheAudioEnum::ToTaiheAudioLoopbackStatus(OHOS::AudioStanda
         AUDIO_WARNING_LOG("ToTaiheAudioLoopbackStatus invalid mode: %{public}d", static_cast<int32_t>(status));
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "ToTaiheAudioLoopbackStatus fail");
         return AudioLoopbackStatus::key_t::UNAVAILABLE_DEVICE;
+    }
+    return iter->second;
+}
+
+ohos::multimedia::audio::RenderTarget TaiheAudioEnum::ToTaiheRenderTarget(OHOS::AudioStandard::RenderTarget target)
+{
+    auto iter = RENDER_TARGET_TAIHE_MAP.find(target);
+    if (iter == RENDER_TARGET_TAIHE_MAP.end()) {
+        AUDIO_WARNING_LOG("ToTaiheRenderTarget invalid mode: %{public}d", static_cast<int32_t>(target));
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "ToTaiheRenderTarget fail");
+        return ohos::multimedia::audio::RenderTarget::key_t::NORMAL_PLAYBACK;
     }
     return iter->second;
 }

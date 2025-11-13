@@ -3605,6 +3605,49 @@ HWTEST_F(AudioCoreServicePrivateTest, FetchRendererPipeAndExecute_001, TestSize.
 }
 
 /**
+ * @tc.name  : AudioCoreServicePrivateTest_FetchRendererPipeAndExecute_002
+ * @tc.number: FetchRendererPipeAndExecute_002
+ * @tc.desc  : Test AudioCoreService::FetchRendererPipeAndExecute()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, FetchRendererPipeAndExecute_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    std::shared_ptr<AdapterPipeInfo> adapterPipeInfo = std::make_shared<AdapterPipeInfo>();
+    std::shared_ptr<PolicyAdapterInfo> policyAdapterInfo = std::make_shared<PolicyAdapterInfo>();
+    MakeDeviceInfoMap(configData, adapterPipeInfo, policyAdapterInfo);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.front()->deviceRole_ = OUTPUT_DEVICE;
+    streamDesc->newDeviceDescs_.front()->networkId_ = "remote";
+    streamDesc->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList;
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+    pipeInfo->adapterName_ = "primary";
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    pipeInfoList.push_back(pipeInfo);
+    AudioPipeManager::GetPipeManager()->curPipeList_ = pipeInfoList;
+
+    uint32_t sessionId = 100001;
+    uint32_t audioFlag = 16;
+    AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
+    AudioStreamDeviceChangeReasonExt reason(extEnum);
+    audioCoreService->FetchRendererPipeAndExecute(streamDesc, sessionId, audioFlag, reason);
+    EXPECT_TRUE(AudioPipeManager::GetPipeManager()->curPipeList_.size() == 1);
+
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    configData.deviceInfoMap.erase(deviceKey);
+    AudioPolicyConfigData::GetInstance().ClearDynamicStreamProps("remote", "offload_distributed_output");
+}
+
+/**
  * @tc.name  : AudioCoreServicePrivateTest_FetchRendererPipesAndExecute_001
  * @tc.number: FetchRendererPipesAndExecute_001
  * @tc.desc  : Test AudioCoreService::FetchRendererPipesAndExecute()

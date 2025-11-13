@@ -53,6 +53,19 @@ static const std::vector<DeviceType> MIC_REF_DEVICES = {
     DEVICE_TYPE_BLUETOOTH_A2DP_IN
 };
 
+static const std::vector<std::string> COMMON_RELOAD_PIPE_NAMES = {
+    "primary_input",
+    "usb_arm_input",
+    "a2dp_input",
+    "primary_input_AI"
+};
+
+static const std::vector<std::string> EC_MICREF_RELOAD_PIPE_NAMES = {
+    "primary_input",
+    "usb_arm_input",
+    "a2dp_input"
+};
+
 static std::map<std::string, AudioSampleFormat> formatStrToEnum = {
     {"s8", SAMPLE_U8},
     {"s16", SAMPLE_S16LE},
@@ -242,31 +255,30 @@ void AudioEcManager::UpdatePrimaryMicModuleInfo(std::shared_ptr<AudioPipeInfo> &
         primaryMicModuleInfo_.format.c_str());
 }
 
+void AudioEcManager::UpdateModuleInfoForPrimary(AudioModuleInfo &moduleInfo, PipeStreamPropInfo &targetInfo)
+{
+    if (moduleInfo.adapterName != PRIMARY_CLASS) {
+        return;
+    }
+    moduleInfo.channels = std::to_string(targetInfo.channels_);
+    moduleInfo.rate = std::to_string(targetInfo.sampleRate_);
+    moduleInfo.bufferSize = std::to_string(targetInfo.bufferSize_);
+    moduleInfo.format = AudioDefinitionPolicyUtils::enumToFormatStr[targetInfo.format_];
+    moduleInfo.channelLayout = std::to_string(targetInfo.channelLayout_);
+}
+
 void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStreamPropInfo &targetInfo,
     SourceType sourceType)
 {
     if (!isEcFeatureEnable_) {
-        // current layout represents the number of channel. This will need to be modify in the future.
-        moduleInfo.channels = std::to_string(targetInfo.channels_);
-        moduleInfo.rate = std::to_string(targetInfo.sampleRate_);
-        moduleInfo.bufferSize = std::to_string(targetInfo.bufferSize_);
-        moduleInfo.format = AudioDefinitionPolicyUtils::enumToFormatStr[targetInfo.format_];
-        moduleInfo.sourceType = std::to_string(sourceType);
-        moduleInfo.channelLayout = std::to_string(targetInfo.channelLayout_);
+        UpdateModuleInfoForPrimary(moduleInfo, targetInfo);
     } else {
         shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1);
         if (inputDesc != nullptr && inputDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-            moduleInfo.sourceType = std::to_string(sourceType);
             moduleInfo.deviceType = std::to_string(static_cast<int32_t>(DEVICE_TYPE_USB_ARM_HEADSET));
             moduleInfo.macAddress = inputDesc->macAddress_;
         } else {
-            // current layout represents the number of channel. This will need to be modify in the future.
-            moduleInfo.channels = std::to_string(targetInfo.channels_);
-            moduleInfo.rate = std::to_string(targetInfo.sampleRate_);
-            moduleInfo.bufferSize = std::to_string(targetInfo.bufferSize_);
-            moduleInfo.format = AudioDefinitionPolicyUtils::enumToFormatStr[targetInfo.format_];
-            moduleInfo.sourceType = std::to_string(sourceType);
-            moduleInfo.channelLayout = std::to_string(targetInfo.channelLayout_);
+            UpdateModuleInfoForPrimary(moduleInfo, targetInfo);
             if (inputDesc != nullptr) {
                 moduleInfo.deviceType = std::to_string(static_cast<int32_t>(inputDesc->deviceType_));
             }
@@ -277,6 +289,7 @@ void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStr
             primaryMicModuleInfo_.channelLayout = std::to_string(targetInfo.channelLayout_);
         }
     }
+    moduleInfo.sourceType = std::to_string(sourceType);
 }
 
 void AudioEcManager::UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType sourceType)
@@ -671,20 +684,22 @@ int32_t AudioEcManager::ReloadSourceSoftLink(std::shared_ptr<AudioPipeInfo> &pip
     return SUCCESS;
 }
 
-void AudioEcManager::ReloadSourceForSession(SessionInfo sessionInfo, uint32_t sessionId)
+int32_t AudioEcManager::ReloadSourceForSession(SessionInfo sessionInfo, uint32_t sessionId)
 {
     AUDIO_INFO_LOG("reload session for source: %{public}d", sessionInfo.sourceType);
 
     PipeStreamPropInfo targetInfo;
     SourceType targetSource = sessionInfo.sourceType;
     int32_t res = FetchTargetInfoForSessionAdd(sessionInfo, targetInfo, targetSource);
-    CHECK_AND_RETURN_LOG(res == SUCCESS, "fetch target source info error");
+    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERROR, "fetch target source info error");
 
-    ReloadNormalSource(sessionInfo, targetInfo, targetSource, sessionId);
-
-    audioActiveDevice_.UpdateActiveDeviceRoute(audioActiveDevice_.GetCurrentInputDeviceType(),
-        DeviceFlag::INPUT_DEVICES_FLAG, audioActiveDevice_.GetCurrentInputDevice().deviceName_,
-        audioActiveDevice_.GetCurrentInputDevice().networkId_);
+    int32_t result = ReloadNormalSource(sessionInfo, targetInfo, targetSource, sessionId);
+    if (result == SUCCESS) {
+        audioActiveDevice_.UpdateActiveDeviceRoute(audioActiveDevice_.GetCurrentInputDeviceType(),
+            DeviceFlag::INPUT_DEVICES_FLAG, audioActiveDevice_.GetCurrentInputDevice().deviceName_,
+            audioActiveDevice_.GetCurrentInputDevice().networkId_);
+    }
+    return result;
 }
 
 int32_t AudioEcManager::FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo, PipeStreamPropInfo &targetInfo,
@@ -822,6 +837,25 @@ uint64_t AudioEcManager::GetOpenedNormalSourceSessionId()
     return sessionIdUsedToOpenSource_;
 }
 
+bool AudioEcManager::IsValidSourcePipe(std::shared_ptr<AudioPipeInfo> &pipeInfo, bool isFromEcMicRef)
+{
+    if (pipeInfo == nullptr) {
+        AUDIO_ERR_LOG("pipe is nullptr");
+        return false;
+    }
+    std::vector<std::string> targetPipeNames = COMMON_RELOAD_PIPE_NAMES;
+    if (isFromEcMicRef) {
+        targetPipeNames = EC_MICREF_RELOAD_PIPE_NAMES;
+    }
+    auto iter = std::find(targetPipeNames.begin(), targetPipeNames.end(), pipeInfo->name_);
+    bool isValidSource = iter != targetPipeNames.end();
+    if (!isValidSource) {
+        AUDIO_WARNING_LOG("no valid source found to reload for %{public}s from EC/MicRef %{public}d",
+            pipeInfo->name_.c_str(), isFromEcMicRef);
+    }
+    return isValidSource;
+}
+
 int32_t AudioEcManager::ReloadNormalSource(SessionInfo &sessionInfo,
     PipeStreamPropInfo &targetInfo, SourceType targetSource, uint32_t sessionId)
 {
@@ -832,8 +866,9 @@ int32_t AudioEcManager::ReloadNormalSource(SessionInfo &sessionInfo,
     const std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = AudioPipeManager::GetPipeManager()->GetPipeList();
     std::shared_ptr<AudioPipeInfo> pipeInfo =
         AudioPipeManager::GetPipeManager()->FindPipeBySessionId(pipeList, targetSessionId);
-    CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, ERROR, "Get normal source pipe failed for sessionId: %{public}u",
-        targetSessionId);
+
+    // The session id is default value when this method is called from EC or MicRef function.
+    CHECK_AND_RETURN_RET(IsValidSourcePipe(pipeInfo, sessionId == DEFAULT_SESSION_ID), ERROR);
 
     UpdateEnhanceEffectState(targetSource);
     UpdateStreamCommonInfo(pipeInfo->moduleInfo_, targetInfo, targetSource);

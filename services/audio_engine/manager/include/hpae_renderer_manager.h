@@ -143,11 +143,11 @@ private:
     void RefreshProcessClusterByDeviceInner(const std::shared_ptr<HpaeSinkInputNode> &node);
     void TriggerStreamState(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode> &node);
     /**
-     * @brief Refresh the usage and type of the cluster corresponding to the given session id.
-     * @param sessionId session id of the target cluster.
+     * @brief Refresh the usage and type of the cluster corresponding to the given scene type.
+     * @param sceneType scene type of the target cluster.
      * @return errCode
      */
-    int32_t UpdateClusterBySessionId(uint32_t sessionId);
+    int32_t UpdateClusterStreamInfo(HpaeProcessorType sceneType);
     bool IsClusterDisConnected(HpaeProcessorType sceneType);
     bool QueryOneStreamUnderrun();
     void DeleteNodesByTraversal(uint32_t sessionId);
