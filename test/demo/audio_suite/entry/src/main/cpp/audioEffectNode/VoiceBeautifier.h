@@ -10,6 +10,18 @@
  
 class VoiceBeautifier {};
 
+enum {
+    ARG_0 = 0,
+    ARG_1 = 1,
+    ARG_2 = 2,
+    ARG_3 = 3,
+    ARG_4 = 4,
+    ARG_5 = 5,
+    ARG_6 = 6,
+    ARG_7 = 7,
+    ARG_8 = 8
+};
+
 struct StartVBParameters {
     std::string inputId;
     int mode = -1;

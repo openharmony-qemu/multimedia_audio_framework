@@ -588,20 +588,20 @@ static napi_value startVBEffect(napi_env env, napi_callback_info info)
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     // inputId
     std::string inputId;
-    napi_status status = parseNapiString(env, argv[0], inputId);
+    napi_status status = parseNapiString(env, argv[ARG_0], inputId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---startVBEffect---inputId==%{public}s",
                  inputId.c_str());
     // 获取二参、美化类型
     int mode = -1;
-    napi_get_value_int32(env, argv[1], &mode);
+    napi_get_value_int32(env, argv[ARG_1], &mode);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---startVBEffect--mode==%{public}zd", mode);
     // 获取三参、效果节点id
     std::string voiceBeautifierId;
-    status = parseNapiString(env, argv[2], voiceBeautifierId);
+    status = parseNapiString(env, argv[ARG_2], voiceBeautifierId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---uuid==%{public}s", voiceBeautifierId.c_str());
     // 获取当前选中的节点id
     std::string selectNodeId;
-    status = parseNapiString(env, argv[3], selectNodeId);
+    status = parseNapiString(env, argv[ARG_3], selectNodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---startVBEffect---selectNodeId==%{public}s",
                  selectNodeId.c_str());
      //调用添加美化效果节点接口

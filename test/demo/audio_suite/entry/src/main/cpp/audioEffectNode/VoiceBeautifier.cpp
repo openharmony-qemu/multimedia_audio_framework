@@ -20,18 +20,6 @@
 const int GLOBAL_RESMGR = 0xFF00;
 const char *VB_NODE_TAG = "[AudioEditTestApp_VoiceBeautifierNode_cpp]";
 
-enum {
-    ARG_0 = 0,
-    ARG_1 = 1,
-    ARG_2 = 2,
-    ARG_3 = 3,
-    ARG_4 = 4,
-    ARG_5 = 5,
-    ARG_6 = 6,
-    ARG_7 = 7,
-    ARG_8 = 8
-};
- 
 int AddVBEffectNode(std::string inputId, int mode, std::string voiceBeautifierId, std::string selectNodeId)
 {
     static constexpr OH_VoiceBeautifierType TYPE_MAP[] = {
