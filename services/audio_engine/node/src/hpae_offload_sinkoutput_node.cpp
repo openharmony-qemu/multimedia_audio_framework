@@ -378,6 +378,7 @@ void HpaeOffloadSinkOutputNode::SetPolicyState(int32_t state)
     }
     hdiPolicyState_ = static_cast<AudioOffloadType>(state);
     SetBufferSize();
+    RunningLock(true);
 }
 
 uint64_t HpaeOffloadSinkOutputNode::GetLatency()
