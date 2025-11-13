@@ -74,7 +74,7 @@ ConcurrencyAction AudioConcurrencyService::GetConcurrencyAction(
             existingPipe, commingPipe);
         return PLAY_BOTH;
     }
-    return concurrencyConfigMap.at(target);
+    return concurrencyConfigMap_.at(target);
 }
 
 AudioPipeType AudioConcurrencyService::GetPipeTypeByRouteFlag(uint32_t flag, AudioMode audioMode)
