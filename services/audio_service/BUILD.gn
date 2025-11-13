@@ -240,7 +240,8 @@ ohos_shared_library("audio_client") {
 
   deps = [
     ":audio_common",
-    "${audio_framework_root}/services/audio_service/idl:audio_client_idl_interface",
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../frameworks/native/audiodefinitions:audio_definitions",
     "../../frameworks/native/audioqosmanager:audio_qosmanager",
     "../../frameworks/native/audioutils:audio_utils",
     "../audio_policy:audio_foundation",

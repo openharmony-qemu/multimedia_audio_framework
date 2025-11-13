@@ -193,7 +193,6 @@ void AudioPolicyManagerTwoFuzzTest()
     AudioPolicyManager::GetInstance().GetStreamMute(volumeType);
     AudioPolicyManager::GetInstance().SetLowPowerVolume(streamId, volume);
     AudioPolicyManager::GetInstance().GetLowPowerVolume(streamId);
-    AudioPolicyManager::GetInstance().GetFastStreamInfo(sessionId);
     AudioPolicyManager::GetInstance().GetSingleStreamVolume(streamId);
     AudioPolicyManager::GetInstance().IsStreamActive(volumeType);
     AudioPolicyManager::GetInstance().IsStreamActiveByStreamUsage(streamUsage);
