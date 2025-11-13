@@ -1757,7 +1757,7 @@ bool RendererInClientInner::RestoreAudioStream(bool needStoreState)
     SetStreamTrackerState(false);
     // If pipe type is offload, need reset to normal.
     // Otherwise, unable to enter offload mode.
-    if (rendererInfo_.pipeType == PIPE_TYPE_OFFLOAD) {
+    if (rendererInfo_.pipeType == PIPE_TYPE_OUT_OFFLOAD) {
         rendererInfo_.pipeType = PIPE_TYPE_OUT_NORMAL;
     }
     int32_t ret = SetAudioStreamInfo(streamParams_, proxyObj_);
