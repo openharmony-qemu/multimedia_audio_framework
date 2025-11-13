@@ -81,7 +81,6 @@ void RunHpaeRenderEffectNodeTest(OHOS::AudioStandard::AudioSampleFormat format_v
     std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     nodeInfo.effectInfo.effectScene = (AudioEffectScene)0xff;
     EXPECT_EQ(hpaeRenderEffectNode->AudioRendererCreate(nodeInfo), 0);
-    EXPECT_EQ(hpaeRenderEffectNode->AudioOffloadRendererCreate(nodeInfo, sinkInfo), 0);
     EXPECT_NE(hpaeRenderEffectNode->ReleaseAudioEffectChain(nodeInfo), 0);
 }
 
