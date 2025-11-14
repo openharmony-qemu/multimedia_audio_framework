@@ -352,10 +352,18 @@ int32_t AudioCapturerSession::ReloadCaptureSessionSoftLink()
     CHECK_AND_RETURN_RET_LOG(hasSession, SUCCESS, "no need to reload session");
     AUDIO_INFO_LOG("start reload session: %{public}u", targetStream.sessionId_);
 
-    audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[targetStream.sessionId_],
+    int32_t result = audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[targetStream.sessionId_],
         targetStream.sessionId_);
-    audioEcManager_.SetOpenedNormalSourceSessionId(targetStream.sessionId_);
-    return SUCCESS;
+    if (result == SUCCESS) {
+        audioEcManager_.SetOpenedNormalSourceSessionId(targetStream.sessionId_);
+    }
+    return result;
+}
+
+bool AudioCapturerSession::IsValidSessionIdForReload(uint32_t sessionId)
+{
+    return sessionWithNormalSourceType_.count(sessionId) > 0 &&
+        specialSourceTypeSet_.count(sessionWithNormalSourceType_[sessionId].sourceType) == 0;
 }
 
 int32_t AudioCapturerSession::ReloadCaptureSession(uint32_t sessionId, SessionOperation operation)
@@ -366,13 +374,7 @@ int32_t AudioCapturerSession::ReloadCaptureSession(uint32_t sessionId, SessionOp
     uint32_t targetSessionId = sessionId;
     AudioStreamDescriptor runningSessionInfo = {};
     bool needReload = false;
-
-    if (sessionWithNormalSourceType_.count(sessionId) == 0 ||
-        (specialSourceTypeSet_.count(sessionWithNormalSourceType_[sessionId].sourceType) != 0)) {
-        AUDIO_ERR_LOG("sessionId error!");
-        return ERROR;
-    }
-
+    CHECK_AND_RETURN_RET_LOG(IsValidSessionIdForReload(sessionId), ERROR, "sessionId error!");
     SessionInfo targetSession = sessionWithNormalSourceType_[sessionId];
     bool findRunningSessionRet = FindRunningNormalSession(targetSessionId, runningSessionInfo);
     CHECK_AND_RETURN_RET_LOG(!(runningSessionInfo.capturerInfo_.sourceType == SOURCE_TYPE_MIC &&
@@ -408,10 +410,11 @@ int32_t AudioCapturerSession::ReloadCaptureSession(uint32_t sessionId, SessionOp
 
     CHECK_AND_RETURN_RET_LOG(needReload, ERROR, "no need to reload session");
     AUDIO_INFO_LOG("start reload session: %{public}u", targetSessionId);
-    audioEcManager_.ReloadSourceForSession(targetSession, targetSessionId);
-    audioEcManager_.SetOpenedNormalSourceSessionId(targetSessionId);
-
-    return SUCCESS;
+    int32_t result = audioEcManager_.ReloadSourceForSession(targetSession, targetSessionId);
+    if (result == SUCCESS) {
+        audioEcManager_.SetOpenedNormalSourceSessionId(targetSessionId);
+    }
+    return result;
 }
 
 bool AudioCapturerSession::IsVirtualAudioRecognitionSession(uint32_t sessionId)

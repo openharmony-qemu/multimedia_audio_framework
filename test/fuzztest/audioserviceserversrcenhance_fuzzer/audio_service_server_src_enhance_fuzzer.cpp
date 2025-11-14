@@ -120,7 +120,6 @@ void AudioServiceMoreFuzzTest()
 
     audioServicePtr->OnInitInnerCapList(1);
     audioServicePtr->OnUpdateInnerCapList(1);
-    audioServicePtr->ResetAudioEndpoint();
 #endif
     uint32_t sourceTypeInt = GetData<uint32_t>();
     sourceTypeInt = (sourceTypeInt % SOURCETYPE_ENUM_NUM) - NUM;

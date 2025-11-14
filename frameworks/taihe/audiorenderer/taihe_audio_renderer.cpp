@@ -32,6 +32,7 @@
 #include "taihe_renderer_period_position_callback.h"
 #include "taihe_audio_renderer_policy_service_died_callback.h"
 #include "taihe_audio_renderer_write_data_callback.h"
+#include "audio_utils.h"
 
 namespace ANI::Audio {
 std::unique_ptr<OHOS::AudioStandard::AudioRendererOptions> AudioRendererImpl::sRendererOptions_ = nullptr;
@@ -528,6 +529,57 @@ double AudioRendererImpl::GetSpeed()
     }
     double ret = audioRenderer_->GetSpeed();
     return ret;
+}
+
+void AudioRendererImpl::SetTargetSync(RenderTarget target)
+{
+    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "Caller is not a system application.");
+        return;
+    }
+    if (audioRenderer_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRenderer_ is nullptr");
+        return;
+    }
+    int32_t renderTarget = target.get_value();
+    if (!TaiheAudioEnum::IsLegalRenderTarget(renderTarget)) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "Parameter verification failed.");
+        return;
+    }
+    int32_t ret = audioRenderer_->SetTarget(static_cast<OHOS::AudioStandard::RenderTarget>(renderTarget));
+    switch (ret) {
+        case OHOS::AudioStandard::SUCCESS:
+            break;
+        case OHOS::AudioStandard::ERR_PERMISSION_DENIED:
+            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_PERMISSION, "Permission denied.");
+            break;
+        case OHOS::AudioStandard::ERR_SYSTEM_PERMISSION_DENIED:
+            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "Caller is not a system application.");
+            break;
+        case OHOS::AudioStandard::ERR_ILLEGAL_STATE:
+            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE,
+                "Operation not permit at running and release state.");
+            break;
+        case OHOS::AudioStandard::ERR_NOT_SUPPORTED:
+            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_UNSUPPORTED,
+                "Current renderer is not supported to set target.");
+            break;
+        default:
+            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM,
+                "Audio client call audio service error, System error.");
+            break;
+    }
+}
+
+RenderTarget AudioRendererImpl::GetTarget()
+{
+    if (audioRenderer_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRenderer_ is nullptr");
+        return RenderTarget::key_t::NORMAL_PLAYBACK;
+    }
+    OHOS::AudioStandard::RenderTarget target = audioRenderer_->GetTarget();
+    RenderTarget result = TaiheAudioEnum::ToTaiheRenderTarget(target);
+    return result;
 }
 
 AudioState AudioRendererImpl::GetState()

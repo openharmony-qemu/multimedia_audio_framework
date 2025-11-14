@@ -1435,6 +1435,10 @@ napi_value NapiAudioVolumeManager::RegisterSystemVolumeChangeCallback(napi_env e
 napi_value NapiAudioVolumeManager::RegisterVolumeDegreeChangeCallback(napi_env env, napi_value *args,
     const std::string &cbName, NapiAudioVolumeManager *napiAudioVolumeManager)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"),
+        "No system permission");
+
     CHECK_AND_RETURN_RET_LOG(napiAudioVolumeManager && napiAudioVolumeManager->audioSystemMngr_,
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "audio volume manager is nullptr.");
     napi_value result = nullptr;
@@ -1745,6 +1749,10 @@ void NapiAudioVolumeManager::UnregisterSystemVolumeChangeCallback(napi_env env, 
 void NapiAudioVolumeManager::UnregisterVolumeDegreeChangeCallback(napi_env env, napi_value *args,
     size_t argc, NapiAudioVolumeManager *napiAudioVolumeManager)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowError(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"),
+        "No system permission");
+
     napi_value callback = nullptr;
     CHECK_AND_RETURN_LOG(args != nullptr, "args is nullptr");
     CHECK_AND_RETURN_LOG(napiAudioVolumeManager != nullptr, "napiAudioVolumeManager is nullptr");
@@ -1872,6 +1880,9 @@ napi_value NapiAudioVolumeManager::GetSystemVolumePercentage(napi_env env, napi_
 
 napi_value NapiAudioVolumeManager::SetSystemVolumePercentage(napi_env env, napi_callback_info info)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"),
+        "No system permission");
     auto context = std::make_shared<AudioVolumeManagerAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("failed : no memory");
@@ -1904,7 +1915,16 @@ napi_value NapiAudioVolumeManager::SetSystemVolumePercentage(napi_env env, napi_
             "audio volume manager state is error.");
         context->intValue = napiAudioVolumeManager->audioSystemMngr_->SetVolumeDegree(
             NapiAudioEnum::GetNativeAudioVolumeType(context->volumeType), context->volDegree);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "failed", NAPI_ERR_SYSTEM);
+        CHECK_AND_RETURN(context->intValue != SUCCESS);
+        if (context->intValue == ERR_PERMISSION_DENIED) {
+            context->SignError(NAPI_ERR_NO_PERMISSION);
+        } else if (context->intValue == ERR_SYSTEM_PERMISSION_DENIED) {
+            context->SignError(NAPI_ERR_PERMISSION_DENIED);
+        } else if (context->intValue == ERR_INVALID_PARAM) {
+            context->SignError(NAPI_ERR_INVALID_PARAM);
+        } else {
+            context->SignError(NAPI_ERR_SYSTEM, "failed");
+        }
     };
 
     auto complete = [env](napi_value &output) {

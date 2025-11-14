@@ -118,7 +118,6 @@ interface IAudioPolicy {
     void GetCurrentRendererChangeInfos([out] List<sharedptr<AudioRendererChangeInfo>> audioRendererChangeInfos);
     void GetCurrentCapturerChangeInfos([out] List<sharedptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos);
     void SetLowPowerVolume([in] int streamId, [in] float volume);
-    void GetFastStreamInfo([out] AudioStreamInfo streamInfo, [in] unsigned int sessionId);
     void GetLowPowerVolume([in] int streamId, [out] float retVolume);
     void UpdateStreamState([in] int clientUid, [in] int streamSetState, [in] int streamUsage);
     void GetSingleStreamVolume([in] int streamId, [out] float retVolume);

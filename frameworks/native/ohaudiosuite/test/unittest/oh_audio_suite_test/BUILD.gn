@@ -14,52 +14,54 @@
 import("//build/test.gni")
 import("../../../../../../config.gni")
 
-module_output_path = "audio_framework/audio_framework_route/audio_ndk"
-audio_framework_root = "//foundation/multimedia/audio_framework"
+if (audio_framework_feature_audiosuite_support) {
+  module_output_path = "audio_framework/audio_framework_route/audio_ndk"
+  audio_framework_root = "//foundation/multimedia/audio_framework"
 
-config("audio_suite_config") {
-  include_dirs = [
-    "${audio_framework_root}/frameworks/native/ohaudiosuite",
-    "${audio_framework_root}/interfaces/inner_api/native/audiocommon/include",
-    "${audio_framework_root}/interfaces/inner_api/native/audiostream/include",
-    "${audio_framework_root}/interfaces/inner_api/native/audiosuite/include",
-  ]
+  config("audio_suite_config") {
+    include_dirs = [
+      "${audio_framework_root}/frameworks/native/ohaudiosuite",
+      "${audio_framework_root}/interfaces/inner_api/native/audiocommon/include",
+      "${audio_framework_root}/interfaces/inner_api/native/audiostream/include",
+      "${audio_framework_root}/interfaces/inner_api/native/audiosuite/include",
+    ]
 
-  cflags = [
-    "-Wall",
-    "-Werror",
-    "-fno-access-control",
-  ]
-}
+    cflags = [
+      "-Wall",
+      "-Werror",
+      "-fno-access-control",
+    ]
+  }
 
-config("audio_ohaudiosuite_config") {
-  include_dirs = [
-    "${audio_framework_root}/interfaces/kits/c/audio_suite/",
-    "${audio_framework_root}/interfaces/kits/c/common/",
-  ]
-}
+  config("audio_ohaudiosuite_config") {
+    include_dirs = [
+      "${audio_framework_root}/interfaces/kits/c/audio_suite/",
+      "${audio_framework_root}/interfaces/kits/c/common/",
+    ]
+  }
 
-ohos_unittest("audio_oh_audio_suite_unit_test") {
-  module_out_path = module_output_path
-  include_dirs = [ "./include" ]
+  ohos_unittest("audio_oh_audio_suite_unit_test") {
+    module_out_path = module_output_path
+    include_dirs = [ "./include" ]
 
-  configs = [
-    ":audio_suite_config",
-    ":audio_ohaudiosuite_config",
-  ]
+    configs = [
+      ":audio_suite_config",
+      ":audio_ohaudiosuite_config",
+    ]
 
-  sources = [
-    "src/oh_audio_suite_engine_test.cpp",
-    "src/oh_audio_suite_node_builder_test.cpp",
-  ]
+    sources = [
+      "src/oh_audio_suite_engine_test.cpp",
+      "src/oh_audio_suite_node_builder_test.cpp",
+    ]
 
-  deps = [
-    "${audio_framework_root}/frameworks/native/ohaudiosuite:ohaudiosuite",
-    "${audio_framework_root}/frameworks/native/audioutils:audio_utils"
-  ]
+    deps = [
+      "${audio_framework_root}/frameworks/native/ohaudiosuite:ohaudiosuite",
+      "${audio_framework_root}/frameworks/native/audioutils:audio_utils"
+    ]
 
-  external_deps = [
-    "hilog:libhilog",
-    "ipc:ipc_single",
-  ]
+    external_deps = [
+      "hilog:libhilog",
+      "ipc:ipc_single",
+    ]
+  }
 }

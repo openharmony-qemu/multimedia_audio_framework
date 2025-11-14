@@ -1254,7 +1254,7 @@ bool AudioRendererPrivate::Mute(StateChangeCmdType cmdType) const
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::shared_lock<std::shared_mutex>(rendererMutex_);
     }
-    AUDIO_INFO_LOG("StreamClientState for Renderer::Mute. id: %{public}u", sessionID_);
+    AUDIO_INFO_LOG("StreamClientState for Renderer::Mute for background control. id: %{public}u", sessionID_);
     (void)audioStream_->SetMute(true, cmdType);
     return true;
 }
@@ -1266,7 +1266,7 @@ bool AudioRendererPrivate::Unmute(StateChangeCmdType cmdType) const
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::shared_lock<std::shared_mutex>(rendererMutex_);
     }
-    AUDIO_INFO_LOG("StreamClientState for Renderer::Unmute. id: %{public}u", sessionID_);
+    AUDIO_INFO_LOG("StreamClientState for Renderer::Unmute for background control. id: %{public}u", sessionID_);
     (void)audioStream_->SetMute(false, cmdType);
     UpdateAudioInterruptStrategy(GetVolumeInner(), false);
     return true;
@@ -1463,9 +1463,12 @@ void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume, bool setVo
         isStillZeroStreamVolume_ = (volume == 0);
     } else if ((isStillZeroStreamVolume_ || !isMute) && volume > 0) {
         isStillZeroStreamVolume_ = false;
-        audioInterrupt_.sessionStrategy.concurrencyMode =
+        std::lock_guard<std::mutex> lock(silentModeAndMixWithOthersMutex_);
+        AudioConcurrencyMode originalConcurrencyMode =
             (originalStrategy_.concurrencyMode == AudioConcurrencyMode::INVALID ?
             AudioConcurrencyMode::DEFAULT : originalStrategy_.concurrencyMode);
+        audioInterrupt_.sessionStrategy.concurrencyMode =
+            audioStream_->GetSilentModeAndMixWithOthers() ? AudioConcurrencyMode::SILENT : originalConcurrencyMode;
         if (currentState == RUNNING && !noNeedActive) {
             AudioInterrupt audioInterrupt = audioInterrupt_;
             AUDIO_INFO_LOG("UpdateAudioInterruptStrategy for set volume,  volume=%{public}f", volume);
@@ -1893,6 +1896,7 @@ void AudioRendererPrivate::SetInterruptMode(InterruptMode mode)
 void AudioRendererPrivate::SetSilentModeAndMixWithOthers(bool on)
 {
     Trace trace(std::string("AudioRenderer::SetSilentModeAndMixWithOthers:") + (on ? "on" : "off"));
+    AUDIO_INFO_LOG("%{public}d", on);
     std::shared_lock<std::shared_mutex> sharedLockSwitch;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         sharedLockSwitch = std::shared_lock<std::shared_mutex>(rendererMutex_);

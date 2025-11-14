@@ -101,7 +101,7 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::Deinit()
     isEqAlgoInit_ = false;
     if (libHandle_ != nullptr) {
         int32_t ret = dlclose(libHandle_);
-        CHECK_AND_RETURN_RET_LOG(ret != 0, ret, "dlclose failed: %{public}s", dlerror());
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "dlclose failed: %{public}s", dlerror());
         libHandle_ = nullptr;
     }
     static_cast<void>(memset_s(&algoApi_, sizeof(algoApi_), 0, sizeof(algoApi_)));

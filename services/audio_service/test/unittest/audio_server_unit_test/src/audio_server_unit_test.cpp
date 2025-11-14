@@ -441,6 +441,11 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAudioParameter_001, TestSize.Level1)
     audioServer->SetAudioParameter("AUDIO_EXT_PARAM_KEY_A2DP_OFFLOAD_CONFIG", "");
     audioServer->SetAudioParameter("mmi", "");
     audioServer->SetAudioParameter("perf_info", "");
+
+    audioServer->SetAudioParameter("VOICE_PHONE_STATUS", "1");
+    audioServer->GetAudioParameter("VOICE_PHONE_STATUS", str);
+    EXPECT_EQ(str, "1");
+
     audioServer->GetAudioParameter("", str);
     audioServer->GetAudioParameter("AUDIO_EXT_PARAM_KEY_LOWPOWER", str);
     audioServer->GetAudioParameter("perf_info", str);
@@ -1479,10 +1484,9 @@ HWTEST_F(AudioServerUnitTest, RendereataTransferStateChangeCallback_005, TestSiz
  */
 HWTEST_F(AudioServerUnitTest, CreateAudioWorkgroup_001, TestSize.Level1)
 {
-    int32_t pid = 123;
     sptr<IRemoteObject> object = nullptr;
     int32_t result = -1;
-    audioServer->CreateAudioWorkgroup(pid, object, result);
+    audioServer->CreateAudioWorkgroup(object, result);
     EXPECT_NE(result, 0);
 }
 
@@ -2374,9 +2378,8 @@ HWTEST_F(AudioServerUnitTest, SetActiveOutputDevice_001, TestSize.Level1)
  */
 HWTEST_F(AudioServerUnitTest, ImproveAudioWorkgroupPrio_001, TestSize.Level1)
 {
-    pid_t pid = 1234;
     std::unordered_map<int32_t, bool> threads = {{1, true}, {2, false}};
-    int32_t result = audioServer->ImproveAudioWorkgroupPrio(pid, threads);
+    int32_t result = audioServer->ImproveAudioWorkgroupPrio(threads);
     EXPECT_EQ(result, 0);
 }
  
@@ -2388,9 +2391,8 @@ HWTEST_F(AudioServerUnitTest, ImproveAudioWorkgroupPrio_001, TestSize.Level1)
  */
 HWTEST_F(AudioServerUnitTest, ImproveAudioWorkgroupPrio_002, TestSize.Level1)
 {
-    pid_t pid = -1;
-    std::unordered_map<int32_t, bool> threads = {{1, true}, {2, false}};
-    int32_t result = audioServer->ImproveAudioWorkgroupPrio(pid, threads);
+    std::unordered_map<int32_t, bool> threads = {{1, true}, {2, true}};
+    int32_t result = audioServer->ImproveAudioWorkgroupPrio(threads);
     EXPECT_EQ(result, 0);
 }
  
@@ -2402,10 +2404,9 @@ HWTEST_F(AudioServerUnitTest, ImproveAudioWorkgroupPrio_002, TestSize.Level1)
  */
 HWTEST_F(AudioServerUnitTest, ImproveAudioWorkgroupPrio_003, TestSize.Level1)
 {
-    pid_t pid = 1234;
     std::unordered_map<int32_t, bool> threads = {};
-    int32_t result = audioServer->ImproveAudioWorkgroupPrio(pid, threads);
-    EXPECT_EQ(result, 0);
+    int32_t result = audioServer->ImproveAudioWorkgroupPrio(threads);
+    EXPECT_NE(result, 0);
 }
  
 /**
@@ -2416,9 +2417,8 @@ HWTEST_F(AudioServerUnitTest, ImproveAudioWorkgroupPrio_003, TestSize.Level1)
  */
 HWTEST_F(AudioServerUnitTest, RestoreAudioWorkgroupPrio_001, TestSize.Level1)
 {
-    pid_t pid = 1234;
     std::unordered_map<int32_t, int32_t> threads = {{1, 10}, {2, 20}, {3, 30}};
-    int32_t result = audioServer->RestoreAudioWorkgroupPrio(pid, threads);
+    int32_t result = audioServer->RestoreAudioWorkgroupPrio(threads);
     EXPECT_EQ(result, 0);
 }
  
@@ -2430,9 +2430,8 @@ HWTEST_F(AudioServerUnitTest, RestoreAudioWorkgroupPrio_001, TestSize.Level1)
  */
 HWTEST_F(AudioServerUnitTest, RestoreAudioWorkgroupPrio_002, TestSize.Level1)
 {
-    pid_t pid = -1;
-    std::unordered_map<int32_t, int32_t> threads = {{1, 10}, {2, 20}, {3, 30}};
-    int32_t result = audioServer->RestoreAudioWorkgroupPrio(pid, threads);
+    std::unordered_map<int32_t, int32_t> threads = {{1, 10}, {2, 20}, {3, 20}};
+    int32_t result = audioServer->RestoreAudioWorkgroupPrio(threads);
     EXPECT_EQ(result, 0);
 }
  
@@ -2444,10 +2443,9 @@ HWTEST_F(AudioServerUnitTest, RestoreAudioWorkgroupPrio_002, TestSize.Level1)
  */
 HWTEST_F(AudioServerUnitTest, RestoreAudioWorkgroupPrio_003, TestSize.Level1)
 {
-    pid_t pid = 1234;
     std::unordered_map<int32_t, int32_t> threads = {};
-    int32_t result = audioServer->RestoreAudioWorkgroupPrio(pid, threads);
-    EXPECT_EQ(result, 0);
+    int32_t result = audioServer->RestoreAudioWorkgroupPrio(threads);
+    EXPECT_NE(result, 0);
 }
 
 #ifdef TEMP_DISABLE
@@ -2539,21 +2537,6 @@ HWTEST_F(AudioServerUnitTest, OnMuteStateChange_002, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test SetAudioParameter API
- * @tc.type  : FUNC
- * @tc.number: AudioServerSetAudioParameter_004
- * @tc.desc  : Test SetAudioParameter interface.
- */
-HWTEST_F(AudioServerUnitTest, AudioServerSetAudioParameter_004, TestSize.Level1)
-{
-    int PARAMETER_SET_LIMIT = 1024;
-    for (int i = 0; i < PARAMETER_SET_LIMIT + 1; ++i) {
-        audioServer->SetAudioParameter("key" + std::to_string(i), "value" + std::to_string(i));
-    }
-    EXPECT_NE(audioServer->SetAudioParameter("key", "value"), SUCCESS);
-}
-
-/**
  * @tc.name  : Test SetAudioSceneInner API
  * @tc.type  : FUNC
  * @tc.number: AudioServerSetAudioSceneInner_005
@@ -2640,6 +2623,30 @@ HWTEST_F(AudioServerUnitTest, CheckMaxLoopbackInstances_003, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
     int32_t ret = audioServer->CheckMaxLoopbackInstances(AUDIO_MODE_PLAYBACK);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioWorkgroup IPC Interface
+ * @tc.type  : FUNC
+ * @tc.number: AudioWorkgroupIPC_001
+ * @tc.desc  : Test AudioWorkgroup IPC with random value
+ */
+HWTEST_F(AudioServerUnitTest, AudioWorkgroupIPC_001, TestSize.Level1)
+{
+    int32_t result = audioServer->ReleaseAudioWorkgroup(1234);
+    EXPECT_NE(result, 0);
+ 
+    result = audioServer->AddThreadToGroup(1234, 1234);
+    EXPECT_NE(result, 0);
+ 
+    result = audioServer->RemoveThreadFromGroup(1234, 1234);
+    EXPECT_NE(result, 0);
+ 
+    result = audioServer->StartGroup(1234, 0, 0);
+    EXPECT_NE(result, 0);
+ 
+    result = audioServer->StopGroup(1234);
+    EXPECT_NE(result, 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -210,7 +210,6 @@ void AudioActiveDevice::NotifyUserDisSelectionEventToBt(std::shared_ptr<AudioDev
         Bluetooth::AudioHfpManager::DisconnectSco();
     }
 #endif
-    SleAudioDeviceManager::GetInstance().SetActiveDevice(audioDeviceDescriptor, STREAM_USAGE_INVALID);
     SleAudioDeviceManager::GetInstance().SendUserSelection(*audioDeviceDescriptor, streamUsage, USER_NOT_SELECT_SLE);
 }
 
@@ -284,7 +283,6 @@ void AudioActiveDevice::HandleActiveBt(DeviceType deviceType, std::string macAdd
     }
     if (GetCurrentOutputDeviceType() == DEVICE_TYPE_NEARLINK &&
         deviceType != DEVICE_TYPE_NEARLINK) {
-        SleAudioDeviceManager::GetInstance().SetActiveDevice(GetCurrentOutputDevice(), STREAM_USAGE_INVALID);
         SleAudioDeviceManager::GetInstance().SendUserSelection(GetCurrentOutputDevice(),
             STREAM_USAGE_VOICE_COMMUNICATION, USER_NOT_SELECT_SLE);
     }
@@ -304,7 +302,6 @@ void AudioActiveDevice::HandleNegtiveBt(DeviceType deviceType)
     }
     if (GetCurrentOutputDeviceType() == DEVICE_TYPE_NEARLINK &&
         deviceType == DEVICE_TYPE_NEARLINK) {
-        SleAudioDeviceManager::GetInstance().SetActiveDevice(GetCurrentOutputDevice(), STREAM_USAGE_INVALID);
         SleAudioDeviceManager::GetInstance().SendUserSelection(GetCurrentOutputDevice(),
             STREAM_USAGE_VOICE_COMMUNICATION, USER_NOT_SELECT_SLE);
     }
@@ -457,6 +454,7 @@ void AudioActiveDevice::UpdateStreamDeviceMap(std::string source)
     std::string logStr = "";
     for (auto &desc : descs) {
         CHECK_AND_CONTINUE(desc != nullptr);
+        CHECK_AND_CONTINUE(desc->streamStatus_ == STREAM_STATUS_STARTED);
         logStr += "session: " + std::to_string(desc->sessionId_) +
             ", appuid: " + std::to_string(desc->appInfo_.appUid) +
             ", usage: " + std::to_string(desc->rendererInfo_.streamUsage) +
@@ -549,8 +547,6 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(Aud
     }
     if (volumeTypeDeviceMap_.contains(type)
         && IsAvailableFrontDeviceInVector(volumeTypeDeviceMap_[type])) {
-        AUDIO_INFO_LOG("Get Device %{public}s for stream %{public}d from map",
-            volumeTypeDeviceMap_[type].front()->GetName().c_str(), type);
         return volumeTypeDeviceMap_[type].front();
     }
     std::vector<StreamUsage> usages = VolumeUtils::GetStreamUsageByVolumeTypeForFetchDevice(type);

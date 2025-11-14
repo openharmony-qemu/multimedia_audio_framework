@@ -58,7 +58,7 @@ public:
     int32_t FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo, PipeStreamPropInfo &targetInfo,
         SourceType &targetSourceType);
 
-    void ReloadSourceForSession(SessionInfo sessionInfo, uint32_t sessionId = DEFAULT_SESSION_ID);
+    int32_t ReloadSourceForSession(SessionInfo sessionInfo, uint32_t sessionId = DEFAULT_SESSION_ID);
     int32_t ReloadSourceSoftLink(std::shared_ptr<AudioPipeInfo> &pipeInfo, const AudioModuleInfo &moduleInfo);
 
     void SetDpSinkModuleInfo(const AudioModuleInfo &moduleInfo);
@@ -76,6 +76,8 @@ public:
         uint32_t sessionId = DEFAULT_SESSION_ID);
     void UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
     void UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
+    bool IsValidSourcePipe(std::shared_ptr<AudioPipeInfo> &pipeInfo, bool isFromEcMicRef);
+    void UpdateModuleInfoForPrimary(AudioModuleInfo &moduleInfo, PipeStreamPropInfo &targetInfo);
 private:
     AudioEcManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),

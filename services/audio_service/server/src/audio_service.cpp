@@ -858,8 +858,7 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     uint32_t sessionId = process->GetSessionId();
     CheckFastSessionMuteState(sessionId, process);
 
-    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
-    int32_t ret = process->ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, audioStreamInfo, buffer);
+    int32_t ret = process->ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, audioStreamInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "ConfigProcessBuffer failed");
 
     ret = LinkProcessToEndpoint(process, audioEndpoint);
@@ -870,72 +869,6 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     CheckInnerCapForProcess(process, audioEndpoint);
 #endif
     return process;
-}
-
-void AudioService::ResetAudioEndpoint()
-{
-    std::lock_guard<std::mutex> lock(processListMutex_);
-
-    std::vector<std::string> audioEndpointNames;
-    for (auto paired = linkedPairedList_.begin(); paired != linkedPairedList_.end(); paired++) {
-        if (paired->second->GetEndpointType() == AudioEndpoint::TYPE_MMAP) {
-            // unlink old link
-            if (UnlinkProcessToEndpoint(paired->first, paired->second) != SUCCESS) {
-                AUDIO_ERR_LOG("Unlink process to old endpoint failed");
-            }
-            audioEndpointNames.push_back(paired->second->GetEndpointName());
-        }
-    }
-
-    // release old endpoint
-    for (auto &endpointName : audioEndpointNames) {
-        if (endpointList_.count(endpointName) > 0) {
-            endpointList_[endpointName]->Release();
-            AUDIO_INFO_LOG("Erase endpoint %{public}s from endpointList_", endpointName.c_str());
-            endpointList_.erase(endpointName);
-        }
-    }
-
-    ReLinkProcessToEndpoint();
-}
-
-void AudioService::ReLinkProcessToEndpoint()
-{
-    using LinkPair = std::pair<sptr<AudioProcessInServer>, std::shared_ptr<AudioEndpoint>>;
-    std::vector<std::vector<LinkPair>::iterator> errorLinkedPaireds;
-    for (auto paired = linkedPairedList_.begin(); paired != linkedPairedList_.end(); paired++) {
-        if (paired->second->GetEndpointType() == AudioEndpoint::TYPE_MMAP) {
-            AUDIO_INFO_LOG("Session id %{public}u", paired->first->GetSessionId());
-
-            // get new endpoint
-            AudioStreamInfo streamInfo;
-            const AudioProcessConfig &config = paired->first->processConfig_;
-            AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config, streamInfo, true);
-            std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config,
-                streamInfo, IsEndpointTypeVoip(config, deviceInfo));
-            if (audioEndpoint == nullptr) {
-                AUDIO_ERR_LOG("Get new endpoint failed");
-                errorLinkedPaireds.push_back(paired);
-                continue;
-            }
-            // link new endpoint
-            if (LinkProcessToEndpoint(paired->first, audioEndpoint) != SUCCESS) {
-                AUDIO_ERR_LOG("LinkProcessToEndpoint failed");
-                errorLinkedPaireds.push_back(paired);
-                continue;
-            }
-            // reset shared_ptr before to new
-            paired->second.reset();
-            paired->second = audioEndpoint;
-#ifdef HAS_FEATURE_INNERCAPTURER
-            CheckInnerCapForProcess(paired->first, audioEndpoint);
-#endif
-        }
-    }
-
-    for (auto &paired : errorLinkedPaireds) {
-        linkedPairedList_.erase(paired);
-    }
 }
 
 #ifdef HAS_FEATURE_INNERCAPTURER

@@ -75,8 +75,8 @@ bool AudioBackgroundManager::IsAllowedPlayback(const int32_t &uid, const int32_t
 
     AppState &appState = appStatesMap_[pid];
     AUDIO_INFO_LOG("appStatesMap_ start pid: %{public}d with hasSession: %{public}d, isBack: %{public}d, "
-        "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
-        appState.hasBackTask, appState.isFreeze);
+        "hasBackgroundTask: %{public}d, isFreeze: %{public}d, isSystem: %{public}d", pid, appState.hasSession,
+        appState.isBack, appState.hasBackTask, appState.isFreeze, appState.isSystem);
     if (appState.isBack && !appState.isSystem) {
         bool mute = appState.hasBackTask ? false : (appState.isBinder ? true : false);
         if (!appState.hasSession) {
@@ -119,8 +119,8 @@ void AudioBackgroundManager::NotifyAppStateChange(const int32_t uid, const int32
         appState.isFreeze = isBack ? appState.isFreeze : false;
         appState.isBinder = isBack ? appState.isBinder : false;
         AUDIO_INFO_LOG("appStatesMap_ change pid: %{public}d with hasSession: %{public}d, isBack: %{public}d, "
-            "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
-            appState.hasBackTask, appState.isFreeze);
+            "hasBackgroundTask: %{public}d, isFreeze: %{public}d, isSystem: %{public}d", pid, appState.hasSession,
+            appState.isBack, appState.hasBackTask, appState.isFreeze, appState.isSystem);
         if (!isBack) {
             return streamCollector_.HandleForegroundUnmute(uid, pid);
         }
@@ -150,8 +150,8 @@ void AudioBackgroundManager::NotifyBackgroundTaskStateChange(const int32_t uid, 
         CHECK_AND_RETURN(appState.hasBackTask != hasBackgroundTask);
         appState.hasBackTask = hasBackgroundTask;
         AUDIO_INFO_LOG("appStatesMap_ change pid: %{public}d with hasSession: %{public}d, isBack: %{public}d, "
-            "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
-            appState.hasBackTask, appState.isFreeze);
+            "hasBackgroundTask: %{public}d, isFreeze: %{public}d, isSystem: %{public}d", pid, appState.hasSession,
+            appState.isBack, appState.hasBackTask, appState.isFreeze, appState.isSystem);
         if (appState.hasBackTask && !appState.isFreeze) {
             streamCollector_.HandleBackTaskStateChange(uid, appState.hasSession);
         }
@@ -173,8 +173,8 @@ int32_t AudioBackgroundManager::NotifySessionStateChange(const int32_t uid, cons
         CHECK_AND_RETURN_RET(appState.hasSession != hasSession, SUCCESS);
         appState.hasSession = hasSession;
         AUDIO_INFO_LOG("appStatesMap_ change pid: %{public}d with hasSession: %{public}d, isBack: %{public}d, "
-            "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
-            appState.hasBackTask, appState.isFreeze);
+            "hasBackgroundTask: %{public}d, isFreeze: %{public}d, isSystem: %{public}d", pid, appState.hasSession,
+            appState.isBack, appState.hasBackTask, appState.isFreeze, appState.isSystem);
         HandleSessionStateChange(uid, pid);
         WriteAppStateChangeSysEvent(pid, appStatesMap_[pid], true);
     }
@@ -213,8 +213,8 @@ int32_t AudioBackgroundManager::NotifyFreezeStateChange(const std::set<int32_t> 
             appState.isFreeze = isFreeze;
             appState.isBinder = !isFreeze;
             AUDIO_INFO_LOG("appStatesMap_ change pid: %{public}d with hasSession: %{public}d, isBack: %{public}d, "
-                "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
-                appState.hasBackTask, appState.isFreeze);
+                "hasBackgroundTask: %{public}d, isFreeze: %{public}d, isSystem: %{public}d", pid, appState.hasSession,
+                appState.isBack, appState.hasBackTask, appState.isFreeze, appState.isSystem);
             HandleFreezeStateChange(pid, isFreeze);
         }
     }

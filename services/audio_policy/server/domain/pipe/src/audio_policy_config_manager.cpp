@@ -847,10 +847,9 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetDynamicStreamPr
 bool AudioPolicyConfigManager::MatchStreamPropInfo(std::shared_ptr<PipeStreamPropInfo> &info,
     std::shared_ptr<AdapterPipeInfo> &adapterPipeInfo, const AudioStreamInfo &streamInfo)
 {
-    std::shared_ptr<PipeStreamPropInfo> streamProp = std::make_shared<PipeStreamPropInfo>();
     AudioStreamInfo temp(streamInfo.samplingRate, streamInfo.encoding, streamInfo.format, streamInfo.channels,
         streamInfo.channelLayout);
-    streamProp = GetStreamPropInfoFromPipe(adapterPipeInfo, temp);
+    std::shared_ptr<PipeStreamPropInfo> streamProp = GetStreamPropInfoFromPipe(adapterPipeInfo, temp);
     if (streamProp != nullptr) {
         info = streamProp;
         return true;

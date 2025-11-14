@@ -1202,10 +1202,10 @@ bool NapiAudioEnum::IsLegalCapturerType(int32_t type)
     return result;
 }
 
-bool NapiAudioEnum::IsLegalRenderTargetType(int32_t type)
+bool NapiAudioEnum::IsLegalRenderTarget(int32_t target)
 {
     bool result = false;
-    switch (type) {
+    switch (target) {
         case NORMAL_PLAYBACK:
         case INJECT_TO_VOICE_COMMUNICATION_CAPTURE:
             result = true;

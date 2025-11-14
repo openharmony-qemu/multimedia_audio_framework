@@ -611,6 +611,7 @@ int32_t OHAudioSuiteEngine::GetPipelineState(OHAudioSuitePipeline *audioPipeline
 int32_t OHAudioSuiteEngine::RenderFrame(OHAudioSuitePipeline *audioPipeline,
     uint8_t *audioData, int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag)
 {
+    Trace trace("OHAudioSuiteEngine::RenderFrame Start");
     CHECK_AND_RETURN_RET_LOG(audioPipeline != nullptr, ERR_INVALID_PARAM,
         "RenderFrame failed, audioPipeline is nullptr.");
 
@@ -620,12 +621,14 @@ int32_t OHAudioSuiteEngine::RenderFrame(OHAudioSuitePipeline *audioPipeline,
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().RenderFrame(
         pipelineId, audioData, requestFrameSize, responseSize, finishedFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RenderFrame failed, ret = %{public}d.", ret);
+    trace.End();
     return ret;
 }
 
 int32_t OHAudioSuiteEngine::MultiRenderFrame(OHAudioSuitePipeline *audioPipeline,
     AudioSuite::AudioDataArray *audioDataArray, int32_t *responseSize, bool *finishedFlag)
 {
+    Trace trace("OHAudioSuiteEngine::MultiRenderFrame Start");
     CHECK_AND_RETURN_RET_LOG(audioPipeline != nullptr, ERR_INVALID_PARAM,
         "MultiRenderFrame failed, audioPipeline is nullptr.");
 
@@ -635,6 +638,7 @@ int32_t OHAudioSuiteEngine::MultiRenderFrame(OHAudioSuitePipeline *audioPipeline
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().MultiRenderFrame(
         pipelineId, audioDataArray, responseSize, finishedFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "MultiRenderFrame failed, ret = %{public}d.", ret);
+    trace.End();
     return ret;
 }
 

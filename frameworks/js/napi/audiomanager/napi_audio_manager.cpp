@@ -180,7 +180,6 @@ void NapiAudioManager::Destructor(napi_env env, void *nativeObject, void *finali
     }
     auto obj = static_cast<NapiAudioManager*>(nativeObject);
     ObjectRefMap<NapiAudioManager>::DecreaseRef(obj);
-    AUDIO_INFO_LOG("Decrease obj count");
 }
 
 napi_value NapiAudioManager::Construct(napi_env env, napi_callback_info info)

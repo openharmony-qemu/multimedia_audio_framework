@@ -910,11 +910,10 @@ void AudioServerRemoveThreadFromGroupFuzzTest(const uint8_t *rawData, size_t siz
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    int32_t pid = *reinterpret_cast<const int32_t*>(rawData);
     int32_t workgroupId = *reinterpret_cast<const int32_t*>(rawData);
     int32_t tokenId = *reinterpret_cast<const int32_t*>(rawData);
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->RemoveThreadFromGroup(pid, workgroupId, tokenId);
+    audioServerPtr->RemoveThreadFromGroup(workgroupId, tokenId);
 }
 
 void AudioServerGetVolumeBySessionIdFuzzTest(const uint8_t *rawData, size_t size)
@@ -935,11 +934,10 @@ void AudioServerImproveAudioWorkgroupPrioFuzzTest(const uint8_t *rawData, size_t
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    int32_t pid = GetData<int32_t>();
     int32_t value1 = GetData<int32_t>();
     unordered_map<int32_t, bool> threads = {{value1, true}};
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->ImproveAudioWorkgroupPrio(pid, threads);
+    audioServerPtr->ImproveAudioWorkgroupPrio(threads);
 }
 
 void AudioServerRestoreAudioWorkgroupPrioFuzzTest(const uint8_t *rawData, size_t size)
@@ -947,12 +945,11 @@ void AudioServerRestoreAudioWorkgroupPrioFuzzTest(const uint8_t *rawData, size_t
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    int32_t pid = GetData<int32_t>();
     int32_t value1 = GetData<int32_t>();
     int32_t value2 = GetData<int32_t>();
     unordered_map<int32_t, int32_t> threads = {{value1, value2}};
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->RestoreAudioWorkgroupPrio(pid, threads);
+    audioServerPtr->RestoreAudioWorkgroupPrio(threads);
 }
 
 void AudioServerGetPrivacyTypeAudioServerFuzzTest(const uint8_t *rawData, size_t size)

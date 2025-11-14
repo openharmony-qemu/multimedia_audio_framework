@@ -1049,6 +1049,7 @@ void AudioDeviceStatus::AddEarpiece()
     AudioPolicyUtils::GetInstance().UpdateDisplayName(audioDescriptor);
     audioDeviceManager_.AddNewDevice(audioDescriptor);
     audioConnectedDevice_.AddConnectedDevice(audioDescriptor);
+    AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(audioDescriptor);
     AUDIO_INFO_LOG("Add earpiece to device list");
 }
 
@@ -1109,6 +1110,7 @@ void AudioDeviceStatus::AddAudioDevice(AudioModuleInfo& moduleInfo, DeviceType d
     audioDeviceManager_.AddNewDevice(audioDescriptor);
     audioConnectedDevice_.AddConnectedDevice(audioDescriptor);
     audioMicrophoneDescriptor_.AddMicrophoneDescriptor(audioDescriptor);
+    AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(audioDescriptor);
 }
 
 int32_t AudioDeviceStatus::OnServiceConnected(AudioServiceIndex serviceIndex)
@@ -1371,15 +1373,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceStatus::UserSelec
     return userSelectDeviceMap;
 }
 
-void AudioDeviceStatus::DeactivateNearlinkDevice(AudioDeviceDescriptor &desc)
-{
-    if (desc.deviceType_ == DEVICE_TYPE_NEARLINK || desc.deviceType_ == DEVICE_TYPE_NEARLINK_IN) {
-        if (desc.macAddress_ == audioActiveDevice_.GetCurrentOutputDeviceMacAddr()) {
-            SleAudioDeviceManager::GetInstance().SetActiveDevice(desc, STREAM_USAGE_INVALID);
-        }
-    }
-}
-
 #ifdef BLUETOOTH_ENABLE
 void AudioDeviceStatus::ClearActiveHfpDevice(AudioDeviceDescriptor &desc,
     const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason)
@@ -1410,8 +1403,6 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
                 Bluetooth::AudioA2dpManager::SetActiveA2dpDevice("");
             }
 #endif
-            // Handle Nearlink Device
-            DeactivateNearlinkDevice(desc);
         } else {
             reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
             auto usage = audioDeviceManager_.GetDeviceUsage(desc);

@@ -456,7 +456,7 @@ HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceStopTest_001, TestSize.Level1)
 
     EXPECT_EQ(hpaeSourceInputNode->audioCapturerSource_, nullptr);
     EXPECT_NE(hpaeSourceInputNode->CapturerSourceStop(), SUCCESS);
-    EXPECT_NE(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_SUSPENDED);
+    EXPECT_EQ(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_SUSPENDED);
 }
 
 /**
@@ -474,7 +474,7 @@ HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceStopTest_002, TestSize.Level1)
     EXPECT_NE(hpaeSourceInputNode->audioCapturerSource_, nullptr);
     EXPECT_EQ(hpaeSourceInputNode->captureId_, HDI_INVALID_ID);
     EXPECT_NE(hpaeSourceInputNode->CapturerSourceStop(), SUCCESS);
-    EXPECT_NE(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_SUSPENDED);
+    EXPECT_EQ(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_SUSPENDED);
 }
 
 /**
@@ -494,7 +494,7 @@ HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceStopTest_003, TestSize.Level1)
     EXPECT_CALL(*mockCaptureSource, IsInited())
         .WillOnce(Return(false)); // hdi not init
     EXPECT_NE(hpaeSourceInputNode->CapturerSourceStop(), SUCCESS);
-    EXPECT_NE(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_SUSPENDED);
+    EXPECT_EQ(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_SUSPENDED);
 }
 
 /**
@@ -964,6 +964,74 @@ HWTEST_F(HpaeSourceInputNodeTest, CapturerSourceInitTest_004, TestSize.Level1)
     EXPECT_NE(hpaeSourceInputNode->CapturerSourceInit(attr), SUCCESS);
     EXPECT_NE(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_IDLE);
     EXPECT_EQ(hpaeSourceInputNode->GetSourceState(), STREAM_MANAGER_NEW);
+}
+
+/**
+ * @tc.name  : Test CaptureFrame fail
+ * @tc.type  : FUNC
+ * @tc.number: CaptureFrameFailTest_001
+ * @tc.desc  : Test HpaeSourceInputNode CaptureFrame fail and sleep
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CaptureFrameFailTest_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    nodeInfo.sourceInputNodeType = HPAE_SOURCE_MIC;
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+    EXPECT_NE(hpaeSourceInputNode->audioCapturerSource_, nullptr);
+
+    EXPECT_CALL(*mockCaptureSource, CaptureFrame(_, _, _))
+        .WillRepeatedly([](char *frame, uint64_t requestBytes, uint64_t &replyBytes) {
+            replyBytes = 0;
+            return ERROR;
+        });
+    uint64_t reply = 0;
+    for (int32_t i = 0; i < 21; i++) { // 21 for test times
+        hpaeSourceInputNode->ReadDataFromSource(nodeInfo.sourceBufferType, reply);
+        EXPECT_EQ(hpaeSourceInputNode->backoffController_.delay_, std::min(i+1, 20));
+    }
+}
+
+/**
+ * @tc.name  : Test CaptureFrame fail
+ * @tc.type  : FUNC
+ * @tc.number: CaptureFrameFailTest_002
+ * @tc.desc  : Test HpaeSourceInputNode micref CaptureFrame fail and sleep
+ */
+HWTEST_F(HpaeSourceInputNodeTest, CaptureFrameFailTest_002, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    nodeInfo.sourceInputNodeType = HPAE_SOURCE_MICREF;
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MICREF;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+    EXPECT_NE(hpaeSourceInputNode->audioCapturerSource_, nullptr);
+
+    EXPECT_CALL(*mockCaptureSource, CaptureFrame(_, _, _))
+        .WillRepeatedly([](char *frame, uint64_t requestBytes, uint64_t &replyBytes) {
+            replyBytes = 0;
+            return ERROR;
+        });
+    uint64_t reply = 0;
+    for (int32_t i = 0; i < 5; i++) { // 5 for test times
+        hpaeSourceInputNode->ReadDataFromSource(nodeInfo.sourceBufferType, reply);
+        EXPECT_EQ(hpaeSourceInputNode->backoffController_.delay_, 0); // micref not sleep
+    }
 }
 } // namespace HPAE
 } // namespace AudioStandard

@@ -130,8 +130,6 @@ public:
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume) override;
 
-    int32_t GetFastStreamInfo(AudioStreamInfo &streamInfo, uint32_t sessionId) override;
-
     int32_t GetLowPowerVolume(int32_t streamId, float &outVolume) override;
 
     int32_t GetSingleStreamVolume(int32_t streamId, float &outVolume) override;
@@ -792,6 +790,7 @@ private:
     // Permission and privacy
     bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);
     bool VerifyBluetoothPermission();
+    bool VerifyBluetoothPermission(const uid_t callingUid);
     int32_t SetAudioSceneInternal(AudioScene audioScene, const int32_t uid = INVALID_UID,
         const int32_t pid = INVALID_PID);
     bool VerifySessionId(uint32_t sessionId, uint32_t clientUid);

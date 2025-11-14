@@ -131,7 +131,6 @@ public:
     int32_t SessionInfoMapAdd(const std::string &sessionID, const SessionEffectInfo &info);
     int32_t SessionInfoMapDelete(const std::string &sceneType, const std::string &sessionID);
     int32_t ReturnEffectChannelInfo(const std::string &sceneType, uint32_t &channels, uint64_t &channelLayout);
-    int32_t ReturnMultiChannelInfo(uint32_t *channels, uint64_t *channelLayout);
     int32_t EffectRotationUpdate(const uint32_t rotationState);
     int32_t EffectVolumeUpdate();
     int32_t StreamVolumeUpdate(const std::string sessionIDString, const float streamVolume);

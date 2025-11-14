@@ -216,8 +216,9 @@ HWTEST_F(RendererInServerExtUnitTest, InnerCaptureOtherStream_001, TestSize.Leve
     IStreamManager::GetDupPlaybackManager().CreateRender(processConfig, captureInfo.dupStream);
     server->InnerCaptureOtherStream(bufferDesc, captureInfo, innerCapId);
 
-    server->renderEmptyCountForInnerCap_ = 1;
+    server->renderEmptyCountForInnerCapToInnerCapIdMap_[innerCapId] = 1;
     server->InnerCaptureOtherStream(bufferDesc, captureInfo, innerCapId);
+    server->InnerCaptureOtherStream(bufferDesc, captureInfo, innerCapId + 1);
 }
 
 /**

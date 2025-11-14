@@ -411,22 +411,6 @@ HWTEST(AudioPolicyManager, GetInputDevice_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test GetFastStreamInfo.
-* @tc.number: GetFastStreamInfo.
-* @tc.desc  : Test GetFastStreamInfo.
-*/
-HWTEST(AudioPolicyManager, GetFastStreamInfo_001, TestSize.Level2)
-{
-    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
-
-    AudioStreamInfo streamInfo = audioPolicyManager_->GetFastStreamInfo(0);
-
-    EXPECT_EQ(streamInfo.samplingRate, SAMPLE_RATE_48000);
-    EXPECT_EQ(streamInfo.encoding, ENCODING_PCM);
-    EXPECT_EQ(streamInfo.channels, STEREO);
-}
-
-/**
 * @tc.name  : Test SetMicrophoneBlockedCallback.
 * @tc.number: SetMicrophoneBlockedCallback.
 * @tc.desc  : Test SetMicrophoneBlockedCallback.

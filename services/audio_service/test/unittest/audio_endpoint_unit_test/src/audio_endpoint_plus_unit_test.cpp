@@ -142,10 +142,9 @@ static sptr<AudioProcessInServer> CreateAudioProcessInServer()
     audioStreamInfo.channelLayout = CH_LAYOUT_STEREO;
     AudioProcessConfig serverConfig = InitServerProcessConfig();
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(serverConfig, audioServicePtr);
-    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
     uint32_t spanSizeInFrame = 1000;
     uint32_t totalSizeInFrame = spanSizeInFrame;
-    processStream->ConfigProcessBuffer(totalSizeInFrame, spanSizeInFrame, audioStreamInfo, buffer);
+    processStream->ConfigProcessBuffer(totalSizeInFrame, spanSizeInFrame, audioStreamInfo);
     return processStream;
 }
 
@@ -352,11 +351,20 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_008, TestSize.Level1)
 
     std::vector<AudioStreamData> srcDataList;
     AudioStreamData dstData;
+    dstData.bufferDesc.buffer = new uint8_t[1] {1};
+    dstData.bufferDesc.bufLength = 1;
+    dstData.bufferDesc.dataLength = 1;
+
+    audioEndpointInner->ProcessData(srcDataList, dstData);
+    EXPECT_EQ(dstData.bufferDesc.buffer[0], 0);
+
     AudioStreamData audioStreamData;
     audioStreamData.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
     audioStreamData.streamInfo.channels = AudioChannel::CHANNEL_3;
     srcDataList.push_back(audioStreamData);
 
+    audioEndpointInner->ProcessData(srcDataList, dstData);
+    audioEndpointInner->endpointType_ = AudioEndpoint::TYPE_VOIP_MMAP;
     audioEndpointInner->ProcessData(srcDataList, dstData);
 }
 
@@ -468,142 +476,6 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_012, TestSize.Level1)
     srcDataList.push_back(audioStreamData);
 
     audioEndpointInner->ProcessData(srcDataList, dstData);
-}
-
-/*
- * @tc.name  : Test AudioEndpointInner API
- * @tc.type  : FUNC
- * @tc.number: AudioEndpointInner_013
- * @tc.desc  : Test AudioEndpointInner::HandleRendererDataParams()
- */
-HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_013, TestSize.Level1)
-{
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
-    uint64_t id = 123;
-    AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
-
-    ASSERT_NE(audioEndpointInner, nullptr);
-
-    AudioStreamData srcData;
-    AudioStreamData dstData;
-    srcData.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    dstData.streamInfo.encoding = AudioEncodingType::ENCODING_AUDIOVIVID;
-
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
-}
-
-/*
- * @tc.name  : Test AudioEndpointInner API
- * @tc.type  : FUNC
- * @tc.number: AudioEndpointInner_014
- * @tc.desc  : Test AudioEndpointInner::HandleRendererDataParams()
- */
-HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_014, TestSize.Level1)
-{
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
-    uint64_t id = 123;
-    AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
-
-    ASSERT_NE(audioEndpointInner, nullptr);
-
-    AudioStreamData srcData;
-    AudioStreamData dstData;
-    srcData.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    dstData.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    srcData.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    srcData.streamInfo.channels = AudioChannel::STEREO;
-
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
-}
-
-/*
- * @tc.name  : Test AudioEndpointInner API
- * @tc.type  : FUNC
- * @tc.number: AudioEndpointInner_015
- * @tc.desc  : Test AudioEndpointInner::HandleRendererDataParams()
- */
-HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_015, TestSize.Level1)
-{
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
-    uint64_t id = 123;
-    AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
-
-    ASSERT_NE(audioEndpointInner, nullptr);
-
-    AudioStreamData srcData;
-    AudioStreamData dstData;
-    srcData.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    dstData.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    srcData.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    srcData.streamInfo.channels = AudioChannel::CHANNEL_3;
-
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
-}
-
-/*
- * @tc.name  : Test AudioEndpointInner API
- * @tc.type  : FUNC
- * @tc.number: AudioEndpointInner_016
- * @tc.desc  : Test AudioEndpointInner::HandleRendererDataParams()
- */
-HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_016, TestSize.Level1)
-{
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
-    uint64_t id = 123;
-    AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
-
-    ASSERT_NE(audioEndpointInner, nullptr);
-
-    AudioStreamData srcData;
-    AudioStreamData dstData;
-    srcData.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    dstData.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    srcData.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
-    srcData.streamInfo.channels = AudioChannel::CHANNEL_3;
-
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
-}
-
-/*
- * @tc.name  : Test AudioEndpointInner API
- * @tc.type  : FUNC
- * @tc.number: AudioEndpointInner_017
- * @tc.desc  : Test AudioEndpointInner::HandleRendererDataParams()
- */
-HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_017, TestSize.Level1)
-{
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
-    uint64_t id = 123;
-    AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
-
-    ASSERT_NE(audioEndpointInner, nullptr);
-
-    AudioStreamData srcData;
-    AudioStreamData dstData;
-    srcData.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    dstData.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    srcData.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    srcData.streamInfo.channels = AudioChannel::MONO;
-
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
-
-    clientConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    clientConfig.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    clientConfig.streamInfo.format = SAMPLE_F32LE;
-    clientConfig.streamInfo.channels = STEREO;
-    sptr<IAudioProcess> process = AudioService::GetInstance()->GetAudioProcess(clientConfig);
-    srcData.streamInfo.format = AudioSampleFormat::SAMPLE_F32LE;
-
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
-
-    srcData.streamInfo.channels = AudioChannel::STEREO;
-
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
 }
 
 /*
@@ -1734,51 +1606,6 @@ HWTEST_F(AudioEndpointPlusUnitTest, ProcessToDupStream_001, TestSize.Level1)
     CaptureInfo captureInfo;
     
     EXPECT_EQ(audioEndpointInner->HandleDisableFastCap(captureInfo), SUCCESS);
-}
-
-/*
- * @tc.name  : Test AudioEndpointInner API
- * @tc.type  : FUNC
- * @tc.number: AudioEndpointInner_008
- * @tc.desc  : Test AudioEndpointInner::HandleRendererDataParams()
- */
-HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_008, TestSize.Level1)
-{
-    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
-    uint64_t id = 123;
-    AudioProcessConfig clientConfig = {};
-    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
-
-    ASSERT_NE(audioEndpointInner, nullptr);
-
-    AudioStreamData srcData;
-    AudioStreamData dstData;
-    srcData.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    dstData.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-
-    srcData.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    srcData.streamInfo.channels = AudioChannel::MONO;
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
-
-    srcData.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    srcData.streamInfo.channels = AudioChannel::CHANNEL_3;
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
-
-    srcData.streamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
-    srcData.streamInfo.channels = AudioChannel::MONO;
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
-
-    srcData.streamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
-    srcData.streamInfo.channels = AudioChannel::STEREO;
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
-
-    srcData.streamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
-    srcData.streamInfo.channels = AudioChannel::CHANNEL_3;
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
-
-    srcData.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
-    srcData.streamInfo.channels = AudioChannel::CHANNEL_3;
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
 }
 } // namespace AudioStandard
 } // namespace OHOS

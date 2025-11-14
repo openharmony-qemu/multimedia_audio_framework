@@ -38,7 +38,6 @@ namespace {
     constexpr uint32_t CACHE_FRAME_COUNT = 2;
     constexpr uint32_t TIME_US_PER_MS = 1000;
     constexpr uint32_t TIME_MS_PER_SEC = 1000;
-    constexpr uint32_t ERR_RETRY_COUNT = 20;
     constexpr int32_t OFFLOAD_FULL = -1;
     constexpr int32_t OFFLOAD_WRITE_FAILED = -2;
     constexpr uint32_t OFFLOAD_HDI_CACHE_BACKGROUND_IN_MS = 7000;
@@ -379,6 +378,7 @@ void HpaeOffloadSinkOutputNode::SetPolicyState(int32_t state)
     }
     hdiPolicyState_ = static_cast<AudioOffloadType>(state);
     SetBufferSize();
+    RunningLock(true);
 }
 
 uint64_t HpaeOffloadSinkOutputNode::GetLatency()
@@ -620,14 +620,7 @@ void HpaeOffloadSinkOutputNode::OffloadNeedSleep(int32_t retType)
         isHdiFull_.store(true);
         return;
     }
-    if (retType != SUCCESS) {
-        usleep(std::min(retryCount_, FRAME_LEN_20MS) * TIME_US_PER_MS);
-        if (retryCount_ < ERR_RETRY_COUNT) {
-            retryCount_++;
-        }
-        return;
-    }
-    retryCount_ = 1;
+    backoffController_.HandleResult(retType == SUCCESS);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

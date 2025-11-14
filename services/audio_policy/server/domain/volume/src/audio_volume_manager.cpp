@@ -427,10 +427,6 @@ int32_t AudioVolumeManager::GetVolumeAdjustZoneId()
 int32_t AudioVolumeManager::SetAdjustVolumeForZone(int32_t zoneId)
 {
     audioActiveDevice_.SetAdjustVolumeForZone(zoneId);
-    if (zoneId == 0) {
-        AudioDeviceDescriptor currentActiveDevice = audioActiveDevice_.GetCurrentOutputDevice();
-        audioPolicyManager_.UpdateVolumeForStreams();
-    }
     return audioPolicyManager_.SetAdjustVolumeForZone(zoneId);
 }
 
@@ -913,12 +909,14 @@ void AudioVolumeManager::SetRestoreVolumeLevel(DeviceType deviceType, int32_t cu
 void AudioVolumeManager::OnCheckActiveMusicTime(const std::string &reason)
 {
     AUDIO_INFO_LOG("reason:%{public}s", reason.c_str());
-    CheckActiveMusicTime("Offload");
-    if (std::string("Started") != reason) {
-        startSafeTime_ = 0;
-        startSafeTimeBt_ = 0;
-        startSafeTimeSle_ = 0;
-    }
+    std::thread([this, reason]() {
+        this->CheckActiveMusicTime("Offload");
+        if (std::string("Started") != reason) {
+            startSafeTime_ = 0;
+            startSafeTimeBt_ = 0;
+            startSafeTimeSle_ = 0;
+        }
+    }).detach();
 }
 
 int32_t AudioVolumeManager::CheckActiveMusicTime(const std::string &reason)

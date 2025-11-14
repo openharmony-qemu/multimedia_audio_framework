@@ -73,7 +73,6 @@ group("audio_unit_test") {
     "../frameworks/native/ohaudio/test/unittest/oh_audio_volume_manager_test:audio_oh_volume_manager_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_session_manager_test:audio_oh_session_manager_unit_test",
     "../frameworks/native/ohaudio/test/unittest/oh_audio_workgroup_test:audio_oh_audio_workgroup_unit_test",
-    "../frameworks/native/ohaudiosuite/test/unittest/oh_audio_suite_test:audio_oh_audio_suite_unit_test",
     "../frameworks/native/toneplayer/test/unittest:audio_toneplayer_unit_test",
     "../services/audio_engine/test/unittest:audio_engine_unit_test",
     "../services/audio_engine/test/unittest:hpae_capture_effect_node_test",
@@ -137,10 +136,16 @@ group("audio_unit_test") {
     "../services/audio_service/test/unittest:ring_buffer_wrapper_unit_test",
     "../services/audio_service/test/unittest:audio_resource_service_unit_test",
     "../services/audio_service/test/unittest:audio_stream_monitor_unit_test",
-    "../services/audio_suite/test/unittest:audio_suite_manager_test",
-    "../services/audio_suite/test/unittest:audio_suite_node_test",
-    "../services/audio_suite/test/unittest:audio_suite_utils_test",
   ]
+
+  if (audio_framework_feature_audiosuite_support) {
+    deps += [
+      "../frameworks/native/ohaudiosuite/test/unittest/oh_audio_suite_test:audio_oh_audio_suite_unit_test",
+      "../services/audio_suite/test/unittest:audio_suite_manager_test",
+      "../services/audio_suite/test/unittest:audio_suite_node_test",
+      "../services/audio_suite/test/unittest:audio_suite_utils_test",
+    ]
+  }
 
   if (audio_framework_feature_opensl_es) {
     deps += [
@@ -352,9 +357,14 @@ group("audio_fuzz_test") {
     "fuzztest/standalonemodemanager_fuzzer:fuzztest",
     "fuzztest/volumedatamaintainer_fuzzer:fuzztest",
     "fuzztest/rendererinserver_fuzzer:fuzztest",
-    "fuzztest/audiosuiteengine_fuzzer:fuzztest",
-    "fuzztest/audiosuitemanager_fuzzer:fuzztest",
   ]
+
+  if (audio_framework_feature_audiosuite_support) {
+    deps += [
+      "fuzztest/audiosuiteengine_fuzzer:fuzztest",
+      "fuzztest/audiosuitemanager_fuzzer:fuzztest",
+    ]
+  }
 }
 
 group("audio_benchmark_test") {

@@ -17,7 +17,7 @@
 #define LOG_TAG "VADeviceBrokerWrapperImpl"
 #endif
 
-#include "va_device_broker_wrapper_Impl.h"
+#include "va_device_broker_wrapper_impl.h"
 #include "va_device_controller_stub_impl.h"
 #include "iv_a_device_broker.h"
 
@@ -51,7 +51,7 @@ int32_t VADeviceBrokerWrapperImpl::OnDevicesConnected(
     controllerStubImpl->SetVADeviceControllerCallback (controllerCallback);
     sptr<IRemoteObject> controllerStubImplObject = controllerStubImpl->AsObject();
     if (controllerStubImplObject == nullptr) {
-        delete controllerStubImpl;
+        AUDIO_ERR_LOG("Weird, controllerStubImplObject is nullptr");
         return ERROR;
     }
     ivaBroker->OnDevicesConnected(device, controllerStubImplObject);
