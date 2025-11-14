@@ -2124,24 +2124,43 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSink005, TestSize.Level1)
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->SetDefaultSink(audioModuleInfo1.name), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
-    EXPECT_EQ(hpaeManager_->movingIds_.size(), 0);
+    EXPECT_EQ(hpaeManager_->movingIds_.size(), 1);
 
     hpaeManager_->capturerIdSourceNameMap_[TEST_CAPTURE_SESSION_ID] = "mic";
     hpaeManager_->capturerIdStreamInfoMap_[TEST_CAPTURE_SESSION_ID] = sessionInfo;
-    std::vector<uint32_t> sessionIds = hpaeManager_->GetAllCaptureSession("mic");
+    sessionIds = hpaeManager_->GetAllCaptureSession("mic");
     EXPECT_EQ(sessionIds.size(), 1);
-    EXPECT_EQ(hpaeManager_->movingIds_.size(), 1);
+    EXPECT_EQ(hpaeManager_->movingIds_.size(), 2);
 
-    AudioModuleInfo audioModuleInfo = GetSourceAudioModeInfo();
+    audioModuleInfo = GetSourceAudioModeInfo();
     EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->SetDefaultSource(audioModuleInfo.name);
     WaitForMsgProcessing(hpaeManager_);
-    AudioModuleInfo audioModuleInfo1 = GetSourceAudioModeInfo("mic1");
+    audioModuleInfo1 = GetSourceAudioModeInfo("mic1");
     EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo1), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->SetDefaultSource(audioModuleInfo1.name);
     WaitForMsgProcessing(hpaeManager_);
-    EXPECT_EQ(hpaeManager_->movingIds_.size(), 0);
+    EXPECT_EQ(hpaeManager_->movingIds_.size(), 2);
+}
+
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerGetUsedMoveInfos001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+    HpaeCaptureMoveInfo moveInfo;
+    moveInfo.sessionId = TEST_STREAM_SESSION_ID;
+    moveInfo.sessionInfo.state = HPAE_SESSION_RUNNING;
+    std::vector<HpaeCaptureMoveInfo> moveInfos;
+    moveInfos.emplace_back(moveInfo);
+    hpaeManager_->movingIds_.emplace(TEST_STREAM_SESSION_ID, HPAE_SESSION_RUNNING);
+    std::vector<HpaeCaptureMoveInfo> results = hpaeManager_->GetUsedMoveInfos(moveInfos);
+    EXPECT_EQ(results.size(), 1);
+    hpaeManager_->movingIds_.emplace(TEST_STREAM_SESSION_ID, HPAE_SESSION_RELEASED);
+    results = hpaeManager_->GetUsedMoveInfos(moveInfos);
+    EXPECT_EQ(results.size(), 0);
 }
 }  // namespace
