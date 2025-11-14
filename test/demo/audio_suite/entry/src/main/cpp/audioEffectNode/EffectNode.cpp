@@ -65,13 +65,14 @@ Node CreateNodeByType(std::string uuid, OH_AudioNode_Type nodeType)
  * @brief 遍历所有 OH_AudioNode_Type 枚举值，检查是否支持。
  * @return napi_value 所有支持的节点类型。
  */
-napi_value GetSupportedAudioNodeTypes(napi_env env) {
-    const int MIN_NODE_TYPE = 201;
-    const int MAX_NODE_TYPE = 206;
+napi_value GetSupportedAudioNodeTypes(napi_env env)
+{
+    const int minNodeType = 201;
+    const int maxNodeType = 206;
  
     std::vector<OH_AudioNode_Type> supportedTypes;
  
-    for (int value = MIN_NODE_TYPE; value <= MAX_NODE_TYPE; ++value) {
+    for (int value = minNodeType; value <= maxNodeType; ++value) {
         OH_AudioNode_Type nodeType = static_cast<OH_AudioNode_Type>(value);
         bool isSupported = false;
         OH_AudioSuite_Result result = OH_AudioSuiteEngine_IsNodeTypeSupported(nodeType, &isSupported);
