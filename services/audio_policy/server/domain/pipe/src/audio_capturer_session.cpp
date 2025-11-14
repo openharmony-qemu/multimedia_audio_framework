@@ -413,11 +413,7 @@ int32_t AudioCapturerSession::ReloadCaptureSession(uint32_t sessionId, SessionOp
 
     CHECK_AND_RETURN_RET_LOG(needReload, ERROR, "no need to reload session");
     AUDIO_INFO_LOG("start reload session: %{public}u", targetSessionId);
-    int32_t result = audioEcManager_.ReloadSourceForSession(targetSession, targetSessionId);
-    if (result == SUCCESS) {
-        audioEcManager_.SetOpenedNormalSourceSessionId(targetSessionId);
-    }
-    return result;
+    return audioEcManager_.ReloadSourceForSession(targetSession, targetSessionId);
 }
 
 int32_t AudioCapturerSession::ReloadCapturerSessionForInputPipe(uint32_t sessionId, SessionOperation operation)
@@ -553,8 +549,7 @@ int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, Session
     std::shared_ptr<AudioPipeInfo> pipeInfo =
         AudioPipeManager::GetPipeManager()->FindPipeBySessionId(pipeList, sessionID);
     if (pipeInfo != nullptr && pipeInfo->routeFlag_ == AUDIO_INPUT_FLAG_AI) {
-        AUDIO_WARNING_LOG("sessionId:%{public}u routeFlag:%{public}u pipe name:%{public}s need not add",
-            sessionID, pipeInfo->routeFlag_, pipeInfo->name_);
+        AUDIO_WARNING_LOG("pipe:%{public}s need not add", pipeInfo->name_.c_str());
         return SUCCESS;
     }
     if (specialSourceTypeSet_.count(sessionInfo.sourceType) == 0) {

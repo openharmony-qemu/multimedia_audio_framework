@@ -60,7 +60,7 @@ public:
 
     int32_t ReloadSourceForSession(SessionInfo sessionInfo, uint32_t sessionId = DEFAULT_SESSION_ID);
     int32_t ReloadSourceSoftLink(std::shared_ptr<AudioPipeInfo> &pipeInfo, const AudioModuleInfo &moduleInfo);
-    int32_t ReloadSourceForInputPipe(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t targetSessionId);
+    int32_t ReloadSourceForInputPipe(std::shared_ptr<AudioPipeInfo> &pipeInfo, uint32_t targetSessionId);
 
     void SetDpSinkModuleInfo(const AudioModuleInfo &moduleInfo);
     void SetPrimaryMicModuleInfo(const AudioModuleInfo &moduleInfo);

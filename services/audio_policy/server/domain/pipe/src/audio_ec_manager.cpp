@@ -684,13 +684,13 @@ int32_t AudioEcManager::ReloadSourceSoftLink(std::shared_ptr<AudioPipeInfo> &pip
     return SUCCESS;
 }
 
-int32_t AudioEcManager::ReloadSourceForInputPipe(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t targetSessionId)
+int32_t AudioEcManager::ReloadSourceForInputPipe(std::shared_ptr<AudioPipeInfo> &pipeInfo, uint32_t targetSessionId)
 {
     CHECK_AND_RETURN_RET_LOG((pipeInfo != nullptr && pipeInfo->streamDescMap_.count(targetSessionId) > 0), ERROR,
         "pipe is null or can not find stream");
     auto streamDesc = pipeInfo->streamDescMap_[targetSessionId];
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
-    audioConfigManager_.etStreamPropInfo(streamDesc, streamPropInfo);
+    audioConfigManager_.GetStreamPropInfo(streamDesc, streamPropInfo);
     PipeStreamPropInfo targetInfo = *streamPropInfo;
     
     AudioModuleInfo moduleInfo = pipeInfo->moduleInfo_;
@@ -933,6 +933,7 @@ int32_t AudioEcManager::ReloadNormalSource(SessionInfo &sessionInfo,
     }
 
     normalSourceOpened_ = targetSource;
+    SetOpenedNormalSourceSessionId(sessionId);
     return SUCCESS;
 }
 }
