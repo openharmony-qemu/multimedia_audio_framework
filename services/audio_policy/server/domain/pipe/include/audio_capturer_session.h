@@ -70,7 +70,7 @@ public:
     CapturerState GetCapturerState();
     int32_t ReloadCaptureSession(uint32_t sessionId, SessionOperation operation);
     int32_t ReloadCapturerSessionForInputPipe(uint32_t sessionId, SessionOperation operation);
-    bool GetTargetSessionIdForInputPipe(std::shared_ptr<AudioPipeInfo> pipeInfo,
+    bool GetTargetSessionIdForInputPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
         uint32_t originSessionId, uint32_t &targetSessionId, SessionOperation operation);
     uint32_t GetMaxPriorityForInputPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
         uint32_t sessionId, AudioStreamDescriptor &maxPriorityDesc, bool onlyRunning);

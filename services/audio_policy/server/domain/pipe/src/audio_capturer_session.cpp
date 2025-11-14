@@ -437,7 +437,7 @@ int32_t AudioCapturerSession::ReloadCapturerSessionForInputPipe(uint32_t session
     return audioEcManager_.ReloadSourceForInputPipe(pipeInfo, targetSessionId);
 }
 
-bool AudioCapturerSession::GetTargetSessionIdForInputPipe(std::shared_ptr<AudioPipeInfo> pipeInfo,
+bool AudioCapturerSession::GetTargetSessionIdForInputPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
     uint32_t originSessionId, uint32_t &targetSessionId, SessionOperation operation)
 {
     CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, false, "pipe is null");
@@ -482,7 +482,7 @@ bool AudioCapturerSession::GetTargetSessionIdForInputPipe(std::shared_ptr<AudioP
         targetSessionId = maxRunningDesc.sessionId_;
         return true;
     }
-    return true;
+    return false;
 }
 
 uint32_t AudioCapturerSession::GetMaxPriorityForInputPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
