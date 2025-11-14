@@ -1064,7 +1064,7 @@ static napi_value getAudioOfTap(napi_env env, napi_callback_info info)
 }
 
 // 音频播放 -------------------------------------
-static napi_ref callbackAudioRendererRef = nullptr;         
+static napi_ref callbackAudioRendererRef = nullptr;
 
 // 注册回调，获取音频播放的finished的值
 static napi_value RegisterFinishedCallback(napi_env env, napi_callback_info info)
