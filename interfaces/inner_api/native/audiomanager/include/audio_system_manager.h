@@ -1091,6 +1091,13 @@ public:
         const int32_t volume, const bool updateUi);
 
     /**
+     * @brief Set nearlink voiceStatus flag
+     *
+     * @return Returns success or not
+     */
+    int32_t SetSleVoiceStatusFlag(bool isSleVoiceStatus);
+
+    /**
      * @brief Registers the availbale deviceChange callback listener.
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code

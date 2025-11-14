@@ -3836,6 +3836,12 @@ int32_t AudioPolicyServer::SetNearlinkDeviceVolume(const std::string &macAddress
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
+{
+    audioPolicyManager_.SetSleVoiceStatusFlag(isSleVoiceStatus);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::GetSelectedInputDevice(std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();

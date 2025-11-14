@@ -417,6 +417,8 @@ public:
     int32_t SetNearlinkDeviceVolume(const std::string &macAddress, int32_t volumeType,
         int32_t volume, bool updateUi) override;
 
+    int32_t SetSleVoiceStatusFlag(bool isSleVoiceStatus) override;
+
     int32_t GetAvailableDevices(int32_t usage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs) override;
 

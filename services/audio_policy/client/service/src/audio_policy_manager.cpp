@@ -1799,6 +1799,13 @@ int32_t AudioPolicyManager::SetNearlinkDeviceVolume(const std::string &macAddres
     return gsp->SetNearlinkDeviceVolume(macAddress, volumeType, volume, updateUi);
 }
 
+int32_t AudioPolicyManager::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetSleVoiceStatusFlag(isSleVoiceStatus);
+}
+
 int32_t AudioPolicyManager::ConfigDistributedRoutingRole(
     std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type)
 {
