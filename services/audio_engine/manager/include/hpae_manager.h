@@ -268,6 +268,8 @@ private:
     std::vector<std::shared_ptr<HpaeSinkInputNode>> GetPerferSinkInputs(
         const std::vector<std::shared_ptr<HpaeSinkInputNode>> &sinkInputs);
     std::vector<HpaeCaptureMoveInfo> GetUsedMoveInfos(std::vector<HpaeCaptureMoveInfo> &moveInfos);
+    std::vector<uint32_t> GetAllRenderSession(const std::string &name);
+    std::vector<uint32_t> GetAllCaptureSession(const std::string &name);
 
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;

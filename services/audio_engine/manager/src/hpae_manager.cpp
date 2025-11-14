@@ -719,14 +719,7 @@ int32_t HpaeManager::SetDefaultSink(std::string name)
             defaultSink_ = name;
             return;
         }
-        std::vector<uint32_t> sessionIds;
-        for (const auto &renderIdMap : rendererIdSinkNameMap_) {
-            if (renderIdMap.second == defaultSink_ &&
-                rendererIdStreamInfoMap_.find(renderIdMap.first) != rendererIdStreamInfoMap_.end()) {
-                    sessionIds.emplace_back(renderIdMap.first);
-                    movingIds_.emplace(renderIdMap.first, rendererIdStreamInfoMap_[renderIdMap.first].state);
-            }
-        }
+        std::vector<uint32_t> sessionIds = GetAllRenderSession(defaultSink_);
         rendererManager->MoveAllStream(name, sessionIds, MOVE_DEFAULT);
         std::string oldDefaultSink = defaultSink_;
         defaultSink_ = name;
@@ -757,14 +750,7 @@ int32_t HpaeManager::SetDefaultSource(std::string name)
             defaultSource_ = name;
             return;
         }
-        std::vector<uint32_t> sessionIds;
-        for (const auto &captureIdMap : capturerIdSourceNameMap_) {
-            if (captureIdMap.second == defaultSource_ &&
-                capturerIdStreamInfoMap_.find(captureIdMap.first) != capturerIdStreamInfoMap_.end()) {
-                    sessionIds.emplace_back(captureIdMap.first);
-                    movingIds_.emplace(captureIdMap.first, capturerIdStreamInfoMap_[captureIdMap.first].state);
-            }
-        }
+        std::vector<uint32_t> sessionIds = GetAllCaptureSession(defaultSource_);
         capturerManager->MoveAllStream(name, sessionIds, MOVE_DEFAULT);
         std::string oldDefaultSource_ = defaultSource_;
         defaultSource_ = name;
@@ -2721,6 +2707,32 @@ std::vector<HpaeCaptureMoveInfo> HpaeManager::GetUsedMoveInfos(std::vector<HpaeC
         }
     }
     return results;
+}
+
+std::vector<uint32_t> HpaeManager::GetAllRenderSession(const std::string &name)
+{
+    std::vector<uint32_t> sessionIds;
+    for (const auto &renderIdMap : rendererIdSinkNameMap_) {
+        if (renderIdMap.second == name &&
+            rendererIdStreamInfoMap_.find(renderIdMap.first) != rendererIdStreamInfoMap_.end()) {
+            sessionIds.emplace_back(renderIdMap.first);
+            movingIds_.emplace(renderIdMap.first, rendererIdStreamInfoMap_[renderIdMap.first].state);
+        }
+    }
+    return sessionIds;
+}
+
+std::vector<uint32_t> HpaeManager::GetAllCaptureSession(const std::string &name)
+{
+    std::vector<uint32_t> sessionIds;
+    for (const auto &captureIdMap : capturerIdSourceNameMap_) {
+        if (captureIdMap.second == name &&
+            capturerIdStreamInfoMap_.find(captureIdMap.first) != capturerIdStreamInfoMap_.end()) {
+            sessionIds.emplace_back(captureIdMap.first);
+            movingIds_.emplace(captureIdMap.first, capturerIdStreamInfoMap_[captureIdMap.first].state);
+        }
+    }
+    return sessionIds;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
