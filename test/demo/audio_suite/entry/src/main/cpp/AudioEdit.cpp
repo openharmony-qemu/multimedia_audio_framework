@@ -1185,6 +1185,12 @@ static napi_value getOptions(napi_env env, napi_callback_info info)
     return napiValue;
 }
 
+static napi_value getEffectNodeList(napi_env env, napi_callback_info info)
+{
+    // 返回 JS 数组
+    return GetSupportedAudioNodeTypes(env);
+}
+
 EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
 {
     napi_property_descriptor desc[] = {
@@ -1226,7 +1232,8 @@ EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
         {"deleteNode", nullptr, DeleteNode, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"registerAudioFormatCallback", nullptr, RegisterAudioFormatCallback, nullptr, nullptr, nullptr,
             napi_default, nullptr},
-        {"getOptions", nullptr, getOptions, nullptr, nullptr, nullptr, napi_default, nullptr}};
+        {"getOptions", nullptr, getOptions, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"getEffectNodeList", nullptr, getEffectNodeList, nullptr, nullptr, nullptr, napi_default, nullptr}};
     napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc);
     return exports;
 }

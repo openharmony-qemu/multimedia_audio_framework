@@ -37,3 +37,4 @@ export const compareTwoFilesBinary: (inputFilePath1: string, inputFilePath2: str
 export const deleteNode: (nodeId: string) => number;
 export const registerAudioFormatCallback: (callBackFull: Function) => string[];
 export const getOptions: (nodeId: string) => string;
+export const getEffectNodeList: () => Array<number>;

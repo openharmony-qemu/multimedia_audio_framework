@@ -14,7 +14,8 @@ import {
   EnvironmentMap,
   VoiceBeautifierMap,
   AudioSeparationType,
-  AudioSeparationMap
+  AudioSeparationMap,
+  NumberToNodeTypeMap
 } from "../../utils/importSongs/InterfaceInfo";
 import { JSON, util }from '@kit.ArkTS';
 import { Logger } from '../../utils/Logger';
@@ -1136,13 +1137,17 @@ export struct CheckNodeDialog {
   //当前音轨的inputId
   @State currentInputId: string = '';
   //组件本身数据
-  private nodes: Array<NodeType> =
-    [NodeType.EQ, NodeType.FIELD, NodeType.ENV, NodeType.NR, NodeType.VB, NodeType.SEPARATION];
+  private nodes: Array<NodeType> = [];
   private select: number | number[] = 0;
   @State selectedEffectNode: NodeType = NodeType.EQ;
 
   aboutToAppear(): void {
     this.currentInputId = this.findInputId();
+    //获取当前设配支持的效果节点列表
+    let nodeType: number[] = audioNapi.getEffectNodeList();
+    this.nodes = nodeType
+      .map(num => numberToNodeTypeMap.get(num)) // 将数字转换为 NodeType
+      .filter(type => type !== undefined) as NodeType[]; // 过滤掉 undefined 值
   }
 
   EffectNodeDialog: CustomDialogController | null = new CustomDialogController({
