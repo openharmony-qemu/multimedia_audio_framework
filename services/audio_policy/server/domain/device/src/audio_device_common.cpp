@@ -1272,7 +1272,7 @@ void AudioDeviceCommon::BluetoothScoFetch(std::shared_ptr<AudioDeviceDescriptor>
                 std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE);
             FetchInputDevice(capturerChangeInfos);
         }
-        ret = ScoInputDeviceFetchedForRecongnition(true, desc->macAddress_, desc->connectState_);
+        ret = ScoInputDeviceFetchedForRecongnition(true, desc->macAddress_, desc->connectState_, desc->isVrSupported_);
     } else {
         ret = HandleScoInputDeviceFetched(desc, capturerChangeInfos);
     }
@@ -1393,9 +1393,9 @@ int32_t AudioDeviceCommon::MoveToRemoteInputDevice(std::vector<SourceOutput> sou
 }
 
 int32_t AudioDeviceCommon::ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address,
-    ConnectState connectState)
+    ConnectState connectState, bool isVrSupported)
 {
-    if (handleFlag && connectState != DEACTIVE_CONNECTED) {
+    if (handleFlag && (connectState != DEACTIVE_CONNECTED || !isVrSupported)) {
         return SUCCESS;
     }
     return Bluetooth::AudioHfpManager::HandleScoWithRecongnition(handleFlag);

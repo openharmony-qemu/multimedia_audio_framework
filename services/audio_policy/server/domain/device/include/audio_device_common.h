@@ -105,7 +105,7 @@ public:
     void TriggerRecreateRendererStreamCallback(int32_t callerPid, int32_t sessionId, int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason);
     int32_t ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address,
-        ConnectState connectState);
+        ConnectState connectState, bool isVrSupported = true);
     std::vector<SourceOutput> GetSourceOutputs();
     void SetFirstScreenOn();
     void ClientDiedDisconnectScoNormal();
