@@ -239,6 +239,29 @@ HWTEST_F(HpaeOffloadSinkOutputNodeTest, ProcessRenderFrame_FirstWrite_Initialize
     EXPECT_GT(offloadNode_->writePos_, 0);
 }
 
+// Test subsequent successful write updates state
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, ProcessRenderFrame_SubsequentWrite_UpdatesState, TestSize.Level0)
+{
+    // Set non-empty data and non-first write
+    offloadNode_->renderFrameData_ = std::vector<char>(DATA_SIZE, 0);
+    offloadNode_->firstWriteHdi_ = false;
+    offloadNode_->writePos_ = 1000; // Initial write position
+    
+    // Mock successful write
+    EXPECT_CALL(*mockSink_, RenderFrame(_, _, _))
+        .WillOnce([](char &data, size_t size, uint64_t &written) {
+            written = DATA_SIZE;
+            return SUCCESS;
+        });
+    // Execute function
+    int32_t result = offloadNode_->ProcessRenderFrame();
+    // Verify success returned
+    EXPECT_EQ(result, SUCCESS);
+    // Verify state updated
+    EXPECT_GT(offloadNode_->writePos_, 1000); // Write position increased
+    EXPECT_TRUE(offloadNode_->renderFrameData_.empty()); // Data cleared
+}
+
 HWTEST_F(HpaeOffloadSinkOutputNodeTest, SetPolicyState_TaskExsist_StateForeground, TestSize.Level0)
 {
     offloadNode_->setPolicyStateTask_.flag = true;
