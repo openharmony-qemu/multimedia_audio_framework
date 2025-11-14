@@ -30,7 +30,17 @@ int AddVBEffectNode(std::string inputId, int mode, std::string voiceBeautifierId
     };
     OH_VoiceBeautifierType type = (mode < sizeof(TYPE_MAP) / sizeof(TYPE_MAP[0])) ? TYPE_MAP[mode] : TYPE_MAP[0];
     Node node = createNodeByType(voiceBeautifierId, OH_AudioNode_Type::EFFECT_NODE_TYPE_VOICE_BEAUTIFIER);
-    OH_AudioSuite_Result result = OH_AudioSuiteEngine_SetVoiceBeautifierType(node.physicalNode, type);
+    bool bypass = mode == 0;
+    OH_AudioSuite_Result result = OH_AudioSuiteEngine_BypassEffectNode(node.physicalNode, bypass);
+    if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, VB_NODE_TAG,
+            "audioEditTest---startVBEffect OH_AudioSuiteEngine_BypassEffectNode ERROR %{public}zd", result);
+        return result;
+    }
+    if (bypass) {
+        return result;
+    }
+    result = OH_AudioSuiteEngine_SetVoiceBeautifierType(node.physicalNode, type);
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, VB_NODE_TAG,
                      "audioEditTest---startVBEffect OH_AudioSuiteEngine_SetVoiceBeautifierType ERROR!");
@@ -63,7 +73,17 @@ int ModifyVBEffectNode(std::string inputId, int mode, std::string voiceBeautifie
     OH_VoiceBeautifierType type = (mode < sizeof(TYPE_MAP) / sizeof(TYPE_MAP[0])) ? TYPE_MAP[mode] : TYPE_MAP[0];
  
     Node node = nodeManager->GetNodeById(voiceBeautifierId);
-    OH_AudioSuite_Result result = OH_AudioSuiteEngine_SetVoiceBeautifierType(node.physicalNode, type);
+    bool bypass = mode == 0;
+    OH_AudioSuite_Result result = OH_AudioSuiteEngine_BypassEffectNode(node.physicalNode, bypass);
+    if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, VB_NODE_TAG,
+            "audioEditTest---ModifyVBEffectNode OH_AudioSuiteEngine_BypassEffectNode ERROR %{public}zd", result);
+        return result;
+    }
+    if (bypass) {
+        return result;
+    }
+    result = OH_AudioSuiteEngine_SetVoiceBeautifierType(node.physicalNode, type);
     if (result != AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, VB_NODE_TAG,
                      "audioEditTest---OH_AudioSuiteEngine_SetVoiceBeautifierType ERROR---%{public}zd", result);

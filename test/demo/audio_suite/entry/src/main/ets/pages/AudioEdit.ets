@@ -475,7 +475,8 @@ export struct AudioEdit {
                 }
                 .width('20%')
                 .onClick(() => {
-                    if(this.environmentEffectNumMap.get(this.pitchSong) != 0) {
+                    this.envEffectShow = false;
+                    if(this.environmentEffectNumMap.get(this.pitchSong) != undefined) {
                         let oldId: string | undefined = this.environmentEffectUriToIdMap.get(this.pitchSong);
                         if(oldId == undefined) {
                             if (this.environmentEffectNumMap.get(this.pitchSong) == 1) {
@@ -520,6 +521,7 @@ export struct AudioEdit {
             Row() {
                 Column() {
                     Radio({ value: 'close', group: 'envEffect'})
+                        .checked(this.environmentEffectNumMap.get(this.pitchSong) === 0)
                         .onChange(() => {
                             this.environmentEffectNumMap.set(this.pitchSong, 1)
                         })
@@ -529,6 +531,7 @@ export struct AudioEdit {
 
                 Column() {
                     Radio({ value: 'broadcast', group: 'envEffect'})
+                        .checked(this.environmentEffectNumMap.get(this.pitchSong) === 1)
                         .onChange(() => {
                             this.environmentEffectNumMap.set(this.pitchSong, 2)
                         })
@@ -538,6 +541,7 @@ export struct AudioEdit {
 
                 Column() {
                     Radio({ value: 'earpiece', group: 'envEffect'})
+                        .checked(this.environmentEffectNumMap.get(this.pitchSong) === 2)
                         .onChange(() => {
                             this.environmentEffectNumMap.set(this.pitchSong, 3)
                         })
@@ -547,6 +551,7 @@ export struct AudioEdit {
 
                 Column() {
                     Radio({ value: 'underWater', group: 'envEffect'})
+                        .checked(this.environmentEffectNumMap.get(this.pitchSong) === 3)
                         .onChange(() => {
                             this.environmentEffectNumMap.set(this.pitchSong, 4)
                         })
@@ -556,6 +561,7 @@ export struct AudioEdit {
 
                 Column() {
                     Radio({ value: 'gramophone', group: 'envEffect'})
+                        .checked(this.environmentEffectNumMap.get(this.pitchSong) === 4)
                         .onChange(() => {
                             this.environmentEffectNumMap.set(this.pitchSong, 5)
                         })

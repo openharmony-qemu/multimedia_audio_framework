@@ -382,8 +382,17 @@ static napi_value SetEquailizerMode(napi_env env, napi_callback_info info)
     if (!eqNode.physicalNode) {
         return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_CREATE_NODE_ERROR));
     }
-
-    OH_AudioSuite_Result result =
+    bool bypass = equailizerMode == 0;
+    OH_AudioSuite_Result result = OH_AudioSuiteEngine_BypassEffectNode(eqNode.physicalNode, bypass);
+    if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+            "audioEditTest---SetEquailizerMode OH_AudioSuiteEngine_BypassEffectNode ERROR %{public}zd", result);
+        return ReturnResult(env, static_cast<AudioSuiteResult>(result));
+    }
+    if (bypass) {
+        return ReturnResult(env, static_cast<AudioSuiteResult>(result));
+    }
+    result =
         OH_AudioSuiteEngine_SetEqualizerFrequencyBandGains(eqNode.physicalNode, SetEqualizerMode(equailizerMode));
     return ReturnResult(env, static_cast<AudioSuiteResult>(result));
 }
@@ -602,7 +611,19 @@ static napi_value startFieldEffect(napi_env env, napi_callback_info info)
     OH_SoundFieldType type = getSoundFieldTypeByNum(mode);
     napi_value ret;
     Node node = CreateNodeByType(fieldEffectId, OH_AudioNode_Type::EFFECT_NODE_TYPE_SOUND_FIELD);
-    OH_AudioSuite_Result result = OH_AudioSuiteEngine_SetSoundFieldType(node.physicalNode, type);
+    bool bypass = mode == 0;
+    OH_AudioSuite_Result result = OH_AudioSuiteEngine_BypassEffectNode(node.physicalNode, bypass);
+    if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+            "audioEditTest---startFieldEffect OH_AudioSuiteEngine_BypassEffectNode ERROR %{public}zd", result);
+        napi_create_int64(env, result, &ret);
+        return ret;
+    }
+    if (bypass) {
+        napi_create_int64(env, result, &ret);
+        return ret;
+    }
+    result = OH_AudioSuiteEngine_SetSoundFieldType(node.physicalNode, type);
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
             "audioEditTest startFieldEffect OH_AudioEditEngine_SetSoundFiledType ERROR!");
@@ -659,7 +680,19 @@ static napi_value resetFieldEffect(napi_env env, napi_callback_info info)
     napi_value ret;
     Node node = g_nodeManager->GetNodeById(fieldEffectId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest get node is %{public}s", node.id.c_str());
-    OH_AudioSuite_Result result = OH_AudioSuiteEngine_SetSoundFieldType(node.physicalNode, type);
+    bool bypass = mode == 0;
+    OH_AudioSuite_Result result = OH_AudioSuiteEngine_BypassEffectNode(node.physicalNode, bypass);
+    if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+            "audioEditTest---resetFieldEffect OH_AudioSuiteEngine_BypassEffectNode ERROR %{public}zd", result);
+        napi_create_int64(env, result, &ret);
+        return ret;
+    }
+    if (bypass) {
+        napi_create_int64(env, result, &ret);
+        return ret;
+    }
+    result = OH_AudioSuiteEngine_SetSoundFieldType(node.physicalNode, type);
     if (result != AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
             "audioEditTest OH_AudioSuiteEngine_SetSoundFieldType ERROR %{public}zd", result);
@@ -782,7 +815,19 @@ static napi_value startEnvEffect(napi_env env, napi_callback_info info)
         napi_create_int64(env, ARG_4, &ret);
         return ret;
     }
-    OH_AudioSuite_Result result = OH_AudioSuiteEngine_SetEnvironmentType(node.physicalNode, type);
+    bool bypass = mode == 0;
+    OH_AudioSuite_Result result = OH_AudioSuiteEngine_BypassEffectNode(node.physicalNode, bypass);
+    if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+            "audioEditTest---startEnvEffect OH_AudioSuiteEngine_BypassEffectNode ERROR %{public}zd", result);
+        napi_create_int64(env, result, &ret);
+        return ret;
+    }
+    if (bypass) {
+        napi_create_int64(env, result, &ret);
+        return ret;
+    }
+    result = OH_AudioSuiteEngine_SetEnvironmentType(node.physicalNode, type);
     if (result != AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
             "audioEditTest---OH_AudioSuiteEngine_SetEnvironmentType ERROR---%{public}zd", result);
@@ -836,7 +881,19 @@ static napi_value resetEnvEffect(napi_env env, napi_callback_info info)
     getEnvEnumByNumber(mode, type);
     napi_value ret;
     Node node = g_nodeManager->GetNodeById(effectNodeId);
-    OH_AudioSuite_Result result = OH_AudioSuiteEngine_SetEnvironmentType(node.physicalNode, type);
+    bool bypass = mode == 0;
+    OH_AudioSuite_Result result = OH_AudioSuiteEngine_BypassEffectNode(node.physicalNode, bypass);
+    if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+            "audioEditTest---resetEnvEffect OH_AudioSuiteEngine_BypassEffectNode ERROR %{public}zd", result);
+        napi_create_int64(env, result, &ret);
+        return ret;
+    }
+    if (bypass) {
+        napi_create_int64(env, result, &ret);
+        return ret;
+    }
+    result = OH_AudioSuiteEngine_SetEnvironmentType(node.physicalNode, type);
     if (result != AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
             "audioEditTest---OH_AudioSuiteEngine_SetEnvironmentType ERROR==%{public}zd", result);
