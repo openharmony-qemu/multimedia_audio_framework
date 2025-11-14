@@ -569,6 +569,8 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->newDeviceDescs_.front();
     CHECK_AND_RETURN_RET_LOG(deviceDesc, ERR_NULL_POINTER, "deviceDesc is nullptr");
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
+        int32_t ret = deviceDesc->networkId_ != LOCAL_NETWORK_ID ? FetchOutputDeviceAndRoute("StartClient") : 0;
+        JUDGE_AND_WARNING_LOG(ret != SUCCESS, "FetchOutputDeviceAndRoute failed");
         int32_t outputRet = ActivateOutputDevice(streamDesc);
         CHECK_AND_RETURN_RET_LOG(outputRet != REFETCH_DEVICE, SUCCESS, "Activate output device failed, refetch device");
         CHECK_AND_RETURN_RET_LOG(outputRet == SUCCESS, outputRet, "Activate output device failed");
