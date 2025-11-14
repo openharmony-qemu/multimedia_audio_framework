@@ -575,5 +575,14 @@ int32_t IpcStreamInServer::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
     }
     return rendererInServer_->SetAudioHapticsSyncId(audioHapticsSyncId);
 }
+
+// int32_t IpcStreamInServer::SetSharedBuffer(std::shared_ptr<OHAudioBufferBase> &buffer)
+// {
+//     CHECK_AND_RETURN_RET_LOG(mode_ == AUDIO_MODE_PLAYBACK, ERR_OPERATION_FAILED,
+//         "invalid mode: %{public}d", static_cast<int32_t>(mode_));
+//     CHECK_AND_RETURN_RET_LOG(rendererInServer_ != nullptr, ERR_OPERATION_FAILED, "rendererInServer is nullptr!");
+//     return rendererInServer_->SetSharedBuffer(buffer);
+// }
+
 } // namespace AudioStandard
 } // namespace OHOS

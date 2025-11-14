@@ -159,9 +159,14 @@ public:
     void ResetFirstFrameState() override;
 
     void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override;
+    int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
 
     bool IsVirtualKeyboard(const int32_t flags);
     void HandleSetRendererInfoByOptions(const AudioRendererOptions &rendererOptions, const AppInfo &appInfo);
+    void SetStaticRendererBuffer(std::shared_ptr<AudioSharedMemory> sharedMemory);
+    int32_t SetStaticBufferCallback(std::shared_ptr<StaticBufferEventCallback> callback);
+    bool IsRendererFlagsSupportStatic(const int32_t rendererFlags);
+
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {
         AudioStreamParams audioStreamParams;
@@ -288,7 +293,6 @@ private:
 
     std::vector<uint32_t> usedSessionId_ = {};
     mutable std::mutex silentModeAndMixWithOthersMutex_;
-    std::mutex setStreamCallbackMutex_;
     std::mutex setParamsMutex_;
     std::mutex rendererPolicyServiceDiedCbMutex_;
     int64_t framesAlreadyWritten_ = 0;
@@ -301,6 +305,8 @@ private:
     std::condition_variable taskLoopCv_;
     std::mutex inSwitchingMtx_;
     bool inSwitchingFlag_ = false;
+
+    StaticBufferInfo staticBufferInfo_{};
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {

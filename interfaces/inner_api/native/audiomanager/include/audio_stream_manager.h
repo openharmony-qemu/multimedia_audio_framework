@@ -113,6 +113,13 @@ public:
      * @param volume volume value.
      */
     virtual void GetSingleStreamVolumeImpl(float &volume) = 0;
+
+    /**
+     * call to trigger recreate AudioRenderer
+     *
+     * @param callingFunc calling function name.
+     */
+    virtual void TriggerRecreate(std::string callingFunc) {}
 };
 
 class AudioStreamManager {

@@ -208,6 +208,15 @@ struct RingBufferWrapper {
         dataLength = buffer.dataLength;
         return SUCCESS;
     }
+
+    // int32_t SetBufferValue(uint8_t *buffer, size_t bufLength, size_t index = 0)
+    // {
+    //     CHECK_AND_RETURN_RET_LOG(index < DESC_SIZE, ERROR_INVALID_PARAM, "invalid Index, size: %{public}d", DESC_SIZE);
+    //     basicBufferDescs[index].buffer = buffer;
+    //     basicBufferDescs[index].bufLength = bufLength;
+    //     dataLength += bufLength;
+    //     return SUCCESS;
+    // }
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -135,7 +135,11 @@ public:
     int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override;
 
     int32_t SetTarget(int32_t target, int32_t &ret) override;
+
     int32_t SetRebuildFlag() override;
+
+    int32_t SetSharedBuffer(std::shared_ptr<OHAudioBufferBase> &buffer); // for static renderer only
+
     // for inner-capturer
     std::shared_ptr<RendererInServer> GetRenderer();
     std::shared_ptr<CapturerInServer> GetCapturer();

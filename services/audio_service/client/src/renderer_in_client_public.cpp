@@ -1474,6 +1474,11 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.lastFramePosAndTimePair = lastFramePosAndTimePair_;
     info.lastFramePosAndTimePairWithSpeed = lastFramePosAndTimePairWithSpeed_;
     info.target = renderTarget_;
+
+    if (rendererInfo_.isStatic) {
+        info.staticBufferInfo = staticBufferInfo_;
+    }
+    info.staticBufferEventCallback = audioStaticBufferEventCallback_;
     GetStreamSwitchInfo(info);
 
     {

@@ -107,6 +107,8 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
         config.rendererInfo.expectedPlaybackDurationBytes = rendererInfo_.expectedPlaybackDurationBytes;
         config.rendererInfo.isLoopback = rendererInfo_.isLoopback;
         config.rendererInfo.loopbackMode = rendererInfo_.loopbackMode;
+        config.rendererInfo.isStatic = rendererInfo_.isStatic;
+        config.sharedMemory = sharedMemory_;
     } else if (eMode_ == AUDIO_MODE_RECORD) {
         AUDIO_DEBUG_LOG("FastAudioStream: Initialize recording");
         config.capturerInfo.sourceType = capturerInfo_.sourceType;
@@ -950,6 +952,10 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.silentModeAndMixWithOthers = silentModeAndMixWithOthers_;
     info.defaultOutputDevice = defaultOutputDevice_;
 
+    if (rendererInfo_.isStatic) {
+        processClient_->GetStaticBufferInfo(info.staticBufferInfo);
+    }
+    info.staticBufferEventCallback = audioStaticBufferEventCallback_;
     {
         std::lock_guard<std::mutex> lock(setPreferredFrameSizeMutex_);
         info.userSettedPreferredFrameSize = userSettedPreferredFrameSize_;
@@ -1270,5 +1276,25 @@ bool FastAudioStream::IsDataCallbackSet() const
 {
     return spkProcClientCb_ != nullptr || micProcClientCb_ != nullptr;
 }
+
+void FastAudioStream::SetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
+{
+    staticBufferInfo_ = staticBufferInfo;
+}
+
+int32_t FastAudioStream::SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback)
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "processClient_ is null");
+    CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE, "incorrect render mode");
+    return processClient_->SetStaticBufferEventCallback();
+}
+
+int32_t FastAudioStream::::SetLoopTimes(int64_t bufferLoopTimes)
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "processClient_ is null");
+    CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE, "incorrect render mode");
+    return processClient_->SetLoopTimes(bufferLoopTimes);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

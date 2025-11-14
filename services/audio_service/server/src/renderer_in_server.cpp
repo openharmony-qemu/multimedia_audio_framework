@@ -137,15 +137,29 @@ int32_t RendererInServer::ConfigServerBuffer()
         "spanSizeInByte_: %{public}zu, bufferTotalSizeInFrame_: %{public}zu", engineTotalSizeInFrame_,
         spanSizeInFrame_, byteSizePerFrame_, spanSizeInByte_, bufferTotalSizeInFrame_);
 
-    // create OHAudioBuffer in server
-    audioServerBuffer_ = OHAudioBufferBase::CreateFromLocal(bufferTotalSizeInFrame_, byteSizePerFrame_);
-    CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_OPERATION_FAILED, "Create oh audio buffer failed");
+    if (processConfig_.rendererInfo.isStatic) {
+        int32_t ret = OHAudioBufferBase::CheckSharedMemoryValidation(processConfig_.staticBufferInfo.sharedMemory_);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CheckSharedMemoryValidation fail!");
 
-    // we need to clear data buffer to avoid dirty data.
-    memset_s(audioServerBuffer_->GetDataBase(), audioServerBuffer_->GetDataSize(), 0,
-        audioServerBuffer_->GetDataSize());
-    int32_t ret = InitBufferStatus();
-    AUDIO_DEBUG_LOG("Clear data buffer, ret:%{public}d", ret);
+        uint32_t totalSizeInFrame = processConfig_.staticBufferInfo.sharedMemory_->GetSize() / byteSizePerFrame_;
+        audioServerBuffer_ = OHAudioBufferBase::CreateFromRemote(totalSizeInFrame, byteSizePerFrame_,
+            AudioBufferHolder::AUDIO_APP_SHARED, processConfig_.staticBufferInfo.sharedMemory_->GetFd());
+        CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERROR, "SetStaticClientBuffer failed!");
+        audioServerBuffer_.isStatic = true;
+        audioServerBuffer_.SetStaticBufferInfo(processConfig_.staticBufferInfo);
+        AUDIO_INFO_LOG("SetStaticBuffer SUCCESS");
+    } else {
+        // create OHAudioBuffer in server
+        audioServerBuffer_ = OHAudioBufferBase::CreateFromLocal(bufferTotalSizeInFrame_, byteSizePerFrame_);
+        CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_OPERATION_FAILED, "Create oh audio buffer failed");
+
+        // we need to clear data buffer to avoid dirty data.
+        memset_s(audioServerBuffer_->GetDataBase(), audioServerBuffer_->GetDataSize(), 0,
+            audioServerBuffer_->GetDataSize());
+        int32_t ret = InitBufferStatus();
+        AUDIO_DEBUG_LOG("Clear data buffer, ret:%{public}d", ret);
+    }
+
     uint32_t spanTime = spanSizeInFrame_ * AUDIO_MS_PER_SECOND /
         (processConfig_.streamInfo.customSampleRate == 0 ? processConfig_.streamInfo.samplingRate :
         processConfig_.streamInfo.customSampleRate);
@@ -787,6 +801,10 @@ void RendererInServer::OnWriteDataFinish()
 
 int32_t RendererInServer::WriteData(int8_t *inputData, size_t requestDataLen)
 {
+    if (isStatic) {
+        return OnWriteDataInStaticMode(inputData, requestDataLen);
+    }
+
     size_t requestDataInFrame = requestDataLen / byteSizePerFrame_;
 
     std::lock_guard lock(writeLock_);
@@ -819,6 +837,17 @@ int32_t RendererInServer::WriteData(int8_t *inputData, size_t requestDataLen)
     uint64_t nextReadFrame = currentReadFrame + requestDataInFrame;
     audioServerBuffer_->SetCurReadFrame(nextReadFrame);
 
+    return SUCCESS;
+}
+
+int32_t RendererInServer::OnWriteDataInStaticMode(int8_t *inputData, size_t requestDataLen)
+{
+    CHECK_AND_RETURN_RET_LOG(requestDataLen != 0, ERR_OPERATION_FAILED, "requestDataLen is 0.");
+    size_t requestDataInFrame = requestDataLen / byteSizePerFrame_;
+    Trace trace1(traceTag_ + " OnWriteDataInStaticMode requestDataInFrame:" + std::to_string(requestDataInFrame));
+
+    int32_t ret = audioServerBuffer_->GetDataFromStaticBuffer(inputData, requestDataLen);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetWritableStaticData failed!");
     return SUCCESS;
 }
 

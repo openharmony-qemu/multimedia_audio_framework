@@ -124,15 +124,20 @@ AudioProcessInServer::~AudioProcessInServer()
 
 bool AudioProcessInServer::PrepareRingBuffer(uint64_t curRead, RingBufferWrapper& ringBuffer)
 {
-    int32_t ret = processBuffer_->GetAllReadableBufferFromPosFrame(curRead, ringBuffer);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && ringBuffer.dataLength > 0, false,
-        "getBuffer failed ret: %{public}d lenth: %{public}zu",
-        ret, ringBuffer.dataLength);
-
     auto byteSizePerFrame = GetByteSizePerFrame();
     CHECK_AND_RETURN_RET_LOG(byteSizePerFrame != 0, false, "byteSizePerFrame is 0");
-
     size_t spanSizeInByte = GetSpanSizeInFrame() * byteSizePerFrame;
+
+    if (processConfig_.rendererInfo.isStatic) {
+        processTmpBuffer_.resize(0);
+        processTmpBuffer_.resize(spanSizeInByte);
+        processBuffer_->GetDataFromStaticBuffer(processTmpBuffer_.data(), spanSizeInByte);
+    } else {
+        int32_t ret = processBuffer_->GetAllReadableBufferFromPosFrame(curRead, ringBuffer);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && ringBuffer.dataLength > 0, false,
+            "getBuffer failed ret: %{public}d lenth: %{public}zu",
+            ret, ringBuffer.dataLength);
+    }
     if (ringBuffer.dataLength > spanSizeInByte) {
         ringBuffer.dataLength = spanSizeInByte;
     }
@@ -165,6 +170,10 @@ void AudioProcessInServer::PrepareStreamDataBufferInner(size_t spanSizeInByte,
         ringBufferDescForCotinueData.basicBufferDescs[0].buffer = processTmpBuffer_.data();
         ringBufferDescForCotinueData.basicBufferDescs[0].bufLength = ringBuffer.dataLength;
         ringBufferDescForCotinueData.CopyInputBufferValueToCurBuffer(ringBuffer);
+        dstBufferDesc.buffer = processTmpBuffer_.data();
+        dstBufferDesc.bufLength = spanSizeInByte;
+        dstBufferDesc.dataLength = spanSizeInByte;
+    } else if (processConfig_.rendererInfo.isStatic) {
         dstBufferDesc.buffer = processTmpBuffer_.data();
         dstBufferDesc.bufLength = spanSizeInByte;
         dstBufferDesc.dataLength = spanSizeInByte;
@@ -753,20 +762,35 @@ int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
         formatKey_ = {processConfig_.streamInfo.channels, processConfig_.streamInfo.format,
             serverStreamInfo.channels, serverStreamInfo.format};
     }
+    if (processConfig_.rendererInfo.isStatic) {
+        int32_t ret = OHAudioBufferBase::CheckSharedMemoryValidation(processConfig_.staticBufferInfo.sharedMemory_);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CheckSharedMemoryValidation fail!");
 
-    // create OHAudioBuffer in server.
-    processBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInframe_, byteSizePerFrame_);
-    CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_OPERATION_FAILED, "Create process buffer failed.");
+        uint32_t byteSizePerFrame = processConfig_.streamInfo.channels *
+            PcmFormatToBits(processConfig_.streamInfo.format);
+        uint32_t totalSizeInFrame = processConfig_.staticBufferInfo.sharedMemory_->GetSize() / byteSizePerFrame;
 
-    CHECK_AND_RETURN_RET_LOG(processBuffer_->GetBufferHolder() == AudioBufferHolder::AUDIO_SERVER_SHARED,
-        ERR_ILLEGAL_STATE, "CreateFormLocal in server failed.");
-    AUDIO_INFO_LOG("Config: totalSizeInframe:%{public}d spanSizeInframe:%{public}d byteSizePerFrame:%{public}d",
-        totalSizeInframe_, spanSizeInframe_, byteSizePerFrame_);
+        processBuffer_ = OHAudioBufferBase::CreateFromRemote(totalSizeInFrame, byteSizePerFrame,
+            AudioBufferHolder::AUDIO_APP_SHARED, processConfig_.staticBufferInfo.sharedMemory_->GetFd());
+        CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, nullptr, "SetStaticClientBuffer failed!");
+        audioServerBuffer_.isStatic = true;
+        audioServerBuffer_.SetStaticBufferInfo(processConfig_.staticBufferInfo);
+        AUDIO_INFO_LOG("SetStaticBuffer SUCCESS");
+    } else {
+        // create OHAudioBuffer in server.
+        processBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInframe_, byteSizePerFrame_);
+        CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_OPERATION_FAILED, "Create process buffer failed.");
 
-    // we need to clear data buffer to avoid dirty data.
-    memset_s(processBuffer_->GetDataBase(), processBuffer_->GetDataSize(), 0, processBuffer_->GetDataSize());
-    int32_t ret = InitBufferStatus();
-    AUDIO_DEBUG_LOG("clear data buffer, ret:%{public}d", ret);
+        CHECK_AND_RETURN_RET_LOG(processBuffer_->GetBufferHolder() == AudioBufferHolder::AUDIO_SERVER_SHARED,
+            ERR_ILLEGAL_STATE, "CreateFormLocal in server failed.");
+        AUDIO_INFO_LOG("Config: totalSizeInframe:%{public}d spanSizeInframe:%{public}d byteSizePerFrame:%{public}d",
+            totalSizeInframe_, spanSizeInframe_, byteSizePerFrame_);
+
+        // we need to clear data buffer to avoid dirty data.
+        memset_s(processBuffer_->GetDataBase(), processBuffer_->GetDataSize(), 0, processBuffer_->GetDataSize());
+        int32_t ret = InitBufferStatus();
+        AUDIO_DEBUG_LOG("clear data buffer, ret:%{public}d", ret);
+    }
 
     streamStatus_ = processBuffer_->GetStreamStatus();
     CHECK_AND_RETURN_RET_LOG(streamStatus_ != nullptr, ERR_OPERATION_FAILED, "Create process buffer failed.");

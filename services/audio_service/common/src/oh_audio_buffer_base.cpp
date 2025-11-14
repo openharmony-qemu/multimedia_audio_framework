@@ -199,6 +199,7 @@ bool AudioSharedMemory::Marshalling(Parcel &parcel) const
 
 AudioSharedMemory *AudioSharedMemory::Unmarshalling(Parcel &parcel)
 {
+    // buffer verify check
     // Parcel -> MessageParcel
     MessageParcel &msgParcel = static_cast<MessageParcel &>(parcel);
     int fd = msgParcel.ReadFileDescriptor();
@@ -337,6 +338,25 @@ std::shared_ptr<OHAudioBufferBase> OHAudioBufferBase::CreateFromRemote(uint32_t 
     return buffer;
 }
 
+int32_t OHAudioBufferBase::CheckSharedMemoryValidation(std::shared_ptr<AudioSharedMemory> sharedMemory)
+{
+    CHECK_AND_RETURN_RET_LOG(sharedMemory != nullptr && sharedMemory->GetBase() != nullptr,
+        ERR_NULL_POINTER, "sharedMemory is nullptr!");
+
+    int fd = sharedMemory->GetFd();
+    if (fd < 0 || fcntl(fd, F_GETFD) == -1) {
+        AUDIO_ERR_LOG("ValidateFileDescriptor: invalid fd %d", fd);
+        return ERR_INVALID_PARAM;
+    }
+    off_t actualSize = lseek(fd, 0, SEEK_END);
+    lseek(fd, 0, SEEK_SET);
+    if (actualSize < (off_t)sharedMemory->GetSize() || sharedMemory->GetSize() == 0) {
+        AUDIO_ERR_LOG("actualSize is not equal to declareSize");
+        return ERR_INVALID_PARAM;
+    }
+    return SUCCESS;
+}
+
 bool OHAudioBufferBase::Marshalling(Parcel &parcel) const
 {
     MessageParcel &messageParcel = static_cast<MessageParcel &>(parcel);
@@ -454,6 +474,11 @@ std::atomic<StreamStatus> *OHAudioBufferBase::GetStreamStatus()
         return nullptr;
     }
     return &basicBufferInfo_->streamStatus;
+}
+
+bool OHAudioBufferBase::IsStreamInRunning()
+{
+    return basicBufferInfo_->streamStatus == STREAM_RUNNING || basicBufferInfo_->streamStatus == STREAM_STARTING;
 }
 
 uint32_t OHAudioBufferBase::GetUnderrunCount()
@@ -1007,5 +1032,122 @@ void OHAudioBufferBase::WakeFutex(uint32_t wakeVal)
 {
     WakeFutexIfNeed(wakeVal);
 }
+
+int32_t OHAudioBufferBase::SetLoopTimes(uint64_t times)
+{
+    CHECK_AND_RETURN_RET_LOG(isStatic_, ERR_ILLEGAL_STATE, "Cannot SetLoopTimes when not in static mode!");
+    totalLoopTimes_ = times;
+    curStaticDataPos_ = 0;
+    currentLoopTimes_ = 0;
+    return SUCCESS;
+}
+
+uint64_t OHAudioBufferBase::GetTotalLoopTimes()
+{
+    return totalLoopTimes_;
+}
+
+uint64_t OHAudioBufferBase::GetCurrentLoopTimes()
+{
+    return currentLoopTimes_;
+}
+
+int32_t OHAudioBufferBase::IncreaseCurrentLoopTimes()
+{
+    currentLoopTimes_ += 1;
+    if (totalLoopTimes_ == -1) {
+        return SUCCESS;
+    }
+    CHECK_AND_RETURN_RET_LOG(currentLoopTimes_ <= totalLoopTimes_, ERROR,
+        "CurrentLoopTimes Reach %{public}zu", totalLoopTimes_);
+    return SUCCESS;
+}
+
+void OHAudioBufferBase::SetStaticMode(bool state)
+{
+    isStatic_ = state;
+}
+
+bool OHAudioBufferBase::GetStaticMode()
+{
+    return isStatic_;
+}
+
+void OHAudioBufferBase::IncreaseBufferEndCallbackSendTimes()
+{
+    basicBufferInfo_->bufferEndCallbackSendTimes.fetch_add(1);
+}
+
+void OHAudioBufferBase::DecreaseBufferEndCallbackSendTimes()
+{
+    basicBufferInfo_->bufferEndCallbackSendTimes.fetch_add(-1);
+}
+
+bool OHAudioBufferBase::IsNeedSendBufferEndCallback()
+{
+    return basicBufferInfo_->bufferEndCallbackSendTimes.load() != 0;
+}
+
+bool OHAudioBufferBase::IsNeedSendLoopEndCallback()
+{
+    return basicBufferInfo_->needSendLoopEndCallback.load();
+}
+
+void OHAudioBufferBase::SetIsNeedSendLoopEndCallback(bool value)
+{
+    basicBufferInfo_->needSendLoopEndCallback.store(value);
+}
+
+int32_t OHAudioBufferBase::GetDataFromStaticBuffer(int8_t *inputData, size_t requestDataLen)
+{
+    if (currentLoopTimes_ == totalLoopTimes_) {
+        memset_s(inputData, requestDataLen, 0, requestDataLen);
+        AUDIO_WARNING_LOG("reach totalLoopTimes, no need copyData!");
+        return SUCCESS;
+    }
+
+    size_t offset = 0;
+    size_t remainSize = requestDataLen;
+    while (remainSize > 0) {
+        Trace loopTrace("CopyDataFromSharedBuffer " + std::to_string(remainSize));
+        size_t copySize = std::min({remainSize, totalSizeInByte_, totalSizeInByte_ - curStaticDataPos_});
+        CHECK_AND_RETURN_RET_LOG(curStaticDataPos_ + copySize <= totalSizeInByte_, ERROR_INVALID_PARAM,
+            "copySize exeeds totalSizeInByte");
+        int32_t ret = memcpy_s(inputData + offset, copySize, dataBase_ + curStaticDataPos_, copySize);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "memcpy to inputData failed!");
+        curStaticDataPos_ += copySize;
+        remainSize -= copySize;
+        offset += copySize;
+
+        if (curStaticDataPos_ == totalSizeInByte_) {
+            // buffer copy finished once
+            IncreaseCurrentLoopTimes();
+            curStaticDataPos_ = 0;
+            IncreaseBufferEndCallbackSendTimes();
+            if (currentLoopTimes_ == totalLoopTimes_) {
+                SetIsNeedSendLoopEndCallback(true);
+                memset_s(inputData + offset, remainSize, 0, remainSize);
+                offset += remainSize;
+                remainSize = 0;
+            }
+            WakeFutex();
+        }
+    }
+
+    if (offset != requestDataLen || remainSize != 0) {
+        AUDIO_ERR_LOG("GetDataFromStaticBuffer failed");
+        memset_s(inputData, requestDataLen, 0, requestDataLen);
+        return ERR_OPERATION_FAILED;
+    }
+    return SUCCESS;
+}
+
+void OHAudioBufferBase::SetStaticBufferInfo(StaticBufferInfo staticBufferInfo)
+{
+    totalLoopTimes_ = staticBufferInfo.totalLoopTimes_;
+    currentLoopTimes_ = staticBufferInfo.currentLoopTimes_;
+    curStaticDataPos_ = staticBufferInfo.curStaticDataPos_;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -218,6 +218,9 @@ public:
     void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
     bool IsRestoreNeeded() override;
     int32_t SetRebuildFlag() override;
+    void SetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override;
+    int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) override;
+    int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
 
 private:
     void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);
@@ -273,6 +276,9 @@ private:
     int32_t callbackLoopTid_ = -1;
     std::mutex callbackLoopTidMutex_;
     std::condition_variable callbackLoopTidCv_;
+
+    // for static audio renderer
+    std::shared_ptr<StaticBufferEventCallback> audioStaticBufferEventCallback_ = nullptr;
 
     enum {
         STATE_CHANGE_EVENT = 0

@@ -401,6 +401,15 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
     // fast/normal has done in audioRendererPrivate
     CHECK_AND_RETURN_LOG(IsForcedNormal(streamDesc) == false, "Forced normal");
 
+    if (streamDesc->rendererInfo_.isStatic) {
+        if (streamDesc->rendererInfo_.originalFlag == AUDIO_FLAG_MMAP) {
+            streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+        } else {
+            streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+        }
+        return;
+    }
+
     if (streamDesc->newDeviceDescs_.back()->deviceType_ == DEVICE_TYPE_REMOTE_CAST ||
         streamDesc->newDeviceDescs_.back()->networkId_ != LOCAL_NETWORK_ID) {
         auto remoteOffloadStreamPropSize = policyConfigMananger_.GetStreamPropInfoSize("remote",

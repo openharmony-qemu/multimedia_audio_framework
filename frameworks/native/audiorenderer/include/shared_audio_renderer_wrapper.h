@@ -492,6 +492,11 @@ public:
         return sharedAudioRenderer_->GetTarget();
     }
 
+    int32_t SetLoopTimes(int64_t bufferLoopTimes) override
+    {
+        return sharedAudioRenderer_->SetLoopTimes(bufferLoopTimes);
+    }
+
     explicit SharedAudioRendererWrapper(std::shared_ptr<AudioRenderer> renderer) : sharedAudioRenderer_(renderer)
     {
     }

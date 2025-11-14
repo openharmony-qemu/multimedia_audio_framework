@@ -120,5 +120,16 @@ void AudioRendererProxyObj::GetSingleStreamVolumeImpl(float &volume)
         volume = renderer->GetSingleStreamVolume();
     }
 }
+
+void AudioRendererProxyObj::TriggerRecreate(std::string callingFunc)
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+    std::shared_ptr<AudioRenderer> renderer = renderer_.lock();
+    lock.unlock();
+    if (renderer != nullptr) {
+        renderer->AsyncCheckAudioRenderer(callingFunc);
+    }
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -46,7 +46,9 @@ enum AudioBufferHolder : uint32_t {
     // Server buffer shared with hdi and has sync info
     AUDIO_SERVER_ONLY_WITH_SYNC,
     // Independent stream
-    AUDIO_SERVER_INDEPENDENT
+    AUDIO_SERVER_INDEPENDENT,
+    // StaticRenderer Mode, shared from soundpool
+    AUDIO_APP_SHARED
 };
 
 enum StreamStatus : uint32_t {
@@ -97,6 +99,10 @@ struct BasicBufferInfo {
     std::atomic<bool> isNeedStop = false;
 
     RestoreInfo restoreInfo;
+
+    // only for static renderer
+    std::atomic<uint64_t> bufferEndCallbackSendTimes = 0;
+    std::atomic<bool> needSendLoopEndCallback = false;
 };
 static_assert(std::is_standard_layout<BasicBufferInfo>::value == true, "is not standard layout!");
 static_assert(std::is_trivially_copyable<BasicBufferInfo>::value == true, "is not trivially copyable!");
@@ -146,6 +152,7 @@ public:
         uint32_t byteSizePerFrame);
     static std::shared_ptr<OHAudioBufferBase> CreateFromRemote(uint32_t totalSizeInFrame,
         uint32_t byteSizePerFrame, AudioBufferHolder holder, int dataFd, int infoFd = INVALID_BUFFER_FD);
+    static int32_t CheckSharedMemoryValidation(std::shared_ptr<AudioSharedMemory> sharedMemory);
 
     // idl
     bool Marshalling(Parcel &parcel) const override;
@@ -160,6 +167,7 @@ public:
     uint32_t GetTotalSizeInFrame();
 
     std::atomic<StreamStatus> *GetStreamStatus();
+    bool IsStreamInRunning();
 
     uint32_t GetUnderrunCount();
 
@@ -233,6 +241,24 @@ public:
     void WakeFutex(uint32_t wakeVal = IS_READY);
 
     RestoreStatus GetRestoreStatus();
+
+    // for sharedbuffer in static mode
+    void IncreaseBufferEndCallbackSendTimes();
+    void DecreaseBufferEndCallbackSendTimes();
+    bool IsNeedSendBufferEndCallback();
+    bool IsNeedSendLoopEndCallback();
+    void SetIsNeedSendLoopEndCallback(bool value);
+
+    int32_t SetLoopTimes(uint64_t times);
+    uint64_t GetTotalLoopTimes();
+    uint64_t GetCurrentLoopTimes();
+    int32_t IncreaseCurrentLoopTimes();
+    void SetStaticMode(bool state);
+    bool GetStaticMode();
+
+    int32_t GetDataFromStaticBuffer(int8_t *inputData, size_t requestDataLen);
+    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo) const;
+
 private:
     int32_t SizeCheck();
 
@@ -271,6 +297,12 @@ private:
     uint8_t *dataBase_ = nullptr;
     volatile uint32_t *syncReadFrame_ = nullptr;
     volatile uint32_t *syncWriteFrame_ = nullptr;
+
+    // for static renderer
+    bool isStatic_ = false;
+    int64_t totalLoopTimes_ = 0;
+    int64_t currentLoopTimes_ = 0;
+    size_t curStaticDataPos_ = 0;
 };
 
 class OHAudioBuffer : public Parcelable {

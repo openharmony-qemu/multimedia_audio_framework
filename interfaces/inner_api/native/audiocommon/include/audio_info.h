@@ -33,6 +33,7 @@
 #include <audio_session_info.h>
 #include <audio_stream_info.h>
 #include <audio_asr.h>
+#include "audio_shared_memory.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -638,6 +639,7 @@ struct AudioRendererInfo : public Parcelable {
     bool forceToNormal = false;
     AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
     bool toneFlag = false;
+    bool isStatic = false;
 
     AudioRendererInfo() {}
     AudioRendererInfo(ContentType contentTypeIn, StreamUsage streamUsageIn, int32_t rendererFlagsIn)
@@ -674,7 +676,8 @@ struct AudioRendererInfo : public Parcelable {
             && parcel.WriteUint32(audioFlag)
             && parcel.WriteBool(forceToNormal)
             && parcel.WriteInt32(privacyType)
-            && parcel.WriteBool(toneFlag);
+            && parcel.WriteBool(toneFlag)
+            && parcel.WriteBool(isStatic);
     }
     void UnmarshallingSelf(Parcel &parcel)
     {
@@ -702,6 +705,7 @@ struct AudioRendererInfo : public Parcelable {
         forceToNormal = parcel.ReadBool();
         privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
         toneFlag = parcel.ReadBool();
+        isStatic = parcel.ReadBool();
     }
 
     static AudioRendererInfo *Unmarshalling(Parcel &parcel)
@@ -1311,6 +1315,8 @@ struct AudioProcessConfig : public Parcelable {
 
     int32_t innerCapId = 0;
 
+    StaticBufferInfo staticBufferInfo{};
+
     AudioProcessConfig() {}
     bool Marshalling(Parcel &parcel) const override
     {
@@ -1348,6 +1354,7 @@ struct AudioProcessConfig : public Parcelable {
         parcel.WriteBool(rendererInfo.isLoopback);
         parcel.WriteInt32(static_cast<int32_t>(rendererInfo.loopbackMode));
         parcel.WriteBool(rendererInfo.isVirtualKeyboard);
+        parcel.WriteBool(rendererInfo.isStatic);
 
         //AudioPrivacyType
         parcel.WriteInt32(privacyType);
@@ -1374,6 +1381,11 @@ struct AudioProcessConfig : public Parcelable {
         // Original session id for re-create stream
         parcel.WriteUint32(originalSessionId);
         parcel.WriteInt32(innerCapId);
+
+        // StaticAudioRenderer
+        if (rendererInfo.isStatic) {
+            staticBufferInfo->Marshalling(parcel);
+        }
 
         return true;
     }
@@ -1418,6 +1430,7 @@ struct AudioProcessConfig : public Parcelable {
         config->rendererInfo.isLoopback = parcel.ReadBool();
         config->rendererInfo.loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
         config->rendererInfo.isVirtualKeyboard = parcel.ReadBool();
+        config->rendererInfo.isStatic = parcel.ReadBool();
 
         //AudioPrivacyType
         config->privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
@@ -1444,6 +1457,13 @@ struct AudioProcessConfig : public Parcelable {
         // Original session id for re-create stream
         config->originalSessionId = parcel.ReadUint32();
         config->innerCapId = parcel.ReadInt32();
+
+        // Static Audiorenderer
+        if (config->rendererInfo.isStatic) {
+            config->staticBufferInfo = StaticBufferInfo::Unmarshalling(parcel);
+        } else {
+            config->staticBufferInfo = nullptr;
+        }
 
         return config;
     }
@@ -2073,6 +2093,41 @@ enum SplitStreamType {
     STREAM_TYPE_NAVIGATION = 13
 };
 
+/**
+ * static audiorenderer callback event enum
+ */
+enum StaticBufferEventId : int32_t {
+    BUFFER_END_EVENT = 0,
+    LOOP_END_EVENT = 1
+};
+
+struct StaticBufferInfo : public Parcelable {
+    std::shared_ptr<AudioSharedMemory> sharedMemory_ = nullptr;
+    int64_t totalLoopTimes_ = 0;
+    int64_t currentLoopTimes_ = 0;
+    size_t curStaticDataPos_ = 0;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        parcel.WriteInt64(totalLoopTimes_);
+        parcel.WriteInt64(currentLoopTimes_);
+        parcel.WriteUint64(curStaticDataPos_);
+        return sharedMemory->Marshalling(parcel);
+    }
+
+    static StaticBufferInfo *Unmarshalling(Parcel &parcel)
+    {
+        auto info = new(std::nothrow) StaticBufferInfo();
+        if (info == nullptr) {
+            return nullptr;
+        }
+        info->totalLoopTimes_ = parcel.ReadInt64();
+        info->currentLoopTimes_ = parcel.ReadInt64();
+        info->curStaticDataPos_ = parcel.ReadUint64();
+        info->sharedMemory_ = std::shared_ptr<AudioSharedMemory>(AudioSharedMemory::Unmarshalling(parcel));
+        return info;
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H

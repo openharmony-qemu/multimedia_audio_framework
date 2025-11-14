@@ -173,6 +173,13 @@ public:
     virtual void OnError(AudioErrors errorCode) = 0;
 };
 
+class StaticBufferEventCallback {
+public:
+    virtual ~StaticBufferEventCallback() = default;
+
+    virtual void OnStaticBufferEvent(StaticBufferEventId eventId) = 0;
+};
+
 /**
  * @brief Provides functions for applications to implement audio rendering.
  * @since 8
@@ -243,18 +250,6 @@ public:
     /**
      * @brief create renderer instance.
      *
-     * @param rendererOptions The audio renderer configuration to be used while creating renderer instance.
-     * refer AudioRendererOptions in audio_info.h.
-     * @param appInfo Originating application's uid and token id can be passed here
-     * @return Returns shared pointer to the AudioRenderer object
-     * @since 12
-    */
-    static std::shared_ptr<AudioRenderer> CreateRenderer(const AudioRendererOptions &rendererOptions,
-        const AppInfo &appInfo = AppInfo());
-
-    /**
-     * @brief create renderer instance.
-     *
      * @param cachePath Application cache path
      * @param rendererOptions The audio renderer configuration to be used while creating renderer instance.
      * refer AudioRendererOptions in audio_info.h.
@@ -265,6 +260,64 @@ public:
     */
     static std::unique_ptr<AudioRenderer> Create(const std::string cachePath,
         const AudioRendererOptions &rendererOptions, const AppInfo &appInfo);
+
+    /**
+     * @brief create renderer instance.
+     *
+     * @param rendererOptions The audio renderer configuration to be used while creating renderer instance.
+     * refer AudioRendererOptions in audio_info.h.
+     * @param sharedMemory The shared memory structure containing the data to be played.
+     * refer AudioSharedMemory in audio_shared_memory.h
+     * @param callback Call the registered callback when the corresponding event ID operation is triggered.
+     * @param appInfo Originating application's uid and token id can be passed here
+     * 
+     * @return Returns shared pointer to the AudioRenderer object
+     * @since 22
+    */
+    static std::shared_ptr<AudioRenderer> Create(
+        const AudioRendererOptions &rendererOptions,
+        std::shared_ptr<AudioSharedMemory> sharedMemory,
+        std::shared_ptr<StaticBufferEventCallback> callback,
+        const AppInfo &appInfo = AppInfo());
+
+    /**
+     * @brief create renderer instance.
+     *
+     * @param rendererOptions The audio renderer configuration to be used while creating renderer instance.
+     * refer AudioRendererOptions in audio_info.h.
+     * @param appInfo Originating application's uid and token id can be passed here
+     * @return Returns shared pointer to the AudioRenderer object
+     * @since 12
+    */
+    static std::shared_ptr<AudioRenderer> CreateRenderer(const AudioRendererOptions &rendererOptions,
+        const AppInfo &appInfo = AppInfo());
+
+    /**
+     * @brief create static renderer instance.
+     *
+     * @param rendererOptions The audio renderer configuration to be used while creating renderer instance.
+     * refer AudioRendererOptions in audio_info.h.
+     * @param sharedMemory The shared memory structure containing the data to be played.
+     * refer AudioSharedMemory in audio_shared_memory.h
+     * @param callback Call the registered callback when the corresponding event ID operation is triggered.
+     * @param appInfo Originating application's uid and token id can be passed here
+     * @return Returns shared pointer to the AudioRenderer object
+     * @since 22
+    */
+    static std::shared_ptr<AudioRenderer> CreateStaticRenderer(
+        const AudioRendererOptions &rendererOptions,
+        std::shared_ptr<AudioSharedMemory> sharedMemory,
+        std::shared_ptr<StaticBufferEventCallback> callback,
+        const AppInfo &appInfo = AppInfo());
+
+    /**
+     * @brief Sets buffer LoopTimes.
+     *
+     * @param bufferLoopTimes Indicates The cache will be played in a loop for the specified number of times.
+     * Setting it to -1 indicates continuous looping.
+     * @since 22
+     */
+    virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) = 0;
 
     /**
      * @brief Sets audio privacy type.

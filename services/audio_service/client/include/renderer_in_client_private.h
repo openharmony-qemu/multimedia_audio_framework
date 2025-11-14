@@ -224,6 +224,9 @@ public:
     int32_t SetRenderTarget(RenderTarget renderTarget) override;
     RenderTarget GetRenderTarget() override;
     bool IsRestoreNeeded() override;
+    void SetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override;
+    int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) override;
+    int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
@@ -286,7 +289,7 @@ private:
 
     int32_t SetSpeedInner(float speed);
 
-    void WaitForBufferNeedWrite();
+    void WaitForBufferNeedOperate();
 
     void UpdatePauseReadIndex();
 
@@ -299,6 +302,8 @@ private:
     bool CheckBufferValid(const BufferDesc &bufDesc);
 
     void RecordDropPosition(size_t dataLength);
+
+    bool CheckStaticAndOperate() const;
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
@@ -390,6 +395,11 @@ private:
     sptr<IpcStreamListenerImpl> listener_ = nullptr;
     sptr<IIpcStream> ipcStream_ = nullptr;
     std::shared_ptr<OHAudioBufferBase> clientBuffer_ = nullptr;
+
+    // for static audio renderer
+    std::shared_ptr<StaticBufferEventCallback> audioStaticBufferEventCallback_ = nullptr;
+    StaticBufferInfo staticBufferInfo_{};
+    std::mutex staticBufferMutex_;
 
     // buffer handle
     std::mutex writeMutex_; // used for prevent multi thread call write
