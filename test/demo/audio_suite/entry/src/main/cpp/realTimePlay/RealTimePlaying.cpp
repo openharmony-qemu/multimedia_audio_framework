@@ -20,17 +20,17 @@ OH_AudioRenderer *audioRenderer = nullptr;
 
 OH_AudioStreamBuilder *rendererBuilder = nullptr;
 
-bool g_play_finishedFlag = false;
+bool g_playFinishedFlag = false;
 
-char *g_play_audioData = (char *)malloc(g_play_dataSize * 5);
+char *g_playAudioData = (char *)malloc(g_playDataSize * 5);
 
-int32_t g_play_dataSize = 0;
+int32_t g_playDataSize = 0;
 
 bool g_isRecord = false;
 
-char *g_play_totalAudioData = (char *)malloc(1024 * 1024 * 100);
+char *g_playTotalAudioData = (char *)malloc(1024 * 1024 * 100);
 
-int32_t g_play_resultTotalSize = 0;
+int32_t g_playResultTotalSize = 0;
 
 OH_AudioSuite_Result ProcessPipeline()
 {
@@ -61,7 +61,7 @@ OH_AudioSuite_Result OneRenDerFrame(int32_t audioDataSize, int32_t *writeSize)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG, "audioEditTest OneRenDerFrame start");
     ProcessPipeline();
-    if (audioDataSize <= CONSTANT_0 ) {
+    if (audioDataSize <= CONSTANT_0) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
             "audioEditTest OH_AudioSuiteEngine_RenderFrame audioDataSize is %{public}d",
             static_cast<int>(audioDataSize));
@@ -70,21 +70,21 @@ OH_AudioSuite_Result OneRenDerFrame(int32_t audioDataSize, int32_t *writeSize)
     char *audioData = (char *)malloc(audioDataSize);
     OH_AudioSuite_Result result =
         OH_AudioSuiteEngine_RenderFrame(g_audioSuitePipeline, audioData,
-                                        audioDataSize, writeSize, &g_play_finishedFlag);
+                                        audioDataSize, writeSize, &g_playFinishedFlag);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
         "audioEditTest OH_AudioSuiteEngine_RenderFrame audioDataSize: %{public}d, writeSize:%{public}d "
-        "g_play_finishedFlag : %{public}s, result: %{public}d",
-        audioDataSize, *writeSize, (g_play_finishedFlag ? "true" : "false"), static_cast<int>(result));
+        "g_playFinishedFlag : %{public}s, result: %{public}d",
+        audioDataSize, *writeSize, (g_playFinishedFlag ? "true" : "false"), static_cast<int>(result));
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
             "audioEditTest OH_AudioSuiteEngine_RenderFrame result is %{public}d", static_cast<int>(result));
     }
     // 每次保存一次获取的buffer值
-    g_play_audioData = (char *)malloc(*writeSize);
-    std::copy(audioData, audioData + *writeSize, static_cast<char *>(g_play_audioData));
+    g_playAudioData = (char *)malloc(*writeSize);
+    std::copy(audioData, audioData + *writeSize, static_cast<char *>(g_playAudioData));
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
-        "audioEditTest OH_AudioSuiteEngine_RenderFrame writeSize : %{public}d, g_play_finishedFlag: %{public}s",
-        *writeSize, (g_play_finishedFlag ? "true" : "false"));
+        "audioEditTest OH_AudioSuiteEngine_RenderFrame writeSize : %{public}d, g_playFinishedFlag: %{public}s",
+        *writeSize, (g_playFinishedFlag ? "true" : "false"));
     return result;
 }
 
@@ -102,38 +102,38 @@ OH_AudioData_Callback_Result PlayAudioRendererOnWriteData(OH_AudioRenderer *rend
         return AUDIO_DATA_CALLBACK_RESULT_INVALID;
     }
     int32_t writeSize = 0;
-    if (!g_play_finishedFlag) {
+    if (!g_playFinishedFlag) {
         OneRenDerFrame(audioDataSize, &writeSize);
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
             "g_isRecord: %{public}s", g_isRecord ? "true" : "false");
         // 每次保存一次获取的buffer值
         if (audioDataSize != 0 && g_isRecord == true) {
-            std::copy(g_play_audioData, g_play_audioData + writeSize,
-                static_cast<char *>(g_play_totalAudioData) + g_play_resultTotalSize);
-            g_play_resultTotalSize += writeSize;
+            std::copy(g_playAudioData, g_playAudioData + writeSize,
+                static_cast<char *>(g_playTotalAudioData) + g_playResultTotalSize);
+            g_playResultTotalSize += writeSize;
         }
     }
     // 播放音频数据
-    if (g_play_audioData != nullptr) {
-        std::copy(g_play_audioData, g_play_audioData + audioDataSize, static_cast<char *>(audioData));
+    if (g_playAudioData != nullptr) {
+        std::copy(g_playAudioData, g_playAudioData + audioDataSize, static_cast<char *>(audioData));
     }
-    if (g_play_finishedFlag) {
+    if (g_playFinishedFlag) {
         // 停止播放
         OH_AudioRenderer_Stop(audioRenderer);
         // 停止管线
         ResetAllIsResetTotalWriteAudioDataSize();
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
-            "audioEditTest PlayAudioRendererOnWriteData g_play_resultTotalSize is %{public}d", g_play_resultTotalSize);
-        CallBooleanCallback(g_play_finishedFlag);
-        g_play_finishedFlag = false;
+            "audioEditTest PlayAudioRendererOnWriteData g_playResultTotalSize is %{public}d", g_playResultTotalSize);
+        CallBooleanCallback(g_playFinishedFlag);
+        g_playFinishedFlag = false;
         if (g_totalBuff != nullptr) {
             free(g_totalBuff);
             g_totalBuff = nullptr;
         }
     }
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
-        "audioEditTest PlayAudioRendererOnWriteData g_play_resultTotalSize: %{public}d, writeSize: %{public}d",
-        g_play_resultTotalSize, writeSize);
+        "audioEditTest PlayAudioRendererOnWriteData g_playResultTotalSize: %{public}d, writeSize: %{public}d",
+        g_playResultTotalSize, writeSize);
     return AUDIO_DATA_CALLBACK_RESULT_VALID;
 }
 

@@ -1064,7 +1064,7 @@ static napi_value getAudioOfTap(napi_env env, napi_callback_info info)
 }
 
 // 音频播放 -------------------------------------
-static napi_ref callbackAudioRendererRef = nullptr;                           
+static napi_ref callbackAudioRendererRef = nullptr;         
 
 // 注册回调，获取音频播放的finished的值
 static napi_value RegisterFinishedCallback(napi_env env, napi_callback_info info)
@@ -1104,27 +1104,27 @@ static napi_value RealTimeSaveFileBuffer(napi_env env, napi_callback_info info)
     napi_value napiValue = nullptr;
     void *arrayBufferData = nullptr;
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-        "audioEditTest RealTimeSaveFileBuffer g_play_resultTotalSize is %{public}d", g_play_resultTotalSize);
-    napi_status status = napi_create_arraybuffer(env, g_play_resultTotalSize, &arrayBufferData, &napiValue);
+        "audioEditTest RealTimeSaveFileBuffer g_playResultTotalSize is %{public}d", g_playResultTotalSize);
+    napi_status status = napi_create_arraybuffer(env, g_playResultTotalSize, &arrayBufferData, &napiValue);
     if (status != napi_ok || arrayBufferData == nullptr) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest napi_create_arraybuffer status: %{public}d",
             static_cast<int>(status));
-        g_play_resultTotalSize = 0;
-        if (g_play_totalAudioData != nullptr) {
-            free(g_play_totalAudioData);
-            g_play_totalAudioData = nullptr;
+        g_playResultTotalSize = 0;
+        if (g_playTotalAudioData != nullptr) {
+            free(g_playTotalAudioData);
+            g_playTotalAudioData = nullptr;
         }
         // 创建 ArrayBuffer 失败，返回一个大小为 0 的ArrayBuffer
         napi_create_arraybuffer(env, 0, &arrayBufferData, &napiValue);
         return napiValue;
     } else {
-        std::copy(g_play_totalAudioData, g_play_totalAudioData + g_play_resultTotalSize,
+        std::copy(g_playTotalAudioData, g_playTotalAudioData + g_playResultTotalSize,
             static_cast<char *>(arrayBufferData));
-        if (g_play_totalAudioData != nullptr) {
-            free(g_play_totalAudioData);
-            g_play_totalAudioData = nullptr;
+        if (g_playTotalAudioData != nullptr) {
+            free(g_playTotalAudioData);
+            g_playTotalAudioData = nullptr;
         }
-        g_play_resultTotalSize = 0;
+        g_playResultTotalSize = 0;
         return napiValue;
     }
 }
@@ -1229,7 +1229,7 @@ static napi_value ResetTotalWriteAudioDataSize(napi_env env, napi_callback_info 
     // 写入音频的buffer，重头开始
     ResetAllIsResetTotalWriteAudioDataSize();
     // 报错音频的也重头开始保存
-    g_play_resultTotalSize = 0;
+    g_playResultTotalSize = 0;
     return nullptr;
 }
 
