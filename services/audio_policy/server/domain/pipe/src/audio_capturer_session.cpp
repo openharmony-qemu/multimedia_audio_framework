@@ -466,19 +466,19 @@ bool AudioCapturerSession::GetTargetSessionIdForInputPipe(std::shared_ptr<AudioP
     CHECK_AND_RETURN_RET_LOG(pipeInfo->streamDescMap_.count(originSessionId) > 0, false, "can not find stream on pipe");
     std::shared_ptr<AudioStreamDescriptor> originDescPtr = pipeInfo->streamDescMap_[originSessionId];
     auto originSource = originDescPtr->capturerInfo_.sourceType;
-    auto originStreategy= sourceStrategyMap->find(originSource);
+    auto originStreategy = sourceStrategyMap->find(originSource);
     CHECK_AND_RETURN_RET_LOG(originStreategy != sourceStrategyMap->end(), false, "can not find originStreategy");
     bool originHigher = originStreategy->second.priority >= maxRunningPriority;
     AUDIO_INFO_LOG("originStreamDesc:<%{public}u, %{public}d> priority:%{public}u",
         originSessionId, originSource, originStreategy->second.priority);
 
-    if ((operation == SESSION_OPERATION_START) && (((hasRunningExpectOrigin) && originHigher)
-        || ((!hasRunningExpectOrigin) && (openSource != std::to_string(originSource))))) {
+    if ((operation == SESSION_OPERATION_START) && ((hasRunningExpectOrigin && originHigher)
+        || (!hasRunningExpectOrigin && openSource != std::to_string(originSource)))) {
         targetSessionId = originSessionId;
         return true;
     }
-    if (((operation == SESSION_OPERATION_PAUSE) || (operation == SESSION_OPERATION_STOP)) 
-        && ((hasRunningExpectOrigin) && (openSource == std::to_string(originSource)))) {
+    if ((operation == SESSION_OPERATION_PAUSE || operation == SESSION_OPERATION_STOP)
+        && (hasRunningExpectOrigin && openSource == std::to_string(originSource))) {
         targetSessionId = maxRunningDesc.sessionId_;
         return true;
     }
@@ -549,7 +549,7 @@ int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, Session
     std::shared_ptr<AudioPipeInfo> pipeInfo =
         AudioPipeManager::GetPipeManager()->FindPipeBySessionId(pipeList, sessionID);
     if (pipeInfo != nullptr && pipeInfo->routeFlag_ == AUDIO_INPUT_FLAG_AI) {
-        AUDIO_WARNING_LOG("pipe:%{public}s routeFlage:%{public}u need not add",
+        AUDIO_WARNING_LOG("pipe:%{public}s routeFlag:%{public}u need not add",
             pipeInfo->name_.c_str(), pipeInfo->routeFlag_);
         sessionWithInputPipeRouteFlag_[sessionID] = pipeInfo->routeFlag_;
         return SUCCESS;
@@ -609,7 +609,7 @@ void AudioCapturerSession::OnCapturerSessionRemoved(uint64_t sessionID)
         audioEcManager_.CloseNormalSource();
         return;
     }
-    if (sessionWithInputPipeRouteFlag_(sessionID) > 0 ) {
+    if (sessionWithInputPipeRouteFlag_.count(sessionID) > 0) {
         sessionWithInputPipeRouteFlag_.erase(sessionID);
         return;
     }
