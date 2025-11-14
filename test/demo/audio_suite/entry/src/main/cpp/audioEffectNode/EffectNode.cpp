@@ -4,6 +4,7 @@
 
 #include "EffectNode.h"
 #include "hilog/log.h"
+#include "../audioSuiteError/AudioSuiteError.h"
 
 const int GLOBAL_RESMGR = 0xFF00;
 const char *EFFECT_NODE_TAG = "[AudioEditTestApp_EffectNode_cpp]";

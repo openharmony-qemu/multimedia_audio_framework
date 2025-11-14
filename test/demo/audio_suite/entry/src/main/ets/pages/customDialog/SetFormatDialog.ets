@@ -99,7 +99,7 @@ export struct SetFormatDialog {
                                 this.createRadio({
                                     value: `${item}`,
                                     groupName: 'radioGroupRate',
-                                    isChecked: this.sampleRate === 16000 ? true : false,
+                                    isChecked: this.sampleRate === item ? true : false,
                                     label: `${item} Hz`,
                                     onChange: () => {
                                         this.sampleRate = item;
@@ -127,7 +127,7 @@ export struct SetFormatDialog {
                                 value: '1',
                                 groupName: 'radioGroupChannels',
                                 isChecked: this.channels === 1 ? true : false,
-                                label: '单声道（降噪）',
+                                label: '单声道',
                                 onChange: () => {
                                     this.channels = 1;
                                 }
@@ -139,7 +139,7 @@ export struct SetFormatDialog {
                                 value: '2',
                                 groupName: 'radioGroupChannels',
                                 isChecked: this.channels === 2 ? true : false,
-                                label: '双声道（均衡器，音源分离，混音）',
+                                label: '双声道',
                                 onChange: () => {
                                     this.channels = 2;
                                 }
@@ -164,7 +164,7 @@ export struct SetFormatDialog {
                                 this.createRadio({
                                     value: `${item}`,
                                     groupName: 'radioGroupBitsPerSample',
-                                    isChecked: this.bitsPerSample === 32 ? true : false,
+                                    isChecked: this.bitsPerSample === item ? true : false,
                                     label: `${item}`,
                                     onChange: () => {
                                         this.bitsPerSample = item;

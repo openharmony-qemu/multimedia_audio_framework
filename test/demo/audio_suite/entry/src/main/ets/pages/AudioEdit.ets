@@ -56,7 +56,6 @@ export struct AudioEdit {
     @StorageLink('publicBuffer') pubBuffer: ArrayBuffer = new ArrayBuffer(0);
     @State openGridState: boolean = false;
     private equailizerId: string = '';
-    private pitchBuffer: ArrayBuffer = new ArrayBuffer(0);
     
     aboutToAppear(): void {
         Logger.info(TAG, 'aboutToAppear');
@@ -884,7 +883,6 @@ export struct AudioEdit {
                             .onClick(() => {
                                 Logger.info(TAG, `index + 1 is ${index + 1}`);
                                 this.equailizerMode = index + 1;
-                                this.changeBalanceBandGains(this.equailizerMode);
                             })
                     })
                 }
@@ -902,7 +900,6 @@ export struct AudioEdit {
                             .onClick(() => {
                                 Logger.info(TAG, `index + 1 is ${index + 6}`);
                                 this.equailizerMode = index + 6;
-                                this.changeBalanceBandGains(this.equailizerMode);
                             })
                     })
                 }
@@ -1311,86 +1308,19 @@ export struct AudioEdit {
             }
         }
         .margin({ bottom: $r('app.float.margin_0') }).width('100%').onClick(() => {
-            Logger.info(TAG, `pitch audio pcmBuffer length is ${this.playList.get(info.uri)?.pcmBuffer?.byteLength}`);
             this.pitchSong = nodeId;
             this.effectBtnState = true;
-            this.pitchBuffer = this.playList.get(info.uri)?.pcmBuffer || new ArrayBuffer(0);
         })
-    }
-
-    changeBalanceBandGains(equailizerMode: number) {
-        switch ((equailizerMode)) {
-            // 默认
-            case 1:
-                this.balanceBandGains = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-                break;
-            // 民谣
-            case 2:
-                this.balanceBandGains = [3, 5, 2, -4, 1, 2, -3, 1, 4, 5];
-                break;
-            // 中国式
-            case 3:
-                this.balanceBandGains = [0, 0, 2, 0, 0, 4, 4, 2, 2, 5];
-                break;
-            // 古典
-            case 4:
-                this.balanceBandGains = [2, 3, 2, 1, 0, 0, -5, -5, -5, -6];
-                break;
-            // 舞曲
-            case 5:
-                this.balanceBandGains = [4, 3, 2, -3, 0, 0, 5, 4, 2, 0];
-                break;
-            // 爵士
-            case 6:
-                this.balanceBandGains = [2, 0, 2, 3, 6, 5, -1, 3, 4, 4];
-                break;
-            // 流行
-            case 7:
-                this.balanceBandGains = [5, 2, 1, -1, -5, -5, -2, 1, 2, 4];
-                break;
-            // R&B
-            case 8:
-                this.balanceBandGains = [1, 4, 5, 3, -2, -2, 2, 3, 5, 5];
-                break;
-            // 摇滚
-            case 9:
-                this.balanceBandGains = [6, 4, 4, 2, 0, 1, 3, 3, 5, 4];
-                break;
-            // 自定义
-            default:
-                this.balanceBandGains = this.balanceBandGains;
-                break;
-        }
     }
 
     selectedAudio(info: SongInfo, inputId: string, outPutId: string, mixerId: string) {
         Logger.info(TAG, 
-            `songType: ${info.songType} --- pcmBuffer length: ${info.pcmBuffer?.byteLength} --- wavBuffer length : ${info.wavBuffer?.byteLength}`);
-        Logger.info(TAG, `inputId : ${inputId} --- outPutId: ${outPutId} --- ${mixerId}, channels: ${info.channels}`);
+            `songType: ${info.songType},  wavBuffer length : ${info.wavBuffer?.byteLength}`);
         if (info.songType === 'wav' && info.wavBuffer) {
-            this.playList.set(info.uri, {
-                uri: info.uri,
-                songType: info.songType,
-                songName: info.songName,
-                nodeId: info.nodeId,
-                pcmBuffer: info.pcmBuffer,
-                wavHeaderBuffer: info.wavHeaderBuffer,
-                wavBuffer: info.wavBuffer,
-                channels: info.channels,
-                sampleRate: info.sampleRate,
-                bitsPerSample: info.bitsPerSample
-            });
-            this.playList.set('format', {
-                uri: 'format',
-                channels: info.channels,
-                sampleRate: info.sampleRate,
-                bitsPerSample: info.bitsPerSample
-            })
             // 调用napi接口
             try {
                 let result =
-                    audioNapi.audioInAndOutInit(inputId, outPutId, mixerId, info.channels, info.sampleRate, info.bitsPerSample, info.formatCategory,
-                        info.pcmBuffer?.byteLength, info.pcmBuffer)
+                    audioNapi.audioInAndOutInit(inputId, outPutId, mixerId, info.fd, info.wavBuffer.byteLength);
                 if (result !== 0) {
                     this.getUIContext().showAlertDialog({
                         title: '提示',

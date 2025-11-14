@@ -35,6 +35,7 @@ export struct MixingConsole {
     private MAX_TRACKS: number = 5; // 最大音轨数
     @State nodeList: Map<string, SongInfo> = new Map();
     private wavBuffer: ArrayBuffer = new ArrayBuffer(0);
+    private fd: number = -1;
     // 是否录制
     @State isRecord: boolean = false;
     // 导出中
@@ -56,9 +57,9 @@ export struct MixingConsole {
     // 导出样式
     @State newAudioFileName: string = '';
     @State audioFormate: string = '.wav';
-    @State sampleRate: number = 48000;
-    @State channels: number = 2;
-    @State bitsPerSample: number = 32;
+    @State sampleRate: number = -1;
+    @State channels: number = -1;
+    @State bitsPerSample: number = -1;
     // 节点操作弹窗参数
     @State isLeft: boolean = true;
     @State selectedNode: string = '';
@@ -71,11 +72,9 @@ export struct MixingConsole {
         // 初始化空列表（保留5个空位）
         this.inputList = Array(this.MAX_TRACKS).fill(null);
         
-
-        
         audioNapi.registerFinishedCallback((result: boolean) => {
             this.finished = result;
-            Logger.info(TAG, `finished: ${JSON.stringify(this.finished)}`);
+            Logger.info(TAG, `registerFinishedCallback finished: ${JSON.stringify(this.finished)}`);
             if (this.finished) {
                 if (this.isRecord) {
                     taskpool.execute(RealTimeSaveFileBuffer).then(async (value: object) => {
@@ -86,6 +85,29 @@ export struct MixingConsole {
                 this.isExported = false;
                 this.isRecord = false;
                 this.isPlay = false;
+            }
+        })
+
+        audioNapi.registerAudioFormatCallback((result: string[]) => {
+            Logger.info(TAG, `registerAudioFormatCallback string size: ${JSON.stringify(result.length)}, result: ${result}`);
+            this.sampleRate = Number(result[0]);
+            this.channels = Number(result[1]);
+            switch (Number(result[2])) {
+                case 0:
+                    this.bitsPerSample = 8;
+                    break;
+                case 1:
+                    this.bitsPerSample = 16;
+                    break;
+                case 2:
+                    this.bitsPerSample = 24;
+                    break;
+                case 3:
+                    this.bitsPerSample = 32;
+                    break;
+                case 4:
+                    this.bitsPerSample = 32;
+                    break;
             }
         })
     }
@@ -193,6 +215,13 @@ export struct MixingConsole {
                             .height('30')
                             .margin({right: $r('app.float.margin_5')})
                             .onClick(() => {
+                                if (this.nodeList.size === 0) {
+                                    this.getUIContext().showAlertDialog({
+                                        title: '提示',
+                                        message: '至少选中一个音频才可以播放'
+                                    });
+                                    return;
+                                }
                                 this.isPlayRealTime = true;
                                 this.isPlay = !this.isPlay;
                                 // 播放
@@ -253,42 +282,17 @@ export struct MixingConsole {
                                                     this.inputList[index] = value;
                                                     this.getPcmFileBuffer(this.inputList[index]);
                                                     if (this.wavBuffer.byteLength !== 0) {
-                                                        const dataView = new DataView(this.wavBuffer);
-                                                        // 获取通道数，通道数位于22字节
-                                                        this.channels = dataView.getUint16(22, true);
-                                                        // 获取采样率，采样率位于第24到28字节
-                                                        this.sampleRate = dataView.getUint32(24, true);
-                                                        // 获取位深，位深位于第34字节
-                                                        this.bitsPerSample = dataView.getUint16(34, true);
-                                                        // 格式类别 int 还是 float(3)
-                                                        const formatCategory = dataView.getUint16(20, true);
-                                                        Logger.info(TAG, `formatCategory: ${formatCategory}`);
-                                                        // 获取音频的长度
-                                                        const fmtSize = dataView.getUint32(16, true); // fmt chunk size
-                                                        let offset = 20 + fmtSize;
-                                                        let pcmLength = 0;
-                                                        while (offset <= this.wavBuffer.byteLength) {
-                                                            const chunkId = dataView.getUint32(offset, true);
-                                                            offset += 4;
-                                                            const chunkSize = dataView.getUint32(offset, true);
-                                                            offset += 4;
-                                                            // 'data' 在 ASCII 小端字节
-                                                            if (chunkId === 0x61746164) {
-                                                                // 找到了 data 块， 返回其大小
-                                                                pcmLength = chunkSize;
-                                                                break;
-                                                            }                    
-                                                            offset += chunkSize;                                        
-                                                        }
-                                                        Logger.info(TAG, `pcmLength: ${pcmLength}`);
-                                                        // 设置音频参数
-                                                        tmpInfo.channels = this.channels;
-                                                        tmpInfo.sampleRate = this.sampleRate;
-                                                        tmpInfo.bitsPerSample = this.bitsPerSample;
-
-                                                        audioNapi.audioInAndOutInit(inputId, this.outputNode.id, this.mixerNode.id, this.channels, this.sampleRate, this.bitsPerSample, formatCategory,
-                                                            pcmLength, this.wavBuffer.slice(offset, offset + pcmLength));
+                                                        audioNapi.audioInAndOutInit(inputId, this.outputNode.id, this.mixerNode.id, this.fd, this.wavBuffer.byteLength);
                                                     }
+                                                    Logger.info(TAG, `fd: ${this.fd}`);
+                                                    fs.closeSync(this.fd);
+                                                    setTimeout(() => {
+                                                        if (tmpInfo) {
+                                                            tmpInfo.sampleRate = this.sampleRate;
+                                                            tmpInfo.channels = this.channels;
+                                                            tmpInfo.bitsPerSample = this.bitsPerSample;
+                                                        }
+                                                    }, 100);
                                                     this.nodeList.set(inputId, tmpInfo);
                                                 }
                                             }
@@ -414,40 +418,16 @@ export struct MixingConsole {
                         //获取音频的相关参数
                         this.getPcmFileBuffer(songInfo);
                         if(this.wavBuffer.byteLength !== 0) {
-                            const dataView = new DataView(this.wavBuffer);
-                            // 获取通道数，通道数位于22字节
-                            this.channels = dataView.getUint16(22, true);
-                            // 获取采样率，采样率位于24到28字节
-                            this.sampleRate = dataView.getUint32(24, true);
-                            // 获取位深，位深位于34字节
-                            this.bitsPerSample = dataView.getUint16(34, true);
-                            // 格式类别 int 还是 float（3） ...
-                            const formatCategory = dataView.getUint16(20, true);
-                            Logger.info(TAG, `formatCategory: ${formatCategory}`);
-                            // 获取音频的长度
-                            const fmtSize = dataView.getUint32(16,true); // fmt chunk size
-                            let offset = 20 + fmtSize;
-                            let pcmLength = 0;
-                            while (offset <= this.wavBuffer.byteLength) {
-                                const chunkId = dataView.getUint32(offset, true);
-                                offset += 4;
-                                const chunkSize = dataView.getUint32(offset, true);
-                                offset += 4;
-                                // 'data' 在 ASCII 小端字节
-                                if(chunkId === 0x61746164){
-                                    // 找到了 data 块， 返回其大小
-                                    pcmLength = chunkSize;
-                                    break;
+                            audioNapi.audioInAndOutInit(nodeId, this.outputNode.id, this.mixerNode.id, this.fd, this.wavBuffer.byteLength);
+                            Logger.info(TAG, `fd: %{public}`);
+                            setTimeout(() => {
+                                if (tmpInfo) {
+                                    songInfo.sampleRate = this.sampleRate;
+                                    songInfo.channels = this.channels;
+                                    songInfo.bitsPerSample = this.bitsPerSample;
                                 }
-                                offset += chunkSize;
-                            }
-                            Logger.info(TAG, `pcmLength: ${pcmLength}`);
-                            //设置音频参数
-                            songInfo.channels = this.channels;
-                            songInfo.sampleRate = this.sampleRate;
-                            songInfo.bitsPerSample  = this.bitsPerSample;
-                            audioNapi.audioInAndOutInit(nodeId, this.outputNode.id, this.mixerNode.id, this.channels, this.sampleRate, this.bitsPerSample, formatCategory,
-                                pcmLength, this.wavBuffer.slice(offset, offset + pcmLength));
+                            }, 100);
+                            fs.closeSync(this.fd);
                         }
                         this.nodeList.set(nodeId, songInfo)
                         const index = this.inputList.findIndex(song => song.nodeId === nodeId);
@@ -525,7 +505,7 @@ export struct MixingConsole {
             let dataBuffer = wavView.slice(44).buffer;
             Logger.info(TAG, `wavBuffer length: ${buffer.byteLength}`);
             this.wavBuffer = buffer;
-            fs.closeSync(file.fd);
+            this.fd = file.fd;
             return true;
         } catch (e) {
             Logger.error(TAG, `getPcmFileBuffer error: ${JSON.stringify(e)}`);
@@ -535,8 +515,6 @@ export struct MixingConsole {
 
     async SaveBuffer(value: ArrayBuffer) {
         try {
-            Logger.info(TAG,
-                `SaveBuffer start, audioFormate: ${this.audioFormate}, sampleRate: ${this.sampleRate}, channels:${this.channels}, bitsPerSample: ${this.bitsPerSample}`);
             let pcmBuffer = value;
             Logger.info(TAG, `SaveBuffer pcmBuffer length : ${pcmBuffer.byteLength}`);
             if(pcmBuffer.byteLength === 0) {
@@ -571,11 +549,6 @@ export struct MixingConsole {
                     let wavBuffer = this.writeWavFileHeader(pcmBuffer);
                     let writeLen = fs.writeSync(file.fd, wavBuffer);
                     Logger.info(TAG, `SaveWavBuffer writeLen : ${writeLen}`);
-                    fs.closeSync(file);
-                } else {
-                    // 处理pcm
-                    let writeLen = fs.writeSync(file.fd, pcmBuffer);
-                    Logger.info(TAG, `SavePcmBuffer writeLen : ${writeLen}`);
                     fs.closeSync(file);
                 }
             }) 
