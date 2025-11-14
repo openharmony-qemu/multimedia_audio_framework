@@ -367,6 +367,7 @@ void HpaeOffloadSinkOutputNode::SetPolicyState(int32_t state)
             AUDIO_INFO_LOG("unset policy state task");
             setPolicyStateTask_.flag = false;
         }
+        hdiPolicyState_ = static_cast<AudioOffloadType>(state);
         return;
     }
     if (hdiPolicyState_ != state && state == OFFLOAD_INACTIVE_BACKGROUND) {
