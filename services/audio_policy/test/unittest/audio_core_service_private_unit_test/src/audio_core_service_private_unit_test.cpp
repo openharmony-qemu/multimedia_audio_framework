@@ -124,47 +124,11 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_003, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_005
+ * @tc.name  : Test ScoInputDeviceFetchedForRecongnition.
+ * @tc.number: ScoInputDeviceFetchedForRecongnition_001
  * @tc.desc  : Test AudioCoreService::ScoInputDeviceFetchedForRecongnition()
  */
-HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_005, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
-
-    bool handleFlag = true;
-    std::string address = "abc";
-    ConnectState connectState = CONNECTED;
-
-    auto ret = audioCoreService->ScoInputDeviceFetchedForRecongnition(handleFlag, address, connectState);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_006
- * @tc.desc  : Test AudioCoreService::ScoInputDeviceFetchedForRecongnition()
- */
-HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_006, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
-
-    bool handleFlag = true;
-    std::string address = "abc";
-    ConnectState connectState = DEACTIVE_CONNECTED;
-
-    auto ret = audioCoreService->ScoInputDeviceFetchedForRecongnition(handleFlag, address, connectState);
-    EXPECT_EQ(ret, ERROR);
-}
-
-/**
- * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_007
- * @tc.desc  : Test AudioCoreService::ScoInputDeviceFetchedForRecongnition()
- */
-HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_007, TestSize.Level1)
+HWTEST_F(AudioCoreServicePrivateTest, ScoInputDeviceFetchedForRecongnition_001, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     EXPECT_NE(audioCoreService, nullptr);
@@ -172,9 +136,91 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_007, TestSize.Leve
     bool handleFlag = false;
     std::string address = "abc";
     ConnectState connectState = DEACTIVE_CONNECTED;
+    bool isVrSupported = false;
 
-    auto ret = audioCoreService->ScoInputDeviceFetchedForRecongnition(handleFlag, address, connectState);
-    EXPECT_EQ(ret, ERROR);
+    auto ret = audioCoreService->ScoInputDeviceFetchedForRecongnition(
+        handleFlag, address, connectState, isVrSupported);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test ScoInputDeviceFetchedForRecongnition.
+ * @tc.number: ScoInputDeviceFetchedForRecongnition_002
+ * @tc.desc  : Test AudioCoreService::ScoInputDeviceFetchedForRecongnition()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, ScoInputDeviceFetchedForRecongnition_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    bool handleFlag = true;
+    std::string address = "abc";
+    ConnectState connectState = DEACTIVE_CONNECTED;
+    bool isVrSupported = false;
+
+    auto ret = audioCoreService->ScoInputDeviceFetchedForRecongnition(
+        handleFlag, address, connectState, isVrSupported);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test ScoInputDeviceFetchedForRecongnition.
+ * @tc.number: ScoInputDeviceFetchedForRecongnition_003
+ * @tc.desc  : Test AudioCoreService::ScoInputDeviceFetchedForRecongnition()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, ScoInputDeviceFetchedForRecongnition_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    bool handleFlag = true;
+    std::string address = "abc";
+    ConnectState connectState = CONNECTED;
+    bool isVrSupported = false;
+
+    auto ret = audioCoreService->ScoInputDeviceFetchedForRecongnition(
+        handleFlag, address, connectState, isVrSupported);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test ScoInputDeviceFetchedForRecongnition.
+ * @tc.number: ScoInputDeviceFetchedForRecongnition_004
+ * @tc.desc  : Test AudioCoreService::ScoInputDeviceFetchedForRecongnition()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, ScoInputDeviceFetchedForRecongnition_004, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    bool handleFlag = true;
+    std::string address = "abc";
+    ConnectState connectState = DEACTIVE_CONNECTED;
+    bool isVrSupported = true;
+
+    auto ret = audioCoreService->ScoInputDeviceFetchedForRecongnition(
+        handleFlag, address, connectState, isVrSupported);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test ScoInputDeviceFetchedForRecongnition.
+ * @tc.number: ScoInputDeviceFetchedForRecongnition_005
+ * @tc.desc  : Test AudioCoreService::ScoInputDeviceFetchedForRecongnition()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, ScoInputDeviceFetchedForRecongnition_005, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    bool handleFlag = true;
+    std::string address = "abc";
+    ConnectState connectState = CONNECTED;
+    bool isVrSupported = true;
+
+    auto ret = audioCoreService->ScoInputDeviceFetchedForRecongnition(
+        handleFlag, address, connectState, isVrSupported);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
