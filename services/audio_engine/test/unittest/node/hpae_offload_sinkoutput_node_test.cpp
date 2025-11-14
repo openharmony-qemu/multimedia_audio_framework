@@ -264,7 +264,6 @@ HWTEST_F(HpaeOffloadSinkOutputNodeTest, SetPolicyState_TaskNotExsist_StateForegr
     EXPECT_FALSE(offloadNode_->setPolicyStateTask_.flag);
 }
 
-// Test first successful write initializes state
 HWTEST_F(HpaeOffloadSinkOutputNodeTest, SetPolicyState_TaskNotExsist_StateBackground, TestSize.Level0)
 {
     offloadNode_->hdiPolicyState_ = 1;
