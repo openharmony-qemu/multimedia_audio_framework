@@ -140,7 +140,6 @@ public:
  
     bool GetSilentState() override;
     void SetSilentState(bool state) override;
-    void AddMuteWriteFrameCnt(int64_t muteFrameCnt) override;
     void AddMuteFrameSize(int64_t muteFrameCnt) override;
     void AddNormalFrameSize() override;
     void AddNoDataFrameSize() override;
@@ -157,6 +156,8 @@ public:
 
     int32_t WriteToSpecialProcBuf(AudioCaptureDataProcParams &procParams) override;
     void UpdateStreamInfo() override;
+
+    void DfxOperationAndCalcMuteFrame(BufferDesc &bufferDesc) override;
 public:
     const AudioProcessConfig processConfig_;
 
@@ -244,8 +245,9 @@ private:
 
     std::atomic<bool> rebuildFlag_ = false;
 
-    std::string dumpFACName_;
-    FILE *dumpFAC_ = nullptr;
+    std::string logUtilsTag_ = "";
+
+    mutable int64_t volumeDataCount_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

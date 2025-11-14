@@ -903,24 +903,6 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_034, TestSize.Level1)
 /**
  * @tc.name  : Test AudioProcessInServer API
  * @tc.type  : FUNC
- * @tc.number: AudioProcessInServer_035
- * @tc.desc  : Test AudioProcessInServer interface.
- */
-HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_035, TestSize.Level1)
-{
-    AudioProcessConfig configRet = InitProcessConfig();
-    AudioService *releaseCallbackRet = AudioService::GetInstance();
-    auto audioProcessInServer = std::make_shared<AudioProcessInServer>(configRet, releaseCallbackRet);
-    int64_t muteFrameCnt = 1;
-
-    audioProcessInServer->lastWriteMuteFrame_ = 0;
-    audioProcessInServer->AddMuteWriteFrameCnt(muteFrameCnt);
-    EXPECT_EQ(audioProcessInServer->lastWriteMuteFrame_, 1);
-}
-
-/**
- * @tc.name  : Test AudioProcessInServer API
- * @tc.type  : FUNC
  * @tc.number: AudioProcessInServer_036
  * @tc.desc  : Test AudioProcessInServer interface.
  */

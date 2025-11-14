@@ -2145,7 +2145,7 @@ HWTEST_F(AudioServerUnitTest, CheckInnerRecorderPermission_002, TestSize.Level1)
     AudioProcessConfig config;
     config.appInfo.appTokenId = SYSTEM_ABILITY_ID;
     config.capturerInfo.sourceType = SOURCE_TYPE_REMOTE_CAST;
-    EXPECT_EQ(audioServer->CheckInnerRecorderPermission(config), PERMISSION_GRANTED);
+    EXPECT_EQ(audioServer->CheckInnerRecorderPermission(config), PERMISSION_DENIED);
 
     config.innerCapMode = MODERN_INNER_CAP;
     config.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
