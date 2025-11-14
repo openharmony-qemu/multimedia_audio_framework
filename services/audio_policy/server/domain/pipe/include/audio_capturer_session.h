@@ -70,7 +70,7 @@ public:
     CapturerState GetCapturerState();
     int32_t ReloadCaptureSession(uint32_t sessionId, SessionOperation operation);
     int32_t ReloadCapturerSessionForInputPipe(uint32_t sessionId, SessionOperation operation);
-    int32_t GetTargetSessionIdForInputPipe(std::shared_ptr<AudioPipeInfo> pipeInfo,
+    bool GetTargetSessionIdForInputPipe(std::shared_ptr<AudioPipeInfo> pipeInfo,
         uint32_t originSessionId, uint32_t &targetSessionId, SessionOperation operation);
     uint32_t GetMaxPriorityForInputPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
         uint32_t sessionId, AudioStreamDescriptor &maxPriorityDesc, bool onlyRunning);
@@ -139,6 +139,8 @@ private:
     std::atomic<bool> isPolicyConfigParsered_ = false;
     std::mutex onCapturerSessionChangedMutex_;
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;
+    // key:sessionId value:routeFlag 
+    std::unordered_map<uint32_t, uint32_t> sessionWithInputPipeRouteFlag_;
     std::unordered_set<uint32_t> sessionIdisRemovedSet_;
     // sourceType is SOURCE_TYPE_PLAYBACK_CAPTURE, SOURCE_TYPE_WAKEUP or SOURCE_TYPE_VIRTUAL_CAPTURE
     std::unordered_map<uint32_t, SessionInfo> sessionWithSpecialSourceType_;

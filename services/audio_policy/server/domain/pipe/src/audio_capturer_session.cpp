@@ -437,7 +437,7 @@ int32_t AudioCapturerSession::ReloadCapturerSessionForInputPipe(uint32_t session
     return audioEcManager_.ReloadSourceForInputPipe(pipeInfo, targetSessionId);
 }
 
-int32_t AudioCapturerSession::GetTargetSessionIdForInputPipe(std::shared_ptr<AudioPipeInfo> pipeInfo,
+bool AudioCapturerSession::GetTargetSessionIdForInputPipe(std::shared_ptr<AudioPipeInfo> pipeInfo,
     uint32_t originSessionId, uint32_t &targetSessionId, SessionOperation operation)
 {
     CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, false, "pipe is null");
@@ -499,8 +499,8 @@ uint32_t AudioCapturerSession::GetMaxPriorityForInputPipe(const std::shared_ptr<
         auto strategyIt = sourceStrategyMap->find(stream->capturerInfo_.sourceType);
         CHECK_AND_CONTINUE(strategyIt != sourceStrategyMap->end());
         if (onlyRunning) {
-            if ((strategyIt->second.priority >= maxPriority)
-                && (stream->streamStatus_ == STREAM_STATUS_STARTED)) {
+            if ((stream->streamStatus_ == STREAM_STATUS_STARTED)
+                && (strategyIt->second.priority >= maxPriority)) {
                 maxPriority = strategyIt->second.priority;
                 stream->CopyToStruct(maxPriorityDesc);
             }
@@ -549,7 +549,9 @@ int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, Session
     std::shared_ptr<AudioPipeInfo> pipeInfo =
         AudioPipeManager::GetPipeManager()->FindPipeBySessionId(pipeList, sessionID);
     if (pipeInfo != nullptr && pipeInfo->routeFlag_ == AUDIO_INPUT_FLAG_AI) {
-        AUDIO_WARNING_LOG("pipe:%{public}s need not add", pipeInfo->name_.c_str());
+        AUDIO_WARNING_LOG("pipe:%{public}s routeFlage:%{public}u need not add",
+            pipeInfo->name_.c_str(), pipeInfo->routeFlag_);
+        sessionWithInputPipeRouteFlag_[sessionID] = pipeInfo->routeFlag_;
         return SUCCESS;
     }
     if (specialSourceTypeSet_.count(sessionInfo.sourceType) == 0) {
@@ -607,7 +609,10 @@ void AudioCapturerSession::OnCapturerSessionRemoved(uint64_t sessionID)
         audioEcManager_.CloseNormalSource();
         return;
     }
-
+    if (sessionWithInputPipeRouteFlag_(sessionID) > 0 ) {
+        sessionWithInputPipeRouteFlag_.erase(sessionID);
+        return;
+    }
     AUDIO_INFO_LOG("Sessionid:%{public}" PRIu64 " not added, directly placed into sessionIdisRemovedSet_", sessionID);
     sessionIdisRemovedSet_.insert(sessionID);
 }
