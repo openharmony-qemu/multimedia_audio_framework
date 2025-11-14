@@ -371,7 +371,8 @@ void HpaeOffloadSinkOutputNode::SetPolicyState(int32_t state)
         }
         return;
     }
-    if (preState != state && state == OFFLOAD_INACTIVE_BACKGROUND) {
+    CHECK_AND_RETURN(preState != state);
+    if (state == OFFLOAD_INACTIVE_BACKGROUND) {
         AUDIO_INFO_LOG("set policy state task");
         setPolicyStateTask_.flag = true;
         setPolicyStateTask_.time = std::chrono::high_resolution_clock::now();
