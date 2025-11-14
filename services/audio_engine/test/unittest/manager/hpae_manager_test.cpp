@@ -37,6 +37,7 @@ static std::string g_rootPath = "/data/";
 const std::string ROOT_PATH = "/data/source_file_io_48000_2_s16le.pcm";
 constexpr int32_t FRAME_LENGTH = 882;
 constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
+constexpr int32_t TEST_CAPTURE_SESSION_ID = 123455;
 constexpr int32_t TEST_STREAM_UID = 111111;
 constexpr int32_t TEST_SLEEP_TIME_20 = 20;
 constexpr int32_t TEST_SLEEP_TIME_40 = 40;
@@ -2096,5 +2097,51 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerGetPreferSInk001, TestSize.Level1)
     hpaeManager_->movingIds_.emplace(TEST_STREAM_SESSION_ID, HPAE_SESSION_RELEASED);
     results = hpaeManager_->GetPerferSinkInputs(sinkInputs);
     EXPECT_EQ(results.size(), 0);
+}
+
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSink005, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->defaultSink_ = "virtual1";
+    EXPECT_EQ(hpaeManager_->SetDefaultSink(audioModuleInfo.name), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+
+    HpaeSessionInfo sessionInfo;
+    hpaeManager_->rendererIdSinkNameMap_[TEST_STREAM_SESSION_ID] = "Speaker_File";
+    hpaeManager_->rendererIdStreamInfoMap_[TEST_STREAM_SESSION_ID] = sessionInfo;
+    std::vector<uint32_t> sessionIds = hpaeManager_->GetAllRenderSession("Speaker_File");
+    EXPECT_EQ(sessionIds.size(), 1);
+    EXPECT_EQ(hpaeManager_->movingIds_.size(), 1);
+
+    AudioModuleInfo audioModuleInfo1 = GetSinkAudioModeInfo("Speaker_File1");
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo1), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->SetDefaultSink(audioModuleInfo1.name), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->movingIds_.size(), 0);
+
+    hpaeManager_->capturerIdSourceNameMap_[TEST_CAPTURE_SESSION_ID] = "mic";
+    hpaeManager_->capturerIdStreamInfoMap_[TEST_CAPTURE_SESSION_ID] = sessionInfo;
+    std::vector<uint32_t> sessionIds = hpaeManager_->GetAllCaptureSession("mic");
+    EXPECT_EQ(sessionIds.size(), 1);
+    EXPECT_EQ(hpaeManager_->movingIds_.size(), 1);
+
+    AudioModuleInfo audioModuleInfo = GetSourceAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->SetDefaultSource(audioModuleInfo.name);
+    WaitForMsgProcessing(hpaeManager_);
+    AudioModuleInfo audioModuleInfo1 = GetSourceAudioModeInfo("mic1");
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo1), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->SetDefaultSource(audioModuleInfo1.name);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->movingIds_.size(), 0);
 }
 }  // namespace

@@ -720,7 +720,9 @@ int32_t HpaeManager::SetDefaultSink(std::string name)
             return;
         }
         std::vector<uint32_t> sessionIds = GetAllRenderSession(defaultSink_);
-        rendererManager->MoveAllStream(name, sessionIds, MOVE_DEFAULT);
+        if (sessionIds.size() > 0) {
+            rendererManager->MoveAllStream(name, sessionIds, MOVE_DEFAULT);
+        }
         std::string oldDefaultSink = defaultSink_;
         defaultSink_ = name;
         if (!rendererManager->IsInit()) {
@@ -751,7 +753,9 @@ int32_t HpaeManager::SetDefaultSource(std::string name)
             return;
         }
         std::vector<uint32_t> sessionIds = GetAllCaptureSession(defaultSource_);
-        capturerManager->MoveAllStream(name, sessionIds, MOVE_DEFAULT);
+        if (sessionIds.size() > 0) {
+            capturerManager->MoveAllStream(name, sessionIds, MOVE_DEFAULT);
+        }
         std::string oldDefaultSource_ = defaultSource_;
         defaultSource_ = name;
         if (!capturerManager->IsInit()) {
