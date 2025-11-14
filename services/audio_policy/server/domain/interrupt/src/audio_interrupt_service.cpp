@@ -2320,6 +2320,7 @@ AudioScene AudioInterruptService::GetHighestPriorityAudioScene(const int32_t zon
         if (itAudioScenePriority >= audioScenePriority) {
             audioScene = itAudioScene;
             audioScenePriority = itAudioScenePriority;
+            formerUid_.store(ownerUid_);
             ownerPid_ = interrupt.pid;
             ownerUid_ = interrupt.uid;
         }
@@ -2365,6 +2366,7 @@ AudioScene AudioInterruptService::GetHighestPriorityAudioSceneFromAudioSession(
     if (itAudioScenePriority >= audioScenePriority) {
         finalAudioScene = itAudioScene;
         audioScenePriority = itAudioScenePriority;
+        formerUid_.store(ownerUid_);
         ownerPid_ = audioInterrupt.pid;
         ownerUid_ = audioInterrupt.uid;
     }
@@ -2458,7 +2460,7 @@ void AudioInterruptService::UpdateAudioSceneFromInterrupt(const AudioScene audio
     int32_t scene = AUDIO_SCENE_INVALID;
     policyServer_->GetAudioScene(scene);
     AudioScene currentAudioScene = static_cast<AudioScene>(scene);
-    if (currentAudioScene != audioScene || formerUid_.load() != ownerUid_) {
+    if (currentAudioScene != audioScene || (formerUid_.load() != -1 && formerUid_.load() != ownerUid_)) {
         HILOG_COMM_INFO("currentScene: %{public}d, targetScene: %{public}d, changeType: %{public}d",
             currentAudioScene, audioScene, changeType);
         if (handler_ != nullptr && currentAudioScene == AUDIO_SCENE_PHONE_CHAT) {
@@ -2742,6 +2744,7 @@ AudioScene AudioInterruptService::RefreshAudioSceneFromAudioInterrupt(const Audi
     AudioScene targetAudioScene = GetAudioSceneFromAudioInterrupt(audioInterrupt);
     if (GetAudioScenePriority(targetAudioScene) >= GetAudioScenePriority(highestPriorityAudioScene)) {
         highestPriorityAudioScene = targetAudioScene;
+        formerUid_.store(ownerUid_);
         ownerPid_ = audioInterrupt.pid;
         ownerUid_ = audioInterrupt.uid;
     }
