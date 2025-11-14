@@ -362,22 +362,21 @@ void HpaeOffloadSinkOutputNode::StopStream()
 
 void HpaeOffloadSinkOutputNode::SetPolicyState(int32_t state)
 {
+    auto preState = hdiPolicyState_;
+    hdiPolicyState_ = static_cast<AudioOffloadType>(state);
     if (setPolicyStateTask_.flag) {
         if (state != OFFLOAD_INACTIVE_BACKGROUND) {
             AUDIO_INFO_LOG("unset policy state task");
             setPolicyStateTask_.flag = false;
         }
-        hdiPolicyState_ = static_cast<AudioOffloadType>(state);
         return;
     }
-    if (hdiPolicyState_ != state && state == OFFLOAD_INACTIVE_BACKGROUND) {
+    if (preState != state && state == OFFLOAD_INACTIVE_BACKGROUND) {
         AUDIO_INFO_LOG("set policy state task");
         setPolicyStateTask_.flag = true;
         setPolicyStateTask_.time = std::chrono::high_resolution_clock::now();
-        hdiPolicyState_ = static_cast<AudioOffloadType>(state);
         return;
     }
-    hdiPolicyState_ = static_cast<AudioOffloadType>(state);
     SetBufferSize();
     RunningLock(true);
 }
