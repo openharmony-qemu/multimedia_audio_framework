@@ -19,6 +19,7 @@
 #include "./audioEffectNode/Output.h"
 #include "/audioEffectNode/Equailizer.h"
 #include "/audioEffectNode/VoiceBeautifier.h"
+#include "/audioEffectNode/Input.h"
 
 const int GLOBAL_RESMGR = 0xFF00;	
 const int FIRST_ARGV_PARAM = 0;
@@ -525,53 +526,46 @@ void MultiCreateInputNode(napi_env env, const std::string &inputId, napi_value &
     threadNodeManager->createNode(inputId, OH_AudioNode_Type::INPUT_NODE_TYPE_DEFAULT, builderIn);
 }
 
-void MultiUpdateInputNode(const std::string &inputId, unsigned int channels, unsigned int sampleRate,
-                          unsigned int bitsPerSample, napi_value &napiValue, OH_AudioSuite_Result &result) 
-{
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "audioEditTest updateInputNode start");
+void MultiUpdateInputNode(napi_value &napiValue, OH_AudioSuite_Result &result, const UpdateInputNodeParams &params) {
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, INPUT_TAG, "audioEditTest MultiUpdateInputNode start");
     OH_AudioFormat &audioFormatInput = threadPipelineManager->audioFormatInput;
     OH_AudioFormat &audioFormatOutput = threadPipelineManager->audioFormatOutput;
     std::map<std::string, std::vector<uint8_t>> writeDataBufferMap = threadPipelineManager->writeDataBufferMap;
     // 设置采样率
-    audioFormatInput.samplingRate = SetSamplingRate(sampleRate);
+    audioFormatInput.samplingRate = setSamplingRate(params.sampleRate);
     // 设置声道
-    audioFormatInput.channelCount = channels;
-    audioFormatInput.channelLayout = SetChannelLayout(channels);
+    audioFormatInput.channelCount = params.channels;
+    audioFormatInput.channelLayout = setChannelLayout(params.channels);
     // 设置位深
-    audioFormatInput.sampleFormat = SetSampleFormat(bitsPerSample);
+    audioFormatInput.sampleFormat = setSampleFormat(params.bitsPerSample);
     // 设置编码格式
     audioFormatInput.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
-
+    
     audioFormatOutput.samplingRate = audioFormatInput.samplingRate;
-    audioFormatOutput.channelCount = channels;
+    audioFormatOutput.channelCount = params.channels;
     audioFormatOutput.channelLayout = audioFormatInput.channelLayout;
     audioFormatOutput.sampleFormat = audioFormatInput.sampleFormat;
     audioFormatOutput.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
 
-    const std::vector<Node> inPutNodes =
-        threadPipelineManager->nodeManager->getNodesByType(OH_AudioNode_Type::INPUT_NODE_TYPE_DEFAULT);
+    const std::vector<Node> inPutNodes = g_nodeManager->getNodesByType(OH_AudioNode_Type::INPUT_NODE_TYPE_DEFAULT);
     result = OH_AudioSuiteEngine_SetAudioFormat(inPutNodes[0].physicalNode, &audioFormatInput);
-    const std::vector<Node> outPutNodes =
-        threadPipelineManager->nodeManager->getNodesByType(OH_AudioNode_Type::OUT_NODE_TYPE_DEFAULT);
+    const std::vector<Node> outPutNodes = g_nodeManager->getNodesByType(OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT);
     result = OH_AudioSuiteEngine_SetAudioFormat(outPutNodes[0].physicalNode, &audioFormatOutput);
     // 添加音频，将音频的buffer出存储到map中，， 上一行中的memcpy可以考虑删除了
-    if (writeDataBufferMap.find(inputId) != writeDataBufferMap.end()) {
+    if (g_writeDataBufferMap.find(params.inputId) != g_writeDataBufferMap.end()) {
         // 键存在，执行删除操作
-        writeDataBufferMap.erase(inputId);
+        g_writeDataBufferMap.erase(params.inputId);
     }
     MultiStoreTotalBuffToMap(threadPipelineManager->inputBuffer, threadPipelineManager->totalInputDataSize, inputId);
-    auto it = writeDataBufferMap.find(inputId);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
-                 "audioEditTest AudioInAndOutInit writeDataBufferMap_[inputId] length: %{public}zu", it->second.size());
-//    std::shared_ptr<MultiUserData> userData =
-//        std::make_shared<MultiUserData>(threadPipelineManager->pipelineId, inputId);
-    // 后面可以考虑去掉totalInputDataSize，用入参形式传入
-    MultiUserData *userData = new MultiUserData();
-    userData->bufferSize = threadPipelineManager->totalInputDataSize;
-    userData->totalWriteAudioDataSize = 0;
-    userData->isResetTotalWriteAudioDataSize = false;
-    // 将userData实例存入映射表中
-//    threadPipelineManager->userDataMap[inputId] = userData;
+    auto it = g_writeDataBufferMap.find(params.inputId);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, INPUT_TAG, 
+                 "audioEditTest AudioInAndOutInit g_writeDataBufferMap[inputId] length: %{public}d", it->second.size());
+    UserData *data = new UserData();
+    data->id = params.inputId;
+    // 后面可以考虑去掉totalSize_，用入参形式传入
+    data->bufferSize = g_totalSize;
+    data->totalWriteAudioDataSize = 0;
+    data->isResetTotalWriteAudioDataSize = false;
 }
 
 void MultiReadTrackSamples(OH_AVDemuxer *demuxer, uint32_t trackIndex, int bufferSize, std::atomic<bool> &isEnd,
