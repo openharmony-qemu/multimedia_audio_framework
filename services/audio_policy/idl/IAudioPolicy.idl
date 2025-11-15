@@ -229,7 +229,7 @@ interface IAudioPolicy {
     void GetInputDevice([in] sptr<AudioCapturerFilter> audioCapturerFilter, [out] List<sharedptr<AudioDeviceDescriptor>> retDevicesList);
     void SetAudioDeviceAnahsCallback([in] IRemoteObject object);
     void UnsetAudioDeviceAnahsCallback();
-    void IsAllowedPlayback([in] int uid, [in] int pid, [out] boolean isAllowed);
+    void IsAllowedPlayback([in] int uid, [in] int pid, [in] int streamUsage, [out] boolean isAllowed, [out] boolean silentControl);
     void SetVoiceRingtoneMute([in] boolean isMute);
     void SetCallbackRendererInfo([in] AudioRendererInfo rendererInfo, [in] int uid);
     void SetCallbackCapturerInfo([in] AudioCapturerInfo capturerInfo);
