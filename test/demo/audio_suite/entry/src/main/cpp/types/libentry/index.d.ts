@@ -2,6 +2,7 @@
  * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. ALL rights reserved.
  */
 
+export * from "./multiPipelineIndex";
 export const record: () => void;
 export const audioRendererInit: () => void;
 export const audioRendererDestory: () => void;
