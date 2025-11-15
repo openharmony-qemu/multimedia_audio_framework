@@ -30,6 +30,5 @@ typedef enum {
     UINT_1000 = 1000,
 } UINT;
 
-const unsigned int g_max_buffer_size = 1024 * 1024 * 100;
 const int NODE_MANAGER_OPERATION_ERROR = -1;
 #endif //AUDIOEDITTESTAPP_CONSTANT_H

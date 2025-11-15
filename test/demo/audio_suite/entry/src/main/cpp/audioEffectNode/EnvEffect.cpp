@@ -27,7 +27,8 @@
 const int GLOBAL_RESMGR = 0xFF00;
 const char *ENV_TAG = "[AudioEditTestApp_ENV_cpp]";
 
-napi_value startEnvEffect(napi_env env, napi_callback_info info) {
+napi_value startEnvEffect(napi_env env, napi_callback_info info) 
+{
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, ENV_TAG, "audioEditTest---startEnvEffect---IN");
     size_t argc = 4;
     napi_value *argv = new napi_value[argc];
@@ -74,7 +75,8 @@ napi_value startEnvEffect(napi_env env, napi_callback_info info) {
     return ret;
 }
 
-napi_value resetEnvEffect(napi_env env, napi_callback_info info) {
+napi_value resetEnvEffect(napi_env env, napi_callback_info info) 
+{
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, ENV_TAG, "audioEditTest---resetEnvEffect---IN");
     size_t argc = 3;
     napi_value *argv = new napi_value[argc];
@@ -92,8 +94,7 @@ napi_value resetEnvEffect(napi_env env, napi_callback_info info) {
     OH_EnvironmentType type = getEnvEnumByNumber(mode);
     napi_value ret;
     Node node = g_nodeManager->getNodeById(effectNodeId);
-    OH_AudioSuite_Result result;
-    result = OH_AudioSuiteEngine_SetEnvironmentType(node.physicalNode, type);
+    OH_AudioSuite_Result result = OH_AudioSuiteEngine_SetEnvironmentType(node.physicalNode, type);
     if (result != AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, ENV_TAG,
                      "OH_AudioSuiteEngine_SetEnvironmentType ERROR---%{public}d", result);

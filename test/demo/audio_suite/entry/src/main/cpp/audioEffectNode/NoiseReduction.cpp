@@ -26,7 +26,8 @@
 const int GLOBAL_RESMGR = 0xFF00;
 const char *NR_TAG = "[AudioEditTestApp_NR_cpp]";
 
-napi_value addNoiseReduction(napi_env env, napi_callback_info info) {
+napi_value addNoiseReduction(napi_env env, napi_callback_info info) 
+{
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, NR_TAG, "audioEditTest---addNoiseReduction IN");
     size_t argc = 3;
     napi_value *argv = new napi_value[argc];
@@ -64,7 +65,8 @@ napi_value addNoiseReduction(napi_env env, napi_callback_info info) {
     return ret;
 }
 
-napi_value deleteNoiseReduction(napi_env env, napi_callback_info info) {
+napi_value deleteNoiseReduction(napi_env env, napi_callback_info info) 
+{
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, NR_TAG, "audioEditTest---deleteNoiseReduction IN");
     size_t argc = 1;
     napi_value *argv = new napi_value[argc];
