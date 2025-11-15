@@ -371,6 +371,9 @@ int32_t AudioCapturerSession::ReloadCaptureSession(uint32_t sessionId, SessionOp
     AUDIO_INFO_LOG("prepare reload session: %{public}u with operation: %{public}d", sessionId, operation);
     std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
     CHECK_AND_RETURN_RET_LOG(!hearingAidReloadFlag_, SUCCESS, "no need to reload session for hearingAid");
+    if ((sessionWithNormalSourceType_.count(sessionId) == 0) && sessionWithSpecialSourceType_.count(sessionId) == 0) {
+        return ReloadCapturerSessionForInputPipe(sessionId, operation);
+    }
     uint32_t targetSessionId = sessionId;
     AudioStreamDescriptor runningSessionInfo = {};
     bool needReload = false;
@@ -410,11 +413,102 @@ int32_t AudioCapturerSession::ReloadCaptureSession(uint32_t sessionId, SessionOp
 
     CHECK_AND_RETURN_RET_LOG(needReload, ERROR, "no need to reload session");
     AUDIO_INFO_LOG("start reload session: %{public}u", targetSessionId);
-    int32_t result = audioEcManager_.ReloadSourceForSession(targetSession, targetSessionId);
-    if (result == SUCCESS) {
-        audioEcManager_.SetOpenedNormalSourceSessionId(targetSessionId);
+    return audioEcManager_.ReloadSourceForSession(targetSession, targetSessionId);
+}
+
+int32_t AudioCapturerSession::ReloadCapturerSessionForInputPipe(uint32_t sessionId, SessionOperation operation)
+{
+    const std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = AudioPipeManager::GetPipeManager()->GetPipeList();
+    std::shared_ptr<AudioPipeInfo> pipeInfo = nullptr;
+    if (operation != SESSION_OPERATION_RELEASE) {
+        pipeInfo = AudioPipeManager::GetPipeManager()->FindPipeBySessionId(pipeList, sessionId);
+    } else {
+        pipeInfo = AudioPipeManager::GetPipeManager()->GetPipeinfoByNameAndFlag("primary", AUDIO_INPUT_FLAG_AI);
     }
-    return result;
+    CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, ERROR, "pipe is null");
+
+    AUDIO_INFO_LOG("reload inputPipe:[%{public}s] flag:%{public}u Id:%{public}u with opt:%{public}d",
+        pipeInfo->ToString().c_str(), pipeInfo->routeFlag_, sessionId, operation);
+
+    uint32_t targetSessionId = sessionId;
+    bool needReload = GetTargetSessionIdForInputPipe(pipeInfo, sessionId, targetSessionId, operation);
+    CHECK_AND_RETURN_RET_LOG(needReload, ERROR, "need not reload");
+    return audioEcManager_.ReloadSourceForInputPipe(pipeInfo, targetSessionId);
+}
+
+bool AudioCapturerSession::GetTargetSessionIdForInputPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
+    uint32_t originSessionId, uint32_t &targetSessionId, SessionOperation operation)
+{
+    CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, false, "pipe is null");
+    AudioStreamDescriptor maxRunningDesc = {};
+    AudioStreamDescriptor maxRemainingDesc = {};
+    auto sourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
+    CHECK_AND_RETURN_RET_LOG(sourceStrategyMap != nullptr, false, "sourceStrategyMap is null");
+
+    uint32_t maxRunningPriority = GetMaxPriorityForInputPipe(pipeInfo,
+        originSessionId, maxRunningDesc, maxRemainingDesc);
+    auto maxRunningSource = maxRunningDesc.capturerInfo_.sourceType;
+    auto maxRemainingSource = maxRemainingDesc.capturerInfo_.sourceType;
+    auto openSource = pipeInfo->moduleInfo_.sourceType;
+    bool hasRunningExpectOrigin = (maxRunningSource != SOURCE_TYPE_INVALID) ? true : false;
+    AUDIO_INFO_LOG("openSource:%{public}s, maxRunningDesc:<%{public}u,%{public}d>,"
+        "maxRemainingDesc:<%{public}u,%{public}d>", openSource.c_str(), maxRunningDesc.sessionId_,
+        maxRunningSource, maxRemainingDesc.sessionId_, maxRemainingSource);
+
+    auto targetSource = (hasRunningExpectOrigin) ? maxRunningSource : maxRemainingSource;
+    if ((operation == SESSION_OPERATION_RELEASE) && (targetSource != SOURCE_TYPE_INVALID) &&
+        (openSource != std::to_string(targetSource))) {
+        targetSessionId = (hasRunningExpectOrigin) ? maxRunningDesc.sessionId_ : maxRemainingDesc.sessionId_;
+        return true;
+    }
+
+    CHECK_AND_RETURN_RET_LOG(pipeInfo->streamDescMap_.count(originSessionId) > 0, false, "can not find stream on pipe");
+    std::shared_ptr<AudioStreamDescriptor> originDescPtr = pipeInfo->streamDescMap_[originSessionId];
+    auto originSource = originDescPtr->capturerInfo_.sourceType;
+    auto originStrategy = sourceStrategyMap->find(originSource);
+    CHECK_AND_RETURN_RET_LOG(originStrategy != sourceStrategyMap->end(), false, "can not find originStrategy");
+    bool originHigher = originStrategy->second.priority >= maxRunningPriority;
+    AUDIO_INFO_LOG("originStreamDesc:<%{public}u, %{public}d> priority:%{public}u",
+        originSessionId, originSource, originStrategy->second.priority);
+
+    if ((operation == SESSION_OPERATION_START) && ((hasRunningExpectOrigin && originHigher) ||
+        (!hasRunningExpectOrigin && openSource != std::to_string(originSource)))) {
+        targetSessionId = originSessionId;
+        return true;
+    }
+    if ((operation == SESSION_OPERATION_PAUSE || operation == SESSION_OPERATION_STOP) &&
+        (hasRunningExpectOrigin && openSource == std::to_string(originSource))) {
+        targetSessionId = maxRunningDesc.sessionId_;
+        return true;
+    }
+    return false;
+}
+
+uint32_t AudioCapturerSession::GetMaxPriorityForInputPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
+    uint32_t sessionId, AudioStreamDescriptor &maxRunningDesc, AudioStreamDescriptor &maxRemainingDesc)
+{
+    uint32_t maxRunningPriority = 0;
+    uint32_t maxRemainingPriority = 0;
+    CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, maxRunningPriority, "pipe is null");
+    auto sourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
+    CHECK_AND_RETURN_RET_LOG(sourceStrategyMap != nullptr, maxRunningPriority, "sourceStrategyMap is null");
+
+    for (const auto &stream : pipeInfo->streamDescriptors_) {
+        CHECK_AND_CONTINUE(stream != nullptr && stream->sessionId_ != sessionId);
+        auto strategyIt = sourceStrategyMap->find(stream->capturerInfo_.sourceType);
+        CHECK_AND_CONTINUE(strategyIt != sourceStrategyMap->end());
+        
+        if ((stream->streamStatus_ == STREAM_STATUS_STARTED) &&
+            (strategyIt->second.priority >= maxRunningPriority)) {
+            maxRunningPriority = strategyIt->second.priority;
+            stream->CopyToStruct(maxRunningDesc);
+        }
+        if (strategyIt->second.priority >=  maxRemainingPriority) {
+            maxRemainingPriority = strategyIt->second.priority;
+            stream->CopyToStruct(maxRemainingDesc);
+        }
+    }
+    return maxRunningPriority;
 }
 
 bool AudioCapturerSession::IsVirtualAudioRecognitionSession(uint32_t sessionId)
@@ -446,6 +540,15 @@ int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, Session
     if (sessionIdisRemovedSet_.count(sessionID) > 0) {
         sessionIdisRemovedSet_.erase(sessionID);
         AUDIO_INFO_LOG("sessionID: %{public}" PRIu64 " had already been removed earlier", sessionID);
+        return SUCCESS;
+    }
+    const std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = AudioPipeManager::GetPipeManager()->GetPipeList();
+    std::shared_ptr<AudioPipeInfo> pipeInfo =
+        AudioPipeManager::GetPipeManager()->FindPipeBySessionId(pipeList, sessionID);
+    if (pipeInfo != nullptr && pipeInfo->routeFlag_ == AUDIO_INPUT_FLAG_AI) {
+        AUDIO_WARNING_LOG("pipe:%{public}s routeFlag:%{public}u need not add",
+            pipeInfo->name_.c_str(), pipeInfo->routeFlag_);
+        sessionWithInputPipeRouteFlag_[sessionID] = pipeInfo->routeFlag_;
         return SUCCESS;
     }
     if (specialSourceTypeSet_.count(sessionInfo.sourceType) == 0) {
@@ -496,14 +599,17 @@ void AudioCapturerSession::OnCapturerSessionRemoved(uint64_t sessionID)
             audioEcManager_.ResetAudioEcInfo();
         }
         sessionWithNormalSourceType_.erase(sessionID);
-        if (!sessionWithNormalSourceType_.empty() && !IsRemainingSourceIndependent()) {
+        if (!sessionWithNormalSourceType_.empty()) {
             return;
         }
         // close source when all capturer sessions removed
         audioEcManager_.CloseNormalSource();
         return;
     }
-
+    if (sessionWithInputPipeRouteFlag_.count(sessionID) > 0) {
+        sessionWithInputPipeRouteFlag_.erase(sessionID);
+        return;
+    }
     AUDIO_INFO_LOG("Sessionid:%{public}" PRIu64 " not added, directly placed into sessionIdisRemovedSet_", sessionID);
     sessionIdisRemovedSet_.insert(sessionID);
 }
