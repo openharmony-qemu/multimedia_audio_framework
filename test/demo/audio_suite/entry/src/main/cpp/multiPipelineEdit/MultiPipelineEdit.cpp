@@ -39,6 +39,8 @@ const unsigned int VB_MODE_THEATRE = 2;
 const unsigned int VB_MODE_CD = 3;
 const unsigned int VB_MODE_RECORDING_STUDIO = 4;
 const size_t INPUT_NODE_SIZE_2 = 2;
+const size_t MAX_FRAME_SIZE = 20 * 192000 * 2 / 1000 * 32 / 8;
+const int MAX_BUFFER_SIZE = 100 * 1024 * 1024;
 const int ARRAY_SIZE_2 = 2;
 const int AUDIOSUITE_ERROR_SYSTEM_CODE = 3;
 const int ERROR_CODE_3 = 3;
@@ -128,9 +130,9 @@ OH_AudioSuite_Result GetRenderFrameOutput(char *&firData, size_t frameSize, size
     OH_AudioSuitePipeline *threadPipeline = threadPipelineManager->audioSuitePipeline;
     OH_AudioSuite_Result result;
     int32_t writeSize = 0;
-    if (frameSize == 0) {
+    if (frameSize <= 0 || frameSize > MAX_FRAME_SIZE) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
-            "audioEditTest GetRenderFrameOutput frameSize is 0, cannot allocate memory");
+            "audioEditTest GetRenderFrameOutput frameSize is invalid, cannot allocate memory");
         return AUDIOSUITE_ERROR_INVALID_PARAM;
     }
     char *audioData = (char *)malloc(frameSize);
@@ -590,9 +592,9 @@ void MultiReadTrackSamples(OH_AVDemuxer *demuxer, uint32_t trackIndex, int buffe
                      trackIndex);
     }
     // 创建缓冲区
-    if (bufferSize == 0) {
+    if (bufferSize <= 0 || bufferSize > MAX_BUFFER_SIZE) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
-            "audioEditTest GetRenderFrameOutput bufferSize is 0, cannot allocate memory");
+            "audioEditTest GetRenderFrameOutput bufferSize is invalid, cannot allocate memory");
         return;
     }
     OH_AVBuffer *buffer = OH_AVBuffer_Create(bufferSize);
