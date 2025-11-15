@@ -1878,6 +1878,8 @@ int32_t AudioPolicyServer::SelectOutputDevice(const sptr<AudioRendererFilter> &a
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
         "SelectOutputDevice: No system permission");
+    CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr && !audioDeviceDescriptors.empty() &&
+        audioDeviceDescriptors[0] != nullptr, ERROR, "SelectOutputDevice: ptr exception");
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> targetOutputDevice;
     for (auto desc : audioDeviceDescriptors) {
@@ -1913,6 +1915,8 @@ int32_t AudioPolicyServer::SelectInputDevice(const sptr<AudioCapturerFilter> &au
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
         "SelectInputDevice: No system permission");
+    CHECK_AND_RETURN_RET_LOG(audioCapturerFilter != nullptr && !audioDeviceDescriptors.empty() &&
+        audioDeviceDescriptors[0] != nullptr, ERROR, "SelectInputDevice: ptr exception");
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> targetInputDevice;
     for (auto desc : audioDeviceDescriptors) {
