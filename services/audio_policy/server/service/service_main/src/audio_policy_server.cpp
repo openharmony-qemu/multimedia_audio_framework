@@ -36,6 +36,7 @@
 #include "audio_usb_manager.h"
 #endif
 #include "audio_zone_service.h"
+#include "audio_bluetooth_manager.h"
 #include "istandard_audio_zone_client.h"
 #include "audio_bundle_manager.h"
 #include "audio_server_proxy.h"
@@ -5445,6 +5446,15 @@ int32_t AudioPolicyServer::ForceSelectDevice(int32_t devType, const std::string 
 {
     eventEntry_->OnForcedDeviceSelected(static_cast<DeviceType>(devType), macAddress, filter);
     return SUCCESS;
+}
+
+int32_t AudioPolicyServer::DisconnectSco()
+{
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("not system SA calling!");
+        return ERR_OPERATION_FAILED;
+    }
+    return Bluetooth::AudioHfpManager::DisconnectSco();
 }
 
 int32_t AudioPolicyServer::IsIntelligentNoiseReductionEnabledForCurrentDevice(int32_t sourceType, bool &ret)

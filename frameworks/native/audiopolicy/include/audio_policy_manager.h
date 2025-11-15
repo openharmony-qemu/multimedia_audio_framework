@@ -114,6 +114,8 @@ public:
     int32_t ForceSelectDevice(DeviceType devType, const std::string &macAddress,
         sptr<AudioRendererFilter> filter);
 
+    int32_t DisconnectSco();
+
     int32_t RestoreOutputDevice(sptr<AudioRendererFilter> audioRendererFilter);
 
     std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType);
