@@ -717,6 +717,8 @@ int32_t OHAudioSuiteEngine::DestroyNode(OHAudioNode *node)
 int32_t OHAudioSuiteEngine::GetNodeBypassStatus(OHAudioNode *node, bool *bypassStatus)
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "GetNodeBypassStatus failed, node is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+                             "OHAudioSuiteEngine::The node does not exist.");
     CHECK_AND_RETURN_RET_LOG(bypassStatus != nullptr, ERR_INVALID_PARAM,
         "GetNodeBypassStatus failed, bypassStatus is nullptr.");
     CHECK_AND_RETURN_RET_LOG((node->GetNodeType() != NODE_TYPE_INPUT) && (node->GetNodeType() != NODE_TYPE_OUTPUT),
@@ -735,6 +737,8 @@ int32_t OHAudioSuiteEngine::GetNodeBypassStatus(OHAudioNode *node, bool *bypassS
 int32_t OHAudioSuiteEngine::BypassEffectNode(OHAudioNode *node, bool bypass)
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "EnableNode failed, node is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+                             "OHAudioSuiteEngine::The node does not exist.");
     CHECK_AND_RETURN_RET_LOG((node->GetNodeType() != NODE_TYPE_INPUT) && (node->GetNodeType() != NODE_TYPE_OUTPUT),
         ERR_NOT_SUPPORTED, "BypassEffectNode failed, enable type %{public}d not support option.",
         static_cast<int32_t>(node->GetNodeType()));
@@ -748,6 +752,8 @@ int32_t OHAudioSuiteEngine::BypassEffectNode(OHAudioNode *node, bool bypass)
 int32_t OHAudioSuiteEngine::SetAudioFormat(OHAudioNode *node, OH_AudioFormat *audioFormat)
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "SetAudioFormat failed, node is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+                             "OHAudioSuiteEngine::The node does not exist.");
     CHECK_AND_RETURN_RET_LOG(audioFormat != nullptr, ERR_INVALID_PARAM,
         "SetAudioFormat failed, audioFormat is nullptr.");
     CHECK_AND_RETURN_RET_LOG((node->GetNodeType() == NODE_TYPE_INPUT) || (node->GetNodeType() == NODE_TYPE_OUTPUT),
@@ -770,7 +776,11 @@ int32_t OHAudioSuiteEngine::SetAudioFormat(OHAudioNode *node, OH_AudioFormat *au
 int32_t OHAudioSuiteEngine::ConnectNodes(OHAudioNode *srcNode, OHAudioNode *destNode)
 {
     CHECK_AND_RETURN_RET_LOG(srcNode != nullptr, ERR_INVALID_PARAM, "ConnectNodes failed, srcNode is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(IsNodeExists(srcNode), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+                             "OHAudioSuiteEngine::The sec node does not exist.");
     CHECK_AND_RETURN_RET_LOG(destNode != nullptr, ERR_INVALID_PARAM, "ConnectNodes failed, srcNode is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(IsNodeExists(destNode), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+                             "OHAudioSuiteEngine::The dest node does not exist.");
     uint32_t srcNodeId = srcNode->GetNodeId();
     uint32_t destNodeId = destNode->GetNodeId();
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().ConnectNodes(srcNodeId, destNodeId);
@@ -781,7 +791,11 @@ int32_t OHAudioSuiteEngine::ConnectNodes(OHAudioNode *srcNode, OHAudioNode *dest
 int32_t OHAudioSuiteEngine::DisConnectNodes(OHAudioNode *srcNode, OHAudioNode *destNode)
 {
     CHECK_AND_RETURN_RET_LOG(srcNode != nullptr, ERR_INVALID_PARAM, "DisConnectNodes failed, srcNode is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(IsNodeExists(srcNode), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+                             "OHAudioSuiteEngine::The sec node does not exist.");
     CHECK_AND_RETURN_RET_LOG(destNode != nullptr, ERR_INVALID_PARAM, "DisConnectNodes failed, srcNode is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(IsNodeExists(destNode), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+                             "OHAudioSuiteEngine::The dest node does not exist.");
     uint32_t srcNodeId = srcNode->GetNodeId();
     uint32_t destNodeId = destNode->GetNodeId();
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().DisConnectNodes(srcNodeId, destNodeId);
@@ -822,6 +836,8 @@ int32_t OHAudioSuiteEngine::SetSoundFieldType(
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM,
         "SetSoundFieldType failed, node is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+                             "OHAudioSuiteEngine::The node does not exist.");
     CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_SOUND_FIELD, ERR_NOT_SUPPORTED, "SetSoundFieldType "
         "failed, node type = %d{public}d must is SOUND_FIELD type.", static_cast<int32_t>(node->GetNodeType()));
 
@@ -836,6 +852,8 @@ int32_t OHAudioSuiteEngine::SetEnvironmentType(
     OHAudioNode *node, OH_EnvironmentType environmentType)
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "SetEnvironmentType failed, node is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+                             "OHAudioSuiteEngine::The node does not exist.");
     CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_ENVIRONMENT_EFFECT, ERR_NOT_SUPPORTED,
         "SetEnvironmentType failed, node type = %d{public}d must is ENVIRONMENT_EFFECT type.",
         static_cast<int32_t>(node->GetNodeType()));
@@ -851,6 +869,8 @@ int32_t OHAudioSuiteEngine::SetVoiceBeautifierType(
     OHAudioNode *node, OH_VoiceBeautifierType voiceBeautifierType)
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "SetVoiceBeautifierType failed, node is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+                             "OHAudioSuiteEngine::The node does not exist.");
     CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_VOICE_BEAUTIFIER, ERR_NOT_SUPPORTED,
         "SetVoiceBeautifierType failed, node type = %d{public}d must is VOICE_BEAUTIFIER type.",
         static_cast<int32_t>(node->GetNodeType()));
@@ -865,6 +885,8 @@ int32_t OHAudioSuiteEngine::SetVoiceBeautifierType(
 int32_t OHAudioSuiteEngine::GetEnvironmentType(OHAudioNode *node, OH_EnvironmentType *environmentType)
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "GetEnvironmentType failed, node is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+                             "OHAudioSuiteEngine::The node does not exist.");
     CHECK_AND_RETURN_RET_LOG(environmentType != nullptr, ERR_INVALID_PARAM,
         "GetEnvironmentType failed, environmentType is nullptr.");
     CHECK_AND_RETURN_RET_LOG((node->GetNodeType() == NODE_TYPE_ENVIRONMENT_EFFECT),
@@ -883,6 +905,8 @@ int32_t OHAudioSuiteEngine::GetEnvironmentType(OHAudioNode *node, OH_Environment
 int32_t OHAudioSuiteEngine::GetSoundFiledType(OHAudioNode *node, OH_SoundFieldType *soundFieldType)
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "GetSoundFiledType failed, node is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+                             "OHAudioSuiteEngine::The node does not exist.");
     CHECK_AND_RETURN_RET_LOG(soundFieldType != nullptr, ERR_INVALID_PARAM,
         "GetSoundFiledType failed, soundFieldType is nullptr.");
     CHECK_AND_RETURN_RET_LOG((node->GetNodeType() == NODE_TYPE_SOUND_FIELD),
@@ -903,6 +927,8 @@ int32_t OHAudioSuiteEngine::GetEqualizerFrequencyBandGains(OHAudioNode *node,
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM,
         "GetEqualizerFrequencyBandGains failed, node is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+                             "OHAudioSuiteEngine::The node does not exist.");
     CHECK_AND_RETURN_RET_LOG(frequencyBandGains != nullptr, ERR_INVALID_PARAM,
         "GetEqualizerFrequencyBandGains failed, frequencyBandGains is nullptr.");
     CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_EQUALIZER, ERR_NOT_SUPPORTED,
@@ -931,6 +957,8 @@ int32_t OHAudioSuiteEngine::GetVoiceBeautifierType(OHAudioNode *node,
     OH_VoiceBeautifierType *voiceBeautifierType)
 {
     CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "GetVoiceBeautifierType failed, node is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+                             "OHAudioSuiteEngine::The node does not exist.");
     CHECK_AND_RETURN_RET_LOG(voiceBeautifierType != nullptr, ERR_INVALID_PARAM,
         "GetVoiceBeautifierType failed, voiceBeautifierType is nullptr.");
     CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_VOICE_BEAUTIFIER, ERR_NOT_SUPPORTED,
