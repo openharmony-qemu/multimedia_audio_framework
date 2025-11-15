@@ -1434,7 +1434,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
 
     // this will update volume device map
     audioActiveDevice_.UpdateStreamDeviceMap("FetchOutputDeviceAndRoute");
-    // here will update volume�? must after UpdateStreamDeviceMap
+    // here will update volumeï¼Œ must after UpdateStreamDeviceMap
     UpdateActiveDeviceAndVolumeBeforeMoveSession(outputStreamDescs, reason);
 
     int32_t ret = FetchRendererPipesAndExecute(outputStreamDescs, reason);
