@@ -40,6 +40,7 @@
 #include "audioEffectNode/NoiseReduction.h"
 #include "audioEffectNode/EnvEffect.h"
 #include "audioEffectNode/AissEffect.h"
+#include "/utils/Constant.h"
 
 #include <multimedia/player_framework/native_avdemuxer.h>
 #include <multimedia/player_framework/native_avsource.h>
@@ -840,7 +841,6 @@ EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
         {"startVBEffect", nullptr, startVBEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"addAudioSeparation", nullptr, addAudioSeparation, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"addNoiseReduction", nullptr, addNoiseReduction, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"stopNoiseReduction", nullptr, stopNoiseReduction, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"resetFieldEffect", nullptr, resetFieldEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"resetVBEffect", nullptr, resetVBEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"resetAudioSeparation", nullptr, resetAudioSeparation, nullptr, nullptr, nullptr, napi_default, nullptr},
