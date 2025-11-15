@@ -9,6 +9,13 @@
 #include "ohaudio/native_audio_suite_base.h"
 #include "ohaudio/native_audio_suite_engine.h"
 
+struct EnvEffectParams {
+    std::string inputIdStr;
+    std::string uuidStr;
+    unsigned int mode = 0;
+    std::string selectedNodeId;
+};
+
 class Env {
 };
 

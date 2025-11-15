@@ -580,38 +580,30 @@ static napi_value resetVBEffect(napi_env env, napi_callback_info info)
     return ret;
 }
 
-static napi_value startFieldEffect(napi_env env, napi_callback_info info)
+static napi_status ParseFieldEffectParams(napi_env env, napi_callback_info info, FieldEffectParams& params)
 {
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---startFieldEffect start");
     size_t argc = 4;
     napi_value argv[4] = {nullptr, nullptr, nullptr, nullptr};
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    napi_status status = parseNapiString(env, argv[ARG_1], params.inputId);
+    napi_get_value_uint32(env, argv[ARG_2], &params.mode);
+    status = parseNapiString(env, argv[ARG_3], params.fieldEffectId);
+    status = parseNapiString(env, argv[ARG_4], params.selectedNodeId);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest FieldEffect inputId==%{public}s,
+        mode==%{public}zd, fieldEffectId==%{public}s, selectedNodeId==%{public}s", params.inputIdStr.c_str(),
+        params.mode, params.fieldEffectId.c_str(), params.selectedNodeId.c_str());
+    return status;
+}
 
-    std::string inputId;
-    napi_status status = parseNapiString(env, argv[ARG_1], inputId);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest startFieldEffect inputId is %{public}s",
-        inputId.c_str());
-    
-    // 获取二参
-    unsigned int mode = -1;
-    napi_get_value_uint32(env, argv[ARG_2], &mode);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest startFieldEffect mode is %{public}zd", mode);
-
-    // 获取三参
-    std::string fieldEffectId;
-    status = parseNapiString(env, argv[ARG_3], fieldEffectId);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest startFieldEffect fieldEffectId is %{public}s",
-        fieldEffectId.c_str());
-
-    // 获取四参
-    std::string selectedNodeId;
-    status = parseNapiString(env, argv[ARG_4], selectedNodeId);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest startFieldEffect selectedNodeId is %{public}s",
-        selectedNodeId.c_str());
-    OH_SoundFieldType type = getSoundFieldTypeByNum(mode);
+static napi_value startFieldEffect(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---startFieldEffect start");
+    FieldEffectParams params;
+    napi_status status = ParseFieldEffectParams(env, info, params);
+    OH_SoundFieldType type = getSoundFieldTypeByNum(params.mode);
     napi_value ret;
-    Node node = CreateNodeByType(fieldEffectId, OH_AudioNode_Type::EFFECT_NODE_TYPE_SOUND_FIELD);
-    bool bypass = mode == 0;
+    Node node = CreateNodeByType(params.fieldEffectId, OH_AudioNode_Type::EFFECT_NODE_TYPE_SOUND_FIELD);
+    bool bypass = params.mode == 0;
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_BypassEffectNode(node.physicalNode, bypass);
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
@@ -630,8 +622,8 @@ static napi_value startFieldEffect(napi_env env, napi_callback_info info)
         napi_create_int64(env, result, &ret);
         return ret;
     }
-    if (selectedNodeId.empty()) {
-        int res = AddEffectNodeToNodeManager(inputId, fieldEffectId);
+    if (params.selectedNodeId.empty()) {
+        int res = AddEffectNodeToNodeManager(params.inputId, params.fieldEffectId);
         if (res != 0) {
             OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
                 "audioEditTest startFieldEffect AddEffectNodeToNodeManager ERROR!");
@@ -639,7 +631,7 @@ static napi_value startFieldEffect(napi_env env, napi_callback_info info)
             return ret;
         }
     } else {
-        result = g_nodeManager->insertNode(fieldEffectId, selectedNodeId, Direction::LATER);
+        result = g_nodeManager->insertNode(params.fieldEffectId, params.selectedNodeId, Direction::LATER);
         if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
             OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "audioEditTest startFieldEffect insertNode ERROR!");
             napi_create_int64(env, result, &ret);
@@ -783,48 +775,43 @@ static napi_value addAudioSeparation(napi_env env, napi_callback_info info)
     return ret;
 }
 
-static napi_value startEnvEffect(napi_env env, napi_callback_info info)
+static napi_status ParseEnvEffectParams(napi_env env, napi_callback_info info, EnvEffectParams& params)
 {
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---startEnvEffect---IN");
     size_t argc = 4;
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-    // 获取一参
-    std::string inputIdStr;
-    napi_status status = parseNapiString(env, argv[ARG_1], inputIdStr);
-
-    // 获取二参uuid
-    std::string uuidStr;
-    status = parseNapiString(env, argv[ARG_2], uuidStr);
-
-    // 获取三参
-    unsigned int mode = 0;
-    napi_get_value_uint32(env, argv[ARG_3], &mode);
-
-    // 获取四参混音台selectedNodeId
-    std::string selectedNodeId;
-    status = parseNapiString(env, argv[ARG_4], selectedNodeId);
+    napi_status status = parseNapiString(env, argv[ARG_1], params.inputIdStr);
+    status = parseNapiString(env, argv[ARG_2], params.uuidStr);
+    napi_get_value_uint32(env, argv[ARG_3], &params.mode);
+    status = parseNapiString(env, argv[ARG_4], params.selectedNodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---inputId==%{public}s, uuid==%{public}s, "
-        "selectedNodeId==%{public}s", inputIdStr.c_str(), uuidStr.c_str(), selectedNodeId.c_str());
+        "selectedNodeId==%{public}s", params.inputIdStr.c_str(), params.uuidStr.c_str(),
+        params.selectedNodeId.c_str());
+    return status;
+}
 
+static napi_value startEnvEffect(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---startEnvEffect---IN");
+    EnvEffectParams params;
+    napi_status status = ParseEnvEffectParams(env, info, params);
     OH_EnvironmentType type;
     getEnvEnumByNumber(mode, type);
     napi_value ret;
-    Node node = CreateNodeByType(uuidStr, OH_AudioNode_Type::EFFECT_NODE_TYPE_ENVIRONMENT_EFFECT);
+    Node node = CreateNodeByType(params.uuidStr, OH_AudioNode_Type::EFFECT_NODE_TYPE_ENVIRONMENT_EFFECT);
     if (node.physicalNode == nullptr) {
         napi_create_int64(env, ARG_4, &ret);
         return ret;
     }
-    bool bypass = mode == 0;
+    bool bypass = params.mode == 0;
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_BypassEffectNode(node.physicalNode, bypass);
+    napi_create_int64(env, result, &ret);
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
             "audioEditTest---startEnvEffect OH_AudioSuiteEngine_BypassEffectNode ERROR %{public}zd", result);
-        napi_create_int64(env, result, &ret);
         return ret;
     }
     if (bypass) {
-        napi_create_int64(env, result, &ret);
         return ret;
     }
     result = OH_AudioSuiteEngine_SetEnvironmentType(node.physicalNode, type);
@@ -834,23 +821,21 @@ static napi_value startEnvEffect(napi_env env, napi_callback_info info)
         napi_create_int64(env, result, &ret);
         return ret;
     }
-
-    if (selectedNodeId.empty()) {
-        int insertRes = AddEffectNodeToNodeManager(inputIdStr, uuidStr);
+    if (params.selectedNodeId.empty()) {
+        int insertRes = AddEffectNodeToNodeManager(params.inputIdStr, params.uuidStr);
         if (insertRes == -1) {
             OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "audioEditTest---AddEffectNodeToNodeManager ERROR!");
             napi_create_int64(env, insertRes, &ret);
             return ret;
         }
     } else {
-        result = g_nodeManager->insertNode(uuidStr, selectedNodeId, Direction::LATER);
+        result = g_nodeManager->insertNode(params.uuidStr, selectedNodeId, Direction::LATER);
         if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
             OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "audioEditTest startEnvEffect insertNode ERROR!");
             napi_create_int64(env, result, &ret);
             return ret;
         }
     }
-
     napi_create_int64(env, 0, &ret);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---startEnvEffect: operation success");
     return ret;
