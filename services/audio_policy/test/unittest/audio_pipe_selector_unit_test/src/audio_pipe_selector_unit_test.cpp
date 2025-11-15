@@ -1147,6 +1147,58 @@ HWTEST_F(AudioPipeSelectorUnitTest, DecidePipesAndStreamAction_001, TestSize.Lev
 }
 
 /**
+ * @tc.name: DecidePipesAndStreamAction_002
+ * @tc.desc: Test DecidePipesAndStreamAction.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, DecidePipesAndStreamAction_002, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc1 = std::make_shared<AudioStreamDescriptor>();
+    streamDesc1->routeFlag_ = 1;
+    streamDesc1->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc1->streamAction_ = AUDIO_STREAM_ACTION_NEW;
+    streamDesc1->sessionId_ = 100001;
+    streamDesc1->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc1->createTimeStamp_ = 1;
+ 
+    std::shared_ptr<AudioStreamDescriptor> streamDesc2 = std::make_shared<AudioStreamDescriptor>();
+    streamDesc2->routeFlag_ = 1;
+    streamDesc2->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc2->streamAction_ = AUDIO_STREAM_ACTION_NEW;
+    streamDesc2->sessionId_ = 100002;
+    streamDesc2->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc2->createTimeStamp_ = 2;
+ 
+    std::vector<std::shared_ptr<AudioPipeInfo>> newPipeInfoList{};
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->adapterName_ = "primary";
+    pipe1->routeFlag_ = 1;
+    pipe1->streamDescMap_[100001] = streamDesc1;
+    pipe1->streamDescriptors_.push_back(streamDesc1);
+    pipe1->pipeAction_ = PIPE_ACTION_NEW;
+    newPipeInfoList.push_back(pipe1);
+ 
+    std::shared_ptr<AudioPipeInfo> pipe2 = std::make_shared<AudioPipeInfo>();
+    pipe2->routeFlag_ = 1;
+    newPipeInfoList.push_back(pipe2);
+ 
+    std::shared_ptr<AudioPipeInfo> pipe3 = std::make_shared<AudioPipeInfo>();
+    pipe3->adapterName_ = "test_pipe";
+    pipe3->routeFlag_ = 1;
+    pipe3->streamDescMap_[100002] = streamDesc2;
+    pipe3->streamDescriptors_.push_back(streamDesc2);
+    newPipeInfoList.push_back(pipe3);
+ 
+    std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo{};
+    streamDescToOldPipeInfo[100001] = pipe1;
+    streamDescToOldPipeInfo[100002] = pipe2;
+ 
+    audioPipeSelector->DecidePipesAndStreamAction(newPipeInfoList, streamDescToOldPipeInfo);
+    EXPECT_TRUE(newPipeInfoList[0]->streamDescriptors_[0]->streamAction_ == AUDIO_STREAM_ACTION_DEFAULT);
+}
+
+/**
  * @tc.name: SetOriginalFlagForcedNormalIfNeed_001
  * @tc.desc: Test SetOriginalFlagForcedNormalIfNeed - StreamDesc select flag is offload, route flag is normal.
  * @tc.type: FUNC

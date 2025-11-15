@@ -33,6 +33,8 @@
 #include "audio_scope_exit.h"
 #include "volume_tools.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B83
 namespace OHOS {
 namespace AudioStandard {
 
