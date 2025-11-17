@@ -1330,7 +1330,9 @@ void AudioCoreService::OnDeviceConfigurationChanged(DeviceType deviceType, const
 
 int32_t AudioCoreService::OnServiceConnected(AudioServiceIndex serviceIndex)
 {
-    return audioDeviceStatus_.OnServiceConnected(serviceIndex);
+    auto result = audioDeviceStatus_.OnServiceConnected(serviceIndex);
+    audioPolicyManager_.SetPrimarySinkExist(AudioPipeManager::HasPrimarySink());
+    return result;
 }
 
 void AudioCoreService::OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,

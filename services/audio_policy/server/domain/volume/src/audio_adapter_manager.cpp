@@ -1958,6 +1958,7 @@ IAudioSourceAttr AudioAdapterManager::GetAudioSourceAttr(const AudioModuleInfo &
         }
     }
     GetHdiSourceTypeToAudioSourceAttr(attr, attr.sourceType);
+    attr.isPrimarySinkExist = isPrimarySinkExist_.load();
     return attr;
 }
 
@@ -3487,6 +3488,11 @@ void AudioAdapterManager::SetMaxVolumeForDpBoardcast()
     volumeDataMaintainer_.SaveMuteToMap(desc, STREAM_MUSIC, false);
     volumeDataMaintainer_.SaveMuteToMap(desc, STREAM_VOICE_CALL, false);
     volumeDataMaintainer_.SaveMuteToMap(desc, STREAM_VOICE_ASSISTANT, false);
+}
+
+void AudioAdapterManager::SetPrimarySinkExist(bool isPrimarySinkExist)
+{
+    isPrimarySinkExist_ = isPrimarySinkExist;
 }
 } // namespace AudioStandard
 } // namespace OHOS

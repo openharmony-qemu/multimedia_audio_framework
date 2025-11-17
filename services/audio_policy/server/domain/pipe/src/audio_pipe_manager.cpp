@@ -651,5 +651,16 @@ uint32_t AudioPipeManager::GetPaIndexByName(std::string portName)
     }
     return HDI_INVALID_ID;
 }
+
+bool AudioPipeManager::HasPrimarySink()
+{
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto pipe : curPipeList_) {
+        if (pipeInfo->id == 0) {
+            return true;
+        }
+    }
+    return false;
+}
 } // namespace AudioStandard
 } // namespace OHOS
