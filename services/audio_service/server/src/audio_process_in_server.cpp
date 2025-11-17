@@ -34,6 +34,7 @@
 #include "stream_dfx_manager.h"
 #include "audio_stream_concurrency_detector.h"
 #include "format_converter.h"
+#include "volume_tools.h"
 #ifdef RESSCHE_ENABLE
 #include "res_type.h"
 #include "res_sched_client.h"
@@ -80,9 +81,15 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
     AudioSamplingRate samplingRate = processConfig_.streamInfo.samplingRate;
     AudioSampleFormat format = processConfig_.streamInfo.format;
     AudioChannel channels = processConfig_.streamInfo.channels;
-    // eg: 100005_dump_process_server_audio_48000_2_1.pcm
-    dumpFileName_ = std::to_string(sessionId_) + '_' + "_dump_process_server_audio_" +
-        std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) + ".pcm";
+    const auto audioMode = processConfig_.audioMode;
+    logUtilsTag_ = audioMode == AUDIO_MODE_PLAYBACK ? "ProcessServerPlay::" : "ProcessServerRec::";
+    logUtilsTag_ += std::to_string(sessionId_);
+    // eg: 100005_dump_process_server_play/rec_audio_48000_2_1.pcm
+    dumpFileName_ = std::to_string(sessionId_);
+    dumpFileName_ += audioMode == AUDIO_MODE_PLAYBACK ?
+        "_dump_process_server_play_audio_" : "_dump_process_server_rec_audio_";
+    dumpFileName_ += (std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) +
+         ".pcm");
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
     playerDfx_ = std::make_unique<PlayerDfxWriter>(processConfig_.appInfo, sessionId_);
     recorderDfx_ = std::make_unique<RecorderDfxWriter>(processConfig_.appInfo, sessionId_);
@@ -95,10 +102,6 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
     audioStreamChecker_ = std::make_shared<AudioStreamChecker>(processConfig);
     AudioStreamMonitor::GetInstance().AddCheckForMonitor(processConfig.originalSessionId, audioStreamChecker_);
     streamStatusInServer_ = STREAM_IDEL;
-
-    dumpFACName_ = std::to_string(sessionId_) + '_' + "_dump_fac_audio_" +
-        std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) + ".pcm";
-    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFACName_, &dumpFAC_);
 }
 
 AudioProcessInServer::~AudioProcessInServer()
@@ -113,7 +116,6 @@ AudioProcessInServer::~AudioProcessInServer()
         delete [] convertedBuffer_.buffer;
     }
     DumpFileUtil::CloseDumpFile(&dumpFile_);
-    DumpFileUtil::CloseDumpFile(&dumpFAC_);
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_INVALID);
     }
@@ -901,11 +903,6 @@ int32_t AudioProcessInServer::SetUnderrunCount(uint32_t underrunCnt)
     return SUCCESS;
 }
 
-void AudioProcessInServer::AddMuteWriteFrameCnt(int64_t muteFrameCnt)
-{
-    lastWriteMuteFrame_ += muteFrameCnt;
-}
-
 void AudioProcessInServer::AddMuteFrameSize(int64_t muteFrameCnt)
 {
     if (muteFrameCnt < 0) {
@@ -1123,8 +1120,6 @@ int32_t AudioProcessInServer::HandleCapturerDataParams(RingBufferWrapper &writeB
 
     ret = CapturerDataFormatAndChnConv(writeBuf, resampleOutBuf, srcInfo, processConfig_.streamInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "capture data convert failed");
-    DumpFileUtil::WriteDumpFile(dumpFAC_, static_cast<void *>(writeBuf.basicBufferDescs[0].buffer),
-        writeBuf.dataLength);
 
     return SUCCESS;
 }
@@ -1167,9 +1162,14 @@ int32_t AudioProcessInServer::WriteToSpecialProcBuf(AudioCaptureDataProcParams &
     } else {
         ret = HandleCapturerDataParams(ringBuffer, procParams);
     }
-
     CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_WRITE_FAILED, "memcpy data to process buffer fail, "
         "curWritePos %{public}" PRIu64", ret %{public}d.", curWritePos, ret);
+
+    AudioStreamData streamData;
+    PrepareStreamDataBuffer(byteSizePerFrame_ * spanSizeInframe_, ringBuffer, streamData);
+    auto &bufferDesc = streamData.bufferDesc;
+    VolumeTools::DfxOperation(bufferDesc, GetStreamInfo(), logUtilsTag_, volumeDataCount_);
+    WriteDumpFile(static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
 
     processBuffer_->SetHandleInfo(curWritePos, ClockTime::GetCurNano());
     ret = processBuffer_->SetCurWriteFrame(curWritePos + dstSpanSizeInframe);
@@ -1178,6 +1178,13 @@ int32_t AudioProcessInServer::WriteToSpecialProcBuf(AudioCaptureDataProcParams &
         return ERR_OPERATION_FAILED;
     }
     return SUCCESS;
+}
+
+void AudioProcessInServer::DfxOperationAndCalcMuteFrame(BufferDesc &bufferDesc)
+{
+    AddNormalFrameSize();
+    VolumeTools::CalcMuteFrame(bufferDesc, GetStreamInfo(), logUtilsTag_, volumeDataCount_, lastWriteMuteFrame_);
+    AddMuteFrameSize(volumeDataCount_);
 }
 } // namespace AudioStandard
 } // namespace OHOS

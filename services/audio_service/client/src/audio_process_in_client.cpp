@@ -676,7 +676,7 @@ static size_t GetFormatSize(const AudioStreamInfo &info)
 
 void AudioProcessInClientInner::InitPlaybackThread(std::weak_ptr<FastAudioStream> weakStream)
 {
-    logUtilsTag_ = "ProcessPlay::" + std::to_string(sessionId_);
+    logUtilsTag_ = "ProcessClientPlay::" + std::to_string(sessionId_);
 #ifdef SUPPORT_LOW_LATENCY
     std::shared_ptr<FastAudioStream> fastStream = weakStream.lock();
     CHECK_AND_RETURN_LOG(fastStream != nullptr, "fast stream is null");
@@ -707,7 +707,7 @@ void AudioProcessInClientInner::InitPlaybackThread(std::weak_ptr<FastAudioStream
 
 void AudioProcessInClientInner::InitRecordThread(std::weak_ptr<FastAudioStream> weakStream)
 {
-    logUtilsTag_ = "ProcessRec::" + std::to_string(sessionId_);
+    logUtilsTag_ = "ProcessClientRec::" + std::to_string(sessionId_);
 #ifdef SUPPORT_LOW_LATENCY
     std::shared_ptr<FastAudioStream> fastStream = weakStream.lock();
     CHECK_AND_RETURN_LOG(fastStream != nullptr, "fast stream is null");
@@ -1079,10 +1079,12 @@ int32_t AudioProcessInClientInner::Start()
     AudioSamplingRate samplingRate = processConfig_.streamInfo.samplingRate;
     AudioSampleFormat format = processConfig_.streamInfo.format;
     AudioChannel channels = processConfig_.streamInfo.channels;
-    // eg: 100005_dump_process_client_audio_48000_2_1.pcm
-    std::string dumpFileName = std::to_string(sessionId_) + "_dump_process_client_audio_" +
-        std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) +
-        ".pcm";
+    // eg: 100005_dump_process_client_play/rec_audio_48000_2_1.pcm
+    std::string dumpFileName = std::to_string(sessionId_);
+    dumpFileName += processConfig_.audioMode == AUDIO_MODE_PLAYBACK ?
+        "_dump_process_client_play_audio_" : "_dump_process_client_rec_audio_";
+    dumpFileName += (std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) +
+        ".pcm");
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
 
     std::lock_guard<std::mutex> lock(statusSwitchLock_);

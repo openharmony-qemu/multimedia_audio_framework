@@ -1412,12 +1412,12 @@ bool AudioEndpointInner::IsNearlinkAbsVolSupportStream(DeviceType deviceType, Au
 void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i,
     std::vector<AudioStreamData> &audioDataList, uint64_t curRead, std::function<void()> &moveClientIndex)
 {
+    auto processServer = processList_[i];
+    CHECK_AND_RETURN_LOG(processServer, "processServer is nullptr!");
     RingBufferWrapper ringBuffer;
-    if (!processList_[i]->PrepareRingBuffer(curRead, ringBuffer)) {
-        auto tempProcess = processList_[i];
-        CHECK_AND_RETURN_LOG(tempProcess, "tempProcess is nullptr!");
-        if (tempProcess->GetStreamStatus() == STREAM_RUNNING) {
-            tempProcess->AddNoDataFrameSize();
+    if (!processServer->PrepareRingBuffer(curRead, ringBuffer)) {
+        if (processServer->GetStreamStatus() == STREAM_RUNNING) {
+            processServer->AddNoDataFrameSize();
         }
         return;
     }
@@ -1427,38 +1427,26 @@ void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i,
     VolumeResult volResult = CalculateVolume(i);
     
     Trace traceVol("VolumeProcess " + std::to_string(volResult.volumeStart) +
-    " sessionid:" + std::to_string(processList_[i]->GetAudioSessionId()) +
+    " sessionid:" + std::to_string(processServer->GetAudioSessionId()) +
     (volResult.muteFlag ? " muted" : " unmuted"));
     
     if (volResult.muteFlag) {
         ringBuffer.SetBuffersValueWithSpecifyDataLen(0);
     }
     
-    size_t spanSizeInByte = processList_[i]->GetSpanSizeInFrame() * processList_[i]->GetByteSizePerFrame();
+    size_t spanSizeInByte = processServer->GetSpanSizeInFrame() * processServer->GetByteSizePerFrame();
 
     AudioStreamData streamData;
     streamData.volumeStart = volResult.volumeStart;
     streamData.volumeEnd = volResult.volumeEnd;
     streamData.volumeHap = volResult.volumeHap;
-    processList_[i]->PrepareStreamDataBuffer(spanSizeInByte, ringBuffer, streamData);
+    processServer->PrepareStreamDataBuffer(spanSizeInByte, ringBuffer, streamData);
     CheckPlaySignal(streamData.bufferDesc.buffer, streamData.bufferDesc.bufLength);
     audioDataList.push_back(streamData);
-    processList_[i]->WriteDumpFile(static_cast<void *>(streamData.bufferDesc.buffer),
+    processServer->DfxOperationAndCalcMuteFrame(streamData.bufferDesc);
+    processServer->WriteDumpFile(static_cast<void *>(streamData.bufferDesc.buffer),
         streamData.bufferDesc.bufLength);
     WriteMuteDataSysEvent(streamData.bufferDesc.buffer, streamData.bufferDesc.bufLength, i);
-    HandleMuteWriteData(streamData.bufferDesc, i);
-}
-
-void AudioEndpointInner::HandleMuteWriteData(BufferDesc &bufferDesc, int32_t index)
-{
-    CHECK_AND_RETURN_LOG(static_cast<size_t>(index + 1) <= processList_.size(), "invalid index");
-    auto tempProcess = processList_[index];
-    CHECK_AND_RETURN_LOG(tempProcess, "tempProcess is nullptr");
-    tempProcess->AddNormalFrameSize();
-    int64_t muteFrameCnt = 0;
-    VolumeTools::CalcMuteFrame(bufferDesc, dstStreamInfo_, logUtilsTag_, volumeDataCount_, muteFrameCnt);
-    tempProcess->AddMuteWriteFrameCnt(muteFrameCnt);
-    tempProcess->AddMuteFrameSize(volumeDataCount_);
 }
 
 bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos, std::function<void()> &moveClientIndex)
@@ -1489,6 +1477,7 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos, std::
             }
         }
     }
+    VolumeTools::DfxOperation(dstStreamData.bufferDesc, dstStreamInfo_, logUtilsTag_, volumeDataCount_);
     if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
         DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(dstStreamData.bufferDesc.buffer),
             dstStreamData.bufferDesc.bufLength);

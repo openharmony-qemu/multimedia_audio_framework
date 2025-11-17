@@ -34,8 +34,11 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
-static int64_t WAIT_TIME_HALF_MILLISECOND = 500000; // 0.5ms
-static int64_t WAIT_TIME_EIGHT_MILLISECOND = 8000000; // 8ms
+namespace {
+    static int64_t WAIT_TIME_HALF_MILLISECOND = 500000; // 0.5ms
+    static int64_t WAIT_TIME_EIGHT_MILLISECOND = 8000000; // 8ms
+    constexpr uint64_t TEST_ENDPOINT_ID = 123;
+}
 class MockAudioProcessStream : public IAudioProcessStream {
 public:
     // Pure virtual methods
@@ -74,7 +77,6 @@ public:
     MOCK_METHOD(bool, GetSilentState, (), (override));
     MOCK_METHOD(void, SetSilentState, (bool state), (override));
 
-    MOCK_METHOD(void, AddMuteWriteFrameCnt, (int64_t muteFrameCnt), (override));
     MOCK_METHOD(void, AddMuteFrameSize, (int64_t muteFrameCnt), (override));
     MOCK_METHOD(void, AddNormalFrameSize, (), (override));
     MOCK_METHOD(void, AddNoDataFrameSize, (), (override));
@@ -86,7 +88,8 @@ public:
     MOCK_METHOD(int32_t, GetAudioHapticsSyncId, (), (override));
     MOCK_METHOD(bool, PrepareRingBuffer, (uint64_t curRead, RingBufferWrapper& ringBuffer), (override));
     MOCK_METHOD(void, PrepareStreamDataBuffer,
-        (ize_t spanSizeInByte, RingBufferWrapper &ringBuffer, AudioStreamData &streamData), (override));
+        (size_t spanSizeInByte, RingBufferWrapper &ringBuffer, AudioStreamData &streamData), (override));
+    MOCK_METHOD(void, DfxOperationAndCalcMuteFrame, (BufferDesc &bufferDesc), (override));
 };
 
 void AudioEndpointPlusUnitTest::SetUpTestCase(void)
@@ -1606,6 +1609,37 @@ HWTEST_F(AudioEndpointPlusUnitTest, ProcessToDupStream_001, TestSize.Level1)
     CaptureInfo captureInfo;
     
     EXPECT_EQ(audioEndpointInner->HandleDisableFastCap(captureInfo), SUCCESS);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: GetAllReadyProcessDataSub_001
+ * @tc.desc  : Test AudioEndpointInner::GetAllReadyProcessDataSub()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, GetAllReadyProcessDataSub_001, TestSize.Level4)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, TEST_ENDPOINT_ID, clientConfig.audioMode);
+
+    auto processBuffer = std::make_shared<OHAudioBufferBase>(AudioBufferHolder::AUDIO_CLIENT, 0, 0);
+    audioEndpointInner->processBufferList_.push_back(processBuffer);
+    AudioStreamData dstStreamData;
+    std::vector<AudioStreamData> audioDataList = {dstStreamData};
+    BasicBufferInfo bufferInfo;
+    processBuffer->basicBufferInfo_ = &bufferInfo;
+
+    MockAudioProcessStream processServer;
+    audioEndpointInner->processList_.push_back(&processServer);
+
+    std::function<void()> moveClientIndex;
+    EXPECT_CALL(processServer, PrepareRingBuffer(_, _)).WillOnce(Return(false));
+    EXPECT_CALL(processServer, GetStreamStatus()).WillOnce(Return(StreamStatus::STREAM_RUNNING));
+    EXPECT_CALL(processServer, AddNoDataFrameSize())
+        .Times(1)
+        .WillOnce(Return());
+    audioEndpointInner->GetAllReadyProcessDataSub(0, audioDataList, 0, moveClientIndex);
 }
 } // namespace AudioStandard
 } // namespace OHOS
