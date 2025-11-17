@@ -243,3 +243,62 @@ ohos_unittest("renderer_in_server_third_unit_test") {
     defines += [ "SUPPORT_LOW_LATENCY" ]
   }
 }
+
+ohos_unittest("renderer_in_server_fourth_unit_test") {
+  testonly = true
+  module_out_path = module_output_path
+
+  cflags = [ "-fno-access-control" ]
+
+  sources = [ "./src/renderer_in_server_fourth_unit_test.cpp" ]
+
+  include_dirs = [
+    "../../../server/include",
+    "../../../../audio_service/common/include",
+    "../../../../audio_service/common/include/dfx",
+    "../../../../audio_service/common",
+    "./include",
+    "../../../../../frameworks/native/playbackcapturer/include",
+    "../../../../../frameworks/native/audioschedule/include",
+    "../../../../../frameworks/native/audioutils/include",
+    "../../../../../frameworks/native/hdiadapter_new/include/common",
+    "../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../frameworks/native/audiodefinitions/include",
+    "../../../../../frameworks/native/audioinnercall/include",
+    "../../../../../frameworks/native/hdiadapter_new/include",
+    "../../../../../services/audio_service/server/include",
+    "../../../../../services/audio_policy/client/include",
+    "../../../../../frameworks/native/audiopolicy/include",
+    "../../../../../frameworks/native/audioclock/include",
+    "../../../../../services/audio_engine/manager/include",
+    "../../../../../services/audio_engine/plugin/resample/include",
+  ]
+
+  configs = [ ":module_private_config" ]
+
+  deps = [
+    "../../../../../services/audio_service/idl:audio_framework_interface",
+    "../../../../../frameworks/native/audioclock:audio_clock",
+    "../../../../../services/audio_service:audio_service",
+    "../../../../audio_service:audio_process_service_static",
+  ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken_shared",
+    "access_token:libtokensetproc_shared",
+    "c_utils:utils",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_single",
+    "qos_manager:concurrent_task_client",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  defines = []
+  if (audio_framework_feature_low_latency) {
+    defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
+}
