@@ -430,7 +430,7 @@ export struct MixingConsole {
                             fs.closeSync(this.fd);
                         }
                         this.nodeList.set(nodeId, songInfo)
-                        const index = this.inputList.findIndex(song => song.nodeId === nodeId);
+                        const index = this.inputList.findIndex(song => song?.nodeId === nodeId);
                         if(index !== -1 && songInfo.uri !== undefined){
                             this.inputList[index] = songInfo
                         }
