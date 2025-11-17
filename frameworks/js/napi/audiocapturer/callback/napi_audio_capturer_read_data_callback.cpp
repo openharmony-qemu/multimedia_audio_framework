@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #ifndef LOG_TAG
-#define LOG_TAG "NapiCapturerReadDataCallback"
+#define LOG_TAG "NapiCapturerReadDataCallback"X
 #endif
 
 #include "js_native_api.h"
