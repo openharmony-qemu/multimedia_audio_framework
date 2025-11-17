@@ -140,7 +140,7 @@ void AudioCaptureSource::DeInit(void)
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
     AUDIO_INFO_LOG("halName: %{public}s, sourceType: %{public}d", halName_.c_str(), attr_.sourceType);
-    if (attr_ != nullptr && attr_.isPrimarySinkExist) {
+    if (audioCapture_ != nullptr && attr_.isPrimarySinkExist) {
         struct AudioSceneDescriptor sceneDesc;
         InitSceneDesc(sceneDesc, AUDIO_SCENE_DEFAULT);
         audioCapture_->SelectScene(audioCapture_, &sceneDesc);
