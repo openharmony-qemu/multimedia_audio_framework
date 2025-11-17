@@ -94,6 +94,18 @@ napi_value resetEnvEffect(napi_env env, napi_callback_info info)
     OH_EnvironmentType type = getEnvEnumByNumber(mode);
     napi_value ret;
     Node node = g_nodeManager->getNodeById(effectNodeId);
+    bool bypass = mode == 0;
+    OH_AudioSuite_Result result = OH_AudioSuiteEngine_BypassEffectNode(node.physicalNode, bypass);
+    if (result != AUDIOSUITE_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+            "audioEditTest---resetEnvEffect OH_AudioSuiteEngine_BypassEffectNode ERROR %{public}zd", result);
+        napi_create_int64(env, result, &ret);
+        return ret;
+    }
+    if (bypass) {
+        napi_create_int64(env, result, &ret);
+        return ret;
+    }
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_SetEnvironmentType(node.physicalNode, type);
     if (result != AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, ENV_TAG,
@@ -115,6 +127,16 @@ OH_AudioSuite_Result createEnvNodeAndSetType(std::string uuidStr, unsigned int m
         return AUDIOSUITE_ERROR_SYSTEM;
     }
     OH_AudioSuite_Result result = AUDIOSUITE_SUCCESS;
+    bool bypass = mode == 0;
+    result = OH_AudioSuiteEngine_BypassEffectNode(node.physicalNode, bypass);
+    if (result != AUDIOSUITE_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+            "audioEditTest---startEnvEffect OH_AudioSuiteEngine_BypassEffectNode ERROR %{public}zd", result);
+        return result;
+    }
+    if (bypass) {
+        return result;
+    }
     result = OH_AudioSuiteEngine_SetEnvironmentType(node.physicalNode, type);
     if (result != AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, ENV_TAG,
