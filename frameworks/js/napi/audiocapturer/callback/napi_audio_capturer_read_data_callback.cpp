@@ -185,8 +185,10 @@ void NapiCapturerReadDataCallback::SafeJsCallbackCapturerReadDataWork(
     SafeJsCallbackCapturerReadDataWorkInner(event);
 
     CHECK_AND_RETURN_LOG(event->capturerNapiObj != nullptr, "NapiAudioCapturer object is nullptr");
+    std::unique_lock<std::mutex> readCallbackLock(event->capturerNapiObj->readCallbackMutex_);
     event->capturerNapiObj->isFrameCallbackDone_.store(true);
     event->capturerNapiObj->readCallbackCv_.notify_all();
+    readCallbackLock.unlock();
     auto napiObj = static_cast<NapiAudioCapturer *>(event->capturerNapiObj);
     ObjectRefMap<NapiAudioCapturer>::DecreaseRef(napiObj);
 }
