@@ -1770,8 +1770,7 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_UpdateAudioSceneFromInter
     auto audioInterruptService = std::make_shared<AudioInterruptService>();
     EXPECT_NE(audioInterruptService, nullptr);
     int32_t ownerUid_ = 20020190;
-    int32_t formerUid_ = 20020191;
- 
+    int32_t formerUid_ = 20020190;
     int32_t systemAbilityId = 0;
     audioInterruptService->policyServer_ = new AudioPolicyServer(systemAbilityId);
     EXPECT_NE(audioInterruptService->policyServer_, nullptr);
@@ -1782,10 +1781,20 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_UpdateAudioSceneFromInter
     audioInterruptService->ownerUid_ = ownerUid_;
     AudioScene audioScene = AUDIO_SCENE_DEFAULT;
     AudioInterruptChangeType changeType = ACTIVATE_AUDIO_INTERRUPT;
- 
     audioInterruptService->UpdateAudioSceneFromInterrupt(audioScene, changeType);
+    ownerUid_ = 20020190;
+    formerUid_ = -1;
+    audioInterruptService->formerUid_.store(formerUid_);
+    audioInterruptService->ownerUid_ = ownerUid_;
+    audioInterruptService->UpdateAudioSceneFromInterrupt(audioScene, changeType);
+    ownerUid_ = 20020190;
+    formerUid_ = 20020191;
+    audioInterruptService->formerUid_.store(formerUid_);
+    audioInterruptService->ownerUid_ = ownerUid_;
+    audioInterruptService->UpdateAudioSceneFromInterrupt(audioScene, changeType);
+    EXPECT_NE(audioInterruptService->ownerUid_, ownerUid_);
 }
- 
+
 /**
  * @tc.name  : Test AudioInterruptService.
  * @tc.number: AudioInterruptService_UpdateAudioSceneFromInterrupt_004
@@ -1804,64 +1813,20 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_UpdateAudioSceneFromInter
     auto coreService = std::make_shared<AudioCoreService>();
     audioInterruptService->policyServer_->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
     audioInterruptService->policyServer_->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
-    audioInterruptService->formerUid_.store(formerUid_);
-    audioInterruptService->ownerUid_ = ownerUid_;
-    AudioScene audioScene = AUDIO_SCENE_DEFAULT;
-    AudioInterruptChangeType changeType = ACTIVATE_AUDIO_INTERRUPT;
- 
-    audioInterruptService->UpdateAudioSceneFromInterrupt(audioScene, changeType);
-}
- 
-/**
- * @tc.name  : Test AudioInterruptService.
- * @tc.number: AudioInterruptService_UpdateAudioSceneFromInterrupt_005
- * @tc.desc  : Test UpdateAudioSceneFromInterrupt.
- */
-HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_UpdateAudioSceneFromInterrupt_005, TestSize.Level1)
-{
-    auto audioInterruptService = std::make_shared<AudioInterruptService>();
-    EXPECT_NE(audioInterruptService, nullptr);
-    int32_t ownerUid_ = 20020190;
-    int32_t formerUid_ = 20020191;
- 
-    int32_t systemAbilityId = 0;
-    audioInterruptService->policyServer_ = new AudioPolicyServer(systemAbilityId);
-    EXPECT_NE(audioInterruptService->policyServer_, nullptr);
-    auto coreService = std::make_shared<AudioCoreService>();
-    audioInterruptService->policyServer_->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
-    audioInterruptService->policyServer_->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
-    audioInterruptService->formerUid_.store(formerUid_);
-    audioInterruptService->ownerUid_ = ownerUid_;
     AudioScene audioScene = AUDIO_SCENE_CALL_START;
     AudioInterruptChangeType changeType = ACTIVATE_AUDIO_INTERRUPT;
- 
     audioInterruptService->UpdateAudioSceneFromInterrupt(audioScene, changeType);
-}
- 
-/**
- * @tc.name  : Test AudioInterruptService.
- * @tc.number: AudioInterruptService_UpdateAudioSceneFromInterrupt_006
- * @tc.desc  : Test UpdateAudioSceneFromInterrupt.
- */
-HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_UpdateAudioSceneFromInterrupt_006, TestSize.Level1)
-{
-    auto audioInterruptService = std::make_shared<AudioInterruptService>();
-    EXPECT_NE(audioInterruptService, nullptr);
-    int32_t ownerUid_ = 20020190;
-    int32_t formerUid_ = 20020190;
- 
-    int32_t systemAbilityId = 0;
-    audioInterruptService->policyServer_ = new AudioPolicyServer(systemAbilityId);
-    EXPECT_NE(audioInterruptService->policyServer_, nullptr);
-    auto coreService = std::make_shared<AudioCoreService>();
-    audioInterruptService->policyServer_->eventEntry_ = std::make_shared<AudioCoreService::EventEntry>(coreService);
-    audioInterruptService->policyServer_->eventEntry_->coreService_ = std::make_shared<AudioCoreService>();
+    ownerUid_ = 20020190;
+    formerUid_ = -1;
     audioInterruptService->formerUid_.store(formerUid_);
     audioInterruptService->ownerUid_ = ownerUid_;
-    AudioScene audioScene = AUDIO_SCENE_CALL_START;
-    AudioInterruptChangeType changeType = ACTIVATE_AUDIO_INTERRUPT;
- 
     audioInterruptService->UpdateAudioSceneFromInterrupt(audioScene, changeType);
+    ownerUid_ = 20020190;
+    formerUid_ = 20020191;
+    audioInterruptService->formerUid_.store(formerUid_);
+    audioInterruptService->ownerUid_ = ownerUid_;
+    audioInterruptService->UpdateAudioSceneFromInterrupt(audioScene, changeType);
+    EXPECT_NE(audioInterruptService->ownerUid_, ownerUid_);
 }
 
 /**

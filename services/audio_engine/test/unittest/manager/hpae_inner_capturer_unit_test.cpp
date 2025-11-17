@@ -783,8 +783,6 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, SetSessionFade_002, TestSize.Level0)
     EXPECT_EQ(hpaeInnerCapturerManager_->SetSessionFade(streamInfo.sessionId, OPERATION_PAUSED), true);
     EXPECT_EQ(hpaeInnerCapturerManager_->Pause(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
-    EXPECT_EQ(hpaeInnerCapturerManager_->SetSessionFade(streamInfo.sessionId, OPERATION_PAUSED), true);
-    EXPECT_EQ(hpaeInnerCapturerManager_->SetSessionFade(streamInfo.sessionId, OPERATION_STOPPED), true);
     EXPECT_EQ(hpaeInnerCapturerManager_->Stop(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
 }

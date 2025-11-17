@@ -433,6 +433,8 @@ public:
     int32_t SetNearlinkDeviceVolume(const std::string &macAddress, AudioVolumeType volumeType,
         const int32_t volume, const bool updateUi);
 
+    int32_t SetSleVoiceStatusFlag(bool isSleVoiceStatus);
+
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
 
     std::shared_ptr<AudioDeviceDescriptor> GetSelectedInputDevice();
@@ -655,7 +657,7 @@ public:
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
-    bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid);
+    bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid, StreamUsage streamUsage, bool &silentControl);
 
     int32_t SetVoiceRingtoneMute(bool isMute);
 

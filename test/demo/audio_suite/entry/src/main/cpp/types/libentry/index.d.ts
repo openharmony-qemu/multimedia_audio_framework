@@ -2,6 +2,7 @@
  * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. ALL rights reserved.
  */
 
+export * from "./multiPipelineIndex";
 export const record: () => void;
 export const audioRendererInit: () => void;
 export const audioRendererDestory: () => void;
@@ -37,3 +38,4 @@ export const compareTwoFilesBinary: (inputFilePath1: string, inputFilePath2: str
 export const deleteNode: (nodeId: string) => number;
 export const registerAudioFormatCallback: (callBackFull: Function) => string[];
 export const getOptions: (nodeId: string) => string;
+export const getEffectNodeList: () => Array<number>;

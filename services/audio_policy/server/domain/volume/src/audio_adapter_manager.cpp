@@ -1115,6 +1115,8 @@ bool AudioAdapterManager::IsDistributedVolumeType(AudioStreamType streamType)
 
 void AudioAdapterManager::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
 {
+    std::lock_guard<std::mutex> lock(setVoiceStatusMutex_);
+    CHECK_AND_RETURN_LOG(isSleVoiceStatus_ != isSleVoiceStatus, "the isSleVoiceStatus state has not changed");
     isSleVoiceStatus_ = isSleVoiceStatus;
     AUDIO_INFO_LOG("SetSleVoiceStatusFlag: %{public}d", isSleVoiceStatus);
     auto desc = audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_NEARLINK);

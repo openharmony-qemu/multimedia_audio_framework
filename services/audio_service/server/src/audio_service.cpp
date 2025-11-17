@@ -1833,6 +1833,7 @@ int32_t AudioService::DisableDualStreamForFastStream(const uint32_t sessionId)
 
 std::shared_ptr<AudioEndpoint> AudioService::GetEndPointByType(AudioEndpoint::EndpointType type)
 {
+    std::lock_guard<std::mutex> lock(processListMutex_);
     for (const auto &pair : endpointList_) {
         CHECK_AND_CONTINUE(pair.second != nullptr);
         if (pair.second->GetEndpointType() == type) {

@@ -1799,6 +1799,13 @@ int32_t AudioPolicyManager::SetNearlinkDeviceVolume(const std::string &macAddres
     return gsp->SetNearlinkDeviceVolume(macAddress, volumeType, volume, updateUi);
 }
 
+int32_t AudioPolicyManager::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetSleVoiceStatusFlag(isSleVoiceStatus);
+}
+
 int32_t AudioPolicyManager::ConfigDistributedRoutingRole(
     std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type)
 {
@@ -2873,12 +2880,13 @@ int32_t AudioPolicyManager::LoadSplitModule(const std::string &splitArgs, const 
     return gsp->LoadSplitModule(splitArgs, networkId);
 }
 
-bool AudioPolicyManager::IsAllowedPlayback(const int32_t &uid, const int32_t &pid)
+bool AudioPolicyManager::IsAllowedPlayback(const int32_t &uid, const int32_t &pid,
+    StreamUsage streamUsage, bool &silentControl)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
     bool isAllowed = false;
-    gsp->IsAllowedPlayback(uid, pid, isAllowed);
+    gsp->IsAllowedPlayback(uid, pid, streamUsage, isAllowed, silentControl);
     return isAllowed;
 }
 

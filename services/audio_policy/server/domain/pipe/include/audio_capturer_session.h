@@ -120,6 +120,11 @@ private:
         uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession);
     bool IsRemainingSourceIndependent();
     bool hearingAidReloadFlag_ = false;
+    int32_t ReloadCapturerSessionForInputPipe(uint32_t sessionId, SessionOperation operation);
+    bool GetTargetSessionIdForInputPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
+        uint32_t originSessionId, uint32_t &targetSessionId, SessionOperation operation);
+    uint32_t GetMaxPriorityForInputPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo, uint32_t sessionId,
+        AudioStreamDescriptor &maxRunningDesc, AudioStreamDescriptor &maxRemainingDesc);
 private:
     IAudioPolicyInterface& audioPolicyManager_;
     AudioRouterCenter& audioRouterCenter_;
@@ -134,6 +139,8 @@ private:
     std::atomic<bool> isPolicyConfigParsered_ = false;
     std::mutex onCapturerSessionChangedMutex_;
     std::unordered_map<uint32_t, SessionInfo> sessionWithNormalSourceType_;
+    // key:sessionId value:routeFlag
+    std::unordered_map<uint32_t, uint32_t> sessionWithInputPipeRouteFlag_;
     std::unordered_set<uint32_t> sessionIdisRemovedSet_;
     // sourceType is SOURCE_TYPE_PLAYBACK_CAPTURE, SOURCE_TYPE_WAKEUP or SOURCE_TYPE_VIRTUAL_CAPTURE
     std::unordered_map<uint32_t, SessionInfo> sessionWithSpecialSourceType_;
