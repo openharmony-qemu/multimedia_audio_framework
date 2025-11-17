@@ -27,7 +27,7 @@
 const int GLOBAL_RESMGR = 0xFF00;
 const char *ENV_TAG = "[AudioEditTestApp_ENV_cpp]";
 
-napi_value startEnvEffect(napi_env env, napi_callback_info info) 
+napi_value startEnvEffect(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, ENV_TAG, "audioEditTest---startEnvEffect---IN");
     size_t argc = 4;
@@ -75,7 +75,7 @@ napi_value startEnvEffect(napi_env env, napi_callback_info info)
     return ret;
 }
 
-napi_value resetEnvEffect(napi_env env, napi_callback_info info) 
+napi_value resetEnvEffect(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, ENV_TAG, "audioEditTest---resetEnvEffect---IN");
     size_t argc = 3;
@@ -107,7 +107,7 @@ napi_value resetEnvEffect(napi_env env, napi_callback_info info)
     return ret;
 }
 
-OH_AudioSuite_Result createEnvNodeAndSetType(std::string uuidStr, unsigned int mode, Node &node) 
+OH_AudioSuite_Result createEnvNodeAndSetType(std::string uuidStr, unsigned int mode, Node &node)
 {
     OH_EnvironmentType type = getEnvEnumByNumber(mode);
     node = createNodeByType(uuidStr, OH_AudioNode_Type::EFFECT_NODE_TYPE_ENVIRONMENT_EFFECT);

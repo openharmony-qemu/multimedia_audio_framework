@@ -27,7 +27,7 @@
 const int GLOBAL_RESMGR = 0xFF00;
 const char *AISS_TAG = "[AudioEditTestApp_AISS_cpp]";
 
-napi_value addAudioSeparation(napi_env env, napi_callback_info info) 
+napi_value addAudioSeparation(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, AISS_TAG, "addAudioSeparation---IN");
     size_t argc = 3;
@@ -67,7 +67,7 @@ napi_value addAudioSeparation(napi_env env, napi_callback_info info)
     return ret;
 }
 
-napi_value resetAudioSeparation(napi_env env, napi_callback_info info) 
+napi_value resetAudioSeparation(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, AISS_TAG, "resetAudioSeparation---IN");
     size_t argc = 2;
@@ -107,7 +107,7 @@ napi_value resetAudioSeparation(napi_env env, napi_callback_info info)
     return ret;
 }
 
-napi_value deleteAudioSeparation(napi_env env, napi_callback_info info) 
+napi_value deleteAudioSeparation(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, AISS_TAG, "deleteAudioSeparation IN");
     size_t argc = 1;
