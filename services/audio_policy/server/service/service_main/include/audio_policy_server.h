@@ -171,6 +171,8 @@ public:
     int32_t ForceSelectDevice(int32_t devType, const std::string &macAddress,
         const sptr<AudioRendererFilter> &filter) override;
 
+    int32_t DisconnectSco() override;
+
     int32_t RestoreOutputDevice(const sptr<AudioRendererFilter> &audioRendererFilter) override;
 
     int32_t GetSelectedDeviceInfo(int32_t uid, int32_t pid, int32_t streamType, std::string &info) override;

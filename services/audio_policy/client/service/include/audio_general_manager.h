@@ -120,6 +120,7 @@ public:
     int32_t SelectPrivateDevice(int32_t devType, const std::string &macAddress);
     int32_t ForceSelectDevice(DeviceType devType, const std::string &macAddress,
         sptr<AudioRendererFilter> filter);
+    int32_t DisconnectSco();
     int32_t SetSleAudioOperationCallback(const std::shared_ptr<SleAudioOperationCallback> &callback);
     int32_t RestoreDistributedDeviceInfo();
 private:

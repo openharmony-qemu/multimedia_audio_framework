@@ -477,6 +477,11 @@ int32_t AudioGeneralManager::ForceSelectDevice(DeviceType devType, const std::st
     return AudioPolicyManager::GetInstance().ForceSelectDevice(devType, macAddress, filter);
 }
 
+int32_t AudioGeneralManager::DisconnectSco()
+{
+    return AudioPolicyManager::GetInstance().DisconnectSco();
+}
+
 int32_t AudioGeneralManager::SetSleAudioOperationCallback(const std::shared_ptr<SleAudioOperationCallback> &callback)
 {
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
