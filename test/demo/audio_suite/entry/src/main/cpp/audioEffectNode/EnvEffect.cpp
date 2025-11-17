@@ -93,7 +93,7 @@ napi_value resetEnvEffect(napi_env env, napi_callback_info info)
 
     OH_EnvironmentType type = getEnvEnumByNumber(mode);
     napi_value ret;
-    Node node = g_nodeManager->getNodeById(effectNodeId);
+    Node node = g_nodeManager->GetNodeById(effectNodeId);
     bool bypass = mode == 0;
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_BypassEffectNode(node.physicalNode, bypass);
     if (result != AUDIOSUITE_SUCCESS) {

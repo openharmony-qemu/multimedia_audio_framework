@@ -83,7 +83,7 @@ napi_value resetAudioSeparation(napi_env env, napi_callback_info info)
                  aissNodeId.c_str(), aissNodeId.size());
 
     napi_value ret;
-    Node node = g_nodeManager->getNodeById(aissNodeId);
+    Node node = g_nodeManager->GetNodeById(aissNodeId);
     
     OH_AudioSuite_Result result;
 

@@ -41,7 +41,7 @@ int32_t AddEffectNodeToNodeManager(std::string &inputNodeId, std::string &effect
         }
         result = g_nodeManager->insertNode(effectNodeId, node.id, Direction::LATER);
     } else {
-        const std::vector<Node> outPutNodes = g_nodeManager->getNodesByType(OH_AudioNode_Type::OUT_NODE_TYPE_DEFAULT);
+        const std::vector<Node> outPutNodes = g_nodeManager->getNodesByType(OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT);
         result = g_nodeManager->insertNode(effectNodeId, outPutNodes[0].id, Direction::BEFORE);
     }
 
@@ -53,11 +53,11 @@ int32_t AddEffectNodeToNodeManager(std::string &inputNodeId, std::string &effect
 
 Node CreateNodeByType(std::string uuid, OH_AudioNode_Type nodeType)
 {
-    OH_AudioSuite_Result result = nodeManager->createNode(uuid, nodeType);
+    OH_AudioSuite_Result result = g_nodeManager->createNode(uuid, nodeType);
     if (result != AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, EFFECT_NODE_TAG, "audioEditTest---create Node Failed");
     }
-    Node node = nodeManager->GetNodeById(uuid);
+    Node node = g_nodeManager->GetNodeById(uuid);
     return node;
 }
 
