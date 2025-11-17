@@ -33,6 +33,7 @@
 #include "audio_policy_utils.h"
 #include "audio_stream_descriptor.h"
 #include "audio_limiter_manager.h"
+#include "bluetooth_host.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1103,6 +1104,11 @@ bool FuzzTest(const uint8_t* rawData, size_t size)
     return true;
 }
 } // namespace AudioStandard
+
+void OnStop()
+{
+    Bluetooth::BluetoothHost::GetDefaultHost().Close();
+}
 } // namesapce OHOS
 
 /* Fuzzer entry point */
@@ -1113,5 +1119,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     }
 
     OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::OnStop();
     return 0;
 }
