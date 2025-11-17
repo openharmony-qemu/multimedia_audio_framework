@@ -1376,6 +1376,43 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_ConnectNodes_010, TestSize.Le
 }
 
 /**
+ * @tc.name  : Test OH_AudioSuiteEngine_ConnectNodes.
+ * @tc.number: OH_AudioSuiteEngine_ConnectNodes_011
+ * @tc.desc  : Test node destroyed.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_ConnectNodes_011, TestSize.Level0)
+{
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *inputNode = nullptr;
+    CreateNode(pipeline, INPUT_NODE_TYPE_DEFAULT, &inputNode);
+
+    OH_AudioNode *outputNode = nullptr;
+    CreateNode(pipeline, OUTPUT_NODE_TYPE_DEFAULT, &outputNode);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(inputNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_ConnectNodes(inputNode, outputNode);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_NODE_NOT_EXIST);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(outputNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
  * @tc.name  : Test OH_AudioSuiteEngine_DisconnectNodes.
  * @tc.number: OH_AudioSuiteEngine_DisconnectNodes_001
  * @tc.desc  : Test nullptr.
@@ -1874,6 +1911,42 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetNodeBypassStatus_004, Test
 }
 
 /**
+ * @tc.name  : Test OH_AudioSuiteEngine_GetNodeBypassStatus.
+ * @tc.number: OH_AudioSuiteEngine_GetNodeBypassStatus_005
+ * @tc.desc  : Test destroyed.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_GetNodeBypassStatus_005, TestSize.Level0)
+{
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *mixNode = nullptr;
+    CreateNode(pipeline, EFFECT_NODE_TYPE_AUDIO_MIXER, &mixNode);
+
+    ret = OH_AudioSuiteEngine_BypassEffectNode(mixNode, true);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(mixNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    bool bypass = false;
+    ret = OH_AudioSuiteEngine_GetNodeBypassStatus(mixNode, &bypass);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_NODE_NOT_EXIST);
+    EXPECT_EQ(bypass, false);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
  * @tc.name  : Test OH_AudioSuiteEngine_BypassEffectNode.
  * @tc.number: OH_AudioSuiteEngine_BypassEffectNode_001
  * @tc.desc  : Test nullptr.
@@ -1980,6 +2053,37 @@ HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_BypassEffectNode_004, TestSiz
 
     ret = OH_AudioSuiteEngine_DestroyNode(mixNode);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_Destroy(audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioSuiteEngine_BypassEffectNode.
+ * @tc.number: OH_AudioSuiteEngine_BypassEffectNode_005
+ * @tc.desc  : Test destroyed.
+ */
+HWTEST(OHAudioSuiteEngineTest, OH_AudioSuiteEngine_BypassEffectNode_005, TestSize.Level0)
+{
+    OH_AudioSuiteEngine *audioSuiteEngine = nullptr;
+    OH_AudioSuite_Result ret = OH_AudioSuiteEngine_Create(&audioSuiteEngine);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioSuitePipeline *pipeline = nullptr;
+    ret = OH_AudioSuiteEngine_CreatePipeline(audioSuiteEngine, &pipeline, AUDIOSUITE_PIPELINE_EDIT_MODE);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    OH_AudioNode *mixNode = nullptr;
+    CreateNode(pipeline, EFFECT_NODE_TYPE_AUDIO_MIXER, &mixNode);
+
+    ret = OH_AudioSuiteEngine_DestroyNode(mixNode);
+    EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
+
+    ret = OH_AudioSuiteEngine_BypassEffectNode(mixNode, true);
+    EXPECT_EQ(ret, AUDIOSUITE_ERROR_NODE_NOT_EXIST);
 
     ret = OH_AudioSuiteEngine_DestroyPipeline(pipeline);
     EXPECT_EQ(ret, AUDIOSUITE_SUCCESS);
