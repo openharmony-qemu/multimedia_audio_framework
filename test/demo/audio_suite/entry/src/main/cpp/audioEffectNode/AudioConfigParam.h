@@ -23,6 +23,13 @@ enum Class AudioChannelLayout {
     CH_LAYOUT_STEREO_DOWNMIX = 3
 };
 
+struct FieldEffectParams {
+    std::string inputId;
+    unsigned int mode = 0;
+    std::string fieldEffectId;
+    std::string selectedNodeId;
+};
+
 class AudioConfigParam {
 };
 
