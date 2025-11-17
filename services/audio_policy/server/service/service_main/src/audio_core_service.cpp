@@ -1673,6 +1673,16 @@ void AudioCoreService::RestoreDistributedDeviceInfo()
     AUDIO_INFO_LOG("try to restore distributed device");
     CHECK_AND_RETURN_LOG(deviceStatusListener_ != nullptr, "deviceStatusListener_ is nullptr");
 
+    std::vector<Media::MediaMonitor::MonitorDmDeviceInfo> dmDeviceInfos;
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().GetDmDeviceInfo(dmDeviceInfos);
+    for (const auto &dmDeviceInfo : dmDeviceInfos) {
+        DmDevice dmDev;
+        dmDev.deviceName_ = dmDeviceInfo.deviceName_;
+        dmDev.networkId_ = dmDeviceInfo.networkId_;
+        dmDev.dmDeviceType_ = dmDeviceInfo.dmDeviceType_;
+        AudioConnectedDevice::GetInstance().UpdateDmDeviceMap(std::move(dmDev), true);
+    }
+
     std::vector<std::string> deviceInfos;
     Media::MediaMonitor::MediaMonitorManager::GetInstance().GetDistributedDeviceInfo(deviceInfos);
     CHECK_AND_RETURN_LOG(!deviceInfos.empty(), "no distributed device info");
