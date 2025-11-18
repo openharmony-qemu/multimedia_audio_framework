@@ -389,18 +389,11 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartStopDump_001, TestSize.Lev
     EXPECT_EQ(hpaeInnerCapturerManager_->Start(playStreamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     HpaeSinkInputInfo sinkInputInfo;
-
     EXPECT_EQ(hpaeInnerCapturerManager_->IsRunning(), true);
-    WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->Stop(playStreamInfo.sessionId) == SUCCESS, true);
-    WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->DumpSinkInfo() == SUCCESS, true);
-    WaitForMsgProcessing(hpaeInnerCapturerManager_);
-    WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->Stop(recordStreamInfo.sessionId) == SUCCESS, true);
-    WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->DestroyStream(recordStreamInfo.sessionId) == SUCCESS, true);
-    WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->DestroyStream(playStreamInfo.sessionId) == SUCCESS, true);
 }
 
