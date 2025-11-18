@@ -90,12 +90,13 @@ HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestVbAlgoApply_002, TestSize.Le
     std::string value = std::to_string(static_cast<int32_t>(AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_CD));
     std::string name = "VoiceBeautifierType";
     EXPECT_EQ(vbAlgo.SetParameter(name, value), 0);
-    // 处理输入文件
+    // Process input file
     std::ifstream ifs("/data/audiosuite/vb/voice_morph_input.pcm", std::ios::binary);
     ifs.seekg(0, std::ios::end);
     size_t fileSize = ifs.tellg();
     ifs.seekg(0, std::ios::beg);
-    // pcm文件长度可能不是帧长的整数倍，补0后再传给算法处理
+    // PCM file length might not be an integer multiple of frame size, 
+    // pad with zeros before processing by algorithm
     size_t zeroPaddingSize = (fileSize % frameSize == 0) ? 0 : (frameSize - fileSize % frameSize);
     size_t fileBufferSize = fileSize + zeroPaddingSize;
     std::vector<int16_t> inputfileBuffer(fileBufferSize / sizeof(int16_t), 0);  // 16-bit PCM file
@@ -113,13 +114,13 @@ HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestVbAlgoApply_002, TestSize.Le
         frameOutputPtr += frameSize;
     }
 
-    // 输出pcm数据写入文件
+    // Write output PCM data to file
     ASSERT_EQ(CreateOutputPcmFile("/data/audiosuite/vb/vb_output_48000_2_S16LE_out.pcm"), true);
     bool isWriteFileSucc =
         WritePcmFile("/data/audiosuite/vb/vb_output_48000_2_S16LE_out.pcm", outputfileBuffer.data(), fileSize);
     ASSERT_EQ(isWriteFileSucc, true);
 
-    // 和归档结果比对
+    // Compare with archived results
     EXPECT_EQ(IsFilesEqual("/data/audiosuite/vb/vb_output_48000_2_S16LE_out.pcm",
                   "/data/audiosuite/vb/voice_morph_pc_output_cd.pcm"),
         true);

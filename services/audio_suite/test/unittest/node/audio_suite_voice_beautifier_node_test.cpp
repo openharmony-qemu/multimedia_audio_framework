@@ -68,39 +68,39 @@ HWTEST_F(AudioSuiteVoiceBeautifierNodeTest, TestSetAndGetOptions, TestSize.Level
     std::string setValue = "";
     std::string getValue = "";
 
-    // 未初始化 无效
+    // Uninitialized, invalid
     setValue = std::to_string(static_cast<int32_t>(AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_CLEAR));
     EXPECT_EQ(node->SetOptions(name, setValue), ERROR);
     EXPECT_EQ(node->GetOptions(name, getValue), ERROR);
 
-    // 初始化
+    // Initialization
     ASSERT_EQ(node->Init(), SUCCESS);
 
-    // 清澈
+    // Clear mode
     setValue = std::to_string(static_cast<int32_t>(AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_CLEAR));
     EXPECT_EQ(node->SetOptions(name, setValue), SUCCESS);
     EXPECT_EQ(node->GetOptions(name, getValue), SUCCESS);
     EXPECT_EQ(getValue == setValue, true);
 
-    // 剧场
+    // Theatre mode
     setValue = std::to_string(static_cast<int32_t>(AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_THEATRE));
     EXPECT_EQ(node->SetOptions(name, setValue), SUCCESS);
     EXPECT_EQ(node->GetOptions(name, getValue), SUCCESS);
     EXPECT_EQ(getValue == setValue, true);
 
-    // CD音效
+    // CD mode
     setValue = std::to_string(static_cast<int32_t>(AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_CD));
     EXPECT_EQ(node->SetOptions(name, setValue), SUCCESS);
     EXPECT_EQ(node->GetOptions(name, getValue), SUCCESS);
     EXPECT_EQ(getValue == setValue, true);
 
-    // 录音棚
+    // Studio mode
     setValue = std::to_string(static_cast<int32_t>(AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_STUDIO));
     EXPECT_EQ(node->SetOptions(name, setValue), SUCCESS);
     EXPECT_EQ(node->GetOptions(name, getValue), SUCCESS);
     EXPECT_EQ(getValue == setValue, true);
 
-    // 无效值
+    // Invalid values
     EXPECT_EQ(node->GetOptions("unKnownType", getValue), ERROR);
     EXPECT_EQ(node->SetOptions("unKnownType", setValue), ERROR);
     EXPECT_EQ(node->SetOptions(name, "9"), ERROR);
