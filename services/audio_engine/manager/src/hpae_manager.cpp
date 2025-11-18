@@ -2694,6 +2694,7 @@ void HpaeManager::DeleteAudioport(const std::string &name)
 std::vector<HpaeCaptureMoveInfo> HpaeManager::GetUsedMoveInfos(std::vector<HpaeCaptureMoveInfo> &moveInfos)
 {
     std::vector<HpaeCaptureMoveInfo> results;
+    results.reserve(moveInfos.size());
     for (HpaeCaptureMoveInfo &moveInfo : moveInfos) {
         uint32_t sessionId = moveInfo.sessionId;
         if (movingIds_.find(sessionId) != movingIds_.end()) {
@@ -2716,6 +2717,7 @@ std::vector<HpaeCaptureMoveInfo> HpaeManager::GetUsedMoveInfos(std::vector<HpaeC
 std::vector<uint32_t> HpaeManager::GetAllRenderSession(const std::string &name)
 {
     std::vector<uint32_t> sessionIds;
+    sessionIds.reserve(rendererIdSinkNameMap_.size());
     for (const auto &renderIdMap : rendererIdSinkNameMap_) {
         if (renderIdMap.second == name &&
             rendererIdStreamInfoMap_.find(renderIdMap.first) != rendererIdStreamInfoMap_.end()) {
@@ -2729,6 +2731,7 @@ std::vector<uint32_t> HpaeManager::GetAllRenderSession(const std::string &name)
 std::vector<uint32_t> HpaeManager::GetAllCaptureSession(const std::string &name)
 {
     std::vector<uint32_t> sessionIds;
+    sessionIds.reserve(capturerIdSourceNameMap_.size());
     for (const auto &captureIdMap : capturerIdSourceNameMap_) {
         if (captureIdMap.second == name &&
             capturerIdStreamInfoMap_.find(captureIdMap.first) != capturerIdStreamInfoMap_.end()) {
