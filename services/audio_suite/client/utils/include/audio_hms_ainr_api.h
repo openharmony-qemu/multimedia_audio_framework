@@ -36,44 +36,44 @@ extern "C" {
 #define AUDIO_AINR_ERR_BASE                                     (0)          // AHA error code base
 
 // AudioAinrGetVersion return codes
-#define AUDIO_AINR_GETVERSION_INV_VERSION                    (AUDIO_AINR_ERR_BASE -  1)  // Invalid version address
-#define AUDIO_AINR_GETVERSION_INV_RELEASETIME                (AUDIO_AINR_ERR_BASE -  2)  // Invalid releaseTime address
-#define AUDIO_AINR_GETVERSION_4_BYTES_NOT_ALIGN_VERSION      (AUDIO_AINR_ERR_BASE -  3)  // Address not 4-byte aligned in GetVersion (version)
-#define AUDIO_AINR_GETVERSION_4_BYTES_NOT_ALIGN_RELEASETIME  (AUDIO_AINR_ERR_BASE -  4)  // Address not 4-byte aligned in GetVersion (releaseTime)
+#define AUDIO_AINR_GETVERSION_INV_VERSION                    (AUDIO_AINR_ERR_BASE -  1)
+#define AUDIO_AINR_GETVERSION_INV_RELEASETIME                (AUDIO_AINR_ERR_BASE -  2)
+#define AUDIO_AINR_GETVERSION_4_BYTES_NOT_ALIGN_VERSION      (AUDIO_AINR_ERR_BASE -  3)
+#define AUDIO_AINR_GETVERSION_4_BYTES_NOT_ALIGN_RELEASETIME  (AUDIO_AINR_ERR_BASE -  4)
 
 // AudioAinrGetSize return codes
-#define AUDIO_AINR_GETSIZE_INV_CHANSIZE                      (AUDIO_AINR_ERR_BASE -  5)  // Null pointer for channel buffer size
-#define AUDIO_AINR_GETSIZE_INV_SCRATCHSIZE                   (AUDIO_AINR_ERR_BASE -  6)  // Null pointer for scratch buffer size
-#define AUDIO_AINR_GETSIZE_4_BYTES_NOT_ALIGN_CHANSIZE        (AUDIO_AINR_ERR_BASE -  7)  // Channel buffer start address not 4-byte aligned
-#define AUDIO_AINR_GETSIZE_8_BYTES_NOT_ALIGN_SCRATCHSIZE     (AUDIO_AINR_ERR_BASE -  8)  // Scratch buffer start address not 8-byte aligned
+#define AUDIO_AINR_GETSIZE_INV_CHANSIZE                      (AUDIO_AINR_ERR_BASE -  5)
+#define AUDIO_AINR_GETSIZE_INV_SCRATCHSIZE                   (AUDIO_AINR_ERR_BASE -  6)
+#define AUDIO_AINR_GETSIZE_4_BYTES_NOT_ALIGN_CHANSIZE        (AUDIO_AINR_ERR_BASE -  7)
+#define AUDIO_AINR_GETSIZE_8_BYTES_NOT_ALIGN_SCRATCHSIZE     (AUDIO_AINR_ERR_BASE -  8)
 
 // AudioAinrInit return codes
-#define AUDIO_AINR_INIT_INV_HANDLE                           (AUDIO_AINR_ERR_BASE - 11)  // Null handle or pointer
-#define AUDIO_AINR_INIT_INV_CHANNELBUF                       (AUDIO_AINR_ERR_BASE - 12)  // Null channel buffer space
-#define AUDIO_AINR_INIT_ERR_BUFSIZE                          (AUDIO_AINR_ERR_BASE - 13)  // Channel buffer space too small
-#define AUDIO_AINR_INIT_8_BYTES_NOT_ALIGN_HANDLE             (AUDIO_AINR_ERR_BASE - 14)  // Channel variable start address not 8-byte aligned
-#define AUDIO_AINR_INIT_4_BYTES_NOT_ALIGN_CONFIG             (AUDIO_AINR_ERR_BASE - 15)  // Configuration parameter start address not 4-byte aligned
-#define AUDIO_AINR_INIT_8_BYTES_NOT_ALIGN_SCRATCHBUF         (AUDIO_AINR_ERR_BASE - 16)  // Scratch buffer start address not 8-byte aligned
-#define AUDIO_AINR_INIT_INV_CONFIG                           (AUDIO_AINR_ERR_BASE - 17)  // Null configuration parameter structure
-#define AUDIO_AINR_INIT_INV_SCRATCHBUF                       (AUDIO_AINR_ERR_BASE - 18)  // Null scratch buffer space
-#define AUDIO_AINR_INIT_INV_OBJMEMMANAGE                     (AUDIO_AINR_ERR_BASE - 19)  // Actual allocated space differs from GetSize
+#define AUDIO_AINR_INIT_INV_HANDLE                           (AUDIO_AINR_ERR_BASE - 11)
+#define AUDIO_AINR_INIT_INV_CHANNELBUF                       (AUDIO_AINR_ERR_BASE - 12)
+#define AUDIO_AINR_INIT_ERR_BUFSIZE                          (AUDIO_AINR_ERR_BASE - 13)
+#define AUDIO_AINR_INIT_8_BYTES_NOT_ALIGN_HANDLE             (AUDIO_AINR_ERR_BASE - 14)
+#define AUDIO_AINR_INIT_4_BYTES_NOT_ALIGN_CONFIG             (AUDIO_AINR_ERR_BASE - 15)
+#define AUDIO_AINR_INIT_8_BYTES_NOT_ALIGN_SCRATCHBUF         (AUDIO_AINR_ERR_BASE - 16)
+#define AUDIO_AINR_INIT_INV_CONFIG                           (AUDIO_AINR_ERR_BASE - 17)
+#define AUDIO_AINR_INIT_INV_SCRATCHBUF                       (AUDIO_AINR_ERR_BASE - 18)
+#define AUDIO_AINR_INIT_INV_OBJMEMMANAGE                     (AUDIO_AINR_ERR_BASE - 19)
 
 // AudioAinrApply return codes
-#define AUDIO_AINR_APPLY_INV_PAHADATA                        (AUDIO_AINR_ERR_BASE - 71)  // Null input/output data structure in apply
-#define AUDIO_AINR_APPLY_INV_PAHADATA_DATAIN                 (AUDIO_AINR_ERR_BASE - 72)  // Null input data pointer in apply
-#define AUDIO_AINR_APPLY_INV_PAHADATA_DATAOUT                (AUDIO_AINR_ERR_BASE - 73)  // Null output data pointer in apply
-#define AUDIO_AINR_APPLY_INV_PHANDLE                         (AUDIO_AINR_ERR_BASE - 74)  // Null channel handle in apply
-#define AUDIO_AINR_APPLY_INV_SCRATCHBUF                      (AUDIO_AINR_ERR_BASE - 75)  // Null scratch buffer pointer in apply
-#define AUDIO_AINR_APPLY_ERR_PROTECTFLAG                     (AUDIO_AINR_ERR_BASE - 76)  // Channel corruption detected
-#define AUDIO_AINR_APPLY_4_BYTES_NOT_ALIGN_PAHADATA          (AUDIO_AINR_ERR_BASE - 77)  // Data structure start address not 4-byte aligned
-#define AUDIO_AINR_APPLY_8_BYTES_NOT_ALIGN_HANDLE            (AUDIO_AINR_ERR_BASE - 78)  // Handle address not 8-byte aligned
-#define AUDIO_AINR_APPLY_8_BYTES_NOT_ALIGN_SCRATCHBUF        (AUDIO_AINR_ERR_BASE - 79)  // Scratch buffer address not 8-byte aligned
-#define AUDIO_AINR_APPLY_UNINITIED                           (AUDIO_AINR_ERR_BASE - 80)  // Call order error (uninitialized)
-#define AUDIO_AINR_COMMON_ERR_PROTECTFLAG                    (AUDIO_AINR_ERR_BASE - 81)  // Common channel corruption
-#define AUDIO_AINR_AINR_ERR_PROTECTFLAG                      (AUDIO_AINR_ERR_BASE - 82)  // Common channel corruption
-#define AUDIO_AINR_APPLY_8_BYTES_NOT_ALIGN_DATAOUT           (AUDIO_AINR_ERR_BASE - 83)  // dataOut not 8-byte aligned
-#define AUDIO_AINR_APPLY_8_BYTES_NOT_ALIGN_DATAIN            (AUDIO_AINR_ERR_BASE - 84)  // dataIn not 8-byte aligned
-#define AUDIO_AINR_APPLY_ERR_FRAMELAP                        (AUDIO_AINR_ERR_BASE - 85)  // Incorrect frameLap
+#define AUDIO_AINR_APPLY_INV_PAHADATA                        (AUDIO_AINR_ERR_BASE - 71)
+#define AUDIO_AINR_APPLY_INV_PAHADATA_DATAIN                 (AUDIO_AINR_ERR_BASE - 72)
+#define AUDIO_AINR_APPLY_INV_PAHADATA_DATAOUT                (AUDIO_AINR_ERR_BASE - 73)
+#define AUDIO_AINR_APPLY_INV_PHANDLE                         (AUDIO_AINR_ERR_BASE - 74)
+#define AUDIO_AINR_APPLY_INV_SCRATCHBUF                      (AUDIO_AINR_ERR_BASE - 75)
+#define AUDIO_AINR_APPLY_ERR_PROTECTFLAG                     (AUDIO_AINR_ERR_BASE - 76)
+#define AUDIO_AINR_APPLY_4_BYTES_NOT_ALIGN_PAHADATA          (AUDIO_AINR_ERR_BASE - 77)
+#define AUDIO_AINR_APPLY_8_BYTES_NOT_ALIGN_HANDLE            (AUDIO_AINR_ERR_BASE - 78)
+#define AUDIO_AINR_APPLY_8_BYTES_NOT_ALIGN_SCRATCHBUF        (AUDIO_AINR_ERR_BASE - 79)
+#define AUDIO_AINR_APPLY_UNINITIED                           (AUDIO_AINR_ERR_BASE - 80)
+#define AUDIO_AINR_COMMON_ERR_PROTECTFLAG                    (AUDIO_AINR_ERR_BASE - 81)
+#define AUDIO_AINR_AINR_ERR_PROTECTFLAG                      (AUDIO_AINR_ERR_BASE - 82)
+#define AUDIO_AINR_APPLY_8_BYTES_NOT_ALIGN_DATAOUT           (AUDIO_AINR_ERR_BASE - 83)
+#define AUDIO_AINR_APPLY_8_BYTES_NOT_ALIGN_DATAIN            (AUDIO_AINR_ERR_BASE - 84)
+#define AUDIO_AINR_APPLY_ERR_FRAMELAP                        (AUDIO_AINR_ERR_BASE - 85)
 // ==================================================================================================================//
 
 
@@ -88,11 +88,11 @@ extern "C" {
 
 /* Device information structure passed from upper layer to algorithm */
 typedef struct {
-    signed short sampleRate;                       // Sample rate, supports 16k only; Range:{1}; Default:1; Error Code:-22;
-    signed short channelNum;                       // Number of channels, supports mono only; Range:{1}; Default:1; Error Code:-21;
-    signed short frameLenth;                       // Samples per frame, 16K->160 samples; Range:{160}; Default:160; Error Code:-23;
-    signed short bitNum;                           // PCM input bit depth, supports 16bit only; Range:{16}; Default:16; Error Code:-24;
-    signed short sReserved[4];                     // Reserved; Range:{0}; Default:0; Error Code:0;
+    signed short sampleRate;    // Sample rate, supports 16k only; Range:{1}; Default:1; Error Code:-22;
+    signed short channelNum;    // Number of channels, supports mono only; Range:{1}; Default:1; Error Code:-21;
+    signed short frameLenth;    // Samples per frame, 16K->160 samples; Range:{160}; Default:160; Error Code:-23;
+    signed short bitNum;        // PCM input bit depth, supports 16bit only; Range:{16}; Default:16; Error Code:-24;
+    signed short sReserved[4];  // Reserved; Range:{0}; Default:0; Error Code:0;
 } AudioAinrStruSysConfig, *AudioAinrPstSysConfig;
 
 typedef struct {

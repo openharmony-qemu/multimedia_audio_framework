@@ -95,7 +95,7 @@ HWTEST_F(AudioSuiteVbAlgoInterfaceImplUnitTest, TestVbAlgoApply_002, TestSize.Le
     ifs.seekg(0, std::ios::end);
     size_t fileSize = ifs.tellg();
     ifs.seekg(0, std::ios::beg);
-    // PCM file length might not be an integer multiple of frame size, 
+    // PCM file length might not be an integer multiple of frame size,
     // pad with zeros before processing by algorithm
     size_t zeroPaddingSize = (fileSize % frameSize == 0) ? 0 : (frameSize - fileSize % frameSize);
     size_t fileBufferSize = fileSize + zeroPaddingSize;
