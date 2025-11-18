@@ -22,160 +22,160 @@ extern "C" {
 
 /******************************************************************************
 *
-*     降噪算法库接口    第一部分   宏定义、返回值与自定义结构体
+*     Noise Reduction Algorithm Library API    Part 1: Macros, Return Values, and Custom Structures
 *
 ******************************************************************************/
 // =============================================================================
-//     成功返回码
+//      Success Return Codes
 // =============================================================================
-#define AUDIO_AINR_EOK   (0)          // 接口函数正常返回
+#define AUDIO_AINR_EOK   (0)          // Function returns normally
 
 // =============================================================================
-//     接口返回错误码
+//      Error Return Codes
 // =============================================================================
-#define AUDIO_AINR_ERR_BASE                                     (0)          // AHA错误码开始
+#define AUDIO_AINR_ERR_BASE                                     (0)          // AHA error code base
 
-// AudioAinrGetVersion 返回码
-#define AUDIO_AINR_GETVERSION_INV_VERSION                    (AUDIO_AINR_ERR_BASE -  1)  // 无效的version地址
-#define AUDIO_AINR_GETVERSION_INV_RELEASETIME                (AUDIO_AINR_ERR_BASE -  2)  // 无效的releaseTime地址
-#define AUDIO_AINR_GETVERSION_4_BYTES_NOT_ALIGN_VERSION      (AUDIO_AINR_ERR_BASE -  3)  // GetVersion函数内地址非4字节对齐
-#define AUDIO_AINR_GETVERSION_4_BYTES_NOT_ALIGN_RELEASETIME  (AUDIO_AINR_ERR_BASE -  4)  // GetVersion函数内地址非4字节对齐
+// AudioAinrGetVersion return codes
+#define AUDIO_AINR_GETVERSION_INV_VERSION                    (AUDIO_AINR_ERR_BASE -  1)  // Invalid version address
+#define AUDIO_AINR_GETVERSION_INV_RELEASETIME                (AUDIO_AINR_ERR_BASE -  2)  // Invalid releaseTime address
+#define AUDIO_AINR_GETVERSION_4_BYTES_NOT_ALIGN_VERSION      (AUDIO_AINR_ERR_BASE -  3)  // Address not 4-byte aligned in GetVersion (version)
+#define AUDIO_AINR_GETVERSION_4_BYTES_NOT_ALIGN_RELEASETIME  (AUDIO_AINR_ERR_BASE -  4)  // Address not 4-byte aligned in GetVersion (releaseTime)
 
-// AudioAinrGetSize 返回码
-#define AUDIO_AINR_GETSIZE_INV_CHANSIZE                      (AUDIO_AINR_ERR_BASE -  5)  // 通道变量长度指针为空
-#define AUDIO_AINR_GETSIZE_INV_SCRATCHSIZE                   (AUDIO_AINR_ERR_BASE -  6)  // 缓冲区的长度指针为空
-#define AUDIO_AINR_GETSIZE_4_BYTES_NOT_ALIGN_CHANSIZE        (AUDIO_AINR_ERR_BASE -  7)  // 通道变量首地址不是4字节对齐
-#define AUDIO_AINR_GETSIZE_8_BYTES_NOT_ALIGN_SCRATCHSIZE     (AUDIO_AINR_ERR_BASE -  8)  // 缓冲区变量首地址不是8字节对齐
+// AudioAinrGetSize return codes
+#define AUDIO_AINR_GETSIZE_INV_CHANSIZE                      (AUDIO_AINR_ERR_BASE -  5)  // Null pointer for channel buffer size
+#define AUDIO_AINR_GETSIZE_INV_SCRATCHSIZE                   (AUDIO_AINR_ERR_BASE -  6)  // Null pointer for scratch buffer size
+#define AUDIO_AINR_GETSIZE_4_BYTES_NOT_ALIGN_CHANSIZE        (AUDIO_AINR_ERR_BASE -  7)  // Channel buffer start address not 4-byte aligned
+#define AUDIO_AINR_GETSIZE_8_BYTES_NOT_ALIGN_SCRATCHSIZE     (AUDIO_AINR_ERR_BASE -  8)  // Scratch buffer start address not 8-byte aligned
 
-// AudioAinrInit 返回码
-#define AUDIO_AINR_INIT_INV_HANDLE                           (AUDIO_AINR_ERR_BASE - 11)  // 空的句柄或指针
-#define AUDIO_AINR_INIT_INV_CHANNELBUF                       (AUDIO_AINR_ERR_BASE - 12)  // 通道变量空间为空
-#define AUDIO_AINR_INIT_ERR_BUFSIZE                          (AUDIO_AINR_ERR_BASE - 13)  // 通道变量空间太小
-#define AUDIO_AINR_INIT_8_BYTES_NOT_ALIGN_HANDLE             (AUDIO_AINR_ERR_BASE - 14)  // 通道变量首地址不是8字节对齐
-#define AUDIO_AINR_INIT_4_BYTES_NOT_ALIGN_CONFIG             (AUDIO_AINR_ERR_BASE - 15)  // 配置参数首地址不是4字节对齐
-#define AUDIO_AINR_INIT_8_BYTES_NOT_ALIGN_SCRATCHBUF         (AUDIO_AINR_ERR_BASE - 16)  // 缓冲区变量首地址不是8字节对齐
-#define AUDIO_AINR_INIT_INV_CONFIG                           (AUDIO_AINR_ERR_BASE - 17)  // 空的配置参数结构体
-#define AUDIO_AINR_INIT_INV_SCRATCHBUF                       (AUDIO_AINR_ERR_BASE - 18)  // 缓冲区空间为空
-#define AUDIO_AINR_INIT_INV_OBJMEMMANAGE                     (AUDIO_AINR_ERR_BASE - 19)  // 实际分配空间与GetSize的不一致
+// AudioAinrInit return codes
+#define AUDIO_AINR_INIT_INV_HANDLE                           (AUDIO_AINR_ERR_BASE - 11)  // Null handle or pointer
+#define AUDIO_AINR_INIT_INV_CHANNELBUF                       (AUDIO_AINR_ERR_BASE - 12)  // Null channel buffer space
+#define AUDIO_AINR_INIT_ERR_BUFSIZE                          (AUDIO_AINR_ERR_BASE - 13)  // Channel buffer space too small
+#define AUDIO_AINR_INIT_8_BYTES_NOT_ALIGN_HANDLE             (AUDIO_AINR_ERR_BASE - 14)  // Channel variable start address not 8-byte aligned
+#define AUDIO_AINR_INIT_4_BYTES_NOT_ALIGN_CONFIG             (AUDIO_AINR_ERR_BASE - 15)  // Configuration parameter start address not 4-byte aligned
+#define AUDIO_AINR_INIT_8_BYTES_NOT_ALIGN_SCRATCHBUF         (AUDIO_AINR_ERR_BASE - 16)  // Scratch buffer start address not 8-byte aligned
+#define AUDIO_AINR_INIT_INV_CONFIG                           (AUDIO_AINR_ERR_BASE - 17)  // Null configuration parameter structure
+#define AUDIO_AINR_INIT_INV_SCRATCHBUF                       (AUDIO_AINR_ERR_BASE - 18)  // Null scratch buffer space
+#define AUDIO_AINR_INIT_INV_OBJMEMMANAGE                     (AUDIO_AINR_ERR_BASE - 19)  // Actual allocated space differs from GetSize
 
-// AudioAinrApply 返回码
-#define AUDIO_AINR_APPLY_INV_PAHADATA                        (AUDIO_AINR_ERR_BASE - 71)  // apply接口输入输出数据结构为空
-#define AUDIO_AINR_APPLY_INV_PAHADATA_DATAIN                 (AUDIO_AINR_ERR_BASE - 72)  // apply接口输入输出数据结构为空
-#define AUDIO_AINR_APPLY_INV_PAHADATA_DATAOUT                (AUDIO_AINR_ERR_BASE - 73)  // apply接口输入输出数据结构为空
-#define AUDIO_AINR_APPLY_INV_PHANDLE                         (AUDIO_AINR_ERR_BASE - 74)  // apply接口输入通道指针为空
-#define AUDIO_AINR_APPLY_INV_SCRATCHBUF                      (AUDIO_AINR_ERR_BASE - 75)  // apply接口输入缓冲区指针为空
-#define AUDIO_AINR_APPLY_ERR_PROTECTFLAG                     (AUDIO_AINR_ERR_BASE - 76)  // 通道被踩
-#define AUDIO_AINR_APPLY_4_BYTES_NOT_ALIGN_PAHADATA          (AUDIO_AINR_ERR_BASE - 77)  // 通道变量首地址不是4字节对齐
-#define AUDIO_AINR_APPLY_8_BYTES_NOT_ALIGN_HANDLE            (AUDIO_AINR_ERR_BASE - 78)  // 通道变量首地址不是8字节对齐
-#define AUDIO_AINR_APPLY_8_BYTES_NOT_ALIGN_SCRATCHBUF        (AUDIO_AINR_ERR_BASE - 79)  // 通道变量首地址不是8字节对齐
-#define AUDIO_AINR_APPLY_UNINITIED                           (AUDIO_AINR_ERR_BASE - 80)  // 调用次序错误，未初始化
-#define AUDIO_AINR_COMMON_ERR_PROTECTFLAG                    (AUDIO_AINR_ERR_BASE - 81)  // common通道被踩
-#define AUDIO_AINR_AINR_ERR_PROTECTFLAG                      (AUDIO_AINR_ERR_BASE - 82)  // common通道被踩
-#define AUDIO_AINR_APPLY_8_BYTES_NOT_ALIGN_DATAOUT           (AUDIO_AINR_ERR_BASE - 83)  // dataout不是8字节对齐
-#define AUDIO_AINR_APPLY_8_BYTES_NOT_ALIGN_DATAIN            (AUDIO_AINR_ERR_BASE - 84)  // datain不是8字节对齐
-#define AUDIO_AINR_APPLY_ERR_FRAMELAP                        (AUDIO_AINR_ERR_BASE - 85)  // frameLap不正确
+// AudioAinrApply return codes
+#define AUDIO_AINR_APPLY_INV_PAHADATA                        (AUDIO_AINR_ERR_BASE - 71)  // Null input/output data structure in apply
+#define AUDIO_AINR_APPLY_INV_PAHADATA_DATAIN                 (AUDIO_AINR_ERR_BASE - 72)  // Null input data pointer in apply
+#define AUDIO_AINR_APPLY_INV_PAHADATA_DATAOUT                (AUDIO_AINR_ERR_BASE - 73)  // Null output data pointer in apply
+#define AUDIO_AINR_APPLY_INV_PHANDLE                         (AUDIO_AINR_ERR_BASE - 74)  // Null channel handle in apply
+#define AUDIO_AINR_APPLY_INV_SCRATCHBUF                      (AUDIO_AINR_ERR_BASE - 75)  // Null scratch buffer pointer in apply
+#define AUDIO_AINR_APPLY_ERR_PROTECTFLAG                     (AUDIO_AINR_ERR_BASE - 76)  // Channel corruption detected
+#define AUDIO_AINR_APPLY_4_BYTES_NOT_ALIGN_PAHADATA          (AUDIO_AINR_ERR_BASE - 77)  // Data structure start address not 4-byte aligned
+#define AUDIO_AINR_APPLY_8_BYTES_NOT_ALIGN_HANDLE            (AUDIO_AINR_ERR_BASE - 78)  // Handle address not 8-byte aligned
+#define AUDIO_AINR_APPLY_8_BYTES_NOT_ALIGN_SCRATCHBUF        (AUDIO_AINR_ERR_BASE - 79)  // Scratch buffer address not 8-byte aligned
+#define AUDIO_AINR_APPLY_UNINITIED                           (AUDIO_AINR_ERR_BASE - 80)  // Call order error (uninitialized)
+#define AUDIO_AINR_COMMON_ERR_PROTECTFLAG                    (AUDIO_AINR_ERR_BASE - 81)  // Common channel corruption
+#define AUDIO_AINR_AINR_ERR_PROTECTFLAG                      (AUDIO_AINR_ERR_BASE - 82)  // Common channel corruption
+#define AUDIO_AINR_APPLY_8_BYTES_NOT_ALIGN_DATAOUT           (AUDIO_AINR_ERR_BASE - 83)  // dataOut not 8-byte aligned
+#define AUDIO_AINR_APPLY_8_BYTES_NOT_ALIGN_DATAIN            (AUDIO_AINR_ERR_BASE - 84)  // dataIn not 8-byte aligned
+#define AUDIO_AINR_APPLY_ERR_FRAMELAP                        (AUDIO_AINR_ERR_BASE - 85)  // Incorrect frameLap
 // ==================================================================================================================//
 
 
 /******************************************************************************
 *
-*                    第二部分 结构体定义
+*                    Part 2: Structure Definitions
 *
 ******************************************************************************/
 // ============================================================================
-// 初始化配置结构体定义
+// Initialization Configuration Structure Definition
 // ============================================================================
 
-/* 算法层从上层获得的设备类信息结构体 */
+/* Device information structure passed from upper layer to algorithm */
 typedef struct {
-    signed short sampleRate;                       // 采样率，仅支持16k; 范围:{1}; 默认值:1; 错误码:-22;
-    signed short channelNum;                       // 通道数量，仅支持单声道; 范围:{1}; 默认值:1; 错误码:-21;
-    signed short frameLenth;                       // 每帧样点数，16K->160点; 范围:{160}; 默认值:160; 错误码:-23;
-    signed short bitNum;                           // pcm输入位宽，仅支持16bit; 范围:{16}; 默认值:16; 错误码:-24;
-    signed short sReserved[4];                     // 保留位; 范围:{0}; 默认值:0; 错误码:0;
+    signed short sampleRate;                       // Sample rate, supports 16k only; Range:{1}; Default:1; Error Code:-22;
+    signed short channelNum;                       // Number of channels, supports mono only; Range:{1}; Default:1; Error Code:-21;
+    signed short frameLenth;                       // Samples per frame, 16K->160 samples; Range:{160}; Default:160; Error Code:-23;
+    signed short bitNum;                           // PCM input bit depth, supports 16bit only; Range:{16}; Default:16; Error Code:-24;
+    signed short sReserved[4];                     // Reserved; Range:{0}; Default:0; Error Code:0;
 } AudioAinrStruSysConfig, *AudioAinrPstSysConfig;
 
 typedef struct {
-    bool supportCurrdevice;
-    bool supportRealtimeProc;
-    signed short sampleRate;
-    signed short bitdepth;
-    signed short channelNum;
-    signed short frameLenth;
+    bool supportCurrdevice;                        // Supports current device
+    bool supportRealtimeProc;                      // Supports real-time processing
+    signed short sampleRate;                       // Sample rate
+    signed short bitdepth;                         // Bit depth
+    signed short channelNum;                       // Number of channels
+    signed short frameLenth;                       // Frame length
 } AudioAinrSpecStruct, *AudioAinrSpecPointer;
 
-/* pcm数据采样率 */
-#define AUDIO_AINR_PCM_SAMPLERATE_16K   (1)  // 算法支持采样率16000
+/* PCM Data Sample Rates */
+#define AUDIO_AINR_PCM_SAMPLERATE_16K   (1)  // Supported sample rate: 16000
 
-/* pcm数据位宽格式 */
+/* PCM Data Bit Depth Formats */
 #define AUDIO_AINR_PCM_16_BIT         (16)   // PCM signed 16 bits
 
-/* pcm数据帧长 */
-#define AUDIO_AINR_PCM_16K_FRAME_LEN  (160)  // 输入帧长，160个采样点
+/* PCM Data Frame Length */
+#define AUDIO_AINR_PCM_16K_FRAME_LEN  (160)  // Input frame length: 160 samples
 
-/* pcm数据声道数 */
-#define AUDIO_AINR_PCM_CHANNEL_NUM    (1)    // 单声道
+/* PCM Data Channel Count */
+#define AUDIO_AINR_PCM_CHANNEL_NUM    (1)    // Mono channel
 
 // ============================================================================
-// 函数调度接口参数结构体
+// Function Dispatch Interface Parameter Structure
 // ============================================================================
 
-/* 主调算法输入输出数据流结构体定义 */
+/* Main algorithm input/output data stream structure definition */
 typedef struct {
-    signed short *dataIn;    // 输入数据流，1声道
-    signed short *pad0;
-    signed short *dataOut;   // 输出数据流，1声道
-    signed short *pad1;
+    signed short *dataIn;    // Input data stream (mono)
+    signed short *pad0;      // Padding
+    signed short *dataOut;   // Output data stream (mono)
+    signed short *pad1;      // Padding
 
-    float *freqDomainOut;
-    float *freqDomainMic;
-    float *ainrGainOut;
-    float pad2;
+    float *freqDomainOut;    // Frequency domain output
+    float *freqDomainMic;    // Microphone frequency domain data
+    float *ainrGainOut;      // AINR gain output
+    float pad2;              // Padding
 } AudioAinrDataTransferStruct, *AudioAinrDataTransferPointer;
 
 /*******************************************************************************
 *
-*  第三部分 主调度 -- 函数声明
+*  Part 3: Main Dispatch -- Function Declarations
 *
 *******************************************************************************/
 // =============================================================================
-// 函数名称  : AudioAinrGetVersion
-// 功能描述  : 获取版本信息
-// 输入参数  : version    --  算法版本
-//            releaseTime  -- 算法发布时间
-// 输出参数  : 无
-// 返 回 值  : AUDIO_AINR_EOK表示成功， 其他返回码表示失败
+// Function Name : AudioAinrGetVersion
+// Description   : Gets version information
+// Input Params  : version     -- Algorithm version
+//                 releaseTime -- Algorithm release time
+// Output Params : None
+// Return Value  : AUDIO_AINR_EOK on success, other codes indicate failure
 // =============================================================================
 signed int AudioAinrGetVersion(unsigned int *version, unsigned int *releaseTime);
 
 // =============================================================================
-// 函数名称  : AudioAinrGetSize
-// 功能描述  : 获取通道大小
-// 输入参数  : chanSize变量地址
-// 输出参数  : chanSize  通道变量大小，对应handle和bufSize
-// 返 回 值  : AUDIO_AINR_EOK表示成功， 其他返回码表示失败
+// Function Name : AudioAinrGetSize
+// Description   : Gets the channel buffer size
+// Input Params  : chanSize variable address
+// Output Params : chanSize  -- Channel buffer size (corresponds to handle and bufSize)
+// Return Value  : AUDIO_AINR_EOK on success, other codes indicate failure
 // =============================================================================
 signed int AudioAinrGetSize(signed int *chanSize);
 
 // =============================================================================
-// 函数名称  : AudioAinrInit
-// 功能描述  : 初始化算法实例（通道变量），并返回其句柄
-// 输入参数  : handle   -- 对象句柄
-//            config   -- 系统配置参数
-//            bufSize  -- 通道变量大小
-// 输出参数  : 无
-// 返 回 值  : AUDIO_AINR_EOK表示成功， 其他返回码表示失败
+// Function Name : AudioAinrInit
+// Description   : Initializes an algorithm instance (channel variables) and returns its handle
+// Input Params  : handle   -- Object handle
+//                 config   -- System configuration parameters
+//                 bufSize  -- Channel buffer size
+// Output Params : None
+// Return Value  : AUDIO_AINR_EOK on success, other codes indicate failure
 // =============================================================================
 signed int AudioAinrInit(signed char *handle, AudioAinrPstSysConfig config, unsigned int bufSize);
 
 
 // =============================================================================
-// 函数名称  : AudioAinrApply
-// 功能描述  : 算法处理主函数
-// 输入参数  : handle    -- 算法实例句柄
-//            pAhaData  -- 输入输出数据结构体
-// 输出参数  : pAhaData的dataOut指针保存输出buff
-// 返 回 值  : AUDIO_AINR_EOK表示成功， 其他返回码表示失败
+// Function Name : AudioAinrApply
+// Description   : Main algorithm processing function
+// Input Params  : handle     -- Algorithm instance handle
+//                 pAhaData   -- Input/output data structure
+// Output Params : pAhaData's dataOut pointer holds the output buffer
+// Return Value  : AUDIO_AINR_EOK on success, other codes indicate failure
 // =============================================================================
 signed int AudioAinrApply(signed char *handle, AudioAinrDataTransferPointer pAhaData);
 
