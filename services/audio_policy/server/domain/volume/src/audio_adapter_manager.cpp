@@ -1958,7 +1958,7 @@ IAudioSourceAttr AudioAdapterManager::GetAudioSourceAttr(const AudioModuleInfo &
         }
     }
     GetHdiSourceTypeToAudioSourceAttr(attr, attr.sourceType);
-    attr.isPrimarySinkExist = isPrimarySinkExist_.load();
+    attr.isPrimarySinkExist_ = isPrimarySinkExist_.load();
     return attr;
 }
 
