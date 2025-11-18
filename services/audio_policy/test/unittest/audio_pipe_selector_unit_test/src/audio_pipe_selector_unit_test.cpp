@@ -25,6 +25,7 @@ namespace AudioStandard {
 
 static const uint32_t TEST_SESSION_ID_BASE = 100000;
 static const uint32_t TEST_STREAM_1_SESSION_ID = 100001;
+static const uint32_t MAX_LINK_PROCESS = 6;
 
 void AudioPipeSelectorUnitTest::SetUpTestCase(void) {}
 void AudioPipeSelectorUnitTest::TearDownTestCase(void) {}
@@ -1381,5 +1382,40 @@ HWTEST_F(AudioPipeSelectorUnitTest, IsNeedTempMoveToNormal_005, TestSize.Level1)
     EXPECT_FALSE(audioPipeSelector->IsNeedTempMoveToNormal(streamDesc1, streamDescToOldPipeInfo));
 }
 
+/**
+ * @tc.name: FastStreamCount_001
+ * @tc.desc: Test FastStreamCount_001
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, FastStreamCount_001, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->routeFlag_ = AUDIO_FLAG_VOIP_FAST;
+    streamDescs.push_back(streamDesc);
+    audioPipeSelector->FastStreamCount(streamDescs);
+    EXPECT_EQ(streamDesc->routeFlag_, AUDIO_FLAG_VOIP_FAST);
+}
+
+/**
+ * @tc.name: FastStreamCount_002
+ * @tc.desc: Test FastStreamCount_002
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, FastStreamCount_002, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->routeFlag_ = AUDIO_FLAG_MMAP;
+    for (int i = 0; i < MAX_LINK_PROCESS + 1; i++) {
+        audioPipeSelector->FastStreamCount(streamDescs);
+    }
+
+    streamDescs.push_back(streamDesc);
+    audioPipeSelector->FastStreamCount(streamDescs);
+    EXPECT_EQ(streamDescs[0]->routeFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+}
 } // namespace AudioStandard
 } // namespace OHOS
