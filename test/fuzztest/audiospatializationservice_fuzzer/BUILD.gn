@@ -49,6 +49,7 @@ ohos_fuzztest("AudioSpatializationServiceFuzzTest") {
   ]
 
   external_deps = [
+    "ability_base:configuration",
     "ability_base:want",
     "ability_runtime:extension_manager",
     "ability_runtime:wantagent_innerkits",
