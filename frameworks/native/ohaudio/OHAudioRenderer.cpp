@@ -440,6 +440,17 @@ OH_AudioStream_Result OH_AudioRenderer_GetFastStatus(OH_AudioRenderer *renderer,
     return AUDIOSTREAM_SUCCESS;
 }
 
+OH_AudioStream_Result OH_AudioRenderer_GetKeepRunning(OH_AudioRenderer* renderer,
+    bool* keepRunning)
+{
+    CHECK_AND_RETURN_RET_LOG(renderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "renderer is nullptr");
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(keepRunning != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "keepRunning is nullptr");
+    int32_t ret = audioRenderer->GetKeepRunning(*keepRunning);
+    CHECK_AND_RETURN_RET_LOG(ret == OHOS::AudioStandard::SUCCESS, AUDIOSTREAM_ERROR_SYSTEM, "System internal error.");
+    return AUDIOSTREAM_SUCCESS;
+}
+
 namespace OHOS {
 namespace AudioStandard {
 OHAudioRenderer::OHAudioRenderer()
@@ -990,6 +1001,12 @@ bool OHAudioRenderer::GetSilentModeAndMixWithOthers()
 {
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, false, "renderer client is nullptr");
     return audioRenderer_->GetSilentModeAndMixWithOthers();
+}
+
+int32_t OHAudioRenderer::GetKeepRunning(bool &keepRunning)
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
+    return audioRenderer_->GetKeepRunning(keepRunning);
 }
 
 int32_t OHAudioRenderer::SetDefaultOutputDevice(DeviceType deviceType)

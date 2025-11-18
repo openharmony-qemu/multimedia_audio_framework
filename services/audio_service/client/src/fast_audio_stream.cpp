@@ -107,6 +107,7 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
         config.rendererInfo.expectedPlaybackDurationBytes = rendererInfo_.expectedPlaybackDurationBytes;
         config.rendererInfo.isLoopback = rendererInfo_.isLoopback;
         config.rendererInfo.loopbackMode = rendererInfo_.loopbackMode;
+        config.rendererInfo.keepRunning = rendererInfo_.keepRunning;
     } else if (eMode_ == AUDIO_MODE_RECORD) {
         AUDIO_DEBUG_LOG("FastAudioStream: Initialize recording");
         config.capturerInfo.sourceType = capturerInfo_.sourceType;
@@ -1269,6 +1270,12 @@ bool FastAudioStream::IsRestoreNeeded()
 bool FastAudioStream::IsDataCallbackSet() const
 {
     return spkProcClientCb_ != nullptr || micProcClientCb_ != nullptr;
+}
+
+int32_t FastAudioStream::GetKeepRunning(bool &keepRunning) const
+{
+    keepRunning = rendererInfo_.keepRunning;
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -126,6 +126,7 @@ public:
     MOCK_METHOD(void, ResetFirstFrameState, (), (override));
     MOCK_METHOD(int32_t, SetTarget, (RenderTarget target), (override));
     MOCK_METHOD(RenderTarget, GetTarget, (), (const, override));
+    MOCK_METHOD(int32_t, GetKeepRunning, (bool &keepRunning), (const, override));
 };
 
 } // namespace AudioStandard

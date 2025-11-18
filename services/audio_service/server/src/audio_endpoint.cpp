@@ -1197,7 +1197,8 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
             int64_t current = ClockTime::GetCurNano();
             int64_t lastWrittenTime = tempBuffer->GetLastWrittenTime();
             uint32_t sessionId = processList_[i]->GetAudioSessionId();
-            if (current - lastWrittenTime > WAIT_CLIENT_STANDBY_TIME_NS) {
+            bool keepRunning = processList_[i]->GetKeepRunning();
+            if (current - lastWrittenTime > WAIT_CLIENT_STANDBY_TIME_NS && !keepRunning) {
                 Trace trace("AudioEndpoint::MarkClientStandby:" + std::to_string(sessionId));
                 AUDIO_INFO_LOG("change the status to stand-by, session %{public}u", sessionId);
                 processList_[i]->EnableStandby();
