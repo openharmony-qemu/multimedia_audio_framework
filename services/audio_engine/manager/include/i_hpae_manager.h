@@ -38,7 +38,7 @@ public:
     virtual int32_t RegisterHpaeDumpCallback(const std::weak_ptr<AudioServiceHpaeDumpCallback> &callback) = 0;
     virtual void DumpSinkInfo(std::string deviceName) = 0;
     virtual void DumpSourceInfo(std::string deviceName) = 0;
-    virtual void DumpAllAvailableDevice(HpaeDeviceInfo &devicesInfo) = 0;
+    virtual void DumpAllAvailableDevice() = 0;
     virtual void DumpSinkInputsInfo() = 0;
     virtual void DumpSourceOutputsInfo() = 0;
     virtual uint32_t OpenAudioPort(const AudioModuleInfo &audioModuleInfo) = 0;

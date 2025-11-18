@@ -72,9 +72,9 @@ int32_t ProAudioServiceAdapterImpl::ReloadAudioPort(const std::string &audioPort
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     Trace trace("ReloadAudioPort");
     lock_guard<mutex> lock(lock_);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishReloadAudioPort_ = false;
     IHpaeManager::GetHpaeManager().ReloadAudioPort(audioModuleInfo);
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishReloadAudioPort_;  // will be true when got notified.
     });
@@ -92,11 +92,11 @@ int32_t ProAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, const Au
         [](void *) {
             AUDIO_ERR_LOG("[xcollie] Timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    lock_guard<mutex> lock(lock_);
     Trace trace("OpenAudioPort");
+    lock_guard<mutex> lock(lock_);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishOpenAudioPort_ = false;
     IHpaeManager::GetHpaeManager().OpenAudioPort(audioModuleInfo);
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishOpenAudioPort_;  // will be true when got notified.
     });
@@ -120,10 +120,9 @@ int32_t ProAudioServiceAdapterImpl::CloseAudioPort(int32_t audioHandleIndex)
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     Trace trace("CloseAudioPort");
     lock_guard<mutex> lock(lock_);
-
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishCloseAudioPort_ = false;
     IHpaeManager::GetHpaeManager().CloseAudioPort(audioHandleIndex);
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishCloseAudioPort_;  // will be true when got notified.
     });
@@ -137,8 +136,8 @@ int32_t ProAudioServiceAdapterImpl::CloseAudioPort(int32_t audioHandleIndex)
 
 int32_t ProAudioServiceAdapterImpl::SuspendAudioDevice(string &audioPortName, bool isSuspend)
 {
-    lock_guard<mutex> lock(lock_);
     Trace trace("SuspendAudioDevice");
+    lock_guard<mutex> lock(lock_);
     AUDIO_INFO_LOG("[%{public}s] : [%{public}d]", audioPortName.c_str(), isSuspend);
     IHpaeManager::GetHpaeManager().SuspendAudioDevice(audioPortName, isSuspend);
     return SUCCESS;
@@ -151,12 +150,12 @@ bool ProAudioServiceAdapterImpl::SetSinkMute(const std::string &sinkName, bool i
         [](void *) {
             AUDIO_ERR_LOG("[xcollie] Timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    lock_guard<mutex> lock(lock_);
     Trace trace("SetSinkMute:" + sinkName + "isMute:" + std::to_string(isMute));
+    lock_guard<mutex> lock(lock_);
     if (isSync) {
+        std::unique_lock<std::mutex> waitLock(callbackMutex_);
         isFinishSetSinkMute_ = false;
         IHpaeManager::GetHpaeManager().SetSinkMute(sinkName, isMute, isSync);
-        std::unique_lock<std::mutex> waitLock(callbackMutex_);
         bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
             return isFinishSetSinkMute_;  // will be true when got notified.
         });
@@ -172,8 +171,8 @@ bool ProAudioServiceAdapterImpl::SetSinkMute(const std::string &sinkName, bool i
 
 int32_t ProAudioServiceAdapterImpl::SetDefaultSink(string name)
 {
-    lock_guard<mutex> lock(lock_);
     Trace trace("SetDefaultSink:" + name);
+    lock_guard<mutex> lock(lock_);
     IHpaeManager::GetHpaeManager().SetDefaultSink(name);
     AUDIO_INFO_LOG("[%{public}s]", name.c_str());
     return SUCCESS;
@@ -181,8 +180,8 @@ int32_t ProAudioServiceAdapterImpl::SetDefaultSink(string name)
 
 int32_t ProAudioServiceAdapterImpl::SetDefaultSource(string name)
 {
-    lock_guard<mutex> lock(lock_);
     Trace trace("SetDefaultSource:" + name);
+    lock_guard<mutex> lock(lock_);
     IHpaeManager::GetHpaeManager().SetDefaultSource(name);
     AUDIO_INFO_LOG("[%{public}s]", name.c_str());
     return SUCCESS;
@@ -195,11 +194,11 @@ std::vector<SinkInfo> ProAudioServiceAdapterImpl::GetAllSinks()
         [](void *) {
             AUDIO_ERR_LOG("[xcollie] Timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    lock_guard<mutex> lock(lock_);
     Trace trace("GetAllSinks");
+    lock_guard<mutex> lock(lock_);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishGetAllSinks_ = false;
     IHpaeManager::GetHpaeManager().GetAllSinks();
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishGetAllSinks_;  // will be true when got notified.
     });
@@ -212,8 +211,8 @@ std::vector<SinkInfo> ProAudioServiceAdapterImpl::GetAllSinks()
 
 std::vector<uint32_t> ProAudioServiceAdapterImpl::GetTargetSinks(std::string adapterName)
 {
-    std::vector<SinkInfo> sinkInfos = GetAllSinks();
     Trace trace("GetTargetSinks:" + adapterName);
+    std::vector<SinkInfo> sinkInfos = GetAllSinks();
     std::vector<uint32_t> targetSinkIds = {};
     for (size_t i = 0; i < sinkInfos.size(); i++) {
         if (sinkInfos[i].adapterName == adapterName) {
@@ -241,12 +240,12 @@ int32_t ProAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(
         [](void *) {
             AUDIO_ERR_LOG("[xcollie] Timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    lock_guard<mutex> lock(lock_);
     Trace trace("MoveSinkInputByIndexOrName: " + std::to_string(sinkInputId) + " index:" + std::to_string(sinkIndex) +
                 " sink:" + sinkName);
+    lock_guard<mutex> lock(lock_);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishMoveSinkInputByIndexOrName_ = false;
     IHpaeManager::GetHpaeManager().MoveSinkInputByIndexOrName(sinkInputId, sinkIndex, sinkName);
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishMoveSinkInputByIndexOrName_;  // will be true when got notified.
     });
@@ -269,12 +268,12 @@ int32_t ProAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName(
         [](void *) {
             AUDIO_ERR_LOG("[xcollie] Timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    lock_guard<mutex> lock(lock_);
     Trace trace("MoveSourceOutputByIndexOrName: " + std::to_string(sourceOutputId) +
                 " index:" + std::to_string(sourceIndex) + " source:" + sourceName);
+    lock_guard<mutex> lock(lock_);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishMoveSourceOutputByIndexOrName_ = false;
     IHpaeManager::GetHpaeManager().MoveSourceOutputByIndexOrName(sourceOutputId, sourceIndex, sourceName);
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishMoveSourceOutputByIndexOrName_;  // will be true when got notified.
     });
@@ -289,10 +288,10 @@ int32_t ProAudioServiceAdapterImpl::SetSourceOutputMute(int32_t uid, bool setMut
 {
     AUDIO_INFO_LOG("Uid %{public}d, setMute %{public}d", uid, setMute);
     lock_guard<mutex> lock(lock_);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishSetSourceOutputMute_ = false;
     SourceOutputMuteStreamSet_ = 0;
     IHpaeManager::GetHpaeManager().SetSourceOutputMute(uid, setMute);
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishSetSourceOutputMute_;  // will be true when got notified.
     });
@@ -311,9 +310,9 @@ std::vector<SinkInput> ProAudioServiceAdapterImpl::GetAllSinkInputs()
             AUDIO_ERR_LOG("[xcollie] Timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishGetAllSinkInputs_ = false;
     IHpaeManager::GetHpaeManager().GetAllSinkInputs();
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishGetAllSinkInputs_;  // will be true when got notified.
     });
@@ -332,9 +331,9 @@ std::vector<SourceOutput> ProAudioServiceAdapterImpl::GetAllSourceOutputs()
             AUDIO_ERR_LOG("[xcollie] Timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishGetAllSourceOutputs_ = false;
     IHpaeManager::GetHpaeManager().GetAllSourceOutputs();
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishGetAllSourceOutputs_;  // will be true when got notified.
     });
@@ -354,9 +353,9 @@ int32_t ProAudioServiceAdapterImpl::GetAudioEffectProperty(AudioEffectPropertyAr
 {
     AUDIO_INFO_LOG("Enter");
     lock_guard<mutex> lock(lock_);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishGetAudioEffectPropertyV3_ = false;
     IHpaeManager::GetHpaeManager().GetAudioEffectProperty(propertyArray);
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishGetAudioEffectPropertyV3_;
     });
@@ -370,9 +369,9 @@ int32_t ProAudioServiceAdapterImpl::GetAudioEffectProperty(AudioEffectPropertyAr
 {
     AUDIO_INFO_LOG("Enter");
     lock_guard<mutex> lock(lock_);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishGetAudioEffectProperty_ = false;
     IHpaeManager::GetHpaeManager().GetAudioEffectProperty(propertyArray);
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishGetAudioEffectProperty_;
     });
@@ -387,9 +386,9 @@ int32_t ProAudioServiceAdapterImpl::GetAudioEnhanceProperty(AudioEffectPropertyA
 {
     AUDIO_INFO_LOG("Enter");
     lock_guard<mutex> lock(lock_);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishGetAudioEnhancePropertyV3_ = false;
     IHpaeManager::GetHpaeManager().GetAudioEnhanceProperty(propertyArray);
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishGetAudioEnhancePropertyV3_;
     });
@@ -404,9 +403,9 @@ int32_t ProAudioServiceAdapterImpl::GetAudioEnhanceProperty(AudioEnhanceProperty
 {
     AUDIO_INFO_LOG("Enter");
     lock_guard<mutex> lock(lock_);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishGetAudioEnhanceProperty_ = false;
     IHpaeManager::GetHpaeManager().GetAudioEnhanceProperty(propertyArray);
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishGetAudioEnhanceProperty_;
     });
@@ -590,9 +589,9 @@ void ProAudioServiceAdapterImpl::UpdateAudioPortInfo(const uint32_t &sinkPortInd
             AUDIO_ERR_LOG("[xcollie] Timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     lock_guard<mutex> lock(lock_);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishOpenAudioPort_ = false;
     IHpaeManager::GetHpaeManager().UpdateAudioPortInfo(sinkPortIndex, audioPortInfo);
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishOpenAudioPort_;  // will be true when got notified.
     });

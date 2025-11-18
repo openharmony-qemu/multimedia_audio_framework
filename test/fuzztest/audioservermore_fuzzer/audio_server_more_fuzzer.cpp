@@ -819,7 +819,8 @@ void AudioServerHpaeDumpOnDumpAllAvailableDeviceCbFuzzTest(const uint8_t *rawDat
     }
     int32_t result = *reinterpret_cast<const int32_t*>(rawData);
     std::shared_ptr<AudioServerHpaeDump> audioServerHpaeDumpPtr = std::make_shared<AudioServerHpaeDump>();
-    audioServerHpaeDumpPtr->OnDumpAllAvailableDeviceCb(result);
+    HpaeDeviceInfo devicesInfo;
+    audioServerHpaeDumpPtr->OnDumpAllAvailableDeviceCb(result, std::move(devicesInfo));
 }
 
 void AudioServerHpaeDumpPolicyHandlerDumpFuzzTest(const uint8_t *rawData, size_t size)
