@@ -28,7 +28,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-static constexpr int32_t MAX_LINK_PROCESS = 6;
+static constexpr int32_t MAX_FAST_STREAM_COUNT = 6;
 static std::map<int, AudioPipeType> flagPipeTypeMap_ = {
     {AUDIO_OUTPUT_FLAG_NORMAL, PIPE_TYPE_NORMAL_OUT},
     {AUDIO_INPUT_FLAG_NORMAL, PIPE_TYPE_NORMAL_IN},
@@ -134,14 +134,14 @@ void AudioPipeSelector::ProcessRendererAndCapturerConcurrency(std::shared_ptr<Au
     AUDIO_INFO_LOG("Set %{public}u to normal flag", streamDesc->GetSessionId());
 }
 
-void AudioPipeSelector::FastStreamCount(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
+void AudioPipeSelector::CheckFastStreamOverLimitToNormal(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
     int32_t fastNum = 0;
     for (auto streamDesc : streamDescs) {
-        if (streamDesc->routeFlag_ != AUDIO_FLAG_MMAP) {
+        if (streamDesc->routeFlag_ != AUDIO_OUTPUT_FLAG_FAST) {
             continue;
         }
-        if (++fastNum > MAX_LINK_PROCESS) {
+        if (++fastNum > MAX_FAST_STREAM_COUNT) {
             AUDIO_INFO_LOG("reach fast limit, set %{publiv}u to normal", streamDesc->sessionId_);
             streamDesc->ResetToNormalRoute(false);
             continue;
@@ -173,7 +173,7 @@ void AudioPipeSelector::DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioSt
         }
     }
     ProcessModemCommunicationConcurrency(streamDescs, streamsMoveToNormal);
-    FastStreamCount(streamDescs);
+    CheckFastStreamOverLimitToNormal(streamDescs);
 }
 
 // add streamDescs to prefer newPipe based on final routeFlag, create newPipe if needed
