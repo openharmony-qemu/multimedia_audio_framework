@@ -139,7 +139,7 @@ void AudioPipeSelector::FastStreamCount(std::vector<std::shared_ptr<AudioStreamD
     int32_t fastNum = 0;
     for (auto streamDesc: streamDescs) {
         if (streamDesc->routeFlag_ != AUDIO_FLAG_MMAP) {
-            return;
+            continue;
         }
         if (++fastNum > MAX_LINK_PROCESS) {
             AUDIO_INFO_LOG("reach fast limit, set %{publiv}u to normal", streamDesc->sessionId_);
