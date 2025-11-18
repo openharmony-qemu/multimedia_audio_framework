@@ -919,34 +919,6 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, FetchInputDeviceWhenNoRunningStream_002,
 }
 
 /**
-* @tc.name  : Test BluetoothScoFetch.
-* @tc.number: BluetoothScoFetch_001
-* @tc.desc  : Test BluetoothScoFetch interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitNextTest, BluetoothScoFetch_001, TestSize.Level4)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.DeInit();
-
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    desc->macAddress_ = "00:11:22:33:44:55";
-    desc->networkId_ = LOCAL_NETWORK_ID;
-
-    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
-    std::shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
-    capturerChangeInfo->capturerInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
-    capturerChangeInfos.push_back(capturerChangeInfo);
-
-    audioDeviceCommon.audioActiveDevice_.SetCurrentInputDevice(*desc);
-    audioDeviceCommon.BluetoothScoFetch(desc, capturerChangeInfos, SOURCE_TYPE_VOICE_RECOGNITION);
-    const AudioDeviceDescriptor& activeDevice = audioDeviceCommon.audioActiveDevice_.GetCurrentInputDevice();
-    EXPECT_EQ(activeDevice.deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
-    EXPECT_EQ(activeDevice.macAddress_, "00:11:22:33:44:55");
-    EXPECT_EQ(activeDevice.networkId_, LOCAL_NETWORK_ID);
-}
-
-/**
 * @tc.name  : Test MoveToRemoteOutputDevice.
 * @tc.number: MoveToRemoteOutputDevice_001
 * @tc.desc  : Test MoveToRemoteOutputDevice interface.

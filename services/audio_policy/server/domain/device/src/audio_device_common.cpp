@@ -1262,8 +1262,9 @@ void AudioDeviceCommon::BluetoothScoFetch(std::shared_ptr<AudioDeviceDescriptor>
     std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos, SourceType sourceType)
 {
     Trace trace("AudioDeviceCommon::BluetoothScoFetch");
+    CHECK_AND_RETURN(desc != nullptr);
     int32_t ret;
-    if (Util::IsScoSupportSource(sourceType)) {
+    if (desc->isVrSupported_ && Util::IsScoSupportSource(sourceType)) {
         int32_t activeRet = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
         if (activeRet != SUCCESS) {
             AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch input device");
