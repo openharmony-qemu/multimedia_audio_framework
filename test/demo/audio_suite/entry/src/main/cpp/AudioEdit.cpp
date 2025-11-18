@@ -519,7 +519,8 @@ static napi_status ParseFieldEffectParams(napi_env env, napi_callback_info info,
     status = parseNapiString(env, argv[ARG_3], params.fieldEffectId);
     status = parseNapiString(env, argv[ARG_4], params.selectedNodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-    "audioEditTest FieldEffect inputId==%{public}s, mode==%{public}zd, fieldEffectId==%{public}s, selectedNodeId==%{public}s",
+    "audioEditTest FieldEffect inputId==%{public}s, mode==%{public}zd, " \ 
+    "fieldEffectId==%{public}s, selectedNodeId==%{public}s",
     params.inputId.c_str(), params.mode, params.fieldEffectId.c_str(), params.selectedNodeId.c_str());
     return status;
 }

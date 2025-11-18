@@ -87,7 +87,7 @@ OH_AudioSuite_Result NodeManager::removeNode(const std::string &nodeId)
     Node node = nodes[nodeId];
     OH_AudioSuite_Result result;
 
-    // disconnection and connection interfaces to disconnect the node from its previous and next connections, and then connect the previous and next nodes.
+    // Disconnect the old connection first, then connect the new node.
     if (node.preNodeIds.empty() && node.nextNodeId.empty()) {
         result = OH_AudioSuiteEngine_DestroyNode(node.physicalNode);
     } else if (node.preNodeIds.empty()) {

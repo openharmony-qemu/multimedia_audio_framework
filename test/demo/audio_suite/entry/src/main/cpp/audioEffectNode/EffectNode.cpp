@@ -41,7 +41,8 @@ int32_t AddEffectNodeToNodeManager(std::string &inputNodeId, std::string &effect
         }
         result = g_nodeManager->insertNode(effectNodeId, node.id, Direction::LATER);
     } else {
-        const std::vector<Node> outPutNodes = g_nodeManager->getNodesByType(OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT);
+        const std::vector<Node> outPutNodes =
+            g_nodeManager->getNodesByType(OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT);
         result = g_nodeManager->insertNode(effectNodeId, outPutNodes[0].id, Direction::BEFORE);
     }
 
