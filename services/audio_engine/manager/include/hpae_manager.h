@@ -217,7 +217,7 @@ private:
     void HandleMoveAllSinkInputs(std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkName,
         MoveSessionType moveType);
     void HandleMoveSourceOutput(HpaeCaptureMoveInfo moveInfo, std::string sourceName);
-    void HandleMoveAllSourceOutputs(const std::vector<HpaeCaptureMoveInfo> moveInfos, std::string sourceName);
+    void HandleMoveAllSourceOutputs(std::vector<HpaeCaptureMoveInfo> moveInfos, std::string sourceName);
     void HandleMoveSessionFailed(HpaeStreamClassType streamClassType, uint32_t sessionId, MoveSessionType moveType,
         std::string name);
     void HandleDumpSinkInfo(std::string deviceName, std::string dumpStr);
@@ -267,6 +267,9 @@ private:
     void DeleteAudioport(const std::string &name);
     std::vector<std::shared_ptr<HpaeSinkInputNode>> GetPerferSinkInputs(
         const std::vector<std::shared_ptr<HpaeSinkInputNode>> &sinkInputs);
+    std::vector<HpaeCaptureMoveInfo> GetUsedMoveInfos(std::vector<HpaeCaptureMoveInfo> &moveInfos);
+    std::vector<uint32_t> GetAllRenderSession(const std::string &name);
+    std::vector<uint32_t> GetAllCaptureSession(const std::string &name);
 
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;
