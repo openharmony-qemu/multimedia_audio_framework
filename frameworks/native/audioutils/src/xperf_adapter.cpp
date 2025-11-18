@@ -32,12 +32,8 @@ XperfAdapter& XperfAdapter::GetInstance()
 
 bool XperfAdapter::NeedNotifyXperf(StreamUsage usage)
 {
-    if ((usage == STREAM_USAGE_MUSIC) || (usage == STREAM_USAGE_VOICE_COMMUNICATION) ||
-        (usage == STREAM_USAGE_MOVIE)) {
-        return true;
-    }
-
-    return false;
+    return ((usage == STREAM_USAGE_MUSIC) || (usage == STREAM_USAGE_VOICE_COMMUNICATION) ||
+        (usage == STREAM_USAGE_MOVIE));
 }
 
 void XperfAdapter::ReportStateChangeEventIfNeed(int32_t eventId, StreamUsage usage, uint32_t sessionId,
