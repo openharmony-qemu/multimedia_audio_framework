@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. ALL rights reserved.
  */
 
 import audioNapi from 'libentry.so';
