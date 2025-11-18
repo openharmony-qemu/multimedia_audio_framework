@@ -173,13 +173,6 @@ public:
     virtual void OnError(AudioErrors errorCode) = 0;
 };
 
-class StaticBufferEventCallback {
-public:
-    virtual ~StaticBufferEventCallback() = default;
-
-    virtual void OnStaticBufferEvent(StaticBufferEventId eventId) = 0;
-};
-
 /**
  * @brief Provides functions for applications to implement audio rendering.
  * @since 8

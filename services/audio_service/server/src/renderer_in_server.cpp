@@ -145,8 +145,6 @@ int32_t RendererInServer::ConfigServerBuffer()
         audioServerBuffer_ = OHAudioBufferBase::CreateFromRemote(totalSizeInFrame, byteSizePerFrame_,
             AudioBufferHolder::AUDIO_APP_SHARED, processConfig_.staticBufferInfo.sharedMemory_->GetFd());
         CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERROR, "SetStaticClientBuffer failed!");
-        audioServerBuffer_.isStatic = true;
-        audioServerBuffer_.SetStaticBufferInfo(processConfig_.staticBufferInfo);
         AUDIO_INFO_LOG("SetStaticBuffer SUCCESS");
     } else {
         // create OHAudioBuffer in server
@@ -756,6 +754,11 @@ int32_t RendererInServer::WriteData()
 
 int32_t RendererInServer::GetAvailableSize(size_t &length)
 {
+    if (processConfig_.rendererInfo.isStatic) {
+        length = spanSizeInByte_;
+        return SUCCESS;
+    }
+
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     if (currentWriteFrame < currentReadFrame) {
@@ -801,10 +804,6 @@ void RendererInServer::OnWriteDataFinish()
 
 int32_t RendererInServer::WriteData(int8_t *inputData, size_t requestDataLen)
 {
-    if (isStatic) {
-        return OnWriteDataInStaticMode(inputData, requestDataLen);
-    }
-
     size_t requestDataInFrame = requestDataLen / byteSizePerFrame_;
 
     std::lock_guard lock(writeLock_);
@@ -840,11 +839,11 @@ int32_t RendererInServer::WriteData(int8_t *inputData, size_t requestDataLen)
     return SUCCESS;
 }
 
-int32_t RendererInServer::OnWriteDataInStaticMode(int8_t *inputData, size_t requestDataLen)
+int32_t RendererInServer::WriteDataInStaticMode(int8_t *inputData, size_t requestDataLen)
 {
     CHECK_AND_RETURN_RET_LOG(requestDataLen != 0, ERR_OPERATION_FAILED, "requestDataLen is 0.");
     size_t requestDataInFrame = requestDataLen / byteSizePerFrame_;
-    Trace trace1(traceTag_ + " OnWriteDataInStaticMode requestDataInFrame:" + std::to_string(requestDataInFrame));
+    Trace trace1(traceTag_ + " WriteDataInStaticMode requestDataInFrame:" + std::to_string(requestDataInFrame));
 
     int32_t ret = audioServerBuffer_->GetDataFromStaticBuffer(inputData, requestDataLen);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetWritableStaticData failed!");
@@ -2691,7 +2690,8 @@ void RendererInServer::WaitForDataConnection()
 
 int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
 {
-    int32_t ret = WriteData(inputData, requestDataLen);
+    int32_t ret = processConfig_.rendererInfo.isStatic ?
+        WriteDataInStaticMode(inputData, requestDataLen) : WriteData(inputData, requestDataLen);
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
 
     BufferDesc bufferDesc = {

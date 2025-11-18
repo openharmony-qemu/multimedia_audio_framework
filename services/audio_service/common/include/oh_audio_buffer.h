@@ -101,8 +101,13 @@ struct BasicBufferInfo {
     RestoreInfo restoreInfo;
 
     // only for static renderer
-    std::atomic<uint64_t> bufferEndCallbackSendTimes = 0;
-    std::atomic<bool> needSendLoopEndCallback = false;
+    std::atomic<uint64_t> bufferEndCallbackSendTimes;
+    std::atomic<bool> needSendLoopEndCallback;
+    std::atomic<bool> isStatic_;
+    std::atomic<int64_t> preSetTotalLoopTimes_;
+    std::atomic<int64_t> totalLoopTimes_;
+    std::atomic<int64_t> currentLoopTimes_;
+    std::atomic<size_t> curStaticDataPos_;
 };
 static_assert(std::is_standard_layout<BasicBufferInfo>::value == true, "is not standard layout!");
 static_assert(std::is_trivially_copyable<BasicBufferInfo>::value == true, "is not trivially copyable!");
@@ -167,7 +172,6 @@ public:
     uint32_t GetTotalSizeInFrame();
 
     std::atomic<StreamStatus> *GetStreamStatus();
-    bool IsStreamInRunning();
 
     uint32_t GetUnderrunCount();
 
@@ -249,7 +253,8 @@ public:
     bool IsNeedSendLoopEndCallback();
     void SetIsNeedSendLoopEndCallback(bool value);
 
-    int32_t SetLoopTimes(uint64_t times);
+    int32_t PreSetLoopTimes(int64_t times);
+    int32_t ResetLoopStatus();
     uint64_t GetTotalLoopTimes();
     uint64_t GetCurrentLoopTimes();
     int32_t IncreaseCurrentLoopTimes();
@@ -257,7 +262,9 @@ public:
     bool GetStaticMode();
 
     int32_t GetDataFromStaticBuffer(int8_t *inputData, size_t requestDataLen);
-    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo) const;
+
+    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo);
+    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
 
 private:
     int32_t SizeCheck();
@@ -297,12 +304,6 @@ private:
     uint8_t *dataBase_ = nullptr;
     volatile uint32_t *syncReadFrame_ = nullptr;
     volatile uint32_t *syncWriteFrame_ = nullptr;
-
-    // for static renderer
-    bool isStatic_ = false;
-    int64_t totalLoopTimes_ = 0;
-    int64_t currentLoopTimes_ = 0;
-    size_t curStaticDataPos_ = 0;
 };
 
 class OHAudioBuffer : public Parcelable {

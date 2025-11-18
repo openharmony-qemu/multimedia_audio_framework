@@ -148,7 +148,11 @@ public:
 
     virtual void SetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) = 0;
 
+    virtual int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) = 0;
+
     virtual int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) = 0;
+
+    virtual int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) = 0;
 
     virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) = 0;
 };

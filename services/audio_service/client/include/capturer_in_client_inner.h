@@ -219,6 +219,11 @@ public:
     bool IsRestoreNeeded() override;
     int32_t SetRebuildFlag() override;
 
+    int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
+    void SetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override;
+    int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) override;
+    int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) override;
+
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);

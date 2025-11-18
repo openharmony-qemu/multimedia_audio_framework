@@ -729,13 +729,12 @@ void RendererInClientInner::InitCallbackLoop()
 
 int32_t RendererInClientInner::SetRenderMode(AudioRenderMode renderMode)
 {
-    AUDIO_INFO_LOG("to %{public}s", renderMode == RENDER_MODE_NORMAL ? "RENDER_MODE_NORMAL" :
-        "RENDER_MODE_CALLBACK");
+    AUDIO_INFO_LOG("to %{public}d", renderMode);
     if (renderMode_ == renderMode) {
         return SUCCESS;
     }
 
-    // renderMode_ is inited as RENDER_MODE_NORMAL, can only be set to RENDER_MODE_CALLBACK.
+    // renderMode_ is inited as RENDER_MODE_NORMAL, can only be set to RENDER_MODE_CALLBACK or RENDER_MODE_STATIC.
     if (renderMode_ == RENDER_MODE_CALLBACK && renderMode == RENDER_MODE_NORMAL) {
         AUDIO_ERR_LOG("SetRenderMode from callback to normal is not supported.");
         return ERR_INCORRECT_MODE;
@@ -989,6 +988,10 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     hasFirstFrameWrited_ = false;
     if (audioStreamTracker_ && audioStreamTracker_.get()) {
         audioStreamTracker_->FetchOutputDeviceForTrack(sessionId_, RUNNING, clientPid_, rendererInfo_, reason);
+    }
+    if (rendererInfo_.isStatic) {
+        CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "clientbuffer is nullptr!");
+        clientBuffer_->ResetLoopStatus();
     }
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Start();
@@ -1476,7 +1479,7 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.target = renderTarget_;
 
     if (rendererInfo_.isStatic) {
-        info.staticBufferInfo = staticBufferInfo_;
+        clientBuffer_->GetStaticBufferInfo(info.staticBufferInfo);
     }
     info.staticBufferEventCallback = audioStaticBufferEventCallback_;
     GetStreamSwitchInfo(info);

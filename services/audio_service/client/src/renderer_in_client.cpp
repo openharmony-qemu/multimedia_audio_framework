@@ -217,7 +217,7 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
 
     config.privacyType = privacyType_;
 
-    config.sharedMemory = sharedMemory_;
+    config.staticBufferInfo = staticBufferInfo_;
 
     clientConfig_ = config;
 
@@ -246,6 +246,10 @@ int32_t RendererInClientInner::InitSharedBuffer()
     AUDIO_INFO_LOG("totalSizeInFrame_[%{public}u] spanSizeInFrame[%{public}u] sizePerFrameInByte_[%{public}zu]"
         "clientSpanSizeInByte_[%{public}zu]", totalSizeInFrame, spanSizeInFrame_, sizePerFrameInByte_,
         clientSpanSizeInByte_);
+    if (rendererInfo_.isStatic) {
+        clientBuffer_->SetStaticMode(true);
+        clientBuffer_->SetStaticBufferInfo(staticBufferInfo_);
+    }
 
     return SUCCESS;
 }
@@ -458,14 +462,16 @@ void RendererInClientInner::WaitForBufferNeedOperate()
     Trace trace("WaitForBufferNeedOperate");
     int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
     FutexCode futexRes = clientBuffer_->WaitFor(
-        isStatic_ ? -1 : static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND,
+        rendererInfo_.isStatic ? -1 : static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND,
         [this] () {
             if (state_ != RUNNING) {
                 return true;
             }
 
             if (IsRestoreNeeded()) {
-                proxyObj_->TriggerRecreate("Recreate in callbackFunc");
+                if (rendererInfo_.isStatic && sendStaticRecreateFunc_ != nullptr) {
+                    sendStaticRecreateFunc_();
+                }
                 return true;
             }
 
@@ -492,9 +498,6 @@ void RendererInClientInner::CallClientHandle()
         if (clientBuffer_->IsNeedSendLoopEndCallback()) {
             audioStaticBufferEventCallback_->OnStaticBufferEvent(LOOP_END_EVENT);
             clientBuffer_->SetIsNeedSendLoopEndCallback(false);
-            int32_t ret = ipcStream_->Stop();
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "Stop call server failed:%{public}u", ret);
-            AUDIO_INFO_LOG("LoopEnd, Stop audioRenderer!");
         }
     }
 
@@ -1066,7 +1069,7 @@ int32_t RendererInClientInner::SetSpeedInner(float speed)
 
 void RendererInClientInner::SetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
 {
-    CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
+    CHECK_AND_RETURN_LOG(rendererInfo_.isStatic, "not support!");
     staticBufferInfo_ = staticBufferInfo;
 }
 
@@ -1074,9 +1077,19 @@ int32_t RendererInClientInner::SetStaticBufferEventCallback(std::shared_ptr<Stat
 {
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "Invalid null callback");
-    CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE, "incorrect render mode");
+    CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
     std::lock_guard<std::mutex> lock(staticBufferMutex_);
     audioStaticBufferEventCallback_ = callback;
+    return SUCCESS;
+}
+
+int32_t RendererInClientInner::SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc)
+{
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
+    CHECK_AND_RETURN_RET_LOG(sendStaticRecreateFunc != nullptr, ERR_INVALID_PARAM, "Invalid null callback");
+    CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
+    std::lock_guard<std::mutex> lock(staticBufferMutex_);
+    sendStaticRecreateFunc_ = sendStaticRecreateFunc;
     return SUCCESS;
 }
 
@@ -1084,18 +1097,14 @@ int32_t RendererInClientInner::SetLoopTimes(int64_t bufferLoopTimes)
 {
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_ILLEGAL_STATE, "clientBuffer is nullptr!");
-    CHECK_AND_RETURN_RET_LOG(!clientBuffer_->IsStreamInRunning(), ERR_ILLEGAL_STATE, "currentStream is running");
-    staticBufferInfo_.totalLoopTimes_ = bufferLoopTimes;
-    staticBufferInfo_.curStaticDataPos_ = 0;
-    staticBufferInfo_.curStaticDataPos_ = 0;
-    return clientBuffer_->SetLoopTimes(bufferLoopTimes);
+    CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
+    staticBufferInfo_.preSetTotalLoopTimes_ = bufferLoopTimes;
+    return clientBuffer_->PreSetLoopTimes(bufferLoopTimes);
 }
 
 bool RendererInClientInner::CheckStaticAndOperate()
 {
     if (rendererInfo_.isStatic) {
-        staticBufferInfo_.currentLoopTimes_ = clientBuffer_->currentLoopTimes_;
-        staticBufferInfo_.curStaticDataPos_ = clientBuffer_->curStaticDataPos_;
         return clientBuffer_->IsNeedSendLoopEndCallback() || clientBuffer_->IsNeedSendBufferEndCallback();
     }
     return false;

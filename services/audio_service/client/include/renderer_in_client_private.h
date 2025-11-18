@@ -226,6 +226,7 @@ public:
     bool IsRestoreNeeded() override;
     void SetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override;
     int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) override;
+    int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) override;
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
 
 private:
@@ -303,7 +304,7 @@ private:
 
     void RecordDropPosition(size_t dataLength);
 
-    bool CheckStaticAndOperate() const;
+    bool CheckStaticAndOperate();
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
@@ -398,6 +399,7 @@ private:
 
     // for static audio renderer
     std::shared_ptr<StaticBufferEventCallback> audioStaticBufferEventCallback_ = nullptr;
+    std::function<void()> sendStaticRecreateFunc_ = nullptr;
     StaticBufferInfo staticBufferInfo_{};
     std::mutex staticBufferMutex_;
 

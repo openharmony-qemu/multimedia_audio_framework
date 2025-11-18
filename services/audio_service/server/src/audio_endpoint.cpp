@@ -1163,6 +1163,11 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
 
 bool AudioEndpointInner::IsBufferDataInsufficient(int32_t readableDataFrame, uint32_t spanSizeInFrame)
 {
+    if (tempBuffer->GetStaticMode()) {
+        // staticMode data is always sufficient;
+        return true;
+    }
+
     if (readableDataFrame < 0) {
         return false;
     }
@@ -1206,7 +1211,7 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
             }
             int32_t readableDataFrame = tempBuffer->GetReadableDataFrames();
             uint32_t spanSizeInFrame = processList_[i]->GetSpanSizeInFrame();
-            if (IsBufferDataInsufficient(readableDataFrame, spanSizeInFrame)) {
+            if (IsBufferDataInsufficient(readableDataFrame, spanSizeInFrame) && !tempBuffer->GetStaticMode()) {
                 isAllReady = false;
                 AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_LOWLATENCY_OUT,
                     processList_[i]->GetAppInfo().appUid);

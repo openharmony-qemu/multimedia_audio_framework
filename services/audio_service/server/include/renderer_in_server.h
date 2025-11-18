@@ -160,7 +160,7 @@ public:
     int32_t SetTarget(RenderTarget target, int32_t &ret);
 
     int32_t SetSharedBuffer(std::shared_ptr<OHAudioBufferBase> &buffer);
-    int32_t OnWriteDataInStaticMode(int8_t *inputData, size_t requestDataLen);
+    int32_t WriteDataInStaticMode(int8_t *inputData, size_t requestDataLen);
 public:
     const AudioProcessConfig processConfig_;
 private:
@@ -321,8 +321,6 @@ private:
     bool isDataLinkConnected_ = true;
     std::mutex dataConnectionMutex_;
     std::condition_variable dataConnectionCV_;
-
-    bool isStatic = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

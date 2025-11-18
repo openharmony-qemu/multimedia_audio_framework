@@ -162,8 +162,11 @@ public:
 
     int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) override;
 
+    int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) override;
+
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
 
+    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo_) override;
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
 
@@ -212,11 +215,7 @@ private:
 
     void WaitForReadableSpace() const;
 
-    int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback);
-
-    bool CheckStaticAndOperate() const;
-
-    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo_);
+    bool CheckStaticAndOperate();
 private:
     static constexpr int64_t MILLISECOND_PER_SECOND = 1000; // 1000ms
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
@@ -300,8 +299,10 @@ private:
 
     // for static audio renderer
     std::shared_ptr<StaticBufferEventCallback> audioStaticBufferEventCallback_ = nullptr;
+    std::function<void()> sendStaticRecreateFunc_ = nullptr;
     StaticBufferInfo staticBufferInfo_{};
     std::mutex staticBufferMutex_;
+    bool isLoopTimesSet = false;
 };
 
 // ProcessCbImpl --> sptr | AudioProcessInClientInner --> shared_ptr
@@ -646,6 +647,10 @@ bool AudioProcessInClientInner::InitAudioBuffer()
     memset_s(callbackBuffer_.get(), clientSpanSizeInByte_, 0, clientSpanSizeInByte_);
     AUDIO_INFO_LOG("CallbackBufferSize is %{public}zu", clientSpanSizeInByte_);
 
+    if (processConfig_.rendererInfo.isStatic) {
+        audioBuffer_->SetStaticMode(true);
+        audioBuffer_->SetStaticBufferInfo(staticBufferInfo_);
+    }
     return true;
 }
 
@@ -1116,6 +1121,11 @@ int32_t AudioProcessInClientInner::Start()
     CHECK_AND_RETURN_RET_LOG(
         ret, ERR_ILLEGAL_STATE, "Start failed, invalid status: %{public}s", GetStatusInfo(targetStatus).c_str());
 
+    if (processConfig_.rendererInfo.isStatic) {
+        CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, ERR_NULL_POINTER, "audiobuffer is nullptr");
+        isLoopTimesSet = false;
+        audioBuffer_->ResetLoopStatus();
+    }
     if (processProxy_->Start() != SUCCESS) {
         streamStatus_->store(StreamStatus::STREAM_IDEL);
         AUDIO_ERR_LOG("Start failed to call process proxy, reset status to IDEL.");
@@ -1189,6 +1199,12 @@ int32_t AudioProcessInClientInner::Resume()
         startFadein_.store(false);
         AUDIO_ERR_LOG("Resume failed, invalid status : %{public}s", GetStatusInfo(stoppedStatus).c_str());
         return ERR_ILLEGAL_STATE;
+    }
+
+    if (processConfig_.rendererInfo.isStatic && isLoopTimesSet) {
+        CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, ERR_NULL_POINTER, "audiobuffer is nullptr");
+        isLoopTimesSet = false;
+        audioBuffer_->ResetLoopStatus();
     }
 
     if (processProxy_->Resume() != SUCCESS) {
@@ -1303,7 +1319,7 @@ int32_t AudioProcessInClientInner::Release(bool isSwitchStream)
 // client should call GetBufferDesc and Enqueue in OnHandleData
 void AudioProcessInClientInner::CallClientHandleCurrent()
 {
-    if (config.rendererInfo.isStatic) {
+    if (processConfig_.rendererInfo.isStatic) {
         Trace trace("AudioProcessInClient::HandleSendStaticBufferCallback");
         std::unique_lock<std::mutex> staticBufferLock(staticBufferMutex_);
         while (audioBuffer_->IsNeedSendBufferEndCallback()) {
@@ -1313,9 +1329,6 @@ void AudioProcessInClientInner::CallClientHandleCurrent()
         if (audioBuffer_->IsNeedSendLoopEndCallback()) {
             audioStaticBufferEventCallback_->OnStaticBufferEvent(LOOP_END_EVENT);
             audioBuffer_->SetIsNeedSendLoopEndCallback(false);
-            int32_t ret = Stop();
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "Stop call server failed:%{public}u", ret);
-            AUDIO_INFO_LOG("LoopEnd, Stop audioRenderer!");
         }
         return;
     }
@@ -1614,13 +1627,17 @@ bool AudioProcessInClientInner::IsRestoreNeeded()
 
 bool AudioProcessInClientInner::CheckAndWaitBufferReadyForPlayback()
 {
-    FutexCode ret = audioBuffer_->WaitFor(FAST_WRITE_CACHE_TIMEOUT_IN_MS * AUDIO_US_PER_SECOND, [this] () {
+    FutexCode ret = audioBuffer_->WaitFor(
+        processConfig_.rendererInfo.isStatic ? -1 : FAST_WRITE_CACHE_TIMEOUT_IN_MS * AUDIO_US_PER_SECOND,
+        [this] () {
         if (streamStatus_->load() != StreamStatus::STREAM_RUNNING) {
             return true;
         }
 
         if (IsRestoreNeeded()) {
-            proxyObj_->TriggerRecreate("Recreate in callbackFunc");
+            if (processConfig_.rendererInfo.isStatic && sendStaticRecreateFunc_ != nullptr) {
+                sendStaticRecreateFunc_();
+            }
             return true;
         }
 
@@ -1800,44 +1817,49 @@ void AudioProcessInClientInner::SetAudioHapticsSyncId(const int32_t &audioHaptic
 
 void AudioProcessInClientInner::SetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
 {
-    CHECK_AND_RETURN_RET_LOG(config.rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
+    CHECK_AND_RETURN_LOG(processConfig_.rendererInfo.isStatic, "not support!");
     staticBufferInfo_ = staticBufferInfo;
 }
 
 int32_t AudioProcessInClientInner::SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(config.rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
+    CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERROR_UNSUPPORTED, "not support!");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "Invalid null callback");
     std::lock_guard<std::mutex> lock(staticBufferMutex_);
     audioStaticBufferEventCallback_ = callback;
     return SUCCESS;
 }
 
+int32_t AudioProcessInClientInner::SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc)
+{
+    CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERROR_UNSUPPORTED, "not support!");
+    CHECK_AND_RETURN_RET_LOG(sendStaticRecreateFunc != nullptr, ERR_INVALID_PARAM, "Invalid null callback");
+    std::lock_guard<std::mutex> lock(staticBufferMutex_);
+    sendStaticRecreateFunc_ = sendStaticRecreateFunc;
+    return SUCCESS;
+}
+
 int32_t AudioProcessInClientInner::SetLoopTimes(int64_t bufferLoopTimes)
 {
-    CHECK_AND_RETURN_RET_LOG(config.rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
+    CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERROR_UNSUPPORTED, "not support!");
     CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, ERR_ILLEGAL_STATE, "clientBuffer is nullptr!");
-    CHECK_AND_RETURN_RET_LOG(!audioBuffer_->IsStreamInRunning(), ERR_ILLEGAL_STATE, "currentStream is running");
-    staticBufferInfo_.totalLoopTimes_ = bufferLoopTimes;
-    staticBufferInfo_.curStaticDataPos_ = 0;
-    staticBufferInfo_.curStaticDataPos_ = 0;
-    return audioBuffer_->SetLoopTimes(bufferLoopTimes);
+    staticBufferInfo_.preSetTotalLoopTimes_ = bufferLoopTimes;
+    isLoopTimesSet = true;
+    return audioBuffer_->PreSetLoopTimes(bufferLoopTimes);
 }
 
 bool AudioProcessInClientInner::CheckStaticAndOperate()
 {
-    if (config.rendererInfo_.isStatic) {
-        staticBufferInfo_.currentLoopTimes_ = clientBuffer_->currentLoopTimes_;
-        staticBufferInfo_.curStaticDataPos_ = clientBuffer_->curStaticDataPos_;
-        return clientBuffer_->IsNeedSendLoopEndCallback() || clientBuffer_->IsNeedSendBufferEndCallback();
+    if (processConfig_.rendererInfo.isStatic) {
+        return audioBuffer_->IsNeedSendLoopEndCallback() || audioBuffer_->IsNeedSendBufferEndCallback();
     }
     return false;
 }
 
 int32_t AudioProcessInClientInner::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
 {
-    CHECK_AND_RETURN_RET_LOG(config.rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
-    staticBufferInfo = staticBufferInfo_;
+    CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERROR_UNSUPPORTED, "not support!");
+    audioBuffer_->GetStaticBufferInfo(staticBufferInfo);
     return SUCCESS;
 }
 

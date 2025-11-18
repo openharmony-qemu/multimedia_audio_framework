@@ -163,7 +163,6 @@ public:
 
     bool IsVirtualKeyboard(const int32_t flags);
     void HandleSetRendererInfoByOptions(const AudioRendererOptions &rendererOptions, const AppInfo &appInfo);
-    void SetStaticRendererBuffer(std::shared_ptr<AudioSharedMemory> sharedMemory);
     int32_t SetStaticBufferCallback(std::shared_ptr<StaticBufferEventCallback> callback);
     bool IsRendererFlagsSupportStatic(const int32_t rendererFlags);
 
@@ -187,6 +186,7 @@ public:
     std::shared_ptr<IAudioStream> audioStream_;
     bool abortRestore_ = false;
     mutable bool isStillZeroStreamVolume_ = false;
+    StaticBufferInfo staticBufferInfo_{};
 
     explicit AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
 
@@ -305,8 +305,6 @@ private:
     std::condition_variable taskLoopCv_;
     std::mutex inSwitchingMtx_;
     bool inSwitchingFlag_ = false;
-
-    StaticBufferInfo staticBufferInfo_{};
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {

@@ -36,7 +36,6 @@ public:
     void SetOffloadModeImpl(int32_t state, bool isAppBack);
     void UnsetOffloadModeImpl();
     void GetSingleStreamVolumeImpl(float &volume);
-    void TriggerRecreate(std::string callingFunc);
 private:
     std::weak_ptr<AudioRenderer> renderer_;
     std::mutex mutex_;

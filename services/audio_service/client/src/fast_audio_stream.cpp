@@ -108,7 +108,7 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
         config.rendererInfo.isLoopback = rendererInfo_.isLoopback;
         config.rendererInfo.loopbackMode = rendererInfo_.loopbackMode;
         config.rendererInfo.isStatic = rendererInfo_.isStatic;
-        config.sharedMemory = sharedMemory_;
+        config.staticBufferInfo = staticBufferInfo_;
     } else if (eMode_ == AUDIO_MODE_RECORD) {
         AUDIO_DEBUG_LOG("FastAudioStream: Initialize recording");
         config.capturerInfo.sourceType = capturerInfo_.sourceType;
@@ -445,8 +445,10 @@ int32_t FastAudioStream::SetStreamCallback(const std::shared_ptr<AudioStreamCall
 
 int32_t FastAudioStream::SetRenderMode(AudioRenderMode renderMode)
 {
-    CHECK_AND_RETURN_RET_LOG(renderMode == RENDER_MODE_CALLBACK && eMode_ == AUDIO_MODE_PLAYBACK,
+    CHECK_AND_RETURN_RET_LOG((renderMode == RENDER_MODE_STATIC ||
+        renderMode == RENDER_MODE_CALLBACK) && eMode_ == AUDIO_MODE_PLAYBACK,
         ERR_INVALID_OPERATION, "SetRenderMode is not supported.");
+    renderMode_ = renderMode;
     return SUCCESS;
 }
 
@@ -1191,7 +1193,7 @@ void FastAudioStream::SetRestoreInfo(RestoreInfo &restoreInfo)
 
 RestoreStatus FastAudioStream::CheckRestoreStatus()
 {
-    if (!IsDataCallbackSet()) {
+    if (!IsDataCallbackSet() && !rendererInfo_.isStatic) {
         AUDIO_INFO_LOG("Fast stream without callback, restore to normal");
         renderMode_ = RENDER_MODE_NORMAL;
         captureMode_ = CAPTURE_MODE_NORMAL;
@@ -1285,14 +1287,21 @@ void FastAudioStream::SetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
 int32_t FastAudioStream::SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback)
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "processClient_ is null");
-    CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE, "incorrect render mode");
-    return processClient_->SetStaticBufferEventCallback();
+    CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
+    return processClient_->SetStaticBufferEventCallback(callback);
 }
 
-int32_t FastAudioStream::::SetLoopTimes(int64_t bufferLoopTimes)
+int32_t FastAudioStream::SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc)
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "processClient_ is null");
-    CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_CALLBACK, ERR_INCORRECT_MODE, "incorrect render mode");
+    CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
+    return processClient_->SetStaticTriggerRecreateCallback(sendStaticRecreateFunc);
+}
+
+int32_t FastAudioStream::SetLoopTimes(int64_t bufferLoopTimes)
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "processClient_ is null");
+    CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
     return processClient_->SetLoopTimes(bufferLoopTimes);
 }
 

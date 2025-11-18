@@ -1896,6 +1896,29 @@ bool CapturerInClientInner::IsRestoreNeeded()
 
     return false;
 }
+
+int32_t CapturerInClientInner::SetLoopTimes(int64_t bufferLoopTimes)
+{
+    AUDIO_WARNING_LOG("not supported in capturer");
+    return ERR_INCORRECT_MODE;
+}
+
+void CapturerInClientInner::SetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
+{
+    AUDIO_WARNING_LOG("not supported in capturer");
+}
+
+int32_t CapturerInClientInner::SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback)
+{
+    AUDIO_WARNING_LOG("not supported in capturer");
+    return ERR_INCORRECT_MODE;
+}
+
+int32_t CapturerInClientInner::SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc)
+{
+    AUDIO_WARNING_LOG("not supported in capturer");
+    return ERR_INCORRECT_MODE;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // FAST_AUDIO_STREAM_H

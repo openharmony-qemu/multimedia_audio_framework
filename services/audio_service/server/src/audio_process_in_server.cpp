@@ -131,7 +131,10 @@ bool AudioProcessInServer::PrepareRingBuffer(uint64_t curRead, RingBufferWrapper
     if (processConfig_.rendererInfo.isStatic) {
         processTmpBuffer_.resize(0);
         processTmpBuffer_.resize(spanSizeInByte);
-        processBuffer_->GetDataFromStaticBuffer(processTmpBuffer_.data(), spanSizeInByte);
+        int32_t ret = processBuffer_->GetDataFromStaticBuffer(reinterpret_cast<int8_t*>(processTmpBuffer_.data()),
+            spanSizeInByte);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "getStaticBuffer failed ret: %{public}d", ret);
+        processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
     } else {
         int32_t ret = processBuffer_->GetAllReadableBufferFromPosFrame(curRead, ringBuffer);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && ringBuffer.dataLength > 0, false,
@@ -162,7 +165,11 @@ bool AudioProcessInServer::NeedUseTempBuffer(const RingBufferWrapper &ringBuffer
 void AudioProcessInServer::PrepareStreamDataBufferInner(size_t spanSizeInByte,
     RingBufferWrapper &ringBuffer, BufferDesc &dstBufferDesc)
 {
-    if (NeedUseTempBuffer(ringBuffer, spanSizeInByte)) {
+    if (processConfig_.rendererInfo.isStatic) {
+        dstBufferDesc.buffer = processTmpBuffer_.data();
+        dstBufferDesc.bufLength = spanSizeInByte;
+        dstBufferDesc.dataLength = spanSizeInByte;
+    } else if (NeedUseTempBuffer(ringBuffer, spanSizeInByte)) {
         processTmpBuffer_.resize(0);
         processTmpBuffer_.resize(spanSizeInByte);
         RingBufferWrapper ringBufferDescForCotinueData;
@@ -170,10 +177,6 @@ void AudioProcessInServer::PrepareStreamDataBufferInner(size_t spanSizeInByte,
         ringBufferDescForCotinueData.basicBufferDescs[0].buffer = processTmpBuffer_.data();
         ringBufferDescForCotinueData.basicBufferDescs[0].bufLength = ringBuffer.dataLength;
         ringBufferDescForCotinueData.CopyInputBufferValueToCurBuffer(ringBuffer);
-        dstBufferDesc.buffer = processTmpBuffer_.data();
-        dstBufferDesc.bufLength = spanSizeInByte;
-        dstBufferDesc.dataLength = spanSizeInByte;
-    } else if (processConfig_.rendererInfo.isStatic) {
         dstBufferDesc.buffer = processTmpBuffer_.data();
         dstBufferDesc.bufLength = spanSizeInByte;
         dstBufferDesc.dataLength = spanSizeInByte;
@@ -772,9 +775,7 @@ int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
 
         processBuffer_ = OHAudioBufferBase::CreateFromRemote(totalSizeInFrame, byteSizePerFrame,
             AudioBufferHolder::AUDIO_APP_SHARED, processConfig_.staticBufferInfo.sharedMemory_->GetFd());
-        CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, nullptr, "SetStaticClientBuffer failed!");
-        audioServerBuffer_.isStatic = true;
-        audioServerBuffer_.SetStaticBufferInfo(processConfig_.staticBufferInfo);
+        CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_OPERATION_FAILED, "SetStaticClientBuffer failed!");
         AUDIO_INFO_LOG("SetStaticBuffer SUCCESS");
     } else {
         // create OHAudioBuffer in server.

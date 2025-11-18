@@ -1093,7 +1093,8 @@ struct BufferQueueState {
 
 enum AudioRenderMode {
     RENDER_MODE_NORMAL,
-    RENDER_MODE_CALLBACK
+    RENDER_MODE_CALLBACK,
+    RENDER_MODE_STATIC
 };
 
 enum AudioCaptureMode {
@@ -1286,6 +1287,37 @@ enum InnerCapMode : uint32_t {
     INVALID_CAP_MODE
 };
 
+struct StaticBufferInfo : public Parcelable {
+    int64_t preSetTotalLoopTimes_ = 0;
+    int64_t totalLoopTimes_ = 0;
+    int64_t currentLoopTimes_ = 0;
+    size_t curStaticDataPos_ = 0;
+    std::shared_ptr<AudioSharedMemory> sharedMemory_ = nullptr;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        parcel.WriteInt64(preSetTotalLoopTimes_);
+        parcel.WriteInt64(totalLoopTimes_);
+        parcel.WriteInt64(currentLoopTimes_);
+        parcel.WriteUint64(curStaticDataPos_);
+        return sharedMemory_->Marshalling(parcel);
+    }
+
+    static StaticBufferInfo *Unmarshalling(Parcel &parcel)
+    {
+        auto info = new(std::nothrow) StaticBufferInfo();
+        if (info == nullptr) {
+            return nullptr;
+        }
+        info->preSetTotalLoopTimes_ = parcel.ReadInt64();
+        info->totalLoopTimes_ = parcel.ReadInt64();
+        info->currentLoopTimes_ = parcel.ReadInt64();
+        info->curStaticDataPos_ = parcel.ReadUint64();
+        info->sharedMemory_ = std::shared_ptr<AudioSharedMemory>(AudioSharedMemory::Unmarshalling(parcel));
+        return info;
+    }
+};
+
 struct AudioProcessConfig : public Parcelable {
     int32_t callerUid = INVALID_UID;
 
@@ -1384,7 +1416,7 @@ struct AudioProcessConfig : public Parcelable {
 
         // StaticAudioRenderer
         if (rendererInfo.isStatic) {
-            staticBufferInfo->Marshalling(parcel);
+            staticBufferInfo.Marshalling(parcel);
         }
 
         return true;
@@ -1460,9 +1492,7 @@ struct AudioProcessConfig : public Parcelable {
 
         // Static Audiorenderer
         if (config->rendererInfo.isStatic) {
-            config->staticBufferInfo = StaticBufferInfo::Unmarshalling(parcel);
-        } else {
-            config->staticBufferInfo = nullptr;
+            config->staticBufferInfo = *StaticBufferInfo::Unmarshalling(parcel);
         }
 
         return config;
@@ -2101,33 +2131,12 @@ enum StaticBufferEventId : int32_t {
     LOOP_END_EVENT = 1
 };
 
-struct StaticBufferInfo : public Parcelable {
-    std::shared_ptr<AudioSharedMemory> sharedMemory_ = nullptr;
-    int64_t totalLoopTimes_ = 0;
-    int64_t currentLoopTimes_ = 0;
-    size_t curStaticDataPos_ = 0;
+class StaticBufferEventCallback {
+public:
+    virtual ~StaticBufferEventCallback() = default;
 
-    bool Marshalling(Parcel &parcel) const override
-    {
-        parcel.WriteInt64(totalLoopTimes_);
-        parcel.WriteInt64(currentLoopTimes_);
-        parcel.WriteUint64(curStaticDataPos_);
-        return sharedMemory->Marshalling(parcel);
-    }
-
-    static StaticBufferInfo *Unmarshalling(Parcel &parcel)
-    {
-        auto info = new(std::nothrow) StaticBufferInfo();
-        if (info == nullptr) {
-            return nullptr;
-        }
-        info->totalLoopTimes_ = parcel.ReadInt64();
-        info->currentLoopTimes_ = parcel.ReadInt64();
-        info->curStaticDataPos_ = parcel.ReadUint64();
-        info->sharedMemory_ = std::shared_ptr<AudioSharedMemory>(AudioSharedMemory::Unmarshalling(parcel));
-        return info;
-    }
-}
+    virtual void OnStaticBufferEvent(StaticBufferEventId eventId) = 0;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H

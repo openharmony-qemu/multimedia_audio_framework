@@ -318,10 +318,10 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
 
 std::shared_ptr<AudioRenderer> AudioRenderer::Create(const AudioRendererOptions &rendererOptions,
     std::shared_ptr<AudioSharedMemory> sharedMemory, std::shared_ptr<StaticBufferEventCallback> callback,
-    const AppInfo &appInfo = AppInfo())
+    const AppInfo &appInfo)
 {
-    CHECK_AND_RETURN_RET_LOG(sharedMemory != nullptr, ERR_INVALID_PARAM, "sharedMemory is null");
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback param is null");
+    CHECK_AND_RETURN_RET_LOG(sharedMemory != nullptr, nullptr, "sharedMemory is null");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, nullptr, "callback param is null");
     auto sharedRenderer = CreateStaticRenderer(rendererOptions, sharedMemory, callback, appInfo);
     CHECK_AND_RETURN_RET_LOG(sharedRenderer != nullptr, nullptr, "renderer is null");
     return sharedRenderer;
@@ -418,11 +418,9 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     return audioRenderer;
 }
 
-std::shared_ptr<AudioRenderer> AudioRenderer::CreateStaticRenderer(
-    const AudioRendererOptions &rendererOptions,
-    std::shared_ptr<AudioSharedMemory> sharedMemory,
-    std::shared_ptr<StaticBufferEventCallback> callback,
-    const AppInfo &appInfo = AppInfo())
+std::shared_ptr<AudioRenderer> AudioRenderer::CreateStaticRenderer( const AudioRendererOptions &rendererOptions,
+    std::shared_ptr<AudioSharedMemory> sharedMemory, std::shared_ptr<StaticBufferEventCallback> callback,
+    const AppInfo &appInfo)
 {
     Trace trace("KeyAction AudioRenderer::StaticCreate");
     std::lock_guard<std::mutex> lock(createRendererMutex_);
@@ -443,13 +441,14 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateStaticRenderer(
     }
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, nullptr, "Failed to create renderer object");
 
-    audioRenderer->SetStaticRendererBuffer(sharedMemory);
+    audioRenderer->rendererInfo_.isStatic = true;
+    audioRenderer->staticBufferInfo_.sharedMemory_ = sharedMemory;
     int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
     bool isVirtualKeyboard = audioRenderer->IsVirtualKeyboard(rendererFlags);
     rendererFlags = rendererFlags == AUDIO_FLAG_VKB_NORMAL ? AUDIO_FLAG_NORMAL : rendererFlags;
     rendererFlags = rendererFlags == AUDIO_FLAG_VKB_FAST ? AUDIO_FLAG_MMAP : rendererFlags;
     CHECK_AND_RETURN_RET_LOG(audioRenderer->IsRendererFlagsSupportStatic(rendererFlags),
-        nullptr, "rendererFlags not support!")
+        nullptr, "rendererFlags not support!");
 
     HILOG_COMM_INFO("StreamClientState for Renderer::StaticCreate. content: %{public}d, usage: %{public}d, "\
         "isOffloadAllowed: %{public}s, flags: %{public}d, uid: %{public}d, toneFlag: %{public}s",
@@ -466,11 +465,13 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateStaticRenderer(
     audioRenderer->HandleSetRendererInfoByOptions(rendererOptions, appInfo);
     AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
     if (audioRenderer->SetParams(params) != SUCCESS) {
-        AUDIO_ERR_LOG("SetParams failed in renderer");
         audioRenderer = nullptr;
         AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage, ERR_OPERATION_FAILED);
     }
-    CHECK_AND_RETURN_RET_LOG(audioRenderer->SetStaticBufferCallback(callback), nullptr, "SetStaticBufferCallback fail");
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, nullptr, "SetParams failed in renderer!");
+    audioRenderer->SetRenderMode(RENDER_MODE_STATIC);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer->SetStaticBufferCallback(callback) == SUCCESS,
+        nullptr, "SetStaticBufferCallback fail");
     return audioRenderer;
 }
 
@@ -607,7 +608,9 @@ int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParam
     SetAudioPrivacyTypeInner(rendererInfo_.privacyType);
     audioStream_->SetStreamTrackerState(false);
 
-    audioStream_->SetStaticBufferInfo(staticBufferInfo_);
+    if (rendererInfo_.isStatic) {
+        audioStream_->SetStaticBufferInfo(staticBufferInfo_);
+    }
     int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, rendererProxyObj_);
     CHECK_AND_RETURN_RET_LOG(!ret, ret, "SetParams SetAudioStreamInfo Failed");
 
@@ -642,10 +645,10 @@ void AudioRendererPrivate::SetAudioPrivacyType(AudioPrivacyType privacyType)
 
 int32_t AudioRendererPrivate::SetLoopTimes(int64_t bufferLoopTimes)
 {
-    CHECK_AND_RETURN_RET_LOG(IsStaticRenderer(), ERR_NOT_SUPPORTED, "Can only be set in staticAudioRenderer!");
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERR_NOT_SUPPORTED, "Can only be set in staticAudioRenderer!");
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERR_INVALID_OPERATION, "audioStream_ is nullptr");
-    currentStream->SetLoopTimes(bufferLoopTimes);
+    return currentStream->SetLoopTimes(bufferLoopTimes);
 }
 
 AudioPrivacyType AudioRendererPrivate::GetAudioPrivacyType()
@@ -1203,7 +1206,7 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
         int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
         CHECK_AND_RETURN_RET_LOG(ret == 0, false, "ActivateAudioInterrupt Failed");
     }
-    trace1.end();
+    trace1.End();
 
     if (IsNoStreamRenderer()) {
         // no stream renderer only need to activate audio interrupt
@@ -2178,6 +2181,9 @@ bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     audioStream->SetPrivacyType(info.privacyType);
     audioStream->SetRendererInfo(info.rendererInfo);
     audioStream->SetCapturerInfo(info.capturerInfo);
+    if (info.rendererInfo.isStatic) {
+        audioStream->SetStaticBufferInfo(info.staticBufferInfo);
+    }
     int32_t res = audioStream->SetAudioStreamInfo(info.params, rendererProxyObj_);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, false, "SetAudioStreamInfo failed");
     audioStream->SetDefaultOutputDevice(info.defaultOutputDevice, true);
@@ -3102,7 +3108,7 @@ int32_t AudioRendererPrivate::HandleCreateFastStreamError(AudioStreamParams &aud
     CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "Re-create normal stream failed.");
     ret = InitAudioStream(audioStreamParams);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitAudioStream failed");
-    audioStream_->SetRenderMode(RENDER_MODE_CALLBACK);
+    audioStream_->SetRenderMode(rendererInfo_.isStatic ? RENDER_MODE_STATIC : RENDER_MODE_CALLBACK);
     callbackLoopTid_ = audioStream_->GetCallbackLoopTid();
     audioStream_->NotifyRouteUpdate(flag, networkId);
     return ret;
@@ -3132,30 +3138,16 @@ bool AudioRendererPrivate::IsRendererFlagsSupportStatic(const int32_t rendererFl
         rendererFlags == AUDIO_FLAG_FORCED_NORMAL;
 }
 
-bool AudioRendererPrivate::IsStaticRenderer()
-{
-    return rendererInfo_.isStatic;
-}
-
-void AudioRendererPrivate::SetStaticRendererBuffer(std::shared_ptr<AudioSharedMemory> sharedMemory)
-{
-    rendererInfo_.isStatic = true;
-    staticBufferInfo_.sharedMemory_ = sharedMemory;
-}
-
+// inner function. Must be called with AudioRendererPrivate::createRendererMutex_ held.
 int32_t AudioRendererPrivate::SetStaticBufferCallback(std::shared_ptr<StaticBufferEventCallback> callback)
 {
-    std::shared_lock<std::shared_mutex> lockShared;
-    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
-        lockShared = std::shared_lock<std::shared_mutex>(rendererMutex_);
-    }
-    // If the client is using the deprecated SetParams API. SetRendererCallback must be invoked, after SetParams.
-    // In general, callbacks can only be set after the renderer state is PREPARED.
     RendererState state = GetStatusInner();
     CHECK_AND_RETURN_RET_LOG(state != RENDERER_NEW && state != RENDERER_RELEASED, ERR_ILLEGAL_STATE,
         "incorrect state:%{public}d to register cb", state);
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback param is null");
-    return audioStream_->SetStaticBufferEventCallback(callback) ;
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_NULL_POINTER, "audioStream_ is null");
+    audioStream_->SetStaticTriggerRecreateCallback([this]() {AsyncCheckAudioRenderer("StaticRecreate");});
+    return audioStream_->SetStaticBufferEventCallback(callback);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS
