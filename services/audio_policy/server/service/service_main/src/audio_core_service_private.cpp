@@ -1331,7 +1331,7 @@ void AudioCoreService::OnDeviceConfigurationChanged(DeviceType deviceType, const
 int32_t AudioCoreService::OnServiceConnected(AudioServiceIndex serviceIndex)
 {
     auto result = audioDeviceStatus_.OnServiceConnected(serviceIndex);
-    audioPolicyManager_.SetPrimarySinkExist(AudioPipeManager::HasPrimarySink());
+    audioPolicyManager_.SetPrimarySinkExist(pipeManager_->HasPrimarySink());
     return result;
 }
 
