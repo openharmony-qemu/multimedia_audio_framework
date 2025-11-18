@@ -137,7 +137,7 @@ void AudioPipeSelector::ProcessRendererAndCapturerConcurrency(std::shared_ptr<Au
 void AudioPipeSelector::FastStreamCount(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
     int32_t fastNum = 0;
-    for (auto streamDesc: streamDescs) {
+    for (auto streamDesc : streamDescs) {
         if (streamDesc->routeFlag_ != AUDIO_FLAG_MMAP) {
             continue;
         }
