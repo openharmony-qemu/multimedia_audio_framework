@@ -5,6 +5,7 @@
 #include "NodeManager.h"
 #include <hilog/log.h>
 #include <stack>
+#include <sstream>
 
 static const int GLOBAL_RESMGR = 0xFF00;
 static const char *TAG = "[AudioEditTestApp_AudioEdit_cpp]";
@@ -86,8 +87,8 @@ OH_AudioSuite_Result NodeManager::removeNode(const std::string &nodeId)
     Node node = nodes[nodeId];
     OH_AudioSuite_Result result;
 
-    // 调用服务端解连接和连接接口，解开该节点的前后连接，并连接前后节点
-    if (node.preNodeIds.empty() && node.nextNodeId, empty()) {
+    // Disconnect the old connection first, then connect the new node.
+    if (node.preNodeIds.empty() && node.nextNodeId.empty()) {
         result = OH_AudioSuiteEngine_DestroyNode(node.physicalNode);
     } else if (node.preNodeIds.empty()) {
         result = disconnect(node.id, node.nextNodeId);
@@ -95,7 +96,7 @@ OH_AudioSuite_Result NodeManager::removeNode(const std::string &nodeId)
             return result;
         }
         result = OH_AudioSuiteEngine_DestroyNode(node.physicalNode);
-    } else if (node.nextNodeId, empty()) {
+    } else if (node.nextNodeId.empty()) {
         result = disconnect(node.preNodeIds[0], node.id);
         if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
             return result;
@@ -108,7 +109,7 @@ OH_AudioSuite_Result NodeManager::removeNode(const std::string &nodeId)
         if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
             return result;
         }
-        result = OH_AudioSuiteEngine_DestroyNode(node.physicalNode)；
+        result = OH_AudioSuiteEngine_DestroyNode(node.physicalNode);
     }
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         return result;
@@ -164,7 +165,7 @@ OH_AudioSuite_Result NodeManager::connect(const std::string &fromId, const std::
         GLOBAL_RESMGR,
         TAG,
         "NodeManagerTest connect fromId toId: %{public}s %{public}s",
-        fromId.cstr(),
+        fromId.c_str(),
         toId.c_str());
     OH_AudioSuite_Result result;
     Node preNode = nodes[fromId];
@@ -185,7 +186,7 @@ OH_AudioSuite_Result NodeManager::connect(const std::string &fromId, const std::
         static_cast<int>(result));
     if (result == OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         nodes[toId].preNodeIds.push_back(fromId);
-        nodes[fromId], nextNodeId = toId;
+        nodes[fromId].nextNodeId = toId;
     }
     return result;
 }
@@ -396,9 +397,9 @@ OH_AudioSuite_Result NodeManager::insertBefore(
 }
 
 OH_AudioSuite_Result NodeManager::insertAfter(
-    const std::string &sourceNodeId, const std::string &targerNodeId, const Node &targetNode)
+    const std::string &sourceNodeId, const std::string &targetNodeId, const Node &targetNode)
 {
-    OH_AudioSuite_Result result = disconnect(targetNodeId, targetNodenextNodeId);
+    OH_AudioSuite_Result result = disconnect(targetNodeId, targetNode.nextNodeId);
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         return result;
     }
@@ -446,7 +447,7 @@ OH_AudioSuite_Result NodeManager::stopPipelineState()
 char *NodeManager::getNodeTypeName(OH_AudioNode_Type type)
 {
     switch (type) {
-        case OH_AudioNode_Type::INPUT_NOE_TYPE_DEFAULT:
+        case OH_AudioNode_Type::INPUT_NODE_TYPE_DEFAULT:
             return "inputNode";
         case OH_AudioNode_Type::EFFECT_NODE_TYPE_AUDIO_MIXER:
             return "mixerNode";
@@ -482,7 +483,7 @@ void NodeManager::GetPipeLineDetail()
         pipelineDetails += "[";
         for (auto it = currentNode.preNodeIds.rbegin(); it != currentNode.preNodeIds.rend(); ++it) {
             Node childNode = GetNodeById(*it);
-            const char *nodeType = getNodeTypeName(childNode.type);
+            char *nodeType = getNodeTypeName(childNode.type);
             pipelineDetails += nodeType;
             nodeStack.push(childNode);
         }

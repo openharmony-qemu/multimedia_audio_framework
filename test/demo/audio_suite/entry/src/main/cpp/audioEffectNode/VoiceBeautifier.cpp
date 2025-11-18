@@ -50,7 +50,7 @@ int AddVBEffectNode(std::string inputId, int mode, std::string voiceBeautifierId
     if (selectNodeId.empty()) {
         res = addEffectNodeToNodeManager(inputId, voiceBeautifierId);
     } else {
-        res = nodeManager->insertNode(voiceBeautifierId, selectNodeId, Direction::LATER);
+        res = g_nodeManager->insertNode(voiceBeautifierId, selectNodeId, Direction::LATER);
     }
     if (res != 0) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, VB_NODE_TAG,
@@ -72,7 +72,7 @@ int ModifyVBEffectNode(std::string inputId, int mode, std::string voiceBeautifie
     };
     OH_VoiceBeautifierType type = (mode < sizeof(TYPE_MAP) / sizeof(TYPE_MAP[0])) ? TYPE_MAP[mode] : TYPE_MAP[0];
  
-    Node node = nodeManager->GetNodeById(voiceBeautifierId);
+    Node node = g_nodeManager->GetNodeById(voiceBeautifierId);
     bool bypass = mode == 0;
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_BypassEffectNode(node.physicalNode, bypass);
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {

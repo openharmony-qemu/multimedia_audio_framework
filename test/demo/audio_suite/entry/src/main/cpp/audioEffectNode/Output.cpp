@@ -4,7 +4,7 @@
 
 #include "Output.h"
 #include "./Input.h"
-#include "../utils/Utils.h"
+#include "../utils/utils.h"
 #include "hilog/log.h"
 
 const int GLOBAL_RESMGR = 0xFF00;
