@@ -47,7 +47,7 @@ class AudioServiceHpaeDumpCallback {
 public:
     virtual void OnDumpSinkInfoCb(std::string& dumpStr, int32_t result) = 0;
     virtual void OnDumpSourceInfoCb(std::string &dumpStr, int32_t result) = 0;
-    virtual void OnDumpAllAvailableDeviceCb(int32_t result) = 0;
+    virtual void OnDumpAllAvailableDeviceCb(int32_t result, HpaeDeviceInfo &&devicesInfo) = 0;
     virtual void OnDumpSinkInputsInfoCb(std::vector<HpaeInputOutputInfo> &sinkInputs, int32_t result) = 0;
     virtual void OnDumpSourceOutputsInfoCb(std::vector<HpaeInputOutputInfo> &sourceOutputs, int32_t result) = 0;
     virtual ~AudioServiceHpaeDumpCallback()

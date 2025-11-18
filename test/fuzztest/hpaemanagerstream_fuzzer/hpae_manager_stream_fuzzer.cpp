@@ -405,8 +405,8 @@ void HpaeManagerFuzzTest::DumpFuzzTest()
     hpaeManager_->DumpSinkInfo(sinkName);
     std::string sourceName = sourceNameList_[GetData<uint32_t>() % sourceNameList_.size()];
     hpaeManager_->DumpSourceInfo(sourceName);
-    HpaeDeviceInfo devicesInfo_;
-    hpaeManager_->DumpAllAvailableDevice(devicesInfo_);
+    // HpaeDeviceInfo devicesInfo_;
+    hpaeManager_->DumpAllAvailableDevice();
     hpaeManager_->DumpSourceInfo(sourceName);
     bool mute = GetData<bool>();
     bool isSync = GetData<bool>();

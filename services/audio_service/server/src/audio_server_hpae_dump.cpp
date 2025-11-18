@@ -69,12 +69,11 @@ void AudioServerHpaeDump::ServerDataDump(string &dumpString)
 
 void AudioServerHpaeDump::GetDeviceSinkInfo(std::string &dumpString, std::string deviceName)
 {
-    lock_guard<mutex> lock(lock_);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_INFO_LOG("GetDeviceSinkInfo %{public}s start.", deviceName.c_str());
     isFinishGetSinkInfo_ = false;
-    IHpaeManager::GetHpaeManager().DumpSinkInfo(deviceName);
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     dumpHpaeSinkInfo_.clear();
+    IHpaeManager::GetHpaeManager().DumpSinkInfo(deviceName);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishGetSinkInfo_;  // will be true when got notified.
     });
@@ -110,12 +109,11 @@ void AudioServerHpaeDump::OnDumpSinkInfoCb(std::string &dumpStr, int32_t result)
 
 void AudioServerHpaeDump::GetDeviceSourceInfo(std::string &dumpString, std::string deviceName)
 {
-    lock_guard<mutex> lock(lock_);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_INFO_LOG("GetDeviceSourceInfo %{public}s start.", deviceName.c_str());
     isFinishGetSourceInfo_ = false;
-    IHpaeManager::GetHpaeManager().DumpSourceInfo(deviceName);
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     dumpHpaeSourceInfo_.clear();
+    IHpaeManager::GetHpaeManager().DumpSourceInfo(deviceName);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishGetSourceInfo_;  // will be true when got notified.
     });
@@ -192,7 +190,6 @@ int32_t AudioServerHpaeDump::Initialize()
 
 void AudioServerHpaeDump::HDFModulesDump(std::string &dumpString)
 {
-    lock_guard<mutex> lock(lock_);
     dumpHdfModulesInfo_ += "\nHDF Input Modules\n";
     AppendFormat(dumpHdfModulesInfo_, "- %zu HDF Input Modules (s) available:\n", devicesInfo_.sourceInfos.size());
 
@@ -219,11 +216,10 @@ void AudioServerHpaeDump::HDFModulesDump(std::string &dumpString)
 
 bool AudioServerHpaeDump::GetDevicesInfo()
 {
-    lock_guard<mutex> lock(lock_);
-    IHpaeManager::GetHpaeManager().DumpAllAvailableDevice(devicesInfo_);
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishGetHdfModulesInfo_ = false;
     dumpHdfModulesInfo_.clear();
+    IHpaeManager::GetHpaeManager().DumpAllAvailableDevice();
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishGetHdfModulesInfo_;  // will be true when got notified.
     });
@@ -231,10 +227,11 @@ bool AudioServerHpaeDump::GetDevicesInfo()
     return true;
 }
 
-void AudioServerHpaeDump::OnDumpAllAvailableDeviceCb(int32_t result)
+void AudioServerHpaeDump::OnDumpAllAvailableDeviceCb(int32_t result, HpaeDeviceInfo &&devicesInfo)
 {
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishGetHdfModulesInfo_ = true;
+    devicesInfo_ = std::move(devicesInfo);
     AUDIO_INFO_LOG(
         "sink count %{public}zu, source count %{public}zu, result %{public}d",
         devicesInfo_.sinkInfos.size(), devicesInfo_.sourceInfos.size(), result);
@@ -290,12 +287,11 @@ void AudioServerHpaeDump::HdiAdapterDump(std::string &dumpString)
 
 void AudioServerHpaeDump::PlaybackSinkInputDump(std::string &dumpString)
 {
-    lock_guard<mutex> lock(lock_);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_INFO_LOG("get sinkinputs dump info");
     isFinishGetStreamInfo_ = false;
     dumpSinkInputsInfo_.clear();
     IHpaeManager::GetHpaeManager().DumpSinkInputsInfo();
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
 
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishGetStreamInfo_;  // will be true when got notified.
@@ -310,12 +306,11 @@ void AudioServerHpaeDump::PlaybackSinkInputDump(std::string &dumpString)
 
 void AudioServerHpaeDump::RecordSourceOutputDump(std::string &dumpString)
 {
-    lock_guard<mutex> lock(lock_);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_INFO_LOG("get sourceoutputs dump info");
     isFinishGetStreamInfo_ = false;
     dumpSourceOutputsInfo_.clear();
     IHpaeManager::GetHpaeManager().DumpSourceOutputsInfo();
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
 
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishGetStreamInfo_;  // will be true when got notified.
