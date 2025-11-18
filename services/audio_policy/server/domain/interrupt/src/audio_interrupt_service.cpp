@@ -39,7 +39,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-
 constexpr uint32_t BOOTUP_MUSIC_UID = 1003;
 constexpr uint32_t MEDIA_SA_UID = 1013;
 constexpr uint32_t THP_EXTRA_SA_UID = 5000;
