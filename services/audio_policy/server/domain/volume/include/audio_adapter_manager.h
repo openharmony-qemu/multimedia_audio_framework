@@ -461,6 +461,7 @@ private:
         AudioStreamType streamType);
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType,
         std::shared_ptr<AudioDeviceDescriptor> desc);
+    void SetPrimarySinkExist(bool isPrimarySinkExist);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
@@ -515,6 +516,7 @@ private:
     VolumeDataMaintainer volumeDataMaintainer_;
     AudioActiveDevice &audioActiveDevice_;
     AudioConnectedDevice &audioConnectedDevice_;
+    std::atomic<bool> isPrimarySinkExist_ {true};
 
     bool isVolumeUnadjustable_ = false;
     bool testModeOn_ {false};
