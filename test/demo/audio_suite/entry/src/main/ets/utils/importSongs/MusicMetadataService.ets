@@ -18,10 +18,10 @@ export class MusicMetadataService {
     // 使用 fs 文件系统打开沙箱地址获取媒体文件地址， 设置 fdSrc 属性， 获取音频元数据并打印，
     // 获取音频专辑封面并通过 Image 控件显示在屏幕上。
     async fetchMetadata(uri: string): Promise<MusicMetadata> {
-        let avMetadataExtractor: media.avMetadataExtractor | null = null;
+        let avMetadataExtractor: media.AVMetadataExtractor | null = null;
         let pixelMap: PixelMap | undefined = undefined;
         let metadata: media.AVMetadata | undefined = undefined;
-        if (canIUse('SystemCapability.Multimedia.Media.avMetadataExtractor')) {
+        if (canIUse('SystemCapability.Multimedia.Media.AVMetadataExtractor')) {
             try { // 创建 AVMetadataExtractor 对象
                 avMetadataExtractor = await media.createAVMetadataExtractor();
                 // 设置fdSrc

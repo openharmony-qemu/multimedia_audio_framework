@@ -3,14 +3,14 @@
  */
 
 export interface SongInfo {
-    uri?: string;
+    uri: string;
     songName?: string | Resource;
     songType?: string;
     nodes?: Array<Node>;
     nodeId?: string;
     duration?: number;
     singerName?: string | Resource;
-    albumCover?: pixelMap;
+    albumCover?: PixelMap;
     albumName?: string | Resource;
     wavBuffer?: ArrayBuffer;
     channels?: number;
@@ -28,7 +28,7 @@ export interface Node {
     soundFiledType?: SoundFiledType;
     environmentType?: EnvironmentType;
     voiceBeautifierType?: VoiceBeautifierType;
-    audioSeparationType?: audioSeparationType;
+    audioSeparationType?: AudioSeparationType;
 }
 
 export enum BackColor {
@@ -47,9 +47,9 @@ export enum NodeType {
     'EQ' = '均衡',
     'FIELD' = '声场',
     'ENV' = '环境',
-    'SEPARATION' = '分离';
+    'SEPARATION' = '分离',
     'VOICE' = '人声',
-    'ACCOMPANIMENT' = '伴奏'，
+    'ACCOMPANIMENT' = '伴奏',
     'NR' = '降噪',
     'INPUT' = '输入',
     'OUTPUT' = '输出',
@@ -135,11 +135,11 @@ export enum EnvironmentType {
     ENVIRONMENT_TYPE_GRAMOPHONE = 5,
 }
 
-export const EnvironmentType = new Map<EnvironmentType | undefined, string>([
+export const EnvironmentMap = new Map<EnvironmentType | undefined, string>([
     [EnvironmentType.ENVIRONMENT_TYPE_CLOSE, '无'],
     [EnvironmentType.ENVIRONMENT_TYPE_BROADCAST, '广播'],
     [EnvironmentType.ENVIRONMENT_TYPE_EARPIECE, '听筒'],
-    [EnvironmentType.ENVIRONMENT_TYPE_UNDERWATER, '水下']，
+    [EnvironmentType.ENVIRONMENT_TYPE_UNDERWATER, '水下'],
     [EnvironmentType.ENVIRONMENT_TYPE_GRAMOPHONE, '留声机']
 ])
 
@@ -205,7 +205,7 @@ export const AudioSeparationMap = new Map<AudioSeparationType | undefined, strin
 ])
 
 // 定义映射表：数字 -> NodeType
-export const numberToNodeTypeMap = new Map<number, NodeType>([
+export const NumberToNodeTypeMap = new Map<number, NodeType>([
   [201, NodeType.EQ],
   [202, NodeType.NR],
   [203, NodeType.FIELD],

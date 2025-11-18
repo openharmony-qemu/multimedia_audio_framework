@@ -2,7 +2,7 @@
  * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. All rights reserved.
  */
 import { StyleConst } from "../utils/StyleConst";
-import { Node, NodeType, colorMap, SongInfo } from "../utils/importSongs/InterfaceInfo";
+import { Node, NodeType, ColorMap, SongInfo } from "../utils/importSongs/InterfaceInfo";
 import { Logger } from '../utils/Logger';
 import audioNapi from 'libentry.so';
 import { importSingleSong } from '../utils/importSongs/ImportSongs';
@@ -44,12 +44,12 @@ export struct MixingConsole {
     @State mixerNode: Node = {
         id: util.generateRandomUUID(true),
         type: NodeType.MIXER,
-        color: colorMap[NodeType.MIXER]
+        color: ColorMap[NodeType.MIXER]
     }
     @State outputNode: Node = {
         id: util.generateRandomUUID(true),
         type: NodeType.OUTPUT,
-        color: colorMap[NodeType.OUTPUT]
+        color: ColorMap[NodeType.OUTPUT]
     }
     // 是否播放
     @State isPlay: boolean = false;
@@ -269,7 +269,7 @@ export struct MixingConsole {
                                             let inputInfo: Node = {
                                                 id: inputId,
                                                 type: NodeType.INPUT,
-                                                color: colorMap.get(NodeType.INPUT)
+                                                color: ColorMap.get(NodeType.INPUT)
                                             }
                                             let nodesArray: Array<Node> = [];
                                             nodesArray.push(inputInfo);
@@ -406,7 +406,7 @@ export struct MixingConsole {
                         let inputInfo: Node = {
                             id: nodeId,
                             type: NodeType.INPUT,
-                            color: colorMap.get(NodeType.INPUT)
+                            color: ColorMap.get(NodeType.INPUT)
                         }
                         if(nodesArray.length > 0){
                             nodesArray[0] = inputInfo
@@ -459,7 +459,7 @@ export struct MixingConsole {
                     .width("15%")
                     .margin({right: $r('app.float.margin_5')})
                     .textAlign(TextAlign.Center)
-                    .backgroundColor(colorMap.get(type))
+                    .backgroundColor(ColorMap.get(type))
                     .fontSize($r('app.float.font_size_10'))
                     .maxLines(1)
                     .textOverflow({ overflow: TextOverflow.Ellipsis })
@@ -471,7 +471,7 @@ export struct MixingConsole {
                 .width("10%")
                 .margin({right: $r('app.float.margin_5')})
                 .textAlign(TextAlign.Center)
-                .backgroundColor(colorMap.get(type))
+                .backgroundColor(ColorMap.get(type))
                 .borderRadius(5)
         }   else{
             Text("+")

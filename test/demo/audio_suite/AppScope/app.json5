@@ -1,6 +1,6 @@
 {
   "app": {
-    "bundleName": "com.example.audio_suite",
+    "bundleName": "src.main.audiodemo",
     "vendor": "example",
     "versionCode": 1000000,
     "versionName": "1.0.0",

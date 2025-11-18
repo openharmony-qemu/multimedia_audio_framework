@@ -7,7 +7,7 @@
  
 #include <string>
 #include "napi/native_api.h"
-#include "./utils/utils.h"
+#include "./utils/Utils.h"
  
 class VoiceBeautifier {};
 

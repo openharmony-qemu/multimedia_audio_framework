@@ -6,6 +6,7 @@
 #define AUDIOEDITTESTAPP_UTILS_H
 
 #include <string>
+#include "audioSuiteError/AudioSuiteError.h"
 #include "napi/native_api.h"
 #include "ohaudio/native_audio_suite_base.h"
 #include "ohaudio/native_audiostream_base.h"
@@ -40,6 +41,20 @@ enum DemoChannels {
     DEMO_CHANNELS_2 = 2,
 };
 
+struct FieldEffectParams {
+    std::string inputId;
+    unsigned int mode = 0;
+    std::string fieldEffectId;
+    std::string selectedNodeId;
+};
+
+struct FieldEffectParams {
+    std::string inputId;
+    unsigned int mode = 0;
+    std::string fieldEffectId;
+    std::string selectedNodeId;
+};
+
 napi_status ParseNapiString(napi_env env, napi_value value, std::string &result);
 
 void GetBitsPerSampleAndStreamFormat(const OH_AudioFormat& g_audioFormatOutput,
@@ -59,4 +74,9 @@ void ConvertBitsPerSample(unsigned int& bitsPerSample);
 
 int32_t GetBitsPerSample(OH_Audio_SampleFormat sampleFormat);
 
+OH_EnvironmentType GetEnvEnumByNumber(int num);
+
+napi_value ReturnResult(napi_env env, AudioSuiteResult result);
+
+void freeBuffer(void *buffer);
 #endif //#define AUDIOEDITTESTAPP_UTILS_H

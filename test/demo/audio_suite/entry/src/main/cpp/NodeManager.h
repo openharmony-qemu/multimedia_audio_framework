@@ -48,9 +48,6 @@ public:
     // 连接两个节点
     OH_AudioSuite_Result connect(const std::string &fromId, const std::string &toId);
 
-    // 连接两个节点的任意端口
-    OH_AudioSuite_Result connectByPort(const std::string &fromId, const std::string &toId);
-
     // 断开两个节点的连接
     OH_AudioSuite_Result disconnect(const std::string &fromId, const std::string &toId);
 

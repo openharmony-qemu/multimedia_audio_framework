@@ -4,7 +4,7 @@
 
 #include "hilog/log.h"
 #include "Equailizer.h"
-#include "./utils/utils.h"
+#include "./utils/Utils.h"
 #include "./EffectNode.h"
 
 const int GLOBAL_RESMGR = 0xFF00;

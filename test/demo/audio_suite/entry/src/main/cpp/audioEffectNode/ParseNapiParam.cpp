@@ -5,7 +5,7 @@
 #include "ParseNapiParam.h"
 
 // 解析 napi 字符串参数
-napi_status parseNapiString(napi_env env, napi_value value, std::string &result)
+napi_status ParseNapiString(napi_env env, napi_value value, std::string &result)
 {
     size_t size;
     napi_status status = napi_get_value_string_utf8(env, value, nullptr, 0, &size);

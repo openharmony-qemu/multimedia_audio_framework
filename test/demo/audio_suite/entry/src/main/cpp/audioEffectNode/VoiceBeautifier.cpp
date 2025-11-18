@@ -29,7 +29,7 @@ int AddVBEffectNode(std::string inputId, int mode, std::string voiceBeautifierId
         OH_VoiceBeautifierType::VOICE_BEAUTIFIER_TYPE_RECORDING_STUDIO
     };
     OH_VoiceBeautifierType type = (mode < sizeof(TYPE_MAP) / sizeof(TYPE_MAP[0])) ? TYPE_MAP[mode] : TYPE_MAP[0];
-    Node node = createNodeByType(voiceBeautifierId, OH_AudioNode_Type::EFFECT_NODE_TYPE_VOICE_BEAUTIFIER);
+    Node node = CreateNodeByType(voiceBeautifierId, OH_AudioNode_Type::EFFECT_NODE_TYPE_VOICE_BEAUTIFIER);
     bool bypass = mode == 0;
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_BypassEffectNode(node.physicalNode, bypass);
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
@@ -48,13 +48,13 @@ int AddVBEffectNode(std::string inputId, int mode, std::string voiceBeautifierId
     }
     int res = -1;
     if (selectNodeId.empty()) {
-        res = addEffectNodeToNodeManager(inputId, voiceBeautifierId);
+        res = AddEffectNodeToNodeManager(inputId, voiceBeautifierId);
     } else {
         res = g_nodeManager->insertNode(voiceBeautifierId, selectNodeId, Direction::LATER);
     }
     if (res != 0) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, VB_NODE_TAG,
-                     "audioEditTest---startVBEffect addEffectNodeToNodeManager ERROR!");
+                     "audioEditTest---startVBEffect AddEffectNodeToNodeManager ERROR!");
         return res;
     }
  
@@ -97,9 +97,9 @@ int ModifyVBEffectNode(std::string inputId, int mode, std::string voiceBeautifie
 napi_status getResetVBParameters(napi_env env, napi_value *argv, std::string &inputId, int &mode,
                                  std::string &voiceBeautifierId)
 {
-    napi_status status = parseNapiString(env, argv[ARG_0], inputId);
+    napi_status status = ParseNapiString(env, argv[ARG_0], inputId);
     status = napi_get_value_int32(env, argv[ARG_1], &mode);
-    status = parseNapiString(env, argv[ARG_2], voiceBeautifierId);
+    status = ParseNapiString(env, argv[ARG_2], voiceBeautifierId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, VB_NODE_TAG,
                  "audioEditTest resetVBEffect inputId: %{public}s, mode: %{public}d, voiceBeautifierId: %{public}s",
                  inputId.c_str(), mode, voiceBeautifierId.c_str());

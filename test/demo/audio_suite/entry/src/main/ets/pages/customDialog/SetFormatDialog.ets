@@ -94,7 +94,7 @@ export struct SetFormatDialog {
                         wrap: FlexWrap.Wrap
                     }) {
 
-                        Foreach(this.sampleRates, (item: number) => {
+                        ForEach(this.sampleRates, (item: number) => {
                             Row() {
                                 this.createRadio({
                                     value: `${item}`,
@@ -159,7 +159,7 @@ export struct SetFormatDialog {
                         alignItems: ItemAlign.Center,
                         wrap: FlexWrap.Wrap
                     }) {
-                        Foreach(this.bitsPerSamples, (item: number) => {
+                        ForEach(this.bitsPerSamples, (item: number) => {
                             Row() {
                                 this.createRadio({
                                     value: `${item}`,
@@ -190,13 +190,13 @@ export struct SetFormatDialog {
                 }
                 .alignItems(HorizontalAlign.Start)
                 .margin({
-                    bottom: $r('app.float.margin_10')
-                    left: $r('app.float.margin_10')
+                    bottom: $r('app.float.margin_10'),
+                    left: $r('app.float.margin_10'),
                     right: $r('app.float.margin_10')
                 })
 
                 Column() {
-                    Button($r('app.float.save_audio_format'))
+                    Button($r('app.string.save_audio_format'))
                         .opacity(this.nodeList.size === 0 ? 0.2 : 1.0)
                         .onClick(() => {
                             if (this.nodeList.size === 0) {
@@ -231,14 +231,12 @@ export struct SetFormatDialog {
         .margin({ right: 10 })
         .checked(param.isChecked)
         .radioStyle({
-            //checkedBackgroundColor: $r('app.color.index_audio_clip_card),
         })
         .onChange((isChecked: boolean) => {
             if (isChecked) {
                 param.onChange();
             }
         })
-        Text(param.label).margin({ right: '20vp }).fontSize(14)
-        // .fontColor($r('app.color.index_title_text_color))
+        Text(param.label).margin({ right: '20vp' }).fontSize(14)
     }
 }
