@@ -43,6 +43,7 @@
 #include "/utils/Constant.h"
 #include "./utils/utils.h"
 #include "realTimePlay/RealTimePlaying.h"
+#include "audioSuiteError/AudioSuiteError.h"
 
 #include <multimedia/player_framework/native_avdemuxer.h>
 #include <multimedia/player_framework/native_avsource.h>
@@ -519,9 +520,12 @@ static napi_status ParseFieldEffectParams(napi_env env, napi_callback_info info,
     status = parseNapiString(env, argv[ARG_3], params.fieldEffectId);
     status = parseNapiString(env, argv[ARG_4], params.selectedNodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-    "audioEditTest FieldEffect inputId==%{public}s, mode==%{public}zd, " \ 
-    "fieldEffectId==%{public}s, selectedNodeId==%{public}s",
-    params.inputId.c_str(), params.mode, params.fieldEffectId.c_str(), params.selectedNodeId.c_str());
+    "audioEditTest FieldEffect inputId==%{public}s mode==%{public}zd, " \
+    "fieldEffectId==%{public}s, selectedNodeId==%{public}s", \
+    params.inputId.c_str(),
+    params.mode,
+    params.fieldEffectId.c_str(),
+    params.selectedNodeId.c_str());
     return status;
 }
 
@@ -878,7 +882,6 @@ EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
         {"getAudioOfTap", nullptr, getAudioOfTap, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"startEnvEffect", nullptr, startEnvEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"resetEnvEffect", nullptr, resetEnvEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"compareTwoFilesBinary", nullptr, compareTwoFilesBinary, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"deleteNode", nullptr, DeleteNode, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"registerAudioFormatCallback", nullptr, RegisterAudioFormatCallback, nullptr, nullptr, nullptr,
             napi_default, nullptr},

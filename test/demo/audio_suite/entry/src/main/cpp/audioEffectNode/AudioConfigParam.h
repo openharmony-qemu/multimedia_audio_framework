@@ -9,13 +9,6 @@
 #include "ohaudio/native_audio_suite_base.h"
 #include "ohaudio/native_audio_suite_engine.h"
 
-enum class SampleFormat {
-    AUDIO_SAMPLE_U8 = 8,
-    AUDIO_SAMPLE_S16LE = 16,
-    AUDIO_SAMPLE_S24LE = 24,
-    AUDIO_SAMPLE_S32LE = 64,
-    AUDIO_SAMPLE_F32LE = 32
-};
 
 enum class AudioChannelLayout {
     CH_LAYOUT_MONO = 1,
