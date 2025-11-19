@@ -68,8 +68,6 @@ private:
 
     size_t totalBytesRead_ = 0;
 
-    FILE *capturerServerDumpFile_ = nullptr;
-
     // Only for debug
     int32_t abortFlag_ = 0;
 
