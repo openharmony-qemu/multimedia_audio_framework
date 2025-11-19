@@ -324,17 +324,6 @@ void AudioVolumeMoreFuzzTest()
     GetServerPtr()->AdjustSystemVolumeByStep(streamType, adjustType);
     GetServerPtr()->GetSystemVolumeInDb(streamType, volume, deviceType);
     GetServerPtr()->GetSelectedDeviceInfo(uid, pid, streamType);
-
-    AudioRendererInfo rendererInfo = getAudioRenderInfo();
-    GetServerPtr()->GetPreferredOutputStreamType(rendererInfo);
-
-    SourceType sourceType = GetData<SourceType>();
-    int32_t capturerFlags = GetData<int32_t>();
-    AudioCapturerInfo capturerInfo = {
-        sourceType,
-        capturerFlags
-    };
-    GetServerPtr()->GetPreferredInputStreamType(capturerInfo);
 }
 
 void AudioDeviceMoreFuzzTest()
