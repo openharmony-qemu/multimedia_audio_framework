@@ -275,23 +275,6 @@ int32_t AudioCapturerPrivate::GetFrameCount(uint32_t &frameCount) const
     return currentStream->GetFrameCount(frameCount);
 }
 
-IAudioStream::StreamClass AudioCapturerPrivate::GetPreferredStreamClass(AudioStreamParams audioStreamParams)
-{
-    int32_t flag = AudioPolicyManager::GetInstance().GetPreferredInputStreamType(capturerInfo_);
-    AUDIO_INFO_LOG("Preferred capturer flag: %{public}d", flag);
-    if (flag == AUDIO_FLAG_MMAP && IAudioStream::IsStreamSupported(capturerInfo_.originalFlag, audioStreamParams)) {
-        capturerInfo_.capturerFlags = AUDIO_FLAG_MMAP;
-        return IAudioStream::FAST_STREAM;
-    }
-    if (flag == AUDIO_FLAG_VOIP_FAST) {
-        // It is not possible to directly create a fast VoIP stream
-        isFastVoipSupported_ = true;
-    }
-
-    capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
-    return IAudioStream::PA_STREAM;
-}
-
 int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 {
     Trace trace("AudioCapturer::SetParams");
@@ -301,7 +284,6 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
         lockShared = std::shared_lock<std::shared_mutex>(capturerMutex_);
     }
     AudioStreamParams audioStreamParams = ConvertToAudioStreamParams(params);
-    IAudioStream::StreamClass streamClass = SetCaptureInfo(audioStreamParams);
 
     // Create Client
     std::shared_ptr<AudioStreamDescriptor> streamDesc = ConvertToStreamDescriptor(audioStreamParams);
@@ -315,7 +297,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     HILOG_COMM_INFO("StreamClientState for Capturer::CreateClient. id %{public}u, flag :%{public}u",
         audioStreamParams.originalSessionId, flag);
 
-    streamClass = DecideStreamClassAndUpdateCapturerInfo(flag);
+    IAudioStream::streamClass = DecideStreamClassAndUpdateCapturerInfo(flag);
     // check AudioStreamParams for fast stream
     if (audioStream_ == nullptr) {
         audioStream_ = IAudioStream::GetRecordStream(streamClass, audioStreamParams, audioStreamType_,
@@ -352,13 +334,9 @@ IAudioStream::StreamClass AudioCapturerPrivate::SetCaptureInfo(AudioStreamParams
 {
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
     if (capturerInfo_.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
-#ifdef SUPPORT_LOW_LATENCY
-        streamClass = GetPreferredStreamClass(audioStreamParams);
-#else
         capturerInfo_.originalFlag = AUDIO_FLAG_FORCED_NORMAL;
         capturerInfo_.capturerFlags = AUDIO_FLAG_NORMAL;
         streamClass = IAudioStream::PA_STREAM;
-#endif
     }
     return streamClass;
 }
