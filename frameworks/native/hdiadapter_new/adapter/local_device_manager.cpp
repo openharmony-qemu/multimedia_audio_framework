@@ -113,7 +113,7 @@ void LocalDeviceManager::AllAdapterSetMicMute(bool isMute)
     }
 }
 
-void LocalDeviceManager::ReprotBundleNameEvent(const std::string &value)
+void LocalDeviceManager::ReportBundleNameEvent(const std::string &value)
 {
     std::unordered_set<std::string> muteType = {"output_mute", "input_mute", "mute_tts", "mute_call", "ouput_mute_ex"};
     size_t equalPos = value.find('=');
@@ -139,7 +139,7 @@ int32_t LocalDeviceManager::SetAudioParameter(const std::string &adapterName, co
     Trace trace("LocalDeviceManager::SetAudioParameter" + std::to_string(key));
     AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
 
-    ReprotBundleNameEvent(value);
+    ReportBundleNameEvent(value);
     std::shared_ptr<LocalAdapterWrapper> wrapper = GetAdapter(adapterName);
     // LCOV_EXCL_START
     if (wrapper == nullptr || wrapper->adapter_ == nullptr) {
