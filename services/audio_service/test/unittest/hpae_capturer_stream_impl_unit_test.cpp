@@ -309,7 +309,6 @@ HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_012, TestSize.Level1)
 HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_013, TestSize.Level1)
 {
     auto capturerStreamImplRet = CreateHpaeCapturerStreamImpl();
-    capturerStreamImplRet->capturerServerDumpFile_ = fopen("/data/data/.pulse_dir/capturer_impl.pcm", "wb+");
     size_t length = 1;
     capturerStreamImplRet->DequeueBuffer(length);
     EXPECT_EQ(capturerStreamImplRet != nullptr, true);
