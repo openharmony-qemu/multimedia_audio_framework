@@ -27,7 +27,7 @@
 #include "audio_engine_manager.h"
 #include "none_mix_engine.h"
 #include "audio_utils.h"
-#include "core_service_hander.h"
+#include "core_service_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
