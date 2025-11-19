@@ -15,6 +15,14 @@
     {
       "name": "main_backgroundColor",
       "value": "#000000"
+    },
+    {
+      "name": "mixing_console_backgroundColor",
+      "value": "#333"
+    },
+    {
+      "name": "mixing_console_mask_color",
+      "value": "#999"
     }
   ]
 }

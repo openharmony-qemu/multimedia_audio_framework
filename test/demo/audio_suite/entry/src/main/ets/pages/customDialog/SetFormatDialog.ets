@@ -53,7 +53,7 @@ export struct SetFormatDialog {
                     Column() {
                         Text('音频格式')
                             .fontWeight(FontWeight.Bold)
-                        // .fontColor($r('app.color.index_title_text_color))
+                            .fontColor(Color.White)
                     }
                     .margin({ top: $r('app.float.margin_10') })
 
@@ -113,7 +113,7 @@ export struct SetFormatDialog {
                     Column() {
                         Text('声道')
                             .fontWeight(FontWeight.Bold)
-                        // .fontColor($r('app.color.index_title_text_color))
+                            .fontColor(Color.White)
                     }.margin({ bottom: $r('app.float.margin_10') })
 
                     Flex({
@@ -150,7 +150,7 @@ export struct SetFormatDialog {
                     Column() {
                         Text('位深')
                             .fontWeight(FontWeight.Bold)
-                        // .fontColor($r('app.color.index_title_text_color))
+                            .fontColor(Color.White)
                     }.margin({ bottom: $r('app.float.margin_10') })
 
                     Flex({
@@ -179,9 +179,9 @@ export struct SetFormatDialog {
                             .margin({ right: '20vp' })
                             .margin({ bottom: $r('app.float.margin_10') })
                             .fontWeight(FontWeight.Bold)
-                        // .fontColor($r('app.color.index_title_text_color))
+                            .fontColor(Color.White)
                         TextInput({ text: this.newAudioFileName, placeholder: '输入保存的音频文件名' })
-                        // .backgroundColor($r('app.color.index_title_text_color))
+                            .backgroundColor(Color.White)
                             .onChange((value: string) => {
                                 this.newAudioFileName = value;
                             })
@@ -198,6 +198,7 @@ export struct SetFormatDialog {
                 Column() {
                     Button($r('app.string.save_audio_format'))
                         .opacity(this.nodeList.size === 0 ? 0.2 : 1.0)
+                        .backgroundColor($r('app.color.index_audio_clip_card'))
                         .onClick(() => {
                             if (this.nodeList.size === 0) {
                                 this.getUIContext().showAlertDialog({
@@ -214,6 +215,7 @@ export struct SetFormatDialog {
                 .margin({ bottom: $r('app.float.margin_10') })
             }
             .padding({ top: $r('app.float.margin_10'), left: $r('app.float.margin_10'), right: $r('app.float.margin_10') })
+            .backgroundColor($r('app.color.main_backgroundColor'))
         }
         .edgeEffect(EdgeEffect.Spring)
 
@@ -238,5 +240,6 @@ export struct SetFormatDialog {
             }
         })
         Text(param.label).margin({ right: '20vp' }).fontSize(14)
+            .fontColor(Color.White)
     }
 }

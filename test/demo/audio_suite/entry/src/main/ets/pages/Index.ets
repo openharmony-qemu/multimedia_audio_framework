@@ -6,6 +6,7 @@ import { Logger } from '../utils/Logger';
 import { StyleConst } from '../utils/StyleConst';
 import window from '@ohos.window';
 import { BusinessError } from '@kit.BasicServicesKit';
+import { display } from '@kit.ArkUI';
 
 const TAG: string = 'AudioEditTestApp_Index';
 
@@ -22,8 +23,18 @@ class TitleTextModifier implements AttributeModifier<TextAttribute> {
 struct Index {
   @Provide('pageInfos') papageInfos: NavPathStack = new NavPathStack()
 
+  // 判断是否是横屏
+  @StorageLink('isHorizontalScreen') isHorizontalScreen: boolean = false;
+
   aboutToAppear(): void {
     this.setSystemBarProperties();
+    // 监听屏幕横竖屏切换
+    display.on('change', () => {
+      this.isHorizontalScreen =
+        (display.getDefaultDisplaySync().orientation === display.Orientation.PORTRAIT ||
+          display.getDefaultDisplaySync().orientation === display.Orientation.PORTRAIT_INVERTED) ?
+          false : true;
+    })
   }
 
   // 设置状态栏的背景色
@@ -88,7 +99,7 @@ struct Index {
         })
         .border({ radius: $r('app.float.border_16') })
         .backgroundColor($r('app.color.index_audio_clip_card'))
-        .margin({bottom:'5%'})
+        .margin({bottom: $r('app.float.margin_10')})
 
         Column() {
           Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.Start, alignItems: ItemAlign.Center }) {
