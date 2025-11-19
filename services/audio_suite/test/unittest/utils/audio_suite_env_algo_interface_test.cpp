@@ -38,7 +38,7 @@ void AudioSuiteEnvAlgoInterfaceImplTest::SetUp()
 void AudioSuiteEnvAlgoInterfaceImplTest::TearDown()
 {}
 
-const size_t FRAME_LEN = 1920;   // 每帧采样点数
+const size_t FRAME_LEN = 1920;
 
 HWTEST_F(AudioSuiteEnvAlgoInterfaceImplTest, AudioSuiteEnvAlgoInterfaceImplTest, TestSize.Level0)
 {

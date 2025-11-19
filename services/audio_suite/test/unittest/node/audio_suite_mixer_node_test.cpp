@@ -77,7 +77,7 @@ HWTEST_F(AudioSuiteMixerTest, constructHpaeMixerNode, TestSize.Level0)
 
 HWTEST_F(AudioSuiteMixerTest, constructHpaeMixerNodeReadFile, TestSize.Level0)
 {
-    AudioSuiteMixerNode mixer;   //初始化一个节点
+    AudioSuiteMixerNode mixer;
 
     std::ifstream file1(g_fileNameOne, std::ios::binary | std::ios::ate);
     std::ifstream file2(g_fileNameTwo, std::ios::binary | std::ios::ate);
