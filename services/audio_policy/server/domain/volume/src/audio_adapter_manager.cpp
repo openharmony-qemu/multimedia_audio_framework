@@ -1136,7 +1136,6 @@ void AudioAdapterManager::UpdateVolumeForStreams()
     if (osAccountReady) {
         LoadVolumeMap();
         LoadMuteStatusMap();
-        UpdateSafeVolume();
     } else {
         AUDIO_WARNING_LOG("Os account is not ready, skip visiting datashare.");
     }
@@ -2209,7 +2208,7 @@ void AudioAdapterManager::UpdateSafeVolumeInner(std::shared_ptr<AudioDeviceDescr
 
 void AudioAdapterManager::UpdateSafeVolume()
 {
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = audioActiveDevice_.GetActiveOutputDevices();
+    auto descs = audioConnectedDevice_.GetCopy();
     for (auto &device: descs) {
         UpdateSafeVolumeInner(device);
     }
@@ -3342,6 +3341,7 @@ void AudioAdapterManager::UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDev
     CHECK_AND_RETURN_LOG(desc != nullptr, "UptdateVolumeWhenDeviceConnect desc is null");
     volumeDataMaintainer_.InitDeviceVolumeMap(desc);
     volumeDataMaintainer_.InitDeviceMuteMap(desc);
+    UpdateSafeVolumeInner(desc);
     CHECK_AND_RETURN_LOG(isCastingConnect_ && (desc->deviceType_ == DEVICE_TYPE_DP), "update ok");
     SetMaxVolumeForDpBoardcast();
     AUDIO_INFO_LOG("update ok for dp casting");
