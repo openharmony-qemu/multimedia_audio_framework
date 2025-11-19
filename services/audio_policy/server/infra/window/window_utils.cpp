@@ -78,21 +78,21 @@ bool WindowUtils::CheckWindowState(const int32_t pid)
     }
     auto sceneSessionManager = Rosen::SessionManagerLite::GetInstance().GetSceneSessionManagerLiteProxy();
     if (sceneSessionManager == nullptr) {
-        AUDIO_ERR_LOG("AudioInterruptService null manager");
+        AUDIO_ERR_LOG("sceneSessionManager is null manager");
         return false;
     }
     std::vector<Rosen::MainWindowState> windowStates;
     Rosen::WSError ret = sceneSessionManager->GetMainWindowStatesByPid(pid, windowStates);
     if (ret != Rosen::WSError::WS_OK || windowStates.empty()) {
-        AUDIO_ERR_LOG("AudioInterruptService fail GetWindow");
+        AUDIO_ERR_LOG("CheckWindowState fail GetWindow");
         return false;
     }
     for (auto &windowState : windowStates) {
         if (windowState.isVisible_ &&
             (windowState.state_ == static_cast<int32_t>(Rosen::SessionState::STATE_ACTIVE) ||
             windowState.state_ == static_cast<int32_t>(Rosen::SessionState::STATE_FOREGROUND))) {
-            AUDIO_INFO_LOG("AudioInterruptService app window front desk,"
-                " windowState.state_ = %{public}d", windowState.state_);
+            AUDIO_INFO_LOG("pid:%{public}d app is in the foreground,"
+                " windowState.state_ = %{public}d", pid, windowState.state_);
             return true;
         }
     }
