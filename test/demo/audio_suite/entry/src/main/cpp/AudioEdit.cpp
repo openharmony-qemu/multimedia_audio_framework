@@ -832,13 +832,13 @@ const std::vector<napi_property_descriptor> multiPipelineDescriptors = {
     {"multiStartVBEffect", nullptr, MultiStartVBEffect,
         nullptr, nullptr, nullptr, napi_default, nullptr},
     {"multiSaveFileBuffer", nullptr, MultiSaveFileBuffer,
-        nullptr, nullptr, nullptr,napi_default, nullptr},
+        nullptr, nullptr, nullptr, napi_default, nullptr},
     {"multiGetSecondOutputAudio", nullptr, MultiGetSecondOutputAudio,
-        nullptr, nullptr, nullptr,napi_default, nullptr},
+        nullptr, nullptr, nullptr, napi_default, nullptr},
     {"multiDeleteSong", nullptr, MultiDeleteSong,
-        nullptr, nullptr, nullptr,napi_default, nullptr},
-    {"destroyMultiPipeline", nullptr,MultiPipeline,
-        nullptr, nullptr, nullptr,napi_default, nullptr}
+        nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"destroyMultiPipeline", nullptr, MultiPipeline,
+        nullptr, nullptr, nullptr, napi_default, nullptr}
 };
 
 EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
