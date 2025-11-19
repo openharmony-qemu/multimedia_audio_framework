@@ -142,6 +142,8 @@ public:
 
     int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override; // for static renderer only
 
+    int32_t GetLatencyWithFlag(uint64_t &latency, uint32_t flag) override;
+
     // for inner-capturer
     std::shared_ptr<RendererInServer> GetRenderer();
     std::shared_ptr<CapturerInServer> GetCapturer();

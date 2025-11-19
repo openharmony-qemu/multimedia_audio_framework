@@ -86,6 +86,7 @@ RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_p
     }
     audioStreamChecker_ = std::make_shared<AudioStreamChecker>(processConfig);
     AudioStreamMonitor::GetInstance().AddCheckForMonitor(processConfig.originalSessionId, audioStreamChecker_);
+    InitLatencyMeasurement();
 }
 
 RendererInServer::~RendererInServer()
@@ -788,6 +789,25 @@ void RendererInServer::OnWriteDataFinish()
     lastWriteTime_ = ClockTime::GetCurNano();
 
     UpdateStreamInfo();
+}
+
+void RendererInServer::InitLatencyMeasurement()
+{
+    static bool latencyMeasureEnabled = AudioLatencyMeasurement::CheckIfEnabled();
+    CHECK_AND_RETURN(latencyMeasureEnabled);
+    signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
+    signalDetectAgent_->sampleRate_ = static_cast<int32_t>(processConfig_.streamInfo.samplingRate);
+    signalDetectAgent_->channels_ = static_cast<int32_t>(processConfig_.streamInfo.channels);
+    signalDetectAgent_->sampleFormat_ = static_cast<int32_t>(processConfig_.streamInfo.format);
+    signalDetectAgent_->formatByteSize_ = GetFormatByteSize(processConfig_.streamInfo.format);
+}
+
+void RendererInServer::DetectLatency(uint8_t *inputData, size_t requestDataLen)
+{
+    CHECK_AND_RETURN(signalDetectAgent_ != nullptr);
+    bool detected = signalDetectAgent_->CheckAudioData(inputData, requestDataLen);
+    CHECK_AND_RETURN(detected);
+    LatencyMonitor::GetInstance().UpdateRendererInServerTime(signalDetectAgent_->lastPeakBufferTime_);
 }
 
 int32_t RendererInServer::WriteData(int8_t *inputData, size_t requestDataLen)
@@ -2690,6 +2710,7 @@ int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
 {
     int32_t ret = SelectModeAndWriteData(inputData, requestDataLen);
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    DetectLatency(reinterpret_cast<uint8_t*>(inputData), requestDataLen);
 
     BufferDesc bufferDesc = {
         .buffer = reinterpret_cast<uint8_t*>(inputData),
@@ -2784,6 +2805,11 @@ int32_t RendererInServer::CreateServerBuffer()
         AUDIO_DEBUG_LOG("Clear data buffer, ret:%{public}d", ret);
     }
     return SUCCESS;
+}
+
+int32_t RendererInServer::GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag)
+{
+    return stream_->GetLatencyWithFlag(latency, flag);
 }
 } // namespace AudioStandard
 } // namespace OHOS

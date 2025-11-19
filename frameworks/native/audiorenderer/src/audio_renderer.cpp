@@ -2223,7 +2223,7 @@ int32_t AudioRendererPrivate::UnsetOffloadModeInner() const
 
 // Inner function. Must be called with AudioRendererPrivate::rendererMutex_
 // or AudioRendererPrivate::streamMutex_ held.
-RendererState AudioRendererPrivate::GetStatusInner()
+RendererState AudioRendererPrivate::GetStatusInner() const
 {
     if (IsNoStreamRenderer()) {
         return state_;
@@ -3140,5 +3140,11 @@ void AudioRendererPrivate::SetSwitchInfoInner(IAudioStream::SwitchInfo &info,
     }
 }
 
+int32_t AudioRendererPrivate::GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) const
+{
+    std::shared_lock lock(rendererMutex_);
+    CHECK_AND_RETURN_RET_LOG(GetStatusInner() != RENDERER_RELEASED, ERROR_ILLEGAL_STATE, "state is released");
+    return audioStream_->GetLatencyWithFlag(latency, flag);
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

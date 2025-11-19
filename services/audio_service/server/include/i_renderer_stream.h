@@ -21,6 +21,7 @@
 #include "i_stream.h"
 #include "audio_stream_info.h"
 #include "i_hpae_soft_link.h"
+#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -76,6 +77,12 @@ public:
     virtual int32_t SetSpeed(float speed) = 0;
     virtual int32_t SetLoudnessGain(float loudnessGain) = 0;
     virtual void BlockStream() noexcept = 0;
+
+    virtual int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) = 0;
+    virtual int32_t RegisterSinkLatencyFetcher(const std::function<int32_t (uint32_t &)> &fetcher)
+    {
+        return ERR_NOT_SUPPORTED;
+    }
 };
 
 struct CaptureInfo {

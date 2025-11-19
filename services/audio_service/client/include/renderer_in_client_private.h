@@ -228,6 +228,7 @@ public:
     int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) override;
     int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) override;
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
+    int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);

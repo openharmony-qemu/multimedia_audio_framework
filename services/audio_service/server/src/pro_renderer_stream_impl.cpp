@@ -23,6 +23,7 @@
 #include "securec.h"
 #include "policy_handler.h"
 #include "audio_volume.h"
+#include "audio_sink_latency_fetcher.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -710,6 +711,33 @@ void ProRendererStreamImpl::BlockStream() noexcept
 {
     isBlock_ = true;
     AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, 0.f);
+}
+
+int32_t ProRendererStreamImpl::GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag)
+{
+    latency = 0;
+    bool needHardware = (flag & LATENCY_FLAG_HARDWARE) != 0;
+    CHECK_AND_RETURN_RET(needHardware, SUCCESS);
+    std::function<int32_t (uint32_t &)> fetcher;
+    {
+        std::lock_guard<std::mutex> lock(sinkLatencyFetcherMutex_);
+        fetcher = sinkLatencyFetcher_;
+    }
+    CHECK_AND_RETURN_RET_LOG(fetcher, ERR_OPERATION_FAILED, "sinkLatencyFetcher is null");
+    uint32_t latencyMs = 0;
+    int32_t ret = fetcher(latencyMs);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "fetcher get latency failed %{public}d", ret);
+    latency = static_cast<uint64_t>(latencyMs * AUDIO_US_PER_MS);
+    return SUCCESS;
+}
+
+int32_t ProRendererStreamImpl::RegisterSinkLatencyFetcher(
+    const std::function<int32_t (uint32_t &)> &fetcher)
+{
+    CHECK_AND_RETURN_RET_LOG(fetcher, ERR_INVALID_PARAM, "fetcher is null");
+    std::lock_guard<std::mutex> lock(sinkLatencyFetcherMutex_);
+    sinkLatencyFetcher_ = fetcher;
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

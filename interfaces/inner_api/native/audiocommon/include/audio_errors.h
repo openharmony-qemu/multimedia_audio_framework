@@ -198,6 +198,9 @@ const int32_t ERR_AUDIO_SUITE_UNSUPPORT_CONNECT = BASE_AUDIO_ERR_OFFSET - 45;
 /** The number of created pipelines or nodes exceeds the system specification. */
 const int32_t ERR_AUDIO_SUITE_CREATED_EXCEED_SYSTEM_LIMITS = BASE_AUDIO_ERR_OFFSET - 46;
 
+/** latency fetcher returns a default value without caching */
+const int32_t ERR_LATENCY_DEFAULT_VALUE = BASE_AUDIO_ERR_OFFSET - 47;
+
 /** Audio suite function timed out during execution. */
 const int32_t ERR_AUDIO_SUITE_TIMEOUT = BASE_AUDIO_ERR_OFFSET - 47;
 

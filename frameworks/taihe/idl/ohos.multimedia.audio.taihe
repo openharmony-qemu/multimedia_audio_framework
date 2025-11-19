@@ -951,6 +951,12 @@ enum RenderTarget: i32 {
   INJECT_TO_VOICE_COMMUNICATION_CAPTURE = 1
 }
 
+enum AudioLatencyType: i32 {
+  LATENCY_TYPE_ALL = 0,
+  LATENCY_TYPE_SOFTWARE = 1,
+  LATENCY_TYPE_HARDWARE = 2,
+}
+
 struct AudioTimestampInfo {
   @readonly framePos: i64;
   @readonly timestamp: i64;
@@ -1063,6 +1069,10 @@ interface AudioRenderer {
   SetLoudnessGainSync(loudnessGain: f64): void;
 
   GetLoudnessGain(): f64;
+
+  @gen_async("getLatency")
+  @gen_promise("getLatency")
+  GetLatencySync(type: AudioLatencyType): i32;
 
   OnAudioInterrupt(callback: (data: InterruptEvent) => void): void;
   OnStateChange(callback: (data: AudioState) => void): void;

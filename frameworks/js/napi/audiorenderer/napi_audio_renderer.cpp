@@ -16,6 +16,8 @@
 #define LOG_TAG "NapiAudioRenderer"
 #endif
 
+#include <limits>
+
 #include "napi_audio_renderer.h"
 #if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
 #include "errors.h"
@@ -123,6 +125,7 @@ napi_status NapiAudioRenderer::InitNapiAudioRenderer(napi_env env, napi_value &c
         DECLARE_NAPI_FUNCTION("off", Off),
         DECLARE_NAPI_FUNCTION("setSilentModeAndMixWithOthers", SetSilentModeAndMixWithOthers),
         DECLARE_NAPI_FUNCTION("getSilentModeAndMixWithOthers", GetSilentModeAndMixWithOthers),
+        DECLARE_NAPI_FUNCTION("getLatency", GetLatency),
         DECLARE_NAPI_FUNCTION("getAudioTimestampInfo", GetAudioTimestampInfo),
         DECLARE_NAPI_FUNCTION("getAudioTimestampInfoSync", GetAudioTimestampInfoSync),
         DECLARE_NAPI_FUNCTION("setDefaultOutputDevice", SetDefaultOutputDevice),
@@ -865,6 +868,58 @@ napi_value NapiAudioRenderer::GetAudioTimestampInfoSync(napi_env env, napi_callb
 
     NapiParamUtils::SetTimeStampInfo(env, timeStamp, result);
     return result;
+}
+
+napi_value NapiAudioRenderer::GetLatency(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioRendererAsyncContext>();
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetValueInt32(env, context->latencyType, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get latency type failed",
+            NAPI_ERR_INVALID_PARAM);
+    };
+    context->GetCbInfo(env, info, inputParser);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioRenderer = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
+            "context object state is error.");
+        if (!NapiAudioEnum::IsLegalAudioLatencyType(context->latencyType)) {
+            context->SignError(NAPI_ERR_INVALID_PARAM,
+                "parameter verification failed: The param of type must be enum AudioLatencyType");
+            return;
+        }
+
+        LatencyFlag flag = NapiAudioEnum::ConvertLatencyTypeToFlag(context->latencyType);
+
+        uint64_t latencyUs = 0;
+        int32_t ret = napiAudioRenderer->audioRenderer_->GetLatencyWithFlag(latencyUs, flag);
+        if (ret == ERR_ILLEGAL_STATE) {
+            context->SignError(NAPI_ERR_ILLEGAL_STATE, "GetLatencyWithFlag illegal state");
+            return;
+        }
+        if (ret != SUCCESS) {
+            context->SignError(NAPI_ERR_SYSTEM, "GetLatencyWithFlag failed");
+            return;
+        }
+
+        int64_t latencyMs = static_cast<int64_t>(latencyUs / AUDIO_US_PER_MS);
+        if (latencyMs > std::numeric_limits<int32_t>::max()) {
+            context->SignError(NAPI_ERR_SYSTEM, "latency exceeds int32 range");
+            return;
+        }
+        context->latencyMs = static_cast<int32_t>(latencyMs);
+    };
+
+    auto complete = [env, context](napi_value &output) {
+        NapiParamUtils::SetValueInt32(env, context->latencyMs, output);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "GetLatency", executor, complete);
 }
 
 napi_value NapiAudioRenderer::Drain(napi_env env, napi_callback_info info)

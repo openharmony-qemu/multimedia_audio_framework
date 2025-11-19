@@ -80,6 +80,7 @@ public:
     void SetDefaultOutputDeviceSync(DeviceType deviceType);
     void SetLoudnessGainSync(double loudnessGain);
     double GetLoudnessGain();
+    int32_t GetLatencySync(AudioLatencyType type);
     void SetTargetSync(RenderTarget target);
     RenderTarget GetTarget();
 

@@ -24,6 +24,7 @@
 #include "i_stream_manager.h"
 #include "audio_effect.h"
 #include "audio_ring_cache.h"
+#include "audio_utils.h"
 #include "audio_stream_monitor.h"
 #include "audio_stream_checker.h"
 #include "player_dfx_writer.h"
@@ -164,6 +165,7 @@ public:
     int32_t WriteDataInStaticMode(int8_t *inputData, size_t requestDataLen);
     int32_t PreSetLoopTimes(int64_t bufferLoopTimes);
     int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
+    int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag);
 public:
     const AudioProcessConfig processConfig_;
 private:
@@ -211,6 +213,8 @@ private:
     void UpdateStreamInfo();
     void RemoveStreamInfo();
     void OnWriteDataFinish();
+    void InitLatencyMeasurement();
+    void DetectLatency(uint8_t *inputData, size_t requestDataLen);
     void PauseInner();
     void InitDupBufferInner(int32_t innerCapId);
     void ClearInnerCapBufferForInject();
@@ -332,6 +336,7 @@ private:
     AudioRendererRate audioRenderRate_ = RENDER_RATE_NORMAL;
     std::shared_ptr<AudioStaticBufferProcessor> staticBufferProcessor_ = nullptr;
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProvider_ = nullptr;
+    std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

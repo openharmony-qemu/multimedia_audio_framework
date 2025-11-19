@@ -94,6 +94,11 @@ public:
         return sharedAudioRenderer_->GetLatency(latency);
     }
 
+    int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) const override
+    {
+        return sharedAudioRenderer_->GetLatencyWithFlag(latency, flag);
+    }
+
     bool Drain() const override
     {
         return sharedAudioRenderer_->Drain();

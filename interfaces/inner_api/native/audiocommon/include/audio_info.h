@@ -2163,6 +2163,14 @@ public:
 
     virtual void OnStaticBufferEvent(StaticBufferEventId eventId) = 0;
 };
+
+enum LatencyFlag : uint32_t {
+    LATENCY_FLAG_SHARED_BUFFER = 1U << 0,
+    LATENCY_FLAG_ENGINE = 1U << 1,
+    LATENCY_FLAG_SOFTWARE = 0X0FFFFFFF,
+    LATENCY_FLAG_HARDWARE = 1U << 31,
+    LATENCY_FLAG_ALL = 0XFFFFFFFF
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H

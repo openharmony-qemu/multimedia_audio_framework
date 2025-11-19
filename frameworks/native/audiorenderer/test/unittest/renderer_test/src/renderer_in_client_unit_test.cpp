@@ -82,6 +82,7 @@ public:
     }
 
     virtual int32_t GetLatency(uint64_t &latency) override { return 0; }
+    virtual int32_t GetLatencyWithFlag(uint64_t &latency, uint32_t flag) override { return 0; }
 
     virtual int32_t SetRate(int32_t rate) override { return 0; } // SetRenderRate
 

@@ -119,6 +119,8 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     HILOG_COMM_INFO("[FinishMove] session :%{public}u to sink:%{public}s, sceneType is %{public}d",
         sessionId, sinkInfo_.deviceClass.c_str(), nodeInfo.sceneType);
     CreateProcessClusterAndConnect(nodeInfo, isConnect);
+
+    node->OnStreamInfoChange(false);
 }
 
 void HpaeRendererManager::CreateProcessClusterAndConnect(HpaeNodeInfo &nodeInfo, bool isConnect)
