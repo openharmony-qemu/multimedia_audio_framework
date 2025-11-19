@@ -1838,24 +1838,6 @@ void AudioPolicyServerInfoDumpHelpFuzzTest()
     server->InfoDumpHelp(dumpString);
 }
 
-void AudioPolicyServerGetPreferredOutputStreamTypeFuzzTest()
-{
-    auto server = GetServerPtr();
-    CHECK_AND_RETURN(server != nullptr);
-    AudioRendererInfo rendererInfo;
-    int32_t streamType = GetData<int32_t>();
-    server->GetPreferredOutputStreamType(rendererInfo, streamType);
-}
-
-void AudioPolicyServerGetPreferredInputStreamTypeFuzzTest()
-{
-    auto server = GetServerPtr();
-    CHECK_AND_RETURN(server != nullptr);
-    AudioCapturerInfo capturerInfo;
-    int32_t streamType = GetData<int32_t>();
-    server->GetPreferredInputStreamType(capturerInfo, streamType);
-}
-
 void AudioPolicyServerCreateRendererClientFuzzTest()
 {
     auto server = GetServerPtr();
@@ -2220,8 +2202,6 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerPolicyDataDumpFuzzTest,
     AudioPolicyServerArgInfoDumpFuzzTest,
     AudioPolicyServerInfoDumpHelpFuzzTest,
-    AudioPolicyServerGetPreferredOutputStreamTypeFuzzTest,
-    AudioPolicyServerGetPreferredInputStreamTypeFuzzTest,
     AudioPolicyServerCreateRendererClientFuzzTest,
     AudioPolicyServerCreateCapturerClientFuzzTest,
     AudioPolicyServerRegisterTrackerFuzzTest,
