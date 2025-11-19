@@ -34,11 +34,11 @@ napi_value addAudioSeparation(napi_env env, napi_callback_info info)
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     std::string uuidStr;
-    napi_status status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_1], uuidStr);
+    napi_status status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_0], uuidStr);
     std::string inputIdStr;
-    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_2], inputIdStr);
+    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_1], inputIdStr);
     std::string selectedNodeId;
-    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_3], selectedNodeId);
+    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_2], selectedNodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, AISS_TAG, "uuid:%{public}s, inputId:%{public}s,"
                  "selectedNodeId:%{public}s", uuidStr.c_str(), inputIdStr.c_str(), selectedNodeId.c_str());
     napi_value ret = nullptr;
