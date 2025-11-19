@@ -800,33 +800,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferr
     return deviceList;
 }
 
-int32_t AudioCoreService::GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo,
-    const std::string &bundleName)
-{
-    // Use GetPreferredOutputDeviceDescriptors instead of currentActiveDevice, if prefer != current, recreate stream
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredDeviceList =
-        GetPreferredOutputDeviceDescInner(rendererInfo, LOCAL_NETWORK_ID);
-    if (preferredDeviceList.size() == 0) {
-        return AUDIO_FLAG_NORMAL;
-    }
-
-    int32_t flag = AUDIO_FLAG_NORMAL;
-    if (isFastControlled_ && (rendererInfo.playerType != PLAYER_TYPE_SOUND_POOL) &&
-        (flag == AUDIO_FLAG_MMAP || flag == AUDIO_FLAG_VOIP_FAST)) {
-        std::string bundleNamePre = CHECK_FAST_BLOCK_PREFIX + bundleName;
-        std::string result = AudioServerProxy::GetInstance().GetAudioParameterProxy(bundleNamePre);
-        if (result == "true") {
-            AUDIO_INFO_LOG("%{public}s not in fast list", bundleName.c_str());
-            return AUDIO_FLAG_NORMAL;
-        }
-    }
-    if (flag == AUDIO_FLAG_VOIP_FAST && audioSceneManager_.GetAudioScene() == AUDIO_SCENE_PHONE_CALL) {
-        AUDIO_INFO_LOG("Current scene is phone call, concede incoming voip fast output stream");
-        flag = AUDIO_FLAG_NORMAL;
-    }
-    return flag;
-}
-
 int32_t AudioCoreService::GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType)
 {
     deviceType = audioSessionService_.GetSessionDefaultOutputDevice(callerPid);
@@ -839,24 +812,6 @@ int32_t AudioCoreService::SetSessionDefaultOutputDevice(const int32_t callerPid,
         "the device has no earpiece");
 
     return audioSessionService_.SetSessionDefaultOutputDevice(callerPid, deviceType);
-}
-
-int32_t AudioCoreService::GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo)
-{
-    // Use GetPreferredInputDeviceDescriptors instead of currentActiveDevice, if prefer != current, recreate stream
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredDeviceList =
-        GetPreferredInputDeviceDescInner(capturerInfo, IPCSkeleton::GetCallingUid(), LOCAL_NETWORK_ID);
-    if (preferredDeviceList.size() == 0) {
-        return AUDIO_FLAG_NORMAL;
-    }
-    int32_t flag = audioDeviceCommon_.GetPreferredInputStreamTypeInner(capturerInfo.sourceType,
-        preferredDeviceList[0]->deviceType_,
-        capturerInfo.originalFlag, preferredDeviceList[0]->networkId_, capturerInfo.samplingRate);
-    if (flag == AUDIO_FLAG_VOIP_FAST && audioSceneManager_.GetAudioScene() == AUDIO_SCENE_PHONE_CALL) {
-        AUDIO_INFO_LOG("Current scene is phone call, concede incoming voip fast input stream");
-        flag = AUDIO_FLAG_NORMAL;
-    }
-    return flag;
 }
 
 bool AudioCoreService::GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos)
