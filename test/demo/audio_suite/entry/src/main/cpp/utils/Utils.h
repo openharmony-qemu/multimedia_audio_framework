@@ -48,13 +48,6 @@ struct FieldEffectParams {
     std::string selectedNodeId;
 };
 
-struct FieldEffectParams {
-    std::string inputId;
-    unsigned int mode = 0;
-    std::string fieldEffectId;
-    std::string selectedNodeId;
-};
-
 napi_status ParseNapiString(napi_env env, napi_value value, std::string &result);
 
 void GetBitsPerSampleAndStreamFormat(const OH_AudioFormat& g_audioFormatOutput,

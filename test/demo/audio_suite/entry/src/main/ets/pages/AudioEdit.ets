@@ -977,7 +977,7 @@ export struct AudioEdit {
                 .margin({ right: $r('app.float.margin_35') })
                 .listDirection(Axis.Horizontal)
                 .alignListItem(ListItemAlign.Center)
-                .ScrollBar(BarState.Off)
+                .scrollBar(BarState.Off)
             }
         } else {
             Image($r('app.media.chevron_down'))
