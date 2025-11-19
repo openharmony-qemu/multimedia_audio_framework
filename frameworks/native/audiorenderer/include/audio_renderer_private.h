@@ -225,7 +225,6 @@ private:
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     void MockPcmData(uint8_t *buffer, size_t bufferSize) const;
     void WriteUnderrunEvent() const;
-    IAudioStream::StreamClass GetPreferredStreamClass(AudioStreamParams audioStreamParams);
     bool IsDirectVoipParams(const AudioStreamParams &audioStreamParams);
     void UpdateAudioInterruptStrategy(float volume, bool setVolume) const;
     bool IsAllowedStartBackground(StreamUsage streamUsage, bool &silentControl);
@@ -275,8 +274,6 @@ private:
     mutable std::shared_mutex streamMutex_;
     mutable AudioRenderMode audioRenderMode_ = RENDER_MODE_NORMAL;
     int32_t callbackLoopTid_ = -1;
-    bool isFastVoipSupported_ = false;
-    bool isDirectVoipSupported_ = false;
     bool isEnableVoiceModemCommunicationStartStream_ = false;
     RendererState state_ = RENDERER_INVALID;
 
