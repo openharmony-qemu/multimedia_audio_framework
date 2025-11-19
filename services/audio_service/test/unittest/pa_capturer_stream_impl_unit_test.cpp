@@ -539,7 +539,6 @@ HWTEST_F(PaCapturerStreamUnitTest, PaCapturerStream_019, TestSize.Level1)
     AudioProcessConfig processConfig = GetInnerCapConfig();
     pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
     capturerStreamImplRet->paStream_ = stream;
-    capturerStreamImplRet->capturerServerDumpFile_ = fopen("/data/data/.pulse_dir/capturer_impl.pcm", "wb+");
     size_t length = 1;
     capturerStreamImplRet->DequeueBuffer(length);
     EXPECT_EQ(capturerStreamImplRet != nullptr, true);
