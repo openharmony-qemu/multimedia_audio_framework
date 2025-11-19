@@ -552,13 +552,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry
     return coreService_->GetExcludedDevices(audioDevUsage);
 }
 
-int32_t AudioCoreService::EventEntry::GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo,
-    const std::string &bundleName)
-{
-    std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    return coreService_->GetPreferredOutputStreamType(rendererInfo, bundleName);
-}
-
 int32_t AudioCoreService::EventEntry::SetSessionDefaultOutputDevice(
     const int32_t callerPid, const DeviceType &deviceType)
 {
@@ -570,12 +563,6 @@ int32_t AudioCoreService::EventEntry::GetSessionDefaultOutputDevice(const int32_
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     return coreService_->GetSessionDefaultOutputDevice(callerPid, deviceType);
-}
-
-int32_t AudioCoreService::EventEntry::GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo)
-{
-    std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    return coreService_->GetPreferredInputStreamType(capturerInfo);
 }
 
 int32_t AudioCoreService::EventEntry::SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config)
