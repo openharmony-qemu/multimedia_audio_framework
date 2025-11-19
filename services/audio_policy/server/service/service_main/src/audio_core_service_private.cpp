@@ -2256,7 +2256,7 @@ int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream(const AudioStream
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1, "HandleFetchOutputWhenNoRunningStream");
     CHECK_AND_RETURN_RET_LOG(!descs.empty(), ERROR, "descs is empty");
-    if (adescs.front()->deviceType_ != DEVICE_TYPE_NONE &&
+    if (descs.front()->deviceType_ != DEVICE_TYPE_NONE &&
         (audioSceneManager_.GetAudioScene(true) != AUDIO_SCENE_DEFAULT || reason.IsSetAudioScene())) {
         audioActiveDevice_.UpdateActiveDeviceRoute(descs.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG,
             descs.front()->deviceName_, descs.front()->networkId_);
