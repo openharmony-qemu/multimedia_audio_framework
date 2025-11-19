@@ -116,8 +116,6 @@ public:
 
     shared_ptr<AudioDeviceDescriptor> GetActiveOutputDeviceDescriptor();
 
-    int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
-
     void OnUpdateAnahsSupport(std::string anahsShowType);
 
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs);
